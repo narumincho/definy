@@ -17,14 +17,15 @@ import Effect.Class as EffectClass
 import Effect.Console as Console
 import EsBuild as EsBuild
 import FileSystem.Copy as FileSystemCopy
+import FileSystem.FileType as FileType
 import FileSystem.Path as Path
 import FileSystem.Read as FileSystemRead
 import FileSystem.Write as FileSystemWrite
-import FileType as FileType
 import Firebase.FirebaseJson as FirebaesJson
 import Firebase.FirebaseJson as FirebaseJson
 import Firebase.SecurityRules as SecurityRules
 import Hash as Hash
+import MediaType as MediaType
 import Node.Buffer as Buffer
 import Node.Encoding as Encoding
 import PackageJson as PackageJson
@@ -275,20 +276,24 @@ writeFirebaseJson staticFileDataList clientProgramHashValue = do
                       , headers:
                           [ FirebaseJson.Header
                               { key: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "content-type")
-                              , value: NonEmptyString.toString FileType.javaScriptMimeType
+                              , value: NonEmptyString.toString MediaType.javaScriptMimeType
                               }
                           ]
                       }
                   )
                   ( map
-                      ( \( StaticResourceFile.StaticResourceFileResult { requestPathAndUploadFileName }
+                      ( \( StaticResourceFile.StaticResourceFileResult { requestPathAndUploadFileName, mediaTypeMaybe }
                         ) ->
                           ( FirebaesJson.SourceAndHeaders
                               { source: requestPathAndUploadFileName
                               , headers:
                                   [ FirebaseJson.Header
                                       { key: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "content-type")
-                                      , value: NonEmptyString.toString FileType.pngMimeType
+                                      , value:
+                                          NonEmptyString.toString
+                                            ( MediaType.toMimeType
+                                                mediaTypeMaybe
+                                            )
                                       }
                                   ]
                               }

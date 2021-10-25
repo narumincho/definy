@@ -4,7 +4,7 @@ import Data.String.NonEmpty as NonEmptyString
 import Effect.Aff as Aff
 import Effect.Aff.Compat as AffCompat
 import FileSystem.Path as Path
-import FileType as FileType
+import FileSystem.FileType as FileType
 import Prelude as Prelude
 
 type Option

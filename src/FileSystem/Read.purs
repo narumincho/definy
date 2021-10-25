@@ -18,7 +18,7 @@ import Node.Buffer as Buffer
 import Node.Encoding as Encoding
 import Node.FS.Aff as Fs
 import FileSystem.Path as Path
-import FileType as FileType
+import FileSystem.FileType as FileType
 
 -- | distribution にあるファイルを文字列として読み取る
 readTextFileInDistribution :: Path.DistributionFilePath -> FileType.FileType -> Aff.Aff String

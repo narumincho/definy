@@ -5,13 +5,14 @@ import Control.Parallel as Parallel
 import Data.Maybe as Maybe
 import Data.String as String
 import Data.String.NonEmpty as NonEmptyString
-import Data.Array as Array
 import Effect.Aff as Aff
 import Effect.Class as EffectClass
 import Effect.Console as Console
+import FileSystem.FileType as FileType
 import FileSystem.Path as Path
 import FileSystem.Read as FileSystemRead
 import Hash as Hash
+import MediaType as MediaType
 
 -- | static な ファイルの解析結果
 newtype StaticResourceFileResult
@@ -25,6 +26,7 @@ newtype StaticResourceFileResult
     ファイルの中身のハッシュ値になる.
   -}
   , requestPathAndUploadFileName :: NonEmptyString.NonEmptyString
+  , mediaTypeMaybe :: Maybe.Maybe MediaType.MediaType
   }
 
 -- | 指定したファイルパスの SHA-256 のハッシュ値を取得する
@@ -60,33 +62,33 @@ getStaticResourceFileResult directoryPath =
   in
     do
       filePathList <- filePathListAff
-      result <-
-        ( Parallel.parSequence
-            ( map
-                ( \filePath ->
-                    filePathToStaticResourceFileResultAff filePath
-                )
-                filePathList
-            )
-        )
-      pure (Array.catMaybes result)
+      ( Parallel.parSequence
+          ( map
+              ( \filePath ->
+                  filePathToStaticResourceFileResultAff filePath
+              )
+              filePathList
+          )
+      )
 
-filePathToStaticResourceFileResultAff :: Path.FilePath -> Aff.Aff (Maybe.Maybe StaticResourceFileResult)
+filePathToStaticResourceFileResultAff :: Path.FilePath -> Aff.Aff StaticResourceFileResult
 filePathToStaticResourceFileResultAff filePath = do
   hashValue <- getFileHash filePath
+  let
+    fileTypeMaybe :: Maybe.Maybe FileType.FileType
+    fileTypeMaybe = Path.filePathGetFileType filePath
   pure
-    ( case Path.filePathGetFileType filePath of
-        Maybe.Just fileType ->
-          Maybe.Just
-            ( StaticResourceFileResult
-                { originalFilePath: filePath
-                , fileId:
-                    NonEmptyString.appendString (Path.filePathGetFileName filePath)
-                      ( firstUppercase
-                          (NonEmptyString.toString (Path.fileTypeToExtension fileType))
-                      )
-                , requestPathAndUploadFileName: hashValue
-                }
-            )
-        Maybe.Nothing -> Maybe.Nothing
+    ( StaticResourceFileResult
+        { originalFilePath: filePath
+        , fileId:
+            NonEmptyString.appendString (Path.filePathGetFileName filePath)
+              ( case fileTypeMaybe of
+                  Maybe.Just fileType ->
+                    firstUppercase
+                      (NonEmptyString.toString (FileType.toExtension fileType))
+                  Maybe.Nothing -> ""
+              )
+        , requestPathAndUploadFileName: hashValue
+        , mediaTypeMaybe: bind fileTypeMaybe FileType.toMediaType
+        }
     )

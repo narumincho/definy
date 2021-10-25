@@ -15,7 +15,7 @@ import Data.String.NonEmpty as NonEmptyString
 import Data.Tuple as Tuple
 import Data.UInt as UInt
 import FileSystem.Path as Path
-import FileType as FileType
+import FileSystem.FileType as FileType
 import Prelude as Prelude
 import Util as Util
 

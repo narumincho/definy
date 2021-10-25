@@ -16,7 +16,7 @@ import Effect.Aff.Compat as AffCompat
 import Effect.Class as EffectClass
 import Effect.Console as Console
 import FileSystem.Path as Path
-import FileType as FileType
+import FileSystem.FileType as FileType
 import Firebase.SecurityRules as FirebaseSecurityRules
 import Node.Encoding as Encoding
 import Node.FS.Aff as Fs

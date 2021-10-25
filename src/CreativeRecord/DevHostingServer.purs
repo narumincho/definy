@@ -6,7 +6,7 @@ import Data.Map as Map
 import Data.String.NonEmpty as NonEmptyString
 import Effect as Effect
 import Effect.Console as Console
-import FileType as FileType
+import MediaType as MediaType
 import Html.ToString as HtmlToSTring
 import Node.Encoding as Encoding
 import Node.HTTP as Http
@@ -104,5 +104,5 @@ htmlResponse =
               )
               CreativeRecordView.view
           )
-    , mimeType: FileType.htmlMimeType
+    , mimeType: MediaType.htmlMimeType
     }

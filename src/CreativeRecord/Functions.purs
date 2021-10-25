@@ -4,7 +4,7 @@ import CreativeRecord.ClientProgramHashValue as ClientProgramHashValue
 import CreativeRecord.View as CreativeRecordView
 import Data.Map as Map
 import Data.String.NonEmpty as NonEmptyString
-import FileType as FileType
+import MediaType as MediaType
 import Firebase.Functions as Functions
 import Html.ToString as HtmlToString
 import Prelude as Prelude
@@ -24,6 +24,6 @@ html =
                   )
                   CreativeRecordView.view
               )
-        , mimeType: NonEmptyString.toString FileType.htmlMimeType
+        , mimeType: NonEmptyString.toString MediaType.htmlMimeType
         }
     )
