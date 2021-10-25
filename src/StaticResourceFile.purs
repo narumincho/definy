@@ -1,5 +1,6 @@
 module StaticResourceFile (StaticResourceFileResult(..), getStaticResourceFileResult) where
 
+import Prelude
 import Control.Parallel as Parallel
 import Data.Maybe as Maybe
 import Data.String as String
@@ -10,7 +11,6 @@ import Effect.Console as Console
 import FileSystem.Path as Path
 import FileSystem.Read as FileSystemRead
 import Hash as Hash
-import Prelude as Prelude
 
 -- | static な ファイルの解析結果
 newtype StaticResourceFileResult
@@ -19,42 +19,35 @@ newtype StaticResourceFileResult
       入力のファイル名. オリジナルのファイル名. 拡張子あり 
     -} originalFilePath :: Path.FilePath
   , fileId :: NonEmptyString.NonEmptyString
-  , requestPath :: String
   {- 
     Firebase Hosting などにアップロードするファイル名. 拡張子は含まれない 
     ファイルの中身のハッシュ値になる.
   -}
-  , uploadFileName :: String
+  , requestPathAndUploadFileName :: NonEmptyString.NonEmptyString
   }
 
 -- | 指定したファイルパスの SHA-256 のハッシュ値を取得する
-getFileHash :: Path.FilePath -> Aff.Aff String
-getFileHash filePath =
-  Prelude.bind
-    ( EffectClass.liftEffect
-        ( Console.log
-            ( Prelude.append
-                (NonEmptyString.toString (Path.filePathToString filePath))
-                "のハッシュ値を取得中"
-            )
+getFileHash :: Path.FilePath -> Aff.Aff NonEmptyString.NonEmptyString
+getFileHash filePath = do
+  EffectClass.liftEffect
+    ( Console.log
+        ( append
+            (NonEmptyString.toString (Path.filePathToString filePath))
+            "のハッシュ値を取得中"
         )
     )
-    ( \_ ->
-        Prelude.map
-          ( \content ->
-              Hash.bufferAndMimeTypeToSha256HashValue
-                { buffer: content
-                , mimeType:
-                    Prelude.show
-                      (Path.filePathGetFileType filePath)
-                }
-          )
-          (FileSystemRead.readBinaryFile filePath)
+  content <- FileSystemRead.readBinaryFile filePath
+  pure
+    ( Hash.bufferAndMimeTypeToSha256HashValue
+        { buffer: content
+        , mimeType:
+            show (Path.filePathGetFileType filePath)
+        }
     )
 
 firstUppercase :: String -> String
 firstUppercase text = case String.uncons text of
-  Maybe.Just { head, tail } -> Prelude.append (String.toUpper (String.singleton head)) tail
+  Maybe.Just { head, tail } -> append (String.toUpper (String.singleton head)) tail
   Maybe.Nothing -> ""
 
 -- | static なファイルが入っているディレクトリを分析する
@@ -64,21 +57,20 @@ getStaticResourceFileResult directoryPath =
     filePathListAff :: Aff.Aff (Array Path.FilePath)
     filePathListAff = FileSystemRead.readFilePathInDirectory directoryPath
   in
-    Prelude.bind
-      filePathListAff
-      ( \filePathList ->
-          Parallel.parSequence
-            ( Prelude.map
-                ( \filePath ->
-                    filePathToStaticResourceFileResultAff filePath
-                )
-                filePathList
-            )
+    do
+      filePathList <- filePathListAff
+      ( Parallel.parSequence
+          ( map
+              ( \filePath ->
+                  filePathToStaticResourceFileResultAff filePath
+              )
+              filePathList
+          )
       )
 
 filePathToStaticResourceFileResultAff :: Path.FilePath -> Aff.Aff StaticResourceFileResult
 filePathToStaticResourceFileResultAff filePath =
-  Prelude.map
+  map
     ( \hashValue ->
         StaticResourceFileResult
           { originalFilePath: filePath
@@ -90,8 +82,7 @@ filePathToStaticResourceFileResultAff filePath =
                         (NonEmptyString.toString (Path.fileTypeToExtension fileType))
                     Maybe.Nothing -> ""
                 )
-          , requestPath: hashValue
-          , uploadFileName: hashValue
+          , requestPathAndUploadFileName: hashValue
           }
     )
     (getFileHash filePath)

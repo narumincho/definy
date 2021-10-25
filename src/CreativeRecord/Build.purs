@@ -309,7 +309,7 @@ staticResourceFileResultToPureScriptDefinition (StaticResourceFile.StaticResourc
           [ "static な ファイル の \""
           , NonEmptyString.toString (Path.filePathToString record.originalFilePath)
           , "\"をリクエストするためのURL. ファイルのハッシュ値は "
-          , record.uploadFileName
+          , NonEmptyString.toString record.requestPathAndUploadFileName
           , "\"(コード生成結果)"
           ]
     , pType:
@@ -338,7 +338,9 @@ staticResourceFileResultToPureScriptDefinition (StaticResourceFile.StaticResourc
           , arguments:
               NonEmptyArray.cons
                 ( PureScriptData.ArrayLiteral
-                    [ PureScriptData.StringLiteral record.uploadFileName ]
+                    [ PureScriptData.StringLiteral
+                        (NonEmptyString.toString record.requestPathAndUploadFileName)
+                    ]
                 )
                 ( NonEmptyArray.singleton PureScriptWellknown.dataMapEmpty
                 )
