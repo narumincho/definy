@@ -360,11 +360,11 @@ staticResourceFileResultToPureScriptDefinition (StaticResourceFile.StaticResourc
     { name: record.fileId
     , document:
         String.joinWith ""
-          [ "static な ファイル の \""
+          [ "static な ファイル の `"
           , NonEmptyString.toString (Path.filePathToString record.originalFilePath)
-          , "\"をリクエストするためのURL. ファイルのハッシュ値は "
+          , "` をリクエストするためのURL. ファイルのハッシュ値は `"
           , NonEmptyString.toString record.requestPathAndUploadFileName
-          , "\"(コード生成結果)"
+          , "`(コード生成結果)"
           ]
     , pType:
         PureScriptData.PType

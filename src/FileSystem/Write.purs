@@ -36,7 +36,7 @@ writeTextFileInDistribution distributionFilePath content =
             (Path.distributionFilePathToDirectoryPath distributionFilePath)
         )
       Fs.writeTextFile Encoding.UTF8 filePath content
-      EffectClass.liftEffect (Console.log (append filePath "の書き込みに成功"))
+      EffectClass.liftEffect (Console.log (append filePath " の書き込みに成功"))
 
 writeJson :: Path.DistributionFilePath -> ArgonautCore.Json -> Aff.Aff Unit
 writeJson distributionFilePath json =
@@ -47,7 +47,7 @@ writeJson distributionFilePath json =
     do
       ensureDir (Path.distributionDirectoryPathToDirectoryPath (Path.distributionFilePathToDirectoryPath distributionFilePath))
       Fs.writeTextFile Encoding.UTF8 filePath (ArgonautCore.stringify json)
-      EffectClass.liftEffect (Console.log (append filePath "の書き込みに成功"))
+      EffectClass.liftEffect (Console.log (append filePath " の書き込みに成功"))
 
 -- | PureScript をモジュール名をファイル名としてファイルに書く
 writePureScript :: Path.DirectoryPath -> PureScriptData.Module -> Aff.Aff Unit
@@ -73,7 +73,7 @@ writePureScript srcDirectoryPath pModule =
     do
       ensureDir directoryPath
       Fs.writeTextFile Encoding.UTF8 filePath (PureScriptToString.toString pModule)
-      EffectClass.liftEffect (Console.log (append filePath "の書き込みに成功"))
+      EffectClass.liftEffect (Console.log (append filePath " の書き込みに成功"))
 
 foreign import ensureDirAsEffectFnAff :: String -> AffCompat.EffectFnAff Unit
 
@@ -103,4 +103,4 @@ writeFirebaseRules distributionFilePath@(Path.DistributionFilePath { directoryPa
         ( NonEmptyString.toString
             (FirebaseSecurityRules.toNonEmptyString securityRules)
         )
-      EffectClass.liftEffect (Console.log (append filePath "の書き込みに成功"))
+      EffectClass.liftEffect (Console.log (append filePath " の書き込みに成功"))

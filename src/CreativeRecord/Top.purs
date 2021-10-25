@@ -2,6 +2,7 @@ module CreativeRecord.Top where
 
 import Color as Color
 import CreativeRecord.Location as Location
+import CreativeRecord.StaticResource as StaticResource
 import CreativeRecord.SvgImage as SvgImage
 import Css as Css
 import Data.Map as Map
@@ -234,7 +235,7 @@ topBox =
                               )
                         }
                     )
-                    (StructuredUrl.pathAndSearchParams [ NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "definy20210811Png") ] Map.empty)
+                    StaticResource.definy20210811Png
                     "definy"
                 , externalLink
                     ( StructuredUrl.StructuredUrl
@@ -242,7 +243,7 @@ topBox =
                         , pathAndSearchParams: StructuredUrl.pathAndSearchParams [] Map.empty
                         }
                     )
-                    (StructuredUrl.pathAndSearchParams [ NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "gravity_starPng") ] Map.empty)
+                    StaticResource.gravity_starPng
                     "重力星"
                 , externalLink
                     ( StructuredUrl.StructuredUrl
@@ -250,7 +251,7 @@ topBox =
                         , pathAndSearchParams: StructuredUrl.pathAndSearchParams [] Map.empty
                         }
                     )
-                    (StructuredUrl.pathAndSearchParams [ NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "tsukumartPng") ] Map.empty)
+                    StaticResource.tsukumartPng
                     "つくマート"
                 ]
             }
@@ -260,62 +261,62 @@ topBox =
             ( [ ArticleTitleAndImageUrl
                   { title:
                       "PowerShell で フォルダ内のファイルに対して 再帰的にコマンドを実行する"
-                  , imagePath: StructuredUrl.pathAndSearchParams [ NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "powershell_iconPng") ] Map.empty
+                  , imagePath: StaticResource.powershell_iconPng
                   , location: Location.PowershellRecursion
                   }
               , ArticleTitleAndImageUrl
                   { title: "SVGの基本"
-                  , imagePath: StructuredUrl.pathAndSearchParams [ NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "svgBasic") ] Map.empty
+                  , imagePath: StaticResource.svg_basicPng
                   , location: Location.SvgBasic
                   }
               , ArticleTitleAndImageUrl
                   { title: "単体SVGと埋め込みSVG"
-                  , imagePath: StructuredUrl.pathAndSearchParams [ NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "grape_svg_codePng") ] Map.empty
+                  , imagePath: StaticResource.grape_svg_codePng
                   , location: Location.SvgStandaloneEmbed
                   }
               , ArticleTitleAndImageUrl
                   { title: "DESIRED Routeについて"
-                  , imagePath: StructuredUrl.pathAndSearchParams [ NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "desired_route_titlePng") ] Map.empty
+                  , imagePath: StaticResource.desired_route_titlePng
                   , location: Location.AboutDesiredRoute
                   }
               , ArticleTitleAndImageUrl
                   { title: "メッセージウィンドウの話"
-                  , imagePath: StructuredUrl.pathAndSearchParams [ NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "windowPng") ] Map.empty
+                  , imagePath: StaticResource.windowPng
                   , location: Location.MessageWindow
                   }
               , ArticleTitleAndImageUrl
                   { title: "DESIRED RouteとNPIMEのフォントの描画処理"
-                  , imagePath: StructuredUrl.pathAndSearchParams [ NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "fontPng") ] Map.empty
+                  , imagePath: StaticResource.fontPng
                   , location: Location.DesiredRouteFont
                   }
               , ArticleTitleAndImageUrl
                   { title: "リストUIのボタン操作の挙動"
-                  , imagePath: StructuredUrl.pathAndSearchParams [ NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "list_uiPng") ] Map.empty
+                  , imagePath: StaticResource.list_uiPng
                   , location: Location.ListSelectionBehavior
                   }
               , ArticleTitleAndImageUrl
                   { title: "UIの配色"
-                  , imagePath: StructuredUrl.pathAndSearchParams [ NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "colorPng") ] Map.empty
+                  , imagePath: StaticResource.colorPng
                   , location: Location.UiColor
                   }
               , ArticleTitleAndImageUrl
                   { title: "モンスターとのエンカウントについて"
-                  , imagePath: StructuredUrl.pathAndSearchParams [ NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "battlePng") ] Map.empty
+                  , imagePath: StaticResource.battlePng
                   , location: Location.DesiredRouteEncounter
                   }
               , ArticleTitleAndImageUrl
                   { title: "星の図形について"
-                  , imagePath: StructuredUrl.pathAndSearchParams [ NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "starPng") ] Map.empty
+                  , imagePath: StaticResource.starPng
                   , location: Location.Star
                   }
               , ArticleTitleAndImageUrl
                   { title: "DESIRED Routeに登場する予定だった敵モンスター"
-                  , imagePath: StructuredUrl.pathAndSearchParams [ NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "kamausagiPng") ] Map.empty
+                  , imagePath: StaticResource.kamausagiPng
                   , location: Location.DesiredRouteMonster
                   }
               , ArticleTitleAndImageUrl
                   { title: "Nプチコン漢字入力(N Petitcom IME)"
-                  , imagePath: StructuredUrl.pathAndSearchParams [ NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "henkanPng") ] Map.empty
+                  , imagePath: StaticResource.henkanPng
                   , location: Location.NPetitcomIme
                   }
               ]

@@ -36,7 +36,7 @@ getFileHash filePath = do
     ( Console.log
         ( append
             (NonEmptyString.toString (Path.filePathToString filePath))
-            "のハッシュ値を取得中"
+            " のハッシュ値を取得中"
         )
     )
   content <- FileSystemRead.readBinaryFile filePath
