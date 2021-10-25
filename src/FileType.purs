@@ -3,6 +3,7 @@ module FileType
   , toMimeType
   , htmlMimeType
   , javaScriptMimeType
+  , pngMimeType
   ) where
 
 import Data.Generic.Rep as GenericRep
@@ -31,11 +32,7 @@ instance showFileType :: Prelude.Show FileType where
 
 toMimeType :: Maybe.Maybe FileType -> Maybe.Maybe NonEmptyString.NonEmptyString
 toMimeType = case _ of
-  Maybe.Just Png ->
-    Maybe.Just
-      ( NonEmptyString.nes
-          (Proxy.Proxy :: Proxy.Proxy "image/png")
-      )
+  Maybe.Just Png -> Maybe.Just pngMimeType
   Maybe.Just TypeScript -> Maybe.Nothing
   Maybe.Just PureScript -> Maybe.Nothing
   Maybe.Just JavaScript -> Maybe.Just javaScriptMimeType
@@ -61,3 +58,8 @@ javaScriptMimeType :: NonEmptyString.NonEmptyString
 javaScriptMimeType =
   NonEmptyString.nes
     (Proxy.Proxy :: Proxy.Proxy "text/javascript")
+
+pngMimeType :: NonEmptyString.NonEmptyString
+pngMimeType =
+  NonEmptyString.nes
+    (Proxy.Proxy :: Proxy.Proxy "image/png")

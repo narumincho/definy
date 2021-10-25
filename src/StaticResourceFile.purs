@@ -5,6 +5,7 @@ import Control.Parallel as Parallel
 import Data.Maybe as Maybe
 import Data.String as String
 import Data.String.NonEmpty as NonEmptyString
+import Data.Array as Array
 import Effect.Aff as Aff
 import Effect.Class as EffectClass
 import Effect.Console as Console
@@ -59,30 +60,33 @@ getStaticResourceFileResult directoryPath =
   in
     do
       filePathList <- filePathListAff
-      ( Parallel.parSequence
-          ( map
-              ( \filePath ->
-                  filePathToStaticResourceFileResultAff filePath
-              )
-              filePathList
-          )
-      )
-
-filePathToStaticResourceFileResultAff :: Path.FilePath -> Aff.Aff StaticResourceFileResult
-filePathToStaticResourceFileResultAff filePath =
-  map
-    ( \hashValue ->
-        StaticResourceFileResult
-          { originalFilePath: filePath
-          , fileId:
-              NonEmptyString.appendString (Path.filePathGetFileName filePath)
-                ( case Path.filePathGetFileType filePath of
-                    Maybe.Just fileType ->
-                      firstUppercase
-                        (NonEmptyString.toString (Path.fileTypeToExtension fileType))
-                    Maybe.Nothing -> ""
+      result <-
+        ( Parallel.parSequence
+            ( map
+                ( \filePath ->
+                    filePathToStaticResourceFileResultAff filePath
                 )
-          , requestPathAndUploadFileName: hashValue
-          }
+                filePathList
+            )
+        )
+      pure (Array.catMaybes result)
+
+filePathToStaticResourceFileResultAff :: Path.FilePath -> Aff.Aff (Maybe.Maybe StaticResourceFileResult)
+filePathToStaticResourceFileResultAff filePath = do
+  hashValue <- getFileHash filePath
+  pure
+    ( case Path.filePathGetFileType filePath of
+        Maybe.Just fileType ->
+          Maybe.Just
+            ( StaticResourceFileResult
+                { originalFilePath: filePath
+                , fileId:
+                    NonEmptyString.appendString (Path.filePathGetFileName filePath)
+                      ( firstUppercase
+                          (NonEmptyString.toString (Path.fileTypeToExtension fileType))
+                      )
+                , requestPathAndUploadFileName: hashValue
+                }
+            )
+        Maybe.Nothing -> Maybe.Nothing
     )
-    (getFileHash filePath)

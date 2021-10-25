@@ -2,6 +2,7 @@ module CreativeRecord.Build (build) where
 
 import Prelude
 import Data.Argonaut.Core as ArgonautCore
+import Data.Array as Array
 import Data.Array.NonEmpty as NonEmptyArray
 import Data.Either as Either
 import Data.Map as Map
@@ -15,6 +16,7 @@ import Effect.Aff as Aff
 import Effect.Class as EffectClass
 import Effect.Console as Console
 import EsBuild as EsBuild
+import FileSystem.Copy as FileSystemCopy
 import FileSystem.Path as Path
 import FileSystem.Read as FileSystemRead
 import FileSystem.Write as FileSystemWrite
@@ -95,23 +97,34 @@ hostingPortNumber = UInt.fromInt 1324
 build :: Aff.Aff Unit
 build = do
   Util.toParallel
-    [ originCodeGen
-    , staticResourceCodeGen
-    , writeFirestoreRules
+    [ writeFirestoreRules
     , writeCloudStorageRules
-    , clientProgramAndFirebaseJsonBuild
-    , runSpagoForFunctions
+    , mainBuild
     , writePackageJsonForFunctions
     ]
 
-clientProgramAndFirebaseJsonBuild :: Aff.Aff Unit
+mainBuild :: Aff.Aff Unit
+mainBuild = do
+  (Tuple.Tuple staticFileData _) <- Tuple.Tuple <$> staticResourceBuild <*> originCodeGen
+  clinetProgramHashValue <- clientProgramAndFirebaseJsonBuild
+  Util.toParallel
+    [ writeCodeClientProgramHashValueAndFunctionBuild clinetProgramHashValue
+    , writeFirebaseJson staticFileData clinetProgramHashValue
+    ]
+  pure unit
+
+writeCodeClientProgramHashValueAndFunctionBuild :: NonEmptyString.NonEmptyString -> Aff.Aff Unit
+writeCodeClientProgramHashValueAndFunctionBuild clinetProgramHashValue = do
+  writeCodeClientProgramHashValue clinetProgramHashValue
+  runSpagoForFunctions
+
+clientProgramAndFirebaseJsonBuild :: Aff.Aff NonEmptyString.NonEmptyString
 clientProgramAndFirebaseJsonBuild = do
   runSpagoBundleAppAndLog
   runEsbuild
   fileHashValue <- readEsbuildResultClientProgramFile
-  writeCodeClientProgramHashValue fileHashValue
-  writeFirebaseJson fileHashValue
-  EffectClass.liftEffect (Console.log "クライアント向けビルド完了!")
+  EffectClass.liftEffect (Console.log (append "クライアント向けビルド完了! hashValue:" (NonEmptyString.toString fileHashValue)))
+  pure fileHashValue
 
 runSpagoBundleAppAndLog :: Aff.Aff Unit
 runSpagoBundleAppAndLog = do
@@ -229,8 +242,8 @@ cloudStorageSecurityRulesFilePath =
     , fileName: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "storage")
     }
 
-writeFirebaseJson :: NonEmptyString.NonEmptyString -> Aff.Aff Unit
-writeFirebaseJson clientProgramHashValue = do
+writeFirebaseJson :: Array StaticResourceFile.StaticResourceFileResult -> NonEmptyString.NonEmptyString -> Aff.Aff Unit
+writeFirebaseJson staticFileDataList clientProgramHashValue = do
   FileSystemWrite.writeJson
     ( Path.DistributionFilePath
         { directoryPath: Path.DistributionDirectoryPath { appName, folderNameMaybe: Maybe.Nothing }
@@ -256,16 +269,33 @@ writeFirebaseJson clientProgramHashValue = do
                     }
                 ]
             , hostingHeaders:
-                [ FirebaesJson.SourceAndHeaders
-                    { source: clientProgramHashValue
-                    , headers:
-                        [ FirebaseJson.Header
-                            { key: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "content-type")
-                            , value: NonEmptyString.toString FileType.javaScriptMimeType
-                            }
-                        ]
-                    }
-                ]
+                Array.cons
+                  ( FirebaesJson.SourceAndHeaders
+                      { source: clientProgramHashValue
+                      , headers:
+                          [ FirebaseJson.Header
+                              { key: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "content-type")
+                              , value: NonEmptyString.toString FileType.javaScriptMimeType
+                              }
+                          ]
+                      }
+                  )
+                  ( map
+                      ( \( StaticResourceFile.StaticResourceFileResult { requestPathAndUploadFileName }
+                        ) ->
+                          ( FirebaesJson.SourceAndHeaders
+                              { source: requestPathAndUploadFileName
+                              , headers:
+                                  [ FirebaseJson.Header
+                                      { key: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "content-type")
+                                      , value: NonEmptyString.toString FileType.pngMimeType
+                                      }
+                                  ]
+                              }
+                          )
+                      )
+                      staticFileDataList
+                  )
             }
         )
     )
@@ -274,21 +304,40 @@ writeFirebaseJson clientProgramHashValue = do
 originCodeGen :: Aff.Aff Prelude.Unit
 originCodeGen = FileSystemWrite.writePureScript srcDirectoryPath originPureScriptModule
 
-staticResourceCodeGen :: Aff.Aff Prelude.Unit
-staticResourceCodeGen =
-  Prelude.bind
-    ( StaticResourceFile.getStaticResourceFileResult
-        ( Path.DirectoryPath
-            [ NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "narumincho-creative-record")
-            , NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "resource")
-            ]
+staticResourceBuild :: Aff.Aff (Array StaticResourceFile.StaticResourceFileResult)
+staticResourceBuild = do
+  resultList <-
+    StaticResourceFile.getStaticResourceFileResult
+      ( Path.DirectoryPath
+          [ NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "narumincho-creative-record")
+          , NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "resource")
+          ]
+      )
+  copyStaticResouece resultList
+  staticResourceCodeGen resultList
+  pure resultList
+
+copyStaticResouece :: Array StaticResourceFile.StaticResourceFileResult -> Aff.Aff Prelude.Unit
+copyStaticResouece resultList =
+  Util.toParallel
+    ( map
+        ( \(StaticResourceFile.StaticResourceFileResult { originalFilePath, requestPathAndUploadFileName }) ->
+            FileSystemCopy.copyFileToDistribution
+              originalFilePath
+              ( Path.DistributionFilePath
+                  { directoryPath: hostingDirectoryPath
+                  , fileName: requestPathAndUploadFileName
+                  }
+              )
         )
+        resultList
     )
-    ( \resultList ->
-        FileSystemWrite.writePureScript
-          srcDirectoryPath
-          (staticFileResultToPureScriptModule resultList)
-    )
+
+staticResourceCodeGen :: Array StaticResourceFile.StaticResourceFileResult -> Aff.Aff Prelude.Unit
+staticResourceCodeGen resultList =
+  FileSystemWrite.writePureScript
+    srcDirectoryPath
+    (staticFileResultToPureScriptModule resultList)
 
 staticFileResultToPureScriptModule :: Array StaticResourceFile.StaticResourceFileResult -> PureScriptData.Module
 staticFileResultToPureScriptModule resultList =

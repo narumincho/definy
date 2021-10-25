@@ -39,7 +39,7 @@ readBinaryFile filePath = Fs.readFile (NonEmptyString.toString (Path.filePathToS
 
 -- | ディレクトリ内に含まれるファイルのパスを取得する.
 -- |
--- |  再帰的には調べず, ディレクトリ内のディレクトリは無視する.
+-- | 再帰的には調べず, ディレクトリ内のディレクトリは無視する.
 readFilePathInDirectory :: Path.DirectoryPath -> Aff.Aff (Array Path.FilePath)
 readFilePathInDirectory directoryPath =
   let
