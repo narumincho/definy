@@ -1,8 +1,8 @@
-module CreativeRecord.Client where
+module CreativeRecord.Client (main) where
 
 import Effect as Effect
-import Effect.Console as Console
 import Prelude as Prelude
+import View.Render as Render
 
 main :: Effect.Effect Prelude.Unit
-main = Console.log "ok"
+main = Render.render
