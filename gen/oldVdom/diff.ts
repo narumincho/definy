@@ -280,7 +280,7 @@ export const createElementDiff = <Message>(
           oldElement.attributeName,
           newElement.attributeName
         ),
-        dur: createNumberDiff(newElement.dur, oldElement.dur),
+        dur: createNumberDiff(oldElement.dur, newElement.dur),
         repeatCount: createStringDiff(
           oldElement.repeatCount,
           newElement.repeatCount

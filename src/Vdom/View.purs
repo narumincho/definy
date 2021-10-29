@@ -1,13 +1,56 @@
-module Vdom.View where
+module Vdom.View
+  ( View(..)
+  , Div(..)
+  , Pointer(..)
+  , Children(..)
+  , ClickMessageData(..)
+  , PointerType(..)
+  , Element(..)
+  , ExternalLink(..)
+  , LocalLink(..)
+  , Button(..)
+  , Img(..)
+  , InputRadio(..)
+  , InputText(..)
+  , TextArea(..)
+  , Label(..)
+  , Svg(..)
+  , SvgPath(..)
+  , SvgCircle(..)
+  , SvgAnimate(..)
+  , ViewDiff(..)
+  , ViewPatchOperation(..)
+  , MessageData(..)
+  , Events
+  , ChildrenDiff(..)
+  , ElementDiff
+  , replace
+  , divDiff
+  , externalLinkDiff
+  , localLinkDiff
+  , imgDiff
+  , buttonDiff
+  , inputRadioDiff
+  , inputTextDiff
+  , textAreaDiff
+  , labelDiff
+  , svgDiff
+  , svgPathDiff
+  , svgCircleDiff
+  , svgAnimateDiff
+  , rootPath
+  , pathAppendKey
+  , Path
+  ) where
 
-import Prelude as Prelude
 import Color as Color
-import Data.Map (Map)
+import Data.Map as Map
 import Data.Maybe as Maybe
 import Data.String as String
-import Data.String.NonEmpty (NonEmptyString) as NonEmptyString
+import Data.Tuple as Tuple
 import Html.Data as HtmlData
 import Language as Language
+import Prelude as Prelude
 import StructuredUrl as StructuredUrl
 
 newtype View message
@@ -69,7 +112,7 @@ data PointerType
 -- | メッセージを集計した結果
 newtype MessageData message
   = MessageData
-  { messageMap :: Map String (Events message)
+  { messageMap :: Map.Map String (Events message)
   , pointerMove :: Maybe.Maybe (Pointer -> message)
   , pointerDown :: Maybe.Maybe (Pointer -> message)
   }
@@ -88,7 +131,7 @@ data ViewPatchOperation
   = ChangePageName String
   | ChangeThemeColor (Maybe.Maybe Color.Color)
   | ChangeLanguage (Maybe.Maybe Language.Language)
-  | ChangeBodyClass NonEmptyString.NonEmptyString
+  | ChangeBodyClass String
 
 data Element message
   = ElementDiv (Div message)
@@ -118,6 +161,9 @@ data ElementDiff message
     }
   | Skip
 
+replace :: forall message. String -> Element message -> ElementDiff message
+replace key newElement = Replace { newElement, key }
+
 data ElementUpdateDiff message
   = ElementUpdateDiffDiv (DivDiff message)
   | ElementUpdateDiffExternalLinkDiff (ExternalLinkDiff message)
@@ -142,11 +188,18 @@ newtype Div message
   }
 
 newtype DivDiff message
-  = DivDiff
-  { id :: Maybe.Maybe String
-  , class :: Maybe.Maybe String
-  , children :: ChildrenDiff message
-  }
+  = DivDiff (DivDiffRec message)
+
+type DivDiffRec message
+  = { id :: Maybe.Maybe String
+    , class :: Maybe.Maybe String
+    , children :: ChildrenDiff message
+    }
+
+divDiff :: forall message. String -> DivDiffRec message -> ElementDiff message
+divDiff key = case _ of
+  { id: Maybe.Nothing, class: Maybe.Nothing, children: ChildrenDiffSkip } -> Skip
+  rec -> Update { elementUpdateDiff: ElementUpdateDiffDiv (DivDiff rec), key }
 
 newtype ExternalLink message
   = ExternalLink
@@ -157,12 +210,20 @@ newtype ExternalLink message
   }
 
 newtype ExternalLinkDiff message
-  = ExternalLinkDiff
-  { id :: Maybe.Maybe String
-  , class :: Maybe.Maybe String
-  , url :: Maybe.Maybe String
-  , children :: ChildrenDiff message
-  }
+  = ExternalLinkDiff (ExternalLinkDiffRec message)
+
+type ExternalLinkDiffRec message
+  = { id :: Maybe.Maybe String
+    , class :: Maybe.Maybe String
+    , url :: Maybe.Maybe String
+    , children :: ChildrenDiff message
+    }
+
+externalLinkDiff :: forall message. String -> ExternalLinkDiffRec message -> ElementDiff message
+externalLinkDiff key = case _ of
+  { id: Maybe.Nothing, class: Maybe.Nothing, url: Maybe.Nothing, children: ChildrenDiffSkip
+  } -> Skip
+  rec -> Update { elementUpdateDiff: ElementUpdateDiffExternalLinkDiff (ExternalLinkDiff rec), key }
 
 newtype LocalLink message
   = LocalLink
@@ -174,12 +235,19 @@ newtype LocalLink message
   }
 
 newtype LocalLinkDiff message
-  = LocalLinkDiff
-  { id :: Maybe.Maybe String
-  , class :: Maybe.Maybe String
-  , url :: Maybe.Maybe String
-  , children :: ChildrenDiff message
-  }
+  = LocalLinkDiff (LocalLinkDiffRec message)
+
+type LocalLinkDiffRec message
+  = { id :: Maybe.Maybe String
+    , class :: Maybe.Maybe String
+    , url :: Maybe.Maybe String
+    , children :: ChildrenDiff message
+    }
+
+localLinkDiff :: forall message. String -> LocalLinkDiffRec message -> ElementDiff message
+localLinkDiff key = case _ of
+  { id: Maybe.Nothing, class: Maybe.Nothing, url: Maybe.Nothing, children: ChildrenDiffSkip } -> Skip
+  rec -> Update { elementUpdateDiff: ElementUpdateDiffLocalLinkDiff (LocalLinkDiff rec), key }
 
 newtype Button message
   = Button
@@ -190,11 +258,18 @@ newtype Button message
   }
 
 newtype ButtonDiff message
-  = ButtonDiff
-  { id :: Maybe.Maybe String
-  , class :: Maybe.Maybe String
-  , children :: ChildrenDiff message
-  }
+  = ButtonDiff (ButtonDiffRec message)
+
+type ButtonDiffRec message
+  = { id :: Maybe.Maybe String
+    , class :: Maybe.Maybe String
+    , children :: ChildrenDiff message
+    }
+
+buttonDiff :: forall message. String -> ButtonDiffRec message -> ElementDiff message
+buttonDiff key = case _ of
+  { id: Maybe.Nothing, class: Maybe.Nothing, children: ChildrenDiffSkip } -> Skip
+  rec -> Update { elementUpdateDiff: ElementUpdateDiffButtonDiff (ButtonDiff rec), key }
 
 newtype Img
   = Img
@@ -205,12 +280,19 @@ newtype Img
   }
 
 newtype ImgDiff
-  = ImgDiff
-  { id :: Maybe.Maybe String
-  , class :: Maybe.Maybe String
-  , alt :: Maybe.Maybe String
-  , src :: Maybe.Maybe String
-  }
+  = ImgDiff (ImgDiffRec)
+
+type ImgDiffRec
+  = { id :: Maybe.Maybe String
+    , class :: Maybe.Maybe String
+    , alt :: Maybe.Maybe String
+    , src :: Maybe.Maybe String
+    }
+
+imgDiff :: forall message. String -> ImgDiffRec -> ElementDiff message
+imgDiff key = case _ of
+  { id: Maybe.Nothing, class: Maybe.Nothing, alt: Maybe.Nothing, src: Maybe.Nothing } -> Skip
+  rec -> Update { elementUpdateDiff: ElementUpdateDiffImgDiff (ImgDiff rec), key }
 
 newtype InputRadio message
   = InputRadio
@@ -223,12 +305,20 @@ newtype InputRadio message
   }
 
 newtype InputRadioDiff
-  = InputRadioDiff
-  { id :: Maybe.Maybe String
-  , class :: Maybe.Maybe String
-  , checked :: Maybe.Maybe Boolean
-  , name :: Maybe.Maybe String
-  }
+  = InputRadioDiff InputRadioDiffRec
+
+type InputRadioDiffRec
+  = { id :: Maybe.Maybe String
+    , class :: Maybe.Maybe String
+    , checked :: Maybe.Maybe Boolean
+    , name :: Maybe.Maybe String
+    }
+
+inputRadioDiff :: forall message. String -> InputRadioDiffRec -> ElementDiff message
+inputRadioDiff key = case _ of
+  { id: Maybe.Nothing, class: Maybe.Nothing, checked: Maybe.Nothing, name: Maybe.Nothing
+  } -> Skip
+  rec -> Update { elementUpdateDiff: ElementUpdateDiffInputRadioDiff (InputRadioDiff rec), key }
 
 newtype InputText message
   = InputText
@@ -239,12 +329,19 @@ newtype InputText message
   }
 
 newtype InputTextDiff
-  = InputTextDiff
-  { id :: Maybe.Maybe String
-  , class :: Maybe.Maybe String
-  , readonly :: Maybe.Maybe Boolean
-  , value :: Maybe.Maybe String
-  }
+  = InputTextDiff InputTextDiffRec
+
+type InputTextDiffRec
+  = { id :: Maybe.Maybe String
+    , class :: Maybe.Maybe String
+    , readonly :: Maybe.Maybe Boolean
+    , value :: Maybe.Maybe String
+    }
+
+inputTextDiff :: forall message. String -> InputTextDiffRec -> ElementDiff message
+inputTextDiff key = case _ of
+  { id: Maybe.Nothing, class: Maybe.Nothing, readonly: Maybe.Nothing, value: Maybe.Nothing } -> Skip
+  rec -> Update { elementUpdateDiff: ElementUpdateDiffInputTextDiff (InputTextDiff rec), key }
 
 newtype TextArea message
   = TextArea
@@ -262,6 +359,22 @@ newtype TextAreaDiff
   , value :: Maybe.Maybe String
   }
 
+type TextAreaDiffRec
+  = { id :: Maybe.Maybe String
+    , class :: Maybe.Maybe String
+    , readonly :: Maybe.Maybe Boolean
+    , value :: Maybe.Maybe String
+    }
+
+textAreaDiff :: forall message. String -> TextAreaDiffRec -> ElementDiff message
+textAreaDiff key = case _ of
+  { id: Maybe.Nothing
+  , class: Maybe.Nothing
+  , readonly: Maybe.Nothing
+  , value: Maybe.Nothing
+  } -> Skip
+  rec -> Update { elementUpdateDiff: ElementUpdateDiffTextAreaDiff (TextAreaDiff rec), key }
+
 newtype Label message
   = Label
   { id :: String
@@ -271,12 +384,19 @@ newtype Label message
   }
 
 newtype LabelDiff message
-  = LabelDiff
-  { id :: Maybe.Maybe String
-  , class :: Maybe.Maybe String
-  , for :: Maybe.Maybe String
-  , children :: ChildrenDiff message
-  }
+  = LabelDiff (LabelDiffRec message)
+
+type LabelDiffRec message
+  = { id :: Maybe.Maybe String
+    , class :: Maybe.Maybe String
+    , for :: Maybe.Maybe String
+    , children :: ChildrenDiff message
+    }
+
+labelDiff :: forall message. String -> LabelDiffRec message -> ElementDiff message
+labelDiff key = case _ of
+  { id: Maybe.Nothing, class: Maybe.Nothing, for: Maybe.Nothing, children: ChildrenDiffSkip } -> Skip
+  rec -> Update { elementUpdateDiff: ElementUpdateDiffLabelDiff (LabelDiff rec), key }
 
 newtype Svg message
   = Svg
@@ -290,15 +410,29 @@ newtype Svg message
   }
 
 newtype SvgDiff message
-  = SvgDiff
-  { id :: Maybe.Maybe String
-  , class :: Maybe.Maybe String
-  , viewBoxX :: Maybe.Maybe Number
-  , viewBoxY :: Maybe.Maybe Number
-  , viewBoxWidth :: Maybe.Maybe Number
-  , viewBoxHeight :: Maybe.Maybe Number
-  , children :: ChildrenDiff message
-  }
+  = SvgDiff (SvgDiffRec message)
+
+type SvgDiffRec message
+  = { id :: Maybe.Maybe String
+    , class :: Maybe.Maybe String
+    , viewBoxX :: Maybe.Maybe Number
+    , viewBoxY :: Maybe.Maybe Number
+    , viewBoxWidth :: Maybe.Maybe Number
+    , viewBoxHeight :: Maybe.Maybe Number
+    , children :: ChildrenDiff message
+    }
+
+svgDiff :: forall message. String -> SvgDiffRec message -> ElementDiff message
+svgDiff key = case _ of
+  { id: Maybe.Nothing
+  , class: Maybe.Nothing
+  , viewBoxX: Maybe.Nothing
+  , viewBoxY: Maybe.Nothing
+  , viewBoxWidth: Maybe.Nothing
+  , viewBoxHeight: Maybe.Nothing
+  , children: ChildrenDiffSkip
+  } -> Skip
+  rec -> Update { elementUpdateDiff: ElementUpdateDiffSvgDiff (SvgDiff rec), key }
 
 newtype SvgPath
   = SvgPath
@@ -309,12 +443,19 @@ newtype SvgPath
   }
 
 newtype SvgPathDiff
-  = SvgPathDiff
-  { id :: Maybe.Maybe String
-  , class :: Maybe.Maybe String
-  , d :: Maybe.Maybe String
-  , fill :: Maybe.Maybe String
-  }
+  = SvgPathDiff SvgPathDiffRec
+
+type SvgPathDiffRec
+  = { id :: Maybe.Maybe String
+    , class :: Maybe.Maybe String
+    , d :: Maybe.Maybe String
+    , fill :: Maybe.Maybe String
+    }
+
+svgPathDiff :: forall message. String -> SvgPathDiffRec -> ElementDiff message
+svgPathDiff key = case _ of
+  { id: Maybe.Nothing, class: Maybe.Nothing, d: Maybe.Nothing, fill: Maybe.Nothing } -> Skip
+  rec -> Update { elementUpdateDiff: ElementUpdateDiffSvgPathDiff (SvgPathDiff rec), key }
 
 newtype SvgCircle
   = SvgCircle
@@ -329,16 +470,31 @@ newtype SvgCircle
   }
 
 newtype SvgCircleDiff
-  = SvgCircleDiff
-  { id :: Maybe.Maybe String
-  , class :: Maybe.Maybe String
-  , fill :: Maybe.Maybe String
-  , stroke :: Maybe.Maybe String
-  , cx :: Maybe.Maybe Number
-  , cy :: Maybe.Maybe Number
-  , r :: Maybe.Maybe Number
-  , children :: ChildrenDiff Prelude.Void
-  }
+  = SvgCircleDiff SvgCircleDiffRec
+
+type SvgCircleDiffRec
+  = { id :: Maybe.Maybe String
+    , class :: Maybe.Maybe String
+    , fill :: Maybe.Maybe String
+    , stroke :: Maybe.Maybe String
+    , cx :: Maybe.Maybe Number
+    , cy :: Maybe.Maybe Number
+    , r :: Maybe.Maybe Number
+    , children :: ChildrenDiff Prelude.Void
+    }
+
+svgCircleDiff :: forall message. String -> SvgCircleDiffRec -> ElementDiff message
+svgCircleDiff key = case _ of
+  { id: Maybe.Nothing
+  , class: Maybe.Nothing
+  , fill: Maybe.Nothing
+  , stroke: Maybe.Nothing
+  , cx: Maybe.Nothing
+  , cy: Maybe.Nothing
+  , r: Maybe.Nothing
+  , children: ChildrenDiffSkip
+  } -> Skip
+  rec -> Update { elementUpdateDiff: ElementUpdateDiffSvgCircleDiff (SvgCircleDiff rec), key }
 
 newtype SvgAnimate
   = SvgAnimate
@@ -350,13 +506,25 @@ newtype SvgAnimate
   }
 
 newtype SvgAnimateDiff
-  = SvgAnimateDiff
-  { attributeName :: Maybe.Maybe String
-  , dur :: Maybe.Maybe Number
-  , repeatCount :: Maybe.Maybe String
-  , from :: Maybe.Maybe String
-  , to :: Maybe.Maybe String
-  }
+  = SvgAnimateDiff SvgAnimateDiffRec
+
+type SvgAnimateDiffRec
+  = { attributeName :: Maybe.Maybe String
+    , dur :: Maybe.Maybe Number
+    , repeatCount :: Maybe.Maybe String
+    , from :: Maybe.Maybe String
+    , to :: Maybe.Maybe String
+    }
+
+svgAnimateDiff :: forall message. String -> SvgAnimateDiffRec -> ElementDiff message
+svgAnimateDiff key = case _ of
+  { attributeName: Maybe.Nothing
+  , dur: Maybe.Nothing
+  , repeatCount: Maybe.Nothing
+  , from: Maybe.Nothing
+  , to: Maybe.Nothing
+  } -> Skip
+  rec -> Update { elementUpdateDiff: ElementUpdateDiffSvgAnimateDiff (SvgAnimateDiff rec), key }
 
 -- | 各要素のイベントのハンドルをどうするかのデータ
 newtype Events message
@@ -389,11 +557,11 @@ newtype InputMessageData message
   = InputMessageData (String -> message)
 
 data Children message
-  = ChildrenElementListTag (Map String (Element message))
-  | ChildrenTextTag String
+  = ChildrenElementList (Array (Tuple.Tuple String (Element message)))
+  | ChildrenText String
 
 data ChildrenDiff message
   = ChildrenDiffSkip
-  | ChildrenDiffSkipSetText String
-  | ChildrenDiffResetAndInsert (Map String (Element message))
+  | ChildrenDiffSetText String
+  | ChildrenDiffResetAndInsert (Array (Tuple.Tuple String (Element message)))
   | ChildDiffList (Array (ElementDiff message))
