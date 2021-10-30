@@ -9,8 +9,8 @@
   },
   "scripts": {
     "typeCheck": "tsc --project tsconfig.json --noEmit",
-    "test": "jest",
-    "generate-graph": "npx depcruise -X node_modules --output-type dot client/main.tsx functions/main.ts core/main.ts build/main.ts | dot -T svg > graph.svg",
+    "test": "jest & spago test",
+    "generate-graph": "depcruise -X node_modules --output-type dot client/main.tsx functions/main.ts core/main.ts build/main.ts | dot -T svg > graph.svg",
     "production-build-main": "ts-node ./build/start-production-main.ts",
     "production-build-dev": "ts-node ./build/start-production-dev.ts",
     "generate-local-data": "npx ts-node ./build/dataTs.ts",
@@ -20,8 +20,7 @@
     "storybook": "start-storybook --config-dir ./storybook --static-dir ./storybook/static",
     "update-package-json": "ncu -u",
     "start-narumincho-creative-record": "npx ts-node ./narumincho-creative-record/start.ts",
-    "purescript-start": "spago run --main CreativeRecord.Start",
-    "purescript-test": "spago test"
+    "purescript-start": "spago run --main CreativeRecord.Start"
   },
   "devDependencies": {
     "@babel/core": "7.15.8",
