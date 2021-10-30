@@ -20,7 +20,8 @@
     "storybook": "start-storybook --config-dir ./storybook --static-dir ./storybook/static",
     "update-package-json": "ncu -u",
     "start-narumincho-creative-record": "npx ts-node ./narumincho-creative-record/start.ts",
-    "purescript-start": "spago run --main CreativeRecord.Start"
+    "purescript-start": "spago run --main CreativeRecord.Start",
+    "start-pHtml": "ts-node ./gen/pHtml/main.ts"
   },
   "devDependencies": {
     "@babel/core": "7.16.0",

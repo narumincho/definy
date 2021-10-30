@@ -4,6 +4,7 @@ module StructuredUrl
   , toString
   , pathAndSearchParams
   , pathAndSearchParamsToString
+  , fromPath
   ) where
 
 import Data.Map as Map
@@ -28,6 +29,9 @@ newtype PathAndSearchParams
 
 pathAndSearchParams :: Array NonEmptyString.NonEmptyString -> Map.Map NonEmptyString.NonEmptyString NonEmptyString.NonEmptyString -> PathAndSearchParams
 pathAndSearchParams path searchParams = PathAndSearchParams { path, searchParams }
+
+fromPath :: Array NonEmptyString.NonEmptyString -> PathAndSearchParams
+fromPath path = PathAndSearchParams { path, searchParams: Map.empty }
 
 -- | 構造化されたURL
 newtype StructuredUrl
