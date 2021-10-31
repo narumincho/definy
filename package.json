@@ -16,7 +16,7 @@
     "generate-local-data": "npx ts-node ./build/dataTs.ts",
     "prestart": "ts-node ./build/start-develop.ts",
     "start": "firebase emulators:start --project definy-lang",
-    "build-gen": "ts-node ./build/gen.ts",
+    "build-gen": "ts-node ./build/gen.ts & npx spago build --purs-args \"-o ./distribution/output\"",
     "storybook": "start-storybook --config-dir ./storybook --static-dir ./storybook/static",
     "update-package-json": "ncu -u",
     "start-narumincho-creative-record": "npx ts-node ./narumincho-creative-record/start.ts",

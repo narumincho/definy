@@ -6,18 +6,16 @@ import {
   ScriptTarget,
   createProgram,
 } from "typescript";
-import {
-  copyFile,
-  distributionPathAsDirectoryPath,
-  resetDistributionDirectory,
-} from "../gen/fileSystem/effect";
-import {
-  directoryPathFrom,
-  fileNameWithFileTypeFrom,
-} from "../gen/fileSystem/data";
-import { fileTypeTypeScript } from "../gen/fileType/main";
 import { packageJson as packageJsonGen } from "../gen/main";
+import { resetDistributionDirectory } from "../gen/fileSystem/effect";
 
+/*
+ * npm パッケージの @narumincho/gen をビルドするプログラム
+ */
+
+/**
+ * 出力先フォルダ名
+ */
 const distributionPath = "./distribution";
 
 const mkdirWithLog = async (path: string): Promise<void> => {
@@ -35,42 +33,11 @@ const copyWithLog = async (
   console.groupEnd();
 };
 
-const moveWithLog = async (
-  source: string,
-  distribution: string
-): Promise<void> => {
-  console.group(`${source} → ${distribution} に移動`);
-  await fs.move(source, distribution);
-  console.groupEnd();
-};
-
 const build = async (): Promise<void> => {
   await resetDistributionDirectory();
-  await mkdirWithLog(distributionPath);
-  await copyFile(
-    {
-      directoryPath: directoryPathFrom([]),
-      fileNameWithFileType: fileNameWithFileTypeFrom(
-        "localData",
-        fileTypeTypeScript
-      ),
-    },
-    {
-      directoryPath: distributionPathAsDirectoryPath,
-      fileName: "localData",
-    }
-  );
 
   await mkdirWithLog(`${distributionPath}/gen`);
-  await copyWithLog("./gen", `${distributionPath}/gen`);
-  await moveWithLog(
-    `${distributionPath}/gen/README.md`,
-    `${distributionPath}/README.md`
-  );
-  await moveWithLog(
-    `${distributionPath}/gen/LICENCE`,
-    `${distributionPath}/LICENCE`
-  );
+  await copyWithLog(`./README.md`, `${distributionPath}/README.md`);
 
   createProgram({
     rootNames: ["./gen/main.ts"],
@@ -87,6 +54,7 @@ const build = async (): Promise<void> => {
       noUncheckedIndexedAccess: true,
       newLine: NewLineKind.LineFeed,
       outDir: distributionPath,
+      declaration: true,
     },
   }).emit();
 
@@ -115,8 +83,8 @@ const build = async (): Promise<void> => {
     homepage: "https://github.com/narumincho/definy",
     name: "@narumincho/gen",
     nodeVersion: ">=14",
-    typeFilePath: "./gen/main.ts",
-    version: "1.0.4",
+    typeFilePath: "./gen/main.d.ts",
+    version: "1.0.5",
   });
 
   if (packageJsonResult._ === "Error") {
@@ -124,6 +92,8 @@ const build = async (): Promise<void> => {
   }
 
   await fs.outputFile(`${distributionPath}/package.json`, packageJsonResult.ok);
+
+  // npx spago build --purs-args "-o ./distribution/output" を後で実行
   console.log("@narumincho/gen の ビルドに成功!");
 };
 
