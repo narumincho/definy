@@ -16,6 +16,8 @@ module Html.Wellknown
   , img
   , svgPath
   , svgG
+  , htmlTagName
+  , bodyTagName
   ) where
 
 import Data.Map as Map
@@ -32,7 +34,7 @@ meta attributes = Data.htmlElement (NonEmptyString.nes (Proxy.Proxy :: Proxy.Pro
 html :: Maybe.Maybe String -> Data.HtmlElement -> Data.HtmlElement -> Data.HtmlElement
 html langMaybe headElement bodyElement =
   Data.htmlElement
-    (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "html"))
+    htmlTagName
     ( case langMaybe of
         Maybe.Just lang ->
           Map.singleton
@@ -42,10 +44,13 @@ html langMaybe headElement bodyElement =
     )
     (Data.ElementList [ headElement, bodyElement ])
 
+htmlTagName :: NonEmptyString.NonEmptyString
+htmlTagName = NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "html")
+
 body :: Maybe.Maybe NonEmptyString.NonEmptyString -> Data.HtmlChildren -> Data.HtmlElement
 body classMaybe children =
   Data.htmlElement
-    (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "body"))
+    bodyTagName
     ( case classMaybe of
         Maybe.Just className ->
           Map.singleton
@@ -56,6 +61,9 @@ body classMaybe children =
         Maybe.Nothing -> Map.empty
     )
     children
+
+bodyTagName :: NonEmptyString.NonEmptyString
+bodyTagName = NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "body")
 
 noscript :: Data.HtmlChildren -> Data.HtmlElement
 noscript children =

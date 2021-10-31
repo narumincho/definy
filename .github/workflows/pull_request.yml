@@ -21,5 +21,3 @@ jobs:
         run: npm run typeCheck
       - name: Test
         run: npm run test
-      - name: Test in PureScript
-        run: npx spago test

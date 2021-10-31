@@ -7,7 +7,9 @@ out.ts
 /bower_components/
 /node_modules/
 /.pulp-cache/
-/output/
+/output/**/**.js
+/output/**/**.cbor
+/output/cache-db.json
 /generated-docs/
 /.psc-package/
 /.psc*

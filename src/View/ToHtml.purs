@@ -51,11 +51,11 @@ htmlElementAndStyleDictToCssStatementList htmlElementAndStyleDict =
     { ruleList:
         Array.concat
           [ [ Css.Rule
-                { selector: Css.Type { elementName: "html" }
+                { selector: Css.Type { elementName: HtmlWellknown.htmlTagName }
                 , declarationList: [ Css.height100Percent ]
                 }
             , Css.Rule
-                { selector: Css.Type { elementName: "body" }
+                { selector: Css.Type { elementName: HtmlWellknown.bodyTagName }
                 , declarationList:
                     [ Css.height100Percent
                     , Css.margin0
@@ -76,7 +76,7 @@ htmlElementAndStyleDictToCssStatementList htmlElementAndStyleDict =
         Prelude.map
           ( \(Tuple.Tuple hashValue keyframeList) ->
               Css.Keyframes
-                { name: sha256HashValueToAnimationName (hashValue)
+                { name: sha256HashValueToAnimationName hashValue
                 , keyframeList
                 }
           )
@@ -386,13 +386,13 @@ sha256HashValueToClassAttributeNameAndValue :: NonEmptyString.NonEmptyString -> 
 sha256HashValueToClassAttributeNameAndValue sha256HashValue =
   Tuple.Tuple
     (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "class"))
-    (Maybe.Just (sha256HashValueToClassName sha256HashValue))
+    (Maybe.Just (NonEmptyString.toString (sha256HashValueToClassName sha256HashValue)))
 
-sha256HashValueToClassName :: NonEmptyString.NonEmptyString -> String
-sha256HashValueToClassName sha256HashValue = Prelude.append "nv_" (NonEmptyString.toString sha256HashValue)
+sha256HashValueToClassName :: NonEmptyString.NonEmptyString -> NonEmptyString.NonEmptyString
+sha256HashValueToClassName sha256HashValue = NonEmptyString.prependString "nv_" sha256HashValue
 
-sha256HashValueToAnimationName :: NonEmptyString.NonEmptyString -> String
-sha256HashValueToAnimationName sha256HashValue = Prelude.append "nva_" (NonEmptyString.toString sha256HashValue)
+sha256HashValueToAnimationName :: NonEmptyString.NonEmptyString -> NonEmptyString.NonEmptyString
+sha256HashValueToAnimationName sha256HashValue = NonEmptyString.prependString "nva_" sha256HashValue
 
 percentageOrRemWidthToCssDeclaration :: View.PercentageOrRem -> Css.Declaration
 percentageOrRemWidthToCssDeclaration = case _ of
