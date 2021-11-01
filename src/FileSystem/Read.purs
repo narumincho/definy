@@ -3,10 +3,14 @@ module FileSystem.Read
   , readTextFile
   , readBinaryFile
   , readFilePathInDirectory
+  , readJsonFile
   ) where
 
 import Prelude
+import Data.Argonaut.Core as ArgonautCore
+import Data.Argonaut.Parser as ArgonautParser
 import Data.Array as Array
+import Data.Either as Either
 import Data.Maybe as Maybe
 import Data.String as String
 import Data.String.NonEmpty as NonEmptyString
@@ -14,11 +18,11 @@ import Effect.Aff as Aff
 import Effect.Aff.Compat as AffCompat
 import Effect.Class as EffectClass
 import Effect.Console as Console
+import FileSystem.FileType as FileType
+import FileSystem.Path as Path
 import Node.Buffer as Buffer
 import Node.Encoding as Encoding
 import Node.FS.Aff as Fs
-import FileSystem.Path as Path
-import FileSystem.FileType as FileType
 
 -- | distribution にあるファイルを文字列として読み取る
 readTextFileInDistribution :: Path.DistributionFilePath -> FileType.FileType -> Aff.Aff String
@@ -36,6 +40,12 @@ readTextFile filePath =
 -- | ファイルをバイナリとして読み取る
 readBinaryFile :: Path.FilePath -> Aff.Aff Buffer.Buffer
 readBinaryFile filePath = Fs.readFile (NonEmptyString.toString (Path.filePathToString filePath))
+
+-- | ファイルを json として読み取る
+readJsonFile :: Path.FilePath -> Aff.Aff (Either.Either String ArgonautCore.Json)
+readJsonFile filePath = do
+  text <- readTextFile filePath
+  pure (ArgonautParser.jsonParser text)
 
 -- | ディレクトリ内に含まれるファイルのパスを取得する.
 -- |
