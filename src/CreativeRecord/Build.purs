@@ -1,20 +1,17 @@
 module CreativeRecord.Build (build) where
 
 import Prelude
+import Console as Console
 import Data.Argonaut.Core as ArgonautCore
 import Data.Array as Array
 import Data.Array.NonEmpty as NonEmptyArray
-import Data.Either as Either
 import Data.Map as Map
 import Data.Maybe as Maybe
 import Data.String as String
 import Data.String.NonEmpty as NonEmptyString
 import Data.Tuple as Tuple
 import Data.UInt as UInt
-import Effect as Effect
 import Effect.Aff as Aff
-import Effect.Class as EffectClass
-import Effect.Console as Console
 import EsBuild as EsBuild
 import FileSystem.Copy as FileSystemCopy
 import FileSystem.FileType as FileType
@@ -26,13 +23,11 @@ import Firebase.FirebaseJson as FirebaseJson
 import Firebase.SecurityRules as SecurityRules
 import Hash as Hash
 import MediaType as MediaType
-import Node.Buffer as Buffer
-import Node.Encoding as Encoding
 import PackageJson as PackageJson
 import Prelude as Prelude
 import PureScript.Data as PureScriptData
+import PureScript.Spago as Spago
 import PureScript.Wellknown as PureScriptWellknown
-import Shell as Shell
 import StaticResourceFile as StaticResourceFile
 import StructuredUrl as StructuredUrl
 import Type.Proxy as Proxy
@@ -124,42 +119,21 @@ clientProgramAndFirebaseJsonBuild = do
   runSpagoBundleAppAndLog
   runEsbuild
   fileHashValue <- readEsbuildResultClientProgramFile
-  EffectClass.liftEffect (Console.log (append "クライアント向けビルド完了! hashValue:" (NonEmptyString.toString fileHashValue)))
+  Console.logValueAsAff "クライアント向けビルド完了!" { fileHashValue }
   pure fileHashValue
 
 runSpagoBundleAppAndLog :: Aff.Aff Unit
 runSpagoBundleAppAndLog = do
-  Aff.makeAff
-    ( \callback ->
-        map (\_ -> Aff.nonCanceler)
-          ( Shell.exec
-              ( NonEmptyString.prependString
-                  "spago bundle-app --main CreativeRecord.Client --to "
-                  (Path.distributionFilePathToString firstClientProgramFilePath FileType.JavaScript)
-              )
-              ( \result -> do
-                  log <- execResultToString result
-                  Console.log log
-                  callback (Either.Right unit)
-              )
+  Spago.bundleApp
+    { mainModuleName:
+        PureScriptData.ModuleName
+          ( NonEmptyArray.cons'
+              (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "CreativeRecord"))
+              [ NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "Client") ]
           )
-    )
-  EffectClass.liftEffect (Console.log "spago でのビルドに成功!")
-
-execResultToString :: Shell.ExecResult -> Effect.Effect String
-execResultToString result = do
-  stdout <- Buffer.toString Encoding.UTF8 result.stdout
-  stderr <- Buffer.toString Encoding.UTF8 result.stderr
-  pure
-    ( String.joinWith "\n"
-        [ "stdout:"
-        , stdout
-        , "stderr:"
-        , stderr
-        , "error:"
-        , show result.error
-        ]
-    )
+    , outputJavaScriptPath: firstClientProgramFilePath
+    }
+  Console.logValueAsAff "spago でのビルドに成功!" {}
 
 runEsbuild :: Aff.Aff Unit
 runEsbuild = do
@@ -169,7 +143,7 @@ runEsbuild = do
     , sourcemap: false
     , target: [ "chrome94", "firefox93", "safari15" ]
     }
-  EffectClass.liftEffect (Console.log "esbuild でのビルドに成功!")
+  Console.logValueAsAff "esbuild でのビルドに成功!" {}
 
 readEsbuildResultClientProgramFile :: Aff.Aff NonEmptyString.NonEmptyString
 readEsbuildResultClientProgramFile = do
@@ -304,7 +278,7 @@ writeFirebaseJson staticFileDataList clientProgramHashValue = do
             }
         )
     )
-  EffectClass.liftEffect (Console.log "firebase.json の書き込みに成功!")
+  Console.logValueAsAff "firebase.json の書き込みに成功!" {}
 
 originCodeGen :: Aff.Aff Prelude.Unit
 originCodeGen = FileSystemWrite.writePureScript srcDirectoryPath originPureScriptModule
@@ -327,7 +301,7 @@ copyStaticResouece resultList =
   Util.toParallel
     ( map
         ( \(StaticResourceFile.StaticResourceFileResult { originalFilePath, requestPathAndUploadFileName }) ->
-            FileSystemCopy.copyFileToDistribution
+            FileSystemCopy.copyFileToDistributionWithoutExtensiton
               originalFilePath
               ( Path.DistributionFilePath
                   { directoryPath: hostingDirectoryPath
@@ -450,31 +424,20 @@ originPureScriptModule =
 
 runSpagoForFunctions :: Aff.Aff Unit
 runSpagoForFunctions = do
-  Aff.makeAff
-    ( \callback ->
-        map (\_ -> Aff.nonCanceler)
-          ( Shell.exec
-              ( Prelude.append
-                  ( NonEmptyString.nes
-                      (Proxy.Proxy :: Proxy.Proxy "spago bundle-module --main CreativeRecord.Functions --to ")
-                  )
-                  ( Path.distributionFilePathToString
-                      ( Path.DistributionFilePath
-                          { directoryPath: functionsDirectoryPath
-                          , fileName: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "index")
-                          }
-                      )
-                      FileType.JavaScript
-                  )
-              )
-              ( \result -> do
-                  log <- execResultToString result
-                  Console.log log
-                  callback (Either.Right unit)
-              )
+  Spago.bundleModule
+    { mainModuleName:
+        PureScriptData.ModuleName
+          ( NonEmptyArray.cons'
+              (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "CreativeRecord"))
+              [ NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "Functions") ]
           )
-    )
-  EffectClass.liftEffect (Console.log "spago で functions のビルドに成功!")
+    , outputJavaScriptPath:
+        Path.DistributionFilePath
+          { directoryPath: functionsDirectoryPath
+          , fileName: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "index")
+          }
+    }
+  Console.logValueAsAff "spago で functions のビルドに成功!" {}
 
 writePackageJsonForFunctions :: Aff.Aff Unit
 writePackageJsonForFunctions = case packageJsonForFunctions of
@@ -486,7 +449,7 @@ writePackageJsonForFunctions = case packageJsonForFunctions of
           }
       )
       json
-  Maybe.Nothing -> EffectClass.liftEffect (Console.log "functions 向けの package.json の生成に失敗した")
+  Maybe.Nothing -> Console.logValueAsAff "functions 向けの package.json の生成に失敗した" {}
 
 packageJsonForFunctions :: Maybe.Maybe ArgonautCore.Json
 packageJsonForFunctions =

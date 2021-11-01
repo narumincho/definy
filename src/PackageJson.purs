@@ -5,6 +5,7 @@ module PackageJson
   , toJson
   , fromJson
   , PackageJsonOutput
+  , devDependencies
   ) where
 
 import Data.Argonaut.Core as ArgonautCore
@@ -42,6 +43,9 @@ newtype PackageJsonOutput
   { dependencies :: Map.Map NonEmptyString.NonEmptyString NonEmptyString.NonEmptyString
   , devDependencies :: Map.Map NonEmptyString.NonEmptyString NonEmptyString.NonEmptyString
   }
+
+devDependencies :: PackageJsonOutput -> Map.Map NonEmptyString.NonEmptyString NonEmptyString.NonEmptyString
+devDependencies (PackageJsonOutput { devDependencies: v }) = v
 
 -- | package.json の name は 214文字以内か調べる
 nameFromNonEmptyString :: NonEmptyString.NonEmptyString -> Maybe.Maybe Name

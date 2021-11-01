@@ -1,4 +1,4 @@
-module PureScript.ToString where
+module PureScript.ToString (toString, moduleNameToString) where
 
 import Data.Array as Array
 import Data.Array.NonEmpty as NonEmptyArray
@@ -30,7 +30,7 @@ toString pModule@(Data.Module { definitionList }) =
                         String.joinWith
                           ""
                           [ "import "
-                          , moduleNameToString moduleName
+                          , NonEmptyString.toString (moduleNameToString moduleName)
                           , " as "
                           , NonEmptyString.toString qualifiedName
                           ]
@@ -70,12 +70,17 @@ importedModuleSetToQualifiedNameDict moduleNameSet =
     )
 
 moduleNameCode :: Data.Module -> String
-moduleNameCode (Data.Module { name, definitionList }) = String.joinWith "" ([ "module ", moduleNameToString name, "(", String.joinWith ", " (collectExportDefinition definitionList), ") where" ])
+moduleNameCode (Data.Module { name, definitionList }) =
+  String.joinWith ""
+    [ "module "
+    , NonEmptyString.toString (moduleNameToString name)
+    , "("
+    , String.joinWith ", " (collectExportDefinition definitionList)
+    , ") where"
+    ]
 
-moduleNameToString :: Data.ModuleName -> String
-moduleNameToString (Data.ModuleName stringList) =
-  String.joinWith "."
-    (Prelude.map NonEmptyString.toString (NonEmptyArray.toArray stringList))
+moduleNameToString :: Data.ModuleName -> NonEmptyString.NonEmptyString
+moduleNameToString (Data.ModuleName stringList) = NonEmptyString.join1With "." stringList
 
 collectInportModule :: Data.Module -> Set.Set Data.ModuleName
 collectInportModule (Data.Module { name, definitionList }) =

@@ -27,6 +27,7 @@ module Shell
   , exec
   , ExecResult
   , fork
+  , execWithLog
   ) where
 
 import Data.Function.Uncurried as FunctionUncurried
@@ -44,8 +45,12 @@ import Node.Buffer as Buffer
 import Node.Platform as Platform
 import Node.Process as Process
 import Node.Stream as Stream
-import Prelude as Prelude
+import Prelude
 import Unsafe.Coerce as UnsafeCoerce
+import Effect.Aff as Aff
+import Effect.Console as Console
+import Data.Either as Either
+import Node.Encoding as Encoding
 
 -- | A handle for inter-process communication (IPC).
 foreign import data Handle :: Type
@@ -63,9 +68,9 @@ type ChildProcessRec
     , stderr :: Nullable.Nullable (Stream.Readable ())
     , pid :: Posix.Pid
     , connected :: Boolean
-    , kill :: String -> Prelude.Unit
+    , kill :: String -> Unit
     , send :: forall r. FunctionUncurried.Fn2 { | r } Handle Boolean
-    , disconnect :: Effect.Effect Prelude.Unit
+    , disconnect :: Effect.Effect Unit
     }
 
 -- | The standard input stream of a child process. Note that this is only
@@ -118,7 +123,7 @@ send ::
 send msg handle (ChildProcess cp) = mkEffect \_ -> FunctionUncurried.runFn2 cp.send msg handle
 
 -- | Closes the IPC channel between parent and child.
-disconnect :: ChildProcess -> Effect.Effect Prelude.Unit
+disconnect :: ChildProcess -> Effect.Effect Unit
 disconnect (ChildProcess rec) = rec.disconnect
 
 -- | Send a signal to a child process. In the same way as the
@@ -129,10 +134,10 @@ disconnect (ChildProcess rec) = rec.disconnect
 -- | and the signal. They can vary from system to system.
 -- | The child process might emit an `"error"` event if the signal
 -- | could not be delivered.
-kill :: Signal.Signal -> ChildProcess -> Effect.Effect Prelude.Unit
+kill :: Signal.Signal -> ChildProcess -> Effect.Effect Unit
 kill sig (ChildProcess cp) = mkEffect \_ -> cp.kill (Signal.toString sig)
 
-mkEffect :: forall a. (Prelude.Unit -> a) -> Effect.Effect a
+mkEffect :: forall a. (Unit -> a) -> Effect.Effect a
 mkEffect = UnsafeCoerce.unsafeCoerce
 
 -- | Specifies how a child process exited; normally (with an exit code), or
@@ -141,50 +146,50 @@ data Exit
   = Normally Int
   | BySignal Signal.Signal
 
-instance showExit :: Prelude.Show Exit where
-  show (Normally x) = Prelude.append "Normally " (Prelude.show x)
-  show (BySignal sig) = Prelude.append "BySignal " (Prelude.show sig)
+instance showExit :: Show Exit where
+  show (Normally x) = append "Normally " (show x)
+  show (BySignal sig) = append "BySignal " (show sig)
 
 mkExit :: Nullable.Nullable Int -> Nullable.Nullable String -> Exit
-mkExit code signal = case Prelude.map Normally (Nullable.toMaybe code) of
+mkExit code signal = case map Normally (Nullable.toMaybe code) of
   Maybe.Just exit -> exit
-  Maybe.Nothing -> case Prelude.bind
+  Maybe.Nothing -> case bind
       (Nullable.toMaybe signal)
-      (\v -> Prelude.map BySignal (Signal.fromString v)) of
+      (\v -> map BySignal (Signal.fromString v)) of
     Maybe.Just exit -> exit
     Maybe.Nothing -> ExceptionUnsafe.unsafeThrow "Node.ChildProcess.mkExit: Invalid arguments"
 
 -- | Handle the `"exit"` signal.
 onExit ::
   ChildProcess ->
-  (Exit -> Effect.Effect Prelude.Unit) ->
-  Effect.Effect Prelude.Unit
+  (Exit -> Effect.Effect Unit) ->
+  Effect.Effect Unit
 onExit = mkOnExit mkExit
 
 foreign import mkOnExit ::
   (Nullable.Nullable Int -> Nullable.Nullable String -> Exit) ->
   ChildProcess ->
-  (Exit -> Effect.Effect Prelude.Unit) ->
-  Effect.Effect Prelude.Unit
+  (Exit -> Effect.Effect Unit) ->
+  Effect.Effect Unit
 
 -- | Handle the `"close"` signal.
 onClose ::
   ChildProcess ->
-  (Exit -> Effect.Effect Prelude.Unit) ->
-  Effect.Effect Prelude.Unit
+  (Exit -> Effect.Effect Unit) ->
+  Effect.Effect Unit
 onClose = mkOnClose mkExit
 
 foreign import mkOnClose ::
   (Nullable.Nullable Int -> Nullable.Nullable String -> Exit) ->
   ChildProcess ->
-  (Exit -> Effect.Effect Prelude.Unit) ->
-  Effect.Effect Prelude.Unit
+  (Exit -> Effect.Effect Unit) ->
+  Effect.Effect Unit
 
 -- | Handle the `"message"` signal.
 onMessage ::
   ChildProcess ->
-  (Foreign.Foreign -> Maybe.Maybe Handle -> Effect.Effect Prelude.Unit) ->
-  Effect.Effect Prelude.Unit
+  (Foreign.Foreign -> Maybe.Maybe Handle -> Effect.Effect Unit) ->
+  Effect.Effect Unit
 onMessage = mkOnMessage Maybe.Nothing Maybe.Just
 
 foreign import mkOnMessage ::
@@ -192,20 +197,20 @@ foreign import mkOnMessage ::
   Maybe.Maybe a ->
   (a -> Maybe.Maybe a) ->
   ChildProcess ->
-  (Foreign.Foreign -> Maybe.Maybe Handle -> Effect.Effect Prelude.Unit) ->
-  Effect.Effect Prelude.Unit
+  (Foreign.Foreign -> Maybe.Maybe Handle -> Effect.Effect Unit) ->
+  Effect.Effect Unit
 
 -- | Handle the `"disconnect"` signal.
 foreign import onDisconnect ::
   ChildProcess ->
-  Effect.Effect Prelude.Unit ->
-  Effect.Effect Prelude.Unit
+  Effect.Effect Unit ->
+  Effect.Effect Unit
 
 -- | Handle the `"error"` signal.
 foreign import onError ::
   ChildProcess ->
-  (Error -> Effect.Effect Prelude.Unit) ->
-  Effect.Effect Prelude.Unit
+  (Error -> Effect.Effect Unit) ->
+  Effect.Effect Unit
 
 -- | Spawn a child process. Note that, in the event that a child process could
 -- | not be spawned (for example, if the executable was not found) this will
@@ -240,7 +245,7 @@ type RawSpawnOption
 -- | a certain threshold (the default is defined by Node.js).
 exec ::
   NonEmptyString.NonEmptyString ->
-  (ExecResult -> Effect.Effect Prelude.Unit) ->
+  (ExecResult -> Effect.Effect Unit) ->
   Effect.Effect ChildProcess
 exec cmd callback =
   execImpl (NonEmptyString.toString cmd)
@@ -253,10 +258,40 @@ exec cmd callback =
           }
     )
 
+execWithLog :: NonEmptyString.NonEmptyString -> Aff.Aff Unit
+execWithLog cmd =
+  Aff.makeAff
+    ( \callback ->
+        map (\_ -> Aff.nonCanceler)
+          ( exec
+              cmd
+              ( \result -> do
+                  log <- execResultToString result
+                  Console.log log
+                  callback (Either.Right unit)
+              )
+          )
+    )
+
+execResultToString :: ExecResult -> Effect.Effect String
+execResultToString result = do
+  stdoutAsString <- Buffer.toString Encoding.UTF8 result.stdout
+  stderrAsString <- Buffer.toString Encoding.UTF8 result.stderr
+  pure
+    ( String.joinWith "\n"
+        [ "stdout:"
+        , stdoutAsString
+        , "stderr:"
+        , stderrAsString
+        , "error:"
+        , show result.error
+        ]
+    )
+
 foreign import execImpl ::
   String ->
   ActualExecOptions ->
-  (Nullable.Nullable Exception.Error -> Buffer.Buffer -> Buffer.Buffer -> Effect.Effect Prelude.Unit) ->
+  (Nullable.Nullable Exception.Error -> Buffer.Buffer -> Buffer.Buffer -> Effect.Effect Unit) ->
   Effect.Effect ChildProcess
 
 type ActualExecOptions
