@@ -16,7 +16,7 @@ jobs:
       - name: Install npm dependencies (npm ci)
         run: npm ci
       - name: Run Build Script
-        run: npm run build-gen
+        run: npm run build-node-package
       - name: npm publish
         uses: JS-DevTools/npm-publish@v1
         with:
