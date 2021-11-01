@@ -1,3 +1,4 @@
+import * as childProcess from "child_process";
 import * as fs from "fs-extra";
 import {
   ModuleKind,
@@ -93,8 +94,14 @@ const build = async (): Promise<void> => {
 
   await fs.outputFile(`${distributionPath}/package.json`, packageJsonResult.ok);
 
-  // npx spago build --purs-args "-o ./distribution/output" を後で実行
-  console.log("@narumincho/gen の ビルドに成功!");
+  childProcess.exec(
+    `spago build --purs-args "-o ${distributionPath}/output"`,
+    {},
+    (error, stdout, stderr) => {
+      console.log("PureScript build ", { error, stdout, stderr });
+      console.log("@narumincho/gen の ビルドに成功!");
+    }
+  );
 };
 
 build();
