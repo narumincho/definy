@@ -1,3 +1,4 @@
+import * as childProcess from "child_process";
 import * as d from "../localData";
 import * as esbuild from "esbuild";
 import * as fileSystem from "fs-extra";
@@ -166,6 +167,13 @@ service firebase.storage {
  * TypeScript の 標準のコンパイラ tsc を使う
  */
 const buildFunctionsTypeScript = (): void => {
+  childProcess.exec(
+    `npx spago build --purs-args "-o ${functionsDistributionPath}/output"`,
+    {},
+    (error, stdout, stderr) => {
+      console.log("PureScript build ", { error, stdout, stderr });
+    }
+  );
   createProgram({
     rootNames: [functionsSourceEntryPath],
     options: {

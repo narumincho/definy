@@ -17,6 +17,8 @@ jobs:
           node-version: "14"
       - name: Install npm dependencies (npm ci)
         run: npm ci
+      - name: PureScript Build
+        run: npx spago build
       - name: Run build script
         run: npm run production-build-dev
       - name: deploy firebase hosting

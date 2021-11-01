@@ -14,14 +14,12 @@
     "production-build-main": "ts-node ./build/start-production-main.ts",
     "production-build-dev": "ts-node ./build/start-production-dev.ts",
     "generate-local-data": "npx ts-node ./build/dataTs.ts",
-    "prestart": "ts-node ./build/start-develop.ts",
-    "start": "firebase emulators:start --project definy-lang",
+    "start": "ts-node ./build/start-develop.ts & firebase emulators:start --project definy-lang",
     "build-gen": "ts-node ./build/gen.ts",
     "storybook": "start-storybook --config-dir ./storybook --static-dir ./storybook/static",
     "update-package-json": "ncu -u",
     "start-narumincho-creative-record": "npx ts-node ./narumincho-creative-record/start.ts",
-    "purescript-start": "spago run --main CreativeRecord.Start",
-    "start-pHtml": "ts-node ./gen/pHtml/main.ts"
+    "purescript-start": "spago run --main CreativeRecord.Start"
   },
   "devDependencies": {
     "@babel/core": "7.16.0",
