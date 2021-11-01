@@ -95,7 +95,7 @@ const build = async (): Promise<void> => {
   await fs.outputFile(`${distributionPath}/package.json`, packageJsonResult.ok);
 
   childProcess.exec(
-    `spago build --purs-args "-o ${distributionPath}/output"`,
+    `npx spago build --purs-args "-o ${distributionPath}/output"`,
     {},
     (error, stdout, stderr) => {
       console.log("PureScript build ", { error, stdout, stderr });

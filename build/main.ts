@@ -168,7 +168,7 @@ service firebase.storage {
  */
 const buildFunctionsTypeScript = (): void => {
   childProcess.exec(
-    `spago build --purs-args "-o ${functionsDistributionPath}/output"`,
+    `npx spago build --purs-args "-o ${functionsDistributionPath}/output"`,
     {},
     (error, stdout, stderr) => {
       console.log("PureScript build ", { error, stdout, stderr });
