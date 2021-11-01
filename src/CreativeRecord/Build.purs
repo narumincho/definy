@@ -1,6 +1,7 @@
 module CreativeRecord.Build (build) where
 
 import Prelude
+import Console as Console
 import Data.Argonaut.Core as ArgonautCore
 import Data.Array as Array
 import Data.Array.NonEmpty as NonEmptyArray
@@ -11,7 +12,6 @@ import Data.String.NonEmpty as NonEmptyString
 import Data.Tuple as Tuple
 import Data.UInt as UInt
 import Effect.Aff as Aff
-import Console as Console
 import EsBuild as EsBuild
 import FileSystem.Copy as FileSystemCopy
 import FileSystem.FileType as FileType
@@ -301,7 +301,7 @@ copyStaticResouece resultList =
   Util.toParallel
     ( map
         ( \(StaticResourceFile.StaticResourceFileResult { originalFilePath, requestPathAndUploadFileName }) ->
-            FileSystemCopy.copyFileToDistribution
+            FileSystemCopy.copyFileToDistributionWithoutExtensiton
               originalFilePath
               ( Path.DistributionFilePath
                   { directoryPath: hostingDirectoryPath

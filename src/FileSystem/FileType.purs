@@ -5,13 +5,13 @@ module FileSystem.FileType
   , toMediaType
   ) where
 
+import Data.Generic.Rep as GenericRep
 import Data.Maybe as Maybe
+import Data.Show.Generic as ShowGeneric
 import Data.String.NonEmpty as NonEmptyString
 import MediaType as MediaType
-import Type.Proxy as Proxy
 import Prelude as Prelude
-import Data.Show.Generic as ShowGeneric
-import Data.Generic.Rep as GenericRep
+import Type.Proxy as Proxy
 
 -- | ファイルシステムで読み書きするファイル
 data FileType
@@ -22,6 +22,7 @@ data FileType
   | Html
   | Json
   | FirebaseSecurityRules
+  | Markdown
 
 derive instance eqFileType :: Prelude.Eq FileType
 
@@ -39,6 +40,7 @@ toExtension = case _ of
   Json -> NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "json")
   PureScript -> NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "purs")
   FirebaseSecurityRules -> NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "rules")
+  Markdown -> NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "md")
 
 fromExtension :: String -> Maybe.Maybe FileType
 fromExtension = case _ of
@@ -49,6 +51,7 @@ fromExtension = case _ of
   "json" -> Maybe.Just Json
   "purs" -> Maybe.Just PureScript
   "rules" -> Maybe.Just FirebaseSecurityRules
+  "md" -> Maybe.Just Markdown
   _ -> Maybe.Nothing
 
 toMediaType :: FileType -> Maybe.Maybe MediaType.MediaType
@@ -60,3 +63,4 @@ toMediaType = case _ of
   Json -> Maybe.Just MediaType.Json
   PureScript -> Maybe.Nothing
   FirebaseSecurityRules -> Maybe.Nothing
+  Markdown -> Maybe.Nothing
