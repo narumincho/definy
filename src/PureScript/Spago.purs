@@ -1,4 +1,4 @@
-module PureScript.Spago (bundleModule, bundleApp) where
+module PureScript.Spago (bundleModule, bundleApp, build) where
 
 import Prelude
 import Data.Array.NonEmpty as NonEmptyArray
@@ -21,7 +21,7 @@ bundleModule { mainModuleName, outputJavaScriptPath } = do
         ""
         ( NonEmptyArray.cons'
             ( NonEmptyString.nes
-                (Proxy.Proxy :: Proxy.Proxy "spago bundle-module --main ")
+                (Proxy.Proxy :: Proxy.Proxy "npx spago bundle-module --main ")
             )
             [ ToString.moduleNameToString mainModuleName
             , NonEmptyString.nes
@@ -55,7 +55,7 @@ bundleApp { mainModuleName, outputJavaScriptPath } = do
         ""
         ( NonEmptyArray.cons'
             ( NonEmptyString.nes
-                (Proxy.Proxy :: Proxy.Proxy "spago bundle-app --main ")
+                (Proxy.Proxy :: Proxy.Proxy "npx spago bundle-app --main ")
             )
             [ ToString.moduleNameToString mainModuleName
             , NonEmptyString.nes
@@ -78,6 +78,33 @@ bundleApp { mainModuleName, outputJavaScriptPath } = do
                     outputJavaScriptPath
                     FileType.JavaScript
                 )
+            ]
+        )
+    )
+
+-- | npx spago build --purs-args "-o {outputDiresctoy}"
+build :: { outputDiresctoy :: Path.DistributionDirectoryPath } -> Aff.Aff Unit
+build { outputDiresctoy } = do
+  Shell.execWithLog
+    ( NonEmptyString.join1With
+        ""
+        ( NonEmptyArray.cons'
+            ( NonEmptyString.nes
+                (Proxy.Proxy :: Proxy.Proxy "npx spago build --purs-args \"-o ")
+            )
+            [ Path.distributionDirectoryPathToString outputDiresctoy
+            , NonEmptyString.nes
+                (Proxy.Proxy :: Proxy.Proxy "\"")
+            ]
+        )
+    )
+  EffectClass.liftEffect
+    ( Console.log
+        ( String.joinWith
+            ""
+            [ "spago build に成功! outputDiresctoy: "
+            , NonEmptyString.toString
+                (Path.distributionDirectoryPathToString outputDiresctoy)
             ]
         )
     )
