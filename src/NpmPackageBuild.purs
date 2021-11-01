@@ -1,14 +1,15 @@
 module NpmPackageBuild where
 
 import Prelude
+import Data.Maybe as Maybe
+import Data.String.NonEmpty as NonEmptyString
 import Effect as Effect
 import Effect.Aff as Aff
 import Effect.Console as Console
-import EsBuild as Esbuild
-import Data.String.NonEmpty as NonEmptyString
-import Type.Proxy as Proxy
+import FileSystem.FileType as FileType
 import FileSystem.Path as Path
-import Data.Maybe as Maybe
+import Type.Proxy as Proxy
+import TypeScript.Tsc as Tsc
 
 main :: Effect.Effect Unit
 main =
@@ -24,31 +25,22 @@ appName = NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "npm-package")
 
 mainAff :: Aff.Aff Unit
 mainAff =
-  Esbuild.buildJs
-    { entryPoints:
-        Path.DistributionFilePath
+  Tsc.compile
+    { rootName:
+        Path.FilePath
           { directoryPath:
-              Path.DistributionDirectoryPath
-                { appName
-                , folderNameMaybe:
-                    Maybe.Just
-                      ( NonEmptyString.nes
-                          (Proxy.Proxy :: Proxy.Proxy "client-result")
-                      )
-                }
+              Path.DirectoryPath
+                [ NonEmptyString.nes
+                    (Proxy.Proxy :: Proxy.Proxy "gen")
+                ]
           , fileName:
               NonEmptyString.nes
-                (Proxy.Proxy :: Proxy.Proxy "client-result")
+                (Proxy.Proxy :: Proxy.Proxy "main")
+          , fileType: Maybe.Just FileType.TypeScript
           }
-    , outdir:
+    , outDir:
         Path.DistributionDirectoryPath
           { appName
-          , folderNameMaybe:
-              Maybe.Just
-                ( NonEmptyString.nes
-                    (Proxy.Proxy :: Proxy.Proxy "client-esbuild-result")
-                )
+          , folderNameMaybe: Maybe.Nothing
           }
-    , sourcemap: false
-    , target: [ "node14" ]
     }
