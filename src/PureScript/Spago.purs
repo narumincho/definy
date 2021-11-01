@@ -1,12 +1,10 @@
 module PureScript.Spago (bundleModule, bundleApp, build) where
 
 import Prelude
+import Console as Console
 import Data.Array.NonEmpty as NonEmptyArray
-import Data.String as String
 import Data.String.NonEmpty as NonEmptyString
 import Effect.Aff as Aff
-import Effect.Class as EffectClass
-import Effect.Console as Console
 import FileSystem.FileType as FileType
 import FileSystem.Path as Path
 import PureScript.Data as Data
@@ -32,21 +30,14 @@ bundleModule { mainModuleName, outputJavaScriptPath } = do
             ]
         )
     )
-  EffectClass.liftEffect
-    ( Console.log
-        ( String.joinWith
-            ""
-            [ "spago での bundle-module に成功! mainModuleName: "
-            , NonEmptyString.toString (ToString.moduleNameToString mainModuleName)
-            , ", outputJavaScriptPath: "
-            , NonEmptyString.toString
-                ( Path.distributionFilePathToString
-                    outputJavaScriptPath
-                    FileType.JavaScript
-                )
-            ]
-        )
-    )
+  Console.logValueAsAff
+    "spago での bundle-module に成功!"
+    { mainModuleName: ToString.moduleNameToString mainModuleName
+    , outputJavaScriptPath:
+        Path.distributionFilePathToString
+          outputJavaScriptPath
+          FileType.JavaScript
+    }
 
 bundleApp :: { mainModuleName :: Data.ModuleName, outputJavaScriptPath :: Path.DistributionFilePath } -> Aff.Aff Unit
 bundleApp { mainModuleName, outputJavaScriptPath } = do
@@ -66,21 +57,13 @@ bundleApp { mainModuleName, outputJavaScriptPath } = do
             ]
         )
     )
-  EffectClass.liftEffect
-    ( Console.log
-        ( String.joinWith
-            ""
-            [ "spago での bundle-app に成功! mainModuleName: "
-            , NonEmptyString.toString (ToString.moduleNameToString mainModuleName)
-            , ", outputJavaScriptPath: "
-            , NonEmptyString.toString
-                ( Path.distributionFilePathToString
-                    outputJavaScriptPath
-                    FileType.JavaScript
-                )
-            ]
-        )
-    )
+  Console.logValueAsAff "spago での bundle-app に成功!"
+    { mainModuleName: ToString.moduleNameToString mainModuleName
+    , outputJavaScriptPath:
+        Path.distributionFilePathToString
+          outputJavaScriptPath
+          FileType.JavaScript
+    }
 
 -- | npx spago build --purs-args "-o {outputDiresctoy}"
 build :: { outputDiresctoy :: Path.DistributionDirectoryPath } -> Aff.Aff Unit
@@ -98,13 +81,6 @@ build { outputDiresctoy } = do
             ]
         )
     )
-  EffectClass.liftEffect
-    ( Console.log
-        ( String.joinWith
-            ""
-            [ "spago build に成功! outputDiresctoy: "
-            , NonEmptyString.toString
-                (Path.distributionDirectoryPathToString outputDiresctoy)
-            ]
-        )
-    )
+  Console.logValueAsAff
+    "spago build に成功!"
+    { outputDiresctoy: Path.distributionDirectoryPathToString outputDiresctoy }

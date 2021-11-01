@@ -11,8 +11,7 @@ import Data.String.NonEmpty as NonEmptyString
 import Data.Tuple as Tuple
 import Data.UInt as UInt
 import Effect.Aff as Aff
-import Effect.Class as EffectClass
-import Effect.Console as Console
+import Console as Console
 import EsBuild as EsBuild
 import FileSystem.Copy as FileSystemCopy
 import FileSystem.FileType as FileType
@@ -120,7 +119,7 @@ clientProgramAndFirebaseJsonBuild = do
   runSpagoBundleAppAndLog
   runEsbuild
   fileHashValue <- readEsbuildResultClientProgramFile
-  EffectClass.liftEffect (Console.log (append "クライアント向けビルド完了! hashValue:" (NonEmptyString.toString fileHashValue)))
+  Console.logValueAsAff "クライアント向けビルド完了!" { fileHashValue }
   pure fileHashValue
 
 runSpagoBundleAppAndLog :: Aff.Aff Unit
@@ -134,7 +133,7 @@ runSpagoBundleAppAndLog = do
           )
     , outputJavaScriptPath: firstClientProgramFilePath
     }
-  EffectClass.liftEffect (Console.log "spago でのビルドに成功!")
+  Console.logValueAsAff "spago でのビルドに成功!" {}
 
 runEsbuild :: Aff.Aff Unit
 runEsbuild = do
@@ -144,7 +143,7 @@ runEsbuild = do
     , sourcemap: false
     , target: [ "chrome94", "firefox93", "safari15" ]
     }
-  EffectClass.liftEffect (Console.log "esbuild でのビルドに成功!")
+  Console.logValueAsAff "esbuild でのビルドに成功!" {}
 
 readEsbuildResultClientProgramFile :: Aff.Aff NonEmptyString.NonEmptyString
 readEsbuildResultClientProgramFile = do
@@ -279,7 +278,7 @@ writeFirebaseJson staticFileDataList clientProgramHashValue = do
             }
         )
     )
-  EffectClass.liftEffect (Console.log "firebase.json の書き込みに成功!")
+  Console.logValueAsAff "firebase.json の書き込みに成功!" {}
 
 originCodeGen :: Aff.Aff Prelude.Unit
 originCodeGen = FileSystemWrite.writePureScript srcDirectoryPath originPureScriptModule
@@ -438,8 +437,7 @@ runSpagoForFunctions = do
           , fileName: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "index")
           }
     }
-  EffectClass.liftEffect
-    (Console.log "spago で functions のビルドに成功!")
+  Console.logValueAsAff "spago で functions のビルドに成功!" {}
 
 writePackageJsonForFunctions :: Aff.Aff Unit
 writePackageJsonForFunctions = case packageJsonForFunctions of
@@ -451,7 +449,7 @@ writePackageJsonForFunctions = case packageJsonForFunctions of
           }
       )
       json
-  Maybe.Nothing -> EffectClass.liftEffect (Console.log "functions 向けの package.json の生成に失敗した")
+  Maybe.Nothing -> Console.logValueAsAff "functions 向けの package.json の生成に失敗した" {}
 
 packageJsonForFunctions :: Maybe.Maybe ArgonautCore.Json
 packageJsonForFunctions =
