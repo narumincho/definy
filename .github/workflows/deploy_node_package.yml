@@ -1,4 +1,4 @@
-name: npm publish
+name: deploy node package
 
 on: workflow_dispatch
 
@@ -15,10 +15,10 @@ jobs:
           node-version: "14"
       - name: Install npm dependencies (npm ci)
         run: npm ci
-      - name: Transpile TypeScript (npx tsc)
+      - name: Run Build Script
         run: npm run build-gen
       - name: npm publish
         uses: JS-DevTools/npm-publish@v1
         with:
           token: ${{ secrets.NPM_AUTH_TOKEN }}
-          package: ./distribution/package.json
+          package: ./distribution/npm-package/package.json

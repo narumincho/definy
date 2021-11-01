@@ -1,4 +1,4 @@
-module NpmPackageBuild where
+module BuildNodePackage where
 
 import Prelude
 import Console as ConsoleValue
