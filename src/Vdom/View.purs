@@ -24,6 +24,7 @@ module Vdom.View
   , Events
   , ChildrenDiff(..)
   , ElementDiff
+  , ElementUpdateDiff
   , replace
   , divDiff
   , externalLinkDiff
