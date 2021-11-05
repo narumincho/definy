@@ -94,7 +94,7 @@ collectInportModuleInDefinition :: Data.Definition -> Set.Set Data.ModuleName
 collectInportModuleInDefinition (Data.Definition { pType, expr }) =
   Set.union
     (collectInportModuleInType pType)
-    (collectInportModuleInExpr expr)
+    (collectInportModuleInExprData expr)
 
 collectInportModuleInType :: Data.PType -> Set.Set Data.ModuleName
 collectInportModuleInType = case _ of
@@ -107,20 +107,20 @@ collectInportModuleInType = case _ of
       )
   Data.SymbolLiteral _ -> Set.empty
 
-collectInportModuleInExpr :: Data.Expr -> Set.Set Data.ModuleName
-collectInportModuleInExpr = case _ of
+collectInportModuleInExprData :: Data.ExprData -> Set.Set Data.ModuleName
+collectInportModuleInExprData = case _ of
   Data.Call { function, arguments } ->
     Set.unions
-      ( Prelude.map collectInportModuleInExpr
+      ( Prelude.map collectInportModuleInExprData
           (Array.cons function (NonEmptyArray.toArray arguments))
       )
   Data.Variable { moduleName } -> Set.singleton moduleName
   Data.StringLiteral _ -> Set.empty
   Data.CharLiteral _ -> Set.empty
-  Data.ArrayLiteral list -> Set.unions (Prelude.map collectInportModuleInExpr list)
+  Data.ArrayLiteral list -> Set.unions (Prelude.map collectInportModuleInExprData list)
   Data.TypeAnnotation { expr, pType } ->
     Set.union
-      (collectInportModuleInExpr expr)
+      (collectInportModuleInExprData expr)
       (collectInportModuleInType pType)
 
 collectExportDefinition :: Array Data.Definition -> Array String
@@ -142,7 +142,7 @@ definitionToString importedModuleQualifiedNameDict (Data.Definition { name, docu
     , "\n"
     , NonEmptyString.toString name
     , " = "
-    , exprToString importedModuleQualifiedNameDict expr
+    , exprDataToString importedModuleQualifiedNameDict expr
     ]
 
 typeToString :: ModuleQualifiedNameDict -> Data.PType -> String
@@ -164,15 +164,15 @@ typeToString importedModuleQualifiedNameDict pType = case pType of
       )
   Data.SymbolLiteral str -> stringToStringLiteral str
 
-exprToString :: ModuleQualifiedNameDict -> Data.Expr -> String
-exprToString importedModuleQualifiedNameDict = case _ of
+exprDataToString :: ModuleQualifiedNameDict -> Data.ExprData -> String
+exprDataToString importedModuleQualifiedNameDict = case _ of
   Data.Call { function, arguments } ->
     String.joinWith " "
       ( Prelude.map
           ( \expr ->
               String.joinWith ""
                 [ "("
-                , exprToString importedModuleQualifiedNameDict expr
+                , exprDataToString importedModuleQualifiedNameDict expr
                 , ")"
                 ]
           )
@@ -197,12 +197,12 @@ exprToString importedModuleQualifiedNameDict = case _ of
   Data.ArrayLiteral list ->
     String.joinWith ""
       [ "[ "
-      , String.joinWith ", " (Prelude.map (exprToString importedModuleQualifiedNameDict) list)
+      , String.joinWith ", " (Prelude.map (exprDataToString importedModuleQualifiedNameDict) list)
       , " ]"
       ]
   Data.TypeAnnotation { expr, pType } ->
     String.joinWith ""
-      [ exprToString importedModuleQualifiedNameDict expr
+      [ exprDataToString importedModuleQualifiedNameDict expr
       , " :: "
       , typeToString importedModuleQualifiedNameDict pType
       ]

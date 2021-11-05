@@ -4,6 +4,7 @@ module PureScript.Data
   , ModuleName(..)
   , PType(..)
   , Expr(..)
+  , ExprData(..)
   , moduleNameAsStringNonEmptyArray
   ) where
 
@@ -23,7 +24,7 @@ newtype Definition
   { name :: NonEmptyString.NonEmptyString
   , document :: String
   , pType :: PType
-  , expr :: Expr
+  , expr :: ExprData
   , isExport :: Boolean
   }
 
@@ -42,13 +43,17 @@ data PType
     }
   | SymbolLiteral String
 
-data Expr
-  = Call { function :: Expr, arguments :: NonEmptyArray.NonEmptyArray Expr }
+data Expr :: Type -> Type
+data Expr pType
+  = Expr ExprData
+
+data ExprData
+  = Call { function :: ExprData, arguments :: NonEmptyArray.NonEmptyArray ExprData }
   | Variable { moduleName :: ModuleName, name :: NonEmptyString.NonEmptyString }
   | StringLiteral String
   | CharLiteral Char
-  | ArrayLiteral (Array Expr)
-  | TypeAnnotation { expr :: Expr, pType :: PType }
+  | ArrayLiteral (Array ExprData)
+  | TypeAnnotation { expr :: ExprData, pType :: PType }
 
 moduleNameAsStringNonEmptyArray :: Module -> NonEmptyArray.NonEmptyArray NonEmptyString.NonEmptyString
 moduleNameAsStringNonEmptyArray (Module { name: ModuleName name }) = name

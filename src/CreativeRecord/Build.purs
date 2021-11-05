@@ -179,7 +179,7 @@ writeCodeClientProgramHashValue fileHashValue =
                   ]
               )
         , definitionList:
-            [ PureScriptData.Definition
+            [ PureScriptWellknown.definition
                 { name: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "clientProgramHashValue")
                 , document: "クライアント向け JavaScript のファイルのハッシュ値"
                 , pType: PureScriptWellknown.nonEmptyString
@@ -330,7 +330,7 @@ staticFileResultToPureScriptModule resultList =
 
 staticResourceFileResultToPureScriptDefinition :: StaticResourceFile.StaticResourceFileResult -> PureScriptData.Definition
 staticResourceFileResultToPureScriptDefinition (StaticResourceFile.StaticResourceFileResult record) =
-  PureScriptData.Definition
+  PureScriptWellknown.definition
     { name: record.fileId
     , document:
         String.joinWith ""
@@ -351,29 +351,27 @@ staticResourceFileResultToPureScriptDefinition (StaticResourceFile.StaticResourc
           , argument: Maybe.Nothing
           }
     , expr:
-        PureScriptData.Call
-          { function:
-              PureScriptData.Variable
-                { moduleName:
-                    PureScriptData.ModuleName
-                      ( NonEmptyArray.singleton
-                          ( NonEmptyString.nes
-                              (Proxy.Proxy :: Proxy.Proxy "StructuredUrl")
-                          )
-                      )
-                , name: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "pathAndSearchParams")
-                }
-          , arguments:
-              NonEmptyArray.cons
-                ( PureScriptData.ArrayLiteral
-                    [ PureScriptWellknown.nonEmptyStringLiteral
-                        record.requestPathAndUploadFileName
-                    ]
-                )
-                ( NonEmptyArray.singleton PureScriptWellknown.dataMapEmpty
-                )
-          }
+        PureScriptWellknown.call
+          structuredUrlFromPath
+          ( PureScriptWellknown.arrayLiteral
+              [ PureScriptWellknown.nonEmptyStringLiteral
+                  record.requestPathAndUploadFileName
+              ]
+          )
     , isExport: true
+    }
+
+structuredUrlFromPath :: PureScriptData.Expr (Array NonEmptyString.NonEmptyString -> StructuredUrl.PathAndSearchParams)
+structuredUrlFromPath =
+  PureScriptWellknown.variable
+    { moduleName:
+        PureScriptData.ModuleName
+          ( NonEmptyArray.singleton
+              ( NonEmptyString.nes
+                  (Proxy.Proxy :: Proxy.Proxy "StructuredUrl")
+              )
+          )
+    , name: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "fromPath")
     }
 
 creativeRecordModuleName :: NonEmptyString.NonEmptyString
@@ -407,7 +405,7 @@ originPureScriptModule =
   PureScriptData.Module
     { name: originModuleName
     , definitionList:
-        [ PureScriptData.Definition
+        [ PureScriptWellknown.definition
             { name: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "origin")
             , document: "アプリケーションのオリジン (コード生成結果)"
             , pType: PureScriptWellknown.nonEmptyString
