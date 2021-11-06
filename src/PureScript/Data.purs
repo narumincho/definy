@@ -2,13 +2,12 @@ module PureScript.Data
   ( Module(..)
   , Definition(..)
   , ModuleName(..)
-  , PType(..)
-  , Expr(..)
+  , TypeData(..)
+  , ExprData(..)
   , moduleNameAsStringNonEmptyArray
   ) where
 
 import Data.Array.NonEmpty as NonEmptyArray
-import Data.Maybe as Maybe
 import Data.String.NonEmpty as NonEmptyString
 import Prelude as Prelude
 
@@ -22,8 +21,8 @@ newtype Definition
   = Definition
   { name :: NonEmptyString.NonEmptyString
   , document :: String
-  , pType :: PType
-  , expr :: Expr
+  , typeData :: TypeData
+  , exprData :: ExprData
   , isExport :: Boolean
   }
 
@@ -34,21 +33,21 @@ derive instance moduleNameEq :: Prelude.Eq ModuleName
 
 derive instance moduleNameOrd :: Prelude.Ord ModuleName
 
-data PType
-  = PType
+data TypeData
+  = TypeData
     { moduleName :: ModuleName
     , name :: NonEmptyString.NonEmptyString
-    , argument :: Maybe.Maybe PType
     }
   | SymbolLiteral String
+  | TypeWithArgument { function :: TypeData, argument :: TypeData }
 
-data Expr
-  = Call { function :: Expr, arguments :: NonEmptyArray.NonEmptyArray Expr }
+data ExprData
+  = Call { function :: ExprData, argument :: ExprData }
   | Variable { moduleName :: ModuleName, name :: NonEmptyString.NonEmptyString }
   | StringLiteral String
   | CharLiteral Char
-  | ArrayLiteral (Array Expr)
-  | TypeAnnotation { expr :: Expr, pType :: PType }
+  | ArrayLiteral (Array ExprData)
+  | TypeAnnotation { expr :: ExprData, pType :: TypeData }
 
 moduleNameAsStringNonEmptyArray :: Module -> NonEmptyArray.NonEmptyArray NonEmptyString.NonEmptyString
 moduleNameAsStringNonEmptyArray (Module { name: ModuleName name }) = name
