@@ -1,7 +1,46 @@
-import * as Color from "../Color";
-import * as Language from "../Language";
-import * as Maybe from "../Data.Maybe";
-import * as StructuredUrl from "../StructuredUrl";
+/* eslint-disable init-declarations */
+
+/**
+ * The representation of a color.
+ * https://pursuit.purescript.org/packages/purescript-colors/5.0.0/docs/Color#t:Color
+ */
+export type Color = { _color: never };
+
+/**
+ * Create a Color from integer RGB values between 0 and 255 and a floating point alpha value between 0.0 and 1.0.
+ * https://pursuit.purescript.org/packages/purescript-colors/5.0.0/docs/Color#v:rgba
+ *
+ * をオブジェクトを受け取るように変更
+ */
+export declare const colorFrom: (rgba: {
+  readonly r: number;
+  readonly g: number;
+  readonly b: number;
+  readonly a: number;
+}) => Color;
+
+/**
+ * 文字列の HTML を生成する
+ */
+export declare const htmlOptionToString: (htmlOption: HtmlOption) => string;
+
+export type Language = { _language: never };
+
+export declare const japanese: Language;
+
+export declare const english: Language;
+
+export declare const esperanto: Language;
+
+export type Maybe<T> = { _maybe: T };
+
+export declare const just: <T>(a: T) => Maybe<T>;
+
+export declare const nothing: <T>() => Maybe<T>;
+
+export type TwitterCard = { _twitterCard: never };
+
+export declare const summaryCardWithLargeImage: TwitterCard;
 
 /**
  * 空ではない文字列 (基本的にリテラルで指定して!)
@@ -77,4 +116,13 @@ export type HtmlOption = {
   readonly bodyChildren: Array<never>;
 };
 
-export declare const SummaryCardWithLargeImage: { readonly value: TwitterCard };
+export type PathAndSearchParams = {
+  _pathAndSearchParams: never;
+};
+
+/**
+ * パスからURLを指定する. 配列の中身は,空 でない文字列である必要がある
+ */
+export declare const pathAndSearchParamsFromPath: (
+  pathList: ReadonlyArray<string>
+) => PathAndSearchParams;

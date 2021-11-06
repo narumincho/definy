@@ -1,12 +1,5 @@
-import * as Color from "../../output/Color";
-import * as HtmlToString from "../../output/Html.ToString";
-import * as Language from "../../output/Language";
-import * as Maybe from "../../output/Data.Maybe";
-import * as StructuredUrl from "../../output/StructuredUrl";
-import {
-  NonEmptyString,
-  SummaryCardWithLargeImage,
-} from "../../output/Html.Data";
+import * as d from "../../localData";
+import * as e from "../../output/TypeScriptEntryPoint";
 
 export type HtmlOption = {
   readonly appName: string;
@@ -14,7 +7,7 @@ export type HtmlOption = {
   readonly coverImagePath: ReadonlyArray<string>;
   readonly description: string;
   readonly iconPath: ReadonlyArray<string>;
-  readonly language: "Japanese" | "English" | undefined;
+  readonly language: d.Language | undefined;
   readonly origin: string;
   readonly pageName: string;
   readonly path: ReadonlyArray<string> | undefined;
@@ -22,53 +15,67 @@ export type HtmlOption = {
   readonly style: string | undefined;
   readonly stylePath: ReadonlyArray<string> | undefined;
   readonly themeColor: {
+    /** 0 ～ 255 の整数 */
     readonly r: number;
+    /** 0 ～ 255 の整数 */
     readonly g: number;
+    /** 0 ～ 255 の整数 */
     readonly b: number;
+    /** 0 ～ 1 */
     readonly a: number;
   };
 };
 
 export const htmlOptionToString = (option: HtmlOption): string => {
-  return HtmlToString.htmlOptionToString({
-    appName: option.appName as NonEmptyString,
+  return e.htmlOptionToString({
+    appName: stringToNonEmptyString(option.appName),
     bodyChildren: [],
     bodyClass:
       typeof option.bodyClass === "string"
-        ? Maybe.Just.create(option.bodyClass)
-        : Maybe.Nothing.value,
-    coverImagePath: StructuredUrl.fromPath(option.coverImagePath),
+        ? e.just(option.bodyClass)
+        : e.nothing(),
+    coverImagePath: e.pathAndSearchParamsFromPath(option.coverImagePath),
     description: option.description,
-    iconPath: StructuredUrl.fromPath(option.iconPath),
+    iconPath: e.pathAndSearchParamsFromPath(option.iconPath),
     language:
       option.language === undefined
-        ? Maybe.Nothing.value
-        : Maybe.Just.create(
-            option.language === "English"
-              ? Language.English.value
-              : Language.Japanese.value
-          ),
-    origin: option.origin as NonEmptyString,
-    pageName: option.pageName as NonEmptyString,
+        ? e.nothing()
+        : e.just(dLanguageToPureScriptLanguage(option.language)),
+    origin: stringToNonEmptyString(option.origin),
+    pageName: stringToNonEmptyString(option.pageName),
     path:
       option.path === undefined
-        ? Maybe.Nothing.value
-        : Maybe.Just.create(StructuredUrl.fromPath(option.path)),
+        ? e.nothing()
+        : e.just(e.pathAndSearchParamsFromPath(option.path)),
     scriptPath:
       option.scriptPath === undefined
-        ? Maybe.Nothing.value
-        : Maybe.Just.create(StructuredUrl.fromPath(option.scriptPath)),
+        ? e.nothing()
+        : e.just(e.pathAndSearchParamsFromPath(option.scriptPath)),
     style:
-      typeof option.style === "string"
-        ? Maybe.Just.create(option.style)
-        : Maybe.Nothing.value,
+      typeof option.style === "string" ? e.just(option.style) : e.nothing(),
     stylePath:
       option.stylePath === undefined
-        ? Maybe.Nothing.value
-        : Maybe.Just.create(StructuredUrl.fromPath(option.stylePath)),
-    themeColor: Color.rgba(option.themeColor.r)(option.themeColor.g)(
-      option.themeColor.b
-    )(option.themeColor.a),
-    twitterCard: SummaryCardWithLargeImage.value,
+        ? e.nothing()
+        : e.just(e.pathAndSearchParamsFromPath(option.stylePath)),
+    themeColor: e.colorFrom(option.themeColor),
+    twitterCard: e.summaryCardWithLargeImage,
   });
+};
+
+const dLanguageToPureScriptLanguage = (language: d.Language): e.Language => {
+  switch (language) {
+    case "English":
+      return e.english;
+    case "Japanese":
+      return e.japanese;
+    case "Esperanto":
+      return e.esperanto;
+  }
+};
+
+/**
+ * 空でない文字列を指定する必要あり
+ */
+const stringToNonEmptyString = (str: string): e.NonEmptyString => {
+  return str as e.NonEmptyString;
 };

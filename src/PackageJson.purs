@@ -86,7 +86,7 @@ toJson (PackageJsonInput packageJson) =
                   ]
               )
           , Tuple.Tuple "license" (ArgonautCore.fromString "MIT")
-          , Tuple.Tuple "mian" (Util.jsonFromNonEmptyString packageJson.entryPoint)
+          , Tuple.Tuple "main" (Util.jsonFromNonEmptyString packageJson.entryPoint)
           , Tuple.Tuple "homepage"
               ( Util.jsonFromNonEmptyString
                   (StructuredUrl.toString packageJson.homepage)
