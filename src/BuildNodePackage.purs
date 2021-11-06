@@ -212,7 +212,7 @@ generatePackageJson rootPackageJson =
                     (Proxy.Proxy :: Proxy.Proxy "gen/main.d.ts")
                 )
           , version:
-              NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "1.0.6")
+              NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "1.0.7")
           }
     )
     ( PackageJson.nameFromNonEmptyString
