@@ -2,6 +2,7 @@ module BuildNodePackage where
 
 import Prelude
 import Console as ConsoleValue
+import Data.Array.NonEmpty as NonEmptyArray
 import Data.Either as Either
 import Data.Map as Map
 import Data.Maybe as Maybe
@@ -16,6 +17,7 @@ import FileSystem.Path as Path
 import FileSystem.Read as FileSyFileSystemRead
 import FileSystem.Write as FileSystemWrite
 import PackageJson as PackageJson
+import PureScript.Data as PureScriptData
 import PureScript.Spago as Spago
 import StructuredUrl as StructuredUrl
 import Type.Proxy as Proxy
@@ -59,15 +61,28 @@ mainAff =
               , folderNameMaybe: Maybe.Nothing
               }
         }
-    , Spago.build
-        { outputDiresctoy:
-            Path.DistributionDirectoryPath
-              { appName
-              , folderNameMaybe:
-                  Maybe.Just
-                    ( NonEmptyString.nes
-                        (Proxy.Proxy :: Proxy.Proxy "output")
-                    )
+    , Spago.bundleModule
+        { mainModuleName:
+            PureScriptData.ModuleName
+              ( NonEmptyArray.singleton
+                  ( NonEmptyString.nes
+                      (Proxy.Proxy :: Proxy.Proxy "TypeScriptEntryPoint")
+                  )
+              )
+        , outputJavaScriptPath:
+            Path.DistributionFilePath
+              { directoryPath:
+                  Path.DistributionDirectoryPath
+                    { appName
+                    , folderNameMaybe:
+                        Maybe.Just
+                          ( NonEmptyString.nes
+                              (Proxy.Proxy :: Proxy.Proxy "output")
+                          )
+                    }
+              , fileName:
+                  NonEmptyString.nes
+                    (Proxy.Proxy :: Proxy.Proxy "TypeScriptEntryPoint")
               }
         }
     , FileSystemCopy.copyFileToDistribution
@@ -171,7 +186,7 @@ generatePackageJson rootPackageJson =
                 (Proxy.Proxy :: Proxy.Proxy "HTML, TypeScript, JavaScript, package.json, wasm Generator")
           , entryPoint:
               NonEmptyString.nes
-                (Proxy.Proxy :: Proxy.Proxy "./gen/main.js")
+                (Proxy.Proxy :: Proxy.Proxy "gen/main.js")
           , gitHubAccountName:
               NonEmptyString.nes
                 (Proxy.Proxy :: Proxy.Proxy "narumincho")
@@ -194,10 +209,10 @@ generatePackageJson rootPackageJson =
           , typeFilePath:
               Maybe.Just
                 ( NonEmptyString.nes
-                    (Proxy.Proxy :: Proxy.Proxy "./gen/main.d.ts")
+                    (Proxy.Proxy :: Proxy.Proxy "gen/main.d.ts")
                 )
           , version:
-              NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "1.0.5")
+              NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "1.0.6")
           }
     )
     ( PackageJson.nameFromNonEmptyString
