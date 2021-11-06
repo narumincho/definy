@@ -1,7 +1,6 @@
 module PureScript.ToString (toString, moduleNameToString) where
 
 import Data.Array as Array
-import Data.Array.NonEmpty as NonEmptyArray
 import Data.Map as Map
 import Data.Maybe as Maybe
 import Data.Set as Set
@@ -91,29 +90,28 @@ collectInportModule (Data.Module { name, definitionList }) =
     )
 
 collectInportModuleInDefinition :: Data.Definition -> Set.Set Data.ModuleName
-collectInportModuleInDefinition (Data.Definition { pType, expr }) =
+collectInportModuleInDefinition (Data.Definition { typeData, exprData }) =
   Set.union
-    (collectInportModuleInType pType)
-    (collectInportModuleInExprData expr)
+    (collectInportModuleInType typeData)
+    (collectInportModuleInExprData exprData)
 
-collectInportModuleInType :: Data.PType -> Set.Set Data.ModuleName
+collectInportModuleInType :: Data.TypeData -> Set.Set Data.ModuleName
 collectInportModuleInType = case _ of
-  Data.PType { moduleName, argument } ->
-    Set.insert
+  Data.TypeData { moduleName } ->
+    Set.singleton
       moduleName
-      ( case argument of
-          Maybe.Just argumentType -> collectInportModuleInType argumentType
-          Maybe.Nothing -> Set.empty
-      )
   Data.SymbolLiteral _ -> Set.empty
+  Data.TypeWithArgument { function, argument } ->
+    Set.union
+      (collectInportModuleInType function)
+      (collectInportModuleInType argument)
 
 collectInportModuleInExprData :: Data.ExprData -> Set.Set Data.ModuleName
 collectInportModuleInExprData = case _ of
-  Data.Call { function, arguments } ->
-    Set.unions
-      ( Prelude.map collectInportModuleInExprData
-          (Array.cons function (NonEmptyArray.toArray arguments))
-      )
+  Data.Call { function, argument } ->
+    Set.union
+      (collectInportModuleInExprData function)
+      (collectInportModuleInExprData argument)
   Data.Variable { moduleName } -> Set.singleton moduleName
   Data.StringLiteral _ -> Set.empty
   Data.CharLiteral _ -> Set.empty
@@ -133,51 +131,45 @@ collectExportDefinition list =
     list
 
 definitionToString :: ModuleQualifiedNameDict -> Data.Definition -> String
-definitionToString importedModuleQualifiedNameDict (Data.Definition { name, document, pType, expr }) =
+definitionToString importedModuleQualifiedNameDict (Data.Definition { name, document, typeData, exprData }) =
   String.joinWith ""
     [ documentToString document
     , NonEmptyString.toString name
     , " :: "
-    , typeToString importedModuleQualifiedNameDict pType
+    , typeToString importedModuleQualifiedNameDict typeData
     , "\n"
     , NonEmptyString.toString name
     , " = "
-    , exprDataToString importedModuleQualifiedNameDict expr
+    , exprDataToString importedModuleQualifiedNameDict exprData
     ]
 
-typeToString :: ModuleQualifiedNameDict -> Data.PType -> String
+typeToString :: ModuleQualifiedNameDict -> Data.TypeData -> String
 typeToString importedModuleQualifiedNameDict pType = case pType of
-  Data.PType { moduleName, name, argument } ->
+  Data.TypeData { moduleName, name } ->
     String.joinWith ""
-      ( Array.concat
-          [ [ moduleNameToStringSelfEmpty importedModuleQualifiedNameDict moduleName
-            , NonEmptyString.toString name
-            ]
-          , case argument of
-              Maybe.Just argumentType ->
-                [ " ("
-                , typeToString importedModuleQualifiedNameDict argumentType
-                , ")"
-                ]
-              Maybe.Nothing -> []
-          ]
-      )
+      [ moduleNameToStringSelfEmpty importedModuleQualifiedNameDict moduleName
+      , NonEmptyString.toString name
+      ]
   Data.SymbolLiteral str -> stringToStringLiteral str
+  Data.TypeWithArgument { function, argument } ->
+    String.joinWith ""
+      [ "("
+      , typeToString importedModuleQualifiedNameDict function
+      , ") ("
+      , typeToString importedModuleQualifiedNameDict argument
+      , ")"
+      ]
 
 exprDataToString :: ModuleQualifiedNameDict -> Data.ExprData -> String
 exprDataToString importedModuleQualifiedNameDict = case _ of
-  Data.Call { function, arguments } ->
-    String.joinWith " "
-      ( Prelude.map
-          ( \expr ->
-              String.joinWith ""
-                [ "("
-                , exprDataToString importedModuleQualifiedNameDict expr
-                , ")"
-                ]
-          )
-          (Array.cons function (NonEmptyArray.toArray arguments))
-      )
+  Data.Call { function, argument } ->
+    String.joinWith ""
+      [ "("
+      , exprDataToString importedModuleQualifiedNameDict function
+      , ") ("
+      , exprDataToString importedModuleQualifiedNameDict argument
+      , ")"
+      ]
   Data.Variable { moduleName, name } ->
     String.joinWith ""
       [ moduleNameToStringSelfEmpty importedModuleQualifiedNameDict moduleName

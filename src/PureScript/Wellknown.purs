@@ -1,6 +1,7 @@
 module PureScript.Wellknown
   ( primString
   , dataMapEmpty
+  , stringLiteral
   , nonEmptyStringLiteral
   , stringSingleton
   , nonEmptyString
@@ -8,16 +9,29 @@ module PureScript.Wellknown
   , call
   , variable
   , definition
+  , pTypeWithArgument
+  , pTypeFrom
+  , PType
+  , Expr
   ) where
 
 import Data.Array.NonEmpty as NonEmptyArray
 import Data.Map as Map
-import Data.Maybe as Maybe
 import Data.String as String
 import Data.String.NonEmpty as NonEmptyString
 import Prelude as Prelude
 import PureScript.Data as Data
 import Type.Proxy as Proxy
+
+data PType :: Type -> Type
+-- | PureScript の型. 型を間違えないように, 型を幽霊型としてつけている
+data PType pType
+  = PType Data.TypeData
+
+data Expr :: Type -> Type
+-- | PureScript の式. 型を間違えないように, 型を幽霊型としてつけている
+data Expr pType
+  = Expr Data.ExprData
 
 -- | Prim
 -- | https://pursuit.purescript.org/builtins/docs/Prim
@@ -29,13 +43,14 @@ primModuleName =
     )
 
 -- | https://pursuit.purescript.org/builtins/docs/Prim#t:String
-primString :: Data.PType
+primString :: PType String
 primString =
-  Data.PType
-    { moduleName: primModuleName
-    , name: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "String")
-    , argument: Maybe.Nothing
-    }
+  PType
+    ( Data.TypeData
+        { moduleName: primModuleName
+        , name: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "String")
+        }
+    )
 
 -- | Data.Map
 -- | https://pursuit.purescript.org/packages/purescript-ordered-collections/2.0.2/docs/Data.Map
@@ -47,9 +62,9 @@ dataMapModuleName =
     )
 
 -- | https://pursuit.purescript.org/packages/purescript-ordered-collections/2.0.2/docs/Data.Map#v:empty
-dataMapEmpty :: forall k v. Data.Expr (Map.Map k v)
+dataMapEmpty :: forall k v. Expr (Map.Map k v)
 dataMapEmpty =
-  Data.Expr
+  Expr
     ( Data.Variable
         { moduleName: dataMapModuleName
         , name: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "empty")
@@ -75,16 +90,16 @@ dataStringModuleName =
     )
 
 -- | https://pursuit.purescript.org/packages/purescript-strings/5.0.0/docs/Data.String#v:singleton
-stringSingleton :: Data.Expr String.CodePoint -> Data.Expr String
-stringSingleton (Data.Expr codePoint) =
-  Data.Expr
+stringSingleton :: Expr String.CodePoint -> Expr String
+stringSingleton (Expr codePoint) =
+  Expr
     ( Data.Call
         { function:
             Data.Variable
               { moduleName: dataStringModuleName
               , name: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "singleton")
               }
-        , arguments: NonEmptyArray.singleton codePoint
+        , argument: codePoint
         }
     )
 
@@ -97,7 +112,7 @@ nonEmptyStringNes proxy =
           { moduleName: dataStringNonEmptyModuleName
           , name: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "nes")
           }
-    , arguments: NonEmptyArray.singleton proxy
+    , argument: proxy
     }
 
 -- | Type.Proxy
@@ -115,65 +130,94 @@ proxyProxyWithTypeAnotation str =
   Data.TypeAnnotation
     { expr: Data.Variable { moduleName: typeProxyModuleName, name: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "Proxy") }
     , pType:
-        Data.PType
-          { moduleName: typeProxyModuleName
-          , name: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "Proxy")
-          , argument: Maybe.Just (Data.SymbolLiteral str)
+        Data.TypeWithArgument
+          { function:
+              Data.TypeData
+                { moduleName: typeProxyModuleName
+                , name: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "Proxy")
+                }
+          , argument: Data.SymbolLiteral str
           }
     }
 
+-- | ```purs
+-- | "{str}"
+-- | ```
+stringLiteral :: String -> Expr String
+stringLiteral str = Expr (Data.StringLiteral str)
+
+-- | ```purs
 -- | NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "{str}")
-nonEmptyStringLiteral :: NonEmptyString.NonEmptyString -> Data.Expr NonEmptyString.NonEmptyString
+-- | ```
+nonEmptyStringLiteral :: NonEmptyString.NonEmptyString -> Expr NonEmptyString.NonEmptyString
 nonEmptyStringLiteral str =
-  Data.Expr
+  Expr
     ( nonEmptyStringNes
         ( proxyProxyWithTypeAnotation
             (NonEmptyString.toString str)
         )
     )
 
-nonEmptyString :: Data.PType
+nonEmptyString :: PType NonEmptyString.NonEmptyString
 nonEmptyString =
-  Data.PType
-    { moduleName: dataStringNonEmptyModuleName
-    , name: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "NonEmptyString")
-    , argument: Maybe.Nothing
-    }
+  PType
+    ( Data.TypeData
+        { moduleName: dataStringNonEmptyModuleName
+        , name: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "NonEmptyString")
+        }
+    )
 
-arrayLiteral :: forall t. Array (Data.Expr t) -> Data.Expr (Array t)
+arrayLiteral :: forall t. Array (Expr t) -> Expr (Array t)
 arrayLiteral list =
-  Data.Expr
+  Expr
     ( Data.ArrayLiteral
-        (Prelude.map (\(Data.Expr exprData) -> exprData) list)
+        (Prelude.map (\(Expr exprData) -> exprData) list)
     )
 
-call :: forall input output. Data.Expr (input -> output) -> Data.Expr input -> Data.Expr output
-call (Data.Expr function) (Data.Expr argument) =
-  Data.Expr
+call :: forall input output. Expr (input -> output) -> Expr input -> Expr output
+call (Expr function) (Expr argument) =
+  Expr
     ( Data.Call
-        { function, arguments: NonEmptyArray.singleton argument }
+        { function, argument }
     )
 
-variable :: forall t. { moduleName :: Data.ModuleName, name :: NonEmptyString.NonEmptyString } -> Data.Expr t
-variable option = Data.Expr (Data.Variable option)
+variable :: forall t. { moduleName :: Data.ModuleName, name :: NonEmptyString.NonEmptyString } -> Expr t
+variable option = Expr (Data.Variable option)
 
 definition ::
   forall t.
   { name :: NonEmptyString.NonEmptyString
   , document :: String
-  , pType :: Data.PType
-  , expr :: Data.Expr t
+  , pType :: PType t
+  , expr :: Expr t
   , isExport :: Boolean
   } ->
   Data.Definition
 definition option =
   let
-    (Data.Expr exprData) = option.expr
+    (Expr exprData) = option.expr
+
+    (PType typeData) = option.pType
   in
     Data.Definition
       { name: option.name
       , document: option.document
-      , pType: option.pType
-      , expr: exprData
+      , typeData: typeData
+      , exprData: exprData
       , isExport: option.isExport
       }
+
+pTypeFrom ::
+  forall t.
+  { moduleName :: Data.ModuleName
+  , name :: NonEmptyString.NonEmptyString
+  } ->
+  PType t
+pTypeFrom option =
+  PType
+    (Data.TypeData option)
+
+pTypeWithArgument :: forall input output. PType (input -> output) -> PType input -> PType output
+pTypeWithArgument (PType function) (PType argument) =
+  PType
+    (Data.TypeWithArgument { function, argument })

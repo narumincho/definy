@@ -341,14 +341,13 @@ staticResourceFileResultToPureScriptDefinition (StaticResourceFile.StaticResourc
           , "`(コード生成結果)"
           ]
     , pType:
-        PureScriptData.PType
+        PureScriptWellknown.pTypeFrom
           { moduleName:
               PureScriptData.ModuleName
                 ( NonEmptyArray.singleton
                     (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "StructuredUrl"))
                 )
           , name: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "PathAndSearchParams")
-          , argument: Maybe.Nothing
           }
     , expr:
         PureScriptWellknown.call
@@ -361,7 +360,7 @@ staticResourceFileResultToPureScriptDefinition (StaticResourceFile.StaticResourc
     , isExport: true
     }
 
-structuredUrlFromPath :: PureScriptData.Expr (Array NonEmptyString.NonEmptyString -> StructuredUrl.PathAndSearchParams)
+structuredUrlFromPath :: PureScriptWellknown.Expr (Array NonEmptyString.NonEmptyString -> StructuredUrl.PathAndSearchParams)
 structuredUrlFromPath =
   PureScriptWellknown.variable
     { moduleName:
