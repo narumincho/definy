@@ -18,7 +18,8 @@
     "build-node-package": "spago run --main BuildNodePackage",
     "storybook": "start-storybook --config-dir ./storybook --static-dir ./storybook/static",
     "update-package-json": "ncu -u",
-    "start-narumincho-creative-record": "spago run --main CreativeRecord.Start"
+    "start-narumincho-creative-record": "spago run --main CreativeRecord.Start",
+    "start-definy-by-purescript": "spago run --main Definy.Start"
   },
   "devDependencies": {
     "@babel/core": "7.16.0",

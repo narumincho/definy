@@ -1,4 +1,8 @@
-module FileSystem.Copy (copyFileToDistributionWithoutExtensiton, copyFileToDistribution) where
+module FileSystem.Copy
+  ( copyFileToDistributionWithoutExtensiton
+  , copyFileToDistribution
+  , copySecretFile
+  ) where
 
 import Prelude
 import Console as Console
@@ -19,13 +23,21 @@ copyFileToDistributionWithoutExtensiton filePath distributionFilePath@(Path.Dist
     , dist: NonEmptyString.toString (Path.distributionFilePathToStringWithoutExtensiton distributionFilePath)
     }
 
--- | ファイルをコピーする.
--- | コピー先ファイル名は拡張子なしになる
+-- | ファイルをコピーする
 copyFileToDistribution :: Path.FilePath -> Path.DistributionFilePath -> FileType.FileType -> Aff.Aff Unit
 copyFileToDistribution filePath distributionFilePath@(Path.DistributionFilePath { directoryPath }) fileType = do
   Write.ensureDir (Path.distributionDirectoryPathToDirectoryPath directoryPath)
   copyFile
     { src: NonEmptyString.toString (Path.filePathToString filePath)
+    , dist: NonEmptyString.toString (Path.distributionFilePathToString distributionFilePath fileType)
+    }
+
+-- | 1つ上の階層の secret ディレクトリないに保存された機密情報の入ったファイルを出力先にコピーする
+copySecretFile :: NonEmptyString.NonEmptyString -> Path.DistributionFilePath -> FileType.FileType -> Aff.Aff Unit
+copySecretFile secretFileName distributionFilePath@(Path.DistributionFilePath { directoryPath }) fileType = do
+  Write.ensureDir (Path.distributionDirectoryPathToDirectoryPath directoryPath)
+  copyFile
+    { src: append "../secret/" (NonEmptyString.toString secretFileName)
     , dist: NonEmptyString.toString (Path.distributionFilePathToString distributionFilePath fileType)
     }
 

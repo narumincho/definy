@@ -14,7 +14,6 @@ import Effect.Console as Console
 import FileSystem.Copy as FileSystemCopy
 import FileSystem.FileType as FileType
 import FileSystem.Path as Path
-import FileSystem.Read as FileSyFileSystemRead
 import FileSystem.Write as FileSystemWrite
 import PackageJson as PackageJson
 import PureScript.Data as PureScriptData
@@ -132,18 +131,10 @@ mainAff =
 writePackageJson :: Aff.Aff Unit
 writePackageJson = do
   rootPackageJsonResult <-
-    FileSyFileSystemRead.readJsonFile
-      ( Path.FilePath
-          { directoryPath: Path.DirectoryPath []
-          , fileName:
-              NonEmptyString.nes
-                (Proxy.Proxy :: Proxy.Proxy "package")
-          , fileType: Maybe.Just FileType.Json
-          }
-      )
+    PackageJson.readPackageVersionFromRootPackageJson usingPackageInGen
   case rootPackageJsonResult of
     Either.Left error -> ConsoleValue.logValueAsAff "jsonの parse エラー!" { error }
-    Either.Right rootPackageJson -> case generatePackageJson (PackageJson.fromJson rootPackageJson) of
+    Either.Right dependencies -> case generatePackageJson dependencies of
       Maybe.Just packageJson ->
         FileSystemWrite.writeJson
           ( Path.DistributionFilePath
@@ -167,20 +158,15 @@ usingPackageInGen =
         (Proxy.Proxy :: Proxy.Proxy "sha256-uint8array")
     )
 
-generatePackageJson :: PackageJson.PackageJsonOutput -> Maybe.Maybe PackageJson.PackageJsonInput
-generatePackageJson rootPackageJson =
+generatePackageJson :: Map.Map NonEmptyString.NonEmptyString NonEmptyString.NonEmptyString -> Maybe.Maybe PackageJson.PackageJsonInput
+generatePackageJson dependencies =
   map
     ( \name ->
         PackageJson.PackageJsonInput
           { author:
               NonEmptyString.nes
                 (Proxy.Proxy :: Proxy.Proxy "narumincho")
-          , dependencies:
-              Map.filterKeys
-                ( \packageName ->
-                    Set.member packageName usingPackageInGen
-                )
-                (PackageJson.devDependencies rootPackageJson)
+          , dependencies: dependencies
           , description:
               NonEmptyString.nes
                 (Proxy.Proxy :: Proxy.Proxy "HTML, TypeScript, JavaScript, package.json, wasm Generator")
