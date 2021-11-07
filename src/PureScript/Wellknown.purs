@@ -9,6 +9,7 @@ module PureScript.Wellknown
   , call
   , variable
   , definition
+  , tag
   , pTypeWithArgument
   , pTypeFrom
   , PType
@@ -183,6 +184,9 @@ call (Expr function) (Expr argument) =
 
 variable :: forall t. { moduleName :: Data.ModuleName, name :: NonEmptyString.NonEmptyString } -> Expr t
 variable option = Expr (Data.Variable option)
+
+tag :: forall t. { moduleName :: Data.ModuleName, name :: NonEmptyString.NonEmptyString } -> Expr t
+tag option = Expr (Data.Tag option)
 
 definition ::
   forall t.

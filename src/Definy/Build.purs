@@ -1,6 +1,9 @@
 module Definy.Build (build) where
 
 import Prelude
+import Console as ConsoleValue
+import Data.Array.NonEmpty as NonEmptyArray
+import Data.Either as Either
 import Data.Map as Map
 import Data.Maybe as Maybe
 import Data.Set as Set
@@ -10,16 +13,17 @@ import Effect.Aff as Aff
 import FileSystem.Copy as FileSystemCopy
 import FileSystem.FileType as FileType
 import FileSystem.Path as Path
+import FileSystem.Write as FileSystemWrite
+import Firebase.SecurityRules as SecurityRules
 import PackageJson as PackageJson
+import PureScript.Data as PureScriptData
+import PureScript.Wellknown as PureScriptWellknown
 import StructuredUrl as StructuredUrl
 import Type.Proxy as Proxy
 import Util as Util
-import Data.Either as Either
-import Console as ConsoleValue
-import FileSystem.Write as FileSystemWrite
 
-build :: Mode.Mode -> Aff.Aff Unit
-build _ =
+build :: Mode.Mode -> NonEmptyString.NonEmptyString -> Aff.Aff Unit
+build mode origin =
   Util.toParallel
     [ FileSystemCopy.copySecretFile
         ( NonEmptyString.nes
@@ -34,14 +38,28 @@ build _ =
         )
         FileType.Json
     , writePackageJsonForFunctions
+    , outputNowModeAndOrigin mode origin
+    , writeFirestoreRules
+    , generateCloudStorageRules
     ]
+
+appName :: NonEmptyString.NonEmptyString
+appName =
+  NonEmptyString.nes
+    (Proxy.Proxy :: Proxy.Proxy "definy")
+
+rootDistributionDirectoryPath :: Path.DistributionDirectoryPath
+rootDistributionDirectoryPath =
+  Path.DistributionDirectoryPath
+    { appName: appName
+    , folderNameMaybe:
+        Maybe.Nothing
+    }
 
 functionsDistributionDirectoryPath :: Path.DistributionDirectoryPath
 functionsDistributionDirectoryPath =
   Path.DistributionDirectoryPath
-    { appName:
-        NonEmptyString.nes
-          (Proxy.Proxy :: Proxy.Proxy "definy")
+    { appName: appName
     , folderNameMaybe:
         Maybe.Just
           ( NonEmptyString.nes
@@ -132,3 +150,88 @@ generatePackageJson dependencies =
             (Proxy.Proxy :: Proxy.Proxy "definy-functions")
         )
     )
+
+definyModuleName :: NonEmptyString.NonEmptyString
+definyModuleName =
+  NonEmptyString.nes
+    (Proxy.Proxy :: Proxy.Proxy "Definy")
+
+outputNowModeAndOrigin :: Mode.Mode -> NonEmptyString.NonEmptyString -> Aff.Aff Unit
+outputNowModeAndOrigin mode _origin =
+  FileSystemWrite.writePureScript
+    ( PureScriptData.Module
+        { name:
+            PureScriptData.ModuleName
+              ( NonEmptyArray.cons' definyModuleName
+                  [ NonEmptyString.nes
+                      (Proxy.Proxy :: Proxy.Proxy "OriginAndVersion")
+                  ]
+              )
+        , definitionList:
+            [ PureScriptWellknown.definition
+                { name: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "nowMode")
+                , document: "実行モード (ビルド時にコード生成される)"
+                , pType:
+                    PureScriptWellknown.pTypeFrom
+                      { moduleName:
+                          PureScriptData.ModuleName
+                            ( NonEmptyArray.cons' definyModuleName
+                                [ NonEmptyString.nes
+                                    (Proxy.Proxy :: Proxy.Proxy "Mode")
+                                ]
+                            )
+                      , name: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "Mode")
+                      }
+                , expr:
+                    case mode of
+                      Mode.Develpment ->
+                        PureScriptWellknown.tag
+                          { moduleName:
+                              PureScriptData.ModuleName
+                                ( NonEmptyArray.cons' definyModuleName
+                                    [ NonEmptyString.nes
+                                        (Proxy.Proxy :: Proxy.Proxy "Mode")
+                                    ]
+                                )
+                          , name: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "Develpment")
+                          }
+                      Mode.Release ->
+                        PureScriptWellknown.tag
+                          { moduleName:
+                              PureScriptData.ModuleName
+                                ( NonEmptyArray.cons' definyModuleName
+                                    [ NonEmptyString.nes
+                                        (Proxy.Proxy :: Proxy.Proxy "Mode")
+                                    ]
+                                )
+                          , name: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "Release")
+                          }
+                , isExport: true
+                }
+            ]
+        }
+    )
+
+writeFirestoreRules :: Aff.Aff Unit
+writeFirestoreRules =
+  FileSystemWrite.writeFirebaseRules
+    ( Path.DistributionFilePath
+        { directoryPath: rootDistributionDirectoryPath
+        , fileName:
+            NonEmptyString.nes
+              (Proxy.Proxy :: Proxy.Proxy "firestore")
+        }
+    )
+    SecurityRules.allForbiddenFirestoreRule
+
+generateCloudStorageRules :: Aff.Aff Unit
+generateCloudStorageRules =
+  FileSystemWrite.writeFirebaseRules
+    ( Path.DistributionFilePath
+        { directoryPath: rootDistributionDirectoryPath
+        , fileName:
+            NonEmptyString.nes
+              (Proxy.Proxy :: Proxy.Proxy "storage")
+        }
+    )
+    SecurityRules.allForbiddenFirebaseStorageRule

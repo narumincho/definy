@@ -169,7 +169,6 @@ readEsbuildResultClientProgramFile = do
 writeCodeClientProgramHashValue :: NonEmptyString.NonEmptyString -> Aff.Aff Unit
 writeCodeClientProgramHashValue fileHashValue =
   FileSystemWrite.writePureScript
-    srcDirectoryPath
     ( PureScriptData.Module
         { name:
             PureScriptData.ModuleName
@@ -281,7 +280,7 @@ writeFirebaseJson staticFileDataList clientProgramHashValue = do
   Console.logValueAsAff "firebase.json の書き込みに成功!" {}
 
 originCodeGen :: Aff.Aff Prelude.Unit
-originCodeGen = FileSystemWrite.writePureScript srcDirectoryPath originPureScriptModule
+originCodeGen = FileSystemWrite.writePureScript originPureScriptModule
 
 staticResourceBuild :: Aff.Aff (Array StaticResourceFile.StaticResourceFileResult)
 staticResourceBuild = do
@@ -315,7 +314,6 @@ copyStaticResouece resultList =
 staticResourceCodeGen :: Array StaticResourceFile.StaticResourceFileResult -> Aff.Aff Prelude.Unit
 staticResourceCodeGen resultList =
   FileSystemWrite.writePureScript
-    srcDirectoryPath
     (staticFileResultToPureScriptModule resultList)
 
 staticFileResultToPureScriptModule :: Array StaticResourceFile.StaticResourceFileResult -> PureScriptData.Module
@@ -393,11 +391,6 @@ staticResourceModuleName =
             (Proxy.Proxy :: Proxy.Proxy "StaticResource")
         ]
     )
-
-srcDirectoryPath :: Path.DirectoryPath
-srcDirectoryPath =
-  Path.DirectoryPath
-    [ NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "src") ]
 
 originPureScriptModule :: PureScriptData.Module
 originPureScriptModule =

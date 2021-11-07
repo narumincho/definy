@@ -48,6 +48,7 @@ data ExprData
   | CharLiteral Char
   | ArrayLiteral (Array ExprData)
   | TypeAnnotation { expr :: ExprData, pType :: TypeData }
+  | Tag { moduleName :: ModuleName, name :: NonEmptyString.NonEmptyString }
 
 moduleNameAsStringNonEmptyArray :: Module -> NonEmptyArray.NonEmptyArray NonEmptyString.NonEmptyString
 moduleNameAsStringNonEmptyArray (Module { name: ModuleName name }) = name
