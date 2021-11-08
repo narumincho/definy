@@ -10,11 +10,13 @@ import Data.Set as Set
 import Data.String.NonEmpty as NonEmptyString
 import Definy.Mode as Mode
 import Effect.Aff as Aff
+import Effect.Class as EffectClass
 import FileSystem.Copy as FileSystemCopy
 import FileSystem.FileType as FileType
 import FileSystem.Path as Path
 import FileSystem.Write as FileSystemWrite
 import Firebase.SecurityRules as SecurityRules
+import Node.Process as Process
 import PackageJson as PackageJson
 import PureScript.Data as PureScriptData
 import PureScript.Wellknown as PureScriptWellknown
@@ -156,9 +158,33 @@ definyModuleName =
   NonEmptyString.nes
     (Proxy.Proxy :: Proxy.Proxy "Definy")
 
+definyModeModuleName :: PureScriptData.ModuleName
+definyModeModuleName =
+  PureScriptData.ModuleName
+    ( NonEmptyArray.cons' definyModuleName
+        [ NonEmptyString.nes
+            (Proxy.Proxy :: Proxy.Proxy "Mode")
+        ]
+    )
+
+definyVersionModuleName :: PureScriptData.ModuleName
+definyVersionModuleName =
+  PureScriptData.ModuleName
+    ( NonEmptyArray.cons' definyModuleName
+        [ NonEmptyString.nes
+            (Proxy.Proxy :: Proxy.Proxy "Version")
+        ]
+    )
+
 outputNowModeAndOrigin :: Mode.Mode -> NonEmptyString.NonEmptyString -> Aff.Aff Unit
-outputNowModeAndOrigin mode _origin =
-  FileSystemWrite.writePureScript
+outputNowModeAndOrigin mode origin = do
+  pureScriptModule <- generateNowModeAndOriginPureScriptModule mode origin
+  FileSystemWrite.writePureScript pureScriptModule
+
+generateNowModeAndOriginPureScriptModule :: Mode.Mode -> NonEmptyString.NonEmptyString -> Aff.Aff PureScriptData.Module
+generateNowModeAndOriginPureScriptModule mode origin = do
+  versionDefinition <- versionDefinitionAff mode
+  pure
     ( PureScriptData.Module
         { name:
             PureScriptData.ModuleName
@@ -173,43 +199,83 @@ outputNowModeAndOrigin mode _origin =
                 , document: "実行モード (ビルド時にコード生成される)"
                 , pType:
                     PureScriptWellknown.pTypeFrom
-                      { moduleName:
-                          PureScriptData.ModuleName
-                            ( NonEmptyArray.cons' definyModuleName
-                                [ NonEmptyString.nes
-                                    (Proxy.Proxy :: Proxy.Proxy "Mode")
-                                ]
-                            )
+                      { moduleName: definyModeModuleName
                       , name: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "Mode")
                       }
                 , expr:
                     case mode of
                       Mode.Develpment ->
                         PureScriptWellknown.tag
-                          { moduleName:
-                              PureScriptData.ModuleName
-                                ( NonEmptyArray.cons' definyModuleName
-                                    [ NonEmptyString.nes
-                                        (Proxy.Proxy :: Proxy.Proxy "Mode")
-                                    ]
-                                )
+                          { moduleName: definyModeModuleName
                           , name: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "Develpment")
                           }
                       Mode.Release ->
                         PureScriptWellknown.tag
-                          { moduleName:
-                              PureScriptData.ModuleName
-                                ( NonEmptyArray.cons' definyModuleName
-                                    [ NonEmptyString.nes
-                                        (Proxy.Proxy :: Proxy.Proxy "Mode")
-                                    ]
-                                )
+                          { moduleName: definyModeModuleName
                           , name: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "Release")
                           }
                 , isExport: true
                 }
+            , PureScriptWellknown.definition
+                { name: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "origin")
+                , document: "オリジン (ビルド時にコード生成される)"
+                , pType: PureScriptWellknown.nonEmptyString
+                , expr: PureScriptWellknown.nonEmptyStringLiteral origin
+                , isExport: true
+                }
+            , versionDefinition
             ]
         }
+    )
+
+versionDefinitionAff :: Mode.Mode -> Aff.Aff PureScriptData.Definition
+versionDefinitionAff = case _ of
+  Mode.Develpment ->
+    pure
+      ( PureScriptWellknown.definition
+          { name: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "version")
+          , document: "バージョン名 (ビルド時にコード生成される)"
+          , pType:
+              PureScriptWellknown.nonEmptyString
+          , expr:
+              PureScriptWellknown.tag
+                { moduleName: definyVersionModuleName
+                , name: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "Develpment")
+                }
+          , isExport: true
+          }
+      )
+  Mode.Release -> do
+    githubSha <- readGithubSha
+    pure
+      ( PureScriptWellknown.definition
+          { name: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "version")
+          , document: "バージョン名 (ビルド時にコード生成される)"
+          , pType:
+              PureScriptWellknown.nonEmptyString
+          , expr:
+              PureScriptWellknown.call
+                ( PureScriptWellknown.tag
+                    { moduleName: definyVersionModuleName
+                    , name: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "Release")
+                    }
+                )
+                (PureScriptWellknown.nonEmptyStringLiteral githubSha)
+          , isExport: true
+          }
+      )
+
+readGithubSha :: Aff.Aff NonEmptyString.NonEmptyString
+readGithubSha =
+  EffectClass.liftEffect
+    ( map
+        ( case _ of
+            Maybe.Just githubShaValue -> case NonEmptyString.fromString githubShaValue of
+              Maybe.Just githubShaAsNonEmptyString -> githubShaAsNonEmptyString
+              Maybe.Nothing -> NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "GITHUB_SHA is empty")
+            Maybe.Nothing -> NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "can not read GITHUB_SHA")
+        )
+        (Process.lookupEnv "GITHUB_SHA")
     )
 
 writeFirestoreRules :: Aff.Aff Unit
