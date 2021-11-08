@@ -74,7 +74,7 @@ moduleNameCode (Data.Module { name, definitionList }) =
   String.joinWith ""
     [ "module "
     , NonEmptyString.toString (moduleNameToString name)
-    , "("
+    , " ("
     , String.joinWith ", " (collectExportDefinition definitionList)
     , ") where"
     ]
