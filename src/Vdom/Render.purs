@@ -1,4 +1,4 @@
-module Vdom.Render (renderView) where
+module Vdom.Render where
 
 import Prelude
 import Data.UInt as UInt

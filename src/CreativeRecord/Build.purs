@@ -18,7 +18,6 @@ import FileSystem.FileType as FileType
 import FileSystem.Path as Path
 import FileSystem.Read as FileSystemRead
 import FileSystem.Write as FileSystemWrite
-import Firebase.FirebaseJson as FirebaesJson
 import Firebase.FirebaseJson as FirebaseJson
 import Firebase.SecurityRules as SecurityRules
 import Hash as Hash
@@ -234,7 +233,13 @@ writeFirebaseJson staticFileDataList clientProgramHashValue = do
                   , storagePortNumber: Maybe.Just (UInt.fromInt 9199)
                   }
             , firestoreRulesFilePath: firestoreSecurityRulesFilePath
-            , functions: Maybe.Nothing
+            , functions:
+                Maybe.Just
+                  ( FirebaseJson.FunctionsSetting
+                      { emulatorsPortNumber: UInt.fromInt 1242
+                      , distributionPath: functionsDirectoryPath
+                      }
+                  )
             , hostingDistributionPath: hostingDirectoryPath
             , hostingRewites:
                 [ FirebaseJson.Rewrite
@@ -244,7 +249,7 @@ writeFirebaseJson staticFileDataList clientProgramHashValue = do
                 ]
             , hostingHeaders:
                 Array.cons
-                  ( FirebaesJson.SourceAndHeaders
+                  ( FirebaseJson.SourceAndHeaders
                       { source: clientProgramHashValue
                       , headers:
                           [ FirebaseJson.Header
@@ -257,7 +262,7 @@ writeFirebaseJson staticFileDataList clientProgramHashValue = do
                   ( map
                       ( \( StaticResourceFile.StaticResourceFileResult { requestPathAndUploadFileName, mediaTypeMaybe }
                         ) ->
-                          ( FirebaesJson.SourceAndHeaders
+                          ( FirebaseJson.SourceAndHeaders
                               { source: requestPathAndUploadFileName
                               , headers:
                                   [ FirebaseJson.Header

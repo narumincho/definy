@@ -15,6 +15,6 @@ origin :: M0.NonEmptyString
 origin = (M0.nes) (M3.Proxy :: (M3.Proxy) ("http://localhost:2520"))
 
 -- | バージョン名 (ビルド時にコード生成される)
-version :: M0.NonEmptyString
-version = M2.Develpment
+version :: M2.Version
+version = M2.Development
 

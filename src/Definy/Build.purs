@@ -8,6 +8,7 @@ import Data.Map as Map
 import Data.Maybe as Maybe
 import Data.Set as Set
 import Data.String.NonEmpty as NonEmptyString
+import Data.UInt as UInt
 import Definy.Mode as Mode
 import Effect.Aff as Aff
 import Effect.Class as EffectClass
@@ -15,6 +16,7 @@ import FileSystem.Copy as FileSystemCopy
 import FileSystem.FileType as FileType
 import FileSystem.Path as Path
 import FileSystem.Write as FileSystemWrite
+import Firebase.FirebaseJson as FirebaseJson
 import Firebase.SecurityRules as SecurityRules
 import Node.Process as Process
 import PackageJson as PackageJson
@@ -43,6 +45,7 @@ build mode origin =
     , outputNowModeAndOrigin mode origin
     , writeFirestoreRules
     , generateCloudStorageRules
+    , writeFirebaseJson mode
     ]
 
 appName :: NonEmptyString.NonEmptyString
@@ -66,6 +69,17 @@ functionsDistributionDirectoryPath =
         Maybe.Just
           ( NonEmptyString.nes
               (Proxy.Proxy :: Proxy.Proxy "functions")
+          )
+    }
+
+hostingDistributionPath :: Path.DistributionDirectoryPath
+hostingDistributionPath =
+  Path.DistributionDirectoryPath
+    { appName: appName
+    , folderNameMaybe:
+        Maybe.Just
+          ( NonEmptyString.nes
+              (Proxy.Proxy :: Proxy.Proxy "hosting")
           )
     }
 
@@ -130,8 +144,7 @@ generatePackageJson dependencies =
           , homepage:
               StructuredUrl.StructuredUrl
                 { origin:
-                    NonEmptyString.nes
-                      (Proxy.Proxy :: Proxy.Proxy "https://github.com")
+                    NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "https://github.com")
                 , pathAndSearchParams:
                     StructuredUrl.fromPath
                       [ NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "narumincho")
@@ -236,11 +249,14 @@ versionDefinitionAff = case _ of
           { name: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "version")
           , document: "バージョン名 (ビルド時にコード生成される)"
           , pType:
-              PureScriptWellknown.nonEmptyString
+              PureScriptWellknown.pTypeFrom
+                { moduleName: definyVersionModuleName
+                , name: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "Version")
+                }
           , expr:
               PureScriptWellknown.tag
                 { moduleName: definyVersionModuleName
-                , name: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "Develpment")
+                , name: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "Development")
                 }
           , isExport: true
           }
@@ -278,26 +294,63 @@ readGithubSha =
         (Process.lookupEnv "GITHUB_SHA")
     )
 
+firestoreSecurityRulesFilePath :: Path.DistributionFilePath
+firestoreSecurityRulesFilePath =
+  Path.DistributionFilePath
+    { directoryPath: rootDistributionDirectoryPath
+    , fileName:
+        NonEmptyString.nes
+          (Proxy.Proxy :: Proxy.Proxy "firestore")
+    }
+
 writeFirestoreRules :: Aff.Aff Unit
 writeFirestoreRules =
   FileSystemWrite.writeFirebaseRules
-    ( Path.DistributionFilePath
-        { directoryPath: rootDistributionDirectoryPath
-        , fileName:
-            NonEmptyString.nes
-              (Proxy.Proxy :: Proxy.Proxy "firestore")
-        }
-    )
+    firestoreSecurityRulesFilePath
     SecurityRules.allForbiddenFirestoreRule
+
+cloudStorageSecurityRulesFilePath :: Path.DistributionFilePath
+cloudStorageSecurityRulesFilePath =
+  Path.DistributionFilePath
+    { directoryPath: rootDistributionDirectoryPath
+    , fileName:
+        NonEmptyString.nes
+          (Proxy.Proxy :: Proxy.Proxy "storage")
+    }
 
 generateCloudStorageRules :: Aff.Aff Unit
 generateCloudStorageRules =
   FileSystemWrite.writeFirebaseRules
+    cloudStorageSecurityRulesFilePath
+    SecurityRules.allForbiddenFirebaseStorageRule
+
+writeFirebaseJson :: Mode.Mode -> Aff.Aff Unit
+writeFirebaseJson _mode = do
+  FileSystemWrite.writeJson
     ( Path.DistributionFilePath
-        { directoryPath: rootDistributionDirectoryPath
-        , fileName:
-            NonEmptyString.nes
-              (Proxy.Proxy :: Proxy.Proxy "storage")
+        { directoryPath: Path.DistributionDirectoryPath { appName, folderNameMaybe: Maybe.Nothing }
+        , fileName: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "firebase")
         }
     )
-    SecurityRules.allForbiddenFirebaseStorageRule
+    ( FirebaseJson.toJson
+        ( FirebaseJson.FirebaseJson
+            { cloudStorageRulesFilePath: cloudStorageSecurityRulesFilePath
+            , emulators:
+                FirebaseJson.Emulators
+                  { firestorePortNumber: Maybe.Just (UInt.fromInt 8080)
+                  , hostingPortNumber: Maybe.Just (UInt.fromInt 2520)
+                  , storagePortNumber: Maybe.Just (UInt.fromInt 9199)
+                  }
+            , firestoreRulesFilePath: firestoreSecurityRulesFilePath
+            , functions: Maybe.Nothing
+            , hostingDistributionPath: hostingDistributionPath
+            , hostingRewites:
+                [ FirebaseJson.Rewrite
+                    { source: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "**")
+                    , function: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "html")
+                    }
+                ]
+            , hostingHeaders: []
+            }
+        )
+    )

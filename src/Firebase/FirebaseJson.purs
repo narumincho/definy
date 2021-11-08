@@ -3,7 +3,7 @@ module Firebase.FirebaseJson
   , Rewrite(..)
   , Emulators(..)
   , toJson
-  , FunctionsSetting
+  , FunctionsSetting(..)
   , SourceAndHeaders(..)
   , Header(..)
   ) where
