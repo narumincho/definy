@@ -169,11 +169,10 @@ readPackageVersionFromRootPackageJson usingPackageNameSet = do
       ( Path.FilePath
           { directoryPath: Path.DirectoryPath []
           , fileName:
-              NonEmptyString.nes
-                (Proxy.Proxy :: Proxy.Proxy "package")
-          , fileType: Maybe.Just FileType.Json
+              NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "package")
           }
       )
+      FileType.Json
   pure
     ( map
         ( \rootPackageJson ->

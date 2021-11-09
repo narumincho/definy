@@ -1,14 +1,15 @@
-module EsBuild (buildJs, Option) where
+module EsBuild (buildJs, buildTsx, Option) where
 
+import Data.Maybe as Maybe
 import Data.String.NonEmpty as NonEmptyString
 import Effect.Aff as Aff
 import Effect.Aff.Compat as AffCompat
-import FileSystem.Path as Path
 import FileSystem.FileType as FileType
+import FileSystem.Path as Path
 import Prelude as Prelude
 
 type Option
-  = { entryPoints :: Path.DistributionFilePath
+  = { entryPoints :: Path.FilePath
     , outdir :: Path.DistributionDirectoryPath
     , sourcemap :: Boolean
     , target :: Array String
@@ -26,12 +27,18 @@ foreign import buildAsEffectFnAff ::
   AffCompat.EffectFnAff Prelude.Unit
 
 buildJs :: Option -> Aff.Aff Prelude.Unit
-buildJs option =
+buildJs option = build FileType.JavaScript option
+
+buildTsx :: Option -> Aff.Aff Prelude.Unit
+buildTsx option = build FileType.TypeScriptReact option
+
+build :: FileType.FileType -> Option -> Aff.Aff Prelude.Unit
+build fileType option =
   AffCompat.fromEffectFnAff
     ( buildAsEffectFnAff
         { entryPoints:
             NonEmptyString.toString
-              (Path.distributionFilePathToString option.entryPoints FileType.JavaScript)
+              (Path.filePathToString option.entryPoints (Maybe.Just fileType))
         , outdir: NonEmptyString.toString (Path.distributionDirectoryPathToString option.outdir)
         , sourcemap: option.sourcemap
         , target: option.target

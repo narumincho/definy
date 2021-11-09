@@ -100,7 +100,7 @@ build = do
 mainBuild :: Aff.Aff Unit
 mainBuild = do
   (Tuple.Tuple staticFileData _) <- Tuple.Tuple <$> staticResourceBuild <*> originCodeGen
-  clinetProgramHashValue <- clientProgramAndFirebaseJsonBuild
+  clinetProgramHashValue <- clientProgramBuild
   Util.toParallel
     [ writeCodeClientProgramHashValueAndFunctionBuild clinetProgramHashValue
     , writeFirebaseJson staticFileData clinetProgramHashValue
@@ -112,8 +112,8 @@ writeCodeClientProgramHashValueAndFunctionBuild clinetProgramHashValue = do
   writeCodeClientProgramHashValue clinetProgramHashValue
   runSpagoForFunctions
 
-clientProgramAndFirebaseJsonBuild :: Aff.Aff NonEmptyString.NonEmptyString
-clientProgramAndFirebaseJsonBuild = do
+clientProgramBuild :: Aff.Aff NonEmptyString.NonEmptyString
+clientProgramBuild = do
   runSpagoBundleAppAndLog
   runEsbuild
   fileHashValue <- readEsbuildResultClientProgramFile
@@ -136,7 +136,7 @@ runSpagoBundleAppAndLog = do
 runEsbuild :: Aff.Aff Unit
 runEsbuild = do
   EsBuild.buildJs
-    { entryPoints: firstClientProgramFilePath
+    { entryPoints: Path.distributionFilePathToFilePath firstClientProgramFilePath
     , outdir: esbuildClientProgramFileDirectoryPath
     , sourcemap: false
     , target: [ "chrome94", "firefox93", "safari15" ]
@@ -303,9 +303,10 @@ copyStaticResouece :: Array StaticResourceFile.StaticResourceFileResult -> Aff.A
 copyStaticResouece resultList =
   Util.toParallel
     ( map
-        ( \(StaticResourceFile.StaticResourceFileResult { originalFilePath, requestPathAndUploadFileName }) ->
+        ( \(StaticResourceFile.StaticResourceFileResult { originalFilePath, fileType, requestPathAndUploadFileName }) ->
             FileSystemCopy.copyFileToDistributionWithoutExtensiton
               originalFilePath
+              fileType
               ( Path.DistributionFilePath
                   { directoryPath: hostingDirectoryPath
                   , fileName: requestPathAndUploadFileName

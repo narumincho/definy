@@ -14,6 +14,7 @@ import Data.Either as Either
 import Data.Maybe as Maybe
 import Data.String as String
 import Data.String.NonEmpty as NonEmptyString
+import Data.Tuple as Tuple
 import Effect.Aff as Aff
 import Effect.Aff.Compat as AffCompat
 import Effect.Class as EffectClass
@@ -31,26 +32,28 @@ readTextFileInDistribution distributionFilePath fileType = do
   EffectClass.liftEffect (Buffer.toString Encoding.UTF8 buffer)
 
 -- | ファイルを文字列として読み取る
-readTextFile :: Path.FilePath -> Aff.Aff String
-readTextFile filePath =
+readTextFile :: Path.FilePath -> FileType.FileType -> Aff.Aff String
+readTextFile filePath fileType =
   bind
-    (Fs.readFile (NonEmptyString.toString (Path.filePathToString filePath)))
+    (Fs.readFile (NonEmptyString.toString (Path.filePathToString filePath (Maybe.Just fileType))))
     (\buffer -> EffectClass.liftEffect (Buffer.toString Encoding.UTF8 buffer))
 
 -- | ファイルをバイナリとして読み取る
-readBinaryFile :: Path.FilePath -> Aff.Aff Buffer.Buffer
-readBinaryFile filePath = Fs.readFile (NonEmptyString.toString (Path.filePathToString filePath))
+readBinaryFile :: Path.FilePath -> Maybe.Maybe FileType.FileType -> Aff.Aff Buffer.Buffer
+readBinaryFile filePath fileTypeMaybe =
+  Fs.readFile
+    (NonEmptyString.toString (Path.filePathToString filePath fileTypeMaybe))
 
 -- | ファイルを json として読み取る
-readJsonFile :: Path.FilePath -> Aff.Aff (Either.Either String ArgonautCore.Json)
-readJsonFile filePath = do
-  text <- readTextFile filePath
+readJsonFile :: Path.FilePath -> FileType.FileType -> Aff.Aff (Either.Either String ArgonautCore.Json)
+readJsonFile filePath fileType = do
+  text <- readTextFile filePath fileType
   pure (ArgonautParser.jsonParser text)
 
 -- | ディレクトリ内に含まれるファイルのパスを取得する.
 -- |
 -- | 再帰的には調べず, ディレクトリ内のディレクトリは無視する.
-readFilePathInDirectory :: Path.DirectoryPath -> Aff.Aff (Array Path.FilePath)
+readFilePathInDirectory :: Path.DirectoryPath -> Aff.Aff (Array (Tuple.Tuple Path.FilePath (Maybe.Maybe FileType.FileType)))
 readFilePathInDirectory directoryPath =
   let
     dirPath = NonEmptyString.toString (Path.directoryPathToString directoryPath)
@@ -73,17 +76,19 @@ readFilePathInDirectory directoryPath =
         )
       pure result
 
-direntToFilePath :: Path.DirectoryPath -> Dirent -> Maybe.Maybe Path.FilePath
+direntToFilePath :: Path.DirectoryPath -> Dirent -> Maybe.Maybe (Tuple.Tuple Path.FilePath (Maybe.Maybe FileType.FileType))
 direntToFilePath directoryPath dirent =
   if dirent.isFile then case NonEmptyString.fromString dirent.name of
     Maybe.Just direntName -> case Path.fileNameWithExtensitonParse direntName of
       Maybe.Just parseResult ->
         Maybe.Just
-          ( Path.FilePath
-              { directoryPath
-              , fileName: parseResult.fileName
-              , fileType: parseResult.fileType
-              }
+          ( Tuple.Tuple
+              ( Path.FilePath
+                  { directoryPath
+                  , fileName: parseResult.fileName
+                  }
+              )
+              parseResult.fileType
           )
       Maybe.Nothing -> Maybe.Nothing
     Maybe.Nothing -> Maybe.Nothing

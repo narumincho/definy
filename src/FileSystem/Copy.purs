@@ -7,6 +7,7 @@ module FileSystem.Copy
 import Prelude
 import Console as Console
 import Data.String.NonEmpty as NonEmptyString
+import Data.Maybe as Maybe
 import Effect.Aff as Aff
 import Effect.Aff.Compat as AffCompat
 import FileSystem.FileType as FileType
@@ -15,20 +16,20 @@ import FileSystem.Write as Write
 
 -- | ファイルをコピーする.
 -- | コピー先ファイル名は拡張子なしになる
-copyFileToDistributionWithoutExtensiton :: Path.FilePath -> Path.DistributionFilePath -> Aff.Aff Unit
-copyFileToDistributionWithoutExtensiton filePath distributionFilePath@(Path.DistributionFilePath { directoryPath }) = do
+copyFileToDistributionWithoutExtensiton :: Path.FilePath -> Maybe.Maybe FileType.FileType -> Path.DistributionFilePath -> Aff.Aff Unit
+copyFileToDistributionWithoutExtensiton filePath fileTypeMaybe distributionFilePath@(Path.DistributionFilePath { directoryPath }) = do
   Write.ensureDir (Path.distributionDirectoryPathToDirectoryPath directoryPath)
   copyFile
-    { src: NonEmptyString.toString (Path.filePathToString filePath)
+    { src: NonEmptyString.toString (Path.filePathToString filePath fileTypeMaybe)
     , dist: NonEmptyString.toString (Path.distributionFilePathToStringWithoutExtensiton distributionFilePath)
     }
 
 -- | ファイルをコピーする
-copyFileToDistribution :: Path.FilePath -> Path.DistributionFilePath -> FileType.FileType -> Aff.Aff Unit
-copyFileToDistribution filePath distributionFilePath@(Path.DistributionFilePath { directoryPath }) fileType = do
+copyFileToDistribution :: Path.FilePath -> Maybe.Maybe FileType.FileType -> Path.DistributionFilePath -> FileType.FileType -> Aff.Aff Unit
+copyFileToDistribution filePath fileTypeMaybe distributionFilePath@(Path.DistributionFilePath { directoryPath }) fileType = do
   Write.ensureDir (Path.distributionDirectoryPathToDirectoryPath directoryPath)
   copyFile
-    { src: NonEmptyString.toString (Path.filePathToString filePath)
+    { src: NonEmptyString.toString (Path.filePathToString filePath fileTypeMaybe)
     , dist: NonEmptyString.toString (Path.distributionFilePathToString distributionFilePath fileType)
     }
 

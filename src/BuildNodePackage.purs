@@ -45,14 +45,13 @@ appName = NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "npm-package")
 mainAff :: Aff.Aff Unit
 mainAff =
   Util.toParallel
-    [ Tsc.compile
+    [ Tsc.compileTs
         { rootName:
             Path.FilePath
               { directoryPath: genDirectoryPath
               , fileName:
                   NonEmptyString.nes
                     (Proxy.Proxy :: Proxy.Proxy "main")
-              , fileType: Maybe.Just FileType.TypeScript
               }
         , outDir:
             Path.DistributionDirectoryPath
@@ -88,11 +87,10 @@ mainAff =
         ( Path.FilePath
             { directoryPath: genDirectoryPath
             , fileName:
-                NonEmptyString.nes
-                  (Proxy.Proxy :: Proxy.Proxy "README")
-            , fileType: Maybe.Just FileType.Markdown
+                NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "README")
             }
         )
+        (Maybe.Just FileType.Markdown)
         ( Path.DistributionFilePath
             { directoryPath:
                 Path.DistributionDirectoryPath
@@ -111,9 +109,9 @@ mainAff =
             , fileName:
                 NonEmptyString.nes
                   (Proxy.Proxy :: Proxy.Proxy "LICENCE")
-            , fileType: Maybe.Nothing
             }
         )
+        Maybe.Nothing
         ( Path.DistributionFilePath
             { directoryPath:
                 Path.DistributionDirectoryPath

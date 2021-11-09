@@ -1,32 +1,36 @@
 module Definy.Build (build) where
 
 import Prelude
+import Console as Console
 import Console as ConsoleValue
-import Data.Tuple as Tuple
 import Data.Array.NonEmpty as NonEmptyArray
 import Data.Either as Either
 import Data.Map as Map
 import Data.Maybe as Maybe
 import Data.Set as Set
 import Data.String.NonEmpty as NonEmptyString
+import Data.Tuple as Tuple
 import Data.UInt as UInt
 import Definy.Mode as Mode
 import Effect.Aff as Aff
 import Effect.Class as EffectClass
+import EsBuild as EsBuild
 import FileSystem.Copy as FileSystemCopy
 import FileSystem.FileType as FileType
 import FileSystem.Path as Path
+import FileSystem.Read as FileSystemRead
 import FileSystem.Write as FileSystemWrite
 import Firebase.FirebaseJson as FirebaseJson
 import Firebase.SecurityRules as SecurityRules
+import Hash as Hash
 import Node.Process as Process
 import PackageJson as PackageJson
 import PureScript.Data as PureScriptData
 import PureScript.Wellknown as PureScriptWellknown
+import StaticResourceFile as StaticResourceFile
 import StructuredUrl as StructuredUrl
 import Type.Proxy as Proxy
 import Util as Util
-import StaticResourceFile as StaticResourceFile
 
 build :: Mode.Mode -> NonEmptyString.NonEmptyString -> Aff.Aff Unit
 build mode origin =
@@ -53,6 +57,7 @@ build mode origin =
 codeGenAndBuildClientAndFunctionsScript :: Mode.Mode -> NonEmptyString.NonEmptyString -> Aff.Aff Unit
 codeGenAndBuildClientAndFunctionsScript mode origin = do
   (Tuple.Tuple _ _) <- Tuple.Tuple <$> staticResourceBuild <*> (outputNowModeAndOrigin mode origin)
+  _ <- clientProgramBuild
   pure unit
 
 appName :: NonEmptyString.NonEmptyString
@@ -87,6 +92,17 @@ hostingDistributionPath =
         Maybe.Just
           ( NonEmptyString.nes
               (Proxy.Proxy :: Proxy.Proxy "hosting")
+          )
+    }
+
+esbuildClientProgramFileDirectoryPath :: Path.DistributionDirectoryPath
+esbuildClientProgramFileDirectoryPath =
+  Path.DistributionDirectoryPath
+    { appName: appName
+    , folderNameMaybe:
+        Maybe.Just
+          ( NonEmptyString.nes
+              (Proxy.Proxy :: Proxy.Proxy "client-esbuild-result")
           )
     }
 
@@ -387,9 +403,10 @@ copyStaticResouece :: Array StaticResourceFile.StaticResourceFileResult -> Aff.A
 copyStaticResouece resultList =
   Util.toParallel
     ( map
-        ( \(StaticResourceFile.StaticResourceFileResult { originalFilePath, requestPathAndUploadFileName }) ->
+        ( \(StaticResourceFile.StaticResourceFileResult { originalFilePath, fileType, requestPathAndUploadFileName }) ->
             FileSystemCopy.copyFileToDistributionWithoutExtensiton
               originalFilePath
+              fileType
               ( Path.DistributionFilePath
                   { directoryPath: hostingDistributionPath
                   , fileName: requestPathAndUploadFileName
@@ -403,3 +420,47 @@ staticResourceCodeGen :: Array StaticResourceFile.StaticResourceFileResult -> Af
 staticResourceCodeGen resultList =
   FileSystemWrite.writePureScript
     (StaticResourceFile.staticFileResultToPureScriptModule staticResourceModuleName resultList)
+
+clientProgramBuild :: Aff.Aff NonEmptyString.NonEmptyString
+clientProgramBuild = do
+  runEsbuild
+  fileHashValue <- readEsbuildResultClientProgramFile
+  Console.logValueAsAff "クライアント向けビルド完了!" { fileHashValue }
+  pure fileHashValue
+
+runEsbuild :: Aff.Aff Unit
+runEsbuild = do
+  EsBuild.buildTsx
+    { entryPoints:
+        Path.FilePath
+          { directoryPath:
+              Path.DirectoryPath
+                [ NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "client") ]
+          , fileName: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "main")
+          }
+    , outdir: esbuildClientProgramFileDirectoryPath
+    , sourcemap: false
+    , target: [ "chrome94", "firefox93", "safari15" ]
+    }
+  Console.logValueAsAff "esbuild でのビルドに成功!" {}
+
+readEsbuildResultClientProgramFile :: Aff.Aff NonEmptyString.NonEmptyString
+readEsbuildResultClientProgramFile = do
+  clientProgramAsString <-
+    FileSystemRead.readTextFileInDistribution
+      ( Path.DistributionFilePath
+          { directoryPath: esbuildClientProgramFileDirectoryPath
+          , fileName: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "main")
+          }
+      )
+      FileType.JavaScript
+  let
+    clientProgramHashValue = Hash.stringToSha256HashValue clientProgramAsString
+  FileSystemWrite.writeTextFileInDistribution
+    ( Path.DistributionFilePath
+        { directoryPath: hostingDistributionPath
+        , fileName: clientProgramHashValue
+        }
+    )
+    clientProgramAsString
+  pure clientProgramHashValue

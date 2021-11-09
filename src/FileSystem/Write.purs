@@ -71,9 +71,9 @@ writePureScript pModule =
             ( Path.FilePath
                 { directoryPath
                 , fileName: moduleNameAsNonEmptyArrayUnsnoced.last
-                , fileType: Maybe.Just FileType.PureScript
                 }
             )
+            (Maybe.Just FileType.PureScript)
         )
   in
     do

@@ -19,6 +19,7 @@ data FileType
   | TypeScript
   | PureScript
   | JavaScript
+  | TypeScriptReact
   | Html
   | Json
   | FirebaseSecurityRules
@@ -36,6 +37,7 @@ toExtension :: FileType -> NonEmptyString.NonEmptyString
 toExtension = case _ of
   Png -> NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "png")
   TypeScript -> NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "ts")
+  TypeScriptReact -> NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "tsx")
   JavaScript -> NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "js")
   Html -> NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "html")
   Json -> NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "json")
@@ -48,6 +50,7 @@ fromExtension :: String -> Maybe.Maybe FileType
 fromExtension = case _ of
   "png" -> Maybe.Just Png
   "ts" -> Maybe.Just TypeScript
+  "tsx" -> Maybe.Just TypeScriptReact
   "js" -> Maybe.Just JavaScript
   "html" -> Maybe.Just Html
   "json" -> Maybe.Just Json
@@ -61,6 +64,7 @@ toMediaType :: FileType -> Maybe.Maybe MediaType.MediaType
 toMediaType = case _ of
   Png -> Maybe.Just MediaType.Png
   TypeScript -> Maybe.Nothing
+  TypeScriptReact -> Maybe.Nothing
   JavaScript -> Maybe.Just MediaType.JavaScript
   Html -> Maybe.Just MediaType.Html
   Json -> Maybe.Just MediaType.Json

@@ -9,6 +9,7 @@ import Control.Parallel as Parallel
 import Data.Maybe as Maybe
 import Data.String as String
 import Data.String.NonEmpty as NonEmptyString
+import Data.Tuple as Tuple
 import Effect.Aff as Aff
 import Effect.Class as EffectClass
 import Effect.Console as Console
@@ -24,8 +25,9 @@ import PureScript.Wellknown as PureScriptWellknown
 newtype StaticResourceFileResult
   = StaticResourceFileResult
   { {- 
-      入力のファイル名. オリジナルのファイル名. 拡張子あり 
+      入力のファイル名. オリジナルのファイル名
     -} originalFilePath :: Path.FilePath
+  , fileType :: Maybe.Maybe FileType.FileType
   , fileId :: NonEmptyString.NonEmptyString
   {- 
     Firebase Hosting などにアップロードするファイル名. 拡張子は含まれない 
@@ -36,21 +38,20 @@ newtype StaticResourceFileResult
   }
 
 -- | 指定したファイルパスの SHA-256 のハッシュ値を取得する
-getFileHash :: Path.FilePath -> Aff.Aff NonEmptyString.NonEmptyString
-getFileHash filePath = do
+getFileHash :: Path.FilePath -> Maybe.Maybe FileType.FileType -> Aff.Aff NonEmptyString.NonEmptyString
+getFileHash filePath fileTypeMaybe = do
   EffectClass.liftEffect
     ( Console.log
         ( append
-            (NonEmptyString.toString (Path.filePathToString filePath))
+            (NonEmptyString.toString (Path.filePathToString filePath fileTypeMaybe))
             " のハッシュ値を取得中"
         )
     )
-  content <- FileSystemRead.readBinaryFile filePath
+  content <- FileSystemRead.readBinaryFile filePath fileTypeMaybe
   pure
     ( Hash.bufferAndMimeTypeToSha256HashValue
         { buffer: content
-        , mimeType:
-            show (Path.filePathGetFileType filePath)
+        , mimeType: show fileTypeMaybe
         }
     )
 
@@ -63,29 +64,27 @@ firstUppercase text = case String.uncons text of
 getStaticResourceFileResult :: Path.DirectoryPath -> Aff.Aff (Array StaticResourceFileResult)
 getStaticResourceFileResult directoryPath =
   let
-    filePathListAff :: Aff.Aff (Array Path.FilePath)
+    filePathListAff :: Aff.Aff (Array (Tuple.Tuple Path.FilePath (Maybe.Maybe FileType.FileType)))
     filePathListAff = FileSystemRead.readFilePathInDirectory directoryPath
   in
     do
       filePathList <- filePathListAff
       ( Parallel.parSequence
           ( map
-              ( \filePath ->
-                  filePathToStaticResourceFileResultAff filePath
+              ( \(Tuple.Tuple filePath fileTypeMaybe) ->
+                  filePathToStaticResourceFileResultAff filePath fileTypeMaybe
               )
               filePathList
           )
       )
 
-filePathToStaticResourceFileResultAff :: Path.FilePath -> Aff.Aff StaticResourceFileResult
-filePathToStaticResourceFileResultAff filePath = do
-  hashValue <- getFileHash filePath
-  let
-    fileTypeMaybe :: Maybe.Maybe FileType.FileType
-    fileTypeMaybe = Path.filePathGetFileType filePath
+filePathToStaticResourceFileResultAff :: Path.FilePath -> Maybe.Maybe FileType.FileType -> Aff.Aff StaticResourceFileResult
+filePathToStaticResourceFileResultAff filePath fileTypeMaybe = do
+  hashValue <- getFileHash filePath fileTypeMaybe
   pure
     ( StaticResourceFileResult
         { originalFilePath: filePath
+        , fileType: fileTypeMaybe
         , fileId:
             NonEmptyString.appendString (Path.filePathGetFileName filePath)
               ( case fileTypeMaybe of
@@ -116,7 +115,7 @@ staticResourceFileResultToPureScriptDefinition (StaticResourceFileResult record)
     , document:
         String.joinWith ""
           [ "static な ファイル の `"
-          , NonEmptyString.toString (Path.filePathToString record.originalFilePath)
+          , NonEmptyString.toString (Path.filePathToString record.originalFilePath record.fileType)
           , "` をリクエストするためのURL. ファイルのハッシュ値は `"
           , NonEmptyString.toString record.requestPathAndUploadFileName
           , "`(コード生成結果)"
