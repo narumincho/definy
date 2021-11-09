@@ -16,6 +16,7 @@ data MediaType
   | JavaScript
   | Html
   | Json
+  | WebOpenFontFormat2
 
 toMimeType :: Maybe.Maybe MediaType -> NonEmptyString.NonEmptyString
 toMimeType = case _ of
@@ -25,6 +26,9 @@ toMimeType = case _ of
   Maybe.Just Json ->
     NonEmptyString.nes
       (Proxy.Proxy :: Proxy.Proxy "application/json")
+  Maybe.Just WebOpenFontFormat2 ->
+    NonEmptyString.nes
+      (Proxy.Proxy :: Proxy.Proxy "font/woff2")
   Maybe.Nothing ->
     NonEmptyString.nes
       (Proxy.Proxy :: Proxy.Proxy "application/octet-stream")

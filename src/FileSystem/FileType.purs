@@ -23,6 +23,7 @@ data FileType
   | Json
   | FirebaseSecurityRules
   | Markdown
+  | WebOpenFontFormat2
 
 derive instance eqFileType :: Prelude.Eq FileType
 
@@ -41,6 +42,7 @@ toExtension = case _ of
   PureScript -> NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "purs")
   FirebaseSecurityRules -> NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "rules")
   Markdown -> NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "md")
+  WebOpenFontFormat2 -> NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "woff2")
 
 fromExtension :: String -> Maybe.Maybe FileType
 fromExtension = case _ of
@@ -52,6 +54,7 @@ fromExtension = case _ of
   "purs" -> Maybe.Just PureScript
   "rules" -> Maybe.Just FirebaseSecurityRules
   "md" -> Maybe.Just Markdown
+  "woff2" -> Maybe.Just WebOpenFontFormat2
   _ -> Maybe.Nothing
 
 toMediaType :: FileType -> Maybe.Maybe MediaType.MediaType
@@ -64,3 +67,4 @@ toMediaType = case _ of
   PureScript -> Maybe.Nothing
   FirebaseSecurityRules -> Maybe.Nothing
   Markdown -> Maybe.Nothing
+  WebOpenFontFormat2 -> Maybe.Just MediaType.WebOpenFontFormat2

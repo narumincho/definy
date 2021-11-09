@@ -7,7 +7,6 @@ import Data.Array as Array
 import Data.Array.NonEmpty as NonEmptyArray
 import Data.Map as Map
 import Data.Maybe as Maybe
-import Data.String as String
 import Data.String.NonEmpty as NonEmptyString
 import Data.Tuple as Tuple
 import Data.UInt as UInt
@@ -319,62 +318,7 @@ copyStaticResouece resultList =
 staticResourceCodeGen :: Array StaticResourceFile.StaticResourceFileResult -> Aff.Aff Prelude.Unit
 staticResourceCodeGen resultList =
   FileSystemWrite.writePureScript
-    (staticFileResultToPureScriptModule resultList)
-
-staticFileResultToPureScriptModule :: Array StaticResourceFile.StaticResourceFileResult -> PureScriptData.Module
-staticFileResultToPureScriptModule resultList =
-  PureScriptData.Module
-    { name: staticResourceModuleName
-    , definitionList:
-        Prelude.map
-          staticResourceFileResultToPureScriptDefinition
-          resultList
-    }
-
-staticResourceFileResultToPureScriptDefinition :: StaticResourceFile.StaticResourceFileResult -> PureScriptData.Definition
-staticResourceFileResultToPureScriptDefinition (StaticResourceFile.StaticResourceFileResult record) =
-  PureScriptWellknown.definition
-    { name: record.fileId
-    , document:
-        String.joinWith ""
-          [ "static な ファイル の `"
-          , NonEmptyString.toString (Path.filePathToString record.originalFilePath)
-          , "` をリクエストするためのURL. ファイルのハッシュ値は `"
-          , NonEmptyString.toString record.requestPathAndUploadFileName
-          , "`(コード生成結果)"
-          ]
-    , pType:
-        PureScriptWellknown.pTypeFrom
-          { moduleName:
-              PureScriptData.ModuleName
-                ( NonEmptyArray.singleton
-                    (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "StructuredUrl"))
-                )
-          , name: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "PathAndSearchParams")
-          }
-    , expr:
-        PureScriptWellknown.call
-          structuredUrlFromPath
-          ( PureScriptWellknown.arrayLiteral
-              [ PureScriptWellknown.nonEmptyStringLiteral
-                  record.requestPathAndUploadFileName
-              ]
-          )
-    , isExport: true
-    }
-
-structuredUrlFromPath :: PureScriptWellknown.Expr (Array NonEmptyString.NonEmptyString -> StructuredUrl.PathAndSearchParams)
-structuredUrlFromPath =
-  PureScriptWellknown.variable
-    { moduleName:
-        PureScriptData.ModuleName
-          ( NonEmptyArray.singleton
-              ( NonEmptyString.nes
-                  (Proxy.Proxy :: Proxy.Proxy "StructuredUrl")
-              )
-          )
-    , name: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "fromPath")
-    }
+    (StaticResourceFile.staticFileResultToPureScriptModule staticResourceModuleName resultList)
 
 creativeRecordModuleName :: NonEmptyString.NonEmptyString
 creativeRecordModuleName = NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "CreativeRecord")

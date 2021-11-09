@@ -2,6 +2,7 @@ module Definy.Build (build) where
 
 import Prelude
 import Console as ConsoleValue
+import Data.Tuple as Tuple
 import Data.Array.NonEmpty as NonEmptyArray
 import Data.Either as Either
 import Data.Map as Map
@@ -25,6 +26,7 @@ import PureScript.Wellknown as PureScriptWellknown
 import StructuredUrl as StructuredUrl
 import Type.Proxy as Proxy
 import Util as Util
+import StaticResourceFile as StaticResourceFile
 
 build :: Mode.Mode -> NonEmptyString.NonEmptyString -> Aff.Aff Unit
 build mode origin =
@@ -42,11 +44,16 @@ build mode origin =
         )
         FileType.Json
     , writePackageJsonForFunctions
-    , outputNowModeAndOrigin mode origin
+    , codeGenAndBuildClientAndFunctionsScript mode origin
     , writeFirestoreRules
     , generateCloudStorageRules
     , writeFirebaseJson mode
     ]
+
+codeGenAndBuildClientAndFunctionsScript :: Mode.Mode -> NonEmptyString.NonEmptyString -> Aff.Aff Unit
+codeGenAndBuildClientAndFunctionsScript mode origin = do
+  (Tuple.Tuple _ _) <- Tuple.Tuple <$> staticResourceBuild <*> (outputNowModeAndOrigin mode origin)
+  pure unit
 
 appName :: NonEmptyString.NonEmptyString
 appName =
@@ -186,6 +193,15 @@ definyVersionModuleName =
     ( NonEmptyArray.cons' definyModuleName
         [ NonEmptyString.nes
             (Proxy.Proxy :: Proxy.Proxy "Version")
+        ]
+    )
+
+staticResourceModuleName :: PureScriptData.ModuleName
+staticResourceModuleName =
+  PureScriptData.ModuleName
+    ( NonEmptyArray.cons' definyModuleName
+        [ NonEmptyString.nes
+            (Proxy.Proxy :: Proxy.Proxy "StaticResource")
         ]
     )
 
@@ -354,3 +370,36 @@ writeFirebaseJson _mode = do
             }
         )
     )
+
+staticResourceBuild :: Aff.Aff (Array StaticResourceFile.StaticResourceFileResult)
+staticResourceBuild = do
+  resultList <-
+    StaticResourceFile.getStaticResourceFileResult
+      ( Path.DirectoryPath
+          [ NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "static")
+          ]
+      )
+  copyStaticResouece resultList
+  staticResourceCodeGen resultList
+  pure resultList
+
+copyStaticResouece :: Array StaticResourceFile.StaticResourceFileResult -> Aff.Aff Unit
+copyStaticResouece resultList =
+  Util.toParallel
+    ( map
+        ( \(StaticResourceFile.StaticResourceFileResult { originalFilePath, requestPathAndUploadFileName }) ->
+            FileSystemCopy.copyFileToDistributionWithoutExtensiton
+              originalFilePath
+              ( Path.DistributionFilePath
+                  { directoryPath: hostingDistributionPath
+                  , fileName: requestPathAndUploadFileName
+                  }
+              )
+        )
+        resultList
+    )
+
+staticResourceCodeGen :: Array StaticResourceFile.StaticResourceFileResult -> Aff.Aff Unit
+staticResourceCodeGen resultList =
+  FileSystemWrite.writePureScript
+    (StaticResourceFile.staticFileResultToPureScriptModule staticResourceModuleName resultList)

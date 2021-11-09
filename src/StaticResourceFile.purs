@@ -1,4 +1,8 @@
-module StaticResourceFile (StaticResourceFileResult(..), getStaticResourceFileResult) where
+module StaticResourceFile
+  ( StaticResourceFileResult(..)
+  , getStaticResourceFileResult
+  , staticFileResultToPureScriptModule
+  ) where
 
 import Prelude
 import Control.Parallel as Parallel
@@ -13,6 +17,8 @@ import FileSystem.Path as Path
 import FileSystem.Read as FileSystemRead
 import Hash as Hash
 import MediaType as MediaType
+import PureScript.Data as PureScriptData
+import PureScript.Wellknown as PureScriptWellknown
 
 -- | static な ファイルの解析結果
 newtype StaticResourceFileResult
@@ -92,3 +98,37 @@ filePathToStaticResourceFileResultAff filePath = do
         , mediaTypeMaybe: bind fileTypeMaybe FileType.toMediaType
         }
     )
+
+staticFileResultToPureScriptModule :: PureScriptData.ModuleName -> Array StaticResourceFileResult -> PureScriptData.Module
+staticFileResultToPureScriptModule moduleName resultList =
+  PureScriptData.Module
+    { name: moduleName
+    , definitionList:
+        map
+          staticResourceFileResultToPureScriptDefinition
+          resultList
+    }
+
+staticResourceFileResultToPureScriptDefinition :: StaticResourceFileResult -> PureScriptData.Definition
+staticResourceFileResultToPureScriptDefinition (StaticResourceFileResult record) =
+  PureScriptWellknown.definition
+    { name: record.fileId
+    , document:
+        String.joinWith ""
+          [ "static な ファイル の `"
+          , NonEmptyString.toString (Path.filePathToString record.originalFilePath)
+          , "` をリクエストするためのURL. ファイルのハッシュ値は `"
+          , NonEmptyString.toString record.requestPathAndUploadFileName
+          , "`(コード生成結果)"
+          ]
+    , pType: PureScriptWellknown.structuredUrlPathAndSearchParams
+    , expr:
+        PureScriptWellknown.call
+          PureScriptWellknown.structuredUrlFromPath
+          ( PureScriptWellknown.arrayLiteral
+              [ PureScriptWellknown.nonEmptyStringLiteral
+                  record.requestPathAndUploadFileName
+              ]
+          )
+    , isExport: true
+    }
