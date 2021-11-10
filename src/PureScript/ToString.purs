@@ -74,7 +74,7 @@ moduleNameCode (Data.Module { name, definitionList }) =
   String.joinWith ""
     [ "module "
     , NonEmptyString.toString (moduleNameToString name)
-    , "("
+    , " ("
     , String.joinWith ", " (collectExportDefinition definitionList)
     , ") where"
     ]
@@ -120,6 +120,7 @@ collectInportModuleInExprData = case _ of
     Set.union
       (collectInportModuleInExprData expr)
       (collectInportModuleInType pType)
+  Data.Tag { moduleName } -> Set.singleton moduleName
 
 collectExportDefinition :: Array Data.Definition -> Array String
 collectExportDefinition list =
@@ -171,10 +172,9 @@ exprDataToString importedModuleQualifiedNameDict = case _ of
       , ")"
       ]
   Data.Variable { moduleName, name } ->
-    String.joinWith ""
-      [ moduleNameToStringSelfEmpty importedModuleQualifiedNameDict moduleName
-      , NonEmptyString.toString name
-      ]
+    Prelude.append
+      (moduleNameToStringSelfEmpty importedModuleQualifiedNameDict moduleName)
+      (NonEmptyString.toString name)
   Data.StringLiteral value -> stringToStringLiteral value
   Data.CharLiteral value ->
     String.joinWith ""
@@ -198,6 +198,10 @@ exprDataToString importedModuleQualifiedNameDict = case _ of
       , " :: "
       , typeToString importedModuleQualifiedNameDict pType
       ]
+  Data.Tag { moduleName, name } ->
+    Prelude.append
+      (moduleNameToStringSelfEmpty importedModuleQualifiedNameDict moduleName)
+      (NonEmptyString.toString name)
 
 stringToStringLiteral :: String -> String
 stringToStringLiteral value =

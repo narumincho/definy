@@ -15,13 +15,14 @@ import Effect.Aff as Aff
 import Effect.Aff.Compat as AffCompat
 import Effect.Class as EffectClass
 import Effect.Console as Console
-import FileSystem.Path as Path
 import FileSystem.FileType as FileType
+import FileSystem.Path as Path
 import Firebase.SecurityRules as FirebaseSecurityRules
 import Node.Encoding as Encoding
 import Node.FS.Aff as Fs
 import PureScript.Data as PureScriptData
 import PureScript.ToString as PureScriptToString
+import Type.Proxy as Proxy
 
 -- | distribution に ファイルを文字列として書き込む 拡張子はなし
 writeTextFileInDistribution :: Path.DistributionFilePath -> String -> Aff.Aff Unit
@@ -49,9 +50,14 @@ writeJson distributionFilePath json =
       Fs.writeTextFile Encoding.UTF8 filePath (ArgonautCore.stringify json)
       EffectClass.liftEffect (Console.log (append filePath " の書き込みに成功"))
 
+srcDirectoryPath :: Path.DirectoryPath
+srcDirectoryPath =
+  Path.DirectoryPath
+    [ NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "src") ]
+
 -- | PureScript をモジュール名をファイル名としてファイルに書く
-writePureScript :: Path.DirectoryPath -> PureScriptData.Module -> Aff.Aff Unit
-writePureScript srcDirectoryPath pModule =
+writePureScript :: PureScriptData.Module -> Aff.Aff Unit
+writePureScript pModule =
   let
     moduleNameAsNonEmptyArrayUnsnoced = ArrayNonEmpty.unsnoc (PureScriptData.moduleNameAsStringNonEmptyArray pModule)
 
@@ -65,9 +71,9 @@ writePureScript srcDirectoryPath pModule =
             ( Path.FilePath
                 { directoryPath
                 , fileName: moduleNameAsNonEmptyArrayUnsnoced.last
-                , fileType: Maybe.Just FileType.PureScript
                 }
             )
+            (Maybe.Just FileType.PureScript)
         )
   in
     do

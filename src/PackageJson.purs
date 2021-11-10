@@ -6,18 +6,26 @@ module PackageJson
   , fromJson
   , PackageJsonOutput
   , devDependencies
+  , readPackageVersionFromRootPackageJson
   ) where
 
+import Prelude
 import Data.Argonaut.Core as ArgonautCore
 import Data.Array as Array
+import Data.Either as Either
 import Data.Map as Map
 import Data.Maybe as Maybe
+import Data.Set as Set
 import Data.String as String
 import Data.String.NonEmpty as NonEmptyString
 import Data.Tuple as Tuple
+import Effect.Aff as Aff
+import FileSystem.FileType as FileType
+import FileSystem.Path as Path
+import FileSystem.Read as FileSystemRead
 import Foreign.Object as Object
-import Prelude as Prelude
 import StructuredUrl as StructuredUrl
+import Type.Proxy as Proxy
 import Util as Util
 
 newtype Name
@@ -50,7 +58,7 @@ devDependencies (PackageJsonOutput { devDependencies: v }) = v
 -- | package.json の name は 214文字以内か調べる
 nameFromNonEmptyString :: NonEmptyString.NonEmptyString -> Maybe.Maybe Name
 nameFromNonEmptyString rawName =
-  if Prelude.(>) (NonEmptyString.length rawName) 214 then
+  if (>) (NonEmptyString.length rawName) 214 then
     Maybe.Nothing
   else
     Maybe.Just (Name rawName)
@@ -109,7 +117,7 @@ toJson (PackageJsonInput packageJson) =
 dependenciesToJson :: Map.Map NonEmptyString.NonEmptyString NonEmptyString.NonEmptyString -> ArgonautCore.Json
 dependenciesToJson dependencies =
   Util.tupleListToJson
-    (Prelude.map (\(Tuple.Tuple key value) -> Tuple.Tuple (NonEmptyString.toString key) (Util.jsonFromNonEmptyString value)) (Map.toUnfoldable dependencies))
+    (map (\(Tuple.Tuple key value) -> Tuple.Tuple (NonEmptyString.toString key) (Util.jsonFromNonEmptyString value)) (Map.toUnfoldable dependencies))
 
 dependenciesPropertyName :: String
 dependenciesPropertyName = "dependencies"
@@ -122,14 +130,14 @@ fromJson json =
   in
     PackageJsonOutput
       { dependencies:
-          case Prelude.bind jsonAsObject
+          case bind jsonAsObject
               (\obj -> Object.lookup dependenciesPropertyName obj) of
             Maybe.Just value -> case ArgonautCore.toObject value of
               Maybe.Just valueAsObject -> objectToNonEmptyStringMap valueAsObject
               Maybe.Nothing -> Map.empty
             Maybe.Nothing -> Map.empty
       , devDependencies:
-          case Prelude.bind jsonAsObject
+          case bind jsonAsObject
               (\obj -> Object.lookup "devDependencies" obj) of
             Maybe.Just value -> case ArgonautCore.toObject value of
               Maybe.Just valueAsObject -> objectToNonEmptyStringMap valueAsObject
@@ -152,3 +160,27 @@ objectToNonEmptyStringMap object =
         (Object.toUnfoldable object)
   in
     Map.fromFoldable array
+
+-- | リポジトリのルートに保存されている `package.json` から指定したライブラリのバージョンを得る
+readPackageVersionFromRootPackageJson :: Set.Set NonEmptyString.NonEmptyString -> Aff.Aff (Either.Either String (Map.Map NonEmptyString.NonEmptyString NonEmptyString.NonEmptyString))
+readPackageVersionFromRootPackageJson usingPackageNameSet = do
+  rootPackageJsonResult <-
+    FileSystemRead.readJsonFile
+      ( Path.FilePath
+          { directoryPath: Path.DirectoryPath []
+          , fileName:
+              NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "package")
+          }
+      )
+      FileType.Json
+  pure
+    ( map
+        ( \rootPackageJson ->
+            Map.filterKeys
+              ( \packageName ->
+                  Set.member packageName usingPackageNameSet
+              )
+              (devDependencies (fromJson rootPackageJson))
+        )
+        rootPackageJsonResult
+    )

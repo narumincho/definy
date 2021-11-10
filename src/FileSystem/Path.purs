@@ -5,9 +5,9 @@ module FileSystem.Path
   , FilePath(..)
   , filePathGetFileName
   , fileNameWithExtensitonParse
-  , filePathGetFileType
   , distributionDirectoryPathToString
   , distributionFilePathToDirectoryPath
+  , distributionFilePathToFilePath
   , distributionFilePathToString
   , distributionFilePathToStringWithoutExtensiton
   , directoryPathPushDirectoryNameList
@@ -49,16 +49,11 @@ newtype FilePath
   = FilePath
   { directoryPath :: DirectoryPath
   , fileName :: NonEmptyString.NonEmptyString
-  , fileType :: Maybe.Maybe FileType.FileType
   }
 
 -- | ファイル名を取得する
 filePathGetFileName :: FilePath -> NonEmptyString.NonEmptyString
 filePathGetFileName (FilePath { fileName }) = fileName
-
--- | ファイルの種類を取得する
-filePathGetFileType :: FilePath -> Maybe.Maybe FileType.FileType
-filePathGetFileType (FilePath { fileType }) = fileType
 
 directoryPathToString :: DirectoryPath -> NonEmptyString.NonEmptyString
 directoryPathToString (DirectoryPath directoryNameList) =
@@ -68,8 +63,8 @@ directoryPathToString (DirectoryPath directoryNameList) =
     NonEmptyString.appendString (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "./"))
       (NonEmptyString.joinWith "/" directoryNameList)
 
-filePathToString :: FilePath -> NonEmptyString.NonEmptyString
-filePathToString (FilePath { directoryPath, fileName, fileType: fileTypeMaybe }) =
+filePathToString :: FilePath -> Maybe.Maybe FileType.FileType -> NonEmptyString.NonEmptyString
+filePathToString (FilePath { directoryPath, fileName }) fileTypeMaybe =
   Prelude.append
     ( Prelude.append
         (directoryPathToString directoryPath)
@@ -93,14 +88,18 @@ distributionDirectoryPathToString distributionDirectoryPath =
     )
 
 distributionFilePathToString :: DistributionFilePath -> FileType.FileType -> NonEmptyString.NonEmptyString
-distributionFilePathToString (DistributionFilePath { directoryPath, fileName }) fileType =
+distributionFilePathToString distributionFilePath fileType =
   filePathToString
-    ( FilePath
-        { directoryPath: distributionDirectoryPathToDirectoryPath directoryPath
-        , fileName
-        , fileType: Maybe.Just fileType
-        }
-    )
+    (distributionFilePathToFilePath distributionFilePath)
+    (Maybe.Just fileType)
+
+distributionFilePathToFilePath :: DistributionFilePath -> FilePath
+distributionFilePathToFilePath (DistributionFilePath { directoryPath, fileName }) =
+  ( FilePath
+      { directoryPath: distributionDirectoryPathToDirectoryPath directoryPath
+      , fileName
+      }
+  )
 
 distributionFilePathToStringWithoutExtensiton :: DistributionFilePath -> NonEmptyString.NonEmptyString
 distributionFilePathToStringWithoutExtensiton (DistributionFilePath { directoryPath, fileName }) =
@@ -108,9 +107,9 @@ distributionFilePathToStringWithoutExtensiton (DistributionFilePath { directoryP
     ( FilePath
         { directoryPath: distributionDirectoryPathToDirectoryPath directoryPath
         , fileName
-        , fileType: Maybe.Nothing
         }
     )
+    Maybe.Nothing
 
 distributionDirectoryPathToDirectoryPath :: DistributionDirectoryPath -> DirectoryPath
 distributionDirectoryPathToDirectoryPath (DistributionDirectoryPath { appName, folderNameMaybe }) =

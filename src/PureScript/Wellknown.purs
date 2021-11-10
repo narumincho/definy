@@ -9,10 +9,13 @@ module PureScript.Wellknown
   , call
   , variable
   , definition
+  , tag
   , pTypeWithArgument
   , pTypeFrom
   , PType
   , Expr
+  , structuredUrlPathAndSearchParams
+  , structuredUrlFromPath
   ) where
 
 import Data.Array.NonEmpty as NonEmptyArray
@@ -21,6 +24,7 @@ import Data.String as String
 import Data.String.NonEmpty as NonEmptyString
 import Prelude as Prelude
 import PureScript.Data as Data
+import StructuredUrl as StructuredUrl
 import Type.Proxy as Proxy
 
 data PType :: Type -> Type
@@ -184,6 +188,9 @@ call (Expr function) (Expr argument) =
 variable :: forall t. { moduleName :: Data.ModuleName, name :: NonEmptyString.NonEmptyString } -> Expr t
 variable option = Expr (Data.Variable option)
 
+tag :: forall t. { moduleName :: Data.ModuleName, name :: NonEmptyString.NonEmptyString } -> Expr t
+tag option = Expr (Data.Tag option)
+
 definition ::
   forall t.
   { name :: NonEmptyString.NonEmptyString
@@ -221,3 +228,30 @@ pTypeWithArgument :: forall input output. PType (input -> output) -> PType input
 pTypeWithArgument (PType function) (PType argument) =
   PType
     (Data.TypeWithArgument { function, argument })
+
+-- | ```purs
+-- | StructuredUrl.fromPath
+-- | ```
+structuredUrlFromPath :: Expr (Array NonEmptyString.NonEmptyString -> StructuredUrl.PathAndSearchParams)
+structuredUrlFromPath =
+  variable
+    { moduleName:
+        Data.ModuleName
+          ( NonEmptyArray.singleton
+              ( NonEmptyString.nes
+                  (Proxy.Proxy :: Proxy.Proxy "StructuredUrl")
+              )
+          )
+    , name: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "fromPath")
+    }
+
+structuredUrlPathAndSearchParams :: PType (StructuredUrl.PathAndSearchParams)
+structuredUrlPathAndSearchParams =
+  pTypeFrom
+    { moduleName:
+        Data.ModuleName
+          ( NonEmptyArray.singleton
+              (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "StructuredUrl"))
+          )
+    , name: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "PathAndSearchParams")
+    }
