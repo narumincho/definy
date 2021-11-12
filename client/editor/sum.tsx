@@ -86,7 +86,7 @@ const SumSelectionView: ElementOperation<
               props.selection.selection === undefined
                 ? "red"
                 : "#333",
-            padding: 4,
+            borderRadius: 8,
           })}
           onFocus={onFocusContent}
           tabIndex={0}
@@ -120,6 +120,7 @@ const TagItem: React.VFC<{
         padding: 8,
         cursor: "pointer",
         textAlign: "center",
+        borderRadius: 8,
       })}
       onClick={sumTagItem.onSelect}
     >
