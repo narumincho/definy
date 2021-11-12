@@ -40,8 +40,17 @@ themeColorName = "theme-color"
 
 -- | すべてをリセットして再描画する. 最初に1回呼ぶと良い.
 resetAndRenderView :: forall message. View.View message -> RenderState.RenderState message -> Effect.Effect Unit
-resetAndRenderView view renderState = Console.logValue "run resetAndRenderView" { view, renderState }
+resetAndRenderView (View.View view) _renderState = changePageName view.pageName
 
 -- | 差分データから実際のDOMを操作して表示に反映させる
 renderView :: forall message. View.ViewDiff message -> RenderState.RenderState message -> Effect.Effect Unit
-renderView viewDiff renderState = Console.logValue "run renderView" { viewDiff, renderState }
+renderView (View.ViewDiff viewDiff) renderState = do
+  Effect.foreachE viewDiff.patchOperationList viewPatchOperationToEffect
+  Console.logValue "run renderView" { viewDiff, renderState }
+
+viewPatchOperationToEffect :: View.ViewPatchOperation -> Effect.Effect Unit
+viewPatchOperationToEffect = case _ of
+  View.ChangePageName newPageName -> changePageName newPageName
+  op -> Console.logValue "まだサポートされていない操作がある" { op }
+
+foreign import changePageName :: String -> Effect.Effect Unit

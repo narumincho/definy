@@ -13,3 +13,12 @@ exports.createDiv = (option) => () => {
   div.className = option.class;
   return div;
 };
+
+/**
+ *
+ * @param {string} newPageName
+ * @returns
+ */
+exports.changePageName = (newPageName) => () => {
+  window.document.title = newPageName;
+};

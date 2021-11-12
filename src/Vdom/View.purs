@@ -49,7 +49,7 @@ import Data.Map as Map
 import Data.Maybe as Maybe
 import Data.String as String
 import Data.Tuple as Tuple
-import Html.Data as HtmlData
+import Data.String.NonEmpty as NonEmptyString
 import Language as Language
 import Prelude as Prelude
 import StructuredUrl as StructuredUrl
@@ -60,17 +60,13 @@ newtype View message
   , appName :: String
   , description :: String
   , themeColor :: Maybe.Maybe Color.Color
-  , iconPath :: String
+  , iconPath :: StructuredUrl.PathAndSearchParams
   , language :: Maybe.Maybe Language.Language
-  , coverImageUrl :: StructuredUrl.StructuredUrl
-  , url :: StructuredUrl.StructuredUrl
-  , manifestPath :: Array StructuredUrl.PathAndSearchParams
-  , twitterCard :: HtmlData.TwitterCard
+  , coverImagePath :: StructuredUrl.PathAndSearchParams
+  , path :: StructuredUrl.PathAndSearchParams
+  , origin :: NonEmptyString.NonEmptyString
   , style :: Maybe.Maybe String
-  , styleUrlList :: Array StructuredUrl.PathAndSearchParams
-  , script :: String
-  , scriptPath :: String
-  , scriptUrlList :: Array StructuredUrl.PathAndSearchParams
+  , scriptPath :: StructuredUrl.PathAndSearchParams
   , bodyClass :: String
   , pointerMove :: Maybe.Maybe (Pointer -> message)
   , pointerDown :: Maybe.Maybe (Pointer -> message)
