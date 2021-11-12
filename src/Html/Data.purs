@@ -1,7 +1,7 @@
 module Html.Data
   ( HtmlOption(..)
   , HtmlChildren(..)
-  , HtmlElement(..)
+  , RawHtmlElement(..)
   , TwitterCard(..)
   , htmlElement
   ) where
@@ -33,25 +33,25 @@ newtype HtmlOption
   , {- 全体に適応されるスタイル. CSS -} style :: Css.StatementList
   , {- スクリプトのパス -} scriptPath :: Maybe.Maybe StructuredUrl.PathAndSearchParams
   , {- body の class -} bodyClass :: Maybe.Maybe NonEmptyString.NonEmptyString
-  , {- body の 子要素 -} bodyChildren :: Array HtmlElement
+  , {- body の 子要素 -} bodyChildren :: Array RawHtmlElement
   }
 
 data TwitterCard
   = SummaryCard
   | SummaryCardWithLargeImage
 
-newtype HtmlElement
-  = HtmlElement
+newtype RawHtmlElement
+  = RawHtmlElement
   { name :: NonEmptyString.NonEmptyString
   , attributes :: Map.Map NonEmptyString.NonEmptyString (Maybe.Maybe String)
   , children :: HtmlChildren
   }
 
 data HtmlChildren
-  = ElementList (Array HtmlElement)
+  = ElementList (Array RawHtmlElement)
   | Text String
   | RawText String
   | NoEndTag
 
-htmlElement :: NonEmptyString.NonEmptyString -> Map.Map NonEmptyString.NonEmptyString (Maybe.Maybe String) -> HtmlChildren -> HtmlElement
-htmlElement name attributes children = HtmlElement { name, attributes, children }
+htmlElement :: NonEmptyString.NonEmptyString -> Map.Map NonEmptyString.NonEmptyString (Maybe.Maybe String) -> HtmlChildren -> RawHtmlElement
+htmlElement name attributes children = RawHtmlElement { name, attributes, children }
