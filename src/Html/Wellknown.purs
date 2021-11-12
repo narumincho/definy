@@ -20,6 +20,7 @@ module Html.Wellknown
   , bodyTagName
   ) where
 
+import Css as Css
 import Data.Map as Map
 import Data.Maybe as Maybe
 import Data.String.NonEmpty as NonEmptyString
@@ -94,12 +95,12 @@ link rel href =
     )
     Data.NoEndTag
 
-style :: String -> Data.HtmlElement
-style cssCode =
+style :: Css.StatementList -> Data.HtmlElement
+style cssStatementList =
   Data.htmlElement
     (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "style"))
     Map.empty
-    (Data.RawText cssCode)
+    (Data.RawText (Css.ruleListToString cssStatementList))
 
 script :: StructuredUrl.StructuredUrl -> Data.HtmlElement
 script url =

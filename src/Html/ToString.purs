@@ -82,11 +82,9 @@ headElement (Data.HtmlOption option) =
               , Wellknown.title option.pageName
               , descriptionElement option.description
               , themeColorElement option.themeColor
+              , iconElement (StructuredUrl.StructuredUrl { origin: option.origin, pathAndSearchParams: option.iconPath })
+              , Wellknown.style option.style
               ]
-            , [ iconElement (StructuredUrl.StructuredUrl { origin: option.origin, pathAndSearchParams: option.iconPath }) ]
-            , case option.style of
-                Maybe.Just style -> [ Wellknown.style style ]
-                Maybe.Nothing -> []
             , [ twitterCardElement option.twitterCard ]
             , case option.path of
                 Maybe.Just path -> [ ogUrlElement (StructuredUrl.StructuredUrl { origin: option.origin, pathAndSearchParams: path }) ]

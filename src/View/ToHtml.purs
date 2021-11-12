@@ -35,10 +35,7 @@ viewToHtmlOption scriptPath (View.View view) =
       , origin: view.origin
       , twitterCard: HtmlData.SummaryCardWithLargeImage
       , style:
-          Maybe.Just
-            ( Css.ruleListToString
-                (htmlElementAndStyleDictToCssStatementList htmlElementAndStyleDict)
-            )
+          htmlElementAndStyleDictToCssStatementList htmlElementAndStyleDict
       , scriptPath: Maybe.Just scriptPath
       , bodyChildren: [ htmlElementAndStyleDictHtmlElement htmlElementAndStyleDict ]
       , bodyClass: Maybe.Nothing

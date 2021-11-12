@@ -12,6 +12,7 @@ import Data.Maybe as Maybe
 import Data.String.NonEmpty as NonEmptyString
 import Language as Language
 import StructuredUrl as StructuredUrl
+import Css as Css
 
 -- | 構造化された Html の指定
 newtype HtmlOption
@@ -29,7 +30,7 @@ newtype HtmlOption
   , {- オリジン -} origin :: NonEmptyString.NonEmptyString
   , {- パス. ログイン時のコールバック時には Noting にして良い -} path :: Maybe.Maybe StructuredUrl.PathAndSearchParams
   , {- Twitter Card. Twitterでシェアしたときの表示をどうするか -} twitterCard :: TwitterCard
-  , {- 全体に適応されるスタイル. CSS -} style :: Maybe.Maybe String
+  , {- 全体に適応されるスタイル. CSS -} style :: Css.StatementList
   , {- スクリプトのパス -} scriptPath :: Maybe.Maybe StructuredUrl.PathAndSearchParams
   , {- body の class -} bodyClass :: Maybe.Maybe NonEmptyString.NonEmptyString
   , {- body の 子要素 -} bodyChildren :: Array HtmlElement
