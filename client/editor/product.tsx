@@ -272,7 +272,7 @@ export const ProductSelectionView: ElementOperation<
         display: "grid",
         gap: 4,
         alignContent: "start",
-        padding: 8,
+        paddingLeft: 16,
       })}
     >
       {props.value.headItem === undefined ? (
@@ -401,6 +401,7 @@ const HeadItemView: React.VFC<{
           props.productSelection.tag === "head"
             ? "red"
             : "#333",
+        borderRadius: 8,
       })}
       onFocus={onFocus}
       tabIndex={0}
@@ -449,10 +450,11 @@ const ItemView: React.VFC<{
     <div
       ref={ref}
       className={css({
-        padding: 4,
+        padding: 2,
         borderWidth: 2,
         borderStyle: "solid",
         borderColor: props.itemSelection === "self" ? "red" : "#333",
+        borderRadius: 8,
       })}
       onFocus={onFocus}
       tabIndex={0}
@@ -468,7 +470,7 @@ const ItemView: React.VFC<{
       </div>
       <div
         className={css({
-          padding: 8,
+          paddingLeft: 16,
         })}
       >
         <commonElement.selectionView

@@ -138,7 +138,6 @@ const ListSelectionView: ElementOperation<
       <div
         className={css({
           display: "grid",
-          padding: 8,
           gridAutoFlow: props.value.isDirectionColumn ? "column" : "row",
           gridTemplateColumns: props.value.isDirectionColumn
             ? "1fr 1fr 1fr"
@@ -228,7 +227,6 @@ const SelectionItem: React.VFC<{
       onFocus={onFocus}
       tabIndex={0}
       className={css({
-        padding: 4,
         borderWidth: 2,
         borderStyle: "solid",
         borderColor: selection === "self" ? "red" : "#333",

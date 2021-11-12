@@ -3,6 +3,7 @@ import * as d from "../../localData";
 import type { ElementOperation } from "./ElementOperation";
 import { Link } from "../ui/Link";
 import type { UseDefinyAppResult } from "../hook/useDefinyApp";
+import { css } from "@emotion/css";
 import { neverFunc } from "../../common/util";
 
 export type TypePartIdSelection = never;
@@ -75,16 +76,18 @@ const TypePartIdSelectionView: ElementOperation<
     );
   }
   return (
-    <Link
-      onJump={props.value.jump}
-      locationAndLanguage={{
-        language: props.value.language,
-        location: d.Location.TypePart(props.value.typePartId),
-      }}
-      style={{ padding: 8 }}
-    >
-      {typePartResource.dataWithTime.data.name}
-    </Link>
+    <div className={css({ paddingLeft: 16 })}>
+      <Link
+        onJump={props.value.jump}
+        locationAndLanguage={{
+          language: props.value.language,
+          location: d.Location.TypePart(props.value.typePartId),
+        }}
+        style={{ padding: 4 }}
+      >
+        {typePartResource.dataWithTime.data.name}
+      </Link>
+    </div>
   );
 });
 TypePartIdSelectionView.displayName = "TypePartIdSelectionView";
