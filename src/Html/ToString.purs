@@ -82,10 +82,11 @@ headElement (Data.HtmlOption option) =
               , Wellknown.title option.pageName
               , descriptionElement option.description
               , themeColorElement option.themeColor
-              , iconElement (StructuredUrl.StructuredUrl { origin: option.origin, pathAndSearchParams: option.iconPath })
-              , Wellknown.style option.style
               ]
-            , [ twitterCardElement option.twitterCard ]
+            , iconElement (StructuredUrl.StructuredUrl { origin: option.origin, pathAndSearchParams: option.iconPath })
+            , [ Wellknown.style option.style
+              , twitterCardElement option.twitterCard
+              ]
             , case option.path of
                 Maybe.Just path -> [ ogUrlElement (StructuredUrl.StructuredUrl { origin: option.origin, pathAndSearchParams: path }) ]
                 Maybe.Nothing -> []
@@ -145,8 +146,15 @@ themeColorElement themeColor =
         ]
     )
 
-iconElement :: StructuredUrl.StructuredUrl -> Data.HtmlElement
-iconElement iconUrl = Wellknown.link "icon" (NonEmptyString.toString (StructuredUrl.toString iconUrl))
+iconElement :: StructuredUrl.StructuredUrl -> Array Data.HtmlElement
+iconElement iconUrl =
+  let
+    href :: String
+    href = NonEmptyString.toString (StructuredUrl.toString iconUrl)
+  in
+    [ Wellknown.link "icon" href
+    , Wellknown.link "apple-touch-icon" href
+    ]
 
 twitterCardElement :: Data.TwitterCard -> Data.HtmlElement
 twitterCardElement twitterCard =
