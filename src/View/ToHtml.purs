@@ -41,7 +41,6 @@ viewToHtmlOption scriptPath (View.View view) =
             )
       , scriptPath: Maybe.Just scriptPath
       , bodyChildren: [ htmlElementAndStyleDictHtmlElement htmlElementAndStyleDict ]
-      , stylePath: Maybe.Nothing
       , bodyClass: Maybe.Nothing
       }
 
