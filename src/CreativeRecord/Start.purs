@@ -1,24 +1,25 @@
 module CreativeRecord.Start where
 
 import Prelude
+import Console as Console
 import CreativeRecord.Build as Build
+import Data.String.NonEmpty as NonEmptyString
 import Effect as Effect
 import Effect.Aff as Aff
 import Effect.Class as EffectClass
-import Effect.Console as Console
 import Node.Buffer as Buffer
 import Node.Encoding as Encoding
 import Node.Stream as Stream
+import ProductionOrDevelopment as ProductionOrDevelopment
 import Shell as Shell
 import Type.Proxy as Proxy
-import Data.String.NonEmpty as NonEmptyString
 
 main :: Effect.Effect Unit
 main =
-  Aff.runAff_ Console.logShow
+  Aff.runAff_ (Console.logValue "start aff result")
     ( Aff.attempt
         ( do
-            Build.build
+            Build.build ProductionOrDevelopment.Develpment
             EffectClass.liftEffect runFirebaseEmulator
         )
     )
@@ -34,5 +35,5 @@ runFirebaseEmulator = do
     (Shell.stdout childProcess)
     ( \buffer -> do
         stdout <- (Buffer.toString Encoding.UTF8 buffer)
-        Console.log (append "firebase emulator の ログ: " stdout)
+        Console.logValue "firebase emulator の ログ:" stdout
     )
