@@ -63,7 +63,7 @@ export const build = async (mode: d.Mode, origin: string): Promise<void> => {
     },
     sourcemap: true,
     minify: true,
-    target: ["chrome88", "firefox85", "safari14"],
+    target: ["chrome95", "firefox94", "safari14"],
   });
   console.log("クライアント向けのスクリプト (main.js) のビルドに成功!");
 
@@ -213,7 +213,7 @@ const outputPackageJsonForFunctions = async (): Promise<void> => {
     description: "definy in Cloud Functions for Firebase",
     entryPoint: "functions/main.js",
     author: "narumincho",
-    nodeVersion: "14",
+    nodeVersion: "16",
     dependencies: new Map(
       [...devDependencies].flatMap(
         ([packageName, packageVersion]): ReadonlyArray<

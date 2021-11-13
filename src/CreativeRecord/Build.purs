@@ -2,10 +2,11 @@ module CreativeRecord.Build (main, build) where
 
 import Prelude
 import Console as Console
-import Data.Argonaut.Core as ArgonautCore
 import Data.Array as Array
 import Data.Array.NonEmpty as NonEmptyArray
 import Data.Map as Map
+import Data.Set as Set
+import Data.Either as Either
 import Data.Maybe as Maybe
 import Data.String.NonEmpty as NonEmptyString
 import Data.Tuple as Tuple
@@ -146,7 +147,7 @@ runEsbuild = do
     { entryPoints: Path.distributionFilePathToFilePath firstClientProgramFilePath
     , outdir: esbuildClientProgramFileDirectoryPath
     , sourcemap: false
-    , target: [ "chrome94", "firefox93", "safari15" ]
+    , target: [ "chrome95", "firefox94", "safari15" ]
     }
   Console.logValueAsAff "esbuild でのビルドに成功!" {}
 
@@ -389,53 +390,61 @@ runSpagoForFunctions = do
     }
   Console.logValueAsAff "spago で functions のビルドに成功!" {}
 
-writePackageJsonForFunctions :: Aff.Aff Unit
-writePackageJsonForFunctions = case packageJsonForFunctions of
-  Maybe.Just json ->
-    FileSystemWrite.writeJson
-      ( Path.DistributionFilePath
-          { directoryPath: functionsDirectoryPath
-          , fileName: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "package")
-          }
-      )
-      json
-  Maybe.Nothing -> Console.logValueAsAff "functions 向けの package.json の生成に失敗した" {}
+usingPackageInFunctions :: Set.Set NonEmptyString.NonEmptyString
+usingPackageInFunctions =
+  Set.fromFoldable
+    [ NonEmptyString.nes
+        (Proxy.Proxy :: Proxy.Proxy "firebase-admin")
+    , NonEmptyString.nes
+        (Proxy.Proxy :: Proxy.Proxy "firebase-functions")
+    , NonEmptyString.nes
+        (Proxy.Proxy :: Proxy.Proxy "sha256-uint8array")
+    ]
 
-packageJsonForFunctions :: Maybe.Maybe ArgonautCore.Json
-packageJsonForFunctions =
-  Prelude.map
-    ( \name ->
-        PackageJson.toJson
-          ( PackageJson.PackageJsonInput
-              { name
-              , version: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "0.0.0")
-              , description: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "ナルミンチョの創作記録 https://narumincho.com")
-              , gitHubAccountName: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "narumincho")
-              , gitHubRepositoryName: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "definy")
-              , entryPoint: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "./index.js")
-              , homepage:
-                  StructuredUrl.StructuredUrl
-                    { origin: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "https://narumincho.com")
-                    , pathAndSearchParams: StructuredUrl.pathAndSearchParams [] Map.empty
-                    }
-              , author:
+writePackageJsonForFunctions :: Aff.Aff Unit
+writePackageJsonForFunctions = do
+  rootPackageJsonResult <-
+    PackageJson.readPackageVersionFromRootPackageJson usingPackageInFunctions
+  case rootPackageJsonResult of
+    Either.Left error -> Console.logValueAsAff "jsonの parse エラー!" { error }
+    Either.Right dependencies -> case packageJsonForFunctions dependencies of
+      Maybe.Just packageJson ->
+        FileSystemWrite.writeJson
+          ( Path.DistributionFilePath
+              { directoryPath: functionsDirectoryPath
+              , fileName:
                   NonEmptyString.nes
-                    ( Proxy.Proxy ::
-                        Proxy.Proxy
-                          "narumincho <narumincho.starfy@gmail.com> (https://narumincho.com)"
-                    )
-              , nodeVersion: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "14")
-              , dependencies:
-                  Map.fromFoldable
-                    [ Tuple.Tuple
-                        (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "firebase-admin"))
-                        (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "10.0.0"))
-                    , Tuple.Tuple
-                        (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "firebase-functions"))
-                        (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "3.15.7"))
-                    ]
-              , typeFilePath: Maybe.Nothing
+                    (Proxy.Proxy :: Proxy.Proxy "package")
               }
           )
+          (PackageJson.toJson packageJson)
+      Maybe.Nothing -> Console.logValueAsAff "名前のエラー" {}
+
+packageJsonForFunctions :: Map.Map NonEmptyString.NonEmptyString NonEmptyString.NonEmptyString -> Maybe.Maybe PackageJson.PackageJsonInput
+packageJsonForFunctions dependencies =
+  Prelude.map
+    ( \name ->
+        PackageJson.PackageJsonInput
+          { name
+          , version: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "0.0.0")
+          , description: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "ナルミンチョの創作記録 https://narumincho.com")
+          , gitHubAccountName: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "narumincho")
+          , gitHubRepositoryName: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "definy")
+          , entryPoint: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "./index.js")
+          , homepage:
+              StructuredUrl.StructuredUrl
+                { origin: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "https://narumincho.com")
+                , pathAndSearchParams: StructuredUrl.pathAndSearchParams [] Map.empty
+                }
+          , author:
+              NonEmptyString.nes
+                ( Proxy.Proxy ::
+                    Proxy.Proxy
+                      "narumincho <narumincho.starfy@gmail.com> (https://narumincho.com)"
+                )
+          , nodeVersion: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "16")
+          , dependencies
+          , typeFilePath: Maybe.Nothing
+          }
     )
     (PackageJson.nameFromNonEmptyString appName)
