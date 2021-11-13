@@ -24,6 +24,8 @@ export type HtmlOption = {
     /** 0 ～ 1 */
     readonly a: number;
   };
+  /** コンテンツ作成者のTwitterID @を含む */
+  readonly creatorTwitterId: string | undefined;
 };
 
 export const htmlOptionToString = (option: HtmlOption): string => {
@@ -58,7 +60,10 @@ export const htmlOptionToString = (option: HtmlOption): string => {
         ? e.nothing()
         : e.just(e.pathAndSearchParamsFromPath(option.stylePath)),
     themeColor: e.colorFrom(option.themeColor),
-    twitterCard: e.summaryCardWithLargeImage,
+    creatorTwitterId:
+      typeof option.creatorTwitterId === "string"
+        ? e.just(option.creatorTwitterId)
+        : e.nothing(),
   });
 };
 

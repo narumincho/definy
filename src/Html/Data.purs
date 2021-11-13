@@ -1,12 +1,12 @@
 module Html.Data
   ( HtmlOption(..)
   , HtmlChildren(..)
-  , HtmlElement(..)
-  , TwitterCard(..)
+  , RawHtmlElement(..)
   , htmlElement
   ) where
 
 import Color as Color
+import Css as Css
 import Data.Map as Map
 import Data.Maybe as Maybe
 import Data.String.NonEmpty as NonEmptyString
@@ -28,30 +28,25 @@ newtype HtmlOption
   , {- OGPに使われるカバー画像のURL (CORSの制限を受けない) -} coverImagePath :: StructuredUrl.PathAndSearchParams
   , {- オリジン -} origin :: NonEmptyString.NonEmptyString
   , {- パス. ログイン時のコールバック時には Noting にして良い -} path :: Maybe.Maybe StructuredUrl.PathAndSearchParams
-  , {- Twitter Card. Twitterでシェアしたときの表示をどうするか -} twitterCard :: TwitterCard
-  , {- 全体に適応されるスタイル. CSS -} style :: Maybe.Maybe String
-  , {- スタイルのパス -} stylePath :: Maybe.Maybe StructuredUrl.PathAndSearchParams
+  , {- コンテンツ作成者のTwitterID `@`を含む -} creatorTwitterId :: Maybe.Maybe NonEmptyString.NonEmptyString
+  , {- 全体に適応されるスタイル. CSS -} style :: Css.StatementList
   , {- スクリプトのパス -} scriptPath :: Maybe.Maybe StructuredUrl.PathAndSearchParams
   , {- body の class -} bodyClass :: Maybe.Maybe NonEmptyString.NonEmptyString
-  , {- body の 子要素 -} bodyChildren :: Array HtmlElement
+  , {- body の 子要素 -} bodyChildren :: Array RawHtmlElement
   }
 
-data TwitterCard
-  = SummaryCard
-  | SummaryCardWithLargeImage
-
-newtype HtmlElement
-  = HtmlElement
+newtype RawHtmlElement
+  = RawHtmlElement
   { name :: NonEmptyString.NonEmptyString
   , attributes :: Map.Map NonEmptyString.NonEmptyString (Maybe.Maybe String)
   , children :: HtmlChildren
   }
 
 data HtmlChildren
-  = ElementList (Array HtmlElement)
+  = ElementList (Array RawHtmlElement)
   | Text String
   | RawText String
   | NoEndTag
 
-htmlElement :: NonEmptyString.NonEmptyString -> Map.Map NonEmptyString.NonEmptyString (Maybe.Maybe String) -> HtmlChildren -> HtmlElement
-htmlElement name attributes children = HtmlElement { name, attributes, children }
+htmlElement :: NonEmptyString.NonEmptyString -> Map.Map NonEmptyString.NonEmptyString (Maybe.Maybe String) -> HtmlChildren -> RawHtmlElement
+htmlElement name attributes children = RawHtmlElement { name, attributes, children }

@@ -27,6 +27,6 @@ view =
     , pageName: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "ナルミンチョの創作記録")
     , path: StructuredUrl.pathAndSearchParams [] Map.empty
     , themeColor: Color.orange
-    , style: Maybe.Nothing
     , origin: Origin.origin
+    , creatorTwitterId: Maybe.Just (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "@naru_mincho"))
     }

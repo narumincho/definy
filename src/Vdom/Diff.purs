@@ -1,4 +1,4 @@
-module Vdom.Diff where
+module Vdom.Diff (createViewDiff) where
 
 import Data.Array as Array
 import Data.Map as Map
@@ -204,4 +204,4 @@ createChildrenDiff (View.ChildrenElementList old) (View.ChildrenElementList new)
 
 -- | TODO
 createElementListChildrenDiff :: forall message. Array (Tuple.Tuple String (View.Element message)) -> Array (Tuple.Tuple String (View.Element message)) -> Array (View.ElementDiff message)
-createElementListChildrenDiff oldChildren newChildren = []
+createElementListChildrenDiff _oldChildren _newChildren = []

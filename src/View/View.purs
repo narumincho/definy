@@ -21,6 +21,7 @@ import Data.Maybe as Maybe
 import Data.String.NonEmpty as NonEmptyString
 import Language as Language
 import StructuredUrl as StructuredUrl
+import Html.Data as HtmlData
 
 newtype View :: Type -> Type
 -- | 見た目を表現するデータ. HTML Option より HTML と離れた, 抽象度の高く 扱いやすいものにする.
@@ -38,7 +39,7 @@ newtype View message
   , {- ページの言語 -} language :: Maybe.Maybe Language.Language
   , {- OGPに使われるカバー画像のパス (CORSの制限を受けない) -} coverImagePath :: StructuredUrl.PathAndSearchParams
   , {- ページのパス -} path :: StructuredUrl.PathAndSearchParams
-  , {- 全体に適応されるスタイル. CSS -} style :: Maybe.Maybe String
+  , {- コンテンツ作成者のTwitterID `@`を含む -} creatorTwitterId :: Maybe.Maybe NonEmptyString.NonEmptyString
   , {- オリジン -} origin :: NonEmptyString.NonEmptyString
   , {- 子要素 -} box :: Box message
   }

@@ -1,4 +1,4 @@
-module CreativeRecord.Build (build) where
+module CreativeRecord.Build (main, build) where
 
 import Prelude
 import Console as Console
@@ -10,6 +10,7 @@ import Data.Maybe as Maybe
 import Data.String.NonEmpty as NonEmptyString
 import Data.Tuple as Tuple
 import Data.UInt as UInt
+import Effect as Effect
 import Effect.Aff as Aff
 import EsBuild as EsBuild
 import FileSystem.Copy as FileSystemCopy
@@ -23,6 +24,7 @@ import Hash as Hash
 import MediaType as MediaType
 import PackageJson as PackageJson
 import Prelude as Prelude
+import ProductionOrDevelopment as ProductionOrDevelopment
 import PureScript.Data as PureScriptData
 import PureScript.Spago as Spago
 import PureScript.Wellknown as PureScriptWellknown
@@ -30,6 +32,11 @@ import StaticResourceFile as StaticResourceFile
 import StructuredUrl as StructuredUrl
 import Type.Proxy as Proxy
 import Util as Util
+
+main :: Effect.Effect Unit
+main =
+  Aff.runAff_ (Console.logValue "build aff result")
+    (Aff.attempt (build ProductionOrDevelopment.Production))
 
 appName :: NonEmptyString.NonEmptyString
 appName = NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "creative-record")
@@ -88,18 +95,18 @@ functionsDirectoryPath =
 hostingPortNumber :: UInt.UInt
 hostingPortNumber = UInt.fromInt 1324
 
-build :: Aff.Aff Unit
-build = do
+build :: ProductionOrDevelopment.ProductionOrDevelopment -> Aff.Aff Unit
+build productionOrDevelopment = do
   Util.toParallel
     [ writeFirestoreRules
     , writeCloudStorageRules
-    , mainBuild
+    , mainBuild productionOrDevelopment
     , writePackageJsonForFunctions
     ]
 
-mainBuild :: Aff.Aff Unit
-mainBuild = do
-  (Tuple.Tuple staticFileData _) <- Tuple.Tuple <$> staticResourceBuild <*> originCodeGen
+mainBuild :: ProductionOrDevelopment.ProductionOrDevelopment -> Aff.Aff Unit
+mainBuild productionOrDevelopment = do
+  (Tuple.Tuple staticFileData _) <- Tuple.Tuple <$> staticResourceBuild <*> (originCodeGen productionOrDevelopment)
   clinetProgramHashValue <- clientProgramBuild
   Util.toParallel
     [ writeCodeClientProgramHashValueAndFunctionBuild clinetProgramHashValue
@@ -283,8 +290,8 @@ writeFirebaseJson staticFileDataList clientProgramHashValue = do
     )
   Console.logValueAsAff "firebase.json の書き込みに成功!" {}
 
-originCodeGen :: Aff.Aff Prelude.Unit
-originCodeGen = FileSystemWrite.writePureScript originPureScriptModule
+originCodeGen :: ProductionOrDevelopment.ProductionOrDevelopment -> Aff.Aff Prelude.Unit
+originCodeGen productionOrDevelopment = FileSystemWrite.writePureScript (originPureScriptModule productionOrDevelopment)
 
 staticResourceBuild :: Aff.Aff (Array StaticResourceFile.StaticResourceFileResult)
 staticResourceBuild = do
@@ -342,8 +349,8 @@ staticResourceModuleName =
         ]
     )
 
-originPureScriptModule :: PureScriptData.Module
-originPureScriptModule =
+originPureScriptModule :: ProductionOrDevelopment.ProductionOrDevelopment -> PureScriptData.Module
+originPureScriptModule productionOrDevelopment =
   PureScriptData.Module
     { name: originModuleName
     , definitionList:
@@ -353,9 +360,12 @@ originPureScriptModule =
             , pType: PureScriptWellknown.nonEmptyString
             , expr:
                 PureScriptWellknown.nonEmptyStringLiteral
-                  ( NonEmptyString.appendString
-                      (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "http://localhost:"))
-                      (UInt.toString hostingPortNumber)
+                  ( case productionOrDevelopment of
+                      ProductionOrDevelopment.Develpment ->
+                        NonEmptyString.appendString
+                          (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "http://localhost:"))
+                          (UInt.toString hostingPortNumber)
+                      ProductionOrDevelopment.Production -> NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "https://narumincho-com-dev.web.app")
                   )
             , isExport: true
             }

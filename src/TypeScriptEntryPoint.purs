@@ -6,7 +6,6 @@ module TypeScriptEntryPoint
   , esperanto
   , just
   , nothing
-  , summaryCardWithLargeImage
   , pathAndSearchParamsFromPath
   ) where
 
@@ -40,9 +39,6 @@ just = Maybe.Just
 
 nothing :: forall a b. b -> Maybe.Maybe a
 nothing _ = Maybe.Nothing
-
-summaryCardWithLargeImage :: HtmlData.TwitterCard
-summaryCardWithLargeImage = HtmlData.SummaryCardWithLargeImage
 
 pathAndSearchParamsFromPath :: Array NonEmptyString.NonEmptyString -> StructuredUrl.PathAndSearchParams
 pathAndSearchParamsFromPath = StructuredUrl.fromPath

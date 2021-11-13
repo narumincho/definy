@@ -33,12 +33,7 @@ languageToIETFLanguageTag = case _ of
   Language.English -> "en"
   Language.Esperanto -> "eo"
 
-twitterCardToString :: Data.TwitterCard -> String
-twitterCardToString = case _ of
-  Data.SummaryCard -> "summary"
-  Data.SummaryCardWithLargeImage -> "summary_large_image"
-
-htmlOptionToHtmlHtmlElement :: Data.HtmlOption -> Data.HtmlElement
+htmlOptionToHtmlHtmlElement :: Data.HtmlOption -> Data.RawHtmlElement
 htmlOptionToHtmlHtmlElement htmlOption@(Data.HtmlOption option) =
   Wellknown.html
     (Prelude.map languageToIETFLanguageTag option.language)
@@ -53,7 +48,7 @@ htmlOptionToHtmlHtmlElement htmlOption@(Data.HtmlOption option) =
         )
     )
 
-noScriptElement :: NonEmptyString.NonEmptyString -> Data.HtmlElement
+noScriptElement :: NonEmptyString.NonEmptyString -> Data.RawHtmlElement
 noScriptElement appName =
   Wellknown.noscript
     ( Data.Text
@@ -72,7 +67,7 @@ htmlOptionToString htmlOption =
         (htmlOptionToHtmlHtmlElement htmlOption)
     )
 
-headElement :: Data.HtmlOption -> Data.HtmlElement
+headElement :: Data.HtmlOption -> Data.RawHtmlElement
 headElement (Data.HtmlOption option) =
   Wellknown.head
     ( Data.ElementList
@@ -83,11 +78,9 @@ headElement (Data.HtmlOption option) =
               , descriptionElement option.description
               , themeColorElement option.themeColor
               ]
-            , [ iconElement (StructuredUrl.StructuredUrl { origin: option.origin, pathAndSearchParams: option.iconPath }) ]
-            , case option.style of
-                Maybe.Just style -> [ Wellknown.style style ]
-                Maybe.Nothing -> []
-            , [ twitterCardElement option.twitterCard ]
+            , iconElement (StructuredUrl.StructuredUrl { origin: option.origin, pathAndSearchParams: option.iconPath })
+            , twitterCardElement option.creatorTwitterId
+            , [ Wellknown.style option.style ]
             , case option.path of
                 Maybe.Just path -> [ ogUrlElement (StructuredUrl.StructuredUrl { origin: option.origin, pathAndSearchParams: path }) ]
                 Maybe.Nothing -> []
@@ -103,12 +96,12 @@ headElement (Data.HtmlOption option) =
         )
     )
 
-charsetElement :: Data.HtmlElement
+charsetElement :: Data.RawHtmlElement
 charsetElement =
   Wellknown.meta
     (Map.singleton (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "charset")) (Maybe.Just "utf-8"))
 
-viewportElement :: Data.HtmlElement
+viewportElement :: Data.RawHtmlElement
 viewportElement =
   Wellknown.meta
     ( Map.fromFoldable
@@ -123,7 +116,7 @@ viewportElement =
         ]
     )
 
-descriptionElement :: String -> Data.HtmlElement
+descriptionElement :: String -> Data.RawHtmlElement
 descriptionElement description =
   Wellknown.meta
     ( Map.fromFoldable
@@ -134,7 +127,7 @@ descriptionElement description =
         ]
     )
 
-themeColorElement :: Color.Color -> Data.HtmlElement
+themeColorElement :: Color.Color -> Data.RawHtmlElement
 themeColorElement themeColor =
   Wellknown.meta
     ( Map.fromFoldable
@@ -147,22 +140,47 @@ themeColorElement themeColor =
         ]
     )
 
-iconElement :: StructuredUrl.StructuredUrl -> Data.HtmlElement
-iconElement iconUrl = Wellknown.link "icon" (NonEmptyString.toString (StructuredUrl.toString iconUrl))
+iconElement :: StructuredUrl.StructuredUrl -> Array Data.RawHtmlElement
+iconElement iconUrl =
+  let
+    href :: String
+    href = NonEmptyString.toString (StructuredUrl.toString iconUrl)
+  in
+    [ Wellknown.link "icon" href
+    , Wellknown.link "apple-touch-icon" href
+    ]
 
-twitterCardElement :: Data.TwitterCard -> Data.HtmlElement
-twitterCardElement twitterCard =
-  Wellknown.meta
-    ( Map.fromFoldable
-        ( [ Tuple.Tuple
-              (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "name"))
-              (Maybe.Just "twitter:card")
-          , Tuple.Tuple
-              (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "content"))
-              (Maybe.Just (twitterCardToString twitterCard))
+twitterCardElement :: Maybe.Maybe NonEmptyString.NonEmptyString -> Array Data.RawHtmlElement
+twitterCardElement creatorTwitterId =
+  Array.concat
+    [ [ Wellknown.meta
+          ( Map.fromFoldable
+              ( [ Tuple.Tuple
+                    (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "name"))
+                    (Maybe.Just "twitter:card")
+                , Tuple.Tuple
+                    (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "content"))
+                    (Maybe.Just "summary_large_image")
+                ]
+              )
+          )
+      ]
+    , case creatorTwitterId of
+        Maybe.Just id ->
+          [ Wellknown.meta
+              ( Map.fromFoldable
+                  ( [ Tuple.Tuple
+                        (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "name"))
+                        (Maybe.Just "twitter:creator")
+                    , Tuple.Tuple
+                        (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "content"))
+                        (Maybe.Just (NonEmptyString.toString id))
+                    ]
+                  )
+              )
           ]
-        )
-    )
+        Maybe.Nothing -> []
+    ]
 
 propertyAttribute :: String -> Tuple.Tuple NonEmptyString.NonEmptyString (Maybe.Maybe String)
 propertyAttribute value =
@@ -176,7 +194,7 @@ contentAttribute value =
     (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "content"))
     (Maybe.Just value)
 
-ogUrlElement :: StructuredUrl.StructuredUrl -> Data.HtmlElement
+ogUrlElement :: StructuredUrl.StructuredUrl -> Data.RawHtmlElement
 ogUrlElement url =
   Wellknown.meta
     ( Map.fromFoldable
@@ -185,7 +203,7 @@ ogUrlElement url =
         ]
     )
 
-ogTitleElement :: NonEmptyString.NonEmptyString -> Data.HtmlElement
+ogTitleElement :: NonEmptyString.NonEmptyString -> Data.RawHtmlElement
 ogTitleElement title =
   Wellknown.meta
     ( Map.fromFoldable
@@ -194,7 +212,7 @@ ogTitleElement title =
         ]
     )
 
-ogSiteName :: NonEmptyString.NonEmptyString -> Data.HtmlElement
+ogSiteName :: NonEmptyString.NonEmptyString -> Data.RawHtmlElement
 ogSiteName siteName =
   Wellknown.meta
     ( Map.fromFoldable
@@ -203,7 +221,7 @@ ogSiteName siteName =
         ]
     )
 
-ogDescription :: String -> Data.HtmlElement
+ogDescription :: String -> Data.RawHtmlElement
 ogDescription description =
   Wellknown.meta
     ( Map.fromFoldable
@@ -212,7 +230,7 @@ ogDescription description =
         ]
     )
 
-ogImage :: StructuredUrl.StructuredUrl -> Data.HtmlElement
+ogImage :: StructuredUrl.StructuredUrl -> Data.RawHtmlElement
 ogImage url =
   Wellknown.meta
     ( Map.fromFoldable
@@ -221,8 +239,8 @@ ogImage url =
         ]
     )
 
-htmlElementToString :: Data.HtmlElement -> String
-htmlElementToString (Data.HtmlElement element) =
+htmlElementToString :: Data.RawHtmlElement -> String
+htmlElementToString (Data.RawHtmlElement element) =
   let
     startTag =
       String.joinWith ""

@@ -33,15 +33,11 @@ viewToHtmlOption scriptPath (View.View view) =
       , coverImagePath: view.coverImagePath
       , path: Maybe.Just view.path
       , origin: view.origin
-      , twitterCard: HtmlData.SummaryCardWithLargeImage
+      , creatorTwitterId: view.creatorTwitterId
       , style:
-          Maybe.Just
-            ( Css.ruleListToString
-                (htmlElementAndStyleDictToCssStatementList htmlElementAndStyleDict)
-            )
+          htmlElementAndStyleDictToCssStatementList htmlElementAndStyleDict
       , scriptPath: Maybe.Just scriptPath
       , bodyChildren: [ htmlElementAndStyleDictHtmlElement htmlElementAndStyleDict ]
-      , stylePath: Maybe.Nothing
       , bodyClass: Maybe.Nothing
       }
 
@@ -120,7 +116,7 @@ newtype ViewStyle
 
 newtype HtmlElementAndStyleDict
   = HtmlElementAndStyleDict
-  { htmlElement :: HtmlData.HtmlElement
+  { htmlElement :: HtmlData.RawHtmlElement
   , styleDict :: Map.Map NonEmptyString.NonEmptyString ViewStyle
   , keyframesDict :: Map.Map NonEmptyString.NonEmptyString (Array Css.Keyframe)
   }
@@ -128,7 +124,7 @@ newtype HtmlElementAndStyleDict
 htmlElementAndStyleDictStyleDict :: HtmlElementAndStyleDict -> Map.Map NonEmptyString.NonEmptyString ViewStyle
 htmlElementAndStyleDictStyleDict (HtmlElementAndStyleDict { styleDict }) = styleDict
 
-htmlElementAndStyleDictHtmlElement :: HtmlElementAndStyleDict -> HtmlData.HtmlElement
+htmlElementAndStyleDictHtmlElement :: HtmlElementAndStyleDict -> HtmlData.RawHtmlElement
 htmlElementAndStyleDictHtmlElement (HtmlElementAndStyleDict { htmlElement }) = htmlElement
 
 htmlElementAndStyleDictKeyframesDict :: HtmlElementAndStyleDict -> Map.Map NonEmptyString.NonEmptyString (Array Css.Keyframe)
@@ -344,7 +340,7 @@ elementToHtmlElementAndStyleDict = case _ of
         }
   View.BoxElement element -> boxToHtmlElementAndStyleDict element
 
-markupToTagName :: View.TextMarkup -> Map.Map NonEmptyString.NonEmptyString (Maybe.Maybe String) → HtmlData.HtmlChildren → HtmlData.HtmlElement
+markupToTagName :: View.TextMarkup -> Map.Map NonEmptyString.NonEmptyString (Maybe.Maybe String) → HtmlData.HtmlChildren → HtmlData.RawHtmlElement
 markupToTagName = case _ of
   View.None -> HtmlWellknown.div
   View.Heading1 -> HtmlWellknown.h1
@@ -361,7 +357,7 @@ viewBoxToViewBoxAttributeValue (View.ViewBox viewBox) =
         ]
     )
 
-svgElementToHtmlElement :: View.SvgElement -> HtmlData.HtmlElement
+svgElementToHtmlElement :: View.SvgElement -> HtmlData.RawHtmlElement
 svgElementToHtmlElement = case _ of
   View.Path { pathText, fill } ->
     HtmlWellknown.svgPath

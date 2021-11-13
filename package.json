@@ -19,6 +19,7 @@
     "storybook": "start-storybook --config-dir ./storybook --static-dir ./storybook/static",
     "update-package-json": "ncu -u",
     "start-narumincho-creative-record": "spago run --main CreativeRecord.Start",
+    "build-narumincho-creative-record": "spago run --main CreativeRecord.Build",
     "start-definy-by-purescript": "spago run --main Definy.Start"
   },
   "devDependencies": {

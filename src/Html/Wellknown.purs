@@ -20,6 +20,7 @@ module Html.Wellknown
   , bodyTagName
   ) where
 
+import Css as Css
 import Data.Map as Map
 import Data.Maybe as Maybe
 import Data.String.NonEmpty as NonEmptyString
@@ -28,10 +29,10 @@ import Html.Data as Data
 import StructuredUrl as StructuredUrl
 import Type.Proxy as Proxy
 
-meta :: Map.Map NonEmptyString.NonEmptyString (Maybe.Maybe String) -> Data.HtmlElement
+meta :: Map.Map NonEmptyString.NonEmptyString (Maybe.Maybe String) -> Data.RawHtmlElement
 meta attributes = Data.htmlElement (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "meta")) attributes Data.NoEndTag
 
-html :: Maybe.Maybe String -> Data.HtmlElement -> Data.HtmlElement -> Data.HtmlElement
+html :: Maybe.Maybe String -> Data.RawHtmlElement -> Data.RawHtmlElement -> Data.RawHtmlElement
 html langMaybe headElement bodyElement =
   Data.htmlElement
     htmlTagName
@@ -47,7 +48,7 @@ html langMaybe headElement bodyElement =
 htmlTagName :: NonEmptyString.NonEmptyString
 htmlTagName = NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "html")
 
-body :: Maybe.Maybe NonEmptyString.NonEmptyString -> Data.HtmlChildren -> Data.HtmlElement
+body :: Maybe.Maybe NonEmptyString.NonEmptyString -> Data.HtmlChildren -> Data.RawHtmlElement
 body classMaybe children =
   Data.htmlElement
     bodyTagName
@@ -65,21 +66,21 @@ body classMaybe children =
 bodyTagName :: NonEmptyString.NonEmptyString
 bodyTagName = NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "body")
 
-noscript :: Data.HtmlChildren -> Data.HtmlElement
+noscript :: Data.HtmlChildren -> Data.RawHtmlElement
 noscript children =
   Data.htmlElement
     (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "noscript"))
     Map.empty
     children
 
-head :: Data.HtmlChildren -> Data.HtmlElement
+head :: Data.HtmlChildren -> Data.RawHtmlElement
 head children =
   Data.htmlElement
     (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "head"))
     Map.empty
     children
 
-link :: String -> String -> Data.HtmlElement
+link :: String -> String -> Data.RawHtmlElement
 link rel href =
   Data.htmlElement
     (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "link"))
@@ -94,14 +95,14 @@ link rel href =
     )
     Data.NoEndTag
 
-style :: String -> Data.HtmlElement
-style cssCode =
+style :: Css.StatementList -> Data.RawHtmlElement
+style cssStatementList =
   Data.htmlElement
     (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "style"))
     Map.empty
-    (Data.RawText cssCode)
+    (Data.RawText (Css.ruleListToString cssStatementList))
 
-script :: StructuredUrl.StructuredUrl -> Data.HtmlElement
+script :: StructuredUrl.StructuredUrl -> Data.RawHtmlElement
 script url =
   Data.htmlElement
     (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "script"))
@@ -116,63 +117,63 @@ script url =
     )
     (Data.ElementList [])
 
-title :: NonEmptyString.NonEmptyString -> Data.HtmlElement
+title :: NonEmptyString.NonEmptyString -> Data.RawHtmlElement
 title pageName =
   Data.htmlElement
     (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "title"))
     Map.empty
     (Data.Text (NonEmptyString.toString pageName))
 
-div :: Map.Map NonEmptyString.NonEmptyString (Maybe.Maybe String) -> Data.HtmlChildren -> Data.HtmlElement
+div :: Map.Map NonEmptyString.NonEmptyString (Maybe.Maybe String) -> Data.HtmlChildren -> Data.RawHtmlElement
 div attributes children =
   Data.htmlElement
     (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "div"))
     attributes
     children
 
-a :: Map.Map NonEmptyString.NonEmptyString (Maybe.Maybe String) -> Data.HtmlChildren -> Data.HtmlElement
+a :: Map.Map NonEmptyString.NonEmptyString (Maybe.Maybe String) -> Data.HtmlChildren -> Data.RawHtmlElement
 a attributes children =
   Data.htmlElement
     (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "a"))
     attributes
     children
 
-h1 :: Map.Map NonEmptyString.NonEmptyString (Maybe.Maybe String) -> Data.HtmlChildren -> Data.HtmlElement
+h1 :: Map.Map NonEmptyString.NonEmptyString (Maybe.Maybe String) -> Data.HtmlChildren -> Data.RawHtmlElement
 h1 attributes children =
   Data.htmlElement
     (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "h1"))
     attributes
     children
 
-h2 :: Map.Map NonEmptyString.NonEmptyString (Maybe.Maybe String) -> Data.HtmlChildren -> Data.HtmlElement
+h2 :: Map.Map NonEmptyString.NonEmptyString (Maybe.Maybe String) -> Data.HtmlChildren -> Data.RawHtmlElement
 h2 attributes children =
   Data.htmlElement
     (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "h2"))
     attributes
     children
 
-svg :: Map.Map NonEmptyString.NonEmptyString (Maybe.Maybe String) -> Data.HtmlChildren -> Data.HtmlElement
+svg :: Map.Map NonEmptyString.NonEmptyString (Maybe.Maybe String) -> Data.HtmlChildren -> Data.RawHtmlElement
 svg attributes children =
   Data.htmlElement
     (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "svg"))
     attributes
     children
 
-img :: Map.Map NonEmptyString.NonEmptyString (Maybe.Maybe String) -> Data.HtmlElement
+img :: Map.Map NonEmptyString.NonEmptyString (Maybe.Maybe String) -> Data.RawHtmlElement
 img attributes =
   Data.htmlElement
     (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "img"))
     attributes
     Data.NoEndTag
 
-svgPath :: Map.Map NonEmptyString.NonEmptyString (Maybe.Maybe String) -> Data.HtmlElement
+svgPath :: Map.Map NonEmptyString.NonEmptyString (Maybe.Maybe String) -> Data.RawHtmlElement
 svgPath attributes =
   Data.htmlElement
     (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "path"))
     attributes
     (Data.ElementList [])
 
-svgG :: Map.Map NonEmptyString.NonEmptyString (Maybe.Maybe String) -> Array Data.HtmlElement -> Data.HtmlElement
+svgG :: Map.Map NonEmptyString.NonEmptyString (Maybe.Maybe String) -> Array Data.RawHtmlElement -> Data.RawHtmlElement
 svgG attributes elementList =
   Data.htmlElement
     (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "g"))

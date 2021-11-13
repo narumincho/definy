@@ -11,7 +11,6 @@ import Data.Set as Set
 import Data.String.NonEmpty as NonEmptyString
 import Data.Tuple as Tuple
 import Data.UInt as UInt
-import Definy.Mode as Mode
 import Effect.Aff as Aff
 import Effect.Class as EffectClass
 import EsBuild as EsBuild
@@ -25,6 +24,7 @@ import Firebase.SecurityRules as SecurityRules
 import Hash as Hash
 import Node.Process as Process
 import PackageJson as PackageJson
+import ProductionOrDevelopment as ProductionOrDevelopment
 import PureScript.Data as PureScriptData
 import PureScript.Wellknown as PureScriptWellknown
 import StaticResourceFile as StaticResourceFile
@@ -32,7 +32,7 @@ import StructuredUrl as StructuredUrl
 import Type.Proxy as Proxy
 import Util as Util
 
-build :: Mode.Mode -> NonEmptyString.NonEmptyString -> Aff.Aff Unit
+build :: ProductionOrDevelopment.ProductionOrDevelopment -> NonEmptyString.NonEmptyString -> Aff.Aff Unit
 build mode origin =
   Util.toParallel
     [ FileSystemCopy.copySecretFile
@@ -54,7 +54,7 @@ build mode origin =
     , writeFirebaseJson mode
     ]
 
-codeGenAndBuildClientAndFunctionsScript :: Mode.Mode -> NonEmptyString.NonEmptyString -> Aff.Aff Unit
+codeGenAndBuildClientAndFunctionsScript :: ProductionOrDevelopment.ProductionOrDevelopment -> NonEmptyString.NonEmptyString -> Aff.Aff Unit
 codeGenAndBuildClientAndFunctionsScript mode origin = do
   (Tuple.Tuple _ _) <- Tuple.Tuple <$> staticResourceBuild <*> (outputNowModeAndOrigin mode origin)
   _ <- clientProgramBuild
@@ -194,13 +194,13 @@ definyModuleName =
   NonEmptyString.nes
     (Proxy.Proxy :: Proxy.Proxy "Definy")
 
-definyModeModuleName :: PureScriptData.ModuleName
-definyModeModuleName =
+productionOrDevelopmentModuleName :: PureScriptData.ModuleName
+productionOrDevelopmentModuleName =
   PureScriptData.ModuleName
-    ( NonEmptyArray.cons' definyModuleName
-        [ NonEmptyString.nes
-            (Proxy.Proxy :: Proxy.Proxy "Mode")
-        ]
+    ( NonEmptyArray.singleton
+        ( NonEmptyString.nes
+            (Proxy.Proxy :: Proxy.Proxy "ProductionOrDevelopment")
+        )
     )
 
 definyVersionModuleName :: PureScriptData.ModuleName
@@ -221,14 +221,14 @@ staticResourceModuleName =
         ]
     )
 
-outputNowModeAndOrigin :: Mode.Mode -> NonEmptyString.NonEmptyString -> Aff.Aff Unit
-outputNowModeAndOrigin mode origin = do
-  pureScriptModule <- generateNowModeAndOriginPureScriptModule mode origin
+outputNowModeAndOrigin :: ProductionOrDevelopment.ProductionOrDevelopment -> NonEmptyString.NonEmptyString -> Aff.Aff Unit
+outputNowModeAndOrigin productionOrDevelopment origin = do
+  pureScriptModule <- generateNowModeAndOriginPureScriptModule productionOrDevelopment origin
   FileSystemWrite.writePureScript pureScriptModule
 
-generateNowModeAndOriginPureScriptModule :: Mode.Mode -> NonEmptyString.NonEmptyString -> Aff.Aff PureScriptData.Module
-generateNowModeAndOriginPureScriptModule mode origin = do
-  versionDefinition <- versionDefinitionAff mode
+generateNowModeAndOriginPureScriptModule :: ProductionOrDevelopment.ProductionOrDevelopment -> NonEmptyString.NonEmptyString -> Aff.Aff PureScriptData.Module
+generateNowModeAndOriginPureScriptModule productionOrDevelopment origin = do
+  versionDefinition <- versionDefinitionAff productionOrDevelopment
   pure
     ( PureScriptData.Module
         { name:
@@ -244,20 +244,20 @@ generateNowModeAndOriginPureScriptModule mode origin = do
                 , document: "実行モード (ビルド時にコード生成される)"
                 , pType:
                     PureScriptWellknown.pTypeFrom
-                      { moduleName: definyModeModuleName
-                      , name: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "Mode")
+                      { moduleName: productionOrDevelopmentModuleName
+                      , name: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "ProductionOrDevelopment")
                       }
                 , expr:
-                    case mode of
-                      Mode.Develpment ->
+                    case productionOrDevelopment of
+                      ProductionOrDevelopment.Develpment ->
                         PureScriptWellknown.tag
-                          { moduleName: definyModeModuleName
+                          { moduleName: productionOrDevelopmentModuleName
                           , name: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "Develpment")
                           }
-                      Mode.Release ->
+                      ProductionOrDevelopment.Production ->
                         PureScriptWellknown.tag
-                          { moduleName: definyModeModuleName
-                          , name: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "Release")
+                          { moduleName: productionOrDevelopmentModuleName
+                          , name: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "Production")
                           }
                 , isExport: true
                 }
@@ -273,9 +273,9 @@ generateNowModeAndOriginPureScriptModule mode origin = do
         }
     )
 
-versionDefinitionAff :: Mode.Mode -> Aff.Aff PureScriptData.Definition
+versionDefinitionAff :: ProductionOrDevelopment.ProductionOrDevelopment -> Aff.Aff PureScriptData.Definition
 versionDefinitionAff = case _ of
-  Mode.Develpment ->
+  ProductionOrDevelopment.Develpment ->
     pure
       ( PureScriptWellknown.definition
           { name: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "version")
@@ -293,7 +293,7 @@ versionDefinitionAff = case _ of
           , isExport: true
           }
       )
-  Mode.Release -> do
+  ProductionOrDevelopment.Production -> do
     githubSha <- readGithubSha
     pure
       ( PureScriptWellknown.definition
@@ -356,8 +356,8 @@ generateCloudStorageRules =
     cloudStorageSecurityRulesFilePath
     SecurityRules.allForbiddenFirebaseStorageRule
 
-writeFirebaseJson :: Mode.Mode -> Aff.Aff Unit
-writeFirebaseJson _mode = do
+writeFirebaseJson :: ProductionOrDevelopment.ProductionOrDevelopment -> Aff.Aff Unit
+writeFirebaseJson _productionOrDevelopment = do
   FileSystemWrite.writeJson
     ( Path.DistributionFilePath
         { directoryPath: Path.DistributionDirectoryPath { appName, folderNameMaybe: Maybe.Nothing }

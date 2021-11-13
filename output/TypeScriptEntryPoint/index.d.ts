@@ -38,10 +38,6 @@ export declare const just: <T>(a: T) => Maybe<T>;
 
 export declare const nothing: <T>() => Maybe<T>;
 
-export type TwitterCard = { _twitterCard: never };
-
-export declare const summaryCardWithLargeImage: TwitterCard;
-
 /**
  * 空ではない文字列 (基本的にリテラルで指定して!)
  */
@@ -98,9 +94,9 @@ export type HtmlOption = {
   readonly path: Maybe.Maybe<StructuredUrl.PathAndSearchParams>;
 
   /**
-   * Twitter Card. Twitterでシェアしたときの表示をどうするか
+   * コンテンツ作成者のTwitterID `@`を含む
    */
-  readonly twitterCard: TwitterCard;
+  readonly creatorTwitterId: Maybe.Maybe<string>;
 
   /**
    * 全体に適応されるスタイル. CSS
