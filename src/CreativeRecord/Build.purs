@@ -147,7 +147,7 @@ runEsbuild = do
     { entryPoints: Path.distributionFilePathToFilePath firstClientProgramFilePath
     , outdir: esbuildClientProgramFileDirectoryPath
     , sourcemap: false
-    , target: [ "chrome94", "firefox93", "safari15" ]
+    , target: [ "chrome95", "firefox94", "safari15" ]
     }
   Console.logValueAsAff "esbuild でのビルドに成功!" {}
 
@@ -442,7 +442,7 @@ packageJsonForFunctions dependencies =
                     Proxy.Proxy
                       "narumincho <narumincho.starfy@gmail.com> (https://narumincho.com)"
                 )
-          , nodeVersion: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "14")
+          , nodeVersion: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "16")
           , dependencies
           , typeFilePath: Maybe.Nothing
           }

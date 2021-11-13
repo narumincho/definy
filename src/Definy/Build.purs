@@ -176,7 +176,7 @@ generatePackageJson dependencies =
                 }
           , name: name
           , nodeVersion:
-              NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "14")
+              NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "16")
           , typeFilePath:
               Maybe.Nothing
           , version:
@@ -440,7 +440,7 @@ runEsbuild = do
           }
     , outdir: esbuildClientProgramFileDirectoryPath
     , sourcemap: false
-    , target: [ "chrome94", "firefox93", "safari15" ]
+    , target: [ "chrome95", "firefox94", "safari15" ]
     }
   Console.logValueAsAff "esbuild でのビルドに成功!" {}
 

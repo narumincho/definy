@@ -68,7 +68,7 @@ export const build = async <State, Message>(
     outdir: directoryPathToPathFromRepositoryRoot(option.distributionPath),
     sourcemap: true,
     minify: true,
-    target: ["chrome93", "firefox91", "safari14"],
+    target: ["chrome95", "firefox94", "safari14"],
   });
   console.log("script のビルドに成功!");
 
