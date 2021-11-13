@@ -397,6 +397,8 @@ usingPackageInFunctions =
         (Proxy.Proxy :: Proxy.Proxy "firebase-admin")
     , NonEmptyString.nes
         (Proxy.Proxy :: Proxy.Proxy "firebase-functions")
+    , NonEmptyString.nes
+        (Proxy.Proxy :: Proxy.Proxy "sha256-uint8array")
     ]
 
 writePackageJsonForFunctions :: Aff.Aff Unit
