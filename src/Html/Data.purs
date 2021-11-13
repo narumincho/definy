@@ -2,17 +2,16 @@ module Html.Data
   ( HtmlOption(..)
   , HtmlChildren(..)
   , RawHtmlElement(..)
-  , TwitterCard(..)
   , htmlElement
   ) where
 
 import Color as Color
+import Css as Css
 import Data.Map as Map
 import Data.Maybe as Maybe
 import Data.String.NonEmpty as NonEmptyString
 import Language as Language
 import StructuredUrl as StructuredUrl
-import Css as Css
 
 -- | 構造化された Html の指定
 newtype HtmlOption
@@ -29,16 +28,12 @@ newtype HtmlOption
   , {- OGPに使われるカバー画像のURL (CORSの制限を受けない) -} coverImagePath :: StructuredUrl.PathAndSearchParams
   , {- オリジン -} origin :: NonEmptyString.NonEmptyString
   , {- パス. ログイン時のコールバック時には Noting にして良い -} path :: Maybe.Maybe StructuredUrl.PathAndSearchParams
-  , {- Twitter Card. Twitterでシェアしたときの表示をどうするか -} twitterCard :: TwitterCard
+  , {- コンテンツ作成者のTwitterID `@`を含む -} creatorTwitterId :: Maybe.Maybe NonEmptyString.NonEmptyString
   , {- 全体に適応されるスタイル. CSS -} style :: Css.StatementList
   , {- スクリプトのパス -} scriptPath :: Maybe.Maybe StructuredUrl.PathAndSearchParams
   , {- body の class -} bodyClass :: Maybe.Maybe NonEmptyString.NonEmptyString
   , {- body の 子要素 -} bodyChildren :: Array RawHtmlElement
   }
-
-data TwitterCard
-  = SummaryCard
-  | SummaryCardWithLargeImage
 
 newtype RawHtmlElement
   = RawHtmlElement
