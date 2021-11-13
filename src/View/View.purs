@@ -21,7 +21,6 @@ import Data.Maybe as Maybe
 import Data.String.NonEmpty as NonEmptyString
 import Language as Language
 import StructuredUrl as StructuredUrl
-import Html.Data as HtmlData
 
 newtype View :: Type -> Type
 -- | 見た目を表現するデータ. HTML Option より HTML と離れた, 抽象度の高く 扱いやすいものにする.
