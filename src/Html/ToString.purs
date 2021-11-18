@@ -27,16 +27,10 @@ escapeInHtml text =
         )
     )
 
-languageToIETFLanguageTag :: Language.Language -> String
-languageToIETFLanguageTag = case _ of
-  Language.Japanese -> "ja"
-  Language.English -> "en"
-  Language.Esperanto -> "eo"
-
 htmlOptionToHtmlHtmlElement :: Data.HtmlOption -> Data.RawHtmlElement
 htmlOptionToHtmlHtmlElement htmlOption@(Data.HtmlOption option) =
   Wellknown.html
-    (Prelude.map languageToIETFLanguageTag option.language)
+    (Prelude.map Language.toIETFLanguageTag option.language)
     (headElement htmlOption)
     ( Wellknown.body
         option.bodyClass

@@ -1,4 +1,4 @@
-module Language (Language(..)) where
+module Language (Language(..), toIETFLanguageTag) where
 
 import Prelude as Prelude
 
@@ -11,3 +11,9 @@ data Language
   | Esperanto
 
 derive instance languageEq :: Prelude.Eq Language
+
+toIETFLanguageTag :: Language -> String
+toIETFLanguageTag = case _ of
+  Japanese -> "ja"
+  English -> "en"
+  Esperanto -> "eo"

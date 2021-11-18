@@ -1,9 +1,12 @@
 module Vdom.Render where
 
 import Prelude
+import Color as Color
 import Console as Console
+import Data.Nullable as Nullable
 import Data.UInt as UInt
 import Effect as Effect
+import Language as Language
 import Vdom.RenderState as RenderState
 import Vdom.View as View
 
@@ -51,6 +54,16 @@ renderView (View.ViewDiff viewDiff) renderState = do
 viewPatchOperationToEffect :: View.ViewPatchOperation -> Effect.Effect Unit
 viewPatchOperationToEffect = case _ of
   View.ChangePageName newPageName -> changePageName newPageName
+  View.ChangeThemeColor colorMaybe ->
+    changeThemeColor
+      (Nullable.toNullable (map Color.toHexString colorMaybe))
+  View.ChangeLanguage languageMaybe ->
+    changeLanguage
+      (Nullable.toNullable (map Language.toIETFLanguageTag languageMaybe))
   op -> Console.logValue "まだサポートされていない操作がある" { op }
 
 foreign import changePageName :: String -> Effect.Effect Unit
+
+foreign import changeThemeColor :: Nullable.Nullable String -> Effect.Effect Unit
+
+foreign import changeLanguage :: Nullable.Nullable String -> Effect.Effect Unit
