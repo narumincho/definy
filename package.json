@@ -33,16 +33,16 @@
     "@storybook/react": "6.3.12",
     "@types/fs-extra": "9.0.13",
     "@types/jest": "27.0.2",
-    "@types/jsonwebtoken": "8.5.5",
+    "@types/jsonwebtoken": "8.5.6",
     "@types/node": "16.11.7",
-    "@types/react": "17.0.34",
+    "@types/react": "17.0.35",
     "@types/react-dom": "17.0.11",
-    "@typescript-eslint/eslint-plugin": "5.3.1",
-    "@typescript-eslint/parser": "5.3.1",
+    "@typescript-eslint/eslint-plugin": "5.4.0",
+    "@typescript-eslint/parser": "5.4.0",
     "axios": "0.24.0",
     "babel-loader": "8.2.3",
     "dependency-cruiser": "10.7.0",
-    "esbuild": "0.13.13",
+    "esbuild": "0.13.14",
     "eslint": "8.2.0",
     "eslint-config-prettier": "8.3.0",
     "eslint-plugin-import-access": "1.0.0",
@@ -68,7 +68,7 @@
     "ts-jest": "27.0.7",
     "ts-node": "10.4.0",
     "typed-admin-firestore": "1.2.2",
-    "typescript": "4.4.4"
+    "typescript": "4.5.2"
   },
   "jest": {
     "preset": "ts-jest"
