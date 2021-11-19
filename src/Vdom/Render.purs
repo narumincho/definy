@@ -60,10 +60,12 @@ viewPatchOperationToEffect = case _ of
   View.ChangeLanguage languageMaybe ->
     changeLanguage
       (Nullable.toNullable (map Language.toIETFLanguageTag languageMaybe))
-  op -> Console.logValue "まだサポートされていない操作がある" { op }
+  View.ChangeBodyClass classNameOrEmpty -> changeBodyClass classNameOrEmpty
 
 foreign import changePageName :: String -> Effect.Effect Unit
 
 foreign import changeThemeColor :: Nullable.Nullable String -> Effect.Effect Unit
 
 foreign import changeLanguage :: Nullable.Nullable String -> Effect.Effect Unit
+
+foreign import changeBodyClass :: String -> Effect.Effect Unit

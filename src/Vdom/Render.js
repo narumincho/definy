@@ -68,3 +68,16 @@ exports.changeLanguage = (newLanguage) => () => {
   }
   document.documentElement.removeAttribute("lang");
 };
+
+/**
+ *
+ * @param {string} classNameOrEmpty
+ * @returns
+ */
+exports.changeBodyClass = (classNameOrEmpty) => () => {
+  if (classNameOrEmpty === "") {
+    document.body.removeAttribute("class");
+    return;
+  }
+  document.body.className = classNameOrEmpty;
+};
