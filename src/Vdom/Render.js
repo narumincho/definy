@@ -2,20 +2,6 @@
 
 /**
  *
- * @param {{id: string, class: string}} option
- * @returns
- */
-exports.createDiv = (option) => () => {
-  const div = window.document.createElement("div");
-  if (option.id !== "") {
-    div.id = option.id;
-  }
-  div.className = option.class;
-  return div;
-};
-
-/**
- *
  * @param {string} newPageName
  * @returns
  */
@@ -80,4 +66,42 @@ exports.changeBodyClass = (classNameOrEmpty) => () => {
     return;
   }
   document.body.className = classNameOrEmpty;
+};
+
+exports.getBodyElement = () => {
+  return document.body;
+};
+
+/**
+ * @param {string} text
+ * @returns {(htmlOrSvgElement: HTMLElement | SVGElement) => () => void}
+ */
+exports.setTextContent = (text) => (htmlOrSvgElement) => () => {
+  htmlOrSvgElement.textContent = text;
+};
+
+/**
+ *
+ * @param {{id: string, class: string, dataPath: string}} option
+ * @returns
+ */
+exports.createDiv = (option) => () => {
+  const div = window.document.createElement("div");
+  if (option.id !== "") {
+    div.id = option.id;
+  }
+  if (option.class !== "") {
+    div.className = option.class;
+  }
+  div.dataset.dPath = option.dataPath;
+  return div;
+};
+
+/**
+ *
+ * @param {HTMLElement | SVGElement} parent
+ * @returns {(child: HTMLElement | SVGElement) => () => void}
+ */
+exports.appendChild = (parent) => (child) => () => {
+  parent.appendChild(child);
 };

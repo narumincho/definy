@@ -4,6 +4,7 @@ import CreativeRecord.ClientProgramHashValue as ClientProgramHashValue
 import CreativeRecord.Origin as Origin
 import CreativeRecord.StaticResource as StaticResource
 import Data.Maybe as Maybe
+import Data.Tuple as Tuple
 import Effect as Effect
 import Language as Language
 import Prelude as Prelude
@@ -24,12 +25,23 @@ main =
         , language: Maybe.Just Language.Japanese
         , coverImagePath: StaticResource.iconPng
         , path: StructuredUrl.fromPath []
-        , style: Maybe.Nothing
         , scriptPath: StructuredUrl.fromPath [ ClientProgramHashValue.clientProgramHashValue ]
         , bodyClass: ""
         , pointerMove: Maybe.Nothing
         , pointerDown: Maybe.Nothing
-        , children: View.ChildrenText ""
+        , children:
+            View.ChildrenElementList
+              [ Tuple.Tuple "hi"
+                  ( View.ElementDiv
+                      ( View.Div
+                          { children: View.ChildrenText "書き換えたbody!"
+                          , id: ""
+                          , class: ""
+                          , click: Maybe.Nothing
+                          }
+                      )
+                  )
+              ]
         , origin: Origin.origin
         }
     )

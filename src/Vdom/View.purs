@@ -42,6 +42,7 @@ module Vdom.View
   , rootPath
   , pathAppendKey
   , Path
+  , pathToString
   ) where
 
 import Color as Color
@@ -65,7 +66,6 @@ newtype View message
   , coverImagePath :: StructuredUrl.PathAndSearchParams
   , path :: StructuredUrl.PathAndSearchParams
   , origin :: NonEmptyString.NonEmptyString
-  , style :: Maybe.Maybe String
   , scriptPath :: StructuredUrl.PathAndSearchParams
   , bodyClass :: String
   , pointerMove :: Maybe.Maybe (Pointer -> message)
@@ -539,6 +539,9 @@ rootPath = Path ""
 
 pathAppendKey :: Path -> String -> Path
 pathAppendKey (Path path) key = Path (String.joinWith "/" [ path, key ])
+
+pathToString :: Path -> String
+pathToString (Path str) = str
 
 newtype ClickMessageData message
   = ClickMessageData
