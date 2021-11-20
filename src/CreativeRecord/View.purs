@@ -11,11 +11,11 @@ import Language as Language
 import Prelude as Prelude
 import StructuredUrl as StructuredUrl
 import Type.Proxy as Proxy
-import View.View as View
+import View.Data as ViewData
 
-view :: View.View Prelude.Unit
+view :: ViewData.View Prelude.Unit
 view =
-  View.View
+  ViewData.View
     { appName: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "ナルミンチョの創作記録")
     , box: Top.topBox
     , coverImagePath: StaticResource.iconPng

@@ -1,6 +1,6 @@
 module CreativeRecord.SvgImage where
 
-import View.View as View
+import View.Data as View
 
 webSiteLogo :: View.Svg
 webSiteLogo =

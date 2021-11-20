@@ -1,4 +1,4 @@
-module View.View
+module View.Data
   ( View(..)
   , Box(..)
   , XOrY(..)
