@@ -54,23 +54,26 @@ import Data.String.NonEmpty as NonEmptyString
 import Language as Language
 import Prelude as Prelude
 import StructuredUrl as StructuredUrl
+import Css as Css
 
 newtype View message
   = View
-  { pageName :: String
-  , appName :: String
-  , description :: String
-  , themeColor :: Maybe.Maybe Color.Color
-  , iconPath :: StructuredUrl.PathAndSearchParams
-  , language :: Maybe.Maybe Language.Language
-  , coverImagePath :: StructuredUrl.PathAndSearchParams
-  , path :: StructuredUrl.PathAndSearchParams
-  , origin :: NonEmptyString.NonEmptyString
-  , scriptPath :: StructuredUrl.PathAndSearchParams
-  , bodyClass :: String
+  { {- ページ名
+  Google 検索のページ名や, タブ, ブックマークのタイトル, OGPのタイトルなどに使用される  -} pageName :: String
+  , {- アプリ名 / サイト名 -} appName :: String
+  , {- ページの説明 -} description :: String
+  , {- テーマカラー -} themeColor :: Maybe.Maybe Color.Color
+  , {- アイコン画像のURL -} iconPath :: StructuredUrl.PathAndSearchParams
+  , {- 使用している言語 -} language :: Maybe.Maybe Language.Language
+  , {- OGPに使われるカバー画像のパス -} coverImagePath :: StructuredUrl.PathAndSearchParams
+  , {- パス. ログイン時のコールバック時には Noting にして良い -} path :: Maybe.Maybe StructuredUrl.PathAndSearchParams
+  , {- オリジン -} origin :: NonEmptyString.NonEmptyString
+  , {- 全体に適応されるスタイル. CSS -} style :: Css.StatementList
+  , {- スクリプトのパス -} scriptPath :: StructuredUrl.PathAndSearchParams
+  , {- body の class -} bodyClass :: String
   , pointerMove :: Maybe.Maybe (Pointer -> message)
   , pointerDown :: Maybe.Maybe (Pointer -> message)
-  , children :: Children message
+  , {- body の 子要素 -} children :: Children message
   }
 
 newtype Pointer

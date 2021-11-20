@@ -3,6 +3,7 @@ module CreativeRecord.Client (main) where
 import CreativeRecord.ClientProgramHashValue as ClientProgramHashValue
 import CreativeRecord.Origin as Origin
 import CreativeRecord.StaticResource as StaticResource
+import Css as Css
 import Data.Maybe as Maybe
 import Data.Tuple as Tuple
 import Effect as Effect
@@ -24,7 +25,8 @@ main =
         , iconPath: StaticResource.iconPng
         , language: Maybe.Just Language.Japanese
         , coverImagePath: StaticResource.iconPng
-        , path: StructuredUrl.fromPath []
+        , style: Css.StatementList { keyframesList: [], ruleList: [] }
+        , path: Maybe.Just (StructuredUrl.fromPath [])
         , scriptPath:
             StructuredUrl.fromPath
               [ ClientProgramHashValue.clientProgramHashValue ]
