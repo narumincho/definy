@@ -62,7 +62,7 @@ newtype Vdom message
   Google 検索のページ名や, タブ, ブックマークのタイトル, OGPのタイトルなどに使用される  -} pageName :: String
   , {- アプリ名 / サイト名 -} appName :: String
   , {- ページの説明 -} description :: String
-  , {- テーマカラー -} themeColor :: Maybe.Maybe Color.Color
+  , {- テーマカラー -} themeColor :: Color.Color
   , {- アイコン画像のURL -} iconPath :: StructuredUrl.PathAndSearchParams
   , {- 使用している言語 -} language :: Maybe.Maybe Language.Language
   , {- OGPに使われるカバー画像のパス -} coverImagePath :: StructuredUrl.PathAndSearchParams
@@ -129,7 +129,7 @@ newtype ViewDiff message
 
 data ViewPatchOperation
   = ChangePageName String
-  | ChangeThemeColor (Maybe.Maybe Color.Color)
+  | ChangeThemeColor Color.Color
   | ChangeLanguage (Maybe.Maybe Language.Language)
   | ChangeBodyClass String
 

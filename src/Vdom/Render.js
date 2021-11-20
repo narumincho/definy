@@ -30,16 +30,12 @@ const getOrCreateThemeColorMetaElement = () => {
 
 /**
  *
- * @param {string | null} newThemeColor
+ * @param {string} newThemeColor
  * @returns
  */
 exports.changeThemeColor = (newThemeColor) => () => {
   const themeColorMetaElement = getOrCreateThemeColorMetaElement();
-  if (newThemeColor === null) {
-    themeColorMetaElement.remove();
-  } else {
-    themeColorMetaElement.content = newThemeColor;
-  }
+  themeColorMetaElement.content = newThemeColor;
 };
 
 /**

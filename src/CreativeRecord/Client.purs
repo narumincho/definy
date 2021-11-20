@@ -1,5 +1,6 @@
 module CreativeRecord.Client (main) where
 
+import Color.Scheme.MaterialDesign as Color
 import CreativeRecord.ClientProgramHashValue as ClientProgramHashValue
 import CreativeRecord.Origin as Origin
 import CreativeRecord.StaticResource as StaticResource
@@ -10,9 +11,9 @@ import Effect as Effect
 import Language as Language
 import Prelude as Prelude
 import StructuredUrl as StructuredUrl
+import Vdom.Data as View
 import Vdom.Render as Render
 import Vdom.RenderState as RenderState
-import Vdom.Data as View
 
 main :: Effect.Effect Prelude.Unit
 main =
@@ -21,7 +22,7 @@ main =
         { pageName: "書き換えた新しいページ名!"
         , appName: "アプリ名!"
         , description: "説明..."
-        , themeColor: Maybe.Nothing
+        , themeColor: Color.orange
         , iconPath: StaticResource.iconPng
         , language: Maybe.Just Language.Japanese
         , coverImagePath: StaticResource.iconPng

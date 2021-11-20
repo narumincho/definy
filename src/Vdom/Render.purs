@@ -76,7 +76,7 @@ resetAndRenderView :: forall message. View.Vdom message -> RenderState.RenderSta
 resetAndRenderView (View.Vdom view) renderState = do
   changePageName view.pageName
   changeThemeColor
-    (Nullable.toNullable (map Color.toHexString view.themeColor))
+    (Color.toHexString view.themeColor)
   changeLanguage
     (Nullable.toNullable (map Language.toIETFLanguageTag view.language))
   changeBodyClass view.bodyClass
@@ -109,7 +109,7 @@ viewPatchOperationToEffect = case _ of
   View.ChangePageName newPageName -> changePageName newPageName
   View.ChangeThemeColor colorMaybe ->
     changeThemeColor
-      (Nullable.toNullable (map Color.toHexString colorMaybe))
+      (Color.toHexString colorMaybe)
   View.ChangeLanguage languageMaybe ->
     changeLanguage
       (Nullable.toNullable (map Language.toIETFLanguageTag languageMaybe))
@@ -117,7 +117,7 @@ viewPatchOperationToEffect = case _ of
 
 foreign import changePageName :: String -> Effect.Effect Unit
 
-foreign import changeThemeColor :: Nullable.Nullable String -> Effect.Effect Unit
+foreign import changeThemeColor :: String -> Effect.Effect Unit
 
 foreign import changeLanguage :: Nullable.Nullable String -> Effect.Effect Unit
 
