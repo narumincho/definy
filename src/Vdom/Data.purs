@@ -1,5 +1,5 @@
-module Vdom.View
-  ( View(..)
+module Vdom.Data
+  ( Vdom(..)
   , Div(..)
   , Pointer(..)
   , Children(..)
@@ -56,8 +56,8 @@ import Prelude as Prelude
 import StructuredUrl as StructuredUrl
 import Css as Css
 
-newtype View message
-  = View
+newtype Vdom message
+  = Vdom
   { {- ページ名
   Google 検索のページ名や, タブ, ブックマークのタイトル, OGPのタイトルなどに使用される  -} pageName :: String
   , {- アプリ名 / サイト名 -} appName :: String

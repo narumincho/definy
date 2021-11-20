@@ -9,7 +9,7 @@ import Data.UInt as UInt
 import Effect as Effect
 import Language as Language
 import Vdom.RenderState as RenderState
-import Vdom.View as View
+import Vdom.Data as View
 
 elementToHtmlOrSvgElement ::
   forall message.
@@ -72,8 +72,8 @@ themeColorName :: String
 themeColorName = "theme-color"
 
 -- | すべてをリセットして再描画する. 最初に1回呼ぶと良い.
-resetAndRenderView :: forall message. View.View message -> RenderState.RenderState message -> Effect.Effect Unit
-resetAndRenderView (View.View view) renderState = do
+resetAndRenderView :: forall message. View.Vdom message -> RenderState.RenderState message -> Effect.Effect Unit
+resetAndRenderView (View.Vdom view) renderState = do
   changePageName view.pageName
   changeThemeColor
     (Nullable.toNullable (map Color.toHexString view.themeColor))

@@ -12,12 +12,12 @@ import Prelude as Prelude
 import StructuredUrl as StructuredUrl
 import Vdom.Render as Render
 import Vdom.RenderState as RenderState
-import Vdom.View as View
+import Vdom.Data as View
 
 main :: Effect.Effect Prelude.Unit
 main =
   Render.resetAndRenderView
-    ( View.View
+    ( View.Vdom
         { pageName: "書き換えた新しいページ名!"
         , appName: "アプリ名!"
         , description: "説明..."

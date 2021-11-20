@@ -5,10 +5,10 @@ import Data.Map as Map
 import Data.Maybe as Maybe
 import Data.Tuple as Tuple
 import Prelude as Prelude
-import Vdom.View as View
+import Vdom.Data as View
 
-createViewDiff :: forall message. View.View message -> View.View message -> View.ViewDiff message
-createViewDiff (View.View oldView) (View.View newView) =
+createViewDiff :: forall message. View.Vdom message -> View.Vdom message -> View.ViewDiff message
+createViewDiff (View.Vdom oldView) (View.Vdom newView) =
   View.ViewDiff
     { patchOperationList:
         Array.catMaybes
