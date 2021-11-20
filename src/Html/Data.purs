@@ -28,7 +28,6 @@ newtype HtmlOption
   , {- OGPに使われるカバー画像のURL (CORSの制限を受けない) -} coverImagePath :: StructuredUrl.PathAndSearchParams
   , {- オリジン -} origin :: NonEmptyString.NonEmptyString
   , {- パス. ログイン時のコールバック時には Noting にして良い -} path :: Maybe.Maybe StructuredUrl.PathAndSearchParams
-  , {- コンテンツ作成者のTwitterID `@`を含む -} creatorTwitterId :: Maybe.Maybe NonEmptyString.NonEmptyString
   , {- 全体に適応されるスタイル. CSS -} style :: Css.StatementList
   , {- スクリプトのパス -} scriptPath :: Maybe.Maybe StructuredUrl.PathAndSearchParams
   , {- body の class -} bodyClass :: Maybe.Maybe NonEmptyString.NonEmptyString

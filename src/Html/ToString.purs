@@ -73,8 +73,7 @@ headElement (Data.HtmlOption option) =
               , themeColorElement option.themeColor
               ]
             , iconElement (StructuredUrl.StructuredUrl { origin: option.origin, pathAndSearchParams: option.iconPath })
-            , twitterCardElement option.creatorTwitterId
-            , [ Wellknown.style option.style ]
+            , [ twitterCardElement, Wellknown.style option.style ]
             , case option.path of
                 Maybe.Just path -> [ ogUrlElement (StructuredUrl.StructuredUrl { origin: option.origin, pathAndSearchParams: path }) ]
                 Maybe.Nothing -> []
@@ -144,37 +143,19 @@ iconElement iconUrl =
     , Wellknown.link "apple-touch-icon" href
     ]
 
-twitterCardElement :: Maybe.Maybe NonEmptyString.NonEmptyString -> Array Data.RawHtmlElement
-twitterCardElement creatorTwitterId =
-  Array.concat
-    [ [ Wellknown.meta
-          ( Map.fromFoldable
-              ( [ Tuple.Tuple
-                    (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "name"))
-                    (Maybe.Just "twitter:card")
-                , Tuple.Tuple
-                    (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "content"))
-                    (Maybe.Just "summary_large_image")
-                ]
-              )
-          )
-      ]
-    , case creatorTwitterId of
-        Maybe.Just id ->
-          [ Wellknown.meta
-              ( Map.fromFoldable
-                  ( [ Tuple.Tuple
-                        (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "name"))
-                        (Maybe.Just "twitter:creator")
-                    , Tuple.Tuple
-                        (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "content"))
-                        (Maybe.Just (NonEmptyString.toString id))
-                    ]
-                  )
-              )
+twitterCardElement :: Data.RawHtmlElement
+twitterCardElement =
+  Wellknown.meta
+    ( Map.fromFoldable
+        ( [ Tuple.Tuple
+              (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "name"))
+              (Maybe.Just "twitter:card")
+          , Tuple.Tuple
+              (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "content"))
+              (Maybe.Just "summary_large_image")
           ]
-        Maybe.Nothing -> []
-    ]
+        )
+    )
 
 propertyAttribute :: String -> Tuple.Tuple NonEmptyString.NonEmptyString (Maybe.Maybe String)
 propertyAttribute value =

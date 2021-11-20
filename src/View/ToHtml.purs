@@ -33,7 +33,6 @@ viewToHtmlOption scriptPath (View.View view) =
       , coverImagePath: view.coverImagePath
       , path: Maybe.Just view.path
       , origin: view.origin
-      , creatorTwitterId: view.creatorTwitterId
       , style:
           htmlElementAndStyleDictToCssStatementList htmlElementAndStyleDict
       , scriptPath: Maybe.Just scriptPath

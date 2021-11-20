@@ -25,7 +25,9 @@ main =
         , language: Maybe.Just Language.Japanese
         , coverImagePath: StaticResource.iconPng
         , path: StructuredUrl.fromPath []
-        , scriptPath: StructuredUrl.fromPath [ ClientProgramHashValue.clientProgramHashValue ]
+        , scriptPath:
+            StructuredUrl.fromPath
+              [ ClientProgramHashValue.clientProgramHashValue ]
         , bodyClass: ""
         , pointerMove: Maybe.Nothing
         , pointerDown: Maybe.Nothing

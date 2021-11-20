@@ -5,7 +5,6 @@ import CreativeRecord.Origin as Origin
 import CreativeRecord.StaticResource as StaticResource
 import CreativeRecord.Top as Top
 import Data.Map as Map
-import Data.Maybe as Mabye
 import Data.Maybe as Maybe
 import Data.String.NonEmpty as NonEmptyString
 import Language as Language
@@ -23,10 +22,9 @@ view =
     , description:
         "革新的なプログラミング言語のdefiny, Web技術, 作っているゲームなどについて解説しています"
     , iconPath: StaticResource.iconPng
-    , language: Mabye.Just Language.Japanese
+    , language: Maybe.Just Language.Japanese
     , pageName: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "ナルミンチョの創作記録")
     , path: StructuredUrl.pathAndSearchParams [] Map.empty
     , themeColor: Color.orange
     , origin: Origin.origin
-    , creatorTwitterId: Maybe.Just (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "@naru_mincho"))
     }
