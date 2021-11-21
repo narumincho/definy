@@ -1,7 +1,10 @@
 module Vdom.Diff (createViewDiff, createElementDiff) where
 
 import Data.Array as Array
+import Data.Array.NonEmpty (NonEmptyArray)
+import Data.Array.NonEmpty as NonEmptyArray
 import Data.Map as Map
+import Data.Maybe (Maybe(..))
 import Data.Maybe as Maybe
 import Data.Tuple as Tuple
 import Prelude as Prelude
@@ -114,7 +117,7 @@ createElementDiff (Data.ElementSvg (Data.Svg old)) (Data.ElementSvg (Data.Svg ne
     , viewBoxY: createDiff old.viewBoxY new.viewBoxY
     , viewBoxWidth: createDiff old.viewBoxWidth new.viewBoxWidth
     , viewBoxHeight: createDiff old.viewBoxHeight new.viewBoxHeight
-    , children: createElementListChildrenDiff old.children new.children
+    , children: createChildListDiff old.children new.children
     }
 
 createElementDiff (Data.ElementSvgPath (Data.SvgPath old)) (Data.ElementSvgPath (Data.SvgPath new)) newKey =
@@ -175,6 +178,21 @@ createChildrenDiff (Data.ChildrenText _) (Data.ChildrenElementList list) = Data.
 
 createChildrenDiff (Data.ChildrenElementList old) (Data.ChildrenElementList new) = Data.ChildDiffList (createElementListChildrenDiff old new)
 
+createChildListDiff ::
+  forall message.
+  Array (Tuple.Tuple String (Data.Element message)) ->
+  Array (Tuple.Tuple String (Data.Element message)) ->
+  Data.ChildrenDiff message
+createChildListDiff oldChildren newChildren = case Tuple.Tuple (NonEmptyArray.fromArray oldChildren) (NonEmptyArray.fromArray newChildren) of
+  Tuple.Tuple (Just oldNonEmpty) (Just newNonEmpty) -> Data.ChildDiffList (createElementListChildrenDiff oldNonEmpty newNonEmpty)
+  Tuple.Tuple Nothing Nothing -> Data.ChildrenDiffSkip
+  Tuple.Tuple (Just _) Nothing -> Data.ChildrenDiffSetText ""
+  Tuple.Tuple Nothing (Just newNonEmpty) -> Data.ChildrenDiffResetAndInsert newNonEmpty
+
 -- | TODO
-createElementListChildrenDiff :: forall message. Array (Tuple.Tuple String (Data.Element message)) -> Array (Tuple.Tuple String (Data.Element message)) -> Array (Data.ElementDiff message)
-createElementListChildrenDiff _oldChildren _newChildren = []
+createElementListChildrenDiff ::
+  forall message.
+  NonEmptyArray (Tuple.Tuple String (Data.Element message)) ->
+  NonEmptyArray (Tuple.Tuple String (Data.Element message)) ->
+  NonEmptyArray (Data.ElementDiff message)
+createElementListChildrenDiff _oldChildren _newChildren = NonEmptyArray.singleton Data.skip

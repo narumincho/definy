@@ -5,6 +5,7 @@ import CreativeRecord.ClientProgramHashValue as ClientProgramHashValue
 import CreativeRecord.Origin as Origin
 import CreativeRecord.StaticResource as StaticResource
 import Css as Css
+import Data.Array.NonEmpty as NonEmptyArray
 import Data.Maybe as Maybe
 import Data.String.NonEmpty as NonEmptyString
 import Data.Tuple as Tuple
@@ -40,17 +41,19 @@ main =
         , pointerDown: Maybe.Nothing
         , children:
             View.ChildrenElementList
-              [ Tuple.Tuple "hi"
-                  ( View.ElementDiv
-                      ( View.Div
-                          { children: View.ChildrenText "書き換えたbody!"
-                          , id: Maybe.Nothing
-                          , class: Maybe.Nothing
-                          , click: Maybe.Nothing
-                          }
+              ( NonEmptyArray.singleton
+                  ( Tuple.Tuple "hi"
+                      ( View.ElementDiv
+                          ( View.Div
+                              { children: View.ChildrenText "書き換えたbody!"
+                              , id: Maybe.Nothing
+                              , class: Maybe.Nothing
+                              , click: Maybe.Nothing
+                              }
+                          )
                       )
                   )
-              ]
+              )
         , origin: Origin.origin
         }
     )

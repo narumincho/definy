@@ -30,6 +30,7 @@ module Vdom.Data
   , Events
   , ChildrenDiff(..)
   , ElementDiff
+  , skip
   , ElementUpdateDiff
   , replace
   , externalLinkDiff
@@ -53,8 +54,10 @@ module Vdom.Data
 import Color as Color
 import Css as Css
 import Data.Array as Array
+import Data.Array.NonEmpty (NonEmptyArray)
 import Data.Array.NonEmpty as NonEmptyArray
 import Data.Map as Map
+import Data.Maybe (Maybe)
 import Data.Maybe as Maybe
 import Data.String as String
 import Data.String.NonEmpty (NonEmptyString)
@@ -171,6 +174,9 @@ data ElementDiff message
     , key :: String
     }
   | Skip
+
+skip :: forall message. ElementDiff message
+skip = Skip
 
 replace :: forall message. String -> Element message -> ElementDiff message
 replace key newElement = Replace { newElement, key }
@@ -323,20 +329,20 @@ buttonDiff key = case _ of
 
 newtype Img
   = Img
-  { id :: String
-  , class :: String
+  { id :: Maybe NonEmptyString
+  , class :: Maybe NonEmptyString
   , alt :: String
-  , src :: String
+  , src :: StructuredUrl.PathAndSearchParams
   }
 
 newtype ImgDiff
   = ImgDiff (ImgDiffRec)
 
 type ImgDiffRec
-  = { id :: Maybe.Maybe String
-    , class :: Maybe.Maybe String
+  = { id :: Maybe (Maybe NonEmptyString)
+    , class :: Maybe (Maybe NonEmptyString)
     , alt :: Maybe.Maybe String
-    , src :: Maybe.Maybe String
+    , src :: Maybe.Maybe StructuredUrl.PathAndSearchParams
     }
 
 imgDiff :: forall message. String -> ImgDiffRec -> ElementDiff message
@@ -346,8 +352,8 @@ imgDiff key = case _ of
 
 newtype InputRadio message
   = InputRadio
-  { id :: String
-  , class :: String
+  { id :: Maybe NonEmptyString
+  , class :: Maybe NonEmptyString
   , select :: message
   , checked :: Boolean
   , {- 選択肢の選択を1にする動作のため. どの選択肢に属しているかを指定する 
@@ -358,8 +364,8 @@ newtype InputRadioDiff
   = InputRadioDiff InputRadioDiffRec
 
 type InputRadioDiffRec
-  = { id :: Maybe.Maybe String
-    , class :: Maybe.Maybe String
+  = { id :: Maybe (Maybe NonEmptyString)
+    , class :: Maybe (Maybe NonEmptyString)
     , checked :: Maybe.Maybe Boolean
     , name :: Maybe.Maybe String
     }
@@ -372,8 +378,8 @@ inputRadioDiff key = case _ of
 
 newtype InputText message
   = InputText
-  { id :: String
-  , class :: String
+  { id :: Maybe NonEmptyString
+  , class :: Maybe NonEmptyString
   , inputOrReadonly :: Maybe.Maybe (String -> message)
   , value :: String
   }
@@ -382,8 +388,8 @@ newtype InputTextDiff
   = InputTextDiff InputTextDiffRec
 
 type InputTextDiffRec
-  = { id :: Maybe.Maybe String
-    , class :: Maybe.Maybe String
+  = { id :: Maybe (Maybe NonEmptyString)
+    , class :: Maybe (Maybe NonEmptyString)
     , readonly :: Maybe.Maybe Boolean
     , value :: Maybe.Maybe String
     }
@@ -395,23 +401,18 @@ inputTextDiff key = case _ of
 
 newtype TextArea message
   = TextArea
-  { id :: String
-  , class :: String
+  { id :: Maybe NonEmptyString
+  , class :: Maybe NonEmptyString
   , inputOrReadonly :: Maybe.Maybe (String -> message)
   , value :: String
   }
 
 newtype TextAreaDiff
-  = TextAreaDiff
-  { id :: Maybe.Maybe String
-  , class :: Maybe.Maybe String
-  , readonly :: Maybe.Maybe Boolean
-  , value :: Maybe.Maybe String
-  }
+  = TextAreaDiff TextAreaDiffRec
 
 type TextAreaDiffRec
-  = { id :: Maybe.Maybe String
-    , class :: Maybe.Maybe String
+  = { id :: Maybe (Maybe NonEmptyString)
+    , class :: Maybe (Maybe NonEmptyString)
     , readonly :: Maybe.Maybe Boolean
     , value :: Maybe.Maybe String
     }
@@ -427,8 +428,8 @@ textAreaDiff key = case _ of
 
 newtype Label message
   = Label
-  { id :: String
-  , class :: String
+  { id :: Maybe NonEmptyString
+  , class :: Maybe NonEmptyString
   , for :: String
   , children :: Children message
   }
@@ -437,8 +438,8 @@ newtype LabelDiff message
   = LabelDiff (LabelDiffRec message)
 
 type LabelDiffRec message
-  = { id :: Maybe.Maybe String
-    , class :: Maybe.Maybe String
+  = { id :: Maybe (Maybe NonEmptyString)
+    , class :: Maybe (Maybe NonEmptyString)
     , for :: Maybe.Maybe String
     , children :: ChildrenDiff message
     }
@@ -452,8 +453,8 @@ newtype Svg message
   = Svg (SvgRec message)
 
 type SvgRec message
-  = { id :: (Maybe.Maybe NonEmptyString.NonEmptyString)
-    , class :: (Maybe.Maybe NonEmptyString.NonEmptyString)
+  = { id :: Maybe NonEmptyString
+    , class :: Maybe NonEmptyString
     , viewBoxX :: Number
     , viewBoxY :: Number
     , viewBoxWidth :: Number
@@ -474,7 +475,7 @@ type SvgDiffRec message
     , viewBoxY :: Maybe.Maybe Number
     , viewBoxWidth :: Maybe.Maybe Number
     , viewBoxHeight :: Maybe.Maybe Number
-    , children :: Array (ElementDiff message)
+    , children :: ChildrenDiff message
     }
 
 svgDiff :: forall message. String -> SvgDiffRec message -> ElementDiff message
@@ -613,11 +614,11 @@ newtype InputMessageData message
   = InputMessageData (String -> message)
 
 data Children message
-  = ChildrenElementList (Array (Tuple.Tuple String (Element message)))
+  = ChildrenElementList (NonEmptyArray (Tuple.Tuple String (Element message)))
   | ChildrenText String
 
 data ChildrenDiff message
   = ChildrenDiffSkip
   | ChildrenDiffSetText String
-  | ChildrenDiffResetAndInsert (Array (Tuple.Tuple String (Element message)))
-  | ChildDiffList (Array (ElementDiff message))
+  | ChildrenDiffResetAndInsert (NonEmptyArray (Tuple.Tuple String (Element message)))
+  | ChildDiffList (NonEmptyArray (ElementDiff message))

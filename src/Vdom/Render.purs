@@ -3,6 +3,7 @@ module Vdom.Render where
 import Prelude
 import Color as Color
 import Console as Console
+import Data.Array.NonEmpty as NonEmptyArray
 import Data.Nullable (Nullable)
 import Data.Nullable as Nullable
 import Data.String.NonEmpty as NonEmptyString
@@ -45,7 +46,7 @@ applyChildren ::
 applyChildren { htmlOrSvgElement, children: View.ChildrenText text } = setTextContent text htmlOrSvgElement
 
 applyChildren { htmlOrSvgElement, children: View.ChildrenElementList list, path, renderState } =
-  Effect.foreachE list
+  Effect.foreachE (NonEmptyArray.toArray list)
     ( \(Tuple.Tuple key child) -> do
         element <-
           elementToHtmlOrSvgElement
