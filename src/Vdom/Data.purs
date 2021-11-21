@@ -1,6 +1,7 @@
 module Vdom.Data
   ( Vdom(..)
   , Div(..)
+  , createDivDeff
   , Pointer(..)
   , Children(..)
   , ClickMessageData(..)
@@ -26,7 +27,6 @@ module Vdom.Data
   , ElementDiff
   , ElementUpdateDiff
   , replace
-  , divDiff
   , externalLinkDiff
   , localLinkDiff
   , imgDiff
@@ -46,15 +46,17 @@ module Vdom.Data
   ) where
 
 import Color as Color
+import Css as Css
+import Data.Array.NonEmpty as NonEmptyArray
+import Data.Array as Array
 import Data.Map as Map
 import Data.Maybe as Maybe
 import Data.String as String
-import Data.Tuple as Tuple
 import Data.String.NonEmpty as NonEmptyString
+import Data.Tuple as Tuple
 import Language as Language
 import Prelude as Prelude
 import StructuredUrl as StructuredUrl
-import Css as Css
 
 newtype Vdom message
   = Vdom
@@ -188,18 +190,33 @@ newtype Div message
   }
 
 newtype DivDiff message
-  = DivDiff (DivDiffRec message)
+  = DivDiff (NonEmptyArray.NonEmptyArray (DivPatchOperation message))
 
-type DivDiffRec message
-  = { id :: Maybe.Maybe String
-    , class :: Maybe.Maybe String
-    , children :: ChildrenDiff message
-    }
+data DivPatchOperation message
+  = DivPatchOperationSetId String
+  | DivPatchOperationSetClass String
+  | DivPatchOperationUpdateChildren (ChildrenDiff message)
 
-divDiff :: forall message. String -> DivDiffRec message -> ElementDiff message
-divDiff key = case _ of
-  { id: Maybe.Nothing, class: Maybe.Nothing, children: ChildrenDiffSkip } -> Skip
-  rec -> Update { elementUpdateDiff: ElementUpdateDiffDiv (DivDiff rec), key }
+createDivDeff :: forall message. String -> Div message -> Div message -> ElementDiff message
+createDivDeff key (Div old) (Div new) = case NonEmptyArray.fromArray
+    ( Array.catMaybes
+        [ Prelude.map DivPatchOperationSetId (createDiff old.id new.id)
+        , Prelude.map DivPatchOperationSetClass (createDiff old.class new.class)
+        ]
+    ) of
+  Maybe.Just list ->
+    Update
+      { elementUpdateDiff: ElementUpdateDiffDiv (DivDiff list)
+      , key
+      }
+  Maybe.Nothing -> Skip
+
+createDiff :: forall a. Prelude.Eq a => a -> a -> Maybe.Maybe a
+createDiff old new =
+  if Prelude.eq old new then
+    Maybe.Nothing
+  else
+    Maybe.Just new
 
 newtype ExternalLink message
   = ExternalLink
