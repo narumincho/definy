@@ -13,7 +13,7 @@ import Prelude as Prelude
 import StructuredUrl as StructuredUrl
 import Type.Proxy as Proxy
 import Util as Util
-import View.View as View
+import View.Data as View
 
 linkBackGroundColor :: Color.Color
 linkBackGroundColor = Color.fromInt 0x333333

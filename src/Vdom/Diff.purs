@@ -1,185 +1,165 @@
-module Vdom.Diff (createViewDiff) where
+module Vdom.Diff (createViewDiff, createElementDiff) where
 
 import Data.Array as Array
 import Data.Map as Map
 import Data.Maybe as Maybe
 import Data.Tuple as Tuple
 import Prelude as Prelude
-import Vdom.View as View
+import Vdom.Data as Data
 
-createViewDiff :: forall message. View.View message -> View.View message -> View.ViewDiff message
-createViewDiff (View.View oldView) (View.View newView) =
-  View.ViewDiff
+createViewDiff :: forall message. Data.Vdom message -> Data.Vdom message -> Data.ViewDiff message
+createViewDiff (Data.Vdom oldVdom) (Data.Vdom newVdom) =
+  Data.ViewDiff
     { patchOperationList:
         Array.catMaybes
-          [ if Prelude.notEq oldView.pageName newView.pageName then
-              Maybe.Just (View.ChangePageName newView.pageName)
+          [ if Prelude.notEq oldVdom.pageName newVdom.pageName then
+              Maybe.Just (Data.ChangePageName newVdom.pageName)
             else
               Maybe.Nothing
-          , if Prelude.notEq oldView.themeColor newView.themeColor then
-              Maybe.Just (View.ChangeThemeColor newView.themeColor)
+          , if Prelude.notEq oldVdom.themeColor newVdom.themeColor then
+              Maybe.Just (Data.ChangeThemeColor newVdom.themeColor)
             else
               Maybe.Nothing
-          , if Prelude.notEq oldView.language newView.language then
-              Maybe.Just (View.ChangeLanguage newView.language)
+          , if Prelude.notEq oldVdom.language newVdom.language then
+              Maybe.Just (Data.ChangeLanguage newVdom.language)
             else
               Maybe.Nothing
-          , if Prelude.notEq oldView.bodyClass newView.bodyClass then
-              Maybe.Just (View.ChangeBodyClass newView.bodyClass)
+          , if Prelude.notEq oldVdom.bodyClass newVdom.bodyClass then
+              Maybe.Just (Data.ChangeBodyClass newVdom.bodyClass)
             else
               Maybe.Nothing
           ]
-    , childrenDiff: createChildrenDiff oldView.children newView.children
+    , childrenDiff: createChildrenDiff oldVdom.children newVdom.children
     , newMessageData:
-        View.MessageData
+        Data.MessageData
           { messageMap: Map.empty
-          , pointerMove: newView.pointerMove
-          , pointerDown: newView.pointerDown
+          , pointerMove: newVdom.pointerMove
+          , pointerDown: newVdom.pointerDown
           }
     }
 
-createElementDiff :: forall message. View.Element message -> View.Element message -> String -> View.ElementDiff message
-createElementDiff (View.ElementDiv (View.Div old)) (View.ElementDiv (View.Div new)) newKey =
-  View.divDiff
+createElementDiff :: forall message. Data.Element message -> Data.Element message -> String -> Data.ElementDiff message
+createElementDiff (Data.ElementDiv old) (Data.ElementDiv new) newKey = Data.createDivDeff newKey old new
+
+createElementDiff (Data.ElementExternalLink (Data.ExternalLink old)) (Data.ElementExternalLink (Data.ExternalLink new)) newKey =
+  Data.externalLinkDiff
     newKey
-    { id: createStringDiff old.id new.id
-    , class: createStringDiff old.class new.class
+    { id: createDiff old.id new.id
+    , class: createDiff old.class new.class
+    , url: createDiff old.url new.url
     , children: createChildrenDiff old.children new.children
     }
 
-createElementDiff (View.ElementExternalLink (View.ExternalLink old)) (View.ElementExternalLink (View.ExternalLink new)) newKey =
-  View.externalLinkDiff
+createElementDiff (Data.ElementLocalLink (Data.LocalLink old)) (Data.ElementLocalLink (Data.LocalLink new)) newKey =
+  Data.localLinkDiff
     newKey
-    { id: createStringDiff old.id new.id
-    , class: createStringDiff old.class new.class
-    , url: createStringDiff old.url new.url
+    { id: createDiff old.id new.id
+    , class: createDiff old.class new.class
+    , url: createDiff old.url new.url
     , children: createChildrenDiff old.children new.children
     }
 
-createElementDiff (View.ElementLocalLink (View.LocalLink old)) (View.ElementLocalLink (View.LocalLink new)) newKey =
-  View.localLinkDiff
+createElementDiff (Data.ElementButton (Data.Button old)) (Data.ElementButton (Data.Button new)) newKey =
+  Data.buttonDiff
     newKey
-    { id: createStringDiff old.id new.id
-    , class: createStringDiff old.class new.class
-    , url: createStringDiff old.url new.url
+    { id: createDiff old.id new.id
+    , class: createDiff old.class new.class
     , children: createChildrenDiff old.children new.children
     }
 
-createElementDiff (View.ElementButton (View.Button old)) (View.ElementButton (View.Button new)) newKey =
-  View.buttonDiff
+createElementDiff (Data.ElementImg (Data.Img old)) (Data.ElementImg (Data.Img new)) newKey =
+  Data.imgDiff
     newKey
-    { id: createStringDiff old.id new.id
-    , class: createStringDiff old.class new.class
-    , children: createChildrenDiff old.children new.children
+    { id: createDiff old.id new.id
+    , class: createDiff old.class new.class
+    , alt: createDiff old.alt new.alt
+    , src: createDiff old.src new.src
     }
 
-createElementDiff (View.ElementImg (View.Img old)) (View.ElementImg (View.Img new)) newKey =
-  View.imgDiff
+createElementDiff (Data.ElementInputRadio (Data.InputRadio old)) (Data.ElementInputRadio (Data.InputRadio new)) newKey =
+  Data.inputRadioDiff
     newKey
-    { id: createStringDiff old.id new.id
-    , class: createStringDiff old.class new.class
-    , alt: createStringDiff old.alt new.alt
-    , src: createStringDiff old.src new.src
+    { id: createDiff old.id new.id
+    , class: createDiff old.class new.class
+    , checked: createDiff old.checked new.checked
+    , name: createDiff old.name new.name
     }
 
-createElementDiff (View.ElementInputRadio (View.InputRadio old)) (View.ElementInputRadio (View.InputRadio new)) newKey =
-  View.inputRadioDiff
+createElementDiff (Data.ElementInputText (Data.InputText old)) (Data.ElementInputText (Data.InputText new)) newKey =
+  Data.inputTextDiff
     newKey
-    { id: createStringDiff old.id new.id
-    , class: createStringDiff old.class new.class
-    , checked: booleanDiff old.checked new.checked
-    , name: createStringDiff old.name new.name
-    }
-
-createElementDiff (View.ElementInputText (View.InputText old)) (View.ElementInputText (View.InputText new)) newKey =
-  View.inputTextDiff
-    newKey
-    { id: createStringDiff old.id new.id
-    , class: createStringDiff old.class new.class
+    { id: createDiff old.id new.id
+    , class: createDiff old.class new.class
     , readonly: createReadonlyDiff old.inputOrReadonly new.inputOrReadonly
-    , value: createStringDiff old.value new.value
+    , value: createDiff old.value new.value
     }
 
-createElementDiff (View.ElementTextArea (View.TextArea old)) (View.ElementTextArea (View.TextArea new)) newKey =
-  View.textAreaDiff
+createElementDiff (Data.ElementTextArea (Data.TextArea old)) (Data.ElementTextArea (Data.TextArea new)) newKey =
+  Data.textAreaDiff
     newKey
-    { id: createStringDiff old.id new.id
-    , class: createStringDiff old.class new.class
+    { id: createDiff old.id new.id
+    , class: createDiff old.class new.class
     , readonly: createReadonlyDiff old.inputOrReadonly new.inputOrReadonly
-    , value: createStringDiff old.value new.value
+    , value: createDiff old.value new.value
     }
 
-createElementDiff (View.ElementLabel (View.Label old)) (View.ElementLabel (View.Label new)) newKey =
-  View.labelDiff
+createElementDiff (Data.ElementLabel (Data.Label old)) (Data.ElementLabel (Data.Label new)) newKey =
+  Data.labelDiff
     newKey
-    { id: createStringDiff old.id new.id
-    , class: createStringDiff old.class new.class
-    , for: createStringDiff old.for new.for
+    { id: createDiff old.id new.id
+    , class: createDiff old.class new.class
+    , for: createDiff old.for new.for
     , children: createChildrenDiff old.children new.children
     }
 
-createElementDiff (View.ElementSvg (View.Svg old)) (View.ElementSvg (View.Svg new)) newKey =
-  View.svgDiff
+createElementDiff (Data.ElementSvg (Data.Svg old)) (Data.ElementSvg (Data.Svg new)) newKey =
+  Data.svgDiff
     newKey
-    { id: createStringDiff old.id new.id
-    , class: createStringDiff old.class new.class
-    , viewBoxX: createNumberDiff old.viewBoxX new.viewBoxX
-    , viewBoxY: createNumberDiff old.viewBoxY new.viewBoxY
-    , viewBoxWidth: createNumberDiff old.viewBoxWidth new.viewBoxWidth
-    , viewBoxHeight: createNumberDiff old.viewBoxHeight new.viewBoxHeight
+    { id: createDiff old.id new.id
+    , class: createDiff old.class new.class
+    , viewBoxX: createDiff old.viewBoxX new.viewBoxX
+    , viewBoxY: createDiff old.viewBoxY new.viewBoxY
+    , viewBoxWidth: createDiff old.viewBoxWidth new.viewBoxWidth
+    , viewBoxHeight: createDiff old.viewBoxHeight new.viewBoxHeight
     , children: createChildrenDiff old.children new.children
     }
 
-createElementDiff (View.ElementSvgPath (View.SvgPath old)) (View.ElementSvgPath (View.SvgPath new)) newKey =
-  View.svgPathDiff
+createElementDiff (Data.ElementSvgPath (Data.SvgPath old)) (Data.ElementSvgPath (Data.SvgPath new)) newKey =
+  Data.svgPathDiff
     newKey
-    { id: createStringDiff old.id new.id
-    , class: createStringDiff old.class new.class
-    , d: createStringDiff old.d new.d
-    , fill: createStringDiff old.fill new.fill
+    { id: createDiff old.id new.id
+    , class: createDiff old.class new.class
+    , d: createDiff old.d new.d
+    , fill: createDiff old.fill new.fill
     }
 
-createElementDiff (View.ElementSvgCircle (View.SvgCircle old)) (View.ElementSvgCircle (View.SvgCircle new)) newKey =
-  View.svgCircleDiff
+createElementDiff (Data.ElementSvgCircle (Data.SvgCircle old)) (Data.ElementSvgCircle (Data.SvgCircle new)) newKey =
+  Data.svgCircleDiff
     newKey
-    { id: createStringDiff old.id new.id
-    , class: createStringDiff old.class new.class
-    , fill: createStringDiff old.fill new.fill
-    , stroke: createStringDiff old.stroke new.stroke
-    , cx: createNumberDiff old.cx new.cx
-    , cy: createNumberDiff old.cy new.cy
-    , r: createNumberDiff old.r new.r
+    { id: createDiff old.id new.id
+    , class: createDiff old.class new.class
+    , fill: createDiff old.fill new.fill
+    , stroke: createDiff old.stroke new.stroke
+    , cx: createDiff old.cx new.cx
+    , cy: createDiff old.cy new.cy
+    , r: createDiff old.r new.r
     , children: createChildrenDiff old.children new.children
     }
 
-createElementDiff (View.ElementSvgAnimate (View.SvgAnimate old)) (View.ElementSvgAnimate (View.SvgAnimate new)) newKey =
-  View.svgAnimateDiff
+createElementDiff (Data.ElementSvgAnimate (Data.SvgAnimate old)) (Data.ElementSvgAnimate (Data.SvgAnimate new)) newKey =
+  Data.svgAnimateDiff
     newKey
-    { attributeName: createStringDiff old.attributeName new.attributeName
-    , dur: createNumberDiff old.dur new.dur
-    , repeatCount: createStringDiff old.repeatCount new.repeatCount
-    , from: createStringDiff old.from new.from
-    , to: createStringDiff old.to new.to
+    { attributeName: createDiff old.attributeName new.attributeName
+    , dur: createDiff old.dur new.dur
+    , repeatCount: createDiff old.repeatCount new.repeatCount
+    , from: createDiff old.from new.from
+    , to: createDiff old.to new.to
     }
 
-createElementDiff _ new newKey = View.replace newKey new
+createElementDiff _ new newKey = Data.replace newKey new
 
-createStringDiff :: String -> String -> Maybe.Maybe String
-createStringDiff old new =
-  if Prelude.eq old new then
-    Maybe.Nothing
-  else
-    Maybe.Just new
-
-booleanDiff :: Boolean -> Boolean -> Maybe.Maybe Boolean
-booleanDiff old new =
-  if Prelude.eq old new then
-    Maybe.Nothing
-  else
-    Maybe.Just new
-
-createNumberDiff :: Number -> Number -> Maybe.Maybe Number
-createNumberDiff old new =
+createDiff :: forall a. Prelude.Eq a => a -> a -> Maybe.Maybe a
+createDiff old new =
   if Prelude.eq old new then
     Maybe.Nothing
   else
@@ -192,16 +172,16 @@ createReadonlyDiff (Maybe.Just _) (Maybe.Nothing) = Maybe.Just false
 
 createReadonlyDiff _ _ = Maybe.Nothing
 
-createChildrenDiff :: forall message. View.Children message -> View.Children message -> View.ChildrenDiff message
-createChildrenDiff (View.ChildrenText old) (View.ChildrenText new)
-  | Prelude.eq old new = View.ChildrenDiffSkip
+createChildrenDiff :: forall message. Data.Children message -> Data.Children message -> Data.ChildrenDiff message
+createChildrenDiff (Data.ChildrenText old) (Data.ChildrenText new)
+  | Prelude.eq old new = Data.ChildrenDiffSkip
 
-createChildrenDiff _ (View.ChildrenText new) = View.ChildrenDiffSetText new
+createChildrenDiff _ (Data.ChildrenText new) = Data.ChildrenDiffSetText new
 
-createChildrenDiff (View.ChildrenText _) (View.ChildrenElementList list) = View.ChildrenDiffResetAndInsert list
+createChildrenDiff (Data.ChildrenText _) (Data.ChildrenElementList list) = Data.ChildrenDiffResetAndInsert list
 
-createChildrenDiff (View.ChildrenElementList old) (View.ChildrenElementList new) = View.ChildDiffList (createElementListChildrenDiff old new)
+createChildrenDiff (Data.ChildrenElementList old) (Data.ChildrenElementList new) = Data.ChildDiffList (createElementListChildrenDiff old new)
 
 -- | TODO
-createElementListChildrenDiff :: forall message. Array (Tuple.Tuple String (View.Element message)) -> Array (Tuple.Tuple String (View.Element message)) -> Array (View.ElementDiff message)
+createElementListChildrenDiff :: forall message. Array (Tuple.Tuple String (Data.Element message)) -> Array (Tuple.Tuple String (Data.Element message)) -> Array (Data.ElementDiff message)
 createElementListChildrenDiff _oldChildren _newChildren = []

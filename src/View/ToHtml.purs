@@ -14,11 +14,11 @@ import Html.Wellknown as HtmlWellknown
 import Prelude as Prelude
 import StructuredUrl as StructuredUrl
 import Type.Proxy as Proxy
-import View.View as View
+import View.Data as Data
 
 -- | View から HtmlOption に変換する
-viewToHtmlOption :: forall message. StructuredUrl.PathAndSearchParams -> View.View message -> HtmlData.HtmlOption
-viewToHtmlOption scriptPath (View.View view) =
+viewToHtmlOption :: forall message. StructuredUrl.PathAndSearchParams -> Data.View message -> HtmlData.HtmlOption
+viewToHtmlOption scriptPath (Data.View view) =
   let
     htmlElementAndStyleDict :: HtmlElementAndStyleDict
     htmlElementAndStyleDict = boxToHtmlElementAndStyleDict view.box
@@ -33,7 +33,6 @@ viewToHtmlOption scriptPath (View.View view) =
       , coverImagePath: view.coverImagePath
       , path: Maybe.Just view.path
       , origin: view.origin
-      , creatorTwitterId: view.creatorTwitterId
       , style:
           htmlElementAndStyleDictToCssStatementList htmlElementAndStyleDict
       , scriptPath: Maybe.Just scriptPath
@@ -130,8 +129,8 @@ htmlElementAndStyleDictHtmlElement (HtmlElementAndStyleDict { htmlElement }) = h
 htmlElementAndStyleDictKeyframesDict :: HtmlElementAndStyleDict -> Map.Map NonEmptyString.NonEmptyString (Array Css.Keyframe)
 htmlElementAndStyleDictKeyframesDict (HtmlElementAndStyleDict { keyframesDict }) = keyframesDict
 
-boxToHtmlElementAndStyleDict :: forall message. View.Box message -> HtmlElementAndStyleDict
-boxToHtmlElementAndStyleDict box@( View.Box
+boxToHtmlElementAndStyleDict :: forall message. Data.Box message -> HtmlElementAndStyleDict
+boxToHtmlElementAndStyleDict box@( Data.Box
     boxRecord
 ) =
   let
@@ -145,8 +144,8 @@ boxToHtmlElementAndStyleDict box@( View.Box
               [ [ Css.boxSizingBorderBox
                 , Css.displayGrid
                 , Css.gridAutoFlow case boxRecord.direction of
-                    View.X -> Css.Column
-                    View.Y -> Css.Row
+                    Data.X -> Css.Column
+                    Data.Y -> Css.Row
                 , Css.alignItems Css.Stretch
                 , Css.gap boxRecord.gap
                 , Css.padding
@@ -228,14 +227,14 @@ boxToHtmlElementAndStyleDict box@( View.Box
 
 boxGetKeyframeListAndAnimationName ::
   forall message.
-  View.Box message ->
+  Data.Box message ->
   Maybe.Maybe
     { keyframeList :: Array Css.Keyframe
     , animationHashValue :: NonEmptyString.NonEmptyString
     , duration :: Number
     }
-boxGetKeyframeListAndAnimationName (View.Box { hover: View.BoxHoverStyle { animation } }) = case animation of
-  Maybe.Just (View.Animation { keyframeList, duration }) ->
+boxGetKeyframeListAndAnimationName (Data.Box { hover: Data.BoxHoverStyle { animation } }) = case animation of
+  Maybe.Just (Data.Animation { keyframeList, duration }) ->
     Maybe.Just
       { keyframeList: keyframeList
       , animationHashValue: keyframeListToSha256HashValue keyframeList
@@ -243,9 +242,9 @@ boxGetKeyframeListAndAnimationName (View.Box { hover: View.BoxHoverStyle { anima
       }
   Maybe.Nothing -> Maybe.Nothing
 
-elementToHtmlElementAndStyleDict :: forall message. View.Element message -> HtmlElementAndStyleDict
+elementToHtmlElementAndStyleDict :: forall message. Data.Element message -> HtmlElementAndStyleDict
 elementToHtmlElementAndStyleDict = case _ of
-  View.Text { padding, markup, text } ->
+  Data.Text { padding, markup, text } ->
     let
       viewStyle :: ViewStyle
       viewStyle =
@@ -269,10 +268,10 @@ elementToHtmlElementAndStyleDict = case _ of
         , styleDict: Map.singleton className viewStyle
         , keyframesDict: Map.empty
         }
-  View.SvgElement
+  Data.SvgElement
     { height
   , isJustifySelfCenter
-  , svg: View.Svg { viewBox, svgElementList }
+  , svg: Data.Svg { viewBox, svgElementList }
   , width
   } ->
     let
@@ -310,7 +309,7 @@ elementToHtmlElementAndStyleDict = case _ of
         , styleDict: Map.singleton className viewStyle
         , keyframesDict: Map.empty
         }
-  View.Image { width, height, path } ->
+  Data.Image { width, height, path } ->
     let
       viewStyle :: ViewStyle
       viewStyle =
@@ -338,16 +337,16 @@ elementToHtmlElementAndStyleDict = case _ of
         , styleDict: Map.singleton className viewStyle
         , keyframesDict: Map.empty
         }
-  View.BoxElement element -> boxToHtmlElementAndStyleDict element
+  Data.BoxElement element -> boxToHtmlElementAndStyleDict element
 
-markupToTagName :: View.TextMarkup -> Map.Map NonEmptyString.NonEmptyString (Maybe.Maybe String) → HtmlData.HtmlChildren → HtmlData.RawHtmlElement
+markupToTagName :: Data.TextMarkup -> Map.Map NonEmptyString.NonEmptyString (Maybe.Maybe String) → HtmlData.HtmlChildren → HtmlData.RawHtmlElement
 markupToTagName = case _ of
-  View.None -> HtmlWellknown.div
-  View.Heading1 -> HtmlWellknown.h1
-  View.Heading2 -> HtmlWellknown.h2
+  Data.None -> HtmlWellknown.div
+  Data.Heading1 -> HtmlWellknown.h1
+  Data.Heading2 -> HtmlWellknown.h2
 
-viewBoxToViewBoxAttributeValue :: View.ViewBox -> String
-viewBoxToViewBoxAttributeValue (View.ViewBox viewBox) =
+viewBoxToViewBoxAttributeValue :: Data.ViewBox -> String
+viewBoxToViewBoxAttributeValue (Data.ViewBox viewBox) =
   String.joinWith " "
     ( Prelude.map Prelude.show
         [ viewBox.x
@@ -357,9 +356,9 @@ viewBoxToViewBoxAttributeValue (View.ViewBox viewBox) =
         ]
     )
 
-svgElementToHtmlElement :: View.SvgElement -> HtmlData.RawHtmlElement
+svgElementToHtmlElement :: Data.SvgElement -> HtmlData.RawHtmlElement
 svgElementToHtmlElement = case _ of
-  View.Path { pathText, fill } ->
+  Data.Path { pathText, fill } ->
     HtmlWellknown.svgPath
       ( Map.fromFoldable
           [ Tuple.Tuple
@@ -370,7 +369,7 @@ svgElementToHtmlElement = case _ of
               (Maybe.Just fill)
           ]
       )
-  View.G { transform, svgElementList } ->
+  Data.G { transform, svgElementList } ->
     HtmlWellknown.svgG
       ( Map.singleton
           (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "transform"))
@@ -390,10 +389,10 @@ sha256HashValueToClassName sha256HashValue = NonEmptyString.prependString "nv_" 
 sha256HashValueToAnimationName :: NonEmptyString.NonEmptyString -> NonEmptyString.NonEmptyString
 sha256HashValueToAnimationName sha256HashValue = NonEmptyString.prependString "nva_" sha256HashValue
 
-percentageOrRemWidthToCssDeclaration :: View.PercentageOrRem -> Css.Declaration
+percentageOrRemWidthToCssDeclaration :: Data.PercentageOrRem -> Css.Declaration
 percentageOrRemWidthToCssDeclaration = case _ of
-  View.Rem value -> Css.widthRem value
-  View.Percentage value -> Css.widthPercent value
+  Data.Rem value -> Css.widthRem value
+  Data.Percentage value -> Css.widthPercent value
 
 viewStyleToSha256HashValue :: ViewStyle -> NonEmptyString.NonEmptyString
 viewStyleToSha256HashValue (ViewStyle { declarationList, hoverDeclarationList }) =

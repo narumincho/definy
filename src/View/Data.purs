@@ -1,4 +1,4 @@
-module View.View
+module View.Data
   ( View(..)
   , Box(..)
   , XOrY(..)
@@ -38,7 +38,6 @@ newtype View message
   , {- ページの言語 -} language :: Maybe.Maybe Language.Language
   , {- OGPに使われるカバー画像のパス (CORSの制限を受けない) -} coverImagePath :: StructuredUrl.PathAndSearchParams
   , {- ページのパス -} path :: StructuredUrl.PathAndSearchParams
-  , {- コンテンツ作成者のTwitterID `@`を含む -} creatorTwitterId :: Maybe.Maybe NonEmptyString.NonEmptyString
   , {- オリジン -} origin :: NonEmptyString.NonEmptyString
   , {- 子要素 -} box :: Box message
   }

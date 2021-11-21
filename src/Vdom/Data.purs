@@ -1,6 +1,7 @@
-module Vdom.View
-  ( View(..)
+module Vdom.Data
+  ( Vdom(..)
   , Div(..)
+  , createDivDeff
   , Pointer(..)
   , Children(..)
   , ClickMessageData(..)
@@ -26,7 +27,6 @@ module Vdom.View
   , ElementDiff
   , ElementUpdateDiff
   , replace
-  , divDiff
   , externalLinkDiff
   , localLinkDiff
   , imgDiff
@@ -42,35 +42,40 @@ module Vdom.View
   , rootPath
   , pathAppendKey
   , Path
+  , pathToString
   ) where
 
 import Color as Color
+import Css as Css
+import Data.Array.NonEmpty as NonEmptyArray
+import Data.Array as Array
 import Data.Map as Map
 import Data.Maybe as Maybe
 import Data.String as String
-import Data.Tuple as Tuple
 import Data.String.NonEmpty as NonEmptyString
+import Data.Tuple as Tuple
 import Language as Language
 import Prelude as Prelude
 import StructuredUrl as StructuredUrl
 
-newtype View message
-  = View
-  { pageName :: String
-  , appName :: String
-  , description :: String
-  , themeColor :: Maybe.Maybe Color.Color
-  , iconPath :: StructuredUrl.PathAndSearchParams
-  , language :: Maybe.Maybe Language.Language
-  , coverImagePath :: StructuredUrl.PathAndSearchParams
-  , path :: StructuredUrl.PathAndSearchParams
-  , origin :: NonEmptyString.NonEmptyString
-  , style :: Maybe.Maybe String
-  , scriptPath :: StructuredUrl.PathAndSearchParams
-  , bodyClass :: String
+newtype Vdom message
+  = Vdom
+  { {- ページ名
+  Google 検索のページ名や, タブ, ブックマークのタイトル, OGPのタイトルなどに使用される  -} pageName :: String
+  , {- アプリ名 / サイト名 -} appName :: String
+  , {- ページの説明 -} description :: String
+  , {- テーマカラー -} themeColor :: Color.Color
+  , {- アイコン画像のURL -} iconPath :: StructuredUrl.PathAndSearchParams
+  , {- 使用している言語 -} language :: Maybe.Maybe Language.Language
+  , {- OGPに使われるカバー画像のパス -} coverImagePath :: StructuredUrl.PathAndSearchParams
+  , {- パス. ログイン時のコールバック時には Noting にして良い -} path :: Maybe.Maybe StructuredUrl.PathAndSearchParams
+  , {- オリジン -} origin :: NonEmptyString.NonEmptyString
+  , {- 全体に適応されるスタイル. CSS -} style :: Css.StatementList
+  , {- スクリプトのパス -} scriptPath :: StructuredUrl.PathAndSearchParams
+  , {- body の class -} bodyClass :: String
   , pointerMove :: Maybe.Maybe (Pointer -> message)
   , pointerDown :: Maybe.Maybe (Pointer -> message)
-  , children :: Children message
+  , {- body の 子要素 -} children :: Children message
   }
 
 newtype Pointer
@@ -126,7 +131,7 @@ newtype ViewDiff message
 
 data ViewPatchOperation
   = ChangePageName String
-  | ChangeThemeColor (Maybe.Maybe Color.Color)
+  | ChangeThemeColor Color.Color
   | ChangeLanguage (Maybe.Maybe Language.Language)
   | ChangeBodyClass String
 
@@ -185,18 +190,33 @@ newtype Div message
   }
 
 newtype DivDiff message
-  = DivDiff (DivDiffRec message)
+  = DivDiff (NonEmptyArray.NonEmptyArray (DivPatchOperation message))
 
-type DivDiffRec message
-  = { id :: Maybe.Maybe String
-    , class :: Maybe.Maybe String
-    , children :: ChildrenDiff message
-    }
+data DivPatchOperation message
+  = DivPatchOperationSetId String
+  | DivPatchOperationSetClass String
+  | DivPatchOperationUpdateChildren (ChildrenDiff message)
 
-divDiff :: forall message. String -> DivDiffRec message -> ElementDiff message
-divDiff key = case _ of
-  { id: Maybe.Nothing, class: Maybe.Nothing, children: ChildrenDiffSkip } -> Skip
-  rec -> Update { elementUpdateDiff: ElementUpdateDiffDiv (DivDiff rec), key }
+createDivDeff :: forall message. String -> Div message -> Div message -> ElementDiff message
+createDivDeff key (Div old) (Div new) = case NonEmptyArray.fromArray
+    ( Array.catMaybes
+        [ Prelude.map DivPatchOperationSetId (createDiff old.id new.id)
+        , Prelude.map DivPatchOperationSetClass (createDiff old.class new.class)
+        ]
+    ) of
+  Maybe.Just list ->
+    Update
+      { elementUpdateDiff: ElementUpdateDiffDiv (DivDiff list)
+      , key
+      }
+  Maybe.Nothing -> Skip
+
+createDiff :: forall a. Prelude.Eq a => a -> a -> Maybe.Maybe a
+createDiff old new =
+  if Prelude.eq old new then
+    Maybe.Nothing
+  else
+    Maybe.Just new
 
 newtype ExternalLink message
   = ExternalLink
@@ -539,6 +559,9 @@ rootPath = Path ""
 
 pathAppendKey :: Path -> String -> Path
 pathAppendKey (Path path) key = Path (String.joinWith "/" [ path, key ])
+
+pathToString :: Path -> String
+pathToString (Path str) = str
 
 newtype ClickMessageData message
   = ClickMessageData
