@@ -35,7 +35,7 @@ main =
               ( StructuredUrl.fromPath
                   [ ClientProgramHashValue.clientProgramHashValue ]
               )
-        , bodyClass: ""
+        , bodyClass: Maybe.Nothing
         , pointerMove: Maybe.Nothing
         , pointerDown: Maybe.Nothing
         , children:

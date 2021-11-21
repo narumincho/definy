@@ -57,6 +57,7 @@ import Data.Array.NonEmpty as NonEmptyArray
 import Data.Map as Map
 import Data.Maybe as Maybe
 import Data.String as String
+import Data.String.NonEmpty (NonEmptyString)
 import Data.String.NonEmpty as NonEmptyString
 import Data.Tuple as Tuple
 import Language as Language
@@ -67,7 +68,7 @@ newtype Vdom message
   = Vdom
   { {- ページ名
   Google 検索のページ名や, タブ, ブックマークのタイトル, OGPのタイトルなどに使用される  -} pageName :: NonEmptyString.NonEmptyString
-  , {- アプリ名 / サイト名 -} appName :: NonEmptyString.NonEmptyString
+  , {- アプリ名 / サイト名 -} appName :: NonEmptyString
   , {- ページの説明 -} description :: String
   , {- テーマカラー -} themeColor :: Color.Color
   , {- アイコン画像のURL -} iconPath :: StructuredUrl.PathAndSearchParams
@@ -77,7 +78,7 @@ newtype Vdom message
   , {- オリジン -} origin :: NonEmptyString.NonEmptyString
   , {- 全体に適応されるスタイル. CSS -} style :: Css.StatementList
   , {- スクリプトのパス -} scriptPath :: Maybe.Maybe StructuredUrl.PathAndSearchParams
-  , {- body の class -} bodyClass :: String
+  , {- body の class -} bodyClass :: Maybe.Maybe NonEmptyString.NonEmptyString
   , pointerMove :: Maybe.Maybe (Pointer -> message)
   , pointerDown :: Maybe.Maybe (Pointer -> message)
   , {- body の 子要素 -} children :: Children message
@@ -138,7 +139,7 @@ data ViewPatchOperation
   = ChangePageName NonEmptyString.NonEmptyString
   | ChangeThemeColor Color.Color
   | ChangeLanguage (Maybe.Maybe Language.Language)
-  | ChangeBodyClass String
+  | ChangeBodyClass (Maybe.Maybe NonEmptyString)
 
 data Element message
   = ElementDiv (Div message)
@@ -504,8 +505,8 @@ svgPathDiff key = case _ of
 
 newtype SvgCircle
   = SvgCircle
-  { id :: String
-  , class :: String
+  { id :: Maybe.Maybe NonEmptyString.NonEmptyString
+  , class :: Maybe.Maybe NonEmptyString.NonEmptyString
   , fill :: String
   , stroke :: String
   , cx :: Number
@@ -518,8 +519,8 @@ newtype SvgCircleDiff
   = SvgCircleDiff SvgCircleDiffRec
 
 type SvgCircleDiffRec
-  = { id :: Maybe.Maybe String
-    , class :: Maybe.Maybe String
+  = { id :: Maybe.Maybe (Maybe.Maybe NonEmptyString.NonEmptyString)
+    , class :: Maybe.Maybe (Maybe.Maybe NonEmptyString.NonEmptyString)
     , fill :: Maybe.Maybe String
     , stroke :: Maybe.Maybe String
     , cx :: Maybe.Maybe Number

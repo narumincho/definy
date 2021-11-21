@@ -3,12 +3,14 @@ module Vdom.Render where
 import Prelude
 import Color as Color
 import Console as Console
+import Data.Nullable (Nullable)
 import Data.Nullable as Nullable
 import Data.String.NonEmpty as NonEmptyString
 import Data.Tuple as Tuple
 import Data.UInt as UInt
 import Effect as Effect
 import Language as Language
+import Vdom.Data as Vdom
 import Vdom.Data as View
 import Vdom.RenderState as RenderState
 
@@ -80,12 +82,13 @@ themeColorName = "theme-color"
 -- | すべてをリセットして再描画する. 最初に1回呼ぶと良い.
 resetAndRenderView :: forall message. View.Vdom message -> RenderState.RenderState message -> Effect.Effect Unit
 resetAndRenderView (View.Vdom view) renderState = do
-  changePageName (NonEmptyString.toString view.pageName)
-  changeThemeColor
-    (Color.toHexString view.themeColor)
-  changeLanguage
-    (Nullable.toNullable (map Language.toIETFLanguageTag view.language))
-  changeBodyClass view.bodyClass
+  Effect.foreachE
+    [ Vdom.ChangePageName view.pageName
+    , Vdom.ChangeThemeColor view.themeColor
+    , Vdom.ChangeLanguage view.language
+    , Vdom.ChangeBodyClass view.bodyClass
+    ]
+    viewPatchOperationToEffect
   bodyElement <- getBodyElement
   renderChildren
     { htmlOrSvgElement: bodyElement
@@ -119,7 +122,7 @@ viewPatchOperationToEffect = case _ of
   View.ChangeLanguage languageMaybe ->
     changeLanguage
       (Nullable.toNullable (map Language.toIETFLanguageTag languageMaybe))
-  View.ChangeBodyClass classNameOrEmpty -> changeBodyClass classNameOrEmpty
+  View.ChangeBodyClass classNameOrEmpty -> changeBodyClass (Nullable.toNullable (map NonEmptyString.toString classNameOrEmpty))
 
 foreign import changePageName :: String -> Effect.Effect Unit
 
@@ -127,7 +130,7 @@ foreign import changeThemeColor :: String -> Effect.Effect Unit
 
 foreign import changeLanguage :: Nullable.Nullable String -> Effect.Effect Unit
 
-foreign import changeBodyClass :: String -> Effect.Effect Unit
+foreign import changeBodyClass :: Nullable String -> Effect.Effect Unit
 
 foreign import getBodyElement :: Effect.Effect HtmlOrSvgElement
 
