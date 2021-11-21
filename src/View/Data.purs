@@ -78,7 +78,12 @@ newtype Animation
 -- | テキスト, リンクなどの要素
 data Element message
   = Text { markup :: TextMarkup, padding :: Number, text :: String }
-  | SvgElement { svg :: Svg, width :: PercentageOrRem, height :: Number, isJustifySelfCenter :: Boolean }
+  | SvgElement
+    { svg :: Svg
+    , width :: PercentageOrRem
+    , height :: Number
+    , isJustifySelfCenter :: Boolean
+    }
   | Image
     { path :: StructuredUrl.PathAndSearchParams
     , width :: PercentageOrRem

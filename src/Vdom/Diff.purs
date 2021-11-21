@@ -41,14 +41,7 @@ createViewDiff (Data.Vdom oldVdom) (Data.Vdom newVdom) =
 createElementDiff :: forall message. Data.Element message -> Data.Element message -> String -> Data.ElementDiff message
 createElementDiff (Data.ElementDiv old) (Data.ElementDiv new) newKey = Data.createDivDeff newKey old new
 
-createElementDiff (Data.ElementExternalLink (Data.ExternalLink old)) (Data.ElementExternalLink (Data.ExternalLink new)) newKey =
-  Data.externalLinkDiff
-    newKey
-    { id: createDiff old.id new.id
-    , class: createDiff old.class new.class
-    , url: createDiff old.url new.url
-    , children: createChildrenDiff old.children new.children
-    }
+createElementDiff (Data.ElementExternalLink old) (Data.ElementExternalLink new) newKey = Data.externalLinkDiff newKey old new
 
 createElementDiff (Data.ElementLocalLink (Data.LocalLink old)) (Data.ElementLocalLink (Data.LocalLink new)) newKey =
   Data.localLinkDiff
@@ -121,7 +114,7 @@ createElementDiff (Data.ElementSvg (Data.Svg old)) (Data.ElementSvg (Data.Svg ne
     , viewBoxY: createDiff old.viewBoxY new.viewBoxY
     , viewBoxWidth: createDiff old.viewBoxWidth new.viewBoxWidth
     , viewBoxHeight: createDiff old.viewBoxHeight new.viewBoxHeight
-    , children: createChildrenDiff old.children new.children
+    , children: createElementListChildrenDiff old.children new.children
     }
 
 createElementDiff (Data.ElementSvgPath (Data.SvgPath old)) (Data.ElementSvgPath (Data.SvgPath new)) newKey =

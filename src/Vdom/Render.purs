@@ -4,12 +4,13 @@ import Prelude
 import Color as Color
 import Console as Console
 import Data.Nullable as Nullable
+import Data.String.NonEmpty as NonEmptyString
 import Data.Tuple as Tuple
 import Data.UInt as UInt
 import Effect as Effect
 import Language as Language
-import Vdom.RenderState as RenderState
 import Vdom.Data as View
+import Vdom.RenderState as RenderState
 
 elementToHtmlOrSvgElement ::
   forall message.
@@ -19,11 +20,16 @@ elementToHtmlOrSvgElement ::
   } ->
   Effect.Effect HtmlOrSvgElement
 elementToHtmlOrSvgElement { element: View.ElementDiv (View.Div rec), path, renderState } = do
-  div <- createDiv { id: rec.id, class: rec.class, dataPath: View.pathToString path }
+  div <-
+    createDiv
+      { id: Nullable.toNullable (map NonEmptyString.toString rec.id)
+      , class: Nullable.toNullable (map NonEmptyString.toString rec.class)
+      , dataPath: View.pathToString path
+      }
   applyChildren { htmlOrSvgElement: div, children: rec.children, path: path, renderState }
   pure div
 
-elementToHtmlOrSvgElement _ = createDiv { id: "", class: "", dataPath: "notSupport" }
+elementToHtmlOrSvgElement _ = createDiv { id: Nullable.null, class: Nullable.null, dataPath: "notSupport" }
 
 -- | HTMLElment か SVGElement の子要素を設定する
 applyChildren ::
@@ -74,7 +80,7 @@ themeColorName = "theme-color"
 -- | すべてをリセットして再描画する. 最初に1回呼ぶと良い.
 resetAndRenderView :: forall message. View.Vdom message -> RenderState.RenderState message -> Effect.Effect Unit
 resetAndRenderView (View.Vdom view) renderState = do
-  changePageName view.pageName
+  changePageName (NonEmptyString.toString view.pageName)
   changeThemeColor
     (Color.toHexString view.themeColor)
   changeLanguage
@@ -106,7 +112,7 @@ renderView (View.ViewDiff viewDiff) renderState = do
 
 viewPatchOperationToEffect :: View.ViewPatchOperation -> Effect.Effect Unit
 viewPatchOperationToEffect = case _ of
-  View.ChangePageName newPageName -> changePageName newPageName
+  View.ChangePageName newPageName -> changePageName (NonEmptyString.toString newPageName)
   View.ChangeThemeColor colorMaybe ->
     changeThemeColor
       (Color.toHexString colorMaybe)
@@ -129,6 +135,6 @@ foreign import setTextContent :: String -> HtmlOrSvgElement -> Effect.Effect Uni
 
 foreign import data HtmlOrSvgElement :: Type
 
-foreign import createDiv :: { id :: String, class :: String, dataPath :: String } -> Effect.Effect HtmlOrSvgElement
+foreign import createDiv :: { id :: Nullable.Nullable String, class :: Nullable.Nullable String, dataPath :: String } -> Effect.Effect HtmlOrSvgElement
 
 foreign import appendChild :: HtmlOrSvgElement -> HtmlOrSvgElement -> Effect.Effect Unit

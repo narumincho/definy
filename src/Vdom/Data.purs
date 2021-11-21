@@ -2,6 +2,8 @@ module Vdom.Data
   ( Vdom(..)
   , Div(..)
   , createDivDeff
+  , H1(..)
+  , H2(..)
   , Pointer(..)
   , Children(..)
   , ClickMessageData(..)
@@ -16,9 +18,12 @@ module Vdom.Data
   , TextArea(..)
   , Label(..)
   , Svg(..)
+  , SvgRec
+  , svg
   , SvgPath(..)
   , SvgCircle(..)
   , SvgAnimate(..)
+  , SvgG(..)
   , ViewDiff(..)
   , ViewPatchOperation(..)
   , MessageData(..)
@@ -47,8 +52,8 @@ module Vdom.Data
 
 import Color as Color
 import Css as Css
-import Data.Array.NonEmpty as NonEmptyArray
 import Data.Array as Array
+import Data.Array.NonEmpty as NonEmptyArray
 import Data.Map as Map
 import Data.Maybe as Maybe
 import Data.String as String
@@ -61,8 +66,8 @@ import StructuredUrl as StructuredUrl
 newtype Vdom message
   = Vdom
   { {- ページ名
-  Google 検索のページ名や, タブ, ブックマークのタイトル, OGPのタイトルなどに使用される  -} pageName :: String
-  , {- アプリ名 / サイト名 -} appName :: String
+  Google 検索のページ名や, タブ, ブックマークのタイトル, OGPのタイトルなどに使用される  -} pageName :: NonEmptyString.NonEmptyString
+  , {- アプリ名 / サイト名 -} appName :: NonEmptyString.NonEmptyString
   , {- ページの説明 -} description :: String
   , {- テーマカラー -} themeColor :: Color.Color
   , {- アイコン画像のURL -} iconPath :: StructuredUrl.PathAndSearchParams
@@ -71,7 +76,7 @@ newtype Vdom message
   , {- パス. ログイン時のコールバック時には Noting にして良い -} path :: Maybe.Maybe StructuredUrl.PathAndSearchParams
   , {- オリジン -} origin :: NonEmptyString.NonEmptyString
   , {- 全体に適応されるスタイル. CSS -} style :: Css.StatementList
-  , {- スクリプトのパス -} scriptPath :: StructuredUrl.PathAndSearchParams
+  , {- スクリプトのパス -} scriptPath :: Maybe.Maybe StructuredUrl.PathAndSearchParams
   , {- body の class -} bodyClass :: String
   , pointerMove :: Maybe.Maybe (Pointer -> message)
   , pointerDown :: Maybe.Maybe (Pointer -> message)
@@ -130,13 +135,15 @@ newtype ViewDiff message
   }
 
 data ViewPatchOperation
-  = ChangePageName String
+  = ChangePageName NonEmptyString.NonEmptyString
   | ChangeThemeColor Color.Color
   | ChangeLanguage (Maybe.Maybe Language.Language)
   | ChangeBodyClass String
 
 data Element message
   = ElementDiv (Div message)
+  | ElementH1 (H1 message)
+  | ElementH2 (H2 message)
   | ElementExternalLink (ExternalLink message)
   | ElementLocalLink (LocalLink message)
   | ElementButton (Button message)
@@ -149,6 +156,7 @@ data Element message
   | ElementSvgPath SvgPath
   | ElementSvgCircle SvgCircle
   | ElementSvgAnimate SvgAnimate
+  | ElementSvgG (SvgG message)
 
 data ElementDiff message
   = Replace { newElement :: Element message, key :: String }
@@ -183,8 +191,8 @@ data ElementUpdateDiff message
 
 newtype Div message
   = Div
-  { id :: String
-  , class :: String
+  { id :: Maybe.Maybe NonEmptyString.NonEmptyString
+  , class :: Maybe.Maybe NonEmptyString.NonEmptyString
   , click :: Maybe.Maybe (ClickMessageData message)
   , children :: Children message
   }
@@ -193,8 +201,8 @@ newtype DivDiff message
   = DivDiff (NonEmptyArray.NonEmptyArray (DivPatchOperation message))
 
 data DivPatchOperation message
-  = DivPatchOperationSetId String
-  | DivPatchOperationSetClass String
+  = DivPatchOperationSetId (Maybe.Maybe NonEmptyString.NonEmptyString)
+  | DivPatchOperationSetClass (Maybe.Maybe NonEmptyString.NonEmptyString)
   | DivPatchOperationUpdateChildren (ChildrenDiff message)
 
 createDivDeff :: forall message. String -> Div message -> Div message -> ElementDiff message
@@ -218,29 +226,52 @@ createDiff old new =
   else
     Maybe.Just new
 
+newtype H1 message
+  = H1
+  { id :: Maybe.Maybe NonEmptyString.NonEmptyString
+  , class :: Maybe.Maybe NonEmptyString.NonEmptyString
+  , click :: Maybe.Maybe (ClickMessageData message)
+  , children :: Children message
+  }
+
+newtype H2 message
+  = H2
+  { id :: Maybe.Maybe NonEmptyString.NonEmptyString
+  , class :: Maybe.Maybe NonEmptyString.NonEmptyString
+  , click :: Maybe.Maybe (ClickMessageData message)
+  , children :: Children message
+  }
+
+-- | 外部のリンクを持つ `<a>`
 newtype ExternalLink message
   = ExternalLink
-  { id :: String
-  , class :: String
-  , url :: String
+  { id :: Maybe.Maybe NonEmptyString.NonEmptyString
+  , class :: Maybe.Maybe NonEmptyString.NonEmptyString
+  , url :: StructuredUrl.StructuredUrl
   , children :: Children message
   }
 
 newtype ExternalLinkDiff message
-  = ExternalLinkDiff (ExternalLinkDiffRec message)
+  = ExternalLinkDiff (NonEmptyArray.NonEmptyArray (ExternalLinkPatchOperation message))
 
-type ExternalLinkDiffRec message
-  = { id :: Maybe.Maybe String
-    , class :: Maybe.Maybe String
-    , url :: Maybe.Maybe String
-    , children :: ChildrenDiff message
-    }
+data ExternalLinkPatchOperation message
+  = ExternalLinkPatchOperationSetId (Maybe.Maybe NonEmptyString.NonEmptyString)
+  | ExternalLinkPatchOperationSetClass (Maybe.Maybe NonEmptyString.NonEmptyString)
+  | ExternalLinkPatchOperationSetUrl StructuredUrl.StructuredUrl
+  | ExternalLinkPatchOperationUpdateChildren (ChildrenDiff message)
 
-externalLinkDiff :: forall message. String -> ExternalLinkDiffRec message -> ElementDiff message
-externalLinkDiff key = case _ of
-  { id: Maybe.Nothing, class: Maybe.Nothing, url: Maybe.Nothing, children: ChildrenDiffSkip
-  } -> Skip
-  rec -> Update { elementUpdateDiff: ElementUpdateDiffExternalLinkDiff (ExternalLinkDiff rec), key }
+externalLinkDiff :: forall message. String -> ExternalLink message -> ExternalLink message -> ElementDiff message
+externalLinkDiff key (ExternalLink old) (ExternalLink new) =
+  ( case NonEmptyArray.fromArray
+        ( Array.catMaybes
+            [ Prelude.map ExternalLinkPatchOperationSetId (createDiff old.id new.id)
+            , Prelude.map ExternalLinkPatchOperationSetClass (createDiff old.class new.class)
+            , Prelude.map ExternalLinkPatchOperationSetUrl (createDiff old.url new.url)
+            ]
+        ) of
+      Maybe.Just list -> Update { elementUpdateDiff: ElementUpdateDiffExternalLinkDiff (ExternalLinkDiff list), key }
+      Maybe.Nothing -> Skip
+  )
 
 newtype LocalLink message
   = LocalLink
@@ -266,6 +297,7 @@ localLinkDiff key = case _ of
   { id: Maybe.Nothing, class: Maybe.Nothing, url: Maybe.Nothing, children: ChildrenDiffSkip } -> Skip
   rec -> Update { elementUpdateDiff: ElementUpdateDiffLocalLinkDiff (LocalLinkDiff rec), key }
 
+newtype Button :: Type -> Type
 newtype Button message
   = Button
   { id :: String
@@ -416,45 +448,41 @@ labelDiff key = case _ of
   rec -> Update { elementUpdateDiff: ElementUpdateDiffLabelDiff (LabelDiff rec), key }
 
 newtype Svg message
-  = Svg
-  { id :: String
-  , class :: String
-  , viewBoxX :: Number
-  , viewBoxY :: Number
-  , viewBoxWidth :: Number
-  , viewBoxHeight :: Number
-  , children :: Children message
-  }
+  = Svg (SvgRec message)
+
+type SvgRec message
+  = { id :: (Maybe.Maybe NonEmptyString.NonEmptyString)
+    , class :: (Maybe.Maybe NonEmptyString.NonEmptyString)
+    , viewBoxX :: Number
+    , viewBoxY :: Number
+    , viewBoxWidth :: Number
+    , viewBoxHeight :: Number
+    , children :: Array (Tuple.Tuple String (Element message))
+    }
+
+svg :: forall message. SvgRec message -> Element message
+svg svgRec = ElementSvg (Svg svgRec)
 
 newtype SvgDiff message
   = SvgDiff (SvgDiffRec message)
 
 type SvgDiffRec message
-  = { id :: Maybe.Maybe String
-    , class :: Maybe.Maybe String
+  = { id :: Maybe.Maybe (Maybe.Maybe NonEmptyString.NonEmptyString)
+    , class :: Maybe.Maybe (Maybe.Maybe NonEmptyString.NonEmptyString)
     , viewBoxX :: Maybe.Maybe Number
     , viewBoxY :: Maybe.Maybe Number
     , viewBoxWidth :: Maybe.Maybe Number
     , viewBoxHeight :: Maybe.Maybe Number
-    , children :: ChildrenDiff message
+    , children :: Array (ElementDiff message)
     }
 
 svgDiff :: forall message. String -> SvgDiffRec message -> ElementDiff message
-svgDiff key = case _ of
-  { id: Maybe.Nothing
-  , class: Maybe.Nothing
-  , viewBoxX: Maybe.Nothing
-  , viewBoxY: Maybe.Nothing
-  , viewBoxWidth: Maybe.Nothing
-  , viewBoxHeight: Maybe.Nothing
-  , children: ChildrenDiffSkip
-  } -> Skip
-  rec -> Update { elementUpdateDiff: ElementUpdateDiffSvgDiff (SvgDiff rec), key }
+svgDiff key rec = Update { elementUpdateDiff: ElementUpdateDiffSvgDiff (SvgDiff rec), key }
 
 newtype SvgPath
   = SvgPath
-  { id :: String
-  , class :: String
+  { id :: Maybe.Maybe NonEmptyString.NonEmptyString
+  , class :: Maybe.Maybe NonEmptyString.NonEmptyString
   , d :: String
   , fill :: String
   }
@@ -463,8 +491,8 @@ newtype SvgPathDiff
   = SvgPathDiff SvgPathDiffRec
 
 type SvgPathDiffRec
-  = { id :: Maybe.Maybe String
-    , class :: Maybe.Maybe String
+  = { id :: Maybe.Maybe (Maybe.Maybe NonEmptyString.NonEmptyString)
+    , class :: Maybe.Maybe (Maybe.Maybe NonEmptyString.NonEmptyString)
     , d :: Maybe.Maybe String
     , fill :: Maybe.Maybe String
     }
@@ -542,6 +570,13 @@ svgAnimateDiff key = case _ of
   , to: Maybe.Nothing
   } -> Skip
   rec -> Update { elementUpdateDiff: ElementUpdateDiffSvgAnimateDiff (SvgAnimateDiff rec), key }
+
+newtype SvgG :: Type -> Type
+newtype SvgG message
+  = SvgG
+  { transform :: String
+  , children :: Array (Tuple.Tuple String (Element message))
+  }
 
 -- | 各要素のイベントのハンドルをどうするかのデータ
 newtype Events message

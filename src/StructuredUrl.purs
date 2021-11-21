@@ -27,6 +27,8 @@ newtype PathAndSearchParams
    -} searchParams :: Map.Map NonEmptyString.NonEmptyString NonEmptyString.NonEmptyString
   }
 
+derive instance pathAndSearchParamsEq :: Prelude.Eq PathAndSearchParams
+
 pathAndSearchParams :: Array NonEmptyString.NonEmptyString -> Map.Map NonEmptyString.NonEmptyString NonEmptyString.NonEmptyString -> PathAndSearchParams
 pathAndSearchParams path searchParams = PathAndSearchParams { path, searchParams }
 
@@ -39,6 +41,8 @@ newtype StructuredUrl
   { origin :: NonEmptyString.NonEmptyString
   , pathAndSearchParams :: PathAndSearchParams
   }
+
+derive instance structuredUrlEq :: Prelude.Eq StructuredUrl
 
 toString :: StructuredUrl -> NonEmptyString.NonEmptyString
 toString (StructuredUrl { origin, pathAndSearchParams: path }) =
