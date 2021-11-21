@@ -33,12 +33,12 @@ newtype StaticResourceFileResult
     Firebase Hosting などにアップロードするファイル名. 拡張子は含まれない 
     ファイルの中身のハッシュ値になる.
   -}
-  , requestPathAndUploadFileName :: NonEmptyString.NonEmptyString
+  , requestPathAndUploadFileName :: Hash.Sha256HashValue
   , mediaTypeMaybe :: Maybe.Maybe MediaType.MediaType
   }
 
 -- | 指定したファイルパスの SHA-256 のハッシュ値を取得する
-getFileHash :: Path.FilePath -> Maybe.Maybe FileType.FileType -> Aff.Aff NonEmptyString.NonEmptyString
+getFileHash :: Path.FilePath -> Maybe.Maybe FileType.FileType -> Aff.Aff Hash.Sha256HashValue
 getFileHash filePath fileTypeMaybe = do
   EffectClass.liftEffect
     ( Console.log
@@ -117,7 +117,7 @@ staticResourceFileResultToPureScriptDefinition (StaticResourceFileResult record)
           [ "static な ファイル の `"
           , NonEmptyString.toString (Path.filePathToString record.originalFilePath record.fileType)
           , "` をリクエストするためのURL. ファイルのハッシュ値は `"
-          , NonEmptyString.toString record.requestPathAndUploadFileName
+          , NonEmptyString.toString (Hash.toNonEmptyString record.requestPathAndUploadFileName)
           , "`(コード生成結果)"
           ]
     , pType: PureScriptWellknown.structuredUrlPathAndSearchParams
@@ -126,7 +126,7 @@ staticResourceFileResultToPureScriptDefinition (StaticResourceFileResult record)
           PureScriptWellknown.structuredUrlFromPath
           ( PureScriptWellknown.arrayLiteral
               [ PureScriptWellknown.nonEmptyStringLiteral
-                  record.requestPathAndUploadFileName
+                  (Hash.toNonEmptyString record.requestPathAndUploadFileName)
               ]
           )
     , isExport: true

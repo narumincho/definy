@@ -409,7 +409,7 @@ copyStaticResouece resultList =
               fileType
               ( Path.DistributionFilePath
                   { directoryPath: hostingDistributionPath
-                  , fileName: requestPathAndUploadFileName
+                  , fileName: Hash.toNonEmptyString requestPathAndUploadFileName
                   }
               )
         )
@@ -421,7 +421,7 @@ staticResourceCodeGen resultList =
   FileSystemWrite.writePureScript
     (StaticResourceFile.staticFileResultToPureScriptModule staticResourceModuleName resultList)
 
-clientProgramBuild :: Aff.Aff NonEmptyString.NonEmptyString
+clientProgramBuild :: Aff.Aff Hash.Sha256HashValue
 clientProgramBuild = do
   runEsbuild
   fileHashValue <- readEsbuildResultClientProgramFile
@@ -444,7 +444,7 @@ runEsbuild = do
     }
   Console.logValueAsAff "esbuild でのビルドに成功!" {}
 
-readEsbuildResultClientProgramFile :: Aff.Aff NonEmptyString.NonEmptyString
+readEsbuildResultClientProgramFile :: Aff.Aff Hash.Sha256HashValue
 readEsbuildResultClientProgramFile = do
   clientProgramAsString <-
     FileSystemRead.readTextFileInDistribution
@@ -459,7 +459,7 @@ readEsbuildResultClientProgramFile = do
   FileSystemWrite.writeTextFileInDistribution
     ( Path.DistributionFilePath
         { directoryPath: hostingDistributionPath
-        , fileName: clientProgramHashValue
+        , fileName: Hash.toNonEmptyString clientProgramHashValue
         }
     )
     clientProgramAsString

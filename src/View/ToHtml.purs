@@ -78,7 +78,7 @@ htmlElementAndStyleDictToCssStatementList htmlElementAndStyleDict =
           (Map.toUnfoldable (htmlElementAndStyleDictKeyframesDict htmlElementAndStyleDict))
     }
 
-styleDictItemToCssRuleList :: Tuple.Tuple NonEmptyString.NonEmptyString ViewStyle -> Array Css.Rule
+styleDictItemToCssRuleList :: Tuple.Tuple Hash.Sha256HashValue ViewStyle -> Array Css.Rule
 styleDictItemToCssRuleList (Tuple.Tuple hashValue (ViewStyle { declarationList, hoverDeclarationList })) =
   Array.concat
     [ if Array.null declarationList then
@@ -116,17 +116,17 @@ newtype ViewStyle
 newtype HtmlElementAndStyleDict
   = HtmlElementAndStyleDict
   { htmlElement :: HtmlData.RawHtmlElement
-  , styleDict :: Map.Map NonEmptyString.NonEmptyString ViewStyle
-  , keyframesDict :: Map.Map NonEmptyString.NonEmptyString (Array Css.Keyframe)
+  , styleDict :: Map.Map Hash.Sha256HashValue ViewStyle
+  , keyframesDict :: Map.Map Hash.Sha256HashValue (Array Css.Keyframe)
   }
 
-htmlElementAndStyleDictStyleDict :: HtmlElementAndStyleDict -> Map.Map NonEmptyString.NonEmptyString ViewStyle
+htmlElementAndStyleDictStyleDict :: HtmlElementAndStyleDict -> Map.Map Hash.Sha256HashValue ViewStyle
 htmlElementAndStyleDictStyleDict (HtmlElementAndStyleDict { styleDict }) = styleDict
 
 htmlElementAndStyleDictHtmlElement :: HtmlElementAndStyleDict -> HtmlData.RawHtmlElement
 htmlElementAndStyleDictHtmlElement (HtmlElementAndStyleDict { htmlElement }) = htmlElement
 
-htmlElementAndStyleDictKeyframesDict :: HtmlElementAndStyleDict -> Map.Map NonEmptyString.NonEmptyString (Array Css.Keyframe)
+htmlElementAndStyleDictKeyframesDict :: HtmlElementAndStyleDict -> Map.Map Hash.Sha256HashValue (Array Css.Keyframe)
 htmlElementAndStyleDictKeyframesDict (HtmlElementAndStyleDict { keyframesDict }) = keyframesDict
 
 boxToHtmlElementAndStyleDict :: forall message. Data.Box message -> HtmlElementAndStyleDict
@@ -213,7 +213,7 @@ boxToHtmlElementAndStyleDict box@( Data.Box
             (Map.fromFoldable (Array.concatMap (\c -> Map.toUnfoldable (htmlElementAndStyleDictStyleDict c)) children))
       , keyframesDict:
           let
-            childrenKeyframesDict :: Map.Map NonEmptyString.NonEmptyString (Array Css.Keyframe)
+            childrenKeyframesDict :: Map.Map Hash.Sha256HashValue (Array Css.Keyframe)
             childrenKeyframesDict =
               Map.fromFoldable
                 (Array.concatMap (\c -> Map.toUnfoldable (htmlElementAndStyleDictKeyframesDict c)) children)
@@ -230,7 +230,7 @@ boxGetKeyframeListAndAnimationName ::
   Data.Box message ->
   Maybe.Maybe
     { keyframeList :: Array Css.Keyframe
-    , animationHashValue :: NonEmptyString.NonEmptyString
+    , animationHashValue :: Hash.Sha256HashValue
     , duration :: Number
     }
 boxGetKeyframeListAndAnimationName (Data.Box { hover: Data.BoxHoverStyle { animation } }) = case animation of
@@ -263,7 +263,7 @@ elementToHtmlElementAndStyleDict = case _ of
       HtmlElementAndStyleDict
         { htmlElement:
             markupToTagName markup
-              (Map.fromFoldable ([ sha256HashValueToClassAttributeNameAndValue (className) ]))
+              (Map.fromFoldable ([ sha256HashValueToClassAttributeNameAndValue className ]))
               (HtmlData.Text text)
         , styleDict: Map.singleton className viewStyle
         , keyframesDict: Map.empty
@@ -291,7 +291,7 @@ elementToHtmlElementAndStyleDict = case _ of
           , hoverDeclarationList: []
           }
 
-      className = viewStyleToSha256HashValue (viewStyle)
+      className = viewStyleToSha256HashValue viewStyle
     in
       HtmlElementAndStyleDict
         { htmlElement:
@@ -322,7 +322,7 @@ elementToHtmlElementAndStyleDict = case _ of
           , hoverDeclarationList: []
           }
 
-      className = viewStyleToSha256HashValue (viewStyle)
+      className = viewStyleToSha256HashValue viewStyle
     in
       HtmlElementAndStyleDict
         { htmlElement:
@@ -377,24 +377,30 @@ svgElementToHtmlElement = case _ of
       )
       (Prelude.map svgElementToHtmlElement svgElementList)
 
-sha256HashValueToClassAttributeNameAndValue :: NonEmptyString.NonEmptyString -> Tuple.Tuple NonEmptyString.NonEmptyString (Maybe.Maybe String)
+sha256HashValueToClassAttributeNameAndValue :: Hash.Sha256HashValue -> Tuple.Tuple NonEmptyString.NonEmptyString (Maybe.Maybe String)
 sha256HashValueToClassAttributeNameAndValue sha256HashValue =
   Tuple.Tuple
     (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "class"))
     (Maybe.Just (NonEmptyString.toString (sha256HashValueToClassName sha256HashValue)))
 
-sha256HashValueToClassName :: NonEmptyString.NonEmptyString -> NonEmptyString.NonEmptyString
-sha256HashValueToClassName sha256HashValue = NonEmptyString.prependString "nv_" sha256HashValue
+sha256HashValueToClassName :: Hash.Sha256HashValue -> NonEmptyString.NonEmptyString
+sha256HashValueToClassName sha256HashValue =
+  NonEmptyString.prependString
+    "nv_"
+    (Hash.toNonEmptyString sha256HashValue)
 
-sha256HashValueToAnimationName :: NonEmptyString.NonEmptyString -> NonEmptyString.NonEmptyString
-sha256HashValueToAnimationName sha256HashValue = NonEmptyString.prependString "nva_" sha256HashValue
+sha256HashValueToAnimationName :: Hash.Sha256HashValue -> NonEmptyString.NonEmptyString
+sha256HashValueToAnimationName sha256HashValue =
+  NonEmptyString.prependString
+    "nva_"
+    (Hash.toNonEmptyString sha256HashValue)
 
 percentageOrRemWidthToCssDeclaration :: Data.PercentageOrRem -> Css.Declaration
 percentageOrRemWidthToCssDeclaration = case _ of
   Data.Rem value -> Css.widthRem value
   Data.Percentage value -> Css.widthPercent value
 
-viewStyleToSha256HashValue :: ViewStyle -> NonEmptyString.NonEmptyString
+viewStyleToSha256HashValue :: ViewStyle -> Hash.Sha256HashValue
 viewStyleToSha256HashValue (ViewStyle { declarationList, hoverDeclarationList }) =
   Hash.stringToSha256HashValue
     ( String.joinWith "!"
@@ -403,7 +409,7 @@ viewStyleToSha256HashValue (ViewStyle { declarationList, hoverDeclarationList })
         ]
     )
 
-keyframeListToSha256HashValue :: Array Css.Keyframe -> NonEmptyString.NonEmptyString
+keyframeListToSha256HashValue :: Array Css.Keyframe -> Hash.Sha256HashValue
 keyframeListToSha256HashValue keyframeList =
   Hash.stringToSha256HashValue
     (String.joinWith "!" (Prelude.map Css.keyFrameToString keyframeList))
