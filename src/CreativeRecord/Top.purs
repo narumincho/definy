@@ -1,5 +1,6 @@
 module CreativeRecord.Top where
 
+import Prelude
 import Color as Color
 import CreativeRecord.Location as Location
 import CreativeRecord.StaticResource as StaticResource
@@ -65,6 +66,7 @@ externalLink url imageUrl text =
             { path: imageUrl
             , width: View.Percentage 100.0
             , height: 8.0
+            , alternativeText: append text "のアイコン"
             }
         , View.Text { markup: View.None, padding: 8.0, text }
         ]
@@ -82,6 +84,7 @@ articleLink (ArticleTitleAndImageUrl { location, imagePath, title }) =
             { path: imagePath
             , width: View.Percentage 100.0
             , height: 8.0
+            , alternativeText: append title "のイメージ画像"
             }
         , View.Text { markup: View.None, padding: 8.0, text: title }
         ]

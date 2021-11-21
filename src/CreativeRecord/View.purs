@@ -17,7 +17,7 @@ view :: ViewData.View Prelude.Unit
 view =
   ViewData.View
     { appName: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "ナルミンチョの創作記録")
-    , box: Top.topBox
+    , children: [ ViewData.BoxElement Top.topBox ]
     , coverImagePath: StaticResource.iconPng
     , description:
         "革新的なプログラミング言語のdefiny, Web技術, 作っているゲームなどについて解説しています"

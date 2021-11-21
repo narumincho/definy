@@ -39,7 +39,7 @@ newtype View message
   , {- OGPに使われるカバー画像のパス (CORSの制限を受けない) -} coverImagePath :: StructuredUrl.PathAndSearchParams
   , {- ページのパス -} path :: StructuredUrl.PathAndSearchParams
   , {- オリジン -} origin :: NonEmptyString.NonEmptyString
-  , {- 子要素 -} box :: Box message
+  , {- 子要素 -} children :: Array (Element message)
   }
 
 newtype Box :: Type -> Type
@@ -88,6 +88,7 @@ data Element message
     { path :: StructuredUrl.PathAndSearchParams
     , width :: PercentageOrRem
     , height :: Number
+    , alternativeText :: String
     }
   | BoxElement (Box message)
 

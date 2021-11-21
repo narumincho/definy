@@ -1,11 +1,14 @@
-module View.ToHtml (viewToHtmlOption) where
+module View.ToVdom where
 
 import Color as Color
 import Css as Css
 import Data.Array as Array
+import Data.Array.NonEmpty as NonEmptyArray
 import Data.Map as Map
+import Data.Maybe (Maybe(..))
 import Data.Maybe as Maybe
 import Data.String as String
+import Data.String.NonEmpty (NonEmptyString)
 import Data.String.NonEmpty as NonEmptyString
 import Data.Tuple as Tuple
 import Hash as Hash
@@ -14,20 +17,20 @@ import Html.Wellknown as HtmlWellknown
 import Prelude as Prelude
 import StructuredUrl as StructuredUrl
 import Type.Proxy as Proxy
+import Vdom.Data as Vdom
 import View.Data as Data
 
--- | View から HtmlOption に変換する
-viewToHtmlOption :: forall message. StructuredUrl.PathAndSearchParams -> Data.View message -> HtmlData.HtmlOption
-viewToHtmlOption scriptPath (Data.View view) =
+toVdom :: forall message. StructuredUrl.PathAndSearchParams -> Data.View message -> Vdom.Vdom message
+toVdom scriptPath (Data.View view) =
   let
     ( VdomChildrenAndStyleDict
-        { children
+        { children: vdomChildren
       , styleDict
       , keyframesDict
       }
-    ) = viewChildrenToHtmlChildren view.children
+    ) = viewChildrenToVdomChildren view.children
   in
-    HtmlData.HtmlOption
+    Vdom.Vdom
       { pageName: view.pageName
       , appName: view.appName
       , description: view.description
@@ -35,21 +38,23 @@ viewToHtmlOption scriptPath (Data.View view) =
       , iconPath: view.iconPath
       , language: view.language
       , coverImagePath: view.coverImagePath
-      , path: Maybe.Just view.path
+      , path: Just view.path
       , origin: view.origin
       , style:
           htmlElementAndStyleDictToCssStatementList { styleDict, keyframesDict }
-      , scriptPath: Maybe.Just scriptPath
-      , bodyChildren: children
-      , bodyClass: Maybe.Nothing
+      , scriptPath: Just scriptPath
+      , children: vdomChildren
+      , bodyClass: Nothing
+      , pointerMove: Nothing
+      , pointerDown: Nothing
       }
 
 htmlElementAndStyleDictToCssStatementList ::
-  { styleDict :: Map.Map Hash.Sha256HashValue ViewStyle
-  , keyframesDict :: Map.Map Hash.Sha256HashValue (Array Css.Keyframe)
+  { keyframesDict :: Map.Map Hash.Sha256HashValue (Array Css.Keyframe)
+  , styleDict :: Map.Map Hash.Sha256HashValue ViewStyle
   } ->
   Css.StatementList
-htmlElementAndStyleDictToCssStatementList { styleDict, keyframesDict } =
+htmlElementAndStyleDictToCssStatementList { keyframesDict, styleDict } =
   Css.StatementList
     { ruleList:
         Array.concat
@@ -119,31 +124,28 @@ newtype ViewStyle
   , hoverDeclarationList :: Array Css.Declaration
   }
 
-newtype HtmlElementAndStyleDict
-  = HtmlElementAndStyleDict
-  { htmlElement :: HtmlData.RawHtmlElement
+newtype ElementAndStyleDict message
+  = ElementAndStyleDict
+  { element :: Vdom.Element message
   , styleDict :: Map.Map Hash.Sha256HashValue ViewStyle
   , keyframesDict :: Map.Map Hash.Sha256HashValue (Array Css.Keyframe)
   }
 
-htmlElementAndStyleDictStyleDict :: HtmlElementAndStyleDict -> Map.Map Hash.Sha256HashValue ViewStyle
-htmlElementAndStyleDictStyleDict (HtmlElementAndStyleDict { styleDict }) = styleDict
-
-htmlElementAndStyleDictHtmlElement :: HtmlElementAndStyleDict -> HtmlData.RawHtmlElement
-htmlElementAndStyleDictHtmlElement (HtmlElementAndStyleDict { htmlElement }) = htmlElement
-
-htmlElementAndStyleDictKeyframesDict :: HtmlElementAndStyleDict -> Map.Map Hash.Sha256HashValue (Array Css.Keyframe)
-htmlElementAndStyleDictKeyframesDict (HtmlElementAndStyleDict { keyframesDict }) = keyframesDict
-
-newtype HtmlChildrenAndStyleDict
+newtype VdomChildrenAndStyleDict message
   = VdomChildrenAndStyleDict
-  { children :: Array HtmlData.RawHtmlElement
+  { children :: Vdom.Children message
   , styleDict :: Map.Map Hash.Sha256HashValue ViewStyle
   , keyframesDict :: Map.Map Hash.Sha256HashValue (Array Css.Keyframe)
   }
 
-boxToHtmlElementAndStyleDict :: forall message. Data.Box message -> HtmlElementAndStyleDict
-boxToHtmlElementAndStyleDict box@( Data.Box
+htmlElementAndStyleDictStyleDict :: forall message. ElementAndStyleDict message -> Map.Map Hash.Sha256HashValue ViewStyle
+htmlElementAndStyleDictStyleDict (ElementAndStyleDict { styleDict }) = styleDict
+
+htmlElementAndStyleDictKeyframesDict :: forall message. ElementAndStyleDict message -> Map.Map Hash.Sha256HashValue (Array Css.Keyframe)
+htmlElementAndStyleDictKeyframesDict (ElementAndStyleDict { keyframesDict }) = keyframesDict
+
+boxToVdomElementAndStyleDict :: forall message. Data.Box message -> ElementAndStyleDict message
+boxToVdomElementAndStyleDict box@( Data.Box
     boxRecord
 ) =
   let
@@ -192,65 +194,70 @@ boxToHtmlElementAndStyleDict box@( Data.Box
               Maybe.Nothing -> []
         }
 
-    className = viewStyleToSha256HashValue viewStyle
+    classNameHashValue :: Hash.Sha256HashValue
+    classNameHashValue = viewStyleToSha256HashValue viewStyle
 
-    children :: Array HtmlElementAndStyleDict
-    children = Prelude.map elementToHtmlElementAndStyleDict boxRecord.children
+    className :: NonEmptyString
+    className = sha256HashValueToClassName classNameHashValue
+
+    ( VdomChildrenAndStyleDict
+        { children: vdomChildren
+      , styleDict: childrenStyleDict
+      , keyframesDict: childrenKeyframesDict
+      }
+    ) = viewChildrenToVdomChildren boxRecord.children
   in
-    HtmlElementAndStyleDict
-      { htmlElement:
-          ( case boxRecord.url of
-              Maybe.Just _ -> HtmlWellknown.a
-              Maybe.Nothing -> HtmlWellknown.div
-          )
-            ( Map.fromFoldable
-                ( Array.concat
-                    [ [ sha256HashValueToClassAttributeNameAndValue className ]
-                    , case boxRecord.url of
-                        Maybe.Just url ->
-                          [ Tuple.Tuple
-                              (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "href"))
-                              ( Maybe.Just
-                                  ( NonEmptyString.toString
-                                      (StructuredUrl.toString url)
-                                  )
-                              )
-                          ]
-                        Maybe.Nothing -> []
-                    ]
+    ElementAndStyleDict
+      { element:
+          case boxRecord.url of
+            Maybe.Just url ->
+              Vdom.ElementExternalLink
+                ( Vdom.ExternalLink
+                    { id: Maybe.Nothing
+                    , class: Maybe.Just className
+                    , url: url
+                    , children: vdomChildren
+                    }
                 )
-            )
-            (HtmlData.ElementList (Prelude.map htmlElementAndStyleDictHtmlElement children))
+            Maybe.Nothing ->
+              Vdom.ElementDiv
+                ( Vdom.Div
+                    { id: Maybe.Nothing
+                    , class: Maybe.Just className
+                    , click: Maybe.Nothing
+                    , children: vdomChildren
+                    }
+                )
       , styleDict:
-          Map.insert className viewStyle
-            (Map.fromFoldable (Array.concatMap (\c -> Map.toUnfoldable (htmlElementAndStyleDictStyleDict c)) children))
+          Map.insert classNameHashValue viewStyle childrenStyleDict
       , keyframesDict:
-          let
-            childrenKeyframesDict :: Map.Map Hash.Sha256HashValue (Array Css.Keyframe)
-            childrenKeyframesDict =
-              Map.fromFoldable
-                (Array.concatMap (\c -> Map.toUnfoldable (htmlElementAndStyleDictKeyframesDict c)) children)
-          in
-            case keyframeResult of
-              Maybe.Just { animationHashValue, keyframeList } ->
-                Map.insert animationHashValue keyframeList
-                  childrenKeyframesDict
-              Maybe.Nothing -> childrenKeyframesDict
+          case keyframeResult of
+            Maybe.Just { animationHashValue, keyframeList } ->
+              Map.insert animationHashValue keyframeList
+                childrenKeyframesDict
+            Maybe.Nothing -> childrenKeyframesDict
       }
 
-viewChildrenToHtmlChildren :: forall message. Array (Data.Element message) -> HtmlChildrenAndStyleDict
-viewChildrenToHtmlChildren children =
+viewChildrenToVdomChildren :: forall message. Array (Data.Element message) -> VdomChildrenAndStyleDict message
+viewChildrenToVdomChildren children =
   let
-    childrenElementAndStyleDict :: Array HtmlElementAndStyleDict
+    childrenElementAndStyleDict :: Array (ElementAndStyleDict message)
     childrenElementAndStyleDict = Prelude.map elementToHtmlElementAndStyleDict children
   in
     VdomChildrenAndStyleDict
       { children:
-          Prelude.map
-            ( \(HtmlElementAndStyleDict { htmlElement }) ->
-                htmlElement
-            )
-            childrenElementAndStyleDict
+          case NonEmptyArray.fromArray childrenElementAndStyleDict of
+            Just childrenNonEmpty ->
+              Vdom.ChildrenElementList
+                ( NonEmptyArray.mapWithIndex
+                    ( \index (ElementAndStyleDict { element }) ->
+                        Tuple.Tuple
+                          (Prelude.show index)
+                          element
+                    )
+                    childrenNonEmpty
+                )
+            Nothing -> Vdom.ChildrenText ""
       , styleDict:
           Map.fromFoldable
             ( Array.concatMap
@@ -282,7 +289,7 @@ boxGetKeyframeListAndAnimationName (Data.Box { hover: Data.BoxHoverStyle { anima
       }
   Maybe.Nothing -> Maybe.Nothing
 
-elementToHtmlElementAndStyleDict :: forall message. Data.Element message -> HtmlElementAndStyleDict
+elementToHtmlElementAndStyleDict :: forall message. Data.Element message -> ElementAndStyleDict message
 elementToHtmlElementAndStyleDict = case _ of
   Data.Text { padding, markup, text } ->
     let
@@ -298,20 +305,49 @@ elementToHtmlElementAndStyleDict = case _ of
           , hoverDeclarationList: []
           }
 
-      className = viewStyleToSha256HashValue viewStyle
+      classNameHashValue :: Hash.Sha256HashValue
+      classNameHashValue = viewStyleToSha256HashValue viewStyle
+
+      className :: NonEmptyString
+      className = sha256HashValueToClassName classNameHashValue
     in
-      HtmlElementAndStyleDict
-        { htmlElement:
-            markupToTagName markup
-              (Map.fromFoldable ([ sha256HashValueToClassAttributeNameAndValue className ]))
-              (HtmlData.Text text)
-        , styleDict: Map.singleton className viewStyle
+      ElementAndStyleDict
+        { element:
+            case markup of
+              Data.None ->
+                Vdom.ElementDiv
+                  ( Vdom.Div
+                      { children: Vdom.ChildrenText text
+                      , class: Maybe.Just className
+                      , click: Maybe.Nothing
+                      , id: Maybe.Nothing
+                      }
+                  )
+              Data.Heading1 ->
+                Vdom.ElementH1
+                  ( Vdom.H1
+                      { class: Maybe.Just className
+                      , click: Maybe.Nothing
+                      , id: Maybe.Nothing
+                      , children: Vdom.ChildrenText text
+                      }
+                  )
+              Data.Heading2 ->
+                Vdom.ElementH2
+                  ( Vdom.H2
+                      { class: Maybe.Just className
+                      , click: Maybe.Nothing
+                      , id: Maybe.Nothing
+                      , children: Vdom.ChildrenText text
+                      }
+                  )
+        , styleDict: Map.singleton classNameHashValue viewStyle
         , keyframesDict: Map.empty
         }
   Data.SvgElement
     { height
   , isJustifySelfCenter
-  , svg: Data.Svg { viewBox, svgElementList }
+  , svg: Data.Svg { viewBox: Data.ViewBox viewBox, svgElementList }
   , width
   } ->
     let
@@ -333,23 +369,22 @@ elementToHtmlElementAndStyleDict = case _ of
 
       className = viewStyleToSha256HashValue viewStyle
     in
-      HtmlElementAndStyleDict
-        { htmlElement:
-            HtmlWellknown.svg
-              ( Map.fromFoldable
-                  [ Tuple.Tuple
-                      (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "viewBox"))
-                      ( Maybe.Just
-                          (viewBoxToViewBoxAttributeValue viewBox)
-                      )
-                  , sha256HashValueToClassAttributeNameAndValue (className)
-                  ]
-              )
-              (HtmlData.ElementList (Prelude.map svgElementToHtmlElement svgElementList))
+      ElementAndStyleDict
+        { element:
+            Vdom.svg
+              { children:
+                  Array.mapWithIndex (\index element -> Tuple.Tuple (Prelude.show index) (svgElementToHtmlElement element)) svgElementList
+              , class: Maybe.Nothing
+              , id: Maybe.Nothing
+              , viewBoxHeight: viewBox.height
+              , viewBoxWidth: viewBox.width
+              , viewBoxX: viewBox.x
+              , viewBoxY: viewBox.y
+              }
         , styleDict: Map.singleton className viewStyle
         , keyframesDict: Map.empty
         }
-  Data.Image { width, height, path } ->
+  Data.Image { width, height, path, alternativeText } ->
     let
       viewStyle :: ViewStyle
       viewStyle =
@@ -362,24 +397,25 @@ elementToHtmlElementAndStyleDict = case _ of
           , hoverDeclarationList: []
           }
 
-      className = viewStyleToSha256HashValue viewStyle
+      classNameHashValue :: Hash.Sha256HashValue
+      classNameHashValue = viewStyleToSha256HashValue viewStyle
     in
-      HtmlElementAndStyleDict
-        { htmlElement:
-            HtmlWellknown.img
-              ( Map.fromFoldable
-                  [ Tuple.Tuple
-                      (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "src"))
-                      (Maybe.Just (NonEmptyString.toString (StructuredUrl.pathAndSearchParamsToString path)))
-                  , sha256HashValueToClassAttributeNameAndValue className
-                  ]
+      ElementAndStyleDict
+        { element:
+            Vdom.ElementImg
+              ( Vdom.Img
+                  { id: Nothing
+                  , class: Just (sha256HashValueToClassName classNameHashValue)
+                  , alt: alternativeText
+                  , src: path
+                  }
               )
-        , styleDict: Map.singleton className viewStyle
+        , styleDict: Map.singleton classNameHashValue viewStyle
         , keyframesDict: Map.empty
         }
-  Data.BoxElement element -> boxToHtmlElementAndStyleDict element
+  Data.BoxElement element -> boxToVdomElementAndStyleDict element
 
-markupToTagName :: Data.TextMarkup -> Map.Map NonEmptyString.NonEmptyString (Maybe.Maybe String) → HtmlData.HtmlChildren → HtmlData.RawHtmlElement
+markupToTagName :: Data.TextMarkup -> Map.Map NonEmptyString (Maybe.Maybe String) → HtmlData.HtmlChildren → HtmlData.RawHtmlElement
 markupToTagName = case _ of
   Data.None -> HtmlWellknown.div
   Data.Heading1 -> HtmlWellknown.h1
@@ -396,40 +432,38 @@ viewBoxToViewBoxAttributeValue (Data.ViewBox viewBox) =
         ]
     )
 
-svgElementToHtmlElement :: Data.SvgElement -> HtmlData.RawHtmlElement
+svgElementToHtmlElement :: forall message. Data.SvgElement -> Vdom.Element message
 svgElementToHtmlElement = case _ of
   Data.Path { pathText, fill } ->
-    HtmlWellknown.svgPath
-      ( Map.fromFoldable
-          [ Tuple.Tuple
-              (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "d"))
-              (Maybe.Just pathText)
-          , Tuple.Tuple
-              (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "fill"))
-              (Maybe.Just fill)
-          ]
+    Vdom.ElementSvgPath
+      ( Vdom.SvgPath
+          { id: Maybe.Nothing
+          , class: Maybe.Nothing
+          , d: pathText
+          , fill: fill
+          }
       )
   Data.G { transform, svgElementList } ->
-    HtmlWellknown.svgG
-      ( Map.singleton
-          (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "transform"))
-          (Maybe.Just (String.joinWith "" transform))
+    Vdom.ElementSvgG
+      ( Vdom.SvgG
+          { transform: String.joinWith "" transform
+          , children: Array.mapWithIndex (\index element -> Tuple.Tuple (Prelude.show index) (svgElementToHtmlElement element)) svgElementList
+          }
       )
-      (Prelude.map svgElementToHtmlElement svgElementList)
 
-sha256HashValueToClassAttributeNameAndValue :: Hash.Sha256HashValue -> Tuple.Tuple NonEmptyString.NonEmptyString (Maybe.Maybe String)
+sha256HashValueToClassAttributeNameAndValue :: Hash.Sha256HashValue -> Tuple.Tuple NonEmptyString (Maybe.Maybe String)
 sha256HashValueToClassAttributeNameAndValue sha256HashValue =
   Tuple.Tuple
     (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "class"))
     (Maybe.Just (NonEmptyString.toString (sha256HashValueToClassName sha256HashValue)))
 
-sha256HashValueToClassName :: Hash.Sha256HashValue -> NonEmptyString.NonEmptyString
+sha256HashValueToClassName :: Hash.Sha256HashValue -> NonEmptyString
 sha256HashValueToClassName sha256HashValue =
   NonEmptyString.prependString
     "nv_"
     (Hash.toNonEmptyString sha256HashValue)
 
-sha256HashValueToAnimationName :: Hash.Sha256HashValue -> NonEmptyString.NonEmptyString
+sha256HashValueToAnimationName :: Hash.Sha256HashValue -> NonEmptyString
 sha256HashValueToAnimationName sha256HashValue =
   NonEmptyString.prependString
     "nva_"
