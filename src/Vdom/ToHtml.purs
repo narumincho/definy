@@ -3,6 +3,7 @@ module Vdom.ToHtml (toHtml) where
 import Data.Array as Array
 import Data.Array.NonEmpty as NonEmptyArray
 import Data.Maybe (Maybe(..))
+import Data.Maybe as Maybe
 import Data.String.NonEmpty as NonEmptyString
 import Data.Tuple as Tuple
 import Html.Data as Html
@@ -76,18 +77,27 @@ vdomElementToHtmlElement = case _ of
   Data.ElementInputRadio (Data.InputRadio rec) ->
     Wellknown.inputRadio
       { id: rec.id, class: rec.class, name: rec.name }
-  Data.ElementInputText (Data.InputText _) ->
-    Wellknown.div
-      { id: Nothing, class: Nothing }
-      (Html.Text "toHtml InputText は未実装")
-  Data.ElementTextArea (Data.TextArea _) ->
-    Wellknown.div
-      { id: Nothing, class: Nothing }
-      (Html.Text "toHtml TextArea は未実装")
-  Data.ElementLabel (Data.Label _) ->
-    Wellknown.div
-      { id: Nothing, class: Nothing }
-      (Html.Text "toHtml Label は未実装")
+  Data.ElementInputText (Data.InputText rec) ->
+    Wellknown.inputText
+      { id: rec.id
+      , class: rec.class
+      , value: rec.value
+      , readonly: Maybe.isNothing rec.inputOrReadonly
+      }
+  Data.ElementTextArea (Data.TextArea rec) ->
+    Wellknown.textarea
+      { id: rec.id
+      , class: rec.class
+      , value: rec.value
+      , readonly: Maybe.isNothing rec.inputOrReadonly
+      }
+  Data.ElementLabel (Data.Label rec) ->
+    Wellknown.label
+      { id: rec.id
+      , class: rec.class
+      , for: rec.for
+      }
+      (vdomChildrenToHtmlChildren rec.children)
   Data.ElementSvg (Data.Svg _) ->
     Wellknown.div
       { id: Nothing, class: Nothing }

@@ -16,6 +16,9 @@ module Html.Wellknown
   , svg
   , img
   , inputRadio
+  , inputText
+  , textarea
+  , label
   , svgPath
   , svgG
   , htmlTagName
@@ -268,10 +271,15 @@ inputRadio ::
   Data.RawHtmlElement
 inputRadio attributes =
   Data.htmlElement
-    (NonEmptyString.nes (Proxy :: Proxy "img"))
+    (NonEmptyString.nes (Proxy :: Proxy "input"))
     ( Map.fromFoldable
         ( Array.catMaybes
-            [ Prelude.map idAttribute attributes.id
+            [ Just
+                ( Tuple.Tuple
+                    (NonEmptyString.nes (Proxy :: Proxy "type"))
+                    (Just "radio")
+                )
+            , Prelude.map idAttribute attributes.id
             , Prelude.map classAttribute attributes.class
             , Just
                 ( Tuple.Tuple
@@ -284,6 +292,93 @@ inputRadio attributes =
         )
     )
     Data.NoEndTag
+
+inputText ::
+  { id :: Maybe NonEmptyString
+  , class :: Maybe NonEmptyString
+  , value :: String
+  , readonly :: Boolean
+  } ->
+  Data.RawHtmlElement
+inputText attributes =
+  Data.htmlElement
+    (NonEmptyString.nes (Proxy :: Proxy "input"))
+    ( Map.fromFoldable
+        ( Array.catMaybes
+            [ Just
+                ( Tuple.Tuple
+                    (NonEmptyString.nes (Proxy :: Proxy "type"))
+                    (Just "text")
+                )
+            , Prelude.map idAttribute attributes.id
+            , Prelude.map classAttribute attributes.class
+            , Just
+                ( Tuple.Tuple
+                    (NonEmptyString.nes (Proxy :: Proxy "value"))
+                    (Just attributes.value)
+                )
+            , if attributes.readonly then
+                Just
+                  ( Tuple.Tuple
+                      (NonEmptyString.nes (Proxy :: Proxy "readonly"))
+                      Nothing
+                  )
+              else
+                Nothing
+            ]
+        )
+    )
+    Data.NoEndTag
+
+textarea ::
+  { id :: Maybe NonEmptyString
+  , class :: Maybe NonEmptyString
+  , value :: String
+  , readonly :: Boolean
+  } ->
+  Data.RawHtmlElement
+textarea attributes =
+  Data.htmlElement
+    (NonEmptyString.nes (Proxy :: Proxy "textarea"))
+    ( Map.fromFoldable
+        ( Array.catMaybes
+            [ Prelude.map idAttribute attributes.id
+            , Prelude.map classAttribute attributes.class
+            , Just
+                ( Tuple.Tuple
+                    (NonEmptyString.nes (Proxy :: Proxy "value"))
+                    (Just attributes.value)
+                )
+            , if attributes.readonly then
+                Just
+                  ( Tuple.Tuple
+                      (NonEmptyString.nes (Proxy :: Proxy "readonly"))
+                      Nothing
+                  )
+              else
+                Nothing
+            ]
+        )
+    )
+    Data.NoEndTag
+
+label :: { id :: Maybe NonEmptyString, class :: Maybe NonEmptyString, for :: NonEmptyString } -> Data.HtmlChildren -> Data.RawHtmlElement
+label attributes children =
+  Data.htmlElement
+    (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "label"))
+    ( Map.fromFoldable
+        ( Array.catMaybes
+            [ Prelude.map idAttribute attributes.id
+            , Prelude.map classAttribute attributes.class
+            , Just
+                ( Tuple.Tuple
+                    (NonEmptyString.nes (Proxy :: Proxy "for"))
+                    (Just (NonEmptyString.toString attributes.for))
+                )
+            ]
+        )
+    )
+    children
 
 svgPath :: Map.Map NonEmptyString.NonEmptyString (Maybe.Maybe String) -> Data.RawHtmlElement
 svgPath attributes =

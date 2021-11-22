@@ -453,7 +453,7 @@ newtype Label message
   = Label
   { id :: Maybe NonEmptyString
   , class :: Maybe NonEmptyString
-  , for :: String
+  , for :: NonEmptyString
   , children :: Children message
   }
 
@@ -463,7 +463,7 @@ newtype LabelDiff message
 type LabelDiffRec message
   = { id :: Maybe (Maybe NonEmptyString)
     , class :: Maybe (Maybe NonEmptyString)
-    , for :: Maybe.Maybe String
+    , for :: Maybe NonEmptyString
     , children :: ChildrenDiff message
     }
 
