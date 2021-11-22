@@ -4,6 +4,7 @@ import Prelude
 import Color as Color
 import Console as Console
 import Data.Array.NonEmpty as NonEmptyArray
+import Data.Maybe (Maybe(..))
 import Data.Nullable (Nullable)
 import Data.Nullable as Nullable
 import Data.String.NonEmpty as NonEmptyString
@@ -62,15 +63,18 @@ renderElement htmlOrSvgElement diff renderState path = Console.logValue "run ren
 
 -- | HTMLElment か SVGElement の子要素に対して差分データの分を反映する
 renderChildren :: forall message. { htmlOrSvgElement :: HtmlOrSvgElement, childrenDiff :: View.ChildrenDiff message, renderState :: RenderState.RenderState message, path :: View.Path } -> Effect.Effect Unit
-renderChildren { childrenDiff: View.ChildrenDiffSkip } = pure unit
-
-renderChildren { htmlOrSvgElement, childrenDiff: View.ChildrenDiffSetText newText } = setTextContent newText htmlOrSvgElement
-
-renderChildren { htmlOrSvgElement, childrenDiff: View.ChildrenDiffResetAndInsert list, renderState, path } = do
-  setTextContent "" htmlOrSvgElement
-  applyChildren { htmlOrSvgElement, children: View.ChildrenElementList list, renderState, path }
-
-renderChildren { childrenDiff: View.ChildDiffList _ } = pure unit
+renderChildren = case _ of
+  { childrenDiff: View.ChildrenDiffSkip } -> pure unit
+  { htmlOrSvgElement, childrenDiff: View.ChildrenDiffSetText newText } -> setTextContent newText htmlOrSvgElement
+  { htmlOrSvgElement, childrenDiff: View.ChildrenDiffResetAndInsert list, renderState, path } -> do
+    setTextContent "" htmlOrSvgElement
+    applyChildren
+      { htmlOrSvgElement
+      , children: View.ChildrenElementList list
+      , renderState
+      , path
+      }
+  { childrenDiff: View.ChildDiffList _ } -> pure unit
 
 renderChild :: forall message. HtmlOrSvgElement -> UInt.UInt -> View.ElementDiff message -> View.Path -> RenderState.RenderState message -> Effect.Effect UInt.UInt
 renderChild htmlOrSvgElement index childDiff path renderState = do
@@ -94,9 +98,9 @@ resetAndRenderView (View.Vdom view) renderState = do
   renderChildren
     { htmlOrSvgElement: bodyElement
     , childrenDiff:
-        case view.children of
-          View.ChildrenElementList list -> View.ChildrenDiffResetAndInsert list
-          View.ChildrenText text -> View.ChildrenDiffSetText text
+        case NonEmptyArray.fromArray view.children of
+          Just list -> View.ChildrenDiffResetAndInsert list
+          Nothing -> View.ChildrenDiffSetText ""
     , renderState
     , path: View.rootPath
     }

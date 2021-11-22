@@ -21,18 +21,24 @@ module Html.Wellknown
   ) where
 
 import Css as Css
+import Data.Array as Array
 import Data.Map as Map
+import Data.Maybe (Maybe(..))
 import Data.Maybe as Maybe
+import Data.String.NonEmpty (NonEmptyString)
 import Data.String.NonEmpty as NonEmptyString
 import Data.Tuple as Tuple
 import Html.Data as Data
+import Language as Language
+import Prelude as Prelude
 import StructuredUrl as StructuredUrl
+import Type.Proxy (Proxy(..))
 import Type.Proxy as Proxy
 
 meta :: Map.Map NonEmptyString.NonEmptyString (Maybe.Maybe String) -> Data.RawHtmlElement
 meta attributes = Data.htmlElement (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "meta")) attributes Data.NoEndTag
 
-html :: Maybe.Maybe String -> Data.RawHtmlElement -> Data.RawHtmlElement -> Data.RawHtmlElement
+html :: Maybe.Maybe Language.Language -> Data.RawHtmlElement -> Data.RawHtmlElement -> Data.RawHtmlElement
 html langMaybe headElement bodyElement =
   Data.htmlElement
     htmlTagName
@@ -40,7 +46,7 @@ html langMaybe headElement bodyElement =
         Maybe.Just lang ->
           Map.singleton
             (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "lang"))
-            (Maybe.Just lang)
+            (Maybe.Just (Language.toIETFLanguageTag lang))
         Maybe.Nothing -> Map.empty
     )
     (Data.ElementList [ headElement, bodyElement ])
@@ -124,11 +130,17 @@ title pageName =
     Map.empty
     (Data.Text (NonEmptyString.toString pageName))
 
-div :: Map.Map NonEmptyString.NonEmptyString (Maybe.Maybe String) -> Data.HtmlChildren -> Data.RawHtmlElement
+div :: { id :: Maybe NonEmptyString, class :: Maybe NonEmptyString } -> Data.HtmlChildren -> Data.RawHtmlElement
 div attributes children =
   Data.htmlElement
     (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "div"))
-    attributes
+    ( Map.fromFoldable
+        ( Array.catMaybes
+            [ Prelude.map idAttribute attributes.id
+            , Prelude.map classAttribute attributes.class
+            ]
+        )
+    )
     children
 
 a :: Map.Map NonEmptyString.NonEmptyString (Maybe.Maybe String) -> Data.HtmlChildren -> Data.RawHtmlElement
@@ -138,18 +150,30 @@ a attributes children =
     attributes
     children
 
-h1 :: Map.Map NonEmptyString.NonEmptyString (Maybe.Maybe String) -> Data.HtmlChildren -> Data.RawHtmlElement
+h1 :: { id :: Maybe NonEmptyString, class :: Maybe NonEmptyString } -> Data.HtmlChildren -> Data.RawHtmlElement
 h1 attributes children =
   Data.htmlElement
     (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "h1"))
-    attributes
+    ( Map.fromFoldable
+        ( Array.catMaybes
+            [ Prelude.map idAttribute attributes.id
+            , Prelude.map classAttribute attributes.class
+            ]
+        )
+    )
     children
 
-h2 :: Map.Map NonEmptyString.NonEmptyString (Maybe.Maybe String) -> Data.HtmlChildren -> Data.RawHtmlElement
+h2 :: { id :: Maybe NonEmptyString, class :: Maybe NonEmptyString } -> Data.HtmlChildren -> Data.RawHtmlElement
 h2 attributes children =
   Data.htmlElement
     (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "h2"))
-    attributes
+    ( Map.fromFoldable
+        ( Array.catMaybes
+            [ Prelude.map idAttribute attributes.id
+            , Prelude.map classAttribute attributes.class
+            ]
+        )
+    )
     children
 
 svg :: Map.Map NonEmptyString.NonEmptyString (Maybe.Maybe String) -> Data.HtmlChildren -> Data.RawHtmlElement
@@ -179,3 +203,16 @@ svgG attributes elementList =
     (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "g"))
     attributes
     (Data.ElementList elementList)
+
+classAttribute :: NonEmptyString -> Tuple.Tuple NonEmptyString (Maybe.Maybe String)
+classAttribute className =
+  Tuple.Tuple
+    (NonEmptyString.nes (Proxy :: Proxy "class"))
+    (Just (NonEmptyString.toString className))
+
+idAttribute :: NonEmptyString -> Tuple.Tuple NonEmptyString (Maybe.Maybe String)
+idAttribute id =
+  ( Tuple.Tuple
+      (NonEmptyString.nes (Proxy :: Proxy "id"))
+      (Just (NonEmptyString.toString id))
+  )

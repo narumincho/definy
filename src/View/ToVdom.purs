@@ -1,4 +1,4 @@
-module View.ToVdom where
+module View.ToVdom (toVdom) where
 
 import Color as Color
 import Css as Css
@@ -12,19 +12,16 @@ import Data.String.NonEmpty (NonEmptyString)
 import Data.String.NonEmpty as NonEmptyString
 import Data.Tuple as Tuple
 import Hash as Hash
-import Html.Data as HtmlData
 import Html.Wellknown as HtmlWellknown
 import Prelude as Prelude
 import StructuredUrl as StructuredUrl
-import Type.Proxy as Proxy
 import Vdom.Data as Vdom
 import View.Data as Data
 
 toVdom :: forall message. StructuredUrl.PathAndSearchParams -> Data.View message -> Vdom.Vdom message
 toVdom scriptPath (Data.View view) =
   let
-    ( VdomChildrenAndStyleDict
-        { children: vdomChildren
+    ( { childList: vdomChildren
       , styleDict
       , keyframesDict
       }
@@ -131,13 +128,6 @@ newtype ElementAndStyleDict message
   , keyframesDict :: Map.Map Hash.Sha256HashValue (Array Css.Keyframe)
   }
 
-newtype VdomChildrenAndStyleDict message
-  = VdomChildrenAndStyleDict
-  { children :: Vdom.Children message
-  , styleDict :: Map.Map Hash.Sha256HashValue ViewStyle
-  , keyframesDict :: Map.Map Hash.Sha256HashValue (Array Css.Keyframe)
-  }
-
 htmlElementAndStyleDictStyleDict :: forall message. ElementAndStyleDict message -> Map.Map Hash.Sha256HashValue ViewStyle
 htmlElementAndStyleDictStyleDict (ElementAndStyleDict { styleDict }) = styleDict
 
@@ -200,12 +190,15 @@ boxToVdomElementAndStyleDict box@( Data.Box
     className :: NonEmptyString
     className = sha256HashValueToClassName classNameHashValue
 
-    ( VdomChildrenAndStyleDict
-        { children: vdomChildren
-      , styleDict: childrenStyleDict
-      , keyframesDict: childrenKeyframesDict
-      }
-    ) = viewChildrenToVdomChildren boxRecord.children
+    { childList: vdomChildList
+    , styleDict: childrenStyleDict
+    , keyframesDict: childrenKeyframesDict
+    } = viewChildrenToVdomChildren boxRecord.children
+
+    vdomChildren :: Vdom.Children message
+    vdomChildren = case NonEmptyArray.fromArray vdomChildList of
+      Just nonEmptyVdomChildren -> Vdom.ChildrenElementList nonEmptyVdomChildren
+      Nothing -> Vdom.ChildrenText ""
   in
     ElementAndStyleDict
       { element:
@@ -238,39 +231,39 @@ boxToVdomElementAndStyleDict box@( Data.Box
             Maybe.Nothing -> childrenKeyframesDict
       }
 
-viewChildrenToVdomChildren :: forall message. Array (Data.Element message) -> VdomChildrenAndStyleDict message
+viewChildrenToVdomChildren ::
+  forall message.
+  Array (Data.Element message) ->
+  { childList :: Array (Tuple.Tuple String (Vdom.Element message))
+  , styleDict :: Map.Map Hash.Sha256HashValue ViewStyle
+  , keyframesDict :: Map.Map Hash.Sha256HashValue (Array Css.Keyframe)
+  }
 viewChildrenToVdomChildren children =
   let
     childrenElementAndStyleDict :: Array (ElementAndStyleDict message)
     childrenElementAndStyleDict = Prelude.map elementToHtmlElementAndStyleDict children
   in
-    VdomChildrenAndStyleDict
-      { children:
-          case NonEmptyArray.fromArray childrenElementAndStyleDict of
-            Just childrenNonEmpty ->
-              Vdom.ChildrenElementList
-                ( NonEmptyArray.mapWithIndex
-                    ( \index (ElementAndStyleDict { element }) ->
-                        Tuple.Tuple
-                          (Prelude.show index)
-                          element
-                    )
-                    childrenNonEmpty
-                )
-            Nothing -> Vdom.ChildrenText ""
-      , styleDict:
-          Map.fromFoldable
-            ( Array.concatMap
-                (\c -> Map.toUnfoldable (htmlElementAndStyleDictStyleDict c))
-                childrenElementAndStyleDict
-            )
-      , keyframesDict:
-          Map.fromFoldable
-            ( Array.concatMap
-                (\c -> Map.toUnfoldable (htmlElementAndStyleDictKeyframesDict c))
-                childrenElementAndStyleDict
-            )
-      }
+    { childList:
+        Array.mapWithIndex
+          ( \index (ElementAndStyleDict { element }) ->
+              Tuple.Tuple
+                (Prelude.show index)
+                element
+          )
+          childrenElementAndStyleDict
+    , styleDict:
+        Map.fromFoldable
+          ( Array.concatMap
+              (\c -> Map.toUnfoldable (htmlElementAndStyleDictStyleDict c))
+              childrenElementAndStyleDict
+          )
+    , keyframesDict:
+        Map.fromFoldable
+          ( Array.concatMap
+              (\c -> Map.toUnfoldable (htmlElementAndStyleDictKeyframesDict c))
+              childrenElementAndStyleDict
+          )
+    }
 
 boxGetKeyframeListAndAnimationName ::
   forall message.
@@ -415,23 +408,6 @@ elementToHtmlElementAndStyleDict = case _ of
         }
   Data.BoxElement element -> boxToVdomElementAndStyleDict element
 
-markupToTagName :: Data.TextMarkup -> Map.Map NonEmptyString (Maybe.Maybe String) → HtmlData.HtmlChildren → HtmlData.RawHtmlElement
-markupToTagName = case _ of
-  Data.None -> HtmlWellknown.div
-  Data.Heading1 -> HtmlWellknown.h1
-  Data.Heading2 -> HtmlWellknown.h2
-
-viewBoxToViewBoxAttributeValue :: Data.ViewBox -> String
-viewBoxToViewBoxAttributeValue (Data.ViewBox viewBox) =
-  String.joinWith " "
-    ( Prelude.map Prelude.show
-        [ viewBox.x
-        , viewBox.y
-        , viewBox.width
-        , viewBox.height
-        ]
-    )
-
 svgElementToHtmlElement :: forall message. Data.SvgElement -> Vdom.Element message
 svgElementToHtmlElement = case _ of
   Data.Path { pathText, fill } ->
@@ -450,12 +426,6 @@ svgElementToHtmlElement = case _ of
           , children: Array.mapWithIndex (\index element -> Tuple.Tuple (Prelude.show index) (svgElementToHtmlElement element)) svgElementList
           }
       )
-
-sha256HashValueToClassAttributeNameAndValue :: Hash.Sha256HashValue -> Tuple.Tuple NonEmptyString (Maybe.Maybe String)
-sha256HashValueToClassAttributeNameAndValue sha256HashValue =
-  Tuple.Tuple
-    (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "class"))
-    (Maybe.Just (NonEmptyString.toString (sha256HashValueToClassName sha256HashValue)))
 
 sha256HashValueToClassName :: Hash.Sha256HashValue -> NonEmptyString
 sha256HashValueToClassName sha256HashValue =

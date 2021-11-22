@@ -32,7 +32,7 @@ createViewDiff (Data.Vdom oldVdom) (Data.Vdom newVdom) =
             else
               Maybe.Nothing
           ]
-    , childrenDiff: createChildrenDiff oldVdom.children newVdom.children
+    , childrenDiff: createChildListDiff oldVdom.children newVdom.children
     , newMessageData:
         Data.MessageData
           { messageMap: Map.empty

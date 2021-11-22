@@ -40,20 +40,17 @@ main =
         , pointerMove: Maybe.Nothing
         , pointerDown: Maybe.Nothing
         , children:
-            View.ChildrenElementList
-              ( NonEmptyArray.singleton
-                  ( Tuple.Tuple "hi"
-                      ( View.ElementDiv
-                          ( View.Div
-                              { children: View.ChildrenText "書き換えたbody!"
-                              , id: Maybe.Nothing
-                              , class: Maybe.Nothing
-                              , click: Maybe.Nothing
-                              }
-                          )
-                      )
-                  )
-              )
+            [ Tuple.Tuple "hi"
+                ( View.ElementDiv
+                    ( View.Div
+                        { children: View.ChildrenText "書き換えたbody!"
+                        , id: Maybe.Nothing
+                        , class: Maybe.Nothing
+                        , click: Maybe.Nothing
+                        }
+                    )
+                )
+            ]
         , origin: Origin.origin
         }
     )

@@ -4,8 +4,10 @@ import Color as Color
 import Css as Css
 import Data.Array as Array
 import Data.Map as Map
+import Data.Maybe (Maybe(..))
 import Data.Maybe as Maybe
 import Data.String as String
+import Data.String.NonEmpty (NonEmptyString)
 import Data.String.NonEmpty as NonEmptyString
 import Data.Tuple as Tuple
 import Hash as Hash
@@ -200,26 +202,25 @@ boxToHtmlElementAndStyleDict box@( Data.Box
     HtmlElementAndStyleDict
       { htmlElement:
           ( case boxRecord.url of
-              Maybe.Just _ -> HtmlWellknown.a
-              Maybe.Nothing -> HtmlWellknown.div
-          )
-            ( Map.fromFoldable
-                ( Array.concat
-                    [ [ sha256HashValueToClassAttributeNameAndValue className ]
-                    , case boxRecord.url of
-                        Maybe.Just url ->
-                          [ Tuple.Tuple
-                              (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "href"))
-                              ( Maybe.Just
-                                  ( NonEmptyString.toString
-                                      (StructuredUrl.toString url)
-                                  )
+              Maybe.Just url ->
+                HtmlWellknown.a
+                  ( Map.fromFoldable
+                      [ sha256HashValueToClassAttributeNameAndValue className
+                      , Tuple.Tuple
+                          (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "href"))
+                          ( Maybe.Just
+                              ( NonEmptyString.toString
+                                  (StructuredUrl.toString url)
                               )
-                          ]
-                        Maybe.Nothing -> []
-                    ]
-                )
-            )
+                          )
+                      ]
+                  )
+              Maybe.Nothing ->
+                HtmlWellknown.div
+                  { class: Just (sha256HashValueToClassName className)
+                  , id: Nothing
+                  }
+          )
             (HtmlData.ElementList (Prelude.map htmlElementAndStyleDictHtmlElement children))
       , styleDict:
           Map.insert className viewStyle
@@ -303,7 +304,9 @@ elementToHtmlElementAndStyleDict = case _ of
       HtmlElementAndStyleDict
         { htmlElement:
             markupToTagName markup
-              (Map.fromFoldable ([ sha256HashValueToClassAttributeNameAndValue className ]))
+              { class: Just (sha256HashValueToClassName className)
+              , id: Nothing
+              }
               (HtmlData.Text text)
         , styleDict: Map.singleton className viewStyle
         , keyframesDict: Map.empty
@@ -342,7 +345,7 @@ elementToHtmlElementAndStyleDict = case _ of
                       ( Maybe.Just
                           (viewBoxToViewBoxAttributeValue viewBox)
                       )
-                  , sha256HashValueToClassAttributeNameAndValue (className)
+                  , sha256HashValueToClassAttributeNameAndValue className
                   ]
               )
               (HtmlData.ElementList (Prelude.map svgElementToHtmlElement svgElementList))
@@ -379,7 +382,7 @@ elementToHtmlElementAndStyleDict = case _ of
         }
   Data.BoxElement element -> boxToHtmlElementAndStyleDict element
 
-markupToTagName :: Data.TextMarkup -> Map.Map NonEmptyString.NonEmptyString (Maybe.Maybe String) → HtmlData.HtmlChildren → HtmlData.RawHtmlElement
+markupToTagName :: Data.TextMarkup -> { id :: Maybe NonEmptyString, class :: Maybe NonEmptyString } → HtmlData.HtmlChildren → HtmlData.RawHtmlElement
 markupToTagName = case _ of
   Data.None -> HtmlWellknown.div
   Data.Heading1 -> HtmlWellknown.h1

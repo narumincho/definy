@@ -84,7 +84,7 @@ newtype Vdom message
   , {- body の class -} bodyClass :: Maybe.Maybe NonEmptyString.NonEmptyString
   , pointerMove :: Maybe.Maybe (Pointer -> message)
   , pointerDown :: Maybe.Maybe (Pointer -> message)
-  , {- body の 子要素 -} children :: Children message
+  , {- body の 子要素 -} children :: Array (Tuple.Tuple String (Element message))
   }
 
 newtype Pointer
