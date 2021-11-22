@@ -276,33 +276,48 @@ externalLinkDiff key (ExternalLink old) (ExternalLink new) =
             , Prelude.map ExternalLinkPatchOperationSetHref (createDiff old.href new.href)
             ]
         ) of
-      Maybe.Just list -> Update { elementUpdateDiff: ElementUpdateDiffExternalLinkDiff (ExternalLinkDiff list), key }
+      Maybe.Just list ->
+        Update
+          { elementUpdateDiff: ElementUpdateDiffExternalLinkDiff (ExternalLinkDiff list)
+          , key
+          }
       Maybe.Nothing -> Skip
   )
 
 newtype LocalLink message
   = LocalLink
-  { id :: String
-  , class :: String
-  , url :: String
+  { id :: Maybe NonEmptyString
+  , class :: Maybe NonEmptyString
+  , href :: StructuredUrl.StructuredUrl
   , jumpMessage :: message
   , children :: Children message
   }
 
 newtype LocalLinkDiff message
-  = LocalLinkDiff (LocalLinkDiffRec message)
+  = LocalLinkDiff (NonEmptyArray (LocalLinkPatchOperation message))
 
-type LocalLinkDiffRec message
-  = { id :: Maybe.Maybe String
-    , class :: Maybe.Maybe String
-    , url :: Maybe.Maybe String
-    , children :: ChildrenDiff message
-    }
+data LocalLinkPatchOperation message
+  = LocalLinkPatchOperationSetId (Maybe NonEmptyString)
+  | LocalLinkPatchOperationSetClass (Maybe NonEmptyString)
+  | LocalLinkPatchOperationSetHref StructuredUrl.StructuredUrl
+  | LocalLinkPatchOperationUpdateChildren (ChildrenDiff message)
 
-localLinkDiff :: forall message. String -> LocalLinkDiffRec message -> ElementDiff message
-localLinkDiff key = case _ of
-  { id: Maybe.Nothing, class: Maybe.Nothing, url: Maybe.Nothing, children: ChildrenDiffSkip } -> Skip
-  rec -> Update { elementUpdateDiff: ElementUpdateDiffLocalLinkDiff (LocalLinkDiff rec), key }
+localLinkDiff :: forall message. String -> LocalLink message -> LocalLink message -> ElementDiff message
+localLinkDiff key (LocalLink old) (LocalLink new) =
+  ( case NonEmptyArray.fromArray
+        ( Array.catMaybes
+            [ Prelude.map LocalLinkPatchOperationSetId (createDiff old.id new.id)
+            , Prelude.map LocalLinkPatchOperationSetClass (createDiff old.class new.class)
+            , Prelude.map LocalLinkPatchOperationSetHref (createDiff old.href new.href)
+            ]
+        ) of
+      Maybe.Just list ->
+        Update
+          { elementUpdateDiff: ElementUpdateDiffLocalLinkDiff (LocalLinkDiff list)
+          , key
+          }
+      Maybe.Nothing -> Skip
+  )
 
 newtype Button :: Type -> Type
 newtype Button message

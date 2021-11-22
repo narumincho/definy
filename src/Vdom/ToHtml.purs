@@ -61,11 +61,11 @@ vdomElementToHtmlElement = case _ of
   Data.ElementExternalLink (Data.ExternalLink rec) ->
     Wellknown.a
       { id: rec.id, class: rec.class, href: rec.href }
-      (Html.Text "toHtml ExternalLink は未実装")
-  Data.ElementLocalLink (Data.LocalLink _) ->
-    Wellknown.div
-      { id: Nothing, class: Nothing }
-      (Html.Text "toHtml LocalLink は未実装")
+      (vdomChildrenToHtmlChildren rec.children)
+  Data.ElementLocalLink (Data.LocalLink rec) ->
+    Wellknown.a
+      { id: rec.id, class: rec.class, href: rec.href }
+      (vdomChildrenToHtmlChildren rec.children)
   Data.ElementButton (Data.Button _) ->
     Wellknown.div
       { id: Nothing, class: Nothing }

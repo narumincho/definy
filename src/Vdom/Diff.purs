@@ -46,14 +46,11 @@ createElementDiff (Data.ElementDiv old) (Data.ElementDiv new) newKey = Data.crea
 
 createElementDiff (Data.ElementExternalLink old) (Data.ElementExternalLink new) newKey = Data.externalLinkDiff newKey old new
 
-createElementDiff (Data.ElementLocalLink (Data.LocalLink old)) (Data.ElementLocalLink (Data.LocalLink new)) newKey =
+createElementDiff (Data.ElementLocalLink old) (Data.ElementLocalLink new) newKey =
   Data.localLinkDiff
     newKey
-    { id: createDiff old.id new.id
-    , class: createDiff old.class new.class
-    , url: createDiff old.url new.url
-    , children: createChildrenDiff old.children new.children
-    }
+    old
+    new
 
 createElementDiff (Data.ElementButton (Data.Button old)) (Data.ElementButton (Data.Button new)) newKey =
   Data.buttonDiff
