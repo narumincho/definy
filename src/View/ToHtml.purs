@@ -363,13 +363,11 @@ elementToHtmlElementAndStyleDict = case _ of
       HtmlElementAndStyleDict
         { htmlElement:
             HtmlWellknown.img
-              ( Map.fromFoldable
-                  [ Tuple.Tuple
-                      (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "src"))
-                      (Maybe.Just (NonEmptyString.toString (StructuredUrl.pathAndSearchParamsToString path)))
-                  , sha256HashValueToClassAttributeNameAndValue className
-                  ]
-              )
+              { id: Nothing
+              , class: Just (sha256HashValueToClassName className)
+              , src: path
+              , alt: ""
+              }
         , styleDict: Map.singleton className viewStyle
         , keyframesDict: Map.empty
         }

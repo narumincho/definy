@@ -70,14 +70,12 @@ vdomElementToHtmlElement = case _ of
     Wellknown.button
       { id: rec.id, class: rec.class }
       (vdomChildrenToHtmlChildren rec.children)
-  Data.ElementImg (Data.Img _) ->
-    Wellknown.div
-      { id: Nothing, class: Nothing }
-      (Html.Text "toHtml Img は未実装")
-  Data.ElementInputRadio (Data.InputRadio _) ->
-    Wellknown.div
-      { id: Nothing, class: Nothing }
-      (Html.Text "toHtml InputRadio は未実装")
+  Data.ElementImg (Data.Img rec) ->
+    Wellknown.img
+      { id: rec.id, class: rec.class, alt: rec.alt, src: rec.src }
+  Data.ElementInputRadio (Data.InputRadio rec) ->
+    Wellknown.inputRadio
+      { id: rec.id, class: rec.class, name: rec.name }
   Data.ElementInputText (Data.InputText _) ->
     Wellknown.div
       { id: Nothing, class: Nothing }

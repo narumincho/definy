@@ -379,8 +379,8 @@ newtype InputRadio message
   , class :: Maybe NonEmptyString
   , select :: message
   , checked :: Boolean
-  , {- 選択肢の選択を1にする動作のため. どの選択肢に属しているかを指定する 
-  -} name :: String
+  , {- 選択肢の選択を1にする動作のため. どの選択肢に属しているかのID文字列を指定する 
+  -} name :: NonEmptyString
   }
 
 newtype InputRadioDiff
@@ -390,7 +390,7 @@ type InputRadioDiffRec
   = { id :: Maybe (Maybe NonEmptyString)
     , class :: Maybe (Maybe NonEmptyString)
     , checked :: Maybe.Maybe Boolean
-    , name :: Maybe.Maybe String
+    , name :: Maybe.Maybe NonEmptyString
     }
 
 inputRadioDiff :: forall message. String -> InputRadioDiffRec -> ElementDiff message

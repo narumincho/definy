@@ -15,6 +15,7 @@ module Html.Wellknown
   , button
   , svg
   , img
+  , inputRadio
   , svgPath
   , svgG
   , htmlTagName
@@ -226,11 +227,62 @@ svg attributes children =
     attributes
     children
 
-img :: Map.Map NonEmptyString.NonEmptyString (Maybe.Maybe String) -> Data.RawHtmlElement
+img ::
+  { id :: Maybe NonEmptyString
+  , class :: Maybe NonEmptyString
+  , alt :: String
+  , src :: StructuredUrl.PathAndSearchParams
+  } ->
+  Data.RawHtmlElement
 img attributes =
   Data.htmlElement
-    (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "img"))
-    attributes
+    (NonEmptyString.nes (Proxy :: Proxy "img"))
+    ( Map.fromFoldable
+        ( Array.catMaybes
+            [ Prelude.map idAttribute attributes.id
+            , Prelude.map classAttribute attributes.class
+            , Just
+                ( Tuple.Tuple
+                    (NonEmptyString.nes (Proxy :: Proxy "alt"))
+                    (Just attributes.alt)
+                )
+            , Just
+                ( Tuple.Tuple
+                    (NonEmptyString.nes (Proxy :: Proxy "src"))
+                    ( Just
+                        ( NonEmptyString.toString
+                            (StructuredUrl.pathAndSearchParamsToString attributes.src)
+                        )
+                    )
+                )
+            ]
+        )
+    )
+    Data.NoEndTag
+
+inputRadio ::
+  { id :: Maybe NonEmptyString
+  , class :: Maybe NonEmptyString
+  , name :: NonEmptyString
+  } ->
+  Data.RawHtmlElement
+inputRadio attributes =
+  Data.htmlElement
+    (NonEmptyString.nes (Proxy :: Proxy "img"))
+    ( Map.fromFoldable
+        ( Array.catMaybes
+            [ Prelude.map idAttribute attributes.id
+            , Prelude.map classAttribute attributes.class
+            , Just
+                ( Tuple.Tuple
+                    (NonEmptyString.nes (Proxy :: Proxy "name"))
+                    ( Just
+                        (NonEmptyString.toString attributes.name)
+                    )
+                )
+            ]
+        )
+    )
     Data.NoEndTag
 
 svgPath :: Map.Map NonEmptyString.NonEmptyString (Maybe.Maybe String) -> Data.RawHtmlElement
