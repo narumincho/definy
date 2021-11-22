@@ -9,9 +9,10 @@ module Html.Wellknown
   , script
   , title
   , div
-  , a
   , h1
   , h2
+  , a
+  , button
   , svg
   , img
   , svgPath
@@ -143,6 +144,32 @@ div attributes children =
     )
     children
 
+h1 :: { id :: Maybe NonEmptyString, class :: Maybe NonEmptyString } -> Data.HtmlChildren -> Data.RawHtmlElement
+h1 attributes children =
+  Data.htmlElement
+    (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "h1"))
+    ( Map.fromFoldable
+        ( Array.catMaybes
+            [ Prelude.map idAttribute attributes.id
+            , Prelude.map classAttribute attributes.class
+            ]
+        )
+    )
+    children
+
+h2 :: { id :: Maybe NonEmptyString, class :: Maybe NonEmptyString } -> Data.HtmlChildren -> Data.RawHtmlElement
+h2 attributes children =
+  Data.htmlElement
+    (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "h2"))
+    ( Map.fromFoldable
+        ( Array.catMaybes
+            [ Prelude.map idAttribute attributes.id
+            , Prelude.map classAttribute attributes.class
+            ]
+        )
+    )
+    children
+
 a ::
   { id :: Maybe NonEmptyString
   , class :: Maybe NonEmptyString
@@ -170,27 +197,23 @@ a attributes children =
     )
     children
 
-h1 :: { id :: Maybe NonEmptyString, class :: Maybe NonEmptyString } -> Data.HtmlChildren -> Data.RawHtmlElement
-h1 attributes children =
+-- | https://developer.mozilla.org/ja/docs/Web/HTML/Element/button
+-- | ```html
+-- | <button type="submit"></button>
+-- | ````
+button :: { id :: Maybe NonEmptyString, class :: Maybe NonEmptyString } -> Data.HtmlChildren -> Data.RawHtmlElement
+button attributes children =
   Data.htmlElement
-    (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "h1"))
+    (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "button"))
     ( Map.fromFoldable
         ( Array.catMaybes
             [ Prelude.map idAttribute attributes.id
             , Prelude.map classAttribute attributes.class
-            ]
-        )
-    )
-    children
-
-h2 :: { id :: Maybe NonEmptyString, class :: Maybe NonEmptyString } -> Data.HtmlChildren -> Data.RawHtmlElement
-h2 attributes children =
-  Data.htmlElement
-    (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "h2"))
-    ( Map.fromFoldable
-        ( Array.catMaybes
-            [ Prelude.map idAttribute attributes.id
-            , Prelude.map classAttribute attributes.class
+            , Just
+                ( Tuple.Tuple
+                    (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "type"))
+                    (Maybe.Just "button")
+                )
             ]
         )
     )

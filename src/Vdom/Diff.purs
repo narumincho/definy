@@ -52,13 +52,11 @@ createElementDiff (Data.ElementLocalLink old) (Data.ElementLocalLink new) newKey
     old
     new
 
-createElementDiff (Data.ElementButton (Data.Button old)) (Data.ElementButton (Data.Button new)) newKey =
+createElementDiff (Data.ElementButton old) (Data.ElementButton new) newKey =
   Data.buttonDiff
     newKey
-    { id: createDiff old.id new.id
-    , class: createDiff old.class new.class
-    , children: createChildrenDiff old.children new.children
-    }
+    old
+    new
 
 createElementDiff (Data.ElementImg (Data.Img old)) (Data.ElementImg (Data.Img new)) newKey =
   Data.imgDiff

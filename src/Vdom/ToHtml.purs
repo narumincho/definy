@@ -66,10 +66,10 @@ vdomElementToHtmlElement = case _ of
     Wellknown.a
       { id: rec.id, class: rec.class, href: rec.href }
       (vdomChildrenToHtmlChildren rec.children)
-  Data.ElementButton (Data.Button _) ->
-    Wellknown.div
-      { id: Nothing, class: Nothing }
-      (Html.Text "toHtml Button は未実装")
+  Data.ElementButton (Data.Button rec) ->
+    Wellknown.button
+      { id: rec.id, class: rec.class }
+      (vdomChildrenToHtmlChildren rec.children)
   Data.ElementImg (Data.Img _) ->
     Wellknown.div
       { id: Nothing, class: Nothing }

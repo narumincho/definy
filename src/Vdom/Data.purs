@@ -322,25 +322,33 @@ localLinkDiff key (LocalLink old) (LocalLink new) =
 newtype Button :: Type -> Type
 newtype Button message
   = Button
-  { id :: String
-  , class :: String
+  { id :: Maybe NonEmptyString
+  , class :: Maybe NonEmptyString
   , click :: message
   , children :: Children message
   }
 
 newtype ButtonDiff message
-  = ButtonDiff (ButtonDiffRec message)
+  = ButtonDiff (NonEmptyArray (ButtonPatchOperation message))
 
-type ButtonDiffRec message
-  = { id :: Maybe.Maybe String
-    , class :: Maybe.Maybe String
-    , children :: ChildrenDiff message
-    }
+data ButtonPatchOperation message
+  = ButtonPatchOperationSetId (Maybe NonEmptyString)
+  | ButtonPatchOperationSetClass (Maybe NonEmptyString)
+  | ButtonPatchOperationUpdateChildren (ChildrenDiff message)
 
-buttonDiff :: forall message. String -> ButtonDiffRec message -> ElementDiff message
-buttonDiff key = case _ of
-  { id: Maybe.Nothing, class: Maybe.Nothing, children: ChildrenDiffSkip } -> Skip
-  rec -> Update { elementUpdateDiff: ElementUpdateDiffButtonDiff (ButtonDiff rec), key }
+buttonDiff :: forall message. String -> Button message -> Button message -> ElementDiff message
+buttonDiff key (Button old) (Button new) = case NonEmptyArray.fromArray
+    ( Array.catMaybes
+        [ Prelude.map DivPatchOperationSetId (createDiff old.id new.id)
+        , Prelude.map DivPatchOperationSetClass (createDiff old.class new.class)
+        ]
+    ) of
+  Maybe.Just list ->
+    Update
+      { elementUpdateDiff: ElementUpdateDiffDiv (DivDiff list)
+      , key
+      }
+  Maybe.Nothing -> Skip
 
 newtype Img
   = Img
