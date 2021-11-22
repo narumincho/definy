@@ -1,7 +1,10 @@
 module Vdom.Diff (createViewDiff, createElementDiff) where
 
 import Data.Array as Array
+import Data.Array.NonEmpty (NonEmptyArray)
+import Data.Array.NonEmpty as NonEmptyArray
 import Data.Map as Map
+import Data.Maybe (Maybe(..))
 import Data.Maybe as Maybe
 import Data.Tuple as Tuple
 import Prelude as Prelude
@@ -29,7 +32,7 @@ createViewDiff (Data.Vdom oldVdom) (Data.Vdom newVdom) =
             else
               Maybe.Nothing
           ]
-    , childrenDiff: createChildrenDiff oldVdom.children newVdom.children
+    , childrenDiff: createChildListDiff oldVdom.children newVdom.children
     , newMessageData:
         Data.MessageData
           { messageMap: Map.empty
@@ -41,31 +44,19 @@ createViewDiff (Data.Vdom oldVdom) (Data.Vdom newVdom) =
 createElementDiff :: forall message. Data.Element message -> Data.Element message -> String -> Data.ElementDiff message
 createElementDiff (Data.ElementDiv old) (Data.ElementDiv new) newKey = Data.createDivDeff newKey old new
 
-createElementDiff (Data.ElementExternalLink (Data.ExternalLink old)) (Data.ElementExternalLink (Data.ExternalLink new)) newKey =
-  Data.externalLinkDiff
-    newKey
-    { id: createDiff old.id new.id
-    , class: createDiff old.class new.class
-    , url: createDiff old.url new.url
-    , children: createChildrenDiff old.children new.children
-    }
+createElementDiff (Data.ElementExternalLink old) (Data.ElementExternalLink new) newKey = Data.externalLinkDiff newKey old new
 
-createElementDiff (Data.ElementLocalLink (Data.LocalLink old)) (Data.ElementLocalLink (Data.LocalLink new)) newKey =
+createElementDiff (Data.ElementLocalLink old) (Data.ElementLocalLink new) newKey =
   Data.localLinkDiff
     newKey
-    { id: createDiff old.id new.id
-    , class: createDiff old.class new.class
-    , url: createDiff old.url new.url
-    , children: createChildrenDiff old.children new.children
-    }
+    old
+    new
 
-createElementDiff (Data.ElementButton (Data.Button old)) (Data.ElementButton (Data.Button new)) newKey =
+createElementDiff (Data.ElementButton old) (Data.ElementButton new) newKey =
   Data.buttonDiff
     newKey
-    { id: createDiff old.id new.id
-    , class: createDiff old.class new.class
-    , children: createChildrenDiff old.children new.children
-    }
+    old
+    new
 
 createElementDiff (Data.ElementImg (Data.Img old)) (Data.ElementImg (Data.Img new)) newKey =
   Data.imgDiff
@@ -121,7 +112,7 @@ createElementDiff (Data.ElementSvg (Data.Svg old)) (Data.ElementSvg (Data.Svg ne
     , viewBoxY: createDiff old.viewBoxY new.viewBoxY
     , viewBoxWidth: createDiff old.viewBoxWidth new.viewBoxWidth
     , viewBoxHeight: createDiff old.viewBoxHeight new.viewBoxHeight
-    , children: createChildrenDiff old.children new.children
+    , children: createChildListDiff old.children new.children
     }
 
 createElementDiff (Data.ElementSvgPath (Data.SvgPath old)) (Data.ElementSvgPath (Data.SvgPath new)) newKey =
@@ -182,6 +173,21 @@ createChildrenDiff (Data.ChildrenText _) (Data.ChildrenElementList list) = Data.
 
 createChildrenDiff (Data.ChildrenElementList old) (Data.ChildrenElementList new) = Data.ChildDiffList (createElementListChildrenDiff old new)
 
+createChildListDiff ::
+  forall message.
+  Array (Tuple.Tuple String (Data.Element message)) ->
+  Array (Tuple.Tuple String (Data.Element message)) ->
+  Data.ChildrenDiff message
+createChildListDiff oldChildren newChildren = case Tuple.Tuple (NonEmptyArray.fromArray oldChildren) (NonEmptyArray.fromArray newChildren) of
+  Tuple.Tuple (Just oldNonEmpty) (Just newNonEmpty) -> Data.ChildDiffList (createElementListChildrenDiff oldNonEmpty newNonEmpty)
+  Tuple.Tuple Nothing Nothing -> Data.ChildrenDiffSkip
+  Tuple.Tuple (Just _) Nothing -> Data.ChildrenDiffSetText ""
+  Tuple.Tuple Nothing (Just newNonEmpty) -> Data.ChildrenDiffResetAndInsert newNonEmpty
+
 -- | TODO
-createElementListChildrenDiff :: forall message. Array (Tuple.Tuple String (Data.Element message)) -> Array (Tuple.Tuple String (Data.Element message)) -> Array (Data.ElementDiff message)
-createElementListChildrenDiff _oldChildren _newChildren = []
+createElementListChildrenDiff ::
+  forall message.
+  NonEmptyArray (Tuple.Tuple String (Data.Element message)) ->
+  NonEmptyArray (Tuple.Tuple String (Data.Element message)) ->
+  NonEmptyArray (Data.ElementDiff message)
+createElementListChildrenDiff _oldChildren _newChildren = NonEmptyArray.singleton Data.skip

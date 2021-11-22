@@ -1,4 +1,4 @@
-module Html.ToString (htmlOptionToString) where
+module Html.ToString (htmlOptionToString, htmlOptionToHtmlHtmlElement) where
 
 import Color as Color
 import Data.Array as Array
@@ -9,7 +9,6 @@ import Data.String.NonEmpty as NonEmptyString
 import Data.Tuple as Tuple
 import Html.Data as Data
 import Html.Wellknown as Wellknown
-import Language as Language
 import Prelude as Prelude
 import StructuredUrl as StructuredUrl
 import Type.Proxy as Proxy
@@ -30,7 +29,7 @@ escapeInHtml text =
 htmlOptionToHtmlHtmlElement :: Data.HtmlOption -> Data.RawHtmlElement
 htmlOptionToHtmlHtmlElement htmlOption@(Data.HtmlOption option) =
   Wellknown.html
-    (Prelude.map Language.toIETFLanguageTag option.language)
+    option.language
     (headElement htmlOption)
     ( Wellknown.body
         option.bodyClass

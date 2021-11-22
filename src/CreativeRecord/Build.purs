@@ -4,10 +4,10 @@ import Prelude
 import Console as Console
 import Data.Array as Array
 import Data.Array.NonEmpty as NonEmptyArray
-import Data.Map as Map
-import Data.Set as Set
 import Data.Either as Either
+import Data.Map as Map
 import Data.Maybe as Maybe
+import Data.Set as Set
 import Data.String.NonEmpty as NonEmptyString
 import Data.Tuple as Tuple
 import Data.UInt as UInt
@@ -115,12 +115,12 @@ mainBuild productionOrDevelopment = do
     ]
   pure unit
 
-writeCodeClientProgramHashValueAndFunctionBuild :: NonEmptyString.NonEmptyString -> Aff.Aff Unit
+writeCodeClientProgramHashValueAndFunctionBuild :: Hash.Sha256HashValue -> Aff.Aff Unit
 writeCodeClientProgramHashValueAndFunctionBuild clinetProgramHashValue = do
   writeCodeClientProgramHashValue clinetProgramHashValue
   runSpagoForFunctions
 
-clientProgramBuild :: Aff.Aff NonEmptyString.NonEmptyString
+clientProgramBuild :: Aff.Aff Hash.Sha256HashValue
 clientProgramBuild = do
   runSpagoBundleAppAndLog
   runEsbuild
@@ -151,7 +151,7 @@ runEsbuild = do
     }
   Console.logValueAsAff "esbuild でのビルドに成功!" {}
 
-readEsbuildResultClientProgramFile :: Aff.Aff NonEmptyString.NonEmptyString
+readEsbuildResultClientProgramFile :: Aff.Aff Hash.Sha256HashValue
 readEsbuildResultClientProgramFile = do
   clientProgramAsString <-
     FileSystemRead.readTextFileInDistribution
@@ -166,13 +166,13 @@ readEsbuildResultClientProgramFile = do
   FileSystemWrite.writeTextFileInDistribution
     ( Path.DistributionFilePath
         { directoryPath: hostingDirectoryPath
-        , fileName: clientProgramHashValue
+        , fileName: Hash.toNonEmptyString clientProgramHashValue
         }
     )
     clientProgramAsString
   pure clientProgramHashValue
 
-writeCodeClientProgramHashValue :: NonEmptyString.NonEmptyString -> Aff.Aff Unit
+writeCodeClientProgramHashValue :: Hash.Sha256HashValue -> Aff.Aff Unit
 writeCodeClientProgramHashValue fileHashValue =
   FileSystemWrite.writePureScript
     ( PureScriptData.Module
@@ -188,7 +188,7 @@ writeCodeClientProgramHashValue fileHashValue =
                 { name: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "clientProgramHashValue")
                 , document: "クライアント向け JavaScript のファイルのハッシュ値"
                 , pType: PureScriptWellknown.nonEmptyString
-                , expr: PureScriptWellknown.nonEmptyStringLiteral fileHashValue
+                , expr: PureScriptWellknown.nonEmptyStringLiteral (Hash.toNonEmptyString fileHashValue)
                 , isExport: true
                 }
             ]
@@ -222,7 +222,7 @@ cloudStorageSecurityRulesFilePath =
     , fileName: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "storage")
     }
 
-writeFirebaseJson :: Array StaticResourceFile.StaticResourceFileResult -> NonEmptyString.NonEmptyString -> Aff.Aff Unit
+writeFirebaseJson :: Array StaticResourceFile.StaticResourceFileResult -> Hash.Sha256HashValue -> Aff.Aff Unit
 writeFirebaseJson staticFileDataList clientProgramHashValue = do
   FileSystemWrite.writeJson
     ( Path.DistributionFilePath
@@ -257,7 +257,7 @@ writeFirebaseJson staticFileDataList clientProgramHashValue = do
             , hostingHeaders:
                 Array.cons
                   ( FirebaseJson.SourceAndHeaders
-                      { source: clientProgramHashValue
+                      { source: Hash.toNonEmptyString clientProgramHashValue
                       , headers:
                           [ FirebaseJson.Header
                               { key: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "content-type")
@@ -269,20 +269,19 @@ writeFirebaseJson staticFileDataList clientProgramHashValue = do
                   ( map
                       ( \( StaticResourceFile.StaticResourceFileResult { requestPathAndUploadFileName, mediaTypeMaybe }
                         ) ->
-                          ( FirebaseJson.SourceAndHeaders
-                              { source: requestPathAndUploadFileName
-                              , headers:
-                                  [ FirebaseJson.Header
-                                      { key: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "content-type")
-                                      , value:
-                                          NonEmptyString.toString
-                                            ( MediaType.toMimeType
-                                                mediaTypeMaybe
-                                            )
-                                      }
-                                  ]
-                              }
-                          )
+                          FirebaseJson.SourceAndHeaders
+                            { source: Hash.toNonEmptyString requestPathAndUploadFileName
+                            , headers:
+                                [ FirebaseJson.Header
+                                    { key: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "content-type")
+                                    , value:
+                                        NonEmptyString.toString
+                                          ( MediaType.toMimeType
+                                              mediaTypeMaybe
+                                          )
+                                    }
+                                ]
+                            }
                       )
                       staticFileDataList
                   )
@@ -317,7 +316,7 @@ copyStaticResouece resultList =
               fileType
               ( Path.DistributionFilePath
                   { directoryPath: hostingDirectoryPath
-                  , fileName: requestPathAndUploadFileName
+                  , fileName: Hash.toNonEmptyString requestPathAndUploadFileName
                   }
               )
         )

@@ -78,15 +78,15 @@ exports.setTextContent = (text) => (htmlOrSvgElement) => () => {
 
 /**
  *
- * @param {{id: string, class: string, dataPath: string}} option
+ * @param {{id: string | null, class: string | null, dataPath: string}} option
  * @returns
  */
 exports.createDiv = (option) => () => {
   const div = window.document.createElement("div");
-  if (option.id !== "") {
+  if (typeof option.id === "string") {
     div.id = option.id;
   }
-  if (option.class !== "") {
+  if (typeof option.class === "string") {
     div.className = option.class;
   }
   div.dataset.dPath = option.dataPath;
