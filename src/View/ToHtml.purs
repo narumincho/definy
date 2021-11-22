@@ -307,7 +307,7 @@ elementToHtmlElementAndStyleDict = case _ of
   Data.SvgElement
     { height
   , isJustifySelfCenter
-  , svg: Data.Svg { viewBox, svgElementList }
+  , svg: Data.Svg { viewBox: Data.ViewBox viewBoxRec, svgElementList }
   , width
   } ->
     let
@@ -332,16 +332,14 @@ elementToHtmlElementAndStyleDict = case _ of
       HtmlElementAndStyleDict
         { htmlElement:
             HtmlWellknown.svg
-              ( Map.fromFoldable
-                  [ Tuple.Tuple
-                      (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "viewBox"))
-                      ( Maybe.Just
-                          (viewBoxToViewBoxAttributeValue viewBox)
-                      )
-                  , sha256HashValueToClassAttributeNameAndValue className
-                  ]
-              )
-              (HtmlData.ElementList (Prelude.map svgElementToHtmlElement svgElementList))
+              { viewBoxX: viewBoxRec.x
+              , viewBoxY: viewBoxRec.y
+              , viewBoxWidth: viewBoxRec.width
+              , viewBoxHeight: viewBoxRec.height
+              , id: Nothing
+              , class: Just (sha256HashValueToClassName className)
+              }
+              (Prelude.map svgElementToHtmlElement svgElementList)
         , styleDict: Map.singleton className viewStyle
         , keyframesDict: Map.empty
         }
@@ -379,17 +377,6 @@ markupToTagName = case _ of
   Data.Heading1 -> HtmlWellknown.h1
   Data.Heading2 -> HtmlWellknown.h2
 
-viewBoxToViewBoxAttributeValue :: Data.ViewBox -> String
-viewBoxToViewBoxAttributeValue (Data.ViewBox viewBox) =
-  String.joinWith " "
-    ( Prelude.map Prelude.show
-        [ viewBox.x
-        , viewBox.y
-        , viewBox.width
-        , viewBox.height
-        ]
-    )
-
 svgElementToHtmlElement :: Data.SvgElement -> HtmlData.RawHtmlElement
 svgElementToHtmlElement = case _ of
   Data.Path { pathText, fill } ->
@@ -410,12 +397,6 @@ svgElementToHtmlElement = case _ of
           (Maybe.Just (String.joinWith "" transform))
       )
       (Prelude.map svgElementToHtmlElement svgElementList)
-
-sha256HashValueToClassAttributeNameAndValue :: Hash.Sha256HashValue -> Tuple.Tuple NonEmptyString.NonEmptyString (Maybe.Maybe String)
-sha256HashValueToClassAttributeNameAndValue sha256HashValue =
-  Tuple.Tuple
-    (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "class"))
-    (Maybe.Just (NonEmptyString.toString (sha256HashValueToClassName sha256HashValue)))
 
 sha256HashValueToClassName :: Hash.Sha256HashValue -> NonEmptyString.NonEmptyString
 sha256HashValueToClassName sha256HashValue =

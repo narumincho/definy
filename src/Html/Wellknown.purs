@@ -13,12 +13,12 @@ module Html.Wellknown
   , h2
   , a
   , button
-  , svg
   , img
   , inputRadio
   , inputText
   , textarea
   , label
+  , svg
   , svgPath
   , svgG
   , htmlTagName
@@ -30,6 +30,7 @@ import Data.Array as Array
 import Data.Map as Map
 import Data.Maybe (Maybe(..))
 import Data.Maybe as Maybe
+import Data.String as String
 import Data.String.NonEmpty (NonEmptyString)
 import Data.String.NonEmpty as NonEmptyString
 import Data.Tuple as Tuple
@@ -223,13 +224,6 @@ button attributes children =
     )
     children
 
-svg :: Map.Map NonEmptyString.NonEmptyString (Maybe.Maybe String) -> Data.HtmlChildren -> Data.RawHtmlElement
-svg attributes children =
-  Data.htmlElement
-    (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "svg"))
-    attributes
-    children
-
 img ::
   { id :: Maybe NonEmptyString
   , class :: Maybe NonEmptyString
@@ -379,6 +373,42 @@ label attributes children =
         )
     )
     children
+
+svg ::
+  { id :: Maybe NonEmptyString
+  , class :: Maybe NonEmptyString
+  , viewBoxX :: Number
+  , viewBoxY :: Number
+  , viewBoxWidth :: Number
+  , viewBoxHeight :: Number
+  } ->
+  Array Data.RawHtmlElement -> Data.RawHtmlElement
+svg attributes children =
+  Data.htmlElement
+    (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "svg"))
+    ( Map.fromFoldable
+        ( Array.catMaybes
+            [ Prelude.map idAttribute attributes.id
+            , Prelude.map classAttribute attributes.class
+            , Just
+                ( Tuple.Tuple
+                    (NonEmptyString.nes (Proxy :: Proxy "viewBox"))
+                    ( Just
+                        ( String.joinWith " "
+                            ( Prelude.map Prelude.show
+                                [ attributes.viewBoxX
+                                , attributes.viewBoxY
+                                , attributes.viewBoxWidth
+                                , attributes.viewBoxHeight
+                                ]
+                            )
+                        )
+                    )
+                )
+            ]
+        )
+    )
+    (Data.ElementList children)
 
 svgPath :: Map.Map NonEmptyString.NonEmptyString (Maybe.Maybe String) -> Data.RawHtmlElement
 svgPath attributes =

@@ -98,10 +98,21 @@ vdomElementToHtmlElement = case _ of
       , for: rec.for
       }
       (vdomChildrenToHtmlChildren rec.children)
-  Data.ElementSvg (Data.Svg _) ->
-    Wellknown.div
-      { id: Nothing, class: Nothing }
-      (Html.Text "toHtml Svg は未実装")
+  Data.ElementSvg (Data.Svg rec) ->
+    Wellknown.svg
+      { id: rec.id
+      , class: rec.class
+      , viewBoxX: rec.viewBoxX
+      , viewBoxY: rec.viewBoxY
+      , viewBoxWidth: rec.viewBoxWidth
+      , viewBoxHeight: rec.viewBoxHeight
+      }
+      ( Prelude.map
+          ( \(Tuple.Tuple _ element) ->
+              vdomElementToHtmlElement element
+          )
+          rec.children
+      )
   Data.ElementSvgPath (Data.SvgPath _) ->
     Wellknown.div
       { id: Nothing, class: Nothing }
