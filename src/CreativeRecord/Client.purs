@@ -5,7 +5,6 @@ import CreativeRecord.ClientProgramHashValue as ClientProgramHashValue
 import CreativeRecord.Origin as Origin
 import CreativeRecord.StaticResource as StaticResource
 import Css as Css
-import Data.Array.NonEmpty as NonEmptyArray
 import Data.Maybe as Maybe
 import Data.String.NonEmpty as NonEmptyString
 import Data.Tuple as Tuple

@@ -143,11 +143,31 @@ div attributes children =
     )
     children
 
-a :: Map.Map NonEmptyString.NonEmptyString (Maybe.Maybe String) -> Data.HtmlChildren -> Data.RawHtmlElement
+a ::
+  { id :: Maybe NonEmptyString
+  , class :: Maybe NonEmptyString
+  , href :: StructuredUrl.StructuredUrl
+  } ->
+  Data.HtmlChildren -> Data.RawHtmlElement
 a attributes children =
   Data.htmlElement
     (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "a"))
-    attributes
+    ( Map.fromFoldable
+        ( Array.catMaybes
+            [ Prelude.map idAttribute attributes.id
+            , Prelude.map classAttribute attributes.class
+            , Just
+                ( Tuple.Tuple
+                    (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "href"))
+                    ( Maybe.Just
+                        ( NonEmptyString.toString
+                            (StructuredUrl.toString attributes.href)
+                        )
+                    )
+                )
+            ]
+        )
+    )
     children
 
 h1 :: { id :: Maybe NonEmptyString, class :: Maybe NonEmptyString } -> Data.HtmlChildren -> Data.RawHtmlElement

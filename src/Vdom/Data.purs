@@ -254,7 +254,7 @@ newtype ExternalLink message
   = ExternalLink
   { id :: Maybe.Maybe NonEmptyString.NonEmptyString
   , class :: Maybe.Maybe NonEmptyString.NonEmptyString
-  , url :: StructuredUrl.StructuredUrl
+  , href :: StructuredUrl.StructuredUrl
   , children :: Children message
   }
 
@@ -264,7 +264,7 @@ newtype ExternalLinkDiff message
 data ExternalLinkPatchOperation message
   = ExternalLinkPatchOperationSetId (Maybe.Maybe NonEmptyString.NonEmptyString)
   | ExternalLinkPatchOperationSetClass (Maybe.Maybe NonEmptyString.NonEmptyString)
-  | ExternalLinkPatchOperationSetUrl StructuredUrl.StructuredUrl
+  | ExternalLinkPatchOperationSetHref StructuredUrl.StructuredUrl
   | ExternalLinkPatchOperationUpdateChildren (ChildrenDiff message)
 
 externalLinkDiff :: forall message. String -> ExternalLink message -> ExternalLink message -> ElementDiff message
@@ -273,7 +273,7 @@ externalLinkDiff key (ExternalLink old) (ExternalLink new) =
         ( Array.catMaybes
             [ Prelude.map ExternalLinkPatchOperationSetId (createDiff old.id new.id)
             , Prelude.map ExternalLinkPatchOperationSetClass (createDiff old.class new.class)
-            , Prelude.map ExternalLinkPatchOperationSetUrl (createDiff old.url new.url)
+            , Prelude.map ExternalLinkPatchOperationSetHref (createDiff old.href new.href)
             ]
         ) of
       Maybe.Just list -> Update { elementUpdateDiff: ElementUpdateDiffExternalLinkDiff (ExternalLinkDiff list), key }

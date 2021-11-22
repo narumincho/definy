@@ -208,7 +208,7 @@ boxToVdomElementAndStyleDict box@( Data.Box
                 ( Vdom.ExternalLink
                     { id: Maybe.Nothing
                     , class: Maybe.Just className
-                    , url: url
+                    , href: url
                     , children: vdomChildren
                     }
                 )

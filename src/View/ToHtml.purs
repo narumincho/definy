@@ -204,17 +204,10 @@ boxToHtmlElementAndStyleDict box@( Data.Box
           ( case boxRecord.url of
               Maybe.Just url ->
                 HtmlWellknown.a
-                  ( Map.fromFoldable
-                      [ sha256HashValueToClassAttributeNameAndValue className
-                      , Tuple.Tuple
-                          (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "href"))
-                          ( Maybe.Just
-                              ( NonEmptyString.toString
-                                  (StructuredUrl.toString url)
-                              )
-                          )
-                      ]
-                  )
+                  { id: Nothing
+                  , class: Just (sha256HashValueToClassName className)
+                  , href: url
+                  }
               Maybe.Nothing ->
                 HtmlWellknown.div
                   { class: Just (sha256HashValueToClassName className)
