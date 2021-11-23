@@ -15,7 +15,6 @@ import Html.Data as HtmlData
 import Html.Wellknown as HtmlWellknown
 import Prelude as Prelude
 import StructuredUrl as StructuredUrl
-import Type.Proxy as Proxy
 import View.Data as Data
 
 -- | View から HtmlOption に変換する

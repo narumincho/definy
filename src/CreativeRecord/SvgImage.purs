@@ -2,7 +2,6 @@ module CreativeRecord.SvgImage where
 
 import Color as Color
 import Data.Array.NonEmpty as NonEmptyArray
-import Data.Array.NonEmpty.Internal (NonEmptyArray(..))
 import Data.String.NonEmpty as NonEmptyString
 import Type.Proxy (Proxy(..))
 import View.Data as View
