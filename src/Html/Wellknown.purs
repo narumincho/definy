@@ -20,6 +20,7 @@ module Html.Wellknown
   , label
   , svg
   , svgPath
+  , svgCircle
   , svgG
   , htmlTagName
   , bodyTagName
@@ -439,6 +440,54 @@ svgPath attributes =
         )
     )
     (Data.ElementList [])
+
+-- | 子要素はアニメーションのため だったような
+svgCircle ::
+  { id :: Maybe NonEmptyString
+  , class :: Maybe NonEmptyString
+  , fill :: Color.Color
+  , stroke :: Color.Color
+  , cx :: Number
+  , cy :: Number
+  , r :: Number
+  } ->
+  Array Data.RawHtmlElement -> Data.RawHtmlElement
+svgCircle attributes children =
+  Data.htmlElement
+    (NonEmptyString.nes (Proxy :: Proxy "circle"))
+    ( Map.fromFoldable
+        ( Array.catMaybes
+            [ Prelude.map idAttribute attributes.id
+            , Prelude.map classAttribute attributes.class
+            , Just
+                ( Tuple.Tuple
+                    (NonEmptyString.nes (Proxy :: Proxy "fill"))
+                    (Just (Color.toHexString attributes.fill))
+                )
+            , Just
+                ( Tuple.Tuple
+                    (NonEmptyString.nes (Proxy :: Proxy "stroke"))
+                    (Just (Color.toHexString attributes.stroke))
+                )
+            , Just
+                ( Tuple.Tuple
+                    (NonEmptyString.nes (Proxy :: Proxy "cx"))
+                    (Just (Prelude.show attributes.cx))
+                )
+            , Just
+                ( Tuple.Tuple
+                    (NonEmptyString.nes (Proxy :: Proxy "cy"))
+                    (Just (Prelude.show attributes.cy))
+                )
+            , Just
+                ( Tuple.Tuple
+                    (NonEmptyString.nes (Proxy :: Proxy "r"))
+                    (Just (Prelude.show attributes.r))
+                )
+            ]
+        )
+    )
+    (Data.ElementList children)
 
 svgG :: Map.Map NonEmptyString.NonEmptyString (Maybe.Maybe String) -> Array Data.RawHtmlElement -> Data.RawHtmlElement
 svgG attributes elementList =

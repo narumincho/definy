@@ -113,13 +113,23 @@ vdomElementToHtmlElement = case _ of
           )
           rec.children
       )
-  Data.ElementSvgPath (Data.SvgPath rec) ->
-    Wellknown.svgPath
-      rec
-  Data.ElementSvgCircle (Data.SvgCircle _) ->
-    Wellknown.div
-      { id: Nothing, class: Nothing }
-      (Html.Text "toHtml SvgCircle は未実装")
+  Data.ElementSvgPath (Data.SvgPath rec) -> Wellknown.svgPath rec
+  Data.ElementSvgCircle (Data.SvgCircle rec) ->
+    Wellknown.svgCircle
+      { id: rec.id
+      , class: rec.class
+      , fill: rec.fill
+      , stroke: rec.stroke
+      , cx: rec.cx
+      , cy: rec.cy
+      , r: rec.r
+      }
+      ( Prelude.map
+          ( \(Tuple.Tuple _ element) ->
+              vdomElementToHtmlElement element
+          )
+          rec.children
+      )
   Data.ElementSvgAnimate (Data.SvgAnimate _) ->
     Wellknown.div
       { id: Nothing, class: Nothing }

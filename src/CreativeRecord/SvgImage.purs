@@ -1,6 +1,5 @@
 module CreativeRecord.SvgImage where
 
-import Color (Color)
 import Color as Color
 import View.Data as View
 

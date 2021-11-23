@@ -529,24 +529,24 @@ svgPathDiff key = case _ of
 
 newtype SvgCircle
   = SvgCircle
-  { id :: Maybe.Maybe NonEmptyString.NonEmptyString
-  , class :: Maybe.Maybe NonEmptyString.NonEmptyString
-  , fill :: String
-  , stroke :: String
+  { id :: Maybe NonEmptyString
+  , class :: Maybe NonEmptyString
+  , fill :: Color.Color
+  , stroke :: Color.Color
   , cx :: Number
   , cy :: Number
   , r :: Number
-  , children :: Children Prelude.Void
+  , children :: Array (Tuple.Tuple String (Element Prelude.Void))
   }
 
 newtype SvgCircleDiff
   = SvgCircleDiff SvgCircleDiffRec
 
 type SvgCircleDiffRec
-  = { id :: Maybe.Maybe (Maybe.Maybe NonEmptyString.NonEmptyString)
-    , class :: Maybe.Maybe (Maybe.Maybe NonEmptyString.NonEmptyString)
-    , fill :: Maybe.Maybe String
-    , stroke :: Maybe.Maybe String
+  = { id :: Maybe (Maybe NonEmptyString)
+    , class :: Maybe (Maybe NonEmptyString)
+    , fill :: Maybe Color.Color
+    , stroke :: Maybe Color.Color
     , cx :: Maybe.Maybe Number
     , cy :: Maybe.Maybe Number
     , r :: Maybe.Maybe Number
