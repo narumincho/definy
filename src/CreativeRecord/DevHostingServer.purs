@@ -1,20 +1,21 @@
 module DevServer where
 
 import CreativeRecord.View as CreativeRecordView
-import Data.Maybe as Maybe
 import Data.Map as Map
+import Data.Maybe as Maybe
 import Data.String.NonEmpty as NonEmptyString
 import Effect as Effect
 import Effect.Console as Console
+import Html.ToString as HtmlToString
 import MediaType as MediaType
-import Html.ToString as HtmlToSTring
 import Node.Encoding as Encoding
 import Node.HTTP as Http
 import Node.Stream as Stream
 import Prelude as Prelude
-import View.ToHtml as ViewToHtml
 import StructuredUrl as StructuredUrl
 import Type.Proxy as Proxy
+import Vdom.ToHtml as VdomToHtml
+import View.ToVdom as ViewToVdom
 
 -- | Firebase の Hosting emulator では配信するリソースを実行時に変更できないので,
 -- | その変更できるサーバーを作る
@@ -97,13 +98,15 @@ htmlResponse :: ResponseData
 htmlResponse =
   StringResponse
     { data:
-        HtmlToSTring.htmlOptionToString
-          ( ViewToHtml.viewToHtmlOption
-              ( StructuredUrl.pathAndSearchParams
-                  [ NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "program") ]
-                  Map.empty
+        HtmlToString.toString
+          ( VdomToHtml.toHtml
+              ( ViewToVdom.toVdom
+                  ( StructuredUrl.pathAndSearchParams
+                      [ NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "program") ]
+                      Map.empty
+                  )
+                  CreativeRecordView.view
               )
-              CreativeRecordView.view
           )
     , mimeType: MediaType.htmlMimeType
     }

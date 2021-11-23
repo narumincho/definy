@@ -19,11 +19,6 @@ export declare const colorFrom: (rgba: {
   readonly a: number;
 }) => Color;
 
-/**
- * 文字列の HTML を生成する
- */
-export declare const htmlOptionToString: (htmlOption: HtmlOption) => string;
-
 export type Language = { _language: never };
 
 export declare const japanese: Language;
