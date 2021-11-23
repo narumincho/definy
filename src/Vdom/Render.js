@@ -95,6 +95,58 @@ exports.createDiv = (option) => () => {
 
 /**
  *
+ * @param {{id: string | null, class: string | null, dataPath: string}} option
+ * @returns
+ */
+exports.createH1 = (option) => () => {
+  const headingElement = window.document.createElement("h1");
+  if (typeof option.id === "string") {
+    headingElement.id = option.id;
+  }
+  if (typeof option.class === "string") {
+    headingElement.className = option.class;
+  }
+  headingElement.dataset.dPath = option.dataPath;
+  return headingElement;
+};
+
+/**
+ *
+ * @param {{id: string | null, class: string | null, dataPath: string}} option
+ * @returns
+ */
+exports.createH2 = (option) => () => {
+  const headingElement = window.document.createElement("h2");
+  if (typeof option.id === "string") {
+    headingElement.id = option.id;
+  }
+  if (typeof option.class === "string") {
+    headingElement.className = option.class;
+  }
+  headingElement.dataset.dPath = option.dataPath;
+  return headingElement;
+};
+
+/**
+ *
+ * @param {{id: string | null, class: string | null, href : string, dataPath: string}} option
+ * @returns
+ */
+exports.createA = (option) => () => {
+  const anchorElement = window.document.createElement("a");
+  if (typeof option.id === "string") {
+    anchorElement.id = option.id;
+  }
+  if (typeof option.class === "string") {
+    anchorElement.className = option.class;
+  }
+  anchorElement.href = option.href;
+  anchorElement.dataset.dPath = option.dataPath;
+  return anchorElement;
+};
+
+/**
+ *
  * @param {HTMLElement | SVGElement} parent
  * @returns {(child: HTMLElement | SVGElement) => () => void}
  */

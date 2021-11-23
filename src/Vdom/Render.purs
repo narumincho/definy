@@ -1,4 +1,4 @@
-module Vdom.Render where
+module Vdom.Render (render, resetAndRender) where
 
 import Prelude
 import Color as Color
@@ -9,13 +9,14 @@ import Data.Nullable (Nullable)
 import Data.Nullable as Nullable
 import Data.String.NonEmpty as NonEmptyString
 import Data.Tuple as Tuple
-import Data.UInt as UInt
 import Effect as Effect
 import Language as Language
+import StructuredUrl as StructuredUrl
 import Vdom.Data as Vdom
 import Vdom.Data as View
 import Vdom.RenderState as RenderState
 
+-- | Vdom の Element から DOM API から HtmlElement か SvgElement を生成する
 elementToHtmlOrSvgElement ::
   forall message.
   { element :: View.Element message
@@ -23,17 +24,45 @@ elementToHtmlOrSvgElement ::
   , renderState :: RenderState.RenderState message
   } ->
   Effect.Effect HtmlOrSvgElement
-elementToHtmlOrSvgElement { element: View.ElementDiv (View.Div rec), path, renderState } = do
-  div <-
-    createDiv
-      { id: Nullable.toNullable (map NonEmptyString.toString rec.id)
-      , class: Nullable.toNullable (map NonEmptyString.toString rec.class)
-      , dataPath: View.pathToString path
-      }
-  applyChildren { htmlOrSvgElement: div, children: rec.children, path: path, renderState }
-  pure div
-
-elementToHtmlOrSvgElement _ = createDiv { id: Nullable.null, class: Nullable.null, dataPath: "notSupport" }
+elementToHtmlOrSvgElement = case _ of
+  { element: View.ElementDiv (View.Div rec), path, renderState } -> do
+    div <-
+      createDiv
+        { id: Nullable.toNullable (map NonEmptyString.toString rec.id)
+        , class: Nullable.toNullable (map NonEmptyString.toString rec.class)
+        , dataPath: View.pathToString path
+        }
+    applyChildren { htmlOrSvgElement: div, children: rec.children, path: path, renderState }
+    pure div
+  { element: View.ElementH1 (View.H1 rec), path, renderState } -> do
+    h1 <-
+      createH1
+        { id: Nullable.toNullable (map NonEmptyString.toString rec.id)
+        , class: Nullable.toNullable (map NonEmptyString.toString rec.class)
+        , dataPath: View.pathToString path
+        }
+    applyChildren { htmlOrSvgElement: h1, children: rec.children, path: path, renderState }
+    pure h1
+  { element: View.ElementH2 (View.H2 rec), path, renderState } -> do
+    h2 <-
+      createH2
+        { id: Nullable.toNullable (map NonEmptyString.toString rec.id)
+        , class: Nullable.toNullable (map NonEmptyString.toString rec.class)
+        , dataPath: View.pathToString path
+        }
+    applyChildren { htmlOrSvgElement: h2, children: rec.children, path: path, renderState }
+    pure h2
+  { element: View.ElementExternalLink (View.ExternalLink rec), path, renderState } -> do
+    anchor <-
+      createA
+        { id: Nullable.toNullable (map NonEmptyString.toString rec.id)
+        , class: Nullable.toNullable (map NonEmptyString.toString rec.class)
+        , href: NonEmptyString.toString (StructuredUrl.toString rec.href)
+        , dataPath: View.pathToString path
+        }
+    applyChildren { htmlOrSvgElement: anchor, children: rec.children, path: path, renderState }
+    pure anchor
+  {} -> createDiv { id: Nullable.null, class: Nullable.null, dataPath: "notSupport" }
 
 -- | HTMLElment か SVGElement の子要素を設定する
 applyChildren ::
@@ -44,22 +73,19 @@ applyChildren ::
   , renderState :: RenderState.RenderState message
   } ->
   Effect.Effect Unit
-applyChildren { htmlOrSvgElement, children: View.ChildrenText text } = setTextContent text htmlOrSvgElement
-
-applyChildren { htmlOrSvgElement, children: View.ChildrenElementList list, path, renderState } =
-  Effect.foreachE (NonEmptyArray.toArray list)
-    ( \(Tuple.Tuple key child) -> do
-        element <-
-          elementToHtmlOrSvgElement
-            { element: child
-            , path: View.pathAppendKey path key
-            , renderState
-            }
-        appendChild htmlOrSvgElement element
-    )
-
-renderElement :: forall message. HtmlOrSvgElement -> View.ElementUpdateDiff message -> RenderState.RenderState message -> View.Path -> Effect.Effect Unit
-renderElement htmlOrSvgElement diff renderState path = Console.logValue "run renderElement" { htmlOrSvgElement, diff, renderState, path }
+applyChildren = case _ of
+  { htmlOrSvgElement, children: View.ChildrenText text } -> setTextContent text htmlOrSvgElement
+  { htmlOrSvgElement, children: View.ChildrenElementList list, path, renderState } ->
+    Effect.foreachE (NonEmptyArray.toArray list)
+      ( \(Tuple.Tuple key child) -> do
+          element <-
+            elementToHtmlOrSvgElement
+              { element: child
+              , path: View.pathAppendKey path key
+              , renderState
+              }
+          appendChild htmlOrSvgElement element
+      )
 
 -- | HTMLElment か SVGElement の子要素に対して差分データの分を反映する
 renderChildren :: forall message. { htmlOrSvgElement :: HtmlOrSvgElement, childrenDiff :: View.ChildrenDiff message, renderState :: RenderState.RenderState message, path :: View.Path } -> Effect.Effect Unit
@@ -76,17 +102,9 @@ renderChildren = case _ of
       }
   { childrenDiff: View.ChildDiffList _ } -> pure unit
 
-renderChild :: forall message. HtmlOrSvgElement -> UInt.UInt -> View.ElementDiff message -> View.Path -> RenderState.RenderState message -> Effect.Effect UInt.UInt
-renderChild htmlOrSvgElement index childDiff path renderState = do
-  Console.logValue "run renderChild" { htmlOrSvgElement, index, childDiff, path, renderState }
-  pure (UInt.fromInt 0)
-
-themeColorName :: String
-themeColorName = "theme-color"
-
 -- | すべてをリセットして再描画する. 最初に1回呼ぶと良い.
-resetAndRenderView :: forall message. View.Vdom message -> RenderState.RenderState message -> Effect.Effect Unit
-resetAndRenderView (View.Vdom view) renderState = do
+resetAndRender :: forall message. View.Vdom message -> RenderState.RenderState message -> Effect.Effect Unit
+resetAndRender (View.Vdom view) renderState = do
   Effect.foreachE
     [ Vdom.ChangePageName view.pageName
     , Vdom.ChangeThemeColor view.themeColor
@@ -106,8 +124,8 @@ resetAndRenderView (View.Vdom view) renderState = do
     }
 
 -- | 差分データから実際のDOMを操作して表示に反映させる
-renderView :: forall message. View.ViewDiff message -> RenderState.RenderState message -> Effect.Effect Unit
-renderView (View.ViewDiff viewDiff) renderState = do
+render :: forall message. View.ViewDiff message -> RenderState.RenderState message -> Effect.Effect Unit
+render (View.ViewDiff viewDiff) renderState = do
   Effect.foreachE viewDiff.patchOperationList viewPatchOperationToEffect
   bodyElement <- getBodyElement
   renderChildren
@@ -143,6 +161,33 @@ foreign import setTextContent :: String -> HtmlOrSvgElement -> Effect.Effect Uni
 
 foreign import data HtmlOrSvgElement :: Type
 
-foreign import createDiv :: { id :: Nullable.Nullable String, class :: Nullable.Nullable String, dataPath :: String } -> Effect.Effect HtmlOrSvgElement
+foreign import createDiv ::
+  { id :: Nullable.Nullable String
+  , class :: Nullable.Nullable String
+  , dataPath :: String
+  } ->
+  Effect.Effect HtmlOrSvgElement
+
+foreign import createH1 ::
+  { id :: Nullable.Nullable String
+  , class :: Nullable.Nullable String
+  , dataPath :: String
+  } ->
+  Effect.Effect HtmlOrSvgElement
+
+foreign import createH2 ::
+  { id :: Nullable.Nullable String
+  , class :: Nullable.Nullable String
+  , dataPath :: String
+  } ->
+  Effect.Effect HtmlOrSvgElement
+
+foreign import createA ::
+  { id :: Nullable String
+  , class :: Nullable String
+  , href :: String
+  , dataPath :: String
+  } ->
+  Effect.Effect HtmlOrSvgElement
 
 foreign import appendChild :: HtmlOrSvgElement -> HtmlOrSvgElement -> Effect.Effect Unit
