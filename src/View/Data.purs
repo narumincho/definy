@@ -114,7 +114,7 @@ newtype ViewBox
 data SvgElement
   = Path
     { pathText :: String
-    , fill :: String
+    , fill :: Color.Color
     }
   | G
     { transform :: Array String

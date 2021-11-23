@@ -509,7 +509,7 @@ newtype SvgPath
   { id :: Maybe.Maybe NonEmptyString.NonEmptyString
   , class :: Maybe.Maybe NonEmptyString.NonEmptyString
   , d :: String
-  , fill :: String
+  , fill :: Color.Color
   }
 
 newtype SvgPathDiff
@@ -519,7 +519,7 @@ type SvgPathDiffRec
   = { id :: Maybe.Maybe (Maybe.Maybe NonEmptyString.NonEmptyString)
     , class :: Maybe.Maybe (Maybe.Maybe NonEmptyString.NonEmptyString)
     , d :: Maybe.Maybe String
-    , fill :: Maybe.Maybe String
+    , fill :: Maybe Color.Color
     }
 
 svgPathDiff :: forall message. String -> SvgPathDiffRec -> ElementDiff message

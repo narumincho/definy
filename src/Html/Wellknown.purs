@@ -25,6 +25,7 @@ module Html.Wellknown
   , bodyTagName
   ) where
 
+import Color as Color
 import Css as Css
 import Data.Array as Array
 import Data.Map as Map
@@ -410,11 +411,33 @@ svg attributes children =
     )
     (Data.ElementList children)
 
-svgPath :: Map.Map NonEmptyString.NonEmptyString (Maybe.Maybe String) -> Data.RawHtmlElement
+svgPath ::
+  { id :: Maybe NonEmptyString
+  , class :: Maybe NonEmptyString
+  , d :: String
+  , fill :: Color.Color
+  } ->
+  Data.RawHtmlElement
 svgPath attributes =
   Data.htmlElement
-    (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "path"))
-    attributes
+    (NonEmptyString.nes (Proxy :: Proxy "path"))
+    ( Map.fromFoldable
+        ( Array.catMaybes
+            [ Prelude.map idAttribute attributes.id
+            , Prelude.map classAttribute attributes.class
+            , Just
+                ( Tuple.Tuple
+                    (NonEmptyString.nes (Proxy :: Proxy "d"))
+                    (Just attributes.d)
+                )
+            , Just
+                ( Tuple.Tuple
+                    (NonEmptyString.nes (Proxy :: Proxy "fill"))
+                    (Just (Color.toHexString attributes.fill))
+                )
+            ]
+        )
+    )
     (Data.ElementList [])
 
 svgG :: Map.Map NonEmptyString.NonEmptyString (Maybe.Maybe String) -> Array Data.RawHtmlElement -> Data.RawHtmlElement

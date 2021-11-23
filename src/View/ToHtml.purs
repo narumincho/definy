@@ -381,15 +381,7 @@ svgElementToHtmlElement :: Data.SvgElement -> HtmlData.RawHtmlElement
 svgElementToHtmlElement = case _ of
   Data.Path { pathText, fill } ->
     HtmlWellknown.svgPath
-      ( Map.fromFoldable
-          [ Tuple.Tuple
-              (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "d"))
-              (Maybe.Just pathText)
-          , Tuple.Tuple
-              (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "fill"))
-              (Maybe.Just fill)
-          ]
-      )
+      { id: Nothing, class: Nothing, d: pathText, fill: fill }
   Data.G { transform, svgElementList } ->
     HtmlWellknown.svgG
       ( Map.singleton

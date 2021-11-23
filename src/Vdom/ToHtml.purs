@@ -113,10 +113,9 @@ vdomElementToHtmlElement = case _ of
           )
           rec.children
       )
-  Data.ElementSvgPath (Data.SvgPath _) ->
-    Wellknown.div
-      { id: Nothing, class: Nothing }
-      (Html.Text "toHtml SvgPath は未実装")
+  Data.ElementSvgPath (Data.SvgPath rec) ->
+    Wellknown.svgPath
+      rec
   Data.ElementSvgCircle (Data.SvgCircle _) ->
     Wellknown.div
       { id: Nothing, class: Nothing }
