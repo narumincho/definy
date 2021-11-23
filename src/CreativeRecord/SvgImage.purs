@@ -1,6 +1,10 @@
 module CreativeRecord.SvgImage where
 
 import Color as Color
+import Data.Array.NonEmpty as NonEmptyArray
+import Data.Array.NonEmpty.Internal (NonEmptyArray(..))
+import Data.String.NonEmpty as NonEmptyString
+import Type.Proxy (Proxy(..))
 import View.Data as View
 
 webSiteLogo :: View.Svg
@@ -47,7 +51,10 @@ gitHubLogo =
           }
     , svgElementList:
         [ View.G
-            { transform: [ "translate(0,560)", "scale(0.1,-0.1)" ]
+            { transform:
+                NonEmptyArray.cons'
+                  (NonEmptyString.nes (Proxy :: Proxy "translate(0,560)"))
+                  [ (NonEmptyString.nes (Proxy :: Proxy "scale(0.1,-0.1)")) ]
             , svgElementList:
                 [ View.Path
                     { fill: Color.rgb 221 221 221

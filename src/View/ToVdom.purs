@@ -422,7 +422,7 @@ svgElementToHtmlElement = case _ of
   Data.G { transform, svgElementList } ->
     Vdom.ElementSvgG
       ( Vdom.SvgG
-          { transform: String.joinWith "" transform
+          { transform: transform
           , children: Array.mapWithIndex (\index element -> Tuple.Tuple (Prelude.show index) (svgElementToHtmlElement element)) svgElementList
           }
       )

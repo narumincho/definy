@@ -21,6 +21,7 @@ module Html.Wellknown
   , svg
   , svgPath
   , svgCircle
+  , svgAnimate
   , svgG
   , htmlTagName
   , bodyTagName
@@ -29,6 +30,7 @@ module Html.Wellknown
 import Color as Color
 import Css as Css
 import Data.Array as Array
+import Data.Array.NonEmpty (NonEmptyArray)
 import Data.Map as Map
 import Data.Maybe (Maybe(..))
 import Data.Maybe as Maybe
@@ -489,11 +491,47 @@ svgCircle attributes children =
     )
     (Data.ElementList children)
 
-svgG :: Map.Map NonEmptyString.NonEmptyString (Maybe.Maybe String) -> Array Data.RawHtmlElement -> Data.RawHtmlElement
+svgAnimate ::
+  { attributeName :: NonEmptyString
+  , dur :: Number
+  , repeatCount :: String
+  , from :: String
+  , to :: String
+  } ->
+  Data.RawHtmlElement
+svgAnimate attributes =
+  Data.htmlElement
+    (NonEmptyString.nes (Proxy :: Proxy "path"))
+    ( Map.fromFoldable
+        [ Tuple.Tuple
+            (NonEmptyString.nes (Proxy :: Proxy "attributeName"))
+            (Just (NonEmptyString.toString attributes.attributeName))
+        , Tuple.Tuple
+            (NonEmptyString.nes (Proxy :: Proxy "dur"))
+            (Just (Prelude.show attributes.dur))
+        , Tuple.Tuple
+            (NonEmptyString.nes (Proxy :: Proxy "repeatCount"))
+            (Just attributes.repeatCount)
+        , Tuple.Tuple
+            (NonEmptyString.nes (Proxy :: Proxy "from"))
+            (Just attributes.from)
+        , Tuple.Tuple
+            (NonEmptyString.nes (Proxy :: Proxy "to"))
+            (Just attributes.to)
+        ]
+    )
+    (Data.ElementList [])
+
+svgG :: { transform :: NonEmptyArray NonEmptyString } -> Array Data.RawHtmlElement -> Data.RawHtmlElement
 svgG attributes elementList =
   Data.htmlElement
     (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "g"))
-    attributes
+    ( Map.fromFoldable
+        [ Tuple.Tuple
+            (NonEmptyString.nes (Proxy :: Proxy "transform"))
+            (Just (NonEmptyString.joinWith " " attributes.transform))
+        ]
+    )
     (Data.ElementList elementList)
 
 classAttribute :: NonEmptyString -> Tuple.Tuple NonEmptyString (Maybe.Maybe String)

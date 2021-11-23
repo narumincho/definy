@@ -130,14 +130,18 @@ vdomElementToHtmlElement = case _ of
           )
           rec.children
       )
-  Data.ElementSvgAnimate (Data.SvgAnimate _) ->
-    Wellknown.div
-      { id: Nothing, class: Nothing }
-      (Html.Text "toHtml SvgAnimate は未実装")
-  Data.ElementSvgG (Data.SvgG _) ->
-    Wellknown.div
-      { id: Nothing, class: Nothing }
-      (Html.Text "toHtml SvgG は未実装")
+  Data.ElementSvgAnimate (Data.SvgAnimate rec) ->
+    Wellknown.svgAnimate
+      rec
+  Data.ElementSvgG (Data.SvgG rec) ->
+    Wellknown.svgG
+      { transform: rec.transform }
+      ( Prelude.map
+          ( \(Tuple.Tuple _ element) ->
+              vdomElementToHtmlElement element
+          )
+          rec.children
+      )
 
 vdomChildrenToHtmlChildren :: forall message. Data.Children message -> Html.HtmlChildren
 vdomChildrenToHtmlChildren = case _ of

@@ -17,7 +17,9 @@ module View.Data
 
 import Color as Color
 import Css as Css
+import Data.Array.NonEmpty (NonEmptyArray)
 import Data.Maybe as Maybe
+import Data.String.NonEmpty (NonEmptyString)
 import Data.String.NonEmpty as NonEmptyString
 import Language as Language
 import StructuredUrl as StructuredUrl
@@ -117,7 +119,7 @@ data SvgElement
     , fill :: Color.Color
     }
   | G
-    { transform :: Array String
+    { transform :: NonEmptyArray NonEmptyString
     , svgElementList :: Array SvgElement
     }
 

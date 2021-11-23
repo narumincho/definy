@@ -384,10 +384,7 @@ svgElementToHtmlElement = case _ of
       { id: Nothing, class: Nothing, d: pathText, fill: fill }
   Data.G { transform, svgElementList } ->
     HtmlWellknown.svgG
-      ( Map.singleton
-          (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "transform"))
-          (Maybe.Just (String.joinWith "" transform))
-      )
+      { transform: transform }
       (Prelude.map svgElementToHtmlElement svgElementList)
 
 sha256HashValueToClassName :: Hash.Sha256HashValue -> NonEmptyString.NonEmptyString

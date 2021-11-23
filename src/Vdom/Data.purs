@@ -568,7 +568,7 @@ svgCircleDiff key = case _ of
 
 newtype SvgAnimate
   = SvgAnimate
-  { attributeName :: String
+  { attributeName :: NonEmptyString
   , dur :: Number
   , repeatCount :: String
   , from :: String
@@ -579,11 +579,11 @@ newtype SvgAnimateDiff
   = SvgAnimateDiff SvgAnimateDiffRec
 
 type SvgAnimateDiffRec
-  = { attributeName :: Maybe.Maybe String
-    , dur :: Maybe.Maybe Number
-    , repeatCount :: Maybe.Maybe String
-    , from :: Maybe.Maybe String
-    , to :: Maybe.Maybe String
+  = { attributeName :: Maybe NonEmptyString
+    , dur :: Maybe Number
+    , repeatCount :: Maybe String
+    , from :: Maybe String
+    , to :: Maybe String
     }
 
 svgAnimateDiff :: forall message. String -> SvgAnimateDiffRec -> ElementDiff message
@@ -599,7 +599,7 @@ svgAnimateDiff key = case _ of
 newtype SvgG :: Type -> Type
 newtype SvgG message
   = SvgG
-  { transform :: String
+  { transform :: NonEmptyArray NonEmptyString
   , children :: Array (Tuple.Tuple String (Element message))
   }
 
