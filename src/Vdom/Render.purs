@@ -71,8 +71,103 @@ elementToHtmlOrSvgElementWithoutDataPath { element, path, renderState } = case e
         }
     applyChildren { htmlOrSvgElement: anchor, children: rec.children, path: path, renderState }
     pure anchor
-  _ -> do
-    div <- createDiv { id: Nullable.null, class: Nullable.null }
+  Vdom.ElementLocalLink (Vdom.LocalLink rec) -> do
+    anchor <-
+      createA
+        { id: Nullable.toNullable (map NonEmptyString.toString rec.id)
+        , class: Nullable.toNullable (map NonEmptyString.toString rec.class)
+        , href: NonEmptyString.toString (StructuredUrl.toString rec.href)
+        }
+    applyChildren { htmlOrSvgElement: anchor, children: rec.children, path: path, renderState }
+    pure anchor
+  Vdom.ElementButton (Vdom.Button rec) -> do
+    button <-
+      createButton
+        { id: Nullable.toNullable (map NonEmptyString.toString rec.id)
+        , class: Nullable.toNullable (map NonEmptyString.toString rec.class)
+        }
+    applyChildren { htmlOrSvgElement: button, children: rec.children, path: path, renderState }
+    pure button
+  Vdom.ElementImg (Vdom.Img rec) -> do
+    image <-
+      createImg
+        { id: Nullable.toNullable (map NonEmptyString.toString rec.id)
+        , class: Nullable.toNullable (map NonEmptyString.toString rec.class)
+        , alt: rec.alt
+        , src: NonEmptyString.toString (StructuredUrl.pathAndSearchParamsToString rec.src)
+        }
+    pure image
+  Vdom.ElementInputRadio (Vdom.InputRadio rec) -> do
+    div <-
+      createInputRadio
+        { id: Nullable.toNullable (map NonEmptyString.toString rec.id)
+        , class: Nullable.toNullable (map NonEmptyString.toString rec.class)
+        , checked: rec.checked
+        , name: NonEmptyString.toString rec.name
+        }
+    pure div
+  Vdom.ElementInputText (Vdom.InputText rec) -> do
+    div <-
+      createDiv
+        { id: Nullable.toNullable (map NonEmptyString.toString rec.id)
+        , class: Nullable.toNullable (map NonEmptyString.toString rec.class)
+        }
+    applyChildren { htmlOrSvgElement: div, children: Vdom.ChildrenText "notSupported", path: path, renderState }
+    pure div
+  Vdom.ElementTextArea (Vdom.TextArea rec) -> do
+    div <-
+      createDiv
+        { id: Nullable.toNullable (map NonEmptyString.toString rec.id)
+        , class: Nullable.toNullable (map NonEmptyString.toString rec.class)
+        }
+    applyChildren { htmlOrSvgElement: div, children: Vdom.ChildrenText "notSupported", path: path, renderState }
+    pure div
+  Vdom.ElementLabel (Vdom.Label rec) -> do
+    div <-
+      createDiv
+        { id: Nullable.toNullable (map NonEmptyString.toString rec.id)
+        , class: Nullable.toNullable (map NonEmptyString.toString rec.class)
+        }
+    applyChildren { htmlOrSvgElement: div, children: Vdom.ChildrenText "notSupported", path: path, renderState }
+    pure div
+  Vdom.ElementSvg (Vdom.Svg rec) -> do
+    div <-
+      createDiv
+        { id: Nullable.toNullable (map NonEmptyString.toString rec.id)
+        , class: Nullable.toNullable (map NonEmptyString.toString rec.class)
+        }
+    applyChildren { htmlOrSvgElement: div, children: Vdom.ChildrenText "notSupported", path: path, renderState }
+    pure div
+  Vdom.ElementSvgPath (Vdom.SvgPath rec) -> do
+    div <-
+      createDiv
+        { id: Nullable.toNullable (map NonEmptyString.toString rec.id)
+        , class: Nullable.toNullable (map NonEmptyString.toString rec.class)
+        }
+    applyChildren { htmlOrSvgElement: div, children: Vdom.ChildrenText "notSupported", path: path, renderState }
+    pure div
+  Vdom.ElementSvgCircle (Vdom.SvgCircle rec) -> do
+    div <-
+      createDiv
+        { id: Nullable.toNullable (map NonEmptyString.toString rec.id)
+        , class: Nullable.toNullable (map NonEmptyString.toString rec.class)
+        }
+    applyChildren { htmlOrSvgElement: div, children: Vdom.ChildrenText "notSupported", path: path, renderState }
+    pure div
+  Vdom.ElementSvgAnimate (Vdom.SvgAnimate _) -> do
+    div <-
+      createDiv
+        { id: Nullable.null
+        , class: Nullable.null
+        }
+    applyChildren { htmlOrSvgElement: div, children: Vdom.ChildrenText "notSupported", path: path, renderState }
+    pure div
+  Vdom.ElementSvgG (Vdom.SvgG _) -> do
+    div <-
+      createDiv
+        { id: Nullable.null
+        , class: Nullable.null
+        }
     applyChildren { htmlOrSvgElement: div, children: Vdom.ChildrenText "notSupported", path: path, renderState }
     pure div
 
@@ -197,6 +292,28 @@ foreign import createA ::
   , href :: String
   } ->
   Effect.Effect HtmlOrSvgElement
+
+foreign import createButton ::
+  { id :: Nullable String
+  , class :: Nullable String
+  } ->
+  Effect.Effect HtmlOrSvgElement
+
+foreign import createImg ::
+  { id :: Nullable String
+  , class :: Nullable String
+  , alt :: String
+  , src :: String
+  } ->
+  Effect HtmlOrSvgElement
+
+foreign import createInputRadio ::
+  { id :: Nullable String
+  , class :: Nullable String
+  , checked :: Boolean
+  , name :: String
+  } ->
+  Effect HtmlOrSvgElement
 
 foreign import setDataPath :: HtmlOrSvgElement -> String -> Effect.Effect Unit
 

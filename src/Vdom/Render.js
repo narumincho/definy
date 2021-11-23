@@ -53,11 +53,11 @@ exports.changeLanguage = (newLanguage) => () => {
 
 /**
  *
- * @param {string} classNameOrEmpty
+ * @param {string | null} classNameOrEmpty
  * @returns
  */
 exports.changeBodyClass = (classNameOrEmpty) => () => {
-  if (classNameOrEmpty === "") {
+  if (classNameOrEmpty === null) {
     document.body.removeAttribute("class");
     return;
   }
@@ -139,6 +139,60 @@ exports.createA = (option) => () => {
   }
   anchorElement.href = option.href;
   return anchorElement;
+};
+
+/**
+ *
+ * @param {{id: string | null, class: string | null}} option
+ * @returns
+ */
+exports.createButton = (option) => () => {
+  const button = window.document.createElement("button");
+  if (typeof option.id === "string") {
+    button.id = option.id;
+  }
+  if (typeof option.class === "string") {
+    button.className = option.class;
+  }
+  button.type = "button";
+  return button;
+};
+
+/**
+ *
+ * @param {{id: string | null, class: string | null, alt : string, src : string}} option
+ * @returns
+ */
+exports.createImg = (option) => () => {
+  const image = window.document.createElement("img");
+  if (typeof option.id === "string") {
+    image.id = option.id;
+  }
+  if (typeof option.class === "string") {
+    image.className = option.class;
+  }
+  image.alt = option.alt;
+  image.src = option.src;
+  return image;
+};
+
+/**
+ *
+ * @param {{id: string | null, class: string | null, checked : boolean, name :string}} option
+ * @returns
+ */
+exports.createInputRadio = (option) => () => {
+  const input = window.document.createElement("input");
+  input.type = "radio";
+  if (typeof option.id === "string") {
+    input.id = option.id;
+  }
+  if (typeof option.class === "string") {
+    input.className = option.class;
+  }
+  input.checked = option.checked;
+  input.name = option.name;
+  return input;
 };
 
 /**

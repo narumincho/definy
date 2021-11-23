@@ -208,7 +208,7 @@ a attributes children =
 
 -- | https://developer.mozilla.org/ja/docs/Web/HTML/Element/button
 -- | ```html
--- | <button type="submit"></button>
+-- | <button type="button"></button>
 -- | ````
 button :: { id :: Maybe NonEmptyString, class :: Maybe NonEmptyString } -> Data.HtmlChildren -> Data.RawHtmlElement
 button attributes children =
