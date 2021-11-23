@@ -13,52 +13,51 @@ import Effect as Effect
 import Language as Language
 import StructuredUrl as StructuredUrl
 import Vdom.Data as Vdom
-import Vdom.Data as View
 import Vdom.RenderState as RenderState
 
 -- | Vdom の Element から DOM API から HtmlElement か SvgElement を生成する
 elementToHtmlOrSvgElement ::
   forall message.
-  { element :: View.Element message
-  , path :: View.Path
+  { element :: Vdom.Element message
+  , path :: Vdom.Path
   , renderState :: RenderState.RenderState message
   } ->
   Effect.Effect HtmlOrSvgElement
 elementToHtmlOrSvgElement = case _ of
-  { element: View.ElementDiv (View.Div rec), path, renderState } -> do
+  { element: Vdom.ElementDiv (Vdom.Div rec), path, renderState } -> do
     div <-
       createDiv
         { id: Nullable.toNullable (map NonEmptyString.toString rec.id)
         , class: Nullable.toNullable (map NonEmptyString.toString rec.class)
-        , dataPath: View.pathToString path
+        , dataPath: Vdom.pathToString path
         }
     applyChildren { htmlOrSvgElement: div, children: rec.children, path: path, renderState }
     pure div
-  { element: View.ElementH1 (View.H1 rec), path, renderState } -> do
+  { element: Vdom.ElementH1 (Vdom.H1 rec), path, renderState } -> do
     h1 <-
       createH1
         { id: Nullable.toNullable (map NonEmptyString.toString rec.id)
         , class: Nullable.toNullable (map NonEmptyString.toString rec.class)
-        , dataPath: View.pathToString path
+        , dataPath: Vdom.pathToString path
         }
     applyChildren { htmlOrSvgElement: h1, children: rec.children, path: path, renderState }
     pure h1
-  { element: View.ElementH2 (View.H2 rec), path, renderState } -> do
+  { element: Vdom.ElementH2 (Vdom.H2 rec), path, renderState } -> do
     h2 <-
       createH2
         { id: Nullable.toNullable (map NonEmptyString.toString rec.id)
         , class: Nullable.toNullable (map NonEmptyString.toString rec.class)
-        , dataPath: View.pathToString path
+        , dataPath: Vdom.pathToString path
         }
     applyChildren { htmlOrSvgElement: h2, children: rec.children, path: path, renderState }
     pure h2
-  { element: View.ElementExternalLink (View.ExternalLink rec), path, renderState } -> do
+  { element: Vdom.ElementExternalLink (Vdom.ExternalLink rec), path, renderState } -> do
     anchor <-
       createA
         { id: Nullable.toNullable (map NonEmptyString.toString rec.id)
         , class: Nullable.toNullable (map NonEmptyString.toString rec.class)
         , href: NonEmptyString.toString (StructuredUrl.toString rec.href)
-        , dataPath: View.pathToString path
+        , dataPath: Vdom.pathToString path
         }
     applyChildren { htmlOrSvgElement: anchor, children: rec.children, path: path, renderState }
     pure anchor
@@ -68,43 +67,43 @@ elementToHtmlOrSvgElement = case _ of
 applyChildren ::
   forall message.
   { htmlOrSvgElement :: HtmlOrSvgElement
-  , children :: View.Children message
-  , path :: View.Path
+  , children :: Vdom.Children message
+  , path :: Vdom.Path
   , renderState :: RenderState.RenderState message
   } ->
   Effect.Effect Unit
 applyChildren = case _ of
-  { htmlOrSvgElement, children: View.ChildrenText text } -> setTextContent text htmlOrSvgElement
-  { htmlOrSvgElement, children: View.ChildrenElementList list, path, renderState } ->
+  { htmlOrSvgElement, children: Vdom.ChildrenText text } -> setTextContent text htmlOrSvgElement
+  { htmlOrSvgElement, children: Vdom.ChildrenElementList list, path, renderState } ->
     Effect.foreachE (NonEmptyArray.toArray list)
       ( \(Tuple.Tuple key child) -> do
           element <-
             elementToHtmlOrSvgElement
               { element: child
-              , path: View.pathAppendKey path key
+              , path: Vdom.pathAppendKey path key
               , renderState
               }
           appendChild htmlOrSvgElement element
       )
 
 -- | HTMLElment か SVGElement の子要素に対して差分データの分を反映する
-renderChildren :: forall message. { htmlOrSvgElement :: HtmlOrSvgElement, childrenDiff :: View.ChildrenDiff message, renderState :: RenderState.RenderState message, path :: View.Path } -> Effect.Effect Unit
+renderChildren :: forall message. { htmlOrSvgElement :: HtmlOrSvgElement, childrenDiff :: Vdom.ChildrenDiff message, renderState :: RenderState.RenderState message, path :: Vdom.Path } -> Effect.Effect Unit
 renderChildren = case _ of
-  { childrenDiff: View.ChildrenDiffSkip } -> pure unit
-  { htmlOrSvgElement, childrenDiff: View.ChildrenDiffSetText newText } -> setTextContent newText htmlOrSvgElement
-  { htmlOrSvgElement, childrenDiff: View.ChildrenDiffResetAndInsert list, renderState, path } -> do
+  { childrenDiff: Vdom.ChildrenDiffSkip } -> pure unit
+  { htmlOrSvgElement, childrenDiff: Vdom.ChildrenDiffSetText newText } -> setTextContent newText htmlOrSvgElement
+  { htmlOrSvgElement, childrenDiff: Vdom.ChildrenDiffResetAndInsert list, renderState, path } -> do
     setTextContent "" htmlOrSvgElement
     applyChildren
       { htmlOrSvgElement
-      , children: View.ChildrenElementList list
+      , children: Vdom.ChildrenElementList list
       , renderState
       , path
       }
-  { childrenDiff: View.ChildDiffList _ } -> pure unit
+  { childrenDiff: Vdom.ChildDiffList _ } -> pure unit
 
 -- | すべてをリセットして再描画する. 最初に1回呼ぶと良い.
-resetAndRender :: forall message. View.Vdom message -> RenderState.RenderState message -> Effect.Effect Unit
-resetAndRender (View.Vdom view) renderState = do
+resetAndRender :: forall message. Vdom.Vdom message -> RenderState.RenderState message -> Effect.Effect Unit
+resetAndRender (Vdom.Vdom view) renderState = do
   Effect.foreachE
     [ Vdom.ChangePageName view.pageName
     , Vdom.ChangeThemeColor view.themeColor
@@ -117,41 +116,41 @@ resetAndRender (View.Vdom view) renderState = do
     { htmlOrSvgElement: bodyElement
     , childrenDiff:
         case NonEmptyArray.fromArray view.children of
-          Just list -> View.ChildrenDiffResetAndInsert list
-          Nothing -> View.ChildrenDiffSetText ""
+          Just list -> Vdom.ChildrenDiffResetAndInsert list
+          Nothing -> Vdom.ChildrenDiffSetText ""
     , renderState
-    , path: View.rootPath
+    , path: Vdom.rootPath
     }
 
 -- | 差分データから実際のDOMを操作して表示に反映させる
-render :: forall message. View.ViewDiff message -> RenderState.RenderState message -> Effect.Effect Unit
-render (View.ViewDiff viewDiff) renderState = do
+render :: forall message. Vdom.ViewDiff message -> RenderState.RenderState message -> Effect.Effect Unit
+render (Vdom.ViewDiff viewDiff) renderState = do
   Effect.foreachE viewDiff.patchOperationList viewPatchOperationToEffect
   bodyElement <- getBodyElement
   renderChildren
     { htmlOrSvgElement: bodyElement
     , childrenDiff: viewDiff.childrenDiff
     , renderState
-    , path: View.rootPath
+    , path: Vdom.rootPath
     }
   Console.logValue "run renderView" { viewDiff, renderState }
 
-viewPatchOperationToEffect :: View.ViewPatchOperation -> Effect.Effect Unit
+viewPatchOperationToEffect :: Vdom.ViewPatchOperation -> Effect.Effect Unit
 viewPatchOperationToEffect = case _ of
-  View.ChangePageName newPageName -> changePageName (NonEmptyString.toString newPageName)
-  View.ChangeThemeColor colorMaybe ->
+  Vdom.ChangePageName newPageName -> changePageName (NonEmptyString.toString newPageName)
+  Vdom.ChangeThemeColor colorMaybe ->
     changeThemeColor
       (Color.toHexString colorMaybe)
-  View.ChangeLanguage languageMaybe ->
+  Vdom.ChangeLanguage languageMaybe ->
     changeLanguage
       (Nullable.toNullable (map Language.toIETFLanguageTag languageMaybe))
-  View.ChangeBodyClass classNameOrEmpty -> changeBodyClass (Nullable.toNullable (map NonEmptyString.toString classNameOrEmpty))
+  Vdom.ChangeBodyClass classNameOrEmpty -> changeBodyClass (Nullable.toNullable (map NonEmptyString.toString classNameOrEmpty))
 
 foreign import changePageName :: String -> Effect.Effect Unit
 
 foreign import changeThemeColor :: String -> Effect.Effect Unit
 
-foreign import changeLanguage :: Nullable.Nullable String -> Effect.Effect Unit
+foreign import changeLanguage :: Nullable String -> Effect.Effect Unit
 
 foreign import changeBodyClass :: Nullable String -> Effect.Effect Unit
 
@@ -162,22 +161,22 @@ foreign import setTextContent :: String -> HtmlOrSvgElement -> Effect.Effect Uni
 foreign import data HtmlOrSvgElement :: Type
 
 foreign import createDiv ::
-  { id :: Nullable.Nullable String
-  , class :: Nullable.Nullable String
+  { id :: Nullable String
+  , class :: Nullable String
   , dataPath :: String
   } ->
   Effect.Effect HtmlOrSvgElement
 
 foreign import createH1 ::
-  { id :: Nullable.Nullable String
-  , class :: Nullable.Nullable String
+  { id :: Nullable String
+  , class :: Nullable String
   , dataPath :: String
   } ->
   Effect.Effect HtmlOrSvgElement
 
 foreign import createH2 ::
-  { id :: Nullable.Nullable String
-  , class :: Nullable.Nullable String
+  { id :: Nullable String
+  , class :: Nullable String
   , dataPath :: String
   } ->
   Effect.Effect HtmlOrSvgElement
