@@ -78,7 +78,7 @@ exports.setTextContent = (text) => (htmlOrSvgElement) => () => {
 
 /**
  *
- * @param {{id: string | null, class: string | null, dataPath: string}} option
+ * @param {{id: string | null, class: string | null}} option
  * @returns
  */
 exports.createDiv = (option) => () => {
@@ -89,13 +89,12 @@ exports.createDiv = (option) => () => {
   if (typeof option.class === "string") {
     div.className = option.class;
   }
-  div.dataset.dPath = option.dataPath;
   return div;
 };
 
 /**
  *
- * @param {{id: string | null, class: string | null, dataPath: string}} option
+ * @param {{id: string | null, class: string | null}} option
  * @returns
  */
 exports.createH1 = (option) => () => {
@@ -106,13 +105,12 @@ exports.createH1 = (option) => () => {
   if (typeof option.class === "string") {
     headingElement.className = option.class;
   }
-  headingElement.dataset.dPath = option.dataPath;
   return headingElement;
 };
 
 /**
  *
- * @param {{id: string | null, class: string | null, dataPath: string}} option
+ * @param {{id: string | null, class: string | null}} option
  * @returns
  */
 exports.createH2 = (option) => () => {
@@ -123,13 +121,12 @@ exports.createH2 = (option) => () => {
   if (typeof option.class === "string") {
     headingElement.className = option.class;
   }
-  headingElement.dataset.dPath = option.dataPath;
   return headingElement;
 };
 
 /**
  *
- * @param {{id: string | null, class: string | null, href : string, dataPath: string}} option
+ * @param {{id: string | null, class: string | null, href : string}} option
  * @returns
  */
 exports.createA = (option) => () => {
@@ -141,7 +138,6 @@ exports.createA = (option) => () => {
     anchorElement.className = option.class;
   }
   anchorElement.href = option.href;
-  anchorElement.dataset.dPath = option.dataPath;
   return anchorElement;
 };
 
@@ -152,4 +148,13 @@ exports.createA = (option) => () => {
  */
 exports.appendChild = (parent) => (child) => () => {
   parent.appendChild(child);
+};
+
+/**
+ *
+ * @param {HTMLElement | SVGElement} element
+ * @returns {(path: string) => () => void}
+ */
+exports.setDataPath = (element) => (path) => () => {
+  element.dataset.dPath = path;
 };

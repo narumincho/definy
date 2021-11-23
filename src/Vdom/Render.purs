@@ -9,6 +9,7 @@ import Data.Nullable (Nullable)
 import Data.Nullable as Nullable
 import Data.String.NonEmpty as NonEmptyString
 import Data.Tuple as Tuple
+import Effect (Effect)
 import Effect as Effect
 import Language as Language
 import StructuredUrl as StructuredUrl
@@ -22,46 +23,58 @@ elementToHtmlOrSvgElement ::
   , path :: Vdom.Path
   , renderState :: RenderState.RenderState message
   } ->
-  Effect.Effect HtmlOrSvgElement
-elementToHtmlOrSvgElement = case _ of
-  { element: Vdom.ElementDiv (Vdom.Div rec), path, renderState } -> do
+  Effect HtmlOrSvgElement
+elementToHtmlOrSvgElement { element, path, renderState } = do
+  htmlOrSvgElement <-
+    elementToHtmlOrSvgElementWithoutDataPath { element, path, renderState }
+  setDataPath htmlOrSvgElement (Vdom.pathToString path)
+  pure htmlOrSvgElement
+
+elementToHtmlOrSvgElementWithoutDataPath ::
+  forall message.
+  { element :: Vdom.Element message
+  , path :: Vdom.Path
+  , renderState :: RenderState.RenderState message
+  } ->
+  Effect HtmlOrSvgElement
+elementToHtmlOrSvgElementWithoutDataPath { element, path, renderState } = case element of
+  Vdom.ElementDiv (Vdom.Div rec) -> do
     div <-
       createDiv
         { id: Nullable.toNullable (map NonEmptyString.toString rec.id)
         , class: Nullable.toNullable (map NonEmptyString.toString rec.class)
-        , dataPath: Vdom.pathToString path
         }
     applyChildren { htmlOrSvgElement: div, children: rec.children, path: path, renderState }
     pure div
-  { element: Vdom.ElementH1 (Vdom.H1 rec), path, renderState } -> do
+  Vdom.ElementH1 (Vdom.H1 rec) -> do
     h1 <-
       createH1
         { id: Nullable.toNullable (map NonEmptyString.toString rec.id)
         , class: Nullable.toNullable (map NonEmptyString.toString rec.class)
-        , dataPath: Vdom.pathToString path
         }
     applyChildren { htmlOrSvgElement: h1, children: rec.children, path: path, renderState }
     pure h1
-  { element: Vdom.ElementH2 (Vdom.H2 rec), path, renderState } -> do
+  Vdom.ElementH2 (Vdom.H2 rec) -> do
     h2 <-
       createH2
         { id: Nullable.toNullable (map NonEmptyString.toString rec.id)
         , class: Nullable.toNullable (map NonEmptyString.toString rec.class)
-        , dataPath: Vdom.pathToString path
         }
     applyChildren { htmlOrSvgElement: h2, children: rec.children, path: path, renderState }
     pure h2
-  { element: Vdom.ElementExternalLink (Vdom.ExternalLink rec), path, renderState } -> do
+  Vdom.ElementExternalLink (Vdom.ExternalLink rec) -> do
     anchor <-
       createA
         { id: Nullable.toNullable (map NonEmptyString.toString rec.id)
         , class: Nullable.toNullable (map NonEmptyString.toString rec.class)
         , href: NonEmptyString.toString (StructuredUrl.toString rec.href)
-        , dataPath: Vdom.pathToString path
         }
     applyChildren { htmlOrSvgElement: anchor, children: rec.children, path: path, renderState }
     pure anchor
-  {} -> createDiv { id: Nullable.null, class: Nullable.null, dataPath: "notSupport" }
+  _ -> do
+    div <- createDiv { id: Nullable.null, class: Nullable.null }
+    applyChildren { htmlOrSvgElement: div, children: Vdom.ChildrenText "notSupported", path: path, renderState }
+    pure div
 
 -- | HTMLElment か SVGElement の子要素を設定する
 applyChildren ::
@@ -163,21 +176,18 @@ foreign import data HtmlOrSvgElement :: Type
 foreign import createDiv ::
   { id :: Nullable String
   , class :: Nullable String
-  , dataPath :: String
   } ->
   Effect.Effect HtmlOrSvgElement
 
 foreign import createH1 ::
   { id :: Nullable String
   , class :: Nullable String
-  , dataPath :: String
   } ->
   Effect.Effect HtmlOrSvgElement
 
 foreign import createH2 ::
   { id :: Nullable String
   , class :: Nullable String
-  , dataPath :: String
   } ->
   Effect.Effect HtmlOrSvgElement
 
@@ -185,8 +195,9 @@ foreign import createA ::
   { id :: Nullable String
   , class :: Nullable String
   , href :: String
-  , dataPath :: String
   } ->
   Effect.Effect HtmlOrSvgElement
+
+foreign import setDataPath :: HtmlOrSvgElement -> String -> Effect.Effect Unit
 
 foreign import appendChild :: HtmlOrSvgElement -> HtmlOrSvgElement -> Effect.Effect Unit
