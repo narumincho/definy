@@ -197,6 +197,25 @@ exports.createInputRadio = (option) => () => {
 
 /**
  *
+ * @param {{id : string | null, class: string | null, readonly : boolean, value : string}} option
+ * @returns
+ */
+exports.createInputText = (option) => () => {
+  const input = window.document.createElement("input");
+  input.type = "text";
+  if (typeof option.id === "string") {
+    input.id = option.id;
+  }
+  if (typeof option.class === "string") {
+    input.className = option.class;
+  }
+  input.readOnly = option.readonly;
+  input.value = option.value;
+  return input;
+};
+
+/**
+ *
  * @param {HTMLElement | SVGElement} parent
  * @returns {(child: HTMLElement | SVGElement) => () => void}
  */

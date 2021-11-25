@@ -5,6 +5,7 @@ import Color as Color
 import Console as Console
 import Data.Array.NonEmpty as NonEmptyArray
 import Data.Maybe (Maybe(..))
+import Data.Maybe as Maybe
 import Data.Nullable (Nullable)
 import Data.Nullable as Nullable
 import Data.String.NonEmpty as NonEmptyString
@@ -108,9 +109,11 @@ elementToHtmlOrSvgElementWithoutDataPath { element, path, renderState } = case e
     pure div
   Vdom.ElementInputText (Vdom.InputText rec) -> do
     div <-
-      createDiv
+      createInputText
         { id: Nullable.toNullable (map NonEmptyString.toString rec.id)
         , class: Nullable.toNullable (map NonEmptyString.toString rec.class)
+        , readonly: Maybe.isNothing rec.inputOrReadonly
+        , value: rec.value
         }
     applyChildren { htmlOrSvgElement: div, children: Vdom.ChildrenText "notSupported", path: path, renderState }
     pure div
@@ -312,6 +315,14 @@ foreign import createInputRadio ::
   , class :: Nullable String
   , checked :: Boolean
   , name :: String
+  } ->
+  Effect HtmlOrSvgElement
+
+foreign import createInputText ::
+  { id :: Nullable String
+  , class :: Nullable String
+  , readonly :: Boolean
+  , value :: String
   } ->
   Effect HtmlOrSvgElement
 
