@@ -379,8 +379,8 @@ newtype InputRadio message
   , class :: Maybe NonEmptyString
   , select :: message
   , checked :: Boolean
-  , {- 選択肢の選択を1にする動作のため. どの選択肢に属しているかを指定する 
-  -} name :: String
+  , {- 選択肢の選択を1にする動作のため. どの選択肢に属しているかのID文字列を指定する 
+  -} name :: NonEmptyString
   }
 
 newtype InputRadioDiff
@@ -390,7 +390,7 @@ type InputRadioDiffRec
   = { id :: Maybe (Maybe NonEmptyString)
     , class :: Maybe (Maybe NonEmptyString)
     , checked :: Maybe.Maybe Boolean
-    , name :: Maybe.Maybe String
+    , name :: Maybe.Maybe NonEmptyString
     }
 
 inputRadioDiff :: forall message. String -> InputRadioDiffRec -> ElementDiff message
@@ -453,7 +453,7 @@ newtype Label message
   = Label
   { id :: Maybe NonEmptyString
   , class :: Maybe NonEmptyString
-  , for :: String
+  , for :: NonEmptyString
   , children :: Children message
   }
 
@@ -463,7 +463,7 @@ newtype LabelDiff message
 type LabelDiffRec message
   = { id :: Maybe (Maybe NonEmptyString)
     , class :: Maybe (Maybe NonEmptyString)
-    , for :: Maybe.Maybe String
+    , for :: Maybe NonEmptyString
     , children :: ChildrenDiff message
     }
 
@@ -509,7 +509,7 @@ newtype SvgPath
   { id :: Maybe.Maybe NonEmptyString.NonEmptyString
   , class :: Maybe.Maybe NonEmptyString.NonEmptyString
   , d :: String
-  , fill :: String
+  , fill :: Color.Color
   }
 
 newtype SvgPathDiff
@@ -519,7 +519,7 @@ type SvgPathDiffRec
   = { id :: Maybe.Maybe (Maybe.Maybe NonEmptyString.NonEmptyString)
     , class :: Maybe.Maybe (Maybe.Maybe NonEmptyString.NonEmptyString)
     , d :: Maybe.Maybe String
-    , fill :: Maybe.Maybe String
+    , fill :: Maybe Color.Color
     }
 
 svgPathDiff :: forall message. String -> SvgPathDiffRec -> ElementDiff message
@@ -529,24 +529,24 @@ svgPathDiff key = case _ of
 
 newtype SvgCircle
   = SvgCircle
-  { id :: Maybe.Maybe NonEmptyString.NonEmptyString
-  , class :: Maybe.Maybe NonEmptyString.NonEmptyString
-  , fill :: String
-  , stroke :: String
+  { id :: Maybe NonEmptyString
+  , class :: Maybe NonEmptyString
+  , fill :: Color.Color
+  , stroke :: Color.Color
   , cx :: Number
   , cy :: Number
   , r :: Number
-  , children :: Children Prelude.Void
+  , children :: Array (Tuple.Tuple String (Element Prelude.Void))
   }
 
 newtype SvgCircleDiff
   = SvgCircleDiff SvgCircleDiffRec
 
 type SvgCircleDiffRec
-  = { id :: Maybe.Maybe (Maybe.Maybe NonEmptyString.NonEmptyString)
-    , class :: Maybe.Maybe (Maybe.Maybe NonEmptyString.NonEmptyString)
-    , fill :: Maybe.Maybe String
-    , stroke :: Maybe.Maybe String
+  = { id :: Maybe (Maybe NonEmptyString)
+    , class :: Maybe (Maybe NonEmptyString)
+    , fill :: Maybe Color.Color
+    , stroke :: Maybe Color.Color
     , cx :: Maybe.Maybe Number
     , cy :: Maybe.Maybe Number
     , r :: Maybe.Maybe Number
@@ -568,7 +568,7 @@ svgCircleDiff key = case _ of
 
 newtype SvgAnimate
   = SvgAnimate
-  { attributeName :: String
+  { attributeName :: NonEmptyString
   , dur :: Number
   , repeatCount :: String
   , from :: String
@@ -579,11 +579,11 @@ newtype SvgAnimateDiff
   = SvgAnimateDiff SvgAnimateDiffRec
 
 type SvgAnimateDiffRec
-  = { attributeName :: Maybe.Maybe String
-    , dur :: Maybe.Maybe Number
-    , repeatCount :: Maybe.Maybe String
-    , from :: Maybe.Maybe String
-    , to :: Maybe.Maybe String
+  = { attributeName :: Maybe NonEmptyString
+    , dur :: Maybe Number
+    , repeatCount :: Maybe String
+    , from :: Maybe String
+    , to :: Maybe String
     }
 
 svgAnimateDiff :: forall message. String -> SvgAnimateDiffRec -> ElementDiff message
@@ -599,7 +599,7 @@ svgAnimateDiff key = case _ of
 newtype SvgG :: Type -> Type
 newtype SvgG message
   = SvgG
-  { transform :: String
+  { transform :: NonEmptyArray NonEmptyString
   , children :: Array (Tuple.Tuple String (Element message))
   }
 

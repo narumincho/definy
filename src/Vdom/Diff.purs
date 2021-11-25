@@ -134,7 +134,7 @@ createElementDiff (Data.ElementSvgCircle (Data.SvgCircle old)) (Data.ElementSvgC
     , cx: createDiff old.cx new.cx
     , cy: createDiff old.cy new.cy
     , r: createDiff old.r new.r
-    , children: createChildrenDiff old.children new.children
+    , children: createChildListDiff old.children new.children
     }
 
 createElementDiff (Data.ElementSvgAnimate (Data.SvgAnimate old)) (Data.ElementSvgAnimate (Data.SvgAnimate new)) newKey =

@@ -13,19 +13,28 @@ module Html.Wellknown
   , h2
   , a
   , button
-  , svg
   , img
+  , inputRadio
+  , inputText
+  , textarea
+  , label
+  , svg
   , svgPath
+  , svgCircle
+  , svgAnimate
   , svgG
   , htmlTagName
   , bodyTagName
   ) where
 
+import Color as Color
 import Css as Css
 import Data.Array as Array
+import Data.Array.NonEmpty (NonEmptyArray)
 import Data.Map as Map
 import Data.Maybe (Maybe(..))
 import Data.Maybe as Maybe
+import Data.String as String
 import Data.String.NonEmpty (NonEmptyString)
 import Data.String.NonEmpty as NonEmptyString
 import Data.Tuple as Tuple
@@ -199,7 +208,7 @@ a attributes children =
 
 -- | https://developer.mozilla.org/ja/docs/Web/HTML/Element/button
 -- | ```html
--- | <button type="submit"></button>
+-- | <button type="button"></button>
 -- | ````
 button :: { id :: Maybe NonEmptyString, class :: Maybe NonEmptyString } -> Data.HtmlChildren -> Data.RawHtmlElement
 button attributes children =
@@ -219,32 +228,310 @@ button attributes children =
     )
     children
 
-svg :: Map.Map NonEmptyString.NonEmptyString (Maybe.Maybe String) -> Data.HtmlChildren -> Data.RawHtmlElement
+img ::
+  { id :: Maybe NonEmptyString
+  , class :: Maybe NonEmptyString
+  , alt :: String
+  , src :: StructuredUrl.PathAndSearchParams
+  } ->
+  Data.RawHtmlElement
+img attributes =
+  Data.htmlElement
+    (NonEmptyString.nes (Proxy :: Proxy "img"))
+    ( Map.fromFoldable
+        ( Array.catMaybes
+            [ Prelude.map idAttribute attributes.id
+            , Prelude.map classAttribute attributes.class
+            , Just
+                ( Tuple.Tuple
+                    (NonEmptyString.nes (Proxy :: Proxy "alt"))
+                    (Just attributes.alt)
+                )
+            , Just
+                ( Tuple.Tuple
+                    (NonEmptyString.nes (Proxy :: Proxy "src"))
+                    ( Just
+                        ( NonEmptyString.toString
+                            (StructuredUrl.pathAndSearchParamsToString attributes.src)
+                        )
+                    )
+                )
+            ]
+        )
+    )
+    Data.NoEndTag
+
+inputRadio ::
+  { id :: Maybe NonEmptyString
+  , class :: Maybe NonEmptyString
+  , name :: NonEmptyString
+  } ->
+  Data.RawHtmlElement
+inputRadio attributes =
+  Data.htmlElement
+    (NonEmptyString.nes (Proxy :: Proxy "input"))
+    ( Map.fromFoldable
+        ( Array.catMaybes
+            [ Just
+                ( Tuple.Tuple
+                    (NonEmptyString.nes (Proxy :: Proxy "type"))
+                    (Just "radio")
+                )
+            , Prelude.map idAttribute attributes.id
+            , Prelude.map classAttribute attributes.class
+            , Just
+                ( Tuple.Tuple
+                    (NonEmptyString.nes (Proxy :: Proxy "name"))
+                    ( Just
+                        (NonEmptyString.toString attributes.name)
+                    )
+                )
+            ]
+        )
+    )
+    Data.NoEndTag
+
+inputText ::
+  { id :: Maybe NonEmptyString
+  , class :: Maybe NonEmptyString
+  , value :: String
+  , readonly :: Boolean
+  } ->
+  Data.RawHtmlElement
+inputText attributes =
+  Data.htmlElement
+    (NonEmptyString.nes (Proxy :: Proxy "input"))
+    ( Map.fromFoldable
+        ( Array.catMaybes
+            [ Just
+                ( Tuple.Tuple
+                    (NonEmptyString.nes (Proxy :: Proxy "type"))
+                    (Just "text")
+                )
+            , Prelude.map idAttribute attributes.id
+            , Prelude.map classAttribute attributes.class
+            , Just
+                ( Tuple.Tuple
+                    (NonEmptyString.nes (Proxy :: Proxy "value"))
+                    (Just attributes.value)
+                )
+            , if attributes.readonly then
+                Just
+                  ( Tuple.Tuple
+                      (NonEmptyString.nes (Proxy :: Proxy "readonly"))
+                      Nothing
+                  )
+              else
+                Nothing
+            ]
+        )
+    )
+    Data.NoEndTag
+
+textarea ::
+  { id :: Maybe NonEmptyString
+  , class :: Maybe NonEmptyString
+  , value :: String
+  , readonly :: Boolean
+  } ->
+  Data.RawHtmlElement
+textarea attributes =
+  Data.htmlElement
+    (NonEmptyString.nes (Proxy :: Proxy "textarea"))
+    ( Map.fromFoldable
+        ( Array.catMaybes
+            [ Prelude.map idAttribute attributes.id
+            , Prelude.map classAttribute attributes.class
+            , Just
+                ( Tuple.Tuple
+                    (NonEmptyString.nes (Proxy :: Proxy "value"))
+                    (Just attributes.value)
+                )
+            , if attributes.readonly then
+                Just
+                  ( Tuple.Tuple
+                      (NonEmptyString.nes (Proxy :: Proxy "readonly"))
+                      Nothing
+                  )
+              else
+                Nothing
+            ]
+        )
+    )
+    Data.NoEndTag
+
+label :: { id :: Maybe NonEmptyString, class :: Maybe NonEmptyString, for :: NonEmptyString } -> Data.HtmlChildren -> Data.RawHtmlElement
+label attributes children =
+  Data.htmlElement
+    (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "label"))
+    ( Map.fromFoldable
+        ( Array.catMaybes
+            [ Prelude.map idAttribute attributes.id
+            , Prelude.map classAttribute attributes.class
+            , Just
+                ( Tuple.Tuple
+                    (NonEmptyString.nes (Proxy :: Proxy "for"))
+                    (Just (NonEmptyString.toString attributes.for))
+                )
+            ]
+        )
+    )
+    children
+
+svg ::
+  { id :: Maybe NonEmptyString
+  , class :: Maybe NonEmptyString
+  , viewBoxX :: Number
+  , viewBoxY :: Number
+  , viewBoxWidth :: Number
+  , viewBoxHeight :: Number
+  } ->
+  Array Data.RawHtmlElement -> Data.RawHtmlElement
 svg attributes children =
   Data.htmlElement
     (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "svg"))
-    attributes
-    children
+    ( Map.fromFoldable
+        ( Array.catMaybes
+            [ Prelude.map idAttribute attributes.id
+            , Prelude.map classAttribute attributes.class
+            , Just
+                ( Tuple.Tuple
+                    (NonEmptyString.nes (Proxy :: Proxy "viewBox"))
+                    ( Just
+                        ( String.joinWith " "
+                            ( Prelude.map Prelude.show
+                                [ attributes.viewBoxX
+                                , attributes.viewBoxY
+                                , attributes.viewBoxWidth
+                                , attributes.viewBoxHeight
+                                ]
+                            )
+                        )
+                    )
+                )
+            ]
+        )
+    )
+    (Data.ElementList children)
 
-img :: Map.Map NonEmptyString.NonEmptyString (Maybe.Maybe String) -> Data.RawHtmlElement
-img attributes =
-  Data.htmlElement
-    (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "img"))
-    attributes
-    Data.NoEndTag
-
-svgPath :: Map.Map NonEmptyString.NonEmptyString (Maybe.Maybe String) -> Data.RawHtmlElement
+svgPath ::
+  { id :: Maybe NonEmptyString
+  , class :: Maybe NonEmptyString
+  , d :: String
+  , fill :: Color.Color
+  } ->
+  Data.RawHtmlElement
 svgPath attributes =
   Data.htmlElement
-    (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "path"))
-    attributes
+    (NonEmptyString.nes (Proxy :: Proxy "path"))
+    ( Map.fromFoldable
+        ( Array.catMaybes
+            [ Prelude.map idAttribute attributes.id
+            , Prelude.map classAttribute attributes.class
+            , Just
+                ( Tuple.Tuple
+                    (NonEmptyString.nes (Proxy :: Proxy "d"))
+                    (Just attributes.d)
+                )
+            , Just
+                ( Tuple.Tuple
+                    (NonEmptyString.nes (Proxy :: Proxy "fill"))
+                    (Just (Color.toHexString attributes.fill))
+                )
+            ]
+        )
+    )
     (Data.ElementList [])
 
-svgG :: Map.Map NonEmptyString.NonEmptyString (Maybe.Maybe String) -> Array Data.RawHtmlElement -> Data.RawHtmlElement
+-- | 子要素はアニメーションのため だったような
+svgCircle ::
+  { id :: Maybe NonEmptyString
+  , class :: Maybe NonEmptyString
+  , fill :: Color.Color
+  , stroke :: Color.Color
+  , cx :: Number
+  , cy :: Number
+  , r :: Number
+  } ->
+  Array Data.RawHtmlElement -> Data.RawHtmlElement
+svgCircle attributes children =
+  Data.htmlElement
+    (NonEmptyString.nes (Proxy :: Proxy "circle"))
+    ( Map.fromFoldable
+        ( Array.catMaybes
+            [ Prelude.map idAttribute attributes.id
+            , Prelude.map classAttribute attributes.class
+            , Just
+                ( Tuple.Tuple
+                    (NonEmptyString.nes (Proxy :: Proxy "fill"))
+                    (Just (Color.toHexString attributes.fill))
+                )
+            , Just
+                ( Tuple.Tuple
+                    (NonEmptyString.nes (Proxy :: Proxy "stroke"))
+                    (Just (Color.toHexString attributes.stroke))
+                )
+            , Just
+                ( Tuple.Tuple
+                    (NonEmptyString.nes (Proxy :: Proxy "cx"))
+                    (Just (Prelude.show attributes.cx))
+                )
+            , Just
+                ( Tuple.Tuple
+                    (NonEmptyString.nes (Proxy :: Proxy "cy"))
+                    (Just (Prelude.show attributes.cy))
+                )
+            , Just
+                ( Tuple.Tuple
+                    (NonEmptyString.nes (Proxy :: Proxy "r"))
+                    (Just (Prelude.show attributes.r))
+                )
+            ]
+        )
+    )
+    (Data.ElementList children)
+
+svgAnimate ::
+  { attributeName :: NonEmptyString
+  , dur :: Number
+  , repeatCount :: String
+  , from :: String
+  , to :: String
+  } ->
+  Data.RawHtmlElement
+svgAnimate attributes =
+  Data.htmlElement
+    (NonEmptyString.nes (Proxy :: Proxy "path"))
+    ( Map.fromFoldable
+        [ Tuple.Tuple
+            (NonEmptyString.nes (Proxy :: Proxy "attributeName"))
+            (Just (NonEmptyString.toString attributes.attributeName))
+        , Tuple.Tuple
+            (NonEmptyString.nes (Proxy :: Proxy "dur"))
+            (Just (Prelude.show attributes.dur))
+        , Tuple.Tuple
+            (NonEmptyString.nes (Proxy :: Proxy "repeatCount"))
+            (Just attributes.repeatCount)
+        , Tuple.Tuple
+            (NonEmptyString.nes (Proxy :: Proxy "from"))
+            (Just attributes.from)
+        , Tuple.Tuple
+            (NonEmptyString.nes (Proxy :: Proxy "to"))
+            (Just attributes.to)
+        ]
+    )
+    (Data.ElementList [])
+
+svgG :: { transform :: NonEmptyArray NonEmptyString } -> Array Data.RawHtmlElement -> Data.RawHtmlElement
 svgG attributes elementList =
   Data.htmlElement
     (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "g"))
-    attributes
+    ( Map.fromFoldable
+        [ Tuple.Tuple
+            (NonEmptyString.nes (Proxy :: Proxy "transform"))
+            (Just (NonEmptyString.joinWith " " attributes.transform))
+        ]
+    )
     (Data.ElementList elementList)
 
 classAttribute :: NonEmptyString -> Tuple.Tuple NonEmptyString (Maybe.Maybe String)

@@ -1,6 +1,5 @@
 module TypeScriptEntryPoint
   ( colorFrom
-  , htmlOptionToString
   , japanese
   , english
   , esperanto
@@ -13,17 +12,12 @@ module TypeScriptEntryPoint
 import Color as Color
 import Data.Maybe as Maybe
 import Data.String.NonEmpty.Internal as NonEmptyString
-import Html.Data as HtmlData
-import Html.ToString as HtmlToString
 import Language as Language
 import StructuredUrl as StructuredUrl
 
 -- | 色の作成
 colorFrom :: { r :: Int, g :: Int, b :: Int, a :: Number } -> Color.Color
 colorFrom { r, g, b, a } = Color.rgba r g b a
-
-htmlOptionToString :: HtmlData.HtmlOption -> String
-htmlOptionToString = HtmlToString.htmlOptionToString
 
 japanese :: Language.Language
 japanese = Language.Japanese
