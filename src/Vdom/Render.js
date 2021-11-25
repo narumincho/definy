@@ -5,7 +5,7 @@
  * @param {string} newPageName
  * @returns
  */
-exports.changePageName = (newPageName) => () => {
+exports.changePageName = (newPageName) => {
   window.document.title = newPageName;
 };
 
@@ -31,9 +31,8 @@ const getOrCreateThemeColorMetaElement = () => {
 /**
  *
  * @param {string} newThemeColor
- * @returns
  */
-exports.changeThemeColor = (newThemeColor) => () => {
+exports.changeThemeColor = (newThemeColor) => {
   const themeColorMetaElement = getOrCreateThemeColorMetaElement();
   themeColorMetaElement.content = newThemeColor;
 };
@@ -41,9 +40,8 @@ exports.changeThemeColor = (newThemeColor) => () => {
 /**
  *
  * @param {string | null} newLanguage
- * @returns
  */
-exports.changeLanguage = (newLanguage) => () => {
+exports.changeLanguage = (newLanguage) => {
   if (typeof newLanguage === "string") {
     document.documentElement.lang = newLanguage;
     return;
@@ -54,9 +52,8 @@ exports.changeLanguage = (newLanguage) => () => {
 /**
  *
  * @param {string | null} classNameOrEmpty
- * @returns
  */
-exports.changeBodyClass = (classNameOrEmpty) => () => {
+exports.changeBodyClass = (classNameOrEmpty) => {
   if (classNameOrEmpty === null) {
     document.body.removeAttribute("class");
     return;
@@ -69,19 +66,20 @@ exports.getBodyElement = () => {
 };
 
 /**
+ *
  * @param {string} text
- * @returns {(htmlOrSvgElement: HTMLElement | SVGElement) => () => void}
+ * @param {HTMLElement | SVGElement} htmlOrSvgElement
  */
-exports.setTextContent = (text) => (htmlOrSvgElement) => () => {
+exports.setTextContent = (text, htmlOrSvgElement) => {
   htmlOrSvgElement.textContent = text;
 };
 
 /**
  *
  * @param {{id: string | null, class: string | null}} option
- * @returns
+ * @returns {HTMLElement | SVGElement}
  */
-exports.createDiv = (option) => () => {
+exports.createDiv = (option) => {
   const div = window.document.createElement("div");
   if (typeof option.id === "string") {
     div.id = option.id;
@@ -95,9 +93,9 @@ exports.createDiv = (option) => () => {
 /**
  *
  * @param {{id: string | null, class: string | null}} option
- * @returns
+ * @returns {HTMLElement | SVGElement}
  */
-exports.createH1 = (option) => () => {
+exports.createH1 = (option) => {
   const headingElement = window.document.createElement("h1");
   if (typeof option.id === "string") {
     headingElement.id = option.id;
@@ -111,9 +109,9 @@ exports.createH1 = (option) => () => {
 /**
  *
  * @param {{id: string | null, class: string | null}} option
- * @returns
+ * @returns {HTMLElement | SVGElement}
  */
-exports.createH2 = (option) => () => {
+exports.createH2 = (option) => {
   const headingElement = window.document.createElement("h2");
   if (typeof option.id === "string") {
     headingElement.id = option.id;
@@ -127,9 +125,9 @@ exports.createH2 = (option) => () => {
 /**
  *
  * @param {{id: string | null, class: string | null, href : string}} option
- * @returns
+ * @returns {HTMLElement | SVGElement}
  */
-exports.createA = (option) => () => {
+exports.createA = (option) => {
   const anchorElement = window.document.createElement("a");
   if (typeof option.id === "string") {
     anchorElement.id = option.id;
@@ -144,9 +142,9 @@ exports.createA = (option) => () => {
 /**
  *
  * @param {{id: string | null, class: string | null}} option
- * @returns
+ * @returns {HTMLElement | SVGElement}
  */
-exports.createButton = (option) => () => {
+exports.createButton = (option) => {
   const button = window.document.createElement("button");
   if (typeof option.id === "string") {
     button.id = option.id;
@@ -161,9 +159,9 @@ exports.createButton = (option) => () => {
 /**
  *
  * @param {{id: string | null, class: string | null, alt : string, src : string}} option
- * @returns
+ * @returns {HTMLElement | SVGElement}
  */
-exports.createImg = (option) => () => {
+exports.createImg = (option) => {
   const image = window.document.createElement("img");
   if (typeof option.id === "string") {
     image.id = option.id;
@@ -179,9 +177,9 @@ exports.createImg = (option) => () => {
 /**
  *
  * @param {{id: string | null, class: string | null, checked : boolean, name :string}} option
- * @returns
+ * @returns {HTMLElement | SVGElement}
  */
-exports.createInputRadio = (option) => () => {
+exports.createInputRadio = (option) => {
   const input = window.document.createElement("input");
   input.type = "radio";
   if (typeof option.id === "string") {
@@ -198,9 +196,9 @@ exports.createInputRadio = (option) => () => {
 /**
  *
  * @param {{id : string | null, class: string | null, readonly : boolean, value : string}} option
- * @returns
+ * @returns {HTMLElement | SVGElement}
  */
-exports.createInputText = (option) => () => {
+exports.createInputText = (option) => {
   const input = window.document.createElement("input");
   input.type = "text";
   if (typeof option.id === "string") {
@@ -217,17 +215,17 @@ exports.createInputText = (option) => () => {
 /**
  *
  * @param {HTMLElement | SVGElement} parent
- * @returns {(child: HTMLElement | SVGElement) => () => void}
+ * @param {HTMLElement | SVGElement} child
  */
-exports.appendChild = (parent) => (child) => () => {
+exports.appendChild = (parent, child) => {
   parent.appendChild(child);
 };
 
 /**
  *
  * @param {HTMLElement | SVGElement} element
- * @returns {(path: string) => () => void}
+ * @param {string} path
  */
-exports.setDataPath = (element) => (path) => () => {
+exports.setDataPath = (element, path) => {
   element.dataset.dPath = path;
 };
