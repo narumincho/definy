@@ -1,4 +1,3 @@
-import * as apiCodec from "../common/apiCodec";
 import * as commonUrl from "../common/url";
 import * as core from "../core/main";
 import * as crypto from "crypto";
@@ -10,6 +9,7 @@ import * as jsonWebToken from "jsonwebtoken";
 import * as stream from "stream";
 import type * as typedFirestore from "typed-admin-firestore";
 import * as util from "../core/util";
+import { ApiCodecType, GetCodecType } from "../common/apiCodec";
 import { Timestamp, getFirestore } from "firebase-admin/firestore";
 import axios, { AxiosResponse } from "axios";
 import { fileTypeImagePng, fileTypeToMimeType } from "../gen/fileType/main";
@@ -473,12 +473,10 @@ const getAccountByAccountToken = async (
   });
 };
 
-type ApiCodecType = typeof apiCodec;
-
 export const apiFunc: {
   [apiName in keyof ApiCodecType]: (
-    request: apiCodec.GetCodecType<ApiCodecType[apiName]["request"]>
-  ) => Promise<apiCodec.GetCodecType<ApiCodecType[apiName]["response"]>>;
+    request: GetCodecType<ApiCodecType[apiName]["request"]>
+  ) => Promise<GetCodecType<ApiCodecType[apiName]["response"]>>;
 } = {
   requestLogInUrl: async (requestLogInUrlRequestData) => {
     const state = createRandomId();
