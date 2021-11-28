@@ -214,6 +214,41 @@ exports.createInputText = (option) => {
 
 /**
  *
+ * @param {{id : string | null, class: string | null, readonly : boolean, value : string}} option
+ * @returns {HTMLElement | SVGElement}
+ */
+exports.createTextArea = (option) => {
+  const input = window.document.createElement("textarea");
+  if (typeof option.id === "string") {
+    input.id = option.id;
+  }
+  if (typeof option.class === "string") {
+    input.className = option.class;
+  }
+  input.readOnly = option.readonly;
+  input.value = option.value;
+  return input;
+};
+
+/**
+ *
+ * @param {{id : string | null, class: string | null, for : string}} option
+ * @returns {HTMLElement | SVGElement}
+ */
+exports.createLabel = (option) => {
+  const label = window.document.createElement("label");
+  if (typeof option.id === "string") {
+    label.id = option.id;
+  }
+  if (typeof option.class === "string") {
+    label.className = option.class;
+  }
+  label.htmlFor = option.for;
+  return label;
+};
+
+/**
+ *
  * @param {HTMLElement | SVGElement} parent
  * @param {HTMLElement | SVGElement} child
  */
