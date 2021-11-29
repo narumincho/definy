@@ -158,7 +158,7 @@ data Element message
   | ElementLabel (Label message)
   | ElementSvg (Svg message)
   | ElementSvgPath SvgPath
-  | ElementSvgCircle SvgCircle
+  | ElementSvgCircle (SvgCircle message)
   | ElementSvgAnimate SvgAnimate
   | ElementSvgG (SvgG message)
 
@@ -193,7 +193,7 @@ data ElementUpdateDiff message
   | ElementUpdateDiffLabelDiff (LabelDiff message)
   | ElementUpdateDiffSvgDiff (SvgDiff message)
   | ElementUpdateDiffSvgPathDiff SvgPathDiff
-  | ElementUpdateDiffSvgCircleDiff SvgCircleDiff
+  | ElementUpdateDiffSvgCircleDiff (SvgCircleDiff message)
   | ElementUpdateDiffSvgAnimateDiff SvgAnimateDiff
 
 newtype Div message
@@ -527,7 +527,8 @@ svgPathDiff key = case _ of
   { id: Maybe.Nothing, class: Maybe.Nothing, d: Maybe.Nothing, fill: Maybe.Nothing } -> Skip
   rec -> Update { elementUpdateDiff: ElementUpdateDiffSvgPathDiff (SvgPathDiff rec), key }
 
-newtype SvgCircle
+newtype SvgCircle :: Type -> Type
+newtype SvgCircle message
   = SvgCircle
   { id :: Maybe NonEmptyString
   , class :: Maybe NonEmptyString
@@ -536,13 +537,14 @@ newtype SvgCircle
   , cx :: Number
   , cy :: Number
   , r :: Number
-  , children :: Array (Tuple.Tuple String (Element Prelude.Void))
+  , children :: Array (Tuple.Tuple String (Element message))
   }
 
-newtype SvgCircleDiff
-  = SvgCircleDiff SvgCircleDiffRec
+newtype SvgCircleDiff :: Type -> Type
+newtype SvgCircleDiff message
+  = SvgCircleDiff (SvgCircleDiffRec message)
 
-type SvgCircleDiffRec
+type SvgCircleDiffRec message
   = { id :: Maybe (Maybe NonEmptyString)
     , class :: Maybe (Maybe NonEmptyString)
     , fill :: Maybe Color.Color
@@ -550,10 +552,10 @@ type SvgCircleDiffRec
     , cx :: Maybe.Maybe Number
     , cy :: Maybe.Maybe Number
     , r :: Maybe.Maybe Number
-    , children :: ChildrenDiff Prelude.Void
+    , children :: ChildrenDiff message
     }
 
-svgCircleDiff :: forall message. String -> SvgCircleDiffRec -> ElementDiff message
+svgCircleDiff :: forall message. String -> SvgCircleDiffRec message -> ElementDiff message
 svgCircleDiff key = case _ of
   { id: Maybe.Nothing
   , class: Maybe.Nothing

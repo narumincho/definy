@@ -131,45 +131,54 @@ elementToHtmlOrSvgElementWithoutDataPath { element, path, renderState } = case e
     applyChildren { htmlOrSvgElement: label, children: rec.children, path, renderState }
     pure label
   Vdom.ElementSvg (Vdom.Svg rec) -> do
-    div <-
-      EffectUncurried.runEffectFn1 createDiv
+    svg <-
+      EffectUncurried.runEffectFn1 createSvg
         { id: Nullable.toNullable (map NonEmptyString.toString rec.id)
         , class: Nullable.toNullable (map NonEmptyString.toString rec.class)
+        , viewBoxX: rec.viewBoxX
+        , viewBoxY: rec.viewBoxY
+        , viewBoxWidth: rec.viewBoxWidth
+        , viewBoxHeight: rec.viewBoxHeight
         }
-    applyChildren { htmlOrSvgElement: div, children: Vdom.ChildrenText "notSupported", path: path, renderState }
-    pure div
-  Vdom.ElementSvgPath (Vdom.SvgPath rec) -> do
-    div <-
-      EffectUncurried.runEffectFn1 createDiv
-        { id: Nullable.toNullable (map NonEmptyString.toString rec.id)
-        , class: Nullable.toNullable (map NonEmptyString.toString rec.class)
-        }
-    applyChildren { htmlOrSvgElement: div, children: Vdom.ChildrenText "notSupported", path: path, renderState }
-    pure div
+    applyChildList { htmlOrSvgElement: svg, childList: rec.children, path, renderState }
+    pure svg
+  Vdom.ElementSvgPath (Vdom.SvgPath rec) ->
+    EffectUncurried.runEffectFn1 createSvgPath
+      { id: Nullable.toNullable (map NonEmptyString.toString rec.id)
+      , class: Nullable.toNullable (map NonEmptyString.toString rec.class)
+      , d: rec.d
+      , fill: Color.toHexString rec.fill
+      }
   Vdom.ElementSvgCircle (Vdom.SvgCircle rec) -> do
-    div <-
-      EffectUncurried.runEffectFn1 createDiv
+    svgCircle <-
+      EffectUncurried.runEffectFn1 createSvgCircle
         { id: Nullable.toNullable (map NonEmptyString.toString rec.id)
         , class: Nullable.toNullable (map NonEmptyString.toString rec.class)
+        , fill: Color.toHexString rec.fill
+        , stroke: Color.toHexString rec.stroke
+        , cx: rec.cx
+        , cy: rec.cy
+        , r: rec.r
         }
-    applyChildren { htmlOrSvgElement: div, children: Vdom.ChildrenText "notSupported", path: path, renderState }
-    pure div
-  Vdom.ElementSvgAnimate (Vdom.SvgAnimate _) -> do
-    div <-
-      EffectUncurried.runEffectFn1 createDiv
+    applyChildList { htmlOrSvgElement: svgCircle, childList: rec.children, path, renderState }
+    pure svgCircle
+  Vdom.ElementSvgAnimate (Vdom.SvgAnimate rec) ->
+    EffectUncurried.runEffectFn1 createSvgAnimate
+      { attributeName: NonEmptyString.toString rec.attributeName
+      , dur: rec.dur
+      , repeatCount: rec.repeatCount
+      , from: rec.from
+      , to: rec.to
+      }
+  Vdom.ElementSvgG (Vdom.SvgG rec) -> do
+    svgG <-
+      EffectUncurried.runEffectFn1 createSvgG
         { id: Nullable.null
         , class: Nullable.null
+        , transform: NonEmptyString.joinWith " " rec.transform
         }
-    applyChildren { htmlOrSvgElement: div, children: Vdom.ChildrenText "notSupported", path: path, renderState }
-    pure div
-  Vdom.ElementSvgG (Vdom.SvgG _) -> do
-    div <-
-      EffectUncurried.runEffectFn1 createDiv
-        { id: Nullable.null
-        , class: Nullable.null
-        }
-    applyChildren { htmlOrSvgElement: div, children: Vdom.ChildrenText "notSupported", path: path, renderState }
-    pure div
+    applyChildList { htmlOrSvgElement: svgG, childList: rec.children, path, renderState }
+    pure svgG
 
 -- | HTMLElment か SVGElement の子要素を設定する
 applyChildren ::
@@ -186,16 +195,32 @@ applyChildren = case _ of
       text
       htmlOrSvgElement
   { htmlOrSvgElement, children: Vdom.ChildrenElementList list, path, renderState } ->
-    Effect.foreachE (NonEmptyArray.toArray list)
-      ( \(Tuple.Tuple key child) -> do
-          element <-
-            elementToHtmlOrSvgElement
-              { element: child
-              , path: Vdom.pathAppendKey path key
-              , renderState
-              }
-          EffectUncurried.runEffectFn2 appendChild htmlOrSvgElement element
-      )
+    applyChildList
+      { htmlOrSvgElement
+      , childList: NonEmptyArray.toArray list
+      , path
+      , renderState
+      }
+
+applyChildList ::
+  forall message.
+  { htmlOrSvgElement :: HtmlOrSvgElement
+  , childList :: Array (Tuple.Tuple String (Vdom.Element message))
+  , path :: Vdom.Path
+  , renderState :: RenderState.RenderState message
+  } ->
+  Effect.Effect Unit
+applyChildList { htmlOrSvgElement, childList, path, renderState } =
+  Effect.foreachE childList
+    ( \(Tuple.Tuple key child) -> do
+        element <-
+          elementToHtmlOrSvgElement
+            { element: child
+            , path: Vdom.pathAppendKey path key
+            , renderState
+            }
+        EffectUncurried.runEffectFn2 appendChild htmlOrSvgElement element
+    )
 
 -- | HTMLElment か SVGElement の子要素に対して差分データの分を反映する
 renderChildren :: forall message. { htmlOrSvgElement :: HtmlOrSvgElement, childrenDiff :: Vdom.ChildrenDiff message, renderState :: RenderState.RenderState message, path :: Vdom.Path } -> Effect.Effect Unit
@@ -356,6 +381,56 @@ foreign import createLabel ::
     { id :: Nullable String
     , class :: Nullable String
     , for :: String
+    }
+    HtmlOrSvgElement
+
+foreign import createSvg ::
+  EffectUncurried.EffectFn1
+    { id :: Nullable String
+    , class :: Nullable String
+    , viewBoxX :: Number
+    , viewBoxY :: Number
+    , viewBoxWidth :: Number
+    , viewBoxHeight :: Number
+    }
+    HtmlOrSvgElement
+
+foreign import createSvgPath ::
+  EffectUncurried.EffectFn1
+    { id :: Nullable String
+    , class :: Nullable String
+    , d :: String
+    , fill :: String
+    }
+    HtmlOrSvgElement
+
+foreign import createSvgCircle ::
+  EffectUncurried.EffectFn1
+    { id :: Nullable String
+    , class :: Nullable String
+    , fill :: String
+    , stroke :: String
+    , cx :: Number
+    , cy :: Number
+    , r :: Number
+    }
+    HtmlOrSvgElement
+
+foreign import createSvgAnimate ::
+  EffectUncurried.EffectFn1
+    { attributeName :: String
+    , dur :: Number
+    , repeatCount :: String
+    , from :: String
+    , to :: String
+    }
+    HtmlOrSvgElement
+
+foreign import createSvgG ::
+  EffectUncurried.EffectFn1
+    { id :: Nullable String
+    , class :: Nullable String
+    , transform :: String
     }
     HtmlOrSvgElement
 
