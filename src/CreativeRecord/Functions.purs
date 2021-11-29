@@ -4,7 +4,7 @@ import CreativeRecord.ClientProgramHashValue as ClientProgramHashValue
 import CreativeRecord.Location as Location
 import CreativeRecord.View as CreativeRecordView
 import Data.Map as Map
-import Data.String.NonEmpty as NonEmptyString
+import Data.Maybe (Maybe(..))
 import Firebase.Functions as Functions
 import Html.ToString as HtmlToString
 import MediaType as MediaType
@@ -18,17 +18,27 @@ html =
   Functions.onRequest
     ( \pathAndSearchParams ->
         Prelude.pure
-          { body:
-              HtmlToString.toString
-                ( VdomToHtml.toHtml
-                    ( ViewToVdom.toVdom
-                        ( StructuredUrl.pathAndSearchParams
-                            [ ClientProgramHashValue.clientProgramHashValue ]
-                            Map.empty
-                        )
-                        (CreativeRecordView.view (Location.fromPath pathAndSearchParams))
-                    )
-                )
-          , mimeType: NonEmptyString.toString MediaType.htmlMimeType
-          }
+          ( let
+              locationMaybe :: Maybe Location.Location
+              locationMaybe = Location.fromPath pathAndSearchParams
+            in
+              Functions.Response
+                { body:
+                    HtmlToString.toString
+                      ( VdomToHtml.toHtml
+                          ( ViewToVdom.toVdom
+                              ( StructuredUrl.pathAndSearchParams
+                                  [ ClientProgramHashValue.clientProgramHashValue ]
+                                  Map.empty
+                              )
+                              (CreativeRecordView.view locationMaybe)
+                          )
+                      )
+                , mediaTypeMaybe: Just MediaType.Html
+                , status:
+                    case locationMaybe of
+                      Just _ -> Functions.Ok
+                      Nothing -> Functions.NotFound
+                }
+          )
     )
