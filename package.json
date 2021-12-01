@@ -60,6 +60,7 @@
     "npm-check-updates": "12.0.2",
     "prettier": "2.5.0",
     "purescript": "0.14.5",
+    "purty": "7.0.0",
     "react": "17.0.2",
     "react-dom": "17.0.2",
     "sha256-uint8array": "0.10.3",

@@ -1,3 +1,10 @@
 {
-  "typescript.tsdk": "node_modules/typescript/lib"
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": true
+  },
+  "purescript.addNpmPath": true,
+  "[purescript]": {
+    "editor.defaultFormatter": "mvakula.vscode-purty"
+  }
 }
