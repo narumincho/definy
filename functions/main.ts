@@ -1,7 +1,7 @@
-import * as apiCodec from "../common/apiCodec";
 import * as commonUrl from "../common/url";
 import * as functions from "firebase-functions";
 import * as lib from "./lib";
+import { ApiCodec, apiCodec } from "../common/apiCodec";
 import { fileTypeImagePng, fileTypeToMimeType } from "../gen/fileType/main";
 import { html as genHtml } from "../gen/main";
 import { generateHtml } from "./html";
@@ -61,7 +61,7 @@ export const api = functions
 const callApiFromCodecAndFunction = async <Request, Response>(
   apiName: string,
   binary: Uint8Array,
-  codec: apiCodec.ApiCodec<Request, Response>,
+  codec: ApiCodec<Request, Response>,
   func: (request: Request) => Promise<Response>
 ): Promise<ReadonlyArray<number>> => {
   const request: Request = codec.request.decode(0, binary).result;
@@ -85,7 +85,7 @@ const callApiFunction = (
       return callApiFromCodecAndFunction(
         selectedApiName,
         binary,
-        selectedApiCodec as apiCodec.ApiCodec<unknown, unknown>,
+        selectedApiCodec as ApiCodec<unknown, unknown>,
         lib.apiFunc[selectedApiName as keyof typeof apiCodec] as (
           request: unknown
         ) => Promise<unknown>

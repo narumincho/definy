@@ -1,4 +1,4 @@
-module CreativeRecord.Top where
+module CreativeRecord.Page.Top where
 
 import Prelude
 import Color as Color
@@ -138,9 +138,9 @@ copyright =
   View.Text
     { markup: View.None, padding: 8.0, text: "© 2021 narumincho" }
 
-topBox :: View.Box Prelude.Unit
+topBox :: View.Element Prelude.Unit
 topBox =
-  View.Box
+  View.box
     { direction: View.Y
     , gap: 0.0
     , paddingTopBottom: 0.0

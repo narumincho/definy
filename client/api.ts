@@ -1,8 +1,6 @@
-import * as apiCodec from "../common/apiCodec";
 import * as commonUrl from "../common/url";
 import * as d from "../localData";
-
-type ApiCodecType = typeof apiCodec;
+import { ApiCodecType, GetCodecType, apiCodec } from "../common/apiCodec";
 
 /**
  * definyのApi. api[api名](リクエストのデータ) で呼べる. 戻り値の Nothing は fetch が失敗した場合に返す.
@@ -12,13 +10,9 @@ export const api = Object.fromEntries(
   Object.entries(apiCodec).map(([apiName, codec]) => [
     apiName,
     (
-      requestData: apiCodec.GetCodecType<
-        ApiCodecType[keyof ApiCodecType]["request"]
-      >
+      requestData: GetCodecType<ApiCodecType[keyof ApiCodecType]["request"]>
     ): Promise<
-      d.Maybe<
-        apiCodec.GetCodecType<ApiCodecType[keyof ApiCodecType]["response"]>
-      >
+      d.Maybe<GetCodecType<ApiCodecType[keyof ApiCodecType]["response"]>>
     > => {
       console.log(apiName, "request", requestData);
       return fetch(commonUrl.apiUrl(apiName).toString(), {
@@ -46,10 +40,8 @@ export const api = Object.fromEntries(
   ])
 ) as {
   [apiName in keyof ApiCodecType]: (
-    requestData: apiCodec.GetCodecType<ApiCodecType[apiName]["request"]>
-  ) => Promise<
-    d.Maybe<apiCodec.GetCodecType<ApiCodecType[apiName]["response"]>>
-  >;
+    requestData: GetCodecType<ApiCodecType[apiName]["request"]>
+  ) => Promise<d.Maybe<GetCodecType<ApiCodecType[apiName]["response"]>>>;
 };
 
 export const getImageWithCache = (

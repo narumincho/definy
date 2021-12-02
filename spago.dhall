@@ -15,7 +15,6 @@
   , "maybe"
   , "node-buffer"
   , "node-fs-aff"
-  , "node-http"
   , "node-process"
   , "node-streams"
   , "nullable"

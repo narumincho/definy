@@ -5,8 +5,10 @@ module StructuredUrl
   , pathAndSearchParams
   , pathAndSearchParamsToString
   , fromPath
+  , pathAndSearchParamsFromString
   ) where
 
+import Data.Array as Array
 import Data.Map as Map
 import Data.String as String
 import Data.String.NonEmpty as NonEmptyString
@@ -55,3 +57,11 @@ pathAndSearchParamsToString (PathAndSearchParams { path }) =
   NonEmptyString.appendString
     (NonEmptyString.singleton (String.codePointFromChar '/'))
     (NonEmptyString.joinWith "/" path)
+
+pathAndSearchParamsFromString :: String -> PathAndSearchParams
+pathAndSearchParamsFromString str =
+  fromPath
+    ( Array.mapMaybe
+        NonEmptyString.fromString
+        (String.split (String.Pattern "/") str)
+    )

@@ -214,6 +214,147 @@ exports.createInputText = (option) => {
 
 /**
  *
+ * @param {{id : string | null, class: string | null, readonly : boolean, value : string}} option
+ * @returns {HTMLElement | SVGElement}
+ */
+exports.createTextArea = (option) => {
+  const input = window.document.createElement("textarea");
+  if (typeof option.id === "string") {
+    input.id = option.id;
+  }
+  if (typeof option.class === "string") {
+    input.className = option.class;
+  }
+  input.readOnly = option.readonly;
+  input.value = option.value;
+  return input;
+};
+
+/**
+ *
+ * @param {{id : string | null, class: string | null, for : string}} option
+ * @returns {HTMLElement | SVGElement}
+ */
+exports.createLabel = (option) => {
+  const label = window.document.createElement("label");
+  if (typeof option.id === "string") {
+    label.id = option.id;
+  }
+  if (typeof option.class === "string") {
+    label.className = option.class;
+  }
+  label.htmlFor = option.for;
+  return label;
+};
+
+/**
+ *
+ * @param {{id : string | null, class: string | null, viewBoxX: number, viewBoxY: number, viewBoxWidth: number, viewBoxHeight: number}} option
+ * @returns {HTMLElement | SVGElement}
+ */
+exports.createSvg = (option) => {
+  const svg = window.document.createElementNS(
+    "http://www.w3.org/2000/svg",
+    "svg"
+  );
+  if (typeof option.id === "string") {
+    svg.id = option.id;
+  }
+  if (typeof option.class === "string") {
+    svg.classList.add(option.class);
+  }
+  svg.viewBox.baseVal.x = option.viewBoxX;
+  svg.viewBox.baseVal.y = option.viewBoxY;
+  svg.viewBox.baseVal.width = option.viewBoxWidth;
+  svg.viewBox.baseVal.height = option.viewBoxHeight;
+  return svg;
+};
+
+/**
+ *
+ * @param {{id : string | null, class: string | null, d: string, fill: string }} option
+ * @returns {HTMLElement | SVGElement}
+ */
+exports.createSvgPath = (option) => {
+  const svgPath = window.document.createElementNS(
+    "http://www.w3.org/2000/svg",
+    "path"
+  );
+  if (typeof option.id === "string") {
+    svgPath.id = option.id;
+  }
+  if (typeof option.class === "string") {
+    svgPath.classList.add(option.class);
+  }
+  svgPath.setAttribute("d", option.d);
+  svgPath.setAttribute("fill", option.fill);
+  return svgPath;
+};
+
+/**
+ *
+ * @param {{id : string | null, class: string | null, fill: string, stroke: string, cx: number, cy: number, r: number }} option
+ * @returns {HTMLElement | SVGElement}
+ */
+exports.createSvgCircle = (option) => {
+  const svgCircle = window.document.createElementNS(
+    "http://www.w3.org/2000/svg",
+    "circle"
+  );
+  if (typeof option.id === "string") {
+    svgCircle.id = option.id;
+  }
+  if (typeof option.class === "string") {
+    svgCircle.classList.add(option.class);
+  }
+  svgCircle.setAttribute("fill", option.fill);
+  svgCircle.setAttribute("stroke", option.stroke);
+  svgCircle.cx.baseVal.value = option.cx;
+  svgCircle.cy.baseVal.value = option.cy;
+  svgCircle.r.baseVal.value = option.r;
+  return svgCircle;
+};
+
+/**
+ *
+ * @param {{ attributeName: string, dur: number, repeatCount: string, from: string, to: string }} option
+ * @returns {HTMLElement | SVGElement}
+ */
+exports.createSvgAnimate = (option) => {
+  const svgAnimate = window.document.createElementNS(
+    "http://www.w3.org/2000/svg",
+    "animate"
+  );
+  svgAnimate.setAttribute("attributeName", option.attributeName);
+  svgAnimate.setAttribute("dur", option.dur.toString());
+  svgAnimate.setAttribute("repeatCount", option.repeatCount);
+  svgAnimate.setAttribute("from", option.from);
+  svgAnimate.setAttribute("to", option.to);
+  return svgAnimate;
+};
+
+/**
+ *
+ * @param {{ id : string | null, class: string | null, transform: string }} option
+ * @returns {HTMLElement | SVGElement}
+ */
+exports.createSvgG = (option) => {
+  const svgG = window.document.createElementNS(
+    "http://www.w3.org/2000/svg",
+    "g"
+  );
+  if (typeof option.id === "string") {
+    svgG.id = option.id;
+  }
+  if (typeof option.class === "string") {
+    svgG.classList.add(option.class);
+  }
+  svgG.setAttribute("transform", option.transform);
+  return svgG;
+};
+
+/**
+ *
  * @param {HTMLElement | SVGElement} parent
  * @param {HTMLElement | SVGElement} child
  */
