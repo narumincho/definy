@@ -12,11 +12,11 @@ import Type.Proxy as Proxy
 
 -- | definy, ナルミンチョの創作記録で扱う http のレスポンスで返す content-type の値
 data MediaType
-  = Png
-  | JavaScript
-  | Html
-  | Json
-  | WebOpenFontFormat2
+  = {- image/png -} Png
+  | {- text/javascript -} JavaScript
+  | {- text/html -} Html
+  | {- application/json -} Json
+  | {- font/woff2 -} WebOpenFontFormat2
 
 toMimeType :: Maybe.Maybe MediaType -> NonEmptyString.NonEmptyString
 toMimeType = case _ of
