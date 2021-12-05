@@ -24,9 +24,7 @@ import PureScript.Wellknown as PureScriptWellknown
 -- | static な ファイルの解析結果
 newtype StaticResourceFileResult
   = StaticResourceFileResult
-  { {- 
-      入力のファイル名. オリジナルのファイル名
-    -} originalFilePath :: Path.FilePath
+  { {- 入力のファイル名. オリジナルのファイル名 -} originalFilePath :: Path.FilePath
   , fileType :: Maybe.Maybe FileType.FileType
   , fileId :: NonEmptyString.NonEmptyString
   {- 
