@@ -19,18 +19,17 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.execImpl = exports.spawnImpl = exports.unsafeFromNullable = void 0;
+exports.execImpl = exports.spawnImpl = void 0;
 const childProcess = __importStar(require("child_process"));
-const unsafeFromNullable = (msg, x) => {
-    if (x === null)
-        throw new Error(msg);
-    return x;
-};
-exports.unsafeFromNullable = unsafeFromNullable;
 const spawnImpl = (command, args, opts) => {
     console.log("spawn を実行する!", command, args, opts);
     try {
-        return childProcess.spawn(command, args, opts);
+        const childProcessWithoutNullStreams = childProcess.spawn(command, args, opts);
+        return {
+            stdin: childProcessWithoutNullStreams.stdin,
+            stdout: childProcessWithoutNullStreams.stdout,
+            stderr: childProcessWithoutNullStreams.stderr,
+        };
     }
     catch (e) {
         console.error(e);

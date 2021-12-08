@@ -10,7 +10,6 @@
   , "either"
   , "exceptions"
   , "foreign-object"
-  , "functions"
   , "maybe"
   , "node-buffer"
   , "node-fs-aff"
@@ -19,13 +18,11 @@
   , "nullable"
   , "ordered-collections"
   , "parallel"
-  , "posix-types"
   , "prelude"
   , "psci-support"
   , "strings"
   , "tuples"
   , "uint"
-  , "unsafe-coerce"
   ]
 , packages = ./packages.dhall
 , sources = [ "src/**/*.purs" ]

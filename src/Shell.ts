@@ -1,18 +1,27 @@
 import * as childProcess from "child_process";
-
-export const unsafeFromNullable = <T>(msg: string, x: null | T): T => {
-  if (x === null) throw new Error(msg);
-  return x;
-};
+import type { Readable, Writable } from "stream";
 
 export const spawnImpl = (
   command: string,
   args: ReadonlyArray<string>,
   opts: childProcess.SpawnOptionsWithoutStdio
-): childProcess.ChildProcessWithoutNullStreams => {
+): {
+  readonly stdin: Writable;
+  readonly stdout: Readable;
+  readonly stderr: Readable;
+} => {
   console.log("spawn を実行する!", command, args, opts);
   try {
-    return childProcess.spawn(command, args, opts);
+    const childProcessWithoutNullStreams = childProcess.spawn(
+      command,
+      args,
+      opts
+    );
+    return {
+      stdin: childProcessWithoutNullStreams.stdin,
+      stdout: childProcessWithoutNullStreams.stdout,
+      stderr: childProcessWithoutNullStreams.stderr,
+    };
   } catch (e) {
     console.error(e);
     throw new Error(
