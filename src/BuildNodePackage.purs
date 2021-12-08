@@ -5,9 +5,11 @@ import Console as ConsoleValue
 import Data.Array.NonEmpty as NonEmptyArray
 import Data.Either as Either
 import Data.Map as Map
+import Data.Maybe (Maybe(..))
 import Data.Maybe as Maybe
 import Data.Set as Set
 import Data.String.NonEmpty as NonEmptyString
+import Data.Tuple as Tuple
 import Effect as Effect
 import Effect.Aff as Aff
 import Effect.Console as Console
@@ -45,19 +47,27 @@ appName = NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "npm-package")
 mainAff :: Aff.Aff Unit
 mainAff =
   Util.toParallel
-    [ Tsc.compileTs
-        { rootName:
-            Path.FilePath
-              { directoryPath: genDirectoryPath
-              , fileName:
-                  NonEmptyString.nes
-                    (Proxy.Proxy :: Proxy.Proxy "main")
-              }
-        , outDir:
-            Path.DistributionDirectoryPath
-              { appName
-              , folderNameMaybe: Maybe.Nothing
-              }
+    [ Tsc.compile
+        { rootNames:
+            NonEmptyArray.singleton
+              ( Tuple.Tuple
+                  ( Path.FilePath
+                      { directoryPath: genDirectoryPath
+                      , fileName:
+                          NonEmptyString.nes
+                            (Proxy.Proxy :: Proxy.Proxy "main")
+                      }
+                  )
+                  Tsc.Ts
+              )
+        , outDirMaybe:
+            Just
+              ( Path.DistributionDirectoryPath
+                  { appName
+                  , folderNameMaybe: Maybe.Nothing
+                  }
+              )
+        , declaration: true
         }
     , Spago.bundleModule
         { mainModuleName:

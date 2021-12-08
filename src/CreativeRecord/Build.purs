@@ -6,6 +6,7 @@ import Data.Array as Array
 import Data.Array.NonEmpty as NonEmptyArray
 import Data.Either as Either
 import Data.Map as Map
+import Data.Maybe (Maybe(..))
 import Data.Maybe as Maybe
 import Data.Set as Set
 import Data.String.NonEmpty as NonEmptyString
@@ -32,6 +33,7 @@ import PureScript.Wellknown as PureScriptWellknown
 import StaticResourceFile as StaticResourceFile
 import StructuredUrl as StructuredUrl
 import Type.Proxy as Proxy
+import TypeScript.Tsc as Tsc
 import Util as Util
 
 main :: Effect.Effect Unit
@@ -122,14 +124,40 @@ writeCodeClientProgramHashValueAndFunctionBuild clinetProgramHashValue = do
 
 clientProgramBuild :: Aff.Aff Hash.Sha256HashValue
 clientProgramBuild = do
-  runSpagoBundleAppAndLog
+  runTsc
+  runSpagoBundleApp
   runEsbuild
   fileHashValue <- readEsbuildResultClientProgramFile
   Console.logValueAsAff "クライアント向けビルド完了!" { fileHashValue }
   pure fileHashValue
 
-runSpagoBundleAppAndLog :: Aff.Aff Unit
-runSpagoBundleAppAndLog = do
+runTsc :: Aff.Aff Unit
+runTsc = do
+  fileList <- FileSystemRead.readFilePathRecursionInDirectory Path.srcDirectoryPath
+  let
+    rootNames =
+      Array.mapMaybe
+        ( \(Tuple.Tuple filePath fileType) -> case fileType of
+            Just FileType.TypeScript ->
+              Just
+                ( Tuple.Tuple
+                    filePath
+                    Tsc.Ts
+                )
+            _ -> Nothing
+        )
+        fileList
+  case NonEmptyArray.fromArray rootNames of
+    Just rootNamesNonEmpty ->
+      Tsc.compile
+        { rootNames: rootNamesNonEmpty
+        , outDirMaybe: Nothing
+        , declaration: false
+        }
+    Nothing -> Console.logValueAsAff "Tscするファイルがなかった..." unit
+
+runSpagoBundleApp :: Aff.Aff Unit
+runSpagoBundleApp = do
   Spago.bundleApp
     { mainModuleName:
         PureScriptData.ModuleName

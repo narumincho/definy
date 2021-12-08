@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
 /* eslint-disable @typescript-eslint/no-var-requires */
 /**
- * @param {{rootName: string, outDir: string }} option
+ * @param {{rootNames: ReadonlyArray<string>, outDir: string | null, declaration: boolean }} option
  * @returns {(onError: (error: Error) => void, onSuccess: () => void) => (cancelError: () => void, cancelerError: () => void, cancelerSuccess: () => void) => void}
  */
 exports.compileAsEffectFnAff = (option) => {
@@ -10,7 +10,7 @@ exports.compileAsEffectFnAff = (option) => {
   return (onError, onSuccess) => {
     typeScript
       .createProgram({
-        rootNames: [option.rootName],
+        rootNames: option.rootNames,
         options: {
           target: typeScript.ScriptTarget.ES2020,
           lib: ["ES2020", "DOM"],
@@ -23,9 +23,9 @@ exports.compileAsEffectFnAff = (option) => {
           skipLibCheck: true,
           noUncheckedIndexedAccess: true,
           newLine: typeScript.NewLineKind.LineFeed,
-          outDir: option.outDir,
+          outDir: typeof option.outDir === "string" ? option.outDir : undefined,
           exactOptionalPropertyTypes: true,
-          declaration: true,
+          declaration: option.declaration,
         },
       })
       .emit();

@@ -5,7 +5,6 @@ module StaticResourceFile
   ) where
 
 import Prelude
-import Control.Parallel as Parallel
 import Data.Maybe as Maybe
 import Data.String as String
 import Data.String.NonEmpty as NonEmptyString
@@ -20,6 +19,7 @@ import Hash as Hash
 import MediaType as MediaType
 import PureScript.Data as PureScriptData
 import PureScript.Wellknown as PureScriptWellknown
+import Util as Util
 
 -- | static な ファイルの解析結果
 newtype StaticResourceFileResult
@@ -67,7 +67,7 @@ getStaticResourceFileResult directoryPath =
   in
     do
       filePathList <- filePathListAff
-      ( Parallel.parSequence
+      ( Util.toParallelWithReturn
           ( map
               ( \(Tuple.Tuple filePath fileTypeMaybe) ->
                   filePathToStaticResourceFileResultAff filePath fileTypeMaybe

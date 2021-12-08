@@ -1,21 +1,22 @@
 module FileSystem.Path
-  ( DistributionDirectoryPath(..)
+  ( DirectoryPath(..)
+  , DistributionDirectoryPath(..)
   , DistributionFilePath(..)
-  , DirectoryPath(..)
   , FilePath(..)
-  , filePathGetFileName
-  , fileNameWithExtensitonParse
+  , directoryPathPushDirectoryNameList
+  , directoryPathToString
+  , distributionDirectoryPathToDirectoryPath
   , distributionDirectoryPathToString
+  , distributionDirectoryPathToStringBaseApp
   , distributionFilePathToDirectoryPath
   , distributionFilePathToFilePath
   , distributionFilePathToString
-  , distributionFilePathToStringWithoutExtensiton
-  , directoryPathPushDirectoryNameList
-  , directoryPathToString
-  , filePathToString
   , distributionFilePathToStringBaseApp
-  , distributionDirectoryPathToStringBaseApp
-  , distributionDirectoryPathToDirectoryPath
+  , distributionFilePathToStringWithoutExtensiton
+  , fileNameWithExtensitonParse
+  , filePathGetFileName
+  , filePathToString
+  , srcDirectoryPath
   ) where
 
 import Data.Array as Array
@@ -159,3 +160,8 @@ distributionDirectoryPathToStringBaseApp (DistributionDirectoryPath { folderName
         Maybe.Just filderName -> Prelude.append (NonEmptyString.toString filderName) "/"
         Maybe.Nothing -> ""
     )
+
+srcDirectoryPath :: DirectoryPath
+srcDirectoryPath =
+  DirectoryPath
+    [ NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "src") ]
