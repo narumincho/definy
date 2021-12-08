@@ -23,6 +23,8 @@ export const Header: React.VFC<Props> = React.memo((props) => {
   return (
     <div
       className={css({
+        gridColumn: "1 / 2",
+        gridRow: "1 / 2",
         width: "100%",
         height: 48,
         backgroundColor: "#333",

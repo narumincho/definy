@@ -36,6 +36,7 @@ export const HomePage: React.VFC<Props> = (props) => {
         padding: 16,
         width: "100%",
         height: "100%",
+        overflow: "hidden",
       })}
     >
       <HomeLinkList jumpHandler={props.onJump} language={props.language} />
@@ -162,6 +163,7 @@ const TopProjectList: React.VFC<
             gridColumn: "1 / 2",
             gridRow: "2 / 3",
             height: "100%",
+            overflow: "hidden",
           })}
         >
           <Editor

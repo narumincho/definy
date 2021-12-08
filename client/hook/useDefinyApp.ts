@@ -1,7 +1,8 @@
 import * as d from "../../localData";
 import * as indexedDB from "../indexedDB";
+import { AddMessage, useNotification } from "./useNotification";
+import { ReactElement, useCallback, useEffect, useMemo, useState } from "react";
 import { locationAndLanguageToUrl, urlToUrlData } from "../../common/url";
-import { useCallback, useEffect, useMemo, useState } from "react";
 import type { TypePartIdAndMessage } from "../../core/TypePartIdAndMessage";
 import { api } from "../api";
 import { generateTypeScriptCode } from "../../core/main";
@@ -179,6 +180,11 @@ export type UseDefinyAppResult = {
    * *no-side-effect*
    */
   readonly outputCode: OutputCode;
+
+  /**
+   * 通知の表示
+   */
+  readonly notificationElement: ReactElement;
 };
 
 export type OutputCode =
@@ -217,9 +223,7 @@ const getIdFunc = <Id>(item: { id: Id }): Id => item.id;
  *
  * 想定する環境は ブラウザで, Reactを使用する. node.js 内ではたぶん動かない
  */
-export const useDefinyApp = (
-  option: UseDefinyAppOption
-): UseDefinyAppResult => {
+export const useDefinyApp = (): UseDefinyAppResult => {
   const [topProjectsLoadingState, setTopProjectsLoadingState] =
     useState<TopProjectsLoadingState>({ _: "none" });
   const [locationAndLanguage, setLocationAndLanguage] =
@@ -242,6 +246,7 @@ export const useDefinyApp = (
   const [outputCode, setOutputCode] = useState<OutputCode>({
     tag: "notGenerated",
   });
+  const { addMessage, element: notificationElement } = useNotification();
 
   /**
    * ページを移動する
@@ -276,10 +281,10 @@ export const useDefinyApp = (
       })
       .then((response) => {
         if (response._ === "Nothing") {
-          option.notificationMessageHandler(
-            "ログインURL取得に失敗しました",
-            "error"
-          );
+          addMessage({
+            text: "ログインURL取得に失敗しました",
+            type: "error",
+          });
           return;
         }
         setLogInState(d.LogInState.JumpingToLogInPage);
@@ -287,7 +292,7 @@ export const useDefinyApp = (
           window.location.href = response.value;
         });
       });
-  }, [locationAndLanguage, option]);
+  }, [locationAndLanguage, addMessage]);
 
   const logOut = useCallback(() => {
     indexedDB.deleteAccountToken();
@@ -296,8 +301,8 @@ export const useDefinyApp = (
       language: locationAndLanguage.language,
       location: d.Location.Home,
     });
-    option.notificationMessageHandler("ログアウトしました", "success");
-  }, [jump, option, locationAndLanguage.language]);
+    addMessage({ text: "ログアウトしました", type: "success" });
+  }, [jump, locationAndLanguage.language, addMessage]);
 
   const getAccountToken = useCallback((): d.AccountToken | undefined => {
     switch (logInState._) {
@@ -310,17 +315,17 @@ export const useDefinyApp = (
     (projectName: string): void => {
       const accountToken = getAccountToken();
       if (accountToken === undefined) {
-        option.notificationMessageHandler(
-          "ログインしていない状態でプロジェクトを作ることはできない",
-          "error"
-        );
+        addMessage({
+          text: "ログインしていない状態でプロジェクトを作ることはできない",
+          type: "error",
+        });
         return;
       }
       if (createProjectState._ === "creating") {
-        option.notificationMessageHandler(
-          "プロジェクト作成中にさらにプロジェクトを作成することはできない",
-          "error"
-        );
+        addMessage({
+          text: "プロジェクト作成中にさらにプロジェクトを作成することはできない",
+          type: "error",
+        });
         return;
       }
       setCreateProjectState({ _: "creating", name: projectName });
@@ -332,16 +337,16 @@ export const useDefinyApp = (
         .then((response) => {
           setCreateProjectState({ _: "none" });
           if (response._ === "Nothing" || response.value._ === "Nothing") {
-            option.notificationMessageHandler(
-              "プロジェクト作成に失敗しました",
-              "error"
-            );
+            addMessage({
+              text: "プロジェクト作成に失敗しました",
+              type: "error",
+            });
             return;
           }
-          option.notificationMessageHandler(
-            `プロジェクト「${response.value.value.name}」を作成しました`,
-            "success"
-          );
+          addMessage({
+            text: `プロジェクト「${response.value.value.name}」を作成しました`,
+            type: "success",
+          });
           jump({
             language: locationAndLanguage.language,
             location: d.Location.Project(response.value.value.id),
@@ -350,10 +355,10 @@ export const useDefinyApp = (
     },
     [
       getAccountToken,
-      createProjectState,
-      locationAndLanguage.language,
+      createProjectState._,
+      addMessage,
       jump,
-      option,
+      locationAndLanguage.language,
     ]
   );
 
@@ -361,10 +366,10 @@ export const useDefinyApp = (
     setTopProjectsLoadingState({ _: "loading" });
     api.getTop50Project(undefined).then((response) => {
       if (response._ === "Nothing") {
-        option.notificationMessageHandler(
-          "プロジェクト一覧取得に失敗しました",
-          "error"
-        );
+        addMessage({
+          text: "プロジェクト一覧取得に失敗しました",
+          type: "error",
+        });
         return;
       }
       projectDict.setLoadedList(response.value.data, response.value.getTime);
@@ -373,7 +378,7 @@ export const useDefinyApp = (
         projectIdList: response.value.data.map((project) => project.id),
       });
     });
-  }, [option, projectDict]);
+  }, [addMessage, projectDict]);
 
   useEffect(() => {
     document.title =
@@ -400,7 +405,7 @@ export const useDefinyApp = (
           setLogInState,
           accountToken,
           accountDict.setLoaded,
-          option.notificationMessageHandler
+          addMessage
         );
       });
       return;
@@ -410,10 +415,10 @@ export const useDefinyApp = (
       setLogInState,
       urlData.codeAndState,
       accountDict.setLoaded,
-      option.notificationMessageHandler,
+      addMessage,
       replace
     );
-  }, [accountDict.setLoaded, option.notificationMessageHandler]);
+  }, [accountDict.setLoaded, addMessage]);
 
   const projectResource: Resource<d.ProjectId, d.Project> = useMemo(
     () => ({
@@ -425,18 +430,18 @@ export const useDefinyApp = (
         projectDict.setRequesting(projectId);
         api.getProject(projectId).then((response) => {
           if (response._ === "Nothing") {
-            option.notificationMessageHandler(
-              "プロジェクトの取得に失敗しました",
-              "error"
-            );
+            addMessage({
+              text: "プロジェクトの取得に失敗しました",
+              type: "error",
+            });
             projectDict.setUnknown(projectId);
             return;
           }
           if (response.value.data._ === "Nothing") {
-            option.notificationMessageHandler(
-              "プロジェクトが存在しなかった",
-              "error"
-            );
+            addMessage({
+              text: "プロジェクトが存在しなかった",
+              type: "error",
+            });
             projectDict.setDeleted(projectId, response.value.getTime);
             return;
           }
@@ -455,7 +460,7 @@ export const useDefinyApp = (
         projectResource.forciblyRequestToServer(projectId);
       },
     }),
-    [option, projectDict]
+    [addMessage, projectDict]
   );
 
   const accountResource: Resource<d.AccountId, d.Account> = useMemo(
@@ -468,18 +473,18 @@ export const useDefinyApp = (
         accountDict.setRequesting(accountId);
         api.getAccount(accountId).then((response) => {
           if (response._ === "Nothing") {
-            option.notificationMessageHandler(
-              "プロジェクトの取得に失敗しました",
-              "error"
-            );
+            addMessage({
+              text: "プロジェクトの取得に失敗しました",
+              type: "error",
+            });
             accountDict.setUnknown(accountId);
             return;
           }
           if (response.value.data._ === "Nothing") {
-            option.notificationMessageHandler(
-              "プロジェクトが存在しなかった",
-              "error"
-            );
+            addMessage({
+              text: "プロジェクトが存在しなかった",
+              type: "error",
+            });
             accountDict.setDeleted(accountId, response.value.getTime);
             return;
           }
@@ -498,24 +503,21 @@ export const useDefinyApp = (
         accountResource.forciblyRequestToServer(accountId);
       },
     }),
-    [accountDict, option]
+    [accountDict, addMessage]
   );
 
   const addTypePart = useCallback(
     (projectId: d.ProjectId): void => {
       const accountToken = getAccountToken();
       if (accountToken === undefined) {
-        option.notificationMessageHandler(
-          "ログインしていない状態で型パーツを作ることはできない",
-          "error"
-        );
+        addMessage({
+          text: "ログインしていない状態で型パーツを作ることはできない",
+          type: "error",
+        });
         return;
       }
       if (createTypePartState.tag === "creating") {
-        option.notificationMessageHandler(
-          "型パーツ作成は同時にできない",
-          "error"
-        );
+        addMessage({ text: "型パーツ作成は同時にできない", type: "error" });
         return;
       }
       setCreateTypePartState({ tag: "creating", projectId });
@@ -527,16 +529,13 @@ export const useDefinyApp = (
         .then((response) => {
           setCreateTypePartState({ tag: "none" });
           if (response._ === "Nothing" || response.value.data._ === "Nothing") {
-            option.notificationMessageHandler(
-              "型パーツ作成に失敗しました",
-              "error"
-            );
+            addMessage({ text: "型パーツ作成に失敗しました", type: "error" });
             return;
           }
-          option.notificationMessageHandler(
-            `型パーツ 「${response.value.data.value.name}」を作成しました`,
-            "success"
-          );
+          addMessage({
+            text: `型パーツ 「${response.value.data.value.name}」を作成しました`,
+            type: "success",
+          });
           jump({
             language: locationAndLanguage.language,
             location: d.Location.TypePart(response.value.data.value.id),
@@ -544,10 +543,10 @@ export const useDefinyApp = (
         });
     },
     [
-      createTypePartState.tag,
       getAccountToken,
+      createTypePartState.tag,
+      addMessage,
       jump,
-      option,
       locationAndLanguage.language,
     ]
   );
@@ -566,10 +565,10 @@ export const useDefinyApp = (
               response.value.data._ === "Nothing"
             ) {
               typePartIdListInProjectDict.setUnknown(projectId);
-              option.notificationMessageHandler(
-                "プロジェクトに属している型パーツ一覧の取得に失敗しました",
-                "error"
-              );
+              addMessage({
+                text: "プロジェクトに属している型パーツ一覧の取得に失敗しました",
+                type: "error",
+              });
               return;
             }
             console.log("typePartList", response);
@@ -592,7 +591,7 @@ export const useDefinyApp = (
           typePartIdListInProjectResource.forciblyRequestToServer(projectId);
         },
       }),
-      [option, typePartDict, typePartIdListInProjectDict]
+      [addMessage, typePartDict, typePartIdListInProjectDict]
     );
 
   const typePartResource: UseDefinyAppResult["typePartResource"] = useMemo(
@@ -605,18 +604,12 @@ export const useDefinyApp = (
         api.getTypePart(typePartId).then((response) => {
           if (response._ === "Nothing") {
             typePartDict.setUnknown(typePartId);
-            option.notificationMessageHandler(
-              "型パーツの取得に失敗しました",
-              "error"
-            );
+            addMessage({ text: "型パーツの取得に失敗しました", type: "error" });
             return;
           }
           if (response.value.data._ === "Nothing") {
             typePartDict.setDeleted(typePartId, response.value.getTime);
-            option.notificationMessageHandler(
-              "型パーツは存在しなかった",
-              "error"
-            );
+            addMessage({ text: "型パーツは存在しなかった", type: "error" });
             return;
           }
           typePartDict.setLoaded(response.value.data.value);
@@ -630,7 +623,7 @@ export const useDefinyApp = (
         typePartResource.forciblyRequestToServer(typePartId);
       },
     }),
-    [option, typePartDict]
+    [addMessage, typePartDict]
   );
 
   const saveTypePart = useCallback(
@@ -647,10 +640,10 @@ export const useDefinyApp = (
     ): void => {
       const accountToken = getAccountToken();
       if (accountToken === undefined) {
-        option.notificationMessageHandler(
-          "ログインしていない状態で型パーツを保存することはできない",
-          "error"
-        );
+        addMessage({
+          text: "ログインしていない状態で型パーツを保存することはできない",
+          type: "error",
+        });
         return;
       }
       setIsSavingTypePart(true);
@@ -667,21 +660,21 @@ export const useDefinyApp = (
         .then((response) => {
           setIsSavingTypePart(false);
           if (response._ === "Nothing") {
-            option.notificationMessageHandler("型の保存に失敗した", "error");
+            addMessage({ text: "型の保存に失敗した", type: "error" });
             return;
           }
           if (response.value.data._ === "Nothing") {
-            option.notificationMessageHandler("型の保存に失敗した?", "error");
+            addMessage({ text: "型の保存に失敗した?", type: "error" });
             return;
           }
           typePartDict.setLoaded(
             response.value.data.value,
             response.value.getTime
           );
-          option.notificationMessageHandler("型の保存に成功!", "success");
+          addMessage({ text: "型の保存に成功!", type: "success" });
         });
     },
-    [getAccountToken, option, typePartDict]
+    [addMessage, getAccountToken, typePartDict]
   );
 
   const generateCode = useCallback(
@@ -691,10 +684,10 @@ export const useDefinyApp = (
         const projectIdList =
           typePartIdListInProjectResource.getFromMemoryCache(projectId);
         if (projectIdList === undefined || projectIdList._ !== "Loaded") {
-          option.notificationMessageHandler(
-            "プロジェクトの型パーツ一覧を取得していない状態でコードは生成できない",
-            "error"
-          );
+          addMessage({
+            text: "プロジェクトの型パーツ一覧を取得していない状態でコードは生成できない",
+            type: "error",
+          });
           return;
         }
         const definyCode: Map<d.TypePartId, d.TypePart> = new Map();
@@ -705,11 +698,11 @@ export const useDefinyApp = (
           }
         }
         setOutputCode(generateCodeWithOutErrorHandling(definyCode));
-        option.notificationMessageHandler("コードを生成しました", "success");
+        addMessage({ text: "コードを生成しました", type: "success" });
       };
       requestAnimationFrame(gen);
     },
-    [option, typePartDict, typePartIdListInProjectResource]
+    [addMessage, typePartDict, typePartIdListInProjectResource]
   );
 
   return useMemo(
@@ -733,27 +726,29 @@ export const useDefinyApp = (
       isSavingTypePart,
       generateCode,
       outputCode,
+      notificationElement,
     }),
     [
       accountResource,
-      addTypePart,
+      projectResource,
       createProject,
       createProjectState,
       jump,
+      locationAndLanguage.language,
+      locationAndLanguage.location,
       logIn,
       logInState,
       logOut,
-      projectResource,
-      requestTop50Project,
       topProjectsLoadingState,
+      requestTop50Project,
+      addTypePart,
       typePartIdListInProjectResource,
       typePartResource,
-      locationAndLanguage.language,
-      locationAndLanguage.location,
       saveTypePart,
       isSavingTypePart,
       generateCode,
       outputCode,
+      notificationElement,
     ]
   );
 };
@@ -762,20 +757,23 @@ const verifyingAccountTokenAndGetAccount = (
   setLogInState: (logInState: d.LogInState) => void,
   accountToken: d.AccountToken,
   setAccount: (account: d.Account) => void,
-  notificationMessageHandler: NotificationMessageHandler
+  addMessage: AddMessage
 ) => {
   setLogInState(d.LogInState.LoadingAccountData);
   api.getAccountByAccountToken(accountToken).then((response) => {
     if (response._ === "Nothing" || response.value._ === "Nothing") {
-      notificationMessageHandler("ログインに失敗しました", "error");
+      addMessage({
+        text: "ログインに失敗しました",
+        type: "error",
+      });
       setLogInState(d.LogInState.Guest);
       return;
     }
     indexedDB.setAccountToken(accountToken);
-    notificationMessageHandler(
-      `「${response.value.value.name}」としてログインしました`,
-      "success"
-    );
+    addMessage({
+      text: `「${response.value.value.name}」としてログインしました`,
+      type: "success",
+    });
     setLogInState(
       d.LogInState.LoggedIn({
         accountToken,
@@ -790,22 +788,22 @@ const verifyingAccountTokenAndGetAccountFromCodeAndState = (
   setLogInState: (logInState: d.LogInState) => void,
   codeAndState: d.CodeAndState,
   setAccount: (account: d.Account) => void,
-  notificationMessageHandler: NotificationMessageHandler,
+  addMessage: AddMessage,
   replace: (newLocationAndLanguage: d.LocationAndLanguage) => void
 ): void => {
   setLogInState(d.LogInState.LoadingAccountData);
 
   api.getAccountTokenAndUrlDataByCodeAndState(codeAndState).then((response) => {
     if (response._ === "Nothing" || response.value._ === "Nothing") {
-      notificationMessageHandler("ログインに失敗しました", "error");
+      addMessage({ text: "ログインに失敗しました", type: "error" });
       setLogInState(d.LogInState.Guest);
       return;
     }
     indexedDB.setAccountToken(response.value.value.accountToken);
-    notificationMessageHandler(
-      `「${response.value.value.account.name}」としてログインしました`,
-      "success"
-    );
+    addMessage({
+      text: `「${response.value.value.account.name}」としてログインしました`,
+      type: "success",
+    });
     setLogInState(
       d.LogInState.LoggedIn({
         accountToken: response.value.value.accountToken,

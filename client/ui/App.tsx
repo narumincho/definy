@@ -56,7 +56,26 @@ export const App: React.VFC<Props> = ({ useDefinyAppResult }) => {
         onJump={useDefinyAppResult.jump}
         onLogInButtonClick={useDefinyAppResult.logIn}
       />
-      <AppMain useDefinyAppResult={useDefinyAppResult} />
+      <div
+        className={css({
+          gridColumn: "1 / 2",
+          gridRow: "2 / 3",
+          overflow: "hidden",
+        })}
+      >
+        <AppMain useDefinyAppResult={useDefinyAppResult} />
+      </div>
+      <div
+        className={css({
+          gridColumn: "1 / 2",
+          gridRow: "1 / 3",
+          justifySelf: "end",
+          alignSelf: "end",
+          overflow: "hidden",
+        })}
+      >
+        {useDefinyAppResult.notificationElement}
+      </div>
     </div>
   );
 };
