@@ -9,17 +9,17 @@
   },
   "scripts": {
     "typeCheck": "tsc --project tsconfig.json --noEmit",
-    "test": "jest & spago test",
+    "test": "jest & spago run --main FfiTsToJs & spago test",
     "generate-graph": "depcruise -X node_modules --output-type dot client/main.tsx functions/main.ts core/main.ts build/main.ts | dot -T svg > graph.svg",
     "production-build-main": "ts-node ./build/start-production-main.ts",
     "production-build-dev": "ts-node ./build/start-production-dev.ts",
     "generate-local-data": "npx ts-node ./build/dataTs.ts",
     "start": "ts-node ./build/start-develop.ts & firebase emulators:start --project definy-lang",
-    "build-node-package": "spago run --main BuildNodePackage",
+    "build-node-package": "spago run --main FfiTsToJs & spago run --main BuildNodePackage",
     "storybook": "start-storybook --config-dir ./storybook --static-dir ./storybook/static",
     "update-package-json": "ncu -u",
-    "start-narumincho-creative-record": "spago run --main CreativeRecord.Start",
-    "build-narumincho-creative-record": "spago run --main CreativeRecord.Build",
+    "start-narumincho-creative-record": "spago run --main FfiTsToJs & spago run --main CreativeRecord.Start",
+    "build-narumincho-creative-record": "spago run --main FfiTsToJs & spago run --main CreativeRecord.Build",
     "start-definy-by-purescript": "spago run --main Definy.Start"
   },
   "devDependencies": {

@@ -17,7 +17,7 @@ type Option
 
 type OptionRaw
   = { entryPoints :: String
-    , outdir :: String
+    , outDir :: String
     , sourcemap :: Boolean
     , target :: Array String
     }
@@ -39,7 +39,7 @@ build fileType option =
         { entryPoints:
             NonEmptyString.toString
               (Path.filePathToString option.entryPoints (Maybe.Just fileType))
-        , outdir: NonEmptyString.toString (Path.distributionDirectoryPathToString option.outdir)
+        , outDir: NonEmptyString.toString (Path.distributionDirectoryPathToString option.outdir)
         , sourcemap: option.sourcemap
         , target: option.target
         }

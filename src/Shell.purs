@@ -18,7 +18,6 @@ module Shell
   , Error
   , toStandardError
   , Exit(..)
-  , onExit
   , onClose
   , onDisconnect
   , onMessage
@@ -26,31 +25,33 @@ module Shell
   , spawn
   , exec
   , ExecResult
-  , fork
   , execWithLog
   ) where
 
+import Prelude
+import Data.Either as Either
 import Data.Function.Uncurried as FunctionUncurried
 import Data.Maybe as Maybe
+import Data.Nullable (Nullable)
 import Data.Nullable as Nullable
 import Data.Posix as Posix
 import Data.Posix.Signal as Signal
 import Data.String as String
+import Data.String.NonEmpty (NonEmptyString)
 import Data.String.NonEmpty as NonEmptyString
 import Effect as Effect
+import Effect.Aff as Aff
+import Effect.Console as Console
 import Effect.Exception as Exception
 import Effect.Exception.Unsafe as ExceptionUnsafe
+import Effect.Uncurried as EffectUncurried
 import Foreign as Foreign
 import Node.Buffer as Buffer
+import Node.Encoding as Encoding
 import Node.Platform as Platform
 import Node.Process as Process
 import Node.Stream as Stream
-import Prelude
 import Unsafe.Coerce as UnsafeCoerce
-import Effect.Aff as Aff
-import Effect.Console as Console
-import Data.Either as Either
-import Node.Encoding as Encoding
 
 -- | A handle for inter-process communication (IPC).
 foreign import data Handle :: Type
@@ -63,9 +64,9 @@ newtype ChildProcess
 -- | Note: some of these types are lies, and so it is unsafe to access some of
 -- | these record fields directly.
 type ChildProcessRec
-  = { stdin :: Nullable.Nullable (Stream.Writable ())
-    , stdout :: Nullable.Nullable (Stream.Readable ())
-    , stderr :: Nullable.Nullable (Stream.Readable ())
+  = { stdin :: Nullable (Stream.Writable ())
+    , stdout :: Nullable (Stream.Readable ())
+    , stderr :: Nullable (Stream.Readable ())
     , pid :: Posix.Pid
     , connected :: Boolean
     , kill :: String -> Unit
@@ -76,17 +77,26 @@ type ChildProcessRec
 -- | The standard input stream of a child process. Note that this is only
 -- | available if the process was spawned with the stdin option set to "pipe".
 stdin :: ChildProcess -> Stream.Writable ()
-stdin (ChildProcess rec) = unsafeFromNullable (missingStream "stdin") rec.stdin
+stdin (ChildProcess rec) =
+  FunctionUncurried.runFn2 unsafeFromNullable
+    (missingStream "stdin")
+    rec.stdin
 
 -- | The standard output stream of a child process. Note that this is only
 -- | available if the process was spawned with the stdout option set to "pipe".
 stdout :: ChildProcess -> Stream.Readable ()
-stdout (ChildProcess rec) = unsafeFromNullable (missingStream "stdout") rec.stdout
+stdout (ChildProcess rec) =
+  FunctionUncurried.runFn2 unsafeFromNullable
+    (missingStream "stdout")
+    rec.stdout
 
 -- | The standard error stream of a child process. Note that this is only
 -- | available if the process was spawned with the stderr option set to "pipe".
 stderr :: ChildProcess -> Stream.Readable ()
-stderr (ChildProcess rec) = unsafeFromNullable (missingStream "stderr") rec.stderr
+stderr (ChildProcess rec) =
+  FunctionUncurried.runFn2 unsafeFromNullable
+    (missingStream "stderr")
+    rec.stderr
 
 missingStream :: String -> String
 missingStream str =
@@ -98,7 +108,9 @@ missingStream str =
     , "you spawned it."
     ]
 
-foreign import unsafeFromNullable :: forall a. String -> Nullable.Nullable a -> a
+foreign import unsafeFromNullable ::
+  forall a.
+  FunctionUncurried.Fn2 String (Nullable a) a
 
 -- | The process ID of a child process. Note that if the process has already
 -- | exited, another process may have taken the same ID, so be careful!
@@ -150,7 +162,7 @@ instance showExit :: Show Exit where
   show (Normally x) = append "Normally " (show x)
   show (BySignal sig) = append "BySignal " (show sig)
 
-mkExit :: Nullable.Nullable Int -> Nullable.Nullable String -> Exit
+mkExit :: Nullable Int -> Nullable String -> Exit
 mkExit code signal = case map Normally (Nullable.toMaybe code) of
   Maybe.Just exit -> exit
   Maybe.Nothing -> case bind
@@ -158,19 +170,6 @@ mkExit code signal = case map Normally (Nullable.toMaybe code) of
       (\v -> map BySignal (Signal.fromString v)) of
     Maybe.Just exit -> exit
     Maybe.Nothing -> ExceptionUnsafe.unsafeThrow "Node.ChildProcess.mkExit: Invalid arguments"
-
--- | Handle the `"exit"` signal.
-onExit ::
-  ChildProcess ->
-  (Exit -> Effect.Effect Unit) ->
-  Effect.Effect Unit
-onExit = mkOnExit mkExit
-
-foreign import mkOnExit ::
-  (Nullable.Nullable Int -> Nullable.Nullable String -> Exit) ->
-  ChildProcess ->
-  (Exit -> Effect.Effect Unit) ->
-  Effect.Effect Unit
 
 -- | Handle the `"close"` signal.
 onClose ::
@@ -180,7 +179,7 @@ onClose ::
 onClose = mkOnClose mkExit
 
 foreign import mkOnClose ::
-  (Nullable.Nullable Int -> Nullable.Nullable String -> Exit) ->
+  (Nullable Int -> Nullable String -> Exit) ->
   ChildProcess ->
   (Exit -> Effect.Effect Unit) ->
   Effect.Effect Unit
@@ -217,10 +216,10 @@ foreign import onError ::
 -- | not throw an error. Instead, the `ChildProcess` will be created anyway,
 -- | but it will immediately emit an 'error' event.
 spawn ::
-  NonEmptyString.NonEmptyString ->
+  NonEmptyString ->
   Effect.Effect ChildProcess
 spawn cmd =
-  spawnImpl (NonEmptyString.toString cmd) []
+  EffectUncurried.runEffectFn3 spawnImpl (NonEmptyString.toString cmd) []
     { shell:
         case Process.platform of
           Maybe.Just Platform.Win32 -> "powershell"
@@ -228,10 +227,11 @@ spawn cmd =
     }
 
 foreign import spawnImpl ::
-  String ->
-  Array String ->
-  RawSpawnOption ->
-  Effect.Effect ChildProcess
+  EffectUncurried.EffectFn3
+    String
+    (Array String)
+    RawSpawnOption
+    ChildProcess
 
 type RawSpawnOption
   = { shell :: String }
@@ -244,12 +244,13 @@ type RawSpawnOption
 -- | Note that the child process will be killed if the amount of output exceeds
 -- | a certain threshold (the default is defined by Node.js).
 exec ::
-  NonEmptyString.NonEmptyString ->
+  NonEmptyString ->
   (ExecResult -> Effect.Effect Unit) ->
   Effect.Effect ChildProcess
 exec cmd callback =
-  execImpl (NonEmptyString.toString cmd)
-    {}
+  EffectUncurried.runEffectFn2
+    execImpl
+    (NonEmptyString.toString cmd)
     ( \err stdout' stderr' ->
         callback
           { error: Nullable.toMaybe err
@@ -258,7 +259,7 @@ exec cmd callback =
           }
     )
 
-execWithLog :: NonEmptyString.NonEmptyString -> Aff.Aff Unit
+execWithLog :: NonEmptyString -> Aff.Aff Unit
 execWithLog cmd =
   Aff.makeAff
     ( \callback ->
@@ -289,13 +290,10 @@ execResultToString result = do
     )
 
 foreign import execImpl ::
-  String ->
-  ActualExecOptions ->
-  (Nullable.Nullable Exception.Error -> Buffer.Buffer -> Buffer.Buffer -> Effect.Effect Unit) ->
-  Effect.Effect ChildProcess
-
-type ActualExecOptions
-  = {}
+  EffectUncurried.EffectFn2
+    String
+    (Nullable Exception.Error -> Buffer.Buffer -> Buffer.Buffer -> Effect.Effect Unit)
+    ChildProcess
 
 -- | The combined output of a process calld with `exec`.
 type ExecResult
@@ -303,14 +301,6 @@ type ExecResult
     , stdout :: Buffer.Buffer
     , error :: Maybe.Maybe Exception.Error
     }
-
--- | A special case of `spawn` for creating Node.js child processes. The first
--- | argument is the module to be run, and the second is the argv (command line
--- | arguments).
-foreign import fork ::
-  String ->
-  Array String ->
-  Effect.Effect ChildProcess
 
 -- | An error which occurred inside a child process.
 type Error
