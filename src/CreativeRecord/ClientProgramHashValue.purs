@@ -6,5 +6,5 @@ import Type.Proxy as M1
 
 -- | クライアント向け JavaScript のファイルのハッシュ値
 clientProgramHashValue :: M0.NonEmptyString
-clientProgramHashValue = (M0.nes) (M1.Proxy :: (M1.Proxy) ("6e193373bd3d279c7596897982a2d590d41e99fd4be420d3ef3a03d9cb613dce"))
+clientProgramHashValue = (M0.nes) (M1.Proxy :: (M1.Proxy) ("3ab6a5ed3467d53fc52c4af5452f0886f31ba00847eff30451c862be0809b7e7"))
 
