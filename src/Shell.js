@@ -19,7 +19,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.nodeProcess = exports.onError = exports.mkOnMessage = exports.onDisconnect = exports.mkOnClose = exports.execImpl = exports.spawnImpl = exports.unsafeFromNullable = void 0;
+exports.execImpl = exports.spawnImpl = exports.unsafeFromNullable = void 0;
 const childProcess = __importStar(require("child_process"));
 const unsafeFromNullable = (msg, x) => {
     if (x === null)
@@ -44,48 +44,3 @@ const execImpl = (command, callback) => {
     });
 };
 exports.execImpl = execImpl;
-const mkOnClose = (mkChildExit) => {
-    return function onClose(cp) {
-        return (cb) => {
-            return () => {
-                cp.on("close", (code, signal) => {
-                    cb(mkChildExit(code)(signal))();
-                });
-            };
-        };
-    };
-};
-exports.mkOnClose = mkOnClose;
-const onDisconnect = (cp) => {
-    return (cb) => {
-        return () => {
-            cp.on("disconnect", cb);
-        };
-    };
-};
-exports.onDisconnect = onDisconnect;
-const mkOnMessage = (nothing) => {
-    return (just) => {
-        return function onMessage(cp) {
-            return (cb) => {
-                return () => {
-                    cp.on("message", (mess, sendHandle) => {
-                        cb(mess, sendHandle ? just(sendHandle) : nothing)();
-                    });
-                };
-            };
-        };
-    };
-};
-exports.mkOnMessage = mkOnMessage;
-const onError = (cp) => {
-    return (cb) => {
-        return () => {
-            cp.on("error", (err) => {
-                cb(err)();
-            });
-        };
-    };
-};
-exports.onError = onError;
-exports.nodeProcess = process;

@@ -25,55 +25,9 @@ export const execImpl = (
   command: string,
   callback: (
     nullableError: Error | null
-  ) => (buffer: Buffer) => (buffer2: Buffer) => () => void
+  ) => (stdout: string) => (stderr: string) => () => void
 ): childProcess.ChildProcess => {
   return childProcess.exec(command, {}, (err, stdout, stderr) => {
-    callback(err)(stdout as unknown as Buffer)(stderr as unknown as Buffer)();
+    callback(err)(stdout)(stderr)();
   });
 };
-
-export const mkOnClose = (mkChildExit: any) => {
-  return function onClose(cp: any) {
-    return (cb: any) => {
-      return () => {
-        cp.on("close", (code: any, signal: any) => {
-          cb(mkChildExit(code)(signal))();
-        });
-      };
-    };
-  };
-};
-
-export const onDisconnect = (cp: any) => {
-  return (cb: any) => {
-    return () => {
-      cp.on("disconnect", cb);
-    };
-  };
-};
-
-export const mkOnMessage = (nothing: any) => {
-  return (just: any) => {
-    return function onMessage(cp: any) {
-      return (cb: any) => {
-        return () => {
-          cp.on("message", (mess: any, sendHandle: any) => {
-            cb(mess, sendHandle ? just(sendHandle) : nothing)();
-          });
-        };
-      };
-    };
-  };
-};
-
-export const onError = (cp: any) => {
-  return (cb: any) => {
-    return () => {
-      cp.on("error", (err: any) => {
-        cb(err)();
-      });
-    };
-  };
-};
-
-export const nodeProcess = process;

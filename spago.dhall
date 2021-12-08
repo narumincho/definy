@@ -9,7 +9,6 @@
   , "effect"
   , "either"
   , "exceptions"
-  , "foreign"
   , "foreign-object"
   , "functions"
   , "maybe"

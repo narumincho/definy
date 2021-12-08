@@ -5,30 +5,26 @@
 -- | https://github.com/purescript-node/purescript-node-child-process から改変
 -- | The MIT License (MIT) Copyright (c) 2014-2015 Hardy Jones
 module Shell
-  ( Handle
-  , ChildProcess
+  ( ChildProcess
+  , Error
+  , ExecResult
+  , Exit(..)
+  , Handle
+  , connected
+  , disconnect
+  , execWithLog
+  , kill
+  , pid
+  , send
+  , spawn
+  , stderr
   , stdin
   , stdout
-  , stderr
-  , pid
-  , connected
-  , kill
-  , send
-  , disconnect
-  , Error
   , toStandardError
-  , Exit(..)
-  , onClose
-  , onDisconnect
-  , onMessage
-  , onError
-  , spawn
-  , exec
-  , ExecResult
-  , execWithLog
   ) where
 
 import Prelude
+import Console as Console
 import Data.Either as Either
 import Data.Function.Uncurried as FunctionUncurried
 import Data.Maybe as Maybe
@@ -41,13 +37,8 @@ import Data.String.NonEmpty (NonEmptyString)
 import Data.String.NonEmpty as NonEmptyString
 import Effect as Effect
 import Effect.Aff as Aff
-import Effect.Console as Console
 import Effect.Exception as Exception
-import Effect.Exception.Unsafe as ExceptionUnsafe
 import Effect.Uncurried as EffectUncurried
-import Foreign as Foreign
-import Node.Buffer as Buffer
-import Node.Encoding as Encoding
 import Node.Platform as Platform
 import Node.Process as Process
 import Node.Stream as Stream
@@ -162,55 +153,6 @@ instance showExit :: Show Exit where
   show (Normally x) = append "Normally " (show x)
   show (BySignal sig) = append "BySignal " (show sig)
 
-mkExit :: Nullable Int -> Nullable String -> Exit
-mkExit code signal = case map Normally (Nullable.toMaybe code) of
-  Maybe.Just exit -> exit
-  Maybe.Nothing -> case bind
-      (Nullable.toMaybe signal)
-      (\v -> map BySignal (Signal.fromString v)) of
-    Maybe.Just exit -> exit
-    Maybe.Nothing -> ExceptionUnsafe.unsafeThrow "Node.ChildProcess.mkExit: Invalid arguments"
-
--- | Handle the `"close"` signal.
-onClose ::
-  ChildProcess ->
-  (Exit -> Effect.Effect Unit) ->
-  Effect.Effect Unit
-onClose = mkOnClose mkExit
-
-foreign import mkOnClose ::
-  (Nullable Int -> Nullable String -> Exit) ->
-  ChildProcess ->
-  (Exit -> Effect.Effect Unit) ->
-  Effect.Effect Unit
-
--- | Handle the `"message"` signal.
-onMessage ::
-  ChildProcess ->
-  (Foreign.Foreign -> Maybe.Maybe Handle -> Effect.Effect Unit) ->
-  Effect.Effect Unit
-onMessage = mkOnMessage Maybe.Nothing Maybe.Just
-
-foreign import mkOnMessage ::
-  forall a.
-  Maybe.Maybe a ->
-  (a -> Maybe.Maybe a) ->
-  ChildProcess ->
-  (Foreign.Foreign -> Maybe.Maybe Handle -> Effect.Effect Unit) ->
-  Effect.Effect Unit
-
--- | Handle the `"disconnect"` signal.
-foreign import onDisconnect ::
-  ChildProcess ->
-  Effect.Effect Unit ->
-  Effect.Effect Unit
-
--- | Handle the `"error"` signal.
-foreign import onError ::
-  ChildProcess ->
-  (Error -> Effect.Effect Unit) ->
-  Effect.Effect Unit
-
 -- | Spawn a child process. Note that, in the event that a child process could
 -- | not be spawned (for example, if the executable was not found) this will
 -- | not throw an error. Instead, the `ChildProcess` will be created anyway,
@@ -251,11 +193,11 @@ exec cmd callback =
   EffectUncurried.runEffectFn2
     execImpl
     (NonEmptyString.toString cmd)
-    ( \err stdout' stderr' ->
+    ( \err stdoutAsString stderrAsString ->
         callback
           { error: Nullable.toMaybe err
-          , stdout: stdout'
-          , stderr: stderr'
+          , stdout: stdoutAsString
+          , stderr: stderrAsString
           }
     )
 
@@ -267,38 +209,24 @@ execWithLog cmd =
           ( exec
               cmd
               ( \result -> do
-                  log <- execResultToString result
-                  Console.log log
+                  Console.logValue "error" result.error
+                  Console.logValue "stdout" result.stdout
+                  Console.logValue "stderr" result.stderr
                   callback (Either.Right unit)
               )
           )
     )
 
-execResultToString :: ExecResult -> Effect.Effect String
-execResultToString result = do
-  stdoutAsString <- Buffer.toString Encoding.UTF8 result.stdout
-  stderrAsString <- Buffer.toString Encoding.UTF8 result.stderr
-  pure
-    ( String.joinWith "\n"
-        [ "stdout:"
-        , stdoutAsString
-        , "stderr:"
-        , stderrAsString
-        , "error:"
-        , show result.error
-        ]
-    )
-
 foreign import execImpl ::
   EffectUncurried.EffectFn2
     String
-    (Nullable Exception.Error -> Buffer.Buffer -> Buffer.Buffer -> Effect.Effect Unit)
+    (Nullable Exception.Error -> String -> String -> Effect.Effect Unit)
     ChildProcess
 
 -- | The combined output of a process calld with `exec`.
 type ExecResult
-  = { stderr :: Buffer.Buffer
-    , stdout :: Buffer.Buffer
+  = { stderr :: String
+    , stdout :: String
     , error :: Maybe.Maybe Exception.Error
     }
 
@@ -313,5 +241,3 @@ type Error
 -- | inside an Effect or Aff computation (for example).
 toStandardError :: Error -> Exception.Error
 toStandardError = UnsafeCoerce.unsafeCoerce
-
-foreign import nodeProcess :: forall props. { | props }
