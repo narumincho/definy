@@ -18,7 +18,7 @@ import StructuredUrl as StructuredUrl
 import Vdom.Data as Vdom
 import View.Data as Data
 
-toVdom :: forall message. StructuredUrl.PathAndSearchParams -> Data.View message -> Vdom.Vdom message
+toVdom :: forall message. Maybe StructuredUrl.PathAndSearchParams -> Data.View message -> Vdom.Vdom message
 toVdom scriptPath (Data.View view) =
   let
     ( { childList: vdomChildren
@@ -39,7 +39,7 @@ toVdom scriptPath (Data.View view) =
       , origin: view.origin
       , style:
           htmlElementAndStyleDictToCssStatementList { styleDict, keyframesDict }
-      , scriptPath: Just scriptPath
+      , scriptPath
       , children: vdomChildren
       , bodyClass: Nothing
       , pointerMove: Nothing

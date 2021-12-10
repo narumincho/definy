@@ -10,6 +10,7 @@
   , "either"
   , "exceptions"
   , "foreign-object"
+  , "functions"
   , "maybe"
   , "node-buffer"
   , "node-fs-aff"

@@ -16,19 +16,19 @@ import Effect.Uncurried as EffectUncurried
 import Language as Language
 import StructuredUrl as StructuredUrl
 import Vdom.Data as Vdom
-import Vdom.RenderState as RenderState
+import Vdom.PatchState as VdomPatchState
 
 -- | Vdom の Element から DOM API から HtmlElement か SvgElement を生成する
 elementToHtmlOrSvgElement ::
   forall message.
   { element :: Vdom.Element message
   , path :: Vdom.Path
-  , renderState :: RenderState.RenderState message
+  , patchState :: VdomPatchState.PatchState message
   } ->
   Effect HtmlOrSvgElement
-elementToHtmlOrSvgElement { element, path, renderState } = do
+elementToHtmlOrSvgElement { element, path, patchState } = do
   htmlOrSvgElement <-
-    elementToHtmlOrSvgElementWithoutDataPath { element, path, renderState }
+    elementToHtmlOrSvgElementWithoutDataPath { element, path, patchState }
   EffectUncurried.runEffectFn2
     setDataPath
     htmlOrSvgElement
@@ -39,17 +39,17 @@ elementToHtmlOrSvgElementWithoutDataPath ::
   forall message.
   { element :: Vdom.Element message
   , path :: Vdom.Path
-  , renderState :: RenderState.RenderState message
+  , patchState :: VdomPatchState.PatchState message
   } ->
   Effect HtmlOrSvgElement
-elementToHtmlOrSvgElementWithoutDataPath { element, path, renderState } = case element of
+elementToHtmlOrSvgElementWithoutDataPath { element, path, patchState } = case element of
   Vdom.ElementDiv (Vdom.Div rec) -> do
     div <-
       EffectUncurried.runEffectFn1 createDiv
         { id: Nullable.toNullable (map NonEmptyString.toString rec.id)
         , class: Nullable.toNullable (map NonEmptyString.toString rec.class)
         }
-    applyChildren { htmlOrSvgElement: div, children: rec.children, path, renderState }
+    applyChildren { htmlOrSvgElement: div, children: rec.children, path, patchState }
     pure div
   Vdom.ElementH1 (Vdom.H1 rec) -> do
     h1 <-
@@ -57,7 +57,7 @@ elementToHtmlOrSvgElementWithoutDataPath { element, path, renderState } = case e
         { id: Nullable.toNullable (map NonEmptyString.toString rec.id)
         , class: Nullable.toNullable (map NonEmptyString.toString rec.class)
         }
-    applyChildren { htmlOrSvgElement: h1, children: rec.children, path, renderState }
+    applyChildren { htmlOrSvgElement: h1, children: rec.children, path, patchState }
     pure h1
   Vdom.ElementH2 (Vdom.H2 rec) -> do
     h2 <-
@@ -65,7 +65,7 @@ elementToHtmlOrSvgElementWithoutDataPath { element, path, renderState } = case e
         { id: Nullable.toNullable (map NonEmptyString.toString rec.id)
         , class: Nullable.toNullable (map NonEmptyString.toString rec.class)
         }
-    applyChildren { htmlOrSvgElement: h2, children: rec.children, path, renderState }
+    applyChildren { htmlOrSvgElement: h2, children: rec.children, path, patchState }
     pure h2
   Vdom.ElementExternalLink (Vdom.ExternalLink rec) -> do
     anchor <-
@@ -74,7 +74,7 @@ elementToHtmlOrSvgElementWithoutDataPath { element, path, renderState } = case e
         , class: Nullable.toNullable (map NonEmptyString.toString rec.class)
         , href: NonEmptyString.toString (StructuredUrl.toString rec.href)
         }
-    applyChildren { htmlOrSvgElement: anchor, children: rec.children, path, renderState }
+    applyChildren { htmlOrSvgElement: anchor, children: rec.children, path, patchState }
     pure anchor
   Vdom.ElementLocalLink (Vdom.LocalLink rec) -> do
     anchor <-
@@ -83,7 +83,7 @@ elementToHtmlOrSvgElementWithoutDataPath { element, path, renderState } = case e
         , class: Nullable.toNullable (map NonEmptyString.toString rec.class)
         , href: NonEmptyString.toString (StructuredUrl.toString rec.href)
         }
-    applyChildren { htmlOrSvgElement: anchor, children: rec.children, path, renderState }
+    applyChildren { htmlOrSvgElement: anchor, children: rec.children, path, patchState }
     pure anchor
   Vdom.ElementButton (Vdom.Button rec) -> do
     button <-
@@ -91,7 +91,7 @@ elementToHtmlOrSvgElementWithoutDataPath { element, path, renderState } = case e
         { id: Nullable.toNullable (map NonEmptyString.toString rec.id)
         , class: Nullable.toNullable (map NonEmptyString.toString rec.class)
         }
-    applyChildren { htmlOrSvgElement: button, children: rec.children, path, renderState }
+    applyChildren { htmlOrSvgElement: button, children: rec.children, path, patchState }
     pure button
   Vdom.ElementImg (Vdom.Img rec) ->
     EffectUncurried.runEffectFn1 createImg
@@ -128,7 +128,7 @@ elementToHtmlOrSvgElementWithoutDataPath { element, path, renderState } = case e
         , class: Nullable.toNullable (map NonEmptyString.toString rec.class)
         , for: NonEmptyString.toString rec.for
         }
-    applyChildren { htmlOrSvgElement: label, children: rec.children, path, renderState }
+    applyChildren { htmlOrSvgElement: label, children: rec.children, path, patchState }
     pure label
   Vdom.ElementSvg (Vdom.Svg rec) -> do
     svg <-
@@ -140,7 +140,7 @@ elementToHtmlOrSvgElementWithoutDataPath { element, path, renderState } = case e
         , viewBoxWidth: rec.viewBoxWidth
         , viewBoxHeight: rec.viewBoxHeight
         }
-    applyChildList { htmlOrSvgElement: svg, childList: rec.children, path, renderState }
+    applyChildList { htmlOrSvgElement: svg, childList: rec.children, path, patchState }
     pure svg
   Vdom.ElementSvgPath (Vdom.SvgPath rec) ->
     EffectUncurried.runEffectFn1 createSvgPath
@@ -160,7 +160,7 @@ elementToHtmlOrSvgElementWithoutDataPath { element, path, renderState } = case e
         , cy: rec.cy
         , r: rec.r
         }
-    applyChildList { htmlOrSvgElement: svgCircle, childList: rec.children, path, renderState }
+    applyChildList { htmlOrSvgElement: svgCircle, childList: rec.children, path, patchState }
     pure svgCircle
   Vdom.ElementSvgAnimate (Vdom.SvgAnimate rec) ->
     EffectUncurried.runEffectFn1 createSvgAnimate
@@ -177,7 +177,7 @@ elementToHtmlOrSvgElementWithoutDataPath { element, path, renderState } = case e
         , class: Nullable.null
         , transform: NonEmptyString.joinWith " " rec.transform
         }
-    applyChildList { htmlOrSvgElement: svgG, childList: rec.children, path, renderState }
+    applyChildList { htmlOrSvgElement: svgG, childList: rec.children, path, patchState }
     pure svgG
 
 -- | HTMLElment か SVGElement の子要素を設定する
@@ -186,7 +186,7 @@ applyChildren ::
   { htmlOrSvgElement :: HtmlOrSvgElement
   , children :: Vdom.Children message
   , path :: Vdom.Path
-  , renderState :: RenderState.RenderState message
+  , patchState :: VdomPatchState.PatchState message
   } ->
   Effect.Effect Unit
 applyChildren = case _ of
@@ -194,12 +194,12 @@ applyChildren = case _ of
     EffectUncurried.runEffectFn2 setTextContent
       text
       htmlOrSvgElement
-  { htmlOrSvgElement, children: Vdom.ChildrenElementList list, path, renderState } ->
+  { htmlOrSvgElement, children: Vdom.ChildrenElementList list, path, patchState } ->
     applyChildList
       { htmlOrSvgElement
       , childList: NonEmptyArray.toArray list
       , path
-      , renderState
+      , patchState
       }
 
 applyChildList ::
@@ -207,42 +207,42 @@ applyChildList ::
   { htmlOrSvgElement :: HtmlOrSvgElement
   , childList :: Array (Tuple.Tuple String (Vdom.Element message))
   , path :: Vdom.Path
-  , renderState :: RenderState.RenderState message
+  , patchState :: VdomPatchState.PatchState message
   } ->
   Effect.Effect Unit
-applyChildList { htmlOrSvgElement, childList, path, renderState } =
+applyChildList { htmlOrSvgElement, childList, path, patchState } =
   Effect.foreachE childList
     ( \(Tuple.Tuple key child) -> do
         element <-
           elementToHtmlOrSvgElement
             { element: child
             , path: Vdom.pathAppendKey path key
-            , renderState
+            , patchState
             }
         EffectUncurried.runEffectFn2 appendChild htmlOrSvgElement element
     )
 
 -- | HTMLElment か SVGElement の子要素に対して差分データの分を反映する
-renderChildren :: forall message. { htmlOrSvgElement :: HtmlOrSvgElement, childrenDiff :: Vdom.ChildrenDiff message, renderState :: RenderState.RenderState message, path :: Vdom.Path } -> Effect.Effect Unit
+renderChildren :: forall message. { htmlOrSvgElement :: HtmlOrSvgElement, childrenDiff :: Vdom.ChildrenDiff message, patchState :: VdomPatchState.PatchState message, path :: Vdom.Path } -> Effect.Effect Unit
 renderChildren = case _ of
   { childrenDiff: Vdom.ChildrenDiffSkip } -> pure unit
   { htmlOrSvgElement, childrenDiff: Vdom.ChildrenDiffSetText newText } ->
     EffectUncurried.runEffectFn2 setTextContent
       newText
       htmlOrSvgElement
-  { htmlOrSvgElement, childrenDiff: Vdom.ChildrenDiffResetAndInsert list, renderState, path } -> do
+  { htmlOrSvgElement, childrenDiff: Vdom.ChildrenDiffResetAndInsert list, patchState, path } -> do
     EffectUncurried.runEffectFn2 setTextContent "" htmlOrSvgElement
     applyChildren
       { htmlOrSvgElement
       , children: Vdom.ChildrenElementList list
-      , renderState
+      , patchState
       , path
       }
   { childrenDiff: Vdom.ChildDiffList _ } -> pure unit
 
 -- | すべてをリセットして再描画する. 最初に1回呼ぶと良い.
-resetAndRender :: forall message. Vdom.Vdom message -> RenderState.RenderState message -> Effect.Effect Unit
-resetAndRender (Vdom.Vdom view) renderState = do
+resetAndRender :: forall message. Vdom.Vdom message -> VdomPatchState.PatchState message -> Effect.Effect Unit
+resetAndRender (Vdom.Vdom view) patchState = do
   Effect.foreachE
     [ Vdom.ChangePageName view.pageName
     , Vdom.ChangeThemeColor view.themeColor
@@ -257,22 +257,22 @@ resetAndRender (Vdom.Vdom view) renderState = do
         case NonEmptyArray.fromArray view.children of
           Just list -> Vdom.ChildrenDiffResetAndInsert list
           Nothing -> Vdom.ChildrenDiffSetText ""
-    , renderState
+    , patchState
     , path: Vdom.rootPath
     }
 
 -- | 差分データから実際のDOMを操作して表示に反映させる
-render :: forall message. Vdom.ViewDiff message -> RenderState.RenderState message -> Effect.Effect Unit
-render (Vdom.ViewDiff viewDiff) renderState = do
+render :: forall message. Vdom.ViewDiff message -> VdomPatchState.PatchState message -> Effect.Effect Unit
+render (Vdom.ViewDiff viewDiff) patchState = do
   Effect.foreachE viewDiff.patchOperationList viewPatchOperationToEffect
   bodyElement <- getBodyElement
   renderChildren
     { htmlOrSvgElement: bodyElement
     , childrenDiff: viewDiff.childrenDiff
-    , renderState
+    , patchState
     , path: Vdom.rootPath
     }
-  Console.logValue "run renderView" { viewDiff, renderState }
+  Console.logValue "run renderView" { viewDiff, patchState }
 
 viewPatchOperationToEffect :: Vdom.ViewPatchOperation -> Effect.Effect Unit
 viewPatchOperationToEffect = case _ of
