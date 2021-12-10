@@ -109,3 +109,4 @@ export const Editor: React.VFC<Props> = React.memo((props: Props) => {
     </div>
   );
 });
+Editor.displayName = "Editor";

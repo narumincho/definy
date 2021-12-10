@@ -1,35 +1,26 @@
-// @ts-check
-/* eslint-disable @typescript-eslint/no-require-imports */
-/* eslint-disable @typescript-eslint/no-var-requires */
-/**
- *
- * @param {{entryPoints: string, outdir:string, sourcemap: boolean, target: string }} option
- * @returns {(onError: (error: Error) => void, onSuccess: () => void) => (cancelError: () => void, cancelerError: () => void, cancelerSuccess: () => void) => void}
- */
-exports.buildAsEffectFnAff = (option) => {
-  return (onError, onSuccess) => {
-    require("esbuild")
-      .build({
-        entryPoints: [option.entryPoints],
-        bundle: true,
-        outdir: option.outdir,
-        sourcemap: option.sourcemap,
-        minify: true,
-        target: option.target,
-      })
-      .then(
-        () => {
-          onSuccess();
-        },
-        (error) => {
-          console.log("esbuild でエラーが発生", error);
-          onError(error);
-        }
-      );
-
-    return (cancelError, cancelerError, cancelerSuccess) => {
-      console.log("ESBuild の停止処理は未実装です");
-      cancelerSuccess();
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.buildAsEffectFnAff = void 0;
+const esbuild_1 = require("esbuild");
+const buildAsEffectFnAff = (option) => {
+    return (onError, onSuccess) => {
+        (0, esbuild_1.build)({
+            entryPoints: [option.entryPoints],
+            bundle: true,
+            outdir: option.outDir,
+            sourcemap: option.sourcemap,
+            minify: true,
+            target: option.target,
+        }).then(() => {
+            onSuccess();
+        }, (error) => {
+            console.log("esbuild でエラーが発生", error);
+            onError(error);
+        });
+        return (cancelError, cancelerError, cancelerSuccess) => {
+            console.log("ESBuild の停止処理は未実装です");
+            cancelerSuccess();
+        };
     };
-  };
 };
+exports.buildAsEffectFnAff = buildAsEffectFnAff;

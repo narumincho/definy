@@ -1,109 +1,45 @@
-// @ts-check
-/* eslint-disable @typescript-eslint/no-var-requires */
-/* eslint-disable @typescript-eslint/no-require-imports */
-
-exports.unsafeFromNullable = function unsafeFromNullable(msg) {
-  return (x) => {
-    if (x === null) throw new Error(msg);
-    return x;
-  };
+"use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
 };
-
-exports.spawnImpl = function spawnImpl(command) {
-  return (args) => {
-    return (opts) => {
-      console.log("spawnの実行準備!", command, args, opts);
-      return () => {
-        console.log("spawn を実行する!", command, args, opts);
-        try {
-          const a = require("child_process").spawn(command, args, opts);
-          return a;
-        } catch (e) {
-          console.log("えらー", e);
-        }
-      };
-    };
-  };
-};
-
-exports.execImpl = function execImpl(command) {
-  return (opts) => {
-    return (callback) => {
-      return () => {
-        return require("child_process").exec(
-          command,
-          opts,
-          (err, stdout, stderr) => {
-            callback(err)(stdout)(stderr)();
-          }
-        );
-      };
-    };
-  };
-};
-
-exports.fork = function fork(cmd) {
-  return (args) => {
-    return () => {
-      return require("child_process").fork(cmd, args);
-    };
-  };
-};
-
-exports.mkOnExit = function mkOnExit(mkChildExit) {
-  return function onExit(cp) {
-    return (cb) => {
-      return () => {
-        cp.on("exit", (code, signal) => {
-          cb(mkChildExit(code)(signal))();
-        });
-      };
-    };
-  };
-};
-
-exports.mkOnClose = function mkOnClose(mkChildExit) {
-  return function onClose(cp) {
-    return (cb) => {
-      return () => {
-        cp.on("close", (code, signal) => {
-          cb(mkChildExit(code)(signal))();
-        });
-      };
-    };
-  };
-};
-
-exports.onDisconnect = function onDisconnect(cp) {
-  return (cb) => {
-    return () => {
-      cp.on("disconnect", cb);
-    };
-  };
-};
-
-exports.mkOnMessage = function mkOnMessage(nothing) {
-  return (just) => {
-    return function onMessage(cp) {
-      return (cb) => {
-        return () => {
-          cp.on("message", (mess, sendHandle) => {
-            cb(mess, sendHandle ? just(sendHandle) : nothing)();
-          });
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.execImpl = exports.spawnImpl = void 0;
+const childProcess = __importStar(require("child_process"));
+const spawnImpl = (command, args, opts) => {
+    console.log("spawn を実行する!", command, args, opts);
+    try {
+        const childProcessWithoutNullStreams = childProcess.spawn(command, args, opts);
+        return {
+            stdin: childProcessWithoutNullStreams.stdin,
+            stdout: childProcessWithoutNullStreams.stdout,
+            stderr: childProcessWithoutNullStreams.stderr,
         };
-      };
-    };
-  };
+    }
+    catch (e) {
+        console.error(e);
+        throw new Error("PureScript 内の child_process の spawn でエラーが発生した");
+    }
 };
-
-exports.onError = function onError(cp) {
-  return (cb) => {
-    return () => {
-      cp.on("error", (err) => {
-        cb(err)();
-      });
-    };
-  };
+exports.spawnImpl = spawnImpl;
+const execImpl = (command, callback) => {
+    return childProcess.exec(command, {}, (err, stdout, stderr) => {
+        callback(err)(stdout)(stderr)();
+    });
 };
-
-exports.nodeProcess = process;
+exports.execImpl = execImpl;

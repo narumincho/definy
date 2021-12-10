@@ -22,7 +22,6 @@ import Node.Encoding as Encoding
 import Node.FS.Aff as Fs
 import PureScript.Data as PureScriptData
 import PureScript.ToString as PureScriptToString
-import Type.Proxy as Proxy
 
 -- | distribution に ファイルを文字列として書き込む 拡張子はなし
 writeTextFileInDistribution :: Path.DistributionFilePath -> String -> Aff.Aff Unit
@@ -50,11 +49,6 @@ writeJson distributionFilePath json =
       Fs.writeTextFile Encoding.UTF8 filePath (ArgonautCore.stringify json)
       EffectClass.liftEffect (Console.log (append filePath " の書き込みに成功"))
 
-srcDirectoryPath :: Path.DirectoryPath
-srcDirectoryPath =
-  Path.DirectoryPath
-    [ NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "src") ]
-
 -- | PureScript をモジュール名をファイル名としてファイルに書く
 writePureScript :: PureScriptData.Module -> Aff.Aff Unit
 writePureScript pModule =
@@ -62,7 +56,7 @@ writePureScript pModule =
     moduleNameAsNonEmptyArrayUnsnoced = ArrayNonEmpty.unsnoc (PureScriptData.moduleNameAsStringNonEmptyArray pModule)
 
     directoryPath :: Path.DirectoryPath
-    directoryPath = Path.directoryPathPushDirectoryNameList srcDirectoryPath moduleNameAsNonEmptyArrayUnsnoced.init
+    directoryPath = Path.directoryPathPushDirectoryNameList Path.srcDirectoryPath moduleNameAsNonEmptyArrayUnsnoced.init
 
     filePath :: String
     filePath =

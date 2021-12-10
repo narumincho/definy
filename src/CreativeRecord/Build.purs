@@ -6,7 +6,7 @@ import Data.Array as Array
 import Data.Array.NonEmpty as NonEmptyArray
 import Data.Either as Either
 import Data.Map as Map
-import Data.Maybe as Maybe
+import Data.Maybe (Maybe(..))
 import Data.Set as Set
 import Data.String.NonEmpty as NonEmptyString
 import Data.Tuple as Tuple
@@ -42,30 +42,20 @@ main =
 appName :: NonEmptyString.NonEmptyString
 appName = NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "creative-record")
 
-firstClientProgramFilePath :: Path.DistributionFilePath
-firstClientProgramFilePath =
-  Path.DistributionFilePath
-    { directoryPath:
-        Path.DistributionDirectoryPath
-          { appName
-          , folderNameMaybe:
-              Maybe.Just
-                ( NonEmptyString.nes
-                    (Proxy.Proxy :: Proxy.Proxy "client-spago-result")
-                )
-          }
-    , fileName: programFileName
-    }
+pureScriptOutputPath :: Path.DirectoryPath
+pureScriptOutputPath =
+  Path.DirectoryPath
+    [ NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "output") ]
 
-programFileName :: NonEmptyString.NonEmptyString
-programFileName = NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "program")
+clientProgramFileName :: NonEmptyString.NonEmptyString
+clientProgramFileName = NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "creativeRecordsClientStart")
 
 esbuildClientProgramFileDirectoryPath :: Path.DistributionDirectoryPath
 esbuildClientProgramFileDirectoryPath =
   Path.DistributionDirectoryPath
     { appName
     , folderNameMaybe:
-        Maybe.Just
+        Just
           ( NonEmptyString.nes
               (Proxy.Proxy :: Proxy.Proxy "client-esbuild-result")
           )
@@ -76,7 +66,7 @@ hostingDirectoryPath =
   Path.DistributionDirectoryPath
     { appName
     , folderNameMaybe:
-        Maybe.Just
+        Just
           ( NonEmptyString.nes
               (Proxy.Proxy :: Proxy.Proxy "hosting")
           )
@@ -87,7 +77,7 @@ functionsDirectoryPath =
   Path.DistributionDirectoryPath
     { appName
     , folderNameMaybe:
-        Maybe.Just
+        Just
           ( NonEmptyString.nes
               (Proxy.Proxy :: Proxy.Proxy "functions")
           )
@@ -122,29 +112,27 @@ writeCodeClientProgramHashValueAndFunctionBuild clinetProgramHashValue = do
 
 clientProgramBuild :: Aff.Aff Hash.Sha256HashValue
 clientProgramBuild = do
-  runSpagoBundleAppAndLog
+  runSpagoBundleApp
   runEsbuild
   fileHashValue <- readEsbuildResultClientProgramFile
   Console.logValueAsAff "クライアント向けビルド完了!" { fileHashValue }
   pure fileHashValue
 
-runSpagoBundleAppAndLog :: Aff.Aff Unit
-runSpagoBundleAppAndLog = do
-  Spago.bundleApp
-    { mainModuleName:
-        PureScriptData.ModuleName
-          ( NonEmptyArray.cons'
-              (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "CreativeRecord"))
-              [ NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "Client") ]
-          )
-    , outputJavaScriptPath: firstClientProgramFilePath
-    }
+runSpagoBundleApp :: Aff.Aff Unit
+runSpagoBundleApp = do
+  Spago.build
+    { outputDiresctoy: pureScriptOutputPath }
   Console.logValueAsAff "spago でのビルドに成功!" {}
 
 runEsbuild :: Aff.Aff Unit
 runEsbuild = do
   EsBuild.buildJs
-    { entryPoints: Path.distributionFilePathToFilePath firstClientProgramFilePath
+    { entryPoints:
+        Path.FilePath
+          { directoryPath:
+              Path.DirectoryPath []
+          , fileName: clientProgramFileName
+          }
     , outdir: esbuildClientProgramFileDirectoryPath
     , sourcemap: false
     , target: [ "chrome95", "firefox94", "safari15" ]
@@ -157,7 +145,7 @@ readEsbuildResultClientProgramFile = do
     FileSystemRead.readTextFileInDistribution
       ( Path.DistributionFilePath
           { directoryPath: esbuildClientProgramFileDirectoryPath
-          , fileName: programFileName
+          , fileName: clientProgramFileName
           }
       )
       FileType.JavaScript
@@ -210,7 +198,7 @@ writeCloudStorageRules =
 firestoreSecurityRulesFilePath :: Path.DistributionFilePath
 firestoreSecurityRulesFilePath =
   Path.DistributionFilePath
-    { directoryPath: Path.DistributionDirectoryPath { appName, folderNameMaybe: Maybe.Nothing }
+    { directoryPath: Path.DistributionDirectoryPath { appName, folderNameMaybe: Nothing }
     , fileName: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "firestore")
     }
 
@@ -218,7 +206,7 @@ cloudStorageSecurityRulesFilePath :: Path.DistributionFilePath
 cloudStorageSecurityRulesFilePath =
   Path.DistributionFilePath
     { directoryPath:
-        Path.DistributionDirectoryPath { appName, folderNameMaybe: Maybe.Nothing }
+        Path.DistributionDirectoryPath { appName, folderNameMaybe: Nothing }
     , fileName: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "storage")
     }
 
@@ -226,7 +214,7 @@ writeFirebaseJson :: Array StaticResourceFile.StaticResourceFileResult -> Hash.S
 writeFirebaseJson staticFileDataList clientProgramHashValue = do
   FileSystemWrite.writeJson
     ( Path.DistributionFilePath
-        { directoryPath: Path.DistributionDirectoryPath { appName, folderNameMaybe: Maybe.Nothing }
+        { directoryPath: Path.DistributionDirectoryPath { appName, folderNameMaybe: Nothing }
         , fileName: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "firebase")
         }
     )
@@ -235,13 +223,13 @@ writeFirebaseJson staticFileDataList clientProgramHashValue = do
             { cloudStorageRulesFilePath: cloudStorageSecurityRulesFilePath
             , emulators:
                 FirebaseJson.Emulators
-                  { firestorePortNumber: Maybe.Just (UInt.fromInt 8080)
-                  , hostingPortNumber: Maybe.Just hostingPortNumber
-                  , storagePortNumber: Maybe.Just (UInt.fromInt 9199)
+                  { firestorePortNumber: Just (UInt.fromInt 8080)
+                  , hostingPortNumber: Just hostingPortNumber
+                  , storagePortNumber: Just (UInt.fromInt 9199)
                   }
             , firestoreRulesFilePath: firestoreSecurityRulesFilePath
             , functions:
-                Maybe.Just
+                Just
                   ( FirebaseJson.FunctionsSetting
                       { emulatorsPortNumber: UInt.fromInt 1242
                       , distributionPath: functionsDirectoryPath
@@ -407,7 +395,7 @@ writePackageJsonForFunctions = do
   case rootPackageJsonResult of
     Either.Left error -> Console.logValueAsAff "jsonの parse エラー!" { error }
     Either.Right dependencies -> case packageJsonForFunctions dependencies of
-      Maybe.Just packageJson ->
+      Just packageJson ->
         FileSystemWrite.writeJson
           ( Path.DistributionFilePath
               { directoryPath: functionsDirectoryPath
@@ -417,9 +405,9 @@ writePackageJsonForFunctions = do
               }
           )
           (PackageJson.toJson packageJson)
-      Maybe.Nothing -> Console.logValueAsAff "名前のエラー" {}
+      Nothing -> Console.logValueAsAff "名前のエラー" {}
 
-packageJsonForFunctions :: Map.Map NonEmptyString.NonEmptyString NonEmptyString.NonEmptyString -> Maybe.Maybe PackageJson.PackageJsonInput
+packageJsonForFunctions :: Map.Map NonEmptyString.NonEmptyString NonEmptyString.NonEmptyString -> Maybe PackageJson.PackageJsonInput
 packageJsonForFunctions dependencies =
   Prelude.map
     ( \name ->
@@ -443,7 +431,7 @@ packageJsonForFunctions dependencies =
                 )
           , nodeVersion: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "16")
           , dependencies
-          , typeFilePath: Maybe.Nothing
+          , typeFilePath: Nothing
           }
     )
     (PackageJson.nameFromNonEmptyString appName)

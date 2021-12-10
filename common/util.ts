@@ -138,3 +138,18 @@ export const groupBySize = <T>(
   }
   return group(list, (_, i) => Math.floor(i / Math.floor(size)));
 };
+
+/**
+ * ランダムな ID の文字列を生成する
+ * [crypto.getRandomValues()](https://developer.mozilla.org/en-US/docs/Web/API/Crypto/getRandomValues) を使っているので,
+ * ブラウザか, Node.js v15 以降 の環境でのみ動く
+ * @returns
+ */
+export const createRandomId = (): string => {
+  const binary = crypto.getRandomValues(new Uint8Array(32));
+  let result = "";
+  for (const item of binary) {
+    result += item.toString(16).padStart(2, "0");
+  }
+  return result;
+};

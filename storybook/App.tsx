@@ -34,6 +34,7 @@ const useDefinyAppResult: UseDefinyAppResult = {
   isSavingTypePart: false,
   generateCode: action("generateCode"),
   outputCode: { tag: "notGenerated" },
+  notificationElement: <div>通知の表示</div>,
 };
 
 type ControlAndActionProps = Pick<UseDefinyAppResult, "language">;

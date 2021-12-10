@@ -1,9 +1,10 @@
 module Util
-  ( listUpdateAtOverAutoCreate
-  , groupBySize
-  , toParallel
-  , tupleListToJson
+  ( groupBySize
   , jsonFromNonEmptyString
+  , listUpdateAtOverAutoCreate
+  , toParallel
+  , toParallelWithReturn
+  , tupleListToJson
   ) where
 
 import Control.Parallel as Parallel
@@ -69,6 +70,10 @@ groupBySize size list = group list (\_ i -> (Prelude.div i size))
 -- | Aff を 並列実行する
 toParallel :: Array (Aff.Aff Prelude.Unit) -> Aff.Aff Prelude.Unit
 toParallel list = Prelude.map (\_ -> Prelude.unit) (Parallel.parSequence list)
+
+-- | Aff を 並列実行する. 返ってきた値を使う
+toParallelWithReturn :: forall e. Array (Aff.Aff e) -> Aff.Aff (Array e)
+toParallelWithReturn list = Parallel.parSequence list
 
 tupleListToJson :: Array (Tuple.Tuple String ArgonautCore.Json) -> ArgonautCore.Json
 tupleListToJson list = ArgonautCore.fromObject (Object.fromFoldable list)

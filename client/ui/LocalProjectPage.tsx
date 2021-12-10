@@ -6,7 +6,7 @@ import {
   listValue,
   oneLineTextValue,
 } from "../editor/common";
-import { listDeleteAt, listUpdateAt } from "../../common/util";
+import { createRandomId, listDeleteAt, listUpdateAt } from "../../common/util";
 import { Button } from "./Button";
 import { Editor } from "./Editor";
 import { ListItem } from "../editor/list";
@@ -238,13 +238,4 @@ const createRandomTypePartId = (): d.TypePartId => {
 
 const createRandomPartId = (): d.PartId => {
   return d.PartId.fromString(createRandomId());
-};
-
-const createRandomId = (): string => {
-  const binary = crypto.getRandomValues(new Uint8Array(32));
-  let result = "";
-  for (const item of binary) {
-    result += item.toString(16).padStart(2, "0");
-  }
-  return result;
 };
