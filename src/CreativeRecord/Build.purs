@@ -42,23 +42,13 @@ main =
 appName :: NonEmptyString.NonEmptyString
 appName = NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "creative-record")
 
-firstClientProgramFilePath :: Path.DistributionFilePath
-firstClientProgramFilePath =
-  Path.DistributionFilePath
-    { directoryPath:
-        Path.DistributionDirectoryPath
-          { appName
-          , folderNameMaybe:
-              Just
-                ( NonEmptyString.nes
-                    (Proxy.Proxy :: Proxy.Proxy "client-spago-result")
-                )
-          }
-    , fileName: programFileName
-    }
+pureScriptOutputPath :: Path.DirectoryPath
+pureScriptOutputPath =
+  Path.DirectoryPath
+    [ NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "output") ]
 
-programFileName :: NonEmptyString.NonEmptyString
-programFileName = NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "program")
+clientProgramFileName :: NonEmptyString.NonEmptyString
+clientProgramFileName = NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "creativeRecordsClientStart")
 
 esbuildClientProgramFileDirectoryPath :: Path.DistributionDirectoryPath
 esbuildClientProgramFileDirectoryPath =
@@ -130,21 +120,19 @@ clientProgramBuild = do
 
 runSpagoBundleApp :: Aff.Aff Unit
 runSpagoBundleApp = do
-  Spago.bundleApp
-    { mainModuleName:
-        PureScriptData.ModuleName
-          ( NonEmptyArray.cons'
-              (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "CreativeRecord"))
-              [ NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "Client") ]
-          )
-    , outputJavaScriptPath: firstClientProgramFilePath
-    }
+  Spago.build
+    { outputDiresctoy: pureScriptOutputPath }
   Console.logValueAsAff "spago でのビルドに成功!" {}
 
 runEsbuild :: Aff.Aff Unit
 runEsbuild = do
   EsBuild.buildJs
-    { entryPoints: Path.distributionFilePathToFilePath firstClientProgramFilePath
+    { entryPoints:
+        Path.FilePath
+          { directoryPath:
+              Path.DirectoryPath []
+          , fileName: clientProgramFileName
+          }
     , outdir: esbuildClientProgramFileDirectoryPath
     , sourcemap: false
     , target: [ "chrome95", "firefox94", "safari15" ]
@@ -157,7 +145,7 @@ readEsbuildResultClientProgramFile = do
     FileSystemRead.readTextFileInDistribution
       ( Path.DistributionFilePath
           { directoryPath: esbuildClientProgramFileDirectoryPath
-          , fileName: programFileName
+          , fileName: clientProgramFileName
           }
       )
       FileType.JavaScript

@@ -30,8 +30,6 @@ import Node.Stream as Stream
 import Node.Buffer as Buffer
 import Node.Encoding as Encoding
 
--- | Note: some of these types are lies, and so it is unsafe to access some of
--- | these record fields directly.
 type ChildProcess
   = { stdin :: Stream.Writable ()
     , stdout :: Stream.Readable ()

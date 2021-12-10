@@ -65,8 +65,10 @@ bundleApp { mainModuleName, outputJavaScriptPath } = do
           FileType.JavaScript
     }
 
+-- | ```ps1
 -- | npx spago build --purs-args "-o {outputDiresctoy}"
-build :: { outputDiresctoy :: Path.DistributionDirectoryPath } -> Aff.Aff Unit
+-- | ```
+build :: { outputDiresctoy :: Path.DirectoryPath } -> Aff.Aff Unit
 build { outputDiresctoy } = do
   Shell.execWithLog
     ( NonEmptyString.join1With
@@ -75,7 +77,7 @@ build { outputDiresctoy } = do
             ( NonEmptyString.nes
                 (Proxy.Proxy :: Proxy.Proxy "npx spago build --purs-args \"-o ")
             )
-            [ Path.distributionDirectoryPathToString outputDiresctoy
+            [ Path.directoryPathToString outputDiresctoy
             , NonEmptyString.nes
                 (Proxy.Proxy :: Proxy.Proxy "\"")
             ]
@@ -83,4 +85,4 @@ build { outputDiresctoy } = do
     )
   Console.logValueAsAff
     "spago build に成功!"
-    { outputDiresctoy: Path.distributionDirectoryPathToString outputDiresctoy }
+    { outputDiresctoy: Path.directoryPathToString outputDiresctoy }

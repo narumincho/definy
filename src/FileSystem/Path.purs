@@ -127,6 +127,7 @@ distributionDirectoryPathToDirectoryPath (DistributionDirectoryPath { appName, f
 distributionFilePathToDirectoryPath :: DistributionFilePath -> DistributionDirectoryPath
 distributionFilePathToDirectoryPath (DistributionFilePath { directoryPath }) = directoryPath
 
+-- | ディレクトリパスのさらに深いところを指定する
 directoryPathPushDirectoryNameList :: DirectoryPath -> Array NonEmptyString.NonEmptyString -> DirectoryPath
 directoryPathPushDirectoryNameList (DirectoryPath directoryPath) list =
   DirectoryPath
