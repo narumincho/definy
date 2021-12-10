@@ -160,28 +160,28 @@ boxToVdomElementAndStyleDict box@( Data.Box
                 , Css.overflowHidden
                 ]
               , case boxRecord.height of
-                  Maybe.Just height -> [ Css.heightRem height ]
-                  Maybe.Nothing -> []
+                  Just height -> [ Css.heightRem height ]
+                  Nothing -> []
               , case boxRecord.backgroundColor of
-                  Maybe.Just backgroundColor -> [ Css.backgroundColor backgroundColor ]
-                  Maybe.Nothing -> []
+                  Just backgroundColor -> [ Css.backgroundColor backgroundColor ]
+                  Nothing -> []
               , case boxRecord.url of
-                  Maybe.Just _ -> [ Css.textDecorationNone ]
-                  Maybe.Nothing -> []
+                  Just _ -> [ Css.textDecorationNone ]
+                  Nothing -> []
               , case boxRecord.gridTemplateColumns1FrCount of
-                  Maybe.Just count -> [ Css.gridTemplateColumns count ]
-                  Maybe.Nothing -> []
+                  Just count -> [ Css.gridTemplateColumns count ]
+                  Nothing -> []
               ]
         , hoverDeclarationList:
             case keyframeResult of
-              Maybe.Just animationHashValue ->
+              Just animationHashValue ->
                 [ Css.animation
                     ( sha256HashValueToAnimationName
                         animationHashValue.animationHashValue
                     )
                     animationHashValue.duration
                 ]
-              Maybe.Nothing -> []
+              Nothing -> []
         }
 
     classNameHashValue :: Hash.Sha256HashValue
@@ -203,21 +203,21 @@ boxToVdomElementAndStyleDict box@( Data.Box
     ElementAndStyleDict
       { element:
           case boxRecord.url of
-            Maybe.Just url ->
+            Just url ->
               Vdom.ElementExternalLink
                 ( Vdom.ExternalLink
-                    { id: Maybe.Nothing
-                    , class: Maybe.Just className
+                    { id: Nothing
+                    , class: Just className
                     , href: url
                     , children: vdomChildren
                     }
                 )
-            Maybe.Nothing ->
+            Nothing ->
               Vdom.ElementDiv
                 ( Vdom.Div
-                    { id: Maybe.Nothing
-                    , class: Maybe.Just className
-                    , click: Maybe.Nothing
+                    { id: Nothing
+                    , class: Just className
+                    , click: Nothing
                     , children: vdomChildren
                     }
                 )
@@ -225,10 +225,10 @@ boxToVdomElementAndStyleDict box@( Data.Box
           Map.insert classNameHashValue viewStyle childrenStyleDict
       , keyframesDict:
           case keyframeResult of
-            Maybe.Just { animationHashValue, keyframeList } ->
+            Just { animationHashValue, keyframeList } ->
               Map.insert animationHashValue keyframeList
                 childrenKeyframesDict
-            Maybe.Nothing -> childrenKeyframesDict
+            Nothing -> childrenKeyframesDict
       }
 
 viewChildrenToVdomChildren ::
@@ -274,69 +274,17 @@ boxGetKeyframeListAndAnimationName ::
     , duration :: Number
     }
 boxGetKeyframeListAndAnimationName (Data.Box { hover: Data.BoxHoverStyle { animation } }) = case animation of
-  Maybe.Just (Data.Animation { keyframeList, duration }) ->
-    Maybe.Just
+  Just (Data.Animation { keyframeList, duration }) ->
+    Just
       { keyframeList: keyframeList
       , animationHashValue: keyframeListToSha256HashValue keyframeList
       , duration: duration
       }
-  Maybe.Nothing -> Maybe.Nothing
+  Nothing -> Nothing
 
 elementToHtmlElementAndStyleDict :: forall message. Data.Element message -> ElementAndStyleDict message
 elementToHtmlElementAndStyleDict = case _ of
-  Data.Text { padding, markup, text } ->
-    let
-      viewStyle :: ViewStyle
-      viewStyle =
-        ViewStyle
-          { declarationList:
-              [ Css.color Color.white
-              , Css.padding { topBottom: padding, leftRight: padding }
-              , Css.margin0
-              , Css.lineHeight 1
-              ]
-          , hoverDeclarationList: []
-          }
-
-      classNameHashValue :: Hash.Sha256HashValue
-      classNameHashValue = viewStyleToSha256HashValue viewStyle
-
-      className :: NonEmptyString
-      className = sha256HashValueToClassName classNameHashValue
-    in
-      ElementAndStyleDict
-        { element:
-            case markup of
-              Data.None ->
-                Vdom.ElementDiv
-                  ( Vdom.Div
-                      { children: Vdom.ChildrenText text
-                      , class: Maybe.Just className
-                      , click: Maybe.Nothing
-                      , id: Maybe.Nothing
-                      }
-                  )
-              Data.Heading1 ->
-                Vdom.ElementH1
-                  ( Vdom.H1
-                      { class: Maybe.Just className
-                      , click: Maybe.Nothing
-                      , id: Maybe.Nothing
-                      , children: Vdom.ChildrenText text
-                      }
-                  )
-              Data.Heading2 ->
-                Vdom.ElementH2
-                  ( Vdom.H2
-                      { class: Maybe.Just className
-                      , click: Maybe.Nothing
-                      , id: Maybe.Nothing
-                      , children: Vdom.ChildrenText text
-                      }
-                  )
-        , styleDict: Map.singleton classNameHashValue viewStyle
-        , keyframesDict: Map.empty
-        }
+  Data.ElementText text -> textToHtmlElementAndStyleDict text
   Data.SvgElement
     { height
   , isJustifySelfCenter
@@ -367,8 +315,8 @@ elementToHtmlElementAndStyleDict = case _ of
             Vdom.svg
               { children:
                   Array.mapWithIndex (\index element -> Tuple.Tuple (Prelude.show index) (svgElementToHtmlElement element)) svgElementList
-              , class: Maybe.Nothing
-              , id: Maybe.Nothing
+              , class: Nothing
+              , id: Nothing
               , viewBoxHeight: viewBox.height
               , viewBoxWidth: viewBox.width
               , viewBoxX: viewBox.x
@@ -408,13 +356,68 @@ elementToHtmlElementAndStyleDict = case _ of
         }
   Data.BoxElement element -> boxToVdomElementAndStyleDict element
 
+textToHtmlElementAndStyleDict :: forall message. Data.Text message -> ElementAndStyleDict message
+textToHtmlElementAndStyleDict (Data.Text { padding, markup, text }) =
+  let
+    viewStyle :: ViewStyle
+    viewStyle =
+      ViewStyle
+        { declarationList:
+            [ Css.color Color.white
+            , Css.padding { topBottom: padding, leftRight: padding }
+            , Css.margin0
+            , Css.lineHeight 1
+            ]
+        , hoverDeclarationList: []
+        }
+
+    classNameHashValue :: Hash.Sha256HashValue
+    classNameHashValue = viewStyleToSha256HashValue viewStyle
+
+    className :: NonEmptyString
+    className = sha256HashValueToClassName classNameHashValue
+  in
+    ElementAndStyleDict
+      { element:
+          case markup of
+            Data.None ->
+              Vdom.ElementDiv
+                ( Vdom.Div
+                    { id: Nothing
+                    , class: Just className
+                    , click: Nothing
+                    , children: Vdom.ChildrenText text
+                    }
+                )
+            Data.Heading1 ->
+              Vdom.ElementH1
+                ( Vdom.H1
+                    { id: Nothing
+                    , class: Just className
+                    , click: Nothing
+                    , children: Vdom.ChildrenText text
+                    }
+                )
+            Data.Heading2 ->
+              Vdom.ElementH2
+                ( Vdom.H2
+                    { id: Nothing
+                    , class: Just className
+                    , click: Nothing
+                    , children: Vdom.ChildrenText text
+                    }
+                )
+      , styleDict: Map.singleton classNameHashValue viewStyle
+      , keyframesDict: Map.empty
+      }
+
 svgElementToHtmlElement :: forall message. Data.SvgElement -> Vdom.Element message
 svgElementToHtmlElement = case _ of
   Data.Path { pathText, fill } ->
     Vdom.ElementSvgPath
       ( Vdom.SvgPath
-          { id: Maybe.Nothing
-          , class: Maybe.Nothing
+          { id: Nothing
+          , class: Nothing
           , d: pathText
           , fill: fill
           }

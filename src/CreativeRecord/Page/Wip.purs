@@ -17,7 +17,10 @@ view =
     , url: Nothing
     , hover: View.boxHoverStyleNone
     , children:
-        [ View.Text
-            { markup: View.Heading2, padding: 8.0, text: "このページはまだ作成中です!" }
+        [ View.text
+            { markup: View.Heading2
+            , padding: 8.0
+            , text: "このページはまだ作成中です!"
+            }
         ]
     }

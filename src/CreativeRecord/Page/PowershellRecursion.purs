@@ -17,7 +17,10 @@ view =
     , url: Nothing
     , hover: View.boxHoverStyleNone
     , children:
-        [ View.Text
-            { markup: View.Heading2, padding: 8.0, text: "PowerShell で フォルダ内のファイルに対して 再帰的にコマンドを実行する" }
+        [ View.text
+            { markup: View.Heading2
+            , padding: 8.0
+            , text: "PowerShell で フォルダ内のファイルに対して 再帰的にコマンドを実行する"
+            }
         ]
     }
