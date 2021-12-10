@@ -45,10 +45,6 @@ module Vdom.Data
   , svgPathDiff
   , svgCircleDiff
   , svgAnimateDiff
-  , rootPath
-  , pathAppendKey
-  , Path
-  , pathToString
   ) where
 
 import Color as Color
@@ -59,7 +55,6 @@ import Data.Array.NonEmpty as NonEmptyArray
 import Data.Map as Map
 import Data.Maybe (Maybe)
 import Data.Maybe as Maybe
-import Data.String as String
 import Data.String.NonEmpty (NonEmptyString)
 import Data.String.NonEmpty as NonEmptyString
 import Data.Tuple as Tuple
@@ -612,18 +607,6 @@ newtype Events message
   , onChange :: Maybe.Maybe (ChangeMessageData message)
   , onInput :: Maybe.Maybe (InputMessageData message)
   }
-
-newtype Path
-  = Path String
-
-rootPath :: Path
-rootPath = Path ""
-
-pathAppendKey :: Path -> String -> Path
-pathAppendKey (Path path) key = Path (String.joinWith "/" [ path, key ])
-
-pathToString :: Path -> String
-pathToString (Path str) = str
 
 newtype ClickMessageData message
   = ClickMessageData

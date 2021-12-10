@@ -16,13 +16,14 @@ import Effect.Uncurried as EffectUncurried
 import Language as Language
 import StructuredUrl as StructuredUrl
 import Vdom.Data as Vdom
+import Vdom.Path as Path
 import Vdom.PatchState as VdomPatchState
 
 -- | Vdom の Element から DOM API から HtmlElement か SvgElement を生成する
 elementToHtmlOrSvgElement ::
   forall message.
   { element :: Vdom.Element message
-  , path :: Vdom.Path
+  , path :: Path.Path
   , patchState :: VdomPatchState.PatchState message
   } ->
   Effect HtmlOrSvgElement
@@ -32,13 +33,13 @@ elementToHtmlOrSvgElement { element, path, patchState } = do
   EffectUncurried.runEffectFn2
     setDataPath
     htmlOrSvgElement
-    (Vdom.pathToString path)
+    (Path.toString path)
   pure htmlOrSvgElement
 
 elementToHtmlOrSvgElementWithoutDataPath ::
   forall message.
   { element :: Vdom.Element message
-  , path :: Vdom.Path
+  , path :: Path.Path
   , patchState :: VdomPatchState.PatchState message
   } ->
   Effect HtmlOrSvgElement
@@ -185,7 +186,7 @@ applyChildren ::
   forall message.
   { htmlOrSvgElement :: HtmlOrSvgElement
   , children :: Vdom.Children message
-  , path :: Vdom.Path
+  , path :: Path.Path
   , patchState :: VdomPatchState.PatchState message
   } ->
   Effect.Effect Unit
@@ -206,7 +207,7 @@ applyChildList ::
   forall message.
   { htmlOrSvgElement :: HtmlOrSvgElement
   , childList :: Array (Tuple.Tuple String (Vdom.Element message))
-  , path :: Vdom.Path
+  , path :: Path.Path
   , patchState :: VdomPatchState.PatchState message
   } ->
   Effect.Effect Unit
@@ -216,14 +217,21 @@ applyChildList { htmlOrSvgElement, childList, path, patchState } =
         element <-
           elementToHtmlOrSvgElement
             { element: child
-            , path: Vdom.pathAppendKey path key
+            , path: Path.appendKey path key
             , patchState
             }
         EffectUncurried.runEffectFn2 appendChild htmlOrSvgElement element
     )
 
 -- | HTMLElment か SVGElement の子要素に対して差分データの分を反映する
-renderChildren :: forall message. { htmlOrSvgElement :: HtmlOrSvgElement, childrenDiff :: Vdom.ChildrenDiff message, patchState :: VdomPatchState.PatchState message, path :: Vdom.Path } -> Effect.Effect Unit
+renderChildren ::
+  forall message.
+  { htmlOrSvgElement :: HtmlOrSvgElement
+  , childrenDiff :: Vdom.ChildrenDiff message
+  , patchState :: VdomPatchState.PatchState message
+  , path :: Path.Path
+  } ->
+  Effect.Effect Unit
 renderChildren = case _ of
   { childrenDiff: Vdom.ChildrenDiffSkip } -> pure unit
   { htmlOrSvgElement, childrenDiff: Vdom.ChildrenDiffSetText newText } ->
@@ -258,7 +266,7 @@ resetAndRender (Vdom.Vdom view) patchState = do
           Just list -> Vdom.ChildrenDiffResetAndInsert list
           Nothing -> Vdom.ChildrenDiffSetText ""
     , patchState
-    , path: Vdom.rootPath
+    , path: Path.root
     }
 
 -- | 差分データから実際のDOMを操作して表示に反映させる
@@ -270,7 +278,7 @@ render (Vdom.ViewDiff viewDiff) patchState = do
     { htmlOrSvgElement: bodyElement
     , childrenDiff: viewDiff.childrenDiff
     , patchState
-    , path: Vdom.rootPath
+    , path: Path.root
     }
   Console.logValue "run renderView" { viewDiff, patchState }
 
