@@ -27,11 +27,13 @@ html =
                     HtmlToString.toString
                       ( VdomToHtml.toHtml
                           ( ViewToVdom.toVdom
-                              ( StructuredUrl.pathAndSearchParams
-                                  [ ClientProgramHashValue.clientProgramHashValue ]
-                                  Map.empty
+                              ( Just
+                                  ( StructuredUrl.pathAndSearchParams
+                                      [ ClientProgramHashValue.clientProgramHashValue ]
+                                      Map.empty
+                                  )
                               )
-                              (CreativeRecordView.view locationMaybe)
+                              (CreativeRecordView.view locationMaybe 0)
                           )
                       )
                 , mediaTypeMaybe: Just MediaType.Html

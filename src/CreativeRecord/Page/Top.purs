@@ -3,11 +3,12 @@ module CreativeRecord.Page.Top where
 import Prelude
 import Color as Color
 import CreativeRecord.Location as Location
+import CreativeRecord.Messgae as Message
 import CreativeRecord.StaticResource as StaticResource
 import CreativeRecord.SvgImage as SvgImage
 import Css as Css
 import Data.Map as Map
-import Data.Maybe as Maybe
+import Data.Maybe (Maybe(..))
 import Data.String.NonEmpty as NonEmptyString
 import Data.UInt as UInt
 import Prelude as Prelude
@@ -31,36 +32,36 @@ zoomAnimation =
         ]
     }
 
-snsLink :: StructuredUrl.StructuredUrl -> View.Svg -> String -> View.Element Prelude.Unit
+snsLink :: StructuredUrl.StructuredUrl -> View.Svg -> String -> View.Element Message.Message
 snsLink url logo text =
   View.box
     { direction: View.X
-    , url: Maybe.Just url
+    , url: Just url
     , paddingLeftRight: 8.0
     , paddingTopBottom: 8.0
     , gap: 8.0
-    , height: Maybe.Nothing
-    , backgroundColor: Maybe.Just linkBackGroundColor
-    , hover: View.BoxHoverStyle { animation: Maybe.Just zoomAnimation }
-    , gridTemplateColumns1FrCount: Maybe.Nothing
+    , height: Nothing
+    , backgroundColor: Just linkBackGroundColor
+    , hover: View.BoxHoverStyle { animation: Just zoomAnimation }
+    , gridTemplateColumns1FrCount: Nothing
     , children:
         [ View.SvgElement { width: View.Rem 2.0, height: 2.0, svg: logo, isJustifySelfCenter: false }
-        , View.Text { markup: View.None, padding: 8.0, text }
+        , View.text { markup: View.None, padding: 8.0, text, click: Nothing }
         ]
     }
 
-externalLink :: StructuredUrl.StructuredUrl -> StructuredUrl.PathAndSearchParams -> String -> View.Element Prelude.Unit
+externalLink :: StructuredUrl.StructuredUrl -> StructuredUrl.PathAndSearchParams -> String -> View.Element Message.Message
 externalLink url imageUrl text =
   View.box
     { direction: View.Y
-    , url: Maybe.Just url
-    , backgroundColor: Maybe.Just linkBackGroundColor
-    , hover: View.BoxHoverStyle { animation: Maybe.Just zoomAnimation }
+    , url: Just url
+    , backgroundColor: Just linkBackGroundColor
+    , hover: View.BoxHoverStyle { animation: Just zoomAnimation }
     , gap: 0.0
     , paddingTopBottom: 0.0
     , paddingLeftRight: 0.0
-    , height: Maybe.Nothing
-    , gridTemplateColumns1FrCount: Maybe.Nothing
+    , height: Nothing
+    , gridTemplateColumns1FrCount: Nothing
     , children:
         [ View.Image
             { path: imageUrl
@@ -68,17 +69,17 @@ externalLink url imageUrl text =
             , height: 8.0
             , alternativeText: append text "のアイコン"
             }
-        , View.Text { markup: View.None, padding: 8.0, text }
+        , View.text { markup: View.None, padding: 8.0, text, click: Nothing }
         ]
     }
 
-articleLink :: ArticleTitleAndImageUrl -> View.Element Prelude.Unit
+articleLink :: ArticleTitleAndImageUrl -> View.Element Message.Message
 articleLink (ArticleTitleAndImageUrl { location, imagePath, title }) =
   View.box
     { direction: View.Y
-    , backgroundColor: Maybe.Just linkBackGroundColor
-    , url: Maybe.Just (Location.toUrl location)
-    , hover: View.BoxHoverStyle { animation: Maybe.Just zoomAnimation }
+    , backgroundColor: Just linkBackGroundColor
+    , url: Just (Location.toUrl location)
+    , hover: View.BoxHoverStyle { animation: Just zoomAnimation }
     , children:
         [ View.Image
             { path: imagePath
@@ -86,13 +87,13 @@ articleLink (ArticleTitleAndImageUrl { location, imagePath, title }) =
             , height: 8.0
             , alternativeText: append title "のイメージ画像"
             }
-        , View.Text { markup: View.None, padding: 8.0, text: title }
+        , View.text { markup: View.None, padding: 8.0, text: title, click: Nothing }
         ]
     , gap: 0.0
     , paddingTopBottom: 0.0
     , paddingLeftRight: 0.0
-    , height: Maybe.Nothing
-    , gridTemplateColumns1FrCount: Maybe.Nothing
+    , height: Nothing
+    , gridTemplateColumns1FrCount: Nothing
     }
 
 newtype ArticleTitleAndImageUrl
@@ -102,7 +103,7 @@ newtype ArticleTitleAndImageUrl
   , location :: Location.Location
   }
 
-articleListToViewElement :: Array ArticleTitleAndImageUrl -> View.Element Prelude.Unit
+articleListToViewElement :: Array ArticleTitleAndImageUrl -> View.Element Message.Message
 articleListToViewElement list =
   View.box
     { direction: View.Y
@@ -115,45 +116,45 @@ articleListToViewElement list =
               View.box
                 { direction: View.X
                 , gap: 8.0
-                , gridTemplateColumns1FrCount: Maybe.Just 3
+                , gridTemplateColumns1FrCount: Just 3
                 , children: Prelude.map articleLink row
                 , paddingTopBottom: 0.0
                 , paddingLeftRight: 0.0
-                , height: Maybe.Nothing
-                , backgroundColor: Maybe.Nothing
-                , url: Maybe.Nothing
+                , height: Nothing
+                , backgroundColor: Nothing
+                , url: Nothing
                 , hover: View.boxHoverStyleNone
                 }
           )
           (Util.groupBySize (UInt.fromInt 3) list)
-    , height: Maybe.Nothing
-    , backgroundColor: Maybe.Nothing
-    , gridTemplateColumns1FrCount: Maybe.Nothing
-    , url: Maybe.Nothing
+    , height: Nothing
+    , backgroundColor: Nothing
+    , gridTemplateColumns1FrCount: Nothing
+    , url: Nothing
     , hover: View.boxHoverStyleNone
     }
 
-copyright :: View.Element Prelude.Unit
+copyright :: View.Element Message.Message
 copyright =
-  View.Text
-    { markup: View.None, padding: 8.0, text: "© 2021 narumincho" }
+  View.text
+    { markup: View.None, padding: 8.0, text: "© 2021 narumincho", click: Nothing }
 
-topBox :: View.Element Prelude.Unit
-topBox =
+topBox :: Int -> View.Element Message.Message
+topBox count =
   View.box
     { direction: View.Y
     , gap: 0.0
     , paddingTopBottom: 0.0
     , paddingLeftRight: 0.0
-    , height: Maybe.Nothing
-    , backgroundColor: Maybe.Nothing
-    , gridTemplateColumns1FrCount: Maybe.Nothing
-    , url: Maybe.Nothing
+    , height: Nothing
+    , backgroundColor: Nothing
+    , gridTemplateColumns1FrCount: Nothing
+    , url: Nothing
     , hover: View.boxHoverStyleNone
     , children:
         [ View.box
             { direction: View.Y
-            , url: Maybe.Just (Location.toUrl Location.Top)
+            , url: Just (Location.toUrl Location.Top)
             , children:
                 [ View.SvgElement
                     { width: View.Percentage 90.0
@@ -165,22 +166,26 @@ topBox =
             , gap: 0.0
             , paddingTopBottom: 48.0
             , paddingLeftRight: 0.0
-            , height: Maybe.Nothing
-            , backgroundColor: Maybe.Nothing
-            , gridTemplateColumns1FrCount: Maybe.Nothing
+            , height: Nothing
+            , backgroundColor: Nothing
+            , gridTemplateColumns1FrCount: Nothing
             , hover: View.boxHoverStyleNone
             }
-        , View.Text
-            { markup: View.Heading2, padding: 8.0, text: "ナルミンチョの SNS アカウント" }
+        , View.text
+            { markup: View.Heading2
+            , padding: 8.0
+            , text: Prelude.append "ナルミンチョの SNS アカウント" (Prelude.show count)
+            , click: Just Message.CountUp
+            }
         , View.box
             { direction: View.X
             , paddingTopBottom: 8.0
             , paddingLeftRight: 8.0
             , gap: 8.0
-            , height: Maybe.Just 4.0
-            , backgroundColor: Maybe.Nothing
-            , gridTemplateColumns1FrCount: Maybe.Nothing
-            , url: Maybe.Nothing
+            , height: Just 4.0
+            , backgroundColor: Nothing
+            , gridTemplateColumns1FrCount: Nothing
+            , url: Nothing
             , hover: View.boxHoverStyleNone
             , children:
                 [ snsLink
@@ -214,18 +219,22 @@ topBox =
                     "ナルミンチョ"
                 ]
             }
-        , View.Text
-            { markup: View.Heading2, padding: 8.0, text: "ナルミンチョが作った Webアプリ" }
+        , View.text
+            { markup: View.Heading2
+            , padding: 8.0
+            , text: "ナルミンチョが作った Webアプリ"
+            , click: Nothing
+            }
         , View.box
             { direction: View.X
             , paddingTopBottom: 8.0
             , paddingLeftRight: 8.0
-            , height: Maybe.Nothing
-            , backgroundColor: Maybe.Nothing
-            , url: Maybe.Nothing
+            , height: Nothing
+            , backgroundColor: Nothing
+            , url: Nothing
             , hover: View.boxHoverStyleNone
             , gap: 8.0
-            , gridTemplateColumns1FrCount: Maybe.Just 3
+            , gridTemplateColumns1FrCount: Just 3
             , children:
                 [ externalLink
                     ( StructuredUrl.StructuredUrl
@@ -258,8 +267,8 @@ topBox =
                     "つくマート"
                 ]
             }
-        , View.Text
-            { markup: View.Heading2, padding: 8.0, text: "ナルミンチョが書いた 記事" }
+        , View.text
+            { markup: View.Heading2, padding: 8.0, text: "ナルミンチョが書いた 記事", click: Nothing }
         , articleListToViewElement
             ( [ ArticleTitleAndImageUrl
                   { title:

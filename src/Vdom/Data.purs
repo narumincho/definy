@@ -6,7 +6,6 @@ module Vdom.Data
   , H2(..)
   , Pointer(..)
   , Children(..)
-  , ClickMessageData(..)
   , PointerType(..)
   , Element(..)
   , ExternalLink(..)
@@ -27,7 +26,6 @@ module Vdom.Data
   , ViewDiff(..)
   , ViewPatchOperation(..)
   , MessageData(..)
-  , Events
   , ChildrenDiff(..)
   , ElementDiff
   , skip
@@ -45,10 +43,6 @@ module Vdom.Data
   , svgPathDiff
   , svgCircleDiff
   , svgAnimateDiff
-  , rootPath
-  , pathAppendKey
-  , Path
-  , pathToString
   ) where
 
 import Color as Color
@@ -59,13 +53,13 @@ import Data.Array.NonEmpty as NonEmptyArray
 import Data.Map as Map
 import Data.Maybe (Maybe)
 import Data.Maybe as Maybe
-import Data.String as String
 import Data.String.NonEmpty (NonEmptyString)
 import Data.String.NonEmpty as NonEmptyString
 import Data.Tuple as Tuple
 import Language as Language
 import Prelude as Prelude
 import StructuredUrl as StructuredUrl
+import Vdom.PatchState as PatchState
 
 newtype Vdom message
   = Vdom
@@ -123,7 +117,7 @@ data PointerType
 -- | メッセージを集計した結果
 newtype MessageData message
   = MessageData
-  { messageMap :: Map.Map String (Events message)
+  { messageMap :: Map.Map String (PatchState.Events message)
   , pointerMove :: Maybe.Maybe (Pointer -> message)
   , pointerDown :: Maybe.Maybe (Pointer -> message)
   }
@@ -200,7 +194,7 @@ newtype Div message
   = Div
   { id :: Maybe.Maybe NonEmptyString.NonEmptyString
   , class :: Maybe.Maybe NonEmptyString.NonEmptyString
-  , click :: Maybe.Maybe (ClickMessageData message)
+  , click :: Maybe.Maybe (PatchState.ClickMessageData message)
   , children :: Children message
   }
 
@@ -237,7 +231,7 @@ newtype H1 message
   = H1
   { id :: Maybe.Maybe NonEmptyString.NonEmptyString
   , class :: Maybe.Maybe NonEmptyString.NonEmptyString
-  , click :: Maybe.Maybe (ClickMessageData message)
+  , click :: Maybe.Maybe (PatchState.ClickMessageData message)
   , children :: Children message
   }
 
@@ -245,7 +239,7 @@ newtype H2 message
   = H2
   { id :: Maybe.Maybe NonEmptyString.NonEmptyString
   , class :: Maybe.Maybe NonEmptyString.NonEmptyString
-  , click :: Maybe.Maybe (ClickMessageData message)
+  , click :: Maybe.Maybe (PatchState.ClickMessageData message)
   , children :: Children message
   }
 
@@ -604,39 +598,6 @@ newtype SvgG message
   { transform :: NonEmptyArray NonEmptyString
   , children :: Array (Tuple.Tuple String (Element message))
   }
-
--- | 各要素のイベントのハンドルをどうするかのデータ
-newtype Events message
-  = Events
-  { onClick :: Maybe.Maybe (ClickMessageData message)
-  , onChange :: Maybe.Maybe (ChangeMessageData message)
-  , onInput :: Maybe.Maybe (InputMessageData message)
-  }
-
-newtype Path
-  = Path String
-
-rootPath :: Path
-rootPath = Path ""
-
-pathAppendKey :: Path -> String -> Path
-pathAppendKey (Path path) key = Path (String.joinWith "/" [ path, key ])
-
-pathToString :: Path -> String
-pathToString (Path str) = str
-
-newtype ClickMessageData message
-  = ClickMessageData
-  { ignoreNewTab :: Boolean
-  , stopPropagation :: Boolean
-  , message :: message
-  }
-
-newtype ChangeMessageData message
-  = ChangeMessageData message
-
-newtype InputMessageData message
-  = InputMessageData (String -> message)
 
 data Children message
   = ChildrenElementList (NonEmptyArray (Tuple.Tuple String (Element message)))

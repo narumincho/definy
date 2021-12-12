@@ -1,23 +1,27 @@
 module View.Data
-  ( View(..)
+  ( Animation(..)
   , Box(..)
-  , XOrY(..)
-  , Element(..)
   , BoxHoverStyle(..)
-  , TextMarkup(..)
-  , Svg(..)
-  , PercentageOrRem(..)
-  , Animation(..)
-  , ViewBox(..)
-  , SvgElement(..)
   , BoxRecord
+  , Element(..)
+  , PercentageOrRem(..)
+  , Svg(..)
+  , SvgElement(..)
+  , Text(..)
+  , TextMarkup(..)
+  , TextRecord
+  , View(..)
+  , ViewBox(..)
+  , XOrY(..)
   , box
   , boxHoverStyleNone
+  , text
   ) where
 
 import Color as Color
 import Css as Css
 import Data.Array.NonEmpty (NonEmptyArray)
+import Data.Maybe (Maybe)
 import Data.Maybe as Maybe
 import Data.String.NonEmpty (NonEmptyString)
 import Data.String.NonEmpty as NonEmptyString
@@ -37,7 +41,7 @@ newtype View message
   , {- ページの説明 (HTML出力のみ反映) -} description :: String
   , {- テーマカラー -} themeColor :: Color.Color
   , {- アイコン画像のURL -} iconPath :: StructuredUrl.PathAndSearchParams
-  , {- ページの言語 -} language :: Maybe.Maybe Language.Language
+  , {- ページの言語 -} language :: Maybe Language.Language
   , {- OGPに使われるカバー画像のパス (CORSの制限を受けない) -} coverImagePath :: StructuredUrl.PathAndSearchParams
   , {- ページのパス -} path :: StructuredUrl.PathAndSearchParams
   , {- オリジン -} origin :: NonEmptyString.NonEmptyString
@@ -55,10 +59,10 @@ type BoxRecord message
     , gap :: Number
     , paddingTopBottom :: Number
     , paddingLeftRight :: Number
-    , height :: Maybe.Maybe Number
-    , backgroundColor :: Maybe.Maybe Color.Color
-    , gridTemplateColumns1FrCount :: Maybe.Maybe Int
-    , url :: Maybe.Maybe StructuredUrl.StructuredUrl
+    , height :: Maybe Number
+    , backgroundColor :: Maybe Color.Color
+    , gridTemplateColumns1FrCount :: Maybe Int
+    , url :: Maybe StructuredUrl.StructuredUrl
     , hover :: BoxHoverStyle
     }
 
@@ -68,7 +72,7 @@ data XOrY
 
 newtype BoxHoverStyle
   = BoxHoverStyle
-  { animation :: Maybe.Maybe Animation
+  { animation :: Maybe Animation
   }
 
 newtype Animation
@@ -79,7 +83,7 @@ newtype Animation
 
 -- | テキスト, リンクなどの要素
 data Element message
-  = Text { markup :: TextMarkup, padding :: Number, text :: String }
+  = ElementText (Text message)
   | SvgElement
     { svg :: Svg
     , width :: PercentageOrRem
@@ -93,6 +97,16 @@ data Element message
     , alternativeText :: String
     }
   | BoxElement (Box message)
+
+newtype Text message
+  = Text (TextRecord message)
+
+type TextRecord message
+  = { markup :: TextMarkup
+    , padding :: Number
+    , click :: Maybe message
+    , text :: String
+    }
 
 data TextMarkup
   = None
@@ -131,6 +145,9 @@ box :: forall message. BoxRecord message -> Element message
 box record =
   BoxElement
     (Box record)
+
+text :: forall message. TextRecord message -> Element message
+text record = ElementText (Text record)
 
 boxHoverStyleNone :: BoxHoverStyle
 boxHoverStyleNone = BoxHoverStyle { animation: Maybe.Nothing }
