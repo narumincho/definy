@@ -8,6 +8,7 @@ type PatchState<Message> = {
 type ClickMessageData<Message> = {
   readonly stopPropagation: boolean;
   readonly message: Message;
+  readonly url: string | null;
 };
 
 type PathAndMessageData<MessageData> = {
@@ -60,6 +61,9 @@ export const start = <State, Message, View>(
         }
         if (messageData.stopPropagation) {
           mouseEvent.stopPropagation();
+        }
+        if (typeof messageData.url === "string") {
+          history.pushState(undefined, "", messageData.url);
         }
         pushMessageList(messageData.message);
       },

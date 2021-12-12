@@ -19,6 +19,9 @@ const start = (option) => {
                 if (messageData.stopPropagation) {
                     mouseEvent.stopPropagation();
                 }
+                if (typeof messageData.url === "string") {
+                    history.pushState(undefined, "", messageData.url);
+                }
                 pushMessageList(messageData.message);
             },
             changeEventHandler: (path) => {

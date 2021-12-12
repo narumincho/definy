@@ -1,9 +1,10 @@
 module Vdom.PatchState
-  ( ClickMessageData(..)
+  ( ClickMessageData
   , InputEvent
   , MouseEvent
   , NewMessageMapParameter(..)
   , PatchState
+  , clickMessageFrom
   , getClickEventHandler
   , newMessageMapParameterAddClick
   , newMessageMapParameterEmpty
@@ -13,6 +14,9 @@ module Vdom.PatchState
 
 import Prelude
 import Data.Map as Map
+import Data.Maybe (Maybe)
+import Data.Nullable (Nullable)
+import Data.Nullable as Nullable
 import Data.Tuple as Tuple
 import Effect (Effect)
 import Effect.Uncurried as EffectUncurried
@@ -40,7 +44,22 @@ newtype ClickMessageData message
   = ClickMessageData
   { stopPropagation :: Boolean
   , message :: message
+  , url :: Nullable String
   }
+
+clickMessageFrom ::
+  forall message.
+  { stopPropagation :: Boolean
+  , message :: message
+  , url :: Maybe String
+  } ->
+  ClickMessageData message
+clickMessageFrom rec =
+  ClickMessageData
+    { stopPropagation: rec.stopPropagation
+    , message: rec.message
+    , url: Nullable.toNullable rec.url
+    }
 
 newtype PatchState message
   = PatchState

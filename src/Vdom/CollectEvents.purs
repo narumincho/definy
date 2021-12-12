@@ -3,7 +3,9 @@ module Vdom.CollectEvents (collectMessageDataMapInChildList) where
 import Prelude
 import Data.Array.NonEmpty as NonEmptyArray
 import Data.Maybe (Maybe(..))
+import Data.String.NonEmpty as NonEmptyString
 import Data.Tuple as Tuple
+import StructuredUrl as StructuredUrl
 import Vdom.Data as Vdom
 import Vdom.PatchState as VdomPatchState
 import Vdom.Path as Path
@@ -65,9 +67,14 @@ collectMessageDataMapInElement element path = case element of
   Vdom.ElementSameOriginLink (Vdom.SameOriginLink rec) ->
     VdomPatchState.newMessageMapParameterAddClick
       path
-      ( VdomPatchState.ClickMessageData
+      ( VdomPatchState.clickMessageFrom
           { stopPropagation: false
           , message: rec.jumpMessage
+          , url:
+              Just
+                ( NonEmptyString.toString
+                    (StructuredUrl.pathAndSearchParamsToString rec.href)
+                )
           }
       )
       (collectMessageDataMapInChildren rec.children path)

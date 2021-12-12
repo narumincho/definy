@@ -392,9 +392,10 @@ textToHtmlElementAndStyleDict (Data.Text { padding, markup, text, click }) =
     clickMessageDataMaybe =
       Prelude.map
         ( \message ->
-            VdomPatchState.ClickMessageData
+            VdomPatchState.clickMessageFrom
               { stopPropagation: false
               , message
+              , url: Nothing
               }
         )
         click
