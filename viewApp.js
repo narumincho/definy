@@ -6,27 +6,15 @@ const start = (option) => {
      * applyViewをする前に事前に実行する必要あり
      */
     const createPatchState = () => {
-        let messageDataMap = new Map();
+        let clickMessageDataMap = new Map();
+        let changeMessageDataMap = new Map();
+        let inputMessageDataMap = new Map();
         return {
             clickEventHandler: (path, mouseEvent) => {
-                const messageData = messageDataMap.get(path)?.onClick;
+                const messageData = clickMessageDataMap.get(path);
                 console.log("クリックを検知した!", path, mouseEvent, messageData);
-                if (messageData === undefined || messageData === null) {
+                if (messageData === undefined) {
                     return;
-                }
-                if (messageData.ignoreNewTab) {
-                    /*
-                     * リンクを
-                     * Ctrlなどを押しながらクリックか,
-                     * マウスの中ボタンでクリックした場合などは, ブラウザで新しいタブが開くので, ブラウザでページ推移をしない.
-                     */
-                    if (mouseEvent.ctrlKey ||
-                        mouseEvent.metaKey ||
-                        mouseEvent.shiftKey ||
-                        mouseEvent.button !== 0) {
-                        return;
-                    }
-                    mouseEvent.preventDefault();
                 }
                 if (messageData.stopPropagation) {
                     mouseEvent.stopPropagation();
@@ -34,21 +22,23 @@ const start = (option) => {
                 pushMessageList(messageData.message);
             },
             changeEventHandler: (path) => {
-                const messageData = messageDataMap.get(path)?.onChange;
-                if (messageData === undefined || messageData === null) {
+                const messageData = changeMessageDataMap.get(path);
+                if (messageData === undefined) {
                     return;
                 }
                 pushMessageList(messageData);
             },
             inputEventHandler: (path, inputEvent) => {
-                const messageData = messageDataMap.get(path)?.onInput;
-                if (messageData === undefined || messageData === null) {
+                const messageData = inputMessageDataMap.get(path);
+                if (messageData === undefined) {
                     return;
                 }
                 pushMessageList(messageData(inputEvent.target.value));
             },
-            setMessageDataMap: (newMapAsList) => {
-                messageDataMap = new Map(newMapAsList.map((e) => [e.path, e.events]));
+            setMessageDataMap: (newMessageMap) => {
+                clickMessageDataMap = new Map(newMessageMap.click.map((e) => [e.path, e.messageData]));
+                changeMessageDataMap = new Map(newMessageMap.change.map((e) => [e.path, e.messageData]));
+                inputMessageDataMap = new Map(newMessageMap.input.map((e) => [e.path, e.messageData]));
             },
         };
     };

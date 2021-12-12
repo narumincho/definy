@@ -3,12 +3,12 @@ module Vdom.Diff (createViewDiff, createElementDiff) where
 import Data.Array as Array
 import Data.Array.NonEmpty (NonEmptyArray)
 import Data.Array.NonEmpty as NonEmptyArray
-import Data.Map as Map
 import Data.Maybe (Maybe(..))
 import Data.Maybe as Maybe
 import Data.Tuple as Tuple
 import Prelude as Prelude
 import Vdom.Data as Data
+import Vdom.PatchState as VdomPatchState
 
 createViewDiff :: forall message. Data.Vdom message -> Data.Vdom message -> Data.ViewDiff message
 createViewDiff (Data.Vdom oldVdom) (Data.Vdom newVdom) =
@@ -35,7 +35,7 @@ createViewDiff (Data.Vdom oldVdom) (Data.Vdom newVdom) =
     , childrenDiff: createChildListDiff oldVdom.children newVdom.children
     , newMessageData:
         Data.MessageData
-          { messageMap: Map.empty
+          { messageMap: VdomPatchState.newMessageMapParameterEmpty
           , pointerMove: newVdom.pointerMove
           , pointerDown: newVdom.pointerDown
           }

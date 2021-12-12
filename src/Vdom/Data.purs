@@ -50,7 +50,6 @@ import Css as Css
 import Data.Array as Array
 import Data.Array.NonEmpty (NonEmptyArray)
 import Data.Array.NonEmpty as NonEmptyArray
-import Data.Map as Map
 import Data.Maybe (Maybe)
 import Data.Maybe as Maybe
 import Data.String.NonEmpty (NonEmptyString)
@@ -117,7 +116,7 @@ data PointerType
 -- | メッセージを集計した結果
 newtype MessageData message
   = MessageData
-  { messageMap :: Map.Map String (PatchState.Events message)
+  { messageMap :: PatchState.NewMessageMapParameter message
   , pointerMove :: Maybe.Maybe (Pointer -> message)
   , pointerDown :: Maybe.Maybe (Pointer -> message)
   }

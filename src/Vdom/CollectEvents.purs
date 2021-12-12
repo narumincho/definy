@@ -2,7 +2,6 @@ module Vdom.CollectEvents (collectMessageDataMapInChildList) where
 
 import Prelude
 import Data.Array.NonEmpty as NonEmptyArray
-import Data.Map as Map
 import Data.Maybe (Maybe(..))
 import Data.Tuple as Tuple
 import Vdom.Data as Vdom
@@ -13,9 +12,9 @@ collectMessageDataMapInChildren ::
   forall message.
   Vdom.Children message ->
   Path.Path ->
-  Map.Map Path.Path (VdomPatchState.Events message)
+  VdomPatchState.NewMessageMapParameter message
 collectMessageDataMapInChildren element path = case element of
-  Vdom.ChildrenText _ -> Map.empty
+  Vdom.ChildrenText _ -> VdomPatchState.newMessageMapParameterEmpty
   Vdom.ChildrenElementList elementList ->
     collectMessageDataMapInChildList
       (NonEmptyArray.toArray elementList)
@@ -25,9 +24,9 @@ collectMessageDataMapInChildList ::
   forall message.
   Array (Tuple.Tuple String (Vdom.Element message)) ->
   Path.Path ->
-  Map.Map Path.Path (VdomPatchState.Events message)
+  VdomPatchState.NewMessageMapParameter message
 collectMessageDataMapInChildList elementList path =
-  Map.unions
+  VdomPatchState.newMessageMapParameterUnions
     ( map
         ( \(Tuple.Tuple key element) ->
             collectMessageDataMapInElement element (Path.appendKey path key)
@@ -39,63 +38,47 @@ collectMessageDataMapInElement ::
   forall message.
   Vdom.Element message ->
   Path.Path ->
-  Map.Map Path.Path (VdomPatchState.Events message)
+  VdomPatchState.NewMessageMapParameter message
 collectMessageDataMapInElement element path = case element of
-  Vdom.ElementDiv (Vdom.Div rec) ->
-    Map.insert
-      path
-      ( VdomPatchState.eventsFrom
-          { onClick: rec.click
-          , onChange: Nothing
-          , onInput: Nothing
-          }
-      )
-      (collectMessageDataMapInChildren rec.children path)
-  Vdom.ElementH1 (Vdom.H1 rec) ->
-    Map.insert
-      path
-      ( VdomPatchState.eventsFrom
-          { onClick: rec.click
-          , onChange: Nothing
-          , onInput: Nothing
-          }
-      )
-      (collectMessageDataMapInChildren rec.children path)
-  Vdom.ElementH2 (Vdom.H2 rec) ->
-    Map.insert
-      path
-      ( VdomPatchState.eventsFrom
-          { onClick: rec.click
-          , onChange: Nothing
-          , onInput: Nothing
-          }
-      )
-      (collectMessageDataMapInChildren rec.children path)
+  Vdom.ElementDiv (Vdom.Div rec) -> case rec.click of
+    Just click ->
+      VdomPatchState.newMessageMapParameterAddClick
+        path
+        click
+        (collectMessageDataMapInChildren rec.children path)
+    Nothing -> collectMessageDataMapInChildren rec.children path
+  Vdom.ElementH1 (Vdom.H1 rec) -> case rec.click of
+    Just click ->
+      VdomPatchState.newMessageMapParameterAddClick
+        path
+        click
+        (collectMessageDataMapInChildren rec.children path)
+    Nothing -> collectMessageDataMapInChildren rec.children path
+  Vdom.ElementH2 (Vdom.H2 rec) -> case rec.click of
+    Just click ->
+      VdomPatchState.newMessageMapParameterAddClick
+        path
+        click
+        (collectMessageDataMapInChildren rec.children path)
+    Nothing -> collectMessageDataMapInChildren rec.children path
   Vdom.ElementExternalLink (Vdom.ExternalLink rec) -> collectMessageDataMapInChildren rec.children path
   Vdom.ElementSameOriginLink (Vdom.SameOriginLink rec) ->
-    Map.insert
+    VdomPatchState.newMessageMapParameterAddClick
       path
-      ( VdomPatchState.eventsFrom
-          { onClick:
-              Just
-                ( VdomPatchState.ClickMessageData
-                    { stopPropagation: false
-                    , message: rec.jumpMessage
-                    }
-                )
-          , onChange: Nothing
-          , onInput: Nothing
+      ( VdomPatchState.ClickMessageData
+          { stopPropagation: false
+          , message: rec.jumpMessage
           }
       )
       (collectMessageDataMapInChildren rec.children path)
   Vdom.ElementButton (Vdom.Button rec) -> collectMessageDataMapInChildren rec.children path
-  Vdom.ElementImg (Vdom.Img _) -> Map.empty
-  Vdom.ElementInputRadio (Vdom.InputRadio _) -> Map.empty
-  Vdom.ElementInputText (Vdom.InputText _) -> Map.empty
-  Vdom.ElementTextArea (Vdom.TextArea _) -> Map.empty
+  Vdom.ElementImg (Vdom.Img _) -> VdomPatchState.newMessageMapParameterEmpty
+  Vdom.ElementInputRadio (Vdom.InputRadio _) -> VdomPatchState.newMessageMapParameterEmpty
+  Vdom.ElementInputText (Vdom.InputText _) -> VdomPatchState.newMessageMapParameterEmpty
+  Vdom.ElementTextArea (Vdom.TextArea _) -> VdomPatchState.newMessageMapParameterEmpty
   Vdom.ElementLabel (Vdom.Label rec) -> collectMessageDataMapInChildren rec.children path
   Vdom.ElementSvg (Vdom.Svg rec) -> collectMessageDataMapInChildList rec.children path
-  Vdom.ElementSvgPath (Vdom.SvgPath _) -> Map.empty
+  Vdom.ElementSvgPath (Vdom.SvgPath _) -> VdomPatchState.newMessageMapParameterEmpty
   Vdom.ElementSvgCircle (Vdom.SvgCircle rec) -> collectMessageDataMapInChildList rec.children path
-  Vdom.ElementSvgAnimate (Vdom.SvgAnimate _) -> Map.empty
+  Vdom.ElementSvgAnimate (Vdom.SvgAnimate _) -> VdomPatchState.newMessageMapParameterEmpty
   Vdom.ElementSvgG (Vdom.SvgG rec) -> collectMessageDataMapInChildList rec.children path

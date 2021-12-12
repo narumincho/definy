@@ -2,26 +2,17 @@ type PatchState<Message> = {
   readonly clickEventHandler: (path: string, mouseEvent: MouseEvent) => void;
   readonly changeEventHandler: (path: string) => void;
   readonly inputEventHandler: (path: string, inputEvent: InputEvent) => void;
-  readonly setMessageDataMap: (
-    newMap: ReadonlyArray<PathAndEvents<Message>>
-  ) => void;
+  readonly setMessageDataMap: (newMap: NewMessageMap<Message>) => void;
 };
 
 type ClickMessageData<Message> = {
-  readonly ignoreNewTab: boolean;
   readonly stopPropagation: boolean;
   readonly message: Message;
 };
 
-type Events<Message> = {
-  readonly onClick: ClickMessageData<Message> | null;
-  readonly onChange: Message | null;
-  readonly onInput: ((newText: string) => Message) | null;
-};
-
-type PathAndEvents<Message> = {
+type PathAndMessageData<MessageData> = {
   readonly path: string;
-  readonly events: Events<Message>;
+  readonly messageData: MessageData;
 };
 
 type StateAndMessageList<State, Message> = {
@@ -38,6 +29,14 @@ type ClientStartOption<State, Message, View> = {
   readonly update: (messageValue: Message, stateValue: State) => State;
 };
 
+type NewMessageMap<Message> = {
+  readonly click: ReadonlyArray<PathAndMessageData<ClickMessageData<Message>>>;
+  readonly change: ReadonlyArray<PathAndMessageData<Message>>;
+  readonly input: ReadonlyArray<
+    PathAndMessageData<(newText: string) => Message>
+  >;
+};
+
 export const start = <State, Message, View>(
   option: ClientStartOption<State, Message, View>
 ): void => {
@@ -45,29 +44,19 @@ export const start = <State, Message, View>(
    * applyViewをする前に事前に実行する必要あり
    */
   const createPatchState = (): PatchState<Message> => {
-    let messageDataMap: ReadonlyMap<string, Events<Message>> = new Map();
+    let clickMessageDataMap: ReadonlyMap<
+      string,
+      ClickMessageData<Message>
+    > = new Map();
+    let changeMessageDataMap: ReadonlyMap<string, Message> = new Map();
+    let inputMessageDataMap: ReadonlyMap<string, (newText: string) => Message> =
+      new Map();
     return {
       clickEventHandler: (path: string, mouseEvent: MouseEvent): void => {
-        const messageData = messageDataMap.get(path)?.onClick;
+        const messageData = clickMessageDataMap.get(path);
         console.log("クリックを検知した!", path, mouseEvent, messageData);
-        if (messageData === undefined || messageData === null) {
+        if (messageData === undefined) {
           return;
-        }
-        if (messageData.ignoreNewTab) {
-          /*
-           * リンクを
-           * Ctrlなどを押しながらクリックか,
-           * マウスの中ボタンでクリックした場合などは, ブラウザで新しいタブが開くので, ブラウザでページ推移をしない.
-           */
-          if (
-            mouseEvent.ctrlKey ||
-            mouseEvent.metaKey ||
-            mouseEvent.shiftKey ||
-            mouseEvent.button !== 0
-          ) {
-            return;
-          }
-          mouseEvent.preventDefault();
         }
         if (messageData.stopPropagation) {
           mouseEvent.stopPropagation();
@@ -75,23 +64,31 @@ export const start = <State, Message, View>(
         pushMessageList(messageData.message);
       },
       changeEventHandler: (path: string) => {
-        const messageData = messageDataMap.get(path)?.onChange;
-        if (messageData === undefined || messageData === null) {
+        const messageData = changeMessageDataMap.get(path);
+        if (messageData === undefined) {
           return;
         }
         pushMessageList(messageData);
       },
       inputEventHandler: (path: string, inputEvent: InputEvent) => {
-        const messageData = messageDataMap.get(path)?.onInput;
-        if (messageData === undefined || messageData === null) {
+        const messageData = inputMessageDataMap.get(path);
+        if (messageData === undefined) {
           return;
         }
         pushMessageList(
           messageData((inputEvent.target as HTMLInputElement).value)
         );
       },
-      setMessageDataMap: (newMapAsList) => {
-        messageDataMap = new Map(newMapAsList.map((e) => [e.path, e.events]));
+      setMessageDataMap: (newMessageMap) => {
+        clickMessageDataMap = new Map(
+          newMessageMap.click.map((e) => [e.path, e.messageData])
+        );
+        changeMessageDataMap = new Map(
+          newMessageMap.change.map((e) => [e.path, e.messageData])
+        );
+        inputMessageDataMap = new Map(
+          newMessageMap.input.map((e) => [e.path, e.messageData])
+        );
       },
     };
   };
