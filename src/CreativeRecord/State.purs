@@ -27,7 +27,10 @@ initState location =
 update :: Message.Message -> State -> State
 update = case _ of
   Message.CountUp -> (\(State rec) -> State (rec { count = Prelude.add rec.count 1 }))
-  Message.ChangeLocation location -> (\(State rec) -> State (rec { location = Just location }))
+  Message.ChangeLocation location ->
+    ( \(State rec) ->
+        State (rec { location = location })
+    )
 
 getLocation :: State -> Maybe Location.Location
 getLocation (State { location }) = location

@@ -4,6 +4,8 @@ exports.start = void 0;
 const start = (option) => {
     /**
      * applyViewをする前に事前に実行する必要あり
+     *
+     * イベントのコールバックの関数の作成と, メッセージの登録をするオブジェクトを作成する.
      */
     const createPatchState = () => {
         let clickMessageDataMap = new Map();
@@ -45,9 +47,15 @@ const start = (option) => {
             },
         };
     };
+    /**
+     * メッセージキューにメッセージを追加
+     */
     const pushMessageList = (message) => {
         messageList.push(message);
     };
+    /**
+     * メインループ!
+     */
     const loop = () => {
         requestAnimationFrame(loop);
         if (messageList.length === 0) {
@@ -68,6 +76,9 @@ const start = (option) => {
     };
     const stateAndMessageList = option.initStateAndMessageList;
     let state = option.initStateAndMessageList.state;
+    /**
+     * メッセージのキュー
+     */
     const messageList = [
         ...option.initStateAndMessageList.messageList,
     ];
@@ -75,5 +86,9 @@ const start = (option) => {
     const patchState = createPatchState();
     option.renderView(oldView, patchState);
     loop();
+    // ブラウザで戻るボタンを押したときのイベントを登録
+    window.addEventListener("popstate", () => {
+        pushMessageList(option.urlChangeMessageData(window.location.pathname + window.location.search));
+    });
 };
 exports.start = start;

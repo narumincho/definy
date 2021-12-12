@@ -80,6 +80,7 @@ pathAndSearchParamsToString (PathAndSearchParams { path, searchParams }) =
           _ -> Prelude.append "?" searchParamsAsString
       )
 
+-- | TODO SearchParams を考慮していない
 pathAndSearchParamsFromString :: String -> PathAndSearchParams
 pathAndSearchParamsFromString str =
   fromPath

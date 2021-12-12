@@ -81,7 +81,7 @@ articleLink (ArticleTitleAndImageUrl { location, imagePath, title }) =
     , link:
         Just
           ( View.linkSameOrigin
-              (Message.ChangeLocation location)
+              (Message.ChangeLocation (Just location))
               (Location.toPath location)
           )
     , hover: View.BoxHoverStyle { animation: Just zoomAnimation }
@@ -162,7 +162,7 @@ topBox count =
             , link:
                 Just
                   ( View.linkSameOrigin
-                      (Message.ChangeLocation Location.Top)
+                      (Message.ChangeLocation (Just Location.Top))
                       (Location.toPath Location.Top)
                   )
             , children:

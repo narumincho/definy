@@ -28,6 +28,7 @@ type ClientStartOption<State, Message, View> = {
     patchState: PatchState<Message>
   ) => void;
   readonly update: (messageValue: Message, stateValue: State) => State;
+  readonly urlChangeMessageData: (pathAndSearchParams: string) => Message;
 };
 
 type NewMessageMap<Message> = {
@@ -43,6 +44,8 @@ export const start = <State, Message, View>(
 ): void => {
   /**
    * applyViewをする前に事前に実行する必要あり
+   *
+   * イベントのコールバックの関数の作成と, メッセージの登録をするオブジェクトを作成する.
    */
   const createPatchState = (): PatchState<Message> => {
     let clickMessageDataMap: ReadonlyMap<
@@ -97,10 +100,16 @@ export const start = <State, Message, View>(
     };
   };
 
+  /**
+   * メッセージキューにメッセージを追加
+   */
   const pushMessageList = (message: Message): void => {
     messageList.push(message);
   };
 
+  /**
+   * メインループ!
+   */
   const loop = (): void => {
     requestAnimationFrame(loop);
     if (messageList.length === 0) {
@@ -123,6 +132,9 @@ export const start = <State, Message, View>(
 
   const stateAndMessageList = option.initStateAndMessageList;
   let state: State = option.initStateAndMessageList.state;
+  /**
+   * メッセージのキュー
+   */
   const messageList: Array<Message> = [
     ...option.initStateAndMessageList.messageList,
   ];
@@ -130,4 +142,13 @@ export const start = <State, Message, View>(
   const patchState = createPatchState();
   option.renderView(oldView, patchState);
   loop();
+
+  // ブラウザで戻るボタンを押したときのイベントを登録
+  window.addEventListener("popstate", () => {
+    pushMessageList(
+      option.urlChangeMessageData(
+        window.location.pathname + window.location.search
+      )
+    );
+  });
 };
