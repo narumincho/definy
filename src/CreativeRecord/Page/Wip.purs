@@ -14,7 +14,7 @@ view =
     , height: Nothing
     , backgroundColor: Nothing
     , gridTemplateColumns1FrCount: Nothing
-    , url: Nothing
+    , link: Nothing
     , hover: View.boxHoverStyleNone
     , children:
         [ View.text

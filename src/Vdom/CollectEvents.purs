@@ -72,7 +72,22 @@ collectMessageDataMapInElement element path = case element of
       )
       (collectMessageDataMapInChildren rec.children path)
   Vdom.ElementExternalLink (Vdom.ExternalLink rec) -> collectMessageDataMapInChildren rec.children path
-  Vdom.ElementLocalLink (Vdom.LocalLink rec) -> collectMessageDataMapInChildren rec.children path
+  Vdom.ElementSameOriginLink (Vdom.SameOriginLink rec) ->
+    Map.insert
+      path
+      ( VdomPatchState.eventsFrom
+          { onClick:
+              Just
+                ( VdomPatchState.ClickMessageData
+                    { stopPropagation: false
+                    , message: rec.jumpMessage
+                    }
+                )
+          , onChange: Nothing
+          , onInput: Nothing
+          }
+      )
+      (collectMessageDataMapInChildren rec.children path)
   Vdom.ElementButton (Vdom.Button rec) -> collectMessageDataMapInChildren rec.children path
   Vdom.ElementImg (Vdom.Img _) -> Map.empty
   Vdom.ElementInputRadio (Vdom.InputRadio _) -> Map.empty

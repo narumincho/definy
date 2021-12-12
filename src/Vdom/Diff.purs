@@ -46,7 +46,7 @@ createElementDiff (Data.ElementDiv old) (Data.ElementDiv new) newKey = Data.crea
 
 createElementDiff (Data.ElementExternalLink old) (Data.ElementExternalLink new) newKey = Data.externalLinkDiff newKey old new
 
-createElementDiff (Data.ElementLocalLink old) (Data.ElementLocalLink new) newKey =
+createElementDiff (Data.ElementSameOriginLink old) (Data.ElementSameOriginLink new) newKey =
   Data.localLinkDiff
     newKey
     old

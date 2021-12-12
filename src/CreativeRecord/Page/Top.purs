@@ -36,7 +36,7 @@ snsLink :: StructuredUrl.StructuredUrl -> View.Svg -> String -> View.Element Mes
 snsLink url logo text =
   View.box
     { direction: View.X
-    , url: Just url
+    , link: Just (View.LinkExternal url)
     , paddingLeftRight: 8.0
     , paddingTopBottom: 8.0
     , gap: 8.0
@@ -54,7 +54,7 @@ externalLink :: StructuredUrl.StructuredUrl -> StructuredUrl.PathAndSearchParams
 externalLink url imageUrl text =
   View.box
     { direction: View.Y
-    , url: Just url
+    , link: Just (View.LinkExternal url)
     , backgroundColor: Just linkBackGroundColor
     , hover: View.BoxHoverStyle { animation: Just zoomAnimation }
     , gap: 0.0
@@ -78,7 +78,12 @@ articleLink (ArticleTitleAndImageUrl { location, imagePath, title }) =
   View.box
     { direction: View.Y
     , backgroundColor: Just linkBackGroundColor
-    , url: Just (Location.toUrl location)
+    , link:
+        Just
+          ( View.linkSameOrigin
+              (Message.ChangeLocation location)
+              (Location.toPath location)
+          )
     , hover: View.BoxHoverStyle { animation: Just zoomAnimation }
     , children:
         [ View.Image
@@ -122,7 +127,7 @@ articleListToViewElement list =
                 , paddingLeftRight: 0.0
                 , height: Nothing
                 , backgroundColor: Nothing
-                , url: Nothing
+                , link: Nothing
                 , hover: View.boxHoverStyleNone
                 }
           )
@@ -130,7 +135,7 @@ articleListToViewElement list =
     , height: Nothing
     , backgroundColor: Nothing
     , gridTemplateColumns1FrCount: Nothing
-    , url: Nothing
+    , link: Nothing
     , hover: View.boxHoverStyleNone
     }
 
@@ -149,12 +154,17 @@ topBox count =
     , height: Nothing
     , backgroundColor: Nothing
     , gridTemplateColumns1FrCount: Nothing
-    , url: Nothing
+    , link: Nothing
     , hover: View.boxHoverStyleNone
     , children:
         [ View.box
             { direction: View.Y
-            , url: Just (Location.toUrl Location.Top)
+            , link:
+                Just
+                  ( View.linkSameOrigin
+                      (Message.ChangeLocation Location.Top)
+                      (Location.toPath Location.Top)
+                  )
             , children:
                 [ View.SvgElement
                     { width: View.Percentage 90.0
@@ -185,7 +195,7 @@ topBox count =
             , height: Just 4.0
             , backgroundColor: Nothing
             , gridTemplateColumns1FrCount: Nothing
-            , url: Nothing
+            , link: Nothing
             , hover: View.boxHoverStyleNone
             , children:
                 [ snsLink
@@ -231,7 +241,7 @@ topBox count =
             , paddingLeftRight: 8.0
             , height: Nothing
             , backgroundColor: Nothing
-            , url: Nothing
+            , link: Nothing
             , hover: View.boxHoverStyleNone
             , gap: 8.0
             , gridTemplateColumns1FrCount: Just 3

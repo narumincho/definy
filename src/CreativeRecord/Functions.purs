@@ -2,6 +2,7 @@ module CreativeRecord.Functions (html) where
 
 import CreativeRecord.ClientProgramHashValue as ClientProgramHashValue
 import CreativeRecord.Location as Location
+import CreativeRecord.State as State
 import CreativeRecord.View as CreativeRecordView
 import Data.Map as Map
 import Data.Maybe (Maybe(..))
@@ -33,7 +34,7 @@ html =
                                       Map.empty
                                   )
                               )
-                              (CreativeRecordView.view locationMaybe 0)
+                              (CreativeRecordView.view (State.initState locationMaybe))
                           )
                       )
                 , mediaTypeMaybe: Just MediaType.Html

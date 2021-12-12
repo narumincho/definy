@@ -5,6 +5,7 @@ import Data.Array as Array
 import Data.Array.NonEmpty as NonEmptyArray
 import Data.Map as Map
 import Data.Maybe as Maybe
+import Data.String.NonEmpty (NonEmptyString)
 import Data.String.NonEmpty as NonEmptyString
 import Data.Tuple as Tuple
 import Html.Data as Html
@@ -26,7 +27,7 @@ toHtml vdom@(Data.Vdom rec) =
                 (noScriptElement rec.appName)
                 ( Prelude.map
                     ( \(Tuple.Tuple _ element) ->
-                        vdomElementToHtmlElement element
+                        vdomElementToHtmlElement rec.origin element
                     )
                     rec.children
                 )
@@ -197,32 +198,35 @@ noScriptElement appName =
         )
     )
 
-vdomElementToHtmlElement :: forall message. Data.Element message -> Html.RawHtmlElement
-vdomElementToHtmlElement = case _ of
+vdomElementToHtmlElement :: forall message. NonEmptyString -> Data.Element message -> Html.RawHtmlElement
+vdomElementToHtmlElement origin = case _ of
   Data.ElementDiv (Data.Div rec) ->
     Wellknown.div
       { id: rec.id, class: rec.class }
-      (vdomChildrenToHtmlChildren rec.children)
+      (vdomChildrenToHtmlChildren origin rec.children)
   Data.ElementH1 (Data.H1 rec) ->
     Wellknown.h1
       { id: rec.id, class: rec.class }
-      (vdomChildrenToHtmlChildren rec.children)
+      (vdomChildrenToHtmlChildren origin rec.children)
   Data.ElementH2 (Data.H2 rec) ->
     Wellknown.h2
       { id: rec.id, class: rec.class }
-      (vdomChildrenToHtmlChildren rec.children)
+      (vdomChildrenToHtmlChildren origin rec.children)
   Data.ElementExternalLink (Data.ExternalLink rec) ->
     Wellknown.a
       { id: rec.id, class: rec.class, href: rec.href }
-      (vdomChildrenToHtmlChildren rec.children)
-  Data.ElementLocalLink (Data.LocalLink rec) ->
+      (vdomChildrenToHtmlChildren origin rec.children)
+  Data.ElementSameOriginLink (Data.SameOriginLink rec) ->
     Wellknown.a
-      { id: rec.id, class: rec.class, href: rec.href }
-      (vdomChildrenToHtmlChildren rec.children)
+      { id: rec.id
+      , class: rec.class
+      , href: StructuredUrl.StructuredUrl { origin, pathAndSearchParams: rec.href }
+      }
+      (vdomChildrenToHtmlChildren origin rec.children)
   Data.ElementButton (Data.Button rec) ->
     Wellknown.button
       { id: rec.id, class: rec.class }
-      (vdomChildrenToHtmlChildren rec.children)
+      (vdomChildrenToHtmlChildren origin rec.children)
   Data.ElementImg (Data.Img rec) ->
     Wellknown.img
       { id: rec.id, class: rec.class, alt: rec.alt, src: rec.src }
@@ -249,7 +253,7 @@ vdomElementToHtmlElement = case _ of
       , class: rec.class
       , for: rec.for
       }
-      (vdomChildrenToHtmlChildren rec.children)
+      (vdomChildrenToHtmlChildren origin rec.children)
   Data.ElementSvg (Data.Svg rec) ->
     Wellknown.svg
       { id: rec.id
@@ -261,7 +265,7 @@ vdomElementToHtmlElement = case _ of
       }
       ( Prelude.map
           ( \(Tuple.Tuple _ element) ->
-              vdomElementToHtmlElement element
+              vdomElementToHtmlElement origin element
           )
           rec.children
       )
@@ -278,7 +282,7 @@ vdomElementToHtmlElement = case _ of
       }
       ( Prelude.map
           ( \(Tuple.Tuple _ element) ->
-              vdomElementToHtmlElement element
+              vdomElementToHtmlElement origin element
           )
           rec.children
       )
@@ -290,19 +294,19 @@ vdomElementToHtmlElement = case _ of
       { transform: rec.transform }
       ( Prelude.map
           ( \(Tuple.Tuple _ element) ->
-              vdomElementToHtmlElement element
+              vdomElementToHtmlElement origin element
           )
           rec.children
       )
 
-vdomChildrenToHtmlChildren :: forall message. Data.Children message -> Html.HtmlChildren
-vdomChildrenToHtmlChildren = case _ of
+vdomChildrenToHtmlChildren :: forall message. NonEmptyString -> Data.Children message -> Html.HtmlChildren
+vdomChildrenToHtmlChildren origin = case _ of
   Data.ChildrenElementList list ->
     Html.ElementList
       ( NonEmptyArray.toArray
           ( Prelude.map
               ( \(Tuple.Tuple _ element) ->
-                  vdomElementToHtmlElement element
+                  vdomElementToHtmlElement origin element
               )
               list
           )

@@ -1,4 +1,9 @@
-module CreativeRecord.Location (Location(..), toUrl, fromPath) where
+module CreativeRecord.Location
+  ( Location(..)
+  , fromPath
+  , toPath
+  , toUrl
+  ) where
 
 import Prelude
 import CreativeRecord.Origin as Origin

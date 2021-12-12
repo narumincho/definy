@@ -4,6 +4,8 @@ module View.Data
   , BoxHoverStyle(..)
   , BoxRecord
   , Element(..)
+  , Link(..)
+  , PathAndSearchParamsAndMessage(..)
   , PercentageOrRem(..)
   , Svg(..)
   , SvgElement(..)
@@ -15,6 +17,7 @@ module View.Data
   , XOrY(..)
   , box
   , boxHoverStyleNone
+  , linkSameOrigin
   , text
   ) where
 
@@ -62,7 +65,7 @@ type BoxRecord message
     , height :: Maybe Number
     , backgroundColor :: Maybe Color.Color
     , gridTemplateColumns1FrCount :: Maybe Int
-    , url :: Maybe StructuredUrl.StructuredUrl
+    , link :: Maybe (Link message)
     , hover :: BoxHoverStyle
     }
 
@@ -80,6 +83,22 @@ newtype Animation
   { keyframeList :: Array Css.Keyframe
   , {- アニメーションする時間. 単位は ms */ -} duration :: Number
   }
+
+data Link message
+  = LinkSameOrigin (PathAndSearchParamsAndMessage message)
+  | LinkExternal StructuredUrl.StructuredUrl
+
+newtype PathAndSearchParamsAndMessage :: Type -> Type
+newtype PathAndSearchParamsAndMessage message
+  = PathAndSearchParamsAndMessage
+  { message :: message, pathAndSearchParams :: StructuredUrl.PathAndSearchParams }
+
+linkSameOrigin :: forall message. message -> StructuredUrl.PathAndSearchParams -> Link message
+linkSameOrigin message pathAndSearchParams =
+  LinkSameOrigin
+    ( PathAndSearchParamsAndMessage
+        { message, pathAndSearchParams }
+    )
 
 -- | テキスト, リンクなどの要素
 data Element message

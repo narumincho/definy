@@ -15,10 +15,10 @@ import Effect as Effect
 import Effect.Uncurried as EffectUncurried
 import Language as Language
 import StructuredUrl as StructuredUrl
+import Vdom.CollectEvents as CollectEvents
 import Vdom.Data as Vdom
 import Vdom.PatchState as VdomPatchState
 import Vdom.Path as Path
-import Vdom.CollectEvents as CollectEvents
 
 -- | Vdom の Element から DOM API から HtmlElement か SvgElement を生成する
 elementToHtmlOrSvgElement ::
@@ -89,19 +89,25 @@ elementToHtmlOrSvgElementWithoutDataPath { element, path, patchState } = case el
     pure h2
   Vdom.ElementExternalLink (Vdom.ExternalLink rec) -> do
     anchor <-
-      EffectUncurried.runEffectFn1 createA
+      EffectUncurried.runEffectFn1 createExternalAnchor
         { id: Nullable.toNullable (map NonEmptyString.toString rec.id)
         , class: Nullable.toNullable (map NonEmptyString.toString rec.class)
         , href: NonEmptyString.toString (StructuredUrl.toString rec.href)
         }
     applyChildren { htmlOrSvgElement: anchor, children: rec.children, path, patchState }
     pure anchor
-  Vdom.ElementLocalLink (Vdom.LocalLink rec) -> do
+  Vdom.ElementSameOriginLink (Vdom.SameOriginLink rec) -> do
     anchor <-
-      EffectUncurried.runEffectFn1 createA
+      EffectUncurried.runEffectFn1 createSameOriginAnchor
         { id: Nullable.toNullable (map NonEmptyString.toString rec.id)
         , class: Nullable.toNullable (map NonEmptyString.toString rec.class)
-        , href: NonEmptyString.toString (StructuredUrl.toString rec.href)
+        , href: NonEmptyString.toString (StructuredUrl.pathAndSearchParamsToString rec.href)
+        , click:
+            EffectUncurried.mkEffectFn1
+              ( EffectUncurried.runEffectFn2
+                  (VdomPatchState.getClickEventHandler patchState)
+                  (Path.toString path)
+              )
         }
     applyChildren { htmlOrSvgElement: anchor, children: rec.children, path, patchState }
     pure anchor
@@ -361,11 +367,20 @@ foreign import createH2 ::
     }
     HtmlOrSvgElement
 
-foreign import createA ::
+foreign import createExternalAnchor ::
   EffectUncurried.EffectFn1
     { id :: Nullable String
     , class :: Nullable String
     , href :: String
+    }
+    HtmlOrSvgElement
+
+foreign import createSameOriginAnchor ::
+  EffectUncurried.EffectFn1
+    { id :: Nullable String
+    , class :: Nullable String
+    , href :: String
+    , click :: EffectUncurried.EffectFn1 VdomPatchState.MouseEvent Unit
     }
     HtmlOrSvgElement
 

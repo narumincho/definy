@@ -166,7 +166,7 @@ boxToVdomElementAndStyleDict box@( Data.Box
               , case boxRecord.backgroundColor of
                   Just backgroundColor -> [ Css.backgroundColor backgroundColor ]
                   Nothing -> []
-              , case boxRecord.url of
+              , case boxRecord.link of
                   Just _ -> [ Css.textDecorationNone ]
                   Nothing -> []
               , case boxRecord.gridTemplateColumns1FrCount of
@@ -203,8 +203,18 @@ boxToVdomElementAndStyleDict box@( Data.Box
   in
     ElementAndStyleDict
       { element:
-          case boxRecord.url of
-            Just url ->
+          case boxRecord.link of
+            Just (Data.LinkSameOrigin (Data.PathAndSearchParamsAndMessage { message, pathAndSearchParams })) ->
+              Vdom.ElementSameOriginLink
+                ( Vdom.SameOriginLink
+                    { id: Nothing
+                    , class: Just className
+                    , href: pathAndSearchParams
+                    , jumpMessage: message
+                    , children: vdomChildren
+                    }
+                )
+            Just (Data.LinkExternal url) ->
               Vdom.ElementExternalLink
                 ( Vdom.ExternalLink
                     { id: Nothing
@@ -378,12 +388,12 @@ textToHtmlElementAndStyleDict (Data.Text { padding, markup, text, click }) =
     className :: NonEmptyString
     className = sha256HashValueToClassName classNameHashValue
 
-    clickE =
+    clickMessageDataMaybe :: Maybe (VdomPatchState.ClickMessageData message)
+    clickMessageDataMaybe =
       Prelude.map
         ( \message ->
             VdomPatchState.ClickMessageData
-              { ignoreNewTab: false
-              , stopPropagation: false
+              { stopPropagation: false
               , message
               }
         )
@@ -397,7 +407,7 @@ textToHtmlElementAndStyleDict (Data.Text { padding, markup, text, click }) =
                 ( Vdom.Div
                     { id: Nothing
                     , class: Just className
-                    , click: clickE
+                    , click: clickMessageDataMaybe
                     , children: Vdom.ChildrenText text
                     }
                 )
@@ -406,7 +416,7 @@ textToHtmlElementAndStyleDict (Data.Text { padding, markup, text, click }) =
                 ( Vdom.H1
                     { id: Nothing
                     , class: Just className
-                    , click: clickE
+                    , click: clickMessageDataMaybe
                     , children: Vdom.ChildrenText text
                     }
                 )
@@ -415,7 +425,7 @@ textToHtmlElementAndStyleDict (Data.Text { padding, markup, text, click }) =
                 ( Vdom.H2
                     { id: Nothing
                     , class: Just className
-                    , click: clickE
+                    , click: clickMessageDataMaybe
                     , children: Vdom.ChildrenText text
                     }
                 )

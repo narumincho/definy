@@ -54,8 +54,7 @@ eventsFrom rec =
 newtype ClickMessageData :: Type -> Type
 newtype ClickMessageData message
   = ClickMessageData
-  { ignoreNewTab :: Boolean
-  , stopPropagation :: Boolean
+  { stopPropagation :: Boolean
   , message :: message
   }
 

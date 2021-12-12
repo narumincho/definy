@@ -9,7 +9,7 @@ module Vdom.Data
   , PointerType(..)
   , Element(..)
   , ExternalLink(..)
-  , LocalLink(..)
+  , SameOriginLink(..)
   , Button(..)
   , Img(..)
   , InputRadio(..)
@@ -143,7 +143,7 @@ data Element message
   | ElementH1 (H1 message)
   | ElementH2 (H2 message)
   | ElementExternalLink (ExternalLink message)
-  | ElementLocalLink (LocalLink message)
+  | ElementSameOriginLink (SameOriginLink message)
   | ElementButton (Button message)
   | ElementImg Img
   | ElementInputRadio (InputRadio message)
@@ -178,7 +178,7 @@ replace key newElement = Replace { newElement, key }
 data ElementUpdateDiff message
   = ElementUpdateDiffDiv (DivDiff message)
   | ElementUpdateDiffExternalLinkDiff (ExternalLinkDiff message)
-  | ElementUpdateDiffLocalLinkDiff (LocalLinkDiff message)
+  | ElementUpdateDiffSameOriginLinkDiff (SameOriginLinkDiff message)
   | ElementUpdateDiffButtonDiff (ButtonDiff message)
   | ElementUpdateDiffImgDiff ImgDiff
   | ElementUpdateDiffInputRadioDiff InputRadioDiff
@@ -278,36 +278,36 @@ externalLinkDiff key (ExternalLink old) (ExternalLink new) =
       Maybe.Nothing -> Skip
   )
 
-newtype LocalLink message
-  = LocalLink
+newtype SameOriginLink message
+  = SameOriginLink
   { id :: Maybe NonEmptyString
   , class :: Maybe NonEmptyString
-  , href :: StructuredUrl.StructuredUrl
+  , href :: StructuredUrl.PathAndSearchParams
   , jumpMessage :: message
   , children :: Children message
   }
 
-newtype LocalLinkDiff message
-  = LocalLinkDiff (NonEmptyArray (LocalLinkPatchOperation message))
+newtype SameOriginLinkDiff message
+  = SameOriginLinkDiff (NonEmptyArray (SameOriginLinkPatchOperation message))
 
-data LocalLinkPatchOperation message
-  = LocalLinkPatchOperationSetId (Maybe NonEmptyString)
-  | LocalLinkPatchOperationSetClass (Maybe NonEmptyString)
-  | LocalLinkPatchOperationSetHref StructuredUrl.StructuredUrl
-  | LocalLinkPatchOperationUpdateChildren (ChildrenDiff message)
+data SameOriginLinkPatchOperation message
+  = SameOriginLinkPatchOperationSetId (Maybe NonEmptyString)
+  | SameOriginLinkPatchOperationSetClass (Maybe NonEmptyString)
+  | SameOriginLinkPatchOperationSetHref StructuredUrl.PathAndSearchParams
+  | SameOriginLinkPatchOperationUpdateChildren (ChildrenDiff message)
 
-localLinkDiff :: forall message. String -> LocalLink message -> LocalLink message -> ElementDiff message
-localLinkDiff key (LocalLink old) (LocalLink new) =
+localLinkDiff :: forall message. String -> SameOriginLink message -> SameOriginLink message -> ElementDiff message
+localLinkDiff key (SameOriginLink old) (SameOriginLink new) =
   ( case NonEmptyArray.fromArray
         ( Array.catMaybes
-            [ Prelude.map LocalLinkPatchOperationSetId (createDiff old.id new.id)
-            , Prelude.map LocalLinkPatchOperationSetClass (createDiff old.class new.class)
-            , Prelude.map LocalLinkPatchOperationSetHref (createDiff old.href new.href)
+            [ Prelude.map SameOriginLinkPatchOperationSetId (createDiff old.id new.id)
+            , Prelude.map SameOriginLinkPatchOperationSetClass (createDiff old.class new.class)
+            , Prelude.map SameOriginLinkPatchOperationSetHref (createDiff old.href new.href)
             ]
         ) of
       Maybe.Just list ->
         Update
-          { elementUpdateDiff: ElementUpdateDiffLocalLinkDiff (LocalLinkDiff list)
+          { elementUpdateDiff: ElementUpdateDiffSameOriginLinkDiff (SameOriginLinkDiff list)
           , key
           }
       Maybe.Nothing -> Skip

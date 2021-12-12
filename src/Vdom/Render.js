@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.setDataPath = exports.appendChild = exports.createSvgG = exports.createSvgAnimate = exports.createSvgCircle = exports.createSvgPath = exports.createSvg = exports.createLabel = exports.createTextArea = exports.createInputText = exports.createInputRadio = exports.createImg = exports.createButton = exports.createA = exports.createH2 = exports.createH1 = exports.createDiv = exports.setTextContent = exports.getBodyElement = exports.changeBodyClass = exports.changeLanguage = exports.changeThemeColor = exports.changePageName = void 0;
+exports.setDataPath = exports.appendChild = exports.createSvgG = exports.createSvgAnimate = exports.createSvgCircle = exports.createSvgPath = exports.createSvg = exports.createLabel = exports.createTextArea = exports.createInputText = exports.createInputRadio = exports.createImg = exports.createButton = exports.createExternalAnchor = exports.createSameOriginAnchor = exports.createH2 = exports.createH1 = exports.createDiv = exports.setTextContent = exports.getBodyElement = exports.changeBodyClass = exports.changeLanguage = exports.changeThemeColor = exports.changePageName = void 0;
 const changePageName = (newPageName) => {
     window.document.title = newPageName;
 };
@@ -83,7 +83,34 @@ const createH2 = (option) => {
     return headingElement;
 };
 exports.createH2 = createH2;
-const createA = (option) => {
+const createSameOriginAnchor = (option) => {
+    const anchorElement = window.document.createElement("a");
+    if (typeof option.id === "string") {
+        anchorElement.id = option.id;
+    }
+    if (typeof option.class === "string") {
+        anchorElement.className = option.class;
+    }
+    anchorElement.href = option.href;
+    anchorElement.addEventListener("click", (mouseEvent) => {
+        /*
+         * リンクを
+         * Ctrlなどを押しながらクリックか,
+         * マウスの中ボタンでクリックした場合などは, ブラウザで新しいタブが開くので, ブラウザでページ推移をしない.
+         */
+        if (mouseEvent.ctrlKey ||
+            mouseEvent.metaKey ||
+            mouseEvent.shiftKey ||
+            mouseEvent.button !== 0) {
+            return;
+        }
+        mouseEvent.preventDefault();
+        option.click(mouseEvent);
+    });
+    return anchorElement;
+};
+exports.createSameOriginAnchor = createSameOriginAnchor;
+const createExternalAnchor = (option) => {
     const anchorElement = window.document.createElement("a");
     if (typeof option.id === "string") {
         anchorElement.id = option.id;
@@ -94,7 +121,7 @@ const createA = (option) => {
     anchorElement.href = option.href;
     return anchorElement;
 };
-exports.createA = createA;
+exports.createExternalAnchor = createExternalAnchor;
 const createButton = (option) => {
     const button = window.document.createElement("button");
     if (typeof option.id === "string") {
