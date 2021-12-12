@@ -55,6 +55,7 @@ const createDiv = (option) => {
     if (typeof option.class === "string") {
         div.className = option.class;
     }
+    div.addEventListener("click", (e) => option.click(e));
     return div;
 };
 exports.createDiv = createDiv;
@@ -66,6 +67,7 @@ const createH1 = (option) => {
     if (typeof option.class === "string") {
         headingElement.className = option.class;
     }
+    headingElement.addEventListener("click", (e) => option.click(e));
     return headingElement;
 };
 exports.createH1 = createH1;
@@ -77,6 +79,7 @@ const createH2 = (option) => {
     if (typeof option.class === "string") {
         headingElement.className = option.class;
     }
+    headingElement.addEventListener("click", (e) => option.click(e));
     return headingElement;
 };
 exports.createH2 = createH2;

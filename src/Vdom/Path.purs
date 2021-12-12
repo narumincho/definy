@@ -5,6 +5,7 @@ module Vdom.Path
   , toString
   ) where
 
+import Prelude as Prelude
 import Data.String as String
 
 -- | vdom の要素の位置を表現するパス
@@ -12,6 +13,10 @@ import Data.String as String
 -- | `/a/list-container/list/item/name/text`
 newtype Path
   = Path String
+
+derive instance pathEq :: Prelude.Eq Path
+
+derive instance pathOrd :: Prelude.Ord Path
 
 root :: Path
 root = Path ""

@@ -49,6 +49,7 @@ export const start = <State, Message, View>(
     return {
       clickEventHandler: (path: string, mouseEvent: MouseEvent): void => {
         const messageData = messageDataMap.get(path)?.onClick;
+        console.log("クリックを検知した!", path, mouseEvent, messageData);
         if (messageData === undefined || messageData === null) {
           return;
         }

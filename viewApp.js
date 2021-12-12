@@ -10,6 +10,7 @@ const start = (option) => {
         return {
             clickEventHandler: (path, mouseEvent) => {
                 const messageData = messageDataMap.get(path)?.onClick;
+                console.log("クリックを検知した!", path, mouseEvent, messageData);
                 if (messageData === undefined || messageData === null) {
                     return;
                 }

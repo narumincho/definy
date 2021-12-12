@@ -16,8 +16,9 @@ import Effect.Uncurried as EffectUncurried
 import Language as Language
 import StructuredUrl as StructuredUrl
 import Vdom.Data as Vdom
-import Vdom.Path as Path
 import Vdom.PatchState as VdomPatchState
+import Vdom.Path as Path
+import Vdom.CollectEvents as CollectEvents
 
 -- | Vdom の Element から DOM API から HtmlElement か SvgElement を生成する
 elementToHtmlOrSvgElement ::
@@ -49,6 +50,12 @@ elementToHtmlOrSvgElementWithoutDataPath { element, path, patchState } = case el
       EffectUncurried.runEffectFn1 createDiv
         { id: Nullable.toNullable (map NonEmptyString.toString rec.id)
         , class: Nullable.toNullable (map NonEmptyString.toString rec.class)
+        , click:
+            EffectUncurried.mkEffectFn1
+              ( EffectUncurried.runEffectFn2
+                  (VdomPatchState.getClickEventHandler patchState)
+                  (Path.toString path)
+              )
         }
     applyChildren { htmlOrSvgElement: div, children: rec.children, path, patchState }
     pure div
@@ -57,6 +64,12 @@ elementToHtmlOrSvgElementWithoutDataPath { element, path, patchState } = case el
       EffectUncurried.runEffectFn1 createH1
         { id: Nullable.toNullable (map NonEmptyString.toString rec.id)
         , class: Nullable.toNullable (map NonEmptyString.toString rec.class)
+        , click:
+            EffectUncurried.mkEffectFn1
+              ( EffectUncurried.runEffectFn2
+                  (VdomPatchState.getClickEventHandler patchState)
+                  (Path.toString path)
+              )
         }
     applyChildren { htmlOrSvgElement: h1, children: rec.children, path, patchState }
     pure h1
@@ -65,6 +78,12 @@ elementToHtmlOrSvgElementWithoutDataPath { element, path, patchState } = case el
       EffectUncurried.runEffectFn1 createH2
         { id: Nullable.toNullable (map NonEmptyString.toString rec.id)
         , class: Nullable.toNullable (map NonEmptyString.toString rec.class)
+        , click:
+            EffectUncurried.mkEffectFn1
+              ( EffectUncurried.runEffectFn2
+                  (VdomPatchState.getClickEventHandler patchState)
+                  (Path.toString path)
+              )
         }
     applyChildren { htmlOrSvgElement: h2, children: rec.children, path, patchState }
     pure h2
@@ -258,6 +277,12 @@ resetAndRender (Vdom.Vdom view) patchState = do
     , Vdom.ChangeBodyClass view.bodyClass
     ]
     viewPatchOperationToEffect
+  VdomPatchState.setMessageDataMap
+    patchState
+    ( CollectEvents.collectMessageDataMapInChildList
+        view.children
+        Path.root
+    )
   bodyElement <- getBodyElement
   renderChildren
     { htmlOrSvgElement: bodyElement
@@ -316,6 +341,7 @@ foreign import createDiv ::
   EffectUncurried.EffectFn1
     { id :: Nullable String
     , class :: Nullable String
+    , click :: EffectUncurried.EffectFn1 VdomPatchState.MouseEvent Unit
     }
     HtmlOrSvgElement
 
@@ -323,6 +349,7 @@ foreign import createH1 ::
   EffectUncurried.EffectFn1
     { id :: Nullable String
     , class :: Nullable String
+    , click :: EffectUncurried.EffectFn1 VdomPatchState.MouseEvent Unit
     }
     HtmlOrSvgElement
 
@@ -330,6 +357,7 @@ foreign import createH2 ::
   EffectUncurried.EffectFn1
     { id :: Nullable String
     , class :: Nullable String
+    , click :: EffectUncurried.EffectFn1 VdomPatchState.MouseEvent Unit
     }
     HtmlOrSvgElement
 

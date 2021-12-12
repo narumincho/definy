@@ -52,6 +52,7 @@ export const setTextContent = (
 export const createDiv = (option: {
   readonly id: string | null;
   readonly class: string | null;
+  readonly click: (mouseEvent: MouseEvent) => void;
 }): HTMLElement | SVGElement => {
   const div = window.document.createElement("div");
   if (typeof option.id === "string") {
@@ -60,12 +61,14 @@ export const createDiv = (option: {
   if (typeof option.class === "string") {
     div.className = option.class;
   }
+  div.addEventListener("click", (e) => option.click(e));
   return div;
 };
 
 export const createH1 = (option: {
   readonly id: string | null;
   readonly class: string | null;
+  readonly click: (mouseEvent: MouseEvent) => void;
 }): HTMLElement | SVGElement => {
   const headingElement = window.document.createElement("h1");
   if (typeof option.id === "string") {
@@ -74,12 +77,14 @@ export const createH1 = (option: {
   if (typeof option.class === "string") {
     headingElement.className = option.class;
   }
+  headingElement.addEventListener("click", (e) => option.click(e));
   return headingElement;
 };
 
 export const createH2 = (option: {
   readonly id: string | null;
   readonly class: string | null;
+  readonly click: (mouseEvent: MouseEvent) => void;
 }): HTMLElement | SVGElement => {
   const headingElement = window.document.createElement("h2");
   if (typeof option.id === "string") {
@@ -88,6 +93,7 @@ export const createH2 = (option: {
   if (typeof option.class === "string") {
     headingElement.className = option.class;
   }
+  headingElement.addEventListener("click", (e) => option.click(e));
   return headingElement;
 };
 

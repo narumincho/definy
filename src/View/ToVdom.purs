@@ -16,6 +16,7 @@ import Html.Wellknown as HtmlWellknown
 import Prelude as Prelude
 import StructuredUrl as StructuredUrl
 import Vdom.Data as Vdom
+import Vdom.PatchState as VdomPatchState
 import View.Data as Data
 
 toVdom :: forall message. Maybe StructuredUrl.PathAndSearchParams -> Data.View message -> Vdom.Vdom message
@@ -380,7 +381,7 @@ textToHtmlElementAndStyleDict (Data.Text { padding, markup, text, click }) =
     clickE =
       Prelude.map
         ( \message ->
-            Vdom.ClickMessageData
+            VdomPatchState.ClickMessageData
               { ignoreNewTab: false
               , stopPropagation: false
               , message

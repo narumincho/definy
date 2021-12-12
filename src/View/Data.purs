@@ -98,11 +98,9 @@ data Element message
     }
   | BoxElement (Box message)
 
-newtype Text :: Type -> Type
 newtype Text message
   = Text (TextRecord message)
 
-type TextRecord :: Type -> Type
 type TextRecord message
   = { markup :: TextMarkup
     , padding :: Number

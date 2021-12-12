@@ -1,17 +1,20 @@
 module Vdom.PatchState
   ( ClickMessageData(..)
-  , Events(..)
+  , Events
   , InputEvent
   , MouseEvent
   , PatchState
   , PathAndEvents
+  , eventsFrom
   , getClickEventHandler
   , setMessageDataMap
   ) where
 
 import Prelude
 import Data.Map as Map
+import Data.Maybe (Maybe)
 import Data.Nullable (Nullable)
+import Data.Nullable as Nullable
 import Data.Tuple as Tuple
 import Effect (Effect)
 import Effect.Uncurried as EffectUncurried
@@ -33,6 +36,20 @@ newtype Events message
   , onChange :: Nullable message
   , onInput :: Nullable (String -> message)
   }
+
+eventsFrom ::
+  forall message.
+  { onClick :: Maybe (ClickMessageData message)
+  , onChange :: Maybe message
+  , onInput :: Maybe (String -> message)
+  } ->
+  Events message
+eventsFrom rec =
+  Events
+    { onClick: Nullable.toNullable rec.onClick
+    , onChange: Nullable.toNullable rec.onChange
+    , onInput: Nullable.toNullable rec.onInput
+    }
 
 newtype ClickMessageData :: Type -> Type
 newtype ClickMessageData message
