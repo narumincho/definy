@@ -357,7 +357,7 @@ elementToHtmlElementAndStyleDict = case _ of
   Data.BoxElement element -> boxToVdomElementAndStyleDict element
 
 textToHtmlElementAndStyleDict :: forall message. Data.Text message -> ElementAndStyleDict message
-textToHtmlElementAndStyleDict (Data.Text { padding, markup, text }) =
+textToHtmlElementAndStyleDict (Data.Text { padding, markup, text, click }) =
   let
     viewStyle :: ViewStyle
     viewStyle =
@@ -376,6 +376,17 @@ textToHtmlElementAndStyleDict (Data.Text { padding, markup, text }) =
 
     className :: NonEmptyString
     className = sha256HashValueToClassName classNameHashValue
+
+    clickE =
+      Prelude.map
+        ( \message ->
+            Vdom.ClickMessageData
+              { ignoreNewTab: false
+              , stopPropagation: false
+              , message
+              }
+        )
+        click
   in
     ElementAndStyleDict
       { element:
@@ -385,7 +396,7 @@ textToHtmlElementAndStyleDict (Data.Text { padding, markup, text }) =
                 ( Vdom.Div
                     { id: Nothing
                     , class: Just className
-                    , click: Nothing
+                    , click: clickE
                     , children: Vdom.ChildrenText text
                     }
                 )
@@ -394,7 +405,7 @@ textToHtmlElementAndStyleDict (Data.Text { padding, markup, text }) =
                 ( Vdom.H1
                     { id: Nothing
                     , class: Just className
-                    , click: Nothing
+                    , click: clickE
                     , children: Vdom.ChildrenText text
                     }
                 )
@@ -403,7 +414,7 @@ textToHtmlElementAndStyleDict (Data.Text { padding, markup, text }) =
                 ( Vdom.H2
                     { id: Nothing
                     , class: Just className
-                    , click: Nothing
+                    , click: clickE
                     , children: Vdom.ChildrenText text
                     }
                 )

@@ -1,10 +1,10 @@
 module CreativeRecord.Page.NotFound (view) where
 
 import Data.Maybe (Maybe(..))
-import Prelude as Prelude
 import View.Data as View
+import CreativeRecord.Messgae as Message
 
-view :: View.Element Prelude.Unit
+view :: View.Element Message.Message
 view =
   View.box
     { direction: View.Y
@@ -21,6 +21,7 @@ view =
             { markup: View.Heading2
             , padding: 8.0
             , text: "ページが見つかりませんでした"
+            , click: Nothing
             }
         ]
     }

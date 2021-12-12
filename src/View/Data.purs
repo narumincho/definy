@@ -106,6 +106,7 @@ type TextRecord :: Type -> Type
 type TextRecord message
   = { markup :: TextMarkup
     , padding :: Number
+    , click :: Maybe message
     , text :: String
     }
 

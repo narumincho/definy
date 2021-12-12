@@ -1,10 +1,10 @@
 module CreativeRecord.Page.Wip (view) where
 
 import Data.Maybe (Maybe(..))
-import Prelude as Prelude
+import CreativeRecord.Messgae as Message
 import View.Data as View
 
-view :: View.Element Prelude.Unit
+view :: View.Element Message.Message
 view =
   View.box
     { direction: View.Y
@@ -21,6 +21,7 @@ view =
             { markup: View.Heading2
             , padding: 8.0
             , text: "このページはまだ作成中です!"
+            , click: Nothing
             }
         ]
     }

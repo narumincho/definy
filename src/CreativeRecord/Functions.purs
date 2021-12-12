@@ -33,7 +33,7 @@ html =
                                       Map.empty
                                   )
                               )
-                              (CreativeRecordView.view locationMaybe)
+                              (CreativeRecordView.view locationMaybe 0)
                           )
                       )
                 , mediaTypeMaybe: Just MediaType.Html

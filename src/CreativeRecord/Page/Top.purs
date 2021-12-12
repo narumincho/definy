@@ -3,6 +3,7 @@ module CreativeRecord.Page.Top where
 import Prelude
 import Color as Color
 import CreativeRecord.Location as Location
+import CreativeRecord.Messgae as Message
 import CreativeRecord.StaticResource as StaticResource
 import CreativeRecord.SvgImage as SvgImage
 import Css as Css
@@ -31,7 +32,7 @@ zoomAnimation =
         ]
     }
 
-snsLink :: StructuredUrl.StructuredUrl -> View.Svg -> String -> View.Element Prelude.Unit
+snsLink :: StructuredUrl.StructuredUrl -> View.Svg -> String -> View.Element Message.Message
 snsLink url logo text =
   View.box
     { direction: View.X
@@ -45,11 +46,11 @@ snsLink url logo text =
     , gridTemplateColumns1FrCount: Nothing
     , children:
         [ View.SvgElement { width: View.Rem 2.0, height: 2.0, svg: logo, isJustifySelfCenter: false }
-        , View.text { markup: View.None, padding: 8.0, text }
+        , View.text { markup: View.None, padding: 8.0, text, click: Nothing }
         ]
     }
 
-externalLink :: StructuredUrl.StructuredUrl -> StructuredUrl.PathAndSearchParams -> String -> View.Element Prelude.Unit
+externalLink :: StructuredUrl.StructuredUrl -> StructuredUrl.PathAndSearchParams -> String -> View.Element Message.Message
 externalLink url imageUrl text =
   View.box
     { direction: View.Y
@@ -68,11 +69,11 @@ externalLink url imageUrl text =
             , height: 8.0
             , alternativeText: append text "のアイコン"
             }
-        , View.text { markup: View.None, padding: 8.0, text }
+        , View.text { markup: View.None, padding: 8.0, text, click: Nothing }
         ]
     }
 
-articleLink :: ArticleTitleAndImageUrl -> View.Element Prelude.Unit
+articleLink :: ArticleTitleAndImageUrl -> View.Element Message.Message
 articleLink (ArticleTitleAndImageUrl { location, imagePath, title }) =
   View.box
     { direction: View.Y
@@ -86,7 +87,7 @@ articleLink (ArticleTitleAndImageUrl { location, imagePath, title }) =
             , height: 8.0
             , alternativeText: append title "のイメージ画像"
             }
-        , View.text { markup: View.None, padding: 8.0, text: title }
+        , View.text { markup: View.None, padding: 8.0, text: title, click: Nothing }
         ]
     , gap: 0.0
     , paddingTopBottom: 0.0
@@ -102,7 +103,7 @@ newtype ArticleTitleAndImageUrl
   , location :: Location.Location
   }
 
-articleListToViewElement :: Array ArticleTitleAndImageUrl -> View.Element Prelude.Unit
+articleListToViewElement :: Array ArticleTitleAndImageUrl -> View.Element Message.Message
 articleListToViewElement list =
   View.box
     { direction: View.Y
@@ -133,13 +134,13 @@ articleListToViewElement list =
     , hover: View.boxHoverStyleNone
     }
 
-copyright :: View.Element Prelude.Unit
+copyright :: View.Element Message.Message
 copyright =
   View.text
-    { markup: View.None, padding: 8.0, text: "© 2021 narumincho" }
+    { markup: View.None, padding: 8.0, text: "© 2021 narumincho", click: Nothing }
 
-topBox :: View.Element Prelude.Unit
-topBox =
+topBox :: Int -> View.Element Message.Message
+topBox count =
   View.box
     { direction: View.Y
     , gap: 0.0
@@ -173,7 +174,8 @@ topBox =
         , View.text
             { markup: View.Heading2
             , padding: 8.0
-            , text: "ナルミンチョの SNS アカウント"
+            , text: Prelude.append "ナルミンチョの SNS アカウント" (Prelude.show count)
+            , click: Just Message.CountUp
             }
         , View.box
             { direction: View.X
@@ -221,6 +223,7 @@ topBox =
             { markup: View.Heading2
             , padding: 8.0
             , text: "ナルミンチョが作った Webアプリ"
+            , click: Nothing
             }
         , View.box
             { direction: View.X
@@ -265,7 +268,7 @@ topBox =
                 ]
             }
         , View.text
-            { markup: View.Heading2, padding: 8.0, text: "ナルミンチョが書いた 記事" }
+            { markup: View.Heading2, padding: 8.0, text: "ナルミンチョが書いた 記事", click: Nothing }
         , articleListToViewElement
             ( [ ArticleTitleAndImageUrl
                   { title:
