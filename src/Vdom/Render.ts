@@ -271,10 +271,7 @@ export const createLabel = (option: {
 export const createSvg = (option: {
   readonly id: string | null;
   readonly class: string | null;
-  readonly viewBoxX: number;
-  readonly viewBoxY: number;
-  readonly viewBoxWidth: number;
-  readonly viewBoxHeight: number;
+  readonly viewBox: string;
 }): HTMLElement | SVGElement => {
   const svg = window.document.createElementNS(
     "http://www.w3.org/2000/svg",
@@ -286,10 +283,7 @@ export const createSvg = (option: {
   if (typeof option.class === "string") {
     svg.classList.add(option.class);
   }
-  svg.viewBox.baseVal.x = option.viewBoxX;
-  svg.viewBox.baseVal.y = option.viewBoxY;
-  svg.viewBox.baseVal.width = option.viewBoxWidth;
-  svg.viewBox.baseVal.height = option.viewBoxHeight;
+  svg.setAttribute("viewBox", option.viewBox);
   return svg;
 };
 

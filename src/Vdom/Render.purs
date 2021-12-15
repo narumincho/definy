@@ -3,11 +3,13 @@ module Vdom.Render (render, resetAndRender) where
 import Prelude
 import Color as Color
 import Console as Console
+import Css as Css
 import Data.Array.NonEmpty as NonEmptyArray
 import Data.Maybe (Maybe(..))
 import Data.Maybe as Maybe
 import Data.Nullable (Nullable)
 import Data.Nullable as Nullable
+import Data.String as String
 import Data.String.NonEmpty as NonEmptyString
 import Data.Tuple as Tuple
 import Effect (Effect)
@@ -19,7 +21,6 @@ import Vdom.CollectEvents as CollectEvents
 import Vdom.Data as Vdom
 import Vdom.PatchState as VdomPatchState
 import Vdom.Path as Path
-import Css as Css
 
 -- | Vdom の Element から DOM API から HtmlElement か SvgElement を生成する
 elementToHtmlOrSvgElement ::
@@ -178,10 +179,13 @@ elementToHtmlOrSvgElementWithoutDataPath { element, path, patchState, locationTo
       EffectUncurried.runEffectFn1 createSvg
         { id: Nullable.toNullable (map NonEmptyString.toString rec.id)
         , class: Nullable.toNullable (map NonEmptyString.toString rec.class)
-        , viewBoxX: rec.viewBoxX
-        , viewBoxY: rec.viewBoxY
-        , viewBoxWidth: rec.viewBoxWidth
-        , viewBoxHeight: rec.viewBoxHeight
+        , viewBox:
+            String.joinWith " "
+              [ show rec.viewBoxX
+              , show rec.viewBoxY
+              , show rec.viewBoxWidth
+              , show rec.viewBoxHeight
+              ]
         }
     applyChildList { htmlOrSvgElement: svg, childList: rec.children, path, patchState, locationToPathAndSearchParams }
     pure svg
@@ -489,10 +493,7 @@ foreign import createSvg ::
   EffectUncurried.EffectFn1
     { id :: Nullable String
     , class :: Nullable String
-    , viewBoxX :: Number
-    , viewBoxY :: Number
-    , viewBoxWidth :: Number
-    , viewBoxHeight :: Number
+    , viewBox :: String
     }
     HtmlOrSvgElement
 
