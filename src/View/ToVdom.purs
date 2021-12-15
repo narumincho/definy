@@ -172,7 +172,10 @@ boxToVdomElementAndStyleDict box@( Data.Box
                   Just backgroundColor -> [ Css.backgroundColor backgroundColor ]
                   Nothing -> []
               , case boxRecord.link of
-                  Just _ -> [ Css.textDecorationNone ]
+                  Just _ ->
+                    [ Css.textDecorationNone
+                    , Css.color (Color.rgb 120 190 245)
+                    ]
                   Nothing -> []
               , case boxRecord.gridTemplateColumns1FrCount of
                   Just count -> [ Css.gridTemplateColumns count ]
@@ -382,7 +385,6 @@ textToHtmlElementAndStyleDict (Data.Text { padding, markup, text, click }) =
                 [ [ Css.color Color.white
                   , Css.padding { topBottom: padding, leftRight: padding }
                   , Css.margin0
-                  , Css.lineHeight 1
                   ]
                 , case markup of
                     Data.Code -> [ Css.whiteSpacePre ]

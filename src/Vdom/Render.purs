@@ -19,6 +19,7 @@ import Vdom.CollectEvents as CollectEvents
 import Vdom.Data as Vdom
 import Vdom.PatchState as VdomPatchState
 import Vdom.Path as Path
+import Css as Css
 
 -- | Vdom の Element から DOM API から HtmlElement か SvgElement を生成する
 elementToHtmlOrSvgElement ::
@@ -332,6 +333,7 @@ resetAndRender { vdom: Vdom.Vdom vdom, patchState, locationToPathAndSearchParams
     , path: Path.root
     , locationToPathAndSearchParams
     }
+  EffectUncurried.runEffectFn1 setStyle (Css.ruleListToString vdom.style)
 
 -- | 差分データから実際のDOMを操作して表示に反映させる
 render ::
@@ -536,3 +538,5 @@ foreign import createSvgG ::
 foreign import appendChild :: EffectUncurried.EffectFn2 HtmlOrSvgElement HtmlOrSvgElement Unit
 
 foreign import setDataPath :: EffectUncurried.EffectFn2 HtmlOrSvgElement String Unit
+
+foreign import setStyle :: EffectUncurried.EffectFn1 String Unit

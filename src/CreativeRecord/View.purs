@@ -9,8 +9,10 @@ import CreativeRecord.Page.NotFound as NotFound
 import CreativeRecord.Page.PowershellRecursion as PowershellRecursion
 import CreativeRecord.Page.Top as Top
 import CreativeRecord.Page.Wip as Wip
+import CreativeRecord.Page.CpsLabAdventCalendar2021 as CpsLabAdventCalendar2021
 import CreativeRecord.State as State
 import CreativeRecord.StaticResource as StaticResource
+import CreativeRecord.SvgImage as SvgImage
 import Data.Array as Array
 import Data.Map as Map
 import Data.Maybe (Maybe(..))
@@ -20,7 +22,6 @@ import Language as Language
 import StructuredUrl as StructuredUrl
 import Type.Proxy as Proxy
 import View.Data as View
-import CreativeRecord.SvgImage as SvgImage
 
 view :: State.State -> View.View Message.Message Location.Location
 view state =
@@ -28,6 +29,7 @@ view state =
     ( case State.getLocation state of
         Location.Top -> Top.view (State.getCount state)
         Location.PowershellRecursion -> PowershellRecursion.view
+        Location.CpsLabAdventCalendar2021 -> CpsLabAdventCalendar2021.view
         Location.NotFound _ -> NotFound.view
         _ -> Wip.view
     )

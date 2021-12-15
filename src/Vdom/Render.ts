@@ -392,3 +392,17 @@ export const setDataPath = (
 ): void => {
   element.dataset.dPath = path;
 };
+
+const getStyleElement = (): HTMLStyleElement => {
+  const styleElement = document.getElementsByTagName("style")[0];
+  if (styleElement === undefined) {
+    const createdStyleElement = document.createElement("style");
+    document.head.appendChild(createdStyleElement);
+    return createdStyleElement;
+  }
+  return styleElement;
+};
+
+export const setStyle = (styleString: string) => {
+  getStyleElement().textContent = styleString;
+};

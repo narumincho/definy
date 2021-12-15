@@ -330,6 +330,11 @@ child count =
                   , imagePath: StaticResource.henkanPng
                   , location: Location.NPetitcomIme
                   }
+              , ArticleTitleAndImageUrl
+                  { title: "型システムと協力して世界を構築する"
+                  , imagePath: StaticResource.definy20210811Png
+                  , location: Location.CpsLabAdventCalendar2021
+                  }
               ]
             )
         , copyright
