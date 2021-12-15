@@ -3,8 +3,7 @@ module CreativeRecord.Messgae
   ) where
 
 import CreativeRecord.Location as Location
-import Data.Maybe (Maybe)
 
 data Message
   = CountUp
-  | ChangeLocation (Maybe Location.Location)
+  | ChangeLocation Location.Location

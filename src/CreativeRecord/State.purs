@@ -8,16 +8,15 @@ module CreativeRecord.State
 
 import CreativeRecord.Location as Location
 import CreativeRecord.Messgae as Message
-import Data.Maybe (Maybe(..))
 import Prelude as Prelude
 
 newtype State
   = State
   { count :: Int
-  , location :: Maybe Location.Location
+  , location :: Location.Location
   }
 
-initState :: Maybe Location.Location -> State
+initState :: Location.Location -> State
 initState location =
   State
     { count: 0
@@ -32,7 +31,7 @@ update = case _ of
         State (rec { location = location })
     )
 
-getLocation :: State -> Maybe Location.Location
+getLocation :: State -> Location.Location
 getLocation (State { location }) = location
 
 getCount :: State -> Int

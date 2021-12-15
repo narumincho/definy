@@ -22,15 +22,16 @@ import Vdom.Path as Path
 
 -- | Vdom の Element から DOM API から HtmlElement か SvgElement を生成する
 elementToHtmlOrSvgElement ::
-  forall message.
-  { element :: Vdom.Element message
+  forall message location.
+  { element :: Vdom.Element message location
   , path :: Path.Path
   , patchState :: VdomPatchState.PatchState message
+  , locationToPathAndSearchParams :: location -> StructuredUrl.PathAndSearchParams
   } ->
   Effect HtmlOrSvgElement
-elementToHtmlOrSvgElement { element, path, patchState } = do
+elementToHtmlOrSvgElement { element, path, patchState, locationToPathAndSearchParams } = do
   htmlOrSvgElement <-
-    elementToHtmlOrSvgElementWithoutDataPath { element, path, patchState }
+    elementToHtmlOrSvgElementWithoutDataPath { element, path, patchState, locationToPathAndSearchParams }
   EffectUncurried.runEffectFn2
     setDataPath
     htmlOrSvgElement
@@ -38,13 +39,14 @@ elementToHtmlOrSvgElement { element, path, patchState } = do
   pure htmlOrSvgElement
 
 elementToHtmlOrSvgElementWithoutDataPath ::
-  forall message.
-  { element :: Vdom.Element message
+  forall message location.
+  { element :: Vdom.Element message location
   , path :: Path.Path
   , patchState :: VdomPatchState.PatchState message
+  , locationToPathAndSearchParams :: location -> StructuredUrl.PathAndSearchParams
   } ->
   Effect HtmlOrSvgElement
-elementToHtmlOrSvgElementWithoutDataPath { element, path, patchState } = case element of
+elementToHtmlOrSvgElementWithoutDataPath { element, path, patchState, locationToPathAndSearchParams } = case element of
   Vdom.ElementDiv (Vdom.Div rec) -> do
     div <-
       EffectUncurried.runEffectFn1 createDiv
@@ -57,7 +59,7 @@ elementToHtmlOrSvgElementWithoutDataPath { element, path, patchState } = case el
                   (Path.toString path)
               )
         }
-    applyChildren { htmlOrSvgElement: div, children: rec.children, path, patchState }
+    applyChildren { htmlOrSvgElement: div, children: rec.children, path, patchState, locationToPathAndSearchParams }
     pure div
   Vdom.ElementH1 (Vdom.H1 rec) -> do
     h1 <-
@@ -71,7 +73,7 @@ elementToHtmlOrSvgElementWithoutDataPath { element, path, patchState } = case el
                   (Path.toString path)
               )
         }
-    applyChildren { htmlOrSvgElement: h1, children: rec.children, path, patchState }
+    applyChildren { htmlOrSvgElement: h1, children: rec.children, path, patchState, locationToPathAndSearchParams }
     pure h1
   Vdom.ElementH2 (Vdom.H2 rec) -> do
     h2 <-
@@ -85,7 +87,7 @@ elementToHtmlOrSvgElementWithoutDataPath { element, path, patchState } = case el
                   (Path.toString path)
               )
         }
-    applyChildren { htmlOrSvgElement: h2, children: rec.children, path, patchState }
+    applyChildren { htmlOrSvgElement: h2, children: rec.children, path, patchState, locationToPathAndSearchParams }
     pure h2
   Vdom.ElementExternalLink (Vdom.ExternalLink rec) -> do
     anchor <-
@@ -94,14 +96,14 @@ elementToHtmlOrSvgElementWithoutDataPath { element, path, patchState } = case el
         , class: Nullable.toNullable (map NonEmptyString.toString rec.class)
         , href: NonEmptyString.toString (StructuredUrl.toString rec.href)
         }
-    applyChildren { htmlOrSvgElement: anchor, children: rec.children, path, patchState }
+    applyChildren { htmlOrSvgElement: anchor, children: rec.children, path, patchState, locationToPathAndSearchParams }
     pure anchor
   Vdom.ElementSameOriginLink (Vdom.SameOriginLink rec) -> do
     anchor <-
       EffectUncurried.runEffectFn1 createSameOriginAnchor
         { id: Nullable.toNullable (map NonEmptyString.toString rec.id)
         , class: Nullable.toNullable (map NonEmptyString.toString rec.class)
-        , href: NonEmptyString.toString (StructuredUrl.pathAndSearchParamsToString rec.href)
+        , href: NonEmptyString.toString (StructuredUrl.pathAndSearchParamsToString (locationToPathAndSearchParams rec.href))
         , click:
             EffectUncurried.mkEffectFn1
               ( EffectUncurried.runEffectFn2
@@ -109,7 +111,7 @@ elementToHtmlOrSvgElementWithoutDataPath { element, path, patchState } = case el
                   (Path.toString path)
               )
         }
-    applyChildren { htmlOrSvgElement: anchor, children: rec.children, path, patchState }
+    applyChildren { htmlOrSvgElement: anchor, children: rec.children, path, patchState, locationToPathAndSearchParams }
     pure anchor
   Vdom.ElementButton (Vdom.Button rec) -> do
     button <-
@@ -117,7 +119,7 @@ elementToHtmlOrSvgElementWithoutDataPath { element, path, patchState } = case el
         { id: Nullable.toNullable (map NonEmptyString.toString rec.id)
         , class: Nullable.toNullable (map NonEmptyString.toString rec.class)
         }
-    applyChildren { htmlOrSvgElement: button, children: rec.children, path, patchState }
+    applyChildren { htmlOrSvgElement: button, children: rec.children, path, patchState, locationToPathAndSearchParams }
     pure button
   Vdom.ElementImg (Vdom.Img rec) ->
     EffectUncurried.runEffectFn1 createImg
@@ -154,7 +156,7 @@ elementToHtmlOrSvgElementWithoutDataPath { element, path, patchState } = case el
         , class: Nullable.toNullable (map NonEmptyString.toString rec.class)
         , for: NonEmptyString.toString rec.for
         }
-    applyChildren { htmlOrSvgElement: label, children: rec.children, path, patchState }
+    applyChildren { htmlOrSvgElement: label, children: rec.children, path, patchState, locationToPathAndSearchParams }
     pure label
   Vdom.ElementSvg (Vdom.Svg rec) -> do
     svg <-
@@ -166,7 +168,7 @@ elementToHtmlOrSvgElementWithoutDataPath { element, path, patchState } = case el
         , viewBoxWidth: rec.viewBoxWidth
         , viewBoxHeight: rec.viewBoxHeight
         }
-    applyChildList { htmlOrSvgElement: svg, childList: rec.children, path, patchState }
+    applyChildList { htmlOrSvgElement: svg, childList: rec.children, path, patchState, locationToPathAndSearchParams }
     pure svg
   Vdom.ElementSvgPath (Vdom.SvgPath rec) ->
     EffectUncurried.runEffectFn1 createSvgPath
@@ -186,7 +188,7 @@ elementToHtmlOrSvgElementWithoutDataPath { element, path, patchState } = case el
         , cy: rec.cy
         , r: rec.r
         }
-    applyChildList { htmlOrSvgElement: svgCircle, childList: rec.children, path, patchState }
+    applyChildList { htmlOrSvgElement: svgCircle, childList: rec.children, path, patchState, locationToPathAndSearchParams }
     pure svgCircle
   Vdom.ElementSvgAnimate (Vdom.SvgAnimate rec) ->
     EffectUncurried.runEffectFn1 createSvgAnimate
@@ -203,16 +205,17 @@ elementToHtmlOrSvgElementWithoutDataPath { element, path, patchState } = case el
         , class: Nullable.null
         , transform: NonEmptyString.joinWith " " rec.transform
         }
-    applyChildList { htmlOrSvgElement: svgG, childList: rec.children, path, patchState }
+    applyChildList { htmlOrSvgElement: svgG, childList: rec.children, path, patchState, locationToPathAndSearchParams }
     pure svgG
 
 -- | HTMLElment か SVGElement の子要素を設定する
 applyChildren ::
-  forall message.
+  forall message location.
   { htmlOrSvgElement :: HtmlOrSvgElement
-  , children :: Vdom.Children message
+  , children :: Vdom.Children message location
   , path :: Path.Path
   , patchState :: VdomPatchState.PatchState message
+  , locationToPathAndSearchParams :: location -> StructuredUrl.PathAndSearchParams
   } ->
   Effect.Effect Unit
 applyChildren = case _ of
@@ -220,23 +223,25 @@ applyChildren = case _ of
     EffectUncurried.runEffectFn2 setTextContent
       text
       htmlOrSvgElement
-  { htmlOrSvgElement, children: Vdom.ChildrenElementList list, path, patchState } ->
+  { htmlOrSvgElement, children: Vdom.ChildrenElementList list, path, patchState, locationToPathAndSearchParams } ->
     applyChildList
       { htmlOrSvgElement
       , childList: NonEmptyArray.toArray list
       , path
       , patchState
+      , locationToPathAndSearchParams
       }
 
 applyChildList ::
-  forall message.
+  forall message location.
   { htmlOrSvgElement :: HtmlOrSvgElement
-  , childList :: Array (Tuple.Tuple String (Vdom.Element message))
+  , childList :: Array (Tuple.Tuple String (Vdom.Element message location))
   , path :: Path.Path
   , patchState :: VdomPatchState.PatchState message
+  , locationToPathAndSearchParams :: location -> StructuredUrl.PathAndSearchParams
   } ->
   Effect.Effect Unit
-applyChildList { htmlOrSvgElement, childList, path, patchState } =
+applyChildList { htmlOrSvgElement, childList, path, patchState, locationToPathAndSearchParams } =
   Effect.foreachE childList
     ( \(Tuple.Tuple key child) -> do
         element <-
@@ -244,17 +249,19 @@ applyChildList { htmlOrSvgElement, childList, path, patchState } =
             { element: child
             , path: Path.appendKey path key
             , patchState
+            , locationToPathAndSearchParams
             }
         EffectUncurried.runEffectFn2 appendChild htmlOrSvgElement element
     )
 
 -- | HTMLElment か SVGElement の子要素に対して差分データの分を反映する
 renderChildren ::
-  forall message.
+  forall message location.
   { htmlOrSvgElement :: HtmlOrSvgElement
-  , childrenDiff :: Vdom.ChildrenDiff message
+  , childrenDiff :: Vdom.ChildrenDiff message location
   , patchState :: VdomPatchState.PatchState message
   , path :: Path.Path
+  , locationToPathAndSearchParams :: location -> StructuredUrl.PathAndSearchParams
   } ->
   Effect.Effect Unit
 renderChildren = case _ of
@@ -263,46 +270,64 @@ renderChildren = case _ of
     EffectUncurried.runEffectFn2 setTextContent
       newText
       htmlOrSvgElement
-  { htmlOrSvgElement, childrenDiff: Vdom.ChildrenDiffResetAndInsert list, patchState, path } -> do
+  { htmlOrSvgElement, childrenDiff: Vdom.ChildrenDiffResetAndInsert list, patchState, path, locationToPathAndSearchParams } -> do
     EffectUncurried.runEffectFn2 setTextContent "" htmlOrSvgElement
     applyChildren
       { htmlOrSvgElement
       , children: Vdom.ChildrenElementList list
       , patchState
       , path
+      , locationToPathAndSearchParams
       }
   { childrenDiff: Vdom.ChildDiffList _ } -> pure unit
 
 -- | すべてをリセットして再描画する. 最初に1回呼ぶと良い.
-resetAndRender :: forall message. Vdom.Vdom message -> VdomPatchState.PatchState message -> Effect.Effect Unit
-resetAndRender (Vdom.Vdom view) patchState = do
+resetAndRender ::
+  forall message location.
+  { vdom :: Vdom.Vdom message location
+  , patchState :: VdomPatchState.PatchState message
+  , locationToPathAndSearchParams :: location -> StructuredUrl.PathAndSearchParams
+  , urlChangeMessageData :: location -> message
+  } ->
+  Effect.Effect Unit
+resetAndRender { vdom: Vdom.Vdom vdom, patchState, locationToPathAndSearchParams, urlChangeMessageData } = do
   Effect.foreachE
-    [ Vdom.ChangePageName view.pageName
-    , Vdom.ChangeThemeColor view.themeColor
-    , Vdom.ChangeLanguage view.language
-    , Vdom.ChangeBodyClass view.bodyClass
+    [ Vdom.ChangePageName vdom.pageName
+    , Vdom.ChangeThemeColor vdom.themeColor
+    , Vdom.ChangeLanguage vdom.language
+    , Vdom.ChangeBodyClass vdom.bodyClass
     ]
     viewPatchOperationToEffect
   VdomPatchState.setMessageDataMap
     patchState
     ( CollectEvents.collectMessageDataMapInChildList
-        view.children
-        Path.root
+        { childList: vdom.children
+        , path: Path.root
+        , locationToPathAndSearchParams
+        , urlChangeMessageData
+        }
     )
   bodyElement <- getBodyElement
   renderChildren
     { htmlOrSvgElement: bodyElement
     , childrenDiff:
-        case NonEmptyArray.fromArray view.children of
+        case NonEmptyArray.fromArray vdom.children of
           Just list -> Vdom.ChildrenDiffResetAndInsert list
           Nothing -> Vdom.ChildrenDiffSetText ""
     , patchState
     , path: Path.root
+    , locationToPathAndSearchParams
     }
 
 -- | 差分データから実際のDOMを操作して表示に反映させる
-render :: forall message. Vdom.ViewDiff message -> VdomPatchState.PatchState message -> Effect.Effect Unit
-render (Vdom.ViewDiff viewDiff) patchState = do
+render ::
+  forall message location.
+  { viewDiff :: Vdom.ViewDiff message location
+  , patchState :: VdomPatchState.PatchState message
+  , locationToPathAndSearchParams :: location -> StructuredUrl.PathAndSearchParams
+  } ->
+  Effect.Effect Unit
+render { viewDiff: Vdom.ViewDiff viewDiff, patchState, locationToPathAndSearchParams } = do
   Effect.foreachE viewDiff.patchOperationList viewPatchOperationToEffect
   bodyElement <- getBodyElement
   renderChildren
@@ -310,6 +335,7 @@ render (Vdom.ViewDiff viewDiff) patchState = do
     , childrenDiff: viewDiff.childrenDiff
     , patchState
     , path: Path.root
+    , locationToPathAndSearchParams
     }
   Console.logValue "run renderView" { viewDiff, patchState }
 

@@ -32,7 +32,7 @@ zoomAnimation =
         ]
     }
 
-snsLink :: StructuredUrl.StructuredUrl -> View.Svg -> String -> View.Element Message.Message
+snsLink :: StructuredUrl.StructuredUrl -> View.Svg -> String -> View.Element Message.Message Location.Location
 snsLink url logo text =
   View.box
     { direction: View.X
@@ -50,7 +50,7 @@ snsLink url logo text =
         ]
     }
 
-externalLink :: StructuredUrl.StructuredUrl -> StructuredUrl.PathAndSearchParams -> String -> View.Element Message.Message
+externalLink :: StructuredUrl.StructuredUrl -> StructuredUrl.PathAndSearchParams -> String -> View.Element Message.Message Location.Location
 externalLink url imageUrl text =
   View.box
     { direction: View.Y
@@ -73,17 +73,12 @@ externalLink url imageUrl text =
         ]
     }
 
-articleLink :: ArticleTitleAndImageUrl -> View.Element Message.Message
+articleLink :: ArticleTitleAndImageUrl -> View.Element Message.Message Location.Location
 articleLink (ArticleTitleAndImageUrl { location, imagePath, title }) =
   View.box
     { direction: View.Y
     , backgroundColor: Just linkBackGroundColor
-    , link:
-        Just
-          ( View.linkSameOrigin
-              (Message.ChangeLocation (Just location))
-              (Location.toPath location)
-          )
+    , link: Just (View.LinkSameOrigin location)
     , hover: View.BoxHoverStyle { animation: Just zoomAnimation }
     , children:
         [ View.Image
@@ -108,7 +103,7 @@ newtype ArticleTitleAndImageUrl
   , location :: Location.Location
   }
 
-articleListToViewElement :: Array ArticleTitleAndImageUrl -> View.Element Message.Message
+articleListToViewElement :: Array ArticleTitleAndImageUrl -> View.Element Message.Message Location.Location
 articleListToViewElement list =
   View.box
     { direction: View.Y
@@ -139,12 +134,12 @@ articleListToViewElement list =
     , hover: View.boxHoverStyleNone
     }
 
-copyright :: View.Element Message.Message
+copyright :: View.Element Message.Message Location.Location
 copyright =
   View.text
     { markup: View.None, padding: 8.0, text: "© 2021 narumincho", click: Nothing }
 
-topBox :: Int -> View.Element Message.Message
+topBox :: Int -> View.Element Message.Message Location.Location
 topBox count =
   View.box
     { direction: View.Y
@@ -159,12 +154,7 @@ topBox count =
     , children:
         [ View.box
             { direction: View.Y
-            , link:
-                Just
-                  ( View.linkSameOrigin
-                      (Message.ChangeLocation (Just Location.Top))
-                      (Location.toPath Location.Top)
-                  )
+            , link: Just (View.LinkSameOrigin Location.Top)
             , children:
                 [ View.SvgElement
                     { width: View.Percentage 90.0

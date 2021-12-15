@@ -3,8 +3,9 @@ module CreativeRecord.Page.NotFound (view) where
 import Data.Maybe (Maybe(..))
 import View.Data as View
 import CreativeRecord.Messgae as Message
+import CreativeRecord.Location as Location
 
-view :: View.Element Message.Message
+view :: View.Element Message.Message Location.Location
 view =
   View.box
     { direction: View.Y

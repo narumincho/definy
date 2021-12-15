@@ -22,20 +22,15 @@ main = do
               }
         , update: State.update
         , stateToView: \state -> (CreativeRecordView.view state)
-        , urlChangeMessageData:
-            \pathAndSearchParamsAsString ->
-              Message.ChangeLocation
-                ( Location.fromPath
-                    ( StructuredUrl.pathAndSearchParamsFromString
-                        pathAndSearchParamsAsString
-                    )
-                )
+        , urlChangeMessageData: Message.ChangeLocation
+        , pathAndSearchParamsToLocation: Location.fromPath
+        , locationToPathAndSearchParams: Location.toPath
         }
     )
 
 foreign import getLocation :: Effect String
 
-getLocationAsPath :: Effect (Maybe Location.Location)
+getLocationAsPath :: Effect (Location.Location)
 getLocationAsPath =
   map Location.fromPath
     (map StructuredUrl.pathAndSearchParamsFromString getLocation)

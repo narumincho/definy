@@ -11,7 +11,6 @@ import CreativeRecord.Page.Wip as Wip
 import CreativeRecord.State as State
 import CreativeRecord.StaticResource as StaticResource
 import Data.Map as Map
-import Data.Maybe (Maybe(..))
 import Data.Maybe as Maybe
 import Data.String.NonEmpty as NonEmptyString
 import Language as Language
@@ -19,16 +18,16 @@ import StructuredUrl as StructuredUrl
 import Type.Proxy as Proxy
 import View.Data as ViewData
 
-view :: State.State -> ViewData.View Message.Message
+view :: State.State -> ViewData.View Message.Message Location.Location
 view state =
   ViewData.View
     { appName: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "ナルミンチョの創作記録")
     , children:
         [ case State.getLocation state of
-            Just Location.Top -> Top.topBox (State.getCount state)
-            Just Location.PowershellRecursion -> PowershellRecursion.view
-            Just _ -> Wip.view
-            Nothing -> NotFound.view
+            Location.Top -> Top.topBox (State.getCount state)
+            Location.PowershellRecursion -> PowershellRecursion.view
+            Location.NotFound _ -> NotFound.view
+            _ -> Wip.view
         ]
     , coverImagePath: StaticResource.iconPng
     , description:

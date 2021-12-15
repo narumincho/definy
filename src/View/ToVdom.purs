@@ -19,8 +19,13 @@ import Vdom.Data as Vdom
 import Vdom.PatchState as VdomPatchState
 import View.Data as Data
 
-toVdom :: forall message. Maybe StructuredUrl.PathAndSearchParams -> Data.View message -> Vdom.Vdom message
-toVdom scriptPath (Data.View view) =
+toVdom ::
+  forall message location.
+  { scriptPath :: Maybe StructuredUrl.PathAndSearchParams
+  , view :: Data.View message location
+  } ->
+  Vdom.Vdom message location
+toVdom { scriptPath, view: Data.View view } =
   let
     ( { childList: vdomChildren
       , styleDict
@@ -122,20 +127,20 @@ newtype ViewStyle
   , hoverDeclarationList :: Array Css.Declaration
   }
 
-newtype ElementAndStyleDict message
+newtype ElementAndStyleDict message location
   = ElementAndStyleDict
-  { element :: Vdom.Element message
+  { element :: Vdom.Element message location
   , styleDict :: Map.Map Hash.Sha256HashValue ViewStyle
   , keyframesDict :: Map.Map Hash.Sha256HashValue (Array Css.Keyframe)
   }
 
-htmlElementAndStyleDictStyleDict :: forall message. ElementAndStyleDict message -> Map.Map Hash.Sha256HashValue ViewStyle
+htmlElementAndStyleDictStyleDict :: forall message location. ElementAndStyleDict message location -> Map.Map Hash.Sha256HashValue ViewStyle
 htmlElementAndStyleDictStyleDict (ElementAndStyleDict { styleDict }) = styleDict
 
-htmlElementAndStyleDictKeyframesDict :: forall message. ElementAndStyleDict message -> Map.Map Hash.Sha256HashValue (Array Css.Keyframe)
+htmlElementAndStyleDictKeyframesDict :: forall message location. ElementAndStyleDict message location -> Map.Map Hash.Sha256HashValue (Array Css.Keyframe)
 htmlElementAndStyleDictKeyframesDict (ElementAndStyleDict { keyframesDict }) = keyframesDict
 
-boxToVdomElementAndStyleDict :: forall message. Data.Box message -> ElementAndStyleDict message
+boxToVdomElementAndStyleDict :: forall message location. Data.Box message location -> ElementAndStyleDict message location
 boxToVdomElementAndStyleDict box@( Data.Box
     boxRecord
 ) =
@@ -196,7 +201,7 @@ boxToVdomElementAndStyleDict box@( Data.Box
     , keyframesDict: childrenKeyframesDict
     } = viewChildrenToVdomChildren boxRecord.children
 
-    vdomChildren :: Vdom.Children message
+    vdomChildren :: Vdom.Children message location
     vdomChildren = case NonEmptyArray.fromArray vdomChildList of
       Just nonEmptyVdomChildren -> Vdom.ChildrenElementList nonEmptyVdomChildren
       Nothing -> Vdom.ChildrenText ""
@@ -204,13 +209,12 @@ boxToVdomElementAndStyleDict box@( Data.Box
     ElementAndStyleDict
       { element:
           case boxRecord.link of
-            Just (Data.LinkSameOrigin (Data.PathAndSearchParamsAndMessage { message, pathAndSearchParams })) ->
+            Just (Data.LinkSameOrigin location) ->
               Vdom.ElementSameOriginLink
                 ( Vdom.SameOriginLink
                     { id: Nothing
                     , class: Just className
-                    , href: pathAndSearchParams
-                    , jumpMessage: message
+                    , href: location
                     , children: vdomChildren
                     }
                 )
@@ -243,15 +247,15 @@ boxToVdomElementAndStyleDict box@( Data.Box
       }
 
 viewChildrenToVdomChildren ::
-  forall message.
-  Array (Data.Element message) ->
-  { childList :: Array (Tuple.Tuple String (Vdom.Element message))
+  forall message location.
+  Array (Data.Element message location) ->
+  { childList :: Array (Tuple.Tuple String (Vdom.Element message location))
   , styleDict :: Map.Map Hash.Sha256HashValue ViewStyle
   , keyframesDict :: Map.Map Hash.Sha256HashValue (Array Css.Keyframe)
   }
 viewChildrenToVdomChildren children =
   let
-    childrenElementAndStyleDict :: Array (ElementAndStyleDict message)
+    childrenElementAndStyleDict :: Array (ElementAndStyleDict message location)
     childrenElementAndStyleDict = Prelude.map elementToHtmlElementAndStyleDict children
   in
     { childList:
@@ -277,8 +281,8 @@ viewChildrenToVdomChildren children =
     }
 
 boxGetKeyframeListAndAnimationName ::
-  forall message.
-  Data.Box message ->
+  forall message location.
+  Data.Box message location ->
   Maybe.Maybe
     { keyframeList :: Array Css.Keyframe
     , animationHashValue :: Hash.Sha256HashValue
@@ -293,7 +297,7 @@ boxGetKeyframeListAndAnimationName (Data.Box { hover: Data.BoxHoverStyle { anima
       }
   Nothing -> Nothing
 
-elementToHtmlElementAndStyleDict :: forall message. Data.Element message -> ElementAndStyleDict message
+elementToHtmlElementAndStyleDict :: forall message location. Data.Element message location -> ElementAndStyleDict message location
 elementToHtmlElementAndStyleDict = case _ of
   Data.ElementText text -> textToHtmlElementAndStyleDict text
   Data.SvgElement
@@ -367,7 +371,7 @@ elementToHtmlElementAndStyleDict = case _ of
         }
   Data.BoxElement element -> boxToVdomElementAndStyleDict element
 
-textToHtmlElementAndStyleDict :: forall message. Data.Text message -> ElementAndStyleDict message
+textToHtmlElementAndStyleDict :: forall message location. Data.Text message -> ElementAndStyleDict message location
 textToHtmlElementAndStyleDict (Data.Text { padding, markup, text, click }) =
   let
     viewStyle :: ViewStyle
@@ -434,7 +438,7 @@ textToHtmlElementAndStyleDict (Data.Text { padding, markup, text, click }) =
       , keyframesDict: Map.empty
       }
 
-svgElementToHtmlElement :: forall message. Data.SvgElement -> Vdom.Element message
+svgElementToHtmlElement :: forall message location. Data.SvgElement -> Vdom.Element message location
 svgElementToHtmlElement = case _ of
   Data.Path { pathText, fill } ->
     Vdom.ElementSvgPath

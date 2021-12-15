@@ -11,81 +11,107 @@ import Vdom.PatchState as VdomPatchState
 import Vdom.Path as Path
 
 collectMessageDataMapInChildren ::
-  forall message.
-  Vdom.Children message ->
-  Path.Path ->
+  forall message location.
+  { locationToPathAndSearchParams :: location -> StructuredUrl.PathAndSearchParams
+  , children :: Vdom.Children message location
+  , path :: Path.Path
+  , urlChangeMessageData :: location -> message
+  } ->
   VdomPatchState.NewMessageMapParameter message
-collectMessageDataMapInChildren element path = case element of
-  Vdom.ChildrenText _ -> VdomPatchState.newMessageMapParameterEmpty
-  Vdom.ChildrenElementList elementList ->
+collectMessageDataMapInChildren parameter = case parameter of
+  { children: Vdom.ChildrenText _ } -> VdomPatchState.newMessageMapParameterEmpty
+  { children: Vdom.ChildrenElementList elementList, path, locationToPathAndSearchParams } ->
     collectMessageDataMapInChildList
-      (NonEmptyArray.toArray elementList)
-      path
+      { locationToPathAndSearchParams
+      , childList: NonEmptyArray.toArray elementList
+      , path
+      , urlChangeMessageData: parameter.urlChangeMessageData
+      }
 
 collectMessageDataMapInChildList ::
-  forall message.
-  Array (Tuple.Tuple String (Vdom.Element message)) ->
-  Path.Path ->
+  forall message location.
+  { locationToPathAndSearchParams :: location -> StructuredUrl.PathAndSearchParams
+  , childList :: Array (Tuple.Tuple String (Vdom.Element message location))
+  , path :: Path.Path
+  , urlChangeMessageData :: location -> message
+  } ->
   VdomPatchState.NewMessageMapParameter message
-collectMessageDataMapInChildList elementList path =
+collectMessageDataMapInChildList { locationToPathAndSearchParams, childList, path, urlChangeMessageData } =
   VdomPatchState.newMessageMapParameterUnions
     ( map
         ( \(Tuple.Tuple key element) ->
-            collectMessageDataMapInElement element (Path.appendKey path key)
+            collectMessageDataMapInElement
+              { locationToPathAndSearchParams
+              , element
+              , path: Path.appendKey path key
+              , urlChangeMessageData
+              }
         )
-        elementList
+        childList
     )
 
 collectMessageDataMapInElement ::
-  forall message.
-  Vdom.Element message ->
-  Path.Path ->
+  forall message location.
+  { locationToPathAndSearchParams :: location -> StructuredUrl.PathAndSearchParams
+  , element :: Vdom.Element message location
+  , path :: Path.Path
+  , urlChangeMessageData :: location -> message
+  } ->
   VdomPatchState.NewMessageMapParameter message
-collectMessageDataMapInElement element path = case element of
+collectMessageDataMapInElement { locationToPathAndSearchParams, element, path, urlChangeMessageData } = case element of
   Vdom.ElementDiv (Vdom.Div rec) -> case rec.click of
     Just click ->
       VdomPatchState.newMessageMapParameterAddClick
         path
         click
-        (collectMessageDataMapInChildren rec.children path)
-    Nothing -> collectMessageDataMapInChildren rec.children path
+        ( collectMessageDataMapInChildren
+            { locationToPathAndSearchParams, children: rec.children, path, urlChangeMessageData
+            }
+        )
+    Nothing -> collectMessageDataMapInChildren { locationToPathAndSearchParams, children: rec.children, path, urlChangeMessageData }
   Vdom.ElementH1 (Vdom.H1 rec) -> case rec.click of
     Just click ->
       VdomPatchState.newMessageMapParameterAddClick
         path
         click
-        (collectMessageDataMapInChildren rec.children path)
-    Nothing -> collectMessageDataMapInChildren rec.children path
+        (collectMessageDataMapInChildren { locationToPathAndSearchParams, children: rec.children, path, urlChangeMessageData })
+    Nothing -> collectMessageDataMapInChildren { locationToPathAndSearchParams, children: rec.children, path, urlChangeMessageData }
   Vdom.ElementH2 (Vdom.H2 rec) -> case rec.click of
     Just click ->
       VdomPatchState.newMessageMapParameterAddClick
         path
         click
-        (collectMessageDataMapInChildren rec.children path)
-    Nothing -> collectMessageDataMapInChildren rec.children path
-  Vdom.ElementExternalLink (Vdom.ExternalLink rec) -> collectMessageDataMapInChildren rec.children path
+        (collectMessageDataMapInChildren { locationToPathAndSearchParams, children: rec.children, path, urlChangeMessageData })
+    Nothing -> collectMessageDataMapInChildren { locationToPathAndSearchParams, children: rec.children, path, urlChangeMessageData }
+  Vdom.ElementExternalLink (Vdom.ExternalLink rec) ->
+    collectMessageDataMapInChildren
+      { locationToPathAndSearchParams
+      , children: rec.children
+      , path
+      , urlChangeMessageData
+      }
   Vdom.ElementSameOriginLink (Vdom.SameOriginLink rec) ->
     VdomPatchState.newMessageMapParameterAddClick
       path
       ( VdomPatchState.clickMessageFrom
           { stopPropagation: false
-          , message: rec.jumpMessage
+          , message: urlChangeMessageData rec.href
           , url:
               Just
                 ( NonEmptyString.toString
-                    (StructuredUrl.pathAndSearchParamsToString rec.href)
+                    (StructuredUrl.pathAndSearchParamsToString (locationToPathAndSearchParams rec.href))
                 )
           }
       )
-      (collectMessageDataMapInChildren rec.children path)
-  Vdom.ElementButton (Vdom.Button rec) -> collectMessageDataMapInChildren rec.children path
+      (collectMessageDataMapInChildren { locationToPathAndSearchParams, children: rec.children, path, urlChangeMessageData })
+  Vdom.ElementButton (Vdom.Button rec) -> collectMessageDataMapInChildren { locationToPathAndSearchParams, children: rec.children, path, urlChangeMessageData }
   Vdom.ElementImg (Vdom.Img _) -> VdomPatchState.newMessageMapParameterEmpty
   Vdom.ElementInputRadio (Vdom.InputRadio _) -> VdomPatchState.newMessageMapParameterEmpty
   Vdom.ElementInputText (Vdom.InputText _) -> VdomPatchState.newMessageMapParameterEmpty
   Vdom.ElementTextArea (Vdom.TextArea _) -> VdomPatchState.newMessageMapParameterEmpty
-  Vdom.ElementLabel (Vdom.Label rec) -> collectMessageDataMapInChildren rec.children path
-  Vdom.ElementSvg (Vdom.Svg rec) -> collectMessageDataMapInChildList rec.children path
+  Vdom.ElementLabel (Vdom.Label rec) -> collectMessageDataMapInChildren { locationToPathAndSearchParams, children: rec.children, path, urlChangeMessageData }
+  Vdom.ElementSvg (Vdom.Svg rec) -> collectMessageDataMapInChildList { locationToPathAndSearchParams, childList: rec.children, path, urlChangeMessageData }
   Vdom.ElementSvgPath (Vdom.SvgPath _) -> VdomPatchState.newMessageMapParameterEmpty
-  Vdom.ElementSvgCircle (Vdom.SvgCircle rec) -> collectMessageDataMapInChildList rec.children path
+  Vdom.ElementSvgCircle (Vdom.SvgCircle rec) -> collectMessageDataMapInChildList { locationToPathAndSearchParams, childList: rec.children, path, urlChangeMessageData }
   Vdom.ElementSvgAnimate (Vdom.SvgAnimate _) -> VdomPatchState.newMessageMapParameterEmpty
-  Vdom.ElementSvgG (Vdom.SvgG rec) -> collectMessageDataMapInChildList rec.children path
+  Vdom.ElementSvgG (Vdom.SvgG rec) -> collectMessageDataMapInChildList { locationToPathAndSearchParams, childList: rec.children, path, urlChangeMessageData }
