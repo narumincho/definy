@@ -1,7 +1,18 @@
-module CreativeRecord.Page.Top where
+module CreativeRecord.Page.Top
+  ( ArticleTitleAndImageUrl(..)
+  , articleLink
+  , articleListToViewElement
+  , copyright
+  , externalLink
+  , linkBackGroundColor
+  , snsLink
+  , view
+  , zoomAnimation
+  ) where
 
 import Prelude
 import Color as Color
+import CreativeRecord.Article as Article
 import CreativeRecord.Location as Location
 import CreativeRecord.Messgae as Message
 import CreativeRecord.StaticResource as StaticResource
@@ -139,8 +150,11 @@ copyright =
   View.normalText
     { padding: 8.0, text: "© 2021 narumincho" }
 
-topBox :: Int -> View.Element Message.Message Location.Location
-topBox count =
+view :: Int -> Article.Article
+view count = Article.Article { title: Nothing, children: [ child count ] }
+
+child :: Int -> View.Element Message.Message Location.Location
+child count =
   View.box
     { direction: View.Y
     , gap: 0.0
@@ -152,26 +166,7 @@ topBox count =
     , link: Nothing
     , hover: View.boxHoverStyleNone
     , children:
-        [ View.box
-            { direction: View.Y
-            , link: Just (View.LinkSameOrigin Location.Top)
-            , children:
-                [ View.SvgElement
-                    { width: View.Percentage 90.0
-                    , height: 5.0
-                    , isJustifySelfCenter: true
-                    , svg: SvgImage.webSiteLogo
-                    }
-                ]
-            , gap: 0.0
-            , paddingTopBottom: 48.0
-            , paddingLeftRight: 0.0
-            , height: Nothing
-            , backgroundColor: Nothing
-            , gridTemplateColumns1FrCount: Nothing
-            , hover: View.boxHoverStyleNone
-            }
-        , View.text
+        [ View.text
             { markup: View.Heading2
             , padding: 8.0
             , text: Prelude.append "ナルミンチョの SNS アカウント" (Prelude.show count)
