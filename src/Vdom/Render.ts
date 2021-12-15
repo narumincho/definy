@@ -97,6 +97,22 @@ export const createH2 = (option: {
   return headingElement;
 };
 
+export const createCode = (option: {
+  readonly id: string | null;
+  readonly class: string | null;
+  readonly click: (mouseEvent: MouseEvent) => void;
+}): HTMLElement | SVGElement => {
+  const codeElement = window.document.createElement("code");
+  if (typeof option.id === "string") {
+    codeElement.id = option.id;
+  }
+  if (typeof option.class === "string") {
+    codeElement.className = option.class;
+  }
+  codeElement.addEventListener("click", (e) => option.click(e));
+  return codeElement;
+};
+
 export const createSameOriginAnchor = (option: {
   readonly id: string | null;
   readonly class: string | null;

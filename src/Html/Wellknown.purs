@@ -1,30 +1,31 @@
 module Html.Wellknown
-  ( meta
-  , html
+  ( a
   , body
-  , noscript
-  , head
-  , link
-  , style
-  , script
-  , title
+  , bodyTagName
+  , button
+  , code
   , div
   , h1
   , h2
-  , a
-  , button
+  , head
+  , html
+  , htmlTagName
   , img
   , inputRadio
   , inputText
-  , textarea
   , label
+  , link
+  , meta
+  , noscript
+  , script
+  , style
   , svg
-  , svgPath
-  , svgCircle
   , svgAnimate
+  , svgCircle
   , svgG
-  , htmlTagName
-  , bodyTagName
+  , svgPath
+  , textarea
+  , title
   ) where
 
 import Color as Color
@@ -168,6 +169,19 @@ h1 attributes children =
 
 h2 :: { id :: Maybe NonEmptyString, class :: Maybe NonEmptyString } -> Data.HtmlChildren -> Data.RawHtmlElement
 h2 attributes children =
+  Data.htmlElement
+    (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "h2"))
+    ( Map.fromFoldable
+        ( Array.catMaybes
+            [ Prelude.map idAttribute attributes.id
+            , Prelude.map classAttribute attributes.class
+            ]
+        )
+    )
+    children
+
+code :: { id :: Maybe NonEmptyString, class :: Maybe NonEmptyString } -> Data.HtmlChildren -> Data.RawHtmlElement
+code attributes children =
   Data.htmlElement
     (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "h2"))
     ( Map.fromFoldable

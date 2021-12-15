@@ -378,11 +378,17 @@ textToHtmlElementAndStyleDict (Data.Text { padding, markup, text, click }) =
     viewStyle =
       ViewStyle
         { declarationList:
-            [ Css.color Color.white
-            , Css.padding { topBottom: padding, leftRight: padding }
-            , Css.margin0
-            , Css.lineHeight 1
-            ]
+            ( Array.concat
+                [ [ Css.color Color.white
+                  , Css.padding { topBottom: padding, leftRight: padding }
+                  , Css.margin0
+                  , Css.lineHeight 1
+                  ]
+                , case markup of
+                    Data.Code -> [ Css.whiteSpacePre ]
+                    _ -> []
+                ]
+            )
         , hoverDeclarationList: []
         }
 
@@ -428,6 +434,15 @@ textToHtmlElementAndStyleDict (Data.Text { padding, markup, text, click }) =
             Data.Heading2 ->
               Vdom.ElementH2
                 ( Vdom.H2
+                    { id: Nothing
+                    , class: Just className
+                    , click: clickMessageDataMaybe
+                    , children: Vdom.ChildrenText text
+                    }
+                )
+            Data.Code ->
+              Vdom.ElementCode
+                ( Vdom.Code
                     { id: Nothing
                     , class: Just className
                     , click: clickMessageDataMaybe

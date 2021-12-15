@@ -46,7 +46,7 @@ snsLink url logo text =
     , gridTemplateColumns1FrCount: Nothing
     , children:
         [ View.SvgElement { width: View.Rem 2.0, height: 2.0, svg: logo, isJustifySelfCenter: false }
-        , View.text { markup: View.None, padding: 8.0, text, click: Nothing }
+        , View.normalText { padding: 8.0, text }
         ]
     }
 
@@ -69,7 +69,7 @@ externalLink url imageUrl text =
             , height: 8.0
             , alternativeText: append text "のアイコン"
             }
-        , View.text { markup: View.None, padding: 8.0, text, click: Nothing }
+        , View.normalText { padding: 8.0, text }
         ]
     }
 
@@ -87,7 +87,7 @@ articleLink (ArticleTitleAndImageUrl { location, imagePath, title }) =
             , height: 8.0
             , alternativeText: append title "のイメージ画像"
             }
-        , View.text { markup: View.None, padding: 8.0, text: title, click: Nothing }
+        , View.normalText { padding: 8.0, text: title }
         ]
     , gap: 0.0
     , paddingTopBottom: 0.0
@@ -136,8 +136,8 @@ articleListToViewElement list =
 
 copyright :: View.Element Message.Message Location.Location
 copyright =
-  View.text
-    { markup: View.None, padding: 8.0, text: "© 2021 narumincho", click: Nothing }
+  View.normalText
+    { padding: 8.0, text: "© 2021 narumincho" }
 
 topBox :: Int -> View.Element Message.Message Location.Location
 topBox count =
@@ -268,7 +268,11 @@ topBox count =
                 ]
             }
         , View.text
-            { markup: View.Heading2, padding: 8.0, text: "ナルミンチョが書いた 記事", click: Nothing }
+            { markup: View.Heading2
+            , padding: 8.0
+            , text: "ナルミンチョが書いた 記事"
+            , click: Nothing
+            }
         , articleListToViewElement
             ( [ ArticleTitleAndImageUrl
                   { title:

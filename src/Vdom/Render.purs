@@ -89,6 +89,20 @@ elementToHtmlOrSvgElementWithoutDataPath { element, path, patchState, locationTo
         }
     applyChildren { htmlOrSvgElement: h2, children: rec.children, path, patchState, locationToPathAndSearchParams }
     pure h2
+  Vdom.ElementCode (Vdom.Code rec) -> do
+    code <-
+      EffectUncurried.runEffectFn1 createCode
+        { id: Nullable.toNullable (map NonEmptyString.toString rec.id)
+        , class: Nullable.toNullable (map NonEmptyString.toString rec.class)
+        , click:
+            EffectUncurried.mkEffectFn1
+              ( EffectUncurried.runEffectFn2
+                  (VdomPatchState.getClickEventHandler patchState)
+                  (Path.toString path)
+              )
+        }
+    applyChildren { htmlOrSvgElement: code, children: rec.children, path, patchState, locationToPathAndSearchParams }
+    pure code
   Vdom.ElementExternalLink (Vdom.ExternalLink rec) -> do
     anchor <-
       EffectUncurried.runEffectFn1 createExternalAnchor
@@ -386,6 +400,14 @@ foreign import createH1 ::
     HtmlOrSvgElement
 
 foreign import createH2 ::
+  EffectUncurried.EffectFn1
+    { id :: Nullable String
+    , class :: Nullable String
+    , click :: EffectUncurried.EffectFn1 VdomPatchState.MouseEvent Unit
+    }
+    HtmlOrSvgElement
+
+foreign import createCode ::
   EffectUncurried.EffectFn1
     { id :: Nullable String
     , class :: Nullable String

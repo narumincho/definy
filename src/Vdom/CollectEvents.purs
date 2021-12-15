@@ -83,6 +83,13 @@ collectMessageDataMapInElement { locationToPathAndSearchParams, element, path, u
         click
         (collectMessageDataMapInChildren { locationToPathAndSearchParams, children: rec.children, path, urlChangeMessageData })
     Nothing -> collectMessageDataMapInChildren { locationToPathAndSearchParams, children: rec.children, path, urlChangeMessageData }
+  Vdom.ElementCode (Vdom.Code rec) -> case rec.click of
+    Just click ->
+      VdomPatchState.newMessageMapParameterAddClick
+        path
+        click
+        (collectMessageDataMapInChildren { locationToPathAndSearchParams, children: rec.children, path, urlChangeMessageData })
+    Nothing -> collectMessageDataMapInChildren { locationToPathAndSearchParams, children: rec.children, path, urlChangeMessageData }
   Vdom.ElementExternalLink (Vdom.ExternalLink rec) ->
     collectMessageDataMapInChildren
       { locationToPathAndSearchParams
