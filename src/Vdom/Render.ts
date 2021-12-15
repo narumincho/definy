@@ -97,7 +97,41 @@ export const createH2 = (option: {
   return headingElement;
 };
 
-export const createA = (option: {
+export const createSameOriginAnchor = (option: {
+  readonly id: string | null;
+  readonly class: string | null;
+  readonly href: string;
+  readonly click: (mouseEvent: MouseEvent) => void;
+}): HTMLElement | SVGElement => {
+  const anchorElement = window.document.createElement("a");
+  if (typeof option.id === "string") {
+    anchorElement.id = option.id;
+  }
+  if (typeof option.class === "string") {
+    anchorElement.className = option.class;
+  }
+  anchorElement.href = option.href;
+  anchorElement.addEventListener("click", (mouseEvent) => {
+    /*
+     * リンクを
+     * Ctrlなどを押しながらクリックか,
+     * マウスの中ボタンでクリックした場合などは, ブラウザで新しいタブが開くので, ブラウザでページ推移をしない.
+     */
+    if (
+      mouseEvent.ctrlKey ||
+      mouseEvent.metaKey ||
+      mouseEvent.shiftKey ||
+      mouseEvent.button !== 0
+    ) {
+      return;
+    }
+    mouseEvent.preventDefault();
+    option.click(mouseEvent);
+  });
+  return anchorElement;
+};
+
+export const createExternalAnchor = (option: {
   readonly id: string | null;
   readonly class: string | null;
   readonly href: string;

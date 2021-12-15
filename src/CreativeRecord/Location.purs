@@ -1,9 +1,13 @@
-module CreativeRecord.Location (Location(..), toUrl, fromPath) where
+module CreativeRecord.Location
+  ( Location(..)
+  , fromPath
+  , toPath
+  , toUrl
+  ) where
 
 import Prelude
 import CreativeRecord.Origin as Origin
 import Data.Map as Map
-import Data.Maybe (Maybe(..))
 import Data.String.NonEmpty (NonEmptyString)
 import Data.String.NonEmpty as NonEmptyString
 import StructuredUrl as StructuredUrl
@@ -23,6 +27,7 @@ data Location
   | Star
   | DesiredRouteMonster
   | NPetitcomIme
+  | NotFound StructuredUrl.PathAndSearchParams
 
 toUrl :: Location -> StructuredUrl.StructuredUrl
 toUrl location =
@@ -30,56 +35,53 @@ toUrl location =
     { origin: Origin.origin, pathAndSearchParams: toPath location }
 
 toPath :: Location -> StructuredUrl.PathAndSearchParams
-toPath location =
-  StructuredUrl.pathAndSearchParams
-    ( case location of
-        Top -> []
-        PowershellRecursion -> [ powershellRecursionPath ]
-        SvgBasic -> [ svgBasicPath ]
-        SvgStandaloneEmbed -> [ svgStandaloneEmbedPath ]
-        AboutDesiredRoute -> [ aboutDesiredRoutePath ]
-        MessageWindow -> [ messageWindowPath ]
-        DesiredRouteFont -> [ desiredRouteFontPath ]
-        ListSelectionBehavior -> [ listSelectionBehaviorPath ]
-        UiColor -> [ uiColorPath ]
-        DesiredRouteEncounter -> [ desiredRouteEncounterPath ]
-        Star -> [ starPath ]
-        DesiredRouteMonster -> [ desiredRouteMonster ]
-        NPetitcomIme -> [ nPetitcomIme ]
-    )
-    Map.empty
+toPath = case _ of
+  Top -> StructuredUrl.pathAndSearchParams [] Map.empty
+  PowershellRecursion -> StructuredUrl.pathAndSearchParams [ powershellRecursionPath ] Map.empty
+  SvgBasic -> StructuredUrl.pathAndSearchParams [ svgBasicPath ] Map.empty
+  SvgStandaloneEmbed -> StructuredUrl.pathAndSearchParams [ svgStandaloneEmbedPath ] Map.empty
+  AboutDesiredRoute -> StructuredUrl.pathAndSearchParams [ aboutDesiredRoutePath ] Map.empty
+  MessageWindow -> StructuredUrl.pathAndSearchParams [ messageWindowPath ] Map.empty
+  DesiredRouteFont -> StructuredUrl.pathAndSearchParams [ desiredRouteFontPath ] Map.empty
+  ListSelectionBehavior -> StructuredUrl.pathAndSearchParams [ listSelectionBehaviorPath ] Map.empty
+  UiColor -> StructuredUrl.pathAndSearchParams [ uiColorPath ] Map.empty
+  DesiredRouteEncounter -> StructuredUrl.pathAndSearchParams [ desiredRouteEncounterPath ] Map.empty
+  Star -> StructuredUrl.pathAndSearchParams [ starPath ] Map.empty
+  DesiredRouteMonster -> StructuredUrl.pathAndSearchParams [ desiredRouteMonster ] Map.empty
+  NPetitcomIme -> StructuredUrl.pathAndSearchParams [ nPetitcomIme ] Map.empty
+  NotFound path -> path
 
-fromPath :: StructuredUrl.PathAndSearchParams -> Maybe Location
-fromPath (StructuredUrl.PathAndSearchParams { path }) = case path of
-  [] -> Just Top
+fromPath :: StructuredUrl.PathAndSearchParams -> Location
+fromPath (StructuredUrl.PathAndSearchParams { path, searchParams }) = case path of
+  [] -> Top
   [ name ] ->
     if eq name powershellRecursionPath then
-      Just PowershellRecursion
+      PowershellRecursion
     else if eq name svgBasicPath then
-      Just SvgBasic
+      SvgBasic
     else if eq name svgStandaloneEmbedPath then
-      Just SvgStandaloneEmbed
+      SvgStandaloneEmbed
     else if eq name aboutDesiredRoutePath then
-      Just AboutDesiredRoute
+      AboutDesiredRoute
     else if eq name messageWindowPath then
-      Just MessageWindow
+      MessageWindow
     else if eq name desiredRouteFontPath then
-      Just DesiredRouteFont
+      DesiredRouteFont
     else if eq name listSelectionBehaviorPath then
-      Just ListSelectionBehavior
+      ListSelectionBehavior
     else if eq name uiColorPath then
-      Just UiColor
+      UiColor
     else if eq name desiredRouteEncounterPath then
-      Just DesiredRouteEncounter
+      DesiredRouteEncounter
     else if eq name starPath then
-      Just Star
+      Star
     else if eq name desiredRouteMonster then
-      Just DesiredRouteMonster
+      DesiredRouteMonster
     else if eq name nPetitcomIme then
-      Just NPetitcomIme
+      NPetitcomIme
     else
-      Nothing
-  _ -> Nothing
+      NotFound (StructuredUrl.PathAndSearchParams { path, searchParams })
+  _ -> NotFound (StructuredUrl.PathAndSearchParams { path, searchParams })
 
 powershellRecursionPath :: NonEmptyString
 powershellRecursionPath =

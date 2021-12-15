@@ -2,6 +2,7 @@ module CreativeRecord.Functions (html) where
 
 import CreativeRecord.ClientProgramHashValue as ClientProgramHashValue
 import CreativeRecord.Location as Location
+import CreativeRecord.State as State
 import CreativeRecord.View as CreativeRecordView
 import Data.Map as Map
 import Data.Maybe (Maybe(..))
@@ -19,28 +20,31 @@ html =
     ( \pathAndSearchParams ->
         Prelude.pure
           ( let
-              locationMaybe :: Maybe Location.Location
-              locationMaybe = Location.fromPath pathAndSearchParams
+              location :: Location.Location
+              location = Location.fromPath pathAndSearchParams
             in
               Functions.Response
                 { body:
                     HtmlToString.toString
                       ( VdomToHtml.toHtml
-                          ( ViewToVdom.toVdom
-                              ( Just
-                                  ( StructuredUrl.pathAndSearchParams
-                                      [ ClientProgramHashValue.clientProgramHashValue ]
-                                      Map.empty
-                                  )
-                              )
-                              (CreativeRecordView.view locationMaybe 0)
-                          )
+                          { vdom:
+                              ViewToVdom.toVdom
+                                { scriptPath:
+                                    Just
+                                      ( StructuredUrl.pathAndSearchParams
+                                          [ ClientProgramHashValue.clientProgramHashValue ]
+                                          Map.empty
+                                      )
+                                , view: CreativeRecordView.view (State.initState location)
+                                }
+                          , locationToPathAndSearchParams: Location.toPath
+                          }
                       )
                 , mediaTypeMaybe: Just MediaType.Html
                 , status:
-                    case locationMaybe of
-                      Just _ -> Functions.Ok
-                      Nothing -> Functions.NotFound
+                    case location of
+                      Location.NotFound _ -> Functions.NotFound
+                      _ -> Functions.Ok
                 }
           )
     )

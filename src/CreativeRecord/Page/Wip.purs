@@ -2,9 +2,10 @@ module CreativeRecord.Page.Wip (view) where
 
 import Data.Maybe (Maybe(..))
 import CreativeRecord.Messgae as Message
+import CreativeRecord.Location as Location
 import View.Data as View
 
-view :: View.Element Message.Message
+view :: View.Element Message.Message Location.Location
 view =
   View.box
     { direction: View.Y
@@ -14,7 +15,7 @@ view =
     , height: Nothing
     , backgroundColor: Nothing
     , gridTemplateColumns1FrCount: Nothing
-    , url: Nothing
+    , link: Nothing
     , hover: View.boxHoverStyleNone
     , children:
         [ View.text

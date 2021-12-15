@@ -1,12 +1,14 @@
 module Vdom.PatchState
-  ( ClickMessageData(..)
-  , Events
+  ( ClickMessageData
   , InputEvent
   , MouseEvent
+  , NewMessageMapParameter(..)
   , PatchState
-  , PathAndEvents
-  , eventsFrom
+  , clickMessageFrom
   , getClickEventHandler
+  , newMessageMapParameterAddClick
+  , newMessageMapParameterEmpty
+  , newMessageMapParameterUnions
   , setMessageDataMap
   ) where
 
@@ -24,58 +26,128 @@ foreign import data MouseEvent :: Type
 
 foreign import data InputEvent :: Type
 
-newtype PathAndEvents message
-  = PathAndEvents
+newtype NewMessageMap message
+  = NewMessageMap
+  { click :: Array (PathAndMessageData (ClickMessageData message))
+  , change :: Array (PathAndMessageData message)
+  , input :: Array (PathAndMessageData (String -> message))
+  }
+
+newtype PathAndMessageData messageData
+  = PathAndMessageData
   { path :: String
-  , events :: Events message
+  , messageData :: messageData
   }
-
-newtype Events message
-  = Events
-  { onClick :: Nullable (ClickMessageData message)
-  , onChange :: Nullable message
-  , onInput :: Nullable (String -> message)
-  }
-
-eventsFrom ::
-  forall message.
-  { onClick :: Maybe (ClickMessageData message)
-  , onChange :: Maybe message
-  , onInput :: Maybe (String -> message)
-  } ->
-  Events message
-eventsFrom rec =
-  Events
-    { onClick: Nullable.toNullable rec.onClick
-    , onChange: Nullable.toNullable rec.onChange
-    , onInput: Nullable.toNullable rec.onInput
-    }
 
 newtype ClickMessageData :: Type -> Type
 newtype ClickMessageData message
   = ClickMessageData
-  { ignoreNewTab :: Boolean
-  , stopPropagation :: Boolean
+  { stopPropagation :: Boolean
   , message :: message
+  , url :: Nullable String
   }
+
+clickMessageFrom ::
+  forall message.
+  { stopPropagation :: Boolean
+  , message :: message
+  , url :: Maybe String
+  } ->
+  ClickMessageData message
+clickMessageFrom rec =
+  ClickMessageData
+    { stopPropagation: rec.stopPropagation
+    , message: rec.message
+    , url: Nullable.toNullable rec.url
+    }
 
 newtype PatchState message
   = PatchState
   { clickEventHandler :: EffectUncurried.EffectFn2 String MouseEvent Unit
   , changeEventHandler :: EffectUncurried.EffectFn1 String Unit
   , inputEventHandler :: EffectUncurried.EffectFn2 String InputEvent Unit
-  , setMessageDataMap :: EffectUncurried.EffectFn1 (Array (PathAndEvents message)) Unit
+  , setMessageDataMap :: EffectUncurried.EffectFn1 (NewMessageMap message) Unit
   }
 
-setMessageDataMap :: forall message. PatchState message -> Map.Map Path.Path (Events message) -> Effect Unit
-setMessageDataMap (PatchState rec) messageDataMap =
+newtype NewMessageMapParameter message
+  = NewMessageMapParameter
+  { click :: Map.Map Path.Path (ClickMessageData message)
+  , change :: Map.Map Path.Path message
+  , input :: Map.Map Path.Path (String -> message)
+  }
+
+setMessageDataMap :: forall message. PatchState message -> NewMessageMapParameter message -> Effect Unit
+setMessageDataMap (PatchState rec) (NewMessageMapParameter messageDataMap) =
   EffectUncurried.runEffectFn1 rec.setMessageDataMap
-    ( map
-        ( \(Tuple.Tuple path events) ->
-            (PathAndEvents { path: Path.toString path, events })
-        )
-        (Map.toUnfoldable messageDataMap)
+    ( NewMessageMap
+        { click:
+            map
+              ( \(Tuple.Tuple path messageData) ->
+                  ( PathAndMessageData
+                      { path: Path.toString path
+                      , messageData
+                      }
+                  )
+              )
+              (Map.toUnfoldable messageDataMap.click)
+        , change:
+            map
+              ( \(Tuple.Tuple path messageData) ->
+                  ( PathAndMessageData
+                      { path: Path.toString path
+                      , messageData
+                      }
+                  )
+              )
+              (Map.toUnfoldable messageDataMap.change)
+        , input:
+            map
+              ( \(Tuple.Tuple path messageData) ->
+                  ( PathAndMessageData
+                      { path: Path.toString path
+                      , messageData
+                      }
+                  )
+              )
+              (Map.toUnfoldable messageDataMap.input)
+        }
     )
+
+newMessageMapParameterAddClick :: forall message. Path.Path -> ClickMessageData message -> NewMessageMapParameter message -> NewMessageMapParameter message
+newMessageMapParameterAddClick path clickMessageData (NewMessageMapParameter rec) =
+  NewMessageMapParameter
+    (rec { click = Map.insert path clickMessageData rec.click })
+
+newMessageMapParameterUnions :: forall message. Array (NewMessageMapParameter message) -> NewMessageMapParameter message
+newMessageMapParameterUnions list =
+  NewMessageMapParameter
+    { click:
+        Map.unions
+          ( map
+              (\(NewMessageMapParameter { click }) -> click)
+              list
+          )
+    , change:
+        Map.unions
+          ( map
+              (\(NewMessageMapParameter { change }) -> change)
+              list
+          )
+    , input:
+        Map.unions
+          ( map
+              (\(NewMessageMapParameter { input }) -> input)
+              list
+          )
+    }
+
+newMessageMapParameterEmpty :: forall message. NewMessageMapParameter message
+newMessageMapParameterEmpty =
+  NewMessageMapParameter
+    { click: Map.empty
+    , change: Map.empty
+    , input: Map.empty
+    }
 
 getClickEventHandler :: forall message. PatchState message -> EffectUncurried.EffectFn2 String MouseEvent Unit
 getClickEventHandler (PatchState { clickEventHandler }) = clickEventHandler

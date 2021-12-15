@@ -9,7 +9,7 @@ module Vdom.Data
   , PointerType(..)
   , Element(..)
   , ExternalLink(..)
-  , LocalLink(..)
+  , SameOriginLink(..)
   , Button(..)
   , Img(..)
   , InputRadio(..)
@@ -50,35 +50,34 @@ import Css as Css
 import Data.Array as Array
 import Data.Array.NonEmpty (NonEmptyArray)
 import Data.Array.NonEmpty as NonEmptyArray
-import Data.Map as Map
 import Data.Maybe (Maybe)
 import Data.Maybe as Maybe
 import Data.String.NonEmpty (NonEmptyString)
-import Data.String.NonEmpty as NonEmptyString
 import Data.Tuple as Tuple
 import Language as Language
 import Prelude as Prelude
 import StructuredUrl as StructuredUrl
 import Vdom.PatchState as PatchState
 
-newtype Vdom message
+newtype Vdom :: Type -> Type -> Type
+newtype Vdom message location
   = Vdom
   { {- ページ名
-  Google 検索のページ名や, タブ, ブックマークのタイトル, OGPのタイトルなどに使用される  -} pageName :: NonEmptyString.NonEmptyString
+  Google 検索のページ名や, タブ, ブックマークのタイトル, OGPのタイトルなどに使用される  -} pageName :: NonEmptyString
   , {- アプリ名 / サイト名 -} appName :: NonEmptyString
   , {- ページの説明 -} description :: String
   , {- テーマカラー -} themeColor :: Color.Color
   , {- アイコン画像のURL -} iconPath :: StructuredUrl.PathAndSearchParams
-  , {- 使用している言語 -} language :: Maybe.Maybe Language.Language
+  , {- 使用している言語 -} language :: Maybe Language.Language
   , {- OGPに使われるカバー画像のパス -} coverImagePath :: StructuredUrl.PathAndSearchParams
-  , {- パス. ログイン時のコールバック時には Noting にして良い -} path :: Maybe.Maybe StructuredUrl.PathAndSearchParams
-  , {- オリジン -} origin :: NonEmptyString.NonEmptyString
+  , {- パス. ログイン時のコールバック時には Noting にして良い -} path :: Maybe StructuredUrl.PathAndSearchParams
+  , {- オリジン -} origin :: NonEmptyString
   , {- 全体に適応されるスタイル. CSS -} style :: Css.StatementList
-  , {- スクリプトのパス -} scriptPath :: Maybe.Maybe StructuredUrl.PathAndSearchParams
-  , {- body の class -} bodyClass :: Maybe.Maybe NonEmptyString.NonEmptyString
-  , pointerMove :: Maybe.Maybe (Pointer -> message)
-  , pointerDown :: Maybe.Maybe (Pointer -> message)
-  , {- body の 子要素 -} children :: Array (Tuple.Tuple String (Element message))
+  , {- スクリプトのパス -} scriptPath :: Maybe StructuredUrl.PathAndSearchParams
+  , {- body の class -} bodyClass :: Maybe NonEmptyString
+  , pointerMove :: Maybe (Pointer -> message)
+  , pointerDown :: Maybe (Pointer -> message)
+  , {- body の 子要素 -} children :: Array (Tuple.Tuple String (Element message location))
   }
 
 newtype Pointer
@@ -114,99 +113,106 @@ data PointerType
   | Touch
   | None
 
+newtype MessageData :: Type -> Type
 -- | メッセージを集計した結果
 newtype MessageData message
   = MessageData
-  { messageMap :: Map.Map String (PatchState.Events message)
-  , pointerMove :: Maybe.Maybe (Pointer -> message)
-  , pointerDown :: Maybe.Maybe (Pointer -> message)
+  { messageMap :: PatchState.NewMessageMapParameter message
+  , pointerMove :: Maybe (Pointer -> message)
+  , pointerDown :: Maybe (Pointer -> message)
   }
 
+newtype ViewDiff :: Type -> Type -> Type
 -- | View の 差分データ.
 -- | 
 -- | イベント関係は差分を使って処理をしないので Message は含まれないが, 要素を追加するときに Message を使う形になってしまっている
-newtype ViewDiff message
+newtype ViewDiff message location
   = ViewDiff
   { patchOperationList :: Array ViewPatchOperation
-  , childrenDiff :: ChildrenDiff message
+  , childrenDiff :: ChildrenDiff message location
   , newMessageData :: MessageData message
   }
 
 data ViewPatchOperation
-  = ChangePageName NonEmptyString.NonEmptyString
+  = ChangePageName NonEmptyString
   | ChangeThemeColor Color.Color
-  | ChangeLanguage (Maybe.Maybe Language.Language)
-  | ChangeBodyClass (Maybe.Maybe NonEmptyString)
+  | ChangeLanguage (Maybe Language.Language)
+  | ChangeBodyClass (Maybe NonEmptyString)
 
-data Element message
-  = ElementDiv (Div message)
-  | ElementH1 (H1 message)
-  | ElementH2 (H2 message)
-  | ElementExternalLink (ExternalLink message)
-  | ElementLocalLink (LocalLink message)
-  | ElementButton (Button message)
+data Element :: Type -> Type -> Type
+data Element message location
+  = ElementDiv (Div message location)
+  | ElementH1 (H1 message location)
+  | ElementH2 (H2 message location)
+  | ElementExternalLink (ExternalLink message location)
+  | ElementSameOriginLink (SameOriginLink message location)
+  | ElementButton (Button message location)
   | ElementImg Img
   | ElementInputRadio (InputRadio message)
   | ElementInputText (InputText message)
   | ElementTextArea (TextArea message)
-  | ElementLabel (Label message)
-  | ElementSvg (Svg message)
+  | ElementLabel (Label message location)
+  | ElementSvg (Svg message location)
   | ElementSvgPath SvgPath
-  | ElementSvgCircle (SvgCircle message)
+  | ElementSvgCircle (SvgCircle message location)
   | ElementSvgAnimate SvgAnimate
-  | ElementSvgG (SvgG message)
+  | ElementSvgG (SvgG message location)
 
-data ElementDiff message
-  = Replace { newElement :: Element message, key :: String }
+data ElementDiff :: Type -> Type -> Type
+data ElementDiff message location
+  = Replace { newElement :: Element message location, key :: String }
   | Update
-    { elementUpdateDiff :: ElementUpdateDiff message
+    { elementUpdateDiff :: ElementUpdateDiff message location
     , key :: String
     }
   | Delete
   | Insert
-    { element :: Element message
+    { element :: Element message location
     , key :: String
     }
   | Skip
 
-skip :: forall message. ElementDiff message
+skip :: forall message location. ElementDiff message location
 skip = Skip
 
-replace :: forall message. String -> Element message -> ElementDiff message
+replace :: forall message location. String -> Element message location -> ElementDiff message location
 replace key newElement = Replace { newElement, key }
 
-data ElementUpdateDiff message
-  = ElementUpdateDiffDiv (DivDiff message)
-  | ElementUpdateDiffExternalLinkDiff (ExternalLinkDiff message)
-  | ElementUpdateDiffLocalLinkDiff (LocalLinkDiff message)
-  | ElementUpdateDiffButtonDiff (ButtonDiff message)
+data ElementUpdateDiff :: Type -> Type -> Type
+data ElementUpdateDiff message location
+  = ElementUpdateDiffDiv (DivDiff message location)
+  | ElementUpdateDiffExternalLinkDiff (ExternalLinkDiff message location)
+  | ElementUpdateDiffSameOriginLinkDiff (SameOriginLinkDiff message location)
+  | ElementUpdateDiffButtonDiff (ButtonDiff message location)
   | ElementUpdateDiffImgDiff ImgDiff
   | ElementUpdateDiffInputRadioDiff InputRadioDiff
   | ElementUpdateDiffInputTextDiff InputTextDiff
   | ElementUpdateDiffTextAreaDiff TextAreaDiff
-  | ElementUpdateDiffLabelDiff (LabelDiff message)
-  | ElementUpdateDiffSvgDiff (SvgDiff message)
+  | ElementUpdateDiffLabelDiff (LabelDiff message location)
+  | ElementUpdateDiffSvgDiff (SvgDiff message location)
   | ElementUpdateDiffSvgPathDiff SvgPathDiff
-  | ElementUpdateDiffSvgCircleDiff (SvgCircleDiff message)
+  | ElementUpdateDiffSvgCircleDiff (SvgCircleDiff message location)
   | ElementUpdateDiffSvgAnimateDiff SvgAnimateDiff
 
-newtype Div message
+newtype Div :: Type -> Type -> Type
+newtype Div message location
   = Div
-  { id :: Maybe.Maybe NonEmptyString.NonEmptyString
-  , class :: Maybe.Maybe NonEmptyString.NonEmptyString
-  , click :: Maybe.Maybe (PatchState.ClickMessageData message)
-  , children :: Children message
+  { id :: Maybe NonEmptyString
+  , class :: Maybe NonEmptyString
+  , click :: Maybe (PatchState.ClickMessageData message)
+  , children :: Children message location
   }
 
-newtype DivDiff message
-  = DivDiff (NonEmptyArray.NonEmptyArray (DivPatchOperation message))
+newtype DivDiff message location
+  = DivDiff (NonEmptyArray (DivPatchOperation message location))
 
-data DivPatchOperation message
-  = DivPatchOperationSetId (Maybe.Maybe NonEmptyString.NonEmptyString)
-  | DivPatchOperationSetClass (Maybe.Maybe NonEmptyString.NonEmptyString)
-  | DivPatchOperationUpdateChildren (ChildrenDiff message)
+data DivPatchOperation :: Type -> Type -> Type
+data DivPatchOperation message location
+  = DivPatchOperationSetId (Maybe NonEmptyString)
+  | DivPatchOperationSetClass (Maybe NonEmptyString)
+  | DivPatchOperationUpdateChildren (ChildrenDiff message location)
 
-createDivDeff :: forall message. String -> Div message -> Div message -> ElementDiff message
+createDivDeff :: forall message location. String -> Div message location -> Div message location -> ElementDiff message location
 createDivDeff key (Div old) (Div new) = case NonEmptyArray.fromArray
     ( Array.catMaybes
         [ Prelude.map DivPatchOperationSetId (createDiff old.id new.id)
@@ -220,48 +226,52 @@ createDivDeff key (Div old) (Div new) = case NonEmptyArray.fromArray
       }
   Maybe.Nothing -> Skip
 
-createDiff :: forall a. Prelude.Eq a => a -> a -> Maybe.Maybe a
+createDiff :: forall a. Prelude.Eq a => a -> a -> Maybe a
 createDiff old new =
   if Prelude.eq old new then
     Maybe.Nothing
   else
     Maybe.Just new
 
-newtype H1 message
+newtype H1 :: Type -> Type -> Type
+newtype H1 message location
   = H1
-  { id :: Maybe.Maybe NonEmptyString.NonEmptyString
-  , class :: Maybe.Maybe NonEmptyString.NonEmptyString
-  , click :: Maybe.Maybe (PatchState.ClickMessageData message)
-  , children :: Children message
+  { id :: Maybe NonEmptyString
+  , class :: Maybe NonEmptyString
+  , click :: Maybe (PatchState.ClickMessageData message)
+  , children :: Children message location
   }
 
-newtype H2 message
+newtype H2 :: Type -> Type -> Type
+newtype H2 message location
   = H2
-  { id :: Maybe.Maybe NonEmptyString.NonEmptyString
-  , class :: Maybe.Maybe NonEmptyString.NonEmptyString
-  , click :: Maybe.Maybe (PatchState.ClickMessageData message)
-  , children :: Children message
+  { id :: Maybe NonEmptyString
+  , class :: Maybe NonEmptyString
+  , click :: Maybe (PatchState.ClickMessageData message)
+  , children :: Children message location
   }
 
+newtype ExternalLink :: Type -> Type -> Type
 -- | 外部のリンクを持つ `<a>`
-newtype ExternalLink message
+newtype ExternalLink message location
   = ExternalLink
-  { id :: Maybe.Maybe NonEmptyString.NonEmptyString
-  , class :: Maybe.Maybe NonEmptyString.NonEmptyString
+  { id :: Maybe NonEmptyString
+  , class :: Maybe NonEmptyString
   , href :: StructuredUrl.StructuredUrl
-  , children :: Children message
+  , children :: Children message location
   }
 
-newtype ExternalLinkDiff message
-  = ExternalLinkDiff (NonEmptyArray.NonEmptyArray (ExternalLinkPatchOperation message))
+newtype ExternalLinkDiff :: Type -> Type -> Type
+newtype ExternalLinkDiff message location
+  = ExternalLinkDiff (NonEmptyArray (ExternalLinkPatchOperation message location))
 
-data ExternalLinkPatchOperation message
-  = ExternalLinkPatchOperationSetId (Maybe.Maybe NonEmptyString.NonEmptyString)
-  | ExternalLinkPatchOperationSetClass (Maybe.Maybe NonEmptyString.NonEmptyString)
+data ExternalLinkPatchOperation message location
+  = ExternalLinkPatchOperationSetId (Maybe NonEmptyString)
+  | ExternalLinkPatchOperationSetClass (Maybe NonEmptyString)
   | ExternalLinkPatchOperationSetHref StructuredUrl.StructuredUrl
-  | ExternalLinkPatchOperationUpdateChildren (ChildrenDiff message)
+  | ExternalLinkPatchOperationUpdateChildren (ChildrenDiff message location)
 
-externalLinkDiff :: forall message. String -> ExternalLink message -> ExternalLink message -> ElementDiff message
+externalLinkDiff :: forall message location. String -> ExternalLink message location -> ExternalLink message location -> ElementDiff message location
 externalLinkDiff key (ExternalLink old) (ExternalLink new) =
   ( case NonEmptyArray.fromArray
         ( Array.catMaybes
@@ -278,59 +288,61 @@ externalLinkDiff key (ExternalLink old) (ExternalLink new) =
       Maybe.Nothing -> Skip
   )
 
-newtype LocalLink message
-  = LocalLink
+newtype SameOriginLink :: Type -> Type -> Type
+newtype SameOriginLink message location
+  = SameOriginLink
   { id :: Maybe NonEmptyString
   , class :: Maybe NonEmptyString
-  , href :: StructuredUrl.StructuredUrl
-  , jumpMessage :: message
-  , children :: Children message
+  , href :: location
+  , children :: Children message location
   }
 
-newtype LocalLinkDiff message
-  = LocalLinkDiff (NonEmptyArray (LocalLinkPatchOperation message))
+newtype SameOriginLinkDiff :: Type -> Type -> Type
+newtype SameOriginLinkDiff message location
+  = SameOriginLinkDiff (NonEmptyArray (SameOriginLinkPatchOperation message location))
 
-data LocalLinkPatchOperation message
-  = LocalLinkPatchOperationSetId (Maybe NonEmptyString)
-  | LocalLinkPatchOperationSetClass (Maybe NonEmptyString)
-  | LocalLinkPatchOperationSetHref StructuredUrl.StructuredUrl
-  | LocalLinkPatchOperationUpdateChildren (ChildrenDiff message)
+data SameOriginLinkPatchOperation message location
+  = SameOriginLinkPatchOperationSetId (Maybe NonEmptyString)
+  | SameOriginLinkPatchOperationSetClass (Maybe NonEmptyString)
+  | SameOriginLinkPatchOperationSetHref location
+  | SameOriginLinkPatchOperationUpdateChildren (ChildrenDiff message location)
 
-localLinkDiff :: forall message. String -> LocalLink message -> LocalLink message -> ElementDiff message
-localLinkDiff key (LocalLink old) (LocalLink new) =
+localLinkDiff :: forall message location. (Prelude.Eq location) => String -> SameOriginLink message location -> SameOriginLink message location -> ElementDiff message location
+localLinkDiff key (SameOriginLink old) (SameOriginLink new) =
   ( case NonEmptyArray.fromArray
         ( Array.catMaybes
-            [ Prelude.map LocalLinkPatchOperationSetId (createDiff old.id new.id)
-            , Prelude.map LocalLinkPatchOperationSetClass (createDiff old.class new.class)
-            , Prelude.map LocalLinkPatchOperationSetHref (createDiff old.href new.href)
+            [ Prelude.map SameOriginLinkPatchOperationSetId (createDiff old.id new.id)
+            , Prelude.map SameOriginLinkPatchOperationSetClass (createDiff old.class new.class)
+            , Prelude.map SameOriginLinkPatchOperationSetHref (createDiff old.href new.href)
             ]
         ) of
       Maybe.Just list ->
         Update
-          { elementUpdateDiff: ElementUpdateDiffLocalLinkDiff (LocalLinkDiff list)
+          { elementUpdateDiff: ElementUpdateDiffSameOriginLinkDiff (SameOriginLinkDiff list)
           , key
           }
       Maybe.Nothing -> Skip
   )
 
-newtype Button :: Type -> Type
-newtype Button message
+newtype Button :: Type -> Type -> Type
+newtype Button message location
   = Button
   { id :: Maybe NonEmptyString
   , class :: Maybe NonEmptyString
   , click :: message
-  , children :: Children message
+  , children :: Children message location
   }
 
-newtype ButtonDiff message
-  = ButtonDiff (NonEmptyArray (ButtonPatchOperation message))
+newtype ButtonDiff :: Type -> Type -> Type
+newtype ButtonDiff message location
+  = ButtonDiff (NonEmptyArray (ButtonPatchOperation message location))
 
-data ButtonPatchOperation message
+data ButtonPatchOperation message location
   = ButtonPatchOperationSetId (Maybe NonEmptyString)
   | ButtonPatchOperationSetClass (Maybe NonEmptyString)
-  | ButtonPatchOperationUpdateChildren (ChildrenDiff message)
+  | ButtonPatchOperationUpdateChildren (ChildrenDiff message location)
 
-buttonDiff :: forall message. String -> Button message -> Button message -> ElementDiff message
+buttonDiff :: forall message location. String -> Button message location -> Button message location -> ElementDiff message location
 buttonDiff key (Button old) (Button new) = case NonEmptyArray.fromArray
     ( Array.catMaybes
         [ Prelude.map DivPatchOperationSetId (createDiff old.id new.id)
@@ -358,15 +370,16 @@ newtype ImgDiff
 type ImgDiffRec
   = { id :: Maybe (Maybe NonEmptyString)
     , class :: Maybe (Maybe NonEmptyString)
-    , alt :: Maybe.Maybe String
-    , src :: Maybe.Maybe StructuredUrl.PathAndSearchParams
+    , alt :: Maybe String
+    , src :: Maybe StructuredUrl.PathAndSearchParams
     }
 
-imgDiff :: forall message. String -> ImgDiffRec -> ElementDiff message
+imgDiff :: forall message location. String -> ImgDiffRec -> ElementDiff message location
 imgDiff key = case _ of
   { id: Maybe.Nothing, class: Maybe.Nothing, alt: Maybe.Nothing, src: Maybe.Nothing } -> Skip
   rec -> Update { elementUpdateDiff: ElementUpdateDiffImgDiff (ImgDiff rec), key }
 
+newtype InputRadio :: Type -> Type
 newtype InputRadio message
   = InputRadio
   { id :: Maybe NonEmptyString
@@ -383,21 +396,22 @@ newtype InputRadioDiff
 type InputRadioDiffRec
   = { id :: Maybe (Maybe NonEmptyString)
     , class :: Maybe (Maybe NonEmptyString)
-    , checked :: Maybe.Maybe Boolean
-    , name :: Maybe.Maybe NonEmptyString
+    , checked :: Maybe Boolean
+    , name :: Maybe NonEmptyString
     }
 
-inputRadioDiff :: forall message. String -> InputRadioDiffRec -> ElementDiff message
+inputRadioDiff :: forall message location. String -> InputRadioDiffRec -> ElementDiff message location
 inputRadioDiff key = case _ of
   { id: Maybe.Nothing, class: Maybe.Nothing, checked: Maybe.Nothing, name: Maybe.Nothing
   } -> Skip
   rec -> Update { elementUpdateDiff: ElementUpdateDiffInputRadioDiff (InputRadioDiff rec), key }
 
+newtype InputText :: Type -> Type
 newtype InputText message
   = InputText
   { id :: Maybe NonEmptyString
   , class :: Maybe NonEmptyString
-  , inputOrReadonly :: Maybe.Maybe (String -> message)
+  , inputOrReadonly :: Maybe (String -> message)
   , value :: String
   }
 
@@ -407,20 +421,21 @@ newtype InputTextDiff
 type InputTextDiffRec
   = { id :: Maybe (Maybe NonEmptyString)
     , class :: Maybe (Maybe NonEmptyString)
-    , readonly :: Maybe.Maybe Boolean
-    , value :: Maybe.Maybe String
+    , readonly :: Maybe Boolean
+    , value :: Maybe String
     }
 
-inputTextDiff :: forall message. String -> InputTextDiffRec -> ElementDiff message
+inputTextDiff :: forall message location. String -> InputTextDiffRec -> ElementDiff message location
 inputTextDiff key = case _ of
   { id: Maybe.Nothing, class: Maybe.Nothing, readonly: Maybe.Nothing, value: Maybe.Nothing } -> Skip
   rec -> Update { elementUpdateDiff: ElementUpdateDiffInputTextDiff (InputTextDiff rec), key }
 
+newtype TextArea :: Type -> Type
 newtype TextArea message
   = TextArea
   { id :: Maybe NonEmptyString
   , class :: Maybe NonEmptyString
-  , inputOrReadonly :: Maybe.Maybe (String -> message)
+  , inputOrReadonly :: Maybe (String -> message)
   , value :: String
   }
 
@@ -430,11 +445,11 @@ newtype TextAreaDiff
 type TextAreaDiffRec
   = { id :: Maybe (Maybe NonEmptyString)
     , class :: Maybe (Maybe NonEmptyString)
-    , readonly :: Maybe.Maybe Boolean
-    , value :: Maybe.Maybe String
+    , readonly :: Maybe Boolean
+    , value :: Maybe String
     }
 
-textAreaDiff :: forall message. String -> TextAreaDiffRec -> ElementDiff message
+textAreaDiff :: forall message location. String -> TextAreaDiffRec -> ElementDiff message location
 textAreaDiff key = case _ of
   { id: Maybe.Nothing
   , class: Maybe.Nothing
@@ -443,65 +458,72 @@ textAreaDiff key = case _ of
   } -> Skip
   rec -> Update { elementUpdateDiff: ElementUpdateDiffTextAreaDiff (TextAreaDiff rec), key }
 
-newtype Label message
+newtype Label :: Type -> Type -> Type
+newtype Label message location
   = Label
   { id :: Maybe NonEmptyString
   , class :: Maybe NonEmptyString
   , for :: NonEmptyString
-  , children :: Children message
+  , children :: Children message location
   }
 
-newtype LabelDiff message
-  = LabelDiff (LabelDiffRec message)
+newtype LabelDiff :: Type -> Type -> Type
+newtype LabelDiff message location
+  = LabelDiff (LabelDiffRec message location)
 
-type LabelDiffRec message
+type LabelDiffRec :: Type -> Type -> Type
+type LabelDiffRec message location
   = { id :: Maybe (Maybe NonEmptyString)
     , class :: Maybe (Maybe NonEmptyString)
     , for :: Maybe NonEmptyString
-    , children :: ChildrenDiff message
+    , children :: ChildrenDiff message location
     }
 
-labelDiff :: forall message. String -> LabelDiffRec message -> ElementDiff message
+labelDiff :: forall message location. String -> LabelDiffRec message location -> ElementDiff message location
 labelDiff key = case _ of
   { id: Maybe.Nothing, class: Maybe.Nothing, for: Maybe.Nothing, children: ChildrenDiffSkip } -> Skip
   rec -> Update { elementUpdateDiff: ElementUpdateDiffLabelDiff (LabelDiff rec), key }
 
-newtype Svg message
-  = Svg (SvgRec message)
+newtype Svg :: Type -> Type -> Type
+newtype Svg message location
+  = Svg (SvgRec message location)
 
-type SvgRec message
+type SvgRec :: Type -> Type -> Type
+type SvgRec message location
   = { id :: Maybe NonEmptyString
     , class :: Maybe NonEmptyString
     , viewBoxX :: Number
     , viewBoxY :: Number
     , viewBoxWidth :: Number
     , viewBoxHeight :: Number
-    , children :: Array (Tuple.Tuple String (Element message))
+    , children :: Array (Tuple.Tuple String (Element message location))
     }
 
-svg :: forall message. SvgRec message -> Element message
+svg :: forall message location. SvgRec message location -> Element message location
 svg svgRec = ElementSvg (Svg svgRec)
 
-newtype SvgDiff message
-  = SvgDiff (SvgDiffRec message)
+newtype SvgDiff :: Type -> Type -> Type
+newtype SvgDiff message location
+  = SvgDiff (SvgDiffRec message location)
 
-type SvgDiffRec message
-  = { id :: Maybe.Maybe (Maybe.Maybe NonEmptyString.NonEmptyString)
-    , class :: Maybe.Maybe (Maybe.Maybe NonEmptyString.NonEmptyString)
-    , viewBoxX :: Maybe.Maybe Number
-    , viewBoxY :: Maybe.Maybe Number
-    , viewBoxWidth :: Maybe.Maybe Number
-    , viewBoxHeight :: Maybe.Maybe Number
-    , children :: ChildrenDiff message
+type SvgDiffRec :: Type -> Type -> Type
+type SvgDiffRec message location
+  = { id :: Maybe (Maybe NonEmptyString)
+    , class :: Maybe (Maybe NonEmptyString)
+    , viewBoxX :: Maybe Number
+    , viewBoxY :: Maybe Number
+    , viewBoxWidth :: Maybe Number
+    , viewBoxHeight :: Maybe Number
+    , children :: ChildrenDiff message location
     }
 
-svgDiff :: forall message. String -> SvgDiffRec message -> ElementDiff message
+svgDiff :: forall message location. String -> SvgDiffRec message location -> ElementDiff message location
 svgDiff key rec = Update { elementUpdateDiff: ElementUpdateDiffSvgDiff (SvgDiff rec), key }
 
 newtype SvgPath
   = SvgPath
-  { id :: Maybe.Maybe NonEmptyString.NonEmptyString
-  , class :: Maybe.Maybe NonEmptyString.NonEmptyString
+  { id :: Maybe NonEmptyString
+  , class :: Maybe NonEmptyString
   , d :: String
   , fill :: Color.Color
   }
@@ -510,19 +532,19 @@ newtype SvgPathDiff
   = SvgPathDiff SvgPathDiffRec
 
 type SvgPathDiffRec
-  = { id :: Maybe.Maybe (Maybe.Maybe NonEmptyString.NonEmptyString)
-    , class :: Maybe.Maybe (Maybe.Maybe NonEmptyString.NonEmptyString)
-    , d :: Maybe.Maybe String
+  = { id :: Maybe (Maybe NonEmptyString)
+    , class :: Maybe (Maybe NonEmptyString)
+    , d :: Maybe String
     , fill :: Maybe Color.Color
     }
 
-svgPathDiff :: forall message. String -> SvgPathDiffRec -> ElementDiff message
+svgPathDiff :: forall message location. String -> SvgPathDiffRec -> ElementDiff message location
 svgPathDiff key = case _ of
   { id: Maybe.Nothing, class: Maybe.Nothing, d: Maybe.Nothing, fill: Maybe.Nothing } -> Skip
   rec -> Update { elementUpdateDiff: ElementUpdateDiffSvgPathDiff (SvgPathDiff rec), key }
 
-newtype SvgCircle :: Type -> Type
-newtype SvgCircle message
+newtype SvgCircle :: Type -> Type -> Type
+newtype SvgCircle message location
   = SvgCircle
   { id :: Maybe NonEmptyString
   , class :: Maybe NonEmptyString
@@ -531,25 +553,26 @@ newtype SvgCircle message
   , cx :: Number
   , cy :: Number
   , r :: Number
-  , children :: Array (Tuple.Tuple String (Element message))
+  , children :: Array (Tuple.Tuple String (Element message location))
   }
 
-newtype SvgCircleDiff :: Type -> Type
-newtype SvgCircleDiff message
-  = SvgCircleDiff (SvgCircleDiffRec message)
+newtype SvgCircleDiff :: Type -> Type -> Type
+newtype SvgCircleDiff message location
+  = SvgCircleDiff (SvgCircleDiffRec message location)
 
-type SvgCircleDiffRec message
+type SvgCircleDiffRec :: Type -> Type -> Type
+type SvgCircleDiffRec message location
   = { id :: Maybe (Maybe NonEmptyString)
     , class :: Maybe (Maybe NonEmptyString)
     , fill :: Maybe Color.Color
     , stroke :: Maybe Color.Color
-    , cx :: Maybe.Maybe Number
-    , cy :: Maybe.Maybe Number
-    , r :: Maybe.Maybe Number
-    , children :: ChildrenDiff message
+    , cx :: Maybe Number
+    , cy :: Maybe Number
+    , r :: Maybe Number
+    , children :: ChildrenDiff message location
     }
 
-svgCircleDiff :: forall message. String -> SvgCircleDiffRec message -> ElementDiff message
+svgCircleDiff :: forall message location. String -> SvgCircleDiffRec message location -> ElementDiff message location
 svgCircleDiff key = case _ of
   { id: Maybe.Nothing
   , class: Maybe.Nothing
@@ -582,7 +605,7 @@ type SvgAnimateDiffRec
     , to :: Maybe String
     }
 
-svgAnimateDiff :: forall message. String -> SvgAnimateDiffRec -> ElementDiff message
+svgAnimateDiff :: forall message location. String -> SvgAnimateDiffRec -> ElementDiff message location
 svgAnimateDiff key = case _ of
   { attributeName: Maybe.Nothing
   , dur: Maybe.Nothing
@@ -592,19 +615,21 @@ svgAnimateDiff key = case _ of
   } -> Skip
   rec -> Update { elementUpdateDiff: ElementUpdateDiffSvgAnimateDiff (SvgAnimateDiff rec), key }
 
-newtype SvgG :: Type -> Type
-newtype SvgG message
+newtype SvgG :: Type -> Type -> Type
+newtype SvgG message location
   = SvgG
   { transform :: NonEmptyArray NonEmptyString
-  , children :: Array (Tuple.Tuple String (Element message))
+  , children :: Array (Tuple.Tuple String (Element message location))
   }
 
-data Children message
-  = ChildrenElementList (NonEmptyArray (Tuple.Tuple String (Element message)))
+data Children :: Type -> Type -> Type
+data Children message location
+  = ChildrenElementList (NonEmptyArray (Tuple.Tuple String (Element message location)))
   | ChildrenText String
 
-data ChildrenDiff message
+data ChildrenDiff :: Type -> Type -> Type
+data ChildrenDiff message location
   = ChildrenDiffSkip
   | ChildrenDiffSetText String
-  | ChildrenDiffResetAndInsert (NonEmptyArray (Tuple.Tuple String (Element message)))
-  | ChildDiffList (NonEmptyArray (ElementDiff message))
+  | ChildrenDiffResetAndInsert (NonEmptyArray (Tuple.Tuple String (Element message location)))
+  | ChildDiffList (NonEmptyArray (ElementDiff message location))

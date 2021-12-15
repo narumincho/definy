@@ -4,6 +4,7 @@ module View.Data
   , BoxHoverStyle(..)
   , BoxRecord
   , Element(..)
+  , Link(..)
   , PercentageOrRem(..)
   , Svg(..)
   , SvgElement(..)
@@ -28,10 +29,10 @@ import Data.String.NonEmpty as NonEmptyString
 import Language as Language
 import StructuredUrl as StructuredUrl
 
-newtype View :: Type -> Type
+newtype View :: Type -> Type -> Type
 -- | 見た目を表現するデータ. HTML Option より HTML と離れた, 抽象度の高く 扱いやすいものにする.
 -- | definy と ナルミンチョの創作記録で両方の指定が可能なもの
-newtype View message
+newtype View message location
   = View
   { {- 
     ページ名
@@ -40,29 +41,29 @@ newtype View message
   , {- アプリ名 / サイト名 (HTML出力のみ反映) -} appName :: NonEmptyString.NonEmptyString
   , {- ページの説明 (HTML出力のみ反映) -} description :: String
   , {- テーマカラー -} themeColor :: Color.Color
-  , {- アイコン画像のURL -} iconPath :: StructuredUrl.PathAndSearchParams
+  , {- アイコン画像のURL (HTML出力のみ反映) -} iconPath :: StructuredUrl.PathAndSearchParams
   , {- ページの言語 -} language :: Maybe Language.Language
-  , {- OGPに使われるカバー画像のパス (CORSの制限を受けない) -} coverImagePath :: StructuredUrl.PathAndSearchParams
-  , {- ページのパス -} path :: StructuredUrl.PathAndSearchParams
+  , {- OGPに使われるカバー画像のパス (HTML出力のみ反映, CORSの制限を受けない) -} coverImagePath :: StructuredUrl.PathAndSearchParams
+  , {- ページのパス (HTML出力のみ反映) -} path :: StructuredUrl.PathAndSearchParams
   , {- オリジン -} origin :: NonEmptyString.NonEmptyString
-  , {- 子要素 -} children :: Array (Element message)
+  , {- 子要素 -} children :: Array (Element message location)
   }
 
-newtype Box :: Type -> Type
+newtype Box :: Type -> Type -> Type
 -- | 縦か横方向に積める箱
-newtype Box message
-  = Box (BoxRecord message)
+newtype Box message location
+  = Box (BoxRecord message location)
 
-type BoxRecord message
+type BoxRecord message location
   = { direction :: XOrY
-    , children :: Array (Element message)
+    , children :: Array (Element message location)
     , gap :: Number
     , paddingTopBottom :: Number
     , paddingLeftRight :: Number
     , height :: Maybe Number
     , backgroundColor :: Maybe Color.Color
     , gridTemplateColumns1FrCount :: Maybe Int
-    , url :: Maybe StructuredUrl.StructuredUrl
+    , link :: Maybe (Link message location)
     , hover :: BoxHoverStyle
     }
 
@@ -81,8 +82,14 @@ newtype Animation
   , {- アニメーションする時間. 単位は ms */ -} duration :: Number
   }
 
+data Link :: Type -> Type -> Type
+data Link message location
+  = LinkSameOrigin location
+  | LinkExternal StructuredUrl.StructuredUrl
+
+data Element :: Type -> Type -> Type
 -- | テキスト, リンクなどの要素
-data Element message
+data Element message location
   = ElementText (Text message)
   | SvgElement
     { svg :: Svg
@@ -96,7 +103,7 @@ data Element message
     , height :: Number
     , alternativeText :: String
     }
-  | BoxElement (Box message)
+  | BoxElement (Box message location)
 
 newtype Text message
   = Text (TextRecord message)
@@ -141,12 +148,12 @@ data PercentageOrRem
   = Rem Number
   | Percentage Number
 
-box :: forall message. BoxRecord message -> Element message
+box :: forall message location. BoxRecord message location -> Element message location
 box record =
   BoxElement
     (Box record)
 
-text :: forall message. TextRecord message -> Element message
+text :: forall message location. TextRecord message -> Element message location
 text record = ElementText (Text record)
 
 boxHoverStyleNone :: BoxHoverStyle

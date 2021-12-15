@@ -5,6 +5,7 @@ import Data.Array as Array
 import Data.Array.NonEmpty as NonEmptyArray
 import Data.Map as Map
 import Data.Maybe as Maybe
+import Data.String.NonEmpty (NonEmptyString)
 import Data.String.NonEmpty as NonEmptyString
 import Data.Tuple as Tuple
 import Html.Data as Html
@@ -14,8 +15,13 @@ import StructuredUrl as StructuredUrl
 import Type.Proxy (Proxy(..))
 import Vdom.Data as Data
 
-toHtml :: forall message. Data.Vdom message -> Html.RawHtmlElement
-toHtml vdom@(Data.Vdom rec) =
+toHtml ::
+  forall message location.
+  { vdom :: Data.Vdom message location
+  , locationToPathAndSearchParams :: location -> StructuredUrl.PathAndSearchParams
+  } ->
+  Html.RawHtmlElement
+toHtml { vdom: vdom@(Data.Vdom rec), locationToPathAndSearchParams } =
   Wellknown.html
     rec.language
     (headElement vdom)
@@ -26,7 +32,11 @@ toHtml vdom@(Data.Vdom rec) =
                 (noScriptElement rec.appName)
                 ( Prelude.map
                     ( \(Tuple.Tuple _ element) ->
-                        vdomElementToHtmlElement element
+                        vdomElementToHtmlElement
+                          { origin: rec.origin
+                          , element
+                          , locationToPathAndSearchParams
+                          }
                     )
                     rec.children
                 )
@@ -34,7 +44,7 @@ toHtml vdom@(Data.Vdom rec) =
         )
     )
 
-headElement :: forall message. Data.Vdom message -> Html.RawHtmlElement
+headElement :: forall message location. Data.Vdom message location -> Html.RawHtmlElement
 headElement (Data.Vdom option) =
   Wellknown.head
     ( Html.ElementList
@@ -197,32 +207,45 @@ noScriptElement appName =
         )
     )
 
-vdomElementToHtmlElement :: forall message. Data.Element message -> Html.RawHtmlElement
-vdomElementToHtmlElement = case _ of
+vdomElementToHtmlElement ::
+  forall message location.
+  { origin :: NonEmptyString
+  , element :: Data.Element message location
+  , locationToPathAndSearchParams :: location -> StructuredUrl.PathAndSearchParams
+  } ->
+  Html.RawHtmlElement
+vdomElementToHtmlElement { origin, element, locationToPathAndSearchParams } = case element of
   Data.ElementDiv (Data.Div rec) ->
     Wellknown.div
       { id: rec.id, class: rec.class }
-      (vdomChildrenToHtmlChildren rec.children)
+      (vdomChildrenToHtmlChildren { origin, children: rec.children, locationToPathAndSearchParams })
   Data.ElementH1 (Data.H1 rec) ->
     Wellknown.h1
       { id: rec.id, class: rec.class }
-      (vdomChildrenToHtmlChildren rec.children)
+      (vdomChildrenToHtmlChildren { origin, children: rec.children, locationToPathAndSearchParams })
   Data.ElementH2 (Data.H2 rec) ->
     Wellknown.h2
       { id: rec.id, class: rec.class }
-      (vdomChildrenToHtmlChildren rec.children)
+      (vdomChildrenToHtmlChildren { origin, children: rec.children, locationToPathAndSearchParams })
   Data.ElementExternalLink (Data.ExternalLink rec) ->
     Wellknown.a
       { id: rec.id, class: rec.class, href: rec.href }
-      (vdomChildrenToHtmlChildren rec.children)
-  Data.ElementLocalLink (Data.LocalLink rec) ->
+      (vdomChildrenToHtmlChildren { origin, children: rec.children, locationToPathAndSearchParams })
+  Data.ElementSameOriginLink (Data.SameOriginLink rec) ->
     Wellknown.a
-      { id: rec.id, class: rec.class, href: rec.href }
-      (vdomChildrenToHtmlChildren rec.children)
+      { id: rec.id
+      , class: rec.class
+      , href:
+          StructuredUrl.StructuredUrl
+            { origin
+            , pathAndSearchParams: locationToPathAndSearchParams rec.href
+            }
+      }
+      (vdomChildrenToHtmlChildren { origin, children: rec.children, locationToPathAndSearchParams })
   Data.ElementButton (Data.Button rec) ->
     Wellknown.button
       { id: rec.id, class: rec.class }
-      (vdomChildrenToHtmlChildren rec.children)
+      (vdomChildrenToHtmlChildren { origin, children: rec.children, locationToPathAndSearchParams })
   Data.ElementImg (Data.Img rec) ->
     Wellknown.img
       { id: rec.id, class: rec.class, alt: rec.alt, src: rec.src }
@@ -249,7 +272,9 @@ vdomElementToHtmlElement = case _ of
       , class: rec.class
       , for: rec.for
       }
-      (vdomChildrenToHtmlChildren rec.children)
+      ( vdomChildrenToHtmlChildren
+          { origin, children: rec.children, locationToPathAndSearchParams }
+      )
   Data.ElementSvg (Data.Svg rec) ->
     Wellknown.svg
       { id: rec.id
@@ -259,11 +284,8 @@ vdomElementToHtmlElement = case _ of
       , viewBoxWidth: rec.viewBoxWidth
       , viewBoxHeight: rec.viewBoxHeight
       }
-      ( Prelude.map
-          ( \(Tuple.Tuple _ element) ->
-              vdomElementToHtmlElement element
-          )
-          rec.children
+      ( vdomChildListToHtmlChildList
+          { origin, childList: rec.children, locationToPathAndSearchParams }
       )
   Data.ElementSvgPath (Data.SvgPath rec) -> Wellknown.svgPath rec
   Data.ElementSvgCircle (Data.SvgCircle rec) ->
@@ -276,11 +298,8 @@ vdomElementToHtmlElement = case _ of
       , cy: rec.cy
       , r: rec.r
       }
-      ( Prelude.map
-          ( \(Tuple.Tuple _ element) ->
-              vdomElementToHtmlElement element
-          )
-          rec.children
+      ( vdomChildListToHtmlChildList
+          { origin, childList: rec.children, locationToPathAndSearchParams }
       )
   Data.ElementSvgAnimate (Data.SvgAnimate rec) ->
     Wellknown.svgAnimate
@@ -288,23 +307,38 @@ vdomElementToHtmlElement = case _ of
   Data.ElementSvgG (Data.SvgG rec) ->
     Wellknown.svgG
       { transform: rec.transform }
-      ( Prelude.map
-          ( \(Tuple.Tuple _ element) ->
-              vdomElementToHtmlElement element
-          )
-          rec.children
+      ( vdomChildListToHtmlChildList
+          { origin, childList: rec.children, locationToPathAndSearchParams }
       )
 
-vdomChildrenToHtmlChildren :: forall message. Data.Children message -> Html.HtmlChildren
-vdomChildrenToHtmlChildren = case _ of
+vdomChildrenToHtmlChildren ::
+  forall message location.
+  { origin :: NonEmptyString
+  , children :: Data.Children message location
+  , locationToPathAndSearchParams :: location -> StructuredUrl.PathAndSearchParams
+  } ->
+  Html.HtmlChildren
+vdomChildrenToHtmlChildren { origin, children, locationToPathAndSearchParams } = case children of
   Data.ChildrenElementList list ->
     Html.ElementList
-      ( NonEmptyArray.toArray
-          ( Prelude.map
-              ( \(Tuple.Tuple _ element) ->
-                  vdomElementToHtmlElement element
-              )
-              list
-          )
+      ( vdomChildListToHtmlChildList
+          { origin
+          , childList: NonEmptyArray.toArray list
+          , locationToPathAndSearchParams
+          }
       )
   Data.ChildrenText text -> Html.Text text
+
+vdomChildListToHtmlChildList ::
+  forall message location.
+  { origin :: NonEmptyString
+  , childList :: Array (Tuple.Tuple String (Data.Element message location))
+  , locationToPathAndSearchParams :: location -> StructuredUrl.PathAndSearchParams
+  } ->
+  Array Html.RawHtmlElement
+vdomChildListToHtmlChildList { origin, childList, locationToPathAndSearchParams } =
+  Prelude.map
+    ( \(Tuple.Tuple _ element) ->
+        vdomElementToHtmlElement { origin, element, locationToPathAndSearchParams }
+    )
+    childList

@@ -23,8 +23,8 @@
     "start-definy-by-purescript": "spago run --main Definy.Start"
   },
   "devDependencies": {
-    "@babel/core": "7.16.0",
-    "@emotion/css": "11.5.0",
+    "@babel/core": "7.16.5",
+    "@emotion/css": "11.7.1",
     "@material-ui/core": "4.12.3",
     "@storybook/addon-a11y": "6.4.9",
     "@storybook/addon-actions": "6.4.9",
@@ -34,15 +34,15 @@
     "@types/fs-extra": "9.0.13",
     "@types/jest": "27.0.3",
     "@types/jsonwebtoken": "8.5.6",
-    "@types/node": "16.11.12",
+    "@types/node": "16.11.13",
     "@types/react": "17.0.37",
     "@types/react-dom": "17.0.11",
-    "@typescript-eslint/eslint-plugin": "5.6.0",
-    "@typescript-eslint/parser": "5.6.0",
+    "@typescript-eslint/eslint-plugin": "5.7.0",
+    "@typescript-eslint/parser": "5.7.0",
     "axios": "0.24.0",
     "babel-loader": "8.2.3",
     "dependency-cruiser": "11.0.0",
-    "esbuild": "0.14.2",
+    "esbuild": "0.14.5",
     "eslint": "8.4.1",
     "eslint-config-prettier": "8.3.0",
     "eslint-plugin-import-access": "1.0.0",
@@ -53,7 +53,7 @@
     "firebase-functions": "3.16.0",
     "firebase-tools": "9.23.1",
     "fs-extra": "10.0.0",
-    "jest": "27.4.4",
+    "jest": "27.4.5",
     "jimp": "0.16.1",
     "jsonwebtoken": "8.5.1",
     "npm-check-updates": "12.0.3",
@@ -68,7 +68,7 @@
     "ts-jest": "27.1.1",
     "ts-node": "10.4.0",
     "typed-admin-firestore": "1.2.2",
-    "typescript": "4.5.3"
+    "typescript": "4.5.4"
   },
   "jest": {
     "preset": "ts-jest"

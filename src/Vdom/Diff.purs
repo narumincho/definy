@@ -3,14 +3,14 @@ module Vdom.Diff (createViewDiff, createElementDiff) where
 import Data.Array as Array
 import Data.Array.NonEmpty (NonEmptyArray)
 import Data.Array.NonEmpty as NonEmptyArray
-import Data.Map as Map
 import Data.Maybe (Maybe(..))
 import Data.Maybe as Maybe
 import Data.Tuple as Tuple
 import Prelude as Prelude
 import Vdom.Data as Data
+import Vdom.PatchState as VdomPatchState
 
-createViewDiff :: forall message. Data.Vdom message -> Data.Vdom message -> Data.ViewDiff message
+createViewDiff :: forall message location. Data.Vdom message location -> Data.Vdom message location -> Data.ViewDiff message location
 createViewDiff (Data.Vdom oldVdom) (Data.Vdom newVdom) =
   Data.ViewDiff
     { patchOperationList:
@@ -35,18 +35,18 @@ createViewDiff (Data.Vdom oldVdom) (Data.Vdom newVdom) =
     , childrenDiff: createChildListDiff oldVdom.children newVdom.children
     , newMessageData:
         Data.MessageData
-          { messageMap: Map.empty
+          { messageMap: VdomPatchState.newMessageMapParameterEmpty
           , pointerMove: newVdom.pointerMove
           , pointerDown: newVdom.pointerDown
           }
     }
 
-createElementDiff :: forall message. Data.Element message -> Data.Element message -> String -> Data.ElementDiff message
+createElementDiff :: forall message location. (Prelude.Eq location) => Data.Element message location -> Data.Element message location -> String -> Data.ElementDiff message location
 createElementDiff (Data.ElementDiv old) (Data.ElementDiv new) newKey = Data.createDivDeff newKey old new
 
 createElementDiff (Data.ElementExternalLink old) (Data.ElementExternalLink new) newKey = Data.externalLinkDiff newKey old new
 
-createElementDiff (Data.ElementLocalLink old) (Data.ElementLocalLink new) newKey =
+createElementDiff (Data.ElementSameOriginLink old) (Data.ElementSameOriginLink new) newKey =
   Data.localLinkDiff
     newKey
     old
@@ -163,7 +163,7 @@ createReadonlyDiff (Maybe.Just _) (Maybe.Nothing) = Maybe.Just false
 
 createReadonlyDiff _ _ = Maybe.Nothing
 
-createChildrenDiff :: forall message. Data.Children message -> Data.Children message -> Data.ChildrenDiff message
+createChildrenDiff :: forall message location. Data.Children message location -> Data.Children message location -> Data.ChildrenDiff message location
 createChildrenDiff (Data.ChildrenText old) (Data.ChildrenText new)
   | Prelude.eq old new = Data.ChildrenDiffSkip
 
@@ -174,10 +174,10 @@ createChildrenDiff (Data.ChildrenText _) (Data.ChildrenElementList list) = Data.
 createChildrenDiff (Data.ChildrenElementList old) (Data.ChildrenElementList new) = Data.ChildDiffList (createElementListChildrenDiff old new)
 
 createChildListDiff ::
-  forall message.
-  Array (Tuple.Tuple String (Data.Element message)) ->
-  Array (Tuple.Tuple String (Data.Element message)) ->
-  Data.ChildrenDiff message
+  forall message location.
+  Array (Tuple.Tuple String (Data.Element message location)) ->
+  Array (Tuple.Tuple String (Data.Element message location)) ->
+  Data.ChildrenDiff message location
 createChildListDiff oldChildren newChildren = case Tuple.Tuple (NonEmptyArray.fromArray oldChildren) (NonEmptyArray.fromArray newChildren) of
   Tuple.Tuple (Just oldNonEmpty) (Just newNonEmpty) -> Data.ChildDiffList (createElementListChildrenDiff oldNonEmpty newNonEmpty)
   Tuple.Tuple Nothing Nothing -> Data.ChildrenDiffSkip
@@ -186,8 +186,8 @@ createChildListDiff oldChildren newChildren = case Tuple.Tuple (NonEmptyArray.fr
 
 -- | TODO
 createElementListChildrenDiff ::
-  forall message.
-  NonEmptyArray (Tuple.Tuple String (Data.Element message)) ->
-  NonEmptyArray (Tuple.Tuple String (Data.Element message)) ->
-  NonEmptyArray (Data.ElementDiff message)
+  forall message location.
+  NonEmptyArray (Tuple.Tuple String (Data.Element message location)) ->
+  NonEmptyArray (Tuple.Tuple String (Data.Element message location)) ->
+  NonEmptyArray (Data.ElementDiff message location)
 createElementListChildrenDiff _oldChildren _newChildren = NonEmptyArray.singleton Data.skip
