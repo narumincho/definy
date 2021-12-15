@@ -97,6 +97,22 @@ export const createH2 = (option: {
   return headingElement;
 };
 
+export const createCode = (option: {
+  readonly id: string | null;
+  readonly class: string | null;
+  readonly click: (mouseEvent: MouseEvent) => void;
+}): HTMLElement | SVGElement => {
+  const codeElement = window.document.createElement("code");
+  if (typeof option.id === "string") {
+    codeElement.id = option.id;
+  }
+  if (typeof option.class === "string") {
+    codeElement.className = option.class;
+  }
+  codeElement.addEventListener("click", (e) => option.click(e));
+  return codeElement;
+};
+
 export const createSameOriginAnchor = (option: {
   readonly id: string | null;
   readonly class: string | null;
@@ -375,4 +391,18 @@ export const setDataPath = (
   path: string
 ): void => {
   element.dataset.dPath = path;
+};
+
+const getStyleElement = (): HTMLStyleElement => {
+  const styleElement = document.getElementsByTagName("style")[0];
+  if (styleElement === undefined) {
+    const createdStyleElement = document.createElement("style");
+    document.head.appendChild(createdStyleElement);
+    return createdStyleElement;
+  }
+  return styleElement;
+};
+
+export const setStyle = (styleString: string) => {
+  getStyleElement().textContent = styleString;
 };

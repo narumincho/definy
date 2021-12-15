@@ -19,6 +19,7 @@ import Vdom.CollectEvents as CollectEvents
 import Vdom.Data as Vdom
 import Vdom.PatchState as VdomPatchState
 import Vdom.Path as Path
+import Css as Css
 
 -- | Vdom の Element から DOM API から HtmlElement か SvgElement を生成する
 elementToHtmlOrSvgElement ::
@@ -89,6 +90,20 @@ elementToHtmlOrSvgElementWithoutDataPath { element, path, patchState, locationTo
         }
     applyChildren { htmlOrSvgElement: h2, children: rec.children, path, patchState, locationToPathAndSearchParams }
     pure h2
+  Vdom.ElementCode (Vdom.Code rec) -> do
+    code <-
+      EffectUncurried.runEffectFn1 createCode
+        { id: Nullable.toNullable (map NonEmptyString.toString rec.id)
+        , class: Nullable.toNullable (map NonEmptyString.toString rec.class)
+        , click:
+            EffectUncurried.mkEffectFn1
+              ( EffectUncurried.runEffectFn2
+                  (VdomPatchState.getClickEventHandler patchState)
+                  (Path.toString path)
+              )
+        }
+    applyChildren { htmlOrSvgElement: code, children: rec.children, path, patchState, locationToPathAndSearchParams }
+    pure code
   Vdom.ElementExternalLink (Vdom.ExternalLink rec) -> do
     anchor <-
       EffectUncurried.runEffectFn1 createExternalAnchor
@@ -318,6 +333,7 @@ resetAndRender { vdom: Vdom.Vdom vdom, patchState, locationToPathAndSearchParams
     , path: Path.root
     , locationToPathAndSearchParams
     }
+  EffectUncurried.runEffectFn1 setStyle (Css.ruleListToString vdom.style)
 
 -- | 差分データから実際のDOMを操作して表示に反映させる
 render ::
@@ -386,6 +402,14 @@ foreign import createH1 ::
     HtmlOrSvgElement
 
 foreign import createH2 ::
+  EffectUncurried.EffectFn1
+    { id :: Nullable String
+    , class :: Nullable String
+    , click :: EffectUncurried.EffectFn1 VdomPatchState.MouseEvent Unit
+    }
+    HtmlOrSvgElement
+
+foreign import createCode ::
   EffectUncurried.EffectFn1
     { id :: Nullable String
     , class :: Nullable String
@@ -514,3 +538,5 @@ foreign import createSvgG ::
 foreign import appendChild :: EffectUncurried.EffectFn2 HtmlOrSvgElement HtmlOrSvgElement Unit
 
 foreign import setDataPath :: EffectUncurried.EffectFn2 HtmlOrSvgElement String Unit
+
+foreign import setStyle :: EffectUncurried.EffectFn1 String Unit

@@ -16,13 +16,14 @@ module View.Data
   , XOrY(..)
   , box
   , boxHoverStyleNone
+  , normalText
   , text
   ) where
 
 import Color as Color
 import Css as Css
 import Data.Array.NonEmpty (NonEmptyArray)
-import Data.Maybe (Maybe)
+import Data.Maybe (Maybe(..))
 import Data.Maybe as Maybe
 import Data.String.NonEmpty (NonEmptyString)
 import Data.String.NonEmpty as NonEmptyString
@@ -119,6 +120,7 @@ data TextMarkup
   = None
   | Heading1
   | Heading2
+  | Code
 
 newtype Svg
   = Svg
@@ -155,6 +157,17 @@ box record =
 
 text :: forall message location. TextRecord message -> Element message location
 text record = ElementText (Text record)
+
+normalText :: forall message location. { padding :: Number, text :: String } -> Element message location
+normalText rec =
+  ElementText
+    ( Text
+        { markup: None
+        , click: Nothing
+        , padding: rec.padding
+        , text: rec.text
+        }
+    )
 
 boxHoverStyleNone :: BoxHoverStyle
 boxHoverStyleNone = BoxHoverStyle { animation: Maybe.Nothing }

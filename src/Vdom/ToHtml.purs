@@ -227,6 +227,10 @@ vdomElementToHtmlElement { origin, element, locationToPathAndSearchParams } = ca
     Wellknown.h2
       { id: rec.id, class: rec.class }
       (vdomChildrenToHtmlChildren { origin, children: rec.children, locationToPathAndSearchParams })
+  Data.ElementCode (Data.Code rec) ->
+    Wellknown.code
+      { id: rec.id, class: rec.class }
+      (vdomChildrenToHtmlChildren { origin, children: rec.children, locationToPathAndSearchParams })
   Data.ElementExternalLink (Data.ExternalLink rec) ->
     Wellknown.a
       { id: rec.id, class: rec.class, href: rec.href }

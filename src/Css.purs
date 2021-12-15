@@ -1,38 +1,39 @@
 module Css
-  ( Declaration
+  ( AlignItemsValue(..)
+  , ColumnOrRow(..)
+  , Declaration
+  , Keyframe(..)
+  , Keyframes(..)
+  , Rule(..)
   , Selector(..)
   , StatementList(..)
-  , Keyframes(..)
-  , Keyframe(..)
-  , Rule(..)
-  , ruleListToString
-  , widthRem
-  , widthPercent
-  , heightRem
-  , height100Percent
-  , boxSizingBorderBox
-  , displayGrid
-  , margin0
   , alignItems
-  , AlignItemsValue(..)
+  , animation
   , backgroundColor
+  , boxSizingBorderBox
+  , color
   , declarationListToString
-  , keyFrameToString
   , declarationProperty
   , declarationValue
-  , gridAutoFlow
-  , ColumnOrRow(..)
+  , displayGrid
   , gap
-  , padding
-  , overflowHidden
-  , textDecorationNone
+  , gridAutoFlow
   , gridTemplateColumns
-  , animation
-  , color
-  , lineHeight
+  , height100Percent
+  , heightRem
   , justifySelfCenter
+  , keyFrameToString
+  , lineHeight
+  , margin0
   , objectFitConver
+  , overflowHidden
+  , padding
+  , ruleListToString
+  , textDecorationNone
   , transformScale
+  , whiteSpacePre
+  , widthPercent
+  , widthRem
   ) where
 
 import Color as Color
@@ -191,6 +192,13 @@ margin0 =
   Declaration
     { property: "margin"
     , value: "0"
+    }
+
+whiteSpacePre :: Declaration
+whiteSpacePre =
+  Declaration
+    { property: "white-space"
+    , value: "pre"
     }
 
 remValueToCssValue :: Number -> String

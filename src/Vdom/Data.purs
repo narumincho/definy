@@ -1,48 +1,49 @@
 module Vdom.Data
-  ( Vdom(..)
+  ( Button(..)
+  , Children(..)
+  , ChildrenDiff(..)
+  , Code(..)
   , Div(..)
-  , createDivDeff
+  , Element(..)
+  , ElementDiff
+  , ElementUpdateDiff
+  , ExternalLink(..)
   , H1(..)
   , H2(..)
-  , Pointer(..)
-  , Children(..)
-  , PointerType(..)
-  , Element(..)
-  , ExternalLink(..)
-  , SameOriginLink(..)
-  , Button(..)
   , Img(..)
   , InputRadio(..)
   , InputText(..)
-  , TextArea(..)
   , Label(..)
+  , MessageData(..)
+  , Pointer(..)
+  , PointerType(..)
+  , SameOriginLink(..)
   , Svg(..)
-  , SvgRec
-  , svg
-  , SvgPath(..)
-  , SvgCircle(..)
   , SvgAnimate(..)
+  , SvgCircle(..)
   , SvgG(..)
+  , SvgPath(..)
+  , SvgRec
+  , TextArea(..)
+  , Vdom(..)
   , ViewDiff(..)
   , ViewPatchOperation(..)
-  , MessageData(..)
-  , ChildrenDiff(..)
-  , ElementDiff
-  , skip
-  , ElementUpdateDiff
-  , replace
-  , externalLinkDiff
-  , localLinkDiff
-  , imgDiff
   , buttonDiff
+  , createDivDeff
+  , externalLinkDiff
+  , imgDiff
   , inputRadioDiff
   , inputTextDiff
-  , textAreaDiff
   , labelDiff
+  , localLinkDiff
+  , replace
+  , skip
+  , svg
+  , svgAnimateDiff
+  , svgCircleDiff
   , svgDiff
   , svgPathDiff
-  , svgCircleDiff
-  , svgAnimateDiff
+  , textAreaDiff
   ) where
 
 import Color as Color
@@ -144,6 +145,7 @@ data Element message location
   = ElementDiv (Div message location)
   | ElementH1 (H1 message location)
   | ElementH2 (H2 message location)
+  | ElementCode (Code message location)
   | ElementExternalLink (ExternalLink message location)
   | ElementSameOriginLink (SameOriginLink message location)
   | ElementButton (Button message location)
@@ -245,6 +247,14 @@ newtype H1 message location
 newtype H2 :: Type -> Type -> Type
 newtype H2 message location
   = H2
+  { id :: Maybe NonEmptyString
+  , class :: Maybe NonEmptyString
+  , click :: Maybe (PatchState.ClickMessageData message)
+  , children :: Children message location
+  }
+
+newtype Code message location
+  = Code
   { id :: Maybe NonEmptyString
   , class :: Maybe NonEmptyString
   , click :: Maybe (PatchState.ClickMessageData message)

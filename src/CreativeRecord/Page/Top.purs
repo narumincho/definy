@@ -1,7 +1,18 @@
-module CreativeRecord.Page.Top where
+module CreativeRecord.Page.Top
+  ( ArticleTitleAndImageUrl(..)
+  , articleLink
+  , articleListToViewElement
+  , copyright
+  , externalLink
+  , linkBackGroundColor
+  , snsLink
+  , view
+  , zoomAnimation
+  ) where
 
 import Prelude
 import Color as Color
+import CreativeRecord.Article as Article
 import CreativeRecord.Location as Location
 import CreativeRecord.Messgae as Message
 import CreativeRecord.StaticResource as StaticResource
@@ -46,7 +57,7 @@ snsLink url logo text =
     , gridTemplateColumns1FrCount: Nothing
     , children:
         [ View.SvgElement { width: View.Rem 2.0, height: 2.0, svg: logo, isJustifySelfCenter: false }
-        , View.text { markup: View.None, padding: 8.0, text, click: Nothing }
+        , View.normalText { padding: 8.0, text }
         ]
     }
 
@@ -69,7 +80,7 @@ externalLink url imageUrl text =
             , height: 8.0
             , alternativeText: append text "のアイコン"
             }
-        , View.text { markup: View.None, padding: 8.0, text, click: Nothing }
+        , View.normalText { padding: 8.0, text }
         ]
     }
 
@@ -87,7 +98,7 @@ articleLink (ArticleTitleAndImageUrl { location, imagePath, title }) =
             , height: 8.0
             , alternativeText: append title "のイメージ画像"
             }
-        , View.text { markup: View.None, padding: 8.0, text: title, click: Nothing }
+        , View.normalText { padding: 8.0, text: title }
         ]
     , gap: 0.0
     , paddingTopBottom: 0.0
@@ -136,11 +147,14 @@ articleListToViewElement list =
 
 copyright :: View.Element Message.Message Location.Location
 copyright =
-  View.text
-    { markup: View.None, padding: 8.0, text: "© 2021 narumincho", click: Nothing }
+  View.normalText
+    { padding: 8.0, text: "© 2021 narumincho" }
 
-topBox :: Int -> View.Element Message.Message Location.Location
-topBox count =
+view :: Int -> Article.Article
+view count = Article.Article { title: Nothing, children: [ child count ] }
+
+child :: Int -> View.Element Message.Message Location.Location
+child count =
   View.box
     { direction: View.Y
     , gap: 0.0
@@ -152,26 +166,7 @@ topBox count =
     , link: Nothing
     , hover: View.boxHoverStyleNone
     , children:
-        [ View.box
-            { direction: View.Y
-            , link: Just (View.LinkSameOrigin Location.Top)
-            , children:
-                [ View.SvgElement
-                    { width: View.Percentage 90.0
-                    , height: 5.0
-                    , isJustifySelfCenter: true
-                    , svg: SvgImage.webSiteLogo
-                    }
-                ]
-            , gap: 0.0
-            , paddingTopBottom: 48.0
-            , paddingLeftRight: 0.0
-            , height: Nothing
-            , backgroundColor: Nothing
-            , gridTemplateColumns1FrCount: Nothing
-            , hover: View.boxHoverStyleNone
-            }
-        , View.text
+        [ View.text
             { markup: View.Heading2
             , padding: 8.0
             , text: Prelude.append "ナルミンチョの SNS アカウント" (Prelude.show count)
@@ -268,7 +263,11 @@ topBox count =
                 ]
             }
         , View.text
-            { markup: View.Heading2, padding: 8.0, text: "ナルミンチョが書いた 記事", click: Nothing }
+            { markup: View.Heading2
+            , padding: 8.0
+            , text: "ナルミンチョが書いた 記事"
+            , click: Nothing
+            }
         , articleListToViewElement
             ( [ ArticleTitleAndImageUrl
                   { title:
@@ -330,6 +329,11 @@ topBox count =
                   { title: "Nプチコン漢字入力(N Petitcom IME)"
                   , imagePath: StaticResource.henkanPng
                   , location: Location.NPetitcomIme
+                  }
+              , ArticleTitleAndImageUrl
+                  { title: "型システムと協力して世界を構築する"
+                  , imagePath: StaticResource.definy20210811Png
+                  , location: Location.CpsLabAdventCalendar2021
                   }
               ]
             )

@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.setDataPath = exports.appendChild = exports.createSvgG = exports.createSvgAnimate = exports.createSvgCircle = exports.createSvgPath = exports.createSvg = exports.createLabel = exports.createTextArea = exports.createInputText = exports.createInputRadio = exports.createImg = exports.createButton = exports.createExternalAnchor = exports.createSameOriginAnchor = exports.createH2 = exports.createH1 = exports.createDiv = exports.setTextContent = exports.getBodyElement = exports.changeBodyClass = exports.changeLanguage = exports.changeThemeColor = exports.changePageName = void 0;
+exports.setStyle = exports.setDataPath = exports.appendChild = exports.createSvgG = exports.createSvgAnimate = exports.createSvgCircle = exports.createSvgPath = exports.createSvg = exports.createLabel = exports.createTextArea = exports.createInputText = exports.createInputRadio = exports.createImg = exports.createButton = exports.createExternalAnchor = exports.createSameOriginAnchor = exports.createCode = exports.createH2 = exports.createH1 = exports.createDiv = exports.setTextContent = exports.getBodyElement = exports.changeBodyClass = exports.changeLanguage = exports.changeThemeColor = exports.changePageName = void 0;
 const changePageName = (newPageName) => {
     window.document.title = newPageName;
 };
@@ -83,6 +83,18 @@ const createH2 = (option) => {
     return headingElement;
 };
 exports.createH2 = createH2;
+const createCode = (option) => {
+    const codeElement = window.document.createElement("code");
+    if (typeof option.id === "string") {
+        codeElement.id = option.id;
+    }
+    if (typeof option.class === "string") {
+        codeElement.className = option.class;
+    }
+    codeElement.addEventListener("click", (e) => option.click(e));
+    return codeElement;
+};
+exports.createCode = createCode;
 const createSameOriginAnchor = (option) => {
     const anchorElement = window.document.createElement("a");
     if (typeof option.id === "string") {
@@ -274,3 +286,16 @@ const setDataPath = (element, path) => {
     element.dataset.dPath = path;
 };
 exports.setDataPath = setDataPath;
+const getStyleElement = () => {
+    const styleElement = document.getElementsByTagName("style")[0];
+    if (styleElement === undefined) {
+        const createdStyleElement = document.createElement("style");
+        document.head.appendChild(createdStyleElement);
+        return createdStyleElement;
+    }
+    return styleElement;
+};
+const setStyle = (styleString) => {
+    getStyleElement().textContent = styleString;
+};
+exports.setStyle = setStyle;

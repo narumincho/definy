@@ -1,28 +1,34 @@
 module CreativeRecord.Page.Wip (view) where
 
+import CreativeRecord.Article as Article
 import Data.Maybe (Maybe(..))
-import CreativeRecord.Messgae as Message
-import CreativeRecord.Location as Location
+import Data.String.NonEmpty as NonEmptyString
+import Type.Proxy as Proxy
 import View.Data as View
 
-view :: View.Element Message.Message Location.Location
+view :: Article.Article
 view =
-  View.box
-    { direction: View.Y
-    , gap: 0.0
-    , paddingTopBottom: 0.0
-    , paddingLeftRight: 0.0
-    , height: Nothing
-    , backgroundColor: Nothing
-    , gridTemplateColumns1FrCount: Nothing
-    , link: Nothing
-    , hover: View.boxHoverStyleNone
+  Article.Article
+    { title: Just (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "このページはまだ作成中です!"))
     , children:
-        [ View.text
-            { markup: View.Heading2
-            , padding: 8.0
-            , text: "このページはまだ作成中です!"
-            , click: Nothing
+        [ View.box
+            { direction: View.Y
+            , gap: 0.0
+            , paddingTopBottom: 0.0
+            , paddingLeftRight: 0.0
+            , height: Nothing
+            , backgroundColor: Nothing
+            , gridTemplateColumns1FrCount: Nothing
+            , link: Nothing
+            , hover: View.boxHoverStyleNone
+            , children:
+                [ View.text
+                    { markup: View.Heading2
+                    , padding: 8.0
+                    , text: "このページはまだ作成中です!"
+                    , click: Nothing
+                    }
+                ]
             }
         ]
     }

@@ -5,7 +5,6 @@ import CreativeRecord.Location as Location
 import CreativeRecord.Messgae as Message
 import CreativeRecord.State as State
 import CreativeRecord.View as CreativeRecordView
-import Data.Maybe (Maybe)
 import Effect (Effect)
 import StructuredUrl as StructuredUrl
 import View.App as ViewApp

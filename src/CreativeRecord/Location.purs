@@ -27,6 +27,7 @@ data Location
   | Star
   | DesiredRouteMonster
   | NPetitcomIme
+  | CpsLabAdventCalendar2021
   | NotFound StructuredUrl.PathAndSearchParams
 
 toUrl :: Location -> StructuredUrl.StructuredUrl
@@ -49,6 +50,10 @@ toPath = case _ of
   Star -> StructuredUrl.pathAndSearchParams [ starPath ] Map.empty
   DesiredRouteMonster -> StructuredUrl.pathAndSearchParams [ desiredRouteMonster ] Map.empty
   NPetitcomIme -> StructuredUrl.pathAndSearchParams [ nPetitcomIme ] Map.empty
+  CpsLabAdventCalendar2021 ->
+    StructuredUrl.pathAndSearchParams
+      [ cpsLabAdventCalendar2021Path ]
+      Map.empty
   NotFound path -> path
 
 fromPath :: StructuredUrl.PathAndSearchParams -> Location
@@ -79,6 +84,8 @@ fromPath (StructuredUrl.PathAndSearchParams { path, searchParams }) = case path 
       DesiredRouteMonster
     else if eq name nPetitcomIme then
       NPetitcomIme
+    else if eq name cpsLabAdventCalendar2021Path then
+      CpsLabAdventCalendar2021
     else
       NotFound (StructuredUrl.PathAndSearchParams { path, searchParams })
   _ -> NotFound (StructuredUrl.PathAndSearchParams { path, searchParams })
@@ -142,3 +149,8 @@ nPetitcomIme :: NonEmptyString
 nPetitcomIme =
   NonEmptyString.nes
     (Proxy.Proxy :: Proxy.Proxy "n-petitcom-ime")
+
+cpsLabAdventCalendar2021Path :: NonEmptyString
+cpsLabAdventCalendar2021Path =
+  NonEmptyString.nes
+    (Proxy.Proxy :: Proxy.Proxy "cps-lab-advent-calendar-2021")
