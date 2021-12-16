@@ -1,23 +1,33 @@
 module Util
-  ( groupBySize
+  ( class RowTraversable
+  , traverseRow
+  , groupBySize
   , jsonFromNonEmptyString
   , listUpdateAtOverAutoCreate
+  , runParallelRecord
   , toParallel
   , toParallelWithReturn
   , tupleListToJson
   ) where
 
+import Prelude
+import Control.Applicative as Applicative
 import Control.Parallel as Parallel
 import Data.Argonaut.Core as ArgonautCore
 import Data.Array as Array
 import Data.Maybe as Maybe
 import Data.Ord as Ord
 import Data.String.NonEmpty as NonEmptyString
+import Data.Symbol as Symbol
 import Data.Tuple as Tuple
 import Data.UInt as UInt
 import Effect.Aff as Aff
 import Foreign.Object as Object
-import Prelude as Prelude
+import Prim.Row as Row
+import Prim.RowList (RowList)
+import Prim.RowList as PrimRowList
+import Record as Record
+import Type.Data.RowList as RowList
 
 listUpdateAtOverAutoCreate :: forall e. Array e -> UInt.UInt -> (Maybe.Maybe e -> e) -> e -> Array e
 listUpdateAtOverAutoCreate list index func fillElement = case Array.index list (UInt.toInt index) of
@@ -28,13 +38,13 @@ listUpdateAtOverAutoCreate list index func fillElement = case Array.index list (
       Array.concat
         [ beforeAndAfter.before
         , [ func (Maybe.Just element) ]
-        , Maybe.maybe [] Prelude.identity (Array.tail beforeAndAfter.after)
+        , Maybe.maybe [] identity (Array.tail beforeAndAfter.after)
         ]
   Maybe.Nothing ->
     if Ord.lessThanOrEq (Array.length list) (UInt.toInt index) then
       Array.concat
         [ list
-        , Array.replicate (Prelude.sub (UInt.toInt index) (Array.length list)) fillElement
+        , Array.replicate (sub (UInt.toInt index) (Array.length list)) fillElement
         , [ func Maybe.Nothing ]
         ]
     else
@@ -65,11 +75,11 @@ group list groupIndexFunc =
     (Array.mapWithIndex (\i e -> Tuple.Tuple (UInt.fromInt i) e) list)
 
 groupBySize :: forall t. UInt.UInt -> Array t -> Array (Array t)
-groupBySize size list = group list (\_ i -> (Prelude.div i size))
+groupBySize size list = group list (\_ i -> (div i size))
 
 -- | Aff を 並列実行する
-toParallel :: Array (Aff.Aff Prelude.Unit) -> Aff.Aff Prelude.Unit
-toParallel list = Prelude.map (\_ -> Prelude.unit) (Parallel.parSequence list)
+toParallel :: Array (Aff.Aff Unit) -> Aff.Aff Unit
+toParallel list = map (\_ -> unit) (Parallel.parSequence list)
 
 -- | Aff を 並列実行する. 返ってきた値を使う
 toParallelWithReturn :: forall e. Array (Aff.Aff e) -> Aff.Aff (Array e)
@@ -82,3 +92,35 @@ jsonFromNonEmptyString :: NonEmptyString.NonEmptyString -> ArgonautCore.Json
 jsonFromNonEmptyString nonEmptyString =
   ArgonautCore.fromString
     (NonEmptyString.toString nonEmptyString)
+
+class RowTraversable :: RowList Type -> Row Type -> Row Type -> (Type -> Type) -> (Type -> Type) -> Constraint
+class RowTraversable list xs ys m f | list -> ys m where
+  traverseRow :: (RowList.RLProxy list) -> (forall v. m v -> f v) -> { | xs } -> f { | ys }
+
+instance rowTraversableNil ::
+  Applicative.Applicative f =>
+  RowTraversable PrimRowList.Nil xs () m f where
+  traverseRow _ _ _ = Applicative.pure {}
+
+instance rowTraversableCons ::
+  ( Symbol.IsSymbol key
+  , Row.Cons key (m a) xs' xs
+  , Row.Cons key a ys' ys
+  , Row.Lacks key ys'
+  , RowTraversable tail xs ys' m f
+  , Applicative.Applicative f
+  ) =>
+  RowTraversable (PrimRowList.Cons key (m a) tail) xs ys m f where
+  traverseRow _ f obj =
+    Record.insert (Symbol.SProxy :: _ key)
+      <$> f (Record.get (Symbol.SProxy :: _ key) obj)
+      <*> traverseRow (RowList.RLProxy :: _ tail) f obj
+
+-- | レコードを並行実行する
+runParallelRecord ::
+  forall rowList mr r m f.
+  PrimRowList.RowToList mr rowList =>
+  RowTraversable rowList mr r m f =>
+  Parallel.Parallel f m =>
+  { | mr } -> m { | r }
+runParallelRecord = Parallel.sequential <<< traverseRow (RowList.RLProxy :: RowList.RLProxy rowList) Parallel.parallel

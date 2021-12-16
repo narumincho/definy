@@ -21,6 +21,7 @@
   , "parallel"
   , "prelude"
   , "psci-support"
+  , "record"
   , "strings"
   , "tuples"
   , "uint"
