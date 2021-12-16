@@ -17,6 +17,7 @@
   , "node-process"
   , "node-streams"
   , "nullable"
+  , "option"
   , "ordered-collections"
   , "parallel"
   , "prelude"
