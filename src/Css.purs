@@ -4,6 +4,7 @@ module Css
   , Declaration
   , Keyframe(..)
   , Keyframes(..)
+  , OverflowValue(..)
   , Rule(..)
   , Selector(..)
   , StatementList(..)
@@ -26,6 +27,7 @@ module Css
   , lineHeight
   , margin0
   , objectFitConver
+  , overflow
   , overflowHidden
   , padding
   , ruleListToString
@@ -37,22 +39,25 @@ module Css
   ) where
 
 import Color as Color
-import Data.Array as Array
+import Data.Array.NonEmpty as NonEmptyArray
+import Data.Maybe (Maybe(..))
 import Data.String as String
+import Data.String.NonEmpty (NonEmptyString)
 import Data.String.NonEmpty as NonEmptyString
 import Prelude as Prelude
+import Type.Proxy (Proxy(..))
 
 newtype Declaration
   = Declaration
-  { property :: String
-  , value :: String
+  { property :: NonEmptyString
+  , value :: NonEmptyString
   }
 
 -- | 宣言のプロパティ名を取得する
-declarationProperty :: Declaration -> String
+declarationProperty :: Declaration -> NonEmptyString
 declarationProperty (Declaration { property }) = property
 
-declarationValue :: Declaration -> String
+declarationValue :: Declaration -> NonEmptyString
 declarationValue (Declaration { value }) = value
 
 data Selector
@@ -70,16 +75,21 @@ newtype Rule
   , declarationList :: Array Declaration
   }
 
-declarationToString :: Declaration -> String
+declarationToString :: Declaration -> NonEmptyString
 declarationToString (Declaration { property, value }) =
-  String.joinWith
-    ""
-    [ property, ":", value, ";" ]
+  Prelude.append
+    ( Prelude.append
+        property
+        (NonEmptyString.nes (Proxy :: _ ":"))
+    )
+    ( Prelude.append value
+        (NonEmptyString.nes (Proxy :: _ ";"))
+    )
 
 -- | style 属性に直接指定するときに使う
 declarationListToString :: Array Declaration -> String
 declarationListToString declarationList =
-  String.joinWith ""
+  NonEmptyString.joinWith ""
     (Prelude.map declarationToString declarationList)
 
 ruleToString :: Rule -> String
@@ -148,61 +158,71 @@ keyFrameToString (Keyframe { percentage, declarationList }) =
 widthRem :: Number -> Declaration
 widthRem value =
   Declaration
-    { property: "width"
-    , value: remValueToCssValue (value)
+    { property: NonEmptyString.nes (Proxy :: _ "width")
+    , value: remValueToCssValue value
     }
 
 widthPercent :: Number -> Declaration
 widthPercent value =
   Declaration
-    { property: "width"
-    , value: Prelude.append (Prelude.show value) "%"
+    { property: NonEmptyString.nes (Proxy :: _ "width")
+    , value:
+        NonEmptyString.prependString (Prelude.show value)
+          (NonEmptyString.nes (Proxy :: _ "%"))
     }
 
 heightRem :: Number -> Declaration
 heightRem value =
   Declaration
-    { property: "height"
-    , value: remValueToCssValue (value)
+    { property: NonEmptyString.nes (Proxy :: _ "height")
+    , value: remValueToCssValue value
     }
 
 height100Percent :: Declaration
 height100Percent =
   Declaration
-    { property: "height"
-    , value: "100%"
+    { property: NonEmptyString.nes (Proxy :: _ "height")
+    , value: NonEmptyString.nes (Proxy :: _ "100%")
     }
 
 boxSizingBorderBox :: Declaration
 boxSizingBorderBox =
   Declaration
-    { property: "box-sizing"
-    , value: "border-box"
+    { property: NonEmptyString.nes (Proxy :: _ "box-sizing")
+    , value: NonEmptyString.nes (Proxy :: _ "border-box")
     }
 
 displayGrid :: Declaration
 displayGrid =
   Declaration
-    { property: "display"
-    , value: "grid"
+    { property: NonEmptyString.nes (Proxy :: _ "display")
+    , value: NonEmptyString.nes (Proxy :: _ "grid")
     }
 
 margin0 :: Declaration
 margin0 =
   Declaration
-    { property: "margin"
-    , value: "0"
+    { property: NonEmptyString.nes (Proxy :: _ "margin")
+    , value: NonEmptyString.nes (Proxy :: _ "0")
     }
 
 whiteSpacePre :: Declaration
 whiteSpacePre =
   Declaration
-    { property: "white-space"
-    , value: "pre"
+    { property: NonEmptyString.nes (Proxy :: _ "white-space")
+    , value: NonEmptyString.nes (Proxy :: _ "pre")
     }
 
-remValueToCssValue :: Number -> String
-remValueToCssValue value = Prelude.append (Prelude.show value) "rem"
+remValueToCssValue :: Number -> NonEmptyString
+remValueToCssValue value =
+  NonEmptyString.prependString
+    (Prelude.show value)
+    (NonEmptyString.nes (Proxy :: _ "rem"))
+
+joinWhiteSpaceValue :: NonEmptyString -> Array NonEmptyString -> NonEmptyString
+joinWhiteSpaceValue head others =
+  NonEmptyString.join1With " "
+    (NonEmptyArray.cons' head others)
 
 data AlignItemsValue
   = Stretch
@@ -212,19 +232,19 @@ data AlignItemsValue
 alignItems :: AlignItemsValue -> Declaration
 alignItems value =
   Declaration
-    { property: "align-items"
+    { property: NonEmptyString.nes (Proxy :: _ "align-items")
     , value:
         case value of
-          Stretch -> "stretch"
-          Center -> "center"
-          Start -> "start"
+          Stretch -> NonEmptyString.nes (Proxy :: _ "stretch")
+          Center -> NonEmptyString.nes (Proxy :: _ "center")
+          Start -> NonEmptyString.nes (Proxy :: _ "start")
     }
 
 backgroundColor :: Color.Color -> Declaration
 backgroundColor value =
   Declaration
-    { property: "background-color"
-    , value: Color.toHexString value
+    { property: NonEmptyString.nes (Proxy :: _ "background-color")
+    , value: colorToNonEmptyString value
     }
 
 data ColumnOrRow
@@ -234,94 +254,124 @@ data ColumnOrRow
 gridAutoFlow :: ColumnOrRow -> Declaration
 gridAutoFlow columnOrRow =
   Declaration
-    { property: "grid-auto-flow"
+    { property: NonEmptyString.nes (Proxy :: _ "grid-auto-flow")
     , value:
         case columnOrRow of
-          Column -> "column"
-          Row -> "row"
+          Column -> NonEmptyString.nes (Proxy :: _ "column")
+          Row -> NonEmptyString.nes (Proxy :: _ "row")
     }
 
 gap :: Number -> Declaration
 gap gapValue =
   Declaration
-    { property: "gap"
-    , value: Prelude.append (Prelude.show gapValue) "px"
+    { property: NonEmptyString.nes (Proxy :: _ "gap")
+    , value: remValueToCssValue gapValue
     }
 
 padding :: { topBottom :: Number, leftRight :: Number } -> Declaration
 padding { topBottom, leftRight } =
   Declaration
-    { property: "padding"
+    { property: NonEmptyString.nes (Proxy :: _ "padding")
     , value:
-        String.joinWith ""
-          [ Prelude.show topBottom
-          , "px "
-          , Prelude.show leftRight
-          , "px"
-          ]
+        joinWhiteSpaceValue
+          (remValueToCssValue topBottom)
+          [ remValueToCssValue leftRight ]
+    }
+
+data OverflowValue
+  = Hidden
+  | Visible
+  | Scroll
+
+overflow :: { x :: OverflowValue, y :: OverflowValue } -> Declaration
+overflow { x, y } =
+  Declaration
+    { property: NonEmptyString.nes (Proxy :: _ "overflow")
+    , value:
+        joinWhiteSpaceValue
+          (overflowValueToCssValue x)
+          [ overflowValueToCssValue y ]
     }
 
 overflowHidden :: Declaration
-overflowHidden =
-  Declaration
-    { property: "overflow"
-    , value: "hidden"
-    }
+overflowHidden = overflow { x: Hidden, y: Hidden }
+
+overflowValueToCssValue :: OverflowValue -> NonEmptyString
+overflowValueToCssValue = case _ of
+  Hidden -> NonEmptyString.nes (Proxy :: _ "hidden")
+  Visible -> NonEmptyString.nes (Proxy :: _ "visible")
+  Scroll -> NonEmptyString.nes (Proxy :: _ "scroll")
 
 textDecorationNone :: Declaration
 textDecorationNone =
   Declaration
-    { property: "text-decoration", value: "none" }
+    { property: NonEmptyString.nes (Proxy :: _ "text-decoration")
+    , value: NonEmptyString.nes (Proxy :: _ "none")
+    }
 
 gridTemplateColumns :: Int -> Declaration
 gridTemplateColumns oneFrCount =
   Declaration
-    { property: "grid-template-columns"
+    { property: NonEmptyString.nes (Proxy :: _ "grid-template-columns")
     , value:
-        String.joinWith " "
-          (Array.replicate oneFrCount "1fr")
+        NonEmptyString.joinWith1 (NonEmptyString.nes (Proxy :: _ " "))
+          (NonEmptyArray.replicate oneFrCount "1fr")
     }
 
 animation :: NonEmptyString.NonEmptyString -> Number -> Declaration
 animation animationName duration =
   Declaration
-    { property: "animation"
+    { property: NonEmptyString.nes (Proxy :: _ "animation")
     , value:
-        String.joinWith " "
-          [ NonEmptyString.toString animationName
-          , Prelude.append (Prelude.show duration) "ms"
+        joinWhiteSpaceValue
+          (animationName)
+          [ NonEmptyString.prependString (Prelude.show duration)
+              (NonEmptyString.nes (Proxy :: _ "ms"))
           ]
     }
 
 color :: Color.Color -> Declaration
 color value =
   Declaration
-    { property: "color"
-    , value: Color.toHexString value
+    { property: NonEmptyString.nes (Proxy :: _ "color")
+    , value: colorToNonEmptyString value
     }
+
+colorToNonEmptyString :: Color.Color -> NonEmptyString
+colorToNonEmptyString colorValue = case NonEmptyString.fromString (Color.toHexString colorValue) of
+  Just hexString -> hexString
+  Nothing -> NonEmptyString.nes (Proxy :: _ "#error")
 
 lineHeight :: Int -> Declaration
 lineHeight value =
   Declaration
-    { property: "line-height"
-    , value: Prelude.show value
+    { property: NonEmptyString.nes (Proxy :: _ "line-height")
+    , value:
+        case NonEmptyString.fromString (Prelude.show value) of
+          Just str -> str
+          Nothing -> NonEmptyString.nes (Proxy :: _ "0")
     }
 
 justifySelfCenter :: Declaration
 justifySelfCenter =
   Declaration
-    { property: "justify-self"
-    , value: "center"
+    { property: NonEmptyString.nes (Proxy :: _ "justify-self")
+    , value: NonEmptyString.nes (Proxy :: _ "center")
     }
 
 objectFitConver :: Declaration
 objectFitConver =
   Declaration
-    { property: "object-fit"
-    , value: "cover"
+    { property: NonEmptyString.nes (Proxy :: _ "object-fit")
+    , value: NonEmptyString.nes (Proxy :: _ "cover")
     }
 
 transformScale :: Number -> Declaration
 transformScale value =
   Declaration
-    { property: "transform", value: String.joinWith "" [ "scale(", Prelude.show value, ")" ] }
+    { property: NonEmptyString.nes (Proxy :: _ "transform")
+    , value:
+        NonEmptyString.appendString
+          (NonEmptyString.nes (Proxy :: _ "scale("))
+          (Prelude.append (Prelude.show value) ")")
+    }
