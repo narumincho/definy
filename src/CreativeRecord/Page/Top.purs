@@ -221,73 +221,72 @@ child count =
         }
         "ナルミンチョが書いた 記事"
     , articleListToViewElement
-        ( [ ArticleTitleAndImageUrl
-              { title:
-                  "PowerShell で フォルダ内のファイルに対して 再帰的にコマンドを実行する"
-              , imagePath: StaticResource.powershell_iconPng
-              , location: Location.PowershellRecursion
-              }
-          , ArticleTitleAndImageUrl
-              { title: "SVGの基本"
-              , imagePath: StaticResource.svg_basicPng
-              , location: Location.SvgBasic
-              }
-          , ArticleTitleAndImageUrl
-              { title: "単体SVGと埋め込みSVG"
-              , imagePath: StaticResource.grape_svg_codePng
-              , location: Location.SvgStandaloneEmbed
-              }
-          , ArticleTitleAndImageUrl
-              { title: "DESIRED Routeについて"
-              , imagePath: StaticResource.desired_route_titlePng
-              , location: Location.AboutDesiredRoute
-              }
-          , ArticleTitleAndImageUrl
-              { title: "メッセージウィンドウの話"
-              , imagePath: StaticResource.windowPng
-              , location: Location.MessageWindow
-              }
-          , ArticleTitleAndImageUrl
-              { title: "DESIRED RouteとNPIMEのフォントの描画処理"
-              , imagePath: StaticResource.fontPng
-              , location: Location.DesiredRouteFont
-              }
-          , ArticleTitleAndImageUrl
-              { title: "リストUIのボタン操作の挙動"
-              , imagePath: StaticResource.list_uiPng
-              , location: Location.ListSelectionBehavior
-              }
-          , ArticleTitleAndImageUrl
-              { title: "UIの配色"
-              , imagePath: StaticResource.colorPng
-              , location: Location.UiColor
-              }
-          , ArticleTitleAndImageUrl
-              { title: "モンスターとのエンカウントについて"
-              , imagePath: StaticResource.battlePng
-              , location: Location.DesiredRouteEncounter
-              }
-          , ArticleTitleAndImageUrl
-              { title: "星の図形について"
-              , imagePath: StaticResource.starPng
-              , location: Location.Star
-              }
-          , ArticleTitleAndImageUrl
-              { title: "DESIRED Routeに登場する予定だった敵モンスター"
-              , imagePath: StaticResource.kamausagiPng
-              , location: Location.DesiredRouteMonster
-              }
-          , ArticleTitleAndImageUrl
-              { title: "Nプチコン漢字入力(N Petitcom IME)"
-              , imagePath: StaticResource.henkanPng
-              , location: Location.NPetitcomIme
-              }
-          , ArticleTitleAndImageUrl
-              { title: "型システムと協力して世界を構築する"
-              , imagePath: StaticResource.definy20210811Png
-              , location: Location.CpsLabAdventCalendar2021
-              }
-          ]
-        )
+        [ ArticleTitleAndImageUrl
+            { title:
+                "PowerShell で フォルダ内のファイルに対して 再帰的にコマンドを実行する"
+            , imagePath: StaticResource.powershell_iconPng
+            , location: Location.PowershellRecursion
+            }
+        , ArticleTitleAndImageUrl
+            { title: "SVGの基本"
+            , imagePath: StaticResource.svg_basicPng
+            , location: Location.SvgBasic
+            }
+        , ArticleTitleAndImageUrl
+            { title: "単体SVGと埋め込みSVG"
+            , imagePath: StaticResource.grape_svg_codePng
+            , location: Location.SvgStandaloneEmbed
+            }
+        , ArticleTitleAndImageUrl
+            { title: "DESIRED Routeについて"
+            , imagePath: StaticResource.desired_route_titlePng
+            , location: Location.AboutDesiredRoute
+            }
+        , ArticleTitleAndImageUrl
+            { title: "メッセージウィンドウの話"
+            , imagePath: StaticResource.windowPng
+            , location: Location.MessageWindow
+            }
+        , ArticleTitleAndImageUrl
+            { title: "DESIRED RouteとNPIMEのフォントの描画処理"
+            , imagePath: StaticResource.fontPng
+            , location: Location.DesiredRouteFont
+            }
+        , ArticleTitleAndImageUrl
+            { title: "リストUIのボタン操作の挙動"
+            , imagePath: StaticResource.list_uiPng
+            , location: Location.ListSelectionBehavior
+            }
+        , ArticleTitleAndImageUrl
+            { title: "UIの配色"
+            , imagePath: StaticResource.colorPng
+            , location: Location.UiColor
+            }
+        , ArticleTitleAndImageUrl
+            { title: "モンスターとのエンカウントについて"
+            , imagePath: StaticResource.battlePng
+            , location: Location.DesiredRouteEncounter
+            }
+        , ArticleTitleAndImageUrl
+            { title: "星の図形について"
+            , imagePath: StaticResource.starPng
+            , location: Location.Star
+            }
+        , ArticleTitleAndImageUrl
+            { title: "DESIRED Routeに登場する予定だった敵モンスター"
+            , imagePath: StaticResource.kamausagiPng
+            , location: Location.DesiredRouteMonster
+            }
+        , ArticleTitleAndImageUrl
+            { title: "Nプチコン漢字入力(N Petitcom IME)"
+            , imagePath: StaticResource.henkanPng
+            , location: Location.NPetitcomIme
+            }
+        , ArticleTitleAndImageUrl
+            { title: "型システムと協力して世界を構築する"
+            , imagePath: StaticResource.definy20210811Png
+            , location: Location.CpsLabAdventCalendar2021
+            }
+        ]
     , copyright
     ]
