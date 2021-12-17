@@ -40,25 +40,17 @@ articleToView (Article.Article { title, children }) =
     { appName: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "ナルミンチョの創作記録")
     , children:
         Array.concat
-          [ [ View.box
-                { direction: View.Y
-                , link: Just (View.LinkSameOrigin Location.Top)
-                , children:
-                    [ View.SvgElement
-                        { width: View.Percentage 90.0
-                        , height: 5.0
-                        , isJustifySelfCenter: true
-                        , svg: SvgImage.webSiteLogo
-                        }
-                    ]
-                , gap: 0.0
+          [ [ View.boxY
+                { link: View.LinkSameOrigin Location.Top
                 , paddingTopBottom: 48.0
-                , paddingLeftRight: 0.0
-                , height: Nothing
-                , backgroundColor: Nothing
-                , gridTemplateColumns1FrCount: Nothing
-                , hover: View.boxHoverStyleNone
                 }
+                [ View.SvgElement
+                    { width: View.Percentage 90.0
+                    , height: 5.0
+                    , isJustifySelfCenter: true
+                    , svg: SvgImage.webSiteLogo
+                    }
+                ]
             ]
           , children
           ]

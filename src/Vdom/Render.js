@@ -220,10 +220,7 @@ const createSvg = (option) => {
     if (typeof option.class === "string") {
         svg.classList.add(option.class);
     }
-    svg.viewBox.baseVal.x = option.viewBoxX;
-    svg.viewBox.baseVal.y = option.viewBoxY;
-    svg.viewBox.baseVal.width = option.viewBoxWidth;
-    svg.viewBox.baseVal.height = option.viewBoxHeight;
+    svg.setAttribute("viewBox", option.viewBox);
     return svg;
 };
 exports.createSvg = createSvg;

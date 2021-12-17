@@ -9,7 +9,6 @@ import Data.Map as Map
 import Data.Maybe (Maybe(..))
 import Data.Set as Set
 import Data.String.NonEmpty as NonEmptyString
-import Data.Tuple as Tuple
 import Data.UInt as UInt
 import Effect as Effect
 import Effect.Aff as Aff
@@ -97,7 +96,9 @@ build productionOrDevelopment = do
 
 mainBuild :: ProductionOrDevelopment.ProductionOrDevelopment -> Aff.Aff Unit
 mainBuild productionOrDevelopment = do
-  (Tuple.Tuple staticFileData _) <- Tuple.Tuple <$> staticResourceBuild <*> (originCodeGen productionOrDevelopment)
+  { static: staticFileData } <-
+    Util.runParallelRecord
+      { static: staticResourceBuild, origin: originCodeGen productionOrDevelopment }
   clinetProgramHashValue <- clientProgramBuild
   Util.toParallel
     [ writeCodeClientProgramHashValueAndFunctionBuild clinetProgramHashValue
