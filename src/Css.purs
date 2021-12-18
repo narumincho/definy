@@ -28,7 +28,6 @@ module Css
   , margin0
   , objectFitConver
   , overflow
-  , overflowHidden
   , padding
   , ruleListToString
   , textDecorationNone
@@ -292,9 +291,6 @@ overflow { x, y } =
           (overflowValueToCssValue x)
           [ overflowValueToCssValue y ]
     }
-
-overflowHidden :: Declaration
-overflowHidden = overflow { x: Hidden, y: Hidden }
 
 overflowValueToCssValue :: OverflowValue -> NonEmptyString
 overflowValueToCssValue = case _ of

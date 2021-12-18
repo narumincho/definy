@@ -52,8 +52,8 @@ gitHubLogo =
         [ View.G
             { transform:
                 NonEmptyArray.cons'
-                  (NonEmptyString.nes (Proxy :: Proxy "translate(0,560)"))
-                  [ (NonEmptyString.nes (Proxy :: Proxy "scale(0.1,-0.1)")) ]
+                  (NonEmptyString.nes (Proxy :: _ "translate(0,560)"))
+                  [ (NonEmptyString.nes (Proxy :: _ "scale(0.1,-0.1)")) ]
             , svgElementList:
                 [ View.Path
                     { fill: Color.rgb 221 221 221
