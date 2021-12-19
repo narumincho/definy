@@ -1,5 +1,6 @@
 module CreativeRecord.Location
-  ( Location(..)
+  ( ArticleLocation(..)
+  , Location(..)
   , fromPath
   , toPath
   , toUrl
@@ -15,7 +16,10 @@ import Type.Proxy as Proxy
 
 data Location
   = Top
-  | PowershellRecursion
+  | Article ArticleLocation
+
+data ArticleLocation
+  = PowershellRecursion
   | SvgBasic
   | SvgStandaloneEmbed
   | AboutDesiredRoute
@@ -38,27 +42,31 @@ toUrl location =
 toPath :: Location -> StructuredUrl.PathAndSearchParams
 toPath = case _ of
   Top -> StructuredUrl.pathAndSearchParams [] Map.empty
-  PowershellRecursion -> StructuredUrl.pathAndSearchParams [ powershellRecursionPath ] Map.empty
-  SvgBasic -> StructuredUrl.pathAndSearchParams [ svgBasicPath ] Map.empty
-  SvgStandaloneEmbed -> StructuredUrl.pathAndSearchParams [ svgStandaloneEmbedPath ] Map.empty
-  AboutDesiredRoute -> StructuredUrl.pathAndSearchParams [ aboutDesiredRoutePath ] Map.empty
-  MessageWindow -> StructuredUrl.pathAndSearchParams [ messageWindowPath ] Map.empty
-  DesiredRouteFont -> StructuredUrl.pathAndSearchParams [ desiredRouteFontPath ] Map.empty
-  ListSelectionBehavior -> StructuredUrl.pathAndSearchParams [ listSelectionBehaviorPath ] Map.empty
-  UiColor -> StructuredUrl.pathAndSearchParams [ uiColorPath ] Map.empty
-  DesiredRouteEncounter -> StructuredUrl.pathAndSearchParams [ desiredRouteEncounterPath ] Map.empty
-  Star -> StructuredUrl.pathAndSearchParams [ starPath ] Map.empty
-  DesiredRouteMonster -> StructuredUrl.pathAndSearchParams [ desiredRouteMonster ] Map.empty
-  NPetitcomIme -> StructuredUrl.pathAndSearchParams [ nPetitcomIme ] Map.empty
-  CpsLabAdventCalendar2021 ->
+  Article PowershellRecursion -> StructuredUrl.pathAndSearchParams [ powershellRecursionPath ] Map.empty
+  Article SvgBasic -> StructuredUrl.pathAndSearchParams [ svgBasicPath ] Map.empty
+  Article SvgStandaloneEmbed -> StructuredUrl.pathAndSearchParams [ svgStandaloneEmbedPath ] Map.empty
+  Article AboutDesiredRoute -> StructuredUrl.pathAndSearchParams [ aboutDesiredRoutePath ] Map.empty
+  Article MessageWindow -> StructuredUrl.pathAndSearchParams [ messageWindowPath ] Map.empty
+  Article DesiredRouteFont -> StructuredUrl.pathAndSearchParams [ desiredRouteFontPath ] Map.empty
+  Article ListSelectionBehavior -> StructuredUrl.pathAndSearchParams [ listSelectionBehaviorPath ] Map.empty
+  Article UiColor -> StructuredUrl.pathAndSearchParams [ uiColorPath ] Map.empty
+  Article DesiredRouteEncounter -> StructuredUrl.pathAndSearchParams [ desiredRouteEncounterPath ] Map.empty
+  Article Star -> StructuredUrl.pathAndSearchParams [ starPath ] Map.empty
+  Article DesiredRouteMonster -> StructuredUrl.pathAndSearchParams [ desiredRouteMonster ] Map.empty
+  Article NPetitcomIme -> StructuredUrl.pathAndSearchParams [ nPetitcomIme ] Map.empty
+  Article CpsLabAdventCalendar2021 ->
     StructuredUrl.pathAndSearchParams
       [ cpsLabAdventCalendar2021Path ]
       Map.empty
-  NotFound path -> path
+  Article (NotFound path) -> path
 
 fromPath :: StructuredUrl.PathAndSearchParams -> Location
-fromPath (StructuredUrl.PathAndSearchParams { path, searchParams }) = case path of
+fromPath (pathAndSearchParams@(StructuredUrl.PathAndSearchParams { path })) = case path of
   [] -> Top
+  _ -> Article (articleLocationFromPath pathAndSearchParams)
+
+articleLocationFromPath :: StructuredUrl.PathAndSearchParams -> ArticleLocation
+articleLocationFromPath (StructuredUrl.PathAndSearchParams { path, searchParams }) = case path of
   [ name ] ->
     if eq name powershellRecursionPath then
       PowershellRecursion

@@ -15,6 +15,8 @@ jobs:
           node-version: "16"
       - name: Install npm dependencies (npm ci)
         run: npm ci
+      - name: PureScript FFI Code TypeScript → JavaScript
+        run: npx tsc --project ./tsconfig-purs-ffi.json
       - name: PureScript Build
         run: npx spago build
       - name: Run build script
