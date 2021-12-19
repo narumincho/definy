@@ -67,7 +67,7 @@ view state =
           (Article.locationToArticleOrTop articleLocation)
 
 articleToView :: Location.ArticleLocation -> ArticleData.Article -> View.View Message.Message Location.Location
-articleToView location (ArticleData.Article { title, children }) =
+articleToView location (ArticleData.Article { title, imagePath, children }) =
   View.View
     { appName: NonEmptyString.nes (Proxy :: _ "ナルミンチョの創作記録")
     , children:
@@ -87,7 +87,7 @@ articleToView location (ArticleData.Article { title, children }) =
           , children
           , [ backToTop, copyright ]
           ]
-    , coverImagePath: StaticResource.iconPng
+    , coverImagePath: imagePath
     , description:
         "革新的なプログラミング言語のdefiny, Web技術, 作っているゲームなどについて解説しています"
     , iconPath: StaticResource.iconPng

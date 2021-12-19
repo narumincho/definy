@@ -1,6 +1,7 @@
 module CreativeRecord.Article.CpsLabAdventCalendar2021 where
 
 import CreativeRecord.Article.Data as Data
+import CreativeRecord.StaticResource as StaticResource
 import Data.Maybe (Maybe(..))
 import Data.String.NonEmpty as NonEmptyString
 import StructuredUrl as StructuredUrl
@@ -11,6 +12,7 @@ view :: Data.Article
 view =
   Data.Article
     { title: NonEmptyString.nes (Proxy :: _ "型システムと協力して世界を構築する")
+    , imagePath: StaticResource.pure_script_code_genPng
     , children:
         [ View.boxY
             { gap: 0.5 }
