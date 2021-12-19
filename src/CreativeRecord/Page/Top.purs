@@ -1,11 +1,5 @@
 module CreativeRecord.Page.Top
-  ( ArticleTitleAndImageUrl(..)
-  , articleLink
-  , articleListToViewElement
-  , externalLink
-  , linkBackGroundColor
-  , view
-  , zoomAnimation
+  ( view
   ) where
 
 import Prelude

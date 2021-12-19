@@ -5,11 +5,7 @@ import CreativeRecord.Article as Article
 import CreativeRecord.Location as Location
 import CreativeRecord.Messgae as Message
 import CreativeRecord.Origin as Origin
-import CreativeRecord.Page.CpsLabAdventCalendar2021 as CpsLabAdventCalendar2021
-import CreativeRecord.Page.NotFound as NotFound
-import CreativeRecord.Page.PowershellRecursion as PowershellRecursion
-import CreativeRecord.Page.Top as Top
-import CreativeRecord.Page.Wip as Wip
+import CreativeRecord.Page as Page
 import CreativeRecord.State as State
 import CreativeRecord.StaticResource as StaticResource
 import CreativeRecord.SvgImage as SvgImage
@@ -29,13 +25,7 @@ view state =
   in
     articleToView
       location
-      ( case location of
-          Location.Top -> Top.view (State.getCount state)
-          Location.PowershellRecursion -> Article.toArticleOrTop PowershellRecursion.view
-          Location.CpsLabAdventCalendar2021 -> Article.toArticleOrTop CpsLabAdventCalendar2021.view
-          Location.NotFound _ -> Article.toArticleOrTop NotFound.view
-          _ -> Article.toArticleOrTop Wip.view
-      )
+      (Page.locationToArticleOrTop state location)
 
 articleToView :: Location.Location -> Article.ArticleOrTop -> View.View Message.Message Location.Location
 articleToView location (Article.ArticleOrTop { title, children }) =
