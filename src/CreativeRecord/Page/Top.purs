@@ -2,10 +2,8 @@ module CreativeRecord.Page.Top
   ( ArticleTitleAndImageUrl(..)
   , articleLink
   , articleListToViewElement
-  , copyright
   , externalLink
   , linkBackGroundColor
-  , snsLink
   , view
   , zoomAnimation
   ) where
@@ -15,16 +13,19 @@ import Color as Color
 import CreativeRecord.Article as Article
 import CreativeRecord.Location as Location
 import CreativeRecord.Messgae as Message
+import CreativeRecord.Page.CpsLabAdventCalendar2021 as CpsLabAdventCalendar2021
+import CreativeRecord.Page.PowershellRecursion as PowershellRecursion
 import CreativeRecord.StaticResource as StaticResource
 import CreativeRecord.SvgImage as SvgImage
 import Css as Css
 import Data.Map as Map
 import Data.Maybe (Maybe(..))
 import Data.String.NonEmpty as NonEmptyString
+import Data.String.NonEmpty (NonEmptyString)
 import Data.UInt as UInt
 import Prelude as Prelude
 import StructuredUrl as StructuredUrl
-import Type.Proxy as Proxy
+import Type.Proxy (Proxy(..))
 import Util as Util
 import View.Data as View
 
@@ -47,9 +48,9 @@ snsLink :: StructuredUrl.StructuredUrl -> View.Svg -> String -> View.Element Mes
 snsLink url logo text =
   View.boxX
     { link: View.LinkExternal url
-    , paddingLeftRight: 8.0
-    , paddingTopBottom: 8.0
-    , gap: 8.0
+    , paddingLeftRight: 0.5
+    , paddingTopBottom: 0.5
+    , gap: 0.5
     , backgroundColor: Just linkBackGroundColor
     , hover: View.BoxHoverStyle { animation: Just zoomAnimation }
     }
@@ -59,7 +60,7 @@ snsLink url logo text =
         , svg: logo
         , isJustifySelfCenter: false
         }
-    , View.text { padding: 8.0 } text
+    , View.text { padding: 0.5 } text
     ]
 
 externalLink :: StructuredUrl.StructuredUrl -> StructuredUrl.PathAndSearchParams -> String -> View.Element Message.Message Location.Location
@@ -75,7 +76,7 @@ externalLink url imageUrl text =
         , height: 8.0
         , alternativeText: append text "のアイコン"
         }
-    , View.text { padding: 8.0 } text
+    , View.text { padding: 0.5 } text
     ]
 
 articleLink :: ArticleTitleAndImageUrl -> View.Element Message.Message Location.Location
@@ -89,29 +90,29 @@ articleLink (ArticleTitleAndImageUrl { location, imagePath, title }) =
         { path: imagePath
         , width: View.Percentage 100.0
         , height: 8.0
-        , alternativeText: append title "のイメージ画像"
+        , alternativeText: append (NonEmptyString.toString title) "のイメージ画像"
         }
-    , View.text { padding: 8.0 } title
+    , View.text { padding: 0.5 } (NonEmptyString.toString title)
     ]
 
 newtype ArticleTitleAndImageUrl
   = ArticleTitleAndImageUrl
   { imagePath :: StructuredUrl.PathAndSearchParams
-  , title :: String
+  , title :: NonEmptyString
   , location :: Location.Location
   }
 
 articleListToViewElement :: Array ArticleTitleAndImageUrl -> View.Element Message.Message Location.Location
 articleListToViewElement list =
   View.boxY
-    { paddingTopBottom: 8.0
-    , paddingLeftRight: 8.0
-    , gap: 8.0
+    { paddingTopBottom: 0.5
+    , paddingLeftRight: 0.5
+    , gap: 0.5
     }
     ( Prelude.map
         ( \row ->
             View.boxX
-              { gap: 8.0
+              { gap: 0.5
               , gridTemplateColumns1FrCount: 3
               }
               (Prelude.map articleLink row)
@@ -119,14 +120,8 @@ articleListToViewElement list =
         (Util.groupBySize (UInt.fromInt 3) list)
     )
 
-copyright :: View.Element Message.Message Location.Location
-copyright =
-  View.text
-    { padding: 8.0 }
-    "© 2021 narumincho"
-
-view :: Int -> Article.Article
-view count = Article.Article { title: Nothing, children: [ child count ] }
+view :: Int -> Article.ArticleOrTop
+view count = Article.ArticleOrTop { title: Nothing, children: [ child count ] }
 
 child :: Int -> View.Element Message.Message Location.Location
 child count =
@@ -134,39 +129,45 @@ child count =
     {}
     [ View.text
         { markup: View.Heading2
-        , padding: 8.0
+        , padding: 0.5
         , click: Message.CountUp
         }
         (Prelude.append "ナルミンチョの SNS アカウント" (Prelude.show count))
     , View.boxX
-        { paddingTopBottom: 8.0
-        , paddingLeftRight: 8.0
-        , gap: 8.0
+        { paddingTopBottom: 0.5
+        , paddingLeftRight: 0.5
+        , gap: 0.5
         , height: 4.0
         }
         [ snsLink
             ( StructuredUrl.StructuredUrl
-                { origin: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "https://twitter.com")
-                , pathAndSearchParams: StructuredUrl.pathAndSearchParams [ NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "naru_mincho") ] Map.empty
+                { origin: NonEmptyString.nes (Proxy :: _ "https://twitter.com")
+                , pathAndSearchParams:
+                    StructuredUrl.pathAndSearchParams
+                      [ NonEmptyString.nes (Proxy :: _ "naru_mincho") ]
+                      Map.empty
                 }
             )
             SvgImage.twitterLogo
             "@naru_mincho"
         , snsLink
             ( StructuredUrl.StructuredUrl
-                { origin: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "https://github.com")
-                , pathAndSearchParams: StructuredUrl.pathAndSearchParams [ NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "narumincho") ] Map.empty
+                { origin: NonEmptyString.nes (Proxy :: _ "https://github.com")
+                , pathAndSearchParams:
+                    StructuredUrl.pathAndSearchParams
+                      [ NonEmptyString.nes (Proxy :: _ "narumincho") ]
+                      Map.empty
                 }
             )
             SvgImage.gitHubLogo
             "@narumincho"
         , snsLink
             ( StructuredUrl.StructuredUrl
-                { origin: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "https://www.youtube.com")
+                { origin: NonEmptyString.nes (Proxy :: _ "https://www.youtube.com")
                 , pathAndSearchParams:
                     StructuredUrl.pathAndSearchParams
-                      [ NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "channel")
-                      , NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "UCDGsMJptdPNN_dbPkTl9qjA")
+                      [ NonEmptyString.nes (Proxy :: _ "channel")
+                      , NonEmptyString.nes (Proxy :: _ "UCDGsMJptdPNN_dbPkTl9qjA")
                       ]
                       Map.empty
                 }
@@ -176,23 +177,23 @@ child count =
         ]
     , View.text
         { markup: View.Heading2
-        , padding: 8.0
+        , padding: 0.5
         }
         "ナルミンチョが作った Webアプリ"
     , View.boxX
-        { paddingTopBottom: 8.0
-        , paddingLeftRight: 8.0
-        , gap: 8.0
+        { paddingTopBottom: 0.5
+        , paddingLeftRight: 0.5
+        , gap: 0.5
         , gridTemplateColumns1FrCount: 3
         }
         [ externalLink
             ( StructuredUrl.StructuredUrl
-                { origin: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "https://definy.app")
+                { origin: NonEmptyString.nes (Proxy :: _ "https://definy.app")
                 , pathAndSearchParams:
                     StructuredUrl.pathAndSearchParams []
                       ( Map.singleton
-                          (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "hl"))
-                          (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "ja"))
+                          (NonEmptyString.nes (Proxy :: _ "hl"))
+                          (NonEmptyString.nes (Proxy :: _ "ja"))
                       )
                 }
             )
@@ -200,7 +201,7 @@ child count =
             "definy"
         , externalLink
             ( StructuredUrl.StructuredUrl
-                { origin: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "https://narumincho-creative-record.web.app")
+                { origin: NonEmptyString.nes (Proxy :: _ "https://narumincho-creative-record.web.app")
                 , pathAndSearchParams: StructuredUrl.pathAndSearchParams [] Map.empty
                 }
             )
@@ -208,7 +209,7 @@ child count =
             "重力星"
         , externalLink
             ( StructuredUrl.StructuredUrl
-                { origin: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "https://tsukumart.com")
+                { origin: NonEmptyString.nes (Proxy :: _ "https://tsukumart.com")
                 , pathAndSearchParams: StructuredUrl.pathAndSearchParams [] Map.empty
                 }
             )
@@ -217,76 +218,74 @@ child count =
         ]
     , View.text
         { markup: View.Heading2
-        , padding: 8.0
+        , padding: 0.5
         }
-        "ナルミンチョが書いた 記事"
+        "ナルミンチョが書いた記事"
     , articleListToViewElement
         [ ArticleTitleAndImageUrl
-            { title:
-                "PowerShell で フォルダ内のファイルに対して 再帰的にコマンドを実行する"
+            { title: Article.getTitle PowershellRecursion.view
             , imagePath: StaticResource.powershell_iconPng
             , location: Location.PowershellRecursion
             }
         , ArticleTitleAndImageUrl
-            { title: "SVGの基本"
+            { title: NonEmptyString.nes (Proxy :: _ "SVGの基本")
             , imagePath: StaticResource.svg_basicPng
             , location: Location.SvgBasic
             }
         , ArticleTitleAndImageUrl
-            { title: "単体SVGと埋め込みSVG"
+            { title: NonEmptyString.nes (Proxy :: _ "単体SVGと埋め込みSVG")
             , imagePath: StaticResource.grape_svg_codePng
             , location: Location.SvgStandaloneEmbed
             }
         , ArticleTitleAndImageUrl
-            { title: "DESIRED Routeについて"
+            { title: NonEmptyString.nes (Proxy :: _ "DESIRED Routeについて")
             , imagePath: StaticResource.desired_route_titlePng
             , location: Location.AboutDesiredRoute
             }
         , ArticleTitleAndImageUrl
-            { title: "メッセージウィンドウの話"
+            { title: NonEmptyString.nes (Proxy :: _ "メッセージウィンドウの話")
             , imagePath: StaticResource.windowPng
             , location: Location.MessageWindow
             }
         , ArticleTitleAndImageUrl
-            { title: "DESIRED RouteとNPIMEのフォントの描画処理"
+            { title: NonEmptyString.nes (Proxy :: _ "DESIRED RouteとNPIMEのフォントの描画処理")
             , imagePath: StaticResource.fontPng
             , location: Location.DesiredRouteFont
             }
         , ArticleTitleAndImageUrl
-            { title: "リストUIのボタン操作の挙動"
+            { title: NonEmptyString.nes (Proxy :: _ "リストUIのボタン操作の挙動")
             , imagePath: StaticResource.list_uiPng
             , location: Location.ListSelectionBehavior
             }
         , ArticleTitleAndImageUrl
-            { title: "UIの配色"
+            { title: NonEmptyString.nes (Proxy :: _ "UIの配色")
             , imagePath: StaticResource.colorPng
             , location: Location.UiColor
             }
         , ArticleTitleAndImageUrl
-            { title: "モンスターとのエンカウントについて"
+            { title: NonEmptyString.nes (Proxy :: _ "モンスターとのエンカウントについて")
             , imagePath: StaticResource.battlePng
             , location: Location.DesiredRouteEncounter
             }
         , ArticleTitleAndImageUrl
-            { title: "星の図形について"
+            { title: NonEmptyString.nes (Proxy :: _ "星の図形について")
             , imagePath: StaticResource.starPng
             , location: Location.Star
             }
         , ArticleTitleAndImageUrl
-            { title: "DESIRED Routeに登場する予定だった敵モンスター"
+            { title: NonEmptyString.nes (Proxy :: _ "DESIRED Routeに登場する予定だった敵モンスター")
             , imagePath: StaticResource.kamausagiPng
             , location: Location.DesiredRouteMonster
             }
         , ArticleTitleAndImageUrl
-            { title: "Nプチコン漢字入力(N Petitcom IME)"
+            { title: NonEmptyString.nes (Proxy :: _ "Nプチコン漢字入力(N Petitcom IME)")
             , imagePath: StaticResource.henkanPng
             , location: Location.NPetitcomIme
             }
         , ArticleTitleAndImageUrl
-            { title: "型システムと協力して世界を構築する"
+            { title: Article.getTitle CpsLabAdventCalendar2021.view
             , imagePath: StaticResource.definy20210811Png
             , location: Location.CpsLabAdventCalendar2021
             }
         ]
-    , copyright
     ]

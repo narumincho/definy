@@ -47,6 +47,8 @@ newtype View message location
   , {- ページのパス (HTML出力のみ反映) -} path :: StructuredUrl.PathAndSearchParams
   , {- オリジン -} origin :: NonEmptyString.NonEmptyString
   , {- 子要素 -} children :: Array (Element message location)
+  , scrollX :: Boolean
+  , scrollY :: Boolean
   }
 
 newtype Box :: Type -> Type -> Type
@@ -63,6 +65,8 @@ newtype Box message location
   , gridTemplateColumns1FrCount :: Maybe Int
   , link :: Maybe (Link message location)
   , hover :: BoxHoverStyle
+  , scrollX :: Boolean
+  , scrollY :: Boolean
   }
 
 data XOrY
@@ -154,6 +158,8 @@ type BoxOptional message location
     , gridTemplateColumns1FrCount :: Int
     , link :: Link message location
     , hover :: BoxHoverStyle
+    , scrollX :: Boolean
+    , scrollY :: Boolean
     )
 
 -- | 縦方向に box を配置する
@@ -198,6 +204,14 @@ boxY option children =
               case rec.paddingTopBottom of
                 Just paddingTopBottom -> paddingTopBottom
                 Nothing -> 0.0
+          , scrollX:
+              case rec.scrollX of
+                Just scrollX -> scrollX
+                Nothing -> false
+          , scrollY:
+              case rec.scrollY of
+                Just scrollY -> scrollY
+                Nothing -> false
           }
       )
 
@@ -243,6 +257,14 @@ boxX option children =
               case rec.paddingTopBottom of
                 Just paddingTopBottom -> paddingTopBottom
                 Nothing -> 0.0
+          , scrollX:
+              case rec.scrollX of
+                Just scrollX -> scrollX
+                Nothing -> false
+          , scrollY:
+              case rec.scrollY of
+                Just scrollY -> scrollY
+                Nothing -> false
           }
       )
 
