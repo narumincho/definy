@@ -55,15 +55,33 @@ headElement (Data.Vdom option) =
               , descriptionElement option.description
               , themeColorElement option.themeColor
               ]
-            , iconElement (StructuredUrl.StructuredUrl { origin: option.origin, pathAndSearchParams: option.iconPath })
-            , [ twitterCardElement, Wellknown.style option.style ]
+            , iconElement
+                ( StructuredUrl.StructuredUrl
+                    { origin: option.origin
+                    , pathAndSearchParams: option.iconPath
+                    }
+                )
+            , [ twitterCardElement ]
             , case option.path of
-                Maybe.Just path -> [ ogUrlElement (StructuredUrl.StructuredUrl { origin: option.origin, pathAndSearchParams: path }) ]
+                Maybe.Just path ->
+                  [ ogUrlElement
+                      ( StructuredUrl.StructuredUrl
+                          { origin: option.origin
+                          , pathAndSearchParams: path
+                          }
+                      )
+                  ]
                 Maybe.Nothing -> []
             , [ ogTitleElement option.pageName
               , ogSiteName option.appName
               , ogDescription option.description
-              , ogImage (StructuredUrl.StructuredUrl { origin: option.origin, pathAndSearchParams: option.coverImagePath })
+              , ogImage
+                  ( StructuredUrl.StructuredUrl
+                      { origin: option.origin
+                      , pathAndSearchParams: option.coverImagePath
+                      }
+                  )
+              , Wellknown.style option.style
               ]
             , case option.scriptPath of
                 Maybe.Just scriptPath -> [ Wellknown.script (StructuredUrl.StructuredUrl { origin: option.origin, pathAndSearchParams: scriptPath }) ]
