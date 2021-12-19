@@ -43,7 +43,7 @@ html =
                 , mediaTypeMaybe: Just MediaType.Html
                 , status:
                     case location of
-                      Location.NotFound _ -> Functions.NotFound
+                      Location.Article (Location.NotFound _) -> Functions.NotFound
                       _ -> Functions.Ok
                 }
           )

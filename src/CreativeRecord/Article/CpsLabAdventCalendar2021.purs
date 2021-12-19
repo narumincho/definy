@@ -1,15 +1,15 @@
-module CreativeRecord.Page.CpsLabAdventCalendar2021 where
+module CreativeRecord.Article.CpsLabAdventCalendar2021 where
 
-import CreativeRecord.Article as Article
+import CreativeRecord.Article.Data as Data
 import Data.Maybe (Maybe(..))
 import Data.String.NonEmpty as NonEmptyString
 import StructuredUrl as StructuredUrl
 import Type.Proxy (Proxy(..))
 import View.Data as View
 
-view :: Article.Article
+view :: Data.Article
 view =
-  Article.Article
+  Data.Article
     { title: NonEmptyString.nes (Proxy :: _ "型システムと協力して世界を構築する")
     , children:
         [ View.boxY

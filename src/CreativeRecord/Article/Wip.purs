@@ -1,14 +1,14 @@
-module CreativeRecord.Page.NotFound (view) where
+module CreativeRecord.Article.Wip (view) where
 
-import CreativeRecord.Article as Article
+import CreativeRecord.Article.Data as Data
 import Data.String.NonEmpty as NonEmptyString
 import Type.Proxy as Proxy
 import View.Data as View
 
-view :: Article.Article
+view :: Data.Article
 view =
-  Article.Article
-    { title: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "ページが見つかりませんでした")
+  Data.Article
+    { title: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "このページはまだ作成中です!")
     , children:
         [ View.boxY
             {}
@@ -16,7 +16,7 @@ view =
                 { markup: View.Heading2
                 , padding: 0.5
                 }
-                "ページが見つかりませんでした"
+                "このページはまだ作成中です!"
             ]
         ]
     }
