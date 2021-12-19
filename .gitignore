@@ -3,6 +3,7 @@ node_modules
 distribution
 firebase.json
 out.ts
+/src/**/**.js
 /narumincho-creative-record/dist
 /bower_components/
 /node_modules/
