@@ -202,7 +202,7 @@ elementToHtmlOrSvgElementWithoutDataPath { element, path, patchState, locationTo
         { id: Nullable.toNullable (map NonEmptyString.toString rec.id)
         , class: Nullable.toNullable (map NonEmptyString.toString rec.class)
         , fill: Color.toHexString rec.fill
-        , stroke: Color.toHexString rec.stroke
+        , stroke: Nullable.toNullable (map Color.toHexString rec.stroke)
         , cx: rec.cx
         , cy: rec.cy
         , r: rec.r
@@ -226,6 +226,27 @@ elementToHtmlOrSvgElementWithoutDataPath { element, path, patchState, locationTo
         }
     applyChildList { htmlOrSvgElement: svgG, childList: rec.children, path, patchState, locationToPathAndSearchParams }
     pure svgG
+  Vdom.ElementSvgPolygon (Vdom.SvgPolygon rec) ->
+    EffectUncurried.runEffectFn1 createSvgPolygon
+      { points:
+          String.joinWith " "
+            ( NonEmptyArray.toArray
+                ( map
+                    (\{ x, y } -> String.joinWith "," [ show x, show y ])
+                    rec.points
+                )
+            )
+      , fill: Color.toHexString rec.fill
+      , stroke: Color.toHexString rec.stroke
+      }
+  Vdom.ElementSvgEllipse (Vdom.SvgEllipse rec) ->
+    EffectUncurried.runEffectFn1 createSvgEllipse
+      { cx: rec.cx
+      , cy: rec.cy
+      , rx: rec.rx
+      , ry: rec.ry
+      , fill: Color.toHexString rec.fill
+      }
 
 -- | HTMLElment か SVGElement の子要素を設定する
 applyChildren ::
@@ -511,7 +532,7 @@ foreign import createSvgCircle ::
     { id :: Nullable String
     , class :: Nullable String
     , fill :: String
-    , stroke :: String
+    , stroke :: Nullable String
     , cx :: Number
     , cy :: Number
     , r :: Number
@@ -533,6 +554,24 @@ foreign import createSvgG ::
     { id :: Nullable String
     , class :: Nullable String
     , transform :: String
+    }
+    HtmlOrSvgElement
+
+foreign import createSvgPolygon ::
+  EffectUncurried.EffectFn1
+    { points :: String
+    , stroke :: String
+    , fill :: String
+    }
+    HtmlOrSvgElement
+
+foreign import createSvgEllipse ::
+  EffectUncurried.EffectFn1
+    { cx :: Number
+    , cy :: Number
+    , rx :: Number
+    , ry :: Number
+    , fill :: String
     }
     HtmlOrSvgElement
 

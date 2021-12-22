@@ -332,6 +332,8 @@ vdomElementToHtmlElement { origin, element, locationToPathAndSearchParams } = ca
       ( vdomChildListToHtmlChildList
           { origin, childList: rec.children, locationToPathAndSearchParams }
       )
+  Data.ElementSvgPolygon (Data.SvgPolygon rec) -> Wellknown.svgPolygon rec
+  Data.ElementSvgEllipse (Data.SvgEllipse rec) -> Wellknown.svgEllipse rec
 
 vdomChildrenToHtmlChildren ::
   forall message location.

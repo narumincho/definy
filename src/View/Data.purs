@@ -144,6 +144,24 @@ data SvgElement
     { transform :: NonEmptyArray NonEmptyString
     , svgElementList :: Array SvgElement
     }
+  | Circle
+    { cx :: Number
+    , cy :: Number
+    , r :: Number
+    , fill :: Color.Color
+    }
+  | Polygon
+    { points :: NonEmptyArray { x :: Number, y :: Number }
+    , stroke :: Color.Color
+    , fill :: Color.Color
+    }
+  | Ellipse
+    { cx :: Number
+    , cy :: Number
+    , rx :: Number
+    , ry :: Number
+    , fill :: Color.Color
+    }
 
 data PercentageOrRem
   = Rem Number
