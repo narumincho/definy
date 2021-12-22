@@ -268,15 +268,14 @@ export const createLabel = (option: {
   return label;
 };
 
+const svgNamespaceUri = "http://www.w3.org/2000/svg";
+
 export const createSvg = (option: {
   readonly id: string | null;
   readonly class: string | null;
   readonly viewBox: string;
 }): HTMLElement | SVGElement => {
-  const svg = window.document.createElementNS(
-    "http://www.w3.org/2000/svg",
-    "svg"
-  );
+  const svg = window.document.createElementNS(svgNamespaceUri, "svg");
   if (typeof option.id === "string") {
     svg.id = option.id;
   }
@@ -293,10 +292,7 @@ export const createSvgPath = (option: {
   readonly d: string;
   readonly fill: string;
 }): HTMLElement | SVGElement => {
-  const svgPath = window.document.createElementNS(
-    "http://www.w3.org/2000/svg",
-    "path"
-  );
+  const svgPath = window.document.createElementNS(svgNamespaceUri, "path");
   if (typeof option.id === "string") {
     svgPath.id = option.id;
   }
@@ -312,15 +308,12 @@ export const createSvgCircle = (option: {
   readonly id: string | null;
   readonly class: string | null;
   readonly fill: string;
-  readonly stroke: string;
+  readonly stroke: string | null;
   readonly cx: number;
   readonly cy: number;
   readonly r: number;
 }): HTMLElement | SVGElement => {
-  const svgCircle = window.document.createElementNS(
-    "http://www.w3.org/2000/svg",
-    "circle"
-  );
+  const svgCircle = window.document.createElementNS(svgNamespaceUri, "circle");
   if (typeof option.id === "string") {
     svgCircle.id = option.id;
   }
@@ -328,7 +321,9 @@ export const createSvgCircle = (option: {
     svgCircle.classList.add(option.class);
   }
   svgCircle.setAttribute("fill", option.fill);
-  svgCircle.setAttribute("stroke", option.stroke);
+  if (typeof option.stroke === "string") {
+    svgCircle.setAttribute("stroke", option.stroke);
+  }
   svgCircle.cx.baseVal.value = option.cx;
   svgCircle.cy.baseVal.value = option.cy;
   svgCircle.r.baseVal.value = option.r;
@@ -343,7 +338,7 @@ export const createSvgAnimate = (option: {
   to: string;
 }): HTMLElement | SVGElement => {
   const svgAnimate = window.document.createElementNS(
-    "http://www.w3.org/2000/svg",
+    svgNamespaceUri,
     "animate"
   );
   svgAnimate.setAttribute("attributeName", option.attributeName);
@@ -359,10 +354,7 @@ export const createSvgG = (option: {
   readonly class: string | null;
   readonly transform: string;
 }): HTMLElement | SVGElement => {
-  const svgG = window.document.createElementNS(
-    "http://www.w3.org/2000/svg",
-    "g"
-  );
+  const svgG = window.document.createElementNS(svgNamespaceUri, "g");
   if (typeof option.id === "string") {
     svgG.id = option.id;
   }
@@ -371,6 +363,44 @@ export const createSvgG = (option: {
   }
   svgG.setAttribute("transform", option.transform);
   return svgG;
+};
+
+export const createSvgPolygon = (option: {
+  readonly points: string;
+  readonly stroke: string;
+  readonly fill: string;
+}): HTMLElement | SVGElement => {
+  const svgPolygon = window.document.createElementNS(
+    svgNamespaceUri,
+    "polygon"
+  );
+  /*
+   * https://developer.mozilla.org/en-US/docs/Web/API/SVGPointList/appendItem
+   * appendItem のパラメータとして使う SVGPoint が非推奨になっているため. setAttribute を使う
+   */
+  svgPolygon.setAttribute("points", option.points);
+  svgPolygon.setAttribute("stroke", option.stroke);
+  svgPolygon.setAttribute("fill", option.fill);
+  return svgPolygon;
+};
+
+export const createSvgEllipse = (option: {
+  readonly cx: number;
+  readonly cy: number;
+  readonly rx: number;
+  readonly ry: number;
+  readonly fill: string;
+}): HTMLElement | SVGElement => {
+  const svgEllipse = window.document.createElementNS(
+    svgNamespaceUri,
+    "ellipse"
+  );
+  svgEllipse.cx.baseVal.value = option.cx;
+  svgEllipse.cy.baseVal.value = option.cy;
+  svgEllipse.rx.baseVal.value = option.rx;
+  svgEllipse.ry.baseVal.value = option.ry;
+  svgEllipse.setAttribute("fill", option.fill);
+  return svgEllipse;
 };
 
 export const appendChild = (

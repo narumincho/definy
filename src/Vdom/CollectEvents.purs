@@ -120,5 +120,7 @@ collectMessageDataMapInElement { locationToPathAndSearchParams, element, path, u
   Vdom.ElementSvg (Vdom.Svg rec) -> collectMessageDataMapInChildList { locationToPathAndSearchParams, childList: rec.children, path, urlChangeMessageData }
   Vdom.ElementSvgPath (Vdom.SvgPath _) -> VdomPatchState.newMessageMapParameterEmpty
   Vdom.ElementSvgCircle (Vdom.SvgCircle rec) -> collectMessageDataMapInChildList { locationToPathAndSearchParams, childList: rec.children, path, urlChangeMessageData }
-  Vdom.ElementSvgAnimate (Vdom.SvgAnimate _) -> VdomPatchState.newMessageMapParameterEmpty
+  Vdom.ElementSvgAnimate _ -> VdomPatchState.newMessageMapParameterEmpty
   Vdom.ElementSvgG (Vdom.SvgG rec) -> collectMessageDataMapInChildList { locationToPathAndSearchParams, childList: rec.children, path, urlChangeMessageData }
+  Vdom.ElementSvgPolygon _ -> VdomPatchState.newMessageMapParameterEmpty
+  Vdom.ElementSvgEllipse _ -> VdomPatchState.newMessageMapParameterEmpty

@@ -21,8 +21,10 @@ module Vdom.Data
   , Svg(..)
   , SvgAnimate(..)
   , SvgCircle(..)
+  , SvgEllipse(..)
   , SvgG(..)
   , SvgPath(..)
+  , SvgPolygon(..)
   , SvgRec
   , TextArea(..)
   , Vdom(..)
@@ -159,6 +161,8 @@ data Element message location
   | ElementSvgCircle (SvgCircle message location)
   | ElementSvgAnimate SvgAnimate
   | ElementSvgG (SvgG message location)
+  | ElementSvgPolygon SvgPolygon
+  | ElementSvgEllipse SvgEllipse
 
 data ElementDiff :: Type -> Type -> Type
 data ElementDiff message location
@@ -559,7 +563,7 @@ newtype SvgCircle message location
   { id :: Maybe NonEmptyString
   , class :: Maybe NonEmptyString
   , fill :: Color.Color
-  , stroke :: Color.Color
+  , stroke :: Maybe Color.Color
   , cx :: Number
   , cy :: Number
   , r :: Number
@@ -575,7 +579,7 @@ type SvgCircleDiffRec message location
   = { id :: Maybe (Maybe NonEmptyString)
     , class :: Maybe (Maybe NonEmptyString)
     , fill :: Maybe Color.Color
-    , stroke :: Maybe Color.Color
+    , stroke :: Maybe (Maybe Color.Color)
     , cx :: Maybe Number
     , cy :: Maybe Number
     , r :: Maybe Number
@@ -630,6 +634,22 @@ newtype SvgG message location
   = SvgG
   { transform :: NonEmptyArray NonEmptyString
   , children :: Array (Tuple.Tuple String (Element message location))
+  }
+
+newtype SvgPolygon
+  = SvgPolygon
+  { points :: NonEmptyArray { x :: Number, y :: Number }
+  , stroke :: Color.Color
+  , fill :: Color.Color
+  }
+
+newtype SvgEllipse
+  = SvgEllipse
+  { cx :: Number
+  , cy :: Number
+  , rx :: Number
+  , ry :: Number
+  , fill :: Color.Color
   }
 
 data Children :: Type -> Type -> Type

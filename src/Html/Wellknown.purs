@@ -22,8 +22,10 @@ module Html.Wellknown
   , svg
   , svgAnimate
   , svgCircle
+  , svgEllipse
   , svgG
   , svgPath
+  , svgPolygon
   , textarea
   , title
   ) where
@@ -32,6 +34,7 @@ import Color as Color
 import Css as Css
 import Data.Array as Array
 import Data.Array.NonEmpty (NonEmptyArray)
+import Data.Array.NonEmpty as NonEmptyArray
 import Data.Map as Map
 import Data.Maybe (Maybe(..))
 import Data.Maybe as Maybe
@@ -462,7 +465,7 @@ svgCircle ::
   { id :: Maybe NonEmptyString
   , class :: Maybe NonEmptyString
   , fill :: Color.Color
-  , stroke :: Color.Color
+  , stroke :: Maybe Color.Color
   , cx :: Number
   , cy :: Number
   , r :: Number
@@ -480,11 +483,13 @@ svgCircle attributes children =
                     (NonEmptyString.nes (Proxy :: Proxy "fill"))
                     (Just (Color.toHexString attributes.fill))
                 )
-            , Just
-                ( Tuple.Tuple
-                    (NonEmptyString.nes (Proxy :: Proxy "stroke"))
-                    (Just (Color.toHexString attributes.stroke))
+            , Prelude.map
+                ( \stroke ->
+                    Tuple.Tuple
+                      (NonEmptyString.nes (Proxy :: Proxy "stroke"))
+                      (Just (Color.toHexString stroke))
                 )
+                attributes.stroke
             , Just
                 ( Tuple.Tuple
                     (NonEmptyString.nes (Proxy :: Proxy "cx"))
@@ -547,6 +552,69 @@ svgG attributes elementList =
         ]
     )
     (Data.ElementList elementList)
+
+svgPolygon ::
+  { points :: NonEmptyArray { x :: Number, y :: Number }
+  , stroke :: Color.Color
+  , fill :: Color.Color
+  } ->
+  Data.RawHtmlElement
+svgPolygon attributes =
+  Data.htmlElement
+    (NonEmptyString.nes (Proxy :: Proxy "polygon"))
+    ( Map.fromFoldable
+        [ Tuple.Tuple
+            (NonEmptyString.nes (Proxy :: Proxy "points"))
+            ( Just
+                ( String.joinWith " "
+                    ( NonEmptyArray.toArray
+                        ( Prelude.map
+                            (\{ x, y } -> String.joinWith "," [ Prelude.show x, Prelude.show y ])
+                            attributes.points
+                        )
+                    )
+                )
+            )
+        , Tuple.Tuple
+            (NonEmptyString.nes (Proxy :: Proxy "stroke"))
+            (Just (Color.toHexString attributes.stroke))
+        , Tuple.Tuple
+            (NonEmptyString.nes (Proxy :: Proxy "fill"))
+            (Just (Color.toHexString attributes.fill))
+        ]
+    )
+    (Data.ElementList [])
+
+svgEllipse ::
+  { cx :: Number
+  , cy :: Number
+  , rx :: Number
+  , ry :: Number
+  , fill :: Color.Color
+  } ->
+  Data.RawHtmlElement
+svgEllipse attributes =
+  Data.htmlElement
+    (NonEmptyString.nes (Proxy :: Proxy "ellipse"))
+    ( Map.fromFoldable
+        [ Tuple.Tuple
+            (NonEmptyString.nes (Proxy :: Proxy "cx"))
+            (Just (Prelude.show attributes.cx))
+        , Tuple.Tuple
+            (NonEmptyString.nes (Proxy :: Proxy "cy"))
+            (Just (Prelude.show attributes.cy))
+        , Tuple.Tuple
+            (NonEmptyString.nes (Proxy :: Proxy "rx"))
+            (Just (Prelude.show attributes.rx))
+        , Tuple.Tuple
+            (NonEmptyString.nes (Proxy :: Proxy "ry"))
+            (Just (Prelude.show attributes.ry))
+        , Tuple.Tuple
+            (NonEmptyString.nes (Proxy :: Proxy "fill"))
+            (Just (Color.toHexString attributes.fill))
+        ]
+    )
+    (Data.ElementList [])
 
 classAttribute :: NonEmptyString -> Tuple.Tuple NonEmptyString (Maybe.Maybe String)
 classAttribute className =

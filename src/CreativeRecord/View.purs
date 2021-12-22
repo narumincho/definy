@@ -64,7 +64,7 @@ view state =
       Location.Article articleLocation ->
         articleToView
           articleLocation
-          (Article.locationToArticleOrTop articleLocation)
+          (Article.articleLocationToArticle articleLocation)
 
 articleToView :: Location.ArticleLocation -> ArticleData.Article -> View.View Message.Message Location.Location
 articleToView location (ArticleData.Article { title, imagePath, children }) =

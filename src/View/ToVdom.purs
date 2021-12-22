@@ -534,6 +534,25 @@ svgElementToHtmlElement = case _ of
                 svgElementList
           }
       )
+  Data.Polygon rec ->
+    Vdom.ElementSvgPolygon
+      ( Vdom.SvgPolygon
+          rec
+      )
+  Data.Circle rec ->
+    Vdom.ElementSvgCircle
+      ( Vdom.SvgCircle
+          { id: Nothing
+          , class: Nothing
+          , fill: rec.fill
+          , stroke: Nothing
+          , cx: rec.cx
+          , cy: rec.cy
+          , r: rec.r
+          , children: []
+          }
+      )
+  Data.Ellipse rec -> Vdom.ElementSvgEllipse (Vdom.SvgEllipse rec)
 
 sha256HashValueToClassName :: Hash.Sha256HashValue -> NonEmptyString
 sha256HashValueToClassName sha256HashValue =
