@@ -2,7 +2,6 @@ module CreativeRecord.Article.CpsLabAdventCalendar2021 where
 
 import CreativeRecord.Article.Data as Data
 import CreativeRecord.StaticResource as StaticResource
-import Data.Maybe (Maybe(..))
 import Data.String.NonEmpty as NonEmptyString
 import StructuredUrl as StructuredUrl
 import Type.Proxy (Proxy(..))

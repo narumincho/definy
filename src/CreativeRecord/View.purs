@@ -88,12 +88,12 @@ articleToView location (ArticleData.Article { title, imagePath, children }) =
                 , padding: 0.5
                 }
                 (NonEmptyString.toString title)
-            , View.Image
-                { alternativeText:
-                    ""
+            , View.image
+                { alternativeText: ""
                 , height: 10.0
                 , path: imagePath
                 , width: View.Percentage 100.0
+                , objectFit: View.Contain
                 }
             ]
           , children

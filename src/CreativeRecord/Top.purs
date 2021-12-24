@@ -62,7 +62,7 @@ externalLink url imageUrl text =
     , backgroundColor: linkBackGroundColor
     , hover: View.BoxHoverStyle { animation: Just zoomAnimation }
     }
-    [ View.Image
+    [ View.image
         { path: imageUrl
         , width: View.Percentage 100.0
         , height: 8.0
@@ -81,7 +81,7 @@ articleLinkView articleLocation =
       , link: View.LinkSameOrigin (Location.Article articleLocation)
       , hover: View.BoxHoverStyle { animation: Just zoomAnimation }
       }
-      [ View.Image
+      [ View.image
           { path: imagePath
           , width: View.Percentage 100.0
           , height: 8.0

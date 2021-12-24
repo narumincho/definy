@@ -4,6 +4,7 @@ module Css
   , Declaration
   , Keyframe(..)
   , Keyframes(..)
+  , ObjectFitValue(..)
   , OverflowValue(..)
   , Rule(..)
   , Selector(..)
@@ -26,7 +27,7 @@ module Css
   , keyFrameToString
   , lineHeight
   , margin0
-  , objectFitConver
+  , objectFit
   , overflow
   , padding
   , ruleListToString
@@ -355,11 +356,18 @@ justifySelfCenter =
     , value: NonEmptyString.nes (Proxy :: _ "center")
     }
 
-objectFitConver :: Declaration
-objectFitConver =
+data ObjectFitValue
+  = Contain
+  | Cover
+
+objectFit :: ObjectFitValue -> Declaration
+objectFit value =
   Declaration
     { property: NonEmptyString.nes (Proxy :: _ "object-fit")
-    , value: NonEmptyString.nes (Proxy :: _ "cover")
+    , value:
+        case value of
+          Contain -> NonEmptyString.nes (Proxy :: _ "contain")
+          Cover -> NonEmptyString.nes (Proxy :: _ "cover")
     }
 
 transformScale :: Number -> Declaration
