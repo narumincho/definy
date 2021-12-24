@@ -1,4 +1,4 @@
-module CreativeRecord.Article.Wip (view) where
+module CreativeRecord.Article.Star (view) where
 
 import CreativeRecord.Article.Data as Data
 import CreativeRecord.StaticResource as StaticResource
@@ -9,8 +9,8 @@ import View.Data as View
 view :: Data.Article
 view =
   Data.Article
-    { title: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "このページはまだ作成中です!")
-    , imagePath: StaticResource.definy20210811Png
+    { title: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "星の図形について")
+    , imagePath: StaticResource.starPng
     , children:
         [ View.boxY
             {}
@@ -18,7 +18,9 @@ view =
                 { markup: View.Heading2
                 , padding: 0.5
                 }
-                "このページはまだ作成中です!"
+                "星の図形について"
+            , View.text {}
+                "移植中です"
             ]
         ]
     }
