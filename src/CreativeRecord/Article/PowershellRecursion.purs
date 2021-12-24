@@ -15,11 +15,6 @@ view =
         [ View.boxY
             { gap: 0.5 }
             [ View.text
-                { markup: View.Heading2
-                , padding: 0.5
-                }
-                "PowerShell で フォルダ内のファイルに対して 再帰的にコマンドを実行する"
-            , View.text
                 { padding: 0.5 }
                 "以下のコードを拡張子.ps1で保存して ./ファイル名.ps1 で実行できる"
             , View.text

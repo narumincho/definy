@@ -14,12 +14,7 @@ view =
     , children:
         [ View.boxY
             {}
-            [ View.text
-                { markup: View.Heading2
-                , padding: 0.5
-                }
-                "リストUIのボタン操作の挙動"
-            , View.text {}
+            [ View.text {}
                 "移植中です"
             ]
         ]

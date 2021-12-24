@@ -14,12 +14,7 @@ view =
     , children:
         [ View.boxY
             {}
-            [ View.text
-                { markup: View.Heading2
-                , padding: 0.5
-                }
-                "モンスターとのエンカウントについて"
-            , View.text {}
+            [ View.text {}
                 "移植中です"
             ]
         ]

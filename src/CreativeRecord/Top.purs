@@ -4,17 +4,15 @@ module CreativeRecord.Top
 
 import Prelude
 import Color as Color
+import CreativeRecord.Article as Article
 import CreativeRecord.Article.Data as ArticleData
 import CreativeRecord.Location as Location
 import CreativeRecord.Messgae as Message
-import CreativeRecord.Article.CpsLabAdventCalendar2021 as CpsLabAdventCalendar2021
-import CreativeRecord.Article.PowershellRecursion as PowershellRecursion
 import CreativeRecord.StaticResource as StaticResource
 import CreativeRecord.SvgImage as SvgImage
 import Css as Css
 import Data.Map as Map
 import Data.Maybe (Maybe(..))
-import Data.String.NonEmpty (NonEmptyString)
 import Data.String.NonEmpty as NonEmptyString
 import Data.UInt as UInt
 import Prelude as Prelude
@@ -73,31 +71,45 @@ externalLink url imageUrl text =
     , View.text { padding: 0.5 } text
     ]
 
-articleLink :: ArticleTitleAndImageUrl -> View.Element Message.Message Location.Location
-articleLink (ArticleTitleAndImageUrl { location, imagePath, title }) =
-  View.boxY
-    { backgroundColor: linkBackGroundColor
-    , link: View.LinkSameOrigin location
-    , hover: View.BoxHoverStyle { animation: Just zoomAnimation }
-    }
-    [ View.Image
-        { path: imagePath
-        , width: View.Percentage 100.0
-        , height: 8.0
-        , alternativeText: append (NonEmptyString.toString title) "のイメージ画像"
-        }
-    , View.text { padding: 0.5 } (NonEmptyString.toString title)
+articleLinkView :: Location.ArticleLocation -> View.Element Message.Message Location.Location
+articleLinkView articleLocation =
+  let
+    (ArticleData.Article { title, imagePath }) = Article.articleLocationToArticle articleLocation
+  in
+    View.boxY
+      { backgroundColor: linkBackGroundColor
+      , link: View.LinkSameOrigin (Location.Article articleLocation)
+      , hover: View.BoxHoverStyle { animation: Just zoomAnimation }
+      }
+      [ View.Image
+          { path: imagePath
+          , width: View.Percentage 100.0
+          , height: 8.0
+          , alternativeText: append (NonEmptyString.toString title) "のイメージ画像"
+          }
+      , View.text { padding: 0.5 } (NonEmptyString.toString title)
+      ]
+
+articleListView :: View.Element Message.Message Location.Location
+articleListView =
+  articleLocationListToViewElement
+    [ Location.PowershellRecursion
+    , Location.SvgBasic
+    , Location.SvgStandaloneEmbed
+    , Location.AboutDesiredRoute
+    , Location.MessageWindow
+    , Location.DesiredRouteFont
+    , Location.ListSelectionBehavior
+    , Location.UiColor
+    , Location.DesiredRouteEncounter
+    , Location.Star
+    , Location.DesiredRouteMonster
+    , Location.NPetitcomIme
+    , Location.CpsLabAdventCalendar2021
     ]
 
-newtype ArticleTitleAndImageUrl
-  = ArticleTitleAndImageUrl
-  { imagePath :: StructuredUrl.PathAndSearchParams
-  , title :: NonEmptyString
-  , location :: Location.Location
-  }
-
-articleListToViewElement :: Array ArticleTitleAndImageUrl -> View.Element Message.Message Location.Location
-articleListToViewElement list =
+articleLocationListToViewElement :: Array Location.ArticleLocation -> View.Element Message.Message Location.Location
+articleLocationListToViewElement list =
   View.boxY
     { paddingTopBottom: 0.5
     , paddingLeftRight: 0.5
@@ -109,7 +121,7 @@ articleListToViewElement list =
               { gap: 0.5
               , gridTemplateColumns1FrCount: 3
               }
-              (Prelude.map articleLink row)
+              (Prelude.map articleLinkView row)
         )
         (Util.groupBySize (UInt.fromInt 3) list)
     )
@@ -210,71 +222,5 @@ view count =
       , padding: 0.5
       }
       "ナルミンチョが書いた記事"
-  , articleListToViewElement
-      [ ArticleTitleAndImageUrl
-          { title: ArticleData.getTitle PowershellRecursion.view
-          , imagePath: StaticResource.powershell_iconPng
-          , location: Location.Article Location.PowershellRecursion
-          }
-      , ArticleTitleAndImageUrl
-          { title: NonEmptyString.nes (Proxy :: _ "SVGの基本")
-          , imagePath: StaticResource.svg_basicPng
-          , location: Location.Article Location.SvgBasic
-          }
-      , ArticleTitleAndImageUrl
-          { title: NonEmptyString.nes (Proxy :: _ "単体SVGと埋め込みSVG")
-          , imagePath: StaticResource.grape_svg_codePng
-          , location: Location.Article Location.SvgStandaloneEmbed
-          }
-      , ArticleTitleAndImageUrl
-          { title: NonEmptyString.nes (Proxy :: _ "DESIRED Routeについて")
-          , imagePath: StaticResource.desired_route_titlePng
-          , location: Location.Article Location.AboutDesiredRoute
-          }
-      , ArticleTitleAndImageUrl
-          { title: NonEmptyString.nes (Proxy :: _ "メッセージウィンドウの話")
-          , imagePath: StaticResource.windowPng
-          , location: Location.Article Location.MessageWindow
-          }
-      , ArticleTitleAndImageUrl
-          { title: NonEmptyString.nes (Proxy :: _ "DESIRED RouteとNPIMEのフォントの描画処理")
-          , imagePath: StaticResource.fontPng
-          , location: Location.Article Location.DesiredRouteFont
-          }
-      , ArticleTitleAndImageUrl
-          { title: NonEmptyString.nes (Proxy :: _ "リストUIのボタン操作の挙動")
-          , imagePath: StaticResource.list_uiPng
-          , location: Location.Article Location.ListSelectionBehavior
-          }
-      , ArticleTitleAndImageUrl
-          { title: NonEmptyString.nes (Proxy :: _ "UIの配色")
-          , imagePath: StaticResource.colorPng
-          , location: Location.Article Location.UiColor
-          }
-      , ArticleTitleAndImageUrl
-          { title: NonEmptyString.nes (Proxy :: _ "モンスターとのエンカウントについて")
-          , imagePath: StaticResource.battlePng
-          , location: Location.Article Location.DesiredRouteEncounter
-          }
-      , ArticleTitleAndImageUrl
-          { title: NonEmptyString.nes (Proxy :: _ "星の図形について")
-          , imagePath: StaticResource.starPng
-          , location: Location.Article Location.Star
-          }
-      , ArticleTitleAndImageUrl
-          { title: NonEmptyString.nes (Proxy :: _ "DESIRED Routeに登場する予定だった敵モンスター")
-          , imagePath: StaticResource.kamausagiPng
-          , location: Location.Article Location.DesiredRouteMonster
-          }
-      , ArticleTitleAndImageUrl
-          { title: NonEmptyString.nes (Proxy :: _ "Nプチコン漢字入力(N Petitcom IME)")
-          , imagePath: StaticResource.henkanPng
-          , location: Location.Article Location.NPetitcomIme
-          }
-      , ArticleTitleAndImageUrl
-          { title: ArticleData.getTitle CpsLabAdventCalendar2021.view
-          , imagePath: StaticResource.definy20210811Png
-          , location: Location.Article Location.CpsLabAdventCalendar2021
-          }
-      ]
+  , articleListView
   ]

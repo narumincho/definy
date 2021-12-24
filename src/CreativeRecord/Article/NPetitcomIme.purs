@@ -10,16 +10,11 @@ view :: Data.Article
 view =
   Data.Article
     { title: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "Nプチコン漢字入力(N Petitcom IME)")
-    , imagePath: StaticResource.kamausagiPng
+    , imagePath: StaticResource.henkanPng
     , children:
         [ View.boxY
             {}
-            [ View.text
-                { markup: View.Heading2
-                , padding: 0.5
-                }
-                "Nプチコン漢字入力(N Petitcom IME)"
-            , View.text {}
+            [ View.text {}
                 "移植中です"
             ]
         ]

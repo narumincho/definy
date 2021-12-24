@@ -14,12 +14,7 @@ view =
     , children:
         [ View.boxY
             {}
-            [ View.text
-                { markup: View.Heading2
-                , padding: 0.5
-                }
-                "UIの配色"
-            , View.text {}
+            [ View.text {}
                 "移植中です"
             ]
         ]

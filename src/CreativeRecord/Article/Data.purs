@@ -1,6 +1,5 @@
 module CreativeRecord.Article.Data
   ( Article(..)
-  , getTitle
   ) where
 
 import CreativeRecord.Location as Location
@@ -15,6 +14,3 @@ newtype Article
   , children :: Array (View.Element Message.Message Location.Location)
   , imagePath :: StructuredUrl.PathAndSearchParams
   }
-
-getTitle :: Article -> NonEmptyString
-getTitle (Article { title }) = title

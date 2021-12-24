@@ -16,13 +16,7 @@ view =
     , children:
         [ View.boxY
             { gap: 0.5 }
-            [ View.text
-                { markup: View.Heading2
-                , padding: 0.5
-                , click: Nothing
-                }
-                "型システムと協力して世界を構築する"
-            , View.boxX
+            [ View.boxX
                 {}
                 [ View.text
                     { padding: 0.5 }
