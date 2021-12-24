@@ -83,6 +83,18 @@ articleToView location (ArticleData.Article { title, imagePath, children }) =
                     , svg: SvgImage.webSiteLogo
                     }
                 ]
+            , View.text
+                { markup: View.Heading2
+                , padding: 0.5
+                }
+                (NonEmptyString.toString title)
+            , View.image
+                { alternativeText: ""
+                , height: 10.0
+                , path: imagePath
+                , width: View.Percentage 100.0
+                , objectFit: View.Contain
+                }
             ]
           , children
           , [ backToTop, copyright ]

@@ -2,7 +2,6 @@ module CreativeRecord.Article.CpsLabAdventCalendar2021 where
 
 import CreativeRecord.Article.Data as Data
 import CreativeRecord.StaticResource as StaticResource
-import Data.Maybe (Maybe(..))
 import Data.String.NonEmpty as NonEmptyString
 import StructuredUrl as StructuredUrl
 import Type.Proxy (Proxy(..))
@@ -16,13 +15,7 @@ view =
     , children:
         [ View.boxY
             { gap: 0.5 }
-            [ View.text
-                { markup: View.Heading2
-                , padding: 0.5
-                , click: Nothing
-                }
-                "型システムと協力して世界を構築する"
-            , View.boxX
+            [ View.boxX
                 {}
                 [ View.text
                     { padding: 0.5 }

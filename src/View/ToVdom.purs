@@ -408,33 +408,7 @@ elementToHtmlElementAndStyleDict { element, parentScrollX, parentScrollY } = cas
         , styleDict
         , keyframesDict: Map.empty
         }
-  Data.Image { width, height, path, alternativeText } ->
-    let
-      { styleDict, className } =
-        createStyleDictAndClassName
-          ( ViewStyle
-              { declarationList:
-                  [ percentageOrRemWidthToCssDeclaration width
-                  , Css.heightRem height
-                  , Css.objectFitConver
-                  ]
-              , hoverDeclarationList: []
-              }
-          )
-    in
-      ElementAndStyleDict
-        { element:
-            Vdom.ElementImg
-              ( Vdom.Img
-                  { id: Nothing
-                  , class: Just className
-                  , alt: alternativeText
-                  , src: path
-                  }
-              )
-        , styleDict
-        , keyframesDict: Map.empty
-        }
+  Data.ElementImage image -> imageElementToHtmlElement image
   Data.BoxElement e -> boxToVdomElementAndStyleDict { box: e, parentScrollX, parentScrollY }
 
 textToHtmlElementAndStyleDict :: forall message location. Data.Text message -> ElementAndStyleDict message location
@@ -509,6 +483,39 @@ textToHtmlElementAndStyleDict (Data.Text { padding, markup, text, click }) =
                     , children: Vdom.ChildrenText text
                     }
                 )
+      , styleDict
+      , keyframesDict: Map.empty
+      }
+
+imageElementToHtmlElement :: forall message location. Data.Image -> ElementAndStyleDict message location
+imageElementToHtmlElement (Data.Image rec) =
+  let
+    { styleDict, className } =
+      createStyleDictAndClassName
+        ( ViewStyle
+            { declarationList:
+                [ percentageOrRemWidthToCssDeclaration rec.width
+                , Css.heightRem rec.height
+                , Css.objectFit
+                    ( case rec.objectFit of
+                        Data.Cover -> Css.Cover
+                        Data.Contain -> Css.Contain
+                    )
+                ]
+            , hoverDeclarationList: []
+            }
+        )
+  in
+    ElementAndStyleDict
+      { element:
+          Vdom.ElementImg
+            ( Vdom.Img
+                { id: Nothing
+                , class: Just className
+                , alt: rec.alternativeText
+                , src: rec.path
+                }
+            )
       , styleDict
       , keyframesDict: Map.empty
       }

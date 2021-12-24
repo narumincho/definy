@@ -16,12 +16,7 @@ view =
     , children:
         [ View.boxY
             {}
-            [ View.text
-                { markup: View.Heading2
-                , padding: 0.5
-                }
-                "SVGの基本!"
-            , View.text {}
+            [ View.text {}
                 "SVG(Scalable Vector Graphics)はベクタ形式の画像を表現するためのルール. W3C(World Wide Web Consortium)によって標準化された."
             , View.text {} "SVGで描かれたみかん"
             , View.boxX {}
