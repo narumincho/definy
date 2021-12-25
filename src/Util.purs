@@ -95,7 +95,7 @@ jsonFromNonEmptyString nonEmptyString =
 
 class RowTraversable :: RowList Type -> Row Type -> Row Type -> (Type -> Type) -> (Type -> Type) -> Constraint
 class RowTraversable list xs ys m f | list -> ys m where
-  traverseRow :: (RowList.RLProxy list) -> (forall v. m v -> f v) -> { | xs } -> f { | ys }
+  traverseRow :: (RowList.RLProxy list) -> (forall v. m v -> f v) -> Record xs -> f (Record ys)
 
 instance rowTraversableNil ::
   Applicative.Applicative f =>
@@ -122,5 +122,5 @@ runParallelRecord ::
   PrimRowList.RowToList mr rowList =>
   RowTraversable rowList mr r m f =>
   Parallel.Parallel f m =>
-  { | mr } -> m { | r }
+  (Record mr) -> m (Record r)
 runParallelRecord = Parallel.sequential <<< traverseRow (RowList.RLProxy :: RowList.RLProxy rowList) Parallel.parallel
