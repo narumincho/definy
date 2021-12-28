@@ -3,16 +3,16 @@ module Playground
   ) where
 
 import Prelude
+
 import Console as Console
-import Data.Array as Array
 import Data.Maybe (Maybe(..))
 import Data.String as String
 import Data.Symbol as Symbol
 import Effect (Effect)
 import Prim.Row as Row
-import Prim.RowList as PrimRowList
+import Prim.RowList (RowList, Nil, Cons, class RowToList)
 import Record as Record
-import Type.Data.RowList as RowList
+import Type.Data.RowList as RLProxy
 import Type.Proxy (Proxy(..))
 
 class StyleTypeToClassNameType styleType classNameType | styleType -> classNameType where
@@ -33,42 +33,41 @@ data Style
 newtype ClassName
   = ClassName String
 
-toString :: forall rs ls. (PrimRowList.RowToList rs ls) => (ShowRecordFields ls rs) => (Record rs) -> String
-toString record = showRecordFields (RowList.RLProxy :: RowList.RLProxy ls) record
+toString :: forall rs ls. (RowToList rs ls) => (ShowRecordFields ls rs) => (Record rs) -> String
+toString record = showRecordFields (RLProxy.RLProxy :: RLProxy.RLProxy ls) record
 
-class ShowRecordFields (rowlist :: PrimRowList.RowList Type) (row :: Row Type) where
-  showRecordFields :: RowList.RLProxy rowlist -> Record row -> String
+class ShowRecordFields (rowlist :: RowList Type) (row :: Row Type) where
+  showRecordFields :: RLProxy.RLProxy rowlist -> Record row -> String
 
-instance showRecordFieldsNil :: ShowRecordFields PrimRowList.Nil row where
+instance showRecordFieldsNil :: ShowRecordFields Nil row where
   showRecordFields _ _ = "nilだ"
 else instance showRecordFieldsTargetFiled ::
   (ShowRecordFields rowlistTail row) =>
-  ShowRecordFields (PrimRowList.Cons "target" value rowlistTail) row where
+  ShowRecordFields (Cons "target" value rowlistTail) row where
   showRecordFields _ record =
     String.joinWith ","
       [ "target のフォールドだけ特別扱いだ!"
-      , showRecordFields (RowList.RLProxy :: RowList.RLProxy rowlistTail) record
+      , showRecordFields (RLProxy.RLProxy :: RLProxy.RLProxy rowlistTail) record
       ]
 else instance showRecordFieldsCons ::
   ( Symbol.IsSymbol key
   , ShowRecordFields rowlistTail row
   ) =>
-  ShowRecordFields (PrimRowList.Cons key value rowlistTail) row where
+  ShowRecordFields (Cons key value rowlistTail) row where
   showRecordFields _ record =
     String.joinWith ","
       [ Symbol.reflectSymbol (Symbol.SProxy :: Symbol.SProxy key)
-      , showRecordFields (RowList.RLProxy :: RowList.RLProxy rowlistTail) record
+      , showRecordFields (RLProxy.RLProxy :: RLProxy.RLProxy rowlistTail) record
       ]
 
-toAllJustValue :: forall rs ls out. (PrimRowList.RowToList rs ls) => (AllValueMaybe ls rs out) => (Record rs) -> Record out
-toAllJustValue value = toMaybe (RowList.RLProxy :: RowList.RLProxy ls) value
+toAllJustValue :: forall rs ls out. (RowToList rs ls) => (AllValueMaybe ls rs out) => (Record rs) -> Record out
+toAllJustValue value = toMaybe (RLProxy.RLProxy :: RLProxy.RLProxy ls) value
 
-class AllValueMaybe :: PrimRowList.RowList Type -> Row Type -> Row Type -> Constraint
-class AllValueMaybe list xs ys | list -> ys where
-  toMaybe :: RowList.RLProxy list -> Record xs -> Record ys
+class AllValueMaybe (list:: RowList Type) (xs::Row Type) (ys::Row Type) | list -> ys where
+  toMaybe :: RLProxy.RLProxy list -> Record xs -> Record ys
 
 instance allValueMaybeNil ::
-  AllValueMaybe PrimRowList.Nil xs () where
+  AllValueMaybe Nil xs () where
   toMaybe _ _ = {}
 
 instance allValueMaybeCons ::
@@ -78,7 +77,7 @@ instance allValueMaybeCons ::
   , Row.Lacks key ysTail
   , AllValueMaybe tail xs ysTail
   ) =>
-  AllValueMaybe (PrimRowList.Cons key (value) tail) xs ys where
+  AllValueMaybe (Cons key (value) tail) xs ys where
   toMaybe _ obj =
     let
       maybeValue :: Maybe value
@@ -86,7 +85,7 @@ instance allValueMaybeCons ::
     in
       Record.insert (Symbol.SProxy :: _ key)
         maybeValue
-        (toMaybe (RowList.RLProxy :: _ tail) obj)
+        (toMaybe (RLProxy.RLProxy :: _ tail) obj)
 
 -- Row.Cons で分解結合できるのが, Row
 styleToClass :: Style -> ClassName
@@ -135,3 +134,56 @@ data ChildrenWithClassName
 
 data ChildrenDiff
   = ChildrenDiff
+
+
+
+
+newtype ElementWithClassOrStyle (classOrStyle :: Type)
+  = ElementWithClassOrStyle
+  { classOrStyle :: classOrStyle
+  , element :: Element classOrStyle
+  }
+
+data Element (classOrStyle :: Type)
+  = ElementDiv (Div classOrStyle)
+  | ElementHeading1 (Heading1 classOrStyle)
+  | ElementImage Image
+
+newtype Div (classOrStyle :: Type)
+  = Div { attribute :: Record DivAttribute, children :: ElementWithClassOrStyle classOrStyle }
+
+type DivAttribute
+  = ( id :: String )
+
+newtype Heading1 (classOrStyle :: Type)
+  = Heading1
+  { children :: ElementWithClassOrStyle classOrStyle
+  }
+
+newtype Image
+  = Image {}
+
+createValue :: forall isNumber resultType. (TypeFuncClass isNumber resultType) => Proxy isNumber -> resultType
+createValue pro = valueData pro
+
+class TypeFuncClass (isNumber :: E) (resultType :: Type) | isNumber -> resultType where
+  valueData :: Proxy isNumber -> resultType
+
+instance TypeFuncClass True String where
+  valueData _ = "str だ"
+
+instance TypeFuncClass False Int where
+  valueData _ = 999
+
+foreign import kind E
+
+foreign import data True :: E
+
+foreign import data False :: E
+
+foreign import data HtmlOrSvgElement :: Type
+
+eValue = createValue (Proxy :: Proxy True)
+
+class Elementable (elementType::Type) where
+  toHtmlOrSvgElement :: elementType -> Effect HtmlOrSvgElement
