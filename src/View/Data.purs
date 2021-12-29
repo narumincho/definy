@@ -14,23 +14,20 @@ module View.Data
   , ViewBox(..)
   , ViewStyle(..)
   , XOrY(..)
-  , boxX
-  , boxY
   , createStyle
-  , text
   ) where
 
 import Color as Color
 import Css as Css
 import Data.Array.NonEmpty (NonEmptyArray)
 import Data.Maybe (Maybe(..))
-import Data.Maybe as Maybe
 import Data.String.NonEmpty (NonEmptyString)
 import Data.String.NonEmpty as NonEmptyString
 import Language as Language
 import Option as Option
 import StructuredUrl as StructuredUrl
 import Type.Proxy as Proxy
+import Util as Util
 
 newtype View :: Type -> Type -> Type
 -- | 見た目を表現するデータ. HTML Option より HTML と離れた, 抽象度の高く 扱いやすいものにする.
@@ -75,7 +72,7 @@ createStyle ::
 createStyle option normal =
   let
     rec =
-      optionRecordToMaybeRecord
+      Util.optionRecordToMaybeRecord
         (Proxy.Proxy :: _ ())
         (Proxy.Proxy :: _ StyleOptional)
         option
@@ -204,175 +201,3 @@ data SvgElement
 data PercentageOrRem
   = Rem Number
   | Percentage Number
-
-type BoxOptional message location
-  = ( gap :: Number
-    , paddingTopBottom :: Number
-    , paddingLeftRight :: Number
-    , height :: Number
-    , backgroundColor :: Color.Color
-    , gridTemplateColumns1FrCount :: Int
-    , link :: Link message location
-    , hover :: BoxHoverStyle
-    , scrollX :: Boolean
-    , scrollY :: Boolean
-    )
-
--- | 縦方向に box を配置する
-boxY ::
-  forall message location (r :: Row Type).
-  Option.FromRecord
-    r
-    ()
-    (BoxOptional message location) =>
-  Record r ->
-  (Array (Element message location)) ->
-  Element message location
-boxY option children =
-  let
-    rec =
-      optionRecordToMaybeRecord
-        (Proxy.Proxy :: _ ())
-        (Proxy.Proxy :: _ (BoxOptional message location))
-        option
-  in
-    BoxElement
-      ( Box
-          { backgroundColor: rec.backgroundColor
-          , children: children
-          , direction: Y
-          , gap:
-              case rec.gap of
-                Just gap -> gap
-                Nothing -> 0.0
-          , gridTemplateColumns1FrCount: rec.gridTemplateColumns1FrCount
-          , height: rec.height
-          , hover:
-              case rec.hover of
-                Just hover -> hover
-                Nothing -> boxHoverStyleNone
-          , link: rec.link
-          , paddingLeftRight:
-              case rec.paddingLeftRight of
-                Just paddingLeftRight -> paddingLeftRight
-                Nothing -> 0.0
-          , paddingTopBottom:
-              case rec.paddingTopBottom of
-                Just paddingTopBottom -> paddingTopBottom
-                Nothing -> 0.0
-          , scrollX:
-              case rec.scrollX of
-                Just scrollX -> scrollX
-                Nothing -> false
-          , scrollY:
-              case rec.scrollY of
-                Just scrollY -> scrollY
-                Nothing -> false
-          }
-      )
-
--- | 横方向に box を配置する
-boxX ::
-  forall message location (r :: Row Type).
-  Option.FromRecord
-    r
-    ()
-    (BoxOptional message location) =>
-  Record r ->
-  (Array (Element message location)) ->
-  Element message location
-boxX option children =
-  let
-    rec =
-      optionRecordToMaybeRecord
-        (Proxy.Proxy :: _ ())
-        (Proxy.Proxy :: _ (BoxOptional message location))
-        option
-  in
-    BoxElement
-      ( Box
-          { backgroundColor: rec.backgroundColor
-          , children: children
-          , direction: X
-          , gap:
-              case rec.gap of
-                Just gap -> gap
-                Nothing -> 0.0
-          , gridTemplateColumns1FrCount: rec.gridTemplateColumns1FrCount
-          , height: rec.height
-          , hover:
-              case rec.hover of
-                Just hover -> hover
-                Nothing -> boxHoverStyleNone
-          , link: rec.link
-          , paddingLeftRight:
-              case rec.paddingLeftRight of
-                Just paddingLeftRight -> paddingLeftRight
-                Nothing -> 0.0
-          , paddingTopBottom:
-              case rec.paddingTopBottom of
-                Just paddingTopBottom -> paddingTopBottom
-                Nothing -> 0.0
-          , scrollX:
-              case rec.scrollX of
-                Just scrollX -> scrollX
-                Nothing -> false
-          , scrollY:
-              case rec.scrollY of
-                Just scrollY -> scrollY
-                Nothing -> false
-          }
-      )
-
-type TextOptional message
-  = ( markup :: TextMarkup
-    , padding :: Number
-    , click :: message
-    )
-
-text ::
-  forall message location (r :: Row Type).
-  Option.FromRecord
-    r
-    ()
-    (TextOptional message) =>
-  Record r -> String -> Element message location
-text option textValue =
-  let
-    rec =
-      optionRecordToMaybeRecord
-        (Proxy.Proxy :: _ ())
-        (Proxy.Proxy :: _ (TextOptional message))
-        option
-  in
-    ElementText
-      ( Text
-          { markup:
-              case rec.markup of
-                Just markup -> markup
-                Nothing -> None
-          , padding:
-              case rec.padding of
-                Just padding -> padding
-                Nothing -> 0.0
-          , click: rec.click
-          , text: textValue
-          }
-      )
-
-boxHoverStyleNone :: BoxHoverStyle
-boxHoverStyleNone = BoxHoverStyle { animation: Maybe.Nothing }
-
-optionRecordToMaybeRecord ::
-  forall (optionRecord :: Row Type) (maybeRecord :: Row Type) (required :: Row Type) (optional :: Row Type).
-  Option.FromRecord optionRecord required optional =>
-  Option.ToRecord required optional maybeRecord =>
-  Proxy.Proxy required ->
-  Proxy.Proxy optional ->
-  Record optionRecord ->
-  Record maybeRecord
-optionRecordToMaybeRecord _ _ optionRecord =
-  Option.recordToRecord
-    ( Option.recordFromRecord optionRecord ::
-        Option.Record required optional
-    )

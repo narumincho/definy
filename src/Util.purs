@@ -1,12 +1,13 @@
 module Util
   ( class RowTraversable
-  , traverseRow
   , groupBySize
   , jsonFromNonEmptyString
   , listUpdateAtOverAutoCreate
+  , optionRecordToMaybeRecord
   , runParallelRecord
   , toParallel
   , toParallelWithReturn
+  , traverseRow
   , tupleListToJson
   ) where
 
@@ -23,11 +24,13 @@ import Data.Tuple as Tuple
 import Data.UInt as UInt
 import Effect.Aff as Aff
 import Foreign.Object as Object
+import Option as Option
 import Prim.Row as Row
 import Prim.RowList (RowList)
 import Prim.RowList as PrimRowList
 import Record as Record
 import Type.Data.RowList as RowList
+import Type.Proxy as Proxy
 
 listUpdateAtOverAutoCreate :: forall e. Array e -> UInt.UInt -> (Maybe.Maybe e -> e) -> e -> Array e
 listUpdateAtOverAutoCreate list index func fillElement = case Array.index list (UInt.toInt index) of
@@ -124,3 +127,17 @@ runParallelRecord ::
   Parallel.Parallel f m =>
   (Record mr) -> m (Record r)
 runParallelRecord = Parallel.sequential <<< traverseRow (RowList.RLProxy :: RowList.RLProxy rowList) Parallel.parallel
+
+optionRecordToMaybeRecord ::
+  forall (optionRecord :: Row Type) (maybeRecord :: Row Type) (required :: Row Type) (optional :: Row Type).
+  Option.FromRecord optionRecord required optional =>
+  Option.ToRecord required optional maybeRecord =>
+  Proxy.Proxy required ->
+  Proxy.Proxy optional ->
+  Record optionRecord ->
+  Record maybeRecord
+optionRecordToMaybeRecord _ _ optionRecord =
+  Option.recordToRecord
+    ( Option.recordFromRecord optionRecord ::
+        Option.Record required optional
+    )

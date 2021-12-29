@@ -39,7 +39,7 @@ zoomAnimation =
 
 snsLink :: StructuredUrl.StructuredUrl -> View.Svg -> String -> View.Element Message.Message Location.Location
 snsLink url logo text =
-  View.boxX
+  ViewHelper.boxX
     { link: View.LinkExternal url
     , paddingLeftRight: 0.5
     , paddingTopBottom: 0.5
@@ -53,12 +53,12 @@ snsLink url logo text =
         , svg: logo
         , isJustifySelfCenter: false
         }
-    , View.text { padding: 0.5 } text
+    , ViewHelper.text { padding: 0.5 } text
     ]
 
 externalLink :: StructuredUrl.StructuredUrl -> StructuredUrl.PathAndSearchParams -> String -> View.Element Message.Message Location.Location
 externalLink url imageUrl text =
-  View.boxY
+  ViewHelper.boxY
     { link: View.LinkExternal url
     , backgroundColor: linkBackGroundColor
     , hover: View.BoxHoverStyle { animation: Just zoomAnimation }
@@ -69,7 +69,7 @@ externalLink url imageUrl text =
         , height: 8.0
         , alternativeText: append text "のアイコン"
         }
-    , View.text { padding: 0.5 } text
+    , ViewHelper.text { padding: 0.5 } text
     ]
 
 articleLinkView :: Location.ArticleLocation -> View.Element Message.Message Location.Location
@@ -77,7 +77,7 @@ articleLinkView articleLocation =
   let
     (ArticleData.Article { title, imagePath }) = Article.articleLocationToArticle articleLocation
   in
-    View.boxY
+    ViewHelper.boxY
       { backgroundColor: linkBackGroundColor
       , link: View.LinkSameOrigin (Location.Article articleLocation)
       , hover: View.BoxHoverStyle { animation: Just zoomAnimation }
@@ -88,7 +88,7 @@ articleLinkView articleLocation =
           , height: 8.0
           , alternativeText: append (NonEmptyString.toString title) "のイメージ画像"
           }
-      , View.text { padding: 0.5 } (NonEmptyString.toString title)
+      , ViewHelper.text { padding: 0.5 } (NonEmptyString.toString title)
       ]
 
 articleListView :: View.Element Message.Message Location.Location
@@ -111,14 +111,14 @@ articleListView =
 
 articleLocationListToViewElement :: Array Location.ArticleLocation -> View.Element Message.Message Location.Location
 articleLocationListToViewElement list =
-  View.boxY
+  ViewHelper.boxY
     { paddingTopBottom: 0.5
     , paddingLeftRight: 0.5
     , gap: 0.5
     }
     ( Prelude.map
         ( \row ->
-            View.boxX
+            ViewHelper.boxX
               { gap: 0.5
               , gridTemplateColumns1FrCount: 3
               }
@@ -129,13 +129,13 @@ articleLocationListToViewElement list =
 
 view :: Int -> Array (View.Element Message.Message Location.Location)
 view count =
-  [ View.text
+  [ ViewHelper.text
       { markup: View.Heading2
       , padding: 0.5
       , click: Message.CountUp
       }
       (Prelude.append "ナルミンチョの SNS アカウント" (Prelude.show count))
-  , View.boxX
+  , ViewHelper.boxX
       { paddingTopBottom: 0.5
       , paddingLeftRight: 0.5
       , gap: 0.5
@@ -177,12 +177,12 @@ view count =
           SvgImage.youTubeLogo
           "ナルミンチョ"
       ]
-  , View.text
+  , ViewHelper.text
       { markup: View.Heading2
       , padding: 0.5
       }
       "ナルミンチョが作った Webアプリ"
-  , View.boxX
+  , ViewHelper.boxX
       { paddingTopBottom: 0.5
       , paddingLeftRight: 0.5
       , gap: 0.5
@@ -218,7 +218,7 @@ view count =
           StaticResource.tsukumartPng
           "つくマート"
       ]
-  , View.text
+  , ViewHelper.text
       { markup: View.Heading2
       , padding: 0.5
       }

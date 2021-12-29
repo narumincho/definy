@@ -36,7 +36,7 @@ view state =
           { appName
           , children:
               Array.concat
-                [ [ View.boxY
+                [ [ ViewHelper.boxY
                       { link: View.LinkSameOrigin Location.Top
                       , paddingTopBottom: 3.0
                       }
@@ -73,7 +73,7 @@ articleToView location (ArticleData.Article { title, imagePath, children }) =
     { appName: NonEmptyString.nes (Proxy :: _ "ナルミンチョの創作記録")
     , children:
         Array.concat
-          [ [ View.boxY
+          [ [ ViewHelper.boxY
                 { link: View.LinkSameOrigin Location.Top
                 , paddingTopBottom: 3.0
                 }
@@ -84,7 +84,7 @@ articleToView location (ArticleData.Article { title, imagePath, children }) =
                     , svg: SvgImage.webSiteLogo
                     }
                 ]
-            , View.text
+            , ViewHelper.text
                 { markup: View.Heading2
                 , padding: 0.5
                 }
@@ -117,18 +117,18 @@ articleToView location (ArticleData.Article { title, imagePath, children }) =
 
 backToTop :: View.Element Message.Message Location.Location
 backToTop =
-  View.boxX
+  ViewHelper.boxX
     {}
-    [ View.boxX
+    [ ViewHelper.boxX
         { paddingLeftRight: 0.5
         , paddingTopBottom: 0.5
         , link: View.LinkSameOrigin Location.Top
         }
-        [ View.text {} "ホームに戻る" ]
+        [ ViewHelper.text {} "ホームに戻る" ]
     ]
 
 copyright :: View.Element Message.Message Location.Location
 copyright =
-  View.text
+  ViewHelper.text
     { padding: 0.5 }
     "© 2021 narumincho"
