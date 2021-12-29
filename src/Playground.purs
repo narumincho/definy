@@ -3,17 +3,25 @@ module Playground
   ) where
 
 import Prelude
-
 import Console as Console
+import Data.Array as Array
+import Data.Generic.Rep as Rep
+import Data.Map as Map
 import Data.Maybe (Maybe(..))
 import Data.String as String
+import Data.String.NonEmpty (NonEmptyString)
+import Data.String.NonEmpty as NonEmptyString
 import Data.Symbol as Symbol
+import Data.Tuple as Tuple
 import Effect (Effect)
+import Effect.Exception (message)
+import Html.Data as HtmlData
 import Prim.Row as Row
 import Prim.RowList (RowList, Nil, Cons, class RowToList)
 import Record as Record
 import Type.Data.RowList as RLProxy
 import Type.Proxy (Proxy(..))
+import Type.Proxy as Proxy
 
 class StyleTypeToClassNameType styleType classNameType | styleType -> classNameType where
   e :: Proxy styleType -> Proxy styleType
@@ -63,7 +71,7 @@ else instance showRecordFieldsCons ::
 toAllJustValue :: forall rs ls out. (RowToList rs ls) => (AllValueMaybe ls rs out) => (Record rs) -> Record out
 toAllJustValue value = toMaybe (RLProxy.RLProxy :: RLProxy.RLProxy ls) value
 
-class AllValueMaybe (list:: RowList Type) (xs::Row Type) (ys::Row Type) | list -> ys where
+class AllValueMaybe (list :: RowList Type) (xs :: Row Type) (ys :: Row Type) | list -> ys where
   toMaybe :: RLProxy.RLProxy list -> Record xs -> Record ys
 
 instance allValueMaybeNil ::
@@ -98,92 +106,83 @@ main :: Effect Unit
 main =
   let
     value :: String
-    value = toString { sampleB: 32, target: "ターゲットの値だぜ", sampleC: "しーしー" }
+    value = getTypeData (Proxy.Proxy :: Proxy.Proxy SampleType)
   in
     do
-      Console.logValue "それな" {}
+      Console.logValue "それな" value
 
-newtype DivWithStyleAndEvent message location
-  = DivWithStyleAndEvent
-  { id :: String
-  , style :: Style
-  , click :: message
-  , children :: ChildrenWithStyleAndEvent message location
-  }
+data ElementOption
 
-newtype DivWithClassName
-  = DivWithClassName
-  { id :: String
-  , className :: ClassName
-  , children :: ChildrenWithClassName
-  }
+foreign import data WithStyleAndEvent :: ElementOption
 
-newtype DivDiff
-  = DivDiff
-  { id :: Maybe String
-  , className :: Maybe ClassName
-  , childrenDiff :: ChildrenDiff
-  }
+foreign import data WithClassName :: ElementOption
 
-data ChildrenWithStyleAndEvent :: Type -> Type -> Type
-data ChildrenWithStyleAndEvent message location
-  = ChildrenWithStyleAndEvent
+foreign import data Diff :: ElementOption
 
-data ChildrenWithClassName
-  = ChildrenWithClassName
+value :: Element WithStyleAndEvent Int _
+value = ElementDiv { attributes: { id: Nothing }, events: { click: 32 } }
 
-data ChildrenDiff
-  = ChildrenDiff
+classValue :: Element WithClassName Int _
+classValue = ElementDiv { attributes: { id: Nothing }, className: NonEmptyString.nes (Proxy :: Proxy "sampleClass") }
 
+data Element (elementOption :: ElementOption) (message :: Type) (item :: Type)
+  = ElementDiv (ElementData elementOption DivAttribute ( click :: message ) item)
+  | ElementHeading (ElementData elementOption ( id :: Maybe NonEmptyString ) () item)
+  | ElementImage (ElementData elementOption ( alt :: String ) () item)
 
-
-
-newtype ElementWithClassOrStyle (classOrStyle :: Type)
-  = ElementWithClassOrStyle
-  { classOrStyle :: classOrStyle
-  , element :: Element classOrStyle
-  }
-
-data Element (classOrStyle :: Type)
-  = ElementDiv (Div classOrStyle)
-  | ElementHeading1 (Heading1 classOrStyle)
-  | ElementImage Image
-
-newtype Div (classOrStyle :: Type)
-  = Div { attribute :: Record DivAttribute, children :: ElementWithClassOrStyle classOrStyle }
-
+type DivAttribute :: Row Type
 type DivAttribute
-  = ( id :: String )
+  = ( id :: Maybe NonEmptyString )
 
-newtype Heading1 (classOrStyle :: Type)
-  = Heading1
-  { children :: ElementWithClassOrStyle classOrStyle
-  }
+type DivEvent (message :: Type)
+  = ( click :: message )
 
-newtype Image
-  = Image {}
+type ElementData (elementOption :: ElementOption) (attributes :: Row Type) (events :: Row Type) (recordType :: Type)
+  = (ElementDataClass elementOption attributes events recordType) => recordType
 
-createValue :: forall isNumber resultType. (TypeFuncClass isNumber resultType) => Proxy isNumber -> resultType
-createValue pro = valueData pro
+class ElementDataClass (elementOption :: ElementOption) (attributes :: Row Type) (events :: Row Type) (outputType :: Type) | elementOption attributes events -> outputType
 
-class TypeFuncClass (isNumber :: E) (resultType :: Type) | isNumber -> resultType where
-  valueData :: Proxy isNumber -> resultType
+-- | そのままの形式
+instance elementDataClassWithStyleAndEvent :: ElementDataClass WithStyleAndEvent attributes events { attributes :: Record attributes, events :: Record events }
+-- | 集計済みの形式
+else instance elementDataClassWithClassName :: ElementDataClass WithClassName attributes events { attributes :: Record attributes, className :: NonEmptyString }
+-- | 差分の形式
+else instance elementDataClassDiff :: ElementDataClass Diff attributes events { attributes :: Record attributes, className :: NonEmptyString }
 
-instance TypeFuncClass True String where
-  valueData _ = "str だ"
+idAttribute :: NonEmptyString -> Tuple.Tuple NonEmptyString (Maybe String)
+idAttribute id =
+  ( Tuple.Tuple
+      (NonEmptyString.nes (Proxy :: Proxy "id"))
+      (Just (NonEmptyString.toString id))
+  )
 
-instance TypeFuncClass False Int where
-  valueData _ = 999
+getTypeData ::
+  forall (t :: Type) (represent :: Type).
+  (Rep.Generic t represent) =>
+  NewTypeSampleClass represent =>
+  Proxy.Proxy t -> String
+getTypeData _ = getOneValue (Proxy :: Proxy represent)
 
-foreign import kind E
+class NewTypeSampleClass (represent :: Type) where
+  getOneValue :: Proxy represent -> String
 
-foreign import data True :: E
+instance oneConstractor :: Symbol.IsSymbol name => NewTypeSampleClass (Rep.Constructor name Rep.NoArguments) where
+  getOneValue _ = append "コンストラクタを発見!" (Symbol.reflectSymbol (Proxy :: Proxy name))
 
-foreign import data False :: E
+instance zeroConstractor :: NewTypeSampleClass Rep.NoConstructors where
+  getOneValue _ = "コンストラクタはないようだ!!"
 
-foreign import data HtmlOrSvgElement :: Type
+instance sumConstractor :: NewTypeSampleClass (Rep.Sum a b) where
+  getOneValue _ = "Sumのようだ"
 
-eValue = createValue (Proxy :: Proxy True)
+data SampleType
 
-class Elementable (elementType::Type) where
-  toHtmlOrSvgElement :: elementType -> Effect HtmlOrSvgElement
+derive instance eqSampleType :: Eq SampleType
+
+derive instance genericSampleType :: Rep.Generic SampleType _
+
+type II
+  = II (forall e. (Show e) => e)
+
+iiValue :: Array II
+iiValue = [ II 3, II 32.43, II "それな" ]
