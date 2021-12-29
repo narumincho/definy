@@ -21,10 +21,10 @@ view =
                 "SVG(Scalable Vector Graphics)はベクタ形式の画像を表現するためのルール. W3C(World Wide Web Consortium)によって標準化された."
             , ViewHelper.text {} "SVGで描かれたみかん"
             , ViewHelper.boxX {}
-                [ View.SvgElement
+                [ ViewHelper.svg
                     { height: 16.0
                     , isJustifySelfCenter: true
-                    , width: View.Rem 16.0
+                    , width: ViewHelper.Rem 16.0
                     , svg: orange
                     }
                 ]

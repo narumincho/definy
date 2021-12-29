@@ -47,8 +47,8 @@ snsLink url logo text =
     , backgroundColor: Just linkBackGroundColor
     , hover: View.BoxHoverStyle { animation: Just zoomAnimation }
     }
-    [ View.SvgElement
-        { width: View.Rem 2.0
+    [ ViewHelper.svg
+        { width: ViewHelper.Rem 2.0
         , height: 2.0
         , svg: logo
         , isJustifySelfCenter: false

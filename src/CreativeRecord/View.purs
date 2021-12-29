@@ -40,8 +40,8 @@ view state =
                       { link: View.LinkSameOrigin Location.Top
                       , paddingTopBottom: 3.0
                       }
-                      [ View.SvgElement
-                          { width: View.Percentage 90.0
+                      [ ViewHelper.svg
+                          { width: ViewHelper.Percentage 90.0
                           , height: 5.0
                           , isJustifySelfCenter: true
                           , svg: SvgImage.webSiteLogo
@@ -77,8 +77,8 @@ articleToView location (ArticleData.Article { title, imagePath, children }) =
                 { link: View.LinkSameOrigin Location.Top
                 , paddingTopBottom: 3.0
                 }
-                [ View.SvgElement
-                    { width: View.Percentage 90.0
+                [ ViewHelper.svg
+                    { width: ViewHelper.Percentage 90.0
                     , height: 5.0
                     , isJustifySelfCenter: true
                     , svg: SvgImage.webSiteLogo

@@ -311,28 +311,13 @@ elementToHtmlElementAndStyleDict ::
 elementToHtmlElementAndStyleDict = case _ of
   Data.ElementText text -> textToHtmlElementAndStyleDict text
   Data.SvgElement
-    { height
-  , isJustifySelfCenter
+    { style
   , svg: Data.Svg { viewBox: Data.ViewBox viewBox, svgElementList }
-  , width
   } ->
     let
       { styleDict, className } =
         createStyleDictAndClassName
-          ( Data.ViewStyle
-              { normal:
-                  Array.concat
-                    [ [ percentageOrRemWidthToCssDeclaration width
-                      , Css.heightRem height
-                      ]
-                    , if isJustifySelfCenter then
-                        [ Css.justifySelfCenter ]
-                      else
-                        []
-                    ]
-              , hover: []
-              }
-          )
+          style
     in
       ElementAndStyleDict
         { element:
@@ -501,11 +486,6 @@ sha256HashValueToAnimationName sha256HashValue =
   NonEmptyString.prependString
     "nva_"
     (Hash.toNonEmptyString sha256HashValue)
-
-percentageOrRemWidthToCssDeclaration :: Data.PercentageOrRem -> Css.Declaration
-percentageOrRemWidthToCssDeclaration = case _ of
-  Data.Rem value -> Css.widthRem value
-  Data.Percentage value -> Css.widthPercent value
 
 viewStyleToSha256HashValue :: Data.ViewStyle -> Hash.Sha256HashValue
 viewStyleToSha256HashValue (Data.ViewStyle { normal, hover }) =

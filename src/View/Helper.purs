@@ -3,6 +3,7 @@ module View.Helper
   , boxX
   , boxY
   , image
+  , svg
   , text
   ) where
 
@@ -14,6 +15,7 @@ import StructuredUrl as StructuredUrl
 import Type.Proxy as Proxy
 import View.Data as Data
 import Util as Util
+import Data.Array as Array
 
 type ImageRequired
   = ( path :: StructuredUrl.PathAndSearchParams
@@ -220,6 +222,26 @@ image option =
               }
         }
       )
+
+svg :: forall message location. { height :: Number, isJustifySelfCenter :: Boolean, width :: PercentageOrRem, svg :: Data.Svg } -> Data.Element message location
+svg rec =
+  Data.SvgElement
+    { style:
+        Data.ViewStyle
+          { normal:
+              Array.concat
+                [ [ percentageOrRemWidthToCssDeclaration rec.width
+                  , Css.heightRem rec.height
+                  ]
+                , if rec.isJustifySelfCenter then
+                    [ Css.justifySelfCenter ]
+                  else
+                    []
+                ]
+          , hover: []
+          }
+    , svg: rec.svg
+    }
 
 percentageOrRemWidthToCssDeclaration :: PercentageOrRem -> Css.Declaration
 percentageOrRemWidthToCssDeclaration = case _ of

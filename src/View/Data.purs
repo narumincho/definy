@@ -5,7 +5,6 @@ module View.Data
   , Element(..)
   , Image(..)
   , Link(..)
-  , PercentageOrRem(..)
   , Svg(..)
   , SvgElement(..)
   , Text(..)
@@ -128,10 +127,8 @@ data Element :: Type -> Type -> Type
 data Element message location
   = ElementText (Text message)
   | SvgElement
-    { svg :: Svg
-    , width :: PercentageOrRem
-    , height :: Number
-    , isJustifySelfCenter :: Boolean
+    { style :: ViewStyle
+    , svg :: Svg
     }
   | ElementImage { style :: ViewStyle, image :: Image }
   | BoxElement (Box message location)
@@ -197,7 +194,3 @@ data SvgElement
     , ry :: Number
     , fill :: Color.Color
     }
-
-data PercentageOrRem
-  = Rem Number
-  | Percentage Number
