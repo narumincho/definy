@@ -13,9 +13,11 @@ module View.Data
   , TextMarkup(..)
   , View(..)
   , ViewBox(..)
+  , ViewStyle(..)
   , XOrY(..)
   , boxX
   , boxY
+  , createStyle
   , image
   , text
   ) where
@@ -49,10 +51,44 @@ newtype View message location
   , {- OGPに使われるカバー画像のパス (HTML出力のみ反映, CORSの制限を受けない) -} coverImagePath :: StructuredUrl.PathAndSearchParams
   , {- ページのパス (HTML出力のみ反映) -} path :: StructuredUrl.PathAndSearchParams
   , {- オリジン -} origin :: NonEmptyString.NonEmptyString
+  , {- body のスタイル -} bodyStyle :: ViewStyle
   , {- 子要素 -} children :: Array (Element message location)
-  , scrollX :: Boolean
-  , scrollY :: Boolean
   }
+
+newtype ViewStyle
+  = ViewStyle
+  { normal :: Array Css.Declaration
+  , hover :: Array Css.Declaration
+  }
+
+type StyleOptional
+  = ( hover :: Array Css.Declaration )
+
+-- | スタイルを指定する
+createStyle ::
+  forall (r :: Row Type).
+  Option.FromRecord
+    r
+    ()
+    StyleOptional =>
+  Record r ->
+  (Array Css.Declaration) ->
+  ViewStyle
+createStyle option normal =
+  let
+    rec =
+      optionRecordToMaybeRecord
+        (Proxy.Proxy :: _ ())
+        (Proxy.Proxy :: _ StyleOptional)
+        option
+  in
+    ViewStyle
+      { normal
+      , hover:
+          case rec.hover of
+            Just hover -> hover
+            Nothing -> []
+      }
 
 newtype Box :: Type -> Type -> Type
 -- | 縦か横方向に積める箱

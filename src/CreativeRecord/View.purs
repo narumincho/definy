@@ -10,6 +10,7 @@ import CreativeRecord.State as State
 import CreativeRecord.StaticResource as StaticResource
 import CreativeRecord.SvgImage as SvgImage
 import CreativeRecord.Top as Top
+import Css as Css
 import Data.Array as Array
 import Data.Maybe as Maybe
 import Data.String.NonEmpty (NonEmptyString)
@@ -58,8 +59,7 @@ view state =
           , path: Location.toPath location
           , themeColor: Color.orange
           , origin: Origin.origin
-          , scrollX: true
-          , scrollY: true
+          , bodyStyle: View.createStyle {} [ Css.overflow { x: Css.Hidden, y: Css.Scroll } ]
           }
       Location.Article articleLocation ->
         articleToView
@@ -111,8 +111,7 @@ articleToView location (ArticleData.Article { title, imagePath, children }) =
     , path: Location.toPath (Location.Article location)
     , themeColor: Color.orange
     , origin: Origin.origin
-    , scrollX: true
-    , scrollY: true
+    , bodyStyle: View.createStyle {} [ Css.overflow { x: Css.Hidden, y: Css.Scroll } ]
     }
 
 backToTop :: View.Element Message.Message Location.Location
