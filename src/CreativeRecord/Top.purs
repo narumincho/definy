@@ -20,6 +20,7 @@ import StructuredUrl as StructuredUrl
 import Type.Proxy (Proxy(..))
 import Util as Util
 import View.Data as View
+import View.Helper as ViewHelper
 
 linkBackGroundColor :: Color.Color
 linkBackGroundColor = Color.fromInt 0x333333
@@ -62,9 +63,9 @@ externalLink url imageUrl text =
     , backgroundColor: linkBackGroundColor
     , hover: View.BoxHoverStyle { animation: Just zoomAnimation }
     }
-    [ View.image
+    [ ViewHelper.image
         { path: imageUrl
-        , width: View.Percentage 100.0
+        , width: ViewHelper.Percentage 100.0
         , height: 8.0
         , alternativeText: append text "のアイコン"
         }
@@ -81,9 +82,9 @@ articleLinkView articleLocation =
       , link: View.LinkSameOrigin (Location.Article articleLocation)
       , hover: View.BoxHoverStyle { animation: Just zoomAnimation }
       }
-      [ View.image
+      [ ViewHelper.image
           { path: imagePath
-          , width: View.Percentage 100.0
+          , width: ViewHelper.Percentage 100.0
           , height: 8.0
           , alternativeText: append (NonEmptyString.toString title) "のイメージ画像"
           }

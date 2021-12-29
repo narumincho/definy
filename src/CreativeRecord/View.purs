@@ -19,6 +19,7 @@ import Language as Language
 import Prelude as Prelude
 import Type.Proxy (Proxy(..))
 import View.Data as View
+import View.Helper as ViewHelper
 
 appName :: NonEmptyString
 appName = NonEmptyString.nes (Proxy :: _ "ナルミンチョの創作記録")
@@ -88,12 +89,12 @@ articleToView location (ArticleData.Article { title, imagePath, children }) =
                 , padding: 0.5
                 }
                 (NonEmptyString.toString title)
-            , View.image
+            , ViewHelper.image
                 { alternativeText: ""
                 , height: 10.0
                 , path: imagePath
-                , width: View.Percentage 100.0
-                , objectFit: View.Contain
+                , width: ViewHelper.Percentage 100.0
+                , objectFit: Css.Contain
                 }
             ]
           , children

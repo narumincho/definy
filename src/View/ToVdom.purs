@@ -430,24 +430,10 @@ textToHtmlElementAndStyleDict (Data.Text { padding, markup, text, click }) =
       , keyframesDict: Map.empty
       }
 
-imageElementToHtmlElement :: forall message location. Data.Image -> ElementAndStyleDict message location
-imageElementToHtmlElement (Data.Image rec) =
+imageElementToHtmlElement :: forall message location. { style :: Data.ViewStyle, image :: Data.Image } -> ElementAndStyleDict message location
+imageElementToHtmlElement { style, image: Data.Image rec } =
   let
-    { styleDict, className } =
-      createStyleDictAndClassName
-        ( Data.ViewStyle
-            { normal:
-                [ percentageOrRemWidthToCssDeclaration rec.width
-                , Css.heightRem rec.height
-                , Css.objectFit
-                    ( case rec.objectFit of
-                        Data.Cover -> Css.Cover
-                        Data.Contain -> Css.Contain
-                    )
-                ]
-            , hover: []
-            }
-        )
+    { styleDict, className } = createStyleDictAndClassName style
   in
     ElementAndStyleDict
       { element:

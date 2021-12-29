@@ -5,7 +5,6 @@ module View.Data
   , Element(..)
   , Image(..)
   , Link(..)
-  , ObjectFitValue(..)
   , PercentageOrRem(..)
   , Svg(..)
   , SvgElement(..)
@@ -18,7 +17,6 @@ module View.Data
   , boxX
   , boxY
   , createStyle
-  , image
   , text
   ) where
 
@@ -138,21 +136,14 @@ data Element message location
     , height :: Number
     , isJustifySelfCenter :: Boolean
     }
-  | ElementImage Image
+  | ElementImage { style :: ViewStyle, image :: Image }
   | BoxElement (Box message location)
 
 newtype Image
   = Image
   { path :: StructuredUrl.PathAndSearchParams
-  , width :: PercentageOrRem
-  , height :: Number
   , alternativeText :: String
-  , objectFit :: ObjectFitValue
   }
-
-data ObjectFitValue
-  = Contain
-  | Cover
 
 newtype Text message
   = Text
@@ -366,44 +357,6 @@ text option textValue =
                 Nothing -> 0.0
           , click: rec.click
           , text: textValue
-          }
-      )
-
-type ImageRequired
-  = ( path :: StructuredUrl.PathAndSearchParams
-    , width :: PercentageOrRem
-    , height :: Number
-    , alternativeText :: String
-    )
-
-type ImageOptional
-  = ( objectFit :: ObjectFitValue )
-
-image ::
-  forall message location (r :: Row Type).
-  Option.FromRecord
-    r
-    ImageRequired
-    ImageOptional =>
-  Record r -> Element message location
-image option =
-  let
-    rec =
-      optionRecordToMaybeRecord
-        (Proxy.Proxy :: _ ImageRequired)
-        (Proxy.Proxy :: _ ImageOptional)
-        option
-  in
-    ElementImage
-      ( Image
-          { path: rec.path
-          , width: rec.width
-          , height: rec.height
-          , alternativeText: rec.alternativeText
-          , objectFit:
-              case rec.objectFit of
-                Just objectFit -> objectFit
-                Nothing -> Cover
           }
       )
 
