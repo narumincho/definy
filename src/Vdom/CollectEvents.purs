@@ -6,7 +6,7 @@ import Data.Maybe (Maybe(..))
 import Data.String.NonEmpty as NonEmptyString
 import Data.Tuple as Tuple
 import StructuredUrl as StructuredUrl
-import Vdom.Data as Vdom
+import Vdom.VdomPicked as Vdom
 import Vdom.PatchState as VdomPatchState
 import Vdom.Path as Path
 

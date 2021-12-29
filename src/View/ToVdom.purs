@@ -14,7 +14,7 @@ import Hash as Hash
 import Html.Wellknown as HtmlWellknown
 import Prelude as Prelude
 import StructuredUrl as StructuredUrl
-import Vdom.Data as Vdom
+import Vdom.VdomPicked as Vdom
 import Vdom.PatchState as VdomPatchState
 import View.Data as Data
 
@@ -23,7 +23,7 @@ toVdom ::
   { scriptPath :: Maybe StructuredUrl.PathAndSearchParams
   , view :: Data.View message location
   } ->
-  Vdom.Vdom message location
+  Vdom.VdomPicked message location
 toVdom { scriptPath, view: Data.View view } =
   let
     ( { childList: vdomChildren

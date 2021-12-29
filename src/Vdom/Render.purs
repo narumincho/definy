@@ -18,7 +18,7 @@ import Effect.Uncurried as EffectUncurried
 import Language as Language
 import StructuredUrl as StructuredUrl
 import Vdom.CollectEvents as CollectEvents
-import Vdom.Data as Vdom
+import Vdom.VdomPicked as Vdom
 import Vdom.PatchState as VdomPatchState
 import Vdom.Path as Path
 
@@ -324,7 +324,7 @@ renderChildren = case _ of
 -- | すべてをリセットして再描画する. 最初に1回呼ぶと良い.
 resetAndRender ::
   forall message location.
-  { vdom :: Vdom.Vdom message location
+  { vdom :: Vdom.VdomPicked message location
   , patchState :: VdomPatchState.PatchState message
   , locationToPathAndSearchParams :: location -> StructuredUrl.PathAndSearchParams
   , urlChangeMessageData :: location -> message

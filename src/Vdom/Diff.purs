@@ -7,10 +7,10 @@ import Data.Maybe (Maybe(..))
 import Data.Maybe as Maybe
 import Data.Tuple as Tuple
 import Prelude as Prelude
-import Vdom.Data as Data
+import Vdom.VdomPicked as Data
 import Vdom.PatchState as VdomPatchState
 
-createViewDiff :: forall message location. Data.Vdom message location -> Data.Vdom message location -> Data.ViewDiff message location
+createViewDiff :: forall message location. Data.VdomPicked message location -> Data.VdomPicked message location -> Data.ViewDiff message location
 createViewDiff (Data.Vdom oldVdom) (Data.Vdom newVdom) =
   Data.ViewDiff
     { patchOperationList:
