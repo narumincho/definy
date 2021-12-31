@@ -13,11 +13,11 @@ import Html.Wellknown as Wellknown
 import Prelude as Prelude
 import StructuredUrl as StructuredUrl
 import Type.Proxy (Proxy(..))
-import Vdom.Data as Data
+import Vdom.VdomPicked as Data
 
 toHtml ::
   forall message location.
-  { vdom :: Data.Vdom message location
+  { vdom :: Data.VdomPicked message location
   , locationToPathAndSearchParams :: location -> StructuredUrl.PathAndSearchParams
   } ->
   Html.RawHtmlElement
@@ -44,7 +44,7 @@ toHtml { vdom: vdom@(Data.Vdom rec), locationToPathAndSearchParams } =
         )
     )
 
-headElement :: forall message location. Data.Vdom message location -> Html.RawHtmlElement
+headElement :: forall message location. Data.VdomPicked message location -> Html.RawHtmlElement
 headElement (Data.Vdom option) =
   Wellknown.head
     ( Html.ElementList

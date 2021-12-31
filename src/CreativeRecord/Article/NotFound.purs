@@ -5,6 +5,7 @@ import CreativeRecord.StaticResource as StaticResource
 import Data.String.NonEmpty as NonEmptyString
 import Type.Proxy as Proxy
 import View.Data as View
+import View.Helper as ViewHelper
 
 view :: Data.Article
 view =
@@ -12,9 +13,9 @@ view =
     { title: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "ページが見つかりませんでした")
     , imagePath: StaticResource.not_foundPng
     , children:
-        [ View.boxY
+        [ ViewHelper.boxY
             {}
-            [ View.text
+            [ ViewHelper.text
                 { markup: View.Heading2
                 , padding: 0.5
                 }

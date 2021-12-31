@@ -7,35 +7,29 @@ import Data.Array.NonEmpty as NonEmptyArray
 import Data.Map as Map
 import Data.Maybe (Maybe(..))
 import Data.String as String
-import Data.String.NonEmpty (NonEmptyString)
-import Data.String.NonEmpty as NonEmptyString
 import Data.Tuple as Tuple
 import Hash as Hash
-import Html.Wellknown as HtmlWellknown
 import Prelude as Prelude
 import StructuredUrl as StructuredUrl
-import Vdom.Data as Vdom
 import Vdom.PatchState as VdomPatchState
+import Vdom.VdomPicked as Vdom
 import View.Data as Data
+import View.StyleDict as StyleDict
 
 toVdom ::
   forall message location.
   { scriptPath :: Maybe StructuredUrl.PathAndSearchParams
   , view :: Data.View message location
   } ->
-  Vdom.Vdom message location
+  Vdom.VdomPicked message location
 toVdom { scriptPath, view: Data.View view } =
   let
     ( { childList: vdomChildren
-      , styleDict
-      , keyframesDict
+      , styleDict: styleDictChildren
       }
-    ) =
-      viewChildrenToVdomChildren
-        { children: view.children
-        , parentScrollX: view.scrollX
-        , parentScrollY: view.scrollY
-        }
+    ) = viewChildrenToVdomChildren view.children
+
+    { className: bodyClassName, styleDict } = StyleDict.addStyleDictAndClassName styleDictChildren view.bodyStyle Map.empty
   in
     Vdom.Vdom
       { pageName: view.pageName
@@ -47,136 +41,42 @@ toVdom { scriptPath, view: Data.View view } =
       , coverImagePath: view.coverImagePath
       , path: Just view.path
       , origin: view.origin
-      , style:
-          htmlElementAndStyleDictToCssStatementList { styleDict, keyframesDict }
+      , style: StyleDict.toCssStatementList styleDict
       , scriptPath
       , children: vdomChildren
-      , bodyClass: Nothing
+      , bodyClass: Just bodyClassName
       , pointerMove: Nothing
       , pointerDown: Nothing
       }
 
-htmlElementAndStyleDictToCssStatementList ::
-  { keyframesDict :: Map.Map Hash.Sha256HashValue (Array Css.Keyframe)
-  , styleDict :: Map.Map Hash.Sha256HashValue ViewStyle
-  } ->
-  Css.StatementList
-htmlElementAndStyleDictToCssStatementList { keyframesDict, styleDict } =
-  Css.StatementList
-    { ruleList:
-        Array.concat
-          [ [ Css.Rule
-                { selector: Css.Type { elementName: HtmlWellknown.htmlTagName }
-                , declarationList: [ Css.height100Percent ]
-                }
-            , Css.Rule
-                { selector: Css.Type { elementName: HtmlWellknown.bodyTagName }
-                , declarationList:
-                    [ Css.height100Percent
-                    , Css.margin0
-                    , Css.backgroundColor Color.black
-                    , Css.displayGrid
-                    , Css.boxSizingBorderBox
-                    , Css.alignItems Css.Start
-                    ]
-                }
-            ]
-          , Array.concatMap
-              styleDictItemToCssRuleList
-              (Map.toUnfoldable styleDict)
-          ]
-    , keyframesList:
-        Prelude.map
-          ( \(Tuple.Tuple hashValue keyframeList) ->
-              Css.Keyframes
-                { name: sha256HashValueToAnimationName hashValue
-                , keyframeList
-                }
-          )
-          (Map.toUnfoldable keyframesDict)
-    }
-
-styleDictItemToCssRuleList :: Tuple.Tuple Hash.Sha256HashValue ViewStyle -> Array Css.Rule
-styleDictItemToCssRuleList (Tuple.Tuple hashValue (ViewStyle { declarationList, hoverDeclarationList })) =
-  Array.concat
-    [ if Array.null declarationList then
-        []
-      else
-        [ Css.Rule
-            { selector:
-                Css.Class
-                  { className: sha256HashValueToClassName hashValue
-                  , isHover: false
-                  }
-            , declarationList: declarationList
-            }
-        ]
-    , if Array.null hoverDeclarationList then
-        []
-      else
-        [ Css.Rule
-            { selector:
-                Css.Class
-                  { className: sha256HashValueToClassName hashValue
-                  , isHover: true
-                  }
-            , declarationList: hoverDeclarationList
-            }
-        ]
-    ]
-
-newtype ViewStyle
-  = ViewStyle
-  { declarationList :: Array Css.Declaration
-  , hoverDeclarationList :: Array Css.Declaration
-  }
-
 newtype ElementAndStyleDict message location
   = ElementAndStyleDict
   { element :: Vdom.Element message location
-  , styleDict :: Map.Map Hash.Sha256HashValue ViewStyle
-  , keyframesDict :: Map.Map Hash.Sha256HashValue (Array Css.Keyframe)
+  , styleDict :: StyleDict.StyleDict
   }
 
 boxToVdomElementAndStyleDict ::
   forall message location.
-  { box :: Data.Box message location
-  , parentScrollX :: Boolean
-  , parentScrollY :: Boolean
-  } ->
+  Data.Box message location ->
   ElementAndStyleDict message location
-boxToVdomElementAndStyleDict { box:
-    box@( Data.Box
-        boxRecord
-    )
-, parentScrollX
-, parentScrollY
-} =
+boxToVdomElementAndStyleDict box@( Data.Box
+    boxRecord
+) =
   let
     keyframeResult = boxGetKeyframeListAndAnimationName box
 
     { childList: vdomChildList
     , styleDict: childrenStyleDict
-    , keyframesDict: childrenKeyframesDict
-    } =
-      viewChildrenToVdomChildren
-        { children: boxRecord.children
-        , parentScrollX:
-            if boxRecord.scrollX then
-              true
-            else
-              parentScrollX
-        , parentScrollY:
-            if boxRecord.scrollY then
-              true
-            else
-              parentScrollY
-        }
+    } = viewChildrenToVdomChildren boxRecord.children
 
     { styleDict, className } =
-      addStyleDictAndClassName
+      StyleDict.addStyleDictAndClassName
         childrenStyleDict
-        (boxToBoxViewStyle { box, parentScrollX, parentScrollY, keyframeResult })
+        (boxToBoxViewStyle { box, keyframeResult })
+        ( case keyframeResult of
+            Just { animationHashValue, keyframeList } -> Map.singleton animationHashValue keyframeList
+            Nothing -> Map.empty
+        )
 
     vdomChildren :: Vdom.Children message location
     vdomChildren = case NonEmptyArray.fromArray vdomChildList of
@@ -214,19 +114,11 @@ boxToVdomElementAndStyleDict { box:
                     }
                 )
       , styleDict
-      , keyframesDict:
-          case keyframeResult of
-            Just { animationHashValue, keyframeList } ->
-              Map.insert animationHashValue keyframeList
-                childrenKeyframesDict
-            Nothing -> childrenKeyframesDict
       }
 
 boxToBoxViewStyle ::
   forall message location.
   { box :: Data.Box message location
-  , parentScrollX :: Boolean
-  , parentScrollY :: Boolean
   , keyframeResult ::
       Maybe
         { keyframeList :: Array Css.Keyframe
@@ -234,10 +126,10 @@ boxToBoxViewStyle ::
         , duration :: Number
         }
   } ->
-  ViewStyle
-boxToBoxViewStyle { box: Data.Box rec, parentScrollX, parentScrollY, keyframeResult } =
-  ViewStyle
-    { declarationList:
+  Data.ViewStyle
+boxToBoxViewStyle { box: Data.Box rec, keyframeResult } =
+  Data.ViewStyle
+    { normal:
         Array.concat
           [ [ Css.boxSizingBorderBox
             , Css.displayGrid
@@ -249,22 +141,6 @@ boxToBoxViewStyle { box: Data.Box rec, parentScrollX, parentScrollY, keyframeRes
             , Css.padding
                 { topBottom: rec.paddingTopBottom
                 , leftRight: rec.paddingLeftRight
-                }
-            , Css.overflow
-                { x:
-                    if rec.scrollX then
-                      Css.Scroll
-                    else if parentScrollX then
-                      Css.Visible
-                    else
-                      Css.Hidden
-                , y:
-                    if rec.scrollY then
-                      Css.Scroll
-                    else if parentScrollY then
-                      Css.Visible
-                    else
-                      Css.Hidden
                 }
             ]
           , case rec.height of
@@ -283,11 +159,11 @@ boxToBoxViewStyle { box: Data.Box rec, parentScrollX, parentScrollY, keyframeRes
               Just count -> [ Css.gridTemplateColumns count ]
               Nothing -> []
           ]
-    , hoverDeclarationList:
+    , hover:
         case keyframeResult of
           Just animationHashValue ->
             [ Css.animation
-                ( sha256HashValueToAnimationName
+                ( StyleDict.sha256HashValueToAnimationName
                     animationHashValue.animationHashValue
                 )
                 animationHashValue.duration
@@ -297,25 +173,17 @@ boxToBoxViewStyle { box: Data.Box rec, parentScrollX, parentScrollY, keyframeRes
 
 viewChildrenToVdomChildren ::
   forall message location.
-  { children :: Array (Data.Element message location)
-  , parentScrollX :: Boolean
-  , parentScrollY :: Boolean
-  } ->
+  Array (Data.Element message location) ->
   { childList :: Array (Tuple.Tuple String (Vdom.Element message location))
-  , styleDict :: Map.Map Hash.Sha256HashValue ViewStyle
-  , keyframesDict :: Map.Map Hash.Sha256HashValue (Array Css.Keyframe)
+  , styleDict :: StyleDict.StyleDict
   }
-viewChildrenToVdomChildren { children, parentScrollX, parentScrollY } =
+viewChildrenToVdomChildren children =
   let
     childrenElementAndStyleDict :: Array (ElementAndStyleDict message location)
     childrenElementAndStyleDict =
       Prelude.map
         ( \child ->
-            elementToHtmlElementAndStyleDict
-              { element: child
-              , parentScrollX
-              , parentScrollY
-              }
+            elementToHtmlElementAndStyleDict child
         )
         children
   in
@@ -328,15 +196,9 @@ viewChildrenToVdomChildren { children, parentScrollX, parentScrollY } =
           )
           childrenElementAndStyleDict
     , styleDict:
-        Map.fromFoldable
-          ( Array.concatMap
-              (\(ElementAndStyleDict { styleDict }) -> Map.toUnfoldable styleDict)
-              childrenElementAndStyleDict
-          )
-    , keyframesDict:
-        Map.fromFoldable
-          ( Array.concatMap
-              (\(ElementAndStyleDict { keyframesDict }) -> Map.toUnfoldable keyframesDict)
+        StyleDict.listStyleDictToStyleDict
+          ( Prelude.map
+              (\(ElementAndStyleDict { styleDict }) -> styleDict)
               childrenElementAndStyleDict
           )
     }
@@ -360,64 +222,21 @@ boxGetKeyframeListAndAnimationName (Data.Box { hover: Data.BoxHoverStyle { anima
 
 elementToHtmlElementAndStyleDict ::
   forall message location.
-  { element :: Data.Element message location
-  , parentScrollX :: Boolean
-  , parentScrollY :: Boolean
-  } ->
+  Data.Element message location ->
   ElementAndStyleDict message location
-elementToHtmlElementAndStyleDict { element, parentScrollX, parentScrollY } = case element of
+elementToHtmlElementAndStyleDict = case _ of
   Data.ElementText text -> textToHtmlElementAndStyleDict text
-  Data.SvgElement
-    { height
-  , isJustifySelfCenter
-  , svg: Data.Svg { viewBox: Data.ViewBox viewBox, svgElementList }
-  , width
-  } ->
-    let
-      { styleDict, className } =
-        createStyleDictAndClassName
-          ( ViewStyle
-              { declarationList:
-                  Array.concat
-                    [ [ percentageOrRemWidthToCssDeclaration width
-                      , Css.heightRem height
-                      ]
-                    , if isJustifySelfCenter then
-                        [ Css.justifySelfCenter ]
-                      else
-                        []
-                    ]
-              , hoverDeclarationList: []
-              }
-          )
-    in
-      ElementAndStyleDict
-        { element:
-            Vdom.svg
-              { children:
-                  Array.mapWithIndex
-                    (\index e -> Tuple.Tuple (Prelude.show index) (svgElementToHtmlElement e))
-                    svgElementList
-              , class: Just className
-              , id: Nothing
-              , viewBoxHeight: viewBox.height
-              , viewBoxWidth: viewBox.width
-              , viewBoxX: viewBox.x
-              , viewBoxY: viewBox.y
-              }
-        , styleDict
-        , keyframesDict: Map.empty
-        }
+  Data.SvgElement styleAndSvg -> svgToHtmlElement styleAndSvg
   Data.ElementImage image -> imageElementToHtmlElement image
-  Data.BoxElement e -> boxToVdomElementAndStyleDict { box: e, parentScrollX, parentScrollY }
+  Data.BoxElement e -> boxToVdomElementAndStyleDict e
 
 textToHtmlElementAndStyleDict :: forall message location. Data.Text message -> ElementAndStyleDict message location
 textToHtmlElementAndStyleDict (Data.Text { padding, markup, text, click }) =
   let
     { styleDict, className } =
-      createStyleDictAndClassName
-        ( ViewStyle
-            { declarationList:
+      StyleDict.createStyleDictAndClassName
+        ( Data.ViewStyle
+            { normal:
                 ( Array.concat
                     [ [ Css.color Color.white
                       , Css.padding { topBottom: padding, leftRight: padding }
@@ -428,9 +247,10 @@ textToHtmlElementAndStyleDict (Data.Text { padding, markup, text, click }) =
                         _ -> []
                     ]
                 )
-            , hoverDeclarationList: []
+            , hover: []
             }
         )
+        Map.empty
 
     clickMessageDataMaybe :: Maybe (VdomPatchState.ClickMessageData message)
     clickMessageDataMaybe =
@@ -484,27 +304,39 @@ textToHtmlElementAndStyleDict (Data.Text { padding, markup, text, click }) =
                     }
                 )
       , styleDict
-      , keyframesDict: Map.empty
       }
 
-imageElementToHtmlElement :: forall message location. Data.Image -> ElementAndStyleDict message location
-imageElementToHtmlElement (Data.Image rec) =
+svgToHtmlElement :: forall message location. { style :: Data.ViewStyle, svg :: Data.Svg } -> ElementAndStyleDict message location
+svgToHtmlElement { style
+, svg: Data.Svg { viewBox: Data.ViewBox viewBox, svgElementList }
+} =
   let
     { styleDict, className } =
-      createStyleDictAndClassName
-        ( ViewStyle
-            { declarationList:
-                [ percentageOrRemWidthToCssDeclaration rec.width
-                , Css.heightRem rec.height
-                , Css.objectFit
-                    ( case rec.objectFit of
-                        Data.Cover -> Css.Cover
-                        Data.Contain -> Css.Contain
-                    )
-                ]
-            , hoverDeclarationList: []
+      StyleDict.createStyleDictAndClassName
+        style
+        (Map.empty)
+  in
+    ElementAndStyleDict
+      { element:
+          Vdom.svg
+            { children:
+                Array.mapWithIndex
+                  (\index e -> Tuple.Tuple (Prelude.show index) (svgElementToHtmlElement e))
+                  svgElementList
+            , class: Just className
+            , id: Nothing
+            , viewBoxHeight: viewBox.height
+            , viewBoxWidth: viewBox.width
+            , viewBoxX: viewBox.x
+            , viewBoxY: viewBox.y
             }
-        )
+      , styleDict
+      }
+
+imageElementToHtmlElement :: forall message location. { style :: Data.ViewStyle, image :: Data.Image } -> ElementAndStyleDict message location
+imageElementToHtmlElement { style, image: Data.Image rec } =
+  let
+    { styleDict, className } = StyleDict.createStyleDictAndClassName style Map.empty
   in
     ElementAndStyleDict
       { element:
@@ -517,7 +349,6 @@ imageElementToHtmlElement (Data.Image rec) =
                 }
             )
       , styleDict
-      , keyframesDict: Map.empty
       }
 
 svgElementToHtmlElement :: forall message location. Data.SvgElement -> Vdom.Element message location
@@ -561,59 +392,7 @@ svgElementToHtmlElement = case _ of
       )
   Data.Ellipse rec -> Vdom.ElementSvgEllipse (Vdom.SvgEllipse rec)
 
-sha256HashValueToClassName :: Hash.Sha256HashValue -> NonEmptyString
-sha256HashValueToClassName sha256HashValue =
-  NonEmptyString.prependString
-    "nv_"
-    (Hash.toNonEmptyString sha256HashValue)
-
-sha256HashValueToAnimationName :: Hash.Sha256HashValue -> NonEmptyString
-sha256HashValueToAnimationName sha256HashValue =
-  NonEmptyString.prependString
-    "nva_"
-    (Hash.toNonEmptyString sha256HashValue)
-
-percentageOrRemWidthToCssDeclaration :: Data.PercentageOrRem -> Css.Declaration
-percentageOrRemWidthToCssDeclaration = case _ of
-  Data.Rem value -> Css.widthRem value
-  Data.Percentage value -> Css.widthPercent value
-
-viewStyleToSha256HashValue :: ViewStyle -> Hash.Sha256HashValue
-viewStyleToSha256HashValue (ViewStyle { declarationList, hoverDeclarationList }) =
-  Hash.stringToSha256HashValue
-    ( String.joinWith "!"
-        [ Css.declarationListToString declarationList
-        , Css.declarationListToString hoverDeclarationList
-        ]
-    )
-
 keyframeListToSha256HashValue :: Array Css.Keyframe -> Hash.Sha256HashValue
 keyframeListToSha256HashValue keyframeList =
   Hash.stringToSha256HashValue
     (String.joinWith "!" (Prelude.map Css.keyFrameToString keyframeList))
-
-createStyleDictAndClassName :: ViewStyle -> { styleDict :: Map.Map Hash.Sha256HashValue ViewStyle, className :: NonEmptyString }
-createStyleDictAndClassName viewStyle =
-  let
-    classNameHashValue :: Hash.Sha256HashValue
-    classNameHashValue = viewStyleToSha256HashValue viewStyle
-
-    className :: NonEmptyString
-    className = sha256HashValueToClassName classNameHashValue
-  in
-    { styleDict: Map.singleton classNameHashValue viewStyle
-    , className
-    }
-
-addStyleDictAndClassName :: Map.Map Hash.Sha256HashValue ViewStyle -> ViewStyle -> { styleDict :: Map.Map Hash.Sha256HashValue ViewStyle, className :: NonEmptyString }
-addStyleDictAndClassName styleDict viewStyle =
-  let
-    classNameHashValue :: Hash.Sha256HashValue
-    classNameHashValue = viewStyleToSha256HashValue viewStyle
-
-    className :: NonEmptyString
-    className = sha256HashValueToClassName classNameHashValue
-  in
-    { styleDict: Map.insert classNameHashValue viewStyle styleDict
-    , className
-    }

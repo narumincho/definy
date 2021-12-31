@@ -1,4 +1,4 @@
-module Vdom.Data
+module Vdom.VdomPicked
   ( Button(..)
   , Children(..)
   , ChildrenDiff(..)
@@ -27,7 +27,7 @@ module Vdom.Data
   , SvgPolygon(..)
   , SvgRec
   , TextArea(..)
-  , Vdom(..)
+  , VdomPicked(..)
   , ViewDiff(..)
   , ViewPatchOperation(..)
   , buttonDiff
@@ -62,8 +62,8 @@ import Prelude as Prelude
 import StructuredUrl as StructuredUrl
 import Vdom.PatchState as PatchState
 
-newtype Vdom :: Type -> Type -> Type
-newtype Vdom message location
+newtype VdomPicked :: Type -> Type -> Type
+newtype VdomPicked message location
   = Vdom
   { {- ページ名
   Google 検索のページ名や, タブ, ブックマークのタイトル, OGPのタイトルなどに使用される  -} pageName :: NonEmptyString

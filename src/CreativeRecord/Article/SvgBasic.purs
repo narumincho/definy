@@ -7,6 +7,7 @@ import Data.Array.NonEmpty as NonEmptyArray
 import Data.String.NonEmpty as NonEmptyString
 import Type.Proxy as Proxy
 import View.Data as View
+import View.Helper as ViewHelper
 
 view :: Data.Article
 view =
@@ -14,20 +15,20 @@ view =
     { title: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "SVGの基本")
     , imagePath: StaticResource.svg_basicPng
     , children:
-        [ View.boxY
+        [ ViewHelper.boxY
             {}
-            [ View.text {}
+            [ ViewHelper.text {}
                 "SVG(Scalable Vector Graphics)はベクタ形式の画像を表現するためのルール. W3C(World Wide Web Consortium)によって標準化された."
-            , View.text {} "SVGで描かれたみかん"
-            , View.boxX {}
-                [ View.SvgElement
+            , ViewHelper.text {} "SVGで描かれたみかん"
+            , ViewHelper.boxX {}
+                [ ViewHelper.svg
                     { height: 16.0
                     , isJustifySelfCenter: true
-                    , width: View.Rem 16.0
+                    , width: ViewHelper.Rem 16.0
                     , svg: orange
                     }
                 ]
-            , View.text {} "SVGの良いところはたくさんあるが、その中で2つ紹介したい"
+            , ViewHelper.text {} "SVGの良いところはたくさんあるが、その中で2つ紹介したい"
             ]
         ]
     }

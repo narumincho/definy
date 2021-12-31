@@ -10,6 +10,7 @@ import CreativeRecord.State as State
 import CreativeRecord.StaticResource as StaticResource
 import CreativeRecord.SvgImage as SvgImage
 import CreativeRecord.Top as Top
+import Css as Css
 import Data.Array as Array
 import Data.Maybe as Maybe
 import Data.String.NonEmpty (NonEmptyString)
@@ -18,6 +19,7 @@ import Language as Language
 import Prelude as Prelude
 import Type.Proxy (Proxy(..))
 import View.Data as View
+import View.Helper as ViewHelper
 
 appName :: NonEmptyString
 appName = NonEmptyString.nes (Proxy :: _ "ナルミンチョの創作記録")
@@ -34,12 +36,12 @@ view state =
           { appName
           , children:
               Array.concat
-                [ [ View.boxY
+                [ [ ViewHelper.boxY
                       { link: View.LinkSameOrigin Location.Top
                       , paddingTopBottom: 3.0
                       }
-                      [ View.SvgElement
-                          { width: View.Percentage 90.0
+                      [ ViewHelper.svg
+                          { width: ViewHelper.Percentage 90.0
                           , height: 5.0
                           , isJustifySelfCenter: true
                           , svg: SvgImage.webSiteLogo
@@ -58,8 +60,7 @@ view state =
           , path: Location.toPath location
           , themeColor: Color.orange
           , origin: Origin.origin
-          , scrollX: true
-          , scrollY: true
+          , bodyStyle: View.createStyle {} [ Css.overflow { x: Css.Hidden, y: Css.Scroll } ]
           }
       Location.Article articleLocation ->
         articleToView
@@ -72,28 +73,28 @@ articleToView location (ArticleData.Article { title, imagePath, children }) =
     { appName: NonEmptyString.nes (Proxy :: _ "ナルミンチョの創作記録")
     , children:
         Array.concat
-          [ [ View.boxY
+          [ [ ViewHelper.boxY
                 { link: View.LinkSameOrigin Location.Top
                 , paddingTopBottom: 3.0
                 }
-                [ View.SvgElement
-                    { width: View.Percentage 90.0
+                [ ViewHelper.svg
+                    { width: ViewHelper.Percentage 90.0
                     , height: 5.0
                     , isJustifySelfCenter: true
                     , svg: SvgImage.webSiteLogo
                     }
                 ]
-            , View.text
+            , ViewHelper.text
                 { markup: View.Heading2
                 , padding: 0.5
                 }
                 (NonEmptyString.toString title)
-            , View.image
+            , ViewHelper.image
                 { alternativeText: ""
                 , height: 10.0
                 , path: imagePath
-                , width: View.Percentage 100.0
-                , objectFit: View.Contain
+                , width: ViewHelper.Percentage 100.0
+                , objectFit: Css.Contain
                 }
             ]
           , children
@@ -111,24 +112,23 @@ articleToView location (ArticleData.Article { title, imagePath, children }) =
     , path: Location.toPath (Location.Article location)
     , themeColor: Color.orange
     , origin: Origin.origin
-    , scrollX: true
-    , scrollY: true
+    , bodyStyle: View.createStyle {} [ Css.overflow { x: Css.Hidden, y: Css.Scroll } ]
     }
 
 backToTop :: View.Element Message.Message Location.Location
 backToTop =
-  View.boxX
+  ViewHelper.boxX
     {}
-    [ View.boxX
+    [ ViewHelper.boxX
         { paddingLeftRight: 0.5
         , paddingTopBottom: 0.5
         , link: View.LinkSameOrigin Location.Top
         }
-        [ View.text {} "ホームに戻る" ]
+        [ ViewHelper.text {} "ホームに戻る" ]
     ]
 
 copyright :: View.Element Message.Message Location.Location
 copyright =
-  View.text
+  ViewHelper.text
     { padding: 0.5 }
     "© 2021 narumincho"
