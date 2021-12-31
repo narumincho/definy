@@ -3,12 +3,11 @@ module View.ToVdom (toVdom) where
 import Color as Color
 import Css as Css
 import Data.Array as Array
+import Data.Array.NonEmpty (NonEmptyArray)
 import Data.Array.NonEmpty as NonEmptyArray
 import Data.Map as Map
 import Data.Maybe (Maybe(..))
-import Data.String as String
 import Data.Tuple as Tuple
-import Hash as Hash
 import Prelude as Prelude
 import StructuredUrl as StructuredUrl
 import Vdom.PatchState as VdomPatchState
@@ -27,9 +26,9 @@ toVdom { scriptPath, view: Data.View view } =
     ( { childList: vdomChildren
       , styleDict: styleDictChildren
       }
-    ) = viewChildrenToVdomChildren view.children
+    ) = viewElementListToVdomChildren view.children
 
-    { className: bodyClassName, styleDict } = StyleDict.addStyleDictAndClassName styleDictChildren view.bodyStyle Map.empty
+    { className: bodyClassName, styleDict } = StyleDict.addStyleDictAndClassName styleDictChildren view.bodyStyle
   in
     Vdom.Vdom
       { pageName: view.pageName
@@ -55,129 +54,136 @@ newtype ElementAndStyleDict message location
   , styleDict :: StyleDict.StyleDict
   }
 
-boxToVdomElementAndStyleDict ::
+divToVdomElementAndStyleDict ::
   forall message location.
-  Data.Box message location ->
+  { style :: Data.ViewStyle, div :: Data.Div message location } ->
   ElementAndStyleDict message location
-boxToVdomElementAndStyleDict box@( Data.Box
-    boxRecord
-) =
+divToVdomElementAndStyleDict { style, div: Data.Div div } =
   let
-    keyframeResult = boxGetKeyframeListAndAnimationName box
+    { styleDict, className, vdomChildren } = case div.children of
+      Data.ElementListOrTextElementList elementList ->
+        let
+          { childList
+          , styleDict: childrenStyleDict
+          } = viewChildrenToVdomChildren elementList
 
-    { childList: vdomChildList
-    , styleDict: childrenStyleDict
-    } = viewChildrenToVdomChildren boxRecord.children
-
-    { styleDict, className } =
-      StyleDict.addStyleDictAndClassName
-        childrenStyleDict
-        (boxToBoxViewStyle { box, keyframeResult })
-        ( case keyframeResult of
-            Just { animationHashValue, keyframeList } -> Map.singleton animationHashValue keyframeList
-            Nothing -> Map.empty
-        )
-
-    vdomChildren :: Vdom.Children message location
-    vdomChildren = case NonEmptyArray.fromArray vdomChildList of
-      Just nonEmptyVdomChildren -> Vdom.ChildrenElementList nonEmptyVdomChildren
-      Nothing -> Vdom.ChildrenText ""
+          { className, styleDict } = StyleDict.addStyleDictAndClassName childrenStyleDict style
+        in
+          { className
+          , styleDict
+          , vdomChildren: Vdom.ChildrenElementList childList
+          }
+      Data.ElementListOrTextText _ ->
+        let
+          { className, styleDict } = StyleDict.createStyleDictAndClassName style
+        in
+          { className
+          , styleDict
+          , vdomChildren: Vdom.ChildrenText ""
+          }
   in
     ElementAndStyleDict
       { element:
-          case boxRecord.link of
-            Just (Data.LinkSameOrigin location) ->
-              Vdom.ElementSameOriginLink
-                ( Vdom.SameOriginLink
-                    { id: Nothing
-                    , class: Just className
-                    , href: location
-                    , children: vdomChildren
-                    }
-                )
-            Just (Data.LinkExternal url) ->
-              Vdom.ElementExternalLink
-                ( Vdom.ExternalLink
-                    { id: Nothing
-                    , class: Just className
-                    , href: url
-                    , children: vdomChildren
-                    }
-                )
-            Nothing ->
-              Vdom.ElementDiv
-                ( Vdom.Div
-                    { id: Nothing
-                    , class: Just className
-                    , click: Nothing
-                    , children: vdomChildren
-                    }
-                )
+          Vdom.ElementDiv
+            ( Vdom.Div
+                { id: Nothing
+                , class: Just className
+                , click: Nothing
+                , children: vdomChildren
+                }
+            )
       , styleDict
       }
 
-boxToBoxViewStyle ::
+sampleOriginAnchorToVdomElementAndStyleDict ::
   forall message location.
-  { box :: Data.Box message location
-  , keyframeResult ::
-      Maybe
-        { keyframeList :: Array Css.Keyframe
-        , animationHashValue :: Hash.Sha256HashValue
-        , duration :: Number
-        }
-  } ->
-  Data.ViewStyle
-boxToBoxViewStyle { box: Data.Box rec, keyframeResult } =
-  Data.ViewStyle
-    { normal:
-        Array.concat
-          [ [ Css.boxSizingBorderBox
-            , Css.displayGrid
-            , Css.gridAutoFlow case rec.direction of
-                Data.X -> Css.Column
-                Data.Y -> Css.Row
-            , Css.alignItems Css.Stretch
-            , Css.gap rec.gap
-            , Css.padding
-                { topBottom: rec.paddingTopBottom
-                , leftRight: rec.paddingLeftRight
-                }
-            ]
-          , case rec.height of
-              Just height -> [ Css.heightRem height ]
-              Nothing -> []
-          , case rec.backgroundColor of
-              Just backgroundColor -> [ Css.backgroundColor backgroundColor ]
-              Nothing -> []
-          , case rec.link of
-              Just _ ->
-                [ Css.textDecorationNone
-                , Css.color (Color.rgb 120 190 245)
-                ]
-              Nothing -> []
-          , case rec.gridTemplateColumns1FrCount of
-              Just count -> [ Css.gridTemplateColumns count ]
-              Nothing -> []
-          ]
-    , hover:
-        case keyframeResult of
-          Just animationHashValue ->
-            [ Css.animation
-                ( StyleDict.sha256HashValueToAnimationName
-                    animationHashValue.animationHashValue
-                )
-                animationHashValue.duration
-            ]
-          Nothing -> []
-    }
+  { style :: Data.ViewStyle, anchor :: Data.SameOriginAnchor message location } ->
+  ElementAndStyleDict message location
+sampleOriginAnchorToVdomElementAndStyleDict { style, anchor: Data.SameOriginAnchor anchor } =
+  let
+    { styleDict, className, vdomChildren } = case anchor.children of
+      Data.ElementListOrTextElementList elementList ->
+        let
+          { childList
+          , styleDict: childrenStyleDict
+          } = viewChildrenToVdomChildren elementList
 
-viewChildrenToVdomChildren ::
+          { className, styleDict } = StyleDict.addStyleDictAndClassName childrenStyleDict style
+        in
+          { className
+          , styleDict
+          , vdomChildren: Vdom.ChildrenElementList childList
+          }
+      Data.ElementListOrTextText _ ->
+        let
+          { className, styleDict } = StyleDict.createStyleDictAndClassName style
+        in
+          { className
+          , styleDict
+          , vdomChildren: Vdom.ChildrenText ""
+          }
+  in
+    ElementAndStyleDict
+      { element:
+          Vdom.ElementSameOriginLink
+            ( Vdom.SameOriginLink
+                { id: Nothing
+                , class: Just className
+                , href: anchor.href
+                , children: vdomChildren
+                }
+            )
+      , styleDict
+      }
+
+externalLinkAnchorToVdomElementAndStyleDict ::
+  forall message location.
+  { style :: Data.ViewStyle, anchor :: Data.ExternalLinkAnchor message location } ->
+  ElementAndStyleDict message location
+externalLinkAnchorToVdomElementAndStyleDict { style, anchor: Data.ExternalLinkAnchor anchor } =
+  let
+    { styleDict, className, vdomChildren } = case anchor.children of
+      Data.ElementListOrTextElementList elementList ->
+        let
+          { childList
+          , styleDict: childrenStyleDict
+          } = viewChildrenToVdomChildren elementList
+
+          { className, styleDict } = StyleDict.addStyleDictAndClassName childrenStyleDict style
+        in
+          { className
+          , styleDict
+          , vdomChildren: Vdom.ChildrenElementList childList
+          }
+      Data.ElementListOrTextText _ ->
+        let
+          { className, styleDict } = StyleDict.createStyleDictAndClassName style
+        in
+          { className
+          , styleDict
+          , vdomChildren: Vdom.ChildrenText ""
+          }
+  in
+    ElementAndStyleDict
+      { element:
+          Vdom.ElementExternalLink
+            ( Vdom.ExternalLink
+                { id: Nothing
+                , class: Just className
+                , href: anchor.href
+                , children: vdomChildren
+                }
+            )
+      , styleDict
+      }
+
+viewElementListToVdomChildren ::
   forall message location.
   Array (Data.Element message location) ->
   { childList :: Array (Tuple.Tuple String (Vdom.Element message location))
   , styleDict :: StyleDict.StyleDict
   }
-viewChildrenToVdomChildren children =
+viewElementListToVdomChildren children =
   let
     childrenElementAndStyleDict :: Array (ElementAndStyleDict message location)
     childrenElementAndStyleDict =
@@ -197,28 +203,48 @@ viewChildrenToVdomChildren children =
           childrenElementAndStyleDict
     , styleDict:
         StyleDict.listStyleDictToStyleDict
-          ( Prelude.map
-              (\(ElementAndStyleDict { styleDict }) -> styleDict)
+          ( Prelude.map (\(ElementAndStyleDict { styleDict }) -> styleDict)
               childrenElementAndStyleDict
           )
     }
 
-boxGetKeyframeListAndAnimationName ::
+viewChildrenToVdomChildren ::
   forall message location.
-  Data.Box message location ->
-  Maybe
-    { keyframeList :: Array Css.Keyframe
-    , animationHashValue :: Hash.Sha256HashValue
-    , duration :: Number
+  NonEmptyArray (Data.KeyAndElement message location) ->
+  { childList :: NonEmptyArray (Tuple.Tuple String (Vdom.Element message location))
+  , styleDict :: StyleDict.StyleDict
+  }
+viewChildrenToVdomChildren children =
+  let
+    childrenElementAndStyleDict ::
+      NonEmptyArray
+        { elementAndStyleDict :: ElementAndStyleDict message location
+        , key :: String
+        }
+    childrenElementAndStyleDict =
+      Prelude.map
+        ( \(Data.KeyAndElement { element, key }) ->
+            { elementAndStyleDict: elementToHtmlElementAndStyleDict element
+            , key
+            }
+        )
+        children
+  in
+    { childList:
+        Prelude.map
+          ( \({ elementAndStyleDict: ElementAndStyleDict { element }, key }) ->
+              Tuple.Tuple
+                key
+                element
+          )
+          childrenElementAndStyleDict
+    , styleDict:
+        StyleDict.listStyleDictToStyleDict
+          ( Prelude.map
+              (\({ elementAndStyleDict: ElementAndStyleDict { styleDict } }) -> styleDict)
+              (NonEmptyArray.toArray childrenElementAndStyleDict)
+          )
     }
-boxGetKeyframeListAndAnimationName (Data.Box { hover: Data.BoxHoverStyle { animation } }) = case animation of
-  Just (Data.Animation { keyframeList, duration }) ->
-    Just
-      { keyframeList: keyframeList
-      , animationHashValue: keyframeListToSha256HashValue keyframeList
-      , duration: duration
-      }
-  Nothing -> Nothing
 
 elementToHtmlElementAndStyleDict ::
   forall message location.
@@ -226,9 +252,11 @@ elementToHtmlElementAndStyleDict ::
   ElementAndStyleDict message location
 elementToHtmlElementAndStyleDict = case _ of
   Data.ElementText text -> textToHtmlElementAndStyleDict text
-  Data.SvgElement styleAndSvg -> svgToHtmlElement styleAndSvg
+  Data.ElementSvg styleAndSvg -> svgToHtmlElement styleAndSvg
   Data.ElementImage image -> imageElementToHtmlElement image
-  Data.BoxElement e -> boxToVdomElementAndStyleDict e
+  Data.ElementDiv div -> divToVdomElementAndStyleDict div
+  Data.ElementSameOriginAnchor sampleOriginAnchor -> sampleOriginAnchorToVdomElementAndStyleDict sampleOriginAnchor
+  Data.ElementExternalLinkAnchor externalLinkAnchor -> externalLinkAnchorToVdomElementAndStyleDict externalLinkAnchor
 
 textToHtmlElementAndStyleDict :: forall message location. Data.Text message -> ElementAndStyleDict message location
 textToHtmlElementAndStyleDict (Data.Text { padding, markup, text, click }) =
@@ -248,9 +276,9 @@ textToHtmlElementAndStyleDict (Data.Text { padding, markup, text, click }) =
                     ]
                 )
             , hover: []
+            , animation: Map.empty
             }
         )
-        Map.empty
 
     clickMessageDataMaybe :: Maybe (VdomPatchState.ClickMessageData message)
     clickMessageDataMaybe =
@@ -311,10 +339,7 @@ svgToHtmlElement { style
 , svg: Data.Svg { viewBox: Data.ViewBox viewBox, svgElementList }
 } =
   let
-    { styleDict, className } =
-      StyleDict.createStyleDictAndClassName
-        style
-        (Map.empty)
+    { styleDict, className } = StyleDict.createStyleDictAndClassName style
   in
     ElementAndStyleDict
       { element:
@@ -336,7 +361,7 @@ svgToHtmlElement { style
 imageElementToHtmlElement :: forall message location. { style :: Data.ViewStyle, image :: Data.Image } -> ElementAndStyleDict message location
 imageElementToHtmlElement { style, image: Data.Image rec } =
   let
-    { styleDict, className } = StyleDict.createStyleDictAndClassName style Map.empty
+    { styleDict, className } = StyleDict.createStyleDictAndClassName style
   in
     ElementAndStyleDict
       { element:
@@ -391,8 +416,3 @@ svgElementToHtmlElement = case _ of
           }
       )
   Data.Ellipse rec -> Vdom.ElementSvgEllipse (Vdom.SvgEllipse rec)
-
-keyframeListToSha256HashValue :: Array Css.Keyframe -> Hash.Sha256HashValue
-keyframeListToSha256HashValue keyframeList =
-  Hash.stringToSha256HashValue
-    (String.joinWith "!" (Prelude.map Css.keyFrameToString keyframeList))

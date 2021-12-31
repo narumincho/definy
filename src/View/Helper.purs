@@ -1,5 +1,7 @@
 module View.Helper
-  ( PercentageOrRem(..)
+  ( Animation(..)
+  , BoxHoverStyle(..)
+  , PercentageOrRem(..)
   , boxX
   , boxY
   , image
@@ -9,13 +11,21 @@ module View.Helper
 
 import Color as Color
 import Css as Css
+import Data.Array as Array
+import Data.Array.NonEmpty as NonEmptyArray
+import Data.Map as Map
 import Data.Maybe (Maybe(..))
+import Data.String as String
+import Data.String.NonEmpty (NonEmptyString)
+import Data.String.NonEmpty as NonEmptyString
+import Hash as Hash
 import Option as Option
+import Prelude as Prelude
 import StructuredUrl as StructuredUrl
 import Type.Proxy as Proxy
-import View.Data as Data
 import Util as Util
-import Data.Array as Array
+import View.Data as Data
+import View.StyleDict as StyleDict
 
 type ImageRequired
   = ( path :: StructuredUrl.PathAndSearchParams
@@ -36,10 +46,39 @@ type BoxOptional message location
     , backgroundColor :: Color.Color
     , gridTemplateColumns1FrCount :: Int
     , link :: Data.Link message location
-    , hover :: Data.BoxHoverStyle
+    , hover :: BoxHoverStyle
     , scrollX :: Boolean
     , scrollY :: Boolean
     )
+
+newtype BoxData message location
+  = BoxData
+  { gap :: Number
+  , paddingTopBottom :: Number
+  , paddingLeftRight :: Number
+  , height :: Maybe Number
+  , backgroundColor :: Maybe Color.Color
+  , gridTemplateColumns1FrCount :: Maybe Int
+  , link :: Maybe (Data.Link message location)
+  , hover :: BoxHoverStyle
+  , scrollX :: Boolean
+  , scrollY :: Boolean
+  }
+
+newtype BoxHoverStyle
+  = BoxHoverStyle
+  { animation :: Maybe Animation
+  }
+
+newtype Animation
+  = Animation
+  { keyframeList :: Array Css.Keyframe
+  , {- アニメーションする時間. 単位は ms */ -} duration :: Number
+  }
+
+data XOrY
+  = X
+  | Y
 
 -- | 縦方向に box を配置する
 boxY ::
@@ -51,48 +90,7 @@ boxY ::
   Record r ->
   (Array (Data.Element message location)) ->
   Data.Element message location
-boxY option children =
-  let
-    rec =
-      Util.optionRecordToMaybeRecord
-        (Proxy.Proxy :: _ ())
-        (Proxy.Proxy :: _ (BoxOptional message location))
-        option
-  in
-    Data.BoxElement
-      ( Data.Box
-          { backgroundColor: rec.backgroundColor
-          , children: children
-          , direction: Data.Y
-          , gap:
-              case rec.gap of
-                Just gap -> gap
-                Nothing -> 0.0
-          , gridTemplateColumns1FrCount: rec.gridTemplateColumns1FrCount
-          , height: rec.height
-          , hover:
-              case rec.hover of
-                Just hover -> hover
-                Nothing -> boxHoverStyleNone
-          , link: rec.link
-          , paddingLeftRight:
-              case rec.paddingLeftRight of
-                Just paddingLeftRight -> paddingLeftRight
-                Nothing -> 0.0
-          , paddingTopBottom:
-              case rec.paddingTopBottom of
-                Just paddingTopBottom -> paddingTopBottom
-                Nothing -> 0.0
-          , scrollX:
-              case rec.scrollX of
-                Just scrollX -> scrollX
-                Nothing -> false
-          , scrollY:
-              case rec.scrollY of
-                Just scrollY -> scrollY
-                Nothing -> false
-          }
-      )
+boxY option children = boxXOrYToElement (boxOptionalToBoxData option) children Y
 
 -- | 横方向に box を配置する
 boxX ::
@@ -104,48 +102,192 @@ boxX ::
   Record r ->
   (Array (Data.Element message location)) ->
   Data.Element message location
-boxX option children =
+boxX option children = boxXOrYToElement (boxOptionalToBoxData option) children X
+
+boxOptionalToBoxData ::
+  forall message location (r :: Row Type).
+  Option.FromRecord
+    r
+    ()
+    (BoxOptional message location) =>
+  Record r -> BoxData message location
+boxOptionalToBoxData rec =
   let
-    rec =
+    maybeRecord =
       Util.optionRecordToMaybeRecord
         (Proxy.Proxy :: _ ())
         (Proxy.Proxy :: _ (BoxOptional message location))
-        option
+        rec
   in
-    Data.BoxElement
-      ( Data.Box
-          { backgroundColor: rec.backgroundColor
-          , children: children
-          , direction: Data.X
-          , gap:
-              case rec.gap of
-                Just gap -> gap
-                Nothing -> 0.0
-          , gridTemplateColumns1FrCount: rec.gridTemplateColumns1FrCount
-          , height: rec.height
-          , hover:
-              case rec.hover of
-                Just hover -> hover
-                Nothing -> boxHoverStyleNone
-          , link: rec.link
-          , paddingLeftRight:
-              case rec.paddingLeftRight of
-                Just paddingLeftRight -> paddingLeftRight
-                Nothing -> 0.0
-          , paddingTopBottom:
-              case rec.paddingTopBottom of
-                Just paddingTopBottom -> paddingTopBottom
-                Nothing -> 0.0
-          , scrollX:
-              case rec.scrollX of
-                Just scrollX -> scrollX
-                Nothing -> false
-          , scrollY:
-              case rec.scrollY of
-                Just scrollY -> scrollY
-                Nothing -> false
+    BoxData
+      { gap:
+          case maybeRecord.gap of
+            Just gap -> gap
+            Nothing -> 0.0
+      , paddingTopBottom:
+          case maybeRecord.paddingTopBottom of
+            Just paddingTopBottom -> paddingTopBottom
+            Nothing -> 0.0
+      , paddingLeftRight:
+          case maybeRecord.paddingLeftRight of
+            Just paddingLeftRight -> paddingLeftRight
+            Nothing -> 0.0
+      , height: maybeRecord.height
+      , backgroundColor: maybeRecord.backgroundColor
+      , gridTemplateColumns1FrCount: maybeRecord.gridTemplateColumns1FrCount
+      , link: maybeRecord.link
+      , hover:
+          case maybeRecord.hover of
+            Just hover -> hover
+            Nothing -> BoxHoverStyle { animation: Nothing }
+      , scrollX:
+          case maybeRecord.scrollX of
+            Just scrollX -> scrollX
+            Nothing -> false
+      , scrollY:
+          case maybeRecord.scrollY of
+            Just scrollY -> scrollY
+            Nothing -> false
+      }
+
+boxXOrYToElement ::
+  forall message location.
+  BoxData message location ->
+  (Array (Data.Element message location)) ->
+  XOrY ->
+  Data.Element message location
+boxXOrYToElement boxData@(BoxData rec) children xOrY =
+  let
+    style :: Data.ViewStyle
+    style = boxToBoxViewStyle boxData xOrY
+
+    vdomChildren :: Data.ElementListOrText message location
+    vdomChildren = case NonEmptyArray.fromArray children of
+      Just nonEmptyVdomChildren ->
+        Data.ElementListOrTextElementList
+          ( NonEmptyArray.mapWithIndex
+              ( \index element ->
+                  Data.KeyAndElement
+                    { key: (Prelude.show index)
+                    , element: element
+                    }
+              )
+              nonEmptyVdomChildren
+          )
+      Nothing -> Data.ElementListOrTextText ""
+  in
+    case rec.link of
+      Just (Data.LinkSameOrigin location) ->
+        Data.ElementSameOriginAnchor
+          { style
+          , anchor:
+              Data.SameOriginAnchor
+                { id: Nothing
+                , href: location
+                , children: vdomChildren
+                }
           }
-      )
+      Just (Data.LinkExternal url) ->
+        Data.ElementExternalLinkAnchor
+          { style
+          , anchor:
+              Data.ExternalLinkAnchor
+                { id: Nothing
+                , href: url
+                , children: vdomChildren
+                }
+          }
+      Nothing ->
+        Data.ElementDiv
+          { style
+          , div:
+              Data.Div
+                { id: Nothing
+                , click: Nothing
+                , children: vdomChildren
+                }
+          }
+
+boxToBoxViewStyle ::
+  forall message location.
+  BoxData message location ->
+  XOrY ->
+  Data.ViewStyle
+boxToBoxViewStyle boxData@(BoxData rec) direction =
+  let
+    keyframeResult = boxGetKeyframeListAndAnimationName boxData
+  in
+    Data.ViewStyle
+      { normal:
+          Array.concat
+            [ [ Css.boxSizingBorderBox
+              , Css.displayGrid
+              , Css.gridAutoFlow case direction of
+                  X -> Css.Column
+                  Y -> Css.Row
+              , Css.alignItems Css.Stretch
+              , Css.gap rec.gap
+              , Css.padding
+                  { topBottom: rec.paddingTopBottom
+                  , leftRight: rec.paddingLeftRight
+                  }
+              ]
+            , case rec.height of
+                Just height -> [ Css.heightRem height ]
+                Nothing -> []
+            , case rec.backgroundColor of
+                Just backgroundColor -> [ Css.backgroundColor backgroundColor ]
+                Nothing -> []
+            , case rec.link of
+                Just _ ->
+                  [ Css.textDecorationNone
+                  , Css.color (Color.rgb 120 190 245)
+                  ]
+                Nothing -> []
+            , case rec.gridTemplateColumns1FrCount of
+                Just count -> [ Css.gridTemplateColumns count ]
+                Nothing -> []
+            ]
+      , hover:
+          case keyframeResult of
+            Just animationHashValue ->
+              [ Css.animation
+                  ( StyleDict.sha256HashValueToAnimationName
+                      animationHashValue.animationHashValue
+                  )
+                  animationHashValue.duration
+              ]
+            Nothing -> []
+      , animation:
+          case keyframeResult of
+            Just animationHashValue ->
+              Map.singleton
+                animationHashValue.animationHashValue
+                animationHashValue.keyframeList
+            Nothing -> Map.empty
+      }
+
+boxGetKeyframeListAndAnimationName ::
+  forall message location.
+  BoxData message location ->
+  Maybe
+    { keyframeList :: Array Css.Keyframe
+    , animationHashValue :: Hash.Sha256HashValue
+    , duration :: Number
+    }
+boxGetKeyframeListAndAnimationName (BoxData rec) = case rec.hover of
+  (BoxHoverStyle { animation: Just (Animation { keyframeList, duration }) }) ->
+    Just
+      { keyframeList: keyframeList
+      , animationHashValue: keyframeListToSha256HashValue keyframeList
+      , duration: duration
+      }
+  _ -> Nothing
+
+keyframeListToSha256HashValue :: Array Css.Keyframe -> Hash.Sha256HashValue
+keyframeListToSha256HashValue keyframeList =
+  Hash.stringToSha256HashValue
+    (String.joinWith "!" (Prelude.map Css.keyFrameToString keyframeList))
 
 type TextOptional message
   = ( markup :: Data.TextMarkup
@@ -214,6 +356,7 @@ image option =
                       )
                   ]
               , hover: []
+              , animation: Map.empty
               }
         , image:
             Data.Image
@@ -225,7 +368,7 @@ image option =
 
 svg :: forall message location. { height :: Number, isJustifySelfCenter :: Boolean, width :: PercentageOrRem, svg :: Data.Svg } -> Data.Element message location
 svg rec =
-  Data.SvgElement
+  Data.ElementSvg
     { style:
         Data.ViewStyle
           { normal:
@@ -239,6 +382,7 @@ svg rec =
                     []
                 ]
           , hover: []
+          , animation: Map.empty
           }
     , svg: rec.svg
     }
@@ -247,6 +391,3 @@ percentageOrRemWidthToCssDeclaration :: PercentageOrRem -> Css.Declaration
 percentageOrRemWidthToCssDeclaration = case _ of
   Rem value -> Css.widthRem value
   Percentage value -> Css.widthPercent value
-
-boxHoverStyleNone :: Data.BoxHoverStyle
-boxHoverStyleNone = Data.BoxHoverStyle { animation: Nothing }
