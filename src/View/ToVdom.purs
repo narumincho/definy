@@ -1,16 +1,13 @@
 module View.ToVdom (toVdom) where
 
-import Color as Color
-import Css as Css
 import Data.Array as Array
 import Data.Array.NonEmpty (NonEmptyArray)
 import Data.Array.NonEmpty as NonEmptyArray
-import Data.Map as Map
 import Data.Maybe (Maybe(..))
+import Data.String.NonEmpty (NonEmptyString)
 import Data.Tuple as Tuple
 import Prelude as Prelude
 import StructuredUrl as StructuredUrl
-import Vdom.PatchState as VdomPatchState
 import Vdom.VdomPicked as Vdom
 import View.Data as Data
 import View.StyleDict as StyleDict
@@ -60,27 +57,10 @@ divToVdomElementAndStyleDict ::
   ElementAndStyleDict message location
 divToVdomElementAndStyleDict { style, div: Data.Div div } =
   let
-    { styleDict, className, vdomChildren } = case div.children of
-      Data.ElementListOrTextElementList elementList ->
-        let
-          { childList
-          , styleDict: childrenStyleDict
-          } = viewChildrenToVdomChildren elementList
-
-          { className, styleDict } = StyleDict.addStyleDictAndClassName childrenStyleDict style
-        in
-          { className
-          , styleDict
-          , vdomChildren: Vdom.ChildrenElementList childList
-          }
-      Data.ElementListOrTextText _ ->
-        let
-          { className, styleDict } = StyleDict.createStyleDictAndClassName style
-        in
-          { className
-          , styleDict
-          , vdomChildren: Vdom.ChildrenText ""
-          }
+    { styleDict, className, vdomChildren } =
+      elementListOrTextToStyleDictAndClassNameAndVdomChildren
+        style
+        div.children
   in
     ElementAndStyleDict
       { element:
@@ -101,27 +81,10 @@ sampleOriginAnchorToVdomElementAndStyleDict ::
   ElementAndStyleDict message location
 sampleOriginAnchorToVdomElementAndStyleDict { style, anchor: Data.SameOriginAnchor anchor } =
   let
-    { styleDict, className, vdomChildren } = case anchor.children of
-      Data.ElementListOrTextElementList elementList ->
-        let
-          { childList
-          , styleDict: childrenStyleDict
-          } = viewChildrenToVdomChildren elementList
-
-          { className, styleDict } = StyleDict.addStyleDictAndClassName childrenStyleDict style
-        in
-          { className
-          , styleDict
-          , vdomChildren: Vdom.ChildrenElementList childList
-          }
-      Data.ElementListOrTextText _ ->
-        let
-          { className, styleDict } = StyleDict.createStyleDictAndClassName style
-        in
-          { className
-          , styleDict
-          , vdomChildren: Vdom.ChildrenText ""
-          }
+    { styleDict, className, vdomChildren } =
+      elementListOrTextToStyleDictAndClassNameAndVdomChildren
+        style
+        anchor.children
   in
     ElementAndStyleDict
       { element:
@@ -142,27 +105,10 @@ externalLinkAnchorToVdomElementAndStyleDict ::
   ElementAndStyleDict message location
 externalLinkAnchorToVdomElementAndStyleDict { style, anchor: Data.ExternalLinkAnchor anchor } =
   let
-    { styleDict, className, vdomChildren } = case anchor.children of
-      Data.ElementListOrTextElementList elementList ->
-        let
-          { childList
-          , styleDict: childrenStyleDict
-          } = viewChildrenToVdomChildren elementList
-
-          { className, styleDict } = StyleDict.addStyleDictAndClassName childrenStyleDict style
-        in
-          { className
-          , styleDict
-          , vdomChildren: Vdom.ChildrenElementList childList
-          }
-      Data.ElementListOrTextText _ ->
-        let
-          { className, styleDict } = StyleDict.createStyleDictAndClassName style
-        in
-          { className
-          , styleDict
-          , vdomChildren: Vdom.ChildrenText ""
-          }
+    { styleDict, className, vdomChildren } =
+      elementListOrTextToStyleDictAndClassNameAndVdomChildren
+        style
+        anchor.children
   in
     ElementAndStyleDict
       { element:
@@ -171,6 +117,78 @@ externalLinkAnchorToVdomElementAndStyleDict { style, anchor: Data.ExternalLinkAn
                 { id: Nothing
                 , class: Just className
                 , href: anchor.href
+                , children: vdomChildren
+                }
+            )
+      , styleDict
+      }
+
+heading1ToVdomElementAndStyleDict ::
+  forall message location.
+  { style :: Data.ViewStyle, heading1 :: Data.Heading1 message location } ->
+  ElementAndStyleDict message location
+heading1ToVdomElementAndStyleDict { style, heading1: Data.Heading1 h1 } =
+  let
+    { styleDict, className, vdomChildren } =
+      elementListOrTextToStyleDictAndClassNameAndVdomChildren
+        style
+        h1.children
+  in
+    ElementAndStyleDict
+      { element:
+          Vdom.ElementH1
+            ( Vdom.H1
+                { id: Nothing
+                , class: Just className
+                , click: h1.click
+                , children: vdomChildren
+                }
+            )
+      , styleDict
+      }
+
+heading2ToVdomElementAndStyleDict ::
+  forall message location.
+  { style :: Data.ViewStyle, heading2 :: Data.Heading2 message location } ->
+  ElementAndStyleDict message location
+heading2ToVdomElementAndStyleDict { style, heading2: Data.Heading2 h2 } =
+  let
+    { styleDict, className, vdomChildren } =
+      elementListOrTextToStyleDictAndClassNameAndVdomChildren
+        style
+        h2.children
+  in
+    ElementAndStyleDict
+      { element:
+          Vdom.ElementH2
+            ( Vdom.H2
+                { id: Nothing
+                , class: Just className
+                , click: h2.click
+                , children: vdomChildren
+                }
+            )
+      , styleDict
+      }
+
+codeToVdomElementAndStyleDict ::
+  forall message location.
+  { style :: Data.ViewStyle, code :: Data.Code message location } ->
+  ElementAndStyleDict message location
+codeToVdomElementAndStyleDict { style, code: Data.Code code } =
+  let
+    { styleDict, className, vdomChildren } =
+      elementListOrTextToStyleDictAndClassNameAndVdomChildren
+        style
+        code.children
+  in
+    ElementAndStyleDict
+      { element:
+          Vdom.ElementCode
+            ( Vdom.Code
+                { id: Nothing
+                , class: Just className
+                , click: code.click
                 , children: vdomChildren
                 }
             )
@@ -251,88 +269,14 @@ elementToHtmlElementAndStyleDict ::
   Data.Element message location ->
   ElementAndStyleDict message location
 elementToHtmlElementAndStyleDict = case _ of
-  Data.ElementText text -> textToHtmlElementAndStyleDict text
   Data.ElementSvg styleAndSvg -> svgToHtmlElement styleAndSvg
   Data.ElementImage image -> imageElementToHtmlElement image
   Data.ElementDiv div -> divToVdomElementAndStyleDict div
   Data.ElementSameOriginAnchor sampleOriginAnchor -> sampleOriginAnchorToVdomElementAndStyleDict sampleOriginAnchor
   Data.ElementExternalLinkAnchor externalLinkAnchor -> externalLinkAnchorToVdomElementAndStyleDict externalLinkAnchor
-
-textToHtmlElementAndStyleDict :: forall message location. Data.Text message -> ElementAndStyleDict message location
-textToHtmlElementAndStyleDict (Data.Text { padding, markup, text, click }) =
-  let
-    { styleDict, className } =
-      StyleDict.createStyleDictAndClassName
-        ( Data.ViewStyle
-            { normal:
-                ( Array.concat
-                    [ [ Css.color Color.white
-                      , Css.padding { topBottom: padding, leftRight: padding }
-                      , Css.margin0
-                      ]
-                    , case markup of
-                        Data.Code -> [ Css.whiteSpacePre ]
-                        _ -> []
-                    ]
-                )
-            , hover: []
-            , animation: Map.empty
-            }
-        )
-
-    clickMessageDataMaybe :: Maybe (VdomPatchState.ClickMessageData message)
-    clickMessageDataMaybe =
-      Prelude.map
-        ( \message ->
-            VdomPatchState.clickMessageFrom
-              { stopPropagation: false
-              , message
-              , url: Nothing
-              }
-        )
-        click
-  in
-    ElementAndStyleDict
-      { element:
-          case markup of
-            Data.None ->
-              Vdom.ElementDiv
-                ( Vdom.Div
-                    { id: Nothing
-                    , class: Just className
-                    , click: clickMessageDataMaybe
-                    , children: Vdom.ChildrenText text
-                    }
-                )
-            Data.Heading1 ->
-              Vdom.ElementH1
-                ( Vdom.H1
-                    { id: Nothing
-                    , class: Just className
-                    , click: clickMessageDataMaybe
-                    , children: Vdom.ChildrenText text
-                    }
-                )
-            Data.Heading2 ->
-              Vdom.ElementH2
-                ( Vdom.H2
-                    { id: Nothing
-                    , class: Just className
-                    , click: clickMessageDataMaybe
-                    , children: Vdom.ChildrenText text
-                    }
-                )
-            Data.Code ->
-              Vdom.ElementCode
-                ( Vdom.Code
-                    { id: Nothing
-                    , class: Just className
-                    , click: clickMessageDataMaybe
-                    , children: Vdom.ChildrenText text
-                    }
-                )
-      , styleDict
-      }
+  Data.ElementHeading1 heading -> heading1ToVdomElementAndStyleDict heading
+  Data.ElementHeading2 heading -> heading2ToVdomElementAndStyleDict heading
+  Data.ElementCode code -> codeToVdomElementAndStyleDict code
 
 svgToHtmlElement :: forall message location. { style :: Data.ViewStyle, svg :: Data.Svg } -> ElementAndStyleDict message location
 svgToHtmlElement { style
@@ -374,6 +318,36 @@ imageElementToHtmlElement { style, image: Data.Image rec } =
                 }
             )
       , styleDict
+      }
+
+elementListOrTextToStyleDictAndClassNameAndVdomChildren ::
+  forall message location.
+  Data.ViewStyle ->
+  Data.ElementListOrText message location ->
+  { styleDict :: StyleDict.StyleDict
+  , className :: NonEmptyString
+  , vdomChildren :: Vdom.Children message location
+  }
+elementListOrTextToStyleDictAndClassNameAndVdomChildren style = case _ of
+  Data.ElementListOrTextElementList elementList ->
+    let
+      { childList
+      , styleDict: childrenStyleDict
+      } = viewChildrenToVdomChildren elementList
+
+      { className, styleDict } = StyleDict.addStyleDictAndClassName childrenStyleDict style
+    in
+      { className
+      , styleDict
+      , vdomChildren: Vdom.ChildrenElementList childList
+      }
+  Data.ElementListOrTextText text ->
+    let
+      { className, styleDict } = StyleDict.createStyleDictAndClassName style
+    in
+      { className
+      , styleDict
+      , vdomChildren: Vdom.ChildrenText text
       }
 
 svgElementToHtmlElement :: forall message location. Data.SvgElement -> Vdom.Element message location

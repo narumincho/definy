@@ -4,7 +4,6 @@ import CreativeRecord.Article.Data as Data
 import CreativeRecord.StaticResource as StaticResource
 import Data.String.NonEmpty as NonEmptyString
 import Type.Proxy as Proxy
-import View.Data as View
 import View.Helper as ViewHelper
 
 view :: Data.Article
@@ -19,7 +18,7 @@ view =
                 { padding: 0.5 }
                 "以下のコードを拡張子.ps1で保存して ./ファイル名.ps1 で実行できる"
             , ViewHelper.text
-                { markup: View.Code
+                { markup: ViewHelper.Code
                 , padding: 0.5
                 }
                 """function Recursion([System.IO.FileSystemInfo[]] $directory) {

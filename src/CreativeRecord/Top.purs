@@ -130,7 +130,7 @@ articleLocationListToViewElement list =
 view :: Int -> Array (View.Element Message.Message Location.Location)
 view count =
   [ ViewHelper.text
-      { markup: View.Heading2
+      { markup: ViewHelper.Heading2
       , padding: 0.5
       , click: Message.CountUp
       }
@@ -178,7 +178,7 @@ view count =
           "ナルミンチョ"
       ]
   , ViewHelper.text
-      { markup: View.Heading2
+      { markup: ViewHelper.Heading2
       , padding: 0.5
       }
       "ナルミンチョが作った Webアプリ"
@@ -219,7 +219,7 @@ view count =
           "つくマート"
       ]
   , ViewHelper.text
-      { markup: View.Heading2
+      { markup: ViewHelper.Heading2
       , padding: 0.5
       }
       "ナルミンチョが書いた記事"

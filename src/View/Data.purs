@@ -1,16 +1,17 @@
 module View.Data
-  ( Div(..)
+  ( Code(..)
+  , Div(..)
   , Element(..)
   , ElementListOrText(..)
   , ExternalLinkAnchor(..)
+  , Heading1(..)
+  , Heading2(..)
   , Image(..)
   , KeyAndElement(..)
   , Link(..)
   , SameOriginAnchor(..)
   , Svg(..)
   , SvgElement(..)
-  , Text(..)
-  , TextMarkup(..)
   , View(..)
   , ViewBox(..)
   , ViewStyle(..)
@@ -98,12 +99,14 @@ data Link message location
 data Element :: Type -> Type -> Type
 -- | テキスト, リンクなどの要素
 data Element message location
-  = ElementText (Text message)
-  | ElementSvg { style :: ViewStyle, svg :: Svg }
+  = ElementSvg { style :: ViewStyle, svg :: Svg }
   | ElementImage { style :: ViewStyle, image :: Image }
   | ElementDiv { style :: ViewStyle, div :: Div message location }
   | ElementSameOriginAnchor { style :: ViewStyle, anchor :: SameOriginAnchor message location }
   | ElementExternalLinkAnchor { style :: ViewStyle, anchor :: ExternalLinkAnchor message location }
+  | ElementHeading1 { style :: ViewStyle, heading1 :: Heading1 message location }
+  | ElementHeading2 { style :: ViewStyle, heading2 :: Heading2 message location }
+  | ElementCode { style :: ViewStyle, code :: Code message location }
 
 newtype Image
   = Image
@@ -143,19 +146,26 @@ data ExternalLinkAnchor message location
     , children :: ElementListOrText message location
     }
 
-newtype Text message
-  = Text
-  { markup :: TextMarkup
-  , padding :: Number
-  , click :: Maybe message
-  , text :: String
+newtype Heading1 message location
+  = Heading1
+  { id :: Maybe NonEmptyString
+  , click :: Maybe (PatchState.ClickMessageData message)
+  , children :: ElementListOrText message location
   }
 
-data TextMarkup
-  = None
-  | Heading1
-  | Heading2
-  | Code
+newtype Heading2 message location
+  = Heading2
+  { id :: Maybe NonEmptyString
+  , click :: Maybe (PatchState.ClickMessageData message)
+  , children :: ElementListOrText message location
+  }
+
+newtype Code message location
+  = Code
+  { id :: Maybe NonEmptyString
+  , click :: Maybe (PatchState.ClickMessageData message)
+  , children :: ElementListOrText message location
+  }
 
 newtype Svg
   = Svg

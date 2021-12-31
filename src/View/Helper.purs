@@ -2,6 +2,7 @@ module View.Helper
   ( Animation(..)
   , BoxHoverStyle(..)
   , PercentageOrRem(..)
+  , TextMarkup(..)
   , boxX
   , boxY
   , image
@@ -16,14 +17,13 @@ import Data.Array.NonEmpty as NonEmptyArray
 import Data.Map as Map
 import Data.Maybe (Maybe(..))
 import Data.String as String
-import Data.String.NonEmpty (NonEmptyString)
-import Data.String.NonEmpty as NonEmptyString
 import Hash as Hash
 import Option as Option
 import Prelude as Prelude
 import StructuredUrl as StructuredUrl
 import Type.Proxy as Proxy
 import Util as Util
+import Vdom.PatchState as PatchState
 import View.Data as Data
 import View.StyleDict as StyleDict
 
@@ -290,10 +290,16 @@ keyframeListToSha256HashValue keyframeList =
     (String.joinWith "!" (Prelude.map Css.keyFrameToString keyframeList))
 
 type TextOptional message
-  = ( markup :: Data.TextMarkup
+  = ( markup :: TextMarkup
     , padding :: Number
     , click :: message
     )
+
+data TextMarkup
+  = None
+  | Heading1
+  | Heading2
+  | Code
 
 text ::
   forall message location (r :: Row Type).
@@ -309,21 +315,85 @@ text option textValue =
         (Proxy.Proxy :: _ ())
         (Proxy.Proxy :: _ (TextOptional message))
         option
+
+    paddingValue = case rec.padding of
+      Just v -> v
+      Nothing -> 0.0
+
+    style =
+      Data.ViewStyle
+        { normal:
+            [ Css.color Color.white
+            , Css.padding { leftRight: paddingValue, topBottom: paddingValue }
+            , Css.margin0
+            ]
+        , hover: []
+        , animation: Map.empty
+        }
+
+    clickMessageData :: Maybe (PatchState.ClickMessageData message)
+    clickMessageData =
+      Prelude.map
+        ( \message ->
+            PatchState.clickMessageFrom
+              { stopPropagation: false
+              , message
+              , url: Nothing
+              }
+        )
+        rec.click
   in
-    Data.ElementText
-      ( Data.Text
-          { markup:
-              case rec.markup of
-                Just markup -> markup
-                Nothing -> Data.None
-          , padding:
-              case rec.padding of
-                Just padding -> padding
-                Nothing -> 0.0
-          , click: rec.click
-          , text: textValue
+    case rec.markup of
+      Just None ->
+        Data.ElementDiv
+          { style
+          , div:
+              Data.Div
+                { children: Data.ElementListOrTextText textValue
+                , click: clickMessageData
+                , id: Nothing
+                }
           }
-      )
+      Just Heading1 ->
+        Data.ElementHeading1
+          { style
+          , heading1:
+              Data.Heading1
+                { children: Data.ElementListOrTextText textValue
+                , click: clickMessageData
+                , id: Nothing
+                }
+          }
+      Just Heading2 ->
+        Data.ElementHeading2
+          { style
+          , heading2:
+              Data.Heading2
+                { children: Data.ElementListOrTextText textValue
+                , click: clickMessageData
+                , id: Nothing
+                }
+          }
+      Just Code ->
+        Data.ElementCode
+          { style
+          , code:
+              Data.Code
+                { children: Data.ElementListOrTextText textValue
+                , click: clickMessageData
+                , id: Nothing
+                }
+          }
+      Nothing ->
+        Data.ElementDiv
+          { style
+          , div:
+              Data.Div
+                { children: Data.ElementListOrTextText textValue
+                , click: clickMessageData
+                , id: Nothing
+                }
+          }
 
 type ImageOptional
   = ( objectFit :: Css.ObjectFitValue )
