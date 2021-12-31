@@ -7,16 +7,14 @@ import Data.Array.NonEmpty as NonEmptyArray
 import Data.Map as Map
 import Data.Maybe (Maybe(..))
 import Data.String as String
-import Data.String.NonEmpty (NonEmptyString)
-import Data.String.NonEmpty as NonEmptyString
 import Data.Tuple as Tuple
 import Hash as Hash
-import Html.Wellknown as HtmlWellknown
 import Prelude as Prelude
 import StructuredUrl as StructuredUrl
-import Vdom.VdomPicked as Vdom
 import Vdom.PatchState as VdomPatchState
+import Vdom.VdomPicked as Vdom
 import View.Data as Data
+import View.StyleDict as StyleDict
 
 toVdom ::
   forall message location.
@@ -28,11 +26,10 @@ toVdom { scriptPath, view: Data.View view } =
   let
     ( { childList: vdomChildren
       , styleDict: styleDictChildren
-      , keyframesDict
       }
     ) = viewChildrenToVdomChildren view.children
 
-    { className: bodyClassName, styleDict } = addStyleDictAndClassName styleDictChildren view.bodyStyle
+    { className: bodyClassName, styleDict } = StyleDict.addStyleDictAndClassName styleDictChildren view.bodyStyle Map.empty
   in
     Vdom.Vdom
       { pageName: view.pageName
@@ -44,8 +41,7 @@ toVdom { scriptPath, view: Data.View view } =
       , coverImagePath: view.coverImagePath
       , path: Just view.path
       , origin: view.origin
-      , style:
-          htmlElementAndStyleDictToCssStatementList { styleDict, keyframesDict }
+      , style: StyleDict.toCssStatementList styleDict
       , scriptPath
       , children: vdomChildren
       , bodyClass: Just bodyClassName
@@ -53,80 +49,10 @@ toVdom { scriptPath, view: Data.View view } =
       , pointerDown: Nothing
       }
 
-htmlElementAndStyleDictToCssStatementList ::
-  { keyframesDict :: Map.Map Hash.Sha256HashValue (Array Css.Keyframe)
-  , styleDict :: Map.Map Hash.Sha256HashValue Data.ViewStyle
-  } ->
-  Css.StatementList
-htmlElementAndStyleDictToCssStatementList { keyframesDict, styleDict } =
-  Css.StatementList
-    { ruleList:
-        Array.concat
-          [ [ Css.Rule
-                { selector: Css.Type { elementName: HtmlWellknown.htmlTagName }
-                , declarationList: [ Css.height100Percent ]
-                }
-            , Css.Rule
-                { selector: Css.Type { elementName: HtmlWellknown.bodyTagName }
-                , declarationList:
-                    [ Css.height100Percent
-                    , Css.margin0
-                    , Css.backgroundColor Color.black
-                    , Css.displayGrid
-                    , Css.boxSizingBorderBox
-                    , Css.alignItems Css.Start
-                    ]
-                }
-            ]
-          , Array.concatMap
-              styleDictItemToCssRuleList
-              (Map.toUnfoldable styleDict)
-          ]
-    , keyframesList:
-        Prelude.map
-          ( \(Tuple.Tuple hashValue keyframeList) ->
-              Css.Keyframes
-                { name: sha256HashValueToAnimationName hashValue
-                , keyframeList
-                }
-          )
-          (Map.toUnfoldable keyframesDict)
-    }
-
-styleDictItemToCssRuleList :: Tuple.Tuple Hash.Sha256HashValue Data.ViewStyle -> Array Css.Rule
-styleDictItemToCssRuleList (Tuple.Tuple hashValue (Data.ViewStyle { normal, hover })) =
-  Array.concat
-    [ if Array.null normal then
-        []
-      else
-        [ Css.Rule
-            { selector:
-                Css.Class
-                  { className: sha256HashValueToClassName hashValue
-                  , isHover: false
-                  }
-            , declarationList: normal
-            }
-        ]
-    , if Array.null hover then
-        []
-      else
-        [ Css.Rule
-            { selector:
-                Css.Class
-                  { className: sha256HashValueToClassName hashValue
-                  , isHover: true
-                  }
-            , declarationList: hover
-            }
-        ]
-    ]
-
 newtype ElementAndStyleDict message location
   = ElementAndStyleDict
   { element :: Vdom.Element message location
-  , styleDict :: Map.Map Hash.Sha256HashValue Data.ViewStyle
-  , keyframesDict :: Map.Map Hash.Sha256HashValue (Array Css.Keyframe)
+  , styleDict :: StyleDict.StyleDict
   }
 
 boxToVdomElementAndStyleDict ::
@@ -141,13 +67,16 @@ boxToVdomElementAndStyleDict box@( Data.Box
 
     { childList: vdomChildList
     , styleDict: childrenStyleDict
-    , keyframesDict: childrenKeyframesDict
     } = viewChildrenToVdomChildren boxRecord.children
 
     { styleDict, className } =
-      addStyleDictAndClassName
+      StyleDict.addStyleDictAndClassName
         childrenStyleDict
         (boxToBoxViewStyle { box, keyframeResult })
+        ( case keyframeResult of
+            Just { animationHashValue, keyframeList } -> Map.singleton animationHashValue keyframeList
+            Nothing -> Map.empty
+        )
 
     vdomChildren :: Vdom.Children message location
     vdomChildren = case NonEmptyArray.fromArray vdomChildList of
@@ -185,12 +114,6 @@ boxToVdomElementAndStyleDict box@( Data.Box
                     }
                 )
       , styleDict
-      , keyframesDict:
-          case keyframeResult of
-            Just { animationHashValue, keyframeList } ->
-              Map.insert animationHashValue keyframeList
-                childrenKeyframesDict
-            Nothing -> childrenKeyframesDict
       }
 
 boxToBoxViewStyle ::
@@ -240,7 +163,7 @@ boxToBoxViewStyle { box: Data.Box rec, keyframeResult } =
         case keyframeResult of
           Just animationHashValue ->
             [ Css.animation
-                ( sha256HashValueToAnimationName
+                ( StyleDict.sha256HashValueToAnimationName
                     animationHashValue.animationHashValue
                 )
                 animationHashValue.duration
@@ -252,8 +175,7 @@ viewChildrenToVdomChildren ::
   forall message location.
   Array (Data.Element message location) ->
   { childList :: Array (Tuple.Tuple String (Vdom.Element message location))
-  , styleDict :: Map.Map Hash.Sha256HashValue Data.ViewStyle
-  , keyframesDict :: Map.Map Hash.Sha256HashValue (Array Css.Keyframe)
+  , styleDict :: StyleDict.StyleDict
   }
 viewChildrenToVdomChildren children =
   let
@@ -274,15 +196,9 @@ viewChildrenToVdomChildren children =
           )
           childrenElementAndStyleDict
     , styleDict:
-        Map.fromFoldable
-          ( Array.concatMap
-              (\(ElementAndStyleDict { styleDict }) -> Map.toUnfoldable styleDict)
-              childrenElementAndStyleDict
-          )
-    , keyframesDict:
-        Map.fromFoldable
-          ( Array.concatMap
-              (\(ElementAndStyleDict { keyframesDict }) -> Map.toUnfoldable keyframesDict)
+        StyleDict.listStyleDictToStyleDict
+          ( Prelude.map
+              (\(ElementAndStyleDict { styleDict }) -> styleDict)
               childrenElementAndStyleDict
           )
     }
@@ -310,32 +226,7 @@ elementToHtmlElementAndStyleDict ::
   ElementAndStyleDict message location
 elementToHtmlElementAndStyleDict = case _ of
   Data.ElementText text -> textToHtmlElementAndStyleDict text
-  Data.SvgElement
-    { style
-  , svg: Data.Svg { viewBox: Data.ViewBox viewBox, svgElementList }
-  } ->
-    let
-      { styleDict, className } =
-        createStyleDictAndClassName
-          style
-    in
-      ElementAndStyleDict
-        { element:
-            Vdom.svg
-              { children:
-                  Array.mapWithIndex
-                    (\index e -> Tuple.Tuple (Prelude.show index) (svgElementToHtmlElement e))
-                    svgElementList
-              , class: Just className
-              , id: Nothing
-              , viewBoxHeight: viewBox.height
-              , viewBoxWidth: viewBox.width
-              , viewBoxX: viewBox.x
-              , viewBoxY: viewBox.y
-              }
-        , styleDict
-        , keyframesDict: Map.empty
-        }
+  Data.SvgElement styleAndSvg -> svgToHtmlElement styleAndSvg
   Data.ElementImage image -> imageElementToHtmlElement image
   Data.BoxElement e -> boxToVdomElementAndStyleDict e
 
@@ -343,7 +234,7 @@ textToHtmlElementAndStyleDict :: forall message location. Data.Text message -> E
 textToHtmlElementAndStyleDict (Data.Text { padding, markup, text, click }) =
   let
     { styleDict, className } =
-      createStyleDictAndClassName
+      StyleDict.createStyleDictAndClassName
         ( Data.ViewStyle
             { normal:
                 ( Array.concat
@@ -359,6 +250,7 @@ textToHtmlElementAndStyleDict (Data.Text { padding, markup, text, click }) =
             , hover: []
             }
         )
+        Map.empty
 
     clickMessageDataMaybe :: Maybe (VdomPatchState.ClickMessageData message)
     clickMessageDataMaybe =
@@ -412,13 +304,39 @@ textToHtmlElementAndStyleDict (Data.Text { padding, markup, text, click }) =
                     }
                 )
       , styleDict
-      , keyframesDict: Map.empty
+      }
+
+svgToHtmlElement :: forall message location. { style :: Data.ViewStyle, svg :: Data.Svg } -> ElementAndStyleDict message location
+svgToHtmlElement { style
+, svg: Data.Svg { viewBox: Data.ViewBox viewBox, svgElementList }
+} =
+  let
+    { styleDict, className } =
+      StyleDict.createStyleDictAndClassName
+        style
+        (Map.empty)
+  in
+    ElementAndStyleDict
+      { element:
+          Vdom.svg
+            { children:
+                Array.mapWithIndex
+                  (\index e -> Tuple.Tuple (Prelude.show index) (svgElementToHtmlElement e))
+                  svgElementList
+            , class: Just className
+            , id: Nothing
+            , viewBoxHeight: viewBox.height
+            , viewBoxWidth: viewBox.width
+            , viewBoxX: viewBox.x
+            , viewBoxY: viewBox.y
+            }
+      , styleDict
       }
 
 imageElementToHtmlElement :: forall message location. { style :: Data.ViewStyle, image :: Data.Image } -> ElementAndStyleDict message location
 imageElementToHtmlElement { style, image: Data.Image rec } =
   let
-    { styleDict, className } = createStyleDictAndClassName style
+    { styleDict, className } = StyleDict.createStyleDictAndClassName style Map.empty
   in
     ElementAndStyleDict
       { element:
@@ -431,7 +349,6 @@ imageElementToHtmlElement { style, image: Data.Image rec } =
                 }
             )
       , styleDict
-      , keyframesDict: Map.empty
       }
 
 svgElementToHtmlElement :: forall message location. Data.SvgElement -> Vdom.Element message location
@@ -475,59 +392,7 @@ svgElementToHtmlElement = case _ of
       )
   Data.Ellipse rec -> Vdom.ElementSvgEllipse (Vdom.SvgEllipse rec)
 
-sha256HashValueToClassName :: Hash.Sha256HashValue -> NonEmptyString
-sha256HashValueToClassName sha256HashValue =
-  NonEmptyString.prependString
-    "nv_"
-    (Hash.toNonEmptyString sha256HashValue)
-
-sha256HashValueToAnimationName :: Hash.Sha256HashValue -> NonEmptyString
-sha256HashValueToAnimationName sha256HashValue =
-  NonEmptyString.prependString
-    "nva_"
-    (Hash.toNonEmptyString sha256HashValue)
-
-viewStyleToSha256HashValue :: Data.ViewStyle -> Hash.Sha256HashValue
-viewStyleToSha256HashValue (Data.ViewStyle { normal, hover }) =
-  Hash.stringToSha256HashValue
-    ( String.joinWith "!"
-        [ Css.declarationListToString normal
-        , Css.declarationListToString hover
-        ]
-    )
-
 keyframeListToSha256HashValue :: Array Css.Keyframe -> Hash.Sha256HashValue
 keyframeListToSha256HashValue keyframeList =
   Hash.stringToSha256HashValue
     (String.joinWith "!" (Prelude.map Css.keyFrameToString keyframeList))
-
-createStyleDictAndClassName ::
-  Data.ViewStyle ->
-  { styleDict :: Map.Map Hash.Sha256HashValue Data.ViewStyle, className :: NonEmptyString }
-createStyleDictAndClassName viewStyle =
-  let
-    classNameHashValue :: Hash.Sha256HashValue
-    classNameHashValue = viewStyleToSha256HashValue viewStyle
-
-    className :: NonEmptyString
-    className = sha256HashValueToClassName classNameHashValue
-  in
-    { styleDict: Map.singleton classNameHashValue viewStyle
-    , className
-    }
-
-addStyleDictAndClassName ::
-  Map.Map Hash.Sha256HashValue Data.ViewStyle ->
-  Data.ViewStyle ->
-  { styleDict :: Map.Map Hash.Sha256HashValue Data.ViewStyle, className :: NonEmptyString }
-addStyleDictAndClassName styleDict viewStyle =
-  let
-    classNameHashValue :: Hash.Sha256HashValue
-    classNameHashValue = viewStyleToSha256HashValue viewStyle
-
-    className :: NonEmptyString
-    className = sha256HashValueToClassName classNameHashValue
-  in
-    { styleDict: Map.insert classNameHashValue viewStyle styleDict
-    , className
-    }
