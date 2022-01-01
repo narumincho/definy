@@ -29,9 +29,8 @@ newtype StyleDict
 
 createStyleDictAndClassName ::
   Data.ViewStyle ->
-  Map.Map Hash.Sha256HashValue (Array Css.Keyframe) ->
   { styleDict :: StyleDict, className :: NonEmptyString }
-createStyleDictAndClassName viewStyle animation =
+createStyleDictAndClassName viewStyle@(Data.ViewStyle { animation }) =
   let
     classNameHashValue :: Hash.Sha256HashValue
     classNameHashValue = viewStyleToSha256HashValue viewStyle
@@ -50,9 +49,8 @@ createStyleDictAndClassName viewStyle animation =
 addStyleDictAndClassName ::
   StyleDict ->
   Data.ViewStyle ->
-  Map.Map Hash.Sha256HashValue (Array Css.Keyframe) ->
   { styleDict :: StyleDict, className :: NonEmptyString }
-addStyleDictAndClassName (StyleDict styleDictRec) viewStyle animation =
+addStyleDictAndClassName (StyleDict styleDictRec) viewStyle@(Data.ViewStyle { animation }) =
   let
     classNameHashValue :: Hash.Sha256HashValue
     classNameHashValue = viewStyleToSha256HashValue viewStyle

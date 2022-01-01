@@ -85,7 +85,7 @@ articleToView location (ArticleData.Article { title, imagePath, children }) =
                     }
                 ]
             , ViewHelper.text
-                { markup: View.Heading2
+                { markup: ViewHelper.Heading2
                 , padding: 0.5
                 }
                 (NonEmptyString.toString title)
@@ -131,4 +131,4 @@ copyright :: View.Element Message.Message Location.Location
 copyright =
   ViewHelper.text
     { padding: 0.5 }
-    "© 2021 narumincho"
+    "© 2022 narumincho"

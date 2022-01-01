@@ -1,32 +1,37 @@
 module View.Data
-  ( Animation(..)
-  , Box(..)
-  , BoxHoverStyle(..)
+  ( Code(..)
+  , Div(..)
   , Element(..)
+  , ElementListOrText(..)
+  , ExternalLinkAnchor(..)
+  , Heading1(..)
+  , Heading2(..)
   , Image(..)
+  , KeyAndElement(..)
   , Link(..)
+  , SameOriginAnchor(..)
   , Svg(..)
   , SvgElement(..)
-  , Text(..)
-  , TextMarkup(..)
   , View(..)
   , ViewBox(..)
   , ViewStyle(..)
-  , XOrY(..)
   , createStyle
   ) where
 
 import Color as Color
 import Css as Css
 import Data.Array.NonEmpty (NonEmptyArray)
+import Data.Map as Map
 import Data.Maybe (Maybe(..))
 import Data.String.NonEmpty (NonEmptyString)
 import Data.String.NonEmpty as NonEmptyString
+import Hash as Hash
 import Language as Language
 import Option as Option
 import StructuredUrl as StructuredUrl
 import Type.Proxy as Proxy
 import Util as Util
+import Vdom.PatchState as PatchState
 
 newtype View :: Type -> Type -> Type
 -- | 見た目を表現するデータ. HTML Option より HTML と離れた, 抽象度の高く 扱いやすいものにする.
@@ -53,6 +58,7 @@ newtype ViewStyle
   = ViewStyle
   { normal :: Array Css.Declaration
   , hover :: Array Css.Declaration
+  , animation :: Map.Map Hash.Sha256HashValue (Array Css.Keyframe)
   }
 
 type StyleOptional
@@ -82,40 +88,8 @@ createStyle option normal =
           case rec.hover of
             Just hover -> hover
             Nothing -> []
+      , animation: Map.empty
       }
-
-newtype Box :: Type -> Type -> Type
--- | 縦か横方向に積める箱
-newtype Box message location
-  = Box
-  { direction :: XOrY
-  , children :: Array (Element message location)
-  , gap :: Number
-  , paddingTopBottom :: Number
-  , paddingLeftRight :: Number
-  , height :: Maybe Number
-  , backgroundColor :: Maybe Color.Color
-  , gridTemplateColumns1FrCount :: Maybe Int
-  , link :: Maybe (Link message location)
-  , hover :: BoxHoverStyle
-  , scrollX :: Boolean
-  , scrollY :: Boolean
-  }
-
-data XOrY
-  = X
-  | Y
-
-newtype BoxHoverStyle
-  = BoxHoverStyle
-  { animation :: Maybe Animation
-  }
-
-newtype Animation
-  = Animation
-  { keyframeList :: Array Css.Keyframe
-  , {- アニメーションする時間. 単位は ms */ -} duration :: Number
-  }
 
 data Link :: Type -> Type -> Type
 data Link message location
@@ -125,13 +99,14 @@ data Link message location
 data Element :: Type -> Type -> Type
 -- | テキスト, リンクなどの要素
 data Element message location
-  = ElementText (Text message)
-  | SvgElement
-    { style :: ViewStyle
-    , svg :: Svg
-    }
+  = ElementSvg { style :: ViewStyle, svg :: Svg }
   | ElementImage { style :: ViewStyle, image :: Image }
-  | BoxElement (Box message location)
+  | ElementDiv { style :: ViewStyle, div :: Div message location }
+  | ElementSameOriginAnchor { style :: ViewStyle, anchor :: SameOriginAnchor message location }
+  | ElementExternalLinkAnchor { style :: ViewStyle, anchor :: ExternalLinkAnchor message location }
+  | ElementHeading1 { style :: ViewStyle, heading1 :: Heading1 message location }
+  | ElementHeading2 { style :: ViewStyle, heading2 :: Heading2 message location }
+  | ElementCode { style :: ViewStyle, code :: Code message location }
 
 newtype Image
   = Image
@@ -139,19 +114,58 @@ newtype Image
   , alternativeText :: String
   }
 
-newtype Text message
-  = Text
-  { markup :: TextMarkup
-  , padding :: Number
-  , click :: Maybe message
-  , text :: String
+newtype Div message location
+  = Div
+  { id :: Maybe NonEmptyString
+  , click :: Maybe (PatchState.ClickMessageData message)
+  , children :: ElementListOrText message location
   }
 
-data TextMarkup
-  = None
-  | Heading1
-  | Heading2
-  | Code
+data ElementListOrText message location
+  = ElementListOrTextElementList
+    (NonEmptyArray (KeyAndElement message location))
+  | ElementListOrTextText String
+
+newtype KeyAndElement message location
+  = KeyAndElement
+  { key :: String
+  , element :: Element message location
+  }
+
+data SameOriginAnchor message location
+  = SameOriginAnchor
+    { id :: Maybe NonEmptyString
+    , href :: location
+    , children :: ElementListOrText message location
+    }
+
+data ExternalLinkAnchor message location
+  = ExternalLinkAnchor
+    { id :: Maybe NonEmptyString
+    , href :: StructuredUrl.StructuredUrl
+    , children :: ElementListOrText message location
+    }
+
+newtype Heading1 message location
+  = Heading1
+  { id :: Maybe NonEmptyString
+  , click :: Maybe (PatchState.ClickMessageData message)
+  , children :: ElementListOrText message location
+  }
+
+newtype Heading2 message location
+  = Heading2
+  { id :: Maybe NonEmptyString
+  , click :: Maybe (PatchState.ClickMessageData message)
+  , children :: ElementListOrText message location
+  }
+
+newtype Code message location
+  = Code
+  { id :: Maybe NonEmptyString
+  , click :: Maybe (PatchState.ClickMessageData message)
+  , children :: ElementListOrText message location
+  }
 
 newtype Svg
   = Svg

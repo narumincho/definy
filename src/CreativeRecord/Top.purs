@@ -25,9 +25,9 @@ import View.Helper as ViewHelper
 linkBackGroundColor :: Color.Color
 linkBackGroundColor = Color.fromInt 0x333333
 
-zoomAnimation :: View.Animation
+zoomAnimation :: ViewHelper.Animation
 zoomAnimation =
-  View.Animation
+  ViewHelper.Animation
     { duration: 300.0
     , keyframeList:
         [ Css.Keyframe
@@ -45,7 +45,7 @@ snsLink url logo text =
     , paddingTopBottom: 0.5
     , gap: 0.5
     , backgroundColor: Just linkBackGroundColor
-    , hover: View.BoxHoverStyle { animation: Just zoomAnimation }
+    , hover: ViewHelper.BoxHoverStyle { animation: Just zoomAnimation }
     }
     [ ViewHelper.svg
         { width: ViewHelper.Rem 2.0
@@ -61,7 +61,7 @@ externalLink url imageUrl text =
   ViewHelper.boxY
     { link: View.LinkExternal url
     , backgroundColor: linkBackGroundColor
-    , hover: View.BoxHoverStyle { animation: Just zoomAnimation }
+    , hover: ViewHelper.BoxHoverStyle { animation: Just zoomAnimation }
     }
     [ ViewHelper.image
         { path: imageUrl
@@ -80,7 +80,7 @@ articleLinkView articleLocation =
     ViewHelper.boxY
       { backgroundColor: linkBackGroundColor
       , link: View.LinkSameOrigin (Location.Article articleLocation)
-      , hover: View.BoxHoverStyle { animation: Just zoomAnimation }
+      , hover: ViewHelper.BoxHoverStyle { animation: Just zoomAnimation }
       }
       [ ViewHelper.image
           { path: imagePath
@@ -130,7 +130,7 @@ articleLocationListToViewElement list =
 view :: Int -> Array (View.Element Message.Message Location.Location)
 view count =
   [ ViewHelper.text
-      { markup: View.Heading2
+      { markup: ViewHelper.Heading2
       , padding: 0.5
       , click: Message.CountUp
       }
@@ -178,7 +178,7 @@ view count =
           "ナルミンチョ"
       ]
   , ViewHelper.text
-      { markup: View.Heading2
+      { markup: ViewHelper.Heading2
       , padding: 0.5
       }
       "ナルミンチョが作った Webアプリ"
@@ -219,7 +219,7 @@ view count =
           "つくマート"
       ]
   , ViewHelper.text
-      { markup: View.Heading2
+      { markup: ViewHelper.Heading2
       , padding: 0.5
       }
       "ナルミンチョが書いた記事"
