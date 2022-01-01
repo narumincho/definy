@@ -237,6 +237,10 @@ vdomElementToHtmlElement { origin, element, locationToPathAndSearchParams } = ca
     Wellknown.div
       { id: rec.id, class: rec.class }
       (vdomChildrenToHtmlChildren { origin, children: rec.children, locationToPathAndSearchParams })
+  Data.ElementSpan (Data.Span rec) ->
+    Wellknown.span
+      { id: rec.id, class: rec.class }
+      (vdomChildrenToHtmlChildren { origin, children: rec.children, locationToPathAndSearchParams })
   Data.ElementH1 (Data.H1 rec) ->
     Wellknown.h1
       { id: rec.id, class: rec.class }

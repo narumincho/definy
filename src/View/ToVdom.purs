@@ -195,6 +195,30 @@ codeToVdomElementAndStyleDict { style, code: Data.Code code } =
       , styleDict
       }
 
+spanToVdomElementAndStyleDict ::
+  forall message location.
+  { style :: Data.ViewStyle, span :: Data.Span message location } ->
+  ElementAndStyleDict message location
+spanToVdomElementAndStyleDict { style, span: Data.Span code } =
+  let
+    { styleDict, className, vdomChildren } =
+      elementListOrTextToStyleDictAndClassNameAndVdomChildren
+        style
+        code.children
+  in
+    ElementAndStyleDict
+      { element:
+          Vdom.ElementSpan
+            ( Vdom.Span
+                { id: Nothing
+                , class: Just className
+                , click: code.click
+                , children: vdomChildren
+                }
+            )
+      , styleDict
+      }
+
 viewElementListToVdomChildren ::
   forall message location.
   Array (Data.Element message location) ->
@@ -277,6 +301,7 @@ elementToHtmlElementAndStyleDict = case _ of
   Data.ElementHeading1 heading -> heading1ToVdomElementAndStyleDict heading
   Data.ElementHeading2 heading -> heading2ToVdomElementAndStyleDict heading
   Data.ElementCode code -> codeToVdomElementAndStyleDict code
+  Data.ElementSpan span -> spanToVdomElementAndStyleDict span
 
 svgToHtmlElement :: forall message location. { style :: Data.ViewStyle, svg :: Data.Svg } -> ElementAndStyleDict message location
 svgToHtmlElement { style

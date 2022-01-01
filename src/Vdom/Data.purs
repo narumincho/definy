@@ -18,6 +18,7 @@ module Vdom.VdomPicked
   , Pointer(..)
   , PointerType(..)
   , SameOriginLink(..)
+  , Span(..)
   , Svg(..)
   , SvgAnimate(..)
   , SvgCircle(..)
@@ -145,6 +146,7 @@ data ViewPatchOperation
 data Element :: Type -> Type -> Type
 data Element message location
   = ElementDiv (Div message location)
+  | ElementSpan (Span message location)
   | ElementH1 (H1 message location)
   | ElementH2 (H2 message location)
   | ElementCode (Code message location)
@@ -231,6 +233,14 @@ createDivDeff key (Div old) (Div new) = case NonEmptyArray.fromArray
       , key
       }
   Maybe.Nothing -> Skip
+
+newtype Span message location
+  = Span
+  { id :: Maybe NonEmptyString
+  , class :: Maybe NonEmptyString
+  , click :: Maybe (PatchState.ClickMessageData message)
+  , children :: Children message location
+  }
 
 createDiff :: forall a. Prelude.Eq a => a -> a -> Maybe a
 createDiff old new =

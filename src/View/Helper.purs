@@ -6,6 +6,8 @@ module View.Helper
   , boxX
   , boxY
   , image
+  , inlineAnchor
+  , span
   , svg
   , text
   ) where
@@ -153,7 +155,7 @@ boxOptionalToBoxData rec =
 boxXOrYToElement ::
   forall message location.
   BoxData message location ->
-  (Array (Data.Element message location)) ->
+  Array (Data.Element message location) ->
   XOrY ->
   Data.Element message location
 boxXOrYToElement boxData@(BoxData rec) children xOrY =
@@ -456,6 +458,62 @@ svg rec =
           }
     , svg: rec.svg
     }
+
+span :: forall message location. { style :: Data.ViewStyle } -> String -> Data.Element message location
+span { style } textValue =
+  Data.ElementSpan
+    { style
+    , span:
+        Data.Span
+          { id: Nothing
+          , click: Nothing
+          , children: Data.ElementListOrTextText textValue
+          }
+    }
+
+inlineAnchor ::
+  forall message location.
+  { style :: Data.ViewStyle, link :: Data.Link message location } ->
+  Array (Data.Element message location) ->
+  Data.Element message location
+inlineAnchor { style, link } children =
+  let
+    vdomChildren :: Data.ElementListOrText message location
+    vdomChildren = case NonEmptyArray.fromArray children of
+      Just nonEmptyVdomChildren ->
+        Data.ElementListOrTextElementList
+          ( NonEmptyArray.mapWithIndex
+              ( \index element ->
+                  Data.KeyAndElement
+                    { key: (Prelude.show index)
+                    , element: element
+                    }
+              )
+              nonEmptyVdomChildren
+          )
+      Nothing -> Data.ElementListOrTextText ""
+  in
+    case link of
+      Data.LinkSameOrigin location ->
+        Data.ElementSameOriginAnchor
+          { style
+          , anchor:
+              Data.SameOriginAnchor
+                { id: Nothing
+                , href: location
+                , children: vdomChildren
+                }
+          }
+      Data.LinkExternal url ->
+        Data.ElementExternalLinkAnchor
+          { style
+          , anchor:
+              Data.ExternalLinkAnchor
+                { id: Nothing
+                , href: url
+                , children: vdomChildren
+                }
+          }
 
 percentageOrRemWidthToCssDeclaration :: PercentageOrRem -> Css.Declaration
 percentageOrRemWidthToCssDeclaration = case _ of

@@ -10,6 +10,7 @@ module View.Data
   , KeyAndElement(..)
   , Link(..)
   , SameOriginAnchor(..)
+  , Span(..)
   , Svg(..)
   , SvgElement(..)
   , View(..)
@@ -107,6 +108,7 @@ data Element message location
   | ElementHeading1 { style :: ViewStyle, heading1 :: Heading1 message location }
   | ElementHeading2 { style :: ViewStyle, heading2 :: Heading2 message location }
   | ElementCode { style :: ViewStyle, code :: Code message location }
+  | ElementSpan { style :: ViewStyle, span :: Span message location }
 
 newtype Image
   = Image
@@ -162,6 +164,13 @@ newtype Heading2 message location
 
 newtype Code message location
   = Code
+  { id :: Maybe NonEmptyString
+  , click :: Maybe (PatchState.ClickMessageData message)
+  , children :: ElementListOrText message location
+  }
+
+newtype Span message location
+  = Span
   { id :: Maybe NonEmptyString
   , click :: Maybe (PatchState.ClickMessageData message)
   , children :: ElementListOrText message location

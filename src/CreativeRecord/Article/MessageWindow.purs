@@ -73,6 +73,8 @@ view =
                 , path: StaticResource.simple_color_message_windowPng
                 , alternativeText: "3色を使ったメッセージウィンドウの表示"
                 }
+            , ViewHelper.text {} "オレンジは重要な単語につけることとします"
+            , ViewHelper.text {} "水色はシステムなどの説明に使うことにします"
             ]
         ]
     }

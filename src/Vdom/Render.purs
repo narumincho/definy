@@ -63,6 +63,20 @@ elementToHtmlOrSvgElementWithoutDataPath { element, path, patchState, locationTo
         }
     applyChildren { htmlOrSvgElement: div, children: rec.children, path, patchState, locationToPathAndSearchParams }
     pure div
+  Vdom.ElementSpan (Vdom.Span rec) -> do
+    span <-
+      EffectUncurried.runEffectFn1 createSpan
+        { id: Nullable.toNullable (map NonEmptyString.toString rec.id)
+        , class: Nullable.toNullable (map NonEmptyString.toString rec.class)
+        , click:
+            EffectUncurried.mkEffectFn1
+              ( EffectUncurried.runEffectFn2
+                  (VdomPatchState.getClickEventHandler patchState)
+                  (Path.toString path)
+              )
+        }
+    applyChildren { htmlOrSvgElement: span, children: rec.children, path, patchState, locationToPathAndSearchParams }
+    pure span
   Vdom.ElementH1 (Vdom.H1 rec) -> do
     h1 <-
       EffectUncurried.runEffectFn1 createH1
@@ -411,6 +425,14 @@ foreign import setTextContent :: EffectUncurried.EffectFn2 String HtmlOrSvgEleme
 foreign import data HtmlOrSvgElement :: Type
 
 foreign import createDiv ::
+  EffectUncurried.EffectFn1
+    { id :: Nullable String
+    , class :: Nullable String
+    , click :: EffectUncurried.EffectFn1 VdomPatchState.MouseEvent Unit
+    }
+    HtmlOrSvgElement
+
+foreign import createSpan ::
   EffectUncurried.EffectFn1
     { id :: Nullable String
     , class :: Nullable String
