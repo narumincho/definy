@@ -14,6 +14,15 @@ const MultiLineTextSelectionView: ElementOperation<
   MultiLineTextSelection,
   MultiLineTextValue
 >["selectionView"] = React.memo(({ value }) => {
+  if (value.text.length === 0) {
+    return (
+      <div
+        className={css({ fontSize: 16, color: "#5c5c5c", fontStyle: "italic" })}
+      >
+        empty
+      </div>
+    );
+  }
   return (
     <div className={css({ fontSize: 16 })}>
       {value.text.split("\n").map((line, index) => (
