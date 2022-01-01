@@ -131,4 +131,4 @@ copyright :: View.Element Message.Message Location.Location
 copyright =
   ViewHelper.text
     { padding: 0.5 }
-    "© 2021 narumincho"
+    "© 2022 narumincho"
