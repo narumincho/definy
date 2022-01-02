@@ -5,9 +5,7 @@ import CreativeRecord.Element as Element
 import CreativeRecord.Location as Location
 import CreativeRecord.Messgae as Message
 import CreativeRecord.StaticResource as StaticResource
-import Data.Map as Map
 import Data.String.NonEmpty as NonEmptyString
-import Data.Tuple as Tuple
 import StructuredUrl as StructuredUrl
 import Type.Proxy (Proxy(..))
 import View.Data as ViewData
