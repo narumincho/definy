@@ -1,6 +1,7 @@
 module CreativeRecord.View (view) where
 
-import Color.Scheme.MaterialDesign as Color
+import Color as Color
+import Color.Scheme.MaterialDesign as ColorMaterial
 import CreativeRecord.Article as Article
 import CreativeRecord.Article.Data as ArticleData
 import CreativeRecord.Location as Location
@@ -35,22 +36,28 @@ view state =
         View.View
           { appName
           , children:
-              Array.concat
-                [ [ ViewHelper.boxY
-                      { link: View.LinkSameOrigin Location.Top
-                      , paddingTopBottom: 3.0
+              [ ViewHelper.boxY
+                  { link: View.LinkSameOrigin Location.Top
+                  , paddingTopBottom: 3.0
+                  }
+                  [ ViewHelper.svg
+                      { width: ViewHelper.Percentage 90.0
+                      , height: 5.0
+                      , isJustifySelfCenter: true
+                      , svg: SvgImage.webSiteLogo
                       }
-                      [ ViewHelper.svg
-                          { width: ViewHelper.Percentage 90.0
-                          , height: 5.0
-                          , isJustifySelfCenter: true
-                          , svg: SvgImage.webSiteLogo
-                          }
-                      ]
                   ]
-                , Top.view (State.getCount state)
-                , [ copyright ]
-                ]
+              , ViewHelper.div
+                  { style:
+                      View.createStyle {}
+                        [ Css.displayGrid
+                        , Css.justifySelfCenter
+                        , Css.maxWidthRem 42.0
+                        ]
+                  }
+                  (Top.view (State.getCount state))
+              , copyright
+              ]
           , coverImagePath: StaticResource.iconPng
           , description:
               "革新的なプログラミング言語のdefiny, Web技術, 作っているゲームなどについて解説しています"
@@ -58,7 +65,7 @@ view state =
           , language: Maybe.Just Language.Japanese
           , pageName: appName
           , path: Location.toPath location
-          , themeColor: Color.orange
+          , themeColor: ColorMaterial.orange
           , origin: Origin.origin
           , bodyStyle: View.createStyle {} [ Css.overflow { x: Css.Hidden, y: Css.Scroll } ]
           }
@@ -72,34 +79,41 @@ articleToView location (ArticleData.Article { title, imagePath, children }) =
   View.View
     { appName: NonEmptyString.nes (Proxy :: _ "ナルミンチョの創作記録")
     , children:
-        Array.concat
-          [ [ ViewHelper.boxY
-                { link: View.LinkSameOrigin Location.Top
-                , paddingTopBottom: 3.0
-                }
-                [ ViewHelper.svg
-                    { width: ViewHelper.Percentage 90.0
-                    , height: 5.0
-                    , isJustifySelfCenter: true
-                    , svg: SvgImage.webSiteLogo
-                    }
-                ]
-            , ViewHelper.text
-                { markup: ViewHelper.Heading2
-                , padding: 0.5
-                }
-                (NonEmptyString.toString title)
-            , ViewHelper.image
-                { alternativeText: ""
-                , height: 10.0
-                , path: imagePath
-                , width: ViewHelper.Percentage 100.0
-                , objectFit: Css.Contain
+        [ ViewHelper.boxY
+            { link: View.LinkSameOrigin Location.Top
+            , paddingTopBottom: 3.0
+            }
+            [ ViewHelper.svg
+                { width: ViewHelper.Percentage 90.0
+                , height: 5.0
+                , isJustifySelfCenter: true
+                , svg: SvgImage.webSiteLogo
                 }
             ]
-          , children
-          , [ backToTop, copyright ]
-          ]
+        , ViewHelper.text
+            { markup: ViewHelper.Heading2
+            , padding: 0.5
+            }
+            (NonEmptyString.toString title)
+        , ViewHelper.image
+            { alternativeText: Prelude.append (NonEmptyString.toString title) "のイメージ"
+            , height: 10.0
+            , path: imagePath
+            , width: ViewHelper.Percentage 100.0
+            , objectFit: Css.Contain
+            }
+        , ViewHelper.div
+            { style:
+                View.createStyle {}
+                  [ Css.displayGrid
+                  , Css.justifySelfCenter
+                  , Css.maxWidthRem 42.0
+                  ]
+            }
+            children
+        , backToTop
+        , copyright
+        ]
     , coverImagePath: imagePath
     , description:
         "革新的なプログラミング言語のdefiny, Web技術, 作っているゲームなどについて解説しています"
@@ -110,7 +124,7 @@ articleToView location (ArticleData.Article { title, imagePath, children }) =
           (NonEmptyString.appendString title " | ")
           appName
     , path: Location.toPath (Location.Article location)
-    , themeColor: Color.orange
+    , themeColor: ColorMaterial.orange
     , origin: Origin.origin
     , bodyStyle: View.createStyle {} [ Css.overflow { x: Css.Hidden, y: Css.Scroll } ]
     }
@@ -124,11 +138,17 @@ backToTop =
         , paddingTopBottom: 0.5
         , link: View.LinkSameOrigin Location.Top
         }
-        [ ViewHelper.text {} "ホームに戻る" ]
+        [ ViewHelper.text {} "トップページに戻る" ]
     ]
 
 copyright :: View.Element Message.Message Location.Location
 copyright =
-  ViewHelper.text
-    { padding: 0.5 }
+  ViewHelper.divText
+    { style:
+        View.createStyle {}
+          [ Css.textAlignCenter
+          , Css.padding { leftRight: 0.0, topBottom: 0.5 }
+          , Css.color Color.white
+          ]
+    }
     "© 2022 narumincho"

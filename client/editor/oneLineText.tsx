@@ -23,6 +23,15 @@ export const HeadTextSelectionView: ElementOperation<
   OneLineTextSelection,
   OneLineTextValue
 >["selectionView"] = React.memo((props) => {
+  if (props.value.text.length === 0) {
+    return (
+      <div
+        className={css({ fontSize: 32, color: "#5c5c5c", fontStyle: "italic" })}
+      >
+        empty
+      </div>
+    );
+  }
   return <div className={css({ fontSize: 32 })}>{props.value.text}</div>;
 });
 HeadTextSelectionView.displayName = "HeadTextSelectionView";

@@ -65,6 +65,22 @@ export const createDiv = (option: {
   return div;
 };
 
+export const createSpan = (option: {
+  readonly id: string | null;
+  readonly class: string | null;
+  readonly click: (mouseEvent: MouseEvent) => void;
+}): HTMLElement | SVGElement => {
+  const span = window.document.createElement("span");
+  if (typeof option.id === "string") {
+    span.id = option.id;
+  }
+  if (typeof option.class === "string") {
+    span.className = option.class;
+  }
+  span.addEventListener("click", (e) => option.click(e));
+  return span;
+};
+
 export const createH1 = (option: {
   readonly id: string | null;
   readonly class: string | null;

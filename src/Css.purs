@@ -27,10 +27,12 @@ module Css
   , keyFrameToString
   , lineHeight
   , margin0
+  , maxWidthRem
   , objectFit
   , overflow
   , padding
   , ruleListToString
+  , textAlignCenter
   , textDecorationNone
   , transformScale
   , whiteSpacePre
@@ -169,6 +171,13 @@ widthPercent value =
     , value:
         NonEmptyString.prependString (Prelude.show value)
           (NonEmptyString.nes (Proxy :: _ "%"))
+    }
+
+maxWidthRem :: Number -> Declaration
+maxWidthRem value =
+  Declaration
+    { property: NonEmptyString.nes (Proxy :: _ "max-width")
+    , value: remValueToCssValue value
     }
 
 heightRem :: Number -> Declaration
@@ -378,4 +387,11 @@ transformScale value =
         NonEmptyString.appendString
           (NonEmptyString.nes (Proxy :: _ "scale("))
           (Prelude.append (Prelude.show value) ")")
+    }
+
+textAlignCenter :: Declaration
+textAlignCenter =
+  Declaration
+    { property: NonEmptyString.nes (Proxy :: _ "text-align")
+    , value: NonEmptyString.nes (Proxy :: _ "center")
     }

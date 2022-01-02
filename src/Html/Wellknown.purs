@@ -18,6 +18,7 @@ module Html.Wellknown
   , meta
   , noscript
   , script
+  , span
   , style
   , svg
   , svgAnimate
@@ -148,6 +149,19 @@ div :: { id :: Maybe NonEmptyString, class :: Maybe NonEmptyString } -> Data.Htm
 div attributes children =
   Data.htmlElement
     (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "div"))
+    ( Map.fromFoldable
+        ( Array.catMaybes
+            [ Prelude.map idAttribute attributes.id
+            , Prelude.map classAttribute attributes.class
+            ]
+        )
+    )
+    children
+
+span :: { id :: Maybe NonEmptyString, class :: Maybe NonEmptyString } -> Data.HtmlChildren -> Data.RawHtmlElement
+span attributes children =
+  Data.htmlElement
+    (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "span"))
     ( Map.fromFoldable
         ( Array.catMaybes
             [ Prelude.map idAttribute attributes.id
