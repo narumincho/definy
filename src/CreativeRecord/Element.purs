@@ -22,6 +22,7 @@ paragraphText textValue =
         ViewData.createStyle {}
           [ Css.color Color.white
           , Css.padding { leftRight: 0.5, topBottom: 0.5 }
+          , Css.fontSize 1.2
           ]
     }
     textValue
@@ -43,6 +44,7 @@ spanNormalText textValue =
     { style:
         ViewData.createStyle {}
           [ Css.color Color.white
+          , Css.fontSize 1.2
           ]
     }
     textValue
@@ -53,6 +55,7 @@ inlineAnchorLocal location textValue =
     { style:
         ViewData.createStyle {}
           [ Css.color ColorMaterial.lightBlue
+          , Css.fontSize 1.2
           ]
     , link: ViewData.LinkSameOrigin location
     }
@@ -64,6 +67,7 @@ inlineAnchorExternal url textValue =
     { style:
         ViewData.createStyle {}
           [ Css.color ColorMaterial.lightBlue
+          , Css.fontSize 1.2
           ]
     , link: ViewData.LinkExternal url
     }

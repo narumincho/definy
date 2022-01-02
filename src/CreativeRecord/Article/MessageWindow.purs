@@ -1,6 +1,7 @@
 module CreativeRecord.Article.MessageWindow (view) where
 
 import CreativeRecord.Article.Data as Data
+import CreativeRecord.Element as Element
 import CreativeRecord.StaticResource as StaticResource
 import Data.String.NonEmpty as NonEmptyString
 import Type.Proxy as Proxy
@@ -17,7 +18,7 @@ view =
             [ ViewHelper.text {} "更新日時 2019/10/4"
             , ViewHelper.text {} "作成日 2015/9/20"
             , ViewHelper.text { markup: ViewHelper.Heading2 } "メッセージウィンドウとは"
-            , ViewHelper.text {} "メッセージウィンドウは、登場人物やが言ったことや、ナレーションの言葉を表示し、プレイヤーに伝えるUIです。DESIRED Routeを作る上で、登場人物たちのセリフをプレイヤーに伝えるために必要でした。市販のゲームを見てどんなメッセージウィンドウを作れば良いか考えてみよう!"
+            , Element.paragraphText "メッセージウィンドウは、登場人物やが言ったことや、ナレーションの言葉を表示し、プレイヤーに伝えるUIです。DESIRED Routeを作る上で、登場人物たちのセリフをプレイヤーに伝えるために必要でした。市販のゲームを見てどんなメッセージウィンドウを作れば良いか考えてみよう!"
             , ViewHelper.text { markup: ViewHelper.Heading2 } "市販のゲームの例"
             , ViewHelper.image
                 { width: ViewHelper.Percentage 50.0

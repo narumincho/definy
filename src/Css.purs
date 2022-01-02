@@ -18,6 +18,7 @@ module Css
   , declarationProperty
   , declarationValue
   , displayGrid
+  , fontSize
   , gap
   , gridAutoFlow
   , gridTemplateColumns
@@ -394,4 +395,11 @@ textAlignCenter =
   Declaration
     { property: NonEmptyString.nes (Proxy :: _ "text-align")
     , value: NonEmptyString.nes (Proxy :: _ "center")
+    }
+
+fontSize :: Number -> Declaration
+fontSize size =
+  Declaration
+    { property: NonEmptyString.nes (Proxy :: _ "font-size")
+    , value: remValueToCssValue size
     }
