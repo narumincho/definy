@@ -5,6 +5,7 @@ module View.Helper
   , TextMarkup(..)
   , boxX
   , boxY
+  , code
   , div
   , divText
   , image
@@ -536,6 +537,20 @@ inlineAnchor { style, link } textValue = case link of
             , children: Data.ElementListOrTextText textValue
             }
       }
+
+code :: forall message location. String -> Data.Element message location
+code textValue =
+  Data.ElementCode
+    { style:
+        Data.createStyle {}
+          [ Css.color Color.white, Css.whiteSpacePreWrap, Css.fontSize 1.1 ]
+    , code:
+        Data.Code
+          { children: Data.ElementListOrTextText textValue
+          , click: Nothing
+          , id: Nothing
+          }
+    }
 
 percentageOrRemWidthToCssDeclaration :: PercentageOrRem -> Css.Declaration
 percentageOrRemWidthToCssDeclaration = case _ of
