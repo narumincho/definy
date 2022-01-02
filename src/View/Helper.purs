@@ -5,6 +5,8 @@ module View.Helper
   , TextMarkup(..)
   , boxX
   , boxY
+  , div
+  , divText
   , image
   , inlineAnchor
   , span
@@ -459,6 +461,43 @@ svg rec =
     , svg: rec.svg
     }
 
+div :: forall message location. { style :: Data.ViewStyle } -> Array (Data.Element message location) -> Data.Element message location
+div { style } children =
+  Data.ElementDiv
+    { style
+    , div:
+        Data.Div
+          { id: Nothing
+          , click: Nothing
+          , children:
+              case NonEmptyArray.fromArray children of
+                Just nonEmptyVdomChildren ->
+                  Data.ElementListOrTextElementList
+                    ( NonEmptyArray.mapWithIndex
+                        ( \index element ->
+                            Data.KeyAndElement
+                              { key: (Prelude.show index)
+                              , element: element
+                              }
+                        )
+                        nonEmptyVdomChildren
+                    )
+                Nothing -> Data.ElementListOrTextText ""
+          }
+    }
+
+divText :: forall message location. { style :: Data.ViewStyle } -> String -> Data.Element message location
+divText { style } textValue =
+  Data.ElementDiv
+    { style
+    , div:
+        Data.Div
+          { id: Nothing
+          , click: Nothing
+          , children: Data.ElementListOrTextText textValue
+          }
+    }
+
 span :: forall message location. { style :: Data.ViewStyle } -> String -> Data.Element message location
 span { style } textValue =
   Data.ElementSpan
@@ -474,46 +513,29 @@ span { style } textValue =
 inlineAnchor ::
   forall message location.
   { style :: Data.ViewStyle, link :: Data.Link message location } ->
-  Array (Data.Element message location) ->
+  String ->
   Data.Element message location
-inlineAnchor { style, link } children =
-  let
-    vdomChildren :: Data.ElementListOrText message location
-    vdomChildren = case NonEmptyArray.fromArray children of
-      Just nonEmptyVdomChildren ->
-        Data.ElementListOrTextElementList
-          ( NonEmptyArray.mapWithIndex
-              ( \index element ->
-                  Data.KeyAndElement
-                    { key: (Prelude.show index)
-                    , element: element
-                    }
-              )
-              nonEmptyVdomChildren
-          )
-      Nothing -> Data.ElementListOrTextText ""
-  in
-    case link of
-      Data.LinkSameOrigin location ->
-        Data.ElementSameOriginAnchor
-          { style
-          , anchor:
-              Data.SameOriginAnchor
-                { id: Nothing
-                , href: location
-                , children: vdomChildren
-                }
-          }
-      Data.LinkExternal url ->
-        Data.ElementExternalLinkAnchor
-          { style
-          , anchor:
-              Data.ExternalLinkAnchor
-                { id: Nothing
-                , href: url
-                , children: vdomChildren
-                }
-          }
+inlineAnchor { style, link } textValue = case link of
+  Data.LinkSameOrigin location ->
+    Data.ElementSameOriginAnchor
+      { style
+      , anchor:
+          Data.SameOriginAnchor
+            { id: Nothing
+            , href: location
+            , children: Data.ElementListOrTextText textValue
+            }
+      }
+  Data.LinkExternal url ->
+    Data.ElementExternalLinkAnchor
+      { style
+      , anchor:
+          Data.ExternalLinkAnchor
+            { id: Nothing
+            , href: url
+            , children: Data.ElementListOrTextText textValue
+            }
+      }
 
 percentageOrRemWidthToCssDeclaration :: PercentageOrRem -> Css.Declaration
 percentageOrRemWidthToCssDeclaration = case _ of
