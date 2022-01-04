@@ -2,6 +2,7 @@ module CreativeRecord.Article.SvgBasic (view) where
 
 import Color as Color
 import CreativeRecord.Article.Data as Data
+import CreativeRecord.Element as Element
 import CreativeRecord.StaticResource as StaticResource
 import Data.Array.NonEmpty as NonEmptyArray
 import Data.String.NonEmpty as NonEmptyString
@@ -27,19 +28,7 @@ view =
                     , width: ViewHelper.Rem 16.0
                     , svg: orange
                     }
-                , ViewHelper.text { markup: ViewHelper.Code }
-                    """<svg viewBox="0 0 324 324" >
-    <circle cx="162" cy="162" r="155" fill="orange" />
-    <circle cx="123" cy="274" r="10" fill="#ffd427" />
-    <circle cx="271" cy="157" r="11" fill="#ffd427" />
-    <circle cx="269" cy="197" r="11" fill="#ffd427" />
-    <circle cx="243" cy="226" r="13" fill="#ffd427" />
-    <circle cx="210" cy="265" r="9" fill="#ffd427" />
-    <circle cx="158" cy="268" r="10" fill="#ffd427" />
-    <circle cx="201" cy="232" r="10" fill="#ffd427" />
-    <polygon points="162,20 170,28 180,25 188,36 198,42 188,50 180,60 162,53 144,60 136,50 126,42 136,36 144,25 154,28" stroke="black" fill="#617e2f" />
-    <ellipse cx="162" cy="40" rx="25" ry="10" fill="rgb(102,174,92)" />
-</svg>"""
+                , Element.htmlCodeWithSyntaxHighlightFromSvg orange
                 ]
             , ViewHelper.text {} "SVGの良いところはたくさんあるが、その中で2つ紹介したい"
             , ViewHelper.text { markup: ViewHelper.Heading2 } "ベクタ形式なので拡大してもギザギザしない"

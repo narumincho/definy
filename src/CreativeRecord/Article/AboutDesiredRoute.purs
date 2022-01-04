@@ -3,7 +3,7 @@ module CreativeRecord.Article.AboutDesiredRoute (view) where
 import CreativeRecord.Article.Data as Data
 import CreativeRecord.Element as Element
 import CreativeRecord.Location as Location
-import CreativeRecord.Messgae as Message
+import CreativeRecord.Message as Message
 import CreativeRecord.StaticResource as StaticResource
 import Data.String.NonEmpty as NonEmptyString
 import StructuredUrl as StructuredUrl

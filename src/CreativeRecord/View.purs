@@ -5,14 +5,13 @@ import Color.Scheme.MaterialDesign as ColorMaterial
 import CreativeRecord.Article as Article
 import CreativeRecord.Article.Data as ArticleData
 import CreativeRecord.Location as Location
-import CreativeRecord.Messgae as Message
+import CreativeRecord.Message as Message
 import CreativeRecord.Origin as Origin
 import CreativeRecord.State as State
 import CreativeRecord.StaticResource as StaticResource
 import CreativeRecord.SvgImage as SvgImage
 import CreativeRecord.Top as Top
 import Css as Css
-import Data.Array as Array
 import Data.Maybe as Maybe
 import Data.String.NonEmpty (NonEmptyString)
 import Data.String.NonEmpty as NonEmptyString

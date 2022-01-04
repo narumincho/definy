@@ -7,7 +7,7 @@ import Color as Color
 import CreativeRecord.Article as Article
 import CreativeRecord.Article.Data as ArticleData
 import CreativeRecord.Location as Location
-import CreativeRecord.Messgae as Message
+import CreativeRecord.Message as Message
 import CreativeRecord.StaticResource as StaticResource
 import CreativeRecord.SvgImage as SvgImage
 import Css as Css

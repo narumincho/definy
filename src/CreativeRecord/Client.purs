@@ -2,7 +2,7 @@ module CreativeRecord.Client (main) where
 
 import Prelude
 import CreativeRecord.Location as Location
-import CreativeRecord.Messgae as Message
+import CreativeRecord.Message as Message
 import CreativeRecord.State as State
 import CreativeRecord.View as CreativeRecordView
 import Effect (Effect)

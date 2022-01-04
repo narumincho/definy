@@ -18,6 +18,7 @@ module Css
   , declarationProperty
   , declarationValue
   , displayGrid
+  , fontSize
   , gap
   , gridAutoFlow
   , gridTemplateColumns
@@ -35,7 +36,7 @@ module Css
   , textAlignCenter
   , textDecorationNone
   , transformScale
-  , whiteSpacePre
+  , whiteSpacePreWrap
   , widthPercent
   , widthRem
   ) where
@@ -215,11 +216,11 @@ margin0 =
     , value: NonEmptyString.nes (Proxy :: _ "0")
     }
 
-whiteSpacePre :: Declaration
-whiteSpacePre =
+whiteSpacePreWrap :: Declaration
+whiteSpacePreWrap =
   Declaration
     { property: NonEmptyString.nes (Proxy :: _ "white-space")
-    , value: NonEmptyString.nes (Proxy :: _ "pre")
+    , value: NonEmptyString.nes (Proxy :: _ "pre-wrap")
     }
 
 remValueToCssValue :: Number -> NonEmptyString
@@ -394,4 +395,11 @@ textAlignCenter =
   Declaration
     { property: NonEmptyString.nes (Proxy :: _ "text-align")
     , value: NonEmptyString.nes (Proxy :: _ "center")
+    }
+
+fontSize :: Number -> Declaration
+fontSize size =
+  Declaration
+    { property: NonEmptyString.nes (Proxy :: _ "font-size")
+    , value: remValueToCssValue size
     }

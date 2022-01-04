@@ -7,7 +7,7 @@ module CreativeRecord.State
   ) where
 
 import CreativeRecord.Location as Location
-import CreativeRecord.Messgae as Message
+import CreativeRecord.Message as Message
 import Prelude as Prelude
 
 newtype State
