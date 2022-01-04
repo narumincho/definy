@@ -9,7 +9,7 @@ module CreativeRecord.Element
 import Color as Color
 import Color.Scheme.MaterialDesign as ColorMaterial
 import CreativeRecord.Location as Location
-import CreativeRecord.Messgae as Message
+import CreativeRecord.Message as Message
 import Css as Css
 import StructuredUrl as StructuredUrl
 import View.Data as ViewData

@@ -1,4 +1,4 @@
-module CreativeRecord.Messgae
+module CreativeRecord.Message
   ( Message(..)
   ) where
 
