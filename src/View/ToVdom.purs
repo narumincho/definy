@@ -1,4 +1,8 @@
-module View.ToVdom (toVdom) where
+module View.ToVdom
+  ( ElementAndStyleDict(..)
+  , svgToHtmlElement
+  , toVdom
+  ) where
 
 import Data.Array as Array
 import Data.Array.NonEmpty (NonEmptyArray)

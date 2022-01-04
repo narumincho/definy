@@ -1,4 +1,7 @@
-module Vdom.ToHtml (toHtml) where
+module Vdom.ToHtml
+  ( toHtml
+  , vdomElementToHtmlElement
+  ) where
 
 import Color as Color
 import Data.Array as Array

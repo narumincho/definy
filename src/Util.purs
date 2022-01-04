@@ -5,6 +5,7 @@ module Util
   , listUpdateAtOverAutoCreate
   , optionRecordToMaybeRecord
   , runParallelRecord
+  , stringRepeat
   , toParallel
   , toParallelWithReturn
   , traverseRow
@@ -18,6 +19,7 @@ import Data.Argonaut.Core as ArgonautCore
 import Data.Array as Array
 import Data.Maybe as Maybe
 import Data.Ord as Ord
+import Data.String as String
 import Data.String.NonEmpty as NonEmptyString
 import Data.Symbol as Symbol
 import Data.Tuple as Tuple
@@ -141,3 +143,6 @@ optionRecordToMaybeRecord _ _ optionRecord =
     ( Option.recordFromRecord optionRecord ::
         Option.Record required optional
     )
+
+stringRepeat :: UInt.UInt -> String -> String
+stringRepeat count str = String.joinWith "" (Array.replicate (UInt.toInt count) str)
