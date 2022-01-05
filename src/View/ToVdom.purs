@@ -44,7 +44,7 @@ toVdom { scriptPath, view: Data.View view } =
       , style: StyleDict.toCssStatementList styleDict
       , scriptPath
       , children: vdomChildren
-      , bodyClass: Just bodyClassName
+      , bodyClass: bodyClassName
       , pointerMove: Nothing
       , pointerDown: Nothing
       }
@@ -71,7 +71,7 @@ divToVdomElementAndStyleDict { style, div: Data.Div div } =
           Vdom.ElementDiv
             ( Vdom.Div
                 { id: Nothing
-                , class: Just className
+                , class: className
                 , click: Nothing
                 , children: vdomChildren
                 }
@@ -95,7 +95,7 @@ sampleOriginAnchorToVdomElementAndStyleDict { style, anchor: Data.SameOriginAnch
           Vdom.ElementSameOriginLink
             ( Vdom.SameOriginLink
                 { id: Nothing
-                , class: Just className
+                , class: className
                 , href: anchor.href
                 , children: vdomChildren
                 }
@@ -119,7 +119,7 @@ externalLinkAnchorToVdomElementAndStyleDict { style, anchor: Data.ExternalLinkAn
           Vdom.ElementExternalLink
             ( Vdom.ExternalLink
                 { id: Nothing
-                , class: Just className
+                , class: className
                 , href: anchor.href
                 , children: vdomChildren
                 }
@@ -143,7 +143,7 @@ heading1ToVdomElementAndStyleDict { style, heading1: Data.Heading1 h1 } =
           Vdom.ElementH1
             ( Vdom.H1
                 { id: Nothing
-                , class: Just className
+                , class: className
                 , click: h1.click
                 , children: vdomChildren
                 }
@@ -167,7 +167,7 @@ heading2ToVdomElementAndStyleDict { style, heading2: Data.Heading2 h2 } =
           Vdom.ElementH2
             ( Vdom.H2
                 { id: Nothing
-                , class: Just className
+                , class: className
                 , click: h2.click
                 , children: vdomChildren
                 }
@@ -191,7 +191,7 @@ codeToVdomElementAndStyleDict { style, code: Data.Code code } =
           Vdom.ElementCode
             ( Vdom.Code
                 { id: Nothing
-                , class: Just className
+                , class: className
                 , click: code.click
                 , children: vdomChildren
                 }
@@ -215,7 +215,7 @@ spanToVdomElementAndStyleDict { style, span: Data.Span code } =
           Vdom.ElementSpan
             ( Vdom.Span
                 { id: Nothing
-                , class: Just className
+                , class: className
                 , click: code.click
                 , children: vdomChildren
                 }
@@ -321,7 +321,7 @@ svgToHtmlElement { style
                 Array.mapWithIndex
                   (\index e -> Tuple.Tuple (Prelude.show index) (svgElementToHtmlElement e))
                   svgElementList
-            , class: Just className
+            , class: className
             , id: Nothing
             , viewBoxHeight: viewBox.height
             , viewBoxWidth: viewBox.width
@@ -341,7 +341,7 @@ imageElementToHtmlElement { style, image: Data.Image rec } =
           Vdom.ElementImg
             ( Vdom.Img
                 { id: Nothing
-                , class: Just className
+                , class: className
                 , alt: rec.alternativeText
                 , src: rec.path
                 }
@@ -354,7 +354,7 @@ elementListOrTextToStyleDictAndClassNameAndVdomChildren ::
   Data.ViewStyle ->
   Data.ElementListOrText message location ->
   { styleDict :: StyleDict.StyleDict
-  , className :: NonEmptyString
+  , className :: Maybe NonEmptyString
   , vdomChildren :: Vdom.Children message location
   }
 elementListOrTextToStyleDictAndClassNameAndVdomChildren style = case _ of
