@@ -275,21 +275,34 @@ htmlCodeWithSyntaxHighlightLoopAttributes keyPrefix attributeMap =
   if Map.isEmpty attributeMap then
     []
   else
-    Array.cons
-      ( ViewData.KeyAndElement
-          { key: Prelude.append keyPrefix "tag-start-before-attribute-space"
-          , element:
-              ViewHelper.span
-                { style: ViewData.createStyle {} [] }
-                " "
-          }
+    Array.concatMap
+      ( \(Tuple.Tuple key value) ->
+          htmlCodeWithSyntaxHighlightLoopAttributeWithStartSpace keyPrefix key value
       )
-      ( Array.concatMap
-          ( \(Tuple.Tuple key value) ->
-              htmlCodeWithSyntaxHighlightLoopAttribute keyPrefix key value
-          )
-          (Map.toUnfoldable attributeMap)
-      )
+      (Map.toUnfoldable attributeMap)
+
+htmlCodeWithSyntaxHighlightLoopAttributeWithStartSpace ::
+  String ->
+  NonEmptyString ->
+  Maybe String ->
+  Array (ViewData.KeyAndElement Message.Message Location.Location)
+htmlCodeWithSyntaxHighlightLoopAttributeWithStartSpace keyPrefix key value =
+  Array.cons
+    ( ViewData.KeyAndElement
+        { key:
+            String.joinWith ""
+              [ keyPrefix
+              , "attribute-"
+              , NonEmptyString.toString key
+              , "-start-space"
+              ]
+        , element:
+            ViewHelper.span
+              { style: ViewData.createStyle {} [] }
+              " "
+        }
+    )
+    (htmlCodeWithSyntaxHighlightLoopAttribute keyPrefix key value)
 
 htmlCodeWithSyntaxHighlightLoopAttribute ::
   String ->
