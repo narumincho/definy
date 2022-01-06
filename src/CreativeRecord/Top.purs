@@ -37,7 +37,11 @@ zoomAnimation =
         ]
     }
 
-snsLink :: StructuredUrl.StructuredUrl -> View.Svg -> String -> View.Element Message.Message Location.Location
+snsLink ::
+  StructuredUrl.StructuredUrl ->
+  View.Svg ->
+  String ->
+  View.ElementAndStyle Message.Message Location.Location
 snsLink url logo text =
   ViewHelper.boxX
     { link: View.LinkExternal url
@@ -56,7 +60,11 @@ snsLink url logo text =
     , ViewHelper.text { padding: 0.5 } text
     ]
 
-externalLink :: StructuredUrl.StructuredUrl -> StructuredUrl.PathAndSearchParams -> String -> View.Element Message.Message Location.Location
+externalLink ::
+  StructuredUrl.StructuredUrl ->
+  StructuredUrl.PathAndSearchParams ->
+  String ->
+  View.ElementAndStyle Message.Message Location.Location
 externalLink url imageUrl text =
   ViewHelper.boxY
     { link: View.LinkExternal url
@@ -72,7 +80,7 @@ externalLink url imageUrl text =
     , ViewHelper.text { padding: 0.5 } text
     ]
 
-articleLinkView :: Location.ArticleLocation -> View.Element Message.Message Location.Location
+articleLinkView :: Location.ArticleLocation -> View.ElementAndStyle Message.Message Location.Location
 articleLinkView articleLocation =
   let
     (ArticleData.Article { title, imagePath }) = Article.articleLocationToArticle articleLocation
@@ -91,7 +99,7 @@ articleLinkView articleLocation =
       , ViewHelper.text { padding: 0.5 } (NonEmptyString.toString title)
       ]
 
-articleListView :: View.Element Message.Message Location.Location
+articleListView :: View.ElementAndStyle Message.Message Location.Location
 articleListView =
   articleLocationListToViewElement
     [ Location.PowershellRecursion
@@ -109,7 +117,7 @@ articleListView =
     , Location.CpsLabAdventCalendar2021
     ]
 
-articleLocationListToViewElement :: Array Location.ArticleLocation -> View.Element Message.Message Location.Location
+articleLocationListToViewElement :: Array Location.ArticleLocation -> View.ElementAndStyle Message.Message Location.Location
 articleLocationListToViewElement list =
   ViewHelper.boxY
     { paddingTopBottom: 0.5
@@ -127,7 +135,7 @@ articleLocationListToViewElement list =
         (Util.groupBySize (UInt.fromInt 3) list)
     )
 
-view :: Int -> Array (View.Element Message.Message Location.Location)
+view :: Int -> Array (View.ElementAndStyle Message.Message Location.Location)
 view count =
   [ ViewHelper.text
       { markup: ViewHelper.Heading2

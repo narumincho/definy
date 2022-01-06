@@ -2,6 +2,7 @@ module View.Data
   ( Code(..)
   , Div(..)
   , Element(..)
+  , ElementAndStyle(..)
   , ElementListOrText(..)
   , ExternalLinkAnchor(..)
   , Heading1(..)
@@ -52,7 +53,7 @@ newtype View message location
   , {- ページのパス (HTML出力のみ反映) -} path :: StructuredUrl.PathAndSearchParams
   , {- オリジン -} origin :: NonEmptyString.NonEmptyString
   , {- body のスタイル -} bodyStyle :: ViewStyle
-  , {- 子要素 -} children :: Array (Element message location)
+  , {- 子要素 -} children :: Array (ElementAndStyle message location)
   }
 
 newtype ViewStyle
@@ -97,18 +98,24 @@ data Link message location
   = LinkSameOrigin location
   | LinkExternal StructuredUrl.StructuredUrl
 
+newtype ElementAndStyle message location
+  = ElementAndStyle
+  { element :: Element message location
+  , style :: ViewStyle
+  }
+
 data Element :: Type -> Type -> Type
 -- | テキスト, リンクなどの要素
 data Element message location
-  = ElementSvg { style :: ViewStyle, svg :: Svg }
-  | ElementImage { style :: ViewStyle, image :: Image }
-  | ElementDiv { style :: ViewStyle, div :: Div message location }
-  | ElementSameOriginAnchor { style :: ViewStyle, anchor :: SameOriginAnchor message location }
-  | ElementExternalLinkAnchor { style :: ViewStyle, anchor :: ExternalLinkAnchor message location }
-  | ElementHeading1 { style :: ViewStyle, heading1 :: Heading1 message location }
-  | ElementHeading2 { style :: ViewStyle, heading2 :: Heading2 message location }
-  | ElementCode { style :: ViewStyle, code :: Code message location }
-  | ElementSpan { style :: ViewStyle, span :: Span message location }
+  = ElementSvg Svg
+  | ElementImage Image
+  | ElementDiv (Div message location)
+  | ElementSameOriginAnchor (SameOriginAnchor message location)
+  | ElementExternalLinkAnchor (ExternalLinkAnchor message location)
+  | ElementHeading1 (Heading1 message location)
+  | ElementHeading2 (Heading2 message location)
+  | ElementCode (Code message location)
+  | ElementSpan (Span message location)
 
 newtype Image
   = Image
@@ -131,7 +138,7 @@ data ElementListOrText message location
 newtype KeyAndElement message location
   = KeyAndElement
   { key :: String
-  , element :: Element message location
+  , element :: ElementAndStyle message location
   }
 
 data SameOriginAnchor message location

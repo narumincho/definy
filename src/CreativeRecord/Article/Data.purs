@@ -5,12 +5,12 @@ module CreativeRecord.Article.Data
 import CreativeRecord.Location as Location
 import CreativeRecord.Message as Message
 import Data.String.NonEmpty (NonEmptyString)
-import View.Data as View
 import StructuredUrl as StructuredUrl
+import View.Data as View
 
 newtype Article
   = Article
   { title :: NonEmptyString
-  , children :: Array (View.Element Message.Message Location.Location)
+  , children :: Array (View.ElementAndStyle Message.Message Location.Location)
   , imagePath :: StructuredUrl.PathAndSearchParams
   }

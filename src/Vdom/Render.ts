@@ -50,98 +50,50 @@ export const setTextContent = (
 };
 
 export const createDiv = (option: {
-  readonly id: string | null;
-  readonly class: string | null;
   readonly click: (mouseEvent: MouseEvent) => void;
 }): HTMLElement | SVGElement => {
   const div = window.document.createElement("div");
-  if (typeof option.id === "string") {
-    div.id = option.id;
-  }
-  if (typeof option.class === "string") {
-    div.className = option.class;
-  }
   div.addEventListener("click", (e) => option.click(e));
   return div;
 };
 
 export const createSpan = (option: {
-  readonly id: string | null;
-  readonly class: string | null;
   readonly click: (mouseEvent: MouseEvent) => void;
 }): HTMLElement | SVGElement => {
   const span = window.document.createElement("span");
-  if (typeof option.id === "string") {
-    span.id = option.id;
-  }
-  if (typeof option.class === "string") {
-    span.className = option.class;
-  }
   span.addEventListener("click", (e) => option.click(e));
   return span;
 };
 
 export const createH1 = (option: {
-  readonly id: string | null;
-  readonly class: string | null;
   readonly click: (mouseEvent: MouseEvent) => void;
 }): HTMLElement | SVGElement => {
   const headingElement = window.document.createElement("h1");
-  if (typeof option.id === "string") {
-    headingElement.id = option.id;
-  }
-  if (typeof option.class === "string") {
-    headingElement.className = option.class;
-  }
   headingElement.addEventListener("click", (e) => option.click(e));
   return headingElement;
 };
 
 export const createH2 = (option: {
-  readonly id: string | null;
-  readonly class: string | null;
   readonly click: (mouseEvent: MouseEvent) => void;
 }): HTMLElement | SVGElement => {
   const headingElement = window.document.createElement("h2");
-  if (typeof option.id === "string") {
-    headingElement.id = option.id;
-  }
-  if (typeof option.class === "string") {
-    headingElement.className = option.class;
-  }
   headingElement.addEventListener("click", (e) => option.click(e));
   return headingElement;
 };
 
 export const createCode = (option: {
-  readonly id: string | null;
-  readonly class: string | null;
   readonly click: (mouseEvent: MouseEvent) => void;
 }): HTMLElement | SVGElement => {
   const codeElement = window.document.createElement("code");
-  if (typeof option.id === "string") {
-    codeElement.id = option.id;
-  }
-  if (typeof option.class === "string") {
-    codeElement.className = option.class;
-  }
   codeElement.addEventListener("click", (e) => option.click(e));
   return codeElement;
 };
 
 export const createSameOriginAnchor = (option: {
-  readonly id: string | null;
-  readonly class: string | null;
   readonly href: string;
   readonly click: (mouseEvent: MouseEvent) => void;
 }): HTMLElement | SVGElement => {
   const anchorElement = window.document.createElement("a");
-  if (typeof option.id === "string") {
-    anchorElement.id = option.id;
-  }
-  if (typeof option.class === "string") {
-    anchorElement.className = option.class;
-  }
   anchorElement.href = option.href;
   anchorElement.addEventListener("click", (mouseEvent) => {
     /*
@@ -164,122 +116,65 @@ export const createSameOriginAnchor = (option: {
 };
 
 export const createExternalAnchor = (option: {
-  readonly id: string | null;
-  readonly class: string | null;
   readonly href: string;
 }): HTMLElement | SVGElement => {
   const anchorElement = window.document.createElement("a");
-  if (typeof option.id === "string") {
-    anchorElement.id = option.id;
-  }
-  if (typeof option.class === "string") {
-    anchorElement.className = option.class;
-  }
   anchorElement.href = option.href;
   return anchorElement;
 };
 
-export const createButton = (option: {
-  readonly id: string | null;
-  readonly class: string | null;
-}): HTMLElement | SVGElement => {
+export const createButton = (): HTMLElement | SVGElement => {
   const button = window.document.createElement("button");
-  if (typeof option.id === "string") {
-    button.id = option.id;
-  }
-  if (typeof option.class === "string") {
-    button.className = option.class;
-  }
   button.type = "button";
   return button;
 };
 
 export const createImg = (option: {
-  readonly id: string | null;
-  readonly class: string | null;
   readonly alt: string;
   readonly src: string;
 }): HTMLElement | SVGElement => {
   const image = window.document.createElement("img");
-  if (typeof option.id === "string") {
-    image.id = option.id;
-  }
-  if (typeof option.class === "string") {
-    image.className = option.class;
-  }
   image.alt = option.alt;
   image.src = option.src;
   return image;
 };
 
 export const createInputRadio = (option: {
-  readonly id: string | null;
-  readonly class: string | null;
   readonly checked: boolean;
   readonly name: string;
 }): HTMLElement | SVGElement => {
   const input = window.document.createElement("input");
   input.type = "radio";
-  if (typeof option.id === "string") {
-    input.id = option.id;
-  }
-  if (typeof option.class === "string") {
-    input.className = option.class;
-  }
   input.checked = option.checked;
   input.name = option.name;
   return input;
 };
 
 export const createInputText = (option: {
-  readonly id: string | null;
-  readonly class: string | null;
   readonly readonly: boolean;
   readonly value: string;
 }): HTMLElement | SVGElement => {
   const input = window.document.createElement("input");
   input.type = "text";
-  if (typeof option.id === "string") {
-    input.id = option.id;
-  }
-  if (typeof option.class === "string") {
-    input.className = option.class;
-  }
   input.readOnly = option.readonly;
   input.value = option.value;
   return input;
 };
 
 export const createTextArea = (option: {
-  readonly id: string | null;
-  readonly class: string | null;
   readonly readonly: boolean;
   readonly value: string;
 }): HTMLElement | SVGElement => {
   const input = window.document.createElement("textarea");
-  if (typeof option.id === "string") {
-    input.id = option.id;
-  }
-  if (typeof option.class === "string") {
-    input.className = option.class;
-  }
   input.readOnly = option.readonly;
   input.value = option.value;
   return input;
 };
 
 export const createLabel = (option: {
-  readonly id: string | null;
-  readonly class: string | null;
   readonly for: string;
 }): HTMLElement | SVGElement => {
   const label = window.document.createElement("label");
-  if (typeof option.id === "string") {
-    label.id = option.id;
-  }
-  if (typeof option.class === "string") {
-    label.className = option.class;
-  }
   label.htmlFor = option.for;
   return label;
 };
@@ -287,42 +182,24 @@ export const createLabel = (option: {
 const svgNamespaceUri = "http://www.w3.org/2000/svg";
 
 export const createSvg = (option: {
-  readonly id: string | null;
-  readonly class: string | null;
   readonly viewBox: string;
 }): HTMLElement | SVGElement => {
   const svg = window.document.createElementNS(svgNamespaceUri, "svg");
-  if (typeof option.id === "string") {
-    svg.id = option.id;
-  }
-  if (typeof option.class === "string") {
-    svg.classList.add(option.class);
-  }
   svg.setAttribute("viewBox", option.viewBox);
   return svg;
 };
 
 export const createSvgPath = (option: {
-  readonly id: string | null;
-  readonly class: string | null;
   readonly d: string;
   readonly fill: string;
 }): HTMLElement | SVGElement => {
   const svgPath = window.document.createElementNS(svgNamespaceUri, "path");
-  if (typeof option.id === "string") {
-    svgPath.id = option.id;
-  }
-  if (typeof option.class === "string") {
-    svgPath.classList.add(option.class);
-  }
   svgPath.setAttribute("d", option.d);
   svgPath.setAttribute("fill", option.fill);
   return svgPath;
 };
 
 export const createSvgCircle = (option: {
-  readonly id: string | null;
-  readonly class: string | null;
   readonly fill: string;
   readonly stroke: string | null;
   readonly cx: number;
@@ -330,12 +207,6 @@ export const createSvgCircle = (option: {
   readonly r: number;
 }): HTMLElement | SVGElement => {
   const svgCircle = window.document.createElementNS(svgNamespaceUri, "circle");
-  if (typeof option.id === "string") {
-    svgCircle.id = option.id;
-  }
-  if (typeof option.class === "string") {
-    svgCircle.classList.add(option.class);
-  }
   svgCircle.setAttribute("fill", option.fill);
   if (typeof option.stroke === "string") {
     svgCircle.setAttribute("stroke", option.stroke);
@@ -347,11 +218,11 @@ export const createSvgCircle = (option: {
 };
 
 export const createSvgAnimate = (option: {
-  attributeName: string;
-  dur: number;
-  repeatCount: string;
-  from: string;
-  to: string;
+  readonly attributeName: string;
+  readonly dur: number;
+  readonly repeatCount: string;
+  readonly from: string;
+  readonly to: string;
 }): HTMLElement | SVGElement => {
   const svgAnimate = window.document.createElementNS(
     svgNamespaceUri,
@@ -366,17 +237,9 @@ export const createSvgAnimate = (option: {
 };
 
 export const createSvgG = (option: {
-  readonly id: string | null;
-  readonly class: string | null;
   readonly transform: string;
 }): HTMLElement | SVGElement => {
   const svgG = window.document.createElementNS(svgNamespaceUri, "g");
-  if (typeof option.id === "string") {
-    svgG.id = option.id;
-  }
-  if (typeof option.class === "string") {
-    svgG.classList.add(option.class);
-  }
   svgG.setAttribute("transform", option.transform);
   return svgG;
 };
@@ -431,6 +294,17 @@ export const setDataPath = (
   path: string
 ): void => {
   element.dataset.dPath = path;
+};
+
+export const setId = (element: HTMLElement | SVGElement, id: string) => {
+  element.id = id;
+};
+
+export const setClass = (
+  element: HTMLElement | SVGElement,
+  className: string
+) => {
+  element.classList.add(className);
 };
 
 const getStyleElement = (): HTMLStyleElement => {

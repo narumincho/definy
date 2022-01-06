@@ -93,8 +93,8 @@ boxY ::
     ()
     (BoxOptional message location) =>
   Record r ->
-  (Array (Data.Element message location)) ->
-  Data.Element message location
+  (Array (Data.ElementAndStyle message location)) ->
+  Data.ElementAndStyle message location
 boxY option children = boxXOrYToElement (boxOptionalToBoxData option) children Y
 
 -- | 横方向に box を配置する
@@ -105,8 +105,8 @@ boxX ::
     ()
     (BoxOptional message location) =>
   Record r ->
-  (Array (Data.Element message location)) ->
-  Data.Element message location
+  (Array (Data.ElementAndStyle message location)) ->
+  Data.ElementAndStyle message location
 boxX option children = boxXOrYToElement (boxOptionalToBoxData option) children X
 
 boxOptionalToBoxData ::
@@ -158,9 +158,9 @@ boxOptionalToBoxData rec =
 boxXOrYToElement ::
   forall message location.
   BoxData message location ->
-  Array (Data.Element message location) ->
+  Array (Data.ElementAndStyle message location) ->
   XOrY ->
-  Data.Element message location
+  Data.ElementAndStyle message location
 boxXOrYToElement boxData@(BoxData rec) children xOrY =
   let
     style :: Data.ViewStyle
@@ -181,37 +181,35 @@ boxXOrYToElement boxData@(BoxData rec) children xOrY =
           )
       Nothing -> Data.ElementListOrTextText ""
   in
-    case rec.link of
-      Just (Data.LinkSameOrigin location) ->
-        Data.ElementSameOriginAnchor
-          { style
-          , anchor:
-              Data.SameOriginAnchor
-                { id: Nothing
-                , href: location
-                , children: vdomChildren
-                }
-          }
-      Just (Data.LinkExternal url) ->
-        Data.ElementExternalLinkAnchor
-          { style
-          , anchor:
-              Data.ExternalLinkAnchor
-                { id: Nothing
-                , href: url
-                , children: vdomChildren
-                }
-          }
-      Nothing ->
-        Data.ElementDiv
-          { style
-          , div:
-              Data.Div
-                { id: Nothing
-                , click: Nothing
-                , children: vdomChildren
-                }
-          }
+    Data.ElementAndStyle
+      { style
+      , element:
+          case rec.link of
+            Just (Data.LinkSameOrigin location) ->
+              Data.ElementSameOriginAnchor
+                ( Data.SameOriginAnchor
+                    { id: Nothing
+                    , href: location
+                    , children: vdomChildren
+                    }
+                )
+            Just (Data.LinkExternal url) ->
+              Data.ElementExternalLinkAnchor
+                ( Data.ExternalLinkAnchor
+                    { id: Nothing
+                    , href: url
+                    , children: vdomChildren
+                    }
+                )
+            Nothing ->
+              Data.ElementDiv
+                ( Data.Div
+                    { id: Nothing
+                    , click: Nothing
+                    , children: vdomChildren
+                    }
+                )
+      }
 
 boxToBoxViewStyle ::
   forall message location.
@@ -312,7 +310,7 @@ text ::
     r
     ()
     (TextOptional message) =>
-  Record r -> String -> Data.Element message location
+  Record r -> String -> Data.ElementAndStyle message location
 text option textValue =
   let
     rec =
@@ -348,57 +346,51 @@ text option textValue =
         )
         rec.click
   in
-    case rec.markup of
-      Just None ->
-        Data.ElementDiv
-          { style
-          , div:
-              Data.Div
-                { children: Data.ElementListOrTextText textValue
-                , click: clickMessageData
-                , id: Nothing
-                }
-          }
-      Just Heading1 ->
-        Data.ElementHeading1
-          { style
-          , heading1:
-              Data.Heading1
-                { children: Data.ElementListOrTextText textValue
-                , click: clickMessageData
-                , id: Nothing
-                }
-          }
-      Just Heading2 ->
-        Data.ElementHeading2
-          { style
-          , heading2:
-              Data.Heading2
-                { children: Data.ElementListOrTextText textValue
-                , click: clickMessageData
-                , id: Nothing
-                }
-          }
-      Just Code ->
-        Data.ElementCode
-          { style
-          , code:
-              Data.Code
-                { children: Data.ElementListOrTextText textValue
-                , click: clickMessageData
-                , id: Nothing
-                }
-          }
-      Nothing ->
-        Data.ElementDiv
-          { style
-          , div:
-              Data.Div
-                { children: Data.ElementListOrTextText textValue
-                , click: clickMessageData
-                , id: Nothing
-                }
-          }
+    Data.ElementAndStyle
+      { style
+      , element:
+          case rec.markup of
+            Just None ->
+              Data.ElementDiv
+                ( Data.Div
+                    { children: Data.ElementListOrTextText textValue
+                    , click: clickMessageData
+                    , id: Nothing
+                    }
+                )
+            Just Heading1 ->
+              Data.ElementHeading1
+                ( Data.Heading1
+                    { children: Data.ElementListOrTextText textValue
+                    , click: clickMessageData
+                    , id: Nothing
+                    }
+                )
+            Just Heading2 ->
+              Data.ElementHeading2
+                ( Data.Heading2
+                    { children: Data.ElementListOrTextText textValue
+                    , click: clickMessageData
+                    , id: Nothing
+                    }
+                )
+            Just Code ->
+              Data.ElementCode
+                ( Data.Code
+                    { children: Data.ElementListOrTextText textValue
+                    , click: clickMessageData
+                    , id: Nothing
+                    }
+                )
+            Nothing ->
+              Data.ElementDiv
+                ( Data.Div
+                    { children: Data.ElementListOrTextText textValue
+                    , click: clickMessageData
+                    , id: Nothing
+                    }
+                )
+      }
 
 type ImageOptional
   = ( objectFit :: Css.ObjectFitValue )
@@ -409,7 +401,7 @@ image ::
     r
     ImageRequired
     ImageOptional =>
-  Record r -> Data.Element message location
+  Record r -> Data.ElementAndStyle message location
 image option =
   let
     rec =
@@ -418,32 +410,33 @@ image option =
         (Proxy.Proxy :: _ ImageOptional)
         option
   in
-    Data.ElementImage
-      ( { style:
-            Data.ViewStyle
-              { normal:
-                  [ percentageOrRemWidthToCssDeclaration rec.width
-                  , Css.heightRem rec.height
-                  , Css.objectFit
-                      ( case rec.objectFit of
-                          Just objectFit -> objectFit
-                          Nothing -> Css.Cover
-                      )
-                  ]
-              , hover: []
-              , animation: Map.empty
-              }
-        , image:
-            Data.Image
-              { path: rec.path
-              , alternativeText: rec.alternativeText
-              }
-        }
-      )
+    Data.ElementAndStyle
+      { style:
+          Data.ViewStyle
+            { normal:
+                [ percentageOrRemWidthToCssDeclaration rec.width
+                , Css.heightRem rec.height
+                , Css.objectFit
+                    ( case rec.objectFit of
+                        Just objectFit -> objectFit
+                        Nothing -> Css.Cover
+                    )
+                ]
+            , hover: []
+            , animation: Map.empty
+            }
+      , element:
+          Data.ElementImage
+            ( Data.Image
+                { path: rec.path
+                , alternativeText: rec.alternativeText
+                }
+            )
+      }
 
-svg :: forall message location. { height :: Number, isJustifySelfCenter :: Boolean, width :: PercentageOrRem, svg :: Data.Svg } -> Data.Element message location
+svg :: forall message location. { height :: Number, isJustifySelfCenter :: Boolean, width :: PercentageOrRem, svg :: Data.Svg } -> Data.ElementAndStyle message location
 svg rec =
-  Data.ElementSvg
+  Data.ElementAndStyle
     { style:
         Data.ViewStyle
           { normal:
@@ -459,97 +452,110 @@ svg rec =
           , hover: []
           , animation: Map.empty
           }
-    , svg: rec.svg
+    , element: Data.ElementSvg rec.svg
     }
 
-div :: forall message location. { style :: Data.ViewStyle } -> Array (Data.Element message location) -> Data.Element message location
+div ::
+  forall message location.
+  { style :: Data.ViewStyle } ->
+  Array (Data.ElementAndStyle message location) ->
+  Data.ElementAndStyle message location
 div { style } children =
-  Data.ElementDiv
+  Data.ElementAndStyle
     { style
-    , div:
-        Data.Div
-          { id: Nothing
-          , click: Nothing
-          , children:
-              case NonEmptyArray.fromArray children of
-                Just nonEmptyVdomChildren ->
-                  Data.ElementListOrTextElementList
-                    ( NonEmptyArray.mapWithIndex
-                        ( \index element ->
-                            Data.KeyAndElement
-                              { key: (Prelude.show index)
-                              , element: element
-                              }
+    , element:
+        Data.ElementDiv
+          ( Data.Div
+              { id: Nothing
+              , click: Nothing
+              , children:
+                  case NonEmptyArray.fromArray children of
+                    Just nonEmptyVdomChildren ->
+                      Data.ElementListOrTextElementList
+                        ( NonEmptyArray.mapWithIndex
+                            ( \index element ->
+                                Data.KeyAndElement
+                                  { key: (Prelude.show index)
+                                  , element: element
+                                  }
+                            )
+                            nonEmptyVdomChildren
                         )
-                        nonEmptyVdomChildren
-                    )
-                Nothing -> Data.ElementListOrTextText ""
-          }
+                    Nothing -> Data.ElementListOrTextText ""
+              }
+          )
     }
 
-divText :: forall message location. { style :: Data.ViewStyle } -> String -> Data.Element message location
+divText :: forall message location. { style :: Data.ViewStyle } -> String -> Data.ElementAndStyle message location
 divText { style } textValue =
-  Data.ElementDiv
+  Data.ElementAndStyle
     { style
-    , div:
-        Data.Div
-          { id: Nothing
-          , click: Nothing
-          , children: Data.ElementListOrTextText textValue
-          }
+    , element:
+        Data.ElementDiv
+          ( Data.Div
+              { id: Nothing
+              , click: Nothing
+              , children: Data.ElementListOrTextText textValue
+              }
+          )
     }
 
-span :: forall message location. { style :: Data.ViewStyle } -> String -> Data.Element message location
+span :: forall message location. { style :: Data.ViewStyle } -> String -> Data.ElementAndStyle message location
 span { style } textValue =
-  Data.ElementSpan
+  Data.ElementAndStyle
     { style
-    , span:
-        Data.Span
-          { id: Nothing
-          , click: Nothing
-          , children: Data.ElementListOrTextText textValue
-          }
+    , element:
+        Data.ElementSpan
+          ( Data.Span
+              { id: Nothing
+              , click: Nothing
+              , children: Data.ElementListOrTextText textValue
+              }
+          )
     }
 
 inlineAnchor ::
   forall message location.
   { style :: Data.ViewStyle, link :: Data.Link message location } ->
   String ->
-  Data.Element message location
-inlineAnchor { style, link } textValue = case link of
-  Data.LinkSameOrigin location ->
-    Data.ElementSameOriginAnchor
-      { style
-      , anchor:
-          Data.SameOriginAnchor
-            { id: Nothing
-            , href: location
-            , children: Data.ElementListOrTextText textValue
-            }
-      }
-  Data.LinkExternal url ->
-    Data.ElementExternalLinkAnchor
-      { style
-      , anchor:
-          Data.ExternalLinkAnchor
-            { id: Nothing
-            , href: url
-            , children: Data.ElementListOrTextText textValue
-            }
-      }
+  Data.ElementAndStyle message location
+inlineAnchor { style, link } textValue =
+  Data.ElementAndStyle
+    { style
+    , element:
+        case link of
+          Data.LinkSameOrigin location ->
+            Data.ElementSameOriginAnchor
+              ( Data.SameOriginAnchor
+                  { id: Nothing
+                  , href: location
+                  , children: Data.ElementListOrTextText textValue
+                  }
+              )
+          Data.LinkExternal url ->
+            Data.ElementExternalLinkAnchor
+              ( Data.ExternalLinkAnchor
+                  { id: Nothing
+                  , href: url
+                  , children: Data.ElementListOrTextText textValue
+                  }
+              )
+    }
 
-code :: forall message location. String -> Data.Element message location
+code :: forall message location. String -> Data.ElementAndStyle message location
 code textValue =
-  Data.ElementCode
+  Data.ElementAndStyle
     { style:
         Data.createStyle {}
           [ Css.color Color.white, Css.whiteSpacePreWrap, Css.fontSize 1.1 ]
-    , code:
-        Data.Code
-          { children: Data.ElementListOrTextText textValue
-          , click: Nothing
-          , id: Nothing
-          }
+    , element:
+        Data.ElementCode
+          ( Data.Code
+              { children: Data.ElementListOrTextText textValue
+              , click: Nothing
+              , id: Nothing
+              }
+          )
     }
 
 percentageOrRemWidthToCssDeclaration :: PercentageOrRem -> Css.Declaration

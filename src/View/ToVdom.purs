@@ -8,7 +8,6 @@ import Data.Array as Array
 import Data.Array.NonEmpty (NonEmptyArray)
 import Data.Array.NonEmpty as NonEmptyArray
 import Data.Maybe (Maybe(..))
-import Data.String.NonEmpty (NonEmptyString)
 import Data.Tuple as Tuple
 import Prelude as Prelude
 import StructuredUrl as StructuredUrl
@@ -55,48 +54,65 @@ newtype ElementAndStyleDict message location
   , styleDict :: StyleDict.StyleDict
   }
 
+newtype ElementAndClassAndStyleDict message location
+  = ElementAndClassAndStyleDict
+  { element :: Vdom.ElementAndClass message location
+  , styleDict :: StyleDict.StyleDict
+  }
+
+elementAndStyleDictSetViewStyle ::
+  forall message location.
+  Data.ViewStyle ->
+  ElementAndStyleDict message location ->
+  ElementAndClassAndStyleDict message location
+elementAndStyleDictSetViewStyle viewStyle (ElementAndStyleDict { element, styleDict }) = case StyleDict.addStyleDictAndClassName styleDict viewStyle of
+  { className, styleDict: newStyleDict } ->
+    ElementAndClassAndStyleDict
+      { styleDict: newStyleDict
+      , element:
+          Vdom.ElementAndClass
+            { element
+            , class: className
+            , id: Nothing
+            }
+      }
+
 divToVdomElementAndStyleDict ::
   forall message location.
-  { style :: Data.ViewStyle, div :: Data.Div message location } ->
+  Data.Div message location ->
   ElementAndStyleDict message location
-divToVdomElementAndStyleDict { style, div: Data.Div div } =
+divToVdomElementAndStyleDict (Data.Div div) =
   let
-    { styleDict, className, vdomChildren } =
+    { styleDict, vdomChildren } =
       elementListOrTextToStyleDictAndClassNameAndVdomChildren
-        style
         div.children
   in
     ElementAndStyleDict
-      { element:
+      { styleDict
+      , element:
           Vdom.ElementDiv
             ( Vdom.Div
-                { id: Nothing
-                , class: className
-                , click: Nothing
+                { click: Nothing
                 , children: vdomChildren
                 }
             )
-      , styleDict
       }
 
 sampleOriginAnchorToVdomElementAndStyleDict ::
   forall message location.
-  { style :: Data.ViewStyle, anchor :: Data.SameOriginAnchor message location } ->
+  Data.SameOriginAnchor message location ->
   ElementAndStyleDict message location
-sampleOriginAnchorToVdomElementAndStyleDict { style, anchor: Data.SameOriginAnchor anchor } =
+sampleOriginAnchorToVdomElementAndStyleDict (Data.SameOriginAnchor anchor) =
   let
-    { styleDict, className, vdomChildren } =
+    { styleDict, vdomChildren } =
       elementListOrTextToStyleDictAndClassNameAndVdomChildren
-        style
         anchor.children
   in
     ElementAndStyleDict
       { element:
           Vdom.ElementSameOriginLink
             ( Vdom.SameOriginLink
-                { id: Nothing
-                , class: className
-                , href: anchor.href
+                { href: anchor.href
                 , children: vdomChildren
                 }
             )
@@ -105,22 +121,19 @@ sampleOriginAnchorToVdomElementAndStyleDict { style, anchor: Data.SameOriginAnch
 
 externalLinkAnchorToVdomElementAndStyleDict ::
   forall message location.
-  { style :: Data.ViewStyle, anchor :: Data.ExternalLinkAnchor message location } ->
+  Data.ExternalLinkAnchor message location ->
   ElementAndStyleDict message location
-externalLinkAnchorToVdomElementAndStyleDict { style, anchor: Data.ExternalLinkAnchor anchor } =
+externalLinkAnchorToVdomElementAndStyleDict (Data.ExternalLinkAnchor anchor) =
   let
-    { styleDict, className, vdomChildren } =
+    { styleDict, vdomChildren } =
       elementListOrTextToStyleDictAndClassNameAndVdomChildren
-        style
         anchor.children
   in
     ElementAndStyleDict
       { element:
           Vdom.ElementExternalLink
             ( Vdom.ExternalLink
-                { id: Nothing
-                , class: className
-                , href: anchor.href
+                { href: anchor.href
                 , children: vdomChildren
                 }
             )
@@ -129,22 +142,19 @@ externalLinkAnchorToVdomElementAndStyleDict { style, anchor: Data.ExternalLinkAn
 
 heading1ToVdomElementAndStyleDict ::
   forall message location.
-  { style :: Data.ViewStyle, heading1 :: Data.Heading1 message location } ->
+  Data.Heading1 message location ->
   ElementAndStyleDict message location
-heading1ToVdomElementAndStyleDict { style, heading1: Data.Heading1 h1 } =
+heading1ToVdomElementAndStyleDict (Data.Heading1 h1) =
   let
-    { styleDict, className, vdomChildren } =
+    { styleDict, vdomChildren } =
       elementListOrTextToStyleDictAndClassNameAndVdomChildren
-        style
         h1.children
   in
     ElementAndStyleDict
       { element:
           Vdom.ElementH1
             ( Vdom.H1
-                { id: Nothing
-                , class: className
-                , click: h1.click
+                { click: h1.click
                 , children: vdomChildren
                 }
             )
@@ -153,22 +163,19 @@ heading1ToVdomElementAndStyleDict { style, heading1: Data.Heading1 h1 } =
 
 heading2ToVdomElementAndStyleDict ::
   forall message location.
-  { style :: Data.ViewStyle, heading2 :: Data.Heading2 message location } ->
+  Data.Heading2 message location ->
   ElementAndStyleDict message location
-heading2ToVdomElementAndStyleDict { style, heading2: Data.Heading2 h2 } =
+heading2ToVdomElementAndStyleDict (Data.Heading2 h2) =
   let
-    { styleDict, className, vdomChildren } =
+    { styleDict, vdomChildren } =
       elementListOrTextToStyleDictAndClassNameAndVdomChildren
-        style
         h2.children
   in
     ElementAndStyleDict
       { element:
           Vdom.ElementH2
             ( Vdom.H2
-                { id: Nothing
-                , class: className
-                , click: h2.click
+                { click: h2.click
                 , children: vdomChildren
                 }
             )
@@ -177,22 +184,19 @@ heading2ToVdomElementAndStyleDict { style, heading2: Data.Heading2 h2 } =
 
 codeToVdomElementAndStyleDict ::
   forall message location.
-  { style :: Data.ViewStyle, code :: Data.Code message location } ->
+  Data.Code message location ->
   ElementAndStyleDict message location
-codeToVdomElementAndStyleDict { style, code: Data.Code code } =
+codeToVdomElementAndStyleDict (Data.Code code) =
   let
-    { styleDict, className, vdomChildren } =
+    { styleDict, vdomChildren } =
       elementListOrTextToStyleDictAndClassNameAndVdomChildren
-        style
         code.children
   in
     ElementAndStyleDict
       { element:
           Vdom.ElementCode
             ( Vdom.Code
-                { id: Nothing
-                , class: className
-                , click: code.click
+                { click: code.click
                 , children: vdomChildren
                 }
             )
@@ -201,22 +205,19 @@ codeToVdomElementAndStyleDict { style, code: Data.Code code } =
 
 spanToVdomElementAndStyleDict ::
   forall message location.
-  { style :: Data.ViewStyle, span :: Data.Span message location } ->
+  (Data.Span message location) ->
   ElementAndStyleDict message location
-spanToVdomElementAndStyleDict { style, span: Data.Span code } =
+spanToVdomElementAndStyleDict (Data.Span code) =
   let
-    { styleDict, className, vdomChildren } =
+    { styleDict, vdomChildren } =
       elementListOrTextToStyleDictAndClassNameAndVdomChildren
-        style
         code.children
   in
     ElementAndStyleDict
       { element:
           Vdom.ElementSpan
             ( Vdom.Span
-                { id: Nothing
-                , class: className
-                , click: code.click
+                { click: code.click
                 , children: vdomChildren
                 }
             )
@@ -225,23 +226,23 @@ spanToVdomElementAndStyleDict { style, span: Data.Span code } =
 
 viewElementListToVdomChildren ::
   forall message location.
-  Array (Data.Element message location) ->
-  { childList :: Array (Tuple.Tuple String (Vdom.Element message location))
+  Array (Data.ElementAndStyle message location) ->
+  { childList :: Array (Tuple.Tuple String (Vdom.ElementAndClass message location))
   , styleDict :: StyleDict.StyleDict
   }
 viewElementListToVdomChildren children =
   let
-    childrenElementAndStyleDict :: Array (ElementAndStyleDict message location)
+    childrenElementAndStyleDict :: Array (ElementAndClassAndStyleDict message location)
     childrenElementAndStyleDict =
       Prelude.map
         ( \child ->
-            elementToHtmlElementAndStyleDict child
+            elementAndStyleToHtmlElementAndStyleDict child
         )
         children
   in
     { childList:
         Array.mapWithIndex
-          ( \index (ElementAndStyleDict { element }) ->
+          ( \index (ElementAndClassAndStyleDict { element }) ->
               Tuple.Tuple
                 (Prelude.show index)
                 element
@@ -249,7 +250,7 @@ viewElementListToVdomChildren children =
           childrenElementAndStyleDict
     , styleDict:
         StyleDict.listStyleDictToStyleDict
-          ( Prelude.map (\(ElementAndStyleDict { styleDict }) -> styleDict)
+          ( Prelude.map (\(ElementAndClassAndStyleDict { styleDict }) -> styleDict)
               childrenElementAndStyleDict
           )
     }
@@ -257,20 +258,20 @@ viewElementListToVdomChildren children =
 viewChildrenToVdomChildren ::
   forall message location.
   NonEmptyArray (Data.KeyAndElement message location) ->
-  { childList :: NonEmptyArray (Tuple.Tuple String (Vdom.Element message location))
+  { childList :: NonEmptyArray (Tuple.Tuple String (Vdom.ElementAndClass message location))
   , styleDict :: StyleDict.StyleDict
   }
 viewChildrenToVdomChildren children =
   let
     childrenElementAndStyleDict ::
       NonEmptyArray
-        { elementAndStyleDict :: ElementAndStyleDict message location
+        { elementAndStyleDict :: ElementAndClassAndStyleDict message location
         , key :: String
         }
     childrenElementAndStyleDict =
       Prelude.map
         ( \(Data.KeyAndElement { element, key }) ->
-            { elementAndStyleDict: elementToHtmlElementAndStyleDict element
+            { elementAndStyleDict: elementAndStyleToHtmlElementAndStyleDict element
             , key
             }
         )
@@ -278,7 +279,7 @@ viewChildrenToVdomChildren children =
   in
     { childList:
         Prelude.map
-          ( \({ elementAndStyleDict: ElementAndStyleDict { element }, key }) ->
+          ( \({ elementAndStyleDict: ElementAndClassAndStyleDict { element }, key }) ->
               Tuple.Tuple
                 key
                 element
@@ -287,10 +288,16 @@ viewChildrenToVdomChildren children =
     , styleDict:
         StyleDict.listStyleDictToStyleDict
           ( Prelude.map
-              (\({ elementAndStyleDict: ElementAndStyleDict { styleDict } }) -> styleDict)
+              (\({ elementAndStyleDict: ElementAndClassAndStyleDict { styleDict } }) -> styleDict)
               (NonEmptyArray.toArray childrenElementAndStyleDict)
           )
     }
+
+elementAndStyleToHtmlElementAndStyleDict ::
+  forall message location.
+  Data.ElementAndStyle message location ->
+  ElementAndClassAndStyleDict message location
+elementAndStyleToHtmlElementAndStyleDict (Data.ElementAndStyle { element, style }) = elementAndStyleDictSetViewStyle style (elementToHtmlElementAndStyleDict element)
 
 elementToHtmlElementAndStyleDict ::
   forall message location.
@@ -300,122 +307,132 @@ elementToHtmlElementAndStyleDict = case _ of
   Data.ElementSvg styleAndSvg -> svgToHtmlElement styleAndSvg
   Data.ElementImage image -> imageElementToHtmlElement image
   Data.ElementDiv div -> divToVdomElementAndStyleDict div
-  Data.ElementSameOriginAnchor sampleOriginAnchor -> sampleOriginAnchorToVdomElementAndStyleDict sampleOriginAnchor
-  Data.ElementExternalLinkAnchor externalLinkAnchor -> externalLinkAnchorToVdomElementAndStyleDict externalLinkAnchor
-  Data.ElementHeading1 heading -> heading1ToVdomElementAndStyleDict heading
-  Data.ElementHeading2 heading -> heading2ToVdomElementAndStyleDict heading
+  Data.ElementSameOriginAnchor anchor -> sampleOriginAnchorToVdomElementAndStyleDict anchor
+  Data.ElementExternalLinkAnchor anchor -> externalLinkAnchorToVdomElementAndStyleDict anchor
+  Data.ElementHeading1 heading1 -> heading1ToVdomElementAndStyleDict heading1
+  Data.ElementHeading2 heading2 -> heading2ToVdomElementAndStyleDict heading2
   Data.ElementCode code -> codeToVdomElementAndStyleDict code
   Data.ElementSpan span -> spanToVdomElementAndStyleDict span
 
-svgToHtmlElement :: forall message location. { style :: Data.ViewStyle, svg :: Data.Svg } -> ElementAndStyleDict message location
-svgToHtmlElement { style
-, svg: Data.Svg { viewBox: Data.ViewBox viewBox, svgElementList }
-} =
-  let
-    { styleDict, className } = StyleDict.createStyleDictAndClassName style
-  in
-    ElementAndStyleDict
-      { element:
-          Vdom.svg
-            { children:
-                Array.mapWithIndex
-                  (\index e -> Tuple.Tuple (Prelude.show index) (svgElementToHtmlElement e))
-                  svgElementList
-            , class: className
-            , id: Nothing
-            , viewBoxHeight: viewBox.height
-            , viewBoxWidth: viewBox.width
-            , viewBoxX: viewBox.x
-            , viewBoxY: viewBox.y
-            }
-      , styleDict
-      }
+svgToHtmlElement ::
+  forall message location.
+  Data.Svg ->
+  ElementAndStyleDict message location
+svgToHtmlElement (Data.Svg { viewBox: Data.ViewBox viewBox, svgElementList }) =
+  ElementAndStyleDict
+    { element:
+        Vdom.ElementSvg
+          ( Vdom.Svg
+              { children:
+                  Array.mapWithIndex
+                    (\index e -> Tuple.Tuple (Prelude.show index) (svgElementToHtmlElement e))
+                    svgElementList
+              , attributes:
+                  Vdom.SvgAttributes
+                    { viewBoxHeight: viewBox.height
+                    , viewBoxWidth: viewBox.width
+                    , viewBoxX: viewBox.x
+                    , viewBoxY: viewBox.y
+                    }
+              }
+          )
+    , styleDict: StyleDict.empty
+    }
 
-imageElementToHtmlElement :: forall message location. { style :: Data.ViewStyle, image :: Data.Image } -> ElementAndStyleDict message location
-imageElementToHtmlElement { style, image: Data.Image rec } =
-  let
-    { styleDict, className } = StyleDict.createStyleDictAndClassName style
-  in
-    ElementAndStyleDict
-      { element:
-          Vdom.ElementImg
-            ( Vdom.Img
-                { id: Nothing
-                , class: className
-                , alt: rec.alternativeText
-                , src: rec.path
-                }
-            )
-      , styleDict
-      }
+imageElementToHtmlElement ::
+  forall message location.
+  Data.Image ->
+  ElementAndStyleDict message location
+imageElementToHtmlElement (Data.Image rec) =
+  ElementAndStyleDict
+    { element:
+        Vdom.ElementImg
+          ( Vdom.Img
+              { alt: rec.alternativeText
+              , src: rec.path
+              }
+          )
+    , styleDict: StyleDict.empty
+    }
 
 elementListOrTextToStyleDictAndClassNameAndVdomChildren ::
   forall message location.
-  Data.ViewStyle ->
   Data.ElementListOrText message location ->
   { styleDict :: StyleDict.StyleDict
-  , className :: Maybe NonEmptyString
   , vdomChildren :: Vdom.Children message location
   }
-elementListOrTextToStyleDictAndClassNameAndVdomChildren style = case _ of
-  Data.ElementListOrTextElementList elementList ->
-    let
-      { childList
-      , styleDict: childrenStyleDict
-      } = viewChildrenToVdomChildren elementList
-
-      { className, styleDict } = StyleDict.addStyleDictAndClassName childrenStyleDict style
-    in
-      { className
-      , styleDict
+elementListOrTextToStyleDictAndClassNameAndVdomChildren = case _ of
+  Data.ElementListOrTextElementList elementList -> case viewChildrenToVdomChildren elementList of
+    { styleDict, childList } ->
+      { styleDict
       , vdomChildren: Vdom.ChildrenElementList childList
       }
   Data.ElementListOrTextText text ->
-    let
-      { className, styleDict } = StyleDict.createStyleDictAndClassName style
-    in
-      { className
-      , styleDict
-      , vdomChildren: Vdom.ChildrenText text
-      }
+    { styleDict: StyleDict.empty
+    , vdomChildren: Vdom.ChildrenText text
+    }
 
-svgElementToHtmlElement :: forall message location. Data.SvgElement -> Vdom.Element message location
+svgElementToHtmlElement :: forall message location. Data.SvgElement -> Vdom.ElementAndClass message location
 svgElementToHtmlElement = case _ of
   Data.Path { pathText, fill } ->
-    Vdom.ElementSvgPath
-      ( Vdom.SvgPath
-          { id: Nothing
-          , class: Nothing
-          , d: pathText
-          , fill: fill
-          }
-      )
+    Vdom.ElementAndClass
+      { element:
+          Vdom.ElementSvgPath
+            ( Vdom.SvgPath
+                { d: pathText
+                , fill: fill
+                }
+            )
+      , id: Nothing
+      , class: Nothing
+      }
   Data.G { transform, svgElementList } ->
-    Vdom.ElementSvgG
-      ( Vdom.SvgG
-          { transform: transform
-          , children:
-              Array.mapWithIndex
-                (\index element -> Tuple.Tuple (Prelude.show index) (svgElementToHtmlElement element))
-                svgElementList
-          }
-      )
+    Vdom.ElementAndClass
+      { element:
+          Vdom.ElementSvgG
+            ( Vdom.SvgG
+                { transform: transform
+                , children:
+                    Array.mapWithIndex
+                      ( \index element ->
+                          Tuple.Tuple (Prelude.show index) (svgElementToHtmlElement element)
+                      )
+                      svgElementList
+                }
+            )
+      , id: Nothing
+      , class: Nothing
+      }
   Data.Polygon rec ->
-    Vdom.ElementSvgPolygon
-      ( Vdom.SvgPolygon
-          rec
-      )
+    Vdom.ElementAndClass
+      { element:
+          Vdom.ElementSvgPolygon
+            ( Vdom.SvgPolygon
+                rec
+            )
+      , id: Nothing
+      , class: Nothing
+      }
   Data.Circle rec ->
-    Vdom.ElementSvgCircle
-      ( Vdom.SvgCircle
-          { id: Nothing
-          , class: Nothing
-          , fill: rec.fill
-          , stroke: Nothing
-          , cx: rec.cx
-          , cy: rec.cy
-          , r: rec.r
-          , children: []
-          }
-      )
-  Data.Ellipse rec -> Vdom.ElementSvgEllipse (Vdom.SvgEllipse rec)
+    Vdom.ElementAndClass
+      { element:
+          Vdom.ElementSvgCircle
+            ( Vdom.SvgCircle
+                { fill: rec.fill
+                , stroke: Nothing
+                , cx: rec.cx
+                , cy: rec.cy
+                , r: rec.r
+                , children: []
+                }
+            )
+      , id: Nothing
+      , class: Nothing
+      }
+  Data.Ellipse rec ->
+    Vdom.ElementAndClass
+      { element:
+          Vdom.ElementSvgEllipse (Vdom.SvgEllipse rec)
+      , id: Nothing
+      , class: Nothing
+      }

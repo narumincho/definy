@@ -231,39 +231,39 @@ noScriptElement appName =
 vdomElementToHtmlElement ::
   forall message location.
   { origin :: NonEmptyString
-  , element :: Data.Element message location
+  , element :: Data.ElementAndClass message location
   , locationToPathAndSearchParams :: location -> StructuredUrl.PathAndSearchParams
   } ->
   Html.RawHtmlElement
-vdomElementToHtmlElement { origin, element, locationToPathAndSearchParams } = case element of
+vdomElementToHtmlElement { origin, element: Data.ElementAndClass { element, class: className, id }, locationToPathAndSearchParams } = case element of
   Data.ElementDiv (Data.Div rec) ->
     Wellknown.div
-      { id: rec.id, class: rec.class }
+      { id, class: className }
       (vdomChildrenToHtmlChildren { origin, children: rec.children, locationToPathAndSearchParams })
   Data.ElementSpan (Data.Span rec) ->
     Wellknown.span
-      { id: rec.id, class: rec.class }
+      { id, class: className }
       (vdomChildrenToHtmlChildren { origin, children: rec.children, locationToPathAndSearchParams })
   Data.ElementH1 (Data.H1 rec) ->
     Wellknown.h1
-      { id: rec.id, class: rec.class }
+      { id, class: className }
       (vdomChildrenToHtmlChildren { origin, children: rec.children, locationToPathAndSearchParams })
   Data.ElementH2 (Data.H2 rec) ->
     Wellknown.h2
-      { id: rec.id, class: rec.class }
+      { id, class: className }
       (vdomChildrenToHtmlChildren { origin, children: rec.children, locationToPathAndSearchParams })
   Data.ElementCode (Data.Code rec) ->
     Wellknown.code
-      { id: rec.id, class: rec.class }
+      { id, class: className }
       (vdomChildrenToHtmlChildren { origin, children: rec.children, locationToPathAndSearchParams })
   Data.ElementExternalLink (Data.ExternalLink rec) ->
     Wellknown.a
-      { id: rec.id, class: rec.class, href: rec.href }
+      { id, class: className, href: rec.href }
       (vdomChildrenToHtmlChildren { origin, children: rec.children, locationToPathAndSearchParams })
   Data.ElementSameOriginLink (Data.SameOriginLink rec) ->
     Wellknown.a
-      { id: rec.id
-      , class: rec.class
+      { id
+      , class: className
       , href:
           StructuredUrl.StructuredUrl
             { origin
@@ -273,54 +273,60 @@ vdomElementToHtmlElement { origin, element, locationToPathAndSearchParams } = ca
       (vdomChildrenToHtmlChildren { origin, children: rec.children, locationToPathAndSearchParams })
   Data.ElementButton (Data.Button rec) ->
     Wellknown.button
-      { id: rec.id, class: rec.class }
+      { id, class: className }
       (vdomChildrenToHtmlChildren { origin, children: rec.children, locationToPathAndSearchParams })
   Data.ElementImg (Data.Img rec) ->
     Wellknown.img
-      { id: rec.id, class: rec.class, alt: rec.alt, src: rec.src }
+      { id, class: className, alt: rec.alt, src: rec.src }
   Data.ElementInputRadio (Data.InputRadio rec) ->
     Wellknown.inputRadio
-      { id: rec.id, class: rec.class, name: rec.name }
+      { id, class: className, name: rec.name }
   Data.ElementInputText (Data.InputText rec) ->
     Wellknown.inputText
-      { id: rec.id
-      , class: rec.class
+      { id
+      , class: className
       , value: rec.value
       , readonly: Maybe.isNothing rec.inputOrReadonly
       }
   Data.ElementTextArea (Data.TextArea rec) ->
     Wellknown.textarea
-      { id: rec.id
-      , class: rec.class
+      { id
+      , class: className
       , value: rec.value
       , readonly: Maybe.isNothing rec.inputOrReadonly
       }
   Data.ElementLabel (Data.Label rec) ->
     Wellknown.label
-      { id: rec.id
-      , class: rec.class
+      { id
+      , class: className
       , for: rec.for
       }
       ( vdomChildrenToHtmlChildren
           { origin, children: rec.children, locationToPathAndSearchParams }
       )
-  Data.ElementSvg (Data.Svg rec) ->
+  Data.ElementSvg (Data.Svg { attributes: Data.SvgAttributes attributes, children }) ->
     Wellknown.svg
-      { id: rec.id
-      , class: rec.class
-      , viewBoxX: rec.viewBoxX
-      , viewBoxY: rec.viewBoxY
-      , viewBoxWidth: rec.viewBoxWidth
-      , viewBoxHeight: rec.viewBoxHeight
+      { id
+      , class: className
+      , viewBoxX: attributes.viewBoxX
+      , viewBoxY: attributes.viewBoxY
+      , viewBoxWidth: attributes.viewBoxWidth
+      , viewBoxHeight: attributes.viewBoxHeight
       }
       ( vdomChildListToHtmlChildList
-          { origin, childList: rec.children, locationToPathAndSearchParams }
+          { origin, childList: children, locationToPathAndSearchParams }
       )
-  Data.ElementSvgPath (Data.SvgPath rec) -> Wellknown.svgPath rec
+  Data.ElementSvgPath (Data.SvgPath rec) ->
+    Wellknown.svgPath
+      { id
+      , class: className
+      , d: rec.d
+      , fill: rec.fill
+      }
   Data.ElementSvgCircle (Data.SvgCircle rec) ->
     Wellknown.svgCircle
-      { id: rec.id
-      , class: rec.class
+      { id
+      , class: className
       , fill: rec.fill
       , stroke: rec.stroke
       , cx: rec.cx
@@ -363,7 +369,7 @@ vdomChildrenToHtmlChildren { origin, children, locationToPathAndSearchParams } =
 vdomChildListToHtmlChildList ::
   forall message location.
   { origin :: NonEmptyString
-  , childList :: Array (Tuple.Tuple String (Data.Element message location))
+  , childList :: Array (Tuple.Tuple String (Data.ElementAndClass message location))
   , locationToPathAndSearchParams :: location -> StructuredUrl.PathAndSearchParams
   } ->
   Array Html.RawHtmlElement

@@ -128,7 +128,7 @@ articleToView location (ArticleData.Article { title, imagePath, children }) =
     , bodyStyle: View.createStyle {} [ Css.overflow { x: Css.Hidden, y: Css.Scroll } ]
     }
 
-backToTop :: View.Element Message.Message Location.Location
+backToTop :: View.ElementAndStyle Message.Message Location.Location
 backToTop =
   ViewHelper.boxX
     {}
@@ -140,7 +140,7 @@ backToTop =
         [ ViewHelper.text {} "トップページに戻る" ]
     ]
 
-copyright :: View.Element Message.Message Location.Location
+copyright :: View.ElementAndStyle Message.Message Location.Location
 copyright =
   ViewHelper.divText
     { style:

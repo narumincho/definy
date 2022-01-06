@@ -29,11 +29,12 @@ import StructuredUrl as StructuredUrl
 import Type.Proxy (Proxy(..))
 import Util as Util
 import Vdom.ToHtml as VdomToHtml
+import Vdom.VdomPicked as VdomPicked
 import View.Data as ViewData
 import View.Helper as ViewHelper
 import View.ToVdom as ViewToVdom
 
-paragraphText :: String -> ViewData.Element Message.Message Location.Location
+paragraphText :: String -> ViewData.ElementAndStyle Message.Message Location.Location
 paragraphText textValue =
   ViewHelper.divText
     { style:
@@ -45,7 +46,7 @@ paragraphText textValue =
     }
     textValue
 
-paragraph :: Array (ViewData.Element Message.Message Location.Location) -> ViewData.Element Message.Message Location.Location
+paragraph :: Array (ViewData.ElementAndStyle Message.Message Location.Location) -> ViewData.ElementAndStyle Message.Message Location.Location
 paragraph children =
   ViewHelper.div
     { style:
@@ -56,7 +57,7 @@ paragraph children =
     }
     children
 
-spanNormalText :: String -> ViewData.Element Message.Message Location.Location
+spanNormalText :: String -> ViewData.ElementAndStyle Message.Message Location.Location
 spanNormalText textValue =
   ViewHelper.span
     { style:
@@ -67,7 +68,7 @@ spanNormalText textValue =
     }
     textValue
 
-inlineAnchorLocal :: Location.Location -> String -> ViewData.Element Message.Message Location.Location
+inlineAnchorLocal :: Location.Location -> String -> ViewData.ElementAndStyle Message.Message Location.Location
 inlineAnchorLocal location textValue =
   ViewHelper.inlineAnchor
     { style:
@@ -79,7 +80,7 @@ inlineAnchorLocal location textValue =
     }
     textValue
 
-inlineAnchorExternal :: StructuredUrl.StructuredUrl -> String -> ViewData.Element Message.Message Location.Location
+inlineAnchorExternal :: StructuredUrl.StructuredUrl -> String -> ViewData.ElementAndStyle Message.Message Location.Location
 inlineAnchorExternal url textValue =
   ViewHelper.inlineAnchor
     { style:
@@ -91,44 +92,44 @@ inlineAnchorExternal url textValue =
     }
     textValue
 
-htmlCodeWithSyntaxHighlightFromSvg :: ViewData.Svg -> ViewData.Element Message.Message Location.Location
+htmlCodeWithSyntaxHighlightFromSvg :: ViewData.Svg -> ViewData.ElementAndStyle Message.Message Location.Location
 htmlCodeWithSyntaxHighlightFromSvg svg =
   let
-    (ViewToVdom.ElementAndStyleDict { element }) =
-      ViewToVdom.svgToHtmlElement
-        { style: ViewData.createStyle {} []
-        , svg
-        }
+    (ViewToVdom.ElementAndStyleDict { element }) = ViewToVdom.svgToHtmlElement svg
   in
     htmlCodeWithSyntaxHighlight
       ( VdomToHtml.vdomElementToHtmlElement
           { origin: NonEmptyString.nes (Proxy :: _ "https://example.com")
-          , element
+          , element:
+              VdomPicked.ElementAndClass
+                { element, id: Nothing, class: Nothing }
           , locationToPathAndSearchParams: \_ -> StructuredUrl.fromPath []
           }
       )
 
 -- | html のコードをシンタックスハイライト付きのコードの vdom に変換する.
 -- | 厳密な話では, 見やすさのためにインデント分のテキストノードが入ってしまうが... 気にしない
-htmlCodeWithSyntaxHighlight :: HtmlData.RawHtmlElement -> ViewData.Element Message.Message Location.Location
+htmlCodeWithSyntaxHighlight :: HtmlData.RawHtmlElement -> ViewData.ElementAndStyle Message.Message Location.Location
 htmlCodeWithSyntaxHighlight htmlElement =
-  ViewData.ElementCode
+  ViewData.ElementAndStyle
     { style:
         ViewData.createStyle {}
           [ Css.whiteSpacePreWrap, Css.fontSize 1.1 ]
-    , code:
-        ViewData.Code
-          { children:
-              ViewData.ElementListOrTextElementList
-                ( htmlCodeWithSyntaxHighlightLoopWithEndNewLine
-                    { keyPrefix: ""
-                    , indent: UInt.fromInt 0
-                    , html: htmlElement
-                    }
-                )
-          , click: Nothing
-          , id: Nothing
-          }
+    , element:
+        ViewData.ElementCode
+          ( ViewData.Code
+              { children:
+                  ViewData.ElementListOrTextElementList
+                    ( htmlCodeWithSyntaxHighlightLoopWithEndNewLine
+                        { keyPrefix: ""
+                        , indent: UInt.fromInt 0
+                        , html: htmlElement
+                        }
+                    )
+              , click: Nothing
+              , id: Nothing
+              }
+          )
     }
 
 htmlCodeWithSyntaxHighlightLoopWithEndNewLine ::

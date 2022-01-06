@@ -2,6 +2,7 @@ module View.StyleDict
   ( StyleDict
   , addStyleDictAndClassName
   , createStyleDictAndClassName
+  , empty
   , listStyleDictToStyleDict
   , sha256HashValueToAnimationName
   , toCssStatementList
@@ -27,6 +28,13 @@ newtype StyleDict
   { keyframes :: Map.Map Hash.Sha256HashValue (Array Css.Keyframe)
   , style :: Map.Map Hash.Sha256HashValue Data.ViewStyle
   }
+
+empty :: StyleDict
+empty =
+  StyleDict
+    { style: Map.empty
+    , keyframes: Map.empty
+    }
 
 createStyleDictAndClassName ::
   Data.ViewStyle ->
