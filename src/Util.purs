@@ -3,6 +3,7 @@ module Util
   , groupBySize
   , jsonFromNonEmptyString
   , listUpdateAtOverAutoCreate
+  , numberToString
   , optionRecordToMaybeRecord
   , runParallelRecord
   , stringRepeat
@@ -146,3 +147,8 @@ optionRecordToMaybeRecord _ _ optionRecord =
 
 stringRepeat :: UInt.UInt -> String -> String
 stringRepeat count str = String.joinWith "" (Array.replicate (UInt.toInt count) str)
+
+-- | ```purs
+-- | numberToString 12.0 -- "12"
+-- | ```
+foreign import numberToString :: Number -> String

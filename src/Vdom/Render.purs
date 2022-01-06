@@ -17,27 +17,47 @@ import Effect as Effect
 import Effect.Uncurried as EffectUncurried
 import Language as Language
 import StructuredUrl as StructuredUrl
+import Util as Util
 import Vdom.CollectEvents as CollectEvents
-import Vdom.VdomPicked as Vdom
 import Vdom.PatchState as VdomPatchState
 import Vdom.Path as Path
+import Vdom.VdomPicked as Vdom
 
 -- | Vdom の Element から DOM API から HtmlElement か SvgElement を生成する
 elementToHtmlOrSvgElement ::
   forall message location.
-  { element :: Vdom.Element message location
+  { element :: Vdom.ElementAndClass message location
   , path :: Path.Path
   , patchState :: VdomPatchState.PatchState message
   , locationToPathAndSearchParams :: location -> StructuredUrl.PathAndSearchParams
   } ->
   Effect HtmlOrSvgElement
-elementToHtmlOrSvgElement { element, path, patchState, locationToPathAndSearchParams } = do
+elementToHtmlOrSvgElement { element: Vdom.ElementAndClass { element, class: classNameMaybe, id: idMaybe }, path, patchState, locationToPathAndSearchParams } = do
   htmlOrSvgElement <-
-    elementToHtmlOrSvgElementWithoutDataPath { element, path, patchState, locationToPathAndSearchParams }
+    elementToHtmlOrSvgElementWithoutDataPath
+      { element
+      , path
+      , patchState
+      , locationToPathAndSearchParams
+      }
   EffectUncurried.runEffectFn2
     setDataPath
     htmlOrSvgElement
     (Path.toString path)
+  case classNameMaybe of
+    Just className ->
+      EffectUncurried.runEffectFn2
+        setClass
+        htmlOrSvgElement
+        (NonEmptyString.toString className)
+    Nothing -> pure unit
+  case idMaybe of
+    Just id ->
+      EffectUncurried.runEffectFn2
+        setId
+        htmlOrSvgElement
+        (NonEmptyString.toString id)
+    Nothing -> pure unit
   pure htmlOrSvgElement
 
 elementToHtmlOrSvgElementWithoutDataPath ::
@@ -52,9 +72,7 @@ elementToHtmlOrSvgElementWithoutDataPath { element, path, patchState, locationTo
   Vdom.ElementDiv (Vdom.Div rec) -> do
     div <-
       EffectUncurried.runEffectFn1 createDiv
-        { id: Nullable.toNullable (map NonEmptyString.toString rec.id)
-        , class: Nullable.toNullable (map NonEmptyString.toString rec.class)
-        , click:
+        { click:
             EffectUncurried.mkEffectFn1
               ( EffectUncurried.runEffectFn2
                   (VdomPatchState.getClickEventHandler patchState)
@@ -66,9 +84,7 @@ elementToHtmlOrSvgElementWithoutDataPath { element, path, patchState, locationTo
   Vdom.ElementSpan (Vdom.Span rec) -> do
     span <-
       EffectUncurried.runEffectFn1 createSpan
-        { id: Nullable.toNullable (map NonEmptyString.toString rec.id)
-        , class: Nullable.toNullable (map NonEmptyString.toString rec.class)
-        , click:
+        { click:
             EffectUncurried.mkEffectFn1
               ( EffectUncurried.runEffectFn2
                   (VdomPatchState.getClickEventHandler patchState)
@@ -80,9 +96,7 @@ elementToHtmlOrSvgElementWithoutDataPath { element, path, patchState, locationTo
   Vdom.ElementH1 (Vdom.H1 rec) -> do
     h1 <-
       EffectUncurried.runEffectFn1 createH1
-        { id: Nullable.toNullable (map NonEmptyString.toString rec.id)
-        , class: Nullable.toNullable (map NonEmptyString.toString rec.class)
-        , click:
+        { click:
             EffectUncurried.mkEffectFn1
               ( EffectUncurried.runEffectFn2
                   (VdomPatchState.getClickEventHandler patchState)
@@ -94,9 +108,7 @@ elementToHtmlOrSvgElementWithoutDataPath { element, path, patchState, locationTo
   Vdom.ElementH2 (Vdom.H2 rec) -> do
     h2 <-
       EffectUncurried.runEffectFn1 createH2
-        { id: Nullable.toNullable (map NonEmptyString.toString rec.id)
-        , class: Nullable.toNullable (map NonEmptyString.toString rec.class)
-        , click:
+        { click:
             EffectUncurried.mkEffectFn1
               ( EffectUncurried.runEffectFn2
                   (VdomPatchState.getClickEventHandler patchState)
@@ -108,9 +120,7 @@ elementToHtmlOrSvgElementWithoutDataPath { element, path, patchState, locationTo
   Vdom.ElementCode (Vdom.Code rec) -> do
     code <-
       EffectUncurried.runEffectFn1 createCode
-        { id: Nullable.toNullable (map NonEmptyString.toString rec.id)
-        , class: Nullable.toNullable (map NonEmptyString.toString rec.class)
-        , click:
+        { click:
             EffectUncurried.mkEffectFn1
               ( EffectUncurried.runEffectFn2
                   (VdomPatchState.getClickEventHandler patchState)
@@ -122,18 +132,14 @@ elementToHtmlOrSvgElementWithoutDataPath { element, path, patchState, locationTo
   Vdom.ElementExternalLink (Vdom.ExternalLink rec) -> do
     anchor <-
       EffectUncurried.runEffectFn1 createExternalAnchor
-        { id: Nullable.toNullable (map NonEmptyString.toString rec.id)
-        , class: Nullable.toNullable (map NonEmptyString.toString rec.class)
-        , href: NonEmptyString.toString (StructuredUrl.toString rec.href)
+        { href: NonEmptyString.toString (StructuredUrl.toString rec.href)
         }
     applyChildren { htmlOrSvgElement: anchor, children: rec.children, path, patchState, locationToPathAndSearchParams }
     pure anchor
   Vdom.ElementSameOriginLink (Vdom.SameOriginLink rec) -> do
     anchor <-
       EffectUncurried.runEffectFn1 createSameOriginAnchor
-        { id: Nullable.toNullable (map NonEmptyString.toString rec.id)
-        , class: Nullable.toNullable (map NonEmptyString.toString rec.class)
-        , href: NonEmptyString.toString (StructuredUrl.pathAndSearchParamsToString (locationToPathAndSearchParams rec.href))
+        { href: NonEmptyString.toString (StructuredUrl.pathAndSearchParamsToString (locationToPathAndSearchParams rec.href))
         , click:
             EffectUncurried.mkEffectFn1
               ( EffectUncurried.runEffectFn2
@@ -145,77 +151,58 @@ elementToHtmlOrSvgElementWithoutDataPath { element, path, patchState, locationTo
     pure anchor
   Vdom.ElementButton (Vdom.Button rec) -> do
     button <-
-      EffectUncurried.runEffectFn1 createButton
-        { id: Nullable.toNullable (map NonEmptyString.toString rec.id)
-        , class: Nullable.toNullable (map NonEmptyString.toString rec.class)
-        }
+      EffectUncurried.runEffectFn1 createButton {}
     applyChildren { htmlOrSvgElement: button, children: rec.children, path, patchState, locationToPathAndSearchParams }
     pure button
   Vdom.ElementImg (Vdom.Img rec) ->
     EffectUncurried.runEffectFn1 createImg
-      { id: Nullable.toNullable (map NonEmptyString.toString rec.id)
-      , class: Nullable.toNullable (map NonEmptyString.toString rec.class)
-      , alt: rec.alt
+      { alt: rec.alt
       , src: NonEmptyString.toString (StructuredUrl.pathAndSearchParamsToString rec.src)
       }
   Vdom.ElementInputRadio (Vdom.InputRadio rec) ->
     EffectUncurried.runEffectFn1 createInputRadio
-      { id: Nullable.toNullable (map NonEmptyString.toString rec.id)
-      , class: Nullable.toNullable (map NonEmptyString.toString rec.class)
-      , checked: rec.checked
+      { checked: rec.checked
       , name: NonEmptyString.toString rec.name
       }
   Vdom.ElementInputText (Vdom.InputText rec) ->
     EffectUncurried.runEffectFn1 createInputText
-      { id: Nullable.toNullable (map NonEmptyString.toString rec.id)
-      , class: Nullable.toNullable (map NonEmptyString.toString rec.class)
-      , readonly: Maybe.isNothing rec.inputOrReadonly
+      { readonly: Maybe.isNothing rec.inputOrReadonly
       , value: rec.value
       }
   Vdom.ElementTextArea (Vdom.TextArea rec) ->
     EffectUncurried.runEffectFn1 createTextArea
-      { id: Nullable.toNullable (map NonEmptyString.toString rec.id)
-      , class: Nullable.toNullable (map NonEmptyString.toString rec.class)
-      , readonly: Maybe.isNothing rec.inputOrReadonly
+      { readonly: Maybe.isNothing rec.inputOrReadonly
       , value: rec.value
       }
   Vdom.ElementLabel (Vdom.Label rec) -> do
     label <-
       EffectUncurried.runEffectFn1 createLabel
-        { id: Nullable.toNullable (map NonEmptyString.toString rec.id)
-        , class: Nullable.toNullable (map NonEmptyString.toString rec.class)
-        , for: NonEmptyString.toString rec.for
+        { for: NonEmptyString.toString rec.for
         }
     applyChildren { htmlOrSvgElement: label, children: rec.children, path, patchState, locationToPathAndSearchParams }
     pure label
-  Vdom.ElementSvg (Vdom.Svg rec) -> do
+  Vdom.ElementSvg (Vdom.Svg { attributes: Vdom.SvgAttributes attributes, children }) -> do
     svg <-
       EffectUncurried.runEffectFn1 createSvg
-        { id: Nullable.toNullable (map NonEmptyString.toString rec.id)
-        , class: Nullable.toNullable (map NonEmptyString.toString rec.class)
-        , viewBox:
+        { viewBox:
             String.joinWith " "
-              [ show rec.viewBoxX
-              , show rec.viewBoxY
-              , show rec.viewBoxWidth
-              , show rec.viewBoxHeight
+              [ Util.numberToString attributes.viewBoxX
+              , Util.numberToString attributes.viewBoxY
+              , Util.numberToString attributes.viewBoxWidth
+              , Util.numberToString attributes.viewBoxHeight
               ]
         }
-    applyChildList { htmlOrSvgElement: svg, childList: rec.children, path, patchState, locationToPathAndSearchParams }
+    applyChildList { htmlOrSvgElement: svg, childList: children, path, patchState, locationToPathAndSearchParams }
     pure svg
   Vdom.ElementSvgPath (Vdom.SvgPath rec) ->
     EffectUncurried.runEffectFn1 createSvgPath
-      { id: Nullable.toNullable (map NonEmptyString.toString rec.id)
-      , class: Nullable.toNullable (map NonEmptyString.toString rec.class)
-      , d: rec.d
+      { d: rec.d
       , fill: Color.toHexString rec.fill
       }
   Vdom.ElementSvgCircle (Vdom.SvgCircle rec) -> do
     svgCircle <-
       EffectUncurried.runEffectFn1 createSvgCircle
-        { id: Nullable.toNullable (map NonEmptyString.toString rec.id)
-        , class: Nullable.toNullable (map NonEmptyString.toString rec.class)
-        , fill: Color.toHexString rec.fill
+        { fill: Color.toHexString rec.fill
         , stroke: Nullable.toNullable (map Color.toHexString rec.stroke)
         , cx: rec.cx
         , cy: rec.cy
@@ -234,9 +221,7 @@ elementToHtmlOrSvgElementWithoutDataPath { element, path, patchState, locationTo
   Vdom.ElementSvgG (Vdom.SvgG rec) -> do
     svgG <-
       EffectUncurried.runEffectFn1 createSvgG
-        { id: Nullable.null
-        , class: Nullable.null
-        , transform: NonEmptyString.joinWith " " rec.transform
+        { transform: NonEmptyString.joinWith " " rec.transform
         }
     applyChildList { htmlOrSvgElement: svgG, childList: rec.children, path, patchState, locationToPathAndSearchParams }
     pure svgG
@@ -289,7 +274,7 @@ applyChildren = case _ of
 applyChildList ::
   forall message location.
   { htmlOrSvgElement :: HtmlOrSvgElement
-  , childList :: Array (Tuple.Tuple String (Vdom.Element message location))
+  , childList :: Array (Tuple.Tuple String (Vdom.ElementAndClass message location))
   , path :: Path.Path
   , patchState :: VdomPatchState.PatchState message
   , locationToPathAndSearchParams :: location -> StructuredUrl.PathAndSearchParams
@@ -426,134 +411,101 @@ foreign import data HtmlOrSvgElement :: Type
 
 foreign import createDiv ::
   EffectUncurried.EffectFn1
-    { id :: Nullable String
-    , class :: Nullable String
-    , click :: EffectUncurried.EffectFn1 VdomPatchState.MouseEvent Unit
+    { click :: EffectUncurried.EffectFn1 VdomPatchState.MouseEvent Unit
     }
     HtmlOrSvgElement
 
 foreign import createSpan ::
   EffectUncurried.EffectFn1
-    { id :: Nullable String
-    , class :: Nullable String
-    , click :: EffectUncurried.EffectFn1 VdomPatchState.MouseEvent Unit
+    { click :: EffectUncurried.EffectFn1 VdomPatchState.MouseEvent Unit
     }
     HtmlOrSvgElement
 
 foreign import createH1 ::
   EffectUncurried.EffectFn1
-    { id :: Nullable String
-    , class :: Nullable String
-    , click :: EffectUncurried.EffectFn1 VdomPatchState.MouseEvent Unit
+    { click :: EffectUncurried.EffectFn1 VdomPatchState.MouseEvent Unit
     }
     HtmlOrSvgElement
 
 foreign import createH2 ::
   EffectUncurried.EffectFn1
-    { id :: Nullable String
-    , class :: Nullable String
-    , click :: EffectUncurried.EffectFn1 VdomPatchState.MouseEvent Unit
+    { click :: EffectUncurried.EffectFn1 VdomPatchState.MouseEvent Unit
     }
     HtmlOrSvgElement
 
 foreign import createCode ::
   EffectUncurried.EffectFn1
-    { id :: Nullable String
-    , class :: Nullable String
-    , click :: EffectUncurried.EffectFn1 VdomPatchState.MouseEvent Unit
+    { click :: EffectUncurried.EffectFn1 VdomPatchState.MouseEvent Unit
     }
     HtmlOrSvgElement
 
 foreign import createExternalAnchor ::
   EffectUncurried.EffectFn1
-    { id :: Nullable String
-    , class :: Nullable String
-    , href :: String
+    { href :: String
     }
     HtmlOrSvgElement
 
 foreign import createSameOriginAnchor ::
   EffectUncurried.EffectFn1
-    { id :: Nullable String
-    , class :: Nullable String
-    , href :: String
+    { href :: String
     , click :: EffectUncurried.EffectFn1 VdomPatchState.MouseEvent Unit
     }
     HtmlOrSvgElement
 
 foreign import createButton ::
   EffectUncurried.EffectFn1
-    { id :: Nullable String
-    , class :: Nullable String
-    }
+    {}
     HtmlOrSvgElement
 
 foreign import createImg ::
   EffectUncurried.EffectFn1
-    { id :: Nullable String
-    , class :: Nullable String
-    , alt :: String
+    { alt :: String
     , src :: String
     }
     HtmlOrSvgElement
 
 foreign import createInputRadio ::
   EffectUncurried.EffectFn1
-    { id :: Nullable String
-    , class :: Nullable String
-    , checked :: Boolean
+    { checked :: Boolean
     , name :: String
     }
     HtmlOrSvgElement
 
 foreign import createInputText ::
   EffectUncurried.EffectFn1
-    { id :: Nullable String
-    , class :: Nullable String
-    , readonly :: Boolean
+    { readonly :: Boolean
     , value :: String
     }
     HtmlOrSvgElement
 
 foreign import createTextArea ::
   EffectUncurried.EffectFn1
-    { id :: Nullable String
-    , class :: Nullable String
-    , readonly :: Boolean
+    { readonly :: Boolean
     , value :: String
     }
     HtmlOrSvgElement
 
 foreign import createLabel ::
   EffectUncurried.EffectFn1
-    { id :: Nullable String
-    , class :: Nullable String
-    , for :: String
+    { for :: String
     }
     HtmlOrSvgElement
 
 foreign import createSvg ::
   EffectUncurried.EffectFn1
-    { id :: Nullable String
-    , class :: Nullable String
-    , viewBox :: String
-    }
+    { viewBox :: String }
     HtmlOrSvgElement
 
 foreign import createSvgPath ::
   EffectUncurried.EffectFn1
-    { id :: Nullable String
-    , class :: Nullable String
-    , d :: String
+    { d :: String
     , fill :: String
     }
     HtmlOrSvgElement
 
 foreign import createSvgCircle ::
   EffectUncurried.EffectFn1
-    { id :: Nullable String
-    , class :: Nullable String
-    , fill :: String
+    { fill :: String
     , stroke :: Nullable String
     , cx :: Number
     , cy :: Number
@@ -573,9 +525,7 @@ foreign import createSvgAnimate ::
 
 foreign import createSvgG ::
   EffectUncurried.EffectFn1
-    { id :: Nullable String
-    , class :: Nullable String
-    , transform :: String
+    { transform :: String
     }
     HtmlOrSvgElement
 
@@ -600,5 +550,9 @@ foreign import createSvgEllipse ::
 foreign import appendChild :: EffectUncurried.EffectFn2 HtmlOrSvgElement HtmlOrSvgElement Unit
 
 foreign import setDataPath :: EffectUncurried.EffectFn2 HtmlOrSvgElement String Unit
+
+foreign import setId :: EffectUncurried.EffectFn2 HtmlOrSvgElement String Unit
+
+foreign import setClass :: EffectUncurried.EffectFn2 HtmlOrSvgElement String Unit
 
 foreign import setStyle :: EffectUncurried.EffectFn1 String Unit

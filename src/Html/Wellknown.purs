@@ -49,6 +49,7 @@ import Prelude as Prelude
 import StructuredUrl as StructuredUrl
 import Type.Proxy (Proxy(..))
 import Type.Proxy as Proxy
+import Util as Util
 
 meta :: Map.Map NonEmptyString.NonEmptyString (Maybe.Maybe String) -> Data.RawHtmlElement
 meta attributes = Data.htmlElement (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "meta")) attributes Data.NoEndTag
@@ -430,7 +431,7 @@ svg attributes children =
                     (NonEmptyString.nes (Proxy :: Proxy "viewBox"))
                     ( Just
                         ( String.joinWith " "
-                            ( Prelude.map Prelude.show
+                            ( Prelude.map Util.numberToString
                                 [ attributes.viewBoxX
                                 , attributes.viewBoxY
                                 , attributes.viewBoxWidth
@@ -507,17 +508,17 @@ svgCircle attributes children =
             , Just
                 ( Tuple.Tuple
                     (NonEmptyString.nes (Proxy :: Proxy "cx"))
-                    (Just (Prelude.show attributes.cx))
+                    (Just (Util.numberToString attributes.cx))
                 )
             , Just
                 ( Tuple.Tuple
                     (NonEmptyString.nes (Proxy :: Proxy "cy"))
-                    (Just (Prelude.show attributes.cy))
+                    (Just (Util.numberToString attributes.cy))
                 )
             , Just
                 ( Tuple.Tuple
                     (NonEmptyString.nes (Proxy :: Proxy "r"))
-                    (Just (Prelude.show attributes.r))
+                    (Just (Util.numberToString attributes.r))
                 )
             ]
         )
@@ -541,7 +542,7 @@ svgAnimate attributes =
             (Just (NonEmptyString.toString attributes.attributeName))
         , Tuple.Tuple
             (NonEmptyString.nes (Proxy :: Proxy "dur"))
-            (Just (Prelude.show attributes.dur))
+            (Just (Util.numberToString attributes.dur))
         , Tuple.Tuple
             (NonEmptyString.nes (Proxy :: Proxy "repeatCount"))
             (Just attributes.repeatCount)
@@ -583,7 +584,12 @@ svgPolygon attributes =
                 ( String.joinWith " "
                     ( NonEmptyArray.toArray
                         ( Prelude.map
-                            (\{ x, y } -> String.joinWith "," [ Prelude.show x, Prelude.show y ])
+                            ( \{ x, y } ->
+                                String.joinWith ","
+                                  [ Util.numberToString x
+                                  , Util.numberToString y
+                                  ]
+                            )
                             attributes.points
                         )
                     )
@@ -613,16 +619,16 @@ svgEllipse attributes =
     ( Map.fromFoldable
         [ Tuple.Tuple
             (NonEmptyString.nes (Proxy :: Proxy "cx"))
-            (Just (Prelude.show attributes.cx))
+            (Just (Util.numberToString attributes.cx))
         , Tuple.Tuple
             (NonEmptyString.nes (Proxy :: Proxy "cy"))
-            (Just (Prelude.show attributes.cy))
+            (Just (Util.numberToString attributes.cy))
         , Tuple.Tuple
             (NonEmptyString.nes (Proxy :: Proxy "rx"))
-            (Just (Prelude.show attributes.rx))
+            (Just (Util.numberToString attributes.rx))
         , Tuple.Tuple
             (NonEmptyString.nes (Proxy :: Proxy "ry"))
-            (Just (Prelude.show attributes.ry))
+            (Just (Util.numberToString attributes.ry))
         , Tuple.Tuple
             (NonEmptyString.nes (Proxy :: Proxy "fill"))
             (Just (Color.toHexString attributes.fill))

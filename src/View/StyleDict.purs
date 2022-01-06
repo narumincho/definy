@@ -2,6 +2,7 @@ module View.StyleDict
   ( StyleDict
   , addStyleDictAndClassName
   , createStyleDictAndClassName
+  , empty
   , listStyleDictToStyleDict
   , sha256HashValueToAnimationName
   , toCssStatementList
@@ -11,6 +12,7 @@ import Color as Color
 import Css as Css
 import Data.Array as Array
 import Data.Map as Map
+import Data.Maybe (Maybe(..))
 import Data.String as String
 import Data.String.NonEmpty (NonEmptyString)
 import Data.String.NonEmpty as NonEmptyString
@@ -27,43 +29,54 @@ newtype StyleDict
   , style :: Map.Map Hash.Sha256HashValue Data.ViewStyle
   }
 
+empty :: StyleDict
+empty =
+  StyleDict
+    { style: Map.empty
+    , keyframes: Map.empty
+    }
+
 createStyleDictAndClassName ::
   Data.ViewStyle ->
-  { styleDict :: StyleDict, className :: NonEmptyString }
-createStyleDictAndClassName viewStyle@(Data.ViewStyle { animation }) =
-  let
-    classNameHashValue :: Hash.Sha256HashValue
-    classNameHashValue = viewStyleToSha256HashValue viewStyle
-
-    className :: NonEmptyString
-    className = sha256HashValueToClassName classNameHashValue
-  in
+  { styleDict :: StyleDict, className :: Maybe NonEmptyString }
+createStyleDictAndClassName viewStyle@(Data.ViewStyle { animation }) = case viewStyleToSha256HashValue viewStyle of
+  Just classNameHashValue ->
     { styleDict:
         StyleDict
           { style: Map.singleton classNameHashValue viewStyle
           , keyframes: animation
           }
-    , className
+    , className: Just (sha256HashValueToClassName classNameHashValue)
+    }
+  Nothing ->
+    { styleDict:
+        StyleDict
+          { style: Map.empty
+          , keyframes: animation
+          }
+    , className: Nothing
     }
 
 addStyleDictAndClassName ::
   StyleDict ->
   Data.ViewStyle ->
-  { styleDict :: StyleDict, className :: NonEmptyString }
-addStyleDictAndClassName (StyleDict styleDictRec) viewStyle@(Data.ViewStyle { animation }) =
-  let
-    classNameHashValue :: Hash.Sha256HashValue
-    classNameHashValue = viewStyleToSha256HashValue viewStyle
-
-    className :: NonEmptyString
-    className = sha256HashValueToClassName classNameHashValue
-  in
+  { styleDict :: StyleDict, className :: Maybe NonEmptyString }
+addStyleDictAndClassName (StyleDict styleDictRec) viewStyle@(Data.ViewStyle { animation }) = case viewStyleToSha256HashValue viewStyle of
+  Just classNameHashValue ->
     { styleDict:
         StyleDict
           { style: Map.insert classNameHashValue viewStyle styleDictRec.style
           , keyframes: Map.union styleDictRec.keyframes animation
           }
-    , className
+    , className: Just (sha256HashValueToClassName classNameHashValue)
+    }
+  Nothing ->
+    { styleDict:
+        StyleDict
+          { style: styleDictRec.style
+          , keyframes: Map.union styleDictRec.keyframes animation
+          }
+    , className: Nothing
     }
 
 listStyleDictToStyleDict :: Array StyleDict -> StyleDict
@@ -80,14 +93,19 @@ listStyleDictToStyleDict styleDictArray =
           )
     }
 
-viewStyleToSha256HashValue :: Data.ViewStyle -> Hash.Sha256HashValue
-viewStyleToSha256HashValue (Data.ViewStyle { normal, hover }) =
-  Hash.stringToSha256HashValue
-    ( String.joinWith "!"
-        [ Css.declarationListToString normal
-        , Css.declarationListToString hover
-        ]
-    )
+-- | ViewStyle の中身のハッシュ値を生成する. 中身がからの場合は Nothing
+viewStyleToSha256HashValue :: Data.ViewStyle -> Maybe Hash.Sha256HashValue
+viewStyleToSha256HashValue = case _ of
+  Data.ViewStyle { normal: [], hover: [] } -> Nothing
+  Data.ViewStyle { normal, hover } ->
+    Just
+      ( Hash.stringToSha256HashValue
+          ( String.joinWith "!"
+              [ Css.declarationListToString normal
+              , Css.declarationListToString hover
+              ]
+          )
+      )
 
 toCssStatementList ::
   StyleDict ->

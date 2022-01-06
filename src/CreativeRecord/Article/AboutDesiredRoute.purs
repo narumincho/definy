@@ -19,7 +19,7 @@ view =
     , children: children
     }
 
-children :: Array (ViewData.Element Message.Message Location.Location)
+children :: Array (ViewData.ElementAndStyle Message.Message Location.Location)
 children =
   [ ViewHelper.text {} "更新日時 2019/10/4"
   , ViewHelper.text {} "作成日 2019/10/4"
