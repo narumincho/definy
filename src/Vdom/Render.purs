@@ -15,9 +15,9 @@ import Data.Tuple as Tuple
 import Effect (Effect)
 import Effect as Effect
 import Effect.Uncurried as EffectUncurried
+import Html.Wellknown as HtmlWellknown
 import Language as Language
 import StructuredUrl as StructuredUrl
-import Util as Util
 import Vdom.CollectEvents as CollectEvents
 import Vdom.PatchState as VdomPatchState
 import Vdom.Path as Path
@@ -184,13 +184,7 @@ elementToHtmlOrSvgElementWithoutDataPath { element, path, patchState, locationTo
   Vdom.ElementSvg (Vdom.Svg { attributes: Vdom.SvgAttributes attributes, children }) -> do
     svg <-
       EffectUncurried.runEffectFn1 createSvg
-        { viewBox:
-            String.joinWith " "
-              [ Util.numberToString attributes.viewBoxX
-              , Util.numberToString attributes.viewBoxY
-              , Util.numberToString attributes.viewBoxWidth
-              , Util.numberToString attributes.viewBoxHeight
-              ]
+        { viewBox: HtmlWellknown.viewBoxToViewBoxAttributeValue attributes.viewBox
         }
     applyChildList { htmlOrSvgElement: svg, childList: children, path, patchState, locationToPathAndSearchParams }
     pure svg

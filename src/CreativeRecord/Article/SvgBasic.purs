@@ -6,12 +6,12 @@ import CreativeRecord.Element as Element
 import CreativeRecord.StaticResource as StaticResource
 import Data.Array.NonEmpty as NonEmptyArray
 import Data.String.NonEmpty as NonEmptyString
-import StructuredUrl (StructuredUrl(..))
 import StructuredUrl as StructuredUrl
 import Type.Proxy (Proxy(..))
 import Type.Proxy as Proxy
 import View.Data as View
 import View.Helper as ViewHelper
+import Html.Wellknown as HtmlWellknown
 
 view :: Data.Article
 view =
@@ -57,7 +57,7 @@ view =
 orange :: View.Svg
 orange =
   View.Svg
-    { viewBox: View.ViewBox { x: 0.0, y: 0.0, width: 324.0, height: 324.0 }
+    { viewBox: HtmlWellknown.ViewBox { x: 0.0, y: 0.0, width: 324.0, height: 324.0 }
     , svgElementList:
         [ View.Circle { cx: 162.0, cy: 162.0, r: 155.0, fill: Color.rgb 255 165 0 }
         , View.Circle { cx: 123.0, cy: 274.0, r: 10.0, fill: Color.rgb 255 212 39 }

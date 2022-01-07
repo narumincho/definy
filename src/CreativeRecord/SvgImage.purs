@@ -5,11 +5,12 @@ import Data.Array.NonEmpty as NonEmptyArray
 import Data.String.NonEmpty as NonEmptyString
 import Type.Proxy (Proxy(..))
 import View.Data as View
+import Html.Wellknown as HtmlWellknown
 
 webSiteLogo :: View.Svg
 webSiteLogo =
   View.Svg
-    { viewBox: View.ViewBox { x: 0.0, y: 0.0, width: 388.0, height: 32.0 }
+    { viewBox: HtmlWellknown.ViewBox { x: 0.0, y: 0.0, width: 388.0, height: 32.0 }
     , svgElementList:
         [ View.Path
             { fill: Color.rgb 255 255 255
@@ -23,7 +24,7 @@ twitterLogo :: View.Svg
 twitterLogo =
   View.Svg
     { viewBox:
-        View.ViewBox
+        HtmlWellknown.ViewBox
           { x: 50.0
           , y: 50.0
           , width: 300.0
@@ -42,7 +43,7 @@ gitHubLogo :: View.Svg
 gitHubLogo =
   View.Svg
     { viewBox:
-        View.ViewBox
+        HtmlWellknown.ViewBox
           { x: 0.0
           , y: 0.0
           , width: 560.0
@@ -69,7 +70,7 @@ youTubeLogo :: View.Svg
 youTubeLogo =
   View.Svg
     { viewBox:
-        View.ViewBox
+        HtmlWellknown.ViewBox
           { x: 0.0
           , y: 0.0
           , width: 30.0

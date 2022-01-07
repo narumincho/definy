@@ -318,7 +318,7 @@ svgToHtmlElement ::
   forall message location.
   Data.Svg ->
   ElementAndStyleDict message location
-svgToHtmlElement (Data.Svg { viewBox: Data.ViewBox viewBox, svgElementList }) =
+svgToHtmlElement (Data.Svg { viewBox, svgElementList }) =
   ElementAndStyleDict
     { element:
         Vdom.ElementSvg
@@ -327,13 +327,7 @@ svgToHtmlElement (Data.Svg { viewBox: Data.ViewBox viewBox, svgElementList }) =
                   Array.mapWithIndex
                     (\index e -> Tuple.Tuple (Prelude.show index) (svgElementToHtmlElement e))
                     svgElementList
-              , attributes:
-                  Vdom.SvgAttributes
-                    { viewBoxHeight: viewBox.height
-                    , viewBoxWidth: viewBox.width
-                    , viewBoxX: viewBox.x
-                    , viewBoxY: viewBox.y
-                    }
+              , attributes: Vdom.SvgAttributes { viewBox }
               }
           )
     , styleDict: StyleDict.empty

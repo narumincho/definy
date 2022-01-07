@@ -308,10 +308,7 @@ vdomElementToHtmlElement { origin, element: Data.ElementAndClass { element, clas
     Wellknown.svg
       { id
       , class: className
-      , viewBoxX: attributes.viewBoxX
-      , viewBoxY: attributes.viewBoxY
-      , viewBoxWidth: attributes.viewBoxWidth
-      , viewBoxHeight: attributes.viewBoxHeight
+      , viewBox: attributes.viewBox
       }
       ( vdomChildListToHtmlChildList
           { origin, childList: children, locationToPathAndSearchParams }

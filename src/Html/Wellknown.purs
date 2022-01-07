@@ -1,5 +1,6 @@
 module Html.Wellknown
-  ( a
+  ( ViewBox(..)
+  , a
   , body
   , bodyTagName
   , button
@@ -29,6 +30,7 @@ module Html.Wellknown
   , svgPolygon
   , textarea
   , title
+  , viewBoxToViewBoxAttributeValue
   ) where
 
 import Color as Color
@@ -410,13 +412,30 @@ label attributes children =
     )
     children
 
+newtype ViewBox
+  = ViewBox
+  { x :: Number
+  , y :: Number
+  , width :: Number
+  , height :: Number
+  }
+
+viewBoxToViewBoxAttributeValue :: ViewBox -> String
+viewBoxToViewBoxAttributeValue (ViewBox viewBox) =
+  ( String.joinWith " "
+      ( Prelude.map Util.numberToString
+          [ viewBox.x
+          , viewBox.y
+          , viewBox.width
+          , viewBox.height
+          ]
+      )
+  )
+
 svg ::
   { id :: Maybe NonEmptyString
   , class :: Maybe NonEmptyString
-  , viewBoxX :: Number
-  , viewBoxY :: Number
-  , viewBoxWidth :: Number
-  , viewBoxHeight :: Number
+  , viewBox :: ViewBox
   } ->
   Array Data.RawHtmlElement -> Data.RawHtmlElement
 svg attributes children =
@@ -430,15 +449,7 @@ svg attributes children =
                 ( Tuple.Tuple
                     (NonEmptyString.nes (Proxy :: Proxy "viewBox"))
                     ( Just
-                        ( String.joinWith " "
-                            ( Prelude.map Util.numberToString
-                                [ attributes.viewBoxX
-                                , attributes.viewBoxY
-                                , attributes.viewBoxWidth
-                                , attributes.viewBoxHeight
-                                ]
-                            )
-                        )
+                        (viewBoxToViewBoxAttributeValue attributes.viewBox)
                     )
                 )
             ]

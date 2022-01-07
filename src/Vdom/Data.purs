@@ -58,6 +58,7 @@ import Data.Maybe (Maybe)
 import Data.Maybe as Maybe
 import Data.String.NonEmpty (NonEmptyString)
 import Data.Tuple as Tuple
+import Html.Wellknown as HtmlWellknown
 import Language as Language
 import Prelude as Prelude
 import StructuredUrl as StructuredUrl
@@ -473,10 +474,7 @@ newtype Svg message location
 
 newtype SvgAttributes
   = SvgAttributes
-  { viewBoxX :: Number
-  , viewBoxY :: Number
-  , viewBoxWidth :: Number
-  , viewBoxHeight :: Number
+  { viewBox :: HtmlWellknown.ViewBox
   }
 
 newtype SvgDiff :: Type -> Type -> Type

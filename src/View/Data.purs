@@ -15,7 +15,6 @@ module View.Data
   , Svg(..)
   , SvgElement(..)
   , View(..)
-  , ViewBox(..)
   , ViewStyle(..)
   , createStyle
   ) where
@@ -34,6 +33,7 @@ import StructuredUrl as StructuredUrl
 import Type.Proxy as Proxy
 import Util as Util
 import Vdom.PatchState as PatchState
+import Html.Wellknown as HtmlWellknown
 
 newtype View :: Type -> Type -> Type
 -- | 見た目を表現するデータ. HTML Option より HTML と離れた, 抽象度の高く 扱いやすいものにする.
@@ -185,16 +185,8 @@ newtype Span message location
 
 newtype Svg
   = Svg
-  { viewBox :: ViewBox
+  { viewBox :: HtmlWellknown.ViewBox
   , svgElementList :: Array SvgElement
-  }
-
-newtype ViewBox
-  = ViewBox
-  { x :: Number
-  , y :: Number
-  , width :: Number
-  , height :: Number
   }
 
 data SvgElement
