@@ -6,6 +6,9 @@ import CreativeRecord.Element as Element
 import CreativeRecord.StaticResource as StaticResource
 import Data.Array.NonEmpty as NonEmptyArray
 import Data.String.NonEmpty as NonEmptyString
+import StructuredUrl (StructuredUrl(..))
+import StructuredUrl as StructuredUrl
+import Type.Proxy (Proxy(..))
 import Type.Proxy as Proxy
 import View.Data as View
 import View.Helper as ViewHelper
@@ -35,7 +38,16 @@ view =
             , ViewHelper.text {} "[比較の図は移植中]"
             , ViewHelper.text {} "このサイトで使われるfavicon(ブラウザのタブのアイコンとかに表示される)は互換性を重視しラスタ形式のPNGファイルにしている. SafariがSVGのfaviconに対応していない(2022年時点). ホーム画面に追加したときなどはちゃんと表示されるのだろうか"
             , ViewHelper.text { markup: ViewHelper.Heading2 } "アクセシビリティに優れている"
-            , ViewHelper.text {} "くいなちゃんのホームページに変わった形のメニューがあるけど、リンクの当たり判定が四角だったり、文字を検索で探すことができないのでSVGで勝手にリメイクしてみた(あえてそうしているかもしれないが)"
+            , Element.paragraph
+                [ Element.inlineAnchorExternal
+                    ( StructuredUrl.StructuredUrl
+                        { origin: NonEmptyString.nes (Proxy :: _ "https://kuina.ch")
+                        , pathAndSearchParams: StructuredUrl.fromPath []
+                        }
+                    )
+                    "くいなちゃんのホームページ"
+                , Element.spanNormalText "に変わった形のメニューがあるけど、リンクの当たり判定が四角だったり、文字を検索で探すことができないのでSVGで勝手にリメイクしてみた(あえてそうしているかもしれないが)"
+                ]
             , ViewHelper.text {} "[くいなちゃんのホームページのメニュー SVG version は移植中]"
             , ViewHelper.text {} "このように、リンクの形を工夫できたり、マウスを載せて一部だけ色を変えたり、文字を検索、コピーができる. (それにしても、封印された地下ってなんだろう?)"
             ]
