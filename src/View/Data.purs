@@ -225,3 +225,4 @@ data SvgElement
     , ry :: Number
     , fill :: Color.Color
     }
+  | SvgText HtmlWellknown.SvgTextAttribute

@@ -160,3 +160,4 @@ collectMessageDataMapInElement { locationToPathAndSearchParams, element: Vdom.El
       }
   Vdom.ElementSvgPolygon _ -> VdomPatchState.newMessageMapParameterEmpty
   Vdom.ElementSvgEllipse _ -> VdomPatchState.newMessageMapParameterEmpty
+  Vdom.ElementSvgText _ -> VdomPatchState.newMessageMapParameterEmpty

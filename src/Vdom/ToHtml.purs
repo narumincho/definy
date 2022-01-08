@@ -344,6 +344,7 @@ vdomElementToHtmlElement { origin, element: Data.ElementAndClass { element, clas
       )
   Data.ElementSvgPolygon (Data.SvgPolygon rec) -> Wellknown.svgPolygon rec
   Data.ElementSvgEllipse (Data.SvgEllipse rec) -> Wellknown.svgEllipse rec
+  Data.ElementSvgText attributes -> Wellknown.svgText attributes
 
 vdomChildrenToHtmlChildren ::
   forall message location.

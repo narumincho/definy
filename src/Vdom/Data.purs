@@ -175,6 +175,7 @@ data Element message location
   | ElementSvgG (SvgG message location)
   | ElementSvgPolygon SvgPolygon
   | ElementSvgEllipse SvgEllipse
+  | ElementSvgText HtmlWellknown.SvgTextAttribute
 
 data ElementDiff :: Type -> Type -> Type
 data ElementDiff message location

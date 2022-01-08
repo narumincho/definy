@@ -17,6 +17,7 @@ module View.Helper
   , svgG
   , svgPath
   , svgPolygon
+  , svgText
   , text
   ) where
 
@@ -30,6 +31,7 @@ import Data.Maybe (Maybe(..))
 import Data.String as String
 import Data.String.NonEmpty (NonEmptyString)
 import Hash as Hash
+import Html.Wellknown as HtmlWellknown
 import Option as Option
 import Prelude as Prelude
 import StructuredUrl as StructuredUrl
@@ -444,7 +446,14 @@ image option =
       , id: Nothing
       }
 
-svg :: forall message location. { height :: Number, isJustifySelfCenter :: Boolean, width :: PercentageOrRem, svg :: Data.Svg } -> Data.ElementAndStyle message location
+svg ::
+  forall message location.
+  { height :: Number
+  , isJustifySelfCenter :: Boolean
+  , width :: PercentageOrRem
+  , svg :: Data.Svg
+  } ->
+  Data.ElementAndStyle message location
 svg rec =
   Data.ElementAndStyle
     { style:
@@ -617,6 +626,24 @@ svgEllipse ::
 svgEllipse attribute =
   Data.SvgElementAndStyle
     { element: Data.Ellipse attribute
+    , id: Nothing
+    , style: Data.createStyle {} []
+    }
+
+svgText :: { fontSize :: Number, x :: Number, y :: Number, fill :: Color.Color } -> String -> Data.SvgElementAndStyle
+svgText attribute textValue =
+  Data.SvgElementAndStyle
+    { element:
+        Data.SvgText
+          ( HtmlWellknown.SvgTextAttribute
+              { fontSize: attribute.fontSize
+              , text: textValue
+              , textAnchor: HtmlWellknown.Middle
+              , x: attribute.x
+              , y: attribute.y
+              , fill: attribute.fill
+              }
+          )
     , id: Nothing
     , style: Data.createStyle {} []
     }

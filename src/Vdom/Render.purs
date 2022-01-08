@@ -240,6 +240,14 @@ elementToHtmlOrSvgElementWithoutDataPath { element, path, patchState, locationTo
       , ry: rec.ry
       , fill: Color.toHexString rec.fill
       }
+  Vdom.ElementSvgText (HtmlWellknown.SvgTextAttribute attribute) ->
+    EffectUncurried.runEffectFn1 createSvgText
+      { x: attribute.x
+      , y: attribute.y
+      , fontSize: attribute.fontSize
+      , fill: Color.toHexString attribute.fill
+      , text: attribute.text
+      }
 
 -- | HTMLElment か SVGElement の子要素を設定する
 applyChildren ::
@@ -537,6 +545,16 @@ foreign import createSvgEllipse ::
     , cy :: Number
     , rx :: Number
     , ry :: Number
+    , fill :: String
+    }
+    HtmlOrSvgElement
+
+foreign import createSvgText ::
+  EffectUncurried.EffectFn1
+    { x :: Number
+    , y :: Number
+    , fontSize :: Number
+    , text :: String
     , fill :: String
     }
     HtmlOrSvgElement

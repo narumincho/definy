@@ -8,7 +8,7 @@ import Data.Array as Array
 import Data.Array.NonEmpty (NonEmptyArray)
 import Data.Array.NonEmpty as NonEmptyArray
 import Data.Maybe (Maybe(..))
-import Data.String.NonEmpty.Internal (NonEmptyString(..))
+import Data.String.NonEmpty (NonEmptyString)
 import Data.Tuple as Tuple
 import Prelude as Prelude
 import StructuredUrl as StructuredUrl
@@ -418,3 +418,4 @@ svgElementToHtmlElement = case _ of
           }
       )
   Data.Ellipse rec -> Vdom.ElementSvgEllipse (Vdom.SvgEllipse rec)
+  Data.SvgText rec -> Vdom.ElementSvgText rec
