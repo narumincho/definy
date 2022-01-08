@@ -59,15 +59,15 @@ orange =
   View.Svg
     { viewBox: HtmlWellknown.ViewBox { x: 0.0, y: 0.0, width: 324.0, height: 324.0 }
     , svgElementList:
-        [ View.Circle { cx: 162.0, cy: 162.0, r: 155.0, fill: Color.rgb 255 165 0 }
-        , View.Circle { cx: 123.0, cy: 274.0, r: 10.0, fill: Color.rgb 255 212 39 }
-        , View.Circle { cx: 271.0, cy: 157.0, r: 11.0, fill: Color.rgb 255 212 39 }
-        , View.Circle { cx: 269.0, cy: 197.0, r: 11.0, fill: Color.rgb 255 212 39 }
-        , View.Circle { cx: 243.0, cy: 226.0, r: 13.0, fill: Color.rgb 255 212 39 }
-        , View.Circle { cx: 210.0, cy: 265.0, r: 9.0, fill: Color.rgb 255 212 39 }
-        , View.Circle { cx: 158.0, cy: 268.0, r: 10.0, fill: Color.rgb 255 212 39 }
-        , View.Circle { cx: 201.0, cy: 232.0, r: 10.0, fill: Color.rgb 255 212 39 }
-        , View.Polygon
+        [ ViewHelper.svgCircle { cx: 162.0, cy: 162.0, r: 155.0, fill: Color.rgb 255 165 0 }
+        , ViewHelper.svgCircle { cx: 123.0, cy: 274.0, r: 10.0, fill: Color.rgb 255 212 39 }
+        , ViewHelper.svgCircle { cx: 271.0, cy: 157.0, r: 11.0, fill: Color.rgb 255 212 39 }
+        , ViewHelper.svgCircle { cx: 269.0, cy: 197.0, r: 11.0, fill: Color.rgb 255 212 39 }
+        , ViewHelper.svgCircle { cx: 243.0, cy: 226.0, r: 13.0, fill: Color.rgb 255 212 39 }
+        , ViewHelper.svgCircle { cx: 210.0, cy: 265.0, r: 9.0, fill: Color.rgb 255 212 39 }
+        , ViewHelper.svgCircle { cx: 158.0, cy: 268.0, r: 10.0, fill: Color.rgb 255 212 39 }
+        , ViewHelper.svgCircle { cx: 201.0, cy: 232.0, r: 10.0, fill: Color.rgb 255 212 39 }
+        , ViewHelper.svgPolygon
             { points:
                 NonEmptyArray.cons'
                   { x: 162.0, y: 20.0 }
@@ -88,7 +88,7 @@ orange =
             , stroke: Color.black
             , fill: Color.rgb 97 126 47
             }
-        , View.Ellipse
+        , ViewHelper.svgEllipse
             { cx: 162.0
             , cy: 40.0
             , rx: 25.0

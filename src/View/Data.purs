@@ -14,6 +14,7 @@ module View.Data
   , Span(..)
   , Svg(..)
   , SvgElement(..)
+  , SvgElementAndStyle(..)
   , View(..)
   , ViewStyle(..)
   , createStyle
@@ -102,6 +103,7 @@ newtype ElementAndStyle message location
   = ElementAndStyle
   { element :: Element message location
   , style :: ViewStyle
+  , id :: Maybe NonEmptyString
   }
 
 data Element :: Type -> Type -> Type
@@ -186,7 +188,14 @@ newtype Span message location
 newtype Svg
   = Svg
   { viewBox :: HtmlWellknown.ViewBox
-  , svgElementList :: Array SvgElement
+  , svgElementList :: Array SvgElementAndStyle
+  }
+
+newtype SvgElementAndStyle
+  = SvgElementAndStyle
+  { element :: SvgElement
+  , style :: ViewStyle
+  , id :: Maybe NonEmptyString
   }
 
 data SvgElement
@@ -196,7 +205,7 @@ data SvgElement
     }
   | G
     { transform :: NonEmptyArray NonEmptyString
-    , svgElementList :: Array SvgElement
+    , svgElementList :: Array SvgElementAndStyle
     }
   | Circle
     { cx :: Number

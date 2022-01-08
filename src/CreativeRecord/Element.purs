@@ -130,6 +130,7 @@ htmlCodeWithSyntaxHighlight htmlElement =
               , id: Nothing
               }
           )
+    , id: Nothing
     }
 
 htmlCodeWithSyntaxHighlightLoopWithEndNewLine ::

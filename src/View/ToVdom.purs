@@ -8,6 +8,7 @@ import Data.Array as Array
 import Data.Array.NonEmpty (NonEmptyArray)
 import Data.Array.NonEmpty as NonEmptyArray
 import Data.Maybe (Maybe(..))
+import Data.String.NonEmpty.Internal (NonEmptyString(..))
 import Data.Tuple as Tuple
 import Prelude as Prelude
 import StructuredUrl as StructuredUrl
@@ -63,9 +64,10 @@ newtype ElementAndClassAndStyleDict message location
 elementAndStyleDictSetViewStyle ::
   forall message location.
   Data.ViewStyle ->
+  Maybe NonEmptyString ->
   ElementAndStyleDict message location ->
   ElementAndClassAndStyleDict message location
-elementAndStyleDictSetViewStyle viewStyle (ElementAndStyleDict { element, styleDict }) = case StyleDict.addStyleDictAndClassName styleDict viewStyle of
+elementAndStyleDictSetViewStyle viewStyle idMaybe (ElementAndStyleDict { element, styleDict }) = case StyleDict.addStyleDictAndClassName styleDict viewStyle of
   { className, styleDict: newStyleDict } ->
     ElementAndClassAndStyleDict
       { styleDict: newStyleDict
@@ -73,7 +75,7 @@ elementAndStyleDictSetViewStyle viewStyle (ElementAndStyleDict { element, styleD
           Vdom.ElementAndClass
             { element
             , class: className
-            , id: Nothing
+            , id: idMaybe
             }
       }
 
@@ -297,7 +299,7 @@ elementAndStyleToHtmlElementAndStyleDict ::
   forall message location.
   Data.ElementAndStyle message location ->
   ElementAndClassAndStyleDict message location
-elementAndStyleToHtmlElementAndStyleDict (Data.ElementAndStyle { element, style }) = elementAndStyleDictSetViewStyle style (elementToHtmlElementAndStyleDict element)
+elementAndStyleToHtmlElementAndStyleDict (Data.ElementAndStyle { element, style, id }) = elementAndStyleDictSetViewStyle style id (elementToHtmlElementAndStyleDict element)
 
 elementToHtmlElementAndStyleDict ::
   forall message location.
@@ -325,7 +327,10 @@ svgToHtmlElement (Data.Svg { viewBox, svgElementList }) =
           ( Vdom.Svg
               { children:
                   Array.mapWithIndex
-                    (\index e -> Tuple.Tuple (Prelude.show index) (svgElementToHtmlElement e))
+                    ( \index e ->
+                        Tuple.Tuple (Prelude.show index)
+                          (svgElementAndStyleToHtmlElementAndClass e)
+                    )
                     svgElementList
               , attributes: Vdom.SvgAttributes { viewBox }
               }
@@ -366,67 +371,50 @@ elementListOrTextToStyleDictAndClassNameAndVdomChildren = case _ of
     , vdomChildren: Vdom.ChildrenText text
     }
 
-svgElementToHtmlElement :: forall message location. Data.SvgElement -> Vdom.ElementAndClass message location
+svgElementAndStyleToHtmlElementAndClass :: forall message location. Data.SvgElementAndStyle -> Vdom.ElementAndClass message location
+svgElementAndStyleToHtmlElementAndClass (Data.SvgElementAndStyle rec) =
+  Vdom.ElementAndClass
+    { element: svgElementToHtmlElement rec.element
+    , id: rec.id
+    , class: Nothing
+    }
+
+svgElementToHtmlElement :: forall message location. Data.SvgElement -> Vdom.Element message location
 svgElementToHtmlElement = case _ of
   Data.Path { pathText, fill } ->
-    Vdom.ElementAndClass
-      { element:
-          Vdom.ElementSvgPath
-            ( Vdom.SvgPath
-                { d: pathText
-                , fill: fill
-                }
-            )
-      , id: Nothing
-      , class: Nothing
-      }
+    Vdom.ElementSvgPath
+      ( Vdom.SvgPath
+          { d: pathText
+          , fill: fill
+          }
+      )
   Data.G { transform, svgElementList } ->
-    Vdom.ElementAndClass
-      { element:
-          Vdom.ElementSvgG
-            ( Vdom.SvgG
-                { transform: transform
-                , children:
-                    Array.mapWithIndex
-                      ( \index element ->
-                          Tuple.Tuple (Prelude.show index) (svgElementToHtmlElement element)
-                      )
-                      svgElementList
-                }
-            )
-      , id: Nothing
-      , class: Nothing
-      }
+    Vdom.ElementSvgG
+      ( Vdom.SvgG
+          { transform: transform
+          , children:
+              Array.mapWithIndex
+                ( \index element ->
+                    Tuple.Tuple (Prelude.show index)
+                      (svgElementAndStyleToHtmlElementAndClass element)
+                )
+                svgElementList
+          }
+      )
   Data.Polygon rec ->
-    Vdom.ElementAndClass
-      { element:
-          Vdom.ElementSvgPolygon
-            ( Vdom.SvgPolygon
-                rec
-            )
-      , id: Nothing
-      , class: Nothing
-      }
+    Vdom.ElementSvgPolygon
+      ( Vdom.SvgPolygon
+          rec
+      )
   Data.Circle rec ->
-    Vdom.ElementAndClass
-      { element:
-          Vdom.ElementSvgCircle
-            ( Vdom.SvgCircle
-                { fill: rec.fill
-                , stroke: Nothing
-                , cx: rec.cx
-                , cy: rec.cy
-                , r: rec.r
-                , children: []
-                }
-            )
-      , id: Nothing
-      , class: Nothing
-      }
-  Data.Ellipse rec ->
-    Vdom.ElementAndClass
-      { element:
-          Vdom.ElementSvgEllipse (Vdom.SvgEllipse rec)
-      , id: Nothing
-      , class: Nothing
-      }
+    Vdom.ElementSvgCircle
+      ( Vdom.SvgCircle
+          { fill: rec.fill
+          , stroke: Nothing
+          , cx: rec.cx
+          , cy: rec.cy
+          , r: rec.r
+          , children: []
+          }
+      )
+  Data.Ellipse rec -> Vdom.ElementSvgEllipse (Vdom.SvgEllipse rec)
