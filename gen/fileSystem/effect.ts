@@ -4,12 +4,14 @@ import * as jsTs from "../jsTs/main";
 import {
   FilePath,
   FilePathWithFileType,
-  directoryPathFrom,
-  directoryPathToPathFromRepositoryRoot,
   filePathSetFileType,
   filePathWithFileTypeToPathFromRepositoryRoot,
 } from "./data";
 import { fileTypeTypeScript } from "../fileType/main";
+
+/**
+ * 非推奨 PureScript 版を使うべし
+ */
 
 /**
  * バイナリデータをファイルシステムの指定した場所にファイルとして書く
@@ -47,33 +49,4 @@ export const writeTypeScriptCode = async (
     filePathSetFileType(filePath, fileTypeTypeScript),
     new TextEncoder().encode(codeAsString)
   );
-};
-
-/**
- * definy のリポジトリで使う. 一時的に保存しておくファイルを保管しておくディレクトリ
- */
-export const distributionPathAsDirectoryPath = directoryPathFrom([
-  "distribution",
-]);
-
-/**
- * distribution ディレクトリを削除する. 中身のファイルやディレクトリも消す
- */
-export const resetDistributionDirectory = async (): Promise<void> => {
-  const path = directoryPathToPathFromRepositoryRoot(
-    distributionPathAsDirectoryPath
-  );
-  console.log(`distribution をリセット中...`);
-  await fs.remove(path).then(
-    () => {},
-    (error: { readonly code: string }) => {
-      if (error.code === "ENOENT") {
-        console.log(`distribution を削除しようとしたが存在しなかった`);
-        return;
-      }
-      throw error;
-    }
-  );
-  await fs.mkdir(path);
-  console.log(`distribution をリセット完了!`);
 };

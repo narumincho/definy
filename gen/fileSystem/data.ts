@@ -1,6 +1,10 @@
 import { FileType } from "../fileType/main";
 
 /**
+ * 非推奨 PureScript 版を使うべし
+ */
+
+/**
  * 標準ライブラリの fs の ディレクトリとファイルの区別が型レベルではない欠点の解決と,
  * ファイル操作時にログを出力したいために作った 雑なファイルシステムライブラリ
  *
@@ -71,15 +75,6 @@ export type FilePath = {
   readonly fileName: string;
 };
 
-export const filePathWithFileTypeToFilePath = (
-  filePathWithFileType: FilePathWithFileType
-): FilePath => {
-  return {
-    directoryPath: filePathWithFileType.directoryPath,
-    fileName: filePathWithFileType.fileNameWithFileType.name,
-  };
-};
-
 export const filePathSetFileType = (
   filePath: FilePath,
   fileType: FileType
@@ -91,25 +86,6 @@ export const filePathSetFileType = (
       fileType,
     },
   };
-};
-
-/**
- * 拡張子から {@link FileType} を得る
- * @param extension 拡張子 `.` は含まない
- */
-export const extensionToFileType = (
-  extension: string
-): FileType | undefined => {
-  switch (extension) {
-    case "png":
-      return "Png";
-    case "ts":
-      return "TypeScript";
-    case "js":
-      return "JavaScript";
-    case "html":
-      return "Html";
-  }
 };
 
 export const fileTypeToExtension = (fileType: FileType): string => {
@@ -144,23 +120,4 @@ export const directoryPathToPathFromRepositoryRoot = (
     return ".";
   }
   return "./" + directoryPath.directoryNameList.join("/");
-};
-
-export const filePathWithFileTypeToPathFromDistribution = (
-  filePathWithFileType: FilePathWithFileType
-): string => {
-  return (
-    directoryPathToPathFromDistribution(filePathWithFileType.directoryPath) +
-    "/" +
-    fileNameWithFileTypeToString(filePathWithFileType.fileNameWithFileType)
-  );
-};
-
-export const directoryPathToPathFromDistribution = (
-  directoryPath: DirectoryPath
-): string => {
-  if (directoryPath.directoryNameList.length === 0) {
-    return "..";
-  }
-  return "../" + directoryPath.directoryNameList.join("/");
 };
