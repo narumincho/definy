@@ -2,6 +2,7 @@ import * as childProcess from "child_process";
 import * as d from "../localData";
 import * as esbuild from "esbuild";
 import * as fileSystem from "fs-extra";
+import * as pLib from "../output/TypeScriptEntryPoint";
 import {
   ModuleKind,
   ModuleResolutionKind,
@@ -207,34 +208,35 @@ const outputPackageJsonForFunctions = async (): Promise<void> => {
     "fs-extra",
     "sha256-uint8array",
   ];
-  const jsonResult = packageJsonGen.toJson({
-    name: "definy-functions",
-    version: "1.0.0",
-    description: "definy in Cloud Functions for Firebase",
-    entryPoint: "functions/main.js",
-    author: "narumincho",
-    nodeVersion: "16",
-    dependencies: new Map(
-      [...devDependencies].flatMap(
-        ([packageName, packageVersion]): ReadonlyArray<
-          readonly [string, string]
-        > =>
-          packageNameUseInFunctions.includes(packageName)
-            ? [[packageName, packageVersion]]
-            : []
-      )
+  const jsonResult = pLib.createPackageJson({
+    name: pLib.packageNameFromString("definy-functions" as pLib.NonEmptyString),
+    version: "1.0.0" as pLib.NonEmptyString,
+    description:
+      "definy in Cloud Functions for Firebase" as pLib.NonEmptyString,
+    entryPoint: "functions/main.js" as pLib.NonEmptyString,
+    author: "narumincho" as pLib.NonEmptyString,
+    nodeVersion: "16" as pLib.NonEmptyString,
+    dependencies: [...devDependencies].flatMap(
+      ([packageName, packageVersion]): ReadonlyArray<{
+        readonly name: string;
+        readonly version: string;
+      }> =>
+        packageNameUseInFunctions.includes(packageName)
+          ? [{ name: packageName, version: packageVersion }]
+          : []
     ),
-    gitHubAccountName: "narumincho",
-    gitHubRepositoryName: "definy",
-    homepage: "https://github.com/narumincho/definy",
+    gitHubAccountName: "narumincho" as pLib.NonEmptyString,
+    gitHubRepositoryName: "definy" as pLib.NonEmptyString,
+    homepage: pLib.structuredUrlFromOriginAndPathAndSearchParams(
+      "https://github.com" as pLib.NonEmptyString,
+      pLib.pathAndSearchParamsFromPath(["narumincho", "definy"])
+    ),
+    typeFilePath: pLib.nothing(),
   });
-  if (jsonResult._ === "Error") {
-    throw new Error(jsonResult.error);
-  }
 
-  await fileSystem.outputJSON(
+  await fileSystem.outputFile(
     `${functionsDistributionPath}/package.json`,
-    jsonResult.ok
+    jsonResult
   );
 };
 
