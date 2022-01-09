@@ -14,8 +14,8 @@ module View.Data
   , Span(..)
   , Svg(..)
   , SvgElement(..)
+  , SvgElementAndStyle(..)
   , View(..)
-  , ViewBox(..)
   , ViewStyle(..)
   , createStyle
   ) where
@@ -34,6 +34,7 @@ import StructuredUrl as StructuredUrl
 import Type.Proxy as Proxy
 import Util as Util
 import Vdom.PatchState as PatchState
+import Html.Wellknown as HtmlWellknown
 
 newtype View :: Type -> Type -> Type
 -- | 見た目を表現するデータ. HTML Option より HTML と離れた, 抽象度の高く 扱いやすいものにする.
@@ -102,6 +103,7 @@ newtype ElementAndStyle message location
   = ElementAndStyle
   { element :: Element message location
   , style :: ViewStyle
+  , id :: Maybe NonEmptyString
   }
 
 data Element :: Type -> Type -> Type
@@ -185,16 +187,15 @@ newtype Span message location
 
 newtype Svg
   = Svg
-  { viewBox :: ViewBox
-  , svgElementList :: Array SvgElement
+  { viewBox :: HtmlWellknown.ViewBox
+  , svgElementList :: Array SvgElementAndStyle
   }
 
-newtype ViewBox
-  = ViewBox
-  { x :: Number
-  , y :: Number
-  , width :: Number
-  , height :: Number
+newtype SvgElementAndStyle
+  = SvgElementAndStyle
+  { element :: SvgElement
+  , style :: ViewStyle
+  , id :: Maybe NonEmptyString
   }
 
 data SvgElement
@@ -204,7 +205,7 @@ data SvgElement
     }
   | G
     { transform :: NonEmptyArray NonEmptyString
-    , svgElementList :: Array SvgElement
+    , svgElementList :: Array SvgElementAndStyle
     }
   | Circle
     { cx :: Number
@@ -224,3 +225,4 @@ data SvgElement
     , ry :: Number
     , fill :: Color.Color
     }
+  | SvgText HtmlWellknown.SvgTextAttribute

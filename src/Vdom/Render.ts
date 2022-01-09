@@ -282,6 +282,23 @@ export const createSvgEllipse = (option: {
   return svgEllipse;
 };
 
+export const createSvgText = (option: {
+  readonly x: number;
+  readonly y: number;
+  readonly fontSize: number;
+  readonly fill: string;
+  readonly text: string;
+}): HTMLElement | SVGElement => {
+  const svgText = window.document.createElementNS(svgNamespaceUri, "text");
+  svgText.setAttribute("text-anchor", "middle");
+  svgText.setAttribute("x", option.x.toString());
+  svgText.setAttribute("y", option.y.toString());
+  svgText.setAttribute("font-size", option.fontSize.toString());
+  svgText.setAttribute("fill", option.fill);
+  svgText.textContent = option.text;
+  return svgText;
+};
+
 export const appendChild = (
   parent: HTMLElement | SVGElement,
   child: HTMLElement | SVGElement

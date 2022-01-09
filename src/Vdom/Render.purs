@@ -15,9 +15,9 @@ import Data.Tuple as Tuple
 import Effect (Effect)
 import Effect as Effect
 import Effect.Uncurried as EffectUncurried
+import Html.Wellknown as HtmlWellknown
 import Language as Language
 import StructuredUrl as StructuredUrl
-import Util as Util
 import Vdom.CollectEvents as CollectEvents
 import Vdom.PatchState as VdomPatchState
 import Vdom.Path as Path
@@ -184,13 +184,7 @@ elementToHtmlOrSvgElementWithoutDataPath { element, path, patchState, locationTo
   Vdom.ElementSvg (Vdom.Svg { attributes: Vdom.SvgAttributes attributes, children }) -> do
     svg <-
       EffectUncurried.runEffectFn1 createSvg
-        { viewBox:
-            String.joinWith " "
-              [ Util.numberToString attributes.viewBoxX
-              , Util.numberToString attributes.viewBoxY
-              , Util.numberToString attributes.viewBoxWidth
-              , Util.numberToString attributes.viewBoxHeight
-              ]
+        { viewBox: HtmlWellknown.viewBoxToViewBoxAttributeValue attributes.viewBox
         }
     applyChildList { htmlOrSvgElement: svg, childList: children, path, patchState, locationToPathAndSearchParams }
     pure svg
@@ -245,6 +239,14 @@ elementToHtmlOrSvgElementWithoutDataPath { element, path, patchState, locationTo
       , rx: rec.rx
       , ry: rec.ry
       , fill: Color.toHexString rec.fill
+      }
+  Vdom.ElementSvgText (HtmlWellknown.SvgTextAttribute attribute) ->
+    EffectUncurried.runEffectFn1 createSvgText
+      { x: attribute.x
+      , y: attribute.y
+      , fontSize: attribute.fontSize
+      , fill: Color.toHexString attribute.fill
+      , text: attribute.text
       }
 
 -- | HTMLElment か SVGElement の子要素を設定する
@@ -543,6 +545,16 @@ foreign import createSvgEllipse ::
     , cy :: Number
     , rx :: Number
     , ry :: Number
+    , fill :: String
+    }
+    HtmlOrSvgElement
+
+foreign import createSvgText ::
+  EffectUncurried.EffectFn1
+    { x :: Number
+    , y :: Number
+    , fontSize :: Number
+    , text :: String
     , fill :: String
     }
     HtmlOrSvgElement

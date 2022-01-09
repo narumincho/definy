@@ -12,17 +12,26 @@ module View.Helper
   , inlineAnchor
   , span
   , svg
+  , svgCircle
+  , svgEllipse
+  , svgG
+  , svgPath
+  , svgPolygon
+  , svgText
   , text
   ) where
 
 import Color as Color
 import Css as Css
 import Data.Array as Array
+import Data.Array.NonEmpty (NonEmptyArray)
 import Data.Array.NonEmpty as NonEmptyArray
 import Data.Map as Map
 import Data.Maybe (Maybe(..))
 import Data.String as String
+import Data.String.NonEmpty (NonEmptyString)
 import Hash as Hash
+import Html.Wellknown as HtmlWellknown
 import Option as Option
 import Prelude as Prelude
 import StructuredUrl as StructuredUrl
@@ -209,6 +218,7 @@ boxXOrYToElement boxData@(BoxData rec) children xOrY =
                     , children: vdomChildren
                     }
                 )
+      , id: Nothing
       }
 
 boxToBoxViewStyle ::
@@ -348,6 +358,7 @@ text option textValue =
   in
     Data.ElementAndStyle
       { style
+      , id: Nothing
       , element:
           case rec.markup of
             Just None ->
@@ -432,9 +443,17 @@ image option =
                 , alternativeText: rec.alternativeText
                 }
             )
+      , id: Nothing
       }
 
-svg :: forall message location. { height :: Number, isJustifySelfCenter :: Boolean, width :: PercentageOrRem, svg :: Data.Svg } -> Data.ElementAndStyle message location
+svg ::
+  forall message location.
+  { height :: Number
+  , isJustifySelfCenter :: Boolean
+  , width :: PercentageOrRem
+  , svg :: Data.Svg
+  } ->
+  Data.ElementAndStyle message location
 svg rec =
   Data.ElementAndStyle
     { style:
@@ -453,6 +472,7 @@ svg rec =
           , animation: Map.empty
           }
     , element: Data.ElementSvg rec.svg
+    , id: Nothing
     }
 
 div ::
@@ -484,6 +504,7 @@ div { style } children =
                     Nothing -> Data.ElementListOrTextText ""
               }
           )
+    , id: Nothing
     }
 
 divText :: forall message location. { style :: Data.ViewStyle } -> String -> Data.ElementAndStyle message location
@@ -498,12 +519,14 @@ divText { style } textValue =
               , children: Data.ElementListOrTextText textValue
               }
           )
+    , id: Nothing
     }
 
 span :: forall message location. { style :: Data.ViewStyle } -> String -> Data.ElementAndStyle message location
 span { style } textValue =
   Data.ElementAndStyle
     { style
+    , id: Nothing
     , element:
         Data.ElementSpan
           ( Data.Span
@@ -540,6 +563,7 @@ inlineAnchor { style, link } textValue =
                   , children: Data.ElementListOrTextText textValue
                   }
               )
+    , id: Nothing
     }
 
 code :: forall message location. String -> Data.ElementAndStyle message location
@@ -556,9 +580,92 @@ code textValue =
               , id: Nothing
               }
           )
+    , id: Nothing
     }
 
 percentageOrRemWidthToCssDeclaration :: PercentageOrRem -> Css.Declaration
 percentageOrRemWidthToCssDeclaration = case _ of
   Rem value -> Css.widthRem value
   Percentage value -> Css.widthPercent value
+
+svgCircle ::
+  { cx :: Number
+  , cy :: Number
+  , r :: Number
+  , fill :: Color.Color
+  } ->
+  Data.SvgElementAndStyle
+svgCircle attribute =
+  Data.SvgElementAndStyle
+    { element: Data.Circle attribute
+    , id: Nothing
+    , style: Data.createStyle {} []
+    }
+
+svgPolygon ::
+  { points :: NonEmptyArray { x :: Number, y :: Number }
+  , stroke :: Color.Color
+  , fill :: Color.Color
+  } ->
+  Data.SvgElementAndStyle
+svgPolygon attribute =
+  Data.SvgElementAndStyle
+    { element: Data.Polygon attribute
+    , id: Nothing
+    , style: Data.createStyle {} []
+    }
+
+svgEllipse ::
+  { cx :: Number
+  , cy :: Number
+  , rx :: Number
+  , ry :: Number
+  , fill :: Color.Color
+  } ->
+  Data.SvgElementAndStyle
+svgEllipse attribute =
+  Data.SvgElementAndStyle
+    { element: Data.Ellipse attribute
+    , id: Nothing
+    , style: Data.createStyle {} []
+    }
+
+svgText :: { fontSize :: Number, x :: Number, y :: Number, fill :: Color.Color } -> String -> Data.SvgElementAndStyle
+svgText attribute textValue =
+  Data.SvgElementAndStyle
+    { element:
+        Data.SvgText
+          ( HtmlWellknown.SvgTextAttribute
+              { fontSize: attribute.fontSize
+              , text: textValue
+              , textAnchor: HtmlWellknown.Middle
+              , x: attribute.x
+              , y: attribute.y
+              , fill: attribute.fill
+              }
+          )
+    , id: Nothing
+    , style: Data.createStyle {} []
+    }
+
+svgPath ::
+  { pathText :: String
+  , fill :: Color.Color
+  } ->
+  Data.SvgElementAndStyle
+svgPath attribute =
+  Data.SvgElementAndStyle
+    { element: Data.Path attribute
+    , id: Nothing
+    , style: Data.createStyle {} []
+    }
+
+svgG ::
+  { transform :: NonEmptyArray NonEmptyString } ->
+  Array Data.SvgElementAndStyle -> Data.SvgElementAndStyle
+svgG attribute children =
+  Data.SvgElementAndStyle
+    { element: Data.G { transform: attribute.transform, svgElementList: children }
+    , id: Nothing
+    , style: Data.createStyle {} []
+    }

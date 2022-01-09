@@ -9,6 +9,7 @@ import Data.Tuple as Tuple
 import Prelude as Prelude
 import Vdom.PatchState as VdomPatchState
 import Vdom.VdomPicked as Data
+import Html.Wellknown as HtmlWellknown
 
 createViewDiff :: forall message location. Data.VdomPicked message location -> Data.VdomPicked message location -> Data.ViewDiff message location
 createViewDiff (Data.Vdom oldVdom) (Data.Vdom newVdom) =
@@ -94,14 +95,14 @@ createElementDiff (Data.ElementLabel (Data.Label old)) (Data.ElementLabel (Data.
     }
 
 createElementDiff ( Data.ElementSvg
-    (Data.Svg { attributes: Data.SvgAttributes old, children: oldChildren })
-) (Data.ElementSvg (Data.Svg { attributes: Data.SvgAttributes new, children: newChildren })) newKey =
+    (Data.Svg { attributes: Data.SvgAttributes { viewBox: HtmlWellknown.ViewBox oldViewBox }, children: oldChildren })
+) (Data.ElementSvg (Data.Svg { attributes: Data.SvgAttributes { viewBox: HtmlWellknown.ViewBox newViewBox }, children: newChildren })) newKey =
   Data.svgDiff
     newKey
-    { viewBoxX: createDiff old.viewBoxX new.viewBoxX
-    , viewBoxY: createDiff old.viewBoxY new.viewBoxY
-    , viewBoxWidth: createDiff old.viewBoxWidth new.viewBoxWidth
-    , viewBoxHeight: createDiff old.viewBoxHeight new.viewBoxHeight
+    { viewBoxX: createDiff oldViewBox.x newViewBox.x
+    , viewBoxY: createDiff oldViewBox.y newViewBox.y
+    , viewBoxWidth: createDiff oldViewBox.width newViewBox.width
+    , viewBoxHeight: createDiff oldViewBox.height newViewBox.height
     , children: createChildListDiff oldChildren newChildren
     }
 

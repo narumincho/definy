@@ -1,5 +1,8 @@
 module Html.Wellknown
-  ( a
+  ( SvgTextAttribute(..)
+  , SvgTextTextAnchor(..)
+  , ViewBox(..)
+  , a
   , body
   , bodyTagName
   , button
@@ -27,8 +30,10 @@ module Html.Wellknown
   , svgG
   , svgPath
   , svgPolygon
+  , svgText
   , textarea
   , title
+  , viewBoxToViewBoxAttributeValue
   ) where
 
 import Color as Color
@@ -410,13 +415,30 @@ label attributes children =
     )
     children
 
+newtype ViewBox
+  = ViewBox
+  { x :: Number
+  , y :: Number
+  , width :: Number
+  , height :: Number
+  }
+
+viewBoxToViewBoxAttributeValue :: ViewBox -> String
+viewBoxToViewBoxAttributeValue (ViewBox viewBox) =
+  ( String.joinWith " "
+      ( Prelude.map Util.numberToString
+          [ viewBox.x
+          , viewBox.y
+          , viewBox.width
+          , viewBox.height
+          ]
+      )
+  )
+
 svg ::
   { id :: Maybe NonEmptyString
   , class :: Maybe NonEmptyString
-  , viewBoxX :: Number
-  , viewBoxY :: Number
-  , viewBoxWidth :: Number
-  , viewBoxHeight :: Number
+  , viewBox :: ViewBox
   } ->
   Array Data.RawHtmlElement -> Data.RawHtmlElement
 svg attributes children =
@@ -430,15 +452,7 @@ svg attributes children =
                 ( Tuple.Tuple
                     (NonEmptyString.nes (Proxy :: Proxy "viewBox"))
                     ( Just
-                        ( String.joinWith " "
-                            ( Prelude.map Util.numberToString
-                                [ attributes.viewBoxX
-                                , attributes.viewBoxY
-                                , attributes.viewBoxWidth
-                                , attributes.viewBoxHeight
-                                ]
-                            )
-                        )
+                        (viewBoxToViewBoxAttributeValue attributes.viewBox)
                     )
                 )
             ]
@@ -635,6 +649,45 @@ svgEllipse attributes =
         ]
     )
     (Data.ElementList [])
+
+newtype SvgTextAttribute
+  = SvgTextAttribute
+  { x :: Number
+  , y :: Number
+  , textAnchor :: SvgTextTextAnchor
+  , fontSize :: Number
+  , text :: String
+  , fill :: Color.Color
+  }
+
+data SvgTextTextAnchor
+  = Middle
+
+svgText ::
+  SvgTextAttribute ->
+  Data.RawHtmlElement
+svgText (SvgTextAttribute attributes) =
+  Data.htmlElement
+    (NonEmptyString.nes (Proxy :: Proxy "text"))
+    ( Map.fromFoldable
+        [ Tuple.Tuple
+            (NonEmptyString.nes (Proxy :: Proxy "x"))
+            (Just (Util.numberToString attributes.x))
+        , Tuple.Tuple
+            (NonEmptyString.nes (Proxy :: Proxy "y"))
+            (Just (Util.numberToString attributes.y))
+        , Tuple.Tuple
+            (NonEmptyString.nes (Proxy :: Proxy "text-anchor"))
+            (Just "middle")
+        , Tuple.Tuple
+            (NonEmptyString.nes (Proxy :: Proxy "font-size"))
+            (Just (Util.numberToString attributes.fontSize))
+        , Tuple.Tuple
+            (NonEmptyString.nes (Proxy :: Proxy "fill"))
+            (Just (Color.toHexString attributes.fill))
+        ]
+    )
+    (Data.Text attributes.text)
 
 classAttribute :: NonEmptyString -> Tuple.Tuple NonEmptyString (Maybe.Maybe String)
 classAttribute className =
