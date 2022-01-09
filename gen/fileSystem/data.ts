@@ -17,24 +17,6 @@ export type FileNameWithFileType = {
 };
 
 /**
- * ファイルタイプ付き, ファイル名を作成する
- */
-export const fileNameWithFileTypeFrom = (
-  fileName: string,
-  fileType: FileType
-): FileNameWithFileType => {
-  if (fileName.includes("/") || fileName.includes("\\")) {
-    throw new Error(
-      "ファイル名に / や \\ を含めることはできません fileName=" + fileName
-    );
-  }
-  return {
-    name: fileName,
-    fileType,
-  };
-};
-
-/**
  * 一般的なファイル名の文字列表現に変換する `star.png` `main.js` `index.html`
  */
 export const fileNameWithFileTypeToString = (
@@ -109,28 +91,6 @@ export const filePathSetFileType = (
       fileType,
     },
   };
-};
-
-/**
- * ディレクトリをめぐるためのディレクトリパスを生成する
- * @example
- * directoryPathToCreateDirectoryList(directoryPathFrom(["a", "b", "c"]));
- * // ↓
- * [
- *   { directoryNameList: ["a"] },
- *   { directoryNameList: ["a", "b"] },
- *   { directoryNameList: ["a", "b", "c"] },
- * ];
- */
-const directoryPathToCreateDirectoryList = (
-  directoryPath: DirectoryPath
-): ReadonlyArray<DirectoryPath> => {
-  return Array.from(
-    { length: directoryPath.directoryNameList.length },
-    (_, index): DirectoryPath => ({
-      directoryNameList: directoryPath.directoryNameList.slice(0, index + 1),
-    })
-  );
 };
 
 /**
