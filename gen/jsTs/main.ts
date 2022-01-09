@@ -1,10 +1,10 @@
 import * as d from "../../localData";
-import { createIdentifier, initialIdentiferIndex } from "./identifer";
+import { createIdentifier, initialIdentifierIndex } from "./identifier";
 import { UsedNameAndModulePathSet } from "./interface";
 import { collectInCode } from "./collect";
 import { toString } from "./toString";
 
-export * from "./identifer";
+export * from "./identifier";
 export * from "./interface";
 
 export const generateCodeAsString = (
@@ -28,18 +28,18 @@ export const generateCodeAsString = (
 const createImportedModuleName = (
   usedNameAndModulePath: UsedNameAndModulePathSet
 ): ReadonlyMap<string, d.TsIdentifier> => {
-  let identiferIndex = initialIdentiferIndex;
+  let identifierIndex = initialIdentifierIndex;
   const importedModuleNameMap = new Map<string, d.TsIdentifier>();
   for (const modulePath of usedNameAndModulePath.modulePathSet) {
-    const identiferAndNextIdentiferIndex = createIdentifier(
-      identiferIndex,
+    const identifierAndNextIdentifierIndex = createIdentifier(
+      identifierIndex,
       usedNameAndModulePath.usedNameSet
     );
     importedModuleNameMap.set(
       modulePath,
-      identiferAndNextIdentiferIndex.identifier
+      identifierAndNextIdentifierIndex.identifier
     );
-    identiferIndex = identiferAndNextIdentiferIndex.nextIdentiferIndex;
+    identifierIndex = identifierAndNextIdentifierIndex.nextIdentifierIndex;
   }
   return importedModuleNameMap;
 };

@@ -92,14 +92,14 @@ describe("test", () => {
   it("識別子の生成で識別子に使えない文字が含まれているかどうか", () => {
     expect(() => {
       const reserved: ReadonlySet<string> = new Set();
-      let index = jsTs.initialIdentiferIndex;
+      let index = jsTs.initialIdentifierIndex;
       for (let i = 0; i < 999; i += 1) {
-        const createIdentiferResult = jsTs.createIdentifier(index, reserved);
-        index = createIdentiferResult.nextIdentiferIndex;
-        if (!jsTs.isIdentifier(createIdentiferResult.identifier.string)) {
+        const createIdentifierResult = jsTs.createIdentifier(index, reserved);
+        index = createIdentifierResult.nextIdentifierIndex;
+        if (!jsTs.isIdentifier(createIdentifierResult.identifier.string)) {
           throw new Error(
-            "create not identifer. identifer=" +
-              createIdentiferResult.identifier.string
+            "create not identifier. identifier=" +
+              createIdentifierResult.identifier.string
           );
         }
       }
@@ -672,7 +672,7 @@ describe("test", () => {
 });
 
 it("output lambda type parameter", () => {
-  const typeParameterIdentifer = jsTs.identifierFromString("t");
+  const typeParameterIdentifier = jsTs.identifierFromString("t");
   const code: d.JsTsCode = {
     exportDefinitionList: [],
     statementList: [
@@ -680,14 +680,14 @@ it("output lambda type parameter", () => {
         name: jsTs.identifierFromString("sampleFunction"),
         isConst: true,
         type: d.TsType.Function({
-          typeParameterList: [typeParameterIdentifer],
-          parameterList: [d.TsType.ScopeInFile(typeParameterIdentifer)],
+          typeParameterList: [typeParameterIdentifier],
+          parameterList: [d.TsType.ScopeInFile(typeParameterIdentifier)],
           return: d.TsType.Object([
             {
               name: "value",
               required: true,
               document: "",
-              type: d.TsType.ScopeInFile(typeParameterIdentifer),
+              type: d.TsType.ScopeInFile(typeParameterIdentifier),
             },
             {
               name: "s",
@@ -707,16 +707,16 @@ it("output lambda type parameter", () => {
           parameterList: [
             {
               name: jsTs.identifierFromString("input"),
-              type: d.TsType.ScopeInFile(typeParameterIdentifer),
+              type: d.TsType.ScopeInFile(typeParameterIdentifier),
             },
           ],
-          typeParameterList: [typeParameterIdentifer],
+          typeParameterList: [typeParameterIdentifier],
           returnType: d.TsType.Object([
             {
               name: "value",
               required: true,
               document: "",
-              type: d.TsType.ScopeInFile(typeParameterIdentifer),
+              type: d.TsType.ScopeInFile(typeParameterIdentifier),
             },
           ]),
           statementList: [

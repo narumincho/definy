@@ -1,5 +1,5 @@
 import * as d from "../../../localData";
-import { isIdentifier, isSafePropertyName } from "../identifer";
+import { isIdentifier, isSafePropertyName } from "../identifier";
 import {
   stringLiteralValueToString,
   typeParameterListToString,
