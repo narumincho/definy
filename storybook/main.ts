@@ -5,3 +5,4 @@ export const addons = [
   "@storybook/addon-a11y",
   "storybook-dark-mode",
 ];
+export const staticDirs = ["./static"];
