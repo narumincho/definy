@@ -33,7 +33,7 @@ module Vdom.VdomPicked
   , ViewDiff(..)
   , ViewPatchOperation(..)
   , buttonDiff
-  , createDivDeff
+  , createDivDiff
   , externalLinkDiff
   , imgDiff
   , inputRadioDiff
@@ -66,12 +66,12 @@ import Vdom.PatchState as PatchState
 
 newtype VdomPicked :: Type -> Type -> Type
 newtype VdomPicked message location
-  = Vdom
+  = VdomPicked
   { {- ページ名
   Google 検索のページ名や, タブ, ブックマークのタイトル, OGPのタイトルなどに使用される  -} pageName :: NonEmptyString
   , {- アプリ名 / サイト名 -} appName :: NonEmptyString
   , {- ページの説明 -} description :: String
-  , {- テーマカラー -} themeColor :: Color.Color
+  , {- テーマカラー -} themeColor :: Maybe Color.Color
   , {- アイコン画像のURL -} iconPath :: StructuredUrl.PathAndSearchParams
   , {- 使用している言語 -} language :: Maybe Language.Language
   , {- OGPに使われるカバー画像のパス -} coverImagePath :: StructuredUrl.PathAndSearchParams
@@ -142,7 +142,7 @@ newtype ViewDiff message location
 
 data ViewPatchOperation
   = ChangePageName NonEmptyString
-  | ChangeThemeColor Color.Color
+  | ChangeThemeColor (Maybe Color.Color)
   | ChangeLanguage (Maybe Language.Language)
   | ChangeBodyClass (Maybe NonEmptyString)
 
@@ -231,8 +231,8 @@ data DivPatchOperation :: Type -> Type -> Type
 data DivPatchOperation message location
   = DivPatchOperationUpdateChildren (ChildrenDiff message location)
 
-createDivDeff :: forall message location. String -> Div message location -> Div message location -> ElementDiff message location
-createDivDeff key (Div _) (Div _) = case NonEmptyArray.fromArray
+createDivDiff :: forall message location. String -> Div message location -> Div message location -> ElementDiff message location
+createDivDiff key (Div _) (Div _) = case NonEmptyArray.fromArray
     ( Array.catMaybes
         []
     ) of

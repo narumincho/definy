@@ -331,7 +331,7 @@ resetAndRender ::
   , urlChangeMessageData :: location -> message
   } ->
   Effect.Effect Unit
-resetAndRender { vdom: Vdom.Vdom vdom, patchState, locationToPathAndSearchParams, urlChangeMessageData } = do
+resetAndRender { vdom: Vdom.VdomPicked vdom, patchState, locationToPathAndSearchParams, urlChangeMessageData } = do
   Effect.foreachE
     [ Vdom.ChangePageName vdom.pageName
     , Vdom.ChangeThemeColor vdom.themeColor
@@ -388,8 +388,11 @@ viewPatchOperationToEffect = case _ of
       changePageName
       (NonEmptyString.toString newPageName)
   Vdom.ChangeThemeColor colorMaybe ->
-    EffectUncurried.runEffectFn1 changeThemeColor
-      (Color.toHexString colorMaybe)
+    EffectUncurried.runEffectFn1
+      changeThemeColor
+      ( Nullable.toNullable
+          (map Color.toHexString colorMaybe)
+      )
   Vdom.ChangeLanguage languageMaybe ->
     EffectUncurried.runEffectFn1 changeLanguage
       (Nullable.toNullable (map Language.toIETFLanguageTag languageMaybe))
@@ -399,7 +402,7 @@ viewPatchOperationToEffect = case _ of
 
 foreign import changePageName :: EffectUncurried.EffectFn1 String Unit
 
-foreign import changeThemeColor :: EffectUncurried.EffectFn1 String Unit
+foreign import changeThemeColor :: EffectUncurried.EffectFn1 (Nullable String) Unit
 
 foreign import changeLanguage :: EffectUncurried.EffectFn1 (Nullable String) Unit
 

@@ -12,7 +12,7 @@ import CreativeRecord.StaticResource as StaticResource
 import CreativeRecord.SvgImage as SvgImage
 import CreativeRecord.Top as Top
 import Css as Css
-import Data.Maybe as Maybe
+import Data.Maybe (Maybe(..))
 import Data.String.NonEmpty (NonEmptyString)
 import Data.String.NonEmpty as NonEmptyString
 import Language as Language
@@ -61,10 +61,10 @@ view state =
           , description:
               "革新的なプログラミング言語のdefiny, Web技術, 作っているゲームなどについて解説しています"
           , iconPath: StaticResource.iconPng
-          , language: Maybe.Just Language.Japanese
+          , language: Just Language.Japanese
           , pageName: appName
           , path: Location.toPath location
-          , themeColor: ColorMaterial.orange
+          , themeColor: Just ColorMaterial.orange
           , origin: Origin.origin
           , bodyStyle: View.createStyle {} [ Css.overflow { x: Css.Hidden, y: Css.Scroll } ]
           }
@@ -117,13 +117,13 @@ articleToView location (ArticleData.Article { title, imagePath, children }) =
     , description:
         "革新的なプログラミング言語のdefiny, Web技術, 作っているゲームなどについて解説しています"
     , iconPath: StaticResource.iconPng
-    , language: Maybe.Just Language.Japanese
+    , language: Just Language.Japanese
     , pageName:
         Prelude.append
           (NonEmptyString.appendString title " | ")
           appName
     , path: Location.toPath (Location.Article location)
-    , themeColor: ColorMaterial.orange
+    , themeColor: Just ColorMaterial.orange
     , origin: Origin.origin
     , bodyStyle: View.createStyle {} [ Css.overflow { x: Css.Hidden, y: Css.Scroll } ]
     }

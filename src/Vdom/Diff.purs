@@ -12,7 +12,7 @@ import Vdom.VdomPicked as Data
 import Html.Wellknown as HtmlWellknown
 
 createViewDiff :: forall message location. Data.VdomPicked message location -> Data.VdomPicked message location -> Data.ViewDiff message location
-createViewDiff (Data.Vdom oldVdom) (Data.Vdom newVdom) =
+createViewDiff (Data.VdomPicked oldVdom) (Data.VdomPicked newVdom) =
   Data.ViewDiff
     { patchOperationList:
         Array.catMaybes
@@ -43,7 +43,7 @@ createViewDiff (Data.Vdom oldVdom) (Data.Vdom newVdom) =
     }
 
 createElementDiff :: forall message location. (Prelude.Eq location) => Data.Element message location -> Data.Element message location -> String -> Data.ElementDiff message location
-createElementDiff (Data.ElementDiv old) (Data.ElementDiv new) newKey = Data.createDivDeff newKey old new
+createElementDiff (Data.ElementDiv old) (Data.ElementDiv new) newKey = Data.createDivDiff newKey old new
 
 createElementDiff (Data.ElementExternalLink old) (Data.ElementExternalLink new) newKey = Data.externalLinkDiff newKey old new
 
