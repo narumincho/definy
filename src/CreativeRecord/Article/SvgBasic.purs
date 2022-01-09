@@ -6,7 +6,6 @@ import CreativeRecord.Element as Element
 import CreativeRecord.Location as Location
 import CreativeRecord.Message as Message
 import CreativeRecord.StaticResource as StaticResource
-import Css as Css
 import Data.Array.NonEmpty as NonEmptyArray
 import Data.String.NonEmpty as NonEmptyString
 import Html.Wellknown as HtmlWellknown

@@ -47,7 +47,7 @@ newtype View message location
     -} pageName :: NonEmptyString.NonEmptyString
   , {- アプリ名 / サイト名 (HTML出力のみ反映) -} appName :: NonEmptyString.NonEmptyString
   , {- ページの説明 (HTML出力のみ反映) -} description :: String
-  , {- テーマカラー -} themeColor :: Color.Color
+  , {- テーマカラー -} themeColor :: Maybe Color.Color
   , {- アイコン画像のURL (HTML出力のみ反映) -} iconPath :: StructuredUrl.PathAndSearchParams
   , {- ページの言語 -} language :: Maybe Language.Language
   , {- OGPに使われるカバー画像のパス (HTML出力のみ反映, CORSの制限を受けない) -} coverImagePath :: StructuredUrl.PathAndSearchParams

@@ -1,11 +1,9 @@
 node_modules
 *.log
-distribution
-firebase.json
-out.ts
-viewApp.js
+/out.ts
+/viewApp.js
+/distribution
 /src/**/**.js
-/narumincho-creative-record/dist
 /bower_components/
 /node_modules/
 /.pulp-cache/

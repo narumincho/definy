@@ -1,6 +1,10 @@
 import { FileType } from "../fileType/main";
 
 /**
+ * 非推奨 PureScript 版を使うべし
+ */
+
+/**
  * 標準ライブラリの fs の ディレクトリとファイルの区別が型レベルではない欠点の解決と,
  * ファイル操作時にログを出力したいために作った 雑なファイルシステムライブラリ
  *
@@ -14,24 +18,6 @@ import { FileType } from "../fileType/main";
 export type FileNameWithFileType = {
   readonly name: string;
   readonly fileType: FileType;
-};
-
-/**
- * ファイルタイプ付き, ファイル名を作成する
- */
-export const fileNameWithFileTypeFrom = (
-  fileName: string,
-  fileType: FileType
-): FileNameWithFileType => {
-  if (fileName.includes("/") || fileName.includes("\\")) {
-    throw new Error(
-      "ファイル名に / や \\ を含めることはできません fileName=" + fileName
-    );
-  }
-  return {
-    name: fileName,
-    fileType,
-  };
 };
 
 /**
@@ -89,15 +75,6 @@ export type FilePath = {
   readonly fileName: string;
 };
 
-export const filePathWithFileTypeToFilePath = (
-  filePathWithFileType: FilePathWithFileType
-): FilePath => {
-  return {
-    directoryPath: filePathWithFileType.directoryPath,
-    fileName: filePathWithFileType.fileNameWithFileType.name,
-  };
-};
-
 export const filePathSetFileType = (
   filePath: FilePath,
   fileType: FileType
@@ -109,47 +86,6 @@ export const filePathSetFileType = (
       fileType,
     },
   };
-};
-
-/**
- * ディレクトリをめぐるためのディレクトリパスを生成する
- * @example
- * directoryPathToCreateDirectoryList(directoryPathFrom(["a", "b", "c"]));
- * // ↓
- * [
- *   { directoryNameList: ["a"] },
- *   { directoryNameList: ["a", "b"] },
- *   { directoryNameList: ["a", "b", "c"] },
- * ];
- */
-const directoryPathToCreateDirectoryList = (
-  directoryPath: DirectoryPath
-): ReadonlyArray<DirectoryPath> => {
-  return Array.from(
-    { length: directoryPath.directoryNameList.length },
-    (_, index): DirectoryPath => ({
-      directoryNameList: directoryPath.directoryNameList.slice(0, index + 1),
-    })
-  );
-};
-
-/**
- * 拡張子から {@link FileType} を得る
- * @param extension 拡張子 `.` は含まない
- */
-export const extensionToFileType = (
-  extension: string
-): FileType | undefined => {
-  switch (extension) {
-    case "png":
-      return "Png";
-    case "ts":
-      return "TypeScript";
-    case "js":
-      return "JavaScript";
-    case "html":
-      return "Html";
-  }
 };
 
 export const fileTypeToExtension = (fileType: FileType): string => {
@@ -184,23 +120,4 @@ export const directoryPathToPathFromRepositoryRoot = (
     return ".";
   }
   return "./" + directoryPath.directoryNameList.join("/");
-};
-
-export const filePathWithFileTypeToPathFromDistribution = (
-  filePathWithFileType: FilePathWithFileType
-): string => {
-  return (
-    directoryPathToPathFromDistribution(filePathWithFileType.directoryPath) +
-    "/" +
-    fileNameWithFileTypeToString(filePathWithFileType.fileNameWithFileType)
-  );
-};
-
-export const directoryPathToPathFromDistribution = (
-  directoryPath: DirectoryPath
-): string => {
-  if (directoryPath.directoryNameList.length === 0) {
-    return "..";
-  }
-  return "../" + directoryPath.directoryNameList.join("/");
 };

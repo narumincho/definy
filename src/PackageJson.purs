@@ -1,12 +1,13 @@
 module PackageJson
-  ( PackageJsonInput(..)
-  , nameFromNonEmptyString
-  , Name
-  , toJson
-  , fromJson
+  ( Name
+  , PackageJsonInput(..)
   , PackageJsonOutput
   , devDependencies
+  , fromJson
+  , nameFromNonEmptyString
+  , nameFromNonEmptyStringUnsafe
   , readPackageVersionFromRootPackageJson
+  , toJson
   ) where
 
 import Prelude
@@ -14,9 +15,10 @@ import Data.Argonaut.Core as ArgonautCore
 import Data.Array as Array
 import Data.Either as Either
 import Data.Map as Map
-import Data.Maybe as Maybe
+import Data.Maybe (Maybe(..))
 import Data.Set as Set
 import Data.String as String
+import Data.String.NonEmpty (NonEmptyString)
 import Data.String.NonEmpty as NonEmptyString
 import Data.Tuple as Tuple
 import Effect.Aff as Aff
@@ -29,41 +31,44 @@ import Type.Proxy as Proxy
 import Util as Util
 
 newtype Name
-  = Name NonEmptyString.NonEmptyString
+  = Name NonEmptyString
 
 newtype PackageJsonInput
   = PackageJsonInput
   { name :: Name
-  , version :: NonEmptyString.NonEmptyString
-  , description :: NonEmptyString.NonEmptyString
-  , gitHubAccountName :: NonEmptyString.NonEmptyString
-  , gitHubRepositoryName :: NonEmptyString.NonEmptyString
-  , entryPoint :: NonEmptyString.NonEmptyString
+  , version :: NonEmptyString
+  , description :: NonEmptyString
+  , gitHubAccountName :: NonEmptyString
+  , gitHubRepositoryName :: NonEmptyString
+  , entryPoint :: NonEmptyString
   , homepage :: StructuredUrl.StructuredUrl
-  , author :: NonEmptyString.NonEmptyString
-  , nodeVersion :: NonEmptyString.NonEmptyString
-  , dependencies :: Map.Map NonEmptyString.NonEmptyString NonEmptyString.NonEmptyString
-  , {- 型定義(.d.ts か .ts ??)のファイルパス -} typeFilePath :: Maybe.Maybe NonEmptyString.NonEmptyString
+  , author :: NonEmptyString
+  , nodeVersion :: NonEmptyString
+  , dependencies :: Map.Map NonEmptyString NonEmptyString
+  , {- 型定義(.d.ts か .ts ??)のファイルパス -} typeFilePath :: Maybe NonEmptyString
   }
 
 newtype PackageJsonOutput
   = PackageJsonOutput
-  { dependencies :: Map.Map NonEmptyString.NonEmptyString NonEmptyString.NonEmptyString
-  , devDependencies :: Map.Map NonEmptyString.NonEmptyString NonEmptyString.NonEmptyString
+  { dependencies :: Map.Map NonEmptyString NonEmptyString
+  , devDependencies :: Map.Map NonEmptyString NonEmptyString
   }
 
-devDependencies :: PackageJsonOutput -> Map.Map NonEmptyString.NonEmptyString NonEmptyString.NonEmptyString
+devDependencies :: PackageJsonOutput -> Map.Map NonEmptyString NonEmptyString
 devDependencies (PackageJsonOutput { devDependencies: v }) = v
 
 -- | package.json の name は 214文字以内か調べる
-nameFromNonEmptyString :: NonEmptyString.NonEmptyString -> Maybe.Maybe Name
+nameFromNonEmptyString :: NonEmptyString -> Maybe Name
 nameFromNonEmptyString rawName =
   if (>) (NonEmptyString.length rawName) 214 then
-    Maybe.Nothing
+    Nothing
   else
-    Maybe.Just (Name rawName)
+    Just (Name rawName)
 
-nameToNonEmptyString :: Name -> NonEmptyString.NonEmptyString
+nameFromNonEmptyStringUnsafe :: NonEmptyString -> Name
+nameFromNonEmptyStringUnsafe rawName = Name rawName
+
+nameToNonEmptyString :: Name -> NonEmptyString
 nameToNonEmptyString (Name name) = name
 
 -- |  npm で パッケージをリリースするときや, firebase の Cloud Functions for Firebase でつかう ` `package.json` を出力する
@@ -109,12 +114,12 @@ toJson (PackageJsonInput packageJson) =
               (dependenciesToJson packageJson.dependencies)
           ]
         , case packageJson.typeFilePath of
-            Maybe.Just typeFilePath -> [ Tuple.Tuple "types" (Util.jsonFromNonEmptyString typeFilePath) ]
-            Maybe.Nothing -> []
+            Just typeFilePath -> [ Tuple.Tuple "types" (Util.jsonFromNonEmptyString typeFilePath) ]
+            Nothing -> []
         ]
     )
 
-dependenciesToJson :: Map.Map NonEmptyString.NonEmptyString NonEmptyString.NonEmptyString -> ArgonautCore.Json
+dependenciesToJson :: Map.Map NonEmptyString NonEmptyString -> ArgonautCore.Json
 dependenciesToJson dependencies =
   Util.tupleListToJson
     (map (\(Tuple.Tuple key value) -> Tuple.Tuple (NonEmptyString.toString key) (Util.jsonFromNonEmptyString value)) (Map.toUnfoldable dependencies))
@@ -125,44 +130,52 @@ dependenciesPropertyName = "dependencies"
 fromJson :: ArgonautCore.Json -> PackageJsonOutput
 fromJson json =
   let
-    jsonAsObject :: Maybe.Maybe (Object.Object ArgonautCore.Json)
+    jsonAsObject :: Maybe (Object.Object ArgonautCore.Json)
     jsonAsObject = ArgonautCore.toObject json
   in
     PackageJsonOutput
       { dependencies:
           case bind jsonAsObject
               (\obj -> Object.lookup dependenciesPropertyName obj) of
-            Maybe.Just value -> case ArgonautCore.toObject value of
-              Maybe.Just valueAsObject -> objectToNonEmptyStringMap valueAsObject
-              Maybe.Nothing -> Map.empty
-            Maybe.Nothing -> Map.empty
+            Just value -> case ArgonautCore.toObject value of
+              Just valueAsObject -> objectToNonEmptyStringMap valueAsObject
+              Nothing -> Map.empty
+            Nothing -> Map.empty
       , devDependencies:
           case bind jsonAsObject
               (\obj -> Object.lookup "devDependencies" obj) of
-            Maybe.Just value -> case ArgonautCore.toObject value of
-              Maybe.Just valueAsObject -> objectToNonEmptyStringMap valueAsObject
-              Maybe.Nothing -> Map.empty
-            Maybe.Nothing -> Map.empty
+            Just value -> case ArgonautCore.toObject value of
+              Just valueAsObject -> objectToNonEmptyStringMap valueAsObject
+              Nothing -> Map.empty
+            Nothing -> Map.empty
       }
 
-objectToNonEmptyStringMap :: Object.Object ArgonautCore.Json -> Map.Map NonEmptyString.NonEmptyString NonEmptyString.NonEmptyString
+objectToNonEmptyStringMap ::
+  Object.Object ArgonautCore.Json ->
+  Map.Map NonEmptyString NonEmptyString
 objectToNonEmptyStringMap object =
   let
-    array :: Array (Tuple.Tuple NonEmptyString.NonEmptyString NonEmptyString.NonEmptyString)
+    array :: Array (Tuple.Tuple NonEmptyString NonEmptyString)
     array =
       Array.mapMaybe
         ( \(Tuple.Tuple key value) -> case Tuple.Tuple (NonEmptyString.fromString key) (ArgonautCore.toString value) of
-            Tuple.Tuple (Maybe.Just keyAsNonEmptyString) (Maybe.Just valueAsString) -> case NonEmptyString.fromString valueAsString of
-              Maybe.Just valueAsNonEmptyString -> Maybe.Just (Tuple.Tuple keyAsNonEmptyString valueAsNonEmptyString)
-              Maybe.Nothing -> Maybe.Nothing
-            Tuple.Tuple _ _ -> Maybe.Nothing
+            Tuple.Tuple (Just keyAsNonEmptyString) (Just valueAsString) -> case NonEmptyString.fromString valueAsString of
+              Just valueAsNonEmptyString -> Just (Tuple.Tuple keyAsNonEmptyString valueAsNonEmptyString)
+              Nothing -> Nothing
+            Tuple.Tuple _ _ -> Nothing
         )
         (Object.toUnfoldable object)
   in
     Map.fromFoldable array
 
 -- | リポジトリのルートに保存されている `package.json` から指定したライブラリのバージョンを得る
-readPackageVersionFromRootPackageJson :: Set.Set NonEmptyString.NonEmptyString -> Aff.Aff (Either.Either String (Map.Map NonEmptyString.NonEmptyString NonEmptyString.NonEmptyString))
+readPackageVersionFromRootPackageJson ::
+  Set.Set NonEmptyString ->
+  Aff.Aff
+    ( Either.Either
+        String
+        (Map.Map NonEmptyString NonEmptyString)
+    )
 readPackageVersionFromRootPackageJson usingPackageNameSet = do
   rootPackageJsonResult <-
     FileSystemRead.readJsonFile

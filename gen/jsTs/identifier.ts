@@ -110,10 +110,10 @@ const reservedByLanguageWordSet: ReadonlySet<string> = new Set([
 /**
  * 識別子のID
  */
-export type IdentifierIndex = number & { _identiferIndex: never };
+export type IdentifierIndex = number & { _identifierIndex: never };
 
 /** 初期インデックス */
-export const initialIdentiferIndex = 0 as IdentifierIndex;
+export const initialIdentifierIndex = 0 as IdentifierIndex;
 
 /**
  * 識別子を生成する
@@ -123,14 +123,14 @@ export const initialIdentiferIndex = 0 as IdentifierIndex;
 export const createIdentifier = (
   identifierIndex: IdentifierIndex,
   reserved: ReadonlySet<string>
-): { identifier: TsIdentifier; nextIdentiferIndex: IdentifierIndex } => {
+): { identifier: TsIdentifier; nextIdentifierIndex: IdentifierIndex } => {
   let index: number = identifierIndex;
   while (true) {
     const result = createIdentifierByIndex(index);
     if (!reserved.has(result) && !reservedByLanguageWordSet.has(result)) {
       return {
         identifier: TsIdentifier.Identifier(result),
-        nextIdentiferIndex: (index + 1) as IdentifierIndex,
+        nextIdentifierIndex: (index + 1) as IdentifierIndex,
       };
     }
     index += 1;

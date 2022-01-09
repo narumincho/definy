@@ -1,9 +1,9 @@
 import * as d from "../../../localData";
 import {
   createIdentifier,
-  initialIdentiferIndex,
+  initialIdentifierIndex,
   isSafePropertyName,
-} from "../identifer";
+} from "../identifier";
 import {
   documentToString,
   stringLiteralValueToString,
@@ -77,15 +77,15 @@ export const typeToString = (
       return type_.tsIdentifier.string;
 
     case "ImportedType": {
-      const nameSpaceIdentifer = moduleMap.get(type_.importedType.moduleName);
-      if (nameSpaceIdentifer === undefined) {
+      const nameSpaceIdentifier = moduleMap.get(type_.importedType.moduleName);
+      if (nameSpaceIdentifier === undefined) {
         throw Error(
           "収集されなかった, モジュールがある moduleName=" +
             type_.importedType.moduleName
         );
       }
 
-      return nameSpaceIdentifer.string + "." + type_.importedType.name.string;
+      return nameSpaceIdentifier.string + "." + type_.importedType.name.string;
     }
 
     case "StringLiteral":
@@ -118,16 +118,16 @@ const functionTypeToString = (
   functionType: d.FunctionType,
   moduleMap: ReadonlyMap<string, d.TsIdentifier>
 ): string => {
-  let index = initialIdentiferIndex;
+  let index = initialIdentifierIndex;
   const parameterList: Array<{
     name: d.TsIdentifier;
     type: d.TsType;
   }> = [];
   for (const parameter of functionType.parameterList) {
-    const indexAndIdentifer = createIdentifier(index, new Set());
-    index = indexAndIdentifer.nextIdentiferIndex;
+    const indexAndIdentifier = createIdentifier(index, new Set());
+    index = indexAndIdentifier.nextIdentifierIndex;
     parameterList.push({
-      name: indexAndIdentifer.identifier,
+      name: indexAndIdentifier.identifier,
       type: parameter,
     });
   }

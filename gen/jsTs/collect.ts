@@ -18,25 +18,25 @@ import { UsedNameAndModulePathSet } from "./interface";
  * @throws コードにエラーが見つかった
  */
 export const collectInCode = (code: JsTsCode): UsedNameAndModulePathSet => {
-  const rootScopeIdentiferSet = collectRootScopeIdentifer(
+  const rootScopeIdentifierSet = collectRootScopeIdentifier(
     code.exportDefinitionList
   );
 
   return concatCollectData(
     collectList(code.exportDefinitionList, (definition) =>
-      collectInDefinition(definition, rootScopeIdentiferSet)
+      collectInDefinition(definition, rootScopeIdentifierSet)
     ),
     collectStatementList(
       code.statementList,
       [],
       [],
-      rootScopeIdentiferSet,
+      rootScopeIdentifierSet,
       new Set()
     )
   );
 };
 
-type RootScopeIdentiferSet = {
+type RootScopeIdentifierSet = {
   rootScopeTypeNameSet: ReadonlySet<string>;
   rootScopeVariableName: ReadonlySet<string>;
 };
@@ -45,9 +45,9 @@ type RootScopeIdentiferSet = {
  * 定義の名前を収集する
  * @throws 同名の定義があった場合
  */
-const collectRootScopeIdentifer = (
+const collectRootScopeIdentifier = (
   definitionList: ReadonlyArray<ExportDefinition>
-): RootScopeIdentiferSet => {
+): RootScopeIdentifierSet => {
   const typeNameSet: Set<string> = new Set();
   const variableNameSet: Set<string> = new Set();
   for (const definition of definitionList) {
@@ -89,25 +89,25 @@ const collectRootScopeIdentifer = (
 
 const collectInDefinition = (
   definition: ExportDefinition,
-  rootScopeIdentiferSet: RootScopeIdentiferSet
+  rootScopeIdentifierSet: RootScopeIdentifierSet
 ): UsedNameAndModulePathSet => {
   switch (definition._) {
     case "TypeAlias":
       return collectInTypeAlias(
         definition.typeAlias,
-        rootScopeIdentiferSet.rootScopeTypeNameSet
+        rootScopeIdentifierSet.rootScopeTypeNameSet
       );
 
     case "Function":
       return collectInFunctionDefinition(
         definition.function,
-        rootScopeIdentiferSet
+        rootScopeIdentifierSet
       );
 
     case "Variable":
       return collectInVariableDefinition(
         definition.variable,
-        rootScopeIdentiferSet
+        rootScopeIdentifierSet
       );
   }
 };
@@ -122,19 +122,21 @@ const collectInTypeAlias = (
       modulePathSet: new Set(),
     },
     collectInType(typeAlias.type, rootScopeTypeNameSet, [
-      new Set(typeAlias.typeParameterList.map((identifer) => identifer.string)),
+      new Set(
+        typeAlias.typeParameterList.map((identifier) => identifier.string)
+      ),
     ])
   );
 
 const collectInFunctionDefinition = (
   function_: Function_,
-  rootScopeIdentiferSet: RootScopeIdentiferSet
+  rootScopeIdentifierSet: RootScopeIdentifierSet
 ): UsedNameAndModulePathSet => {
-  const parameterNameSet = checkDuplicateIdentifer(
+  const parameterNameSet = checkDuplicateIdentifier(
     "export function parameter name",
     function_.parameterList.map((parameter) => parameter.name)
   );
-  const typeParameterNameSet = checkDuplicateIdentifer(
+  const typeParameterNameSet = checkDuplicateIdentifier(
     "export function type parameter name",
     function_.typeParameterList
   );
@@ -153,7 +155,7 @@ const collectInFunctionDefinition = (
             },
             collectInType(
               parameter.type,
-              rootScopeIdentiferSet.rootScopeTypeNameSet,
+              rootScopeIdentifierSet.rootScopeTypeNameSet,
               [typeParameterNameSet]
             )
           )
@@ -161,7 +163,7 @@ const collectInFunctionDefinition = (
       ),
       collectInType(
         function_.returnType,
-        rootScopeIdentiferSet.rootScopeTypeNameSet,
+        rootScopeIdentifierSet.rootScopeTypeNameSet,
         [typeParameterNameSet]
       )
     ),
@@ -169,7 +171,7 @@ const collectInFunctionDefinition = (
       function_.statementList,
       [],
       [typeParameterNameSet],
-      rootScopeIdentiferSet,
+      rootScopeIdentifierSet,
       parameterNameSet
     )
   );
@@ -177,7 +179,7 @@ const collectInFunctionDefinition = (
 
 const collectInVariableDefinition = (
   variable: Variable,
-  rootScopeIdentiferSet: RootScopeIdentiferSet
+  rootScopeIdentifierSet: RootScopeIdentifierSet
 ): UsedNameAndModulePathSet =>
   concatCollectData(
     concatCollectData(
@@ -185,11 +187,13 @@ const collectInVariableDefinition = (
         modulePathSet: new Set(),
         usedNameSet: new Set([variable.name.string]),
       },
-      collectInType(variable.type, rootScopeIdentiferSet.rootScopeTypeNameSet, [
-        new Set(),
-      ])
+      collectInType(
+        variable.type,
+        rootScopeIdentifierSet.rootScopeTypeNameSet,
+        [new Set()]
+      )
     ),
-    collectInExpr(variable.expr, [], [], rootScopeIdentiferSet)
+    collectInExpr(variable.expr, [], [], rootScopeIdentifierSet)
   );
 
 /**
@@ -201,7 +205,7 @@ const collectInExpr = (
   expr: TsExpr,
   localVariableNameSetList: ReadonlyArray<ReadonlySet<string>>,
   typeParameterSetList: ReadonlyArray<ReadonlySet<string>>,
-  rootScopeIdentiferSet: RootScopeIdentiferSet
+  rootScopeIdentifierSet: RootScopeIdentifierSet
 ): UsedNameAndModulePathSet => {
   switch (expr._) {
     case "NumberLiteral":
@@ -219,7 +223,7 @@ const collectInExpr = (
         expr.unaryOperatorExpr.expr,
         localVariableNameSetList,
         typeParameterSetList,
-        rootScopeIdentiferSet
+        rootScopeIdentifierSet
       );
 
     case "BinaryOperator":
@@ -228,13 +232,13 @@ const collectInExpr = (
           expr.binaryOperatorExpr.left,
           localVariableNameSetList,
           typeParameterSetList,
-          rootScopeIdentiferSet
+          rootScopeIdentifierSet
         ),
         collectInExpr(
           expr.binaryOperatorExpr.right,
           localVariableNameSetList,
           typeParameterSetList,
-          rootScopeIdentiferSet
+          rootScopeIdentifierSet
         )
       );
     case "ConditionalOperator":
@@ -243,20 +247,20 @@ const collectInExpr = (
           expr.conditionalOperatorExpr.condition,
           localVariableNameSetList,
           typeParameterSetList,
-          rootScopeIdentiferSet
+          rootScopeIdentifierSet
         ),
         concatCollectData(
           collectInExpr(
             expr.conditionalOperatorExpr.thenExpr,
             localVariableNameSetList,
             typeParameterSetList,
-            rootScopeIdentiferSet
+            rootScopeIdentifierSet
           ),
           collectInExpr(
             expr.conditionalOperatorExpr.elseExpr,
             localVariableNameSetList,
             typeParameterSetList,
-            rootScopeIdentiferSet
+            rootScopeIdentifierSet
           )
         )
       );
@@ -267,7 +271,7 @@ const collectInExpr = (
           item.expr,
           localVariableNameSetList,
           typeParameterSetList,
-          rootScopeIdentiferSet
+          rootScopeIdentifierSet
         )
       );
 
@@ -279,26 +283,26 @@ const collectInExpr = (
               member.tsExpr,
               localVariableNameSetList,
               typeParameterSetList,
-              rootScopeIdentiferSet
+              rootScopeIdentifierSet
             );
           case "KeyValue":
             return collectInExpr(
               member.keyValue.value,
               localVariableNameSetList,
               typeParameterSetList,
-              rootScopeIdentiferSet
+              rootScopeIdentifierSet
             );
         }
       });
 
     case "Lambda": {
-      const parameterNameSet = checkDuplicateIdentifer(
+      const parameterNameSet = checkDuplicateIdentifier(
         "lambda parameter name",
         expr.lambdaExpr.parameterList.map((parameter) => parameter.name)
       );
       const newTypeParameterSetList = typeParameterSetList.concat(
-        checkDuplicateIdentifer(
-          "lambda type paramter name",
+        checkDuplicateIdentifier(
+          "lambda type parameter name",
           expr.lambdaExpr.typeParameterList
         )
       );
@@ -313,14 +317,14 @@ const collectInExpr = (
               },
               collectInType(
                 oneParameter.type,
-                rootScopeIdentiferSet.rootScopeTypeNameSet,
+                rootScopeIdentifierSet.rootScopeTypeNameSet,
                 newTypeParameterSetList
               )
             )
           ),
           collectInType(
             expr.lambdaExpr.returnType,
-            rootScopeIdentiferSet.rootScopeTypeNameSet,
+            rootScopeIdentifierSet.rootScopeTypeNameSet,
             newTypeParameterSetList
           )
         ),
@@ -328,7 +332,7 @@ const collectInExpr = (
           expr.lambdaExpr.statementList,
           localVariableNameSetList,
           newTypeParameterSetList,
-          rootScopeIdentiferSet,
+          rootScopeIdentifierSet,
           parameterNameSet
         )
       );
@@ -337,7 +341,7 @@ const collectInExpr = (
     case "Variable":
       checkVariableIsDefinedOrThrow(
         localVariableNameSetList,
-        rootScopeIdentiferSet.rootScopeVariableName,
+        rootScopeIdentifierSet.rootScopeVariableName,
         expr.tsIdentifier
       );
       return {
@@ -363,13 +367,13 @@ const collectInExpr = (
           expr.getExpr.expr,
           localVariableNameSetList,
           typeParameterSetList,
-          rootScopeIdentiferSet
+          rootScopeIdentifierSet
         ),
         collectInExpr(
           expr.getExpr.propertyExpr,
           localVariableNameSetList,
           typeParameterSetList,
-          rootScopeIdentiferSet
+          rootScopeIdentifierSet
         )
       );
 
@@ -378,7 +382,7 @@ const collectInExpr = (
         expr.callExpr,
         localVariableNameSetList,
         typeParameterSetList,
-        rootScopeIdentiferSet
+        rootScopeIdentifierSet
       );
 
     case "New":
@@ -386,7 +390,7 @@ const collectInExpr = (
         expr.callExpr,
         localVariableNameSetList,
         typeParameterSetList,
-        rootScopeIdentiferSet
+        rootScopeIdentifierSet
       );
 
     case "TypeAssertion":
@@ -395,11 +399,11 @@ const collectInExpr = (
           expr.typeAssertion.expr,
           localVariableNameSetList,
           typeParameterSetList,
-          rootScopeIdentiferSet
+          rootScopeIdentifierSet
         ),
         collectInType(
           expr.typeAssertion.type,
-          rootScopeIdentiferSet.rootScopeTypeNameSet,
+          rootScopeIdentifierSet.rootScopeTypeNameSet,
           typeParameterSetList
         )
       );
@@ -410,21 +414,21 @@ const collectCallExpr = (
   callExpr: CallExpr,
   localVariableNameSetList: ReadonlyArray<ReadonlySet<string>>,
   typeParameterSetList: ReadonlyArray<ReadonlySet<string>>,
-  rootScopeIdentiferSet: RootScopeIdentiferSet
+  rootScopeIdentifierSet: RootScopeIdentifierSet
 ) =>
   concatCollectData(
     collectInExpr(
       callExpr.expr,
       localVariableNameSetList,
       typeParameterSetList,
-      rootScopeIdentiferSet
+      rootScopeIdentifierSet
     ),
     collectList(callExpr.parameterList, (parameter) =>
       collectInExpr(
         parameter,
         localVariableNameSetList,
         typeParameterSetList,
-        rootScopeIdentiferSet
+        rootScopeIdentifierSet
       )
     )
   );
@@ -433,7 +437,7 @@ const collectStatementList = (
   statementList: ReadonlyArray<Statement>,
   localVariableNameSetList: ReadonlyArray<ReadonlySet<string>>,
   typeParameterSetList: ReadonlyArray<ReadonlySet<string>>,
-  rootScopeIdentiferSet: RootScopeIdentiferSet,
+  rootScopeIdentifierSet: RootScopeIdentifierSet,
   parameterNameSet: ReadonlySet<string>
 ): UsedNameAndModulePathSet => {
   const newLocalVariableNameSetList = localVariableNameSetList.concat(
@@ -444,7 +448,7 @@ const collectStatementList = (
       statement,
       newLocalVariableNameSetList,
       typeParameterSetList,
-      rootScopeIdentiferSet
+      rootScopeIdentifierSet
     )
   );
 };
@@ -452,24 +456,24 @@ const collectStatementList = (
 const collectNameInStatement = (
   statementList: ReadonlyArray<Statement>
 ): ReadonlySet<string> => {
-  const identiferSet: Set<string> = new Set();
+  const identifierSet: Set<string> = new Set();
   for (const statement of statementList) {
     switch (statement._) {
       case "VariableDefinition":
-        identiferSet.add(statement.variableDefinitionStatement.name.string);
+        identifierSet.add(statement.variableDefinitionStatement.name.string);
         break;
       case "FunctionDefinition":
-        identiferSet.add(statement.functionDefinitionStatement.name.string);
+        identifierSet.add(statement.functionDefinitionStatement.name.string);
     }
   }
-  return identiferSet;
+  return identifierSet;
 };
 
 const collectInStatement = (
   statement: Statement,
   localVariableNameSetList: ReadonlyArray<ReadonlySet<string>>,
   typeParameterSetList: ReadonlyArray<ReadonlySet<string>>,
-  rootScopeIdentiferSet: RootScopeIdentiferSet
+  rootScopeIdentifierSet: RootScopeIdentifierSet
 ): UsedNameAndModulePathSet => {
   switch (statement._) {
     case "EvaluateExpr":
@@ -477,7 +481,7 @@ const collectInStatement = (
         statement.tsExpr,
         localVariableNameSetList,
         typeParameterSetList,
-        rootScopeIdentiferSet
+        rootScopeIdentifierSet
       );
 
     case "Set":
@@ -486,13 +490,13 @@ const collectInStatement = (
           statement.setStatement.target,
           localVariableNameSetList,
           typeParameterSetList,
-          rootScopeIdentiferSet
+          rootScopeIdentifierSet
         ),
         collectInExpr(
           statement.setStatement.expr,
           localVariableNameSetList,
           typeParameterSetList,
-          rootScopeIdentiferSet
+          rootScopeIdentifierSet
         )
       );
 
@@ -502,13 +506,13 @@ const collectInStatement = (
           statement.ifStatement.condition,
           localVariableNameSetList,
           typeParameterSetList,
-          rootScopeIdentiferSet
+          rootScopeIdentifierSet
         ),
         collectStatementList(
           statement.ifStatement.thenStatementList,
           localVariableNameSetList,
           typeParameterSetList,
-          rootScopeIdentiferSet,
+          rootScopeIdentifierSet,
           new Set()
         )
       );
@@ -518,7 +522,7 @@ const collectInStatement = (
         statement.tsExpr,
         localVariableNameSetList,
         typeParameterSetList,
-        rootScopeIdentiferSet
+        rootScopeIdentifierSet
       );
 
     case "Return":
@@ -526,7 +530,7 @@ const collectInStatement = (
         statement.tsExpr,
         localVariableNameSetList,
         typeParameterSetList,
-        rootScopeIdentiferSet
+        rootScopeIdentifierSet
       );
 
     case "ReturnVoid":
@@ -542,24 +546,24 @@ const collectInStatement = (
           statement.variableDefinitionStatement.expr,
           localVariableNameSetList,
           typeParameterSetList,
-          rootScopeIdentiferSet
+          rootScopeIdentifierSet
         ),
         collectInType(
           statement.variableDefinitionStatement.type,
-          rootScopeIdentiferSet.rootScopeTypeNameSet,
+          rootScopeIdentifierSet.rootScopeTypeNameSet,
           typeParameterSetList
         )
       );
 
     case "FunctionDefinition": {
-      const parameterNameSet = checkDuplicateIdentifer(
+      const parameterNameSet = checkDuplicateIdentifier(
         "local function parameter name",
         statement.functionDefinitionStatement.parameterList.map(
           (parameter) => parameter.name
         )
       );
       const newTypeParameterSetList = typeParameterSetList.concat(
-        checkDuplicateIdentifer(
+        checkDuplicateIdentifier(
           "local function type parameter name",
           statement.functionDefinitionStatement.typeParameterList
         )
@@ -570,21 +574,21 @@ const collectInStatement = (
           (parameter) =>
             collectInType(
               parameter.type,
-              rootScopeIdentiferSet.rootScopeTypeNameSet,
+              rootScopeIdentifierSet.rootScopeTypeNameSet,
               newTypeParameterSetList
             )
         ),
         concatCollectData(
           collectInType(
             statement.functionDefinitionStatement.returnType,
-            rootScopeIdentiferSet.rootScopeTypeNameSet,
+            rootScopeIdentifierSet.rootScopeTypeNameSet,
             newTypeParameterSetList
           ),
           collectStatementList(
             statement.functionDefinitionStatement.statementList,
             localVariableNameSetList,
             newTypeParameterSetList,
-            rootScopeIdentiferSet,
+            rootScopeIdentifierSet,
             parameterNameSet
           )
         )
@@ -597,13 +601,13 @@ const collectInStatement = (
           statement.forStatement.untilExpr,
           localVariableNameSetList,
           typeParameterSetList,
-          rootScopeIdentiferSet
+          rootScopeIdentifierSet
         ),
         collectStatementList(
           statement.forStatement.statementList,
           localVariableNameSetList,
           typeParameterSetList,
-          rootScopeIdentiferSet,
+          rootScopeIdentifierSet,
           new Set([statement.forStatement.counterVariableName.string])
         )
       );
@@ -614,13 +618,13 @@ const collectInStatement = (
           statement.forOfStatement.iterableExpr,
           localVariableNameSetList,
           typeParameterSetList,
-          rootScopeIdentiferSet
+          rootScopeIdentifierSet
         ),
         collectStatementList(
           statement.forOfStatement.statementList,
           localVariableNameSetList,
           typeParameterSetList,
-          rootScopeIdentiferSet,
+          rootScopeIdentifierSet,
           new Set([statement.forOfStatement.elementVariableName.string])
         )
       );
@@ -630,7 +634,7 @@ const collectInStatement = (
         statement.statementList,
         localVariableNameSetList,
         typeParameterSetList,
-        rootScopeIdentiferSet,
+        rootScopeIdentifierSet,
         new Set()
       );
     case "Break":
@@ -645,14 +649,14 @@ const collectInStatement = (
           statement.switchStatement.expr,
           localVariableNameSetList,
           typeParameterSetList,
-          rootScopeIdentiferSet
+          rootScopeIdentifierSet
         ),
         collectList(statement.switchStatement.patternList, (pattern) =>
           collectStatementList(
             pattern.statementList,
             localVariableNameSetList,
             typeParameterSetList,
-            rootScopeIdentiferSet,
+            rootScopeIdentifierSet,
             new Set()
           )
         )
@@ -721,7 +725,7 @@ const collectInType = (
 
     case "Function": {
       const newTypeParameterSetList = typeParameterSetList.concat(
-        checkDuplicateIdentifer(
+        checkDuplicateIdentifier(
           "function type, type parameter",
           type_.functionType.typeParameterList
         )
@@ -872,18 +876,18 @@ const collectList = <Element>(
 /**
  * 識別子の重複を調べる
  * @param name エラーメッセージに使う.何の識別子を表すか
- * @param identiferList 識別子のリスト
+ * @param identifierList 識別子のリスト
  */
-const checkDuplicateIdentifer = (
+const checkDuplicateIdentifier = (
   name: string,
-  identiferList: ReadonlyArray<TsIdentifier>
+  identifierList: ReadonlyArray<TsIdentifier>
 ): ReadonlySet<string> => {
   const set: Set<string> = new Set();
-  for (const identifer of identiferList) {
-    if (set.has(identifer.string)) {
-      throw new Error("Duplicate " + name + ". name = " + identifer.string);
+  for (const identifier of identifierList) {
+    if (set.has(identifier.string)) {
+      throw new Error("Duplicate " + name + ". name = " + identifier.string);
     }
-    set.add(identifer.string);
+    set.add(identifier.string);
   }
   return set;
 };

@@ -1,6 +1,5 @@
 import * as d from "../localData";
 import * as fileSystem from "../gen/fileSystem/data";
-import { fileTypeTypeScript } from "../gen/fileType/main";
 import { generateTypeScriptCode } from "../core/main";
 import { writeTypeScriptCode } from "../gen/fileSystem/effect";
 

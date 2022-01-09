@@ -31,7 +31,7 @@ toVdom { scriptPath, view: Data.View view } =
 
     { className: bodyClassName, styleDict } = StyleDict.addStyleDictAndClassName styleDictChildren view.bodyStyle
   in
-    Vdom.Vdom
+    Vdom.VdomPicked
       { pageName: view.pageName
       , appName: view.appName
       , description: view.description

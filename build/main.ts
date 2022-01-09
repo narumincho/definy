@@ -2,6 +2,7 @@ import * as childProcess from "child_process";
 import * as d from "../localData";
 import * as esbuild from "esbuild";
 import * as fileSystem from "fs-extra";
+import * as pLib from "../output/TypeScriptEntryPoint";
 import {
   ModuleKind,
   ModuleResolutionKind,
@@ -9,46 +10,25 @@ import {
   ScriptTarget,
   createProgram,
 } from "typescript";
-import { jsTs, packageJson as packageJsonGen } from "../gen/main";
-import { resetDistributionDirectory } from "../gen/fileSystem/effect";
+import { jsTs } from "../gen/main";
 
 const clientSourceEntryPath = "./client/main.tsx";
 const functionsSourceEntryPath = "./functions/main.ts";
-const distributionPath = "./distribution";
+const distributionPath = "./distribution/definy";
 const functionsDistributionPath = `${distributionPath}/functions`;
 const hostingDistributionPath = `${distributionPath}/hosting`;
-const firestoreRulesFilePath = `${distributionPath}/firestore.rules`;
-const cloudStorageRulesPath = `${distributionPath}/storage.rules`;
 
 /**
  * Firebase へ デプロイするためにビルドする
  */
 export const build = async (mode: d.Mode, origin: string): Promise<void> => {
-  await resetDistributionDirectory();
-  if (mode === "Develop") {
-    await fileSystem.copy(
-      "../secret/definy.json",
-      `${functionsDistributionPath}/.runtimeconfig.json`
-    );
-    console.log(
-      `.runtimeconfig.json サーバーの秘密情報をローカルファイルからコピー完了`
-    );
-  }
+  pLib.definyBuild({
+    isDevelopment: mode === "Develop",
+    origin: origin as pLib.NonEmptyString,
+  });
 
-  await outputPackageJsonForFunctions();
-  console.log(`package.json を出力完了!`);
   await outputNowModeAndOrigin(mode, origin);
   console.log(`out.ts を出力完了!`);
-  await generateFirestoreRules();
-  console.log(
-    `Firestore 向けセキュリティールール (${firestoreRulesFilePath}) を出力完了!`
-  );
-  await generateCloudStorageRules();
-  console.log(
-    `Cloud Storage 向けの セキュリティールール (${cloudStorageRulesPath}) を出力完了!`
-  );
-  await generateFirebaseJson(mode);
-  console.log(`firebase.json を出力完了!`);
 
   /** staticなファイルのコピー */
   await fileSystem.copy("./static", hostingDistributionPath);
@@ -69,96 +49,6 @@ export const build = async (mode: d.Mode, origin: string): Promise<void> => {
 
   buildFunctionsTypeScript();
   console.log("Cloud Functions for Firebase 向けのスクリプトのビルドに成功!");
-};
-
-const generateFirebaseJson = (mode: d.Mode): Promise<void> => {
-  return fileSystem.outputFile(
-    `firebase.json`,
-    JSON.stringify({
-      functions: {
-        source: functionsDistributionPath,
-      },
-      firestore: {
-        rules: firestoreRulesFilePath,
-      },
-      storage: {
-        rules: cloudStorageRulesPath,
-      },
-      hosting: {
-        public: hostingDistributionPath,
-        rewrites: [
-          {
-            source: "/api/**",
-            function: "api",
-          },
-          {
-            source: "/pngFile/**",
-            function: "pngFile",
-          },
-          {
-            source: "**",
-            function: "html",
-          },
-        ],
-        cleanUrls: true,
-        trailingSlash: false,
-      },
-      emulators:
-        mode === d.Mode.Release
-          ? undefined
-          : {
-              functions: {
-                port: 5001,
-              },
-              firestore: {
-                port: 8080,
-              },
-              hosting: {
-                port: 2520,
-              },
-              storage: {
-                port: 9199,
-              },
-              ui: {
-                enabled: true,
-              },
-            },
-    })
-  );
-};
-
-const generateFirestoreRules = (): Promise<void> => {
-  return fileSystem.outputFile(
-    firestoreRulesFilePath,
-    `
-rules_version = '2';
-
-service cloud.firestore {
-  match /databases/{database}/documents {
-    match /{document=**} {
-      allow read, write: if false;
-    }
-  }
-}
-`
-  );
-};
-
-const generateCloudStorageRules = (): Promise<void> => {
-  return fileSystem.outputFile(
-    cloudStorageRulesPath,
-    `
-rules_version = '2';
-
-service firebase.storage {
-  match /b/{bucket}/o {
-    match /{allPaths=**} {
-      allow read, write: if false;
-    }
-  }
-}
-`
-  );
 };
 
 /**
@@ -192,50 +82,6 @@ const buildFunctionsTypeScript = (): void => {
       outDir: functionsDistributionPath,
     },
   }).emit();
-};
-
-const outputPackageJsonForFunctions = async (): Promise<void> => {
-  const devDependencies = packageJsonGen.fromJson(
-    await fileSystem.readJSON("package.json")
-  ).devDependencies;
-  const packageNameUseInFunctions: ReadonlyArray<string> = [
-    "firebase-admin",
-    "firebase-functions",
-    "axios",
-    "jimp",
-    "jsonwebtoken",
-    "fs-extra",
-    "sha256-uint8array",
-  ];
-  const jsonResult = packageJsonGen.toJson({
-    name: "definy-functions",
-    version: "1.0.0",
-    description: "definy in Cloud Functions for Firebase",
-    entryPoint: "functions/main.js",
-    author: "narumincho",
-    nodeVersion: "16",
-    dependencies: new Map(
-      [...devDependencies].flatMap(
-        ([packageName, packageVersion]): ReadonlyArray<
-          readonly [string, string]
-        > =>
-          packageNameUseInFunctions.includes(packageName)
-            ? [[packageName, packageVersion]]
-            : []
-      )
-    ),
-    gitHubAccountName: "narumincho",
-    gitHubRepositoryName: "definy",
-    homepage: "https://github.com/narumincho/definy",
-  });
-  if (jsonResult._ === "Error") {
-    throw new Error(jsonResult.error);
-  }
-
-  await fileSystem.outputJSON(
-    `${functionsDistributionPath}/package.json`,
-    jsonResult.ok
-  );
 };
 
 const outputNowModeAndOrigin = async (

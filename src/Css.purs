@@ -18,6 +18,7 @@ module Css
   , declarationProperty
   , declarationValue
   , displayGrid
+  , fontFamily
   , fontSize
   , gap
   , gridAutoFlow
@@ -402,4 +403,11 @@ fontSize size =
   Declaration
     { property: NonEmptyString.nes (Proxy :: _ "font-size")
     , value: remValueToCssValue size
+    }
+
+fontFamily :: NonEmptyString -> Declaration
+fontFamily fontName =
+  Declaration
+    { property: NonEmptyString.nes (Proxy :: _ "font-family")
+    , value: fontName
     }

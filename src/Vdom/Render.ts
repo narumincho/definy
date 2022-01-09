@@ -4,22 +4,25 @@ export const changePageName = (newPageName: string): void => {
 
 const themeColorName = "theme-color";
 
-const getOrCreateThemeColorMetaElement = (): HTMLMetaElement => {
+export const changeThemeColor = (newThemeColor: string | null): void => {
   const themeColorMetaElement = window.document
     .getElementsByTagName("meta")
     .namedItem("theme-color");
   if (themeColorMetaElement !== null) {
-    return themeColorMetaElement;
+    if (typeof newThemeColor === "string") {
+      themeColorMetaElement.content = newThemeColor;
+      return;
+    }
+    themeColorMetaElement.remove();
+    return;
+  }
+  if (newThemeColor === null) {
+    return;
   }
   const newMetaElement = document.createElement("meta");
   document.head.appendChild(newMetaElement);
   newMetaElement.name = themeColorName;
-  return newMetaElement;
-};
-
-export const changeThemeColor = (newThemeColor: string): void => {
-  const themeColorMetaElement = getOrCreateThemeColorMetaElement();
-  themeColorMetaElement.content = newThemeColor;
+  newMetaElement.content = newThemeColor;
 };
 
 export const changeLanguage = (newLanguage: string | null): void => {

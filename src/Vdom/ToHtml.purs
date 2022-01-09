@@ -7,6 +7,7 @@ import Color as Color
 import Data.Array as Array
 import Data.Array.NonEmpty as NonEmptyArray
 import Data.Map as Map
+import Data.Maybe (Maybe(..))
 import Data.Maybe as Maybe
 import Data.String.NonEmpty (NonEmptyString)
 import Data.String.NonEmpty as NonEmptyString
@@ -24,7 +25,7 @@ toHtml ::
   , locationToPathAndSearchParams :: location -> StructuredUrl.PathAndSearchParams
   } ->
   Html.RawHtmlElement
-toHtml { vdom: vdom@(Data.Vdom rec), locationToPathAndSearchParams } =
+toHtml { vdom: vdom@(Data.VdomPicked rec), locationToPathAndSearchParams } =
   Wellknown.html
     rec.language
     (headElement vdom)
@@ -48,7 +49,7 @@ toHtml { vdom: vdom@(Data.Vdom rec), locationToPathAndSearchParams } =
     )
 
 headElement :: forall message location. Data.VdomPicked message location -> Html.RawHtmlElement
-headElement (Data.Vdom option) =
+headElement (Data.VdomPicked option) =
   Wellknown.head
     ( Html.ElementList
         ( Array.concat
@@ -56,8 +57,10 @@ headElement (Data.Vdom option) =
               , viewportElement
               , Wellknown.title option.pageName
               , descriptionElement option.description
-              , themeColorElement option.themeColor
               ]
+            , case option.themeColor of
+                Just themeColor -> [ themeColorElement themeColor ]
+                Nothing -> []
             , iconElement
                 ( StructuredUrl.StructuredUrl
                     { origin: option.origin
@@ -66,7 +69,7 @@ headElement (Data.Vdom option) =
                 )
             , [ twitterCardElement ]
             , case option.path of
-                Maybe.Just path ->
+                Just path ->
                   [ ogUrlElement
                       ( StructuredUrl.StructuredUrl
                           { origin: option.origin
@@ -74,7 +77,7 @@ headElement (Data.Vdom option) =
                           }
                       )
                   ]
-                Maybe.Nothing -> []
+                Nothing -> []
             , [ ogTitleElement option.pageName
               , ogSiteName option.appName
               , ogDescription option.description
@@ -87,8 +90,8 @@ headElement (Data.Vdom option) =
               , Wellknown.style option.style
               ]
             , case option.scriptPath of
-                Maybe.Just scriptPath -> [ Wellknown.script (StructuredUrl.StructuredUrl { origin: option.origin, pathAndSearchParams: scriptPath }) ]
-                Maybe.Nothing -> []
+                Just scriptPath -> [ Wellknown.script (StructuredUrl.StructuredUrl { origin: option.origin, pathAndSearchParams: scriptPath }) ]
+                Nothing -> []
             ]
         )
     )
@@ -96,7 +99,7 @@ headElement (Data.Vdom option) =
 charsetElement :: Html.RawHtmlElement
 charsetElement =
   Wellknown.meta
-    (Map.singleton (NonEmptyString.nes (Proxy :: Proxy "charset")) (Maybe.Just "utf-8"))
+    (Map.singleton (NonEmptyString.nes (Proxy :: Proxy "charset")) (Just "utf-8"))
 
 viewportElement :: Html.RawHtmlElement
 viewportElement =
@@ -104,10 +107,10 @@ viewportElement =
     ( Map.fromFoldable
         [ Tuple.Tuple
             (NonEmptyString.nes (Proxy :: Proxy "name"))
-            (Maybe.Just "viewport")
+            (Just "viewport")
         , Tuple.Tuple
             (NonEmptyString.nes (Proxy :: Proxy "content"))
-            ( Maybe.Just
+            ( Just
                 "width=device-width,initial-scale=1.0"
             )
         ]
@@ -119,7 +122,7 @@ descriptionElement description =
     ( Map.fromFoldable
         [ Tuple.Tuple
             (NonEmptyString.nes (Proxy :: Proxy "name"))
-            (Maybe.Just "description")
+            (Just "description")
         , contentAttribute description
         ]
     )
@@ -130,10 +133,10 @@ themeColorElement themeColor =
     ( Map.fromFoldable
         [ Tuple.Tuple
             (NonEmptyString.nes (Proxy :: Proxy "name"))
-            (Maybe.Just "theme-color")
+            (Just "theme-color")
         , Tuple.Tuple
             (NonEmptyString.nes (Proxy :: Proxy "content"))
-            (Maybe.Just (Color.toHexString themeColor))
+            (Just (Color.toHexString themeColor))
         ]
     )
 
@@ -153,25 +156,25 @@ twitterCardElement =
     ( Map.fromFoldable
         ( [ Tuple.Tuple
               (NonEmptyString.nes (Proxy :: Proxy "name"))
-              (Maybe.Just "twitter:card")
+              (Just "twitter:card")
           , Tuple.Tuple
               (NonEmptyString.nes (Proxy :: Proxy "content"))
-              (Maybe.Just "summary_large_image")
+              (Just "summary_large_image")
           ]
         )
     )
 
-propertyAttribute :: String -> Tuple.Tuple NonEmptyString.NonEmptyString (Maybe.Maybe String)
+propertyAttribute :: String -> Tuple.Tuple NonEmptyString (Maybe.Maybe String)
 propertyAttribute value =
   Tuple.Tuple
     (NonEmptyString.nes (Proxy :: Proxy "property"))
-    (Maybe.Just value)
+    (Just value)
 
-contentAttribute :: String -> Tuple.Tuple NonEmptyString.NonEmptyString (Maybe.Maybe String)
+contentAttribute :: String -> Tuple.Tuple NonEmptyString (Maybe.Maybe String)
 contentAttribute value =
   Tuple.Tuple
     (NonEmptyString.nes (Proxy :: Proxy "content"))
-    (Maybe.Just value)
+    (Just value)
 
 ogUrlElement :: StructuredUrl.StructuredUrl -> Html.RawHtmlElement
 ogUrlElement url =
@@ -182,7 +185,7 @@ ogUrlElement url =
         ]
     )
 
-ogTitleElement :: NonEmptyString.NonEmptyString -> Html.RawHtmlElement
+ogTitleElement :: NonEmptyString -> Html.RawHtmlElement
 ogTitleElement title =
   Wellknown.meta
     ( Map.fromFoldable
@@ -191,7 +194,7 @@ ogTitleElement title =
         ]
     )
 
-ogSiteName :: NonEmptyString.NonEmptyString -> Html.RawHtmlElement
+ogSiteName :: NonEmptyString -> Html.RawHtmlElement
 ogSiteName siteName =
   Wellknown.meta
     ( Map.fromFoldable
@@ -218,7 +221,7 @@ ogImage url =
         ]
     )
 
-noScriptElement :: NonEmptyString.NonEmptyString -> Html.RawHtmlElement
+noScriptElement :: NonEmptyString -> Html.RawHtmlElement
 noScriptElement appName =
   Wellknown.noscript
     ( Html.Text

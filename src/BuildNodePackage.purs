@@ -113,7 +113,7 @@ mainAff =
             }
         )
         FileType.Markdown
-    , FileSystemCopy.copyFileToDistributionWithoutExtensiton
+    , FileSystemCopy.copyFileToDistributionWithoutExtension
         ( Path.FilePath
             { directoryPath: genDirectoryPath
             , fileName:
