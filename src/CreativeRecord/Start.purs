@@ -16,7 +16,7 @@ main =
   Aff.runAff_ (Console.logValue "start aff result")
     ( Aff.attempt
         ( do
-            Build.build ProductionOrDevelopment.Develpment
+            Build.build ProductionOrDevelopment.Development
             EffectClass.liftEffect runFirebaseEmulator
         )
     )

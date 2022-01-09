@@ -1,5 +1,5 @@
 module FileSystem.Copy
-  ( copyFileToDistributionWithoutExtensiton
+  ( copyFileToDistributionWithoutExtension
   , copyFileToDistribution
   , copySecretFile
   ) where
@@ -16,8 +16,8 @@ import FileSystem.Write as Write
 
 -- | ファイルをコピーする.
 -- | コピー先ファイル名は拡張子なしになる
-copyFileToDistributionWithoutExtensiton :: Path.FilePath -> Maybe.Maybe FileType.FileType -> Path.DistributionFilePath -> Aff.Aff Unit
-copyFileToDistributionWithoutExtensiton filePath fileTypeMaybe distributionFilePath@(Path.DistributionFilePath { directoryPath }) = do
+copyFileToDistributionWithoutExtension :: Path.FilePath -> Maybe.Maybe FileType.FileType -> Path.DistributionFilePath -> Aff.Aff Unit
+copyFileToDistributionWithoutExtension filePath fileTypeMaybe distributionFilePath@(Path.DistributionFilePath { directoryPath }) = do
   Write.ensureDir (Path.distributionDirectoryPathToDirectoryPath directoryPath)
   copyFile
     { src: NonEmptyString.toString (Path.filePathToString filePath fileTypeMaybe)

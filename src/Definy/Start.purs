@@ -13,7 +13,7 @@ main :: Effect.Effect Prelude.Unit
 main =
   Aff.runAff_ Console.logShow
     ( Aff.attempt
-        ( Build.build ProductionOrDevelopment.Develpment
+        ( Build.build ProductionOrDevelopment.Development
             ( NonEmptyString.nes
                 (Proxy.Proxy :: Proxy.Proxy "http://localhost:2520")
             )

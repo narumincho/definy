@@ -300,7 +300,7 @@ copyStaticResouece resultList =
   Util.toParallel
     ( map
         ( \(StaticResourceFile.StaticResourceFileResult { originalFilePath, fileType, requestPathAndUploadFileName }) ->
-            FileSystemCopy.copyFileToDistributionWithoutExtensiton
+            FileSystemCopy.copyFileToDistributionWithoutExtension
               originalFilePath
               fileType
               ( Path.DistributionFilePath
@@ -350,7 +350,7 @@ originPureScriptModule productionOrDevelopment =
             , expr:
                 PureScriptWellknown.nonEmptyStringLiteral
                   ( case productionOrDevelopment of
-                      ProductionOrDevelopment.Develpment ->
+                      ProductionOrDevelopment.Development ->
                         NonEmptyString.appendString
                           (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "http://localhost:"))
                           (UInt.toString hostingPortNumber)

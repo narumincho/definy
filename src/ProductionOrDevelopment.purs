@@ -1,5 +1,5 @@
 module ProductionOrDevelopment (ProductionOrDevelopment(..)) where
 
 data ProductionOrDevelopment
-  = Develpment
+  = Development
   | Production

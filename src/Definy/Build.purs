@@ -249,10 +249,10 @@ generateNowModeAndOriginPureScriptModule productionOrDevelopment origin = do
                       }
                 , expr:
                     case productionOrDevelopment of
-                      ProductionOrDevelopment.Develpment ->
+                      ProductionOrDevelopment.Development ->
                         PureScriptWellknown.tag
                           { moduleName: productionOrDevelopmentModuleName
-                          , name: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "Develpment")
+                          , name: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "Development")
                           }
                       ProductionOrDevelopment.Production ->
                         PureScriptWellknown.tag
@@ -275,7 +275,7 @@ generateNowModeAndOriginPureScriptModule productionOrDevelopment origin = do
 
 versionDefinitionAff :: ProductionOrDevelopment.ProductionOrDevelopment -> Aff.Aff PureScriptData.Definition
 versionDefinitionAff = case _ of
-  ProductionOrDevelopment.Develpment ->
+  ProductionOrDevelopment.Development ->
     pure
       ( PureScriptWellknown.definition
           { name: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "version")
@@ -395,16 +395,16 @@ staticResourceBuild = do
           [ NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "static")
           ]
       )
-  copyStaticResouece resultList
+  copyStaticResource resultList
   staticResourceCodeGen resultList
   pure resultList
 
-copyStaticResouece :: Array StaticResourceFile.StaticResourceFileResult -> Aff.Aff Unit
-copyStaticResouece resultList =
+copyStaticResource :: Array StaticResourceFile.StaticResourceFileResult -> Aff.Aff Unit
+copyStaticResource resultList =
   Util.toParallel
     ( map
         ( \(StaticResourceFile.StaticResourceFileResult { originalFilePath, fileType, requestPathAndUploadFileName }) ->
-            FileSystemCopy.copyFileToDistributionWithoutExtensiton
+            FileSystemCopy.copyFileToDistributionWithoutExtension
               originalFilePath
               fileType
               ( Path.DistributionFilePath
