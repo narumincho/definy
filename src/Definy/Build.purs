@@ -1,4 +1,7 @@
-module Definy.Build (build) where
+module Definy.Build
+  ( build
+  , codeGenAndBuildClientAndFunctionsScript
+  ) where
 
 import Prelude
 import Console as Console
@@ -6,8 +9,10 @@ import Console as ConsoleValue
 import Data.Array.NonEmpty as NonEmptyArray
 import Data.Either as Either
 import Data.Map as Map
+import Data.Maybe (Maybe(..))
 import Data.Maybe as Maybe
 import Data.Set as Set
+import Data.String.NonEmpty (NonEmptyString)
 import Data.String.NonEmpty as NonEmptyString
 import Data.Tuple as Tuple
 import Data.UInt as UInt
@@ -32,8 +37,8 @@ import StructuredUrl as StructuredUrl
 import Type.Proxy as Proxy
 import Util as Util
 
-build :: ProductionOrDevelopment.ProductionOrDevelopment -> NonEmptyString.NonEmptyString -> Aff.Aff Unit
-build mode origin =
+build :: ProductionOrDevelopment.ProductionOrDevelopment -> NonEmptyString -> Aff.Aff Unit
+build mode _ =
   Util.toParallel
     [ FileSystemCopy.copySecretFile
         ( NonEmptyString.nes
@@ -48,7 +53,7 @@ build mode origin =
         )
         FileType.Json
     , writePackageJsonForFunctions
-    , codeGenAndBuildClientAndFunctionsScript mode origin
+    -- , codeGenAndBuildClientAndFunctionsScript mode origin
     , writeFirestoreRules
     , generateCloudStorageRules
     , writeFirebaseJson mode
@@ -60,7 +65,7 @@ codeGenAndBuildClientAndFunctionsScript mode origin = do
   _ <- clientProgramBuild
   pure unit
 
-appName :: NonEmptyString.NonEmptyString
+appName :: NonEmptyString
 appName =
   NonEmptyString.nes
     (Proxy.Proxy :: Proxy.Proxy "definy")
@@ -70,7 +75,7 @@ rootDistributionDirectoryPath =
   Path.DistributionDirectoryPath
     { appName: appName
     , folderNameMaybe:
-        Maybe.Nothing
+        Nothing
     }
 
 functionsDistributionDirectoryPath :: Path.DistributionDirectoryPath
@@ -78,7 +83,7 @@ functionsDistributionDirectoryPath =
   Path.DistributionDirectoryPath
     { appName: appName
     , folderNameMaybe:
-        Maybe.Just
+        Just
           ( NonEmptyString.nes
               (Proxy.Proxy :: Proxy.Proxy "functions")
           )
@@ -89,7 +94,7 @@ hostingDistributionPath =
   Path.DistributionDirectoryPath
     { appName: appName
     , folderNameMaybe:
-        Maybe.Just
+        Just
           ( NonEmptyString.nes
               (Proxy.Proxy :: Proxy.Proxy "hosting")
           )
@@ -100,7 +105,7 @@ esbuildClientProgramFileDirectoryPath =
   Path.DistributionDirectoryPath
     { appName: appName
     , folderNameMaybe:
-        Maybe.Just
+        Just
           ( NonEmptyString.nes
               (Proxy.Proxy :: Proxy.Proxy "client-esbuild-result")
           )
@@ -113,7 +118,7 @@ writePackageJsonForFunctions = do
   case rootPackageJsonResult of
     Either.Left error -> ConsoleValue.logValueAsAff "jsonの parse エラー!" { error }
     Either.Right dependencies -> case generatePackageJson dependencies of
-      Maybe.Just packageJson ->
+      Just packageJson ->
         FileSystemWrite.writeJson
           ( Path.DistributionFilePath
               { directoryPath: functionsDistributionDirectoryPath
@@ -123,9 +128,12 @@ writePackageJsonForFunctions = do
               }
           )
           (PackageJson.toJson packageJson)
-      Maybe.Nothing -> ConsoleValue.logValueAsAff "名前のエラー" {}
+      Nothing ->
+        ConsoleValue.logValueAsAff
+          "definyの Functions 向けの package.json のパッケージの名のエラー"
+          {}
 
-usingPackageInFunctions :: Set.Set NonEmptyString.NonEmptyString
+usingPackageInFunctions :: Set.Set NonEmptyString
 usingPackageInFunctions =
   Set.fromFoldable
     [ NonEmptyString.nes
@@ -144,7 +152,7 @@ usingPackageInFunctions =
         (Proxy.Proxy :: Proxy.Proxy "sha256-uint8array")
     ]
 
-generatePackageJson :: Map.Map NonEmptyString.NonEmptyString NonEmptyString.NonEmptyString -> Maybe.Maybe PackageJson.PackageJsonInput
+generatePackageJson :: Map.Map NonEmptyString NonEmptyString -> Maybe.Maybe PackageJson.PackageJsonInput
 generatePackageJson dependencies =
   map
     ( \name ->
@@ -178,7 +186,7 @@ generatePackageJson dependencies =
           , nodeVersion:
               NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "16")
           , typeFilePath:
-              Maybe.Nothing
+              Nothing
           , version:
               NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "1.0.0")
           }
@@ -189,7 +197,7 @@ generatePackageJson dependencies =
         )
     )
 
-definyModuleName :: NonEmptyString.NonEmptyString
+definyModuleName :: NonEmptyString
 definyModuleName =
   NonEmptyString.nes
     (Proxy.Proxy :: Proxy.Proxy "Definy")
@@ -221,12 +229,12 @@ staticResourceModuleName =
         ]
     )
 
-outputNowModeAndOrigin :: ProductionOrDevelopment.ProductionOrDevelopment -> NonEmptyString.NonEmptyString -> Aff.Aff Unit
+outputNowModeAndOrigin :: ProductionOrDevelopment.ProductionOrDevelopment -> NonEmptyString -> Aff.Aff Unit
 outputNowModeAndOrigin productionOrDevelopment origin = do
   pureScriptModule <- generateNowModeAndOriginPureScriptModule productionOrDevelopment origin
   FileSystemWrite.writePureScript pureScriptModule
 
-generateNowModeAndOriginPureScriptModule :: ProductionOrDevelopment.ProductionOrDevelopment -> NonEmptyString.NonEmptyString -> Aff.Aff PureScriptData.Module
+generateNowModeAndOriginPureScriptModule :: ProductionOrDevelopment.ProductionOrDevelopment -> NonEmptyString -> Aff.Aff PureScriptData.Module
 generateNowModeAndOriginPureScriptModule productionOrDevelopment origin = do
   versionDefinition <- versionDefinitionAff productionOrDevelopment
   pure
@@ -313,15 +321,15 @@ versionDefinitionAff = case _ of
           }
       )
 
-readGithubSha :: Aff.Aff NonEmptyString.NonEmptyString
+readGithubSha :: Aff.Aff NonEmptyString
 readGithubSha =
   EffectClass.liftEffect
     ( map
         ( case _ of
-            Maybe.Just githubShaValue -> case NonEmptyString.fromString githubShaValue of
-              Maybe.Just githubShaAsNonEmptyString -> githubShaAsNonEmptyString
-              Maybe.Nothing -> NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "GITHUB_SHA is empty")
-            Maybe.Nothing -> NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "can not read GITHUB_SHA")
+            Just githubShaValue -> case NonEmptyString.fromString githubShaValue of
+              Just githubShaAsNonEmptyString -> githubShaAsNonEmptyString
+              Nothing -> NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "GITHUB_SHA is empty")
+            Nothing -> NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "can not read GITHUB_SHA")
         )
         (Process.lookupEnv "GITHUB_SHA")
     )
@@ -357,10 +365,10 @@ generateCloudStorageRules =
     SecurityRules.allForbiddenFirebaseStorageRule
 
 writeFirebaseJson :: ProductionOrDevelopment.ProductionOrDevelopment -> Aff.Aff Unit
-writeFirebaseJson _productionOrDevelopment = do
+writeFirebaseJson productionOrDevelopment = do
   FileSystemWrite.writeJson
     ( Path.DistributionFilePath
-        { directoryPath: Path.DistributionDirectoryPath { appName, folderNameMaybe: Maybe.Nothing }
+        { directoryPath: Path.DistributionDirectoryPath { appName, folderNameMaybe: Nothing }
         , fileName: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "firebase")
         }
     )
@@ -369,15 +377,32 @@ writeFirebaseJson _productionOrDevelopment = do
             { cloudStorageRulesFilePath: cloudStorageSecurityRulesFilePath
             , emulators:
                 FirebaseJson.Emulators
-                  { firestorePortNumber: Maybe.Just (UInt.fromInt 8080)
-                  , hostingPortNumber: Maybe.Just (UInt.fromInt 2520)
-                  , storagePortNumber: Maybe.Just (UInt.fromInt 9199)
+                  { firestorePortNumber:
+                      case productionOrDevelopment of
+                        ProductionOrDevelopment.Development -> Just (UInt.fromInt 8080)
+                        ProductionOrDevelopment.Production -> Nothing
+                  , hostingPortNumber:
+                      case productionOrDevelopment of
+                        ProductionOrDevelopment.Development -> Just (UInt.fromInt 2520)
+                        ProductionOrDevelopment.Production -> Nothing
+                  , storagePortNumber:
+                      case productionOrDevelopment of
+                        ProductionOrDevelopment.Development -> Just (UInt.fromInt 9199)
+                        ProductionOrDevelopment.Production -> Nothing
                   }
             , firestoreRulesFilePath: firestoreSecurityRulesFilePath
-            , functions: Maybe.Nothing
+            , functions: Nothing
             , hostingDistributionPath: hostingDistributionPath
             , hostingRewites:
                 [ FirebaseJson.Rewrite
+                    { source: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "/api/**")
+                    , function: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "api")
+                    }
+                , FirebaseJson.Rewrite
+                    { source: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "/pngFile/**")
+                    , function: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "pngFile")
+                    }
+                , FirebaseJson.Rewrite
                     { source: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "**")
                     , function: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "html")
                     }

@@ -24,4 +24,4 @@ jobs:
       - name: Run build script
         run: npm run production-build-main
       - name: Deploy to Firebase
-        run: npx firebase deploy --project definy-lang --token ${{ secrets.FIREBASE_TOKEN }}
+        run: npx firebase deploy --config ./distribution/definy/firebase.json --project definy-lang --token ${{ secrets.FIREBASE_TOKEN }}
