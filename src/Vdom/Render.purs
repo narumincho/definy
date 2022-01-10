@@ -359,7 +359,7 @@ resetAndRender { vdom: Vdom.VdomPicked vdom, patchState, locationToPathAndSearch
     , path: Path.root
     , locationToPathAndSearchParams
     }
-  EffectUncurried.runEffectFn1 setStyle (Css.ruleListToString vdom.style)
+  EffectUncurried.runEffectFn1 setStyle (Css.statementListToString vdom.style)
 
 -- | 差分データから実際のDOMを操作して表示に反映させる
 render ::

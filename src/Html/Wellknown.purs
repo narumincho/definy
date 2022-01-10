@@ -127,7 +127,7 @@ style cssStatementList =
   Data.htmlElement
     (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "style"))
     Map.empty
-    (Data.RawText (Css.ruleListToString cssStatementList))
+    (Data.RawText (Css.statementListToString cssStatementList))
 
 script :: StructuredUrl.StructuredUrl -> Data.RawHtmlElement
 script url =

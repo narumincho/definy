@@ -20,7 +20,7 @@ jobs:
       - name: PureScript Build
         run: npx spago build
       - name: Run build script
-        run: npm run production-build-main
+        run: npx spago run --main Definy.StartProductionMain
       - name: Type check
         run: npm run typeCheck
       - name: Test
