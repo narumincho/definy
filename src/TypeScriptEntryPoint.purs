@@ -12,7 +12,9 @@ module TypeScriptEntryPoint
   , structuredUrlFromOriginAndPathAndSearchParams
   ) where
 
--- PureScript で書かれたコードを呼び出すためのモジュール. bundle-module するためにこのモジュール以外から import してはいけない
+-- PureScript で書かれたコードを呼び出すためのモジュール. 
+-- node package に公開するための関数はすべてここで公開する
+-- bundle-module するためにこのモジュール以外から import してはいけない
 import Color as Color
 import Console as Console
 import Data.Argonaut.Core as ArgonautCore

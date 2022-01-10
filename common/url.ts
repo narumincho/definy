@@ -1,5 +1,6 @@
 import * as d from "../localData";
 import { structuredUrlToUrl, urlToStructuredUrl } from "../gen/url/main";
+import { esperantoId } from "../output/EntryPointNoEffect";
 import { origin } from "../out";
 
 const languageQueryKey = "hl";
@@ -159,4 +160,3 @@ const partPath = "part";
 const localProjectPath = "local-project";
 const japaneseId = "ja";
 const englishId = "en";
-const esperantoId = "eo";
