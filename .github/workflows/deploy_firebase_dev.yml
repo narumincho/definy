@@ -22,6 +22,6 @@ jobs:
       - name: PureScript Build
         run: npx spago build
       - name: Run build script
-        run: npm run production-build-dev
+        run: npx spago run --main Definy.StartProductionDev
       - name: Deploy to Firebase
         run: npx firebase deploy --config ./distribution/definy/firebase.json --project definy-dev --token ${{ secrets.FIREBASE_TOKEN }}

@@ -2,7 +2,6 @@ import * as childProcess from "child_process";
 import * as d from "../localData";
 import * as esbuild from "esbuild";
 import * as fileSystem from "fs-extra";
-import * as pLib from "../output/TypeScriptEntryPoint";
 import {
   ModuleKind,
   ModuleResolutionKind,
@@ -19,16 +18,10 @@ const functionsDistributionPath = `${distributionPath}/functions`;
 const hostingDistributionPath = `${distributionPath}/hosting`;
 
 /**
- * Firebase へ デプロイするためにビルドする
+ * コード生成と, クライアント向けビルド, Functions 向けビルドをする
+ * @param mode 開発用か本番用か
+ * @param origin 公開するURLのオリジン
  */
-export const build = async (mode: d.Mode, origin: string): Promise<void> => {
-  pLib.definyBuild({
-    isDevelopment: mode === "Develop",
-    origin: origin as pLib.NonEmptyString,
-  });
-  await buildClientAndFunction(mode, origin);
-};
-
 export const buildClientAndFunction = async (mode: d.Mode, origin: string) => {
   await outputNowModeAndOrigin(mode, origin);
   console.log(`out.ts を出力完了!`);
