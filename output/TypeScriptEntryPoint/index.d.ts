@@ -86,8 +86,3 @@ export declare const createPackageJson: (option: {
   readonly typeFilePath: Maybe<NonEmptyString>;
   readonly version: NonEmptyString;
 }) => string;
-
-export declare const definyBuild: (option: {
-  readonly isDevelopment: boolean;
-  readonly origin: NonEmptyString;
-}) => void;
