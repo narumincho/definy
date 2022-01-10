@@ -10,6 +10,7 @@ import Data.Array.NonEmpty as NonEmptyArray
 import Data.Either as Either
 import Data.Map as Map
 import Data.Maybe (Maybe(..))
+import Data.Array as Array
 import Data.Maybe as Maybe
 import Data.Set as Set
 import Data.String.NonEmpty (NonEmptyString)
@@ -41,33 +42,39 @@ import Util as Util
 build :: ProductionOrDevelopment.ProductionOrDevelopment -> NonEmptyString -> Aff.Aff Unit
 build mode origin =
   Util.toParallel
-    [ FileSystemCopy.copySecretFile
-        ( NonEmptyString.nes
-            (Proxy.Proxy :: Proxy.Proxy "definy.json")
-        )
-        ( Path.DistributionFilePath
-            { directoryPath: functionsDistributionDirectoryPath
-            , fileName:
-                NonEmptyString.nes
-                  (Proxy.Proxy :: Proxy.Proxy ".runtimeconfig")
-            }
-        )
-        FileType.Json
-    , writePackageJsonForFunctions
-    -- , codeGenAndBuildClientAndFunctionsScript mode origin
-    , writeFirestoreRules
-    , generateCloudStorageRules
-    , writeFirebaseJson mode
-    , EffectClass.liftEffect
-        ( EffectUncurried.runEffectFn2
-            buildInTypeScript
-            ( case mode of
-                ProductionOrDevelopment.Development -> true
-                ProductionOrDevelopment.Production -> false
-            )
-            (NonEmptyString.toString origin)
-        )
-    ]
+    ( Array.concat
+        [ case mode of
+            ProductionOrDevelopment.Production -> []
+            ProductionOrDevelopment.Development ->
+              [ FileSystemCopy.copySecretFile
+                  ( NonEmptyString.nes
+                      (Proxy.Proxy :: Proxy.Proxy "definy.json")
+                  )
+                  ( Path.DistributionFilePath
+                      { directoryPath: functionsDistributionDirectoryPath
+                      , fileName:
+                          NonEmptyString.nes
+                            (Proxy.Proxy :: Proxy.Proxy ".runtimeconfig")
+                      }
+                  )
+                  FileType.Json
+              ]
+        , [ writePackageJsonForFunctions
+          , writeFirestoreRules
+          , generateCloudStorageRules
+          , writeFirebaseJson mode
+          , EffectClass.liftEffect
+              ( EffectUncurried.runEffectFn2
+                  buildInTypeScript
+                  ( case mode of
+                      ProductionOrDevelopment.Development -> true
+                      ProductionOrDevelopment.Production -> false
+                  )
+                  (NonEmptyString.toString origin)
+              )
+          ]
+        ]
+    )
 
 codeGenAndBuildClientAndFunctionsScript :: ProductionOrDevelopment.ProductionOrDevelopment -> NonEmptyString.NonEmptyString -> Aff.Aff Unit
 codeGenAndBuildClientAndFunctionsScript mode origin = do
