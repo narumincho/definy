@@ -2,6 +2,7 @@ module Css
   ( AlignItemsValue(..)
   , ColumnOrRow(..)
   , Declaration
+  , FontFace
   , Keyframe(..)
   , Keyframes(..)
   , ObjectFitValue(..)
@@ -14,6 +15,7 @@ module Css
   , backgroundColor
   , boxSizingBorderBox
   , color
+  , createFontFace
   , declarationListToString
   , declarationProperty
   , declarationValue
@@ -33,7 +35,7 @@ module Css
   , objectFit
   , overflow
   , padding
-  , ruleListToString
+  , statementListToString
   , textAlignCenter
   , textDecorationNone
   , transformScale
@@ -72,6 +74,7 @@ data Selector
   | Type
     { elementName :: NonEmptyString.NonEmptyString
     }
+  | Universal
 
 newtype Rule
   = Rule
@@ -114,11 +117,13 @@ selectorToString = case _ of
       , NonEmptyString.toString className
       , if isHover then ":hover" else ""
       ]
+  Universal -> "*"
 
 newtype StatementList
   = StatementList
   { keyframesList :: Array Keyframes
   , ruleList :: Array Rule
+  , fontFaceList :: Array FontFace
   }
 
 newtype Keyframes
@@ -133,8 +138,8 @@ newtype Keyframe
   , declarationList :: Array Declaration
   }
 
-ruleListToString :: StatementList -> String
-ruleListToString (StatementList { ruleList, keyframesList }) =
+statementListToString :: StatementList -> String
+statementListToString (StatementList { ruleList, keyframesList }) =
   Prelude.append
     (String.joinWith "" (Prelude.map ruleToString ruleList))
     (String.joinWith "" (Prelude.map keyFramesToString keyframesList))
@@ -411,3 +416,9 @@ fontFamily fontName =
     { property: NonEmptyString.nes (Proxy :: _ "font-family")
     , value: fontName
     }
+
+newtype FontFace
+  = FontFace String
+
+createFontFace :: String -> FontFace
+createFontFace rawValue = FontFace rawValue

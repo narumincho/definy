@@ -1,8 +1,10 @@
 import * as commonUrl from "../common/url";
 import * as d from "../localData";
 import * as lib from "./lib";
+import * as pLib from "../output/TypeScriptEntryPoint";
 import { html as genHtml } from "../gen/main";
 import { globalStyle } from "../common/globalStyle";
+import { origin } from "../out";
 
 /**
  * OGP の 情報が含まれている HTML を返す
@@ -10,50 +12,59 @@ import { globalStyle } from "../common/globalStyle";
 export const generateHtml = async (
   urlData: d.UrlData
 ): Promise<{
-  readonly htmlOption: genHtml.HtmlOption;
+  readonly htmlAsString: string;
   readonly isNotFound: boolean;
 }> => {
   const coverImageUrlAndDescription = await getCoverImageUrlAndDescription(
     urlData
   );
   return {
-    htmlOption: {
-      appName: "definy",
-      pageName: "definy",
-      iconUrl: commonUrl.iconUrl,
-      coverImageUrl: coverImageUrlAndDescription.imageUrl,
+    htmlAsString: pLib.generateDefinyHtml({
+      iconPath: commonUrl.iconUrl,
+      coverImagePath: coverImageUrlAndDescription.imageUrl,
       description: coverImageUrlAndDescription.description,
-      scriptUrlList: [commonUrl.scriptUrl],
-      twitterCard: "SummaryCard",
       language:
         urlData._ === "Normal"
-          ? urlData.locationAndLanguage.language
-          : d.Language.English,
-      url: undefined,
-      style: globalStyle,
-      themeColor: undefined,
-      children: [
-        genHtml.div(
-          {},
-          loadingMessage(
-            urlData._ === "Normal"
-              ? urlData.locationAndLanguage.language
-              : d.Language.English
-          )
-        ),
-      ],
-    },
+          ? pLib.just(
+              tsLanguageToPureScriptLanguage(
+                urlData.locationAndLanguage.language
+              )
+            )
+          : pLib.nothing(),
+      path:
+        urlData._ === "Normal"
+          ? pLib.just(
+              commonUrl.locationAndLanguageToPLibPathAndSearchParams(
+                urlData.locationAndLanguage
+              )
+            )
+          : pLib.nothing(),
+      origin: origin as pLib.NonEmptyString,
+    }),
     isNotFound: false,
   };
 };
 
-const getCoverImageUrlAndDescription = (
-  urlData: d.UrlData
-): Promise<{
-  readonly imageUrl: URL;
+const tsLanguageToPureScriptLanguage = (language: d.Language) => {
+  switch (language) {
+    case "Japanese":
+      return pLib.japanese;
+    case "English":
+      return pLib.english;
+    case "Esperanto":
+      return pLib.esperanto;
+  }
+};
+
+type ImageUrlAndDescription = {
+  readonly imageUrl: pLib.PathAndSearchParams;
   readonly description: string;
   readonly isNotFound: boolean;
-}> => {
+};
+
+const getCoverImageUrlAndDescription = (
+  urlData: d.UrlData
+): Promise<ImageUrlAndDescription> => {
   switch (urlData._) {
     case "LogInCallback": {
       return Promise.resolve({
@@ -70,17 +81,15 @@ const getCoverImageUrlAndDescription = (
 const getCoverImageUrlAndDescriptionNormal = async ({
   location,
   language,
-}: d.LocationAndLanguage): Promise<{
-  imageUrl: URL;
-  description: string;
-  isNotFound: boolean;
-}> => {
+}: d.LocationAndLanguage): Promise<ImageUrlAndDescription> => {
   switch (location._) {
     case "Project": {
       const projectResource = await lib.apiFunc.getProject(location.projectId);
       if (projectResource.data._ === "Just") {
         return {
-          imageUrl: commonUrl.pngFileUrl(projectResource.data.value.imageHash),
+          imageUrl: commonUrl.pngFilePathAsPathAndSearchParams(
+            projectResource.data.value.imageHash
+          ),
           description:
             projectResource.data.value.name +
             " | definy で作られたプロジェクト",
@@ -97,7 +106,9 @@ const getCoverImageUrlAndDescriptionNormal = async ({
       const user = await lib.apiFunc.getAccount(location.accountId);
       if (user.data._ === "Just") {
         return {
-          imageUrl: commonUrl.pngFileUrl(user.data.value.imageHash),
+          imageUrl: commonUrl.pngFilePathAsPathAndSearchParams(
+            user.data.value.imageHash
+          ),
           description: user.data.value.name + " | definy のアカウント",
           isNotFound: false,
         };

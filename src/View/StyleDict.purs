@@ -5,6 +5,7 @@ module View.StyleDict
   , empty
   , listStyleDictToStyleDict
   , sha256HashValueToAnimationName
+  , simpleDarkModeGlobalCss
   , toCssStatementList
   ) where
 
@@ -107,10 +108,8 @@ viewStyleToSha256HashValue = case _ of
           )
       )
 
-toCssStatementList ::
-  StyleDict ->
-  Css.StatementList
-toCssStatementList (StyleDict { keyframes, style }) =
+simpleDarkModeGlobalCss :: Maybe NonEmptyString -> Css.StatementList
+simpleDarkModeGlobalCss fontNameMaybe =
   Css.StatementList
     { ruleList:
         Array.concat
@@ -121,29 +120,50 @@ toCssStatementList (StyleDict { keyframes, style }) =
             , Css.Rule
                 { selector: Css.Type { elementName: HtmlWellknown.bodyTagName }
                 , declarationList:
-                    [ Css.height100Percent
-                    , Css.margin0
-                    , Css.backgroundColor Color.black
-                    , Css.displayGrid
-                    , Css.boxSizingBorderBox
-                    , Css.alignItems Css.Start
-                    ]
+                    ( Array.concat
+                        [ [ Css.height100Percent
+                          , Css.margin0
+                          , Css.backgroundColor Color.black
+                          , Css.displayGrid
+                          , Css.boxSizingBorderBox
+                          , Css.alignItems Css.Start
+                          ]
+                        , case fontNameMaybe of
+                            Just fontName -> [ Css.fontFamily fontName ]
+                            Nothing -> []
+                        ]
+                    )
                 }
             ]
-          , Array.concatMap
-              styleDictItemToCssRuleList
-              (Map.toUnfoldable style)
           ]
-    , keyframesList:
-        Prelude.map
-          ( \(Tuple.Tuple hashValue keyframeList) ->
-              Css.Keyframes
-                { name: sha256HashValueToAnimationName hashValue
-                , keyframeList
-                }
-          )
-          (Map.toUnfoldable keyframes)
+    , keyframesList: []
     }
+
+toCssStatementList ::
+  StyleDict ->
+  Css.StatementList
+toCssStatementList (StyleDict { keyframes, style }) =
+  let
+    (Css.StatementList { ruleList: globalRuleList }) = simpleDarkModeGlobalCss Nothing
+  in
+    Css.StatementList
+      { ruleList:
+          Array.concat
+            [ globalRuleList
+            , Array.concatMap
+                styleDictItemToCssRuleList
+                (Map.toUnfoldable style)
+            ]
+      , keyframesList:
+          Prelude.map
+            ( \(Tuple.Tuple hashValue keyframeList) ->
+                Css.Keyframes
+                  { name: sha256HashValueToAnimationName hashValue
+                  , keyframeList
+                  }
+            )
+            (Map.toUnfoldable keyframes)
+      }
 
 styleDictItemToCssRuleList :: Tuple.Tuple Hash.Sha256HashValue Data.ViewStyle -> Array Css.Rule
 styleDictItemToCssRuleList (Tuple.Tuple hashValue (Data.ViewStyle { normal, hover })) =

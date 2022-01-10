@@ -10,6 +10,7 @@ module TypeScriptEntryPoint
   , packageNameFromString
   , pathAndSearchParamsFromPath
   , structuredUrlFromOriginAndPathAndSearchParams
+  , module Definy.Html
   ) where
 
 -- PureScript で書かれたコードを呼び出すためのモジュール. bundle-module するためにこのモジュール以外から import してはいけない
@@ -23,6 +24,7 @@ import Data.Maybe as Maybe
 import Data.String.NonEmpty (NonEmptyString)
 import Data.Tuple as Tuple
 import Definy.Build as DefinyBuild
+import Definy.Html (generateDefinyHtml, globalStyleAsString)
 import Effect.Aff as Aff
 import Effect.Uncurried as EffectUncurried
 import Language as Language

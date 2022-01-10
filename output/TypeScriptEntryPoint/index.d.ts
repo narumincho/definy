@@ -91,3 +91,14 @@ export declare const definyBuild: (option: {
   readonly isDevelopment: boolean;
   readonly origin: NonEmptyString;
 }) => void;
+
+export declare const generateDefinyHtml: (option: {
+  readonly description: string;
+  readonly iconPath: PathAndSearchParams;
+  readonly language: Maybe<Language>;
+  readonly coverImagePath: PathAndSearchParams;
+  readonly path: Maybe<PathAndSearchParams>;
+  readonly origin: NonEmptyString;
+}) => string;
+
+export declare const globalStyleAsString: string;

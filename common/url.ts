@@ -1,4 +1,5 @@
 import * as d from "../localData";
+import * as pLib from "../output/TypeScriptEntryPoint";
 import { structuredUrlToUrl, urlToStructuredUrl } from "../gen/url/main";
 import { origin } from "../out";
 
@@ -14,6 +15,15 @@ export const locationAndLanguageToUrl = (
       [languageQueryKey, languageToIdString(locationAndLanguage.language)],
     ]),
   });
+};
+
+export const locationAndLanguageToPLibPathAndSearchParams = (
+  locationAndLanguage: d.LocationAndLanguage
+): pLib.PathAndSearchParams => {
+  // query は あとで作るか, 移植のため不要になる
+  return pLib.pathAndSearchParamsFromPath(
+    locationToPathList(locationAndLanguage.location)
+  );
 };
 
 const locationToPathList = (location: d.Location): ReadonlyArray<string> => {
@@ -132,8 +142,10 @@ const languageFromIdString = (languageAsString: string): d.Language => {
   return defaultLanguage;
 };
 
-export const iconUrl: URL = new URL(`${origin}/icon.png`);
-export const scriptUrl: URL = new URL(`${origin}/main.js`);
+export const iconUrl: pLib.PathAndSearchParams =
+  pLib.pathAndSearchParamsFromPath(["icon.png"]);
+export const scriptUrl: pLib.PathAndSearchParams =
+  pLib.pathAndSearchParamsFromPath(["main.js"]);
 
 export const pngFileUrl = (imageHash: d.ImageHash): URL =>
   new URL(`${origin}${pngFilePath(imageHash)}`);
@@ -141,6 +153,11 @@ export const pngFileUrl = (imageHash: d.ImageHash): URL =>
 export const pngFilePath = (imageHash: d.ImageHash): string => {
   return `/pngFile/${imageHash}.png`;
 };
+
+export const pngFilePathAsPathAndSearchParams = (
+  imageHash: d.ImageHash
+): pLib.PathAndSearchParams =>
+  pLib.pathAndSearchParamsFromPath(["pngFile", `${imageHash}.png`]);
 
 export const apiUrl = (apiName: string): URL =>
   new URL(`${origin}/api/${apiName}`);
