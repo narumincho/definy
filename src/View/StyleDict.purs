@@ -143,6 +143,7 @@ toCssStatementList (StyleDict { keyframes, style }) =
                 }
           )
           (Map.toUnfoldable keyframes)
+    , fontFaceList: []
     }
 
 styleDictItemToCssRuleList :: Tuple.Tuple Hash.Sha256HashValue Data.ViewStyle -> Array Css.Rule
