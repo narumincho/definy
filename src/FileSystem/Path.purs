@@ -13,7 +13,7 @@ module FileSystem.Path
   , distributionFilePathToString
   , distributionFilePathToStringBaseApp
   , distributionFilePathToStringWithoutExtensiton
-  , fileNameWithExtensitonParse
+  , fileNameWithExtensionParse
   , filePathGetFileName
   , filePathToString
   , srcDirectoryPath
@@ -133,8 +133,8 @@ directoryPathPushDirectoryNameList (DirectoryPath directoryPath) list =
   DirectoryPath
     (Prelude.append directoryPath list)
 
-fileNameWithExtensitonParse :: NonEmptyString.NonEmptyString -> Maybe.Maybe { fileName :: NonEmptyString.NonEmptyString, fileType :: Maybe.Maybe FileType.FileType }
-fileNameWithExtensitonParse fileNameWithExtensiton = case NonEmptyString.lastIndexOf (String.Pattern ".") fileNameWithExtensiton of
+fileNameWithExtensionParse :: NonEmptyString.NonEmptyString -> Maybe.Maybe { fileName :: NonEmptyString.NonEmptyString, fileType :: Maybe.Maybe FileType.FileType }
+fileNameWithExtensionParse fileNameWithExtensiton = case NonEmptyString.lastIndexOf (String.Pattern ".") fileNameWithExtensiton of
   Maybe.Just index ->
     let
       afterAndBefore = String.splitAt index (NonEmptyString.toString fileNameWithExtensiton)

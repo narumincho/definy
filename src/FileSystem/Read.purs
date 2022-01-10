@@ -138,7 +138,7 @@ readFilePathRecursionInDirectoryLoop directoryPath =
 
 direntToFilePath :: Path.DirectoryPath -> String -> Maybe (Tuple.Tuple Path.FilePath (Maybe FileType.FileType))
 direntToFilePath directoryPath fileName = case NonEmptyString.fromString fileName of
-  Just direntName -> case Path.fileNameWithExtensitonParse direntName of
+  Just direntName -> case Path.fileNameWithExtensionParse direntName of
     Just parseResult ->
       Just
         ( Tuple.Tuple

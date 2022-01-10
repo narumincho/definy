@@ -22,7 +22,7 @@ main = do
   listUpdateAtOverAutoCreateLast
   listUpdateAtOverAutoCreateAutoCreate
   groupBySize2
-  fileNameWithExtensitonParse
+  fileNameWithExtensionParse
   pureScriptCodeGenerate
 
 listUpdateAtOverAutoCreateInline :: Effect.Effect Unit
@@ -92,11 +92,11 @@ groupBySize2 =
     , expected: [ [ 0, 1 ], [ 2, 3 ], [ 4 ] ]
     }
 
-fileNameWithExtensitonParse :: Effect.Effect Unit
-fileNameWithExtensitonParse =
+fileNameWithExtensionParse :: Effect.Effect Unit
+fileNameWithExtensionParse =
   Assert.assertEqual
     { actual:
-        FileSystemPath.fileNameWithExtensitonParse
+        FileSystemPath.fileNameWithExtensionParse
           (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "sample.test.js"))
     , expected:
         Maybe.Just
