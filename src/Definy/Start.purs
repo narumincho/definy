@@ -1,17 +1,19 @@
-module Definy.Start where
+module Definy.Start
+  ( main
+  ) where
 
+import Console as Console
 import Data.String.NonEmpty as NonEmptyString
 import Definy.Build as Build
 import Effect as Effect
 import Effect.Aff as Aff
-import Effect.Console as Console
 import Prelude as Prelude
-import Type.Proxy as Proxy
 import ProductionOrDevelopment as ProductionOrDevelopment
+import Type.Proxy as Proxy
 
 main :: Effect.Effect Prelude.Unit
 main =
-  Aff.runAff_ Console.logShow
+  Aff.runAff_ (Console.logValue "definy build by PureScript:")
     ( Aff.attempt
         ( Build.build ProductionOrDevelopment.Development
             ( NonEmptyString.nes

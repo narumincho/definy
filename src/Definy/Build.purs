@@ -18,6 +18,7 @@ import Data.Tuple as Tuple
 import Data.UInt as UInt
 import Effect.Aff as Aff
 import Effect.Class as EffectClass
+import Effect.Uncurried as EffectUncurried
 import EsBuild as EsBuild
 import FileSystem.Copy as FileSystemCopy
 import FileSystem.FileType as FileType
@@ -38,7 +39,7 @@ import Type.Proxy as Proxy
 import Util as Util
 
 build :: ProductionOrDevelopment.ProductionOrDevelopment -> NonEmptyString -> Aff.Aff Unit
-build mode _ =
+build mode origin =
   Util.toParallel
     [ FileSystemCopy.copySecretFile
         ( NonEmptyString.nes
@@ -57,6 +58,15 @@ build mode _ =
     , writeFirestoreRules
     , generateCloudStorageRules
     , writeFirebaseJson mode
+    , EffectClass.liftEffect
+        ( EffectUncurried.runEffectFn2
+            buildInTypeScript
+            ( case mode of
+                ProductionOrDevelopment.Development -> true
+                ProductionOrDevelopment.Production -> false
+            )
+            (NonEmptyString.toString origin)
+        )
     ]
 
 codeGenAndBuildClientAndFunctionsScript :: ProductionOrDevelopment.ProductionOrDevelopment -> NonEmptyString.NonEmptyString -> Aff.Aff Unit
@@ -489,3 +499,5 @@ readEsbuildResultClientProgramFile = do
     )
     clientProgramAsString
   pure clientProgramHashValue
+
+foreign import buildInTypeScript :: EffectUncurried.EffectFn2 Boolean String Unit

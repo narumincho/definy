@@ -10,7 +10,7 @@ export const globalStyle = `
   font-family: "Hack";
   font-weight: 400;
   font-style: normal;
-  src: url("/hack-regular-subset.woff2") format("woff2");
+  src: url("/hack_regular_subset.woff2") format("woff2");
 }
 
 ${css.ruleListToString({

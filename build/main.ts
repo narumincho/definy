@@ -26,7 +26,10 @@ export const build = async (mode: d.Mode, origin: string): Promise<void> => {
     isDevelopment: mode === "Develop",
     origin: origin as pLib.NonEmptyString,
   });
+  await buildClientAndFunction(mode, origin);
+};
 
+export const buildClientAndFunction = async (mode: d.Mode, origin: string) => {
   await outputNowModeAndOrigin(mode, origin);
   console.log(`out.ts を出力完了!`);
 
