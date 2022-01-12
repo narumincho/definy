@@ -8,6 +8,8 @@ module Identifier
   , Nil
   , Other
   , class CharSymbolToCharType
+  , class CharTypeListLowercaseToUppercase
+  , class LowercaseToUppercase
   , class SymbolToCharTypeList
   ) where
 
@@ -89,18 +91,60 @@ else instance charSymbolToCharType8 :: CharSymbolToCharType "8" (Digit "8")
 else instance charSymbolToCharType9 :: CharSymbolToCharType "9" (Digit "9")
 else instance charSymbolToCharTypeOther :: CharSymbolToCharType char (Other char)
 
+-- | 扱いやすい Symbol の文字のリスト
 data CharTypeList
 
 foreign import data Cons :: CharType -> CharTypeList -> CharTypeList
 
 foreign import data Nil :: CharTypeList
 
-class SymbolToCharTypeList (symbol :: Symbol) (charTypeList :: CharTypeList) | symbol -> charTypeList
+-- | Symbol を 扱いやすい symbol の文字のリストに変換する
+class SymbolToCharTypeList (symbol :: Symbol) (charTypeList :: CharTypeList) | symbol -> charTypeList, charTypeList -> symbol
 
 instance symbolToCharTypeListNil :: SymbolToCharTypeList "" Nil
 else instance symbolToCharTypeListCons ::
-  ( Symbol.Cons head tail symbol
+  ( SymbolToCharTypeList tail tailCharTypeList
+  , Symbol.Cons head tail symbol
   , CharSymbolToCharType head headChar
-  , SymbolToCharTypeList tail taalCharTypeList
   ) =>
-  SymbolToCharTypeList symbol (Cons headChar taalCharTypeList)
+  SymbolToCharTypeList symbol (Cons headChar tailCharTypeList)
+
+class LowercaseToUppercase (lower :: CharType) (upper :: CharType) | lower -> upper, upper -> lower
+
+instance lowercaseToUppercaseA :: LowercaseToUppercase (AlphabetLowercase "a") (AlphabetUppercase "A")
+else instance lowercaseToUppercaseB :: LowercaseToUppercase (AlphabetLowercase "b") (AlphabetUppercase "B")
+else instance lowercaseToUppercaseC :: LowercaseToUppercase (AlphabetLowercase "c") (AlphabetUppercase "C")
+else instance lowercaseToUppercaseD :: LowercaseToUppercase (AlphabetLowercase "d") (AlphabetUppercase "D")
+else instance lowercaseToUppercaseE :: LowercaseToUppercase (AlphabetLowercase "e") (AlphabetUppercase "E")
+else instance lowercaseToUppercaseF :: LowercaseToUppercase (AlphabetLowercase "f") (AlphabetUppercase "F")
+else instance lowercaseToUppercaseG :: LowercaseToUppercase (AlphabetLowercase "g") (AlphabetUppercase "G")
+else instance lowercaseToUppercaseH :: LowercaseToUppercase (AlphabetLowercase "h") (AlphabetUppercase "H")
+else instance lowercaseToUppercaseI :: LowercaseToUppercase (AlphabetLowercase "i") (AlphabetUppercase "I")
+else instance lowercaseToUppercaseJ :: LowercaseToUppercase (AlphabetLowercase "j") (AlphabetUppercase "J")
+else instance lowercaseToUppercaseK :: LowercaseToUppercase (AlphabetLowercase "k") (AlphabetUppercase "K")
+else instance lowercaseToUppercaseL :: LowercaseToUppercase (AlphabetLowercase "l") (AlphabetUppercase "L")
+else instance lowercaseToUppercaseM :: LowercaseToUppercase (AlphabetLowercase "m") (AlphabetUppercase "M")
+else instance lowercaseToUppercaseN :: LowercaseToUppercase (AlphabetLowercase "n") (AlphabetUppercase "N")
+else instance lowercaseToUppercaseO :: LowercaseToUppercase (AlphabetLowercase "o") (AlphabetUppercase "O")
+else instance lowercaseToUppercaseP :: LowercaseToUppercase (AlphabetLowercase "p") (AlphabetUppercase "P")
+else instance lowercaseToUppercaseQ :: LowercaseToUppercase (AlphabetLowercase "q") (AlphabetUppercase "Q")
+else instance lowercaseToUppercaseR :: LowercaseToUppercase (AlphabetLowercase "r") (AlphabetUppercase "R")
+else instance lowercaseToUppercaseS :: LowercaseToUppercase (AlphabetLowercase "s") (AlphabetUppercase "S")
+else instance lowercaseToUppercaseT :: LowercaseToUppercase (AlphabetLowercase "t") (AlphabetUppercase "T")
+else instance lowercaseToUppercaseU :: LowercaseToUppercase (AlphabetLowercase "u") (AlphabetUppercase "U")
+else instance lowercaseToUppercaseV :: LowercaseToUppercase (AlphabetLowercase "v") (AlphabetUppercase "V")
+else instance lowercaseToUppercaseW :: LowercaseToUppercase (AlphabetLowercase "w") (AlphabetUppercase "W")
+else instance lowercaseToUppercaseX :: LowercaseToUppercase (AlphabetLowercase "x") (AlphabetUppercase "X")
+else instance lowercaseToUppercaseY :: LowercaseToUppercase (AlphabetLowercase "y") (AlphabetUppercase "Y")
+else instance lowercaseToUppercaseZ :: LowercaseToUppercase (AlphabetLowercase "z") (AlphabetUppercase "Z")
+else instance lowercaseToUppercaseOther :: LowercaseToUppercase charType charType
+
+class CharTypeListLowercaseToUppercase (lower :: CharTypeList) (upper :: CharTypeList) | lower -> upper, upper -> lower
+
+instance charTypeListLowercaseToUppercaseNil :: CharTypeListLowercaseToUppercase Nil Nil
+
+instance charTypeListLowercaseToUppercaseCons ::
+  ( LowercaseToUppercase lowerHead upperHead
+  , CharTypeListLowercaseToUppercase lowerTail upperTail
+  ) =>
+  CharTypeListLowercaseToUppercase (Cons lowerHead lowerTail) (Cons upperHead upperTail)
