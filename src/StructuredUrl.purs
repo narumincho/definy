@@ -54,7 +54,7 @@ toString (StructuredUrl { origin, pathAndSearchParams: path }) =
     origin
     (pathAndSearchParamsToString path)
 
-pathAndSearchParamsToString :: PathAndSearchParams -> NonEmptyString.NonEmptyString
+pathAndSearchParamsToString :: PathAndSearchParams -> NonEmptyString
 pathAndSearchParamsToString (PathAndSearchParams { path, searchParams }) =
   let
     pathAsString :: NonEmptyString

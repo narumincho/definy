@@ -9,7 +9,7 @@ import Effect as Effect
 import Effect.Aff as Aff
 import Prelude as Prelude
 import ProductionOrDevelopment as ProductionOrDevelopment
-import Type.Proxy as Proxy
+import Type.Proxy (Proxy(..))
 
 main :: Effect.Effect Prelude.Unit
 main =
@@ -17,7 +17,7 @@ main =
     ( Aff.attempt
         ( Build.build ProductionOrDevelopment.Production
             ( NonEmptyString.nes
-                (Proxy.Proxy :: Proxy.Proxy "https://definy-dev.web.app")
+                (Proxy :: _ "https://definy-dev.web.app")
             )
         )
     )

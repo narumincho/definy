@@ -8,6 +8,7 @@ import Data.Either as Either
 import Data.Map as Map
 import Data.Maybe (Maybe(..))
 import Data.Set as Set
+import Data.String.NonEmpty (NonEmptyString)
 import Data.String.NonEmpty as NonEmptyString
 import Data.UInt as UInt
 import Effect as Effect
@@ -31,7 +32,7 @@ import PureScript.Spago as Spago
 import PureScript.Wellknown as PureScriptWellknown
 import StaticResourceFile as StaticResourceFile
 import StructuredUrl as StructuredUrl
-import Type.Proxy as Proxy
+import Type.Proxy (Proxy(..))
 import Util as Util
 
 main :: Effect.Effect Unit
@@ -40,15 +41,15 @@ main =
     (Aff.attempt (build ProductionOrDevelopment.Production))
 
 appName :: Name.Name
-appName = Name.fromSymbolProxy (Proxy.Proxy :: Proxy.Proxy "creative-record")
+appName = Name.fromSymbolProxy (Proxy :: _ "creative-record")
 
 pureScriptOutputPath :: Path.DirectoryPath
 pureScriptOutputPath =
   Path.DirectoryPath
-    [ Name.fromSymbolProxy (Proxy.Proxy :: Proxy.Proxy "output") ]
+    [ Name.fromSymbolProxy (Proxy :: _ "output") ]
 
 clientProgramFileName :: Name.Name
-clientProgramFileName = Name.fromSymbolProxy (Proxy.Proxy :: Proxy.Proxy "creativeRecordsClientStart")
+clientProgramFileName = Name.fromSymbolProxy (Proxy :: _ "creativeRecordsClientStart")
 
 esbuildClientProgramFileDirectoryPath :: Path.DistributionDirectoryPath
 esbuildClientProgramFileDirectoryPath =
@@ -57,7 +58,7 @@ esbuildClientProgramFileDirectoryPath =
     , folderNameMaybe:
         Just
           ( Name.fromSymbolProxy
-              (Proxy.Proxy :: Proxy.Proxy "client-esbuild-result")
+              (Proxy :: _ "client-esbuild-result")
           )
     }
 
@@ -68,7 +69,7 @@ hostingDirectoryPath =
     , folderNameMaybe:
         Just
           ( Name.fromSymbolProxy
-              (Proxy.Proxy :: Proxy.Proxy "hosting")
+              (Proxy :: _ "hosting")
           )
     }
 
@@ -79,7 +80,7 @@ functionsDirectoryPath =
     , folderNameMaybe:
         Just
           ( Name.fromSymbolProxy
-              (Proxy.Proxy :: Proxy.Proxy "functions")
+              (Proxy :: _ "functions")
           )
     }
 
@@ -172,12 +173,12 @@ writeCodeClientProgramHashValue fileHashValue =
             PureScriptData.ModuleName
               ( NonEmptyArray.cons' creativeRecordModuleName
                   [ NonEmptyString.nes
-                      (Proxy.Proxy :: Proxy.Proxy "ClientProgramHashValue")
+                      (Proxy :: _ "ClientProgramHashValue")
                   ]
               )
         , definitionList:
             [ PureScriptWellknown.definition
-                { name: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "clientProgramHashValue")
+                { name: NonEmptyString.nes (Proxy :: _ "clientProgramHashValue")
                 , document: "クライアント向け JavaScript のファイルのハッシュ値"
                 , pType: PureScriptWellknown.nonEmptyString
                 , expr: PureScriptWellknown.nonEmptyStringLiteral (Hash.toNonEmptyString fileHashValue)
@@ -203,7 +204,7 @@ firestoreSecurityRulesFilePath :: Path.DistributionFilePath
 firestoreSecurityRulesFilePath =
   Path.DistributionFilePath
     { directoryPath: Path.DistributionDirectoryPath { appName, folderNameMaybe: Nothing }
-    , fileName: Name.fromSymbolProxy (Proxy.Proxy :: Proxy.Proxy "firestore")
+    , fileName: Name.fromSymbolProxy (Proxy :: _ "firestore")
     }
 
 cloudStorageSecurityRulesFilePath :: Path.DistributionFilePath
@@ -211,7 +212,7 @@ cloudStorageSecurityRulesFilePath =
   Path.DistributionFilePath
     { directoryPath:
         Path.DistributionDirectoryPath { appName, folderNameMaybe: Nothing }
-    , fileName: Name.fromSymbolProxy (Proxy.Proxy :: Proxy.Proxy "storage")
+    , fileName: Name.fromSymbolProxy (Proxy :: _ "storage")
     }
 
 writeFirebaseJson :: Array StaticResourceFile.StaticResourceFileResult -> Hash.Sha256HashValue -> Aff.Aff Unit
@@ -219,7 +220,7 @@ writeFirebaseJson staticFileDataList clientProgramHashValue = do
   FileSystemWrite.writeJson
     ( Path.DistributionFilePath
         { directoryPath: Path.DistributionDirectoryPath { appName, folderNameMaybe: Nothing }
-        , fileName: Name.fromSymbolProxy (Proxy.Proxy :: Proxy.Proxy "firebase")
+        , fileName: Name.fromSymbolProxy (Proxy :: _ "firebase")
         }
     )
     ( FirebaseJson.toJson
@@ -242,8 +243,8 @@ writeFirebaseJson staticFileDataList clientProgramHashValue = do
             , hostingDistributionPath: hostingDirectoryPath
             , hostingRewites:
                 [ FirebaseJson.Rewrite
-                    { source: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "**")
-                    , function: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "html")
+                    { source: NonEmptyString.nes (Proxy :: _ "**")
+                    , function: NonEmptyString.nes (Proxy :: _ "html")
                     }
                 ]
             , hostingHeaders:
@@ -252,7 +253,7 @@ writeFirebaseJson staticFileDataList clientProgramHashValue = do
                       { source: Hash.toNonEmptyString clientProgramHashValue
                       , headers:
                           [ FirebaseJson.Header
-                              { key: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "content-type")
+                              { key: NonEmptyString.nes (Proxy :: _ "content-type")
                               , value: NonEmptyString.toString MediaType.javaScriptMimeType
                               }
                           ]
@@ -265,7 +266,7 @@ writeFirebaseJson staticFileDataList clientProgramHashValue = do
                             { source: Hash.toNonEmptyString requestPathAndUploadFileName
                             , headers:
                                 [ FirebaseJson.Header
-                                    { key: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "content-type")
+                                    { key: NonEmptyString.nes (Proxy :: _ "content-type")
                                     , value:
                                         NonEmptyString.toString
                                           ( MediaType.toMimeType
@@ -290,8 +291,8 @@ staticResourceBuild = do
   resultList <-
     StaticResourceFile.getStaticResourceFileResult
       ( Path.DirectoryPath
-          [ Name.fromSymbolProxy (Proxy.Proxy :: Proxy.Proxy "narumincho-creative-record")
-          , Name.fromSymbolProxy (Proxy.Proxy :: Proxy.Proxy "resource")
+          [ Name.fromSymbolProxy (Proxy :: _ "narumincho-creative-record")
+          , Name.fromSymbolProxy (Proxy :: _ "resource")
           ]
       )
   copyStaticResouece resultList
@@ -322,15 +323,15 @@ staticResourceCodeGen resultList =
   FileSystemWrite.writePureScript
     (StaticResourceFile.staticFileResultToPureScriptModule staticResourceModuleName resultList)
 
-creativeRecordModuleName :: NonEmptyString.NonEmptyString
-creativeRecordModuleName = NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "CreativeRecord")
+creativeRecordModuleName :: NonEmptyString
+creativeRecordModuleName = NonEmptyString.nes (Proxy :: _ "CreativeRecord")
 
 originModuleName :: PureScriptData.ModuleName
 originModuleName =
   PureScriptData.ModuleName
     ( NonEmptyArray.cons' creativeRecordModuleName
         [ NonEmptyString.nes
-            (Proxy.Proxy :: Proxy.Proxy "Origin")
+            (Proxy :: _ "Origin")
         ]
     )
 
@@ -339,7 +340,7 @@ staticResourceModuleName =
   PureScriptData.ModuleName
     ( NonEmptyArray.cons' creativeRecordModuleName
         [ NonEmptyString.nes
-            (Proxy.Proxy :: Proxy.Proxy "StaticResource")
+            (Proxy :: _ "StaticResource")
         ]
     )
 
@@ -349,7 +350,7 @@ originPureScriptModule productionOrDevelopment =
     { name: originModuleName
     , definitionList:
         [ PureScriptWellknown.definition
-            { name: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "origin")
+            { name: NonEmptyString.nes (Proxy :: _ "origin")
             , document: "アプリケーションのオリジン (コード生成結果)"
             , pType: PureScriptWellknown.nonEmptyString
             , expr:
@@ -357,9 +358,9 @@ originPureScriptModule productionOrDevelopment =
                   ( case productionOrDevelopment of
                       ProductionOrDevelopment.Development ->
                         NonEmptyString.appendString
-                          (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "http://localhost:"))
+                          (NonEmptyString.nes (Proxy :: _ "http://localhost:"))
                           (UInt.toString hostingPortNumber)
-                      ProductionOrDevelopment.Production -> NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "https://narumincho-com-dev.web.app")
+                      ProductionOrDevelopment.Production -> NonEmptyString.nes (Proxy :: _ "https://narumincho-com-dev.web.app")
                   )
             , isExport: true
             }
@@ -372,26 +373,26 @@ runSpagoForFunctions = do
     { mainModuleName:
         PureScriptData.ModuleName
           ( NonEmptyArray.cons'
-              (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "CreativeRecord"))
-              [ NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "Functions") ]
+              (NonEmptyString.nes (Proxy :: _ "CreativeRecord"))
+              [ NonEmptyString.nes (Proxy :: _ "Functions") ]
           )
     , outputJavaScriptPath:
         Path.DistributionFilePath
           { directoryPath: functionsDirectoryPath
-          , fileName: Name.fromSymbolProxy (Proxy.Proxy :: Proxy.Proxy "index")
+          , fileName: Name.fromSymbolProxy (Proxy :: _ "index")
           }
     }
   Console.logValueAsAff "spago で functions のビルドに成功!" {}
 
-usingPackageInFunctions :: Set.Set NonEmptyString.NonEmptyString
+usingPackageInFunctions :: Set.Set NonEmptyString
 usingPackageInFunctions =
   Set.fromFoldable
     [ NonEmptyString.nes
-        (Proxy.Proxy :: Proxy.Proxy "firebase-admin")
+        (Proxy :: _ "firebase-admin")
     , NonEmptyString.nes
-        (Proxy.Proxy :: Proxy.Proxy "firebase-functions")
+        (Proxy :: _ "firebase-functions")
     , NonEmptyString.nes
-        (Proxy.Proxy :: Proxy.Proxy "sha256-uint8array")
+        (Proxy :: _ "sha256-uint8array")
     ]
 
 writePackageJsonForFunctions :: Aff.Aff Unit
@@ -407,35 +408,35 @@ writePackageJsonForFunctions = do
               { directoryPath: functionsDirectoryPath
               , fileName:
                   Name.fromSymbolProxy
-                    (Proxy.Proxy :: Proxy.Proxy "package")
+                    (Proxy :: _ "package")
               }
           )
           (PackageJson.toJson packageJson)
       Nothing -> Console.logValueAsAff "名前のエラー" {}
 
-packageJsonForFunctions :: Map.Map NonEmptyString.NonEmptyString NonEmptyString.NonEmptyString -> Maybe PackageJson.PackageJsonInput
+packageJsonForFunctions :: Map.Map NonEmptyString NonEmptyString -> Maybe PackageJson.PackageJsonInput
 packageJsonForFunctions dependencies =
   Prelude.map
     ( \name ->
         PackageJson.PackageJsonInput
           { name
-          , version: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "0.0.0")
-          , description: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "ナルミンチョの創作記録 https://narumincho.com")
-          , gitHubAccountName: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "narumincho")
-          , gitHubRepositoryName: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "definy")
-          , entryPoint: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "./index.js")
+          , version: NonEmptyString.nes (Proxy :: _ "0.0.0")
+          , description: NonEmptyString.nes (Proxy :: _ "ナルミンチョの創作記録 https://narumincho.com")
+          , gitHubAccountName: NonEmptyString.nes (Proxy :: _ "narumincho")
+          , gitHubRepositoryName: NonEmptyString.nes (Proxy :: _ "definy")
+          , entryPoint: NonEmptyString.nes (Proxy :: _ "./index.js")
           , homepage:
               StructuredUrl.StructuredUrl
-                { origin: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "https://narumincho.com")
+                { origin: NonEmptyString.nes (Proxy :: _ "https://narumincho.com")
                 , pathAndSearchParams: StructuredUrl.pathAndSearchParams [] Map.empty
                 }
           , author:
               NonEmptyString.nes
-                ( Proxy.Proxy ::
-                    Proxy.Proxy
+                ( Proxy ::
+                    _
                       "narumincho <narumincho.starfy@gmail.com> (https://narumincho.com)"
                 )
-          , nodeVersion: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "16")
+          , nodeVersion: NonEmptyString.nes (Proxy :: _ "16")
           , dependencies
           , typeFilePath: Nothing
           }

@@ -7,6 +7,7 @@ module StaticResourceFile
 import Prelude
 import Data.Maybe as Maybe
 import Data.String as String
+import Data.String.NonEmpty (NonEmptyString)
 import Data.String.NonEmpty as NonEmptyString
 import Data.Tuple as Tuple
 import Effect.Aff as Aff
@@ -27,7 +28,7 @@ newtype StaticResourceFileResult
   = StaticResourceFileResult
   { {- 入力のファイル名. オリジナルのファイル名 -} originalFilePath :: Path.FilePath
   , fileType :: Maybe.Maybe FileType.FileType
-  , fileId :: NonEmptyString.NonEmptyString
+  , fileId :: NonEmptyString
   {- 
     Firebase Hosting などにアップロードするファイル名. 拡張子は含まれない 
     ファイルの中身のハッシュ値になる.

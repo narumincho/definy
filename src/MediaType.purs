@@ -7,8 +7,9 @@ module MediaType
   ) where
 
 import Data.Maybe as Maybe
+import Data.String.NonEmpty (NonEmptyString)
 import Data.String.NonEmpty as NonEmptyString
-import Type.Proxy as Proxy
+import Type.Proxy (Proxy(..))
 
 -- | definy, ナルミンチョの創作記録で扱う http のレスポンスで返す content-type の値
 data MediaType
@@ -18,32 +19,32 @@ data MediaType
   | {- application/json -} Json
   | {- font/woff2 -} WebOpenFontFormat2
 
-toMimeType :: Maybe.Maybe MediaType -> NonEmptyString.NonEmptyString
+toMimeType :: Maybe.Maybe MediaType -> NonEmptyString
 toMimeType = case _ of
   Maybe.Just Png -> pngMimeType
   Maybe.Just JavaScript -> javaScriptMimeType
   Maybe.Just Html -> htmlMimeType
   Maybe.Just Json ->
     NonEmptyString.nes
-      (Proxy.Proxy :: Proxy.Proxy "application/json")
+      (Proxy :: _ "application/json")
   Maybe.Just WebOpenFontFormat2 ->
     NonEmptyString.nes
-      (Proxy.Proxy :: Proxy.Proxy "font/woff2")
+      (Proxy :: _ "font/woff2")
   Maybe.Nothing ->
     NonEmptyString.nes
-      (Proxy.Proxy :: Proxy.Proxy "application/octet-stream")
+      (Proxy :: _ "application/octet-stream")
 
-htmlMimeType :: NonEmptyString.NonEmptyString
+htmlMimeType :: NonEmptyString
 htmlMimeType =
   NonEmptyString.nes
-    (Proxy.Proxy :: Proxy.Proxy "text/html")
+    (Proxy :: _ "text/html")
 
-javaScriptMimeType :: NonEmptyString.NonEmptyString
+javaScriptMimeType :: NonEmptyString
 javaScriptMimeType =
   NonEmptyString.nes
-    (Proxy.Proxy :: Proxy.Proxy "text/javascript")
+    (Proxy :: _ "text/javascript")
 
-pngMimeType :: NonEmptyString.NonEmptyString
+pngMimeType :: NonEmptyString
 pngMimeType =
   NonEmptyString.nes
-    (Proxy.Proxy :: Proxy.Proxy "image/png")
+    (Proxy :: _ "image/png")

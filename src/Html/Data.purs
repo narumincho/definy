@@ -6,12 +6,12 @@ module Html.Data
 
 import Data.Map as Map
 import Data.Maybe as Maybe
-import Data.String.NonEmpty as NonEmptyString
+import Data.String.NonEmpty (NonEmptyString)
 
 newtype RawHtmlElement
   = RawHtmlElement
-  { name :: NonEmptyString.NonEmptyString
-  , attributes :: Map.Map NonEmptyString.NonEmptyString (Maybe.Maybe String)
+  { name :: NonEmptyString
+  , attributes :: Map.Map NonEmptyString (Maybe.Maybe String)
   , children :: HtmlChildren
   }
 
@@ -21,5 +21,5 @@ data HtmlChildren
   | RawText String
   | NoEndTag
 
-htmlElement :: NonEmptyString.NonEmptyString -> Map.Map NonEmptyString.NonEmptyString (Maybe.Maybe String) -> HtmlChildren -> RawHtmlElement
+htmlElement :: NonEmptyString -> Map.Map NonEmptyString (Maybe.Maybe String) -> HtmlChildren -> RawHtmlElement
 htmlElement name attributes children = RawHtmlElement { name, attributes, children }

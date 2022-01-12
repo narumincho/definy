@@ -21,6 +21,7 @@ import Data.Array as Array
 import Data.Maybe as Maybe
 import Data.Ord as Ord
 import Data.String as String
+import Data.String.NonEmpty (NonEmptyString)
 import Data.String.NonEmpty as NonEmptyString
 import Data.Symbol as Symbol
 import Data.Tuple as Tuple
@@ -94,7 +95,7 @@ toParallelWithReturn list = Parallel.parSequence list
 tupleListToJson :: Array (Tuple.Tuple String ArgonautCore.Json) -> ArgonautCore.Json
 tupleListToJson list = ArgonautCore.fromObject (Object.fromFoldable list)
 
-jsonFromNonEmptyString :: NonEmptyString.NonEmptyString -> ArgonautCore.Json
+jsonFromNonEmptyString :: NonEmptyString -> ArgonautCore.Json
 jsonFromNonEmptyString nonEmptyString =
   ArgonautCore.fromString
     (NonEmptyString.toString nonEmptyString)

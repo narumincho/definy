@@ -4,13 +4,13 @@ import CreativeRecord.Article.Data as Data
 import CreativeRecord.Element as Element
 import CreativeRecord.StaticResource as StaticResource
 import Data.String.NonEmpty as NonEmptyString
-import Type.Proxy as Proxy
+import Type.Proxy (Proxy(..))
 import View.Helper as ViewHelper
 
 view :: Data.Article
 view =
   Data.Article
-    { title: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "メッセージウィンドウの話")
+    { title: NonEmptyString.nes (Proxy :: _ "メッセージウィンドウの話")
     , imagePath: StaticResource.windowPng
     , children:
         [ ViewHelper.boxY

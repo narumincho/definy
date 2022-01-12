@@ -68,11 +68,11 @@ declarationValue (Declaration { value }) = value
 
 data Selector
   = Class
-    { className :: NonEmptyString.NonEmptyString
+    { className :: NonEmptyString
     , isHover :: Boolean
     }
   | Type
-    { elementName :: NonEmptyString.NonEmptyString
+    { elementName :: NonEmptyString
     }
   | Universal
 
@@ -128,7 +128,7 @@ newtype StatementList
 
 newtype Keyframes
   = Keyframes
-  { name :: NonEmptyString.NonEmptyString
+  { name :: NonEmptyString
   , keyframeList :: Array Keyframe
   }
 
@@ -337,7 +337,7 @@ gridTemplateColumns oneFrCount =
           (NonEmptyArray.replicate oneFrCount "1fr")
     }
 
-animation :: NonEmptyString.NonEmptyString -> Number -> Declaration
+animation :: NonEmptyString -> Number -> Declaration
 animation animationName duration =
   Declaration
     { property: NonEmptyString.nes (Proxy :: _ "animation")

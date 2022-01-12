@@ -8,6 +8,7 @@ import Data.Map as Map
 import Data.Maybe (Maybe(..))
 import Data.Maybe as Maybe
 import Data.Set as Set
+import Data.String.NonEmpty (NonEmptyString)
 import Data.String.NonEmpty as NonEmptyString
 import Data.Tuple as Tuple
 import Effect as Effect
@@ -157,14 +158,14 @@ writePackageJson = do
           (PackageJson.toJson packageJson)
       Maybe.Nothing -> ConsoleValue.logValueAsAff "名前のエラー" {}
 
-usingPackageInGen :: Set.Set NonEmptyString.NonEmptyString
+usingPackageInGen :: Set.Set NonEmptyString
 usingPackageInGen =
   Set.singleton
     ( NonEmptyString.nes
         (Proxy :: _ "sha256-uint8array")
     )
 
-generatePackageJson :: Map.Map NonEmptyString.NonEmptyString NonEmptyString.NonEmptyString -> Maybe.Maybe PackageJson.PackageJsonInput
+generatePackageJson :: Map.Map NonEmptyString NonEmptyString -> Maybe.Maybe PackageJson.PackageJsonInput
 generatePackageJson dependencies =
   map
     ( \name ->

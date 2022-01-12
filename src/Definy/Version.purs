@@ -1,7 +1,7 @@
 module Definy.Version (Version(..)) where
 
-import Data.String.NonEmpty as NonEmptyString
+import Data.String.NonEmpty (NonEmptyString)
 
 data Version
-  = Release NonEmptyString.NonEmptyString
+  = Release NonEmptyString
   | Development

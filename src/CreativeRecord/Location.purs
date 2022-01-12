@@ -12,7 +12,7 @@ import Data.Map as Map
 import Data.String.NonEmpty (NonEmptyString)
 import Data.String.NonEmpty as NonEmptyString
 import StructuredUrl as StructuredUrl
-import Type.Proxy as Proxy
+import Type.Proxy (Proxy(..))
 
 data Location
   = Top
@@ -101,64 +101,64 @@ articleLocationFromPath (StructuredUrl.PathAndSearchParams { path, searchParams 
 powershellRecursionPath :: NonEmptyString
 powershellRecursionPath =
   NonEmptyString.nes
-    (Proxy.Proxy :: Proxy.Proxy "powershell-recursion")
+    (Proxy :: _ "powershell-recursion")
 
 svgBasicPath :: NonEmptyString
 svgBasicPath =
   NonEmptyString.nes
-    (Proxy.Proxy :: Proxy.Proxy "svg-basic")
+    (Proxy :: _ "svg-basic")
 
 svgStandaloneEmbedPath :: NonEmptyString
 svgStandaloneEmbedPath =
   NonEmptyString.nes
-    (Proxy.Proxy :: Proxy.Proxy "svg-standalone-embed")
+    (Proxy :: _ "svg-standalone-embed")
 
 aboutDesiredRoutePath :: NonEmptyString
 aboutDesiredRoutePath =
   NonEmptyString.nes
-    (Proxy.Proxy :: Proxy.Proxy "about-desired-route")
+    (Proxy :: _ "about-desired-route")
 
 messageWindowPath :: NonEmptyString
 messageWindowPath =
   NonEmptyString.nes
-    (Proxy.Proxy :: Proxy.Proxy "message-window")
+    (Proxy :: _ "message-window")
 
 desiredRouteFontPath :: NonEmptyString
 desiredRouteFontPath =
   NonEmptyString.nes
-    (Proxy.Proxy :: Proxy.Proxy "desired-route-font")
+    (Proxy :: _ "desired-route-font")
 
 listSelectionBehaviorPath :: NonEmptyString
 listSelectionBehaviorPath =
   NonEmptyString.nes
-    (Proxy.Proxy :: Proxy.Proxy "list-selection-behavior")
+    (Proxy :: _ "list-selection-behavior")
 
 uiColorPath :: NonEmptyString
 uiColorPath =
   NonEmptyString.nes
-    (Proxy.Proxy :: Proxy.Proxy "ui-color")
+    (Proxy :: _ "ui-color")
 
 desiredRouteEncounterPath :: NonEmptyString
 desiredRouteEncounterPath =
   NonEmptyString.nes
-    (Proxy.Proxy :: Proxy.Proxy "desired-route-encounter")
+    (Proxy :: _ "desired-route-encounter")
 
 starPath :: NonEmptyString
 starPath =
   NonEmptyString.nes
-    (Proxy.Proxy :: Proxy.Proxy "star")
+    (Proxy :: _ "star")
 
 desiredRouteMonster :: NonEmptyString
 desiredRouteMonster =
   NonEmptyString.nes
-    (Proxy.Proxy :: Proxy.Proxy "desired-route-monster")
+    (Proxy :: _ "desired-route-monster")
 
 nPetitcomIme :: NonEmptyString
 nPetitcomIme =
   NonEmptyString.nes
-    (Proxy.Proxy :: Proxy.Proxy "n-petitcom-ime")
+    (Proxy :: _ "n-petitcom-ime")
 
 cpsLabAdventCalendar2021Path :: NonEmptyString
 cpsLabAdventCalendar2021Path =
   NonEmptyString.nes
-    (Proxy.Proxy :: Proxy.Proxy "cps-lab-advent-calendar-2021")
+    (Proxy :: _ "cps-lab-advent-calendar-2021")

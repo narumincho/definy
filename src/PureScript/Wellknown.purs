@@ -21,11 +21,12 @@ module PureScript.Wellknown
 import Data.Array.NonEmpty as NonEmptyArray
 import Data.Map as Map
 import Data.String as String
+import Data.String.NonEmpty (NonEmptyString)
 import Data.String.NonEmpty as NonEmptyString
 import Prelude as Prelude
 import PureScript.Data as Data
 import StructuredUrl as StructuredUrl
-import Type.Proxy as Proxy
+import Type.Proxy (Proxy(..))
 
 data PType :: Type -> Type
 -- | PureScript の型. 型を間違えないように, 型を幽霊型としてつけている
@@ -43,7 +44,7 @@ primModuleName :: Data.ModuleName
 primModuleName =
   Data.ModuleName
     ( NonEmptyArray.singleton
-        (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "Prim"))
+        (NonEmptyString.nes (Proxy :: _ "Prim"))
     )
 
 -- | https://pursuit.purescript.org/builtins/docs/Prim#t:String
@@ -52,7 +53,7 @@ primString =
   PType
     ( Data.TypeData
         { moduleName: primModuleName
-        , name: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "String")
+        , name: NonEmptyString.nes (Proxy :: _ "String")
         }
     )
 
@@ -61,8 +62,8 @@ primString =
 dataMapModuleName :: Data.ModuleName
 dataMapModuleName =
   Data.ModuleName
-    ( NonEmptyArray.cons' (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "Data"))
-        [ NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "Map") ]
+    ( NonEmptyArray.cons' (NonEmptyString.nes (Proxy :: _ "Data"))
+        [ NonEmptyString.nes (Proxy :: _ "Map") ]
     )
 
 -- | https://pursuit.purescript.org/packages/purescript-ordered-collections/2.0.2/docs/Data.Map#v:empty
@@ -71,7 +72,7 @@ dataMapEmpty =
   Expr
     ( Data.Variable
         { moduleName: dataMapModuleName
-        , name: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "empty")
+        , name: NonEmptyString.nes (Proxy :: _ "empty")
         }
     )
 
@@ -80,17 +81,17 @@ dataMapEmpty =
 dataStringNonEmptyModuleName :: Data.ModuleName
 dataStringNonEmptyModuleName =
   Data.ModuleName
-    ( NonEmptyArray.cons' (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "Data"))
-        [ NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "String")
-        , NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "NonEmpty")
+    ( NonEmptyArray.cons' (NonEmptyString.nes (Proxy :: _ "Data"))
+        [ NonEmptyString.nes (Proxy :: _ "String")
+        , NonEmptyString.nes (Proxy :: _ "NonEmpty")
         ]
     )
 
 dataStringModuleName :: Data.ModuleName
 dataStringModuleName =
   Data.ModuleName
-    ( NonEmptyArray.cons' (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "Data"))
-        [ NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "String") ]
+    ( NonEmptyArray.cons' (NonEmptyString.nes (Proxy :: _ "Data"))
+        [ NonEmptyString.nes (Proxy :: _ "String") ]
     )
 
 -- | https://pursuit.purescript.org/packages/purescript-strings/5.0.0/docs/Data.String#v:singleton
@@ -101,7 +102,7 @@ stringSingleton (Expr codePoint) =
         { function:
             Data.Variable
               { moduleName: dataStringModuleName
-              , name: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "singleton")
+              , name: NonEmptyString.nes (Proxy :: _ "singleton")
               }
         , argument: codePoint
         }
@@ -114,7 +115,7 @@ nonEmptyStringNes proxy =
     { function:
         Data.Variable
           { moduleName: dataStringNonEmptyModuleName
-          , name: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "nes")
+          , name: NonEmptyString.nes (Proxy :: _ "nes")
           }
     , argument: proxy
     }
@@ -124,21 +125,21 @@ nonEmptyStringNes proxy =
 typeProxyModuleName :: Data.ModuleName
 typeProxyModuleName =
   Data.ModuleName
-    ( NonEmptyArray.cons' (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "Type"))
-        [ NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "Proxy") ]
+    ( NonEmptyArray.cons' (NonEmptyString.nes (Proxy :: _ "Type"))
+        [ NonEmptyString.nes (Proxy :: _ "Proxy") ]
     )
 
--- | Proxy.Proxy :: Proxy.Proxy "{str}"
+-- | Proxy :: _ "{str}"
 proxyProxyWithTypeAnotation :: String -> Data.ExprData
 proxyProxyWithTypeAnotation str =
   Data.TypeAnnotation
-    { expr: Data.Variable { moduleName: typeProxyModuleName, name: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "Proxy") }
+    { expr: Data.Variable { moduleName: typeProxyModuleName, name: NonEmptyString.nes (Proxy :: _ "Proxy") }
     , pType:
         Data.TypeWithArgument
           { function:
               Data.TypeData
                 { moduleName: typeProxyModuleName
-                , name: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "Proxy")
+                , name: NonEmptyString.nes (Proxy :: _ "Proxy")
                 }
           , argument: Data.SymbolLiteral str
           }
@@ -151,9 +152,9 @@ stringLiteral :: String -> Expr String
 stringLiteral str = Expr (Data.StringLiteral str)
 
 -- | ```purs
--- | NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "{str}")
+-- | NonEmptyString.nes (Proxy :: _ "{str}")
 -- | ```
-nonEmptyStringLiteral :: NonEmptyString.NonEmptyString -> Expr NonEmptyString.NonEmptyString
+nonEmptyStringLiteral :: NonEmptyString -> Expr NonEmptyString
 nonEmptyStringLiteral str =
   Expr
     ( nonEmptyStringNes
@@ -162,12 +163,12 @@ nonEmptyStringLiteral str =
         )
     )
 
-nonEmptyString :: PType NonEmptyString.NonEmptyString
+nonEmptyString :: PType NonEmptyString
 nonEmptyString =
   PType
     ( Data.TypeData
         { moduleName: dataStringNonEmptyModuleName
-        , name: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "NonEmptyString")
+        , name: NonEmptyString.nes (Proxy :: _ "NonEmptyString")
         }
     )
 
@@ -185,15 +186,15 @@ call (Expr function) (Expr argument) =
         { function, argument }
     )
 
-variable :: forall t. { moduleName :: Data.ModuleName, name :: NonEmptyString.NonEmptyString } -> Expr t
+variable :: forall t. { moduleName :: Data.ModuleName, name :: NonEmptyString } -> Expr t
 variable option = Expr (Data.Variable option)
 
-tag :: forall t. { moduleName :: Data.ModuleName, name :: NonEmptyString.NonEmptyString } -> Expr t
+tag :: forall t. { moduleName :: Data.ModuleName, name :: NonEmptyString } -> Expr t
 tag option = Expr (Data.Tag option)
 
 definition ::
   forall t.
-  { name :: NonEmptyString.NonEmptyString
+  { name :: NonEmptyString
   , document :: String
   , pType :: PType t
   , expr :: Expr t
@@ -217,7 +218,7 @@ definition option =
 pTypeFrom ::
   forall t.
   { moduleName :: Data.ModuleName
-  , name :: NonEmptyString.NonEmptyString
+  , name :: NonEmptyString
   } ->
   PType t
 pTypeFrom option =
@@ -232,17 +233,17 @@ pTypeWithArgument (PType function) (PType argument) =
 -- | ```purs
 -- | StructuredUrl.fromPath
 -- | ```
-structuredUrlFromPath :: Expr (Array NonEmptyString.NonEmptyString -> StructuredUrl.PathAndSearchParams)
+structuredUrlFromPath :: Expr (Array NonEmptyString -> StructuredUrl.PathAndSearchParams)
 structuredUrlFromPath =
   variable
     { moduleName:
         Data.ModuleName
           ( NonEmptyArray.singleton
               ( NonEmptyString.nes
-                  (Proxy.Proxy :: Proxy.Proxy "StructuredUrl")
+                  (Proxy :: _ "StructuredUrl")
               )
           )
-    , name: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "fromPath")
+    , name: NonEmptyString.nes (Proxy :: _ "fromPath")
     }
 
 structuredUrlPathAndSearchParams :: PType (StructuredUrl.PathAndSearchParams)
@@ -251,7 +252,7 @@ structuredUrlPathAndSearchParams =
     { moduleName:
         Data.ModuleName
           ( NonEmptyArray.singleton
-              (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "StructuredUrl"))
+              (NonEmptyString.nes (Proxy :: _ "StructuredUrl"))
           )
-    , name: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "PathAndSearchParams")
+    , name: NonEmptyString.nes (Proxy :: _ "PathAndSearchParams")
     }
