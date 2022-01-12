@@ -13,6 +13,7 @@ import Effect.Aff as Aff
 import Effect.Class as EffectClass
 import Effect.Console as Console
 import FileSystem.FileType as FileType
+import FileSystem.Name as Name
 import FileSystem.Path as Path
 import FileSystem.Read as FileSystemRead
 import Hash as Hash
@@ -84,7 +85,10 @@ filePathToStaticResourceFileResultAff filePath fileTypeMaybe = do
         { originalFilePath: filePath
         , fileType: fileTypeMaybe
         , fileId:
-            NonEmptyString.appendString (Path.filePathGetFileName filePath)
+            NonEmptyString.appendString
+              ( Name.toNonEmptyString
+                  (Path.filePathGetFileName filePath)
+              )
               ( case fileTypeMaybe of
                   Maybe.Just fileType ->
                     firstUppercase

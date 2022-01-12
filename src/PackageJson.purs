@@ -23,11 +23,12 @@ import Data.String.NonEmpty as NonEmptyString
 import Data.Tuple as Tuple
 import Effect.Aff as Aff
 import FileSystem.FileType as FileType
+import FileSystem.Name as Name
 import FileSystem.Path as Path
 import FileSystem.Read as FileSystemRead
 import Foreign.Object as Object
 import StructuredUrl as StructuredUrl
-import Type.Proxy as Proxy
+import Type.Proxy (Proxy(..))
 import Util as Util
 
 newtype Name
@@ -181,8 +182,7 @@ readPackageVersionFromRootPackageJson usingPackageNameSet = do
     FileSystemRead.readJsonFile
       ( Path.FilePath
           { directoryPath: Path.DirectoryPath []
-          , fileName:
-              NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "package")
+          , fileName: Name.fromSymbolProxy (Proxy :: _ "package")
           }
       )
       FileType.Json

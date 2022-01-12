@@ -20,51 +20,54 @@ module FileSystem.Path
   ) where
 
 import Data.Array as Array
-import Data.Maybe as Maybe
+import Data.Maybe (Maybe(..))
 import Data.String as String
+import Data.String.NonEmpty (NonEmptyString)
 import Data.String.NonEmpty as NonEmptyString
+import Data.Tuple as Tuple
 import FileSystem.FileType as FileType
+import FileSystem.Name as Name
 import Prelude as Prelude
-import Type.Proxy as Proxy
+import Type.Proxy (Proxy(..))
 
 -- | 基本的な出力先の `distribution` 内の ディレクトリのパス
 newtype DistributionDirectoryPath
   = DistributionDirectoryPath
-  { appName :: NonEmptyString.NonEmptyString
-  , folderNameMaybe :: Maybe.Maybe NonEmptyString.NonEmptyString
+  { appName :: Name.Name
+  , folderNameMaybe :: Maybe Name.Name
   }
 
 -- | 基本的な出力先の `distribution` 内の ファイルパス
 newtype DistributionFilePath
   = DistributionFilePath
   { directoryPath :: DistributionDirectoryPath
-  , fileName :: NonEmptyString.NonEmptyString
+  , fileName :: Name.Name
   }
 
 -- | リポジトリのルートをルートとした ディレクトリのパス
 newtype DirectoryPath
-  = DirectoryPath (Array NonEmptyString.NonEmptyString)
+  = DirectoryPath (Array Name.Name)
 
 -- | リポジトリのルートをルートとした ファイルパス
 newtype FilePath
   = FilePath
   { directoryPath :: DirectoryPath
-  , fileName :: NonEmptyString.NonEmptyString
+  , fileName :: Name.Name
   }
 
 -- | ファイル名を取得する
-filePathGetFileName :: FilePath -> NonEmptyString.NonEmptyString
+filePathGetFileName :: FilePath -> Name.Name
 filePathGetFileName (FilePath { fileName }) = fileName
 
-directoryPathToString :: DirectoryPath -> NonEmptyString.NonEmptyString
+directoryPathToString :: DirectoryPath -> NonEmptyString
 directoryPathToString (DirectoryPath directoryNameList) =
   if Array.null directoryNameList then
     (NonEmptyString.singleton (String.codePointFromChar '.'))
   else
-    NonEmptyString.appendString (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "./"))
-      (NonEmptyString.joinWith "/" directoryNameList)
+    NonEmptyString.appendString (NonEmptyString.nes (Proxy :: _ "./"))
+      (NonEmptyString.joinWith "/" (Prelude.map Name.toNonEmptyString directoryNameList))
 
-filePathToString :: FilePath -> Maybe.Maybe FileType.FileType -> NonEmptyString.NonEmptyString
+filePathToString :: FilePath -> Maybe FileType.FileType -> NonEmptyString
 filePathToString (FilePath { directoryPath, fileName }) fileTypeMaybe =
   Prelude.append
     ( Prelude.append
@@ -72,27 +75,27 @@ filePathToString (FilePath { directoryPath, fileName }) fileTypeMaybe =
         (NonEmptyString.singleton (String.codePointFromChar '/'))
     )
     ( case fileTypeMaybe of
-        Maybe.Just fileType -> fileNameWithFileTypeToString fileName fileType
-        Maybe.Nothing -> fileName
+        Just fileType -> fileNameWithFileTypeToString fileName fileType
+        Nothing -> Name.toNonEmptyString fileName
     )
 
-fileNameWithFileTypeToString :: NonEmptyString.NonEmptyString -> FileType.FileType -> NonEmptyString.NonEmptyString
+fileNameWithFileTypeToString :: Name.Name -> FileType.FileType -> NonEmptyString
 fileNameWithFileTypeToString fileName fileType =
   Prelude.append
-    fileName
+    (Name.toNonEmptyString fileName)
     (NonEmptyString.prependString "." (FileType.toExtension fileType))
 
-distributionDirectoryPathToString :: DistributionDirectoryPath -> NonEmptyString.NonEmptyString
+distributionDirectoryPathToString :: DistributionDirectoryPath -> NonEmptyString
 distributionDirectoryPathToString distributionDirectoryPath =
   directoryPathToString
     ( distributionDirectoryPathToDirectoryPath distributionDirectoryPath
     )
 
-distributionFilePathToString :: DistributionFilePath -> FileType.FileType -> NonEmptyString.NonEmptyString
+distributionFilePathToString :: DistributionFilePath -> FileType.FileType -> NonEmptyString
 distributionFilePathToString distributionFilePath fileType =
   filePathToString
     (distributionFilePathToFilePath distributionFilePath)
-    (Maybe.Just fileType)
+    (Just fileType)
 
 distributionFilePathToFilePath :: DistributionFilePath -> FilePath
 distributionFilePathToFilePath (DistributionFilePath { directoryPath, fileName }) =
@@ -102,7 +105,7 @@ distributionFilePathToFilePath (DistributionFilePath { directoryPath, fileName }
       }
   )
 
-distributionFilePathToStringWithoutExtensiton :: DistributionFilePath -> NonEmptyString.NonEmptyString
+distributionFilePathToStringWithoutExtensiton :: DistributionFilePath -> NonEmptyString
 distributionFilePathToStringWithoutExtensiton (DistributionFilePath { directoryPath, fileName }) =
   filePathToString
     ( FilePath
@@ -110,16 +113,16 @@ distributionFilePathToStringWithoutExtensiton (DistributionFilePath { directoryP
         , fileName
         }
     )
-    Maybe.Nothing
+    Nothing
 
 distributionDirectoryPathToDirectoryPath :: DistributionDirectoryPath -> DirectoryPath
 distributionDirectoryPathToDirectoryPath (DistributionDirectoryPath { appName, folderNameMaybe }) =
   ( DirectoryPath
       ( Array.concat
-          [ [ NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "distribution"), appName ]
+          [ [ Name.fromSymbolProxy (Proxy :: _ "distribution"), appName ]
           , case folderNameMaybe of
-              Maybe.Just folderName -> [ folderName ]
-              Maybe.Nothing -> []
+              Just folderName -> [ folderName ]
+              Nothing -> []
           ]
       )
   )
@@ -128,41 +131,52 @@ distributionFilePathToDirectoryPath :: DistributionFilePath -> DistributionDirec
 distributionFilePathToDirectoryPath (DistributionFilePath { directoryPath }) = directoryPath
 
 -- | ディレクトリパスのさらに深いところを指定する
-directoryPathPushDirectoryNameList :: DirectoryPath -> Array NonEmptyString.NonEmptyString -> DirectoryPath
+directoryPathPushDirectoryNameList :: DirectoryPath -> Array Name.Name -> DirectoryPath
 directoryPathPushDirectoryNameList (DirectoryPath directoryPath) list =
   DirectoryPath
     (Prelude.append directoryPath list)
 
-fileNameWithExtensionParse :: NonEmptyString.NonEmptyString -> Maybe.Maybe { fileName :: NonEmptyString.NonEmptyString, fileType :: Maybe.Maybe FileType.FileType }
-fileNameWithExtensionParse fileNameWithExtensiton = case NonEmptyString.lastIndexOf (String.Pattern ".") fileNameWithExtensiton of
-  Maybe.Just index ->
+fileNameWithExtensionParse ::
+  String ->
+  Maybe { fileName :: Name.Name, fileType :: Maybe FileType.FileType }
+fileNameWithExtensionParse fileNameWithExtension = case String.lastIndexOf (String.Pattern ".") fileNameWithExtension of
+  Just index ->
     let
-      afterAndBefore = String.splitAt index (NonEmptyString.toString fileNameWithExtensiton)
+      afterAndBefore = String.splitAt index fileNameWithExtension
     in
-      Prelude.map
-        ( \fileName ->
-            { fileName: fileName
-            , fileType: FileType.fromExtension (String.drop 1 afterAndBefore.after)
-            }
-        )
-        (NonEmptyString.fromString afterAndBefore.before)
-  Maybe.Nothing -> Maybe.Just { fileName: fileNameWithExtensiton, fileType: Maybe.Nothing }
+      case Tuple.Tuple
+          (Name.fromString afterAndBefore.before)
+          (FileType.fromExtension (String.drop 1 afterAndBefore.after)) of
+        Tuple.Tuple (Just fileName) (Just fileType) ->
+          Just
+            { fileName, fileType: Just fileType }
+        Tuple.Tuple _ _ -> Nothing
+  Nothing -> case Name.fromString fileNameWithExtension of
+    Just fileName ->
+      Just
+        { fileName: fileName
+        , fileType: Nothing
+        }
+    Nothing -> Nothing
 
-distributionFilePathToStringBaseApp :: DistributionFilePath -> FileType.FileType -> NonEmptyString.NonEmptyString
+distributionFilePathToStringBaseApp :: DistributionFilePath -> FileType.FileType -> NonEmptyString
 distributionFilePathToStringBaseApp (DistributionFilePath { directoryPath, fileName }) fileType =
   Prelude.append
     (distributionDirectoryPathToStringBaseApp directoryPath)
     (fileNameWithFileTypeToString fileName fileType)
 
-distributionDirectoryPathToStringBaseApp :: DistributionDirectoryPath -> NonEmptyString.NonEmptyString
+distributionDirectoryPathToStringBaseApp :: DistributionDirectoryPath -> NonEmptyString
 distributionDirectoryPathToStringBaseApp (DistributionDirectoryPath { folderNameMaybe }) =
-  NonEmptyString.appendString (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "./"))
+  NonEmptyString.appendString (NonEmptyString.nes (Proxy :: _ "./"))
     ( case folderNameMaybe of
-        Maybe.Just filderName -> Prelude.append (NonEmptyString.toString filderName) "/"
-        Maybe.Nothing -> ""
+        Just folderName ->
+          Prelude.append
+            (NonEmptyString.toString (Name.toNonEmptyString folderName))
+            "/"
+        Nothing -> ""
     )
 
 srcDirectoryPath :: DirectoryPath
 srcDirectoryPath =
   DirectoryPath
-    [ NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "src") ]
+    [ Name.fromSymbolProxy (Proxy :: _ "src") ]

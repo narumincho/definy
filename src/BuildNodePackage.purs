@@ -15,13 +15,14 @@ import Effect.Aff as Aff
 import Effect.Console as Console
 import FileSystem.Copy as FileSystemCopy
 import FileSystem.FileType as FileType
+import FileSystem.Name as Name
 import FileSystem.Path as Path
 import FileSystem.Write as FileSystemWrite
 import PackageJson as PackageJson
 import PureScript.Data as PureScriptData
 import PureScript.Spago as Spago
 import StructuredUrl as StructuredUrl
-import Type.Proxy as Proxy
+import Type.Proxy (Proxy(..))
 import TypeScript.Tsc as Tsc
 import Util as Util
 
@@ -37,12 +38,10 @@ main =
 genDirectoryPath :: Path.DirectoryPath
 genDirectoryPath =
   Path.DirectoryPath
-    [ NonEmptyString.nes
-        (Proxy.Proxy :: Proxy.Proxy "gen")
-    ]
+    [ Name.fromSymbolProxy (Proxy :: _ "gen") ]
 
-appName :: NonEmptyString.NonEmptyString
-appName = NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "npm-package")
+appName :: Name.Name
+appName = Name.fromSymbolProxy (Proxy :: _ "npm-package")
 
 mainAff :: Aff.Aff Unit
 mainAff =
@@ -54,8 +53,7 @@ mainAff =
                   ( Path.FilePath
                       { directoryPath: genDirectoryPath
                       , fileName:
-                          NonEmptyString.nes
-                            (Proxy.Proxy :: Proxy.Proxy "main")
+                          Name.fromSymbolProxy (Proxy :: _ "main")
                       }
                   )
                   Tsc.Ts
@@ -74,7 +72,7 @@ mainAff =
             PureScriptData.ModuleName
               ( NonEmptyArray.singleton
                   ( NonEmptyString.nes
-                      (Proxy.Proxy :: Proxy.Proxy "TypeScriptEntryPoint")
+                      (Proxy :: _ "TypeScriptEntryPoint")
                   )
               )
         , outputJavaScriptPath:
@@ -84,20 +82,20 @@ mainAff =
                     { appName
                     , folderNameMaybe:
                         Maybe.Just
-                          ( NonEmptyString.nes
-                              (Proxy.Proxy :: Proxy.Proxy "output")
+                          ( Name.fromSymbolProxy
+                              (Proxy :: _ "output")
                           )
                     }
               , fileName:
-                  NonEmptyString.nes
-                    (Proxy.Proxy :: Proxy.Proxy "TypeScriptEntryPoint")
+                  Name.fromSymbolProxy
+                    (Proxy :: _ "TypeScriptEntryPoint")
               }
         }
     , FileSystemCopy.copyFileToDistribution
         ( Path.FilePath
             { directoryPath: genDirectoryPath
             , fileName:
-                NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "README")
+                Name.fromSymbolProxy (Proxy :: _ "README")
             }
         )
         (Maybe.Just FileType.Markdown)
@@ -108,8 +106,8 @@ mainAff =
                   , folderNameMaybe: Maybe.Nothing
                   }
             , fileName:
-                NonEmptyString.nes
-                  (Proxy.Proxy :: Proxy.Proxy "README")
+                Name.fromSymbolProxy
+                  (Proxy :: Proxy "README")
             }
         )
         FileType.Markdown
@@ -117,8 +115,8 @@ mainAff =
         ( Path.FilePath
             { directoryPath: genDirectoryPath
             , fileName:
-                NonEmptyString.nes
-                  (Proxy.Proxy :: Proxy.Proxy "LICENCE")
+                Name.fromSymbolProxy
+                  (Proxy :: _ "LICENCE")
             }
         )
         Maybe.Nothing
@@ -129,8 +127,8 @@ mainAff =
                   , folderNameMaybe: Maybe.Nothing
                   }
             , fileName:
-                NonEmptyString.nes
-                  (Proxy.Proxy :: Proxy.Proxy "LICENCE")
+                Name.fromSymbolProxy
+                  (Proxy :: _ "LICENCE")
             }
         )
     , writePackageJson
@@ -152,8 +150,8 @@ writePackageJson = do
                     , folderNameMaybe: Maybe.Nothing
                     }
               , fileName:
-                  NonEmptyString.nes
-                    (Proxy.Proxy :: Proxy.Proxy "package")
+                  Name.fromSymbolProxy
+                    (Proxy :: _ "package")
               }
           )
           (PackageJson.toJson packageJson)
@@ -163,7 +161,7 @@ usingPackageInGen :: Set.Set NonEmptyString.NonEmptyString
 usingPackageInGen =
   Set.singleton
     ( NonEmptyString.nes
-        (Proxy.Proxy :: Proxy.Proxy "sha256-uint8array")
+        (Proxy :: _ "sha256-uint8array")
     )
 
 generatePackageJson :: Map.Map NonEmptyString.NonEmptyString NonEmptyString.NonEmptyString -> Maybe.Maybe PackageJson.PackageJsonInput
@@ -173,44 +171,44 @@ generatePackageJson dependencies =
         PackageJson.PackageJsonInput
           { author:
               NonEmptyString.nes
-                (Proxy.Proxy :: Proxy.Proxy "narumincho")
+                (Proxy :: _ "narumincho")
           , dependencies: dependencies
           , description:
               NonEmptyString.nes
-                (Proxy.Proxy :: Proxy.Proxy "HTML, TypeScript, JavaScript, package.json, wasm Generator")
+                (Proxy :: _ "HTML, TypeScript, JavaScript, package.json, wasm Generator")
           , entryPoint:
               NonEmptyString.nes
-                (Proxy.Proxy :: Proxy.Proxy "gen/main.js")
+                (Proxy :: _ "gen/main.js")
           , gitHubAccountName:
               NonEmptyString.nes
-                (Proxy.Proxy :: Proxy.Proxy "narumincho")
+                (Proxy :: _ "narumincho")
           , gitHubRepositoryName:
-              NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "definy")
+              NonEmptyString.nes (Proxy :: _ "definy")
           , homepage:
               StructuredUrl.StructuredUrl
                 { origin:
                     NonEmptyString.nes
-                      (Proxy.Proxy :: Proxy.Proxy "https://www.npmjs.com")
+                      (Proxy :: _ "https://www.npmjs.com")
                 , pathAndSearchParams:
                     StructuredUrl.fromPath
-                      [ NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "package")
-                      , NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "@narumincho/gen")
+                      [ NonEmptyString.nes (Proxy :: _ "package")
+                      , NonEmptyString.nes (Proxy :: _ "@narumincho/gen")
                       ]
                 }
           , name: name
           , nodeVersion:
-              NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy ">=14")
+              NonEmptyString.nes (Proxy :: _ ">=14")
           , typeFilePath:
               Maybe.Just
                 ( NonEmptyString.nes
-                    (Proxy.Proxy :: Proxy.Proxy "gen/main.d.ts")
+                    (Proxy :: _ "gen/main.d.ts")
                 )
           , version:
-              NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "1.0.7")
+              NonEmptyString.nes (Proxy :: _ "1.0.7")
           }
     )
     ( PackageJson.nameFromNonEmptyString
         ( NonEmptyString.nes
-            (Proxy.Proxy :: Proxy.Proxy "@narumincho/gen")
+            (Proxy :: _ "@narumincho/gen")
         )
     )

@@ -15,6 +15,7 @@ import Effect.Aff as Aff
 import EsBuild as EsBuild
 import FileSystem.Copy as FileSystemCopy
 import FileSystem.FileType as FileType
+import FileSystem.Name as Name
 import FileSystem.Path as Path
 import FileSystem.Read as FileSystemRead
 import FileSystem.Write as FileSystemWrite
@@ -38,16 +39,16 @@ main =
   Aff.runAff_ (Console.logValue "build aff result")
     (Aff.attempt (build ProductionOrDevelopment.Production))
 
-appName :: NonEmptyString.NonEmptyString
-appName = NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "creative-record")
+appName :: Name.Name
+appName = Name.fromSymbolProxy (Proxy.Proxy :: Proxy.Proxy "creative-record")
 
 pureScriptOutputPath :: Path.DirectoryPath
 pureScriptOutputPath =
   Path.DirectoryPath
-    [ NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "output") ]
+    [ Name.fromSymbolProxy (Proxy.Proxy :: Proxy.Proxy "output") ]
 
-clientProgramFileName :: NonEmptyString.NonEmptyString
-clientProgramFileName = NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "creativeRecordsClientStart")
+clientProgramFileName :: Name.Name
+clientProgramFileName = Name.fromSymbolProxy (Proxy.Proxy :: Proxy.Proxy "creativeRecordsClientStart")
 
 esbuildClientProgramFileDirectoryPath :: Path.DistributionDirectoryPath
 esbuildClientProgramFileDirectoryPath =
@@ -55,7 +56,7 @@ esbuildClientProgramFileDirectoryPath =
     { appName
     , folderNameMaybe:
         Just
-          ( NonEmptyString.nes
+          ( Name.fromSymbolProxy
               (Proxy.Proxy :: Proxy.Proxy "client-esbuild-result")
           )
     }
@@ -66,7 +67,7 @@ hostingDirectoryPath =
     { appName
     , folderNameMaybe:
         Just
-          ( NonEmptyString.nes
+          ( Name.fromSymbolProxy
               (Proxy.Proxy :: Proxy.Proxy "hosting")
           )
     }
@@ -77,7 +78,7 @@ functionsDirectoryPath =
     { appName
     , folderNameMaybe:
         Just
-          ( NonEmptyString.nes
+          ( Name.fromSymbolProxy
               (Proxy.Proxy :: Proxy.Proxy "functions")
           )
     }
@@ -155,7 +156,9 @@ readEsbuildResultClientProgramFile = do
   FileSystemWrite.writeTextFileInDistribution
     ( Path.DistributionFilePath
         { directoryPath: hostingDirectoryPath
-        , fileName: Hash.toNonEmptyString clientProgramHashValue
+        , fileName:
+            Name.fromNonEmptyStringUnsafe
+              (Hash.toNonEmptyString clientProgramHashValue)
         }
     )
     clientProgramAsString
@@ -200,7 +203,7 @@ firestoreSecurityRulesFilePath :: Path.DistributionFilePath
 firestoreSecurityRulesFilePath =
   Path.DistributionFilePath
     { directoryPath: Path.DistributionDirectoryPath { appName, folderNameMaybe: Nothing }
-    , fileName: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "firestore")
+    , fileName: Name.fromSymbolProxy (Proxy.Proxy :: Proxy.Proxy "firestore")
     }
 
 cloudStorageSecurityRulesFilePath :: Path.DistributionFilePath
@@ -208,7 +211,7 @@ cloudStorageSecurityRulesFilePath =
   Path.DistributionFilePath
     { directoryPath:
         Path.DistributionDirectoryPath { appName, folderNameMaybe: Nothing }
-    , fileName: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "storage")
+    , fileName: Name.fromSymbolProxy (Proxy.Proxy :: Proxy.Proxy "storage")
     }
 
 writeFirebaseJson :: Array StaticResourceFile.StaticResourceFileResult -> Hash.Sha256HashValue -> Aff.Aff Unit
@@ -216,7 +219,7 @@ writeFirebaseJson staticFileDataList clientProgramHashValue = do
   FileSystemWrite.writeJson
     ( Path.DistributionFilePath
         { directoryPath: Path.DistributionDirectoryPath { appName, folderNameMaybe: Nothing }
-        , fileName: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "firebase")
+        , fileName: Name.fromSymbolProxy (Proxy.Proxy :: Proxy.Proxy "firebase")
         }
     )
     ( FirebaseJson.toJson
@@ -287,8 +290,8 @@ staticResourceBuild = do
   resultList <-
     StaticResourceFile.getStaticResourceFileResult
       ( Path.DirectoryPath
-          [ NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "narumincho-creative-record")
-          , NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "resource")
+          [ Name.fromSymbolProxy (Proxy.Proxy :: Proxy.Proxy "narumincho-creative-record")
+          , Name.fromSymbolProxy (Proxy.Proxy :: Proxy.Proxy "resource")
           ]
       )
   copyStaticResouece resultList
@@ -305,7 +308,9 @@ copyStaticResouece resultList =
               fileType
               ( Path.DistributionFilePath
                   { directoryPath: hostingDirectoryPath
-                  , fileName: Hash.toNonEmptyString requestPathAndUploadFileName
+                  , fileName:
+                      Name.fromNonEmptyStringUnsafe
+                        (Hash.toNonEmptyString requestPathAndUploadFileName)
                   }
               )
         )
@@ -373,7 +378,7 @@ runSpagoForFunctions = do
     , outputJavaScriptPath:
         Path.DistributionFilePath
           { directoryPath: functionsDirectoryPath
-          , fileName: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "index")
+          , fileName: Name.fromSymbolProxy (Proxy.Proxy :: Proxy.Proxy "index")
           }
     }
   Console.logValueAsAff "spago で functions のビルドに成功!" {}
@@ -401,7 +406,7 @@ writePackageJsonForFunctions = do
           ( Path.DistributionFilePath
               { directoryPath: functionsDirectoryPath
               , fileName:
-                  NonEmptyString.nes
+                  Name.fromSymbolProxy
                     (Proxy.Proxy :: Proxy.Proxy "package")
               }
           )
@@ -435,4 +440,4 @@ packageJsonForFunctions dependencies =
           , typeFilePath: Nothing
           }
     )
-    (PackageJson.nameFromNonEmptyString appName)
+    (PackageJson.nameFromNonEmptyString (Name.toNonEmptyString appName))

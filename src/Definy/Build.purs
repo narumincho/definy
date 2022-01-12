@@ -6,11 +6,11 @@ module Definy.Build
 import Prelude
 import Console as Console
 import Console as ConsoleValue
+import Data.Array as Array
 import Data.Array.NonEmpty as NonEmptyArray
 import Data.Either as Either
 import Data.Map as Map
 import Data.Maybe (Maybe(..))
-import Data.Array as Array
 import Data.Maybe as Maybe
 import Data.Set as Set
 import Data.String.NonEmpty (NonEmptyString)
@@ -23,6 +23,7 @@ import Effect.Uncurried as EffectUncurried
 import EsBuild as EsBuild
 import FileSystem.Copy as FileSystemCopy
 import FileSystem.FileType as FileType
+import FileSystem.Name as Name
 import FileSystem.Path as Path
 import FileSystem.Read as FileSystemRead
 import FileSystem.Write as FileSystemWrite
@@ -53,7 +54,7 @@ build mode origin =
                   ( Path.DistributionFilePath
                       { directoryPath: functionsDistributionDirectoryPath
                       , fileName:
-                          NonEmptyString.nes
+                          Name.fromSymbolProxy
                             (Proxy.Proxy :: Proxy.Proxy ".runtimeconfig")
                       }
                   )
@@ -82,9 +83,9 @@ codeGenAndBuildClientAndFunctionsScript mode origin = do
   _ <- clientProgramBuild
   pure unit
 
-appName :: NonEmptyString
+appName :: Name.Name
 appName =
-  NonEmptyString.nes
+  Name.fromSymbolProxy
     (Proxy.Proxy :: Proxy.Proxy "definy")
 
 rootDistributionDirectoryPath :: Path.DistributionDirectoryPath
@@ -101,7 +102,7 @@ functionsDistributionDirectoryPath =
     { appName: appName
     , folderNameMaybe:
         Just
-          ( NonEmptyString.nes
+          ( Name.fromSymbolProxy
               (Proxy.Proxy :: Proxy.Proxy "functions")
           )
     }
@@ -112,7 +113,7 @@ hostingDistributionPath =
     { appName: appName
     , folderNameMaybe:
         Just
-          ( NonEmptyString.nes
+          ( Name.fromSymbolProxy
               (Proxy.Proxy :: Proxy.Proxy "hosting")
           )
     }
@@ -123,7 +124,7 @@ esbuildClientProgramFileDirectoryPath =
     { appName: appName
     , folderNameMaybe:
         Just
-          ( NonEmptyString.nes
+          ( Name.fromSymbolProxy
               (Proxy.Proxy :: Proxy.Proxy "client-esbuild-result")
           )
     }
@@ -140,7 +141,7 @@ writePackageJsonForFunctions = do
           ( Path.DistributionFilePath
               { directoryPath: functionsDistributionDirectoryPath
               , fileName:
-                  NonEmptyString.nes
+                  Name.fromSymbolProxy
                     (Proxy.Proxy :: Proxy.Proxy "package")
               }
           )
@@ -356,7 +357,7 @@ firestoreSecurityRulesFilePath =
   Path.DistributionFilePath
     { directoryPath: rootDistributionDirectoryPath
     , fileName:
-        NonEmptyString.nes
+        Name.fromSymbolProxy
           (Proxy.Proxy :: Proxy.Proxy "firestore")
     }
 
@@ -371,7 +372,7 @@ cloudStorageSecurityRulesFilePath =
   Path.DistributionFilePath
     { directoryPath: rootDistributionDirectoryPath
     , fileName:
-        NonEmptyString.nes
+        Name.fromSymbolProxy
           (Proxy.Proxy :: Proxy.Proxy "storage")
     }
 
@@ -386,7 +387,7 @@ writeFirebaseJson productionOrDevelopment = do
   FileSystemWrite.writeJson
     ( Path.DistributionFilePath
         { directoryPath: Path.DistributionDirectoryPath { appName, folderNameMaybe: Nothing }
-        , fileName: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "firebase")
+        , fileName: Name.fromSymbolProxy (Proxy.Proxy :: Proxy.Proxy "firebase")
         }
     )
     ( FirebaseJson.toJson
@@ -434,7 +435,7 @@ staticResourceBuild = do
   resultList <-
     StaticResourceFile.getStaticResourceFileResult
       ( Path.DirectoryPath
-          [ NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "static")
+          [ Name.fromSymbolProxy (Proxy.Proxy :: Proxy.Proxy "static")
           ]
       )
   copyStaticResource resultList
@@ -451,7 +452,9 @@ copyStaticResource resultList =
               fileType
               ( Path.DistributionFilePath
                   { directoryPath: hostingDistributionPath
-                  , fileName: Hash.toNonEmptyString requestPathAndUploadFileName
+                  , fileName:
+                      Name.fromNonEmptyStringUnsafe
+                        (Hash.toNonEmptyString requestPathAndUploadFileName)
                   }
               )
         )
@@ -477,8 +480,8 @@ runEsbuild = do
         Path.FilePath
           { directoryPath:
               Path.DirectoryPath
-                [ NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "client") ]
-          , fileName: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "main")
+                [ Name.fromSymbolProxy (Proxy.Proxy :: Proxy.Proxy "client") ]
+          , fileName: Name.fromSymbolProxy (Proxy.Proxy :: Proxy.Proxy "main")
           }
     , outdir: esbuildClientProgramFileDirectoryPath
     , sourcemap: false
@@ -492,7 +495,7 @@ readEsbuildResultClientProgramFile = do
     FileSystemRead.readTextFileInDistribution
       ( Path.DistributionFilePath
           { directoryPath: esbuildClientProgramFileDirectoryPath
-          , fileName: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "main")
+          , fileName: Name.fromSymbolProxy (Proxy.Proxy :: Proxy.Proxy "main")
           }
       )
       FileType.JavaScript
@@ -501,7 +504,9 @@ readEsbuildResultClientProgramFile = do
   FileSystemWrite.writeTextFileInDistribution
     ( Path.DistributionFilePath
         { directoryPath: hostingDistributionPath
-        , fileName: Hash.toNonEmptyString clientProgramHashValue
+        , fileName:
+            Name.fromNonEmptyStringUnsafe
+              (Hash.toNonEmptyString clientProgramHashValue)
         }
     )
     clientProgramAsString
