@@ -23,7 +23,7 @@ foreign import data Digit :: Symbol -> CharType
 
 foreign import data Other :: Symbol -> CharType
 
-class CharSymbolToCharType (charSymbol :: Symbol) (charType :: CharType) | charSymbol -> charType
+class CharSymbolToCharType (charSymbol :: Symbol) (charType :: CharType) | charSymbol -> charType, charType -> charSymbol
 
 instance charSymbolToCharTypeUpperA :: CharSymbolToCharType "A" (AlphabetUppercase "A")
 else instance charSymbolToCharTypeUpperB :: CharSymbolToCharType "B" (AlphabetUppercase "B")
