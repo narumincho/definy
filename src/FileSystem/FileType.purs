@@ -8,10 +8,11 @@ module FileSystem.FileType
 import Data.Generic.Rep as GenericRep
 import Data.Maybe as Maybe
 import Data.Show.Generic as ShowGeneric
+import Data.String.NonEmpty (NonEmptyString)
 import Data.String.NonEmpty as NonEmptyString
 import MediaType as MediaType
 import Prelude as Prelude
-import Type.Proxy as Proxy
+import Type.Proxy (Proxy(..))
 
 -- | ファイルシステムで読み書きするファイル
 data FileType
@@ -33,18 +34,18 @@ derive instance genericFileType :: GenericRep.Generic FileType _
 instance showFileType :: Prelude.Show FileType where
   show = ShowGeneric.genericShow
 
-toExtension :: FileType -> NonEmptyString.NonEmptyString
+toExtension :: FileType -> NonEmptyString
 toExtension = case _ of
-  Png -> NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "png")
-  TypeScript -> NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "ts")
-  TypeScriptReact -> NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "tsx")
-  JavaScript -> NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "js")
-  Html -> NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "html")
-  Json -> NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "json")
-  PureScript -> NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "purs")
-  FirebaseSecurityRules -> NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "rules")
-  Markdown -> NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "md")
-  WebOpenFontFormat2 -> NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "woff2")
+  Png -> NonEmptyString.nes (Proxy :: _ "png")
+  TypeScript -> NonEmptyString.nes (Proxy :: _ "ts")
+  TypeScriptReact -> NonEmptyString.nes (Proxy :: _ "tsx")
+  JavaScript -> NonEmptyString.nes (Proxy :: _ "js")
+  Html -> NonEmptyString.nes (Proxy :: _ "html")
+  Json -> NonEmptyString.nes (Proxy :: _ "json")
+  PureScript -> NonEmptyString.nes (Proxy :: _ "purs")
+  FirebaseSecurityRules -> NonEmptyString.nes (Proxy :: _ "rules")
+  Markdown -> NonEmptyString.nes (Proxy :: _ "md")
+  WebOpenFontFormat2 -> NonEmptyString.nes (Proxy :: _ "woff2")
 
 fromExtension :: String -> Maybe.Maybe FileType
 fromExtension = case _ of

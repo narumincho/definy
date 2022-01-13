@@ -35,7 +35,7 @@ import Html.Wellknown as HtmlWellknown
 import Option as Option
 import Prelude as Prelude
 import StructuredUrl as StructuredUrl
-import Type.Proxy as Proxy
+import Type.Proxy (Proxy(..))
 import Util as Util
 import Vdom.PatchState as PatchState
 import View.Data as Data
@@ -129,8 +129,8 @@ boxOptionalToBoxData rec =
   let
     maybeRecord =
       Util.optionRecordToMaybeRecord
-        (Proxy.Proxy :: _ ())
-        (Proxy.Proxy :: _ (BoxOptional message location))
+        (Proxy :: _ ())
+        (Proxy :: _ (BoxOptional message location))
         rec
   in
     BoxData
@@ -325,8 +325,8 @@ text option textValue =
   let
     rec =
       Util.optionRecordToMaybeRecord
-        (Proxy.Proxy :: _ ())
-        (Proxy.Proxy :: _ (TextOptional message))
+        (Proxy :: _ ())
+        (Proxy :: _ (TextOptional message))
         option
 
     paddingValue = case rec.padding of
@@ -417,8 +417,8 @@ image option =
   let
     rec =
       Util.optionRecordToMaybeRecord
-        (Proxy.Proxy :: _ ImageRequired)
-        (Proxy.Proxy :: _ ImageOptional)
+        (Proxy :: _ ImageRequired)
+        (Proxy :: _ ImageOptional)
         option
   in
     Data.ElementAndStyle

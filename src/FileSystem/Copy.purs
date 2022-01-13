@@ -6,8 +6,9 @@ module FileSystem.Copy
 
 import Prelude
 import Console as Console
-import Data.String.NonEmpty as NonEmptyString
 import Data.Maybe as Maybe
+import Data.String.NonEmpty (NonEmptyString)
+import Data.String.NonEmpty as NonEmptyString
 import Effect.Aff as Aff
 import Effect.Aff.Compat as AffCompat
 import FileSystem.FileType as FileType
@@ -34,7 +35,9 @@ copyFileToDistribution filePath fileTypeMaybe distributionFilePath@(Path.Distrib
     }
 
 -- | 1つ上の階層の secret ディレクトリないに保存された機密情報の入ったファイルを出力先にコピーする
-copySecretFile :: NonEmptyString.NonEmptyString -> Path.DistributionFilePath -> FileType.FileType -> Aff.Aff Unit
+copySecretFile ::
+  NonEmptyString ->
+  Path.DistributionFilePath -> FileType.FileType -> Aff.Aff Unit
 copySecretFile secretFileName distributionFilePath@(Path.DistributionFilePath { directoryPath }) fileType = do
   Write.ensureDir (Path.distributionDirectoryPathToDirectoryPath directoryPath)
   copyFile

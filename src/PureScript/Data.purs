@@ -8,7 +8,7 @@ module PureScript.Data
   ) where
 
 import Data.Array.NonEmpty as NonEmptyArray
-import Data.String.NonEmpty as NonEmptyString
+import Data.String.NonEmpty (NonEmptyString)
 import Prelude as Prelude
 
 newtype Module
@@ -19,7 +19,7 @@ newtype Module
 
 newtype Definition
   = Definition
-  { name :: NonEmptyString.NonEmptyString
+  { name :: NonEmptyString
   , document :: String
   , typeData :: TypeData
   , exprData :: ExprData
@@ -27,7 +27,7 @@ newtype Definition
   }
 
 newtype ModuleName
-  = ModuleName (NonEmptyArray.NonEmptyArray NonEmptyString.NonEmptyString)
+  = ModuleName (NonEmptyArray.NonEmptyArray NonEmptyString)
 
 derive instance moduleNameEq :: Prelude.Eq ModuleName
 
@@ -36,19 +36,19 @@ derive instance moduleNameOrd :: Prelude.Ord ModuleName
 data TypeData
   = TypeData
     { moduleName :: ModuleName
-    , name :: NonEmptyString.NonEmptyString
+    , name :: NonEmptyString
     }
   | SymbolLiteral String
   | TypeWithArgument { function :: TypeData, argument :: TypeData }
 
 data ExprData
   = Call { function :: ExprData, argument :: ExprData }
-  | Variable { moduleName :: ModuleName, name :: NonEmptyString.NonEmptyString }
+  | Variable { moduleName :: ModuleName, name :: NonEmptyString }
   | StringLiteral String
   | CharLiteral Char
   | ArrayLiteral (Array ExprData)
   | TypeAnnotation { expr :: ExprData, pType :: TypeData }
-  | Tag { moduleName :: ModuleName, name :: NonEmptyString.NonEmptyString }
+  | Tag { moduleName :: ModuleName, name :: NonEmptyString }
 
-moduleNameAsStringNonEmptyArray :: Module -> NonEmptyArray.NonEmptyArray NonEmptyString.NonEmptyString
+moduleNameAsStringNonEmptyArray :: Module -> NonEmptyArray.NonEmptyArray NonEmptyString
 moduleNameAsStringNonEmptyArray (Module { name: ModuleName name }) = name

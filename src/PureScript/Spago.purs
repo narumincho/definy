@@ -10,7 +10,7 @@ import FileSystem.Path as Path
 import PureScript.Data as Data
 import PureScript.ToString as ToString
 import Shell as Shell
-import Type.Proxy as Proxy
+import Type.Proxy (Proxy(..))
 
 bundleModule :: { mainModuleName :: Data.ModuleName, outputJavaScriptPath :: Path.DistributionFilePath } -> Aff.Aff Unit
 bundleModule { mainModuleName, outputJavaScriptPath } = do
@@ -19,11 +19,11 @@ bundleModule { mainModuleName, outputJavaScriptPath } = do
         ""
         ( NonEmptyArray.cons'
             ( NonEmptyString.nes
-                (Proxy.Proxy :: Proxy.Proxy "npx spago bundle-module --main ")
+                (Proxy :: _ "npx spago bundle-module --main ")
             )
             [ ToString.moduleNameToString mainModuleName
             , NonEmptyString.nes
-                (Proxy.Proxy :: Proxy.Proxy " --to ")
+                (Proxy :: _ " --to ")
             , Path.distributionFilePathToString
                 outputJavaScriptPath
                 FileType.JavaScript
@@ -46,11 +46,11 @@ bundleApp { mainModuleName, outputJavaScriptPath } = do
         ""
         ( NonEmptyArray.cons'
             ( NonEmptyString.nes
-                (Proxy.Proxy :: Proxy.Proxy "npx spago bundle-app --main ")
+                (Proxy :: _ "npx spago bundle-app --main ")
             )
             [ ToString.moduleNameToString mainModuleName
             , NonEmptyString.nes
-                (Proxy.Proxy :: Proxy.Proxy " --to ")
+                (Proxy :: _ " --to ")
             , Path.distributionFilePathToString
                 outputJavaScriptPath
                 FileType.JavaScript
@@ -75,11 +75,11 @@ build { outputDiresctoy } = do
         ""
         ( NonEmptyArray.cons'
             ( NonEmptyString.nes
-                (Proxy.Proxy :: Proxy.Proxy "npx spago build --purs-args \"-o ")
+                (Proxy :: _ "npx spago build --purs-args \"-o ")
             )
             [ Path.directoryPathToString outputDiresctoy
             , NonEmptyString.nes
-                (Proxy.Proxy :: Proxy.Proxy "\"")
+                (Proxy :: _ "\"")
             ]
         )
     )

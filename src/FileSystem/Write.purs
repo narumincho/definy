@@ -16,6 +16,7 @@ import Effect.Aff.Compat as AffCompat
 import Effect.Class as EffectClass
 import Effect.Console as Console
 import FileSystem.FileType as FileType
+import FileSystem.Name as Name
 import FileSystem.Path as Path
 import Firebase.SecurityRules as FirebaseSecurityRules
 import Node.Encoding as Encoding
@@ -56,7 +57,7 @@ writePureScript pModule =
     moduleNameAsNonEmptyArrayUnsnoced = ArrayNonEmpty.unsnoc (PureScriptData.moduleNameAsStringNonEmptyArray pModule)
 
     directoryPath :: Path.DirectoryPath
-    directoryPath = Path.directoryPathPushDirectoryNameList Path.srcDirectoryPath moduleNameAsNonEmptyArrayUnsnoced.init
+    directoryPath = Path.directoryPathPushDirectoryNameList Path.srcDirectoryPath (map Name.fromNonEmptyStringUnsafe moduleNameAsNonEmptyArrayUnsnoced.init)
 
     filePath :: String
     filePath =
@@ -64,7 +65,7 @@ writePureScript pModule =
         ( Path.filePathToString
             ( Path.FilePath
                 { directoryPath
-                , fileName: moduleNameAsNonEmptyArrayUnsnoced.last
+                , fileName: Name.fromNonEmptyStringUnsafe moduleNameAsNonEmptyArrayUnsnoced.last
                 }
             )
             (Maybe.Just FileType.PureScript)

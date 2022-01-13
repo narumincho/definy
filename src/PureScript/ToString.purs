@@ -6,6 +6,7 @@ import Data.Maybe as Maybe
 import Data.Set as Set
 import Data.String as String
 import Data.String.CodePoints as CodePoints
+import Data.String.NonEmpty (NonEmptyString)
 import Data.String.NonEmpty as NonEmptyString
 import Data.Tuple as Tuple
 import Prelude as Prelude
@@ -44,12 +45,12 @@ toString pModule@(Data.Module { definitionList }) =
       )
 
 newtype ModuleQualifiedNameDict
-  = ModuleQualifiedNameDict (Map.Map Data.ModuleName NonEmptyString.NonEmptyString)
+  = ModuleQualifiedNameDict (Map.Map Data.ModuleName NonEmptyString)
 
-dictToTupleArray :: ModuleQualifiedNameDict -> Array (Tuple.Tuple Data.ModuleName NonEmptyString.NonEmptyString)
+dictToTupleArray :: ModuleQualifiedNameDict -> Array (Tuple.Tuple Data.ModuleName NonEmptyString)
 dictToTupleArray (ModuleQualifiedNameDict map) = Map.toUnfoldable map
 
-dicGetQualifiedName :: Data.ModuleName -> ModuleQualifiedNameDict -> Maybe.Maybe NonEmptyString.NonEmptyString
+dicGetQualifiedName :: Data.ModuleName -> ModuleQualifiedNameDict -> Maybe.Maybe NonEmptyString
 dicGetQualifiedName moduleName (ModuleQualifiedNameDict map) = Map.lookup moduleName map
 
 importedModuleSetToQualifiedNameDict :: Set.Set Data.ModuleName -> ModuleQualifiedNameDict
@@ -79,7 +80,7 @@ moduleNameCode (Data.Module { name, definitionList }) =
     , ") where"
     ]
 
-moduleNameToString :: Data.ModuleName -> NonEmptyString.NonEmptyString
+moduleNameToString :: Data.ModuleName -> NonEmptyString
 moduleNameToString (Data.ModuleName stringList) = NonEmptyString.join1With "." stringList
 
 collectInportModule :: Data.Module -> Set.Set Data.ModuleName

@@ -22,13 +22,17 @@ import Effect.Aff.Compat as AffCompat
 import Effect.Class as EffectClass
 import FileSystem.FileType as FileType
 import FileSystem.Path as Path
+import FileSystem.Name as Name
 import Node.Buffer as Buffer
 import Node.Encoding as Encoding
 import Node.FS.Aff as Fs
 import Util as Util
 
 -- | distribution にあるファイルを文字列として読み取る
-readTextFileInDistribution :: Path.DistributionFilePath -> FileType.FileType -> Aff.Aff String
+readTextFileInDistribution ::
+  Path.DistributionFilePath ->
+  FileType.FileType ->
+  Aff.Aff String
 readTextFileInDistribution distributionFilePath fileType = do
   buffer <- Fs.readFile (NonEmptyString.toString (Path.distributionFilePathToString distributionFilePath fileType))
   EffectClass.liftEffect (Buffer.toString Encoding.UTF8 buffer)
@@ -41,13 +45,19 @@ readTextFile filePath fileType =
     (\buffer -> EffectClass.liftEffect (Buffer.toString Encoding.UTF8 buffer))
 
 -- | ファイルをバイナリとして読み取る
-readBinaryFile :: Path.FilePath -> Maybe FileType.FileType -> Aff.Aff Buffer.Buffer
+readBinaryFile ::
+  Path.FilePath ->
+  Maybe FileType.FileType ->
+  Aff.Aff Buffer.Buffer
 readBinaryFile filePath fileTypeMaybe =
   Fs.readFile
     (NonEmptyString.toString (Path.filePathToString filePath fileTypeMaybe))
 
 -- | ファイルを json として読み取る
-readJsonFile :: Path.FilePath -> FileType.FileType -> Aff.Aff (Either.Either String ArgonautCore.Json)
+readJsonFile ::
+  Path.FilePath ->
+  FileType.FileType ->
+  Aff.Aff (Either.Either String ArgonautCore.Json)
 readJsonFile filePath fileType = do
   text <- readTextFile filePath fileType
   pure (ArgonautParser.jsonParser text)
@@ -55,7 +65,9 @@ readJsonFile filePath fileType = do
 -- | ディレクトリ内に含まれるファイルのパスを取得する.
 -- |
 -- | 再帰的には調べず, ディレクトリ内のディレクトリは無視する.
-readFilePathInDirectory :: Path.DirectoryPath -> Aff.Aff (Array (Tuple.Tuple Path.FilePath (Maybe FileType.FileType)))
+readFilePathInDirectory ::
+  Path.DirectoryPath ->
+  Aff.Aff (Array (Tuple.Tuple Path.FilePath (Maybe FileType.FileType)))
 readFilePathInDirectory directoryPath =
   let
     directoryPathAsString :: String
@@ -86,7 +98,9 @@ readFilePathInDirectory directoryPath =
 -- | ディレクトリ内に含まれるファイルのパスを再帰的に取得する.
 -- |
 -- | ファイルの含まれていないディレクトリは取得しない
-readFilePathRecursionInDirectory :: Path.DirectoryPath -> Aff.Aff (Array (Tuple.Tuple Path.FilePath (Maybe FileType.FileType)))
+readFilePathRecursionInDirectory ::
+  Path.DirectoryPath ->
+  Aff.Aff (Array (Tuple.Tuple Path.FilePath (Maybe FileType.FileType)))
 readFilePathRecursionInDirectory directoryPath =
   let
     directoryPathAsString :: String
@@ -104,7 +118,9 @@ readFilePathRecursionInDirectory directoryPath =
         }
       pure result
 
-readFilePathRecursionInDirectoryLoop :: Path.DirectoryPath -> Aff.Aff (Array (Tuple.Tuple Path.FilePath (Maybe FileType.FileType)))
+readFilePathRecursionInDirectoryLoop ::
+  Path.DirectoryPath ->
+  Aff.Aff (Array (Tuple.Tuple Path.FilePath (Maybe FileType.FileType)))
 readFilePathRecursionInDirectoryLoop directoryPath =
   let
     directoryPathAsString :: String
@@ -123,7 +139,7 @@ readFilePathRecursionInDirectoryLoop directoryPath =
                             Just tuple -> [ tuple ]
                             Nothing -> []
                         )
-                    else case NonEmptyString.fromString dirent.name of
+                    else case Name.fromString dirent.name of
                       Just dirName ->
                         readFilePathRecursionInDirectoryLoop
                           ( Path.directoryPathPushDirectoryNameList
@@ -136,20 +152,21 @@ readFilePathRecursionInDirectoryLoop directoryPath =
             )
         )
 
-direntToFilePath :: Path.DirectoryPath -> String -> Maybe (Tuple.Tuple Path.FilePath (Maybe FileType.FileType))
-direntToFilePath directoryPath fileName = case NonEmptyString.fromString fileName of
-  Just direntName -> case Path.fileNameWithExtensitonParse direntName of
-    Just parseResult ->
-      Just
-        ( Tuple.Tuple
-            ( Path.FilePath
-                { directoryPath
-                , fileName: parseResult.fileName
-                }
-            )
-            parseResult.fileType
-        )
-    Nothing -> Nothing
+direntToFilePath ::
+  Path.DirectoryPath ->
+  String ->
+  Maybe (Tuple.Tuple Path.FilePath (Maybe FileType.FileType))
+direntToFilePath directoryPath direntName = case Path.fileNameWithExtensionParse direntName of
+  Just parseResult ->
+    Just
+      ( Tuple.Tuple
+          ( Path.FilePath
+              { directoryPath
+              , fileName: parseResult.fileName
+              }
+          )
+          parseResult.fileType
+      )
   Nothing -> Nothing
 
 type Dirent

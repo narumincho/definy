@@ -9,7 +9,7 @@ import Effect.Aff as Aff
 import Effect.Class as EffectClass
 import ProductionOrDevelopment as ProductionOrDevelopment
 import Shell as Shell
-import Type.Proxy as Proxy
+import Type.Proxy (Proxy(..))
 
 main :: Effect.Effect Unit
 main =
@@ -25,5 +25,5 @@ runFirebaseEmulator :: Effect.Effect Unit
 runFirebaseEmulator =
   Shell.spawnWithLog
     ( NonEmptyString.nes
-        (Proxy.Proxy :: Proxy.Proxy "npx firebase emulators:start --project definy-lang --config ./distribution/creative-record/firebase.json")
+        (Proxy :: _ "npx firebase emulators:start --project definy-lang --config ./distribution/creative-record/firebase.json")
     )

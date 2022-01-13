@@ -6,6 +6,7 @@ module Definy.Build
 import Prelude
 import Console as Console
 import Console as ConsoleValue
+import Data.Array as Array
 import Data.Array.NonEmpty as NonEmptyArray
 import Data.Either as Either
 import Data.Map as Map
@@ -22,6 +23,7 @@ import Effect.Uncurried as EffectUncurried
 import EsBuild as EsBuild
 import FileSystem.Copy as FileSystemCopy
 import FileSystem.FileType as FileType
+import FileSystem.Name as Name
 import FileSystem.Path as Path
 import FileSystem.Read as FileSystemRead
 import FileSystem.Write as FileSystemWrite
@@ -35,50 +37,56 @@ import PureScript.Data as PureScriptData
 import PureScript.Wellknown as PureScriptWellknown
 import StaticResourceFile as StaticResourceFile
 import StructuredUrl as StructuredUrl
-import Type.Proxy as Proxy
+import Type.Proxy (Proxy(..))
 import Util as Util
 
 build :: ProductionOrDevelopment.ProductionOrDevelopment -> NonEmptyString -> Aff.Aff Unit
 build mode origin =
   Util.toParallel
-    [ FileSystemCopy.copySecretFile
-        ( NonEmptyString.nes
-            (Proxy.Proxy :: Proxy.Proxy "definy.json")
-        )
-        ( Path.DistributionFilePath
-            { directoryPath: functionsDistributionDirectoryPath
-            , fileName:
-                NonEmptyString.nes
-                  (Proxy.Proxy :: Proxy.Proxy ".runtimeconfig")
-            }
-        )
-        FileType.Json
-    , writePackageJsonForFunctions
-    -- , codeGenAndBuildClientAndFunctionsScript mode origin
-    , writeFirestoreRules
-    , generateCloudStorageRules
-    , writeFirebaseJson mode
-    , EffectClass.liftEffect
-        ( EffectUncurried.runEffectFn2
-            buildInTypeScript
-            ( case mode of
-                ProductionOrDevelopment.Development -> true
-                ProductionOrDevelopment.Production -> false
-            )
-            (NonEmptyString.toString origin)
-        )
-    ]
+    ( Array.concat
+        [ case mode of
+            ProductionOrDevelopment.Production -> []
+            ProductionOrDevelopment.Development ->
+              [ FileSystemCopy.copySecretFile
+                  ( NonEmptyString.nes
+                      (Proxy :: _ "definy.json")
+                  )
+                  ( Path.DistributionFilePath
+                      { directoryPath: functionsDistributionDirectoryPath
+                      , fileName:
+                          Name.fromSymbolProxy
+                            (Proxy :: _ ".runtimeconfig")
+                      }
+                  )
+                  FileType.Json
+              ]
+        , [ writePackageJsonForFunctions
+          , writeFirestoreRules
+          , generateCloudStorageRules
+          , writeFirebaseJson mode
+          , EffectClass.liftEffect
+              ( EffectUncurried.runEffectFn2
+                  buildInTypeScript
+                  ( case mode of
+                      ProductionOrDevelopment.Development -> true
+                      ProductionOrDevelopment.Production -> false
+                  )
+                  (NonEmptyString.toString origin)
+              )
+          ]
+        ]
+    )
 
-codeGenAndBuildClientAndFunctionsScript :: ProductionOrDevelopment.ProductionOrDevelopment -> NonEmptyString.NonEmptyString -> Aff.Aff Unit
+codeGenAndBuildClientAndFunctionsScript :: ProductionOrDevelopment.ProductionOrDevelopment -> NonEmptyString -> Aff.Aff Unit
 codeGenAndBuildClientAndFunctionsScript mode origin = do
   (Tuple.Tuple _ _) <- Tuple.Tuple <$> staticResourceBuild <*> (outputNowModeAndOrigin mode origin)
   _ <- clientProgramBuild
   pure unit
 
-appName :: NonEmptyString
+appName :: Name.Name
 appName =
-  NonEmptyString.nes
-    (Proxy.Proxy :: Proxy.Proxy "definy")
+  Name.fromSymbolProxy
+    (Proxy :: _ "definy")
 
 rootDistributionDirectoryPath :: Path.DistributionDirectoryPath
 rootDistributionDirectoryPath =
@@ -94,8 +102,8 @@ functionsDistributionDirectoryPath =
     { appName: appName
     , folderNameMaybe:
         Just
-          ( NonEmptyString.nes
-              (Proxy.Proxy :: Proxy.Proxy "functions")
+          ( Name.fromSymbolProxy
+              (Proxy :: _ "functions")
           )
     }
 
@@ -105,8 +113,8 @@ hostingDistributionPath =
     { appName: appName
     , folderNameMaybe:
         Just
-          ( NonEmptyString.nes
-              (Proxy.Proxy :: Proxy.Proxy "hosting")
+          ( Name.fromSymbolProxy
+              (Proxy :: _ "hosting")
           )
     }
 
@@ -116,8 +124,8 @@ esbuildClientProgramFileDirectoryPath =
     { appName: appName
     , folderNameMaybe:
         Just
-          ( NonEmptyString.nes
-              (Proxy.Proxy :: Proxy.Proxy "client-esbuild-result")
+          ( Name.fromSymbolProxy
+              (Proxy :: _ "client-esbuild-result")
           )
     }
 
@@ -133,8 +141,8 @@ writePackageJsonForFunctions = do
           ( Path.DistributionFilePath
               { directoryPath: functionsDistributionDirectoryPath
               , fileName:
-                  NonEmptyString.nes
-                    (Proxy.Proxy :: Proxy.Proxy "package")
+                  Name.fromSymbolProxy
+                    (Proxy :: _ "package")
               }
           )
           (PackageJson.toJson packageJson)
@@ -147,19 +155,19 @@ usingPackageInFunctions :: Set.Set NonEmptyString
 usingPackageInFunctions =
   Set.fromFoldable
     [ NonEmptyString.nes
-        (Proxy.Proxy :: Proxy.Proxy "firebase-admin")
+        (Proxy :: _ "firebase-admin")
     , NonEmptyString.nes
-        (Proxy.Proxy :: Proxy.Proxy "firebase-functions")
+        (Proxy :: _ "firebase-functions")
     , NonEmptyString.nes
-        (Proxy.Proxy :: Proxy.Proxy "axios")
+        (Proxy :: _ "axios")
     , NonEmptyString.nes
-        (Proxy.Proxy :: Proxy.Proxy "jimp")
+        (Proxy :: _ "jimp")
     , NonEmptyString.nes
-        (Proxy.Proxy :: Proxy.Proxy "jsonwebtoken")
+        (Proxy :: _ "jsonwebtoken")
     , NonEmptyString.nes
-        (Proxy.Proxy :: Proxy.Proxy "fs-extra")
+        (Proxy :: _ "fs-extra")
     , NonEmptyString.nes
-        (Proxy.Proxy :: Proxy.Proxy "sha256-uint8array")
+        (Proxy :: _ "sha256-uint8array")
     ]
 
 generatePackageJson :: Map.Map NonEmptyString NonEmptyString -> Maybe.Maybe PackageJson.PackageJsonInput
@@ -169,55 +177,55 @@ generatePackageJson dependencies =
         PackageJson.PackageJsonInput
           { author:
               NonEmptyString.nes
-                (Proxy.Proxy :: Proxy.Proxy "narumincho")
+                (Proxy :: _ "narumincho")
           , dependencies: dependencies
           , description:
               NonEmptyString.nes
-                (Proxy.Proxy :: Proxy.Proxy "definy in Cloud Functions for Firebase")
+                (Proxy :: _ "definy in Cloud Functions for Firebase")
           , entryPoint:
               NonEmptyString.nes
-                (Proxy.Proxy :: Proxy.Proxy "functions/main.js")
+                (Proxy :: _ "functions/main.js")
           , gitHubAccountName:
               NonEmptyString.nes
-                (Proxy.Proxy :: Proxy.Proxy "narumincho")
+                (Proxy :: _ "narumincho")
           , gitHubRepositoryName:
-              NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "definy")
+              NonEmptyString.nes (Proxy :: _ "definy")
           , homepage:
               StructuredUrl.StructuredUrl
                 { origin:
-                    NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "https://github.com")
+                    NonEmptyString.nes (Proxy :: _ "https://github.com")
                 , pathAndSearchParams:
                     StructuredUrl.fromPath
-                      [ NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "narumincho")
-                      , NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "definy")
+                      [ NonEmptyString.nes (Proxy :: _ "narumincho")
+                      , NonEmptyString.nes (Proxy :: _ "definy")
                       ]
                 }
           , name: name
           , nodeVersion:
-              NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "16")
+              NonEmptyString.nes (Proxy :: _ "16")
           , typeFilePath:
               Nothing
           , version:
-              NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "1.0.0")
+              NonEmptyString.nes (Proxy :: _ "1.0.0")
           }
     )
     ( PackageJson.nameFromNonEmptyString
         ( NonEmptyString.nes
-            (Proxy.Proxy :: Proxy.Proxy "definy-functions")
+            (Proxy :: _ "definy-functions")
         )
     )
 
 definyModuleName :: NonEmptyString
 definyModuleName =
   NonEmptyString.nes
-    (Proxy.Proxy :: Proxy.Proxy "Definy")
+    (Proxy :: _ "Definy")
 
 productionOrDevelopmentModuleName :: PureScriptData.ModuleName
 productionOrDevelopmentModuleName =
   PureScriptData.ModuleName
     ( NonEmptyArray.singleton
         ( NonEmptyString.nes
-            (Proxy.Proxy :: Proxy.Proxy "ProductionOrDevelopment")
+            (Proxy :: _ "ProductionOrDevelopment")
         )
     )
 
@@ -226,7 +234,7 @@ definyVersionModuleName =
   PureScriptData.ModuleName
     ( NonEmptyArray.cons' definyModuleName
         [ NonEmptyString.nes
-            (Proxy.Proxy :: Proxy.Proxy "Version")
+            (Proxy :: _ "Version")
         ]
     )
 
@@ -235,7 +243,7 @@ staticResourceModuleName =
   PureScriptData.ModuleName
     ( NonEmptyArray.cons' definyModuleName
         [ NonEmptyString.nes
-            (Proxy.Proxy :: Proxy.Proxy "StaticResource")
+            (Proxy :: _ "StaticResource")
         ]
     )
 
@@ -253,34 +261,34 @@ generateNowModeAndOriginPureScriptModule productionOrDevelopment origin = do
             PureScriptData.ModuleName
               ( NonEmptyArray.cons' definyModuleName
                   [ NonEmptyString.nes
-                      (Proxy.Proxy :: Proxy.Proxy "OriginAndVersion")
+                      (Proxy :: _ "OriginAndVersion")
                   ]
               )
         , definitionList:
             [ PureScriptWellknown.definition
-                { name: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "nowMode")
+                { name: NonEmptyString.nes (Proxy :: _ "nowMode")
                 , document: "実行モード (ビルド時にコード生成される)"
                 , pType:
                     PureScriptWellknown.pTypeFrom
                       { moduleName: productionOrDevelopmentModuleName
-                      , name: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "ProductionOrDevelopment")
+                      , name: NonEmptyString.nes (Proxy :: _ "ProductionOrDevelopment")
                       }
                 , expr:
                     case productionOrDevelopment of
                       ProductionOrDevelopment.Development ->
                         PureScriptWellknown.tag
                           { moduleName: productionOrDevelopmentModuleName
-                          , name: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "Development")
+                          , name: NonEmptyString.nes (Proxy :: _ "Development")
                           }
                       ProductionOrDevelopment.Production ->
                         PureScriptWellknown.tag
                           { moduleName: productionOrDevelopmentModuleName
-                          , name: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "Production")
+                          , name: NonEmptyString.nes (Proxy :: _ "Production")
                           }
                 , isExport: true
                 }
             , PureScriptWellknown.definition
-                { name: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "origin")
+                { name: NonEmptyString.nes (Proxy :: _ "origin")
                 , document: "オリジン (ビルド時にコード生成される)"
                 , pType: PureScriptWellknown.nonEmptyString
                 , expr: PureScriptWellknown.nonEmptyStringLiteral origin
@@ -296,17 +304,17 @@ versionDefinitionAff = case _ of
   ProductionOrDevelopment.Development ->
     pure
       ( PureScriptWellknown.definition
-          { name: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "version")
+          { name: NonEmptyString.nes (Proxy :: _ "version")
           , document: "バージョン名 (ビルド時にコード生成される)"
           , pType:
               PureScriptWellknown.pTypeFrom
                 { moduleName: definyVersionModuleName
-                , name: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "Version")
+                , name: NonEmptyString.nes (Proxy :: _ "Version")
                 }
           , expr:
               PureScriptWellknown.tag
                 { moduleName: definyVersionModuleName
-                , name: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "Development")
+                , name: NonEmptyString.nes (Proxy :: _ "Development")
                 }
           , isExport: true
           }
@@ -315,7 +323,7 @@ versionDefinitionAff = case _ of
     githubSha <- readGithubSha
     pure
       ( PureScriptWellknown.definition
-          { name: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "version")
+          { name: NonEmptyString.nes (Proxy :: _ "version")
           , document: "バージョン名 (ビルド時にコード生成される)"
           , pType:
               PureScriptWellknown.nonEmptyString
@@ -323,7 +331,7 @@ versionDefinitionAff = case _ of
               PureScriptWellknown.call
                 ( PureScriptWellknown.tag
                     { moduleName: definyVersionModuleName
-                    , name: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "Release")
+                    , name: NonEmptyString.nes (Proxy :: _ "Release")
                     }
                 )
                 (PureScriptWellknown.nonEmptyStringLiteral githubSha)
@@ -338,8 +346,8 @@ readGithubSha =
         ( case _ of
             Just githubShaValue -> case NonEmptyString.fromString githubShaValue of
               Just githubShaAsNonEmptyString -> githubShaAsNonEmptyString
-              Nothing -> NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "GITHUB_SHA is empty")
-            Nothing -> NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "can not read GITHUB_SHA")
+              Nothing -> NonEmptyString.nes (Proxy :: _ "GITHUB_SHA is empty")
+            Nothing -> NonEmptyString.nes (Proxy :: _ "can not read GITHUB_SHA")
         )
         (Process.lookupEnv "GITHUB_SHA")
     )
@@ -349,8 +357,8 @@ firestoreSecurityRulesFilePath =
   Path.DistributionFilePath
     { directoryPath: rootDistributionDirectoryPath
     , fileName:
-        NonEmptyString.nes
-          (Proxy.Proxy :: Proxy.Proxy "firestore")
+        Name.fromSymbolProxy
+          (Proxy :: _ "firestore")
     }
 
 writeFirestoreRules :: Aff.Aff Unit
@@ -364,8 +372,8 @@ cloudStorageSecurityRulesFilePath =
   Path.DistributionFilePath
     { directoryPath: rootDistributionDirectoryPath
     , fileName:
-        NonEmptyString.nes
-          (Proxy.Proxy :: Proxy.Proxy "storage")
+        Name.fromSymbolProxy
+          (Proxy :: _ "storage")
     }
 
 generateCloudStorageRules :: Aff.Aff Unit
@@ -379,7 +387,7 @@ writeFirebaseJson productionOrDevelopment = do
   FileSystemWrite.writeJson
     ( Path.DistributionFilePath
         { directoryPath: Path.DistributionDirectoryPath { appName, folderNameMaybe: Nothing }
-        , fileName: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "firebase")
+        , fileName: Name.fromSymbolProxy (Proxy :: _ "firebase")
         }
     )
     ( FirebaseJson.toJson
@@ -405,16 +413,16 @@ writeFirebaseJson productionOrDevelopment = do
             , hostingDistributionPath: hostingDistributionPath
             , hostingRewites:
                 [ FirebaseJson.Rewrite
-                    { source: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "/api/**")
-                    , function: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "api")
+                    { source: NonEmptyString.nes (Proxy :: _ "/api/**")
+                    , function: NonEmptyString.nes (Proxy :: _ "api")
                     }
                 , FirebaseJson.Rewrite
-                    { source: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "/pngFile/**")
-                    , function: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "pngFile")
+                    { source: NonEmptyString.nes (Proxy :: _ "/pngFile/**")
+                    , function: NonEmptyString.nes (Proxy :: _ "pngFile")
                     }
                 , FirebaseJson.Rewrite
-                    { source: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "**")
-                    , function: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "html")
+                    { source: NonEmptyString.nes (Proxy :: _ "**")
+                    , function: NonEmptyString.nes (Proxy :: _ "html")
                     }
                 ]
             , hostingHeaders: []
@@ -427,7 +435,7 @@ staticResourceBuild = do
   resultList <-
     StaticResourceFile.getStaticResourceFileResult
       ( Path.DirectoryPath
-          [ NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "static")
+          [ Name.fromSymbolProxy (Proxy :: _ "static")
           ]
       )
   copyStaticResource resultList
@@ -444,7 +452,9 @@ copyStaticResource resultList =
               fileType
               ( Path.DistributionFilePath
                   { directoryPath: hostingDistributionPath
-                  , fileName: Hash.toNonEmptyString requestPathAndUploadFileName
+                  , fileName:
+                      Name.fromNonEmptyStringUnsafe
+                        (Hash.toNonEmptyString requestPathAndUploadFileName)
                   }
               )
         )
@@ -470,8 +480,8 @@ runEsbuild = do
         Path.FilePath
           { directoryPath:
               Path.DirectoryPath
-                [ NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "client") ]
-          , fileName: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "main")
+                [ Name.fromSymbolProxy (Proxy :: _ "client") ]
+          , fileName: Name.fromSymbolProxy (Proxy :: _ "main")
           }
     , outdir: esbuildClientProgramFileDirectoryPath
     , sourcemap: false
@@ -485,7 +495,7 @@ readEsbuildResultClientProgramFile = do
     FileSystemRead.readTextFileInDistribution
       ( Path.DistributionFilePath
           { directoryPath: esbuildClientProgramFileDirectoryPath
-          , fileName: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "main")
+          , fileName: Name.fromSymbolProxy (Proxy :: _ "main")
           }
       )
       FileType.JavaScript
@@ -494,7 +504,9 @@ readEsbuildResultClientProgramFile = do
   FileSystemWrite.writeTextFileInDistribution
     ( Path.DistributionFilePath
         { directoryPath: hostingDistributionPath
-        , fileName: Hash.toNonEmptyString clientProgramHashValue
+        , fileName:
+            Name.fromNonEmptyStringUnsafe
+              (Hash.toNonEmptyString clientProgramHashValue)
         }
     )
     clientProgramAsString

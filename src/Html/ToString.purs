@@ -4,6 +4,7 @@ import Data.Array as Array
 import Data.Map as Map
 import Data.Maybe as Maybe
 import Data.String as String
+import Data.String.NonEmpty (NonEmptyString)
 import Data.String.NonEmpty as NonEmptyString
 import Data.Tuple as Tuple
 import Html.Data as Data
@@ -60,7 +61,7 @@ htmlElementToString (Data.RawHtmlElement element) =
           ]
       )
 
-attributesToString :: Map.Map NonEmptyString.NonEmptyString (Maybe.Maybe String) -> String
+attributesToString :: Map.Map NonEmptyString (Maybe.Maybe String) -> String
 attributesToString attributeMap =
   if Map.isEmpty attributeMap then
     ""

@@ -11,14 +11,13 @@ import Data.String.NonEmpty as NonEmptyString
 import Html.Wellknown as HtmlWellknown
 import StructuredUrl as StructuredUrl
 import Type.Proxy (Proxy(..))
-import Type.Proxy as Proxy
 import View.Data as View
 import View.Helper as ViewHelper
 
 view :: Data.Article
 view =
   Data.Article
-    { title: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "SVGの基本")
+    { title: NonEmptyString.nes (Proxy :: _ "SVGの基本")
     , imagePath: StaticResource.svg_basicPng
     , children:
         [ ViewHelper.boxY

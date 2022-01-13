@@ -11,11 +11,11 @@ module Firebase.FirebaseJson
 import Data.Argonaut.Core as ArgonautCore
 import Data.Array as Array
 import Data.Maybe as Maybe
-import Data.String.NonEmpty as NonEmptyString
+import Data.String.NonEmpty (NonEmptyString)
 import Data.Tuple as Tuple
 import Data.UInt as UInt
-import FileSystem.Path as Path
 import FileSystem.FileType as FileType
+import FileSystem.Path as Path
 import Prelude as Prelude
 import Util as Util
 
@@ -38,19 +38,19 @@ newtype FunctionsSetting
 
 newtype Rewrite
   = Rewrite
-  { source :: NonEmptyString.NonEmptyString
-  , function :: NonEmptyString.NonEmptyString
+  { source :: NonEmptyString
+  , function :: NonEmptyString
   }
 
 newtype SourceAndHeaders
   = SourceAndHeaders
-  { source :: NonEmptyString.NonEmptyString
+  { source :: NonEmptyString
   , headers :: Array Header
   }
 
 newtype Header
   = Header
-  { key :: NonEmptyString.NonEmptyString
+  { key :: NonEmptyString
   , value :: String
   }
 

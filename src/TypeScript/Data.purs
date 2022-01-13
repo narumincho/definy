@@ -5,7 +5,7 @@ module TypeScript.Data
   , ExportDefinition(..)
   , Expr(..)
   , FunctionDeclaration(..)
-  , JsTsCode(..)
+  , Module(..)
   , ParameterWithDocument(..)
   , Statement(..)
   , TsIdentifier(..)
@@ -17,11 +17,13 @@ module TypeScript.Data
   ) where
 
 import Data.String.NonEmpty (NonEmptyString)
+import TypeScript.ModuleName as ModuleName
 
 -- | TypeScriptやJavaScriptのコードを表現する. TypeScriptでも出力できるように型情報をつける必要がある
-newtype JsTsCode
-  = JsTsCode
-  { {- 外部に公開する定義 -} exportDefinitionList :: Array ExportDefinition
+newtype Module
+  = Module
+  { name :: ModuleName.ModuleName
+  , {- 外部に公開する定義 -} exportDefinitionList :: Array ExportDefinition
   , {- 定義した後に実行するコード -} statementList :: Array Statement
   }
 

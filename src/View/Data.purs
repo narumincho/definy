@@ -26,12 +26,11 @@ import Data.Array.NonEmpty (NonEmptyArray)
 import Data.Map as Map
 import Data.Maybe (Maybe(..))
 import Data.String.NonEmpty (NonEmptyString)
-import Data.String.NonEmpty as NonEmptyString
 import Hash as Hash
 import Language as Language
 import Option as Option
 import StructuredUrl as StructuredUrl
-import Type.Proxy as Proxy
+import Type.Proxy (Proxy(..))
 import Util as Util
 import Vdom.PatchState as PatchState
 import Html.Wellknown as HtmlWellknown
@@ -44,15 +43,15 @@ newtype View message location
   { {- 
     ページ名
     Google 検索のページ名や, タブ, ブックマークのタイトル, OGPのタイトルなどに使用される
-    -} pageName :: NonEmptyString.NonEmptyString
-  , {- アプリ名 / サイト名 (HTML出力のみ反映) -} appName :: NonEmptyString.NonEmptyString
+    -} pageName :: NonEmptyString
+  , {- アプリ名 / サイト名 (HTML出力のみ反映) -} appName :: NonEmptyString
   , {- ページの説明 (HTML出力のみ反映) -} description :: String
   , {- テーマカラー -} themeColor :: Maybe Color.Color
   , {- アイコン画像のURL (HTML出力のみ反映) -} iconPath :: StructuredUrl.PathAndSearchParams
   , {- ページの言語 -} language :: Maybe Language.Language
   , {- OGPに使われるカバー画像のパス (HTML出力のみ反映, CORSの制限を受けない) -} coverImagePath :: StructuredUrl.PathAndSearchParams
   , {- ページのパス (HTML出力のみ反映) -} path :: StructuredUrl.PathAndSearchParams
-  , {- オリジン -} origin :: NonEmptyString.NonEmptyString
+  , {- オリジン -} origin :: NonEmptyString
   , {- body のスタイル -} bodyStyle :: ViewStyle
   , {- 子要素 -} children :: Array (ElementAndStyle message location)
   }
@@ -81,8 +80,8 @@ createStyle option normal =
   let
     rec =
       Util.optionRecordToMaybeRecord
-        (Proxy.Proxy :: _ ())
-        (Proxy.Proxy :: _ StyleOptional)
+        (Proxy :: _ ())
+        (Proxy :: _ StyleOptional)
         option
   in
     ViewStyle

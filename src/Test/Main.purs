@@ -7,12 +7,13 @@ import Data.String.NonEmpty as NonEmptyString
 import Data.UInt as UInt
 import Effect as Effect
 import FileSystem.FileType as FileType
+import FileSystem.Name as Name
 import FileSystem.Path as FileSystemPath
 import PureScript.Data as PureScriptData
 import PureScript.ToString as PureScriptToString
 import PureScript.Wellknown as PureScriptWellknown
 import Test.Assert as Assert
-import Type.Proxy as Proxy
+import Type.Proxy (Proxy(..))
 import Util as Util
 
 main :: Effect.Effect Unit
@@ -22,7 +23,8 @@ main = do
   listUpdateAtOverAutoCreateLast
   listUpdateAtOverAutoCreateAutoCreate
   groupBySize2
-  fileNameWithExtensitonParse
+  fileNameParse
+  fileNameWithExtensionParse
   pureScriptCodeGenerate
 
 listUpdateAtOverAutoCreateInline :: Effect.Effect Unit
@@ -92,16 +94,24 @@ groupBySize2 =
     , expected: [ [ 0, 1 ], [ 2, 3 ], [ 4 ] ]
     }
 
-fileNameWithExtensitonParse :: Effect.Effect Unit
-fileNameWithExtensitonParse =
+fileNameParse :: Effect.Effect Unit
+fileNameParse =
   Assert.assertEqual
     { actual:
-        FileSystemPath.fileNameWithExtensitonParse
-          (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "sample.test.js"))
+        Name.toNonEmptyString (Name.fromSymbolProxy (Proxy :: _ "sampleFileName"))
+    , expected:
+        NonEmptyString.nes (Proxy :: _ "sampleFileName")
+    }
+
+fileNameWithExtensionParse :: Effect.Effect Unit
+fileNameWithExtensionParse =
+  Assert.assertEqual
+    { actual:
+        FileSystemPath.fileNameWithExtensionParse "sample.test.js"
     , expected:
         Maybe.Just
           { fileName:
-              NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "sample.test")
+              Name.fromSymbolProxy (Proxy :: _ "sample.test")
           , fileType: Maybe.Just FileType.JavaScript
           }
     }
@@ -115,18 +125,18 @@ pureScriptCodeGenerate =
               { name:
                   PureScriptData.ModuleName
                     ( NonEmptyArray.singleton
-                        (NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "Sample"))
+                        (NonEmptyString.nes (Proxy :: _ "Sample"))
                     )
               , definitionList:
                   [ PureScriptWellknown.definition
-                      { name: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "origin")
+                      { name: NonEmptyString.nes (Proxy :: _ "origin")
                       , document: "オリジン"
                       , pType: PureScriptWellknown.primString
                       , expr: PureScriptWellknown.stringLiteral "http://narumincho.com"
                       , isExport: true
                       }
                   , PureScriptWellknown.definition
-                      { name: NonEmptyString.nes (Proxy.Proxy :: Proxy.Proxy "sample")
+                      { name: NonEmptyString.nes (Proxy :: _ "sample")
                       , document: "サンプルデータ\n改行付きのドキュメント"
                       , pType: PureScriptWellknown.primString
                       , expr: PureScriptWellknown.stringLiteral "改行も\nしっかりエスケープされてるかな?"
