@@ -23,6 +23,7 @@ main = do
   listUpdateAtOverAutoCreateLast
   listUpdateAtOverAutoCreateAutoCreate
   groupBySize2
+  fileNameParse
   fileNameWithExtensionParse
   pureScriptCodeGenerate
 
@@ -91,6 +92,15 @@ groupBySize2 =
   Assert.assertEqual
     { actual: Util.groupBySize (UInt.fromInt 2) [ 0, 1, 2, 3, 4 ]
     , expected: [ [ 0, 1 ], [ 2, 3 ], [ 4 ] ]
+    }
+
+fileNameParse :: Effect.Effect Unit
+fileNameParse =
+  Assert.assertEqual
+    { actual:
+        Name.toNonEmptyString (Name.fromSymbolProxy (Proxy :: _ "sampleFileName"))
+    , expected:
+        NonEmptyString.nes (Proxy :: _ "sampleFileName")
     }
 
 fileNameWithExtensionParse :: Effect.Effect Unit

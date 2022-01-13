@@ -36,13 +36,15 @@ instance nameShow :: Prelude.Show Name where
   show (Name rawNonEmptyString) = NonEmptyString.toString rawNonEmptyString
 
 safePatternEither :: Either.Either String Regex.Regex
-safePatternEither = Regex.regex "^[a-zA-Z0-9-_]+$" RegexFlags.unicode
+safePatternEither = Regex.regex "^[a-zA-Z0-9-_.]+$" RegexFlags.unicode
 
 -- | 予約されていて使えないディレクトリ/ファイル名
 reservedNameSet :: Set.Set NonEmptyString
 reservedNameSet =
   Set.fromFoldable
-    [ NonEmptyString.nes (Proxy :: _ "CON")
+    [ NonEmptyString.nes (Proxy :: _ ".")
+    , NonEmptyString.nes (Proxy :: _ "..")
+    , NonEmptyString.nes (Proxy :: _ "CON")
     , NonEmptyString.nes (Proxy :: _ "AUX")
     , NonEmptyString.nes (Proxy :: _ "PRN")
     , NonEmptyString.nes (Proxy :: _ "NUL")
