@@ -4,6 +4,8 @@ module FileSystem.Name
   , class CheckSafeName
   , class CheckValidChar
   , class CheckValidCharTail
+  , class IsName
+  , reflectName
   , fromNonEmptyString
   , fromNonEmptyStringUnsafe
   , fromString
@@ -37,6 +39,8 @@ derive instance nameOrd :: Prelude.Ord Name
 
 instance nameShow :: Prelude.Show Name where
   show (Name rawNonEmptyString) = NonEmptyString.toString rawNonEmptyString
+
+foreign import data TypeLevelName :: Symbol -> Name
 
 safePatternEither :: Either.Either String Regex.Regex
 safePatternEither = Regex.regex "^[a-zA-Z0-9-_.]+$" RegexFlags.unicode
@@ -106,13 +110,19 @@ fromString name = case NonEmptyString.fromString name of
 -- | Proxy symbol から作成する. 含まれる文字のチェックはするが,
 -- | 予約されていて名前に関してはチェックしないので, コード内に気をつけて書く.
 fromSymbolProxy ::
-  forall (symbol :: Symbol).
-  (Symbol.IsSymbol symbol) =>
-  (CheckSafeName symbol) =>
+  forall (symbol :: Symbol) (name :: Name).
+  (CheckSafeName symbol name) =>
+  (IsName name) =>
   Proxy symbol -> Name
-fromSymbolProxy _ = Name (NonEmptyString.nes (Proxy :: Proxy symbol))
+fromSymbolProxy _ = reflectName (Proxy :: Proxy name)
 
-class CheckSafeName (symbol :: Symbol)
+class IsName (name :: Name) where
+  reflectName :: Proxy name -> Name
+
+instance isName :: (Symbol.IsSymbol symbol) => IsName (TypeLevelName symbol) where
+  reflectName _ = Name (NonEmptyString.nes (Proxy :: Proxy symbol))
+
+class CheckSafeName (symbol :: Symbol) (name :: Name) | symbol -> name
 
 instance checkSafeName ::
   ( Identifier.SymbolToCharTypeList symbol charTypeList
@@ -121,7 +131,7 @@ instance checkSafeName ::
   , Identifier.SymbolToCharTypeList upperSymbol upperCharTypeList
   , CheckNotReserved symbol upperSymbol
   ) =>
-  CheckSafeName symbol
+  CheckSafeName symbol (TypeLevelName symbol)
 
 class CheckNotReserved (originalSymbol :: Symbol) (uppercaseSymbol :: Symbol)
 
