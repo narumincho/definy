@@ -25,6 +25,7 @@
   , "record"
   , "strings"
   , "tuples"
+  , "typelevel-prelude"
   , "uint"
   ]
 , packages = ./packages.dhall
