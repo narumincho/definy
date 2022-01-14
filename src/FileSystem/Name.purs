@@ -5,11 +5,12 @@ module FileSystem.Name
   , class CheckValidChar
   , class CheckValidCharTail
   , class IsName
-  , reflectName
   , fromNonEmptyString
   , fromNonEmptyStringUnsafe
   , fromString
   , fromSymbolProxy
+  , reflectName
+  , reifyName
   , toNonEmptyString
   ) where
 
@@ -121,6 +122,15 @@ class IsName (name :: Name) where
 
 instance isName :: (Symbol.IsSymbol symbol) => IsName (TypeLevelName symbol) where
   reflectName _ = Name (NonEmptyString.nes (Proxy :: Proxy symbol))
+
+reifyName :: forall (r :: Type). Name -> (forall (o :: Name). IsName o => Proxy o -> r) -> r
+reifyName (Name str) f = Symbol.reifySymbol (NonEmptyString.toString str) (reifyNameName f)
+
+reifyNameName ::
+  forall (r :: Type) (symbol :: Symbol).
+  (Symbol.IsSymbol symbol) =>
+  (forall (o :: Name). IsName o => Proxy o -> r) -> Proxy symbol -> r
+reifyNameName f _ = f (Proxy :: Proxy (TypeLevelName symbol))
 
 class CheckSafeName (symbol :: Symbol) (name :: Name) | symbol -> name
 
