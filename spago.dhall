@@ -25,6 +25,7 @@
   , "record"
   , "strings"
   , "tuples"
+  , "typelevel-lists"
   , "typelevel-prelude"
   , "uint"
   ]

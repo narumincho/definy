@@ -2,10 +2,7 @@ module Identifier
   ( AlphabetLowercase
   , AlphabetUppercase
   , CharType(..)
-  , CharTypeList
-  , Cons
   , Digit
-  , Nil
   , reflectCharType
   , Other
   , class CharSymbolToCharType
@@ -18,6 +15,7 @@ module Identifier
 
 import Data.String as String
 import Prim.Symbol as Symbol
+import Type.Data.List as TList
 import Type.Prelude (class IsSymbol, Proxy(..), reflectSymbol, reifySymbol)
 
 data CharType
@@ -311,23 +309,16 @@ else instance charSymbolToCharType8 :: CharSymbolToCharType "8" (Digit "8")
 else instance charSymbolToCharType9 :: CharSymbolToCharType "9" (Digit "9")
 else instance charSymbolToCharTypeOther :: CharSymbolToCharType char (Other char)
 
--- | 扱いやすい Symbol の文字のリスト
-data CharTypeList
-
-foreign import data Cons :: CharType -> CharTypeList -> CharTypeList
-
-foreign import data Nil :: CharTypeList
-
 -- | Symbol を 扱いやすい symbol の文字のリストに変換する
-class SymbolToCharTypeList (symbol :: Symbol) (charTypeList :: CharTypeList) | symbol -> charTypeList, charTypeList -> symbol
+class SymbolToCharTypeList (symbol :: Symbol) (charTypeList :: TList.List' CharType) | symbol -> charTypeList, charTypeList -> symbol
 
-instance symbolToCharTypeListNil :: SymbolToCharTypeList "" Nil
+instance symbolToCharTypeListNil :: SymbolToCharTypeList "" TList.Nil'
 else instance symbolToCharTypeListCons ::
   ( SymbolToCharTypeList tail tailCharTypeList
   , Symbol.Cons head tail symbol
   , CharSymbolToCharType head headChar
   ) =>
-  SymbolToCharTypeList symbol (Cons headChar tailCharTypeList)
+  SymbolToCharTypeList symbol (TList.Cons' headChar tailCharTypeList)
 
 class LowercaseToUppercase (lower :: CharType) (upper :: CharType) | lower -> upper, upper -> lower
 
@@ -359,12 +350,12 @@ else instance lowercaseToUppercaseY :: LowercaseToUppercase (AlphabetLowercase "
 else instance lowercaseToUppercaseZ :: LowercaseToUppercase (AlphabetLowercase "z") (AlphabetUppercase "Z")
 else instance lowercaseToUppercaseOther :: LowercaseToUppercase charType charType
 
-class CharTypeListLowercaseToUppercase (lower :: CharTypeList) (upper :: CharTypeList) | lower -> upper, upper -> lower
+class CharTypeListLowercaseToUppercase (lower :: TList.List' CharType) (upper :: TList.List' CharType) | lower -> upper, upper -> lower
 
-instance charTypeListLowercaseToUppercaseNil :: CharTypeListLowercaseToUppercase Nil Nil
+instance charTypeListLowercaseToUppercaseNil :: CharTypeListLowercaseToUppercase TList.Nil' TList.Nil'
 
 instance charTypeListLowercaseToUppercaseCons ::
   ( LowercaseToUppercase lowerHead upperHead
   , CharTypeListLowercaseToUppercase lowerTail upperTail
   ) =>
-  CharTypeListLowercaseToUppercase (Cons lowerHead lowerTail) (Cons upperHead upperTail)
+  CharTypeListLowercaseToUppercase (TList.Cons' lowerHead lowerTail) (TList.Cons' upperHead upperTail)

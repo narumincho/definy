@@ -22,6 +22,7 @@ import Identifier as Identifier
 import Prelude as Prelude
 import Prim.Symbol as PrimSymbol
 import Prim.TypeError as TypeError
+import Type.Data.List as TList
 import Type.Proxy (Proxy(..))
 
 -- | `*/` などのファイル名やディレクトリ名にふさわしくない文字列が含まれていないことを保証した名前
@@ -105,10 +106,10 @@ fromString name = case NonEmptyString.fromString name of
 fromSymbolProxy ::
   forall (symbol :: Symbol).
   (Symbol.IsSymbol symbol) =>
-  forall (charTypeList :: Identifier.CharTypeList).
+  forall (charTypeList :: TList.List' Identifier.CharType).
   (Identifier.SymbolToCharTypeList symbol charTypeList) =>
   (MakeName charTypeList) =>
-  forall (upperCharTypeList :: Identifier.CharTypeList).
+  forall (upperCharTypeList :: TList.List' Identifier.CharType).
   (Identifier.CharTypeListLowercaseToUppercase charTypeList upperCharTypeList) =>
   forall (upperSymbol :: Symbol).
   (Identifier.SymbolToCharTypeList upperSymbol upperCharTypeList) =>
@@ -210,85 +211,85 @@ type ReservedNameErrorMessage originalSymbol symbol
       )
       (TypeError.Text ") is reserved Name")
 
-class MakeName (charTypeList :: Identifier.CharTypeList)
+class MakeName (charTypeList :: TList.List' Identifier.CharType)
 
 instance makeNameEmpty ::
   TypeError.Fail (TypeError.Text "Cannot create an Name from an empty Symbol") =>
-  MakeName Identifier.Nil
+  MakeName TList.Nil'
 else instance makeNameAlphabetUppercase ::
   ( MakeNameTail tail tailSymbol
   , Symbol.IsSymbol head
   , PrimSymbol.Append head tailSymbol symbol
   , Symbol.IsSymbol symbol
   ) =>
-  MakeName (Identifier.Cons (Identifier.AlphabetUppercase head) tail)
+  MakeName (TList.Cons' (Identifier.AlphabetUppercase head) tail)
 else instance makeNameAlphabetLowercase ::
   ( MakeNameTail tail tailSymbol
   , Symbol.IsSymbol head
   , PrimSymbol.Append head tailSymbol symbol
   , Symbol.IsSymbol symbol
   ) =>
-  MakeName (Identifier.Cons (Identifier.AlphabetLowercase head) tail)
+  MakeName (TList.Cons' (Identifier.AlphabetLowercase head) tail)
 else instance makeNameDigit ::
   ( MakeNameTail tail tailSymbol
   , Symbol.IsSymbol head
   , PrimSymbol.Append head tailSymbol symbol
   , Symbol.IsSymbol symbol
   ) =>
-  MakeName (Identifier.Cons (Identifier.Digit head) tail)
+  MakeName (TList.Cons' (Identifier.Digit head) tail)
 else instance makeNameDot ::
   ( MakeNameTail tail tailSymbol
   , PrimSymbol.Append "." tailSymbol symbol
   , Symbol.IsSymbol symbol
   ) =>
-  MakeName (Identifier.Cons (Identifier.Other ".") tail)
+  MakeName (TList.Cons' (Identifier.Other ".") tail)
 else instance makeNameOther ::
   ( Identifier.CharSymbolToCharType headChar head
   , PrimSymbol.Append "The first letter of the Name must not be " headChar message
   , TypeError.Fail (TypeError.Text message)
   ) =>
-  MakeName (Identifier.Cons head tail)
+  MakeName (TList.Cons' head tail)
 
-class MakeNameTail (charTypeList :: Identifier.CharTypeList) (symbol :: Symbol) | charTypeList -> symbol
+class MakeNameTail (charTypeList :: TList.List' Identifier.CharType) (symbol :: Symbol) | charTypeList -> symbol
 
 instance makeNameTailEmpty ::
-  MakeNameTail Identifier.Nil ""
+  MakeNameTail TList.Nil' ""
 else instance makeNameTailAlphabetUppercase ::
   ( MakeNameTail tail tailSymbol
   , PrimSymbol.Append head tailSymbol symbol
   ) =>
-  MakeNameTail (Identifier.Cons (Identifier.AlphabetUppercase head) tail) symbol
+  MakeNameTail (TList.Cons' (Identifier.AlphabetUppercase head) tail) symbol
 else instance makeNameTailAlphabetLowercase ::
   ( MakeNameTail tail tailSymbol
   , PrimSymbol.Append head tailSymbol symbol
   ) =>
-  MakeNameTail (Identifier.Cons (Identifier.AlphabetLowercase head) tail) symbol
+  MakeNameTail (TList.Cons' (Identifier.AlphabetLowercase head) tail) symbol
 else instance makeNameTailAlphabetDigit ::
   ( MakeNameTail tail tailSymbol
   , PrimSymbol.Append head tailSymbol symbol
   ) =>
-  MakeNameTail (Identifier.Cons (Identifier.Digit head) tail) symbol
+  MakeNameTail (TList.Cons' (Identifier.Digit head) tail) symbol
 else instance makeNameTailUnderscore ::
   ( MakeNameTail tail tailSymbol
   , PrimSymbol.Append "_" tailSymbol symbol
   ) =>
-  MakeNameTail (Identifier.Cons (Identifier.Other "_") tail) symbol
+  MakeNameTail (TList.Cons' (Identifier.Other "_") tail) symbol
 else instance makeNameTailHyphenMinus ::
   ( MakeNameTail tail tailSymbol
   , PrimSymbol.Append "-" tailSymbol symbol
   ) =>
-  MakeNameTail (Identifier.Cons (Identifier.Other "-") tail) symbol
+  MakeNameTail (TList.Cons' (Identifier.Other "-") tail) symbol
 else instance makeNameTailHyphenDot ::
   ( MakeNameTail tail tailSymbol
   , PrimSymbol.Append "." tailSymbol symbol
   ) =>
-  MakeNameTail (Identifier.Cons (Identifier.Other ".") tail) symbol
+  MakeNameTail (TList.Cons' (Identifier.Other ".") tail) symbol
 else instance makeNameTailOther ::
   ( Identifier.CharSymbolToCharType headCharSymbol headCharType
   , PrimSymbol.Append "Name cannot contain " headCharSymbol message
   , TypeError.Fail (TypeError.Text message)
   ) =>
-  MakeNameTail (Identifier.Cons headCharType tail) "tail error"
+  MakeNameTail (TList.Cons' headCharType tail) "tail error"
 
 toNonEmptyString :: Name -> NonEmptyString
 toNonEmptyString (Name str) = str
