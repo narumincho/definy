@@ -1,6 +1,7 @@
 module FileSystem.Name
   ( Name
   , class CheckNotReserved
+  , class CheckSafeName
   , class CheckValidChar
   , class CheckValidCharTail
   , fromNonEmptyString
@@ -106,16 +107,20 @@ fromString name = case NonEmptyString.fromString name of
 fromSymbolProxy ::
   forall (symbol :: Symbol).
   (Symbol.IsSymbol symbol) =>
-  forall (charTypeList :: TList.List' Identifier.CharType).
-  (Identifier.SymbolToCharTypeList symbol charTypeList) =>
-  (CheckValidChar charTypeList) =>
-  forall (upperCharTypeList :: TList.List' Identifier.CharType).
-  (Identifier.CharTypeListLowercaseToUppercase charTypeList upperCharTypeList) =>
-  forall (upperSymbol :: Symbol).
-  (Identifier.SymbolToCharTypeList upperSymbol upperCharTypeList) =>
-  (CheckNotReserved symbol upperSymbol) =>
+  (CheckSafeName symbol) =>
   Proxy symbol -> Name
 fromSymbolProxy _ = Name (NonEmptyString.nes (Proxy :: Proxy symbol))
+
+class CheckSafeName (symbol :: Symbol)
+
+instance checkSafeName ::
+  ( Identifier.SymbolToCharTypeList symbol charTypeList
+  , CheckValidChar charTypeList
+  , Identifier.CharTypeListLowercaseToUppercase charTypeList upperCharTypeList
+  , Identifier.SymbolToCharTypeList upperSymbol upperCharTypeList
+  , CheckNotReserved symbol upperSymbol
+  ) =>
+  CheckSafeName symbol
 
 class CheckNotReserved (originalSymbol :: Symbol) (uppercaseSymbol :: Symbol)
 
