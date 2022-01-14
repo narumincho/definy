@@ -7,6 +7,7 @@ module ErrorMessage
   , class ErrorMessageToTypeErrorDoc
   , class IsErrorMessage
   , reflectErrorMessage
+  , reifyErrorMessage
   ) where
 
 import Prim.TypeError as TypeError

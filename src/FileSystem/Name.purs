@@ -14,6 +14,7 @@ module FileSystem.Name
   , toNonEmptyString
   ) where
 
+import Data.Either (Either)
 import Data.Either as Either
 import Data.Maybe (Maybe(..))
 import Data.Set as Set
@@ -22,6 +23,7 @@ import Data.String.NonEmpty as NonEmptyString
 import Data.String.Regex as Regex
 import Data.String.Regex.Flags as RegexFlags
 import Data.Symbol as Symbol
+import ErrorMessage as ErrorMessage
 import Identifier as Identifier
 import Prelude as Prelude
 import Prim.Symbol as PrimSymbol
@@ -136,7 +138,8 @@ class CheckSafeName (symbol :: Symbol) (name :: Name) | symbol -> name
 
 instance checkSafeName ::
   ( Identifier.SymbolToCharTypeList symbol charTypeList
-  , CheckValidChar charTypeList
+  , CheckValidChar charTypeList result
+  , CheckNameResultTrowError result
   , Identifier.CharTypeListLowercaseToUppercase charTypeList upperCharTypeList
   , Identifier.SymbolToCharTypeList upperSymbol upperCharTypeList
   , CheckNotReserved symbol upperSymbol
@@ -237,88 +240,133 @@ type ReservedNameErrorMessage originalSymbol symbol
       )
       (TypeError.Text ") is reserved Name")
 
-class CheckValidChar (charTypeList :: TList.List' Identifier.CharType)
+class CheckValidChar (charTypeList :: TList.List' Identifier.CharType) (result :: CheckNameResult) | charTypeList -> result
 
 instance checkValidCharEmpty ::
-  TypeError.Fail (TypeError.Text "Cannot create an Name from an empty Symbol") =>
-  CheckValidChar TList.Nil'
+  CheckValidChar TList.Nil' (NameError (ErrorMessage.Text "Cannot create an Name from an empty Symbol"))
 else instance checkValidCharAlphabetUppercase ::
-  ( CheckValidCharTail tail tailSymbol PeanoNat.D1
-  , Symbol.IsSymbol head
-  , PrimSymbol.Append head tailSymbol symbol
-  , Symbol.IsSymbol symbol
+  ( CheckValidCharTail tail PeanoNat.D1 tailResult
+  , CheckNameResultJoin head tailResult result
   ) =>
-  CheckValidChar (TList.Cons' (Identifier.AlphabetUppercase head) tail)
+  CheckValidChar (TList.Cons' (Identifier.AlphabetUppercase head) tail) result
 else instance checkValidCharAlphabetLowercase ::
-  ( CheckValidCharTail tail tailSymbol PeanoNat.D1
-  , Symbol.IsSymbol head
-  , PrimSymbol.Append head tailSymbol symbol
-  , Symbol.IsSymbol symbol
+  ( CheckValidCharTail tail PeanoNat.D1 tailResult
+  , CheckNameResultJoin head tailResult result
   ) =>
-  CheckValidChar (TList.Cons' (Identifier.AlphabetLowercase head) tail)
+  CheckValidChar (TList.Cons' (Identifier.AlphabetLowercase head) tail) result
 else instance checkValidCharDigit ::
-  ( CheckValidCharTail tail tailSymbol PeanoNat.D1
-  , Symbol.IsSymbol head
-  , PrimSymbol.Append head tailSymbol symbol
-  , Symbol.IsSymbol symbol
+  ( CheckValidCharTail tail PeanoNat.D1 tailResult
+  , CheckNameResultJoin head tailResult result
   ) =>
-  CheckValidChar (TList.Cons' (Identifier.Digit head) tail)
+  CheckValidChar (TList.Cons' (Identifier.Digit head) tail) result
 else instance checkValidCharDot ::
-  ( CheckValidCharTail tail tailSymbol PeanoNat.D1
-  , PrimSymbol.Append "." tailSymbol symbol
-  , Symbol.IsSymbol symbol
+  ( CheckValidCharTail tail PeanoNat.D1 tailResult
+  , CheckNameResultJoin "." tailSymbol result
   ) =>
-  CheckValidChar (TList.Cons' (Identifier.Other ".") tail)
+  CheckValidChar (TList.Cons' (Identifier.Other ".") tail) result
 else instance checkValidCharOther ::
   ( Identifier.CharSymbolToCharType headChar head
   , PrimSymbol.Append "The first letter of the Name must not be " headChar message
-  , TypeError.Fail (TypeError.Text message)
   ) =>
-  CheckValidChar (TList.Cons' head tail)
+  CheckValidChar (TList.Cons' head tail) (NameError (ErrorMessage.Text message))
 
-class CheckValidCharTail (charTypeList :: TList.List' Identifier.CharType) (symbol :: Symbol) (length :: PeanoNat.Nat) | charTypeList -> symbol
+class CheckValidCharTail (charTypeList :: TList.List' Identifier.CharType) (length :: PeanoNat.Nat) (result :: CheckNameTailResult) | charTypeList -> result
 
 instance checkValidCharTailLength ::
-  (TypeError.Fail (TypeError.Text "50文字以上です!")) =>
-  CheckValidCharTail list symbol PeanoNat.D50
+  CheckValidCharTail list PeanoNat.D50 (NameTailError (ErrorMessage.Text "50文字以上です!"))
 else instance checkValidCharTailEmpty ::
-  CheckValidCharTail TList.Nil' "" length
+  CheckValidCharTail TList.Nil' length (NameTailOk "")
 else instance checkValidCharTailAlphabetUppercase ::
-  ( CheckValidCharTail tail tailSymbol (PeanoNat.Succ length)
-  , PrimSymbol.Append head tailSymbol symbol
+  ( CheckValidCharTail tail (PeanoNat.Succ length) tailResult
+  , CheckNameTailResultJoin head tailResult result
   ) =>
-  CheckValidCharTail (TList.Cons' (Identifier.AlphabetUppercase head) tail) symbol length
+  CheckValidCharTail (TList.Cons' (Identifier.AlphabetUppercase head) tail) length result
 else instance checkValidCharTailAlphabetLowercase ::
-  ( CheckValidCharTail tail tailSymbol (PeanoNat.Succ length)
-  , PrimSymbol.Append head tailSymbol symbol
+  ( CheckValidCharTail tail (PeanoNat.Succ length) tailResult
+  , CheckNameTailResultJoin head tailResult result
   ) =>
-  CheckValidCharTail (TList.Cons' (Identifier.AlphabetLowercase head) tail) symbol length
+  CheckValidCharTail (TList.Cons' (Identifier.AlphabetLowercase head) tail) length result
 else instance checkValidCharTailAlphabetDigit ::
-  ( CheckValidCharTail tail tailSymbol (PeanoNat.Succ length)
-  , PrimSymbol.Append head tailSymbol symbol
+  ( CheckValidCharTail tail (PeanoNat.Succ length) tailResult
+  , CheckNameTailResultJoin head tailResult result
   ) =>
-  CheckValidCharTail (TList.Cons' (Identifier.Digit head) tail) symbol length
+  CheckValidCharTail (TList.Cons' (Identifier.Digit head) tail) length result
 else instance checkValidCharTailUnderscore ::
-  ( CheckValidCharTail tail tailSymbol (PeanoNat.Succ length)
-  , PrimSymbol.Append "_" tailSymbol symbol
+  ( CheckValidCharTail tail (PeanoNat.Succ length) tailResult
+  , CheckNameTailResultJoin "_" tailResult result
   ) =>
-  CheckValidCharTail (TList.Cons' (Identifier.Other "_") tail) symbol length
+  CheckValidCharTail (TList.Cons' (Identifier.Other "_") tail) length result
 else instance checkValidCharTailHyphenMinus ::
-  ( CheckValidCharTail tail tailSymbol (PeanoNat.Succ length)
-  , PrimSymbol.Append "-" tailSymbol symbol
+  ( CheckValidCharTail tail (PeanoNat.Succ length) tailResult
+  , CheckNameTailResultJoin "-" tailResult result
   ) =>
-  CheckValidCharTail (TList.Cons' (Identifier.Other "-") tail) symbol length
+  CheckValidCharTail (TList.Cons' (Identifier.Other "-") tail) length result
 else instance checkValidCharTailHyphenDot ::
-  ( CheckValidCharTail tail tailSymbol (PeanoNat.Succ length)
-  , PrimSymbol.Append "." tailSymbol symbol
+  ( CheckValidCharTail tail (PeanoNat.Succ length) tailResult
+  , CheckNameTailResultJoin "." tailResult result
   ) =>
-  CheckValidCharTail (TList.Cons' (Identifier.Other ".") tail) symbol length
+  CheckValidCharTail (TList.Cons' (Identifier.Other ".") tail) length result
 else instance checkValidCharTailOther ::
   ( Identifier.CharSymbolToCharType headCharSymbol headCharType
   , PrimSymbol.Append "Name cannot contain " headCharSymbol message
-  , TypeError.Fail (TypeError.Text message)
   ) =>
-  CheckValidCharTail (TList.Cons' headCharType tail) "tail error" length
+  CheckValidCharTail (TList.Cons' headCharType tail) length (NameTailError (ErrorMessage.Text message))
+
+data CheckNameResult
+
+foreign import data NameOk :: Name -> CheckNameResult
+
+foreign import data NameError :: ErrorMessage.ErrorMessage -> CheckNameResult
+
+class IsCheckNameResult (checkNameResult :: CheckNameResult) where
+  reflectCheckNameResult :: Proxy checkNameResult -> Either ErrorMessage.ErrorMessage Name
+
+instance isCheckNameResultOk ::
+  (IsName name) =>
+  IsCheckNameResult (NameOk name) where
+  reflectCheckNameResult _ =
+    Either.Right
+      (reflectName (Proxy :: Proxy name))
+else instance isCheckNameResultError ::
+  (ErrorMessage.IsErrorMessage errorMessage) =>
+  IsCheckNameResult (NameError errorMessage) where
+  reflectCheckNameResult _ =
+    Either.Left
+      (ErrorMessage.reflectErrorMessage (Proxy :: Proxy errorMessage))
+
+class CheckNameResultTrowError (checkNameResult :: CheckNameResult)
+
+instance checkNameResultTrowErrorOk :: CheckNameResultTrowError (NameOk name)
+else instance checkNameResultTrowError ::
+  ( ErrorMessage.ErrorMessageToTypeErrorDoc error doc
+  , TypeError.Fail doc
+  ) =>
+  CheckNameResultTrowError (NameError error)
+
+class CheckNameResultJoin (head :: Symbol) (checkNameTailResult :: CheckNameTailResult) (checkNameResult :: CheckNameResult) | head checkNameTailResult -> checkNameResult
+
+instance checkNameResultJoinOk :: (PrimSymbol.Append head tail symbol) => CheckNameResultJoin head (NameTailOk tail) (NameOk (TypeLevelName symbol))
+else instance checkNameResultJoinError :: CheckNameResultJoin head (NameTailError message) (NameError message)
+
+data CheckNameTailResult
+
+foreign import data NameTailOk :: Symbol -> CheckNameTailResult
+
+foreign import data NameTailError :: ErrorMessage.ErrorMessage -> CheckNameTailResult
+
+class IsCheckNameTailResult (checkNameTailResult :: CheckNameTailResult)
+
+instance isCheckNameTailResultOk ::
+  (Symbol.IsSymbol nameTail) =>
+  IsCheckNameTailResult (NameTailOk nameTail)
+else instance isCheckNameTailResultError ::
+  (ErrorMessage.IsErrorMessage errorMessage) =>
+  IsCheckNameTailResult (NameTailError errorMessage)
+
+class CheckNameTailResultJoin (head :: Symbol) (isCheckNameTailResult :: CheckNameTailResult) (result :: CheckNameTailResult) | isCheckNameTailResult -> result
+
+instance checkNameTailResultJoinOk :: (PrimSymbol.Append head tail symbol) => CheckNameTailResultJoin head (NameTailOk tail) (NameTailOk symbol)
+else instance checkNameTailResultJoinError :: CheckNameTailResultJoin head (NameTailError errorMessage) (NameTailError errorMessage)
 
 toNonEmptyString :: Name -> NonEmptyString
 toNonEmptyString (Name str) = str
