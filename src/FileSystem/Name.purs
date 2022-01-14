@@ -24,6 +24,7 @@ import Prelude as Prelude
 import Prim.Symbol as PrimSymbol
 import Prim.TypeError as TypeError
 import Type.Data.List as TList
+import Type.Data.Peano.Nat as PeanoNat
 import Type.Proxy (Proxy(..))
 
 -- | `*/` などのファイル名やディレクトリ名にふさわしくない文字列が含まれていないことを保証した名前
@@ -222,28 +223,28 @@ instance checkValidCharEmpty ::
   TypeError.Fail (TypeError.Text "Cannot create an Name from an empty Symbol") =>
   CheckValidChar TList.Nil'
 else instance checkValidCharAlphabetUppercase ::
-  ( CheckValidCharTail tail tailSymbol
+  ( CheckValidCharTail tail tailSymbol PeanoNat.D1
   , Symbol.IsSymbol head
   , PrimSymbol.Append head tailSymbol symbol
   , Symbol.IsSymbol symbol
   ) =>
   CheckValidChar (TList.Cons' (Identifier.AlphabetUppercase head) tail)
 else instance checkValidCharAlphabetLowercase ::
-  ( CheckValidCharTail tail tailSymbol
+  ( CheckValidCharTail tail tailSymbol PeanoNat.D1
   , Symbol.IsSymbol head
   , PrimSymbol.Append head tailSymbol symbol
   , Symbol.IsSymbol symbol
   ) =>
   CheckValidChar (TList.Cons' (Identifier.AlphabetLowercase head) tail)
 else instance checkValidCharDigit ::
-  ( CheckValidCharTail tail tailSymbol
+  ( CheckValidCharTail tail tailSymbol PeanoNat.D1
   , Symbol.IsSymbol head
   , PrimSymbol.Append head tailSymbol symbol
   , Symbol.IsSymbol symbol
   ) =>
   CheckValidChar (TList.Cons' (Identifier.Digit head) tail)
 else instance checkValidCharDot ::
-  ( CheckValidCharTail tail tailSymbol
+  ( CheckValidCharTail tail tailSymbol PeanoNat.D1
   , PrimSymbol.Append "." tailSymbol symbol
   , Symbol.IsSymbol symbol
   ) =>
@@ -255,46 +256,49 @@ else instance checkValidCharOther ::
   ) =>
   CheckValidChar (TList.Cons' head tail)
 
-class CheckValidCharTail (charTypeList :: TList.List' Identifier.CharType) (symbol :: Symbol) | charTypeList -> symbol
+class CheckValidCharTail (charTypeList :: TList.List' Identifier.CharType) (symbol :: Symbol) (length :: PeanoNat.Nat) | charTypeList -> symbol
 
-instance checkValidCharTailEmpty ::
-  CheckValidCharTail TList.Nil' ""
+instance checkValidCharTailLength ::
+  (TypeError.Fail (TypeError.Text "50文字以上です!")) =>
+  CheckValidCharTail list symbol PeanoNat.D50
+else instance checkValidCharTailEmpty ::
+  CheckValidCharTail TList.Nil' "" length
 else instance checkValidCharTailAlphabetUppercase ::
-  ( CheckValidCharTail tail tailSymbol
+  ( CheckValidCharTail tail tailSymbol (PeanoNat.Succ length)
   , PrimSymbol.Append head tailSymbol symbol
   ) =>
-  CheckValidCharTail (TList.Cons' (Identifier.AlphabetUppercase head) tail) symbol
+  CheckValidCharTail (TList.Cons' (Identifier.AlphabetUppercase head) tail) symbol length
 else instance checkValidCharTailAlphabetLowercase ::
-  ( CheckValidCharTail tail tailSymbol
+  ( CheckValidCharTail tail tailSymbol (PeanoNat.Succ length)
   , PrimSymbol.Append head tailSymbol symbol
   ) =>
-  CheckValidCharTail (TList.Cons' (Identifier.AlphabetLowercase head) tail) symbol
+  CheckValidCharTail (TList.Cons' (Identifier.AlphabetLowercase head) tail) symbol length
 else instance checkValidCharTailAlphabetDigit ::
-  ( CheckValidCharTail tail tailSymbol
+  ( CheckValidCharTail tail tailSymbol (PeanoNat.Succ length)
   , PrimSymbol.Append head tailSymbol symbol
   ) =>
-  CheckValidCharTail (TList.Cons' (Identifier.Digit head) tail) symbol
+  CheckValidCharTail (TList.Cons' (Identifier.Digit head) tail) symbol length
 else instance checkValidCharTailUnderscore ::
-  ( CheckValidCharTail tail tailSymbol
+  ( CheckValidCharTail tail tailSymbol (PeanoNat.Succ length)
   , PrimSymbol.Append "_" tailSymbol symbol
   ) =>
-  CheckValidCharTail (TList.Cons' (Identifier.Other "_") tail) symbol
+  CheckValidCharTail (TList.Cons' (Identifier.Other "_") tail) symbol length
 else instance checkValidCharTailHyphenMinus ::
-  ( CheckValidCharTail tail tailSymbol
+  ( CheckValidCharTail tail tailSymbol (PeanoNat.Succ length)
   , PrimSymbol.Append "-" tailSymbol symbol
   ) =>
-  CheckValidCharTail (TList.Cons' (Identifier.Other "-") tail) symbol
+  CheckValidCharTail (TList.Cons' (Identifier.Other "-") tail) symbol length
 else instance checkValidCharTailHyphenDot ::
-  ( CheckValidCharTail tail tailSymbol
+  ( CheckValidCharTail tail tailSymbol (PeanoNat.Succ length)
   , PrimSymbol.Append "." tailSymbol symbol
   ) =>
-  CheckValidCharTail (TList.Cons' (Identifier.Other ".") tail) symbol
+  CheckValidCharTail (TList.Cons' (Identifier.Other ".") tail) symbol length
 else instance checkValidCharTailOther ::
   ( Identifier.CharSymbolToCharType headCharSymbol headCharType
   , PrimSymbol.Append "Name cannot contain " headCharSymbol message
   , TypeError.Fail (TypeError.Text message)
   ) =>
-  CheckValidCharTail (TList.Cons' headCharType tail) "tail error"
+  CheckValidCharTail (TList.Cons' headCharType tail) "tail error" length
 
 toNonEmptyString :: Name -> NonEmptyString
 toNonEmptyString (Name str) = str

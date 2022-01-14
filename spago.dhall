@@ -26,6 +26,7 @@
   , "strings"
   , "tuples"
   , "typelevel-lists"
+  , "typelevel-peano"
   , "typelevel-prelude"
   , "uint"
   ]
