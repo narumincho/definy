@@ -1,8 +1,9 @@
 module FileSystem.Name
   ( Name
   , class CheckNotReserved
-  , class MakeName
-  , class MakeNameTail
+  , class CheckSafeName
+  , class CheckValidChar
+  , class CheckValidCharTail
   , fromNonEmptyString
   , fromNonEmptyStringUnsafe
   , fromString
@@ -22,6 +23,8 @@ import Identifier as Identifier
 import Prelude as Prelude
 import Prim.Symbol as PrimSymbol
 import Prim.TypeError as TypeError
+import Type.Data.List as TList
+import Type.Data.Peano.Nat as PeanoNat
 import Type.Proxy (Proxy(..))
 
 -- | `*/` などのファイル名やディレクトリ名にふさわしくない文字列が含まれていないことを保証した名前
@@ -105,16 +108,20 @@ fromString name = case NonEmptyString.fromString name of
 fromSymbolProxy ::
   forall (symbol :: Symbol).
   (Symbol.IsSymbol symbol) =>
-  forall (charTypeList :: Identifier.CharTypeList).
-  (Identifier.SymbolToCharTypeList symbol charTypeList) =>
-  (MakeName charTypeList) =>
-  forall (upperCharTypeList :: Identifier.CharTypeList).
-  (Identifier.CharTypeListLowercaseToUppercase charTypeList upperCharTypeList) =>
-  forall (upperSymbol :: Symbol).
-  (Identifier.SymbolToCharTypeList upperSymbol upperCharTypeList) =>
-  (CheckNotReserved symbol upperSymbol) =>
+  (CheckSafeName symbol) =>
   Proxy symbol -> Name
 fromSymbolProxy _ = Name (NonEmptyString.nes (Proxy :: Proxy symbol))
+
+class CheckSafeName (symbol :: Symbol)
+
+instance checkSafeName ::
+  ( Identifier.SymbolToCharTypeList symbol charTypeList
+  , CheckValidChar charTypeList
+  , Identifier.CharTypeListLowercaseToUppercase charTypeList upperCharTypeList
+  , Identifier.SymbolToCharTypeList upperSymbol upperCharTypeList
+  , CheckNotReserved symbol upperSymbol
+  ) =>
+  CheckSafeName symbol
 
 class CheckNotReserved (originalSymbol :: Symbol) (uppercaseSymbol :: Symbol)
 
@@ -210,85 +217,88 @@ type ReservedNameErrorMessage originalSymbol symbol
       )
       (TypeError.Text ") is reserved Name")
 
-class MakeName (charTypeList :: Identifier.CharTypeList)
+class CheckValidChar (charTypeList :: TList.List' Identifier.CharType)
 
-instance makeNameEmpty ::
+instance checkValidCharEmpty ::
   TypeError.Fail (TypeError.Text "Cannot create an Name from an empty Symbol") =>
-  MakeName Identifier.Nil
-else instance makeNameAlphabetUppercase ::
-  ( MakeNameTail tail tailSymbol
+  CheckValidChar TList.Nil'
+else instance checkValidCharAlphabetUppercase ::
+  ( CheckValidCharTail tail tailSymbol PeanoNat.D1
   , Symbol.IsSymbol head
   , PrimSymbol.Append head tailSymbol symbol
   , Symbol.IsSymbol symbol
   ) =>
-  MakeName (Identifier.Cons (Identifier.AlphabetUppercase head) tail)
-else instance makeNameAlphabetLowercase ::
-  ( MakeNameTail tail tailSymbol
+  CheckValidChar (TList.Cons' (Identifier.AlphabetUppercase head) tail)
+else instance checkValidCharAlphabetLowercase ::
+  ( CheckValidCharTail tail tailSymbol PeanoNat.D1
   , Symbol.IsSymbol head
   , PrimSymbol.Append head tailSymbol symbol
   , Symbol.IsSymbol symbol
   ) =>
-  MakeName (Identifier.Cons (Identifier.AlphabetLowercase head) tail)
-else instance makeNameDigit ::
-  ( MakeNameTail tail tailSymbol
+  CheckValidChar (TList.Cons' (Identifier.AlphabetLowercase head) tail)
+else instance checkValidCharDigit ::
+  ( CheckValidCharTail tail tailSymbol PeanoNat.D1
   , Symbol.IsSymbol head
   , PrimSymbol.Append head tailSymbol symbol
   , Symbol.IsSymbol symbol
   ) =>
-  MakeName (Identifier.Cons (Identifier.Digit head) tail)
-else instance makeNameDot ::
-  ( MakeNameTail tail tailSymbol
+  CheckValidChar (TList.Cons' (Identifier.Digit head) tail)
+else instance checkValidCharDot ::
+  ( CheckValidCharTail tail tailSymbol PeanoNat.D1
   , PrimSymbol.Append "." tailSymbol symbol
   , Symbol.IsSymbol symbol
   ) =>
-  MakeName (Identifier.Cons (Identifier.Other ".") tail)
-else instance makeNameOther ::
+  CheckValidChar (TList.Cons' (Identifier.Other ".") tail)
+else instance checkValidCharOther ::
   ( Identifier.CharSymbolToCharType headChar head
   , PrimSymbol.Append "The first letter of the Name must not be " headChar message
   , TypeError.Fail (TypeError.Text message)
   ) =>
-  MakeName (Identifier.Cons head tail)
+  CheckValidChar (TList.Cons' head tail)
 
-class MakeNameTail (charTypeList :: Identifier.CharTypeList) (symbol :: Symbol) | charTypeList -> symbol
+class CheckValidCharTail (charTypeList :: TList.List' Identifier.CharType) (symbol :: Symbol) (length :: PeanoNat.Nat) | charTypeList -> symbol
 
-instance makeNameTailEmpty ::
-  MakeNameTail Identifier.Nil ""
-else instance makeNameTailAlphabetUppercase ::
-  ( MakeNameTail tail tailSymbol
+instance checkValidCharTailLength ::
+  (TypeError.Fail (TypeError.Text "50文字以上です!")) =>
+  CheckValidCharTail list symbol PeanoNat.D50
+else instance checkValidCharTailEmpty ::
+  CheckValidCharTail TList.Nil' "" length
+else instance checkValidCharTailAlphabetUppercase ::
+  ( CheckValidCharTail tail tailSymbol (PeanoNat.Succ length)
   , PrimSymbol.Append head tailSymbol symbol
   ) =>
-  MakeNameTail (Identifier.Cons (Identifier.AlphabetUppercase head) tail) symbol
-else instance makeNameTailAlphabetLowercase ::
-  ( MakeNameTail tail tailSymbol
+  CheckValidCharTail (TList.Cons' (Identifier.AlphabetUppercase head) tail) symbol length
+else instance checkValidCharTailAlphabetLowercase ::
+  ( CheckValidCharTail tail tailSymbol (PeanoNat.Succ length)
   , PrimSymbol.Append head tailSymbol symbol
   ) =>
-  MakeNameTail (Identifier.Cons (Identifier.AlphabetLowercase head) tail) symbol
-else instance makeNameTailAlphabetDigit ::
-  ( MakeNameTail tail tailSymbol
+  CheckValidCharTail (TList.Cons' (Identifier.AlphabetLowercase head) tail) symbol length
+else instance checkValidCharTailAlphabetDigit ::
+  ( CheckValidCharTail tail tailSymbol (PeanoNat.Succ length)
   , PrimSymbol.Append head tailSymbol symbol
   ) =>
-  MakeNameTail (Identifier.Cons (Identifier.Digit head) tail) symbol
-else instance makeNameTailUnderscore ::
-  ( MakeNameTail tail tailSymbol
+  CheckValidCharTail (TList.Cons' (Identifier.Digit head) tail) symbol length
+else instance checkValidCharTailUnderscore ::
+  ( CheckValidCharTail tail tailSymbol (PeanoNat.Succ length)
   , PrimSymbol.Append "_" tailSymbol symbol
   ) =>
-  MakeNameTail (Identifier.Cons (Identifier.Other "_") tail) symbol
-else instance makeNameTailHyphenMinus ::
-  ( MakeNameTail tail tailSymbol
+  CheckValidCharTail (TList.Cons' (Identifier.Other "_") tail) symbol length
+else instance checkValidCharTailHyphenMinus ::
+  ( CheckValidCharTail tail tailSymbol (PeanoNat.Succ length)
   , PrimSymbol.Append "-" tailSymbol symbol
   ) =>
-  MakeNameTail (Identifier.Cons (Identifier.Other "-") tail) symbol
-else instance makeNameTailHyphenDot ::
-  ( MakeNameTail tail tailSymbol
+  CheckValidCharTail (TList.Cons' (Identifier.Other "-") tail) symbol length
+else instance checkValidCharTailHyphenDot ::
+  ( CheckValidCharTail tail tailSymbol (PeanoNat.Succ length)
   , PrimSymbol.Append "." tailSymbol symbol
   ) =>
-  MakeNameTail (Identifier.Cons (Identifier.Other ".") tail) symbol
-else instance makeNameTailOther ::
+  CheckValidCharTail (TList.Cons' (Identifier.Other ".") tail) symbol length
+else instance checkValidCharTailOther ::
   ( Identifier.CharSymbolToCharType headCharSymbol headCharType
   , PrimSymbol.Append "Name cannot contain " headCharSymbol message
   , TypeError.Fail (TypeError.Text message)
   ) =>
-  MakeNameTail (Identifier.Cons headCharType tail) "tail error"
+  CheckValidCharTail (TList.Cons' headCharType tail) "tail error" length
 
 toNonEmptyString :: Name -> NonEmptyString
 toNonEmptyString (Name str) = str
