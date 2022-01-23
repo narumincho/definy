@@ -21,6 +21,8 @@ console.log("versions", JSON.stringify(process.versions));
 
 export const html = functions.https.onRequest(async (request, response) => {
   const requestUrl = new URL("https://" + request.hostname + request.url);
+  console.log("protocol を表示!", request.protocol);
+  console.log(request.headers.host, request.url, request.originalUrl);
   const urlData = commonUrl.urlToUrlData(requestUrl);
   console.log("requestUrl", requestUrl.toString());
   const htmlAndIsNotFound = await generateHtml(urlData);
