@@ -25,8 +25,10 @@ onRequest :: (StructuredUrl.PathAndSearchParams -> Effect Response) -> HttpsFunc
 onRequest responseEffect =
   onRequestJs
     ( EffectUncurried.mkEffectFn1
-        ( \str -> do
-            (Response res) <- responseEffect (StructuredUrl.pathAndSearchParamsFromString str)
+        ( \requestData -> do
+            (Response res) <-
+              responseEffect
+                (StructuredUrl.nodeHttpUrlToPathAndSearchParams requestData.nodeHttpUrl)
             pure
               { body: res.body
               , mimeType: NonEmptyString.toString (MediaType.toMimeType res.mediaTypeMaybe)
@@ -43,6 +45,6 @@ data HttpsFunction
 
 foreign import onRequestJs ::
   EffectUncurried.EffectFn1
-    String
+    { nodeHttpUrl :: String }
     { body :: String, mimeType :: String, status :: Int } ->
   HttpsFunction

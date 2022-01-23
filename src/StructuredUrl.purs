@@ -1,15 +1,17 @@
 module StructuredUrl
   ( PathAndSearchParams(..)
   , StructuredUrl(..)
-  , toString
+  , nodeHttpUrlToPathAndSearchParams
+  , fromPath
+  , locationPathAndSearchParamsToPathAndSearchParams
   , pathAndSearchParams
   , pathAndSearchParamsToString
-  , fromPath
-  , pathAndSearchParamsFromString
+  , toString
   ) where
 
 import Data.Array as Array
 import Data.Map as Map
+import Data.Maybe (Maybe(..))
 import Data.String as String
 import Data.String.NonEmpty (NonEmptyString)
 import Data.String.NonEmpty as NonEmptyString
@@ -33,6 +35,9 @@ newtype PathAndSearchParams
 
 derive instance pathAndSearchParamsEq :: Prelude.Eq PathAndSearchParams
 
+instance pathAndSearchParamsShow :: Prelude.Show PathAndSearchParams where
+  show value = NonEmptyString.toString (pathAndSearchParamsToString value)
+
 pathAndSearchParams :: Array NonEmptyString -> Map.Map NonEmptyString NonEmptyString -> PathAndSearchParams
 pathAndSearchParams path searchParams = PathAndSearchParams { path, searchParams }
 
@@ -47,6 +52,9 @@ newtype StructuredUrl
   }
 
 derive instance structuredUrlEq :: Prelude.Eq StructuredUrl
+
+instance structuredUrlShow :: Prelude.Show StructuredUrl where
+  show structuredUrl = NonEmptyString.toString (toString structuredUrl)
 
 toString :: StructuredUrl -> NonEmptyString
 toString (StructuredUrl { origin, pathAndSearchParams: path }) =
@@ -80,13 +88,47 @@ pathAndSearchParamsToString (PathAndSearchParams { path, searchParams }) =
           _ -> Prelude.append "?" searchParamsAsString
       )
 
--- | TODO SearchParams を考慮していない
-pathAndSearchParamsFromString :: String -> PathAndSearchParams
-pathAndSearchParamsFromString str =
-  fromPath
-    ( Array.mapMaybe
-        NonEmptyString.fromString
-        (String.split (String.Pattern "/") str)
-    )
+nodeHttpUrlToPathAndSearchParams :: String -> PathAndSearchParams
+nodeHttpUrlToPathAndSearchParams nodeHttpUrl =
+  let
+    parsed = parseNodeHttpUrl nodeHttpUrl
+  in
+    PathAndSearchParams
+      { path: parsePath parsed.path
+      , searchParams: keyValueArrayToSearchParams parsed.searchParams
+      }
 
 foreign import searchParamsToString :: Array { key :: String, value :: String } -> String
+
+foreign import parseNodeHttpUrl ::
+  String ->
+  { path :: String
+  , searchParams :: Array { key :: String, value :: String }
+  }
+
+locationPathAndSearchParamsToPathAndSearchParams :: { path :: String, searchParams :: String } -> PathAndSearchParams
+locationPathAndSearchParamsToPathAndSearchParams option =
+  pathAndSearchParams
+    (parsePath option.path)
+    (keyValueArrayToSearchParams (parseSearchParams option.searchParams))
+
+foreign import parseSearchParams ::
+  String ->
+  Array { key :: String, value :: String }
+
+parsePath :: String -> Array NonEmptyString
+parsePath path =
+  Array.mapMaybe
+    NonEmptyString.fromString
+    (String.split (String.Pattern "/") path)
+
+keyValueArrayToSearchParams :: Array { key :: String, value :: String } -> Map.Map NonEmptyString NonEmptyString
+keyValueArrayToSearchParams searchParams =
+  Map.fromFoldable
+    ( Array.mapMaybe
+        ( \{ key, value } -> case { keyNonEmptyMaybe: NonEmptyString.fromString key, valueNonEmptyMaybe: NonEmptyString.fromString value } of
+            { keyNonEmptyMaybe: Just keyNonEmpty, valueNonEmptyMaybe: Just valueNonEmpty } -> Just (Tuple.Tuple keyNonEmpty valueNonEmpty)
+            _ -> Nothing
+        )
+        searchParams
+    )

@@ -15,6 +15,7 @@ import PureScript.Wellknown as PureScriptWellknown
 import Test.Assert as Assert
 import Type.Proxy (Proxy(..))
 import Util as Util
+import Test.StructuredUrl as StructuredUrlTest
 
 main :: Effect.Effect Unit
 main = do
@@ -26,6 +27,7 @@ main = do
   fileNameParse
   fileNameWithExtensionParse
   pureScriptCodeGenerate
+  StructuredUrlTest.test
 
 listUpdateAtOverAutoCreateInline :: Effect.Effect Unit
 listUpdateAtOverAutoCreateInline =
