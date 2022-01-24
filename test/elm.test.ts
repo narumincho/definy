@@ -43,7 +43,19 @@ describe("test", () => {
             }),
           ],
         };
-        expect(elm.codeToString(sampleElmCode)).toMatchSnapshot();
+        expect(elm.codeToString(sampleElmCode)).toMatchInlineSnapshot(`
+          "module Main exposing (Color(..))
+
+
+
+          {-| 色
+          -}
+          type Color
+              = Red
+              | Green
+              | Blue
+          "
+        `);
         return;
       }
       case "Nothing":
@@ -73,7 +85,18 @@ describe("test", () => {
         }),
       ],
     };
-    expect(elm.codeToString(sampleElmCode)).toMatchSnapshot();
+    expect(elm.codeToString(sampleElmCode)).toMatchInlineSnapshot(`
+      "module Main exposing ()
+
+      import String
+      import Basics
+
+      {-| 色
+      -}
+      type alias User =
+          { name : String.String, age : Basics.Int }
+      "
+    `);
   });
 
   it("invalid filed name", () => {
@@ -97,7 +120,7 @@ describe("test", () => {
       };
 
       elm.codeToString(sampleElmCode);
-    }).toThrowErrorMatchingSnapshot();
+    }).toThrowErrorMatchingInlineSnapshot(`"invalid field name = then"`);
   });
 
   it("output (List Int) -> String", () => {
@@ -116,7 +139,17 @@ describe("test", () => {
         }),
       ],
     };
-    expect(elm.codeToString(sampleElmCode)).toMatchSnapshot();
+    expect(elm.codeToString(sampleElmCode)).toMatchInlineSnapshot(`
+      "module Main exposing ()
+
+      import String
+
+      {-| List Int -> Stringの型
+      -}
+      type alias IntListToString =
+          ((List Basics.Int) -> String.String)
+      "
+    `);
   });
 
   it("output type parameter", () => {
@@ -137,6 +170,16 @@ describe("test", () => {
         }),
       ],
     };
-    expect(elm.codeToString(sampleCode)).toMatchSnapshot();
+    expect(elm.codeToString(sampleCode)).toMatchInlineSnapshot(`
+      "module Main exposing ()
+
+
+
+      {-| 型パラメーターがつくもの
+      -}
+      type alias WithParameter element =
+          { field : element }
+      "
+    `);
   });
 });
