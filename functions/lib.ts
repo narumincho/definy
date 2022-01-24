@@ -12,9 +12,9 @@ import * as util from "../core/util";
 import { ApiCodecType, GetCodecType } from "../common/apiCodec";
 import { Timestamp, getFirestore } from "firebase-admin/firestore";
 import axios, { AxiosResponse } from "axios";
-import { fileTypeImagePng, fileTypeToMimeType } from "../gen/fileType/main";
 import { getStorage } from "firebase-admin/storage";
 import { initializeApp } from "firebase-admin/app";
+import { pngMimeType } from "../output/TypeScriptEntryPoint";
 
 const app = initializeApp();
 
@@ -312,7 +312,7 @@ const getAndSaveUserImage = async (imageUrl: URL): Promise<d.ImageHash> => {
   return savePngFile(
     await (await jimp.create(response.data))
       .resize(64, 64)
-      .getBufferAsync(fileTypeToMimeType(fileTypeImagePng))
+      .getBufferAsync(pngMimeType)
   );
 };
 
@@ -323,7 +323,7 @@ const savePngFile = async (binary: Uint8Array): Promise<d.ImageHash> => {
   const hash = createImageTokenFromUint8ArrayAndMimeType(binary);
   const file = storageDefaultBucket.file(hash);
   await file.save(Buffer.from(binary), {
-    contentType: fileTypeToMimeType(fileTypeImagePng),
+    contentType: pngMimeType,
   });
   return hash;
 };
@@ -335,7 +335,7 @@ export const createImageTokenFromUint8ArrayAndMimeType = (
     crypto
       .createHash("sha256")
       .update(binary)
-      .update(fileTypeToMimeType(fileTypeImagePng), "utf8")
+      .update(pngMimeType, "utf8")
       .digest("hex")
   );
 

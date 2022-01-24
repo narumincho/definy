@@ -10,6 +10,7 @@ module TypeScriptEntryPoint
   , languageToIdString
   , nothing
   , pathAndSearchParamsFromPath
+  , pngMimeType
   , structuredUrlFromOriginAndPathAndSearchParams
   ) where
 
@@ -21,7 +22,9 @@ import Data.Function.Uncurried as FnUncurried
 import Data.Maybe (Maybe)
 import Data.Maybe as Maybe
 import Data.String.NonEmpty (NonEmptyString)
+import Data.String.NonEmpty as NonEmptyString
 import Language as Language
+import MediaType as MediaType
 import StructuredUrl as StructuredUrl
 
 -- | 色の作成
@@ -72,3 +75,6 @@ japaneseId = "ja"
 
 esperantoId ∷ String
 esperantoId = "eo"
+
+pngMimeType :: String
+pngMimeType = NonEmptyString.toString MediaType.pngMimeType
