@@ -1,12 +1,14 @@
 module TypeScriptEntryPoint
   ( colorFrom
-  , createPackageJson
   , english
+  , englishId
   , esperanto
+  , esperantoId
   , japanese
+  , japaneseId
   , just
+  , languageToIdString
   , nothing
-  , packageNameFromString
   , pathAndSearchParamsFromPath
   , structuredUrlFromOriginAndPathAndSearchParams
   ) where
@@ -15,16 +17,11 @@ module TypeScriptEntryPoint
 -- node package に公開するための関数はすべてここで公開する
 -- bundle-module するためにこのモジュール以外から import してはいけない
 import Color as Color
-import Data.Argonaut.Core as ArgonautCore
 import Data.Function.Uncurried as FnUncurried
-import Data.Map as Map
 import Data.Maybe (Maybe)
 import Data.Maybe as Maybe
 import Data.String.NonEmpty (NonEmptyString)
-import Data.Tuple as Tuple
 import Language as Language
-import PackageJson as PackageJson
-import Prelude as Prelude
 import StructuredUrl as StructuredUrl
 
 -- | 色の作成
@@ -61,43 +58,17 @@ structuredUrlFromOriginAndPathAndSearchParams =
           { origin, pathAndSearchParams }
     )
 
-packageNameFromString :: NonEmptyString -> PackageJson.Name
-packageNameFromString rawName = PackageJson.nameFromNonEmptyStringUnsafe rawName
+languageToIdString :: Language.Language -> String
+languageToIdString = case _ of
+  Language.English -> englishId
+  Language.Japanese -> japaneseId
+  Language.Esperanto -> esperantoId
 
-createPackageJson ::
-  { author :: NonEmptyString
-  , dependencies :: Array { name :: NonEmptyString, version :: NonEmptyString }
-  , description :: NonEmptyString
-  , entryPoint :: NonEmptyString
-  , gitHubAccountName :: NonEmptyString
-  , gitHubRepositoryName :: NonEmptyString
-  , homepage :: StructuredUrl.StructuredUrl
-  , name :: PackageJson.Name
-  , nodeVersion :: NonEmptyString
-  , typeFilePath :: Maybe NonEmptyString
-  , version :: NonEmptyString
-  } ->
-  String
-createPackageJson option =
-  ArgonautCore.stringify
-    ( PackageJson.toJson
-        ( PackageJson.PackageJsonInput
-            { author: option.author
-            , dependencies:
-                Map.fromFoldable
-                  ( Prelude.map
-                      (\{ name, version } -> Tuple.Tuple name version)
-                      option.dependencies
-                  )
-            , description: option.description
-            , entryPoint: option.entryPoint
-            , gitHubAccountName: option.gitHubAccountName
-            , gitHubRepositoryName: option.gitHubRepositoryName
-            , homepage: option.homepage
-            , name: option.name
-            , nodeVersion: option.nodeVersion
-            , typeFilePath: option.typeFilePath
-            , version: option.version
-            }
-        )
-    )
+englishId ∷ String
+englishId = "en"
+
+japaneseId ∷ String
+japaneseId = "ja"
+
+esperantoId ∷ String
+esperantoId = "eo"

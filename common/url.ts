@@ -1,6 +1,14 @@
 import * as d from "../localData";
+import {
+  english,
+  englishId,
+  esperanto,
+  esperantoId,
+  japanese,
+  japaneseId,
+  languageToIdString,
+} from "../output/TypeScriptEntryPoint";
 import { structuredUrlToUrl, urlToStructuredUrl } from "../gen/url/main";
-import { esperantoId } from "../output/EntryPointNoEffect";
 import { origin } from "../out";
 
 const languageQueryKey = "hl";
@@ -12,9 +20,25 @@ export const locationAndLanguageToUrl = (
   return structuredUrlToUrl(origin, {
     path: locationToPathList(locationAndLanguage.location),
     searchParams: new Map<string, string>([
-      [languageQueryKey, languageToIdString(locationAndLanguage.language)],
+      [
+        languageQueryKey,
+        languageToIdString(
+          dataLanguageToPureLanguage(locationAndLanguage.language)
+        ),
+      ],
     ]),
   });
+};
+
+const dataLanguageToPureLanguage = (language: d.Language) => {
+  switch (language) {
+    case "English":
+      return english;
+    case "Japanese":
+      return japanese;
+    case "Esperanto":
+      return esperanto;
+  }
 };
 
 const locationToPathList = (location: d.Location): ReadonlyArray<string> => {
@@ -37,17 +61,6 @@ const locationToPathList = (location: d.Location): ReadonlyArray<string> => {
       return [partPath, location.partId];
     case "LocalProject":
       return [localProjectPath];
-  }
-};
-
-const languageToIdString = (language: d.Language): string => {
-  switch (language) {
-    case "English":
-      return englishId;
-    case "Japanese":
-      return japaneseId;
-    case "Esperanto":
-      return esperantoId;
   }
 };
 
@@ -158,5 +171,3 @@ const accountPath = "account";
 const typePartPath = "type-part";
 const partPath = "part";
 const localProjectPath = "local-project";
-const japaneseId = "ja";
-const englishId = "en";
