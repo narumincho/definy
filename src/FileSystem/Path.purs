@@ -14,6 +14,7 @@ module FileSystem.Path
   , distributionFilePathToStringBaseApp
   , distributionFilePathToStringWithoutExtensiton
   , fileNameWithExtensionParse
+  , filePathGetDirectoryPath
   , filePathGetFileName
   , filePathToString
   , srcDirectoryPath
@@ -54,6 +55,10 @@ newtype FilePath
   { directoryPath :: DirectoryPath
   , fileName :: Name.Name
   }
+
+-- | パスのディレクトリを取得する
+filePathGetDirectoryPath :: FilePath -> DirectoryPath
+filePathGetDirectoryPath (FilePath { directoryPath }) = directoryPath
 
 -- | ファイル名を取得する
 filePathGetFileName :: FilePath -> Name.Name

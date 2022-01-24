@@ -11,7 +11,7 @@
     "typeCheck": "tsc --project tsconfig.json --noEmit",
     "test": "jest & npx tsc --project ./tsconfig-purs-ffi.json & spago test",
     "generate-graph": "depcruise -X node_modules --output-type dot client/main.tsx functions/main.ts core/main.ts build/main.ts | dot -T svg > graph.svg",
-    "generate-local-data": "npx ts-node ./build/dataTs.ts",
+    "generate-local-data": "npx spago build && npx ts-node ./build/dataTs.ts",
     "build-node-package": "npx tsc --project ./tsconfig-purs-ffi.json & spago run --main BuildNodePackage",
     "storybook": "start-storybook --config-dir ./storybook",
     "update-package-json": "ncu -u",
