@@ -48,7 +48,7 @@ writeJson distributionFilePath json =
     do
       ensureDir (Path.distributionDirectoryPathToDirectoryPath (Path.distributionFilePathToDirectoryPath distributionFilePath))
       Fs.writeTextFile Encoding.UTF8 filePath (ArgonautCore.stringify json)
-      Console.logValueAsAff "JSONファイルの書き込んだ" { filePath }
+      Console.logValueAsAff "JSONファイルを書き込んだ" { filePath }
 
 -- | PureScript をモジュール名をファイル名としてファイルに書く
 writePureScript :: PureScriptData.Module -> Aff.Aff Unit
