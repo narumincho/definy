@@ -1,14 +1,16 @@
 import { HttpsFunction, https } from "firebase-functions";
 
 export const onRequestJs = (
-  callback: (pathAndSearchParams: string) => {
-    body: string;
-    mimeType: string;
-    status: number;
+  callback: (requestData: { readonly nodeHttpUrl: string }) => {
+    readonly body: string;
+    readonly mimeType: string;
+    readonly status: number;
   }
 ): HttpsFunction => {
   return https.onRequest((request, response) => {
-    const res = callback(request.path);
+    const res = callback({
+      nodeHttpUrl: request.url,
+    });
     response.type(res.mimeType);
     response.status(res.status);
     response.send(res.body);

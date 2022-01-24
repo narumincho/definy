@@ -1,20 +1,20 @@
 module FileSystem.Write
-  ( writeTextFileInDistribution
-  , writePureScript
+  ( ensureDir
   , writeFirebaseRules
   , writeJson
-  , ensureDir
+  , writePureScript
+  , writeTextFileInDistribution
+  , writeTypeScriptFile
   ) where
 
 import Prelude
+import Console as Console
 import Data.Argonaut.Core as ArgonautCore
 import Data.Array.NonEmpty as ArrayNonEmpty
 import Data.Maybe as Maybe
 import Data.String.NonEmpty as NonEmptyString
 import Effect.Aff as Aff
 import Effect.Aff.Compat as AffCompat
-import Effect.Class as EffectClass
-import Effect.Console as Console
 import FileSystem.FileType as FileType
 import FileSystem.Name as Name
 import FileSystem.Path as Path
@@ -37,7 +37,7 @@ writeTextFileInDistribution distributionFilePath content =
             (Path.distributionFilePathToDirectoryPath distributionFilePath)
         )
       Fs.writeTextFile Encoding.UTF8 filePath content
-      EffectClass.liftEffect (Console.log (append filePath " の書き込みに成功"))
+      Console.logValueAsAff "拡張子なしの文字列を書き込んだ" { filePath }
 
 writeJson :: Path.DistributionFilePath -> ArgonautCore.Json -> Aff.Aff Unit
 writeJson distributionFilePath json =
@@ -48,7 +48,7 @@ writeJson distributionFilePath json =
     do
       ensureDir (Path.distributionDirectoryPathToDirectoryPath (Path.distributionFilePathToDirectoryPath distributionFilePath))
       Fs.writeTextFile Encoding.UTF8 filePath (ArgonautCore.stringify json)
-      EffectClass.liftEffect (Console.log (append filePath " の書き込みに成功"))
+      Console.logValueAsAff "JSONファイルを書き込んだ" { filePath }
 
 -- | PureScript をモジュール名をファイル名としてファイルに書く
 writePureScript :: PureScriptData.Module -> Aff.Aff Unit
@@ -74,7 +74,24 @@ writePureScript pModule =
     do
       ensureDir directoryPath
       Fs.writeTextFile Encoding.UTF8 filePath (PureScriptToString.toString pModule)
-      EffectClass.liftEffect (Console.log (append filePath " の書き込みに成功"))
+      Console.logValueAsAff "PureScriptのコードを書き込んだ" { filePath }
+
+-- | テキストファイルを書き込む
+writeTypeScriptFile :: Path.FilePath -> String -> Aff.Aff Unit
+writeTypeScriptFile filePath codeAsText =
+  let
+    filePathAsString :: String
+    filePathAsString =
+      NonEmptyString.toString
+        ( Path.filePathToString
+            filePath
+            (Maybe.Just FileType.TypeScript)
+        )
+  in
+    do
+      ensureDir (Path.filePathGetDirectoryPath filePath)
+      Fs.writeTextFile Encoding.UTF8 filePathAsString codeAsText
+      Console.logValueAsAff "TypeScript のファイルを書き込んだ" { filePath: filePathAsString }
 
 foreign import ensureDirAsEffectFnAff :: String -> AffCompat.EffectFnAff Unit
 
@@ -104,4 +121,4 @@ writeFirebaseRules distributionFilePath@(Path.DistributionFilePath { directoryPa
         ( NonEmptyString.toString
             (FirebaseSecurityRules.toNonEmptyString securityRules)
         )
-      EffectClass.liftEffect (Console.log (append filePath " の書き込みに成功"))
+      Console.logValueAsAff "Firebaseのセキュリティを書き込んだ" { filePath }

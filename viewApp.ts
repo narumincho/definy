@@ -28,7 +28,10 @@ type ClientStartOption<State, Message, View> = {
     patchState: PatchState<Message>
   ) => void;
   readonly update: (messageValue: Message, stateValue: State) => State;
-  readonly urlChangeMessageData: (pathAndSearchParams: string) => Message;
+  readonly urlChangeMessageData: (pathAndSearchParams: {
+    readonly path: string;
+    readonly searchParams: string;
+  }) => Message;
 };
 
 type NewMessageMap<Message> = {
@@ -146,9 +149,10 @@ export const start = <State, Message, View>(
   // ブラウザで戻るボタンを押したときのイベントを登録
   window.addEventListener("popstate", () => {
     pushMessageList(
-      option.urlChangeMessageData(
-        window.location.pathname + window.location.search
-      )
+      option.urlChangeMessageData({
+        path: window.location.pathname,
+        searchParams: window.location.search,
+      })
     );
   });
 };

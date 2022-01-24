@@ -34,7 +34,7 @@ copyFileToDistribution filePath fileTypeMaybe distributionFilePath@(Path.Distrib
     , dist: NonEmptyString.toString (Path.distributionFilePathToString distributionFilePath fileType)
     }
 
--- | 1つ上の階層の secret ディレクトリないに保存された機密情報の入ったファイルを出力先にコピーする
+-- | 1つ上の階層の secret ディレクトリ内に保存された機密情報の入ったファイルを出力先にコピーする
 copySecretFile ::
   NonEmptyString ->
   Path.DistributionFilePath -> FileType.FileType -> Aff.Aff Unit

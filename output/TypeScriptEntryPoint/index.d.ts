@@ -60,29 +60,10 @@ export declare const structuredUrlFromOriginAndPathAndSearchParams: (
   pathAndSearchParams: PathAndSearchParams
 ) => StructuredUrl;
 
-export type PackageJsonName = { _packageJsonName: never };
+export declare const languageToIdString: (language: Language) => string;
 
-export declare const packageNameFromString: (
-  name: NonEmptyString
-) => PackageJsonName;
+export declare const englishId: string;
+export declare const japaneseId: string;
+export declare const esperantoId: string;
 
-/**
- * packageJson を作成する
- * PureScript 版
- */
-export declare const createPackageJson: (option: {
-  readonly author: NonEmptyString;
-  readonly dependencies: ReadonlyArray<{
-    readonly name: string;
-    readonly version: string;
-  }>;
-  readonly description: NonEmptyString;
-  readonly entryPoint: NonEmptyString;
-  readonly gitHubAccountName: NonEmptyString;
-  readonly gitHubRepositoryName: NonEmptyString;
-  readonly homepage: StructuredUrl;
-  readonly name: PackageJsonName;
-  readonly nodeVersion: NonEmptyString;
-  readonly typeFilePath: Maybe<NonEmptyString>;
-  readonly version: NonEmptyString;
-}) => string;
+export declare const pngMimeType: string;

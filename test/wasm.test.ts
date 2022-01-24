@@ -44,7 +44,14 @@ test("wasm test", (done) => {
     for (const [name, func] of Object.entries(result.instance.exports)) {
       resultMap.set(name, (func as () => number)());
     }
-    expect(resultMap).toMatchSnapshot();
+    expect(resultMap).toMatchInlineSnapshot(`
+      Map {
+        "ok28" => 28,
+        "oneAddOne" => 2,
+        "よん" => 4,
+        "マイナス" => -99000,
+      }
+    `);
     done();
   });
 });

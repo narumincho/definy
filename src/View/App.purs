@@ -27,10 +27,14 @@ type ClientStartOption state message view
     , stateToView :: state -> view
     , renderView :: EffectUncurried.EffectFn2 view (VdomPatchState.PatchState message) Unit
     , update :: Uncurried.Fn2 message state state
-    , urlChangeMessageData :: String -> message
+    , urlChangeMessageData ::
+        { path :: String, searchParams :: String } ->
+        message
     }
 
-foreign import clientStart :: forall state message view. EffectUncurried.EffectFn1 (ClientStartOption state message view) Unit
+foreign import clientStart ::
+  forall state message view.
+  EffectUncurried.EffectFn1 (ClientStartOption state message view) Unit
 
 -- | Webアプリを表現する
 newtype App state message location
@@ -55,10 +59,12 @@ startApp (App rec) =
           }
     , update: Uncurried.mkFn2 rec.update
     , urlChangeMessageData:
-        ( \pathAndSearchParamsAsString ->
+        ( \pathAndSearchParams ->
             rec.urlChangeMessageData
               ( rec.pathAndSearchParamsToLocation
-                  (StructuredUrl.pathAndSearchParamsFromString pathAndSearchParamsAsString)
+                  ( StructuredUrl.locationPathAndSearchParamsToPathAndSearchParams
+                      pathAndSearchParams
+                  )
               )
         )
     }

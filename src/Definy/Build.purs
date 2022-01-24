@@ -6,7 +6,6 @@ module Definy.Build
 import Prelude
 import Console as Console
 import Console as ConsoleValue
-import Data.Array as Array
 import Data.Array.NonEmpty as NonEmptyArray
 import Data.Either as Either
 import Data.Map as Map
@@ -43,39 +42,35 @@ import Util as Util
 build :: ProductionOrDevelopment.ProductionOrDevelopment -> NonEmptyString -> Aff.Aff Unit
 build mode origin =
   Util.toParallel
-    ( Array.concat
-        [ case mode of
-            ProductionOrDevelopment.Production -> []
-            ProductionOrDevelopment.Development ->
-              [ FileSystemCopy.copySecretFile
-                  ( NonEmptyString.nes
-                      (Proxy :: _ "definy.json")
-                  )
-                  ( Path.DistributionFilePath
-                      { directoryPath: functionsDistributionDirectoryPath
-                      , fileName:
-                          Name.fromSymbolProxy
-                            (Proxy :: _ ".runtimeconfig")
-                      }
-                  )
-                  FileType.Json
-              ]
-        , [ writePackageJsonForFunctions
-          , writeFirestoreRules
-          , generateCloudStorageRules
-          , writeFirebaseJson mode
-          , EffectClass.liftEffect
-              ( EffectUncurried.runEffectFn2
-                  buildInTypeScript
-                  ( case mode of
-                      ProductionOrDevelopment.Development -> true
-                      ProductionOrDevelopment.Production -> false
-                  )
-                  (NonEmptyString.toString origin)
-              )
-          ]
-        ]
-    )
+    [ case mode of
+        ProductionOrDevelopment.Production -> pure unit
+        ProductionOrDevelopment.Development ->
+          FileSystemCopy.copySecretFile
+            ( NonEmptyString.nes
+                (Proxy :: _ "definy.json")
+            )
+            ( Path.DistributionFilePath
+                { directoryPath: functionsDistributionDirectoryPath
+                , fileName:
+                    Name.fromSymbolProxy
+                      (Proxy :: _ ".runtimeconfig")
+                }
+            )
+            FileType.Json
+    , writePackageJsonForFunctions
+    , writeFirestoreRules
+    , generateCloudStorageRules
+    , writeFirebaseJson mode
+    , EffectClass.liftEffect
+        ( EffectUncurried.runEffectFn2
+            buildInTypeScript
+            ( case mode of
+                ProductionOrDevelopment.Development -> true
+                ProductionOrDevelopment.Production -> false
+            )
+            (NonEmptyString.toString origin)
+        )
+    ]
 
 codeGenAndBuildClientAndFunctionsScript :: ProductionOrDevelopment.ProductionOrDevelopment -> NonEmptyString -> Aff.Aff Unit
 codeGenAndBuildClientAndFunctionsScript mode origin = do

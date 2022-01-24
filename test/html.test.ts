@@ -23,7 +23,9 @@ describe("toString", () => {
   const htmlAsString: string = htmlOptionToString(sampleHtml);
   console.log(htmlAsString);
   it("include doctype html", () => {
-    expect(htmlAsString).toMatchSnapshot();
+    expect(htmlAsString).toMatchInlineSnapshot(
+      `"<!doctype html><html lang=\\"ja\\"><head><meta charset=\\"utf-8\\"><meta name=\\"viewport\\" content=\\"width=device-width,initial-scale=1.0\\"><title>テストページ</title><meta name=\\"description\\" content=\\"ページの説明\\"><link rel=\\"icon\\" href=\\"https://narumincho.com/assets/kamausagi.png\\"><meta name=\\"twitter:card\\" content=\\"summary\\"><meta property=\\"og:url\\" content=\\"https://narumincho.com/\\"><meta property=\\"og:title\\" content=\\"テストページ\\"><meta property=\\"og:site_name\\" content=\\"テストアプリ\\"><meta property=\\"og:description\\" content=\\"ページの説明\\"><meta property=\\"og:image\\" content=\\"https://narumincho.com/assets/kamausagi.png\\"></head><body><noscript>テストアプリ では JavaScript を使用します. ブラウザの設定で有効にしてください.</noscript><div>それな</div></body></html>"`
+    );
   });
 });
 
