@@ -30,7 +30,7 @@ newtype PathAndSearchParams
   クエリパラメーター.
   検索条件等を入れる.
   キーにも値にも文字の制限はない. JavaScript の URLSearchParams で 変換される.
-   -} searchParams :: Map.Map NonEmptyString NonEmptyString
+   -} searchParams :: Map.Map NonEmptyString String
   }
 
 derive instance pathAndSearchParamsEq :: Prelude.Eq PathAndSearchParams
@@ -38,7 +38,7 @@ derive instance pathAndSearchParamsEq :: Prelude.Eq PathAndSearchParams
 instance pathAndSearchParamsShow :: Prelude.Show PathAndSearchParams where
   show value = NonEmptyString.toString (pathAndSearchParamsToString value)
 
-pathAndSearchParams :: Array NonEmptyString -> Map.Map NonEmptyString NonEmptyString -> PathAndSearchParams
+pathAndSearchParams :: Array NonEmptyString -> Map.Map NonEmptyString String -> PathAndSearchParams
 pathAndSearchParams path searchParams = PathAndSearchParams { path, searchParams }
 
 fromPath :: Array NonEmptyString -> PathAndSearchParams
@@ -76,7 +76,7 @@ pathAndSearchParamsToString (PathAndSearchParams { path, searchParams }) =
       searchParamsToString
         ( Prelude.map
             ( \(Tuple.Tuple key value) ->
-                { key: NonEmptyString.toString key, value: NonEmptyString.toString value }
+                { key: NonEmptyString.toString key, value }
             )
             (Map.toUnfoldable searchParams)
         )
@@ -122,13 +122,13 @@ parsePath path =
     NonEmptyString.fromString
     (String.split (String.Pattern "/") path)
 
-keyValueArrayToSearchParams :: Array { key :: String, value :: String } -> Map.Map NonEmptyString NonEmptyString
+keyValueArrayToSearchParams :: Array { key :: String, value :: String } -> Map.Map NonEmptyString String
 keyValueArrayToSearchParams searchParams =
   Map.fromFoldable
     ( Array.mapMaybe
-        ( \{ key, value } -> case { keyNonEmptyMaybe: NonEmptyString.fromString key, valueNonEmptyMaybe: NonEmptyString.fromString value } of
-            { keyNonEmptyMaybe: Just keyNonEmpty, valueNonEmptyMaybe: Just valueNonEmpty } -> Just (Tuple.Tuple keyNonEmpty valueNonEmpty)
-            _ -> Nothing
+        ( \{ key, value } -> case NonEmptyString.fromString key of
+            Just keyNonEmpty -> Just (Tuple.Tuple keyNonEmpty value)
+            Nothing -> Nothing
         )
         searchParams
     )

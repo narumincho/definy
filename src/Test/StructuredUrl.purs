@@ -5,6 +5,7 @@ module Test.StructuredUrl
 import Prelude
 import Data.Map as Map
 import Data.String.NonEmpty as NonEmptyString
+import Data.Tuple as Tuple
 import Effect as Effect
 import StructuredUrl as StructuredUrl
 import Test.Assert as Assert
@@ -81,9 +82,10 @@ searchParamsRemoveEmpty =
               , NonEmptyString.nes (Proxy :: _ "orange")
               ]
           , searchParams:
-              Map.singleton
-                (NonEmptyString.nes (Proxy :: _ "a"))
-                (NonEmptyString.nes (Proxy :: _ "32"))
+              Map.fromFoldable
+                [ Tuple.Tuple (NonEmptyString.nes (Proxy :: _ "a")) "32"
+                , Tuple.Tuple (NonEmptyString.nes (Proxy :: _ "empty")) ""
+                ]
           }
     }
 
@@ -100,6 +102,6 @@ searchParamsSpace =
           , searchParams:
               Map.singleton
                 (NonEmptyString.nes (Proxy :: _ "query"))
-                (NonEmptyString.nes (Proxy :: _ "sample value"))
+                "sample value"
           }
     }
