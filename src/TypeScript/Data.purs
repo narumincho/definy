@@ -5,25 +5,36 @@ module TypeScript.Data
   , ExportDefinition(..)
   , Expr(..)
   , FunctionDeclaration(..)
-  , Module(..)
+  , JavaScriptContent(..)
   , ParameterWithDocument(..)
   , Statement(..)
-  , TsIdentifier(..)
+  , TsMemberType(..)
   , TsType(..)
   , TypeAlias(..)
+  , TypeScriptModule(..)
+  , TypeScriptModuleMap(..)
   , UnaryOperator(..)
   , UnaryOperatorExpr(..)
   , VariableDeclaration(..)
   ) where
 
-import Data.String.NonEmpty (NonEmptyString)
+import Data.Map as Map
+import TypeScript.Identifier (TsIdentifier)
 import TypeScript.ModuleName as ModuleName
 
+newtype TypeScriptModuleMap
+  = TypeScriptModuleMap
+  (Map.Map ModuleName.ModuleName TypeScriptModule)
+
 -- | TypeScriptやJavaScriptのコードを表現する. TypeScriptでも出力できるように型情報をつける必要がある
-newtype Module
-  = Module
-  { name :: ModuleName.ModuleName
-  , {- 外部に公開する定義 -} exportDefinitionList :: Array ExportDefinition
+newtype TypeScriptModule
+  = TypeScriptModule
+  { {- 外部に公開する定義 -} exportDefinitionList :: Array ExportDefinition
+  }
+
+newtype JavaScriptContent
+  = JavaScriptContent
+  { {- 外部に公開する定義 -} exportDefinitionList :: Array ExportDefinition
   , {- 定義した後に実行するコード -} statementList :: Array Statement
   }
 
@@ -82,15 +93,23 @@ data TsType
   | TsTypeNull
   | TsTypeNever
   | TsTypeVoid
-  | TsTypeObject
+  | TsTypeObject (Array TsMemberType)
   | TsTypeFunction
-  | TsTypeWithTypeParameter
   | TsTypeUnion
   | TsTypeIntersection
   | TsTypeImportedType
   | TsTypeScopeInFile
   | TsTypeScopeInGlobal
   | TsTypeStringLiteral
+
+-- | オブジェクトのメンバーの型
+newtype TsMemberType
+  = TsMemberType
+  { name :: String
+  , {- 必須かどうか falseの場合 ? がつく -} required :: Boolean
+  , type :: TsType
+  , document :: String
+  }
 
 data Expr
   = {- 数値リテラル `123` -} NumberLiteral Number
@@ -161,9 +180,6 @@ newtype ConditionalOperatorExpr
   , {- 条件がtrueのときに評価される式 -} thenExpr :: Expr
   , {- 条件がfalseのときに評価される式 -} elseExpr :: Expr
   }
-
-newtype TsIdentifier
-  = TsIdentifier NonEmptyString
 
 -- | TypeScript の文
 data Statement
