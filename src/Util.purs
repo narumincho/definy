@@ -3,6 +3,7 @@ module Util
   , groupBySize
   , jsonFromNonEmptyString
   , listUpdateAtOverAutoCreate
+  , nonEmptyArrayGetAtLoop
   , numberToString
   , optionRecordToMaybeRecord
   , runParallelRecord
@@ -18,6 +19,10 @@ import Control.Applicative as Applicative
 import Control.Parallel as Parallel
 import Data.Argonaut.Core as ArgonautCore
 import Data.Array as Array
+import Data.Array.NonEmpty (NonEmptyArray)
+import Data.Array.NonEmpty as NonEmptyArray
+import Data.Int as Int
+import Data.Maybe (Maybe(..))
 import Data.Maybe as Maybe
 import Data.Ord as Ord
 import Data.String as String
@@ -28,6 +33,7 @@ import Data.Tuple as Tuple
 import Data.UInt as UInt
 import Effect.Aff as Aff
 import Foreign.Object as Object
+import Math as Math
 import Option as Option
 import Prim.Row as Row
 import Prim.RowList (RowList)
@@ -153,3 +159,19 @@ stringRepeat count str = String.joinWith "" (Array.replicate (UInt.toInt count) 
 -- | numberToString 12.0 -- "12"
 -- | ```
 foreign import numberToString :: Number -> String
+
+-- | `NonEmptyArray` の要素を ループした インデックスから取得する
+-- | ```purs
+-- | nonEmptyArrayGetAtLoop (NonEmptyArray.cons' "a" ["b", "c"]) (UInt.fromInt 0) -- "a"
+-- | ```
+nonEmptyArrayGetAtLoop :: forall a. NonEmptyArray a -> UInt.UInt -> a
+nonEmptyArrayGetAtLoop nonEmptyArray index = case NonEmptyArray.index
+    nonEmptyArray
+    ( Int.floor
+        ( Math.remainder
+            (UInt.toNumber index)
+            (Int.toNumber (NonEmptyArray.length nonEmptyArray))
+        )
+    ) of
+  Just element -> element
+  Nothing -> NonEmptyArray.head nonEmptyArray -- ここに来ることはない

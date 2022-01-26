@@ -13,9 +13,9 @@ import PureScript.Data as PureScriptData
 import PureScript.ToString as PureScriptToString
 import PureScript.Wellknown as PureScriptWellknown
 import Test.Assert as Assert
+import Test.StructuredUrl as StructuredUrlTest
 import Type.Proxy (Proxy(..))
 import Util as Util
-import Test.StructuredUrl as StructuredUrlTest
 
 main :: Effect.Effect Unit
 main = do
@@ -27,6 +27,7 @@ main = do
   fileNameParse
   fileNameWithExtensionParse
   pureScriptCodeGenerate
+  nonEmptyArrayGetAtLoop
   StructuredUrlTest.test
 
 listUpdateAtOverAutoCreateInline :: Effect.Effect Unit
@@ -163,4 +164,62 @@ sample :: M0.String
 sample = "改行も\nしっかりエスケープされてるかな?"
 
 """
+    }
+
+nonEmptyArrayGetAtLoop :: Effect.Effect Unit
+nonEmptyArrayGetAtLoop = do
+  nonEmptyArrayGetAtLoopZero
+  nonEmptyArrayGetAtLoopOne
+  nonEmptyArrayGetAtLoopLoopOne
+  nonEmptyArrayGetAtLoopLoopTwo
+  nonEmptyArrayGetAtLoopOneElement
+
+nonEmptyArrayGetAtLoopZero :: Effect.Effect Unit
+nonEmptyArrayGetAtLoopZero =
+  Assert.assertEqual
+    { actual:
+        Util.nonEmptyArrayGetAtLoop
+          (NonEmptyArray.cons' "a" [ "b", "c" ])
+          (UInt.fromInt 0)
+    , expected: "a"
+    }
+
+nonEmptyArrayGetAtLoopOne :: Effect.Effect Unit
+nonEmptyArrayGetAtLoopOne =
+  Assert.assertEqual
+    { actual:
+        Util.nonEmptyArrayGetAtLoop
+          (NonEmptyArray.cons' "a" [ "b", "c" ])
+          (UInt.fromInt 1)
+    , expected: "b"
+    }
+
+nonEmptyArrayGetAtLoopLoopOne :: Effect.Effect Unit
+nonEmptyArrayGetAtLoopLoopOne =
+  Assert.assertEqual
+    { actual:
+        Util.nonEmptyArrayGetAtLoop
+          (NonEmptyArray.cons' "a" [ "b", "c" ])
+          (UInt.fromInt 4)
+    , expected: "b"
+    }
+
+nonEmptyArrayGetAtLoopLoopTwo :: Effect.Effect Unit
+nonEmptyArrayGetAtLoopLoopTwo =
+  Assert.assertEqual
+    { actual:
+        Util.nonEmptyArrayGetAtLoop
+          (NonEmptyArray.cons' "a" [ "b", "c" ])
+          (UInt.fromInt 6)
+    , expected: "a"
+    }
+
+nonEmptyArrayGetAtLoopOneElement :: Effect.Effect Unit
+nonEmptyArrayGetAtLoopOneElement =
+  Assert.assertEqual
+    { actual:
+        Util.nonEmptyArrayGetAtLoop
+          (NonEmptyArray.cons' "a" [])
+          (UInt.fromInt 99)
+    , expected: "a"
     }
