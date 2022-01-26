@@ -99,9 +99,15 @@ typeToString = case _ of
       (typeToString left)
       " & "
       (typeToString right)
-  Data.TsTypeImportedType -> "!!!!"
-  Data.TsTypeScopeInFile -> "!!!!"
-  Data.TsTypeScopeInGlobal -> "!!!!"
+  Data.TsTypeImportedType (Data.ImportedType { typeNameAndTypeParameter }) ->
+    Prelude.append
+      "(!!!!scope!!!!)."
+      (typeNameAndTypeParameterToString typeNameAndTypeParameter)
+  Data.TsTypeScopeInFile typeNameAndTypeParameter -> typeNameAndTypeParameterToString typeNameAndTypeParameter
+  Data.TsTypeScopeInGlobal typeNameAndTypeParameter ->
+    Prelude.append
+      "globalThis."
+      (typeNameAndTypeParameterToString typeNameAndTypeParameter)
   Data.TsTypeStringLiteral str -> stringLiteralValueToString str
 
 typeObjectToString :: Array Data.TsMemberType -> String
@@ -162,6 +168,19 @@ identifierAndTypeToString identifier parameterType =
     (Identifier.toString identifier)
     ": "
     (typeToString parameterType)
+
+typeNameAndTypeParameterToString :: Data.TypeNameAndTypeParameter -> String
+typeNameAndTypeParameterToString (Data.TypeNameAndTypeParameter { name, typeParameterList }) =
+  Prelude.append
+    (Identifier.toString name)
+    ( if Array.null typeParameterList then
+        ""
+      else
+        append3
+          "<"
+          (String.joinWith ", " (Prelude.map typeToString typeParameterList))
+          ">"
+    )
 
 -- | 文字列を`"`で囲んでエスケープする
 stringLiteralValueToString :: String -> String

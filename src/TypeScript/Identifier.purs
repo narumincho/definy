@@ -135,6 +135,7 @@ reservedByLanguageWordSet =
     , NonEmptyString.nes (Proxy :: _ "top")
     , NonEmptyString.nes (Proxy :: _ "closed")
     , NonEmptyString.nes (Proxy :: _ "self")
+    , NonEmptyString.nes (Proxy :: _ "globalThis")
     ]
 
 fromSymbolProxyUnsafe ::

@@ -6,12 +6,14 @@ module TypeScript.Data
   , Expr(..)
   , FunctionDeclaration(..)
   , FunctionType(..)
+  , ImportedType(..)
   , JavaScriptContent(..)
   , ParameterWithDocument(..)
   , Statement(..)
   , TsMemberType(..)
   , TsType(..)
   , TypeAlias(..)
+  , TypeNameAndTypeParameter(..)
   , TypeScriptModule(..)
   , TypeScriptModuleMap(..)
   , UnaryOperator(..)
@@ -20,9 +22,9 @@ module TypeScript.Data
   ) where
 
 import Data.Map as Map
+import Data.Tuple as Tuple
 import TypeScript.Identifier (TsIdentifier)
 import TypeScript.ModuleName as ModuleName
-import Data.Tuple as Tuple
 
 newtype TypeScriptModuleMap
   = TypeScriptModuleMap
@@ -99,9 +101,9 @@ data TsType
   | TsTypeFunction FunctionType
   | TsTypeUnion (Array TsType)
   | TsTypeIntersection (Tuple.Tuple TsType TsType)
-  | TsTypeImportedType
-  | TsTypeScopeInFile
-  | TsTypeScopeInGlobal
+  | TsTypeImportedType ImportedType
+  | TsTypeScopeInFile TypeNameAndTypeParameter
+  | TsTypeScopeInGlobal TypeNameAndTypeParameter
   | TsTypeStringLiteral String
 
 -- | オブジェクトのメンバーの型
@@ -118,6 +120,18 @@ newtype FunctionType
   { typeParameterList :: Array TsIdentifier
   , {- パラメーターの型. 意味のない引数名は適当に付く -} parameterList :: Array TsType
   , return :: TsType
+  }
+
+newtype ImportedType
+  = ImportedType
+  { moduleName :: ModuleName.ModuleName
+  , typeNameAndTypeParameter :: TypeNameAndTypeParameter
+  }
+
+newtype TypeNameAndTypeParameter
+  = TypeNameAndTypeParameter
+  { name :: TsIdentifier
+  , typeParameterList :: Array TsType
   }
 
 data Expr
