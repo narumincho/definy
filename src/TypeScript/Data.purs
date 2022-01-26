@@ -5,25 +5,40 @@ module TypeScript.Data
   , ExportDefinition(..)
   , Expr(..)
   , FunctionDeclaration(..)
-  , Module(..)
+  , FunctionType(..)
+  , ImportedType(..)
+  , JavaScriptContent(..)
   , ParameterWithDocument(..)
   , Statement(..)
-  , TsIdentifier(..)
+  , TsMemberType(..)
   , TsType(..)
   , TypeAlias(..)
+  , TypeNameAndTypeParameter(..)
+  , TypeScriptModule(..)
+  , TypeScriptModuleMap(..)
   , UnaryOperator(..)
   , UnaryOperatorExpr(..)
   , VariableDeclaration(..)
   ) where
 
-import Data.String.NonEmpty (NonEmptyString)
+import Data.Map as Map
+import Data.Tuple as Tuple
+import TypeScript.Identifier (TsIdentifier)
 import TypeScript.ModuleName as ModuleName
 
+newtype TypeScriptModuleMap
+  = TypeScriptModuleMap
+  (Map.Map ModuleName.ModuleName TypeScriptModule)
+
 -- | TypeScriptやJavaScriptのコードを表現する. TypeScriptでも出力できるように型情報をつける必要がある
-newtype Module
-  = Module
-  { name :: ModuleName.ModuleName
-  , {- 外部に公開する定義 -} exportDefinitionList :: Array ExportDefinition
+newtype TypeScriptModule
+  = TypeScriptModule
+  { {- 外部に公開する定義 -} exportDefinitionList :: Array ExportDefinition
+  }
+
+newtype JavaScriptContent
+  = JavaScriptContent
+  { {- 外部に公開する定義 -} exportDefinitionList :: Array ExportDefinition
   , {- 定義した後に実行するコード -} statementList :: Array Statement
   }
 
@@ -82,15 +97,42 @@ data TsType
   | TsTypeNull
   | TsTypeNever
   | TsTypeVoid
-  | TsTypeObject
-  | TsTypeFunction
-  | TsTypeWithTypeParameter
-  | TsTypeUnion
-  | TsTypeIntersection
-  | TsTypeImportedType
-  | TsTypeScopeInFile
-  | TsTypeScopeInGlobal
-  | TsTypeStringLiteral
+  | TsTypeObject (Array TsMemberType)
+  | TsTypeFunction FunctionType
+  | TsTypeUnion (Array TsType)
+  | TsTypeIntersection (Tuple.Tuple TsType TsType)
+  | TsTypeImportedType ImportedType
+  | TsTypeScopeInFile TypeNameAndTypeParameter
+  | TsTypeScopeInGlobal TypeNameAndTypeParameter
+  | TsTypeStringLiteral String
+
+-- | オブジェクトのメンバーの型
+newtype TsMemberType
+  = TsMemberType
+  { name :: String
+  , {- 必須かどうか falseの場合 ? がつく -} required :: Boolean
+  , type :: TsType
+  , document :: String
+  }
+
+newtype FunctionType
+  = FunctionType
+  { typeParameterList :: Array TsIdentifier
+  , {- パラメーターの型. 意味のない引数名は適当に付く -} parameterList :: Array TsType
+  , return :: TsType
+  }
+
+newtype ImportedType
+  = ImportedType
+  { moduleName :: ModuleName.ModuleName
+  , typeNameAndTypeParameter :: TypeNameAndTypeParameter
+  }
+
+newtype TypeNameAndTypeParameter
+  = TypeNameAndTypeParameter
+  { name :: TsIdentifier
+  , typeParameterList :: Array TsType
+  }
 
 data Expr
   = {- 数値リテラル `123` -} NumberLiteral Number
@@ -161,9 +203,6 @@ newtype ConditionalOperatorExpr
   , {- 条件がtrueのときに評価される式 -} thenExpr :: Expr
   , {- 条件がfalseのときに評価される式 -} elseExpr :: Expr
   }
-
-newtype TsIdentifier
-  = TsIdentifier NonEmptyString
 
 -- | TypeScript の文
 data Statement

@@ -11,6 +11,8 @@
   , "exceptions"
   , "foreign-object"
   , "functions"
+  , "integers"
+  , "math"
   , "maybe"
   , "node-buffer"
   , "node-fs-aff"
