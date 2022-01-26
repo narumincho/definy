@@ -5,7 +5,6 @@ module Test.TypeScript
 import Console as Console
 import Data.Array as Array
 import Data.Set as Set
-import Data.String as String
 import Effect as Effect
 import Prelude as Prelude
 import TypeScript.Identifier as Identifier

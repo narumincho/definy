@@ -22,6 +22,7 @@ module TypeScript.Data
 import Data.Map as Map
 import TypeScript.Identifier (TsIdentifier)
 import TypeScript.ModuleName as ModuleName
+import Data.Tuple as Tuple
 
 newtype TypeScriptModuleMap
   = TypeScriptModuleMap
@@ -96,12 +97,12 @@ data TsType
   | TsTypeVoid
   | TsTypeObject (Array TsMemberType)
   | TsTypeFunction FunctionType
-  | TsTypeUnion
-  | TsTypeIntersection
+  | TsTypeUnion (Array TsType)
+  | TsTypeIntersection (Tuple.Tuple TsType TsType)
   | TsTypeImportedType
   | TsTypeScopeInFile
   | TsTypeScopeInGlobal
-  | TsTypeStringLiteral
+  | TsTypeStringLiteral String
 
 -- | オブジェクトのメンバーの型
 newtype TsMemberType
