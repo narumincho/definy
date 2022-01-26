@@ -74,7 +74,7 @@ export const typeToString = (
       return type_.tsIdentifier.string;
 
     case "ScopeInGlobal":
-      return type_.tsIdentifier.string;
+      return "globalThis." + type_.tsIdentifier.string;
 
     case "ImportedType": {
       const nameSpaceIdentifier = moduleMap.get(type_.importedType.moduleName);

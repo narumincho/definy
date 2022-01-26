@@ -103,7 +103,7 @@ export const exprToString = (
       return expr.tsIdentifier.string;
 
     case "GlobalObjects":
-      return expr.tsIdentifier.string;
+      return "globalThis." + expr.tsIdentifier.string;
 
     case "ImportedVariable": {
       const nameSpaceIdentifer = moduleMap.get(
