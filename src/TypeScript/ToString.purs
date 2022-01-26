@@ -87,7 +87,7 @@ typeToString = case _ of
   Data.TsTypeNever -> "never"
   Data.TsTypeVoid -> "void"
   Data.TsTypeObject memberList -> typeObjectToString memberList
-  Data.TsTypeFunction -> "!!!!"
+  Data.TsTypeFunction functionType -> functionTypeToString functionType
   Data.TsTypeUnion -> "!!!!"
   Data.TsTypeIntersection -> "!!!!"
   Data.TsTypeImportedType -> "!!!!"
@@ -118,6 +118,9 @@ typeObjectToString memberList =
         )
     )
     " }"
+
+functionTypeToString :: Data.FunctionType -> String
+functionTypeToString (Data.FunctionType _) = "wip function type"
 
 -- | 文字列を`"`で囲んでエスケープする
 stringLiteralValueToString :: String -> String

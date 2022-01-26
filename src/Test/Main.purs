@@ -14,6 +14,7 @@ import PureScript.ToString as PureScriptToString
 import PureScript.Wellknown as PureScriptWellknown
 import Test.Assert as Assert
 import Test.StructuredUrl as StructuredUrlTest
+import Test.TypeScript as TypeScriptText
 import Type.Proxy (Proxy(..))
 import Util as Util
 
@@ -29,6 +30,7 @@ main = do
   pureScriptCodeGenerate
   nonEmptyArrayGetAtLoop
   StructuredUrlTest.test
+  TypeScriptText.test
 
 listUpdateAtOverAutoCreateInline :: Effect.Effect Unit
 listUpdateAtOverAutoCreateInline =

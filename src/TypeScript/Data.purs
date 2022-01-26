@@ -5,6 +5,7 @@ module TypeScript.Data
   , ExportDefinition(..)
   , Expr(..)
   , FunctionDeclaration(..)
+  , FunctionType(..)
   , JavaScriptContent(..)
   , ParameterWithDocument(..)
   , Statement(..)
@@ -94,7 +95,7 @@ data TsType
   | TsTypeNever
   | TsTypeVoid
   | TsTypeObject (Array TsMemberType)
-  | TsTypeFunction
+  | TsTypeFunction FunctionType
   | TsTypeUnion
   | TsTypeIntersection
   | TsTypeImportedType
@@ -109,6 +110,13 @@ newtype TsMemberType
   , {- 必須かどうか falseの場合 ? がつく -} required :: Boolean
   , type :: TsType
   , document :: String
+  }
+
+newtype FunctionType
+  = FunctionType
+  { typeParameterList :: Array TsIdentifier
+  , {- パラメーターの型. 意味のない引数名は適当に付く -} parameterList :: Array TsType
+  , return :: TsType
   }
 
 data Expr

@@ -153,10 +153,7 @@ const createIdentifierByIndex = (index: number): string => {
   let offsetIndex = index - headIdentifierCharTable.length;
   while (true) {
     const quotient = Math.floor(offsetIndex / noHeadIdentifierCharTable.length);
-    const first =
-      headIdentifierCharTable[
-        Math.floor(offsetIndex / noHeadIdentifierCharTable.length)
-      ];
+    const first = headIdentifierCharTable[quotient];
     const second = noHeadIdentifierCharTable[
       offsetIndex % noHeadIdentifierCharTable.length
     ] as string;
