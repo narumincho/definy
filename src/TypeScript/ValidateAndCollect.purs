@@ -1,5 +1,6 @@
 module TypeScript.ValidateAndCollect
   ( RootIdentifierSetInModule(..)
+  , UnknownTypeNameData(..)
   , ValidateAndCollectResult(..)
   , ValidationError(..)
   , ValidationErrorWithIndex(..)
@@ -30,15 +31,18 @@ newtype ValidateAndCollectResult
 concatValidateAndCollectResult :: Array ValidateAndCollectResult -> ValidateAndCollectResult
 concatValidateAndCollectResult list = case Array.uncons list of
   Nothing -> validateAndCollectResultEmpty
-  Just { head: ValidateAndCollectResult head, tail: tailList } ->
-    let
-      (ValidateAndCollectResult tail) = concatValidateAndCollectResult tailList
-    in
-      ValidateAndCollectResult
-        { usedNameSet: Set.union head.usedNameSet tail.usedNameSet
-        , modulePathSet: Set.union head.modulePathSet tail.modulePathSet
-        , errorList: Prelude.append head.errorList tail.errorList
-        }
+  Just { head, tail: tailList } -> appendValidateAndCollectResult head (concatValidateAndCollectResult tailList)
+
+appendValidateAndCollectResult ::
+  ValidateAndCollectResult ->
+  ValidateAndCollectResult ->
+  ValidateAndCollectResult
+appendValidateAndCollectResult (ValidateAndCollectResult a) (ValidateAndCollectResult b) =
+  ValidateAndCollectResult
+    { usedNameSet: Set.union a.usedNameSet b.usedNameSet
+    , modulePathSet: Set.union a.modulePathSet b.modulePathSet
+    , errorList: Prelude.append a.errorList b.errorList
+    }
 
 newtype ValidationErrorWithIndex
   = ValidationErrorWithIndex
@@ -49,6 +53,14 @@ newtype ValidationErrorWithIndex
 data ValidationError
   = NotImplemented
   | DuplicateName
+  | DuplicateIdentifier (Array Identifier.TsIdentifier)
+  | UnknownTypeName UnknownTypeNameData
+
+newtype UnknownTypeNameData
+  = UnknownTypeNameData
+  { typeName :: Identifier.TsIdentifier
+  , scope :: Array (Set.Set Identifier.TsIdentifier)
+  }
 
 validateAndCollect ::
   Data.TypeScriptModuleMap ->
@@ -121,18 +133,33 @@ collectRootIdentifierInExportDefinition head (RootIdentifierSetInModule tail) = 
           { rootVariableNameSet = Set.insert name tail.rootVariableNameSet }
       )
 
+rootIdentifierSetInModuleMemberType ::
+  Identifier.TsIdentifier ->
+  RootIdentifierSetInModule ->
+  Boolean
+rootIdentifierSetInModuleMemberType typeName (RootIdentifierSetInModule { rootTypeNameSet }) = Set.member typeName rootTypeNameSet
+
+rootIdentifierSetInModuleMemberVariable ::
+  Identifier.TsIdentifier ->
+  RootIdentifierSetInModule ->
+  Boolean
+rootIdentifierSetInModuleMemberVariable variableName (RootIdentifierSetInModule { rootVariableNameSet }) = Set.member variableName rootVariableNameSet
+
+type ContextInModuleRecord :: Row Type
+type ContextInModuleRecord
+  = ( moduleName :: ModuleName.ModuleName
+    , rootIdentifierMap :: Map.Map ModuleName.ModuleName RootIdentifierSetInModule
+    )
+
 newtype ContextInModule
-  = ContextInModule
-  { moduleName :: ModuleName.ModuleName
-  , rootIdentifierMap :: Map.Map ModuleName.ModuleName RootIdentifierSetInModule
-  }
+  = ContextInModule (Record ContextInModuleRecord)
+
+type ContextInExportDefinitionRecord :: Row Type
+type ContextInExportDefinitionRecord
+  = ( index :: UInt.UInt | ContextInModuleRecord )
 
 newtype ContextInExportDefinition
-  = ContextInExportDefinition
-  { moduleName :: ModuleName.ModuleName
-  , rootIdentifierMap :: Map.Map ModuleName.ModuleName RootIdentifierSetInModule
-  , index :: UInt.UInt
-  }
+  = ContextInExportDefinition (Record ContextInExportDefinitionRecord)
 
 collectInModule ::
   ContextInModule -> Data.TypeScriptModule -> ValidateAndCollectResult
@@ -169,37 +196,41 @@ collectInTypeAlias ::
   ContextInExportDefinition ->
   Data.TypeAlias ->
   ValidateAndCollectResult
-collectInTypeAlias context@(ContextInExportDefinition { moduleName, rootIdentifierMap, index }) (Data.TypeAlias rec) =
-  concatValidateAndCollectResult
-    [ ValidateAndCollectResult
-        { modulePathSet: Set.empty
-        , usedNameSet: Set.singleton rec.name
-        , errorList:
-            case Map.lookup moduleName rootIdentifierMap of
-              Just (RootIdentifierSetInModule { rootTypeNameSet }) ->
-                if Set.member rec.name rootTypeNameSet then
-                  [ ValidationErrorWithIndex { index, error: DuplicateName } ]
-                else
-                  []
-              Nothing -> []
-        }
-    , collectInType
-        { context
-        , tsType: rec.type
-        , typeParameterSetList: [ Set.fromFoldable rec.typeParameterList ]
-        }
-    ]
+collectInTypeAlias (ContextInExportDefinition { moduleName, rootIdentifierMap, index }) (Data.TypeAlias rec) =
+  let
+    { tsIdentifierSet, validationErrorMaybe } = checkDuplicateIdentifier rec.typeParameterList
+  in
+    concatValidateAndCollectResult
+      [ ValidateAndCollectResult
+          { modulePathSet: Set.empty
+          , usedNameSet: Set.singleton rec.name
+          , errorList:
+              Array.catMaybes
+                [ case Map.lookup moduleName rootIdentifierMap of
+                    Just (RootIdentifierSetInModule { rootTypeNameSet }) ->
+                      if Set.member rec.name rootTypeNameSet then
+                        Just (ValidationErrorWithIndex { index, error: DuplicateName })
+                      else
+                        Nothing
+                    Nothing -> Nothing
+                , case validationErrorMaybe of
+                    Just error -> Just (ValidationErrorWithIndex { index, error })
+                    Nothing -> Nothing
+                ]
+          }
+      , collectInType
+          (ContextInType { moduleName, rootIdentifierMap, index, typeParameterSetList: [ tsIdentifierSet ] })
+          rec.type
+      ]
 
-collectInType ::
-  { context :: ContextInExportDefinition
-  , tsType :: Data.TsType
-  , typeParameterSetList :: Array (Set.Set Identifier.TsIdentifier)
-  } ->
-  ValidateAndCollectResult
-collectInType { context: context@(ContextInExportDefinition { index })
-, tsType
-, typeParameterSetList
-} = case tsType of
+newtype ContextInType
+  = ContextInType
+  { typeParameterSetList :: Array (Set.Set Identifier.TsIdentifier)
+  | ContextInExportDefinitionRecord
+  }
+
+collectInType :: ContextInType -> Data.TsType -> ValidateAndCollectResult
+collectInType context@(ContextInType { index, moduleName, rootIdentifierMap, typeParameterSetList }) tsType = case tsType of
   Data.TsTypeNumber -> validateAndCollectResultEmpty
   Data.TsTypeString -> validateAndCollectResultEmpty
   Data.TsTypeBoolean -> validateAndCollectResultEmpty
@@ -211,52 +242,163 @@ collectInType { context: context@(ContextInExportDefinition { index })
     concatValidateAndCollectResult
       ( Prelude.map
           ( \(Data.TsMemberType member) ->
-              collectInType { context, tsType: member.type, typeParameterSetList }
+              collectInType context member.type
           )
           memberTypeList
       )
-  Data.TsTypeFunction functionType ->
-    ValidateAndCollectResult
-      { modulePathSet: Set.empty
-      , usedNameSet: Set.empty
-      , errorList: [ ValidationErrorWithIndex { index, error: NotImplemented } ]
-      }
+  Data.TsTypeFunction (Data.FunctionType functionType) ->
+    let
+      { tsIdentifierSet, validationErrorMaybe } = checkDuplicateIdentifier functionType.typeParameterList
+
+      newContext =
+        ContextInType
+          { index
+          , rootIdentifierMap
+          , moduleName
+          , typeParameterSetList: Array.snoc typeParameterSetList tsIdentifierSet
+          }
+    in
+      concatValidateAndCollectResult
+        ( Array.concat
+            [ [ ValidateAndCollectResult
+                  { modulePathSet: Set.empty
+                  , usedNameSet: Set.empty
+                  , errorList:
+                      case validationErrorMaybe of
+                        Just error -> [ ValidationErrorWithIndex { index, error } ]
+                        Nothing -> []
+                  }
+              , collectInType
+                  newContext
+                  functionType.return
+              ]
+            , Prelude.map
+                ( \parameterType ->
+                    collectInType newContext parameterType
+                )
+                functionType.parameterList
+            ]
+        )
   Data.TsTypeUnion typeList ->
-    ValidateAndCollectResult
-      { modulePathSet: Set.empty
-      , usedNameSet: Set.empty
-      , errorList: [ ValidationErrorWithIndex { index, error: NotImplemented } ]
-      }
+    concatValidateAndCollectResult
+      ( Prelude.map
+          ( \parameterType ->
+              collectInType context parameterType
+          )
+          typeList
+      )
   Data.TsTypeIntersection (Tuple.Tuple left right) ->
-    ValidateAndCollectResult
-      { modulePathSet: Set.empty
-      , usedNameSet: Set.empty
-      , errorList: [ ValidationErrorWithIndex { index, error: NotImplemented } ]
-      }
-  Data.TsTypeImportedType importedType ->
-    ValidateAndCollectResult
-      { modulePathSet: Set.empty
-      , usedNameSet: Set.empty
-      , errorList: [ ValidationErrorWithIndex { index, error: NotImplemented } ]
-      }
-  Data.TsTypeScopeInFile typeNameAndTypeParameter ->
-    ValidateAndCollectResult
-      { modulePathSet: Set.empty
-      , usedNameSet: Set.empty
-      , errorList: [ ValidationErrorWithIndex { index, error: NotImplemented } ]
-      }
+    appendValidateAndCollectResult
+      (collectInType context left)
+      (collectInType context right)
+  Data.TsTypeImportedType (Data.ImportedType importedType@{ typeNameAndTypeParameter: Data.TypeNameAndTypeParameter { name } }) ->
+    concatValidateAndCollectResult
+      [ ValidateAndCollectResult
+          { modulePathSet: Set.singleton importedType.moduleName
+          , usedNameSet: Set.empty
+          , errorList: []
+          }
+      , ValidateAndCollectResult
+          { modulePathSet: Set.empty
+          , usedNameSet: Set.empty
+          , errorList:
+              case checkTypeIsDefined
+                  ( ContextInType
+                      { index
+                      , rootIdentifierMap
+                      , moduleName: importedType.moduleName
+                      , typeParameterSetList
+                      }
+                  )
+                  name of
+                Just error ->
+                  [ ValidationErrorWithIndex
+                      { index
+                      , error: UnknownTypeName error
+                      }
+                  ]
+                Nothing -> []
+          }
+      , collectInTypeNameAndTypeParameter
+          context
+          importedType.typeNameAndTypeParameter
+      ]
+  Data.TsTypeScopeInFile typeNameAndTypeParameter@(Data.TypeNameAndTypeParameter { name }) ->
+    appendValidateAndCollectResult
+      ( ValidateAndCollectResult
+          { modulePathSet: Set.empty
+          , usedNameSet: Set.empty
+          , errorList:
+              case checkTypeIsDefined context name of
+                Just error ->
+                  [ ValidationErrorWithIndex
+                      { index
+                      , error: UnknownTypeName error
+                      }
+                  ]
+                Nothing -> []
+          }
+      )
+      ( collectInTypeNameAndTypeParameter
+          context
+          typeNameAndTypeParameter
+      )
   Data.TsTypeScopeInGlobal typeNameAndTypeParameter ->
-    ValidateAndCollectResult
-      { modulePathSet: Set.empty
-      , usedNameSet: Set.empty
-      , errorList: [ ValidationErrorWithIndex { index, error: NotImplemented } ]
-      }
-  Data.TsTypeStringLiteral string ->
-    ValidateAndCollectResult
-      { modulePathSet: Set.empty
-      , usedNameSet: Set.empty
-      , errorList: [ ValidationErrorWithIndex { index, error: NotImplemented } ]
-      }
+    collectInTypeNameAndTypeParameter
+      context
+      typeNameAndTypeParameter
+  Data.TsTypeStringLiteral _ -> validateAndCollectResultEmpty
+
+collectInTypeNameAndTypeParameter ::
+  ContextInType ->
+  Data.TypeNameAndTypeParameter ->
+  ValidateAndCollectResult
+collectInTypeNameAndTypeParameter context (Data.TypeNameAndTypeParameter typeNameAndTypeParameter) =
+  appendValidateAndCollectResult
+    ( ValidateAndCollectResult
+        { modulePathSet: Set.empty
+        , usedNameSet: Set.singleton typeNameAndTypeParameter.name
+        , errorList: []
+        }
+    )
+    ( concatValidateAndCollectResult
+        ( Prelude.map
+            ( \parameterType ->
+                collectInType
+                  context
+                  parameterType
+            )
+            typeNameAndTypeParameter.typeParameterList
+        )
+    )
+
+checkTypeIsDefined ::
+  ContextInType ->
+  Identifier.TsIdentifier ->
+  Maybe UnknownTypeNameData
+checkTypeIsDefined (ContextInType context) typeName =
+  if rootIdentifierSetInModuleMemberType
+    typeName
+    ( getRootIdentifierSetInModule
+        { moduleName: context.moduleName, rootIdentifierMap: context.rootIdentifierMap }
+    ) then
+    Nothing
+  else if Array.any (Set.member typeName) context.typeParameterSetList then
+    Nothing
+  else
+    Just
+      ( UnknownTypeNameData
+          { typeName
+          , scope: context.typeParameterSetList
+          }
+      )
+
+getRootIdentifierSetInModule :: Record ContextInModuleRecord -> RootIdentifierSetInModule
+getRootIdentifierSetInModule ({ moduleName, rootIdentifierMap }) = case Map.lookup moduleName rootIdentifierMap of
+  Just rootIdentifierSetInModule -> rootIdentifierSetInModule
+  Nothing ->
+    RootIdentifierSetInModule
+      { rootTypeNameSet: Set.empty, rootVariableNameSet: Set.empty }
 
 validateAndCollectResultEmpty :: ValidateAndCollectResult
 validateAndCollectResultEmpty =
@@ -264,4 +406,17 @@ validateAndCollectResultEmpty =
     { modulePathSet: Set.empty
     , usedNameSet: Set.empty
     , errorList: []
+    }
+
+checkDuplicateIdentifier :: Array Identifier.TsIdentifier -> { validationErrorMaybe :: Maybe ValidationError, tsIdentifierSet :: Set.Set Identifier.TsIdentifier }
+checkDuplicateIdentifier identifierList =
+  let
+    tsIdentifierSet = Set.fromFoldable identifierList
+  in
+    { validationErrorMaybe:
+        if Prelude.eq (Set.size tsIdentifierSet) (Array.length identifierList) then
+          Just (DuplicateIdentifier identifierList)
+        else
+          Nothing
+    , tsIdentifierSet
     }
