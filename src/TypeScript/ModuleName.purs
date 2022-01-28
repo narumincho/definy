@@ -8,6 +8,7 @@ module TypeScript.ModuleName
   , toNonEmptyString
   ) where
 
+import Prelude as Prelude
 import Data.Either as Either
 import Data.Maybe (Maybe(..))
 import Data.String.NonEmpty (NonEmptyString)
@@ -21,6 +22,10 @@ import Type.Proxy (Proxy(..))
 
 newtype ModuleName
   = ModuleName NonEmptyString
+
+derive instance eqModuleName :: Prelude.Eq ModuleName
+
+derive instance ordModuleName :: Prelude.Ord ModuleName
 
 safePatternEither :: Either.Either String Regex.Regex
 safePatternEither = Regex.regex "^[a-zA-Z0-9-_]+$" RegexFlags.unicode
