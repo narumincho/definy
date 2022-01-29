@@ -17,6 +17,7 @@ import Prelude as Prelude
 import Record as Record
 import Type.Proxy (Proxy(..))
 import TypeScript.Data as Data
+import TypeScript.Identifier (TsIdentifier(..))
 import TypeScript.Identifier as Identifier
 import TypeScript.ModuleName as ModuleName
 
@@ -179,12 +180,7 @@ collectInExportDefinition ::
   ContextInExportDefinition -> Data.ExportDefinition -> ValidateAndCollectResult
 collectInExportDefinition context@(ContextInExportDefinition { index }) = case _ of
   Data.ExportDefinitionTypeAlias typeAlias -> collectInTypeAlias context typeAlias
-  Data.ExportDefinitionFunction func ->
-    ValidateAndCollectResult
-      { modulePathSet: Set.empty
-      , usedNameSet: Set.empty
-      , errorList: [ ValidationErrorWithIndex { index, error: NotImplemented } ]
-      }
+  Data.ExportDefinitionFunction func -> collectInFunctionDeclaration context func
   Data.ExportDefinitionVariable variableDefinition ->
     ValidateAndCollectResult
       { modulePathSet: Set.empty
@@ -200,15 +196,15 @@ collectInTypeAlias (ContextInExportDefinition { moduleName, rootIdentifierMap, i
   let
     { tsIdentifierSet, validationErrorMaybe } = checkDuplicateIdentifier rec.typeParameterList
   in
-    concatValidateAndCollectResult
-      [ ValidateAndCollectResult
+    appendValidateAndCollectResult
+      ( ValidateAndCollectResult
           { modulePathSet: Set.empty
           , usedNameSet: Set.singleton rec.name
           , errorList:
               Array.catMaybes
                 [ case Map.lookup moduleName rootIdentifierMap of
-                    Just (RootIdentifierSetInModule { rootTypeNameSet }) ->
-                      if Set.member rec.name rootTypeNameSet then
+                    Just rootIdentifierSetInModule ->
+                      if rootIdentifierSetInModuleMemberType rec.name rootIdentifierSetInModule then
                         Just (ValidationErrorWithIndex { index, error: DuplicateName })
                       else
                         Nothing
@@ -218,16 +214,99 @@ collectInTypeAlias (ContextInExportDefinition { moduleName, rootIdentifierMap, i
                     Nothing -> Nothing
                 ]
           }
-      , collectInType
-          (ContextInType { moduleName, rootIdentifierMap, index, typeParameterSetList: [ tsIdentifierSet ] })
+      )
+      ( collectInType
+          ( ContextInType
+              { moduleName
+              , rootIdentifierMap
+              , index
+              , typeParameterSetList: [ tsIdentifierSet ]
+              }
+          )
           rec.type
-      ]
+      )
+
+collectInFunctionDeclaration ::
+  ContextInExportDefinition ->
+  Data.FunctionDeclaration ->
+  ValidateAndCollectResult
+collectInFunctionDeclaration context@(ContextInExportDefinition { moduleName, rootIdentifierMap, index }) (Data.FunctionDeclaration rec) =
+  let
+    { tsIdentifierSet, validationErrorMaybe } = checkDuplicateIdentifier rec.typeParameterList
+
+    { validationErrorMaybe: parameterErrorMaybe } =
+      checkDuplicateIdentifier
+        ( Prelude.map
+            (\(Data.ParameterWithDocument { name }) -> name)
+            rec.parameterList
+        )
+  in
+    concatValidateAndCollectResult
+      ( Array.concat
+          [ [ ValidateAndCollectResult
+                { modulePathSet: Set.empty
+                , usedNameSet: Set.singleton rec.name
+                , errorList:
+                    Array.catMaybes
+                      [ case Map.lookup moduleName rootIdentifierMap of
+                          Just rootIdentifierSetInModule ->
+                            if rootIdentifierSetInModuleMemberVariable rec.name rootIdentifierSetInModule then
+                              Just (ValidationErrorWithIndex { index, error: DuplicateName })
+                            else
+                              Nothing
+                          Nothing -> Nothing
+                      , case validationErrorMaybe of
+                          Just error -> Just (ValidationErrorWithIndex { index, error })
+                          Nothing -> Nothing
+                      , case parameterErrorMaybe of
+                          Just error -> Just (ValidationErrorWithIndex { index, error })
+                          Nothing -> Nothing
+                      ]
+                }
+            , collectInType
+                ( ContextInType
+                    { moduleName
+                    , rootIdentifierMap
+                    , index
+                    , typeParameterSetList: [ tsIdentifierSet ]
+                    }
+                )
+                rec.returnType
+            , collectInStatementList
+                ( ContextInExpr
+                    { moduleName
+                    , rootIdentifierMap
+                    , index
+                    , typeParameterSetList: [ tsIdentifierSet ]
+                    , localVariableNameSetList: []
+                    }
+                )
+                rec.statementList
+            ]
+          , Prelude.map
+              ( \(Data.ParameterWithDocument { type: tsType }) ->
+                  collectInType
+                    ( ContextInType
+                        { moduleName
+                        , rootIdentifierMap
+                        , index
+                        , typeParameterSetList: [ tsIdentifierSet ]
+                        }
+                    )
+                    tsType
+              )
+              rec.parameterList
+          ]
+      )
+
+type ContextInTypeRecord :: Row Type
+type ContextInTypeRecord
+  = ( typeParameterSetList :: Array (Set.Set Identifier.TsIdentifier)
+    | ContextInExportDefinitionRecord
+    )
 
 newtype ContextInType
-  = ContextInType
-  { typeParameterSetList :: Array (Set.Set Identifier.TsIdentifier)
-  | ContextInExportDefinitionRecord
-  }
+  = ContextInType (Record ContextInTypeRecord)
 
 collectInType :: ContextInType -> Data.TsType -> ValidateAndCollectResult
 collectInType context@(ContextInType { index, moduleName, rootIdentifierMap, typeParameterSetList }) tsType = case tsType of
@@ -408,7 +487,11 @@ validateAndCollectResultEmpty =
     , errorList: []
     }
 
-checkDuplicateIdentifier :: Array Identifier.TsIdentifier -> { validationErrorMaybe :: Maybe ValidationError, tsIdentifierSet :: Set.Set Identifier.TsIdentifier }
+checkDuplicateIdentifier ::
+  Array Identifier.TsIdentifier ->
+  { validationErrorMaybe :: Maybe ValidationError
+  , tsIdentifierSet :: Set.Set Identifier.TsIdentifier
+  }
 checkDuplicateIdentifier identifierList =
   let
     tsIdentifierSet = Set.fromFoldable identifierList
@@ -420,3 +503,55 @@ checkDuplicateIdentifier identifierList =
           Nothing
     , tsIdentifierSet
     }
+
+newtype ContextInExpr
+  = ContextInExpr
+  { localVariableNameSetList :: Array (Set.Set Identifier.TsIdentifier)
+  | ContextInTypeRecord
+  }
+
+contextInExprAppendLocalVariableNameSet ::
+  Set.Set Identifier.TsIdentifier ->
+  ContextInExpr ->
+  ContextInExpr
+contextInExprAppendLocalVariableNameSet localVariableNameSet (ContextInExpr rec) =
+  ContextInExpr
+    ( rec
+        { localVariableNameSetList =
+          Array.snoc rec.localVariableNameSetList localVariableNameSet
+        }
+    )
+
+collectInStatementList :: ContextInExpr -> Array Data.Statement -> ValidateAndCollectResult
+collectInStatementList context statementList =
+  let
+    localVariableNameSet = collectNameInStatementList statementList
+  in
+    concatValidateAndCollectResult
+      ( Prelude.map
+          ( collectInStatement
+              (contextInExprAppendLocalVariableNameSet localVariableNameSet context)
+          )
+          statementList
+      )
+
+collectInStatement :: ContextInExpr -> Data.Statement -> ValidateAndCollectResult
+collectInStatement context@(ContextInExpr { index }) = case _ of
+  _ ->
+    ValidateAndCollectResult
+      { modulePathSet: Set.empty
+      , usedNameSet: Set.empty
+      , errorList: [ ValidationErrorWithIndex { index, error: NotImplemented } ]
+      }
+
+collectNameInStatementList :: Array Data.Statement -> Set.Set Identifier.TsIdentifier
+collectNameInStatementList statementList =
+  -- TODO 重複チェック
+  Set.fromFoldable
+    (Array.mapMaybe collectNameInStatement statementList)
+
+collectNameInStatement :: Data.Statement -> Maybe Identifier.TsIdentifier
+collectNameInStatement = case _ of
+  Data.VariableDefinition (Data.VariableDefinitionStatement { name }) -> Just name
+  Data.FunctionDefinition (Data.FunctionDefinitionStatement { name }) -> Just name
+  _ -> Nothing

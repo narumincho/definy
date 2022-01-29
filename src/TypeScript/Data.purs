@@ -4,12 +4,19 @@ module TypeScript.Data
   , ConditionalOperatorExpr(..)
   , ExportDefinition(..)
   , Expr(..)
+  , ForOfStatement(..)
+  , ForStatement(..)
   , FunctionDeclaration(..)
+  , FunctionDefinitionStatement(..)
   , FunctionType(..)
+  , IfStatement(..)
   , ImportedType(..)
   , JavaScriptContent(..)
   , ParameterWithDocument(..)
+  , Pattern(..)
+  , SetStatement(..)
   , Statement(..)
+  , SwitchStatement(..)
   , TsMemberType(..)
   , TsType(..)
   , TypeAlias(..)
@@ -19,9 +26,11 @@ module TypeScript.Data
   , UnaryOperator(..)
   , UnaryOperatorExpr(..)
   , VariableDeclaration(..)
+  , VariableDefinitionStatement(..)
   ) where
 
 import Data.Map as Map
+import Data.Maybe (Maybe)
 import Data.Tuple as Tuple
 import TypeScript.Identifier (TsIdentifier)
 import TypeScript.ModuleName as ModuleName
@@ -206,17 +215,70 @@ newtype ConditionalOperatorExpr
 
 -- | TypeScript の文
 data Statement
-  = EvaluateExpr
-  | Set
-  | If
-  | ThrowError
-  | Return
+  = EvaluateExpr Expr
+  | Set SetStatement
+  | If IfStatement
+  | ThrowError Expr
+  | Return Expr
   | ReturnVoid
   | Continue
-  | VariableDefinition
-  | FunctionDefinition
-  | For
-  | ForOf
-  | WhileTrue
+  | VariableDefinition VariableDefinitionStatement
+  | FunctionDefinition FunctionDefinitionStatement
+  | For ForStatement
+  | ForOf ForOfStatement
+  | WhileTrue (Array Statement)
   | Break
-  | Switch
+  | Switch SwitchStatement
+
+-- | 代入文
+newtype SetStatement
+  = SetStatement
+  { {- 対象となる式. 指定の仕方によってはJSのSyntaxErrorになる -} target :: Expr
+  , {- 演算子を=の左につける -} operatorMaybe :: Maybe BinaryOperator
+  , {- 式 -} expr :: Expr
+  }
+
+newtype IfStatement
+  = IfStatement
+  { {- 条件の式 -} condition :: Expr
+  , {- 条件がtrueのときに実行する文 -} thenStatementList :: Array Statement
+  }
+
+newtype VariableDefinitionStatement
+  = VariableDefinitionStatement
+  { name :: TsIdentifier, type :: TsType, expr :: Expr, isConst :: Boolean }
+
+newtype FunctionDefinitionStatement
+  = FunctionDefinitionStatement
+  { name :: TsIdentifier
+  , typeParameterList :: Array TsIdentifier
+  , parameterList :: Array ParameterWithDocument
+  , returnType :: TsType
+  , statementList :: Array Statement
+  }
+
+newtype ForStatement
+  = ForStatement
+  { {- カウンタ変数名 -} counterVariableName :: TsIdentifier
+  , {- ループの上限の式 -} untilExpr :: Expr
+  , {- 繰り返す文 -} statementList :: Array Statement
+  }
+
+newtype ForOfStatement
+  = ForOfStatement
+  { {- 要素の変数名 -} elementVariableName :: TsIdentifier
+  , {- 繰り返す対象 -} iterableExpr :: Expr
+  , {- 繰り返す文 -} statementList :: Array Statement
+  }
+
+newtype SwitchStatement
+  = SwitchStatement
+  { expr :: Expr
+  , patternList :: Array Pattern
+  }
+
+newtype Pattern
+  = Pattern
+  { {- case に使う文字列 -} caseString :: String
+  , {- マッチしたときに実行する部分 -} statementList :: Array Statement
+  }
