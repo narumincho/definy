@@ -19,3 +19,4 @@ node_modules
 /.spago
 /build/**/**.js
 /gen/**/**.js
+/core/**/**.js
