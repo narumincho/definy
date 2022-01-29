@@ -1,6 +1,8 @@
 module TypeScript.Data
-  ( BinaryOperator(..)
+  ( ArrayItem(..)
+  , BinaryOperator(..)
   , BinaryOperatorExpr(..)
+  , CallExpr(..)
   , ConditionalOperatorExpr(..)
   , ExportDefinition(..)
   , Expr(..)
@@ -9,9 +11,15 @@ module TypeScript.Data
   , FunctionDeclaration(..)
   , FunctionDefinitionStatement(..)
   , FunctionType(..)
+  , GetExpr(..)
   , IfStatement(..)
   , ImportedType(..)
+  , ImportedVariable(..)
   , JavaScriptContent(..)
+  , KeyValue(..)
+  , LambdaExpr(..)
+  , Member(..)
+  , Parameter(..)
   , ParameterWithDocument(..)
   , Pattern(..)
   , SetStatement(..)
@@ -20,6 +28,7 @@ module TypeScript.Data
   , TsMemberType(..)
   , TsType(..)
   , TypeAlias(..)
+  , TypeAssertion(..)
   , TypeNameAndTypeParameter(..)
   , TypeScriptModule(..)
   , TypeScriptModuleMap(..)
@@ -152,16 +161,16 @@ data Expr
   | {- 単項演算子での式 -} UnaryOperator UnaryOperatorExpr
   | {- 2項演算子での式 -} BinaryOperator BinaryOperatorExpr
   | {- 件演算子 `a ? b : c` -} ConditionalOperator ConditionalOperatorExpr
-  | {- 配列リテラル `[1, 2, 3]` -} ArrayLiteral
-  | {- オブジェクトリテラル `{ data: 123, text: "sorena" }` -} ObjectLiteral
-  | {- ラムダ式 `() => {}` -} Lambda
-  | {- 変数. 変数が存在するかのチャックがされる -} Variable
+  | {- 配列リテラル `[1, 2, 3]` -} ArrayLiteral (Array ArrayItem)
+  | {- オブジェクトリテラル `{ data: 123, text: "sorena" }` -} ObjectLiteral (Array Member)
+  | {- ラムダ式 `() => {}` -} Lambda LambdaExpr
+  | {- 変数. 変数が存在するかのチャックがされる -} Variable TsIdentifier
   | {- グローバルオブジェクト -} GlobalObjects TsIdentifier
-  | {- インポートされた変数 -} ImportedVariable
-  | {- プロパティの値を取得する `a.b a[12] data[f(2)]` -} Get
-  | {- 関数を呼ぶ `f(x)`` -} Call
-  | {- 式からインスタンスを作成する `new Date()` -} New
-  | {- 型アサーション `a as string` -} TypeAssertion
+  | {- インポートされた変数 -} ExprImportedVariable ImportedVariable
+  | {- プロパティの値を取得する `a.b a[12] data[f(2)]` -} Get GetExpr
+  | {- 関数を呼ぶ `f(x)`` -} Call CallExpr
+  | {- 式からインスタンスを作成する `new Date()` -} New CallExpr
+  | {- 型アサーション `a as string` -} ExprTypeAssertion TypeAssertion
 
 -- | 単項演算子と適用される式
 newtype UnaryOperatorExpr
@@ -191,19 +200,19 @@ data BinaryOperator
   | {- 数値の割り算 `a / b` -} Division
   | {- 剰余演算 `a % b` -} Remainder
   | {- 数値の足し算, 文字列の結合 `a + b` -} Addition
-  | Subtraction
-  | LeftShift
-  | SignedRightShift
-  | UnsignedRightShift
-  | LessThan
-  | LessThanOrEqual
-  | Equal
-  | NotEqual
-  | BitwiseAnd
-  | BitwiseXOr
-  | BitwiseOr
-  | LogicalAnd
-  | LogicalOr
+  | {- 数値の引き算 `a - b` -} Subtraction
+  | {- 左シフト `a << b` -} LeftShift
+  | {- 符号を維持する右シフト `a >> b` -} SignedRightShift
+  | {- 符号を維持しない(0埋め)右シフト `a >>> b` -} UnsignedRightShift
+  | {- 未満 `a < b` -} LessThan
+  | {- 以下 `a <= b` -} LessThanOrEqual
+  | {- 等号 `a === b` -} Equal
+  | {- 不等号 `a !== b` -} NotEqual
+  | {- ビットAND `a & b` -} BitwiseAnd
+  | {- ビットXOR `a ^ b` -} BitwiseXOr
+  | {- ビットOR `a | b` -} BitwiseOr
+  | {- 論理AND `a && b` -} LogicalAnd
+  | {- 論理OR `a || b` -} LogicalOr
 
 -- | 条件演算子
 newtype ConditionalOperatorExpr
@@ -211,6 +220,57 @@ newtype ConditionalOperatorExpr
   { {- 条件の式 -} condition :: Expr
   , {- 条件がtrueのときに評価される式 -} thenExpr :: Expr
   , {- 条件がfalseのときに評価される式 -} elseExpr :: Expr
+  }
+
+newtype ArrayItem
+  = ArrayItem
+  { expr :: Expr
+  , {- スプレッド ...a のようにするか -} spread :: Boolean
+  }
+
+data Member
+  = MemberSpread Expr
+  | MemberKeyValue KeyValue
+
+newtype KeyValue
+  = KeyValue { key :: String, value :: Expr }
+
+newtype LambdaExpr
+  = LambdaExpr
+  { parameterList :: Array Parameter
+  , typeParameterList :: Array TsIdentifier
+  , returnType :: TsType
+  , statementList :: Array Statement
+  }
+
+newtype Parameter
+  = Parameter
+  { name :: TsIdentifier
+  , type :: TsType
+  }
+
+newtype ImportedVariable
+  = ImportedVariable
+  { {- モジュール名, 使うときにはnamedインポートされ, そのモジュール識別子は自動的につけられる -} moduleName :: ModuleName.ModuleName
+  , name :: TsIdentifier
+  }
+
+newtype GetExpr
+  = GetExpr
+  { expr :: Expr
+  , propertyExpr :: Expr
+  }
+
+newtype CallExpr
+  = CallExpr
+  { expr :: Expr
+  , parameterList :: Array Expr
+  }
+
+newtype TypeAssertion
+  = TypeAssertion
+  { expr :: Expr
+  , type :: TsType
   }
 
 -- | TypeScript の文
