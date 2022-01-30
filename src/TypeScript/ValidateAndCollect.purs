@@ -1,5 +1,6 @@
 module TypeScript.ValidateAndCollect
-  ( UnknownTypeNameData(..)
+  ( UnknownImportedIdentifierData(..)
+  , UnknownIdentifierData(..)
   , ValidateAndCollectResult(..)
   , ValidationError(..)
   , ValidationErrorWithIndex(..)
@@ -52,12 +53,21 @@ data ValidationError
   = NotImplemented
   | DuplicateName
   | DuplicateIdentifier (Array Identifier.TsIdentifier)
-  | UnknownTypeName UnknownTypeNameData
+  | UnknownTypeName UnknownIdentifierData
+  | UnknownImportedTypeName UnknownImportedIdentifierData
+  | UnknownVariableName UnknownIdentifierData
+  | UnknownImportedVariableName UnknownImportedIdentifierData
 
-newtype UnknownTypeNameData
-  = UnknownTypeNameData
-  { typeName :: Identifier.TsIdentifier
+newtype UnknownIdentifierData
+  = UnknownIdentifierData
+  { name :: Identifier.TsIdentifier
   , scope :: Array (Set.Set Identifier.TsIdentifier)
+  }
+
+newtype UnknownImportedIdentifierData
+  = UnknownImportedIdentifierData
+  { moduleName :: ModuleName.ModuleName
+  , name :: Identifier.TsIdentifier
   }
 
 validateAndCollect ::
@@ -140,12 +150,7 @@ collectInExportDefinition ::
 collectInExportDefinition context = case _ of
   Data.ExportDefinitionTypeAlias typeAlias -> collectInTypeAlias context typeAlias
   Data.ExportDefinitionFunction func -> collectInFunctionDeclaration context func
-  Data.ExportDefinitionVariable variableDefinition ->
-    ValidateAndCollectResult
-      { modulePathSet: Set.empty
-      , usedNameSet: Set.empty
-      , errorList: [ ValidationErrorWithIndex { index: CollectData.contextInExportDefinitionGetIndex context, error: NotImplemented } ]
-      }
+  Data.ExportDefinitionVariable variableDefinition -> collectInExportDefinitionVariable context variableDefinition
 
 collectInTypeAlias ::
   CollectData.ContextInExportDefinition ->
@@ -243,6 +248,18 @@ collectInFunctionDeclaration context (Data.FunctionDeclaration rec) =
           ]
       )
 
+collectInExportDefinitionVariable ::
+  CollectData.ContextInExportDefinition ->
+  Data.VariableDeclaration ->
+  ValidateAndCollectResult
+collectInExportDefinitionVariable context (Data.VariableDeclaration { type: tsType, expr }) =
+  let
+    contextInExpr = CollectData.contextExportDefinitionToContextInExpr Set.empty context
+  in
+    appendValidateAndCollectResult
+      (collectInType contextInExpr tsType)
+      (collectInExpr contextInExpr expr)
+
 collectInType :: CollectData.ContextInExpr -> Data.TsType -> ValidateAndCollectResult
 collectInType context tsType = case tsType of
   Data.TsTypeNumber -> validateAndCollectResultEmpty
@@ -305,48 +322,54 @@ collectInType context tsType = case tsType of
       (collectInType context left)
       (collectInType context right)
   Data.TsTypeImportedType (Data.ImportedType importedType@{ typeNameAndTypeParameter: Data.TypeNameAndTypeParameter { name } }) ->
-    concatValidateAndCollectResult
-      [ ValidateAndCollectResult
+    appendValidateAndCollectResult
+      ( ValidateAndCollectResult
           { modulePathSet: Set.singleton importedType.moduleName
           , usedNameSet: Set.empty
-          , errorList: []
-          }
-      , ValidateAndCollectResult
-          { modulePathSet: Set.empty
-          , usedNameSet: Set.empty
           , errorList:
-              case checkTypeIsDefined
-                  ( CollectData.setModuleName
-                      importedType.moduleName
-                      context
-                  )
-                  name of
-                Just error ->
-                  [ ValidationErrorWithIndex
-                      { index: CollectData.contextInExprGetIndex context
-                      , error: UnknownTypeName error
-                      }
-                  ]
-                Nothing -> []
+              if CollectData.memberTypeNameImported
+                importedType.moduleName
+                name
+                context then
+                []
+              else
+                [ ValidationErrorWithIndex
+                    { index: CollectData.contextInExprGetIndex context
+                    , error:
+                        UnknownImportedTypeName
+                          ( UnknownImportedIdentifierData
+                              { name
+                              , moduleName: importedType.moduleName
+                              }
+                          )
+                    }
+                ]
           }
-      , collectInTypeNameAndTypeParameter
+      )
+      ( collectInTypeNameAndTypeParameter
           context
           importedType.typeNameAndTypeParameter
-      ]
+      )
   Data.TsTypeScopeInFile typeNameAndTypeParameter@(Data.TypeNameAndTypeParameter { name }) ->
     appendValidateAndCollectResult
       ( ValidateAndCollectResult
           { modulePathSet: Set.empty
           , usedNameSet: Set.empty
           , errorList:
-              case checkTypeIsDefined context name of
-                Just error ->
-                  [ ValidationErrorWithIndex
-                      { index: CollectData.contextInExprGetIndex context
-                      , error: UnknownTypeName error
-                      }
-                  ]
-                Nothing -> []
+              if CollectData.memberTypeNameContextInExpr name context then
+                []
+              else
+                [ ValidationErrorWithIndex
+                    { index: CollectData.contextInExprGetIndex context
+                    , error:
+                        UnknownTypeName
+                          ( UnknownIdentifierData
+                              { name
+                              , scope: CollectData.getTypeParameterSetList context
+                              }
+                          )
+                    }
+                ]
           }
       )
       ( collectInTypeNameAndTypeParameter
@@ -381,21 +404,6 @@ collectInTypeNameAndTypeParameter context (Data.TypeNameAndTypeParameter typeNam
             typeNameAndTypeParameter.typeParameterList
         )
     )
-
-checkTypeIsDefined ::
-  CollectData.ContextInExpr ->
-  Identifier.TsIdentifier ->
-  Maybe UnknownTypeNameData
-checkTypeIsDefined context typeName =
-  if CollectData.memberTypeNameContextInExpr typeName context then
-    Nothing
-  else
-    Just
-      ( UnknownTypeNameData
-          { typeName
-          , scope: CollectData.getTypeParameterSetList context
-          }
-      )
 
 validateAndCollectResultEmpty :: ValidateAndCollectResult
 validateAndCollectResultEmpty =
@@ -491,38 +499,57 @@ collectInExpr context = case _ of
           memberArray
       )
   Data.Lambda (Data.LambdaExpr lambdaRec) -> collectInFunction context lambdaRec
-  Data.Variable _ ->
+  Data.Variable name ->
+    ValidateAndCollectResult
+      { modulePathSet: Set.empty
+      , usedNameSet: Set.singleton name
+      , errorList:
+          if CollectData.memberVariableNameContextInExpr name context then
+            []
+          else
+            [ ValidationErrorWithIndex
+                { index: CollectData.contextInExprGetIndex context
+                , error:
+                    UnknownVariableName
+                      ( UnknownIdentifierData
+                          { name
+                          , scope: CollectData.getLocalVariableNameSetList context
+                          }
+                      )
+                }
+            ]
+      }
+  Data.GlobalObjects _ -> validateAndCollectResultEmpty
+  Data.ExprImportedVariable (Data.ImportedVariable { moduleName, name }) ->
     ValidateAndCollectResult
       { modulePathSet: Set.empty
       , usedNameSet: Set.empty
-      , errorList: [ ValidationErrorWithIndex { index: CollectData.contextInExprGetIndex context, error: NotImplemented } ]
+      , errorList:
+          if CollectData.memberVariableNameImported moduleName name context then
+            []
+          else
+            [ ValidationErrorWithIndex
+                { index: CollectData.contextInExprGetIndex context
+                , error:
+                    UnknownVariableName
+                      ( UnknownIdentifierData
+                          { name
+                          , scope: CollectData.getLocalVariableNameSetList context
+                          }
+                      )
+                }
+            ]
       }
-  Data.GlobalObjects _ ->
-    ValidateAndCollectResult
-      { modulePathSet: Set.empty
-      , usedNameSet: Set.empty
-      , errorList: [ ValidationErrorWithIndex { index: CollectData.contextInExprGetIndex context, error: NotImplemented } ]
-      }
-  Data.ExprImportedVariable _ ->
-    ValidateAndCollectResult
-      { modulePathSet: Set.empty
-      , usedNameSet: Set.empty
-      , errorList: [ ValidationErrorWithIndex { index: CollectData.contextInExprGetIndex context, error: NotImplemented } ]
-      }
-  Data.Get _ ->
-    ValidateAndCollectResult
-      { modulePathSet: Set.empty
-      , usedNameSet: Set.empty
-      , errorList: [ ValidationErrorWithIndex { index: CollectData.contextInExprGetIndex context, error: NotImplemented } ]
-      }
+  Data.Get (Data.GetExpr { expr, propertyExpr }) ->
+    appendValidateAndCollectResult
+      (collectInExpr context expr)
+      (collectInExpr context propertyExpr)
   Data.Call callExpr -> collectInCallExpr context callExpr
   Data.New callExpr -> collectInCallExpr context callExpr
-  Data.ExprTypeAssertion _ ->
-    ValidateAndCollectResult
-      { modulePathSet: Set.empty
-      , usedNameSet: Set.empty
-      , errorList: [ ValidationErrorWithIndex { index: CollectData.contextInExprGetIndex context, error: NotImplemented } ]
-      }
+  Data.ExprTypeAssertion (Data.TypeAssertion { type: tsType, expr }) ->
+    appendValidateAndCollectResult
+      (collectInExpr context expr)
+      (collectInType context tsType)
 
 collectInFunction ::
   CollectData.ContextInExpr ->

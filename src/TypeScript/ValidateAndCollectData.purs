@@ -11,14 +11,16 @@ module TypeScript.ValidateAndCollectData
   , contextInModuleToContextExportDefinition
   , createContextInModule
   , emptyRootIdentifierSetInModule
+  , getLocalVariableNameSetList
   , getTypeParameterSetList
   , insertTypeName
   , insertVariableName
   , memberTypeName
   , memberTypeNameContextInExpr
+  , memberTypeNameImported
   , memberVariableName
   , memberVariableNameContextInExpr
-  , setModuleName
+  , memberVariableNameImported
   ) where
 
 import Data.Array as Array
@@ -29,7 +31,6 @@ import Data.UInt as UInt
 import Record as Record
 import Type.Proxy (Proxy(..))
 import TypeScript.Identifier as Identifier
-import TypeScript.ModuleName (ModuleName)
 import TypeScript.ModuleName as ModuleName
 
 newtype RootIdentifierSetInModule
@@ -114,6 +115,12 @@ contextExportDefinitionToContextInExpr typeParameterSet (ContextInExportDefiniti
         (Record.insert (Proxy :: _ "typeParameterSetList") [ typeParameterSet ] rec)
     )
 
+memberTypeNameImported :: ModuleName.ModuleName -> Identifier.TsIdentifier -> ContextInExpr -> Boolean
+memberTypeNameImported moduleName typeName context =
+  memberTypeNameContextInExpr
+    typeName
+    (setModuleName moduleName context)
+
 memberTypeNameContextInExpr :: Identifier.TsIdentifier -> ContextInExpr -> Boolean
 memberTypeNameContextInExpr typeName context@(ContextInExpr { typeParameterSetList }) =
   if memberTypeNameContextInExprInRoot typeName context then
@@ -125,6 +132,12 @@ memberTypeNameContextInExprInRoot :: Identifier.TsIdentifier -> ContextInExpr ->
 memberTypeNameContextInExprInRoot typeName (ContextInExpr { moduleName, rootIdentifierMap }) = case Map.lookup moduleName rootIdentifierMap of
   Just rootIdentifierSet -> memberTypeName typeName rootIdentifierSet
   Nothing -> false
+
+memberVariableNameImported :: ModuleName.ModuleName -> Identifier.TsIdentifier -> ContextInExpr -> Boolean
+memberVariableNameImported moduleName variableName context =
+  memberVariableNameContextInExpr
+    variableName
+    (setModuleName moduleName context)
 
 memberVariableNameContextInExpr :: Identifier.TsIdentifier -> ContextInExpr -> Boolean
 memberVariableNameContextInExpr variableName context@(ContextInExpr { localVariableNameSetList }) =
@@ -146,6 +159,15 @@ getTypeParameterSetList (ContextInExpr { moduleName, rootIdentifierMap, typePara
         Nothing -> Set.empty
     )
     typeParameterSetList
+
+getLocalVariableNameSetList :: ContextInExpr -> Array (Set.Set Identifier.TsIdentifier)
+getLocalVariableNameSetList (ContextInExpr { moduleName, rootIdentifierMap, localVariableNameSetList }) =
+  Array.cons
+    ( case Map.lookup moduleName rootIdentifierMap of
+        Just (RootIdentifierSetInModule { rootVariableNameSet }) -> rootVariableNameSet
+        Nothing -> Set.empty
+    )
+    localVariableNameSetList
 
 contextInExprGetIndex :: ContextInExpr -> UInt.UInt
 contextInExprGetIndex (ContextInExpr { index }) = index
