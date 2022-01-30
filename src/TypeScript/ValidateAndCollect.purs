@@ -17,7 +17,6 @@ import Prelude as Prelude
 import Record as Record
 import Type.Proxy (Proxy(..))
 import TypeScript.Data as Data
-import TypeScript.Identifier (TsIdentifier(..))
 import TypeScript.Identifier as Identifier
 import TypeScript.ModuleName as ModuleName
 
@@ -308,8 +307,16 @@ type ContextInTypeRecord
 newtype ContextInType
   = ContextInType (Record ContextInTypeRecord)
 
+contextInTypeAddTypeParameter :: Set.Set Identifier.TsIdentifier -> ContextInType -> ContextInType
+contextInTypeAddTypeParameter identifierSet (ContextInType rec) =
+  ContextInType
+    ( rec
+        { typeParameterSetList = Array.snoc rec.typeParameterSetList identifierSet
+        }
+    )
+
 collectInType :: ContextInType -> Data.TsType -> ValidateAndCollectResult
-collectInType context@(ContextInType { index, moduleName, rootIdentifierMap, typeParameterSetList }) tsType = case tsType of
+collectInType context@(ContextInType { index, rootIdentifierMap, typeParameterSetList }) tsType = case tsType of
   Data.TsTypeNumber -> validateAndCollectResultEmpty
   Data.TsTypeString -> validateAndCollectResultEmpty
   Data.TsTypeBoolean -> validateAndCollectResultEmpty
@@ -329,13 +336,7 @@ collectInType context@(ContextInType { index, moduleName, rootIdentifierMap, typ
     let
       { tsIdentifierSet, validationErrorMaybe } = checkDuplicateIdentifier functionType.typeParameterList
 
-      newContext =
-        ContextInType
-          { index
-          , rootIdentifierMap
-          , moduleName
-          , typeParameterSetList: Array.snoc typeParameterSetList tsIdentifierSet
-          }
+      newContext = contextInTypeAddTypeParameter tsIdentifierSet context
     in
       concatValidateAndCollectResult
         ( Array.concat
@@ -536,7 +537,7 @@ collectInStatementList context statementList =
       )
 
 collectInStatement :: ContextInExpr -> Data.Statement -> ValidateAndCollectResult
-collectInStatement context@(ContextInExpr { index }) = case _ of
+collectInStatement (ContextInExpr { index }) = case _ of
   _ ->
     ValidateAndCollectResult
       { modulePathSet: Set.empty
@@ -555,3 +556,109 @@ collectNameInStatement = case _ of
   Data.VariableDefinition (Data.VariableDefinitionStatement { name }) -> Just name
   Data.FunctionDefinition (Data.FunctionDefinitionStatement { name }) -> Just name
   _ -> Nothing
+
+collectInExpr :: ContextInExpr -> Data.Expr -> ValidateAndCollectResult
+collectInExpr context@(ContextInExpr { index }) = case _ of
+  Data.NumberLiteral _ -> validateAndCollectResultEmpty
+  Data.StringLiteral _ -> validateAndCollectResultEmpty
+  Data.BooleanLiteral _ -> validateAndCollectResultEmpty
+  Data.NullLiteral -> validateAndCollectResultEmpty
+  Data.UndefinedLiteral -> validateAndCollectResultEmpty
+  Data.UnaryOperator (Data.UnaryOperatorExpr { expr }) -> collectInExpr context expr
+  Data.BinaryOperator (Data.BinaryOperatorExpr { left, right }) ->
+    appendValidateAndCollectResult
+      (collectInExpr context left)
+      (collectInExpr context right)
+  Data.ConditionalOperator (Data.ConditionalOperatorExpr { condition, thenExpr, elseExpr }) ->
+    appendValidateAndCollectResult
+      (collectInExpr context condition)
+      ( appendValidateAndCollectResult
+          (collectInExpr context thenExpr)
+          (collectInExpr context elseExpr)
+      )
+  Data.ArrayLiteral array ->
+    concatValidateAndCollectResult
+      ( Prelude.map
+          (\(Data.ArrayItem { expr }) -> collectInExpr context expr)
+          array
+      )
+  Data.ObjectLiteral memberArray ->
+    concatValidateAndCollectResult
+      ( Prelude.map
+          ( case _ of
+              Data.MemberSpread expr -> collectInExpr context expr
+              Data.MemberKeyValue (Data.KeyValue { value }) -> collectInExpr context value
+          )
+          memberArray
+      )
+  Data.Lambda (Data.LambdaExpr lambdaRec) -> collectInFunction context lambdaRec
+  Data.Variable _ ->
+    ValidateAndCollectResult
+      { modulePathSet: Set.empty
+      , usedNameSet: Set.empty
+      , errorList: [ ValidationErrorWithIndex { index, error: NotImplemented } ]
+      }
+  Data.GlobalObjects _ ->
+    ValidateAndCollectResult
+      { modulePathSet: Set.empty
+      , usedNameSet: Set.empty
+      , errorList: [ ValidationErrorWithIndex { index, error: NotImplemented } ]
+      }
+  Data.ExprImportedVariable _ ->
+    ValidateAndCollectResult
+      { modulePathSet: Set.empty
+      , usedNameSet: Set.empty
+      , errorList: [ ValidationErrorWithIndex { index, error: NotImplemented } ]
+      }
+  Data.Get _ ->
+    ValidateAndCollectResult
+      { modulePathSet: Set.empty
+      , usedNameSet: Set.empty
+      , errorList: [ ValidationErrorWithIndex { index, error: NotImplemented } ]
+      }
+  Data.Call callExpr -> collectInCallExpr context callExpr
+  Data.New callExpr -> collectInCallExpr context callExpr
+  Data.ExprTypeAssertion _ ->
+    ValidateAndCollectResult
+      { modulePathSet: Set.empty
+      , usedNameSet: Set.empty
+      , errorList: [ ValidationErrorWithIndex { index, error: NotImplemented } ]
+      }
+
+collectInFunction ::
+  ContextInExpr ->
+  { typeParameterList :: Array Identifier.TsIdentifier
+  , parameterList :: Array Data.Parameter
+  , returnType :: Data.TsType
+  , statementList :: Array Data.Statement
+  } ->
+  ValidateAndCollectResult
+collectInFunction (ContextInExpr (contextRec@{ index })) rec =
+  let
+    { tsIdentifierSet, validationErrorMaybe } = checkDuplicateIdentifier rec.typeParameterList
+  in
+    appendValidateAndCollectResult
+      ( ValidateAndCollectResult
+          { modulePathSet: Set.empty
+          , usedNameSet: Set.empty
+          , errorList:
+              case validationErrorMaybe of
+                Just error -> [ ValidationErrorWithIndex { index, error } ]
+                Nothing -> []
+          }
+      )
+      ( collectInType
+          ( contextInTypeAddTypeParameter
+              tsIdentifierSet
+              ( ContextInType
+                  (Record.delete (Proxy :: _ "localVariableNameSetList") contextRec)
+              )
+          )
+          rec.returnType
+      )
+
+collectInCallExpr :: ContextInExpr -> Data.CallExpr -> ValidateAndCollectResult
+collectInCallExpr context (Data.CallExpr { expr, parameterList }) =
+  appendValidateAndCollectResult
+    (collectInExpr context expr)
+    (concatValidateAndCollectResult (Prelude.map (collectInExpr context) parameterList))
