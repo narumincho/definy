@@ -1,14 +1,11 @@
 module TypeScript.ValidateAndCollectData
-  ( ContextInExportDefinition
-  , ContextInExpr
+  ( ContextInExpr
   , ContextInModule
   , RootIdentifierSetInModule
   , addLocalVariableNameSet
   , addTypeParameter
-  , contextExportDefinitionToContextInExpr
-  , contextInExportDefinitionGetIndex
   , contextInExprGetIndex
-  , contextInModuleToContextExportDefinition
+  , contextInModuleToContextExpr
   , createContextInModule
   , emptyRootIdentifierSetInModule
   , getLocalVariableNameSetList
@@ -84,36 +81,23 @@ newtype ContextInModule
 createContextInModule :: Record ContextInModuleRecord -> ContextInModule
 createContextInModule = ContextInModule
 
-type ContextInExportDefinitionRecord :: Row Type
-type ContextInExportDefinitionRecord
-  = ( index :: UInt.UInt | ContextInModuleRecord )
-
-newtype ContextInExportDefinition
-  = ContextInExportDefinition (Record ContextInExportDefinitionRecord)
-
-contextInExportDefinitionGetIndex :: ContextInExportDefinition -> UInt.UInt
-contextInExportDefinitionGetIndex (ContextInExportDefinition { index }) = index
-
 newtype ContextInExpr
   = ContextInExpr
-  { localVariableNameSetList :: Array (Set.Set Identifier.TsIdentifier)
+  { index :: UInt.UInt
+  , localVariableNameSetList :: Array (Set.Set Identifier.TsIdentifier)
   , typeParameterSetList :: Array (Set.Set Identifier.TsIdentifier)
-  | ContextInExportDefinitionRecord
+  | ContextInModuleRecord
   }
 
-contextInModuleToContextExportDefinition :: UInt.UInt -> ContextInModule -> ContextInExportDefinition
-contextInModuleToContextExportDefinition index (ContextInModule rec) =
-  ContextInExportDefinition
-    (Record.insert (Proxy :: _ "index") index rec)
-
-contextExportDefinitionToContextInExpr :: Set.Set Identifier.TsIdentifier -> ContextInExportDefinition -> ContextInExpr
-contextExportDefinitionToContextInExpr typeParameterSet (ContextInExportDefinition rec) =
+contextInModuleToContextExpr :: UInt.UInt -> ContextInModule -> ContextInExpr
+contextInModuleToContextExpr index (ContextInModule rec) =
   ContextInExpr
-    ( Record.insert
-        (Proxy :: _ "localVariableNameSetList")
-        []
-        (Record.insert (Proxy :: _ "typeParameterSetList") [ typeParameterSet ] rec)
-    )
+    { localVariableNameSetList: []
+    , typeParameterSetList: []
+    , index
+    , moduleName: rec.moduleName
+    , rootIdentifierMap: rec.rootIdentifierMap
+    }
 
 memberTypeNameImported :: ModuleName.ModuleName -> Identifier.TsIdentifier -> ContextInExpr -> Boolean
 memberTypeNameImported moduleName typeName context =
