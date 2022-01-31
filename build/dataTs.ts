@@ -1,7 +1,6 @@
 import * as d from "../localData";
 import { generateTypeScriptCode } from "../core/main";
 import { jsTs } from "../gen/main";
-import { writeLocalOutFile } from "../output/TypeScriptEntryPointWithEffect";
 
 const coreProjectId: d.ProjectId = d.ProjectId.fromString(
   "96deb95f697e66f12a55e4d3910ea509"
@@ -3636,11 +3635,13 @@ const typePartList: ReadonlyArray<d.TypePart> = [
   },
 ];
 
-const code = generateTypeScriptCode(
-  new Map(typePartList.map((typePart) => [typePart.id, typePart]))
-);
-if (code._ === "Error") {
-  throw new Error(JSON.stringify(code.error));
-}
+export const generateDataTsTypeScriptCode = (): string => {
+  const code = generateTypeScriptCode(
+    new Map(typePartList.map((typePart) => [typePart.id, typePart]))
+  );
+  if (code._ === "Error") {
+    throw new Error(JSON.stringify(code.error));
+  }
 
-writeLocalOutFile(jsTs.generateCodeAsString(code.ok, d.CodeType.TypeScript));
+  return jsTs.generateCodeAsString(code.ok, d.CodeType.TypeScript);
+};
