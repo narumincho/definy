@@ -81,13 +81,35 @@ validateAndCollect typeScriptModuleMap@(Data.TypeScriptModuleMap moduleMap) =
     Map.mapMaybeWithKey
       ( \moduleName content ->
           Just
-            ( collectInModule
-                ( CollectData.createContextInModule
-                    { moduleName
-                    , rootIdentifierMap
+            ( appendValidateAndCollectResult
+                ( collectInModule
+                    ( CollectData.createContextInModule
+                        { moduleName
+                        , rootIdentifierMap
+                        }
+                    )
+                    content
+                )
+                ( ValidateAndCollectResult
+                    { modulePathSet: Set.empty
+                    , usedNameSet: Set.empty
+                    , errorList:
+                        ( Prelude.map
+                            ( \index ->
+                                ValidationErrorWithIndex
+                                  { index, error: DuplicateName }
+                            )
+                            ( Set.toUnfoldable
+                                ( CollectData.rootIdentifierSetInModuleGetDuplicateIndexSet
+                                    ( CollectData.rootIdentifierMapGetByModuleName
+                                        moduleName
+                                        rootIdentifierMap
+                                    )
+                                )
+                            )
+                        )
                     }
                 )
-                content
             )
       )
       moduleMap
@@ -104,32 +126,46 @@ collectRootIdentifierInModule ::
   Data.TypeScriptModule -> CollectData.RootIdentifierSetInModule
 collectRootIdentifierInModule (Data.TypeScriptModule { exportDefinitionList }) = collectRootIdentifierInExportDefinitionList exportDefinitionList
 
-collectRootIdentifierInExportDefinitionList :: Array Data.ExportDefinition -> CollectData.RootIdentifierSetInModule
-collectRootIdentifierInExportDefinitionList list = case Array.uncons list of
-  Nothing -> CollectData.emptyRootIdentifierSetInModule
-  Just { head, tail } ->
-    collectRootIdentifierInExportDefinition
-      head
-      (collectRootIdentifierInExportDefinitionList tail)
+collectRootIdentifierInExportDefinitionList ::
+  Array Data.ExportDefinition ->
+  CollectData.RootIdentifierSetInModule
+collectRootIdentifierInExportDefinitionList list =
+  Array.foldl
+    ( \rootIdentifierSet (Tuple.Tuple index exportDefinition) ->
+        CollectData.insertTypeOrVariableDeclaration
+          ( Record.insert
+              (Proxy :: _ "index")
+              index
+              (exportDefinitionGetNameAndExport exportDefinition)
+          )
+          rootIdentifierSet
+    )
+    CollectData.emptyRootIdentifierSetInModule
+    (Array.mapWithIndex (\index -> Tuple.Tuple (UInt.fromInt index)) list)
 
 -- | モジュール内のルートにある識別子を取得する
-collectRootIdentifierInExportDefinition ::
+exportDefinitionGetNameAndExport ::
   Data.ExportDefinition ->
-  CollectData.RootIdentifierSetInModule ->
-  CollectData.RootIdentifierSetInModule
-collectRootIdentifierInExportDefinition head tail = case head of
-  Data.ExportDefinitionTypeAlias (Data.TypeAlias { name }) ->
-    CollectData.insertTypeName
-      name
-      tail
-  Data.ExportDefinitionFunction (Data.FunctionDeclaration { name }) ->
-    CollectData.insertVariableName
-      name
-      tail
-  Data.ExportDefinitionVariable (Data.VariableDeclaration { name }) ->
-    CollectData.insertVariableName
-      name
-      tail
+  { typeOrVariable :: CollectData.TypeOrVariable
+  , name :: Identifier.TsIdentifier
+  , export :: Boolean
+  }
+exportDefinitionGetNameAndExport = case _ of
+  Data.ExportDefinitionTypeAlias (Data.TypeAlias { name, export }) ->
+    { typeOrVariable: CollectData.Type
+    , name
+    , export
+    }
+  Data.ExportDefinitionFunction (Data.FunctionDeclaration { name, export }) ->
+    { typeOrVariable: CollectData.Variable
+    , name
+    , export
+    }
+  Data.ExportDefinitionVariable (Data.VariableDeclaration { name, export }) ->
+    { typeOrVariable: CollectData.Variable
+    , name
+    , export
+    }
 
 collectInModule ::
   CollectData.ContextInModule -> Data.TypeScriptModule -> ValidateAndCollectResult

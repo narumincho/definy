@@ -76,6 +76,7 @@ newtype TypeAlias
   , {- 型パラメーターのリスト -} typeParameterList :: Array TsIdentifier
   , {- ドキュメント -} document :: String
   , {- 型本体 -} type :: TsType
+  , export :: Boolean
   }
 
 -- | TypeScriptの関数
@@ -87,6 +88,7 @@ newtype FunctionDeclaration
   , {- パラメーター -} parameterList :: Array ParameterWithDocument
   , {- 戻り値の型 -} returnType :: TsType
   , {- 関数の本体 -} statementList :: Array Statement
+  , export :: Boolean
   }
 
 -- | ドキュメント付きの関数のパラメーター. パラメーター名, ドキュメント, 型
@@ -104,6 +106,7 @@ newtype VariableDeclaration
   , {- ドキュメント -} document :: String
   , {- 変数の型 -} type :: TsType
   , {- 変数の式 -} expr :: Expr
+  , export :: Boolean
   }
 
 -- | TypeScript の型
