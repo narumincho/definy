@@ -44,7 +44,6 @@ const argTypes: Record<
 > = {
   language: {
     description: "storybook 用. 言語",
-    defaultValue: d.Language.Japanese,
   },
   onJump: {
     description: "storybook 用. ページ移動をリクエストする",
@@ -56,6 +55,9 @@ const meta: Meta = {
   title: "Editor",
   component: Editor,
   argTypes,
+  args: {
+    language: d.Language.Japanese,
+  },
 };
 export default meta;
 
