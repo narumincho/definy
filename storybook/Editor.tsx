@@ -1,6 +1,5 @@
 import * as React from "react";
 import * as d from "../localData";
-import { Editor, Props } from "../client/ui/Editor";
 import { Meta, Story } from "@storybook/react";
 import {
   imageValue,
@@ -28,6 +27,7 @@ import {
   typePartResource,
 } from "./mockData";
 import { ArgType } from "@storybook/addons";
+import { Editor } from "../client/ui/Editor";
 import type { Item } from "../client/editor/product";
 import { UseDefinyAppResult } from "../client/hook/useDefinyApp";
 import { action } from "@storybook/addon-actions";
