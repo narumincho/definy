@@ -1,10 +1,11 @@
 module TypeScript.ValidateAndCollect
-  ( UnknownImportedIdentifierData(..)
-  , UnknownIdentifierData(..)
+  ( UnknownIdentifierData(..)
+  , UnknownImportedIdentifierData(..)
   , ValidateAndCollectResult(..)
   , ValidationError(..)
   , ValidationErrorWithIndex(..)
   , validateAndCollect
+  , validateAndCollectResultEmpty
   ) where
 
 import Data.Array as Array

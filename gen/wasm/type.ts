@@ -1,13 +1,7 @@
 import { vectorToWasmBinary } from "./vector";
 
-/**
- * @package
- */
 export type NumType = "i32" | "i64" | "f32" | "f64";
 
-/**
- * @package
- */
 export const numTypeToWasmBinary = (
   numType: NumType
 ): ReadonlyArray<number> => {
@@ -24,7 +18,6 @@ export const numTypeToWasmBinary = (
 };
 
 /**
- * @package
  * functype
  * https://webassembly.github.io/spec/core/syntax/types.html#syntax-functype
  */
@@ -33,9 +26,6 @@ export type FunctionType = {
   readonly result: ReadonlyArray<NumType>;
 };
 
-/**
- * @package
- */
 export const functionTypeToWasmBinary = (
   functionType: FunctionType
 ): ReadonlyArray<number> => {

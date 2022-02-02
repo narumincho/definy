@@ -43,15 +43,15 @@ const argTypes: Record<keyof Props & "language", ArgType> = {
   useDefinyAppResult: {
     control: null,
   },
-  language: {
-    defaultValue: d.Language.Japanese,
-  },
 };
 
-const meta: Meta = {
+const meta: Meta<Record<keyof Props & "language", ArgType>> = {
   title: "App",
   component: App,
   argTypes,
+  args: {
+    language: d.Language.Japanese,
+  },
 };
 export default meta;
 

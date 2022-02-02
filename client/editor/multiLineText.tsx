@@ -1,4 +1,5 @@
 import * as React from "react";
+import { Button } from "../ui/Button";
 import type { ElementOperation } from "./ElementOperation";
 import { css } from "@emotion/css";
 import { neverFunc } from "../../common/util";
@@ -9,6 +10,8 @@ export type MultiLineTextValue = {
   readonly text: string;
   readonly onChange: ((newText: string) => void) | undefined;
 };
+
+const selectionViewMaxLine = 20;
 
 const MultiLineTextSelectionView: ElementOperation<
   MultiLineTextSelection,
@@ -23,11 +26,18 @@ const MultiLineTextSelectionView: ElementOperation<
       </div>
     );
   }
+  const lines = value.text.split("\n");
+  const isOver = lines.length > selectionViewMaxLine;
   return (
     <div className={css({ fontSize: 16 })}>
-      {value.text.split("\n").map((line, index) => (
+      {lines.slice(selectionViewMaxLine).map((line, index) => (
         <div key={index}>{line}</div>
       ))}
+      {isOver ? (
+        <div className={css({ fontSize: 16, color: "#ccc" })}>...</div>
+      ) : (
+        <></>
+      )}
     </div>
   );
 });
@@ -45,41 +55,54 @@ const MultiLineTextDetailView: ElementOperation<
   MultiLineTextSelection,
   MultiLineTextValue
 >["detailView"] = ({ value }) => {
-  if (value.onChange !== undefined) {
-    return (
-      <MultiLineTextEditorCanEdit
-        onChange={value.onChange}
-        value={value.text}
-      />
-    );
-  }
+  const copyText = (): void => {
+    navigator.clipboard.writeText(value.text);
+  };
+
   return (
     <div>
-      <textarea
-        onKeyDown={(e) => {
-          e.stopPropagation();
-        }}
-        className={css({
-          padding: 8,
-          fontSize: 16,
-          border: "2px solid #222",
-          backgroundColor: "#000",
-          color: "#ddd",
-          borderRadius: 8,
-          resize: "none",
-          lineHeight: 1.5,
-          width: "100%",
-          height: 480,
-
-          "&:focus": {
-            border: "2px solid #f0932b",
-            outline: "none",
-          },
-        })}
-      >
-        {value.text}
-      </textarea>
+      <div>文字列の長さ: {[...value.text].length}</div>
+      <Button onClick={copyText}>クリップボードにコピー</Button>
+      {value.onChange === undefined ? (
+        <MultiLineTextEditorReadonly value={value.text} />
+      ) : (
+        <MultiLineTextEditorCanEdit
+          onChange={value.onChange}
+          value={value.text}
+        />
+      )}
     </div>
+  );
+};
+
+const MultiLineTextEditorReadonly = (props: {
+  value: string;
+}): React.ReactElement => {
+  return (
+    <textarea
+      onKeyDown={(e) => {
+        e.stopPropagation();
+      }}
+      className={css({
+        padding: 8,
+        fontSize: 16,
+        border: "2px solid #222",
+        backgroundColor: "#000",
+        color: "#ddd",
+        borderRadius: 8,
+        resize: "none",
+        lineHeight: 1.5,
+        width: "100%",
+        height: 480,
+
+        "&:focus": {
+          border: "2px solid #f0932b",
+          outline: "none",
+        },
+      })}
+      readOnly
+      value={props.value}
+    />
   );
 };
 
@@ -112,14 +135,12 @@ const MultiLineTextEditorCanEdit: React.VFC<{
           outline: "none",
         },
       })}
-      readOnly={onChange === undefined}
       onChange={onChangeTextAreaValue}
       onKeyDown={(e) => {
         e.stopPropagation();
       }}
-    >
-      {value}
-    </textarea>
+      value={value}
+    />
   );
 };
 
