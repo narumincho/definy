@@ -78,7 +78,7 @@ definitionToString :: Data.ExportDefinition -> String
 definitionToString = case _ of
   Data.ExportDefinitionTypeAlias typeAlias -> typeAliasToString (Context {}) typeAlias
   Data.ExportDefinitionFunction func -> exportFunctionToString (Context {}) func
-  Data.ExportDefinitionVariable _ -> ""
+  Data.ExportDefinitionVariable variable -> exportVariableToString (Context {}) variable
 
 typeAliasToString :: Context -> Data.TypeAlias -> String
 typeAliasToString context (Data.TypeAlias rec) =
@@ -101,20 +101,32 @@ exportFunctionToString context (Data.FunctionDeclaration func) =
     , Identifier.toString func.name
     , " = "
     , typeParameterListToString func.typeParameterList
-    , "("
-    , String.joinWith ", "
-        ( Prelude.map
-            ( \(Data.ParameterWithDocument parameter) ->
-                Prelude.append
-                  (Identifier.toString parameter.name)
-                  (Prelude.append ": " (typeToString context parameter.type))
+    , encloseParenthesis
+        ( joinWithComma
+            ( Prelude.map
+                ( \(Data.ParameterWithDocument parameter) ->
+                    Prelude.append
+                      (Identifier.toString parameter.name)
+                      (typeAnnotation context parameter.type)
+                )
+                func.parameterList
             )
-            func.parameterList
         )
-    , ")"
     , Prelude.append ": " (typeToString context func.returnType)
     , " => "
     , lambdaBodyToString context func.statementList
+    , ";\n\n"
+    ]
+
+exportVariableToString :: Context -> Data.VariableDeclaration -> String
+exportVariableToString context (Data.VariableDeclaration rec) =
+  String.joinWith ""
+    [ documentToString rec.document
+    , "export const "
+    , Identifier.toString rec.name
+    , typeAnnotation context rec.type
+    , " = "
+    , exprToString context rec.expr
     , ";\n\n"
     ]
 
@@ -157,12 +169,11 @@ exprToString context = case _ of
       context
       tsMemberList
   Data.UnaryOperator (Data.UnaryOperatorExpr { operator, expr }) ->
-    append3
-      "("
-      ( Prelude.append (unaryOperatorToString operator)
+    encloseParenthesis
+      ( Prelude.append
+          (unaryOperatorToString operator)
           (exprToString context expr)
       )
-      ")"
   Data.BinaryOperator binaryOperatorExpr ->
     binaryOperatorExprToString
       context
@@ -174,17 +185,17 @@ exprToString context = case _ of
   Data.Lambda (Data.LambdaExpr rec) ->
     String.joinWith ""
       [ typeParameterListToString rec.typeParameterList
-      , "("
-      , String.joinWith ", "
-          ( Prelude.map
-              ( \(Data.Parameter { name, type: tsType }) ->
-                  Prelude.append
-                    (Identifier.toString name)
-                    (typeAnnotation context tsType)
+      , encloseParenthesis
+          ( joinWithComma
+              ( Prelude.map
+                  ( \(Data.Parameter { name, type: tsType }) ->
+                      Prelude.append
+                        (Identifier.toString name)
+                        (typeAnnotation context tsType)
+                  )
+                  rec.parameterList
               )
-              rec.parameterList
           )
-      , ")"
       , typeAnnotation context rec.returnType
       , " => "
       , lambdaBodyToString context rec.statementList
@@ -214,7 +225,7 @@ arrayLiteralToString :: Context -> Array Data.ArrayItem -> String
 arrayLiteralToString context itemList =
   append3
     "["
-    ( String.joinWith ", "
+    ( joinWithComma
         ( Prelude.map
             ( \(Data.ArrayItem { spread, expr }) ->
                 Prelude.append
@@ -230,7 +241,7 @@ objectLiteralToString :: Context -> Array Data.Member -> String
 objectLiteralToString context memberList =
   append3
     "{ "
-    ( String.joinWith ", "
+    ( joinWithComma
         ( Prelude.map
             ( case _ of
                 Data.MemberSpread expr -> Prelude.append "..." (exprToString context expr)
@@ -265,14 +276,12 @@ unaryOperatorToString = case _ of
 
 binaryOperatorExprToString :: Context -> Data.BinaryOperatorExpr -> String
 binaryOperatorExprToString context (Data.BinaryOperatorExpr { left, operator, right }) =
-  append3
-    "("
+  encloseParenthesis
     ( append3
         (exprToString context left)
         (binaryOperatorToString operator)
         (exprToString context right)
     )
-    ")"
 
 binaryOperatorToString :: Data.BinaryOperator -> String
 binaryOperatorToString = case _ of
@@ -297,15 +306,15 @@ binaryOperatorToString = case _ of
 
 conditionalOperatorToString :: Context -> Data.ConditionalOperatorExpr -> String
 conditionalOperatorToString context (Data.ConditionalOperatorExpr { condition, thenExpr, elseExpr }) =
-  String.joinWith ""
-    [ "("
-    , exprToString context condition
-    , "?"
-    , exprToString context thenExpr
-    , ":"
-    , exprToString context elseExpr
-    , ")"
-    ]
+  encloseParenthesis
+    ( String.joinWith ""
+        [ exprToString context condition
+        , "?"
+        , exprToString context thenExpr
+        , ":"
+        , exprToString context elseExpr
+        ]
+    )
 
 typeAnnotation :: Context -> Data.TsType -> String
 typeAnnotation context tsType = Prelude.append ": " (typeToString context tsType)
@@ -369,27 +378,28 @@ functionTypeToString :: Context -> Data.FunctionType -> String
 functionTypeToString context (Data.FunctionType rec) =
   String.joinWith ""
     [ typeParameterListToString rec.typeParameterList
-    , "("
-    , String.joinWith ", "
-        ( Array.foldl
-              ( \indexAndList parameterType ->
-                  let
-                    { identifier, nextIdentifierIndex } = Identifier.createIdentifier indexAndList.identifierIndex Set.empty
-                  in
-                    { list:
-                        Array.snoc
-                          indexAndList.list
-                          (identifierAndTypeToString context identifier parameterType)
-                    , identifierIndex: nextIdentifierIndex
-                    }
+    , encloseParenthesis
+        ( joinWithComma
+            ( Array.foldl
+                  ( \indexAndList parameterType ->
+                      let
+                        { identifier, nextIdentifierIndex } = Identifier.createIdentifier indexAndList.identifierIndex Set.empty
+                      in
+                        { list:
+                            Array.snoc
+                              indexAndList.list
+                              (identifierAndTypeToString context identifier parameterType)
+                        , identifierIndex: nextIdentifierIndex
+                        }
+                  )
+                  { list: []
+                  , identifierIndex: Identifier.initialIdentifierIndex
+                  }
+                  rec.parameterList
               )
-              { list: []
-              , identifierIndex: Identifier.initialIdentifierIndex
-              }
-              rec.parameterList
-          )
-          .list
-    , ") => "
+              .list
+        )
+    , " => "
     , typeToString context rec.return
     ]
 
@@ -409,7 +419,7 @@ typeNameAndTypeParameterToString context (Data.TypeNameAndTypeParameter { name, 
       else
         append3
           "<"
-          (String.joinWith ", " (Prelude.map (typeToString context) typeParameterList))
+          (joinWithComma (Prelude.map (typeToString context) typeParameterList))
           ">"
     )
 
@@ -457,7 +467,7 @@ typeParameterListToString = case _ of
   list ->
     append3
       "<"
-      ( String.joinWith ", "
+      ( joinWithComma
           ( Prelude.map
               ( \typeParameter ->
                   Prelude.append
@@ -584,18 +594,18 @@ functionDefinitionStatementToString context (Data.FunctionDefinitionStatement re
     , Identifier.toString rec.name
     , " = "
     , typeParameterListToString rec.typeParameterList
-    , "("
-    , String.joinWith ", "
-        ( Prelude.map
-            ( \(Data.ParameterWithDocument { name, type: tsType }) ->
-                Prelude.append
-                  (Identifier.toString name)
-                  (typeAnnotation context tsType)
+    , encloseParenthesis
+        ( joinWithComma
+            ( Prelude.map
+                ( \(Data.ParameterWithDocument { name, type: tsType }) ->
+                    Prelude.append
+                      (Identifier.toString name)
+                      (typeAnnotation context tsType)
+                )
+                rec.parameterList
             )
-            rec.parameterList
         )
-    , ")"
-    , (typeAnnotation context rec.returnType)
+    , typeAnnotation context rec.returnType
     , " => "
     , lambdaBodyToString context rec.statementList
     , ";"
@@ -644,7 +654,7 @@ callExprToString isNew context (Data.CallExpr { expr, parameterList }) =
         (if isNew then "new " else "")
         (exprToString context expr)
         ( encloseParenthesis
-            ( String.joinWith ","
+            ( joinWithComma
                 ( Prelude.map
                     (\parameter -> exprToString context parameter)
                     parameterList
@@ -655,3 +665,6 @@ callExprToString isNew context (Data.CallExpr { expr, parameterList }) =
 
 encloseParenthesis :: String -> String
 encloseParenthesis value = append3 "(" value ")"
+
+joinWithComma :: Array String -> String
+joinWithComma = String.joinWith ", "
