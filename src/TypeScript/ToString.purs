@@ -71,26 +71,247 @@ typeScriptModuleContentToString (Data.TypeScriptModule { exportDefinitionList })
     (String.joinWith "" (Prelude.map definitionToString exportDefinitionList))
     "\n"
 
+newtype Context
+  = Context {}
+
 definitionToString :: Data.ExportDefinition -> String
 definitionToString = case _ of
-  Data.ExportDefinitionTypeAlias typeAlias -> typeAliasToString typeAlias
-  Data.ExportDefinitionFunction _ -> ""
+  Data.ExportDefinitionTypeAlias typeAlias -> typeAliasToString (Context {}) typeAlias
+  Data.ExportDefinitionFunction func -> exportFunctionToString (Context {}) func
   Data.ExportDefinitionVariable _ -> ""
 
-typeAliasToString :: Data.TypeAlias -> String
-typeAliasToString (Data.TypeAlias rec) =
+typeAliasToString :: Context -> Data.TypeAlias -> String
+typeAliasToString context (Data.TypeAlias rec) =
   String.joinWith ""
     [ documentToString rec.document
     , "export type "
     , Identifier.toString rec.name
     , typeParameterListToString rec.typeParameterList
     , " = "
-    , typeToString rec.type
+    , typeToString context rec.type
     , ";\n\n"
     ]
 
-typeToString :: Data.TsType -> String
-typeToString = case _ of
+exportFunctionToString :: Context -> Data.FunctionDeclaration -> String
+exportFunctionToString context (Data.FunctionDeclaration func) =
+  String.joinWith ""
+    [ documentToString
+        (Prelude.append func.document (parameterListToDocument func.parameterList))
+    , "export const "
+    , Identifier.toString func.name
+    , " = "
+    , typeParameterListToString func.typeParameterList
+    , "("
+    , String.joinWith ", "
+        ( Prelude.map
+            ( \(Data.ParameterWithDocument parameter) ->
+                Prelude.append
+                  (Identifier.toString parameter.name)
+                  (Prelude.append ": " (typeToString context parameter.type))
+            )
+            func.parameterList
+        )
+    , ")"
+    , Prelude.append ": " (typeToString context func.returnType)
+    , " => "
+    , lambdaBodyToString context func.statementList
+    , ";\n\n"
+    ]
+
+parameterListToDocument :: Array Data.ParameterWithDocument -> String
+parameterListToDocument = case _ of
+  [] -> ""
+  parameterList ->
+    Prelude.append "\n"
+      ( String.joinWith "\n"
+          ( Prelude.map
+              ( case _ of
+                  Data.ParameterWithDocument { document: "" } -> ""
+                  Data.ParameterWithDocument rec ->
+                    String.joinWith ""
+                      [ "@param "
+                      , Identifier.toString rec.name
+                      , " "
+                      , rec.document
+                      ]
+              )
+              parameterList
+          )
+      )
+
+-- | 式をコードに変換する
+exprToString :: Context -> Data.Expr -> String
+exprToString context = case _ of
+  Data.NumberLiteral value -> Prelude.show value
+  Data.StringLiteral value -> stringLiteralValueToString value
+  Data.BooleanLiteral true -> "true"
+  Data.BooleanLiteral false -> "false"
+  Data.UndefinedLiteral -> "undefined"
+  Data.NullLiteral -> "null"
+  Data.ArrayLiteral arrayItemList ->
+    arrayLiteralToString
+      context
+      arrayItemList
+  Data.ObjectLiteral tsMemberList ->
+    objectLiteralToString
+      context
+      tsMemberList
+  Data.UnaryOperator (Data.UnaryOperatorExpr { operator, expr }) ->
+    append3
+      "("
+      ( Prelude.append (unaryOperatorToString operator)
+          (exprToString context expr)
+      )
+      ")"
+  Data.BinaryOperator binaryOperatorExpr ->
+    binaryOperatorExprToString
+      context
+      binaryOperatorExpr
+  Data.ConditionalOperator conditionalOperatorExpr ->
+    conditionalOperatorToString
+      context
+      conditionalOperatorExpr
+  Data.Lambda (Data.LambdaExpr rec) ->
+    String.joinWith ""
+      [ typeParameterListToString rec.typeParameterList
+      , "("
+      , String.joinWith ", "
+          ( Prelude.map
+              ( \(Data.Parameter { name, type: tsType }) ->
+                  Prelude.append
+                    (Identifier.toString name)
+                    (typeAnnotation context tsType)
+              )
+              rec.parameterList
+          )
+      , ")"
+      , typeAnnotation context rec.returnType
+      , " => "
+      , lambdaBodyToString context rec.statementList
+      ]
+  Data.Variable name -> Identifier.toString name
+  Data.GlobalObjects name -> Prelude.append "globalThis." (Identifier.toString name)
+  Data.ExprImportedVariable (Data.ImportedVariable rec) ->
+    append3
+      "(!!!!scope!!!!)" -- TODO
+      "."
+      (Identifier.toString rec.name)
+  Data.Get (Data.GetExpr { expr, propertyExpr }) ->
+    Prelude.append
+      (exprToString context expr)
+      (indexAccessToString context propertyExpr)
+  Data.Call callExpr -> callExprToString false context callExpr
+  Data.New callExpr -> callExprToString true context callExpr
+  Data.ExprTypeAssertion (Data.TypeAssertion { expr, type: tsType }) ->
+    encloseParenthesis
+      ( append3
+          (exprToString context expr)
+          " as "
+          (typeToString context tsType)
+      )
+
+arrayLiteralToString :: Context -> Array Data.ArrayItem -> String
+arrayLiteralToString context itemList =
+  append3
+    "["
+    ( String.joinWith ", "
+        ( Prelude.map
+            ( \(Data.ArrayItem { spread, expr }) ->
+                Prelude.append
+                  (if spread then "..." else "")
+                  (exprToString context expr)
+            )
+            itemList
+        )
+    )
+    "]"
+
+objectLiteralToString :: Context -> Array Data.Member -> String
+objectLiteralToString context memberList =
+  append3
+    "{ "
+    ( String.joinWith ", "
+        ( Prelude.map
+            ( case _ of
+                Data.MemberSpread expr -> Prelude.append "..." (exprToString context expr)
+                Data.MemberKeyValue kyeValue@(Data.KeyValue { key, value: Data.Variable valueIdentifier }) ->
+                  if Prelude.eq key (Identifier.toString valueIdentifier) then
+                    key
+                  else
+                    objectLiteralMemberKeyValueToString context kyeValue
+                Data.MemberKeyValue kyeValue -> objectLiteralMemberKeyValueToString context kyeValue
+            )
+            memberList
+        )
+    )
+    " }"
+
+objectLiteralMemberKeyValueToString :: Context -> Data.KeyValue -> String
+objectLiteralMemberKeyValueToString context (Data.KeyValue { key, value }) =
+  append3
+    ( if Identifier.isSafePropertyName key then
+        key
+      else
+        stringLiteralValueToString key
+    )
+    ": "
+    (exprToString context value)
+
+unaryOperatorToString :: Data.UnaryOperator -> String
+unaryOperatorToString = case _ of
+  Data.Minus -> "-"
+  Data.BitwiseNot -> "~"
+  Data.LogicalNot -> "!"
+
+binaryOperatorExprToString :: Context -> Data.BinaryOperatorExpr -> String
+binaryOperatorExprToString context (Data.BinaryOperatorExpr { left, operator, right }) =
+  append3
+    "("
+    ( append3
+        (exprToString context left)
+        (binaryOperatorToString operator)
+        (exprToString context right)
+    )
+    ")"
+
+binaryOperatorToString :: Data.BinaryOperator -> String
+binaryOperatorToString = case _ of
+  Data.Exponentiation -> "**"
+  Data.Multiplication -> "*"
+  Data.Division -> "/"
+  Data.Remainder -> "%"
+  Data.Addition -> "+"
+  Data.Subtraction -> "-"
+  Data.LeftShift -> "<<"
+  Data.SignedRightShift -> ">>"
+  Data.UnsignedRightShift -> ">>>"
+  Data.LessThan -> "<"
+  Data.LessThanOrEqual -> "<="
+  Data.Equal -> "==="
+  Data.NotEqual -> "!=="
+  Data.BitwiseAnd -> "&"
+  Data.BitwiseXOr -> "^"
+  Data.BitwiseOr -> "|"
+  Data.LogicalAnd -> "&&"
+  Data.LogicalOr -> "||"
+
+conditionalOperatorToString :: Context -> Data.ConditionalOperatorExpr -> String
+conditionalOperatorToString context (Data.ConditionalOperatorExpr { condition, thenExpr, elseExpr }) =
+  String.joinWith ""
+    [ "("
+    , exprToString context condition
+    , "?"
+    , exprToString context thenExpr
+    , ":"
+    , exprToString context elseExpr
+    , ")"
+    ]
+
+typeAnnotation :: Context -> Data.TsType -> String
+typeAnnotation context tsType = Prelude.append ": " (typeToString context tsType)
+
+typeToString :: Context -> Data.TsType -> String
+typeToString context = case _ of
   Data.TsTypeNumber -> "number"
   Data.TsTypeString -> "string"
   Data.TsTypeBoolean -> "boolean"
@@ -98,30 +319,30 @@ typeToString = case _ of
   Data.TsTypeNull -> "null"
   Data.TsTypeNever -> "never"
   Data.TsTypeVoid -> "void"
-  Data.TsTypeObject memberList -> typeObjectToString memberList
-  Data.TsTypeFunction functionType -> functionTypeToString functionType
+  Data.TsTypeObject memberList -> typeObjectToString context memberList
+  Data.TsTypeFunction functionType -> functionTypeToString context functionType
   Data.TsTypeUnion typeList ->
     String.joinWith
       " | "
-      (Prelude.map typeToString typeList)
+      (Prelude.map (typeToString context) typeList)
   Data.TsTypeIntersection (Tuple.Tuple left right) ->
     append3
-      (typeToString left)
+      (typeToString context left)
       " & "
-      (typeToString right)
+      (typeToString context right)
   Data.TsTypeImportedType (Data.ImportedType { typeNameAndTypeParameter }) ->
     Prelude.append
-      "(!!!!scope!!!!)."
-      (typeNameAndTypeParameterToString typeNameAndTypeParameter)
-  Data.TsTypeScopeInFile typeNameAndTypeParameter -> typeNameAndTypeParameterToString typeNameAndTypeParameter
+      "(!!!!scope!!!!)." -- TODO
+      (typeNameAndTypeParameterToString context typeNameAndTypeParameter)
+  Data.TsTypeScopeInFile typeNameAndTypeParameter -> typeNameAndTypeParameterToString context typeNameAndTypeParameter
   Data.TsTypeScopeInGlobal typeNameAndTypeParameter ->
     Prelude.append
       "globalThis."
-      (typeNameAndTypeParameterToString typeNameAndTypeParameter)
+      (typeNameAndTypeParameterToString context typeNameAndTypeParameter)
   Data.TsTypeStringLiteral str -> stringLiteralValueToString str
 
-typeObjectToString :: Array Data.TsMemberType -> String
-typeObjectToString memberList =
+typeObjectToString :: Context -> Array Data.TsMemberType -> String
+typeObjectToString context memberList =
   append3
     "{ "
     ( String.joinWith "; "
@@ -136,7 +357,7 @@ typeObjectToString memberList =
                       stringLiteralValueToString member.name
                   , if member.required then "" else "?"
                   , ": "
-                  , typeToString member.type
+                  , typeToString context member.type
                   ]
             )
             memberList
@@ -144,8 +365,8 @@ typeObjectToString memberList =
     )
     " }"
 
-functionTypeToString :: Data.FunctionType -> String
-functionTypeToString (Data.FunctionType rec) =
+functionTypeToString :: Context -> Data.FunctionType -> String
+functionTypeToString context (Data.FunctionType rec) =
   String.joinWith ""
     [ typeParameterListToString rec.typeParameterList
     , "("
@@ -158,7 +379,7 @@ functionTypeToString (Data.FunctionType rec) =
                     { list:
                         Array.snoc
                           indexAndList.list
-                          (identifierAndTypeToString identifier parameterType)
+                          (identifierAndTypeToString context identifier parameterType)
                     , identifierIndex: nextIdentifierIndex
                     }
               )
@@ -169,18 +390,18 @@ functionTypeToString (Data.FunctionType rec) =
           )
           .list
     , ") => "
-    , typeToString rec.return
+    , typeToString context rec.return
     ]
 
-identifierAndTypeToString :: Identifier.TsIdentifier -> Data.TsType -> String
-identifierAndTypeToString identifier parameterType =
+identifierAndTypeToString :: Context -> Identifier.TsIdentifier -> Data.TsType -> String
+identifierAndTypeToString context identifier parameterType =
   append3
     (Identifier.toString identifier)
     ": "
-    (typeToString parameterType)
+    (typeToString context parameterType)
 
-typeNameAndTypeParameterToString :: Data.TypeNameAndTypeParameter -> String
-typeNameAndTypeParameterToString (Data.TypeNameAndTypeParameter { name, typeParameterList }) =
+typeNameAndTypeParameterToString :: Context -> Data.TypeNameAndTypeParameter -> String
+typeNameAndTypeParameterToString context (Data.TypeNameAndTypeParameter { name, typeParameterList }) =
   Prelude.append
     (Identifier.toString name)
     ( if Array.null typeParameterList then
@@ -188,7 +409,7 @@ typeNameAndTypeParameterToString (Data.TypeNameAndTypeParameter { name, typePara
       else
         append3
           "<"
-          (String.joinWith ", " (Prelude.map typeToString typeParameterList))
+          (String.joinWith ", " (Prelude.map (typeToString context) typeParameterList))
           ">"
     )
 
@@ -253,3 +474,184 @@ append3 a b c =
   Prelude.append
     (Prelude.append a b)
     c
+
+-- | ラムダ式の本体 文が1つでreturn exprだった場合、returnを省略する形になる
+lambdaBodyToString :: Context -> Array Data.Statement -> String
+lambdaBodyToString context statementList = case Array.uncons statementList of
+  Just { head: Data.Return expr } -> exprToString context expr
+  _ -> statementListToString context statementList
+
+statementListToString :: Context -> Array Data.Statement -> String
+statementListToString context statementList =
+  append3
+    "{"
+    ( String.joinWith "\n"
+        ( Prelude.map
+            (\statement -> statementToString context statement)
+            statementList
+        )
+    )
+    "}"
+
+statementToString :: Context -> Data.Statement -> String
+statementToString context = case _ of
+  Data.EvaluateExpr expr ->
+    Prelude.append
+      (exprToString context expr)
+      ";"
+  Data.Set (Data.SetStatement { target, operatorMaybe, expr }) ->
+    String.joinWith ""
+      [ ( exprToString
+            context
+            target
+        )
+      , case operatorMaybe of
+          Just operator -> binaryOperatorToString operator
+          Nothing -> ""
+      , "= "
+      , exprToString context expr
+      , ";"
+      ]
+  Data.If (Data.IfStatement { condition, thenStatementList }) ->
+    String.joinWith ""
+      [ "if ("
+      , exprToString context condition
+      , ") "
+      , statementListToString context thenStatementList
+      ]
+  Data.ThrowError expr ->
+    append3
+      "throw new Error("
+      (exprToString context expr)
+      ");"
+  Data.Return expr ->
+    append3
+      "return "
+      (exprToString context expr)
+      ";"
+  Data.ReturnVoid -> "return;"
+  Data.Continue -> "continue;"
+  Data.VariableDefinition (Data.VariableDefinitionStatement { isConst, name, type: tsType, expr }) ->
+    String.joinWith ""
+      [ if isConst then "const" else "let"
+      , " "
+      , Identifier.toString name
+      , typeAnnotation context tsType
+      , " = "
+      , exprToString context expr
+      , ";"
+      ]
+  Data.FunctionDefinition functionDefinitionStatement -> functionDefinitionStatementToString context functionDefinitionStatement
+  Data.For (Data.ForStatement rec) ->
+    String.joinWith ""
+      [ "for (let "
+      , Identifier.toString rec.counterVariableName
+      , " = 0; "
+      , Identifier.toString rec.counterVariableName
+      , " < "
+      , exprToString context rec.untilExpr
+      , "; "
+      , Identifier.toString rec.counterVariableName
+      , " += 1)"
+      , statementListToString context rec.statementList
+      ]
+  Data.ForOf (Data.ForOfStatement rec) ->
+    String.joinWith ""
+      [ "for (const "
+      , Identifier.toString rec.elementVariableName
+      , " of "
+      , exprToString context rec.iterableExpr
+      , ")"
+      , statementListToString context rec.statementList
+      ]
+  Data.WhileTrue statementList ->
+    Prelude.append
+      "while (true) "
+      ( statementListToString
+          context
+          statementList
+      )
+  Data.Break -> "break;"
+  Data.Switch switchStatement ->
+    switchToString
+      context
+      switchStatement
+
+functionDefinitionStatementToString :: Context -> Data.FunctionDefinitionStatement -> String
+functionDefinitionStatementToString context (Data.FunctionDefinitionStatement rec) =
+  String.joinWith ""
+    [ "const "
+    , Identifier.toString rec.name
+    , " = "
+    , typeParameterListToString rec.typeParameterList
+    , "("
+    , String.joinWith ", "
+        ( Prelude.map
+            ( \(Data.ParameterWithDocument { name, type: tsType }) ->
+                Prelude.append
+                  (Identifier.toString name)
+                  (typeAnnotation context tsType)
+            )
+            rec.parameterList
+        )
+    , ")"
+    , (typeAnnotation context rec.returnType)
+    , " => "
+    , lambdaBodyToString context rec.statementList
+    , ";"
+    ]
+
+switchToString :: Context -> Data.SwitchStatement -> String
+switchToString context (Data.SwitchStatement { expr, patternList }) =
+  String.joinWith ""
+    [ "switch ("
+    , exprToString context expr
+    , ") {\n"
+    , String.joinWith "\n"
+        ( Prelude.map
+            ( \(Data.Pattern pattern) ->
+                String.joinWith ""
+                  [ "case "
+                  , stringLiteralValueToString pattern.caseString
+                  , ": "
+                  , statementListToString context pattern.statementList
+                  ]
+            )
+            patternList
+        )
+    , "\n"
+    , "}"
+    ]
+
+-- | ```ts
+-- | list[0] // [0]
+-- | data.name // .name
+-- | ```
+-- | の部分indexのExprがstringLiteralで識別子に使える文字なら`.name`のようになる
+indexAccessToString :: Context -> Data.Expr -> String
+indexAccessToString context indexExpr = case indexExpr of
+  Data.StringLiteral indexName ->
+    if Identifier.isSafePropertyName indexName then
+      Prelude.append "." indexName
+    else
+      append3 "[" (exprToString context indexExpr) "]"
+  _ -> append3 "[" (exprToString context indexExpr) "]"
+
+callExprToString :: Boolean -> Context -> Data.CallExpr -> String
+callExprToString isNew context (Data.CallExpr { expr, parameterList }) =
+  encloseParenthesis
+    ( append3
+        (if isNew then "new " else "")
+        (exprToString context expr)
+        ( encloseParenthesis
+            ( String.joinWith ","
+                ( Prelude.map
+                    (\parameter -> exprToString context parameter)
+                    parameterList
+                )
+            )
+        )
+    )
+
+encloseParenthesis :: String -> String
+encloseParenthesis value = append3 "(" value ")"
