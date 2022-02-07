@@ -6,7 +6,6 @@ import Data.Maybe as Maybe
 import Data.String.NonEmpty as NonEmptyString
 import Data.UInt as UInt
 import Effect as Effect
-import Effect.Aff (Aff)
 import FileSystem.FileType as FileType
 import FileSystem.Name as Name
 import FileSystem.Path as FileSystemPath
@@ -16,8 +15,8 @@ import PureScript.Wellknown as PureScriptWellknown
 import Test.StructuredUrl as StructuredUrlTest
 import Test.TypeScript as TypeScriptTest
 import Test.Unit as TestUnit
-import Test.Unit.Assert as Assert
 import Test.Unit.Main as TestUnitMain
+import Test.Util (assertEqual)
 import Type.Proxy (Proxy(..))
 import Util as Util
 
@@ -39,115 +38,129 @@ main =
     TestUnit.test "TypeScriptTest" do
       TypeScriptTest.test
 
-listUpdateAtOverAutoCreateInline :: Aff Unit
+listUpdateAtOverAutoCreateInline :: TestUnit.Test
 listUpdateAtOverAutoCreateInline =
-  Assert.equal' "listUpdateAtOverAutoCreateInline"
-    ( Util.listUpdateAtOverAutoCreate
-        [ "zero", "one", "two", "three" ]
-        (UInt.fromInt 1)
-        ( case _ of
-            Maybe.Just item -> append item "!"
-            Maybe.Nothing -> "new"
-        )
-        "fill"
-    )
-    [ "zero", "one!", "two", "three" ]
+  assertEqual "listUpdateAtOverAutoCreateInline"
+    { actual:
+        Util.listUpdateAtOverAutoCreate
+          [ "zero", "one", "two", "three" ]
+          (UInt.fromInt 1)
+          ( case _ of
+              Maybe.Just item -> append item "!"
+              Maybe.Nothing -> "new"
+          )
+          "fill"
+    , expected:
+        [ "zero", "one!", "two", "three" ]
+    }
 
-listUpdateAtOverAutoCreateFirst :: Aff Unit
+listUpdateAtOverAutoCreateFirst :: TestUnit.Test
 listUpdateAtOverAutoCreateFirst =
-  Assert.equal' "listUpdateAtOverAutoCreateFirst"
-    ( Util.listUpdateAtOverAutoCreate
-        [ "zero", "one", "two", "three" ]
-        (UInt.fromInt 0)
-        ( case _ of
-            Maybe.Just item -> append item "!"
-            Maybe.Nothing -> "new"
-        )
-        "fill"
-    )
-    [ "zero!", "one", "two", "three" ]
+  assertEqual "listUpdateAtOverAutoCreateFirst"
+    { actual:
+        Util.listUpdateAtOverAutoCreate
+          [ "zero", "one", "two", "three" ]
+          (UInt.fromInt 0)
+          ( case _ of
+              Maybe.Just item -> append item "!"
+              Maybe.Nothing -> "new"
+          )
+          "fill"
+    , expected: [ "zero!", "one", "two", "three" ]
+    }
 
-listUpdateAtOverAutoCreateLast :: Aff Unit
+listUpdateAtOverAutoCreateLast :: TestUnit.Test
 listUpdateAtOverAutoCreateLast =
-  Assert.equal' "listUpdateAtOverAutoCreateLast"
-    ( Util.listUpdateAtOverAutoCreate
-        [ "zero", "one", "two", "three" ]
-        (UInt.fromInt 3)
-        ( case _ of
-            Maybe.Just item -> append item "!"
-            Maybe.Nothing -> "new"
-        )
-        "fill"
-    )
-    [ "zero", "one", "two", "three!" ]
+  assertEqual "listUpdateAtOverAutoCreateLast"
+    { actual:
+        Util.listUpdateAtOverAutoCreate
+          [ "zero", "one", "two", "three" ]
+          (UInt.fromInt 3)
+          ( case _ of
+              Maybe.Just item -> append item "!"
+              Maybe.Nothing -> "new"
+          )
+          "fill"
+    , expected: [ "zero", "one", "two", "three!" ]
+    }
 
-listUpdateAtOverAutoCreateAutoCreate :: Aff Unit
+listUpdateAtOverAutoCreateAutoCreate :: TestUnit.Test
 listUpdateAtOverAutoCreateAutoCreate =
-  Assert.equal' "listUpdateAtOverAutoCreateAutoCreate"
-    ( Util.listUpdateAtOverAutoCreate
-        [ "zero", "one", "two", "three" ]
-        (UInt.fromInt 6)
-        ( case _ of
-            Maybe.Just item -> append item "!"
-            Maybe.Nothing -> "new"
-        )
-        "fill"
-    )
-    [ "zero", "one", "two", "three", "fill", "fill", "new" ]
+  assertEqual "listUpdateAtOverAutoCreateAutoCreate"
+    { actual:
+        Util.listUpdateAtOverAutoCreate
+          [ "zero", "one", "two", "three" ]
+          (UInt.fromInt 6)
+          ( case _ of
+              Maybe.Just item -> append item "!"
+              Maybe.Nothing -> "new"
+          )
+          "fill"
+    , expected: [ "zero", "one", "two", "three", "fill", "fill", "new" ]
+    }
 
-groupBySize2 :: Aff Unit
+groupBySize2 :: TestUnit.Test
 groupBySize2 =
-  Assert.equal
-    (Util.groupBySize (UInt.fromInt 2) [ 0, 1, 2, 3, 4 ])
-    [ [ 0, 1 ], [ 2, 3 ], [ 4 ] ]
+  assertEqual
+    "groupBySize2"
+    { actual: Util.groupBySize (UInt.fromInt 2) [ 0, 1, 2, 3, 4 ]
+    , expected: [ [ 0, 1 ], [ 2, 3 ], [ 4 ] ]
+    }
 
-fileNameParse :: Aff Unit
+fileNameParse :: TestUnit.Test
 fileNameParse =
-  Assert.equal
-    (Name.toNonEmptyString (Name.fromSymbolProxy (Proxy :: _ "sampleFileName")))
-    (NonEmptyString.nes (Proxy :: _ "sampleFileName"))
+  assertEqual
+    "fileNameParse"
+    { actual: Name.toNonEmptyString (Name.fromSymbolProxy (Proxy :: _ "sampleFileName"))
+    , expected: (NonEmptyString.nes (Proxy :: _ "sampleFileName"))
+    }
 
-fileNameWithExtensionParse :: Aff Unit
+fileNameWithExtensionParse :: TestUnit.Test
 fileNameWithExtensionParse =
-  Assert.equal
-    (FileSystemPath.fileNameWithExtensionParse "sample.test.js")
-    ( Maybe.Just
-        { fileName:
-            Name.fromSymbolProxy (Proxy :: _ "sample.test")
-        , fileType: Maybe.Just FileType.JavaScript
-        }
-    )
-
-pureScriptCodeGenerate :: Aff Unit
-pureScriptCodeGenerate =
-  Assert.equal
-    ( PureScriptToString.toString
-        ( PureScriptData.Module
-            { name:
-                PureScriptData.ModuleName
-                  ( NonEmptyArray.singleton
-                      (NonEmptyString.nes (Proxy :: _ "Sample"))
-                  )
-            , definitionList:
-                [ PureScriptWellknown.definition
-                    { name: NonEmptyString.nes (Proxy :: _ "origin")
-                    , document: "オリジン"
-                    , pType: PureScriptWellknown.primString
-                    , expr: PureScriptWellknown.stringLiteral "http://narumincho.com"
-                    , isExport: true
-                    }
-                , PureScriptWellknown.definition
-                    { name: NonEmptyString.nes (Proxy :: _ "sample")
-                    , document: "サンプルデータ\n改行付きのドキュメント"
-                    , pType: PureScriptWellknown.primString
-                    , expr: PureScriptWellknown.stringLiteral "改行も\nしっかりエスケープされてるかな?"
-                    , isExport: false
-                    }
-                ]
+  assertEqual
+    "fileNameWithExtensionParse"
+    { actual: FileSystemPath.fileNameWithExtensionParse "sample.test.js"
+    , expected:
+        ( Maybe.Just
+            { fileName:
+                Name.fromSymbolProxy (Proxy :: _ "sample.test")
+            , fileType: Maybe.Just FileType.JavaScript
             }
         )
-    )
-    """-- generated by definy. Do not edit!
+    }
+
+pureScriptCodeGenerate :: TestUnit.Test
+pureScriptCodeGenerate =
+  assertEqual
+    "pureScriptCodeGenerate"
+    { actual:
+        PureScriptToString.toString
+          ( PureScriptData.Module
+              { name:
+                  PureScriptData.ModuleName
+                    ( NonEmptyArray.singleton
+                        (NonEmptyString.nes (Proxy :: _ "Sample"))
+                    )
+              , definitionList:
+                  [ PureScriptWellknown.definition
+                      { name: NonEmptyString.nes (Proxy :: _ "origin")
+                      , document: "オリジン"
+                      , pType: PureScriptWellknown.primString
+                      , expr: PureScriptWellknown.stringLiteral "http://narumincho.com"
+                      , isExport: true
+                      }
+                  , PureScriptWellknown.definition
+                      { name: NonEmptyString.nes (Proxy :: _ "sample")
+                      , document: "サンプルデータ\n改行付きのドキュメント"
+                      , pType: PureScriptWellknown.primString
+                      , expr: PureScriptWellknown.stringLiteral "改行も\nしっかりエスケープされてるかな?"
+                      , isExport: false
+                      }
+                  ]
+              }
+          )
+    , expected:
+        """-- generated by definy. Do not edit!
 module Sample (origin) where
 
 import Prim as M0
@@ -162,8 +175,9 @@ sample :: M0.String
 sample = "改行も\nしっかりエスケープされてるかな?"
 
 """
+    }
 
-nonEmptyArrayGetAtLoop :: Aff Unit
+nonEmptyArrayGetAtLoop :: TestUnit.Test
 nonEmptyArrayGetAtLoop = do
   nonEmptyArrayGetAtLoopZero
   nonEmptyArrayGetAtLoopOne
@@ -171,47 +185,58 @@ nonEmptyArrayGetAtLoop = do
   nonEmptyArrayGetAtLoopLoopTwo
   nonEmptyArrayGetAtLoopOneElement
 
-nonEmptyArrayGetAtLoopZero :: Aff Unit
+nonEmptyArrayGetAtLoopZero :: TestUnit.Test
 nonEmptyArrayGetAtLoopZero =
-  Assert.equal
-    ( Util.nonEmptyArrayGetAtLoop
-        (NonEmptyArray.cons' "a" [ "b", "c" ])
-        (UInt.fromInt 0)
-    )
-    "a"
+  assertEqual
+    "nonEmptyArrayGetAtLoopZero"
+    { actual:
+        ( Util.nonEmptyArrayGetAtLoop
+            (NonEmptyArray.cons' "a" [ "b", "c" ])
+            (UInt.fromInt 0)
+        )
+    , expected: "a"
+    }
 
-nonEmptyArrayGetAtLoopOne :: Aff Unit
+nonEmptyArrayGetAtLoopOne :: TestUnit.Test
 nonEmptyArrayGetAtLoopOne =
-  Assert.equal
-    ( Util.nonEmptyArrayGetAtLoop
-        (NonEmptyArray.cons' "a" [ "b", "c" ])
-        (UInt.fromInt 1)
-    )
-    "b"
+  assertEqual
+    "nonEmptyArrayGetAtLoopOne"
+    { actual:
+        Util.nonEmptyArrayGetAtLoop
+          (NonEmptyArray.cons' "a" [ "b", "c" ])
+          (UInt.fromInt 1)
+    , expected: "b"
+    }
 
-nonEmptyArrayGetAtLoopLoopOne :: Aff Unit
+nonEmptyArrayGetAtLoopLoopOne :: TestUnit.Test
 nonEmptyArrayGetAtLoopLoopOne =
-  Assert.equal
-    ( Util.nonEmptyArrayGetAtLoop
-        (NonEmptyArray.cons' "a" [ "b", "c" ])
-        (UInt.fromInt 4)
-    )
-    "b"
+  assertEqual
+    "nonEmptyArrayGetAtLoopLoopOne"
+    { actual:
+        Util.nonEmptyArrayGetAtLoop
+          (NonEmptyArray.cons' "a" [ "b", "c" ])
+          (UInt.fromInt 4)
+    , expected: "b"
+    }
 
-nonEmptyArrayGetAtLoopLoopTwo :: Aff Unit
+nonEmptyArrayGetAtLoopLoopTwo :: TestUnit.Test
 nonEmptyArrayGetAtLoopLoopTwo =
-  Assert.equal
-    ( Util.nonEmptyArrayGetAtLoop
-        (NonEmptyArray.cons' "a" [ "b", "c" ])
-        (UInt.fromInt 6)
-    )
-    "a"
+  assertEqual
+    "nonEmptyArrayGetAtLoopLoopTwo"
+    { actual:
+        Util.nonEmptyArrayGetAtLoop
+          (NonEmptyArray.cons' "a" [ "b", "c" ])
+          (UInt.fromInt 6)
+    , expected: "a"
+    }
 
-nonEmptyArrayGetAtLoopOneElement :: Aff Unit
+nonEmptyArrayGetAtLoopOneElement :: TestUnit.Test
 nonEmptyArrayGetAtLoopOneElement =
-  Assert.equal
-    ( Util.nonEmptyArrayGetAtLoop
-        (NonEmptyArray.cons' "a" [])
-        (UInt.fromInt 99)
-    )
-    "a"
+  assertEqual
+    "nonEmptyArrayGetAtLoopOneElement"
+    { actual:
+        Util.nonEmptyArrayGetAtLoop
+          (NonEmptyArray.cons' "a" [])
+          (UInt.fromInt 99)
+    , expected: "a"
+    }
