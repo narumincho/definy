@@ -83,9 +83,9 @@ export const exprToString = (
         "(" +
         expr.lambdaExpr.parameterList
           .map(
-            (paramter) =>
-              paramter.name.string +
-              typeAnnotation(paramter.type, codeType, moduleMap)
+            (parameter) =>
+              parameter.name.string +
+              typeAnnotation(parameter.type, codeType, moduleMap)
           )
           .join(", ") +
         ")" +
@@ -106,17 +106,17 @@ export const exprToString = (
       return "globalThis." + expr.tsIdentifier.string;
 
     case "ImportedVariable": {
-      const nameSpaceIdentifer = moduleMap.get(
+      const nameSpaceIdentifier = moduleMap.get(
         expr.importedVariable.moduleName
       );
-      if (nameSpaceIdentifer === undefined) {
+      if (nameSpaceIdentifier === undefined) {
         throw Error(
           "収集されなかった, モジュールがある moduleName=" +
             expr.importedVariable.moduleName
         );
       }
       return (
-        nameSpaceIdentifer.string + "." + expr.importedVariable.name.string
+        nameSpaceIdentifier.string + "." + expr.importedVariable.name.string
       );
     }
 

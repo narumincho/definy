@@ -12,29 +12,35 @@ import FileSystem.Path as FileSystemPath
 import PureScript.Data as PureScriptData
 import PureScript.ToString as PureScriptToString
 import PureScript.Wellknown as PureScriptWellknown
-import Test.Assert as Assert
 import Test.StructuredUrl as StructuredUrlTest
-import Test.TypeScript as TypeScriptText
+import Test.TypeScript as TypeScriptTest
+import Test.Unit as TestUnit
+import Test.Unit.Main as TestUnitMain
+import Test.Util (assertEqual)
 import Type.Proxy (Proxy(..))
 import Util as Util
 
 main :: Effect.Effect Unit
-main = do
-  listUpdateAtOverAutoCreateInline
-  listUpdateAtOverAutoCreateFirst
-  listUpdateAtOverAutoCreateLast
-  listUpdateAtOverAutoCreateAutoCreate
-  groupBySize2
-  fileNameParse
-  fileNameWithExtensionParse
-  pureScriptCodeGenerate
-  nonEmptyArrayGetAtLoop
-  StructuredUrlTest.test
-  TypeScriptText.test
+main =
+  TestUnitMain.runTest do
+    TestUnit.test "util" do
+      listUpdateAtOverAutoCreateInline
+      listUpdateAtOverAutoCreateFirst
+      listUpdateAtOverAutoCreateLast
+      listUpdateAtOverAutoCreateAutoCreate
+      groupBySize2
+      fileNameParse
+      fileNameWithExtensionParse
+      pureScriptCodeGenerate
+      nonEmptyArrayGetAtLoop
+    TestUnit.test "StructuredUrlTest" do
+      StructuredUrlTest.test
+    TestUnit.test "TypeScriptTest" do
+      TypeScriptTest.test
 
-listUpdateAtOverAutoCreateInline :: Effect.Effect Unit
+listUpdateAtOverAutoCreateInline :: TestUnit.Test
 listUpdateAtOverAutoCreateInline =
-  Assert.assertEqual
+  assertEqual "listUpdateAtOverAutoCreateInline"
     { actual:
         Util.listUpdateAtOverAutoCreate
           [ "zero", "one", "two", "three" ]
@@ -44,12 +50,13 @@ listUpdateAtOverAutoCreateInline =
               Maybe.Nothing -> "new"
           )
           "fill"
-    , expected: [ "zero", "one!", "two", "three" ]
+    , expected:
+        [ "zero", "one!", "two", "three" ]
     }
 
-listUpdateAtOverAutoCreateFirst :: Effect.Effect Unit
+listUpdateAtOverAutoCreateFirst :: TestUnit.Test
 listUpdateAtOverAutoCreateFirst =
-  Assert.assertEqual
+  assertEqual "listUpdateAtOverAutoCreateFirst"
     { actual:
         Util.listUpdateAtOverAutoCreate
           [ "zero", "one", "two", "three" ]
@@ -62,9 +69,9 @@ listUpdateAtOverAutoCreateFirst =
     , expected: [ "zero!", "one", "two", "three" ]
     }
 
-listUpdateAtOverAutoCreateLast :: Effect.Effect Unit
+listUpdateAtOverAutoCreateLast :: TestUnit.Test
 listUpdateAtOverAutoCreateLast =
-  Assert.assertEqual
+  assertEqual "listUpdateAtOverAutoCreateLast"
     { actual:
         Util.listUpdateAtOverAutoCreate
           [ "zero", "one", "two", "three" ]
@@ -77,9 +84,9 @@ listUpdateAtOverAutoCreateLast =
     , expected: [ "zero", "one", "two", "three!" ]
     }
 
-listUpdateAtOverAutoCreateAutoCreate :: Effect.Effect Unit
+listUpdateAtOverAutoCreateAutoCreate :: TestUnit.Test
 listUpdateAtOverAutoCreateAutoCreate =
-  Assert.assertEqual
+  assertEqual "listUpdateAtOverAutoCreateAutoCreate"
     { actual:
         Util.listUpdateAtOverAutoCreate
           [ "zero", "one", "two", "three" ]
@@ -92,38 +99,40 @@ listUpdateAtOverAutoCreateAutoCreate =
     , expected: [ "zero", "one", "two", "three", "fill", "fill", "new" ]
     }
 
-groupBySize2 :: Effect.Effect Unit
+groupBySize2 :: TestUnit.Test
 groupBySize2 =
-  Assert.assertEqual
+  assertEqual
+    "groupBySize2"
     { actual: Util.groupBySize (UInt.fromInt 2) [ 0, 1, 2, 3, 4 ]
     , expected: [ [ 0, 1 ], [ 2, 3 ], [ 4 ] ]
     }
 
-fileNameParse :: Effect.Effect Unit
+fileNameParse :: TestUnit.Test
 fileNameParse =
-  Assert.assertEqual
-    { actual:
-        Name.toNonEmptyString (Name.fromSymbolProxy (Proxy :: _ "sampleFileName"))
-    , expected:
-        NonEmptyString.nes (Proxy :: _ "sampleFileName")
+  assertEqual
+    "fileNameParse"
+    { actual: Name.toNonEmptyString (Name.fromSymbolProxy (Proxy :: _ "sampleFileName"))
+    , expected: (NonEmptyString.nes (Proxy :: _ "sampleFileName"))
     }
 
-fileNameWithExtensionParse :: Effect.Effect Unit
+fileNameWithExtensionParse :: TestUnit.Test
 fileNameWithExtensionParse =
-  Assert.assertEqual
-    { actual:
-        FileSystemPath.fileNameWithExtensionParse "sample.test.js"
+  assertEqual
+    "fileNameWithExtensionParse"
+    { actual: FileSystemPath.fileNameWithExtensionParse "sample.test.js"
     , expected:
-        Maybe.Just
-          { fileName:
-              Name.fromSymbolProxy (Proxy :: _ "sample.test")
-          , fileType: Maybe.Just FileType.JavaScript
-          }
+        ( Maybe.Just
+            { fileName:
+                Name.fromSymbolProxy (Proxy :: _ "sample.test")
+            , fileType: Maybe.Just FileType.JavaScript
+            }
+        )
     }
 
-pureScriptCodeGenerate :: Effect.Effect Unit
+pureScriptCodeGenerate :: TestUnit.Test
 pureScriptCodeGenerate =
-  Assert.assertEqual
+  assertEqual
+    "pureScriptCodeGenerate"
     { actual:
         PureScriptToString.toString
           ( PureScriptData.Module
@@ -168,7 +177,7 @@ sample = "改行も\nしっかりエスケープされてるかな?"
 """
     }
 
-nonEmptyArrayGetAtLoop :: Effect.Effect Unit
+nonEmptyArrayGetAtLoop :: TestUnit.Test
 nonEmptyArrayGetAtLoop = do
   nonEmptyArrayGetAtLoopZero
   nonEmptyArrayGetAtLoopOne
@@ -176,19 +185,22 @@ nonEmptyArrayGetAtLoop = do
   nonEmptyArrayGetAtLoopLoopTwo
   nonEmptyArrayGetAtLoopOneElement
 
-nonEmptyArrayGetAtLoopZero :: Effect.Effect Unit
+nonEmptyArrayGetAtLoopZero :: TestUnit.Test
 nonEmptyArrayGetAtLoopZero =
-  Assert.assertEqual
+  assertEqual
+    "nonEmptyArrayGetAtLoopZero"
     { actual:
-        Util.nonEmptyArrayGetAtLoop
-          (NonEmptyArray.cons' "a" [ "b", "c" ])
-          (UInt.fromInt 0)
+        ( Util.nonEmptyArrayGetAtLoop
+            (NonEmptyArray.cons' "a" [ "b", "c" ])
+            (UInt.fromInt 0)
+        )
     , expected: "a"
     }
 
-nonEmptyArrayGetAtLoopOne :: Effect.Effect Unit
+nonEmptyArrayGetAtLoopOne :: TestUnit.Test
 nonEmptyArrayGetAtLoopOne =
-  Assert.assertEqual
+  assertEqual
+    "nonEmptyArrayGetAtLoopOne"
     { actual:
         Util.nonEmptyArrayGetAtLoop
           (NonEmptyArray.cons' "a" [ "b", "c" ])
@@ -196,9 +208,10 @@ nonEmptyArrayGetAtLoopOne =
     , expected: "b"
     }
 
-nonEmptyArrayGetAtLoopLoopOne :: Effect.Effect Unit
+nonEmptyArrayGetAtLoopLoopOne :: TestUnit.Test
 nonEmptyArrayGetAtLoopLoopOne =
-  Assert.assertEqual
+  assertEqual
+    "nonEmptyArrayGetAtLoopLoopOne"
     { actual:
         Util.nonEmptyArrayGetAtLoop
           (NonEmptyArray.cons' "a" [ "b", "c" ])
@@ -206,9 +219,10 @@ nonEmptyArrayGetAtLoopLoopOne =
     , expected: "b"
     }
 
-nonEmptyArrayGetAtLoopLoopTwo :: Effect.Effect Unit
+nonEmptyArrayGetAtLoopLoopTwo :: TestUnit.Test
 nonEmptyArrayGetAtLoopLoopTwo =
-  Assert.assertEqual
+  assertEqual
+    "nonEmptyArrayGetAtLoopLoopTwo"
     { actual:
         Util.nonEmptyArrayGetAtLoop
           (NonEmptyArray.cons' "a" [ "b", "c" ])
@@ -216,9 +230,10 @@ nonEmptyArrayGetAtLoopLoopTwo =
     , expected: "a"
     }
 
-nonEmptyArrayGetAtLoopOneElement :: Effect.Effect Unit
+nonEmptyArrayGetAtLoopOneElement :: TestUnit.Test
 nonEmptyArrayGetAtLoopOneElement =
-  Assert.assertEqual
+  assertEqual
+    "nonEmptyArrayGetAtLoopOneElement"
     { actual:
         Util.nonEmptyArrayGetAtLoop
           (NonEmptyArray.cons' "a" [])

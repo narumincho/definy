@@ -6,12 +6,12 @@ import Prelude
 import Data.Map as Map
 import Data.String.NonEmpty as NonEmptyString
 import Data.Tuple as Tuple
-import Effect as Effect
 import StructuredUrl as StructuredUrl
-import Test.Assert as Assert
+import Test.Unit as TestUnit
 import Type.Proxy (Proxy(..))
+import Test.Util (assertEqual)
 
-test :: Effect.Effect Unit
+test :: TestUnit.Test
 test = do
   rootEmpty
   rootSlash
@@ -21,45 +21,50 @@ test = do
   searchParamsRemoveEmpty
   searchParamsSpace
 
-rootEmpty :: Effect.Effect Unit
+rootEmpty :: TestUnit.Test
 rootEmpty =
-  Assert.assertEqual
+  assertEqual
+    "rootEmpty"
     { actual: StructuredUrl.nodeHttpUrlToPathAndSearchParams ""
     , expected:
         StructuredUrl.PathAndSearchParams
           { path: [], searchParams: Map.empty }
     }
 
-rootSlash :: Effect.Effect Unit
+rootSlash :: TestUnit.Test
 rootSlash =
-  Assert.assertEqual
+  assertEqual
+    "rootSlash"
     { actual: StructuredUrl.nodeHttpUrlToPathAndSearchParams "/"
     , expected:
         StructuredUrl.PathAndSearchParams
           { path: [], searchParams: Map.empty }
     }
 
-pathOne :: Effect.Effect Unit
+pathOne :: TestUnit.Test
 pathOne =
-  Assert.assertEqual
+  assertEqual
+    "pathOne"
     { actual: StructuredUrl.nodeHttpUrlToPathAndSearchParams "/abc"
     , expected:
         StructuredUrl.PathAndSearchParams
           { path: [ NonEmptyString.nes (Proxy :: _ "abc") ], searchParams: Map.empty }
     }
 
-pathOneSlash :: Effect.Effect Unit
+pathOneSlash :: TestUnit.Test
 pathOneSlash =
-  Assert.assertEqual
+  assertEqual
+    "pathOneSlash"
     { actual: StructuredUrl.nodeHttpUrlToPathAndSearchParams "/def/"
     , expected:
         StructuredUrl.PathAndSearchParams
           { path: [ NonEmptyString.nes (Proxy :: _ "def") ], searchParams: Map.empty }
     }
 
-pathTwo :: Effect.Effect Unit
+pathTwo :: TestUnit.Test
 pathTwo =
-  Assert.assertEqual
+  assertEqual
+    "pathTwo"
     { actual: StructuredUrl.nodeHttpUrlToPathAndSearchParams "/apple/orange"
     , expected:
         StructuredUrl.PathAndSearchParams
@@ -71,9 +76,10 @@ pathTwo =
           }
     }
 
-searchParamsRemoveEmpty :: Effect.Effect Unit
+searchParamsRemoveEmpty :: TestUnit.Test
 searchParamsRemoveEmpty =
-  Assert.assertEqual
+  assertEqual
+    "searchParamsRemoveEmpty"
     { actual: StructuredUrl.nodeHttpUrlToPathAndSearchParams "/apple/orange?a=32&empty=&=99"
     , expected:
         StructuredUrl.PathAndSearchParams
@@ -89,9 +95,10 @@ searchParamsRemoveEmpty =
           }
     }
 
-searchParamsSpace :: Effect.Effect Unit
+searchParamsSpace :: TestUnit.Test
 searchParamsSpace =
-  Assert.assertEqual
+  assertEqual
+    "searchParamsSpace"
     { actual: StructuredUrl.nodeHttpUrlToPathAndSearchParams "/apple/orange?query=sample+value"
     , expected:
         StructuredUrl.PathAndSearchParams

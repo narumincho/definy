@@ -2,6 +2,7 @@ module TypeScript.Identifier
   ( IdentifierIndex
   , TsIdentifier(..)
   , createIdentifier
+  , fromNonEmptyString
   , fromSymbolProxyUnsafe
   , initialIdentifierIndex
   , isSafePropertyName
@@ -51,17 +52,33 @@ toString (TsIdentifier nonEmptyString) = (NonEmptyString.toString nonEmptyString
 -- | プロパティ名として直接コードで指定できるかどうか
 -- | isIdentifier とは予約語を指定できるかの面で違う
 isSafePropertyName :: String -> Boolean
-isSafePropertyName word = case String.uncons word of
-  Just { head, tail } ->
-    if Prelude.not (String.contains (String.Pattern (CodePoints.singleton head)) "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ$_") then
-      false
-    else
-      Array.all
-        ( \tailChar ->
-            Prelude.not (String.contains (String.Pattern (CodePoints.singleton tailChar)) "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ$_0123456789")
-        )
-        (String.toCodePointArray tail)
+isSafePropertyName word = case NonEmptyString.fromString word of
+  Just nonEmpty -> isSafePropertyNameNonEmpty nonEmpty
   Nothing -> false
+
+isSafePropertyNameNonEmpty :: NonEmptyString -> Boolean
+isSafePropertyNameNonEmpty str =
+  let
+    { head, tail } = NonEmptyString.uncons str
+  in
+    Prelude.(&&)
+      ( String.contains
+          (String.Pattern (CodePoints.singleton head))
+          "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ$_"
+      )
+      ( Array.all
+          ( \tailChar ->
+              String.contains
+                (String.Pattern (CodePoints.singleton tailChar))
+                "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ$_0123456789"
+          )
+          ( String.toCodePointArray
+              ( case tail of
+                  Just t -> NonEmptyString.toString t
+                  Nothing -> ""
+              )
+          )
+      )
 
 -- | JavaScriptやTypeScriptによって決められた予約語と、できるだけ使いたくない語
 reservedByLanguageWordSet :: Set.Set NonEmptyString
@@ -221,3 +238,12 @@ createIdentifierByIndexLoop index =
               )
           )
           (NonEmptyString.singleton second)
+
+fromNonEmptyString :: NonEmptyString -> Maybe TsIdentifier
+fromNonEmptyString str =
+  if Prelude.(&&)
+    (isSafePropertyNameNonEmpty str)
+    (Prelude.not (Set.member str reservedByLanguageWordSet)) then
+    Just (TsIdentifier str)
+  else
+    Nothing
