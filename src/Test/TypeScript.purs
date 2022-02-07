@@ -1,5 +1,6 @@
 module Test.TypeScript
-  ( test
+  ( log100Identifier
+  , test
   ) where
 
 import Console as Console
@@ -8,10 +9,11 @@ import Data.Set as Set
 import Effect as Effect
 import Prelude as Prelude
 import TypeScript.Identifier as Identifier
+import Test.Unit as TestUnit
 
-test :: Effect.Effect Prelude.Unit
+test :: TestUnit.Test
 test = do
-  log100Identifier
+  Prelude.pure Prelude.unit
 
 log100Identifier :: Effect.Effect Prelude.Unit
 log100Identifier = Console.logValue "log100Identifier" create10000Identifier
