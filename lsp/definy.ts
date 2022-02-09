@@ -6,30 +6,57 @@ const main = (args: ReadonlyArray<string>): void => {
     return;
   }
   if (args[2] === "--language-server") {
-    receiveJsonRpcMessage((data) => {
-      if (data.type === "error") {
+    runLanguageServer();
+    return;
+  }
+  console.log("考慮していないパラメータを受け取った.", args);
+};
+
+const runLanguageServer = (): void => {
+  receiveJsonRpcMessage((request) => {
+    if (request.type === "error") {
+      sendJsonRpcMessage({
+        method: "window/logMessage",
+        params: {
+          type: 3,
+          message: `理解できないメッセージが来ました message:${
+            request.message
+          }, rawObject:${JSON.stringify(request.rawObject)}
+          `,
+        },
+      });
+      return;
+    }
+    switch (request.method) {
+      case "initialize": {
         sendJsonRpcMessage({
           method: "window/logMessage",
           params: {
             type: 3,
-            message: `理解できないメッセージが来ました message:${
-              data.message
-            }, rawObject:${JSON.stringify(data.rawObject)}
-        `,
+            message: "initialize 来たぜ",
           },
         });
-      } else {
         sendJsonRpcMessage({
-          id: data.id,
+          id: request.id,
           result: {
-            capabilities: {},
+            capabilities: {
+              textDocumentSync: 1,
+            },
+          },
+        });
+        return;
+      }
+      case "initialized": {
+        sendJsonRpcMessage({
+          method: "window/logMessage",
+          params: {
+            type: 3,
+            message: "initialized 来たぜ",
           },
         });
       }
-    });
-    return;
-  }
-  console.log("考慮していないパラメータを受け取った.", args);
+    }
+  });
 };
 
 type JsonRpcRequestOrParseError =
@@ -41,7 +68,7 @@ type JsonRpcRequestOrParseError =
   | {
       readonly type: "ok";
       readonly id: number;
-      readonly method: "initialize";
+      readonly method: "initialize" | "initialized";
     };
 
 /**
@@ -51,32 +78,35 @@ type JsonRpcRequestOrParseError =
 const receiveJsonRpcMessage = (
   callback: (data: JsonRpcRequestOrParseError) => void
 ): void => {
+  let buffer = new Uint8Array();
   process.stdin.on("data", (data) => {
-    callback(binaryToJsonRpcMessage(data));
+    const result = binaryToJsonRpcMessage(data);
+    if (result === "need more") {
+      buffer = new Uint8Array([...buffer, ...data]);
+    } else {
+      callback(result);
+      buffer = new Uint8Array();
+    }
   });
 };
 
 const binaryToJsonRpcMessage = (
   binary: Uint8Array
-): JsonRpcRequestOrParseError => {
+): JsonRpcRequestOrParseError | "need more" => {
   try {
     return stringToJsonRpcMessage(new TextDecoder().decode(binary));
   } catch (error) {
-    return { type: "error", message: "invalid UTF8", rawObject: binary };
+    return "need more";
   }
 };
 
 const stringToJsonRpcMessage = (
   message: string
-): JsonRpcRequestOrParseError => {
+): JsonRpcRequestOrParseError | "need more" => {
   const headerAndBody = message.split("\r\n\r\n");
   const body = headerAndBody[1];
   if (body === undefined) {
-    return {
-      type: "error",
-      message: "error. no body!",
-      rawObject: undefined,
-    };
+    return "need more";
   }
   try {
     const jsonValue: unknown = JSON.parse(body);
@@ -87,25 +117,31 @@ const stringToJsonRpcMessage = (
         rawObject: jsonValue,
       };
     }
-    const object = jsonValue as {
-      readonly id: unknown;
-      readonly method: unknown;
-    };
-    if (object.method === "initialize" && typeof object.id === "number") {
-      return {
-        type: "ok",
-        id: object.id,
-        method: "initialize",
-      };
-    }
-    return { type: "error", message: "unknown method...", rawObject: object };
+    return objectToJsonRpcMessage(jsonValue as JsonRpcRequestLooseObject);
   } catch (error: unknown) {
+    return "need more";
+  }
+};
+
+type JsonRpcRequestLooseObject = {
+  readonly id: unknown;
+  readonly method: unknown;
+};
+
+const objectToJsonRpcMessage = (
+  message: JsonRpcRequestLooseObject
+): JsonRpcRequestOrParseError | "need more" => {
+  if (typeof message.id !== "number") {
+    return { type: "error", message: "unknown id type", rawObject: message };
+  }
+  if (message.method === "initialize" || message.method === "initialized") {
     return {
-      type: "error",
-      message: `error. body is not valid json.`,
-      rawObject: message,
+      type: "ok",
+      id: message.id,
+      method: message.method,
     };
   }
+  return { type: "error", message: "unknown method...", rawObject: message };
 };
 
 type JsonRpcResponse =
@@ -118,13 +154,15 @@ type JsonRpcResponse =
     }
   | {
       readonly id: number;
-      readonly result: { readonly capabilities: Record<never, never> };
+      readonly result: {
+        readonly capabilities: { readonly textDocumentSync: 1 };
+      };
     };
 
 /**
  * JSON-RPC 2.0 でメッセージを標準出力(`stdout`) に送る
  */
-const sendJsonRpcMessage = (message: JsonRpcResponse) => {
+const sendJsonRpcMessage = (message: JsonRpcResponse): void => {
   const jsonValue = JSON.stringify({
     jsonrpc: "2.0",
     ...message,
