@@ -6,7 +6,8 @@
       "type": "extensionHost",
       "request": "launch",
       "runtimeExecutable": "${execPath}",
-      "args": ["--extensionDevelopmentPath=${workspaceFolder}/lsp"]
+      "args": ["--extensionDevelopmentPath=${workspaceFolder}/lsp"],
+      "preLaunchTask": "lsp-compile"
     }
   ]
 }
