@@ -17,6 +17,9 @@ jobs:
           node-version: "16"
       - name: Install npm dependencies (npm ci)
         run: npm ci
+      - name: Install npm dependencies in lsp
+        run: npm ci
+        working-directory: ./lsp
       - name: PureScript FFI Code TypeScript → JavaScript
         run: npx tsc --project ./tsconfig-purs-ffi.json
       - name: PureScript Build
