@@ -27,7 +27,7 @@
     {
       "label": "lsp-compile",
       "type": "shell",
-      "command": "npx spago run --main Lsp.Build && npx tsc --project ./lsp/tsconfig.json"
+      "command": "npx spago run --main VsCodeExtension.Build && npx tsc --project ./lsp/tsconfig.json"
     }
   ]
 }

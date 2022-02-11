@@ -1,4 +1,4 @@
-module Lsp.Build
+module VsCodeExtension.Build
   ( main
   ) where
 
