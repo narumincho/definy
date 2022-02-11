@@ -1,10 +1,10 @@
 import { build } from "esbuild";
 
 export const buildAsEffectFnAff = (option: {
-  entryPoints: string;
-  outDir: string;
-  sourcemap: boolean;
-  target: string;
+  readonly entryPoints: string;
+  readonly outDir: string;
+  readonly sourcemap: boolean;
+  readonly target: string;
 }): ((
   onError: (error: Error) => void,
   onSuccess: () => void
