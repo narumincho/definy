@@ -4,7 +4,7 @@ import { LanguageClient } from "vscode-languageclient/node";
 // eslint-disable-next-line no-undef-init
 let client: LanguageClient | undefined = undefined;
 
-export const activate = (context: ExtensionContext): void => {
+export const activateFunc = (context: ExtensionContext): void => {
   client = new LanguageClient(
     "definy-lsp",
     {
@@ -18,7 +18,7 @@ export const activate = (context: ExtensionContext): void => {
   context.subscriptions.push(client.start());
 };
 
-export const deactivate = (): Promise<void> | undefined => {
+export const deactivateFunc = (): Promise<void> | undefined => {
   if (client !== undefined) {
     return client.stop();
   }
