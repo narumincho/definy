@@ -2,6 +2,7 @@ module TypeScript.Identifier
   ( IdentifierIndex
   , TsIdentifier(..)
   , createIdentifier
+  , fromDefinyIdentifierEscapeReserved
   , fromNonEmptyString
   , fromSymbolProxyUnsafe
   , initialIdentifierIndex
@@ -21,6 +22,7 @@ import Data.String.NonEmpty (NonEmptyString)
 import Data.String.NonEmpty as NonEmptyString
 import Data.String.NonEmpty.CodePoints as NonEmptyCodePoints
 import Data.UInt as UInt
+import Definy.Identifier as DefinyIdentifier
 import Prelude as Prelude
 import Type.Proxy (Proxy(..))
 import Util as Util
@@ -62,16 +64,9 @@ isSafePropertyNameNonEmpty str =
     { head, tail } = NonEmptyString.uncons str
   in
     Prelude.(&&)
-      ( String.contains
-          (String.Pattern (CodePoints.singleton head))
-          "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ$_"
-      )
+      (headCodePointSafe head)
       ( Array.all
-          ( \tailChar ->
-              String.contains
-                (String.Pattern (CodePoints.singleton tailChar))
-                "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ$_0123456789"
-          )
+          tailCodePointSafe
           ( String.toCodePointArray
               ( case tail of
                   Just t -> NonEmptyString.toString t
@@ -79,6 +74,18 @@ isSafePropertyNameNonEmpty str =
               )
           )
       )
+
+headCodePointSafe :: CodePoints.CodePoint -> Boolean
+headCodePointSafe head =
+  String.contains
+    (String.Pattern (CodePoints.singleton head))
+    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ$_"
+
+tailCodePointSafe :: CodePoints.CodePoint -> Boolean
+tailCodePointSafe tail =
+  String.contains
+    (String.Pattern (CodePoints.singleton tail))
+    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ$_0123456789"
 
 -- | JavaScriptやTypeScriptによって決められた予約語と、できるだけ使いたくない語
 reservedByLanguageWordSet :: Set.Set NonEmptyString
@@ -247,3 +254,15 @@ fromNonEmptyString str =
     Just (TsIdentifier str)
   else
     Nothing
+
+-- | `NonEmptyString` から `TsIdentifier` を無理矢理でも生成する.
+-- | 識別子に使えない文字が含まれていた場合, 末尾に_がつくか, $マークでエンコードされる
+fromDefinyIdentifierEscapeReserved :: DefinyIdentifier.Identifier -> TsIdentifier
+fromDefinyIdentifierEscapeReserved definyIdentifier =
+  let
+    nonEmptyString = DefinyIdentifier.identifierToNonEmptyString definyIdentifier
+  in
+    if Set.member nonEmptyString reservedByLanguageWordSet then
+      TsIdentifier (NonEmptyString.appendString nonEmptyString "_")
+    else
+      TsIdentifier nonEmptyString
