@@ -9,7 +9,7 @@
   },
   "scripts": {
     "typeCheck": "tsc --project tsconfig.json --noEmit",
-    "test": "jest & npx tsc --project ./tsconfig-purs-ffi.json & spago test",
+    "test": "jest && npx tsc --project ./tsconfig-purs-ffi.json & spago test",
     "generate-graph": "depcruise -X node_modules --output-type dot client/main.tsx functions/main.ts core/main.ts build/main.ts | dot -T svg > graph.svg",
     "generate-local-data": "npx tsc --project ./tsconfig-purs-ffi.json & spago run --main DataTs.Build",
     "build-node-package": "npx tsc --project ./tsconfig-purs-ffi.json & spago run --main BuildNodePackage",
