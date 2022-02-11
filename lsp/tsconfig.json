@@ -13,7 +13,7 @@
     "jsx": "react",
     "noUncheckedIndexedAccess": true,
     "exactOptionalPropertyTypes": true,
-    "outDir": "./distribution"
+    "outDir": "../distribution/definy-lsp"
   },
   "exclude": ["distribution"]
 }

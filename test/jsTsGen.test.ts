@@ -578,7 +578,7 @@ describe("test", () => {
     };
     const codeAsString = jsTs.generateCodeAsString(code, "TypeScript");
     console.log(codeAsString);
-    expect(codeAsString).toMatch(/as Date/u);
+    expect(codeAsString).toMatch(/as globalThis.Date/u);
   });
   it("Type Intersection", () => {
     const code: d.JsTsCode = d.JsTsCode.helper({
@@ -597,7 +597,7 @@ describe("test", () => {
     });
     const codeAsString = jsTs.generateCodeAsString(code, "TypeScript");
     console.log(codeAsString);
-    expect(codeAsString).toMatch(/Date & Uint8Array/u);
+    expect(codeAsString).toMatch(/globalThis.Date & globalThis.Uint8Array/u);
   });
 
   it("object literal spread syntax", () => {

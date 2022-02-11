@@ -103,8 +103,8 @@ fromString name = case NonEmptyString.fromString name of
   Just nonEmptyName -> fromNonEmptyString nonEmptyName
   Nothing -> Nothing
 
--- | Proxy symbol から作成する. 含まれる文字のチェックはするが,
--- | 予約されていて名前に関してはチェックしないので, コード内に気をつけて書く.
+-- | Proxy symbol から作成する. 
+-- | いろいろとコンパイル時に不正な文字が含まれていないか検査してくれる
 fromSymbolProxy ::
   forall (symbol :: Symbol).
   (Symbol.IsSymbol symbol) =>
