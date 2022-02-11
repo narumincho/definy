@@ -3,11 +3,10 @@
   "version": "0.0.0",
   "description": "",
   "main": "./distribution/extension.js",
-  "scripts": {
-    "compile": "npx tsc"
-  },
-  "keywords": [],
-  "author": "",
+  "keywords": [
+    "definy"
+  ],
+  "author": "narumincho",
   "license": "ISC",
   "activationEvents": [
     "onLanguage:definy"
