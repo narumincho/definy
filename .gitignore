@@ -1,12 +1,11 @@
-node_modules
+node_modules/
+distribution/
 *.log
 /out.ts
 /viewApp.js
 /localData.js
-/distribution
 /src/**/**.js
 /bower_components/
-/node_modules/
 /.pulp-cache/
 /output/**/**.js
 /output/**/**.cbor

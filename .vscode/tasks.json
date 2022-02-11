@@ -23,6 +23,11 @@
       "problemMatcher": [],
       "label": "型チェックをする",
       "detail": "tsc --project tsconfig.json --noEmit"
+    },
+    {
+      "label": "lsp-compile",
+      "type": "shell",
+      "command": "cd ./lsp && npx tsc"
     }
   ]
 }
