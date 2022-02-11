@@ -9,10 +9,7 @@ export const activate = (context: ExtensionContext): void => {
     "definy-lsp",
     {
       command: "node",
-      args: [
-        context.extensionPath + "/distribution/definy.js",
-        "--language-server",
-      ],
+      args: [context.extensionPath + "/definy.js", "--language-server"],
     },
     {
       documentSelector: [{ scheme: "file", language: "definy" }],

@@ -1,5 +1,5 @@
-node_modules/
-distribution/
+/node_modules/
+/distribution/
 *.log
 /out.ts
 /viewApp.js

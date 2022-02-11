@@ -197,8 +197,8 @@ generatePackageJson dependencies =
                       ]
                 }
           , name: name
-          , nodeVersion:
-              NonEmptyString.nes (Proxy :: _ ">=14")
+          , nodeVersionMaybe:
+              Just (NonEmptyString.nes (Proxy :: _ ">=14"))
           , typeFilePath:
               Maybe.Just
                 ( NonEmptyString.nes
@@ -206,6 +206,9 @@ generatePackageJson dependencies =
                 )
           , version:
               NonEmptyString.nes (Proxy :: _ "1.0.7")
+          , vsCodeVersionMaybe: Nothing
+          , activationEvents: Nothing
+          , contributesLanguages: Nothing
           }
     )
     ( PackageJson.nameFromNonEmptyString

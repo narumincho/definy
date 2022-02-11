@@ -10,7 +10,6 @@ import Data.Array.NonEmpty as NonEmptyArray
 import Data.Either as Either
 import Data.Map as Map
 import Data.Maybe (Maybe(..))
-import Data.Maybe as Maybe
 import Data.Set as Set
 import Data.String.NonEmpty (NonEmptyString)
 import Data.String.NonEmpty as NonEmptyString
@@ -130,21 +129,14 @@ writePackageJsonForFunctions = do
     PackageJson.readPackageVersionFromRootPackageJson usingPackageInFunctions
   case rootPackageJsonResult of
     Either.Left error -> ConsoleValue.logValueAsAff "jsonの parse エラー!" { error }
-    Either.Right dependencies -> case generatePackageJson dependencies of
-      Just packageJson ->
-        FileSystemWrite.writeJson
-          ( Path.DistributionFilePath
-              { directoryPath: functionsDistributionDirectoryPath
-              , fileName:
-                  Name.fromSymbolProxy
-                    (Proxy :: _ "package")
-              }
-          )
-          (PackageJson.toJson packageJson)
-      Nothing ->
-        ConsoleValue.logValueAsAff
-          "definyの Functions 向けの package.json のパッケージの名のエラー"
-          {}
+    Either.Right dependencies ->
+      FileSystemWrite.writeJson
+        ( Path.DistributionFilePath
+            { directoryPath: functionsDistributionDirectoryPath
+            , fileName: Name.fromSymbolProxy (Proxy :: _ "package")
+            }
+        )
+        (PackageJson.toJson (generatePackageJson dependencies))
 
 usingPackageInFunctions :: Set.Set NonEmptyString
 usingPackageInFunctions =
@@ -165,50 +157,42 @@ usingPackageInFunctions =
         (Proxy :: _ "sha256-uint8array")
     ]
 
-generatePackageJson :: Map.Map NonEmptyString NonEmptyString -> Maybe.Maybe PackageJson.PackageJsonInput
+generatePackageJson :: Map.Map NonEmptyString NonEmptyString -> PackageJson.PackageJsonInput
 generatePackageJson dependencies =
-  map
-    ( \name ->
-        PackageJson.PackageJsonInput
-          { author:
-              NonEmptyString.nes
-                (Proxy :: _ "narumincho")
-          , dependencies: dependencies
-          , description:
-              NonEmptyString.nes
-                (Proxy :: _ "definy in Cloud Functions for Firebase")
-          , entryPoint:
-              NonEmptyString.nes
-                (Proxy :: _ "functions/main.js")
-          , gitHubAccountName:
-              NonEmptyString.nes
-                (Proxy :: _ "narumincho")
-          , gitHubRepositoryName:
-              NonEmptyString.nes (Proxy :: _ "definy")
-          , homepage:
-              StructuredUrl.StructuredUrl
-                { origin:
-                    NonEmptyString.nes (Proxy :: _ "https://github.com")
-                , pathAndSearchParams:
-                    StructuredUrl.fromPath
-                      [ NonEmptyString.nes (Proxy :: _ "narumincho")
-                      , NonEmptyString.nes (Proxy :: _ "definy")
-                      ]
-                }
-          , name: name
-          , nodeVersion:
-              NonEmptyString.nes (Proxy :: _ "16")
-          , typeFilePath:
-              Nothing
-          , version:
-              NonEmptyString.nes (Proxy :: _ "1.0.0")
+  PackageJson.PackageJsonInput
+    { author:
+        NonEmptyString.nes
+          (Proxy :: _ "narumincho")
+    , dependencies: dependencies
+    , description:
+        NonEmptyString.nes
+          (Proxy :: _ "definy in Cloud Functions for Firebase")
+    , entryPoint:
+        NonEmptyString.nes
+          (Proxy :: _ "./functions/main.js")
+    , gitHubAccountName:
+        NonEmptyString.nes
+          (Proxy :: _ "narumincho")
+    , gitHubRepositoryName:
+        NonEmptyString.nes (Proxy :: _ "definy")
+    , homepage:
+        StructuredUrl.StructuredUrl
+          { origin:
+              NonEmptyString.nes (Proxy :: _ "https://github.com")
+          , pathAndSearchParams:
+              StructuredUrl.fromPath
+                [ NonEmptyString.nes (Proxy :: _ "narumincho")
+                , NonEmptyString.nes (Proxy :: _ "definy")
+                ]
           }
-    )
-    ( PackageJson.nameFromNonEmptyString
-        ( NonEmptyString.nes
-            (Proxy :: _ "definy-functions")
-        )
-    )
+    , name: PackageJson.nameFromSymbolProxy (Proxy :: _ "definy-functions")
+    , nodeVersionMaybe: Just (NonEmptyString.nes (Proxy :: _ "16"))
+    , vsCodeVersionMaybe: Nothing
+    , typeFilePath: Nothing
+    , version: NonEmptyString.nes (Proxy :: _ "1.0.0")
+    , activationEvents: Nothing
+    , contributesLanguages: Nothing
+    }
 
 definyModuleName :: NonEmptyString
 definyModuleName =

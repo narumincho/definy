@@ -1,11 +1,12 @@
 module PackageJson
-  ( Name
+  ( ContributesLanguages(..)
+  , Name
   , PackageJsonInput(..)
   , PackageJsonOutput
   , devDependencies
   , fromJson
   , nameFromNonEmptyString
-  , nameFromNonEmptyStringUnsafe
+  , nameFromSymbolProxy
   , readPackageVersionFromRootPackageJson
   , toJson
   ) where
@@ -13,6 +14,8 @@ module PackageJson
 import Prelude
 import Data.Argonaut.Core as ArgonautCore
 import Data.Array as Array
+import Data.Array.NonEmpty (NonEmptyArray)
+import Data.Array.NonEmpty as NonEmptyArray
 import Data.Either as Either
 import Data.Map as Map
 import Data.Maybe (Maybe(..))
@@ -28,6 +31,7 @@ import FileSystem.Path as Path
 import FileSystem.Read as FileSystemRead
 import Foreign.Object as Object
 import StructuredUrl as StructuredUrl
+import Type.Data.Symbol as Symbol
 import Type.Proxy (Proxy(..))
 import Util as Util
 
@@ -44,9 +48,18 @@ newtype PackageJsonInput
   , entryPoint :: NonEmptyString
   , homepage :: StructuredUrl.StructuredUrl
   , author :: NonEmptyString
-  , nodeVersion :: NonEmptyString
+  , nodeVersionMaybe :: Maybe NonEmptyString
+  , vsCodeVersionMaybe :: Maybe NonEmptyString
   , dependencies :: Map.Map NonEmptyString NonEmptyString
   , {- 型定義(.d.ts か .ts ??)のファイルパス -} typeFilePath :: Maybe NonEmptyString
+  , activationEvents :: Maybe (Array NonEmptyString)
+  , contributesLanguages :: Maybe (NonEmptyArray ContributesLanguages)
+  }
+
+newtype ContributesLanguages
+  = ContributesLanguages
+  { id :: NonEmptyString
+  , extensions :: Array NonEmptyString
   }
 
 newtype PackageJsonOutput
@@ -66,8 +79,13 @@ nameFromNonEmptyString rawName =
   else
     Just (Name rawName)
 
-nameFromNonEmptyStringUnsafe :: NonEmptyString -> Name
-nameFromNonEmptyStringUnsafe rawName = Name rawName
+nameFromSymbolProxy :: forall symbol. (Symbol.IsSymbol symbol) => Proxy symbol -> Name
+nameFromSymbolProxy symbol =
+  Name
+    ( case NonEmptyString.fromString (Symbol.reflectSymbol symbol) of
+        Just nonEmpty -> nonEmpty
+        Nothing -> NonEmptyString.nes (Proxy :: _ "packageJsonNameError")
+    )
 
 nameToNonEmptyString :: Name -> NonEmptyString
 nameToNonEmptyString (Name name) = name
@@ -108,8 +126,19 @@ toJson (PackageJsonInput packageJson) =
           , Tuple.Tuple "author" (Util.jsonFromNonEmptyString packageJson.author)
           , Tuple.Tuple "engines"
               ( Util.tupleListToJson
-                  [ Tuple.Tuple "node" (Util.jsonFromNonEmptyString packageJson.nodeVersion)
-                  ]
+                  ( Array.catMaybes
+                      [ case packageJson.nodeVersionMaybe of
+                          Just nodeVersion ->
+                            Just
+                              (Tuple.Tuple "node" (Util.jsonFromNonEmptyString nodeVersion))
+                          Nothing -> Nothing
+                      , case packageJson.vsCodeVersionMaybe of
+                          Just vsCodeVersion ->
+                            Just
+                              (Tuple.Tuple "vscode" (Util.jsonFromNonEmptyString vsCodeVersion))
+                          Nothing -> Nothing
+                      ]
+                  )
               )
           , Tuple.Tuple dependenciesPropertyName
               (dependenciesToJson packageJson.dependencies)
@@ -117,8 +146,44 @@ toJson (PackageJsonInput packageJson) =
         , case packageJson.typeFilePath of
             Just typeFilePath -> [ Tuple.Tuple "types" (Util.jsonFromNonEmptyString typeFilePath) ]
             Nothing -> []
+        , case packageJson.activationEvents of
+            Just activationEvents ->
+              [ Tuple.Tuple "activationEvents"
+                  ( ArgonautCore.fromArray
+                      (map Util.jsonFromNonEmptyString activationEvents)
+                  )
+              ]
+            Nothing -> []
+        , case packageJson.contributesLanguages of
+            Just contributesLanguages ->
+              [ Tuple.Tuple "contributes"
+                  (createContributesValue contributesLanguages)
+              ]
+            Nothing -> []
         ]
     )
+
+createContributesValue :: NonEmptyArray ContributesLanguages -> ArgonautCore.Json
+createContributesValue languageList =
+  Util.tupleListToJson
+    [ Tuple.Tuple "languages"
+        ( ArgonautCore.fromArray
+            ( NonEmptyArray.toArray
+                (map createContributesLanguages languageList)
+            )
+        )
+    ]
+
+createContributesLanguages :: ContributesLanguages -> ArgonautCore.Json
+createContributesLanguages (ContributesLanguages rec) =
+  Util.tupleListToJson
+    [ Tuple.Tuple "id"
+        (Util.jsonFromNonEmptyString rec.id)
+    , Tuple.Tuple "extensions"
+        ( ArgonautCore.fromArray
+            (map Util.jsonFromNonEmptyString rec.extensions)
+        )
+    ]
 
 dependenciesToJson :: Map.Map NonEmptyString NonEmptyString -> ArgonautCore.Json
 dependenciesToJson dependencies =
