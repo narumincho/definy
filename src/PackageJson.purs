@@ -137,7 +137,14 @@ toJson (PackageJsonInput packageJson) =
                   )
               )
           , Tuple.Tuple dependenciesPropertyName
-              (Argonaut.encodeJson packageJson.dependencies)
+              ( Util.tupleListToJson
+                  ( map
+                      ( \(Tuple.Tuple k v) ->
+                          Tuple.Tuple (NonEmptyString.toString k) (Argonaut.encodeJson v)
+                      )
+                      (Map.toUnfoldable packageJson.dependencies)
+                  )
+              )
           ]
         , case packageJson.typeFilePath of
             Just typeFilePath -> [ Tuple.Tuple "types" (Argonaut.encodeJson typeFilePath) ]
