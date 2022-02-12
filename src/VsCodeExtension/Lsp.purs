@@ -6,7 +6,6 @@ import Data.Array as Array
 import Data.Either as Either
 import Data.Maybe (Maybe(..))
 import Data.String as String
-import Data.Tuple as Tuple
 import Effect as Effect
 import Effect.Uncurried as EffectUncurried
 import Foreign.Object as Object
@@ -14,7 +13,6 @@ import Node.Buffer as Buffer
 import Node.Encoding as Encoding
 import Node.Process as Process
 import Node.Stream as Stream
-import Util as Util
 
 main :: Effect.Effect Unit
 main =
@@ -61,17 +59,37 @@ jsonRpcRequestParse request = case Array.index
     Either.Left parseError ->
       Either.Left
         (append "JSON のパースに失敗した 一度に送られなかった?" parseError)
-  Nothing -> Either.Left "一度に送られなかった?"
+  Nothing -> Either.Left "一度に送られなかった? ヘッダーとJSONの区切りが見つからなかった"
 
 jsonToJsonRpcRequestResult :: Argonaut.Json -> Either.Either String JsonRpcRequest
 jsonToJsonRpcRequestResult json = case Argonaut.toObject json of
-  Just jsonAsObj -> case Tuple.Tuple
-      (Object.lookup "id" jsonAsObj)
-      (Object.lookup "method" jsonAsObj) of
-    Tuple.Tuple (Just idJson) (Just methodJson) -> case Tuple.Tuple (Argonaut.toNumber idJson) (Argonaut.toString methodJson) of
-      Tuple.Tuple _ _ -> Either.Left "wip...."
-    Tuple.Tuple _ _ -> Either.Left "wip"
+  Just jsonAsObj -> case jsonObjectToJsonRpcRequestResult jsonAsObj of
+    Either.Right r -> Either.Right r
+    Either.Left l -> Either.Left (Argonaut.printJsonDecodeError l)
   Nothing -> Either.Left "json のルートの値が object ではなかった"
+
+jsonObjectToJsonRpcRequestResult :: Object.Object Argonaut.Json -> Either.Either Argonaut.JsonDecodeError JsonRpcRequest
+jsonObjectToJsonRpcRequestResult jsonObject = do
+  (method :: String) <- Argonaut.getField jsonObject "method"
+  ( case method of
+      "initialize" -> do
+        (id :: Int) <- Argonaut.getField jsonObject "id"
+        Either.Right (Initialize (JsonRpcId id))
+      "Initialized" -> do
+        (id :: Int) <- Argonaut.getField jsonObject "id"
+        Either.Right (Initialized (JsonRpcId id))
+      "textDocument/didOpen" -> do
+        (textDocument :: Object.Object Argonaut.Json) <- Argonaut.getField jsonObject "textDocument"
+        (uri :: String) <- Argonaut.getField textDocument "uri"
+        Either.Right (TextDocumentDidOpen { uri })
+      "textDocument/didChange" -> do
+        (textDocument :: Object.Object Argonaut.Json) <- Argonaut.getField jsonObject "textDocument"
+        (uri :: String) <- Argonaut.getField textDocument "uri"
+        Either.Right (TextDocumentDidOpen { uri })
+      _ ->
+        Either.Left
+          (Argonaut.TypeMismatch (append "unknown method " method))
+  )
 
 data JsonRpcResponse
   = WindowLogMessage String
@@ -108,15 +126,10 @@ jsonRpcResponseToBinary response =
 jsonRpcResponseToJson :: JsonRpcResponse -> Argonaut.Json
 jsonRpcResponseToJson = case _ of
   WindowLogMessage message ->
-    Util.tupleListToJson
-      [ Tuple.Tuple "method" (Argonaut.fromString "window/logMessage")
-      , Tuple.Tuple "params"
-          ( Util.tupleListToJson
-              [ Tuple.Tuple "type" (Argonaut.fromNumber 3.0)
-              , Tuple.Tuple "message" (Argonaut.fromString message)
-              ]
-          )
-      ]
+    Argonaut.encodeJson
+      { method: "window/logMessage"
+      , params: { type: 3.0, message }
+      }
 
 foreign import appendChunk :: EffectUncurried.EffectFn1 Buffer.Buffer Unit
 

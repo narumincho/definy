@@ -1,7 +1,6 @@
 module Util
   ( class RowTraversable
   , groupBySize
-  , jsonFromNonEmptyString
   , listUpdateAtOverAutoCreate
   , nonEmptyArrayGetAtLoop
   , numberToString
@@ -11,13 +10,11 @@ module Util
   , toParallel
   , toParallelWithReturn
   , traverseRow
-  , tupleListToJson
   ) where
 
 import Prelude
 import Control.Applicative as Applicative
 import Control.Parallel as Parallel
-import Data.Argonaut as Argonaut
 import Data.Array as Array
 import Data.Array.NonEmpty (NonEmptyArray)
 import Data.Array.NonEmpty as NonEmptyArray
@@ -26,13 +23,10 @@ import Data.Maybe (Maybe(..))
 import Data.Maybe as Maybe
 import Data.Ord as Ord
 import Data.String as String
-import Data.String.NonEmpty (NonEmptyString)
-import Data.String.NonEmpty as NonEmptyString
 import Data.Symbol as Symbol
 import Data.Tuple as Tuple
 import Data.UInt as UInt
 import Effect.Aff as Aff
-import Foreign.Object as Object
 import Math as Math
 import Option as Option
 import Prim.Row as Row
@@ -97,14 +91,6 @@ toParallel list = map (\_ -> unit) (Parallel.parSequence list)
 -- | Aff を 並列実行する. 返ってきた値を使う
 toParallelWithReturn :: forall e. Array (Aff.Aff e) -> Aff.Aff (Array e)
 toParallelWithReturn list = Parallel.parSequence list
-
-tupleListToJson :: Array (Tuple.Tuple String Argonaut.Json) -> Argonaut.Json
-tupleListToJson list = Argonaut.fromObject (Object.fromFoldable list)
-
-jsonFromNonEmptyString :: NonEmptyString -> Argonaut.Json
-jsonFromNonEmptyString nonEmptyString =
-  Argonaut.fromString
-    (NonEmptyString.toString nonEmptyString)
 
 class RowTraversable :: RowList Type -> Row Type -> Row Type -> (Type -> Type) -> (Type -> Type) -> Constraint
 class RowTraversable list xs ys m f | list -> ys m where

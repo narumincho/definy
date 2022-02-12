@@ -15,7 +15,6 @@ import Prelude
 import Data.Argonaut as Argonaut
 import Data.Array as Array
 import Data.Array.NonEmpty (NonEmptyArray)
-import Data.Array.NonEmpty as NonEmptyArray
 import Data.Either as Either
 import Data.Map as Map
 import Data.Maybe (Maybe(..))
@@ -33,7 +32,6 @@ import Foreign.Object as Object
 import StructuredUrl as StructuredUrl
 import Type.Data.Symbol as Symbol
 import Type.Proxy (Proxy(..))
-import Util as Util
 
 newtype Name
   = Name NonEmptyString
@@ -95,62 +93,59 @@ nameToNonEmptyString (Name name) = name
 -- | クリエイティブ・コモンズは, ロゴ用意してあったり, サイトも翻訳されていたりとしっかりしているので, 使いたいが, GitHub でリポジトリを作成するときの選択肢に出ないため, 各サイトのUI があまり対応していないと判断したため今回は選択肢なし
 toJson :: PackageJsonInput -> Argonaut.Json
 toJson (PackageJsonInput packageJson) =
-  Util.tupleListToJson
+  Argonaut.encodeJson
     ( Array.concat
-        [ [ Tuple.Tuple "name" (Util.jsonFromNonEmptyString (nameToNonEmptyString packageJson.name))
-          , Tuple.Tuple "version" (Util.jsonFromNonEmptyString packageJson.version)
-          , Tuple.Tuple "description" (Util.jsonFromNonEmptyString packageJson.description)
+        [ [ Tuple.Tuple "name" (Argonaut.encodeJson (nameToNonEmptyString packageJson.name))
+          , Tuple.Tuple "version" (Argonaut.encodeJson packageJson.version)
+          , Tuple.Tuple "description" (Argonaut.encodeJson packageJson.description)
           , Tuple.Tuple "repository"
-              ( Util.tupleListToJson
-                  [ Tuple.Tuple "type" (Argonaut.fromString "git")
-                  , Tuple.Tuple "url"
-                      ( Argonaut.fromString
-                          ( String.joinWith
-                              ""
-                              [ "git+https://github.com/"
-                              , NonEmptyString.toString packageJson.gitHubAccountName
-                              , "/"
-                              , NonEmptyString.toString packageJson.gitHubRepositoryName
-                              , ".git"
-                              ]
-                          )
-                      )
-                  ]
+              ( Argonaut.encodeJson
+                  { type: "git"
+                  , url:
+                      String.joinWith
+                        ""
+                        [ "git+https://github.com/"
+                        , NonEmptyString.toString packageJson.gitHubAccountName
+                        , "/"
+                        , NonEmptyString.toString packageJson.gitHubRepositoryName
+                        , ".git"
+                        ]
+                  }
               )
           , Tuple.Tuple "license" (Argonaut.fromString "MIT")
-          , Tuple.Tuple "main" (Util.jsonFromNonEmptyString packageJson.entryPoint)
+          , Tuple.Tuple "main" (Argonaut.encodeJson packageJson.entryPoint)
           , Tuple.Tuple "homepage"
-              ( Util.jsonFromNonEmptyString
+              ( Argonaut.encodeJson
                   (StructuredUrl.toString packageJson.homepage)
               )
-          , Tuple.Tuple "author" (Util.jsonFromNonEmptyString packageJson.author)
+          , Tuple.Tuple "author" (Argonaut.encodeJson packageJson.author)
           , Tuple.Tuple "engines"
-              ( Util.tupleListToJson
+              ( Argonaut.encodeJson
                   ( Array.catMaybes
                       [ case packageJson.nodeVersionMaybe of
                           Just nodeVersion ->
                             Just
-                              (Tuple.Tuple "node" (Util.jsonFromNonEmptyString nodeVersion))
+                              (Tuple.Tuple "node" (Argonaut.encodeJson nodeVersion))
                           Nothing -> Nothing
                       , case packageJson.vsCodeVersionMaybe of
                           Just vsCodeVersion ->
                             Just
-                              (Tuple.Tuple "vscode" (Util.jsonFromNonEmptyString vsCodeVersion))
+                              (Tuple.Tuple "vscode" (Argonaut.encodeJson vsCodeVersion))
                           Nothing -> Nothing
                       ]
                   )
               )
           , Tuple.Tuple dependenciesPropertyName
-              (dependenciesToJson packageJson.dependencies)
+              (Argonaut.encodeJson packageJson.dependencies)
           ]
         , case packageJson.typeFilePath of
-            Just typeFilePath -> [ Tuple.Tuple "types" (Util.jsonFromNonEmptyString typeFilePath) ]
+            Just typeFilePath -> [ Tuple.Tuple "types" (Argonaut.encodeJson typeFilePath) ]
             Nothing -> []
         , case packageJson.activationEvents of
             Just activationEvents ->
               [ Tuple.Tuple "activationEvents"
                   ( Argonaut.fromArray
-                      (map Util.jsonFromNonEmptyString activationEvents)
+                      (map Argonaut.encodeJson activationEvents)
                   )
               ]
             Nothing -> []
@@ -165,30 +160,13 @@ toJson (PackageJsonInput packageJson) =
 
 createContributesValue :: NonEmptyArray ContributesLanguages -> Argonaut.Json
 createContributesValue languageList =
-  Util.tupleListToJson
-    [ Tuple.Tuple "languages"
-        ( Argonaut.fromArray
-            ( NonEmptyArray.toArray
-                (map createContributesLanguages languageList)
-            )
-        )
-    ]
+  Argonaut.encodeJson
+    { languages:
+        map createContributesLanguages languageList
+    }
 
 createContributesLanguages :: ContributesLanguages -> Argonaut.Json
-createContributesLanguages (ContributesLanguages rec) =
-  Util.tupleListToJson
-    [ Tuple.Tuple "id"
-        (Util.jsonFromNonEmptyString rec.id)
-    , Tuple.Tuple "extensions"
-        ( Argonaut.fromArray
-            (map Util.jsonFromNonEmptyString rec.extensions)
-        )
-    ]
-
-dependenciesToJson :: Map.Map NonEmptyString NonEmptyString -> Argonaut.Json
-dependenciesToJson dependencies =
-  Util.tupleListToJson
-    (map (\(Tuple.Tuple key value) -> Tuple.Tuple (NonEmptyString.toString key) (Util.jsonFromNonEmptyString value)) (Map.toUnfoldable dependencies))
+createContributesLanguages (ContributesLanguages rec) = Argonaut.encodeJson rec
 
 dependenciesPropertyName :: String
 dependenciesPropertyName = "dependencies"
