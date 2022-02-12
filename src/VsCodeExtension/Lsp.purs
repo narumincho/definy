@@ -1,4 +1,6 @@
-module VsCodeExtension.Lsp where
+module VsCodeExtension.Lsp
+  ( main
+  ) where
 
 import Prelude
 import Data.Argonaut as Argonaut
@@ -18,7 +20,9 @@ main :: Effect.Effect Unit
 main =
   receiveJsonRpcMessage
     ( case _ of
-        Either.Right (Initialize _) -> sendJsonRpcMessage (WindowLogMessage "Initializeされた!")
+        Either.Right (Initialize id) -> do
+          sendJsonRpcMessage (WindowLogMessage "Initializeされた!")
+          sendJsonRpcMessage (ResponseInitialize { id })
         Either.Right (Initialized _) -> sendJsonRpcMessage (WindowLogMessage "Initializedされた!")
         Either.Right (TextDocumentDidOpen _) ->
           sendJsonRpcMessage
@@ -93,6 +97,7 @@ jsonObjectToJsonRpcRequestResult jsonObject = do
 
 data JsonRpcResponse
   = WindowLogMessage String
+  | ResponseInitialize { id :: JsonRpcId }
 
 sendJsonRpcMessage :: JsonRpcResponse -> Effect.Effect Unit
 sendJsonRpcMessage response = do
@@ -129,6 +134,11 @@ jsonRpcResponseToJson = case _ of
     Argonaut.encodeJson
       { method: "window/logMessage"
       , params: { type: 3.0, message }
+      }
+  ResponseInitialize { id: JsonRpcId id } ->
+    Argonaut.encodeJson
+      { id
+      , result: { capabilities: { textDocumentSync: 1 } }
       }
 
 foreign import appendChunk :: EffectUncurried.EffectFn1 Buffer.Buffer Unit

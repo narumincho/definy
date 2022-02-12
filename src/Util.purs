@@ -10,12 +10,15 @@ module Util
   , toParallel
   , toParallelWithReturn
   , traverseRow
+  , tupleListToJson
   ) where
 
 import Prelude
 import Control.Applicative as Applicative
 import Control.Parallel as Parallel
+import Data.Argonaut as Argonaut
 import Data.Array as Array
+import Foreign.Object as Object
 import Data.Array.NonEmpty (NonEmptyArray)
 import Data.Array.NonEmpty as NonEmptyArray
 import Data.Int as Int
@@ -161,3 +164,6 @@ nonEmptyArrayGetAtLoop nonEmptyArray index = case NonEmptyArray.index
     ) of
   Just element -> element
   Nothing -> NonEmptyArray.head nonEmptyArray -- ここに来ることはない
+
+tupleListToJson :: Array (Tuple.Tuple String Argonaut.Json) -> Argonaut.Json
+tupleListToJson list = Argonaut.fromObject (Object.fromFoldable list)

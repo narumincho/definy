@@ -32,6 +32,7 @@ import Foreign.Object as Object
 import StructuredUrl as StructuredUrl
 import Type.Data.Symbol as Symbol
 import Type.Proxy (Proxy(..))
+import Util as Util
 
 newtype Name
   = Name NonEmptyString
@@ -93,7 +94,7 @@ nameToNonEmptyString (Name name) = name
 -- | クリエイティブ・コモンズは, ロゴ用意してあったり, サイトも翻訳されていたりとしっかりしているので, 使いたいが, GitHub でリポジトリを作成するときの選択肢に出ないため, 各サイトのUI があまり対応していないと判断したため今回は選択肢なし
 toJson :: PackageJsonInput -> Argonaut.Json
 toJson (PackageJsonInput packageJson) =
-  Argonaut.encodeJson
+  Util.tupleListToJson
     ( Array.concat
         [ [ Tuple.Tuple "name" (Argonaut.encodeJson (nameToNonEmptyString packageJson.name))
           , Tuple.Tuple "version" (Argonaut.encodeJson packageJson.version)
@@ -120,7 +121,7 @@ toJson (PackageJsonInput packageJson) =
               )
           , Tuple.Tuple "author" (Argonaut.encodeJson packageJson.author)
           , Tuple.Tuple "engines"
-              ( Argonaut.encodeJson
+              ( Util.tupleListToJson
                   ( Array.catMaybes
                       [ case packageJson.nodeVersionMaybe of
                           Just nodeVersion ->

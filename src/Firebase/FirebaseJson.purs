@@ -17,6 +17,7 @@ import Data.UInt as UInt
 import FileSystem.FileType as FileType
 import FileSystem.Path as Path
 import Prelude as Prelude
+import Util as Util
 
 newtype FirebaseJson
   = FirebaseJson
@@ -62,7 +63,7 @@ newtype Emulators
 
 toJson :: FirebaseJson -> Argonaut.Json
 toJson (FirebaseJson record) =
-  Argonaut.encodeJson
+  Util.tupleListToJson
     ( Array.concat
         [ case record.functions of
             Maybe.Just (FunctionsSetting setting) ->
@@ -130,7 +131,7 @@ headerToJson (Header rec) = Argonaut.encodeJson rec
 
 emulatorsToJsonValue :: Emulators -> Maybe.Maybe FunctionsSetting -> Argonaut.Json
 emulatorsToJsonValue (Emulators emulators) functionsSetting =
-  Argonaut.encodeJson
+  Util.tupleListToJson
     ( Array.concat
         [ case functionsSetting of
             Maybe.Just (FunctionsSetting setting) ->
