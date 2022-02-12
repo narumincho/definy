@@ -12,7 +12,7 @@ module PackageJson
   ) where
 
 import Prelude
-import Data.Argonaut.Core as ArgonautCore
+import Data.Argonaut as Argonaut
 import Data.Array as Array
 import Data.Array.NonEmpty (NonEmptyArray)
 import Data.Array.NonEmpty as NonEmptyArray
@@ -93,7 +93,7 @@ nameToNonEmptyString (Name name) = name
 -- |  npm で パッケージをリリースするときや, firebase の Cloud Functions for Firebase でつかう ` `package.json` を出力する
 -- | ライセンスは常に MIT になる.
 -- | クリエイティブ・コモンズは, ロゴ用意してあったり, サイトも翻訳されていたりとしっかりしているので, 使いたいが, GitHub でリポジトリを作成するときの選択肢に出ないため, 各サイトのUI があまり対応していないと判断したため今回は選択肢なし
-toJson :: PackageJsonInput -> ArgonautCore.Json
+toJson :: PackageJsonInput -> Argonaut.Json
 toJson (PackageJsonInput packageJson) =
   Util.tupleListToJson
     ( Array.concat
@@ -102,9 +102,9 @@ toJson (PackageJsonInput packageJson) =
           , Tuple.Tuple "description" (Util.jsonFromNonEmptyString packageJson.description)
           , Tuple.Tuple "repository"
               ( Util.tupleListToJson
-                  [ Tuple.Tuple "type" (ArgonautCore.fromString "git")
+                  [ Tuple.Tuple "type" (Argonaut.fromString "git")
                   , Tuple.Tuple "url"
-                      ( ArgonautCore.fromString
+                      ( Argonaut.fromString
                           ( String.joinWith
                               ""
                               [ "git+https://github.com/"
@@ -117,7 +117,7 @@ toJson (PackageJsonInput packageJson) =
                       )
                   ]
               )
-          , Tuple.Tuple "license" (ArgonautCore.fromString "MIT")
+          , Tuple.Tuple "license" (Argonaut.fromString "MIT")
           , Tuple.Tuple "main" (Util.jsonFromNonEmptyString packageJson.entryPoint)
           , Tuple.Tuple "homepage"
               ( Util.jsonFromNonEmptyString
@@ -149,7 +149,7 @@ toJson (PackageJsonInput packageJson) =
         , case packageJson.activationEvents of
             Just activationEvents ->
               [ Tuple.Tuple "activationEvents"
-                  ( ArgonautCore.fromArray
+                  ( Argonaut.fromArray
                       (map Util.jsonFromNonEmptyString activationEvents)
                   )
               ]
@@ -163,29 +163,29 @@ toJson (PackageJsonInput packageJson) =
         ]
     )
 
-createContributesValue :: NonEmptyArray ContributesLanguages -> ArgonautCore.Json
+createContributesValue :: NonEmptyArray ContributesLanguages -> Argonaut.Json
 createContributesValue languageList =
   Util.tupleListToJson
     [ Tuple.Tuple "languages"
-        ( ArgonautCore.fromArray
+        ( Argonaut.fromArray
             ( NonEmptyArray.toArray
                 (map createContributesLanguages languageList)
             )
         )
     ]
 
-createContributesLanguages :: ContributesLanguages -> ArgonautCore.Json
+createContributesLanguages :: ContributesLanguages -> Argonaut.Json
 createContributesLanguages (ContributesLanguages rec) =
   Util.tupleListToJson
     [ Tuple.Tuple "id"
         (Util.jsonFromNonEmptyString rec.id)
     , Tuple.Tuple "extensions"
-        ( ArgonautCore.fromArray
+        ( Argonaut.fromArray
             (map Util.jsonFromNonEmptyString rec.extensions)
         )
     ]
 
-dependenciesToJson :: Map.Map NonEmptyString NonEmptyString -> ArgonautCore.Json
+dependenciesToJson :: Map.Map NonEmptyString NonEmptyString -> Argonaut.Json
 dependenciesToJson dependencies =
   Util.tupleListToJson
     (map (\(Tuple.Tuple key value) -> Tuple.Tuple (NonEmptyString.toString key) (Util.jsonFromNonEmptyString value)) (Map.toUnfoldable dependencies))
@@ -193,38 +193,38 @@ dependenciesToJson dependencies =
 dependenciesPropertyName :: String
 dependenciesPropertyName = "dependencies"
 
-fromJson :: ArgonautCore.Json -> PackageJsonOutput
+fromJson :: Argonaut.Json -> PackageJsonOutput
 fromJson json =
   let
-    jsonAsObject :: Maybe (Object.Object ArgonautCore.Json)
-    jsonAsObject = ArgonautCore.toObject json
+    jsonAsObject :: Maybe (Object.Object Argonaut.Json)
+    jsonAsObject = Argonaut.toObject json
   in
     PackageJsonOutput
       { dependencies:
           case bind jsonAsObject
               (\obj -> Object.lookup dependenciesPropertyName obj) of
-            Just value -> case ArgonautCore.toObject value of
+            Just value -> case Argonaut.toObject value of
               Just valueAsObject -> objectToNonEmptyStringMap valueAsObject
               Nothing -> Map.empty
             Nothing -> Map.empty
       , devDependencies:
           case bind jsonAsObject
               (\obj -> Object.lookup "devDependencies" obj) of
-            Just value -> case ArgonautCore.toObject value of
+            Just value -> case Argonaut.toObject value of
               Just valueAsObject -> objectToNonEmptyStringMap valueAsObject
               Nothing -> Map.empty
             Nothing -> Map.empty
       }
 
 objectToNonEmptyStringMap ::
-  Object.Object ArgonautCore.Json ->
+  Object.Object Argonaut.Json ->
   Map.Map NonEmptyString NonEmptyString
 objectToNonEmptyStringMap object =
   let
     array :: Array (Tuple.Tuple NonEmptyString NonEmptyString)
     array =
       Array.mapMaybe
-        ( \(Tuple.Tuple key value) -> case Tuple.Tuple (NonEmptyString.fromString key) (ArgonautCore.toString value) of
+        ( \(Tuple.Tuple key value) -> case Tuple.Tuple (NonEmptyString.fromString key) (Argonaut.toString value) of
             Tuple.Tuple (Just keyAsNonEmptyString) (Just valueAsString) -> case NonEmptyString.fromString valueAsString of
               Just valueAsNonEmptyString -> Just (Tuple.Tuple keyAsNonEmptyString valueAsNonEmptyString)
               Nothing -> Nothing

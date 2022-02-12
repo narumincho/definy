@@ -17,7 +17,7 @@ module Util
 import Prelude
 import Control.Applicative as Applicative
 import Control.Parallel as Parallel
-import Data.Argonaut.Core as ArgonautCore
+import Data.Argonaut as Argonaut
 import Data.Array as Array
 import Data.Array.NonEmpty (NonEmptyArray)
 import Data.Array.NonEmpty as NonEmptyArray
@@ -98,12 +98,12 @@ toParallel list = map (\_ -> unit) (Parallel.parSequence list)
 toParallelWithReturn :: forall e. Array (Aff.Aff e) -> Aff.Aff (Array e)
 toParallelWithReturn list = Parallel.parSequence list
 
-tupleListToJson :: Array (Tuple.Tuple String ArgonautCore.Json) -> ArgonautCore.Json
-tupleListToJson list = ArgonautCore.fromObject (Object.fromFoldable list)
+tupleListToJson :: Array (Tuple.Tuple String Argonaut.Json) -> Argonaut.Json
+tupleListToJson list = Argonaut.fromObject (Object.fromFoldable list)
 
-jsonFromNonEmptyString :: NonEmptyString -> ArgonautCore.Json
+jsonFromNonEmptyString :: NonEmptyString -> Argonaut.Json
 jsonFromNonEmptyString nonEmptyString =
-  ArgonautCore.fromString
+  Argonaut.fromString
     (NonEmptyString.toString nonEmptyString)
 
 class RowTraversable :: RowList Type -> Row Type -> Row Type -> (Type -> Type) -> (Type -> Type) -> Constraint

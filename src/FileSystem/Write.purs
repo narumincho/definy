@@ -9,7 +9,7 @@ module FileSystem.Write
 
 import Prelude
 import Console as Console
-import Data.Argonaut.Core as ArgonautCore
+import Data.Argonaut as Argonaut
 import Data.Array.NonEmpty as ArrayNonEmpty
 import Data.Maybe as Maybe
 import Data.String.NonEmpty as NonEmptyString
@@ -39,7 +39,7 @@ writeTextFileInDistribution distributionFilePath content =
       Fs.writeTextFile Encoding.UTF8 filePath content
       Console.logValueAsAff "拡張子なしの文字列を書き込んだ" { filePath }
 
-writeJson :: Path.DistributionFilePath -> ArgonautCore.Json -> Aff.Aff Unit
+writeJson :: Path.DistributionFilePath -> Argonaut.Json -> Aff.Aff Unit
 writeJson distributionFilePath json =
   let
     filePath :: String
@@ -47,7 +47,7 @@ writeJson distributionFilePath json =
   in
     do
       ensureDir (Path.distributionDirectoryPathToDirectoryPath (Path.distributionFilePathToDirectoryPath distributionFilePath))
-      Fs.writeTextFile Encoding.UTF8 filePath (ArgonautCore.stringify json)
+      Fs.writeTextFile Encoding.UTF8 filePath (Argonaut.stringify json)
       Console.logValueAsAff "JSONファイルを書き込んだ" { filePath }
 
 -- | PureScript をモジュール名をファイル名としてファイルに書く

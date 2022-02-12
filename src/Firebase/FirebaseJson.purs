@@ -8,7 +8,7 @@ module Firebase.FirebaseJson
   , Header(..)
   ) where
 
-import Data.Argonaut.Core as ArgonautCore
+import Data.Argonaut as Argonaut
 import Data.Array as Array
 import Data.Maybe as Maybe
 import Data.String.NonEmpty (NonEmptyString)
@@ -61,14 +61,14 @@ newtype Emulators
   , storagePortNumber :: Maybe.Maybe UInt.UInt
   }
 
-toJson :: FirebaseJson -> ArgonautCore.Json
+toJson :: FirebaseJson -> Argonaut.Json
 toJson (FirebaseJson record) =
   Util.tupleListToJson
     ( Array.concat
         [ case record.functions of
             Maybe.Just (FunctionsSetting setting) ->
               [ Tuple.Tuple "functions"
-                  ( ArgonautCore.jsonSingletonObject "source"
+                  ( Argonaut.jsonSingletonObject "source"
                       ( Util.jsonFromNonEmptyString
                           ( Path.distributionDirectoryPathToStringBaseApp
                               setting.distributionPath
@@ -79,7 +79,7 @@ toJson (FirebaseJson record) =
             Maybe.Nothing -> []
         , [ Tuple.Tuple
               "firestore"
-              ( ArgonautCore.jsonSingletonObject "rules"
+              ( Argonaut.jsonSingletonObject "rules"
                   ( Util.jsonFromNonEmptyString
                       ( Path.distributionFilePathToStringBaseApp
                           record.firestoreRulesFilePath
@@ -88,7 +88,7 @@ toJson (FirebaseJson record) =
                   )
               )
           , Tuple.Tuple "storage"
-              ( ArgonautCore.jsonSingletonObject "rules"
+              ( Argonaut.jsonSingletonObject "rules"
                   ( Util.jsonFromNonEmptyString
                       ( Path.distributionFilePathToStringBaseApp
                           record.cloudStorageRulesFilePath
@@ -105,13 +105,13 @@ toJson (FirebaseJson record) =
                           )
                       )
                   , Tuple.Tuple "rewrites"
-                      ( ArgonautCore.fromArray
+                      ( Argonaut.fromArray
                           (Prelude.map rewriteToJson record.hostingRewites)
                       )
                   , Tuple.Tuple "headers"
-                      (ArgonautCore.fromArray (Prelude.map sourceAndHeadersToJson record.hostingHeaders))
-                  , Tuple.Tuple "cleanUrls" ArgonautCore.jsonTrue
-                  , Tuple.Tuple "trailingSlash" ArgonautCore.jsonFalse
+                      (Argonaut.fromArray (Prelude.map sourceAndHeadersToJson record.hostingHeaders))
+                  , Tuple.Tuple "cleanUrls" Argonaut.jsonTrue
+                  , Tuple.Tuple "trailingSlash" Argonaut.jsonFalse
                   ]
               )
           , Tuple.Tuple "emulators" (emulatorsToJsonValue record.emulators record.functions)
@@ -119,36 +119,36 @@ toJson (FirebaseJson record) =
         ]
     )
 
-rewriteToJson :: Rewrite -> ArgonautCore.Json
+rewriteToJson :: Rewrite -> Argonaut.Json
 rewriteToJson (Rewrite { source, function }) =
   Util.tupleListToJson
     [ Tuple.Tuple "source" (Util.jsonFromNonEmptyString source)
     , Tuple.Tuple "function" (Util.jsonFromNonEmptyString function)
     ]
 
-sourceAndHeadersToJson :: SourceAndHeaders -> ArgonautCore.Json
+sourceAndHeadersToJson :: SourceAndHeaders -> Argonaut.Json
 sourceAndHeadersToJson (SourceAndHeaders { source, headers }) =
   Util.tupleListToJson
     [ Tuple.Tuple "source" (Util.jsonFromNonEmptyString source)
-    , Tuple.Tuple "headers" (ArgonautCore.fromArray (Prelude.map headerToJson headers))
+    , Tuple.Tuple "headers" (Argonaut.fromArray (Prelude.map headerToJson headers))
     ]
 
-headerToJson :: Header -> ArgonautCore.Json
+headerToJson :: Header -> Argonaut.Json
 headerToJson (Header { key, value }) =
   Util.tupleListToJson
     [ Tuple.Tuple "key" (Util.jsonFromNonEmptyString key)
-    , Tuple.Tuple "value" (ArgonautCore.fromString value)
+    , Tuple.Tuple "value" (Argonaut.fromString value)
     ]
 
-emulatorsToJsonValue :: Emulators -> Maybe.Maybe FunctionsSetting -> ArgonautCore.Json
+emulatorsToJsonValue :: Emulators -> Maybe.Maybe FunctionsSetting -> Argonaut.Json
 emulatorsToJsonValue (Emulators emulators) functionsSetting =
   Util.tupleListToJson
     ( Array.concat
         [ case functionsSetting of
             Maybe.Just (FunctionsSetting setting) ->
               [ Tuple.Tuple "functions"
-                  ( ArgonautCore.jsonSingletonObject "port"
-                      ( ArgonautCore.fromNumber
+                  ( Argonaut.jsonSingletonObject "port"
+                      ( Argonaut.fromNumber
                           (UInt.toNumber setting.emulatorsPortNumber)
                       )
                   )
@@ -157,8 +157,8 @@ emulatorsToJsonValue (Emulators emulators) functionsSetting =
         , case emulators.firestorePortNumber of
             Maybe.Just portNumber ->
               [ Tuple.Tuple "firestore"
-                  ( ArgonautCore.jsonSingletonObject "port"
-                      ( ArgonautCore.fromNumber
+                  ( Argonaut.jsonSingletonObject "port"
+                      ( Argonaut.fromNumber
                           (UInt.toNumber portNumber)
                       )
                   )
@@ -167,8 +167,8 @@ emulatorsToJsonValue (Emulators emulators) functionsSetting =
         , case emulators.hostingPortNumber of
             Maybe.Just portNumber ->
               [ Tuple.Tuple "hosting"
-                  ( ArgonautCore.jsonSingletonObject "port"
-                      ( ArgonautCore.fromNumber
+                  ( Argonaut.jsonSingletonObject "port"
+                      ( Argonaut.fromNumber
                           (UInt.toNumber portNumber)
                       )
                   )
@@ -177,17 +177,16 @@ emulatorsToJsonValue (Emulators emulators) functionsSetting =
         , case emulators.storagePortNumber of
             Maybe.Just portNumber ->
               [ Tuple.Tuple "storage"
-                  ( ArgonautCore.jsonSingletonObject "port"
-                      ( ArgonautCore.fromNumber
+                  ( Argonaut.jsonSingletonObject "port"
+                      ( Argonaut.fromNumber
                           (UInt.toNumber portNumber)
                       )
                   )
               ]
             Maybe.Nothing -> []
         , [ Tuple.Tuple "ui"
-              ( ArgonautCore.jsonSingletonObject "enabled"
-                  ( ArgonautCore.jsonTrue
-                  )
+              ( Argonaut.jsonSingletonObject "enabled"
+                  Argonaut.jsonTrue
               )
           ]
         ]

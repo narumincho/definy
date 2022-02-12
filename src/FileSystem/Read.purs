@@ -9,8 +9,7 @@ module FileSystem.Read
 
 import Prelude
 import Console as Console
-import Data.Argonaut.Core as ArgonautCore
-import Data.Argonaut.Parser as ArgonautParser
+import Data.Argonaut as Argonaut
 import Data.Array as Array
 import Data.Either as Either
 import Data.Maybe (Maybe(..))
@@ -57,10 +56,10 @@ readBinaryFile filePath fileTypeMaybe =
 readJsonFile ::
   Path.FilePath ->
   FileType.FileType ->
-  Aff.Aff (Either.Either String ArgonautCore.Json)
+  Aff.Aff (Either.Either String Argonaut.Json)
 readJsonFile filePath fileType = do
   text <- readTextFile filePath fileType
-  pure (ArgonautParser.jsonParser text)
+  pure (Argonaut.jsonParser text)
 
 -- | ディレクトリ内に含まれるファイルのパスを取得する.
 -- |
