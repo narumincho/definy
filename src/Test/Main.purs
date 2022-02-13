@@ -14,6 +14,7 @@ import PureScript.ToString as PureScriptToString
 import PureScript.Wellknown as PureScriptWellknown
 import Test.StructuredUrl as StructuredUrlTest
 import Test.TypeScript as TypeScriptTest
+import Test.VsCodeExtension as VsCodeExtensionTest
 import Test.Unit as TestUnit
 import Test.Unit.Main as TestUnitMain
 import Test.Util (assertEqual)
@@ -33,10 +34,12 @@ main =
       fileNameWithExtensionParse
       pureScriptCodeGenerate
       nonEmptyArrayGetAtLoop
-    TestUnit.test "StructuredUrlTest" do
+    TestUnit.test "StructuredUrlTest"
       StructuredUrlTest.test
-    TestUnit.test "TypeScriptTest" do
+    TestUnit.test "TypeScriptTest"
       TypeScriptTest.test
+    TestUnit.test "VsCodeExtensionTest"
+      VsCodeExtensionTest.test
 
 listUpdateAtOverAutoCreateInline :: TestUnit.Test
 listUpdateAtOverAutoCreateInline =
