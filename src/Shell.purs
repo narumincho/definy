@@ -53,15 +53,15 @@ spawnWithLog ::
 spawnWithLog cmd = do
   childProcess <- spawn cmd
   Stream.onData
-    (childProcess.stdout)
+    childProcess.stdout
     ( \buffer -> do
-        stdout <- (Buffer.toString Encoding.UTF8 buffer)
+        stdout <- Buffer.toString Encoding.UTF8 buffer
         Console.logValue "stdout" stdout
     )
   Stream.onData
-    (childProcess.stderr)
+    childProcess.stderr
     ( \buffer -> do
-        stderr <- (Buffer.toString Encoding.UTF8 buffer)
+        stderr <- Buffer.toString Encoding.UTF8 buffer
         Console.logValue "sterr" stderr
     )
 

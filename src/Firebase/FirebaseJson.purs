@@ -8,7 +8,7 @@ module Firebase.FirebaseJson
   , Header(..)
   ) where
 
-import Data.Argonaut.Core as ArgonautCore
+import Data.Argonaut as Argonaut
 import Data.Array as Array
 import Data.Maybe as Maybe
 import Data.String.NonEmpty (NonEmptyString)
@@ -61,134 +61,114 @@ newtype Emulators
   , storagePortNumber :: Maybe.Maybe UInt.UInt
   }
 
-toJson :: FirebaseJson -> ArgonautCore.Json
+toJson :: FirebaseJson -> Argonaut.Json
 toJson (FirebaseJson record) =
   Util.tupleListToJson
     ( Array.concat
         [ case record.functions of
             Maybe.Just (FunctionsSetting setting) ->
               [ Tuple.Tuple "functions"
-                  ( ArgonautCore.jsonSingletonObject "source"
-                      ( Util.jsonFromNonEmptyString
-                          ( Path.distributionDirectoryPathToStringBaseApp
-                              setting.distributionPath
-                          )
-                      )
+                  ( Argonaut.encodeJson
+                      { source:
+                          Path.distributionDirectoryPathToStringBaseApp
+                            setting.distributionPath
+                      }
                   )
               ]
             Maybe.Nothing -> []
         , [ Tuple.Tuple
               "firestore"
-              ( ArgonautCore.jsonSingletonObject "rules"
-                  ( Util.jsonFromNonEmptyString
-                      ( Path.distributionFilePathToStringBaseApp
-                          record.firestoreRulesFilePath
-                          FileType.FirebaseSecurityRules
-                      )
-                  )
+              ( Argonaut.encodeJson
+                  { rules:
+                      Path.distributionFilePathToStringBaseApp
+                        record.firestoreRulesFilePath
+                        FileType.FirebaseSecurityRules
+                  }
               )
           , Tuple.Tuple "storage"
-              ( ArgonautCore.jsonSingletonObject "rules"
-                  ( Util.jsonFromNonEmptyString
-                      ( Path.distributionFilePathToStringBaseApp
-                          record.cloudStorageRulesFilePath
-                          FileType.FirebaseSecurityRules
-                      )
-                  )
+              ( Argonaut.encodeJson
+                  { rules:
+                      Path.distributionFilePathToStringBaseApp
+                        record.cloudStorageRulesFilePath
+                        FileType.FirebaseSecurityRules
+                  }
               )
           , Tuple.Tuple "hosting"
-              ( Util.tupleListToJson
-                  [ Tuple.Tuple "public"
-                      ( Util.jsonFromNonEmptyString
-                          ( Path.distributionDirectoryPathToStringBaseApp
-                              record.hostingDistributionPath
-                          )
-                      )
-                  , Tuple.Tuple "rewrites"
-                      ( ArgonautCore.fromArray
-                          (Prelude.map rewriteToJson record.hostingRewites)
-                      )
-                  , Tuple.Tuple "headers"
-                      (ArgonautCore.fromArray (Prelude.map sourceAndHeadersToJson record.hostingHeaders))
-                  , Tuple.Tuple "cleanUrls" ArgonautCore.jsonTrue
-                  , Tuple.Tuple "trailingSlash" ArgonautCore.jsonFalse
-                  ]
+              ( Argonaut.encodeJson
+                  { public:
+                      Path.distributionDirectoryPathToStringBaseApp
+                        record.hostingDistributionPath
+                  , rewrites:
+                      Prelude.map rewriteToJson record.hostingRewites
+                  , headers:
+                      Prelude.map sourceAndHeadersToJson record.hostingHeaders
+                  , cleanUrls: true
+                  , trailingSlash: false
+                  }
               )
-          , Tuple.Tuple "emulators" (emulatorsToJsonValue record.emulators record.functions)
+          , Tuple.Tuple "emulators"
+              (emulatorsToJsonValue record.emulators record.functions)
           ]
         ]
     )
 
-rewriteToJson :: Rewrite -> ArgonautCore.Json
+rewriteToJson :: Rewrite -> Argonaut.Json
 rewriteToJson (Rewrite { source, function }) =
-  Util.tupleListToJson
-    [ Tuple.Tuple "source" (Util.jsonFromNonEmptyString source)
-    , Tuple.Tuple "function" (Util.jsonFromNonEmptyString function)
-    ]
+  Argonaut.encodeJson
+    { source: source
+    , function: function
+    }
 
-sourceAndHeadersToJson :: SourceAndHeaders -> ArgonautCore.Json
+sourceAndHeadersToJson :: SourceAndHeaders -> Argonaut.Json
 sourceAndHeadersToJson (SourceAndHeaders { source, headers }) =
-  Util.tupleListToJson
-    [ Tuple.Tuple "source" (Util.jsonFromNonEmptyString source)
-    , Tuple.Tuple "headers" (ArgonautCore.fromArray (Prelude.map headerToJson headers))
-    ]
+  Argonaut.encodeJson
+    { source: source
+    , headers: Prelude.map headerToJson headers
+    }
 
-headerToJson :: Header -> ArgonautCore.Json
-headerToJson (Header { key, value }) =
-  Util.tupleListToJson
-    [ Tuple.Tuple "key" (Util.jsonFromNonEmptyString key)
-    , Tuple.Tuple "value" (ArgonautCore.fromString value)
-    ]
+headerToJson :: Header -> Argonaut.Json
+headerToJson (Header rec) = Argonaut.encodeJson rec
 
-emulatorsToJsonValue :: Emulators -> Maybe.Maybe FunctionsSetting -> ArgonautCore.Json
+emulatorsToJsonValue :: Emulators -> Maybe.Maybe FunctionsSetting -> Argonaut.Json
 emulatorsToJsonValue (Emulators emulators) functionsSetting =
   Util.tupleListToJson
     ( Array.concat
         [ case functionsSetting of
             Maybe.Just (FunctionsSetting setting) ->
               [ Tuple.Tuple "functions"
-                  ( ArgonautCore.jsonSingletonObject "port"
-                      ( ArgonautCore.fromNumber
-                          (UInt.toNumber setting.emulatorsPortNumber)
-                      )
+                  ( Argonaut.encodeJson
+                      { port:
+                          UInt.toNumber setting.emulatorsPortNumber
+                      }
                   )
               ]
             Maybe.Nothing -> []
         , case emulators.firestorePortNumber of
             Maybe.Just portNumber ->
               [ Tuple.Tuple "firestore"
-                  ( ArgonautCore.jsonSingletonObject "port"
-                      ( ArgonautCore.fromNumber
-                          (UInt.toNumber portNumber)
-                      )
+                  ( Argonaut.encodeJson
+                      { port: UInt.toNumber portNumber }
                   )
               ]
             Maybe.Nothing -> []
         , case emulators.hostingPortNumber of
             Maybe.Just portNumber ->
               [ Tuple.Tuple "hosting"
-                  ( ArgonautCore.jsonSingletonObject "port"
-                      ( ArgonautCore.fromNumber
-                          (UInt.toNumber portNumber)
-                      )
+                  ( Argonaut.encodeJson
+                      { port: UInt.toNumber portNumber }
                   )
               ]
             Maybe.Nothing -> []
         , case emulators.storagePortNumber of
             Maybe.Just portNumber ->
               [ Tuple.Tuple "storage"
-                  ( ArgonautCore.jsonSingletonObject "port"
-                      ( ArgonautCore.fromNumber
-                          (UInt.toNumber portNumber)
-                      )
+                  ( Argonaut.encodeJson
+                      { port: UInt.toNumber portNumber }
                   )
               ]
             Maybe.Nothing -> []
         , [ Tuple.Tuple "ui"
-              ( ArgonautCore.jsonSingletonObject "enabled"
-                  ( ArgonautCore.jsonTrue
-                  )
-              )
+              (Argonaut.encodeJson { enabled: true })
           ]
         ]
     )

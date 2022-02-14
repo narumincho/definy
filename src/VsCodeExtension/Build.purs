@@ -1,4 +1,4 @@
-module Lsp.Build
+module VsCodeExtension.Build
   ( main
   ) where
 
@@ -17,13 +17,30 @@ import FileSystem.Name as Name
 import FileSystem.Path as Path
 import FileSystem.Write as FileSystemWrite
 import PackageJson as PackageJson
+import PureScript.Data as PureScriptData
+import PureScript.Spago as Spago
 import StructuredUrl as StructuredUrl
 import Type.Proxy (Proxy(..))
+import Util as Util
 
 main :: Effect.Effect Unit
 main =
   Aff.runAff_ (Console.logValue "definy lsp build:")
-    (Aff.attempt writePackageJsonForVsCodeExtension)
+    ( Aff.attempt
+        ( Util.toParallel
+            [ writePackageJsonForVsCodeExtension
+            , buildExtensionMain
+            , buildExtensionLsp
+            ]
+        )
+    )
+
+distributionDirectoryPath :: Path.DistributionDirectoryPath
+distributionDirectoryPath =
+  Path.DistributionDirectoryPath
+    { appName: Name.fromSymbolProxy (Proxy :: _ "definy-lsp")
+    , folderNameMaybe: Nothing
+    }
 
 writePackageJsonForVsCodeExtension :: Aff.Aff Unit
 writePackageJsonForVsCodeExtension = do
@@ -39,11 +56,7 @@ writePackageJsonForVsCodeExtension = do
     Either.Right dependencies ->
       FileSystemWrite.writeJson
         ( Path.DistributionFilePath
-            { directoryPath:
-                Path.DistributionDirectoryPath
-                  { appName: Name.fromSymbolProxy (Proxy :: _ "definy-lsp")
-                  , folderNameMaybe: Nothing
-                  }
+            { directoryPath: distributionDirectoryPath
             , fileName: Name.fromSymbolProxy (Proxy :: _ "package")
             }
         )
@@ -94,4 +107,30 @@ generatePackageJson dependencies =
                   }
               )
           )
+    }
+
+buildExtensionMain :: Aff.Aff Unit
+buildExtensionMain =
+  Spago.bundleModule
+    { mainModuleName:
+        PureScriptData.ModuleName
+          (NonEmptyArray.cons (NonEmptyString.nes (Proxy :: _ "VsCodeExtension")) (NonEmptyArray.singleton (NonEmptyString.nes (Proxy :: _ "Main"))))
+    , outputJavaScriptPath:
+        Path.DistributionFilePath
+          { directoryPath: distributionDirectoryPath
+          , fileName: Name.fromSymbolProxy (Proxy :: _ "main")
+          }
+    }
+
+buildExtensionLsp :: Aff.Aff Unit
+buildExtensionLsp =
+  Spago.bundleApp
+    { mainModuleName:
+        PureScriptData.ModuleName
+          (NonEmptyArray.cons (NonEmptyString.nes (Proxy :: _ "VsCodeExtension")) (NonEmptyArray.singleton (NonEmptyString.nes (Proxy :: _ "Lsp"))))
+    , outputJavaScriptPath:
+        Path.DistributionFilePath
+          { directoryPath: distributionDirectoryPath
+          , fileName: Name.fromSymbolProxy (Proxy :: _ "lsp")
+          }
     }

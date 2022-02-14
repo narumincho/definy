@@ -2,32 +2,9 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "type": "npm",
-      "script": "start",
-      "problemMatcher": [],
-      "label": "開発用にアプリを起動する",
-      "detail": "ビルドをした後に, Firebase のエミュレータが起動する",
-      "runOptions": {
-        "instanceLimit": 1
-      }
-    },
-    {
-      "type": "npm",
-      "script": "storybook",
-      "problemMatcher": [],
-      "label": "storybook を起動する"
-    },
-    {
-      "type": "npm",
-      "script": "typeCheck",
-      "problemMatcher": [],
-      "label": "型チェックをする",
-      "detail": "tsc --project tsconfig.json --noEmit"
-    },
-    {
       "label": "lsp-compile",
       "type": "shell",
-      "command": "npx spago run --main Lsp.Build && npx tsc --project ./lsp/tsconfig.json"
+      "command": "npx tsc --project ./tsconfig-purs-ffi.json && npx spago run --main VsCodeExtension.Build"
     }
   ]
 }

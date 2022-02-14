@@ -1,7 +1,7 @@
 { name = "my-project"
 , dependencies =
   [ "aff"
-  , "argonaut-core"
+  , "argonaut"
   , "arrays"
   , "colors"
   , "console"
@@ -22,8 +22,8 @@
   , "ordered-collections"
   , "parallel"
   , "prelude"
-  , "psci-support"
   , "record"
+  , "refs"
   , "strings"
   , "test-unit"
   , "tuples"
