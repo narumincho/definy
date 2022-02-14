@@ -15,7 +15,6 @@ jobs:
           node-version: "16"
       - name: Install npm dependencies (npm ci)
         run: npm ci
-        working-directory: ./lsp
       - name: Run Build Script
         run: npm run build-node-package
       - name: npm publish
