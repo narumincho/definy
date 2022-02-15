@@ -14,6 +14,8 @@ import Data.String.NonEmpty (NonEmptyString)
 import Data.String.NonEmpty as NonEmptyString
 import Effect as Effect
 import Effect.Aff as Aff
+import FileSystem.Copy as FileSystemCopy
+import FileSystem.FileType as FileType
 import FileSystem.Name as Name
 import FileSystem.Path as Path
 import FileSystem.Write as FileSystemWrite
@@ -33,6 +35,7 @@ main =
             , buildExtensionMain
             , buildExtensionLsp
             , writeLanguageConfiguration
+            , copyIcon
             ]
         )
     )
@@ -114,6 +117,10 @@ generatePackageJson dependencies =
                   , extensions:
                       [ NonEmptyString.nes (Proxy :: _ ".definy") ]
                   , configuration: languageConfigurationPath
+                  , icon:
+                      { light: iconDistributionPath
+                      , dark: iconDistributionPath
+                      }
                   }
               )
           )
@@ -176,3 +183,23 @@ languageConfiguration =
         , [ "\"", "\"" ]
         ]
     }
+
+iconDistributionPath :: Path.DistributionFilePath
+iconDistributionPath =
+  Path.DistributionFilePath
+    { directoryPath: distributionDirectoryPath
+    , fileName: Name.fromSymbolProxy (Proxy :: _ "icon")
+    }
+
+copyIcon :: Aff.Aff Unit
+copyIcon =
+  FileSystemCopy.copyFileToDistribution
+    ( Path.FilePath
+        { directoryPath:
+            Path.DirectoryPath
+              [ Name.fromSymbolProxy (Proxy :: _ "static") ]
+        , fileName: Name.fromSymbolProxy (Proxy :: _ "icon")
+        }
+    )
+    iconDistributionPath
+    (Just FileType.Png)

@@ -30,10 +30,14 @@ import Util as Util
 -- | distribution にあるファイルを文字列として読み取る
 readTextFileInDistribution ::
   Path.DistributionFilePath ->
-  FileType.FileType ->
+  Maybe FileType.FileType ->
   Aff.Aff String
-readTextFileInDistribution distributionFilePath fileType = do
-  buffer <- Fs.readFile (NonEmptyString.toString (Path.distributionFilePathToString distributionFilePath fileType))
+readTextFileInDistribution distributionFilePath fileTypeMaybe = do
+  buffer <-
+    Fs.readFile
+      ( NonEmptyString.toString
+          (Path.distributionFilePathToString distributionFilePath fileTypeMaybe)
+      )
   EffectClass.liftEffect (Buffer.toString Encoding.UTF8 buffer)
 
 -- | ファイルを文字列として読み取る

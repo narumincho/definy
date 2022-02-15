@@ -1,12 +1,12 @@
 module FileSystem.Copy
-  ( copyFileToDistributionWithoutExtension
+  ( copyFileToDistributionChangeFileType
   , copyFileToDistribution
   , copySecretFile
   ) where
 
 import Prelude
 import Console as Console
-import Data.Maybe as Maybe
+import Data.Maybe (Maybe(..))
 import Data.String.NonEmpty (NonEmptyString)
 import Data.String.NonEmpty as NonEmptyString
 import Effect.Aff as Aff
@@ -16,22 +16,34 @@ import FileSystem.Path as Path
 import FileSystem.Write as Write
 
 -- | ファイルをコピーする.
--- | コピー先ファイル名は拡張子なしになる
-copyFileToDistributionWithoutExtension :: Path.FilePath -> Maybe.Maybe FileType.FileType -> Path.DistributionFilePath -> Aff.Aff Unit
-copyFileToDistributionWithoutExtension filePath fileTypeMaybe distributionFilePath@(Path.DistributionFilePath { directoryPath }) = do
-  Write.ensureDir (Path.distributionDirectoryPathToDirectoryPath directoryPath)
+-- | 拡張子を変更するか, 設定削除する
+copyFileToDistributionChangeFileType ::
+  { src :: { filePath :: Path.FilePath, fileTypeMaybe :: Maybe FileType.FileType }
+  , dist :: { filePath :: Path.DistributionFilePath, fileTypeMaybe :: Maybe FileType.FileType }
+  } ->
+  Aff.Aff Unit
+copyFileToDistributionChangeFileType { src, dist } = do
+  Write.ensureDir (Path.distributionDirectoryPathToDirectoryPath (Path.distributionDirectoryPathGetDirectoryPath dist.filePath))
   copyFile
-    { src: NonEmptyString.toString (Path.filePathToString filePath fileTypeMaybe)
-    , dist: NonEmptyString.toString (Path.distributionFilePathToStringWithoutExtensiton distributionFilePath)
+    { src: NonEmptyString.toString (Path.filePathToString src.filePath src.fileTypeMaybe)
+    , dist:
+        NonEmptyString.toString
+          (Path.distributionFilePathToString dist.filePath dist.fileTypeMaybe)
     }
 
 -- | ファイルをコピーする
-copyFileToDistribution :: Path.FilePath -> Maybe.Maybe FileType.FileType -> Path.DistributionFilePath -> FileType.FileType -> Aff.Aff Unit
-copyFileToDistribution filePath fileTypeMaybe distributionFilePath@(Path.DistributionFilePath { directoryPath }) fileType = do
+copyFileToDistribution ::
+  Path.FilePath ->
+  Path.DistributionFilePath ->
+  Maybe FileType.FileType ->
+  Aff.Aff Unit
+copyFileToDistribution filePath distributionFilePath@(Path.DistributionFilePath { directoryPath }) fileTypeMaybe = do
   Write.ensureDir (Path.distributionDirectoryPathToDirectoryPath directoryPath)
   copyFile
     { src: NonEmptyString.toString (Path.filePathToString filePath fileTypeMaybe)
-    , dist: NonEmptyString.toString (Path.distributionFilePathToString distributionFilePath fileType)
+    , dist:
+        NonEmptyString.toString
+          (Path.distributionFilePathToString distributionFilePath fileTypeMaybe)
     }
 
 -- | 1つ上の階層の secret ディレクトリ内に保存された機密情報の入ったファイルを出力先にコピーする
@@ -42,7 +54,9 @@ copySecretFile secretFileName distributionFilePath@(Path.DistributionFilePath { 
   Write.ensureDir (Path.distributionDirectoryPathToDirectoryPath directoryPath)
   copyFile
     { src: append "../secret/" (NonEmptyString.toString secretFileName)
-    , dist: NonEmptyString.toString (Path.distributionFilePathToString distributionFilePath fileType)
+    , dist:
+        NonEmptyString.toString
+          (Path.distributionFilePathToString distributionFilePath (Just fileType))
     }
 
 copyFile :: { src :: String, dist :: String } -> Aff.Aff Unit

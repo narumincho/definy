@@ -60,6 +60,10 @@ newtype ContributesLanguages
   { id :: NonEmptyString
   , extensions :: Array NonEmptyString
   , configuration :: Path.DistributionFilePath
+  , icon ::
+      { light :: Path.DistributionFilePath
+      , dark :: Path.DistributionFilePath
+      }
   }
 
 newtype PackageJsonOutput
@@ -183,6 +187,16 @@ createContributesLanguages (ContributesLanguages rec) =
         Path.distributionFilePathToStringBaseApp
           rec.configuration
           FileType.Json
+    , icon:
+        { dark:
+            Path.distributionFilePathToStringBaseApp
+              rec.icon.dark
+              FileType.Png
+        , light:
+            Path.distributionFilePathToStringBaseApp
+              rec.icon.light
+              FileType.Png
+        }
     }
 
 dependenciesPropertyName :: String

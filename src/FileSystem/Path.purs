@@ -5,6 +5,7 @@ module FileSystem.Path
   , FilePath(..)
   , directoryPathPushDirectoryNameList
   , directoryPathToString
+  , distributionDirectoryPathGetDirectoryPath
   , distributionDirectoryPathToDirectoryPath
   , distributionDirectoryPathToString
   , distributionDirectoryPathToStringBaseApp
@@ -12,7 +13,6 @@ module FileSystem.Path
   , distributionFilePathToFilePath
   , distributionFilePathToString
   , distributionFilePathToStringBaseApp
-  , distributionFilePathToStringWithoutExtensiton
   , fileNameWithExtensionParse
   , filePathGetDirectoryPath
   , filePathGetFileName
@@ -44,6 +44,9 @@ newtype DistributionFilePath
   { directoryPath :: DistributionDirectoryPath
   , fileName :: Name.Name
   }
+
+distributionDirectoryPathGetDirectoryPath :: DistributionFilePath -> DistributionDirectoryPath
+distributionDirectoryPathGetDirectoryPath (DistributionFilePath { directoryPath }) = directoryPath
 
 -- | リポジトリのルートをルートとした ディレクトリのパス
 newtype DirectoryPath
@@ -96,29 +99,18 @@ distributionDirectoryPathToString distributionDirectoryPath =
     ( distributionDirectoryPathToDirectoryPath distributionDirectoryPath
     )
 
-distributionFilePathToString :: DistributionFilePath -> FileType.FileType -> NonEmptyString
-distributionFilePathToString distributionFilePath fileType =
+distributionFilePathToString :: DistributionFilePath -> Maybe FileType.FileType -> NonEmptyString
+distributionFilePathToString distributionFilePath fileTypeMaybe =
   filePathToString
     (distributionFilePathToFilePath distributionFilePath)
-    (Just fileType)
+    fileTypeMaybe
 
 distributionFilePathToFilePath :: DistributionFilePath -> FilePath
 distributionFilePathToFilePath (DistributionFilePath { directoryPath, fileName }) =
-  ( FilePath
-      { directoryPath: distributionDirectoryPathToDirectoryPath directoryPath
-      , fileName
-      }
-  )
-
-distributionFilePathToStringWithoutExtensiton :: DistributionFilePath -> NonEmptyString
-distributionFilePathToStringWithoutExtensiton (DistributionFilePath { directoryPath, fileName }) =
-  filePathToString
-    ( FilePath
-        { directoryPath: distributionDirectoryPathToDirectoryPath directoryPath
-        , fileName
-        }
-    )
-    Nothing
+  FilePath
+    { directoryPath: distributionDirectoryPathToDirectoryPath directoryPath
+    , fileName
+    }
 
 distributionDirectoryPathToDirectoryPath :: DistributionDirectoryPath -> DirectoryPath
 distributionDirectoryPathToDirectoryPath (DistributionDirectoryPath { appName, folderNameMaybe }) =
