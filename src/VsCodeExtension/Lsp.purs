@@ -197,14 +197,12 @@ jsonObjectToJsonRpcRequestResult jsonObject = do
         Either.Right Initialized
       "textDocument/didOpen" -> do
         params <- getParam jsonObject
-        (textDocument :: Object.Object Argonaut.Json) <- Argonaut.getField params "textDocument"
-        (uri :: String) <- Argonaut.getField textDocument "uri"
-        Either.Right (TextDocumentDidOpen { uri })
+        (textDocument :: { uri :: String }) <- Argonaut.getField params "textDocument"
+        Either.Right (TextDocumentDidOpen { uri: textDocument.uri })
       "textDocument/didChange" -> do
         params <- getParam jsonObject
-        (textDocument :: Object.Object Argonaut.Json) <- Argonaut.getField params "textDocument"
-        (uri :: String) <- Argonaut.getField textDocument "uri"
-        Either.Right (TextDocumentDidOpen { uri })
+        (textDocument :: { uri :: String }) <- Argonaut.getField params "textDocument"
+        Either.Right (TextDocumentDidOpen { uri: textDocument.uri })
       _ ->
         Either.Left
           (Argonaut.TypeMismatch (append "unknown method " method))
