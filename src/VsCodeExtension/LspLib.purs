@@ -40,7 +40,7 @@ data JsonRpcRequest
     }
   | Initialized
   | TextDocumentDidOpen { uri :: Uri, text :: String }
-  | TextDocumentDidChange { uri :: Uri }
+  | TextDocumentDidChange { uri :: Uri, text :: String }
   | TextDocumentSemanticTokensFull { id :: Id, uri :: Uri }
 
 newtype Id
@@ -239,7 +239,16 @@ jsonObjectToJsonRpcRequestResult jsonObject = do
       "textDocument/didChange" -> do
         params <- getParam jsonObject
         (textDocument :: { uri :: Uri }) <- Argonaut.getField params "textDocument"
-        Either.Right (TextDocumentDidChange { uri: textDocument.uri })
+        (contentChanges :: Array { text :: String }) <- Argonaut.getField params "contentChanges"
+        Either.Right
+          ( TextDocumentDidChange
+              { uri: textDocument.uri
+              , text:
+                  case Array.last contentChanges of
+                    Just contentChange -> contentChange.text
+                    Nothing -> ""
+              }
+          )
       "textDocument/semanticTokens/full" -> do
         id <- getId jsonObject
         params <- getParam jsonObject

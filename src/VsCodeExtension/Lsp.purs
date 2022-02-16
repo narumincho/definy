@@ -36,7 +36,6 @@ main = do
     parseStateRef
     ( case _ of
         Either.Right (LspLib.Initialize rec) -> do
-          LspLib.sendNotificationWindowLogMessage "Initializeされた!"
           let
             { tokenTypeDict, supportTokenType } = TokenType.createTokenTypeDictAndSupportTokenList rec.supportTokenTypes
           Ref.modify_
@@ -64,23 +63,33 @@ main = do
                   (stateRec { codeDict = Map.insert uri text stateRec.codeDict })
             )
             state
-          LspLib.sendNotificationWindowLogMessage "TextDocumentDidOpenされた!"
-        Either.Right (LspLib.TextDocumentDidChange _) -> LspLib.sendNotificationWindowLogMessage "TextDocumentDidChangeされた!"
+        Either.Right (LspLib.TextDocumentDidChange { uri, text }) -> do
+          Ref.modify_
+            ( \(State stateRec) ->
+                State
+                  (stateRec { codeDict = Map.insert uri text stateRec.codeDict })
+            )
+            state
         Either.Right (LspLib.TextDocumentSemanticTokensFull { id, uri }) -> do
           (State { tokenTypeDict, codeDict }) <- Ref.read state
           case Map.lookup uri codeDict of
-            Just code -> do
-              LspLib.sendJsonRpcMessage
-                ( LspLib.ResponseTextDocumentSemanticTokensFull
-                    { id
-                    , tokenTypeDict
-                    , tokenDataList:
-                        Array.mapMaybe
-                          Tokenize.tokenWithRangeToTokenTypeAndRangeTuple
-                          (Tokenize.tokenize code)
-                    }
-                )
-                true
+            Just code ->
+              let
+                tokenList = Tokenize.tokenize code
+              in
+                do
+                  LspLib.sendNotificationWindowLogMessage (append "tokenList: " (show tokenList))
+                  LspLib.sendJsonRpcMessage
+                    ( LspLib.ResponseTextDocumentSemanticTokensFull
+                        { id
+                        , tokenTypeDict
+                        , tokenDataList:
+                            Array.mapMaybe
+                              Tokenize.tokenWithRangeToTokenTypeAndRangeTuple
+                              tokenList
+                        }
+                    )
+                    true
             Nothing -> LspLib.sendNotificationWindowLogMessage "TextDocumentSemanticTokensFullされた けどコードを取得できていない..."
         Either.Left message -> LspLib.sendNotificationWindowLogMessage message
     )
