@@ -1,20 +1,20 @@
 module VsCodeExtension.TokenType
-  ( TokenType(..)
+  ( TokenData(..)
+  , TokenType(..)
   , TokenTypeDict
   , TokenTypeOrNotSupportTokenType
-  , TokenTypeWithDict
   , createTokenTypeDictAndSupportTokenList
   , dictEmpty
-  , tokenAddDict
+  , tokenDataToData
   ) where
 
 import Data.Argonaut as Argonaut
 import Data.Array as Array
 import Data.Either as Either
-import Data.Map as Map
 import Data.Maybe (Maybe(..))
 import Data.UInt as UInt
 import Prelude as Prelude
+import VsCodeExtension.Range as Range
 
 data TokenType
   = TokenTypeVariable
@@ -22,6 +22,9 @@ data TokenType
 derive instance eqTokenType :: Prelude.Eq TokenType
 
 derive instance ordTokenType :: Prelude.Ord TokenType
+
+instance showTokenType :: Prelude.Show TokenType where
+  show tokenType = toString tokenType
 
 toString :: TokenType -> String
 toString = case _ of
@@ -45,10 +48,10 @@ fromString = case _ of
   _ -> Nothing
 
 newtype TokenTypeDict
-  = TokenTypeDict (Map.Map TokenType UInt.UInt)
+  = TokenTypeDict (Array TokenType)
 
 dictEmpty :: TokenTypeDict
-dictEmpty = TokenTypeDict Map.empty
+dictEmpty = TokenTypeDict []
 
 createTokenTypeDictAndSupportTokenList ::
   Array TokenTypeOrNotSupportTokenType ->
@@ -57,38 +60,44 @@ createTokenTypeDictAndSupportTokenList tokenTypeOrNotSupportTokenTypeList =
   let
     rec =
       Array.foldl
-        ( \{ index, tokenTypeDict: TokenTypeDict dict, supportTokenType } (TokenTypeOrNotSupportTokenType tokenMaybe) ->
+        ( \{ index, supportTokenType } (TokenTypeOrNotSupportTokenType tokenMaybe) ->
             { index: Prelude.add index (UInt.fromInt 1)
-            , tokenTypeDict:
-                case tokenMaybe of
-                  Just token ->
-                    TokenTypeDict
-                      (Map.insert token index dict)
-                  Nothing -> TokenTypeDict dict
             , supportTokenType:
                 case tokenMaybe of
-                  Just token -> Array.snoc supportTokenType (toString token)
+                  Just token -> Array.snoc supportTokenType token
                   Nothing -> supportTokenType
             }
         )
         { index: UInt.fromInt 0
-        , tokenTypeDict: TokenTypeDict Map.empty
         , supportTokenType: []
         }
         tokenTypeOrNotSupportTokenTypeList
   in
-    { tokenTypeDict: rec.tokenTypeDict
-    , supportTokenType: rec.supportTokenType
+    { tokenTypeDict: TokenTypeDict rec.supportTokenType
+    , supportTokenType: Prelude.map toString rec.supportTokenType
     }
 
-newtype TokenTypeWithDict
-  = TokenTypeWithDict { tokenType :: TokenType, dict :: TokenTypeDict }
+tokenTypeToInt :: TokenTypeDict -> TokenType -> Int
+tokenTypeToInt (TokenTypeDict dict) tokenType = case Array.elemIndex tokenType dict of
+  Just id -> id
+  -- TODO クライアントが未対応のtokenは0番固定にならないように
+  Nothing -> 0
 
-tokenAddDict :: TokenType -> TokenTypeDict -> TokenTypeWithDict
-tokenAddDict tokenType dict = TokenTypeWithDict { tokenType, dict }
+newtype TokenData
+  = TokenData
+  { tokenType :: TokenType
+  , start :: Range.Position
+  , length :: UInt.UInt
+  }
 
-instance jsonEncodeTokenTypeWithDict :: Argonaut.EncodeJson TokenTypeWithDict where
-  encodeJson (TokenTypeWithDict { tokenType, dict: TokenTypeDict dict }) = case Map.lookup tokenType dict of
-    Just id -> Argonaut.fromNumber (UInt.toNumber id)
-    -- TODO クライアントが未対応のtokenは0番固定にならないように
-    Nothing -> Argonaut.encodeJson 0
+instance showTokenData :: Prelude.Show TokenData where
+  show (TokenData rec) = Prelude.show rec
+
+tokenDataToData :: TokenTypeDict -> TokenData -> Array Int
+tokenDataToData dict (TokenData { tokenType, start: Range.Position { line, character }, length }) =
+  [ UInt.toInt line
+  , UInt.toInt character
+  , UInt.toInt length
+  , tokenTypeToInt dict tokenType
+  , 0
+  ]

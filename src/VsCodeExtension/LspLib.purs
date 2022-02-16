@@ -9,6 +9,8 @@ module VsCodeExtension.LspLib
   , parseContentLengthHeader
   , receiveJsonRpcMessage
   , sendJsonRpcMessage
+  , sendNotificationPublishDiagnostics
+  , sendNotificationWindowLogMessage
   ) where
 
 import Prelude
@@ -79,7 +81,7 @@ receiveJsonRpcMessage stateRef handler =
     ( \buffer -> do
         state <- Ref.read stateRef
         stdin <- Buffer.toString Encoding.UTF8 buffer
-        sendJsonRpcMessage (WindowLogMessage (append "request:" stdin))
+        sendNotificationWindowLogMessage (append "● client → server: " stdin)
         let
           (JsonRpcRequestListParseData { resultList, readContentLength, rest }) =
             jsonRpcRequestListParse state
@@ -228,7 +230,7 @@ jsonObjectToJsonRpcRequestResult jsonObject = do
                     Just { tokenTypes } -> tokenTypes
               }
           )
-      "Initialized" -> do
+      "initialized" -> do
         Either.Right Initialized
       "textDocument/didOpen" -> do
         params <- getParam jsonObject
@@ -272,7 +274,7 @@ data JsonRpcResponse
   | PublishDiagnostics { uri :: String, diagnostics :: Array Diagnostic }
   | ResponseTextDocumentSemanticTokensFull
     { id :: Id
-    , data :: Array (Tuple.Tuple TokenType.TokenType Range.Range)
+    , tokenDataList :: Array TokenType.TokenData
     , tokenTypeDict :: TokenType.TokenTypeDict
     }
 
@@ -283,9 +285,9 @@ instance encodeJsonDiagnostic :: Argonaut.EncodeJson Diagnostic where
   encodeJson :: Diagnostic -> Argonaut.Json
   encodeJson (Diagnostic rec) = Argonaut.encodeJson rec
 
-sendJsonRpcMessage :: JsonRpcResponse -> Effect.Effect Unit
-sendJsonRpcMessage response = do
-  binary <- jsonRpcResponseToBinary response
+sendJsonRpcMessage :: JsonRpcResponse -> Boolean -> Effect.Effect Unit
+sendJsonRpcMessage response isLog = do
+  binary <- jsonRpcResponseToBinary response isLog
   _ <-
     Stream.writeString
       Process.stdout
@@ -294,13 +296,31 @@ sendJsonRpcMessage response = do
       (pure unit)
   pure unit
 
-jsonRpcResponseToBinary :: JsonRpcResponse -> Effect.Effect String
-jsonRpcResponseToBinary response =
+sendNotificationPublishDiagnostics ::
+  { uri :: String, diagnostics :: Array Diagnostic } ->
+  Effect.Effect Unit
+sendNotificationPublishDiagnostics result =
+  sendJsonRpcMessage
+    (PublishDiagnostics result)
+    true
+
+sendNotificationWindowLogMessage :: String -> Effect.Effect Unit
+sendNotificationWindowLogMessage message =
+  sendJsonRpcMessage
+    (WindowLogMessage message)
+    false
+
+jsonRpcResponseToBinary :: JsonRpcResponse -> Boolean -> Effect.Effect String
+jsonRpcResponseToBinary response isLog =
   let
     jsonValueAsString :: String
     jsonValueAsString = Argonaut.stringify (jsonRpcResponseToJson response)
   in
     do
+      if isLog then
+        sendNotificationWindowLogMessage (append "○ client ← server: " jsonValueAsString)
+      else
+        pure unit
       jsonValueAsBuffer <- (Buffer.fromString jsonValueAsString Encoding.UTF8) :: Effect.Effect Buffer.Buffer
       jsonValueBinaryLength <- Buffer.size jsonValueAsBuffer
       pure
@@ -339,10 +359,16 @@ jsonRpcResponseToJson = case _ of
     encodeNotification
       "textDocument/publishDiagnostics"
       (Argonaut.encodeJson value)
-  ResponseTextDocumentSemanticTokensFull { id } ->
+  ResponseTextDocumentSemanticTokensFull { id, tokenDataList, tokenTypeDict } ->
     encodeResponse
       id
-      (Argonaut.encodeJson { data: ([] :: Array Int) })
+      ( Argonaut.encodeJson
+          { data:
+              bind
+                tokenDataList
+                (TokenType.tokenDataToData tokenTypeDict)
+          }
+      )
 
 encodeNotification :: String -> Argonaut.Json -> Argonaut.Json
 encodeNotification method params = Argonaut.encodeJson { jsonrpc: "2.0", method, params }
