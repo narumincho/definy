@@ -20,12 +20,13 @@ import Node.Encoding as Encoding
 import Node.Process as Process
 import Node.Stream as Stream
 import VsCodeExtension.Range as Range
+import VsCodeExtension.TokenType as TokenType
 
 newtype State
-  = State { supportPublishDiagnostics :: Boolean }
-
-stateSetSupportPublishDiagnostics :: Boolean -> State -> State
-stateSetSupportPublishDiagnostics supportPublishDiagnostics (State rec) = State (rec { supportPublishDiagnostics = supportPublishDiagnostics })
+  = State
+  { supportPublishDiagnostics :: Boolean
+  , tokenTypeDict :: TokenType.TokenTypeDict
+  }
 
 main :: Effect.Effect Unit
 main = do
@@ -36,14 +37,34 @@ main = do
           , rest: Binary.empty
           }
       )
-  state <- Ref.new (State { supportPublishDiagnostics: false })
+  state <-
+    Ref.new
+      ( State
+          { supportPublishDiagnostics: false
+          , tokenTypeDict: TokenType.dictEmpty
+          }
+      )
   receiveJsonRpcMessage
     parseState
     ( case _ of
-        Either.Right (Initialize { id, supportPublishDiagnostics }) -> do
+        Either.Right (Initialize rec) -> do
           sendJsonRpcMessage (WindowLogMessage "Initializeされた!")
-          Ref.modify_ (stateSetSupportPublishDiagnostics supportPublishDiagnostics) state
-          sendJsonRpcMessage (ResponseInitialize { id })
+          let
+            { tokenTypeDict, supportTokenType } = TokenType.createTokenTypeDictAndSupportTokenList rec.supportTokenTypes
+          Ref.modify_
+            ( \(State _) ->
+                State
+                  { supportPublishDiagnostics: rec.supportPublishDiagnostics
+                  , tokenTypeDict
+                  }
+            )
+            state
+          sendJsonRpcMessage
+            ( ResponseInitialize
+                { id: rec.id
+                , semanticTokensProviderLegendTokenTypes: supportTokenType
+                }
+            )
         Either.Right Initialized ->
           sendJsonRpcMessage
             (WindowLogMessage "Initializedされた!")
@@ -84,7 +105,11 @@ main = do
     )
 
 data JsonRpcRequest
-  = Initialize { id :: JsonRpcId, supportPublishDiagnostics :: Boolean }
+  = Initialize
+    { id :: JsonRpcId
+    , supportPublishDiagnostics :: Boolean
+    , supportTokenTypes :: Array TokenType.TokenTypeOrNotSupportTokenType
+    }
   | Initialized
   | TextDocumentDidOpen { uri :: String }
   | TextDocumentDidChange { uri :: String }
@@ -229,7 +254,14 @@ jsonObjectToJsonRpcRequestResult jsonObject = do
       "initialize" -> do
         (id :: Int) <- Argonaut.getField jsonObject "id"
         (params :: { capabilities :: { textDocument :: Object.Object Argonaut.Json } }) <- Argonaut.getField jsonObject "params"
-        (publishDiagnosticsMaybe :: Maybe (Object.Object Argonaut.Json)) <- Argonaut.getFieldOptional params.capabilities.textDocument "publishDiagnostics"
+        (publishDiagnosticsMaybe :: Maybe (Object.Object Argonaut.Json)) <-
+          Argonaut.getFieldOptional
+            params.capabilities.textDocument
+            "publishDiagnostics"
+        (semanticTokens :: Maybe ({ tokenTypes :: Array TokenType.TokenTypeOrNotSupportTokenType })) <-
+          Argonaut.getFieldOptional
+            params.capabilities.textDocument
+            "semanticTokens"
         Either.Right
           ( Initialize
               { id: JsonRpcId id
@@ -237,6 +269,10 @@ jsonObjectToJsonRpcRequestResult jsonObject = do
                   case publishDiagnosticsMaybe of
                     Just _ -> true
                     Nothing -> false
+              , supportTokenTypes:
+                  case semanticTokens of
+                    Nothing -> []
+                    Just { tokenTypes } -> tokenTypes
               }
           )
       "Initialized" -> do
@@ -261,7 +297,10 @@ getParam jsonObject = Argonaut.getField jsonObject "params"
 
 data JsonRpcResponse
   = WindowLogMessage String
-  | ResponseInitialize { id :: JsonRpcId }
+  | ResponseInitialize
+    { id :: JsonRpcId
+    , semanticTokensProviderLegendTokenTypes :: Array String
+    }
   | PublishDiagnostics { uri :: String, diagnostics :: Array Diagnostic }
 
 newtype Diagnostic
@@ -308,11 +347,23 @@ jsonRpcResponseToJson = case _ of
       , method: "window/logMessage"
       , params: { type: 3.0, message }
       }
-  ResponseInitialize { id: JsonRpcId id } ->
+  ResponseInitialize { id: JsonRpcId id, semanticTokensProviderLegendTokenTypes } ->
     Argonaut.encodeJson
       { jsonrpc: "2.0"
       , id
-      , result: { capabilities: { textDocumentSync: 1 } }
+      , result:
+          { capabilities:
+              { textDocumentSync: 1
+              , semanticTokensProvider:
+                  { legend:
+                      { tokenTypes: semanticTokensProviderLegendTokenTypes
+                      , tokenModifiers: [] :: Array String
+                      }
+                  , range: false
+                  , full: true
+                  }
+              }
+          }
       }
   PublishDiagnostics value ->
     Argonaut.encodeJson
