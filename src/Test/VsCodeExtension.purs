@@ -9,7 +9,7 @@ import Data.UInt as UInt
 import Test.Unit as TestUnit
 import Test.Util (assertEqual)
 import Type.Proxy (Proxy(..))
-import VsCodeExtension.Lsp as Lsp
+import VsCodeExtension.LspLib as LspLib
 import VsCodeExtension.Range as Range
 import VsCodeExtension.Tokenize as Tokenize
 
@@ -22,22 +22,22 @@ parseContentLengthHeaderTest :: TestUnit.Test
 parseContentLengthHeaderTest = do
   assertEqual
     "parseContentLengthHeader lowercase"
-    { actual: Lsp.parseContentLengthHeader "content-length: 234"
+    { actual: LspLib.parseContentLengthHeader "content-length: 234"
     , expected: Just (UInt.fromInt 234)
     }
   assertEqual
     "parseContentLengthHeader uppercase"
-    { actual: Lsp.parseContentLengthHeader "Content-Length: 3"
+    { actual: LspLib.parseContentLengthHeader "Content-Length: 3"
     , expected: Just (UInt.fromInt 3)
     }
   assertEqual
     "parseContentLengthHeader separator"
-    { actual: Lsp.parseContentLengthHeader "Content-LEngth:99999"
+    { actual: LspLib.parseContentLengthHeader "Content-LEngth:99999"
     , expected: Just (UInt.fromInt 99999)
     }
   assertEqual
     "parseContentLengthHeader separator nothing"
-    { actual: Lsp.parseContentLengthHeader "Content-Length+742"
+    { actual: LspLib.parseContentLengthHeader "Content-Length+742"
     , expected: Nothing
     }
 
