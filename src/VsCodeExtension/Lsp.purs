@@ -8,6 +8,7 @@ import Binary as Binary
 import Data.Argonaut as Argonaut
 import Data.Array as Array
 import Data.Either as Either
+import Data.Map as Map
 import Data.Maybe (Maybe(..))
 import Data.String as String
 import Data.Tuple as Tuple
@@ -26,6 +27,7 @@ newtype State
   = State
   { supportPublishDiagnostics :: Boolean
   , tokenTypeDict :: TokenType.TokenTypeDict
+  , codeDict :: Map.Map String String
   }
 
 main :: Effect.Effect Unit
@@ -42,6 +44,7 @@ main = do
       ( State
           { supportPublishDiagnostics: false
           , tokenTypeDict: TokenType.dictEmpty
+          , codeDict: Map.empty
           }
       )
   receiveJsonRpcMessage
@@ -52,11 +55,13 @@ main = do
           let
             { tokenTypeDict, supportTokenType } = TokenType.createTokenTypeDictAndSupportTokenList rec.supportTokenTypes
           Ref.modify_
-            ( \(State _) ->
+            ( \(State stateRec) ->
                 State
-                  { supportPublishDiagnostics: rec.supportPublishDiagnostics
-                  , tokenTypeDict
-                  }
+                  ( stateRec
+                      { supportPublishDiagnostics = rec.supportPublishDiagnostics
+                      , tokenTypeDict = tokenTypeDict
+                      }
+                  )
             )
             state
           sendJsonRpcMessage
@@ -68,39 +73,24 @@ main = do
         Either.Right Initialized ->
           sendJsonRpcMessage
             (WindowLogMessage "Initializedされた!")
-        Either.Right (TextDocumentDidOpen { uri }) -> do
-          (State { supportPublishDiagnostics }) <- Ref.read state
+        Either.Right (TextDocumentDidOpen { uri, text }) -> do
+          Ref.modify_
+            ( \(State stateRec) ->
+                State
+                  (stateRec { codeDict = Map.insert uri text stateRec.codeDict })
+            )
+            state
           sendJsonRpcMessage
             (WindowLogMessage "TextDocumentDidOpenされた!")
-          if supportPublishDiagnostics then
-            sendJsonRpcMessage
-              ( PublishDiagnostics
-                  { uri
-                  , diagnostics:
-                      [ Diagnostic
-                          { range:
-                              Range.Range
-                                { start:
-                                    Range.Position
-                                      { line: UInt.fromInt 0
-                                      , character: UInt.fromInt 0
-                                      }
-                                , end:
-                                    Range.Position
-                                      { line: UInt.fromInt 0
-                                      , character: UInt.fromInt 2
-                                      }
-                                }
-                          , message: "テストエラーメッセージ!"
-                          }
-                      ]
-                  }
-              )
-          else
-            pure unit
         Either.Right (TextDocumentDidChange _) ->
           sendJsonRpcMessage
             (WindowLogMessage "TextDocumentDidChangeされた!")
+        Either.Right (TextDocumentSemanticTokensFull { id }) -> do
+          (State { tokenTypeDict }) <- Ref.read state
+          sendJsonRpcMessage
+            (ResponseTextDocumentSemanticTokensFull { id, tokenTypeDict, data: [] })
+          sendJsonRpcMessage
+            (WindowLogMessage "TextDocumentSemanticTokensFullされた!")
         Either.Left message -> sendJsonRpcMessage (WindowLogMessage message)
     )
 
@@ -111,8 +101,9 @@ data JsonRpcRequest
     , supportTokenTypes :: Array TokenType.TokenTypeOrNotSupportTokenType
     }
   | Initialized
-  | TextDocumentDidOpen { uri :: String }
+  | TextDocumentDidOpen { uri :: String, text :: String }
   | TextDocumentDidChange { uri :: String }
+  | TextDocumentSemanticTokensFull { id :: JsonRpcId, uri :: String }
 
 data JsonRpcId
   = JsonRpcId Int
@@ -279,12 +270,22 @@ jsonObjectToJsonRpcRequestResult jsonObject = do
         Either.Right Initialized
       "textDocument/didOpen" -> do
         params <- getParam jsonObject
-        (textDocument :: { uri :: String }) <- Argonaut.getField params "textDocument"
-        Either.Right (TextDocumentDidOpen { uri: textDocument.uri })
+        (textDocument :: { uri :: String, text :: String }) <- Argonaut.getField params "textDocument"
+        Either.Right (TextDocumentDidOpen textDocument)
       "textDocument/didChange" -> do
         params <- getParam jsonObject
         (textDocument :: { uri :: String }) <- Argonaut.getField params "textDocument"
-        Either.Right (TextDocumentDidOpen { uri: textDocument.uri })
+        Either.Right (TextDocumentDidChange { uri: textDocument.uri })
+      "textDocument/semanticTokens/full" -> do
+        (id :: Int) <- Argonaut.getField jsonObject "id"
+        params <- getParam jsonObject
+        (textDocument :: { uri :: String }) <- Argonaut.getField params "textDocument"
+        Either.Right
+          ( TextDocumentSemanticTokensFull
+              { id: JsonRpcId id
+              , uri: textDocument.uri
+              }
+          )
       _ ->
         Either.Left
           (Argonaut.TypeMismatch (append "unknown method " method))
@@ -302,6 +303,11 @@ data JsonRpcResponse
     , semanticTokensProviderLegendTokenTypes :: Array String
     }
   | PublishDiagnostics { uri :: String, diagnostics :: Array Diagnostic }
+  | ResponseTextDocumentSemanticTokensFull
+    { id :: JsonRpcId
+    , data :: Array (Tuple.Tuple TokenType.TokenType Range.Range)
+    , tokenTypeDict :: TokenType.TokenTypeDict
+    }
 
 newtype Diagnostic
   = Diagnostic { range :: Range.Range, message :: String }
@@ -370,4 +376,11 @@ jsonRpcResponseToJson = case _ of
       { jsonrpc: "2.0"
       , method: "textDocument/publishDiagnostics"
       , params: value
+      }
+  ResponseTextDocumentSemanticTokensFull { id: JsonRpcId id } ->
+    Argonaut.encodeJson
+      { jsonrpc: "2.0"
+      , id
+      , result:
+          { data: ([] :: Array Int) }
       }
