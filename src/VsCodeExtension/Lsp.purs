@@ -8,6 +8,7 @@ import Binary as Binary
 import Data.Argonaut as Argonaut
 import Data.Array as Array
 import Data.Either as Either
+import Data.Generic.Rep (class Generic)
 import Data.Maybe (Maybe(..))
 import Data.String as String
 import Data.Tuple as Tuple
@@ -20,6 +21,12 @@ import Node.Encoding as Encoding
 import Node.Process as Process
 import Node.Stream as Stream
 
+newtype State
+  = State { supportPublishDiagnostics :: Boolean }
+
+stateSetSupportPublishDiagnostics :: Boolean -> State -> State
+stateSetSupportPublishDiagnostics supportPublishDiagnostics (State rec) = State (rec { supportPublishDiagnostics = supportPublishDiagnostics })
+
 main :: Effect.Effect Unit
 main = do
   parseState <-
@@ -29,18 +36,47 @@ main = do
           , rest: Binary.empty
           }
       )
+  state <- Ref.new (State { supportPublishDiagnostics: false })
   receiveJsonRpcMessage
     parseState
     ( case _ of
-        Either.Right (Initialize id) -> do
+        Either.Right (Initialize { id, supportPublishDiagnostics }) -> do
           sendJsonRpcMessage (WindowLogMessage "Initializeされた!")
+          Ref.modify_ (stateSetSupportPublishDiagnostics supportPublishDiagnostics) state
           sendJsonRpcMessage (ResponseInitialize { id })
         Either.Right Initialized ->
           sendJsonRpcMessage
             (WindowLogMessage "Initializedされた!")
-        Either.Right (TextDocumentDidOpen _) ->
+        Either.Right (TextDocumentDidOpen { uri }) -> do
+          (State { supportPublishDiagnostics }) <- Ref.read state
           sendJsonRpcMessage
             (WindowLogMessage "TextDocumentDidOpenされた!")
+          if supportPublishDiagnostics then
+            sendJsonRpcMessage
+              ( PublishDiagnostics
+                  { uri
+                  , diagnostics:
+                      [ Diagnostic
+                          { range:
+                              Range
+                                { start:
+                                    Position
+                                      { line: UInt.fromInt 0
+                                      , character: UInt.fromInt 0
+                                      }
+                                , end:
+                                    Position
+                                      { line: UInt.fromInt 0
+                                      , character: UInt.fromInt 2
+                                      }
+                                }
+                          , message: "テストエラーメッセージ!"
+                          }
+                      ]
+                  }
+              )
+          else
+            pure unit
         Either.Right (TextDocumentDidChange _) ->
           sendJsonRpcMessage
             (WindowLogMessage "TextDocumentDidChangeされた!")
@@ -48,7 +84,7 @@ main = do
     )
 
 data JsonRpcRequest
-  = Initialize JsonRpcId
+  = Initialize { id :: JsonRpcId, supportPublishDiagnostics :: Boolean }
   | Initialized
   | TextDocumentDidOpen { uri :: String }
   | TextDocumentDidChange { uri :: String }
@@ -192,7 +228,17 @@ jsonObjectToJsonRpcRequestResult jsonObject = do
   ( case method of
       "initialize" -> do
         (id :: Int) <- Argonaut.getField jsonObject "id"
-        Either.Right (Initialize (JsonRpcId id))
+        (params :: { capabilities :: { textDocument :: Object.Object Argonaut.Json } }) <- Argonaut.getField jsonObject "params"
+        (publishDiagnosticsMaybe :: Maybe (Object.Object Argonaut.Json)) <- Argonaut.getFieldOptional params.capabilities.textDocument "publishDiagnostics"
+        Either.Right
+          ( Initialize
+              { id: JsonRpcId id
+              , supportPublishDiagnostics:
+                  case publishDiagnosticsMaybe of
+                    Just _ -> true
+                    Nothing -> false
+              }
+          )
       "Initialized" -> do
         Either.Right Initialized
       "textDocument/didOpen" -> do
@@ -216,6 +262,34 @@ getParam jsonObject = Argonaut.getField jsonObject "params"
 data JsonRpcResponse
   = WindowLogMessage String
   | ResponseInitialize { id :: JsonRpcId }
+  | PublishDiagnostics { uri :: String, diagnostics :: Array Diagnostic }
+
+newtype Diagnostic
+  = Diagnostic { range :: Range, message :: String }
+
+derive instance genericDiagnostic :: Generic Diagnostic _
+
+instance encodeJsonDiagnostic :: Argonaut.EncodeJson Diagnostic where
+  encodeJson :: Diagnostic -> Argonaut.Json
+  encodeJson (Diagnostic rec) = Argonaut.encodeJson rec
+
+newtype Range
+  = Range { start :: Position, end :: Position }
+
+instance encodeJsonRange :: Argonaut.EncodeJson Range where
+  encodeJson :: Range -> Argonaut.Json
+  encodeJson (Range rec) = Argonaut.encodeJson rec
+
+newtype Position
+  = Position { line :: UInt.UInt, character :: UInt.UInt }
+
+instance encodeJsonPosition :: Argonaut.EncodeJson Position where
+  encodeJson :: Position -> Argonaut.Json
+  encodeJson (Position rec) =
+    Argonaut.encodeJson
+      { line: UInt.toInt rec.line
+      , character: UInt.toInt rec.character
+      }
 
 sendJsonRpcMessage :: JsonRpcResponse -> Effect.Effect Unit
 sendJsonRpcMessage response = do
@@ -250,11 +324,19 @@ jsonRpcResponseToJson :: JsonRpcResponse -> Argonaut.Json
 jsonRpcResponseToJson = case _ of
   WindowLogMessage message ->
     Argonaut.encodeJson
-      { method: "window/logMessage"
+      { jsonrpc: "2.0"
+      , method: "window/logMessage"
       , params: { type: 3.0, message }
       }
   ResponseInitialize { id: JsonRpcId id } ->
     Argonaut.encodeJson
-      { id
+      { jsonrpc: "2.0"
+      , id
       , result: { capabilities: { textDocumentSync: 1 } }
+      }
+  PublishDiagnostics value ->
+    Argonaut.encodeJson
+      { jsonrpc: "2.0"
+      , method: "textDocument/publishDiagnostics"
+      , params: value
       }
