@@ -14,7 +14,7 @@ newtype State
   = State
   { supportPublishDiagnostics :: Boolean
   , tokenTypeDict :: TokenType.TokenTypeDict
-  , codeDict :: Map.Map String String
+  , codeDict :: Map.Map LspLib.Uri String
   }
 
 main :: Effect.Effect Unit
