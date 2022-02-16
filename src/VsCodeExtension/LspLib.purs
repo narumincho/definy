@@ -372,12 +372,33 @@ jsonRpcResponseToJson = case _ of
     encodeResponse
       id
       ( Argonaut.encodeJson
-          { data:
-              bind
-                tokenDataList
-                (TokenType.tokenDataToData tokenTypeDict)
-          }
+          { data: tokenDataListToDataList tokenTypeDict tokenDataList }
       )
+
+tokenDataListToDataList :: TokenType.TokenTypeDict -> Array TokenType.TokenData -> Array Int
+tokenDataListToDataList tokenTypeDict tokenDataList =
+  ( Array.foldl
+        ( \{ beforePosition, result } item@(TokenType.TokenData { start }) ->
+            { beforePosition: start
+            , result:
+                append result
+                  ( TokenType.tokenDataToData
+                      tokenTypeDict
+                      beforePosition
+                      item
+                  )
+            }
+        )
+        { beforePosition:
+            Range.Position
+              { line: UInt.fromInt 0
+              , character: UInt.fromInt 0
+              }
+        , result: []
+        }
+        tokenDataList
+    )
+    .result
 
 encodeNotification :: String -> Argonaut.Json -> Argonaut.Json
 encodeNotification method params = Argonaut.encodeJson { jsonrpc: "2.0", method, params }

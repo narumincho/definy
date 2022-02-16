@@ -93,10 +93,10 @@ newtype TokenData
 instance showTokenData :: Prelude.Show TokenData where
   show (TokenData rec) = Prelude.show rec
 
-tokenDataToData :: TokenTypeDict -> TokenData -> Array Int
-tokenDataToData dict (TokenData { tokenType, start: Range.Position { line, character }, length }) =
-  [ UInt.toInt line
-  , UInt.toInt character
+tokenDataToData :: TokenTypeDict -> Range.Position -> TokenData -> Array Int
+tokenDataToData dict (Range.Position { line: beforeLine, character: beforeCharacter }) (TokenData { tokenType, start: Range.Position { line, character }, length }) =
+  [ Prelude.sub (UInt.toInt line) (UInt.toInt beforeLine)
+  , Prelude.sub (UInt.toInt character) (UInt.toInt beforeCharacter)
   , UInt.toInt length
   , tokenTypeToInt dict tokenType
   , 0
