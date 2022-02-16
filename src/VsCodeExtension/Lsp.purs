@@ -8,7 +8,6 @@ import Binary as Binary
 import Data.Argonaut as Argonaut
 import Data.Array as Array
 import Data.Either as Either
-import Data.Generic.Rep (class Generic)
 import Data.Maybe (Maybe(..))
 import Data.String as String
 import Data.Tuple as Tuple
@@ -20,6 +19,7 @@ import Node.Buffer as Buffer
 import Node.Encoding as Encoding
 import Node.Process as Process
 import Node.Stream as Stream
+import VsCodeExtension.Range as Range
 
 newtype State
   = State { supportPublishDiagnostics :: Boolean }
@@ -58,14 +58,14 @@ main = do
                   , diagnostics:
                       [ Diagnostic
                           { range:
-                              Range
+                              Range.Range
                                 { start:
-                                    Position
+                                    Range.Position
                                       { line: UInt.fromInt 0
                                       , character: UInt.fromInt 0
                                       }
                                 , end:
-                                    Position
+                                    Range.Position
                                       { line: UInt.fromInt 0
                                       , character: UInt.fromInt 2
                                       }
@@ -265,31 +265,11 @@ data JsonRpcResponse
   | PublishDiagnostics { uri :: String, diagnostics :: Array Diagnostic }
 
 newtype Diagnostic
-  = Diagnostic { range :: Range, message :: String }
-
-derive instance genericDiagnostic :: Generic Diagnostic _
+  = Diagnostic { range :: Range.Range, message :: String }
 
 instance encodeJsonDiagnostic :: Argonaut.EncodeJson Diagnostic where
   encodeJson :: Diagnostic -> Argonaut.Json
   encodeJson (Diagnostic rec) = Argonaut.encodeJson rec
-
-newtype Range
-  = Range { start :: Position, end :: Position }
-
-instance encodeJsonRange :: Argonaut.EncodeJson Range where
-  encodeJson :: Range -> Argonaut.Json
-  encodeJson (Range rec) = Argonaut.encodeJson rec
-
-newtype Position
-  = Position { line :: UInt.UInt, character :: UInt.UInt }
-
-instance encodeJsonPosition :: Argonaut.EncodeJson Position where
-  encodeJson :: Position -> Argonaut.Json
-  encodeJson (Position rec) =
-    Argonaut.encodeJson
-      { line: UInt.toInt rec.line
-      , character: UInt.toInt rec.character
-      }
 
 sendJsonRpcMessage :: JsonRpcResponse -> Effect.Effect Unit
 sendJsonRpcMessage response = do
