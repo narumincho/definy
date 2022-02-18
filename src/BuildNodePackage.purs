@@ -99,7 +99,6 @@ mainAff =
                 Name.fromSymbolProxy (Proxy :: _ "README")
             }
         )
-        (Maybe.Just FileType.Markdown)
         ( Path.DistributionFilePath
             { directoryPath:
                 Path.DistributionDirectoryPath
@@ -111,8 +110,8 @@ mainAff =
                   (Proxy :: Proxy "README")
             }
         )
-        FileType.Markdown
-    , FileSystemCopy.copyFileToDistributionWithoutExtension
+        (Maybe.Just FileType.Markdown)
+    , FileSystemCopy.copyFileToDistribution
         ( Path.FilePath
             { directoryPath: genDirectoryPath
             , fileName:
@@ -120,7 +119,6 @@ mainAff =
                   (Proxy :: _ "LICENCE")
             }
         )
-        Maybe.Nothing
         ( Path.DistributionFilePath
             { directoryPath:
                 Path.DistributionDirectoryPath
@@ -132,6 +130,7 @@ mainAff =
                   (Proxy :: _ "LICENCE")
             }
         )
+        Maybe.Nothing
     , writePackageJson
     ]
 

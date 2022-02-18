@@ -3,6 +3,7 @@ module PureScript.Spago (bundleModule, bundleApp, build) where
 import Prelude
 import Console as Console
 import Data.Array.NonEmpty as NonEmptyArray
+import Data.Maybe (Maybe(..))
 import Data.String.NonEmpty as NonEmptyString
 import Effect.Aff as Aff
 import FileSystem.FileType as FileType
@@ -26,7 +27,7 @@ bundleModule { mainModuleName, outputJavaScriptPath } = do
                 (Proxy :: _ " --to ")
             , Path.distributionFilePathToString
                 outputJavaScriptPath
-                FileType.JavaScript
+                (Just FileType.JavaScript)
             ]
         )
     )
@@ -36,7 +37,7 @@ bundleModule { mainModuleName, outputJavaScriptPath } = do
     , outputJavaScriptPath:
         Path.distributionFilePathToString
           outputJavaScriptPath
-          FileType.JavaScript
+          (Just FileType.JavaScript)
     }
 
 bundleApp :: { mainModuleName :: Data.ModuleName, outputJavaScriptPath :: Path.DistributionFilePath } -> Aff.Aff Unit
@@ -53,7 +54,7 @@ bundleApp { mainModuleName, outputJavaScriptPath } = do
                 (Proxy :: _ " --to ")
             , Path.distributionFilePathToString
                 outputJavaScriptPath
-                FileType.JavaScript
+                (Just FileType.JavaScript)
             ]
         )
     )
@@ -62,7 +63,7 @@ bundleApp { mainModuleName, outputJavaScriptPath } = do
     , outputJavaScriptPath:
         Path.distributionFilePathToString
           outputJavaScriptPath
-          FileType.JavaScript
+          (Just FileType.JavaScript)
     }
 
 -- | ```ps1

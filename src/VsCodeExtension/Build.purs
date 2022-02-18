@@ -4,6 +4,7 @@ module VsCodeExtension.Build
 
 import Prelude
 import Console as Console
+import Data.Argonaut as Argonaut
 import Data.Array.NonEmpty as NonEmptyArray
 import Data.Either as Either
 import Data.Map as Map
@@ -13,6 +14,8 @@ import Data.String.NonEmpty (NonEmptyString)
 import Data.String.NonEmpty as NonEmptyString
 import Effect as Effect
 import Effect.Aff as Aff
+import FileSystem.Copy as FileSystemCopy
+import FileSystem.FileType as FileType
 import FileSystem.Name as Name
 import FileSystem.Path as Path
 import FileSystem.Write as FileSystemWrite
@@ -31,6 +34,8 @@ main =
             [ writePackageJsonForVsCodeExtension
             , buildExtensionMain
             , buildExtensionLsp
+            , writeLanguageConfiguration
+            , copyIcon
             ]
         )
     )
@@ -40,6 +45,13 @@ distributionDirectoryPath =
   Path.DistributionDirectoryPath
     { appName: Name.fromSymbolProxy (Proxy :: _ "definy-lsp")
     , folderNameMaybe: Nothing
+    }
+
+languageConfigurationPath :: Path.DistributionFilePath
+languageConfigurationPath =
+  Path.DistributionFilePath
+    { directoryPath: distributionDirectoryPath
+    , fileName: Name.fromSymbolProxy (Proxy :: _ "language-configuration")
     }
 
 writePackageJsonForVsCodeExtension :: Aff.Aff Unit
@@ -104,6 +116,11 @@ generatePackageJson dependencies =
                   { id: NonEmptyString.nes (Proxy :: _ "definy")
                   , extensions:
                       [ NonEmptyString.nes (Proxy :: _ ".definy") ]
+                  , configuration: languageConfigurationPath
+                  , icon:
+                      { light: iconDistributionPath
+                      , dark: iconDistributionPath
+                      }
                   }
               )
           )
@@ -134,3 +151,55 @@ buildExtensionLsp =
           , fileName: Name.fromSymbolProxy (Proxy :: _ "lsp")
           }
     }
+
+writeLanguageConfiguration :: Aff.Aff Unit
+writeLanguageConfiguration =
+  FileSystemWrite.writeJson
+    languageConfigurationPath
+    languageConfiguration
+
+languageConfiguration :: Argonaut.Json
+languageConfiguration =
+  Argonaut.encodeJson
+    { comments: { blockComment: [ "{-", "-}" ] }
+    , brackets:
+        [ [ "{", "}" ]
+        , [ "[", "]" ]
+        , [ "(", ")" ]
+        ]
+    , autoClosingPairs:
+        [ Argonaut.encodeJson { open: "{", close: "}" }
+        , Argonaut.encodeJson { open: "[", close: "]" }
+        , Argonaut.encodeJson { open: "(", close: ")" }
+        , Argonaut.encodeJson { open: "'", close: "'", notIn: [ "string", "comment" ] }
+        , Argonaut.encodeJson { open: "\"", close: "\"", notIn: [ "string" ] }
+        , Argonaut.encodeJson { open: "///", close: "///", notIn: [ "string" ] }
+        ]
+    , surroundingPairs:
+        [ [ "{", "}" ]
+        , [ "[", "]" ]
+        , [ "(", ")" ]
+        , [ "'", "'" ]
+        , [ "\"", "\"" ]
+        ]
+    }
+
+iconDistributionPath :: Path.DistributionFilePath
+iconDistributionPath =
+  Path.DistributionFilePath
+    { directoryPath: distributionDirectoryPath
+    , fileName: Name.fromSymbolProxy (Proxy :: _ "icon")
+    }
+
+copyIcon :: Aff.Aff Unit
+copyIcon =
+  FileSystemCopy.copyFileToDistribution
+    ( Path.FilePath
+        { directoryPath:
+            Path.DirectoryPath
+              [ Name.fromSymbolProxy (Proxy :: _ "static") ]
+        , fileName: Name.fromSymbolProxy (Proxy :: _ "icon")
+        }
+    )
+    iconDistributionPath
+    (Just FileType.Png)

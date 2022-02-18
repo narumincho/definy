@@ -59,6 +59,11 @@ newtype ContributesLanguages
   = ContributesLanguages
   { id :: NonEmptyString
   , extensions :: Array NonEmptyString
+  , configuration :: Path.DistributionFilePath
+  , icon ::
+      { light :: Path.DistributionFilePath
+      , dark :: Path.DistributionFilePath
+      }
   }
 
 newtype PackageJsonOutput
@@ -174,7 +179,25 @@ createContributesValue languageList =
     }
 
 createContributesLanguages :: ContributesLanguages -> Argonaut.Json
-createContributesLanguages (ContributesLanguages rec) = Argonaut.encodeJson rec
+createContributesLanguages (ContributesLanguages rec) =
+  Argonaut.encodeJson
+    { id: rec.id
+    , extensions: rec.extensions
+    , configuration:
+        Path.distributionFilePathToStringBaseApp
+          rec.configuration
+          FileType.Json
+    , icon:
+        { dark:
+            Path.distributionFilePathToStringBaseApp
+              rec.icon.dark
+              FileType.Png
+        , light:
+            Path.distributionFilePathToStringBaseApp
+              rec.icon.light
+              FileType.Png
+        }
+    }
 
 dependenciesPropertyName :: String
 dependenciesPropertyName = "dependencies"

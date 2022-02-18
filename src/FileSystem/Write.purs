@@ -11,6 +11,7 @@ import Prelude
 import Console as Console
 import Data.Argonaut as Argonaut
 import Data.Array.NonEmpty as ArrayNonEmpty
+import Data.Maybe (Maybe(..))
 import Data.Maybe as Maybe
 import Data.String.NonEmpty as NonEmptyString
 import Effect.Aff as Aff
@@ -29,7 +30,9 @@ writeTextFileInDistribution :: Path.DistributionFilePath -> String -> Aff.Aff Un
 writeTextFileInDistribution distributionFilePath content =
   let
     filePath :: String
-    filePath = NonEmptyString.toString (Path.distributionFilePathToStringWithoutExtensiton distributionFilePath)
+    filePath =
+      NonEmptyString.toString
+        (Path.distributionFilePathToString distributionFilePath Nothing)
   in
     do
       ensureDir
@@ -43,7 +46,9 @@ writeJson :: Path.DistributionFilePath -> Argonaut.Json -> Aff.Aff Unit
 writeJson distributionFilePath json =
   let
     filePath :: String
-    filePath = NonEmptyString.toString (Path.distributionFilePathToString distributionFilePath FileType.Json)
+    filePath =
+      NonEmptyString.toString
+        (Path.distributionFilePathToString distributionFilePath (Just FileType.Json))
   in
     do
       ensureDir (Path.distributionDirectoryPathToDirectoryPath (Path.distributionFilePathToDirectoryPath distributionFilePath))
@@ -91,7 +96,8 @@ writeTypeScriptFile filePath codeAsText =
     do
       ensureDir (Path.filePathGetDirectoryPath filePath)
       Fs.writeTextFile Encoding.UTF8 filePathAsString codeAsText
-      Console.logValueAsAff "TypeScript のファイルを書き込んだ" { filePath: filePathAsString }
+      Console.logValueAsAff "TypeScript のファイルを書き込んだ"
+        { filePath: filePathAsString }
 
 foreign import ensureDirAsEffectFnAff :: String -> AffCompat.EffectFnAff Unit
 
@@ -112,7 +118,7 @@ writeFirebaseRules distributionFilePath@(Path.DistributionFilePath { directoryPa
       NonEmptyString.toString
         ( Path.distributionFilePathToString
             distributionFilePath
-            FileType.FirebaseSecurityRules
+            (Just FileType.FirebaseSecurityRules)
         )
   in
     do

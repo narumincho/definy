@@ -426,9 +426,8 @@ copyStaticResource resultList =
   Util.toParallel
     ( map
         ( \(StaticResourceFile.StaticResourceFileResult { originalFilePath, fileType, requestPathAndUploadFileName }) ->
-            FileSystemCopy.copyFileToDistributionWithoutExtension
+            FileSystemCopy.copyFileToDistribution
               originalFilePath
-              fileType
               ( Path.DistributionFilePath
                   { directoryPath: hostingDistributionPath
                   , fileName:
@@ -436,6 +435,7 @@ copyStaticResource resultList =
                         (Hash.toNonEmptyString requestPathAndUploadFileName)
                   }
               )
+              fileType
         )
         resultList
     )
@@ -477,7 +477,7 @@ readEsbuildResultClientProgramFile = do
           , fileName: Name.fromSymbolProxy (Proxy :: _ "main")
           }
       )
-      FileType.JavaScript
+      (Just FileType.JavaScript)
   let
     clientProgramHashValue = Hash.stringToSha256HashValue clientProgramAsString
   FileSystemWrite.writeTextFileInDistribution
