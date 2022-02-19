@@ -235,6 +235,8 @@ charIsEnd = case _ of
   '（' -> EndWithToken ParenthesisStart
   ')' -> EndWithToken ParenthesisEnd
   '）' -> EndWithToken ParenthesisEnd
+  ',' -> EndWithToken Comma
+  '，' -> EndWithToken Comma
   ' ' -> End
   '　' -> End
   '\t' -> End
