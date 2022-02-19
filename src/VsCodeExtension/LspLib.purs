@@ -41,6 +41,7 @@ data JsonRpcRequest
   | Initialized
   | TextDocumentDidOpen { uri :: Uri, text :: String }
   | TextDocumentDidChange { uri :: Uri, text :: String }
+  | TextDocumentDidSave { uri :: Uri }
   | TextDocumentSemanticTokensFull { id :: Id, uri :: Uri }
 
 newtype Id
@@ -248,6 +249,13 @@ jsonObjectToJsonRpcRequestResult jsonObject = do
                     Just contentChange -> contentChange.text
                     Nothing -> ""
               }
+          )
+      "textDocument/didSave" -> do
+        params <- getParam jsonObject
+        (textDocument :: { uri :: Uri }) <- Argonaut.getField params "textDocument"
+        Either.Right
+          ( TextDocumentDidSave
+              { uri: textDocument.uri }
           )
       "textDocument/semanticTokens/full" -> do
         id <- getId jsonObject

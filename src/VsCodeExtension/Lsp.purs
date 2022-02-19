@@ -8,8 +8,11 @@ import Data.Either as Either
 import Data.Map as Map
 import Data.Maybe (Maybe(..))
 import Effect as Effect
+import Effect.Aff as Aff
 import Effect.Ref as Ref
+import FileSystem.Write as Write
 import VsCodeExtension.LspLib as LspLib
+import VsCodeExtension.ToString as ToString
 import VsCodeExtension.TokenType as TokenType
 import VsCodeExtension.Tokenize as Tokenize
 
@@ -70,6 +73,25 @@ main = do
                   (stateRec { codeDict = Map.insert uri text stateRec.codeDict })
             )
             state
+        Either.Right (LspLib.TextDocumentDidSave { uri: uri@(LspLib.Uri uriAsString) }) -> do
+          (State { codeDict }) <- Ref.read state
+          case Map.lookup uri codeDict of
+            Just code -> do
+              Aff.runAff_
+                ( \result ->
+                    LspLib.sendNotificationWindowLogMessage
+                      (append "書き込み完了した " (show result))
+                )
+                ( Aff.attempt
+                    ( Write.writeTextFilePathFileProtocol uriAsString
+                        ( ToString.tokenWithRangeArrayToString
+                            (Tokenize.tokenize code)
+                        )
+                    )
+                )
+              LspLib.sendNotificationWindowLogMessage
+                "フォーマットした内容で書き込みます"
+            Nothing -> LspLib.sendNotificationWindowLogMessage "ファイルの情報が1度も来ていない..?"
         Either.Right (LspLib.TextDocumentSemanticTokensFull { id, uri }) -> do
           (State { tokenTypeDict, codeDict }) <- Ref.read state
           case Map.lookup uri codeDict of
