@@ -11,7 +11,10 @@ import VsCodeExtension.SimpleToken as SimpleToken
 simpleTokenWithRangeArrayToString :: Array SimpleToken.SimpleTokenWithRange -> String
 simpleTokenWithRangeArrayToString tokenWithRangeArray =
   String.joinWith ", "
-    ( map (\(SimpleToken.SimpleTokenWithRange { simpleToken }) -> simpleTokenToString simpleToken)
+    ( map
+        ( \(SimpleToken.SimpleTokenWithRange { simpleToken }) ->
+            simpleTokenToString simpleToken
+        )
         tokenWithRangeArray
     )
 

@@ -133,10 +133,6 @@ tokenListToSimpleTokenListLoop beforeNameMaybe (Tokenize.TokenWithRange { token,
           ]
       , nameMaybe: Nothing
       }
-    Tokenize.Comma ->
-      { newSimpleTokenList: []
-      , nameMaybe: beforeNameMaybe
-      }
   Nothing -> case token of
     Tokenize.Name name ->
       { newSimpleTokenList: []
@@ -158,9 +154,5 @@ tokenListToSimpleTokenListLoop beforeNameMaybe (Tokenize.TokenWithRange { token,
               , range: range
               }
           ]
-      , nameMaybe: Nothing
-      }
-    Tokenize.Comma ->
-      { newSimpleTokenList: []
       , nameMaybe: Nothing
       }

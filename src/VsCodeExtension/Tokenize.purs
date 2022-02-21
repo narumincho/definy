@@ -39,7 +39,6 @@ data Token
   = Name NonEmptyString
   | ParenthesisStart
   | ParenthesisEnd
-  | Comma
 
 derive instance tokenEq :: Eq Token
 
@@ -235,8 +234,8 @@ charIsEnd = case _ of
   '（' -> EndWithToken ParenthesisStart
   ')' -> EndWithToken ParenthesisEnd
   '）' -> EndWithToken ParenthesisEnd
-  ',' -> EndWithToken Comma
-  '，' -> EndWithToken Comma
+  ',' -> End
+  '，' -> End
   ' ' -> End
   '　' -> End
   '\t' -> End
