@@ -126,7 +126,11 @@ nameAndSimpleTokenListToCodeTreeListWithRest { name, nameRange, simpleTokenList 
                   ( CodeTree
                       { name
                       , children: firstItem.codeTreeList
-                      , range: nameRange
+                      , range:
+                          Range.Range
+                            { start: Range.rangeStart nameRange
+                            , end: firstItem.endPosition
+                            }
                       }
                   )
                   tailItem.codeTreeList

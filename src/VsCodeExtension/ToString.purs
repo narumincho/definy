@@ -10,13 +10,16 @@ import VsCodeExtension.SimpleToken as SimpleToken
 -- | シンプルなトークンの列を整形された文字列に変換する
 simpleTokenWithRangeArrayToString :: Array SimpleToken.SimpleTokenWithRange -> String
 simpleTokenWithRangeArrayToString tokenWithRangeArray =
-  String.joinWith ", "
-    ( map
-        ( \(SimpleToken.SimpleTokenWithRange { simpleToken }) ->
-            simpleTokenToString simpleToken
+  append
+    ( String.joinWith " "
+        ( map
+            ( \(SimpleToken.SimpleTokenWithRange { simpleToken }) ->
+                simpleTokenToString simpleToken
+            )
+            tokenWithRangeArray
         )
-        tokenWithRangeArray
     )
+    "\n"
 
 simpleTokenToString :: SimpleToken.SimpleToken -> String
 simpleTokenToString = case _ of

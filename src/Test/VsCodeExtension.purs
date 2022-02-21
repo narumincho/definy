@@ -154,7 +154,7 @@ simpleTokenTest = do
         SimpleToken.tokenListToSimpleTokenList
           ( Tokenize.tokenize
               """
-sorena(arena(), noArg, (28))
+sorena(arena()  oneArg (28))
 """
           )
     , expected:
@@ -177,7 +177,7 @@ sorena(arena(), noArg, (28))
             { range: rangeFrom 1 16 1 24
             , simpleToken:
                 SimpleToken.Start
-                  { name: NonEmptyString.nes (Proxy :: _ "noArg") }
+                  { name: NonEmptyString.nes (Proxy :: _ "oneArg") }
             }
         , SimpleToken.SimpleTokenWithRange
             { range: rangeFrom 1 24 1 26
@@ -203,7 +203,7 @@ parserTest = do
           ( SimpleToken.tokenListToSimpleTokenList
               ( Tokenize.tokenize
                   """
-sorena(arena(), noArg, (28))
+sorena(arena()  oneArg (28))
 """
               )
           )
@@ -214,10 +214,10 @@ sorena(arena(), noArg, (28))
               [ Parser.CodeTree
                   { name: NonEmptyString.nes (Proxy :: _ "arena")
                   , children: []
-                  , range: rangeFrom 1 7 1 13
+                  , range: rangeFrom 1 7 1 14
                   }
               , Parser.CodeTree
-                  { name: NonEmptyString.nes (Proxy :: _ "noArg")
+                  { name: NonEmptyString.nes (Proxy :: _ "oneArg")
                   , children:
                       [ Parser.CodeTree
                           { name: NonEmptyString.nes (Proxy :: _ "28")
@@ -225,7 +225,7 @@ sorena(arena(), noArg, (28))
                           , range: rangeFrom 1 24 1 26
                           }
                       ]
-                  , range: rangeFrom 1 16 1 24
+                  , range: rangeFrom 1 16 1 27
                   }
               ]
           , range: rangeFrom 1 0 1 28

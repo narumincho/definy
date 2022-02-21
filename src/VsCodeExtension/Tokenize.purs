@@ -234,8 +234,6 @@ charIsEnd = case _ of
   '（' -> EndWithToken ParenthesisStart
   ')' -> EndWithToken ParenthesisEnd
   '）' -> EndWithToken ParenthesisEnd
-  ',' -> End
-  '，' -> End
   ' ' -> End
   '　' -> End
   '\t' -> End
