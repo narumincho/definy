@@ -11,12 +11,14 @@ import Test.Util (assertEqual)
 import Type.Proxy (Proxy(..))
 import VsCodeExtension.LspLib as LspLib
 import VsCodeExtension.Range as Range
+import VsCodeExtension.SimpleToken as SimpleToken
 import VsCodeExtension.Tokenize as Tokenize
 
 test :: TestUnit.Test
 test = do
   parseContentLengthHeaderTest
   tokenizeTest
+  simpleTokenTest
 
 parseContentLengthHeaderTest :: TestUnit.Test
 parseContentLengthHeaderTest = do
@@ -140,4 +142,52 @@ rangeFrom startLine startChar endLine endChar =
           { line: UInt.fromInt endLine
           , character: UInt.fromInt endChar
           }
+    }
+
+simpleTokenTest :: TestUnit.Test
+simpleTokenTest = do
+  assertEqual
+    "simpleToken test"
+    { actual:
+        SimpleToken.tokenListToSimpleTokenList
+          ( Tokenize.tokenize
+              """
+sorena(arena(), noArg, (28))
+"""
+          )
+    , expected:
+        [ SimpleToken.SimpleTokenWithRange
+            { range: rangeFrom 1 0 1 7
+            , simpleToken:
+                SimpleToken.Start
+                  { name: NonEmptyString.nes (Proxy :: _ "sorena") }
+            }
+        , SimpleToken.SimpleTokenWithRange
+            { range: rangeFrom 1 7 1 13
+            , simpleToken:
+                ( SimpleToken.Start
+                    { name: NonEmptyString.nes (Proxy :: _ "arena") }
+                )
+            }
+        , SimpleToken.SimpleTokenWithRange
+            { range: rangeFrom 1 13 1 14, simpleToken: SimpleToken.End }
+        , SimpleToken.SimpleTokenWithRange
+            { range: rangeFrom 1 16 1 24
+            , simpleToken:
+                SimpleToken.Start
+                  { name: NonEmptyString.nes (Proxy :: _ "noArg") }
+            }
+        , SimpleToken.SimpleTokenWithRange
+            { range: rangeFrom 1 24 1 26
+            , simpleToken:
+                SimpleToken.Start
+                  { name: NonEmptyString.nes (Proxy :: _ "28") }
+            }
+        , SimpleToken.SimpleTokenWithRange
+            { range: rangeFrom 1 24 1 26, simpleToken: SimpleToken.End }
+        , SimpleToken.SimpleTokenWithRange
+            { range: rangeFrom 1 26 1 27, simpleToken: SimpleToken.End }
+        , SimpleToken.SimpleTokenWithRange
+            { range: rangeFrom 1 27 1 28, simpleToken: SimpleToken.End }
+        ]
     }

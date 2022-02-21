@@ -2,6 +2,8 @@ module VsCodeExtension.Range
   ( Position(..)
   , Range(..)
   , positionAdd1Character
+  , rangeEnd
+  , rangeStart
   ) where
 
 import Prelude
@@ -25,6 +27,12 @@ instance showRange :: Show Range where
 instance encodeJsonRange :: Argonaut.EncodeJson Range where
   encodeJson :: Range -> Argonaut.Json
   encodeJson (Range rec) = Argonaut.encodeJson rec
+
+rangeStart :: Range -> Position
+rangeStart (Range { start }) = start
+
+rangeEnd :: Range -> Position
+rangeEnd (Range { end }) = end
 
 newtype Position
   = Position { line :: UInt.UInt, character :: UInt.UInt }
