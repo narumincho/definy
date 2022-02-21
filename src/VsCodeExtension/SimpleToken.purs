@@ -1,6 +1,5 @@
 module VsCodeExtension.SimpleToken
-  ( CodeTree(..)
-  , SimpleToken(..)
+  ( SimpleToken(..)
   , SimpleTokenWithRange(..)
   , tokenListToSimpleTokenList
   ) where
@@ -15,13 +14,6 @@ import Type.Proxy (Proxy(..))
 import VsCodeExtension.Range as Range
 import Data.Generic.Rep as GenericRep
 import VsCodeExtension.Tokenize as Tokenize
-
-newtype CodeTree
-  = CodeTree
-  { name :: NonEmptyString
-  , children :: Array CodeTree
-  , range :: Range.Range
-  }
 
 -- | よりシンプルなトークン
 newtype SimpleTokenWithRange

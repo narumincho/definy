@@ -10,6 +10,7 @@ import Test.Unit as TestUnit
 import Test.Util (assertEqual)
 import Type.Proxy (Proxy(..))
 import VsCodeExtension.LspLib as LspLib
+import VsCodeExtension.Parser as Parser
 import VsCodeExtension.Range as Range
 import VsCodeExtension.SimpleToken as SimpleToken
 import VsCodeExtension.Tokenize as Tokenize
@@ -19,6 +20,7 @@ test = do
   parseContentLengthHeaderTest
   tokenizeTest
   simpleTokenTest
+  parserTest
 
 parseContentLengthHeaderTest :: TestUnit.Test
 parseContentLengthHeaderTest = do
@@ -190,4 +192,42 @@ sorena(arena(), noArg, (28))
         , SimpleToken.SimpleTokenWithRange
             { range: rangeFrom 1 27 1 28, simpleToken: SimpleToken.End }
         ]
+    }
+
+parserTest :: TestUnit.Test
+parserTest = do
+  assertEqual
+    "parser test"
+    { actual:
+        Parser.parse
+          ( SimpleToken.tokenListToSimpleTokenList
+              ( Tokenize.tokenize
+                  """
+sorena(arena(), noArg, (28))
+"""
+              )
+          )
+    , expected:
+        Parser.CodeTree
+          { name: NonEmptyString.nes (Proxy :: _ "sorena")
+          , children:
+              [ Parser.CodeTree
+                  { name: NonEmptyString.nes (Proxy :: _ "arena")
+                  , children: []
+                  , range: rangeFrom 1 7 1 13
+                  }
+              , Parser.CodeTree
+                  { name: NonEmptyString.nes (Proxy :: _ "noArg")
+                  , children:
+                      [ Parser.CodeTree
+                          { name: NonEmptyString.nes (Proxy :: _ "28")
+                          , children: []
+                          , range: rangeFrom 1 24 1 26
+                          }
+                      ]
+                  , range: rangeFrom 1 16 1 24
+                  }
+              ]
+          , range: rangeFrom 1 0 1 28
+          }
     }
