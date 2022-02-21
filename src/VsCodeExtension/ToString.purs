@@ -1,23 +1,21 @@
 module VsCodeExtension.ToString
-  ( tokenWithRangeArrayToString
+  ( simpleTokenWithRangeArrayToString
   ) where
 
 import Prelude
-import Data.String.NonEmpty as NonEmptyString
 import Data.String as String
-import VsCodeExtension.Tokenize as Tokenize
+import Data.String.NonEmpty as NonEmptyString
+import VsCodeExtension.SimpleToken as SimpleToken
 
--- | トークンの列を整形された文字列に変換する
-tokenWithRangeArrayToString :: Array Tokenize.TokenWithRange -> String
-tokenWithRangeArrayToString tokenWithRangeArray =
-  String.joinWith ""
-    ( map (\(Tokenize.TokenWithRange { token }) -> tokenToString token)
+-- | シンプルなトークンの列を整形された文字列に変換する
+simpleTokenWithRangeArrayToString :: Array SimpleToken.SimpleTokenWithRange -> String
+simpleTokenWithRangeArrayToString tokenWithRangeArray =
+  String.joinWith ", "
+    ( map (\(SimpleToken.SimpleTokenWithRange { simpleToken }) -> simpleTokenToString simpleToken)
         tokenWithRangeArray
     )
 
-tokenToString :: Tokenize.Token -> String
-tokenToString = case _ of
-  Tokenize.Comma -> ", "
-  Tokenize.ParenthesisStart -> "("
-  Tokenize.ParenthesisEnd -> ")"
-  Tokenize.Name name -> NonEmptyString.toString name
+simpleTokenToString :: SimpleToken.SimpleToken -> String
+simpleTokenToString = case _ of
+  SimpleToken.Start { name } -> append (NonEmptyString.toString name) "("
+  SimpleToken.End -> ")"
