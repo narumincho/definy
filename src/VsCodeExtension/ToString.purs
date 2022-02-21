@@ -1,27 +1,30 @@
 module VsCodeExtension.ToString
-  ( simpleTokenWithRangeArrayToString
+  ( codeTreeToString
   ) where
 
 import Prelude
+import Data.Array as Array
 import Data.String as String
 import Data.String.NonEmpty as NonEmptyString
-import VsCodeExtension.SimpleToken as SimpleToken
+import VsCodeExtension.Parser as Parser
 
--- | シンプルなトークンの列を整形された文字列に変換する
-simpleTokenWithRangeArrayToString :: Array SimpleToken.SimpleTokenWithRange -> String
-simpleTokenWithRangeArrayToString tokenWithRangeArray =
+-- | コードのツリー構造を整形された文字列に変換する
+codeTreeToString :: Parser.CodeTree -> String
+codeTreeToString codeTree =
   append
-    ( String.joinWith " "
-        ( map
-            ( \(SimpleToken.SimpleTokenWithRange { simpleToken }) ->
-                simpleTokenToString simpleToken
-            )
-            tokenWithRangeArray
-        )
-    )
+    (codeTreeToStringLoop codeTree)
     "\n"
 
-simpleTokenToString :: SimpleToken.SimpleToken -> String
-simpleTokenToString = case _ of
-  SimpleToken.Start { name } -> append (NonEmptyString.toString name) "("
-  SimpleToken.End -> ")"
+codeTreeToStringLoop :: Parser.CodeTree -> String
+codeTreeToStringLoop (Parser.CodeTree { name, children }) =
+  append
+    (NonEmptyString.toString name)
+    ( if Array.null children then
+        ""
+      else
+        append
+          ( append "("
+              (String.joinWith " " (map codeTreeToStringLoop children))
+          )
+          ")"
+    )

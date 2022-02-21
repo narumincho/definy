@@ -1,1 +1,1 @@
-part( value( ) type( []( ) uint( ) ) 説明文( ) uint( 23( ) ) )
+part(value type([] uint) 説明文 uint(23))

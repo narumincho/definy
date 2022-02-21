@@ -131,12 +131,7 @@ tokenListToSimpleTokenListLoop beforeNameMaybe (Tokenize.TokenWithRange { token,
       , nameMaybe: Just (BeforeName { name, range })
       }
     Tokenize.ParenthesisStart ->
-      { newSimpleTokenList:
-          [ SimpleTokenWithRange
-              { simpleToken: Start { name: NonEmptyString.nes (Proxy :: _ "unknown") }
-              , range
-              }
-          ]
+      { newSimpleTokenList: []
       , nameMaybe: Nothing
       }
     Tokenize.ParenthesisEnd ->

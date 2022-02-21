@@ -12,6 +12,7 @@ import Effect.Aff as Aff
 import Effect.Ref as Ref
 import FileSystem.Write as Write
 import VsCodeExtension.LspLib as LspLib
+import VsCodeExtension.Parser as Parser
 import VsCodeExtension.SimpleToken as SimpleToken
 import VsCodeExtension.ToString as ToString
 import VsCodeExtension.TokenType as TokenType
@@ -85,8 +86,10 @@ main = do
                 )
                 ( Aff.attempt
                     ( Write.writeTextFilePathFileProtocol uriAsString
-                        ( ToString.simpleTokenWithRangeArrayToString
-                            (SimpleToken.tokenListToSimpleTokenList (Tokenize.tokenize code))
+                        ( ToString.codeTreeToString
+                            ( Parser.parse
+                                (SimpleToken.tokenListToSimpleTokenList (Tokenize.tokenize code))
+                            )
                         )
                     )
                 )
