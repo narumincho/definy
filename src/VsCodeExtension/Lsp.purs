@@ -5,6 +5,7 @@ module VsCodeExtension.Lsp
 import Prelude
 import Data.Array as Array
 import Data.Either as Either
+import Data.UInt as UInt
 import Data.Map as Map
 import Data.Maybe (Maybe(..))
 import Effect as Effect
@@ -13,6 +14,7 @@ import Effect.Ref as Ref
 import FileSystem.Write as Write
 import VsCodeExtension.LspLib as LspLib
 import VsCodeExtension.Parser as Parser
+import VsCodeExtension.Range as Range
 import VsCodeExtension.SimpleToken as SimpleToken
 import VsCodeExtension.ToString as ToString
 import VsCodeExtension.TokenType as TokenType
@@ -75,7 +77,7 @@ main = do
                   (stateRec { codeDict = Map.insert uri text stateRec.codeDict })
             )
             state
-        Either.Right (LspLib.TextDocumentDidSave { uri: uri@(LspLib.Uri uriAsString) }) -> do
+        Either.Right (LspLib.TextDocumentDidSave { uri }) -> do
           (State { codeDict }) <- Ref.read state
           case Map.lookup uri codeDict of
             Just code -> do
@@ -85,7 +87,7 @@ main = do
                       (append "書き込み完了した " (show result))
                 )
                 ( Aff.attempt
-                    ( Write.writeTextFilePathFileProtocol uriAsString
+                    ( Write.writeTextFilePathFileProtocol (LspLib.uriToString uri)
                         ( ToString.codeTreeToString
                             ( Parser.parse
                                 (SimpleToken.tokenListToSimpleTokenList (Tokenize.tokenize code))
@@ -117,5 +119,37 @@ main = do
                     )
                     true
             Nothing -> LspLib.sendNotificationWindowLogMessage "TextDocumentSemanticTokensFullされた けどコードを取得できていない..."
+        Either.Right (LspLib.TextDocumentCodeLens { id }) ->
+          LspLib.sendJsonRpcMessage
+            ( LspLib.ResponseTextDocumentCodeLens
+                { id
+                , codeLensList:
+                    [ LspLib.CodeLens
+                        { command:
+                            LspLib.Command
+                              { title: "メッセージを表示"
+                              , command: testCommandKey
+                              }
+                        , range:
+                            Range.Range
+                              { start:
+                                  Range.Position
+                                    { line: UInt.fromInt 0
+                                    , character: UInt.fromInt 0
+                                    }
+                              , end:
+                                  Range.Position
+                                    { line: UInt.fromInt 0
+                                    , character: UInt.fromInt 1
+                                    }
+                              }
+                        }
+                    ]
+                }
+            )
+            true
         Either.Left message -> LspLib.sendNotificationWindowLogMessage message
     )
+
+testCommandKey :: String
+testCommandKey = "definy.testCommand"

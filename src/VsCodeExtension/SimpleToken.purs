@@ -9,8 +9,6 @@ import Data.Array as Array
 import Data.Maybe (Maybe(..))
 import Data.Show.Generic as ShowGeneric
 import Data.String.NonEmpty (NonEmptyString)
-import Data.String.NonEmpty as NonEmptyString
-import Type.Proxy (Proxy(..))
 import VsCodeExtension.Range as Range
 import Data.Generic.Rep as GenericRep
 import VsCodeExtension.Tokenize as Tokenize
