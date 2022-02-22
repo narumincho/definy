@@ -208,6 +208,7 @@ generatePackageJson dependencies =
           , vsCodeVersionMaybe: Nothing
           , activationEvents: Nothing
           , contributesLanguages: Nothing
+          , browser: Nothing
           }
     )
     ( PackageJson.nameFromNonEmptyString

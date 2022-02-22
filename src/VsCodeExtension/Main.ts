@@ -6,14 +6,15 @@ let client: LanguageClient | undefined = undefined;
 
 export const activateFunc = (context: ExtensionContext): void => {
   commands.registerCommand("definy.testCommand", () => {
+    console.log("called definy.testCommand !");
     window.showInformationMessage("コマンドを呼ばれた!");
   });
 
   client = new LanguageClient(
-    "definy-lsp",
+    "definy-language-server",
     {
       command: "node",
-      args: [context.extensionPath + "/lsp.js"],
+      args: [context.asAbsolutePath("lsp.js")],
     },
     {
       documentSelector: [{ scheme: "file", language: "definy" }],

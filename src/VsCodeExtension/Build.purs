@@ -124,6 +124,7 @@ generatePackageJson dependencies =
                   }
               )
           )
+    , browser: Just (NonEmptyString.nes (Proxy :: _ "./main.js"))
     }
 
 buildExtensionMain :: Aff.Aff Unit

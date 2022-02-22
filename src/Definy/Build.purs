@@ -192,6 +192,7 @@ generatePackageJson dependencies =
     , version: NonEmptyString.nes (Proxy :: _ "1.0.0")
     , activationEvents: Nothing
     , contributesLanguages: Nothing
+    , browser: Nothing
     }
 
 definyModuleName :: NonEmptyString
