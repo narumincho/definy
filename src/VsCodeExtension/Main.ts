@@ -1,15 +1,20 @@
-import type { ExtensionContext } from "vscode";
+import { type ExtensionContext, commands, window } from "vscode";
 import { LanguageClient } from "vscode-languageclient/node";
 
 // eslint-disable-next-line no-undef-init
 let client: LanguageClient | undefined = undefined;
 
 export const activateFunc = (context: ExtensionContext): void => {
+  commands.registerCommand("definy.testCommand", () => {
+    console.log("called definy.testCommand !");
+    window.showInformationMessage("コマンドを呼ばれた!");
+  });
+
   client = new LanguageClient(
-    "definy-lsp",
+    "definy-language-server",
     {
       command: "node",
-      args: [context.extensionPath + "/lsp.js"],
+      args: [context.asAbsolutePath("lsp.js")],
     },
     {
       documentSelector: [{ scheme: "file", language: "definy" }],

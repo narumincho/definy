@@ -7,17 +7,25 @@ import Data.Array as Array
 import Data.Either as Either
 import Data.Map as Map
 import Data.Maybe (Maybe(..))
+import Data.UInt as UInt
 import Effect as Effect
+import Effect.Aff as Aff
 import Effect.Ref as Ref
+import FileSystem.Write as Write
 import VsCodeExtension.LspLib as LspLib
+import VsCodeExtension.Parser as Parser
+import VsCodeExtension.Range as Range
+import VsCodeExtension.SimpleToken as SimpleToken
+import VsCodeExtension.ToString as ToString
 import VsCodeExtension.TokenType as TokenType
 import VsCodeExtension.Tokenize as Tokenize
+import VsCodeExtension.Uri as Uri
 
 newtype State
   = State
   { supportPublishDiagnostics :: Boolean
   , tokenTypeDict :: TokenType.TokenTypeDict
-  , codeDict :: Map.Map LspLib.Uri String
+  , codeDict :: Map.Map Uri.Uri String
   }
 
 main :: Effect.Effect Unit
@@ -70,6 +78,27 @@ main = do
                   (stateRec { codeDict = Map.insert uri text stateRec.codeDict })
             )
             state
+        Either.Right (LspLib.TextDocumentDidSave { uri }) -> do
+          (State { codeDict }) <- Ref.read state
+          case Map.lookup uri codeDict of
+            Just code -> do
+              Aff.runAff_
+                ( \result ->
+                    LspLib.sendNotificationWindowLogMessage
+                      (append "書き込み完了した " (show result))
+                )
+                ( Aff.attempt
+                    ( Write.writeTextFilePathFileProtocol uri
+                        ( ToString.codeTreeToString
+                            ( Parser.parse
+                                (SimpleToken.tokenListToSimpleTokenList (Tokenize.tokenize code))
+                            )
+                        )
+                    )
+                )
+              LspLib.sendNotificationWindowLogMessage
+                "フォーマットした内容で書き込みます"
+            Nothing -> LspLib.sendNotificationWindowLogMessage "ファイルの情報が1度も来ていない..?"
         Either.Right (LspLib.TextDocumentSemanticTokensFull { id, uri }) -> do
           (State { tokenTypeDict, codeDict }) <- Ref.read state
           case Map.lookup uri codeDict of
@@ -91,5 +120,37 @@ main = do
                     )
                     true
             Nothing -> LspLib.sendNotificationWindowLogMessage "TextDocumentSemanticTokensFullされた けどコードを取得できていない..."
+        Either.Right (LspLib.TextDocumentCodeLens { id }) ->
+          LspLib.sendJsonRpcMessage
+            ( LspLib.ResponseTextDocumentCodeLens
+                { id
+                , codeLensList:
+                    [ LspLib.CodeLens
+                        { command:
+                            LspLib.Command
+                              { title: "メッセージを表示"
+                              , command: testCommandKey
+                              }
+                        , range:
+                            Range.Range
+                              { start:
+                                  Range.Position
+                                    { line: UInt.fromInt 0
+                                    , character: UInt.fromInt 0
+                                    }
+                              , end:
+                                  Range.Position
+                                    { line: UInt.fromInt 0
+                                    , character: UInt.fromInt 1
+                                    }
+                              }
+                        }
+                    ]
+                }
+            )
+            true
         Either.Left message -> LspLib.sendNotificationWindowLogMessage message
     )
+
+testCommandKey :: String
+testCommandKey = "definy.testCommand"

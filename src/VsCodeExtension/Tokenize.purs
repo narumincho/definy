@@ -39,7 +39,6 @@ data Token
   = Name NonEmptyString
   | ParenthesisStart
   | ParenthesisEnd
-  | Comma
 
 derive instance tokenEq :: Eq Token
 

@@ -53,6 +53,7 @@ newtype PackageJsonInput
   , {- 型定義(.d.ts か .ts ??)のファイルパス -} typeFilePath :: Maybe NonEmptyString
   , activationEvents :: Maybe (Array NonEmptyString)
   , contributesLanguages :: Maybe (NonEmptyArray ContributesLanguages)
+  , browser :: Maybe NonEmptyString
   }
 
 newtype ContributesLanguages
@@ -167,6 +168,9 @@ toJson (PackageJsonInput packageJson) =
               [ Tuple.Tuple "contributes"
                   (createContributesValue contributesLanguages)
               ]
+            Nothing -> []
+        , case packageJson.browser of
+            Just browser -> [ Tuple.Tuple "browser" (Argonaut.encodeJson browser) ]
             Nothing -> []
         ]
     )
