@@ -6,7 +6,6 @@ module VsCodeExtension.LspLib
   , Diagnostic(..)
   , Id
   , ServerToClientMessage(..)
-  , Uri
   , createJsonRpcRequestListParseStateRef
   , idZero
   , parseContentLengthHeader
@@ -14,7 +13,6 @@ module VsCodeExtension.LspLib
   , sendJsonRpcMessage
   , sendNotificationPublishDiagnostics
   , sendNotificationWindowLogMessage
-  , uriToString
   ) where
 
 import Prelude
@@ -35,6 +33,7 @@ import Node.Process as Process
 import Node.Stream as Stream
 import VsCodeExtension.Range as Range
 import VsCodeExtension.TokenType as TokenType
+import VsCodeExtension.Uri as Uri
 
 data ClientToServerMessage
   = Initialize
@@ -43,11 +42,11 @@ data ClientToServerMessage
     , supportTokenTypes :: Array TokenType.TokenTypeOrNotSupportTokenType
     }
   | Initialized
-  | TextDocumentDidOpen { uri :: Uri, text :: String }
-  | TextDocumentDidChange { uri :: Uri, text :: String }
-  | TextDocumentDidSave { uri :: Uri }
-  | TextDocumentSemanticTokensFull { id :: Id, uri :: Uri }
-  | TextDocumentCodeLens { id :: Id, uri :: Uri }
+  | TextDocumentDidOpen { uri :: Uri.Uri, text :: String }
+  | TextDocumentDidChange { uri :: Uri.Uri, text :: String }
+  | TextDocumentDidSave { uri :: Uri.Uri }
+  | TextDocumentSemanticTokensFull { id :: Id, uri :: Uri.Uri }
+  | TextDocumentCodeLens { id :: Id, uri :: Uri.Uri }
 
 newtype Id
   = Id Int
@@ -59,21 +58,6 @@ instance decodeId :: Argonaut.DecodeJson Id where
 
 idZero :: Id
 idZero = Id 0
-
-newtype Uri
-  = Uri String
-
-derive instance eqUri :: Eq Uri
-
-derive instance ordUri :: Ord Uri
-
-instance decodeUri :: Argonaut.DecodeJson Uri where
-  decodeJson json = do
-    (uri :: String) <- Argonaut.decodeJson json
-    pure (Uri uri)
-
-uriToString :: Uri -> String
-uriToString (Uri str) = str
 
 createJsonRpcRequestListParseStateRef :: Effect.Effect (Ref.Ref ClientToServerMessageParseState)
 createJsonRpcRequestListParseStateRef =
@@ -246,11 +230,11 @@ jsonObjectToJsonRpcRequestResult jsonObject = do
         Either.Right Initialized
       "textDocument/didOpen" -> do
         params <- getParam jsonObject
-        (textDocument :: { uri :: Uri, text :: String }) <- Argonaut.getField params "textDocument"
+        (textDocument :: { uri :: Uri.Uri, text :: String }) <- Argonaut.getField params "textDocument"
         Either.Right (TextDocumentDidOpen textDocument)
       "textDocument/didChange" -> do
         params <- getParam jsonObject
-        (textDocument :: { uri :: Uri }) <- Argonaut.getField params "textDocument"
+        (textDocument :: { uri :: Uri.Uri }) <- Argonaut.getField params "textDocument"
         (contentChanges :: Array { text :: String }) <- Argonaut.getField params "contentChanges"
         Either.Right
           ( TextDocumentDidChange
@@ -263,7 +247,7 @@ jsonObjectToJsonRpcRequestResult jsonObject = do
           )
       "textDocument/didSave" -> do
         params <- getParam jsonObject
-        (textDocument :: { uri :: Uri }) <- Argonaut.getField params "textDocument"
+        (textDocument :: { uri :: Uri.Uri }) <- Argonaut.getField params "textDocument"
         Either.Right
           ( TextDocumentDidSave
               { uri: textDocument.uri }
@@ -271,7 +255,7 @@ jsonObjectToJsonRpcRequestResult jsonObject = do
       "textDocument/semanticTokens/full" -> do
         id <- getId jsonObject
         params <- getParam jsonObject
-        (textDocument :: { uri :: Uri }) <- Argonaut.getField params "textDocument"
+        (textDocument :: { uri :: Uri.Uri }) <- Argonaut.getField params "textDocument"
         Either.Right
           ( TextDocumentSemanticTokensFull
               { id, uri: textDocument.uri }
@@ -279,7 +263,7 @@ jsonObjectToJsonRpcRequestResult jsonObject = do
       "textDocument/codeLens" -> do
         id <- getId jsonObject
         params <- getParam jsonObject
-        (textDocument :: { uri :: Uri }) <- Argonaut.getField params "textDocument"
+        (textDocument :: { uri :: Uri.Uri }) <- Argonaut.getField params "textDocument"
         Either.Right
           ( TextDocumentCodeLens
               { id, uri: textDocument.uri }

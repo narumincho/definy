@@ -25,13 +25,14 @@ import Node.Encoding as Encoding
 import Node.FS.Aff as Fs
 import PureScript.Data as PureScriptData
 import PureScript.ToString as PureScriptToString
+import VsCodeExtension.Uri as Uri
 
 -- | テキストファイル書き込む
-writeTextFilePathFileProtocol :: String -> String -> Aff.Aff Unit
-writeTextFilePathFileProtocol pathUseFileProtocol content =
+writeTextFilePathFileProtocol :: Uri.Uri -> String -> Aff.Aff Unit
+writeTextFilePathFileProtocol uri content =
   AffCompat.fromEffectFnAff
     ( writeTextFilePathFileProtocolImpl
-        pathUseFileProtocol
+        (Uri.uriToString uri)
         content
     )
 

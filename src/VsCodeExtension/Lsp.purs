@@ -5,9 +5,9 @@ module VsCodeExtension.Lsp
 import Prelude
 import Data.Array as Array
 import Data.Either as Either
-import Data.UInt as UInt
 import Data.Map as Map
 import Data.Maybe (Maybe(..))
+import Data.UInt as UInt
 import Effect as Effect
 import Effect.Aff as Aff
 import Effect.Ref as Ref
@@ -19,12 +19,13 @@ import VsCodeExtension.SimpleToken as SimpleToken
 import VsCodeExtension.ToString as ToString
 import VsCodeExtension.TokenType as TokenType
 import VsCodeExtension.Tokenize as Tokenize
+import VsCodeExtension.Uri as Uri
 
 newtype State
   = State
   { supportPublishDiagnostics :: Boolean
   , tokenTypeDict :: TokenType.TokenTypeDict
-  , codeDict :: Map.Map LspLib.Uri String
+  , codeDict :: Map.Map Uri.Uri String
   }
 
 main :: Effect.Effect Unit
@@ -87,7 +88,7 @@ main = do
                       (append "書き込み完了した " (show result))
                 )
                 ( Aff.attempt
-                    ( Write.writeTextFilePathFileProtocol (LspLib.uriToString uri)
+                    ( Write.writeTextFilePathFileProtocol uri
                         ( ToString.codeTreeToString
                             ( Parser.parse
                                 (SimpleToken.tokenListToSimpleTokenList (Tokenize.tokenize code))
