@@ -1,6 +1,8 @@
 module EsBuild (buildJs, buildTsx, Option) where
 
+import Data.Maybe (Maybe(..))
 import Data.Maybe as Maybe
+import Data.String.NonEmpty (NonEmptyString)
 import Data.String.NonEmpty as NonEmptyString
 import Effect.Aff as Aff
 import Effect.Aff.Compat as AffCompat
@@ -9,17 +11,18 @@ import FileSystem.Path as Path
 import Prelude as Prelude
 
 type Option
-  = { entryPoints :: Path.FilePath
-    , outdir :: Path.DistributionDirectoryPath
+  = { entryPoint :: Path.FilePath
+    , outFile :: Path.DistributionFilePath
     , sourcemap :: Boolean
-    , target :: Array String
+    , external :: Array NonEmptyString
     }
 
 type OptionRaw
-  = { entryPoints :: String
-    , outDir :: String
+  = { entryPoint :: String
     , sourcemap :: Boolean
     , target :: Array String
+    , external :: Array String
+    , outFile :: String
     }
 
 foreign import buildAsEffectFnAff ::
@@ -36,11 +39,14 @@ build :: FileType.FileType -> Option -> Aff.Aff Prelude.Unit
 build fileType option =
   AffCompat.fromEffectFnAff
     ( buildAsEffectFnAff
-        { entryPoints:
+        { entryPoint:
             NonEmptyString.toString
-              (Path.filePathToString option.entryPoints (Maybe.Just fileType))
-        , outDir: NonEmptyString.toString (Path.distributionDirectoryPathToString option.outdir)
+              (Path.filePathToString option.entryPoint (Maybe.Just fileType))
+        , outFile:
+            NonEmptyString.toString
+              (Path.distributionFilePathToString option.outFile (Just FileType.JavaScript))
         , sourcemap: option.sourcemap
-        , target: option.target
+        , target: [ "chrome98", "firefox97", "safari15" ]
+        , external: Prelude.map NonEmptyString.toString option.external
         }
     )

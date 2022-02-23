@@ -453,19 +453,29 @@ clientProgramBuild = do
   Console.logValueAsAff "クライアント向けビルド完了!" { fileHashValue }
   pure fileHashValue
 
+esbuildResultFileName :: Name.Name
+esbuildResultFileName = Name.fromSymbolProxy (Proxy :: _ "main")
+
+esbuildResultFilePath :: Path.DistributionFilePath
+esbuildResultFilePath =
+  Path.DistributionFilePath
+    { directoryPath: esbuildClientProgramFileDirectoryPath
+    , fileName: esbuildResultFileName
+    }
+
 runEsbuild :: Aff.Aff Unit
 runEsbuild = do
   EsBuild.buildTsx
-    { entryPoints:
+    { entryPoint:
         Path.FilePath
           { directoryPath:
               Path.DirectoryPath
                 [ Name.fromSymbolProxy (Proxy :: _ "client") ]
-          , fileName: Name.fromSymbolProxy (Proxy :: _ "main")
+          , fileName: esbuildResultFileName
           }
-    , outdir: esbuildClientProgramFileDirectoryPath
     , sourcemap: false
-    , target: [ "chrome95", "firefox94", "safari15" ]
+    , external: []
+    , outFile: esbuildResultFilePath
     }
   Console.logValueAsAff "esbuild でのビルドに成功!" {}
 
@@ -473,11 +483,7 @@ readEsbuildResultClientProgramFile :: Aff.Aff Hash.Sha256HashValue
 readEsbuildResultClientProgramFile = do
   clientProgramAsString <-
     FileSystemRead.readTextFileInDistribution
-      ( Path.DistributionFilePath
-          { directoryPath: esbuildClientProgramFileDirectoryPath
-          , fileName: Name.fromSymbolProxy (Proxy :: _ "main")
-          }
-      )
+      esbuildResultFilePath
       (Just FileType.JavaScript)
   let
     clientProgramHashValue = Hash.stringToSha256HashValue clientProgramAsString

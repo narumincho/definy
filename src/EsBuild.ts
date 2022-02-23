@@ -1,10 +1,11 @@
 import { build } from "esbuild";
 
 export const buildAsEffectFnAff = (option: {
-  readonly entryPoints: string;
-  readonly outDir: string;
+  readonly entryPoint: string;
   readonly sourcemap: boolean;
-  readonly target: string;
+  readonly target: ReadonlyArray<string>;
+  readonly external: ReadonlyArray<string>;
+  readonly outFile: string;
 }): ((
   onError: (error: Error) => void,
   onSuccess: () => void
@@ -15,12 +16,13 @@ export const buildAsEffectFnAff = (option: {
 ) => void) => {
   return (onError, onSuccess) => {
     build({
-      entryPoints: [option.entryPoints],
+      entryPoints: [option.entryPoint],
       bundle: true,
-      outdir: option.outDir,
+      outfile: option.outFile,
       sourcemap: option.sourcemap,
       minify: true,
-      target: option.target,
+      target: [...option.target],
+      external: [...option.external],
     }).then(
       () => {
         onSuccess();

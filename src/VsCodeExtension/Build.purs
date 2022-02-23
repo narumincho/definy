@@ -14,17 +14,17 @@ import Data.String.NonEmpty (NonEmptyString)
 import Data.String.NonEmpty as NonEmptyString
 import Effect as Effect
 import Effect.Aff as Aff
+import EsBuild as Esbuild
 import FileSystem.Copy as FileSystemCopy
 import FileSystem.FileType as FileType
 import FileSystem.Name as Name
 import FileSystem.Path as Path
 import FileSystem.Write as FileSystemWrite
 import PackageJson as PackageJson
-import PureScript.Data as PureScriptData
-import PureScript.Spago as Spago
 import StructuredUrl as StructuredUrl
 import Type.Proxy (Proxy(..))
 import Util as Util
+import VsCodeExtension.Path as VsCodeExtensionPath
 
 main :: Effect.Effect Unit
 main =
@@ -33,7 +33,7 @@ main =
         ( Util.toParallel
             [ writePackageJsonForVsCodeExtension
             , buildExtensionMain
-            , buildExtensionLsp
+            , buildLanguageServer
             , writeLanguageConfiguration
             , copyIcon
             ]
@@ -43,7 +43,7 @@ main =
 distributionDirectoryPath :: Path.DistributionDirectoryPath
 distributionDirectoryPath =
   Path.DistributionDirectoryPath
-    { appName: Name.fromSymbolProxy (Proxy :: _ "definy-lsp")
+    { appName: Name.fromSymbolProxy (Proxy :: _ "definy-extension")
     , folderNameMaybe: Nothing
     }
 
@@ -85,8 +85,7 @@ generatePackageJson dependencies =
         NonEmptyString.nes
           (Proxy :: _ "definy VSCode extension")
     , entryPoint:
-        NonEmptyString.nes
-          (Proxy :: _ "./main.js")
+        Path.distributionFilePathToStringBaseApp extensionMainPath FileType.JavaScript
     , gitHubAccountName:
         NonEmptyString.nes
           (Proxy :: _ "narumincho")
@@ -124,33 +123,54 @@ generatePackageJson dependencies =
                   }
               )
           )
-    , browser: Just (NonEmptyString.nes (Proxy :: _ "./main.js"))
+    , browser:
+        Just
+          (Path.distributionFilePathToStringBaseApp extensionMainPath FileType.JavaScript)
+    }
+
+extensionMainPath :: Path.DistributionFilePath
+extensionMainPath =
+  Path.DistributionFilePath
+    { directoryPath: distributionDirectoryPath
+    , fileName: Name.fromSymbolProxy (Proxy :: _ "main")
     }
 
 buildExtensionMain :: Aff.Aff Unit
 buildExtensionMain =
-  Spago.bundleModule
-    { mainModuleName:
-        PureScriptData.ModuleName
-          (NonEmptyArray.cons (NonEmptyString.nes (Proxy :: _ "VsCodeExtension")) (NonEmptyArray.singleton (NonEmptyString.nes (Proxy :: _ "Main"))))
-    , outputJavaScriptPath:
-        Path.DistributionFilePath
-          { directoryPath: distributionDirectoryPath
-          , fileName: Name.fromSymbolProxy (Proxy :: _ "main")
+  Esbuild.buildJs
+    { entryPoint:
+        Path.FilePath
+          { directoryPath:
+              Path.DirectoryPath
+                [ Name.fromSymbolProxy (Proxy :: _ "output")
+                , Name.fromSymbolProxy (Proxy :: _ "VsCodeExtension.Main")
+                ]
+          , fileName: Name.fromSymbolProxy (Proxy :: _ "index")
           }
+    , outFile: extensionMainPath
+    , sourcemap: true
+    , external: [ NonEmptyString.nes (Proxy :: _ "vscode") ]
     }
 
-buildExtensionLsp :: Aff.Aff Unit
-buildExtensionLsp =
-  Spago.bundleApp
-    { mainModuleName:
-        PureScriptData.ModuleName
-          (NonEmptyArray.cons (NonEmptyString.nes (Proxy :: _ "VsCodeExtension")) (NonEmptyArray.singleton (NonEmptyString.nes (Proxy :: _ "Lsp"))))
-    , outputJavaScriptPath:
+buildLanguageServer :: Aff.Aff Unit
+buildLanguageServer =
+  Esbuild.buildJs
+    { entryPoint:
+        Path.FilePath
+          { directoryPath:
+              Path.DirectoryPath
+                [ Name.fromSymbolProxy (Proxy :: _ "output")
+                , Name.fromSymbolProxy (Proxy :: _ "VsCodeExtension.LanguageServer")
+                ]
+          , fileName: Name.fromSymbolProxy (Proxy :: _ "index")
+          }
+    , outFile:
         Path.DistributionFilePath
           { directoryPath: distributionDirectoryPath
-          , fileName: Name.fromSymbolProxy (Proxy :: _ "lsp")
+          , fileName: VsCodeExtensionPath.languageServerFileName
           }
+    , sourcemap: true
+    , external: [ NonEmptyString.nes (Proxy :: _ "vscode") ]
     }
 
 writeLanguageConfiguration :: Aff.Aff Unit
