@@ -6,6 +6,7 @@ module Definy.Build
 import Prelude
 import Console as Console
 import Console as ConsoleValue
+import Data.Argonaut as Argonaut
 import Data.Array.NonEmpty as NonEmptyArray
 import Data.Either as Either
 import Data.Map as Map
@@ -136,7 +137,7 @@ writePackageJsonForFunctions = do
             , fileName: Name.fromSymbolProxy (Proxy :: _ "package")
             }
         )
-        (PackageJson.toJson (generatePackageJson dependencies))
+        (generatePackageJson dependencies)
 
 usingPackageInFunctions :: Set.Set NonEmptyString
 usingPackageInFunctions =
@@ -157,9 +158,9 @@ usingPackageInFunctions =
         (Proxy :: _ "sha256-uint8array")
     ]
 
-generatePackageJson :: Map.Map NonEmptyString NonEmptyString -> PackageJson.PackageJsonInput
+generatePackageJson :: Map.Map NonEmptyString NonEmptyString -> Argonaut.Json
 generatePackageJson dependencies =
-  PackageJson.PackageJsonInput
+  PackageJson.toJson
     { author:
         NonEmptyString.nes
           (Proxy :: _ "narumincho")
@@ -185,14 +186,9 @@ generatePackageJson dependencies =
                 , NonEmptyString.nes (Proxy :: _ "definy")
                 ]
           }
-    , name: PackageJson.nameFromSymbolProxy (Proxy :: _ "definy-functions")
-    , nodeVersionMaybe: Just (NonEmptyString.nes (Proxy :: _ "16"))
-    , vsCodeVersionMaybe: Nothing
-    , typeFilePath: Nothing
+    , name: PackageJson.nameFromSymbolProxyUnsafe (Proxy :: _ "definy-functions")
+    , nodeVersion: NonEmptyString.nes (Proxy :: _ "16")
     , version: NonEmptyString.nes (Proxy :: _ "1.0.0")
-    , activationEvents: Nothing
-    , contributesLanguages: Nothing
-    , browser: Nothing
     }
 
 definyModuleName :: NonEmptyString
