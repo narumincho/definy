@@ -1,4 +1,9 @@
-module EsBuild (buildJs, buildTsx, Option) where
+module EsBuild
+  ( Option
+  , buildJs
+  , buildTs
+  , buildTsx
+  ) where
 
 import Data.Maybe (Maybe(..))
 import Data.Maybe as Maybe
@@ -31,6 +36,9 @@ foreign import buildAsEffectFnAff ::
 
 buildJs :: Option -> Aff.Aff Prelude.Unit
 buildJs option = build FileType.JavaScript option
+
+buildTs :: Option -> Aff.Aff Prelude.Unit
+buildTs option = build FileType.TypeScript option
 
 buildTsx :: Option -> Aff.Aff Prelude.Unit
 buildTsx option = build FileType.TypeScriptReact option
