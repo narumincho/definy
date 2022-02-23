@@ -2,6 +2,7 @@ module BuildNodePackage where
 
 import Prelude
 import Console as ConsoleValue
+import Data.Argonaut as Argonaut
 import Data.Array.NonEmpty as NonEmptyArray
 import Data.Either as Either
 import Data.Map as Map
@@ -140,22 +141,20 @@ writePackageJson = do
     PackageJson.readPackageVersionFromRootPackageJson usingPackageInGen
   case rootPackageJsonResult of
     Either.Left error -> ConsoleValue.logValueAsAff "jsonの parse エラー!" { error }
-    Either.Right dependencies -> case generatePackageJson dependencies of
-      Maybe.Just packageJson ->
-        FileSystemWrite.writeJson
-          ( Path.DistributionFilePath
-              { directoryPath:
-                  Path.DistributionDirectoryPath
-                    { appName
-                    , folderNameMaybe: Maybe.Nothing
-                    }
-              , fileName:
-                  Name.fromSymbolProxy
-                    (Proxy :: _ "package")
-              }
-          )
-          (PackageJson.toJson packageJson)
-      Maybe.Nothing -> ConsoleValue.logValueAsAff "名前のエラー" {}
+    Either.Right dependencies ->
+      FileSystemWrite.writeJson
+        ( Path.DistributionFilePath
+            { directoryPath:
+                Path.DistributionDirectoryPath
+                  { appName
+                  , folderNameMaybe: Maybe.Nothing
+                  }
+            , fileName:
+                Name.fromSymbolProxy
+                  (Proxy :: _ "package")
+            }
+        )
+        (generatePackageJson dependencies)
 
 usingPackageInGen :: Set.Set NonEmptyString
 usingPackageInGen =
@@ -164,55 +163,40 @@ usingPackageInGen =
         (Proxy :: _ "sha256-uint8array")
     )
 
-generatePackageJson :: Map.Map NonEmptyString NonEmptyString -> Maybe.Maybe PackageJson.PackageJsonInput
+generatePackageJson :: Map.Map NonEmptyString NonEmptyString -> Argonaut.Json
 generatePackageJson dependencies =
-  map
-    ( \name ->
-        PackageJson.PackageJsonInput
-          { author:
+  PackageJson.toJson
+    { author:
+        NonEmptyString.nes
+          (Proxy :: _ "narumincho")
+    , dependencies: dependencies
+    , description:
+        NonEmptyString.nes
+          (Proxy :: _ "HTML, TypeScript, JavaScript, package.json, wasm Generator")
+    , main:
+        NonEmptyString.nes
+          (Proxy :: _ "gen/main.js")
+    , gitHubAccountName:
+        NonEmptyString.nes
+          (Proxy :: _ "narumincho")
+    , gitHubRepositoryName:
+        NonEmptyString.nes (Proxy :: _ "definy")
+    , homepage:
+        StructuredUrl.StructuredUrl
+          { origin:
               NonEmptyString.nes
-                (Proxy :: _ "narumincho")
-          , dependencies: dependencies
-          , description:
-              NonEmptyString.nes
-                (Proxy :: _ "HTML, TypeScript, JavaScript, package.json, wasm Generator")
-          , entryPoint:
-              NonEmptyString.nes
-                (Proxy :: _ "gen/main.js")
-          , gitHubAccountName:
-              NonEmptyString.nes
-                (Proxy :: _ "narumincho")
-          , gitHubRepositoryName:
-              NonEmptyString.nes (Proxy :: _ "definy")
-          , homepage:
-              StructuredUrl.StructuredUrl
-                { origin:
-                    NonEmptyString.nes
-                      (Proxy :: _ "https://www.npmjs.com")
-                , pathAndSearchParams:
-                    StructuredUrl.fromPath
-                      [ NonEmptyString.nes (Proxy :: _ "package")
-                      , NonEmptyString.nes (Proxy :: _ "@narumincho/gen")
-                      ]
-                }
-          , name: name
-          , nodeVersionMaybe:
-              Just (NonEmptyString.nes (Proxy :: _ ">=14"))
-          , typeFilePath:
-              Maybe.Just
-                ( NonEmptyString.nes
-                    (Proxy :: _ "gen/main.d.ts")
-                )
-          , version:
-              NonEmptyString.nes (Proxy :: _ "1.0.7")
-          , vsCodeVersionMaybe: Nothing
-          , activationEvents: Nothing
-          , contributesLanguages: Nothing
-          , browser: Nothing
+                (Proxy :: _ "https://www.npmjs.com")
+          , pathAndSearchParams:
+              StructuredUrl.fromPath
+                [ NonEmptyString.nes (Proxy :: _ "package")
+                , NonEmptyString.nes (Proxy :: _ "@narumincho/gen")
+                ]
           }
-    )
-    ( PackageJson.nameFromNonEmptyString
-        ( NonEmptyString.nes
-            (Proxy :: _ "@narumincho/gen")
-        )
-    )
+    , name: PackageJson.nameFromSymbolProxyUnsafe (Proxy :: _ "@narumincho/gen")
+    , nodeVersion: NonEmptyString.nes (Proxy :: _ ">=14")
+    , typeFilePath:
+        NonEmptyString.nes
+          (Proxy :: _ "gen/main.d.ts")
+    , version:
+        NonEmptyString.nes (Proxy :: _ "1.0.7")
+    }
