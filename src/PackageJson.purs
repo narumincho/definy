@@ -1,12 +1,11 @@
 module PackageJson
   ( ContributesLanguages(..)
   , Name
-  , PackageJsonInput(..)
   , PackageJsonOutput
   , devDependencies
   , fromJson
   , nameFromNonEmptyString
-  , nameFromSymbolProxy
+  , nameFromSymbolProxyUnsafe
   , readPackageVersionFromRootPackageJson
   , toJson
   ) where
@@ -33,28 +32,31 @@ import StructuredUrl as StructuredUrl
 import Type.Data.Symbol as Symbol
 import Type.Proxy (Proxy(..))
 import Util as Util
+import Option as Option
 
 newtype Name
   = Name NonEmptyString
 
-newtype PackageJsonInput
-  = PackageJsonInput
-  { name :: Name
-  , version :: NonEmptyString
-  , description :: NonEmptyString
-  , gitHubAccountName :: NonEmptyString
-  , gitHubRepositoryName :: NonEmptyString
-  , entryPoint :: NonEmptyString
-  , homepage :: StructuredUrl.StructuredUrl
-  , author :: NonEmptyString
-  , nodeVersionMaybe :: Maybe NonEmptyString
-  , vsCodeVersionMaybe :: Maybe NonEmptyString
-  , dependencies :: Map.Map NonEmptyString NonEmptyString
-  , {- 型定義(.d.ts か .ts ??)のファイルパス -} typeFilePath :: Maybe NonEmptyString
-  , activationEvents :: Maybe (Array NonEmptyString)
-  , contributesLanguages :: Maybe (NonEmptyArray ContributesLanguages)
-  , browser :: Maybe NonEmptyString
-  }
+type PackageJsonInputRequired
+  = ( name :: Name
+    , version :: NonEmptyString
+    , description :: NonEmptyString
+    , gitHubAccountName :: NonEmptyString
+    , gitHubRepositoryName :: NonEmptyString
+    , entryPoint :: NonEmptyString
+    , homepage :: StructuredUrl.StructuredUrl
+    , author :: NonEmptyString
+    , dependencies :: Map.Map NonEmptyString NonEmptyString
+    )
+
+type PackageJsonInputOptional
+  = ( nodeVersion :: NonEmptyString
+    , vsCodeVersion :: NonEmptyString
+    , {- 型定義(.d.ts か .ts ??)のファイルパス -} typeFilePath :: NonEmptyString
+    , activationEvents :: Array NonEmptyString
+    , contributesLanguages :: NonEmptyArray ContributesLanguages
+    , browser :: NonEmptyString
+    )
 
 newtype ContributesLanguages
   = ContributesLanguages
@@ -84,8 +86,8 @@ nameFromNonEmptyString rawName =
   else
     Just (Name rawName)
 
-nameFromSymbolProxy :: forall symbol. (Symbol.IsSymbol symbol) => Proxy symbol -> Name
-nameFromSymbolProxy symbol =
+nameFromSymbolProxyUnsafe :: forall symbol. (Symbol.IsSymbol symbol) => Proxy symbol -> Name
+nameFromSymbolProxyUnsafe symbol =
   Name
     ( case NonEmptyString.fromString (Symbol.reflectSymbol symbol) of
         Just nonEmpty -> nonEmpty
@@ -98,82 +100,95 @@ nameToNonEmptyString (Name name) = name
 -- |  npm で パッケージをリリースするときや, firebase の Cloud Functions for Firebase でつかう ` `package.json` を出力する
 -- | ライセンスは常に MIT になる.
 -- | クリエイティブ・コモンズは, ロゴ用意してあったり, サイトも翻訳されていたりとしっかりしているので, 使いたいが, GitHub でリポジトリを作成するときの選択肢に出ないため, 各サイトのUI があまり対応していないと判断したため今回は選択肢なし
-toJson :: PackageJsonInput -> Argonaut.Json
-toJson (PackageJsonInput packageJson) =
-  Util.tupleListToJson
-    ( Array.concat
-        [ [ Tuple.Tuple "name" (Argonaut.encodeJson (nameToNonEmptyString packageJson.name))
-          , Tuple.Tuple "version" (Argonaut.encodeJson packageJson.version)
-          , Tuple.Tuple "description" (Argonaut.encodeJson packageJson.description)
-          , Tuple.Tuple "repository"
-              ( Argonaut.encodeJson
-                  { type: "git"
-                  , url:
-                      String.joinWith
-                        ""
-                        [ "git+https://github.com/"
-                        , NonEmptyString.toString packageJson.gitHubAccountName
-                        , "/"
-                        , NonEmptyString.toString packageJson.gitHubRepositoryName
-                        , ".git"
+toJson ::
+  forall (r :: Row Type).
+  Option.FromRecord
+    r
+    PackageJsonInputRequired
+    PackageJsonInputOptional =>
+  Record r -> Argonaut.Json
+toJson option =
+  let
+    rec =
+      Util.optionRecordToMaybeRecord
+        (Proxy :: _ PackageJsonInputRequired)
+        (Proxy :: _ PackageJsonInputOptional)
+        option
+  in
+    Util.tupleListToJson
+      ( Array.concat
+          [ [ Tuple.Tuple "name" (Argonaut.encodeJson (nameToNonEmptyString rec.name))
+            , Tuple.Tuple "version" (Argonaut.encodeJson rec.version)
+            , Tuple.Tuple "description" (Argonaut.encodeJson rec.description)
+            , Tuple.Tuple "repository"
+                ( Argonaut.encodeJson
+                    { type: "git"
+                    , url:
+                        String.joinWith
+                          ""
+                          [ "git+https://github.com/"
+                          , NonEmptyString.toString rec.gitHubAccountName
+                          , "/"
+                          , NonEmptyString.toString rec.gitHubRepositoryName
+                          , ".git"
+                          ]
+                    }
+                )
+            , Tuple.Tuple "license" (Argonaut.fromString "MIT")
+            , Tuple.Tuple "main" (Argonaut.encodeJson rec.entryPoint)
+            , Tuple.Tuple "homepage"
+                ( Argonaut.encodeJson
+                    (StructuredUrl.toString rec.homepage)
+                )
+            , Tuple.Tuple "author" (Argonaut.encodeJson rec.author)
+            , Tuple.Tuple "engines"
+                ( Util.tupleListToJson
+                    ( Array.catMaybes
+                        [ case rec.nodeVersion of
+                            Just nodeVersion ->
+                              Just
+                                (Tuple.Tuple "node" (Argonaut.encodeJson nodeVersion))
+                            Nothing -> Nothing
+                        , case rec.vsCodeVersion of
+                            Just vsCodeVersion ->
+                              Just
+                                (Tuple.Tuple "vscode" (Argonaut.encodeJson vsCodeVersion))
+                            Nothing -> Nothing
                         ]
-                  }
-              )
-          , Tuple.Tuple "license" (Argonaut.fromString "MIT")
-          , Tuple.Tuple "main" (Argonaut.encodeJson packageJson.entryPoint)
-          , Tuple.Tuple "homepage"
-              ( Argonaut.encodeJson
-                  (StructuredUrl.toString packageJson.homepage)
-              )
-          , Tuple.Tuple "author" (Argonaut.encodeJson packageJson.author)
-          , Tuple.Tuple "engines"
-              ( Util.tupleListToJson
-                  ( Array.catMaybes
-                      [ case packageJson.nodeVersionMaybe of
-                          Just nodeVersion ->
-                            Just
-                              (Tuple.Tuple "node" (Argonaut.encodeJson nodeVersion))
-                          Nothing -> Nothing
-                      , case packageJson.vsCodeVersionMaybe of
-                          Just vsCodeVersion ->
-                            Just
-                              (Tuple.Tuple "vscode" (Argonaut.encodeJson vsCodeVersion))
-                          Nothing -> Nothing
-                      ]
-                  )
-              )
-          , Tuple.Tuple dependenciesPropertyName
-              ( Util.tupleListToJson
-                  ( map
-                      ( \(Tuple.Tuple k v) ->
-                          Tuple.Tuple (NonEmptyString.toString k) (Argonaut.encodeJson v)
-                      )
-                      (Map.toUnfoldable packageJson.dependencies)
-                  )
-              )
+                    )
+                )
+            , Tuple.Tuple dependenciesPropertyName
+                ( Util.tupleListToJson
+                    ( map
+                        ( \(Tuple.Tuple k v) ->
+                            Tuple.Tuple (NonEmptyString.toString k) (Argonaut.encodeJson v)
+                        )
+                        (Map.toUnfoldable rec.dependencies)
+                    )
+                )
+            ]
+          , case rec.typeFilePath of
+              Just typeFilePath -> [ Tuple.Tuple "types" (Argonaut.encodeJson typeFilePath) ]
+              Nothing -> []
+          , case rec.activationEvents of
+              Just activationEvents ->
+                [ Tuple.Tuple "activationEvents"
+                    ( Argonaut.fromArray
+                        (map Argonaut.encodeJson activationEvents)
+                    )
+                ]
+              Nothing -> []
+          , case rec.contributesLanguages of
+              Just contributesLanguages ->
+                [ Tuple.Tuple "contributes"
+                    (createContributesValue contributesLanguages)
+                ]
+              Nothing -> []
+          , case rec.browser of
+              Just browser -> [ Tuple.Tuple "browser" (Argonaut.encodeJson browser) ]
+              Nothing -> []
           ]
-        , case packageJson.typeFilePath of
-            Just typeFilePath -> [ Tuple.Tuple "types" (Argonaut.encodeJson typeFilePath) ]
-            Nothing -> []
-        , case packageJson.activationEvents of
-            Just activationEvents ->
-              [ Tuple.Tuple "activationEvents"
-                  ( Argonaut.fromArray
-                      (map Argonaut.encodeJson activationEvents)
-                  )
-              ]
-            Nothing -> []
-        , case packageJson.contributesLanguages of
-            Just contributesLanguages ->
-              [ Tuple.Tuple "contributes"
-                  (createContributesValue contributesLanguages)
-              ]
-            Nothing -> []
-        , case packageJson.browser of
-            Just browser -> [ Tuple.Tuple "browser" (Argonaut.encodeJson browser) ]
-            Nothing -> []
-        ]
-    )
+      )
 
 createContributesValue :: NonEmptyArray ContributesLanguages -> Argonaut.Json
 createContributesValue languageList =

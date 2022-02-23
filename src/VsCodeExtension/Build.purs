@@ -72,11 +72,11 @@ writePackageJsonForVsCodeExtension = do
             , fileName: Name.fromSymbolProxy (Proxy :: _ "package")
             }
         )
-        (PackageJson.toJson (generatePackageJson dependencies))
+        (generatePackageJson dependencies)
 
-generatePackageJson :: Map.Map NonEmptyString NonEmptyString -> PackageJson.PackageJsonInput
+generatePackageJson :: Map.Map NonEmptyString NonEmptyString -> Argonaut.Json
 generatePackageJson dependencies =
-  PackageJson.PackageJsonInput
+  PackageJson.toJson
     { author:
         NonEmptyString.nes
           (Proxy :: _ "narumincho")
@@ -101,31 +101,26 @@ generatePackageJson dependencies =
                 , NonEmptyString.nes (Proxy :: _ "definy")
                 ]
           }
-    , name: PackageJson.nameFromSymbolProxy (Proxy :: _ "definy-vscode-extension")
-    , nodeVersionMaybe: Nothing
-    , vsCodeVersionMaybe: Just (NonEmptyString.nes (Proxy :: _ "^1.64.1"))
+    , name: PackageJson.nameFromSymbolProxyUnsafe (Proxy :: _ "definy-vscode-extension")
+    , vsCodeVersion: NonEmptyString.nes (Proxy :: _ "^1.64.1")
     , typeFilePath: Nothing
-    , version:
-        NonEmptyString.nes (Proxy :: _ "0.0.0")
+    , version: NonEmptyString.nes (Proxy :: _ "0.0.0")
     , activationEvents: Just [ NonEmptyString.nes (Proxy :: _ "onLanguage:definy") ]
     , contributesLanguages:
-        Just
-          ( NonEmptyArray.singleton
-              ( PackageJson.ContributesLanguages
-                  { id: NonEmptyString.nes (Proxy :: _ "definy")
-                  , extensions:
-                      [ NonEmptyString.nes (Proxy :: _ ".definy") ]
-                  , configuration: languageConfigurationPath
-                  , icon:
-                      { light: iconDistributionPath
-                      , dark: iconDistributionPath
-                      }
+        NonEmptyArray.singleton
+          ( PackageJson.ContributesLanguages
+              { id: NonEmptyString.nes (Proxy :: _ "definy")
+              , extensions:
+                  [ NonEmptyString.nes (Proxy :: _ ".definy") ]
+              , configuration: languageConfigurationPath
+              , icon:
+                  { light: iconDistributionPath
+                  , dark: iconDistributionPath
                   }
-              )
+              }
           )
     , browser:
-        Just
-          (Path.distributionFilePathToStringBaseApp extensionMainPath FileType.JavaScript)
+        Path.distributionFilePathToStringBaseApp extensionMainPath FileType.JavaScript
     }
 
 extensionMainPath :: Path.DistributionFilePath
