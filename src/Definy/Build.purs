@@ -168,7 +168,7 @@ generatePackageJson dependencies =
     , description:
         NonEmptyString.nes
           (Proxy :: _ "definy in Cloud Functions for Firebase")
-    , entryPoint:
+    , main:
         NonEmptyString.nes
           (Proxy :: _ "./functions/main.js")
     , gitHubAccountName:

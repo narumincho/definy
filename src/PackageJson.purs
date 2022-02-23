@@ -43,14 +43,14 @@ type PackageJsonInputRequired
     , description :: NonEmptyString
     , gitHubAccountName :: NonEmptyString
     , gitHubRepositoryName :: NonEmptyString
-    , entryPoint :: NonEmptyString
     , homepage :: StructuredUrl.StructuredUrl
     , author :: NonEmptyString
     , dependencies :: Map.Map NonEmptyString NonEmptyString
     )
 
 type PackageJsonInputOptional
-  = ( nodeVersion :: NonEmptyString
+  = ( main :: NonEmptyString
+    , nodeVersion :: NonEmptyString
     , vsCodeVersion :: NonEmptyString
     , {- 型定義(.d.ts か .ts ??)のファイルパス -} typeFilePath :: NonEmptyString
     , activationEvents :: Array NonEmptyString
@@ -135,7 +135,6 @@ toJson option =
                     }
                 )
             , Tuple.Tuple "license" (Argonaut.fromString "MIT")
-            , Tuple.Tuple "main" (Argonaut.encodeJson rec.entryPoint)
             , Tuple.Tuple "homepage"
                 ( Argonaut.encodeJson
                     (StructuredUrl.toString rec.homepage)
@@ -167,6 +166,9 @@ toJson option =
                     )
                 )
             ]
+          , case rec.main of
+              Just main -> [ Tuple.Tuple "main" (Argonaut.encodeJson main) ]
+              Nothing -> []
           , case rec.typeFilePath of
               Just typeFilePath -> [ Tuple.Tuple "types" (Argonaut.encodeJson typeFilePath) ]
               Nothing -> []

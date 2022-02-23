@@ -173,7 +173,7 @@ generatePackageJson dependencies =
     , description:
         NonEmptyString.nes
           (Proxy :: _ "HTML, TypeScript, JavaScript, package.json, wasm Generator")
-    , entryPoint:
+    , main:
         NonEmptyString.nes
           (Proxy :: _ "gen/main.js")
     , gitHubAccountName:

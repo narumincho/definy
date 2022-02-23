@@ -84,9 +84,6 @@ generatePackageJson dependencies =
     , description:
         NonEmptyString.nes
           (Proxy :: _ "definy VSCode extension")
-    , entryPoint:
-        NonEmptyString.nes
-          (Proxy :: _ "./main.js")
     , gitHubAccountName:
         NonEmptyString.nes
           (Proxy :: _ "narumincho")
@@ -120,7 +117,7 @@ generatePackageJson dependencies =
                   }
               }
           )
-    , browser:
+    , main:
         Path.distributionFilePathToStringBaseApp extensionMainPath FileType.JavaScript
     }
 
