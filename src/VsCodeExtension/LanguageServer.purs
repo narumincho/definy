@@ -1,4 +1,4 @@
-module VsCodeExtension.Lsp
+module VsCodeExtension.LanguageServer
   ( main
   ) where
 
@@ -12,7 +12,7 @@ import Effect as Effect
 import Effect.Aff as Aff
 import Effect.Ref as Ref
 import FileSystem.Write as Write
-import VsCodeExtension.LspLib as LspLib
+import VsCodeExtension.LanguageServerLib as Lib
 import VsCodeExtension.Parser as Parser
 import VsCodeExtension.Range as Range
 import VsCodeExtension.SimpleToken as SimpleToken
@@ -31,7 +31,7 @@ newtype State
 main :: Effect.Effect Unit
 main = do
   parseStateRef <-
-    LspLib.createJsonRpcRequestListParseStateRef
+    Lib.createJsonRpcRequestListParseStateRef
   state <-
     Ref.new
       ( State
@@ -40,10 +40,10 @@ main = do
           , codeDict: Map.empty
           }
       )
-  LspLib.receiveJsonRpcMessage
+  Lib.receiveJsonRpcMessage
     parseStateRef
     ( case _ of
-        Either.Right (LspLib.Initialize rec) -> do
+        Either.Right (Lib.Initialize rec) -> do
           let
             { tokenTypeDict, supportTokenType } = TokenType.createTokenTypeDictAndSupportTokenList rec.supportTokenTypes
           Ref.modify_
@@ -56,35 +56,35 @@ main = do
                   )
             )
             state
-          LspLib.sendJsonRpcMessage
-            ( LspLib.ResponseInitialize
+          Lib.sendJsonRpcMessage
+            ( Lib.ResponseInitialize
                 { id: rec.id
                 , semanticTokensProviderLegendTokenTypes: supportTokenType
                 }
             )
             true
-        Either.Right LspLib.Initialized -> LspLib.sendNotificationWindowLogMessage "Initializedされた!"
-        Either.Right (LspLib.TextDocumentDidOpen { uri, text }) -> do
+        Either.Right Lib.Initialized -> Lib.sendNotificationWindowLogMessage "Initializedされた!"
+        Either.Right (Lib.TextDocumentDidOpen { uri, text }) -> do
           Ref.modify_
             ( \(State stateRec) ->
                 State
                   (stateRec { codeDict = Map.insert uri text stateRec.codeDict })
             )
             state
-        Either.Right (LspLib.TextDocumentDidChange { uri, text }) -> do
+        Either.Right (Lib.TextDocumentDidChange { uri, text }) -> do
           Ref.modify_
             ( \(State stateRec) ->
                 State
                   (stateRec { codeDict = Map.insert uri text stateRec.codeDict })
             )
             state
-        Either.Right (LspLib.TextDocumentDidSave { uri }) -> do
+        Either.Right (Lib.TextDocumentDidSave { uri }) -> do
           (State { codeDict }) <- Ref.read state
           case Map.lookup uri codeDict of
             Just code -> do
               Aff.runAff_
                 ( \result ->
-                    LspLib.sendNotificationWindowLogMessage
+                    Lib.sendNotificationWindowLogMessage
                       (append "書き込み完了した " (show result))
                 )
                 ( Aff.attempt
@@ -96,10 +96,10 @@ main = do
                         )
                     )
                 )
-              LspLib.sendNotificationWindowLogMessage
+              Lib.sendNotificationWindowLogMessage
                 "フォーマットした内容で書き込みます"
-            Nothing -> LspLib.sendNotificationWindowLogMessage "ファイルの情報が1度も来ていない..?"
-        Either.Right (LspLib.TextDocumentSemanticTokensFull { id, uri }) -> do
+            Nothing -> Lib.sendNotificationWindowLogMessage "ファイルの情報が1度も来ていない..?"
+        Either.Right (Lib.TextDocumentSemanticTokensFull { id, uri }) -> do
           (State { tokenTypeDict, codeDict }) <- Ref.read state
           case Map.lookup uri codeDict of
             Just code ->
@@ -107,9 +107,9 @@ main = do
                 tokenList = Tokenize.tokenize code
               in
                 do
-                  LspLib.sendNotificationWindowLogMessage (append "tokenList: " (show tokenList))
-                  LspLib.sendJsonRpcMessage
-                    ( LspLib.ResponseTextDocumentSemanticTokensFull
+                  Lib.sendNotificationWindowLogMessage (append "tokenList: " (show tokenList))
+                  Lib.sendJsonRpcMessage
+                    ( Lib.ResponseTextDocumentSemanticTokensFull
                         { id
                         , tokenTypeDict
                         , tokenDataList:
@@ -119,15 +119,15 @@ main = do
                         }
                     )
                     true
-            Nothing -> LspLib.sendNotificationWindowLogMessage "TextDocumentSemanticTokensFullされた けどコードを取得できていない..."
-        Either.Right (LspLib.TextDocumentCodeLens { id }) ->
-          LspLib.sendJsonRpcMessage
-            ( LspLib.ResponseTextDocumentCodeLens
+            Nothing -> Lib.sendNotificationWindowLogMessage "TextDocumentSemanticTokensFullされた けどコードを取得できていない..."
+        Either.Right (Lib.TextDocumentCodeLens { id }) ->
+          Lib.sendJsonRpcMessage
+            ( Lib.ResponseTextDocumentCodeLens
                 { id
                 , codeLensList:
-                    [ LspLib.CodeLens
+                    [ Lib.CodeLens
                         { command:
-                            LspLib.Command
+                            Lib.Command
                               { title: "メッセージを表示"
                               , command: testCommandKey
                               }
@@ -149,7 +149,7 @@ main = do
                 }
             )
             true
-        Either.Left message -> LspLib.sendNotificationWindowLogMessage message
+        Either.Left message -> Lib.sendNotificationWindowLogMessage message
     )
 
 testCommandKey :: String

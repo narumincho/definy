@@ -43,7 +43,7 @@ main =
 distributionDirectoryPath :: Path.DistributionDirectoryPath
 distributionDirectoryPath =
   Path.DistributionDirectoryPath
-    { appName: Name.fromSymbolProxy (Proxy :: _ "definy-lsp")
+    { appName: Name.fromSymbolProxy (Proxy :: _ "definy-extension")
     , folderNameMaybe: Nothing
     }
 
@@ -146,11 +146,11 @@ buildExtensionLsp =
   Spago.bundleApp
     { mainModuleName:
         PureScriptData.ModuleName
-          (NonEmptyArray.cons (NonEmptyString.nes (Proxy :: _ "VsCodeExtension")) (NonEmptyArray.singleton (NonEmptyString.nes (Proxy :: _ "Lsp"))))
+          (NonEmptyArray.cons (NonEmptyString.nes (Proxy :: _ "VsCodeExtension")) (NonEmptyArray.singleton (NonEmptyString.nes (Proxy :: _ "LanguageServer"))))
     , outputJavaScriptPath:
         Path.DistributionFilePath
           { directoryPath: distributionDirectoryPath
-          , fileName: Name.fromSymbolProxy (Proxy :: _ "lsp")
+          , fileName: Name.fromSymbolProxy (Proxy :: _ "language-server")
           }
     }
 

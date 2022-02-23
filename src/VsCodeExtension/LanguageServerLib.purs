@@ -1,4 +1,4 @@
-module VsCodeExtension.LspLib
+module VsCodeExtension.LanguageServerLib
   ( ClientToServerMessage(..)
   , ClientToServerMessageParseState
   , CodeLens(..)

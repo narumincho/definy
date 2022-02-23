@@ -9,18 +9,22 @@ export const activateFunc = (context: ExtensionContext): void => {
     console.log("called definy.testCommand !");
     window.showInformationMessage("コマンドを呼ばれた!");
   });
+  window.showInformationMessage("definy VSCode 拡張機能が起動できた");
 
   client = new LanguageClient(
     "definy-language-server",
     {
       command: "node",
-      args: [context.asAbsolutePath("lsp.js")],
+      args: [context.asAbsolutePath("language-server.js")],
     },
     {
       documentSelector: [{ scheme: "file", language: "definy" }],
     }
   );
   context.subscriptions.push(client.start());
+  client.onReady().then(() => {
+    window.showInformationMessage("definy language client を起動できた");
+  });
 };
 
 export const deactivateFunc = (): Promise<void> | undefined => {
