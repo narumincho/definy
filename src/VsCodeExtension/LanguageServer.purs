@@ -15,6 +15,7 @@ import Effect.Ref as Ref
 import FileSystem.Write as Write
 import VsCodeExtension.Evaluate as Evaluate
 import VsCodeExtension.LanguageServerLib as Lib
+import VsCodeExtension.Parser (CodeTree(..))
 import VsCodeExtension.Parser as Parser
 import VsCodeExtension.Range as Range
 import VsCodeExtension.SimpleToken as SimpleToken
@@ -27,7 +28,7 @@ newtype State
   = State
   { supportPublishDiagnostics :: Boolean
   , tokenTypeDict :: TokenType.TokenTypeDict
-  , codeDict :: Map.Map Uri.Uri String
+  , codeDict :: Map.Map Uri.Uri Parser.CodeTree
   }
 
 main :: Effect.Effect Unit
@@ -63,26 +64,41 @@ main = do
             , semanticTokensProviderLegendTokenTypes: supportTokenType
             }
         Either.Right Lib.Initialized -> Lib.sendNotificationWindowLogMessage "Initializedされた!"
-        Either.Right (Lib.TextDocumentDidOpen { uri, text }) -> do
-          Ref.modify_
-            ( \(State stateRec) ->
-                State
-                  (stateRec { codeDict = Map.insert uri text stateRec.codeDict })
-            )
-            state
-          sendError uri text
-        Either.Right (Lib.TextDocumentDidChange { uri, text }) -> do
-          Ref.modify_
-            ( \(State stateRec) ->
-                State
-                  (stateRec { codeDict = Map.insert uri text stateRec.codeDict })
-            )
-            state
-          sendError uri text
+        Either.Right (Lib.TextDocumentDidOpen { uri, text }) ->
+          let
+            codeTree = stringToCodeTree text
+          in
+            do
+              Ref.modify_
+                ( \(State stateRec) ->
+                    State
+                      ( stateRec
+                          { codeDict = Map.insert uri codeTree stateRec.codeDict }
+                      )
+                )
+                state
+              sendError uri codeTree
+        Either.Right (Lib.TextDocumentDidChange { uri, text }) ->
+          let
+            codeTree = stringToCodeTree text
+          in
+            do
+              Ref.modify_
+                ( \(State stateRec) ->
+                    State
+                      ( stateRec
+                          { codeDict =
+                            Map.insert uri (stringToCodeTree text)
+                              stateRec.codeDict
+                          }
+                      )
+                )
+                state
+              sendError uri codeTree
         Either.Right (Lib.TextDocumentDidSave { uri }) -> do
           (State { codeDict }) <- Ref.read state
           case Map.lookup uri codeDict of
-            Just code -> do
+            Just codeTree -> do
               Aff.runAff_
                 ( \result ->
                     Lib.sendNotificationWindowLogMessage
@@ -90,11 +106,7 @@ main = do
                 )
                 ( Aff.attempt
                     ( Write.writeTextFilePathFileProtocol uri
-                        ( ToString.codeTreeToString
-                            ( Parser.parse
-                                (SimpleToken.tokenListToSimpleTokenList (Tokenize.tokenize code))
-                            )
-                        )
+                        (ToString.codeTreeToString codeTree)
                     )
                 )
               Lib.sendNotificationWindowLogMessage
@@ -104,61 +116,49 @@ main = do
           (State { tokenTypeDict, codeDict }) <- Ref.read state
           case Map.lookup uri codeDict of
             Just code ->
-              let
-                tokenList = Tokenize.tokenize code
-              in
-                do
-                  Lib.sendNotificationWindowLogMessage (append "tokenList: " (show tokenList))
-                  Lib.responseTextDocumentSemanticTokensFull
-                    { id
-                    , tokenTypeDict
-                    , tokenDataList:
-                        Array.mapMaybe
-                          Tokenize.tokenWithRangeToTokenTypeAndRangeTuple
-                          tokenList
-                    }
+              Lib.responseTextDocumentSemanticTokensFull
+                { id
+                , tokenTypeDict
+                , tokenDataList: Parser.codeTreeToTokenData code
+                }
             Nothing -> Lib.sendNotificationWindowLogMessage "TextDocumentSemanticTokensFullされた けどコードを取得できていない..."
         Either.Right (Lib.TextDocumentCodeLens { uri, id }) -> do
           (State { codeDict }) <- Ref.read state
           case Map.lookup uri codeDict of
-            Just code ->
-              let
-                tokenList = Tokenize.tokenize code
-              in
-                do
-                  Lib.sendNotificationWindowLogMessage (append "tokenList: " (show tokenList))
-                  Lib.responseTextDocumentCodeLens
-                    { id
-                    , codeLensList:
-                        [ Lib.CodeLens
-                            { command:
-                                showEvaluatedValue
-                                  ( Evaluate.evaluateResultGetValue
-                                      ( Evaluate.evaluate
-                                          ( Parser.parse
-                                              (SimpleToken.tokenListToSimpleTokenList (Tokenize.tokenize code))
-                                          )
-                                      )
-                                  )
-                            , range:
-                                Range.Range
-                                  { start:
-                                      Range.Position
-                                        { line: UInt.fromInt 0
-                                        , character: UInt.fromInt 0
-                                        }
-                                  , end:
-                                      Range.Position
-                                        { line: UInt.fromInt 0
-                                        , character: UInt.fromInt 1
-                                        }
-                                  }
-                            }
-                        ]
-                    }
+            Just code -> do
+              Lib.responseTextDocumentCodeLens
+                { id
+                , codeLensList:
+                    [ Lib.CodeLens
+                        { command:
+                            showEvaluatedValue
+                              ( Evaluate.evaluateResultGetValue
+                                  (Evaluate.evaluate code)
+                              )
+                        , range:
+                            Range.Range
+                              { start:
+                                  Range.Position
+                                    { line: UInt.fromInt 0
+                                    , character: UInt.fromInt 0
+                                    }
+                              , end:
+                                  Range.Position
+                                    { line: UInt.fromInt 0
+                                    , character: UInt.fromInt 1
+                                    }
+                              }
+                        }
+                    ]
+                }
             Nothing -> Lib.sendNotificationWindowLogMessage "codelens取得内でコードを取得できていない..."
         Either.Left message -> Lib.sendNotificationWindowLogMessage message
     )
+
+stringToCodeTree :: String -> CodeTree
+stringToCodeTree code =
+  Parser.parse
+    (SimpleToken.tokenListToSimpleTokenList (Tokenize.tokenize code))
 
 showEvaluatedValue :: Maybe UInt.UInt -> Lib.Command
 showEvaluatedValue valueMaybe =
@@ -175,14 +175,10 @@ showEvaluatedValue valueMaybe =
       , arguments: [ Argonaut.fromString result ]
       }
 
-sendError :: Uri.Uri -> String -> Effect.Effect Unit
-sendError uri code =
+sendError :: Uri.Uri -> Parser.CodeTree -> Effect.Effect Unit
+sendError uri codeTree =
   let
-    (Evaluate.EvaluateResult { errorList }) =
-      Evaluate.evaluate
-        ( Parser.parse
-            (SimpleToken.tokenListToSimpleTokenList (Tokenize.tokenize code))
-        )
+    (Evaluate.EvaluateResult { errorList }) = Evaluate.evaluate codeTree
   in
     Lib.sendNotificationPublishDiagnostics
       { diagnostics:

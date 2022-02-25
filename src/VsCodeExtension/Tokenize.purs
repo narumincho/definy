@@ -1,7 +1,6 @@
 module VsCodeExtension.Tokenize
   ( Token(..)
   , TokenWithRange(..)
-  , tokenWithRangeToTokenTypeAndRangeTuple
   , tokenize
   ) where
 
@@ -20,7 +19,6 @@ import Data.Tuple as Tuple
 import Data.UInt as UInt
 import VsCodeExtension.Range as Position
 import VsCodeExtension.Range as Range
-import VsCodeExtension.TokenType as TokenType
 
 newtype TokenWithRange
   = TokenWithRange
@@ -46,20 +44,6 @@ derive instance tokenGeneric :: GenericRep.Generic Token _
 
 instance tokenShow :: Show Token where
   show = ShowGeneric.genericShow
-
-tokenWithRangeToTokenTypeAndRangeTuple ::
-  TokenWithRange ->
-  Maybe TokenType.TokenData
-tokenWithRangeToTokenTypeAndRangeTuple (TokenWithRange { token, range: Range.Range { start } }) = case token of
-  Name name ->
-    Just
-      ( TokenType.TokenData
-          { length: UInt.fromInt (Array.length (NonEmptyCodeUnits.toCharArray name))
-          , start
-          , tokenType: TokenType.TokenTypeVariable
-          }
-      )
-  _ -> Nothing
 
 newtype State
   = State { target :: Char, rest :: Array Char, range :: Range.Range }
