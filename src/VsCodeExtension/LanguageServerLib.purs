@@ -4,10 +4,8 @@ module VsCodeExtension.LanguageServerLib
   , CodeLens(..)
   , Command(..)
   , Diagnostic(..)
-  , Id
   , ServerToClientMessage(..)
   , createJsonRpcRequestListParseStateRef
-  , idZero
   , parseContentLengthHeader
   , receiveJsonRpcMessage
   , sendJsonRpcMessage
@@ -31,13 +29,14 @@ import Node.Buffer as Buffer
 import Node.Encoding as Encoding
 import Node.Process as Process
 import Node.Stream as Stream
+import VsCodeExtension.JsonRpc as JsonRpc
 import VsCodeExtension.Range as Range
 import VsCodeExtension.TokenType as TokenType
 import VsCodeExtension.Uri as Uri
 
 data ClientToServerMessage
   = Initialize
-    { id :: Id
+    { id :: JsonRpc.Id
     , supportPublishDiagnostics :: Boolean
     , supportTokenTypes :: Array TokenType.TokenTypeOrNotSupportTokenType
     }
@@ -45,19 +44,8 @@ data ClientToServerMessage
   | TextDocumentDidOpen { uri :: Uri.Uri, text :: String }
   | TextDocumentDidChange { uri :: Uri.Uri, text :: String }
   | TextDocumentDidSave { uri :: Uri.Uri }
-  | TextDocumentSemanticTokensFull { id :: Id, uri :: Uri.Uri }
-  | TextDocumentCodeLens { id :: Id, uri :: Uri.Uri }
-
-newtype Id
-  = Id Int
-
-instance decodeId :: Argonaut.DecodeJson Id where
-  decodeJson json = do
-    (id :: Int) <- Argonaut.decodeJson json
-    pure (Id id)
-
-idZero :: Id
-idZero = Id 0
+  | TextDocumentSemanticTokensFull { id :: JsonRpc.Id, uri :: Uri.Uri }
+  | TextDocumentCodeLens { id :: JsonRpc.Id, uri :: Uri.Uri }
 
 createJsonRpcRequestListParseStateRef :: Effect.Effect (Ref.Ref ClientToServerMessageParseState)
 createJsonRpcRequestListParseStateRef =
@@ -280,25 +268,24 @@ getParam jsonObject = Argonaut.getField jsonObject "params"
 
 getId ::
   Object.Object Argonaut.Json ->
-  Either.Either Argonaut.JsonDecodeError Id
+  Either.Either Argonaut.JsonDecodeError JsonRpc.Id
 getId jsonObject = do
-  (id :: Id) <- Argonaut.getField jsonObject "id"
+  (id :: JsonRpc.Id) <- Argonaut.getField jsonObject "id"
   pure id
 
 data ServerToClientMessage
   = WindowLogMessage String
   | ResponseInitialize
-    { id :: Id
+    { id :: JsonRpc.Id
     , semanticTokensProviderLegendTokenTypes :: Array String
     }
   | PublishDiagnostics { uri :: Uri.Uri, diagnostics :: Array Diagnostic }
   | ResponseTextDocumentSemanticTokensFull
-    { id :: Id
+    { id :: JsonRpc.Id
     , tokenDataList :: Array TokenType.TokenData
     , tokenTypeDict :: TokenType.TokenTypeDict
     }
-  | RequestCodeLensRefresh { id :: Id }
-  | ResponseTextDocumentCodeLens { id :: Id, codeLensList :: Array CodeLens }
+  | ResponseTextDocumentCodeLens { id :: JsonRpc.Id, codeLensList :: Array CodeLens }
 
 newtype Diagnostic
   = Diagnostic { range :: Range.Range, message :: String }
@@ -373,39 +360,52 @@ jsonRpcResponseToBinary response isLog =
 jsonRpcResponseToJson :: ServerToClientMessage -> Argonaut.Json
 jsonRpcResponseToJson = case _ of
   WindowLogMessage message ->
-    encodeNotification
-      "window/logMessage"
-      (Argonaut.encodeJson { type: 3.0, message })
+    Argonaut.encodeJson
+      ( JsonRpc.NotificationMessage
+          { method: "window/logMessage"
+          , params: JsonRpc.paramsFromRecord { type: 3.0, message }
+          }
+      )
   ResponseInitialize { id, semanticTokensProviderLegendTokenTypes } ->
-    encodeResponse
-      id
-      ( Argonaut.encodeJson
-          { capabilities:
-              { textDocumentSync: 1
-              , semanticTokensProvider:
-                  { legend:
-                      { tokenTypes: semanticTokensProviderLegendTokenTypes
-                      , tokenModifiers: [] :: Array String
-                      }
-                  , range: false
-                  , full: true
-                  }
-              , codeLensProvider: { resolveProvider: true }
-              }
+    Argonaut.encodeJson
+      ( JsonRpc.ResponseMessageSuccess
+          { id
+          , result:
+              Argonaut.encodeJson
+                { capabilities:
+                    { textDocumentSync: 1
+                    , semanticTokensProvider:
+                        { legend:
+                            { tokenTypes: semanticTokensProviderLegendTokenTypes
+                            , tokenModifiers: [] :: Array String
+                            }
+                        , range: false
+                        , full: true
+                        }
+                    , codeLensProvider: { resolveProvider: true }
+                    }
+                }
           }
       )
   PublishDiagnostics value ->
-    encodeNotification
-      "textDocument/publishDiagnostics"
-      (Argonaut.encodeJson value)
-  ResponseTextDocumentSemanticTokensFull { id, tokenDataList, tokenTypeDict } ->
-    encodeResponse
-      id
-      ( Argonaut.encodeJson
-          { data: tokenDataListToDataList tokenTypeDict tokenDataList }
+    Argonaut.encodeJson
+      ( JsonRpc.NotificationMessage
+          { method: "textDocument/publishDiagnostics"
+          , params: JsonRpc.paramsFromRecord value
+          }
       )
-  RequestCodeLensRefresh { id } -> encodeRequest id "workspace/codeLens/refresh" Argonaut.jsonEmptyObject
-  ResponseTextDocumentCodeLens { id, codeLensList } -> encodeResponse id (Argonaut.encodeJson codeLensList)
+  ResponseTextDocumentSemanticTokensFull { id, tokenDataList, tokenTypeDict } ->
+    Argonaut.encodeJson
+      ( JsonRpc.ResponseMessageSuccess
+          { id
+          , result:
+              Argonaut.encodeJson
+                { data: tokenDataListToDataList tokenTypeDict tokenDataList }
+          }
+      )
+  ResponseTextDocumentCodeLens { id, codeLensList } ->
+    Argonaut.encodeJson
+      (JsonRpc.ResponseMessageSuccess { id, result: Argonaut.encodeJson codeLensList })
 
 tokenDataListToDataList ::
   TokenType.TokenTypeDict ->
@@ -434,18 +434,3 @@ tokenDataListToDataList tokenTypeDict tokenDataList =
         tokenDataList
     )
     .result
-
-encodeNotification :: String -> Argonaut.Json -> Argonaut.Json
-encodeNotification method params = Argonaut.encodeJson { jsonrpc: "2.0", method, params }
-
-encodeResponse :: Id -> Argonaut.Json -> Argonaut.Json
-encodeResponse (Id id) result = Argonaut.encodeJson { jsonrpc: "2.0", id, result }
-
-encodeRequest :: Id -> String -> Argonaut.Json -> Argonaut.Json
-encodeRequest (Id id) method params =
-  Argonaut.encodeJson
-    { jsonrpc: "2.0"
-    , id
-    , method
-    , params
-    }
