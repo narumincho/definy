@@ -26,6 +26,11 @@ newtype EvaluateResult
 evaluateResultGetValue :: EvaluateResult -> Maybe UInt.UInt
 evaluateResultGetValue (EvaluateResult { value }) = value
 
+addErrorList :: Array ErrorWithRange -> EvaluateResult -> EvaluateResult
+addErrorList newErrorList (EvaluateResult { value, errorList }) =
+  EvaluateResult
+    { value, errorList: append errorList newErrorList }
+
 newtype ErrorWithRange
   = ErrorWithRange
   { error :: Error, range :: Range.Range }
@@ -42,11 +47,14 @@ errorToString = case _ of
   SuperfluousParameter -> "余計なパラメーターです"
 
 evaluate :: Parser.CodeTree -> EvaluateResult
-evaluate codeTree@(Parser.CodeTree { name, nameRange }) =
+evaluate codeTree@(Parser.CodeTree { name, nameRange, children }) =
   if eq name (NonEmptyString.nes (Proxy :: Proxy "add")) then
-    addEvaluateResult
-      (codeTreeGetChildEvaluateResult (UInt.fromInt 0) codeTree)
-      (codeTreeGetChildEvaluateResult (UInt.fromInt 1) codeTree)
+    addErrorList
+      (childrenSuperfluousParameterErrorList (UInt.fromInt 2) children)
+      ( addEvaluateResult
+          (codeTreeGetChildEvaluateResult (UInt.fromInt 0) codeTree)
+          (codeTreeGetChildEvaluateResult (UInt.fromInt 1) codeTree)
+      )
   else case UInt.fromString (NonEmptyString.toString name) of
     Just value -> EvaluateResult { value: Just value, errorList: [] }
     Nothing ->
@@ -73,6 +81,15 @@ codeTreeGetChildEvaluateResult index (Parser.CodeTree { children, range }) = cas
               }
           ]
       }
+
+childrenSuperfluousParameterErrorList :: UInt.UInt -> Array Parser.CodeTree -> Array ErrorWithRange
+childrenSuperfluousParameterErrorList size children =
+  map
+    ( \(Parser.CodeTree { range }) ->
+        ErrorWithRange
+          { error: SuperfluousParameter, range }
+    )
+    (Array.drop (UInt.toInt size) children)
 
 addEvaluateResult :: EvaluateResult -> EvaluateResult -> EvaluateResult
 addEvaluateResult (EvaluateResult a) (EvaluateResult b) =
