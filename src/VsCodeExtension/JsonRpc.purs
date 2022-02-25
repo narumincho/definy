@@ -2,9 +2,11 @@ module VsCodeExtension.JsonRpc
   ( ErrorCode(..)
   , Id
   , NotificationMessage(..)
+  , NotificationMessageOrRequestMessage(..)
   , Params(..)
   , ResponseError(..)
   , ResponseMessage(..)
+  , RequestMessage(..)
   , idZero
   , paramsFromRecord
   ) where
@@ -78,8 +80,11 @@ instance encodeResponseMessage ::
     ResponseMessageError { id, error } -> Argonaut.encodeJson { jsonrpc: "2.0", id, error }
 
 data NotificationMessageOrRequestMessage
-  = DecodeResultRequestMessage { id :: Id, method :: String, params :: Params }
-  | DecodeResultNotificationMessage { method :: String, params :: Params }
+  = DecodeResultRequestMessage RequestMessage
+  | DecodeResultNotificationMessage NotificationMessage
+
+newtype RequestMessage
+  = RequestMessage { id :: Id, method :: String, params :: Maybe Params }
 
 data Params
   = ParamsArray (Array Argonaut.Json)
@@ -111,15 +116,23 @@ instance decodeNotificationMessageOrRequestMessage :: Argonaut.DecodeJson Notifi
     Just jsonObject -> do
       (_ :: String) <- Argonaut.getField jsonObject "jsonrpc"
       (method :: String) <- Argonaut.getField jsonObject "method"
-      (params :: Params) <- Argonaut.getField jsonObject "params"
+      (params :: Maybe Params) <- Argonaut.getFieldOptional jsonObject "params"
       (idMaybe :: Maybe Id) <- Argonaut.getFieldOptional jsonObject "id"
       case idMaybe of
-        Just id -> Either.Right (DecodeResultRequestMessage { id, method, params })
-        Nothing -> Either.Right (DecodeResultNotificationMessage { method, params })
+        Just id ->
+          Either.Right
+            ( DecodeResultRequestMessage
+                (RequestMessage { id, method, params })
+            )
+        Nothing ->
+          Either.Right
+            ( DecodeResultNotificationMessage
+                (NotificationMessage { method, params })
+            )
     Nothing -> Either.Left (Argonaut.TypeMismatch "Expected JsonRpc NotificationMessage or RequestMessage type object")
 
 newtype NotificationMessage
-  = NotificationMessage { method :: String, params :: Params }
+  = NotificationMessage { method :: String, params :: Maybe Params }
 
 instance encodeNotificationMessage :: Argonaut.EncodeJson NotificationMessage where
   encodeJson (NotificationMessage rec) = Argonaut.encodeJson rec

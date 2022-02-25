@@ -172,106 +172,101 @@ parseContentLengthHeader headerItem =
 
 jsonRpcRequestParse :: String -> Either.Either String ClientToServerMessage
 jsonRpcRequestParse jsonAsString = case Argonaut.jsonParser jsonAsString of
-  Either.Right json -> jsonToJsonRpcRequestResult json
+  Either.Right json -> case jsonToJsonRpcRequestResult json of
+    Either.Right message -> Either.Right message
+    Either.Left error -> Either.Left (Argonaut.printJsonDecodeError error)
   Either.Left parseError ->
     Either.Left
       (append "JSON のパースに失敗した " parseError)
 
-jsonToJsonRpcRequestResult :: Argonaut.Json -> Either.Either String ClientToServerMessage
-jsonToJsonRpcRequestResult json = case Argonaut.toObject json of
-  Just jsonAsObj -> case jsonObjectToJsonRpcRequestResult jsonAsObj of
-    Either.Right r -> Either.Right r
-    Either.Left l -> Either.Left (Argonaut.printJsonDecodeError l)
-  Nothing -> Either.Left "json のルートの値が object ではなかった"
+jsonToJsonRpcRequestResult :: Argonaut.Json -> Either.Either Argonaut.JsonDecodeError ClientToServerMessage
+jsonToJsonRpcRequestResult json = do
+  (notificationMessageOrRequestMessage :: JsonRpc.NotificationMessageOrRequestMessage) <- Argonaut.decodeJson json
+  case notificationMessageOrRequestMessage of
+    JsonRpc.DecodeResultRequestMessage request -> notificationMessageToLanguageClientToServerRequest request
+    JsonRpc.DecodeResultNotificationMessage notification -> notificationMessageToLanguageClientToServerNotification notification
 
-jsonObjectToJsonRpcRequestResult ::
-  Object.Object Argonaut.Json ->
-  Either.Either Argonaut.JsonDecodeError ClientToServerMessage
-jsonObjectToJsonRpcRequestResult jsonObject = do
-  (method :: String) <- Argonaut.getField jsonObject "method"
-  ( case method of
-      "initialize" -> do
-        id <- getId jsonObject
-        (params :: { capabilities :: { textDocument :: Object.Object Argonaut.Json } }) <- Argonaut.getField jsonObject "params"
-        (publishDiagnosticsMaybe :: Maybe (Object.Object Argonaut.Json)) <-
-          Argonaut.getFieldOptional
-            params.capabilities.textDocument
-            "publishDiagnostics"
-        (semanticTokens :: Maybe ({ tokenTypes :: Array TokenType.TokenTypeOrNotSupportTokenType })) <-
-          Argonaut.getFieldOptional
-            params.capabilities.textDocument
-            "semanticTokens"
-        Either.Right
-          ( Initialize
-              { id
-              , supportPublishDiagnostics:
-                  case publishDiagnosticsMaybe of
-                    Just _ -> true
-                    Nothing -> false
-              , supportTokenTypes:
-                  case semanticTokens of
-                    Nothing -> []
-                    Just { tokenTypes } -> tokenTypes
-              }
-          )
-      "initialized" -> do
-        Either.Right Initialized
-      "textDocument/didOpen" -> do
-        params <- getParam jsonObject
-        (textDocument :: { uri :: Uri.Uri, text :: String }) <- Argonaut.getField params "textDocument"
-        Either.Right (TextDocumentDidOpen textDocument)
-      "textDocument/didChange" -> do
-        params <- getParam jsonObject
-        (textDocument :: { uri :: Uri.Uri }) <- Argonaut.getField params "textDocument"
-        (contentChanges :: Array { text :: String }) <- Argonaut.getField params "contentChanges"
-        Either.Right
-          ( TextDocumentDidChange
-              { uri: textDocument.uri
-              , text:
-                  case Array.last contentChanges of
-                    Just contentChange -> contentChange.text
-                    Nothing -> ""
-              }
-          )
-      "textDocument/didSave" -> do
-        params <- getParam jsonObject
-        (textDocument :: { uri :: Uri.Uri }) <- Argonaut.getField params "textDocument"
-        Either.Right
-          ( TextDocumentDidSave
-              { uri: textDocument.uri }
-          )
-      "textDocument/semanticTokens/full" -> do
-        id <- getId jsonObject
-        params <- getParam jsonObject
-        (textDocument :: { uri :: Uri.Uri }) <- Argonaut.getField params "textDocument"
-        Either.Right
-          ( TextDocumentSemanticTokensFull
-              { id, uri: textDocument.uri }
-          )
-      "textDocument/codeLens" -> do
-        id <- getId jsonObject
-        params <- getParam jsonObject
-        (textDocument :: { uri :: Uri.Uri }) <- Argonaut.getField params "textDocument"
-        Either.Right
-          ( TextDocumentCodeLens
-              { id, uri: textDocument.uri }
-          )
-      _ ->
-        Either.Left
-          (Argonaut.TypeMismatch (append "unknown method " method))
-  )
+notificationMessageToLanguageClientToServerRequest :: JsonRpc.RequestMessage -> Either.Either Argonaut.JsonDecodeError ClientToServerMessage
+notificationMessageToLanguageClientToServerRequest (JsonRpc.RequestMessage { id, method, params }) = case method of
+  "initialize" -> case params of
+    Just (JsonRpc.ParamsObject paramsObj) -> do
+      (capabilities :: { textDocument :: Object.Object Argonaut.Json }) <- Argonaut.getField paramsObj "capabilities"
+      (publishDiagnosticsMaybe :: Maybe (Object.Object Argonaut.Json)) <-
+        Argonaut.getFieldOptional
+          capabilities.textDocument
+          "publishDiagnostics"
+      (semanticTokens :: Maybe ({ tokenTypes :: Array TokenType.TokenTypeOrNotSupportTokenType })) <-
+        Argonaut.getFieldOptional
+          capabilities.textDocument
+          "semanticTokens"
+      Either.Right
+        ( Initialize
+            { id
+            , supportPublishDiagnostics:
+                case publishDiagnosticsMaybe of
+                  Just _ -> true
+                  Nothing -> false
+            , supportTokenTypes:
+                case semanticTokens of
+                  Nothing -> []
+                  Just { tokenTypes } -> tokenTypes
+            }
+        )
+    _ -> Either.Left (Argonaut.TypeMismatch "expect initialize params type object")
+  "textDocument/semanticTokens/full" -> case params of
+    Just (JsonRpc.ParamsObject paramsObj) -> do
+      (textDocument :: { uri :: Uri.Uri }) <- Argonaut.getField paramsObj "textDocument"
+      Either.Right
+        ( TextDocumentSemanticTokensFull
+            { id, uri: textDocument.uri }
+        )
+    _ -> Either.Left (Argonaut.TypeMismatch "expect textDocument/semanticTokens/full params type object")
+  "textDocument/codeLens" -> case params of
+    Just (JsonRpc.ParamsObject paramsObj) -> do
+      (textDocument :: { uri :: Uri.Uri }) <- Argonaut.getField paramsObj "textDocument"
+      Either.Right
+        ( TextDocumentCodeLens
+            { id, uri: textDocument.uri }
+        )
+    _ -> Either.Left (Argonaut.TypeMismatch "expect textDocument/codeLens params type object")
+  _ ->
+    Either.Left
+      (Argonaut.TypeMismatch (append "unknown request method " method))
 
-getParam ::
-  Object.Object Argonaut.Json ->
-  Either.Either Argonaut.JsonDecodeError (Object.Object Argonaut.Json)
-getParam jsonObject = Argonaut.getField jsonObject "params"
-
-getId ::
-  Object.Object Argonaut.Json ->
-  Either.Either Argonaut.JsonDecodeError JsonRpc.Id
-getId jsonObject = do
-  (id :: JsonRpc.Id) <- Argonaut.getField jsonObject "id"
-  pure id
+notificationMessageToLanguageClientToServerNotification :: JsonRpc.NotificationMessage -> Either.Either Argonaut.JsonDecodeError ClientToServerMessage
+notificationMessageToLanguageClientToServerNotification (JsonRpc.NotificationMessage { method, params }) = case method of
+  "initialized" -> do
+    Either.Right Initialized
+  "textDocument/didOpen" -> case params of
+    Just (JsonRpc.ParamsObject paramsObj) -> do
+      (textDocument :: { uri :: Uri.Uri, text :: String }) <- Argonaut.getField paramsObj "textDocument"
+      Either.Right (TextDocumentDidOpen textDocument)
+    _ -> Either.Left (Argonaut.TypeMismatch "expect textDocument/didOpen params type object")
+  "textDocument/didChange" -> case params of
+    Just (JsonRpc.ParamsObject paramsObj) -> do
+      (textDocument :: { uri :: Uri.Uri }) <- Argonaut.getField paramsObj "textDocument"
+      (contentChanges :: Array { text :: String }) <- Argonaut.getField paramsObj "contentChanges"
+      Either.Right
+        ( TextDocumentDidChange
+            { uri: textDocument.uri
+            , text:
+                case Array.last contentChanges of
+                  Just contentChange -> contentChange.text
+                  Nothing -> ""
+            }
+        )
+    _ -> Either.Left (Argonaut.TypeMismatch "expect textDocument/didChange params type object")
+  "textDocument/didSave" -> case params of
+    Just (JsonRpc.ParamsObject paramsObj) -> do
+      (textDocument :: { uri :: Uri.Uri }) <- Argonaut.getField paramsObj "textDocument"
+      Either.Right
+        ( TextDocumentDidSave
+            { uri: textDocument.uri }
+        )
+    _ -> Either.Left (Argonaut.TypeMismatch "expect textDocument/didSave params type object")
+  _ ->
+    Either.Left
+      (Argonaut.TypeMismatch (append "unknown notification method " method))
 
 data ServerToClientMessage
   = WindowLogMessage String
@@ -363,7 +358,7 @@ jsonRpcResponseToJson = case _ of
     Argonaut.encodeJson
       ( JsonRpc.NotificationMessage
           { method: "window/logMessage"
-          , params: JsonRpc.paramsFromRecord { type: 3.0, message }
+          , params: Just (JsonRpc.paramsFromRecord { type: 3.0, message })
           }
       )
   ResponseInitialize { id, semanticTokensProviderLegendTokenTypes } ->
@@ -391,7 +386,7 @@ jsonRpcResponseToJson = case _ of
     Argonaut.encodeJson
       ( JsonRpc.NotificationMessage
           { method: "textDocument/publishDiagnostics"
-          , params: JsonRpc.paramsFromRecord value
+          , params: Just (JsonRpc.paramsFromRecord value)
           }
       )
   ResponseTextDocumentSemanticTokensFull { id, tokenDataList, tokenTypeDict } ->
