@@ -5,6 +5,7 @@ module VsCodeExtension.Range
   , positionOneCharacterLeft
   , rangeEnd
   , rangeStart
+  , rangeZero
   ) where
 
 import Prelude
@@ -34,6 +35,21 @@ rangeStart (Range { start }) = start
 
 rangeEnd :: Range -> Position
 rangeEnd (Range { end }) = end
+
+rangeZero :: Range
+rangeZero =
+  Range
+    { start:
+        Position
+          { line: UInt.fromInt 0
+          , character: UInt.fromInt 0
+          }
+    , end:
+        Position
+          { line: UInt.fromInt 0
+          , character: UInt.fromInt 0
+          }
+    }
 
 positionOneCharacterLeft :: Position -> Position
 positionOneCharacterLeft (Position { line, character }) =

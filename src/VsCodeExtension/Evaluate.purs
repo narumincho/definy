@@ -5,6 +5,7 @@ module VsCodeExtension.Evaluate
   , errorToString
   , evaluate
   , evaluateResultGetValue
+  , fillCodeTree
   ) where
 
 import Prelude
@@ -103,3 +104,26 @@ addEvaluateResult (EvaluateResult a) (EvaluateResult b) =
           Tuple.Tuple _ _ -> Nothing
     , errorList: append a.errorList b.errorList
     }
+
+-- | 足りないパラメーターを補う `CodeTree` に変換する
+fillCodeTree :: Parser.CodeTree -> Parser.CodeTree
+fillCodeTree (Parser.CodeTree rec) =
+  if eq rec.name (NonEmptyString.nes (Proxy :: Proxy "add")) then
+    Parser.CodeTree (rec { children = fillChildren (UInt.fromInt 2) rec.children })
+  else
+    Parser.CodeTree rec
+
+fillChildren :: UInt.UInt -> Array Parser.CodeTree -> Array Parser.CodeTree
+fillChildren size children =
+  append
+    (map fillCodeTree children)
+    ( Array.replicate
+        (sub (UInt.toInt size) (Array.length children))
+        ( Parser.CodeTree
+            { name: NonEmptyString.nes (Proxy :: Proxy "?")
+            , nameRange: Range.rangeZero
+            , children: []
+            , range: Range.rangeZero
+            }
+        )
+    )

@@ -65,33 +65,9 @@ emptyCodeTree :: CodeTree
 emptyCodeTree =
   CodeTree
     { name: NonEmptyString.nes (Proxy :: Proxy "module")
-    , nameRange:
-        Range.Range
-          { start:
-              Range.Position
-                { line: UInt.fromInt 0
-                , character: UInt.fromInt 0
-                }
-          , end:
-              Range.Position
-                { line: UInt.fromInt 0
-                , character: UInt.fromInt 0
-                }
-          }
+    , nameRange: Range.rangeZero
     , children: []
-    , range:
-        Range.Range
-          { start:
-              Range.Position
-                { line: UInt.fromInt 0
-                , character: UInt.fromInt 0
-                }
-          , end:
-              Range.Position
-                { line: UInt.fromInt 0
-                , character: UInt.fromInt 0
-                }
-          }
+    , range: Range.rangeZero
     }
 
 -- | `a(), b())` をパースする` 
