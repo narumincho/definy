@@ -2,6 +2,7 @@ module VsCodeExtension.Range
   ( Position(..)
   , Range(..)
   , positionAdd1Character
+  , positionOneCharacterLeft
   , rangeEnd
   , rangeStart
   ) where
@@ -33,6 +34,17 @@ rangeStart (Range { start }) = start
 
 rangeEnd :: Range -> Position
 rangeEnd (Range { end }) = end
+
+positionOneCharacterLeft :: Position -> Position
+positionOneCharacterLeft (Position { line, character }) =
+  Position
+    { line
+    , character:
+        if eq character (UInt.fromInt 0) then
+          UInt.fromInt 0
+        else
+          sub character (UInt.fromInt 1)
+    }
 
 newtype Position
   = Position { line :: UInt.UInt, character :: UInt.UInt }

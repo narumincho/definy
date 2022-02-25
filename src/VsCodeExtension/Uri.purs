@@ -18,5 +18,8 @@ instance decodeUri :: Argonaut.DecodeJson Uri where
     (uri :: String) <- Argonaut.decodeJson json
     pure (Uri uri)
 
+instance encodeUri :: Argonaut.EncodeJson Uri where
+  encodeJson uri = Argonaut.fromString (uriToString uri)
+
 uriToString :: Uri -> String
 uriToString (Uri str) = str

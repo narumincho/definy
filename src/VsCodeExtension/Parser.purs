@@ -20,6 +20,7 @@ import VsCodeExtension.SimpleToken as SimpleToken
 newtype CodeTree
   = CodeTree
   { name :: NonEmptyString
+  , nameRange :: Range.Range
   , children :: Array CodeTree
   , range :: Range.Range
   }
@@ -41,6 +42,7 @@ parse simpleTokenList = case Array.uncons simpleTokenList of
         in
           CodeTree
             { name
+            , nameRange: range
             , children: firstItem.codeTreeList
             , range:
                 Range.Range
@@ -49,6 +51,7 @@ parse simpleTokenList = case Array.uncons simpleTokenList of
       Nothing ->
         CodeTree
           { name
+          , nameRange: range
           , children: []
           , range: range
           }
@@ -59,6 +62,19 @@ emptyCodeTree :: CodeTree
 emptyCodeTree =
   CodeTree
     { name: NonEmptyString.nes (Proxy :: Proxy "module")
+    , nameRange:
+        Range.Range
+          { start:
+              Range.Position
+                { line: UInt.fromInt 0
+                , character: UInt.fromInt 0
+                }
+          , end:
+              Range.Position
+                { line: UInt.fromInt 0
+                , character: UInt.fromInt 0
+                }
+          }
     , children: []
     , range:
         Range.Range
@@ -125,6 +141,7 @@ nameAndSimpleTokenListToCodeTreeListWithRest { name, nameRange, simpleTokenList 
                 Array.cons
                   ( CodeTree
                       { name
+                      , nameRange
                       , children: firstItem.codeTreeList
                       , range:
                           Range.Range
@@ -141,6 +158,7 @@ nameAndSimpleTokenListToCodeTreeListWithRest { name, nameRange, simpleTokenList 
           { codeTreeList:
               [ CodeTree
                   { name
+                  , nameRange
                   , children: firstItem.codeTreeList
                   , range: nameRange
                   }
@@ -152,6 +170,7 @@ nameAndSimpleTokenListToCodeTreeListWithRest { name, nameRange, simpleTokenList 
     { codeTreeList:
         [ CodeTree
             { name
+            , nameRange
             , children: []
             , range: nameRange
             }

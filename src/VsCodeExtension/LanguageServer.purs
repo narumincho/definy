@@ -73,6 +73,7 @@ main = do
                   (stateRec { codeDict = Map.insert uri text stateRec.codeDict })
             )
             state
+          sendError uri text
         Either.Right (Lib.TextDocumentDidChange { uri, text }) -> do
           Ref.modify_
             ( \(State stateRec) ->
@@ -80,6 +81,7 @@ main = do
                   (stateRec { codeDict = Map.insert uri text stateRec.codeDict })
             )
             state
+          sendError uri text
         Either.Right (Lib.TextDocumentDidSave { uri }) -> do
           (State { codeDict }) <- Ref.read state
           case Map.lookup uri codeDict of
@@ -138,9 +140,11 @@ main = do
                             [ Lib.CodeLens
                                 { command:
                                     showEvaluatedValue
-                                      ( Evaluate.evaluate
-                                          ( Parser.parse
-                                              (SimpleToken.tokenListToSimpleTokenList (Tokenize.tokenize code))
+                                      ( Evaluate.evaluateResultGetValue
+                                          ( Evaluate.evaluate
+                                              ( Parser.parse
+                                                  (SimpleToken.tokenListToSimpleTokenList (Tokenize.tokenize code))
+                                              )
                                           )
                                       )
                                 , range:
@@ -178,4 +182,23 @@ showEvaluatedValue valueMaybe =
           append (append "評価結果: " result) " 評価結果を新たなファイルとして表示"
       , command: "definy.showEvaluatedValue"
       , arguments: [ Argonaut.fromString result ]
+      }
+
+sendError :: Uri.Uri -> String -> Effect.Effect Unit
+sendError uri code =
+  let
+    (Evaluate.EvaluateResult { errorList }) =
+      Evaluate.evaluate
+        ( Parser.parse
+            (SimpleToken.tokenListToSimpleTokenList (Tokenize.tokenize code))
+        )
+  in
+    Lib.sendNotificationPublishDiagnostics
+      { diagnostics:
+          map
+            ( \(Evaluate.ErrorWithRange { error, range }) ->
+                Lib.Diagnostic { message: Evaluate.errorToString error, range }
+            )
+            errorList
+      , uri
       }
