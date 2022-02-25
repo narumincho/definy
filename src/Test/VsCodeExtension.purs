@@ -9,7 +9,7 @@ import Data.UInt as UInt
 import Test.Unit as TestUnit
 import Test.Util (assertEqual)
 import Type.Proxy (Proxy(..))
-import VsCodeExtension.LspLib as LspLib
+import VsCodeExtension.LanguageServerLib as Lib
 import VsCodeExtension.Parser as Parser
 import VsCodeExtension.Range as Range
 import VsCodeExtension.SimpleToken as SimpleToken
@@ -26,22 +26,22 @@ parseContentLengthHeaderTest :: TestUnit.Test
 parseContentLengthHeaderTest = do
   assertEqual
     "parseContentLengthHeader lowercase"
-    { actual: LspLib.parseContentLengthHeader "content-length: 234"
+    { actual: Lib.parseContentLengthHeader "content-length: 234"
     , expected: Just (UInt.fromInt 234)
     }
   assertEqual
     "parseContentLengthHeader uppercase"
-    { actual: LspLib.parseContentLengthHeader "Content-Length: 3"
+    { actual: Lib.parseContentLengthHeader "Content-Length: 3"
     , expected: Just (UInt.fromInt 3)
     }
   assertEqual
     "parseContentLengthHeader separator"
-    { actual: LspLib.parseContentLengthHeader "Content-LEngth:99999"
+    { actual: Lib.parseContentLengthHeader "Content-LEngth:99999"
     , expected: Just (UInt.fromInt 99999)
     }
   assertEqual
     "parseContentLengthHeader separator nothing"
-    { actual: LspLib.parseContentLengthHeader "Content-Length+742"
+    { actual: Lib.parseContentLengthHeader "Content-Length+742"
     , expected: Nothing
     }
 
@@ -210,17 +210,21 @@ sorena(arena()  oneArg (28))
     , expected:
         Parser.CodeTree
           { name: NonEmptyString.nes (Proxy :: _ "sorena")
+          , nameRange: rangeFrom 1 0 1 7
           , children:
               [ Parser.CodeTree
                   { name: NonEmptyString.nes (Proxy :: _ "arena")
+                  , nameRange: rangeFrom 1 7 1 13
                   , children: []
                   , range: rangeFrom 1 7 1 14
                   }
               , Parser.CodeTree
                   { name: NonEmptyString.nes (Proxy :: _ "oneArg")
+                  , nameRange: rangeFrom 1 16 1 24
                   , children:
                       [ Parser.CodeTree
                           { name: NonEmptyString.nes (Proxy :: _ "28")
+                          , nameRange: rangeFrom 1 24 1 26
                           , children: []
                           , range: rangeFrom 1 24 1 26
                           }

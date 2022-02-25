@@ -1,4 +1,4 @@
-module VsCodeExtension.LspLib
+module VsCodeExtension.LanguageServerLib
   ( ClientToServerMessage(..)
   , ClientToServerMessageParseState
   , CodeLens(..)
@@ -291,7 +291,7 @@ data ServerToClientMessage
     { id :: Id
     , semanticTokensProviderLegendTokenTypes :: Array String
     }
-  | PublishDiagnostics { uri :: String, diagnostics :: Array Diagnostic }
+  | PublishDiagnostics { uri :: Uri.Uri, diagnostics :: Array Diagnostic }
   | ResponseTextDocumentSemanticTokensFull
     { id :: Id
     , tokenDataList :: Array TokenType.TokenData
@@ -317,6 +317,7 @@ newtype Command
   = Command
   { title :: String
   , command :: String
+  , arguments :: Array Argonaut.Json
   }
 
 instance encodeJsonCommand :: Argonaut.EncodeJson Command where
@@ -334,7 +335,7 @@ sendJsonRpcMessage response isLog = do
   pure unit
 
 sendNotificationPublishDiagnostics ::
-  { uri :: String, diagnostics :: Array Diagnostic } ->
+  { uri :: Uri.Uri, diagnostics :: Array Diagnostic } ->
   Effect.Effect Unit
 sendNotificationPublishDiagnostics result =
   sendJsonRpcMessage
