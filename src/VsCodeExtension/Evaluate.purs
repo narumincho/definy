@@ -56,7 +56,10 @@ evaluate codeTree@(Parser.CodeTree { name, nameRange, children }) =
           (codeTreeGetChildEvaluateResult (UInt.fromInt 1) codeTree)
       )
   else case UInt.fromString (NonEmptyString.toString name) of
-    Just value -> EvaluateResult { value: Just value, errorList: [] }
+    Just value ->
+      addErrorList
+        (childrenSuperfluousParameterErrorList (UInt.fromInt 0) children)
+        (EvaluateResult { value: Just value, errorList: [] })
     Nothing ->
       EvaluateResult
         { value: Nothing

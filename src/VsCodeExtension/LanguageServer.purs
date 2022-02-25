@@ -4,7 +4,6 @@ module VsCodeExtension.LanguageServer
 
 import Prelude
 import Data.Argonaut as Argonaut
-import Data.Array as Array
 import Data.Either as Either
 import Data.Map as Map
 import Data.Maybe (Maybe(..))
@@ -15,7 +14,6 @@ import Effect.Ref as Ref
 import FileSystem.Write as Write
 import VsCodeExtension.Evaluate as Evaluate
 import VsCodeExtension.LanguageServerLib as Lib
-import VsCodeExtension.Parser (CodeTree(..))
 import VsCodeExtension.Parser as Parser
 import VsCodeExtension.Range as Range
 import VsCodeExtension.SimpleToken as SimpleToken
@@ -155,7 +153,7 @@ main = do
         Either.Left message -> Lib.sendNotificationWindowLogMessage message
     )
 
-stringToCodeTree :: String -> CodeTree
+stringToCodeTree :: String -> Parser.CodeTree
 stringToCodeTree code =
   Parser.parse
     (SimpleToken.tokenListToSimpleTokenList (Tokenize.tokenize code))
