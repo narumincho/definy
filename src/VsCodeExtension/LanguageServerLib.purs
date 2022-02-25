@@ -317,6 +317,7 @@ newtype Command
   = Command
   { title :: String
   , command :: String
+  , arguments :: Array Argonaut.Json
   }
 
 instance encodeJsonCommand :: Argonaut.EncodeJson Command where

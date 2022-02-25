@@ -3,6 +3,7 @@ module VsCodeExtension.LanguageServer
   ) where
 
 import Prelude
+import Data.Argonaut as Argonaut
 import Data.Array as Array
 import Data.Either as Either
 import Data.Map as Map
@@ -12,6 +13,7 @@ import Effect as Effect
 import Effect.Aff as Aff
 import Effect.Ref as Ref
 import FileSystem.Write as Write
+import VsCodeExtension.Evaluate as Evaluate
 import VsCodeExtension.LanguageServerLib as Lib
 import VsCodeExtension.Parser as Parser
 import VsCodeExtension.Range as Range
@@ -120,37 +122,55 @@ main = do
                     )
                     true
             Nothing -> Lib.sendNotificationWindowLogMessage "TextDocumentSemanticTokensFullされた けどコードを取得できていない..."
-        Either.Right (Lib.TextDocumentCodeLens { id }) ->
-          Lib.sendJsonRpcMessage
-            ( Lib.ResponseTextDocumentCodeLens
-                { id
-                , codeLensList:
-                    [ Lib.CodeLens
-                        { command:
-                            Lib.Command
-                              { title: "メッセージを表示"
-                              , command: testCommandKey
-                              }
-                        , range:
-                            Range.Range
-                              { start:
-                                  Range.Position
-                                    { line: UInt.fromInt 0
-                                    , character: UInt.fromInt 0
-                                    }
-                              , end:
-                                  Range.Position
-                                    { line: UInt.fromInt 0
-                                    , character: UInt.fromInt 1
-                                    }
-                              }
+        Either.Right (Lib.TextDocumentCodeLens { uri, id }) -> do
+          (State { codeDict }) <- Ref.read state
+          case Map.lookup uri codeDict of
+            Just code ->
+              let
+                tokenList = Tokenize.tokenize code
+              in
+                do
+                  Lib.sendNotificationWindowLogMessage (append "tokenList: " (show tokenList))
+                  Lib.sendJsonRpcMessage
+                    ( Lib.ResponseTextDocumentCodeLens
+                        { id
+                        , codeLensList:
+                            [ Lib.CodeLens
+                                { command:
+                                    showEvaluatedValue
+                                      ( case Evaluate.evaluate
+                                            ( Parser.parse
+                                                (SimpleToken.tokenListToSimpleTokenList (Tokenize.tokenize code))
+                                            ) of
+                                          Just v -> v
+                                          Nothing -> UInt.fromInt 9999
+                                      )
+                                , range:
+                                    Range.Range
+                                      { start:
+                                          Range.Position
+                                            { line: UInt.fromInt 0
+                                            , character: UInt.fromInt 0
+                                            }
+                                      , end:
+                                          Range.Position
+                                            { line: UInt.fromInt 0
+                                            , character: UInt.fromInt 1
+                                            }
+                                      }
+                                }
+                            ]
                         }
-                    ]
-                }
-            )
-            true
+                    )
+                    true
+            Nothing -> Lib.sendNotificationWindowLogMessage "codelens取得内でコードを取得できていない..."
         Either.Left message -> Lib.sendNotificationWindowLogMessage message
     )
 
-testCommandKey :: String
-testCommandKey = "definy.testCommand"
+showEvaluatedValue :: UInt.UInt -> Lib.Command
+showEvaluatedValue value =
+  Lib.Command
+    { title: "評価結果を通知に表示"
+    , command: "definy.showEvaluatedValue"
+    , arguments: [ Argonaut.fromNumber (UInt.toNumber value) ]
+    }

@@ -5,9 +5,9 @@ import { LanguageClient } from "vscode-languageclient/node";
 let client: LanguageClient | undefined = undefined;
 
 export const activateFunc = (context: ExtensionContext): void => {
-  commands.registerCommand("definy.testCommand", () => {
+  commands.registerCommand("definy.showEvaluatedValue", (value: number) => {
     console.log("called definy.testCommand !");
-    window.showInformationMessage("コマンドを呼ばれた!");
+    window.showInformationMessage(`評価結果 ${value}`);
   });
   window.showInformationMessage("definy VSCode 拡張機能が起動できた");
 
