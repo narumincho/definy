@@ -95,8 +95,11 @@ instance showTokenData :: Prelude.Show TokenData where
 
 tokenDataToData :: TokenTypeDict -> Range.Position -> TokenData -> Array Int
 tokenDataToData dict (Range.Position { line: beforeLine, character: beforeCharacter }) (TokenData { tokenType, start: Range.Position { line, character }, length }) =
-  [ Prelude.sub (UInt.toInt line) (UInt.toInt beforeLine)
-  , Prelude.sub (UInt.toInt character) (UInt.toInt beforeCharacter)
+  [ UInt.toInt (Prelude.sub line beforeLine)
+  , if Prelude.eq line beforeLine then
+      UInt.toInt (Prelude.sub character beforeCharacter)
+    else
+      UInt.toInt character
   , UInt.toInt length
   , tokenTypeToInt dict tokenType
   , 0
