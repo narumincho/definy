@@ -175,7 +175,7 @@ showEvaluatedValue valueMaybe =
   in
     Lib.Command
       { title:
-          append "評価結果を通知に表示. 評価結果: " result
+          append (append "評価結果: " result) " 評価結果を新たなファイルとして表示"
       , command: "definy.showEvaluatedValue"
       , arguments: [ Argonaut.fromString result ]
       }
