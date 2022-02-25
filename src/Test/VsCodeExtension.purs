@@ -210,22 +210,22 @@ sorena(arena()  oneArg (28))
     , expected:
         Parser.CodeTree
           { name: NonEmptyString.nes (Proxy :: _ "sorena")
-          , nameRange: rangeFrom 1 7 1 8
+          , nameRange: rangeFrom 1 0 1 7
           , children:
               [ Parser.CodeTree
                   { name: NonEmptyString.nes (Proxy :: _ "arena")
-                  , nameRange: rangeFrom 1 7 1 8
+                  , nameRange: rangeFrom 1 7 1 13
                   , children: []
                   , range: rangeFrom 1 7 1 14
                   }
               , Parser.CodeTree
                   { name: NonEmptyString.nes (Proxy :: _ "oneArg")
-                  , nameRange: rangeFrom 1 7 1 8
+                  , nameRange: rangeFrom 1 16 1 24
                   , children:
                       [ Parser.CodeTree
                           { name: NonEmptyString.nes (Proxy :: _ "28")
+                          , nameRange: rangeFrom 1 24 1 26
                           , children: []
-                          , nameRange: rangeFrom 1 7 1 8
                           , range: rangeFrom 1 24 1 26
                           }
                       ]
