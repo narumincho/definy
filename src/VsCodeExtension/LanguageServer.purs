@@ -138,12 +138,10 @@ main = do
                             [ Lib.CodeLens
                                 { command:
                                     showEvaluatedValue
-                                      ( case Evaluate.evaluate
-                                            ( Parser.parse
-                                                (SimpleToken.tokenListToSimpleTokenList (Tokenize.tokenize code))
-                                            ) of
-                                          Just v -> v
-                                          Nothing -> UInt.fromInt 9999
+                                      ( Evaluate.evaluate
+                                          ( Parser.parse
+                                              (SimpleToken.tokenListToSimpleTokenList (Tokenize.tokenize code))
+                                          )
                                       )
                                 , range:
                                     Range.Range
@@ -167,10 +165,17 @@ main = do
         Either.Left message -> Lib.sendNotificationWindowLogMessage message
     )
 
-showEvaluatedValue :: UInt.UInt -> Lib.Command
-showEvaluatedValue value =
-  Lib.Command
-    { title: "評価結果を通知に表示"
-    , command: "definy.showEvaluatedValue"
-    , arguments: [ Argonaut.fromNumber (UInt.toNumber value) ]
-    }
+showEvaluatedValue :: Maybe UInt.UInt -> Lib.Command
+showEvaluatedValue valueMaybe =
+  let
+    result :: String
+    result = case valueMaybe of
+      Just value -> UInt.toString value
+      Nothing -> "エラー"
+  in
+    Lib.Command
+      { title:
+          append "評価結果を通知に表示. 評価結果: " result
+      , command: "definy.showEvaluatedValue"
+      , arguments: [ Argonaut.fromString result ]
+      }

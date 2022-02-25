@@ -5,7 +5,7 @@ import { LanguageClient } from "vscode-languageclient/node";
 let client: LanguageClient | undefined = undefined;
 
 export const activateFunc = (context: ExtensionContext): void => {
-  commands.registerCommand("definy.showEvaluatedValue", (value: number) => {
+  commands.registerCommand("definy.showEvaluatedValue", (value: string) => {
     console.log("called definy.testCommand !");
     window.showInformationMessage(`評価結果 ${value}`);
   });
