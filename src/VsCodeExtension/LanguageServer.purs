@@ -58,13 +58,10 @@ main = do
                   )
             )
             state
-          Lib.sendJsonRpcMessage
-            ( Lib.ResponseInitialize
-                { id: rec.id
-                , semanticTokensProviderLegendTokenTypes: supportTokenType
-                }
-            )
-            true
+          Lib.responseInitialize
+            { id: rec.id
+            , semanticTokensProviderLegendTokenTypes: supportTokenType
+            }
         Either.Right Lib.Initialized -> Lib.sendNotificationWindowLogMessage "Initializedされた!"
         Either.Right (Lib.TextDocumentDidOpen { uri, text }) -> do
           Ref.modify_
@@ -112,17 +109,14 @@ main = do
               in
                 do
                   Lib.sendNotificationWindowLogMessage (append "tokenList: " (show tokenList))
-                  Lib.sendJsonRpcMessage
-                    ( Lib.ResponseTextDocumentSemanticTokensFull
-                        { id
-                        , tokenTypeDict
-                        , tokenDataList:
-                            Array.mapMaybe
-                              Tokenize.tokenWithRangeToTokenTypeAndRangeTuple
-                              tokenList
-                        }
-                    )
-                    true
+                  Lib.responseTextDocumentSemanticTokensFull
+                    { id
+                    , tokenTypeDict
+                    , tokenDataList:
+                        Array.mapMaybe
+                          Tokenize.tokenWithRangeToTokenTypeAndRangeTuple
+                          tokenList
+                    }
             Nothing -> Lib.sendNotificationWindowLogMessage "TextDocumentSemanticTokensFullされた けどコードを取得できていない..."
         Either.Right (Lib.TextDocumentCodeLens { uri, id }) -> do
           (State { codeDict }) <- Ref.read state
@@ -133,38 +127,35 @@ main = do
               in
                 do
                   Lib.sendNotificationWindowLogMessage (append "tokenList: " (show tokenList))
-                  Lib.sendJsonRpcMessage
-                    ( Lib.ResponseTextDocumentCodeLens
-                        { id
-                        , codeLensList:
-                            [ Lib.CodeLens
-                                { command:
-                                    showEvaluatedValue
-                                      ( Evaluate.evaluateResultGetValue
-                                          ( Evaluate.evaluate
-                                              ( Parser.parse
-                                                  (SimpleToken.tokenListToSimpleTokenList (Tokenize.tokenize code))
-                                              )
+                  Lib.responseTextDocumentCodeLens
+                    { id
+                    , codeLensList:
+                        [ Lib.CodeLens
+                            { command:
+                                showEvaluatedValue
+                                  ( Evaluate.evaluateResultGetValue
+                                      ( Evaluate.evaluate
+                                          ( Parser.parse
+                                              (SimpleToken.tokenListToSimpleTokenList (Tokenize.tokenize code))
                                           )
                                       )
-                                , range:
-                                    Range.Range
-                                      { start:
-                                          Range.Position
-                                            { line: UInt.fromInt 0
-                                            , character: UInt.fromInt 0
-                                            }
-                                      , end:
-                                          Range.Position
-                                            { line: UInt.fromInt 0
-                                            , character: UInt.fromInt 1
-                                            }
-                                      }
-                                }
-                            ]
-                        }
-                    )
-                    true
+                                  )
+                            , range:
+                                Range.Range
+                                  { start:
+                                      Range.Position
+                                        { line: UInt.fromInt 0
+                                        , character: UInt.fromInt 0
+                                        }
+                                  , end:
+                                      Range.Position
+                                        { line: UInt.fromInt 0
+                                        , character: UInt.fromInt 1
+                                        }
+                                  }
+                            }
+                        ]
+                    }
             Nothing -> Lib.sendNotificationWindowLogMessage "codelens取得内でコードを取得できていない..."
         Either.Left message -> Lib.sendNotificationWindowLogMessage message
     )

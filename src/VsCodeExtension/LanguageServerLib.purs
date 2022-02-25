@@ -4,10 +4,12 @@ module VsCodeExtension.LanguageServerLib
   , CodeLens(..)
   , Command(..)
   , Diagnostic(..)
-  , ServerToClientMessage(..)
   , createJsonRpcRequestListParseStateRef
   , parseContentLengthHeader
   , receiveJsonRpcMessage
+  , responseInitialize
+  , responseTextDocumentCodeLens
+  , responseTextDocumentSemanticTokensFull
   , sendJsonRpcMessage
   , sendNotificationPublishDiagnostics
   , sendNotificationWindowLogMessage
@@ -268,20 +270,6 @@ notificationMessageToLanguageClientToServerNotification (JsonRpc.NotificationMes
     Either.Left
       (Argonaut.TypeMismatch (append "unknown notification method " method))
 
-data ServerToClientMessage
-  = WindowLogMessage String
-  | ResponseInitialize
-    { id :: JsonRpc.Id
-    , semanticTokensProviderLegendTokenTypes :: Array String
-    }
-  | PublishDiagnostics { uri :: Uri.Uri, diagnostics :: Array Diagnostic }
-  | ResponseTextDocumentSemanticTokensFull
-    { id :: JsonRpc.Id
-    , tokenDataList :: Array TokenType.TokenData
-    , tokenTypeDict :: TokenType.TokenTypeDict
-    }
-  | ResponseTextDocumentCodeLens { id :: JsonRpc.Id, codeLensList :: Array CodeLens }
-
 newtype Diagnostic
   = Diagnostic { range :: Range.Range, message :: String }
 
@@ -305,102 +293,117 @@ newtype Command
 instance encodeJsonCommand :: Argonaut.EncodeJson Command where
   encodeJson (Command rec) = Argonaut.encodeJson rec
 
-sendJsonRpcMessage :: ServerToClientMessage -> Boolean -> Effect.Effect Unit
-sendJsonRpcMessage response isLog = do
-  binary <- jsonRpcResponseToBinary response isLog
-  _ <-
-    Stream.writeString
-      Process.stdout
-      Encoding.UTF8
-      binary
-      (pure unit)
-  pure unit
-
 sendNotificationPublishDiagnostics ::
   { uri :: Uri.Uri, diagnostics :: Array Diagnostic } ->
   Effect.Effect Unit
 sendNotificationPublishDiagnostics result =
   sendJsonRpcMessage
-    (PublishDiagnostics result)
+    ( Argonaut.encodeJson
+        ( JsonRpc.NotificationMessage
+            { method: "textDocument/publishDiagnostics"
+            , params: Just (JsonRpc.paramsFromRecord result)
+            }
+        )
+    )
     true
 
 sendNotificationWindowLogMessage :: String -> Effect.Effect Unit
 sendNotificationWindowLogMessage message =
   sendJsonRpcMessage
-    (WindowLogMessage message)
+    ( Argonaut.encodeJson
+        ( JsonRpc.NotificationMessage
+            { method: "window/logMessage"
+            , params: Just (JsonRpc.paramsFromRecord { type: 3.0, message })
+            }
+        )
+    )
     false
 
-jsonRpcResponseToBinary :: ServerToClientMessage -> Boolean -> Effect.Effect String
-jsonRpcResponseToBinary response isLog =
+responseInitialize ::
+  { id :: JsonRpc.Id
+  , semanticTokensProviderLegendTokenTypes :: Array String
+  } ->
+  Effect.Effect Unit
+responseInitialize { id, semanticTokensProviderLegendTokenTypes } =
+  sendJsonRpcMessage
+    ( Argonaut.encodeJson
+        ( JsonRpc.ResponseMessageSuccess
+            { id
+            , result:
+                Argonaut.encodeJson
+                  { capabilities:
+                      { textDocumentSync: 1
+                      , semanticTokensProvider:
+                          { legend:
+                              { tokenTypes: semanticTokensProviderLegendTokenTypes
+                              , tokenModifiers: [] :: Array String
+                              }
+                          , range: false
+                          , full: true
+                          }
+                      , codeLensProvider: { resolveProvider: true }
+                      }
+                  }
+            }
+        )
+    )
+    true
+
+responseTextDocumentSemanticTokensFull :: { id :: JsonRpc.Id, tokenDataList :: Array TokenType.TokenData, tokenTypeDict :: TokenType.TokenTypeDict } -> Effect.Effect Unit
+responseTextDocumentSemanticTokensFull { id, tokenDataList, tokenTypeDict } =
+  sendJsonRpcMessage
+    ( Argonaut.encodeJson
+        ( JsonRpc.ResponseMessageSuccess
+            { id
+            , result:
+                Argonaut.encodeJson
+                  { data: tokenDataListToDataList tokenTypeDict tokenDataList }
+            }
+        )
+    )
+    true
+
+responseTextDocumentCodeLens :: { id :: JsonRpc.Id, codeLensList :: Array CodeLens } -> Effect.Effect Unit
+responseTextDocumentCodeLens { id, codeLensList } =
+  sendJsonRpcMessage
+    ( Argonaut.encodeJson
+        ( JsonRpc.ResponseMessageSuccess
+            { id, result: Argonaut.encodeJson codeLensList }
+        )
+    )
+    true
+
+sendJsonRpcMessage :: Argonaut.Json -> Boolean -> Effect.Effect Unit
+sendJsonRpcMessage message isLog =
   let
-    jsonValueAsString :: String
-    jsonValueAsString = Argonaut.stringify (jsonRpcResponseToJson response)
+    jsonAsString = Argonaut.stringify message
   in
     do
       if isLog then
-        sendNotificationWindowLogMessage (append "○ client ← server: " jsonValueAsString)
+        sendNotificationWindowLogMessage (append "○ client ← server: " jsonAsString)
       else
         pure unit
-      jsonValueAsBuffer <- (Buffer.fromString jsonValueAsString Encoding.UTF8) :: Effect.Effect Buffer.Buffer
-      jsonValueBinaryLength <- Buffer.size jsonValueAsBuffer
-      pure
-        ( String.joinWith ""
-            [ "Content-Length: "
-            , show jsonValueBinaryLength
-            , "\r\n\r\n"
-            , jsonValueAsString
-            ]
-        )
+      binary <- jsonRpcResponseToBinary jsonAsString
+      _ <-
+        Stream.writeString
+          Process.stdout
+          Encoding.UTF8
+          binary
+          (pure unit)
+      pure unit
 
-jsonRpcResponseToJson :: ServerToClientMessage -> Argonaut.Json
-jsonRpcResponseToJson = case _ of
-  WindowLogMessage message ->
-    Argonaut.encodeJson
-      ( JsonRpc.NotificationMessage
-          { method: "window/logMessage"
-          , params: Just (JsonRpc.paramsFromRecord { type: 3.0, message })
-          }
-      )
-  ResponseInitialize { id, semanticTokensProviderLegendTokenTypes } ->
-    Argonaut.encodeJson
-      ( JsonRpc.ResponseMessageSuccess
-          { id
-          , result:
-              Argonaut.encodeJson
-                { capabilities:
-                    { textDocumentSync: 1
-                    , semanticTokensProvider:
-                        { legend:
-                            { tokenTypes: semanticTokensProviderLegendTokenTypes
-                            , tokenModifiers: [] :: Array String
-                            }
-                        , range: false
-                        , full: true
-                        }
-                    , codeLensProvider: { resolveProvider: true }
-                    }
-                }
-          }
-      )
-  PublishDiagnostics value ->
-    Argonaut.encodeJson
-      ( JsonRpc.NotificationMessage
-          { method: "textDocument/publishDiagnostics"
-          , params: Just (JsonRpc.paramsFromRecord value)
-          }
-      )
-  ResponseTextDocumentSemanticTokensFull { id, tokenDataList, tokenTypeDict } ->
-    Argonaut.encodeJson
-      ( JsonRpc.ResponseMessageSuccess
-          { id
-          , result:
-              Argonaut.encodeJson
-                { data: tokenDataListToDataList tokenTypeDict tokenDataList }
-          }
-      )
-  ResponseTextDocumentCodeLens { id, codeLensList } ->
-    Argonaut.encodeJson
-      (JsonRpc.ResponseMessageSuccess { id, result: Argonaut.encodeJson codeLensList })
+jsonRpcResponseToBinary :: String -> Effect.Effect String
+jsonRpcResponseToBinary jsonValueAsString = do
+  jsonValueAsBuffer <- (Buffer.fromString jsonValueAsString Encoding.UTF8) :: Effect.Effect Buffer.Buffer
+  jsonValueBinaryLength <- Buffer.size jsonValueAsBuffer
+  pure
+    ( String.joinWith ""
+        [ "Content-Length: "
+        , show jsonValueBinaryLength
+        , "\r\n\r\n"
+        , jsonValueAsString
+        ]
+    )
 
 tokenDataListToDataList ::
   TokenType.TokenTypeDict ->

@@ -2,6 +2,7 @@
 , dependencies =
   [ "aff"
   , "argonaut"
+  , "argonaut-codecs"
   , "arrays"
   , "colors"
   , "console"
