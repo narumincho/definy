@@ -18,7 +18,6 @@ import Control.Applicative as Applicative
 import Control.Parallel as Parallel
 import Data.Argonaut as Argonaut
 import Data.Array as Array
-import Foreign.Object as Object
 import Data.Array.NonEmpty (NonEmptyArray)
 import Data.Array.NonEmpty as NonEmptyArray
 import Data.Int as Int
@@ -30,6 +29,7 @@ import Data.Symbol as Symbol
 import Data.Tuple as Tuple
 import Data.UInt as UInt
 import Effect.Aff as Aff
+import Foreign.Object as Object
 import Math as Math
 import Option as Option
 import Prim.Row as Row
