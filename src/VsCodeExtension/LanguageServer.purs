@@ -15,7 +15,6 @@ import FileSystem.Write as Write
 import VsCodeExtension.Evaluate as Evaluate
 import VsCodeExtension.LanguageServerLib as Lib
 import VsCodeExtension.Parser as Parser
-import VsCodeExtension.Range as Range
 import VsCodeExtension.SimpleToken as SimpleToken
 import VsCodeExtension.ToString as ToString
 import VsCodeExtension.TokenType as TokenType
@@ -127,29 +126,10 @@ main = do
               Lib.responseTextDocumentCodeLens
                 { id
                 , codeLensList:
-                    [ Lib.CodeLens
-                        { command:
-                            showEvaluatedValue
-                              ( Evaluate.parietalModuleGetValue
-                                  ( Evaluate.withErrorResultGetValue
-                                      (Evaluate.evaluateModule code)
-                                  )
-                              )
-                        , range:
-                            Range.Range
-                              { start:
-                                  Range.Position
-                                    { line: UInt.fromInt 0
-                                    , character: UInt.fromInt 0
-                                    }
-                              , end:
-                                  Range.Position
-                                    { line: UInt.fromInt 0
-                                    , character: UInt.fromInt 1
-                                    }
-                              }
-                        }
-                    ]
+                    calculateCodeLens
+                      ( Evaluate.withErrorResultGetValue
+                          (Evaluate.evaluateModule code)
+                      )
                 }
             Nothing -> Lib.sendNotificationWindowLogMessage "codelens取得内でコードを取得できていない..."
         Either.Left message -> Lib.sendNotificationWindowLogMessage message
@@ -160,8 +140,22 @@ stringToCodeTree code =
   Parser.parse
     (SimpleToken.tokenListToSimpleTokenList (Tokenize.tokenize code))
 
-showEvaluatedValue :: Maybe UInt.UInt -> Lib.Command
-showEvaluatedValue valueMaybe =
+calculateCodeLens :: Evaluate.PartialModule -> Array Lib.CodeLens
+calculateCodeLens partialModule =
+  let
+    (Evaluate.PartialModule { value }) = partialModule
+  in
+    map
+      ( \(Evaluate.PartialPart { value: partValue, range: partRange }) ->
+          Lib.CodeLens
+            { command: calculateCodeLensCommand partValue
+            , range: partRange
+            }
+      )
+      value
+
+calculateCodeLensCommand :: Maybe UInt.UInt -> Lib.Command
+calculateCodeLensCommand valueMaybe =
   let
     result :: String
     result = case valueMaybe of
