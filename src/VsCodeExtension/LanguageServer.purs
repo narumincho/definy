@@ -130,8 +130,10 @@ main = do
                     [ Lib.CodeLens
                         { command:
                             showEvaluatedValue
-                              ( Evaluate.evaluateResultGetValue
-                                  (Evaluate.evaluate code)
+                              ( Evaluate.parietalModuleGetValue
+                                  ( Evaluate.withErrorResultGetValue
+                                      (Evaluate.evaluateModule code)
+                                  )
                               )
                         , range:
                             Range.Range
@@ -175,15 +177,12 @@ showEvaluatedValue valueMaybe =
 
 sendError :: Uri.Uri -> Parser.CodeTree -> Effect.Effect Unit
 sendError uri codeTree =
-  let
-    (Evaluate.EvaluateResult { errorList }) = Evaluate.evaluate codeTree
-  in
-    Lib.sendNotificationPublishDiagnostics
-      { diagnostics:
-          map
-            ( \(Evaluate.ErrorWithRange { error, range }) ->
-                Lib.Diagnostic { message: Evaluate.errorToString error, range }
-            )
-            errorList
-      , uri
-      }
+  Lib.sendNotificationPublishDiagnostics
+    { diagnostics:
+        map
+          ( \(Evaluate.ErrorWithRange { error, range }) ->
+              Lib.Diagnostic { message: Evaluate.errorToString error, range }
+          )
+          (Evaluate.withErrorResultGetErrorList (Evaluate.evaluateModule codeTree))
+    , uri
+    }
