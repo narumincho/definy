@@ -53,7 +53,7 @@
     "jsonwebtoken": "8.5.1",
     "npm-check-updates": "12.4.0",
     "prettier": "2.5.1",
-    "purescript": "0.14.6",
+    "purescript": "0.14.5",
     "purty": "7.0.0",
     "react": "17.0.2",
     "react-dom": "17.0.2",
