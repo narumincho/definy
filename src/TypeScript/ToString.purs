@@ -17,6 +17,7 @@ import TypeScript.Data as Data
 import TypeScript.Identifier as Identifier
 import TypeScript.ModuleName as ModuleName
 import TypeScript.ValidateAndCollect as ValidateAndCollect
+import Util as Util
 
 newtype ModuleResult
   = ModuleResult
@@ -297,7 +298,7 @@ exprToString context = case _ of
   Data.Variable name -> Identifier.toString name
   Data.GlobalObjects name -> Prelude.append "globalThis." (Identifier.toString name)
   Data.ExprImportedVariable (Data.ImportedVariable rec) ->
-    append3
+    Util.append3
       (contextGetModuleNameNamespaceIdentifier rec.moduleName context)
       "."
       (Identifier.toString rec.name)
@@ -309,7 +310,7 @@ exprToString context = case _ of
   Data.New callExpr -> callExprToString true context callExpr
   Data.ExprTypeAssertion (Data.TypeAssertion { expr, type: tsType }) ->
     encloseParenthesis
-      ( append3
+      ( Util.append3
           (exprToString context expr)
           " as "
           (typeToString context tsType)
@@ -317,7 +318,7 @@ exprToString context = case _ of
 
 arrayLiteralToString :: Context -> Array Data.ArrayItem -> String
 arrayLiteralToString context itemList =
-  append3
+  Util.append3
     "["
     ( joinWithComma
         ( Prelude.map
@@ -333,7 +334,7 @@ arrayLiteralToString context itemList =
 
 objectLiteralToString :: Context -> Array Data.Member -> String
 objectLiteralToString context memberList =
-  append3
+  Util.append3
     "{ "
     ( joinWithComma
         ( Prelude.map
@@ -353,7 +354,7 @@ objectLiteralToString context memberList =
 
 objectLiteralMemberKeyValueToString :: Context -> Data.KeyValue -> String
 objectLiteralMemberKeyValueToString context (Data.KeyValue { key, value }) =
-  append3
+  Util.append3
     ( if Identifier.isSafePropertyName key then
         key
       else
@@ -371,7 +372,7 @@ unaryOperatorToString = case _ of
 binaryOperatorExprToString :: Context -> Data.BinaryOperatorExpr -> String
 binaryOperatorExprToString context (Data.BinaryOperatorExpr { left, operator, right }) =
   encloseParenthesis
-    ( append3
+    ( Util.append3
         (exprToString context left)
         (binaryOperatorToString operator)
         (exprToString context right)
@@ -429,12 +430,12 @@ typeToString context = case _ of
       " | "
       (Prelude.map (typeToString context) typeList)
   Data.TsTypeIntersection (Tuple.Tuple left right) ->
-    append3
+    Util.append3
       (typeToString context left)
       " & "
       (typeToString context right)
   Data.TsTypeImportedType (Data.ImportedType { typeNameAndTypeParameter, moduleName }) ->
-    append3
+    Util.append3
       (contextGetModuleNameNamespaceIdentifier moduleName context)
       "."
       (typeNameAndTypeParameterToString context typeNameAndTypeParameter)
@@ -447,7 +448,7 @@ typeToString context = case _ of
 
 typeObjectToString :: Context -> Array Data.TsMemberType -> String
 typeObjectToString context memberList =
-  append3
+  Util.append3
     "{ "
     ( String.joinWith "; "
         ( Prelude.map
@@ -500,7 +501,7 @@ functionTypeToString context (Data.FunctionType rec) =
 
 identifierAndTypeToString :: Context -> Identifier.TsIdentifier -> Data.TsType -> String
 identifierAndTypeToString context identifier parameterType =
-  append3
+  Util.append3
     (Identifier.toString identifier)
     ": "
     (typeToString context parameterType)
@@ -512,7 +513,7 @@ typeNameAndTypeParameterToString context (Data.TypeNameAndTypeParameter { name, 
     ( if Array.null typeParameterList then
         ""
       else
-        append3
+        Util.append3
           "<"
           (joinWithComma (Prelude.map (typeToString context) typeParameterList))
           ">"
@@ -521,7 +522,7 @@ typeNameAndTypeParameterToString context (Data.TypeNameAndTypeParameter { name, 
 -- | 文字列を`"`で囲んでエスケープする
 stringLiteralValueToString :: String -> String
 stringLiteralValueToString value =
-  append3
+  Util.append3
     "\""
     ( String.replaceAll (String.Pattern "\n") (String.Replacement "\\n")
         ( String.replaceAll (String.Pattern "\r\n") (String.Replacement "\\n")
@@ -537,7 +538,7 @@ stringLiteralValueToString value =
 documentToString :: String -> String
 documentToString document = case NonEmptyString.fromString (String.trim document) of
   Just nonEmptyDocument ->
-    append3
+    Util.append3
       """
 /**
 """
@@ -560,7 +561,7 @@ typeParameterListToString :: Array Identifier.TsIdentifier -> String
 typeParameterListToString = case _ of
   [] -> ""
   list ->
-    append3
+    Util.append3
       "<"
       ( joinWithComma
           ( Prelude.map
@@ -574,12 +575,6 @@ typeParameterListToString = case _ of
       )
       ">"
 
-append3 :: String -> String -> String -> String
-append3 a b c =
-  Prelude.append
-    (Prelude.append a b)
-    c
-
 -- | ラムダ式の本体 文が1つでreturn exprだった場合、returnを省略する形になる
 lambdaBodyToString :: Context -> Array Data.Statement -> String
 lambdaBodyToString context statementList = case Array.uncons statementList of
@@ -588,7 +583,7 @@ lambdaBodyToString context statementList = case Array.uncons statementList of
 
 statementListToString :: Context -> Array Data.Statement -> String
 statementListToString context statementList =
-  append3
+  Util.append3
     "{"
     ( String.joinWith "\n"
         ( Prelude.map
@@ -625,12 +620,12 @@ statementToString context = case _ of
       , statementListToString context thenStatementList
       ]
   Data.ThrowError expr ->
-    append3
+    Util.append3
       "throw new Error("
       (exprToString context expr)
       ");"
   Data.Return expr ->
-    append3
+    Util.append3
       "return "
       (exprToString context expr)
       ";"
@@ -739,13 +734,13 @@ indexAccessToString context indexExpr = case indexExpr of
     if Identifier.isSafePropertyName indexName then
       Prelude.append "." indexName
     else
-      append3 "[" (exprToString context indexExpr) "]"
-  _ -> append3 "[" (exprToString context indexExpr) "]"
+      Util.append3 "[" (exprToString context indexExpr) "]"
+  _ -> Util.append3 "[" (exprToString context indexExpr) "]"
 
 callExprToString :: Boolean -> Context -> Data.CallExpr -> String
 callExprToString isNew context (Data.CallExpr { expr, parameterList }) =
   encloseParenthesis
-    ( append3
+    ( Util.append3
         (if isNew then "new " else "")
         (exprToString context expr)
         ( encloseParenthesis
@@ -759,7 +754,7 @@ callExprToString isNew context (Data.CallExpr { expr, parameterList }) =
     )
 
 encloseParenthesis :: String -> String
-encloseParenthesis value = append3 "(" value ")"
+encloseParenthesis value = Util.append3 "(" value ")"
 
 joinWithComma :: Array String -> String
 joinWithComma = String.joinWith ", "

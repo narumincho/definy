@@ -1,5 +1,6 @@
 module Util
-  ( class RowTraversable
+  ( append3
+  , class RowTraversable
   , groupBySize
   , listUpdateAtOverAutoCreate
   , nonEmptyArrayGetAtLoop
@@ -167,3 +168,9 @@ nonEmptyArrayGetAtLoop nonEmptyArray index = case NonEmptyArray.index
 
 tupleListToJson :: Array (Tuple.Tuple String Argonaut.Json) -> Argonaut.Json
 tupleListToJson list = Argonaut.fromObject (Object.fromFoldable list)
+
+append3 :: String -> String -> String -> String
+append3 a b c =
+  append
+    (append a b)
+    c

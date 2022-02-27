@@ -1,13 +1,14 @@
 module VsCodeExtension.Evaluate
   ( Error(..)
   , ErrorWithRange(..)
-  , ParietalModule(..)
+  , PartialModule(..)
+  , PartialPart(..)
   , WithError
   , errorToString
   , evaluateExpr
   , evaluateModule
   , fillCodeTree
-  , parietalModuleGetValue
+  , partialModuleGetPartialPartList
   , withErrorResultGetErrorList
   , withErrorResultGetValue
   ) where
@@ -15,6 +16,7 @@ module VsCodeExtension.Evaluate
 import Prelude
 import Data.Array as Array
 import Data.Maybe (Maybe(..))
+import Data.String.NonEmpty (NonEmptyString)
 import Data.String.NonEmpty as NonEmptyString
 import Data.Tuple as Tuple
 import Data.UInt as UInt
@@ -37,7 +39,26 @@ newtype WithError v
   = WithError { errorList :: Array ErrorWithRange, value :: v }
 
 mapWithError :: forall a b. (a -> b) -> WithError a -> WithError b
-mapWithError func (WithError rec) = WithError { errorList: rec.errorList, value: func rec.value }
+mapWithError func (WithError rec) =
+  WithError
+    { errorList: rec.errorList, value: func rec.value }
+
+flatWithError :: forall a. Array (WithError a) -> WithError (Array a)
+flatWithError withErrorList =
+  WithError
+    { errorList: bind withErrorList withErrorResultGetErrorList
+    , value: map withErrorResultGetValue withErrorList
+    }
+
+andThenWithError :: forall a b. (a -> WithError b) -> WithError a -> WithError b
+andThenWithError func (WithError rec) =
+  let
+    result = func rec.value
+  in
+    WithError
+      { errorList: append rec.errorList (withErrorResultGetErrorList result)
+      , value: withErrorResultGetValue result
+      }
 
 newtype ErrorWithRange
   = ErrorWithRange
@@ -48,6 +69,8 @@ data Error
   | NeedParameter
   | SuperfluousParameter
   | NeedTopModule
+  | NeedBody
+  | NeedPart
 
 errorToString :: Error -> String
 errorToString = case _ of
@@ -55,34 +78,90 @@ errorToString = case _ of
   NeedParameter -> "パラメーターが必要です"
   SuperfluousParameter -> "余計なパラメーターです"
   NeedTopModule -> "ファイル直下は module である必要がある"
+  NeedBody -> "module(説明文 body()) の body でない"
+  NeedPart -> "module(説明文 body(part())) の part でない"
 
-newtype ParietalModule
-  = ParietalModule
+newtype PartialModule
+  = PartialModule
   { description :: Maybe String
-  , value :: Maybe UInt.UInt
+  , value :: Array PartialPart
   }
 
-parietalModuleGetValue :: ParietalModule -> Maybe UInt.UInt
-parietalModuleGetValue (ParietalModule { value }) = value
+newtype PartialPart
+  = PartialPart
+  { name :: Maybe NonEmptyString
+  , description :: Maybe String
+  , value :: Maybe UInt.UInt
+  , range :: Range.Range
+  }
 
-evaluateModule :: Parser.CodeTree -> WithError ParietalModule
+partialModuleGetPartialPartList :: PartialModule -> Array PartialPart
+partialModuleGetPartialPartList (PartialModule { value }) = value
+
+evaluateModule :: Parser.CodeTree -> WithError PartialModule
 evaluateModule codeTree@(Parser.CodeTree { name, nameRange, children }) =
   if eq name (NonEmptyString.nes (Proxy :: Proxy "module")) then
     addErrorList
       (childrenSuperfluousParameterErrorList (UInt.fromInt 2) children)
       ( mapWithError
           ( \value ->
-              ParietalModule
+              PartialModule
                 { description: Nothing
                 , value
                 }
           )
-          (codeTreeGetChildEvaluateExpr (UInt.fromInt 1) codeTree)
+          ( andThenWithError
+              ( case _ of
+                  Just body -> evaluatePartList body
+                  Nothing -> WithError { value: [], errorList: [] }
+              )
+              (codeTreeGetChild (UInt.fromInt 1) codeTree)
+          )
       )
   else
     WithError
-      { value: ParietalModule { description: Nothing, value: Nothing }
+      { value: PartialModule { description: Nothing, value: [] }
       , errorList: [ ErrorWithRange { error: NeedTopModule, range: nameRange } ]
+      }
+
+evaluatePartList :: Parser.CodeTree -> WithError (Array PartialPart)
+evaluatePartList (Parser.CodeTree { name, nameRange, children }) =
+  if eq name (NonEmptyString.nes (Proxy :: Proxy "body")) then
+    ( flatWithError
+        (map evaluatePart children)
+    )
+  else
+    WithError
+      { value: []
+      , errorList: [ ErrorWithRange { error: NeedBody, range: nameRange } ]
+      }
+
+evaluatePart :: Parser.CodeTree -> WithError PartialPart
+evaluatePart codeTree@(Parser.CodeTree { name, nameRange, children, range }) =
+  if eq name (NonEmptyString.nes (Proxy :: Proxy "part")) then
+    addErrorList
+      (childrenSuperfluousParameterErrorList (UInt.fromInt 3) children)
+      ( mapWithError
+          ( \value ->
+              PartialPart
+                { name: Nothing
+                , description: Nothing
+                , range
+                , value
+                }
+          )
+          (codeTreeGetChildEvaluateExpr (UInt.fromInt 2) codeTree)
+      )
+  else
+    WithError
+      { value:
+          PartialPart
+            { name: Nothing
+            , description: Nothing
+            , value: Nothing
+            , range
+            }
+      , errorList: [ ErrorWithRange { error: NeedBody, range: nameRange } ]
       }
 
 evaluateExpr :: Parser.CodeTree -> WithError (Maybe UInt.UInt)
@@ -106,34 +185,36 @@ evaluateExpr codeTree@(Parser.CodeTree { name, nameRange, children }) =
             [ ErrorWithRange { error: UnknownName, range: nameRange } ]
         }
 
-codeTreeGetChild :: UInt.UInt -> Parser.CodeTree -> Tuple.Tuple (Array ErrorWithRange) (Maybe Parser.CodeTree)
+codeTreeGetChild :: UInt.UInt -> Parser.CodeTree -> WithError (Maybe Parser.CodeTree)
 codeTreeGetChild index (Parser.CodeTree { children, range }) = case Array.index children (UInt.toInt index) of
-  Just child -> Tuple.Tuple [] (Just child)
+  Just child -> WithError { errorList: [], value: Just child }
   Nothing ->
-    Tuple.Tuple
-      [ ErrorWithRange
-          { error: NeedParameter
-          , range:
-              Range.Range
-                { start: Range.positionOneCharacterLeft (Range.rangeEnd range)
-                , end: Range.rangeEnd range
-                }
-          }
-      ]
-      Nothing
+    WithError
+      { errorList:
+          [ ErrorWithRange
+              { error: NeedParameter
+              , range:
+                  Range.Range
+                    { start: Range.positionOneCharacterLeft (Range.rangeEnd range)
+                    , end: Range.rangeEnd range
+                    }
+              }
+          ]
+      , value: Nothing
+      }
 
 codeTreeGetChildEvaluateExpr :: UInt.UInt -> Parser.CodeTree -> WithError (Maybe UInt.UInt)
 codeTreeGetChildEvaluateExpr index codeTree =
-  let
-    Tuple.Tuple errorList exprMaybe = codeTreeGetChild index codeTree
-  in
-    case exprMaybe of
-      Just expr -> evaluateExpr expr
-      Nothing ->
-        WithError
-          { value: Nothing
-          , errorList
-          }
+  andThenWithError
+    ( case _ of
+        Just expr -> evaluateExpr expr
+        Nothing ->
+          WithError
+            { value: Nothing
+            , errorList: []
+            }
+    )
+    (codeTreeGetChild index codeTree)
 
 childrenSuperfluousParameterErrorList :: UInt.UInt -> Array Parser.CodeTree -> Array ErrorWithRange
 childrenSuperfluousParameterErrorList size children =
