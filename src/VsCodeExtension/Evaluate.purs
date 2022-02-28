@@ -9,6 +9,7 @@ module VsCodeExtension.Evaluate
   , evaluateModule
   , fillCodeTree
   , partialModuleGetPartialPartList
+  , withErrorAndThen
   , withErrorResultGetErrorList
   , withErrorResultGetValue
   ) where
@@ -16,6 +17,7 @@ module VsCodeExtension.Evaluate
 import Prelude
 import Data.Array as Array
 import Data.Maybe (Maybe(..))
+import Data.String as String
 import Data.String.NonEmpty (NonEmptyString)
 import Data.String.NonEmpty as NonEmptyString
 import Data.Tuple as Tuple
@@ -38,8 +40,8 @@ addErrorList newErrorList (WithError rec) =
 newtype WithError v
   = WithError { errorList :: Array ErrorWithRange, value :: v }
 
-mapWithError :: forall a b. (a -> b) -> WithError a -> WithError b
-mapWithError func (WithError rec) =
+withErrorMap :: forall a b. (a -> b) -> WithError a -> WithError b
+withErrorMap func (WithError rec) =
   WithError
     { errorList: rec.errorList, value: func rec.value }
 
@@ -50,8 +52,8 @@ flatWithError withErrorList =
     , value: map withErrorResultGetValue withErrorList
     }
 
-andThenWithError :: forall a b. (a -> WithError b) -> WithError a -> WithError b
-andThenWithError func (WithError rec) =
+withErrorAndThen :: forall a b. (a -> WithError b) -> WithError a -> WithError b
+withErrorAndThen func (WithError rec) =
   let
     result = func rec.value
   in
@@ -66,8 +68,8 @@ newtype ErrorWithRange
 
 data Error
   = UnknownName
-  | NeedParameter
-  | SuperfluousParameter
+  | NeedParameter { name :: NonEmptyString, expect :: UInt.UInt, actual :: UInt.UInt }
+  | SuperfluousParameter { name :: NonEmptyString, expect :: UInt.UInt }
   | NeedTopModule
   | NeedBody
   | NeedPart
@@ -75,8 +77,26 @@ data Error
 errorToString :: Error -> String
 errorToString = case _ of
   UnknownName -> "不明な名前です"
-  NeedParameter -> "パラメーターが必要です"
-  SuperfluousParameter -> "余計なパラメーターです"
+  NeedParameter rec ->
+    String.joinWith
+      ""
+      [ NonEmptyString.toString rec.name
+      , "には"
+      , UInt.toString rec.expect
+      , "個のパラメーターが必要ですが"
+      , UInt.toString rec.actual
+      , "個のパラメーターしか渡されませんでした. あと残り"
+      , UInt.toString (rec.expect - rec.actual)
+      , "個のパラメーターが必要です"
+      ]
+  SuperfluousParameter rec ->
+    String.joinWith ""
+      [ "このパラメーターは余計です. "
+      , NonEmptyString.toString rec.name
+      , "には"
+      , UInt.toString rec.expect
+      , "個のパラメーターがあれば充分です"
+      ]
   NeedTopModule -> "ファイル直下は module である必要がある"
   NeedBody -> "module(説明文 body()) の body でない"
   NeedPart -> "module(説明文 body(part())) の part でない"
@@ -99,23 +119,28 @@ partialModuleGetPartialPartList :: PartialModule -> Array PartialPart
 partialModuleGetPartialPartList (PartialModule { value }) = value
 
 evaluateModule :: Parser.CodeTree -> WithError PartialModule
-evaluateModule codeTree@(Parser.CodeTree { name, nameRange, children }) =
+evaluateModule codeTree@(Parser.CodeTree { name, nameRange }) =
   if eq name (NonEmptyString.nes (Proxy :: Proxy "module")) then
-    addErrorList
-      (childrenSuperfluousParameterErrorList (UInt.fromInt 2) children)
-      ( mapWithError
-          ( \value ->
-              PartialModule
-                { description: Nothing
-                , value
-                }
-          )
-          ( andThenWithError
-              ( case _ of
-                  Just body -> evaluatePartList body
-                  Nothing -> WithError { value: [], errorList: [] }
-              )
-              (codeTreeGetChild (UInt.fromInt 1) codeTree)
+    get2Children
+      codeTree
+      ( \{ second } ->
+          ( case second of
+              Just body ->
+                withErrorMap
+                  ( \value ->
+                      PartialModule
+                        { description: Nothing, value }
+                  )
+                  (evaluatePartList body)
+              Nothing ->
+                WithError
+                  { value:
+                      PartialModule
+                        { description: Nothing
+                        , value: []
+                        }
+                  , errorList: []
+                  }
           )
       )
   else
@@ -137,20 +162,26 @@ evaluatePartList (Parser.CodeTree { name, nameRange, children }) =
       }
 
 evaluatePart :: Parser.CodeTree -> WithError PartialPart
-evaluatePart codeTree@(Parser.CodeTree { name, nameRange, children, range }) =
+evaluatePart codeTree@(Parser.CodeTree { name, nameRange, range }) =
   if eq name (NonEmptyString.nes (Proxy :: Proxy "part")) then
-    addErrorList
-      (childrenSuperfluousParameterErrorList (UInt.fromInt 3) children)
-      ( mapWithError
-          ( \value ->
-              PartialPart
-                { name: Nothing
-                , description: Nothing
-                , range
-                , value
-                }
-          )
-          (codeTreeGetChildEvaluateExpr (UInt.fromInt 2) codeTree)
+    get3Children
+      codeTree
+      ( \{ third } ->
+          let
+            valueAndError = case third of
+              Just t -> evaluateExpr t
+              Nothing -> WithError { errorList: [], value: Nothing }
+          in
+            WithError
+              { errorList: withErrorResultGetErrorList valueAndError
+              , value:
+                  PartialPart
+                    { name: Nothing
+                    , description: Nothing
+                    , range
+                    , value: withErrorResultGetValue valueAndError
+                    }
+              }
       )
   else
     WithError
@@ -165,65 +196,24 @@ evaluatePart codeTree@(Parser.CodeTree { name, nameRange, children, range }) =
       }
 
 evaluateExpr :: Parser.CodeTree -> WithError (Maybe UInt.UInt)
-evaluateExpr codeTree@(Parser.CodeTree { name, nameRange, children }) =
+evaluateExpr codeTree@(Parser.CodeTree { name, nameRange }) =
   if eq name (NonEmptyString.nes (Proxy :: Proxy "add")) then
-    addErrorList
-      (childrenSuperfluousParameterErrorList (UInt.fromInt 2) children)
-      ( addEvaluateResult
-          (codeTreeGetChildEvaluateExpr (UInt.fromInt 0) codeTree)
-          (codeTreeGetChildEvaluateExpr (UInt.fromInt 1) codeTree)
+    get2Children
+      codeTree
+      ( case _ of
+          { first: Just fist, second: Just second } -> addEvaluateResult (evaluateExpr fist) (evaluateExpr second)
+          { first: Nothing, second: Just second } -> evaluateExpr second
+          { first: Just first, second: Nothing } -> evaluateExpr first
+          { first: Nothing, second: Nothing } -> WithError { value: Nothing, errorList: [] }
       )
   else case UInt.fromString (NonEmptyString.toString name) of
-    Just value ->
-      addErrorList
-        (childrenSuperfluousParameterErrorList (UInt.fromInt 0) children)
-        (WithError { value: Just value, errorList: [] })
+    Just value -> WithError { value: Just value, errorList: [] }
     Nothing ->
       WithError
         { value: Nothing
         , errorList:
             [ ErrorWithRange { error: UnknownName, range: nameRange } ]
         }
-
-codeTreeGetChild :: UInt.UInt -> Parser.CodeTree -> WithError (Maybe Parser.CodeTree)
-codeTreeGetChild index (Parser.CodeTree { children, range }) = case Array.index children (UInt.toInt index) of
-  Just child -> WithError { errorList: [], value: Just child }
-  Nothing ->
-    WithError
-      { errorList:
-          [ ErrorWithRange
-              { error: NeedParameter
-              , range:
-                  Range.Range
-                    { start: Range.positionOneCharacterLeft (Range.rangeEnd range)
-                    , end: Range.rangeEnd range
-                    }
-              }
-          ]
-      , value: Nothing
-      }
-
-codeTreeGetChildEvaluateExpr :: UInt.UInt -> Parser.CodeTree -> WithError (Maybe UInt.UInt)
-codeTreeGetChildEvaluateExpr index codeTree =
-  andThenWithError
-    ( case _ of
-        Just expr -> evaluateExpr expr
-        Nothing ->
-          WithError
-            { value: Nothing
-            , errorList: []
-            }
-    )
-    (codeTreeGetChild index codeTree)
-
-childrenSuperfluousParameterErrorList :: UInt.UInt -> Array Parser.CodeTree -> Array ErrorWithRange
-childrenSuperfluousParameterErrorList size children =
-  map
-    ( \(Parser.CodeTree { range }) ->
-        ErrorWithRange
-          { error: SuperfluousParameter, range }
-    )
-    (Array.drop (UInt.toInt size) children)
 
 addEvaluateResult :: WithError (Maybe UInt.UInt) -> WithError (Maybe UInt.UInt) -> WithError (Maybe UInt.UInt)
 addEvaluateResult (WithError a) (WithError b) =
@@ -256,4 +246,86 @@ fillChildren size children =
             , range: Range.rangeZero
             }
         )
+    )
+
+get2Children ::
+  forall a.
+  Parser.CodeTree ->
+  ({ first :: Maybe Parser.CodeTree, second :: Maybe Parser.CodeTree } -> WithError a) ->
+  WithError a
+get2Children (Parser.CodeTree { name, children, range }) func =
+  addErrorList
+    ( case compare (Array.length children) 2 of
+        LT ->
+          [ ErrorWithRange
+              { error:
+                  NeedParameter
+                    { name
+                    , actual: UInt.fromInt (Array.length children)
+                    , expect: UInt.fromInt 2
+                    }
+              , range:
+                  Range.Range
+                    { start: Range.positionOneCharacterLeft (Range.rangeEnd range)
+                    , end: Range.rangeEnd range
+                    }
+              }
+          ]
+        EQ -> []
+        GT ->
+          map
+            ( \(Parser.CodeTree { range: parameterRange }) ->
+                ErrorWithRange
+                  { error: SuperfluousParameter { name, expect: UInt.fromInt 2 }
+                  , range: parameterRange
+                  }
+            )
+            (Array.drop 2 children)
+    )
+    (func { first: Array.index children 0, second: Array.index children 1 })
+
+get3Children ::
+  forall a.
+  Parser.CodeTree ->
+  ( { first :: Maybe Parser.CodeTree
+    , second :: Maybe Parser.CodeTree
+    , third :: Maybe Parser.CodeTree
+    } ->
+    WithError a
+  ) ->
+  WithError a
+get3Children (Parser.CodeTree { name, children, range }) func =
+  addErrorList
+    ( case compare (Array.length children) 3 of
+        LT ->
+          [ ErrorWithRange
+              { error:
+                  NeedParameter
+                    { name
+                    , actual: UInt.fromInt (Array.length children)
+                    , expect: UInt.fromInt 3
+                    }
+              , range:
+                  Range.Range
+                    { start: Range.positionOneCharacterLeft (Range.rangeEnd range)
+                    , end: Range.rangeEnd range
+                    }
+              }
+          ]
+        EQ -> []
+        GT ->
+          map
+            ( \(Parser.CodeTree { range: parameterRange }) ->
+                ErrorWithRange
+                  { error: SuperfluousParameter { name, expect: UInt.fromInt 3 }
+                  , range: parameterRange
+                  }
+            )
+            (Array.drop 3 children)
+    )
+    ( func
+        { first: Array.index children 0
+        , second: Array.index children 1
+        , third: Array.index children 2
+        }
     )
