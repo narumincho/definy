@@ -1,7 +1,7 @@
 module(
   モジュールの説明
   body(
-    part(partName partDescription add(1 add(2 3)))
-    part(partName partDescription add(1 1))
+    part(partName partDescription add(uint(1) add(uint(2) uint(3))))
+    part(partName partDescription add(uint(1) uint(1)))
   )
 )
