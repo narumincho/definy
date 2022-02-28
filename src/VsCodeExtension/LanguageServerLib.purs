@@ -4,6 +4,8 @@ module VsCodeExtension.LanguageServerLib
   , CodeLens(..)
   , Command(..)
   , Diagnostic(..)
+  , DiagnosticRelatedInformation(..)
+  , Location(..)
   , createJsonRpcRequestListParseStateRef
   , parseContentLengthHeader
   , receiveJsonRpcMessage
@@ -271,11 +273,35 @@ notificationMessageToLanguageClientToServerNotification (JsonRpc.NotificationMes
       (Argonaut.TypeMismatch (append "unknown notification method " method))
 
 newtype Diagnostic
-  = Diagnostic { range :: Range.Range, message :: String }
+  = Diagnostic
+  { range :: Range.Range
+  , message :: String
+  , relatedInformation :: Array DiagnosticRelatedInformation
+  }
 
 instance encodeJsonDiagnostic :: Argonaut.EncodeJson Diagnostic where
   encodeJson :: Diagnostic -> Argonaut.Json
   encodeJson (Diagnostic rec) = Argonaut.encodeJson rec
+
+newtype DiagnosticRelatedInformation
+  = DiagnosticRelatedInformation
+  { location :: Location
+  , message :: String
+  }
+
+instance encodeJsonDiagnosticRelatedInformation :: Argonaut.EncodeJson DiagnosticRelatedInformation where
+  encodeJson :: DiagnosticRelatedInformation -> Argonaut.Json
+  encodeJson (DiagnosticRelatedInformation rec) = Argonaut.encodeJson rec
+
+newtype Location
+  = Location
+  { uri :: Uri.Uri
+  , range :: Range.Range
+  }
+
+instance encodeJsonLocation :: Argonaut.EncodeJson Location where
+  encodeJson :: Location -> Argonaut.Json
+  encodeJson (Location rec) = Argonaut.encodeJson rec
 
 newtype CodeLens
   = CodeLens { range :: Range.Range, command :: Command }

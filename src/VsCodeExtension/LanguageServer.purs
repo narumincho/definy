@@ -7,6 +7,7 @@ import Data.Argonaut as Argonaut
 import Data.Either as Either
 import Data.Map as Map
 import Data.Maybe (Maybe(..))
+import Data.String.NonEmpty as NonEmptyString
 import Data.UInt as UInt
 import Effect as Effect
 import Effect.Aff as Aff
@@ -175,7 +176,34 @@ sendError uri codeTree =
     { diagnostics:
         map
           ( \(Evaluate.ErrorWithRange { error, range }) ->
-              Lib.Diagnostic { message: Evaluate.errorToString error, range }
+              Lib.Diagnostic
+                { message: Evaluate.errorToString error
+                , range
+                , relatedInformation:
+                    ( case error of
+                        Evaluate.SuperfluousParameter { name, nameRange } ->
+                          [ Lib.DiagnosticRelatedInformation
+                              { location:
+                                  Lib.Location
+                                    { uri
+                                    , range: nameRange
+                                    }
+                              , message: NonEmptyString.toString name
+                              }
+                          ]
+                        Evaluate.NeedParameter { name, nameRange } ->
+                          [ Lib.DiagnosticRelatedInformation
+                              { location:
+                                  Lib.Location
+                                    { uri
+                                    , range: nameRange
+                                    }
+                              , message: NonEmptyString.toString name
+                              }
+                          ]
+                        _ -> []
+                    )
+                }
           )
           (Evaluate.withErrorResultGetErrorList (Evaluate.evaluateModule codeTree))
     , uri

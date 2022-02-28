@@ -68,8 +68,17 @@ newtype ErrorWithRange
 
 data Error
   = UnknownName
-  | NeedParameter { name :: NonEmptyString, expect :: UInt.UInt, actual :: UInt.UInt }
-  | SuperfluousParameter { name :: NonEmptyString, expect :: UInt.UInt }
+  | NeedParameter
+    { name :: NonEmptyString
+    , nameRange :: Range.Range
+    , expect :: UInt.UInt
+    , actual :: UInt.UInt
+    }
+  | SuperfluousParameter
+    { name :: NonEmptyString
+    , nameRange :: Range.Range
+    , expect :: UInt.UInt
+    }
   | NeedTopModule
   | NeedBody
   | NeedPart
@@ -253,7 +262,7 @@ get2Children ::
   Parser.CodeTree ->
   ({ first :: Maybe Parser.CodeTree, second :: Maybe Parser.CodeTree } -> WithError a) ->
   WithError a
-get2Children (Parser.CodeTree { name, children, range }) func =
+get2Children (Parser.CodeTree { name, nameRange, children, range }) func =
   addErrorList
     ( case compare (Array.length children) 2 of
         LT ->
@@ -261,6 +270,7 @@ get2Children (Parser.CodeTree { name, children, range }) func =
               { error:
                   NeedParameter
                     { name
+                    , nameRange: nameRange
                     , actual: UInt.fromInt (Array.length children)
                     , expect: UInt.fromInt 2
                     }
@@ -276,7 +286,12 @@ get2Children (Parser.CodeTree { name, children, range }) func =
           map
             ( \(Parser.CodeTree { range: parameterRange }) ->
                 ErrorWithRange
-                  { error: SuperfluousParameter { name, expect: UInt.fromInt 2 }
+                  { error:
+                      SuperfluousParameter
+                        { name
+                        , nameRange: nameRange
+                        , expect: UInt.fromInt 2
+                        }
                   , range: parameterRange
                   }
             )
@@ -294,7 +309,7 @@ get3Children ::
     WithError a
   ) ->
   WithError a
-get3Children (Parser.CodeTree { name, children, range }) func =
+get3Children (Parser.CodeTree { name, nameRange, children, range }) func =
   addErrorList
     ( case compare (Array.length children) 3 of
         LT ->
@@ -302,6 +317,7 @@ get3Children (Parser.CodeTree { name, children, range }) func =
               { error:
                   NeedParameter
                     { name
+                    , nameRange
                     , actual: UInt.fromInt (Array.length children)
                     , expect: UInt.fromInt 3
                     }
@@ -317,7 +333,12 @@ get3Children (Parser.CodeTree { name, children, range }) func =
           map
             ( \(Parser.CodeTree { range: parameterRange }) ->
                 ErrorWithRange
-                  { error: SuperfluousParameter { name, expect: UInt.fromInt 3 }
+                  { error:
+                      SuperfluousParameter
+                        { name
+                        , nameRange
+                        , expect: UInt.fromInt 3
+                        }
                   , range: parameterRange
                   }
             )
