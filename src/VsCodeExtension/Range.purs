@@ -10,6 +10,8 @@ module VsCodeExtension.Range
 
 import Prelude
 import Data.Argonaut as Argonaut
+import Data.Either as Either
+import Data.Maybe (Maybe(..))
 import Data.String as String
 import Data.UInt as UInt
 
@@ -79,6 +81,13 @@ instance encodeJsonPosition :: Argonaut.EncodeJson Position where
       { line: UInt.toInt rec.line
       , character: UInt.toInt rec.character
       }
+
+instance decodeJsonPosition :: Argonaut.DecodeJson Position where
+  decodeJson json = do
+    (rec :: { line :: Int, character :: Int }) <- Argonaut.decodeJson json
+    case { line: UInt.fromInt' rec.line, character: UInt.fromInt' rec.character } of
+      { line: Just line, character: Just character } -> Either.Right (Position { line, character })
+      {} -> Either.Left (Argonaut.TypeMismatch "position need positive integer")
 
 positionAdd1Character :: Position -> Position
 positionAdd1Character (Position rec) =
