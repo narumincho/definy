@@ -33,8 +33,8 @@
     "@types/react": "17.0.39",
     "@types/react-dom": "17.0.11",
     "@types/vscode": "1.64.0",
-    "@typescript-eslint/eslint-plugin": "5.12.1",
-    "@typescript-eslint/parser": "5.12.1",
+    "@typescript-eslint/eslint-plugin": "5.13.0",
+    "@typescript-eslint/parser": "5.13.0",
     "axios": "0.26.0",
     "babel-loader": "8.2.3",
     "dependency-cruiser": "11.3.1",
@@ -51,7 +51,7 @@
     "jest": "27.5.1",
     "jimp": "0.16.1",
     "jsonwebtoken": "8.5.1",
-    "npm-check-updates": "12.4.0",
+    "npm-check-updates": "12.5.0",
     "prettier": "2.5.1",
     "purescript": "0.14.5",
     "purty": "7.0.0",
@@ -63,7 +63,7 @@
     "ts-jest": "27.1.3",
     "ts-node": "10.5.0",
     "typed-admin-firestore": "1.2.2",
-    "typescript": "4.5.5",
+    "typescript": "4.6.2",
     "vscode-languageclient": "7.0.0"
   },
   "jest": {
