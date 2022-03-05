@@ -4,9 +4,15 @@ module VsCodeExtension.LanguageServerLib
   , CodeLens(..)
   , Command(..)
   , Diagnostic(..)
+  , DiagnosticRelatedInformation(..)
+  , Hover(..)
+  , Location(..)
+  , MarkupContent(..)
+  , MarkupKind(..)
   , createJsonRpcRequestListParseStateRef
   , parseContentLengthHeader
   , receiveJsonRpcMessage
+  , responseHover
   , responseInitialize
   , responseTextDocumentCodeLens
   , responseTextDocumentSemanticTokensFull
@@ -48,6 +54,7 @@ data ClientToServerMessage
   | TextDocumentDidSave { uri :: Uri.Uri }
   | TextDocumentSemanticTokensFull { id :: JsonRpc.Id, uri :: Uri.Uri }
   | TextDocumentCodeLens { id :: JsonRpc.Id, uri :: Uri.Uri }
+  | TextDocumentHover { id :: JsonRpc.Id, uri :: Uri.Uri, position :: Range.Position }
 
 createJsonRpcRequestListParseStateRef :: Effect.Effect (Ref.Ref ClientToServerMessageParseState)
 createJsonRpcRequestListParseStateRef =
@@ -231,6 +238,15 @@ notificationMessageToLanguageClientToServerRequest (JsonRpc.RequestMessage { id,
             { id, uri: textDocument.uri }
         )
     _ -> Either.Left (Argonaut.TypeMismatch "expect textDocument/codeLens params type object")
+  "textDocument/hover" -> case params of
+    Just (JsonRpc.ParamsObject paramsObj) -> do
+      (textDocument :: { uri :: Uri.Uri }) <- Argonaut.getField paramsObj "textDocument"
+      (position :: Range.Position) <- Argonaut.getField paramsObj "position"
+      Either.Right
+        ( TextDocumentHover
+            { id, uri: textDocument.uri, position }
+        )
+    _ -> Either.Left (Argonaut.TypeMismatch "expect textDocument/hover params type object")
   _ ->
     Either.Left
       (Argonaut.TypeMismatch (append "unknown request method " method))
@@ -271,11 +287,35 @@ notificationMessageToLanguageClientToServerNotification (JsonRpc.NotificationMes
       (Argonaut.TypeMismatch (append "unknown notification method " method))
 
 newtype Diagnostic
-  = Diagnostic { range :: Range.Range, message :: String }
+  = Diagnostic
+  { range :: Range.Range
+  , message :: String
+  , relatedInformation :: Array DiagnosticRelatedInformation
+  }
 
 instance encodeJsonDiagnostic :: Argonaut.EncodeJson Diagnostic where
   encodeJson :: Diagnostic -> Argonaut.Json
   encodeJson (Diagnostic rec) = Argonaut.encodeJson rec
+
+newtype DiagnosticRelatedInformation
+  = DiagnosticRelatedInformation
+  { location :: Location
+  , message :: String
+  }
+
+instance encodeJsonDiagnosticRelatedInformation :: Argonaut.EncodeJson DiagnosticRelatedInformation where
+  encodeJson :: DiagnosticRelatedInformation -> Argonaut.Json
+  encodeJson (DiagnosticRelatedInformation rec) = Argonaut.encodeJson rec
+
+newtype Location
+  = Location
+  { uri :: Uri.Uri
+  , range :: Range.Range
+  }
+
+instance encodeJsonLocation :: Argonaut.EncodeJson Location where
+  encodeJson :: Location -> Argonaut.Json
+  encodeJson (Location rec) = Argonaut.encodeJson rec
 
 newtype CodeLens
   = CodeLens { range :: Range.Range, command :: Command }
@@ -342,6 +382,7 @@ responseInitialize { id, semanticTokensProviderLegendTokenTypes } =
                           , full: true
                           }
                       , codeLensProvider: { resolveProvider: true }
+                      , hoverProvider: true
                       }
                   }
             }
@@ -369,6 +410,36 @@ responseTextDocumentCodeLens { id, codeLensList } =
     ( Argonaut.encodeJson
         ( JsonRpc.ResponseMessageSuccess
             { id, result: Argonaut.encodeJson codeLensList }
+        )
+    )
+    true
+
+newtype Hover
+  = Hover { contents :: MarkupContent, range :: Range.Range }
+
+instance encodeJsonHover :: Argonaut.EncodeJson Hover where
+  encodeJson (Hover rec) = Argonaut.encodeJson rec
+
+-- | https://microsoft.github.io/language-server-protocol/specifications/specification-3-17/#markupContentInnerDefinition
+newtype MarkupContent
+  = MarkupContent { kind :: MarkupKind, value :: String }
+
+instance encodeJsonMarkupContent :: Argonaut.EncodeJson MarkupContent where
+  encodeJson (MarkupContent rec) = Argonaut.encodeJson rec
+
+data MarkupKind
+  = Markdown
+
+instance encodeJsonMarkupKind :: Argonaut.EncodeJson MarkupKind where
+  encodeJson = case _ of
+    Markdown -> Argonaut.fromString "markdown"
+
+responseHover :: { id :: JsonRpc.Id, hover :: Hover } -> Effect.Effect Unit
+responseHover { id, hover } =
+  sendJsonRpcMessage
+    ( Argonaut.encodeJson
+        ( JsonRpc.ResponseMessageSuccess
+            { id, result: Argonaut.encodeJson hover }
         )
     )
     true
