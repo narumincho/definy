@@ -1,6 +1,5 @@
 module Definy.Build
   ( build
-  , codeGenAndBuildClientAndFunctionsScript
   ) where
 
 import Prelude
@@ -14,8 +13,8 @@ import Data.Maybe (Maybe(..))
 import Data.Set as Set
 import Data.String.NonEmpty (NonEmptyString)
 import Data.String.NonEmpty as NonEmptyString
-import Data.Tuple as Tuple
 import Data.UInt as UInt
+import Definy.Version as Version
 import Effect.Aff as Aff
 import Effect.Class as EffectClass
 import Effect.Uncurried as EffectUncurried
@@ -29,7 +28,6 @@ import FileSystem.Write as FileSystemWrite
 import Firebase.FirebaseJson as FirebaseJson
 import Firebase.SecurityRules as SecurityRules
 import Hash as Hash
-import Node.Process as Process
 import PackageJson as PackageJson
 import ProductionOrDevelopment as ProductionOrDevelopment
 import PureScript.Data as PureScriptData
@@ -39,8 +37,12 @@ import StructuredUrl as StructuredUrl
 import Type.Proxy (Proxy(..))
 import Util as Util
 
-build :: ProductionOrDevelopment.ProductionOrDevelopment -> NonEmptyString -> Aff.Aff Unit
-build mode origin =
+build ::
+  ProductionOrDevelopment.ProductionOrDevelopment ->
+  NonEmptyString ->
+  Aff.Aff Unit
+build mode origin = do
+  _ <- Version.getVersion mode
   Util.toParallel
     [ case mode of
         ProductionOrDevelopment.Production -> pure unit
@@ -72,9 +74,16 @@ build mode origin =
         )
     ]
 
-codeGenAndBuildClientAndFunctionsScript :: ProductionOrDevelopment.ProductionOrDevelopment -> NonEmptyString -> Aff.Aff Unit
-codeGenAndBuildClientAndFunctionsScript mode origin = do
-  (Tuple.Tuple _ _) <- Tuple.Tuple <$> staticResourceBuild <*> (outputNowModeAndOrigin mode origin)
+codeGenAndBuildClientAndFunctionsScript ::
+  ProductionOrDevelopment.ProductionOrDevelopment ->
+  NonEmptyString ->
+  Version.Version ->
+  Aff.Aff Unit
+codeGenAndBuildClientAndFunctionsScript mode origin version = do
+  Util.toParallel
+    [ map (\_ -> unit) staticResourceBuild
+    , outputNowModeAndOrigin mode origin version
+    ]
   _ <- clientProgramBuild
   pure unit
 
@@ -205,15 +214,6 @@ productionOrDevelopmentModuleName =
         )
     )
 
-definyVersionModuleName :: PureScriptData.ModuleName
-definyVersionModuleName =
-  PureScriptData.ModuleName
-    ( NonEmptyArray.cons' definyModuleName
-        [ NonEmptyString.nes
-            (Proxy :: _ "Version")
-        ]
-    )
-
 staticResourceModuleName :: PureScriptData.ModuleName
 staticResourceModuleName =
   PureScriptData.ModuleName
@@ -223,110 +223,79 @@ staticResourceModuleName =
         ]
     )
 
-outputNowModeAndOrigin :: ProductionOrDevelopment.ProductionOrDevelopment -> NonEmptyString -> Aff.Aff Unit
-outputNowModeAndOrigin productionOrDevelopment origin = do
-  pureScriptModule <- generateNowModeAndOriginPureScriptModule productionOrDevelopment origin
-  FileSystemWrite.writePureScript pureScriptModule
+outputNowModeAndOrigin ::
+  ProductionOrDevelopment.ProductionOrDevelopment ->
+  NonEmptyString ->
+  Version.Version ->
+  Aff.Aff Unit
+outputNowModeAndOrigin productionOrDevelopment origin version =
+  FileSystemWrite.writePureScript
+    ( generateNowModeAndOriginPureScriptModule
+        productionOrDevelopment
+        origin
+        version
+    )
 
-generateNowModeAndOriginPureScriptModule :: ProductionOrDevelopment.ProductionOrDevelopment -> NonEmptyString -> Aff.Aff PureScriptData.Module
-generateNowModeAndOriginPureScriptModule productionOrDevelopment origin = do
-  versionDefinition <- versionDefinitionAff productionOrDevelopment
-  pure
-    ( PureScriptData.Module
-        { name:
-            PureScriptData.ModuleName
-              ( NonEmptyArray.cons' definyModuleName
-                  [ NonEmptyString.nes
-                      (Proxy :: _ "OriginAndVersion")
-                  ]
-              )
-        , definitionList:
-            [ PureScriptWellknown.definition
-                { name: NonEmptyString.nes (Proxy :: _ "nowMode")
-                , document: "実行モード (ビルド時にコード生成される)"
-                , pType:
-                    PureScriptWellknown.pTypeFrom
+generateNowModeAndOriginPureScriptModule ::
+  ProductionOrDevelopment.ProductionOrDevelopment ->
+  NonEmptyString ->
+  Version.Version ->
+  PureScriptData.Module
+generateNowModeAndOriginPureScriptModule productionOrDevelopment origin version =
+  PureScriptData.Module
+    { name:
+        PureScriptData.ModuleName
+          ( NonEmptyArray.cons' definyModuleName
+              [ NonEmptyString.nes
+                  (Proxy :: _ "OriginAndVersion")
+              ]
+          )
+    , definitionList:
+        [ PureScriptWellknown.definition
+            { name: NonEmptyString.nes (Proxy :: _ "nowMode")
+            , document: "実行モード (ビルド時にコード生成される)"
+            , pType:
+                PureScriptWellknown.pTypeFrom
+                  { moduleName: productionOrDevelopmentModuleName
+                  , name: NonEmptyString.nes (Proxy :: _ "ProductionOrDevelopment")
+                  }
+            , expr:
+                case productionOrDevelopment of
+                  ProductionOrDevelopment.Development ->
+                    PureScriptWellknown.tag
                       { moduleName: productionOrDevelopmentModuleName
-                      , name: NonEmptyString.nes (Proxy :: _ "ProductionOrDevelopment")
+                      , name: NonEmptyString.nes (Proxy :: _ "Development")
                       }
-                , expr:
-                    case productionOrDevelopment of
-                      ProductionOrDevelopment.Development ->
-                        PureScriptWellknown.tag
-                          { moduleName: productionOrDevelopmentModuleName
-                          , name: NonEmptyString.nes (Proxy :: _ "Development")
-                          }
-                      ProductionOrDevelopment.Production ->
-                        PureScriptWellknown.tag
-                          { moduleName: productionOrDevelopmentModuleName
-                          , name: NonEmptyString.nes (Proxy :: _ "Production")
-                          }
-                , isExport: true
-                }
-            , PureScriptWellknown.definition
-                { name: NonEmptyString.nes (Proxy :: _ "origin")
-                , document: "オリジン (ビルド時にコード生成される)"
-                , pType: PureScriptWellknown.nonEmptyString
-                , expr: PureScriptWellknown.nonEmptyStringLiteral origin
-                , isExport: true
-                }
-            , versionDefinition
-            ]
-        }
-    )
+                  ProductionOrDevelopment.Production ->
+                    PureScriptWellknown.tag
+                      { moduleName: productionOrDevelopmentModuleName
+                      , name: NonEmptyString.nes (Proxy :: _ "Production")
+                      }
+            , isExport: true
+            }
+        , PureScriptWellknown.definition
+            { name: NonEmptyString.nes (Proxy :: _ "origin")
+            , document: "オリジン (ビルド時にコード生成される)"
+            , pType: PureScriptWellknown.nonEmptyString
+            , expr: PureScriptWellknown.nonEmptyStringLiteral origin
+            , isExport: true
+            }
+        , createVersionDefinition version
+        ]
+    }
 
-versionDefinitionAff :: ProductionOrDevelopment.ProductionOrDevelopment -> Aff.Aff PureScriptData.Definition
-versionDefinitionAff = case _ of
-  ProductionOrDevelopment.Development ->
-    pure
-      ( PureScriptWellknown.definition
-          { name: NonEmptyString.nes (Proxy :: _ "version")
-          , document: "バージョン名 (ビルド時にコード生成される)"
-          , pType:
-              PureScriptWellknown.pTypeFrom
-                { moduleName: definyVersionModuleName
-                , name: NonEmptyString.nes (Proxy :: _ "Version")
-                }
-          , expr:
-              PureScriptWellknown.tag
-                { moduleName: definyVersionModuleName
-                , name: NonEmptyString.nes (Proxy :: _ "Development")
-                }
-          , isExport: true
-          }
-      )
-  ProductionOrDevelopment.Production -> do
-    githubSha <- readGithubSha
-    pure
-      ( PureScriptWellknown.definition
-          { name: NonEmptyString.nes (Proxy :: _ "version")
-          , document: "バージョン名 (ビルド時にコード生成される)"
-          , pType:
-              PureScriptWellknown.nonEmptyString
-          , expr:
-              PureScriptWellknown.call
-                ( PureScriptWellknown.tag
-                    { moduleName: definyVersionModuleName
-                    , name: NonEmptyString.nes (Proxy :: _ "Release")
-                    }
-                )
-                (PureScriptWellknown.nonEmptyStringLiteral githubSha)
-          , isExport: true
-          }
-      )
-
-readGithubSha :: Aff.Aff NonEmptyString
-readGithubSha =
-  EffectClass.liftEffect
-    ( map
-        ( case _ of
-            Just githubShaValue -> case NonEmptyString.fromString githubShaValue of
-              Just githubShaAsNonEmptyString -> githubShaAsNonEmptyString
-              Nothing -> NonEmptyString.nes (Proxy :: _ "GITHUB_SHA is empty")
-            Nothing -> NonEmptyString.nes (Proxy :: _ "can not read GITHUB_SHA")
-        )
-        (Process.lookupEnv "GITHUB_SHA")
-    )
+createVersionDefinition ::
+  Version.Version ->
+  PureScriptData.Definition
+createVersionDefinition version =
+  PureScriptWellknown.definition
+    { name: NonEmptyString.nes (Proxy :: _ "version")
+    , document: append "バージョン名 (ビルド時にコード生成される) " (Version.toSimpleString version)
+    , pType: Version.versionType
+    , expr:
+        Version.toExpr version
+    , isExport: true
+    }
 
 firestoreSecurityRulesFilePath :: Path.DistributionFilePath
 firestoreSecurityRulesFilePath =
