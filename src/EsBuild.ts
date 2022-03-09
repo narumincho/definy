@@ -1,3 +1,4 @@
+import type { EffectFnAff } from "./PureScriptType";
 import { build } from "esbuild";
 
 export const buildAsEffectFnAff = (option: {
@@ -5,14 +6,7 @@ export const buildAsEffectFnAff = (option: {
   readonly outDir: string;
   readonly sourcemap: boolean;
   readonly target: string;
-}): ((
-  onError: (error: Error) => void,
-  onSuccess: () => void
-) => (
-  cancelError: () => void,
-  cancelerError: () => void,
-  cancelerSuccess: () => void
-) => void) => {
+}): EffectFnAff<void, Error> => {
   return (onError, onSuccess) => {
     build({
       entryPoints: [option.entryPoints],

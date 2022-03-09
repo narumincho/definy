@@ -3,8 +3,8 @@ module DataTs.Build
   ) where
 
 import Prelude
-import Effect (Effect)
 import Console as Console
+import Effect (Effect)
 import Effect.Aff as Aff
 import FileSystem.Name as Name
 import FileSystem.Path as Path
@@ -18,7 +18,7 @@ main = do
   Aff.runAff_
     (Console.logValue "writeLocalOutFile")
     ( Aff.attempt
-        ( Write.writeTypeScriptFile
+        ( Write.writeTypeScriptFileOneFile
             ( Path.FilePath
                 { directoryPath: Path.DirectoryPath []
                 , fileName: Name.fromSymbolProxy (Proxy :: _ "localData_out")

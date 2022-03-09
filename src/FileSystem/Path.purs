@@ -52,12 +52,20 @@ distributionDirectoryPathGetDirectoryPath (DistributionFilePath { directoryPath 
 newtype DirectoryPath
   = DirectoryPath (Array Name.Name)
 
+derive instance eqDirectoryPath :: Prelude.Eq DirectoryPath
+
+derive instance ordDirectoryPath :: Prelude.Ord DirectoryPath
+
 -- | リポジトリのルートをルートとした ファイルパス
 newtype FilePath
   = FilePath
   { directoryPath :: DirectoryPath
   , fileName :: Name.Name
   }
+
+derive instance eqFilePath :: Prelude.Eq FilePath
+
+derive instance ordFilePath :: Prelude.Ord FilePath
 
 -- | パスのディレクトリを取得する
 filePathGetDirectoryPath :: FilePath -> DirectoryPath

@@ -13,15 +13,17 @@ import Data.String as String
 import Data.String.NonEmpty as NonEmptyString
 import Data.Tuple as Tuple
 import Effect as Effect
+import FileSystem.Name as Name
+import FileSystem.Path as Path
 import Prelude as Prelude
 import Test.Unit as TestUnit
+import Test.Util (assertEqual)
+import Test.Util as TestUtil
 import Type.Proxy (Proxy(..))
 import TypeScript.Data as Data
 import TypeScript.Identifier as Identifier
 import TypeScript.ModuleName as ModuleName
 import TypeScript.ToString as ToString
-import Test.Util as TestUtil
-import Test.Util (assertEqual)
 
 test :: TestUnit.Test
 test = do
@@ -79,7 +81,7 @@ identifierNotCreateReservedWord = do
 
 sampleCodeExpressServerAsString :: String
 sampleCodeExpressServerAsString = case Map.lookup
-    (ModuleName.toFileSystemName sampleCodeExpressServerModuleName)
+    sampleCodeExpressServerModuleFilePath
     ( ToString.typeScriptModuleMapToString
         ( Data.TypeScriptModuleMap
             ( Map.fromFoldable
@@ -90,8 +92,13 @@ sampleCodeExpressServerAsString = case Map.lookup
   Just (ToString.ModuleResult { code }) -> code
   Nothing -> "test module not found"
 
-sampleCodeExpressServerModuleName :: ModuleName.ModuleName
-sampleCodeExpressServerModuleName = ModuleName.fromSymbolProxy (Proxy :: _ "expressServer")
+sampleCodeExpressServerModuleFilePath :: Path.FilePath
+sampleCodeExpressServerModuleFilePath =
+  Path.FilePath
+    { directoryPath: Path.DirectoryPath []
+    , fileName:
+        Name.fromSymbolProxy (Proxy :: Proxy "sampleServer")
+    }
 
 sampleCodeExpressServer :: Tuple.Tuple ModuleName.ModuleName Data.TypeScriptModule
 sampleCodeExpressServer =
@@ -99,7 +106,7 @@ sampleCodeExpressServer =
     expressRequest =
       Data.TsTypeImportedType
         ( Data.ImportedType
-            { moduleName: ModuleName.fromSymbolProxy (Proxy :: _ "express")
+            { moduleName: ModuleName.NpmModule (NonEmptyString.nes (Proxy :: _ "express"))
             , typeNameAndTypeParameter:
                 Data.TypeNameAndTypeParameter
                   { name: Identifier.fromSymbolProxyUnsafe (Proxy :: _ "Request")
@@ -111,7 +118,9 @@ sampleCodeExpressServer =
     expressResponse =
       Data.TsTypeImportedType
         ( Data.ImportedType
-            { moduleName: ModuleName.fromSymbolProxy (Proxy :: _ "express")
+            { moduleName:
+                ModuleName.NpmModule
+                  (NonEmptyString.nes (Proxy :: _ "express"))
             , typeNameAndTypeParameter:
                 Data.TypeNameAndTypeParameter
                   { name: Identifier.fromSymbolProxyUnsafe (Proxy :: _ "Response")
@@ -121,7 +130,7 @@ sampleCodeExpressServer =
         )
   in
     Tuple.Tuple
-      sampleCodeExpressServerModuleName
+      (ModuleName.Local sampleCodeExpressServerModuleFilePath)
       ( Data.TypeScriptModule
           { exportDefinitionList:
               [ Data.ExportDefinitionFunction
