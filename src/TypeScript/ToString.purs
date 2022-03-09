@@ -11,7 +11,7 @@ import Data.Set as Set
 import Data.String as String
 import Data.String.NonEmpty as NonEmptyString
 import Data.Tuple as Tuple
-import FileSystem.Name as Name
+import FileSystem.Path as Path
 import Prelude as Prelude
 import TypeScript.Data as Data
 import TypeScript.Identifier as Identifier
@@ -27,14 +27,14 @@ newtype ModuleResult
 
 typeScriptModuleMapToString ::
   Data.TypeScriptModuleMap ->
-  (Map.Map Name.Name ModuleResult)
+  (Map.Map Path.FilePath ModuleResult)
 typeScriptModuleMapToString typeScriptModuleMap@(Data.TypeScriptModuleMap moduleMap) =
   let
     collectResult :: Map.Map ModuleName.ModuleName ValidateAndCollect.ValidateAndCollectResult
     collectResult = ValidateAndCollect.validateAndCollect typeScriptModuleMap
   in
     Map.fromFoldable
-      ( Prelude.map
+      ( Array.mapMaybe
           ( \tuple@(Tuple.Tuple moduleName _) ->
               typeScriptModuleToString
                 ( case Map.lookup moduleName collectResult of
@@ -49,24 +49,26 @@ typeScriptModuleMapToString typeScriptModuleMap@(Data.TypeScriptModuleMap module
 typeScriptModuleToString ::
   ValidateAndCollect.ValidateAndCollectResult ->
   Tuple.Tuple ModuleName.ModuleName Data.TypeScriptModule ->
-  Tuple.Tuple
-    Name.Name
-    ModuleResult
-typeScriptModuleToString (ValidateAndCollect.ValidateAndCollectResult collectResult) (Tuple.Tuple moduleName moduleContent) =
-  Tuple.Tuple
-    (ModuleName.toFileSystemName moduleName)
-    ( ModuleResult
-        { code:
-            typeScriptModuleContentToString
-              ( UsedNameSetAndModulePathSet
-                  { usedNameSet: collectResult.usedNameSet
-                  , modulePathSet: collectResult.modulePathSet
-                  }
-              )
-              moduleContent
-        , errorList: collectResult.errorList
-        }
-    )
+  Maybe (Tuple.Tuple Path.FilePath ModuleResult)
+typeScriptModuleToString (ValidateAndCollect.ValidateAndCollectResult collectResult) (Tuple.Tuple moduleName moduleContent) = case moduleName of
+  ModuleName.NpmModule _ -> Nothing
+  ModuleName.Local filePath ->
+    Just
+      ( Tuple.Tuple
+          filePath
+          ( ModuleResult
+              { code:
+                  typeScriptModuleContentToString
+                    ( UsedNameSetAndModulePathSet
+                        { usedNameSet: collectResult.usedNameSet
+                        , modulePathSet: collectResult.modulePathSet
+                        }
+                    )
+                    moduleContent
+              , errorList: collectResult.errorList
+              }
+          )
+      )
 
 newtype UsedNameSetAndModulePathSet
   = UsedNameSetAndModulePathSet
@@ -127,7 +129,9 @@ newtype UsedNameSetAndModulePathSetToContextLoopItem
   , identifierIndex :: Identifier.IdentifierIndex
   }
 
-usedNameSetAndModulePathSetToContextLoopItemGetList :: UsedNameSetAndModulePathSetToContextLoopItem -> Map.Map ModuleName.ModuleName Identifier.TsIdentifier
+usedNameSetAndModulePathSetToContextLoopItemGetList ::
+  UsedNameSetAndModulePathSetToContextLoopItem ->
+  Map.Map ModuleName.ModuleName Identifier.TsIdentifier
 usedNameSetAndModulePathSetToContextLoopItemGetList (UsedNameSetAndModulePathSetToContextLoopItem { list }) = Map.fromFoldable list
 
 usedNameSetAndModulePathSetToContextLoop ::
@@ -152,7 +156,14 @@ importStatementToString namespace moduleName =
     , " from \""
     , stringLiteralValueToString
         ( NonEmptyString.toString
-            (ModuleName.toNonEmptyString moduleName)
+            ( case moduleName of
+                ModuleName.NpmModule packageName -> packageName
+                ModuleName.Local filePath ->
+                  -- TODO 相対パスの基準点が常にルートになってしまう
+                  Path.filePathToString
+                    filePath
+                    Nothing
+            )
         )
     ]
 

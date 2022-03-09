@@ -6,15 +6,18 @@ module FileSystem.Write
   , writeTextFileInDistribution
   , writeTextFilePathFileProtocol
   , writeTypeScriptFile
+  , writeTypeScriptFileOneFile
   ) where
 
 import Prelude
 import Console as Console
 import Data.Argonaut as Argonaut
 import Data.Array.NonEmpty as ArrayNonEmpty
+import Data.Map as Map
 import Data.Maybe (Maybe(..))
 import Data.Maybe as Maybe
 import Data.String.NonEmpty as NonEmptyString
+import Data.Tuple as Tuple
 import Effect.Aff as Aff
 import Effect.Aff.Compat as AffCompat
 import FileSystem.FileType as FileType
@@ -25,6 +28,8 @@ import Node.Encoding as Encoding
 import Node.FS.Aff as Fs
 import PureScript.Data as PureScriptData
 import PureScript.ToString as PureScriptToString
+import TypeScript.ToString as TypeScriptToString
+import Util as Util
 import VsCodeExtension.Uri as Uri
 
 -- | テキストファイル書き込む
@@ -94,9 +99,20 @@ writePureScript pModule =
       Fs.writeTextFile Encoding.UTF8 filePath (PureScriptToString.toString pModule)
       Console.logValueAsAff "PureScriptのコードを書き込んだ" { filePath }
 
--- | テキストファイルを書き込む
-writeTypeScriptFile :: Path.FilePath -> String -> Aff.Aff Unit
-writeTypeScriptFile filePath codeAsText =
+-- | 複数のTypeScriptモジューつを書き込む
+writeTypeScriptFile :: Map.Map Path.FilePath TypeScriptToString.ModuleResult -> Aff.Aff Unit
+writeTypeScriptFile moduleMap =
+  Util.toParallel
+    ( map
+        ( \(Tuple.Tuple filePath (TypeScriptToString.ModuleResult { code })) ->
+            writeTypeScriptFileOneFile filePath code
+        )
+        (Map.toUnfoldable moduleMap)
+    )
+
+-- | TypeScriptコードを1つのファイルに書き込む
+writeTypeScriptFileOneFile :: Path.FilePath -> String -> Aff.Aff Unit
+writeTypeScriptFileOneFile filePath code =
   let
     filePathAsString :: String
     filePathAsString =
@@ -108,9 +124,8 @@ writeTypeScriptFile filePath codeAsText =
   in
     do
       ensureDir (Path.filePathGetDirectoryPath filePath)
-      Fs.writeTextFile Encoding.UTF8 filePathAsString codeAsText
-      Console.logValueAsAff "TypeScript のファイルを書き込んだ"
-        { filePath: filePathAsString }
+      Fs.writeTextFile Encoding.UTF8 filePathAsString code
+      Console.logValueAsAff "TypeScript のファイルを書き込んだ" { filePath: filePathAsString }
 
 foreign import ensureDirAsEffectFnAff :: String -> AffCompat.EffectFnAff Unit
 
