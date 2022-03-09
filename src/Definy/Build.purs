@@ -16,8 +16,6 @@ import Data.String.NonEmpty as NonEmptyString
 import Data.UInt as UInt
 import Definy.Version as Version
 import Effect.Aff as Aff
-import Effect.Class as EffectClass
-import Effect.Uncurried as EffectUncurried
 import EsBuild as EsBuild
 import FileSystem.Copy as FileSystemCopy
 import FileSystem.FileType as FileType
@@ -35,6 +33,10 @@ import PureScript.Wellknown as PureScriptWellknown
 import StaticResourceFile as StaticResourceFile
 import StructuredUrl as StructuredUrl
 import Type.Proxy (Proxy(..))
+import TypeScript.Data as TypeScriptData
+import TypeScript.Identifier as TypeScriptIdentifier
+import TypeScript.ModuleName as TypeScriptModuleName
+import TypeScript.ToString as TypeScriptToString
 import Util as Util
 
 build ::
@@ -42,7 +44,7 @@ build ::
   NonEmptyString ->
   Aff.Aff Unit
 build mode origin = do
-  _ <- Version.getVersion mode
+  version <- Version.getVersion mode
   Util.toParallel
     [ case mode of
         ProductionOrDevelopment.Production -> pure unit
@@ -63,15 +65,7 @@ build mode origin = do
     , writeFirestoreRules
     , generateCloudStorageRules
     , writeFirebaseJson mode
-    , EffectClass.liftEffect
-        ( EffectUncurried.runEffectFn2
-            buildInTypeScript
-            ( case mode of
-                ProductionOrDevelopment.Development -> true
-                ProductionOrDevelopment.Production -> false
-            )
-            (NonEmptyString.toString origin)
-        )
+    , buildInTypeScript mode origin version
     ]
 
 codeGenAndBuildClientAndFunctionsScript ::
@@ -292,8 +286,7 @@ createVersionDefinition version =
     { name: NonEmptyString.nes (Proxy :: _ "version")
     , document: append "バージョン名 (ビルド時にコード生成される) " (Version.toSimpleString version)
     , pType: Version.versionType
-    , expr:
-        Version.toExpr version
+    , expr: Version.toExpr version
     , isExport: true
     }
 
@@ -457,4 +450,127 @@ readEsbuildResultClientProgramFile = do
     clientProgramAsString
   pure clientProgramHashValue
 
-foreign import buildInTypeScript :: EffectUncurried.EffectFn2 Boolean String Unit
+buildInTypeScript ::
+  ProductionOrDevelopment.ProductionOrDevelopment ->
+  NonEmptyString ->
+  Version.Version ->
+  Aff.Aff Unit
+buildInTypeScript mode origin = outputNowModeAndOriginTypeScriptCode mode origin
+
+localDataTypeScriptModuleName :: TypeScriptModuleName.ModuleName
+localDataTypeScriptModuleName =
+  TypeScriptModuleName.Local
+    ( Path.FilePath
+        { directoryPath: Path.DirectoryPath []
+        , fileName: Name.fromSymbolProxy (Proxy :: Proxy "localData")
+        }
+    )
+
+outputNowModeAndOriginTypeScriptCode ::
+  ProductionOrDevelopment.ProductionOrDevelopment ->
+  NonEmptyString ->
+  Version.Version ->
+  Aff.Aff Unit
+outputNowModeAndOriginTypeScriptCode mode origin version =
+  FileSystemWrite.writeTypeScriptFile
+    ( TypeScriptToString.typeScriptModuleMapToString
+        ( TypeScriptData.TypeScriptModuleMap
+            ( Map.singleton
+                ( TypeScriptModuleName.Local
+                    ( Path.FilePath
+                        { directoryPath: (Path.DirectoryPath [])
+                        , fileName: Name.fromSymbolProxy (Proxy :: Proxy "out")
+                        }
+                    )
+                )
+                (nowModeTypeScriptModule mode origin version)
+            )
+        )
+    )
+
+nowModeTypeScriptModule ::
+  ProductionOrDevelopment.ProductionOrDevelopment ->
+  NonEmptyString ->
+  Version.Version -> TypeScriptData.TypeScriptModule
+nowModeTypeScriptModule mode origin version =
+  TypeScriptData.TypeScriptModule
+    { exportDefinitionList:
+        [ TypeScriptData.ExportDefinitionVariable
+            ( TypeScriptData.VariableDeclaration
+                { name: TypeScriptIdentifier.fromSymbolProxyUnsafe (Proxy :: Proxy "nowMode")
+                , export: true
+                , document: "実行モード (ビルド時にコード生成される)"
+                , expr:
+                    TypeScriptData.Get
+                      ( TypeScriptData.GetExpr
+                          { expr:
+                              TypeScriptData.ExprImportedVariable
+                                ( TypeScriptData.ImportedVariable
+                                    { moduleName: localDataTypeScriptModuleName
+                                    , name: TypeScriptIdentifier.fromSymbolProxyUnsafe (Proxy :: Proxy "Release")
+                                    }
+                                )
+                          , propertyExpr:
+                              TypeScriptData.StringLiteral
+                                ( case mode of
+                                    ProductionOrDevelopment.Development -> "Develop"
+                                    ProductionOrDevelopment.Production -> "Production"
+                                )
+                          }
+                      )
+                , type:
+                    TypeScriptData.TsTypeImportedType
+                      ( TypeScriptData.ImportedType
+                          { moduleName: localDataTypeScriptModuleName
+                          , typeNameAndTypeParameter:
+                              ( TypeScriptData.TypeNameAndTypeParameter
+                                  { name:
+                                      TypeScriptIdentifier.fromSymbolProxyUnsafe
+                                        (Proxy :: Proxy "Mode")
+                                  , typeParameterList: []
+                                  }
+                              )
+                          }
+                      )
+                }
+            )
+        , TypeScriptData.ExportDefinitionVariable
+            ( TypeScriptData.VariableDeclaration
+                { name: TypeScriptIdentifier.fromSymbolProxyUnsafe (Proxy :: Proxy "origin")
+                , document: "オリジン (ビルド時にコード生成される)"
+                , export: true
+                , expr:
+                    TypeScriptData.StringLiteral (NonEmptyString.toString origin)
+                , type: TypeScriptData.TsTypeString
+                }
+            )
+        , TypeScriptData.ExportDefinitionVariable
+            ( TypeScriptData.VariableDeclaration
+                { name: TypeScriptIdentifier.fromSymbolProxyUnsafe (Proxy :: Proxy "version")
+                , document: "バージョン名"
+                , export: true
+                , expr:
+                    TypeScriptData.StringLiteral
+                      (Version.toSimpleString version)
+                , type: TypeScriptData.TsTypeString
+                }
+            )
+        , TypeScriptData.ExportDefinitionVariable
+            ( TypeScriptData.VariableDeclaration
+                { name: TypeScriptIdentifier.fromSymbolProxyUnsafe (Proxy :: Proxy "commitUrl")
+                , document: "このサーバーのコードのスナップショット"
+                , export: true
+                , expr:
+                    TypeScriptData.StringLiteral
+                      ( append
+                          "https://github.com/narumincho/definy"
+                          ( case version of
+                              Version.Release githubSha -> append "/tree/" (NonEmptyString.toString githubSha)
+                              Version.Development _ -> ""
+                          )
+                      )
+                , type: TypeScriptData.TsTypeString
+                }
+            )
+        ]
+    }
