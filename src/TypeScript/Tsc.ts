@@ -1,17 +1,11 @@
 import * as typeScript from "typescript";
+import type { EffectFnAff } from "../PureScriptType";
 
 export const compileAsEffectFnAff = (option: {
   rootNames: ReadonlyArray<string>;
   outDir: string | null;
   declaration: boolean;
-}): ((
-  onError: (error: Error) => void,
-  onSuccess: () => void
-) => (
-  cancelError: () => void,
-  cancelerError: () => void,
-  cancelerSuccess: () => void
-) => void) => {
+}): EffectFnAff<void, Error> => {
   return (onError, onSuccess) => {
     typeScript
       .createProgram({
