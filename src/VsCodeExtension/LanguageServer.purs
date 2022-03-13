@@ -4,6 +4,7 @@ module VsCodeExtension.LanguageServer
 
 import Prelude
 import Data.Argonaut as Argonaut
+import Data.Array as Array
 import Data.Either as Either
 import Data.Map as Map
 import Data.Maybe (Maybe(..))
@@ -12,19 +13,19 @@ import Data.UInt as UInt
 import Effect as Effect
 import Effect.Aff as Aff
 import Effect.Ref as Ref
-import Data.Array as Array
 import FileSystem.Write as Write
+import Util as Util
 import VsCodeExtension.Error as Error
 import VsCodeExtension.Evaluate as Evaluate
 import VsCodeExtension.LanguageServerLib as Lib
 import VsCodeExtension.Parser as Parser
 import VsCodeExtension.Range as Range
+import VsCodeExtension.SemanticToken as SemanticToken
 import VsCodeExtension.SimpleToken as SimpleToken
 import VsCodeExtension.ToString as ToString
 import VsCodeExtension.TokenType as TokenType
 import VsCodeExtension.Tokenize as Tokenize
 import VsCodeExtension.Uri as Uri
-import Util as Util
 
 newtype State
   = State
@@ -121,7 +122,7 @@ main = do
               Lib.responseTextDocumentSemanticTokensFull
                 { id
                 , tokenTypeDict
-                , tokenDataList: Parser.codeTreeToTokenData code
+                , tokenDataList: SemanticToken.evaluateTreeToTokenData (Evaluate.codeTreeToEvaluatedTreeIContextNormal code)
                 }
             Nothing -> Lib.sendNotificationWindowLogMessage "TextDocumentSemanticTokensFullされた けどコードを取得できていない..."
         Either.Right (Lib.TextDocumentCodeLens { uri, id }) -> do
