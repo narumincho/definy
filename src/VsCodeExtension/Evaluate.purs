@@ -1,10 +1,10 @@
 module VsCodeExtension.Evaluate
-  ( PartialModule(..)
+  ( EvaluatedItem(..)
+  , EvaluatedTree(..)
+  , PartialModule(..)
   , PartialPart(..)
-  , evaluateExpr
-  , evaluateModule
-  , fillCodeTree
-  , partialModuleGetPartialPartList
+  , codeTreeToEvaluatedTreeIContextNormal
+  , evaluatedTreeGetItem
   ) where
 
 import Prelude
@@ -12,145 +12,184 @@ import Data.Array as Array
 import Data.Maybe (Maybe(..))
 import Data.String.NonEmpty (NonEmptyString)
 import Data.String.NonEmpty as NonEmptyString
-import Data.Tuple as Tuple
 import Data.UInt as UInt
 import Type.Proxy (Proxy(..))
 import VsCodeExtension.Parser as Parser
 import VsCodeExtension.Range as Range
-import VsCodeExtension.WithError as WithError
+
+newtype EvaluatedTree
+  = EvaluatedTree
+  { item :: EvaluatedItem
+  , range :: Range.Range
+  , children :: Array EvaluatedTree
+  {- 期待した子要素の数 -}
+  , expectedChildrenCount :: Maybe UInt.UInt
+  , nameRange :: Range.Range
+  , name :: NonEmptyString
+  }
+
+evaluatedTreeGetItem :: EvaluatedTree -> EvaluatedItem
+evaluatedTreeGetItem (EvaluatedTree { item }) = item
+
+data EvaluatedItem
+  = Module PartialModule
+  | Description String
+  | ModuleBody (Array PartialPart)
+  | Part PartialPart
+  | Expr (Maybe UInt.UInt)
+  | UIntLiteral (Maybe UInt.UInt)
+  | Unknown
 
 newtype PartialModule
   = PartialModule
-  { description :: Maybe String
-  , value :: Array PartialPart
+  { description :: String
+  , partList :: Array PartialPart
   }
 
 newtype PartialPart
   = PartialPart
   { name :: Maybe NonEmptyString
-  , description :: Maybe String
+  , description :: String
   , value :: Maybe UInt.UInt
-  , range :: Range.Range
   }
 
-partialModuleGetPartialPartList :: PartialModule -> Array PartialPart
-partialModuleGetPartialPartList (PartialModule { value }) = value
+data Context
+  = ContextNormal
+  | ContextDescription
+  | ContextUIntLiteral
 
-evaluateModule :: Parser.CodeTree -> WithError.WithError PartialModule
-evaluateModule codeTree@(Parser.CodeTree { name, nameRange }) =
-  if eq name (NonEmptyString.nes (Proxy :: Proxy "module")) then
-    get2Children
+codeTreeToEvaluatedTree :: Context -> Parser.CodeTree -> EvaluatedTree
+codeTreeToEvaluatedTree context codeTree = case context of
+  ContextNormal -> codeTreeToEvaluatedTreeIContextNormal codeTree
+  ContextDescription -> codeTreeToEvaluatedTreeInContextDescription codeTree
+  ContextUIntLiteral -> codeTreeToEvaluatedTreeInContextUIntLiteral codeTree
+
+codeTreeToEvaluatedTreeIContextNormal :: Parser.CodeTree -> EvaluatedTree
+codeTreeToEvaluatedTreeIContextNormal codeTree@(Parser.CodeTree { name, nameRange, range, children }) = case NonEmptyString.toString name of
+  "module" ->
+    need2Children
+      { firstContext: ContextDescription, secondContext: ContextNormal }
       codeTree
-      ( \{ second } ->
-          ( case second of
-              Just body ->
-                WithError.map
-                  ( \value ->
-                      PartialModule
-                        { description: Nothing, value }
-                  )
-                  (evaluatePartList body)
-              Nothing ->
-                WithError.createNoError
-                  ( PartialModule
-                      { description: Nothing
-                      , value: []
-                      }
-                  )
+      ( \{ first, second } ->
+          Module
+            ( PartialModule
+                { description:
+                    case first of
+                      Just (Description description) -> description
+                      _ -> ""
+                , partList:
+                    case second of
+                      Just (ModuleBody partList) -> partList
+                      _ -> []
+                }
+            )
+      )
+  "body" ->
+    let
+      evaluatedChildren =
+        map
+          ( \child ->
+              codeTreeToEvaluatedTree
+                ContextNormal
+                child
           )
-      )
-  else
-    WithError.create
-      (PartialModule { description: Nothing, value: [] })
-      [ WithError.ErrorWithRange { error: WithError.NeedTopModule, range: nameRange } ]
-
-evaluatePartList :: Parser.CodeTree -> WithError.WithError (Array PartialPart)
-evaluatePartList (Parser.CodeTree { name, nameRange, children }) =
-  if eq name (NonEmptyString.nes (Proxy :: Proxy "body")) then
-    ( WithError.toWithErrorArray
-        (map evaluatePart children)
-    )
-  else
-    WithError.create
-      []
-      [ WithError.ErrorWithRange { error: WithError.NeedBody, range: nameRange } ]
-
-evaluatePart :: Parser.CodeTree -> WithError.WithError PartialPart
-evaluatePart codeTree@(Parser.CodeTree { name, nameRange, range }) =
-  if eq name (NonEmptyString.nes (Proxy :: Proxy "part")) then
-    get3Children
+          children
+    in
+      EvaluatedTree
+        { item:
+            ModuleBody
+              ( Array.mapMaybe
+                  ( \childTree -> case evaluatedTreeGetItem childTree of
+                      (Part part) -> Just part
+                      _ -> Nothing
+                  )
+                  evaluatedChildren
+              )
+        , range
+        , children: evaluatedChildren
+        , expectedChildrenCount: Nothing
+        , nameRange
+        , name
+        }
+  "part" ->
+    need3Children
+      { firstContext: ContextDescription
+      , secondContext: ContextDescription
+      , thirdContext: ContextNormal
+      }
       codeTree
-      ( \{ third } ->
-          WithError.map
-            ( \value ->
-                PartialPart
-                  { name: Nothing
-                  , description: Nothing
-                  , range
-                  , value
-                  }
-            )
-            ( case third of
-                Just t -> evaluateExpr t
-                Nothing -> WithError.createNoError Nothing
+      ( \{ first, second, third } ->
+          Part
+            ( PartialPart
+                { name:
+                    case first of
+                      Just (Description partName) -> NonEmptyString.fromString partName
+                      _ -> Nothing
+                , description:
+                    case second of
+                      Just (Description description) -> description
+                      _ -> ""
+                , value:
+                    case third of
+                      Just (Expr value) -> value
+                      _ -> Nothing
+                }
             )
       )
-  else
-    WithError.create
-      ( PartialPart
-          { name: Nothing
-          , description: Nothing
-          , value: Nothing
-          , range
-          }
-      )
-      [ WithError.ErrorWithRange { error: WithError.NeedPart, range: nameRange } ]
-
-evaluateExpr :: Parser.CodeTree -> WithError.WithError (Maybe UInt.UInt)
-evaluateExpr codeTree@(Parser.CodeTree { name, nameRange }) = case NonEmptyString.toString name of
   "add" ->
-    get2Children
+    need2Children
+      { firstContext: ContextNormal, secondContext: ContextNormal }
       codeTree
-      ( case _ of
-          { first: Just fist, second: Just second } ->
-            addEvaluateResult
-              (evaluateExpr fist)
-              (evaluateExpr second)
-          { first: Nothing, second: Just second } -> evaluateExpr second
-          { first: Just first, second: Nothing } -> evaluateExpr first
-          { first: Nothing, second: Nothing } -> WithError.createNoError Nothing
+      ( \{ first, second } ->
+          Expr
+            ( Just
+                ( add
+                    (maybeEvaluatedItemToUInt first)
+                    (maybeEvaluatedItemToUInt second)
+                )
+            )
       )
   "uint" ->
-    get1Children
+    need1Children
+      ContextUIntLiteral
       codeTree
       ( case _ of
-          Just child -> evaluateUInt child
-          Nothing -> WithError.createNoError Nothing
+          Just (UIntLiteral child) -> Expr child
+          _ -> Expr Nothing
       )
   _ ->
-    WithError.create
-      Nothing
-      [ WithError.ErrorWithRange { error: WithError.UnknownName, range: nameRange } ]
+    EvaluatedTree
+      { item: Unknown
+      , range
+      , children:
+          map
+            ( \child ->
+                codeTreeToEvaluatedTree
+                  ContextNormal
+                  child
+            )
+            children
+      , expectedChildrenCount: Nothing
+      , nameRange
+      , name
+      }
 
-evaluateUInt :: Parser.CodeTree -> WithError.WithError (Maybe UInt.UInt)
-evaluateUInt (Parser.CodeTree { name, nameRange }) = case UInt.fromString (NonEmptyString.toString name) of
-  Just value -> WithError.createNoError (Just value)
-  Nothing ->
-    WithError.create
-      Nothing
-      [ WithError.ErrorWithRange { error: WithError.UIntParseError, range: nameRange } ]
+codeTreeToEvaluatedTreeInContextDescription :: Parser.CodeTree -> EvaluatedTree
+codeTreeToEvaluatedTreeInContextDescription codeTree@(Parser.CodeTree { name }) =
+  need0Children
+    codeTree
+    (Description (NonEmptyString.toString name))
 
-addEvaluateResult ::
-  WithError.WithError (Maybe UInt.UInt) ->
-  WithError.WithError (Maybe UInt.UInt) ->
-  WithError.WithError (Maybe UInt.UInt)
-addEvaluateResult a b =
-  WithError.map
-    ( case _ of
-        Tuple.Tuple (Just aValue) (Just bValue) -> Just (add aValue bValue)
-        Tuple.Tuple _ _ -> Nothing
-    )
-    (WithError.toWithErrorTuple a b)
+codeTreeToEvaluatedTreeInContextUIntLiteral :: Parser.CodeTree -> EvaluatedTree
+codeTreeToEvaluatedTreeInContextUIntLiteral codeTree@(Parser.CodeTree { name }) =
+  need0Children
+    codeTree
+    (UIntLiteral (UInt.fromString (NonEmptyString.toString name)))
+
+maybeEvaluatedItemToUInt :: Maybe EvaluatedItem -> UInt.UInt
+maybeEvaluatedItemToUInt = case _ of
+  Just (Expr (Just value)) -> value
+  _ -> UInt.fromInt 28
 
 -- | 足りないパラメーターを補う `CodeTree` に変換する
 fillCodeTree :: Parser.CodeTree -> Parser.CodeTree
@@ -175,138 +214,126 @@ fillChildren size children =
         )
     )
 
-get1Children ::
-  forall a.
+need0Children ::
   Parser.CodeTree ->
-  (Maybe Parser.CodeTree -> WithError.WithError a) ->
-  WithError.WithError a
-get1Children (Parser.CodeTree { name, nameRange, children, range }) func =
-  WithError.addErrorList
-    ( case compare (Array.length children) 1 of
-        LT ->
-          [ WithError.ErrorWithRange
-              { error:
-                  WithError.NeedParameter
-                    { name
-                    , nameRange: nameRange
-                    , actual: UInt.fromInt (Array.length children)
-                    , expect: UInt.fromInt 1
-                    }
-              , range:
-                  Range.Range
-                    { start: Range.positionOneCharacterLeft (Range.rangeEnd range)
-                    , end: Range.rangeEnd range
-                    }
-              }
-          ]
-        EQ -> []
-        GT ->
-          map
-            ( \(Parser.CodeTree { range: parameterRange }) ->
-                WithError.ErrorWithRange
-                  { error:
-                      WithError.SuperfluousParameter
-                        { name
-                        , nameRange: nameRange
-                        , expect: UInt.fromInt 1
-                        }
-                  , range: parameterRange
-                  }
-            )
-            (Array.drop 1 children)
-    )
-    (func (Array.index children 0))
+  EvaluatedItem ->
+  EvaluatedTree
+need0Children (Parser.CodeTree { name, nameRange, children, range }) item =
+  let
+    evaluatedChildren =
+      map
+        ( \child ->
+            codeTreeToEvaluatedTree
+              ContextNormal
+              child
+        )
+        children
+  in
+    EvaluatedTree
+      { item: item
+      , range: range
+      , children: evaluatedChildren
+      {- 期待した子要素の数 -}
+      , expectedChildrenCount: Just (UInt.fromInt 0)
+      , name
+      , nameRange
+      }
 
-get2Children ::
-  forall a.
+need1Children ::
+  Context ->
   Parser.CodeTree ->
-  ({ first :: Maybe Parser.CodeTree, second :: Maybe Parser.CodeTree } -> WithError.WithError a) ->
-  WithError.WithError a
-get2Children (Parser.CodeTree { name, nameRange, children, range }) func =
-  WithError.addErrorList
-    ( case compare (Array.length children) 2 of
-        LT ->
-          [ WithError.ErrorWithRange
-              { error:
-                  WithError.NeedParameter
-                    { name
-                    , nameRange: nameRange
-                    , actual: UInt.fromInt (Array.length children)
-                    , expect: UInt.fromInt 2
-                    }
-              , range:
-                  Range.Range
-                    { start: Range.positionOneCharacterLeft (Range.rangeEnd range)
-                    , end: Range.rangeEnd range
-                    }
-              }
-          ]
-        EQ -> []
-        GT ->
-          map
-            ( \(Parser.CodeTree { range: parameterRange }) ->
-                WithError.ErrorWithRange
-                  { error:
-                      WithError.SuperfluousParameter
-                        { name
-                        , nameRange: nameRange
-                        , expect: UInt.fromInt 2
-                        }
-                  , range: parameterRange
-                  }
-            )
-            (Array.drop 2 children)
-    )
-    (func { first: Array.index children 0, second: Array.index children 1 })
+  (Maybe EvaluatedItem -> EvaluatedItem) ->
+  EvaluatedTree
+need1Children context (Parser.CodeTree { name, nameRange, children, range }) func =
+  let
+    evaluatedChildren =
+      Array.mapWithIndex
+        ( \index child ->
+            codeTreeToEvaluatedTree
+              ( case index of
+                  0 -> context
+                  _ -> ContextNormal
+              )
+              child
+        )
+        children
+  in
+    EvaluatedTree
+      { item: func (map evaluatedTreeGetItem (Array.index evaluatedChildren 0))
+      , range: range
+      , children: evaluatedChildren
+      {- 期待した子要素の数 -}
+      , expectedChildrenCount: Just (UInt.fromInt 1)
+      , name
+      , nameRange
+      }
 
-get3Children ::
-  forall a.
+need2Children ::
+  { firstContext :: Context, secondContext :: Context } ->
   Parser.CodeTree ->
-  ( { first :: Maybe Parser.CodeTree
-    , second :: Maybe Parser.CodeTree
-    , third :: Maybe Parser.CodeTree
-    } ->
-    WithError.WithError a
-  ) ->
-  WithError.WithError a
-get3Children (Parser.CodeTree { name, nameRange, children, range }) func =
-  WithError.addErrorList
-    ( case compare (Array.length children) 3 of
-        LT ->
-          [ WithError.ErrorWithRange
-              { error:
-                  WithError.NeedParameter
-                    { name
-                    , nameRange
-                    , actual: UInt.fromInt (Array.length children)
-                    , expect: UInt.fromInt 3
-                    }
-              , range:
-                  Range.Range
-                    { start: Range.positionOneCharacterLeft (Range.rangeEnd range)
-                    , end: Range.rangeEnd range
-                    }
-              }
-          ]
-        EQ -> []
-        GT ->
-          map
-            ( \(Parser.CodeTree { range: parameterRange }) ->
-                WithError.ErrorWithRange
-                  { error:
-                      WithError.SuperfluousParameter
-                        { name
-                        , nameRange
-                        , expect: UInt.fromInt 3
-                        }
-                  , range: parameterRange
-                  }
-            )
-            (Array.drop 3 children)
-    )
-    ( func
-        { first: Array.index children 0
-        , second: Array.index children 1
-        , third: Array.index children 2
-        }
-    )
+  ({ first :: Maybe EvaluatedItem, second :: Maybe EvaluatedItem } -> EvaluatedItem) ->
+  EvaluatedTree
+need2Children { firstContext, secondContext } (Parser.CodeTree { name, nameRange, children, range }) func =
+  let
+    evaluatedChildren =
+      Array.mapWithIndex
+        ( \index child ->
+            codeTreeToEvaluatedTree
+              ( case index of
+                  0 -> firstContext
+                  1 -> secondContext
+                  _ -> ContextNormal
+              )
+              child
+        )
+        children
+  in
+    EvaluatedTree
+      { item:
+          func
+            { first: map evaluatedTreeGetItem (Array.index evaluatedChildren 0)
+            , second: map evaluatedTreeGetItem (Array.index evaluatedChildren 1)
+            }
+      , range: range
+      , children: evaluatedChildren
+      {- 期待した子要素の数 -}
+      , expectedChildrenCount: Just (UInt.fromInt 2)
+      , name
+      , nameRange
+      }
+
+need3Children ::
+  { firstContext :: Context, secondContext :: Context, thirdContext :: Context } ->
+  Parser.CodeTree ->
+  ({ first :: Maybe EvaluatedItem, second :: Maybe EvaluatedItem, third :: Maybe EvaluatedItem } -> EvaluatedItem) ->
+  EvaluatedTree
+need3Children context (Parser.CodeTree { name, nameRange, children, range }) func =
+  let
+    evaluatedChildren =
+      Array.mapWithIndex
+        ( \index child ->
+            codeTreeToEvaluatedTree
+              ( case index of
+                  0 -> context.firstContext
+                  1 -> context.secondContext
+                  2 -> context.thirdContext
+                  _ -> ContextNormal
+              )
+              child
+        )
+        children
+  in
+    EvaluatedTree
+      { item:
+          func
+            { first: map evaluatedTreeGetItem (Array.index evaluatedChildren 0)
+            , second: map evaluatedTreeGetItem (Array.index evaluatedChildren 1)
+            , third: map evaluatedTreeGetItem (Array.index evaluatedChildren 2)
+            }
+      , range: range
+      , children: evaluatedChildren
+      {- 期待した子要素の数 -}
+      , expectedChildrenCount: Just (UInt.fromInt 3)
+      , name
+      , nameRange
+      }

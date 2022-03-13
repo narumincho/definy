@@ -9,14 +9,13 @@ import Data.String as String
 import Data.String.NonEmpty as NonEmptyString
 import Data.UInt as UInt
 import Util as Util
-import VsCodeExtension.Evaluate as Evaluate
 import VsCodeExtension.Parser as Parser
 
 -- | コードのツリー構造を整形された文字列に変換する
 codeTreeToString :: Parser.CodeTree -> String
 codeTreeToString codeTree =
   append
-    (codeTreeToStringLoop (UInt.fromInt 0) (Evaluate.fillCodeTree codeTree))
+    (codeTreeToStringLoop (UInt.fromInt 0) codeTree)
     "\n"
 
 codeTreeToStringLoop :: UInt.UInt -> Parser.CodeTree -> String

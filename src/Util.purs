@@ -12,6 +12,7 @@ module Util
   , toParallelWithReturn
   , traverseRow
   , tupleListToJson
+  , unknownValueToString
   ) where
 
 import Prelude
@@ -174,3 +175,5 @@ append3 a b c =
   append
     (append a b)
     c
+
+foreign import unknownValueToString :: forall a. a -> String

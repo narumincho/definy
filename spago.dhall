@@ -8,7 +8,6 @@
   , "console"
   , "effect"
   , "either"
-  , "exceptions"
   , "foreign-object"
   , "functions"
   , "integers"
