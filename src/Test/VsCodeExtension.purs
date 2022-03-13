@@ -21,6 +21,7 @@ test = do
   tokenizeTest
   simpleTokenTest
   parserTest
+  rangeTest
 
 parseContentLengthHeaderTest :: TestUnit.Test
 parseContentLengthHeaderTest = do
@@ -234,4 +235,47 @@ sorena(arena()  oneArg (28))
               ]
           , range: rangeFrom 1 0 1 28
           }
+    }
+
+rangeTest :: TestUnit.Test
+rangeTest = do
+  assertEqual
+    "range inside"
+    { actual:
+        Range.isPositionInsideRange
+          (rangeFrom 1 0 1 28)
+          (Range.Position { line: UInt.fromInt 1, character: UInt.fromInt 15 })
+    , expected: true
+    }
+  assertEqual
+    "range inside start"
+    { actual:
+        Range.isPositionInsideRange
+          (rangeFrom 1 0 1 28)
+          (Range.Position { line: UInt.fromInt 1, character: UInt.fromInt 0 })
+    , expected: true
+    }
+  assertEqual
+    "range inside end"
+    { actual:
+        Range.isPositionInsideRange
+          (rangeFrom 1 0 1 28)
+          (Range.Position { line: UInt.fromInt 1, character: UInt.fromInt 28 })
+    , expected: true
+    }
+  assertEqual
+    "range outside (line)"
+    { actual:
+        Range.isPositionInsideRange
+          (rangeFrom 1 0 1 28)
+          (Range.Position { line: UInt.fromInt 6, character: UInt.fromInt 15 })
+    , expected: false
+    }
+  assertEqual
+    "range outside (character)"
+    { actual:
+        Range.isPositionInsideRange
+          (rangeFrom 1 0 1 28)
+          (Range.Position { line: UInt.fromInt 1, character: UInt.fromInt 29 })
+    , expected: false
     }

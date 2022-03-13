@@ -14,18 +14,17 @@ import Effect as Effect
 import Effect.Aff as Aff
 import Effect.Ref as Ref
 import FileSystem.Write as Write
-import Util as Util
 import VsCodeExtension.Error as Error
 import VsCodeExtension.Evaluate as Evaluate
 import VsCodeExtension.LanguageServerLib as Lib
 import VsCodeExtension.Parser as Parser
-import VsCodeExtension.Range as Range
 import VsCodeExtension.SemanticToken as SemanticToken
 import VsCodeExtension.SimpleToken as SimpleToken
 import VsCodeExtension.ToString as ToString
 import VsCodeExtension.TokenType as TokenType
 import VsCodeExtension.Tokenize as Tokenize
 import VsCodeExtension.Uri as Uri
+import VsCodeExtension.Hover as Hover
 
 newtype State
   = State
@@ -143,14 +142,7 @@ main = do
               Lib.responseHover
                 { id
                 , hover:
-                    Lib.Hover
-                      { contents:
-                          Lib.MarkupContent
-                            { kind: Lib.Markdown
-                            , value: Util.unknownValueToString (Evaluate.codeTreeToEvaluatedTreeIContextNormal code)
-                            }
-                      , range: Range.Range { start: position, end: position }
-                      }
+                    Hover.getHoverData position (Evaluate.codeTreeToEvaluatedTreeIContextNormal code)
                 }
             Nothing -> Lib.sendNotificationWindowLogMessage "hover のコードを受け取っていない..."
         Either.Left message -> Lib.sendNotificationWindowLogMessage message
