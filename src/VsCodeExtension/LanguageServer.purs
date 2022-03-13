@@ -12,16 +12,17 @@ import Data.UInt as UInt
 import Effect as Effect
 import Effect.Aff as Aff
 import Effect.Ref as Ref
-import VsCodeExtension.Range as Range
 import FileSystem.Write as Write
 import VsCodeExtension.Evaluate as Evaluate
 import VsCodeExtension.LanguageServerLib as Lib
 import VsCodeExtension.Parser as Parser
+import VsCodeExtension.Range as Range
 import VsCodeExtension.SimpleToken as SimpleToken
 import VsCodeExtension.ToString as ToString
 import VsCodeExtension.TokenType as TokenType
 import VsCodeExtension.Tokenize as Tokenize
 import VsCodeExtension.Uri as Uri
+import VsCodeExtension.WithError as WithError
 
 newtype State
   = State
@@ -129,7 +130,7 @@ main = do
                 { id
                 , codeLensList:
                     calculateCodeLens
-                      ( Evaluate.withErrorResultGetValue
+                      ( WithError.getValue
                           (Evaluate.evaluateModule code)
                       )
                 }
@@ -211,13 +212,13 @@ sendError uri codeTree =
   Lib.sendNotificationPublishDiagnostics
     { diagnostics:
         map
-          ( \(Evaluate.ErrorWithRange { error, range }) ->
+          ( \(WithError.ErrorWithRange { error, range }) ->
               Lib.Diagnostic
-                { message: Evaluate.errorToString error
+                { message: WithError.errorToString error
                 , range
                 , relatedInformation:
                     ( case error of
-                        Evaluate.SuperfluousParameter { name, nameRange } ->
+                        WithError.SuperfluousParameter { name, nameRange } ->
                           [ Lib.DiagnosticRelatedInformation
                               { location:
                                   Lib.Location
@@ -227,7 +228,7 @@ sendError uri codeTree =
                               , message: NonEmptyString.toString name
                               }
                           ]
-                        Evaluate.NeedParameter { name, nameRange } ->
+                        WithError.NeedParameter { name, nameRange } ->
                           [ Lib.DiagnosticRelatedInformation
                               { location:
                                   Lib.Location
@@ -241,6 +242,6 @@ sendError uri codeTree =
                     )
                 }
           )
-          (Evaluate.withErrorResultGetErrorList (Evaluate.evaluateModule codeTree))
+          (WithError.getErrorList (Evaluate.evaluateModule codeTree))
     , uri
     }
