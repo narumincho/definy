@@ -5,20 +5,22 @@ module VsCodeExtension.Hover
 import Data.Array as Array
 import Data.Maybe (Maybe(..))
 import Data.String as String
+import Data.String.NonEmpty (NonEmptyString)
+import Data.String.NonEmpty as NonEmptyString
 import Data.UInt as UInt
 import VsCodeExtension.Evaluate as Evaluate
 import VsCodeExtension.LanguageServerLib as Lib
 import VsCodeExtension.Range as Range
 
 getHoverData :: Range.Position -> Evaluate.EvaluatedTree -> Maybe Lib.Hover
-getHoverData position (Evaluate.EvaluatedTree { nameRange, range, item, children }) =
+getHoverData position (Evaluate.EvaluatedTree { name, nameRange, range, item, children }) =
   if Range.isPositionInsideRange nameRange position then
     Just
       ( Lib.Hover
           { contents:
               Lib.MarkupContent
                 { kind: Lib.Markdown
-                , value: evaluatedItemToHoverText item
+                , value: evaluatedItemToHoverText name item
                 }
           , range: range
           }
@@ -26,8 +28,8 @@ getHoverData position (Evaluate.EvaluatedTree { nameRange, range, item, children
   else
     Array.findMap (getHoverData position) children
 
-evaluatedItemToHoverText :: Evaluate.EvaluatedItem -> String
-evaluatedItemToHoverText = case _ of
+evaluatedItemToHoverText :: NonEmptyString -> Evaluate.EvaluatedItem -> String
+evaluatedItemToHoverText name = case _ of
   Evaluate.Module _ -> "Module(..)"
   Evaluate.Description description -> String.joinWith "" [ "Description(", description, ")" ]
   Evaluate.ModuleBody _ -> "ModuleBody(..)"
@@ -35,7 +37,7 @@ evaluatedItemToHoverText = case _ of
   Evaluate.Expr value ->
     String.joinWith ""
       ( Array.concat
-          [ [ "Expr(" ]
+          [ [ "Expr(", NonEmptyString.toString name, " " ]
           , case value of
               Just v -> [ "Just(", UInt.toString v, ")" ]
               Nothing -> [ "Nothing" ]

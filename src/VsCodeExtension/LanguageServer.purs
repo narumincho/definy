@@ -16,6 +16,7 @@ import Effect.Ref as Ref
 import FileSystem.Write as Write
 import VsCodeExtension.Error as Error
 import VsCodeExtension.Evaluate as Evaluate
+import VsCodeExtension.Hover as Hover
 import VsCodeExtension.LanguageServerLib as Lib
 import VsCodeExtension.Parser as Parser
 import VsCodeExtension.SemanticToken as SemanticToken
@@ -24,7 +25,6 @@ import VsCodeExtension.ToString as ToString
 import VsCodeExtension.TokenType as TokenType
 import VsCodeExtension.Tokenize as Tokenize
 import VsCodeExtension.Uri as Uri
-import VsCodeExtension.Hover as Hover
 
 newtype State
   = State
@@ -108,7 +108,7 @@ main = do
                 )
                 ( Aff.attempt
                     ( Write.writeTextFilePathFileProtocol uri
-                        (ToString.codeTreeToString codeTree)
+                        (ToString.evaluatedTreeToString (Evaluate.codeTreeToEvaluatedTreeIContextNormal codeTree))
                     )
                 )
               Lib.sendNotificationWindowLogMessage
