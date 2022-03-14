@@ -30,7 +30,7 @@ newtype State
   = State
   { supportPublishDiagnostics :: Boolean
   , tokenTypeDict :: TokenType.TokenTypeDict
-  , codeDict :: Map.Map Uri.Uri Parser.CodeTree
+  , codeDict :: Map.Map Uri.Uri Evaluate.EvaluatedTree
   }
 
 main :: Effect.Effect Unit
@@ -68,21 +68,21 @@ main = do
         Either.Right Lib.Initialized -> Lib.sendNotificationWindowLogMessage "Initializedされた!"
         Either.Right (Lib.TextDocumentDidOpen { uri, text }) ->
           let
-            codeTree = stringToCodeTree text
+            evaluatedTree = stringToEvaluatedTree text
           in
             do
               Ref.modify_
                 ( \(State stateRec) ->
                     State
                       ( stateRec
-                          { codeDict = Map.insert uri codeTree stateRec.codeDict }
+                          { codeDict = Map.insert uri evaluatedTree stateRec.codeDict }
                       )
                 )
                 state
-              sendError uri codeTree
+              sendError uri evaluatedTree
         Either.Right (Lib.TextDocumentDidChange { uri, text }) ->
           let
-            codeTree = stringToCodeTree text
+            evaluatedTree = stringToEvaluatedTree text
           in
             do
               Ref.modify_
@@ -90,17 +90,17 @@ main = do
                     State
                       ( stateRec
                           { codeDict =
-                            Map.insert uri (stringToCodeTree text)
+                            Map.insert uri evaluatedTree
                               stateRec.codeDict
                           }
                       )
                 )
                 state
-              sendError uri codeTree
+              sendError uri evaluatedTree
         Either.Right (Lib.TextDocumentDidSave { uri }) -> do
           (State { codeDict }) <- Ref.read state
           case Map.lookup uri codeDict of
-            Just codeTree -> do
+            Just evaluatedTree -> do
               Aff.runAff_
                 ( \result ->
                     Lib.sendNotificationWindowLogMessage
@@ -108,7 +108,7 @@ main = do
                 )
                 ( Aff.attempt
                     ( Write.writeTextFilePathFileProtocol uri
-                        (ToString.evaluatedTreeToString (Evaluate.codeTreeToEvaluatedTreeIContextNormal codeTree))
+                        (ToString.evaluatedTreeToString evaluatedTree)
                     )
                 )
               Lib.sendNotificationWindowLogMessage
@@ -117,42 +117,42 @@ main = do
         Either.Right (Lib.TextDocumentSemanticTokensFull { id, uri }) -> do
           (State { tokenTypeDict, codeDict }) <- Ref.read state
           case Map.lookup uri codeDict of
-            Just code ->
+            Just evaluatedTree ->
               Lib.responseTextDocumentSemanticTokensFull
                 { id
                 , tokenTypeDict
-                , tokenDataList: SemanticToken.evaluateTreeToTokenData (Evaluate.codeTreeToEvaluatedTreeIContextNormal code)
+                , tokenDataList: SemanticToken.evaluateTreeToTokenData evaluatedTree
                 }
             Nothing -> Lib.sendNotificationWindowLogMessage "TextDocumentSemanticTokensFullされた けどコードを取得できていない..."
         Either.Right (Lib.TextDocumentCodeLens { uri, id }) -> do
           (State { codeDict }) <- Ref.read state
           case Map.lookup uri codeDict of
-            Just code -> do
+            Just evaluatedTree -> do
               Lib.responseTextDocumentCodeLens
                 { id
                 , codeLensList:
-                    calculateCodeLens
-                      (Evaluate.codeTreeToEvaluatedTreeIContextNormal code)
+                    calculateCodeLens evaluatedTree
                 }
             Nothing -> Lib.sendNotificationWindowLogMessage "codelens取得内でコードを取得できていない..."
         Either.Right (Lib.TextDocumentHover { id, position, uri }) -> do
           (State { codeDict }) <- Ref.read state
           case Map.lookup uri codeDict of
-            Just code ->
+            Just evaluatedTree ->
               Lib.responseHover
                 { id
                 , hover:
-                    Hover.getHoverData position
-                      (Evaluate.codeTreeToEvaluatedTreeIContextNormal code)
+                    Hover.getHoverData position evaluatedTree
                 }
             Nothing -> Lib.sendNotificationWindowLogMessage "hover のコードを受け取っていない..."
         Either.Left message -> Lib.sendNotificationWindowLogMessage message
     )
 
-stringToCodeTree :: String -> Parser.CodeTree
-stringToCodeTree code =
-  Parser.parse
-    (SimpleToken.tokenListToSimpleTokenList (Tokenize.tokenize code))
+stringToEvaluatedTree :: String -> Evaluate.EvaluatedTree
+stringToEvaluatedTree code =
+  Evaluate.codeTreeToEvaluatedTreeIContextNormal
+    ( Parser.parse
+        (SimpleToken.tokenListToSimpleTokenList (Tokenize.tokenize code))
+    )
 
 calculateCodeLens :: Evaluate.EvaluatedTree -> Array Lib.CodeLens
 calculateCodeLens (Evaluate.EvaluatedTree { item, range, children }) = case item of
@@ -181,8 +181,8 @@ calculateCodeLensCommand valueMaybe =
       , arguments: [ Argonaut.fromString result ]
       }
 
-sendError :: Uri.Uri -> Parser.CodeTree -> Effect.Effect Unit
-sendError uri codeTree =
+sendError :: Uri.Uri -> Evaluate.EvaluatedTree -> Effect.Effect Unit
+sendError uri tree =
   Lib.sendNotificationPublishDiagnostics
     { diagnostics:
         map
@@ -216,6 +216,6 @@ sendError uri codeTree =
                     )
                 }
           )
-          (Error.getErrorList (Evaluate.codeTreeToEvaluatedTreeIContextNormal codeTree))
+          (Error.getErrorList tree)
     , uri
     }
