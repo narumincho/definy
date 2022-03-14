@@ -16,13 +16,19 @@ import VsCodeExtension.Evaluate as Evaluate
 import VsCodeExtension.Range as Range
 
 getErrorList :: Evaluate.EvaluatedTree -> Array ErrorWithRange
-getErrorList tree@(Evaluate.EvaluatedTree { children, expectedChildrenCount: expectedChildrenCountMaybe }) =
-  Prelude.append
-    ( case expectedChildrenCountMaybe of
+getErrorList tree@(Evaluate.EvaluatedTree { item, name, nameRange, children, expectedChildrenCount: expectedChildrenCountMaybe }) =
+  Array.concat
+    [ case expectedChildrenCountMaybe of
         Just expectedChildrenCount -> getParameterError tree expectedChildrenCount
         Nothing -> []
-    )
-    (Prelude.bind children getErrorList)
+    , case item of
+        Evaluate.Unknown -> [ ErrorWithRange { error: UnknownName name, range: nameRange } ]
+        Evaluate.UIntLiteral Nothing ->
+          [ ErrorWithRange { error: UIntParseError name, range: nameRange }
+          ]
+        _ -> []
+    , Prelude.bind children getErrorList
+    ]
 
 getParameterError :: Evaluate.EvaluatedTree -> UInt.UInt -> Array ErrorWithRange
 getParameterError (Evaluate.EvaluatedTree { name, nameRange, range, children }) expectedChildrenCount = case Prelude.compare (Array.length children) (UInt.toInt expectedChildrenCount) of
@@ -63,7 +69,7 @@ newtype ErrorWithRange
   { error :: Error, range :: Range.Range }
 
 data Error
-  = UnknownName
+  = UnknownName NonEmptyString
   | NeedParameter
     { name :: NonEmptyString
     , nameRange :: Range.Range
@@ -75,14 +81,11 @@ data Error
     , nameRange :: Range.Range
     , expect :: UInt.UInt
     }
-  | NeedTopModule
-  | NeedBody
-  | NeedPart
-  | UIntParseError
+  | UIntParseError NonEmptyString
 
 errorToString :: Error -> String
 errorToString = case _ of
-  UnknownName -> "不明な名前です"
+  UnknownName name -> Prelude.append (NonEmptyString.toString name) "は不明な名前です"
   NeedParameter rec ->
     String.joinWith
       ""
@@ -103,7 +106,7 @@ errorToString = case _ of
       , UInt.toString rec.expect
       , "個のパラメーターがあれば充分です"
       ]
-  NeedTopModule -> "ファイル直下は module である必要がある"
-  NeedBody -> "module(説明文 body()) の body でない"
-  NeedPart -> "module(説明文 body(part())) の part でない"
-  UIntParseError -> "UInt としてパースできませんでした"
+  UIntParseError name ->
+    Prelude.append
+      (NonEmptyString.toString name)
+      "はUInt としてパースできませんでした"
