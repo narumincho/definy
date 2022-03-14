@@ -434,7 +434,7 @@ instance encodeJsonMarkupKind :: Argonaut.EncodeJson MarkupKind where
   encodeJson = case _ of
     Markdown -> Argonaut.fromString "markdown"
 
-responseHover :: { id :: JsonRpc.Id, hover :: Hover } -> Effect.Effect Unit
+responseHover :: { id :: JsonRpc.Id, hover :: Maybe Hover } -> Effect.Effect Unit
 responseHover { id, hover } =
   sendJsonRpcMessage
     ( Argonaut.encodeJson

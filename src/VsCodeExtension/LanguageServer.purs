@@ -142,7 +142,8 @@ main = do
               Lib.responseHover
                 { id
                 , hover:
-                    Hover.getHoverData position (Evaluate.codeTreeToEvaluatedTreeIContextNormal code)
+                    Hover.getHoverData position
+                      (Evaluate.codeTreeToEvaluatedTreeIContextNormal code)
                 }
             Nothing -> Lib.sendNotificationWindowLogMessage "hover のコードを受け取っていない..."
         Either.Left message -> Lib.sendNotificationWindowLogMessage message
