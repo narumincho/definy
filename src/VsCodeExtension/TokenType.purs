@@ -17,7 +17,10 @@ import Prelude as Prelude
 import VsCodeExtension.Range as Range
 
 data TokenType
-  = TokenTypeVariable
+  = TokenTypeNamespace
+  | TokenTypeVariable
+  | TokenTypeString
+  | TokenTypeNumber
 
 derive instance eqTokenType :: Prelude.Eq TokenType
 
@@ -28,7 +31,10 @@ instance showTokenType :: Prelude.Show TokenType where
 
 toString :: TokenType -> String
 toString = case _ of
+  TokenTypeNamespace -> "namespace"
   TokenTypeVariable -> "variable"
+  TokenTypeString -> "string"
+  TokenTypeNumber -> "number"
 
 newtype TokenTypeOrNotSupportTokenType
   = TokenTypeOrNotSupportTokenType (Maybe TokenType)
@@ -44,7 +50,10 @@ instance decodeJsonTokenType :: Argonaut.DecodeJson TokenTypeOrNotSupportTokenTy
 
 fromString :: String -> Maybe TokenType
 fromString = case _ of
+  "namespace" -> Just TokenTypeNamespace
   "variable" -> Just TokenTypeVariable
+  "string" -> Just TokenTypeString
+  "number" -> Just TokenTypeNumber
   _ -> Nothing
 
 newtype TokenTypeDict

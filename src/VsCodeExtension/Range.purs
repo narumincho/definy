@@ -1,6 +1,7 @@
 module VsCodeExtension.Range
   ( Position(..)
   , Range(..)
+  , isPositionInsideRange
   , positionAdd1Character
   , positionOneCharacterLeft
   , rangeEnd
@@ -12,6 +13,7 @@ import Prelude
 import Data.Argonaut as Argonaut
 import Data.Either as Either
 import Data.Maybe (Maybe(..))
+import Data.Ord as Ord
 import Data.String as String
 import Data.UInt as UInt
 
@@ -69,6 +71,12 @@ newtype Position
 
 derive instance positionEq :: Eq Position
 
+instance positionOrd :: Ord Position where
+  compare (Position { line: beforeLine, character: beforeCharacter }) (Position { line: afterLine, character: afterCharacter }) = case compare beforeLine afterLine of
+    LT -> LT
+    EQ -> compare beforeCharacter afterCharacter
+    GT -> GT
+
 instance showPosition :: Show Position where
   show (Position { line, character }) =
     String.joinWith ""
@@ -93,3 +101,9 @@ positionAdd1Character :: Position -> Position
 positionAdd1Character (Position rec) =
   Position
     (rec { character = add (UInt.fromInt 1) rec.character })
+
+isPositionInsideRange :: Range -> Position -> Boolean
+isPositionInsideRange (Range { start, end }) position =
+  (&&)
+    (Ord.lessThanOrEq start position)
+    (Ord.lessThanOrEq position end)

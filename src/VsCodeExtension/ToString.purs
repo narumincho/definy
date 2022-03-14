@@ -1,28 +1,31 @@
 module VsCodeExtension.ToString
-  ( codeTreeToString
+  ( evaluatedTreeToString
   ) where
 
 import Prelude
 import Data.Array as Array
+import Data.Maybe (Maybe(..))
 import Data.Ord as Ord
 import Data.String as String
 import Data.String.NonEmpty as NonEmptyString
 import Data.UInt as UInt
 import Util as Util
 import VsCodeExtension.Evaluate as Evaluate
-import VsCodeExtension.Parser as Parser
 
 -- | コードのツリー構造を整形された文字列に変換する
-codeTreeToString :: Parser.CodeTree -> String
-codeTreeToString codeTree =
+evaluatedTreeToString :: Evaluate.EvaluatedTree -> String
+evaluatedTreeToString codeTree =
   append
-    (codeTreeToStringLoop (UInt.fromInt 0) (Evaluate.fillCodeTree codeTree))
+    (evaluatedTreeToStringLoop (UInt.fromInt 0) codeTree)
     "\n"
 
-codeTreeToStringLoop :: UInt.UInt -> Parser.CodeTree -> String
-codeTreeToStringLoop indent codeTree@(Parser.CodeTree { name, children }) =
+evaluatedTreeToStringLoop :: UInt.UInt -> Evaluate.EvaluatedTree -> String
+evaluatedTreeToStringLoop indent codeTree@(Evaluate.EvaluatedTree { name, children }) =
   let
-    oneLineText = append (indentCountToIndentString indent) (codeTreeToOneLineStringLoop codeTree)
+    oneLineText =
+      append
+        (indentCountToIndentString indent)
+        (evaluatedTreeToOneLineStringLoop codeTree)
   in
     if Ord.lessThan (calculateStringWidth oneLineText) (UInt.fromInt 80) then
       oneLineText
@@ -38,7 +41,7 @@ codeTreeToStringLoop indent codeTree@(Parser.CodeTree { name, children }) =
               ( String.joinWith "\n"
                   ( map
                       ( \child ->
-                          codeTreeToStringLoop
+                          evaluatedTreeToStringLoop
                             ( add indent
                                 (UInt.fromInt 1)
                             )
@@ -59,14 +62,25 @@ indentCountToIndentString indent =
 calculateStringWidth :: String -> UInt.UInt
 calculateStringWidth str = UInt.fromInt (String.length str)
 
-codeTreeToOneLineStringLoop :: Parser.CodeTree -> String
-codeTreeToOneLineStringLoop (Parser.CodeTree { name, children }) =
-  append
-    (NonEmptyString.toString name)
-    ( if Array.null children then
-        ""
-      else
-        Util.append3 "("
-          (String.joinWith " " (map codeTreeToOneLineStringLoop children))
-          ")"
+evaluatedTreeToOneLineStringLoop :: Evaluate.EvaluatedTree -> String
+evaluatedTreeToOneLineStringLoop tree@(Evaluate.EvaluatedTree { name }) =
+  let
+    childrenArrayString = evaluatedTreeChildrenToFilledChildren tree
+  in
+    append
+      (NonEmptyString.toString name)
+      ( if Array.null childrenArrayString then
+          ""
+        else
+          Util.append3 "("
+            (String.joinWith " " childrenArrayString)
+            ")"
+      )
+
+evaluatedTreeChildrenToFilledChildren :: Evaluate.EvaluatedTree -> Array String
+evaluatedTreeChildrenToFilledChildren (Evaluate.EvaluatedTree { children, expectedChildrenCount }) =
+  append (map evaluatedTreeToOneLineStringLoop children)
+    ( case expectedChildrenCount of
+        Just expectedCount -> Array.replicate (sub (UInt.toInt expectedCount) (Array.length children)) "???"
+        Nothing -> []
     )

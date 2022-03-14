@@ -1,6 +1,5 @@
 module VsCodeExtension.Parser
   ( CodeTree(..)
-  , codeTreeToTokenData
   , parse
   ) where
 
@@ -12,13 +11,10 @@ import Data.Maybe (Maybe(..))
 import Data.Show.Generic as ShowGeneric
 import Data.String.NonEmpty (NonEmptyString)
 import Data.String.NonEmpty as NonEmptyString
-import Data.String.NonEmpty.CodeUnits as NonEmptyCodeUnits
-import Data.UInt as UInt
 import Prelude as Prelude
 import Type.Proxy (Proxy(..))
 import VsCodeExtension.Range as Range
 import VsCodeExtension.SimpleToken as SimpleToken
-import VsCodeExtension.TokenType as TokenType
 
 newtype CodeTree
   = CodeTree
@@ -157,16 +153,3 @@ nameAndSimpleTokenListToCodeTreeListWithRest { name, nameRange, simpleTokenList 
     , rest: []
     , endPosition: Range.rangeEnd nameRange
     }
-
-codeTreeToTokenData ::
-  CodeTree ->
-  Array TokenType.TokenData
-codeTreeToTokenData (CodeTree { name, nameRange, children }) =
-  Array.cons
-    ( TokenType.TokenData
-        { length: UInt.fromInt (Array.length (NonEmptyCodeUnits.toCharArray name))
-        , start: Range.rangeStart nameRange
-        , tokenType: TokenType.TokenTypeVariable
-        }
-    )
-    (Prelude.bind children codeTreeToTokenData)

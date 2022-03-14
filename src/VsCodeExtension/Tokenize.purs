@@ -219,6 +219,21 @@ charIsEnd = case _ of
   ')' -> EndWithToken ParenthesisEnd
   '）' -> EndWithToken ParenthesisEnd
   ' ' -> End
-  '　' -> End
+  '\x00A0' -> End
+  '\x1680' -> End
+  '\x2000' -> End
+  '\x2001' -> End
+  '\x2002' -> End
+  '\x2003' -> End
+  '\x2004' -> End
+  '\x2005' -> End
+  '\x2006' -> End
+  '\x2007' -> End
+  '\x2008' -> End
+  '\x2009' -> End
+  '\x200A' -> End
+  '\x202F' -> End
+  '\x205F' -> End
+  '\x3000' -> End
   '\t' -> End
   _ -> NotEnd
