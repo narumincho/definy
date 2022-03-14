@@ -163,8 +163,8 @@ calculateCodeLens (Evaluate.EvaluatedTree { item, range, children }) = case item
           , range: range
           }
       )
-      (bind children calculateCodeLens)
-  _ -> bind children calculateCodeLens
+      (bind children (\(Evaluate.EvaluatedTreeChild { child }) -> calculateCodeLens child))
+  _ -> bind children (\(Evaluate.EvaluatedTreeChild { child }) -> calculateCodeLens child)
 
 calculateCodeLensCommand :: Maybe UInt.UInt -> Lib.Command
 calculateCodeLensCommand valueMaybe =

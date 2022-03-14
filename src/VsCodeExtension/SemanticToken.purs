@@ -2,13 +2,13 @@ module VsCodeExtension.SemanticToken
   ( evaluateTreeToTokenData
   ) where
 
-import Prelude as Prelude
 import Data.Array as Array
-import VsCodeExtension.Evaluate as Evaluate
-import VsCodeExtension.TokenType as TokenType
-import Data.UInt as UInt
 import Data.String.NonEmpty.CodeUnits as NonEmptyCodeUnits
+import Data.UInt as UInt
+import Prelude as Prelude
+import VsCodeExtension.Evaluate as Evaluate
 import VsCodeExtension.Range as Range
+import VsCodeExtension.TokenType as TokenType
 
 evaluateTreeToTokenData :: Evaluate.EvaluatedTree -> Array TokenType.TokenData
 evaluateTreeToTokenData (Evaluate.EvaluatedTree { name, nameRange, item, children }) =
@@ -27,4 +27,4 @@ evaluateTreeToTokenData (Evaluate.EvaluatedTree { name, nameRange, item, childre
               Evaluate.Unknown -> TokenType.TokenTypeVariable
         }
     )
-    (Prelude.bind children evaluateTreeToTokenData)
+    (Prelude.bind children (\(Evaluate.EvaluatedTreeChild { child }) -> evaluateTreeToTokenData child))

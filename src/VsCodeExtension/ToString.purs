@@ -40,7 +40,7 @@ evaluatedTreeToStringLoop indent codeTree@(Evaluate.EvaluatedTree { name, childr
               "(\n"
               ( String.joinWith "\n"
                   ( map
-                      ( \child ->
+                      ( \(Evaluate.EvaluatedTreeChild { child }) ->
                           evaluatedTreeToStringLoop
                             ( add indent
                                 (UInt.fromInt 1)
@@ -79,7 +79,7 @@ evaluatedTreeToOneLineStringLoop tree@(Evaluate.EvaluatedTree { name }) =
 
 evaluatedTreeChildrenToFilledChildren :: Evaluate.EvaluatedTree -> Array String
 evaluatedTreeChildrenToFilledChildren (Evaluate.EvaluatedTree { children, expectedChildrenCount }) =
-  append (map evaluatedTreeToOneLineStringLoop children)
+  append (map (\(Evaluate.EvaluatedTreeChild { child }) -> evaluatedTreeToOneLineStringLoop child) children)
     ( case expectedChildrenCount of
         Just expectedCount -> Array.replicate (sub (UInt.toInt expectedCount) (Array.length children)) "???"
         Nothing -> []

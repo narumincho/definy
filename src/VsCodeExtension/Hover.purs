@@ -26,7 +26,7 @@ getHoverData position (Evaluate.EvaluatedTree { name, nameRange, range, item, ch
           }
       )
   else
-    Array.findMap (getHoverData position) children
+    Array.findMap (\(Evaluate.EvaluatedTreeChild { child }) -> getHoverData position child) children
 
 evaluatedItemToHoverText :: NonEmptyString -> Evaluate.EvaluatedItem -> String
 evaluatedItemToHoverText name = case _ of
