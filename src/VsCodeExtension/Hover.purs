@@ -7,6 +7,7 @@ import Data.Maybe (Maybe(..))
 import Data.String.NonEmpty (NonEmptyString)
 import Data.String.NonEmpty as NonEmptyString
 import Data.UInt as UInt
+import Markdown as Markdown
 import Prelude as Prelude
 import Type.Proxy (Proxy(..))
 import VsCodeExtension.Evaluate as Evaluate
@@ -22,7 +23,18 @@ getHoverData position (Evaluate.EvaluatedTree { name, nameRange, range, item, ch
           { contents:
               Lib.MarkupContent
                 { kind: Lib.Markdown
-                , value: ToString.noPositionTreeToString (evaluatedItemToHoverTree name item)
+                , value:
+                    Markdown.Markdown
+                      [ Markdown.Header2 (NonEmptyString.nes (Proxy :: Proxy "Type"))
+                      , Markdown.CodeBlock "..."
+                      , Markdown.Header2 (NonEmptyString.nes (Proxy :: Proxy "Value"))
+                      , Markdown.CodeBlock "..."
+                      , Markdown.Header2 (NonEmptyString.nes (Proxy :: Proxy "Tree"))
+                      , Markdown.CodeBlock
+                          ( ToString.noPositionTreeToString
+                              (evaluatedItemToHoverTree name item)
+                          )
+                      ]
                 }
           , range: range
           }

@@ -33,6 +33,7 @@ import Data.UInt as UInt
 import Effect as Effect
 import Effect.Ref as Ref
 import Foreign.Object as Object
+import Markdown as Markdown
 import Node.Buffer as Buffer
 import Node.Encoding as Encoding
 import Node.Process as Process
@@ -422,10 +423,14 @@ instance encodeJsonHover :: Argonaut.EncodeJson Hover where
 
 -- | https://microsoft.github.io/language-server-protocol/specifications/specification-3-17/#markupContentInnerDefinition
 newtype MarkupContent
-  = MarkupContent { kind :: MarkupKind, value :: String }
+  = MarkupContent { kind :: MarkupKind, value :: Markdown.Markdown }
 
 instance encodeJsonMarkupContent :: Argonaut.EncodeJson MarkupContent where
-  encodeJson (MarkupContent rec) = Argonaut.encodeJson rec
+  encodeJson (MarkupContent rec) =
+    Argonaut.encodeJson
+      { kind: Argonaut.encodeJson rec.kind
+      , value: Markdown.toMarkdownString rec.value
+      }
 
 data MarkupKind
   = Markdown
