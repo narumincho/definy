@@ -22,13 +22,27 @@ getErrorList tree@(Evaluate.EvaluatedTree { item, name, nameRange, children, exp
         Just expectedChildrenCount -> getParameterError tree expectedChildrenCount
         Nothing -> []
     , case item of
-        Evaluate.Unknown -> [ ErrorWithRange { error: UnknownName name, range: nameRange } ]
+        Evaluate.Unknown ->
+          [ ErrorWithRange { error: UnknownName name, range: nameRange }
+          ]
         Evaluate.UIntLiteral Nothing ->
           [ ErrorWithRange { error: UIntParseError name, range: nameRange }
           ]
         _ -> []
-    , Prelude.bind children getErrorList
+    , Prelude.bind children getErrorListFromEvaluatedTreeChild
     ]
+
+getErrorListFromEvaluatedTreeChild :: Evaluate.EvaluatedTreeChild -> Array ErrorWithRange
+getErrorListFromEvaluatedTreeChild (Evaluate.EvaluatedTreeChild { child: child@(Evaluate.EvaluatedTree { range }), typeMisMatchMaybe }) =
+  Prelude.append
+    ( case typeMisMatchMaybe of
+        Just (typeMismatch) ->
+          [ ErrorWithRange
+              { error: TypeMisMatchError typeMismatch, range }
+          ]
+        Nothing -> []
+    )
+    (getErrorList child)
 
 getParameterError :: Evaluate.EvaluatedTree -> UInt.UInt -> Array ErrorWithRange
 getParameterError (Evaluate.EvaluatedTree { name, nameRange, range, children }) expectedChildrenCount = case Prelude.compare (Array.length children) (UInt.toInt expectedChildrenCount) of
@@ -51,13 +65,13 @@ getParameterError (Evaluate.EvaluatedTree { name, nameRange, range, children }) 
   Prelude.EQ -> []
   Prelude.GT ->
     Prelude.map
-      ( \(Evaluate.EvaluatedTree { range: parameterRange }) ->
+      ( \(Evaluate.EvaluatedTreeChild { child: Evaluate.EvaluatedTree { range: parameterRange } }) ->
           ErrorWithRange
             { error:
                 SuperfluousParameter
                   { name
                   , nameRange: nameRange
-                  , expect: UInt.fromInt 1
+                  , expect: expectedChildrenCount
                   }
             , range: parameterRange
             }
@@ -82,6 +96,7 @@ data Error
     , expect :: UInt.UInt
     }
   | UIntParseError NonEmptyString
+  | TypeMisMatchError Evaluate.TypeMisMatch
 
 errorToString :: Error -> String
 errorToString = case _ of
@@ -110,3 +125,15 @@ errorToString = case _ of
     Prelude.append
       (NonEmptyString.toString name)
       "はUInt としてパースできませんでした"
+  TypeMisMatchError (Evaluate.TypeMisMatch { actual, expect }) ->
+    String.joinWith ""
+      [ treeTypeToString expect, "を期待したが", treeTypeToString actual, "が渡された" ]
+
+treeTypeToString :: Evaluate.TreeType -> String
+treeTypeToString = case _ of
+  Evaluate.TreeTypeModule -> "Module"
+  Evaluate.TreeTypeDescription -> "Description"
+  Evaluate.TreeTypeModuleBody -> "ModuleBody"
+  Evaluate.TreeTypePart -> "Part"
+  Evaluate.TreeTypeExpr -> "Expr"
+  Evaluate.TreeTypeUIntLiteral -> "UIntLiteral"

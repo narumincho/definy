@@ -1,5 +1,8 @@
 module VsCodeExtension.ToString
-  ( evaluatedTreeToString
+  ( NoPositionTree(..)
+  , evaluatedTreeToNoPositionTree
+  , evaluatedTreeToString
+  , noPositionTreeToString
   ) where
 
 import Prelude
@@ -7,25 +10,51 @@ import Data.Array as Array
 import Data.Maybe (Maybe(..))
 import Data.Ord as Ord
 import Data.String as String
+import Data.String.NonEmpty (NonEmptyString)
 import Data.String.NonEmpty as NonEmptyString
 import Data.UInt as UInt
+import Type.Proxy (Proxy(..))
 import Util as Util
 import VsCodeExtension.Evaluate as Evaluate
 
+-- | 位置情報が含まれていないシンプルな木構造
+newtype NoPositionTree
+  = NoPositionTree
+  { name :: NonEmptyString, children :: Array NoPositionTree }
+
 -- | コードのツリー構造を整形された文字列に変換する
 evaluatedTreeToString :: Evaluate.EvaluatedTree -> String
-evaluatedTreeToString codeTree =
+evaluatedTreeToString codeTree = noPositionTreeToString (evaluatedTreeToNoPositionTree codeTree)
+
+evaluatedTreeToNoPositionTree :: Evaluate.EvaluatedTree -> NoPositionTree
+evaluatedTreeToNoPositionTree (Evaluate.EvaluatedTree { name, children, expectedChildrenCount }) =
+  NoPositionTree
+    { name
+    , children:
+        append (map (\(Evaluate.EvaluatedTreeChild { child }) -> evaluatedTreeToNoPositionTree child) children)
+          ( case expectedChildrenCount of
+              Just expectedCount ->
+                Array.replicate (sub (UInt.toInt expectedCount) (Array.length children))
+                  ( NoPositionTree
+                      { name: NonEmptyString.nes (Proxy :: Proxy "???"), children: [] }
+                  )
+              Nothing -> []
+          )
+    }
+
+noPositionTreeToString :: NoPositionTree -> String
+noPositionTreeToString noPositionTree =
   append
-    (evaluatedTreeToStringLoop (UInt.fromInt 0) codeTree)
+    (evaluatedTreeToStringLoop (UInt.fromInt 0) noPositionTree)
     "\n"
 
-evaluatedTreeToStringLoop :: UInt.UInt -> Evaluate.EvaluatedTree -> String
-evaluatedTreeToStringLoop indent codeTree@(Evaluate.EvaluatedTree { name, children }) =
+evaluatedTreeToStringLoop :: UInt.UInt -> NoPositionTree -> String
+evaluatedTreeToStringLoop indent noPositionTree@(NoPositionTree { name, children }) =
   let
     oneLineText =
       append
         (indentCountToIndentString indent)
-        (evaluatedTreeToOneLineStringLoop codeTree)
+        (evaluatedTreeToOneLineStringLoop noPositionTree)
   in
     if Ord.lessThan (calculateStringWidth oneLineText) (UInt.fromInt 80) then
       oneLineText
@@ -62,25 +91,14 @@ indentCountToIndentString indent =
 calculateStringWidth :: String -> UInt.UInt
 calculateStringWidth str = UInt.fromInt (String.length str)
 
-evaluatedTreeToOneLineStringLoop :: Evaluate.EvaluatedTree -> String
-evaluatedTreeToOneLineStringLoop tree@(Evaluate.EvaluatedTree { name }) =
-  let
-    childrenArrayString = evaluatedTreeChildrenToFilledChildren tree
-  in
-    append
-      (NonEmptyString.toString name)
-      ( if Array.null childrenArrayString then
-          ""
-        else
+evaluatedTreeToOneLineStringLoop :: NoPositionTree -> String
+evaluatedTreeToOneLineStringLoop (NoPositionTree { name, children }) =
+  append
+    (NonEmptyString.toString name)
+    ( case map evaluatedTreeToOneLineStringLoop children of
+        [] -> ""
+        list ->
           Util.append3 "("
-            (String.joinWith " " childrenArrayString)
+            (String.joinWith " " list)
             ")"
-      )
-
-evaluatedTreeChildrenToFilledChildren :: Evaluate.EvaluatedTree -> Array String
-evaluatedTreeChildrenToFilledChildren (Evaluate.EvaluatedTree { children, expectedChildrenCount }) =
-  append (map evaluatedTreeToOneLineStringLoop children)
-    ( case expectedChildrenCount of
-        Just expectedCount -> Array.replicate (sub (UInt.toInt expectedCount) (Array.length children)) "???"
-        Nothing -> []
     )

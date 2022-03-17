@@ -15,6 +15,7 @@ import PureScript.Wellknown as PureScriptWellknown
 import Test.StructuredUrl as StructuredUrlTest
 import Test.TypeScript as TypeScriptTest
 import Test.VsCodeExtension as VsCodeExtensionTest
+import Test.Markdown as MarkdownTest
 import Test.Unit as TestUnit
 import Test.Unit.Main as TestUnitMain
 import Test.Util (assertEqual)
@@ -40,6 +41,8 @@ main =
       TypeScriptTest.test
     TestUnit.test "VsCodeExtensionTest"
       VsCodeExtensionTest.test
+    TestUnit.test "Markdown"
+      MarkdownTest.test
 
 listUpdateAtOverAutoCreateInline :: TestUnit.Test
 listUpdateAtOverAutoCreateInline =

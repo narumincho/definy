@@ -1,8 +1,11 @@
 module VsCodeExtension.Evaluate
   ( EvaluatedItem(..)
   , EvaluatedTree(..)
+  , EvaluatedTreeChild(..)
   , PartialModule(..)
   , PartialPart(..)
+  , TreeType(..)
+  , TypeMisMatch(..)
   , codeTreeToEvaluatedTreeIContextNormal
   , evaluatedTreeGetItem
   ) where
@@ -21,15 +24,24 @@ newtype EvaluatedTree
   = EvaluatedTree
   { item :: EvaluatedItem
   , range :: Range.Range
-  , children :: Array EvaluatedTree
+  , children :: Array EvaluatedTreeChild
   {- 期待した子要素の数 -}
   , expectedChildrenCount :: Maybe UInt.UInt
   , nameRange :: Range.Range
   , name :: NonEmptyString
   }
 
+newtype EvaluatedTreeChild
+  = EvaluatedTreeChild
+  { child :: EvaluatedTree
+  , typeMisMatchMaybe :: Maybe TypeMisMatch
+  }
+
 evaluatedTreeGetItem :: EvaluatedTree -> EvaluatedItem
 evaluatedTreeGetItem (EvaluatedTree { item }) = item
+
+evaluatedTreeChildGetItem :: EvaluatedTreeChild -> EvaluatedItem
+evaluatedTreeChildGetItem (EvaluatedTreeChild { child }) = evaluatedTreeGetItem child
 
 data EvaluatedItem
   = Module PartialModule
@@ -39,6 +51,40 @@ data EvaluatedItem
   | Expr (Maybe UInt.UInt)
   | UIntLiteral (Maybe UInt.UInt)
   | Unknown
+
+newtype TypeMisMatch
+  = TypeMisMatch { expect :: TreeType, actual :: TreeType }
+
+compareType :: Maybe TreeType -> EvaluatedTree -> Maybe TypeMisMatch
+compareType expectMaybe tree = case expectMaybe of
+  Nothing -> Nothing
+  Just expect -> case (evaluateItemToTreeType (evaluatedTreeGetItem tree)) of
+    Nothing -> Nothing
+    Just actual ->
+      if eq expect actual then
+        Nothing
+      else
+        Just (TypeMisMatch { expect, actual })
+
+evaluateItemToTreeType :: EvaluatedItem -> Maybe TreeType
+evaluateItemToTreeType = case _ of
+  Module _ -> Just TreeTypeModule
+  Description _ -> Just TreeTypeDescription
+  ModuleBody _ -> Just TreeTypeModuleBody
+  Part _ -> Just TreeTypePart
+  Expr _ -> Just TreeTypeExpr
+  UIntLiteral _ -> Just TreeTypeUIntLiteral
+  Unknown -> Nothing
+
+data TreeType
+  = TreeTypeModule
+  | TreeTypeDescription
+  | TreeTypeModuleBody
+  | TreeTypePart
+  | TreeTypeExpr
+  | TreeTypeUIntLiteral
+
+derive instance eqTreeType :: Eq TreeType
 
 newtype PartialModule
   = PartialModule
@@ -53,22 +99,24 @@ newtype PartialPart
   , value :: Maybe UInt.UInt
   }
 
-data Context
-  = ContextNormal
-  | ContextDescription
-  | ContextUIntLiteral
-
-codeTreeToEvaluatedTree :: Context -> Parser.CodeTree -> EvaluatedTree
-codeTreeToEvaluatedTree context codeTree = case context of
-  ContextNormal -> codeTreeToEvaluatedTreeIContextNormal codeTree
-  ContextDescription -> codeTreeToEvaluatedTreeInContextDescription codeTree
-  ContextUIntLiteral -> codeTreeToEvaluatedTreeInContextUIntLiteral codeTree
+codeTreeToEvaluatedTree :: Maybe TreeType -> Parser.CodeTree -> EvaluatedTreeChild
+codeTreeToEvaluatedTree treeType codeTree =
+  let
+    tree = case treeType of
+      Just TreeTypeDescription -> codeTreeToEvaluatedTreeInContextDescription codeTree
+      Just TreeTypeUIntLiteral -> codeTreeToEvaluatedTreeInContextUIntLiteral codeTree
+      _ -> codeTreeToEvaluatedTreeIContextNormal codeTree
+  in
+    EvaluatedTreeChild
+      { child: tree
+      , typeMisMatchMaybe: compareType treeType tree
+      }
 
 codeTreeToEvaluatedTreeIContextNormal :: Parser.CodeTree -> EvaluatedTree
 codeTreeToEvaluatedTreeIContextNormal codeTree@(Parser.CodeTree { name, nameRange, range, children }) = case NonEmptyString.toString name of
   "module" ->
     need2Children
-      { firstContext: ContextDescription, secondContext: ContextNormal }
+      { firstContext: TreeTypeDescription, secondContext: TreeTypeModuleBody }
       codeTree
       ( \{ first, second } ->
           Module
@@ -89,9 +137,7 @@ codeTreeToEvaluatedTreeIContextNormal codeTree@(Parser.CodeTree { name, nameRang
       evaluatedChildren =
         map
           ( \child ->
-              codeTreeToEvaluatedTree
-                ContextNormal
-                child
+              codeTreeToEvaluatedTree (Just TreeTypePart) child
           )
           children
     in
@@ -99,7 +145,7 @@ codeTreeToEvaluatedTreeIContextNormal codeTree@(Parser.CodeTree { name, nameRang
         { item:
             ModuleBody
               ( Array.mapMaybe
-                  ( \childTree -> case evaluatedTreeGetItem childTree of
+                  ( \childTree -> case evaluatedTreeChildGetItem childTree of
                       (Part part) -> Just part
                       _ -> Nothing
                   )
@@ -113,9 +159,9 @@ codeTreeToEvaluatedTreeIContextNormal codeTree@(Parser.CodeTree { name, nameRang
         }
   "part" ->
     need3Children
-      { firstContext: ContextDescription
-      , secondContext: ContextDescription
-      , thirdContext: ContextNormal
+      { firstContext: TreeTypeDescription
+      , secondContext: TreeTypeDescription
+      , thirdContext: TreeTypeExpr
       }
       codeTree
       ( \{ first, second, third } ->
@@ -138,7 +184,7 @@ codeTreeToEvaluatedTreeIContextNormal codeTree@(Parser.CodeTree { name, nameRang
       )
   "add" ->
     need2Children
-      { firstContext: ContextNormal, secondContext: ContextNormal }
+      { firstContext: TreeTypeExpr, secondContext: TreeTypeExpr }
       codeTree
       ( \{ first, second } ->
           Expr
@@ -151,7 +197,7 @@ codeTreeToEvaluatedTreeIContextNormal codeTree@(Parser.CodeTree { name, nameRang
       )
   "uint" ->
     need1Children
-      ContextUIntLiteral
+      TreeTypeUIntLiteral
       codeTree
       ( case _ of
           Just (UIntLiteral child) -> Expr child
@@ -165,7 +211,7 @@ codeTreeToEvaluatedTreeIContextNormal codeTree@(Parser.CodeTree { name, nameRang
           map
             ( \child ->
                 codeTreeToEvaluatedTree
-                  ContextNormal
+                  Nothing
                   child
             )
             children
@@ -220,12 +266,14 @@ need0Children ::
   EvaluatedTree
 need0Children (Parser.CodeTree { name, nameRange, children, range }) item =
   let
+    evaluatedChildren :: Array EvaluatedTreeChild
     evaluatedChildren =
       map
         ( \child ->
-            codeTreeToEvaluatedTree
-              ContextNormal
-              child
+            EvaluatedTreeChild
+              { child: codeTreeToEvaluatedTreeIContextNormal child
+              , typeMisMatchMaybe: Nothing
+              }
         )
         children
   in
@@ -240,26 +288,27 @@ need0Children (Parser.CodeTree { name, nameRange, children, range }) item =
       }
 
 need1Children ::
-  Context ->
+  TreeType ->
   Parser.CodeTree ->
   (Maybe EvaluatedItem -> EvaluatedItem) ->
   EvaluatedTree
 need1Children context (Parser.CodeTree { name, nameRange, children, range }) func =
   let
+    evaluatedChildren :: Array EvaluatedTreeChild
     evaluatedChildren =
       Array.mapWithIndex
         ( \index child ->
             codeTreeToEvaluatedTree
               ( case index of
-                  0 -> context
-                  _ -> ContextNormal
+                  0 -> Just context
+                  _ -> Nothing
               )
               child
         )
         children
   in
     EvaluatedTree
-      { item: func (map evaluatedTreeGetItem (Array.index evaluatedChildren 0))
+      { item: func (map evaluatedTreeChildGetItem (Array.index evaluatedChildren 0))
       , range: range
       , children: evaluatedChildren
       {- 期待した子要素の数 -}
@@ -269,20 +318,21 @@ need1Children context (Parser.CodeTree { name, nameRange, children, range }) fun
       }
 
 need2Children ::
-  { firstContext :: Context, secondContext :: Context } ->
+  { firstContext :: TreeType, secondContext :: TreeType } ->
   Parser.CodeTree ->
   ({ first :: Maybe EvaluatedItem, second :: Maybe EvaluatedItem } -> EvaluatedItem) ->
   EvaluatedTree
 need2Children { firstContext, secondContext } (Parser.CodeTree { name, nameRange, children, range }) func =
   let
+    evaluatedChildren :: Array EvaluatedTreeChild
     evaluatedChildren =
       Array.mapWithIndex
         ( \index child ->
             codeTreeToEvaluatedTree
               ( case index of
-                  0 -> firstContext
-                  1 -> secondContext
-                  _ -> ContextNormal
+                  0 -> Just firstContext
+                  1 -> Just secondContext
+                  _ -> Nothing
               )
               child
         )
@@ -291,8 +341,8 @@ need2Children { firstContext, secondContext } (Parser.CodeTree { name, nameRange
     EvaluatedTree
       { item:
           func
-            { first: map evaluatedTreeGetItem (Array.index evaluatedChildren 0)
-            , second: map evaluatedTreeGetItem (Array.index evaluatedChildren 1)
+            { first: map evaluatedTreeChildGetItem (Array.index evaluatedChildren 0)
+            , second: map evaluatedTreeChildGetItem (Array.index evaluatedChildren 1)
             }
       , range: range
       , children: evaluatedChildren
@@ -303,21 +353,22 @@ need2Children { firstContext, secondContext } (Parser.CodeTree { name, nameRange
       }
 
 need3Children ::
-  { firstContext :: Context, secondContext :: Context, thirdContext :: Context } ->
+  { firstContext :: TreeType, secondContext :: TreeType, thirdContext :: TreeType } ->
   Parser.CodeTree ->
   ({ first :: Maybe EvaluatedItem, second :: Maybe EvaluatedItem, third :: Maybe EvaluatedItem } -> EvaluatedItem) ->
   EvaluatedTree
 need3Children context (Parser.CodeTree { name, nameRange, children, range }) func =
   let
+    evaluatedChildren :: Array EvaluatedTreeChild
     evaluatedChildren =
       Array.mapWithIndex
         ( \index child ->
             codeTreeToEvaluatedTree
               ( case index of
-                  0 -> context.firstContext
-                  1 -> context.secondContext
-                  2 -> context.thirdContext
-                  _ -> ContextNormal
+                  0 -> Just context.firstContext
+                  1 -> Just context.secondContext
+                  2 -> Just context.thirdContext
+                  _ -> Nothing
               )
               child
         )
@@ -326,9 +377,9 @@ need3Children context (Parser.CodeTree { name, nameRange, children, range }) fun
     EvaluatedTree
       { item:
           func
-            { first: map evaluatedTreeGetItem (Array.index evaluatedChildren 0)
-            , second: map evaluatedTreeGetItem (Array.index evaluatedChildren 1)
-            , third: map evaluatedTreeGetItem (Array.index evaluatedChildren 2)
+            { first: map evaluatedTreeChildGetItem (Array.index evaluatedChildren 0)
+            , second: map evaluatedTreeChildGetItem (Array.index evaluatedChildren 1)
+            , third: map evaluatedTreeChildGetItem (Array.index evaluatedChildren 2)
             }
       , range: range
       , children: evaluatedChildren

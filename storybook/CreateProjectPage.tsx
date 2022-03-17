@@ -1,5 +1,4 @@
 import * as React from "react";
-import * as d from "../localData";
 import { CreateProjectPage, Props } from "../client/ui/CreateProjectPage";
 import { Meta, Story } from "@storybook/react";
 

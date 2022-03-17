@@ -222,7 +222,7 @@ const LoadedTypePartEditor: React.VFC<
   );
 };
 
-const maybeValue = <T extends unknown>(
+const maybeValue = <T,>(
   language: d.Language,
   valueFunc: (t: T) => CommonValue,
   maybe: d.Maybe<T>,
