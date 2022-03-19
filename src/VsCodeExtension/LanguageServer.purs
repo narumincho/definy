@@ -97,23 +97,8 @@ main = do
                 )
                 state
               sendError uri evaluatedTree
-        Either.Right (Lib.TextDocumentDidSave { uri }) -> do
-          (State { codeDict }) <- Ref.read state
-          case Map.lookup uri codeDict of
-            Just evaluatedTree -> do
-              Aff.runAff_
-                ( \result ->
-                    Lib.sendNotificationWindowLogMessage
-                      (append "書き込み完了した " (show result))
-                )
-                ( Aff.attempt
-                    ( Write.writeTextFilePathFileProtocol uri
-                        (ToString.evaluatedTreeToString evaluatedTree)
-                    )
-                )
-              Lib.sendNotificationWindowLogMessage
-                "フォーマットした内容で書き込みます"
-            Nothing -> Lib.sendNotificationWindowLogMessage "ファイルの情報が1度も来ていない..?"
+        Either.Right (Lib.TextDocumentDidSave {}) -> do
+          pure unit
         Either.Right (Lib.TextDocumentSemanticTokensFull { id, uri }) -> do
           (State { tokenTypeDict, codeDict }) <- Ref.read state
           case Map.lookup uri codeDict of
