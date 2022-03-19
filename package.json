@@ -18,7 +18,7 @@
     "start-definy": "npx tsc --project ./tsconfig-purs-ffi.json && spago run --main Definy.Start && firebase emulators:start --project definy-lang --config ./distribution/definy/firebase.json"
   },
   "devDependencies": {
-    "@babel/core": "7.17.7",
+    "@babel/core": "7.17.8",
     "@emotion/css": "11.7.1",
     "@material-ui/core": "4.12.3",
     "@storybook/addon-a11y": "6.4.19",
@@ -46,12 +46,12 @@
     "eslint-plugin-react-hooks": "4.3.0",
     "firebase-admin": "10.0.2",
     "firebase-functions": "3.19.0",
-    "firebase-tools": "10.3.1",
+    "firebase-tools": "10.4.0",
     "fs-extra": "10.0.1",
     "jest": "27.5.1",
     "jimp": "0.16.1",
     "jsonwebtoken": "8.5.1",
-    "npm-check-updates": "12.5.3",
+    "npm-check-updates": "12.5.4",
     "prettier": "2.6.0",
     "purescript": "0.14.7",
     "purty": "7.0.0",
