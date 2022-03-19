@@ -15,7 +15,6 @@ module VsCodeExtension.LanguageServerLib
   , responseHover
   , responseInitialize
   , responseTextDocumentCodeLens
-  , responseTextDocumentSemanticTokensFull
   , sendJsonRpcMessage
   , sendNotificationPublishDiagnostics
   , sendNotificationWindowLogMessage
@@ -40,14 +39,12 @@ import Node.Process as Process
 import Node.Stream as Stream
 import VsCodeExtension.JsonRpc as JsonRpc
 import VsCodeExtension.Range as Range
-import VsCodeExtension.TokenType as TokenType
 import VsCodeExtension.Uri as Uri
 
 data ClientToServerMessage
   = Initialize
     { id :: JsonRpc.Id
     , supportPublishDiagnostics :: Boolean
-    , supportTokenTypes :: Array TokenType.TokenTypeOrNotSupportTokenType
     }
   | Initialized
   | TextDocumentDidOpen { uri :: Uri.Uri, text :: String }
@@ -205,10 +202,6 @@ notificationMessageToLanguageClientToServerRequest (JsonRpc.RequestMessage { id,
         Argonaut.getFieldOptional
           capabilities.textDocument
           "publishDiagnostics"
-      (semanticTokens :: Maybe ({ tokenTypes :: Array TokenType.TokenTypeOrNotSupportTokenType })) <-
-        Argonaut.getFieldOptional
-          capabilities.textDocument
-          "semanticTokens"
       Either.Right
         ( Initialize
             { id
@@ -216,10 +209,6 @@ notificationMessageToLanguageClientToServerRequest (JsonRpc.RequestMessage { id,
                 case publishDiagnosticsMaybe of
                   Just _ -> true
                   Nothing -> false
-            , supportTokenTypes:
-                case semanticTokens of
-                  Nothing -> []
-                  Just { tokenTypes } -> tokenTypes
             }
         )
     _ -> Either.Left (Argonaut.TypeMismatch "expect initialize params type object")
@@ -361,11 +350,9 @@ sendNotificationWindowLogMessage message =
     false
 
 responseInitialize ::
-  { id :: JsonRpc.Id
-  , semanticTokensProviderLegendTokenTypes :: Array String
-  } ->
+  { id :: JsonRpc.Id } ->
   Effect.Effect Unit
-responseInitialize { id, semanticTokensProviderLegendTokenTypes } =
+responseInitialize { id } =
   sendJsonRpcMessage
     ( Argonaut.encodeJson
         ( JsonRpc.ResponseMessageSuccess
@@ -374,32 +361,10 @@ responseInitialize { id, semanticTokensProviderLegendTokenTypes } =
                 Argonaut.encodeJson
                   { capabilities:
                       { textDocumentSync: 1
-                      , semanticTokensProvider:
-                          { legend:
-                              { tokenTypes: semanticTokensProviderLegendTokenTypes
-                              , tokenModifiers: [] :: Array String
-                              }
-                          , range: false
-                          , full: true
-                          }
                       , codeLensProvider: { resolveProvider: true }
                       , hoverProvider: true
                       }
                   }
-            }
-        )
-    )
-    true
-
-responseTextDocumentSemanticTokensFull :: { id :: JsonRpc.Id, tokenDataList :: Array TokenType.TokenData, tokenTypeDict :: TokenType.TokenTypeDict } -> Effect.Effect Unit
-responseTextDocumentSemanticTokensFull { id, tokenDataList, tokenTypeDict } =
-  sendJsonRpcMessage
-    ( Argonaut.encodeJson
-        ( JsonRpc.ResponseMessageSuccess
-            { id
-            , result:
-                Argonaut.encodeJson
-                  { data: tokenDataListToDataList tokenTypeDict tokenDataList }
             }
         )
     )
@@ -480,31 +445,3 @@ jsonRpcResponseToBinary jsonValueAsString = do
         , jsonValueAsString
         ]
     )
-
-tokenDataListToDataList ::
-  TokenType.TokenTypeDict ->
-  Array TokenType.TokenData ->
-  Array Int
-tokenDataListToDataList tokenTypeDict tokenDataList =
-  ( Array.foldl
-        ( \{ beforePosition, result } item@(TokenType.TokenData { start }) ->
-            { beforePosition: start
-            , result:
-                append result
-                  ( TokenType.tokenDataToData
-                      tokenTypeDict
-                      beforePosition
-                      item
-                  )
-            }
-        )
-        { beforePosition:
-            Range.Position
-              { line: UInt.fromInt 0
-              , character: UInt.fromInt 0
-              }
-        , result: []
-        }
-        tokenDataList
-    )
-    .result

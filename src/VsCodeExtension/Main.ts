@@ -1,20 +1,24 @@
 import {
-  type ExtensionContext,
   Position,
   Range,
+  SemanticTokens,
+  SemanticTokensLegend,
   TextEdit,
   commands,
   languages,
   workspace,
 } from "vscode";
-import { LanguageClient, NodeModule } from "vscode-languageclient/node";
-
-// eslint-disable-next-line no-undef-init
-let client: LanguageClient | undefined = undefined;
 
 export const activateFunc =
-  (option: { formatFunc: (code: string) => string }) =>
-  (context: ExtensionContext): void => {
+  (option: {
+    readonly languageId: string;
+    readonly formatFunc: (code: string) => string;
+    readonly semanticTokensProviderFunc: (
+      code: string
+    ) => ReadonlyArray<number>;
+    readonly semanticTokensProviderLegend: ReadonlyArray<string>;
+  }) =>
+  (): void => {
     commands.registerCommand("definy.showEvaluatedValue", (value: string) => {
       workspace.openTextDocument({
         language: "definy",
@@ -22,22 +26,7 @@ export const activateFunc =
       });
     });
 
-    const nodeModule: NodeModule = {
-      module: context.asAbsolutePath("language-server.js"),
-    };
-    client = new LanguageClient(
-      "definy-language-server",
-      {
-        run: nodeModule,
-        debug: nodeModule,
-      },
-      {
-        documentSelector: [{ language: "definy" }],
-      }
-    );
-    context.subscriptions.push(client.start());
-
-    languages.registerDocumentFormattingEditProvider("definy", {
+    languages.registerDocumentFormattingEditProvider(option.languageId, {
       provideDocumentFormattingEdits(document) {
         const fullText = document.getText();
         console.log(fullText);
@@ -51,10 +40,22 @@ export const activateFunc =
         ];
       },
     });
+
+    languages.registerDocumentSemanticTokensProvider(
+      option.languageId,
+      {
+        provideDocumentSemanticTokens(document) {
+          return new SemanticTokens(
+            new Uint32Array(
+              option.semanticTokensProviderFunc(document.getText())
+            )
+          );
+        },
+      },
+      new SemanticTokensLegend([...option.semanticTokensProviderLegend])
+    );
   };
 
-export const deactivateFunc = (): Promise<void> | undefined => {
-  if (client !== undefined) {
-    return client.stop();
-  }
+export const deactivateFunc = (): Promise<void> => {
+  return Promise.resolve();
 };

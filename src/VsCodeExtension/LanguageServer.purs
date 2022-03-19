@@ -11,25 +11,19 @@ import Data.Maybe (Maybe(..))
 import Data.String.NonEmpty as NonEmptyString
 import Data.UInt as UInt
 import Effect as Effect
-import Effect.Aff as Aff
 import Effect.Ref as Ref
-import FileSystem.Write as Write
 import VsCodeExtension.Error as Error
 import VsCodeExtension.Evaluate as Evaluate
 import VsCodeExtension.Hover as Hover
 import VsCodeExtension.LanguageServerLib as Lib
 import VsCodeExtension.Parser as Parser
-import VsCodeExtension.SemanticToken as SemanticToken
 import VsCodeExtension.SimpleToken as SimpleToken
-import VsCodeExtension.ToString as ToString
-import VsCodeExtension.TokenType as TokenType
 import VsCodeExtension.Tokenize as Tokenize
 import VsCodeExtension.Uri as Uri
 
 newtype State
   = State
   { supportPublishDiagnostics :: Boolean
-  , tokenTypeDict :: TokenType.TokenTypeDict
   , codeDict :: Map.Map Uri.Uri Evaluate.EvaluatedTree
   }
 
@@ -41,7 +35,6 @@ main = do
     Ref.new
       ( State
           { supportPublishDiagnostics: false
-          , tokenTypeDict: TokenType.dictEmpty
           , codeDict: Map.empty
           }
       )
@@ -49,22 +42,15 @@ main = do
     parseStateRef
     ( case _ of
         Either.Right (Lib.Initialize rec) -> do
-          let
-            { tokenTypeDict, supportTokenType } = TokenType.createTokenTypeDictAndSupportTokenList rec.supportTokenTypes
           Ref.modify_
             ( \(State stateRec) ->
                 State
                   ( stateRec
-                      { supportPublishDiagnostics = rec.supportPublishDiagnostics
-                      , tokenTypeDict = tokenTypeDict
-                      }
+                      { supportPublishDiagnostics = rec.supportPublishDiagnostics }
                   )
             )
             state
-          Lib.responseInitialize
-            { id: rec.id
-            , semanticTokensProviderLegendTokenTypes: supportTokenType
-            }
+          Lib.responseInitialize { id: rec.id }
         Either.Right Lib.Initialized -> Lib.sendNotificationWindowLogMessage "Initializedされた!"
         Either.Right (Lib.TextDocumentDidOpen { uri, text }) ->
           let
@@ -99,16 +85,7 @@ main = do
               sendError uri evaluatedTree
         Either.Right (Lib.TextDocumentDidSave {}) -> do
           pure unit
-        Either.Right (Lib.TextDocumentSemanticTokensFull { id, uri }) -> do
-          (State { tokenTypeDict, codeDict }) <- Ref.read state
-          case Map.lookup uri codeDict of
-            Just evaluatedTree ->
-              Lib.responseTextDocumentSemanticTokensFull
-                { id
-                , tokenTypeDict
-                , tokenDataList: SemanticToken.evaluateTreeToTokenData evaluatedTree
-                }
-            Nothing -> Lib.sendNotificationWindowLogMessage "TextDocumentSemanticTokensFullされた けどコードを取得できていない..."
+        Either.Right (Lib.TextDocumentSemanticTokensFull {}) -> pure unit
         Either.Right (Lib.TextDocumentCodeLens { uri, id }) -> do
           (State { codeDict }) <- Ref.read state
           case Map.lookup uri codeDict of

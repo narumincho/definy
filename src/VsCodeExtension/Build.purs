@@ -25,6 +25,7 @@ import PureScript.Spago as Spago
 import StructuredUrl as StructuredUrl
 import Type.Proxy (Proxy(..))
 import Util as Util
+import VsCodeExtension.LanguageId as LanguageId
 
 main :: Effect.Effect Unit
 main =
@@ -107,7 +108,7 @@ generatePackageJson dependencies =
     , contributesLanguages:
         NonEmptyArray.singleton
           ( PackageJson.ContributesLanguages
-              { id: NonEmptyString.nes (Proxy :: _ "definy")
+              { id: LanguageId.languageId
               , extensions:
                   [ NonEmptyString.nes (Proxy :: _ ".definy") ]
               , configuration: languageConfigurationPath
@@ -117,8 +118,7 @@ generatePackageJson dependencies =
                   }
               }
           )
-    , main:
-        Path.distributionFilePathToStringBaseApp extensionMainPath FileType.JavaScript
+    , browser: Path.distributionFilePathToStringBaseApp extensionMainPath FileType.JavaScript
     }
 
 extensionMainPath :: Path.DistributionFilePath
