@@ -1,13 +1,13 @@
 module VsCodeExtension.Main
-  ( ActivateType
-  , DeactivateType
-  , activate
+  ( activate
   , deactivate
   ) where
 
+import Prelude
 import Data.Array as Array
 import Data.String.NonEmpty as NonEmptyString
 import Data.UInt as UInt
+import Effect (Effect)
 import Prelude as Prelude
 import VsCodeExtension.Evaluate as Evaluate
 import VsCodeExtension.LanguageId as LanguageId
@@ -18,24 +18,12 @@ import VsCodeExtension.SimpleToken as SimpleToken
 import VsCodeExtension.ToString as ToString
 import VsCodeExtension.TokenType as TokenType
 import VsCodeExtension.Tokenize as Tokenize
+import VsCodeExtension.VSCodeApi as VSCodeApi
 
-foreign import data ActivateType :: Type
-
-foreign import data DeactivateType :: Type
-
-foreign import activateFunc ::
-  { languageId :: String
-  , formatFunc :: String -> String
-  , semanticTokensProviderFunc :: String -> Array Int
-  , semanticTokensProviderLegend :: Array String
-  } ->
-  ActivateType
-
-foreign import deactivateFunc :: DeactivateType
-
-activate :: ActivateType
-activate =
-  activateFunc
+activate :: Effect Unit
+activate = do
+  diagnosticCollection <- VSCodeApi.languagesCreateDiagnosticCollection "definy-error"
+  VSCodeApi.languagesRegisterDocumentFormattingEditProvider
     { languageId: NonEmptyString.toString LanguageId.languageId
     , formatFunc:
         \code ->
@@ -45,6 +33,9 @@ activate =
                     (SimpleToken.tokenListToSimpleTokenList (Tokenize.tokenize code))
                 )
             )
+    }
+  VSCodeApi.languagesRegisterDocumentSemanticTokensProvider
+    { languageId: NonEmptyString.toString LanguageId.languageId
     , semanticTokensProviderFunc:
         \code ->
           tokenDataListToDataList
@@ -58,8 +49,8 @@ activate =
     , semanticTokensProviderLegend: TokenType.useTokenTypesAsStringArray
     }
 
-deactivate :: DeactivateType
-deactivate = deactivateFunc
+deactivate :: Effect Unit
+deactivate = pure unit
 
 tokenDataListToDataList ::
   Array TokenType.TokenData ->
