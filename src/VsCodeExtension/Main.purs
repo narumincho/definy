@@ -5,11 +5,12 @@ module VsCodeExtension.Main
 
 import Prelude
 import Data.Array as Array
-import Data.String.NonEmpty as NonEmptyString
+import Data.Nullable as Nullable
 import Data.UInt as UInt
 import Effect (Effect)
 import Prelude as Prelude
 import VsCodeExtension.Evaluate as Evaluate
+import VsCodeExtension.Hover as Hover
 import VsCodeExtension.LanguageId as LanguageId
 import VsCodeExtension.Parser as Parser
 import VsCodeExtension.SemanticToken as SemanticToken
@@ -46,6 +47,19 @@ activate = do
                 )
             )
     , semanticTokensProviderLegend: TokenType.useTokenTypesAsStringArray
+    }
+  VSCodeApi.languagesRegisterHoverProvider
+    { languageId: LanguageId.languageId
+    , func:
+        \{ code, position } ->
+          Nullable.toNullable
+            ( Hover.getHoverData position
+                ( Evaluate.codeTreeToEvaluatedTreeIContextNormal
+                    ( Parser.parse
+                        (SimpleToken.tokenListToSimpleTokenList (Tokenize.tokenize code))
+                    )
+                )
+            )
     }
 
 deactivate :: Effect Unit

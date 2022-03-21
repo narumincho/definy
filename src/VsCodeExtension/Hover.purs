@@ -17,22 +17,24 @@ import VsCodeExtension.VSCodeApi as VSCodeApi
 getHoverData ::
   VSCodeApi.Position ->
   Evaluate.EvaluatedTree ->
-  Maybe { contents :: Markdown.Markdown, range :: VSCodeApi.Range }
+  Maybe { contents :: String, range :: VSCodeApi.Range }
 getHoverData position (Evaluate.EvaluatedTree { name, nameRange, range, item, children }) =
   if VSCodeApi.rangeContains position nameRange then
     Just
       { contents:
-          Markdown.Markdown
-            [ Markdown.Header2 (NonEmptyString.nes (Proxy :: Proxy "Type"))
-            , Markdown.CodeBlock "..."
-            , Markdown.Header2 (NonEmptyString.nes (Proxy :: Proxy "Value"))
-            , Markdown.CodeBlock "..."
-            , Markdown.Header2 (NonEmptyString.nes (Proxy :: Proxy "Tree"))
-            , Markdown.CodeBlock
-                ( ToString.noPositionTreeToString
-                    (evaluatedItemToHoverTree name item)
-                )
-            ]
+          Markdown.toMarkdownString
+            ( Markdown.Markdown
+                [ Markdown.Header2 (NonEmptyString.nes (Proxy :: Proxy "Type"))
+                , Markdown.CodeBlock "..."
+                , Markdown.Header2 (NonEmptyString.nes (Proxy :: Proxy "Value"))
+                , Markdown.CodeBlock "..."
+                , Markdown.Header2 (NonEmptyString.nes (Proxy :: Proxy "Tree"))
+                , Markdown.CodeBlock
+                    ( ToString.noPositionTreeToString
+                        (evaluatedItemToHoverTree name item)
+                    )
+                ]
+            )
       , range: range
       }
   else

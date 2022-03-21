@@ -113,15 +113,18 @@ export const languagesRegisterHoverProvider =
       readonly code: string;
       readonly position: Position;
     }) => {
-      readonly markdown: string;
+      readonly contents: string;
       readonly range: Range;
-    };
+    } | null;
   }) =>
   () => {
     languages.registerHoverProvider(option.languageId, {
       provideHover(document, position) {
         const result = option.func({ code: document.getText(), position });
-        return new Hover(result.markdown, result.range);
+        if (result === null) {
+          return undefined;
+        }
+        return new Hover(result.contents, result.range);
       },
     });
   };

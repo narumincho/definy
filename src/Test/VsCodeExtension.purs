@@ -3,7 +3,6 @@ module Test.VsCodeExtension
   ) where
 
 import Prelude
-import Data.Maybe (Maybe(..))
 import Data.String.NonEmpty as NonEmptyString
 import Data.UInt as UInt
 import Test.Unit as TestUnit

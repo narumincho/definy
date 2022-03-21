@@ -19,11 +19,12 @@ module VsCodeExtension.VSCodeApi
   ) where
 
 import Prelude
+import Data.Nullable (Nullable)
+import Data.String as String
 import Data.String.NonEmpty (NonEmptyString)
 import Data.UInt as UInt
 import Effect as Effect
 import Effect.Uncurried (EffectFn1)
-import Data.String as String
 
 -- | 文章中の文字の位置の範囲
 -- | LSP の仕様により, UTF16 での offset になる
@@ -93,7 +94,7 @@ foreign import languagesRegisterHoverProvider ::
   { languageId :: NonEmptyString
   , func ::
       { code :: String, position :: Position } ->
-      { markdown :: String, range :: Range }
+      Nullable { contents :: String, range :: Range }
   } ->
   Effect.Effect Unit
 
