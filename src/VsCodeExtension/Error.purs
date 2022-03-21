@@ -13,7 +13,7 @@ import Data.String.NonEmpty as NonEmptyString
 import Data.UInt as UInt
 import Prelude as Prelude
 import VsCodeExtension.Evaluate as Evaluate
-import VsCodeExtension.Range as Range
+import VsCodeExtension.VSCodeApi as VSCodeApi
 
 getErrorList :: Evaluate.EvaluatedTree -> Array ErrorWithRange
 getErrorList tree@(Evaluate.EvaluatedTree { item, name, nameRange, children, expectedChildrenCount: expectedChildrenCountMaybe }) =
@@ -56,10 +56,9 @@ getParameterError (Evaluate.EvaluatedTree { name, nameRange, range, children }) 
               , expect: UInt.fromInt 1
               }
         , range:
-            Range.Range
-              { start: Range.positionOneCharacterLeft (Range.rangeEnd range)
-              , end: Range.rangeEnd range
-              }
+            VSCodeApi.newRange
+              (VSCodeApi.positionSub1Character (VSCodeApi.rangeGetEnd range))
+              (VSCodeApi.rangeGetEnd range)
         }
     ]
   Prelude.EQ -> []
@@ -80,19 +79,19 @@ getParameterError (Evaluate.EvaluatedTree { name, nameRange, range, children }) 
 
 newtype ErrorWithRange
   = ErrorWithRange
-  { error :: Error, range :: Range.Range }
+  { error :: Error, range :: VSCodeApi.Range }
 
 data Error
   = UnknownName NonEmptyString
   | NeedParameter
     { name :: NonEmptyString
-    , nameRange :: Range.Range
+    , nameRange :: VSCodeApi.Range
     , expect :: UInt.UInt
     , actual :: UInt.UInt
     }
   | SuperfluousParameter
     { name :: NonEmptyString
-    , nameRange :: Range.Range
+    , nameRange :: VSCodeApi.Range
     , expect :: UInt.UInt
     }
   | UIntParseError NonEmptyString

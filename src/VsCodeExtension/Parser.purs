@@ -3,6 +3,7 @@ module VsCodeExtension.Parser
   , parse
   ) where
 
+import Data.UInt as UInt
 import Data.Array as Array
 import Data.Array.NonEmpty (NonEmptyArray)
 import Data.Array.NonEmpty as NonEmptyArray
@@ -13,15 +14,15 @@ import Data.String.NonEmpty (NonEmptyString)
 import Data.String.NonEmpty as NonEmptyString
 import Prelude as Prelude
 import Type.Proxy (Proxy(..))
-import VsCodeExtension.Range as Range
 import VsCodeExtension.SimpleToken as SimpleToken
+import VsCodeExtension.VSCodeApi as VSCodeApi
 
 newtype CodeTree
   = CodeTree
   { name :: NonEmptyString
-  , nameRange :: Range.Range
+  , nameRange :: VSCodeApi.Range
   , children :: Array CodeTree
-  , range :: Range.Range
+  , range :: VSCodeApi.Range
   }
 
 derive instance eqCodeTree :: Prelude.Eq CodeTree
@@ -44,8 +45,9 @@ parse simpleTokenList = case Array.uncons simpleTokenList of
             , nameRange: range
             , children: firstItem.codeTreeList
             , range:
-                Range.Range
-                  { start: Range.rangeStart range, end: firstItem.endPosition }
+                VSCodeApi.newRange
+                  (VSCodeApi.rangeGetStart range)
+                  firstItem.endPosition
             }
       Nothing ->
         CodeTree
@@ -61,16 +63,22 @@ emptyCodeTree :: CodeTree
 emptyCodeTree =
   CodeTree
     { name: NonEmptyString.nes (Proxy :: Proxy "module")
-    , nameRange: Range.rangeZero
+    , nameRange:
+        VSCodeApi.newRange
+          (VSCodeApi.newPosition (UInt.fromInt 0) (UInt.fromInt 0))
+          (VSCodeApi.newPosition (UInt.fromInt 0) (UInt.fromInt 0))
     , children: []
-    , range: Range.rangeZero
+    , range:
+        VSCodeApi.newRange
+          (VSCodeApi.newPosition (UInt.fromInt 0) (UInt.fromInt 0))
+          (VSCodeApi.newPosition (UInt.fromInt 0) (UInt.fromInt 0))
     }
 
 -- | `a(), b())` をパースする` 
 simpleTokenListToCodeTreeListWithRest ::
   NonEmptyArray SimpleToken.SimpleTokenWithRange ->
   { codeTreeList :: Array CodeTree
-  , endPosition :: Range.Position
+  , endPosition :: VSCodeApi.Position
   , rest :: Array SimpleToken.SimpleTokenWithRange
   }
 simpleTokenListToCodeTreeListWithRest simpleTokenList =
@@ -88,18 +96,18 @@ simpleTokenListToCodeTreeListWithRest simpleTokenList =
           }
       SimpleToken.End ->
         { codeTreeList: []
-        , endPosition: Range.rangeEnd range
+        , endPosition: VSCodeApi.rangeGetEnd range
         , rest: tail
         }
 
 -- | {`a` と `(), b())`} をパースする` 
 nameAndSimpleTokenListToCodeTreeListWithRest ::
   { name :: NonEmptyString
-  , nameRange :: Range.Range
+  , nameRange :: VSCodeApi.Range
   , simpleTokenList :: Array SimpleToken.SimpleTokenWithRange
   } ->
   { codeTreeList :: Array CodeTree
-  , endPosition :: Range.Position
+  , endPosition :: VSCodeApi.Position
   , rest :: Array SimpleToken.SimpleTokenWithRange
   }
 nameAndSimpleTokenListToCodeTreeListWithRest { name, nameRange, simpleTokenList } = case NonEmptyArray.fromArray simpleTokenList of
@@ -119,10 +127,9 @@ nameAndSimpleTokenListToCodeTreeListWithRest { name, nameRange, simpleTokenList 
                       , nameRange
                       , children: firstItem.codeTreeList
                       , range:
-                          Range.Range
-                            { start: Range.rangeStart nameRange
-                            , end: firstItem.endPosition
-                            }
+                          VSCodeApi.newRange
+                            (VSCodeApi.rangeGetStart nameRange)
+                            (firstItem.endPosition)
                       }
                   )
                   tailItem.codeTreeList
@@ -151,5 +158,5 @@ nameAndSimpleTokenListToCodeTreeListWithRest { name, nameRange, simpleTokenList 
             }
         ]
     , rest: []
-    , endPosition: Range.rangeEnd nameRange
+    , endPosition: VSCodeApi.rangeGetEnd nameRange
     }

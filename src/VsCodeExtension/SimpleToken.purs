@@ -6,18 +6,18 @@ module VsCodeExtension.SimpleToken
 
 import Prelude
 import Data.Array as Array
+import Data.Generic.Rep as GenericRep
 import Data.Maybe (Maybe(..))
 import Data.Show.Generic as ShowGeneric
 import Data.String.NonEmpty (NonEmptyString)
-import VsCodeExtension.Range as Range
-import Data.Generic.Rep as GenericRep
 import VsCodeExtension.Tokenize as Tokenize
+import VsCodeExtension.VSCodeApi as VSCodeApi
 
 -- | よりシンプルなトークン
 newtype SimpleTokenWithRange
   = SimpleTokenWithRange
   { simpleToken :: SimpleToken
-  , range :: Range.Range
+  , range :: VSCodeApi.Range
   }
 
 derive instance eqSimpleTokenWithRange :: Eq SimpleTokenWithRange
@@ -39,7 +39,7 @@ instance showSimpleToken :: Show SimpleToken where
   show = ShowGeneric.genericShow
 
 newtype BeforeName
-  = BeforeName { name :: NonEmptyString, range :: Range.Range }
+  = BeforeName { name :: NonEmptyString, range :: VSCodeApi.Range }
 
 tokenListToSimpleTokenList :: Array Tokenize.TokenWithRange -> Array SimpleTokenWithRange
 tokenListToSimpleTokenList tokenList =
@@ -98,10 +98,9 @@ tokenListToSimpleTokenListLoop beforeNameMaybe (Tokenize.TokenWithRange { token,
           [ SimpleTokenWithRange
               { simpleToken: Start { name: beforeName }
               , range:
-                  Range.Range
-                    { start: Range.rangeStart beforeNameRange
-                    , end: Range.rangeEnd range
-                    }
+                  VSCodeApi.newRange
+                    (VSCodeApi.rangeGetStart beforeNameRange)
+                    (VSCodeApi.rangeGetEnd range)
               }
           ]
       , nameMaybe: Nothing

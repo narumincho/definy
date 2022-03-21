@@ -17,12 +17,11 @@ import Data.String.NonEmpty (NonEmptyString)
 import Data.String.NonEmpty.CodeUnits as NonEmptyCodeUnits
 import Data.Tuple as Tuple
 import Data.UInt as UInt
-import VsCodeExtension.Range as Position
-import VsCodeExtension.Range as Range
+import VsCodeExtension.VSCodeApi as VSCodeApi
 
 newtype TokenWithRange
   = TokenWithRange
-  { range :: Range.Range
+  { range :: VSCodeApi.Range
   , token :: Token
   }
 
@@ -46,7 +45,7 @@ instance tokenShow :: Show Token where
   show = ShowGeneric.genericShow
 
 newtype State
-  = State { target :: Char, rest :: Array Char, range :: Range.Range }
+  = State { target :: Char, rest :: Array Char, range :: VSCodeApi.Range }
 
 tokenize :: String -> Array TokenWithRange
 tokenize str =
@@ -85,8 +84,7 @@ tokenizeInLine { line, positionLine } =
             in
               case tokenizeLoop
                   { position:
-                      Position.Position
-                        { character: positionCharacter, line: positionLine }
+                      VSCodeApi.newPosition positionLine positionCharacter
                   , readState
                   , targetRight: char
                   } of
@@ -119,8 +117,9 @@ tokenizeInLine { line, positionLine } =
                         Ended ->
                           BeforeName
                             { startPosition:
-                                Position.Position
-                                  { character: positionCharacter, line: positionLine }
+                                VSCodeApi.newPosition
+                                  positionLine
+                                  positionCharacter
                             , charList: NonEmptyArray.singleton char
                             }
                   , result: result
@@ -134,21 +133,19 @@ tokenizeInLine { line, positionLine } =
         Array.snoc resultAndState.result
           ( TokenWithRange
               { range:
-                  Range.Range
-                    { start: startPosition
-                    , end:
-                        Range.Position
-                          { line: positionLine
-                          , character: UInt.fromInt (Array.length lineAsCharList)
-                          }
-                    }
+                  VSCodeApi.newRange
+                    startPosition
+                    ( VSCodeApi.newPosition
+                        positionLine
+                        (UInt.fromInt (Array.length lineAsCharList))
+                    )
               , token: Name (NonEmptyCodeUnits.fromNonEmptyCharArray charList)
               }
           )
       Ended -> resultAndState.result
 
 data ReadState
-  = BeforeName { startPosition :: Range.Position, charList :: NonEmptyArray Char }
+  = BeforeName { startPosition :: VSCodeApi.Position, charList :: NonEmptyArray Char }
   | Ended
 
 data TokenLoopResult
@@ -160,7 +157,7 @@ data TokenLoopResult
 tokenizeLoop ::
   { readState :: ReadState
   , targetRight :: Char
-  , position :: Range.Position
+  , position :: VSCodeApi.Position
   } ->
   TokenLoopResult
 tokenizeLoop { targetRight, readState, position } = case charIsEnd targetRight of
@@ -174,10 +171,9 @@ tokenizeLoop { targetRight, readState, position } = case charIsEnd targetRight o
             tokenWithRange
             ( TokenWithRange
                 { range:
-                    Range.Range
-                      { start: position
-                      , end: Range.positionAdd1Character position
-                      }
+                    VSCodeApi.newRange
+                      position
+                      (VSCodeApi.positionAdd1Character position)
                 , token
                 }
             )
@@ -186,22 +182,21 @@ tokenizeLoop { targetRight, readState, position } = case charIsEnd targetRight o
       One
         ( TokenWithRange
             { range:
-                Range.Range
-                  { start: position
-                  , end: Range.positionAdd1Character position
-                  }
+                VSCodeApi.newRange
+                  position
+                  (VSCodeApi.positionAdd1Character position)
             , token
             }
         )
   NotEnd -> AddName
 
 -- | 右の文字が終了文字だと仮定して得られた, 左側の文字
-getLeftToken :: ReadState -> Range.Position -> Maybe TokenWithRange
+getLeftToken :: ReadState -> VSCodeApi.Position -> Maybe TokenWithRange
 getLeftToken readState endPosition = case readState of
   BeforeName { charList, startPosition } ->
     Just
       ( TokenWithRange
-          { range: Range.Range { start: startPosition, end: endPosition }
+          { range: VSCodeApi.newRange startPosition endPosition
           , token: Name (NonEmptyCodeUnits.fromNonEmptyCharArray charList)
           }
       )

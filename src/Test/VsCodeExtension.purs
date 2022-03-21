@@ -9,42 +9,17 @@ import Data.UInt as UInt
 import Test.Unit as TestUnit
 import Test.Util (assertEqual)
 import Type.Proxy (Proxy(..))
-import VsCodeExtension.LanguageServerLib as Lib
 import VsCodeExtension.Parser as Parser
-import VsCodeExtension.Range as Range
 import VsCodeExtension.SimpleToken as SimpleToken
 import VsCodeExtension.Tokenize as Tokenize
+import VsCodeExtension.VSCodeApi as VSCodeApi
 
 test :: TestUnit.Test
 test = do
-  parseContentLengthHeaderTest
   tokenizeTest
   simpleTokenTest
   parserTest
   rangeTest
-
-parseContentLengthHeaderTest :: TestUnit.Test
-parseContentLengthHeaderTest = do
-  assertEqual
-    "parseContentLengthHeader lowercase"
-    { actual: Lib.parseContentLengthHeader "content-length: 234"
-    , expected: Just (UInt.fromInt 234)
-    }
-  assertEqual
-    "parseContentLengthHeader uppercase"
-    { actual: Lib.parseContentLengthHeader "Content-Length: 3"
-    , expected: Just (UInt.fromInt 3)
-    }
-  assertEqual
-    "parseContentLengthHeader separator"
-    { actual: Lib.parseContentLengthHeader "Content-LEngth:99999"
-    , expected: Just (UInt.fromInt 99999)
-    }
-  assertEqual
-    "parseContentLengthHeader separator nothing"
-    { actual: Lib.parseContentLengthHeader "Content-Length+742"
-    , expected: Nothing
-    }
 
 tokenizeTest :: TestUnit.Test
 tokenizeTest = do
@@ -132,20 +107,17 @@ part(value)
         ]
     }
 
-rangeFrom :: Int -> Int -> Int -> Int -> Range.Range
+rangeFrom :: Int -> Int -> Int -> Int -> VSCodeApi.Range
 rangeFrom startLine startChar endLine endChar =
-  Range.Range
-    { start:
-        Range.Position
-          { line: UInt.fromInt startLine
-          , character: UInt.fromInt startChar
-          }
-    , end:
-        Range.Position
-          { line: UInt.fromInt endLine
-          , character: UInt.fromInt endChar
-          }
-    }
+  VSCodeApi.newRange
+    ( VSCodeApi.newPosition
+        (UInt.fromInt startLine)
+        (UInt.fromInt startChar)
+    )
+    ( VSCodeApi.newPosition
+        (UInt.fromInt endLine)
+        (UInt.fromInt endChar)
+    )
 
 simpleTokenTest :: TestUnit.Test
 simpleTokenTest = do
@@ -242,40 +214,40 @@ rangeTest = do
   assertEqual
     "range inside"
     { actual:
-        Range.isPositionInsideRange
+        VSCodeApi.rangeContains
+          (VSCodeApi.newPosition (UInt.fromInt 1) (UInt.fromInt 15))
           (rangeFrom 1 0 1 28)
-          (Range.Position { line: UInt.fromInt 1, character: UInt.fromInt 15 })
     , expected: true
     }
   assertEqual
     "range inside start"
     { actual:
-        Range.isPositionInsideRange
+        VSCodeApi.rangeContains
+          (VSCodeApi.newPosition (UInt.fromInt 1) (UInt.fromInt 0))
           (rangeFrom 1 0 1 28)
-          (Range.Position { line: UInt.fromInt 1, character: UInt.fromInt 0 })
     , expected: true
     }
   assertEqual
     "range inside end"
     { actual:
-        Range.isPositionInsideRange
+        VSCodeApi.rangeContains
+          (VSCodeApi.newPosition (UInt.fromInt 1) (UInt.fromInt 28))
           (rangeFrom 1 0 1 28)
-          (Range.Position { line: UInt.fromInt 1, character: UInt.fromInt 28 })
     , expected: true
     }
   assertEqual
     "range outside (line)"
     { actual:
-        Range.isPositionInsideRange
+        VSCodeApi.rangeContains
+          (VSCodeApi.newPosition (UInt.fromInt 6) (UInt.fromInt 15))
           (rangeFrom 1 0 1 28)
-          (Range.Position { line: UInt.fromInt 6, character: UInt.fromInt 15 })
     , expected: false
     }
   assertEqual
     "range outside (character)"
     { actual:
-        Range.isPositionInsideRange
+        VSCodeApi.rangeContains
+          (VSCodeApi.newPosition (UInt.fromInt 1) (UInt.fromInt 29))
           (rangeFrom 1 0 1 28)
-          (Range.Position { line: UInt.fromInt 1, character: UInt.fromInt 29 })
     , expected: false
     }

@@ -10,7 +10,7 @@ import Data.Array as Array
 import Data.Maybe (Maybe(..))
 import Data.UInt as UInt
 import Prelude as Prelude
-import VsCodeExtension.Range as Range
+import VsCodeExtension.VSCodeApi as VSCodeApi
 
 data TokenType
   = TokenTypeNamespace
@@ -46,20 +46,30 @@ tokenTypeToInt tokenType = case Array.elemIndex tokenType useTokenTypes of
 newtype TokenData
   = TokenData
   { tokenType :: TokenType
-  , start :: Range.Position
+  , start :: VSCodeApi.Position
   , length :: UInt.UInt
   }
 
 instance showTokenData :: Prelude.Show TokenData where
   show (TokenData rec) = Prelude.show rec
 
-tokenDataToData :: Range.Position -> TokenData -> Array Int
-tokenDataToData (Range.Position { line: beforeLine, character: beforeCharacter }) (TokenData { tokenType, start: Range.Position { line, character }, length }) =
-  [ UInt.toInt (Prelude.sub line beforeLine)
-  , if Prelude.eq line beforeLine then
-      UInt.toInt (Prelude.sub character beforeCharacter)
+tokenDataToData :: VSCodeApi.Position -> TokenData -> Array Int
+tokenDataToData beforePosition (TokenData { tokenType, start: startPosition, length }) =
+  [ UInt.toInt
+      ( Prelude.sub
+          (VSCodeApi.positionGetLine startPosition)
+          (VSCodeApi.positionGetLine beforePosition)
+      )
+  , if Prelude.eq
+      (VSCodeApi.positionGetLine startPosition)
+      (VSCodeApi.positionGetLine beforePosition) then
+      UInt.toInt
+        ( Prelude.sub
+            (VSCodeApi.positionGetCharacter startPosition)
+            (VSCodeApi.positionGetCharacter beforePosition)
+        )
     else
-      UInt.toInt character
+      UInt.toInt (VSCodeApi.positionGetCharacter startPosition)
   , UInt.toInt length
   , tokenTypeToInt tokenType
   , 0

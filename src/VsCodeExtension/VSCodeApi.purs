@@ -8,13 +8,26 @@ module VsCodeExtension.VSCodeApi
   , languagesRegisterHoverProvider
   , newPosition
   , newRange
+  , positionAdd1Character
+  , positionGetCharacter
+  , positionGetLine
+  , positionSub1Character
+  , rangeContains
+  , rangeGetEnd
+  , rangeGetStart
   , workspaceOnDidChangeTextDocument
   ) where
 
 import Prelude
+import Data.String.NonEmpty (NonEmptyString)
+import Data.UInt as UInt
 import Effect as Effect
 import Effect.Uncurried (EffectFn1)
+import Data.String as String
 
+-- | 文章中の文字の位置の範囲
+-- | LSP の仕様により, UTF16 での offset になる
+-- | https://microsoft.github.io/language-server-protocol/specifications/specification-3-16/#textDocuments
 foreign import data Range :: Type
 
 foreign import data Position :: Type
@@ -23,23 +36,61 @@ foreign import data DiagnosticCollection :: Type
 
 foreign import newRange :: Position -> Position -> Range
 
-foreign import newPosition :: Int -> Int -> Position
+foreign import rangeGetStart :: Range -> Position
+
+foreign import rangeGetEnd :: Range -> Position
+
+foreign import rangeContains :: Position -> Range -> Boolean
+
+foreign import rangeEqual :: Range -> Range -> Boolean
+
+instance eqRange :: Eq Range where
+  eq a b = rangeEqual a b
+
+instance showRange :: Show Range where
+  show range =
+    String.joinWith "→"
+      [ show (rangeGetStart range), show (rangeGetEnd range) ]
+
+foreign import newPosition :: UInt.UInt -> UInt.UInt -> Position
+
+foreign import positionGetLine :: Position -> UInt.UInt
+
+foreign import positionGetCharacter :: Position -> UInt.UInt
+
+foreign import positionTranslateCharacter :: Int -> Position -> Position
+
+positionAdd1Character :: Position -> Position
+positionAdd1Character = positionTranslateCharacter 1
+
+positionSub1Character :: Position -> Position
+positionSub1Character = positionTranslateCharacter (-1)
+
+instance showPosition :: Show Position where
+  show position =
+    String.joinWith ""
+      [ "("
+      , UInt.toString (positionGetLine position)
+      , ","
+      , UInt.toString (positionGetCharacter position)
+      , ")"
+      ]
 
 foreign import languagesCreateDiagnosticCollection ::
   String -> Effect.Effect DiagnosticCollection
 
 foreign import languagesRegisterDocumentFormattingEditProvider ::
-  { languageId :: String, formatFunc :: String -> String } -> Effect.Effect Unit
+  { languageId :: NonEmptyString, formatFunc :: String -> String } -> Effect.Effect Unit
 
 foreign import languagesRegisterDocumentSemanticTokensProvider ::
-  { languageId :: String
+  { languageId :: NonEmptyString
   , semanticTokensProviderFunc :: String -> Array Int
   , semanticTokensProviderLegend :: Array String
   } ->
   Effect.Effect Unit
 
 foreign import languagesRegisterHoverProvider ::
-  { languageId :: String
+  { languageId :: NonEmptyString
   , func ::
       { code :: String, position :: Position } ->
       { markdown :: String, range :: Range }

@@ -12,7 +12,6 @@ import Prelude as Prelude
 import VsCodeExtension.Evaluate as Evaluate
 import VsCodeExtension.LanguageId as LanguageId
 import VsCodeExtension.Parser as Parser
-import VsCodeExtension.Range as Range
 import VsCodeExtension.SemanticToken as SemanticToken
 import VsCodeExtension.SimpleToken as SimpleToken
 import VsCodeExtension.ToString as ToString
@@ -24,7 +23,7 @@ activate :: Effect Unit
 activate = do
   diagnosticCollection <- VSCodeApi.languagesCreateDiagnosticCollection "definy-error"
   VSCodeApi.languagesRegisterDocumentFormattingEditProvider
-    { languageId: NonEmptyString.toString LanguageId.languageId
+    { languageId: LanguageId.languageId
     , formatFunc:
         \code ->
           ToString.evaluatedTreeToString
@@ -35,7 +34,7 @@ activate = do
             )
     }
   VSCodeApi.languagesRegisterDocumentSemanticTokensProvider
-    { languageId: NonEmptyString.toString LanguageId.languageId
+    { languageId: LanguageId.languageId
     , semanticTokensProviderFunc:
         \code ->
           tokenDataListToDataList
@@ -67,10 +66,9 @@ tokenDataListToDataList tokenDataList =
             }
         )
         { beforePosition:
-            Range.Position
-              { line: UInt.fromInt 0
-              , character: UInt.fromInt 0
-              }
+            VSCodeApi.newPosition
+              (UInt.fromInt 0)
+              (UInt.fromInt 0)
         , result: []
         }
         tokenDataList

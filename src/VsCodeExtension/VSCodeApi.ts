@@ -16,10 +16,44 @@ export const newRange =
     return new Range(start, end);
   };
 
+export const rangeGetStart = (range: Range): Position => {
+  return range.start;
+};
+
+export const rangeGetEnd = (range: Range): Position => {
+  return range.end;
+};
+
+export const rangeContains =
+  (position: Position) =>
+  (range: Range): boolean => {
+    return range.contains(position);
+  };
+
+export const rangeEqual =
+  (a: Range) =>
+  (b: Range): boolean => {
+    return a.isEqual(b);
+  };
+
 export const newPosition =
   (line: number) =>
   (character: number): Position => {
     return new Position(line, character);
+  };
+
+export const positionGetLine = (position: Position): number => {
+  return position.line;
+};
+
+export const positionGetCharacter = (position: Position): number => {
+  return position.character;
+};
+
+export const positionTranslateCharacter =
+  (characterDelta: number) =>
+  (position: Position): Position => {
+    return position.translate(0, characterDelta);
   };
 
 export const languagesCreateDiagnosticCollection =

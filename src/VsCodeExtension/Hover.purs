@@ -11,34 +11,30 @@ import Markdown as Markdown
 import Prelude as Prelude
 import Type.Proxy (Proxy(..))
 import VsCodeExtension.Evaluate as Evaluate
-import VsCodeExtension.LanguageServerLib as Lib
-import VsCodeExtension.Range as Range
 import VsCodeExtension.ToString as ToString
+import VsCodeExtension.VSCodeApi as VSCodeApi
 
-getHoverData :: Range.Position -> Evaluate.EvaluatedTree -> Maybe Lib.Hover
+getHoverData ::
+  VSCodeApi.Position ->
+  Evaluate.EvaluatedTree ->
+  Maybe { contents :: Markdown.Markdown, range :: VSCodeApi.Range }
 getHoverData position (Evaluate.EvaluatedTree { name, nameRange, range, item, children }) =
-  if Range.isPositionInsideRange nameRange position then
+  if VSCodeApi.rangeContains position nameRange then
     Just
-      ( Lib.Hover
-          { contents:
-              Lib.MarkupContent
-                { kind: Lib.Markdown
-                , value:
-                    Markdown.Markdown
-                      [ Markdown.Header2 (NonEmptyString.nes (Proxy :: Proxy "Type"))
-                      , Markdown.CodeBlock "..."
-                      , Markdown.Header2 (NonEmptyString.nes (Proxy :: Proxy "Value"))
-                      , Markdown.CodeBlock "..."
-                      , Markdown.Header2 (NonEmptyString.nes (Proxy :: Proxy "Tree"))
-                      , Markdown.CodeBlock
-                          ( ToString.noPositionTreeToString
-                              (evaluatedItemToHoverTree name item)
-                          )
-                      ]
-                }
-          , range: range
-          }
-      )
+      { contents:
+          Markdown.Markdown
+            [ Markdown.Header2 (NonEmptyString.nes (Proxy :: Proxy "Type"))
+            , Markdown.CodeBlock "..."
+            , Markdown.Header2 (NonEmptyString.nes (Proxy :: Proxy "Value"))
+            , Markdown.CodeBlock "..."
+            , Markdown.Header2 (NonEmptyString.nes (Proxy :: Proxy "Tree"))
+            , Markdown.CodeBlock
+                ( ToString.noPositionTreeToString
+                    (evaluatedItemToHoverTree name item)
+                )
+            ]
+      , range: range
+      }
   else
     Array.findMap (\(Evaluate.EvaluatedTreeChild { child }) -> getHoverData position child) children
 
