@@ -6,10 +6,8 @@ import Prelude
 import Console as Console
 import Data.Argonaut as Argonaut
 import Data.Array.NonEmpty as NonEmptyArray
-import Data.Either as Either
 import Data.Map as Map
 import Data.Maybe (Maybe(..))
-import Data.Set as Set
 import Data.String.NonEmpty (NonEmptyString)
 import Data.String.NonEmpty as NonEmptyString
 import Effect as Effect
@@ -57,31 +55,20 @@ languageConfigurationPath =
 
 writePackageJsonForVsCodeExtension :: Aff.Aff Unit
 writePackageJsonForVsCodeExtension = do
-  rootPackageJsonResult <-
-    PackageJson.readPackageVersionFromRootPackageJson
-      ( Set.fromFoldable
-          [ NonEmptyString.nes
-              (Proxy :: _ "vscode-languageclient")
-          ]
-      )
-  case rootPackageJsonResult of
-    Either.Left error -> Console.logValueAsAff "jsonの parse エラー!" { error }
-    Either.Right dependencies ->
-      FileSystemWrite.writeJson
-        ( Path.DistributionFilePath
-            { directoryPath: distributionDirectoryPath
-            , fileName: Name.fromSymbolProxy (Proxy :: _ "package")
-            }
-        )
-        (generatePackageJson dependencies)
+  FileSystemWrite.writeJson
+    ( Path.DistributionFilePath
+        { directoryPath: distributionDirectoryPath
+        , fileName: Name.fromSymbolProxy (Proxy :: _ "package")
+        }
+    )
+    generatePackageJson
 
-generatePackageJson :: Map.Map NonEmptyString NonEmptyString -> Argonaut.Json
-generatePackageJson dependencies =
+generatePackageJson :: Argonaut.Json
+generatePackageJson =
   PackageJson.toJson
-    { author:
-        NonEmptyString.nes
-          (Proxy :: _ "narumincho")
-    , dependencies: dependencies
+    { author: NonEmptyString.nes (Proxy :: _ "narumincho")
+    , publisher: NonEmptyString.nes (Proxy :: _ "narumincho")
+    , dependencies: Map.empty :: Map.Map NonEmptyString NonEmptyString
     , description:
         NonEmptyString.nes
           (Proxy :: _ "definy VSCode extension")
@@ -100,7 +87,7 @@ generatePackageJson dependencies =
                 , NonEmptyString.nes (Proxy :: _ "definy")
                 ]
           }
-    , name: PackageJson.nameFromSymbolProxyUnsafe (Proxy :: _ "definy-vscode-extension")
+    , name: PackageJson.nameFromSymbolProxyUnsafe (Proxy :: _ "definy")
     , vsCodeVersion: NonEmptyString.nes (Proxy :: _ "^1.64.1")
     , typeFilePath: Nothing
     , version: NonEmptyString.nes (Proxy :: _ "0.0.0")
