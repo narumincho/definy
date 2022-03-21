@@ -1,11 +1,19 @@
 module VsCodeExtension.VSCodeApi
-  ( DiagnosticCollection
+  ( Diagnostic
+  , DiagnosticCollection
+  , DiagnosticRelatedInformation
+  , Location
   , Position
   , Range
+  , Uri
+  , diagnosticCollectionSet
   , languagesCreateDiagnosticCollection
   , languagesRegisterDocumentFormattingEditProvider
   , languagesRegisterDocumentSemanticTokensProvider
   , languagesRegisterHoverProvider
+  , newDiagnostic
+  , newDiagnosticRelatedInformation
+  , newLocation
   , newPosition
   , newRange
   , positionAdd1Character
@@ -61,6 +69,14 @@ foreign import positionGetCharacter :: Position -> UInt.UInt
 
 foreign import positionTranslateCharacter :: Int -> Position -> Position
 
+foreign import data Uri :: Type
+
+foreign import data Diagnostic :: Type
+
+foreign import data DiagnosticRelatedInformation :: Type
+
+foreign import data Location :: Type
+
 positionAdd1Character :: Position -> Position
 positionAdd1Character = positionTranslateCharacter 1
 
@@ -79,6 +95,17 @@ instance showPosition :: Show Position where
 
 foreign import languagesCreateDiagnosticCollection ::
   String -> Effect.Effect DiagnosticCollection
+
+foreign import diagnosticCollectionSet ::
+  Array { uri :: Uri, diagnosticList :: Array Diagnostic } ->
+  DiagnosticCollection ->
+  Effect.Effect Unit
+
+foreign import newDiagnostic :: Range -> String -> Array DiagnosticRelatedInformation -> Diagnostic
+
+foreign import newDiagnosticRelatedInformation :: Location -> String -> DiagnosticRelatedInformation
+
+foreign import newLocation :: Uri -> Range -> Location
 
 foreign import languagesRegisterDocumentFormattingEditProvider ::
   { languageId :: NonEmptyString, formatFunc :: String -> String } -> Effect.Effect Unit
@@ -99,7 +126,5 @@ foreign import languagesRegisterHoverProvider ::
   Effect.Effect Unit
 
 foreign import workspaceOnDidChangeTextDocument ::
-  { callback ::
-      EffectFn1 { languageId :: String, code :: String } Unit
-  } ->
+  EffectFn1 { languageId :: String, uri :: Uri, code :: String } Unit ->
   Effect.Effect Unit

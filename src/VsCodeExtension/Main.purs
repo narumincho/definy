@@ -6,8 +6,10 @@ module VsCodeExtension.Main
 import Prelude
 import Data.Array as Array
 import Data.Nullable as Nullable
+import Data.String.NonEmpty as NonEmptyString
 import Data.UInt as UInt
 import Effect (Effect)
+import Effect.Uncurried as EffectUncurried
 import Prelude as Prelude
 import VsCodeExtension.Evaluate as Evaluate
 import VsCodeExtension.Hover as Hover
@@ -19,6 +21,7 @@ import VsCodeExtension.ToString as ToString
 import VsCodeExtension.TokenType as TokenType
 import VsCodeExtension.Tokenize as Tokenize
 import VsCodeExtension.VSCodeApi as VSCodeApi
+import VsCodeExtension.Error as Error
 
 activate :: Effect Unit
 activate = do
@@ -61,6 +64,24 @@ activate = do
                 )
             )
     }
+  VSCodeApi.workspaceOnDidChangeTextDocument
+    ( EffectUncurried.mkEffectFn1 \{ code, languageId, uri } ->
+        if eq languageId (NonEmptyString.toString LanguageId.languageId) then
+          VSCodeApi.diagnosticCollectionSet
+            [ { diagnosticList:
+                  evaluatedTreeToDiagnosticList uri
+                    ( Evaluate.codeTreeToEvaluatedTreeIContextNormal
+                        ( Parser.parse
+                            (SimpleToken.tokenListToSimpleTokenList (Tokenize.tokenize code))
+                        )
+                    )
+              , uri
+              }
+            ]
+            diagnosticCollection
+        else
+          pure unit
+    )
 
 deactivate :: Effect Unit
 deactivate = pure unit
@@ -88,3 +109,26 @@ tokenDataListToDataList tokenDataList =
         tokenDataList
     )
     .result
+
+evaluatedTreeToDiagnosticList :: VSCodeApi.Uri -> Evaluate.EvaluatedTree -> Array VSCodeApi.Diagnostic
+evaluatedTreeToDiagnosticList uri tree =
+  map
+    ( \(Error.ErrorWithRange { error, range }) ->
+        VSCodeApi.newDiagnostic
+          range
+          (Error.errorToString error)
+          ( case error of
+              Error.SuperfluousParameter { name, nameRange } ->
+                [ VSCodeApi.newDiagnosticRelatedInformation
+                    (VSCodeApi.newLocation uri nameRange)
+                    (NonEmptyString.toString name)
+                ]
+              Error.NeedParameter { name, nameRange } ->
+                [ VSCodeApi.newDiagnosticRelatedInformation
+                    (VSCodeApi.newLocation uri nameRange)
+                    (NonEmptyString.toString name)
+                ]
+              _ -> []
+          )
+    )
+    (Error.getErrorList tree)

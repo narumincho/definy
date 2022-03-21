@@ -1,11 +1,16 @@
 import {
+  Diagnostic,
   DiagnosticCollection,
+  DiagnosticRelatedInformation,
+  DiagnosticSeverity,
   Hover,
+  Location,
   Position,
   Range,
   SemanticTokens,
   SemanticTokensLegend,
   TextEdit,
+  Uri,
   languages,
   workspace,
 } from "vscode";
@@ -59,6 +64,42 @@ export const positionTranslateCharacter =
 export const languagesCreateDiagnosticCollection =
   (name: string) => (): DiagnosticCollection => {
     return languages.createDiagnosticCollection(name);
+  };
+
+export const diagnosticCollectionSet =
+  (
+    diagnosticsData: ReadonlyArray<{
+      readonly uri: Uri;
+      readonly diagnosticList: ReadonlyArray<Diagnostic>;
+    }>
+  ) =>
+  (diagnosticCollection: DiagnosticCollection): void => {
+    diagnosticCollection.set(
+      diagnosticsData.map(({ uri, diagnosticList }) => [uri, diagnosticList])
+    );
+  };
+
+export const newDiagnostic =
+  (range: Range) =>
+  (message: string) =>
+  (
+    relatedInformation: ReadonlyArray<DiagnosticRelatedInformation>
+  ): Diagnostic => {
+    const diagnostic = new Diagnostic(range, message, DiagnosticSeverity.Error);
+    diagnostic.relatedInformation = [...relatedInformation];
+    return diagnostic;
+  };
+
+export const newDiagnosticRelatedInformation =
+  (location: Location) =>
+  (message: string): DiagnosticRelatedInformation => {
+    return new DiagnosticRelatedInformation(location, message);
+  };
+
+export const newLocation =
+  (uri: Uri) =>
+  (range: Range): Location => {
+    return new Location(uri, range);
   };
 
 export const languagesRegisterDocumentFormattingEditProvider =
@@ -130,16 +171,18 @@ export const languagesRegisterHoverProvider =
   };
 
 export const workspaceOnDidChangeTextDocument =
-  (option: {
+  (
     callback: (data: {
       readonly languageId: string;
+      readonly uri: Uri;
       readonly code: string;
-    }) => void;
-  }) =>
+    }) => void
+  ) =>
   () => {
     workspace.onDidChangeTextDocument((textDocumentChangeEvent) => {
-      option.callback({
+      callback({
         languageId: textDocumentChangeEvent.document.languageId,
+        uri: textDocumentChangeEvent.document.uri,
         code: textDocumentChangeEvent.document.getText(),
       });
     });
