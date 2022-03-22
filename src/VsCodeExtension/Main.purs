@@ -1,20 +1,167 @@
 module VsCodeExtension.Main
-  ( ActivateType
-  , DeactivateType
-  , activate
+  ( activate
   , deactivate
   ) where
 
-foreign import data ActivateType :: Type
+import Prelude
+import Data.Array as Array
+import Data.Maybe (Maybe(..))
+import Data.Nullable as Nullable
+import Data.String.NonEmpty as NonEmptyString
+import Data.UInt as UInt
+import Effect (Effect)
+import Effect.Uncurried as EffectUncurried
+import Markdown as Markdown
+import Prelude as Prelude
+import VsCodeExtension.Error as Error
+import VsCodeExtension.Evaluate as Evaluate
+import VsCodeExtension.Hover as Hover
+import VsCodeExtension.LanguageId as LanguageId
+import VsCodeExtension.Parser as Parser
+import VsCodeExtension.Range as Range
+import VsCodeExtension.SemanticToken as SemanticToken
+import VsCodeExtension.SimpleToken as SimpleToken
+import VsCodeExtension.ToString as ToString
+import VsCodeExtension.TokenType as TokenType
+import VsCodeExtension.Tokenize as Tokenize
+import VsCodeExtension.VSCodeApi as VSCodeApi
 
-foreign import data DeactivateType :: Type
+activate :: Effect Unit
+activate = do
+  diagnosticCollection <- VSCodeApi.languagesCreateDiagnosticCollection "definy-error"
+  VSCodeApi.languagesRegisterDocumentFormattingEditProvider
+    { languageId: LanguageId.languageId
+    , formatFunc:
+        \code ->
+          ToString.evaluatedTreeToString
+            ( Evaluate.codeTreeToEvaluatedTreeIContextNormal
+                ( Parser.parse
+                    (SimpleToken.tokenListToSimpleTokenList (Tokenize.tokenize code))
+                )
+            )
+    }
+  VSCodeApi.languagesRegisterDocumentSemanticTokensProvider
+    { languageId: LanguageId.languageId
+    , semanticTokensProviderFunc:
+        \code ->
+          tokenDataListToDataList
+            ( SemanticToken.evaluateTreeToTokenData
+                ( Evaluate.codeTreeToEvaluatedTreeIContextNormal
+                    ( Parser.parse
+                        (SimpleToken.tokenListToSimpleTokenList (Tokenize.tokenize code))
+                    )
+                )
+            )
+    , semanticTokensProviderLegend: TokenType.useTokenTypesAsStringArray
+    }
+  VSCodeApi.languagesRegisterHoverProvider
+    { languageId: LanguageId.languageId
+    , func:
+        \{ code, position } ->
+          hoverToVscodeHover
+            ( Hover.getHoverData (vsCodePositionToPosition position)
+                ( Evaluate.codeTreeToEvaluatedTreeIContextNormal
+                    ( Parser.parse
+                        (SimpleToken.tokenListToSimpleTokenList (Tokenize.tokenize code))
+                    )
+                )
+            )
+    }
+  VSCodeApi.workspaceOnDidChangeTextDocument
+    ( EffectUncurried.mkEffectFn1 \{ code, languageId, uri } ->
+        if eq languageId (NonEmptyString.toString LanguageId.languageId) then
+          VSCodeApi.diagnosticCollectionSet
+            [ { diagnosticList:
+                  evaluatedTreeToDiagnosticList uri
+                    ( Evaluate.codeTreeToEvaluatedTreeIContextNormal
+                        ( Parser.parse
+                            (SimpleToken.tokenListToSimpleTokenList (Tokenize.tokenize code))
+                        )
+                    )
+              , uri
+              }
+            ]
+            diagnosticCollection
+        else
+          pure unit
+    )
 
-foreign import activateFunc :: ActivateType
+deactivate :: Effect Unit
+deactivate = pure unit
 
-foreign import deactivateFunc :: DeactivateType
+tokenDataListToDataList ::
+  Array TokenType.TokenData ->
+  Array Int
+tokenDataListToDataList tokenDataList =
+  ( Array.foldl
+        ( \{ beforePosition, result } item@(TokenType.TokenData { start }) ->
+            { beforePosition: start
+            , result:
+                Prelude.append result
+                  ( TokenType.tokenDataToData beforePosition
+                      item
+                  )
+            }
+        )
+        { beforePosition:
+            Range.Position
+              { line: UInt.fromInt 0
+              , character:
+                  UInt.fromInt 0
+              }
+        , result: []
+        }
+        tokenDataList
+    )
+    .result
 
-activate :: ActivateType
-activate = activateFunc
+evaluatedTreeToDiagnosticList :: VSCodeApi.Uri -> Evaluate.EvaluatedTree -> Array VSCodeApi.Diagnostic
+evaluatedTreeToDiagnosticList uri tree =
+  map
+    ( \(Error.ErrorWithRange { error, range }) ->
+        VSCodeApi.newDiagnostic
+          (rangeToVsCodeRange range)
+          (Error.errorToString error)
+          ( case error of
+              Error.SuperfluousParameter { name, nameRange } ->
+                [ VSCodeApi.newDiagnosticRelatedInformation
+                    (VSCodeApi.newLocation uri (rangeToVsCodeRange nameRange))
+                    (NonEmptyString.toString name)
+                ]
+              Error.NeedParameter { name, nameRange } ->
+                [ VSCodeApi.newDiagnosticRelatedInformation
+                    (VSCodeApi.newLocation uri (rangeToVsCodeRange nameRange))
+                    (NonEmptyString.toString name)
+                ]
+              _ -> []
+          )
+    )
+    (Error.getErrorList tree)
 
-deactivate :: DeactivateType
-deactivate = deactivateFunc
+rangeToVsCodeRange :: Range.Range -> VSCodeApi.Range
+rangeToVsCodeRange range =
+  VSCodeApi.newRange
+    (positionToVsCodePosition (Range.rangeStart range))
+    (positionToVsCodePosition (Range.rangeEnd range))
+
+positionToVsCodePosition :: Range.Position -> VSCodeApi.Position
+positionToVsCodePosition position =
+  VSCodeApi.newPosition
+    (Range.positionLine position)
+    (Range.positionCharacter position)
+
+vsCodePositionToPosition :: VSCodeApi.Position -> Range.Position
+vsCodePositionToPosition position =
+  Range.Position
+    { line: VSCodeApi.positionGetLine position
+    , character: VSCodeApi.positionGetCharacter position
+    }
+
+hoverToVscodeHover :: Maybe Hover.Hover -> Nullable.Nullable { contents :: String, range :: VSCodeApi.Range }
+hoverToVscodeHover = case _ of
+  Just (Hover.Hover { contents, range }) ->
+    Nullable.notNull
+      { contents: Markdown.toMarkdownString contents
+      , range: rangeToVsCodeRange range
+      }
+  Nothing -> Nullable.null

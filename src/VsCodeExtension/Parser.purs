@@ -45,7 +45,9 @@ parse simpleTokenList = case Array.uncons simpleTokenList of
             , children: firstItem.codeTreeList
             , range:
                 Range.Range
-                  { start: Range.rangeStart range, end: firstItem.endPosition }
+                  { start: Range.rangeStart range
+                  , end: firstItem.endPosition
+                  }
             }
       Nothing ->
         CodeTree

@@ -6,12 +6,12 @@ module VsCodeExtension.SimpleToken
 
 import Prelude
 import Data.Array as Array
+import Data.Generic.Rep as GenericRep
 import Data.Maybe (Maybe(..))
 import Data.Show.Generic as ShowGeneric
 import Data.String.NonEmpty (NonEmptyString)
-import VsCodeExtension.Range as Range
-import Data.Generic.Rep as GenericRep
 import VsCodeExtension.Tokenize as Tokenize
+import VsCodeExtension.Range as Range
 
 -- | よりシンプルなトークン
 newtype SimpleTokenWithRange

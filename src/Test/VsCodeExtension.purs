@@ -3,13 +3,11 @@ module Test.VsCodeExtension
   ) where
 
 import Prelude
-import Data.Maybe (Maybe(..))
 import Data.String.NonEmpty as NonEmptyString
 import Data.UInt as UInt
 import Test.Unit as TestUnit
 import Test.Util (assertEqual)
 import Type.Proxy (Proxy(..))
-import VsCodeExtension.LanguageServerLib as Lib
 import VsCodeExtension.Parser as Parser
 import VsCodeExtension.Range as Range
 import VsCodeExtension.SimpleToken as SimpleToken
@@ -17,34 +15,10 @@ import VsCodeExtension.Tokenize as Tokenize
 
 test :: TestUnit.Test
 test = do
-  parseContentLengthHeaderTest
   tokenizeTest
   simpleTokenTest
   parserTest
   rangeTest
-
-parseContentLengthHeaderTest :: TestUnit.Test
-parseContentLengthHeaderTest = do
-  assertEqual
-    "parseContentLengthHeader lowercase"
-    { actual: Lib.parseContentLengthHeader "content-length: 234"
-    , expected: Just (UInt.fromInt 234)
-    }
-  assertEqual
-    "parseContentLengthHeader uppercase"
-    { actual: Lib.parseContentLengthHeader "Content-Length: 3"
-    , expected: Just (UInt.fromInt 3)
-    }
-  assertEqual
-    "parseContentLengthHeader separator"
-    { actual: Lib.parseContentLengthHeader "Content-LEngth:99999"
-    , expected: Just (UInt.fromInt 99999)
-    }
-  assertEqual
-    "parseContentLengthHeader separator nothing"
-    { actual: Lib.parseContentLengthHeader "Content-Length+742"
-    , expected: Nothing
-    }
 
 tokenizeTest :: TestUnit.Test
 tokenizeTest = do

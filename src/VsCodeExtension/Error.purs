@@ -57,7 +57,7 @@ getParameterError (Evaluate.EvaluatedTree { name, nameRange, range, children }) 
               }
         , range:
             Range.Range
-              { start: Range.positionOneCharacterLeft (Range.rangeEnd range)
+              { start: Range.positionSub1Character (Range.rangeEnd range)
               , end: Range.rangeEnd range
               }
         }

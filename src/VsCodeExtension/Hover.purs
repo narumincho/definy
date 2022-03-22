@@ -1,5 +1,6 @@
 module VsCodeExtension.Hover
-  ( getHoverData
+  ( Hover(..)
+  , getHoverData
   ) where
 
 import Data.Array as Array
@@ -11,31 +12,32 @@ import Markdown as Markdown
 import Prelude as Prelude
 import Type.Proxy (Proxy(..))
 import VsCodeExtension.Evaluate as Evaluate
-import VsCodeExtension.LanguageServerLib as Lib
 import VsCodeExtension.Range as Range
 import VsCodeExtension.ToString as ToString
 
-getHoverData :: Range.Position -> Evaluate.EvaluatedTree -> Maybe Lib.Hover
+newtype Hover
+  = Hover { contents :: Markdown.Markdown, range :: Range.Range }
+
+getHoverData ::
+  Range.Position ->
+  Evaluate.EvaluatedTree ->
+  Maybe Hover
 getHoverData position (Evaluate.EvaluatedTree { name, nameRange, range, item, children }) =
   if Range.isPositionInsideRange nameRange position then
     Just
-      ( Lib.Hover
+      ( Hover
           { contents:
-              Lib.MarkupContent
-                { kind: Lib.Markdown
-                , value:
-                    Markdown.Markdown
-                      [ Markdown.Header2 (NonEmptyString.nes (Proxy :: Proxy "Type"))
-                      , Markdown.CodeBlock "..."
-                      , Markdown.Header2 (NonEmptyString.nes (Proxy :: Proxy "Value"))
-                      , Markdown.CodeBlock "..."
-                      , Markdown.Header2 (NonEmptyString.nes (Proxy :: Proxy "Tree"))
-                      , Markdown.CodeBlock
-                          ( ToString.noPositionTreeToString
-                              (evaluatedItemToHoverTree name item)
-                          )
-                      ]
-                }
+              Markdown.Markdown
+                [ Markdown.Header2 (NonEmptyString.nes (Proxy :: Proxy "Type"))
+                , Markdown.CodeBlock "..."
+                , Markdown.Header2 (NonEmptyString.nes (Proxy :: Proxy "Value"))
+                , Markdown.CodeBlock "..."
+                , Markdown.Header2 (NonEmptyString.nes (Proxy :: Proxy "Tree"))
+                , Markdown.CodeBlock
+                    ( ToString.noPositionTreeToString
+                        (evaluatedItemToHoverTree name item)
+                    )
+                ]
           , range: range
           }
       )

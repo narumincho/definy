@@ -16,7 +16,6 @@ import Data.Maybe (Maybe(..))
 import Data.String.NonEmpty (NonEmptyString)
 import Data.String.NonEmpty as NonEmptyString
 import Data.UInt as UInt
-import Type.Proxy (Proxy(..))
 import VsCodeExtension.Parser as Parser
 import VsCodeExtension.Range as Range
 
@@ -236,29 +235,6 @@ maybeEvaluatedItemToUInt :: Maybe EvaluatedItem -> UInt.UInt
 maybeEvaluatedItemToUInt = case _ of
   Just (Expr (Just value)) -> value
   _ -> UInt.fromInt 28
-
--- | 足りないパラメーターを補う `CodeTree` に変換する
-fillCodeTree :: Parser.CodeTree -> Parser.CodeTree
-fillCodeTree (Parser.CodeTree rec) =
-  if eq rec.name (NonEmptyString.nes (Proxy :: Proxy "add")) then
-    Parser.CodeTree (rec { children = fillChildren (UInt.fromInt 2) rec.children })
-  else
-    Parser.CodeTree rec
-
-fillChildren :: UInt.UInt -> Array Parser.CodeTree -> Array Parser.CodeTree
-fillChildren size children =
-  append
-    (map fillCodeTree children)
-    ( Array.replicate
-        (sub (UInt.toInt size) (Array.length children))
-        ( Parser.CodeTree
-            { name: NonEmptyString.nes (Proxy :: Proxy "?")
-            , nameRange: Range.rangeZero
-            , children: []
-            , range: Range.rangeZero
-            }
-        )
-    )
 
 need0Children ::
   Parser.CodeTree ->

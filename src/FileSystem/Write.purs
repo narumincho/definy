@@ -4,7 +4,6 @@ module FileSystem.Write
   , writeJson
   , writePureScript
   , writeTextFileInDistribution
-  , writeTextFilePathFileProtocol
   , writeTypeScriptFile
   , writeTypeScriptFileOneFile
   ) where
@@ -30,18 +29,6 @@ import PureScript.Data as PureScriptData
 import PureScript.ToString as PureScriptToString
 import TypeScript.ToString as TypeScriptToString
 import Util as Util
-import VsCodeExtension.Uri as Uri
-
--- | テキストファイル書き込む
-writeTextFilePathFileProtocol :: Uri.Uri -> String -> Aff.Aff Unit
-writeTextFilePathFileProtocol uri content =
-  AffCompat.fromEffectFnAff
-    ( writeTextFilePathFileProtocolImpl
-        (Uri.uriToString uri)
-        content
-    )
-
-foreign import writeTextFilePathFileProtocolImpl :: String -> String -> AffCompat.EffectFnAff Unit
 
 -- | distribution に ファイルを文字列として書き込む 拡張子はなし
 writeTextFileInDistribution :: Path.DistributionFilePath -> String -> Aff.Aff Unit

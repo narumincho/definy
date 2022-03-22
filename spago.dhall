@@ -16,7 +16,6 @@
   , "node-buffer"
   , "node-fs-aff"
   , "node-process"
-  , "node-streams"
   , "nullable"
   , "option"
   , "ordered-collections"

@@ -3,7 +3,9 @@ module VsCodeExtension.Range
   , Range(..)
   , isPositionInsideRange
   , positionAdd1Character
-  , positionOneCharacterLeft
+  , positionCharacter
+  , positionLine
+  , positionSub1Character
   , rangeEnd
   , rangeStart
   , rangeZero
@@ -55,8 +57,8 @@ rangeZero =
           }
     }
 
-positionOneCharacterLeft :: Position -> Position
-positionOneCharacterLeft (Position { line, character }) =
+positionSub1Character :: Position -> Position
+positionSub1Character (Position { line, character }) =
   Position
     { line
     , character:
@@ -96,6 +98,12 @@ instance decodeJsonPosition :: Argonaut.DecodeJson Position where
     case { line: UInt.fromInt' rec.line, character: UInt.fromInt' rec.character } of
       { line: Just line, character: Just character } -> Either.Right (Position { line, character })
       {} -> Either.Left (Argonaut.TypeMismatch "position need positive integer")
+
+positionLine :: Position -> UInt.UInt
+positionLine (Position { line }) = line
+
+positionCharacter :: Position -> UInt.UInt
+positionCharacter (Position { character }) = character
 
 positionAdd1Character :: Position -> Position
 positionAdd1Character (Position rec) =

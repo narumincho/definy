@@ -28,11 +28,11 @@ import FileSystem.Name as Name
 import FileSystem.Path as Path
 import FileSystem.Read as FileSystemRead
 import Foreign.Object as Object
+import Option as Option
 import StructuredUrl as StructuredUrl
 import Type.Data.Symbol as Symbol
 import Type.Proxy (Proxy(..))
 import Util as Util
-import Option as Option
 
 newtype Name
   = Name NonEmptyString
@@ -56,6 +56,7 @@ type PackageJsonInputOptional
     , activationEvents :: Array NonEmptyString
     , contributesLanguages :: NonEmptyArray ContributesLanguages
     , browser :: NonEmptyString
+    , publisher :: NonEmptyString
     )
 
 newtype ContributesLanguages
@@ -188,6 +189,9 @@ toJson option =
               Nothing -> []
           , case rec.browser of
               Just browser -> [ Tuple.Tuple "browser" (Argonaut.encodeJson browser) ]
+              Nothing -> []
+          , case rec.publisher of
+              Just publisher -> [ Tuple.Tuple "publisher" (Argonaut.encodeJson publisher) ]
               Nothing -> []
           ]
       )

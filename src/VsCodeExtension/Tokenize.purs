@@ -17,7 +17,6 @@ import Data.String.NonEmpty (NonEmptyString)
 import Data.String.NonEmpty.CodeUnits as NonEmptyCodeUnits
 import Data.Tuple as Tuple
 import Data.UInt as UInt
-import VsCodeExtension.Range as Position
 import VsCodeExtension.Range as Range
 
 newtype TokenWithRange
@@ -85,8 +84,7 @@ tokenizeInLine { line, positionLine } =
             in
               case tokenizeLoop
                   { position:
-                      Position.Position
-                        { character: positionCharacter, line: positionLine }
+                      Range.Position { line: positionLine, character: positionCharacter }
                   , readState
                   , targetRight: char
                   } of
@@ -119,8 +117,10 @@ tokenizeInLine { line, positionLine } =
                         Ended ->
                           BeforeName
                             { startPosition:
-                                Position.Position
-                                  { character: positionCharacter, line: positionLine }
+                                Range.Position
+                                  { line: positionLine
+                                  , character: positionCharacter
+                                  }
                             , charList: NonEmptyArray.singleton char
                             }
                   , result: result
