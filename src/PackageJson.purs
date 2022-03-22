@@ -57,6 +57,7 @@ type PackageJsonInputOptional
     , contributesLanguages :: NonEmptyArray ContributesLanguages
     , browser :: NonEmptyString
     , publisher :: NonEmptyString
+    , icon :: Path.DistributionFilePath
     )
 
 newtype ContributesLanguages
@@ -192,6 +193,18 @@ toJson option =
               Nothing -> []
           , case rec.publisher of
               Just publisher -> [ Tuple.Tuple "publisher" (Argonaut.encodeJson publisher) ]
+              Nothing -> []
+          , case rec.icon of
+              Just icon ->
+                [ Tuple.Tuple
+                    "icon"
+                    ( Argonaut.encodeJson
+                        ( Path.distributionFilePathToStringBaseApp
+                            icon
+                            FileType.Png
+                        )
+                    )
+                ]
               Nothing -> []
           ]
       )
