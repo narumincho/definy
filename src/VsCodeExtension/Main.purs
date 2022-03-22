@@ -5,23 +5,26 @@ module VsCodeExtension.Main
 
 import Prelude
 import Data.Array as Array
+import Data.Maybe (Maybe(..))
 import Data.Nullable as Nullable
 import Data.String.NonEmpty as NonEmptyString
 import Data.UInt as UInt
 import Effect (Effect)
 import Effect.Uncurried as EffectUncurried
+import Markdown as Markdown
 import Prelude as Prelude
+import VsCodeExtension.Error as Error
 import VsCodeExtension.Evaluate as Evaluate
 import VsCodeExtension.Hover as Hover
 import VsCodeExtension.LanguageId as LanguageId
 import VsCodeExtension.Parser as Parser
+import VsCodeExtension.Range as Range
 import VsCodeExtension.SemanticToken as SemanticToken
 import VsCodeExtension.SimpleToken as SimpleToken
 import VsCodeExtension.ToString as ToString
 import VsCodeExtension.TokenType as TokenType
 import VsCodeExtension.Tokenize as Tokenize
 import VsCodeExtension.VSCodeApi as VSCodeApi
-import VsCodeExtension.Error as Error
 
 activate :: Effect Unit
 activate = do
@@ -55,8 +58,8 @@ activate = do
     { languageId: LanguageId.languageId
     , func:
         \{ code, position } ->
-          Nullable.toNullable
-            ( Hover.getHoverData position
+          hoverToVscodeHover
+            ( Hover.getHoverData (vsCodePositionToPosition position)
                 ( Evaluate.codeTreeToEvaluatedTreeIContextNormal
                     ( Parser.parse
                         (SimpleToken.tokenListToSimpleTokenList (Tokenize.tokenize code))
@@ -101,9 +104,11 @@ tokenDataListToDataList tokenDataList =
             }
         )
         { beforePosition:
-            VSCodeApi.newPosition
-              (UInt.fromInt 0)
-              (UInt.fromInt 0)
+            Range.Position
+              { line: UInt.fromInt 0
+              , character:
+                  UInt.fromInt 0
+              }
         , result: []
         }
         tokenDataList
@@ -115,20 +120,48 @@ evaluatedTreeToDiagnosticList uri tree =
   map
     ( \(Error.ErrorWithRange { error, range }) ->
         VSCodeApi.newDiagnostic
-          range
+          (rangeToVsCodeRange range)
           (Error.errorToString error)
           ( case error of
               Error.SuperfluousParameter { name, nameRange } ->
                 [ VSCodeApi.newDiagnosticRelatedInformation
-                    (VSCodeApi.newLocation uri nameRange)
+                    (VSCodeApi.newLocation uri (rangeToVsCodeRange nameRange))
                     (NonEmptyString.toString name)
                 ]
               Error.NeedParameter { name, nameRange } ->
                 [ VSCodeApi.newDiagnosticRelatedInformation
-                    (VSCodeApi.newLocation uri nameRange)
+                    (VSCodeApi.newLocation uri (rangeToVsCodeRange nameRange))
                     (NonEmptyString.toString name)
                 ]
               _ -> []
           )
     )
     (Error.getErrorList tree)
+
+rangeToVsCodeRange :: Range.Range -> VSCodeApi.Range
+rangeToVsCodeRange range =
+  VSCodeApi.newRange
+    (positionToVsCodePosition (Range.rangeStart range))
+    (positionToVsCodePosition (Range.rangeEnd range))
+
+positionToVsCodePosition :: Range.Position -> VSCodeApi.Position
+positionToVsCodePosition position =
+  VSCodeApi.newPosition
+    (Range.positionLine position)
+    (Range.positionCharacter position)
+
+vsCodePositionToPosition :: VSCodeApi.Position -> Range.Position
+vsCodePositionToPosition position =
+  Range.Position
+    { line: VSCodeApi.positionGetLine position
+    , character: VSCodeApi.positionGetCharacter position
+    }
+
+hoverToVscodeHover :: Maybe Hover.Hover -> Nullable.Nullable { contents :: String, range :: VSCodeApi.Range }
+hoverToVscodeHover = case _ of
+  Just (Hover.Hover { contents, range }) ->
+    Nullable.notNull
+      { contents: Markdown.toMarkdownString contents
+      , range: rangeToVsCodeRange range
+      }
+  Nothing -> Nullable.null

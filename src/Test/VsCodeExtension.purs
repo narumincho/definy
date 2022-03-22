@@ -9,9 +9,9 @@ import Test.Unit as TestUnit
 import Test.Util (assertEqual)
 import Type.Proxy (Proxy(..))
 import VsCodeExtension.Parser as Parser
+import VsCodeExtension.Range as Range
 import VsCodeExtension.SimpleToken as SimpleToken
 import VsCodeExtension.Tokenize as Tokenize
-import VsCodeExtension.VSCodeApi as VSCodeApi
 
 test :: TestUnit.Test
 test = do
@@ -106,17 +106,20 @@ part(value)
         ]
     }
 
-rangeFrom :: Int -> Int -> Int -> Int -> VSCodeApi.Range
+rangeFrom :: Int -> Int -> Int -> Int -> Range.Range
 rangeFrom startLine startChar endLine endChar =
-  VSCodeApi.newRange
-    ( VSCodeApi.newPosition
-        (UInt.fromInt startLine)
-        (UInt.fromInt startChar)
-    )
-    ( VSCodeApi.newPosition
-        (UInt.fromInt endLine)
-        (UInt.fromInt endChar)
-    )
+  Range.Range
+    { start:
+        Range.Position
+          { line: UInt.fromInt startLine
+          , character: UInt.fromInt startChar
+          }
+    , end:
+        Range.Position
+          { line: UInt.fromInt endLine
+          , character: UInt.fromInt endChar
+          }
+    }
 
 simpleTokenTest :: TestUnit.Test
 simpleTokenTest = do
@@ -213,40 +216,40 @@ rangeTest = do
   assertEqual
     "range inside"
     { actual:
-        VSCodeApi.rangeContains
-          (VSCodeApi.newPosition (UInt.fromInt 1) (UInt.fromInt 15))
+        Range.isPositionInsideRange
           (rangeFrom 1 0 1 28)
+          (Range.Position { line: UInt.fromInt 1, character: UInt.fromInt 15 })
     , expected: true
     }
   assertEqual
     "range inside start"
     { actual:
-        VSCodeApi.rangeContains
-          (VSCodeApi.newPosition (UInt.fromInt 1) (UInt.fromInt 0))
+        Range.isPositionInsideRange
           (rangeFrom 1 0 1 28)
+          (Range.Position { line: UInt.fromInt 1, character: UInt.fromInt 0 })
     , expected: true
     }
   assertEqual
     "range inside end"
     { actual:
-        VSCodeApi.rangeContains
-          (VSCodeApi.newPosition (UInt.fromInt 1) (UInt.fromInt 28))
+        Range.isPositionInsideRange
           (rangeFrom 1 0 1 28)
+          (Range.Position { line: UInt.fromInt 1, character: UInt.fromInt 28 })
     , expected: true
     }
   assertEqual
     "range outside (line)"
     { actual:
-        VSCodeApi.rangeContains
-          (VSCodeApi.newPosition (UInt.fromInt 6) (UInt.fromInt 15))
+        Range.isPositionInsideRange
           (rangeFrom 1 0 1 28)
+          (Range.Position { line: UInt.fromInt 6, character: UInt.fromInt 15 })
     , expected: false
     }
   assertEqual
     "range outside (character)"
     { actual:
-        VSCodeApi.rangeContains
-          (VSCodeApi.newPosition (UInt.fromInt 1) (UInt.fromInt 29))
+        Range.isPositionInsideRange
           (rangeFrom 1 0 1 28)
+          (Range.Position { line: UInt.fromInt 1, character: UInt.fromInt 29 })
     , expected: false
     }

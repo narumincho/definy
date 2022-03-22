@@ -35,12 +35,6 @@ export const rangeContains =
     return range.contains(position);
   };
 
-export const rangeEqual =
-  (a: Range) =>
-  (b: Range): boolean => {
-    return a.isEqual(b);
-  };
-
 export const newPosition =
   (line: number) =>
   (character: number): Position => {

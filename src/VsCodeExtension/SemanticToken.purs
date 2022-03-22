@@ -7,7 +7,7 @@ import Data.String.NonEmpty.CodeUnits as NonEmptyCodeUnits
 import Data.UInt as UInt
 import Prelude as Prelude
 import VsCodeExtension.Evaluate as Evaluate
-import VsCodeExtension.VSCodeApi as VSCodeApi
+import VsCodeExtension.Range as Range
 import VsCodeExtension.TokenType as TokenType
 
 evaluateTreeToTokenData :: Evaluate.EvaluatedTree -> Array TokenType.TokenData
@@ -15,7 +15,7 @@ evaluateTreeToTokenData (Evaluate.EvaluatedTree { name, nameRange, item, childre
   Array.cons
     ( TokenType.TokenData
         { length: UInt.fromInt (Array.length (NonEmptyCodeUnits.toCharArray name))
-        , start: VSCodeApi.rangeGetStart nameRange
+        , start: Range.rangeStart nameRange
         , tokenType:
             case item of
               Evaluate.Description _ -> TokenType.TokenTypeString

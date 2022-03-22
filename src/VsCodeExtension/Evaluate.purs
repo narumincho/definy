@@ -17,16 +17,16 @@ import Data.String.NonEmpty (NonEmptyString)
 import Data.String.NonEmpty as NonEmptyString
 import Data.UInt as UInt
 import VsCodeExtension.Parser as Parser
-import VsCodeExtension.VSCodeApi as VSCodeApi
+import VsCodeExtension.Range as Range
 
 newtype EvaluatedTree
   = EvaluatedTree
   { item :: EvaluatedItem
-  , range :: VSCodeApi.Range
+  , range :: Range.Range
   , children :: Array EvaluatedTreeChild
   {- 期待した子要素の数 -}
   , expectedChildrenCount :: Maybe UInt.UInt
-  , nameRange :: VSCodeApi.Range
+  , nameRange :: Range.Range
   , name :: NonEmptyString
   }
 

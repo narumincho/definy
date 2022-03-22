@@ -1,5 +1,6 @@
 module VsCodeExtension.Hover
-  ( getHoverData
+  ( Hover(..)
+  , getHoverData
   ) where
 
 import Data.Array as Array
@@ -11,19 +12,22 @@ import Markdown as Markdown
 import Prelude as Prelude
 import Type.Proxy (Proxy(..))
 import VsCodeExtension.Evaluate as Evaluate
+import VsCodeExtension.Range as Range
 import VsCodeExtension.ToString as ToString
-import VsCodeExtension.VSCodeApi as VSCodeApi
+
+newtype Hover
+  = Hover { contents :: Markdown.Markdown, range :: Range.Range }
 
 getHoverData ::
-  VSCodeApi.Position ->
+  Range.Position ->
   Evaluate.EvaluatedTree ->
-  Maybe { contents :: String, range :: VSCodeApi.Range }
+  Maybe Hover
 getHoverData position (Evaluate.EvaluatedTree { name, nameRange, range, item, children }) =
-  if VSCodeApi.rangeContains position nameRange then
+  if Range.isPositionInsideRange nameRange position then
     Just
-      { contents:
-          Markdown.toMarkdownString
-            ( Markdown.Markdown
+      ( Hover
+          { contents:
+              Markdown.Markdown
                 [ Markdown.Header2 (NonEmptyString.nes (Proxy :: Proxy "Type"))
                 , Markdown.CodeBlock "..."
                 , Markdown.Header2 (NonEmptyString.nes (Proxy :: Proxy "Value"))
@@ -34,9 +38,9 @@ getHoverData position (Evaluate.EvaluatedTree { name, nameRange, range, item, ch
                         (evaluatedItemToHoverTree name item)
                     )
                 ]
-            )
-      , range: range
-      }
+          , range: range
+          }
+      )
   else
     Array.findMap (\(Evaluate.EvaluatedTreeChild { child }) -> getHoverData position child) children
 

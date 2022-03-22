@@ -1,3 +1,4 @@
+-- | vscode の拡張機能の環境内でのみ動作するモジュール
 module VsCodeExtension.VSCodeApi
   ( Diagnostic
   , DiagnosticCollection
@@ -16,10 +17,8 @@ module VsCodeExtension.VSCodeApi
   , newLocation
   , newPosition
   , newRange
-  , positionAdd1Character
   , positionGetCharacter
   , positionGetLine
-  , positionSub1Character
   , rangeContains
   , rangeGetEnd
   , rangeGetStart
@@ -28,7 +27,6 @@ module VsCodeExtension.VSCodeApi
 
 import Prelude
 import Data.Nullable (Nullable)
-import Data.String as String
 import Data.String.NonEmpty (NonEmptyString)
 import Data.UInt as UInt
 import Effect as Effect
@@ -51,16 +49,6 @@ foreign import rangeGetEnd :: Range -> Position
 
 foreign import rangeContains :: Position -> Range -> Boolean
 
-foreign import rangeEqual :: Range -> Range -> Boolean
-
-instance eqRange :: Eq Range where
-  eq a b = rangeEqual a b
-
-instance showRange :: Show Range where
-  show range =
-    String.joinWith "→"
-      [ show (rangeGetStart range), show (rangeGetEnd range) ]
-
 foreign import newPosition :: UInt.UInt -> UInt.UInt -> Position
 
 foreign import positionGetLine :: Position -> UInt.UInt
@@ -76,22 +64,6 @@ foreign import data Diagnostic :: Type
 foreign import data DiagnosticRelatedInformation :: Type
 
 foreign import data Location :: Type
-
-positionAdd1Character :: Position -> Position
-positionAdd1Character = positionTranslateCharacter 1
-
-positionSub1Character :: Position -> Position
-positionSub1Character = positionTranslateCharacter (-1)
-
-instance showPosition :: Show Position where
-  show position =
-    String.joinWith ""
-      [ "("
-      , UInt.toString (positionGetLine position)
-      , ","
-      , UInt.toString (positionGetCharacter position)
-      , ")"
-      ]
 
 foreign import languagesCreateDiagnosticCollection ::
   String -> Effect.Effect DiagnosticCollection
