@@ -24,66 +24,132 @@ getHoverData ::
   Maybe Hover
 getHoverData position (Evaluate.EvaluatedTree { name, nameRange, range, item, children }) =
   if Range.isPositionInsideRange nameRange position then
-    Just
-      ( Hover
-          { contents:
-              Markdown.Markdown
-                [ Markdown.Header2 (NonEmptyString.nes (Proxy :: Proxy "Type"))
-                , Markdown.CodeBlock "..."
-                , Markdown.Header2 (NonEmptyString.nes (Proxy :: Proxy "Value"))
-                , Markdown.CodeBlock "..."
-                , Markdown.Header2 (NonEmptyString.nes (Proxy :: Proxy "Tree"))
-                , Markdown.CodeBlock
-                    ( ToString.noPositionTreeToString
-                        (evaluatedItemToHoverTree name item)
-                    )
-                ]
-          , range: range
-          }
-      )
+    let
+      hoverTree = evaluatedItemToHoverTree name item
+    in
+      Just
+        ( Hover
+            { contents:
+                Markdown.Markdown
+                  [ Markdown.Header2 (NonEmptyString.nes (Proxy :: Proxy "Type"))
+                  , Markdown.CodeBlock
+                      (ToString.noPositionTreeToString hoverTree.type)
+                  , Markdown.Header2 (NonEmptyString.nes (Proxy :: Proxy "Value"))
+                  , Markdown.CodeBlock
+                      (ToString.noPositionTreeToString hoverTree.value)
+                  , Markdown.Header2 (NonEmptyString.nes (Proxy :: Proxy "Tree"))
+                  , Markdown.CodeBlock
+                      (ToString.noPositionTreeToString hoverTree.tree)
+                  ]
+            , range: range
+            }
+        )
   else
     Array.findMap (\(Evaluate.EvaluatedTreeChild { child }) -> getHoverData position child) children
 
-evaluatedItemToHoverTree :: NonEmptyString -> Evaluate.EvaluatedItem -> ToString.NoPositionTree
+evaluatedItemToHoverTree ::
+  NonEmptyString ->
+  Evaluate.EvaluatedItem ->
+  { type :: ToString.NoPositionTree
+  , value :: ToString.NoPositionTree
+  , tree :: ToString.NoPositionTree
+  }
 evaluatedItemToHoverTree name = case _ of
   Evaluate.Module (Evaluate.PartialModule { description, partList }) ->
-    ToString.NoPositionTree
-      { name: NonEmptyString.nes (Proxy :: Proxy "Module")
-      , children:
-          [ stringToNoPositionTree description
-          , moduleBodyToNoPositionTree partList
-          ]
-      }
+    { type:
+        ToString.NoPositionTree
+          { name: NonEmptyString.nes (Proxy :: Proxy "Module")
+          , children: []
+          }
+    , value:
+        ToString.NoPositionTree
+          { name: NonEmptyString.nes (Proxy :: Proxy "Module")
+          , children:
+              [ stringToNoPositionTree description
+              , moduleBodyToNoPositionTree partList
+              ]
+          }
+    , tree:
+        ToString.NoPositionTree
+          { name: NonEmptyString.nes (Proxy :: Proxy "Module")
+          , children:
+              [ stringToNoPositionTree description
+              , moduleBodyToNoPositionTree partList
+              ]
+          }
+    }
   Evaluate.Description description ->
-    ToString.NoPositionTree
-      { name: NonEmptyString.nes (Proxy :: Proxy "Description")
-      , children: [ stringToNoPositionTree description ]
-      }
-  Evaluate.ModuleBody partList -> moduleBodyToNoPositionTree partList
-  Evaluate.Part part -> partialPartToNoPositionTree part
+    { type:
+        ToString.NoPositionTree
+          { name: NonEmptyString.nes (Proxy :: Proxy "Description")
+          , children: []
+          }
+    , value:
+        ToString.NoPositionTree
+          { name: NonEmptyString.nes (Proxy :: Proxy "Description")
+          , children: [ stringToNoPositionTree description ]
+          }
+    , tree:
+        ToString.NoPositionTree
+          { name: NonEmptyString.nes (Proxy :: Proxy "Description")
+          , children: [ stringToNoPositionTree description ]
+          }
+    }
+  Evaluate.ModuleBody partList ->
+    { type:
+        ToString.NoPositionTree
+          { name: NonEmptyString.nes (Proxy :: Proxy "ModuleBody")
+          , children: []
+          }
+    , value: moduleBodyToNoPositionTree partList
+    , tree: moduleBodyToNoPositionTree partList
+    }
+  Evaluate.Part part ->
+    { type:
+        ToString.NoPositionTree
+          { name: NonEmptyString.nes (Proxy :: Proxy "Part")
+          , children: []
+          }
+    , value: partialPartToNoPositionTree part
+    , tree: partialPartToNoPositionTree part
+    }
   Evaluate.Expr value ->
-    ToString.NoPositionTree
-      { name: NonEmptyString.nes (Proxy :: Proxy "Expr")
-      , children:
-          [ ToString.NoPositionTree
-              { name: name, children: [] }
-          , maybeToNoPositionTree
-              (Prelude.map (\v -> stringToNoPositionTree (UInt.toString v)) value)
-          ]
-      }
+    { type:
+        ToString.NoPositionTree
+          { name: NonEmptyString.nes (Proxy :: Proxy "Expr")
+          , children: []
+          }
+    , value:
+        maybeToNoPositionTree
+          (Prelude.map (\v -> stringToNoPositionTree (UInt.toString v)) value)
+    , tree:
+        ToString.NoPositionTree
+          { name: name, children: [] }
+    }
   Evaluate.UIntLiteral uintLiteral ->
-    ToString.NoPositionTree
-      { name: NonEmptyString.nes (Proxy :: Proxy "UIntLiteral")
-      , children:
-          [ maybeToNoPositionTree
-              (Prelude.map (\v -> stringToNoPositionTree (UInt.toString v)) uintLiteral)
-          ]
-      }
+    { type:
+        ToString.NoPositionTree
+          { name: NonEmptyString.nes (Proxy :: Proxy "UIntLiteral")
+          , children: []
+          }
+    , value:
+        maybeToNoPositionTree
+          (Prelude.map (\v -> stringToNoPositionTree (UInt.toString v)) uintLiteral)
+    , tree:
+        ToString.NoPositionTree
+          { name: name, children: [] }
+    }
   Evaluate.Unknown ->
-    ToString.NoPositionTree
-      { name: NonEmptyString.nes (Proxy :: Proxy "Unknown")
-      , children: []
-      }
+    { type:
+        ToString.NoPositionTree
+          { name: NonEmptyString.nes (Proxy :: Proxy "Unknown")
+          , children: []
+          }
+    , value: maybeToNoPositionTree Nothing
+    , tree:
+        ToString.NoPositionTree
+          { name: name, children: [] }
+    }
 
 stringToNoPositionTree :: String -> ToString.NoPositionTree
 stringToNoPositionTree str =
