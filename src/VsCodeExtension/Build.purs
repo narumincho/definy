@@ -106,6 +106,7 @@ generatePackageJson =
               }
           )
     , browser: Path.distributionFilePathToStringBaseApp extensionMainPath FileType.JavaScript
+    , icon: iconDistributionPath
     }
 
 extensionMainPath :: Path.DistributionFilePath
