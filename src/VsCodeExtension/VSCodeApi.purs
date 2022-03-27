@@ -1,14 +1,18 @@
 -- | vscode の拡張機能の環境内でのみ動作するモジュール
 module VsCodeExtension.VSCodeApi
-  ( Diagnostic
+  ( CompletionItemKind
+  , Diagnostic
   , DiagnosticCollection
   , DiagnosticRelatedInformation
   , Location
   , Position
   , Range
   , Uri
+  , completionItemKindFunction
+  , completionItemKindModule
   , diagnosticCollectionSet
   , languagesCreateDiagnosticCollection
+  , languagesRegisterCompletionItemProvider
   , languagesRegisterDocumentFormattingEditProvider
   , languagesRegisterDocumentSemanticTokensProvider
   , languagesRegisterHoverProvider
@@ -96,6 +100,28 @@ foreign import languagesRegisterHoverProvider ::
       Nullable { contents :: String, range :: Range }
   } ->
   Effect.Effect Unit
+
+foreign import languagesRegisterCompletionItemProvider ::
+  { languageId :: NonEmptyString
+  , func ::
+      { code :: String, position :: Position } ->
+      Array
+        { label :: String
+        , description :: String
+        , detail :: String
+        , kind :: CompletionItemKind
+        , documentation :: String
+        , commitCharacters :: Array String
+        , insertText :: String
+        }
+  } ->
+  Effect.Effect Unit
+
+foreign import data CompletionItemKind :: Type
+
+foreign import completionItemKindFunction :: CompletionItemKind
+
+foreign import completionItemKindModule :: CompletionItemKind
 
 foreign import workspaceOnDidChangeTextDocument ::
   EffectFn1 { languageId :: String, uri :: Uri, code :: String } Unit ->

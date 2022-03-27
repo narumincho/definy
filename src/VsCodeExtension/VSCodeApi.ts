@@ -1,4 +1,7 @@
 import {
+  CompletionItem,
+  CompletionItemKind,
+  CompletionList,
   Diagnostic,
   DiagnosticCollection,
   DiagnosticRelatedInformation,
@@ -9,6 +12,7 @@ import {
   Range,
   SemanticTokens,
   SemanticTokensLegend,
+  SnippetString,
   TextEdit,
   Uri,
   languages,
@@ -163,6 +167,48 @@ export const languagesRegisterHoverProvider =
       },
     });
   };
+
+export const languagesRegisterCompletionItemProvider =
+  (option: {
+    readonly languageId: string;
+    readonly func: (input: {
+      readonly code: string;
+      readonly position: Position;
+    }) => ReadonlyArray<{
+      readonly label: string;
+      readonly description: string;
+      readonly detail: string;
+      readonly kind: CompletionItemKind;
+      readonly documentation: string;
+      readonly commitCharacters: ReadonlyArray<string>;
+      readonly insertText: string;
+    }>;
+  }) =>
+  () => {
+    languages.registerCompletionItemProvider(option.languageId, {
+      provideCompletionItems(document, position) {
+        return new CompletionList(
+          option.func({ code: document.getText(), position }).map((item) => {
+            const completionItem = new CompletionItem(
+              {
+                label: item.label,
+                description: item.description,
+                detail: item.detail,
+              },
+              item.kind
+            );
+            completionItem.documentation = item.documentation;
+            completionItem.commitCharacters = [...item.commitCharacters];
+            completionItem.insertText = new SnippetString(item.insertText);
+            return completionItem;
+          })
+        );
+      },
+    });
+  };
+
+export const completionItemKindFunction = CompletionItemKind.Function;
+export const completionItemKindModule = CompletionItemKind.Module;
 
 export const workspaceOnDidChangeTextDocument =
   (

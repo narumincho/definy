@@ -13,6 +13,7 @@ import Effect (Effect)
 import Effect.Uncurried as EffectUncurried
 import Markdown as Markdown
 import Prelude as Prelude
+import VsCodeExtension.Completion as Completion
 import VsCodeExtension.Error as Error
 import VsCodeExtension.Evaluate as Evaluate
 import VsCodeExtension.Hover as Hover
@@ -65,6 +66,16 @@ activate = do
                         (SimpleToken.tokenListToSimpleTokenList (Tokenize.tokenize code))
                     )
                 )
+            )
+    }
+  VSCodeApi.languagesRegisterCompletionItemProvider
+    { languageId: LanguageId.languageId
+    , func:
+        \{ code, position } ->
+          Prelude.map
+            completionItemToVsCodeCompletionItem
+            ( Completion.getCompletionList
+                { code, position: vsCodePositionToPosition position }
             )
     }
   VSCodeApi.workspaceOnDidChangeTextDocument
@@ -165,3 +176,26 @@ hoverToVscodeHover = case _ of
       , range: rangeToVsCodeRange range
       }
   Nothing -> Nullable.null
+
+completionItemToVsCodeCompletionItem ::
+  Completion.CompletionItem ->
+  { label :: String
+  , description :: String
+  , detail :: String
+  , kind :: VSCodeApi.CompletionItemKind
+  , documentation :: String
+  , commitCharacters :: Array String
+  , insertText :: String
+  }
+completionItemToVsCodeCompletionItem (Completion.CompletionItem rec) =
+  { label: rec.label
+  , description: rec.description
+  , detail: rec.detail
+  , kind:
+      case rec.kind of
+        Completion.Function -> VSCodeApi.completionItemKindFunction
+        Completion.Module -> VSCodeApi.completionItemKindModule
+  , documentation: rec.documentation
+  , commitCharacters: rec.commitCharacters
+  , insertText: rec.insertText
+  }
