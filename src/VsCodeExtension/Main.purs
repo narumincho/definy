@@ -21,6 +21,7 @@ import VsCodeExtension.LanguageId as LanguageId
 import VsCodeExtension.Parser as Parser
 import VsCodeExtension.Range as Range
 import VsCodeExtension.SemanticToken as SemanticToken
+import VsCodeExtension.SignatureHelp as SignatureHelp
 import VsCodeExtension.SimpleToken as SimpleToken
 import VsCodeExtension.ToString as ToString
 import VsCodeExtension.TokenType as TokenType
@@ -84,6 +85,30 @@ activate = do
                 }
             )
     , triggerCharacters: Completion.triggerCharacters
+    }
+  VSCodeApi.languageRegisterSignatureHelpProvider
+    { languageId: LanguageId.languageId
+    , func:
+        \{ code, position } -> case SignatureHelp.getSignatureHelp
+            { tree:
+                Evaluate.codeTreeToEvaluatedTreeIContextNormal
+                  ( Parser.parse
+                      (SimpleToken.tokenListToSimpleTokenList (Tokenize.tokenize code))
+                  )
+            , position: vsCodePositionToPosition position
+            } of
+          Just result ->
+            Nullable.notNull
+              { signatures:
+                  [ { label: result.label
+                    , documentation: Markdown.toMarkdownString result.documentation
+                    }
+                  ]
+              , activeSignature: UInt.fromInt 0
+              , activeParameter: result.activeParameter
+              }
+          Nothing -> Nullable.null
+    , triggerCharacters: SignatureHelp.triggerCharacters
     }
   VSCodeApi.workspaceOnDidChangeTextDocument
     ( EffectUncurried.mkEffectFn1 \{ code, languageId, uri } ->

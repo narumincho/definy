@@ -13,6 +13,8 @@ import {
   Range,
   SemanticTokens,
   SemanticTokensLegend,
+  SignatureHelp,
+  SignatureInformation,
   SnippetString,
   TextEdit,
   Uri,
@@ -218,6 +220,48 @@ export const languagesRegisterCompletionItemProvider =
 
 export const completionItemKindFunction = CompletionItemKind.Function;
 export const completionItemKindModule = CompletionItemKind.Module;
+
+export const languageRegisterSignatureHelpProvider =
+  (option: {
+    readonly languageId: string;
+    readonly func: (input: {
+      readonly code: string;
+      readonly position: Position;
+    }) => {
+      readonly signatures: ReadonlyArray<{
+        readonly label: string;
+        readonly documentation: string;
+      }>;
+      readonly activeSignature: number;
+      readonly activeParameter: number;
+    };
+    readonly triggerCharacters: ReadonlyArray<string>;
+  }) =>
+  () => {
+    languages.registerSignatureHelpProvider(
+      option.languageId,
+      {
+        provideSignatureHelp(document, position) {
+          const line = document.lineAt(position.line);
+          // eslint-disable-next-line require-unicode-regexp
+          if (!line.text.substring(0, position.character).match(/\(/)) {
+            return undefined;
+          }
+
+          const result = option.func({ code: document.getText(), position });
+          const signatureHelp = new SignatureHelp();
+          signatureHelp.activeSignature = result.activeSignature;
+          signatureHelp.activeParameter = result.activeParameter;
+          signatureHelp.signatures = result.signatures.map(
+            (signature) =>
+              new SignatureInformation(signature.label, signature.documentation)
+          );
+          return signatureHelp;
+        },
+      },
+      { triggerCharacters: option.triggerCharacters, retriggerCharacters: [] }
+    );
+  };
 
 export const workspaceOnDidChangeTextDocument =
   (

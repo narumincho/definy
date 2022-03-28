@@ -11,6 +11,7 @@ module VsCodeExtension.VSCodeApi
   , completionItemKindFunction
   , completionItemKindModule
   , diagnosticCollectionSet
+  , languageRegisterSignatureHelpProvider
   , languagesCreateDiagnosticCollection
   , languagesRegisterCompletionItemProvider
   , languagesRegisterDocumentFormattingEditProvider
@@ -123,6 +124,19 @@ foreign import data CompletionItemKind :: Type
 foreign import completionItemKindFunction :: CompletionItemKind
 
 foreign import completionItemKindModule :: CompletionItemKind
+
+foreign import languageRegisterSignatureHelpProvider ::
+  { languageId :: NonEmptyString
+  , func ::
+      { code :: String, position :: Position } ->
+      Nullable
+        { signatures :: Array { label :: String, documentation :: String }
+        , activeSignature :: UInt.UInt
+        , activeParameter :: UInt.UInt
+        }
+  , triggerCharacters :: Array String
+  } ->
+  Effect.Effect Unit
 
 foreign import workspaceOnDidChangeTextDocument ::
   EffectFn1 { languageId :: String, uri :: Uri, code :: String } Unit ->
