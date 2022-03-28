@@ -199,7 +199,7 @@ toJson option =
                 [ Tuple.Tuple
                     "icon"
                     ( Argonaut.encodeJson
-                        ( Path.distributionFilePathToStringBaseApp
+                        ( Path.distributionFilePathToStringBaseAppWithoutDotSlash
                             icon
                             FileType.Png
                         )

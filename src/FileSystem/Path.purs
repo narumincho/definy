@@ -13,6 +13,7 @@ module FileSystem.Path
   , distributionFilePathToFilePath
   , distributionFilePathToString
   , distributionFilePathToStringBaseApp
+  , distributionFilePathToStringBaseAppWithoutDotSlash
   , fileNameWithExtensionParse
   , filePathGetDirectoryPath
   , filePathGetFileName
@@ -171,15 +172,25 @@ distributionFilePathToStringBaseApp (DistributionFilePath { directoryPath, fileN
     (fileNameWithFileTypeToString fileName fileType)
 
 distributionDirectoryPathToStringBaseApp :: DistributionDirectoryPath -> NonEmptyString
-distributionDirectoryPathToStringBaseApp (DistributionDirectoryPath { folderNameMaybe }) =
+distributionDirectoryPathToStringBaseApp distributionDirectoryPath =
   NonEmptyString.appendString (NonEmptyString.nes (Proxy :: _ "./"))
-    ( case folderNameMaybe of
-        Just folderName ->
-          Prelude.append
-            (NonEmptyString.toString (Name.toNonEmptyString folderName))
-            "/"
-        Nothing -> ""
+    ( distributionDirectoryPathToStringBaseAppWithoutDotSlash
+        distributionDirectoryPath
     )
+
+distributionFilePathToStringBaseAppWithoutDotSlash :: DistributionFilePath -> FileType.FileType -> NonEmptyString
+distributionFilePathToStringBaseAppWithoutDotSlash (DistributionFilePath { directoryPath, fileName }) fileType =
+  NonEmptyString.prependString
+    (distributionDirectoryPathToStringBaseAppWithoutDotSlash directoryPath)
+    (fileNameWithFileTypeToString fileName fileType)
+
+distributionDirectoryPathToStringBaseAppWithoutDotSlash :: DistributionDirectoryPath -> String
+distributionDirectoryPathToStringBaseAppWithoutDotSlash (DistributionDirectoryPath { folderNameMaybe }) = case folderNameMaybe of
+  Just folderName ->
+    Prelude.append
+      (NonEmptyString.toString (Name.toNonEmptyString folderName))
+      "/"
+  Nothing -> ""
 
 srcDirectoryPath :: DirectoryPath
 srcDirectoryPath =
