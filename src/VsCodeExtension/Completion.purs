@@ -8,8 +8,8 @@ module VsCodeExtension.Completion
 import Data.Array as Array
 import Data.Maybe (Maybe(..))
 import Data.String as String
-import Data.String.NonEmpty (NonEmptyString)
 import Data.String.NonEmpty as NonEmptyString
+import Definy.Identifier as Identifier
 import Markdown as Markdown
 import Prelude as Prelude
 import Type.Proxy (Proxy(..))
@@ -160,7 +160,9 @@ getSimpleCompletionList { tree } =
       , Prelude.map
           ( \{ name, description } ->
               SimpleCompletionItem
-                { label: NonEmptyString.toString name
+                { label:
+                    NonEmptyString.toString
+                      (Identifier.identifierToNonEmptyString name)
                 , description: "Expr"
                 , kind: Function
                 , documentation:
@@ -168,7 +170,7 @@ getSimpleCompletionList { tree } =
                       [ Markdown.Raw description ]
                 , insertText:
                     ToString.NoPositionTree
-                      { name: name
+                      { name: Identifier.identifierToNonEmptyString name
                       , children: snippetPlaceholderListToNoPositionTree []
                       }
                 }
@@ -179,7 +181,7 @@ getSimpleCompletionList { tree } =
 getPartNameListInTree ::
   Evaluate.EvaluatedTree ->
   Array
-    { name :: NonEmptyString
+    { name :: Identifier.Identifier
     , description :: String
     }
 getPartNameListInTree (Evaluate.EvaluatedTree { item }) = case item of

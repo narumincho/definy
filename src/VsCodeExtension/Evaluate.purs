@@ -16,6 +16,7 @@ import Data.Maybe (Maybe(..))
 import Data.String.NonEmpty (NonEmptyString)
 import Data.String.NonEmpty as NonEmptyString
 import Data.UInt as UInt
+import Definy.Identifier as Identifier
 import VsCodeExtension.Parser as Parser
 import VsCodeExtension.Range as Range
 
@@ -49,6 +50,7 @@ data EvaluatedItem
   | Part PartialPart
   | Expr (Maybe UInt.UInt)
   | UIntLiteral (Maybe UInt.UInt)
+  | Identifier (Maybe Identifier.Identifier)
   | Unknown
 
 newtype TypeMisMatch
@@ -73,6 +75,7 @@ evaluateItemToTreeType = case _ of
   Part _ -> Just TreeTypePart
   Expr _ -> Just TreeTypeExpr
   UIntLiteral _ -> Just TreeTypeUIntLiteral
+  Identifier _ -> Just TreeTypeIdentifier
   Unknown -> Nothing
 
 data TreeType
@@ -82,6 +85,7 @@ data TreeType
   | TreeTypePart
   | TreeTypeExpr
   | TreeTypeUIntLiteral
+  | TreeTypeIdentifier
 
 derive instance eqTreeType :: Eq TreeType
 
@@ -93,7 +97,7 @@ newtype PartialModule
 
 newtype PartialPart
   = PartialPart
-  { name :: Maybe NonEmptyString
+  { name :: Maybe Identifier.Identifier
   , description :: String
   , value :: Maybe UInt.UInt
   }
@@ -104,6 +108,7 @@ codeTreeToEvaluatedTree treeType codeTree =
     tree = case treeType of
       Just TreeTypeDescription -> codeTreeToEvaluatedTreeInContextDescription codeTree
       Just TreeTypeUIntLiteral -> codeTreeToEvaluatedTreeInContextUIntLiteral codeTree
+      Just TreeTypeIdentifier -> codeTreeToEvaluatedTreeInContextIdentifier codeTree
       _ -> codeTreeToEvaluatedTreeIContextNormal codeTree
   in
     EvaluatedTreeChild
@@ -158,7 +163,7 @@ codeTreeToEvaluatedTreeIContextNormal codeTree@(Parser.CodeTree { name, nameRang
         }
   "part" ->
     need3Children
-      { firstContext: TreeTypeDescription
+      { firstContext: TreeTypeIdentifier
       , secondContext: TreeTypeDescription
       , thirdContext: TreeTypeExpr
       }
@@ -168,7 +173,7 @@ codeTreeToEvaluatedTreeIContextNormal codeTree@(Parser.CodeTree { name, nameRang
             ( PartialPart
                 { name:
                     case first of
-                      Just (Description partName) -> NonEmptyString.fromString partName
+                      Just (Identifier partName) -> partName
                       _ -> Nothing
                 , description:
                     case second of
@@ -230,6 +235,12 @@ codeTreeToEvaluatedTreeInContextUIntLiteral codeTree@(Parser.CodeTree { name }) 
   need0Children
     codeTree
     (UIntLiteral (UInt.fromString (NonEmptyString.toString name)))
+
+codeTreeToEvaluatedTreeInContextIdentifier :: Parser.CodeTree -> EvaluatedTree
+codeTreeToEvaluatedTreeInContextIdentifier codeTree@(Parser.CodeTree { name }) =
+  need0Children
+    codeTree
+    (Identifier (Identifier.identifierFromNonEmptyString name))
 
 maybeEvaluatedItemToUInt :: Maybe EvaluatedItem -> UInt.UInt
 maybeEvaluatedItemToUInt = case _ of

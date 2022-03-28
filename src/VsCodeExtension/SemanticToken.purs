@@ -25,6 +25,7 @@ evaluateTreeToTokenData (Evaluate.EvaluatedTree { name, nameRange, item, childre
               Evaluate.Expr _ -> TokenType.TokenTypeVariable
               Evaluate.UIntLiteral _ -> TokenType.TokenTypeNumber
               Evaluate.Unknown -> TokenType.TokenTypeVariable
+              Evaluate.Identifier _ -> TokenType.TokenTypeFunction
         }
     )
     (Prelude.bind children (\(Evaluate.EvaluatedTreeChild { child }) -> evaluateTreeToTokenData child))
