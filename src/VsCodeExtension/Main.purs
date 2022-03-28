@@ -83,6 +83,7 @@ activate = do
                 , position: vsCodePositionToPosition position
                 }
             )
+    , triggerCharacters: Completion.triggerCharacters
     }
   VSCodeApi.workspaceOnDidChangeTextDocument
     ( EffectUncurried.mkEffectFn1 \{ code, languageId, uri } ->

@@ -2,6 +2,7 @@ module VsCodeExtension.Completion
   ( CompletionItem(..)
   , CompletionItemKind(..)
   , getCompletionList
+  , triggerCharacters
   ) where
 
 import Data.Array as Array
@@ -210,3 +211,6 @@ snippetPlaceholderListToNoPositionTree placeholderList =
           }
     )
     placeholderList
+
+triggerCharacters :: Array String
+triggerCharacters = [ " ", "(", ")" ]

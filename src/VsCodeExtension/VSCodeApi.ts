@@ -17,7 +17,6 @@ import {
   TextEdit,
   Uri,
   languages,
-  window,
   workspace,
 } from "vscode";
 
@@ -185,31 +184,36 @@ export const languagesRegisterCompletionItemProvider =
       readonly commitCharacters: ReadonlyArray<string>;
       readonly insertText: string;
     }>;
+    readonly triggerCharacters: ReadonlyArray<string>;
   }) =>
   () => {
-    languages.registerCompletionItemProvider(option.languageId, {
-      provideCompletionItems(document, position) {
-        return new CompletionList(
-          option.func({ code: document.getText(), position }).map((item) => {
-            const completionItem = new CompletionItem(
-              {
-                label: item.label,
-                description: item.description,
-                detail: item.detail,
-              },
-              item.kind
-            );
-            completionItem.documentation = new MarkdownString(
-              item.documentation
-            );
+    languages.registerCompletionItemProvider(
+      option.languageId,
+      {
+        provideCompletionItems(document, position) {
+          return new CompletionList(
+            option.func({ code: document.getText(), position }).map((item) => {
+              const completionItem = new CompletionItem(
+                {
+                  label: item.label,
+                  description: item.description,
+                  detail: item.detail,
+                },
+                item.kind
+              );
+              completionItem.documentation = new MarkdownString(
+                item.documentation
+              );
 
-            completionItem.commitCharacters = [...item.commitCharacters];
-            completionItem.insertText = new SnippetString(item.insertText);
-            return completionItem;
-          })
-        );
+              completionItem.commitCharacters = [...item.commitCharacters];
+              completionItem.insertText = new SnippetString(item.insertText);
+              return completionItem;
+            })
+          );
+        },
       },
-    });
+      ...option.triggerCharacters
+    );
   };
 
 export const completionItemKindFunction = CompletionItemKind.Function;

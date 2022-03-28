@@ -114,6 +114,7 @@ foreign import languagesRegisterCompletionItemProvider ::
         , commitCharacters :: Array String
         , insertText :: String
         }
+  , triggerCharacters :: Array String
   } ->
   Effect.Effect Unit
 
