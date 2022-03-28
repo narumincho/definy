@@ -247,12 +247,6 @@ export const languageRegisterSignatureHelpProvider =
       option.languageId,
       {
         provideSignatureHelp(document, position) {
-          const line = document.lineAt(position.line);
-          // eslint-disable-next-line require-unicode-regexp
-          if (!line.text.substring(0, position.character).match(/\(/)) {
-            return undefined;
-          }
-
           const result = option.func({ code: document.getText(), position });
           const signatureHelp = new SignatureHelp();
           signatureHelp.activeSignature = result.activeSignature;
