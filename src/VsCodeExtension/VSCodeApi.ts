@@ -9,6 +9,7 @@ import {
   Hover,
   Location,
   MarkdownString,
+  ParameterInformation,
   Position,
   Range,
   SemanticTokens,
@@ -231,6 +232,10 @@ export const languageRegisterSignatureHelpProvider =
       readonly signatures: ReadonlyArray<{
         readonly label: string;
         readonly documentation: string;
+        readonly parameters: ReadonlyArray<{
+          readonly label: string;
+          readonly documentation: string;
+        }>;
       }>;
       readonly activeSignature: number;
       readonly activeParameter: number;
@@ -252,10 +257,20 @@ export const languageRegisterSignatureHelpProvider =
           const signatureHelp = new SignatureHelp();
           signatureHelp.activeSignature = result.activeSignature;
           signatureHelp.activeParameter = result.activeParameter;
-          signatureHelp.signatures = result.signatures.map(
-            (signature) =>
-              new SignatureInformation(signature.label, signature.documentation)
-          );
+          signatureHelp.signatures = result.signatures.map((signature) => {
+            const signatureInformation = new SignatureInformation(
+              signature.label,
+              signature.documentation
+            );
+            signatureInformation.parameters = signature.parameters.map(
+              (parameter) =>
+                new ParameterInformation(
+                  parameter.label,
+                  new MarkdownString(parameter.documentation)
+                )
+            );
+            return signatureInformation;
+          });
           return signatureHelp;
         },
       },

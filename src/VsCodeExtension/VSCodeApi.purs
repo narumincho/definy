@@ -130,7 +130,12 @@ foreign import languageRegisterSignatureHelpProvider ::
   , func ::
       { code :: String, position :: Position } ->
       Nullable
-        { signatures :: Array { label :: String, documentation :: String }
+        { signatures ::
+            Array
+              { label :: String
+              , documentation :: String
+              , parameters :: Array { label :: String, documentation :: String }
+              }
         , activeSignature :: UInt.UInt
         , activeParameter :: UInt.UInt
         }

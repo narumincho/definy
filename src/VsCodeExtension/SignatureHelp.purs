@@ -17,7 +17,12 @@ triggerCharacters = [ "(", " " ]
 
 getSignatureHelp ::
   { tree :: Evaluate.EvaluatedTree, position :: Range.Position } ->
-  Maybe { label :: String, documentation :: Markdown.Markdown, activeParameter :: UInt.UInt }
+  Maybe
+    { label :: String
+    , documentation :: Markdown.Markdown
+    , parameters :: Array { label :: String, documentation :: String }
+    , activeParameter :: UInt.UInt
+    }
 getSignatureHelp { tree: Evaluate.EvaluatedTree { children }, position } = case Array.findMap
     (\(Evaluate.EvaluatedTreeChild { child }) -> getData position child)
     children of
@@ -25,6 +30,7 @@ getSignatureHelp { tree: Evaluate.EvaluatedTree { children }, position } = case 
     Just
       { label: NonEmptyString.toString name
       , documentation: Markdown.Markdown []
+      , parameters: [ { label: "パラメーター名", documentation: "パラメーターの説明" } ]
       , activeParameter: UInt.fromInt 0
       }
   Nothing -> Nothing

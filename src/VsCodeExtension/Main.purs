@@ -102,6 +102,7 @@ activate = do
               { signatures:
                   [ { label: result.label
                     , documentation: Markdown.toMarkdownString result.documentation
+                    , parameters: result.parameters
                     }
                   ]
               , activeSignature: UInt.fromInt 0
