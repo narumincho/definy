@@ -201,7 +201,7 @@ completionItemToVsCodeCompletionItem (Completion.CompletionItem rec) =
       case rec.kind of
         Completion.Function -> VSCodeApi.completionItemKindFunction
         Completion.Module -> VSCodeApi.completionItemKindModule
-  , documentation: rec.documentation
+  , documentation: Markdown.toMarkdownString rec.documentation
   , commitCharacters: rec.commitCharacters
   , insertText: rec.insertText
   }

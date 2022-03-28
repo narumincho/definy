@@ -6,11 +6,15 @@ module VsCodeExtension.Completion
 
 import Data.Array as Array
 import Data.Maybe (Maybe(..))
+import Data.String as String
 import Data.String.NonEmpty (NonEmptyString)
 import Data.String.NonEmpty as NonEmptyString
+import Markdown as Markdown
 import Prelude as Prelude
+import Type.Proxy (Proxy(..))
 import VsCodeExtension.Evaluate as Evaluate
 import VsCodeExtension.Range as Range
+import VsCodeExtension.ToString as ToString
 
 newtype CompletionItem
   = CompletionItem
@@ -18,7 +22,7 @@ newtype CompletionItem
   , description :: String
   , detail :: String
   , kind :: CompletionItemKind
-  , documentation :: String
+  , documentation :: Markdown.Markdown
   , commitCharacters :: Array String
   , insertText :: String
   }
@@ -27,70 +31,145 @@ data CompletionItemKind
   = Function
   | Module
 
+newtype SimpleCompletionItem
+  = SimpleCompletionItem
+  { label :: String
+  , description :: String
+  , kind :: CompletionItemKind
+  , documentation :: Markdown.Markdown
+  , insertText :: ToString.NoPositionTree
+  }
+
+simpleCompletionItemToCompletionItem :: SimpleCompletionItem -> CompletionItem
+simpleCompletionItemToCompletionItem (SimpleCompletionItem rec) =
+  CompletionItem
+    { label: rec.label
+    , description: rec.description
+    , detail: ""
+    , kind: rec.kind
+    , documentation: rec.documentation
+    , commitCharacters: [ " ", "(" ]
+    , insertText: ToString.noPositionTreeToString rec.insertText
+    }
+
 getCompletionList ::
   { tree :: Evaluate.EvaluatedTree, position :: Range.Position } ->
   Array CompletionItem
-getCompletionList { tree } =
+getCompletionList { tree, position } = Prelude.map simpleCompletionItemToCompletionItem (getSimpleCompletionList { tree, position })
+
+getSimpleCompletionList ::
+  { tree :: Evaluate.EvaluatedTree, position :: Range.Position } ->
+  Array SimpleCompletionItem
+getSimpleCompletionList { tree } =
   let
     partNameSet = getPartNameListInTree tree
   in
     Array.concat
-      [ [ CompletionItem
+      [ [ SimpleCompletionItem
             { label: "module"
-            , description: "複数のパーツと説明文を合わせたまとまり"
-            , detail: "ファイルの直下に必ず指定するもの"
+            , description: "Module"
             , kind: Module
-            , documentation: "複数のパーツと説明文を合わせたまとまり"
-            , commitCharacters: [ " ", "(" ]
-            , insertText: "module(${1:description} ${2:body})"
+            , documentation:
+                Markdown.Markdown
+                  [ Markdown.Paragraph
+                      ( NonEmptyString.nes (Proxy :: Proxy "複数のパーツと説明文を合わせたまとまり")
+                      )
+                  ]
+            , insertText:
+                ToString.NoPositionTree
+                  { name: NonEmptyString.nes (Proxy :: Proxy "module")
+                  , children:
+                      snippetPlaceholderListToNoPositionTree
+                        [ "description", "body" ]
+                  }
             }
-        , CompletionItem
+        , SimpleCompletionItem
             { label: "body"
-            , description: "複数のパーツを合わせたまとまり"
-            , detail: "moduleの説明文の次に指定するもの"
+            , description: "ModuleBody"
             , kind: Module
-            , documentation: "複数のパーツを合わせたまとまり"
-            , commitCharacters: [ " ", "(" ]
-            , insertText: "body(${1:part})"
+            , documentation:
+                Markdown.Markdown
+                  [ Markdown.Paragraph
+                      ( NonEmptyString.nes (Proxy :: Proxy "複数のパーツを合わせたまとまり")
+                      )
+                  ]
+            , insertText:
+                ToString.NoPositionTree
+                  { name: NonEmptyString.nes (Proxy :: Proxy "body")
+                  , children:
+                      snippetPlaceholderListToNoPositionTree
+                        [ "part" ]
+                  }
             }
-        , CompletionItem
+        , SimpleCompletionItem
             { label: "part"
-            , description: "パーツの定義"
-            , detail: "パーツは定数のようなもの "
+            , description: "Part"
             , kind: Module
-            , documentation: "複数のパーツを合わせたまとまり"
-            , commitCharacters: [ " ", "(" ]
-            , insertText: "part(${1:partName} ${2:description} ${3:expr})"
+            , documentation:
+                Markdown.Markdown
+                  [ Markdown.Paragraph
+                      ( NonEmptyString.nes (Proxy :: Proxy "パーツの定義 パーツは定数のようなもの")
+                      )
+                  ]
+            , insertText:
+                ToString.NoPositionTree
+                  { name: NonEmptyString.nes (Proxy :: Proxy "part")
+                  , children:
+                      snippetPlaceholderListToNoPositionTree
+                        [ "partName", "description", "expr" ]
+                  }
             }
-        , CompletionItem
+        , SimpleCompletionItem
             { label: "add"
-            , description: "足し算"
-            , detail: "足し算 "
+            , description: "Expr"
             , kind: Function
-            , documentation: "足し算"
-            , commitCharacters: [ " ", "(" ]
-            , insertText: "add(${1:expr} ${2:expr})"
+            , documentation:
+                Markdown.Markdown
+                  [ Markdown.Paragraph
+                      ( NonEmptyString.nes (Proxy :: Proxy "足し算")
+                      )
+                  ]
+            , insertText:
+                ToString.NoPositionTree
+                  { name: NonEmptyString.nes (Proxy :: Proxy "add")
+                  , children:
+                      snippetPlaceholderListToNoPositionTree
+                        [ "expr", "expr" ]
+                  }
             }
-        , CompletionItem
+        , SimpleCompletionItem
             { label: "uint"
-            , description: "自然数リテラル"
-            , detail: "自然数リテラル"
-            , kind: Function
-            , documentation: "自然数リテラル"
-            , commitCharacters: [ " ", "(" ]
-            , insertText: "uint(${1:literal})"
+            , description: "Expr"
+            , kind: Module
+            , documentation:
+                Markdown.Markdown
+                  [ Markdown.Paragraph
+                      ( NonEmptyString.nes (Proxy :: Proxy "自然数リテラル")
+                      )
+                  ]
+            , insertText:
+                ToString.NoPositionTree
+                  { name: NonEmptyString.nes (Proxy :: Proxy "uint")
+                  , children:
+                      snippetPlaceholderListToNoPositionTree
+                        [ "literal" ]
+                  }
             }
         ]
       , Prelude.map
           ( \{ name, description } ->
-              CompletionItem
+              SimpleCompletionItem
                 { label: NonEmptyString.toString name
-                , description: description
-                , detail: ""
+                , description: "Expr"
                 , kind: Function
-                , documentation: description
-                , commitCharacters: [ " ", "(" ]
-                , insertText: NonEmptyString.toString name
+                , documentation:
+                    Markdown.Markdown
+                      [ Markdown.Raw description ]
+                , insertText:
+                    ToString.NoPositionTree
+                      { name: name
+                      , children: snippetPlaceholderListToNoPositionTree []
+                      }
                 }
           )
           partNameSet
@@ -111,3 +190,23 @@ getPartNameListInTree (Evaluate.EvaluatedTree { item }) = case item of
       )
       partList
   _ -> []
+
+snippetPlaceholderListToNoPositionTree :: Array String -> Array ToString.NoPositionTree
+snippetPlaceholderListToNoPositionTree placeholderList =
+  Array.mapWithIndex
+    ( \index placeholder ->
+        ToString.NoPositionTree
+          { name:
+              NonEmptyString.appendString (NonEmptyString.nes (Proxy :: Proxy "$"))
+                ( String.joinWith ""
+                    [ "{"
+                    , Prelude.show (Prelude.add index 1)
+                    , ":"
+                    , placeholder
+                    , "}"
+                    ]
+                )
+          , children: []
+          }
+    )
+    placeholderList

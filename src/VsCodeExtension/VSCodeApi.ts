@@ -8,6 +8,7 @@ import {
   DiagnosticSeverity,
   Hover,
   Location,
+  MarkdownString,
   Position,
   Range,
   SemanticTokens,
@@ -16,6 +17,7 @@ import {
   TextEdit,
   Uri,
   languages,
+  window,
   workspace,
 } from "vscode";
 
@@ -197,7 +199,10 @@ export const languagesRegisterCompletionItemProvider =
               },
               item.kind
             );
-            completionItem.documentation = item.documentation;
+            completionItem.documentation = new MarkdownString(
+              item.documentation
+            );
+
             completionItem.commitCharacters = [...item.commitCharacters];
             completionItem.insertText = new SnippetString(item.insertText);
             return completionItem;
