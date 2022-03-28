@@ -75,7 +75,13 @@ activate = do
           Prelude.map
             completionItemToVsCodeCompletionItem
             ( Completion.getCompletionList
-                { code, position: vsCodePositionToPosition position }
+                { tree:
+                    Evaluate.codeTreeToEvaluatedTreeIContextNormal
+                      ( Parser.parse
+                          (SimpleToken.tokenListToSimpleTokenList (Tokenize.tokenize code))
+                      )
+                , position: vsCodePositionToPosition position
+                }
             )
     }
   VSCodeApi.workspaceOnDidChangeTextDocument
