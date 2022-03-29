@@ -1,14 +1,22 @@
 import {
+  CompletionItem,
+  CompletionItemKind,
+  CompletionList,
   Diagnostic,
   DiagnosticCollection,
   DiagnosticRelatedInformation,
   DiagnosticSeverity,
   Hover,
   Location,
+  MarkdownString,
+  ParameterInformation,
   Position,
   Range,
   SemanticTokens,
   SemanticTokensLegend,
+  SignatureHelp,
+  SignatureInformation,
+  SnippetString,
   TextEdit,
   Uri,
   languages,
@@ -162,6 +170,106 @@ export const languagesRegisterHoverProvider =
         return new Hover(result.contents, result.range);
       },
     });
+  };
+
+export const languagesRegisterCompletionItemProvider =
+  (option: {
+    readonly languageId: string;
+    readonly func: (input: {
+      readonly code: string;
+      readonly position: Position;
+    }) => ReadonlyArray<{
+      readonly label: string;
+      readonly description: string;
+      readonly detail: string;
+      readonly kind: CompletionItemKind;
+      readonly documentation: string;
+      readonly commitCharacters: ReadonlyArray<string>;
+      readonly insertText: string;
+    }>;
+    readonly triggerCharacters: ReadonlyArray<string>;
+  }) =>
+  () => {
+    languages.registerCompletionItemProvider(
+      option.languageId,
+      {
+        provideCompletionItems(document, position) {
+          return new CompletionList(
+            option.func({ code: document.getText(), position }).map((item) => {
+              const completionItem = new CompletionItem(
+                {
+                  label: item.label,
+                  description: item.description,
+                  detail: item.detail,
+                },
+                item.kind
+              );
+              completionItem.documentation = new MarkdownString(
+                item.documentation
+              );
+
+              completionItem.commitCharacters = [...item.commitCharacters];
+              completionItem.insertText = new SnippetString(item.insertText);
+              return completionItem;
+            })
+          );
+        },
+      },
+      ...option.triggerCharacters
+    );
+  };
+
+export const completionItemKindFunction = CompletionItemKind.Function;
+export const completionItemKindModule = CompletionItemKind.Module;
+
+export const languageRegisterSignatureHelpProvider =
+  (option: {
+    readonly languageId: string;
+    readonly func: (input: {
+      readonly code: string;
+      readonly position: Position;
+    }) => {
+      readonly signatures: ReadonlyArray<{
+        readonly label: string;
+        readonly documentation: string;
+        readonly parameters: ReadonlyArray<{
+          readonly label: string;
+          readonly documentation: string;
+        }>;
+      }>;
+      readonly activeSignature: number;
+      readonly activeParameter: number;
+    };
+    readonly triggerCharacters: ReadonlyArray<string>;
+  }) =>
+  () => {
+    languages.registerSignatureHelpProvider(
+      option.languageId,
+      {
+        provideSignatureHelp(document, position) {
+          const result = option.func({ code: document.getText(), position });
+          const signatureHelp = new SignatureHelp();
+          signatureHelp.activeSignature = result.activeSignature;
+          signatureHelp.activeParameter = result.activeParameter;
+          signatureHelp.signatures = result.signatures.map((signature) => {
+            const signatureInformation = new SignatureInformation(
+              signature.label,
+              signature.documentation
+            );
+            signatureInformation.parameters = signature.parameters.map(
+              (parameter) =>
+                new ParameterInformation(
+                  parameter.label,
+                  new MarkdownString(parameter.documentation)
+                )
+            );
+            return signatureInformation;
+          });
+          return signatureHelp;
+        },
+      },
+      { triggerCharacters: option.triggerCharacters, retriggerCharacters: [] }
+    );
   };
 
 export const workspaceOnDidChangeTextDocument =

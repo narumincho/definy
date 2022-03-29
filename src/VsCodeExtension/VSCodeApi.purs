@@ -1,14 +1,19 @@
 -- | vscode の拡張機能の環境内でのみ動作するモジュール
 module VsCodeExtension.VSCodeApi
-  ( Diagnostic
+  ( CompletionItemKind
+  , Diagnostic
   , DiagnosticCollection
   , DiagnosticRelatedInformation
   , Location
   , Position
   , Range
   , Uri
+  , completionItemKindFunction
+  , completionItemKindModule
   , diagnosticCollectionSet
+  , languageRegisterSignatureHelpProvider
   , languagesCreateDiagnosticCollection
+  , languagesRegisterCompletionItemProvider
   , languagesRegisterDocumentFormattingEditProvider
   , languagesRegisterDocumentSemanticTokensProvider
   , languagesRegisterHoverProvider
@@ -94,6 +99,47 @@ foreign import languagesRegisterHoverProvider ::
   , func ::
       { code :: String, position :: Position } ->
       Nullable { contents :: String, range :: Range }
+  } ->
+  Effect.Effect Unit
+
+foreign import languagesRegisterCompletionItemProvider ::
+  { languageId :: NonEmptyString
+  , func ::
+      { code :: String, position :: Position } ->
+      Array
+        { label :: String
+        , description :: String
+        , detail :: String
+        , kind :: CompletionItemKind
+        , documentation :: String
+        , commitCharacters :: Array String
+        , insertText :: String
+        }
+  , triggerCharacters :: Array String
+  } ->
+  Effect.Effect Unit
+
+foreign import data CompletionItemKind :: Type
+
+foreign import completionItemKindFunction :: CompletionItemKind
+
+foreign import completionItemKindModule :: CompletionItemKind
+
+foreign import languageRegisterSignatureHelpProvider ::
+  { languageId :: NonEmptyString
+  , func ::
+      { code :: String, position :: Position } ->
+      Nullable
+        { signatures ::
+            Array
+              { label :: String
+              , documentation :: String
+              , parameters :: Array { label :: String, documentation :: String }
+              }
+        , activeSignature :: UInt.UInt
+        , activeParameter :: UInt.UInt
+        }
+  , triggerCharacters :: Array String
   } ->
   Effect.Effect Unit
 

@@ -15,7 +15,8 @@
     "build-node-package": "npx tsc --project ./tsconfig-purs-ffi.json & spago run --main BuildNodePackage",
     "storybook": "start-storybook --config-dir ./storybook",
     "update-package-json": "ncu -u",
-    "start-definy": "npx tsc --project ./tsconfig-purs-ffi.json && spago run --main Definy.Start && firebase emulators:start --project definy-lang --config ./distribution/definy/firebase.json"
+    "start-definy": "npx tsc --project ./tsconfig-purs-ffi.json && spago run --main Definy.Start && firebase emulators:start --project definy-lang --config ./distribution/definy/firebase.json",
+    "package-vscode-extension": "cd ./distribution/definy-extension && npx vsce package"
   },
   "devDependencies": {
     "@babel/core": "7.17.8",
@@ -33,8 +34,8 @@
     "@types/react": "17.0.43",
     "@types/react-dom": "17.0.14",
     "@types/vscode": "1.65.0",
-    "@typescript-eslint/eslint-plugin": "5.16.0",
-    "@typescript-eslint/parser": "5.16.0",
+    "@typescript-eslint/eslint-plugin": "5.17.0",
+    "@typescript-eslint/parser": "5.17.0",
     "axios": "0.26.1",
     "babel-loader": "8.2.4",
     "dependency-cruiser": "11.4.1",

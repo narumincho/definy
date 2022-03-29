@@ -17,6 +17,7 @@ data TokenType
   | TokenTypeVariable
   | TokenTypeString
   | TokenTypeNumber
+  | TokenTypeFunction
 
 derive instance eqTokenType :: Prelude.Eq TokenType
 
@@ -29,7 +30,13 @@ useTokenTypesAsStringArray :: Array String
 useTokenTypesAsStringArray = Prelude.map toString useTokenTypes
 
 useTokenTypes :: Array TokenType
-useTokenTypes = [ TokenTypeNamespace, TokenTypeVariable, TokenTypeString, TokenTypeNumber ]
+useTokenTypes =
+  [ TokenTypeNamespace
+  , TokenTypeVariable
+  , TokenTypeString
+  , TokenTypeNumber
+  , TokenTypeFunction
+  ]
 
 toString :: TokenType -> String
 toString = case _ of
@@ -37,6 +44,7 @@ toString = case _ of
   TokenTypeVariable -> "variable"
   TokenTypeString -> "string"
   TokenTypeNumber -> "number"
+  TokenTypeFunction -> "function"
 
 tokenTypeToInt :: TokenType -> Int
 tokenTypeToInt tokenType = case Array.elemIndex tokenType useTokenTypes of

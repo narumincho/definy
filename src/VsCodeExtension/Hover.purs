@@ -8,6 +8,7 @@ import Data.Maybe (Maybe(..))
 import Data.String.NonEmpty (NonEmptyString)
 import Data.String.NonEmpty as NonEmptyString
 import Data.UInt as UInt
+import Definy.Identifier as Identifier
 import Markdown as Markdown
 import Prelude as Prelude
 import Type.Proxy (Proxy(..))
@@ -139,6 +140,27 @@ evaluatedItemToHoverTree name = case _ of
         ToString.NoPositionTree
           { name: name, children: [] }
     }
+  Evaluate.Identifier identifier ->
+    { type:
+        ToString.NoPositionTree
+          { name: NonEmptyString.nes (Proxy :: Proxy "Identifier")
+          , children: []
+          }
+    , value:
+        maybeToNoPositionTree
+          ( Prelude.map
+              ( \v ->
+                  stringToNoPositionTree
+                    ( NonEmptyString.toString
+                        (Identifier.identifierToNonEmptyString v)
+                    )
+              )
+              identifier
+          )
+    , tree:
+        ToString.NoPositionTree
+          { name: name, children: [] }
+    }
   Evaluate.Unknown ->
     { type:
         ToString.NoPositionTree
@@ -177,7 +199,9 @@ partialPartToNoPositionTree (Evaluate.PartialPart { name, description, value }) 
             ( Prelude.map
                 ( \nonEmpty ->
                     ToString.NoPositionTree
-                      { name: nonEmpty, children: [] }
+                      { name: Identifier.identifierToNonEmptyString nonEmpty
+                      , children: []
+                      }
                 )
                 name
             )

@@ -13,6 +13,7 @@ import Effect (Effect)
 import Effect.Uncurried as EffectUncurried
 import Markdown as Markdown
 import Prelude as Prelude
+import VsCodeExtension.Completion as Completion
 import VsCodeExtension.Error as Error
 import VsCodeExtension.Evaluate as Evaluate
 import VsCodeExtension.Hover as Hover
@@ -20,6 +21,7 @@ import VsCodeExtension.LanguageId as LanguageId
 import VsCodeExtension.Parser as Parser
 import VsCodeExtension.Range as Range
 import VsCodeExtension.SemanticToken as SemanticToken
+import VsCodeExtension.SignatureHelp as SignatureHelp
 import VsCodeExtension.SimpleToken as SimpleToken
 import VsCodeExtension.ToString as ToString
 import VsCodeExtension.TokenType as TokenType
@@ -66,6 +68,48 @@ activate = do
                     )
                 )
             )
+    }
+  VSCodeApi.languagesRegisterCompletionItemProvider
+    { languageId: LanguageId.languageId
+    , func:
+        \{ code, position } ->
+          Prelude.map
+            completionItemToVsCodeCompletionItem
+            ( Completion.getCompletionList
+                { tree:
+                    Evaluate.codeTreeToEvaluatedTreeIContextNormal
+                      ( Parser.parse
+                          (SimpleToken.tokenListToSimpleTokenList (Tokenize.tokenize code))
+                      )
+                , position: vsCodePositionToPosition position
+                }
+            )
+    , triggerCharacters: Completion.triggerCharacters
+    }
+  VSCodeApi.languageRegisterSignatureHelpProvider
+    { languageId: LanguageId.languageId
+    , func:
+        \{ code, position } -> case SignatureHelp.getSignatureHelp
+            { tree:
+                Evaluate.codeTreeToEvaluatedTreeIContextNormal
+                  ( Parser.parse
+                      (SimpleToken.tokenListToSimpleTokenList (Tokenize.tokenize code))
+                  )
+            , position: vsCodePositionToPosition position
+            } of
+          Just result ->
+            Nullable.notNull
+              { signatures:
+                  [ { label: result.label
+                    , documentation: Markdown.toMarkdownString result.documentation
+                    , parameters: result.parameters
+                    }
+                  ]
+              , activeSignature: UInt.fromInt 0
+              , activeParameter: result.activeParameter
+              }
+          Nothing -> Nullable.null
+    , triggerCharacters: SignatureHelp.triggerCharacters
     }
   VSCodeApi.workspaceOnDidChangeTextDocument
     ( EffectUncurried.mkEffectFn1 \{ code, languageId, uri } ->
@@ -165,3 +209,26 @@ hoverToVscodeHover = case _ of
       , range: rangeToVsCodeRange range
       }
   Nothing -> Nullable.null
+
+completionItemToVsCodeCompletionItem ::
+  Completion.CompletionItem ->
+  { label :: String
+  , description :: String
+  , detail :: String
+  , kind :: VSCodeApi.CompletionItemKind
+  , documentation :: String
+  , commitCharacters :: Array String
+  , insertText :: String
+  }
+completionItemToVsCodeCompletionItem (Completion.CompletionItem rec) =
+  { label: rec.label
+  , description: rec.description
+  , detail: rec.detail
+  , kind:
+      case rec.kind of
+        Completion.Function -> VSCodeApi.completionItemKindFunction
+        Completion.Module -> VSCodeApi.completionItemKindModule
+  , documentation: Markdown.toMarkdownString rec.documentation
+  , commitCharacters: rec.commitCharacters
+  , insertText: rec.insertText
+  }
