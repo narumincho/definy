@@ -10,6 +10,8 @@ import { LocalProjectPage } from "./LocalProjectPage";
 import { PartPage } from "./PartPage";
 import { ProjectPage } from "./ProjectPage";
 import { SettingPage } from "./SettingPage";
+import { ThemeColorRainbow } from "../tool/ThemeColorRainbow";
+import { ToolListPage } from "./ToolListPage";
 import { TypePartPage } from "./TypePartPage";
 import type { UseDefinyAppResult } from "../hook/useDefinyApp";
 
@@ -241,5 +243,23 @@ const AppMain: React.VFC<Props> = (props) => {
       return <PartPage />;
     case "LocalProject":
       return <LocalProjectPage />;
+    case "ToolList":
+      return (
+        <ToolListPage
+          language={useDefinyAppResult.language}
+          onJump={useDefinyAppResult.jump}
+        />
+      );
+    case "Tool":
+      return <Tool toolName={useDefinyAppResult.location.toolName} />;
+  }
+};
+
+export const Tool = (props: {
+  readonly toolName: d.ToolName;
+}): React.ReactElement => {
+  switch (props.toolName) {
+    case "ThemeColorRainbow":
+      return <ThemeColorRainbow />;
   }
 };

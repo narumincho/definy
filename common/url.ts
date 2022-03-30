@@ -61,6 +61,17 @@ const locationToPathList = (location: d.Location): ReadonlyArray<string> => {
       return [partPath, location.partId];
     case "LocalProject":
       return [localProjectPath];
+    case "ToolList":
+      return [toolPath];
+    case "Tool":
+      return [toolPath, toolToPath(location.toolName)];
+  }
+};
+
+const toolToPath = (toolName: d.ToolName): string => {
+  switch (toolName) {
+    case "ThemeColorRainbow":
+      return toolThemeColorRainbow;
   }
 };
 
@@ -130,6 +141,12 @@ const locationFromUrl = (path: ReadonlyArray<string>): d.Location => {
 
     case localProjectPath:
       return d.Location.LocalProject;
+
+    case toolPath:
+      if (path[1] === "theme-color-rainbow") {
+        return d.Location.Tool("ThemeColorRainbow");
+      }
+      return d.Location.ToolList;
   }
   return d.Location.Home;
 };
@@ -171,3 +188,5 @@ const accountPath = "account";
 const typePartPath = "type-part";
 const partPath = "part";
 const localProjectPath = "local-project";
+const toolPath = "tool";
+const toolThemeColorRainbow = "theme-color-rainbow";
