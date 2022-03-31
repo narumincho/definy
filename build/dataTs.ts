@@ -2617,6 +2617,11 @@ const typePartList: ReadonlyArray<d.TypePart> = [
         description: "テーマカラーレインボー",
         parameter: d.Maybe.Nothing(),
       },
+      {
+        name: "SoundQuiz",
+        description: "音のクイズ",
+        parameter: d.Maybe.Nothing(),
+      },
     ]),
   },
   {

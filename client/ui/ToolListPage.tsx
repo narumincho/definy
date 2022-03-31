@@ -21,6 +21,16 @@ export const ToolListPage = (props: {
         >
           テーマカラーレインボー
         </Link>
+        <Link
+          locationAndLanguage={{
+            location: d.Location.Tool(d.ToolName.SoundQuiz),
+            language: props.language,
+          }}
+          onJump={props.onJump}
+          style={{ padding: 8 }}
+        >
+          音の周波数クイズ
+        </Link>
       </div>
     </div>
   );

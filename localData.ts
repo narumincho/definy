@@ -1040,7 +1040,7 @@ export type Location = { readonly _: "Home" } | { readonly _: "CreateProject" } 
  * Tool名
  * @typePartId 40986ff02e1371e56d78b4905305724c
  */
-export type ToolName = "ThemeColorRainbow";
+export type ToolName = "ThemeColorRainbow" | "SoundQuiz";
 
 
 /**
@@ -4950,16 +4950,26 @@ readonly codec: Codec<ToolName>;
 /**
  * テーマカラーレインボー
  */
-readonly ThemeColorRainbow: ToolName } = { ThemeColorRainbow: "ThemeColorRainbow", typePartId: "40986ff02e1371e56d78b4905305724c" as TypePartId, codec: { encode: (value: ToolName): globalThis.ReadonlyArray<number> => {
+readonly ThemeColorRainbow: ToolName; 
+/**
+ * 音のクイズ
+ */
+readonly SoundQuiz: ToolName } = { ThemeColorRainbow: "ThemeColorRainbow", SoundQuiz: "SoundQuiz", typePartId: "40986ff02e1371e56d78b4905305724c" as TypePartId, codec: { encode: (value: ToolName): globalThis.ReadonlyArray<number> => {
   switch (value) {
     case "ThemeColorRainbow": {
       return [0];
+    }
+    case "SoundQuiz": {
+      return [1];
     }
   }
 }, decode: (index: number, binary: globalThis.Uint8Array): { readonly result: ToolName; readonly nextIndex: number } => {
   const patternIndex: { readonly result: number; readonly nextIndex: number } = Int32.codec.decode(index, binary);
   if (patternIndex.result === 0) {
     return { result: ToolName.ThemeColorRainbow, nextIndex: patternIndex.nextIndex };
+  }
+  if (patternIndex.result === 1) {
+    return { result: ToolName.SoundQuiz, nextIndex: patternIndex.nextIndex };
   }
   throw new Error("存在しないパターンを指定された 型を更新してください");
 } } };

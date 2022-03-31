@@ -72,6 +72,8 @@ const toolToPath = (toolName: d.ToolName): string => {
   switch (toolName) {
     case "ThemeColorRainbow":
       return toolThemeColorRainbow;
+    case "SoundQuiz":
+      return toolSoundQuiz;
   }
 };
 
@@ -143,8 +145,11 @@ const locationFromUrl = (path: ReadonlyArray<string>): d.Location => {
       return d.Location.LocalProject;
 
     case toolPath:
-      if (path[1] === "theme-color-rainbow") {
-        return d.Location.Tool("ThemeColorRainbow");
+      switch (path[1]) {
+        case toolThemeColorRainbow:
+          return d.Location.Tool(d.ToolName.ThemeColorRainbow);
+        case toolSoundQuiz:
+          return d.Location.Tool(d.ToolName.SoundQuiz);
       }
       return d.Location.ToolList;
   }
@@ -190,3 +195,4 @@ const partPath = "part";
 const localProjectPath = "local-project";
 const toolPath = "tool";
 const toolThemeColorRainbow = "theme-color-rainbow";
+const toolSoundQuiz = "sound-quiz";

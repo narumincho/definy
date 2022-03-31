@@ -10,6 +10,7 @@ import { LocalProjectPage } from "./LocalProjectPage";
 import { PartPage } from "./PartPage";
 import { ProjectPage } from "./ProjectPage";
 import { SettingPage } from "./SettingPage";
+import { SoundQuiz } from "../tool/SoundQuiz";
 import { ThemeColorRainbow } from "../tool/ThemeColorRainbow";
 import { ToolListPage } from "./ToolListPage";
 import { TypePartPage } from "./TypePartPage";
@@ -261,5 +262,7 @@ export const Tool = (props: {
   switch (props.toolName) {
     case "ThemeColorRainbow":
       return <ThemeColorRainbow />;
+    case "SoundQuiz":
+      return <SoundQuiz />;
   }
 };

@@ -1,5 +1,4 @@
 import * as React from "react";
-import { css } from "@emotion/css";
 
 const themeColorName = "theme-color";
 
