@@ -2585,8 +2585,44 @@ const typePartList: ReadonlyArray<d.TypePart> = [
           description: "ローカルで保存するプロジェクトファイルの編集ページ",
           parameter: d.Maybe.Nothing(),
         },
+        {
+          name: "ToolList",
+          description: "definyとは関係ないかもしれないツールたりのページ一覧",
+          parameter: d.Maybe.Nothing(),
+        },
+        {
+          name: "Tool",
+          description: "definyとは関係ないかもしれないツールたりのページ",
+          parameter: d.Maybe.Just({
+            input: d.Maybe.Nothing(),
+            output: d.DataTypeOrDataTypeParameter.DataType({
+              typePartId: d.ToolName.typePartId,
+              arguments: [],
+            }),
+          }),
+        },
       ],
     },
+  },
+  {
+    id: d.ToolName.typePartId,
+    name: "ToolName",
+    description: "Tool名",
+    attribute: d.Maybe.Nothing(),
+    dataTypeParameterList: [],
+    projectId: coreProjectId,
+    body: d.TypePartBody.Sum([
+      {
+        name: "ThemeColorRainbow",
+        description: "テーマカラーレインボー",
+        parameter: d.Maybe.Nothing(),
+      },
+      {
+        name: "SoundQuiz",
+        description: "音のクイズ",
+        parameter: d.Maybe.Nothing(),
+      },
+    ]),
   },
   {
     id: d.TypeAlias.typePartId,

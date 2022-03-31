@@ -93,6 +93,16 @@ const HomeLinkList: React.VFC<{
       >
         ファイルから開く
       </Link>
+      <Link
+        locationAndLanguage={{
+          location: d.Location.ToolList,
+          language: props.language,
+        }}
+        style={{ padding: 4 }}
+        onJump={props.jumpHandler}
+      >
+        ツール
+      </Link>
     </div>
   );
 };

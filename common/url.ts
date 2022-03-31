@@ -61,6 +61,19 @@ const locationToPathList = (location: d.Location): ReadonlyArray<string> => {
       return [partPath, location.partId];
     case "LocalProject":
       return [localProjectPath];
+    case "ToolList":
+      return [toolPath];
+    case "Tool":
+      return [toolPath, toolToPath(location.toolName)];
+  }
+};
+
+const toolToPath = (toolName: d.ToolName): string => {
+  switch (toolName) {
+    case "ThemeColorRainbow":
+      return toolThemeColorRainbow;
+    case "SoundQuiz":
+      return toolSoundQuiz;
   }
 };
 
@@ -130,6 +143,15 @@ const locationFromUrl = (path: ReadonlyArray<string>): d.Location => {
 
     case localProjectPath:
       return d.Location.LocalProject;
+
+    case toolPath:
+      switch (path[1]) {
+        case toolThemeColorRainbow:
+          return d.Location.Tool(d.ToolName.ThemeColorRainbow);
+        case toolSoundQuiz:
+          return d.Location.Tool(d.ToolName.SoundQuiz);
+      }
+      return d.Location.ToolList;
   }
   return d.Location.Home;
 };
@@ -171,3 +193,6 @@ const accountPath = "account";
 const typePartPath = "type-part";
 const partPath = "part";
 const localProjectPath = "local-project";
+const toolPath = "tool";
+const toolThemeColorRainbow = "theme-color-rainbow";
+const toolSoundQuiz = "sound-quiz";

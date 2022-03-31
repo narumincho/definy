@@ -1033,7 +1033,14 @@ export type ProjectDataFileHashValue = string & { readonly _projectDataFileHashV
  * definyWebアプリ内での場所を示すもの. URLから求められる. URLに変換できる
  * @typePartId bbcb8e43df8afff9fe24b001c66fb065
  */
-export type Location = { readonly _: "Home" } | { readonly _: "CreateProject" } | { readonly _: "Project"; readonly projectId: ProjectId } | { readonly _: "Account"; readonly accountId: AccountId } | { readonly _: "Setting" } | { readonly _: "About" } | { readonly _: "TypePart"; readonly typePartId: TypePartId } | { readonly _: "Part"; readonly partId: PartId } | { readonly _: "LocalProject" };
+export type Location = { readonly _: "Home" } | { readonly _: "CreateProject" } | { readonly _: "Project"; readonly projectId: ProjectId } | { readonly _: "Account"; readonly accountId: AccountId } | { readonly _: "Setting" } | { readonly _: "About" } | { readonly _: "TypePart"; readonly typePartId: TypePartId } | { readonly _: "Part"; readonly partId: PartId } | { readonly _: "LocalProject" } | { readonly _: "ToolList" } | { readonly _: "Tool"; readonly toolName: ToolName };
+
+
+/**
+ * Tool名
+ * @typePartId 40986ff02e1371e56d78b4905305724c
+ */
+export type ToolName = "ThemeColorRainbow" | "SoundQuiz";
 
 
 /**
@@ -4839,7 +4846,15 @@ readonly Part: (a: PartId) => Location;
 /**
  * ローカルで保存するプロジェクトファイルの編集ページ
  */
-readonly LocalProject: Location } = { Home: { _: "Home" }, CreateProject: { _: "CreateProject" }, Project: (projectId: ProjectId): Location => ({ _: "Project", projectId }), Account: (accountId: AccountId): Location => ({ _: "Account", accountId }), Setting: { _: "Setting" }, About: { _: "About" }, TypePart: (typePartId: TypePartId): Location => ({ _: "TypePart", typePartId }), Part: (partId: PartId): Location => ({ _: "Part", partId }), LocalProject: { _: "LocalProject" }, typePartId: "bbcb8e43df8afff9fe24b001c66fb065" as TypePartId, codec: { encode: (value: Location): globalThis.ReadonlyArray<number> => {
+readonly LocalProject: Location; 
+/**
+ * definyとは関係ないかもしれないツールたりのページ一覧
+ */
+readonly ToolList: Location; 
+/**
+ * definyとは関係ないかもしれないツールたりのページ
+ */
+readonly Tool: (a: ToolName) => Location } = { Home: { _: "Home" }, CreateProject: { _: "CreateProject" }, Project: (projectId: ProjectId): Location => ({ _: "Project", projectId }), Account: (accountId: AccountId): Location => ({ _: "Account", accountId }), Setting: { _: "Setting" }, About: { _: "About" }, TypePart: (typePartId: TypePartId): Location => ({ _: "TypePart", typePartId }), Part: (partId: PartId): Location => ({ _: "Part", partId }), LocalProject: { _: "LocalProject" }, ToolList: { _: "ToolList" }, Tool: (toolName: ToolName): Location => ({ _: "Tool", toolName }), typePartId: "bbcb8e43df8afff9fe24b001c66fb065" as TypePartId, codec: { encode: (value: Location): globalThis.ReadonlyArray<number> => {
   switch (value._) {
     case "Home": {
       return [0];
@@ -4867,6 +4882,12 @@ readonly LocalProject: Location } = { Home: { _: "Home" }, CreateProject: { _: "
     }
     case "LocalProject": {
       return [8];
+    }
+    case "ToolList": {
+      return [9];
+    }
+    case "Tool": {
+      return [10].concat(ToolName.codec.encode(value.toolName));
     }
   }
 }, decode: (index: number, binary: globalThis.Uint8Array): { readonly result: Location; readonly nextIndex: number } => {
@@ -4901,6 +4922,54 @@ readonly LocalProject: Location } = { Home: { _: "Home" }, CreateProject: { _: "
   }
   if (patternIndex.result === 8) {
     return { result: Location.LocalProject, nextIndex: patternIndex.nextIndex };
+  }
+  if (patternIndex.result === 9) {
+    return { result: Location.ToolList, nextIndex: patternIndex.nextIndex };
+  }
+  if (patternIndex.result === 10) {
+    const result: { readonly result: ToolName; readonly nextIndex: number } = ToolName.codec.decode(patternIndex.nextIndex, binary);
+    return { result: Location.Tool(result.result), nextIndex: result.nextIndex };
+  }
+  throw new Error("存在しないパターンを指定された 型を更新してください");
+} } };
+
+
+/**
+ * Tool名
+ * @typePartId 40986ff02e1371e56d78b4905305724c
+ */
+export const ToolName: { 
+/**
+ * definy.app 内 の 型パーツの Id
+ */
+readonly typePartId: TypePartId; 
+/**
+ * 独自のバイナリ形式の変換処理ができるコーデック
+ */
+readonly codec: Codec<ToolName>; 
+/**
+ * テーマカラーレインボー
+ */
+readonly ThemeColorRainbow: ToolName; 
+/**
+ * 音のクイズ
+ */
+readonly SoundQuiz: ToolName } = { ThemeColorRainbow: "ThemeColorRainbow", SoundQuiz: "SoundQuiz", typePartId: "40986ff02e1371e56d78b4905305724c" as TypePartId, codec: { encode: (value: ToolName): globalThis.ReadonlyArray<number> => {
+  switch (value) {
+    case "ThemeColorRainbow": {
+      return [0];
+    }
+    case "SoundQuiz": {
+      return [1];
+    }
+  }
+}, decode: (index: number, binary: globalThis.Uint8Array): { readonly result: ToolName; readonly nextIndex: number } => {
+  const patternIndex: { readonly result: number; readonly nextIndex: number } = Int32.codec.decode(index, binary);
+  if (patternIndex.result === 0) {
+    return { result: ToolName.ThemeColorRainbow, nextIndex: patternIndex.nextIndex };
+  }
+  if (patternIndex.result === 1) {
+    return { result: ToolName.SoundQuiz, nextIndex: patternIndex.nextIndex };
   }
   throw new Error("存在しないパターンを指定された 型を更新してください");
 } } };
