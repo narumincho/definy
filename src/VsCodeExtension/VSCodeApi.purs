@@ -19,6 +19,7 @@ module VsCodeExtension.VSCodeApi
   , languagesRegisterDocumentSemanticTokensProvider
   , languagesRegisterDocumentSymbolProvider
   , languagesRegisterHoverProvider
+  , languagesRegisterReferenceProvider
   , newDiagnostic
   , newDiagnosticRelatedInformation
   , newLocation
@@ -157,6 +158,13 @@ foreign import languagesRegisterDocumentSymbolProvider ::
   { languageId :: NonEmptyString
   , func ::
       { code :: String, uri :: Uri } -> Array { name :: NonEmptyString, location :: Location }
+  } ->
+  Effect.Effect Unit
+
+foreign import languagesRegisterReferenceProvider ::
+  { languageId :: NonEmptyString
+  , func ::
+      { code :: String, uri :: Uri, position :: Position } -> Array Location
   } ->
   Effect.Effect Unit
 

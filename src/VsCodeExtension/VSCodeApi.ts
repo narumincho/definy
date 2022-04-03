@@ -321,6 +321,29 @@ export const languagesRegisterDocumentSymbolProvider =
     });
   };
 
+export const languagesRegisterReferenceProvider =
+  (option: {
+    readonly languageId: string;
+    readonly func: (input: {
+      readonly code: string;
+      readonly uri: Uri;
+      readonly position: Position;
+    }) => ReadonlyArray<Location>;
+  }) =>
+  () => {
+    languages.registerReferenceProvider(option.languageId, {
+      provideReferences(document, position) {
+        return [
+          ...option.func({
+            code: document.getText(),
+            position,
+            uri: document.uri,
+          }),
+        ];
+      },
+    });
+  };
+
 export const workspaceOnDidChangeTextDocument =
   (
     callback: (data: {

@@ -29,6 +29,7 @@ import VsCodeExtension.ToString as ToString
 import VsCodeExtension.TokenType as TokenType
 import VsCodeExtension.Tokenize as Tokenize
 import VsCodeExtension.VSCodeApi as VSCodeApi
+import VsCodeExtension.Reference as Reference
 
 activate :: Effect Unit
 activate = do
@@ -141,6 +142,23 @@ activate = do
                 }
             )
             ( Symbol.getSymbolAndRangeList
+                ( Evaluate.codeTreeToEvaluatedTreeIContextNormal
+                    ( Parser.parse
+                        (SimpleToken.tokenListToSimpleTokenList (Tokenize.tokenize code))
+                    )
+                )
+            )
+    }
+  VSCodeApi.languagesRegisterReferenceProvider
+    { languageId: LanguageId.languageId
+    , func:
+        \{ code, uri, position } ->
+          Prelude.map
+            ( \range ->
+                VSCodeApi.newLocation uri (rangeToVsCodeRange range)
+            )
+            ( Reference.getReference
+                (vsCodePositionToPosition position)
                 ( Evaluate.codeTreeToEvaluatedTreeIContextNormal
                     ( Parser.parse
                         (SimpleToken.tokenListToSimpleTokenList (Tokenize.tokenize code))
