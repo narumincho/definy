@@ -17,6 +17,8 @@ import {
   SignatureHelp,
   SignatureInformation,
   SnippetString,
+  SymbolInformation,
+  SymbolKind,
   TextEdit,
   Uri,
   languages,
@@ -289,6 +291,32 @@ export const languageRegisterDefinitionProvider =
           uri: document.uri,
           position,
         });
+      },
+    });
+  };
+
+export const languagesRegisterDocumentSymbolProvider =
+  (option: {
+    readonly languageId: string;
+    readonly func: (input: {
+      readonly code: string;
+      readonly uri: Uri;
+    }) => ReadonlyArray<{ readonly name: string; readonly location: Location }>;
+  }) =>
+  () => {
+    languages.registerDocumentSymbolProvider(option.languageId, {
+      provideDocumentSymbols(document) {
+        return option
+          .func({ code: document.getText(), uri: document.uri })
+          .map(
+            (symbolData) =>
+              new SymbolInformation(
+                symbolData.name,
+                SymbolKind.Function,
+                symbolData.name,
+                symbolData.location
+              )
+          );
       },
     });
   };

@@ -24,6 +24,7 @@ import VsCodeExtension.Range as Range
 import VsCodeExtension.SemanticToken as SemanticToken
 import VsCodeExtension.SignatureHelp as SignatureHelp
 import VsCodeExtension.SimpleToken as SimpleToken
+import VsCodeExtension.Symbol as Symbol
 import VsCodeExtension.ToString as ToString
 import VsCodeExtension.TokenType as TokenType
 import VsCodeExtension.Tokenize as Tokenize
@@ -125,6 +126,24 @@ activate = do
                         ( Parser.parse
                             (SimpleToken.tokenListToSimpleTokenList (Tokenize.tokenize code))
                         )
+                    )
+                )
+            )
+    }
+  VSCodeApi.languagesRegisterDocumentSymbolProvider
+    { languageId: LanguageId.languageId
+    , func:
+        \{ code, uri } ->
+          Prelude.map
+            ( \{ name, range } ->
+                { name
+                , location: VSCodeApi.newLocation uri (rangeToVsCodeRange range)
+                }
+            )
+            ( Symbol.getSymbolAndRangeList
+                ( Evaluate.codeTreeToEvaluatedTreeIContextNormal
+                    ( Parser.parse
+                        (SimpleToken.tokenListToSimpleTokenList (Tokenize.tokenize code))
                     )
                 )
             )
