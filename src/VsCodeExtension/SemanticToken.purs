@@ -24,7 +24,6 @@ evaluateTreeToTokenData (Evaluate.EvaluatedTree { name, nameRange, item, childre
               Evaluate.Part _ -> TokenType.TokenTypeNamespace
               Evaluate.Expr _ -> TokenType.TokenTypeVariable
               Evaluate.UIntLiteral _ -> TokenType.TokenTypeNumber
-              Evaluate.Unknown -> TokenType.TokenTypeVariable
               Evaluate.Identifier _ -> TokenType.TokenTypeFunction
         }
     )

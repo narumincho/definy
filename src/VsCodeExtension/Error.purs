@@ -22,8 +22,8 @@ getErrorList tree@(Evaluate.EvaluatedTree { item, name, nameRange, children, exp
         Just expectedChildrenCount -> getParameterError tree expectedChildrenCount
         Nothing -> []
     , case item of
-        Evaluate.Unknown ->
-          [ ErrorWithRange { error: UnknownName name, range: nameRange }
+        Evaluate.Expr (Evaluate.ExprPartReferenceInvalidName { name }) ->
+          [ ErrorWithRange { error: InvalidPartName name, range: nameRange }
           ]
         Evaluate.UIntLiteral Nothing ->
           [ ErrorWithRange { error: UIntParseError name, range: nameRange }
@@ -83,7 +83,7 @@ newtype ErrorWithRange
   { error :: Error, range :: Range.Range }
 
 data Error
-  = UnknownName NonEmptyString
+  = InvalidPartName NonEmptyString
   | NeedParameter
     { name :: NonEmptyString
     , nameRange :: Range.Range
@@ -100,7 +100,7 @@ data Error
 
 errorToString :: Error -> String
 errorToString = case _ of
-  UnknownName name -> Prelude.append (NonEmptyString.toString name) "は不明な名前です"
+  InvalidPartName name -> Prelude.append (NonEmptyString.toString name) "は不正なパーツ名です"
   NeedParameter rec ->
     String.joinWith
       ""

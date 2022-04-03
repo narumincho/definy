@@ -205,17 +205,6 @@ evaluatedItemToHoverTree { name, item, partialModule } = case item of
         ToString.NoPositionTree
           { name: name, children: [] }
     }
-  Evaluate.Unknown ->
-    { type:
-        ToString.NoPositionTree
-          { name: NonEmptyString.nes (Proxy :: Proxy "Unknown")
-          , children: []
-          }
-    , value: maybeToNoPositionTree Nothing
-    , tree:
-        ToString.NoPositionTree
-          { name: name, children: [] }
-    }
 
 stringToNoPositionTree :: String -> ToString.NoPositionTree
 stringToNoPositionTree str =
@@ -272,6 +261,9 @@ partialExprToNoPositionTree = case _ of
       { name: Identifier.identifierToNonEmptyString name
       , children: []
       }
+  Evaluate.ExprPartReferenceInvalidName { name } ->
+    ToString.NoPositionTree
+      { name: name, children: [] }
   Evaluate.ExprUIntLiteral uintMaybe ->
     ToString.NoPositionTree
       { name: NonEmptyString.nes (Proxy :: Proxy "UIntLiteral")

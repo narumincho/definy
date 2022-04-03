@@ -55,7 +55,6 @@ data EvaluatedItem
   | Expr PartialExpr
   | UIntLiteral (Maybe UInt.UInt)
   | Identifier (Maybe Identifier.Identifier)
-  | Unknown
 
 newtype TypeMisMatch
   = TypeMisMatch { expect :: TreeType, actual :: TreeType }
@@ -80,7 +79,6 @@ evaluateItemToTreeType = case _ of
   Expr _ -> Just TreeTypeExpr
   UIntLiteral _ -> Just TreeTypeUIntLiteral
   Identifier _ -> Just TreeTypeIdentifier
-  Unknown -> Nothing
 
 data TreeType
   = TreeTypeModule
@@ -109,6 +107,7 @@ newtype PartialPart
 data PartialExpr
   = ExprAdd { a :: Maybe PartialExpr, b :: Maybe PartialExpr }
   | ExprPartReference { name :: Identifier.Identifier }
+  | ExprPartReferenceInvalidName { name :: NonEmptyString }
   | ExprUIntLiteral (Maybe UInt.UInt)
 
 newtype EvaluateExprResult
@@ -150,6 +149,7 @@ evaluateExpr expr partialModule = case expr of
             )
             partList
         )
+  ExprPartReferenceInvalidName { name } -> uintDummy
   ExprUIntLiteral uintMaybe ->
     Maybe.fromMaybe
       uintDummy
@@ -269,7 +269,10 @@ codeTreeToEvaluatedTreeIContextNormal codeTree@(Parser.CodeTree { name, nameRang
       )
   _ ->
     EvaluatedTree
-      { item: Unknown
+      { item:
+          case Identifier.identifierFromNonEmptyString name of
+            Just nameIdentifier -> Expr (ExprPartReference { name: nameIdentifier })
+            Nothing -> Expr (ExprPartReferenceInvalidName { name })
       , range
       , children:
           map
