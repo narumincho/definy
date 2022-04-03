@@ -11,6 +11,7 @@ module VsCodeExtension.VSCodeApi
   , completionItemKindFunction
   , completionItemKindModule
   , diagnosticCollectionSet
+  , languageRegisterDefinitionProvider
   , languageRegisterSignatureHelpProvider
   , languagesCreateDiagnosticCollection
   , languagesRegisterCompletionItemProvider
@@ -140,6 +141,13 @@ foreign import languageRegisterSignatureHelpProvider ::
         , activeParameter :: UInt.UInt
         }
   , triggerCharacters :: Array String
+  } ->
+  Effect.Effect Unit
+
+foreign import languageRegisterDefinitionProvider ::
+  { languageId :: NonEmptyString
+  , func ::
+      { code :: String, uri :: Uri, position :: Position } -> Nullable Location
   } ->
   Effect.Effect Unit
 

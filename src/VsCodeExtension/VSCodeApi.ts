@@ -272,6 +272,27 @@ export const languageRegisterSignatureHelpProvider =
     );
   };
 
+export const languageRegisterDefinitionProvider =
+  (option: {
+    readonly languageId: string;
+    readonly func: (input: {
+      readonly code: string;
+      readonly uri: Uri;
+      readonly position: Position;
+    }) => Location | null;
+  }) =>
+  () => {
+    languages.registerDefinitionProvider(option.languageId, {
+      provideDefinition(document, position) {
+        return option.func({
+          code: document.getText(),
+          uri: document.uri,
+          position,
+        });
+      },
+    });
+  };
+
 export const workspaceOnDidChangeTextDocument =
   (
     callback: (data: {

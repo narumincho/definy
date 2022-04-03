@@ -14,6 +14,7 @@ import Effect.Uncurried as EffectUncurried
 import Markdown as Markdown
 import Prelude as Prelude
 import VsCodeExtension.Completion as Completion
+import VsCodeExtension.Definition as Definition
 import VsCodeExtension.Error as Error
 import VsCodeExtension.Evaluate as Evaluate
 import VsCodeExtension.Hover as Hover
@@ -110,6 +111,23 @@ activate = do
               }
           Nothing -> Nullable.null
     , triggerCharacters: SignatureHelp.triggerCharacters
+    }
+  VSCodeApi.languageRegisterDefinitionProvider
+    { languageId: LanguageId.languageId
+    , func:
+        \{ code, uri, position } ->
+          Nullable.toNullable
+            ( Prelude.map
+                (\range -> VSCodeApi.newLocation uri (rangeToVsCodeRange range))
+                ( Definition.getDefinitionLocation
+                    (vsCodePositionToPosition position)
+                    ( Evaluate.codeTreeToEvaluatedTreeIContextNormal
+                        ( Parser.parse
+                            (SimpleToken.tokenListToSimpleTokenList (Tokenize.tokenize code))
+                        )
+                    )
+                )
+            )
     }
   VSCodeApi.workspaceOnDidChangeTextDocument
     ( EffectUncurried.mkEffectFn1 \{ code, languageId, uri } ->

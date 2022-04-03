@@ -21,16 +21,22 @@ getErrorList tree@(Evaluate.EvaluatedTree { item, name, nameRange, children, exp
     [ case expectedChildrenCountMaybe of
         Just expectedChildrenCount -> getParameterError tree expectedChildrenCount
         Nothing -> []
-    , case item of
-        Evaluate.Unknown ->
-          [ ErrorWithRange { error: UnknownName name, range: nameRange }
+    , case evaluatedItemGetError name item of
+        Just error ->
+          [ ErrorWithRange { error, range: nameRange }
           ]
-        Evaluate.UIntLiteral Nothing ->
-          [ ErrorWithRange { error: UIntParseError name, range: nameRange }
-          ]
-        _ -> []
+        Nothing -> []
     , Prelude.bind children getErrorListFromEvaluatedTreeChild
     ]
+
+evaluatedItemGetError :: NonEmptyString -> Evaluate.EvaluatedItem -> Maybe Error
+evaluatedItemGetError name = case _ of
+  Evaluate.Expr (Evaluate.ExprPartReferenceInvalidName { name: partName }) ->
+    Just
+      (InvalidPartName partName)
+  Evaluate.UIntLiteral Nothing -> Just (UIntParseError name)
+  Evaluate.Identifier Nothing -> Just (InvalidIdentifier name)
+  _ -> Nothing
 
 getErrorListFromEvaluatedTreeChild :: Evaluate.EvaluatedTreeChild -> Array ErrorWithRange
 getErrorListFromEvaluatedTreeChild (Evaluate.EvaluatedTreeChild { child: child@(Evaluate.EvaluatedTree { range }), typeMisMatchMaybe }) =
@@ -83,7 +89,7 @@ newtype ErrorWithRange
   { error :: Error, range :: Range.Range }
 
 data Error
-  = UnknownName NonEmptyString
+  = InvalidPartName NonEmptyString
   | NeedParameter
     { name :: NonEmptyString
     , nameRange :: Range.Range
@@ -97,10 +103,11 @@ data Error
     }
   | UIntParseError NonEmptyString
   | TypeMisMatchError Evaluate.TypeMisMatch
+  | InvalidIdentifier NonEmptyString
 
 errorToString :: Error -> String
 errorToString = case _ of
-  UnknownName name -> Prelude.append (NonEmptyString.toString name) "は不明な名前です"
+  InvalidPartName name -> Prelude.append (NonEmptyString.toString name) "は不正なパーツ名です"
   NeedParameter rec ->
     String.joinWith
       ""
@@ -128,6 +135,10 @@ errorToString = case _ of
   TypeMisMatchError (Evaluate.TypeMisMatch { actual, expect }) ->
     String.joinWith ""
       [ treeTypeToString expect, "を期待したが", treeTypeToString actual, "が渡された" ]
+  InvalidIdentifier name ->
+    Prelude.append
+      (NonEmptyString.toString name)
+      "は識別子として不正です. 識別子は 正規表現 ^[a-z][a-zA-Z0-9]{0,63}$ を満たさす必要があります"
 
 treeTypeToString :: Evaluate.TreeType -> String
 treeTypeToString = case _ of

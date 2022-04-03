@@ -2,6 +2,8 @@ module(
   モジュールの説明
   body(
     part(partName partDescription add(uint(1) add(uint(2) uint(3))))
-    part(~~partName~~ **partDescription** add(uint(3) uint(1)))
+    part(パーツ名 **partDescription** add(uint(3) uint(1)))
+    part(samplePart samplePartの説明文 add(uint(32) uint(10)))
+    part(b description add(samplePart uint(1)))
   )
 )
