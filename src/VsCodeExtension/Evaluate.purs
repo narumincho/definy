@@ -103,6 +103,7 @@ newtype PartialPart
   { name :: Maybe Identifier.Identifier
   , description :: String
   , expr :: Maybe PartialExpr
+  , range :: Range.Range
   }
 
 data PartialExpr
@@ -246,6 +247,7 @@ codeTreeToEvaluatedTreeIContextNormal codeTree@(Parser.CodeTree { name, nameRang
                     case third of
                       Just (Expr value) -> Just value
                       _ -> Nothing
+                , range
                 }
             )
       )

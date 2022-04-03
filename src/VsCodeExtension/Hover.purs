@@ -3,7 +3,6 @@ module VsCodeExtension.Hover
   , getHoverData
   ) where
 
-import Data.Array as Array
 import Data.Maybe (Maybe(..))
 import Data.String.NonEmpty (NonEmptyString)
 import Data.String.NonEmpty as NonEmptyString
@@ -13,6 +12,7 @@ import Markdown as Markdown
 import Prelude as Prelude
 import Type.Proxy (Proxy(..))
 import VsCodeExtension.Evaluate as Evaluate
+import VsCodeExtension.EvaluatedTreeIndex as EvaluatedTreeIndex
 import VsCodeExtension.Range as Range
 import VsCodeExtension.ToString as ToString
 
@@ -24,7 +24,30 @@ getHoverData ::
   Evaluate.EvaluatedTree ->
   Maybe Hover
 getHoverData position tree@(Evaluate.EvaluatedTree { item, range }) = case item of
-  Evaluate.Module partialModule -> getHoverDataLoop { position, tree, partialModule }
+  Evaluate.Module partialModule -> case EvaluatedTreeIndex.getEvaluatedItem position tree of
+    Just { item: targetItem, range: targetRange } ->
+      let
+        hoverTree = evaluatedItemToHoverTree { item: targetItem, partialModule }
+      in
+        Just
+          ( Hover
+              { contents:
+                  Markdown.Markdown
+                    [ Markdown.Paragraph hoverTree.description
+                    , Markdown.Header2 (NonEmptyString.nes (Proxy :: Proxy "Type"))
+                    , Markdown.CodeBlock
+                        (ToString.noPositionTreeToString hoverTree.type)
+                    , Markdown.Header2 (NonEmptyString.nes (Proxy :: Proxy "Value"))
+                    , Markdown.CodeBlock
+                        (ToString.noPositionTreeToString hoverTree.value)
+                    , Markdown.Header2 (NonEmptyString.nes (Proxy :: Proxy "Tree"))
+                    , Markdown.CodeBlock
+                        (ToString.noPositionTreeToString hoverTree.tree)
+                    ]
+              , range: targetRange
+              }
+          )
+    Nothing -> Nothing
   _ ->
     Just
       ( Hover
@@ -37,45 +60,8 @@ getHoverData position tree@(Evaluate.EvaluatedTree { item, range }) = case item 
           }
       )
 
-getHoverDataLoop ::
-  { position :: Range.Position
-  , tree :: Evaluate.EvaluatedTree
-  , partialModule :: Evaluate.PartialModule
-  } ->
-  Maybe Hover
-getHoverDataLoop { position, tree: Evaluate.EvaluatedTree { name, nameRange, item, children }, partialModule } =
-  if Range.isPositionInsideRange nameRange position then
-    let
-      hoverTree = evaluatedItemToHoverTree { name, item, partialModule }
-    in
-      Just
-        ( Hover
-            { contents:
-                Markdown.Markdown
-                  [ Markdown.Paragraph hoverTree.description
-                  , Markdown.Header2 (NonEmptyString.nes (Proxy :: Proxy "Type"))
-                  , Markdown.CodeBlock
-                      (ToString.noPositionTreeToString hoverTree.type)
-                  , Markdown.Header2 (NonEmptyString.nes (Proxy :: Proxy "Value"))
-                  , Markdown.CodeBlock
-                      (ToString.noPositionTreeToString hoverTree.value)
-                  , Markdown.Header2 (NonEmptyString.nes (Proxy :: Proxy "Tree"))
-                  , Markdown.CodeBlock
-                      (ToString.noPositionTreeToString hoverTree.tree)
-                  ]
-            , range: nameRange
-            }
-        )
-  else
-    Array.findMap
-      ( \(Evaluate.EvaluatedTreeChild { child }) ->
-          getHoverDataLoop { position, tree: child, partialModule }
-      )
-      children
-
 evaluatedItemToHoverTree ::
-  { name :: NonEmptyString
-  , item :: Evaluate.EvaluatedItem
+  { item :: Evaluate.EvaluatedItem
   , partialModule :: Evaluate.PartialModule
   } ->
   { type :: ToString.NoPositionTree
@@ -83,7 +69,7 @@ evaluatedItemToHoverTree ::
   , tree :: ToString.NoPositionTree
   , description :: NonEmptyString
   }
-evaluatedItemToHoverTree { name, item, partialModule } = case item of
+evaluatedItemToHoverTree { item, partialModule } = case item of
   Evaluate.Module (Evaluate.PartialModule { description, partList }) ->
     { type:
         ToString.NoPositionTree
@@ -188,8 +174,8 @@ evaluatedItemToHoverTree { name, item, partialModule } = case item of
         maybeToNoPositionTree
           (Prelude.map (\v -> stringToNoPositionTree (UInt.toString v)) uintLiteral)
     , tree:
-        ToString.NoPositionTree
-          { name: name, children: [] }
+        maybeToNoPositionTree
+          (Prelude.map (\v -> stringToNoPositionTree (UInt.toString v)) uintLiteral)
     , description: NonEmptyString.nes (Proxy :: Proxy "自然数リテラル")
     }
   Evaluate.Identifier identifier ->
@@ -210,8 +196,16 @@ evaluatedItemToHoverTree { name, item, partialModule } = case item of
               identifier
           )
     , tree:
-        ToString.NoPositionTree
-          { name: name, children: [] }
+        maybeToNoPositionTree
+          ( Prelude.map
+              ( \v ->
+                  stringToNoPositionTree
+                    ( NonEmptyString.toString
+                        (Identifier.identifierToNonEmptyString v)
+                    )
+              )
+              identifier
+          )
     , description: NonEmptyString.nes (Proxy :: Proxy "識別子")
     }
 
