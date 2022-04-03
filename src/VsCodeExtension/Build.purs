@@ -32,7 +32,6 @@ main =
         ( Util.toParallel
             [ writePackageJsonForVsCodeExtension
             , buildExtensionMain
-            , buildExtensionLsp
             , writeLanguageConfiguration
             , copyIcon
             ]
@@ -126,19 +125,6 @@ buildExtensionMain =
         Path.DistributionFilePath
           { directoryPath: distributionDirectoryPath
           , fileName: Name.fromSymbolProxy (Proxy :: _ "main")
-          }
-    }
-
-buildExtensionLsp :: Aff.Aff Unit
-buildExtensionLsp =
-  Spago.bundleApp
-    { mainModuleName:
-        PureScriptData.ModuleName
-          (NonEmptyArray.cons (NonEmptyString.nes (Proxy :: _ "VsCodeExtension")) (NonEmptyArray.singleton (NonEmptyString.nes (Proxy :: _ "LanguageServer"))))
-    , outputJavaScriptPath:
-        Path.DistributionFilePath
-          { directoryPath: distributionDirectoryPath
-          , fileName: Name.fromSymbolProxy (Proxy :: _ "language-server")
           }
     }
 
