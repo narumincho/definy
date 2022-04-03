@@ -52,7 +52,8 @@ getHoverDataLoop { position, tree: Evaluate.EvaluatedTree { name, nameRange, ite
         ( Hover
             { contents:
                 Markdown.Markdown
-                  [ Markdown.Header2 (NonEmptyString.nes (Proxy :: Proxy "Type"))
+                  [ Markdown.Paragraph hoverTree.description
+                  , Markdown.Header2 (NonEmptyString.nes (Proxy :: Proxy "Type"))
                   , Markdown.CodeBlock
                       (ToString.noPositionTreeToString hoverTree.type)
                   , Markdown.Header2 (NonEmptyString.nes (Proxy :: Proxy "Value"))
@@ -80,6 +81,7 @@ evaluatedItemToHoverTree ::
   { type :: ToString.NoPositionTree
   , value :: ToString.NoPositionTree
   , tree :: ToString.NoPositionTree
+  , description :: NonEmptyString
   }
 evaluatedItemToHoverTree { name, item, partialModule } = case item of
   Evaluate.Module (Evaluate.PartialModule { description, partList }) ->
@@ -104,6 +106,7 @@ evaluatedItemToHoverTree { name, item, partialModule } = case item of
               , moduleBodyToNoPositionTree partList
               ]
           }
+    , description: NonEmptyString.nes (Proxy :: Proxy "モジュール")
     }
   Evaluate.Description description ->
     { type:
@@ -121,6 +124,7 @@ evaluatedItemToHoverTree { name, item, partialModule } = case item of
           { name: NonEmptyString.nes (Proxy :: Proxy "Description")
           , children: [ stringToNoPositionTree description ]
           }
+    , description: NonEmptyString.nes (Proxy :: Proxy "なにかの説明文")
     }
   Evaluate.ModuleBody partList ->
     { type:
@@ -130,6 +134,7 @@ evaluatedItemToHoverTree { name, item, partialModule } = case item of
           }
     , value: moduleBodyToNoPositionTree partList
     , tree: moduleBodyToNoPositionTree partList
+    , description: NonEmptyString.nes (Proxy :: Proxy "モジュール本体")
     }
   Evaluate.Part part ->
     { type:
@@ -139,6 +144,7 @@ evaluatedItemToHoverTree { name, item, partialModule } = case item of
           }
     , value: partialPartToNoPositionTree part
     , tree: partialPartToNoPositionTree part
+    , description: NonEmptyString.nes (Proxy :: Proxy "パーツの定義")
     }
   Evaluate.Expr value ->
     { type:
@@ -170,6 +176,7 @@ evaluatedItemToHoverTree { name, item, partialModule } = case item of
             }
     , tree:
         partialExprToNoPositionTree value
+    , description: partialExprToDescription partialModule value
     }
   Evaluate.UIntLiteral uintLiteral ->
     { type:
@@ -183,6 +190,7 @@ evaluatedItemToHoverTree { name, item, partialModule } = case item of
     , tree:
         ToString.NoPositionTree
           { name: name, children: [] }
+    , description: NonEmptyString.nes (Proxy :: Proxy "自然数リテラル")
     }
   Evaluate.Identifier identifier ->
     { type:
@@ -204,6 +212,7 @@ evaluatedItemToHoverTree { name, item, partialModule } = case item of
     , tree:
         ToString.NoPositionTree
           { name: name, children: [] }
+    , description: NonEmptyString.nes (Proxy :: Proxy "識別子")
     }
 
 stringToNoPositionTree :: String -> ToString.NoPositionTree
@@ -272,6 +281,17 @@ partialExprToNoPositionTree = case _ of
               (Prelude.map (\v -> stringToNoPositionTree (UInt.toString v)) uintMaybe)
           ]
       }
+
+partialExprToDescription :: Evaluate.PartialModule -> Evaluate.PartialExpr -> NonEmptyString
+partialExprToDescription partialModule = case _ of
+  Evaluate.ExprAdd {} -> NonEmptyString.nes (Proxy :: Proxy "組み込みの足し算")
+  Evaluate.ExprPartReference { name } -> case Evaluate.findPart partialModule name of
+    Just (Evaluate.PartialPart { description }) -> case NonEmptyString.fromString description of
+      Just descriptionNonEmpty -> descriptionNonEmpty
+      Nothing -> NonEmptyString.nes (Proxy :: Proxy "パーツの参照 (説明文なし)")
+    Nothing -> NonEmptyString.nes (Proxy :: Proxy "不明なパーツの参照")
+  Evaluate.ExprPartReferenceInvalidName _ -> NonEmptyString.nes (Proxy :: Proxy "パーツの参照 識別子としてエラー")
+  Evaluate.ExprUIntLiteral _ -> NonEmptyString.nes (Proxy :: Proxy "自然数リテラル")
 
 maybeToNoPositionTree :: Maybe ToString.NoPositionTree -> ToString.NoPositionTree
 maybeToNoPositionTree = case _ of

@@ -11,6 +11,7 @@ module VsCodeExtension.Evaluate
   , codeTreeToEvaluatedTreeIContextNormal
   , evaluateExpr
   , evaluatedTreeGetItem
+  , findPart
   ) where
 
 import Prelude
@@ -135,21 +136,11 @@ evaluateExpr expr partialModule = case expr of
       , b: evaluateExprMaybe b partialModule
       }
   ExprPartReference { name } ->
-    let
-      PartialModule { partList } = partialModule
-    in
-      Maybe.fromMaybe
-        uintDummy
-        ( Array.findMap
-            ( \(PartialPart { name: partName, expr: partExpr }) ->
-                if eq partName (Just name) then
-                  Just (evaluateExprMaybe partExpr partialModule)
-                else
-                  Nothing
-            )
-            partList
-        )
-  ExprPartReferenceInvalidName { name } -> uintDummy
+    ( case findPart partialModule name of
+        Just (PartialPart { expr: partExpr }) -> evaluateExprMaybe partExpr partialModule
+        Nothing -> uintDummy
+    )
+  ExprPartReferenceInvalidName {} -> uintDummy
   ExprUIntLiteral uintMaybe ->
     Maybe.fromMaybe
       uintDummy
@@ -162,6 +153,17 @@ evaluateExprMaybe exprMaybe partialModule = case exprMaybe of
 
 uintDummy :: EvaluateExprResult
 uintDummy = EvaluateExprResult { value: UInt.fromInt 28, dummy: true }
+
+findPart :: PartialModule -> Identifier.Identifier -> Maybe PartialPart
+findPart (PartialModule { partList }) name =
+  Array.findMap
+    ( \partialPart@(PartialPart { name: partName }) ->
+        if eq partName (Just name) then
+          Just partialPart
+        else
+          Nothing
+    )
+    partList
 
 codeTreeToEvaluatedTree :: Maybe TreeType -> Parser.CodeTree -> EvaluatedTreeChild
 codeTreeToEvaluatedTree treeType codeTree =
