@@ -22,7 +22,6 @@
   , "parallel"
   , "prelude"
   , "record"
-  , "refs"
   , "strings"
   , "test-unit"
   , "tuples"

@@ -6,7 +6,8 @@ module Definy.Identifier
   , fromSymbolProxy
   , identifierFromNonEmptyString
   , identifierToNonEmptyString
-  ) where
+  )
+  where
 
 import Data.Either as Either
 import Data.Maybe (Maybe(..))
@@ -17,11 +18,11 @@ import Data.String.Regex.Flags as RegexFlags
 import Data.Symbol as Symbol
 import Identifier as Identifier
 import Prelude as Prelude
+import Prim.Symbol as PrimSymbol
+import Prim.TypeError as TypeError
 import Type.Data.List as TList
 import Type.Data.Peano as PeanoNat
 import Type.Proxy (Proxy(..))
-import Prim.TypeError as TypeError
-import Prim.Symbol as PrimSymbol
 
 data AccountName
   = AccountName NonEmptyString
@@ -31,6 +32,8 @@ accountNameFromNonEmptyString raw = Prelude.map AccountName (NonEmptyString.trim
 
 data Identifier
   = Identifier NonEmptyString
+
+derive instance  Prelude.Eq Identifier
 
 safePatternEither :: Either.Either String Regex.Regex
 safePatternEither = Regex.regex "^[a-z][a-zA-Z0-9]{0,63}$" RegexFlags.unicode
