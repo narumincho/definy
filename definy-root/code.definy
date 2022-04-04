@@ -6,5 +6,7 @@ module(
     part(samplePart samplePartの説明文 add(sample4Part uint(10)))
     part(b description add(samplePart uint(1)))
     part(k description add(samplePart uint(1)))
+    part(sample description uint(28))
+    part(sample description add(28 uint(28)))
   )
 )
