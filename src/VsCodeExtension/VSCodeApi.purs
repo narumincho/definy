@@ -17,7 +17,9 @@ module VsCodeExtension.VSCodeApi
   , languagesRegisterCompletionItemProvider
   , languagesRegisterDocumentFormattingEditProvider
   , languagesRegisterDocumentSemanticTokensProvider
+  , languagesRegisterDocumentSymbolProvider
   , languagesRegisterHoverProvider
+  , languagesRegisterReferenceProvider
   , newDiagnostic
   , newDiagnosticRelatedInformation
   , newLocation
@@ -34,6 +36,7 @@ module VsCodeExtension.VSCodeApi
 import Prelude
 import Data.Nullable (Nullable)
 import Data.String.NonEmpty (NonEmptyString)
+import Data.String.NonEmpty.Internal (NonEmptyString(..))
 import Data.UInt as UInt
 import Effect as Effect
 import Effect.Uncurried (EffectFn1)
@@ -148,6 +151,20 @@ foreign import languageRegisterDefinitionProvider ::
   { languageId :: NonEmptyString
   , func ::
       { code :: String, uri :: Uri, position :: Position } -> Nullable Location
+  } ->
+  Effect.Effect Unit
+
+foreign import languagesRegisterDocumentSymbolProvider ::
+  { languageId :: NonEmptyString
+  , func ::
+      { code :: String, uri :: Uri } -> Array { name :: NonEmptyString, location :: Location }
+  } ->
+  Effect.Effect Unit
+
+foreign import languagesRegisterReferenceProvider ::
+  { languageId :: NonEmptyString
+  , func ::
+      { code :: String, uri :: Uri, position :: Position } -> Array Location
   } ->
   Effect.Effect Unit
 

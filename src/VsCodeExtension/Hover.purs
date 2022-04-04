@@ -4,7 +4,6 @@ module VsCodeExtension.Hover
   ) where
 
 import Data.Maybe (Maybe(..))
-import Data.String.NonEmpty (NonEmptyString)
 import Data.String.NonEmpty as NonEmptyString
 import Data.UInt as UInt
 import Definy.Identifier as Identifier
@@ -33,7 +32,7 @@ getHoverData position tree@(Evaluate.EvaluatedTree { item, range }) = case item 
           ( Hover
               { contents:
                   Markdown.Markdown
-                    [ Markdown.Paragraph hoverTree.description
+                    [ Markdown.Raw hoverTree.description
                     , Markdown.Header2 (NonEmptyString.nes (Proxy :: Proxy "Type"))
                     , Markdown.CodeBlock
                         (ToString.noPositionTreeToString hoverTree.type)
@@ -67,7 +66,7 @@ evaluatedItemToHoverTree ::
   { type :: ToString.NoPositionTree
   , value :: ToString.NoPositionTree
   , tree :: ToString.NoPositionTree
-  , description :: NonEmptyString
+  , description :: String
   }
 evaluatedItemToHoverTree { item, partialModule } = case item of
   Evaluate.Module (Evaluate.PartialModule { description, partList }) ->
@@ -92,7 +91,7 @@ evaluatedItemToHoverTree { item, partialModule } = case item of
               , moduleBodyToNoPositionTree partList
               ]
           }
-    , description: NonEmptyString.nes (Proxy :: Proxy "モジュール")
+    , description: "モジュール"
     }
   Evaluate.Description description ->
     { type:
@@ -110,7 +109,7 @@ evaluatedItemToHoverTree { item, partialModule } = case item of
           { name: NonEmptyString.nes (Proxy :: Proxy "Description")
           , children: [ stringToNoPositionTree description ]
           }
-    , description: NonEmptyString.nes (Proxy :: Proxy "なにかの説明文")
+    , description: "なにかの説明文"
     }
   Evaluate.ModuleBody partList ->
     { type:
@@ -120,7 +119,7 @@ evaluatedItemToHoverTree { item, partialModule } = case item of
           }
     , value: moduleBodyToNoPositionTree partList
     , tree: moduleBodyToNoPositionTree partList
-    , description: NonEmptyString.nes (Proxy :: Proxy "モジュール本体")
+    , description: "モジュール本体"
     }
   Evaluate.Part part ->
     { type:
@@ -130,7 +129,7 @@ evaluatedItemToHoverTree { item, partialModule } = case item of
           }
     , value: partialPartToNoPositionTree part
     , tree: partialPartToNoPositionTree part
-    , description: NonEmptyString.nes (Proxy :: Proxy "パーツの定義")
+    , description: "パーツの定義"
     }
   Evaluate.Expr value ->
     { type:
@@ -176,7 +175,7 @@ evaluatedItemToHoverTree { item, partialModule } = case item of
     , tree:
         maybeToNoPositionTree
           (Prelude.map (\v -> stringToNoPositionTree (UInt.toString v)) uintLiteral)
-    , description: NonEmptyString.nes (Proxy :: Proxy "自然数リテラル")
+    , description: "自然数リテラル"
     }
   Evaluate.Identifier identifier ->
     { type:
@@ -206,7 +205,7 @@ evaluatedItemToHoverTree { item, partialModule } = case item of
               )
               identifier
           )
-    , description: NonEmptyString.nes (Proxy :: Proxy "識別子")
+    , description: "識別子"
     }
 
 stringToNoPositionTree :: String -> ToString.NoPositionTree
@@ -276,16 +275,14 @@ partialExprToNoPositionTree = case _ of
           ]
       }
 
-partialExprToDescription :: Evaluate.PartialModule -> Evaluate.PartialExpr -> NonEmptyString
+partialExprToDescription :: Evaluate.PartialModule -> Evaluate.PartialExpr -> String
 partialExprToDescription partialModule = case _ of
-  Evaluate.ExprAdd {} -> NonEmptyString.nes (Proxy :: Proxy "組み込みの足し算")
+  Evaluate.ExprAdd {} -> "組み込みの足し算"
   Evaluate.ExprPartReference { name } -> case Evaluate.findPart partialModule name of
-    Just (Evaluate.PartialPart { description }) -> case NonEmptyString.fromString description of
-      Just descriptionNonEmpty -> descriptionNonEmpty
-      Nothing -> NonEmptyString.nes (Proxy :: Proxy "パーツの参照 (説明文なし)")
-    Nothing -> NonEmptyString.nes (Proxy :: Proxy "不明なパーツの参照")
-  Evaluate.ExprPartReferenceInvalidName _ -> NonEmptyString.nes (Proxy :: Proxy "パーツの参照 識別子としてエラー")
-  Evaluate.ExprUIntLiteral _ -> NonEmptyString.nes (Proxy :: Proxy "自然数リテラル")
+    Just (Evaluate.PartialPart { description }) -> description
+    Nothing -> "不明なパーツの参照"
+  Evaluate.ExprPartReferenceInvalidName _ -> "パーツの参照 識別子としてエラー"
+  Evaluate.ExprUIntLiteral _ -> "自然数リテラル"
 
 maybeToNoPositionTree :: Maybe ToString.NoPositionTree -> ToString.NoPositionTree
 maybeToNoPositionTree = case _ of

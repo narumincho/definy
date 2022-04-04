@@ -27,20 +27,60 @@ evaluatedTreeToString :: Evaluate.EvaluatedTree -> String
 evaluatedTreeToString codeTree = noPositionTreeToString (evaluatedTreeToNoPositionTree codeTree)
 
 evaluatedTreeToNoPositionTree :: Evaluate.EvaluatedTree -> NoPositionTree
-evaluatedTreeToNoPositionTree (Evaluate.EvaluatedTree { name, children, expectedChildrenCount }) =
+evaluatedTreeToNoPositionTree (Evaluate.EvaluatedTree { name, children, expectedChildrenTypeMaybe }) =
   NoPositionTree
     { name
     , children:
         append (map (\(Evaluate.EvaluatedTreeChild { child }) -> evaluatedTreeToNoPositionTree child) children)
-          ( case expectedChildrenCount of
-              Just expectedCount ->
-                Array.replicate (sub (UInt.toInt expectedCount) (Array.length children))
-                  ( NoPositionTree
-                      { name: NonEmptyString.nes (Proxy :: Proxy "???"), children: [] }
+          ( case expectedChildrenTypeMaybe of
+              Just expectedChildrenType ->
+                map
+                  typeDefaultValue
+                  ( Array.drop
+                      (Array.length children)
+                      expectedChildrenType
                   )
               Nothing -> []
           )
     }
+
+typeDefaultValue :: Evaluate.TreeType -> NoPositionTree
+typeDefaultValue = case _ of
+  Evaluate.TreeTypeModule ->
+    NoPositionTree
+      { name: NonEmptyString.nes (Proxy :: Proxy "module")
+      , children:
+          [ typeDefaultValue Evaluate.TreeTypeDescription
+          , typeDefaultValue Evaluate.TreeTypeModuleBody
+          ]
+      }
+  Evaluate.TreeTypeDescription ->
+    NoPositionTree
+      { name: NonEmptyString.nes (Proxy :: Proxy "description"), children: [] }
+  Evaluate.TreeTypeModuleBody ->
+    NoPositionTree
+      { name: NonEmptyString.nes (Proxy :: Proxy "body"), children: [] }
+  Evaluate.TreeTypePart ->
+    NoPositionTree
+      { name: NonEmptyString.nes (Proxy :: Proxy "part")
+      , children:
+          [ typeDefaultValue Evaluate.TreeTypeIdentifier
+          , typeDefaultValue Evaluate.TreeTypeDescription
+          , typeDefaultValue Evaluate.TreeTypeExpr
+          ]
+      }
+  Evaluate.TreeTypeExpr ->
+    NoPositionTree
+      { name: NonEmptyString.nes (Proxy :: Proxy "uint")
+      , children:
+          [ typeDefaultValue Evaluate.TreeTypeUIntLiteral ]
+      }
+  Evaluate.TreeTypeUIntLiteral ->
+    NoPositionTree
+      { name: NonEmptyString.nes (Proxy :: Proxy "28"), children: [] }
+  Evaluate.TreeTypeIdentifier ->
+    NoPositionTree
+      { name: NonEmptyString.nes (Proxy :: Proxy "sample"), children: [] }
 
 noPositionTreeToString :: NoPositionTree -> String
 noPositionTreeToString noPositionTree =

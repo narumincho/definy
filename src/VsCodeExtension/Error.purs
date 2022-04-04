@@ -16,10 +16,13 @@ import VsCodeExtension.Evaluate as Evaluate
 import VsCodeExtension.Range as Range
 
 getErrorList :: Evaluate.EvaluatedTree -> Array ErrorWithRange
-getErrorList tree@(Evaluate.EvaluatedTree { item, name, nameRange, children, expectedChildrenCount: expectedChildrenCountMaybe }) =
+getErrorList tree@(Evaluate.EvaluatedTree { item, name, nameRange, children, expectedChildrenTypeMaybe }) =
   Array.concat
-    [ case expectedChildrenCountMaybe of
-        Just expectedChildrenCount -> getParameterError tree expectedChildrenCount
+    [ case expectedChildrenTypeMaybe of
+        Just expectedChildrenType ->
+          getParameterError
+            tree
+            (UInt.fromInt (Array.length expectedChildrenType))
         Nothing -> []
     , case evaluatedItemGetError name item of
         Just error ->

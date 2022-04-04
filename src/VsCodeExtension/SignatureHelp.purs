@@ -36,7 +36,7 @@ getSignatureHelp { tree: Evaluate.EvaluatedTree { children }, position } = case 
   Nothing -> Nothing
 
 getData :: Range.Position -> Evaluate.EvaluatedTree -> Maybe NonEmptyString
-getData position (Evaluate.EvaluatedTree { name, nameRange, range, item, children }) =
+getData position (Evaluate.EvaluatedTree { name, nameRange, children }) =
   if Range.isPositionInsideRange nameRange position then
     Just name
   else

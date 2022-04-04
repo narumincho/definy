@@ -30,8 +30,8 @@ newtype EvaluatedTree
   { item :: EvaluatedItem
   , range :: Range.Range
   , children :: Array EvaluatedTreeChild
-  {- 期待した子要素の数 -}
-  , expectedChildrenCount :: Maybe UInt.UInt
+  {- 期待した子要素の個数と型. Nothing は期待する個数が決まっていない (bodyなど) -}
+  , expectedChildrenTypeMaybe :: Maybe (Array TreeType)
   , nameRange :: Range.Range
   , name :: NonEmptyString
   }
@@ -221,7 +221,7 @@ codeTreeToEvaluatedTreeIContextNormal codeTree@(Parser.CodeTree { name, nameRang
               )
         , range
         , children: evaluatedChildren
-        , expectedChildrenCount: Nothing
+        , expectedChildrenTypeMaybe: Nothing
         , nameRange
         , name
         }
@@ -286,7 +286,7 @@ codeTreeToEvaluatedTreeIContextNormal codeTree@(Parser.CodeTree { name, nameRang
                   child
             )
             children
-      , expectedChildrenCount: Nothing
+      , expectedChildrenTypeMaybe: Nothing
       , nameRange
       , name
       }
@@ -335,8 +335,7 @@ need0Children (Parser.CodeTree { name, nameRange, children, range }) item =
       { item: item
       , range: range
       , children: evaluatedChildren
-      {- 期待した子要素の数 -}
-      , expectedChildrenCount: Just (UInt.fromInt 0)
+      , expectedChildrenTypeMaybe: Just []
       , name
       , nameRange
       }
@@ -346,7 +345,7 @@ need1Children ::
   Parser.CodeTree ->
   (Maybe EvaluatedItem -> EvaluatedItem) ->
   EvaluatedTree
-need1Children context (Parser.CodeTree { name, nameRange, children, range }) func =
+need1Children treeType (Parser.CodeTree { name, nameRange, children, range }) func =
   let
     evaluatedChildren :: Array EvaluatedTreeChild
     evaluatedChildren =
@@ -354,7 +353,7 @@ need1Children context (Parser.CodeTree { name, nameRange, children, range }) fun
         ( \index child ->
             codeTreeToEvaluatedTree
               ( case index of
-                  0 -> Just context
+                  0 -> Just treeType
                   _ -> Nothing
               )
               child
@@ -365,8 +364,7 @@ need1Children context (Parser.CodeTree { name, nameRange, children, range }) fun
       { item: func (map evaluatedTreeChildGetItem (Array.index evaluatedChildren 0))
       , range: range
       , children: evaluatedChildren
-      {- 期待した子要素の数 -}
-      , expectedChildrenCount: Just (UInt.fromInt 1)
+      , expectedChildrenTypeMaybe: Just [ treeType ]
       , name
       , nameRange
       }
@@ -400,8 +398,7 @@ need2Children { firstContext, secondContext } (Parser.CodeTree { name, nameRange
             }
       , range: range
       , children: evaluatedChildren
-      {- 期待した子要素の数 -}
-      , expectedChildrenCount: Just (UInt.fromInt 2)
+      , expectedChildrenTypeMaybe: Just [ firstContext, secondContext ]
       , name
       , nameRange
       }
@@ -437,8 +434,12 @@ need3Children context (Parser.CodeTree { name, nameRange, children, range }) fun
             }
       , range: range
       , children: evaluatedChildren
-      {- 期待した子要素の数 -}
-      , expectedChildrenCount: Just (UInt.fromInt 3)
+      , expectedChildrenTypeMaybe:
+          Just
+            [ context.firstContext
+            , context.secondContext
+            , context.thirdContext
+            ]
       , name
       , nameRange
       }
