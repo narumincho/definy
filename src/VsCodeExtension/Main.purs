@@ -21,6 +21,7 @@ import VsCodeExtension.Hover as Hover
 import VsCodeExtension.LanguageId as LanguageId
 import VsCodeExtension.Parser as Parser
 import VsCodeExtension.Range as Range
+import VsCodeExtension.Reference as Reference
 import VsCodeExtension.SemanticToken as SemanticToken
 import VsCodeExtension.SignatureHelp as SignatureHelp
 import VsCodeExtension.SimpleToken as SimpleToken
@@ -29,7 +30,6 @@ import VsCodeExtension.ToString as ToString
 import VsCodeExtension.TokenType as TokenType
 import VsCodeExtension.Tokenize as Tokenize
 import VsCodeExtension.VSCodeApi as VSCodeApi
-import VsCodeExtension.Reference as Reference
 
 activate :: Effect Unit
 activate = do
@@ -167,23 +167,46 @@ activate = do
             )
     }
   VSCodeApi.workspaceOnDidChangeTextDocument
-    ( EffectUncurried.mkEffectFn1 \{ code, languageId, uri } ->
-        if eq languageId (NonEmptyString.toString LanguageId.languageId) then
-          VSCodeApi.diagnosticCollectionSet
-            [ { diagnosticList:
-                  evaluatedTreeToDiagnosticList uri
-                    ( Evaluate.codeTreeToEvaluatedTreeIContextNormal
-                        ( Parser.parse
-                            (SimpleToken.tokenListToSimpleTokenList (Tokenize.tokenize code))
-                        )
-                    )
-              , uri
-              }
-            ]
-            diagnosticCollection
-        else
-          pure unit
+    (getWorkspaceTextDocumentsAndSendError diagnosticCollection)
+  VSCodeApi.workspaceOnDidOpenTextDocument
+    (getWorkspaceTextDocumentsAndSendError diagnosticCollection)
+  getWorkspaceTextDocumentsAndSendError diagnosticCollection
+
+getWorkspaceTextDocumentsAndSendError :: VSCodeApi.DiagnosticCollection -> Effect Unit
+getWorkspaceTextDocumentsAndSendError diagnosticCollection =
+  VSCodeApi.workspaceTextDocuments
+    ( EffectUncurried.mkEffectFn1 \codeDataList ->
+        sendError
+          diagnosticCollection
+          codeDataList
     )
+
+sendError ::
+  VSCodeApi.DiagnosticCollection ->
+  Array { languageId :: String, uri :: VSCodeApi.Uri, code :: String } ->
+  Effect Unit
+sendError diagnosticCollection codeDataList =
+  VSCodeApi.diagnosticCollectionSet
+    (Array.mapMaybe codeDataToDiagnosticList codeDataList)
+    diagnosticCollection
+
+codeDataToDiagnosticList ::
+  { languageId :: String, uri :: VSCodeApi.Uri, code :: String } ->
+  Maybe { diagnosticList ∷ Array VSCodeApi.Diagnostic, uri ∷ VSCodeApi.Uri }
+codeDataToDiagnosticList { languageId, uri, code } =
+  if eq languageId (NonEmptyString.toString LanguageId.languageId) then
+    Just
+      { diagnosticList:
+          evaluatedTreeToDiagnosticList uri
+            ( Evaluate.codeTreeToEvaluatedTreeIContextNormal
+                ( Parser.parse
+                    (SimpleToken.tokenListToSimpleTokenList (Tokenize.tokenize code))
+                )
+            )
+      , uri
+      }
+  else
+    Nothing
 
 deactivate :: Effect Unit
 deactivate = pure unit

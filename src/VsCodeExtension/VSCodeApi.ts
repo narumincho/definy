@@ -77,7 +77,8 @@ export const diagnosticCollectionSet =
       readonly diagnosticList: ReadonlyArray<Diagnostic>;
     }>
   ) =>
-  (diagnosticCollection: DiagnosticCollection): void => {
+  (diagnosticCollection: DiagnosticCollection) =>
+  (): void => {
     diagnosticCollection.set(
       diagnosticsData.map(({ uri, diagnosticList }) => [uri, diagnosticList])
     );
@@ -345,19 +346,30 @@ export const languagesRegisterReferenceProvider =
   };
 
 export const workspaceOnDidChangeTextDocument =
+  (callback: () => void) => () => {
+    workspace.onDidChangeTextDocument(callback);
+  };
+
+export const workspaceOnDidOpenTextDocument = (callback: () => void) => () => {
+  workspace.onDidOpenTextDocument(callback);
+};
+
+export const workspaceTextDocuments =
   (
-    callback: (data: {
-      readonly languageId: string;
-      readonly uri: Uri;
-      readonly code: string;
-    }) => void
+    callback: (
+      data: ReadonlyArray<{
+        readonly languageId: string;
+        readonly uri: Uri;
+        readonly code: string;
+      }>
+    ) => void
   ) =>
   () => {
-    workspace.onDidChangeTextDocument((textDocumentChangeEvent) => {
-      callback({
-        languageId: textDocumentChangeEvent.document.languageId,
-        uri: textDocumentChangeEvent.document.uri,
-        code: textDocumentChangeEvent.document.getText(),
-      });
-    });
+    callback(
+      workspace.textDocuments.map((textDocument) => ({
+        languageId: textDocument.languageId,
+        uri: textDocument.uri,
+        code: textDocument.getText(),
+      }))
+    );
   };
