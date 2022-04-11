@@ -140,7 +140,11 @@ tokenizeInLine { line, positionLine } =
 
 data ReadState
   = BeforeName { startPosition :: Range.Position, charList :: NonEmptyArray Char }
-  | BeforeQuote { startPosition :: Range.Position, charList :: Array Char }
+  | BeforeQuote
+    { startPosition :: Range.Position
+    , charList :: Array Char
+    , beforeBackSlash :: Boolean
+    }
   | None
 
 newtype TokenLoopResult
@@ -239,7 +243,28 @@ tokenizeLoopInBeforeName rec = case charToCharTypeMaybe rec.targetRight of
         CharTypeQuote ->
           TokenLoopResult
             { newTokenList: [ nameTokenWithRange ]
-            , nextState: BeforeQuote { startPosition: rec.position, charList: [] }
+            , nextState:
+                BeforeQuote
+                  { startPosition: rec.position
+                  , charList: []
+                  , beforeBackSlash: false
+                  }
+            }
+        -- 深くしないほうがいいや
+        CharTypeQuote ->
+          TokenLoopResult
+            { newTokenList:
+                [ nameTokenWithRange
+                , TokenWithRange
+                    { range:
+                        Range.Range
+                          { start: rec.position
+                          , end: Range.positionAdd1Character rec.position
+                          }
+                    , token: Comma
+                    }
+                ]
+            , nextState: None
             }
   Nothing ->
     TokenLoopResult
@@ -256,6 +281,7 @@ tokenizeLoopInBeforeQuote ::
   , position :: Range.Position
   , startPosition :: Range.Position
   , charList :: Array Char
+  , beforeBackSlash :: Boolean
   } ->
   TokenLoopResult
 tokenizeLoopInBeforeQuote rec = case charToCharTypeMaybe rec.targetRight of
@@ -280,6 +306,7 @@ tokenizeLoopInBeforeQuote rec = case charToCharTypeMaybe rec.targetRight of
           BeforeQuote
             { startPosition: rec.startPosition
             , charList: Array.snoc rec.charList rec.targetRight
+            , beforeBackSlash: rec.beforeBackSlash
             }
       }
 
@@ -360,6 +387,7 @@ data CharType
   | CharTypeSpace
   | CharTypeComma
   | CharTypeQuote
+  | CharBackslash
 
 charToCharTypeMaybe :: Char -> Maybe CharType
 charToCharTypeMaybe = case _ of
@@ -400,4 +428,5 @@ charToCharTypeMaybe = case _ of
   '\x201D' -> Just CharTypeQuote
   '\xff02' -> Just CharTypeQuote
   '\xff07' -> Just CharTypeQuote
+  '\\' -> Just CharBackslash
   _ -> Nothing
