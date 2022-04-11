@@ -4,6 +4,7 @@ module VsCodeExtension.Main
   ) where
 
 import Prelude
+import Binary as Binary
 import Data.Array as Array
 import Data.Maybe (Maybe(..))
 import Data.Nullable as Nullable
@@ -171,6 +172,14 @@ activate = do
   VSCodeApi.workspaceOnDidOpenTextDocument
     (getWorkspaceTextDocumentsAndSendError diagnosticCollection)
   getWorkspaceTextDocumentsAndSendError diagnosticCollection
+  folders <- VSCodeApi.workspaceWorkspaceFolders
+  case Array.index folders 0 of
+    Just folder ->
+      VSCodeApi.workspaceFsWriteFile
+        { uri: VSCodeApi.uriJoinPath { uri: folder.uri, relativePath: "definy-output.txt" }
+        , content: Binary.fromStringWriteAsUtf8 "sampleText"
+        }
+    Nothing -> pure unit
 
 getWorkspaceTextDocumentsAndSendError :: VSCodeApi.DiagnosticCollection -> Effect Unit
 getWorkspaceTextDocumentsAndSendError diagnosticCollection =
