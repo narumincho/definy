@@ -3,7 +3,7 @@ module VsCodeExtension.SemanticToken
   ) where
 
 import Data.Array as Array
-import Data.String.NonEmpty.CodeUnits as NonEmptyCodeUnits
+import Data.String.CodeUnits as CodeUnits
 import Data.UInt as UInt
 import Prelude as Prelude
 import VsCodeExtension.Evaluate as Evaluate
@@ -14,7 +14,7 @@ evaluateTreeToTokenData :: Evaluate.EvaluatedTree -> Array TokenType.TokenData
 evaluateTreeToTokenData (Evaluate.EvaluatedTree { name, nameRange, item, children }) =
   Array.cons
     ( TokenType.TokenData
-        { length: UInt.fromInt (Array.length (NonEmptyCodeUnits.toCharArray name))
+        { length: UInt.fromInt (Array.length (CodeUnits.toCharArray name))
         , start: Range.rangeStart nameRange
         , tokenType:
             case item of

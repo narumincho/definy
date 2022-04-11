@@ -78,7 +78,7 @@ getSimpleCompletionList { tree } =
                   ]
             , insertText:
                 ToString.NoPositionTree
-                  { name: NonEmptyString.nes (Proxy :: Proxy "module")
+                  { name: "module"
                   , children:
                       snippetPlaceholderListToNoPositionTree
                         [ "description", "body" ]
@@ -96,7 +96,7 @@ getSimpleCompletionList { tree } =
                   ]
             , insertText:
                 ToString.NoPositionTree
-                  { name: NonEmptyString.nes (Proxy :: Proxy "body")
+                  { name: "body"
                   , children:
                       snippetPlaceholderListToNoPositionTree
                         [ "part" ]
@@ -114,7 +114,7 @@ getSimpleCompletionList { tree } =
                   ]
             , insertText:
                 ToString.NoPositionTree
-                  { name: NonEmptyString.nes (Proxy :: Proxy "part")
+                  { name: "part"
                   , children:
                       snippetPlaceholderListToNoPositionTree
                         [ "partName", "description", "expr" ]
@@ -132,7 +132,7 @@ getSimpleCompletionList { tree } =
                   ]
             , insertText:
                 ToString.NoPositionTree
-                  { name: NonEmptyString.nes (Proxy :: Proxy "add")
+                  { name: "add"
                   , children:
                       snippetPlaceholderListToNoPositionTree
                         [ "expr", "expr" ]
@@ -150,7 +150,7 @@ getSimpleCompletionList { tree } =
                   ]
             , insertText:
                 ToString.NoPositionTree
-                  { name: NonEmptyString.nes (Proxy :: Proxy "uint")
+                  { name: "uint"
                   , children:
                       snippetPlaceholderListToNoPositionTree
                         [ "literal" ]
@@ -160,9 +160,7 @@ getSimpleCompletionList { tree } =
       , Prelude.map
           ( \{ name, description } ->
               SimpleCompletionItem
-                { label:
-                    NonEmptyString.toString
-                      (Identifier.identifierToNonEmptyString name)
+                { label: Identifier.identifierToString name
                 , description: "Expr"
                 , kind: Function
                 , documentation:
@@ -170,7 +168,7 @@ getSimpleCompletionList { tree } =
                       [ Markdown.Raw description ]
                 , insertText:
                     ToString.NoPositionTree
-                      { name: Identifier.identifierToNonEmptyString name
+                      { name: Identifier.identifierToString name
                       , children: snippetPlaceholderListToNoPositionTree []
                       }
                 }
@@ -200,7 +198,7 @@ snippetPlaceholderListToNoPositionTree placeholderList =
     ( \index placeholder ->
         ToString.NoPositionTree
           { name:
-              NonEmptyString.appendString (NonEmptyString.nes (Proxy :: Proxy "$"))
+              Prelude.append "$"
                 ( String.joinWith ""
                     [ "{"
                     , Prelude.show (Prelude.add index 1)

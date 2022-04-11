@@ -18,8 +18,6 @@ import Prelude
 import Data.Array as Array
 import Data.Maybe (Maybe(..))
 import Data.Maybe as Maybe
-import Data.String.NonEmpty (NonEmptyString)
-import Data.String.NonEmpty as NonEmptyString
 import Data.UInt as UInt
 import Definy.Identifier as Identifier
 import VsCodeExtension.Parser as Parser
@@ -33,7 +31,7 @@ newtype EvaluatedTree
   {- 期待した子要素の個数と型. Nothing は期待する個数が決まっていない (bodyなど) -}
   , expectedChildrenTypeMaybe :: Maybe (Array TreeType)
   , nameRange :: Range.Range
-  , name :: NonEmptyString
+  , name :: String
   }
 
 newtype EvaluatedTreeChild
@@ -109,7 +107,7 @@ newtype PartialPart
 data PartialExpr
   = ExprAdd { a :: Maybe PartialExpr, b :: Maybe PartialExpr }
   | ExprPartReference { name :: Identifier.Identifier }
-  | ExprPartReferenceInvalidName { name :: NonEmptyString }
+  | ExprPartReferenceInvalidName { name :: String }
   | ExprUIntLiteral (Maybe UInt.UInt)
 
 newtype EvaluateExprResult
@@ -181,7 +179,7 @@ codeTreeToEvaluatedTree treeType codeTree =
       }
 
 codeTreeToEvaluatedTreeIContextNormal :: Parser.CodeTree -> EvaluatedTree
-codeTreeToEvaluatedTreeIContextNormal codeTree@(Parser.CodeTree { name, nameRange, range, children }) = case NonEmptyString.toString name of
+codeTreeToEvaluatedTreeIContextNormal codeTree@(Parser.CodeTree { name, nameRange, range, children }) = case name of
   "module" ->
     need2Children
       { firstContext: TreeTypeDescription, secondContext: TreeTypeModuleBody }
@@ -274,7 +272,7 @@ codeTreeToEvaluatedTreeIContextNormal codeTree@(Parser.CodeTree { name, nameRang
   _ ->
     EvaluatedTree
       { item:
-          case Identifier.identifierFromNonEmptyString name of
+          case Identifier.identifierFromString name of
             Just nameIdentifier -> Expr (ExprPartReference { name: nameIdentifier })
             Nothing -> Expr (ExprPartReferenceInvalidName { name })
       , range
@@ -300,19 +298,19 @@ codeTreeToEvaluatedTreeInContextDescription :: Parser.CodeTree -> EvaluatedTree
 codeTreeToEvaluatedTreeInContextDescription codeTree@(Parser.CodeTree { name }) =
   need0Children
     codeTree
-    (Description (NonEmptyString.toString name))
+    (Description name)
 
 codeTreeToEvaluatedTreeInContextUIntLiteral :: Parser.CodeTree -> EvaluatedTree
 codeTreeToEvaluatedTreeInContextUIntLiteral codeTree@(Parser.CodeTree { name }) =
   need0Children
     codeTree
-    (UIntLiteral (UInt.fromString (NonEmptyString.toString name)))
+    (UIntLiteral (UInt.fromString name))
 
 codeTreeToEvaluatedTreeInContextIdentifier :: Parser.CodeTree -> EvaluatedTree
 codeTreeToEvaluatedTreeInContextIdentifier codeTree@(Parser.CodeTree { name }) =
   need0Children
     codeTree
-    (Identifier (Identifier.identifierFromNonEmptyString name))
+    (Identifier (Identifier.identifierFromString name))
 
 need0Children ::
   Parser.CodeTree ->

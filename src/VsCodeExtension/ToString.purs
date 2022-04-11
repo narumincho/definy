@@ -10,17 +10,14 @@ import Data.Array as Array
 import Data.Maybe (Maybe(..))
 import Data.Ord as Ord
 import Data.String as String
-import Data.String.NonEmpty (NonEmptyString)
-import Data.String.NonEmpty as NonEmptyString
 import Data.UInt as UInt
-import Type.Proxy (Proxy(..))
 import Util as Util
 import VsCodeExtension.Evaluate as Evaluate
 
 -- | 位置情報が含まれていないシンプルな木構造
 newtype NoPositionTree
   = NoPositionTree
-  { name :: NonEmptyString, children :: Array NoPositionTree }
+  { name :: String, children :: Array NoPositionTree }
 
 -- | コードのツリー構造を整形された文字列に変換する
 evaluatedTreeToString :: Evaluate.EvaluatedTree -> String
@@ -48,7 +45,7 @@ typeDefaultValue :: Evaluate.TreeType -> NoPositionTree
 typeDefaultValue = case _ of
   Evaluate.TreeTypeModule ->
     NoPositionTree
-      { name: NonEmptyString.nes (Proxy :: Proxy "module")
+      { name: "module"
       , children:
           [ typeDefaultValue Evaluate.TreeTypeDescription
           , typeDefaultValue Evaluate.TreeTypeModuleBody
@@ -56,13 +53,13 @@ typeDefaultValue = case _ of
       }
   Evaluate.TreeTypeDescription ->
     NoPositionTree
-      { name: NonEmptyString.nes (Proxy :: Proxy "description"), children: [] }
+      { name: "description", children: [] }
   Evaluate.TreeTypeModuleBody ->
     NoPositionTree
-      { name: NonEmptyString.nes (Proxy :: Proxy "body"), children: [] }
+      { name: "body", children: [] }
   Evaluate.TreeTypePart ->
     NoPositionTree
-      { name: NonEmptyString.nes (Proxy :: Proxy "part")
+      { name: "part"
       , children:
           [ typeDefaultValue Evaluate.TreeTypeIdentifier
           , typeDefaultValue Evaluate.TreeTypeDescription
@@ -71,43 +68,62 @@ typeDefaultValue = case _ of
       }
   Evaluate.TreeTypeExpr ->
     NoPositionTree
-      { name: NonEmptyString.nes (Proxy :: Proxy "uint")
+      { name: "uint"
       , children:
           [ typeDefaultValue Evaluate.TreeTypeUIntLiteral ]
       }
   Evaluate.TreeTypeUIntLiteral ->
     NoPositionTree
-      { name: NonEmptyString.nes (Proxy :: Proxy "28"), children: [] }
+      { name: "28", children: [] }
   Evaluate.TreeTypeIdentifier ->
     NoPositionTree
-      { name: NonEmptyString.nes (Proxy :: Proxy "sample"), children: [] }
+      { name: "sample", children: [] }
 
 noPositionTreeToString :: NoPositionTree -> String
-noPositionTreeToString noPositionTree =
-  append
-    (evaluatedTreeToStringLoop (UInt.fromInt 0) noPositionTree)
-    "\n"
+noPositionTreeToString (NoPositionTree { name, children }) =
+  String.joinWith ""
+    [ name
+    , if Array.null children then
+        ""
+      else
+        String.joinWith ""
+          [ "(\n"
+          , String.joinWith "\n"
+              ( map
+                  ( \child ->
+                      evaluatedTreeToStringLoop
+                        (UInt.fromInt 1)
+                        child
+                  )
+                  children
+              )
+          , "\n"
+          , ")"
+          ]
+    , "\n"
+    ]
 
 evaluatedTreeToStringLoop :: UInt.UInt -> NoPositionTree -> String
 evaluatedTreeToStringLoop indent noPositionTree@(NoPositionTree { name, children }) =
   let
     oneLineText =
-      append
+      Util.append3
         (indentCountToIndentString indent)
         (evaluatedTreeToOneLineStringLoop noPositionTree)
+        ","
   in
     if Ord.lessThan (calculateStringWidth oneLineText) (UInt.fromInt 80) then
       oneLineText
     else
-      Util.append3
-        (indentCountToIndentString indent)
-        (NonEmptyString.toString name)
-        ( if Array.null children then
+      String.joinWith ""
+        [ indentCountToIndentString indent
+        , name
+        , if Array.null children then
             ""
           else
-            Util.append3
-              "(\n"
-              ( String.joinWith "\n"
+            String.joinWith ""
+              [ "(\n"
+              , String.joinWith "\n"
                   ( map
                       ( \child ->
                           evaluatedTreeToStringLoop
@@ -118,9 +134,12 @@ evaluatedTreeToStringLoop indent noPositionTree@(NoPositionTree { name, children
                       )
                       children
                   )
-              )
-              (Util.append3 "\n" (indentCountToIndentString indent) ")")
-        )
+              , "\n"
+              , indentCountToIndentString indent
+              , ")"
+              ]
+        , ","
+        ]
 
 indentCountToIndentString :: UInt.UInt -> String
 indentCountToIndentString indent =
@@ -134,11 +153,11 @@ calculateStringWidth str = UInt.fromInt (String.length str)
 evaluatedTreeToOneLineStringLoop :: NoPositionTree -> String
 evaluatedTreeToOneLineStringLoop (NoPositionTree { name, children }) =
   append
-    (NonEmptyString.toString name)
+    name
     ( case map evaluatedTreeToOneLineStringLoop children of
         [] -> ""
         list ->
           Util.append3 "("
-            (String.joinWith " " list)
+            (String.joinWith ", " list)
             ")"
     )

@@ -136,29 +136,23 @@ sorena(arena()  oneArg (28))
         [ SimpleToken.SimpleTokenWithRange
             { range: rangeFrom 1 0 1 7
             , simpleToken:
-                SimpleToken.Start
-                  { name: NonEmptyString.nes (Proxy :: _ "sorena") }
+                SimpleToken.Start "sorena"
             }
         , SimpleToken.SimpleTokenWithRange
             { range: rangeFrom 1 7 1 13
             , simpleToken:
-                ( SimpleToken.Start
-                    { name: NonEmptyString.nes (Proxy :: _ "arena") }
+                ( SimpleToken.Start "arena"
                 )
             }
         , SimpleToken.SimpleTokenWithRange
             { range: rangeFrom 1 13 1 14, simpleToken: SimpleToken.End }
         , SimpleToken.SimpleTokenWithRange
             { range: rangeFrom 1 16 1 24
-            , simpleToken:
-                SimpleToken.Start
-                  { name: NonEmptyString.nes (Proxy :: _ "oneArg") }
+            , simpleToken: SimpleToken.Start "oneArg"
             }
         , SimpleToken.SimpleTokenWithRange
             { range: rangeFrom 1 24 1 26
-            , simpleToken:
-                SimpleToken.Start
-                  { name: NonEmptyString.nes (Proxy :: _ "28") }
+            , simpleToken: SimpleToken.Start "28"
             }
         , SimpleToken.SimpleTokenWithRange
             { range: rangeFrom 1 24 1 26, simpleToken: SimpleToken.End }
@@ -184,21 +178,21 @@ sorena(arena()  oneArg (28))
           )
     , expected:
         Parser.CodeTree
-          { name: NonEmptyString.nes (Proxy :: _ "sorena")
+          { name: "sorena"
           , nameRange: rangeFrom 1 0 1 7
           , children:
               [ Parser.CodeTree
-                  { name: NonEmptyString.nes (Proxy :: _ "arena")
+                  { name: "arena"
                   , nameRange: rangeFrom 1 7 1 13
                   , children: []
                   , range: rangeFrom 1 7 1 14
                   }
               , Parser.CodeTree
-                  { name: NonEmptyString.nes (Proxy :: _ "oneArg")
+                  { name: "oneArg"
                   , nameRange: rangeFrom 1 16 1 24
                   , children:
                       [ Parser.CodeTree
-                          { name: NonEmptyString.nes (Proxy :: _ "28")
+                          { name: "28"
                           , nameRange: rangeFrom 1 24 1 26
                           , children: []
                           , range: rangeFrom 1 24 1 26

@@ -9,16 +9,13 @@ import Data.Array.NonEmpty as NonEmptyArray
 import Data.Generic.Rep as GenericRep
 import Data.Maybe (Maybe(..))
 import Data.Show.Generic as ShowGeneric
-import Data.String.NonEmpty (NonEmptyString)
-import Data.String.NonEmpty as NonEmptyString
 import Prelude as Prelude
-import Type.Proxy (Proxy(..))
 import VsCodeExtension.Range as Range
 import VsCodeExtension.SimpleToken as SimpleToken
 
 newtype CodeTree
   = CodeTree
-  { name :: NonEmptyString
+  { name :: String
   , nameRange :: Range.Range
   , children :: Array CodeTree
   , range :: Range.Range
@@ -34,7 +31,7 @@ instance showCodeTree :: Prelude.Show CodeTree where
 parse :: Array SimpleToken.SimpleTokenWithRange -> CodeTree
 parse simpleTokenList = case Array.uncons simpleTokenList of
   Just { head: SimpleToken.SimpleTokenWithRange { simpleToken, range }, tail } -> case simpleToken of
-    SimpleToken.Start { name } -> case NonEmptyArray.fromArray tail of
+    SimpleToken.Start name -> case NonEmptyArray.fromArray tail of
       Just tailNonEmpty ->
         let
           firstItem = simpleTokenListToCodeTreeListWithRest tailNonEmpty
@@ -62,7 +59,7 @@ parse simpleTokenList = case Array.uncons simpleTokenList of
 emptyCodeTree :: CodeTree
 emptyCodeTree =
   CodeTree
-    { name: NonEmptyString.nes (Proxy :: Proxy "module")
+    { name: "module"
     , nameRange: Range.rangeZero
     , children: []
     , range: Range.rangeZero
@@ -82,7 +79,7 @@ simpleTokenListToCodeTreeListWithRest simpleTokenList =
         simpleTokenList
   in
     case simpleToken of
-      SimpleToken.Start { name } ->
+      SimpleToken.Start name ->
         nameAndSimpleTokenListToCodeTreeListWithRest
           { name
           , nameRange: range
@@ -96,7 +93,7 @@ simpleTokenListToCodeTreeListWithRest simpleTokenList =
 
 -- | {`a` と `(), b())`} をパースする` 
 nameAndSimpleTokenListToCodeTreeListWithRest ::
-  { name :: NonEmptyString
+  { name :: String
   , nameRange :: Range.Range
   , simpleTokenList :: Array SimpleToken.SimpleTokenWithRange
   } ->

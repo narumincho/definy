@@ -248,12 +248,12 @@ evaluatedTreeToDiagnosticList uri tree =
               Error.SuperfluousParameter { name, nameRange } ->
                 [ VSCodeApi.newDiagnosticRelatedInformation
                     (VSCodeApi.newLocation uri (rangeToVsCodeRange nameRange))
-                    (NonEmptyString.toString name)
+                    name
                 ]
               Error.NeedParameter { name, nameRange } ->
                 [ VSCodeApi.newDiagnosticRelatedInformation
                     (VSCodeApi.newLocation uri (rangeToVsCodeRange nameRange))
-                    (NonEmptyString.toString name)
+                    name
                 ]
               _ -> []
           )

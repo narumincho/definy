@@ -10,6 +10,7 @@ import Data.Generic.Rep as GenericRep
 import Data.Maybe (Maybe(..))
 import Data.Show.Generic as ShowGeneric
 import Data.String.NonEmpty (NonEmptyString)
+import Data.String.NonEmpty as NonEmptyString
 import VsCodeExtension.Tokenize as Tokenize
 import VsCodeExtension.Range as Range
 
@@ -28,7 +29,7 @@ instance showSimpleTokenWithRange :: Show SimpleTokenWithRange where
   show = ShowGeneric.genericShow
 
 data SimpleToken
-  = Start { name :: NonEmptyString }
+  = Start String
   | End
 
 derive instance eqSimpleToken :: Eq SimpleToken
@@ -61,7 +62,7 @@ tokenListToSimpleTokenList tokenList =
       ( case beforeName of
           Just (BeforeName { name, range }) ->
             [ SimpleTokenWithRange
-                { simpleToken: Start { name }
+                { simpleToken: Start (NonEmptyString.toString name)
                 , range
                 }
             , SimpleTokenWithRange
@@ -78,12 +79,12 @@ tokenListToSimpleTokenListLoop ::
   { newSimpleTokenList :: Array SimpleTokenWithRange
   , nameMaybe :: Maybe BeforeName
   }
-tokenListToSimpleTokenListLoop beforeNameMaybe (Tokenize.TokenWithRange { token, range }) = case beforeNameMaybe of
+tokenListToSimpleTokenListLoop state (Tokenize.TokenWithRange { token, range }) = case state of
   Just (BeforeName { name: beforeName, range: beforeNameRange }) -> case token of
     Tokenize.Name name ->
       { newSimpleTokenList:
           [ SimpleTokenWithRange
-              { simpleToken: Start { name: beforeName }
+              { simpleToken: Start (NonEmptyString.toString beforeName)
               , range: beforeNameRange
               }
           , SimpleTokenWithRange
@@ -96,7 +97,7 @@ tokenListToSimpleTokenListLoop beforeNameMaybe (Tokenize.TokenWithRange { token,
     Tokenize.ParenthesisStart ->
       { newSimpleTokenList:
           [ SimpleTokenWithRange
-              { simpleToken: Start { name: beforeName }
+              { simpleToken: Start (NonEmptyString.toString beforeName)
               , range:
                   Range.Range
                     { start: Range.rangeStart beforeNameRange
@@ -109,7 +110,7 @@ tokenListToSimpleTokenListLoop beforeNameMaybe (Tokenize.TokenWithRange { token,
     Tokenize.ParenthesisEnd ->
       { newSimpleTokenList:
           [ SimpleTokenWithRange
-              { simpleToken: Start { name: beforeName }
+              { simpleToken: Start (NonEmptyString.toString beforeName)
               , range: beforeNameRange
               }
           , SimpleTokenWithRange
@@ -119,6 +120,19 @@ tokenListToSimpleTokenListLoop beforeNameMaybe (Tokenize.TokenWithRange { token,
           , SimpleTokenWithRange
               { simpleToken: End
               , range: range
+              }
+          ]
+      , nameMaybe: Nothing
+      }
+    Tokenize.Comma ->
+      { newSimpleTokenList:
+          [ SimpleTokenWithRange
+              { simpleToken: Start (NonEmptyString.toString beforeName)
+              , range: beforeNameRange
+              }
+          , SimpleTokenWithRange
+              { simpleToken: End
+              , range: beforeNameRange
               }
           ]
       , nameMaybe: Nothing
@@ -135,6 +149,19 @@ tokenListToSimpleTokenListLoop beforeNameMaybe (Tokenize.TokenWithRange { token,
     Tokenize.ParenthesisEnd ->
       { newSimpleTokenList:
           [ SimpleTokenWithRange
+              { simpleToken: End
+              , range: range
+              }
+          ]
+      , nameMaybe: Nothing
+      }
+    Tokenize.Comma ->
+      { newSimpleTokenList:
+          [ SimpleTokenWithRange
+              { simpleToken: Start ""
+              , range: range
+              }
+          , SimpleTokenWithRange
               { simpleToken: End
               , range: range
               }

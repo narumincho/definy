@@ -5,8 +5,6 @@ module VsCodeExtension.SignatureHelp
 
 import Data.Array as Array
 import Data.Maybe (Maybe(..))
-import Data.String.NonEmpty (NonEmptyString)
-import Data.String.NonEmpty as NonEmptyString
 import Data.UInt as UInt
 import Markdown as Markdown
 import VsCodeExtension.Evaluate as Evaluate
@@ -28,14 +26,14 @@ getSignatureHelp { tree: Evaluate.EvaluatedTree { children }, position } = case 
     children of
   Just name ->
     Just
-      { label: NonEmptyString.toString name
+      { label: name
       , documentation: Markdown.Markdown []
       , parameters: [ { label: "パラメーター名", documentation: "パラメーターの説明" } ]
       , activeParameter: UInt.fromInt 0
       }
   Nothing -> Nothing
 
-getData :: Range.Position -> Evaluate.EvaluatedTree -> Maybe NonEmptyString
+getData :: Range.Position -> Evaluate.EvaluatedTree -> Maybe String
 getData position (Evaluate.EvaluatedTree { name, nameRange, children }) =
   if Range.isPositionInsideRange nameRange position then
     Just name
