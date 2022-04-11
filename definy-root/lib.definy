@@ -1,1 +1,4 @@
-module(description body(part(それな description uint(32))))
+module(
+  description,
+  body(part(それな, description, uint(32))),
+)
