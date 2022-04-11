@@ -5,7 +5,9 @@ module Definy.Identifier
   , class SafeIdentifier
   , fromSymbolProxy
   , identifierFromNonEmptyString
+  , identifierFromString
   , identifierToNonEmptyString
+  , identifierToString
   )
   where
 
@@ -38,6 +40,13 @@ derive instance  Prelude.Eq Identifier
 safePatternEither :: Either.Either String Regex.Regex
 safePatternEither = Regex.regex "^[a-z][a-zA-Z0-9]{0,63}$" RegexFlags.unicode
 
+identifierFromString ::  String -> Maybe Identifier
+identifierFromString value =
+  case NonEmptyString.fromString value of
+    Just nonEmptyValue -> identifierFromNonEmptyString nonEmptyValue
+    Nothing -> Nothing
+
+
 identifierFromNonEmptyString :: NonEmptyString -> Maybe Identifier
 identifierFromNonEmptyString value = case safePatternEither of
   Either.Right safePattern ->
@@ -49,6 +58,10 @@ identifierFromNonEmptyString value = case safePatternEither of
 
 identifierToNonEmptyString :: Identifier -> NonEmptyString
 identifierToNonEmptyString (Identifier value) = value
+
+identifierToString :: Identifier -> String
+identifierToString identifier = NonEmptyString.toString
+               (identifierToNonEmptyString identifier)
 
 fromSymbolProxy ::
   forall (symbol :: Symbol).

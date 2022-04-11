@@ -2,7 +2,7 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "LspExtension",
+      "name": "start-vscode-extension",
       "type": "extensionHost",
       "request": "launch",
       "runtimeExecutable": "${execPath}",
@@ -10,7 +10,7 @@
         "--extensionDevelopmentPath=${workspaceFolder}/distribution/definy-extension",
         "--extensionDevelopmentKind=web"
       ],
-      "preLaunchTask": "lsp-compile"
+      "preLaunchTask": "vscode-extension-build"
     }
   ]
 }

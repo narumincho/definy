@@ -31,12 +31,13 @@ module VsCodeExtension.VSCodeApi
   , rangeGetEnd
   , rangeGetStart
   , workspaceOnDidChangeTextDocument
+  , workspaceOnDidOpenTextDocument
+  , workspaceTextDocuments
   ) where
 
 import Prelude
 import Data.Nullable (Nullable)
 import Data.String.NonEmpty (NonEmptyString)
-import Data.String.NonEmpty.Internal (NonEmptyString(..))
 import Data.UInt as UInt
 import Effect as Effect
 import Effect.Uncurried (EffectFn1)
@@ -169,5 +170,13 @@ foreign import languagesRegisterReferenceProvider ::
   Effect.Effect Unit
 
 foreign import workspaceOnDidChangeTextDocument ::
-  EffectFn1 { languageId :: String, uri :: Uri, code :: String } Unit ->
+  Effect.Effect Unit ->
+  Effect.Effect Unit
+
+foreign import workspaceOnDidOpenTextDocument ::
+  Effect.Effect Unit ->
+  Effect.Effect Unit
+
+foreign import workspaceTextDocuments ::
+  EffectFn1 (Array { languageId :: String, uri :: Uri, code :: String }) Unit ->
   Effect.Effect Unit

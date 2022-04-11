@@ -1,0 +1,4 @@
+module(
+  description,
+  body(part("それな", description, uint(32))),
+)

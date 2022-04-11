@@ -72,12 +72,12 @@ evaluatedItemToHoverTree { item, partialModule } = case item of
   Evaluate.Module (Evaluate.PartialModule { description, partList }) ->
     { type:
         ToString.NoPositionTree
-          { name: NonEmptyString.nes (Proxy :: Proxy "Module")
+          { name: "Module"
           , children: []
           }
     , value:
         ToString.NoPositionTree
-          { name: NonEmptyString.nes (Proxy :: Proxy "Module")
+          { name: "Module"
           , children:
               [ stringToNoPositionTree description
               , moduleBodyToNoPositionTree partList
@@ -85,7 +85,7 @@ evaluatedItemToHoverTree { item, partialModule } = case item of
           }
     , tree:
         ToString.NoPositionTree
-          { name: NonEmptyString.nes (Proxy :: Proxy "Module")
+          { name: "Module"
           , children:
               [ stringToNoPositionTree description
               , moduleBodyToNoPositionTree partList
@@ -96,17 +96,17 @@ evaluatedItemToHoverTree { item, partialModule } = case item of
   Evaluate.Description description ->
     { type:
         ToString.NoPositionTree
-          { name: NonEmptyString.nes (Proxy :: Proxy "Description")
+          { name: "Description"
           , children: []
           }
     , value:
         ToString.NoPositionTree
-          { name: NonEmptyString.nes (Proxy :: Proxy "Description")
+          { name: "Description"
           , children: [ stringToNoPositionTree description ]
           }
     , tree:
         ToString.NoPositionTree
-          { name: NonEmptyString.nes (Proxy :: Proxy "Description")
+          { name: "Description"
           , children: [ stringToNoPositionTree description ]
           }
     , description: "なにかの説明文"
@@ -114,7 +114,7 @@ evaluatedItemToHoverTree { item, partialModule } = case item of
   Evaluate.ModuleBody partList ->
     { type:
         ToString.NoPositionTree
-          { name: NonEmptyString.nes (Proxy :: Proxy "ModuleBody")
+          { name: "ModuleBody"
           , children: []
           }
     , value: moduleBodyToNoPositionTree partList
@@ -124,7 +124,7 @@ evaluatedItemToHoverTree { item, partialModule } = case item of
   Evaluate.Part part ->
     { type:
         ToString.NoPositionTree
-          { name: NonEmptyString.nes (Proxy :: Proxy "Part")
+          { name: "Part"
           , children: []
           }
     , value: partialPartToNoPositionTree part
@@ -134,7 +134,7 @@ evaluatedItemToHoverTree { item, partialModule } = case item of
   Evaluate.Expr value ->
     { type:
         ToString.NoPositionTree
-          { name: NonEmptyString.nes (Proxy :: Proxy "Expr")
+          { name: "Expr"
           , children: []
           }
     , value:
@@ -146,15 +146,15 @@ evaluatedItemToHoverTree { item, partialModule } = case item of
             )
         in
           ToString.NoPositionTree
-            { name: NonEmptyString.nes (Proxy :: Proxy "EvaluateExprResult")
+            { name: "EvaluateExprResult"
             , children:
                 [ stringToNoPositionTree (UInt.toString value)
                 , ToString.NoPositionTree
                     { name:
                         if dummy then
-                          NonEmptyString.nes (Proxy :: Proxy "True")
+                          "True"
                         else
-                          NonEmptyString.nes (Proxy :: Proxy "False")
+                          "False"
                     , children: []
                     }
                 ]
@@ -166,7 +166,7 @@ evaluatedItemToHoverTree { item, partialModule } = case item of
   Evaluate.UIntLiteral uintLiteral ->
     { type:
         ToString.NoPositionTree
-          { name: NonEmptyString.nes (Proxy :: Proxy "UIntLiteral")
+          { name: "UIntLiteral"
           , children: []
           }
     , value:
@@ -180,7 +180,7 @@ evaluatedItemToHoverTree { item, partialModule } = case item of
   Evaluate.Identifier identifier ->
     { type:
         ToString.NoPositionTree
-          { name: NonEmptyString.nes (Proxy :: Proxy "Identifier")
+          { name: "Identifier"
           , children: []
           }
     , value:
@@ -188,9 +188,7 @@ evaluatedItemToHoverTree { item, partialModule } = case item of
           ( Prelude.map
               ( \v ->
                   stringToNoPositionTree
-                    ( NonEmptyString.toString
-                        (Identifier.identifierToNonEmptyString v)
-                    )
+                    (Identifier.identifierToString v)
               )
               identifier
           )
@@ -199,9 +197,7 @@ evaluatedItemToHoverTree { item, partialModule } = case item of
           ( Prelude.map
               ( \v ->
                   stringToNoPositionTree
-                    ( NonEmptyString.toString
-                        (Identifier.identifierToNonEmptyString v)
-                    )
+                    (Identifier.identifierToString v)
               )
               identifier
           )
@@ -211,30 +207,27 @@ evaluatedItemToHoverTree { item, partialModule } = case item of
 stringToNoPositionTree :: String -> ToString.NoPositionTree
 stringToNoPositionTree str =
   ToString.NoPositionTree
-    { name:
-        case NonEmptyString.fromString str of
-          Just nonEmptyString -> nonEmptyString
-          Nothing -> NonEmptyString.nes (Proxy :: Proxy "\"\"")
+    { name: str
     , children: []
     }
 
 moduleBodyToNoPositionTree :: Array Evaluate.PartialPart -> ToString.NoPositionTree
 moduleBodyToNoPositionTree moduleBody =
   ToString.NoPositionTree
-    { name: NonEmptyString.nes (Proxy :: Proxy "ModuleBody")
+    { name: "ModuleBody"
     , children: Prelude.map partialPartToNoPositionTree moduleBody
     }
 
 partialPartToNoPositionTree :: Evaluate.PartialPart -> ToString.NoPositionTree
 partialPartToNoPositionTree (Evaluate.PartialPart { name, description, expr }) =
   ToString.NoPositionTree
-    { name: NonEmptyString.nes (Proxy :: Proxy "Part")
+    { name: "Part"
     , children:
         [ maybeToNoPositionTree
             ( Prelude.map
                 ( \nonEmpty ->
                     ToString.NoPositionTree
-                      { name: Identifier.identifierToNonEmptyString nonEmpty
+                      { name: Identifier.identifierToString nonEmpty
                       , children: []
                       }
                 )
@@ -250,7 +243,7 @@ partialExprToNoPositionTree :: Evaluate.PartialExpr -> ToString.NoPositionTree
 partialExprToNoPositionTree = case _ of
   Evaluate.ExprAdd { a, b } ->
     ToString.NoPositionTree
-      { name: NonEmptyString.nes (Proxy :: Proxy "Add")
+      { name: "Add"
       , children:
           [ maybeToNoPositionTree
               (Prelude.map partialExprToNoPositionTree a)
@@ -260,7 +253,7 @@ partialExprToNoPositionTree = case _ of
       }
   Evaluate.ExprPartReference { name } ->
     ToString.NoPositionTree
-      { name: Identifier.identifierToNonEmptyString name
+      { name: Identifier.identifierToString name
       , children: []
       }
   Evaluate.ExprPartReferenceInvalidName { name } ->
@@ -268,7 +261,7 @@ partialExprToNoPositionTree = case _ of
       { name: name, children: [] }
   Evaluate.ExprUIntLiteral uintMaybe ->
     ToString.NoPositionTree
-      { name: NonEmptyString.nes (Proxy :: Proxy "UIntLiteral")
+      { name: "UIntLiteral"
       , children:
           [ maybeToNoPositionTree
               (Prelude.map (\v -> stringToNoPositionTree (UInt.toString v)) uintMaybe)
@@ -288,11 +281,11 @@ maybeToNoPositionTree :: Maybe ToString.NoPositionTree -> ToString.NoPositionTre
 maybeToNoPositionTree = case _ of
   Just value ->
     ToString.NoPositionTree
-      { name: NonEmptyString.nes (Proxy :: Proxy "Just")
+      { name: "Just"
       , children: [ value ]
       }
   Nothing ->
     ToString.NoPositionTree
-      { name: NonEmptyString.nes (Proxy :: Proxy "Nothing")
+      { name: "Nothing"
       , children: []
       }

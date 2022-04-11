@@ -7,9 +7,7 @@ module VsCodeExtension.SimpleToken
 import Prelude
 import Data.Array as Array
 import Data.Generic.Rep as GenericRep
-import Data.Maybe (Maybe(..))
 import Data.Show.Generic as ShowGeneric
-import Data.String.NonEmpty (NonEmptyString)
 import VsCodeExtension.Tokenize as Tokenize
 import VsCodeExtension.Range as Range
 
@@ -28,7 +26,7 @@ instance showSimpleTokenWithRange :: Show SimpleTokenWithRange where
   show = ShowGeneric.genericShow
 
 data SimpleToken
-  = Start { name :: NonEmptyString }
+  = Start String
   | End
 
 derive instance eqSimpleToken :: Eq SimpleToken
@@ -38,30 +36,32 @@ derive instance genericSimpleToken :: GenericRep.Generic SimpleToken _
 instance showSimpleToken :: Show SimpleToken where
   show = ShowGeneric.genericShow
 
-newtype BeforeName
-  = BeforeName { name :: NonEmptyString, range :: Range.Range }
+data State
+  = BeforeName { name :: String, range :: Range.Range }
+  | BeforeParenthesisEnd
+  | BeforeParenthesisStartOrNeedName
 
 tokenListToSimpleTokenList :: Array Tokenize.TokenWithRange -> Array SimpleTokenWithRange
 tokenListToSimpleTokenList tokenList =
   let
-    { result, beforeName } =
+    { result, state } =
       Array.foldl
-        ( \{ result, beforeName } tokenWithRange ->
+        ( \{ result, state } tokenWithRange ->
             let
-              { newSimpleTokenList, nameMaybe } = tokenListToSimpleTokenListLoop beforeName tokenWithRange
+              { newSimpleTokenList, nextState } = tokenListToSimpleTokenListLoop state tokenWithRange
             in
               { result: append result newSimpleTokenList
-              , beforeName: nameMaybe
+              , state: nextState
               }
         )
-        { result: [], beforeName: Nothing }
+        { result: [], state: BeforeParenthesisStartOrNeedName }
         tokenList
   in
     append result
-      ( case beforeName of
-          Just (BeforeName { name, range }) ->
+      ( case state of
+          BeforeName { name, range } ->
             [ SimpleTokenWithRange
-                { simpleToken: Start { name }
+                { simpleToken: Start name
                 , range
                 }
             , SimpleTokenWithRange
@@ -69,21 +69,21 @@ tokenListToSimpleTokenList tokenList =
                 , range
                 }
             ]
-          Nothing -> []
+          _ -> []
       )
 
 tokenListToSimpleTokenListLoop ::
-  Maybe BeforeName ->
+  State ->
   Tokenize.TokenWithRange ->
   { newSimpleTokenList :: Array SimpleTokenWithRange
-  , nameMaybe :: Maybe BeforeName
+  , nextState :: State
   }
-tokenListToSimpleTokenListLoop beforeNameMaybe (Tokenize.TokenWithRange { token, range }) = case beforeNameMaybe of
-  Just (BeforeName { name: beforeName, range: beforeNameRange }) -> case token of
+tokenListToSimpleTokenListLoop state (Tokenize.TokenWithRange { token, range }) = case state of
+  BeforeName { name: beforeName, range: beforeNameRange } -> case token of
     Tokenize.Name name ->
       { newSimpleTokenList:
           [ SimpleTokenWithRange
-              { simpleToken: Start { name: beforeName }
+              { simpleToken: Start beforeName
               , range: beforeNameRange
               }
           , SimpleTokenWithRange
@@ -91,12 +91,12 @@ tokenListToSimpleTokenListLoop beforeNameMaybe (Tokenize.TokenWithRange { token,
               , range: beforeNameRange
               }
           ]
-      , nameMaybe: Just (BeforeName { name, range })
+      , nextState: BeforeName { name, range }
       }
     Tokenize.ParenthesisStart ->
       { newSimpleTokenList:
           [ SimpleTokenWithRange
-              { simpleToken: Start { name: beforeName }
+              { simpleToken: Start beforeName
               , range:
                   Range.Range
                     { start: Range.rangeStart beforeNameRange
@@ -104,12 +104,12 @@ tokenListToSimpleTokenListLoop beforeNameMaybe (Tokenize.TokenWithRange { token,
                     }
               }
           ]
-      , nameMaybe: Nothing
+      , nextState: BeforeParenthesisStartOrNeedName
       }
     Tokenize.ParenthesisEnd ->
       { newSimpleTokenList:
           [ SimpleTokenWithRange
-              { simpleToken: Start { name: beforeName }
+              { simpleToken: Start beforeName
               , range: beforeNameRange
               }
           , SimpleTokenWithRange
@@ -121,16 +121,29 @@ tokenListToSimpleTokenListLoop beforeNameMaybe (Tokenize.TokenWithRange { token,
               , range: range
               }
           ]
-      , nameMaybe: Nothing
+      , nextState: BeforeParenthesisEnd
       }
-  Nothing -> case token of
+    Tokenize.Comma ->
+      { newSimpleTokenList:
+          [ SimpleTokenWithRange
+              { simpleToken: Start beforeName
+              , range: beforeNameRange
+              }
+          , SimpleTokenWithRange
+              { simpleToken: End
+              , range: beforeNameRange
+              }
+          ]
+      , nextState: BeforeParenthesisStartOrNeedName
+      }
+  BeforeParenthesisStartOrNeedName -> case token of
     Tokenize.Name name ->
       { newSimpleTokenList: []
-      , nameMaybe: Just (BeforeName { name, range })
+      , nextState: BeforeName { name, range }
       }
     Tokenize.ParenthesisStart ->
       { newSimpleTokenList: []
-      , nameMaybe: Nothing
+      , nextState: BeforeParenthesisStartOrNeedName
       }
     Tokenize.ParenthesisEnd ->
       { newSimpleTokenList:
@@ -139,5 +152,40 @@ tokenListToSimpleTokenListLoop beforeNameMaybe (Tokenize.TokenWithRange { token,
               , range: range
               }
           ]
-      , nameMaybe: Nothing
+      , nextState: BeforeParenthesisEnd
+      }
+    Tokenize.Comma ->
+      { newSimpleTokenList:
+          [ SimpleTokenWithRange
+              { simpleToken: Start ""
+              , range: range
+              }
+          , SimpleTokenWithRange
+              { simpleToken: End
+              , range: range
+              }
+          ]
+      , nextState: BeforeParenthesisStartOrNeedName
+      }
+  BeforeParenthesisEnd -> case token of
+    Tokenize.Name name ->
+      { newSimpleTokenList: []
+      , nextState: BeforeName { name, range }
+      }
+    Tokenize.ParenthesisStart ->
+      { newSimpleTokenList: []
+      , nextState: BeforeParenthesisStartOrNeedName
+      }
+    Tokenize.ParenthesisEnd ->
+      { newSimpleTokenList:
+          [ SimpleTokenWithRange
+              { simpleToken: End
+              , range: range
+              }
+          ]
+      , nextState: BeforeParenthesisEnd
+      }
+    Tokenize.Comma ->
+      { newSimpleTokenList: []
+      , nextState: BeforeParenthesisStartOrNeedName
       }

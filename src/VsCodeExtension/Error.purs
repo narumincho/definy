@@ -8,12 +8,11 @@ module VsCodeExtension.Error
 import Data.Array as Array
 import Data.Maybe (Maybe(..))
 import Data.String as String
-import Data.String.NonEmpty (NonEmptyString)
-import Data.String.NonEmpty as NonEmptyString
 import Data.UInt as UInt
 import Prelude as Prelude
 import VsCodeExtension.Evaluate as Evaluate
 import VsCodeExtension.Range as Range
+import VsCodeExtension.ToString as ToString
 
 getErrorList :: Evaluate.EvaluatedTree -> Array ErrorWithRange
 getErrorList tree@(Evaluate.EvaluatedTree { item, name, nameRange, children, expectedChildrenTypeMaybe }) =
@@ -32,7 +31,7 @@ getErrorList tree@(Evaluate.EvaluatedTree { item, name, nameRange, children, exp
     , Prelude.bind children getErrorListFromEvaluatedTreeChild
     ]
 
-evaluatedItemGetError :: NonEmptyString -> Evaluate.EvaluatedItem -> Maybe Error
+evaluatedItemGetError :: String -> Evaluate.EvaluatedItem -> Maybe Error
 evaluatedItemGetError name = case _ of
   Evaluate.Expr (Evaluate.ExprPartReferenceInvalidName { name: partName }) ->
     Just
@@ -92,29 +91,29 @@ newtype ErrorWithRange
   { error :: Error, range :: Range.Range }
 
 data Error
-  = InvalidPartName NonEmptyString
+  = InvalidPartName String
   | NeedParameter
-    { name :: NonEmptyString
+    { name :: String
     , nameRange :: Range.Range
     , expect :: UInt.UInt
     , actual :: UInt.UInt
     }
   | SuperfluousParameter
-    { name :: NonEmptyString
+    { name :: String
     , nameRange :: Range.Range
     , expect :: UInt.UInt
     }
-  | UIntParseError NonEmptyString
+  | UIntParseError String
   | TypeMisMatchError Evaluate.TypeMisMatch
-  | InvalidIdentifier NonEmptyString
+  | InvalidIdentifier String
 
 errorToString :: Error -> String
 errorToString = case _ of
-  InvalidPartName name -> Prelude.append (NonEmptyString.toString name) "は不正なパーツ名です"
+  InvalidPartName name -> Prelude.append (ToString.escapeName name) "は不正なパーツ名です"
   NeedParameter rec ->
     String.joinWith
       ""
-      [ NonEmptyString.toString rec.name
+      [ ToString.escapeName rec.name
       , "には"
       , UInt.toString rec.expect
       , "個のパラメーターが必要ですが"
@@ -126,21 +125,21 @@ errorToString = case _ of
   SuperfluousParameter rec ->
     String.joinWith ""
       [ "このパラメーターは余計です. "
-      , NonEmptyString.toString rec.name
+      , ToString.escapeName rec.name
       , "には"
       , UInt.toString rec.expect
       , "個のパラメーターがあれば充分です"
       ]
   UIntParseError name ->
     Prelude.append
-      (NonEmptyString.toString name)
+      (ToString.escapeName name)
       "はUInt としてパースできませんでした"
   TypeMisMatchError (Evaluate.TypeMisMatch { actual, expect }) ->
     String.joinWith ""
       [ treeTypeToString expect, "を期待したが", treeTypeToString actual, "が渡された" ]
   InvalidIdentifier name ->
     Prelude.append
-      (NonEmptyString.toString name)
+      (ToString.escapeName name)
       "は識別子として不正です. 識別子は 正規表現 ^[a-z][a-zA-Z0-9]{0,63}$ を満たさす必要があります"
 
 treeTypeToString :: Evaluate.TreeType -> String
