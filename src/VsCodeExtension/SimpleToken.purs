@@ -8,8 +8,6 @@ import Prelude
 import Data.Array as Array
 import Data.Generic.Rep as GenericRep
 import Data.Show.Generic as ShowGeneric
-import Data.String.NonEmpty (NonEmptyString)
-import Data.String.NonEmpty as NonEmptyString
 import VsCodeExtension.Tokenize as Tokenize
 import VsCodeExtension.Range as Range
 
@@ -39,7 +37,7 @@ instance showSimpleToken :: Show SimpleToken where
   show = ShowGeneric.genericShow
 
 data State
-  = BeforeName { name :: NonEmptyString, range :: Range.Range }
+  = BeforeName { name :: String, range :: Range.Range }
   | BeforeParenthesisEnd
   | BeforeParenthesisStartOrNeedName
 
@@ -63,7 +61,7 @@ tokenListToSimpleTokenList tokenList =
       ( case state of
           BeforeName { name, range } ->
             [ SimpleTokenWithRange
-                { simpleToken: Start (NonEmptyString.toString name)
+                { simpleToken: Start name
                 , range
                 }
             , SimpleTokenWithRange
@@ -85,7 +83,7 @@ tokenListToSimpleTokenListLoop state (Tokenize.TokenWithRange { token, range }) 
     Tokenize.Name name ->
       { newSimpleTokenList:
           [ SimpleTokenWithRange
-              { simpleToken: Start (NonEmptyString.toString beforeName)
+              { simpleToken: Start beforeName
               , range: beforeNameRange
               }
           , SimpleTokenWithRange
@@ -98,7 +96,7 @@ tokenListToSimpleTokenListLoop state (Tokenize.TokenWithRange { token, range }) 
     Tokenize.ParenthesisStart ->
       { newSimpleTokenList:
           [ SimpleTokenWithRange
-              { simpleToken: Start (NonEmptyString.toString beforeName)
+              { simpleToken: Start beforeName
               , range:
                   Range.Range
                     { start: Range.rangeStart beforeNameRange
@@ -111,7 +109,7 @@ tokenListToSimpleTokenListLoop state (Tokenize.TokenWithRange { token, range }) 
     Tokenize.ParenthesisEnd ->
       { newSimpleTokenList:
           [ SimpleTokenWithRange
-              { simpleToken: Start (NonEmptyString.toString beforeName)
+              { simpleToken: Start beforeName
               , range: beforeNameRange
               }
           , SimpleTokenWithRange
@@ -128,7 +126,7 @@ tokenListToSimpleTokenListLoop state (Tokenize.TokenWithRange { token, range }) 
     Tokenize.Comma ->
       { newSimpleTokenList:
           [ SimpleTokenWithRange
-              { simpleToken: Start (NonEmptyString.toString beforeName)
+              { simpleToken: Start beforeName
               , range: beforeNameRange
               }
           , SimpleTokenWithRange

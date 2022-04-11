@@ -13,9 +13,8 @@ import Data.Maybe (Maybe(..))
 import Data.Show.Generic as ShowGeneric
 import Data.String as String
 import Data.String.CodeUnits as CodeUnits
-import Data.String.NonEmpty (NonEmptyString)
+import Data.String.NonEmpty as NonEmptyString
 import Data.String.NonEmpty.CodeUnits as NonEmptyCodeUnits
-import Data.Tuple as Tuple
 import Data.UInt as UInt
 import VsCodeExtension.Range as Range
 
@@ -33,7 +32,7 @@ instance tokenWithRangeShow :: Show TokenWithRange where
   show = ShowGeneric.genericShow
 
 data Token
-  = Name NonEmptyString
+  = Name String
   | ParenthesisStart
   | ParenthesisEnd
   | Comma
@@ -77,57 +76,29 @@ tokenizeInLine { line, positionLine } =
     lineAsCharList :: Array Char
     lineAsCharList = CodeUnits.toCharArray line
 
+    resultAndState ::
+      { positionCharacter :: UInt.UInt
+      , readState :: ReadState
+      , result :: Array TokenWithRange
+      }
     resultAndState =
       Array.foldl
         ( \{ positionCharacter, readState, result } char ->
             let
-              newPositionCharacter = add positionCharacter (UInt.fromInt 1)
-            in
-              case tokenizeLoop
+              (TokenLoopResult loopResult) =
+                tokenizeLoop
                   { position:
                       Range.Position { line: positionLine, character: positionCharacter }
                   , readState
                   , targetRight: char
-                  } of
-                Zero ->
-                  { positionCharacter: newPositionCharacter
-                  , readState: Ended
-                  , result
                   }
-                One tokenWithRange ->
-                  { positionCharacter: newPositionCharacter
-                  , readState: Ended
-                  , result: Array.snoc result tokenWithRange
-                  }
-                Two (Tuple.Tuple a b) ->
-                  { positionCharacter: newPositionCharacter
-                  , readState: Ended
-                  , result: append result [ a, b ]
-                  }
-                AddName ->
-                  { positionCharacter: newPositionCharacter
-                  , readState:
-                      case readState of
-                        BeforeName rec ->
-                          BeforeName
-                            ( rec
-                                { charList =
-                                  NonEmptyArray.snoc rec.charList char
-                                }
-                            )
-                        Ended ->
-                          BeforeName
-                            { startPosition:
-                                Range.Position
-                                  { line: positionLine
-                                  , character: positionCharacter
-                                  }
-                            , charList: NonEmptyArray.singleton char
-                            }
-                  , result: result
-                  }
+            in
+              { positionCharacter: add positionCharacter (UInt.fromInt 1)
+              , readState: loopResult.nextState
+              , result: append result loopResult.newTokenList
+              }
         )
-        { positionCharacter: UInt.fromInt 0, readState: Ended, result: [] }
+        { positionCharacter: UInt.fromInt 0, readState: None, result: [] }
         lineAsCharList
   in
     case resultAndState.readState of
@@ -143,20 +114,40 @@ tokenizeInLine { line, positionLine } =
                           , character: UInt.fromInt (Array.length lineAsCharList)
                           }
                     }
-              , token: Name (NonEmptyCodeUnits.fromNonEmptyCharArray charList)
+              , token:
+                  Name
+                    ( NonEmptyString.toString
+                        (NonEmptyCodeUnits.fromNonEmptyCharArray charList)
+                    )
               }
           )
-      Ended -> resultAndState.result
+      BeforeQuote { startPosition, charList } ->
+        Array.snoc resultAndState.result
+          ( TokenWithRange
+              { range:
+                  Range.Range
+                    { start: startPosition
+                    , end:
+                        Range.Position
+                          { line: positionLine
+                          , character: UInt.fromInt (Array.length lineAsCharList)
+                          }
+                    }
+              , token: Name (CodeUnits.fromCharArray charList)
+              }
+          )
+      None -> resultAndState.result
 
 data ReadState
   = BeforeName { startPosition :: Range.Position, charList :: NonEmptyArray Char }
-  | Ended
+  | BeforeQuote { startPosition :: Range.Position, charList :: Array Char }
+  | None
 
-data TokenLoopResult
-  = Zero
-  | One TokenWithRange
-  | Two (Tuple.Tuple TokenWithRange TokenWithRange)
-  | AddName
+newtype TokenLoopResult
+  = TokenLoopResult
+  { newTokenList :: Array TokenWithRange
+  , nextState :: ReadState
+  }
 
 tokenizeLoop ::
   { readState :: ReadState
@@ -164,84 +155,249 @@ tokenizeLoop ::
   , position :: Range.Position
   } ->
   TokenLoopResult
-tokenizeLoop { targetRight, readState, position } = case charIsEnd targetRight of
-  End -> case getLeftToken readState position of
-    Just tokenWithRange -> One tokenWithRange
-    Nothing -> Zero
-  EndWithToken token -> case getLeftToken readState position of
-    Just tokenWithRange ->
-      Two
-        ( Tuple.Tuple
-            tokenWithRange
-            ( TokenWithRange
-                { range:
-                    Range.Range
-                      { start: position
-                      , end: Range.positionAdd1Character position
-                      }
-                , token
-                }
-            )
-        )
-    Nothing ->
-      One
-        ( TokenWithRange
-            { range:
-                Range.Range
-                  { start: position
-                  , end: Range.positionAdd1Character position
-                  }
-            , token
-            }
-        )
-  NotEnd -> AddName
+tokenizeLoop { targetRight, readState, position } = case readState of
+  BeforeName { startPosition, charList } ->
+    tokenizeLoopInBeforeName
+      { targetRight, position, startPosition, charList }
+  BeforeQuote { startPosition, charList } ->
+    tokenizeLoopInBeforeQuote
+      { targetRight, position, startPosition, charList }
+  None -> tokenizeLoopInNone { targetRight, position }
 
--- | 右の文字が終了文字だと仮定して得られた, 左側の文字
-getLeftToken :: ReadState -> Range.Position -> Maybe TokenWithRange
-getLeftToken readState endPosition = case readState of
-  BeforeName { charList, startPosition } ->
-    Just
-      ( TokenWithRange
-          { range: Range.Range { start: startPosition, end: endPosition }
-          , token: Name (NonEmptyCodeUnits.fromNonEmptyCharArray charList)
+tokenizeLoopInBeforeName ::
+  { targetRight :: Char
+  , position :: Range.Position
+  , startPosition :: Range.Position
+  , charList :: NonEmptyArray Char
+  } ->
+  TokenLoopResult
+tokenizeLoopInBeforeName rec = case charToCharTypeMaybe rec.targetRight of
+  Just charType ->
+    let
+      nameTokenWithRange :: TokenWithRange
+      nameTokenWithRange =
+        TokenWithRange
+          { range: Range.Range { start: rec.startPosition, end: rec.position }
+          , token:
+              Name
+                ( NonEmptyString.toString
+                    (NonEmptyCodeUnits.fromNonEmptyCharArray rec.charList)
+                )
           }
-      )
-  Ended -> Nothing
+    in
+      case charType of
+        CharTypeParenthesisStart ->
+          TokenLoopResult
+            { newTokenList:
+                [ nameTokenWithRange
+                , TokenWithRange
+                    { range:
+                        Range.Range
+                          { start: rec.position
+                          , end: Range.positionAdd1Character rec.position
+                          }
+                    , token: ParenthesisStart
+                    }
+                ]
+            , nextState: None
+            }
+        CharTypeParenthesisEnd ->
+          TokenLoopResult
+            { newTokenList:
+                [ nameTokenWithRange
+                , TokenWithRange
+                    { range:
+                        Range.Range
+                          { start: rec.position
+                          , end: Range.positionAdd1Character rec.position
+                          }
+                    , token: ParenthesisEnd
+                    }
+                ]
+            , nextState: None
+            }
+        CharTypeSpace ->
+          TokenLoopResult
+            { newTokenList: [ nameTokenWithRange ]
+            , nextState: None
+            }
+        CharTypeComma ->
+          TokenLoopResult
+            { newTokenList:
+                [ nameTokenWithRange
+                , TokenWithRange
+                    { range:
+                        Range.Range
+                          { start: rec.position
+                          , end: Range.positionAdd1Character rec.position
+                          }
+                    , token: Comma
+                    }
+                ]
+            , nextState: None
+            }
+        CharTypeQuote ->
+          TokenLoopResult
+            { newTokenList: [ nameTokenWithRange ]
+            , nextState: BeforeQuote { startPosition: rec.position, charList: [] }
+            }
+  Nothing ->
+    TokenLoopResult
+      { newTokenList: []
+      , nextState:
+          BeforeName
+            { startPosition: rec.startPosition
+            , charList: NonEmptyArray.snoc rec.charList rec.targetRight
+            }
+      }
+
+tokenizeLoopInBeforeQuote ::
+  { targetRight :: Char
+  , position :: Range.Position
+  , startPosition :: Range.Position
+  , charList :: Array Char
+  } ->
+  TokenLoopResult
+tokenizeLoopInBeforeQuote rec = case charToCharTypeMaybe rec.targetRight of
+  Just CharTypeQuote ->
+    TokenLoopResult
+      { newTokenList:
+          [ TokenWithRange
+              { range:
+                  Range.Range
+                    { start: rec.startPosition
+                    , end: Range.positionAdd1Character rec.position
+                    }
+              , token: Name (CodeUnits.fromCharArray rec.charList)
+              }
+          ]
+      , nextState: None
+      }
+  _ ->
+    TokenLoopResult
+      { newTokenList: []
+      , nextState:
+          BeforeQuote
+            { startPosition: rec.startPosition
+            , charList: Array.snoc rec.charList rec.targetRight
+            }
+      }
+
+tokenizeLoopInNone ::
+  { targetRight :: Char
+  , position :: Range.Position
+  } ->
+  TokenLoopResult
+tokenizeLoopInNone rec = case charToCharTypeMaybe rec.targetRight of
+  Just CharTypeParenthesisStart ->
+    TokenLoopResult
+      { newTokenList:
+          [ TokenWithRange
+              { range:
+                  Range.Range
+                    { start: rec.position
+                    , end: Range.positionAdd1Character rec.position
+                    }
+              , token: ParenthesisStart
+              }
+          ]
+      , nextState: None
+      }
+  Just CharTypeParenthesisEnd ->
+    TokenLoopResult
+      { newTokenList:
+          [ TokenWithRange
+              { range:
+                  Range.Range
+                    { start: rec.position
+                    , end: Range.positionAdd1Character rec.position
+                    }
+              , token: ParenthesisEnd
+              }
+          ]
+      , nextState: None
+      }
+  Just CharTypeSpace ->
+    TokenLoopResult
+      { newTokenList: [], nextState: None }
+  Just CharTypeComma ->
+    TokenLoopResult
+      { newTokenList:
+          [ TokenWithRange
+              { range:
+                  Range.Range
+                    { start: rec.position
+                    , end: Range.positionAdd1Character rec.position
+                    }
+              , token: Comma
+              }
+          ]
+      , nextState: None
+      }
+  Just CharTypeQuote ->
+    TokenLoopResult
+      { newTokenList: []
+      , nextState: BeforeQuote { startPosition: rec.position, charList: [] }
+      }
+  Nothing ->
+    TokenLoopResult
+      { newTokenList: []
+      , nextState:
+          BeforeName
+            { startPosition: rec.position
+            , charList: NonEmptyArray.singleton rec.targetRight
+            }
+      }
 
 data CharIsEndResult
   = End
   | EndWithToken Token
   | NotEnd
 
-charIsEnd :: Char -> CharIsEndResult
-charIsEnd = case _ of
-  '(' -> EndWithToken ParenthesisStart
-  '（' -> EndWithToken ParenthesisStart
-  ')' -> EndWithToken ParenthesisEnd
-  '）' -> EndWithToken ParenthesisEnd
-  ',' -> EndWithToken Comma
-  '\xFF0C' -> EndWithToken Comma
-  '\x3001' -> EndWithToken Comma
-  '\xFE50' -> EndWithToken Comma
-  '\xFE51' -> EndWithToken Comma
-  '\xFF64' -> EndWithToken Comma
-  '\x0326' -> EndWithToken Comma
-  ' ' -> End
-  '\x00A0' -> End
-  '\x1680' -> End
-  '\x2000' -> End
-  '\x2001' -> End
-  '\x2002' -> End
-  '\x2003' -> End
-  '\x2004' -> End
-  '\x2005' -> End
-  '\x2006' -> End
-  '\x2007' -> End
-  '\x2008' -> End
-  '\x2009' -> End
-  '\x200A' -> End
-  '\x202F' -> End
-  '\x205F' -> End
-  '\x3000' -> End
-  '\t' -> End
-  _ -> NotEnd
+data CharType
+  = CharTypeParenthesisStart
+  | CharTypeParenthesisEnd
+  | CharTypeSpace
+  | CharTypeComma
+  | CharTypeQuote
+
+charToCharTypeMaybe :: Char -> Maybe CharType
+charToCharTypeMaybe = case _ of
+  '(' -> Just CharTypeParenthesisStart
+  '（' -> Just CharTypeParenthesisStart
+  ')' -> Just CharTypeParenthesisEnd
+  '）' -> Just CharTypeParenthesisEnd
+  ',' -> Just CharTypeComma
+  '\xFF0C' -> Just CharTypeComma
+  '\x3001' -> Just CharTypeComma
+  '\xFE50' -> Just CharTypeComma
+  '\xFE51' -> Just CharTypeComma
+  '\xFF64' -> Just CharTypeComma
+  '\x0326' -> Just CharTypeComma
+  ' ' -> Just CharTypeSpace
+  '\x00A0' -> Just CharTypeSpace
+  '\x1680' -> Just CharTypeSpace
+  '\x2000' -> Just CharTypeSpace
+  '\x2001' -> Just CharTypeSpace
+  '\x2002' -> Just CharTypeSpace
+  '\x2003' -> Just CharTypeSpace
+  '\x2004' -> Just CharTypeSpace
+  '\x2005' -> Just CharTypeSpace
+  '\x2006' -> Just CharTypeSpace
+  '\x2007' -> Just CharTypeSpace
+  '\x2008' -> Just CharTypeSpace
+  '\x2009' -> Just CharTypeSpace
+  '\x200A' -> Just CharTypeSpace
+  '\x202F' -> Just CharTypeSpace
+  '\x205F' -> Just CharTypeSpace
+  '\x3000' -> Just CharTypeSpace
+  '\t' -> Just CharTypeSpace
+  '"' -> Just CharTypeQuote
+  '\'' -> Just CharTypeQuote
+  '\x2018' -> Just CharTypeQuote
+  '\x2019' -> Just CharTypeQuote
+  '\x201C' -> Just CharTypeQuote
+  '\x201D' -> Just CharTypeQuote
+  '\xff02' -> Just CharTypeQuote
+  '\xff07' -> Just CharTypeQuote
+  _ -> Nothing

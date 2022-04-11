@@ -3,11 +3,9 @@ module Test.VsCodeExtension
   ) where
 
 import Prelude
-import Data.String.NonEmpty as NonEmptyString
 import Data.UInt as UInt
 import Test.Unit as TestUnit
 import Test.Util (assertEqual)
-import Type.Proxy (Proxy(..))
 import VsCodeExtension.Parser as Parser
 import VsCodeExtension.Range as Range
 import VsCodeExtension.SimpleToken as SimpleToken
@@ -33,7 +31,7 @@ tokenizeTest = do
     , expected:
         [ Tokenize.TokenWithRange
             { range: rangeFrom 0 0 0 11
-            , token: Tokenize.Name (NonEmptyString.nes (Proxy :: _ "sampleValue"))
+            , token: Tokenize.Name "sampleValue"
             }
         ]
     }
@@ -43,15 +41,15 @@ tokenizeTest = do
     , expected:
         [ Tokenize.TokenWithRange
             { range: rangeFrom 0 1 0 4
-            , token: Tokenize.Name (NonEmptyString.nes (Proxy :: _ "abc"))
+            , token: Tokenize.Name "abc"
             }
         , Tokenize.TokenWithRange
             { range: rangeFrom 0 5 0 8
-            , token: Tokenize.Name (NonEmptyString.nes (Proxy :: _ "def"))
+            , token: Tokenize.Name "def"
             }
         , Tokenize.TokenWithRange
             { range: rangeFrom 0 10 0 11
-            , token: Tokenize.Name (NonEmptyString.nes (Proxy :: _ "g"))
+            , token: Tokenize.Name "g"
             }
         ]
     }
@@ -61,7 +59,7 @@ tokenizeTest = do
     , expected:
         [ Tokenize.TokenWithRange
             { range: rangeFrom 1 2 1 3
-            , token: Tokenize.Name (NonEmptyString.nes (Proxy :: _ "a"))
+            , token: Tokenize.Name "a"
             }
         ]
     }
@@ -75,7 +73,7 @@ part(value)
     , expected:
         [ Tokenize.TokenWithRange
             { range: rangeFrom 1 0 1 4
-            , token: (Tokenize.Name (NonEmptyString.nes (Proxy :: _ "part")))
+            , token: Tokenize.Name "part"
             }
         , Tokenize.TokenWithRange
             { range: rangeFrom 1 4 1 5
@@ -83,7 +81,7 @@ part(value)
             }
         , Tokenize.TokenWithRange
             { range: rangeFrom 1 5 1 10
-            , token: Tokenize.Name (NonEmptyString.nes (Proxy :: _ "value"))
+            , token: Tokenize.Name "value"
             }
         , Tokenize.TokenWithRange
             { range: rangeFrom 1 10 1 11
@@ -101,7 +99,7 @@ part(value)
     , expected:
         [ Tokenize.TokenWithRange
             { range: rangeFrom 1 0 1 7
-            , token: (Tokenize.Name (NonEmptyString.nes (Proxy :: _ "👨🏽‍🦰")))
+            , token: Tokenize.Name "👨🏽‍🦰"
             }
         ]
     }

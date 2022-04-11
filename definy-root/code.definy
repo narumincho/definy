@@ -1,16 +1,20 @@
 module(
-  モジュールの説明,
+  "モジュールの説明",
   body(
     part(
       InvalidPartName,
       partDescription,
       add(uint(1), add(uint(2), uint(3))),
     ),
-    part(sample4Part, **サンプル4パーツの説明文!**, add(uint(3), uint(1))),
-    part(samplePart, samplePartの説明文, add(sample4Part, uint(10))),
-    part(b, bの説明文, add(samplePart, uint(1))),
-    part(k, kの説明文, add(samplePart, add(uint(1), uint(39)))),
-    part(sample, description, uint(28)),
+    part(sample4Part, "**サンプル4パーツの説明文!**", add(uint(3), uint(1))),
+    part(
+      samplePart,
+      "samplePartの説明文 カッコ() や 空白を含めることもできるようになったぞ!",
+      add(sample4Part, uint(10)),
+    ),
+    part(b, "bの説明文 改行有り", add(samplePart, uint(1))),
+    part(k, "kの説明文", add(samplePart, add(uint(1), uint(39)))),
+    part(sample, description, uint(" 123")),
     part(sample, description, add(28, uint(28))),
   ),
 )

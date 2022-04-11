@@ -12,6 +12,7 @@ import Data.UInt as UInt
 import Prelude as Prelude
 import VsCodeExtension.Evaluate as Evaluate
 import VsCodeExtension.Range as Range
+import VsCodeExtension.ToString as ToString
 
 getErrorList :: Evaluate.EvaluatedTree -> Array ErrorWithRange
 getErrorList tree@(Evaluate.EvaluatedTree { item, name, nameRange, children, expectedChildrenTypeMaybe }) =
@@ -108,11 +109,11 @@ data Error
 
 errorToString :: Error -> String
 errorToString = case _ of
-  InvalidPartName name -> Prelude.append name "は不正なパーツ名です"
+  InvalidPartName name -> Prelude.append (ToString.escapeName name) "は不正なパーツ名です"
   NeedParameter rec ->
     String.joinWith
       ""
-      [ rec.name
+      [ ToString.escapeName rec.name
       , "には"
       , UInt.toString rec.expect
       , "個のパラメーターが必要ですが"
@@ -124,21 +125,21 @@ errorToString = case _ of
   SuperfluousParameter rec ->
     String.joinWith ""
       [ "このパラメーターは余計です. "
-      , rec.name
+      , ToString.escapeName rec.name
       , "には"
       , UInt.toString rec.expect
       , "個のパラメーターがあれば充分です"
       ]
   UIntParseError name ->
     Prelude.append
-      name
+      (ToString.escapeName name)
       "はUInt としてパースできませんでした"
   TypeMisMatchError (Evaluate.TypeMisMatch { actual, expect }) ->
     String.joinWith ""
       [ treeTypeToString expect, "を期待したが", treeTypeToString actual, "が渡された" ]
   InvalidIdentifier name ->
     Prelude.append
-      name
+      (ToString.escapeName name)
       "は識別子として不正です. 識別子は 正規表現 ^[a-z][a-zA-Z0-9]{0,63}$ を満たさす必要があります"
 
 treeTypeToString :: Evaluate.TreeType -> String
