@@ -14,6 +14,7 @@ import Effect (Effect)
 import Effect.Uncurried as EffectUncurried
 import Markdown as Markdown
 import Prelude as Prelude
+import VsCodeExtension.CodeGen as CodeGen
 import VsCodeExtension.Completion as Completion
 import VsCodeExtension.Definition as Definition
 import VsCodeExtension.Error as Error
@@ -35,16 +36,13 @@ import VsCodeExtension.VSCodeApi as VSCodeApi
 activate :: Effect Unit
 activate = do
   diagnosticCollection <- VSCodeApi.languagesCreateDiagnosticCollection "definy-error"
+  workspaceFolders <- VSCodeApi.workspaceWorkspaceFolders
   VSCodeApi.languagesRegisterDocumentFormattingEditProvider
     { languageId: LanguageId.languageId
     , formatFunc:
         \code ->
           ToString.evaluatedTreeToString
-            ( Evaluate.codeTreeToEvaluatedTreeIContextNormal
-                ( Parser.parse
-                    (SimpleToken.tokenListToSimpleTokenList (Tokenize.tokenize code))
-                )
-            )
+            (codeStringToEvaluatedTree code)
     }
   VSCodeApi.languagesRegisterDocumentSemanticTokensProvider
     { languageId: LanguageId.languageId
@@ -52,11 +50,7 @@ activate = do
         \code ->
           tokenDataListToDataList
             ( SemanticToken.evaluateTreeToTokenData
-                ( Evaluate.codeTreeToEvaluatedTreeIContextNormal
-                    ( Parser.parse
-                        (SimpleToken.tokenListToSimpleTokenList (Tokenize.tokenize code))
-                    )
-                )
+                (codeStringToEvaluatedTree code)
             )
     , semanticTokensProviderLegend: TokenType.useTokenTypesAsStringArray
     }
@@ -66,11 +60,7 @@ activate = do
         \{ code, position } ->
           hoverToVscodeHover
             ( Hover.getHoverData (vsCodePositionToPosition position)
-                ( Evaluate.codeTreeToEvaluatedTreeIContextNormal
-                    ( Parser.parse
-                        (SimpleToken.tokenListToSimpleTokenList (Tokenize.tokenize code))
-                    )
-                )
+                (codeStringToEvaluatedTree code)
             )
     }
   VSCodeApi.languagesRegisterCompletionItemProvider
@@ -80,11 +70,7 @@ activate = do
           Prelude.map
             completionItemToVsCodeCompletionItem
             ( Completion.getCompletionList
-                { tree:
-                    Evaluate.codeTreeToEvaluatedTreeIContextNormal
-                      ( Parser.parse
-                          (SimpleToken.tokenListToSimpleTokenList (Tokenize.tokenize code))
-                      )
+                { tree: codeStringToEvaluatedTree code
                 , position: vsCodePositionToPosition position
                 }
             )
@@ -94,11 +80,7 @@ activate = do
     { languageId: LanguageId.languageId
     , func:
         \{ code, position } -> case SignatureHelp.getSignatureHelp
-            { tree:
-                Evaluate.codeTreeToEvaluatedTreeIContextNormal
-                  ( Parser.parse
-                      (SimpleToken.tokenListToSimpleTokenList (Tokenize.tokenize code))
-                  )
+            { tree: codeStringToEvaluatedTree code
             , position: vsCodePositionToPosition position
             } of
           Just result ->
@@ -124,11 +106,7 @@ activate = do
                 (\range -> VSCodeApi.newLocation uri (rangeToVsCodeRange range))
                 ( Definition.getDefinitionLocation
                     (vsCodePositionToPosition position)
-                    ( Evaluate.codeTreeToEvaluatedTreeIContextNormal
-                        ( Parser.parse
-                            (SimpleToken.tokenListToSimpleTokenList (Tokenize.tokenize code))
-                        )
-                    )
+                    (codeStringToEvaluatedTree code)
                 )
             )
     }
@@ -143,11 +121,7 @@ activate = do
                 }
             )
             ( Symbol.getSymbolAndRangeList
-                ( Evaluate.codeTreeToEvaluatedTreeIContextNormal
-                    ( Parser.parse
-                        (SimpleToken.tokenListToSimpleTokenList (Tokenize.tokenize code))
-                    )
-                )
+                (codeStringToEvaluatedTree code)
             )
     }
   VSCodeApi.languagesRegisterReferenceProvider
@@ -160,31 +134,40 @@ activate = do
             )
             ( Reference.getReference
                 (vsCodePositionToPosition position)
-                ( Evaluate.codeTreeToEvaluatedTreeIContextNormal
-                    ( Parser.parse
-                        (SimpleToken.tokenListToSimpleTokenList (Tokenize.tokenize code))
-                    )
-                )
+                (codeStringToEvaluatedTree code)
             )
     }
   VSCodeApi.workspaceOnDidChangeTextDocument
-    (getWorkspaceTextDocumentsAndSendError diagnosticCollection)
+    (getWorkspaceTextDocumentsAndSendError workspaceFolders diagnosticCollection)
   VSCodeApi.workspaceOnDidOpenTextDocument
-    (getWorkspaceTextDocumentsAndSendError diagnosticCollection)
-  getWorkspaceTextDocumentsAndSendError diagnosticCollection
-  folders <- VSCodeApi.workspaceWorkspaceFolders
-  case Array.index folders 0 of
-    Just folder ->
-      VSCodeApi.workspaceFsWriteFile
-        { uri: VSCodeApi.uriJoinPath { uri: folder.uri, relativePath: "definy-output.txt" }
-        , content: Binary.fromStringWriteAsUtf8 "sampleText"
-        }
-    Nothing -> pure unit
+    (getWorkspaceTextDocumentsAndSendError workspaceFolders diagnosticCollection)
+  getWorkspaceTextDocumentsAndSendError workspaceFolders diagnosticCollection
 
-getWorkspaceTextDocumentsAndSendError :: VSCodeApi.DiagnosticCollection -> Effect Unit
-getWorkspaceTextDocumentsAndSendError diagnosticCollection =
+codeStringToEvaluatedTree :: String -> Evaluate.EvaluatedTree
+codeStringToEvaluatedTree code =
+  Evaluate.codeTreeToEvaluatedTreeIContextNormal
+    ( Parser.parse
+        (SimpleToken.tokenListToSimpleTokenList (Tokenize.tokenize code))
+    )
+
+getWorkspaceTextDocumentsAndSendError ::
+  (Array { index ∷ Int, name ∷ String, uri ∷ VSCodeApi.Uri }) ->
+  VSCodeApi.DiagnosticCollection ->
+  Effect Unit
+getWorkspaceTextDocumentsAndSendError workspaceFolders diagnosticCollection =
   VSCodeApi.workspaceTextDocuments
-    ( EffectUncurried.mkEffectFn1 \codeDataList ->
+    ( EffectUncurried.mkEffectFn1 \codeDataList -> do
+        case { folder: Array.index workspaceFolders 0, codeData: Array.index codeDataList 0 } of
+          { folder: Just folder, codeData: Just codeData } ->
+            VSCodeApi.workspaceFsWriteFile
+              { uri:
+                  VSCodeApi.uriJoinPath
+                    { uri: folder.uri
+                    , relativePath: "definy-output/typescript/main.ts"
+                    }
+              , content: CodeGen.codeAsBinary codeData.code
+              }
+          {} -> pure unit
         sendError
           diagnosticCollection
           codeDataList
