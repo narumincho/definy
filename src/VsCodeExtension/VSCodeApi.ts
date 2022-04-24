@@ -22,6 +22,7 @@ import {
   TextEdit,
   Uri,
   languages,
+  window,
   workspace,
 } from "vscode";
 
@@ -373,3 +374,31 @@ export const workspaceTextDocuments =
       }))
     );
   };
+
+export const workspaceWorkspaceFolders = (): ReadonlyArray<{
+  readonly index: number;
+  readonly name: string;
+  readonly uri: Uri;
+}> => {
+  const folders = workspace.workspaceFolders;
+  if (folders === undefined) {
+    return [];
+  }
+  return folders;
+};
+
+export const workspaceFsWriteFile =
+  (option: { readonly uri: Uri; readonly content: Uint8Array }) => () => {
+    workspace.fs.writeFile(option.uri, option.content);
+  };
+
+export const uriJoinPath = (option: {
+  readonly uri: Uri;
+  readonly relativePath: string;
+}): Uri => {
+  return Uri.joinPath(option.uri, option.relativePath);
+};
+
+export const windowShowInformationMessage = (message: string) => () => {
+  window.showInformationMessage(message);
+};

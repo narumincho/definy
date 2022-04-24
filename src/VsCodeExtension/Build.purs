@@ -16,6 +16,7 @@ import FileSystem.Copy as FileSystemCopy
 import FileSystem.FileType as FileType
 import FileSystem.Name as Name
 import FileSystem.Path as Path
+import FileSystem.Read as FileSystemRead
 import FileSystem.Write as FileSystemWrite
 import PackageJson as PackageJson
 import PureScript.Data as PureScriptData
@@ -115,18 +116,24 @@ extensionMainPath =
     , fileName: Name.fromSymbolProxy (Proxy :: _ "main")
     }
 
+mainScriptPath :: Path.DistributionFilePath
+mainScriptPath =
+  Path.DistributionFilePath
+    { directoryPath: distributionDirectoryPath
+    , fileName: Name.fromSymbolProxy (Proxy :: _ "main")
+    }
+
 buildExtensionMain :: Aff.Aff Unit
-buildExtensionMain =
+buildExtensionMain = do
   Spago.bundleModule
     { mainModuleName:
         PureScriptData.ModuleName
           (NonEmptyArray.cons (NonEmptyString.nes (Proxy :: _ "VsCodeExtension")) (NonEmptyArray.singleton (NonEmptyString.nes (Proxy :: _ "Main"))))
-    , outputJavaScriptPath:
-        Path.DistributionFilePath
-          { directoryPath: distributionDirectoryPath
-          , fileName: Name.fromSymbolProxy (Proxy :: _ "main")
-          }
+    , outputJavaScriptPath: mainScriptPath
     }
+  code <- FileSystemRead.readTextFile (Path.distributionFilePathToFilePath mainScriptPath) FileType.JavaScript
+  FileSystemWrite.writeTextFileInDistribution mainScriptPath (Just FileType.JavaScript)
+    (append code "const JavaScriptDynamicImport = (url) => import(url);\n")
 
 writeLanguageConfiguration :: Aff.Aff Unit
 writeLanguageConfiguration =

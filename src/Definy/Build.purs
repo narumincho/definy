@@ -454,6 +454,7 @@ readEsbuildResultClientProgramFile = do
               (Hash.toNonEmptyString clientProgramHashValue)
         }
     )
+    Nothing
     clientProgramAsString
   pure clientProgramHashValue
 

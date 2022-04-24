@@ -30,12 +30,17 @@ module VsCodeExtension.VSCodeApi
   , rangeContains
   , rangeGetEnd
   , rangeGetStart
+  , uriJoinPath
+  , windowShowInformationMessage
+  , workspaceFsWriteFile
   , workspaceOnDidChangeTextDocument
   , workspaceOnDidOpenTextDocument
   , workspaceTextDocuments
+  , workspaceWorkspaceFolders
   ) where
 
 import Prelude
+import Binary as Binary
 import Data.Nullable (Nullable)
 import Data.String.NonEmpty (NonEmptyString)
 import Data.UInt as UInt
@@ -180,3 +185,17 @@ foreign import workspaceOnDidOpenTextDocument ::
 foreign import workspaceTextDocuments ::
   EffectFn1 (Array { languageId :: String, uri :: Uri, code :: String }) Unit ->
   Effect.Effect Unit
+
+foreign import workspaceWorkspaceFolders ::
+  Effect.Effect
+    (Array { index :: Int, name :: String, uri :: Uri })
+
+foreign import workspaceFsWriteFile ::
+  { uri :: Uri, content :: Binary.Binary } ->
+  Effect.Effect Unit
+
+foreign import uriJoinPath ::
+  { uri :: Uri, relativePath :: String } -> Uri
+
+foreign import windowShowInformationMessage ::
+  String -> Effect.Effect Unit

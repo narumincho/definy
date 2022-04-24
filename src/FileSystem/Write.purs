@@ -30,14 +30,14 @@ import PureScript.ToString as PureScriptToString
 import TypeScript.ToString as TypeScriptToString
 import Util as Util
 
--- | distribution に ファイルを文字列として書き込む 拡張子はなし
-writeTextFileInDistribution :: Path.DistributionFilePath -> String -> Aff.Aff Unit
-writeTextFileInDistribution distributionFilePath content =
+-- | distribution に ファイルを文字列として書き込む
+writeTextFileInDistribution :: Path.DistributionFilePath -> Maybe FileType.FileType -> String -> Aff.Aff Unit
+writeTextFileInDistribution distributionFilePath fileType content =
   let
     filePath :: String
     filePath =
       NonEmptyString.toString
-        (Path.distributionFilePathToString distributionFilePath Nothing)
+        (Path.distributionFilePathToString distributionFilePath fileType)
   in
     do
       ensureDir
@@ -45,7 +45,7 @@ writeTextFileInDistribution distributionFilePath content =
             (Path.distributionFilePathToDirectoryPath distributionFilePath)
         )
       Fs.writeTextFile Encoding.UTF8 filePath content
-      Console.logValueAsAff "拡張子なしの文字列を書き込んだ" { filePath }
+      Console.logValueAsAff "文字列をファイルに書き込んだ" { filePath }
 
 writeJson :: Path.DistributionFilePath -> Argonaut.Json -> Aff.Aff Unit
 writeJson distributionFilePath json =

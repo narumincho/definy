@@ -1,5 +1,5 @@
 module(
-  "モジュールの説明",
+  "モジュールの説明だよー",
   body(
     part(
       InvalidPartName,

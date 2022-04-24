@@ -29,6 +29,8 @@
   , "typelevel-peano"
   , "typelevel-prelude"
   , "uint"
+  , "foreign"
+  , "transformers"
   ]
 , packages = ./packages.dhall
 , sources = [ "src/**/*.purs" ]

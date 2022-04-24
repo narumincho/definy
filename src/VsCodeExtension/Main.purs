@@ -5,19 +5,22 @@ module VsCodeExtension.Main
 
 import Prelude
 import Data.Array as Array
+import Data.Either as Either
 import Data.Maybe (Maybe(..))
 import Data.Nullable as Nullable
 import Data.String.NonEmpty as NonEmptyString
 import Data.UInt as UInt
 import Effect (Effect)
+import Effect.Aff as Aff
 import Effect.Uncurried as EffectUncurried
 import Markdown as Markdown
-import Prelude as Prelude
+import VsCodeExtension.CodeGen as CodeGen
 import VsCodeExtension.Completion as Completion
 import VsCodeExtension.Definition as Definition
 import VsCodeExtension.Error as Error
 import VsCodeExtension.Evaluate as Evaluate
 import VsCodeExtension.Hover as Hover
+import VsCodeExtension.Import as Import
 import VsCodeExtension.LanguageId as LanguageId
 import VsCodeExtension.Parser as Parser
 import VsCodeExtension.Range as Range
@@ -34,16 +37,13 @@ import VsCodeExtension.VSCodeApi as VSCodeApi
 activate :: Effect Unit
 activate = do
   diagnosticCollection <- VSCodeApi.languagesCreateDiagnosticCollection "definy-error"
+  workspaceFolders <- VSCodeApi.workspaceWorkspaceFolders
   VSCodeApi.languagesRegisterDocumentFormattingEditProvider
     { languageId: LanguageId.languageId
     , formatFunc:
         \code ->
           ToString.evaluatedTreeToString
-            ( Evaluate.codeTreeToEvaluatedTreeIContextNormal
-                ( Parser.parse
-                    (SimpleToken.tokenListToSimpleTokenList (Tokenize.tokenize code))
-                )
-            )
+            (codeStringToEvaluatedTree code)
     }
   VSCodeApi.languagesRegisterDocumentSemanticTokensProvider
     { languageId: LanguageId.languageId
@@ -51,11 +51,7 @@ activate = do
         \code ->
           tokenDataListToDataList
             ( SemanticToken.evaluateTreeToTokenData
-                ( Evaluate.codeTreeToEvaluatedTreeIContextNormal
-                    ( Parser.parse
-                        (SimpleToken.tokenListToSimpleTokenList (Tokenize.tokenize code))
-                    )
-                )
+                (codeStringToEvaluatedTree code)
             )
     , semanticTokensProviderLegend: TokenType.useTokenTypesAsStringArray
     }
@@ -65,25 +61,17 @@ activate = do
         \{ code, position } ->
           hoverToVscodeHover
             ( Hover.getHoverData (vsCodePositionToPosition position)
-                ( Evaluate.codeTreeToEvaluatedTreeIContextNormal
-                    ( Parser.parse
-                        (SimpleToken.tokenListToSimpleTokenList (Tokenize.tokenize code))
-                    )
-                )
+                (codeStringToEvaluatedTree code)
             )
     }
   VSCodeApi.languagesRegisterCompletionItemProvider
     { languageId: LanguageId.languageId
     , func:
         \{ code, position } ->
-          Prelude.map
+          map
             completionItemToVsCodeCompletionItem
             ( Completion.getCompletionList
-                { tree:
-                    Evaluate.codeTreeToEvaluatedTreeIContextNormal
-                      ( Parser.parse
-                          (SimpleToken.tokenListToSimpleTokenList (Tokenize.tokenize code))
-                      )
+                { tree: codeStringToEvaluatedTree code
                 , position: vsCodePositionToPosition position
                 }
             )
@@ -93,11 +81,7 @@ activate = do
     { languageId: LanguageId.languageId
     , func:
         \{ code, position } -> case SignatureHelp.getSignatureHelp
-            { tree:
-                Evaluate.codeTreeToEvaluatedTreeIContextNormal
-                  ( Parser.parse
-                      (SimpleToken.tokenListToSimpleTokenList (Tokenize.tokenize code))
-                  )
+            { tree: codeStringToEvaluatedTree code
             , position: vsCodePositionToPosition position
             } of
           Just result ->
@@ -119,15 +103,11 @@ activate = do
     , func:
         \{ code, uri, position } ->
           Nullable.toNullable
-            ( Prelude.map
+            ( map
                 (\range -> VSCodeApi.newLocation uri (rangeToVsCodeRange range))
                 ( Definition.getDefinitionLocation
                     (vsCodePositionToPosition position)
-                    ( Evaluate.codeTreeToEvaluatedTreeIContextNormal
-                        ( Parser.parse
-                            (SimpleToken.tokenListToSimpleTokenList (Tokenize.tokenize code))
-                        )
-                    )
+                    (codeStringToEvaluatedTree code)
                 )
             )
     }
@@ -135,47 +115,75 @@ activate = do
     { languageId: LanguageId.languageId
     , func:
         \{ code, uri } ->
-          Prelude.map
+          map
             ( \{ name, range } ->
                 { name
                 , location: VSCodeApi.newLocation uri (rangeToVsCodeRange range)
                 }
             )
             ( Symbol.getSymbolAndRangeList
-                ( Evaluate.codeTreeToEvaluatedTreeIContextNormal
-                    ( Parser.parse
-                        (SimpleToken.tokenListToSimpleTokenList (Tokenize.tokenize code))
-                    )
-                )
+                (codeStringToEvaluatedTree code)
             )
     }
   VSCodeApi.languagesRegisterReferenceProvider
     { languageId: LanguageId.languageId
     , func:
         \{ code, uri, position } ->
-          Prelude.map
+          map
             ( \range ->
                 VSCodeApi.newLocation uri (rangeToVsCodeRange range)
             )
             ( Reference.getReference
                 (vsCodePositionToPosition position)
-                ( Evaluate.codeTreeToEvaluatedTreeIContextNormal
-                    ( Parser.parse
-                        (SimpleToken.tokenListToSimpleTokenList (Tokenize.tokenize code))
-                    )
-                )
+                (codeStringToEvaluatedTree code)
             )
     }
   VSCodeApi.workspaceOnDidChangeTextDocument
-    (getWorkspaceTextDocumentsAndSendError diagnosticCollection)
+    (getWorkspaceTextDocumentsAndSendError workspaceFolders diagnosticCollection)
   VSCodeApi.workspaceOnDidOpenTextDocument
-    (getWorkspaceTextDocumentsAndSendError diagnosticCollection)
-  getWorkspaceTextDocumentsAndSendError diagnosticCollection
+    (getWorkspaceTextDocumentsAndSendError workspaceFolders diagnosticCollection)
+  getWorkspaceTextDocumentsAndSendError workspaceFolders diagnosticCollection
+  Aff.runAff_
+    ( case _ of
+        Either.Left e ->
+          VSCodeApi.windowShowInformationMessage
+            ( append
+                "JavaScript の評価に失敗した: "
+                (show e)
+            )
+        Either.Right valueMaybe ->
+          VSCodeApi.windowShowInformationMessage
+            (show valueMaybe)
+    )
+    Import.sampleCall
 
-getWorkspaceTextDocumentsAndSendError :: VSCodeApi.DiagnosticCollection -> Effect Unit
-getWorkspaceTextDocumentsAndSendError diagnosticCollection =
+codeStringToEvaluatedTree :: String -> Evaluate.EvaluatedTree
+codeStringToEvaluatedTree code =
+  Evaluate.codeTreeToEvaluatedTreeIContextNormal
+    ( Parser.parse
+        (SimpleToken.tokenListToSimpleTokenList (Tokenize.tokenize code))
+    )
+
+getWorkspaceTextDocumentsAndSendError ::
+  (Array { index ∷ Int, name ∷ String, uri ∷ VSCodeApi.Uri }) ->
+  VSCodeApi.DiagnosticCollection ->
+  Effect Unit
+getWorkspaceTextDocumentsAndSendError workspaceFolders diagnosticCollection =
   VSCodeApi.workspaceTextDocuments
-    ( EffectUncurried.mkEffectFn1 \codeDataList ->
+    ( EffectUncurried.mkEffectFn1 \codeDataList -> do
+        case Array.find (\codeData -> eq codeData.languageId (NonEmptyString.toString LanguageId.languageId)) codeDataList of
+          Just definyCodeData -> case Array.index workspaceFolders 0 of
+            Just folder ->
+              VSCodeApi.workspaceFsWriteFile
+                { uri:
+                    VSCodeApi.uriJoinPath
+                      { uri: folder.uri
+                      , relativePath: "definy-output/typescript/main.ts"
+                      }
+                , content: CodeGen.codeAsBinary definyCodeData.code
+                }
+            Nothing -> pure unit
+          Nothing -> pure unit
         sendError
           diagnosticCollection
           codeDataList
@@ -219,7 +227,7 @@ tokenDataListToDataList tokenDataList =
         ( \{ beforePosition, result } item@(TokenType.TokenData { start }) ->
             { beforePosition: start
             , result:
-                Prelude.append result
+                append result
                   ( TokenType.tokenDataToData beforePosition
                       item
                   )
