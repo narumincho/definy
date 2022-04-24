@@ -22,6 +22,7 @@ import {
   TextEdit,
   Uri,
   languages,
+  window,
   workspace,
 } from "vscode";
 
@@ -396,4 +397,8 @@ export const uriJoinPath = (option: {
   readonly relativePath: string;
 }): Uri => {
   return Uri.joinPath(option.uri, option.relativePath);
+};
+
+export const windowShowInformationMessage = (message: string) => () => {
+  window.showInformationMessage(message);
 };

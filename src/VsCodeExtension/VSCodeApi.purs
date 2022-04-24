@@ -31,6 +31,7 @@ module VsCodeExtension.VSCodeApi
   , rangeGetEnd
   , rangeGetStart
   , uriJoinPath
+  , windowShowInformationMessage
   , workspaceFsWriteFile
   , workspaceOnDidChangeTextDocument
   , workspaceOnDidOpenTextDocument
@@ -195,3 +196,6 @@ foreign import workspaceFsWriteFile ::
 
 foreign import uriJoinPath ::
   { uri :: Uri, relativePath :: String } -> Uri
+
+foreign import windowShowInformationMessage ::
+  String -> Effect.Effect Unit

@@ -4,22 +4,23 @@ module VsCodeExtension.Main
   ) where
 
 import Prelude
-import Binary as Binary
 import Data.Array as Array
+import Data.Either as Either
 import Data.Maybe (Maybe(..))
 import Data.Nullable as Nullable
 import Data.String.NonEmpty as NonEmptyString
 import Data.UInt as UInt
 import Effect (Effect)
+import Effect.Aff as Aff
 import Effect.Uncurried as EffectUncurried
 import Markdown as Markdown
-import Prelude as Prelude
 import VsCodeExtension.CodeGen as CodeGen
 import VsCodeExtension.Completion as Completion
 import VsCodeExtension.Definition as Definition
 import VsCodeExtension.Error as Error
 import VsCodeExtension.Evaluate as Evaluate
 import VsCodeExtension.Hover as Hover
+import VsCodeExtension.Import as Import
 import VsCodeExtension.LanguageId as LanguageId
 import VsCodeExtension.Parser as Parser
 import VsCodeExtension.Range as Range
@@ -67,7 +68,7 @@ activate = do
     { languageId: LanguageId.languageId
     , func:
         \{ code, position } ->
-          Prelude.map
+          map
             completionItemToVsCodeCompletionItem
             ( Completion.getCompletionList
                 { tree: codeStringToEvaluatedTree code
@@ -102,7 +103,7 @@ activate = do
     , func:
         \{ code, uri, position } ->
           Nullable.toNullable
-            ( Prelude.map
+            ( map
                 (\range -> VSCodeApi.newLocation uri (rangeToVsCodeRange range))
                 ( Definition.getDefinitionLocation
                     (vsCodePositionToPosition position)
@@ -114,7 +115,7 @@ activate = do
     { languageId: LanguageId.languageId
     , func:
         \{ code, uri } ->
-          Prelude.map
+          map
             ( \{ name, range } ->
                 { name
                 , location: VSCodeApi.newLocation uri (rangeToVsCodeRange range)
@@ -128,7 +129,7 @@ activate = do
     { languageId: LanguageId.languageId
     , func:
         \{ code, uri, position } ->
-          Prelude.map
+          map
             ( \range ->
                 VSCodeApi.newLocation uri (rangeToVsCodeRange range)
             )
@@ -142,6 +143,19 @@ activate = do
   VSCodeApi.workspaceOnDidOpenTextDocument
     (getWorkspaceTextDocumentsAndSendError workspaceFolders diagnosticCollection)
   getWorkspaceTextDocumentsAndSendError workspaceFolders diagnosticCollection
+  Aff.runAff_
+    ( case _ of
+        Either.Left e ->
+          VSCodeApi.windowShowInformationMessage
+            ( append
+                "JavaScript の評価に失敗した: "
+                (show e)
+            )
+        Either.Right valueMaybe ->
+          VSCodeApi.windowShowInformationMessage
+            (show valueMaybe)
+    )
+    Import.sampleCall
 
 codeStringToEvaluatedTree :: String -> Evaluate.EvaluatedTree
 codeStringToEvaluatedTree code =
@@ -211,7 +225,7 @@ tokenDataListToDataList tokenDataList =
         ( \{ beforePosition, result } item@(TokenType.TokenData { start }) ->
             { beforePosition: start
             , result:
-                Prelude.append result
+                append result
                   ( TokenType.tokenDataToData beforePosition
                       item
                   )
