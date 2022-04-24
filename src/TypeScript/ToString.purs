@@ -27,8 +27,9 @@ newtype ModuleResult
 
 typeScriptModuleMapToString ::
   Data.TypeScriptModuleMap ->
+  Boolean ->
   (Map.Map Path.FilePath ModuleResult)
-typeScriptModuleMapToString typeScriptModuleMap@(Data.TypeScriptModuleMap moduleMap) =
+typeScriptModuleMapToString typeScriptModuleMap@(Data.TypeScriptModuleMap moduleMap) outputType =
   let
     collectResult :: Map.Map ModuleName.ModuleName ValidateAndCollect.ValidateAndCollectResult
     collectResult = ValidateAndCollect.validateAndCollect typeScriptModuleMap
@@ -41,6 +42,7 @@ typeScriptModuleMapToString typeScriptModuleMap@(Data.TypeScriptModuleMap module
                     Just r -> r
                     Nothing -> ValidateAndCollect.validateAndCollectResultEmpty
                 )
+                outputType
                 tuple
           )
           ((Map.toUnfoldable moduleMap) :: Array _)
@@ -48,9 +50,10 @@ typeScriptModuleMapToString typeScriptModuleMap@(Data.TypeScriptModuleMap module
 
 typeScriptModuleToString ::
   ValidateAndCollect.ValidateAndCollectResult ->
+  Boolean ->
   Tuple.Tuple ModuleName.ModuleName Data.TypeScriptModule ->
   Maybe (Tuple.Tuple Path.FilePath ModuleResult)
-typeScriptModuleToString (ValidateAndCollect.ValidateAndCollectResult collectResult) (Tuple.Tuple moduleName moduleContent) = case moduleName of
+typeScriptModuleToString (ValidateAndCollect.ValidateAndCollectResult collectResult) outputType (Tuple.Tuple moduleName moduleContent) = case moduleName of
   ModuleName.NpmModule _ -> Nothing
   ModuleName.Local filePath ->
     Just
@@ -64,6 +67,7 @@ typeScriptModuleToString (ValidateAndCollect.ValidateAndCollectResult collectRes
                         , modulePathSet: collectResult.modulePathSet
                         }
                     )
+                    outputType
                     moduleContent
               , errorList: collectResult.errorList
               }
@@ -78,12 +82,13 @@ newtype UsedNameSetAndModulePathSet
 
 typeScriptModuleContentToString ::
   UsedNameSetAndModulePathSet ->
+  Boolean ->
   Data.TypeScriptModule ->
   String
-typeScriptModuleContentToString usedNameSetAndModulePathSet (Data.TypeScriptModule { exportDefinitionList }) =
+typeScriptModuleContentToString usedNameSetAndModulePathSet outputType (Data.TypeScriptModule { exportDefinitionList }) =
   let
     context :: Context
-    context = usedNameSetAndModulePathSetToContext usedNameSetAndModulePathSet
+    context = usedNameSetAndModulePathSetToContext usedNameSetAndModulePathSet outputType
   in
     String.joinWith ""
       [ """/* eslint-disable */
@@ -107,8 +112,8 @@ typeScriptModuleContentToString usedNameSetAndModulePathSet (Data.TypeScriptModu
       , "\n"
       ]
 
-usedNameSetAndModulePathSetToContext :: UsedNameSetAndModulePathSet -> Context
-usedNameSetAndModulePathSetToContext (UsedNameSetAndModulePathSet { usedNameSet, modulePathSet }) =
+usedNameSetAndModulePathSetToContext :: UsedNameSetAndModulePathSet -> Boolean -> Context
+usedNameSetAndModulePathSetToContext (UsedNameSetAndModulePathSet { usedNameSet, modulePathSet }) outputType =
   Context
     { moduleNameNamespaceIdentifyMap:
         usedNameSetAndModulePathSetToContextLoopItemGetList
@@ -121,6 +126,7 @@ usedNameSetAndModulePathSetToContext (UsedNameSetAndModulePathSet { usedNameSet,
               )
               ((Set.toUnfoldable modulePathSet) :: Array ModuleName.ModuleName)
           )
+    , outputType
     }
 
 newtype UsedNameSetAndModulePathSetToContextLoopItem
@@ -170,7 +176,11 @@ importStatementToString namespace moduleName =
 newtype Context
   = Context
   { moduleNameNamespaceIdentifyMap :: Map.Map ModuleName.ModuleName Identifier.TsIdentifier
+  , outputType :: Boolean
   }
+
+contextGetOutputType :: Context -> Boolean
+contextGetOutputType (Context { outputType }) = outputType
 
 contextGetModuleNameNamespaceIdentifierList :: Context -> Array (Tuple.Tuple ModuleName.ModuleName Identifier.TsIdentifier)
 contextGetModuleNameNamespaceIdentifierList (Context { moduleNameNamespaceIdentifyMap }) = Map.toUnfoldable moduleNameNamespaceIdentifyMap
@@ -182,7 +192,11 @@ contextGetModuleNameNamespaceIdentifier moduleName (Context { moduleNameNamespac
 
 definitionToString :: Context -> Data.ExportDefinition -> String
 definitionToString context = case _ of
-  Data.ExportDefinitionTypeAlias typeAlias -> typeAliasToString context typeAlias
+  Data.ExportDefinitionTypeAlias typeAlias ->
+    if contextGetOutputType context then
+      typeAliasToString context typeAlias
+    else
+      ""
   Data.ExportDefinitionFunction func -> exportFunctionToString context func
   Data.ExportDefinitionVariable variable -> exportVariableToString context variable
 
@@ -206,7 +220,10 @@ exportFunctionToString context (Data.FunctionDeclaration func) =
     , "export const "
     , Identifier.toString func.name
     , " = "
-    , typeParameterListToString func.typeParameterList
+    , if contextGetOutputType context then
+        typeParameterListToString func.typeParameterList
+      else
+        ""
     , encloseParenthesis
         ( joinWithComma
             ( Prelude.map
@@ -218,7 +235,7 @@ exportFunctionToString context (Data.FunctionDeclaration func) =
                 func.parameterList
             )
         )
-    , Prelude.append ": " (typeToString context func.returnType)
+    , typeAnnotation context func.returnType
     , " => "
     , lambdaBodyToString context func.statementList
     , ";"
@@ -423,7 +440,11 @@ conditionalOperatorToString context (Data.ConditionalOperatorExpr { condition, t
     )
 
 typeAnnotation :: Context -> Data.TsType -> String
-typeAnnotation context tsType = Prelude.append ": " (typeToString context tsType)
+typeAnnotation context tsType =
+  if contextGetOutputType context then
+    Prelude.append ": " (typeToString context tsType)
+  else
+    ""
 
 typeToString :: Context -> Data.TsType -> String
 typeToString context = case _ of

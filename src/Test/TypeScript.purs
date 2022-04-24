@@ -88,6 +88,7 @@ sampleCodeExpressServerAsString = case Map.lookup
                 [ sampleCodeExpressServer ]
             )
         )
+        true
     ) of
   Just (ToString.ModuleResult { code }) -> code
   Nothing -> "test module not found"
