@@ -171,17 +171,19 @@ getWorkspaceTextDocumentsAndSendError ::
 getWorkspaceTextDocumentsAndSendError workspaceFolders diagnosticCollection =
   VSCodeApi.workspaceTextDocuments
     ( EffectUncurried.mkEffectFn1 \codeDataList -> do
-        case { folder: Array.index workspaceFolders 0, codeData: Array.index codeDataList 0 } of
-          { folder: Just folder, codeData: Just codeData } ->
-            VSCodeApi.workspaceFsWriteFile
-              { uri:
-                  VSCodeApi.uriJoinPath
-                    { uri: folder.uri
-                    , relativePath: "definy-output/typescript/main.ts"
-                    }
-              , content: CodeGen.codeAsBinary codeData.code
-              }
-          {} -> pure unit
+        case Array.find (\codeData -> eq codeData.languageId (NonEmptyString.toString LanguageId.languageId)) codeDataList of
+          Just definyCodeData -> case Array.index workspaceFolders 0 of
+            Just folder ->
+              VSCodeApi.workspaceFsWriteFile
+                { uri:
+                    VSCodeApi.uriJoinPath
+                      { uri: folder.uri
+                      , relativePath: "definy-output/typescript/main.ts"
+                      }
+                , content: CodeGen.codeAsBinary definyCodeData.code
+                }
+            Nothing -> pure unit
+          Nothing -> pure unit
         sendError
           diagnosticCollection
           codeDataList
