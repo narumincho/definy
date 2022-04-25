@@ -8,9 +8,11 @@ import Data.Array as Array
 import Data.Either as Either
 import Data.Maybe (Maybe(..))
 import Data.Nullable as Nullable
+import Data.String as String
 import Data.String.NonEmpty as NonEmptyString
 import Data.UInt as UInt
 import Effect (Effect)
+import Effect as Effect
 import Effect.Aff as Aff
 import Effect.Uncurried as EffectUncurried
 import Markdown as Markdown
@@ -139,10 +141,10 @@ activate = do
             )
     }
   VSCodeApi.workspaceOnDidChangeTextDocument
-    (getWorkspaceTextDocumentsAndSendError workspaceFolders diagnosticCollection)
+    (getWorkspaceTextDocumentsAndSendErrorAndOutputCode workspaceFolders diagnosticCollection)
   VSCodeApi.workspaceOnDidOpenTextDocument
-    (getWorkspaceTextDocumentsAndSendError workspaceFolders diagnosticCollection)
-  getWorkspaceTextDocumentsAndSendError workspaceFolders diagnosticCollection
+    (getWorkspaceTextDocumentsAndSendErrorAndOutputCode workspaceFolders diagnosticCollection)
+  getWorkspaceTextDocumentsAndSendErrorAndOutputCode workspaceFolders diagnosticCollection
   Aff.runAff_
     ( case _ of
         Either.Left e ->
@@ -164,29 +166,52 @@ codeStringToEvaluatedTree code =
         (SimpleToken.tokenListToSimpleTokenList (Tokenize.tokenize code))
     )
 
-getWorkspaceTextDocumentsAndSendError ::
+getWorkspaceTextDocumentsAndSendErrorAndOutputCode ::
   (Array { index ∷ Int, name ∷ String, uri ∷ VSCodeApi.Uri }) ->
   VSCodeApi.DiagnosticCollection ->
   Effect Unit
-getWorkspaceTextDocumentsAndSendError workspaceFolders diagnosticCollection =
+getWorkspaceTextDocumentsAndSendErrorAndOutputCode workspaceFolders diagnosticCollection =
   VSCodeApi.workspaceTextDocuments
     ( EffectUncurried.mkEffectFn1 \codeDataList -> do
-        case Array.find (\codeData -> eq codeData.languageId (NonEmptyString.toString LanguageId.languageId)) codeDataList of
-          Just definyCodeData -> case Array.index workspaceFolders 0 of
-            Just folder ->
-              VSCodeApi.workspaceFsWriteFile
-                { uri:
-                    VSCodeApi.uriJoinPath
-                      { uri: folder.uri
-                      , relativePath: "definy-output/typescript/main.ts"
-                      }
-                , content: CodeGen.codeAsBinary definyCodeData.code
-                }
-            Nothing -> pure unit
+        case Array.find (\workspaceFolde -> eq workspaceFolde.index 0) workspaceFolders of
+          Just workspaceFolderUri ->
+            outputCode
+              workspaceFolderUri.uri
+              ( Array.mapMaybe
+                  ( \codeData ->
+                      if eq codeData.languageId (NonEmptyString.toString LanguageId.languageId) then
+                        Just { code: codeData.code, uri: codeData.uri }
+                      else
+                        Nothing
+                  )
+                  codeDataList
+              )
           Nothing -> pure unit
         sendError
           diagnosticCollection
           codeDataList
+    )
+
+outputCode :: VSCodeApi.Uri -> Array { code :: String, uri :: VSCodeApi.Uri } -> Effect Unit
+outputCode workspaceFolderUri codeDataList =
+  Effect.foreachE
+    codeDataList
+    ( \codeData -> case String.stripPrefix
+          (String.Pattern (VSCodeApi.uriToString workspaceFolderUri))
+          (VSCodeApi.uriToString codeData.uri) of
+        Just fileName ->
+          VSCodeApi.workspaceFsWriteFile
+            { uri:
+                VSCodeApi.uriJoinPath
+                  { uri: workspaceFolderUri
+                  , relativePath:
+                      append
+                        (append "definy-output/typescript/" fileName)
+                        ".ts"
+                  }
+            , content: CodeGen.codeAsBinary codeData.code
+            }
+        Nothing -> pure unit
     )
 
 sendError ::

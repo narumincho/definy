@@ -399,6 +399,14 @@ export const uriJoinPath = (option: {
   return Uri.joinPath(option.uri, option.relativePath);
 };
 
+export const uriToString = (uri: Uri): string => {
+  return uri.toString();
+};
+
+export const uriToPath = (uri: Uri): string => {
+  return uri.path;
+};
+
 export const windowShowInformationMessage = (message: string) => () => {
   window.showInformationMessage(message);
 };

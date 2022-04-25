@@ -18,6 +18,7 @@ codeAsBinary definyCode = case Map.lookup
     filePath
     ( TsToString.typeScriptModuleMapToString
         (moduleMap definyCode)
+        true
     ) of
   Just (TsToString.ModuleResult { code }) -> Binary.fromStringWriteAsUtf8 code
   Nothing -> Binary.fromStringWriteAsUtf8 "output error"
