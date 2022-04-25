@@ -10,4 +10,4 @@
 /**
  * description
  */
-export const _: number = 32.0;
+export const _: number = 32;

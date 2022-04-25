@@ -278,7 +278,7 @@ parameterListToDocument = case _ of
 -- | 式をコードに変換する
 exprToString :: Context -> Data.Expr -> String
 exprToString context = case _ of
-  Data.NumberLiteral value -> Prelude.show value
+  Data.NumberLiteral value -> Util.numberToString value
   Data.StringLiteral value -> stringLiteralValueToString value
   Data.BooleanLiteral true -> "true"
   Data.BooleanLiteral false -> "false"

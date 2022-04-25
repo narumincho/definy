@@ -10,4 +10,4 @@
 /**
  * description
  */
-export const _ = 32.0;
+export const _ = 32;
