@@ -7,6 +7,7 @@ import Prelude
 import Data.Array as Array
 import Data.Either as Either
 import Data.Maybe (Maybe(..))
+import Data.Maybe as Maybe
 import Data.Nullable as Nullable
 import Data.String as String
 import Data.String.NonEmpty as NonEmptyString
@@ -145,19 +146,6 @@ activate = do
   VSCodeApi.workspaceOnDidOpenTextDocument
     (getWorkspaceTextDocumentsAndSendErrorAndOutputCode workspaceFolders diagnosticCollection)
   getWorkspaceTextDocumentsAndSendErrorAndOutputCode workspaceFolders diagnosticCollection
-  Aff.runAff_
-    ( case _ of
-        Either.Left e ->
-          VSCodeApi.windowShowInformationMessage
-            ( append
-                "JavaScript の評価に失敗した: "
-                (show e)
-            )
-        Either.Right valueMaybe ->
-          VSCodeApi.windowShowInformationMessage
-            (show valueMaybe)
-    )
-    Import.sampleCall
 
 codeStringToEvaluatedTree :: String -> Evaluate.EvaluatedTree
 codeStringToEvaluatedTree code =
@@ -197,7 +185,15 @@ outputCode workspaceFolderUri codeDataList =
   Effect.foreachE
     codeDataList
     ( \codeData -> case String.stripPrefix
-          (String.Pattern (VSCodeApi.uriToString workspaceFolderUri))
+          ( String.Pattern
+              ( VSCodeApi.uriToString
+                  ( VSCodeApi.uriJoinPath
+                      { uri: workspaceFolderUri
+                      , relativePath: "definy-input"
+                      }
+                  )
+              )
+          )
           (VSCodeApi.uriToString codeData.uri) of
         Just fileName ->
           VSCodeApi.workspaceFsWriteFile
@@ -206,7 +202,14 @@ outputCode workspaceFolderUri codeDataList =
                   { uri: workspaceFolderUri
                   , relativePath:
                       append
-                        (append "definy-output/typescript/" fileName)
+                        ( append "definy-output/typescript/"
+                            ( Maybe.fromMaybe
+                                fileName
+                                ( String.stripSuffix (String.Pattern ".definy")
+                                    fileName
+                                )
+                            )
+                        )
                         ".ts"
                   }
             , content: CodeGen.codeAsBinary codeData.code

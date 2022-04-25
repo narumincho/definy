@@ -76,6 +76,9 @@ foreign import positionTranslateCharacter :: Int -> Position -> Position
 
 foreign import data Uri :: Type
 
+instance showUri :: Show Uri where
+  show uri = uriToString uri
+
 foreign import data Diagnostic :: Type
 
 foreign import data DiagnosticRelatedInformation :: Type
