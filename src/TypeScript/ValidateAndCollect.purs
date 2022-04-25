@@ -124,8 +124,8 @@ collectRootIdentifierInModuleMap (Data.TypeScriptModuleMap moduleMap) =
     moduleMap
 
 collectRootIdentifierInModule ::
-  Data.TypeScriptModule -> CollectData.RootIdentifierSetInModule
-collectRootIdentifierInModule (Data.TypeScriptModule { exportDefinitionList }) = collectRootIdentifierInExportDefinitionList exportDefinitionList
+  Data.Module -> CollectData.RootIdentifierSetInModule
+collectRootIdentifierInModule (Data.Module { exportDefinitionList }) = collectRootIdentifierInExportDefinitionList exportDefinitionList
 
 collectRootIdentifierInExportDefinitionList ::
   Array Data.ExportDefinition ->
@@ -169,8 +169,8 @@ exportDefinitionGetNameAndExport = case _ of
     }
 
 collectInModule ::
-  CollectData.ContextInModule -> Data.TypeScriptModule -> ValidateAndCollectResult
-collectInModule contextInModule (Data.TypeScriptModule { exportDefinitionList }) =
+  CollectData.ContextInModule -> Data.Module -> ValidateAndCollectResult
+collectInModule contextInModule (Data.Module { exportDefinitionList }) =
   concatValidateAndCollectResult
     ( Array.mapWithIndex
         ( \index ->

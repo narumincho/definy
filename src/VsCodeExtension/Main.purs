@@ -5,13 +5,14 @@ module VsCodeExtension.Main
 
 import Prelude
 import Data.Array as Array
-import Data.Either as Either
 import Data.Maybe (Maybe(..))
+import Data.Maybe as Maybe
 import Data.Nullable as Nullable
+import Data.String as String
 import Data.String.NonEmpty as NonEmptyString
 import Data.UInt as UInt
 import Effect (Effect)
-import Effect.Aff as Aff
+import Effect as Effect
 import Effect.Uncurried as EffectUncurried
 import Markdown as Markdown
 import VsCodeExtension.CodeGen as CodeGen
@@ -20,7 +21,6 @@ import VsCodeExtension.Definition as Definition
 import VsCodeExtension.Error as Error
 import VsCodeExtension.Evaluate as Evaluate
 import VsCodeExtension.Hover as Hover
-import VsCodeExtension.Import as Import
 import VsCodeExtension.LanguageId as LanguageId
 import VsCodeExtension.Parser as Parser
 import VsCodeExtension.Range as Range
@@ -139,23 +139,10 @@ activate = do
             )
     }
   VSCodeApi.workspaceOnDidChangeTextDocument
-    (getWorkspaceTextDocumentsAndSendError workspaceFolders diagnosticCollection)
+    (getWorkspaceTextDocumentsAndSendErrorAndOutputCode workspaceFolders diagnosticCollection)
   VSCodeApi.workspaceOnDidOpenTextDocument
-    (getWorkspaceTextDocumentsAndSendError workspaceFolders diagnosticCollection)
-  getWorkspaceTextDocumentsAndSendError workspaceFolders diagnosticCollection
-  Aff.runAff_
-    ( case _ of
-        Either.Left e ->
-          VSCodeApi.windowShowInformationMessage
-            ( append
-                "JavaScript の評価に失敗した: "
-                (show e)
-            )
-        Either.Right valueMaybe ->
-          VSCodeApi.windowShowInformationMessage
-            (show valueMaybe)
-    )
-    Import.sampleCall
+    (getWorkspaceTextDocumentsAndSendErrorAndOutputCode workspaceFolders diagnosticCollection)
+  getWorkspaceTextDocumentsAndSendErrorAndOutputCode workspaceFolders diagnosticCollection
 
 codeStringToEvaluatedTree :: String -> Evaluate.EvaluatedTree
 codeStringToEvaluatedTree code =
@@ -164,29 +151,82 @@ codeStringToEvaluatedTree code =
         (SimpleToken.tokenListToSimpleTokenList (Tokenize.tokenize code))
     )
 
-getWorkspaceTextDocumentsAndSendError ::
+getWorkspaceTextDocumentsAndSendErrorAndOutputCode ::
   (Array { index ∷ Int, name ∷ String, uri ∷ VSCodeApi.Uri }) ->
   VSCodeApi.DiagnosticCollection ->
   Effect Unit
-getWorkspaceTextDocumentsAndSendError workspaceFolders diagnosticCollection =
+getWorkspaceTextDocumentsAndSendErrorAndOutputCode workspaceFolders diagnosticCollection =
   VSCodeApi.workspaceTextDocuments
     ( EffectUncurried.mkEffectFn1 \codeDataList -> do
-        case Array.find (\codeData -> eq codeData.languageId (NonEmptyString.toString LanguageId.languageId)) codeDataList of
-          Just definyCodeData -> case Array.index workspaceFolders 0 of
-            Just folder ->
-              VSCodeApi.workspaceFsWriteFile
-                { uri:
-                    VSCodeApi.uriJoinPath
-                      { uri: folder.uri
-                      , relativePath: "definy-output/typescript/main.ts"
-                      }
-                , content: CodeGen.codeAsBinary definyCodeData.code
-                }
-            Nothing -> pure unit
+        case Array.find (\workspaceFolde -> eq workspaceFolde.index 0) workspaceFolders of
+          Just workspaceFolderUri ->
+            outputCode
+              workspaceFolderUri.uri
+              ( Array.mapMaybe
+                  ( \codeData ->
+                      if eq codeData.languageId (NonEmptyString.toString LanguageId.languageId) then
+                        Just { code: codeData.code, uri: codeData.uri }
+                      else
+                        Nothing
+                  )
+                  codeDataList
+              )
           Nothing -> pure unit
         sendError
           diagnosticCollection
           codeDataList
+    )
+
+outputCode :: VSCodeApi.Uri -> Array { code :: String, uri :: VSCodeApi.Uri } -> Effect Unit
+outputCode workspaceFolderUri codeDataList =
+  Effect.foreachE
+    codeDataList
+    ( \codeData -> case String.stripPrefix
+          ( String.Pattern
+              ( VSCodeApi.uriToString
+                  ( VSCodeApi.uriJoinPath
+                      { uri: workspaceFolderUri
+                      , relativePath: "definy-input"
+                      }
+                  )
+              )
+          )
+          (VSCodeApi.uriToString codeData.uri) of
+        Just fileName ->
+          let
+            fileNameWithoutExtension =
+              Maybe.fromMaybe
+                fileName
+                ( String.stripSuffix (String.Pattern ".definy")
+                    fileName
+                )
+
+            evaluatedTree = codeStringToEvaluatedTree codeData.code
+          in
+            do
+              VSCodeApi.workspaceFsWriteFile
+                { uri:
+                    VSCodeApi.uriJoinPath
+                      { uri: workspaceFolderUri
+                      , relativePath:
+                          append
+                            (append "definy-output/typescript/" fileNameWithoutExtension)
+                            ".ts"
+                      }
+                , content: CodeGen.codeAsBinary evaluatedTree true
+                }
+              VSCodeApi.workspaceFsWriteFile
+                { uri:
+                    VSCodeApi.uriJoinPath
+                      { uri: workspaceFolderUri
+                      , relativePath:
+                          append
+                            (append "definy-output/javascript/" fileNameWithoutExtension)
+                            ".js"
+                      }
+                , content: CodeGen.codeAsBinary evaluatedTree false
+                }
+        Nothing -> pure unit
     )
 
 sendError ::

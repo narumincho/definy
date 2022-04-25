@@ -14,5 +14,5 @@
     "noUncheckedIndexedAccess": true,
     "exactOptionalPropertyTypes": true
   },
-  "exclude": ["distribution"]
+  "exclude": ["distribution", "definy-output"]
 }

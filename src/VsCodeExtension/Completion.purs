@@ -49,7 +49,7 @@ simpleCompletionItemToCompletionItem (SimpleCompletionItem rec) =
     , detail: ""
     , kind: rec.kind
     , documentation: rec.documentation
-    , commitCharacters: [ " ", "(" ]
+    , commitCharacters: [ ",", "(" ]
     , insertText: ToString.noPositionTreeToString rec.insertText
     }
 

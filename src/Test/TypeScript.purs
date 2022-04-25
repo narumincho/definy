@@ -88,6 +88,7 @@ sampleCodeExpressServerAsString = case Map.lookup
                 [ sampleCodeExpressServer ]
             )
         )
+        true
     ) of
   Just (ToString.ModuleResult { code }) -> code
   Nothing -> "test module not found"
@@ -100,7 +101,7 @@ sampleCodeExpressServerModuleFilePath =
         Name.fromSymbolProxy (Proxy :: Proxy "sampleServer")
     }
 
-sampleCodeExpressServer :: Tuple.Tuple ModuleName.ModuleName Data.TypeScriptModule
+sampleCodeExpressServer :: Tuple.Tuple ModuleName.ModuleName Data.Module
 sampleCodeExpressServer =
   let
     expressRequest =
@@ -131,7 +132,7 @@ sampleCodeExpressServer =
   in
     Tuple.Tuple
       (ModuleName.Local sampleCodeExpressServerModuleFilePath)
-      ( Data.TypeScriptModule
+      ( Data.Module
           { exportDefinitionList:
               [ Data.ExportDefinitionFunction
                   ( Data.FunctionDeclaration
@@ -156,5 +157,6 @@ sampleCodeExpressServer =
                       }
                   )
               ]
+          , moduleDocument: ""
           }
       )

@@ -15,7 +15,6 @@ module TypeScript.Data
   , IfStatement(..)
   , ImportedType(..)
   , ImportedVariable(..)
-  , JavaScriptContent(..)
   , KeyValue(..)
   , LambdaExpr(..)
   , Member(..)
@@ -30,7 +29,7 @@ module TypeScript.Data
   , TypeAlias(..)
   , TypeAssertion(..)
   , TypeNameAndTypeParameter(..)
-  , TypeScriptModule(..)
+  , Module(..)
   , TypeScriptModuleMap(..)
   , UnaryOperator(..)
   , UnaryOperatorExpr(..)
@@ -46,18 +45,13 @@ import TypeScript.ModuleName as ModuleName
 
 newtype TypeScriptModuleMap
   = TypeScriptModuleMap
-  (Map.Map ModuleName.ModuleName TypeScriptModule)
+  (Map.Map ModuleName.ModuleName Module)
 
 -- | TypeScriptやJavaScriptのコードを表現する. TypeScriptでも出力できるように型情報をつける必要がある
-newtype TypeScriptModule
-  = TypeScriptModule
-  { {- 外部に公開する定義 -} exportDefinitionList :: Array ExportDefinition
-  }
-
-newtype JavaScriptContent
-  = JavaScriptContent
-  { {- 外部に公開する定義 -} exportDefinitionList :: Array ExportDefinition
-  , {- 定義した後に実行するコード -} statementList :: Array Statement
+newtype Module
+  = Module
+  { {-| モジュールの説明 -} moduleDocument :: String
+  , {- 外部に公開する定義 -} exportDefinitionList :: Array ExportDefinition
   }
 
 -- | 外部に公開する定義

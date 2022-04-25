@@ -31,6 +31,8 @@ module VsCodeExtension.VSCodeApi
   , rangeGetEnd
   , rangeGetStart
   , uriJoinPath
+  , uriToPath
+  , uriToString
   , windowShowInformationMessage
   , workspaceFsWriteFile
   , workspaceOnDidChangeTextDocument
@@ -73,6 +75,9 @@ foreign import positionGetCharacter :: Position -> UInt.UInt
 foreign import positionTranslateCharacter :: Int -> Position -> Position
 
 foreign import data Uri :: Type
+
+instance showUri :: Show Uri where
+  show uri = uriToString uri
 
 foreign import data Diagnostic :: Type
 
@@ -196,6 +201,12 @@ foreign import workspaceFsWriteFile ::
 
 foreign import uriJoinPath ::
   { uri :: Uri, relativePath :: String } -> Uri
+
+foreign import uriToString ::
+  Uri -> String
+
+foreign import uriToPath ::
+  Uri -> String
 
 foreign import windowShowInformationMessage ::
   String -> Effect.Effect Unit
