@@ -5,7 +5,6 @@ module VsCodeExtension.Main
 
 import Prelude
 import Data.Array as Array
-import Data.Either as Either
 import Data.Maybe (Maybe(..))
 import Data.Maybe as Maybe
 import Data.Nullable as Nullable
@@ -14,7 +13,6 @@ import Data.String.NonEmpty as NonEmptyString
 import Data.UInt as UInt
 import Effect (Effect)
 import Effect as Effect
-import Effect.Aff as Aff
 import Effect.Uncurried as EffectUncurried
 import Markdown as Markdown
 import VsCodeExtension.CodeGen as CodeGen
@@ -23,7 +21,6 @@ import VsCodeExtension.Definition as Definition
 import VsCodeExtension.Error as Error
 import VsCodeExtension.Evaluate as Evaluate
 import VsCodeExtension.Hover as Hover
-import VsCodeExtension.Import as Import
 import VsCodeExtension.LanguageId as LanguageId
 import VsCodeExtension.Parser as Parser
 import VsCodeExtension.Range as Range
@@ -196,24 +193,37 @@ outputCode workspaceFolderUri codeDataList =
           )
           (VSCodeApi.uriToString codeData.uri) of
         Just fileName ->
-          VSCodeApi.workspaceFsWriteFile
-            { uri:
-                VSCodeApi.uriJoinPath
-                  { uri: workspaceFolderUri
-                  , relativePath:
-                      append
-                        ( append "definy-output/typescript/"
-                            ( Maybe.fromMaybe
-                                fileName
-                                ( String.stripSuffix (String.Pattern ".definy")
-                                    fileName
-                                )
-                            )
-                        )
-                        ".ts"
-                  }
-            , content: CodeGen.codeAsBinary codeData.code
-            }
+          let
+            fileNameWithoutExtension =
+              Maybe.fromMaybe
+                fileName
+                ( String.stripSuffix (String.Pattern ".definy")
+                    fileName
+                )
+          in
+            do
+              VSCodeApi.workspaceFsWriteFile
+                { uri:
+                    VSCodeApi.uriJoinPath
+                      { uri: workspaceFolderUri
+                      , relativePath:
+                          append
+                            (append "definy-output/typescript/" fileNameWithoutExtension)
+                            ".ts"
+                      }
+                , content: CodeGen.codeAsBinary codeData.code true
+                }
+              VSCodeApi.workspaceFsWriteFile
+                { uri:
+                    VSCodeApi.uriJoinPath
+                      { uri: workspaceFolderUri
+                      , relativePath:
+                          append
+                            (append "definy-output/javascript/" fileNameWithoutExtension)
+                            ".js"
+                      }
+                , content: CodeGen.codeAsBinary codeData.code false
+                }
         Nothing -> pure unit
     )
 

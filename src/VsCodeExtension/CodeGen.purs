@@ -13,12 +13,12 @@ import TypeScript.Identifier as TsIdentifier
 import TypeScript.ModuleName as TsModuleName
 import TypeScript.ToString as TsToString
 
-codeAsBinary :: String -> Binary.Binary
-codeAsBinary definyCode = case Map.lookup
+codeAsBinary :: String -> Boolean -> Binary.Binary
+codeAsBinary definyCode outputType = case Map.lookup
     filePath
     ( TsToString.typeScriptModuleMapToString
         (moduleMap definyCode)
-        true
+        outputType
     ) of
   Just (TsToString.ModuleResult { code }) -> Binary.fromStringWriteAsUtf8 code
   Nothing -> Binary.fromStringWriteAsUtf8 "output error"
