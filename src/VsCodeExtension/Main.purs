@@ -200,6 +200,8 @@ outputCode workspaceFolderUri codeDataList =
                 ( String.stripSuffix (String.Pattern ".definy")
                     fileName
                 )
+
+            evaluatedTree = codeStringToEvaluatedTree codeData.code
           in
             do
               VSCodeApi.workspaceFsWriteFile
@@ -211,7 +213,7 @@ outputCode workspaceFolderUri codeDataList =
                             (append "definy-output/typescript/" fileNameWithoutExtension)
                             ".ts"
                       }
-                , content: CodeGen.codeAsBinary codeData.code true
+                , content: CodeGen.codeAsBinary evaluatedTree true
                 }
               VSCodeApi.workspaceFsWriteFile
                 { uri:
@@ -222,7 +224,7 @@ outputCode workspaceFolderUri codeDataList =
                             (append "definy-output/javascript/" fileNameWithoutExtension)
                             ".js"
                       }
-                , content: CodeGen.codeAsBinary codeData.code false
+                , content: CodeGen.codeAsBinary evaluatedTree false
                 }
         Nothing -> pure unit
     )
