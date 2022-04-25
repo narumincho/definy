@@ -36,7 +36,7 @@ moduleMap definyCode =
     ( Map.singleton
         ( TsModuleName.Local filePath
         )
-        ( TsData.TypeScriptModule
+        ( TsData.Module
             { exportDefinitionList:
                 [ TsData.ExportDefinitionVariable
                     ( TsData.VariableDeclaration
@@ -48,6 +48,7 @@ moduleMap definyCode =
                         }
                     )
                 ]
+            , moduleDocument: ""
             }
         )
     )
