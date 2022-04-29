@@ -90,7 +90,7 @@ generatePackageJson =
     , name: PackageJson.nameFromSymbolProxyUnsafe (Proxy :: _ "definy")
     , vsCodeVersion: NonEmptyString.nes (Proxy :: _ "^1.66.0")
     , typeFilePath: Nothing
-    , version: NonEmptyString.nes (Proxy :: _ "0.0.3")
+    , version: NonEmptyString.nes (Proxy :: _ "0.0.4")
     , activationEvents: Just [ NonEmptyString.nes (Proxy :: _ "onLanguage:definy") ]
     , contributesLanguages:
         NonEmptyArray.singleton
