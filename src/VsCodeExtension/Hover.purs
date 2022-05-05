@@ -3,6 +3,7 @@ module VsCodeExtension.Hover
   , getHoverData
   ) where
 
+import Data.Array as Array
 import Data.Maybe (Maybe(..))
 import Data.String.NonEmpty as NonEmptyString
 import Data.UInt as UInt
@@ -32,17 +33,26 @@ getHoverData position tree@(Evaluate.EvaluatedTree { item, range }) = case item 
           ( Hover
               { contents:
                   Markdown.Markdown
-                    [ Markdown.Raw hoverTree.description
-                    , Markdown.Header2 (NonEmptyString.nes (Proxy :: Proxy "Type"))
-                    , Markdown.CodeBlock
-                        (ToString.noPositionTreeToString hoverTree.type)
-                    , Markdown.Header2 (NonEmptyString.nes (Proxy :: Proxy "Value"))
-                    , Markdown.CodeBlock
-                        (ToString.noPositionTreeToString hoverTree.value)
-                    , Markdown.Header2 (NonEmptyString.nes (Proxy :: Proxy "Tree"))
-                    , Markdown.CodeBlock
-                        (ToString.noPositionTreeToString hoverTree.tree)
-                    ]
+                    ( Array.concat
+                        [ [ Markdown.Raw hoverTree.description
+                          , Markdown.Header2 (NonEmptyString.nes (Proxy :: Proxy "Type"))
+                          , Markdown.CodeBlock
+                              (ToString.noPositionTreeToString hoverTree.type)
+                          , Markdown.Header2 (NonEmptyString.nes (Proxy :: Proxy "Value"))
+                          ]
+                        , if hoverTree.valueDummy then
+                            [ Markdown.Italic (NonEmptyString.nes (Proxy :: Proxy "dummy data"))
+                            ]
+                          else
+                            []
+                        , [ Markdown.CodeBlock
+                              (ToString.noPositionTreeToString hoverTree.value)
+                          , Markdown.Header2 (NonEmptyString.nes (Proxy :: Proxy "Tree"))
+                          , Markdown.CodeBlock
+                              (ToString.noPositionTreeToString hoverTree.tree)
+                          ]
+                        ]
+                    )
               , range: targetRange
               }
           )
@@ -65,6 +75,7 @@ evaluatedItemToHoverTree ::
   } ->
   { type :: ToString.NoPositionTree
   , value :: ToString.NoPositionTree
+  , valueDummy :: Boolean
   , tree :: ToString.NoPositionTree
   , description :: String
   }
@@ -83,6 +94,7 @@ evaluatedItemToHoverTree { item, partialModule } = case item of
               , moduleBodyToNoPositionTree partList
               ]
           }
+    , valueDummy: false
     , tree:
         ToString.NoPositionTree
           { name: "Module"
@@ -104,6 +116,7 @@ evaluatedItemToHoverTree { item, partialModule } = case item of
           { name: "Description"
           , children: [ stringToNoPositionTree description ]
           }
+    , valueDummy: false
     , tree:
         ToString.NoPositionTree
           { name: "Description"
@@ -118,6 +131,7 @@ evaluatedItemToHoverTree { item, partialModule } = case item of
           , children: []
           }
     , value: moduleBodyToNoPositionTree partList
+    , valueDummy: false
     , tree: moduleBodyToNoPositionTree partList
     , description: "モジュール本体"
     }
@@ -128,41 +142,29 @@ evaluatedItemToHoverTree { item, partialModule } = case item of
           , children: []
           }
     , value: partialPartToNoPositionTree part
+    , valueDummy: false
     , tree: partialPartToNoPositionTree part
     , description: "パーツの定義"
     }
   Evaluate.Expr value ->
-    { type:
-        ToString.NoPositionTree
-          { name: "Expr"
-          , children: []
-          }
-    , value:
-        let
-          (Evaluate.EvaluateExprResult { value, dummy }) =
-            ( Evaluate.evaluateExpr
-                value
-                partialModule
-            )
-        in
+    let
+      (Evaluate.EvaluateExprResult { value: evaluatedValue, dummy }) =
+        ( Evaluate.evaluateExpr
+            value
+            partialModule
+        )
+    in
+      { type:
           ToString.NoPositionTree
-            { name: "EvaluateExprResult"
-            , children:
-                [ stringToNoPositionTree (UInt.toString value)
-                , ToString.NoPositionTree
-                    { name:
-                        if dummy then
-                          "True"
-                        else
-                          "False"
-                    , children: []
-                    }
-                ]
+            { name: "Expr"
+            , children: []
             }
-    , tree:
-        partialExprToNoPositionTree value
-    , description: partialExprToDescription partialModule value
-    }
+      , value: stringToNoPositionTree (UInt.toString evaluatedValue)
+      , valueDummy: dummy
+      , tree:
+          partialExprToNoPositionTree value
+      , description: partialExprToDescription partialModule value
+      }
   Evaluate.UIntLiteral uintLiteral ->
     { type:
         ToString.NoPositionTree
@@ -172,6 +174,7 @@ evaluatedItemToHoverTree { item, partialModule } = case item of
     , value:
         maybeToNoPositionTree
           (Prelude.map (\v -> stringToNoPositionTree (UInt.toString v)) uintLiteral)
+    , valueDummy: false
     , tree:
         maybeToNoPositionTree
           (Prelude.map (\v -> stringToNoPositionTree (UInt.toString v)) uintLiteral)
@@ -192,6 +195,7 @@ evaluatedItemToHoverTree { item, partialModule } = case item of
               )
               identifier
           )
+    , valueDummy: false
     , tree:
         maybeToNoPositionTree
           ( Prelude.map

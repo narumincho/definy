@@ -11,12 +11,14 @@ import Data.String.NonEmpty (NonEmptyString)
 import Data.String.NonEmpty as NonEmptyString
 import Data.UInt as UInt
 import Prelude as Prelude
+import Util as Util
 
 newtype Markdown
   = Markdown (Array Block)
 
 data Block
   = Paragraph NonEmptyString
+  | Italic NonEmptyString
   | Header2 NonEmptyString
   | CodeBlock String
   | Raw String
@@ -30,6 +32,11 @@ toMarkdownString (Markdown blockList) =
 blockToString :: Block -> String
 blockToString = case _ of
   Paragraph str -> escape (NonEmptyString.toString str)
+  Italic str ->
+    Util.append3
+      "*"
+      (escape (NonEmptyString.toString str))
+      "*"
   Header2 value ->
     Prelude.append "## "
       (escape (NonEmptyString.toString value))
