@@ -92,6 +92,7 @@ definyPartialExprToTypeScriptExpr = case _ of
   Just (Evaluate.ExprUIntLiteral (Just value)) ->
     TsData.NumberLiteral
       (UInt.toNumber value)
+  Just (Evaluate.ExprTextLiteral text) -> TsData.StringLiteral text
   Just (Evaluate.ExprUIntLiteral Nothing) ->
     TsData.StringLiteral
       "<unknown uint literal!!!>"

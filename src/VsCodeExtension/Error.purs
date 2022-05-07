@@ -150,4 +150,5 @@ treeTypeToString = case _ of
   Evaluate.TreeTypePart -> "Part"
   Evaluate.TreeTypeExpr -> "Expr"
   Evaluate.TreeTypeUIntLiteral -> "UIntLiteral"
+  Evaluate.TreeTypeTextLiteral -> "TextLiteral"
   Evaluate.TreeTypeIdentifier -> "Identifier"
