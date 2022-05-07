@@ -52,10 +52,10 @@ export const sample: number = ("<unknown part!!!>"+28);
 /**
  * `sampleText`を使ってみる
  */
-export const useSampleText: number = sampleText;
+export const useSampleText: unknown = sampleText;
 
 
 /**
  * サンプルテキストだ!
  */
-export const sampleText: number = "文字列をちゃんと定義できてるかな?";
+export const sampleText: string = "文字列をちゃんと定義できてるかな?";

@@ -456,6 +456,7 @@ typeToString context = case _ of
   Data.TsTypeNull -> "null"
   Data.TsTypeNever -> "never"
   Data.TsTypeVoid -> "void"
+  Data.TsTypeUnknown -> "unknown"
   Data.TsTypeObject memberList -> typeObjectToString context memberList
   Data.TsTypeFunction functionType -> functionTypeToString context functionType
   Data.TsTypeUnion typeList ->
