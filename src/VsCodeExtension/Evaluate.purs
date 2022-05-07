@@ -19,6 +19,7 @@ import Prelude
 import Data.Array as Array
 import Data.Maybe (Maybe(..))
 import Data.Maybe as Maybe
+import Data.Number as Number
 import Data.UInt as UInt
 import Definy.Identifier as Identifier
 import VsCodeExtension.Parser as Parser
@@ -56,6 +57,7 @@ data EvaluatedItem
   | UIntLiteral (Maybe UInt.UInt)
   | Identifier (Maybe Identifier.Identifier)
   | TextLiteral String
+  | Float64Literal (Maybe Number)
 
 newtype TypeMisMatch
   = TypeMisMatch { expect :: TreeType, actual :: TreeType }
@@ -81,6 +83,7 @@ evaluateItemToTreeType = case _ of
   UIntLiteral _ -> Just TreeTypeUIntLiteral
   Identifier _ -> Just TreeTypeIdentifier
   TextLiteral _ -> Just TreeTypeTextLiteral
+  Float64Literal _ -> Just TreeTypeFloat64Literal
 
 data TreeType
   = TreeTypeModule
@@ -91,6 +94,7 @@ data TreeType
   | TreeTypeUIntLiteral
   | TreeTypeIdentifier
   | TreeTypeTextLiteral
+  | TreeTypeFloat64Literal
 
 derive instance eqTreeType :: Eq TreeType
 
@@ -113,6 +117,7 @@ data PartialExpr
   | ExprPartReference { name :: Identifier.Identifier }
   | ExprPartReferenceInvalidName { name :: String }
   | ExprUIntLiteral (Maybe UInt.UInt)
+  | ExprFloat64Literal (Maybe Number)
   | ExprTextLiteral String
 
 newtype EvaluateExprResult
@@ -121,6 +126,7 @@ newtype EvaluateExprResult
 data Value
   = ValueUInt UInt.UInt
   | ValueText String
+  | ValueFloat64 Number
 
 evaluateExprResultMap2 ::
   { func :: Value -> Value -> EvaluateExprResult
@@ -157,6 +163,13 @@ evaluateExpr expr partialModule = case expr of
       uintDummy
       (map (\uintValue -> EvaluateExprResult { value: ValueUInt uintValue, dummy: false }) uintMaybe)
   ExprTextLiteral textMaybe -> EvaluateExprResult { value: ValueText textMaybe, dummy: false }
+  ExprFloat64Literal valueMaybe ->
+    Maybe.fromMaybe
+      (EvaluateExprResult { value: ValueFloat64 6.28, dummy: false })
+      ( map
+          (\uintValue -> EvaluateExprResult { value: ValueFloat64 uintValue, dummy: false })
+          valueMaybe
+      )
 
 valueAdd :: Value -> Value -> EvaluateExprResult
 valueAdd a b = case { a, b } of
@@ -193,6 +206,7 @@ codeTreeToEvaluatedTree treeType codeTree =
       Just TreeTypeDescription -> codeTreeToEvaluatedTreeInContextDescription codeTree
       Just TreeTypeUIntLiteral -> codeTreeToEvaluatedTreeInContextUIntLiteral codeTree
       Just TreeTypeTextLiteral -> codeTreeToEvaluatedTreeInContextTextLiteral codeTree
+      Just TreeTypeFloat64Literal -> codeTreeToEvaluatedTreeInContextFloat64Literal codeTree
       Just TreeTypeIdentifier -> codeTreeToEvaluatedTreeInContextIdentifier codeTree
       _ -> codeTreeToEvaluatedTreeIContextNormal codeTree
   in
@@ -297,8 +311,16 @@ codeTreeToEvaluatedTreeIContextNormal codeTree@(Parser.CodeTree { name, nameRang
       TreeTypeTextLiteral
       codeTree
       ( case _ of
-          Just (TextLiteral child) -> Expr ((ExprTextLiteral child))
-          _ -> Expr (ExprUIntLiteral Nothing)
+          Just (TextLiteral child) -> Expr (ExprTextLiteral child)
+          _ -> Expr (ExprTextLiteral "")
+      )
+  "float64" ->
+    need1Children
+      TreeTypeFloat64Literal
+      codeTree
+      ( case _ of
+          Just (Float64Literal child) -> Expr (ExprFloat64Literal child)
+          _ -> Expr (ExprFloat64Literal Nothing)
       )
   _ ->
     EvaluatedTree
@@ -342,6 +364,12 @@ codeTreeToEvaluatedTreeInContextTextLiteral codeTree@(Parser.CodeTree { name }) 
   need0Children
     codeTree
     (TextLiteral name)
+
+codeTreeToEvaluatedTreeInContextFloat64Literal :: Parser.CodeTree -> EvaluatedTree
+codeTreeToEvaluatedTreeInContextFloat64Literal codeTree@(Parser.CodeTree { name }) =
+  need0Children
+    codeTree
+    (Float64Literal (Number.fromString name))
 
 codeTreeToEvaluatedTreeInContextIdentifier :: Parser.CodeTree -> EvaluatedTree
 codeTreeToEvaluatedTreeInContextIdentifier codeTree@(Parser.CodeTree { name }) =

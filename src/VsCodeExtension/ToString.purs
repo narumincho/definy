@@ -86,6 +86,9 @@ typeDefaultValue = case _ of
   Evaluate.TreeTypeTextLiteral ->
     NoPositionTree
       { name: "sample text", children: [] }
+  Evaluate.TreeTypeFloat64Literal ->
+    NoPositionTree
+      { name: "6.28", children: [] }
   Evaluate.TreeTypeIdentifier ->
     NoPositionTree
       { name: "sample", children: [] }

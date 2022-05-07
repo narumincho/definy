@@ -11,6 +11,7 @@ import Definy.Identifier as Identifier
 import Markdown as Markdown
 import Prelude as Prelude
 import Type.Proxy (Proxy(..))
+import Util as Util
 import VsCodeExtension.Evaluate as Evaluate
 import VsCodeExtension.EvaluatedTreeIndex as EvaluatedTreeIndex
 import VsCodeExtension.Range as Range
@@ -161,6 +162,7 @@ evaluatedItemToHoverTree { item, partialModule } = case item of
                 [ case evaluatedValue of
                     Evaluate.ValueText _ -> ToString.noPositionTreeEmptyChildren "Text"
                     Evaluate.ValueUInt _ -> ToString.noPositionTreeEmptyChildren "UInt"
+                    Evaluate.ValueFloat64 _ -> ToString.noPositionTreeEmptyChildren "Float64"
                 ]
             }
       , value:
@@ -168,6 +170,7 @@ evaluatedItemToHoverTree { item, partialModule } = case item of
             ( case evaluatedValue of
                 Evaluate.ValueText text -> text
                 Evaluate.ValueUInt uintValue -> UInt.toString uintValue
+                Evaluate.ValueFloat64 f64Value -> Util.numberToString f64Value
             )
       , valueDummy: dummy
       , tree:
@@ -195,10 +198,31 @@ evaluatedItemToHoverTree { item, partialModule } = case item of
           { name: "TextLiteral"
           , children: []
           }
-    , value: ToString.noPositionTreeEmptyChildren (text)
+    , value: ToString.noPositionTreeEmptyChildren text
     , valueDummy: false
-    , tree: ToString.noPositionTreeEmptyChildren (text)
+    , tree: ToString.noPositionTreeEmptyChildren text
     , description: "テキストリテラル"
+    }
+  Evaluate.Float64Literal numberMaybe ->
+    { type:
+        ToString.NoPositionTree
+          { name: "Float64Literal"
+          , children: []
+          }
+    , value:
+        maybeToNoPositionTree
+          ( Prelude.map
+              (\num -> ToString.noPositionTreeEmptyChildren (Util.numberToString num))
+              numberMaybe
+          )
+    , valueDummy: false
+    , tree:
+        maybeToNoPositionTree
+          ( Prelude.map
+              (\num -> ToString.noPositionTreeEmptyChildren (Util.numberToString num))
+              numberMaybe
+          )
+    , description: "64bit 浮動小数点数リテラル"
     }
   Evaluate.Identifier identifier ->
     { type:
@@ -284,6 +308,14 @@ partialExprToNoPositionTree = case _ of
               (Prelude.map (\v -> ToString.noPositionTreeEmptyChildren (UInt.toString v)) uintMaybe)
           ]
       }
+  Evaluate.ExprFloat64Literal numberMaybe ->
+    ToString.NoPositionTree
+      { name: "Float64Literal"
+      , children:
+          [ maybeToNoPositionTree
+              (Prelude.map (\v -> ToString.noPositionTreeEmptyChildren (Util.numberToString v)) numberMaybe)
+          ]
+      }
   Evaluate.ExprTextLiteral text ->
     ToString.NoPositionTree
       { name: "Text"
@@ -299,6 +331,7 @@ partialExprToDescription partialModule = case _ of
     Nothing -> "不明なパーツの参照"
   Evaluate.ExprPartReferenceInvalidName _ -> "パーツの参照 識別子としてエラー"
   Evaluate.ExprUIntLiteral _ -> "自然数リテラル"
+  Evaluate.ExprFloat64Literal _ -> "64bit 浮動小数点数リテラル"
   Evaluate.ExprTextLiteral _ -> "文字列リテラル"
 
 maybeToNoPositionTree :: Maybe ToString.NoPositionTree -> ToString.NoPositionTree
