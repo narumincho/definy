@@ -47,3 +47,15 @@ export const sample = 123;
  * description
  */
 export const sample = ("<unknown part!!!>"+28);
+
+
+/**
+ * `sampleText`を使ってみる
+ */
+export const useSampleText = sampleText;
+
+
+/**
+ * サンプルテキストだ!
+ */
+export const sampleText = "文字列をちゃんと定義できてるかな?";

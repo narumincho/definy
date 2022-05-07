@@ -255,6 +255,7 @@ collectInType context tsType = case tsType of
   Data.TsTypeNull -> validateAndCollectResultEmpty
   Data.TsTypeNever -> validateAndCollectResultEmpty
   Data.TsTypeVoid -> validateAndCollectResultEmpty
+  Data.TsTypeUnknown -> validateAndCollectResultEmpty
   Data.TsTypeObject memberTypeList ->
     concatValidateAndCollectResult
       ( Prelude.map

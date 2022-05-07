@@ -90,7 +90,7 @@ evaluatedItemToHoverTree { item, partialModule } = case item of
         ToString.NoPositionTree
           { name: "Module"
           , children:
-              [ stringToNoPositionTree description
+              [ ToString.noPositionTreeEmptyChildren description
               , moduleBodyToNoPositionTree partList
               ]
           }
@@ -99,7 +99,7 @@ evaluatedItemToHoverTree { item, partialModule } = case item of
         ToString.NoPositionTree
           { name: "Module"
           , children:
-              [ stringToNoPositionTree description
+              [ ToString.noPositionTreeEmptyChildren description
               , moduleBodyToNoPositionTree partList
               ]
           }
@@ -114,13 +114,13 @@ evaluatedItemToHoverTree { item, partialModule } = case item of
     , value:
         ToString.NoPositionTree
           { name: "Description"
-          , children: [ stringToNoPositionTree description ]
+          , children: [ ToString.noPositionTreeEmptyChildren description ]
           }
     , valueDummy: false
     , tree:
         ToString.NoPositionTree
           { name: "Description"
-          , children: [ stringToNoPositionTree description ]
+          , children: [ ToString.noPositionTreeEmptyChildren description ]
           }
     , description: "なにかの説明文"
     }
@@ -157,9 +157,18 @@ evaluatedItemToHoverTree { item, partialModule } = case item of
       { type:
           ToString.NoPositionTree
             { name: "Expr"
-            , children: []
+            , children:
+                [ case evaluatedValue of
+                    Evaluate.ValueText _ -> ToString.noPositionTreeEmptyChildren "Text"
+                    Evaluate.ValueUInt _ -> ToString.noPositionTreeEmptyChildren "UInt"
+                ]
             }
-      , value: stringToNoPositionTree (UInt.toString evaluatedValue)
+      , value:
+          ToString.noPositionTreeEmptyChildren
+            ( case evaluatedValue of
+                Evaluate.ValueText text -> text
+                Evaluate.ValueUInt uintValue -> UInt.toString uintValue
+            )
       , valueDummy: dummy
       , tree:
           partialExprToNoPositionTree value
@@ -173,12 +182,23 @@ evaluatedItemToHoverTree { item, partialModule } = case item of
           }
     , value:
         maybeToNoPositionTree
-          (Prelude.map (\v -> stringToNoPositionTree (UInt.toString v)) uintLiteral)
+          (Prelude.map (\v -> ToString.noPositionTreeEmptyChildren (UInt.toString v)) uintLiteral)
     , valueDummy: false
     , tree:
         maybeToNoPositionTree
-          (Prelude.map (\v -> stringToNoPositionTree (UInt.toString v)) uintLiteral)
+          (Prelude.map (\v -> ToString.noPositionTreeEmptyChildren (UInt.toString v)) uintLiteral)
     , description: "自然数リテラル"
+    }
+  Evaluate.TextLiteral text ->
+    { type:
+        ToString.NoPositionTree
+          { name: "TextLiteral"
+          , children: []
+          }
+    , value: ToString.noPositionTreeEmptyChildren (text)
+    , valueDummy: false
+    , tree: ToString.noPositionTreeEmptyChildren (text)
+    , description: "テキストリテラル"
     }
   Evaluate.Identifier identifier ->
     { type:
@@ -190,7 +210,7 @@ evaluatedItemToHoverTree { item, partialModule } = case item of
         maybeToNoPositionTree
           ( Prelude.map
               ( \v ->
-                  stringToNoPositionTree
+                  ToString.noPositionTreeEmptyChildren
                     (Identifier.identifierToString v)
               )
               identifier
@@ -200,19 +220,12 @@ evaluatedItemToHoverTree { item, partialModule } = case item of
         maybeToNoPositionTree
           ( Prelude.map
               ( \v ->
-                  stringToNoPositionTree
+                  ToString.noPositionTreeEmptyChildren
                     (Identifier.identifierToString v)
               )
               identifier
           )
     , description: "識別子"
-    }
-
-stringToNoPositionTree :: String -> ToString.NoPositionTree
-stringToNoPositionTree str =
-  ToString.NoPositionTree
-    { name: str
-    , children: []
     }
 
 moduleBodyToNoPositionTree :: Array Evaluate.PartialPart -> ToString.NoPositionTree
@@ -237,7 +250,7 @@ partialPartToNoPositionTree (Evaluate.PartialPart { name, description, expr }) =
                 )
                 name
             )
-        , stringToNoPositionTree description
+        , ToString.noPositionTreeEmptyChildren description
         , maybeToNoPositionTree
             (Prelude.map partialExprToNoPositionTree expr)
         ]
@@ -268,8 +281,14 @@ partialExprToNoPositionTree = case _ of
       { name: "UIntLiteral"
       , children:
           [ maybeToNoPositionTree
-              (Prelude.map (\v -> stringToNoPositionTree (UInt.toString v)) uintMaybe)
+              (Prelude.map (\v -> ToString.noPositionTreeEmptyChildren (UInt.toString v)) uintMaybe)
           ]
+      }
+  Evaluate.ExprTextLiteral text ->
+    ToString.NoPositionTree
+      { name: "Text"
+      , children:
+          [ ToString.noPositionTreeEmptyChildren text ]
       }
 
 partialExprToDescription :: Evaluate.PartialModule -> Evaluate.PartialExpr -> String
@@ -280,6 +299,7 @@ partialExprToDescription partialModule = case _ of
     Nothing -> "不明なパーツの参照"
   Evaluate.ExprPartReferenceInvalidName _ -> "パーツの参照 識別子としてエラー"
   Evaluate.ExprUIntLiteral _ -> "自然数リテラル"
+  Evaluate.ExprTextLiteral _ -> "文字列リテラル"
 
 maybeToNoPositionTree :: Maybe ToString.NoPositionTree -> ToString.NoPositionTree
 maybeToNoPositionTree = case _ of

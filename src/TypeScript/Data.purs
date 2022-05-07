@@ -112,6 +112,7 @@ data TsType
   | TsTypeNull
   | TsTypeNever
   | TsTypeVoid
+  | TsTypeUnknown
   | TsTypeObject (Array TsMemberType)
   | TsTypeFunction FunctionType
   | TsTypeUnion (Array TsType)

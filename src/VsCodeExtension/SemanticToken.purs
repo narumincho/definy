@@ -9,7 +9,7 @@ import VsCodeExtension.Range as Range
 import VsCodeExtension.TokenType as TokenType
 
 evaluateTreeToTokenData :: Evaluate.EvaluatedTree -> Array TokenType.TokenData
-evaluateTreeToTokenData (Evaluate.EvaluatedTree { name, nameRange, item, children }) =
+evaluateTreeToTokenData (Evaluate.EvaluatedTree { nameRange, item, children }) =
   Array.cons
     ( TokenType.TokenData
         { length:
@@ -25,6 +25,7 @@ evaluateTreeToTokenData (Evaluate.EvaluatedTree { name, nameRange, item, childre
               Evaluate.Part _ -> TokenType.TokenTypeNamespace
               Evaluate.Expr _ -> TokenType.TokenTypeVariable
               Evaluate.UIntLiteral _ -> TokenType.TokenTypeNumber
+              Evaluate.TextLiteral _ -> TokenType.TokenTypeString
               Evaluate.Identifier _ -> TokenType.TokenTypeFunction
         }
     )

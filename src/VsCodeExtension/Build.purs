@@ -28,7 +28,7 @@ import VsCodeExtension.LanguageId as LanguageId
 
 main :: Effect.Effect Unit
 main =
-  Aff.runAff_ (Console.logValue "definy lsp build:")
+  Aff.runAff_ (Console.logValue "definy vscode extension build:")
     ( Aff.attempt
         ( Util.toParallel
             [ writePackageJsonForVsCodeExtension

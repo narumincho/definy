@@ -68,7 +68,14 @@ definyPartialPartToExportVariable (Evaluate.PartialPart partialPart) =
               Just name -> TsIdentifier.fromDefinyIdentifierEscapeReserved name
               Nothing -> TsIdentifier.fromSymbolProxyUnsafe (Proxy :: Proxy "_")
         , document: partialPart.description
-        , type: TsData.TsTypeNumber
+        , type:
+            case partialPart.expr of
+              Nothing -> TsData.TsTypeUnknown
+              Just (Evaluate.ExprAdd _) -> TsData.TsTypeNumber
+              Just (Evaluate.ExprPartReference _) -> TsData.TsTypeUnknown
+              Just (Evaluate.ExprPartReferenceInvalidName _) -> TsData.TsTypeUnknown
+              Just (Evaluate.ExprUIntLiteral _) -> TsData.TsTypeNumber
+              Just (Evaluate.ExprTextLiteral _) -> TsData.TsTypeString
         , expr: definyPartialExprToTypeScriptExpr partialPart.expr
         , export: true
         }
@@ -92,6 +99,7 @@ definyPartialExprToTypeScriptExpr = case _ of
   Just (Evaluate.ExprUIntLiteral (Just value)) ->
     TsData.NumberLiteral
       (UInt.toNumber value)
+  Just (Evaluate.ExprTextLiteral text) -> TsData.StringLiteral text
   Just (Evaluate.ExprUIntLiteral Nothing) ->
     TsData.StringLiteral
       "<unknown uint literal!!!>"

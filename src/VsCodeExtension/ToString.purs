@@ -3,6 +3,7 @@ module VsCodeExtension.ToString
   , escapeName
   , evaluatedTreeToNoPositionTree
   , evaluatedTreeToString
+  , noPositionTreeEmptyChildren
   , noPositionTreeToString
   ) where
 
@@ -22,6 +23,9 @@ import VsCodeExtension.Evaluate as Evaluate
 newtype NoPositionTree
   = NoPositionTree
   { name :: String, children :: Array NoPositionTree }
+
+noPositionTreeEmptyChildren :: String -> NoPositionTree
+noPositionTreeEmptyChildren name = NoPositionTree { name, children: [] }
 
 -- | コードのツリー構造を整形された文字列に変換する
 evaluatedTreeToString :: Evaluate.EvaluatedTree -> String
@@ -79,6 +83,9 @@ typeDefaultValue = case _ of
   Evaluate.TreeTypeUIntLiteral ->
     NoPositionTree
       { name: "28", children: [] }
+  Evaluate.TreeTypeTextLiteral ->
+    NoPositionTree
+      { name: "sample text", children: [] }
   Evaluate.TreeTypeIdentifier ->
     NoPositionTree
       { name: "sample", children: [] }
