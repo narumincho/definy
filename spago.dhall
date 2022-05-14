@@ -8,6 +8,7 @@
   , "console"
   , "effect"
   , "either"
+  , "foreign"
   , "foreign-object"
   , "functions"
   , "integers"
@@ -17,6 +18,7 @@
   , "node-fs-aff"
   , "node-process"
   , "nullable"
+  , "numbers"
   , "option"
   , "ordered-collections"
   , "parallel"
@@ -24,13 +26,12 @@
   , "record"
   , "strings"
   , "test-unit"
+  , "transformers"
   , "tuples"
   , "typelevel-lists"
   , "typelevel-peano"
   , "typelevel-prelude"
   , "uint"
-  , "foreign"
-  , "transformers"
   ]
 , packages = ./packages.dhall
 , sources = [ "src/**/*.purs" ]
