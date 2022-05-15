@@ -11,7 +11,7 @@ export type Props = Pick<
   onLogOut: UseDefinyAppResult["logOut"];
 };
 
-export const SettingPage: React.VFC<Props> = (props) => {
+export const SettingPage: React.FC<Props> = (props) => {
   return (
     <div
       className={css({

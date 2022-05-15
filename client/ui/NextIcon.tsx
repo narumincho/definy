@@ -1,6 +1,6 @@
 import * as React from "react";
 
-export const NextIcon: React.VFC<Record<string, string>> = React.memo(() => (
+export const NextIcon: React.FC<Record<string, string>> = React.memo(() => (
   <svg
     width="24"
     height="24"

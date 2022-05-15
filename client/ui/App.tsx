@@ -22,7 +22,7 @@ export type Props = {
 
 const titleItemList: ReadonlyArray<TitleItem> = [];
 
-export const App: React.VFC<Props> = ({ useDefinyAppResult }) => {
+export const App: React.FC<Props> = ({ useDefinyAppResult }) => {
   switch (useDefinyAppResult.logInState._) {
     case "RequestingLogInUrl": {
       return (
@@ -82,7 +82,7 @@ export const App: React.VFC<Props> = ({ useDefinyAppResult }) => {
     </div>
   );
 };
-const PrepareLogIn: React.VFC<{ message: string }> = (props) => (
+const PrepareLogIn: React.FC<{ message: string }> = (props) => (
   <div
     className={css({
       height: "100%",
@@ -120,7 +120,7 @@ const jumpMessage = (language: d.Language): string => {
   }
 };
 
-const LoadingBox: React.VFC<{ message: string }> = (props) => (
+const LoadingBox: React.FC<{ message: string }> = (props) => (
   <div
     className={css({
       display: "grid",
@@ -161,7 +161,7 @@ const rotateAnimation = keyframes`
 /**
  * Header を含まない部分
  */
-const AppMain: React.VFC<Props> = (props) => {
+const AppMain: React.FC<Props> = (props) => {
   const useDefinyAppResult = props.useDefinyAppResult;
   switch (useDefinyAppResult.location._) {
     case "Home":

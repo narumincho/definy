@@ -103,7 +103,7 @@ const SumSelectionView: ElementOperation<
 });
 SumSelectionView.displayName = "SumSelectionView";
 
-const TagItem: React.VFC<{
+const TagItem: React.FC<{
   index: number;
   isSelect: boolean;
   sumTagItem: SumTagItem;

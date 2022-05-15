@@ -432,7 +432,7 @@ NestProduct.args = { language: d.Language.Japanese };
 
 const valueList = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"];
 
-const SumComponent: React.VFC<Record<string, string>> = () => {
+const SumComponent = (): React.ReactElement => {
   const [selectedIndex, setSelectedIndex] = React.useState<number>(0);
   return (
     <Editor

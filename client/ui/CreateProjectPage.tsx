@@ -10,7 +10,7 @@ export type Props = {
   createProjectState: CreateProjectState;
 };
 
-export const CreateProjectPage: React.VFC<Props> = (props) => {
+export const CreateProjectPage: React.FC<Props> = (props) => {
   const { text, element } = useOneLineTextEditor({
     id: "project-name",
     initText: "",

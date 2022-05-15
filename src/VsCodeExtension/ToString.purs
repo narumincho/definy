@@ -4,6 +4,7 @@ module VsCodeExtension.ToString
   , evaluatedTreeToNoPositionTree
   , evaluatedTreeToString
   , noPositionTreeEmptyChildren
+  , noPositionTreeRootToString
   , noPositionTreeToString
   ) where
 
@@ -29,7 +30,9 @@ noPositionTreeEmptyChildren name = NoPositionTree { name, children: [] }
 
 -- | コードのツリー構造を整形された文字列に変換する
 evaluatedTreeToString :: Evaluate.EvaluatedTree -> String
-evaluatedTreeToString codeTree = noPositionTreeToString (evaluatedTreeToNoPositionTree codeTree)
+evaluatedTreeToString codeTree =
+  noPositionTreeRootToString
+    (evaluatedTreeToNoPositionTree codeTree)
 
 evaluatedTreeToNoPositionTree :: Evaluate.EvaluatedTree -> NoPositionTree
 evaluatedTreeToNoPositionTree (Evaluate.EvaluatedTree { name, children, expectedChildrenTypeMaybe }) =
@@ -86,12 +89,15 @@ typeDefaultValue = case _ of
   Evaluate.TreeTypeTextLiteral ->
     NoPositionTree
       { name: "sample text", children: [] }
+  Evaluate.TreeTypeFloat64Literal ->
+    NoPositionTree
+      { name: "6.28", children: [] }
   Evaluate.TreeTypeIdentifier ->
     NoPositionTree
       { name: "sample", children: [] }
 
-noPositionTreeToString :: NoPositionTree -> String
-noPositionTreeToString (NoPositionTree { name, children }) =
+noPositionTreeRootToString :: NoPositionTree -> String
+noPositionTreeRootToString (NoPositionTree { name, children }) =
   String.joinWith ""
     [ name
     , if Array.null children then
@@ -113,6 +119,12 @@ noPositionTreeToString (NoPositionTree { name, children }) =
           ]
     , "\n"
     ]
+
+noPositionTreeToString :: NoPositionTree -> String
+noPositionTreeToString tree =
+  evaluatedTreeToStringLoop
+    (UInt.fromInt 0)
+    tree
 
 evaluatedTreeToStringLoop :: UInt.UInt -> NoPositionTree -> String
 evaluatedTreeToStringLoop indent noPositionTree@(NoPositionTree { name, children }) =

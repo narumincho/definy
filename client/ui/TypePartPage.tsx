@@ -33,7 +33,7 @@ export type Props = Pick<
   onJump: UseDefinyAppResult["jump"];
 };
 
-export const TypePartPage: React.VFC<Props> = (props) => {
+export const TypePartPage = (props: Props): React.ReactElement => {
   React.useEffect(() => {
     props.typePartResource.forciblyRequestToServer(props.typePartId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -76,8 +76,8 @@ export const TypePartPage: React.VFC<Props> = (props) => {
   );
 };
 
-const LoadedTypePartEditor: React.VFC<
-  Pick<
+const LoadedTypePartEditor = (
+  props: Pick<
     UseDefinyAppResult,
     | "accountResource"
     | "projectResource"
@@ -92,7 +92,7 @@ const LoadedTypePartEditor: React.VFC<
     typePart: d.TypePart;
     getTime: d.Time;
   }
-> = (props) => {
+): React.ReactElement => {
   const saveTypePart = props.saveTypePart;
   const [name, setName] = React.useState<string>(props.typePart.name);
   const [description, setDescription] = React.useState<string>(

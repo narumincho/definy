@@ -18,5 +18,6 @@ module(
     part(sample, description, add(28, uint(28))),
     part(useSampleText, "`sampleText`を使ってみる", sampleText),
     part(sampleText, "サンプルテキストだ!", text("文字列をちゃんと定義できてるかな?")),
+    part(sampleFloat64Value, "浮動小数点数リテラルを導入したぞ!", float64("32.324")),
   ),
 )

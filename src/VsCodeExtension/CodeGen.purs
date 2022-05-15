@@ -76,6 +76,7 @@ definyPartialPartToExportVariable (Evaluate.PartialPart partialPart) =
               Just (Evaluate.ExprPartReferenceInvalidName _) -> TsData.TsTypeUnknown
               Just (Evaluate.ExprUIntLiteral _) -> TsData.TsTypeNumber
               Just (Evaluate.ExprTextLiteral _) -> TsData.TsTypeString
+              Just (Evaluate.ExprFloat64Literal _) -> TsData.TsTypeNumber
         , expr: definyPartialExprToTypeScriptExpr partialPart.expr
         , export: true
         }
@@ -99,7 +100,9 @@ definyPartialExprToTypeScriptExpr = case _ of
   Just (Evaluate.ExprUIntLiteral (Just value)) ->
     TsData.NumberLiteral
       (UInt.toNumber value)
-  Just (Evaluate.ExprTextLiteral text) -> TsData.StringLiteral text
   Just (Evaluate.ExprUIntLiteral Nothing) ->
     TsData.StringLiteral
       "<unknown uint literal!!!>"
+  Just (Evaluate.ExprTextLiteral text) -> TsData.StringLiteral text
+  Just (Evaluate.ExprFloat64Literal (Just value)) -> TsData.NumberLiteral value
+  Just (Evaluate.ExprFloat64Literal Nothing) -> TsData.StringLiteral "<unknown float64 literal!!!>"

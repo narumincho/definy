@@ -1,6 +1,6 @@
 import * as React from "react";
-import * as ReactDom from "react-dom";
 import { App } from "./ui/App";
+import { createRoot } from "react-dom/client";
 import { useDefinyApp } from "./hook/useDefinyApp";
 
 export const AppWithState = (): React.ReactElement => {
@@ -14,9 +14,9 @@ entryElement.style.height = "100%";
 entryElement.style.overflow = "hidden";
 document.body.textContent = "";
 document.body.appendChild(entryElement);
-ReactDom.render(
+const root = createRoot(entryElement);
+root.render(
   <React.StrictMode>
     <AppWithState />
-  </React.StrictMode>,
-  entryElement
+  </React.StrictMode>
 );

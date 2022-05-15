@@ -32,7 +32,7 @@ export type Props = Pick<
   readonly onJump: UseDefinyAppResult["jump"];
 };
 
-export const ProjectPage: React.VFC<Props> = (props) => {
+export const ProjectPage: React.FC<Props> = (props) => {
   const addTypePart = props.addTypePart;
   const addTypePartInProject = React.useCallback(
     (): void => addTypePart(props.projectId),

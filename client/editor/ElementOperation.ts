@@ -48,7 +48,7 @@ export type ElementOperation<Selection, Value> = {
   /**
    * 左側の選択の木構造のコンポーネント
    */
-  readonly selectionView: React.VFC<{
+  readonly selectionView: React.FC<{
     readonly selection: Selection | undefined;
     readonly value: Value;
     readonly onChangeSelection: (selection: Selection) => void;
@@ -57,7 +57,7 @@ export type ElementOperation<Selection, Value> = {
   /**
    * 右側に表示される詳細コンポーネント
    */
-  readonly detailView: React.VFC<{
+  readonly detailView: React.FC<{
     readonly value: Value;
     readonly selection: Selection | undefined;
   }>;

@@ -16,7 +16,7 @@ export type Props = Pick<UseDefinyAppResult, "projectResource" | "language"> & {
   readonly onJump: UseDefinyAppResult["jump"];
 };
 
-export const ProjectCard: React.VFC<Props> = React.memo((props) => {
+export const ProjectCard: React.FC<Props> = React.memo((props) => {
   React.useEffect(() => {
     props.projectResource.requestToServerIfEmpty(props.projectId);
   }, [props.projectId, props.projectResource]);

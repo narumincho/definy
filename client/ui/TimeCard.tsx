@@ -14,7 +14,7 @@ const timeToDate = (time: d.Time): Date => {
 /**
  * 日付を表示する. タイムゾーンを内部で考慮する
  */
-export const TimeCard: React.VFC<Props> = React.memo((props) => {
+export const TimeCard = React.memo((props: Props): React.ReactElement => {
   const date = timeToDate(props.time);
   return (
     <div
@@ -30,7 +30,7 @@ export const TimeCard: React.VFC<Props> = React.memo((props) => {
 });
 TimeCard.displayName = "TimeCard";
 
-export const TimeDetail: React.VFC<Props> = React.memo((props) => {
+export const TimeDetail = React.memo((props: Props): React.ReactElement => {
   const date = timeToDate(props.time);
   return (
     <div

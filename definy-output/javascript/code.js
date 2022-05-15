@@ -59,3 +59,9 @@ export const useSampleText = sampleText;
  * サンプルテキストだ!
  */
 export const sampleText = "文字列をちゃんと定義できてるかな?";
+
+
+/**
+ * 浮動小数点数リテラルを導入したぞ!
+ */
+export const sampleFloat64Value = float64;

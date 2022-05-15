@@ -19,7 +19,7 @@ export type Props = Pick<
   titleItemList: ReadonlyArray<TitleItem>;
 };
 
-export const Header: React.VFC<Props> = React.memo((props) => {
+export const Header: React.FC<Props> = React.memo((props) => {
   return (
     <div
       className={css({
@@ -82,7 +82,7 @@ export const Header: React.VFC<Props> = React.memo((props) => {
 });
 Header.displayName = "Header";
 
-const UserViewOrLogInButton: React.VFC<
+const UserViewOrLogInButton: React.FC<
   Pick<UseDefinyAppResult, "logInState" | "language" | "accountResource"> & {
     onJump: UseDefinyAppResult["jump"];
     onLogInButtonClick: () => void;
@@ -143,7 +143,7 @@ const userViewOrLogInButtonStyle: CSSObject = {
   alignSelf: "center",
 };
 
-const SettingLink: React.VFC<{
+const SettingLink: React.FC<{
   account: d.Account;
   language: d.Language;
   onJump: (urlData: d.LocationAndLanguage) => void;
@@ -174,7 +174,7 @@ const SettingLink: React.VFC<{
   </Link>
 );
 
-const LogInButtonList: React.VFC<{
+const LogInButtonList: React.FC<{
   readonly language: d.Language;
   readonly onLogInButtonClick: () => void;
 }> = React.memo((props) => (
@@ -195,7 +195,7 @@ const LogInButtonList: React.VFC<{
 ));
 LogInButtonList.displayName = "LogInButtonList";
 
-const GoogleLogInButton: React.VFC<{
+const GoogleLogInButton: React.FC<{
   language: d.Language;
   onLogInButtonClick: () => void;
 }> = React.memo((props) => (
@@ -230,7 +230,7 @@ const GoogleLogInButton: React.VFC<{
 ));
 GoogleLogInButton.displayName = "GoogleLogInButton";
 
-const GoogleIcon: React.VFC<Record<string, string>> = React.memo(() => (
+const GoogleIcon: React.FC<Record<string, string>> = React.memo(() => (
   <svg
     viewBox="0 0 20 20"
     className={css({

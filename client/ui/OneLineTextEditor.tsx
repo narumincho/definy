@@ -39,7 +39,7 @@ export const useOneLineTextEditor = (option: {
  *
  * 文字の変更を検知しないなら, `useOneLineTextEditor` を使うと良い
  */
-export const OneLineTextEditor: React.VFC<{
+export const OneLineTextEditor: React.FC<{
   value: string;
   onChange: ((value: string) => void) | undefined;
   id: string;

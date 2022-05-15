@@ -21,7 +21,7 @@ export type Props = Pick<
   onJump: UseDefinyAppResult["jump"];
 };
 
-export const HomePage: React.VFC<Props> = (props) => {
+export const HomePage: React.FC<Props> = (props) => {
   React.useEffect(() => {
     props.requestTop50Project();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -56,7 +56,7 @@ export const HomePage: React.VFC<Props> = (props) => {
   );
 };
 
-const HomeLinkList: React.VFC<{
+const HomeLinkList: React.FC<{
   language: d.Language;
   jumpHandler: (urlData: d.LocationAndLanguage) => void;
 }> = (props) => {
@@ -107,7 +107,7 @@ const HomeLinkList: React.VFC<{
   );
 };
 
-const TopProjectList: React.VFC<
+const TopProjectList: React.FC<
   Pick<
     UseDefinyAppResult,
     | "topProjectsLoadingState"
@@ -216,7 +216,7 @@ const projectIdToListItem =
     );
   };
 
-const CreateProjectButton: React.VFC<{
+const CreateProjectButton: React.FC<{
   language: d.Language;
   onJump: (urlData: d.LocationAndLanguage) => void;
 }> = (props) => (
