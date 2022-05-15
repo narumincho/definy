@@ -16,7 +16,7 @@ export type Props = Pick<
   readonly onJump: UseDefinyAppResult["jump"];
 };
 
-export const AccountPage: React.VFC<Props> = (props) => {
+export const AccountPage: React.FC<Props> = (props) => {
   React.useEffect(() => {
     props.accountResource.forciblyRequestToServer(props.accountId);
     // eslint-disable-next-line react-hooks/exhaustive-deps

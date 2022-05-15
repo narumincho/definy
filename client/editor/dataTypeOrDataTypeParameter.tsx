@@ -174,60 +174,68 @@ const getTypeArgumentSelection = (
   return typeSelection.typeSelection;
 };
 
-const TypeArgument: React.VFC<{
-  index: number;
-  selection: TypeArgumentSelection;
-  name: string;
-  value: DataTypeOrDataTypeParameterValue;
-  onChangeSelection: (
-    typeSelection: DataTypeOrDataTypeParameterSelection
-  ) => void;
-}> = React.memo(({ index, selection, value, name, onChangeSelection }) => {
-  const onChangeArgumentSelection = React.useCallback(
-    (typeSelection: DataTypeOrDataTypeParameterSelection) => {
-      onChangeSelection({ index, typeSelection });
-    },
-    [index, onChangeSelection]
-  );
-  const onFocus = React.useCallback(
-    (event: React.FocusEvent<HTMLDivElement>) => {
-      event.preventDefault();
-      event.stopPropagation();
-      onChangeSelection({ index, typeSelection: undefined });
-    },
-    [index, onChangeSelection]
-  );
+const TypeArgument = React.memo(
+  ({
+    index,
+    selection,
+    value,
+    name,
+    onChangeSelection,
+  }: {
+    readonly index: number;
+    readonly selection: TypeArgumentSelection;
+    readonly name: string;
+    readonly value: DataTypeOrDataTypeParameterValue;
+    readonly onChangeSelection: (
+      typeSelection: DataTypeOrDataTypeParameterSelection
+    ) => void;
+  }): React.ReactElement => {
+    const onChangeArgumentSelection = React.useCallback(
+      (typeSelection: DataTypeOrDataTypeParameterSelection) => {
+        onChangeSelection({ index, typeSelection });
+      },
+      [index, onChangeSelection]
+    );
+    const onFocus = React.useCallback(
+      (event: React.FocusEvent<HTMLDivElement>) => {
+        event.preventDefault();
+        event.stopPropagation();
+        onChangeSelection({ index, typeSelection: undefined });
+      },
+      [index, onChangeSelection]
+    );
 
-  return (
-    <div
-      className={css({
-        borderStyle: "solid",
-        borderColor: selection === "self" ? "red" : "#333",
-        borderWidth: 2,
-        padding: 4,
-        display: "flex",
-        gap: 8,
-      })}
-      tabIndex={0}
-      onFocus={onFocus}
-    >
+    return (
       <div
         className={css({
-          fontSize: 14,
+          borderStyle: "solid",
+          borderColor: selection === "self" ? "red" : "#333",
+          borderWidth: 2,
+          padding: 4,
+          display: "flex",
+          gap: 8,
         })}
+        tabIndex={0}
+        onFocus={onFocus}
       >
-        {name}:
+        <div
+          className={css({
+            fontSize: 14,
+          })}
+        >
+          {name}:
+        </div>
+        <DataTypeSelectionView
+          value={value}
+          selection={
+            selection !== "self" && selection !== "none" ? selection : undefined
+          }
+          onChangeSelection={onChangeArgumentSelection}
+        />
       </div>
-      <DataTypeSelectionView
-        value={value}
-        selection={
-          selection !== "self" && selection !== "none" ? selection : undefined
-        }
-        onChangeSelection={onChangeArgumentSelection}
-      />
-    </div>
-  );
-});
+    );
+  }
+);
 TypeArgument.displayName = "TypeArgument";
 
 const DataTypeDetailView: ElementOperation<
@@ -370,109 +378,119 @@ const setTypePartAtSelectionDataType = (
   });
 };
 
-const SelectedType: React.VFC<
-  Pick<UseDefinyAppResult, "typePartResource" | "jump" | "language"> & {
-    readonly dataTypeOrDataTypeParameter: d.DataTypeOrDataTypeParameter;
-    readonly scopeTypePartId: d.TypePartId;
-  }
-> = React.memo((props) => {
-  const result = getTypePartNameFromDataTypeOrDataTypeParameter(
-    props.dataTypeOrDataTypeParameter,
-    props.typePartResource,
-    props.scopeTypePartId
-  );
-  switch (props.dataTypeOrDataTypeParameter._) {
-    case "DataType":
-      return (
-        <div>
-          <div className={css({ padding: 8 })}>{result.name} を選択中</div>
-          <Link
-            onJump={props.jump}
-            locationAndLanguage={{
-              language: props.language,
-              location: d.Location.TypePart(
-                props.dataTypeOrDataTypeParameter.dataType.typePartId
-              ),
-            }}
-            style={{ padding: 8 }}
-          >
-            {result.name}のページ
-          </Link>
-        </div>
-      );
-    case "DataTypeParameter":
-      return (
-        <div>
-          <div className={css({ padding: 8 })}>{result.name} を選択中</div>
-        </div>
-      );
-  }
-});
-SelectedType.displayName = "SelectedType";
-
-const SearchResult: React.VFC<
-  Pick<UseDefinyAppResult, "language" | "typePartResource" | "jump"> & {
-    readonly typePartIdListInProject:
-      | d.ResourceState<ReadonlyArray<d.TypePartId>>
-      | undefined;
-    /** 前後の空白を取り除き, 小文字に変換しておく必要がある */
-    readonly normalizedSearchText: string;
-    readonly selectedDataType: d.DataType | undefined;
-    readonly onChange: (t: d.DataTypeOrDataTypeParameter) => void;
-  }
-> = React.memo((props) => {
-  if (props.typePartIdListInProject === undefined) {
-    return <div>プロジェクトに属している型パーツを取得準備中</div>;
-  }
-  switch (props.typePartIdListInProject._) {
-    case "Unknown":
-      return <div>取得に失敗した</div>;
-    case "Deleted":
-      return <div>不明なプロジェクトのため取得に失敗した</div>;
-    case "Requesting":
-      return <div>取得中</div>;
-    case "Loaded": {
-      const typePartList = generateTypeSuggestion(
-        props.typePartIdListInProject.dataWithTime.data,
-        props.typePartResource.getFromMemoryCache,
-        props.normalizedSearchText
-      );
-
-      return (
-        <div>
-          {typePartList.slice(0, 20).map((item) => (
-            <DataTypeItem
-              key={item.typePartId}
-              jump={props.jump}
-              language={props.language}
-              name={item.name}
-              onChange={() => {
-                props.onChange(
-                  d.DataTypeOrDataTypeParameter.DataType({
-                    typePartId: item.typePartId,
-                    arguments: new Array<d.DataTypeOrDataTypeParameter>(
-                      item.typeParameterCount
-                    ).fill(
-                      d.DataTypeOrDataTypeParameter.DataType({
-                        arguments: [],
-                        typePartId: d.Int32.typePartId,
-                      })
-                    ),
-                  })
-                );
+const SelectedType = React.memo(
+  (
+    props: Pick<
+      UseDefinyAppResult,
+      "typePartResource" | "jump" | "language"
+    > & {
+      readonly dataTypeOrDataTypeParameter: d.DataTypeOrDataTypeParameter;
+      readonly scopeTypePartId: d.TypePartId;
+    }
+  ): React.ReactElement => {
+    const result = getTypePartNameFromDataTypeOrDataTypeParameter(
+      props.dataTypeOrDataTypeParameter,
+      props.typePartResource,
+      props.scopeTypePartId
+    );
+    switch (props.dataTypeOrDataTypeParameter._) {
+      case "DataType":
+        return (
+          <div>
+            <div className={css({ padding: 8 })}>{result.name} を選択中</div>
+            <Link
+              onJump={props.jump}
+              locationAndLanguage={{
+                language: props.language,
+                location: d.Location.TypePart(
+                  props.dataTypeOrDataTypeParameter.dataType.typePartId
+                ),
               }}
-              typeParameterCount={item.typeParameterCount}
-              typePartId={item.typePartId}
-              isSelected={
-                props.selectedDataType?.typePartId === item.typePartId
-              }
-            />
-          ))}
-        </div>
-      );
+              style={{ padding: 8 }}
+            >
+              {result.name}のページ
+            </Link>
+          </div>
+        );
+      case "DataTypeParameter":
+        return (
+          <div>
+            <div className={css({ padding: 8 })}>{result.name} を選択中</div>
+          </div>
+        );
     }
   }
-});
+);
+SelectedType.displayName = "SelectedType";
+
+const SearchResult = React.memo(
+  (
+    props: Pick<
+      UseDefinyAppResult,
+      "language" | "typePartResource" | "jump"
+    > & {
+      readonly typePartIdListInProject:
+        | d.ResourceState<ReadonlyArray<d.TypePartId>>
+        | undefined;
+      /** 前後の空白を取り除き, 小文字に変換しておく必要がある */
+      readonly normalizedSearchText: string;
+      readonly selectedDataType: d.DataType | undefined;
+      readonly onChange: (t: d.DataTypeOrDataTypeParameter) => void;
+    }
+  ): React.ReactElement => {
+    if (props.typePartIdListInProject === undefined) {
+      return <div>プロジェクトに属している型パーツを取得準備中</div>;
+    }
+    switch (props.typePartIdListInProject._) {
+      case "Unknown":
+        return <div>取得に失敗した</div>;
+      case "Deleted":
+        return <div>不明なプロジェクトのため取得に失敗した</div>;
+      case "Requesting":
+        return <div>取得中</div>;
+      case "Loaded": {
+        const typePartList = generateTypeSuggestion(
+          props.typePartIdListInProject.dataWithTime.data,
+          props.typePartResource.getFromMemoryCache,
+          props.normalizedSearchText
+        );
+
+        return (
+          <div>
+            {typePartList.slice(0, 20).map((item) => (
+              <DataTypeItem
+                key={item.typePartId}
+                jump={props.jump}
+                language={props.language}
+                name={item.name}
+                onChange={() => {
+                  props.onChange(
+                    d.DataTypeOrDataTypeParameter.DataType({
+                      typePartId: item.typePartId,
+                      arguments: new Array<d.DataTypeOrDataTypeParameter>(
+                        item.typeParameterCount
+                      ).fill(
+                        d.DataTypeOrDataTypeParameter.DataType({
+                          arguments: [],
+                          typePartId: d.Int32.typePartId,
+                        })
+                      ),
+                    })
+                  );
+                }}
+                typeParameterCount={item.typeParameterCount}
+                typePartId={item.typePartId}
+                isSelected={
+                  props.selectedDataType?.typePartId === item.typePartId
+                }
+              />
+            ))}
+          </div>
+        );
+      }
+    }
+  }
+);
 SearchResult.displayName = "SearchResult";
 
 type SuggestionText = {
@@ -550,111 +568,124 @@ const generateTypeSuggestion = (
 /**
  * 型を選択するボタン, ボタンの右に詳細ページへ移動するリンクがある
  */
-const DataTypeItem: React.VFC<
-  Pick<UseDefinyAppResult, "jump" | "language"> & {
-    typePartId: d.TypePartId;
-    name: ReadonlyArray<SuggestionText>;
-    typeParameterCount: number;
-    onChange: () => void;
-    isSelected: boolean;
-  }
-> = React.memo(({ typePartId, name, jump, language, isSelected, onChange }) => {
-  return (
-    <div
-      className={css({
-        display: "grid",
-        gridTemplateColumns: "1fr auto",
-        border: isSelected ? "solid 2px red" : "solid 2px transparent",
-      })}
-    >
-      <Button onClick={onChange}>
-        {name.map((suggestionText, index) => (
-          <span
-            key={index}
+const DataTypeItem = React.memo(
+  ({
+    typePartId,
+    name,
+    jump,
+    language,
+    isSelected,
+    onChange,
+  }: Pick<UseDefinyAppResult, "jump" | "language"> & {
+    readonly typePartId: d.TypePartId;
+    readonly name: ReadonlyArray<SuggestionText>;
+    readonly typeParameterCount: number;
+    readonly onChange: () => void;
+    readonly isSelected: boolean;
+  }): React.ReactElement => {
+    return (
+      <div
+        className={css({
+          display: "grid",
+          gridTemplateColumns: "1fr auto",
+          border: isSelected ? "solid 2px red" : "solid 2px transparent",
+        })}
+      >
+        <Button onClick={onChange}>
+          {name.map((suggestionText, index) => (
+            <span
+              key={index}
+              className={css({
+                fontWeight: suggestionText.isEmphasis ? "bold" : "normal",
+                color: suggestionText.isEmphasis ? "#f0932b" : "inherit",
+              })}
+            >
+              {suggestionText.text}
+            </span>
+          ))}
+        </Button>
+        <Link
+          onJump={jump}
+          locationAndLanguage={{
+            language,
+            location: d.Location.TypePart(typePartId),
+          }}
+          style={{
+            display: "grid",
+            placeItems: "center",
+          }}
+        >
+          <div
             className={css({
-              fontWeight: suggestionText.isEmphasis ? "bold" : "normal",
-              color: suggestionText.isEmphasis ? "#f0932b" : "inherit",
+              padding: 4,
             })}
           >
-            {suggestionText.text}
-          </span>
-        ))}
-      </Button>
-      <Link
-        onJump={jump}
-        locationAndLanguage={{
-          language,
-          location: d.Location.TypePart(typePartId),
-        }}
-        style={{
-          display: "grid",
-          placeItems: "center",
-        }}
-      >
-        <div
-          className={css({
-            padding: 4,
-          })}
-        >
-          →
-        </div>
-      </Link>
-    </div>
-  );
-});
+            →
+          </div>
+        </Link>
+      </div>
+    );
+  }
+);
 DataTypeItem.displayName = "DataTypeItem";
 
-const DataTypeParameterList: React.VFC<
-  Pick<UseDefinyAppResult, "typePartResource"> & {
-    readonly typePartId: d.TypePartId;
-    readonly onChange: (t: number) => void;
-    readonly selectedIndex: number | undefined;
-  }
-> = React.memo((props) => {
-  const typePartResource = props.typePartResource.getFromMemoryCache(
-    props.typePartId
-  );
-  if (typePartResource === undefined) {
-    return <div>型の情報の取得待ち</div>;
-  }
-  switch (typePartResource._) {
-    case "Deleted":
-    case "Unknown":
-    case "Requesting":
-      return <div>...</div>;
-    case "Loaded": {
-      const data = typePartResource.dataWithTime.data;
-      if (data.dataTypeParameterList.length === 0) {
-        return <div>型パラメータはない</div>;
+const DataTypeParameterList = React.memo(
+  (
+    props: Pick<UseDefinyAppResult, "typePartResource"> & {
+      readonly typePartId: d.TypePartId;
+      readonly onChange: (t: number) => void;
+      readonly selectedIndex: number | undefined;
+    }
+  ): React.ReactElement => {
+    const typePartResource = props.typePartResource.getFromMemoryCache(
+      props.typePartId
+    );
+    if (typePartResource === undefined) {
+      return <div>型の情報の取得待ち</div>;
+    }
+    switch (typePartResource._) {
+      case "Deleted":
+      case "Unknown":
+      case "Requesting":
+        return <div>...</div>;
+      case "Loaded": {
+        const data = typePartResource.dataWithTime.data;
+        if (data.dataTypeParameterList.length === 0) {
+          return <div>型パラメータはない</div>;
+        }
+        return (
+          <div>
+            <div>型パラメータから</div>
+            {data.dataTypeParameterList.map((p, index) => (
+              <DataTypeParameterItem
+                key={index}
+                name={[{ text: p.name, isEmphasis: false }]}
+                onChange={() => {
+                  props.onChange(index);
+                }}
+                isSelected={index === props.selectedIndex}
+              />
+            ))}
+          </div>
+        );
       }
-      return (
-        <div>
-          <div>型パラメータから</div>
-          {data.dataTypeParameterList.map((p, index) => (
-            <DataTypeParameterItem
-              key={index}
-              name={[{ text: p.name, isEmphasis: false }]}
-              onChange={() => {
-                props.onChange(index);
-              }}
-              isSelected={index === props.selectedIndex}
-            />
-          ))}
-        </div>
-      );
     }
   }
-});
+);
 DataTypeParameterList.displayName = "DataTypeParameterList";
 
 /**
  * 型を選択するボタン, ボタンの右に詳細ページへ移動するリンクがある
  */
-const DataTypeParameterItem: React.VFC<{
+const DataTypeParameterItem = ({
+  isSelected,
+  onChange,
+  name,
+}: {
   readonly name: ReadonlyArray<SuggestionText>;
   readonly onChange: () => void;
   readonly isSelected: boolean;
-}> = ({ isSelected, onChange, name }) => {
+}): React.ReactElement => {
   return (
     <div
       className={css({

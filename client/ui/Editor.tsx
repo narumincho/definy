@@ -14,7 +14,7 @@ export type Props = {
 /**
  * 要素の操作対象を選ぶ, SelectionView, 選択した対象を操作する DetailView を内包する
  */
-export const Editor: React.VFC<Props> = React.memo((props: Props) => {
+export const Editor: React.FC<Props> = React.memo((props: Props) => {
   const [selection, setSelection] = React.useState<ProductSelection>({
     tag: "head",
     selection: undefined,

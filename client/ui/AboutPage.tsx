@@ -7,7 +7,7 @@ export type Props = {
   language: d.Language;
 };
 
-export const AboutPage: React.VFC<Props> = (props) => {
+export const AboutPage: React.FC<Props> = (props) => {
   return (
     <div
       className={css({
@@ -64,7 +64,7 @@ const versionMessage = (language: d.Language): string => {
   }
 };
 
-const GitHubRepositoryLink: React.VFC<{
+const GitHubRepositoryLink: React.FC<{
   githubAccountName: string;
   repoName: string;
 }> = (props) => (
@@ -98,7 +98,7 @@ const GitHubRepositoryLink: React.VFC<{
 /**
  * GitHubのアイコン
  */
-export const GitHubIcon: React.VFC<{
+export const GitHubIcon: React.FC<{
   color: string;
   width: number;
   height: number;

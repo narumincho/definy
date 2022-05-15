@@ -106,7 +106,7 @@ const MultiLineTextEditorReadonly = (props: {
   );
 };
 
-const MultiLineTextEditorCanEdit: React.VFC<{
+const MultiLineTextEditorCanEdit: React.FC<{
   onChange: (text: string) => void;
   value: string;
 }> = ({ value, onChange }) => {

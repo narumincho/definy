@@ -362,7 +362,7 @@ const getContentItemSelection = (
 
 type ItemSelection = "none" | "self" | CommonSelection;
 
-const HeadItemView: React.VFC<{
+const HeadItemView: React.FC<{
   readonly onSelect: (selection: OneLineTextSelection | undefined) => void;
   readonly name: string;
   readonly textValue: OneLineTextValue;
@@ -421,7 +421,7 @@ const HeadItemView: React.VFC<{
 });
 HeadItemView.displayName = "HeadItemView";
 
-const ItemView: React.VFC<{
+const ItemView: React.FC<{
   readonly onSelect: (selection: CommonSelection | undefined) => void;
   readonly name: string;
   readonly value: CommonValue;

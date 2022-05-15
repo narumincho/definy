@@ -189,7 +189,7 @@ const getListItemSelection = (
 
 type ListItemSelection = CommonSelection | "none" | "self";
 
-const SelectionItem: React.VFC<{
+const SelectionItem: React.FC<{
   index: number;
   onChangeSelection: (listSelection: ListSelection) => void;
   selection: ListItemSelection;

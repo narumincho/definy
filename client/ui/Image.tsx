@@ -3,7 +3,7 @@ import * as d from "../../localData";
 import { CSSObject, css } from "@emotion/css";
 import { pngFilePath } from "../../common/url";
 
-export const Image: React.VFC<{
+export const Image: React.FC<{
   imageHash: d.ImageHash;
   alt: string;
   width: number;
@@ -26,7 +26,7 @@ export const Image: React.VFC<{
 });
 Image.displayName = "Image";
 
-export const ImageSkeleton: React.VFC<{
+export const ImageSkeleton: React.FC<{
   width: number;
   height: number;
 }> = React.memo((props) => {
