@@ -48,9 +48,6 @@ getHoverData position tree@(Evaluate.EvaluatedTree { item, range }) = case item 
                             []
                         , [ Markdown.CodeBlock
                               (ToString.noPositionTreeToString hoverTree.value)
-                          , Markdown.Header2 (NonEmptyString.nes (Proxy :: Proxy "Tree"))
-                          , Markdown.CodeBlock
-                              (ToString.noPositionTreeToString hoverTree.tree)
                           ]
                         ]
                     )
@@ -77,7 +74,6 @@ evaluatedItemToHoverTree ::
   { type :: ToString.NoPositionTree
   , value :: ToString.NoPositionTree
   , valueDummy :: Boolean
-  , tree :: ToString.NoPositionTree
   , description :: String
   }
 evaluatedItemToHoverTree { item, partialModule } = case item of
@@ -96,14 +92,6 @@ evaluatedItemToHoverTree { item, partialModule } = case item of
               ]
           }
     , valueDummy: false
-    , tree:
-        ToString.NoPositionTree
-          { name: "Module"
-          , children:
-              [ ToString.noPositionTreeEmptyChildren description
-              , moduleBodyToNoPositionTree partList
-              ]
-          }
     , description: "モジュール"
     }
   Evaluate.Description description ->
@@ -118,11 +106,6 @@ evaluatedItemToHoverTree { item, partialModule } = case item of
           , children: [ ToString.noPositionTreeEmptyChildren description ]
           }
     , valueDummy: false
-    , tree:
-        ToString.NoPositionTree
-          { name: "Description"
-          , children: [ ToString.noPositionTreeEmptyChildren description ]
-          }
     , description: "なにかの説明文"
     }
   Evaluate.ModuleBody partList ->
@@ -133,7 +116,6 @@ evaluatedItemToHoverTree { item, partialModule } = case item of
           }
     , value: moduleBodyToNoPositionTree partList
     , valueDummy: false
-    , tree: moduleBodyToNoPositionTree partList
     , description: "モジュール本体"
     }
   Evaluate.Part part ->
@@ -144,7 +126,6 @@ evaluatedItemToHoverTree { item, partialModule } = case item of
           }
     , value: partialPartToNoPositionTree part
     , valueDummy: false
-    , tree: partialPartToNoPositionTree part
     , description: "パーツの定義"
     }
   Evaluate.Expr value ->
@@ -173,8 +154,6 @@ evaluatedItemToHoverTree { item, partialModule } = case item of
                 Evaluate.ValueFloat64 f64Value -> Util.numberToString f64Value
             )
       , valueDummy: dummy
-      , tree:
-          partialExprToNoPositionTree value
       , description: partialExprToDescription partialModule value
       }
   Evaluate.UIntLiteral uintLiteral ->
@@ -187,9 +166,6 @@ evaluatedItemToHoverTree { item, partialModule } = case item of
         maybeToNoPositionTree
           (Prelude.map (\v -> ToString.noPositionTreeEmptyChildren (UInt.toString v)) uintLiteral)
     , valueDummy: false
-    , tree:
-        maybeToNoPositionTree
-          (Prelude.map (\v -> ToString.noPositionTreeEmptyChildren (UInt.toString v)) uintLiteral)
     , description: "自然数リテラル"
     }
   Evaluate.TextLiteral text ->
@@ -200,7 +176,6 @@ evaluatedItemToHoverTree { item, partialModule } = case item of
           }
     , value: ToString.noPositionTreeEmptyChildren text
     , valueDummy: false
-    , tree: ToString.noPositionTreeEmptyChildren text
     , description: "テキストリテラル"
     }
   Evaluate.Float64Literal numberMaybe ->
@@ -216,12 +191,6 @@ evaluatedItemToHoverTree { item, partialModule } = case item of
               numberMaybe
           )
     , valueDummy: false
-    , tree:
-        maybeToNoPositionTree
-          ( Prelude.map
-              (\num -> ToString.noPositionTreeEmptyChildren (Util.numberToString num))
-              numberMaybe
-          )
     , description: "64bit 浮動小数点数リテラル"
     }
   Evaluate.Identifier identifier ->
@@ -240,15 +209,6 @@ evaluatedItemToHoverTree { item, partialModule } = case item of
               identifier
           )
     , valueDummy: false
-    , tree:
-        maybeToNoPositionTree
-          ( Prelude.map
-              ( \v ->
-                  ToString.noPositionTreeEmptyChildren
-                    (Identifier.identifierToString v)
-              )
-              identifier
-          )
     , description: "識別子"
     }
 
