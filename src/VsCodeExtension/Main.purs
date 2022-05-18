@@ -285,13 +285,16 @@ tokenDataListToDataList tokenDataList =
     )
     .result
 
-evaluatedTreeToDiagnosticList :: VSCodeApi.Uri -> Evaluate.EvaluatedTree -> Array VSCodeApi.Diagnostic
+evaluatedTreeToDiagnosticList ::
+  VSCodeApi.Uri ->
+  Evaluate.EvaluatedTree ->
+  Array VSCodeApi.Diagnostic
 evaluatedTreeToDiagnosticList uri tree =
   map
     ( \(Error.ErrorWithRange { error, range }) ->
         VSCodeApi.newDiagnostic
           (rangeToVsCodeRange range)
-          (Error.errorToString error)
+          (NonEmptyString.toString (Error.errorToString error))
           ( case error of
               Error.SuperfluousParameter { name, nameRange } ->
                 [ VSCodeApi.newDiagnosticRelatedInformation

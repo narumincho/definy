@@ -352,3 +352,28 @@ completionTest = do
         NonEmptyString.nes
           (Proxy :: Proxy "func(paramA, ${1:paramB(${2:bChild})}, ${3:paramC})")
     }
+  assertEqual
+    "quote"
+    { actual:
+        Completion.insertTextTreeToString
+          ( Completion.InsertTextTree
+              { name: NonEmptyString.nes (Proxy :: Proxy "func")
+              , focus: false
+              , children:
+                  [ Completion.InsertTextTree
+                      { name: NonEmptyString.nes (Proxy :: Proxy "sample description")
+                      , children: []
+                      , focus: true
+                      }
+                  , Completion.InsertTextTree
+                      { name: NonEmptyString.nes (Proxy :: Proxy "param")
+                      , children: []
+                      , focus: true
+                      }
+                  ]
+              }
+          )
+    , expected:
+        NonEmptyString.nes
+          (Proxy :: Proxy "func(\"${1:sample description}\", ${2:param})")
+    }

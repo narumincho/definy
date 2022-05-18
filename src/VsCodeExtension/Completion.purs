@@ -43,7 +43,7 @@ newtype SimpleCompletionItem
   , description :: String
   , kind :: CompletionItemKind
   , documentation :: Markdown.Markdown
-  , insertText :: ToString.NoPositionTree
+  , insertText :: InsertTextTree
   }
 
 simpleCompletionItemToCompletionItem :: SimpleCompletionItem -> CompletionItem
@@ -55,7 +55,9 @@ simpleCompletionItemToCompletionItem (SimpleCompletionItem rec) =
     , kind: rec.kind
     , documentation: rec.documentation
     , commitCharacters: [ ",", "(" ]
-    , insertText: ToString.noPositionTreeToString rec.insertText
+    , insertText:
+        NonEmptyString.toString
+          (insertTextTreeToString (setRootFocusFalse rec.insertText))
     }
 
 getCompletionList ::
@@ -91,9 +93,10 @@ getSimpleCompletionList { tree, position } = case EvaluatedTreeIndex.getEvaluate
                       Markdown.Markdown
                         [ Markdown.Raw description ]
                   , insertText:
-                      ToString.NoPositionTree
-                        { name: Identifier.identifierToString name
-                        , children: snippetPlaceholderListToNoPositionTree []
+                      InsertTextTree
+                        { name: Identifier.identifierToNonEmptyString name
+                        , focus: false
+                        , children: []
                         }
                   }
             )
@@ -113,11 +116,17 @@ moduleCompletionItem =
               )
           ]
     , insertText:
-        ToString.NoPositionTree
-          { name: "module"
+        InsertTextTree
+          { name: NonEmptyString.nes (Proxy :: Proxy "module")
+          , focus: false
           , children:
-              snippetPlaceholderListToNoPositionTree
-                [ "description", "body" ]
+              [ InsertTextTree
+                  { name: NonEmptyString.nes (Proxy :: Proxy "module description")
+                  , focus: false
+                  , children: []
+                  }
+              , bodyInsertText
+              ]
           }
     }
 
@@ -130,16 +139,9 @@ bodyCompletionItem =
     , documentation:
         Markdown.Markdown
           [ Markdown.Paragraph
-              ( NonEmptyString.nes (Proxy :: Proxy "複数のパーツを合わせたまとまり")
-              )
+              (NonEmptyString.nes (Proxy :: Proxy "複数のパーツを合わせたまとまり"))
           ]
-    , insertText:
-        ToString.NoPositionTree
-          { name: "body"
-          , children:
-              snippetPlaceholderListToNoPositionTree
-                [ "part" ]
-          }
+    , insertText: bodyInsertText
     }
 
 partCompletionItem :: SimpleCompletionItem
@@ -155,11 +157,22 @@ partCompletionItem =
               )
           ]
     , insertText:
-        ToString.NoPositionTree
-          { name: "part"
+        InsertTextTree
+          { name: NonEmptyString.nes (Proxy :: Proxy "part")
+          , focus: false
           , children:
-              snippetPlaceholderListToNoPositionTree
-                [ "partName", "description", "expr" ]
+              [ InsertTextTree
+                  { name: NonEmptyString.nes (Proxy :: Proxy "partName")
+                  , focus: false
+                  , children: []
+                  }
+              , InsertTextTree
+                  { name: NonEmptyString.nes (Proxy :: Proxy "part description")
+                  , focus: false
+                  , children: []
+                  }
+              , exprInsertText
+              ]
           }
     }
 
@@ -175,13 +188,7 @@ addCompletionItem =
               ( NonEmptyString.nes (Proxy :: Proxy "足し算")
               )
           ]
-    , insertText:
-        ToString.NoPositionTree
-          { name: "add"
-          , children:
-              snippetPlaceholderListToNoPositionTree
-                [ "expr", "expr" ]
-          }
+    , insertText: exprInsertText
     }
 
 uintCompletionItem :: SimpleCompletionItem
@@ -196,13 +203,63 @@ uintCompletionItem =
               ( NonEmptyString.nes (Proxy :: Proxy "自然数リテラル")
               )
           ]
-    , insertText:
-        ToString.NoPositionTree
-          { name: "uint"
-          , children:
-              snippetPlaceholderListToNoPositionTree
-                [ "literal" ]
-          }
+    , insertText: setRootFocusFalse exprInsertText
+    }
+
+bodyInsertText :: InsertTextTree
+bodyInsertText =
+  InsertTextTree
+    { name: NonEmptyString.nes (Proxy :: Proxy "body")
+    , focus: true
+    , children:
+        [ partInsertText
+        , partInsertText
+        ]
+    }
+
+partInsertText :: InsertTextTree
+partInsertText =
+  InsertTextTree
+    { name: NonEmptyString.nes (Proxy :: Proxy "part")
+    , focus: true
+    , children:
+        [ InsertTextTree
+            { name: NonEmptyString.nes (Proxy :: Proxy "partName")
+            , focus: true
+            , children: []
+            }
+        , InsertTextTree
+            { name: NonEmptyString.nes (Proxy :: Proxy "part description")
+            , focus: true
+            , children: []
+            }
+        , exprInsertText
+        ]
+    }
+
+exprInsertText :: InsertTextTree
+exprInsertText =
+  InsertTextTree
+    { name: NonEmptyString.nes (Proxy :: Proxy "add")
+    , focus: true
+    , children:
+        [ uintInsertText
+        , uintInsertText
+        ]
+    }
+
+uintInsertText :: InsertTextTree
+uintInsertText =
+  InsertTextTree
+    { name: NonEmptyString.nes (Proxy :: Proxy "uint")
+    , focus: true
+    , children:
+        [ InsertTextTree
+            { name: NonEmptyString.nes (Proxy :: Proxy "28")
+            , focus: true
+            , children: []
+            }
+        ]
     }
 
 getPartNameListInTree ::
@@ -221,32 +278,15 @@ getPartNameListInTree (Evaluate.EvaluatedTree { item }) = case item of
       partList
   _ -> []
 
-snippetPlaceholderListToNoPositionTree :: Array String -> Array ToString.NoPositionTree
-snippetPlaceholderListToNoPositionTree placeholderList =
-  Array.mapWithIndex
-    ( \index placeholder ->
-        ToString.NoPositionTree
-          { name:
-              Prelude.append "$"
-                ( String.joinWith ""
-                    [ "{"
-                    , Prelude.show (Prelude.add index 1)
-                    , ":"
-                    , placeholder
-                    , "}"
-                    ]
-                )
-          , children: []
-          }
-    )
-    placeholderList
-
 triggerCharacters :: Array String
 triggerCharacters = [ " ", "(", ")" ]
 
 newtype InsertTextTree
   = InsertTextTree
   { name :: NonEmptyString, children :: Array InsertTextTree, focus :: Boolean }
+
+setRootFocusFalse :: InsertTextTree -> InsertTextTree
+setRootFocusFalse (InsertTextTree rec) = InsertTextTree (rec { focus = false })
 
 insertTextTreeToString :: InsertTextTree -> NonEmptyString
 insertTextTreeToString tree = (insertTextTreeToStringLoop (UInt.fromInt 0) tree).text
@@ -275,25 +315,35 @@ insertTextTreeToStringLoop index (InsertTextTree { name, children, focus }) =
           children
       )
 
-    content :: NonEmptyString
-    content =
-      NonEmptyString.appendString
-        name
-        ( if Array.null result.textList then
-            ""
+    text :: NonEmptyString
+    text = case ToString.isSafeName (NonEmptyString.toString name) of
+      Just safeName ->
+        let
+          content =
+            NonEmptyString.appendString
+              safeName
+              ( if Array.null result.textList then
+                  ""
+                else
+                  String.joinWith ""
+                    [ "("
+                    , NonEmptyString.joinWith ", " result.textList
+                    , ")"
+                    ]
+              )
+        in
+          if focus then
+            snippetPlaceholderToString index content
           else
-            String.joinWith ""
-              [ "("
-              , NonEmptyString.joinWith ", " result.textList
-              , ")"
-              ]
-        )
-  in
-    { text:
+            content
+      Nothing ->
         if focus then
-          snippetPlaceholderToString index content
+          ToString.quoteString
+            (NonEmptyString.toString (snippetPlaceholderToString index name))
         else
-          content
+          ToString.quoteString (NonEmptyString.toString name)
+  in
+    { text: text
     , nextIndex: result.nextIndex
     }
 

@@ -8,8 +8,11 @@ module VsCodeExtension.Error
 import Data.Array as Array
 import Data.Maybe (Maybe(..))
 import Data.String as String
+import Data.String.NonEmpty (NonEmptyString)
+import Data.String.NonEmpty as NonEmptyString
 import Data.UInt as UInt
 import Prelude as Prelude
+import Type.Proxy (Proxy(..))
 import VsCodeExtension.Evaluate as Evaluate
 import VsCodeExtension.Range as Range
 import VsCodeExtension.ToString as ToString
@@ -107,49 +110,61 @@ data Error
   | TypeMisMatchError Evaluate.TypeMisMatch
   | InvalidIdentifier String
 
-errorToString :: Error -> String
+errorToString :: Error -> NonEmptyString
 errorToString = case _ of
-  InvalidPartName name -> Prelude.append (ToString.escapeName name) "は不正なパーツ名です"
+  InvalidPartName name ->
+    NonEmptyString.appendString
+      (ToString.escapeName name)
+      "は不正なパーツ名です"
   NeedParameter rec ->
-    String.joinWith
-      ""
-      [ ToString.escapeName rec.name
-      , "には"
-      , UInt.toString rec.expect
-      , "個のパラメーターが必要ですが"
-      , UInt.toString rec.actual
-      , "個のパラメーターしか渡されませんでした. あと残り"
-      , UInt.toString (Prelude.sub rec.expect rec.actual)
-      , "個のパラメーターが必要です"
-      ]
+    NonEmptyString.appendString
+      (ToString.escapeName rec.name)
+      ( String.joinWith
+          ""
+          [ "には"
+          , UInt.toString rec.expect
+          , "個のパラメーターが必要ですが"
+          , UInt.toString rec.actual
+          , "個のパラメーターしか渡されませんでした. あと残り"
+          , UInt.toString (Prelude.sub rec.expect rec.actual)
+          , "個のパラメーターが必要です"
+          ]
+      )
   SuperfluousParameter rec ->
-    String.joinWith ""
-      [ "このパラメーターは余計です. "
-      , ToString.escapeName rec.name
-      , "には"
-      , UInt.toString rec.expect
-      , "個のパラメーターがあれば充分です"
-      ]
+    NonEmptyString.appendString
+      (NonEmptyString.nes (Proxy :: Proxy "このパラメーターは余計です. "))
+      ( String.joinWith
+          ""
+          [ ""
+          , NonEmptyString.toString (ToString.escapeName rec.name)
+          , "には"
+          , UInt.toString rec.expect
+          , "個のパラメーターがあれば充分です"
+          ]
+      )
   UIntParseError name ->
-    Prelude.append
+    NonEmptyString.appendString
       (ToString.escapeName name)
       "はUInt としてパースできませんでした"
   TypeMisMatchError (Evaluate.TypeMisMatch { actual, expect }) ->
-    String.joinWith ""
-      [ treeTypeToString expect, "を期待したが", treeTypeToString actual, "が渡された" ]
+    NonEmptyString.appendString
+      (treeTypeToString expect)
+      ( String.joinWith ""
+          [ "を期待したが", NonEmptyString.toString (treeTypeToString actual), "が渡された" ]
+      )
   InvalidIdentifier name ->
-    Prelude.append
+    NonEmptyString.appendString
       (ToString.escapeName name)
       "は識別子として不正です. 識別子は 正規表現 ^[a-z][a-zA-Z0-9]{0,63}$ を満たさす必要があります"
 
-treeTypeToString :: Evaluate.TreeType -> String
+treeTypeToString :: Evaluate.TreeType -> NonEmptyString
 treeTypeToString = case _ of
-  Evaluate.TreeTypeModule -> "Module"
-  Evaluate.TreeTypeDescription -> "Description"
-  Evaluate.TreeTypeModuleBody -> "ModuleBody"
-  Evaluate.TreeTypePart -> "Part"
-  Evaluate.TreeTypeExpr -> "Expr"
-  Evaluate.TreeTypeUIntLiteral -> "UIntLiteral"
-  Evaluate.TreeTypeTextLiteral -> "TextLiteral"
-  Evaluate.TreeTypeFloat64Literal -> "Float64Literal"
-  Evaluate.TreeTypeIdentifier -> "Identifier"
+  Evaluate.TreeTypeModule -> NonEmptyString.nes (Proxy :: Proxy "Module")
+  Evaluate.TreeTypeDescription -> NonEmptyString.nes (Proxy :: Proxy "Description")
+  Evaluate.TreeTypeModuleBody -> NonEmptyString.nes (Proxy :: Proxy "ModuleBody")
+  Evaluate.TreeTypePart -> NonEmptyString.nes (Proxy :: Proxy "Part")
+  Evaluate.TreeTypeExpr -> NonEmptyString.nes (Proxy :: Proxy "Expr")
+  Evaluate.TreeTypeUIntLiteral -> NonEmptyString.nes (Proxy :: Proxy "UIntLiteral")
+  Evaluate.TreeTypeTextLiteral -> NonEmptyString.nes (Proxy :: Proxy "TextLiteral")
+  Evaluate.TreeTypeFloat64Literal -> NonEmptyString.nes (Proxy :: Proxy "Float64Literal")
+  Evaluate.TreeTypeIdentifier -> NonEmptyString.nes (Proxy :: Proxy "Identifier")
