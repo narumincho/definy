@@ -1,22 +1,26 @@
 module VsCodeExtension.Completion
   ( CompletionItem(..)
   , CompletionItemKind(..)
+  , InsertTextTree(..)
   , getCompletionList
+  , insertTextTreeToString
   , triggerCharacters
   ) where
 
 import Data.Array as Array
 import Data.Maybe (Maybe(..))
 import Data.String as String
+import Data.String.NonEmpty (NonEmptyString)
 import Data.String.NonEmpty as NonEmptyString
+import Data.UInt as UInt
 import Definy.Identifier as Identifier
 import Markdown as Markdown
 import Prelude as Prelude
 import Type.Proxy (Proxy(..))
 import VsCodeExtension.Evaluate as Evaluate
+import VsCodeExtension.EvaluatedTreeIndex as EvaluatedTreeIndex
 import VsCodeExtension.Range as Range
 import VsCodeExtension.ToString as ToString
-import VsCodeExtension.EvaluatedTreeIndex as EvaluatedTreeIndex
 
 newtype CompletionItem
   = CompletionItem
@@ -239,3 +243,69 @@ snippetPlaceholderListToNoPositionTree placeholderList =
 
 triggerCharacters :: Array String
 triggerCharacters = [ " ", "(", ")" ]
+
+newtype InsertTextTree
+  = InsertTextTree
+  { name :: NonEmptyString, children :: Array InsertTextTree, focus :: Boolean }
+
+insertTextTreeToString :: InsertTextTree -> NonEmptyString
+insertTextTreeToString tree = (insertTextTreeToStringLoop (UInt.fromInt 0) tree).text
+
+insertTextTreeToStringLoop ::
+  UInt.UInt ->
+  InsertTextTree ->
+  { text :: NonEmptyString, nextIndex :: UInt.UInt }
+insertTextTreeToStringLoop index (InsertTextTree { name, children, focus }) =
+  let
+    result :: { textList :: Array NonEmptyString, nextIndex :: UInt.UInt }
+    result =
+      ( Array.foldl
+          ( \{ textList, nextIndex } tree ->
+              let
+                r = insertTextTreeToStringLoop nextIndex tree
+              in
+                { textList: Array.snoc textList r.text
+                , nextIndex: r.nextIndex
+                }
+          )
+          { textList: []
+          , nextIndex:
+              if focus then Prelude.add index (UInt.fromInt 1) else index
+          }
+          children
+      )
+
+    content :: NonEmptyString
+    content =
+      NonEmptyString.appendString
+        name
+        ( if Array.null result.textList then
+            ""
+          else
+            String.joinWith ""
+              [ "("
+              , NonEmptyString.joinWith ", " result.textList
+              , ")"
+              ]
+        )
+  in
+    { text:
+        if focus then
+          snippetPlaceholderToString index content
+        else
+          content
+    , nextIndex: result.nextIndex
+    }
+
+snippetPlaceholderToString :: UInt.UInt -> NonEmptyString -> NonEmptyString
+snippetPlaceholderToString index placeholder =
+  NonEmptyString.appendString
+    (NonEmptyString.nes (Proxy :: Proxy "$"))
+    ( String.joinWith ""
+        [ "{"
+        , UInt.toString (Prelude.add index (UInt.fromInt 1))
+        , ":"
+        , NonEmptyString.toString placeholder
+        , "}"
+        ]
+    )
