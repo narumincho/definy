@@ -35,6 +35,7 @@ main =
             , buildExtensionMain
             , writeLanguageConfiguration
             , copyIcon
+            , copyReadMe
             ]
         )
     )
@@ -88,9 +89,9 @@ generatePackageJson =
                 ]
           }
     , name: PackageJson.nameFromSymbolProxyUnsafe (Proxy :: _ "definy")
-    , vsCodeVersion: NonEmptyString.nes (Proxy :: _ "^1.66.0")
+    , vsCodeVersion: NonEmptyString.nes (Proxy :: _ "^1.67.0")
     , typeFilePath: Nothing
-    , version: NonEmptyString.nes (Proxy :: _ "0.0.4")
+    , version: NonEmptyString.nes (Proxy :: _ "0.0.5")
     , activationEvents: Just [ NonEmptyString.nes (Proxy :: _ "onLanguage:definy") ]
     , contributesLanguages:
         NonEmptyArray.singleton
@@ -186,3 +187,18 @@ copyIcon =
     )
     iconDistributionPath
     (Just FileType.Png)
+
+copyReadMe :: Aff.Aff Unit
+copyReadMe =
+  FileSystemCopy.copyFileToDistribution
+    ( Path.FilePath
+        { directoryPath: Path.DirectoryPath []
+        , fileName: Name.fromSymbolProxy (Proxy :: _ "definyVSCodeExtension")
+        }
+    )
+    ( Path.DistributionFilePath
+        { directoryPath: distributionDirectoryPath
+        , fileName: Name.fromSymbolProxy (Proxy :: _ "README")
+        }
+    )
+    (Just FileType.Markdown)

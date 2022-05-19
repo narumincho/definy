@@ -3,9 +3,11 @@ module VsCodeExtension.ToString
   , escapeName
   , evaluatedTreeToNoPositionTree
   , evaluatedTreeToString
+  , isSafeName
   , noPositionTreeEmptyChildren
   , noPositionTreeRootToString
   , noPositionTreeToString
+  , quoteString
   ) where
 
 import Prelude
@@ -14,9 +16,12 @@ import Data.Either as Either
 import Data.Maybe (Maybe(..))
 import Data.Ord as Ord
 import Data.String as String
+import Data.String.NonEmpty (NonEmptyString)
+import Data.String.NonEmpty as NonEmptyString
 import Data.String.Regex as Regex
 import Data.String.Regex.Flags as RegexFlags
 import Data.UInt as UInt
+import Type.Proxy (Proxy(..))
 import Util as Util
 import VsCodeExtension.Evaluate as Evaluate
 
@@ -140,7 +145,7 @@ evaluatedTreeToStringLoop indent noPositionTree@(NoPositionTree { name, children
     else
       String.joinWith ""
         [ indentCountToIndentString indent
-        , escapeName name
+        , NonEmptyString.toString (escapeName name)
         , if Array.null children then
             ""
           else
@@ -174,7 +179,7 @@ calculateStringWidth str = UInt.fromInt (String.length str)
 evaluatedTreeToOneLineStringLoop :: NoPositionTree -> String
 evaluatedTreeToOneLineStringLoop (NoPositionTree { name, children }) =
   append
-    (escapeName name)
+    (NonEmptyString.toString (escapeName name))
     ( case map evaluatedTreeToOneLineStringLoop children of
         [] -> ""
         list ->
@@ -184,14 +189,25 @@ evaluatedTreeToOneLineStringLoop (NoPositionTree { name, children }) =
     )
 
 -- | シンプルな文字列 (`^[a-zA-Z0-9-]{1,}$` を満たす) 以外を "" で囲む
-escapeName :: String -> String
-escapeName name = case safePatternEither of
-  Either.Right safePattern ->
-    if (Regex.test safePattern name) then
-      name
-    else
-      Util.append3 "\"" name "\""
-  Either.Left _ -> Util.append3 "\"" name "\""
+escapeName :: String -> NonEmptyString
+escapeName name = case isSafeName name of
+  Just safeName -> safeName
+  Nothing -> quoteString name
 
 safePatternEither :: Either.Either String Regex.Regex
 safePatternEither = Regex.regex "^[a-zA-Z0-9-]{1,}$" RegexFlags.unicode
+
+isSafeName :: String -> Maybe NonEmptyString
+isSafeName name = case safePatternEither of
+  Either.Right safePattern ->
+    if (Regex.test safePattern name) then
+      NonEmptyString.fromString name
+    else
+      Nothing
+  Either.Left _ -> Nothing
+
+quoteString :: String -> NonEmptyString
+quoteString str =
+  NonEmptyString.appendString
+    (NonEmptyString.nes (Proxy :: Proxy "\""))
+    (append str "\"")

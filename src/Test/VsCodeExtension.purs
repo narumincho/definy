@@ -3,9 +3,12 @@ module Test.VsCodeExtension
   ) where
 
 import Prelude
+import Data.String.NonEmpty as NonEmptyString
 import Data.UInt as UInt
 import Test.Unit as TestUnit
 import Test.Util (assertEqual)
+import Type.Proxy (Proxy(..))
+import VsCodeExtension.Completion as Completion
 import VsCodeExtension.Parser as Parser
 import VsCodeExtension.Range as Range
 import VsCodeExtension.SimpleToken as SimpleToken
@@ -17,6 +20,7 @@ test = do
   simpleTokenTest
   parserTest
   rangeTest
+  completionTest
 
 tokenizeTest :: TestUnit.Test
 tokenizeTest = do
@@ -244,4 +248,132 @@ rangeTest = do
           (rangeFrom 1 0 1 28)
           (Range.Position { line: UInt.fromInt 1, character: UInt.fromInt 29 })
     , expected: false
+    }
+
+completionTest :: TestUnit.Test
+completionTest = do
+  assertEqual
+    "insertTextTreeToString empty"
+    { actual:
+        Completion.insertTextTreeToString
+          ( Completion.InsertTextTree
+              { name: NonEmptyString.nes (Proxy :: Proxy "sampleText")
+              , children: []
+              , focus: false
+              }
+          )
+    , expected: NonEmptyString.nes (Proxy :: Proxy "sampleText")
+    }
+  assertEqual
+    "insertTextTreeToString func(paramA)"
+    { actual:
+        Completion.insertTextTreeToString
+          ( Completion.InsertTextTree
+              { name: NonEmptyString.nes (Proxy :: Proxy "func")
+              , children:
+                  [ Completion.InsertTextTree
+                      { name: NonEmptyString.nes (Proxy :: Proxy "paramA")
+                      , children: []
+                      , focus: false
+                      }
+                  ]
+              , focus: false
+              }
+          )
+    , expected: NonEmptyString.nes (Proxy :: Proxy "func(paramA)")
+    }
+  assertEqual
+    "insertTextTreeToString tree"
+    { actual:
+        Completion.insertTextTreeToString
+          ( Completion.InsertTextTree
+              { name: NonEmptyString.nes (Proxy :: Proxy "func")
+              , children:
+                  [ Completion.InsertTextTree
+                      { name: NonEmptyString.nes (Proxy :: Proxy "paramA")
+                      , children: []
+                      , focus: false
+                      }
+                  , Completion.InsertTextTree
+                      { name: NonEmptyString.nes (Proxy :: Proxy "paramB")
+                      , children:
+                          [ Completion.InsertTextTree
+                              { name: NonEmptyString.nes (Proxy :: Proxy "bChild")
+                              , children: []
+                              , focus: false
+                              }
+                          ]
+                      , focus: false
+                      }
+                  , Completion.InsertTextTree
+                      { name: NonEmptyString.nes (Proxy :: Proxy "paramC")
+                      , children: []
+                      , focus: false
+                      }
+                  ]
+              , focus: false
+              }
+          )
+    , expected: NonEmptyString.nes (Proxy :: Proxy "func(paramA, paramB(bChild), paramC)")
+    }
+  assertEqual
+    "insertTextTreeToString focus"
+    { actual:
+        Completion.insertTextTreeToString
+          ( Completion.InsertTextTree
+              { name: NonEmptyString.nes (Proxy :: Proxy "func")
+              , focus: false
+              , children:
+                  [ Completion.InsertTextTree
+                      { name: NonEmptyString.nes (Proxy :: Proxy "paramA")
+                      , children: []
+                      , focus: false
+                      }
+                  , Completion.InsertTextTree
+                      { name: NonEmptyString.nes (Proxy :: Proxy "paramB")
+                      , focus: true
+                      , children:
+                          [ Completion.InsertTextTree
+                              { name: NonEmptyString.nes (Proxy :: Proxy "bChild")
+                              , children: []
+                              , focus: true
+                              }
+                          ]
+                      }
+                  , Completion.InsertTextTree
+                      { name: NonEmptyString.nes (Proxy :: Proxy "paramC")
+                      , children: []
+                      , focus: true
+                      }
+                  ]
+              }
+          )
+    , expected:
+        NonEmptyString.nes
+          (Proxy :: Proxy "func(paramA, ${1:paramB(${2:bChild})}, ${3:paramC})")
+    }
+  assertEqual
+    "quote"
+    { actual:
+        Completion.insertTextTreeToString
+          ( Completion.InsertTextTree
+              { name: NonEmptyString.nes (Proxy :: Proxy "func")
+              , focus: false
+              , children:
+                  [ Completion.InsertTextTree
+                      { name: NonEmptyString.nes (Proxy :: Proxy "sample description")
+                      , children: []
+                      , focus: true
+                      }
+                  , Completion.InsertTextTree
+                      { name: NonEmptyString.nes (Proxy :: Proxy "param")
+                      , children: []
+                      , focus: true
+                      }
+                  ]
+              }
+          )
+    , expected:
+        NonEmptyString.nes
+          (Proxy :: Proxy "func(\"${1:sample description}\", ${2:param})")
     }
