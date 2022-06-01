@@ -9,6 +9,7 @@ import {
   languageToIdString,
 } from "../output/TypeScriptEntryPoint";
 import { structuredUrlToUrl, urlToStructuredUrl } from "../gen/url/main";
+import { clientScriptPath } from "../clientScriptHash";
 import { origin } from "../out";
 
 const languageQueryKey = "hl";
@@ -169,7 +170,7 @@ const languageFromIdString = (languageAsString: string): d.Language => {
 };
 
 export const iconUrl: URL = new URL(`${origin}/icon.png`);
-export const scriptUrl: URL = new URL(`${origin}/main.js`);
+export const scriptUrl: URL = new URL(`${origin}/${clientScriptPath}`);
 
 export const pngFileUrl = (imageHash: d.ImageHash): URL =>
   new URL(`${origin}${pngFilePath(imageHash)}`);

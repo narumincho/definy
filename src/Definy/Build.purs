@@ -59,8 +59,7 @@ build mode origin = do
     , writePackageJsonForFunctions
     , writeFirestoreRules
     , generateCloudStorageRules
-    , codeGenAndBuildClientAndFunctionsScript mode origin version
-    , buildFunctionsScript mode
+    , codeGenAndBuildClientAndFunctionsScript origin version
     ]
 
 appName :: Name.Name
@@ -289,43 +288,34 @@ createFirebaseJson productionOrDevelopment clientProgramHash staticResourceFileR
     }
 
 codeGenAndBuildClientAndFunctionsScript ::
-  ProductionOrDevelopment.ProductionOrDevelopment ->
   NonEmptyString ->
   Version.Version ->
   Aff.Aff Unit
-codeGenAndBuildClientAndFunctionsScript mode origin version = do
+codeGenAndBuildClientAndFunctionsScript origin version = do
   { staticResourceBuild: staticResourceHashList } <-
     Util.runParallelRecord
       { staticResourceBuild
-      , codeGen: outputNowModeAndOrigin mode origin version
+      , codeGen: BuildCodeGen.outputNowModeAndOrigin origin version
       }
-  hash <- clientProgramBuild mode
-  writeFirebaseJson mode hash staticResourceHashList
+  hash <- clientProgramBuild (Version.toProductionOrDevelopment version)
+  Util.toParallel
+    [ writeFirebaseJson
+        (Version.toProductionOrDevelopment version)
+        hash
+        staticResourceHashList
+    , buildFunctionsScript (Version.toProductionOrDevelopment version) hash
+    ]
 
 staticResourceBuild :: Aff.Aff (Array StaticResourceFile.StaticResourceFileResult)
 staticResourceBuild = do
   resultList <-
     StaticResourceFile.getStaticResourceFileResult
       ( Path.DirectoryPath
-          [ Name.fromSymbolProxy (Proxy :: _ "static")
-          ]
+          [ Name.fromSymbolProxy (Proxy :: _ "static") ]
       )
   copyStaticResource resultList
   staticResourceCodeGen resultList
   pure resultList
-
-outputNowModeAndOrigin ::
-  ProductionOrDevelopment.ProductionOrDevelopment ->
-  NonEmptyString ->
-  Version.Version ->
-  Aff.Aff Unit
-outputNowModeAndOrigin productionOrDevelopment origin version =
-  FileSystemWrite.writePureScript
-    ( BuildCodeGen.generateNowModeAndOriginPureScriptModule
-        productionOrDevelopment
-        origin
-        version
-    )
 
 copyStaticResource :: Array StaticResourceFile.StaticResourceFileResult -> Aff.Aff Unit
 copyStaticResource resultList =
@@ -380,6 +370,7 @@ runEsbuild productionOrDevelopment = do
             ]
       , external: Set.empty
       , define: createEsbuildDefine productionOrDevelopment
+      , format: EsBuild.EsModule
       }
   let
     clientProgramHashValue = Hash.stringToSha256HashValue clientProgramAsString
@@ -398,8 +389,10 @@ runEsbuild productionOrDevelopment = do
 
 buildFunctionsScript ::
   ProductionOrDevelopment.ProductionOrDevelopment ->
+  Hash.Sha256HashValue ->
   Aff.Aff Unit
-buildFunctionsScript productionOrDevelopment = do
+buildFunctionsScript productionOrDevelopment clientScriptHash = do
+  BuildCodeGen.writeClientScriptHashTs clientScriptHash
   code <-
     EsBuild.buildJs
       { entryPoints:
@@ -433,6 +426,7 @@ buildFunctionsScript productionOrDevelopment = do
             , NonEmptyString.nes (Proxy :: _ "sha256-uint8array")
             ]
       , define: createEsbuildDefine productionOrDevelopment
+      , format: EsBuild.CommonJs
       }
   FileSystemWrite.writeTextFileInDistribution
     functionsMainScriptPath

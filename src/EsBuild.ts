@@ -5,6 +5,7 @@ export const buildAsEffectFnAff = (option: {
   readonly entryPoints: string;
   readonly target: ReadonlyArray<string>;
   readonly external: ReadonlyArray<string>;
+  readonly format: "cjs" | "esm";
 }): EffectFnAff<Uint8Array, Error> => {
   return (onError, onSuccess) => {
     build({
@@ -14,7 +15,7 @@ export const buildAsEffectFnAff = (option: {
       target: [...option.target],
       external: [...option.external],
       write: false,
-      format: "cjs",
+      format: option.format,
     }).then(
       (e) => {
         const contents = e.outputFiles[0]?.contents;

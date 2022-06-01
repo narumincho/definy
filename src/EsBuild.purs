@@ -1,4 +1,4 @@
-module EsBuild (buildJs, buildTsx, Option) where
+module EsBuild (buildJs, buildTsx, Option, Format(..)) where
 
 import Prelude
 import Binary as Binary
@@ -21,13 +21,19 @@ type Option
     , target :: Set.Set NonEmptyString
     , external :: Set.Set NonEmptyString
     , define :: Map.Map NonEmptyString NonEmptyString
+    , format :: Format
     }
+
+data Format
+  = CommonJs
+  | EsModule
 
 type OptionRaw
   = { entryPoints :: String
     , target :: Array String
     , external :: Array String
     , define :: Object.Object String
+    , format :: String
     }
 
 foreign import buildAsEffectFnAff ::
@@ -67,6 +73,10 @@ build fileType option =
                             )
                       )
                   )
+            , format:
+                case option.format of
+                  CommonJs -> "cjs"
+                  EsModule -> "esm"
             }
         )
     )

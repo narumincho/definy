@@ -2,6 +2,7 @@ module Definy.Version
   ( Version(..)
   , getVersion
   , toExpr
+  , toProductionOrDevelopment
   , toSimpleString
   , versionType
   ) where
@@ -21,12 +22,12 @@ import PureScript.Wellknown as Pw
 import Type.Prelude (Proxy(..))
 
 data Version
-  = Release NonEmptyString
+  = Production NonEmptyString
   | Development String
 
 toSimpleString :: Version -> String
 toSimpleString = case _ of
-  Release sha -> append "Release: " (NonEmptyString.toString sha)
+  Production sha -> append "Production: " (NonEmptyString.toString sha)
   Development dateTime -> append "Development: " dateTime
 
 definyVersionModuleName :: P.ModuleName
@@ -46,7 +47,7 @@ versionType =
 
 toExpr :: Version -> Pw.Expr Version
 toExpr = case _ of
-  Release githubSha ->
+  Production githubSha ->
     Pw.call
       ( Pw.tag
           { moduleName: definyVersionModuleName
@@ -67,7 +68,7 @@ getVersion :: ProductionOrDevelopment.ProductionOrDevelopment -> Aff.Aff Version
 getVersion = case _ of
   ProductionOrDevelopment.Production -> do
     sha <- readGithubSha
-    pure (Release sha)
+    pure (Production sha)
   ProductionOrDevelopment.Development -> do
     now <- EffectClass.liftEffect simpleGetNow
     pure (Development now)
@@ -84,5 +85,10 @@ readGithubSha =
             Nothing -> Aff.throwError (Aff.error "can not read GITHUB_SHA")
         )
     )
+
+toProductionOrDevelopment :: Version -> ProductionOrDevelopment.ProductionOrDevelopment
+toProductionOrDevelopment = case _ of
+  Production _ -> ProductionOrDevelopment.Production
+  Development _ -> ProductionOrDevelopment.Development
 
 foreign import simpleGetNow :: Effect String

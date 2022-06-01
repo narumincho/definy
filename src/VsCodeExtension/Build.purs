@@ -141,6 +141,7 @@ buildExtensionMain = do
             ]
       , external: Set.singleton (NonEmptyString.nes (Proxy :: Proxy "vscode"))
       , define: Map.empty
+      , format: EsBuild.CommonJs
       }
   FileSystemWrite.writeTextFileInDistribution mainScriptPath (Just FileType.JavaScript)
     (append code "const JavaScriptDynamicImport = (url) => import(url);\n")

@@ -134,8 +134,8 @@ script url =
     (NonEmptyString.nes (Proxy :: _ "script"))
     ( Map.fromFoldable
         [ Tuple.Tuple
-            (NonEmptyString.nes (Proxy :: _ "defer"))
-            Maybe.Nothing
+            (NonEmptyString.nes (Proxy :: _ "type"))
+            (Maybe.Just "module")
         , Tuple.Tuple
             (NonEmptyString.nes (Proxy :: _ "src"))
             (Maybe.Just (NonEmptyString.toString (StructuredUrl.toString url)))
