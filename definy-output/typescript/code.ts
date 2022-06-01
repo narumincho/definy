@@ -64,4 +64,4 @@ export const sampleText: string = "文字列をちゃんと定義できてるか
 /**
  * 浮動小数点数リテラルを導入したぞ!
  */
-export const sampleFloat64Value: unknown = float64;
+export const sampleFloat64Value: number = 32.324;

@@ -3,10 +3,8 @@ module Definy.Build
   ) where
 
 import Prelude
-import Console as Console
 import Console as ConsoleValue
 import Data.Argonaut as Argonaut
-import Data.Array.NonEmpty as NonEmptyArray
 import Data.Either as Either
 import Data.Map as Map
 import Data.Maybe (Maybe(..))
@@ -18,21 +16,15 @@ import Definy.Version as Version
 import Effect.Aff as Aff
 import Effect.Class as EffectClass
 import Effect.Uncurried as EffectUncurried
-import EsBuild as EsBuild
 import FileSystem.Copy as FileSystemCopy
 import FileSystem.FileType as FileType
 import FileSystem.Name as Name
 import FileSystem.Path as Path
-import FileSystem.Read as FileSystemRead
 import FileSystem.Write as FileSystemWrite
 import Firebase.FirebaseJson as FirebaseJson
 import Firebase.SecurityRules as SecurityRules
-import Hash as Hash
 import PackageJson as PackageJson
 import ProductionOrDevelopment as ProductionOrDevelopment
-import PureScript.Data as PureScriptData
-import PureScript.Wellknown as PureScriptWellknown
-import StaticResourceFile as StaticResourceFile
 import StructuredUrl as StructuredUrl
 import Type.Proxy (Proxy(..))
 import Util as Util
@@ -74,19 +66,6 @@ build mode origin = do
         )
     ]
 
-codeGenAndBuildClientAndFunctionsScript ::
-  ProductionOrDevelopment.ProductionOrDevelopment ->
-  NonEmptyString ->
-  Version.Version ->
-  Aff.Aff Unit
-codeGenAndBuildClientAndFunctionsScript mode origin version = do
-  Util.toParallel
-    [ map (\_ -> unit) staticResourceBuild
-    , outputNowModeAndOrigin mode origin version
-    ]
-  _ <- clientProgramBuild
-  pure unit
-
 appName :: Name.Name
 appName =
   Name.fromSymbolProxy
@@ -119,17 +98,6 @@ hostingDistributionPath =
         Just
           ( Name.fromSymbolProxy
               (Proxy :: _ "hosting")
-          )
-    }
-
-esbuildClientProgramFileDirectoryPath :: Path.DistributionDirectoryPath
-esbuildClientProgramFileDirectoryPath =
-  Path.DistributionDirectoryPath
-    { appName: appName
-    , folderNameMaybe:
-        Just
-          ( Name.fromSymbolProxy
-              (Proxy :: _ "client-esbuild-result")
           )
     }
 
@@ -198,103 +166,6 @@ generatePackageJson dependencies =
     , name: PackageJson.nameFromSymbolProxyUnsafe (Proxy :: _ "definy-functions")
     , nodeVersion: NonEmptyString.nes (Proxy :: _ "16")
     , version: NonEmptyString.nes (Proxy :: _ "1.0.0")
-    }
-
-definyModuleName :: NonEmptyString
-definyModuleName =
-  NonEmptyString.nes
-    (Proxy :: _ "Definy")
-
-productionOrDevelopmentModuleName :: PureScriptData.ModuleName
-productionOrDevelopmentModuleName =
-  PureScriptData.ModuleName
-    ( NonEmptyArray.singleton
-        ( NonEmptyString.nes
-            (Proxy :: _ "ProductionOrDevelopment")
-        )
-    )
-
-staticResourceModuleName :: PureScriptData.ModuleName
-staticResourceModuleName =
-  PureScriptData.ModuleName
-    ( NonEmptyArray.cons' definyModuleName
-        [ NonEmptyString.nes
-            (Proxy :: _ "StaticResource")
-        ]
-    )
-
-outputNowModeAndOrigin ::
-  ProductionOrDevelopment.ProductionOrDevelopment ->
-  NonEmptyString ->
-  Version.Version ->
-  Aff.Aff Unit
-outputNowModeAndOrigin productionOrDevelopment origin version =
-  FileSystemWrite.writePureScript
-    ( generateNowModeAndOriginPureScriptModule
-        productionOrDevelopment
-        origin
-        version
-    )
-
-generateNowModeAndOriginPureScriptModule ::
-  ProductionOrDevelopment.ProductionOrDevelopment ->
-  NonEmptyString ->
-  Version.Version ->
-  PureScriptData.Module
-generateNowModeAndOriginPureScriptModule productionOrDevelopment origin version =
-  PureScriptData.Module
-    { name:
-        PureScriptData.ModuleName
-          ( NonEmptyArray.cons' definyModuleName
-              [ NonEmptyString.nes
-                  (Proxy :: _ "OriginAndVersion")
-              ]
-          )
-    , definitionList:
-        [ PureScriptWellknown.definition
-            { name: NonEmptyString.nes (Proxy :: _ "nowMode")
-            , document: "実行モード (ビルド時にコード生成される)"
-            , pType:
-                PureScriptWellknown.pTypeFrom
-                  { moduleName: productionOrDevelopmentModuleName
-                  , name: NonEmptyString.nes (Proxy :: _ "ProductionOrDevelopment")
-                  }
-            , expr:
-                case productionOrDevelopment of
-                  ProductionOrDevelopment.Development ->
-                    PureScriptWellknown.tag
-                      { moduleName: productionOrDevelopmentModuleName
-                      , name: NonEmptyString.nes (Proxy :: _ "Development")
-                      }
-                  ProductionOrDevelopment.Production ->
-                    PureScriptWellknown.tag
-                      { moduleName: productionOrDevelopmentModuleName
-                      , name: NonEmptyString.nes (Proxy :: _ "Production")
-                      }
-            , isExport: true
-            }
-        , PureScriptWellknown.definition
-            { name: NonEmptyString.nes (Proxy :: _ "origin")
-            , document: "オリジン (ビルド時にコード生成される)"
-            , pType: PureScriptWellknown.nonEmptyString
-            , expr: PureScriptWellknown.nonEmptyStringLiteral origin
-            , isExport: true
-            }
-        , createVersionDefinition version
-        ]
-    }
-
-createVersionDefinition ::
-  Version.Version ->
-  PureScriptData.Definition
-createVersionDefinition version =
-  PureScriptWellknown.definition
-    { name: NonEmptyString.nes (Proxy :: _ "version")
-    , document: append "バージョン名 (ビルド時にコード生成される) " (Version.toSimpleString version)
-    , pType: Version.versionType
-    , expr:
-        Version.toExpr version
-    , isExport: true
     }
 
 firestoreSecurityRulesFilePath :: Path.DistributionFilePath
@@ -374,88 +245,5 @@ writeFirebaseJson productionOrDevelopment = do
             }
         )
     )
-
-staticResourceBuild :: Aff.Aff (Array StaticResourceFile.StaticResourceFileResult)
-staticResourceBuild = do
-  resultList <-
-    StaticResourceFile.getStaticResourceFileResult
-      ( Path.DirectoryPath
-          [ Name.fromSymbolProxy (Proxy :: _ "static")
-          ]
-      )
-  copyStaticResource resultList
-  staticResourceCodeGen resultList
-  pure resultList
-
-copyStaticResource :: Array StaticResourceFile.StaticResourceFileResult -> Aff.Aff Unit
-copyStaticResource resultList =
-  Util.toParallel
-    ( map
-        ( \(StaticResourceFile.StaticResourceFileResult { originalFilePath, fileType, requestPathAndUploadFileName }) ->
-            FileSystemCopy.copyFileToDistribution
-              originalFilePath
-              ( Path.DistributionFilePath
-                  { directoryPath: hostingDistributionPath
-                  , fileName:
-                      Name.fromNonEmptyStringUnsafe
-                        (Hash.toNonEmptyString requestPathAndUploadFileName)
-                  }
-              )
-              fileType
-        )
-        resultList
-    )
-
-staticResourceCodeGen :: Array StaticResourceFile.StaticResourceFileResult -> Aff.Aff Unit
-staticResourceCodeGen resultList =
-  FileSystemWrite.writePureScript
-    (StaticResourceFile.staticFileResultToPureScriptModule staticResourceModuleName resultList)
-
-clientProgramBuild :: Aff.Aff Hash.Sha256HashValue
-clientProgramBuild = do
-  runEsbuild
-  fileHashValue <- readEsbuildResultClientProgramFile
-  Console.logValueAsAff "クライアント向けビルド完了!" { fileHashValue }
-  pure fileHashValue
-
-runEsbuild :: Aff.Aff Unit
-runEsbuild = do
-  EsBuild.buildTsx
-    { entryPoints:
-        Path.FilePath
-          { directoryPath:
-              Path.DirectoryPath
-                [ Name.fromSymbolProxy (Proxy :: _ "client") ]
-          , fileName: Name.fromSymbolProxy (Proxy :: _ "main")
-          }
-    , outdir: esbuildClientProgramFileDirectoryPath
-    , sourcemap: false
-    , target: [ "chrome95", "firefox94", "safari15" ]
-    }
-  Console.logValueAsAff "esbuild でのビルドに成功!" {}
-
-readEsbuildResultClientProgramFile :: Aff.Aff Hash.Sha256HashValue
-readEsbuildResultClientProgramFile = do
-  clientProgramAsString <-
-    FileSystemRead.readTextFileInDistribution
-      ( Path.DistributionFilePath
-          { directoryPath: esbuildClientProgramFileDirectoryPath
-          , fileName: Name.fromSymbolProxy (Proxy :: _ "main")
-          }
-      )
-      (Just FileType.JavaScript)
-  let
-    clientProgramHashValue = Hash.stringToSha256HashValue clientProgramAsString
-  FileSystemWrite.writeTextFileInDistribution
-    ( Path.DistributionFilePath
-        { directoryPath: hostingDistributionPath
-        , fileName:
-            Name.fromNonEmptyStringUnsafe
-              (Hash.toNonEmptyString clientProgramHashValue)
-        }
-    )
-    Nothing
-    clientProgramAsString
-  pure clientProgramHashValue
 
 foreign import buildInTypeScript :: EffectUncurried.EffectFn2 Boolean String Unit

@@ -32,14 +32,13 @@ import Data.Tuple as Tuple
 import Data.UInt as UInt
 import Effect.Aff as Aff
 import Foreign.Object as Object
-import Math as Math
 import Option as Option
 import Prim.Row as Row
 import Prim.RowList (RowList)
 import Prim.RowList as PrimRowList
 import Record as Record
-import Type.Data.RowList as RowList
 import Type.Proxy as Proxy
+import Math as Math
 
 listUpdateAtOverAutoCreate :: forall e. Array e -> UInt.UInt -> (Maybe.Maybe e -> e) -> e -> Array e
 listUpdateAtOverAutoCreate list index func fillElement = case Array.index list (UInt.toInt index) of
@@ -99,7 +98,7 @@ toParallelWithReturn list = Parallel.parSequence list
 
 class RowTraversable :: RowList Type -> Row Type -> Row Type -> (Type -> Type) -> (Type -> Type) -> Constraint
 class RowTraversable list xs ys m f | list -> ys m where
-  traverseRow :: (RowList.RLProxy list) -> (forall v. m v -> f v) -> Record xs -> f (Record ys)
+  traverseRow :: (Proxy.Proxy list) -> (forall v. m v -> f v) -> Record xs -> f (Record ys)
 
 instance rowTraversableNil ::
   Applicative.Applicative f =>
@@ -116,9 +115,9 @@ instance rowTraversableCons ::
   ) =>
   RowTraversable (PrimRowList.Cons key (m a) tail) xs ys m f where
   traverseRow _ f obj =
-    Record.insert (Symbol.SProxy :: _ key)
-      <$> f (Record.get (Symbol.SProxy :: _ key) obj)
-      <*> traverseRow (RowList.RLProxy :: _ tail) f obj
+    Record.insert (Proxy.Proxy :: _ key)
+      <$> f (Record.get (Proxy.Proxy :: _ key) obj)
+      <*> traverseRow (Proxy.Proxy :: _ tail) f obj
 
 -- | レコードを並行実行する
 runParallelRecord ::
@@ -127,7 +126,7 @@ runParallelRecord ::
   RowTraversable rowList mr r m f =>
   Parallel.Parallel f m =>
   (Record mr) -> m (Record r)
-runParallelRecord = Parallel.sequential <<< traverseRow (RowList.RLProxy :: RowList.RLProxy rowList) Parallel.parallel
+runParallelRecord = Parallel.sequential <<< traverseRow (Proxy.Proxy :: Proxy.Proxy rowList) Parallel.parallel
 
 optionRecordToMaybeRecord ::
   forall (optionRecord :: Row Type) (maybeRecord :: Row Type) (required :: Row Type) (optional :: Row Type).

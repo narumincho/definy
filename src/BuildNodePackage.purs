@@ -70,7 +70,8 @@ mainAff =
         , declaration: true
         }
     , Spago.bundleModule
-        { mainModuleName:
+        { name: NonEmptyString.nes (Proxy :: _ "NodePackage TypeScriptEntryPoint")
+        , mainModuleName:
             PureScriptData.ModuleName
               ( NonEmptyArray.singleton
                   ( NonEmptyString.nes

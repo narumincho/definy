@@ -3,21 +3,26 @@ import { build } from "esbuild";
 
 export const buildAsEffectFnAff = (option: {
   readonly entryPoints: string;
-  readonly outDir: string;
-  readonly sourcemap: boolean;
-  readonly target: string;
-}): EffectFnAff<void, Error> => {
+  readonly target: ReadonlyArray<string>;
+  readonly external: ReadonlyArray<string>;
+}): EffectFnAff<Uint8Array, Error> => {
   return (onError, onSuccess) => {
     build({
       entryPoints: [option.entryPoints],
       bundle: true,
-      outdir: option.outDir,
-      sourcemap: option.sourcemap,
       minify: true,
-      target: option.target,
+      target: [...option.target],
+      external: [...option.external],
+      write: false,
+      format: "cjs",
     }).then(
-      () => {
-        onSuccess();
+      (e) => {
+        const contents = e.outputFiles[0]?.contents;
+        if (contents === undefined) {
+          onError(new Error("esbuild outputFiles contents is undefined"));
+          return;
+        }
+        onSuccess(contents);
       },
       (error) => {
         console.log("esbuild でエラーが発生", error);
