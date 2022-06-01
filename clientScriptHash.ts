@@ -6,4 +6,4 @@
 /**
  * クライアントのスクリプトのパス
  */
-export const clientScriptPath: string = "141fc2b6bf0a3dfb552c4e321391b9d275241203ab4a72390a662be7cc13dba0";
+export const clientScriptPath: string = "3df893e5cce002fd037fdf9c5812b0c0b85150ffe18011ed21b27bcd83c7a267";

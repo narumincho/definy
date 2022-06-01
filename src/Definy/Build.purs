@@ -32,6 +32,9 @@ import ProductionOrDevelopment as ProductionOrDevelopment
 import StaticResourceFile as StaticResourceFile
 import StructuredUrl as StructuredUrl
 import Type.Proxy (Proxy(..))
+import TypeScript.Data as TypeScriptData
+import TypeScript.ModuleName as TypeScriptModuleName
+import TypeScript.ToString as TypeScriptToString
 import Util as Util
 
 build ::
@@ -339,9 +342,25 @@ copyStaticResource resultList =
     )
 
 staticResourceCodeGen :: Array StaticResourceFile.StaticResourceFileResult -> Aff.Aff Unit
-staticResourceCodeGen resultList =
+staticResourceCodeGen resultList = do
   FileSystemWrite.writePureScript
     (StaticResourceFile.staticFileResultToPureScriptModule ModuleName.staticResource resultList)
+  FileSystemWrite.writeTypeScriptFile
+    ( TypeScriptToString.typeScriptModuleMapToString
+        ( TypeScriptData.TypeScriptModuleMap
+            ( Map.singleton
+                ( TypeScriptModuleName.Local
+                    ( Path.FilePath
+                        { directoryPath: Path.DirectoryPath []
+                        , fileName: Name.fromSymbolProxy (Proxy :: _ "staticResource")
+                        }
+                    )
+                )
+                (StaticResourceFile.staticFileResultToTypeScriptModule resultList)
+            )
+        )
+        true
+    )
 
 clientProgramBuild ::
   ProductionOrDevelopment.ProductionOrDevelopment ->

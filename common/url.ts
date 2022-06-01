@@ -1,4 +1,5 @@
 import * as d from "../localData";
+import * as s from "../staticResource";
 import {
   english,
   englishId,
@@ -169,7 +170,7 @@ const languageFromIdString = (languageAsString: string): d.Language => {
   return defaultLanguage;
 };
 
-export const iconUrl: URL = new URL(`${origin}/icon.png`);
+export const iconUrl: URL = new URL(`${origin}/${s.iconPng}`);
 export const scriptUrl: URL = new URL(`${origin}/${clientScriptPath}`);
 
 export const pngFileUrl = (imageHash: d.ImageHash): URL =>

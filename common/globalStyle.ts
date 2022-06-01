@@ -1,4 +1,5 @@
 import * as css from "../gen/css/main";
+import { hack_regular_subsetWoff2 } from "../staticResource";
 
 export const globalStyle = `
 /*
@@ -10,7 +11,7 @@ export const globalStyle = `
   font-family: "Hack";
   font-weight: 400;
   font-style: normal;
-  src: url("/hack_regular_subset.woff2") format("woff2");
+  src: url("/${hack_regular_subsetWoff2}") format("woff2");
 }
 
 ${css.ruleListToString({
