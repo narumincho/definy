@@ -51,7 +51,7 @@ toExpr = case _ of
     Pw.call
       ( Pw.tag
           { moduleName: definyVersionModuleName
-          , name: NonEmptyString.nes (Proxy :: _ "Release")
+          , name: NonEmptyString.nes (Proxy :: _ "Production")
           }
       )
       (Pw.nonEmptyStringLiteral githubSha)
