@@ -6,7 +6,6 @@ import Prelude
 import Console as Console
 import Console as ConsoleValue
 import Data.Argonaut as Argonaut
-import Data.Array.NonEmpty as NonEmptyArray
 import Data.Either as Either
 import Data.Map as Map
 import Data.Maybe (Maybe(..))
@@ -14,6 +13,8 @@ import Data.Set as Set
 import Data.String.NonEmpty (NonEmptyString)
 import Data.String.NonEmpty as NonEmptyString
 import Data.UInt as UInt
+import Definy.BuildCodeGen as BuildCodeGen
+import Definy.ModuleName as ModuleName
 import Definy.Version as Version
 import Effect.Aff as Aff
 import EsBuild as EsBuild
@@ -28,8 +29,6 @@ import Hash as Hash
 import MediaType as MediaType
 import PackageJson as PackageJson
 import ProductionOrDevelopment as ProductionOrDevelopment
-import PureScript.Data as PureScriptData
-import PureScript.Wellknown as PureScriptWellknown
 import StaticResourceFile as StaticResourceFile
 import StructuredUrl as StructuredUrl
 import Type.Proxy (Proxy(..))
@@ -322,95 +321,11 @@ outputNowModeAndOrigin ::
   Aff.Aff Unit
 outputNowModeAndOrigin productionOrDevelopment origin version =
   FileSystemWrite.writePureScript
-    ( generateNowModeAndOriginPureScriptModule
+    ( BuildCodeGen.generateNowModeAndOriginPureScriptModule
         productionOrDevelopment
         origin
         version
     )
-
-definyModuleName :: NonEmptyString
-definyModuleName =
-  NonEmptyString.nes
-    (Proxy :: _ "Definy")
-
-productionOrDevelopmentModuleName :: PureScriptData.ModuleName
-productionOrDevelopmentModuleName =
-  PureScriptData.ModuleName
-    ( NonEmptyArray.singleton
-        ( NonEmptyString.nes
-            (Proxy :: _ "ProductionOrDevelopment")
-        )
-    )
-
-staticResourceModuleName :: PureScriptData.ModuleName
-staticResourceModuleName =
-  PureScriptData.ModuleName
-    ( NonEmptyArray.cons' definyModuleName
-        [ NonEmptyString.nes
-            (Proxy :: _ "StaticResource")
-        ]
-    )
-
-generateNowModeAndOriginPureScriptModule ::
-  ProductionOrDevelopment.ProductionOrDevelopment ->
-  NonEmptyString ->
-  Version.Version ->
-  PureScriptData.Module
-generateNowModeAndOriginPureScriptModule productionOrDevelopment origin version =
-  PureScriptData.Module
-    { name:
-        PureScriptData.ModuleName
-          ( NonEmptyArray.cons' definyModuleName
-              [ NonEmptyString.nes
-                  (Proxy :: _ "OriginAndVersion")
-              ]
-          )
-    , definitionList:
-        [ PureScriptWellknown.definition
-            { name: NonEmptyString.nes (Proxy :: _ "nowMode")
-            , document: "実行モード (ビルド時にコード生成される)"
-            , pType:
-                PureScriptWellknown.pTypeFrom
-                  { moduleName: productionOrDevelopmentModuleName
-                  , name: NonEmptyString.nes (Proxy :: _ "ProductionOrDevelopment")
-                  }
-            , expr:
-                case productionOrDevelopment of
-                  ProductionOrDevelopment.Development ->
-                    PureScriptWellknown.tag
-                      { moduleName: productionOrDevelopmentModuleName
-                      , name: NonEmptyString.nes (Proxy :: _ "Development")
-                      }
-                  ProductionOrDevelopment.Production ->
-                    PureScriptWellknown.tag
-                      { moduleName: productionOrDevelopmentModuleName
-                      , name: NonEmptyString.nes (Proxy :: _ "Production")
-                      }
-            , isExport: true
-            }
-        , PureScriptWellknown.definition
-            { name: NonEmptyString.nes (Proxy :: _ "origin")
-            , document: "オリジン (ビルド時にコード生成される)"
-            , pType: PureScriptWellknown.nonEmptyString
-            , expr: PureScriptWellknown.nonEmptyStringLiteral origin
-            , isExport: true
-            }
-        , createVersionDefinition version
-        ]
-    }
-
-createVersionDefinition ::
-  Version.Version ->
-  PureScriptData.Definition
-createVersionDefinition version =
-  PureScriptWellknown.definition
-    { name: NonEmptyString.nes (Proxy :: _ "version")
-    , document: append "バージョン名 (ビルド時にコード生成される) " (Version.toSimpleString version)
-    , pType: Version.versionType
-    , expr:
-        Version.toExpr version
-    , isExport: true
-    }
 
 copyStaticResource :: Array StaticResourceFile.StaticResourceFileResult -> Aff.Aff Unit
 copyStaticResource resultList =
@@ -436,7 +351,7 @@ copyStaticResource resultList =
 staticResourceCodeGen :: Array StaticResourceFile.StaticResourceFileResult -> Aff.Aff Unit
 staticResourceCodeGen resultList =
   FileSystemWrite.writePureScript
-    (StaticResourceFile.staticFileResultToPureScriptModule staticResourceModuleName resultList)
+    (StaticResourceFile.staticFileResultToPureScriptModule ModuleName.staticResource resultList)
 
 clientProgramBuild ::
   ProductionOrDevelopment.ProductionOrDevelopment ->
