@@ -4,7 +4,10 @@ export const compare = <Props>(prev: Props, next: Props): boolean => {
     ...(Object.keys(next) as unknown as ReadonlyArray<keyof Props>),
   ])) {
     if (prev[key] !== next[key]) {
-      console.log(`${key}が変化した.`, { prev: prev[key], next: next[key] });
+      console.log(`${key.toString()}が変化した.`, {
+        prev: prev[key],
+        next: next[key],
+      });
       return true;
     }
   }
