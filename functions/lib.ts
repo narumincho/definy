@@ -1,17 +1,17 @@
 import * as commonUrl from "../common/url";
 import * as core from "../core/main";
-import * as crypto from "crypto";
+import * as crypto from "node:crypto";
 import * as d from "../localData";
 import * as functions from "firebase-functions";
 import * as image from "./image";
 import * as jimp from "jimp";
 import * as jsonWebToken from "jsonwebtoken";
-import * as stream from "stream";
 import type * as typedFirestore from "typed-admin-firestore";
 import * as util from "../core/util";
 import { ApiCodecType, GetCodecType } from "../common/apiCodec";
 import { Timestamp, getFirestore } from "firebase-admin/firestore";
 import axios, { AxiosResponse } from "axios";
+import type { Readable } from "node:stream";
 import { getStorage } from "firebase-admin/storage";
 import { initializeApp } from "firebase-admin/app";
 import { pngMimeType } from "../output/TypeScriptEntryPoint";
@@ -386,7 +386,7 @@ const hashAccessToken = (accountToken: d.AccountToken): AccessTokenHash =>
 /**
  * Cloud Storage for Firebase からPNGファイルを読み込む
  */
-export const readPngFile = (hash: string): stream.Readable => {
+export const readPngFile = (hash: string): Readable => {
   return storageDefaultBucket.file(hash).createReadStream();
 };
 

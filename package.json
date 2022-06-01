@@ -9,13 +9,13 @@
   },
   "scripts": {
     "typeCheck": "tsc --project tsconfig.json --noEmit",
-    "test": "jest && npx tsc --project ./tsconfig-purs-ffi.json & spago test",
+    "test": "jest && npx tsc --project ./tsconfig-purs-ffi.json & npx spago test",
     "generate-graph": "depcruise -X node_modules --output-type dot client/main.tsx functions/main.ts core/main.ts build/main.ts | dot -T svg > graph.svg",
-    "generate-local-data": "npx tsc --project ./tsconfig-purs-ffi.json & spago run --main DataTs.Build",
-    "build-node-package": "npx tsc --project ./tsconfig-purs-ffi.json & spago run --main BuildNodePackage",
+    "generate-local-data": "npx tsc --project ./tsconfig-purs-ffi.json & npx spago run --main DataTs.Build",
+    "build-node-package": "npx tsc --project ./tsconfig-purs-ffi.json & npx spago run --main BuildNodePackage",
     "storybook": "start-storybook --config-dir ./storybook",
     "update-package-json": "ncu -u",
-    "start-definy": "npx tsc --project ./tsconfig-purs-ffi.json && spago run --main Definy.Start && firebase emulators:start --project definy-lang --config ./distribution/definy/firebase.json",
+    "start-definy": "npx tsc --project ./tsconfig-purs-ffi.json && npx spago run --main Definy.Start && firebase emulators:start --project definy-lang --config ./distribution/definy/firebase.json",
     "package-vscode-extension": "cd ./distribution/definy-extension && npx vsce package"
   },
   "devDependencies": {

@@ -75,14 +75,14 @@ getVersion = case _ of
 readGithubSha :: Aff.Aff NonEmptyString
 readGithubSha =
   EffectClass.liftEffect
-    ( map
+    ( bind
+        (Process.lookupEnv "GITHUB_SHA")
         ( case _ of
             Just githubShaValue -> case NonEmptyString.fromString githubShaValue of
-              Just githubShaAsNonEmptyString -> githubShaAsNonEmptyString
-              Nothing -> NonEmptyString.nes (Proxy :: _ "GITHUB_SHA is empty")
-            Nothing -> NonEmptyString.nes (Proxy :: _ "can not read GITHUB_SHA")
+              Just githubShaAsNonEmptyString -> pure githubShaAsNonEmptyString
+              Nothing -> Aff.throwError (Aff.error "GITHUB_SHA is empty")
+            Nothing -> Aff.throwError (Aff.error "can not read GITHUB_SHA")
         )
-        (Process.lookupEnv "GITHUB_SHA")
     )
 
 foreign import simpleGetNow :: Effect String

@@ -1,4 +1,4 @@
-import * as childProcess from "child_process";
+import * as childProcess from "node:child_process";
 import * as d from "../localData";
 import * as esbuild from "esbuild";
 import * as fileSystem from "fs-extra";

@@ -140,6 +140,7 @@ buildExtensionMain = do
             , NonEmptyString.nes (Proxy :: Proxy "node16")
             ]
       , external: Set.singleton (NonEmptyString.nes (Proxy :: Proxy "vscode"))
+      , define: Map.empty
       }
   FileSystemWrite.writeTextFileInDistribution mainScriptPath (Just FileType.JavaScript)
     (append code "const JavaScriptDynamicImport = (url) => import(url);\n")
