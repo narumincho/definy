@@ -24,10 +24,16 @@ spagoCliJsFilePath =
     , fileName: Name.fromSymbolProxy (Proxy :: Proxy "spago")
     }
 
-bundleModule :: { mainModuleName :: Data.ModuleName, outputJavaScriptPath :: Path.DistributionFilePath } -> Aff.Aff Unit
-bundleModule { mainModuleName, outputJavaScriptPath } = do
+bundleModule ::
+  { name :: NonEmptyString.NonEmptyString
+  , mainModuleName :: Data.ModuleName
+  , outputJavaScriptPath :: Path.DistributionFilePath
+  } ->
+  Aff.Aff Unit
+bundleModule { name, mainModuleName, outputJavaScriptPath } = do
   Command.execJsWithoutExtensionByNodeJsWithLog
-    { filePath: spagoCliJsFilePath
+    { name: NonEmptyString.appendString name "(spago bundle-module)"
+    , filePath: spagoCliJsFilePath
     , parameters:
         [ NonEmptyString.nes (Proxy :: Proxy "bundle-module")
         , NonEmptyString.nes (Proxy :: Proxy "--main")
@@ -47,10 +53,16 @@ bundleModule { mainModuleName, outputJavaScriptPath } = do
           (Just FileType.JavaScript)
     }
 
-bundleApp :: { mainModuleName :: Data.ModuleName, outputJavaScriptPath :: Path.DistributionFilePath } -> Aff.Aff Unit
-bundleApp { mainModuleName, outputJavaScriptPath } = do
+bundleApp ::
+  { name :: NonEmptyString.NonEmptyString
+  , mainModuleName :: Data.ModuleName
+  , outputJavaScriptPath :: Path.DistributionFilePath
+  } ->
+  Aff.Aff Unit
+bundleApp { name, mainModuleName, outputJavaScriptPath } = do
   Command.execJsWithoutExtensionByNodeJsWithLog
-    { filePath: spagoCliJsFilePath
+    { name: NonEmptyString.appendString name "(spago bundle-app)"
+    , filePath: spagoCliJsFilePath
     , parameters:
         [ NonEmptyString.nes (Proxy :: _ "bundle-app")
         , NonEmptyString.nes (Proxy :: _ "--main")
@@ -70,20 +82,25 @@ bundleApp { mainModuleName, outputJavaScriptPath } = do
     }
 
 -- | ```ps1
--- | npx spago build --purs-args "-o {outputDiresctoy}"
+-- | npx spago build --purs-args "-o {outputDirectory}"
 -- | ```
-build :: { outputDiresctoy :: Path.DirectoryPath } -> Aff.Aff Unit
-build { outputDiresctoy } = do
+build ::
+  { name :: NonEmptyString.NonEmptyString
+  , outputDirectory :: Path.DirectoryPath
+  } ->
+  Aff.Aff Unit
+build { name, outputDirectory } = do
   Command.execJsWithoutExtensionByNodeJsWithLog
-    { filePath: spagoCliJsFilePath
+    { name: NonEmptyString.appendString name "(spago build)"
+    , filePath: spagoCliJsFilePath
     , parameters:
         [ NonEmptyString.nes (Proxy :: _ "build")
         , NonEmptyString.nes (Proxy :: _ "--purs-args")
         , append
             (NonEmptyString.nes (Proxy :: Proxy "-o "))
-            (Path.directoryPathToString outputDiresctoy)
+            (Path.directoryPathToString outputDirectory)
         ]
     }
   Console.logValueAsAff
     "spago build に成功!"
-    { outputDiresctoy: Path.directoryPathToString outputDiresctoy }
+    { outputDiresctoy: Path.directoryPathToString outputDirectory }

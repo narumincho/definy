@@ -1,5 +1,6 @@
 import type { EffectFnAff } from "../PureScriptType";
-import { copyFile } from "fs-extra";
+import pkg from "fs-extra";
+const { copyFile } = pkg;
 
 export const copyFileAsEffectFnAff =
   (option: { src: string; dist: string }): EffectFnAff<void, void> =>

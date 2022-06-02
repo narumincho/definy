@@ -109,6 +109,7 @@ fromSymbolProxy ::
   forall (symbol :: Symbol).
   (Symbol.IsSymbol symbol) =>
   (CheckSafeName symbol) =>
+  (NonEmptyString.MakeNonEmpty symbol) =>
   Proxy symbol -> Name
 fromSymbolProxy _ = Name (NonEmptyString.nes (Proxy :: Proxy symbol))
 

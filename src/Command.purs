@@ -16,14 +16,16 @@ import FileSystem.Path as Path
 import Node.Process as Process
 
 execJsWithoutExtensionByNodeJsWithLog ::
-  { filePath :: Path.FilePath
+  { name :: NonEmptyString
+  , filePath :: Path.FilePath
   , parameters :: Array NonEmptyString
   } ->
   Aff.Aff Unit
-execJsWithoutExtensionByNodeJsWithLog { filePath, parameters } = do
+execJsWithoutExtensionByNodeJsWithLog { name, filePath, parameters } = do
   nodeJsExecPath <- EffectClass.liftEffect Process.execPath
   execWithLog
-    { filePath: nodeJsExecPath
+    { name
+    , filePath: nodeJsExecPath
     , parameters:
         Array.cons
           (Path.filePathToString filePath Nothing)
@@ -31,11 +33,12 @@ execJsWithoutExtensionByNodeJsWithLog { filePath, parameters } = do
     }
 
 execWithLog ::
-  { filePath :: String
+  { name :: NonEmptyString
+  , filePath :: String
   , parameters :: Array NonEmptyString
   } ->
   Aff.Aff Unit
-execWithLog { filePath, parameters } = do
+execWithLog { name, filePath, parameters } = do
   result <-
     AffCompat.fromEffectFnAff
       ( childProcessExecFile
@@ -43,6 +46,7 @@ execWithLog { filePath, parameters } = do
           , parameters: map NonEmptyString.toString parameters
           }
       )
+  Console.logValueAsAff "childProcess" name
   Console.logValueAsAff "stdout" result.stdout
   Console.logValueAsAff "sterr" result.stderr
 

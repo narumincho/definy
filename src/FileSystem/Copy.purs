@@ -1,6 +1,7 @@
 module FileSystem.Copy
-  ( copyFileToDistributionChangeFileType
-  , copyFileToDistribution
+  ( copyFileToDistribution
+  , copyFileToDistributionChangeFileType
+  , copyFileToDistributionWithoutExtension
   , copySecretFile
   ) where
 
@@ -44,6 +45,21 @@ copyFileToDistribution filePath distributionFilePath@(Path.DistributionFilePath 
     , dist:
         NonEmptyString.toString
           (Path.distributionFilePathToString distributionFilePath fileTypeMaybe)
+    }
+
+-- | ファイルをコピーする. 出力先のファイル名には拡張子を出力しない
+copyFileToDistributionWithoutExtension ::
+  Path.FilePath ->
+  Maybe FileType.FileType ->
+  Path.DistributionFilePath ->
+  Aff.Aff Unit
+copyFileToDistributionWithoutExtension filePath fileTypeMaybe distributionFilePath@(Path.DistributionFilePath { directoryPath }) = do
+  Write.ensureDir (Path.distributionDirectoryPathToDirectoryPath directoryPath)
+  copyFile
+    { src: NonEmptyString.toString (Path.filePathToString filePath fileTypeMaybe)
+    , dist:
+        NonEmptyString.toString
+          (Path.distributionFilePathToString distributionFilePath Nothing)
     }
 
 -- | 1つ上の階層の secret ディレクトリ内に保存された機密情報の入ったファイルを出力先にコピーする

@@ -67,6 +67,7 @@ fromSymbolProxy ::
   forall (symbol :: Symbol).
   (SafeIdentifier symbol) =>
   (Symbol.IsSymbol symbol) =>
+  (NonEmptyString.MakeNonEmpty symbol) =>
   Proxy symbol -> Identifier
 fromSymbolProxy _ = Identifier (NonEmptyString.nes (Proxy :: Proxy symbol))
 

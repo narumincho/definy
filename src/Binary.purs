@@ -15,7 +15,7 @@ import Data.Nullable as Nullable
 import Data.UInt as UInt
 import Node.Buffer as Buffer
 
--- | Data.ArrayBuffer の扱いがいまいちだったため別で作ってみる
+-- | Data.ArrayBuffer の扱いがいまいちだったため別で作ってみる `Uint8Array`
 foreign import data Binary :: Type
 
 foreign import append :: Binary -> Binary -> Binary

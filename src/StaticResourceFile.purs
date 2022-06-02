@@ -2,9 +2,12 @@ module StaticResourceFile
   ( StaticResourceFileResult(..)
   , getStaticResourceFileResult
   , staticFileResultToPureScriptModule
+  , staticFileResultToTypeScriptModule
   ) where
 
 import Prelude
+import Data.Array as Array
+import Data.Maybe (Maybe(..))
 import Data.Maybe as Maybe
 import Data.String as String
 import Data.String.NonEmpty (NonEmptyString)
@@ -21,6 +24,8 @@ import Hash as Hash
 import MediaType as MediaType
 import PureScript.Data as PureScriptData
 import PureScript.Wellknown as PureScriptWellknown
+import TypeScript.Data as TypeScriptData
+import TypeScript.Identifier as TsIdentifier
 import Util as Util
 
 -- | static な ファイルの解析結果
@@ -101,7 +106,8 @@ filePathToStaticResourceFileResultAff filePath fileTypeMaybe = do
         }
     )
 
-staticFileResultToPureScriptModule :: PureScriptData.ModuleName -> Array StaticResourceFileResult -> PureScriptData.Module
+staticFileResultToPureScriptModule ::
+  PureScriptData.ModuleName -> Array StaticResourceFileResult -> PureScriptData.Module
 staticFileResultToPureScriptModule moduleName resultList =
   PureScriptData.Module
     { name: moduleName
@@ -111,7 +117,8 @@ staticFileResultToPureScriptModule moduleName resultList =
           resultList
     }
 
-staticResourceFileResultToPureScriptDefinition :: StaticResourceFileResult -> PureScriptData.Definition
+staticResourceFileResultToPureScriptDefinition ::
+  StaticResourceFileResult -> PureScriptData.Definition
 staticResourceFileResultToPureScriptDefinition (StaticResourceFileResult record) =
   PureScriptWellknown.definition
     { name: record.fileId
@@ -134,3 +141,42 @@ staticResourceFileResultToPureScriptDefinition (StaticResourceFileResult record)
           )
     , isExport: true
     }
+
+staticFileResultToTypeScriptModule ::
+  Array StaticResourceFileResult -> TypeScriptData.Module
+staticFileResultToTypeScriptModule resultList =
+  TypeScriptData.Module
+    { moduleDocument: ""
+    , exportDefinitionList:
+        Array.mapMaybe
+          staticResourceFileResultToTypeScriptDefinition
+          resultList
+    }
+
+staticResourceFileResultToTypeScriptDefinition ::
+  StaticResourceFileResult -> Maybe TypeScriptData.ExportDefinition
+staticResourceFileResultToTypeScriptDefinition (StaticResourceFileResult record) = case TsIdentifier.fromNonEmptyString record.fileId of
+  Just name ->
+    Just
+      ( TypeScriptData.ExportDefinitionVariable
+          ( TypeScriptData.VariableDeclaration
+              { name
+              , document:
+                  String.joinWith ""
+                    [ "static な ファイル の `"
+                    , NonEmptyString.toString (Path.filePathToString record.originalFilePath record.fileType)
+                    , "` のハッシュ値(`"
+                    , NonEmptyString.toString (Hash.toNonEmptyString record.requestPathAndUploadFileName)
+                    , "`)(コード生成結果)"
+                    ]
+              , type: TypeScriptData.TsTypeString
+              , expr:
+                  TypeScriptData.StringLiteral
+                    ( NonEmptyString.toString
+                        (Hash.toNonEmptyString record.requestPathAndUploadFileName)
+                    )
+              , export: true
+              }
+          )
+      )
+  Nothing -> Nothing

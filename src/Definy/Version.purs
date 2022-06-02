@@ -2,6 +2,7 @@ module Definy.Version
   ( Version(..)
   , getVersion
   , toExpr
+  , toProductionOrDevelopment
   , toSimpleString
   , versionType
   ) where
@@ -21,12 +22,12 @@ import PureScript.Wellknown as Pw
 import Type.Prelude (Proxy(..))
 
 data Version
-  = Release NonEmptyString
+  = Production NonEmptyString
   | Development String
 
 toSimpleString :: Version -> String
 toSimpleString = case _ of
-  Release sha -> append "Release: " (NonEmptyString.toString sha)
+  Production sha -> append "Production: " (NonEmptyString.toString sha)
   Development dateTime -> append "Development: " dateTime
 
 definyVersionModuleName :: P.ModuleName
@@ -46,11 +47,11 @@ versionType =
 
 toExpr :: Version -> Pw.Expr Version
 toExpr = case _ of
-  Release githubSha ->
+  Production githubSha ->
     Pw.call
       ( Pw.tag
           { moduleName: definyVersionModuleName
-          , name: NonEmptyString.nes (Proxy :: _ "Release")
+          , name: NonEmptyString.nes (Proxy :: _ "Production")
           }
       )
       (Pw.nonEmptyStringLiteral githubSha)
@@ -67,7 +68,7 @@ getVersion :: ProductionOrDevelopment.ProductionOrDevelopment -> Aff.Aff Version
 getVersion = case _ of
   ProductionOrDevelopment.Production -> do
     sha <- readGithubSha
-    pure (Release sha)
+    pure (Production sha)
   ProductionOrDevelopment.Development -> do
     now <- EffectClass.liftEffect simpleGetNow
     pure (Development now)
@@ -75,14 +76,19 @@ getVersion = case _ of
 readGithubSha :: Aff.Aff NonEmptyString
 readGithubSha =
   EffectClass.liftEffect
-    ( map
+    ( bind
+        (Process.lookupEnv "GITHUB_SHA")
         ( case _ of
             Just githubShaValue -> case NonEmptyString.fromString githubShaValue of
-              Just githubShaAsNonEmptyString -> githubShaAsNonEmptyString
-              Nothing -> NonEmptyString.nes (Proxy :: _ "GITHUB_SHA is empty")
-            Nothing -> NonEmptyString.nes (Proxy :: _ "can not read GITHUB_SHA")
+              Just githubShaAsNonEmptyString -> pure githubShaAsNonEmptyString
+              Nothing -> Aff.throwError (Aff.error "GITHUB_SHA is empty")
+            Nothing -> Aff.throwError (Aff.error "can not read GITHUB_SHA")
         )
-        (Process.lookupEnv "GITHUB_SHA")
     )
+
+toProductionOrDevelopment :: Version -> ProductionOrDevelopment.ProductionOrDevelopment
+toProductionOrDevelopment = case _ of
+  Production _ -> ProductionOrDevelopment.Production
+  Development _ -> ProductionOrDevelopment.Development
 
 foreign import simpleGetNow :: Effect String

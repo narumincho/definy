@@ -8,18 +8,18 @@ import Data.Argonaut as Argonaut
 import Data.Array.NonEmpty as NonEmptyArray
 import Data.Map as Map
 import Data.Maybe (Maybe(..))
+import Data.Set as Set
 import Data.String.NonEmpty (NonEmptyString)
 import Data.String.NonEmpty as NonEmptyString
 import Effect as Effect
 import Effect.Aff as Aff
+import EsBuild as EsBuild
 import FileSystem.Copy as FileSystemCopy
 import FileSystem.FileType as FileType
 import FileSystem.Name as Name
 import FileSystem.Path as Path
-import FileSystem.Read as FileSystemRead
 import FileSystem.Write as FileSystemWrite
 import PackageJson as PackageJson
-import PureScript.Data as PureScriptData
 import PureScript.Spago as Spago
 import StructuredUrl as StructuredUrl
 import Type.Proxy (Proxy(..))
@@ -106,15 +106,8 @@ generatePackageJson =
                   }
               }
           )
-    , browser: Path.distributionFilePathToStringBaseApp extensionMainPath FileType.JavaScript
+    , browser: Path.distributionFilePathToStringBaseApp mainScriptPath FileType.JavaScript
     , icon: iconDistributionPath
-    }
-
-extensionMainPath :: Path.DistributionFilePath
-extensionMainPath =
-  Path.DistributionFilePath
-    { directoryPath: distributionDirectoryPath
-    , fileName: Name.fromSymbolProxy (Proxy :: _ "main")
     }
 
 mainScriptPath :: Path.DistributionFilePath
@@ -126,13 +119,30 @@ mainScriptPath =
 
 buildExtensionMain :: Aff.Aff Unit
 buildExtensionMain = do
-  Spago.bundleModule
-    { mainModuleName:
-        PureScriptData.ModuleName
-          (NonEmptyArray.cons (NonEmptyString.nes (Proxy :: _ "VsCodeExtension")) (NonEmptyArray.singleton (NonEmptyString.nes (Proxy :: _ "Main"))))
-    , outputJavaScriptPath: mainScriptPath
+  Spago.build
+    { name: NonEmptyString.nes (Proxy :: _ "VsCodeExtension Main")
+    , outputDirectory: Path.DirectoryPath [ Name.fromSymbolProxy (Proxy :: Proxy "output") ]
     }
-  code <- FileSystemRead.readTextFile (Path.distributionFilePathToFilePath mainScriptPath) FileType.JavaScript
+  code <-
+    EsBuild.buildJs
+      { entryPoints:
+          Path.FilePath
+            { directoryPath:
+                Path.DirectoryPath
+                  [ Name.fromSymbolProxy (Proxy :: Proxy "output")
+                  , Name.fromSymbolProxy (Proxy :: Proxy "VsCodeExtension.Main")
+                  ]
+            , fileName: Name.fromSymbolProxy (Proxy :: Proxy "index")
+            }
+      , target:
+          Set.fromFoldable
+            [ NonEmptyString.nes (Proxy :: Proxy "chrome100")
+            , NonEmptyString.nes (Proxy :: Proxy "node16")
+            ]
+      , external: Set.singleton (NonEmptyString.nes (Proxy :: Proxy "vscode"))
+      , define: Map.empty
+      , format: EsBuild.CommonJs
+      }
   FileSystemWrite.writeTextFileInDistribution mainScriptPath (Just FileType.JavaScript)
     (append code "const JavaScriptDynamicImport = (url) => import(url);\n")
 

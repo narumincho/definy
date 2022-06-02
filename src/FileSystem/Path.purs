@@ -9,6 +9,7 @@ module FileSystem.Path
   , distributionDirectoryPathToDirectoryPath
   , distributionDirectoryPathToString
   , distributionDirectoryPathToStringBaseApp
+  , distributionDirectoryPathToStringBaseFolderFromSame
   , distributionFilePathToDirectoryPath
   , distributionFilePathToFilePath
   , distributionFilePathToString
@@ -191,6 +192,12 @@ distributionDirectoryPathToStringBaseAppWithoutDotSlash (DistributionDirectoryPa
       (NonEmptyString.toString (Name.toNonEmptyString folderName))
       "/"
   Nothing -> ""
+
+distributionDirectoryPathToStringBaseFolderFromSame ::
+  DistributionFilePath -> FileType.FileType -> NonEmptyString
+distributionDirectoryPathToStringBaseFolderFromSame (DistributionFilePath { fileName }) fileType =
+  Prelude.append (NonEmptyString.nes (Proxy :: _ "./"))
+    (fileNameWithFileTypeToString fileName fileType)
 
 srcDirectoryPath :: DirectoryPath
 srcDirectoryPath =

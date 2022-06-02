@@ -248,7 +248,7 @@ const javaScriptElementByUrl = (url: URL): HtmlElement =>
   htmlElement(
     "script",
     new Map([
-      ["defer", null],
+      ["type", "module"],
       ["src", url.toString()],
     ]),
     []

@@ -6,7 +6,6 @@ import Prelude
 import Console as Console
 import Console as ConsoleValue
 import Data.Argonaut as Argonaut
-import Data.Array.NonEmpty as NonEmptyArray
 import Data.Either as Either
 import Data.Map as Map
 import Data.Maybe (Maybe(..))
@@ -14,27 +13,28 @@ import Data.Set as Set
 import Data.String.NonEmpty (NonEmptyString)
 import Data.String.NonEmpty as NonEmptyString
 import Data.UInt as UInt
+import Definy.BuildCodeGen as BuildCodeGen
+import Definy.ModuleName as ModuleName
 import Definy.Version as Version
 import Effect.Aff as Aff
-import Effect.Class as EffectClass
-import Effect.Uncurried as EffectUncurried
 import EsBuild as EsBuild
 import FileSystem.Copy as FileSystemCopy
 import FileSystem.FileType as FileType
 import FileSystem.Name as Name
 import FileSystem.Path as Path
-import FileSystem.Read as FileSystemRead
 import FileSystem.Write as FileSystemWrite
 import Firebase.FirebaseJson as FirebaseJson
 import Firebase.SecurityRules as SecurityRules
 import Hash as Hash
+import MediaType as MediaType
 import PackageJson as PackageJson
 import ProductionOrDevelopment as ProductionOrDevelopment
-import PureScript.Data as PureScriptData
-import PureScript.Wellknown as PureScriptWellknown
 import StaticResourceFile as StaticResourceFile
 import StructuredUrl as StructuredUrl
 import Type.Proxy (Proxy(..))
+import TypeScript.Data as TypeScriptData
+import TypeScript.ModuleName as TypeScriptModuleName
+import TypeScript.ToString as TypeScriptToString
 import Util as Util
 
 build ::
@@ -42,7 +42,7 @@ build ::
   NonEmptyString ->
   Aff.Aff Unit
 build mode origin = do
-  _ <- Version.getVersion mode
+  version <- Version.getVersion mode
   Util.toParallel
     [ case mode of
         ProductionOrDevelopment.Production -> pure unit
@@ -62,30 +62,8 @@ build mode origin = do
     , writePackageJsonForFunctions
     , writeFirestoreRules
     , generateCloudStorageRules
-    , writeFirebaseJson mode
-    , EffectClass.liftEffect
-        ( EffectUncurried.runEffectFn2
-            buildInTypeScript
-            ( case mode of
-                ProductionOrDevelopment.Development -> true
-                ProductionOrDevelopment.Production -> false
-            )
-            (NonEmptyString.toString origin)
-        )
+    , codeGenAndBuildClientAndFunctionsScript origin version
     ]
-
-codeGenAndBuildClientAndFunctionsScript ::
-  ProductionOrDevelopment.ProductionOrDevelopment ->
-  NonEmptyString ->
-  Version.Version ->
-  Aff.Aff Unit
-codeGenAndBuildClientAndFunctionsScript mode origin version = do
-  Util.toParallel
-    [ map (\_ -> unit) staticResourceBuild
-    , outputNowModeAndOrigin mode origin version
-    ]
-  _ <- clientProgramBuild
-  pure unit
 
 appName :: Name.Name
 appName =
@@ -111,6 +89,13 @@ functionsDistributionDirectoryPath =
           )
     }
 
+functionsMainScriptPath :: Path.DistributionFilePath
+functionsMainScriptPath =
+  Path.DistributionFilePath
+    { directoryPath: functionsDistributionDirectoryPath
+    , fileName: Name.fromSymbolProxy (Proxy :: _ "main")
+    }
+
 hostingDistributionPath :: Path.DistributionDirectoryPath
 hostingDistributionPath =
   Path.DistributionDirectoryPath
@@ -119,17 +104,6 @@ hostingDistributionPath =
         Just
           ( Name.fromSymbolProxy
               (Proxy :: _ "hosting")
-          )
-    }
-
-esbuildClientProgramFileDirectoryPath :: Path.DistributionDirectoryPath
-esbuildClientProgramFileDirectoryPath =
-  Path.DistributionDirectoryPath
-    { appName: appName
-    , folderNameMaybe:
-        Just
-          ( Name.fromSymbolProxy
-              (Proxy :: _ "client-esbuild-result")
           )
     }
 
@@ -151,20 +125,13 @@ writePackageJsonForFunctions = do
 usingPackageInFunctions :: Set.Set NonEmptyString
 usingPackageInFunctions =
   Set.fromFoldable
-    [ NonEmptyString.nes
-        (Proxy :: _ "firebase-admin")
-    , NonEmptyString.nes
-        (Proxy :: _ "firebase-functions")
-    , NonEmptyString.nes
-        (Proxy :: _ "axios")
-    , NonEmptyString.nes
-        (Proxy :: _ "jimp")
-    , NonEmptyString.nes
-        (Proxy :: _ "jsonwebtoken")
-    , NonEmptyString.nes
-        (Proxy :: _ "fs-extra")
-    , NonEmptyString.nes
-        (Proxy :: _ "sha256-uint8array")
+    [ NonEmptyString.nes (Proxy :: _ "firebase-admin")
+    , NonEmptyString.nes (Proxy :: _ "firebase-functions")
+    , NonEmptyString.nes (Proxy :: _ "axios")
+    , NonEmptyString.nes (Proxy :: _ "jimp")
+    , NonEmptyString.nes (Proxy :: _ "jsonwebtoken")
+    , NonEmptyString.nes (Proxy :: _ "fs-extra")
+    , NonEmptyString.nes (Proxy :: _ "sha256-uint8array")
     ]
 
 generatePackageJson :: Map.Map NonEmptyString NonEmptyString -> Argonaut.Json
@@ -178,8 +145,9 @@ generatePackageJson dependencies =
         NonEmptyString.nes
           (Proxy :: _ "definy in Cloud Functions for Firebase")
     , main:
-        NonEmptyString.nes
-          (Proxy :: _ "./functions/main.js")
+        Path.distributionDirectoryPathToStringBaseFolderFromSame
+          functionsMainScriptPath
+          FileType.JavaScript
     , gitHubAccountName:
         NonEmptyString.nes
           (Proxy :: _ "narumincho")
@@ -198,103 +166,6 @@ generatePackageJson dependencies =
     , name: PackageJson.nameFromSymbolProxyUnsafe (Proxy :: _ "definy-functions")
     , nodeVersion: NonEmptyString.nes (Proxy :: _ "16")
     , version: NonEmptyString.nes (Proxy :: _ "1.0.0")
-    }
-
-definyModuleName :: NonEmptyString
-definyModuleName =
-  NonEmptyString.nes
-    (Proxy :: _ "Definy")
-
-productionOrDevelopmentModuleName :: PureScriptData.ModuleName
-productionOrDevelopmentModuleName =
-  PureScriptData.ModuleName
-    ( NonEmptyArray.singleton
-        ( NonEmptyString.nes
-            (Proxy :: _ "ProductionOrDevelopment")
-        )
-    )
-
-staticResourceModuleName :: PureScriptData.ModuleName
-staticResourceModuleName =
-  PureScriptData.ModuleName
-    ( NonEmptyArray.cons' definyModuleName
-        [ NonEmptyString.nes
-            (Proxy :: _ "StaticResource")
-        ]
-    )
-
-outputNowModeAndOrigin ::
-  ProductionOrDevelopment.ProductionOrDevelopment ->
-  NonEmptyString ->
-  Version.Version ->
-  Aff.Aff Unit
-outputNowModeAndOrigin productionOrDevelopment origin version =
-  FileSystemWrite.writePureScript
-    ( generateNowModeAndOriginPureScriptModule
-        productionOrDevelopment
-        origin
-        version
-    )
-
-generateNowModeAndOriginPureScriptModule ::
-  ProductionOrDevelopment.ProductionOrDevelopment ->
-  NonEmptyString ->
-  Version.Version ->
-  PureScriptData.Module
-generateNowModeAndOriginPureScriptModule productionOrDevelopment origin version =
-  PureScriptData.Module
-    { name:
-        PureScriptData.ModuleName
-          ( NonEmptyArray.cons' definyModuleName
-              [ NonEmptyString.nes
-                  (Proxy :: _ "OriginAndVersion")
-              ]
-          )
-    , definitionList:
-        [ PureScriptWellknown.definition
-            { name: NonEmptyString.nes (Proxy :: _ "nowMode")
-            , document: "実行モード (ビルド時にコード生成される)"
-            , pType:
-                PureScriptWellknown.pTypeFrom
-                  { moduleName: productionOrDevelopmentModuleName
-                  , name: NonEmptyString.nes (Proxy :: _ "ProductionOrDevelopment")
-                  }
-            , expr:
-                case productionOrDevelopment of
-                  ProductionOrDevelopment.Development ->
-                    PureScriptWellknown.tag
-                      { moduleName: productionOrDevelopmentModuleName
-                      , name: NonEmptyString.nes (Proxy :: _ "Development")
-                      }
-                  ProductionOrDevelopment.Production ->
-                    PureScriptWellknown.tag
-                      { moduleName: productionOrDevelopmentModuleName
-                      , name: NonEmptyString.nes (Proxy :: _ "Production")
-                      }
-            , isExport: true
-            }
-        , PureScriptWellknown.definition
-            { name: NonEmptyString.nes (Proxy :: _ "origin")
-            , document: "オリジン (ビルド時にコード生成される)"
-            , pType: PureScriptWellknown.nonEmptyString
-            , expr: PureScriptWellknown.nonEmptyStringLiteral origin
-            , isExport: true
-            }
-        , createVersionDefinition version
-        ]
-    }
-
-createVersionDefinition ::
-  Version.Version ->
-  PureScriptData.Definition
-createVersionDefinition version =
-  PureScriptWellknown.definition
-    { name: NonEmptyString.nes (Proxy :: _ "version")
-    , document: append "バージョン名 (ビルド時にコード生成される) " (Version.toSimpleString version)
-    , pType: Version.versionType
-    , expr:
-        Version.toExpr version
-    , isExport: true
     }
 
 firestoreSecurityRulesFilePath :: Path.DistributionFilePath
@@ -327,8 +198,12 @@ generateCloudStorageRules =
     cloudStorageSecurityRulesFilePath
     SecurityRules.allForbiddenFirebaseStorageRule
 
-writeFirebaseJson :: ProductionOrDevelopment.ProductionOrDevelopment -> Aff.Aff Unit
-writeFirebaseJson productionOrDevelopment = do
+writeFirebaseJson ::
+  ProductionOrDevelopment.ProductionOrDevelopment ->
+  Hash.Sha256HashValue ->
+  Array StaticResourceFile.StaticResourceFileResult ->
+  Aff.Aff Unit
+writeFirebaseJson productionOrDevelopment clientProgramHash staticResourceFileResult = do
   FileSystemWrite.writeJson
     ( Path.DistributionFilePath
         { directoryPath: Path.DistributionDirectoryPath { appName, folderNameMaybe: Nothing }
@@ -336,52 +211,110 @@ writeFirebaseJson productionOrDevelopment = do
         }
     )
     ( FirebaseJson.toJson
-        ( FirebaseJson.FirebaseJson
-            { cloudStorageRulesFilePath: cloudStorageSecurityRulesFilePath
-            , emulators:
-                FirebaseJson.Emulators
-                  { firestorePortNumber:
-                      case productionOrDevelopment of
-                        ProductionOrDevelopment.Development -> Just (UInt.fromInt 8080)
-                        ProductionOrDevelopment.Production -> Nothing
-                  , hostingPortNumber:
-                      case productionOrDevelopment of
-                        ProductionOrDevelopment.Development -> Just (UInt.fromInt 2520)
-                        ProductionOrDevelopment.Production -> Nothing
-                  , storagePortNumber:
-                      case productionOrDevelopment of
-                        ProductionOrDevelopment.Development -> Just (UInt.fromInt 9199)
-                        ProductionOrDevelopment.Production -> Nothing
-                  }
-            , firestoreRulesFilePath: firestoreSecurityRulesFilePath
-            , functions: Nothing
-            , hostingDistributionPath: hostingDistributionPath
-            , hostingRewites:
-                [ FirebaseJson.Rewrite
-                    { source: NonEmptyString.nes (Proxy :: _ "/api/**")
-                    , function: NonEmptyString.nes (Proxy :: _ "api")
-                    }
-                , FirebaseJson.Rewrite
-                    { source: NonEmptyString.nes (Proxy :: _ "/pngFile/**")
-                    , function: NonEmptyString.nes (Proxy :: _ "pngFile")
-                    }
-                , FirebaseJson.Rewrite
-                    { source: NonEmptyString.nes (Proxy :: _ "**")
-                    , function: NonEmptyString.nes (Proxy :: _ "html")
-                    }
-                ]
-            , hostingHeaders: []
-            }
+        ( createFirebaseJson
+            productionOrDevelopment
+            clientProgramHash
+            staticResourceFileResult
         )
     )
+
+createFirebaseJson ::
+  ProductionOrDevelopment.ProductionOrDevelopment ->
+  Hash.Sha256HashValue ->
+  Array StaticResourceFile.StaticResourceFileResult ->
+  FirebaseJson.FirebaseJson
+createFirebaseJson productionOrDevelopment clientProgramHash staticResourceFileResult =
+  FirebaseJson.FirebaseJson
+    { cloudStorageRulesFilePath: cloudStorageSecurityRulesFilePath
+    , emulators:
+        FirebaseJson.Emulators
+          { firestorePortNumber:
+              case productionOrDevelopment of
+                ProductionOrDevelopment.Development -> Just (UInt.fromInt 8080)
+                ProductionOrDevelopment.Production -> Nothing
+          , hostingPortNumber:
+              case productionOrDevelopment of
+                ProductionOrDevelopment.Development -> Just (UInt.fromInt 2520)
+                ProductionOrDevelopment.Production -> Nothing
+          , storagePortNumber:
+              case productionOrDevelopment of
+                ProductionOrDevelopment.Development -> Just (UInt.fromInt 9199)
+                ProductionOrDevelopment.Production -> Nothing
+          }
+    , firestoreRulesFilePath: firestoreSecurityRulesFilePath
+    , functions: Nothing
+    , hostingDistributionPath: hostingDistributionPath
+    , hostingRewites:
+        [ FirebaseJson.Rewrite
+            { source: NonEmptyString.nes (Proxy :: _ "/api/**")
+            , function: NonEmptyString.nes (Proxy :: _ "api")
+            }
+        , FirebaseJson.Rewrite
+            { source: NonEmptyString.nes (Proxy :: _ "/pngFile/**")
+            , function: NonEmptyString.nes (Proxy :: _ "pngFile")
+            }
+        , FirebaseJson.Rewrite
+            { source: NonEmptyString.nes (Proxy :: _ "**")
+            , function: NonEmptyString.nes (Proxy :: _ "html")
+            }
+        ]
+    , hostingHeaders:
+        append
+          [ FirebaseJson.SourceAndHeaders
+              { source: Hash.toNonEmptyString clientProgramHash
+              , headers:
+                  [ FirebaseJson.Header
+                      { key: NonEmptyString.nes (Proxy :: _ "content-type")
+                      , value: "text/javascript; charset=utf-8"
+                      }
+                  ]
+              }
+          ]
+          ( map
+              ( \( StaticResourceFile.StaticResourceFileResult
+                    { requestPathAndUploadFileName, mediaTypeMaybe }
+                ) ->
+                  FirebaseJson.SourceAndHeaders
+                    { source: Hash.toNonEmptyString requestPathAndUploadFileName
+                    , headers:
+                        [ FirebaseJson.Header
+                            { key: NonEmptyString.nes (Proxy :: _ "content-type")
+                            , value:
+                                NonEmptyString.toString
+                                  (MediaType.toMimeType mediaTypeMaybe)
+                            }
+                        ]
+                    }
+              )
+              staticResourceFileResult
+          )
+    }
+
+codeGenAndBuildClientAndFunctionsScript ::
+  NonEmptyString ->
+  Version.Version ->
+  Aff.Aff Unit
+codeGenAndBuildClientAndFunctionsScript origin version = do
+  { staticResourceBuild: staticResourceHashList } <-
+    Util.runParallelRecord
+      { staticResourceBuild
+      , codeGen: BuildCodeGen.outputNowModeAndOrigin origin version
+      }
+  hash <- clientProgramBuild (Version.toProductionOrDevelopment version)
+  Util.toParallel
+    [ writeFirebaseJson
+        (Version.toProductionOrDevelopment version)
+        hash
+        staticResourceHashList
+    , buildFunctionsScript (Version.toProductionOrDevelopment version) hash
+    ]
 
 staticResourceBuild :: Aff.Aff (Array StaticResourceFile.StaticResourceFileResult)
 staticResourceBuild = do
   resultList <-
     StaticResourceFile.getStaticResourceFileResult
       ( Path.DirectoryPath
-          [ Name.fromSymbolProxy (Proxy :: _ "static")
-          ]
+          [ Name.fromSymbolProxy (Proxy :: _ "static") ]
       )
   copyStaticResource resultList
   staticResourceCodeGen resultList
@@ -391,9 +324,12 @@ copyStaticResource :: Array StaticResourceFile.StaticResourceFileResult -> Aff.A
 copyStaticResource resultList =
   Util.toParallel
     ( map
-        ( \(StaticResourceFile.StaticResourceFileResult { originalFilePath, fileType, requestPathAndUploadFileName }) ->
-            FileSystemCopy.copyFileToDistribution
+        ( \( StaticResourceFile.StaticResourceFileResult
+              { originalFilePath, fileType, requestPathAndUploadFileName }
+          ) ->
+            FileSystemCopy.copyFileToDistributionWithoutExtension
               originalFilePath
+              fileType
               ( Path.DistributionFilePath
                   { directoryPath: hostingDistributionPath
                   , fileName:
@@ -401,49 +337,60 @@ copyStaticResource resultList =
                         (Hash.toNonEmptyString requestPathAndUploadFileName)
                   }
               )
-              fileType
         )
         resultList
     )
 
 staticResourceCodeGen :: Array StaticResourceFile.StaticResourceFileResult -> Aff.Aff Unit
-staticResourceCodeGen resultList =
+staticResourceCodeGen resultList = do
   FileSystemWrite.writePureScript
-    (StaticResourceFile.staticFileResultToPureScriptModule staticResourceModuleName resultList)
+    (StaticResourceFile.staticFileResultToPureScriptModule ModuleName.staticResource resultList)
+  FileSystemWrite.writeTypeScriptFile
+    ( TypeScriptToString.typeScriptModuleMapToString
+        ( TypeScriptData.TypeScriptModuleMap
+            ( Map.singleton
+                ( TypeScriptModuleName.Local
+                    ( Path.FilePath
+                        { directoryPath: Path.DirectoryPath []
+                        , fileName: Name.fromSymbolProxy (Proxy :: _ "staticResource")
+                        }
+                    )
+                )
+                (StaticResourceFile.staticFileResultToTypeScriptModule resultList)
+            )
+        )
+        true
+    )
 
-clientProgramBuild :: Aff.Aff Hash.Sha256HashValue
-clientProgramBuild = do
-  runEsbuild
-  fileHashValue <- readEsbuildResultClientProgramFile
+clientProgramBuild ::
+  ProductionOrDevelopment.ProductionOrDevelopment ->
+  Aff.Aff Hash.Sha256HashValue
+clientProgramBuild productionOrDevelopment = do
+  fileHashValue <- runEsbuild productionOrDevelopment
   Console.logValueAsAff "クライアント向けビルド完了!" { fileHashValue }
   pure fileHashValue
 
-runEsbuild :: Aff.Aff Unit
-runEsbuild = do
-  EsBuild.buildTsx
-    { entryPoints:
-        Path.FilePath
-          { directoryPath:
-              Path.DirectoryPath
-                [ Name.fromSymbolProxy (Proxy :: _ "client") ]
-          , fileName: Name.fromSymbolProxy (Proxy :: _ "main")
-          }
-    , outdir: esbuildClientProgramFileDirectoryPath
-    , sourcemap: false
-    , target: [ "chrome95", "firefox94", "safari15" ]
-    }
-  Console.logValueAsAff "esbuild でのビルドに成功!" {}
-
-readEsbuildResultClientProgramFile :: Aff.Aff Hash.Sha256HashValue
-readEsbuildResultClientProgramFile = do
+runEsbuild :: ProductionOrDevelopment.ProductionOrDevelopment -> Aff.Aff Hash.Sha256HashValue
+runEsbuild productionOrDevelopment = do
   clientProgramAsString <-
-    FileSystemRead.readTextFileInDistribution
-      ( Path.DistributionFilePath
-          { directoryPath: esbuildClientProgramFileDirectoryPath
-          , fileName: Name.fromSymbolProxy (Proxy :: _ "main")
-          }
-      )
-      (Just FileType.JavaScript)
+    EsBuild.buildTsx
+      { entryPoints:
+          Path.FilePath
+            { directoryPath:
+                Path.DirectoryPath
+                  [ Name.fromSymbolProxy (Proxy :: _ "client") ]
+            , fileName: Name.fromSymbolProxy (Proxy :: _ "main")
+            }
+      , target:
+          Set.fromFoldable
+            [ NonEmptyString.nes (Proxy :: _ "chrome100")
+            , NonEmptyString.nes (Proxy :: _ "firefox100")
+            , NonEmptyString.nes (Proxy :: _ "safari15")
+            ]
+      , external: Set.empty
+      , define: createEsbuildDefine productionOrDevelopment
+      , format: EsBuild.EsModule
+      }
   let
     clientProgramHashValue = Hash.stringToSha256HashValue clientProgramAsString
   FileSystemWrite.writeTextFileInDistribution
@@ -456,6 +403,65 @@ readEsbuildResultClientProgramFile = do
     )
     Nothing
     clientProgramAsString
+  Console.logValueAsAff "esbuild でのビルドに成功!" {}
   pure clientProgramHashValue
 
-foreign import buildInTypeScript :: EffectUncurried.EffectFn2 Boolean String Unit
+buildFunctionsScript ::
+  ProductionOrDevelopment.ProductionOrDevelopment ->
+  Hash.Sha256HashValue ->
+  Aff.Aff Unit
+buildFunctionsScript productionOrDevelopment clientScriptHash = do
+  BuildCodeGen.writeClientScriptHashTs clientScriptHash
+  code <-
+    EsBuild.buildJs
+      { entryPoints:
+          Path.FilePath
+            { directoryPath:
+                Path.DirectoryPath
+                  [ Name.fromSymbolProxy (Proxy :: _ "functions") ]
+            , fileName: Name.fromSymbolProxy (Proxy :: _ "main")
+            }
+      , target:
+          Set.singleton (NonEmptyString.nes (Proxy :: _ "node16"))
+      , external:
+          Set.fromFoldable
+            [ NonEmptyString.nes (Proxy :: _ "crypto")
+            , NonEmptyString.nes (Proxy :: _ "node:crypto")
+            , NonEmptyString.nes (Proxy :: _ "path")
+            , NonEmptyString.nes (Proxy :: _ "tls")
+            , NonEmptyString.nes (Proxy :: _ "https")
+            , NonEmptyString.nes (Proxy :: _ "http")
+            , NonEmptyString.nes (Proxy :: _ "zlib")
+            , NonEmptyString.nes (Proxy :: _ "fs")
+            , NonEmptyString.nes (Proxy :: _ "stream")
+            , NonEmptyString.nes (Proxy :: _ "os")
+            , NonEmptyString.nes (Proxy :: _ "net")
+            , NonEmptyString.nes (Proxy :: _ "firebase-admin")
+            , NonEmptyString.nes (Proxy :: _ "firebase-functions")
+            , NonEmptyString.nes (Proxy :: _ "axios")
+            , NonEmptyString.nes (Proxy :: _ "jimp")
+            , NonEmptyString.nes (Proxy :: _ "jsonwebtoken")
+            , NonEmptyString.nes (Proxy :: _ "fs-extra")
+            , NonEmptyString.nes (Proxy :: _ "sha256-uint8array")
+            ]
+      , define: createEsbuildDefine productionOrDevelopment
+      , format: EsBuild.CommonJs
+      }
+  FileSystemWrite.writeTextFileInDistribution
+    functionsMainScriptPath
+    (Just FileType.JavaScript)
+    code
+  Console.logValueAsAff "Functions のビルドに成功!" {}
+
+createEsbuildDefine :: ProductionOrDevelopment.ProductionOrDevelopment -> Map.Map NonEmptyString NonEmptyString
+createEsbuildDefine productionOrDevelopment =
+  Map.singleton
+    (NonEmptyString.nes (Proxy :: _ "process.env.NODE_ENV"))
+    ( case productionOrDevelopment of
+        ProductionOrDevelopment.Production ->
+          NonEmptyString.nes
+            (Proxy :: _ "\"production\"")
+        ProductionOrDevelopment.Development ->
+          NonEmptyString.nes
+            (Proxy :: _ "\"development\"")
+    )
