@@ -82,6 +82,8 @@ getSimpleCompletionList { tree, position } = case EvaluatedTreeIndex.getEvaluate
           , partCompletionItem
           , addCompletionItem
           , uintCompletionItem
+          , textCompletionItem
+          , float64CompletionItem
           ]
         , Prelude.map
             ( \{ name, description } ->
@@ -206,6 +208,36 @@ uintCompletionItem =
     , insertText: setRootFocusFalse exprInsertText
     }
 
+textCompletionItem :: SimpleCompletionItem
+textCompletionItem =
+  SimpleCompletionItem
+    { label: "text"
+    , description: "Expr"
+    , kind: Module
+    , documentation:
+        Markdown.Markdown
+          [ Markdown.Paragraph
+              ( NonEmptyString.nes (Proxy :: Proxy "文字列リテラル")
+              )
+          ]
+    , insertText: setRootFocusFalse textInsertText
+    }
+
+float64CompletionItem :: SimpleCompletionItem
+float64CompletionItem =
+  SimpleCompletionItem
+    { label: "float64"
+    , description: "Expr"
+    , kind: Module
+    , documentation:
+        Markdown.Markdown
+          [ Markdown.Paragraph
+              ( NonEmptyString.nes (Proxy :: Proxy "64bit 浮動小数点数リテラル")
+              )
+          ]
+    , insertText: setRootFocusFalse float64InsertText
+    }
+
 bodyInsertText :: InsertTextTree
 bodyInsertText =
   InsertTextTree
@@ -256,6 +288,34 @@ uintInsertText =
     , children:
         [ InsertTextTree
             { name: NonEmptyString.nes (Proxy :: Proxy "28")
+            , focus: true
+            , children: []
+            }
+        ]
+    }
+
+textInsertText :: InsertTextTree
+textInsertText =
+  InsertTextTree
+    { name: NonEmptyString.nes (Proxy :: Proxy "text")
+    , focus: true
+    , children:
+        [ InsertTextTree
+            { name: NonEmptyString.nes (Proxy :: Proxy "hello")
+            , focus: true
+            , children: []
+            }
+        ]
+    }
+
+float64InsertText :: InsertTextTree
+float64InsertText =
+  InsertTextTree
+    { name: NonEmptyString.nes (Proxy :: Proxy "float64")
+    , focus: true
+    , children:
+        [ InsertTextTree
+            { name: NonEmptyString.nes (Proxy :: Proxy "6.28")
             , focus: true
             , children: []
             }

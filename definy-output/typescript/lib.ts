@@ -8,6 +8,18 @@
 
 
 /**
- * description
+ * 浮動小数点数のサンプル
  */
-export const _: number = 32;
+export const floatSample: number = 32;
+
+
+/**
+ * part description
+ */
+export const partName: number = 6.28;
+
+
+/**
+ * part description
+ */
+export const partName: string = "テキスト";

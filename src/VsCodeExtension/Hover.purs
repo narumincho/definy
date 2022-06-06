@@ -47,7 +47,7 @@ getHoverData position tree@(Evaluate.EvaluatedTree { item, range }) = case item 
                           else
                             []
                         , [ Markdown.CodeBlock
-                              (ToString.noPositionTreeToString hoverTree.value)
+                              (ToString.noPositionTreeRootToString hoverTree.value)
                           ]
                         ]
                     )
@@ -106,7 +106,7 @@ evaluatedItemToHoverTree { item, partialModule } = case item of
           , children: [ ToString.noPositionTreeEmptyChildren description ]
           }
     , valueDummy: false
-    , description: "なにかの説明文"
+    , description: "説明文"
     }
   Evaluate.ModuleBody partList ->
     { type:
