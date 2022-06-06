@@ -17,6 +17,7 @@ import Definy.Identifier as Identifier
 import Markdown as Markdown
 import Prelude as Prelude
 import Type.Proxy (Proxy(..))
+import VsCodeExtension.BuiltIn as BuiltIn
 import VsCodeExtension.Evaluate as Evaluate
 import VsCodeExtension.EvaluatedTreeIndex as EvaluatedTreeIndex
 import VsCodeExtension.Range as Range
@@ -71,21 +72,16 @@ getSimpleCompletionList ::
 getSimpleCompletionList { tree, position } = case EvaluatedTreeIndex.getEvaluatedItem position tree of
   Just { item: Evaluate.Description _ } -> []
   Just { item: Evaluate.UIntLiteral _ } -> []
+  Just { item: Evaluate.Float64Literal _ } -> []
+  Just { item: Evaluate.TextLiteral _ } -> []
   Just { item: Evaluate.Identifier _ } -> []
   _ ->
     let
       partNameSet = getPartNameListInTree tree
     in
-      Array.concat
-        [ [ moduleCompletionItem
-          , bodyCompletionItem
-          , partCompletionItem
-          , addCompletionItem
-          , uintCompletionItem
-          , textCompletionItem
-          , float64CompletionItem
-          ]
-        , Prelude.map
+      Prelude.append
+        (Prelude.map buildInToSimpleCompletionItem BuiltIn.all)
+        ( Prelude.map
             ( \{ name, description } ->
                 SimpleCompletionItem
                   { label: Identifier.identifierToString name
@@ -103,224 +99,84 @@ getSimpleCompletionList { tree, position } = case EvaluatedTreeIndex.getEvaluate
                   }
             )
             partNameSet
-        ]
+        )
 
-moduleCompletionItem :: SimpleCompletionItem
-moduleCompletionItem =
+buildInToSimpleCompletionItem :: BuiltIn.BuiltIn -> SimpleCompletionItem
+buildInToSimpleCompletionItem (BuiltIn.BuiltIn rec) =
   SimpleCompletionItem
-    { label: "module"
-    , description: "Module"
-    , kind: Module
+    { label: NonEmptyString.toString rec.name
+    , description: BuiltIn.builtInTypeToString rec.outputType
+    , kind:
+        case rec.outputType of
+          BuiltIn.Module -> Module
+          BuiltIn.ModuleBody -> Module
+          BuiltIn.Part -> Module
+          _ -> Function
     , documentation:
-        Markdown.Markdown
-          [ Markdown.Paragraph
-              ( NonEmptyString.nes (Proxy :: Proxy "複数のパーツと説明文を合わせたまとまり")
-              )
-          ]
+        Markdown.Markdown [ Markdown.Paragraph rec.description ]
     , insertText:
         InsertTextTree
-          { name: NonEmptyString.nes (Proxy :: Proxy "module")
-          , focus: false
-          , children:
-              [ InsertTextTree
-                  { name: NonEmptyString.nes (Proxy :: Proxy "module description")
-                  , focus: false
-                  , children: []
-                  }
-              , bodyInsertText
-              ]
+          { name: rec.name
+          , focus: true
+          , children: inputTypeToInsertTextTree rec.inputType
           }
     }
 
-bodyCompletionItem :: SimpleCompletionItem
-bodyCompletionItem =
-  SimpleCompletionItem
-    { label: "body"
-    , description: "ModuleBody"
-    , kind: Module
-    , documentation:
-        Markdown.Markdown
-          [ Markdown.Paragraph
-              (NonEmptyString.nes (Proxy :: Proxy "複数のパーツを合わせたまとまり"))
-          ]
-    , insertText: bodyInsertText
-    }
+builtInTypeToInsertTextTree :: BuiltIn.BuiltInType -> InsertTextTree
+builtInTypeToInsertTextTree = case _ of
+  BuiltIn.Module -> builtInToInsertTextTree BuiltIn.moduleBuiltIn
+  BuiltIn.Description ->
+    InsertTextTree
+      { name: NonEmptyString.nes (Proxy :: Proxy "分かりやすい説明文")
+      , focus: true
+      , children: []
+      }
+  BuiltIn.ModuleBody -> builtInToInsertTextTree BuiltIn.bodyBuiltIn
+  BuiltIn.Part -> builtInToInsertTextTree BuiltIn.partBuiltIn
+  BuiltIn.Expr BuiltIn.UInt -> builtInToInsertTextTree BuiltIn.uintBuiltIn
+  BuiltIn.Expr BuiltIn.Text -> builtInToInsertTextTree BuiltIn.textBuiltIn
+  BuiltIn.Expr BuiltIn.Float64 -> builtInToInsertTextTree BuiltIn.float64BuiltIn
+  BuiltIn.Expr BuiltIn.Unknown -> builtInToInsertTextTree BuiltIn.uintBuiltIn
+  BuiltIn.Identifier ->
+    InsertTextTree
+      { name: NonEmptyString.nes (Proxy :: Proxy "identifierSample")
+      , focus: true
+      , children: []
+      }
+  BuiltIn.UIntLiteral ->
+    InsertTextTree
+      { name: NonEmptyString.nes (Proxy :: Proxy "28")
+      , focus: true
+      , children: []
+      }
+  BuiltIn.TextLiteral ->
+    InsertTextTree
+      { name: NonEmptyString.nes (Proxy :: Proxy "Hello, World!")
+      , focus: true
+      , children: []
+      }
+  BuiltIn.Float64Literal ->
+    InsertTextTree
+      { name: NonEmptyString.nes (Proxy :: Proxy "6.28")
+      , focus: true
+      , children: []
+      }
 
-partCompletionItem :: SimpleCompletionItem
-partCompletionItem =
-  SimpleCompletionItem
-    { label: "part"
-    , description: "Part"
-    , kind: Module
-    , documentation:
-        Markdown.Markdown
-          [ Markdown.Paragraph
-              ( NonEmptyString.nes (Proxy :: Proxy "パーツの定義 パーツは定数のようなもの")
-              )
-          ]
-    , insertText:
-        InsertTextTree
-          { name: NonEmptyString.nes (Proxy :: Proxy "part")
-          , focus: false
-          , children:
-              [ InsertTextTree
-                  { name: NonEmptyString.nes (Proxy :: Proxy "partName")
-                  , focus: false
-                  , children: []
-                  }
-              , InsertTextTree
-                  { name: NonEmptyString.nes (Proxy :: Proxy "part description")
-                  , focus: false
-                  , children: []
-                  }
-              , exprInsertText
-              ]
-          }
-    }
-
-addCompletionItem :: SimpleCompletionItem
-addCompletionItem =
-  SimpleCompletionItem
-    { label: "add"
-    , description: "Expr"
-    , kind: Function
-    , documentation:
-        Markdown.Markdown
-          [ Markdown.Paragraph
-              ( NonEmptyString.nes (Proxy :: Proxy "足し算")
-              )
-          ]
-    , insertText: exprInsertText
-    }
-
-uintCompletionItem :: SimpleCompletionItem
-uintCompletionItem =
-  SimpleCompletionItem
-    { label: "uint"
-    , description: "Expr"
-    , kind: Module
-    , documentation:
-        Markdown.Markdown
-          [ Markdown.Paragraph
-              ( NonEmptyString.nes (Proxy :: Proxy "自然数リテラル")
-              )
-          ]
-    , insertText: setRootFocusFalse exprInsertText
-    }
-
-textCompletionItem :: SimpleCompletionItem
-textCompletionItem =
-  SimpleCompletionItem
-    { label: "text"
-    , description: "Expr"
-    , kind: Module
-    , documentation:
-        Markdown.Markdown
-          [ Markdown.Paragraph
-              ( NonEmptyString.nes (Proxy :: Proxy "文字列リテラル")
-              )
-          ]
-    , insertText: setRootFocusFalse textInsertText
-    }
-
-float64CompletionItem :: SimpleCompletionItem
-float64CompletionItem =
-  SimpleCompletionItem
-    { label: "float64"
-    , description: "Expr"
-    , kind: Module
-    , documentation:
-        Markdown.Markdown
-          [ Markdown.Paragraph
-              ( NonEmptyString.nes (Proxy :: Proxy "64bit 浮動小数点数リテラル")
-              )
-          ]
-    , insertText: setRootFocusFalse float64InsertText
-    }
-
-bodyInsertText :: InsertTextTree
-bodyInsertText =
+builtInToInsertTextTree :: BuiltIn.BuiltIn -> InsertTextTree
+builtInToInsertTextTree (BuiltIn.BuiltIn { name, inputType }) =
   InsertTextTree
-    { name: NonEmptyString.nes (Proxy :: Proxy "body")
+    { name: name
     , focus: true
-    , children:
-        [ partInsertText
-        , partInsertText
-        ]
+    , children: inputTypeToInsertTextTree inputType
     }
 
-partInsertText :: InsertTextTree
-partInsertText =
-  InsertTextTree
-    { name: NonEmptyString.nes (Proxy :: Proxy "part")
-    , focus: true
-    , children:
-        [ InsertTextTree
-            { name: NonEmptyString.nes (Proxy :: Proxy "partName")
-            , focus: true
-            , children: []
-            }
-        , InsertTextTree
-            { name: NonEmptyString.nes (Proxy :: Proxy "part description")
-            , focus: true
-            , children: []
-            }
-        , exprInsertText
-        ]
-    }
-
-exprInsertText :: InsertTextTree
-exprInsertText =
-  InsertTextTree
-    { name: NonEmptyString.nes (Proxy :: Proxy "add")
-    , focus: true
-    , children:
-        [ uintInsertText
-        , uintInsertText
-        ]
-    }
-
-uintInsertText :: InsertTextTree
-uintInsertText =
-  InsertTextTree
-    { name: NonEmptyString.nes (Proxy :: Proxy "uint")
-    , focus: true
-    , children:
-        [ InsertTextTree
-            { name: NonEmptyString.nes (Proxy :: Proxy "28")
-            , focus: true
-            , children: []
-            }
-        ]
-    }
-
-textInsertText :: InsertTextTree
-textInsertText =
-  InsertTextTree
-    { name: NonEmptyString.nes (Proxy :: Proxy "text")
-    , focus: true
-    , children:
-        [ InsertTextTree
-            { name: NonEmptyString.nes (Proxy :: Proxy "hello")
-            , focus: true
-            , children: []
-            }
-        ]
-    }
-
-float64InsertText :: InsertTextTree
-float64InsertText =
-  InsertTextTree
-    { name: NonEmptyString.nes (Proxy :: Proxy "float64")
-    , focus: true
-    , children:
-        [ InsertTextTree
-            { name: NonEmptyString.nes (Proxy :: Proxy "6.28")
-            , focus: true
-            , children: []
-            }
-        ]
-    }
+inputTypeToInsertTextTree :: BuiltIn.InputType -> Array InsertTextTree
+inputTypeToInsertTextTree = case _ of
+  BuiltIn.InputTypeNormal types -> Prelude.map builtInTypeToInsertTextTree types
+  BuiltIn.InputTypeRepeat t ->
+    Prelude.map
+      builtInTypeToInsertTextTree
+      (Array.replicate 2 t)
 
 getPartNameListInTree ::
   Evaluate.EvaluatedTree ->
