@@ -14,7 +14,7 @@ jobs:
         with:
           node-version: "16"
       - name: Install npm dependencies (npm ci)
-        run: npm ci
+        run: npm ci --legacy-peer-deps
       - name: PureScript FFI Code TypeScript → JavaScript
         run: npx tsc --project ./tsconfig-purs-ffi.json
       - name: PureScript Build
