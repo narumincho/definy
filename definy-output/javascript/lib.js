@@ -10,7 +10,7 @@
 /**
  * 浮動小数点数のサンプル
  */
-export const floatSample = 32;
+export const floatSample = "<unknown float64 literal!!!>";
 
 
 /**
@@ -23,3 +23,9 @@ export const partName = 6.28;
  * part description
  */
 export const partName = "テキスト";
+
+
+/**
+ * 分かりやすい説明文
+ */
+export const identifierSample = unknownPart;

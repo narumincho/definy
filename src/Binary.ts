@@ -35,3 +35,13 @@ export const fromStringWriteAsUtf8 = (text: string): Uint8Array => {
 };
 
 export const empty = new Uint8Array();
+
+export const fromFloat64 = (v: number): Uint8Array => {
+  const buffer = new ArrayBuffer(8);
+  new DataView(buffer).setFloat64(0, v, false);
+  return new Uint8Array(buffer);
+};
+
+export const toArray = (binary: Uint8Array): ReadonlyArray<number> => {
+  return [...binary];
+};
