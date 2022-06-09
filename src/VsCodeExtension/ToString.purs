@@ -126,10 +126,33 @@ noPositionTreeRootToString (NoPositionTree { name, children }) =
     ]
 
 noPositionTreeToString :: NoPositionTree -> String
-noPositionTreeToString tree =
-  evaluatedTreeToStringLoop
-    (UInt.fromInt 0)
-    tree
+noPositionTreeToString noPositionTree@(NoPositionTree { name, children }) =
+  let
+    oneLineText = evaluatedTreeToOneLineStringLoop noPositionTree
+  in
+    if Ord.lessThan (calculateStringWidth oneLineText) (UInt.fromInt 40) then
+      oneLineText
+    else
+      String.joinWith ""
+        [ NonEmptyString.toString (escapeName name)
+        , if Array.null children then
+            ""
+          else
+            String.joinWith ""
+              [ "(\n"
+              , String.joinWith "\n"
+                  ( map
+                      ( \child ->
+                          evaluatedTreeToStringLoop
+                            (UInt.fromInt 1)
+                            child
+                      )
+                      children
+                  )
+              , "\n"
+              , ")"
+              ]
+        ]
 
 evaluatedTreeToStringLoop :: UInt.UInt -> NoPositionTree -> String
 evaluatedTreeToStringLoop indent noPositionTree@(NoPositionTree { name, children }) =

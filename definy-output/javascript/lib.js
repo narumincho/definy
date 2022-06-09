@@ -3,11 +3,29 @@
 
 
 /**
- * description
+ * 分かりやすい説明文
  */
 
 
 /**
- * description
+ * 浮動小数点数のサンプル
  */
-export const _ = 32;
+export const floatSample = "<unknown float64 literal!!!>";
+
+
+/**
+ * part description
+ */
+export const partName = 6.28;
+
+
+/**
+ * part description
+ */
+export const partName = "テキスト";
+
+
+/**
+ * 分かりやすい説明文
+ */
+export const identifierSample = unknownPart;

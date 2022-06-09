@@ -1,7 +1,9 @@
 module Markdown
   ( Block(..)
   , Markdown(..)
+  , append
   , countMaxLengthGraveAccent
+  , join
   , toMarkdownString
   ) where
 
@@ -15,6 +17,12 @@ import Util as Util
 
 newtype Markdown
   = Markdown (Array Block)
+
+append :: Markdown -> Markdown -> Markdown
+append (Markdown a) (Markdown b) = Markdown (Prelude.append a b)
+
+join :: Array Markdown -> Markdown
+join list = Markdown (Array.concatMap (\(Markdown m) -> m) list)
 
 data Block
   = Paragraph NonEmptyString

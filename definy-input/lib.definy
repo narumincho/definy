@@ -1,4 +1,9 @@
 module(
-  description,
-  body(part("それな", description, uint(32))),
+  "分かりやすい説明文",
+  body(
+    part(floatSample, "浮動小数点数のサンプル", float64(NaN)),
+    part(partName, "part description", float64("6.28")),
+    part(partName, "part description", text("テキスト")),
+    part(identifierSample, "分かりやすい説明文", unknownPart),
+  ),
 )
