@@ -11,6 +11,7 @@ import Data.String as String
 import Data.String.NonEmpty (NonEmptyString)
 import Data.String.NonEmpty as NonEmptyString
 import Data.UInt as UInt
+import Definy.Identifier as Identifier
 import Prelude as Prelude
 import Type.Proxy (Proxy(..))
 import VsCodeExtension.Evaluate as Evaluate
@@ -38,12 +39,18 @@ getErrorListLoop partialModule tree@(Evaluate.EvaluatedTree { item, name, nameRa
     ]
 
 evaluatedItemGetError :: String -> Evaluate.PartialModule -> Evaluate.EvaluatedItem -> Maybe Error
-evaluatedItemGetError name partialModule = case _ of
+evaluatedItemGetError rawName partialModule = case _ of
   Evaluate.Expr (Evaluate.ExprPartReferenceInvalidName { name: partName }) ->
     Just
       (InvalidPartName partName)
-  Evaluate.UIntLiteral Nothing -> Just (UIntParseError name)
-  Evaluate.Identifier Nothing -> Just (InvalidIdentifier name)
+  Evaluate.Expr (Evaluate.ExprPartReference { name }) -> case Evaluate.findPart partialModule name of
+    Just _ -> Nothing
+    Nothing ->
+      Just
+        (UnknownPartName name)
+  Evaluate.UIntLiteral Nothing -> Just (UIntParseError rawName)
+  Evaluate.Float64Literal Nothing -> Just (Float64ParseError rawName)
+  Evaluate.Identifier Nothing -> Just (InvalidIdentifier rawName)
   _ -> Nothing
 
 getErrorListFromEvaluatedTreeChild :: Evaluate.PartialModule -> Evaluate.EvaluatedTreeChild -> Array ErrorWithRange
@@ -98,6 +105,7 @@ newtype ErrorWithRange
 
 data Error
   = InvalidPartName String
+  | UnknownPartName Identifier.Identifier
   | NeedParameter
     { name :: String
     , nameRange :: Range.Range
@@ -110,6 +118,7 @@ data Error
     , expect :: UInt.UInt
     }
   | UIntParseError String
+  | Float64ParseError String
   | TypeMisMatchError Evaluate.TypeMisMatch
   | InvalidIdentifier String
   | RootNotModule
@@ -120,6 +129,10 @@ errorToString = case _ of
     NonEmptyString.appendString
       (ToString.escapeName name)
       "は不正なパーツ名です"
+  UnknownPartName name ->
+    NonEmptyString.appendString
+      (Identifier.identifierToNonEmptyString name)
+      "が見つかりませんでした"
   NeedParameter rec ->
     NonEmptyString.appendString
       (ToString.escapeName rec.name)
@@ -150,6 +163,10 @@ errorToString = case _ of
     NonEmptyString.appendString
       (ToString.escapeName name)
       "はUInt としてパースできませんでした"
+  Float64ParseError name ->
+    NonEmptyString.appendString
+      (ToString.escapeName name)
+      "Float64 としてパースできませんでした"
   TypeMisMatchError (Evaluate.TypeMisMatch { actual, expect }) ->
     NonEmptyString.appendString
       (treeTypeToString expect)
