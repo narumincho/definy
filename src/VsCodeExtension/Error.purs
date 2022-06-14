@@ -18,7 +18,12 @@ import VsCodeExtension.Range as Range
 import VsCodeExtension.ToString as ToString
 
 getErrorList :: Evaluate.EvaluatedTree -> Array ErrorWithRange
-getErrorList tree@(Evaluate.EvaluatedTree { item, name, nameRange, children, expectedChildrenTypeMaybe }) =
+getErrorList tree@(Evaluate.EvaluatedTree { item, range }) = case item of
+  Evaluate.Module partialModule -> getErrorListLoop partialModule tree
+  _ -> [ ErrorWithRange { error: RootNotModule, range } ]
+
+getErrorListLoop :: Evaluate.PartialModule -> Evaluate.EvaluatedTree -> Array ErrorWithRange
+getErrorListLoop partialModule tree@(Evaluate.EvaluatedTree { item, name, nameRange, children, expectedChildrenTypeMaybe }) =
   Array.concat
     [ case expectedChildrenTypeMaybe of
         Just expectedChildrenType ->
@@ -26,16 +31,14 @@ getErrorList tree@(Evaluate.EvaluatedTree { item, name, nameRange, children, exp
             tree
             (UInt.fromInt (Array.length expectedChildrenType))
         Nothing -> []
-    , case evaluatedItemGetError name item of
-        Just error ->
-          [ ErrorWithRange { error, range: nameRange }
-          ]
+    , case evaluatedItemGetError name partialModule item of
+        Just error -> [ ErrorWithRange { error, range: nameRange } ]
         Nothing -> []
-    , Prelude.bind children getErrorListFromEvaluatedTreeChild
+    , Prelude.bind children (getErrorListFromEvaluatedTreeChild partialModule)
     ]
 
-evaluatedItemGetError :: String -> Evaluate.EvaluatedItem -> Maybe Error
-evaluatedItemGetError name = case _ of
+evaluatedItemGetError :: String -> Evaluate.PartialModule -> Evaluate.EvaluatedItem -> Maybe Error
+evaluatedItemGetError name partialModule = case _ of
   Evaluate.Expr (Evaluate.ExprPartReferenceInvalidName { name: partName }) ->
     Just
       (InvalidPartName partName)
@@ -43,8 +46,8 @@ evaluatedItemGetError name = case _ of
   Evaluate.Identifier Nothing -> Just (InvalidIdentifier name)
   _ -> Nothing
 
-getErrorListFromEvaluatedTreeChild :: Evaluate.EvaluatedTreeChild -> Array ErrorWithRange
-getErrorListFromEvaluatedTreeChild (Evaluate.EvaluatedTreeChild { child: child@(Evaluate.EvaluatedTree { range }), typeMisMatchMaybe }) =
+getErrorListFromEvaluatedTreeChild :: Evaluate.PartialModule -> Evaluate.EvaluatedTreeChild -> Array ErrorWithRange
+getErrorListFromEvaluatedTreeChild partialModule (Evaluate.EvaluatedTreeChild { child: child@(Evaluate.EvaluatedTree { range }), typeMisMatchMaybe }) =
   Prelude.append
     ( case typeMisMatchMaybe of
         Just (typeMismatch) ->
@@ -53,7 +56,7 @@ getErrorListFromEvaluatedTreeChild (Evaluate.EvaluatedTreeChild { child: child@(
           ]
         Nothing -> []
     )
-    (getErrorList child)
+    (getErrorListLoop partialModule child)
 
 getParameterError :: Evaluate.EvaluatedTree -> UInt.UInt -> Array ErrorWithRange
 getParameterError (Evaluate.EvaluatedTree { name, nameRange, range, children }) expectedChildrenCount = case Prelude.compare (Array.length children) (UInt.toInt expectedChildrenCount) of
@@ -109,6 +112,7 @@ data Error
   | UIntParseError String
   | TypeMisMatchError Evaluate.TypeMisMatch
   | InvalidIdentifier String
+  | RootNotModule
 
 errorToString :: Error -> NonEmptyString
 errorToString = case _ of
@@ -156,6 +160,7 @@ errorToString = case _ of
     NonEmptyString.appendString
       (ToString.escapeName name)
       "は識別子として不正です. 識別子は 正規表現 ^[a-z][a-zA-Z0-9]{0,63}$ を満たさす必要があります"
+  RootNotModule -> (NonEmptyString.nes (Proxy :: Proxy "直下がモジュールではありません"))
 
 treeTypeToString :: Evaluate.TreeType -> NonEmptyString
 treeTypeToString = case _ of
