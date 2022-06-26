@@ -14,5 +14,5 @@
     "exactOptionalPropertyTypes": true,
     "newLine": "lf"
   },
-  "include": ["src", "./viewApp.ts"]
+  "include": ["src"]
 }
