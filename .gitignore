@@ -2,7 +2,6 @@
 /distribution/
 *.log
 /out.ts
-/viewApp.js
 /localData.js
 /src/**/**.js
 /bower_components/

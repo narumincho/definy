@@ -3,11 +3,8 @@
   [ "aff"
   , "argonaut"
   , "argonaut-codecs"
-  , "argonaut-core"
   , "arrays"
-  , "codec"
-  , "codec-argonaut"
-  , "colors"
+  ,"colors"
   , "console"
   , "effect"
   , "either"
@@ -15,7 +12,6 @@
   , "foreign-object"
   , "functions"
   , "integers"
-  , "lists"
   , "maybe"
   , "node-buffer"
   , "node-fs-aff"
@@ -25,7 +21,6 @@
   , "ordered-collections"
   , "parallel"
   , "prelude"
-  , "profunctor"
   , "record"
   , "strings"
   , "test-unit"
@@ -35,7 +30,6 @@
   , "typelevel-peano"
   , "typelevel-prelude"
   , "uint"
-  , "unsafe-coerce"
   ]
 , packages = ./packages.dhall
 , sources = [ "src/**/*.purs" ]

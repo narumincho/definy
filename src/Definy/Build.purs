@@ -144,10 +144,6 @@ generatePackageJson dependencies =
     , description:
         NonEmptyString.nes
           (Proxy :: _ "definy in Cloud Functions for Firebase")
-    , main:
-        Path.distributionDirectoryPathToStringBaseFolderFromSame
-          functionsMainScriptPath
-          FileType.JavaScript
     , gitHubAccountName:
         NonEmptyString.nes
           (Proxy :: _ "narumincho")
@@ -164,9 +160,18 @@ generatePackageJson dependencies =
                 ]
           }
     , name: PackageJson.nameFromSymbolProxyUnsafe (Proxy :: _ "definy-functions")
-    , nodeVersion: NonEmptyString.nes (Proxy :: _ "16")
     , version: NonEmptyString.nes (Proxy :: _ "1.0.0")
     }
+    ( PackageJson.packageJsonInputOptionalDefault
+        { main =
+          Just
+            ( Path.distributionDirectoryPathToStringBaseFolderFromSame
+                functionsMainScriptPath
+                FileType.JavaScript
+            )
+        , nodeVersion = Just (NonEmptyString.nes (Proxy :: _ "16"))
+        }
+    )
 
 firestoreSecurityRulesFilePath :: Path.DistributionFilePath
 firestoreSecurityRulesFilePath =

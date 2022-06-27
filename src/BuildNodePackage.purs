@@ -174,9 +174,6 @@ generatePackageJson dependencies =
     , description:
         NonEmptyString.nes
           (Proxy :: _ "HTML, TypeScript, JavaScript, package.json, wasm Generator")
-    , main:
-        NonEmptyString.nes
-          (Proxy :: _ "gen/main.js")
     , gitHubAccountName:
         NonEmptyString.nes
           (Proxy :: _ "narumincho")
@@ -194,10 +191,14 @@ generatePackageJson dependencies =
                 ]
           }
     , name: PackageJson.nameFromSymbolProxyUnsafe (Proxy :: _ "@narumincho/gen")
-    , nodeVersion: NonEmptyString.nes (Proxy :: _ ">=14")
-    , typeFilePath:
-        NonEmptyString.nes
-          (Proxy :: _ "gen/main.d.ts")
     , version:
         NonEmptyString.nes (Proxy :: _ "1.0.7")
     }
+    ( PackageJson.packageJsonInputOptionalDefault
+        { main =
+          Just (NonEmptyString.nes (Proxy :: _ "gen/main.js"))
+        , nodeVersion = Just (NonEmptyString.nes (Proxy :: _ ">=14"))
+        , typeFilePath =
+          Just (NonEmptyString.nes (Proxy :: _ "gen/main.d.ts"))
+        }
+    )

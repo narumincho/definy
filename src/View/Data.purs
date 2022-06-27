@@ -18,20 +18,18 @@ module View.Data
   , View(..)
   , ViewStyle(..)
   , createStyle
+  , styleOptionalDefault
   ) where
 
 import Color as Color
 import Css as Css
 import Data.Array.NonEmpty (NonEmptyArray)
 import Data.Map as Map
-import Data.Maybe (Maybe(..))
+import Data.Maybe (Maybe)
 import Data.String.NonEmpty (NonEmptyString)
 import Hash as Hash
 import Language as Language
-import Option as Option
 import StructuredUrl as StructuredUrl
-import Type.Proxy (Proxy(..))
-import Util as Util
 import Vdom.PatchState as PatchState
 import Html.Wellknown as HtmlWellknown
 
@@ -64,34 +62,22 @@ newtype ViewStyle
   }
 
 type StyleOptional
-  = ( hover :: Array Css.Declaration )
+  = { hover :: Array Css.Declaration }
+
+styleOptionalDefault :: StyleOptional
+styleOptionalDefault = { hover: [] }
 
 -- | スタイルを指定する
 createStyle ::
-  forall (r :: Row Type).
-  Option.FromRecord
-    r
-    ()
-    StyleOptional =>
-  Record r ->
+  StyleOptional ->
   (Array Css.Declaration) ->
   ViewStyle
 createStyle option normal =
-  let
-    rec =
-      Util.optionRecordToMaybeRecord
-        (Proxy :: _ ())
-        (Proxy :: _ StyleOptional)
-        option
-  in
-    ViewStyle
-      { normal
-      , hover:
-          case rec.hover of
-            Just hover -> hover
-            Nothing -> []
-      , animation: Map.empty
-      }
+  ViewStyle
+    { normal
+    , hover: option.hover
+    , animation: Map.empty
+    }
 
 data Link :: Type -> Type -> Type
 data Link message location
