@@ -68,7 +68,6 @@ generatePackageJson :: Argonaut.Json
 generatePackageJson =
   PackageJson.toJson
     { author: NonEmptyString.nes (Proxy :: _ "narumincho")
-    , publisher: NonEmptyString.nes (Proxy :: _ "narumincho")
     , dependencies: Map.empty :: Map.Map NonEmptyString NonEmptyString
     , description:
         NonEmptyString.nes
@@ -89,26 +88,31 @@ generatePackageJson =
                 ]
           }
     , name: PackageJson.nameFromSymbolProxyUnsafe (Proxy :: _ "definy")
-    , vsCodeVersion: NonEmptyString.nes (Proxy :: _ "^1.67.0")
-    , typeFilePath: Nothing
     , version: NonEmptyString.nes (Proxy :: _ "0.0.6")
-    , activationEvents: Just [ NonEmptyString.nes (Proxy :: _ "onLanguage:definy") ]
-    , contributesLanguages:
-        NonEmptyArray.singleton
-          ( PackageJson.ContributesLanguages
-              { id: LanguageId.languageId
-              , extensions:
-                  [ NonEmptyString.nes (Proxy :: _ ".definy") ]
-              , configuration: languageConfigurationPath
-              , icon:
-                  { light: iconDistributionPath
-                  , dark: iconDistributionPath
-                  }
-              }
-          )
-    , browser: Path.distributionFilePathToStringBaseApp mainScriptPath FileType.JavaScript
-    , icon: iconDistributionPath
     }
+    ( PackageJson.packageJsonInputOptionalDefault
+        { publisher = Just (NonEmptyString.nes (Proxy :: _ "narumincho"))
+        , vsCodeVersion = Just (NonEmptyString.nes (Proxy :: _ "^1.67.0"))
+        , activationEvents = Just [ NonEmptyString.nes (Proxy :: _ "onLanguage:definy") ]
+        , contributesLanguages =
+          Just
+            ( NonEmptyArray.singleton
+                ( PackageJson.ContributesLanguages
+                    { id: LanguageId.languageId
+                    , extensions:
+                        [ NonEmptyString.nes (Proxy :: _ ".definy") ]
+                    , configuration: languageConfigurationPath
+                    , icon:
+                        { light: iconDistributionPath
+                        , dark: iconDistributionPath
+                        }
+                    }
+                )
+            )
+        , browser = Just (Path.distributionFilePathToStringBaseApp mainScriptPath FileType.JavaScript)
+        , icon = Just iconDistributionPath
+        }
+    )
 
 mainScriptPath :: Path.DistributionFilePath
 mainScriptPath =

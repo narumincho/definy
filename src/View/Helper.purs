@@ -3,12 +3,14 @@ module View.Helper
   , BoxHoverStyle(..)
   , PercentageOrRem(..)
   , TextMarkup(..)
+  , boxOptionalDefault
   , boxX
   , boxY
   , code
   , div
   , divText
   , image
+  , imageOptionalDefault
   , inlineAnchor
   , span
   , svg
@@ -19,6 +21,7 @@ module View.Helper
   , svgPolygon
   , svgText
   , text
+  , textOptionalDefault
   ) where
 
 import Color as Color
@@ -32,38 +35,49 @@ import Data.String as String
 import Data.String.NonEmpty (NonEmptyString)
 import Hash as Hash
 import Html.Wellknown as HtmlWellknown
-import Option as Option
 import Prelude as Prelude
 import StructuredUrl as StructuredUrl
-import Type.Proxy (Proxy(..))
-import Util as Util
 import Vdom.PatchState as PatchState
 import View.Data as Data
 import View.StyleDict as StyleDict
 
 type ImageRequired
-  = ( path :: StructuredUrl.PathAndSearchParams
+  = { path :: StructuredUrl.PathAndSearchParams
     , width :: PercentageOrRem
     , height :: Number
     , alternativeText :: String
-    )
+    }
 
 data PercentageOrRem
   = Rem Number
   | Percentage Number
 
 type BoxOptional message location
-  = ( gap :: Number
+  = { gap :: Number
     , paddingTopBottom :: Number
     , paddingLeftRight :: Number
-    , height :: Number
-    , backgroundColor :: Color.Color
-    , gridTemplateColumns1FrCount :: Int
-    , link :: Data.Link message location
+    , height :: Maybe Number
+    , backgroundColor :: Maybe Color.Color
+    , gridTemplateColumns1FrCount :: Maybe Int
+    , link :: Maybe (Data.Link message location)
     , hover :: BoxHoverStyle
     , scrollX :: Boolean
     , scrollY :: Boolean
-    )
+    }
+
+boxOptionalDefault :: forall message location. BoxOptional message location
+boxOptionalDefault =
+  { gap: 0.0
+  , paddingTopBottom: 0.0
+  , paddingLeftRight: 0.0
+  , height: Nothing
+  , backgroundColor: Nothing
+  , gridTemplateColumns1FrCount: Nothing
+  , link: Nothing
+  , hover: BoxHoverStyle { animation: Nothing }
+  , scrollX: false
+  , scrollY: false
+  }
 
 newtype BoxData message location
   = BoxData
@@ -96,73 +110,36 @@ data XOrY
 
 -- | 縦方向に box を配置する
 boxY ::
-  forall message location (r :: Row Type).
-  Option.FromRecord
-    r
-    ()
-    (BoxOptional message location) =>
-  Record r ->
+  forall message location.
+  BoxOptional message location ->
   (Array (Data.ElementAndStyle message location)) ->
   Data.ElementAndStyle message location
 boxY option children = boxXOrYToElement (boxOptionalToBoxData option) children Y
 
 -- | 横方向に box を配置する
 boxX ::
-  forall message location (r :: Row Type).
-  Option.FromRecord
-    r
-    ()
-    (BoxOptional message location) =>
-  Record r ->
+  forall message location.
+  BoxOptional message location ->
   (Array (Data.ElementAndStyle message location)) ->
   Data.ElementAndStyle message location
 boxX option children = boxXOrYToElement (boxOptionalToBoxData option) children X
 
 boxOptionalToBoxData ::
-  forall message location (r :: Row Type).
-  Option.FromRecord
-    r
-    ()
-    (BoxOptional message location) =>
-  Record r -> BoxData message location
+  forall message location.
+  BoxOptional message location -> BoxData message location
 boxOptionalToBoxData rec =
-  let
-    maybeRecord =
-      Util.optionRecordToMaybeRecord
-        (Proxy :: _ ())
-        (Proxy :: _ (BoxOptional message location))
-        rec
-  in
-    BoxData
-      { gap:
-          case maybeRecord.gap of
-            Just gap -> gap
-            Nothing -> 0.0
-      , paddingTopBottom:
-          case maybeRecord.paddingTopBottom of
-            Just paddingTopBottom -> paddingTopBottom
-            Nothing -> 0.0
-      , paddingLeftRight:
-          case maybeRecord.paddingLeftRight of
-            Just paddingLeftRight -> paddingLeftRight
-            Nothing -> 0.0
-      , height: maybeRecord.height
-      , backgroundColor: maybeRecord.backgroundColor
-      , gridTemplateColumns1FrCount: maybeRecord.gridTemplateColumns1FrCount
-      , link: maybeRecord.link
-      , hover:
-          case maybeRecord.hover of
-            Just hover -> hover
-            Nothing -> BoxHoverStyle { animation: Nothing }
-      , scrollX:
-          case maybeRecord.scrollX of
-            Just scrollX -> scrollX
-            Nothing -> false
-      , scrollY:
-          case maybeRecord.scrollY of
-            Just scrollY -> scrollY
-            Nothing -> false
-      }
+  BoxData
+    { gap: rec.gap
+    , paddingTopBottom: rec.paddingTopBottom
+    , paddingLeftRight: rec.paddingLeftRight
+    , height: rec.height
+    , backgroundColor: rec.backgroundColor
+    , gridTemplateColumns1FrCount: rec.gridTemplateColumns1FrCount
+    , link: rec.link
+    , hover: rec.hover
+    , scrollX: rec.scrollX
+    , scrollY: rec.scrollY
+    }
 
 boxXOrYToElement ::
   forall message location.
@@ -303,10 +280,17 @@ keyframeListToSha256HashValue keyframeList =
     (String.joinWith "!" (Prelude.map Css.keyFrameToString keyframeList))
 
 type TextOptional message
-  = ( markup :: TextMarkup
+  = { markup :: TextMarkup
     , padding :: Number
-    , click :: message
-    )
+    , click :: Maybe message
+    }
+
+textOptionalDefault :: forall (message :: Type). TextOptional message
+textOptionalDefault =
+  { markup: None
+  , padding: 0.0
+  , click: Nothing
+  }
 
 data TextMarkup
   = None
@@ -315,29 +299,15 @@ data TextMarkup
   | Code
 
 text ::
-  forall message location (r :: Row Type).
-  Option.FromRecord
-    r
-    ()
-    (TextOptional message) =>
-  Record r -> String -> Data.ElementAndStyle message location
+  forall message location.
+  TextOptional message -> String -> Data.ElementAndStyle message location
 text option textValue =
   let
-    rec =
-      Util.optionRecordToMaybeRecord
-        (Proxy :: _ ())
-        (Proxy :: _ (TextOptional message))
-        option
-
-    paddingValue = case rec.padding of
-      Just v -> v
-      Nothing -> 0.0
-
     style =
       Data.ViewStyle
         { normal:
             [ Css.color Color.white
-            , Css.padding { leftRight: paddingValue, topBottom: paddingValue }
+            , Css.padding { leftRight: option.padding, topBottom: option.padding }
             , Css.margin0
             ]
         , hover: []
@@ -354,14 +324,14 @@ text option textValue =
               , url: Nothing
               }
         )
-        rec.click
+        option.click
   in
     Data.ElementAndStyle
       { style
       , id: Nothing
       , element:
-          case rec.markup of
-            Just None ->
+          case option.markup of
+            None ->
               Data.ElementDiv
                 ( Data.Div
                     { children: Data.ElementListOrTextText textValue
@@ -369,7 +339,7 @@ text option textValue =
                     , id: Nothing
                     }
                 )
-            Just Heading1 ->
+            Heading1 ->
               Data.ElementHeading1
                 ( Data.Heading1
                     { children: Data.ElementListOrTextText textValue
@@ -377,7 +347,7 @@ text option textValue =
                     , id: Nothing
                     }
                 )
-            Just Heading2 ->
+            Heading2 ->
               Data.ElementHeading2
                 ( Data.Heading2
                     { children: Data.ElementListOrTextText textValue
@@ -385,17 +355,9 @@ text option textValue =
                     , id: Nothing
                     }
                 )
-            Just Code ->
+            Code ->
               Data.ElementCode
                 ( Data.Code
-                    { children: Data.ElementListOrTextText textValue
-                    , click: clickMessageData
-                    , id: Nothing
-                    }
-                )
-            Nothing ->
-              Data.ElementDiv
-                ( Data.Div
                     { children: Data.ElementListOrTextText textValue
                     , click: clickMessageData
                     , id: Nothing
@@ -404,47 +366,37 @@ text option textValue =
       }
 
 type ImageOptional
-  = ( objectFit :: Css.ObjectFitValue )
+  = { objectFit :: Css.ObjectFitValue }
+
+imageOptionalDefault :: ImageOptional
+imageOptionalDefault = { objectFit: Css.Cover }
 
 image ::
-  forall message location (r :: Row Type).
-  Option.FromRecord
-    r
-    ImageRequired
-    ImageOptional =>
-  Record r -> Data.ElementAndStyle message location
-image option =
-  let
-    rec =
-      Util.optionRecordToMaybeRecord
-        (Proxy :: _ ImageRequired)
-        (Proxy :: _ ImageOptional)
-        option
-  in
-    Data.ElementAndStyle
-      { style:
-          Data.ViewStyle
-            { normal:
-                [ percentageOrRemWidthToCssDeclaration rec.width
-                , Css.heightRem rec.height
-                , Css.objectFit
-                    ( case rec.objectFit of
-                        Just objectFit -> objectFit
-                        Nothing -> Css.Cover
-                    )
-                ]
-            , hover: []
-            , animation: Map.empty
-            }
-      , element:
-          Data.ElementImage
-            ( Data.Image
-                { path: rec.path
-                , alternativeText: rec.alternativeText
-                }
-            )
-      , id: Nothing
-      }
+  forall message location.
+  ImageRequired ->
+  ImageOptional ->
+  Data.ElementAndStyle message location
+image option optionOptional =
+  Data.ElementAndStyle
+    { style:
+        Data.ViewStyle
+          { normal:
+              [ percentageOrRemWidthToCssDeclaration option.width
+              , Css.heightRem option.height
+              , Css.objectFit optionOptional.objectFit
+              ]
+          , hover: []
+          , animation: Map.empty
+          }
+    , element:
+        Data.ElementImage
+          ( Data.Image
+              { path: option.path
+              , alternativeText: option.alternativeText
+              }
+          )
+    , id: Nothing
+    }
 
 svg ::
   forall message location.
@@ -570,7 +522,7 @@ code :: forall message location. String -> Data.ElementAndStyle message location
 code textValue =
   Data.ElementAndStyle
     { style:
-        Data.createStyle {}
+        Data.createStyle Data.styleOptionalDefault
           [ Css.color Color.white, Css.whiteSpacePreWrap, Css.fontSize 1.1 ]
     , element:
         Data.ElementCode
@@ -599,7 +551,7 @@ svgCircle attribute =
   Data.SvgElementAndStyle
     { element: Data.Circle attribute
     , id: Nothing
-    , style: Data.createStyle {} []
+    , style: Data.createStyle Data.styleOptionalDefault []
     }
 
 svgPolygon ::
@@ -612,7 +564,7 @@ svgPolygon attribute =
   Data.SvgElementAndStyle
     { element: Data.Polygon attribute
     , id: Nothing
-    , style: Data.createStyle {} []
+    , style: Data.createStyle Data.styleOptionalDefault []
     }
 
 svgEllipse ::
@@ -627,7 +579,7 @@ svgEllipse attribute =
   Data.SvgElementAndStyle
     { element: Data.Ellipse attribute
     , id: Nothing
-    , style: Data.createStyle {} []
+    , style: Data.createStyle Data.styleOptionalDefault []
     }
 
 svgText :: { fontSize :: Number, x :: Number, y :: Number, fill :: Color.Color } -> String -> Data.SvgElementAndStyle
@@ -645,7 +597,7 @@ svgText attribute textValue =
               }
           )
     , id: Nothing
-    , style: Data.createStyle {} []
+    , style: Data.createStyle Data.styleOptionalDefault []
     }
 
 svgPath ::
@@ -657,7 +609,7 @@ svgPath attribute =
   Data.SvgElementAndStyle
     { element: Data.Path attribute
     , id: Nothing
-    , style: Data.createStyle {} []
+    , style: Data.createStyle Data.styleOptionalDefault []
     }
 
 svgG ::
@@ -667,5 +619,5 @@ svgG attribute children =
   Data.SvgElementAndStyle
     { element: Data.G { transform: attribute.transform, svgElementList: children }
     , id: Nothing
-    , style: Data.createStyle {} []
+    , style: Data.createStyle Data.styleOptionalDefault []
     }
