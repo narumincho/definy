@@ -6,6 +6,8 @@ import {
   DiagnosticCollection,
   DiagnosticRelatedInformation,
   DiagnosticSeverity,
+  Disposable,
+  ExtensionContext,
   Hover,
   Location,
   MarkdownString,
@@ -21,6 +23,11 @@ import {
   SymbolKind,
   TextEdit,
   Uri,
+  ViewColumn,
+  Webview,
+  WebviewOptions,
+  WebviewPanel,
+  commands,
   languages,
   window,
   workspace,
@@ -409,4 +416,136 @@ export const uriToPath = (uri: Uri): string => {
 
 export const windowShowInformationMessage = (message: string) => () => {
   window.showInformationMessage(message);
+};
+
+class CatCodingPanel {
+  /**
+   * Track the currently panel. Only allow a single panel to exist at a time.
+   */
+  public static currentPanel: CatCodingPanel | undefined;
+
+  public static readonly viewType = "catCoding";
+
+  private readonly _panel: WebviewPanel;
+
+  private readonly _extensionUri: Uri;
+
+  private _disposables: Array<Disposable> = [];
+
+  public static createOrShow(extensionUri: Uri) {
+    const column = window.activeTextEditor
+      ? window.activeTextEditor.viewColumn
+      : undefined;
+
+    // If we already have a panel, show it.
+    if (CatCodingPanel.currentPanel) {
+      CatCodingPanel.currentPanel._panel.reveal(column);
+      return;
+    }
+
+    // Otherwise, create a new panel.
+    const panel = window.createWebviewPanel(
+      CatCodingPanel.viewType,
+      "Cat Coding",
+      column || ViewColumn.One,
+      getWebviewOptions(extensionUri)
+    );
+
+    CatCodingPanel.currentPanel = new CatCodingPanel(panel, extensionUri);
+  }
+
+  public static revive(panel: WebviewPanel, extensionUri: Uri) {
+    CatCodingPanel.currentPanel = new CatCodingPanel(panel, extensionUri);
+  }
+
+  private constructor(panel: WebviewPanel, extensionUri: Uri) {
+    this._panel = panel;
+    this._extensionUri = extensionUri;
+
+    // Set the webview's initial html content
+    this._update();
+
+    /*
+     * Listen for when the panel is disposed
+     * This happens when the user closes the panel or when the panel is closed programmatically
+     */
+    this._panel.onDidDispose(() => this.dispose(), null, this._disposables);
+
+    // Update the content based on view changes
+    this._panel.onDidChangeViewState(
+      (e) => {
+        if (this._panel.visible) {
+          this._update();
+        }
+      },
+      null,
+      this._disposables
+    );
+
+    // Handle messages from the webview
+    this._panel.webview.onDidReceiveMessage(
+      (message) => {
+        switch (message.command) {
+          case "alert":
+            window.showErrorMessage(message.text);
+        }
+      },
+      null,
+      this._disposables
+    );
+  }
+
+  public doRefactor() {
+    /*
+     * Send a message to the webview webview.
+     * You can send any JSON serializable data.
+     */
+    this._panel.webview.postMessage({ command: "refactor" });
+  }
+
+  public dispose() {
+    CatCodingPanel.currentPanel = undefined;
+
+    // Clean up our resources
+    this._panel.dispose();
+
+    while (this._disposables.length) {
+      const x = this._disposables.pop();
+      if (x) {
+        x.dispose();
+      }
+    }
+  }
+
+  private _update() {
+    this._panel.title = "任意のタイトル!";
+    this._panel.webview.html = `<!DOCTYPE html>
+    <html lang="ja">
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Cat Coding</title>
+    </head>
+    <body>
+      任意のHTML を表示する WebView!!!
+      <script type="module"> document.body.append(new Date().toString()); </script>
+    </body>
+    </html>`;
+  }
+}
+
+const getWebviewOptions = (extensionUri: Uri): WebviewOptions => {
+  return {
+    // Enable javascript in the webview
+    enableScripts: true,
+
+    // And restrict the webview to only loading content from our extension's `media` directory.
+    localResourceRoots: [Uri.joinPath(extensionUri, "media")],
+  };
+};
+
+export const registerWebView = (context: ExtensionContext) => () => {
+  commands.registerCommand("definy.webview", () => {
+    CatCodingPanel.createOrShow(context.extensionUri);
+  });
 };

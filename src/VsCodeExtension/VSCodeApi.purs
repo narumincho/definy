@@ -4,6 +4,7 @@ module VsCodeExtension.VSCodeApi
   , Diagnostic
   , DiagnosticCollection
   , DiagnosticRelatedInformation
+  , ExtensionContext(..)
   , Location
   , Position
   , Range
@@ -30,6 +31,7 @@ module VsCodeExtension.VSCodeApi
   , rangeContains
   , rangeGetEnd
   , rangeGetStart
+  , registerWebView
   , uriJoinPath
   , uriToPath
   , uriToString
@@ -48,6 +50,7 @@ import Data.String.NonEmpty (NonEmptyString)
 import Data.UInt as UInt
 import Effect as Effect
 import Effect.Uncurried (EffectFn1)
+import Prim.Row (class Union)
 
 -- | 文章中の文字の位置の範囲
 -- | LSP の仕様により, UTF16 での offset になる
@@ -210,3 +213,7 @@ foreign import uriToPath ::
 
 foreign import windowShowInformationMessage ::
   String -> Effect.Effect Unit
+
+data ExtensionContext
+
+foreign import registerWebView :: ExtensionContext -> Effect.Effect Unit

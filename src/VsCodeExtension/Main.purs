@@ -34,8 +34,11 @@ import VsCodeExtension.TokenType as TokenType
 import VsCodeExtension.Tokenize as Tokenize
 import VsCodeExtension.VSCodeApi as VSCodeApi
 
-activate :: Effect Unit
-activate = do
+activate :: EffectUncurried.EffectFn1 VSCodeApi.ExtensionContext Unit
+activate = EffectUncurried.mkEffectFn1 activateFn
+
+activateFn :: VSCodeApi.ExtensionContext -> Effect.Effect Unit
+activateFn context = do
   diagnosticCollection <- VSCodeApi.languagesCreateDiagnosticCollection "definy-error"
   workspaceFolders <- VSCodeApi.workspaceWorkspaceFolders
   VSCodeApi.languagesRegisterDocumentFormattingEditProvider
@@ -143,6 +146,7 @@ activate = do
   VSCodeApi.workspaceOnDidOpenTextDocument
     (getWorkspaceTextDocumentsAndSendErrorAndOutputCode workspaceFolders diagnosticCollection)
   getWorkspaceTextDocumentsAndSendErrorAndOutputCode workspaceFolders diagnosticCollection
+  VSCodeApi.registerWebView context
 
 codeStringToEvaluatedTree :: String -> Evaluate.EvaluatedTree
 codeStringToEvaluatedTree code =

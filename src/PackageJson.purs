@@ -1,5 +1,6 @@
 module PackageJson
-  ( ContributesLanguages(..)
+  ( ContributesCommand(..)
+  , ContributesLanguages(..)
   , Name
   , PackageJsonOutput
   , devDependencies
@@ -55,6 +56,7 @@ type PackageJsonInputOptional
     , {- 型定義(.d.ts か .ts ??)のファイルパス -} typeFilePath :: Maybe NonEmptyString
     , activationEvents :: Maybe (Array NonEmptyString)
     , contributesLanguages :: Maybe (NonEmptyArray ContributesLanguages)
+    , contributesCommand :: Maybe (NonEmptyArray ContributesCommand)
     , browser :: Maybe NonEmptyString
     , publisher :: Maybe NonEmptyString
     , icon :: Maybe Path.DistributionFilePath
@@ -68,6 +70,7 @@ packageJsonInputOptionalDefault =
   , typeFilePath: Nothing
   , activationEvents: Nothing
   , contributesLanguages: Nothing
+  , contributesCommand: Nothing
   , browser: Nothing
   , publisher: Nothing
   , icon: Nothing
@@ -82,6 +85,12 @@ newtype ContributesLanguages
       { light :: Path.DistributionFilePath
       , dark :: Path.DistributionFilePath
       }
+  }
+
+newtype ContributesCommand
+  = ContributesCommand
+  { command :: NonEmptyString
+  , title :: NonEmptyString
   }
 
 newtype PackageJsonOutput
@@ -185,12 +194,22 @@ toJson option optionalOption =
                   )
               ]
             Nothing -> []
-        , case optionalOption.contributesLanguages of
-            Just contributesLanguages ->
+        , case Tuple.Tuple optionalOption.contributesLanguages optionalOption.contributesCommand of
+            Tuple.Tuple Nothing Nothing -> []
+            _ ->
               [ Tuple.Tuple "contributes"
-                  (createContributesValue contributesLanguages)
+                  ( Util.tupleListToJson
+                      ( Array.concat
+                          [ case optionalOption.contributesLanguages of
+                              Just languageList -> [ Tuple.Tuple "languages" (Argonaut.encodeJson (map createContributesLanguages languageList)) ]
+                              Nothing -> []
+                          , case optionalOption.contributesCommand of
+                              Just contributesCommand -> [ Tuple.Tuple "commands" (Argonaut.encodeJson (map contributesCommandToJson contributesCommand)) ]
+                              Nothing -> []
+                          ]
+                      )
+                  )
               ]
-            Nothing -> []
         , case optionalOption.browser of
             Just browser -> [ Tuple.Tuple "browser" (Argonaut.encodeJson browser) ]
             Nothing -> []
@@ -212,13 +231,6 @@ toJson option optionalOption =
         ]
     )
 
-createContributesValue :: NonEmptyArray ContributesLanguages -> Argonaut.Json
-createContributesValue languageList =
-  Argonaut.encodeJson
-    { languages:
-        map createContributesLanguages languageList
-    }
-
 createContributesLanguages :: ContributesLanguages -> Argonaut.Json
 createContributesLanguages (ContributesLanguages rec) =
   Argonaut.encodeJson
@@ -239,6 +251,9 @@ createContributesLanguages (ContributesLanguages rec) =
               FileType.Png
         }
     }
+
+contributesCommandToJson :: ContributesCommand -> Argonaut.Json
+contributesCommandToJson (ContributesCommand rec) = Argonaut.encodeJson rec
 
 dependenciesPropertyName :: String
 dependenciesPropertyName = "dependencies"

@@ -93,7 +93,11 @@ generatePackageJson =
     ( PackageJson.packageJsonInputOptionalDefault
         { publisher = Just (NonEmptyString.nes (Proxy :: _ "narumincho"))
         , vsCodeVersion = Just (NonEmptyString.nes (Proxy :: _ "^1.67.0"))
-        , activationEvents = Just [ NonEmptyString.nes (Proxy :: _ "onLanguage:definy") ]
+        , activationEvents =
+          Just
+            [ NonEmptyString.nes (Proxy :: _ "onLanguage:definy")
+            , NonEmptyString.nes (Proxy :: _ "onCommand:definy.webview")
+            ]
         , contributesLanguages =
           Just
             ( NonEmptyArray.singleton
@@ -106,6 +110,15 @@ generatePackageJson =
                         { light: iconDistributionPath
                         , dark: iconDistributionPath
                         }
+                    }
+                )
+            )
+        , contributesCommand =
+          Just
+            ( NonEmptyArray.singleton
+                ( PackageJson.ContributesCommand
+                    { command: NonEmptyString.nes (Proxy :: _ "definy.webview")
+                    , title: NonEmptyString.nes (Proxy :: _ ".definy の拡張機能から webview を開きます")
                     }
                 )
             )
