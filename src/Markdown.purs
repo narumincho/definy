@@ -29,6 +29,7 @@ data Block
   | Italic NonEmptyString
   | Header2 NonEmptyString
   | CodeBlock String
+  | ListItem NonEmptyString
   | Raw String
 
 toMarkdownString :: Markdown -> String
@@ -69,6 +70,7 @@ blockToString = case _ of
         , "\n"
         , startOrEndGraveAccent
         ]
+  ListItem str -> Prelude.append "- " (escape (NonEmptyString.toString str))
   Raw value -> value
 
 -- | markdown の特殊文字をエスケープする
