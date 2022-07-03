@@ -15,6 +15,7 @@ import Effect (Effect)
 import Effect as Effect
 import Effect.Uncurried as EffectUncurried
 import Markdown as Markdown
+import Type.Proxy (Proxy(..))
 import VsCodeExtension.CodeGen as CodeGen
 import VsCodeExtension.Command as Command
 import VsCodeExtension.Completion as Completion
@@ -170,7 +171,7 @@ activateFn context = do
         \content ->
           VSCodeApi.openTextDocument
             { content: content
-            , language: LanguageId.languageId
+            , language: NonEmptyString.nes (Proxy :: _ "plaintext")
             }
     , command: Command.definyOpenTextFile
     }

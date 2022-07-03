@@ -59,6 +59,7 @@ newtype HoverTree
   { type :: ToString.NoPositionTree
   , value :: ToString.NoPositionTree
   , valueDummy :: Boolean
+  , evaluatedValue :: Maybe Evaluate.Value
   , description :: Markdown.Markdown
   , valueDetail :: Markdown.Markdown
   }
@@ -88,22 +89,9 @@ hoverTreeToMarkdown (HoverTree rec) =
             (ToString.noPositionTreeRootToString rec.value)
         ]
     , rec.valueDetail
-    , Markdown.Markdown
-        [ Markdown.ParagraphWithLineBlock
-            ( NonEmptyArray.singleton
-                ( Markdown.LinkVSCodeCommand
-                    ( NonEmptyArray.singleton
-                        ( Markdown.PlanText
-                            ( NonEmptyString.nes (Proxy :: Proxy "評価結果を新しいエディタで開く")
-                            )
-                        )
-                    )
-                    ( Command.definyOpenTextFileWithParameterUrl
-                        (ToString.noPositionTreeRootToString rec.value)
-                    )
-                )
-            )
-        ]
+    , case rec.evaluatedValue of
+        Just e -> evaluatedTextOpenAsNewFile e
+        Nothing -> Markdown.Markdown []
     ]
 
 evaluatedItemToHoverTree ::
@@ -128,6 +116,7 @@ evaluatedItemToHoverTree { item, partialModule } = case item of
                 ]
             }
       , valueDummy: false
+      , evaluatedValue: Nothing
       , description:
           Markdown.Markdown
             [ Markdown.Paragraph
@@ -148,6 +137,7 @@ evaluatedItemToHoverTree { item, partialModule } = case item of
             , children: [ ToString.noPositionTreeEmptyChildren description ]
             }
       , valueDummy: false
+      , evaluatedValue: Nothing
       , description:
           Markdown.Markdown
             [ Markdown.Paragraph
@@ -164,6 +154,7 @@ evaluatedItemToHoverTree { item, partialModule } = case item of
             }
       , value: moduleBodyToNoPositionTree partList
       , valueDummy: false
+      , evaluatedValue: Nothing
       , description:
           Markdown.Markdown
             [ Markdown.Paragraph
@@ -180,6 +171,7 @@ evaluatedItemToHoverTree { item, partialModule } = case item of
             }
       , value: partialPartToNoPositionTree part
       , valueDummy: false
+      , evaluatedValue: Nothing
       , description:
           Markdown.Markdown
             [ Markdown.Paragraph
@@ -208,6 +200,7 @@ evaluatedItemToHoverTree { item, partialModule } = case item of
               }
         , value: valueToValueTree evaluatedValue
         , valueDummy: dummy
+        , evaluatedValue: Just evaluatedValue
         , description:
             Markdown.Markdown
               ( case partialExprToDescription partialModule value of
@@ -227,6 +220,7 @@ evaluatedItemToHoverTree { item, partialModule } = case item of
           maybeToNoPositionTree
             (Prelude.map (\v -> ToString.noPositionTreeEmptyChildren (UInt.toString v)) uintLiteral)
       , valueDummy: false
+      , evaluatedValue: Nothing
       , description:
           Markdown.Markdown
             [ Markdown.Paragraph
@@ -243,6 +237,7 @@ evaluatedItemToHoverTree { item, partialModule } = case item of
             }
       , value: ToString.noPositionTreeEmptyChildren text
       , valueDummy: false
+      , evaluatedValue: Just (Evaluate.ValueText text)
       , description:
           Markdown.Markdown
             [ Markdown.Paragraph
@@ -264,6 +259,7 @@ evaluatedItemToHoverTree { item, partialModule } = case item of
                 numberMaybe
             )
       , valueDummy: false
+      , evaluatedValue: Nothing
       , description:
           Markdown.Markdown
             [ Markdown.Paragraph
@@ -288,6 +284,7 @@ evaluatedItemToHoverTree { item, partialModule } = case item of
                 identifier
             )
       , valueDummy: false
+      , evaluatedValue: Nothing
       , description:
           Markdown.Markdown
             [ Markdown.Paragraph
@@ -450,3 +447,24 @@ valueToValueMarkdown = case _ of
             Just v -> Markdown.Paragraph v
             Nothing -> Markdown.Paragraph (NonEmptyString.nes (Proxy :: Proxy " "))
         ]
+
+evaluatedTextOpenAsNewFile :: Evaluate.Value -> Markdown.Markdown
+evaluatedTextOpenAsNewFile evaluatedValue =
+  Markdown.Markdown
+    ( case evaluatedValue of
+        Evaluate.ValueText text ->
+          [ Markdown.ParagraphWithLineBlock
+              ( NonEmptyArray.singleton
+                  ( Markdown.LinkVSCodeCommand
+                      ( NonEmptyArray.singleton
+                          ( Markdown.PlanText
+                              ( NonEmptyString.nes (Proxy :: Proxy "評価結果を新しいエディタで開く")
+                              )
+                          )
+                      )
+                      (Command.definyOpenTextFileWithParameterUrl text)
+                  )
+              )
+          ]
+        _ -> []
+    )
