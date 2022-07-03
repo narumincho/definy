@@ -554,6 +554,13 @@ export const commandsRegisterCommandRaw =
   }) =>
   () => {
     option.context.subscriptions.push(
-      commands.registerCommand(option.command, (arg) => option.callback(arg)())
+      commands.registerCommand(option.command, (arg) => {
+        option.callback(arg)();
+      })
     );
+  };
+
+export const openTextDocumentRaw =
+  (option: { readonly content: string; readonly language: string }) => () => {
+    workspace.openTextDocument(option);
   };

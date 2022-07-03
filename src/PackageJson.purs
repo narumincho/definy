@@ -151,7 +151,7 @@ toJson option optionalOption =
           , Tuple.Tuple "license" (Argonaut.fromString "MIT")
           , Tuple.Tuple "homepage"
               ( Argonaut.encodeJson
-                  (StructuredUrl.toString option.homepage)
+                  (StructuredUrl.toNonEmptyString option.homepage)
               )
           , Tuple.Tuple "author" (Argonaut.encodeJson option.author)
           , Tuple.Tuple "engines"

@@ -144,7 +144,7 @@ iconElement :: StructuredUrl.StructuredUrl -> Array Html.RawHtmlElement
 iconElement iconUrl =
   let
     href :: String
-    href = NonEmptyString.toString (StructuredUrl.toString iconUrl)
+    href = NonEmptyString.toString (StructuredUrl.toNonEmptyString iconUrl)
   in
     [ Wellknown.link "icon" href
     , Wellknown.link "apple-touch-icon" href
@@ -181,7 +181,7 @@ ogUrlElement url =
   Wellknown.meta
     ( Map.fromFoldable
         [ propertyAttribute "og:url"
-        , contentAttribute (NonEmptyString.toString (StructuredUrl.toString url))
+        , contentAttribute (NonEmptyString.toString (StructuredUrl.toNonEmptyString url))
         ]
     )
 
@@ -217,7 +217,7 @@ ogImage url =
   Wellknown.meta
     ( Map.fromFoldable
         [ propertyAttribute "og:image"
-        , contentAttribute (NonEmptyString.toString (StructuredUrl.toString url))
+        , contentAttribute (NonEmptyString.toString (StructuredUrl.toNonEmptyString url))
         ]
     )
 

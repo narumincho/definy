@@ -16,6 +16,7 @@ import Prelude as Prelude
 import Type.Proxy (Proxy(..))
 import Util as Util
 import VsCodeExtension.BuiltIn as BuiltIn
+import VsCodeExtension.Command as Command
 import VsCodeExtension.Evaluate as Evaluate
 import VsCodeExtension.EvaluatedTreeIndex as EvaluatedTreeIndex
 import VsCodeExtension.Range as Range
@@ -36,16 +37,7 @@ getHoverData position tree@(Evaluate.EvaluatedTree { item, range }) = case item 
       in
         Just
           ( Hover
-              { contents:
-                  Markdown.append
-                    (hoverTreeToMarkdown hoverTree)
-                    ( Markdown.Markdown
-                        [ Markdown.Paragraph
-                            ( NonEmptyString.nes
-                                (Proxy :: Proxy "[拡張機能で検索](command:workbench.extensions.search)")
-                            )
-                        ]
-                    )
+              { contents: hoverTreeToMarkdown hoverTree
               , range: targetRange
               }
           )
@@ -83,7 +75,11 @@ hoverTreeToMarkdown (HoverTree rec) =
         ]
     , Markdown.Markdown
         ( if rec.valueDummy then
-            [ Markdown.Italic (NonEmptyString.nes (Proxy :: Proxy "dummy data")) ]
+            [ Markdown.ParagraphWithLineBlock
+                ( NonEmptyArray.singleton
+                    (Markdown.Italic (NonEmptyString.nes (Proxy :: Proxy "dummy data")))
+                )
+            ]
           else
             []
         )
@@ -92,6 +88,22 @@ hoverTreeToMarkdown (HoverTree rec) =
             (ToString.noPositionTreeRootToString rec.value)
         ]
     , rec.valueDetail
+    , Markdown.Markdown
+        [ Markdown.ParagraphWithLineBlock
+            ( NonEmptyArray.singleton
+                ( Markdown.LinkVSCodeCommand
+                    ( NonEmptyArray.singleton
+                        ( Markdown.PlanText
+                            ( NonEmptyString.nes (Proxy :: Proxy "評価結果を新しいエディタで開く")
+                            )
+                        )
+                    )
+                    ( Command.definyOpenTextFileWithParameterUrl
+                        (ToString.noPositionTreeRootToString rec.value)
+                    )
+                )
+            )
+        ]
     ]
 
 evaluatedItemToHoverTree ::

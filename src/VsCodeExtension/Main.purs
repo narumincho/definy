@@ -164,6 +164,16 @@ activateFn context = do
     , callback: \_ -> VSCodeApi.webviewCreateOrShow context
     , command: Command.definyWebview
     }
+  VSCodeApi.commandsRegisterCommand
+    { context
+    , callback:
+        \content ->
+          VSCodeApi.openTextDocument
+            { content: content
+            , language: LanguageId.languageId
+            }
+    , command: Command.definyOpenTextFile
+    }
 
 codeStringToEvaluatedTree :: String -> Evaluate.EvaluatedTree
 codeStringToEvaluatedTree code =

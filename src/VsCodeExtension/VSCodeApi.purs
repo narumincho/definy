@@ -27,6 +27,7 @@ module VsCodeExtension.VSCodeApi
   , newLocation
   , newPosition
   , newRange
+  , openTextDocument
   , positionGetCharacter
   , positionGetLine
   , rangeContains
@@ -248,4 +249,13 @@ commandsRegisterCommand option =
     { context: option.context
     , command: NonEmptyString.toString option.command
     , callback: option.callback
+    }
+
+foreign import openTextDocumentRaw :: { content :: String, language :: String } -> Effect.Effect Unit
+
+openTextDocument :: { content :: String, language :: NonEmptyString } -> Effect.Effect Unit
+openTextDocument option =
+  openTextDocumentRaw
+    { content: option.content
+    , language: NonEmptyString.toString option.language
     }

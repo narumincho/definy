@@ -132,7 +132,7 @@ elementToHtmlOrSvgElementWithoutDataPath { element, path, patchState, locationTo
   Vdom.ElementExternalLink (Vdom.ExternalLink rec) -> do
     anchor <-
       EffectUncurried.runEffectFn1 createExternalAnchor
-        { href: NonEmptyString.toString (StructuredUrl.toString rec.href)
+        { href: NonEmptyString.toString (StructuredUrl.toNonEmptyString rec.href)
         }
     applyChildren { htmlOrSvgElement: anchor, children: rec.children, path, patchState, locationToPathAndSearchParams }
     pure anchor
