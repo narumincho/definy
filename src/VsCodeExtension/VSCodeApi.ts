@@ -6,6 +6,8 @@ import {
   DiagnosticCollection,
   DiagnosticRelatedInformation,
   DiagnosticSeverity,
+  Disposable,
+  ExtensionContext,
   Hover,
   Location,
   MarkdownString,
@@ -21,6 +23,9 @@ import {
   SymbolKind,
   TextEdit,
   Uri,
+  ViewColumn,
+  WebviewPanel,
+  commands,
   languages,
   window,
   workspace,
@@ -110,27 +115,34 @@ export const newLocation =
 
 export const languagesRegisterDocumentFormattingEditProvider =
   (option: {
+    readonly context: ExtensionContext;
     readonly languageId: string;
     readonly formatFunc: (code: string) => string;
   }) =>
   (): void => {
-    languages.registerDocumentFormattingEditProvider(option.languageId, {
-      provideDocumentFormattingEdits(document) {
-        const fullText = document.getText();
-        return [
-          TextEdit.replace(
-            document.validateRange(
-              new Range(new Position(0, 0), new Position(document.lineCount, 0))
+    option.context.subscriptions.push(
+      languages.registerDocumentFormattingEditProvider(option.languageId, {
+        provideDocumentFormattingEdits(document) {
+          const fullText = document.getText();
+          return [
+            TextEdit.replace(
+              document.validateRange(
+                new Range(
+                  new Position(0, 0),
+                  new Position(document.lineCount, 0)
+                )
+              ),
+              option.formatFunc(fullText)
             ),
-            option.formatFunc(fullText)
-          ),
-        ];
-      },
-    });
+          ];
+        },
+      })
+    );
   };
 
 export const languagesRegisterDocumentSemanticTokensProvider =
   (option: {
+    readonly context: ExtensionContext;
     readonly languageId: string;
     readonly semanticTokensProviderFunc: (
       code: string
@@ -155,6 +167,7 @@ export const languagesRegisterDocumentSemanticTokensProvider =
 
 export const languagesRegisterHoverProvider =
   (option: {
+    readonly context: ExtensionContext;
     readonly languageId: string;
     readonly func: (funcInput: {
       readonly code: string;
@@ -165,19 +178,24 @@ export const languagesRegisterHoverProvider =
     } | null;
   }) =>
   () => {
-    languages.registerHoverProvider(option.languageId, {
-      provideHover(document, position) {
-        const result = option.func({ code: document.getText(), position });
-        if (result === null) {
-          return undefined;
-        }
-        return new Hover(result.contents, result.range);
-      },
-    });
+    option.context.subscriptions.push(
+      languages.registerHoverProvider(option.languageId, {
+        provideHover(document, position) {
+          const result = option.func({ code: document.getText(), position });
+          if (result === null) {
+            return undefined;
+          }
+          const markdownString = new MarkdownString(result.contents);
+          markdownString.isTrusted = true;
+          return new Hover(markdownString, result.range);
+        },
+      })
+    );
   };
 
 export const languagesRegisterCompletionItemProvider =
   (option: {
+    readonly context: ExtensionContext;
     readonly languageId: string;
     readonly func: (input: {
       readonly code: string;
@@ -194,32 +212,38 @@ export const languagesRegisterCompletionItemProvider =
     readonly triggerCharacters: ReadonlyArray<string>;
   }) =>
   () => {
-    languages.registerCompletionItemProvider(
-      option.languageId,
-      {
-        provideCompletionItems(document, position) {
-          return new CompletionList(
-            option.func({ code: document.getText(), position }).map((item) => {
-              const completionItem = new CompletionItem(
-                {
-                  label: item.label,
-                  description: item.description,
-                  detail: item.detail,
-                },
-                item.kind
-              );
-              completionItem.documentation = new MarkdownString(
-                item.documentation
-              );
+    option.context.subscriptions.push(
+      languages.registerCompletionItemProvider(
+        option.languageId,
+        {
+          provideCompletionItems(document, position) {
+            return new CompletionList(
+              option
+                .func({ code: document.getText(), position })
+                .map((item) => {
+                  const completionItem = new CompletionItem(
+                    {
+                      label: item.label,
+                      description: item.description,
+                      detail: item.detail,
+                    },
+                    item.kind
+                  );
+                  completionItem.documentation = new MarkdownString(
+                    item.documentation
+                  );
 
-              completionItem.commitCharacters = [...item.commitCharacters];
-              completionItem.insertText = new SnippetString(item.insertText);
-              return completionItem;
-            })
-          );
+                  completionItem.commitCharacters = [...item.commitCharacters];
+                  completionItem.insertText = new SnippetString(
+                    item.insertText
+                  );
+                  return completionItem;
+                })
+            );
+          },
         },
-      },
-      ...option.triggerCharacters
+        ...option.triggerCharacters
+      )
     );
   };
 
@@ -228,6 +252,7 @@ export const completionItemKindModule = CompletionItemKind.Module;
 
 export const languageRegisterSignatureHelpProvider =
   (option: {
+    readonly context: ExtensionContext;
     readonly languageId: string;
     readonly func: (input: {
       readonly code: string;
@@ -247,37 +272,40 @@ export const languageRegisterSignatureHelpProvider =
     readonly triggerCharacters: ReadonlyArray<string>;
   }) =>
   () => {
-    languages.registerSignatureHelpProvider(
-      option.languageId,
-      {
-        provideSignatureHelp(document, position) {
-          const result = option.func({ code: document.getText(), position });
-          const signatureHelp = new SignatureHelp();
-          signatureHelp.activeSignature = result.activeSignature;
-          signatureHelp.activeParameter = result.activeParameter;
-          signatureHelp.signatures = result.signatures.map((signature) => {
-            const signatureInformation = new SignatureInformation(
-              signature.label,
-              signature.documentation
-            );
-            signatureInformation.parameters = signature.parameters.map(
-              (parameter) =>
-                new ParameterInformation(
-                  parameter.label,
-                  new MarkdownString(parameter.documentation)
-                )
-            );
-            return signatureInformation;
-          });
-          return signatureHelp;
+    option.context.subscriptions.push(
+      languages.registerSignatureHelpProvider(
+        option.languageId,
+        {
+          provideSignatureHelp(document, position) {
+            const result = option.func({ code: document.getText(), position });
+            const signatureHelp = new SignatureHelp();
+            signatureHelp.activeSignature = result.activeSignature;
+            signatureHelp.activeParameter = result.activeParameter;
+            signatureHelp.signatures = result.signatures.map((signature) => {
+              const signatureInformation = new SignatureInformation(
+                signature.label,
+                signature.documentation
+              );
+              signatureInformation.parameters = signature.parameters.map(
+                (parameter) =>
+                  new ParameterInformation(
+                    parameter.label,
+                    new MarkdownString(parameter.documentation)
+                  )
+              );
+              return signatureInformation;
+            });
+            return signatureHelp;
+          },
         },
-      },
-      { triggerCharacters: option.triggerCharacters, retriggerCharacters: [] }
+        { triggerCharacters: option.triggerCharacters, retriggerCharacters: [] }
+      )
     );
   };
 
 export const languageRegisterDefinitionProvider =
   (option: {
+    readonly context: ExtensionContext;
     readonly languageId: string;
     readonly func: (input: {
       readonly code: string;
@@ -286,19 +314,22 @@ export const languageRegisterDefinitionProvider =
     }) => Location | null;
   }) =>
   () => {
-    languages.registerDefinitionProvider(option.languageId, {
-      provideDefinition(document, position) {
-        return option.func({
-          code: document.getText(),
-          uri: document.uri,
-          position,
-        });
-      },
-    });
+    option.context.subscriptions.push(
+      languages.registerDefinitionProvider(option.languageId, {
+        provideDefinition(document, position) {
+          return option.func({
+            code: document.getText(),
+            uri: document.uri,
+            position,
+          });
+        },
+      })
+    );
   };
 
 export const languagesRegisterDocumentSymbolProvider =
   (option: {
+    readonly context: ExtensionContext;
     readonly languageId: string;
     readonly func: (input: {
       readonly code: string;
@@ -306,25 +337,28 @@ export const languagesRegisterDocumentSymbolProvider =
     }) => ReadonlyArray<{ readonly name: string; readonly location: Location }>;
   }) =>
   () => {
-    languages.registerDocumentSymbolProvider(option.languageId, {
-      provideDocumentSymbols(document) {
-        return option
-          .func({ code: document.getText(), uri: document.uri })
-          .map(
-            (symbolData) =>
-              new SymbolInformation(
-                symbolData.name,
-                SymbolKind.Function,
-                symbolData.name,
-                symbolData.location
-              )
-          );
-      },
-    });
+    option.context.subscriptions.push(
+      languages.registerDocumentSymbolProvider(option.languageId, {
+        provideDocumentSymbols(document) {
+          return option
+            .func({ code: document.getText(), uri: document.uri })
+            .map(
+              (symbolData) =>
+                new SymbolInformation(
+                  symbolData.name,
+                  SymbolKind.Function,
+                  symbolData.name,
+                  symbolData.location
+                )
+            );
+        },
+      })
+    );
   };
 
 export const languagesRegisterReferenceProvider =
   (option: {
+    readonly context: ExtensionContext;
     readonly languageId: string;
     readonly func: (input: {
       readonly code: string;
@@ -333,27 +367,42 @@ export const languagesRegisterReferenceProvider =
     }) => ReadonlyArray<Location>;
   }) =>
   () => {
-    languages.registerReferenceProvider(option.languageId, {
-      provideReferences(document, position) {
-        return [
-          ...option.func({
-            code: document.getText(),
-            position,
-            uri: document.uri,
-          }),
-        ];
-      },
-    });
+    option.context.subscriptions.push(
+      languages.registerReferenceProvider(option.languageId, {
+        provideReferences(document, position) {
+          return [
+            ...option.func({
+              code: document.getText(),
+              position,
+              uri: document.uri,
+            }),
+          ];
+        },
+      })
+    );
   };
 
 export const workspaceOnDidChangeTextDocument =
-  (callback: () => void) => () => {
-    workspace.onDidChangeTextDocument(callback);
+  (option: {
+    readonly context: ExtensionContext;
+    readonly callback: () => void;
+  }) =>
+  () => {
+    option.context.subscriptions.push(
+      workspace.onDidChangeTextDocument(option.callback)
+    );
   };
 
-export const workspaceOnDidOpenTextDocument = (callback: () => void) => () => {
-  workspace.onDidOpenTextDocument(callback);
-};
+export const workspaceOnDidOpenTextDocument =
+  (option: {
+    readonly context: ExtensionContext;
+    readonly callback: () => void;
+  }) =>
+  () => {
+    option.context.subscriptions.push(
+      workspace.onDidOpenTextDocument(option.callback)
+    );
+  };
 
 export const workspaceTextDocuments =
   (
@@ -410,3 +459,108 @@ export const uriToPath = (uri: Uri): string => {
 export const windowShowInformationMessage = (message: string) => () => {
   window.showInformationMessage(message);
 };
+
+// eslint-disable-next-line init-declarations
+let currentPanel: WebviewPanel | undefined;
+
+export const webviewCreateOrShow = (context: ExtensionContext): void => {
+  const column = window.activeTextEditor
+    ? window.activeTextEditor.viewColumn
+    : undefined;
+
+  if (currentPanel) {
+    currentPanel.reveal(column);
+    return;
+  }
+
+  const panel = window.createWebviewPanel(
+    "definyDetailView",
+    "definy detail view",
+    column ?? ViewColumn.One,
+    {
+      enableScripts: true,
+      localResourceRoots: [Uri.joinPath(context.extensionUri, "media")],
+    }
+  );
+
+  updatePanel(panel);
+
+  const disposables: Array<Disposable> = [];
+
+  const dispose = (): void => {
+    currentPanel = undefined;
+
+    panel.dispose();
+
+    while (disposables.length) {
+      const x = disposables.pop();
+      if (x) {
+        x.dispose();
+      }
+    }
+  };
+
+  context.subscriptions.push(panel.onDidDispose(dispose, null, disposables));
+
+  context.subscriptions.push(
+    panel.onDidChangeViewState(
+      () => {
+        if (panel.visible) {
+          updatePanel(panel);
+        }
+      },
+      null,
+      disposables
+    )
+  );
+
+  context.subscriptions.push(
+    panel.webview.onDidReceiveMessage(
+      (message) => {
+        switch (message.command) {
+          case "alert":
+            window.showErrorMessage(message.text);
+        }
+      },
+      null,
+      disposables
+    )
+  );
+
+  currentPanel = panel;
+};
+
+const updatePanel = (panel: WebviewPanel): void => {
+  panel.title = "任意のタイトル!";
+  panel.webview.html = `<!doctype html>
+  <html lang="ja">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cat Coding</title>
+  </head>
+  <body>
+    任意のHTML を表示する WebView!!!
+    <script type="module"> document.body.append(new Date().toString()); </script>
+  </body>
+  </html>`;
+};
+
+export const commandsRegisterCommandRaw =
+  (option: {
+    readonly context: ExtensionContext;
+    readonly command: string;
+    readonly callback: (args: unknown) => () => void;
+  }) =>
+  () => {
+    option.context.subscriptions.push(
+      commands.registerCommand(option.command, (arg) => {
+        option.callback(arg)();
+      })
+    );
+  };
+
+export const openTextDocumentRaw =
+  (option: { readonly content: string; readonly language: string }) => () => {
+    workspace.openTextDocument(option);
+  };

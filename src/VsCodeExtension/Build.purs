@@ -24,6 +24,7 @@ import PureScript.Spago as Spago
 import StructuredUrl as StructuredUrl
 import Type.Proxy (Proxy(..))
 import Util as Util
+import VsCodeExtension.Command as Command
 import VsCodeExtension.LanguageId as LanguageId
 
 main :: Effect.Effect Unit
@@ -88,12 +89,16 @@ generatePackageJson =
                 ]
           }
     , name: PackageJson.nameFromSymbolProxyUnsafe (Proxy :: _ "definy")
-    , version: NonEmptyString.nes (Proxy :: _ "0.0.6")
+    , version: NonEmptyString.nes (Proxy :: _ "0.0.7")
     }
     ( PackageJson.packageJsonInputOptionalDefault
         { publisher = Just (NonEmptyString.nes (Proxy :: _ "narumincho"))
         , vsCodeVersion = Just (NonEmptyString.nes (Proxy :: _ "^1.67.0"))
-        , activationEvents = Just [ NonEmptyString.nes (Proxy :: _ "onLanguage:definy") ]
+        , activationEvents =
+          Just
+            [ NonEmptyString.nes (Proxy :: _ "onLanguage:definy")
+            , NonEmptyString.nes (Proxy :: _ "onCommand:definy.webview")
+            ]
         , contributesLanguages =
           Just
             ( NonEmptyArray.singleton
@@ -106,6 +111,15 @@ generatePackageJson =
                         { light: iconDistributionPath
                         , dark: iconDistributionPath
                         }
+                    }
+                )
+            )
+        , contributesCommand =
+          Just
+            ( NonEmptyArray.singleton
+                ( PackageJson.ContributesCommand
+                    { command: Command.definyWebview
+                    , title: NonEmptyString.nes (Proxy :: _ ".definy の拡張機能から webview を開きます")
                     }
                 )
             )

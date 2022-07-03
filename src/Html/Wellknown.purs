@@ -138,7 +138,7 @@ script url =
             (Maybe.Just "module")
         , Tuple.Tuple
             (NonEmptyString.nes (Proxy :: _ "src"))
-            (Maybe.Just (NonEmptyString.toString (StructuredUrl.toString url)))
+            (Maybe.Just (NonEmptyString.toString (StructuredUrl.toNonEmptyString url)))
         ]
     )
     (Data.ElementList [])
@@ -233,7 +233,7 @@ a attributes children =
                     (NonEmptyString.nes (Proxy :: _ "href"))
                     ( Maybe.Just
                         ( NonEmptyString.toString
-                            (StructuredUrl.toString attributes.href)
+                            (StructuredUrl.toNonEmptyString attributes.href)
                         )
                     )
                 )

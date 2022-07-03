@@ -1,12 +1,12 @@
 module StructuredUrl
   ( PathAndSearchParams(..)
   , StructuredUrl(..)
-  , nodeHttpUrlToPathAndSearchParams
   , fromPath
   , locationPathAndSearchParamsToPathAndSearchParams
+  , nodeHttpUrlToPathAndSearchParams
   , pathAndSearchParams
   , pathAndSearchParamsToString
-  , toString
+  , toNonEmptyString
   ) where
 
 import Data.Array as Array
@@ -54,10 +54,10 @@ newtype StructuredUrl
 derive instance structuredUrlEq :: Prelude.Eq StructuredUrl
 
 instance structuredUrlShow :: Prelude.Show StructuredUrl where
-  show structuredUrl = NonEmptyString.toString (toString structuredUrl)
+  show structuredUrl = NonEmptyString.toString (toNonEmptyString structuredUrl)
 
-toString :: StructuredUrl -> NonEmptyString
-toString (StructuredUrl { origin, pathAndSearchParams: path }) =
+toNonEmptyString :: StructuredUrl -> NonEmptyString
+toNonEmptyString (StructuredUrl { origin, pathAndSearchParams: path }) =
   Prelude.append
     origin
     (pathAndSearchParamsToString path)
@@ -70,23 +70,10 @@ pathAndSearchParamsToString (PathAndSearchParams { path, searchParams }) =
       NonEmptyString.appendString
         (NonEmptyString.singleton (String.codePointFromChar '/'))
         (NonEmptyString.joinWith "/" path)
-
-    searchParamsAsString :: String
-    searchParamsAsString =
-      searchParamsToString
-        ( Prelude.map
-            ( \(Tuple.Tuple key value) ->
-                { key: NonEmptyString.toString key, value }
-            )
-            (Map.toUnfoldable searchParams)
-        )
   in
     NonEmptyString.appendString
       pathAsString
-      ( case searchParamsAsString of
-          "" -> ""
-          _ -> Prelude.append "?" searchParamsAsString
-      )
+      (searchParamsMapToString searchParams)
 
 nodeHttpUrlToPathAndSearchParams :: String -> PathAndSearchParams
 nodeHttpUrlToPathAndSearchParams nodeHttpUrl =
@@ -99,6 +86,22 @@ nodeHttpUrlToPathAndSearchParams nodeHttpUrl =
       }
 
 foreign import searchParamsToString :: Array { key :: String, value :: String } -> String
+
+searchParamsMapToString :: Map.Map NonEmptyString String -> String
+searchParamsMapToString searchParams =
+  let
+    str =
+      searchParamsToString
+        ( Prelude.map
+            ( \(Tuple.Tuple key value) ->
+                { key: NonEmptyString.toString key, value }
+            )
+            (Map.toUnfoldable searchParams)
+        )
+  in
+    case str of
+      "" -> ""
+      _ -> Prelude.append "?" str
 
 foreign import parseNodeHttpUrl ::
   String ->

@@ -4,10 +4,12 @@ module VsCodeExtension.VSCodeApi
   , Diagnostic
   , DiagnosticCollection
   , DiagnosticRelatedInformation
+  , ExtensionContext(..)
   , Location
   , Position
   , Range
   , Uri
+  , commandsRegisterCommand
   , completionItemKindFunction
   , completionItemKindModule
   , diagnosticCollectionSet
@@ -25,6 +27,7 @@ module VsCodeExtension.VSCodeApi
   , newLocation
   , newPosition
   , newRange
+  , openTextDocument
   , positionGetCharacter
   , positionGetLine
   , rangeContains
@@ -33,6 +36,7 @@ module VsCodeExtension.VSCodeApi
   , uriJoinPath
   , uriToPath
   , uriToString
+  , webviewCreateOrShow
   , windowShowInformationMessage
   , workspaceFsWriteFile
   , workspaceOnDidChangeTextDocument
@@ -45,6 +49,7 @@ import Prelude
 import Binary as Binary
 import Data.Nullable (Nullable)
 import Data.String.NonEmpty (NonEmptyString)
+import Data.String.NonEmpty as NonEmptyString
 import Data.UInt as UInt
 import Effect as Effect
 import Effect.Uncurried (EffectFn1)
@@ -100,17 +105,23 @@ foreign import newDiagnosticRelatedInformation :: Location -> String -> Diagnost
 foreign import newLocation :: Uri -> Range -> Location
 
 foreign import languagesRegisterDocumentFormattingEditProvider ::
-  { languageId :: NonEmptyString, formatFunc :: String -> String } -> Effect.Effect Unit
+  { context :: ExtensionContext
+  , languageId :: NonEmptyString
+  , formatFunc :: String -> String
+  } ->
+  Effect.Effect Unit
 
 foreign import languagesRegisterDocumentSemanticTokensProvider ::
-  { languageId :: NonEmptyString
+  { context :: ExtensionContext
+  , languageId :: NonEmptyString
   , semanticTokensProviderFunc :: String -> Array Int
   , semanticTokensProviderLegend :: Array String
   } ->
   Effect.Effect Unit
 
 foreign import languagesRegisterHoverProvider ::
-  { languageId :: NonEmptyString
+  { context :: ExtensionContext
+  , languageId :: NonEmptyString
   , func ::
       { code :: String, position :: Position } ->
       Nullable { contents :: String, range :: Range }
@@ -118,7 +129,8 @@ foreign import languagesRegisterHoverProvider ::
   Effect.Effect Unit
 
 foreign import languagesRegisterCompletionItemProvider ::
-  { languageId :: NonEmptyString
+  { context :: ExtensionContext
+  , languageId :: NonEmptyString
   , func ::
       { code :: String, position :: Position } ->
       Array
@@ -141,7 +153,8 @@ foreign import completionItemKindFunction :: CompletionItemKind
 foreign import completionItemKindModule :: CompletionItemKind
 
 foreign import languageRegisterSignatureHelpProvider ::
-  { languageId :: NonEmptyString
+  { context :: ExtensionContext
+  , languageId :: NonEmptyString
   , func ::
       { code :: String, position :: Position } ->
       Nullable
@@ -159,32 +172,35 @@ foreign import languageRegisterSignatureHelpProvider ::
   Effect.Effect Unit
 
 foreign import languageRegisterDefinitionProvider ::
-  { languageId :: NonEmptyString
+  { context :: ExtensionContext
+  , languageId :: NonEmptyString
   , func ::
       { code :: String, uri :: Uri, position :: Position } -> Nullable Location
   } ->
   Effect.Effect Unit
 
 foreign import languagesRegisterDocumentSymbolProvider ::
-  { languageId :: NonEmptyString
+  { context :: ExtensionContext
+  , languageId :: NonEmptyString
   , func ::
       { code :: String, uri :: Uri } -> Array { name :: NonEmptyString, location :: Location }
   } ->
   Effect.Effect Unit
 
 foreign import languagesRegisterReferenceProvider ::
-  { languageId :: NonEmptyString
+  { context :: ExtensionContext
+  , languageId :: NonEmptyString
   , func ::
       { code :: String, uri :: Uri, position :: Position } -> Array Location
   } ->
   Effect.Effect Unit
 
 foreign import workspaceOnDidChangeTextDocument ::
-  Effect.Effect Unit ->
+  { context :: ExtensionContext, callback :: Effect.Effect Unit } ->
   Effect.Effect Unit
 
 foreign import workspaceOnDidOpenTextDocument ::
-  Effect.Effect Unit ->
+  { context :: ExtensionContext, callback :: Effect.Effect Unit } ->
   Effect.Effect Unit
 
 foreign import workspaceTextDocuments ::
@@ -210,3 +226,36 @@ foreign import uriToPath ::
 
 foreign import windowShowInformationMessage ::
   String -> Effect.Effect Unit
+
+data ExtensionContext
+
+foreign import webviewCreateOrShow :: ExtensionContext -> Effect.Effect Unit
+
+foreign import commandsRegisterCommandRaw ::
+  { context :: ExtensionContext
+  , command :: String
+  , callback :: String -> Effect.Effect Unit
+  } ->
+  Effect.Effect Unit
+
+commandsRegisterCommand ::
+  { context :: ExtensionContext
+  , command :: NonEmptyString
+  , callback :: String -> Effect.Effect Unit
+  } ->
+  Effect.Effect Unit
+commandsRegisterCommand option =
+  commandsRegisterCommandRaw
+    { context: option.context
+    , command: NonEmptyString.toString option.command
+    , callback: option.callback
+    }
+
+foreign import openTextDocumentRaw :: { content :: String, language :: String } -> Effect.Effect Unit
+
+openTextDocument :: { content :: String, language :: NonEmptyString } -> Effect.Effect Unit
+openTextDocument option =
+  openTextDocumentRaw
+    { content: option.content
+    , language: NonEmptyString.toString option.language
+    }

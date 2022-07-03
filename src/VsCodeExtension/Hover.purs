@@ -3,7 +3,10 @@ module VsCodeExtension.Hover
   , getHoverData
   ) where
 
+import Data.Array as Array
+import Data.Array.NonEmpty as NonEmptyArray
 import Data.Maybe (Maybe(..))
+import Data.String as String
 import Data.String.NonEmpty as NonEmptyString
 import Data.UInt as UInt
 import Definy.Identifier as Identifier
@@ -13,6 +16,7 @@ import Prelude as Prelude
 import Type.Proxy (Proxy(..))
 import Util as Util
 import VsCodeExtension.BuiltIn as BuiltIn
+import VsCodeExtension.Command as Command
 import VsCodeExtension.Evaluate as Evaluate
 import VsCodeExtension.EvaluatedTreeIndex as EvaluatedTreeIndex
 import VsCodeExtension.Range as Range
@@ -55,7 +59,9 @@ newtype HoverTree
   { type :: ToString.NoPositionTree
   , value :: ToString.NoPositionTree
   , valueDummy :: Boolean
+  , evaluatedValue :: Maybe Evaluate.Value
   , description :: Markdown.Markdown
+  , valueDetail :: Markdown.Markdown
   }
 
 hoverTreeToMarkdown :: HoverTree -> Markdown.Markdown
@@ -63,14 +69,18 @@ hoverTreeToMarkdown (HoverTree rec) =
   Markdown.join
     [ rec.description
     , Markdown.Markdown
-        [ Markdown.Header2 (NonEmptyString.nes (Proxy :: Proxy "Type"))
+        [ Markdown.ListItem (NonEmptyString.nes (Proxy :: Proxy "type"))
         , Markdown.CodeBlock
             (ToString.noPositionTreeToString rec.type)
-        , Markdown.Header2 (NonEmptyString.nes (Proxy :: Proxy "Value"))
+        , Markdown.ListItem (NonEmptyString.nes (Proxy :: Proxy "value"))
         ]
     , Markdown.Markdown
         ( if rec.valueDummy then
-            [ Markdown.Italic (NonEmptyString.nes (Proxy :: Proxy "dummy data")) ]
+            [ Markdown.ParagraphWithLineBlock
+                ( NonEmptyArray.singleton
+                    (Markdown.Italic (NonEmptyString.nes (Proxy :: Proxy "dummy data")))
+                )
+            ]
           else
             []
         )
@@ -78,6 +88,10 @@ hoverTreeToMarkdown (HoverTree rec) =
         [ Markdown.CodeBlock
             (ToString.noPositionTreeRootToString rec.value)
         ]
+    , rec.valueDetail
+    , case rec.evaluatedValue of
+        Just e -> evaluatedTextOpenAsNewFile e
+        Nothing -> Markdown.Markdown []
     ]
 
 evaluatedItemToHoverTree ::
@@ -102,11 +116,13 @@ evaluatedItemToHoverTree { item, partialModule } = case item of
                 ]
             }
       , valueDummy: false
+      , evaluatedValue: Nothing
       , description:
           Markdown.Markdown
             [ Markdown.Paragraph
                 (BuiltIn.buildInGetDescription BuiltIn.moduleBuiltIn)
             ]
+      , valueDetail: Markdown.Markdown []
       }
   Evaluate.Description description ->
     HoverTree
@@ -121,11 +137,13 @@ evaluatedItemToHoverTree { item, partialModule } = case item of
             , children: [ ToString.noPositionTreeEmptyChildren description ]
             }
       , valueDummy: false
+      , evaluatedValue: Nothing
       , description:
           Markdown.Markdown
             [ Markdown.Paragraph
                 (NonEmptyString.nes (Proxy :: Proxy "説明文"))
             ]
+      , valueDetail: Markdown.Markdown []
       }
   Evaluate.ModuleBody partList ->
     HoverTree
@@ -136,11 +154,13 @@ evaluatedItemToHoverTree { item, partialModule } = case item of
             }
       , value: moduleBodyToNoPositionTree partList
       , valueDummy: false
+      , evaluatedValue: Nothing
       , description:
           Markdown.Markdown
             [ Markdown.Paragraph
                 (BuiltIn.buildInGetDescription BuiltIn.bodyBuiltIn)
             ]
+      , valueDetail: Markdown.Markdown []
       }
   Evaluate.Part part ->
     HoverTree
@@ -151,11 +171,13 @@ evaluatedItemToHoverTree { item, partialModule } = case item of
             }
       , value: partialPartToNoPositionTree part
       , valueDummy: false
+      , evaluatedValue: Nothing
       , description:
           Markdown.Markdown
             [ Markdown.Paragraph
                 (BuiltIn.buildInGetDescription BuiltIn.partBuiltIn)
             ]
+      , valueDetail: Markdown.Markdown []
       }
   Evaluate.Expr value ->
     let
@@ -176,23 +198,16 @@ evaluatedItemToHoverTree { item, partialModule } = case item of
                       Evaluate.ValueFloat64 _ -> ToString.noPositionTreeEmptyChildren "Float64"
                   ]
               }
-        , value:
-            ToString.noPositionTreeEmptyChildren
-              ( case evaluatedValue of
-                  Evaluate.ValueText text -> text
-                  Evaluate.ValueUInt uintValue -> UInt.toString uintValue
-                  Evaluate.ValueFloat64 f64Value -> Util.numberToString f64Value
-              )
+        , value: valueToValueTree evaluatedValue
         , valueDummy: dummy
+        , evaluatedValue: Just evaluatedValue
         , description:
-            Markdown.append
-              ( Markdown.Markdown
-                  ( case partialExprToDescription partialModule value of
-                      Just description -> [ Markdown.Paragraph description ]
-                      Nothing -> []
-                  )
+            Markdown.Markdown
+              ( case partialExprToDescription partialModule value of
+                  Just description -> [ Markdown.Paragraph description ]
+                  Nothing -> []
               )
-              (partialExprValueToMarkdown evaluatedValue)
+        , valueDetail: valueToValueMarkdown evaluatedValue
         }
   Evaluate.UIntLiteral uintLiteral ->
     HoverTree
@@ -205,11 +220,13 @@ evaluatedItemToHoverTree { item, partialModule } = case item of
           maybeToNoPositionTree
             (Prelude.map (\v -> ToString.noPositionTreeEmptyChildren (UInt.toString v)) uintLiteral)
       , valueDummy: false
+      , evaluatedValue: Nothing
       , description:
           Markdown.Markdown
             [ Markdown.Paragraph
                 (NonEmptyString.nes (Proxy :: Proxy "自然数リテラル"))
             ]
+      , valueDetail: Markdown.Markdown []
       }
   Evaluate.TextLiteral text ->
     HoverTree
@@ -220,11 +237,13 @@ evaluatedItemToHoverTree { item, partialModule } = case item of
             }
       , value: ToString.noPositionTreeEmptyChildren text
       , valueDummy: false
+      , evaluatedValue: Just (Evaluate.ValueText text)
       , description:
           Markdown.Markdown
             [ Markdown.Paragraph
                 (NonEmptyString.nes (Proxy :: Proxy "テキストリテラル"))
             ]
+      , valueDetail: Markdown.Markdown []
       }
   Evaluate.Float64Literal numberMaybe ->
     HoverTree
@@ -240,11 +259,13 @@ evaluatedItemToHoverTree { item, partialModule } = case item of
                 numberMaybe
             )
       , valueDummy: false
+      , evaluatedValue: Nothing
       , description:
           Markdown.Markdown
             [ Markdown.Paragraph
                 (NonEmptyString.nes (Proxy :: Proxy "64bit 浮動小数点数リテラル"))
             ]
+      , valueDetail: Markdown.Markdown []
       }
   Evaluate.Identifier identifier ->
     HoverTree
@@ -263,11 +284,13 @@ evaluatedItemToHoverTree { item, partialModule } = case item of
                 identifier
             )
       , valueDummy: false
+      , evaluatedValue: Nothing
       , description:
           Markdown.Markdown
             [ Markdown.Paragraph
                 (NonEmptyString.nes (Proxy :: Proxy "識別子"))
             ]
+      , valueDetail: Markdown.Markdown []
       }
 
 moduleBodyToNoPositionTree :: Array Evaluate.PartialPart -> ToString.NoPositionTree
@@ -352,24 +375,6 @@ partialExprToDescription partialModule = case _ of
   Evaluate.ExprFloat64Literal _ -> Just (BuiltIn.buildInGetDescription BuiltIn.float64BuiltIn)
   Evaluate.ExprTextLiteral _ -> Just (BuiltIn.buildInGetDescription BuiltIn.textBuiltIn)
 
-partialExprValueToMarkdown :: Evaluate.Value -> Markdown.Markdown
-partialExprValueToMarkdown value =
-  Markdown.Markdown
-    ( case value of
-        Evaluate.ValueText text -> case NonEmptyString.fromString text of
-          Just nonEmpty -> [ Markdown.Paragraph nonEmpty ]
-          Nothing -> []
-        Evaluate.ValueUInt uintValue -> case NonEmptyString.fromString (UInt.toString uintValue) of
-          Just nonEmpty -> [ Markdown.Paragraph nonEmpty ]
-          Nothing -> []
-        Evaluate.ValueFloat64 f64Value -> case NonEmptyString.fromString
-            ( Float.float64RawDataToString
-                (Float.numberToFloatRawData f64Value)
-            ) of
-          Just nonEmpty -> [ Markdown.Paragraph nonEmpty ]
-          Nothing -> []
-    )
-
 maybeToNoPositionTree :: Maybe ToString.NoPositionTree -> ToString.NoPositionTree
 maybeToNoPositionTree = case _ of
   Just value ->
@@ -382,3 +387,84 @@ maybeToNoPositionTree = case _ of
       { name: "Nothing"
       , children: []
       }
+
+valueToValueTree :: Evaluate.Value -> ToString.NoPositionTree
+valueToValueTree = case _ of
+  Evaluate.ValueText text ->
+    ToString.NoPositionTree
+      { name: "text"
+      , children: [ ToString.noPositionTreeEmptyChildren text ]
+      }
+  Evaluate.ValueUInt uintValue ->
+    ToString.NoPositionTree
+      { name: "uint"
+      , children: [ ToString.noPositionTreeEmptyChildren (UInt.toString uintValue) ]
+      }
+  Evaluate.ValueFloat64 f64Value ->
+    ToString.NoPositionTree
+      { name: "float64"
+      , children: [ ToString.noPositionTreeEmptyChildren (Util.numberToString f64Value) ]
+      }
+
+valueToValueMarkdown :: Evaluate.Value -> Markdown.Markdown
+valueToValueMarkdown = case _ of
+  Evaluate.ValueText text ->
+    let
+      codePointArray = String.toCodePointArray text
+    in
+      Markdown.Markdown
+        ( Prelude.append
+            [ Markdown.Paragraph
+                ( NonEmptyString.appendString
+                    (NonEmptyString.nes (Proxy :: Proxy "length: "))
+                    (Prelude.show (Array.length codePointArray))
+                )
+            ]
+            ( Prelude.map
+                ( \codePoint ->
+                    Markdown.ListItem
+                      ( Prelude.append
+                          ( NonEmptyString.fromNonEmptyCodePointArray
+                              (NonEmptyArray.singleton codePoint)
+                          )
+                          ( NonEmptyString.appendString
+                              (NonEmptyString.nes (Proxy :: Proxy " "))
+                              (Prelude.show codePoint)
+                          )
+                      )
+                )
+                codePointArray
+            )
+        )
+  Evaluate.ValueUInt _ -> Markdown.Markdown []
+  Evaluate.ValueFloat64 f64Value ->
+    let
+      (Float.Float64RawData { isPositive }) = Float.numberToFloatRawData f64Value
+    in
+      Markdown.Markdown
+        [ Markdown.CodeBlock (if isPositive then "+" else "-")
+        , case NonEmptyString.fromString (Float.float64RawDataToString (Float.numberToFloatRawData f64Value)) of
+            Just v -> Markdown.Paragraph v
+            Nothing -> Markdown.Paragraph (NonEmptyString.nes (Proxy :: Proxy " "))
+        ]
+
+evaluatedTextOpenAsNewFile :: Evaluate.Value -> Markdown.Markdown
+evaluatedTextOpenAsNewFile evaluatedValue =
+  Markdown.Markdown
+    ( case evaluatedValue of
+        Evaluate.ValueText text ->
+          [ Markdown.ParagraphWithLineBlock
+              ( NonEmptyArray.singleton
+                  ( Markdown.LinkVSCodeCommand
+                      ( NonEmptyArray.singleton
+                          ( Markdown.PlanText
+                              ( NonEmptyString.nes (Proxy :: Proxy "評価結果を新しいエディタで開く")
+                              )
+                          )
+                      )
+                      (Command.definyOpenTextFileWithParameterUrl text)
+                  )
+              )
+          ]
+        _ -> []
+    )

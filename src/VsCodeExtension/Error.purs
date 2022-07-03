@@ -74,7 +74,7 @@ getParameterError (Evaluate.EvaluatedTree { name, nameRange, range, children }) 
               { name
               , nameRange
               , actual: UInt.fromInt (Array.length children)
-              , expect: UInt.fromInt 1
+              , expect: expectedChildrenCount
               }
         , range:
             Range.Range
