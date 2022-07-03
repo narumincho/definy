@@ -24,8 +24,6 @@ import {
   TextEdit,
   Uri,
   ViewColumn,
-  Webview,
-  WebviewOptions,
   WebviewPanel,
   commands,
   languages,
@@ -418,134 +416,93 @@ export const windowShowInformationMessage = (message: string) => () => {
   window.showInformationMessage(message);
 };
 
-class CatCodingPanel {
-  /**
-   * Track the currently panel. Only allow a single panel to exist at a time.
-   */
-  public static currentPanel: CatCodingPanel | undefined;
+// eslint-disable-next-line init-declarations
+let currentPanel: WebviewPanel | undefined;
 
-  public static readonly viewType = "catCoding";
+const createOrShow = (extensionUri: Uri): void => {
+  const column = window.activeTextEditor
+    ? window.activeTextEditor.viewColumn
+    : undefined;
 
-  private readonly _panel: WebviewPanel;
+  if (currentPanel) {
+    currentPanel.reveal(column);
+    return;
+  }
 
-  private readonly _extensionUri: Uri;
-
-  private _disposables: Array<Disposable> = [];
-
-  public static createOrShow(extensionUri: Uri) {
-    const column = window.activeTextEditor
-      ? window.activeTextEditor.viewColumn
-      : undefined;
-
-    // If we already have a panel, show it.
-    if (CatCodingPanel.currentPanel) {
-      CatCodingPanel.currentPanel._panel.reveal(column);
-      return;
+  const panel = window.createWebviewPanel(
+    "definyDetailView",
+    "definy detail view",
+    column ?? ViewColumn.One,
+    {
+      enableScripts: true,
+      localResourceRoots: [Uri.joinPath(extensionUri, "media")],
     }
+  );
 
-    // Otherwise, create a new panel.
-    const panel = window.createWebviewPanel(
-      CatCodingPanel.viewType,
-      "Cat Coding",
-      column || ViewColumn.One,
-      getWebviewOptions(extensionUri)
-    );
+  updatePanel(panel);
 
-    CatCodingPanel.currentPanel = new CatCodingPanel(panel, extensionUri);
-  }
+  const disposables: Array<Disposable> = [];
 
-  public static revive(panel: WebviewPanel, extensionUri: Uri) {
-    CatCodingPanel.currentPanel = new CatCodingPanel(panel, extensionUri);
-  }
+  panel.onDidDispose(
+    (): void => {
+      currentPanel = undefined;
 
-  private constructor(panel: WebviewPanel, extensionUri: Uri) {
-    this._panel = panel;
-    this._extensionUri = extensionUri;
+      panel.dispose();
 
-    // Set the webview's initial html content
-    this._update();
-
-    /*
-     * Listen for when the panel is disposed
-     * This happens when the user closes the panel or when the panel is closed programmatically
-     */
-    this._panel.onDidDispose(() => this.dispose(), null, this._disposables);
-
-    // Update the content based on view changes
-    this._panel.onDidChangeViewState(
-      (e) => {
-        if (this._panel.visible) {
-          this._update();
+      while (disposables.length) {
+        const x = disposables.pop();
+        if (x) {
+          x.dispose();
         }
-      },
-      null,
-      this._disposables
-    );
-
-    // Handle messages from the webview
-    this._panel.webview.onDidReceiveMessage(
-      (message) => {
-        switch (message.command) {
-          case "alert":
-            window.showErrorMessage(message.text);
-        }
-      },
-      null,
-      this._disposables
-    );
-  }
-
-  public doRefactor() {
-    /*
-     * Send a message to the webview webview.
-     * You can send any JSON serializable data.
-     */
-    this._panel.webview.postMessage({ command: "refactor" });
-  }
-
-  public dispose() {
-    CatCodingPanel.currentPanel = undefined;
-
-    // Clean up our resources
-    this._panel.dispose();
-
-    while (this._disposables.length) {
-      const x = this._disposables.pop();
-      if (x) {
-        x.dispose();
       }
-    }
-  }
+    },
+    null,
+    disposables
+  );
 
-  private _update() {
-    this._panel.title = "任意のタイトル!";
-    this._panel.webview.html = `<!DOCTYPE html>
-    <html lang="ja">
-    <head>
-      <meta charset="UTF-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>Cat Coding</title>
-    </head>
-    <body>
-      任意のHTML を表示する WebView!!!
-      <script type="module"> document.body.append(new Date().toString()); </script>
-    </body>
-    </html>`;
-  }
-}
+  panel.onDidChangeViewState(
+    () => {
+      if (panel.visible) {
+        updatePanel(panel);
+      }
+    },
+    null,
+    disposables
+  );
 
-const getWebviewOptions = (extensionUri: Uri): WebviewOptions => {
-  return {
-    // Enable javascript in the webview
-    enableScripts: true,
+  // Handle messages from the webview
+  panel.webview.onDidReceiveMessage(
+    (message) => {
+      switch (message.command) {
+        case "alert":
+          window.showErrorMessage(message.text);
+      }
+    },
+    null,
+    disposables
+  );
 
-    // And restrict the webview to only loading content from our extension's `media` directory.
-    localResourceRoots: [Uri.joinPath(extensionUri, "media")],
-  };
+  currentPanel = panel;
+};
+
+const updatePanel = (panel: WebviewPanel): void => {
+  panel.title = "任意のタイトル!";
+  panel.webview.html = `<!doctype html>
+  <html lang="ja">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cat Coding</title>
+  </head>
+  <body>
+    任意のHTML を表示する WebView!!!
+    <script type="module"> document.body.append(new Date().toString()); </script>
+  </body>
+  </html>`;
 };
 
 export const registerWebView = (context: ExtensionContext) => () => {
   commands.registerCommand("definy.webview", () => {
-    CatCodingPanel.createOrShow(context.extensionUri);
+    createOrShow(context.extensionUri);
   });
 };
