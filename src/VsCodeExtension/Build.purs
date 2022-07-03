@@ -24,6 +24,7 @@ import PureScript.Spago as Spago
 import StructuredUrl as StructuredUrl
 import Type.Proxy (Proxy(..))
 import Util as Util
+import VsCodeExtension.Command as Command
 import VsCodeExtension.LanguageId as LanguageId
 
 main :: Effect.Effect Unit
@@ -117,7 +118,7 @@ generatePackageJson =
           Just
             ( NonEmptyArray.singleton
                 ( PackageJson.ContributesCommand
-                    { command: NonEmptyString.nes (Proxy :: _ "definy.webview")
+                    { command: Command.definyWebview
                     , title: NonEmptyString.nes (Proxy :: _ ".definy の拡張機能から webview を開きます")
                     }
                 )

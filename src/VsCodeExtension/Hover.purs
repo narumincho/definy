@@ -36,7 +36,16 @@ getHoverData position tree@(Evaluate.EvaluatedTree { item, range }) = case item 
       in
         Just
           ( Hover
-              { contents: hoverTreeToMarkdown hoverTree
+              { contents:
+                  Markdown.append
+                    (hoverTreeToMarkdown hoverTree)
+                    ( Markdown.Markdown
+                        [ Markdown.Paragraph
+                            ( NonEmptyString.nes
+                                (Proxy :: Proxy "[拡張機能で検索](command:workbench.extensions.search)")
+                            )
+                        ]
+                    )
               , range: targetRange
               }
           )

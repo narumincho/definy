@@ -16,6 +16,7 @@ import Effect as Effect
 import Effect.Uncurried as EffectUncurried
 import Markdown as Markdown
 import VsCodeExtension.CodeGen as CodeGen
+import VsCodeExtension.Command as Command
 import VsCodeExtension.Completion as Completion
 import VsCodeExtension.Definition as Definition
 import VsCodeExtension.Error as Error
@@ -42,14 +43,16 @@ activateFn context = do
   diagnosticCollection <- VSCodeApi.languagesCreateDiagnosticCollection "definy-error"
   workspaceFolders <- VSCodeApi.workspaceWorkspaceFolders
   VSCodeApi.languagesRegisterDocumentFormattingEditProvider
-    { languageId: LanguageId.languageId
+    { context
+    , languageId: LanguageId.languageId
     , formatFunc:
         \code ->
           ToString.evaluatedTreeToString
             (codeStringToEvaluatedTree code)
     }
   VSCodeApi.languagesRegisterDocumentSemanticTokensProvider
-    { languageId: LanguageId.languageId
+    { context
+    , languageId: LanguageId.languageId
     , semanticTokensProviderFunc:
         \code ->
           tokenDataListToDataList
@@ -59,7 +62,8 @@ activateFn context = do
     , semanticTokensProviderLegend: TokenType.useTokenTypesAsStringArray
     }
   VSCodeApi.languagesRegisterHoverProvider
-    { languageId: LanguageId.languageId
+    { context
+    , languageId: LanguageId.languageId
     , func:
         \{ code, position } ->
           hoverToVscodeHover
@@ -68,7 +72,8 @@ activateFn context = do
             )
     }
   VSCodeApi.languagesRegisterCompletionItemProvider
-    { languageId: LanguageId.languageId
+    { context
+    , languageId: LanguageId.languageId
     , func:
         \{ code, position } ->
           map
@@ -81,7 +86,8 @@ activateFn context = do
     , triggerCharacters: Completion.triggerCharacters
     }
   VSCodeApi.languageRegisterSignatureHelpProvider
-    { languageId: LanguageId.languageId
+    { context
+    , languageId: LanguageId.languageId
     , func:
         \{ code, position } -> case SignatureHelp.getSignatureHelp
             { tree: codeStringToEvaluatedTree code
@@ -102,7 +108,8 @@ activateFn context = do
     , triggerCharacters: SignatureHelp.triggerCharacters
     }
   VSCodeApi.languageRegisterDefinitionProvider
-    { languageId: LanguageId.languageId
+    { context
+    , languageId: LanguageId.languageId
     , func:
         \{ code, uri, position } ->
           Nullable.toNullable
@@ -115,7 +122,8 @@ activateFn context = do
             )
     }
   VSCodeApi.languagesRegisterDocumentSymbolProvider
-    { languageId: LanguageId.languageId
+    { context
+    , languageId: LanguageId.languageId
     , func:
         \{ code, uri } ->
           map
@@ -129,7 +137,8 @@ activateFn context = do
             )
     }
   VSCodeApi.languagesRegisterReferenceProvider
-    { languageId: LanguageId.languageId
+    { context
+    , languageId: LanguageId.languageId
     , func:
         \{ code, uri, position } ->
           map
@@ -142,11 +151,19 @@ activateFn context = do
             )
     }
   VSCodeApi.workspaceOnDidChangeTextDocument
-    (getWorkspaceTextDocumentsAndSendErrorAndOutputCode workspaceFolders diagnosticCollection)
+    { context
+    , callback: getWorkspaceTextDocumentsAndSendErrorAndOutputCode workspaceFolders diagnosticCollection
+    }
   VSCodeApi.workspaceOnDidOpenTextDocument
-    (getWorkspaceTextDocumentsAndSendErrorAndOutputCode workspaceFolders diagnosticCollection)
+    { context
+    , callback: getWorkspaceTextDocumentsAndSendErrorAndOutputCode workspaceFolders diagnosticCollection
+    }
   getWorkspaceTextDocumentsAndSendErrorAndOutputCode workspaceFolders diagnosticCollection
-  VSCodeApi.registerWebView context
+  VSCodeApi.commandsRegisterCommand
+    { context
+    , callback: \_ -> VSCodeApi.webviewCreateOrShow context
+    , command: Command.definyWebview
+    }
 
 codeStringToEvaluatedTree :: String -> Evaluate.EvaluatedTree
 codeStringToEvaluatedTree code =
