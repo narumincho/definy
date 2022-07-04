@@ -16,6 +16,7 @@ module VsCodeExtension.BuiltIn
   , nonEmptyTextBuiltIn
   , partBuiltIn
   , textBuiltIn
+  , typeBuiltIn
   , uintBuiltIn
   ) where
 
@@ -51,6 +52,7 @@ data ExprType
   | Text
   | NonEmptyText
   | Float64
+  | TypeBody
   | Unknown
 
 derive instance genericExprType :: GenericRep.Generic ExprType _
@@ -86,6 +88,7 @@ all :: Array BuiltIn
 all =
   [ moduleBuiltIn
   , bodyBuiltIn
+  , typeBuiltIn
   , partBuiltIn
   , addBuiltIn
   , uintBuiltIn
@@ -114,6 +117,18 @@ bodyBuiltIn =
     , description: NonEmptyString.nes (Proxy :: Proxy "複数のパーツを合わせたまとまり")
     , inputType: InputTypeRepeat Part
     , outputType: ModuleBody
+    }
+
+typeBuiltIn :: BuiltIn
+typeBuiltIn =
+  BuiltIn
+    { name: NonEmptyString.nes (Proxy :: Proxy "type")
+    , description:
+        NonEmptyString.nes
+          (Proxy :: Proxy "型を定義する")
+    , inputType:
+        InputTypeNormal [ Identifier, Description, Expr TypeBody ]
+    , outputType: Part
     }
 
 partBuiltIn :: BuiltIn

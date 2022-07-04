@@ -18,6 +18,7 @@ import Util as Util
 import VsCodeExtension.BuiltIn as BuiltIn
 import VsCodeExtension.Command as Command
 import VsCodeExtension.Evaluate as Evaluate
+import VsCodeExtension.EvaluatedItem as EvaluatedItem
 import VsCodeExtension.EvaluatedTreeIndex as EvaluatedTreeIndex
 import VsCodeExtension.Range as Range
 import VsCodeExtension.ToString as ToString
@@ -30,7 +31,7 @@ getHoverData ::
   Evaluate.EvaluatedTree ->
   Maybe Hover
 getHoverData position tree@(Evaluate.EvaluatedTree { item, range }) = case item of
-  Evaluate.Module partialModule -> case EvaluatedTreeIndex.getEvaluatedItem position tree of
+  EvaluatedItem.Module partialModule -> case EvaluatedTreeIndex.getEvaluatedItem position tree of
     Just { item: targetItem, range: targetRange } ->
       let
         hoverTree = evaluatedItemToHoverTree { item: targetItem, partialModule }
@@ -95,12 +96,12 @@ hoverTreeToMarkdown (HoverTree rec) =
     ]
 
 evaluatedItemToHoverTree ::
-  { item :: Evaluate.EvaluatedItem
-  , partialModule :: Evaluate.PartialModule
+  { item :: EvaluatedItem.EvaluatedItem
+  , partialModule :: EvaluatedItem.PartialModule
   } ->
   HoverTree
 evaluatedItemToHoverTree { item, partialModule } = case item of
-  Evaluate.Module (Evaluate.PartialModule { description, partList }) ->
+  EvaluatedItem.Module (EvaluatedItem.PartialModule { description, partList }) ->
     HoverTree
       { type:
           ToString.NoPositionTree
@@ -124,7 +125,7 @@ evaluatedItemToHoverTree { item, partialModule } = case item of
             ]
       , valueDetail: Markdown.Markdown []
       }
-  Evaluate.Description description ->
+  EvaluatedItem.Description description ->
     HoverTree
       { type:
           ToString.NoPositionTree
@@ -145,7 +146,7 @@ evaluatedItemToHoverTree { item, partialModule } = case item of
             ]
       , valueDetail: Markdown.Markdown []
       }
-  Evaluate.ModuleBody partList ->
+  EvaluatedItem.ModuleBody partList ->
     HoverTree
       { type:
           ToString.NoPositionTree
@@ -162,7 +163,7 @@ evaluatedItemToHoverTree { item, partialModule } = case item of
             ]
       , valueDetail: Markdown.Markdown []
       }
-  Evaluate.Part part ->
+  EvaluatedItem.Part part ->
     HoverTree
       { type:
           ToString.NoPositionTree
@@ -179,7 +180,7 @@ evaluatedItemToHoverTree { item, partialModule } = case item of
             ]
       , valueDetail: Markdown.Markdown []
       }
-  Evaluate.Expr value ->
+  EvaluatedItem.Expr value ->
     let
       (Evaluate.EvaluateExprResult { value: evaluatedValue, dummy }) =
         ( Evaluate.evaluateExpr
@@ -210,7 +211,7 @@ evaluatedItemToHoverTree { item, partialModule } = case item of
               )
         , valueDetail: valueToValueMarkdown evaluatedValue
         }
-  Evaluate.UIntLiteral uintLiteral ->
+  EvaluatedItem.UIntLiteral uintLiteral ->
     HoverTree
       { type:
           ToString.NoPositionTree
@@ -229,7 +230,7 @@ evaluatedItemToHoverTree { item, partialModule } = case item of
             ]
       , valueDetail: Markdown.Markdown []
       }
-  Evaluate.TextLiteral text ->
+  EvaluatedItem.TextLiteral text ->
     HoverTree
       { type:
           ToString.NoPositionTree
@@ -246,7 +247,7 @@ evaluatedItemToHoverTree { item, partialModule } = case item of
             ]
       , valueDetail: Markdown.Markdown []
       }
-  Evaluate.NonEmptyTextLiteral text ->
+  EvaluatedItem.NonEmptyTextLiteral text ->
     HoverTree
       { type:
           ToString.NoPositionTree
@@ -268,7 +269,7 @@ evaluatedItemToHoverTree { item, partialModule } = case item of
             ]
       , valueDetail: Markdown.Markdown []
       }
-  Evaluate.Float64Literal numberMaybe ->
+  EvaluatedItem.Float64Literal numberMaybe ->
     HoverTree
       { type:
           ToString.NoPositionTree
@@ -290,7 +291,7 @@ evaluatedItemToHoverTree { item, partialModule } = case item of
             ]
       , valueDetail: Markdown.Markdown []
       }
-  Evaluate.Identifier identifier ->
+  EvaluatedItem.Identifier identifier ->
     HoverTree
       { type:
           ToString.NoPositionTree
@@ -316,15 +317,15 @@ evaluatedItemToHoverTree { item, partialModule } = case item of
       , valueDetail: Markdown.Markdown []
       }
 
-moduleBodyToNoPositionTree :: Array Evaluate.PartialPart -> ToString.NoPositionTree
+moduleBodyToNoPositionTree :: Array EvaluatedItem.PartialPart -> ToString.NoPositionTree
 moduleBodyToNoPositionTree moduleBody =
   ToString.NoPositionTree
     { name: "ModuleBody"
     , children: Prelude.map partialPartToNoPositionTree moduleBody
     }
 
-partialPartToNoPositionTree :: Evaluate.PartialPart -> ToString.NoPositionTree
-partialPartToNoPositionTree (Evaluate.PartialPart { name, description, expr }) =
+partialPartToNoPositionTree :: EvaluatedItem.PartialPart -> ToString.NoPositionTree
+partialPartToNoPositionTree (EvaluatedItem.PartialPart { name, description, expr }) =
   ToString.NoPositionTree
     { name: "Part"
     , children:
@@ -344,9 +345,9 @@ partialPartToNoPositionTree (Evaluate.PartialPart { name, description, expr }) =
         ]
     }
 
-partialExprToNoPositionTree :: Evaluate.PartialExpr -> ToString.NoPositionTree
+partialExprToNoPositionTree :: EvaluatedItem.PartialExpr -> ToString.NoPositionTree
 partialExprToNoPositionTree = case _ of
-  Evaluate.ExprAdd { a, b } ->
+  EvaluatedItem.ExprAdd { a, b } ->
     ToString.NoPositionTree
       { name: "Add"
       , children:
@@ -356,15 +357,15 @@ partialExprToNoPositionTree = case _ of
               (Prelude.map partialExprToNoPositionTree b)
           ]
       }
-  Evaluate.ExprPartReference { name } ->
+  EvaluatedItem.ExprPartReference { name } ->
     ToString.NoPositionTree
       { name: Identifier.identifierToString name
       , children: []
       }
-  Evaluate.ExprPartReferenceInvalidName { name } ->
+  EvaluatedItem.ExprPartReferenceInvalidName { name } ->
     ToString.NoPositionTree
       { name: name, children: [] }
-  Evaluate.ExprUIntLiteral uintMaybe ->
+  EvaluatedItem.ExprUIntLiteral uintMaybe ->
     ToString.NoPositionTree
       { name: "UIntLiteral"
       , children:
@@ -375,7 +376,7 @@ partialExprToNoPositionTree = case _ of
               )
           ]
       }
-  Evaluate.ExprFloat64Literal numberMaybe ->
+  EvaluatedItem.ExprFloat64Literal numberMaybe ->
     ToString.NoPositionTree
       { name: "Float64Literal"
       , children:
@@ -386,13 +387,13 @@ partialExprToNoPositionTree = case _ of
               )
           ]
       }
-  Evaluate.ExprTextLiteral text ->
+  EvaluatedItem.ExprTextLiteral text ->
     ToString.NoPositionTree
       { name: "Text"
       , children:
           [ ToString.noPositionTreeEmptyChildren text ]
       }
-  Evaluate.ExprNonEmptyTextLiteral textMaybe ->
+  EvaluatedItem.ExprNonEmptyTextLiteral textMaybe ->
     ToString.NoPositionTree
       { name: "Text"
       , children:
@@ -404,17 +405,17 @@ partialExprToNoPositionTree = case _ of
           ]
       }
 
-partialExprToDescription :: Evaluate.PartialModule -> Evaluate.PartialExpr -> Maybe NonEmptyString.NonEmptyString
+partialExprToDescription :: EvaluatedItem.PartialModule -> EvaluatedItem.PartialExpr -> Maybe NonEmptyString.NonEmptyString
 partialExprToDescription partialModule = case _ of
-  Evaluate.ExprAdd {} -> Just (BuiltIn.buildInGetDescription BuiltIn.addBuiltIn)
-  Evaluate.ExprPartReference { name } -> case Evaluate.findPart partialModule name of
-    Just (Evaluate.PartialPart { description }) -> NonEmptyString.fromString description
+  EvaluatedItem.ExprAdd {} -> Just (BuiltIn.buildInGetDescription BuiltIn.addBuiltIn)
+  EvaluatedItem.ExprPartReference { name } -> case EvaluatedItem.findPart partialModule name of
+    Just (EvaluatedItem.PartialPart { description }) -> NonEmptyString.fromString description
     Nothing -> Just (NonEmptyString.nes (Proxy :: Proxy "不明なパーツの参照"))
-  Evaluate.ExprPartReferenceInvalidName _ -> Just (NonEmptyString.nes (Proxy :: Proxy "パーツの参照 識別子としてエラー"))
-  Evaluate.ExprUIntLiteral _ -> Just (BuiltIn.buildInGetDescription BuiltIn.uintBuiltIn)
-  Evaluate.ExprFloat64Literal _ -> Just (BuiltIn.buildInGetDescription BuiltIn.float64BuiltIn)
-  Evaluate.ExprTextLiteral _ -> Just (BuiltIn.buildInGetDescription BuiltIn.textBuiltIn)
-  Evaluate.ExprNonEmptyTextLiteral _ -> Just (BuiltIn.buildInGetDescription BuiltIn.nonEmptyTextBuiltIn)
+  EvaluatedItem.ExprPartReferenceInvalidName _ -> Just (NonEmptyString.nes (Proxy :: Proxy "パーツの参照 識別子としてエラー"))
+  EvaluatedItem.ExprUIntLiteral _ -> Just (BuiltIn.buildInGetDescription BuiltIn.uintBuiltIn)
+  EvaluatedItem.ExprFloat64Literal _ -> Just (BuiltIn.buildInGetDescription BuiltIn.float64BuiltIn)
+  EvaluatedItem.ExprTextLiteral _ -> Just (BuiltIn.buildInGetDescription BuiltIn.textBuiltIn)
+  EvaluatedItem.ExprNonEmptyTextLiteral _ -> Just (BuiltIn.buildInGetDescription BuiltIn.nonEmptyTextBuiltIn)
 
 maybeToNoPositionTree :: Maybe ToString.NoPositionTree -> ToString.NoPositionTree
 maybeToNoPositionTree = case _ of

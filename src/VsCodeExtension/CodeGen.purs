@@ -16,6 +16,7 @@ import TypeScript.Identifier as TsIdentifier
 import TypeScript.ModuleName as TsModuleName
 import TypeScript.ToString as TsToString
 import VsCodeExtension.Evaluate as Evaluate
+import VsCodeExtension.EvaluatedItem as EvaluatedItem
 
 codeAsBinary :: Evaluate.EvaluatedTree -> Boolean -> Binary.Binary
 codeAsBinary definyCode outputType = case Map.lookup
@@ -40,7 +41,7 @@ moduleMap (Evaluate.EvaluatedTree { item }) =
     ( Map.singleton
         (TsModuleName.Local filePath)
         ( case item of
-            Evaluate.Module definyModule -> definyPartialModuleToTypeScriptModule definyModule
+            EvaluatedItem.Module definyModule -> definyPartialModuleToTypeScriptModule definyModule
             _ ->
               ( TsData.Module
                   { exportDefinitionList: []
@@ -50,8 +51,8 @@ moduleMap (Evaluate.EvaluatedTree { item }) =
         )
     )
 
-definyPartialModuleToTypeScriptModule :: Evaluate.PartialModule -> TsData.Module
-definyPartialModuleToTypeScriptModule (Evaluate.PartialModule partialModule) =
+definyPartialModuleToTypeScriptModule :: EvaluatedItem.PartialModule -> TsData.Module
+definyPartialModuleToTypeScriptModule (EvaluatedItem.PartialModule partialModule) =
   TsData.Module
     { exportDefinitionList:
         Prelude.map
@@ -60,8 +61,8 @@ definyPartialModuleToTypeScriptModule (Evaluate.PartialModule partialModule) =
     , moduleDocument: partialModule.description
     }
 
-definyPartialPartToExportVariable :: Evaluate.PartialPart -> TsData.ExportDefinition
-definyPartialPartToExportVariable (Evaluate.PartialPart partialPart) =
+definyPartialPartToExportVariable :: EvaluatedItem.PartialPart -> TsData.ExportDefinition
+definyPartialPartToExportVariable (EvaluatedItem.PartialPart partialPart) =
   TsData.ExportDefinitionVariable
     ( TsData.VariableDeclaration
         { name:
@@ -72,22 +73,22 @@ definyPartialPartToExportVariable (Evaluate.PartialPart partialPart) =
         , type:
             case partialPart.expr of
               Nothing -> TsData.TsTypeUnknown
-              Just (Evaluate.ExprAdd _) -> TsData.TsTypeNumber
-              Just (Evaluate.ExprPartReference _) -> TsData.TsTypeUnknown
-              Just (Evaluate.ExprPartReferenceInvalidName _) -> TsData.TsTypeUnknown
-              Just (Evaluate.ExprUIntLiteral _) -> TsData.TsTypeNumber
-              Just (Evaluate.ExprTextLiteral _) -> TsData.TsTypeString
-              Just (Evaluate.ExprNonEmptyTextLiteral _) -> TsData.TsTypeString
-              Just (Evaluate.ExprFloat64Literal _) -> TsData.TsTypeNumber
+              Just (EvaluatedItem.ExprAdd _) -> TsData.TsTypeNumber
+              Just (EvaluatedItem.ExprPartReference _) -> TsData.TsTypeUnknown
+              Just (EvaluatedItem.ExprPartReferenceInvalidName _) -> TsData.TsTypeUnknown
+              Just (EvaluatedItem.ExprUIntLiteral _) -> TsData.TsTypeNumber
+              Just (EvaluatedItem.ExprTextLiteral _) -> TsData.TsTypeString
+              Just (EvaluatedItem.ExprNonEmptyTextLiteral _) -> TsData.TsTypeString
+              Just (EvaluatedItem.ExprFloat64Literal _) -> TsData.TsTypeNumber
         , expr: definyPartialExprToTypeScriptExpr partialPart.expr
         , export: true
         }
     )
 
-definyPartialExprToTypeScriptExpr :: Maybe Evaluate.PartialExpr -> TsData.Expr
+definyPartialExprToTypeScriptExpr :: Maybe EvaluatedItem.PartialExpr -> TsData.Expr
 definyPartialExprToTypeScriptExpr = case _ of
   Nothing -> TsData.StringLiteral "<unknown expr!!!>"
-  Just (Evaluate.ExprAdd { a, b }) ->
+  Just (EvaluatedItem.ExprAdd { a, b }) ->
     TsData.BinaryOperator
       ( TsData.BinaryOperatorExpr
           { operator: TsData.Addition
@@ -95,22 +96,22 @@ definyPartialExprToTypeScriptExpr = case _ of
           , right: definyPartialExprToTypeScriptExpr b
           }
       )
-  Just (Evaluate.ExprPartReference { name }) -> TsData.Variable (TsIdentifier.fromDefinyIdentifierEscapeReserved name)
-  Just (Evaluate.ExprPartReferenceInvalidName {}) ->
+  Just (EvaluatedItem.ExprPartReference { name }) -> TsData.Variable (TsIdentifier.fromDefinyIdentifierEscapeReserved name)
+  Just (EvaluatedItem.ExprPartReferenceInvalidName {}) ->
     TsData.StringLiteral
       "<unknown part!!!>"
-  Just (Evaluate.ExprUIntLiteral (Just value)) ->
+  Just (EvaluatedItem.ExprUIntLiteral (Just value)) ->
     TsData.NumberLiteral
       (UInt.toNumber value)
-  Just (Evaluate.ExprUIntLiteral Nothing) ->
+  Just (EvaluatedItem.ExprUIntLiteral Nothing) ->
     TsData.StringLiteral
       "<unknown uint literal!!!>"
-  Just (Evaluate.ExprTextLiteral text) -> TsData.StringLiteral text
-  Just (Evaluate.ExprNonEmptyTextLiteral (Just text)) ->
+  Just (EvaluatedItem.ExprTextLiteral text) -> TsData.StringLiteral text
+  Just (EvaluatedItem.ExprNonEmptyTextLiteral (Just text)) ->
     TsData.StringLiteral
       (NonEmptyString.toString text)
-  Just (Evaluate.ExprNonEmptyTextLiteral Nothing) ->
+  Just (EvaluatedItem.ExprNonEmptyTextLiteral Nothing) ->
     TsData.StringLiteral
       "<unknown nonEmptyString literal!!!>"
-  Just (Evaluate.ExprFloat64Literal (Just value)) -> TsData.NumberLiteral value
-  Just (Evaluate.ExprFloat64Literal Nothing) -> TsData.StringLiteral "<unknown float64 literal!!!>"
+  Just (EvaluatedItem.ExprFloat64Literal (Just value)) -> TsData.NumberLiteral value
+  Just (EvaluatedItem.ExprFloat64Literal Nothing) -> TsData.StringLiteral "<unknown float64 literal!!!>"

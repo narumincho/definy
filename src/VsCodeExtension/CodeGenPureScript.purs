@@ -16,6 +16,7 @@ import PureScript.Wellknown as Wellknown
 import Type.Proxy (Proxy(..))
 import Util as Util
 import VsCodeExtension.Evaluate as Evaluate
+import VsCodeExtension.EvaluatedItem as EvaluatedItem
 
 definyEvaluatedTreeToPureScriptCodeAsBinary :: Evaluate.EvaluatedTree -> String -> Binary.Binary
 definyEvaluatedTreeToPureScriptCodeAsBinary definyCode fileName =
@@ -44,7 +45,7 @@ fileNameToModuleName fileName =
 
 definyEvaluatedTreeToPureScriptCode :: Evaluate.EvaluatedTree -> Data.ModuleName -> Data.Module
 definyEvaluatedTreeToPureScriptCode (Evaluate.EvaluatedTree { item }) moduleName = case item of
-  Evaluate.Module (Evaluate.PartialModule { partList }) ->
+  EvaluatedItem.Module (EvaluatedItem.PartialModule { partList }) ->
     Data.Module
       { definitionList: Prelude.map (partialPartToDefinition moduleName) partList
       , name: moduleName
@@ -55,8 +56,8 @@ definyEvaluatedTreeToPureScriptCode (Evaluate.EvaluatedTree { item }) moduleName
       , name: moduleName
       }
 
-partialPartToDefinition :: Data.ModuleName -> Evaluate.PartialPart -> Data.Definition
-partialPartToDefinition moduleName (Evaluate.PartialPart rec) =
+partialPartToDefinition :: Data.ModuleName -> EvaluatedItem.PartialPart -> Data.Definition
+partialPartToDefinition moduleName (EvaluatedItem.PartialPart rec) =
   Data.Definition
     { document: rec.description
     , exprData: partialExprMaybeToExpr moduleName rec.expr
@@ -72,35 +73,35 @@ partialPartToDefinition moduleName (Evaluate.PartialPart rec) =
         )
     }
 
-partialExprMaybeToExpr :: Data.ModuleName -> Maybe Evaluate.PartialExpr -> Data.ExprData
+partialExprMaybeToExpr :: Data.ModuleName -> Maybe EvaluatedItem.PartialExpr -> Data.ExprData
 partialExprMaybeToExpr moduleName = case _ of
   Just expr -> partialExprToExpr moduleName expr
   Nothing -> Data.StringLiteral "no expr"
 
-partialExprToExpr :: Data.ModuleName -> Evaluate.PartialExpr -> Data.ExprData
+partialExprToExpr :: Data.ModuleName -> EvaluatedItem.PartialExpr -> Data.ExprData
 partialExprToExpr moduleName = case _ of
-  Evaluate.ExprAdd {} -> Data.StringLiteral "unsupported add"
-  Evaluate.ExprPartReference { name } ->
+  EvaluatedItem.ExprAdd {} -> Data.StringLiteral "unsupported add"
+  EvaluatedItem.ExprPartReference { name } ->
     Data.Variable
       { moduleName
       , name: Identifier.identifierToNonEmptyString name
       }
-  Evaluate.ExprPartReferenceInvalidName {} -> Data.StringLiteral "invalid name"
-  Evaluate.ExprUIntLiteral _ -> Data.StringLiteral "unsupported uint"
-  Evaluate.ExprFloat64Literal _ -> Data.StringLiteral "unsupported float"
-  Evaluate.ExprTextLiteral value -> Data.StringLiteral value
-  Evaluate.ExprNonEmptyTextLiteral (Just value) ->
+  EvaluatedItem.ExprPartReferenceInvalidName {} -> Data.StringLiteral "invalid name"
+  EvaluatedItem.ExprUIntLiteral _ -> Data.StringLiteral "unsupported uint"
+  EvaluatedItem.ExprFloat64Literal _ -> Data.StringLiteral "unsupported float"
+  EvaluatedItem.ExprTextLiteral value -> Data.StringLiteral value
+  EvaluatedItem.ExprNonEmptyTextLiteral (Just value) ->
     Wellknown.exprToExprData
       (Wellknown.nonEmptyStringLiteral value)
-  Evaluate.ExprNonEmptyTextLiteral Nothing -> Data.StringLiteral "invalid nonEmptyString"
+  EvaluatedItem.ExprNonEmptyTextLiteral Nothing -> Data.StringLiteral "invalid nonEmptyString"
 
-partialExprToType :: Evaluate.PartialExpr -> Data.TypeData
+partialExprToType :: EvaluatedItem.PartialExpr -> Data.TypeData
 partialExprToType = case _ of
-  Evaluate.ExprAdd {} -> Wellknown.pTypeToTypeData Wellknown.primString
-  Evaluate.ExprPartReference {} -> Wellknown.pTypeToTypeData Wellknown.primString
-  Evaluate.ExprPartReferenceInvalidName {} -> Wellknown.pTypeToTypeData Wellknown.primString
-  Evaluate.ExprUIntLiteral _ -> Wellknown.pTypeToTypeData Wellknown.primString
-  Evaluate.ExprFloat64Literal _ -> Wellknown.pTypeToTypeData Wellknown.primString
-  Evaluate.ExprTextLiteral _ -> Wellknown.pTypeToTypeData Wellknown.primString
-  Evaluate.ExprNonEmptyTextLiteral (Just _) -> Wellknown.pTypeToTypeData Wellknown.nonEmptyString
-  Evaluate.ExprNonEmptyTextLiteral Nothing -> Wellknown.pTypeToTypeData Wellknown.primString
+  EvaluatedItem.ExprAdd {} -> Wellknown.pTypeToTypeData Wellknown.primString
+  EvaluatedItem.ExprPartReference {} -> Wellknown.pTypeToTypeData Wellknown.primString
+  EvaluatedItem.ExprPartReferenceInvalidName {} -> Wellknown.pTypeToTypeData Wellknown.primString
+  EvaluatedItem.ExprUIntLiteral _ -> Wellknown.pTypeToTypeData Wellknown.primString
+  EvaluatedItem.ExprFloat64Literal _ -> Wellknown.pTypeToTypeData Wellknown.primString
+  EvaluatedItem.ExprTextLiteral _ -> Wellknown.pTypeToTypeData Wellknown.primString
+  EvaluatedItem.ExprNonEmptyTextLiteral (Just _) -> Wellknown.pTypeToTypeData Wellknown.nonEmptyString
+  EvaluatedItem.ExprNonEmptyTextLiteral Nothing -> Wellknown.pTypeToTypeData Wellknown.primString

@@ -5,6 +5,7 @@ module VsCodeExtension.SemanticToken
 import Data.Array as Array
 import Prelude as Prelude
 import VsCodeExtension.Evaluate as Evaluate
+import VsCodeExtension.EvaluatedItem as EvaluatedItem
 import VsCodeExtension.Range as Range
 import VsCodeExtension.TokenType as TokenType
 
@@ -19,16 +20,16 @@ evaluateTreeToTokenData (Evaluate.EvaluatedTree { nameRange, item, children }) =
         , start: Range.rangeStart nameRange
         , tokenType:
             case item of
-              Evaluate.Description _ -> TokenType.TokenTypeString
-              Evaluate.Module _ -> TokenType.TokenTypeNamespace
-              Evaluate.ModuleBody _ -> TokenType.TokenTypeNamespace
-              Evaluate.Part _ -> TokenType.TokenTypeNamespace
-              Evaluate.Expr _ -> TokenType.TokenTypeVariable
-              Evaluate.UIntLiteral _ -> TokenType.TokenTypeNumber
-              Evaluate.TextLiteral _ -> TokenType.TokenTypeString
-              Evaluate.NonEmptyTextLiteral _ -> TokenType.TokenTypeString
-              Evaluate.Identifier _ -> TokenType.TokenTypeFunction
-              Evaluate.Float64Literal _ -> TokenType.TokenTypeNumber
+              EvaluatedItem.Description _ -> TokenType.TokenTypeString
+              EvaluatedItem.Module _ -> TokenType.TokenTypeNamespace
+              EvaluatedItem.ModuleBody _ -> TokenType.TokenTypeNamespace
+              EvaluatedItem.Part _ -> TokenType.TokenTypeNamespace
+              EvaluatedItem.Expr _ -> TokenType.TokenTypeVariable
+              EvaluatedItem.UIntLiteral _ -> TokenType.TokenTypeNumber
+              EvaluatedItem.TextLiteral _ -> TokenType.TokenTypeString
+              EvaluatedItem.NonEmptyTextLiteral _ -> TokenType.TokenTypeString
+              EvaluatedItem.Identifier _ -> TokenType.TokenTypeFunction
+              EvaluatedItem.Float64Literal _ -> TokenType.TokenTypeNumber
         }
     )
     (Prelude.bind children (\(Evaluate.EvaluatedTreeChild { child }) -> evaluateTreeToTokenData child))

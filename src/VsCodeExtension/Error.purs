@@ -15,15 +15,16 @@ import Definy.Identifier as Identifier
 import Prelude as Prelude
 import Type.Proxy (Proxy(..))
 import VsCodeExtension.Evaluate as Evaluate
+import VsCodeExtension.EvaluatedItem as EvaluatedItem
 import VsCodeExtension.Range as Range
 import VsCodeExtension.ToString as ToString
 
 getErrorList :: Evaluate.EvaluatedTree -> Array ErrorWithRange
 getErrorList tree@(Evaluate.EvaluatedTree { item, range }) = case item of
-  Evaluate.Module partialModule -> getErrorListLoop partialModule tree
+  EvaluatedItem.Module partialModule -> getErrorListLoop partialModule tree
   _ -> [ ErrorWithRange { error: RootNotModule, range } ]
 
-getErrorListLoop :: Evaluate.PartialModule -> Evaluate.EvaluatedTree -> Array ErrorWithRange
+getErrorListLoop :: EvaluatedItem.PartialModule -> Evaluate.EvaluatedTree -> Array ErrorWithRange
 getErrorListLoop partialModule tree@(Evaluate.EvaluatedTree { item, name, nameRange, children, expectedChildrenTypeMaybe }) =
   Array.concat
     [ case expectedChildrenTypeMaybe of
@@ -38,23 +39,27 @@ getErrorListLoop partialModule tree@(Evaluate.EvaluatedTree { item, name, nameRa
     , Prelude.bind children (getErrorListFromEvaluatedTreeChild partialModule)
     ]
 
-evaluatedItemGetError :: String -> Evaluate.PartialModule -> Evaluate.EvaluatedItem -> Maybe Error
+evaluatedItemGetError ::
+  String ->
+  EvaluatedItem.PartialModule ->
+  EvaluatedItem.EvaluatedItem ->
+  Maybe Error
 evaluatedItemGetError rawName partialModule = case _ of
-  Evaluate.Expr (Evaluate.ExprPartReferenceInvalidName { name: partName }) ->
+  EvaluatedItem.Expr (EvaluatedItem.ExprPartReferenceInvalidName { name: partName }) ->
     Just
       (InvalidPartName partName)
-  Evaluate.Expr (Evaluate.ExprPartReference { name }) -> case Evaluate.findPart partialModule name of
+  EvaluatedItem.Expr (EvaluatedItem.ExprPartReference { name }) -> case EvaluatedItem.findPart partialModule name of
     Just _ -> Nothing
     Nothing ->
       Just
         (UnknownPartName name)
-  Evaluate.UIntLiteral Nothing -> Just (UIntParseError rawName)
-  Evaluate.Float64Literal Nothing -> Just (Float64ParseError rawName)
-  Evaluate.NonEmptyTextLiteral Nothing -> Just NonEmptyStringEmptyError
-  Evaluate.Identifier Nothing -> Just (InvalidIdentifier rawName)
+  EvaluatedItem.UIntLiteral Nothing -> Just (UIntParseError rawName)
+  EvaluatedItem.Float64Literal Nothing -> Just (Float64ParseError rawName)
+  EvaluatedItem.NonEmptyTextLiteral Nothing -> Just NonEmptyStringEmptyError
+  EvaluatedItem.Identifier Nothing -> Just (InvalidIdentifier rawName)
   _ -> Nothing
 
-getErrorListFromEvaluatedTreeChild :: Evaluate.PartialModule -> Evaluate.EvaluatedTreeChild -> Array ErrorWithRange
+getErrorListFromEvaluatedTreeChild :: EvaluatedItem.PartialModule -> Evaluate.EvaluatedTreeChild -> Array ErrorWithRange
 getErrorListFromEvaluatedTreeChild partialModule (Evaluate.EvaluatedTreeChild { child: child@(Evaluate.EvaluatedTree { range }), typeMisMatchMaybe }) =
   Prelude.append
     ( case typeMisMatchMaybe of

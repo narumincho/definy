@@ -8,6 +8,12 @@
 
 
 /**
+ * 新たな型!
+ */
+export const sampleType = "wip";
+
+
+/**
  * 浮動小数点数のサンプル
  */
 export const floatSample = "<unknown float64 literal!!!>";

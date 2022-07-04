@@ -19,6 +19,7 @@ import Prelude as Prelude
 import Type.Proxy (Proxy(..))
 import VsCodeExtension.BuiltIn as BuiltIn
 import VsCodeExtension.Evaluate as Evaluate
+import VsCodeExtension.EvaluatedItem as EvaluatedItem
 import VsCodeExtension.EvaluatedTreeIndex as EvaluatedTreeIndex
 import VsCodeExtension.Range as Range
 import VsCodeExtension.ToString as ToString
@@ -70,11 +71,11 @@ getSimpleCompletionList ::
   { tree :: Evaluate.EvaluatedTree, position :: Range.Position } ->
   Array SimpleCompletionItem
 getSimpleCompletionList { tree, position } = case EvaluatedTreeIndex.getEvaluatedItem position tree of
-  Just { item: Evaluate.Description _ } -> []
-  Just { item: Evaluate.UIntLiteral _ } -> []
-  Just { item: Evaluate.Float64Literal _ } -> []
-  Just { item: Evaluate.TextLiteral _ } -> []
-  Just { item: Evaluate.Identifier _ } -> []
+  Just { item: EvaluatedItem.Description _ } -> []
+  Just { item: EvaluatedItem.UIntLiteral _ } -> []
+  Just { item: EvaluatedItem.Float64Literal _ } -> []
+  Just { item: EvaluatedItem.TextLiteral _ } -> []
+  Just { item: EvaluatedItem.Identifier _ } -> []
   _ ->
     let
       partNameSet = getPartNameListInTree tree
@@ -137,6 +138,7 @@ builtInTypeToInsertTextTree = case _ of
   BuiltIn.Expr BuiltIn.Text -> builtInToInsertTextTree BuiltIn.textBuiltIn
   BuiltIn.Expr BuiltIn.Float64 -> builtInToInsertTextTree BuiltIn.float64BuiltIn
   BuiltIn.Expr BuiltIn.NonEmptyText -> builtInToInsertTextTree BuiltIn.nonEmptyTextBuiltIn
+  BuiltIn.Expr BuiltIn.TypeBody -> builtInToInsertTextTree BuiltIn.typeBuiltIn
   BuiltIn.Expr BuiltIn.Unknown -> builtInToInsertTextTree BuiltIn.uintBuiltIn
   BuiltIn.Identifier ->
     InsertTextTree
@@ -192,9 +194,9 @@ getPartNameListInTree ::
     , description :: String
     }
 getPartNameListInTree (Evaluate.EvaluatedTree { item }) = case item of
-  Evaluate.Module (Evaluate.PartialModule { partList }) ->
+  EvaluatedItem.Module (EvaluatedItem.PartialModule { partList }) ->
     Array.mapMaybe
-      ( \(Evaluate.PartialPart { name, description }) -> case name of
+      ( \(EvaluatedItem.PartialPart { name, description }) -> case name of
           Just nameNonEmpty -> Just { name: nameNonEmpty, description }
           Nothing -> Nothing
       )

@@ -8,6 +8,12 @@
 
 
 /**
+ * 新たな型!
+ */
+export const sampleType: string = "wip";
+
+
+/**
  * 浮動小数点数のサンプル
  */
 export const floatSample: number = "<unknown float64 literal!!!>";
