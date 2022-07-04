@@ -40,12 +40,6 @@ export const k = (samplePart+(1+39));
 /**
  * description
  */
-export const sample = 123;
-
-
-/**
- * description
- */
 export const sample = ("<unknown part!!!>"+28);
 
 

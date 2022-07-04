@@ -60,11 +60,6 @@ getFileHash filePath fileTypeMaybe = do
         }
     )
 
-firstUppercase :: String -> String
-firstUppercase text = case String.uncons text of
-  Maybe.Just { head, tail } -> append (String.toUpper (String.singleton head)) tail
-  Maybe.Nothing -> ""
-
 -- | static なファイルが入っているディレクトリを分析する
 getStaticResourceFileResult :: Path.DirectoryPath -> Aff.Aff (Array StaticResourceFileResult)
 getStaticResourceFileResult directoryPath =
@@ -97,7 +92,7 @@ filePathToStaticResourceFileResultAff filePath fileTypeMaybe = do
               )
               ( case fileTypeMaybe of
                   Maybe.Just fileType ->
-                    firstUppercase
+                    Util.firstUppercase
                       (NonEmptyString.toString (FileType.toExtension fileType))
                   Maybe.Nothing -> ""
               )

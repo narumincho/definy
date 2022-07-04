@@ -40,12 +40,6 @@ export const k: number = (samplePart+(1+39));
 /**
  * description
  */
-export const sample: number = 123;
-
-
-/**
- * description
- */
 export const sample: number = ("<unknown part!!!>"+28);
 
 

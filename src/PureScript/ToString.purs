@@ -1,7 +1,9 @@
 module PureScript.ToString (toString, moduleNameToString) where
 
 import Data.Array as Array
+import Data.Array.NonEmpty as NonEmptyArray
 import Data.Map as Map
+import Data.Maybe (Maybe(..))
 import Data.Maybe as Maybe
 import Data.Set as Set
 import Data.String as String
@@ -11,6 +13,7 @@ import Data.String.NonEmpty as NonEmptyString
 import Data.Tuple as Tuple
 import Prelude as Prelude
 import PureScript.Data as Data
+import Util as Util
 
 toString :: Data.Module -> String
 toString pModule@(Data.Module { definitionList }) =
@@ -75,9 +78,11 @@ moduleNameCode (Data.Module { name, definitionList }) =
   String.joinWith ""
     [ "module "
     , NonEmptyString.toString (moduleNameToString name)
-    , " ("
-    , String.joinWith ", " (collectExportDefinition definitionList)
-    , ") where"
+    , " "
+    , case NonEmptyArray.fromArray (collectExportDefinition definitionList) of
+        Just nonEmpty -> Util.joinWithCommaAndEncloseParenthesis (NonEmptyArray.toArray nonEmpty)
+        Nothing -> ""
+    , " where"
     ]
 
 moduleNameToString :: Data.ModuleName -> NonEmptyString

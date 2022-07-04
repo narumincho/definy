@@ -1,7 +1,11 @@
 module Util
   ( append3
   , class RowTraversable
+  , encloseParenthesis
+  , firstUppercase
   , groupBySize
+  , joinWithComma
+  , joinWithCommaAndEncloseParenthesis
   , listUpdateAtOverAutoCreate
   , nonEmptyArrayGetAtLoop
   , numberToString
@@ -160,3 +164,17 @@ append3 a b c =
     c
 
 foreign import unknownValueToString :: forall a. a -> String
+
+firstUppercase :: String -> String
+firstUppercase text = case String.uncons text of
+  Maybe.Just { head, tail } -> append (String.toUpper (String.singleton head)) tail
+  Maybe.Nothing -> ""
+
+joinWithCommaAndEncloseParenthesis :: Array String -> String
+joinWithCommaAndEncloseParenthesis value = encloseParenthesis (joinWithComma value)
+
+encloseParenthesis :: String -> String
+encloseParenthesis value = append3 "(" value ")"
+
+joinWithComma :: Array String -> String
+joinWithComma = String.joinWith ", "
