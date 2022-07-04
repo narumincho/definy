@@ -50,6 +50,7 @@ evaluatedItemGetError rawName partialModule = case _ of
         (UnknownPartName name)
   Evaluate.UIntLiteral Nothing -> Just (UIntParseError rawName)
   Evaluate.Float64Literal Nothing -> Just (Float64ParseError rawName)
+  Evaluate.NonEmptyTextLiteral Nothing -> Just NonEmptyStringEmptyError
   Evaluate.Identifier Nothing -> Just (InvalidIdentifier rawName)
   _ -> Nothing
 
@@ -119,6 +120,7 @@ data Error
     }
   | UIntParseError String
   | Float64ParseError String
+  | NonEmptyStringEmptyError
   | TypeMisMatchError Evaluate.TypeMisMatch
   | InvalidIdentifier String
   | RootNotModule
@@ -167,6 +169,7 @@ errorToString = case _ of
     NonEmptyString.appendString
       (ToString.escapeName name)
       "Float64 としてパースできませんでした"
+  NonEmptyStringEmptyError -> NonEmptyString.nes (Proxy :: Proxy "nonEmptyText には 空ではない文字列を指定する必要があります")
   TypeMisMatchError (Evaluate.TypeMisMatch { actual, expect }) ->
     NonEmptyString.appendString
       (treeTypeToString expect)

@@ -22,4 +22,10 @@ export const partName: number = 6.28;
 /**
  * part description
  */
+export const nonEmptyTextEmptyErrorTest: string = "<unknown nonEmptyString literal!!!>";
+
+
+/**
+ * part description
+ */
 export const nonEmptyTextSampleMimeType: string = "image/png";

@@ -3,6 +3,7 @@ module(
   body(
     part(floatSample, "浮動小数点数のサンプル", float64(NaN)),
     part(partName, "part description", float64("6.28")),
+    part(nonEmptyTextEmptyErrorTest, "part description", nonEmptyText("")),
     part(
       nonEmptyTextSampleMimeType,
       "part description",

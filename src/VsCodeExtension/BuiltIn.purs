@@ -160,7 +160,7 @@ textBuiltIn =
 nonEmptyTextBuiltIn :: BuiltIn
 nonEmptyTextBuiltIn =
   BuiltIn
-    { name: NonEmptyString.nes (Proxy :: Proxy "text")
+    { name: NonEmptyString.nes (Proxy :: Proxy "nonEmptyText")
     , description: NonEmptyString.nes (Proxy :: Proxy "空ではない文字列リテラル")
     , inputType: InputTypeNormal [ NonEmptyTextLiteral ]
     , outputType: Expr NonEmptyText

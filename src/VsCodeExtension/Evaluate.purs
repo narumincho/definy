@@ -181,7 +181,7 @@ evaluateExpr expr partialModule = case expr of
       )
   ExprFloat64Literal valueMaybe ->
     Maybe.fromMaybe
-      (EvaluateExprResult { value: ValueFloat64 6.28, dummy: false })
+      (EvaluateExprResult { value: ValueFloat64 6.28, dummy: true })
       ( map
           (\uintValue -> EvaluateExprResult { value: ValueFloat64 uintValue, dummy: false })
           valueMaybe
@@ -371,7 +371,7 @@ equalName :: String -> BuiltIn.BuiltIn -> Boolean
 equalName name builtIn =
   eq
     name
-    (NonEmptyString.toString (BuiltIn.builtInGetName BuiltIn.uintBuiltIn))
+    (NonEmptyString.toString (BuiltIn.builtInGetName builtIn))
 
 maybeEvaluatedItemToMaybeExpr :: Maybe EvaluatedItem -> Maybe PartialExpr
 maybeEvaluatedItemToMaybeExpr = case _ of
