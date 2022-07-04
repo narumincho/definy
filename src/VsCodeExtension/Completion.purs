@@ -136,6 +136,7 @@ builtInTypeToInsertTextTree = case _ of
   BuiltIn.Expr BuiltIn.UInt -> builtInToInsertTextTree BuiltIn.uintBuiltIn
   BuiltIn.Expr BuiltIn.Text -> builtInToInsertTextTree BuiltIn.textBuiltIn
   BuiltIn.Expr BuiltIn.Float64 -> builtInToInsertTextTree BuiltIn.float64BuiltIn
+  BuiltIn.Expr BuiltIn.NonEmptyText -> builtInToInsertTextTree BuiltIn.nonEmptyTextBuiltIn
   BuiltIn.Expr BuiltIn.Unknown -> builtInToInsertTextTree BuiltIn.uintBuiltIn
   BuiltIn.Identifier ->
     InsertTextTree
@@ -158,6 +159,12 @@ builtInTypeToInsertTextTree = case _ of
   BuiltIn.Float64Literal ->
     InsertTextTree
       { name: NonEmptyString.nes (Proxy :: Proxy "6.28")
+      , focus: true
+      , children: []
+      }
+  BuiltIn.NonEmptyTextLiteral ->
+    InsertTextTree
+      { name: NonEmptyString.nes (Proxy :: Proxy "Hello, World!")
       , focus: true
       , children: []
       }

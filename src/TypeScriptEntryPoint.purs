@@ -10,7 +10,6 @@ module TypeScriptEntryPoint
   , languageToIdString
   , nothing
   , pathAndSearchParamsFromPath
-  , pngMimeType
   , structuredUrlFromOriginAndPathAndSearchParams
   ) where
 
@@ -75,6 +74,3 @@ japaneseId = "ja"
 
 esperantoId ∷ String
 esperantoId = "eo"
-
-pngMimeType :: String
-pngMimeType = NonEmptyString.toString MediaType.pngMimeType

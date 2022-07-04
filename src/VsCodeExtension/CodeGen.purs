@@ -5,6 +5,7 @@ module VsCodeExtension.CodeGen
 import Binary as Binary
 import Data.Map as Map
 import Data.Maybe (Maybe(..))
+import Data.String.NonEmpty as NonEmptyString
 import Data.UInt as UInt
 import FileSystem.Name as FileSystemName
 import FileSystem.Path as FileSystemPath
@@ -76,6 +77,7 @@ definyPartialPartToExportVariable (Evaluate.PartialPart partialPart) =
               Just (Evaluate.ExprPartReferenceInvalidName _) -> TsData.TsTypeUnknown
               Just (Evaluate.ExprUIntLiteral _) -> TsData.TsTypeNumber
               Just (Evaluate.ExprTextLiteral _) -> TsData.TsTypeString
+              Just (Evaluate.ExprNonEmptyTextLiteral _) -> TsData.TsTypeString
               Just (Evaluate.ExprFloat64Literal _) -> TsData.TsTypeNumber
         , expr: definyPartialExprToTypeScriptExpr partialPart.expr
         , export: true
@@ -104,5 +106,11 @@ definyPartialExprToTypeScriptExpr = case _ of
     TsData.StringLiteral
       "<unknown uint literal!!!>"
   Just (Evaluate.ExprTextLiteral text) -> TsData.StringLiteral text
+  Just (Evaluate.ExprNonEmptyTextLiteral (Just text)) ->
+    TsData.StringLiteral
+      (NonEmptyString.toString text)
+  Just (Evaluate.ExprNonEmptyTextLiteral Nothing) ->
+    TsData.StringLiteral
+      "<unknown nonEmptyString literal!!!>"
   Just (Evaluate.ExprFloat64Literal (Just value)) -> TsData.NumberLiteral value
   Just (Evaluate.ExprFloat64Literal Nothing) -> TsData.StringLiteral "<unknown float64 literal!!!>"

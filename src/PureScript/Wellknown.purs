@@ -6,9 +6,11 @@ module PureScript.Wellknown
   , dataMapEmpty
   , definition
   , exprFromExprData
+  , exprToExprData
   , nonEmptyString
   , nonEmptyStringLiteral
   , pTypeFrom
+  , pTypeToTypeData
   , pTypeWithArgument
   , primString
   , stringLiteral
@@ -34,6 +36,9 @@ data PType :: Type -> Type
 data PType pType
   = PType Data.TypeData
 
+pTypeToTypeData :: forall t. PType t -> Data.TypeData
+pTypeToTypeData (PType v) = v
+
 data Expr :: Type -> Type
 -- | PureScript の式. 型を間違えないように, 型を幽霊型としてつけている
 data Expr pType
@@ -41,6 +46,9 @@ data Expr pType
 
 exprFromExprData :: forall t. Data.ExprData -> Expr t
 exprFromExprData = Expr
+
+exprToExprData :: forall t. Expr t -> Data.ExprData
+exprToExprData (Expr v) = v
 
 -- | Prim
 -- | https://pursuit.purescript.org/builtins/docs/Prim

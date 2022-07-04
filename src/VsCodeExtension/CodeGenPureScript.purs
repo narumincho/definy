@@ -57,15 +57,19 @@ definyEvaluatedTreeToPureScriptCode (Evaluate.EvaluatedTree { item }) moduleName
 
 partialPartToDefinition :: Data.ModuleName -> Evaluate.PartialPart -> Data.Definition
 partialPartToDefinition moduleName (Evaluate.PartialPart rec) =
-  Wellknown.definition
+  Data.Definition
     { document: rec.description
-    , expr: Wellknown.exprFromExprData (partialExprMaybeToExpr moduleName rec.expr)
+    , exprData: partialExprMaybeToExpr moduleName rec.expr
     , isExport: true
     , name:
         case rec.name of
           Just name -> Identifier.identifierToNonEmptyString name
           Nothing -> NonEmptyString.nes (Proxy :: Proxy "invalidName")
-    , pType: Wellknown.primString
+    , typeData:
+        ( case rec.expr of
+            Just expr -> partialExprToType expr
+            Nothing -> Wellknown.pTypeToTypeData Wellknown.primString
+        )
     }
 
 partialExprMaybeToExpr :: Data.ModuleName -> Maybe Evaluate.PartialExpr -> Data.ExprData
@@ -85,3 +89,18 @@ partialExprToExpr moduleName = case _ of
   Evaluate.ExprUIntLiteral _ -> Data.StringLiteral "unsupported uint"
   Evaluate.ExprFloat64Literal _ -> Data.StringLiteral "unsupported float"
   Evaluate.ExprTextLiteral value -> Data.StringLiteral value
+  Evaluate.ExprNonEmptyTextLiteral (Just value) ->
+    Wellknown.exprToExprData
+      (Wellknown.nonEmptyStringLiteral value)
+  Evaluate.ExprNonEmptyTextLiteral Nothing -> Data.StringLiteral "invalid nonEmptyString"
+
+partialExprToType :: Evaluate.PartialExpr -> Data.TypeData
+partialExprToType = case _ of
+  Evaluate.ExprAdd {} -> Wellknown.pTypeToTypeData Wellknown.primString
+  Evaluate.ExprPartReference {} -> Wellknown.pTypeToTypeData Wellknown.primString
+  Evaluate.ExprPartReferenceInvalidName {} -> Wellknown.pTypeToTypeData Wellknown.primString
+  Evaluate.ExprUIntLiteral _ -> Wellknown.pTypeToTypeData Wellknown.primString
+  Evaluate.ExprFloat64Literal _ -> Wellknown.pTypeToTypeData Wellknown.primString
+  Evaluate.ExprTextLiteral _ -> Wellknown.pTypeToTypeData Wellknown.primString
+  Evaluate.ExprNonEmptyTextLiteral (Just _) -> Wellknown.pTypeToTypeData Wellknown.nonEmptyString
+  Evaluate.ExprNonEmptyTextLiteral Nothing -> Wellknown.pTypeToTypeData Wellknown.primString

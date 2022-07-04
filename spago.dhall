@@ -32,5 +32,5 @@
   , "uint"
   ]
 , packages = ./packages.dhall
-, sources = [ "src/**/*.purs", "definy-output/purescript/**/*.purs" ]
+, sources = [ "src/**/*.purs", "definy-output/purescript/*.purs" ]
 }

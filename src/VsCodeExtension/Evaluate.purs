@@ -20,8 +20,11 @@ import Data.Array as Array
 import Data.Maybe (Maybe(..))
 import Data.Maybe as Maybe
 import Data.Number as Number
+import Data.String.NonEmpty (NonEmptyString)
+import Data.String.NonEmpty as NonEmptyString
 import Data.UInt as UInt
 import Definy.Identifier as Identifier
+import Type.Proxy (Proxy(..))
 import VsCodeExtension.Parser as Parser
 import VsCodeExtension.Range as Range
 
@@ -57,6 +60,7 @@ data EvaluatedItem
   | UIntLiteral (Maybe UInt.UInt)
   | Identifier (Maybe Identifier.Identifier)
   | TextLiteral String
+  | NonEmptyTextLiteral (Maybe NonEmptyString)
   | Float64Literal (Maybe Number)
 
 newtype TypeMisMatch
@@ -83,6 +87,7 @@ evaluateItemToTreeType = case _ of
   UIntLiteral _ -> Just TreeTypeUIntLiteral
   Identifier _ -> Just TreeTypeIdentifier
   TextLiteral _ -> Just TreeTypeTextLiteral
+  NonEmptyTextLiteral _ -> Just TreeTypeNonEmptyTextLiteral
   Float64Literal _ -> Just TreeTypeFloat64Literal
 
 data TreeType
@@ -94,6 +99,7 @@ data TreeType
   | TreeTypeUIntLiteral
   | TreeTypeIdentifier
   | TreeTypeTextLiteral
+  | TreeTypeNonEmptyTextLiteral
   | TreeTypeFloat64Literal
 
 derive instance eqTreeType :: Eq TreeType
@@ -119,6 +125,7 @@ data PartialExpr
   | ExprUIntLiteral (Maybe UInt.UInt)
   | ExprFloat64Literal (Maybe Number)
   | ExprTextLiteral String
+  | ExprNonEmptyTextLiteral (Maybe NonEmptyString)
 
 newtype EvaluateExprResult
   = EvaluateExprResult { value :: Value, dummy :: Boolean }
@@ -126,6 +133,7 @@ newtype EvaluateExprResult
 data Value
   = ValueUInt UInt.UInt
   | ValueText String
+  | ValueNonEmptyText NonEmptyString
   | ValueFloat64 Number
 
 evaluateExprResultMap2 ::
@@ -163,6 +171,13 @@ evaluateExpr expr partialModule = case expr of
       uintDummy
       (map (\uintValue -> EvaluateExprResult { value: ValueUInt uintValue, dummy: false }) uintMaybe)
   ExprTextLiteral textMaybe -> EvaluateExprResult { value: ValueText textMaybe, dummy: false }
+  ExprNonEmptyTextLiteral textMaybe ->
+    Maybe.fromMaybe
+      (EvaluateExprResult { value: ValueNonEmptyText (NonEmptyString.nes (Proxy :: Proxy "sample text")), dummy: true })
+      ( map
+          (\text -> EvaluateExprResult { value: ValueNonEmptyText text, dummy: false })
+          textMaybe
+      )
   ExprFloat64Literal valueMaybe ->
     Maybe.fromMaybe
       (EvaluateExprResult { value: ValueFloat64 6.28, dummy: false })
@@ -206,6 +221,7 @@ codeTreeToEvaluatedTree treeType codeTree =
       Just TreeTypeDescription -> codeTreeToEvaluatedTreeInContextDescription codeTree
       Just TreeTypeUIntLiteral -> codeTreeToEvaluatedTreeInContextUIntLiteral codeTree
       Just TreeTypeTextLiteral -> codeTreeToEvaluatedTreeInContextTextLiteral codeTree
+      Just TreeTypeNonEmptyTextLiteral -> codeTreeToEvaluatedTreeInContextNonEmptyTextLiteral codeTree
       Just TreeTypeFloat64Literal -> codeTreeToEvaluatedTreeInContextFloat64Literal codeTree
       Just TreeTypeIdentifier -> codeTreeToEvaluatedTreeInContextIdentifier codeTree
       _ -> codeTreeToEvaluatedTreeIContextNormal codeTree
@@ -314,6 +330,14 @@ codeTreeToEvaluatedTreeIContextNormal codeTree@(Parser.CodeTree { name, nameRang
           Just (TextLiteral child) -> Expr (ExprTextLiteral child)
           _ -> Expr (ExprTextLiteral "")
       )
+  "nonEmptyText" ->
+    need1Children
+      TreeTypeNonEmptyTextLiteral
+      codeTree
+      ( case _ of
+          Just (NonEmptyTextLiteral child) -> Expr (ExprNonEmptyTextLiteral child)
+          _ -> Expr (ExprNonEmptyTextLiteral Nothing)
+      )
   "float64" ->
     need1Children
       TreeTypeFloat64Literal
@@ -364,6 +388,12 @@ codeTreeToEvaluatedTreeInContextTextLiteral codeTree@(Parser.CodeTree { name }) 
   need0Children
     codeTree
     (TextLiteral name)
+
+codeTreeToEvaluatedTreeInContextNonEmptyTextLiteral :: Parser.CodeTree -> EvaluatedTree
+codeTreeToEvaluatedTreeInContextNonEmptyTextLiteral codeTree@(Parser.CodeTree { name }) =
+  need0Children
+    codeTree
+    (NonEmptyTextLiteral (NonEmptyString.fromString name))
 
 codeTreeToEvaluatedTreeInContextFloat64Literal :: Parser.CodeTree -> EvaluatedTree
 codeTreeToEvaluatedTreeInContextFloat64Literal codeTree@(Parser.CodeTree { name }) =

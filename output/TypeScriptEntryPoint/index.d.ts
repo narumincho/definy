@@ -65,5 +65,3 @@ export declare const languageToIdString: (language: Language) => string;
 export declare const englishId: string;
 export declare const japaneseId: string;
 export declare const esperantoId: string;
-
-export declare const pngMimeType: string;

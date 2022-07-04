@@ -22,10 +22,4 @@ export const partName = 6.28;
 /**
  * part description
  */
-export const partName = "テキスト";
-
-
-/**
- * 分かりやすい説明文
- */
-export const identifierSample = unknownPart;
+export const nonEmptyTextSampleMimeType = "image/png";

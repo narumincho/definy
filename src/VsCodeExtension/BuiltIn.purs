@@ -11,11 +11,12 @@ module VsCodeExtension.BuiltIn
   , buildInGetOutputType
   , builtInGetName
   , builtInTypeToString
+  , float64BuiltIn
   , moduleBuiltIn
+  , nonEmptyTextBuiltIn
   , partBuiltIn
   , textBuiltIn
   , uintBuiltIn
-  , float64BuiltIn
   ) where
 
 import Data.Generic.Rep as GenericRep
@@ -34,6 +35,7 @@ data BuiltInType
   | Identifier
   | UIntLiteral
   | TextLiteral
+  | NonEmptyTextLiteral
   | Float64Literal
 
 derive instance genericBuiltInType :: GenericRep.Generic BuiltInType _
@@ -47,6 +49,7 @@ builtInTypeToString = Prelude.show
 data ExprType
   = UInt
   | Text
+  | NonEmptyText
   | Float64
   | Unknown
 
@@ -151,6 +154,15 @@ textBuiltIn =
     , description: NonEmptyString.nes (Proxy :: Proxy "文字列リテラル")
     , inputType: InputTypeNormal [ TextLiteral ]
     , outputType: Expr Text
+    }
+
+nonEmptyTextBuiltIn :: BuiltIn
+nonEmptyTextBuiltIn =
+  BuiltIn
+    { name: NonEmptyString.nes (Proxy :: Proxy "text")
+    , description: NonEmptyString.nes (Proxy :: Proxy "空ではない文字列リテラル")
+    , inputType: InputTypeNormal [ NonEmptyTextLiteral ]
+    , outputType: Expr NonEmptyText
     }
 
 float64BuiltIn :: BuiltIn

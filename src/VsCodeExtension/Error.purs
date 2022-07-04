@@ -188,5 +188,6 @@ treeTypeToString = case _ of
   Evaluate.TreeTypeExpr -> NonEmptyString.nes (Proxy :: Proxy "Expr")
   Evaluate.TreeTypeUIntLiteral -> NonEmptyString.nes (Proxy :: Proxy "UIntLiteral")
   Evaluate.TreeTypeTextLiteral -> NonEmptyString.nes (Proxy :: Proxy "TextLiteral")
+  Evaluate.TreeTypeNonEmptyTextLiteral -> NonEmptyString.nes (Proxy :: Proxy "NonEmptyTextLiteral")
   Evaluate.TreeTypeFloat64Literal -> NonEmptyString.nes (Proxy :: Proxy "Float64Literal")
   Evaluate.TreeTypeIdentifier -> NonEmptyString.nes (Proxy :: Proxy "Identifier")
