@@ -90,6 +90,7 @@ all =
   , addBuiltIn
   , uintBuiltIn
   , textBuiltIn
+  , nonEmptyTextBuiltIn
   , float64BuiltIn
   ]
 

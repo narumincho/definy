@@ -25,6 +25,7 @@ import Data.String.NonEmpty as NonEmptyString
 import Data.UInt as UInt
 import Definy.Identifier as Identifier
 import Type.Proxy (Proxy(..))
+import VsCodeExtension.BuiltIn as BuiltIn
 import VsCodeExtension.Parser as Parser
 import VsCodeExtension.Range as Range
 
@@ -232,8 +233,8 @@ codeTreeToEvaluatedTree treeType codeTree =
       }
 
 codeTreeToEvaluatedTreeIContextNormal :: Parser.CodeTree -> EvaluatedTree
-codeTreeToEvaluatedTreeIContextNormal codeTree@(Parser.CodeTree { name, nameRange, range, children }) = case name of
-  "module" ->
+codeTreeToEvaluatedTreeIContextNormal codeTree@(Parser.CodeTree { name, nameRange, range, children }) =
+  if equalName name BuiltIn.moduleBuiltIn then
     need2Children
       { firstContext: TreeTypeDescription, secondContext: TreeTypeModuleBody }
       codeTree
@@ -251,7 +252,7 @@ codeTreeToEvaluatedTreeIContextNormal codeTree@(Parser.CodeTree { name, nameRang
                 }
             )
       )
-  "body" ->
+  else if equalName name BuiltIn.bodyBuiltIn then
     let
       evaluatedChildren =
         map
@@ -276,7 +277,7 @@ codeTreeToEvaluatedTreeIContextNormal codeTree@(Parser.CodeTree { name, nameRang
         , nameRange
         , name
         }
-  "part" ->
+  else if equalName name BuiltIn.partBuiltIn then
     need3Children
       { firstContext: TreeTypeIdentifier
       , secondContext: TreeTypeDescription
@@ -302,7 +303,7 @@ codeTreeToEvaluatedTreeIContextNormal codeTree@(Parser.CodeTree { name, nameRang
                 }
             )
       )
-  "add" ->
+  else if equalName name BuiltIn.addBuiltIn then
     need2Children
       { firstContext: TreeTypeExpr, secondContext: TreeTypeExpr }
       codeTree
@@ -314,7 +315,7 @@ codeTreeToEvaluatedTreeIContextNormal codeTree@(Parser.CodeTree { name, nameRang
                 }
             )
       )
-  "uint" ->
+  else if equalName name BuiltIn.uintBuiltIn then
     need1Children
       TreeTypeUIntLiteral
       codeTree
@@ -322,7 +323,7 @@ codeTreeToEvaluatedTreeIContextNormal codeTree@(Parser.CodeTree { name, nameRang
           Just (UIntLiteral child) -> Expr ((ExprUIntLiteral child))
           _ -> Expr (ExprUIntLiteral Nothing)
       )
-  "text" ->
+  else if equalName name BuiltIn.textBuiltIn then
     need1Children
       TreeTypeTextLiteral
       codeTree
@@ -330,7 +331,7 @@ codeTreeToEvaluatedTreeIContextNormal codeTree@(Parser.CodeTree { name, nameRang
           Just (TextLiteral child) -> Expr (ExprTextLiteral child)
           _ -> Expr (ExprTextLiteral "")
       )
-  "nonEmptyText" ->
+  else if equalName name BuiltIn.nonEmptyTextBuiltIn then
     need1Children
       TreeTypeNonEmptyTextLiteral
       codeTree
@@ -338,7 +339,7 @@ codeTreeToEvaluatedTreeIContextNormal codeTree@(Parser.CodeTree { name, nameRang
           Just (NonEmptyTextLiteral child) -> Expr (ExprNonEmptyTextLiteral child)
           _ -> Expr (ExprNonEmptyTextLiteral Nothing)
       )
-  "float64" ->
+  else if equalName name BuiltIn.float64BuiltIn then
     need1Children
       TreeTypeFloat64Literal
       codeTree
@@ -346,7 +347,7 @@ codeTreeToEvaluatedTreeIContextNormal codeTree@(Parser.CodeTree { name, nameRang
           Just (Float64Literal child) -> Expr (ExprFloat64Literal child)
           _ -> Expr (ExprFloat64Literal Nothing)
       )
-  _ ->
+  else
     EvaluatedTree
       { item:
           case Identifier.identifierFromString name of
@@ -365,6 +366,12 @@ codeTreeToEvaluatedTreeIContextNormal codeTree@(Parser.CodeTree { name, nameRang
       , nameRange
       , name
       }
+
+equalName :: String -> BuiltIn.BuiltIn -> Boolean
+equalName name builtIn =
+  eq
+    name
+    (NonEmptyString.toString (BuiltIn.builtInGetName BuiltIn.uintBuiltIn))
 
 maybeEvaluatedItemToMaybeExpr :: Maybe EvaluatedItem -> Maybe PartialExpr
 maybeEvaluatedItemToMaybeExpr = case _ of
