@@ -65,12 +65,12 @@ typeDefaultValue = case _ of
     NoPositionTree
       { name: "description", children: [] }
   BuiltIn.ModuleBody -> builtInToDefaultNoPositionTree BuiltIn.bodyBuiltIn
-  BuiltIn.Part -> builtInToDefaultNoPositionTree BuiltIn.partBuiltIn
-  BuiltIn.Type -> builtInToDefaultNoPositionTree BuiltIn.typeBuiltIn
+  BuiltIn.PartDefinition -> builtInToDefaultNoPositionTree BuiltIn.partBuiltIn
   BuiltIn.Expr BuiltIn.UInt -> builtInToDefaultNoPositionTree BuiltIn.uintBuiltIn
   BuiltIn.Expr BuiltIn.Float64 -> builtInToDefaultNoPositionTree BuiltIn.float64BuiltIn
   BuiltIn.Expr BuiltIn.Text -> builtInToDefaultNoPositionTree BuiltIn.textBuiltIn
   BuiltIn.Expr BuiltIn.NonEmptyText -> builtInToDefaultNoPositionTree BuiltIn.nonEmptyTextBuiltIn
+  BuiltIn.Expr BuiltIn.TypePart -> builtInToDefaultNoPositionTree BuiltIn.typeBuiltIn
   BuiltIn.Expr BuiltIn.TypeBody -> builtInToDefaultNoPositionTree BuiltIn.uintBuiltIn
   BuiltIn.Expr BuiltIn.Unknown -> builtInToDefaultNoPositionTree BuiltIn.uintBuiltIn
   BuiltIn.UIntLiteral ->

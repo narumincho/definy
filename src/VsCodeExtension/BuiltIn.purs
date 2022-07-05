@@ -33,8 +33,7 @@ data BuiltInType
   = Module
   | Description
   | ModuleBody
-  | Part
-  | Type
+  | PartDefinition
   | Expr ExprType
   | Identifier
   | UIntLiteral
@@ -47,8 +46,7 @@ builtInTypeMatch expected actual = case Tuple.Tuple expected actual of
   Tuple.Tuple Module Module -> true
   Tuple.Tuple Description Description -> true
   Tuple.Tuple ModuleBody ModuleBody -> true
-  Tuple.Tuple Part Part -> true
-  Tuple.Tuple Type Type -> true
+  Tuple.Tuple PartDefinition PartDefinition -> true
   Tuple.Tuple (Expr expectedExprType) (Expr actualExprType) -> exprTypeMatch expectedExprType actualExprType
   Tuple.Tuple Identifier Identifier -> true
   Tuple.Tuple UIntLiteral UIntLiteral -> true
@@ -70,6 +68,7 @@ data ExprType
   | Text
   | NonEmptyText
   | Float64
+  | TypePart
   | TypeBody
   | Unknown
 
@@ -145,7 +144,7 @@ bodyBuiltIn =
   BuiltIn
     { name: NonEmptyString.nes (Proxy :: Proxy "body")
     , description: NonEmptyString.nes (Proxy :: Proxy "複数のパーツを合わせたまとまり")
-    , inputType: InputTypeRepeat Part
+    , inputType: InputTypeRepeat PartDefinition
     , outputType: ModuleBody
     }
 
@@ -158,7 +157,7 @@ typeBuiltIn =
           (Proxy :: Proxy "型を定義する")
     , inputType:
         InputTypeNormal [ Identifier, Description, Expr TypeBody ]
-    , outputType: Part
+    , outputType: PartDefinition
     }
 
 partBuiltIn :: BuiltIn
@@ -170,7 +169,7 @@ partBuiltIn =
           (Proxy :: Proxy "パーツの定義 パーツはあらゆるデータに名前を付けて使えるようにしたもの")
     , inputType:
         InputTypeNormal [ Identifier, Description, Expr Unknown ]
-    , outputType: Part
+    , outputType: PartDefinition
     }
 
 addBuiltIn :: BuiltIn

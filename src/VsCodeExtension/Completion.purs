@@ -111,7 +111,7 @@ buildInToSimpleCompletionItem (BuiltIn.BuiltIn rec) =
         case rec.outputType of
           BuiltIn.Module -> Module
           BuiltIn.ModuleBody -> Module
-          BuiltIn.Part -> Module
+          BuiltIn.PartDefinition -> Module
           _ -> Function
     , documentation:
         Markdown.Markdown [ Markdown.Paragraph rec.description ]
@@ -133,12 +133,12 @@ builtInTypeToInsertTextTree = case _ of
       , children: []
       }
   BuiltIn.ModuleBody -> builtInToInsertTextTree BuiltIn.bodyBuiltIn
-  BuiltIn.Part -> builtInToInsertTextTree BuiltIn.partBuiltIn
-  BuiltIn.Type -> builtInToInsertTextTree BuiltIn.typeBuiltIn
+  BuiltIn.PartDefinition -> builtInToInsertTextTree BuiltIn.partBuiltIn
   BuiltIn.Expr BuiltIn.UInt -> builtInToInsertTextTree BuiltIn.uintBuiltIn
   BuiltIn.Expr BuiltIn.Text -> builtInToInsertTextTree BuiltIn.textBuiltIn
   BuiltIn.Expr BuiltIn.Float64 -> builtInToInsertTextTree BuiltIn.float64BuiltIn
   BuiltIn.Expr BuiltIn.NonEmptyText -> builtInToInsertTextTree BuiltIn.nonEmptyTextBuiltIn
+  BuiltIn.Expr BuiltIn.TypePart -> builtInToInsertTextTree BuiltIn.typeBuiltIn
   BuiltIn.Expr BuiltIn.TypeBody -> builtInToInsertTextTree BuiltIn.typeBuiltIn
   BuiltIn.Expr BuiltIn.Unknown -> builtInToInsertTextTree BuiltIn.uintBuiltIn
   BuiltIn.Identifier ->

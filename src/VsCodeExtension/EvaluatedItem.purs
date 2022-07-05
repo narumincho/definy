@@ -74,8 +74,8 @@ toBuiltInType = case _ of
   Module _ -> BuiltIn.Module
   Description _ -> BuiltIn.Description
   ModuleBody _ -> BuiltIn.ModuleBody
-  Part _ -> BuiltIn.Part
-  Type _ -> BuiltIn.Type
+  Part _ -> BuiltIn.PartDefinition
+  Type _ -> BuiltIn.PartDefinition
   Expr (ExprAdd _) -> BuiltIn.Expr BuiltIn.UInt
   Expr (ExprPartReference _) -> BuiltIn.Expr BuiltIn.Unknown
   Expr (ExprPartReferenceInvalidName _) -> BuiltIn.Expr BuiltIn.Unknown
