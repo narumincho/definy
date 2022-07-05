@@ -2,6 +2,7 @@ module VsCodeExtension.Evaluate
   ( EvaluateExprResult(..)
   , EvaluatedTree(..)
   , EvaluatedTreeChild(..)
+  , Pattern(..)
   , TypeMisMatch(..)
   , Value(..)
   , codeTreeToEvaluatedTreeIContextNormal
@@ -21,6 +22,7 @@ import Data.UInt as UInt
 import Definy.Identifier as Identifier
 import Type.Proxy (Proxy(..))
 import VsCodeExtension.BuiltIn as BuiltIn
+import VsCodeExtension.EvaluatedItem (PartialExpr(..))
 import VsCodeExtension.EvaluatedItem as EvaluatedItem
 import VsCodeExtension.Parser as Parser
 import VsCodeExtension.Range as Range
@@ -70,6 +72,12 @@ data Value
   | ValueText String
   | ValueNonEmptyText NonEmptyString
   | ValueFloat64 Number
+  | ValueTypeBody (Array Pattern)
+  | ValuePattern Pattern
+
+newtype Pattern
+  = Pattern
+  { name :: Identifier.Identifier, description :: String }
 
 evaluateExprResultMap2 ::
   { func :: Value -> Value -> EvaluateExprResult
@@ -120,6 +128,40 @@ evaluateExpr expr partialModule = case expr of
           (\uintValue -> EvaluateExprResult { value: ValueFloat64 uintValue, dummy: false })
           valueMaybe
       )
+  EvaluatedItem.ExprTypeBodySum patternList ->
+    EvaluateExprResult
+      { value:
+          ValueTypeBody
+            ( Array.mapMaybe
+                ( case _ of
+                    ExprPattern { name: Just name, description } ->
+                      Just
+                        ( Pattern
+                            { name, description }
+                        )
+                    _ -> Nothing
+                )
+                patternList
+            )
+      , dummy: false
+      }
+  EvaluatedItem.ExprPattern { name, description } -> case name of
+    Just nameIdentifier ->
+      EvaluateExprResult
+        { value: ValuePattern (Pattern { name: nameIdentifier, description })
+        , dummy: false
+        }
+    Nothing ->
+      EvaluateExprResult
+        { value:
+            ValuePattern
+              ( Pattern
+                  { name: Identifier.fromSymbolProxy (Proxy :: Proxy "tag")
+                  , description
+                  }
+              )
+        , dummy: true
+        }
 
 valueAdd :: Value -> Value -> EvaluateExprResult
 valueAdd a b = case { a, b } of
@@ -276,6 +318,40 @@ codeTreeToEvaluatedTreeIContextNormal codeTree@(Parser.CodeTree { name, nameRang
       ( \childrenEvaluatedItem -> case Array.index childrenEvaluatedItem 0 of
           Just (EvaluatedItem.Float64Literal child) -> EvaluatedItem.Expr (EvaluatedItem.ExprFloat64Literal child)
           _ -> EvaluatedItem.Expr (EvaluatedItem.ExprFloat64Literal Nothing)
+      )
+  else if equalName name BuiltIn.typeBodySumBuiltIn then
+    needNChildren
+      (BuiltIn.buildInGetInputType BuiltIn.typeBodySumBuiltIn)
+      codeTree
+      ( \childrenEvaluatedItem ->
+          EvaluatedItem.Expr
+            ( EvaluatedItem.ExprTypeBodySum
+                ( Array.mapMaybe
+                    ( case _ of
+                        EvaluatedItem.Expr expr -> Just expr
+                        _ -> Nothing
+                    )
+                    childrenEvaluatedItem
+                )
+            )
+      )
+  else if equalName name BuiltIn.patternBuiltIn then
+    needNChildren
+      (BuiltIn.buildInGetInputType BuiltIn.patternBuiltIn)
+      codeTree
+      ( \childrenEvaluatedItem ->
+          EvaluatedItem.Expr
+            ( EvaluatedItem.ExprPattern
+                { name:
+                    case Array.index childrenEvaluatedItem 0 of
+                      Just (EvaluatedItem.Identifier nameIdentifier) -> nameIdentifier
+                      _ -> Nothing
+                , description:
+                    case Array.index childrenEvaluatedItem 1 of
+                      Just (EvaluatedItem.Description value) -> value
+                      _ -> ""
+                }
+            )
       )
   else
     EvaluatedTree

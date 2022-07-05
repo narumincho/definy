@@ -16,7 +16,9 @@ module VsCodeExtension.BuiltIn
   , moduleBuiltIn
   , nonEmptyTextBuiltIn
   , partBuiltIn
+  , patternBuiltIn
   , textBuiltIn
+  , typeBodySumBuiltIn
   , typeBuiltIn
   , uintBuiltIn
   ) where
@@ -70,17 +72,13 @@ data ExprType
   | Float64
   | TypePart
   | TypeBody
+  | Pattern
   | Unknown
 
 exprTypeMatch :: ExprType -> ExprType -> Boolean
-exprTypeMatch expected actual = case Tuple.Tuple expected actual of
-  Tuple.Tuple Unknown _ -> true
-  Tuple.Tuple UInt UInt -> true
-  Tuple.Tuple Text Text -> true
-  Tuple.Tuple NonEmptyText NonEmptyText -> true
-  Tuple.Tuple Float64 Float64 -> true
-  Tuple.Tuple TypeBody TypeBody -> true
-  Tuple.Tuple _ _ -> false
+exprTypeMatch expected actual = case expected of
+  Unknown -> true
+  _ -> Prelude.eq expected actual
 
 derive instance eqExprType :: Prelude.Eq ExprType
 
@@ -124,6 +122,8 @@ all =
   , textBuiltIn
   , nonEmptyTextBuiltIn
   , float64BuiltIn
+  , typeBodySumBuiltIn
+  , patternBuiltIn
   ]
 
 moduleBuiltIn :: BuiltIn
@@ -217,4 +217,22 @@ float64BuiltIn =
     , description: NonEmptyString.nes (Proxy :: Proxy "64bit 浮動小数点数リテラル")
     , inputType: InputTypeNormal [ Float64Literal ]
     , outputType: Expr Float64
+    }
+
+typeBodySumBuiltIn :: BuiltIn
+typeBodySumBuiltIn =
+  BuiltIn
+    { name: NonEmptyString.nes (Proxy :: Proxy "typeBodySum")
+    , description: NonEmptyString.nes (Proxy :: Proxy "直和型. A か B か C. のように同時に入らない型を作る. enum に近いが, パラメーターを指定することができる")
+    , inputType: InputTypeRepeat (Expr Pattern)
+    , outputType: Expr TypeBody
+    }
+
+patternBuiltIn :: BuiltIn
+patternBuiltIn =
+  BuiltIn
+    { name: NonEmptyString.nes (Proxy :: Proxy "pattern")
+    , description: NonEmptyString.nes (Proxy :: Proxy "直和型のパターン. パラメーターはあとで対応")
+    , inputType: InputTypeNormal [ Identifier, Description ]
+    , outputType: Expr Pattern
     }

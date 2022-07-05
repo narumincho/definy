@@ -215,6 +215,8 @@ evaluatedItemToHoverTree { item, partialModule } = case item of
                       Evaluate.ValueNonEmptyText _ -> ToString.noPositionTreeEmptyChildren "ValueNonEmptyText"
                       Evaluate.ValueUInt _ -> ToString.noPositionTreeEmptyChildren "UInt"
                       Evaluate.ValueFloat64 _ -> ToString.noPositionTreeEmptyChildren "Float64"
+                      Evaluate.ValueTypeBody _ -> ToString.noPositionTreeEmptyChildren "TypeBody"
+                      Evaluate.ValuePattern _ -> ToString.noPositionTreeEmptyChildren "Pattern"
                   ]
               }
         , value: valueToValueTree evaluatedValue
@@ -442,6 +444,24 @@ partialExprToNoPositionTree = case _ of
               )
           ]
       }
+  EvaluatedItem.ExprTypeBodySum sum ->
+    ToString.NoPositionTree
+      { name: "TypeBodySum"
+      , children:
+          Prelude.map partialExprToNoPositionTree sum
+      }
+  EvaluatedItem.ExprPattern rec ->
+    ToString.NoPositionTree
+      { name: "Pattern"
+      , children:
+          [ maybeToNoPositionTree
+              ( Prelude.map
+                  (\v -> ToString.noPositionTreeEmptyChildren (Identifier.identifierToString v))
+                  rec.name
+              )
+          , ToString.noPositionTreeEmptyChildren rec.description
+          ]
+      }
 
 partialExprToDescription :: EvaluatedItem.PartialModule -> EvaluatedItem.PartialExpr -> Maybe NonEmptyString.NonEmptyString
 partialExprToDescription partialModule = case _ of
@@ -454,6 +474,8 @@ partialExprToDescription partialModule = case _ of
   EvaluatedItem.ExprFloat64Literal _ -> Just (BuiltIn.buildInGetDescription BuiltIn.float64BuiltIn)
   EvaluatedItem.ExprTextLiteral _ -> Just (BuiltIn.buildInGetDescription BuiltIn.textBuiltIn)
   EvaluatedItem.ExprNonEmptyTextLiteral _ -> Just (BuiltIn.buildInGetDescription BuiltIn.nonEmptyTextBuiltIn)
+  EvaluatedItem.ExprTypeBodySum _ -> Just (BuiltIn.buildInGetDescription BuiltIn.typeBodySumBuiltIn)
+  EvaluatedItem.ExprPattern _ -> Just (BuiltIn.buildInGetDescription BuiltIn.patternBuiltIn)
 
 maybeToNoPositionTree :: Maybe ToString.NoPositionTree -> ToString.NoPositionTree
 maybeToNoPositionTree = case _ of
@@ -472,30 +494,45 @@ valueToValueTree :: Evaluate.Value -> ToString.NoPositionTree
 valueToValueTree = case _ of
   Evaluate.ValueText text ->
     ToString.NoPositionTree
-      { name: "text"
+      { name: NonEmptyString.toString (BuiltIn.builtInGetName BuiltIn.textBuiltIn)
       , children: [ ToString.noPositionTreeEmptyChildren text ]
       }
   Evaluate.ValueNonEmptyText text ->
     ToString.NoPositionTree
-      { name: "nonEmptyText"
+      { name: NonEmptyString.toString (BuiltIn.builtInGetName BuiltIn.nonEmptyTextBuiltIn)
       , children: [ ToString.noPositionTreeEmptyChildren (NonEmptyString.toString text) ]
       }
   Evaluate.ValueUInt uintValue ->
     ToString.NoPositionTree
-      { name: "uint"
+      { name: NonEmptyString.toString (BuiltIn.builtInGetName BuiltIn.uintBuiltIn)
       , children: [ ToString.noPositionTreeEmptyChildren (UInt.toString uintValue) ]
       }
   Evaluate.ValueFloat64 f64Value ->
     ToString.NoPositionTree
-      { name: "float64"
+      { name: NonEmptyString.toString (BuiltIn.builtInGetName BuiltIn.float64BuiltIn)
       , children: [ ToString.noPositionTreeEmptyChildren (Util.numberToString f64Value) ]
+      }
+  Evaluate.ValueTypeBody body ->
+    ToString.NoPositionTree
+      { name: NonEmptyString.toString (BuiltIn.builtInGetName BuiltIn.typeBodySumBuiltIn)
+      , children:
+          Prelude.map
+            (\pattern -> valueToValueTree (Evaluate.ValuePattern pattern))
+            body
+      }
+  Evaluate.ValuePattern (Evaluate.Pattern { name, description }) ->
+    ToString.NoPositionTree
+      { name: NonEmptyString.toString (BuiltIn.builtInGetName BuiltIn.patternBuiltIn)
+      , children:
+          [ ToString.noPositionTreeEmptyChildren (Identifier.identifierToString name)
+          , ToString.noPositionTreeEmptyChildren description
+          ]
       }
 
 valueToValueMarkdown :: Evaluate.Value -> Markdown.Markdown
 valueToValueMarkdown = case _ of
   Evaluate.ValueText text -> valueTextToMarkdown text
   Evaluate.ValueNonEmptyText text -> valueTextToMarkdown (NonEmptyString.toString text)
-  Evaluate.ValueUInt _ -> Markdown.Markdown []
   Evaluate.ValueFloat64 f64Value ->
     let
       (Float.Float64RawData { isPositive }) = Float.numberToFloatRawData f64Value
@@ -506,6 +543,7 @@ valueToValueMarkdown = case _ of
             Just v -> Markdown.Paragraph v
             Nothing -> Markdown.Paragraph (NonEmptyString.nes (Proxy :: Proxy " "))
         ]
+  _ -> Markdown.Markdown []
 
 valueTextToMarkdown :: String -> Markdown.Markdown
 valueTextToMarkdown text =

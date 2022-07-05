@@ -80,6 +80,8 @@ definyPartialPartToExportVariable (EvaluatedItem.PartialPart partialPart) =
               Just (EvaluatedItem.ExprTextLiteral _) -> TsData.TsTypeString
               Just (EvaluatedItem.ExprNonEmptyTextLiteral _) -> TsData.TsTypeString
               Just (EvaluatedItem.ExprFloat64Literal _) -> TsData.TsTypeNumber
+              Just (EvaluatedItem.ExprTypeBodySum _) -> TsData.TsTypeString
+              Just (EvaluatedItem.ExprPattern _) -> TsData.TsTypeString
         , expr: definyPartialExprToTypeScriptExpr partialPart.expr
         , export: true
         }
@@ -113,5 +115,11 @@ definyPartialExprToTypeScriptExpr = case _ of
   Just (EvaluatedItem.ExprNonEmptyTextLiteral Nothing) ->
     TsData.StringLiteral
       "<unknown nonEmptyString literal!!!>"
+  Just (EvaluatedItem.ExprTypeBodySum _) ->
+    TsData.StringLiteral
+      "<unsupported ExprTypeBodySum>"
+  Just (EvaluatedItem.ExprPattern _) ->
+    TsData.StringLiteral
+      "<unsupported ExprPattern>"
   Just (EvaluatedItem.ExprFloat64Literal (Just value)) -> TsData.NumberLiteral value
   Just (EvaluatedItem.ExprFloat64Literal Nothing) -> TsData.StringLiteral "<unknown float64 literal!!!>"

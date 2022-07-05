@@ -57,6 +57,8 @@ data PartialExpr
   | ExprFloat64Literal (Maybe Number)
   | ExprTextLiteral String
   | ExprNonEmptyTextLiteral (Maybe NonEmptyString)
+  | ExprTypeBodySum (Array PartialExpr)
+  | ExprPattern { name :: Maybe Identifier.Identifier, description :: String }
 
 findPart :: PartialModule -> Identifier.Identifier -> Maybe PartialPart
 findPart (PartialModule { partList }) name =
@@ -83,6 +85,8 @@ toBuiltInType = case _ of
   Expr (ExprFloat64Literal _) -> BuiltIn.Expr BuiltIn.Float64
   Expr (ExprTextLiteral _) -> BuiltIn.Expr BuiltIn.Text
   Expr (ExprNonEmptyTextLiteral _) -> BuiltIn.Expr BuiltIn.NonEmptyText
+  Expr (ExprTypeBodySum _) -> BuiltIn.Expr BuiltIn.TypeBody
+  Expr (ExprPattern {}) -> BuiltIn.Expr BuiltIn.Pattern
   UIntLiteral _ -> BuiltIn.UIntLiteral
   Identifier _ -> BuiltIn.Identifier
   TextLiteral _ -> BuiltIn.TextLiteral

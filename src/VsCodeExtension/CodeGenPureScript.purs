@@ -94,6 +94,8 @@ partialExprToExpr moduleName = case _ of
     Wellknown.exprToExprData
       (Wellknown.nonEmptyStringLiteral value)
   EvaluatedItem.ExprNonEmptyTextLiteral Nothing -> Data.StringLiteral "invalid nonEmptyString"
+  EvaluatedItem.ExprTypeBodySum _ -> Data.StringLiteral "unsupported ExprTypeBodySum"
+  EvaluatedItem.ExprPattern _ -> Data.StringLiteral "unsupported ExprPattern"
 
 partialExprToType :: EvaluatedItem.PartialExpr -> Data.TypeData
 partialExprToType = case _ of
@@ -105,3 +107,5 @@ partialExprToType = case _ of
   EvaluatedItem.ExprTextLiteral _ -> Wellknown.pTypeToTypeData Wellknown.primString
   EvaluatedItem.ExprNonEmptyTextLiteral (Just _) -> Wellknown.pTypeToTypeData Wellknown.nonEmptyString
   EvaluatedItem.ExprNonEmptyTextLiteral Nothing -> Wellknown.pTypeToTypeData Wellknown.primString
+  EvaluatedItem.ExprTypeBodySum _ -> Wellknown.pTypeToTypeData Wellknown.primString
+  EvaluatedItem.ExprPattern _ -> Wellknown.pTypeToTypeData Wellknown.primString

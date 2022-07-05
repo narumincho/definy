@@ -140,6 +140,7 @@ builtInTypeToInsertTextTree = case _ of
   BuiltIn.Expr BuiltIn.NonEmptyText -> builtInToInsertTextTree BuiltIn.nonEmptyTextBuiltIn
   BuiltIn.Expr BuiltIn.TypePart -> builtInToInsertTextTree BuiltIn.typeBuiltIn
   BuiltIn.Expr BuiltIn.TypeBody -> builtInToInsertTextTree BuiltIn.typeBuiltIn
+  BuiltIn.Expr BuiltIn.Pattern -> builtInToInsertTextTree BuiltIn.patternBuiltIn
   BuiltIn.Expr BuiltIn.Unknown -> builtInToInsertTextTree BuiltIn.uintBuiltIn
   BuiltIn.Identifier ->
     InsertTextTree

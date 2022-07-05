@@ -72,6 +72,7 @@ typeDefaultValue = case _ of
   BuiltIn.Expr BuiltIn.NonEmptyText -> builtInToDefaultNoPositionTree BuiltIn.nonEmptyTextBuiltIn
   BuiltIn.Expr BuiltIn.TypePart -> builtInToDefaultNoPositionTree BuiltIn.typeBuiltIn
   BuiltIn.Expr BuiltIn.TypeBody -> builtInToDefaultNoPositionTree BuiltIn.uintBuiltIn
+  BuiltIn.Expr BuiltIn.Pattern -> builtInToDefaultNoPositionTree BuiltIn.patternBuiltIn
   BuiltIn.Expr BuiltIn.Unknown -> builtInToDefaultNoPositionTree BuiltIn.uintBuiltIn
   BuiltIn.UIntLiteral ->
     NoPositionTree
