@@ -10,6 +10,6 @@ module(
       "part description",
       nonEmptyText("image/png"),
     ),
-    part(addTextErrorSample, "", add(uint(28), uint(28))),
+    part(addTextErrorSample, "", add(text(28), uint(28))),
   ),
 )

@@ -10,6 +10,7 @@ module VsCodeExtension.BuiltIn
   , buildInGetInputType
   , buildInGetOutputType
   , builtInGetName
+  , builtInTypeMatch
   , builtInTypeToString
   , float64BuiltIn
   , moduleBuiltIn
@@ -24,6 +25,7 @@ import Data.Generic.Rep as GenericRep
 import Data.Show.Generic as ShowGeneric
 import Data.String.NonEmpty (NonEmptyString)
 import Data.String.NonEmpty as NonEmptyString
+import Data.Tuple as Tuple
 import Prelude as Prelude
 import Type.Proxy (Proxy(..))
 
@@ -40,7 +42,20 @@ data BuiltInType
   | NonEmptyTextLiteral
   | Float64Literal
 
-derive instance eqBuiltInType :: Prelude.Eq BuiltInType
+builtInTypeMatch :: BuiltInType -> BuiltInType -> Boolean
+builtInTypeMatch expected actual = case Tuple.Tuple expected actual of
+  Tuple.Tuple Module Module -> true
+  Tuple.Tuple Description Description -> true
+  Tuple.Tuple ModuleBody ModuleBody -> true
+  Tuple.Tuple Part Part -> true
+  Tuple.Tuple Type Type -> true
+  Tuple.Tuple (Expr expectedExprType) (Expr actualExprType) -> exprTypeMatch expectedExprType actualExprType
+  Tuple.Tuple Identifier Identifier -> true
+  Tuple.Tuple UIntLiteral UIntLiteral -> true
+  Tuple.Tuple TextLiteral TextLiteral -> true
+  Tuple.Tuple NonEmptyTextLiteral NonEmptyTextLiteral -> true
+  Tuple.Tuple Float64Literal Float64Literal -> true
+  Tuple.Tuple _ _ -> false
 
 derive instance genericBuiltInType :: GenericRep.Generic BuiltInType _
 
@@ -57,6 +72,16 @@ data ExprType
   | Float64
   | TypeBody
   | Unknown
+
+exprTypeMatch :: ExprType -> ExprType -> Boolean
+exprTypeMatch expected actual = case Tuple.Tuple expected actual of
+  Tuple.Tuple Unknown _ -> true
+  Tuple.Tuple UInt UInt -> true
+  Tuple.Tuple Text Text -> true
+  Tuple.Tuple NonEmptyText NonEmptyText -> true
+  Tuple.Tuple Float64 Float64 -> true
+  Tuple.Tuple TypeBody TypeBody -> true
+  Tuple.Tuple _ _ -> false
 
 derive instance eqExprType :: Prelude.Eq ExprType
 

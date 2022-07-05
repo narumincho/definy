@@ -57,7 +57,7 @@ compareType expectMaybe tree = case expectMaybe of
     let
       actual = EvaluatedItem.toBuiltInType (evaluatedTreeGetItem tree)
     in
-      if eq expect actual then
+      if BuiltIn.builtInTypeMatch expect actual then
         Nothing
       else
         Just (TypeMisMatch { expect, actual })

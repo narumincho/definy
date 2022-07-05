@@ -30,4 +30,4 @@ export const nonEmptyTextEmptyErrorTest: string = "<unknown nonEmptyString liter
  */
 export const nonEmptyTextSampleMimeType: string = "image/png";
 
-export const addTextErrorSample: number = (28+28);
+export const addTextErrorSample: number = ("28"+28);
