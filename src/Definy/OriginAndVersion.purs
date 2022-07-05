@@ -14,7 +14,7 @@ nowMode = M2.Development
 origin :: M0.NonEmptyString
 origin = (M0.nes) (M3.Proxy :: (M3.Proxy) ("http://localhost:2520"))
 
--- | バージョン名 (ビルド時にコード生成される) Development: 2022-06-01T12:26:23.803Z
+-- | バージョン名 (ビルド時にコード生成される) Development: 2022-07-04T04:58:51.372Z
 version :: M1.Version
-version = (M1.Development) ("2022-06-01T12:26:23.803Z")
+version = (M1.Development) ("2022-07-04T04:58:51.372Z")
 

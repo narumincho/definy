@@ -1,0 +1,11 @@
+module(
+  mimetype,
+  body(
+    part(png, "png 画像", nonEmptyText("image/png")),
+    part(html, html, nonEmptyText("text/html")),
+    part(javaScript, javaScript, nonEmptyText("text/javaScript")),
+    part(json, json, nonEmptyText("application/json")),
+    part(woff2, "フォント WebOpenFontFormat2", nonEmptyText("font/woff2")),
+    part(binary, "バイナリ形式", nonEmptyText("application/octet-stream")),
+  ),
+)

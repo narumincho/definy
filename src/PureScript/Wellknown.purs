@@ -1,21 +1,24 @@
 module PureScript.Wellknown
-  ( primString
-  , dataMapEmpty
-  , stringLiteral
-  , nonEmptyStringLiteral
-  , stringSingleton
-  , nonEmptyString
+  ( Expr
+  , PType
   , arrayLiteral
   , call
-  , variable
+  , dataMapEmpty
   , definition
-  , tag
-  , pTypeWithArgument
+  , exprFromExprData
+  , exprToExprData
+  , nonEmptyString
+  , nonEmptyStringLiteral
   , pTypeFrom
-  , PType
-  , Expr
-  , structuredUrlPathAndSearchParams
+  , pTypeToTypeData
+  , pTypeWithArgument
+  , primString
+  , stringLiteral
+  , stringSingleton
   , structuredUrlFromPath
+  , structuredUrlPathAndSearchParams
+  , tag
+  , variable
   ) where
 
 import Data.Array.NonEmpty as NonEmptyArray
@@ -33,10 +36,19 @@ data PType :: Type -> Type
 data PType pType
   = PType Data.TypeData
 
+pTypeToTypeData :: forall t. PType t -> Data.TypeData
+pTypeToTypeData (PType v) = v
+
 data Expr :: Type -> Type
 -- | PureScript の式. 型を間違えないように, 型を幽霊型としてつけている
 data Expr pType
   = Expr Data.ExprData
+
+exprFromExprData :: forall t. Data.ExprData -> Expr t
+exprFromExprData = Expr
+
+exprToExprData :: forall t. Expr t -> Data.ExprData
+exprToExprData (Expr v) = v
 
 -- | Prim
 -- | https://pursuit.purescript.org/builtins/docs/Prim

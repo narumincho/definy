@@ -5,12 +5,13 @@ module VsCodeExtension.EvaluatedTreeIndex
 import Data.Array as Array
 import Data.Maybe (Maybe(..))
 import VsCodeExtension.Evaluate as Evaluate
+import VsCodeExtension.EvaluatedItem as EvaluatedItem
 import VsCodeExtension.Range as Range
 
 getEvaluatedItem ::
   Range.Position ->
   Evaluate.EvaluatedTree ->
-  Maybe { item :: Evaluate.EvaluatedItem, range :: Range.Range }
+  Maybe { item :: EvaluatedItem.EvaluatedItem, range :: Range.Range }
 getEvaluatedItem position (Evaluate.EvaluatedTree { nameRange, item, children }) =
   if Range.isPositionInsideRange nameRange position then
     Just { range: nameRange, item }

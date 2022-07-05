@@ -1,18 +1,14 @@
 module VsCodeExtension.Evaluate
   ( EvaluateExprResult(..)
-  , EvaluatedItem(..)
   , EvaluatedTree(..)
   , EvaluatedTreeChild(..)
-  , PartialExpr(..)
-  , Value(..)
-  , PartialModule(..)
-  , PartialPart(..)
-  , TreeType(..)
+  , Pattern(..)
   , TypeMisMatch(..)
+  , Value(..)
   , codeTreeToEvaluatedTreeIContextNormal
   , evaluateExpr
+  , evaluatedTreeChildGetItem
   , evaluatedTreeGetItem
-  , findPart
   ) where
 
 import Prelude
@@ -20,18 +16,23 @@ import Data.Array as Array
 import Data.Maybe (Maybe(..))
 import Data.Maybe as Maybe
 import Data.Number as Number
+import Data.String.NonEmpty (NonEmptyString)
+import Data.String.NonEmpty as NonEmptyString
 import Data.UInt as UInt
 import Definy.Identifier as Identifier
+import Type.Proxy (Proxy(..))
+import VsCodeExtension.BuiltIn as BuiltIn
+import VsCodeExtension.EvaluatedItem (PartialExpr(..))
+import VsCodeExtension.EvaluatedItem as EvaluatedItem
 import VsCodeExtension.Parser as Parser
 import VsCodeExtension.Range as Range
 
 newtype EvaluatedTree
   = EvaluatedTree
-  { item :: EvaluatedItem
+  { item :: EvaluatedItem.EvaluatedItem
   , range :: Range.Range
   , children :: Array EvaluatedTreeChild
-  {- 期待した子要素の個数と型. Nothing は期待する個数が決まっていない (bodyなど) -}
-  , expectedChildrenTypeMaybe :: Maybe (Array TreeType)
+  , expectedInputType :: BuiltIn.InputType
   , nameRange :: Range.Range
   , name :: String
   }
@@ -42,83 +43,26 @@ newtype EvaluatedTreeChild
   , typeMisMatchMaybe :: Maybe TypeMisMatch
   }
 
-evaluatedTreeGetItem :: EvaluatedTree -> EvaluatedItem
+evaluatedTreeGetItem :: EvaluatedTree -> EvaluatedItem.EvaluatedItem
 evaluatedTreeGetItem (EvaluatedTree { item }) = item
 
-evaluatedTreeChildGetItem :: EvaluatedTreeChild -> EvaluatedItem
+evaluatedTreeChildGetItem :: EvaluatedTreeChild -> EvaluatedItem.EvaluatedItem
 evaluatedTreeChildGetItem (EvaluatedTreeChild { child }) = evaluatedTreeGetItem child
 
-data EvaluatedItem
-  = Module PartialModule
-  | Description String
-  | ModuleBody (Array PartialPart)
-  | Part PartialPart
-  | Expr PartialExpr
-  | UIntLiteral (Maybe UInt.UInt)
-  | Identifier (Maybe Identifier.Identifier)
-  | TextLiteral String
-  | Float64Literal (Maybe Number)
-
 newtype TypeMisMatch
-  = TypeMisMatch { expect :: TreeType, actual :: TreeType }
+  = TypeMisMatch { expect :: BuiltIn.BuiltInType, actual :: BuiltIn.BuiltInType }
 
-compareType :: Maybe TreeType -> EvaluatedTree -> Maybe TypeMisMatch
+compareType :: Maybe BuiltIn.BuiltInType -> EvaluatedTree -> Maybe TypeMisMatch
 compareType expectMaybe tree = case expectMaybe of
   Nothing -> Nothing
-  Just expect -> case (evaluateItemToTreeType (evaluatedTreeGetItem tree)) of
-    Nothing -> Nothing
-    Just actual ->
-      if eq expect actual then
+  Just expect ->
+    let
+      actual = EvaluatedItem.toBuiltInType (evaluatedTreeGetItem tree)
+    in
+      if BuiltIn.builtInTypeMatch expect actual then
         Nothing
       else
         Just (TypeMisMatch { expect, actual })
-
-evaluateItemToTreeType :: EvaluatedItem -> Maybe TreeType
-evaluateItemToTreeType = case _ of
-  Module _ -> Just TreeTypeModule
-  Description _ -> Just TreeTypeDescription
-  ModuleBody _ -> Just TreeTypeModuleBody
-  Part _ -> Just TreeTypePart
-  Expr _ -> Just TreeTypeExpr
-  UIntLiteral _ -> Just TreeTypeUIntLiteral
-  Identifier _ -> Just TreeTypeIdentifier
-  TextLiteral _ -> Just TreeTypeTextLiteral
-  Float64Literal _ -> Just TreeTypeFloat64Literal
-
-data TreeType
-  = TreeTypeModule
-  | TreeTypeDescription
-  | TreeTypeModuleBody
-  | TreeTypePart
-  | TreeTypeExpr
-  | TreeTypeUIntLiteral
-  | TreeTypeIdentifier
-  | TreeTypeTextLiteral
-  | TreeTypeFloat64Literal
-
-derive instance eqTreeType :: Eq TreeType
-
-newtype PartialModule
-  = PartialModule
-  { description :: String
-  , partList :: Array PartialPart
-  }
-
-newtype PartialPart
-  = PartialPart
-  { name :: Maybe Identifier.Identifier
-  , description :: String
-  , expr :: Maybe PartialExpr
-  , range :: Range.Range
-  }
-
-data PartialExpr
-  = ExprAdd { a :: Maybe PartialExpr, b :: Maybe PartialExpr }
-  | ExprPartReference { name :: Identifier.Identifier }
-  | ExprPartReferenceInvalidName { name :: String }
-  | ExprUIntLiteral (Maybe UInt.UInt)
-  | ExprFloat64Literal (Maybe Number)
-  | ExprTextLiteral String
 
 newtype EvaluateExprResult
   = EvaluateExprResult { value :: Value, dummy :: Boolean }
@@ -126,7 +70,14 @@ newtype EvaluateExprResult
 data Value
   = ValueUInt UInt.UInt
   | ValueText String
+  | ValueNonEmptyText NonEmptyString
   | ValueFloat64 Number
+  | ValueTypeBody (Array Pattern)
+  | ValuePattern Pattern
+
+newtype Pattern
+  = Pattern
+  { name :: Identifier.Identifier, description :: String }
 
 evaluateExprResultMap2 ::
   { func :: Value -> Value -> EvaluateExprResult
@@ -144,32 +95,73 @@ evaluateExprResultMap2 { func, a: EvaluateExprResult aResult, b: EvaluateExprRes
       }
 
 -- | dummy は式の値を計算できない場合に, テキトーなダミーデータを入れている場合に `true` になる
-evaluateExpr :: PartialExpr -> PartialModule -> EvaluateExprResult
+evaluateExpr :: EvaluatedItem.PartialExpr -> EvaluatedItem.PartialModule -> EvaluateExprResult
 evaluateExpr expr partialModule = case expr of
-  ExprAdd { a, b } ->
+  EvaluatedItem.ExprAdd { a, b } ->
     evaluateExprResultMap2
       { func: valueAdd
       , a: evaluateExprMaybe a partialModule
       , b: evaluateExprMaybe b partialModule
       }
-  ExprPartReference { name } ->
-    ( case findPart partialModule name of
-        Just (PartialPart { expr: partExpr }) -> evaluateExprMaybe partExpr partialModule
+  EvaluatedItem.ExprPartReference { name } ->
+    ( case EvaluatedItem.findPart partialModule name of
+        Just (EvaluatedItem.PartialPart { expr: partExpr }) -> evaluateExprMaybe partExpr partialModule
         Nothing -> uintDummy
     )
-  ExprPartReferenceInvalidName {} -> uintDummy
-  ExprUIntLiteral uintMaybe ->
+  EvaluatedItem.ExprPartReferenceInvalidName {} -> uintDummy
+  EvaluatedItem.ExprUIntLiteral uintMaybe ->
     Maybe.fromMaybe
       uintDummy
       (map (\uintValue -> EvaluateExprResult { value: ValueUInt uintValue, dummy: false }) uintMaybe)
-  ExprTextLiteral textMaybe -> EvaluateExprResult { value: ValueText textMaybe, dummy: false }
-  ExprFloat64Literal valueMaybe ->
+  EvaluatedItem.ExprTextLiteral textMaybe -> EvaluateExprResult { value: ValueText textMaybe, dummy: false }
+  EvaluatedItem.ExprNonEmptyTextLiteral textMaybe ->
     Maybe.fromMaybe
-      (EvaluateExprResult { value: ValueFloat64 6.28, dummy: false })
+      (EvaluateExprResult { value: ValueNonEmptyText (NonEmptyString.nes (Proxy :: Proxy "sample text")), dummy: true })
+      ( map
+          (\text -> EvaluateExprResult { value: ValueNonEmptyText text, dummy: false })
+          textMaybe
+      )
+  EvaluatedItem.ExprFloat64Literal valueMaybe ->
+    Maybe.fromMaybe
+      (EvaluateExprResult { value: ValueFloat64 6.28, dummy: true })
       ( map
           (\uintValue -> EvaluateExprResult { value: ValueFloat64 uintValue, dummy: false })
           valueMaybe
       )
+  EvaluatedItem.ExprTypeBodySum patternList ->
+    EvaluateExprResult
+      { value:
+          ValueTypeBody
+            ( Array.mapMaybe
+                ( case _ of
+                    ExprPattern { name: Just name, description } ->
+                      Just
+                        ( Pattern
+                            { name, description }
+                        )
+                    _ -> Nothing
+                )
+                patternList
+            )
+      , dummy: false
+      }
+  EvaluatedItem.ExprPattern { name, description } -> case name of
+    Just nameIdentifier ->
+      EvaluateExprResult
+        { value: ValuePattern (Pattern { name: nameIdentifier, description })
+        , dummy: false
+        }
+    Nothing ->
+      EvaluateExprResult
+        { value:
+            ValuePattern
+              ( Pattern
+                  { name: Identifier.fromSymbolProxy (Proxy :: Proxy "tag")
+                  , description
+                  }
+              )
+        , dummy: true
+        }
 
 valueAdd :: Value -> Value -> EvaluateExprResult
 valueAdd a b = case { a, b } of
@@ -180,7 +172,7 @@ valueAdd a b = case { a, b } of
       }
   {} -> uintDummy
 
-evaluateExprMaybe :: Maybe PartialExpr -> PartialModule -> EvaluateExprResult
+evaluateExprMaybe :: Maybe EvaluatedItem.PartialExpr -> EvaluatedItem.PartialModule -> EvaluateExprResult
 evaluateExprMaybe exprMaybe partialModule = case exprMaybe of
   Just expr -> evaluateExpr expr partialModule
   Nothing -> uintDummy
@@ -188,26 +180,16 @@ evaluateExprMaybe exprMaybe partialModule = case exprMaybe of
 uintDummy :: EvaluateExprResult
 uintDummy = EvaluateExprResult { value: ValueUInt (UInt.fromInt 28), dummy: true }
 
-findPart :: PartialModule -> Identifier.Identifier -> Maybe PartialPart
-findPart (PartialModule { partList }) name =
-  Array.findMap
-    ( \partialPart@(PartialPart { name: partName }) ->
-        if eq partName (Just name) then
-          Just partialPart
-        else
-          Nothing
-    )
-    partList
-
-codeTreeToEvaluatedTree :: Maybe TreeType -> Parser.CodeTree -> EvaluatedTreeChild
+codeTreeToEvaluatedTree :: Maybe BuiltIn.BuiltInType -> Parser.CodeTree -> EvaluatedTreeChild
 codeTreeToEvaluatedTree treeType codeTree =
   let
     tree = case treeType of
-      Just TreeTypeDescription -> codeTreeToEvaluatedTreeInContextDescription codeTree
-      Just TreeTypeUIntLiteral -> codeTreeToEvaluatedTreeInContextUIntLiteral codeTree
-      Just TreeTypeTextLiteral -> codeTreeToEvaluatedTreeInContextTextLiteral codeTree
-      Just TreeTypeFloat64Literal -> codeTreeToEvaluatedTreeInContextFloat64Literal codeTree
-      Just TreeTypeIdentifier -> codeTreeToEvaluatedTreeInContextIdentifier codeTree
+      Just BuiltIn.Description -> codeTreeToEvaluatedTreeInContextDescription codeTree
+      Just BuiltIn.UIntLiteral -> codeTreeToEvaluatedTreeInContextUIntLiteral codeTree
+      Just BuiltIn.TextLiteral -> codeTreeToEvaluatedTreeInContextTextLiteral codeTree
+      Just BuiltIn.NonEmptyTextLiteral -> codeTreeToEvaluatedTreeInContextNonEmptyTextLiteral codeTree
+      Just BuiltIn.Float64Literal -> codeTreeToEvaluatedTreeInContextFloat64Literal codeTree
+      Just BuiltIn.Identifier -> codeTreeToEvaluatedTreeInContextIdentifier codeTree
       _ -> codeTreeToEvaluatedTreeIContextNormal codeTree
   in
     EvaluatedTreeChild
@@ -216,118 +198,167 @@ codeTreeToEvaluatedTree treeType codeTree =
       }
 
 codeTreeToEvaluatedTreeIContextNormal :: Parser.CodeTree -> EvaluatedTree
-codeTreeToEvaluatedTreeIContextNormal codeTree@(Parser.CodeTree { name, nameRange, range, children }) = case name of
-  "module" ->
-    need2Children
-      { firstContext: TreeTypeDescription, secondContext: TreeTypeModuleBody }
+codeTreeToEvaluatedTreeIContextNormal codeTree@(Parser.CodeTree { name, nameRange, range, children }) =
+  if equalName name BuiltIn.moduleBuiltIn then
+    needNChildren
+      (BuiltIn.buildInGetInputType BuiltIn.moduleBuiltIn)
       codeTree
-      ( \{ first, second } ->
-          Module
-            ( PartialModule
+      ( \childrenEvaluatedItem ->
+          EvaluatedItem.Module
+            ( EvaluatedItem.PartialModule
                 { description:
-                    case first of
-                      Just (Description description) -> description
+                    case Array.index childrenEvaluatedItem 0 of
+                      Just (EvaluatedItem.Description description) -> description
                       _ -> ""
                 , partList:
-                    case second of
-                      Just (ModuleBody partList) -> partList
+                    case Array.index childrenEvaluatedItem 1 of
+                      Just (EvaluatedItem.ModuleBody partList) -> partList
                       _ -> []
                 }
             )
       )
-  "body" ->
-    let
-      evaluatedChildren =
-        map
-          ( \child ->
-              codeTreeToEvaluatedTree (Just TreeTypePart) child
-          )
-          children
-    in
-      EvaluatedTree
-        { item:
-            ModuleBody
-              ( Array.mapMaybe
-                  ( \childTree -> case evaluatedTreeChildGetItem childTree of
-                      (Part part) -> Just part
-                      _ -> Nothing
-                  )
-                  evaluatedChildren
-              )
-        , range
-        , children: evaluatedChildren
-        , expectedChildrenTypeMaybe: Nothing
-        , nameRange
-        , name
-        }
-  "part" ->
-    need3Children
-      { firstContext: TreeTypeIdentifier
-      , secondContext: TreeTypeDescription
-      , thirdContext: TreeTypeExpr
-      }
+  else if equalName name BuiltIn.bodyBuiltIn then
+    needNChildren
+      (BuiltIn.buildInGetInputType BuiltIn.bodyBuiltIn)
       codeTree
-      ( \{ first, second, third } ->
-          Part
-            ( PartialPart
+      ( \childrenEvaluatedItem ->
+          EvaluatedItem.ModuleBody
+            ( Array.mapMaybe
+                ( \child -> case child of
+                    (EvaluatedItem.Part part) -> Just part
+                    _ -> Nothing
+                )
+                childrenEvaluatedItem
+            )
+      )
+  else if equalName name BuiltIn.typeBuiltIn then
+    needNChildren
+      (BuiltIn.buildInGetInputType BuiltIn.typeBuiltIn)
+      codeTree
+      ( \childrenEvaluatedItem ->
+          EvaluatedItem.Type
+            ( EvaluatedItem.PartialType
                 { name:
-                    case first of
-                      Just (Identifier partName) -> partName
+                    case Array.index childrenEvaluatedItem 0 of
+                      Just (EvaluatedItem.Identifier partName) -> partName
                       _ -> Nothing
                 , description:
-                    case second of
-                      Just (Description description) -> description
+                    case Array.index childrenEvaluatedItem 1 of
+                      Just (EvaluatedItem.Description description) -> description
                       _ -> ""
                 , expr:
-                    case third of
-                      Just (Expr value) -> Just value
+                    case Array.index childrenEvaluatedItem 2 of
+                      Just (EvaluatedItem.Expr value) -> Just value
                       _ -> Nothing
-                , range
                 }
             )
       )
-  "add" ->
-    need2Children
-      { firstContext: TreeTypeExpr, secondContext: TreeTypeExpr }
+  else if equalName name BuiltIn.partBuiltIn then
+    needNChildren
+      (BuiltIn.buildInGetInputType BuiltIn.partBuiltIn)
       codeTree
-      ( \{ first, second } ->
-          Expr
-            ( ExprAdd
-                { a: maybeEvaluatedItemToMaybeExpr first
-                , b: maybeEvaluatedItemToMaybeExpr second
+      ( \childrenEvaluatedItem ->
+          EvaluatedItem.Part
+            ( EvaluatedItem.PartialPart
+                { name:
+                    case Array.index childrenEvaluatedItem 0 of
+                      Just (EvaluatedItem.Identifier partName) -> partName
+                      _ -> Nothing
+                , description:
+                    case Array.index childrenEvaluatedItem 1 of
+                      Just (EvaluatedItem.Description description) -> description
+                      _ -> ""
+                , expr:
+                    case Array.index childrenEvaluatedItem 2 of
+                      Just (EvaluatedItem.Expr value) -> Just value
+                      _ -> Nothing
                 }
             )
       )
-  "uint" ->
-    need1Children
-      TreeTypeUIntLiteral
+  else if equalName name BuiltIn.addBuiltIn then
+    needNChildren
+      (BuiltIn.buildInGetInputType BuiltIn.addBuiltIn)
       codeTree
-      ( case _ of
-          Just (UIntLiteral child) -> Expr ((ExprUIntLiteral child))
-          _ -> Expr (ExprUIntLiteral Nothing)
+      ( \childrenEvaluatedItem ->
+          EvaluatedItem.Expr
+            ( EvaluatedItem.ExprAdd
+                { a: maybeEvaluatedItemToMaybeExpr (Array.index childrenEvaluatedItem 0)
+                , b: maybeEvaluatedItemToMaybeExpr (Array.index childrenEvaluatedItem 1)
+                }
+            )
       )
-  "text" ->
-    need1Children
-      TreeTypeTextLiteral
+  else if equalName name BuiltIn.uintBuiltIn then
+    needNChildren
+      (BuiltIn.buildInGetInputType BuiltIn.uintBuiltIn)
       codeTree
-      ( case _ of
-          Just (TextLiteral child) -> Expr (ExprTextLiteral child)
-          _ -> Expr (ExprTextLiteral "")
+      ( \childrenEvaluatedItem -> case Array.index childrenEvaluatedItem 0 of
+          Just (EvaluatedItem.UIntLiteral child) -> EvaluatedItem.Expr (EvaluatedItem.ExprUIntLiteral child)
+          _ -> EvaluatedItem.Expr (EvaluatedItem.ExprUIntLiteral Nothing)
       )
-  "float64" ->
-    need1Children
-      TreeTypeFloat64Literal
+  else if equalName name BuiltIn.textBuiltIn then
+    needNChildren
+      (BuiltIn.buildInGetInputType BuiltIn.textBuiltIn)
       codeTree
-      ( case _ of
-          Just (Float64Literal child) -> Expr (ExprFloat64Literal child)
-          _ -> Expr (ExprFloat64Literal Nothing)
+      ( \childrenEvaluatedItem -> case Array.index childrenEvaluatedItem 0 of
+          Just (EvaluatedItem.TextLiteral child) -> EvaluatedItem.Expr (EvaluatedItem.ExprTextLiteral child)
+          _ -> EvaluatedItem.Expr (EvaluatedItem.ExprTextLiteral "")
       )
-  _ ->
+  else if equalName name BuiltIn.nonEmptyTextBuiltIn then
+    needNChildren
+      (BuiltIn.buildInGetInputType BuiltIn.nonEmptyTextBuiltIn)
+      codeTree
+      ( \childrenEvaluatedItem -> case Array.index childrenEvaluatedItem 0 of
+          Just (EvaluatedItem.NonEmptyTextLiteral child) -> EvaluatedItem.Expr (EvaluatedItem.ExprNonEmptyTextLiteral child)
+          _ -> EvaluatedItem.Expr (EvaluatedItem.ExprNonEmptyTextLiteral Nothing)
+      )
+  else if equalName name BuiltIn.float64BuiltIn then
+    needNChildren
+      (BuiltIn.buildInGetInputType BuiltIn.float64BuiltIn)
+      codeTree
+      ( \childrenEvaluatedItem -> case Array.index childrenEvaluatedItem 0 of
+          Just (EvaluatedItem.Float64Literal child) -> EvaluatedItem.Expr (EvaluatedItem.ExprFloat64Literal child)
+          _ -> EvaluatedItem.Expr (EvaluatedItem.ExprFloat64Literal Nothing)
+      )
+  else if equalName name BuiltIn.typeBodySumBuiltIn then
+    needNChildren
+      (BuiltIn.buildInGetInputType BuiltIn.typeBodySumBuiltIn)
+      codeTree
+      ( \childrenEvaluatedItem ->
+          EvaluatedItem.Expr
+            ( EvaluatedItem.ExprTypeBodySum
+                ( Array.mapMaybe
+                    ( case _ of
+                        EvaluatedItem.Expr expr -> Just expr
+                        _ -> Nothing
+                    )
+                    childrenEvaluatedItem
+                )
+            )
+      )
+  else if equalName name BuiltIn.patternBuiltIn then
+    needNChildren
+      (BuiltIn.buildInGetInputType BuiltIn.patternBuiltIn)
+      codeTree
+      ( \childrenEvaluatedItem ->
+          EvaluatedItem.Expr
+            ( EvaluatedItem.ExprPattern
+                { name:
+                    case Array.index childrenEvaluatedItem 0 of
+                      Just (EvaluatedItem.Identifier nameIdentifier) -> nameIdentifier
+                      _ -> Nothing
+                , description:
+                    case Array.index childrenEvaluatedItem 1 of
+                      Just (EvaluatedItem.Description value) -> value
+                      _ -> ""
+                }
+            )
+      )
+  else
     EvaluatedTree
       { item:
           case Identifier.identifierFromString name of
-            Just nameIdentifier -> Expr (ExprPartReference { name: nameIdentifier })
-            Nothing -> Expr (ExprPartReferenceInvalidName { name })
+            Just nameIdentifier -> EvaluatedItem.Expr (EvaluatedItem.ExprPartReference { name: nameIdentifier })
+            Nothing -> EvaluatedItem.Expr (EvaluatedItem.ExprPartReferenceInvalidName { name })
       , range
       , children:
           map
@@ -337,49 +368,61 @@ codeTreeToEvaluatedTreeIContextNormal codeTree@(Parser.CodeTree { name, nameRang
                   child
             )
             children
-      , expectedChildrenTypeMaybe: Nothing
+      , expectedInputType: BuiltIn.InputTypeNormal []
       , nameRange
       , name
       }
 
-maybeEvaluatedItemToMaybeExpr :: Maybe EvaluatedItem -> Maybe PartialExpr
+equalName :: String -> BuiltIn.BuiltIn -> Boolean
+equalName name builtIn =
+  eq
+    name
+    (NonEmptyString.toString (BuiltIn.builtInGetName builtIn))
+
+maybeEvaluatedItemToMaybeExpr :: Maybe EvaluatedItem.EvaluatedItem -> Maybe EvaluatedItem.PartialExpr
 maybeEvaluatedItemToMaybeExpr = case _ of
-  Just (Expr expr) -> Just expr
+  Just (EvaluatedItem.Expr expr) -> Just expr
   _ -> Nothing
 
 codeTreeToEvaluatedTreeInContextDescription :: Parser.CodeTree -> EvaluatedTree
 codeTreeToEvaluatedTreeInContextDescription codeTree@(Parser.CodeTree { name }) =
   need0Children
     codeTree
-    (Description name)
+    (EvaluatedItem.Description name)
 
 codeTreeToEvaluatedTreeInContextUIntLiteral :: Parser.CodeTree -> EvaluatedTree
 codeTreeToEvaluatedTreeInContextUIntLiteral codeTree@(Parser.CodeTree { name }) =
   need0Children
     codeTree
-    (UIntLiteral (UInt.fromString name))
+    (EvaluatedItem.UIntLiteral (UInt.fromString name))
 
 codeTreeToEvaluatedTreeInContextTextLiteral :: Parser.CodeTree -> EvaluatedTree
 codeTreeToEvaluatedTreeInContextTextLiteral codeTree@(Parser.CodeTree { name }) =
   need0Children
     codeTree
-    (TextLiteral name)
+    (EvaluatedItem.TextLiteral name)
+
+codeTreeToEvaluatedTreeInContextNonEmptyTextLiteral :: Parser.CodeTree -> EvaluatedTree
+codeTreeToEvaluatedTreeInContextNonEmptyTextLiteral codeTree@(Parser.CodeTree { name }) =
+  need0Children
+    codeTree
+    (EvaluatedItem.NonEmptyTextLiteral (NonEmptyString.fromString name))
 
 codeTreeToEvaluatedTreeInContextFloat64Literal :: Parser.CodeTree -> EvaluatedTree
 codeTreeToEvaluatedTreeInContextFloat64Literal codeTree@(Parser.CodeTree { name }) =
   need0Children
     codeTree
-    (Float64Literal (Number.fromString name))
+    (EvaluatedItem.Float64Literal (Number.fromString name))
 
 codeTreeToEvaluatedTreeInContextIdentifier :: Parser.CodeTree -> EvaluatedTree
 codeTreeToEvaluatedTreeInContextIdentifier codeTree@(Parser.CodeTree { name }) =
   need0Children
     codeTree
-    (Identifier (Identifier.identifierFromString name))
+    (EvaluatedItem.Identifier (Identifier.identifierFromString name))
 
 need0Children ::
   Parser.CodeTree ->
-  EvaluatedItem ->
+  EvaluatedItem.EvaluatedItem ->
   EvaluatedTree
 need0Children (Parser.CodeTree { name, nameRange, children, range }) item =
   let
@@ -398,56 +441,26 @@ need0Children (Parser.CodeTree { name, nameRange, children, range }) item =
       { item: item
       , range: range
       , children: evaluatedChildren
-      , expectedChildrenTypeMaybe: Just []
+      , expectedInputType: BuiltIn.InputTypeNormal []
       , name
       , nameRange
       }
 
-need1Children ::
-  TreeType ->
+needNChildren ::
+  BuiltIn.InputType ->
   Parser.CodeTree ->
-  (Maybe EvaluatedItem -> EvaluatedItem) ->
+  (Array EvaluatedItem.EvaluatedItem -> EvaluatedItem.EvaluatedItem) ->
   EvaluatedTree
-need1Children treeType (Parser.CodeTree { name, nameRange, children, range }) func =
+needNChildren expectedType (Parser.CodeTree { name, nameRange, children, range }) func =
   let
     evaluatedChildren :: Array EvaluatedTreeChild
     evaluatedChildren =
       Array.mapWithIndex
         ( \index child ->
             codeTreeToEvaluatedTree
-              ( case index of
-                  0 -> Just treeType
-                  _ -> Nothing
-              )
-              child
-        )
-        children
-  in
-    EvaluatedTree
-      { item: func (map evaluatedTreeChildGetItem (Array.index evaluatedChildren 0))
-      , range: range
-      , children: evaluatedChildren
-      , expectedChildrenTypeMaybe: Just [ treeType ]
-      , name
-      , nameRange
-      }
-
-need2Children ::
-  { firstContext :: TreeType, secondContext :: TreeType } ->
-  Parser.CodeTree ->
-  ({ first :: Maybe EvaluatedItem, second :: Maybe EvaluatedItem } -> EvaluatedItem) ->
-  EvaluatedTree
-need2Children { firstContext, secondContext } (Parser.CodeTree { name, nameRange, children, range }) func =
-  let
-    evaluatedChildren :: Array EvaluatedTreeChild
-    evaluatedChildren =
-      Array.mapWithIndex
-        ( \index child ->
-            codeTreeToEvaluatedTree
-              ( case index of
-                  0 -> Just firstContext
-                  1 -> Just secondContext
-                  _ -> Nothing
+              ( case expectedType of
+                  BuiltIn.InputTypeNormal typeList -> Array.index typeList index
+                  BuiltIn.InputTypeRepeat builtInType -> Just builtInType
               )
               child
         )
@@ -455,54 +468,10 @@ need2Children { firstContext, secondContext } (Parser.CodeTree { name, nameRange
   in
     EvaluatedTree
       { item:
-          func
-            { first: map evaluatedTreeChildGetItem (Array.index evaluatedChildren 0)
-            , second: map evaluatedTreeChildGetItem (Array.index evaluatedChildren 1)
-            }
+          func (map evaluatedTreeChildGetItem evaluatedChildren)
       , range: range
       , children: evaluatedChildren
-      , expectedChildrenTypeMaybe: Just [ firstContext, secondContext ]
-      , name
-      , nameRange
-      }
-
-need3Children ::
-  { firstContext :: TreeType, secondContext :: TreeType, thirdContext :: TreeType } ->
-  Parser.CodeTree ->
-  ({ first :: Maybe EvaluatedItem, second :: Maybe EvaluatedItem, third :: Maybe EvaluatedItem } -> EvaluatedItem) ->
-  EvaluatedTree
-need3Children context (Parser.CodeTree { name, nameRange, children, range }) func =
-  let
-    evaluatedChildren :: Array EvaluatedTreeChild
-    evaluatedChildren =
-      Array.mapWithIndex
-        ( \index child ->
-            codeTreeToEvaluatedTree
-              ( case index of
-                  0 -> Just context.firstContext
-                  1 -> Just context.secondContext
-                  2 -> Just context.thirdContext
-                  _ -> Nothing
-              )
-              child
-        )
-        children
-  in
-    EvaluatedTree
-      { item:
-          func
-            { first: map evaluatedTreeChildGetItem (Array.index evaluatedChildren 0)
-            , second: map evaluatedTreeChildGetItem (Array.index evaluatedChildren 1)
-            , third: map evaluatedTreeChildGetItem (Array.index evaluatedChildren 2)
-            }
-      , range: range
-      , children: evaluatedChildren
-      , expectedChildrenTypeMaybe:
-          Just
-            [ context.firstContext
-            , context.secondContext
-            , context.thirdContext
-            ]
+      , expectedInputType: expectedType
       , name
       , nameRange
       }

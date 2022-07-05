@@ -7,6 +7,7 @@ import Data.Maybe (Maybe(..))
 import Definy.Identifier as Identifier
 import Prelude as Prelude
 import VsCodeExtension.Evaluate as Evaluate
+import VsCodeExtension.EvaluatedItem as EvaluatedItem
 import VsCodeExtension.EvaluatedTreeIndex as EvaluatedTreeIndex
 import VsCodeExtension.Range as Range
 
@@ -15,11 +16,11 @@ getReference ::
   Evaluate.EvaluatedTree ->
   Array Range.Range
 getReference position tree = case EvaluatedTreeIndex.getEvaluatedItem position tree of
-  Just { item: Evaluate.Expr (Evaluate.ExprPartReference { name }) } ->
+  Just { item: EvaluatedItem.Expr (EvaluatedItem.ExprPartReference { name }) } ->
     getReferenceInTree
       tree
       name
-  Just { item: Evaluate.Identifier (Just name) } ->
+  Just { item: EvaluatedItem.Identifier (Just name) } ->
     getReferenceInTree
       tree
       name
@@ -39,8 +40,8 @@ getReferenceInTree (Evaluate.EvaluatedTree { children, item, nameRange }) identi
         children
     )
 
-itemIsMatch :: Evaluate.EvaluatedItem -> Identifier.Identifier -> Boolean
+itemIsMatch :: EvaluatedItem.EvaluatedItem -> Identifier.Identifier -> Boolean
 itemIsMatch item identifier = case item of
-  Evaluate.Expr (Evaluate.ExprPartReference { name }) -> Prelude.eq name identifier
-  Evaluate.Identifier (Just name) -> Prelude.eq name identifier
+  EvaluatedItem.Expr (EvaluatedItem.ExprPartReference { name }) -> Prelude.eq name identifier
+  EvaluatedItem.Identifier (Just name) -> Prelude.eq name identifier
   _ -> false

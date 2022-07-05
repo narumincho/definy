@@ -2,7 +2,8 @@ module Definy.Identifier
   ( AccountName
   , Identifier
   , accountNameFromNonEmptyString
-  , class SafeIdentifier
+  , class CheckValidChar
+  , class CheckValidCharTail
   , fromSymbolProxy
   , identifierFromNonEmptyString
   , identifierFromString
@@ -64,21 +65,14 @@ identifierToString identifier = NonEmptyString.toString
                (identifierToNonEmptyString identifier)
 
 fromSymbolProxy ::
-  forall (symbol :: Symbol).
-  (SafeIdentifier symbol) =>
+  forall (symbol :: Symbol) (charTypeList:: TList.List' Identifier.CharType).
+  (Identifier.SymbolToCharTypeList symbol charTypeList) => 
+  (CheckValidChar charTypeList) =>
   (Symbol.IsSymbol symbol) =>
   (NonEmptyString.MakeNonEmpty symbol) =>
   Proxy symbol -> Identifier
 fromSymbolProxy _ = Identifier (NonEmptyString.nes (Proxy :: Proxy symbol))
 
--- | 正常なdefinyの識別子のシンボルである
-class SafeIdentifier (symbol :: Symbol)
-
-instance safeIdentifier ::
-  ( Identifier.SymbolToCharTypeList symbol charTypeList
-  , CheckValidChar charTypeList
-  ) =>
-  SafeIdentifier symbol
 
 class CheckValidChar (charType :: TList.List' Identifier.CharType)
 

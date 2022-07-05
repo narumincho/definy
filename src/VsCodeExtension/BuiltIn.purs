@@ -10,18 +10,24 @@ module VsCodeExtension.BuiltIn
   , buildInGetInputType
   , buildInGetOutputType
   , builtInGetName
+  , builtInTypeMatch
   , builtInTypeToString
-  , moduleBuiltIn
-  , partBuiltIn
-  , textBuiltIn
-  , uintBuiltIn
   , float64BuiltIn
+  , moduleBuiltIn
+  , nonEmptyTextBuiltIn
+  , partBuiltIn
+  , patternBuiltIn
+  , textBuiltIn
+  , typeBodySumBuiltIn
+  , typeBuiltIn
+  , uintBuiltIn
   ) where
 
 import Data.Generic.Rep as GenericRep
 import Data.Show.Generic as ShowGeneric
 import Data.String.NonEmpty (NonEmptyString)
 import Data.String.NonEmpty as NonEmptyString
+import Data.Tuple as Tuple
 import Prelude as Prelude
 import Type.Proxy (Proxy(..))
 
@@ -29,12 +35,27 @@ data BuiltInType
   = Module
   | Description
   | ModuleBody
-  | Part
+  | PartDefinition
   | Expr ExprType
   | Identifier
   | UIntLiteral
   | TextLiteral
+  | NonEmptyTextLiteral
   | Float64Literal
+
+builtInTypeMatch :: BuiltInType -> BuiltInType -> Boolean
+builtInTypeMatch expected actual = case Tuple.Tuple expected actual of
+  Tuple.Tuple Module Module -> true
+  Tuple.Tuple Description Description -> true
+  Tuple.Tuple ModuleBody ModuleBody -> true
+  Tuple.Tuple PartDefinition PartDefinition -> true
+  Tuple.Tuple (Expr expectedExprType) (Expr actualExprType) -> exprTypeMatch expectedExprType actualExprType
+  Tuple.Tuple Identifier Identifier -> true
+  Tuple.Tuple UIntLiteral UIntLiteral -> true
+  Tuple.Tuple TextLiteral TextLiteral -> true
+  Tuple.Tuple NonEmptyTextLiteral NonEmptyTextLiteral -> true
+  Tuple.Tuple Float64Literal Float64Literal -> true
+  Tuple.Tuple _ _ -> false
 
 derive instance genericBuiltInType :: GenericRep.Generic BuiltInType _
 
@@ -47,8 +68,19 @@ builtInTypeToString = Prelude.show
 data ExprType
   = UInt
   | Text
+  | NonEmptyText
   | Float64
+  | TypePart
+  | TypeBody
+  | Pattern
   | Unknown
+
+exprTypeMatch :: ExprType -> ExprType -> Boolean
+exprTypeMatch expected actual = case expected of
+  Unknown -> true
+  _ -> Prelude.eq expected actual
+
+derive instance eqExprType :: Prelude.Eq ExprType
 
 derive instance genericExprType :: GenericRep.Generic ExprType _
 
@@ -83,11 +115,15 @@ all :: Array BuiltIn
 all =
   [ moduleBuiltIn
   , bodyBuiltIn
+  , typeBuiltIn
   , partBuiltIn
   , addBuiltIn
   , uintBuiltIn
   , textBuiltIn
+  , nonEmptyTextBuiltIn
   , float64BuiltIn
+  , typeBodySumBuiltIn
+  , patternBuiltIn
   ]
 
 moduleBuiltIn :: BuiltIn
@@ -108,8 +144,20 @@ bodyBuiltIn =
   BuiltIn
     { name: NonEmptyString.nes (Proxy :: Proxy "body")
     , description: NonEmptyString.nes (Proxy :: Proxy "複数のパーツを合わせたまとまり")
-    , inputType: InputTypeRepeat Part
+    , inputType: InputTypeRepeat PartDefinition
     , outputType: ModuleBody
+    }
+
+typeBuiltIn :: BuiltIn
+typeBuiltIn =
+  BuiltIn
+    { name: NonEmptyString.nes (Proxy :: Proxy "type")
+    , description:
+        NonEmptyString.nes
+          (Proxy :: Proxy "型を定義する")
+    , inputType:
+        InputTypeNormal [ Identifier, Description, Expr TypeBody ]
+    , outputType: PartDefinition
     }
 
 partBuiltIn :: BuiltIn
@@ -121,7 +169,7 @@ partBuiltIn =
           (Proxy :: Proxy "パーツの定義 パーツはあらゆるデータに名前を付けて使えるようにしたもの")
     , inputType:
         InputTypeNormal [ Identifier, Description, Expr Unknown ]
-    , outputType: Part
+    , outputType: PartDefinition
     }
 
 addBuiltIn :: BuiltIn
@@ -153,6 +201,15 @@ textBuiltIn =
     , outputType: Expr Text
     }
 
+nonEmptyTextBuiltIn :: BuiltIn
+nonEmptyTextBuiltIn =
+  BuiltIn
+    { name: NonEmptyString.nes (Proxy :: Proxy "nonEmptyText")
+    , description: NonEmptyString.nes (Proxy :: Proxy "空ではない文字列リテラル")
+    , inputType: InputTypeNormal [ NonEmptyTextLiteral ]
+    , outputType: Expr NonEmptyText
+    }
+
 float64BuiltIn :: BuiltIn
 float64BuiltIn =
   BuiltIn
@@ -160,4 +217,22 @@ float64BuiltIn =
     , description: NonEmptyString.nes (Proxy :: Proxy "64bit 浮動小数点数リテラル")
     , inputType: InputTypeNormal [ Float64Literal ]
     , outputType: Expr Float64
+    }
+
+typeBodySumBuiltIn :: BuiltIn
+typeBodySumBuiltIn =
+  BuiltIn
+    { name: NonEmptyString.nes (Proxy :: Proxy "typeBodySum")
+    , description: NonEmptyString.nes (Proxy :: Proxy "直和型. A か B か C. のように同時に入らない型を作る. enum に近いが, パラメーターを指定することができる")
+    , inputType: InputTypeRepeat (Expr Pattern)
+    , outputType: Expr TypeBody
+    }
+
+patternBuiltIn :: BuiltIn
+patternBuiltIn =
+  BuiltIn
+    { name: NonEmptyString.nes (Proxy :: Proxy "pattern")
+    , description: NonEmptyString.nes (Proxy :: Proxy "直和型のパターン. パラメーターはあとで対応")
+    , inputType: InputTypeNormal [ Identifier, Description ]
+    , outputType: Expr Pattern
     }

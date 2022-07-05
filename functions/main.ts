@@ -1,10 +1,10 @@
 import * as commonUrl from "../common/url";
 import * as functions from "firebase-functions";
 import * as lib from "./lib";
+import * as mimeType from "../definy-output/typescript/mimeType";
 import { ApiCodec, apiCodec } from "../common/apiCodec";
 import { html as genHtml } from "../gen/main";
 import { generateHtml } from "./html";
-import { pngMimeType } from "../output/TypeScriptEntryPoint";
 
 console.log("versions", JSON.stringify(process.versions));
 /*
@@ -28,7 +28,7 @@ export const html = functions.https.onRequest(async (request, response) => {
   const htmlAndIsNotFound = await generateHtml(urlData);
 
   response.status(htmlAndIsNotFound.isNotFound ? 404 : 200);
-  response.setHeader("content-type", "text/html");
+  response.setHeader("content-type", mimeType.html);
   response.send(genHtml.htmlOptionToString(htmlAndIsNotFound.htmlOption));
 });
 
@@ -118,7 +118,7 @@ export const pngFile = functions.https.onRequest((request, response): void => {
     return;
   }
   const readableStream = lib.readPngFile(fileHash);
-  response.contentType(pngMimeType);
+  response.contentType(mimeType.png);
   response.header("cache-control", "max-age=31536000");
   readableStream.pipe(response);
 });

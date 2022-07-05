@@ -22,10 +22,12 @@ export const partName: number = 6.28;
 /**
  * part description
  */
-export const partName: string = "テキスト";
+export const nonEmptyTextEmptyErrorTest: string = "<unknown nonEmptyString literal!!!>";
 
 
 /**
- * 分かりやすい説明文
+ * part description
  */
-export const identifierSample: unknown = unknownPart;
+export const nonEmptyTextSampleMimeType: string = "image/png";
+
+export const addTextErrorSample: number = ("28"+28);

@@ -17,6 +17,7 @@ import Effect.Uncurried as EffectUncurried
 import Markdown as Markdown
 import Type.Proxy (Proxy(..))
 import VsCodeExtension.CodeGen as CodeGen
+import VsCodeExtension.CodeGenPureScript as CodeGenPureScript
 import VsCodeExtension.Command as Command
 import VsCodeExtension.Completion as Completion
 import VsCodeExtension.Definition as Definition
@@ -257,6 +258,20 @@ outputCode workspaceFolderUri codeDataList =
                             ".js"
                       }
                 , content: CodeGen.codeAsBinary evaluatedTree false
+                }
+              VSCodeApi.workspaceFsWriteFile
+                { uri:
+                    VSCodeApi.uriJoinPath
+                      { uri: workspaceFolderUri
+                      , relativePath:
+                          append
+                            (append "definy-output/purescript/" fileNameWithoutExtension)
+                            ".purs"
+                      }
+                , content:
+                    CodeGenPureScript.definyEvaluatedTreeToPureScriptCodeAsBinary
+                      evaluatedTree
+                      fileNameWithoutExtension
                 }
         Nothing -> pure unit
     )

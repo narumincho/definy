@@ -14,46 +14,53 @@ import Data.UInt as UInt
 import Definy.Identifier as Identifier
 import Prelude as Prelude
 import Type.Proxy (Proxy(..))
+import VsCodeExtension.BuiltIn as BuiltIn
 import VsCodeExtension.Evaluate as Evaluate
+import VsCodeExtension.EvaluatedItem as EvaluatedItem
 import VsCodeExtension.Range as Range
 import VsCodeExtension.ToString as ToString
 
 getErrorList :: Evaluate.EvaluatedTree -> Array ErrorWithRange
 getErrorList tree@(Evaluate.EvaluatedTree { item, range }) = case item of
-  Evaluate.Module partialModule -> getErrorListLoop partialModule tree
+  EvaluatedItem.Module partialModule -> getErrorListLoop partialModule tree
   _ -> [ ErrorWithRange { error: RootNotModule, range } ]
 
-getErrorListLoop :: Evaluate.PartialModule -> Evaluate.EvaluatedTree -> Array ErrorWithRange
-getErrorListLoop partialModule tree@(Evaluate.EvaluatedTree { item, name, nameRange, children, expectedChildrenTypeMaybe }) =
+getErrorListLoop :: EvaluatedItem.PartialModule -> Evaluate.EvaluatedTree -> Array ErrorWithRange
+getErrorListLoop partialModule tree@(Evaluate.EvaluatedTree { item, name, nameRange, children, expectedInputType }) =
   Array.concat
-    [ case expectedChildrenTypeMaybe of
-        Just expectedChildrenType ->
+    [ case expectedInputType of
+        BuiltIn.InputTypeNormal expectedChildrenType ->
           getParameterError
             tree
             (UInt.fromInt (Array.length expectedChildrenType))
-        Nothing -> []
+        BuiltIn.InputTypeRepeat _ -> []
     , case evaluatedItemGetError name partialModule item of
         Just error -> [ ErrorWithRange { error, range: nameRange } ]
         Nothing -> []
     , Prelude.bind children (getErrorListFromEvaluatedTreeChild partialModule)
     ]
 
-evaluatedItemGetError :: String -> Evaluate.PartialModule -> Evaluate.EvaluatedItem -> Maybe Error
+evaluatedItemGetError ::
+  String ->
+  EvaluatedItem.PartialModule ->
+  EvaluatedItem.EvaluatedItem ->
+  Maybe Error
 evaluatedItemGetError rawName partialModule = case _ of
-  Evaluate.Expr (Evaluate.ExprPartReferenceInvalidName { name: partName }) ->
+  EvaluatedItem.Expr (EvaluatedItem.ExprPartReferenceInvalidName { name: partName }) ->
     Just
       (InvalidPartName partName)
-  Evaluate.Expr (Evaluate.ExprPartReference { name }) -> case Evaluate.findPart partialModule name of
+  EvaluatedItem.Expr (EvaluatedItem.ExprPartReference { name }) -> case EvaluatedItem.findPart partialModule name of
     Just _ -> Nothing
     Nothing ->
       Just
         (UnknownPartName name)
-  Evaluate.UIntLiteral Nothing -> Just (UIntParseError rawName)
-  Evaluate.Float64Literal Nothing -> Just (Float64ParseError rawName)
-  Evaluate.Identifier Nothing -> Just (InvalidIdentifier rawName)
+  EvaluatedItem.UIntLiteral Nothing -> Just (UIntParseError rawName)
+  EvaluatedItem.Float64Literal Nothing -> Just (Float64ParseError rawName)
+  EvaluatedItem.NonEmptyTextLiteral Nothing -> Just NonEmptyStringEmptyError
+  EvaluatedItem.Identifier Nothing -> Just (InvalidIdentifier rawName)
   _ -> Nothing
 
-getErrorListFromEvaluatedTreeChild :: Evaluate.PartialModule -> Evaluate.EvaluatedTreeChild -> Array ErrorWithRange
+getErrorListFromEvaluatedTreeChild :: EvaluatedItem.PartialModule -> Evaluate.EvaluatedTreeChild -> Array ErrorWithRange
 getErrorListFromEvaluatedTreeChild partialModule (Evaluate.EvaluatedTreeChild { child: child@(Evaluate.EvaluatedTree { range }), typeMisMatchMaybe }) =
   Prelude.append
     ( case typeMisMatchMaybe of
@@ -119,6 +126,7 @@ data Error
     }
   | UIntParseError String
   | Float64ParseError String
+  | NonEmptyStringEmptyError
   | TypeMisMatchError Evaluate.TypeMisMatch
   | InvalidIdentifier String
   | RootNotModule
@@ -167,26 +175,18 @@ errorToString = case _ of
     NonEmptyString.appendString
       (ToString.escapeName name)
       "Float64 としてパースできませんでした"
+  NonEmptyStringEmptyError -> NonEmptyString.nes (Proxy :: Proxy "nonEmptyText には 空ではない文字列を指定する必要があります")
   TypeMisMatchError (Evaluate.TypeMisMatch { actual, expect }) ->
-    NonEmptyString.appendString
-      (treeTypeToString expect)
+    NonEmptyString.prependString
       ( String.joinWith ""
-          [ "を期待したが", NonEmptyString.toString (treeTypeToString actual), "が渡された" ]
+          [ Prelude.show expect
+          , "を期待したが"
+          , Prelude.show actual
+          ]
       )
+      (NonEmptyString.nes (Proxy :: Proxy "が渡された"))
   InvalidIdentifier name ->
     NonEmptyString.appendString
       (ToString.escapeName name)
       "は識別子として不正です. 識別子は 正規表現 ^[a-z][a-zA-Z0-9]{0,63}$ を満たさす必要があります"
   RootNotModule -> (NonEmptyString.nes (Proxy :: Proxy "直下がモジュールではありません"))
-
-treeTypeToString :: Evaluate.TreeType -> NonEmptyString
-treeTypeToString = case _ of
-  Evaluate.TreeTypeModule -> NonEmptyString.nes (Proxy :: Proxy "Module")
-  Evaluate.TreeTypeDescription -> NonEmptyString.nes (Proxy :: Proxy "Description")
-  Evaluate.TreeTypeModuleBody -> NonEmptyString.nes (Proxy :: Proxy "ModuleBody")
-  Evaluate.TreeTypePart -> NonEmptyString.nes (Proxy :: Proxy "Part")
-  Evaluate.TreeTypeExpr -> NonEmptyString.nes (Proxy :: Proxy "Expr")
-  Evaluate.TreeTypeUIntLiteral -> NonEmptyString.nes (Proxy :: Proxy "UIntLiteral")
-  Evaluate.TreeTypeTextLiteral -> NonEmptyString.nes (Proxy :: Proxy "TextLiteral")
-  Evaluate.TreeTypeFloat64Literal -> NonEmptyString.nes (Proxy :: Proxy "Float64Literal")
-  Evaluate.TreeTypeIdentifier -> NonEmptyString.nes (Proxy :: Proxy "Identifier")

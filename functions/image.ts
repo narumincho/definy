@@ -1,5 +1,5 @@
 import * as jimp from "jimp";
-import { pngMimeType } from "../output/TypeScriptEntryPoint";
+import * as mimeType from "../definy-output/typescript/mimeType";
 
 export const createProjectIconAndImage = async (): Promise<{
   icon: Buffer;
@@ -23,8 +23,8 @@ export const createProjectIconAndImage = async (): Promise<{
   const icon = await jimp.create(iconWidth, iconHeight);
   drawPaletteImage(icon, palette);
   return {
-    image: await image.getBufferAsync(pngMimeType),
-    icon: await icon.getBufferAsync(pngMimeType),
+    image: await image.getBufferAsync(mimeType.png),
+    icon: await icon.getBufferAsync(mimeType.png),
   };
 };
 

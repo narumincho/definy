@@ -14,7 +14,6 @@ module(
     ),
     part(b, "bの説明文 改行有り", add(samplePart, uint(1))),
     part(k, "kの説明文", add(samplePart, add(uint(1), uint(39)))),
-    part(sample, description, uint(" 123")),
     part(sample, description, add(28, uint(28))),
     part(useSampleText, "`sampleText`を使ってみる", sampleText),
     part(sampleText, "サンプルテキストだ!", text("文字列をちゃんと定義できてるかな?")),
