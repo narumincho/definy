@@ -180,6 +180,23 @@ evaluatedItemToHoverTree { item, partialModule } = case item of
             ]
       , valueDetail: Markdown.Markdown []
       }
+  EvaluatedItem.Type typePart ->
+    HoverTree
+      { type:
+          ToString.NoPositionTree
+            { name: "Type"
+            , children: []
+            }
+      , value: partialTypeToNoPositionTree typePart
+      , valueDummy: false
+      , evaluatedValue: Nothing
+      , description:
+          Markdown.Markdown
+            [ Markdown.Paragraph
+                (BuiltIn.buildInGetDescription BuiltIn.typeBuiltIn)
+            ]
+      , valueDetail: Markdown.Markdown []
+      }
   EvaluatedItem.Expr value ->
     let
       (Evaluate.EvaluateExprResult { value: evaluatedValue, dummy }) =
@@ -328,6 +345,27 @@ partialPartToNoPositionTree :: EvaluatedItem.PartialPart -> ToString.NoPositionT
 partialPartToNoPositionTree (EvaluatedItem.PartialPart { name, description, expr }) =
   ToString.NoPositionTree
     { name: "Part"
+    , children:
+        [ maybeToNoPositionTree
+            ( Prelude.map
+                ( \nonEmpty ->
+                    ToString.NoPositionTree
+                      { name: Identifier.identifierToString nonEmpty
+                      , children: []
+                      }
+                )
+                name
+            )
+        , ToString.noPositionTreeEmptyChildren description
+        , maybeToNoPositionTree
+            (Prelude.map partialExprToNoPositionTree expr)
+        ]
+    }
+
+partialTypeToNoPositionTree :: EvaluatedItem.PartialType -> ToString.NoPositionTree
+partialTypeToNoPositionTree (EvaluatedItem.PartialType { name, description, expr }) =
+  ToString.NoPositionTree
+    { name: "Type"
     , children:
         [ maybeToNoPositionTree
             ( Prelude.map

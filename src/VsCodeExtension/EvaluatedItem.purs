@@ -3,7 +3,9 @@ module VsCodeExtension.EvaluatedItem
   , PartialExpr(..)
   , PartialModule(..)
   , PartialPart(..)
+  , PartialType(..)
   , findPart
+  , toBuiltInType
   ) where
 
 import Data.Array as Array
@@ -12,13 +14,14 @@ import Data.String.NonEmpty (NonEmptyString)
 import Data.UInt as UInt
 import Definy.Identifier as Identifier
 import Prelude as Prelude
-import VsCodeExtension.Range as Range
+import VsCodeExtension.BuiltIn as BuiltIn
 
 data EvaluatedItem
   = Module PartialModule
   | Description String
   | ModuleBody (Array PartialPart)
   | Part PartialPart
+  | Type PartialType
   | Expr PartialExpr
   | UIntLiteral (Maybe UInt.UInt)
   | Identifier (Maybe Identifier.Identifier)
@@ -37,7 +40,13 @@ newtype PartialPart
   { name :: Maybe Identifier.Identifier
   , description :: String
   , expr :: Maybe PartialExpr
-  , range :: Range.Range
+  }
+
+newtype PartialType
+  = PartialType
+  { name :: Maybe Identifier.Identifier
+  , description :: String
+  , expr :: Maybe PartialExpr
   }
 
 data PartialExpr
@@ -59,3 +68,23 @@ findPart (PartialModule { partList }) name =
           Nothing
     )
     partList
+
+toBuiltInType :: EvaluatedItem -> BuiltIn.BuiltInType
+toBuiltInType = case _ of
+  Module _ -> BuiltIn.Module
+  Description _ -> BuiltIn.Description
+  ModuleBody _ -> BuiltIn.ModuleBody
+  Part _ -> BuiltIn.Part
+  Type _ -> BuiltIn.Type
+  Expr (ExprAdd _) -> BuiltIn.Expr BuiltIn.UInt
+  Expr (ExprPartReference _) -> BuiltIn.Expr BuiltIn.Unknown
+  Expr (ExprPartReferenceInvalidName _) -> BuiltIn.Expr BuiltIn.Unknown
+  Expr (ExprUIntLiteral _) -> BuiltIn.Expr BuiltIn.UInt
+  Expr (ExprFloat64Literal _) -> BuiltIn.Expr BuiltIn.Float64
+  Expr (ExprTextLiteral _) -> BuiltIn.Expr BuiltIn.Text
+  Expr (ExprNonEmptyTextLiteral _) -> BuiltIn.Expr BuiltIn.NonEmptyText
+  UIntLiteral _ -> BuiltIn.UIntLiteral
+  Identifier _ -> BuiltIn.Identifier
+  TextLiteral _ -> BuiltIn.TextLiteral
+  NonEmptyTextLiteral _ -> BuiltIn.NonEmptyTextLiteral
+  Float64Literal _ -> BuiltIn.Float64Literal

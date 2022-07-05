@@ -10,7 +10,6 @@ module VsCodeExtension.ToString
   , quoteString
   ) where
 
-import Prelude
 import Data.Array as Array
 import Data.Either as Either
 import Data.Maybe (Maybe(..))
@@ -21,8 +20,10 @@ import Data.String.NonEmpty as NonEmptyString
 import Data.String.Regex as Regex
 import Data.String.Regex.Flags as RegexFlags
 import Data.UInt as UInt
+import Prelude as Prelude
 import Type.Proxy (Proxy(..))
 import Util as Util
+import VsCodeExtension.BuiltIn as BuiltIn
 import VsCodeExtension.Evaluate as Evaluate
 
 -- | 位置情報が含まれていないシンプルな木構造
@@ -40,69 +41,70 @@ evaluatedTreeToString codeTree =
     (evaluatedTreeToNoPositionTree codeTree)
 
 evaluatedTreeToNoPositionTree :: Evaluate.EvaluatedTree -> NoPositionTree
-evaluatedTreeToNoPositionTree (Evaluate.EvaluatedTree { name, children, expectedChildrenTypeMaybe }) =
+evaluatedTreeToNoPositionTree (Evaluate.EvaluatedTree { name, children, expectedInputType }) =
   NoPositionTree
     { name
     , children:
-        append (map (\(Evaluate.EvaluatedTreeChild { child }) -> evaluatedTreeToNoPositionTree child) children)
-          ( case expectedChildrenTypeMaybe of
-              Just expectedChildrenType ->
-                map
+        Prelude.append (Prelude.map (\(Evaluate.EvaluatedTreeChild { child }) -> evaluatedTreeToNoPositionTree child) children)
+          ( case expectedInputType of
+              BuiltIn.InputTypeNormal expectedChildrenType ->
+                Prelude.map
                   typeDefaultValue
                   ( Array.drop
                       (Array.length children)
                       expectedChildrenType
                   )
-              Nothing -> []
+              BuiltIn.InputTypeRepeat _ -> []
           )
     }
 
-typeDefaultValue :: Evaluate.TreeType -> NoPositionTree
+typeDefaultValue :: BuiltIn.BuiltInType -> NoPositionTree
 typeDefaultValue = case _ of
-  Evaluate.TreeTypeModule ->
-    NoPositionTree
-      { name: "module"
-      , children:
-          [ typeDefaultValue Evaluate.TreeTypeDescription
-          , typeDefaultValue Evaluate.TreeTypeModuleBody
-          ]
-      }
-  Evaluate.TreeTypeDescription ->
+  BuiltIn.Module -> builtInToDefaultNoPositionTree BuiltIn.moduleBuiltIn
+  BuiltIn.Description ->
     NoPositionTree
       { name: "description", children: [] }
-  Evaluate.TreeTypeModuleBody ->
-    NoPositionTree
-      { name: "body", children: [] }
-  Evaluate.TreeTypePart ->
-    NoPositionTree
-      { name: "part"
-      , children:
-          [ typeDefaultValue Evaluate.TreeTypeIdentifier
-          , typeDefaultValue Evaluate.TreeTypeDescription
-          , typeDefaultValue Evaluate.TreeTypeExpr
-          ]
-      }
-  Evaluate.TreeTypeExpr ->
-    NoPositionTree
-      { name: "uint"
-      , children:
-          [ typeDefaultValue Evaluate.TreeTypeUIntLiteral ]
-      }
-  Evaluate.TreeTypeUIntLiteral ->
+  BuiltIn.ModuleBody -> builtInToDefaultNoPositionTree BuiltIn.bodyBuiltIn
+  BuiltIn.Part -> builtInToDefaultNoPositionTree BuiltIn.partBuiltIn
+  BuiltIn.Type -> builtInToDefaultNoPositionTree BuiltIn.typeBuiltIn
+  BuiltIn.Expr BuiltIn.UInt -> builtInToDefaultNoPositionTree BuiltIn.uintBuiltIn
+  BuiltIn.Expr BuiltIn.Float64 -> builtInToDefaultNoPositionTree BuiltIn.float64BuiltIn
+  BuiltIn.Expr BuiltIn.Text -> builtInToDefaultNoPositionTree BuiltIn.textBuiltIn
+  BuiltIn.Expr BuiltIn.NonEmptyText -> builtInToDefaultNoPositionTree BuiltIn.nonEmptyTextBuiltIn
+  BuiltIn.Expr BuiltIn.TypeBody -> builtInToDefaultNoPositionTree BuiltIn.uintBuiltIn
+  BuiltIn.Expr BuiltIn.Unknown -> builtInToDefaultNoPositionTree BuiltIn.uintBuiltIn
+  BuiltIn.UIntLiteral ->
     NoPositionTree
       { name: "28", children: [] }
-  Evaluate.TreeTypeTextLiteral ->
+  BuiltIn.TextLiteral ->
     NoPositionTree
       { name: "sample text", children: [] }
-  Evaluate.TreeTypeNonEmptyTextLiteral ->
+  BuiltIn.NonEmptyTextLiteral ->
     NoPositionTree
       { name: "sample text", children: [] }
-  Evaluate.TreeTypeFloat64Literal ->
+  BuiltIn.Float64Literal ->
     NoPositionTree
       { name: "6.28", children: [] }
-  Evaluate.TreeTypeIdentifier ->
+  BuiltIn.Identifier ->
     NoPositionTree
       { name: "sample", children: [] }
+
+builtInToDefaultNoPositionTree :: BuiltIn.BuiltIn -> NoPositionTree
+builtInToDefaultNoPositionTree builtIn =
+  NoPositionTree
+    { name: NonEmptyString.toString (BuiltIn.builtInGetName builtIn)
+    , children:
+        inputTypeToDefaultValue (BuiltIn.buildInGetInputType builtIn)
+    }
+
+inputTypeToDefaultValue :: BuiltIn.InputType -> Array NoPositionTree
+inputTypeToDefaultValue = case _ of
+  BuiltIn.InputTypeNormal typeList -> Prelude.map typeDefaultValue typeList
+  BuiltIn.InputTypeRepeat builtInType ->
+    [ typeDefaultValue builtInType
+    , typeDefaultValue builtInType
+    , typeDefaultValue builtInType
+    ]
 
 noPositionTreeRootToString :: NoPositionTree -> String
 noPositionTreeRootToString (NoPositionTree { name, children }) =
@@ -114,7 +116,7 @@ noPositionTreeRootToString (NoPositionTree { name, children }) =
         String.joinWith ""
           [ "(\n"
           , String.joinWith "\n"
-              ( map
+              ( Prelude.map
                   ( \child ->
                       evaluatedTreeToStringLoop
                         (UInt.fromInt 1)
@@ -144,7 +146,7 @@ noPositionTreeToString noPositionTree@(NoPositionTree { name, children }) =
             String.joinWith ""
               [ "(\n"
               , String.joinWith "\n"
-                  ( map
+                  ( Prelude.map
                       ( \child ->
                           evaluatedTreeToStringLoop
                             (UInt.fromInt 1)
@@ -178,10 +180,10 @@ evaluatedTreeToStringLoop indent noPositionTree@(NoPositionTree { name, children
             String.joinWith ""
               [ "(\n"
               , String.joinWith "\n"
-                  ( map
+                  ( Prelude.map
                       ( \child ->
                           evaluatedTreeToStringLoop
-                            (add indent (UInt.fromInt 1))
+                            (Prelude.add indent (UInt.fromInt 1))
                             child
                       )
                       children
@@ -204,9 +206,9 @@ calculateStringWidth str = UInt.fromInt (String.length str)
 
 evaluatedTreeToOneLineStringLoop :: NoPositionTree -> String
 evaluatedTreeToOneLineStringLoop (NoPositionTree { name, children }) =
-  append
+  Prelude.append
     (NonEmptyString.toString (escapeName name))
-    ( case map evaluatedTreeToOneLineStringLoop children of
+    ( case Prelude.map evaluatedTreeToOneLineStringLoop children of
         [] -> ""
         list ->
           Util.append3 "("
@@ -236,4 +238,4 @@ quoteString :: String -> NonEmptyString
 quoteString str =
   NonEmptyString.appendString
     (NonEmptyString.nes (Proxy :: Proxy "\""))
-    (append str "\"")
+    (Prelude.append str "\"")

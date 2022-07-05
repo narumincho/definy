@@ -14,6 +14,7 @@ import Data.UInt as UInt
 import Definy.Identifier as Identifier
 import Prelude as Prelude
 import Type.Proxy (Proxy(..))
+import VsCodeExtension.BuiltIn as BuiltIn
 import VsCodeExtension.Evaluate as Evaluate
 import VsCodeExtension.EvaluatedItem as EvaluatedItem
 import VsCodeExtension.Range as Range
@@ -25,14 +26,14 @@ getErrorList tree@(Evaluate.EvaluatedTree { item, range }) = case item of
   _ -> [ ErrorWithRange { error: RootNotModule, range } ]
 
 getErrorListLoop :: EvaluatedItem.PartialModule -> Evaluate.EvaluatedTree -> Array ErrorWithRange
-getErrorListLoop partialModule tree@(Evaluate.EvaluatedTree { item, name, nameRange, children, expectedChildrenTypeMaybe }) =
+getErrorListLoop partialModule tree@(Evaluate.EvaluatedTree { item, name, nameRange, children, expectedInputType }) =
   Array.concat
-    [ case expectedChildrenTypeMaybe of
-        Just expectedChildrenType ->
+    [ case expectedInputType of
+        BuiltIn.InputTypeNormal expectedChildrenType ->
           getParameterError
             tree
             (UInt.fromInt (Array.length expectedChildrenType))
-        Nothing -> []
+        BuiltIn.InputTypeRepeat _ -> []
     , case evaluatedItemGetError name partialModule item of
         Just error -> [ ErrorWithRange { error, range: nameRange } ]
         Nothing -> []
@@ -176,26 +177,16 @@ errorToString = case _ of
       "Float64 としてパースできませんでした"
   NonEmptyStringEmptyError -> NonEmptyString.nes (Proxy :: Proxy "nonEmptyText には 空ではない文字列を指定する必要があります")
   TypeMisMatchError (Evaluate.TypeMisMatch { actual, expect }) ->
-    NonEmptyString.appendString
-      (treeTypeToString expect)
+    NonEmptyString.prependString
       ( String.joinWith ""
-          [ "を期待したが", NonEmptyString.toString (treeTypeToString actual), "が渡された" ]
+          [ Prelude.show expect
+          , "を期待したが"
+          , Prelude.show actual
+          ]
       )
+      (NonEmptyString.nes (Proxy :: Proxy "が渡された"))
   InvalidIdentifier name ->
     NonEmptyString.appendString
       (ToString.escapeName name)
       "は識別子として不正です. 識別子は 正規表現 ^[a-z][a-zA-Z0-9]{0,63}$ を満たさす必要があります"
   RootNotModule -> (NonEmptyString.nes (Proxy :: Proxy "直下がモジュールではありません"))
-
-treeTypeToString :: Evaluate.TreeType -> NonEmptyString
-treeTypeToString = case _ of
-  Evaluate.TreeTypeModule -> NonEmptyString.nes (Proxy :: Proxy "Module")
-  Evaluate.TreeTypeDescription -> NonEmptyString.nes (Proxy :: Proxy "Description")
-  Evaluate.TreeTypeModuleBody -> NonEmptyString.nes (Proxy :: Proxy "ModuleBody")
-  Evaluate.TreeTypePart -> NonEmptyString.nes (Proxy :: Proxy "Part")
-  Evaluate.TreeTypeExpr -> NonEmptyString.nes (Proxy :: Proxy "Expr")
-  Evaluate.TreeTypeUIntLiteral -> NonEmptyString.nes (Proxy :: Proxy "UIntLiteral")
-  Evaluate.TreeTypeTextLiteral -> NonEmptyString.nes (Proxy :: Proxy "TextLiteral")
-  Evaluate.TreeTypeNonEmptyTextLiteral -> NonEmptyString.nes (Proxy :: Proxy "NonEmptyTextLiteral")
-  Evaluate.TreeTypeFloat64Literal -> NonEmptyString.nes (Proxy :: Proxy "Float64Literal")
-  Evaluate.TreeTypeIdentifier -> NonEmptyString.nes (Proxy :: Proxy "Identifier")

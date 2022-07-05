@@ -24,6 +24,7 @@ evaluateTreeToTokenData (Evaluate.EvaluatedTree { nameRange, item, children }) =
               EvaluatedItem.Module _ -> TokenType.TokenTypeNamespace
               EvaluatedItem.ModuleBody _ -> TokenType.TokenTypeNamespace
               EvaluatedItem.Part _ -> TokenType.TokenTypeNamespace
+              EvaluatedItem.Type _ -> TokenType.TokenTypeNamespace
               EvaluatedItem.Expr _ -> TokenType.TokenTypeVariable
               EvaluatedItem.UIntLiteral _ -> TokenType.TokenTypeNumber
               EvaluatedItem.TextLiteral _ -> TokenType.TokenTypeString

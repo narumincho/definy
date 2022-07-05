@@ -32,12 +32,15 @@ data BuiltInType
   | Description
   | ModuleBody
   | Part
+  | Type
   | Expr ExprType
   | Identifier
   | UIntLiteral
   | TextLiteral
   | NonEmptyTextLiteral
   | Float64Literal
+
+derive instance eqBuiltInType :: Prelude.Eq BuiltInType
 
 derive instance genericBuiltInType :: GenericRep.Generic BuiltInType _
 
@@ -54,6 +57,8 @@ data ExprType
   | Float64
   | TypeBody
   | Unknown
+
+derive instance eqExprType :: Prelude.Eq ExprType
 
 derive instance genericExprType :: GenericRep.Generic ExprType _
 

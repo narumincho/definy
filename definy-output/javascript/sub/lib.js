@@ -8,12 +8,6 @@
 
 
 /**
- * 新たな型!
- */
-export const sampleType = "wip";
-
-
-/**
  * 浮動小数点数のサンプル
  */
 export const floatSample = "<unknown float64 literal!!!>";
@@ -35,3 +29,5 @@ export const nonEmptyTextEmptyErrorTest = "<unknown nonEmptyString literal!!!>";
  * part description
  */
 export const nonEmptyTextSampleMimeType = "image/png";
+
+export const addTextErrorSample = (28+28);

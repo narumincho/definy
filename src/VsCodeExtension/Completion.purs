@@ -134,6 +134,7 @@ builtInTypeToInsertTextTree = case _ of
       }
   BuiltIn.ModuleBody -> builtInToInsertTextTree BuiltIn.bodyBuiltIn
   BuiltIn.Part -> builtInToInsertTextTree BuiltIn.partBuiltIn
+  BuiltIn.Type -> builtInToInsertTextTree BuiltIn.typeBuiltIn
   BuiltIn.Expr BuiltIn.UInt -> builtInToInsertTextTree BuiltIn.uintBuiltIn
   BuiltIn.Expr BuiltIn.Text -> builtInToInsertTextTree BuiltIn.textBuiltIn
   BuiltIn.Expr BuiltIn.Float64 -> builtInToInsertTextTree BuiltIn.float64BuiltIn
