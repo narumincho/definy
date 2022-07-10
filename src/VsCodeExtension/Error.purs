@@ -179,9 +179,9 @@ errorToString = case _ of
   TypeMisMatchError (Evaluate.TypeMisMatch { actual, expect }) ->
     NonEmptyString.prependString
       ( String.joinWith ""
-          [ Prelude.show expect
+          [ ToString.noPositionTreeToString (BuiltIn.builtInTypeToNoPositionTree expect)
           , "を期待したが"
-          , Prelude.show actual
+          , ToString.noPositionTreeToString (BuiltIn.builtInTypeToNoPositionTree actual)
           ]
       )
       (NonEmptyString.nes (Proxy :: Proxy "が渡された"))

@@ -1,10 +1,8 @@
 module VsCodeExtension.ToString
-  ( NoPositionTree(..)
-  , escapeName
+  ( escapeName
   , evaluatedTreeToNoPositionTree
   , evaluatedTreeToString
   , isSafeName
-  , noPositionTreeEmptyChildren
   , noPositionTreeRootToString
   , noPositionTreeToString
   , quoteString
@@ -25,14 +23,7 @@ import Type.Proxy (Proxy(..))
 import Util as Util
 import VsCodeExtension.BuiltIn as BuiltIn
 import VsCodeExtension.Evaluate as Evaluate
-
--- | 位置情報が含まれていないシンプルな木構造
-newtype NoPositionTree
-  = NoPositionTree
-  { name :: String, children :: Array NoPositionTree }
-
-noPositionTreeEmptyChildren :: String -> NoPositionTree
-noPositionTreeEmptyChildren name = NoPositionTree { name, children: [] }
+import VsCodeExtension.NoPositionTree (NoPositionTree(..))
 
 -- | コードのツリー構造を整形された文字列に変換する
 evaluatedTreeToString :: Evaluate.EvaluatedTree -> String
@@ -49,7 +40,7 @@ evaluatedTreeToNoPositionTree (Evaluate.EvaluatedTree { name, children, expected
           ( case expectedInputType of
               BuiltIn.InputTypeNormal expectedChildrenType ->
                 Prelude.map
-                  typeDefaultValue
+                  BuiltIn.typeDefaultValue
                   ( Array.drop
                       (Array.length children)
                       expectedChildrenType
@@ -57,55 +48,6 @@ evaluatedTreeToNoPositionTree (Evaluate.EvaluatedTree { name, children, expected
               BuiltIn.InputTypeRepeat _ -> []
           )
     }
-
-typeDefaultValue :: BuiltIn.BuiltInType -> NoPositionTree
-typeDefaultValue = case _ of
-  BuiltIn.Module -> builtInToDefaultNoPositionTree BuiltIn.moduleBuiltIn
-  BuiltIn.Description ->
-    NoPositionTree
-      { name: "description", children: [] }
-  BuiltIn.ModuleBody -> builtInToDefaultNoPositionTree BuiltIn.bodyBuiltIn
-  BuiltIn.PartDefinition -> builtInToDefaultNoPositionTree BuiltIn.partBuiltIn
-  BuiltIn.Expr BuiltIn.UInt -> builtInToDefaultNoPositionTree BuiltIn.uintBuiltIn
-  BuiltIn.Expr BuiltIn.Float64 -> builtInToDefaultNoPositionTree BuiltIn.float64BuiltIn
-  BuiltIn.Expr BuiltIn.Text -> builtInToDefaultNoPositionTree BuiltIn.textBuiltIn
-  BuiltIn.Expr BuiltIn.NonEmptyText -> builtInToDefaultNoPositionTree BuiltIn.nonEmptyTextBuiltIn
-  BuiltIn.Expr BuiltIn.TypePart -> builtInToDefaultNoPositionTree BuiltIn.typeBuiltIn
-  BuiltIn.Expr BuiltIn.TypeBody -> builtInToDefaultNoPositionTree BuiltIn.uintBuiltIn
-  BuiltIn.Expr BuiltIn.Pattern -> builtInToDefaultNoPositionTree BuiltIn.patternBuiltIn
-  BuiltIn.Expr BuiltIn.Unknown -> builtInToDefaultNoPositionTree BuiltIn.uintBuiltIn
-  BuiltIn.UIntLiteral ->
-    NoPositionTree
-      { name: "28", children: [] }
-  BuiltIn.TextLiteral ->
-    NoPositionTree
-      { name: "sample text", children: [] }
-  BuiltIn.NonEmptyTextLiteral ->
-    NoPositionTree
-      { name: "sample text", children: [] }
-  BuiltIn.Float64Literal ->
-    NoPositionTree
-      { name: "6.28", children: [] }
-  BuiltIn.Identifier ->
-    NoPositionTree
-      { name: "sample", children: [] }
-
-builtInToDefaultNoPositionTree :: BuiltIn.BuiltIn -> NoPositionTree
-builtInToDefaultNoPositionTree builtIn =
-  NoPositionTree
-    { name: NonEmptyString.toString (BuiltIn.builtInGetName builtIn)
-    , children:
-        inputTypeToDefaultValue (BuiltIn.buildInGetInputType builtIn)
-    }
-
-inputTypeToDefaultValue :: BuiltIn.InputType -> Array NoPositionTree
-inputTypeToDefaultValue = case _ of
-  BuiltIn.InputTypeNormal typeList -> Prelude.map typeDefaultValue typeList
-  BuiltIn.InputTypeRepeat builtInType ->
-    [ typeDefaultValue builtInType
-    , typeDefaultValue builtInType
-    , typeDefaultValue builtInType
-    ]
 
 noPositionTreeRootToString :: NoPositionTree -> String
 noPositionTreeRootToString (NoPositionTree { name, children }) =

@@ -106,7 +106,9 @@ buildInToSimpleCompletionItem :: BuiltIn.BuiltIn -> SimpleCompletionItem
 buildInToSimpleCompletionItem (BuiltIn.BuiltIn rec) =
   SimpleCompletionItem
     { label: NonEmptyString.toString rec.name
-    , description: BuiltIn.builtInTypeToString rec.outputType
+    , description:
+        ToString.noPositionTreeToString
+          (BuiltIn.builtInTypeToNoPositionTree rec.outputType)
     , kind:
         case rec.outputType of
           BuiltIn.Module -> Module

@@ -11,7 +11,7 @@ module VsCodeExtension.BuiltIn
   , buildInGetOutputType
   , builtInGetName
   , builtInTypeMatch
-  , builtInTypeToString
+  , builtInTypeToNoPositionTree
   , float64BuiltIn
   , moduleBuiltIn
   , nonEmptyTextBuiltIn
@@ -20,6 +20,7 @@ module VsCodeExtension.BuiltIn
   , textBuiltIn
   , typeBodySumBuiltIn
   , typeBuiltIn
+  , typeDefaultValue
   , uintBuiltIn
   ) where
 
@@ -30,6 +31,7 @@ import Data.String.NonEmpty as NonEmptyString
 import Data.Tuple as Tuple
 import Prelude as Prelude
 import Type.Proxy (Proxy(..))
+import VsCodeExtension.NoPositionTree as NoPositionTree
 
 data BuiltInType
   = Module
@@ -59,11 +61,71 @@ builtInTypeMatch expected actual = case Tuple.Tuple expected actual of
 
 derive instance genericBuiltInType :: GenericRep.Generic BuiltInType _
 
-instance showBuiltInType :: Prelude.Show BuiltInType where
-  show = ShowGeneric.genericShow
+builtInTypeToNoPositionTree :: BuiltInType -> NoPositionTree.NoPositionTree
+builtInTypeToNoPositionTree = case _ of
+  Module -> NoPositionTree.noPositionTreeEmptyChildren "Module"
+  Description -> NoPositionTree.noPositionTreeEmptyChildren "Description"
+  ModuleBody -> NoPositionTree.noPositionTreeEmptyChildren "ModuleBody"
+  PartDefinition -> NoPositionTree.noPositionTreeEmptyChildren "PartDefinition"
+  Expr expr ->
+    NoPositionTree.NoPositionTree
+      { name: "Expr"
+      , children: [ NoPositionTree.noPositionTreeEmptyChildren (Prelude.show expr) ]
+      }
+  Identifier -> NoPositionTree.noPositionTreeEmptyChildren "Identifier"
+  UIntLiteral -> NoPositionTree.noPositionTreeEmptyChildren "UIntLiteral"
+  TextLiteral -> NoPositionTree.noPositionTreeEmptyChildren "TextLiteral"
+  NonEmptyTextLiteral -> NoPositionTree.noPositionTreeEmptyChildren "NonEmptyTextLiteral"
+  Float64Literal -> NoPositionTree.noPositionTreeEmptyChildren "Float64Literal"
 
-builtInTypeToString :: BuiltInType -> String
-builtInTypeToString = Prelude.show
+typeDefaultValue :: BuiltInType -> NoPositionTree.NoPositionTree
+typeDefaultValue = case _ of
+  Module -> builtInToDefaultNoPositionTree moduleBuiltIn
+  Description ->
+    NoPositionTree.NoPositionTree
+      { name: "description", children: [] }
+  ModuleBody -> builtInToDefaultNoPositionTree bodyBuiltIn
+  PartDefinition -> builtInToDefaultNoPositionTree partBuiltIn
+  Expr UInt -> builtInToDefaultNoPositionTree uintBuiltIn
+  Expr Float64 -> builtInToDefaultNoPositionTree float64BuiltIn
+  Expr Text -> builtInToDefaultNoPositionTree textBuiltIn
+  Expr NonEmptyText -> builtInToDefaultNoPositionTree nonEmptyTextBuiltIn
+  Expr TypePart -> builtInToDefaultNoPositionTree typeBuiltIn
+  Expr TypeBody -> builtInToDefaultNoPositionTree typeBodySumBuiltIn
+  Expr Pattern -> builtInToDefaultNoPositionTree patternBuiltIn
+  Expr Unknown -> builtInToDefaultNoPositionTree uintBuiltIn
+  UIntLiteral ->
+    NoPositionTree.NoPositionTree
+      { name: "28", children: [] }
+  TextLiteral ->
+    NoPositionTree.NoPositionTree
+      { name: "sample text", children: [] }
+  NonEmptyTextLiteral ->
+    NoPositionTree.NoPositionTree
+      { name: "sample text", children: [] }
+  Float64Literal ->
+    NoPositionTree.NoPositionTree
+      { name: "6.28", children: [] }
+  Identifier ->
+    NoPositionTree.NoPositionTree
+      { name: "sample", children: [] }
+
+builtInToDefaultNoPositionTree :: BuiltIn -> NoPositionTree.NoPositionTree
+builtInToDefaultNoPositionTree builtIn =
+  NoPositionTree.NoPositionTree
+    { name: NonEmptyString.toString (builtInGetName builtIn)
+    , children:
+        inputTypeToDefaultValue (buildInGetInputType builtIn)
+    }
+
+inputTypeToDefaultValue :: InputType -> Array NoPositionTree.NoPositionTree
+inputTypeToDefaultValue = case _ of
+  InputTypeNormal typeList -> Prelude.map typeDefaultValue typeList
+  InputTypeRepeat builtInType ->
+    [ typeDefaultValue builtInType
+    , typeDefaultValue builtInType
+    , typeDefaultValue builtInType
+    ]
 
 data ExprType
   = UInt
