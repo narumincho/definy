@@ -6,5 +6,6 @@
   "purescript.addNpmPath": true,
   "[purescript]": {
     "editor.defaultFormatter": "mvakula.vscode-purty"
-  }
+  },
+  "cSpell.words": ["concat"]
 }

@@ -13,6 +13,7 @@ import Data.String.NonEmpty as NonEmptyString
 import Data.Tuple as Tuple
 import FileSystem.Path as Path
 import Prelude as Prelude
+import Type.Proxy (Proxy(..))
 import TypeScript.Data as Data
 import TypeScript.Identifier as Identifier
 import TypeScript.ModuleName as ModuleName
@@ -456,9 +457,11 @@ typeToString context = case _ of
   Data.TsTypeObject memberList -> typeObjectToString context memberList
   Data.TsTypeFunction functionType -> functionTypeToString context functionType
   Data.TsTypeUnion typeList ->
-    String.joinWith
-      " | "
-      (Prelude.map (typeToString context) typeList)
+    NonEmptyString.toString
+      ( NonEmptyString.joinWith1
+          (NonEmptyString.nes (Proxy :: _ " | "))
+          (Prelude.map (typeToString context) typeList)
+      )
   Data.TsTypeIntersection (Tuple.Tuple left right) ->
     Util.append3
       (typeToString context left)

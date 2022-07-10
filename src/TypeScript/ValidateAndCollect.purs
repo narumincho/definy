@@ -9,6 +9,7 @@ module TypeScript.ValidateAndCollect
   ) where
 
 import Data.Array as Array
+import Data.Array.NonEmpty as NonEmptyArray
 import Data.Map as Map
 import Data.Maybe (Maybe(..))
 import Data.Set as Set
@@ -298,11 +299,13 @@ collectInType context tsType = case tsType of
         )
   Data.TsTypeUnion typeList ->
     concatValidateAndCollectResult
-      ( Prelude.map
-          ( \parameterType ->
-              collectInType context parameterType
+      ( NonEmptyArray.toArray
+          ( Prelude.map
+              ( \parameterType ->
+                  collectInType context parameterType
+              )
+              typeList
           )
-          typeList
       )
   Data.TsTypeIntersection (Tuple.Tuple left right) ->
     appendValidateAndCollectResult

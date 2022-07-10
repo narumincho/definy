@@ -4,6 +4,7 @@ module Definy.BuildCodeGen
   , writeOutTs
   ) where
 
+import Data.Array.NonEmpty as NonEmptyArray
 import Data.Map as Map
 import Data.String.NonEmpty (NonEmptyString)
 import Data.String.NonEmpty as NonEmptyString
@@ -125,9 +126,10 @@ createOutTs origin version =
                 , document: "実行モード (ビルド時にコード生成される)"
                 , type:
                     Data.TsTypeUnion
-                      [ Data.TsTypeStringLiteral "Develop"
-                      , Data.TsTypeStringLiteral "Release"
-                      ]
+                      ( NonEmptyArray.cons'
+                          (Data.TsTypeStringLiteral "Develop")
+                          [ Data.TsTypeStringLiteral "Release" ]
+                      )
                 , expr:
                     Data.StringLiteral
                       ( case version of
