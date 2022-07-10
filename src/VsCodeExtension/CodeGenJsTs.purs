@@ -1,4 +1,4 @@
-module VsCodeExtension.CodeGen
+module VsCodeExtension.CodeGenJsTs
   ( codeAsBinary
   ) where
 
