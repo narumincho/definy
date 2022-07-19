@@ -61,7 +61,7 @@ fromExtension = case _ of
   "woff2" -> Maybe.Just WebOpenFontFormat2
   _ -> Maybe.Nothing
 
-toMediaType :: FileType -> Maybe.Maybe MediaType.MediaType
+toMediaType :: FileType -> Maybe.Maybe MediaType.MimeType
 toMediaType = case _ of
   Png -> Maybe.Just MediaType.Png
   TypeScript -> Maybe.Nothing

@@ -39,7 +39,7 @@ newtype StaticResourceFileResult
     ファイルの中身のハッシュ値になる.
   -}
   , requestPathAndUploadFileName :: Hash.Sha256HashValue
-  , mediaTypeMaybe :: Maybe.Maybe MediaType.MediaType
+  , mediaTypeMaybe :: Maybe.Maybe MediaType.MimeType
   }
 
 -- | 指定したファイルパスの SHA-256 のハッシュ値を取得する

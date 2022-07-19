@@ -3,13 +3,13 @@ module(
   body(
     type(
       mimeType,
-      "MIME タイプ https://developer.mozilla.org/ja/docs/Web/HTTP/Basics_of_HTTP/MIME_types",
+      "MIME タイプ https://developer.mozilla.org/ja/docs/Web/HTTP/Basics_of_HTTP/MIME_types  definy, ナルミンチョの創作記録で扱う http のレスポンスで返す content-type",
       typeBodySum(
         pattern(png, "image/png"),
         pattern(javaScript, "text/javaScript"),
         pattern(html, "text/html"),
         pattern(json, "application/json"),
-        pattern(woff2, "font/woff2"),
+        pattern(webOpenFontFormat2, "font/woff2"),
       ),
     ),
     part(png, "png 画像", nonEmptyText("image/png")),
