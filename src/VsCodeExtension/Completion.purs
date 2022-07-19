@@ -198,13 +198,15 @@ getPartNameListInTree ::
     , description :: String
     }
 getPartNameListInTree (Evaluate.EvaluatedTree { item }) = case item of
-  EvaluatedItem.Module (EvaluatedItem.PartialModule { partList }) ->
+  EvaluatedItem.Module (EvaluatedItem.PartialModule { partOrTypePartList }) ->
     Array.mapMaybe
-      ( \(EvaluatedItem.PartialPart { name, description }) -> case name of
-          Just nameNonEmpty -> Just { name: nameNonEmpty, description }
-          Nothing -> Nothing
+      ( case _ of
+          (EvaluatedItem.PartialPartOrTypePartPart (EvaluatedItem.PartialPart { name, description })) -> case name of
+            Just nameNonEmpty -> Just { name: nameNonEmpty, description }
+            Nothing -> Nothing
+          EvaluatedItem.PartialPartOrTypePartTypePart _ -> Nothing
       )
-      partList
+      partOrTypePartList
   _ -> []
 
 triggerCharacters :: Array String

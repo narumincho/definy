@@ -6,8 +6,8 @@ import Prim as M1
 import Type.Proxy as M2
 
 -- | 新たな型!
-sampleType :: M1.String
-sampleType = "unsupported ExprTypeBodySum"
+data sampleType =
+
 
 -- | 浮動小数点数のサンプル
 floatSample :: M1.String

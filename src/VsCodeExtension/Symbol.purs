@@ -11,15 +11,23 @@ import VsCodeExtension.Range as Range
 getSymbolAndRangeList ::
   Evaluate.EvaluatedTree -> Array { name :: NonEmptyString, range :: Range.Range }
 getSymbolAndRangeList = case _ of
-  (Evaluate.EvaluatedTree { item: EvaluatedItem.Module (EvaluatedItem.PartialModule { partList }), nameRange }) ->
+  (Evaluate.EvaluatedTree { item: EvaluatedItem.Module (EvaluatedItem.PartialModule { partOrTypePartList }), nameRange }) ->
     Array.mapMaybe
-      ( \(EvaluatedItem.PartialPart { name }) -> case name of
-          Just identifier ->
-            Just
-              { name: Identifier.identifierToNonEmptyString identifier
-              , range: nameRange
-              }
-          Nothing -> Nothing
+      ( case _ of
+          (EvaluatedItem.PartialPartOrTypePartPart (EvaluatedItem.PartialPart { name })) -> case name of
+            Just identifier ->
+              Just
+                { name: Identifier.identifierToNonEmptyString identifier
+                , range: nameRange
+                }
+            Nothing -> Nothing
+          (EvaluatedItem.PartialPartOrTypePartTypePart (EvaluatedItem.PartialType { name })) -> case name of
+            Just identifier ->
+              Just
+                { name: Identifier.identifierToNonEmptyString identifier
+                , range: nameRange
+                }
+            Nothing -> Nothing
       )
-      partList
+      partOrTypePartList
   _ -> []

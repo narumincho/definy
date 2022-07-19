@@ -45,9 +45,9 @@ fileNameToModuleName fileName =
 
 definyEvaluatedTreeToPureScriptCode :: Evaluate.EvaluatedTree -> Data.ModuleName -> Data.Module
 definyEvaluatedTreeToPureScriptCode (Evaluate.EvaluatedTree { item }) moduleName = case item of
-  EvaluatedItem.Module (EvaluatedItem.PartialModule { partList }) ->
+  EvaluatedItem.Module (partialModule@(EvaluatedItem.PartialModule { partOrTypePartList })) ->
     Data.Module
-      { definitionList: Prelude.map (partialPartToDefinition moduleName) partList
+      { definitionList: Prelude.map (partialPartToDefinition partialModule moduleName) partOrTypePartList
       , name: moduleName
       }
   _ ->
@@ -56,22 +56,35 @@ definyEvaluatedTreeToPureScriptCode (Evaluate.EvaluatedTree { item }) moduleName
       , name: moduleName
       }
 
-partialPartToDefinition :: Data.ModuleName -> EvaluatedItem.PartialPart -> Data.Definition
-partialPartToDefinition moduleName (EvaluatedItem.PartialPart rec) =
-  Data.Definition
-    { document: rec.description
-    , exprData: partialExprMaybeToExpr moduleName rec.expr
-    , isExport: true
-    , name:
-        case rec.name of
-          Just name -> Identifier.identifierToNonEmptyString name
-          Nothing -> NonEmptyString.nes (Proxy :: Proxy "invalidName")
-    , typeData:
-        ( case rec.expr of
-            Just expr -> partialExprToType expr
-            Nothing -> Wellknown.pTypeToTypeData Wellknown.primString
-        )
-    }
+partialPartToDefinition ::
+  EvaluatedItem.PartialModule ->
+  Data.ModuleName -> EvaluatedItem.PartialPartOrTypePart -> Data.Definition
+partialPartToDefinition partialModule moduleName = case _ of
+  EvaluatedItem.PartialPartOrTypePartPart (EvaluatedItem.PartialPart rec) ->
+    Data.Definition
+      { document: rec.description
+      , exprData: partialExprMaybeToExpr moduleName rec.expr
+      , isExport: true
+      , name:
+          case rec.name of
+            Just name -> Identifier.identifierToNonEmptyString name
+            Nothing -> NonEmptyString.nes (Proxy :: Proxy "invalidName")
+      , typeData:
+          ( case rec.expr of
+              Just expr -> partialExprToType expr
+              Nothing -> Wellknown.pTypeToTypeData Wellknown.primString
+          )
+      }
+  EvaluatedItem.PartialPartOrTypePartTypePart (EvaluatedItem.PartialType rec) ->
+    Data.DataDefinition
+      { document: rec.description
+      , name:
+          case rec.name of
+            Just name -> Identifier.identifierToNonEmptyString name
+            Nothing -> NonEmptyString.nes (Proxy :: Proxy "invalidName")
+      , patternList:
+          (exprToPatternList partialModule rec.expr)
+      }
 
 partialExprMaybeToExpr :: Data.ModuleName -> Maybe EvaluatedItem.PartialExpr -> Data.ExprData
 partialExprMaybeToExpr moduleName = case _ of
@@ -109,3 +122,29 @@ partialExprToType = case _ of
   EvaluatedItem.ExprNonEmptyTextLiteral Nothing -> Wellknown.pTypeToTypeData Wellknown.primString
   EvaluatedItem.ExprTypeBodySum _ -> Wellknown.pTypeToTypeData Wellknown.primString
   EvaluatedItem.ExprPattern _ -> Wellknown.pTypeToTypeData Wellknown.primString
+
+exprToPatternList ::
+  EvaluatedItem.PartialModule ->
+  Maybe EvaluatedItem.PartialExpr ->
+  Array Data.Pattern
+exprToPatternList partialModule = case _ of
+  Just expr ->
+    let
+      (Evaluate.EvaluateExprResult { value }) = Evaluate.evaluateExpr expr partialModule
+    in
+      case value of
+        Evaluate.ValueList patternList ->
+          Array.mapMaybe
+            ( case _ of
+                Evaluate.ValuePattern (Evaluate.Pattern pattern) ->
+                  Just
+                    ( Data.Pattern
+                        { name: (Identifier.identifierToNonEmptyString pattern.name)
+                        , parameter: Nothing
+                        }
+                    )
+                _ -> Nothing
+            )
+            patternList
+        _ -> []
+  Nothing -> []

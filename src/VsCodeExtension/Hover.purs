@@ -102,7 +102,7 @@ evaluatedItemToHoverTree ::
   } ->
   HoverTree
 evaluatedItemToHoverTree { item, partialModule } = case item of
-  EvaluatedItem.Module (EvaluatedItem.PartialModule { description, partList }) ->
+  EvaluatedItem.Module (EvaluatedItem.PartialModule { description, partOrTypePartList }) ->
     HoverTree
       { type:
           NoPositionTree.NoPositionTree
@@ -114,7 +114,7 @@ evaluatedItemToHoverTree { item, partialModule } = case item of
             { name: "Module"
             , children:
                 [ NoPositionTree.noPositionTreeEmptyChildren description
-                , moduleBodyToNoPositionTree partList
+                , moduleBodyToNoPositionTree partOrTypePartList
                 ]
             }
       , valueDummy: false
@@ -205,6 +205,7 @@ evaluatedItemToHoverTree { item, partialModule } = case item of
                       Evaluate.ValueUInt _ -> NoPositionTree.noPositionTreeEmptyChildren "UInt"
                       Evaluate.ValueFloat64 _ -> NoPositionTree.noPositionTreeEmptyChildren "Float64"
                       Evaluate.ValueTypeBody _ -> NoPositionTree.noPositionTreeEmptyChildren "TypeBody"
+                      Evaluate.ValueList _ -> NoPositionTree.noPositionTreeEmptyChildren "List"
                       Evaluate.ValuePattern _ -> NoPositionTree.noPositionTreeEmptyChildren "Pattern"
                   ]
               }
@@ -322,11 +323,11 @@ evaluatedItemToHoverTree { item, partialModule } = case item of
       , valueDetail: Markdown.Markdown []
       }
 
-moduleBodyToNoPositionTree :: Array EvaluatedItem.PartialPart -> NoPositionTree.NoPositionTree
+moduleBodyToNoPositionTree :: Array EvaluatedItem.PartialPartOrTypePart -> NoPositionTree.NoPositionTree
 moduleBodyToNoPositionTree moduleBody =
   NoPositionTree.NoPositionTree
     { name: "ModuleBody"
-    , children: Prelude.map partialPartToNoPositionTree moduleBody
+    , children: Prelude.map partialPartOrTypePartToNoPositionTree moduleBody
     }
 
 partialPartToNoPositionTree :: EvaluatedItem.PartialPart -> NoPositionTree.NoPositionTree
@@ -347,6 +348,43 @@ partialPartToNoPositionTree (EvaluatedItem.PartialPart { name, description, expr
             (Prelude.map partialExprToNoPositionTree expr)
         ]
     }
+
+partialPartOrTypePartToNoPositionTree :: EvaluatedItem.PartialPartOrTypePart -> NoPositionTree.NoPositionTree
+partialPartOrTypePartToNoPositionTree = case _ of
+  EvaluatedItem.PartialPartOrTypePartPart (EvaluatedItem.PartialPart { name, description, expr }) ->
+    NoPositionTree.NoPositionTree
+      { name: "Part"
+      , children:
+          [ maybeToNoPositionTree
+              ( Prelude.map
+                  ( \nonEmpty ->
+                      NoPositionTree.noPositionTreeEmptyChildren
+                        (Identifier.identifierToString nonEmpty)
+                  )
+                  name
+              )
+          , NoPositionTree.noPositionTreeEmptyChildren description
+          , maybeToNoPositionTree
+              (Prelude.map partialExprToNoPositionTree expr)
+          ]
+      }
+  EvaluatedItem.PartialPartOrTypePartTypePart (EvaluatedItem.PartialType { name, description, expr }) ->
+    NoPositionTree.NoPositionTree
+      { name: "Type"
+      , children:
+          [ maybeToNoPositionTree
+              ( Prelude.map
+                  ( \nonEmpty ->
+                      NoPositionTree.noPositionTreeEmptyChildren
+                        (Identifier.identifierToString nonEmpty)
+                  )
+                  name
+              )
+          , NoPositionTree.noPositionTreeEmptyChildren description
+          , maybeToNoPositionTree
+              (Prelude.map partialExprToNoPositionTree expr)
+          ]
+      }
 
 partialTypeToNoPositionTree :: EvaluatedItem.PartialType -> NoPositionTree.NoPositionTree
 partialTypeToNoPositionTree (EvaluatedItem.PartialType { name, description, expr }) =
@@ -506,6 +544,14 @@ valueToValueTree = case _ of
           Prelude.map
             (\pattern -> valueToValueTree (Evaluate.ValuePattern pattern))
             body
+      }
+  Evaluate.ValueList list ->
+    NoPositionTree.NoPositionTree
+      { name: "list"
+      , children:
+          Prelude.map
+            (\v -> valueToValueTree v)
+            list
       }
   Evaluate.ValuePattern (Evaluate.Pattern { name, description }) ->
     NoPositionTree.NoPositionTree

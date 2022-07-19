@@ -74,6 +74,7 @@ data Value
   | ValueFloat64 Number
   | ValueTypeBody (Array Pattern)
   | ValuePattern Pattern
+  | ValueList (Array Value)
 
 newtype Pattern
   = Pattern
@@ -113,10 +114,18 @@ evaluateExpr expr partialModule = case expr of
     Maybe.fromMaybe
       uintDummy
       (map (\uintValue -> EvaluateExprResult { value: ValueUInt uintValue, dummy: false }) uintMaybe)
-  EvaluatedItem.ExprTextLiteral textMaybe -> EvaluateExprResult { value: ValueText textMaybe, dummy: false }
+  EvaluatedItem.ExprTextLiteral textMaybe ->
+    EvaluateExprResult
+      { value: ValueText textMaybe
+      , dummy: false
+      }
   EvaluatedItem.ExprNonEmptyTextLiteral textMaybe ->
     Maybe.fromMaybe
-      (EvaluateExprResult { value: ValueNonEmptyText (NonEmptyString.nes (Proxy :: Proxy "sample text")), dummy: true })
+      ( EvaluateExprResult
+          { value: ValueNonEmptyText (NonEmptyString.nes (Proxy :: Proxy "sample text"))
+          , dummy: true
+          }
+      )
       ( map
           (\text -> EvaluateExprResult { value: ValueNonEmptyText text, dummy: false })
           textMaybe
@@ -210,7 +219,7 @@ codeTreeToEvaluatedTreeIContextNormal codeTree@(Parser.CodeTree { name, nameRang
                     case Array.index childrenEvaluatedItem 0 of
                       Just (EvaluatedItem.Description description) -> description
                       _ -> ""
-                , partList:
+                , partOrTypePartList:
                     case Array.index childrenEvaluatedItem 1 of
                       Just (EvaluatedItem.ModuleBody partList) -> partList
                       _ -> []
@@ -225,7 +234,8 @@ codeTreeToEvaluatedTreeIContextNormal codeTree@(Parser.CodeTree { name, nameRang
           EvaluatedItem.ModuleBody
             ( Array.mapMaybe
                 ( \child -> case child of
-                    (EvaluatedItem.Part part) -> Just part
+                    (EvaluatedItem.Part part) -> Just (EvaluatedItem.PartialPartOrTypePartPart part)
+                    (EvaluatedItem.Type t) -> Just (EvaluatedItem.PartialPartOrTypePartTypePart t)
                     _ -> Nothing
                 )
                 childrenEvaluatedItem

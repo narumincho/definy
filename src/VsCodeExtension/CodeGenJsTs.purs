@@ -2,6 +2,7 @@ module VsCodeExtension.CodeGenJsTs
   ( codeAsBinary
   ) where
 
+import Prelude as Prelude
 import Binary as Binary
 import Data.Array as Array
 import Data.Array.NonEmpty as NonEmptyArray
@@ -57,30 +58,21 @@ definyPartialModuleToTypeScriptModule :: EvaluatedItem.PartialModule -> TsData.M
 definyPartialModuleToTypeScriptModule (EvaluatedItem.PartialModule partialModule) =
   TsData.Module
     { exportDefinitionList:
-        Array.concatMap
-          definyPartialPartToExportVariable
-          partialModule.partList
+        Prelude.map
+          (definyPartialPartToExportVariable (EvaluatedItem.PartialModule partialModule))
+          partialModule.partOrTypePartList
     , moduleDocument: partialModule.description
     }
 
-definyPartialPartToExportVariable :: EvaluatedItem.PartialPart -> Array TsData.ExportDefinition
-definyPartialPartToExportVariable (EvaluatedItem.PartialPart partialPart) =
-  Array.catMaybes
-    [ Just
-        ( definyPartialPartToExportMainVariable
-            (EvaluatedItem.PartialPart partialPart)
-        )
-    , case partialPart.expr of
-        Just (EvaluatedItem.ExprTypeBodySum patternList) ->
-          Just
-            ( TsData.ExportDefinitionTypeAlias
-                ( definyPartialPartToType
-                    (EvaluatedItem.PartialPart partialPart)
-                    patternList
-                )
-            )
-        _ -> Nothing
-    ]
+definyPartialPartToExportVariable :: EvaluatedItem.PartialModule -> EvaluatedItem.PartialPartOrTypePart -> TsData.ExportDefinition
+definyPartialPartToExportVariable partialModule = case _ of
+  EvaluatedItem.PartialPartOrTypePartTypePart (EvaluatedItem.PartialType typePart) ->
+    TsData.ExportDefinitionTypeAlias
+      ( definyPartialPartToType
+          partialModule
+          (EvaluatedItem.PartialType typePart)
+      )
+  EvaluatedItem.PartialPartOrTypePartPart partialPart -> definyPartialPartToExportMainVariable partialPart
 
 definyPartialPartToExportMainVariable :: EvaluatedItem.PartialPart -> TsData.ExportDefinition
 definyPartialPartToExportMainVariable (EvaluatedItem.PartialPart partialPart) =
@@ -105,29 +97,41 @@ definyPartialPartToExportMainVariable (EvaluatedItem.PartialPart partialPart) =
         }
     )
 
-definyPartialPartToType :: EvaluatedItem.PartialPart -> Array EvaluatedItem.PartialExpr -> TsData.TypeAlias
-definyPartialPartToType (EvaluatedItem.PartialPart partialPart) exprList =
+definyPartialPartToType ::
+  EvaluatedItem.PartialModule ->
+  EvaluatedItem.PartialType ->
+  TsData.TypeAlias
+definyPartialPartToType partialModule (EvaluatedItem.PartialType partialPart) =
   TsData.TypeAlias
     { name: identifierMaybeToTsIdentifier partialPart.name
     , typeParameterList: []
     , document: partialPart.description
     , type:
-        case NonEmptyArray.fromArray
-            ( Array.mapMaybe
-                ( case _ of
-                    EvaluatedItem.ExprPattern pattern -> case pattern.name of
-                      Just name ->
-                        Just
-                          ( TsData.TsTypeStringLiteral
-                              (DefinyIdentifier.identifierToString name)
-                          )
-                      Nothing -> Nothing
-                    _ -> Nothing
-                )
-                exprList
-            ) of
-          Just nonEmpty -> TsData.TsTypeUnion nonEmpty
-          Nothing -> TsData.TsTypeStringLiteral "<invalid pattern>"
+        case partialPart.expr of
+          Just expr ->
+            let
+              (Evaluate.EvaluateExprResult { value }) =
+                Evaluate.evaluateExpr
+                  expr
+                  partialModule
+            in
+              case value of
+                Evaluate.ValueList list -> case NonEmptyArray.fromArray
+                    ( Array.mapMaybe
+                        ( case _ of
+                            Evaluate.ValuePattern (Evaluate.Pattern pattern) ->
+                              Just
+                                ( TsData.TsTypeStringLiteral
+                                    (DefinyIdentifier.identifierToString pattern.name)
+                                )
+                            _ -> Nothing
+                        )
+                        list
+                    ) of
+                  Just nonEmpty -> TsData.TsTypeUnion nonEmpty
+                  Nothing -> TsData.TsTypeStringLiteral "<invalid pattern>"
+                _ -> TsData.TsTypeStringLiteral "<invalid pattern>"
+          Nothing -> TsData.TsTypeStringLiteral "<invalid pattern miss expr>"
     , export: true
     }
 

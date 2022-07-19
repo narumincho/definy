@@ -3,6 +3,7 @@ module VsCodeExtension.EvaluatedItem
   , PartialExpr(..)
   , PartialModule(..)
   , PartialPart(..)
+  , PartialPartOrTypePart(..)
   , PartialType(..)
   , findPart
   , toBuiltInType
@@ -19,7 +20,7 @@ import VsCodeExtension.BuiltIn as BuiltIn
 data EvaluatedItem
   = Module PartialModule
   | Description String
-  | ModuleBody (Array PartialPart)
+  | ModuleBody (Array PartialPartOrTypePart)
   | Part PartialPart
   | Type PartialType
   | Expr PartialExpr
@@ -32,8 +33,12 @@ data EvaluatedItem
 newtype PartialModule
   = PartialModule
   { description :: String
-  , partList :: Array PartialPart
+  , partOrTypePartList :: Array PartialPartOrTypePart
   }
+
+data PartialPartOrTypePart
+  = PartialPartOrTypePartPart PartialPart
+  | PartialPartOrTypePartTypePart PartialType
 
 newtype PartialPart
   = PartialPart
@@ -61,15 +66,17 @@ data PartialExpr
   | ExprPattern { name :: Maybe Identifier.Identifier, description :: String }
 
 findPart :: PartialModule -> Identifier.Identifier -> Maybe PartialPart
-findPart (PartialModule { partList }) name =
+findPart (PartialModule { partOrTypePartList }) name =
   Array.findMap
-    ( \partialPart@(PartialPart { name: partName }) ->
-        if Prelude.eq partName (Just name) then
-          Just partialPart
-        else
-          Nothing
+    ( case _ of
+        PartialPartOrTypePartPart (partialPart@(PartialPart { name: partName })) ->
+          if Prelude.eq partName (Just name) then
+            Just partialPart
+          else
+            Nothing
+        _ -> Nothing
     )
-    partList
+    partOrTypePartList
 
 toBuiltInType :: EvaluatedItem -> BuiltIn.BuiltInType
 toBuiltInType = case _ of

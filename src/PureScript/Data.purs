@@ -1,13 +1,15 @@
 module PureScript.Data
-  ( Module(..)
-  , Definition(..)
-  , ModuleName(..)
-  , TypeData(..)
+  ( Definition(..)
   , ExprData(..)
+  , Module(..)
+  , ModuleName(..)
+  , Pattern(..)
+  , TypeData(..)
   , moduleNameAsStringNonEmptyArray
   ) where
 
 import Data.Array.NonEmpty as NonEmptyArray
+import Data.Maybe (Maybe)
 import Data.String.NonEmpty (NonEmptyString)
 import Prelude as Prelude
 
@@ -17,14 +19,23 @@ newtype Module
   , definitionList :: Array Definition
   }
 
-newtype Definition
+data Definition
   = Definition
-  { name :: NonEmptyString
-  , document :: String
-  , typeData :: TypeData
-  , exprData :: ExprData
-  , isExport :: Boolean
-  }
+    { name :: NonEmptyString
+    , document :: String
+    , typeData :: TypeData
+    , exprData :: ExprData
+    , isExport :: Boolean
+    }
+  | DataDefinition
+    { name :: NonEmptyString
+    , document :: String
+    , patternList :: Array Pattern
+    }
+
+newtype Pattern
+  = Pattern
+  { name :: NonEmptyString, parameter :: Maybe TypeData }
 
 newtype ModuleName
   = ModuleName (NonEmptyArray.NonEmptyArray NonEmptyString)

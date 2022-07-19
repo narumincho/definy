@@ -7,12 +7,6 @@
  */
 
 
-/**
- * 新たな型!
- */
-export const sampleType = "<unsupported ExprTypeBodySum>";
-
-
 
 
 /**
