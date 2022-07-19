@@ -80,10 +80,10 @@ partialPartToDefinition partialModule moduleName = case _ of
       { document: rec.description
       , name:
           case rec.name of
-            Just name -> Identifier.identifierToNonEmptyString name
-            Nothing -> NonEmptyString.nes (Proxy :: Proxy "invalidName")
+            Just name -> Util.firstUppercaseNonEmpty (Identifier.identifierToNonEmptyString name)
+            Nothing -> NonEmptyString.nes (Proxy :: Proxy "InvalidName")
       , patternList:
-          (exprToPatternList partialModule rec.expr)
+          exprToPatternList partialModule rec.expr
       }
 
 partialExprMaybeToExpr :: Data.ModuleName -> Maybe EvaluatedItem.PartialExpr -> Data.ExprData
@@ -139,7 +139,9 @@ exprToPatternList partialModule = case _ of
                 Evaluate.ValuePattern (Evaluate.Pattern pattern) ->
                   Just
                     ( Data.Pattern
-                        { name: (Identifier.identifierToNonEmptyString pattern.name)
+                        { name:
+                            Util.firstUppercaseNonEmpty
+                              (Identifier.identifierToNonEmptyString pattern.name)
                         , parameter: Nothing
                         }
                     )

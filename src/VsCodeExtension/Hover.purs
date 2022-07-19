@@ -204,7 +204,6 @@ evaluatedItemToHoverTree { item, partialModule } = case item of
                       Evaluate.ValueNonEmptyText _ -> NoPositionTree.noPositionTreeEmptyChildren "ValueNonEmptyText"
                       Evaluate.ValueUInt _ -> NoPositionTree.noPositionTreeEmptyChildren "UInt"
                       Evaluate.ValueFloat64 _ -> NoPositionTree.noPositionTreeEmptyChildren "Float64"
-                      Evaluate.ValueTypeBody _ -> NoPositionTree.noPositionTreeEmptyChildren "TypeBody"
                       Evaluate.ValueList _ -> NoPositionTree.noPositionTreeEmptyChildren "List"
                       Evaluate.ValuePattern _ -> NoPositionTree.noPositionTreeEmptyChildren "Pattern"
                   ]
@@ -536,14 +535,6 @@ valueToValueTree = case _ of
     NoPositionTree.NoPositionTree
       { name: NonEmptyString.toString (BuiltIn.builtInGetName BuiltIn.float64BuiltIn)
       , children: [ NoPositionTree.noPositionTreeEmptyChildren (Util.numberToString f64Value) ]
-      }
-  Evaluate.ValueTypeBody body ->
-    NoPositionTree.NoPositionTree
-      { name: NonEmptyString.toString (BuiltIn.builtInGetName BuiltIn.typeBodySumBuiltIn)
-      , children:
-          Prelude.map
-            (\pattern -> valueToValueTree (Evaluate.ValuePattern pattern))
-            body
       }
   Evaluate.ValueList list ->
     NoPositionTree.NoPositionTree

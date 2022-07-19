@@ -16,6 +16,7 @@ import Effect as Effect
 import Effect.Uncurried as EffectUncurried
 import Markdown as Markdown
 import Type.Proxy (Proxy(..))
+import Util as Util
 import VsCodeExtension.CodeGenJsTs as CodeGenJsTs
 import VsCodeExtension.CodeGenPureScript as CodeGenPureScript
 import VsCodeExtension.Command as Command
@@ -265,7 +266,10 @@ outputCode workspaceFolderUri codeDataList =
                       { uri: workspaceFolderUri
                       , relativePath:
                           append
-                            (append "definy-output/purescript/" fileNameWithoutExtension)
+                            ( append
+                                "definy-output/purescript/"
+                                (Util.firstUppercase fileNameWithoutExtension)
+                            )
                             ".purs"
                       }
                 , content:

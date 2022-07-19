@@ -10,7 +10,7 @@
 /**
  * 新たな型!
  */
-export type sampleType = "<invalid pattern>";
+export type sampleType = "tagA" | "tagB";
 
 
 /**

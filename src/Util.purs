@@ -3,7 +3,9 @@ module Util
   , class RowTraversable
   , encloseParenthesis
   , firstUppercase
+  , firstUppercaseNonEmpty
   , groupBySize
+  , isFirstUppercase
   , joinWithComma
   , joinWithCommaAndEncloseParenthesis
   , listUpdateAtOverAutoCreate
@@ -30,17 +32,19 @@ import Data.Maybe (Maybe(..))
 import Data.Maybe as Maybe
 import Data.Ord as Ord
 import Data.String as String
+import Data.String.NonEmpty (NonEmptyString)
+import Data.String.NonEmpty as NonEmptyString
 import Data.Symbol as Symbol
 import Data.Tuple as Tuple
 import Data.UInt as UInt
 import Effect.Aff as Aff
 import Foreign.Object as Object
+import Math as Math
 import Prim.Row as Row
 import Prim.RowList (RowList)
 import Prim.RowList as PrimRowList
 import Record as Record
 import Type.Proxy as Proxy
-import Math as Math
 
 listUpdateAtOverAutoCreate :: forall e. Array e -> UInt.UInt -> (Maybe.Maybe e -> e) -> e -> Array e
 listUpdateAtOverAutoCreate list index func fillElement = case Array.index list (UInt.toInt index) of
@@ -169,6 +173,18 @@ firstUppercase :: String -> String
 firstUppercase text = case String.uncons text of
   Maybe.Just { head, tail } -> append (String.toUpper (String.singleton head)) tail
   Maybe.Nothing -> ""
+
+isFirstUppercase :: String -> Boolean
+isFirstUppercase text = eq text (firstUppercase text)
+
+firstUppercaseNonEmpty :: NonEmptyString -> NonEmptyString
+firstUppercaseNonEmpty text = case NonEmptyString.uncons text of
+  { head, tail } ->
+    NonEmptyString.appendString (NonEmptyString.toUpper (NonEmptyString.singleton head))
+      ( case tail of
+          Maybe.Just t -> NonEmptyString.toString t
+          Nothing -> ""
+      )
 
 joinWithCommaAndEncloseParenthesis :: Array String -> String
 joinWithCommaAndEncloseParenthesis value = encloseParenthesis (joinWithComma value)

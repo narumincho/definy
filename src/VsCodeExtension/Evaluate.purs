@@ -72,7 +72,6 @@ data Value
   | ValueText String
   | ValueNonEmptyText NonEmptyString
   | ValueFloat64 Number
-  | ValueTypeBody (Array Pattern)
   | ValuePattern Pattern
   | ValueList (Array Value)
 
@@ -140,13 +139,13 @@ evaluateExpr expr partialModule = case expr of
   EvaluatedItem.ExprTypeBodySum patternList ->
     EvaluateExprResult
       { value:
-          ValueTypeBody
+          ValueList
             ( Array.mapMaybe
                 ( case _ of
                     ExprPattern { name: Just name, description } ->
                       Just
-                        ( Pattern
-                            { name, description }
+                        ( ValuePattern
+                            (Pattern { name, description })
                         )
                     _ -> Nothing
                 )

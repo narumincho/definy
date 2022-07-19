@@ -80,7 +80,16 @@ moduleNameCode (Data.Module { name, definitionList }) =
     , NonEmptyString.toString (moduleNameToString name)
     , " "
     , case NonEmptyArray.fromArray (collectExportDefinition definitionList) of
-        Just nonEmpty -> Util.joinWithCommaAndEncloseParenthesis (NonEmptyArray.toArray nonEmpty)
+        Just nonEmpty ->
+          Util.joinWithCommaAndEncloseParenthesis
+            ( NonEmptyArray.toArray
+                ( Prelude.map
+                    ( \item ->
+                        if Util.isFirstUppercase item then Prelude.append item "(..)" else item
+                    )
+                    nonEmpty
+                )
+            )
         Nothing -> ""
     , " where"
     ]
@@ -166,8 +175,8 @@ definitionToString importedModuleQualifiedNameDict = case _ of
       [ documentToString document
       , if Prelude.eq (Array.length patternList) 1 then "newtype " else "data "
       , NonEmptyString.toString name
-      , " =\n"
-      , String.joinWith "|"
+      , " =\n  "
+      , String.joinWith " | "
           ( Prelude.map
               ( \(Data.Pattern pattern) ->
                   String.joinWith " "

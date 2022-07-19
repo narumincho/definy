@@ -1,6 +1,17 @@
 module(
   mimetype,
   body(
+    type(
+      mimeType,
+      "MIME タイプ https://developer.mozilla.org/ja/docs/Web/HTTP/Basics_of_HTTP/MIME_types",
+      typeBodySum(
+        pattern(png, "image/png"),
+        pattern(javaScript, "text/javaScript"),
+        pattern(html, "text/html"),
+        pattern(json, "application/json"),
+        pattern(woff2, "font/woff2"),
+      ),
+    ),
     part(png, "png 画像", nonEmptyText("image/png")),
     part(html, html, nonEmptyText("text/html")),
     part(javaScript, javaScript, nonEmptyText("text/javaScript")),

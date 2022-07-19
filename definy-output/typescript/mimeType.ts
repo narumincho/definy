@@ -8,6 +8,12 @@
 
 
 /**
+ * MIME タイプ https://developer.mozilla.org/ja/docs/Web/HTTP/Basics_of_HTTP/MIME_types
+ */
+export type mimeType = "png" | "javaScript" | "html" | "json" | "woff2";
+
+
+/**
  * png 画像
  */
 export const png: string = "image/png";
