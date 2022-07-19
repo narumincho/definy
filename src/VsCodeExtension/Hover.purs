@@ -20,6 +20,7 @@ import VsCodeExtension.Command as Command
 import VsCodeExtension.Evaluate as Evaluate
 import VsCodeExtension.EvaluatedItem as EvaluatedItem
 import VsCodeExtension.EvaluatedTreeIndex as EvaluatedTreeIndex
+import VsCodeExtension.NoPositionTree as NoPositionTree
 import VsCodeExtension.Range as Range
 import VsCodeExtension.ToString as ToString
 
@@ -57,8 +58,8 @@ getHoverData position tree@(Evaluate.EvaluatedTree { item, range }) = case item 
 
 newtype HoverTree
   = HoverTree
-  { type :: ToString.NoPositionTree
-  , value :: ToString.NoPositionTree
+  { type :: NoPositionTree.NoPositionTree
+  , value :: NoPositionTree.NoPositionTree
   , valueDummy :: Boolean
   , evaluatedValue :: Maybe Evaluate.Value
   , description :: Markdown.Markdown
@@ -87,7 +88,7 @@ hoverTreeToMarkdown (HoverTree rec) =
         )
     , Markdown.Markdown
         [ Markdown.CodeBlock
-            (ToString.noPositionTreeRootToString rec.value)
+            (ToString.noPositionTreeToString rec.value)
         ]
     , rec.valueDetail
     , case rec.evaluatedValue of
@@ -104,15 +105,15 @@ evaluatedItemToHoverTree { item, partialModule } = case item of
   EvaluatedItem.Module (EvaluatedItem.PartialModule { description, partList }) ->
     HoverTree
       { type:
-          ToString.NoPositionTree
+          NoPositionTree.NoPositionTree
             { name: "Module"
             , children: []
             }
       , value:
-          ToString.NoPositionTree
+          NoPositionTree.NoPositionTree
             { name: "Module"
             , children:
-                [ ToString.noPositionTreeEmptyChildren description
+                [ NoPositionTree.noPositionTreeEmptyChildren description
                 , moduleBodyToNoPositionTree partList
                 ]
             }
@@ -128,14 +129,11 @@ evaluatedItemToHoverTree { item, partialModule } = case item of
   EvaluatedItem.Description description ->
     HoverTree
       { type:
-          ToString.NoPositionTree
-            { name: "Description"
-            , children: []
-            }
+          NoPositionTree.noPositionTreeEmptyChildren "Description"
       , value:
-          ToString.NoPositionTree
+          NoPositionTree.NoPositionTree
             { name: "Description"
-            , children: [ ToString.noPositionTreeEmptyChildren description ]
+            , children: [ NoPositionTree.noPositionTreeEmptyChildren description ]
             }
       , valueDummy: false
       , evaluatedValue: Nothing
@@ -149,10 +147,7 @@ evaluatedItemToHoverTree { item, partialModule } = case item of
   EvaluatedItem.ModuleBody partList ->
     HoverTree
       { type:
-          ToString.NoPositionTree
-            { name: "ModuleBody"
-            , children: []
-            }
+          NoPositionTree.noPositionTreeEmptyChildren "ModuleBody"
       , value: moduleBodyToNoPositionTree partList
       , valueDummy: false
       , evaluatedValue: Nothing
@@ -166,10 +161,7 @@ evaluatedItemToHoverTree { item, partialModule } = case item of
   EvaluatedItem.Part part ->
     HoverTree
       { type:
-          ToString.NoPositionTree
-            { name: "Part"
-            , children: []
-            }
+          NoPositionTree.noPositionTreeEmptyChildren "Part"
       , value: partialPartToNoPositionTree part
       , valueDummy: false
       , evaluatedValue: Nothing
@@ -183,10 +175,7 @@ evaluatedItemToHoverTree { item, partialModule } = case item of
   EvaluatedItem.Type typePart ->
     HoverTree
       { type:
-          ToString.NoPositionTree
-            { name: "Type"
-            , children: []
-            }
+          NoPositionTree.noPositionTreeEmptyChildren "Type"
       , value: partialTypeToNoPositionTree typePart
       , valueDummy: false
       , evaluatedValue: Nothing
@@ -207,16 +196,16 @@ evaluatedItemToHoverTree { item, partialModule } = case item of
     in
       HoverTree
         { type:
-            ToString.NoPositionTree
+            NoPositionTree.NoPositionTree
               { name: "Expr"
               , children:
                   [ case evaluatedValue of
-                      Evaluate.ValueText _ -> ToString.noPositionTreeEmptyChildren "Text"
-                      Evaluate.ValueNonEmptyText _ -> ToString.noPositionTreeEmptyChildren "ValueNonEmptyText"
-                      Evaluate.ValueUInt _ -> ToString.noPositionTreeEmptyChildren "UInt"
-                      Evaluate.ValueFloat64 _ -> ToString.noPositionTreeEmptyChildren "Float64"
-                      Evaluate.ValueTypeBody _ -> ToString.noPositionTreeEmptyChildren "TypeBody"
-                      Evaluate.ValuePattern _ -> ToString.noPositionTreeEmptyChildren "Pattern"
+                      Evaluate.ValueText _ -> NoPositionTree.noPositionTreeEmptyChildren "Text"
+                      Evaluate.ValueNonEmptyText _ -> NoPositionTree.noPositionTreeEmptyChildren "ValueNonEmptyText"
+                      Evaluate.ValueUInt _ -> NoPositionTree.noPositionTreeEmptyChildren "UInt"
+                      Evaluate.ValueFloat64 _ -> NoPositionTree.noPositionTreeEmptyChildren "Float64"
+                      Evaluate.ValueTypeBody _ -> NoPositionTree.noPositionTreeEmptyChildren "TypeBody"
+                      Evaluate.ValuePattern _ -> NoPositionTree.noPositionTreeEmptyChildren "Pattern"
                   ]
               }
         , value: valueToValueTree evaluatedValue
@@ -233,13 +222,13 @@ evaluatedItemToHoverTree { item, partialModule } = case item of
   EvaluatedItem.UIntLiteral uintLiteral ->
     HoverTree
       { type:
-          ToString.NoPositionTree
+          NoPositionTree.NoPositionTree
             { name: "UIntLiteral"
             , children: []
             }
       , value:
           maybeToNoPositionTree
-            (Prelude.map (\v -> ToString.noPositionTreeEmptyChildren (UInt.toString v)) uintLiteral)
+            (Prelude.map (\v -> NoPositionTree.noPositionTreeEmptyChildren (UInt.toString v)) uintLiteral)
       , valueDummy: false
       , evaluatedValue: Nothing
       , description:
@@ -252,11 +241,8 @@ evaluatedItemToHoverTree { item, partialModule } = case item of
   EvaluatedItem.TextLiteral text ->
     HoverTree
       { type:
-          ToString.NoPositionTree
-            { name: "TextLiteral"
-            , children: []
-            }
-      , value: ToString.noPositionTreeEmptyChildren text
+          NoPositionTree.noPositionTreeEmptyChildren "TextLiteral"
+      , value: NoPositionTree.noPositionTreeEmptyChildren text
       , valueDummy: false
       , evaluatedValue: Just (Evaluate.ValueText text)
       , description:
@@ -269,14 +255,14 @@ evaluatedItemToHoverTree { item, partialModule } = case item of
   EvaluatedItem.NonEmptyTextLiteral text ->
     HoverTree
       { type:
-          ToString.NoPositionTree
+          NoPositionTree.NoPositionTree
             { name: "NonEmptyTextLiteral"
             , children: []
             }
       , value:
           maybeToNoPositionTree
             ( Prelude.map
-                (\t -> ToString.noPositionTreeEmptyChildren (NonEmptyString.toString t))
+                (\t -> NoPositionTree.noPositionTreeEmptyChildren (NonEmptyString.toString t))
                 text
             )
       , valueDummy: false
@@ -291,14 +277,14 @@ evaluatedItemToHoverTree { item, partialModule } = case item of
   EvaluatedItem.Float64Literal numberMaybe ->
     HoverTree
       { type:
-          ToString.NoPositionTree
+          NoPositionTree.NoPositionTree
             { name: "Float64Literal"
             , children: []
             }
       , value:
           maybeToNoPositionTree
             ( Prelude.map
-                (\num -> ToString.noPositionTreeEmptyChildren (Util.numberToString num))
+                (\num -> NoPositionTree.noPositionTreeEmptyChildren (Util.numberToString num))
                 numberMaybe
             )
       , valueDummy: false
@@ -313,7 +299,7 @@ evaluatedItemToHoverTree { item, partialModule } = case item of
   EvaluatedItem.Identifier identifier ->
     HoverTree
       { type:
-          ToString.NoPositionTree
+          NoPositionTree.NoPositionTree
             { name: "Identifier"
             , children: []
             }
@@ -321,7 +307,7 @@ evaluatedItemToHoverTree { item, partialModule } = case item of
           maybeToNoPositionTree
             ( Prelude.map
                 ( \v ->
-                    ToString.noPositionTreeEmptyChildren
+                    NoPositionTree.noPositionTreeEmptyChildren
                       (Identifier.identifierToString v)
                 )
                 identifier
@@ -336,59 +322,57 @@ evaluatedItemToHoverTree { item, partialModule } = case item of
       , valueDetail: Markdown.Markdown []
       }
 
-moduleBodyToNoPositionTree :: Array EvaluatedItem.PartialPart -> ToString.NoPositionTree
+moduleBodyToNoPositionTree :: Array EvaluatedItem.PartialPart -> NoPositionTree.NoPositionTree
 moduleBodyToNoPositionTree moduleBody =
-  ToString.NoPositionTree
+  NoPositionTree.NoPositionTree
     { name: "ModuleBody"
     , children: Prelude.map partialPartToNoPositionTree moduleBody
     }
 
-partialPartToNoPositionTree :: EvaluatedItem.PartialPart -> ToString.NoPositionTree
+partialPartToNoPositionTree :: EvaluatedItem.PartialPart -> NoPositionTree.NoPositionTree
 partialPartToNoPositionTree (EvaluatedItem.PartialPart { name, description, expr }) =
-  ToString.NoPositionTree
+  NoPositionTree.NoPositionTree
     { name: "Part"
     , children:
         [ maybeToNoPositionTree
             ( Prelude.map
                 ( \nonEmpty ->
-                    ToString.NoPositionTree
-                      { name: Identifier.identifierToString nonEmpty
-                      , children: []
-                      }
+                    NoPositionTree.noPositionTreeEmptyChildren
+                      (Identifier.identifierToString nonEmpty)
                 )
                 name
             )
-        , ToString.noPositionTreeEmptyChildren description
+        , NoPositionTree.noPositionTreeEmptyChildren description
         , maybeToNoPositionTree
             (Prelude.map partialExprToNoPositionTree expr)
         ]
     }
 
-partialTypeToNoPositionTree :: EvaluatedItem.PartialType -> ToString.NoPositionTree
+partialTypeToNoPositionTree :: EvaluatedItem.PartialType -> NoPositionTree.NoPositionTree
 partialTypeToNoPositionTree (EvaluatedItem.PartialType { name, description, expr }) =
-  ToString.NoPositionTree
+  NoPositionTree.NoPositionTree
     { name: "Type"
     , children:
         [ maybeToNoPositionTree
             ( Prelude.map
                 ( \nonEmpty ->
-                    ToString.NoPositionTree
+                    NoPositionTree.NoPositionTree
                       { name: Identifier.identifierToString nonEmpty
                       , children: []
                       }
                 )
                 name
             )
-        , ToString.noPositionTreeEmptyChildren description
+        , NoPositionTree.noPositionTreeEmptyChildren description
         , maybeToNoPositionTree
             (Prelude.map partialExprToNoPositionTree expr)
         ]
     }
 
-partialExprToNoPositionTree :: EvaluatedItem.PartialExpr -> ToString.NoPositionTree
+partialExprToNoPositionTree :: EvaluatedItem.PartialExpr -> NoPositionTree.NoPositionTree
 partialExprToNoPositionTree = case _ of
   EvaluatedItem.ExprAdd { a, b } ->
-    ToString.NoPositionTree
+    NoPositionTree.NoPositionTree
       { name: "Add"
       , children:
           [ maybeToNoPositionTree
@@ -398,68 +382,71 @@ partialExprToNoPositionTree = case _ of
           ]
       }
   EvaluatedItem.ExprPartReference { name } ->
-    ToString.NoPositionTree
+    NoPositionTree.NoPositionTree
       { name: Identifier.identifierToString name
       , children: []
       }
   EvaluatedItem.ExprPartReferenceInvalidName { name } ->
-    ToString.NoPositionTree
+    NoPositionTree.NoPositionTree
       { name: name, children: [] }
   EvaluatedItem.ExprUIntLiteral uintMaybe ->
-    ToString.NoPositionTree
+    NoPositionTree.NoPositionTree
       { name: "UIntLiteral"
       , children:
           [ maybeToNoPositionTree
               ( Prelude.map
-                  (\v -> ToString.noPositionTreeEmptyChildren (UInt.toString v))
+                  (\v -> NoPositionTree.noPositionTreeEmptyChildren (UInt.toString v))
                   uintMaybe
               )
           ]
       }
   EvaluatedItem.ExprFloat64Literal numberMaybe ->
-    ToString.NoPositionTree
+    NoPositionTree.NoPositionTree
       { name: "Float64Literal"
       , children:
           [ maybeToNoPositionTree
               ( Prelude.map
-                  (\v -> ToString.noPositionTreeEmptyChildren (Util.numberToString v))
+                  (\v -> NoPositionTree.noPositionTreeEmptyChildren (Util.numberToString v))
                   numberMaybe
               )
           ]
       }
   EvaluatedItem.ExprTextLiteral text ->
-    ToString.NoPositionTree
+    NoPositionTree.NoPositionTree
       { name: "Text"
       , children:
-          [ ToString.noPositionTreeEmptyChildren text ]
+          [ NoPositionTree.noPositionTreeEmptyChildren text ]
       }
   EvaluatedItem.ExprNonEmptyTextLiteral textMaybe ->
-    ToString.NoPositionTree
+    NoPositionTree.NoPositionTree
       { name: "Text"
       , children:
           [ maybeToNoPositionTree
               ( Prelude.map
-                  (\v -> ToString.noPositionTreeEmptyChildren (NonEmptyString.toString v))
+                  ( \v ->
+                      NoPositionTree.noPositionTreeEmptyChildren
+                        (NonEmptyString.toString v)
+                  )
                   textMaybe
               )
           ]
       }
   EvaluatedItem.ExprTypeBodySum sum ->
-    ToString.NoPositionTree
+    NoPositionTree.NoPositionTree
       { name: "TypeBodySum"
       , children:
           Prelude.map partialExprToNoPositionTree sum
       }
   EvaluatedItem.ExprPattern rec ->
-    ToString.NoPositionTree
+    NoPositionTree.NoPositionTree
       { name: "Pattern"
       , children:
           [ maybeToNoPositionTree
               ( Prelude.map
-                  (\v -> ToString.noPositionTreeEmptyChildren (Identifier.identifierToString v))
+                  (\v -> NoPositionTree.noPositionTreeEmptyChildren (Identifier.identifierToString v))
                   rec.name
               )
-          , ToString.noPositionTreeEmptyChildren rec.description
+          , NoPositionTree.noPositionTreeEmptyChildren rec.description
           ]
       }
 
@@ -477,43 +464,43 @@ partialExprToDescription partialModule = case _ of
   EvaluatedItem.ExprTypeBodySum _ -> Just (BuiltIn.buildInGetDescription BuiltIn.typeBodySumBuiltIn)
   EvaluatedItem.ExprPattern _ -> Just (BuiltIn.buildInGetDescription BuiltIn.patternBuiltIn)
 
-maybeToNoPositionTree :: Maybe ToString.NoPositionTree -> ToString.NoPositionTree
+maybeToNoPositionTree :: Maybe NoPositionTree.NoPositionTree -> NoPositionTree.NoPositionTree
 maybeToNoPositionTree = case _ of
   Just value ->
-    ToString.NoPositionTree
+    NoPositionTree.NoPositionTree
       { name: "Just"
       , children: [ value ]
       }
   Nothing ->
-    ToString.NoPositionTree
+    NoPositionTree.NoPositionTree
       { name: "Nothing"
       , children: []
       }
 
-valueToValueTree :: Evaluate.Value -> ToString.NoPositionTree
+valueToValueTree :: Evaluate.Value -> NoPositionTree.NoPositionTree
 valueToValueTree = case _ of
   Evaluate.ValueText text ->
-    ToString.NoPositionTree
+    NoPositionTree.NoPositionTree
       { name: NonEmptyString.toString (BuiltIn.builtInGetName BuiltIn.textBuiltIn)
-      , children: [ ToString.noPositionTreeEmptyChildren text ]
+      , children: [ NoPositionTree.noPositionTreeEmptyChildren text ]
       }
   Evaluate.ValueNonEmptyText text ->
-    ToString.NoPositionTree
+    NoPositionTree.NoPositionTree
       { name: NonEmptyString.toString (BuiltIn.builtInGetName BuiltIn.nonEmptyTextBuiltIn)
-      , children: [ ToString.noPositionTreeEmptyChildren (NonEmptyString.toString text) ]
+      , children: [ NoPositionTree.noPositionTreeEmptyChildren (NonEmptyString.toString text) ]
       }
   Evaluate.ValueUInt uintValue ->
-    ToString.NoPositionTree
+    NoPositionTree.NoPositionTree
       { name: NonEmptyString.toString (BuiltIn.builtInGetName BuiltIn.uintBuiltIn)
-      , children: [ ToString.noPositionTreeEmptyChildren (UInt.toString uintValue) ]
+      , children: [ NoPositionTree.noPositionTreeEmptyChildren (UInt.toString uintValue) ]
       }
   Evaluate.ValueFloat64 f64Value ->
-    ToString.NoPositionTree
+    NoPositionTree.NoPositionTree
       { name: NonEmptyString.toString (BuiltIn.builtInGetName BuiltIn.float64BuiltIn)
-      , children: [ ToString.noPositionTreeEmptyChildren (Util.numberToString f64Value) ]
+      , children: [ NoPositionTree.noPositionTreeEmptyChildren (Util.numberToString f64Value) ]
       }
   Evaluate.ValueTypeBody body ->
-    ToString.NoPositionTree
+    NoPositionTree.NoPositionTree
       { name: NonEmptyString.toString (BuiltIn.builtInGetName BuiltIn.typeBodySumBuiltIn)
       , children:
           Prelude.map
@@ -521,11 +508,11 @@ valueToValueTree = case _ of
             body
       }
   Evaluate.ValuePattern (Evaluate.Pattern { name, description }) ->
-    ToString.NoPositionTree
+    NoPositionTree.NoPositionTree
       { name: NonEmptyString.toString (BuiltIn.builtInGetName BuiltIn.patternBuiltIn)
       , children:
-          [ ToString.noPositionTreeEmptyChildren (Identifier.identifierToString name)
-          , ToString.noPositionTreeEmptyChildren description
+          [ NoPositionTree.noPositionTreeEmptyChildren (Identifier.identifierToString name)
+          , NoPositionTree.noPositionTreeEmptyChildren description
           ]
       }
 

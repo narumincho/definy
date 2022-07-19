@@ -1,15 +1,17 @@
-module VsCodeExtension.CodeGen
+module VsCodeExtension.CodeGenJsTs
   ( codeAsBinary
   ) where
 
 import Binary as Binary
+import Data.Array as Array
+import Data.Array.NonEmpty as NonEmptyArray
 import Data.Map as Map
 import Data.Maybe (Maybe(..))
 import Data.String.NonEmpty as NonEmptyString
 import Data.UInt as UInt
+import Definy.Identifier as DefinyIdentifier
 import FileSystem.Name as FileSystemName
 import FileSystem.Path as FileSystemPath
-import Prelude as Prelude
 import Type.Proxy (Proxy(..))
 import TypeScript.Data as TsData
 import TypeScript.Identifier as TsIdentifier
@@ -55,20 +57,36 @@ definyPartialModuleToTypeScriptModule :: EvaluatedItem.PartialModule -> TsData.M
 definyPartialModuleToTypeScriptModule (EvaluatedItem.PartialModule partialModule) =
   TsData.Module
     { exportDefinitionList:
-        Prelude.map
+        Array.concatMap
           definyPartialPartToExportVariable
           partialModule.partList
     , moduleDocument: partialModule.description
     }
 
-definyPartialPartToExportVariable :: EvaluatedItem.PartialPart -> TsData.ExportDefinition
+definyPartialPartToExportVariable :: EvaluatedItem.PartialPart -> Array TsData.ExportDefinition
 definyPartialPartToExportVariable (EvaluatedItem.PartialPart partialPart) =
+  Array.catMaybes
+    [ Just
+        ( definyPartialPartToExportMainVariable
+            (EvaluatedItem.PartialPart partialPart)
+        )
+    , case partialPart.expr of
+        Just (EvaluatedItem.ExprTypeBodySum patternList) ->
+          Just
+            ( TsData.ExportDefinitionTypeAlias
+                ( definyPartialPartToType
+                    (EvaluatedItem.PartialPart partialPart)
+                    patternList
+                )
+            )
+        _ -> Nothing
+    ]
+
+definyPartialPartToExportMainVariable :: EvaluatedItem.PartialPart -> TsData.ExportDefinition
+definyPartialPartToExportMainVariable (EvaluatedItem.PartialPart partialPart) =
   TsData.ExportDefinitionVariable
     ( TsData.VariableDeclaration
-        { name:
-            case partialPart.name of
-              Just name -> TsIdentifier.fromDefinyIdentifierEscapeReserved name
-              Nothing -> TsIdentifier.fromSymbolProxyUnsafe (Proxy :: Proxy "_")
+        { name: identifierMaybeToTsIdentifier partialPart.name
         , document: partialPart.description
         , type:
             case partialPart.expr of
@@ -86,6 +104,37 @@ definyPartialPartToExportVariable (EvaluatedItem.PartialPart partialPart) =
         , export: true
         }
     )
+
+definyPartialPartToType :: EvaluatedItem.PartialPart -> Array EvaluatedItem.PartialExpr -> TsData.TypeAlias
+definyPartialPartToType (EvaluatedItem.PartialPart partialPart) exprList =
+  TsData.TypeAlias
+    { name: identifierMaybeToTsIdentifier partialPart.name
+    , typeParameterList: []
+    , document: partialPart.description
+    , type:
+        case NonEmptyArray.fromArray
+            ( Array.mapMaybe
+                ( case _ of
+                    EvaluatedItem.ExprPattern pattern -> case pattern.name of
+                      Just name ->
+                        Just
+                          ( TsData.TsTypeStringLiteral
+                              (DefinyIdentifier.identifierToString name)
+                          )
+                      Nothing -> Nothing
+                    _ -> Nothing
+                )
+                exprList
+            ) of
+          Just nonEmpty -> TsData.TsTypeUnion nonEmpty
+          Nothing -> TsData.TsTypeStringLiteral "<invalid pattern>"
+    , export: true
+    }
+
+identifierMaybeToTsIdentifier :: Maybe DefinyIdentifier.Identifier -> TsIdentifier.TsIdentifier
+identifierMaybeToTsIdentifier = case _ of
+  Just name -> TsIdentifier.fromDefinyIdentifierEscapeReserved name
+  Nothing -> TsIdentifier.fromSymbolProxyUnsafe (Proxy :: Proxy "_")
 
 definyPartialExprToTypeScriptExpr :: Maybe EvaluatedItem.PartialExpr -> TsData.Expr
 definyPartialExprToTypeScriptExpr = case _ of

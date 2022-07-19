@@ -8,6 +8,14 @@
 
 
 /**
+ * 新たな型!
+ */
+export const sampleType = "<unsupported ExprTypeBodySum>";
+
+
+
+
+/**
  * 浮動小数点数のサンプル
  */
 export const floatSample = "<unknown float64 literal!!!>";

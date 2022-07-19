@@ -16,7 +16,7 @@ import Effect as Effect
 import Effect.Uncurried as EffectUncurried
 import Markdown as Markdown
 import Type.Proxy (Proxy(..))
-import VsCodeExtension.CodeGen as CodeGen
+import VsCodeExtension.CodeGenJsTs as CodeGenJsTs
 import VsCodeExtension.CodeGenPureScript as CodeGenPureScript
 import VsCodeExtension.Command as Command
 import VsCodeExtension.Completion as Completion
@@ -246,7 +246,7 @@ outputCode workspaceFolderUri codeDataList =
                             (append "definy-output/typescript/" fileNameWithoutExtension)
                             ".ts"
                       }
-                , content: CodeGen.codeAsBinary evaluatedTree true
+                , content: CodeGenJsTs.codeAsBinary evaluatedTree true
                 }
               VSCodeApi.workspaceFsWriteFile
                 { uri:
@@ -257,7 +257,7 @@ outputCode workspaceFolderUri codeDataList =
                             (append "definy-output/javascript/" fileNameWithoutExtension)
                             ".js"
                       }
-                , content: CodeGen.codeAsBinary evaluatedTree false
+                , content: CodeGenJsTs.codeAsBinary evaluatedTree false
                 }
               VSCodeApi.workspaceFsWriteFile
                 { uri:

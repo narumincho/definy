@@ -106,7 +106,9 @@ buildInToSimpleCompletionItem :: BuiltIn.BuiltIn -> SimpleCompletionItem
 buildInToSimpleCompletionItem (BuiltIn.BuiltIn rec) =
   SimpleCompletionItem
     { label: NonEmptyString.toString rec.name
-    , description: BuiltIn.builtInTypeToString rec.outputType
+    , description:
+        ToString.noPositionTreeToString
+          (BuiltIn.builtInTypeToNoPositionTree rec.outputType)
     , kind:
         case rec.outputType of
           BuiltIn.Module -> Module
@@ -139,7 +141,7 @@ builtInTypeToInsertTextTree = case _ of
   BuiltIn.Expr BuiltIn.Float64 -> builtInToInsertTextTree BuiltIn.float64BuiltIn
   BuiltIn.Expr BuiltIn.NonEmptyText -> builtInToInsertTextTree BuiltIn.nonEmptyTextBuiltIn
   BuiltIn.Expr BuiltIn.TypePart -> builtInToInsertTextTree BuiltIn.typeBuiltIn
-  BuiltIn.Expr BuiltIn.TypeBody -> builtInToInsertTextTree BuiltIn.typeBuiltIn
+  BuiltIn.Expr BuiltIn.TypeBody -> builtInToInsertTextTree BuiltIn.typeBodySumBuiltIn
   BuiltIn.Expr BuiltIn.Pattern -> builtInToInsertTextTree BuiltIn.patternBuiltIn
   BuiltIn.Expr BuiltIn.Unknown -> builtInToInsertTextTree BuiltIn.uintBuiltIn
   BuiltIn.Identifier ->

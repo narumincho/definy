@@ -37,6 +37,7 @@ module TypeScript.Data
   , VariableDefinitionStatement(..)
   ) where
 
+import Data.Array.NonEmpty (NonEmptyArray)
 import Data.Map as Map
 import Data.Maybe (Maybe)
 import Data.Tuple as Tuple
@@ -115,7 +116,7 @@ data TsType
   | TsTypeUnknown
   | TsTypeObject (Array TsMemberType)
   | TsTypeFunction FunctionType
-  | TsTypeUnion (Array TsType)
+  | TsTypeUnion (NonEmptyArray TsType)
   | TsTypeIntersection (Tuple.Tuple TsType TsType)
   | TsTypeImportedType ImportedType
   | TsTypeScopeInFile TypeNameAndTypeParameter

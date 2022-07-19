@@ -1,7 +1,7 @@
 module(
   "分かりやすい説明文",
   body(
-    type(
+    part(
       sampleType,
       "新たな型!",
       typeBodySum(pattern(tagA, "タグAの説明だよー"), pattern(tagB, "ダグBの説明文")),
