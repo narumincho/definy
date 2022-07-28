@@ -15,7 +15,7 @@ import StructuredUrl as StructuredUrl
 
 data Response
   = Response
-    { body :: String, mediaTypeMaybe :: Maybe MediaType.MediaType, status :: Status }
+    { body :: String, mediaTypeMaybe :: Maybe MediaType.MimeType, status :: Status }
 
 data Status
   = Ok

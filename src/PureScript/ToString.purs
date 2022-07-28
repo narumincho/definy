@@ -80,7 +80,16 @@ moduleNameCode (Data.Module { name, definitionList }) =
     , NonEmptyString.toString (moduleNameToString name)
     , " "
     , case NonEmptyArray.fromArray (collectExportDefinition definitionList) of
-        Just nonEmpty -> Util.joinWithCommaAndEncloseParenthesis (NonEmptyArray.toArray nonEmpty)
+        Just nonEmpty ->
+          Util.joinWithCommaAndEncloseParenthesis
+            ( NonEmptyArray.toArray
+                ( Prelude.map
+                    ( \item ->
+                        if Util.isFirstUppercase item then Prelude.append item "(..)" else item
+                    )
+                    nonEmpty
+                )
+            )
         Nothing -> ""
     , " where"
     ]
@@ -96,10 +105,20 @@ collectInportModule (Data.Module { name, definitionList }) =
     )
 
 collectInportModuleInDefinition :: Data.Definition -> Set.Set Data.ModuleName
-collectInportModuleInDefinition (Data.Definition { typeData, exprData }) =
-  Set.union
-    (collectInportModuleInType typeData)
-    (collectInportModuleInExprData exprData)
+collectInportModuleInDefinition = case _ of
+  (Data.Definition { typeData, exprData }) ->
+    Set.union
+      (collectInportModuleInType typeData)
+      (collectInportModuleInExprData exprData)
+  (Data.DataDefinition { patternList }) ->
+    Set.unions
+      ( Prelude.map
+          ( \(Data.Pattern pattern) -> case pattern.parameter of
+              Just typeData -> collectInportModuleInType typeData
+              Nothing -> Set.empty
+          )
+          patternList
+      )
 
 collectInportModuleInType :: Data.TypeData -> Set.Set Data.ModuleName
 collectInportModuleInType = case _ of
@@ -134,21 +153,42 @@ collectExportDefinition list =
     ( case _ of
         Data.Definition { isExport: true, name } -> Maybe.Just (NonEmptyString.toString name)
         Data.Definition _ -> Maybe.Nothing
+        Data.DataDefinition { name } -> Maybe.Just (NonEmptyString.toString name)
     )
     list
 
 definitionToString :: ModuleQualifiedNameDict -> Data.Definition -> String
-definitionToString importedModuleQualifiedNameDict (Data.Definition { name, document, typeData, exprData }) =
-  String.joinWith ""
-    [ documentToString document
-    , NonEmptyString.toString name
-    , " :: "
-    , typeToString importedModuleQualifiedNameDict typeData
-    , "\n"
-    , NonEmptyString.toString name
-    , " = "
-    , exprDataToString importedModuleQualifiedNameDict exprData
-    ]
+definitionToString importedModuleQualifiedNameDict = case _ of
+  (Data.Definition { name, document, typeData, exprData }) ->
+    String.joinWith ""
+      [ documentToString document
+      , NonEmptyString.toString name
+      , " :: "
+      , typeToString importedModuleQualifiedNameDict typeData
+      , "\n"
+      , NonEmptyString.toString name
+      , " = "
+      , exprDataToString importedModuleQualifiedNameDict exprData
+      ]
+  (Data.DataDefinition { name, document, patternList }) ->
+    String.joinWith ""
+      [ documentToString document
+      , if Prelude.eq (Array.length patternList) 1 then "newtype " else "data "
+      , NonEmptyString.toString name
+      , " =\n  "
+      , String.joinWith " | "
+          ( Prelude.map
+              ( \(Data.Pattern pattern) ->
+                  String.joinWith " "
+                    [ NonEmptyString.toString pattern.name
+                    , case pattern.parameter of
+                        Just typeData -> typeToString importedModuleQualifiedNameDict typeData
+                        Nothing -> ""
+                    ]
+              )
+              patternList
+          )
+      ]
 
 typeToString :: ModuleQualifiedNameDict -> Data.TypeData -> String
 typeToString importedModuleQualifiedNameDict pType = case pType of

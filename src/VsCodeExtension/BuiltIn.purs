@@ -285,7 +285,9 @@ typeBodySumBuiltIn :: BuiltIn
 typeBodySumBuiltIn =
   BuiltIn
     { name: NonEmptyString.nes (Proxy :: Proxy "typeBodySum")
-    , description: NonEmptyString.nes (Proxy :: Proxy "直和型. A か B か C. のように同時に入らない型を作る. enum に近いが, パラメーターを指定することができる")
+    , description:
+        NonEmptyString.nes
+          (Proxy :: Proxy "直和型. A か B か C. のように同時に入らない型を作る. enum に近いが, パラメーターを指定することができる")
     , inputType: InputTypeRepeat (Expr Pattern)
     , outputType: Expr TypeBody
     }

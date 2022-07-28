@@ -139,7 +139,7 @@ errorToString = case _ of
       "は不正なパーツ名です"
   UnknownPartName name ->
     NonEmptyString.appendString
-      (Identifier.identifierToNonEmptyString name)
+      (Identifier.identifierToNonEmptyString false name)
       "が見つかりませんでした"
   NeedParameter rec ->
     NonEmptyString.appendString

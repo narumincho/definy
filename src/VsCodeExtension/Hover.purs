@@ -102,7 +102,7 @@ evaluatedItemToHoverTree ::
   } ->
   HoverTree
 evaluatedItemToHoverTree { item, partialModule } = case item of
-  EvaluatedItem.Module (EvaluatedItem.PartialModule { description, partList }) ->
+  EvaluatedItem.Module (EvaluatedItem.PartialModule { description, partOrTypePartList }) ->
     HoverTree
       { type:
           NoPositionTree.NoPositionTree
@@ -114,7 +114,7 @@ evaluatedItemToHoverTree { item, partialModule } = case item of
             { name: "Module"
             , children:
                 [ NoPositionTree.noPositionTreeEmptyChildren description
-                , moduleBodyToNoPositionTree partList
+                , moduleBodyToNoPositionTree partOrTypePartList
                 ]
             }
       , valueDummy: false
@@ -204,7 +204,7 @@ evaluatedItemToHoverTree { item, partialModule } = case item of
                       Evaluate.ValueNonEmptyText _ -> NoPositionTree.noPositionTreeEmptyChildren "ValueNonEmptyText"
                       Evaluate.ValueUInt _ -> NoPositionTree.noPositionTreeEmptyChildren "UInt"
                       Evaluate.ValueFloat64 _ -> NoPositionTree.noPositionTreeEmptyChildren "Float64"
-                      Evaluate.ValueTypeBody _ -> NoPositionTree.noPositionTreeEmptyChildren "TypeBody"
+                      Evaluate.ValueList _ -> NoPositionTree.noPositionTreeEmptyChildren "List"
                       Evaluate.ValuePattern _ -> NoPositionTree.noPositionTreeEmptyChildren "Pattern"
                   ]
               }
@@ -308,7 +308,7 @@ evaluatedItemToHoverTree { item, partialModule } = case item of
             ( Prelude.map
                 ( \v ->
                     NoPositionTree.noPositionTreeEmptyChildren
-                      (Identifier.identifierToString v)
+                      (Identifier.identifierToString false v)
                 )
                 identifier
             )
@@ -322,11 +322,11 @@ evaluatedItemToHoverTree { item, partialModule } = case item of
       , valueDetail: Markdown.Markdown []
       }
 
-moduleBodyToNoPositionTree :: Array EvaluatedItem.PartialPart -> NoPositionTree.NoPositionTree
+moduleBodyToNoPositionTree :: Array EvaluatedItem.PartialPartOrTypePart -> NoPositionTree.NoPositionTree
 moduleBodyToNoPositionTree moduleBody =
   NoPositionTree.NoPositionTree
     { name: "ModuleBody"
-    , children: Prelude.map partialPartToNoPositionTree moduleBody
+    , children: Prelude.map partialPartOrTypePartToNoPositionTree moduleBody
     }
 
 partialPartToNoPositionTree :: EvaluatedItem.PartialPart -> NoPositionTree.NoPositionTree
@@ -338,7 +338,7 @@ partialPartToNoPositionTree (EvaluatedItem.PartialPart { name, description, expr
             ( Prelude.map
                 ( \nonEmpty ->
                     NoPositionTree.noPositionTreeEmptyChildren
-                      (Identifier.identifierToString nonEmpty)
+                      (Identifier.identifierToString false nonEmpty)
                 )
                 name
             )
@@ -347,6 +347,43 @@ partialPartToNoPositionTree (EvaluatedItem.PartialPart { name, description, expr
             (Prelude.map partialExprToNoPositionTree expr)
         ]
     }
+
+partialPartOrTypePartToNoPositionTree :: EvaluatedItem.PartialPartOrTypePart -> NoPositionTree.NoPositionTree
+partialPartOrTypePartToNoPositionTree = case _ of
+  EvaluatedItem.PartialPartOrTypePartPart (EvaluatedItem.PartialPart { name, description, expr }) ->
+    NoPositionTree.NoPositionTree
+      { name: "Part"
+      , children:
+          [ maybeToNoPositionTree
+              ( Prelude.map
+                  ( \nonEmpty ->
+                      NoPositionTree.noPositionTreeEmptyChildren
+                        (Identifier.identifierToString false nonEmpty)
+                  )
+                  name
+              )
+          , NoPositionTree.noPositionTreeEmptyChildren description
+          , maybeToNoPositionTree
+              (Prelude.map partialExprToNoPositionTree expr)
+          ]
+      }
+  EvaluatedItem.PartialPartOrTypePartTypePart (EvaluatedItem.PartialType { name, description, expr }) ->
+    NoPositionTree.NoPositionTree
+      { name: "Type"
+      , children:
+          [ maybeToNoPositionTree
+              ( Prelude.map
+                  ( \nonEmpty ->
+                      NoPositionTree.noPositionTreeEmptyChildren
+                        (Identifier.identifierToString true nonEmpty)
+                  )
+                  name
+              )
+          , NoPositionTree.noPositionTreeEmptyChildren description
+          , maybeToNoPositionTree
+              (Prelude.map partialExprToNoPositionTree expr)
+          ]
+      }
 
 partialTypeToNoPositionTree :: EvaluatedItem.PartialType -> NoPositionTree.NoPositionTree
 partialTypeToNoPositionTree (EvaluatedItem.PartialType { name, description, expr }) =
@@ -357,7 +394,7 @@ partialTypeToNoPositionTree (EvaluatedItem.PartialType { name, description, expr
             ( Prelude.map
                 ( \nonEmpty ->
                     NoPositionTree.NoPositionTree
-                      { name: Identifier.identifierToString nonEmpty
+                      { name: Identifier.identifierToString true nonEmpty
                       , children: []
                       }
                 )
@@ -383,7 +420,7 @@ partialExprToNoPositionTree = case _ of
       }
   EvaluatedItem.ExprPartReference { name } ->
     NoPositionTree.NoPositionTree
-      { name: Identifier.identifierToString name
+      { name: Identifier.identifierToString false name
       , children: []
       }
   EvaluatedItem.ExprPartReferenceInvalidName { name } ->
@@ -443,7 +480,10 @@ partialExprToNoPositionTree = case _ of
       , children:
           [ maybeToNoPositionTree
               ( Prelude.map
-                  (\v -> NoPositionTree.noPositionTreeEmptyChildren (Identifier.identifierToString v))
+                  ( \v ->
+                      NoPositionTree.noPositionTreeEmptyChildren
+                        (Identifier.identifierToString false v)
+                  )
                   rec.name
               )
           , NoPositionTree.noPositionTreeEmptyChildren rec.description
@@ -499,19 +539,19 @@ valueToValueTree = case _ of
       { name: NonEmptyString.toString (BuiltIn.builtInGetName BuiltIn.float64BuiltIn)
       , children: [ NoPositionTree.noPositionTreeEmptyChildren (Util.numberToString f64Value) ]
       }
-  Evaluate.ValueTypeBody body ->
+  Evaluate.ValueList list ->
     NoPositionTree.NoPositionTree
-      { name: NonEmptyString.toString (BuiltIn.builtInGetName BuiltIn.typeBodySumBuiltIn)
+      { name: "list"
       , children:
           Prelude.map
-            (\pattern -> valueToValueTree (Evaluate.ValuePattern pattern))
-            body
+            (\v -> valueToValueTree v)
+            list
       }
   Evaluate.ValuePattern (Evaluate.Pattern { name, description }) ->
     NoPositionTree.NoPositionTree
       { name: NonEmptyString.toString (BuiltIn.builtInGetName BuiltIn.patternBuiltIn)
       , children:
-          [ NoPositionTree.noPositionTreeEmptyChildren (Identifier.identifierToString name)
+          [ NoPositionTree.noPositionTreeEmptyChildren (Identifier.identifierToString false name)
           , NoPositionTree.noPositionTreeEmptyChildren description
           ]
       }

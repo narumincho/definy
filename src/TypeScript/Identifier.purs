@@ -260,7 +260,7 @@ fromNonEmptyString str =
 fromDefinyIdentifierEscapeReserved :: DefinyIdentifier.Identifier -> TsIdentifier
 fromDefinyIdentifierEscapeReserved definyIdentifier =
   let
-    nonEmptyString = DefinyIdentifier.identifierToNonEmptyString definyIdentifier
+    nonEmptyString = DefinyIdentifier.identifierToNonEmptyString false definyIdentifier
   in
     if Set.member nonEmptyString reservedByLanguageWordSet then
       TsIdentifier (NonEmptyString.appendString nonEmptyString "_")

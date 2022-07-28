@@ -1,25 +1,17 @@
 module MediaType
-  ( MediaType(..)
+  ( module MimeTypeModule
   , toMimeType
   ) where
 
 import Data.Maybe as Maybe
 import Data.String.NonEmpty (NonEmptyString)
-import MimeType as MimeType
+import MimeType (MimeType(..), binary, html, javaScript, json, png, woff2) as MimeTypeModule
 
--- | definy, ナルミンチョの創作記録で扱う http のレスポンスで返す content-type の値
-data MediaType
-  = {- image/png -} Png
-  | {- text/javascript -} JavaScript
-  | {- text/html -} Html
-  | {- application/json -} Json
-  | {- font/woff2 -} WebOpenFontFormat2
-
-toMimeType :: Maybe.Maybe MediaType -> NonEmptyString
+toMimeType :: Maybe.Maybe MimeTypeModule.MimeType -> NonEmptyString
 toMimeType = case _ of
-  Maybe.Just Png -> MimeType.png
-  Maybe.Just JavaScript -> MimeType.javaScript
-  Maybe.Just Html -> MimeType.html
-  Maybe.Just Json -> MimeType.json
-  Maybe.Just WebOpenFontFormat2 -> MimeType.woff2
-  Maybe.Nothing -> MimeType.binary
+  Maybe.Just MimeTypeModule.Png -> MimeTypeModule.png
+  Maybe.Just MimeTypeModule.JavaScript -> MimeTypeModule.javaScript
+  Maybe.Just MimeTypeModule.Html -> MimeTypeModule.html
+  Maybe.Just MimeTypeModule.Json -> MimeTypeModule.json
+  Maybe.Just MimeTypeModule.WebOpenFontFormat2 -> MimeTypeModule.woff2
+  Maybe.Nothing -> MimeTypeModule.binary

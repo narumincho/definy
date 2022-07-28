@@ -10,12 +10,6 @@
 /**
  * 新たな型!
  */
-export const sampleType: string = "<unsupported ExprTypeBodySum>";
-
-
-/**
- * 新たな型!
- */
 export type sampleType = "tagA" | "tagB";
 
 

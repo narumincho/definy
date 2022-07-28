@@ -85,7 +85,7 @@ getSimpleCompletionList { tree, position } = case EvaluatedTreeIndex.getEvaluate
         ( Prelude.map
             ( \{ name, description } ->
                 SimpleCompletionItem
-                  { label: Identifier.identifierToString name
+                  { label: Identifier.identifierToString false name
                   , description: "Expr"
                   , kind: Function
                   , documentation:
@@ -93,7 +93,7 @@ getSimpleCompletionList { tree, position } = case EvaluatedTreeIndex.getEvaluate
                         [ Markdown.Raw description ]
                   , insertText:
                       InsertTextTree
-                        { name: Identifier.identifierToNonEmptyString name
+                        { name: Identifier.identifierToNonEmptyString false name
                         , focus: false
                         , children: []
                         }
@@ -198,13 +198,15 @@ getPartNameListInTree ::
     , description :: String
     }
 getPartNameListInTree (Evaluate.EvaluatedTree { item }) = case item of
-  EvaluatedItem.Module (EvaluatedItem.PartialModule { partList }) ->
+  EvaluatedItem.Module (EvaluatedItem.PartialModule { partOrTypePartList }) ->
     Array.mapMaybe
-      ( \(EvaluatedItem.PartialPart { name, description }) -> case name of
-          Just nameNonEmpty -> Just { name: nameNonEmpty, description }
-          Nothing -> Nothing
+      ( case _ of
+          (EvaluatedItem.PartialPartOrTypePartPart (EvaluatedItem.PartialPart { name, description })) -> case name of
+            Just nameNonEmpty -> Just { name: nameNonEmpty, description }
+            Nothing -> Nothing
+          EvaluatedItem.PartialPartOrTypePartTypePart _ -> Nothing
       )
-      partList
+      partOrTypePartList
   _ -> []
 
 triggerCharacters :: Array String
