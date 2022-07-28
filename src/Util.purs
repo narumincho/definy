@@ -2,6 +2,8 @@ module Util
   ( append3
   , class RowTraversable
   , encloseParenthesis
+  , firstLowercase
+  , firstLowercaseNonEmpty
   , firstUppercase
   , firstUppercaseNonEmpty
   , groupBySize
@@ -181,6 +183,20 @@ firstUppercaseNonEmpty :: NonEmptyString -> NonEmptyString
 firstUppercaseNonEmpty text = case NonEmptyString.uncons text of
   { head, tail } ->
     NonEmptyString.appendString (NonEmptyString.toUpper (NonEmptyString.singleton head))
+      ( case tail of
+          Maybe.Just t -> NonEmptyString.toString t
+          Nothing -> ""
+      )
+
+firstLowercase :: String -> String
+firstLowercase text = case String.uncons text of
+  Maybe.Just { head, tail } -> append (String.toLower (String.singleton head)) tail
+  Maybe.Nothing -> ""
+
+firstLowercaseNonEmpty :: NonEmptyString -> NonEmptyString
+firstLowercaseNonEmpty text = case NonEmptyString.uncons text of
+  { head, tail } ->
+    NonEmptyString.appendString (NonEmptyString.toLower (NonEmptyString.singleton head))
       ( case tail of
           Maybe.Just t -> NonEmptyString.toString t
           Nothing -> ""

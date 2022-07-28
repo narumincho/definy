@@ -2,7 +2,7 @@ module(
   mimetype,
   body(
     type(
-      mimeType,
+      MimeType,
       "MIME タイプ https://developer.mozilla.org/ja/docs/Web/HTTP/Basics_of_HTTP/MIME_types  definy, ナルミンチョの創作記録で扱う http のレスポンスで返す content-type",
       typeBodySum(
         pattern(png, "image/png"),

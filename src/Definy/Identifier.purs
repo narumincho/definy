@@ -3,7 +3,7 @@ module Definy.Identifier
   , Identifier
   , accountNameFromNonEmptyString
   , class CheckValidChar
-  , class CheckValidCharTail
+  , class CheckValidCharTail 
   , fromSymbolProxy
   , identifierFromNonEmptyString
   , identifierFromString
@@ -13,7 +13,8 @@ module Definy.Identifier
   where
 
 import Data.Either as Either
-import Data.Maybe (Maybe(..))
+import Data.Maybe (Maybe(..)) 
+import Data.String as String
 import Data.String.NonEmpty (NonEmptyString)
 import Data.String.NonEmpty as NonEmptyString
 import Data.String.Regex as Regex
@@ -26,24 +27,25 @@ import Prim.TypeError as TypeError
 import Type.Data.List as TList
 import Type.Data.Peano as PeanoNat
 import Type.Proxy (Proxy(..))
+import Util as Util
 
 data AccountName
   = AccountName NonEmptyString
 
 accountNameFromNonEmptyString :: NonEmptyString -> Maybe AccountName
 accountNameFromNonEmptyString raw = Prelude.map AccountName (NonEmptyString.trim raw)
-
+ 
 data Identifier
   = Identifier NonEmptyString
-
-derive instance  Prelude.Eq Identifier
-
+ 
+derive instance Prelude.Eq Identifier
+ 
 safePatternEither :: Either.Either String Regex.Regex
 safePatternEither = Regex.regex "^[a-z][a-zA-Z0-9]{0,63}$" RegexFlags.unicode
 
 identifierFromString ::  String -> Maybe Identifier
 identifierFromString value =
-  case NonEmptyString.fromString value of
+  case NonEmptyString.fromString (String.trim value) of
     Just nonEmptyValue -> identifierFromNonEmptyString nonEmptyValue
     Nothing -> Nothing
 
@@ -51,18 +53,30 @@ identifierFromString value =
 identifierFromNonEmptyString :: NonEmptyString -> Maybe Identifier
 identifierFromNonEmptyString value = case safePatternEither of
   Either.Right safePattern ->
-    if (Regex.test safePattern (NonEmptyString.toString value)) then
-      Just (Identifier value)
-    else
-      Nothing
+    case NonEmptyString.trim value of
+      Just valueTrimmed ->
+        let 
+          lowercase = Util.firstLowercaseNonEmpty valueTrimmed
+        in
+        if Regex.test safePattern (NonEmptyString.toString lowercase) then
+          Just (Identifier lowercase)
+        else
+          Nothing
+      Nothing ->
+        Nothing
   Either.Left _ -> Nothing
 
-identifierToNonEmptyString :: Identifier -> NonEmptyString
-identifierToNonEmptyString (Identifier value) = value
+identifierToNonEmptyString :: Boolean -> Identifier -> NonEmptyString
+identifierToNonEmptyString isUppercase (Identifier value) = 
+  if isUppercase then
+    Util.firstUppercaseNonEmpty value
+  else
+    value 
 
-identifierToString :: Identifier -> String
-identifierToString identifier = NonEmptyString.toString
-               (identifierToNonEmptyString identifier)
+identifierToString :: Boolean -> Identifier -> String
+identifierToString isUppercase identifier =
+  NonEmptyString.toString
+    (identifierToNonEmptyString isUppercase identifier)
 
 fromSymbolProxy ::
   forall (symbol :: Symbol) (charTypeList:: TList.List' Identifier.CharType).

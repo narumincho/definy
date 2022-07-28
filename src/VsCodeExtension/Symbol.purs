@@ -17,14 +17,14 @@ getSymbolAndRangeList = case _ of
           (EvaluatedItem.PartialPartOrTypePartPart (EvaluatedItem.PartialPart { name })) -> case name of
             Just identifier ->
               Just
-                { name: Identifier.identifierToNonEmptyString identifier
+                { name: Identifier.identifierToNonEmptyString false identifier
                 , range: nameRange
                 }
             Nothing -> Nothing
           (EvaluatedItem.PartialPartOrTypePartTypePart (EvaluatedItem.PartialType { name })) -> case name of
             Just identifier ->
               Just
-                { name: Identifier.identifierToNonEmptyString identifier
+                { name: Identifier.identifierToNonEmptyString true identifier
                 , range: nameRange
                 }
             Nothing -> Nothing

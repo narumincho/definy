@@ -1,17 +1,17 @@
 module MediaType
-  ( module MimeType
+  ( module MimeTypeModule
   , toMimeType
   ) where
 
 import Data.Maybe as Maybe
 import Data.String.NonEmpty (NonEmptyString)
-import MimeType (MimeType(..), binary, html, javaScript, json, png, woff2) as MimeType
+import MimeType (MimeType(..), binary, html, javaScript, json, png, woff2) as MimeTypeModule
 
-toMimeType :: Maybe.Maybe MimeType.MimeType -> NonEmptyString
+toMimeType :: Maybe.Maybe MimeTypeModule.MimeType -> NonEmptyString
 toMimeType = case _ of
-  Maybe.Just MimeType.Png -> MimeType.png
-  Maybe.Just MimeType.JavaScript -> MimeType.javaScript
-  Maybe.Just MimeType.Html -> MimeType.html
-  Maybe.Just MimeType.Json -> MimeType.json
-  Maybe.Just MimeType.WebOpenFontFormat2 -> MimeType.woff2
-  Maybe.Nothing -> MimeType.binary
+  Maybe.Just MimeTypeModule.Png -> MimeTypeModule.png
+  Maybe.Just MimeTypeModule.JavaScript -> MimeTypeModule.javaScript
+  Maybe.Just MimeTypeModule.Html -> MimeTypeModule.html
+  Maybe.Just MimeTypeModule.Json -> MimeTypeModule.json
+  Maybe.Just MimeTypeModule.WebOpenFontFormat2 -> MimeTypeModule.woff2
+  Maybe.Nothing -> MimeTypeModule.binary

@@ -67,7 +67,7 @@ partialPartToDefinition partialModule moduleName = case _ of
       , isExport: true
       , name:
           case rec.name of
-            Just name -> Identifier.identifierToNonEmptyString name
+            Just name -> Identifier.identifierToNonEmptyString false name
             Nothing -> NonEmptyString.nes (Proxy :: Proxy "invalidName")
       , typeData:
           ( case rec.expr of
@@ -80,7 +80,7 @@ partialPartToDefinition partialModule moduleName = case _ of
       { document: rec.description
       , name:
           case rec.name of
-            Just name -> Util.firstUppercaseNonEmpty (Identifier.identifierToNonEmptyString name)
+            Just name -> Util.firstUppercaseNonEmpty (Identifier.identifierToNonEmptyString true name)
             Nothing -> NonEmptyString.nes (Proxy :: Proxy "InvalidName")
       , patternList:
           exprToPatternList partialModule rec.expr
@@ -97,7 +97,7 @@ partialExprToExpr moduleName = case _ of
   EvaluatedItem.ExprPartReference { name } ->
     Data.Variable
       { moduleName
-      , name: Identifier.identifierToNonEmptyString name
+      , name: Identifier.identifierToNonEmptyString false name
       }
   EvaluatedItem.ExprPartReferenceInvalidName {} -> Data.StringLiteral "invalid name"
   EvaluatedItem.ExprUIntLiteral _ -> Data.StringLiteral "unsupported uint"
@@ -141,7 +141,7 @@ exprToPatternList partialModule = case _ of
                     ( Data.Pattern
                         { name:
                             Util.firstUppercaseNonEmpty
-                              (Identifier.identifierToNonEmptyString pattern.name)
+                              (Identifier.identifierToNonEmptyString false pattern.name)
                         , parameter: Nothing
                         }
                     )

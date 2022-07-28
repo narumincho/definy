@@ -85,7 +85,7 @@ getSimpleCompletionList { tree, position } = case EvaluatedTreeIndex.getEvaluate
         ( Prelude.map
             ( \{ name, description } ->
                 SimpleCompletionItem
-                  { label: Identifier.identifierToString name
+                  { label: Identifier.identifierToString false name
                   , description: "Expr"
                   , kind: Function
                   , documentation:
@@ -93,7 +93,7 @@ getSimpleCompletionList { tree, position } = case EvaluatedTreeIndex.getEvaluate
                         [ Markdown.Raw description ]
                   , insertText:
                       InsertTextTree
-                        { name: Identifier.identifierToNonEmptyString name
+                        { name: Identifier.identifierToNonEmptyString false name
                         , focus: false
                         , children: []
                         }

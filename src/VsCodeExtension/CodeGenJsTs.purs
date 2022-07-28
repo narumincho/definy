@@ -122,7 +122,7 @@ definyPartialPartToType partialModule (EvaluatedItem.PartialType partialPart) =
                             Evaluate.ValuePattern (Evaluate.Pattern pattern) ->
                               Just
                                 ( TsData.TsTypeStringLiteral
-                                    (DefinyIdentifier.identifierToString pattern.name)
+                                    (DefinyIdentifier.identifierToString false pattern.name)
                                 )
                             _ -> Nothing
                         )

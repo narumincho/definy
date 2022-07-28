@@ -308,7 +308,7 @@ evaluatedItemToHoverTree { item, partialModule } = case item of
             ( Prelude.map
                 ( \v ->
                     NoPositionTree.noPositionTreeEmptyChildren
-                      (Identifier.identifierToString v)
+                      (Identifier.identifierToString false v)
                 )
                 identifier
             )
@@ -338,7 +338,7 @@ partialPartToNoPositionTree (EvaluatedItem.PartialPart { name, description, expr
             ( Prelude.map
                 ( \nonEmpty ->
                     NoPositionTree.noPositionTreeEmptyChildren
-                      (Identifier.identifierToString nonEmpty)
+                      (Identifier.identifierToString false nonEmpty)
                 )
                 name
             )
@@ -358,7 +358,7 @@ partialPartOrTypePartToNoPositionTree = case _ of
               ( Prelude.map
                   ( \nonEmpty ->
                       NoPositionTree.noPositionTreeEmptyChildren
-                        (Identifier.identifierToString nonEmpty)
+                        (Identifier.identifierToString false nonEmpty)
                   )
                   name
               )
@@ -375,7 +375,7 @@ partialPartOrTypePartToNoPositionTree = case _ of
               ( Prelude.map
                   ( \nonEmpty ->
                       NoPositionTree.noPositionTreeEmptyChildren
-                        (Identifier.identifierToString nonEmpty)
+                        (Identifier.identifierToString true nonEmpty)
                   )
                   name
               )
@@ -394,7 +394,7 @@ partialTypeToNoPositionTree (EvaluatedItem.PartialType { name, description, expr
             ( Prelude.map
                 ( \nonEmpty ->
                     NoPositionTree.NoPositionTree
-                      { name: Identifier.identifierToString nonEmpty
+                      { name: Identifier.identifierToString true nonEmpty
                       , children: []
                       }
                 )
@@ -420,7 +420,7 @@ partialExprToNoPositionTree = case _ of
       }
   EvaluatedItem.ExprPartReference { name } ->
     NoPositionTree.NoPositionTree
-      { name: Identifier.identifierToString name
+      { name: Identifier.identifierToString false name
       , children: []
       }
   EvaluatedItem.ExprPartReferenceInvalidName { name } ->
@@ -480,7 +480,10 @@ partialExprToNoPositionTree = case _ of
       , children:
           [ maybeToNoPositionTree
               ( Prelude.map
-                  (\v -> NoPositionTree.noPositionTreeEmptyChildren (Identifier.identifierToString v))
+                  ( \v ->
+                      NoPositionTree.noPositionTreeEmptyChildren
+                        (Identifier.identifierToString false v)
+                  )
                   rec.name
               )
           , NoPositionTree.noPositionTreeEmptyChildren rec.description
@@ -548,7 +551,7 @@ valueToValueTree = case _ of
     NoPositionTree.NoPositionTree
       { name: NonEmptyString.toString (BuiltIn.builtInGetName BuiltIn.patternBuiltIn)
       , children:
-          [ NoPositionTree.noPositionTreeEmptyChildren (Identifier.identifierToString name)
+          [ NoPositionTree.noPositionTreeEmptyChildren (Identifier.identifierToString false name)
           , NoPositionTree.noPositionTreeEmptyChildren description
           ]
       }
