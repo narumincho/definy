@@ -10,9 +10,10 @@ jobs:
       - name: checkout repository
         uses: actions/checkout@v2
       - name: setup Node.js
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v3
         with:
           node-version: "16"
+          cache: npm
       - name: Install npm dependencies (npm ci)
         run: npm ci --legacy-peer-deps
       - name: PureScript FFI Code TypeScript → JavaScript
