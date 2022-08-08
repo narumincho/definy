@@ -20,7 +20,7 @@ evaluateTreeToTokenData (Evaluate.EvaluatedTree { nameRange, item, children }) =
         , start: Range.rangeStart nameRange
         , tokenType:
             case item of
-              EvaluatedItem.Description _ -> TokenType.TokenTypeString
+              EvaluatedItem.Description _ -> TokenType.TokenTypeComment
               EvaluatedItem.Module _ -> TokenType.TokenTypeNamespace
               EvaluatedItem.ModuleBody _ -> TokenType.TokenTypeNamespace
               EvaluatedItem.Part _ -> TokenType.TokenTypeNamespace
@@ -29,7 +29,11 @@ evaluateTreeToTokenData (Evaluate.EvaluatedTree { nameRange, item, children }) =
               EvaluatedItem.UIntLiteral _ -> TokenType.TokenTypeNumber
               EvaluatedItem.TextLiteral _ -> TokenType.TokenTypeString
               EvaluatedItem.NonEmptyTextLiteral _ -> TokenType.TokenTypeString
-              EvaluatedItem.Identifier _ -> TokenType.TokenTypeFunction
+              EvaluatedItem.Identifier { isUppercase } ->
+                if isUppercase then
+                  TokenType.TokenTypeType
+                else
+                  TokenType.TokenTypeFunction
               EvaluatedItem.Float64Literal _ -> TokenType.TokenTypeNumber
         }
     )

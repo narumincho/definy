@@ -39,7 +39,7 @@ data BuiltInType
   | ModuleBody
   | PartDefinition
   | Expr ExprType
-  | Identifier
+  | Identifier Boolean
   | UIntLiteral
   | TextLiteral
   | NonEmptyTextLiteral
@@ -52,7 +52,8 @@ builtInTypeMatch expected actual = case Tuple.Tuple expected actual of
   Tuple.Tuple ModuleBody ModuleBody -> true
   Tuple.Tuple PartDefinition PartDefinition -> true
   Tuple.Tuple (Expr expectedExprType) (Expr actualExprType) -> exprTypeMatch expectedExprType actualExprType
-  Tuple.Tuple Identifier Identifier -> true
+  Tuple.Tuple (Identifier true) (Identifier true) -> true
+  Tuple.Tuple (Identifier false) (Identifier false) -> true
   Tuple.Tuple UIntLiteral UIntLiteral -> true
   Tuple.Tuple TextLiteral TextLiteral -> true
   Tuple.Tuple NonEmptyTextLiteral NonEmptyTextLiteral -> true
@@ -72,7 +73,11 @@ builtInTypeToNoPositionTree = case _ of
       { name: "Expr"
       , children: [ NoPositionTree.noPositionTreeEmptyChildren (Prelude.show expr) ]
       }
-  Identifier -> NoPositionTree.noPositionTreeEmptyChildren "Identifier"
+  Identifier isUppercase ->
+    NoPositionTree.NoPositionTree
+      { name: "Identifier"
+      , children: [ NoPositionTree.noPositionTreeEmptyChildren (Prelude.show isUppercase) ]
+      }
   UIntLiteral -> NoPositionTree.noPositionTreeEmptyChildren "UIntLiteral"
   TextLiteral -> NoPositionTree.noPositionTreeEmptyChildren "TextLiteral"
   NonEmptyTextLiteral -> NoPositionTree.noPositionTreeEmptyChildren "NonEmptyTextLiteral"
@@ -106,7 +111,10 @@ typeDefaultValue = case _ of
   Float64Literal ->
     NoPositionTree.NoPositionTree
       { name: "6.28", children: [] }
-  Identifier ->
+  Identifier true ->
+    NoPositionTree.NoPositionTree
+      { name: "Sample", children: [] }
+  Identifier false ->
     NoPositionTree.NoPositionTree
       { name: "sample", children: [] }
 
@@ -218,7 +226,7 @@ typeBuiltIn =
         NonEmptyString.nes
           (Proxy :: Proxy "型を定義する")
     , inputType:
-        InputTypeNormal [ Identifier, Description, Expr TypeBody ]
+        InputTypeNormal [ Identifier true, Description, Expr TypeBody ]
     , outputType: PartDefinition
     }
 
@@ -230,7 +238,7 @@ partBuiltIn =
         NonEmptyString.nes
           (Proxy :: Proxy "パーツの定義 パーツはあらゆるデータに名前を付けて使えるようにしたもの")
     , inputType:
-        InputTypeNormal [ Identifier, Description, Expr Unknown ]
+        InputTypeNormal [ Identifier false, Description, Expr Unknown ]
     , outputType: PartDefinition
     }
 
@@ -297,6 +305,6 @@ patternBuiltIn =
   BuiltIn
     { name: NonEmptyString.nes (Proxy :: Proxy "pattern")
     , description: NonEmptyString.nes (Proxy :: Proxy "直和型のパターン. パラメーターはあとで対応")
-    , inputType: InputTypeNormal [ Identifier, Description ]
+    , inputType: InputTypeNormal [ Identifier false, Description ]
     , outputType: Expr Pattern
     }

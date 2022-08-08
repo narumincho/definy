@@ -89,7 +89,7 @@ generatePackageJson =
                 ]
           }
     , name: PackageJson.nameFromSymbolProxyUnsafe (Proxy :: _ "definy")
-    , version: NonEmptyString.nes (Proxy :: _ "0.0.7")
+    , version: NonEmptyString.nes (Proxy :: _ "0.0.8")
     }
     ( PackageJson.packageJsonInputOptionalDefault
         { publisher = Just (NonEmptyString.nes (Proxy :: _ "narumincho"))

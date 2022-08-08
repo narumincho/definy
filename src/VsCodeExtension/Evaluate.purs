@@ -197,7 +197,10 @@ codeTreeToEvaluatedTree treeType codeTree =
       Just BuiltIn.TextLiteral -> codeTreeToEvaluatedTreeInContextTextLiteral codeTree
       Just BuiltIn.NonEmptyTextLiteral -> codeTreeToEvaluatedTreeInContextNonEmptyTextLiteral codeTree
       Just BuiltIn.Float64Literal -> codeTreeToEvaluatedTreeInContextFloat64Literal codeTree
-      Just BuiltIn.Identifier -> codeTreeToEvaluatedTreeInContextIdentifier codeTree
+      Just (BuiltIn.Identifier isUppercase) ->
+        codeTreeToEvaluatedTreeInContextIdentifier
+          isUppercase
+          codeTree
       _ -> codeTreeToEvaluatedTreeIContextNormal codeTree
   in
     EvaluatedTreeChild
@@ -249,7 +252,7 @@ codeTreeToEvaluatedTreeIContextNormal codeTree@(Parser.CodeTree { name, nameRang
             ( EvaluatedItem.PartialType
                 { name:
                     case Array.index childrenEvaluatedItem 0 of
-                      Just (EvaluatedItem.Identifier partName) -> partName
+                      Just (EvaluatedItem.Identifier partName) -> partName.identifier
                       _ -> Nothing
                 , description:
                     case Array.index childrenEvaluatedItem 1 of
@@ -271,7 +274,7 @@ codeTreeToEvaluatedTreeIContextNormal codeTree@(Parser.CodeTree { name, nameRang
             ( EvaluatedItem.PartialPart
                 { name:
                     case Array.index childrenEvaluatedItem 0 of
-                      Just (EvaluatedItem.Identifier partName) -> partName
+                      Just (EvaluatedItem.Identifier partName) -> partName.identifier
                       _ -> Nothing
                 , description:
                     case Array.index childrenEvaluatedItem 1 of
@@ -353,7 +356,7 @@ codeTreeToEvaluatedTreeIContextNormal codeTree@(Parser.CodeTree { name, nameRang
             ( EvaluatedItem.ExprPattern
                 { name:
                     case Array.index childrenEvaluatedItem 0 of
-                      Just (EvaluatedItem.Identifier nameIdentifier) -> nameIdentifier
+                      Just (EvaluatedItem.Identifier nameIdentifier) -> nameIdentifier.identifier
                       _ -> Nothing
                 , description:
                     case Array.index childrenEvaluatedItem 1 of
@@ -423,11 +426,11 @@ codeTreeToEvaluatedTreeInContextFloat64Literal codeTree@(Parser.CodeTree { name 
     codeTree
     (EvaluatedItem.Float64Literal (Number.fromString name))
 
-codeTreeToEvaluatedTreeInContextIdentifier :: Parser.CodeTree -> EvaluatedTree
-codeTreeToEvaluatedTreeInContextIdentifier codeTree@(Parser.CodeTree { name }) =
+codeTreeToEvaluatedTreeInContextIdentifier :: Boolean -> Parser.CodeTree -> EvaluatedTree
+codeTreeToEvaluatedTreeInContextIdentifier isUppercase codeTree@(Parser.CodeTree { name }) =
   need0Children
     codeTree
-    (EvaluatedItem.Identifier (Identifier.identifierFromString name))
+    (EvaluatedItem.Identifier { isUppercase, identifier: Identifier.identifierFromString name })
 
 need0Children ::
   Parser.CodeTree ->

@@ -296,7 +296,7 @@ evaluatedItemToHoverTree { item, partialModule } = case item of
             ]
       , valueDetail: Markdown.Markdown []
       }
-  EvaluatedItem.Identifier identifier ->
+  EvaluatedItem.Identifier { identifier, isUppercase } ->
     HoverTree
       { type:
           NoPositionTree.NoPositionTree
@@ -308,7 +308,7 @@ evaluatedItemToHoverTree { item, partialModule } = case item of
             ( Prelude.map
                 ( \v ->
                     NoPositionTree.noPositionTreeEmptyChildren
-                      (Identifier.identifierToString false v)
+                      (Identifier.identifierToString isUppercase v)
                 )
                 identifier
             )

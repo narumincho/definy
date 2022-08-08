@@ -10,7 +10,7 @@
 /**
  * partDescription
  */
-export const _: number = (1+(2+3));
+export const invalidPartName: number = (1+(2+3));
 
 
 /**

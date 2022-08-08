@@ -57,7 +57,7 @@ evaluatedItemGetError rawName partialModule = case _ of
   EvaluatedItem.UIntLiteral Nothing -> Just (UIntParseError rawName)
   EvaluatedItem.Float64Literal Nothing -> Just (Float64ParseError rawName)
   EvaluatedItem.NonEmptyTextLiteral Nothing -> Just NonEmptyStringEmptyError
-  EvaluatedItem.Identifier Nothing -> Just (InvalidIdentifier rawName)
+  EvaluatedItem.Identifier { identifier: Nothing } -> Just (InvalidIdentifier rawName)
   _ -> Nothing
 
 getErrorListFromEvaluatedTreeChild :: EvaluatedItem.PartialModule -> Evaluate.EvaluatedTreeChild -> Array ErrorWithRange
