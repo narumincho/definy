@@ -14,7 +14,9 @@ import VsCodeExtension.Range as Range
 
 data TokenType
   = TokenTypeNamespace
+  | TokenTypeType
   | TokenTypeVariable
+  | TokenTypeComment
   | TokenTypeString
   | TokenTypeNumber
   | TokenTypeFunction
@@ -32,7 +34,9 @@ useTokenTypesAsStringArray = Prelude.map toString useTokenTypes
 useTokenTypes :: Array TokenType
 useTokenTypes =
   [ TokenTypeNamespace
+  , TokenTypeType
   , TokenTypeVariable
+  , TokenTypeComment
   , TokenTypeString
   , TokenTypeNumber
   , TokenTypeFunction
@@ -41,7 +45,9 @@ useTokenTypes =
 toString :: TokenType -> String
 toString = case _ of
   TokenTypeNamespace -> "namespace"
+  TokenTypeType -> "type"
   TokenTypeVariable -> "variable"
+  TokenTypeComment -> "comment"
   TokenTypeString -> "string"
   TokenTypeNumber -> "number"
   TokenTypeFunction -> "function"
