@@ -46,6 +46,8 @@ newtype SimpleCompletionItem
   , kind :: CompletionItemKind
   , documentation :: Markdown.Markdown
   , insertText :: InsertTextTree
+  , builtInType :: BuiltIn.BuiltInType
+  -- 型を追加して上層でフィルターしたい
   }
 
 simpleCompletionItemToCompletionItem :: SimpleCompletionItem -> CompletionItem
@@ -65,42 +67,48 @@ simpleCompletionItemToCompletionItem (SimpleCompletionItem rec) =
 getCompletionList ::
   { tree :: Evaluate.EvaluatedTree, position :: Range.Position } ->
   Array CompletionItem
-getCompletionList { tree, position } = Prelude.map simpleCompletionItemToCompletionItem (getSimpleCompletionList { tree, position })
+getCompletionList { tree, position } =
+  let
+    simpleCompletionList = getSimpleCompletionList tree
+  in
+    Prelude.map
+      simpleCompletionItemToCompletionItem
+      ( case EvaluatedTreeIndex.getEvaluatedItem position tree of
+          Just { item } ->
+            Array.filter
+              ( \(SimpleCompletionItem { builtInType }) ->
+                  BuiltIn.builtInTypeMatch (EvaluatedItem.toBuiltInType item) builtInType
+              )
+              simpleCompletionList
+          Nothing -> simpleCompletionList
+      )
 
 getSimpleCompletionList ::
-  { tree :: Evaluate.EvaluatedTree, position :: Range.Position } ->
+  Evaluate.EvaluatedTree ->
   Array SimpleCompletionItem
-getSimpleCompletionList { tree, position } = case EvaluatedTreeIndex.getEvaluatedItem position tree of
-  Just { item: EvaluatedItem.Description _ } -> []
-  Just { item: EvaluatedItem.UIntLiteral _ } -> []
-  Just { item: EvaluatedItem.Float64Literal _ } -> []
-  Just { item: EvaluatedItem.TextLiteral _ } -> []
-  Just { item: EvaluatedItem.Identifier _ } -> []
-  _ ->
-    let
-      partNameSet = getPartNameListInTree tree
-    in
-      Prelude.append
-        (Prelude.map buildInToSimpleCompletionItem BuiltIn.all)
-        ( Prelude.map
-            ( \{ name, description } ->
-                SimpleCompletionItem
-                  { label: Identifier.identifierToString false name
-                  , description: "Expr"
-                  , kind: Function
-                  , documentation:
-                      Markdown.Markdown
-                        [ Markdown.Raw description ]
-                  , insertText:
-                      InsertTextTree
-                        { name: Identifier.identifierToNonEmptyString false name
-                        , focus: false
-                        , children: []
-                        }
-                  }
-            )
-            partNameSet
+getSimpleCompletionList tree =
+  Prelude.append
+    (Prelude.map buildInToSimpleCompletionItem BuiltIn.all)
+    ( Prelude.map
+        ( \{ name, description } ->
+            SimpleCompletionItem
+              { label: Identifier.identifierToString false name
+              , description: "Expr"
+              , kind: Function
+              , documentation:
+                  Markdown.Markdown
+                    [ Markdown.Raw description ]
+              , insertText:
+                  InsertTextTree
+                    { name: Identifier.identifierToNonEmptyString false name
+                    , focus: false
+                    , children: []
+                    }
+              , builtInType: BuiltIn.Expr BuiltIn.Unknown
+              }
         )
+        (getPartNameListInTree tree)
+    )
 
 buildInToSimpleCompletionItem :: BuiltIn.BuiltIn -> SimpleCompletionItem
 buildInToSimpleCompletionItem (BuiltIn.BuiltIn rec) =
@@ -123,6 +131,7 @@ buildInToSimpleCompletionItem (BuiltIn.BuiltIn rec) =
           , focus: true
           , children: inputTypeToInsertTextTree rec.inputType
           }
+    , builtInType: rec.outputType
     }
 
 builtInTypeToInsertTextTree :: BuiltIn.BuiltInType -> InsertTextTree
