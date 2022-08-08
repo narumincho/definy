@@ -144,9 +144,13 @@ builtInTypeToInsertTextTree = case _ of
   BuiltIn.Expr BuiltIn.TypeBody -> builtInToInsertTextTree BuiltIn.typeBodySumBuiltIn
   BuiltIn.Expr BuiltIn.Pattern -> builtInToInsertTextTree BuiltIn.patternBuiltIn
   BuiltIn.Expr BuiltIn.Unknown -> builtInToInsertTextTree BuiltIn.uintBuiltIn
-  BuiltIn.Identifier ->
+  BuiltIn.Identifier isUppercase ->
     InsertTextTree
-      { name: NonEmptyString.nes (Proxy :: Proxy "identifierSample")
+      { name:
+          if isUppercase then
+            NonEmptyString.nes (Proxy :: Proxy "IdentifierSample")
+          else
+            NonEmptyString.nes (Proxy :: Proxy "identifierSample")
       , focus: true
       , children: []
       }

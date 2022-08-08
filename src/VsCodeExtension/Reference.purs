@@ -19,29 +19,44 @@ getReference position tree = case EvaluatedTreeIndex.getEvaluatedItem position t
   Just { item: EvaluatedItem.Expr (EvaluatedItem.ExprPartReference { name }) } ->
     getReferenceInTree
       tree
+      false
       name
-  Just { item: EvaluatedItem.Identifier (Just name) } ->
+  Just { item: EvaluatedItem.Identifier { isUppercase, identifier: Just name } } ->
     getReferenceInTree
       tree
+      isUppercase
       name
   _ -> []
 
-getReferenceInTree :: Evaluate.EvaluatedTree -> Identifier.Identifier -> Array Range.Range
-getReferenceInTree (Evaluate.EvaluatedTree { children, item, nameRange }) identifier =
-  if itemIsMatch item identifier then
+getReferenceInTree :: Evaluate.EvaluatedTree -> Boolean -> Identifier.Identifier -> Array Range.Range
+getReferenceInTree (Evaluate.EvaluatedTree { children, item, nameRange }) isUppercase identifier =
+  if itemIsMatch item isUppercase identifier then
     Array.cons nameRange
       ( Array.concatMap
-          (\(Evaluate.EvaluatedTreeChild { child }) -> getReferenceInTree child identifier)
+          ( \(Evaluate.EvaluatedTreeChild { child }) ->
+              getReferenceInTree
+                child
+                isUppercase
+                identifier
+          )
           children
       )
   else
     ( Array.concatMap
-        (\(Evaluate.EvaluatedTreeChild { child }) -> getReferenceInTree child identifier)
+        ( \(Evaluate.EvaluatedTreeChild { child }) ->
+            getReferenceInTree
+              child
+              isUppercase
+              identifier
+        )
         children
     )
 
-itemIsMatch :: EvaluatedItem.EvaluatedItem -> Identifier.Identifier -> Boolean
-itemIsMatch item identifier = case item of
+itemIsMatch :: EvaluatedItem.EvaluatedItem -> Boolean -> Identifier.Identifier -> Boolean
+itemIsMatch item isUppercase identifier = case item of
   EvaluatedItem.Expr (EvaluatedItem.ExprPartReference { name }) -> Prelude.eq name identifier
-  EvaluatedItem.Identifier (Just name) -> Prelude.eq name identifier
+  EvaluatedItem.Identifier { isUppercase: evaluatedIsUppercase, identifier: Just name } ->
+    Prelude.(&&)
+      (Prelude.eq evaluatedIsUppercase isUppercase)
+      (Prelude.eq name identifier)
   _ -> false

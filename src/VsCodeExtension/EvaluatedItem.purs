@@ -25,7 +25,7 @@ data EvaluatedItem
   | Type PartialType
   | Expr PartialExpr
   | UIntLiteral (Maybe UInt.UInt)
-  | Identifier (Maybe Identifier.Identifier)
+  | Identifier { isUppercase :: Boolean, identifier :: Maybe Identifier.Identifier }
   | TextLiteral String
   | NonEmptyTextLiteral (Maybe NonEmptyString)
   | Float64Literal (Maybe Number)
@@ -95,7 +95,7 @@ toBuiltInType = case _ of
   Expr (ExprTypeBodySum _) -> BuiltIn.Expr BuiltIn.TypeBody
   Expr (ExprPattern {}) -> BuiltIn.Expr BuiltIn.Pattern
   UIntLiteral _ -> BuiltIn.UIntLiteral
-  Identifier _ -> BuiltIn.Identifier
+  Identifier { isUppercase } -> BuiltIn.Identifier isUppercase
   TextLiteral _ -> BuiltIn.TextLiteral
   NonEmptyTextLiteral _ -> BuiltIn.NonEmptyTextLiteral
   Float64Literal _ -> BuiltIn.Float64Literal

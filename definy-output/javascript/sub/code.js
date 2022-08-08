@@ -10,7 +10,7 @@
 /**
  * partDescription
  */
-export const _ = (1+(2+3));
+export const invalidPartName = (1+(2+3));
 
 
 /**

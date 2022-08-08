@@ -18,11 +18,13 @@ import Data.String.NonEmpty as NonEmptyString
 import Data.String.Regex as Regex
 import Data.String.Regex.Flags as RegexFlags
 import Data.UInt as UInt
+import Definy.Identifier as Identifier
 import Prelude as Prelude
 import Type.Proxy (Proxy(..))
 import Util as Util
 import VsCodeExtension.BuiltIn as BuiltIn
 import VsCodeExtension.Evaluate as Evaluate
+import VsCodeExtension.EvaluatedItem as EvaluatedItem
 import VsCodeExtension.NoPositionTree (NoPositionTree(..))
 
 -- | コードのツリー構造を整形された文字列に変換する
@@ -32,22 +34,35 @@ evaluatedTreeToString codeTree =
     (evaluatedTreeToNoPositionTree codeTree)
 
 evaluatedTreeToNoPositionTree :: Evaluate.EvaluatedTree -> NoPositionTree
-evaluatedTreeToNoPositionTree (Evaluate.EvaluatedTree { name, children, expectedInputType }) =
-  NoPositionTree
-    { name
-    , children:
-        Prelude.append (Prelude.map (\(Evaluate.EvaluatedTreeChild { child }) -> evaluatedTreeToNoPositionTree child) children)
-          ( case expectedInputType of
-              BuiltIn.InputTypeNormal expectedChildrenType ->
-                Prelude.map
-                  BuiltIn.typeDefaultValue
-                  ( Array.drop
-                      (Array.length children)
-                      expectedChildrenType
-                  )
-              BuiltIn.InputTypeRepeat _ -> []
-          )
-    }
+evaluatedTreeToNoPositionTree (Evaluate.EvaluatedTree { name, item, children, expectedInputType }) = case item of
+  EvaluatedItem.Identifier { isUppercase, identifier } ->
+    NoPositionTree
+      { name:
+          case identifier of
+            Just i -> Identifier.identifierToString isUppercase i
+            Nothing -> if isUppercase then "sampleIdentifier" else "SampleIdentifier"
+      , children: []
+      }
+  _ ->
+    NoPositionTree
+      { name
+      , children:
+          Prelude.append
+            ( Prelude.map
+                (\(Evaluate.EvaluatedTreeChild { child }) -> evaluatedTreeToNoPositionTree child)
+                children
+            )
+            ( case expectedInputType of
+                BuiltIn.InputTypeNormal expectedChildrenType ->
+                  Prelude.map
+                    BuiltIn.typeDefaultValue
+                    ( Array.drop
+                        (Array.length children)
+                        expectedChildrenType
+                    )
+                BuiltIn.InputTypeRepeat _ -> []
+            )
+      }
 
 noPositionTreeRootToString :: NoPositionTree -> String
 noPositionTreeRootToString (NoPositionTree { name, children }) =
