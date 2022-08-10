@@ -19,3 +19,4 @@
 /gen/**/**.js
 /core/**/**.js
 local-server.exe
+.next/

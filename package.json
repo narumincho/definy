@@ -15,7 +15,9 @@
     "build-node-package": "npx tsc --project ./tsconfig-purs-ffi.json & npx spago run --main BuildNodePackage",
     "storybook": "start-storybook --config-dir ./storybook",
     "update-package-json": "ncu -u",
-    "start-definy": "npx tsc --project ./tsconfig-purs-ffi.json && npx spago run --main Definy.Start && firebase emulators:start --project definy-lang --config ./distribution/definy/firebase.json",
+    "start-definy": "npx tsc --project ./tsconfig-purs-ffi.json && npx spago run --main Definy.Start",
+    "start-definy-client": "npx next dev ./next",
+    "start-definy-firebase-emulators": "firebase emulators:start --project definy-lang --config ./distribution/definy/firebase.json",
     "package-vscode-extension": "cd ./distribution/definy-extension && npx vsce package"
   },
   "engines": {
@@ -55,6 +57,7 @@
     "jest": "28.1.3",
     "jimp": "0.16.1",
     "jsonwebtoken": "8.5.1",
+    "next": "12.2.4",
     "npm-check-updates": "16.0.5",
     "prettier": "2.7.1",
     "purescript": "0.15.4",
