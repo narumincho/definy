@@ -4,6 +4,7 @@
     "esbenp.prettier-vscode",
     "nwolverson.ide-purescript",
     "nwolverson.language-purescript",
-    "mvakula.vscode-purty"
+    "mvakula.vscode-purty",
+    "denoland.vscode-deno"
   ]
 }

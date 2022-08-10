@@ -14,5 +14,5 @@
     "noUncheckedIndexedAccess": true,
     "exactOptionalPropertyTypes": true
   },
-  "exclude": ["distribution", "definy-output"]
+  "exclude": ["distribution", "definy-output", "local-server"]
 }
