@@ -5,7 +5,6 @@ import { NextRouter, useRouter } from "next/router";
 import { ReactElement, useCallback, useEffect, useMemo, useState } from "react";
 import {
   locationAndLanguageToNodeUrlObject,
-  locationAndLanguageToUrl,
   urlToUrlData,
 } from "../../common/url";
 import type { TypePartIdAndMessage } from "../../core/TypePartIdAndMessage";

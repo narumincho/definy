@@ -1,6 +1,9 @@
 import * as React from "react";
-import { App } from "../client/ui/App";
 import Head from "next/head";
+import { Header } from "../client/ui/Header";
+import { HomePage } from "../client/ui/HomePage";
+import { LogInMessage } from "../components/LogInMessage";
+import { css } from "@emotion/css";
 import { useDefinyApp } from "../client/hook/useDefinyApp";
 
 export const TopPage = (): React.ReactElement => {
@@ -14,7 +17,44 @@ export const TopPage = (): React.ReactElement => {
           が目標のWebアプリ
         </title>
       </Head>
-      <App useDefinyAppResult={useDefinyAppResult} />
+      <div
+        className={css({
+          width: "100%",
+          height: "100%",
+          display: "grid",
+          overflow: "hidden",
+          gridTemplateRows: "48px 1fr",
+          backgroundColor: "#222",
+        })}
+      >
+        <Header
+          logInState={useDefinyAppResult.logInState}
+          accountResource={useDefinyAppResult.accountResource}
+          language={useDefinyAppResult.language}
+          titleItemList={[]}
+          onLogInButtonClick={useDefinyAppResult.logIn}
+        />
+        <LogInMessage
+          logInState={useDefinyAppResult.logInState}
+          language={useDefinyAppResult.language}
+        />
+        <div
+          className={css({
+            gridColumn: "1 / 2",
+            gridRow: "2 / 3",
+          })}
+        >
+          <HomePage
+            topProjectsLoadingState={useDefinyAppResult.topProjectsLoadingState}
+            accountResource={useDefinyAppResult.accountResource}
+            language={useDefinyAppResult.language}
+            logInState={useDefinyAppResult.logInState}
+            projectResource={useDefinyAppResult.projectResource}
+            requestTop50Project={useDefinyAppResult.requestTop50Project}
+            typePartResource={useDefinyAppResult.typePartResource}
+          />
+        </div>
+      </div>
     </>
   );
 };

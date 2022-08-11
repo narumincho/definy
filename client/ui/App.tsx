@@ -1,7 +1,6 @@
 import * as React from "react";
 import * as d from "../../localData";
 import { Header, TitleItem } from "./Header";
-import { css, keyframes } from "@emotion/css";
 import { AboutPage } from "./AboutPage";
 import { AccountPage } from "./AccountPage";
 import { CreateProjectPage } from "./CreateProjectPage";
@@ -14,6 +13,7 @@ import { SoundQuiz } from "../tool/SoundQuiz";
 import { ThemeColorRainbow } from "../tool/ThemeColorRainbow";
 import { TypePartPage } from "./TypePartPage";
 import type { UseDefinyAppResult } from "../hook/useDefinyApp";
+import { css } from "@emotion/css";
 
 export type Props = {
   readonly useDefinyAppResult: UseDefinyAppResult;
@@ -23,21 +23,9 @@ const titleItemList: ReadonlyArray<TitleItem> = [];
 
 export const App: React.FC<Props> = ({ useDefinyAppResult }) => {
   switch (useDefinyAppResult.logInState._) {
-    case "RequestingLogInUrl": {
-      return (
-        <PrepareLogIn
-          message={logInMessage(
-            useDefinyAppResult.logInState.openIdConnectProvider,
-            useDefinyAppResult.language
-          )}
-        />
-      );
-    }
-    case "JumpingToLogInPage": {
-      return (
-        <PrepareLogIn message={jumpMessage(useDefinyAppResult.language)} />
-      );
-    }
+    case "RequestingLogInUrl":
+    case "JumpingToLogInPage":
+      return <div>LogInMessage に移植済み</div>;
   }
   return (
     <div
@@ -80,81 +68,6 @@ export const App: React.FC<Props> = ({ useDefinyAppResult }) => {
     </div>
   );
 };
-const PrepareLogIn: React.FC<{ message: string }> = (props) => (
-  <div
-    className={css({
-      height: "100%",
-      display: "grid",
-      alignItems: "center",
-      justifyItems: "center",
-    })}
-  >
-    <LoadingBox message={props.message} />
-  </div>
-);
-
-const logInMessage = (
-  provider: d.OpenIdConnectProvider,
-  language: d.Language
-): string => {
-  switch (language) {
-    case "English":
-      return `Preparing to log in to ${provider}`;
-    case "Esperanto":
-      return `Preparante ensaluti al Google${provider}`;
-    case "Japanese":
-      return `${provider}へのログインを準備中……`;
-  }
-};
-
-const jumpMessage = (language: d.Language): string => {
-  switch (language) {
-    case "English":
-      return `Navigating to Google logIn page.`;
-    case "Esperanto":
-      return `Navigado al Google-ensaluta paĝo.`;
-    case "Japanese":
-      return `Google のログインページへ移動中……`;
-  }
-};
-
-const LoadingBox: React.FC<{ message: string }> = (props) => (
-  <div
-    className={css({
-      display: "grid",
-      overflow: "hidden",
-      justifyItems: "center",
-    })}
-  >
-    <div>{props.message}</div>
-    <div
-      className={css({
-        width: 128,
-        height: 128,
-        display: "grid",
-        justifyItems: "center",
-        alignItems: "center",
-        borderRadius: "50%",
-        animation: `3s ${rotateAnimation} infinite linear`,
-        fontSize: 24,
-        padding: 8,
-        backgroundColor: "#333",
-        color: "#ddd",
-      })}
-    >
-      definy
-    </div>
-  </div>
-);
-
-const rotateAnimation = keyframes`
-  0% {
-    transform: rotate(0);
-  }
-  100% {
-    transform: rotate(1turn);
-  }
-`;
 
 /**
  * Header を含まない部分
