@@ -29,7 +29,6 @@ export type Props = Pick<
   | "outputCode"
 > & {
   readonly projectId: d.ProjectId;
-  readonly onJump: UseDefinyAppResult["jump"];
 };
 
 export const ProjectPage: React.FC<Props> = (props) => {
@@ -89,7 +88,6 @@ export const ProjectPage: React.FC<Props> = (props) => {
               accountId: project.createAccountId,
               canEdit: false,
               accountResource: props.accountResource,
-              jump: props.onJump,
               language: props.language,
             }),
           },
@@ -110,7 +108,6 @@ export const ProjectPage: React.FC<Props> = (props) => {
             name: "型パーツ",
             value: typePartListValue(typePartIdListInProject, {
               addTypePartInProject,
-              jump: props.onJump,
               language: props.language,
               typePartResource: props.typePartResource,
             }),
@@ -131,7 +128,6 @@ export const ProjectPage: React.FC<Props> = (props) => {
           {
             name: "出力されたコード",
             value: outputCodeToText({
-              jump: props.onJump,
               language: props.language,
               outputCode: props.outputCode,
               typePartResource: props.typePartResource,
@@ -147,7 +143,7 @@ const typePartListValue = (
   typePartIdListInProject:
     | d.ResourceState<ReadonlyArray<d.TypePartId>>
     | undefined,
-  option: Pick<UseDefinyAppResult, "typePartResource" | "jump" | "language"> & {
+  option: Pick<UseDefinyAppResult, "typePartResource" | "language"> & {
     addTypePartInProject: () => void;
   }
 ): CommonValue => {
@@ -173,7 +169,6 @@ const typePartListValue = (
     items: typePartIdListInProject.dataWithTime.data.map(
       typePartIdToListItem({
         typePartResource: option.typePartResource,
-        jump: option.jump,
         language: option.language,
       })
     ),
@@ -182,9 +177,7 @@ const typePartListValue = (
 };
 
 const typePartIdToListItem =
-  (
-    option: Pick<UseDefinyAppResult, "typePartResource" | "jump" | "language">
-  ) =>
+  (option: Pick<UseDefinyAppResult, "typePartResource" | "language">) =>
   (typePartId: d.TypePartId): ListItem => {
     const typePart = option.typePartResource.getFromMemoryCache(typePartId);
     return listItem(
@@ -192,7 +185,7 @@ const typePartIdToListItem =
         canEdit: false,
         typePartId,
         typePartResource: option.typePartResource,
-        jump: option.jump,
+
         language: option.language,
       }),
       typePart?._ === "Loaded" ? typePart.dataWithTime.data.name : ""
@@ -202,7 +195,7 @@ const typePartIdToListItem =
 const outputCodeToText = (
   option: Pick<
     UseDefinyAppResult,
-    "typePartResource" | "jump" | "language" | "outputCode"
+    "typePartResource" | "language" | "outputCode"
   >
 ): CommonValue => {
   switch (option.outputCode.tag) {
@@ -223,7 +216,7 @@ const outputCodeToText = (
         items: option.outputCode.messageList.map((typePartIdAndMessage) => {
           const errorTypePartListItem = typePartIdToListItem({
             typePartResource: option.typePartResource,
-            jump: option.jump,
+
             language: option.language,
           })(typePartIdAndMessage.typePartId);
           return listItem(

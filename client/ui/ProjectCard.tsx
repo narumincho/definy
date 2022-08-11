@@ -13,7 +13,6 @@ const cardHeight = imageHeight + textHeight;
 
 export type Props = Pick<UseDefinyAppResult, "projectResource" | "language"> & {
   readonly projectId: d.ProjectId;
-  readonly onJump: UseDefinyAppResult["jump"];
 };
 
 export const ProjectCard: React.FC<Props> = React.memo((props) => {
@@ -49,7 +48,6 @@ export const ProjectCard: React.FC<Props> = React.memo((props) => {
         location: d.Location.Project(props.projectId),
         language: props.language,
       }}
-      onJump={props.onJump}
     >
       <Image
         alt={`${project.name}の画像`}

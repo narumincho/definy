@@ -23,7 +23,7 @@ const meta: Meta = {
 };
 export default meta;
 
-type ControlAndActionProps = Pick<Props, "language" | "onJump">;
+type ControlAndActionProps = Pick<Props, "language">;
 
 export const Default: Story<ControlAndActionProps> = (props) => (
   <HomePage
@@ -31,7 +31,6 @@ export const Default: Story<ControlAndActionProps> = (props) => (
     projectResource={projectResource}
     accountResource={accountResource}
     logInState={{ _: "Guest" }}
-    onJump={props.onJump}
     topProjectsLoadingState={{ _: "none" }}
     requestTop50Project={action("requestTop50Project")}
     typePartResource={typePartResource}
@@ -52,7 +51,6 @@ export const LoggedIn: Story<ControlAndActionProps> = (props) => (
       accountToken: d.AccountToken.fromString("dummyAccountToken"),
       accountId: dummyAccountId,
     })}
-    onJump={props.onJump}
     topProjectsLoadingState={{ _: "none" }}
     requestTop50Project={action("requestTop50Project")}
     typePartResource={typePartResource}
@@ -71,7 +69,6 @@ export const Loaded: Story<ControlAndActionProps> = (props) => (
       accountToken: d.AccountToken.fromString("dummyAccountToken"),
       accountId: dummyAccountId,
     })}
-    onJump={props.onJump}
     topProjectsLoadingState={{
       _: "loaded",
       projectIdList: [project1Id, project2Id],

@@ -18,7 +18,7 @@ const meta: Meta = {
 };
 export default meta;
 
-type ControlAndActionProps = Pick<Props, "language" | "onJump">;
+type ControlAndActionProps = Pick<Props, "language">;
 
 export const Default: Story<ControlAndActionProps> = (props) => (
   <TypePartPage
@@ -27,7 +27,6 @@ export const Default: Story<ControlAndActionProps> = (props) => (
     language={props.language}
     projectResource={projectResource}
     accountResource={accountResource}
-    onJump={props.onJump}
     typePartIdListInProjectResource={typePartIdListInProjectResource}
     isSavingTypePart={false}
     saveTypePart={action("saveTypePart")}
@@ -42,7 +41,6 @@ export const WithTypeParameter: Story<ControlAndActionProps> = (props) => (
     language={props.language}
     projectResource={projectResource}
     accountResource={accountResource}
-    onJump={props.onJump}
     typePartIdListInProjectResource={typePartIdListInProjectResource}
     isSavingTypePart={false}
     saveTypePart={action("saveTypePart")}

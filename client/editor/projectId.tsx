@@ -11,7 +11,7 @@ export type ProjectIdSelection = never;
 export type ProjectIdValue = {
   readonly projectId: d.ProjectId;
   readonly canEdit: boolean;
-} & Pick<UseDefinyAppResult, "projectResource" | "language" | "jump">;
+} & Pick<UseDefinyAppResult, "projectResource" | "language">;
 
 const ProjectIdSelectionView: ElementOperation<
   ProjectIdSelection,
@@ -22,7 +22,6 @@ const ProjectIdSelectionView: ElementOperation<
       projectResource={props.value.projectResource}
       projectId={props.value.projectId}
       language={props.value.language}
-      onJump={props.value.jump}
     />
   );
 });
@@ -37,7 +36,6 @@ const ProjectIdDetailView: ElementOperation<
       projectResource={props.value.projectResource}
       projectId={props.value.projectId}
       language={props.value.language}
-      onJump={props.value.jump}
     />
   );
 });

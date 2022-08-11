@@ -7,7 +7,6 @@ export type Props = Pick<
   UseDefinyAppResult,
   "accountResource" | "language" | "logInState"
 > & {
-  onJump: UseDefinyAppResult["jump"];
   onLogOut: UseDefinyAppResult["logOut"];
 };
 

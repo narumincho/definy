@@ -13,7 +13,6 @@ export type Props = Pick<
   "accountResource" | "projectResource" | "language" | "typePartResource"
 > & {
   readonly accountId: d.AccountId;
-  readonly onJump: UseDefinyAppResult["jump"];
 };
 
 export const AccountPage: React.FC<Props> = (props) => {

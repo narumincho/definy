@@ -14,7 +14,6 @@ export type Props = Pick<
   UseDefinyAppResult,
   "accountResource" | "language" | "logInState"
 > & {
-  onJump: UseDefinyAppResult["jump"];
   onLogInButtonClick: UseDefinyAppResult["logIn"];
   titleItemList: ReadonlyArray<TitleItem>;
 };
@@ -46,7 +45,6 @@ export const Header: React.FC<Props> = React.memo((props) => {
           language: props.language,
           location: d.Location.Home,
         }}
-        onJump={props.onJump}
       >
         definy
       </Link>
@@ -62,7 +60,6 @@ export const Header: React.FC<Props> = React.memo((props) => {
                 language: props.language,
                 location: titleItem.location,
               }}
-              onJump={props.onJump}
               key={`${titleItem.name}-link`}
             >
               {titleItem.name}
@@ -74,7 +71,6 @@ export const Header: React.FC<Props> = React.memo((props) => {
         logInState={props.logInState}
         language={props.language}
         accountResource={props.accountResource}
-        onJump={props.onJump}
         onLogInButtonClick={props.onLogInButtonClick}
       />
     </div>
@@ -84,7 +80,6 @@ Header.displayName = "Header";
 
 const UserViewOrLogInButton: React.FC<
   Pick<UseDefinyAppResult, "logInState" | "language" | "accountResource"> & {
-    onJump: UseDefinyAppResult["jump"];
     onLogInButtonClick: () => void;
   }
 > = (props) => {
@@ -127,7 +122,6 @@ const UserViewOrLogInButton: React.FC<
       return (
         <SettingLink
           language={props.language}
-          onJump={props.onJump}
           account={accountResourceState.dataWithTime.data}
         />
       );
@@ -146,10 +140,8 @@ const userViewOrLogInButtonStyle: CSSObject = {
 const SettingLink: React.FC<{
   account: d.Account;
   language: d.Language;
-  onJump: (urlData: d.LocationAndLanguage) => void;
 }> = (props) => (
   <Link
-    onJump={props.onJump}
     style={{
       justifySelf: "end",
       display: "grid",

@@ -12,7 +12,6 @@ import { ProjectPage } from "./ProjectPage";
 import { SettingPage } from "./SettingPage";
 import { SoundQuiz } from "../tool/SoundQuiz";
 import { ThemeColorRainbow } from "../tool/ThemeColorRainbow";
-import { ToolListPage } from "./ToolListPage";
 import { TypePartPage } from "./TypePartPage";
 import type { UseDefinyAppResult } from "../hook/useDefinyApp";
 
@@ -56,7 +55,6 @@ export const App: React.FC<Props> = ({ useDefinyAppResult }) => {
         accountResource={useDefinyAppResult.accountResource}
         language={useDefinyAppResult.language}
         titleItemList={titleItemList}
-        onJump={useDefinyAppResult.jump}
         onLogInButtonClick={useDefinyAppResult.logIn}
       />
       <div
@@ -172,7 +170,6 @@ const AppMain: React.FC<Props> = (props) => {
           language={useDefinyAppResult.language}
           logInState={useDefinyAppResult.logInState}
           projectResource={useDefinyAppResult.projectResource}
-          onJump={useDefinyAppResult.jump}
           requestTop50Project={useDefinyAppResult.requestTop50Project}
           typePartResource={useDefinyAppResult.typePartResource}
         />
@@ -185,7 +182,6 @@ const AppMain: React.FC<Props> = (props) => {
           accountResource={useDefinyAppResult.accountResource}
           language={useDefinyAppResult.language}
           logInState={useDefinyAppResult.logInState}
-          onJump={useDefinyAppResult.jump}
           onLogOut={useDefinyAppResult.logOut}
         />
       );
@@ -200,7 +196,6 @@ const AppMain: React.FC<Props> = (props) => {
       return (
         <ProjectPage
           language={useDefinyAppResult.language}
-          onJump={useDefinyAppResult.jump}
           projectId={useDefinyAppResult.location.projectId}
           accountResource={useDefinyAppResult.accountResource}
           projectResource={useDefinyAppResult.projectResource}
@@ -217,7 +212,6 @@ const AppMain: React.FC<Props> = (props) => {
       return (
         <AccountPage
           language={useDefinyAppResult.language}
-          onJump={useDefinyAppResult.jump}
           accountId={useDefinyAppResult.location.accountId}
           accountResource={useDefinyAppResult.accountResource}
           projectResource={useDefinyAppResult.projectResource}
@@ -232,7 +226,6 @@ const AppMain: React.FC<Props> = (props) => {
           accountResource={useDefinyAppResult.accountResource}
           projectResource={useDefinyAppResult.projectResource}
           language={useDefinyAppResult.language}
-          onJump={useDefinyAppResult.jump}
           typePartIdListInProjectResource={
             useDefinyAppResult.typePartIdListInProjectResource
           }
@@ -245,12 +238,7 @@ const AppMain: React.FC<Props> = (props) => {
     case "LocalProject":
       return <LocalProjectPage />;
     case "ToolList":
-      return (
-        <ToolListPage
-          language={useDefinyAppResult.language}
-          onJump={useDefinyAppResult.jump}
-        />
-      );
+      return <div>next の route として移植済み</div>;
     case "Tool":
       return <Tool toolName={useDefinyAppResult.location.toolName} />;
   }

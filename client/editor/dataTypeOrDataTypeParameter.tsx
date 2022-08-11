@@ -15,7 +15,7 @@ export type DataTypeOrDataTypeParameterSelection = {
 
 export type DataTypeOrDataTypeParameterValue = Pick<
   UseDefinyAppResult,
-  "typePartResource" | "jump" | "language" | "typePartIdListInProjectResource"
+  "typePartResource" | "language" | "typePartIdListInProjectResource"
 > & {
   readonly dataTypeOrTypeParameter: d.DataTypeOrDataTypeParameter;
   readonly projectId: d.ProjectId;
@@ -305,7 +305,6 @@ const DataTypeDetailView: ElementOperation<
     <div>
       <SelectedType
         language={props.value.language}
-        jump={props.value.jump}
         dataTypeOrDataTypeParameter={props.value.dataTypeOrTypeParameter}
         typePartResource={props.value.typePartResource}
         scopeTypePartId={props.value.scopeTypePartId}
@@ -316,7 +315,6 @@ const DataTypeDetailView: ElementOperation<
         onChange={onSearchTextChange}
       />
       <SearchResult
-        jump={props.value.jump}
         normalizedSearchText={text.trim().toLocaleLowerCase()}
         typePartIdListInProject={props.value.typePartIdListInProjectResource.getFromMemoryCache(
           props.value.projectId
@@ -380,10 +378,7 @@ const setTypePartAtSelectionDataType = (
 
 const SelectedType = React.memo(
   (
-    props: Pick<
-      UseDefinyAppResult,
-      "typePartResource" | "jump" | "language"
-    > & {
+    props: Pick<UseDefinyAppResult, "typePartResource" | "language"> & {
       readonly dataTypeOrDataTypeParameter: d.DataTypeOrDataTypeParameter;
       readonly scopeTypePartId: d.TypePartId;
     }
@@ -399,7 +394,6 @@ const SelectedType = React.memo(
           <div>
             <div className={css({ padding: 8 })}>{result.name} を選択中</div>
             <Link
-              onJump={props.jump}
               locationAndLanguage={{
                 language: props.language,
                 location: d.Location.TypePart(
@@ -425,10 +419,7 @@ SelectedType.displayName = "SelectedType";
 
 const SearchResult = React.memo(
   (
-    props: Pick<
-      UseDefinyAppResult,
-      "language" | "typePartResource" | "jump"
-    > & {
+    props: Pick<UseDefinyAppResult, "language" | "typePartResource"> & {
       readonly typePartIdListInProject:
         | d.ResourceState<ReadonlyArray<d.TypePartId>>
         | undefined;
@@ -460,7 +451,6 @@ const SearchResult = React.memo(
             {typePartList.slice(0, 20).map((item) => (
               <DataTypeItem
                 key={item.typePartId}
-                jump={props.jump}
                 language={props.language}
                 name={item.name}
                 onChange={() => {
@@ -572,11 +562,10 @@ const DataTypeItem = React.memo(
   ({
     typePartId,
     name,
-    jump,
     language,
     isSelected,
     onChange,
-  }: Pick<UseDefinyAppResult, "jump" | "language"> & {
+  }: Pick<UseDefinyAppResult, "language"> & {
     readonly typePartId: d.TypePartId;
     readonly name: ReadonlyArray<SuggestionText>;
     readonly typeParameterCount: number;
@@ -605,7 +594,6 @@ const DataTypeItem = React.memo(
           ))}
         </Button>
         <Link
-          onJump={jump}
           locationAndLanguage={{
             language,
             location: d.Location.TypePart(typePartId),

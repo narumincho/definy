@@ -6,7 +6,6 @@ import type { UseDefinyAppResult } from "../hook/useDefinyApp";
 
 export type Props = Pick<UseDefinyAppResult, "language" | "accountResource"> & {
   readonly accountId: d.AccountId;
-  readonly onJump: UseDefinyAppResult["jump"];
 };
 
 export const AccountCard: React.FC<Props> = React.memo((props) => {
@@ -31,7 +30,6 @@ export const AccountCard: React.FC<Props> = React.memo((props) => {
   const account = accountResource.dataWithTime.data;
   return (
     <Link
-      onJump={props.onJump}
       locationAndLanguage={{
         language: props.language,
         location: d.Location.Account(props.accountId),

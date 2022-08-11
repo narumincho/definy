@@ -22,10 +22,7 @@ const meta: Meta = {
 };
 export default meta;
 
-type ControlAndActionProps = Pick<
-  Props,
-  "language" | "onJump" | "onLogInButtonClick"
->;
+type ControlAndActionProps = Pick<Props, "language" | "onLogInButtonClick">;
 
 export const Default: Story<ControlAndActionProps> = (props) => (
   <Header
@@ -33,7 +30,6 @@ export const Default: Story<ControlAndActionProps> = (props) => (
     titleItemList={[]}
     accountResource={accountResource}
     logInState={{ _: "Guest" }}
-    onJump={props.onJump}
     onLogInButtonClick={props.onLogInButtonClick}
   />
 );
@@ -56,7 +52,6 @@ export const Title: Story<ControlAndActionProps> = (props) => (
     ]}
     accountResource={accountResource}
     logInState={{ _: "Guest" }}
-    onJump={props.onJump}
     onLogInButtonClick={props.onLogInButtonClick}
   />
 );

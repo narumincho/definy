@@ -10,7 +10,7 @@ export type TypePartIdSelection = never;
 export type TypePartIdValue = {
   readonly typePartId: d.TypePartId;
   readonly canEdit: boolean;
-} & Pick<UseDefinyAppResult, "typePartResource" | "language" | "jump">;
+} & Pick<UseDefinyAppResult, "typePartResource" | "language">;
 
 const TypePartIdSelectionView: ElementOperation<
   TypePartIdSelection,
@@ -26,7 +26,6 @@ const TypePartIdSelectionView: ElementOperation<
   if (typePartResource === undefined) {
     return (
       <Link
-        onJump={props.value.jump}
         locationAndLanguage={{
           language: props.value.language,
           location: d.Location.TypePart(props.value.typePartId),
@@ -39,7 +38,6 @@ const TypePartIdSelectionView: ElementOperation<
   if (typePartResource._ === "Deleted") {
     return (
       <Link
-        onJump={props.value.jump}
         locationAndLanguage={{
           language: props.value.language,
           location: d.Location.TypePart(props.value.typePartId),
@@ -52,7 +50,6 @@ const TypePartIdSelectionView: ElementOperation<
   if (typePartResource._ === "Unknown") {
     return (
       <Link
-        onJump={props.value.jump}
         locationAndLanguage={{
           language: props.value.language,
           location: d.Location.TypePart(props.value.typePartId),
@@ -65,7 +62,6 @@ const TypePartIdSelectionView: ElementOperation<
   if (typePartResource._ === "Requesting") {
     return (
       <Link
-        onJump={props.value.jump}
         locationAndLanguage={{
           language: props.value.language,
           location: d.Location.TypePart(props.value.typePartId),
@@ -78,7 +74,6 @@ const TypePartIdSelectionView: ElementOperation<
   return (
     <div className={css({ paddingLeft: 16 })}>
       <Link
-        onJump={props.value.jump}
         locationAndLanguage={{
           language: props.value.language,
           location: d.Location.TypePart(props.value.typePartId),

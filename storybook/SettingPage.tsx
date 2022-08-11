@@ -10,14 +10,13 @@ const meta: Meta = {
 };
 export default meta;
 
-type ControlAndActionProps = Pick<Props, "language" | "onJump" | "onLogOut">;
+type ControlAndActionProps = Pick<Props, "language" | "onLogOut">;
 
 export const Default: Story<ControlAndActionProps> = (props) => (
   <SettingPage
     language={props.language}
     accountResource={accountResource}
     logInState={{ _: "Guest" }}
-    onJump={props.onJump}
     onLogOut={props.onLogOut}
   />
 );

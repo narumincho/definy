@@ -2,6 +2,7 @@ import * as d from "../localData";
 import * as s from "../staticResource";
 import {
   StructuredUrl,
+  structuredUrlToNodeUrlObject,
   structuredUrlToUrl,
   urlToStructuredUrl,
 } from "../gen/url/main";
@@ -14,6 +15,7 @@ import {
   japaneseId,
   languageToIdString,
 } from "../output/TypeScriptEntryPoint";
+import type { UrlObject } from "url";
 import { clientScriptPath } from "../clientScriptHash";
 import { origin } from "../out";
 
@@ -50,6 +52,14 @@ export const locationAndLanguageToStructuredUrl = (
       ],
     ]),
   };
+};
+
+export const locationAndLanguageToNodeUrlObject = (
+  locationAndLanguage: d.LocationAndLanguage
+): UrlObject => {
+  return structuredUrlToNodeUrlObject(
+    locationAndLanguageToStructuredUrl(locationAndLanguage)
+  );
 };
 
 const dataLanguageToPureLanguage = (language: d.Language) => {

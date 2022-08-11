@@ -14,7 +14,7 @@ export type AccountIdSelection = never;
 export type AccountIdValue = {
   readonly accountId: d.AccountId;
   readonly canEdit: boolean;
-} & Pick<UseDefinyAppResult, "accountResource" | "language" | "jump">;
+} & Pick<UseDefinyAppResult, "accountResource" | "language">;
 
 const AccountIdSelectionView: ElementOperation<
   AccountIdSelection,
@@ -58,7 +58,6 @@ const AccountIdSelectionView: ElementOperation<
       />
       <div>{account.name}</div>
       <Link
-        onJump={props.value.jump}
         locationAndLanguage={{
           language: props.value.language,
           location: d.Location.Account(props.value.accountId),
@@ -86,7 +85,6 @@ const AccountIdDetailView: ElementOperation<
       <AccountCard
         accountId={props.value.accountId}
         language={props.value.language}
-        onJump={props.value.jump}
         accountResource={props.value.accountResource}
       />
     </div>

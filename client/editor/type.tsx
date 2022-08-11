@@ -13,7 +13,7 @@ export type TypeSelection = {
 
 export type TypeValue = Pick<
   UseDefinyAppResult,
-  "typePartResource" | "jump" | "language" | "typePartIdListInProjectResource"
+  "typePartResource" | "language" | "typePartIdListInProjectResource"
 > & {
   readonly type: d.Type;
   readonly projectId: d.ProjectId;
@@ -52,7 +52,7 @@ const TypeSelectionView: ElementOperation<
         <dataTypeOrDataTypeParameterOperation.selectionView
           value={{
             dataTypeOrTypeParameter: value.type.output,
-            jump: value.jump,
+
             language: value.language,
             onChange,
             projectId: value.projectId,
@@ -86,7 +86,6 @@ const TypeDetailView: ElementOperation<TypeSelection, TypeValue>["detailView"] =
         selection={selection}
         value={{
           dataTypeOrTypeParameter: value.type.output,
-          jump: value.jump,
           language: value.language,
           onChange,
           projectId: value.projectId,

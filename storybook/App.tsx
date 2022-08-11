@@ -21,7 +21,6 @@ const useDefinyAppResult: UseDefinyAppResult = {
   typePartResource,
   createProject: action("createProject"),
   createProjectState: { _: "none" },
-  jump: action("jump"),
   language: d.Language.Japanese,
   location: d.Location.Home,
   logIn: action("logIn"),

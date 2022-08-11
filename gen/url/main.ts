@@ -1,3 +1,5 @@
+import type { UrlObject } from "url";
+
 /**
  * 構造化され, 単純化されたURL
  */
@@ -29,6 +31,18 @@ export const structuredUrlToUrl = (
     }
   }
   return url;
+};
+
+/**
+ * Next.js で使ってる. Node の URL. (なんでWebのほうと別にあるんだろう?)
+ */
+export const structuredUrlToNodeUrlObject = (
+  structuredUrl: StructuredUrl
+): UrlObject => {
+  return {
+    pathname: "/" + structuredUrl.path.join("/"),
+    query: Object.fromEntries(structuredUrl.searchParams),
+  };
 };
 
 /**

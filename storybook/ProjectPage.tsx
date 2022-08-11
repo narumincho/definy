@@ -17,7 +17,7 @@ const meta: Meta = {
 };
 export default meta;
 
-type ControlAndActionProps = Pick<Props, "language" | "onJump">;
+type ControlAndActionProps = Pick<Props, "language">;
 
 export const Default: Story<ControlAndActionProps> = (props) => (
   <ProjectPage
@@ -27,7 +27,6 @@ export const Default: Story<ControlAndActionProps> = (props) => (
     typePartResource={typePartResource}
     typePartIdListInProjectResource={typePartIdListInProjectResource}
     projectId={project1Id}
-    onJump={props.onJump}
     addTypePart={action("addTypePart")}
     generateCode={action("generateCode")}
     outputCode={{ tag: "notGenerated" }}

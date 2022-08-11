@@ -15,12 +15,11 @@ const meta: Meta = {
 };
 export default meta;
 
-type ControlAndActionProps = Pick<Props, "language" | "onJump">;
+type ControlAndActionProps = Pick<Props, "language">;
 
 export const Default: Story<ControlAndActionProps> = (props) => (
   <AccountPage
     accountId={account1Id}
-    onJump={props.onJump}
     language={props.language}
     accountResource={accountResource}
     projectResource={projectResource}

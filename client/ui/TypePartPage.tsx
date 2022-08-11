@@ -30,7 +30,6 @@ export type Props = Pick<
   | "isSavingTypePart"
 > & {
   typePartId: d.TypePartId;
-  onJump: UseDefinyAppResult["jump"];
 };
 
 export const TypePartPage = (props: Props): React.ReactElement => {
@@ -65,7 +64,6 @@ export const TypePartPage = (props: Props): React.ReactElement => {
       projectResource={props.projectResource}
       typePartResource={props.typePartResource}
       language={props.language}
-      jump={props.onJump}
       saveTypePart={props.saveTypePart}
       isSavingTypePart={props.isSavingTypePart}
       typePartId={props.typePartId}
@@ -83,7 +81,6 @@ const LoadedTypePartEditor = (
     | "projectResource"
     | "typePartResource"
     | "language"
-    | "jump"
     | "typePartIdListInProjectResource"
     | "saveTypePart"
     | "isSavingTypePart"
@@ -151,7 +148,7 @@ const LoadedTypePartEditor = (
                 : "parameter",
             value: parameterListValue({
               language: props.language,
-              jump: props.jump,
+
               typePartResource: props.typePartResource,
               typeParameterList: dataTypeParameterList,
               setTypeParameterList: setDataTypeParameterList,
@@ -163,7 +160,7 @@ const LoadedTypePartEditor = (
               {
                 language: props.language,
                 typePartResource: props.typePartResource,
-                jump: props.jump,
+
                 typePartIdListInProjectResource:
                   props.typePartIdListInProjectResource,
                 projectId: props.typePart.projectId,
@@ -195,7 +192,7 @@ const LoadedTypePartEditor = (
               canEdit: false,
               projectId: props.typePart.projectId,
               projectResource: props.projectResource,
-              jump: props.jump,
+
               language: props.language,
             }),
           },
@@ -301,7 +298,7 @@ const attributeValue = (
 };
 
 const parameterListValue = (
-  option: Pick<UseDefinyAppResult, "typePartResource" | "language" | "jump"> & {
+  option: Pick<UseDefinyAppResult, "typePartResource" | "language"> & {
     typeParameterList: ReadonlyArray<d.DataTypeParameter>;
     setTypeParameterList: React.Dispatch<
       React.SetStateAction<ReadonlyArray<d.DataTypeParameter>>
@@ -362,7 +359,7 @@ const parameterListValue = (
 const bodyValue = (
   context: Pick<
     UseDefinyAppResult,
-    "jump" | "language" | "typePartResource" | "typePartIdListInProjectResource"
+    "language" | "typePartResource" | "typePartIdListInProjectResource"
   > & { projectId: d.ProjectId; scopeTypePartId: d.TypePartId },
   typePartBody: d.TypePartBody,
   setBody: React.Dispatch<React.SetStateAction<d.TypePartBody>>
@@ -454,7 +451,7 @@ const bodyValue = (
 const patternListValue = (
   context: Pick<
     UseDefinyAppResult,
-    "jump" | "language" | "typePartResource" | "typePartIdListInProjectResource"
+    "language" | "typePartResource" | "typePartIdListInProjectResource"
   > & { projectId: d.ProjectId; scopeTypePartId: d.TypePartId },
   patternList: ReadonlyArray<d.Pattern>,
   setPatternList: (
@@ -493,7 +490,7 @@ const patternListValue = (
 const patternValue = (
   context: Pick<
     UseDefinyAppResult,
-    "jump" | "language" | "typePartResource" | "typePartIdListInProjectResource"
+    "language" | "typePartResource" | "typePartIdListInProjectResource"
   > & { projectId: d.ProjectId; scopeTypePartId: d.TypePartId },
   pattern: d.Pattern,
   setPattern: (func: (prevPattern: d.Pattern) => d.Pattern) => void
@@ -534,7 +531,6 @@ const patternValue = (
             typeValue({
               type,
               typePartResource: context.typePartResource,
-              jump: context.jump,
               language: context.language,
               onChange: (newType) => {
                 setPattern((prevPattern) => ({
@@ -577,7 +573,7 @@ const patternValue = (
 const memberListValue = (
   context: Pick<
     UseDefinyAppResult,
-    "typePartResource" | "language" | "jump" | "typePartIdListInProjectResource"
+    "typePartResource" | "language" | "typePartIdListInProjectResource"
   > & { projectId: d.ProjectId; scopeTypePartId: d.TypePartId },
   memberList: ReadonlyArray<d.Member>,
   setMemberList: (
@@ -622,7 +618,7 @@ const memberListValue = (
 const memberValue = (
   context: Pick<
     UseDefinyAppResult,
-    "typePartResource" | "language" | "jump" | "typePartIdListInProjectResource"
+    "typePartResource" | "language" | "typePartIdListInProjectResource"
   > & { projectId: d.ProjectId; scopeTypePartId: d.TypePartId },
   member: d.Member,
   setMember: (func: (prev: d.Member) => d.Member) => void
@@ -660,7 +656,6 @@ const memberValue = (
         value: typeValue({
           type: member.type,
           typePartResource: context.typePartResource,
-          jump: context.jump,
           language: context.language,
           onChange: (newType) => {
             setMember((prev) => ({

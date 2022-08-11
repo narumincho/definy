@@ -17,9 +17,7 @@ export type Props = Pick<
   | "logInState"
   | "requestTop50Project"
   | "typePartResource"
-> & {
-  onJump: UseDefinyAppResult["jump"];
-};
+>;
 
 export const HomePage: React.FC<Props> = (props) => {
   React.useEffect(() => {
@@ -39,16 +37,15 @@ export const HomePage: React.FC<Props> = (props) => {
         overflow: "hidden",
       })}
     >
-      <HomeLinkList jumpHandler={props.onJump} language={props.language} />
+      <HomeLinkList language={props.language} />
       <TopProjectList
         topProjectsLoadingState={props.topProjectsLoadingState}
-        onJump={props.onJump}
         language={props.language}
         projectResource={props.projectResource}
         accountResource={props.accountResource}
       />
       {props.logInState._ === "LoggedIn" ? (
-        <CreateProjectButton language={props.language} onJump={props.onJump} />
+        <CreateProjectButton language={props.language} />
       ) : (
         <></>
       )}
@@ -57,8 +54,7 @@ export const HomePage: React.FC<Props> = (props) => {
 };
 
 const HomeLinkList: React.FC<{
-  language: d.Language;
-  jumpHandler: (urlData: d.LocationAndLanguage) => void;
+  readonly language: d.Language;
 }> = (props) => {
   return (
     <div
@@ -79,7 +75,6 @@ const HomeLinkList: React.FC<{
           language: props.language,
         }}
         style={{ padding: 4 }}
-        onJump={props.jumpHandler}
       >
         definyについて
       </Link>
@@ -89,7 +84,6 @@ const HomeLinkList: React.FC<{
           language: props.language,
         }}
         style={{ padding: 4 }}
-        onJump={props.jumpHandler}
       >
         ファイルから開く
       </Link>
@@ -99,7 +93,6 @@ const HomeLinkList: React.FC<{
           language: props.language,
         }}
         style={{ padding: 4 }}
-        onJump={props.jumpHandler}
       >
         ツール
       </Link>
@@ -114,9 +107,7 @@ const TopProjectList: React.FC<
     | "projectResource"
     | "accountResource"
     | "language"
-  > & {
-    onJump: UseDefinyAppResult["jump"];
-  }
+  >
 > = (props) => {
   switch (props.topProjectsLoadingState._) {
     case "none":
@@ -186,7 +177,6 @@ const TopProjectList: React.FC<
                     items: props.topProjectsLoadingState.projectIdList.map(
                       projectIdToListItem({
                         projectResource: props.projectResource,
-                        jump: props.onJump,
                         language: props.language,
                       })
                     ),
@@ -201,7 +191,7 @@ const TopProjectList: React.FC<
 };
 
 const projectIdToListItem =
-  (option: Pick<UseDefinyAppResult, "projectResource" | "jump" | "language">) =>
+  (option: Pick<UseDefinyAppResult, "projectResource" | "language">) =>
   (projectId: d.ProjectId): ListItem => {
     const project = option.projectResource.getFromMemoryCache(projectId);
     return listItem(
@@ -209,7 +199,6 @@ const projectIdToListItem =
         canEdit: false,
         projectId,
         projectResource: option.projectResource,
-        jump: option.jump,
         language: option.language,
       }),
       project?._ === "Loaded" ? project.dataWithTime.data.name : ""
@@ -218,7 +207,6 @@ const projectIdToListItem =
 
 const CreateProjectButton: React.FC<{
   language: d.Language;
-  onJump: (urlData: d.LocationAndLanguage) => void;
 }> = (props) => (
   <div
     className={css({
@@ -234,7 +222,6 @@ const CreateProjectButton: React.FC<{
         language: props.language,
         location: d.Location.CreateProject,
       }}
-      onJump={props.onJump}
       style={{ padding: 8 }}
       isActive
     >

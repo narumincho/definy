@@ -4,7 +4,7 @@ import { AddMessage, useNotification } from "./useNotification";
 import { NextRouter, useRouter } from "next/router";
 import { ReactElement, useCallback, useEffect, useMemo, useState } from "react";
 import {
-  locationAndLanguageToStructuredUrl,
+  locationAndLanguageToNodeUrlObject,
   locationAndLanguageToUrl,
   urlToUrlData,
 } from "../../common/url";
@@ -108,12 +108,6 @@ export type UseDefinyAppResult = {
    * *no-side-effect*
    */
   readonly createProjectState: CreateProjectState;
-  /**
-   * ページを移動する
-   *
-   * *side-effect*
-   */
-  readonly jump: (urlData: d.LocationAndLanguage) => void;
   /**
    * ログインする
    *
@@ -255,21 +249,6 @@ export const useDefinyApp = (): UseDefinyAppResult => {
 
   const router = useRouter();
 
-  /**
-   * ページを移動する
-   */
-  const jump = useCallback(
-    (newLocationAndLanguage: d.LocationAndLanguage): void => {
-      window.history.pushState(
-        undefined,
-        "",
-        locationAndLanguageToUrl(newLocationAndLanguage).toString()
-      );
-      setLocationAndLanguage(newLocationAndLanguage);
-    },
-    []
-  );
-
   const logIn = useCallback(() => {
     setLogInState({ _: "RequestingLogInUrl", openIdConnectProvider: "Google" });
     api
@@ -295,12 +274,14 @@ export const useDefinyApp = (): UseDefinyAppResult => {
   const logOut = useCallback(() => {
     indexedDB.deleteAccountToken();
     setLogInState(d.LogInState.Guest);
-    jump({
-      language: locationAndLanguage.language,
-      location: d.Location.Home,
-    });
+    router.push(
+      locationAndLanguageToNodeUrlObject({
+        language: locationAndLanguage.language,
+        location: d.Location.Home,
+      })
+    );
     addMessage({ text: "ログアウトしました", type: "success" });
-  }, [jump, locationAndLanguage.language, addMessage]);
+  }, [router, locationAndLanguage.language, addMessage]);
 
   const getAccountToken = useCallback((): d.AccountToken | undefined => {
     switch (logInState._) {
@@ -345,17 +326,19 @@ export const useDefinyApp = (): UseDefinyAppResult => {
             text: `プロジェクト「${response.value.value.name}」を作成しました`,
             type: "success",
           });
-          jump({
-            language: locationAndLanguage.language,
-            location: d.Location.Project(response.value.value.id),
-          });
+          router.push(
+            locationAndLanguageToNodeUrlObject({
+              language: locationAndLanguage.language,
+              location: d.Location.Project(response.value.value.id),
+            })
+          );
         });
     },
     [
       getAccountToken,
       createProjectState._,
       addMessage,
-      jump,
+      router,
       locationAndLanguage.language,
     ]
   );
@@ -390,13 +373,9 @@ export const useDefinyApp = (): UseDefinyAppResult => {
     const urlData = urlToUrlData(new URL(location.href));
     if (urlData._ === "Normal") {
       // ブラウザのURLを正規化.
-      const structuredUrl = locationAndLanguageToStructuredUrl(
-        urlData.locationAndLanguage
+      router.replace(
+        locationAndLanguageToNodeUrlObject(urlData.locationAndLanguage)
       );
-      router.replace({
-        pathname: "/" + structuredUrl.path.join("/"),
-        query: Object.fromEntries(structuredUrl.searchParams),
-      });
       indexedDB.getAccountToken().then((accountToken) => {
         if (accountToken === undefined) {
           setLogInState(d.LogInState.Guest);
@@ -537,17 +516,19 @@ export const useDefinyApp = (): UseDefinyAppResult => {
             text: `型パーツ 「${response.value.data.value.name}」を作成しました`,
             type: "success",
           });
-          jump({
-            language: locationAndLanguage.language,
-            location: d.Location.TypePart(response.value.data.value.id),
-          });
+          router.push(
+            locationAndLanguageToNodeUrlObject({
+              language: locationAndLanguage.language,
+              location: d.Location.TypePart(response.value.data.value.id),
+            })
+          );
         });
     },
     [
       getAccountToken,
       createTypePartState.tag,
       addMessage,
-      jump,
+      router,
       locationAndLanguage.language,
     ]
   );
@@ -712,7 +693,6 @@ export const useDefinyApp = (): UseDefinyAppResult => {
       projectResource,
       createProject,
       createProjectState,
-      jump,
       language: locationAndLanguage.language,
       location: locationAndLanguage.location,
       logIn,
@@ -734,7 +714,6 @@ export const useDefinyApp = (): UseDefinyAppResult => {
       projectResource,
       createProject,
       createProjectState,
-      jump,
       locationAndLanguage.language,
       locationAndLanguage.location,
       logIn,
@@ -812,13 +791,11 @@ const verifyingAccountTokenAndGetAccountFromCodeAndState = (
       })
     );
     setAccount(response.value.value.account);
-    const structuredUrl = locationAndLanguageToStructuredUrl(
-      response.value.value.locationAndLanguage
+    router.push(
+      locationAndLanguageToNodeUrlObject(
+        response.value.value.locationAndLanguage
+      )
     );
-    router.push({
-      pathname: "/" + structuredUrl.path.join("/"),
-      query: Object.fromEntries(structuredUrl.searchParams),
-    });
   });
 };
 

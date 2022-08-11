@@ -35,21 +35,14 @@ import { listItem } from "../client/editor/list";
 
 type ControlAndActionProps = {
   language: d.Language;
-  onJump: UseDefinyAppResult["jump"];
 };
 
-const argTypes: Record<
-  keyof Pick<ControlAndActionProps, "language" | "onJump">,
-  ArgType
-> = {
-  language: {
-    description: "storybook 用. 言語",
-  },
-  onJump: {
-    description: "storybook 用. ページ移動をリクエストする",
-    action: "onJump",
-  },
-};
+const argTypes: Record<keyof Pick<ControlAndActionProps, "language">, ArgType> =
+  {
+    language: {
+      description: "storybook 用. 言語",
+    },
+  };
 
 const meta: Meta = {
   title: "Editor",
@@ -109,7 +102,6 @@ export const Project: Story<ControlAndActionProps> = (props) => (
                 typePartIdValue({
                   canEdit: false,
                   typePartId: typePart1Id,
-                  jump: props.onJump,
                   language: props.language,
                   typePartResource,
                 }),
@@ -119,7 +111,6 @@ export const Project: Story<ControlAndActionProps> = (props) => (
                 typePartIdValue({
                   canEdit: false,
                   typePartId: listTypePartId,
-                  jump: props.onJump,
                   language: props.language,
                   typePartResource,
                 }),
@@ -129,7 +120,6 @@ export const Project: Story<ControlAndActionProps> = (props) => (
                 typePartIdValue({
                   canEdit: false,
                   typePartId: resultTypePartId,
-                  jump: props.onJump,
                   language: props.language,
                   typePartResource,
                 }),
@@ -198,7 +188,6 @@ export const TypePart: Story<ControlAndActionProps> = (props) => (
                 typePartIdValue({
                   canEdit: false,
                   typePartId: typePart1Id,
-                  jump: props.onJump,
                   language: props.language,
                   typePartResource,
                 }),
@@ -208,7 +197,6 @@ export const TypePart: Story<ControlAndActionProps> = (props) => (
                 typePartIdValue({
                   canEdit: false,
                   typePartId: listTypePartId,
-                  jump: props.onJump,
                   language: props.language,
                   typePartResource,
                 }),
@@ -218,7 +206,6 @@ export const TypePart: Story<ControlAndActionProps> = (props) => (
                 typePartIdValue({
                   canEdit: false,
                   typePartId: resultTypePartId,
-                  jump: props.onJump,
                   language: props.language,
                   typePartResource,
                 }),
@@ -255,7 +242,6 @@ export const Home: Story<ControlAndActionProps> = (props) => (
                   projectIdValue({
                     canEdit: false,
                     projectId: project1Id,
-                    jump: props.onJump,
                     language: props.language,
                     projectResource,
                   }),
@@ -265,7 +251,6 @@ export const Home: Story<ControlAndActionProps> = (props) => (
                   projectIdValue({
                     canEdit: false,
                     projectId: project2Id,
-                    jump: props.onJump,
                     language: props.language,
                     projectResource,
                   }),
