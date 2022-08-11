@@ -10,7 +10,8 @@ export type TypePartIdSelection = never;
 export type TypePartIdValue = {
   readonly typePartId: d.TypePartId;
   readonly canEdit: boolean;
-} & Pick<UseDefinyAppResult, "typePartResource" | "language">;
+  readonly language: d.Language;
+} & Pick<UseDefinyAppResult, "typePartResource">;
 
 const TypePartIdSelectionView: ElementOperation<
   TypePartIdSelection,

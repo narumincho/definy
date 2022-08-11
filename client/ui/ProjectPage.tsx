@@ -21,7 +21,6 @@ export type Props = Pick<
   UseDefinyAppResult,
   | "projectResource"
   | "accountResource"
-  | "language"
   | "addTypePart"
   | "typePartIdListInProjectResource"
   | "typePartResource"
@@ -29,13 +28,15 @@ export type Props = Pick<
   | "outputCode"
 > & {
   readonly projectId: d.ProjectId;
+  readonly language: d.Language;
 };
 
 export const ProjectPage: React.FC<Props> = (props) => {
   const addTypePart = props.addTypePart;
   const addTypePartInProject = React.useCallback(
-    (): void => addTypePart(props.projectId),
-    [addTypePart, props.projectId]
+    (): void =>
+      addTypePart({ projectId: props.projectId, language: props.language }),
+    [addTypePart, props.projectId, props.language]
   );
   const [partList, setPartList] = React.useState<ReadonlyArray<d.Part>>([]);
 
@@ -143,8 +144,9 @@ const typePartListValue = (
   typePartIdListInProject:
     | d.ResourceState<ReadonlyArray<d.TypePartId>>
     | undefined,
-  option: Pick<UseDefinyAppResult, "typePartResource" | "language"> & {
-    addTypePartInProject: () => void;
+  option: Pick<UseDefinyAppResult, "typePartResource"> & {
+    readonly addTypePartInProject: () => void;
+    readonly language: d.Language;
   }
 ): CommonValue => {
   if (typePartIdListInProject === undefined) {
@@ -177,7 +179,11 @@ const typePartListValue = (
 };
 
 const typePartIdToListItem =
-  (option: Pick<UseDefinyAppResult, "typePartResource" | "language">) =>
+  (
+    option: Pick<UseDefinyAppResult, "typePartResource"> & {
+      readonly language: d.Language;
+    }
+  ) =>
   (typePartId: d.TypePartId): ListItem => {
     const typePart = option.typePartResource.getFromMemoryCache(typePartId);
     return listItem(
@@ -193,10 +199,9 @@ const typePartIdToListItem =
   };
 
 const outputCodeToText = (
-  option: Pick<
-    UseDefinyAppResult,
-    "typePartResource" | "language" | "outputCode"
-  >
+  option: Pick<UseDefinyAppResult, "typePartResource" | "outputCode"> & {
+    readonly language: d.Language;
+  }
 ): CommonValue => {
   switch (option.outputCode.tag) {
     case "notGenerated":

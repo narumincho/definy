@@ -15,7 +15,7 @@ export type DataTypeOrDataTypeParameterSelection = {
 
 export type DataTypeOrDataTypeParameterValue = Pick<
   UseDefinyAppResult,
-  "typePartResource" | "language" | "typePartIdListInProjectResource"
+  "typePartResource" | "typePartIdListInProjectResource"
 > & {
   readonly dataTypeOrTypeParameter: d.DataTypeOrDataTypeParameter;
   readonly projectId: d.ProjectId;
@@ -23,6 +23,7 @@ export type DataTypeOrDataTypeParameterValue = Pick<
   readonly onChange: (
     newDataTypeOrDataTypeParameter: d.DataTypeOrDataTypeParameter
   ) => void;
+  readonly language: d.Language;
 };
 
 const DataTypeSelectionView: ElementOperation<
@@ -378,9 +379,10 @@ const setTypePartAtSelectionDataType = (
 
 const SelectedType = React.memo(
   (
-    props: Pick<UseDefinyAppResult, "typePartResource" | "language"> & {
+    props: Pick<UseDefinyAppResult, "typePartResource"> & {
       readonly dataTypeOrDataTypeParameter: d.DataTypeOrDataTypeParameter;
       readonly scopeTypePartId: d.TypePartId;
+      readonly language: d.Language;
     }
   ): React.ReactElement => {
     const result = getTypePartNameFromDataTypeOrDataTypeParameter(
@@ -419,7 +421,7 @@ SelectedType.displayName = "SelectedType";
 
 const SearchResult = React.memo(
   (
-    props: Pick<UseDefinyAppResult, "language" | "typePartResource"> & {
+    props: Pick<UseDefinyAppResult, "typePartResource"> & {
       readonly typePartIdListInProject:
         | d.ResourceState<ReadonlyArray<d.TypePartId>>
         | undefined;
@@ -427,6 +429,7 @@ const SearchResult = React.memo(
       readonly normalizedSearchText: string;
       readonly selectedDataType: d.DataType | undefined;
       readonly onChange: (t: d.DataTypeOrDataTypeParameter) => void;
+      readonly language: d.Language;
     }
   ): React.ReactElement => {
     if (props.typePartIdListInProject === undefined) {
@@ -565,9 +568,10 @@ const DataTypeItem = React.memo(
     language,
     isSelected,
     onChange,
-  }: Pick<UseDefinyAppResult, "language"> & {
+  }: {
     readonly typePartId: d.TypePartId;
     readonly name: ReadonlyArray<SuggestionText>;
+    readonly language: d.Language;
     readonly typeParameterCount: number;
     readonly onChange: () => void;
     readonly isSelected: boolean;

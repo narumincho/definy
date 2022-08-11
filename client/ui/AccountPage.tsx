@@ -10,9 +10,10 @@ import type { UseDefinyAppResult } from "../hook/useDefinyApp";
 
 export type Props = Pick<
   UseDefinyAppResult,
-  "accountResource" | "projectResource" | "language" | "typePartResource"
+  "accountResource" | "projectResource" | "typePartResource"
 > & {
   readonly accountId: d.AccountId;
+  readonly language: d.Language;
 };
 
 export const AccountPage: React.FC<Props> = (props) => {

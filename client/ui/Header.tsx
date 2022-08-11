@@ -12,10 +12,11 @@ export type TitleItem = {
 
 export type Props = Pick<
   UseDefinyAppResult,
-  "accountResource" | "language" | "logInState"
+  "accountResource" | "logInState"
 > & {
   onLogInButtonClick: UseDefinyAppResult["logIn"];
   titleItemList: ReadonlyArray<TitleItem>;
+  locationAndLanguage: d.LocationAndLanguage;
 };
 
 export const Header: React.FC<Props> = React.memo((props) => {
@@ -42,7 +43,7 @@ export const Header: React.FC<Props> = React.memo((props) => {
           alignItems: "center",
         }}
         locationAndLanguage={{
-          language: props.language,
+          language: props.locationAndLanguage.language,
           location: d.Location.Home,
         }}
       >
@@ -57,7 +58,7 @@ export const Header: React.FC<Props> = React.memo((props) => {
                 padding: 8,
               }}
               locationAndLanguage={{
-                language: props.language,
+                language: props.locationAndLanguage.language,
                 location: titleItem.location,
               }}
               key={`${titleItem.name}-link`}
@@ -69,9 +70,11 @@ export const Header: React.FC<Props> = React.memo((props) => {
       </div>
       <UserViewOrLogInButton
         logInState={props.logInState}
-        language={props.language}
+        language={props.locationAndLanguage.language}
         accountResource={props.accountResource}
-        onLogInButtonClick={props.onLogInButtonClick}
+        onLogInButtonClick={() =>
+          props.onLogInButtonClick(props.locationAndLanguage)
+        }
       />
     </div>
   );
@@ -79,8 +82,9 @@ export const Header: React.FC<Props> = React.memo((props) => {
 Header.displayName = "Header";
 
 const UserViewOrLogInButton: React.FC<
-  Pick<UseDefinyAppResult, "logInState" | "language" | "accountResource"> & {
+  Pick<UseDefinyAppResult, "logInState" | "accountResource"> & {
     onLogInButtonClick: () => void;
+    language: d.Language;
   }
 > = (props) => {
   switch (props.logInState._) {

@@ -10,7 +10,7 @@ import type { UrlObject } from "url";
 import { clientScriptPath } from "../clientScriptHash";
 import { origin } from "../out";
 
-const languageQueryKey = "hl";
+export const languageQueryKey = "hl";
 export const defaultLanguage: d.Language = "English";
 
 export const locationAndLanguageToUrl = (
@@ -21,7 +21,7 @@ export const locationAndLanguageToUrl = (
     searchParams: new Map<string, string>([
       [
         languageQueryKey,
-        dataLanguageToPureLanguage(locationAndLanguage.language),
+        dataLanguageToQueryValue(locationAndLanguage.language),
       ],
     ]),
   });
@@ -35,7 +35,7 @@ export const locationAndLanguageToStructuredUrl = (
     searchParams: new Map<string, string>([
       [
         languageQueryKey,
-        dataLanguageToPureLanguage(locationAndLanguage.language),
+        dataLanguageToQueryValue(locationAndLanguage.language),
       ],
     ]),
   };
@@ -49,7 +49,7 @@ export const locationAndLanguageToNodeUrlObject = (
   );
 };
 
-const dataLanguageToPureLanguage = (language: d.Language): string => {
+const dataLanguageToQueryValue = (language: d.Language): string => {
   switch (language) {
     case "English":
       return englishId;
@@ -58,6 +58,18 @@ const dataLanguageToPureLanguage = (language: d.Language): string => {
     case "Esperanto":
       return esperantoId;
   }
+};
+
+export const queryValueToDataLanguage = (language: string): d.Language => {
+  switch (language) {
+    case englishId:
+      return "English";
+    case japaneseId:
+      return "Japanese";
+    case esperantoId:
+      return "Esperanto";
+  }
+  return defaultLanguage;
 };
 
 const locationToPathList = (location: d.Location): ReadonlyArray<string> => {

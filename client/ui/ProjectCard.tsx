@@ -11,8 +11,9 @@ const textHeight = 48;
 const cardWidth = imageWidth;
 const cardHeight = imageHeight + textHeight;
 
-export type Props = Pick<UseDefinyAppResult, "projectResource" | "language"> & {
+export type Props = Pick<UseDefinyAppResult, "projectResource"> & {
   readonly projectId: d.ProjectId;
+  readonly language: d.Language;
 };
 
 export const ProjectCard: React.FC<Props> = React.memo((props) => {

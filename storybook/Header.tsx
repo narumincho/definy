@@ -22,11 +22,14 @@ const meta: Meta = {
 };
 export default meta;
 
-type ControlAndActionProps = Pick<Props, "language" | "onLogInButtonClick">;
+type ControlAndActionProps = Pick<
+  Props,
+  "locationAndLanguage" | "onLogInButtonClick"
+>;
 
 export const Default: Story<ControlAndActionProps> = (props) => (
   <Header
-    language={props.language}
+    locationAndLanguage={props.locationAndLanguage}
     titleItemList={[]}
     accountResource={accountResource}
     logInState={{ _: "Guest" }}
@@ -34,12 +37,15 @@ export const Default: Story<ControlAndActionProps> = (props) => (
   />
 );
 Default.args = {
-  language: d.Language.Japanese,
+  locationAndLanguage: {
+    language: d.Language.Japanese,
+    location: d.Location.Home,
+  },
 };
 
 export const Title: Story<ControlAndActionProps> = (props) => (
   <Header
-    language={props.language}
+    locationAndLanguage={props.locationAndLanguage}
     titleItemList={[
       {
         name: "サンプルプロジェクト",
@@ -56,5 +62,8 @@ export const Title: Story<ControlAndActionProps> = (props) => (
   />
 );
 Title.args = {
-  language: d.Language.Japanese,
+  locationAndLanguage: {
+    language: d.Language.Japanese,
+    location: d.Location.Home,
+  },
 };

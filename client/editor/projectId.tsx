@@ -11,7 +11,8 @@ export type ProjectIdSelection = never;
 export type ProjectIdValue = {
   readonly projectId: d.ProjectId;
   readonly canEdit: boolean;
-} & Pick<UseDefinyAppResult, "projectResource" | "language">;
+  readonly language: d.Language;
+} & Pick<UseDefinyAppResult, "projectResource">;
 
 const ProjectIdSelectionView: ElementOperation<
   ProjectIdSelection,

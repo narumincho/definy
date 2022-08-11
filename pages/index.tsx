@@ -1,3 +1,4 @@
+import * as d from "../localData";
 import * as React from "react";
 import Head from "next/head";
 import { Header } from "../client/ui/Header";
@@ -5,9 +6,11 @@ import { HomePage } from "../client/ui/HomePage";
 import { LogInMessage } from "../components/LogInMessage";
 import { css } from "@emotion/css";
 import { useDefinyApp } from "../client/hook/useDefinyApp";
+import { useLanguage } from "../client/hook/useLanguage";
 
 export const TopPage = (): React.ReactElement => {
   const useDefinyAppResult = useDefinyApp();
+  const language = useLanguage();
 
   return (
     <>
@@ -30,13 +33,13 @@ export const TopPage = (): React.ReactElement => {
         <Header
           logInState={useDefinyAppResult.logInState}
           accountResource={useDefinyAppResult.accountResource}
-          language={useDefinyAppResult.language}
+          locationAndLanguage={{ location: d.Location.Home, language }}
           titleItemList={[]}
           onLogInButtonClick={useDefinyAppResult.logIn}
         />
         <LogInMessage
           logInState={useDefinyAppResult.logInState}
-          language={useDefinyAppResult.language}
+          language={language}
         />
         <div
           className={css({
@@ -47,7 +50,7 @@ export const TopPage = (): React.ReactElement => {
           <HomePage
             topProjectsLoadingState={useDefinyAppResult.topProjectsLoadingState}
             accountResource={useDefinyAppResult.accountResource}
-            language={useDefinyAppResult.language}
+            language={language}
             logInState={useDefinyAppResult.logInState}
             projectResource={useDefinyAppResult.projectResource}
             requestTop50Project={useDefinyAppResult.requestTop50Project}

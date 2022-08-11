@@ -14,7 +14,8 @@ export type AccountIdSelection = never;
 export type AccountIdValue = {
   readonly accountId: d.AccountId;
   readonly canEdit: boolean;
-} & Pick<UseDefinyAppResult, "accountResource" | "language">;
+  readonly language: d.Language;
+} & Pick<UseDefinyAppResult, "accountResource">;
 
 const AccountIdSelectionView: ElementOperation<
   AccountIdSelection,

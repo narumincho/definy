@@ -13,12 +13,13 @@ export type TypeSelection = {
 
 export type TypeValue = Pick<
   UseDefinyAppResult,
-  "typePartResource" | "language" | "typePartIdListInProjectResource"
+  "typePartResource" | "typePartIdListInProjectResource"
 > & {
   readonly type: d.Type;
   readonly projectId: d.ProjectId;
   readonly scopeTypePartId: d.TypePartId;
   readonly onChange: (newType: d.Type) => void;
+  readonly language: d.Language;
 };
 
 const TypeSelectionView: ElementOperation<

@@ -13,11 +13,10 @@ export type Props = Pick<
   | "topProjectsLoadingState"
   | "projectResource"
   | "accountResource"
-  | "language"
   | "logInState"
   | "requestTop50Project"
   | "typePartResource"
->;
+> & { readonly language: d.Language };
 
 export const HomePage: React.FC<Props> = (props) => {
   React.useEffect(() => {
@@ -103,11 +102,8 @@ const HomeLinkList: React.FC<{
 const TopProjectList: React.FC<
   Pick<
     UseDefinyAppResult,
-    | "topProjectsLoadingState"
-    | "projectResource"
-    | "accountResource"
-    | "language"
-  >
+    "topProjectsLoadingState" | "projectResource" | "accountResource"
+  > & { readonly language: d.Language }
 > = (props) => {
   switch (props.topProjectsLoadingState._) {
     case "none":
@@ -191,7 +187,11 @@ const TopProjectList: React.FC<
 };
 
 const projectIdToListItem =
-  (option: Pick<UseDefinyAppResult, "projectResource" | "language">) =>
+  (
+    option: Pick<UseDefinyAppResult, "projectResource"> & {
+      readonly language: d.Language;
+    }
+  ) =>
   (projectId: d.ProjectId): ListItem => {
     const project = option.projectResource.getFromMemoryCache(projectId);
     return listItem(

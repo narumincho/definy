@@ -4,8 +4,9 @@ import { Image } from "./Image";
 import { Link } from "./Link";
 import type { UseDefinyAppResult } from "../hook/useDefinyApp";
 
-export type Props = Pick<UseDefinyAppResult, "language" | "accountResource"> & {
+export type Props = Pick<UseDefinyAppResult, "accountResource"> & {
   readonly accountId: d.AccountId;
+  readonly language: d.Language;
 };
 
 export const AccountCard: React.FC<Props> = React.memo((props) => {

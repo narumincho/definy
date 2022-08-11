@@ -1,13 +1,15 @@
 import * as React from "react";
+import * as d from "../../localData";
 import { Button } from "./Button";
 import type { UseDefinyAppResult } from "../hook/useDefinyApp";
 import { css } from "@emotion/css";
 
 export type Props = Pick<
   UseDefinyAppResult,
-  "accountResource" | "language" | "logInState"
+  "accountResource" | "logInState"
 > & {
-  onLogOut: UseDefinyAppResult["logOut"];
+  readonly onLogOut: UseDefinyAppResult["logOut"];
+  readonly language: d.Language;
 };
 
 export const SettingPage: React.FC<Props> = (props) => {
@@ -30,7 +32,9 @@ export const SettingPage: React.FC<Props> = (props) => {
       >
         設定
       </div>
-      <Button onClick={props.onLogOut}>ログアウトする</Button>
+      <Button onClick={() => props.onLogOut(props.language)}>
+        ログアウトする
+      </Button>
       <div>アカウントの情報</div>
     </div>
   );

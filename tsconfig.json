@@ -12,7 +12,7 @@
     "rootDir": ".",
     "jsx": "preserve",
     "incremental": true,
-    "types": ["@emotion/react/types/css-prop"],
+    "types": ["@emotion/react/types/css-prop", "@types/jest"],
     "noUncheckedIndexedAccess": true,
     "exactOptionalPropertyTypes": true,
     "allowJs": true,

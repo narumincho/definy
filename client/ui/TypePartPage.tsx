@@ -24,12 +24,12 @@ export type Props = Pick<
   | "accountResource"
   | "projectResource"
   | "typePartResource"
-  | "language"
   | "typePartIdListInProjectResource"
   | "saveTypePart"
   | "isSavingTypePart"
 > & {
   typePartId: d.TypePartId;
+  language: d.Language;
 };
 
 export const TypePartPage = (props: Props): React.ReactElement => {
@@ -80,7 +80,6 @@ const LoadedTypePartEditor = (
     | "accountResource"
     | "projectResource"
     | "typePartResource"
-    | "language"
     | "typePartIdListInProjectResource"
     | "saveTypePart"
     | "isSavingTypePart"
@@ -88,6 +87,7 @@ const LoadedTypePartEditor = (
     typePartId: d.TypePartId;
     typePart: d.TypePart;
     getTime: d.Time;
+    language: d.Language;
   }
 ): React.ReactElement => {
   const saveTypePart = props.saveTypePart;
@@ -298,11 +298,12 @@ const attributeValue = (
 };
 
 const parameterListValue = (
-  option: Pick<UseDefinyAppResult, "typePartResource" | "language"> & {
+  option: Pick<UseDefinyAppResult, "typePartResource"> & {
     typeParameterList: ReadonlyArray<d.DataTypeParameter>;
     setTypeParameterList: React.Dispatch<
       React.SetStateAction<ReadonlyArray<d.DataTypeParameter>>
     >;
+    language: d.Language;
   }
 ): CommonValue => {
   return listValue({
@@ -359,8 +360,12 @@ const parameterListValue = (
 const bodyValue = (
   context: Pick<
     UseDefinyAppResult,
-    "language" | "typePartResource" | "typePartIdListInProjectResource"
-  > & { projectId: d.ProjectId; scopeTypePartId: d.TypePartId },
+    "typePartResource" | "typePartIdListInProjectResource"
+  > & {
+    projectId: d.ProjectId;
+    scopeTypePartId: d.TypePartId;
+    language: d.Language;
+  },
   typePartBody: d.TypePartBody,
   setBody: React.Dispatch<React.SetStateAction<d.TypePartBody>>
 ): CommonValue => {
@@ -451,8 +456,12 @@ const bodyValue = (
 const patternListValue = (
   context: Pick<
     UseDefinyAppResult,
-    "language" | "typePartResource" | "typePartIdListInProjectResource"
-  > & { projectId: d.ProjectId; scopeTypePartId: d.TypePartId },
+    "typePartResource" | "typePartIdListInProjectResource"
+  > & {
+    projectId: d.ProjectId;
+    scopeTypePartId: d.TypePartId;
+    language: d.Language;
+  },
   patternList: ReadonlyArray<d.Pattern>,
   setPatternList: (
     func: (prev: ReadonlyArray<d.Pattern>) => ReadonlyArray<d.Pattern>
@@ -490,8 +499,12 @@ const patternListValue = (
 const patternValue = (
   context: Pick<
     UseDefinyAppResult,
-    "language" | "typePartResource" | "typePartIdListInProjectResource"
-  > & { projectId: d.ProjectId; scopeTypePartId: d.TypePartId },
+    "typePartResource" | "typePartIdListInProjectResource"
+  > & {
+    projectId: d.ProjectId;
+    scopeTypePartId: d.TypePartId;
+    language: d.Language;
+  },
   pattern: d.Pattern,
   setPattern: (func: (prevPattern: d.Pattern) => d.Pattern) => void
 ): CommonValue =>
@@ -573,8 +586,12 @@ const patternValue = (
 const memberListValue = (
   context: Pick<
     UseDefinyAppResult,
-    "typePartResource" | "language" | "typePartIdListInProjectResource"
-  > & { projectId: d.ProjectId; scopeTypePartId: d.TypePartId },
+    "typePartResource" | "typePartIdListInProjectResource"
+  > & {
+    projectId: d.ProjectId;
+    scopeTypePartId: d.TypePartId;
+    language: d.Language;
+  },
   memberList: ReadonlyArray<d.Member>,
   setMemberList: (
     func: (prev: ReadonlyArray<d.Member>) => ReadonlyArray<d.Member>
@@ -618,8 +635,12 @@ const memberListValue = (
 const memberValue = (
   context: Pick<
     UseDefinyAppResult,
-    "typePartResource" | "language" | "typePartIdListInProjectResource"
-  > & { projectId: d.ProjectId; scopeTypePartId: d.TypePartId },
+    "typePartResource" | "typePartIdListInProjectResource"
+  > & {
+    projectId: d.ProjectId;
+    scopeTypePartId: d.TypePartId;
+    language: d.Language;
+  },
   member: d.Member,
   setMember: (func: (prev: d.Member) => d.Member) => void
 ) => {

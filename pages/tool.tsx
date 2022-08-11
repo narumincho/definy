@@ -4,14 +4,16 @@ import { Header } from "../client/ui/Header";
 import { Link } from "../client/ui/Link";
 import { css } from "@emotion/css";
 import { useDefinyApp } from "../client/hook/useDefinyApp";
+import { useLanguage } from "../client/hook/useLanguage";
 
 export const ToolListPage = (): React.ReactElement => {
   const useDefinyAppResult = useDefinyApp();
+  const language = useLanguage();
 
   return (
     <div>
       <Header
-        language={useDefinyAppResult.language}
+        locationAndLanguage={{ language, location: d.Location.ToolList }}
         accountResource={useDefinyAppResult.accountResource}
         logInState={useDefinyAppResult.logInState}
         onLogInButtonClick={useDefinyAppResult.logIn}
@@ -22,7 +24,7 @@ export const ToolListPage = (): React.ReactElement => {
         <Link
           locationAndLanguage={{
             location: d.Location.Tool(d.ToolName.ThemeColorRainbow),
-            language: useDefinyAppResult.language,
+            language,
           }}
           style={{ padding: 8 }}
         >
@@ -31,7 +33,7 @@ export const ToolListPage = (): React.ReactElement => {
         <Link
           locationAndLanguage={{
             location: d.Location.Tool(d.ToolName.SoundQuiz),
-            language: useDefinyAppResult.language,
+            language,
           }}
           style={{ padding: 8 }}
         >
