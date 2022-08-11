@@ -6,15 +6,6 @@ import {
   structuredUrlToUrl,
   urlToStructuredUrl,
 } from "../gen/url/main";
-import {
-  english,
-  englishId,
-  esperanto,
-  esperantoId,
-  japanese,
-  japaneseId,
-  languageToIdString,
-} from "../output/TypeScriptEntryPoint";
 import type { UrlObject } from "url";
 import { clientScriptPath } from "../clientScriptHash";
 import { origin } from "../out";
@@ -30,9 +21,7 @@ export const locationAndLanguageToUrl = (
     searchParams: new Map<string, string>([
       [
         languageQueryKey,
-        languageToIdString(
-          dataLanguageToPureLanguage(locationAndLanguage.language)
-        ),
+        dataLanguageToPureLanguage(locationAndLanguage.language),
       ],
     ]),
   });
@@ -46,9 +35,7 @@ export const locationAndLanguageToStructuredUrl = (
     searchParams: new Map<string, string>([
       [
         languageQueryKey,
-        languageToIdString(
-          dataLanguageToPureLanguage(locationAndLanguage.language)
-        ),
+        dataLanguageToPureLanguage(locationAndLanguage.language),
       ],
     ]),
   };
@@ -62,14 +49,14 @@ export const locationAndLanguageToNodeUrlObject = (
   );
 };
 
-const dataLanguageToPureLanguage = (language: d.Language) => {
+const dataLanguageToPureLanguage = (language: d.Language): string => {
   switch (language) {
     case "English":
-      return english;
+      return englishId;
     case "Japanese":
-      return japanese;
+      return japaneseId;
     case "Esperanto":
-      return esperanto;
+      return esperantoId;
   }
 };
 
@@ -113,7 +100,9 @@ const toolToPath = (toolName: d.ToolName): string => {
  * URLのパスを場所のデータに変換する
  * @param url `https://definy.app/project/580d8d6a54cf43e4452a0bba6694a4ed?hl=ja` のようなURL
  */
-export const urlToUrlData = (url: URL): d.UrlData => {
+export const urlToUrlData = (
+  url: Readonly<Pick<URL, "pathname" | "search">>
+): d.UrlData => {
   const structuredUrl = urlToStructuredUrl(url.pathname, url.search);
   if (
     structuredUrl.path[0] === "logInCallback" &&
@@ -228,3 +217,7 @@ const localProjectPath = "local-project";
 const toolPath = "tool";
 const toolThemeColorRainbow = "theme-color-rainbow";
 const toolSoundQuiz = "sound-quiz";
+
+const englishId = "en";
+const esperantoId = "eo";
+const japaneseId = "ja";

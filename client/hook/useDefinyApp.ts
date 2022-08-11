@@ -84,18 +84,6 @@ export type UseDefinyAppResult = {
     ReadonlyArray<d.TypePartId>
   >;
   /**
-   * 現在のページの場所
-   *
-   * *no-side-effect*
-   */
-  readonly location: d.Location;
-  /**
-   * 画面表示に使用する言語
-   *
-   * *no-side-effect*
-   */
-  readonly language: d.Language;
-  /**
    * ログイン状態
    *
    * *no-side-effect*
@@ -112,20 +100,23 @@ export type UseDefinyAppResult = {
    *
    * *side-effect*
    */
-  readonly logIn: () => void;
+  readonly logIn: (locationAndLanguage: d.LocationAndLanguage) => void;
   /**
    * ログアウトする
    *
    * *side-effect*
    */
-  readonly logOut: () => void;
+  readonly logOut: (language: d.Language) => void;
   /**
    * プロジェクトを作成する
    * @param projectName プロジェクト名
    *
    * *side-effect*
    */
-  readonly createProject: (projectName: string) => void;
+  readonly createProject: (param: {
+    readonly projectName: string;
+    readonly language: d.Language;
+  }) => void;
 
   /**
    * おすすめのプロジェクトを取得する
@@ -139,7 +130,10 @@ export type UseDefinyAppResult = {
    *
    * *side-effect*
    */
-  readonly addTypePart: (projectId: d.ProjectId) => void;
+  readonly addTypePart: (param: {
+    readonly projectId: d.ProjectId;
+    readonly language: d.Language;
+  }) => void;
 
   /**
    * 型パーツを保存する
@@ -224,11 +218,7 @@ const getIdFunc = <Id>(item: { id: Id }): Id => item.id;
 export const useDefinyApp = (): UseDefinyAppResult => {
   const [topProjectsLoadingState, setTopProjectsLoadingState] =
     useState<TopProjectsLoadingState>({ _: "none" });
-  const [locationAndLanguage, setLocationAndLanguage] =
-    useState<d.LocationAndLanguage>({
-      language: "English",
-      location: d.Location.Home,
-    });
+
   const [logInState, setLogInState] = useState<d.LogInState>(
     d.LogInState.Guest
   );
@@ -248,39 +238,48 @@ export const useDefinyApp = (): UseDefinyAppResult => {
 
   const router = useRouter();
 
-  const logIn = useCallback(() => {
-    setLogInState({ _: "RequestingLogInUrl", openIdConnectProvider: "Google" });
-    api
-      .requestLogInUrl({
-        locationAndLanguage,
+  const logIn = useCallback(
+    (locationAndLanguage: d.LocationAndLanguage) => {
+      setLogInState({
+        _: "RequestingLogInUrl",
         openIdConnectProvider: "Google",
-      })
-      .then((response) => {
-        if (response._ === "Nothing") {
-          addMessage({
-            text: "ログインURL取得に失敗しました",
-            type: "error",
-          });
-          return;
-        }
-        setLogInState(d.LogInState.JumpingToLogInPage);
-        requestAnimationFrame(() => {
-          window.location.href = response.value;
-        });
       });
-  }, [locationAndLanguage, addMessage]);
+      api
+        .requestLogInUrl({
+          locationAndLanguage,
+          openIdConnectProvider: "Google",
+        })
+        .then((response) => {
+          if (response._ === "Nothing") {
+            addMessage({
+              text: "ログインURL取得に失敗しました",
+              type: "error",
+            });
+            return;
+          }
+          setLogInState(d.LogInState.JumpingToLogInPage);
+          requestAnimationFrame(() => {
+            window.location.href = response.value;
+          });
+        });
+    },
+    [addMessage]
+  );
 
-  const logOut = useCallback(() => {
-    indexedDB.deleteAccountToken();
-    setLogInState(d.LogInState.Guest);
-    router.push(
-      locationAndLanguageToNodeUrlObject({
-        language: locationAndLanguage.language,
-        location: d.Location.Home,
-      })
-    );
-    addMessage({ text: "ログアウトしました", type: "success" });
-  }, [router, locationAndLanguage.language, addMessage]);
+  const logOut = useCallback(
+    (language: d.Language) => {
+      indexedDB.deleteAccountToken();
+      setLogInState(d.LogInState.Guest);
+      router.push(
+        locationAndLanguageToNodeUrlObject({
+          language,
+          location: d.Location.Home,
+        })
+      );
+      addMessage({ text: "ログアウトしました", type: "success" });
+    },
+    [router, addMessage]
+  );
 
   const getAccountToken = useCallback((): d.AccountToken | undefined => {
     switch (logInState._) {
@@ -290,7 +289,10 @@ export const useDefinyApp = (): UseDefinyAppResult => {
   }, [logInState]);
 
   const createProject = useCallback(
-    (projectName: string): void => {
+    (param: {
+      readonly projectName: string;
+      readonly language: d.Language;
+    }): void => {
       const accountToken = getAccountToken();
       if (accountToken === undefined) {
         addMessage({
@@ -306,11 +308,11 @@ export const useDefinyApp = (): UseDefinyAppResult => {
         });
         return;
       }
-      setCreateProjectState({ _: "creating", name: projectName });
+      setCreateProjectState({ _: "creating", name: param.projectName });
       api
         .createProject({
           accountToken,
-          projectName,
+          projectName: param.projectName,
         })
         .then((response) => {
           setCreateProjectState({ _: "none" });
@@ -327,19 +329,13 @@ export const useDefinyApp = (): UseDefinyAppResult => {
           });
           router.push(
             locationAndLanguageToNodeUrlObject({
-              language: locationAndLanguage.language,
+              language: param.language,
               location: d.Location.Project(response.value.value.id),
             })
           );
         });
     },
-    [
-      getAccountToken,
-      createProjectState._,
-      addMessage,
-      router,
-      locationAndLanguage.language,
-    ]
+    [getAccountToken, createProjectState._, addMessage, router]
   );
 
   const requestTop50Project = useCallback((): void => {
@@ -361,14 +357,6 @@ export const useDefinyApp = (): UseDefinyAppResult => {
   }, [addMessage, projectDict]);
 
   useEffect(() => {
-    // ブラウザで戻るボタンを押したときのイベントを登録
-    window.addEventListener("popstate", () => {
-      const newUrlData: d.UrlData = urlToUrlData(new URL(window.location.href));
-      if (newUrlData._ === "Normal") {
-        setLocationAndLanguage(newUrlData.locationAndLanguage);
-      }
-    });
-
     const urlData = urlToUrlData(new URL(location.href));
     if (urlData._ === "Normal") {
       // ブラウザのURLを正規化.
@@ -486,7 +474,10 @@ export const useDefinyApp = (): UseDefinyAppResult => {
   );
 
   const addTypePart = useCallback(
-    (projectId: d.ProjectId): void => {
+    (param: {
+      readonly projectId: d.ProjectId;
+      readonly language: d.Language;
+    }): void => {
       const accountToken = getAccountToken();
       if (accountToken === undefined) {
         addMessage({
@@ -499,11 +490,11 @@ export const useDefinyApp = (): UseDefinyAppResult => {
         addMessage({ text: "型パーツ作成は同時にできない", type: "error" });
         return;
       }
-      setCreateTypePartState({ tag: "creating", projectId });
+      setCreateTypePartState({ tag: "creating", projectId: param.projectId });
       api
         .addTypePart({
           accountToken,
-          projectId,
+          projectId: param.projectId,
         })
         .then((response) => {
           setCreateTypePartState({ tag: "none" });
@@ -517,19 +508,13 @@ export const useDefinyApp = (): UseDefinyAppResult => {
           });
           router.push(
             locationAndLanguageToNodeUrlObject({
-              language: locationAndLanguage.language,
+              language: param.language,
               location: d.Location.TypePart(response.value.data.value.id),
             })
           );
         });
     },
-    [
-      getAccountToken,
-      createTypePartState.tag,
-      addMessage,
-      router,
-      locationAndLanguage.language,
-    ]
+    [getAccountToken, createTypePartState.tag, addMessage, router]
   );
 
   const typePartIdListInProjectResource: UseDefinyAppResult["typePartIdListInProjectResource"] =
@@ -686,14 +671,12 @@ export const useDefinyApp = (): UseDefinyAppResult => {
     [addMessage, typePartDict, typePartIdListInProjectResource]
   );
 
-  return useMemo(
+  return useMemo<UseDefinyAppResult>(
     () => ({
       accountResource,
       projectResource,
       createProject,
       createProjectState,
-      language: locationAndLanguage.language,
-      location: locationAndLanguage.location,
       logIn,
       logInState,
       logOut,
@@ -713,8 +696,6 @@ export const useDefinyApp = (): UseDefinyAppResult => {
       projectResource,
       createProject,
       createProjectState,
-      locationAndLanguage.language,
-      locationAndLanguage.location,
       logIn,
       logInState,
       logOut,

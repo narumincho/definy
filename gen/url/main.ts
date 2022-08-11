@@ -41,7 +41,7 @@ export const structuredUrlToNodeUrlObject = (
 ): UrlObject => {
   return {
     pathname: "/" + structuredUrl.path.join("/"),
-    query: Object.fromEntries(structuredUrl.searchParams),
+    query: Object.fromEntries([...structuredUrl.searchParams]),
   };
 };
 
@@ -77,5 +77,21 @@ export const urlToStructuredUrl = (
   return {
     path: pathList,
     searchParams: new Map([...new URLSearchParams(searchParamsAsString)]),
+  };
+};
+
+export const parsedUrlToStructuredUrl = (
+  pathAsString: string,
+  parsedSearchParams: { [key in string]: string | ReadonlyArray<string> }
+): StructuredUrl => {
+  const pathList = pathAsString.split("/").slice(1);
+  return {
+    path: pathList,
+    searchParams: new Map(
+      Object.entries(parsedSearchParams).flatMap(
+        ([key, value]): ReadonlyArray<readonly [string, string]> =>
+          typeof value === "string" ? [[key, value]] : []
+      )
+    ),
   };
 };
