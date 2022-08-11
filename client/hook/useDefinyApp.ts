@@ -379,9 +379,6 @@ export const useDefinyApp = (): UseDefinyAppResult => {
   }, [addMessage, projectDict]);
 
   useEffect(() => {
-    document.title =
-      "definy 手軽に堅牢なゲームとツールが作れて公開できる が目標のWebアプリ";
-
     // ブラウザで戻るボタンを押したときのイベントを登録
     window.addEventListener("popstate", () => {
       const newUrlData: d.UrlData = urlToUrlData(new URL(window.location.href));
