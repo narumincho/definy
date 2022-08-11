@@ -9,6 +9,10 @@ import type { Language } from "../../localData";
 import { useEffect } from "react";
 import { useRouter } from "next/router";
 
+/**
+ * Next.js の {@link useRouter} から言語のパラメータ(`hl`)を受け取り, 余計なパラメータを削除する
+ * @returns
+ */
 export const useLanguage = (): Language => {
   const { replace, query } = useRouter();
   useEffect(() => {

@@ -21,7 +21,7 @@ export const ToolListPage = (): React.ReactElement => {
         titleItemList={[]}
       />
       <h2>definyとは直接関係ないツール</h2>
-      <div className={css({ display: "grid" })}>
+      <div className={css({ display: "grid", gap: 8, padding: 8 })}>
         <Link
           locationAndLanguage={{
             location: d.Location.Tool(d.ToolName.ThemeColorRainbow),

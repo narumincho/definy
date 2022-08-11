@@ -1,15 +1,15 @@
 import * as React from "react";
-import * as d from "../../localData";
+import * as d from "../localData";
 import {
   CommonValue,
   buttonValue,
   listValue,
   oneLineTextValue,
-} from "../editor/common";
-import { createRandomId, listDeleteAt, listUpdateAt } from "../../common/util";
-import { Button } from "./Button";
-import { Editor } from "./Editor";
-import { ListItem } from "../editor/list";
+} from "../client/editor/common";
+import { createRandomId, listDeleteAt } from "../common/util";
+import { Button } from "../client/ui/Button";
+import { Editor } from "../client/ui/Editor";
+import { ListItem } from "../client/editor/list";
 
 export const LocalProjectPage = (): React.ReactElement => {
   const fileInputElement = React.useRef<HTMLInputElement>(null);
@@ -185,7 +185,7 @@ const typePartListEditor = (
   setLocalLocation: (l: LocalLocation) => void
 ): CommonValue => {
   return listValue({
-    items: typePartList.map<ListItem>((typePart, index) => ({
+    items: typePartList.map<ListItem>((typePart) => ({
       searchText: typePart.name,
       commonValue: buttonValue({
         text: typePart.name,
@@ -213,7 +213,7 @@ const partListEditor = (
   setPartList: (list: ReadonlyArray<LocalPart>) => void
 ): CommonValue => {
   return listValue({
-    items: partList.map<ListItem>((part, index) => ({
+    items: partList.map<ListItem>((part) => ({
       searchText: part.name,
       commonValue: oneLineTextValue({
         text: part.name,
@@ -239,3 +239,5 @@ const createRandomTypePartId = (): d.TypePartId => {
 const createRandomPartId = (): d.PartId => {
   return d.PartId.fromString(createRandomId());
 };
+
+export default LocalProjectPage;
