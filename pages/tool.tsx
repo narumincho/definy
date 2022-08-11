@@ -9,6 +9,7 @@ import { useLanguage } from "../client/hook/useLanguage";
 export const ToolListPage = (): React.ReactElement => {
   const useDefinyAppResult = useDefinyApp();
   const language = useLanguage();
+  console.log("language in tool", language);
 
   return (
     <div>

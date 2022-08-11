@@ -1,5 +1,5 @@
-import * as d from "../localData";
 import * as React from "react";
+import * as d from "../localData";
 import Head from "next/head";
 import { Header } from "../client/ui/Header";
 import { HomePage } from "../client/ui/HomePage";
@@ -11,6 +11,8 @@ import { useLanguage } from "../client/hook/useLanguage";
 export const TopPage = (): React.ReactElement => {
   const useDefinyAppResult = useDefinyApp();
   const language = useLanguage();
+
+  console.log("language", language);
 
   return (
     <>

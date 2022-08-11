@@ -359,10 +359,6 @@ export const useDefinyApp = (): UseDefinyAppResult => {
   useEffect(() => {
     const urlData = urlToUrlData(new URL(location.href));
     if (urlData._ === "Normal") {
-      // ブラウザのURLを正規化.
-      router.replace(
-        locationAndLanguageToNodeUrlObject(urlData.locationAndLanguage)
-      );
       indexedDB.getAccountToken().then((accountToken) => {
         if (accountToken === undefined) {
           setLogInState(d.LogInState.Guest);

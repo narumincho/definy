@@ -49,7 +49,7 @@ export const locationAndLanguageToNodeUrlObject = (
   );
 };
 
-const dataLanguageToQueryValue = (language: d.Language): string => {
+export const dataLanguageToQueryValue = (language: d.Language): string => {
   switch (language) {
     case "English":
       return englishId;
@@ -70,6 +70,13 @@ export const queryValueToDataLanguage = (language: string): d.Language => {
       return "Esperanto";
   }
   return defaultLanguage;
+};
+
+export const isValidLanguageQueryValue = (value: unknown): boolean => {
+  if (typeof value !== "string") {
+    return false;
+  }
+  return new Set([englishId, japaneseId, esperantoId]).has(value);
 };
 
 const locationToPathList = (location: d.Location): ReadonlyArray<string> => {
