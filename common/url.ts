@@ -1,6 +1,11 @@
 import * as d from "../localData";
 import * as s from "../staticResource";
 import {
+  StructuredUrl,
+  structuredUrlToUrl,
+  urlToStructuredUrl,
+} from "../gen/url/main";
+import {
   english,
   englishId,
   esperanto,
@@ -9,7 +14,6 @@ import {
   japaneseId,
   languageToIdString,
 } from "../output/TypeScriptEntryPoint";
-import { structuredUrlToUrl, urlToStructuredUrl } from "../gen/url/main";
 import { clientScriptPath } from "../clientScriptHash";
 import { origin } from "../out";
 
@@ -30,6 +34,22 @@ export const locationAndLanguageToUrl = (
       ],
     ]),
   });
+};
+
+export const locationAndLanguageToStructuredUrl = (
+  locationAndLanguage: d.LocationAndLanguage
+): StructuredUrl => {
+  return {
+    path: locationToPathList(locationAndLanguage.location),
+    searchParams: new Map<string, string>([
+      [
+        languageQueryKey,
+        languageToIdString(
+          dataLanguageToPureLanguage(locationAndLanguage.language)
+        ),
+      ],
+    ]),
+  };
 };
 
 const dataLanguageToPureLanguage = (language: d.Language) => {

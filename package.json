@@ -16,7 +16,7 @@
     "storybook": "start-storybook --config-dir ./storybook",
     "update-package-json": "ncu -u",
     "start-definy": "npx tsc --project ./tsconfig-purs-ffi.json && npx spago run --main Definy.Start",
-    "start-definy-client": "npx next dev ./next",
+    "start-definy-client": "npx next dev",
     "start-definy-firebase-emulators": "firebase emulators:start --project definy-lang --config ./distribution/definy/firebase.json",
     "package-vscode-extension": "cd ./distribution/definy-extension && npx vsce package"
   },

@@ -1,8 +1,13 @@
 import * as d from "../../localData";
 import * as indexedDB from "../indexedDB";
 import { AddMessage, useNotification } from "./useNotification";
+import { NextRouter, useRouter } from "next/router";
 import { ReactElement, useCallback, useEffect, useMemo, useState } from "react";
-import { locationAndLanguageToUrl, urlToUrlData } from "../../common/url";
+import {
+  locationAndLanguageToStructuredUrl,
+  locationAndLanguageToUrl,
+  urlToUrlData,
+} from "../../common/url";
 import type { TypePartIdAndMessage } from "../../core/TypePartIdAndMessage";
 import { api } from "../api";
 import { generateTypeScriptCode } from "../../core/main";
@@ -248,6 +253,8 @@ export const useDefinyApp = (): UseDefinyAppResult => {
   });
   const { addMessage, element: notificationElement } = useNotification();
 
+  const router = useRouter();
+
   /**
    * ページを移動する
    */
@@ -262,15 +269,6 @@ export const useDefinyApp = (): UseDefinyAppResult => {
     },
     []
   );
-
-  const replace = (newLocationAndLanguage: d.LocationAndLanguage): void => {
-    window.history.replaceState(
-      undefined,
-      "",
-      locationAndLanguageToUrl(newLocationAndLanguage).toString()
-    );
-    setLocationAndLanguage(newLocationAndLanguage);
-  };
 
   const logIn = useCallback(() => {
     setLogInState({ _: "RequestingLogInUrl", openIdConnectProvider: "Google" });
@@ -395,7 +393,13 @@ export const useDefinyApp = (): UseDefinyAppResult => {
     const urlData = urlToUrlData(new URL(location.href));
     if (urlData._ === "Normal") {
       // ブラウザのURLを正規化.
-      replace(urlData.locationAndLanguage);
+      const structuredUrl = locationAndLanguageToStructuredUrl(
+        urlData.locationAndLanguage
+      );
+      router.replace({
+        pathname: "/" + structuredUrl.path.join("/"),
+        query: Object.fromEntries(structuredUrl.searchParams),
+      });
       indexedDB.getAccountToken().then((accountToken) => {
         if (accountToken === undefined) {
           setLogInState(d.LogInState.Guest);
@@ -416,9 +420,9 @@ export const useDefinyApp = (): UseDefinyAppResult => {
       urlData.codeAndState,
       accountDict.setLoaded,
       addMessage,
-      replace
+      router
     );
-  }, [accountDict.setLoaded, addMessage]);
+  }, [accountDict.setLoaded, addMessage, router]);
 
   const projectResource: Resource<d.ProjectId, d.Project> = useMemo(
     () => ({
@@ -789,7 +793,7 @@ const verifyingAccountTokenAndGetAccountFromCodeAndState = (
   codeAndState: d.CodeAndState,
   setAccount: (account: d.Account) => void,
   addMessage: AddMessage,
-  replace: (newLocationAndLanguage: d.LocationAndLanguage) => void
+  router: NextRouter
 ): void => {
   setLogInState(d.LogInState.LoadingAccountData);
 
@@ -811,7 +815,13 @@ const verifyingAccountTokenAndGetAccountFromCodeAndState = (
       })
     );
     setAccount(response.value.value.account);
-    replace(response.value.value.locationAndLanguage);
+    const structuredUrl = locationAndLanguageToStructuredUrl(
+      response.value.value.locationAndLanguage
+    );
+    router.push({
+      pathname: "/" + structuredUrl.path.join("/"),
+      query: Object.fromEntries(structuredUrl.searchParams),
+    });
   });
 };
 

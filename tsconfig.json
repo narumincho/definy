@@ -10,9 +10,15 @@
     "isolatedModules": true,
     "skipLibCheck": true,
     "rootDir": ".",
-    "jsx": "react",
+    "jsx": "preserve",
+    "incremental": true,
+    "types": ["@emotion/react/types/css-prop"],
     "noUncheckedIndexedAccess": true,
-    "exactOptionalPropertyTypes": true
+    "exactOptionalPropertyTypes": true,
+    "allowJs": true,
+    "noEmit": true,
+    "resolveJsonModule": true
   },
-  "exclude": ["distribution", "definy-output", "local-server", "next"]
+  "exclude": ["distribution", "definy-output", "local-server"],
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx"]
 }
