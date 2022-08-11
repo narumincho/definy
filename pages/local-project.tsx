@@ -9,9 +9,15 @@ import {
 import { createRandomId, listDeleteAt } from "../common/util";
 import { Button } from "../client/ui/Button";
 import { Editor } from "../client/ui/Editor";
+import Head from "next/head";
+import { Header } from "../client/ui/Header";
 import { ListItem } from "../client/editor/list";
+import { useDefinyApp } from "../client/hook/useDefinyApp";
+import { useLanguage } from "../client/hook/useLanguage";
 
 export const LocalProjectPage = (): React.ReactElement => {
+  const useDefinyAppResult = useDefinyApp();
+  const language = useLanguage();
   const fileInputElement = React.useRef<HTMLInputElement>(null);
   const [isLoaded, setIsLoaded] = React.useState<boolean>(false);
 
@@ -37,15 +43,31 @@ export const LocalProjectPage = (): React.ReactElement => {
   }
 
   return (
-    <div>
+    <>
+      <Head>
+        <title>ファイルから開く definy</title>
+      </Head>
       <div>
-        <div>ファイルから始めるか, 空のプロジェクトから始めるか</div>
-        <input type="file" ref={fileInputElement} onInput={onInputFile}></input>
-        <Button onClick={onClickStartFromEmpty}>
-          空のプロジェクトから始める
-        </Button>
+        <Header
+          locationAndLanguage={{ language, location: d.Location.ToolList }}
+          accountResource={useDefinyAppResult.accountResource}
+          logInState={useDefinyAppResult.logInState}
+          onLogInButtonClick={useDefinyAppResult.logIn}
+          titleItemList={[]}
+        />
+        <div>
+          <div>ファイルから始めるか, 空のプロジェクトから始めるか</div>
+          <input
+            type="file"
+            ref={fileInputElement}
+            onInput={onInputFile}
+          ></input>
+          <Button onClick={onClickStartFromEmpty}>
+            空のプロジェクトから始める
+          </Button>
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 
