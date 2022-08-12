@@ -6,6 +6,7 @@ const nextConfig = {
     compiler: {
         emotion: true,
     },
+    distDir: "next-dist"
 };
 
 module.exports = nextConfig;

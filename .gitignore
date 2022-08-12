@@ -21,3 +21,4 @@
 local-server.exe
 .next/
 tsconfig.tsbuildinfo
+next-dist

@@ -19,11 +19,12 @@ console.log("versions", JSON.stringify(process.versions));
 
 const nextJsServer = next({
   dev: true,
-  customServer: true,
+  dir: "../../../next-dist",
 });
+
 const nextJsHandle = nextJsServer.getRequestHandler();
 
-export const html = functions.https.onRequest((request, response) => {
+export const html = functions.https.onRequest(async (request, response) => {
   const requestUrl = new URL("https://" + request.hostname + request.url);
   console.log(
     request.protocol,
@@ -33,7 +34,10 @@ export const html = functions.https.onRequest((request, response) => {
   );
   console.log("requestUrl", requestUrl.toString());
 
-  nextJsServer.prepare().then(() => nextJsHandle(request, response as any));
+  await nextJsServer.prepare();
+  console.log("nextJsServer.prepare が完了した");
+  await nextJsHandle(request, response as any);
+  console.log("最後まで到達?");
 });
 
 /*
