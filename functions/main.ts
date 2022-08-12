@@ -18,8 +18,8 @@ console.log("versions", JSON.stringify(process.versions));
  */
 
 const nextJsServer = next({
-  dev: true,
-  dir: "../../../next-dist",
+  dev: false,
+  dir: "../../../",
 });
 
 const nextJsHandle = nextJsServer.getRequestHandler();
