@@ -14,8 +14,7 @@ body {
   font-family: "Hack";
   font-weight: 400;
   font-style: normal;
-  src: url("/4c5217415405c8a6d127b962214a58cfd8fa2c9f961409bfa20b2a0400a18b78")
-    format("woff2");
+  src: url("./static/hack_regular_subset.woff2") format("woff2");
 }
 
 html {
