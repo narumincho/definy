@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Button } from "../ui/Button";
+import { Button } from "../client/ui/Button";
 import { css } from "@emotion/css";
 
 const itemList: ReadonlyArray<OscillatorType> = [
@@ -251,3 +251,5 @@ const Answer = (props: {
       );
   }
 };
+
+export default SoundQuiz;
