@@ -1,10 +1,8 @@
 import * as React from "react";
 import * as d from "../localData";
 import Head from "next/head";
-import { Header } from "../client/ui/Header";
 import { HomePage } from "../client/ui/HomePage";
-import { LogInMessage } from "../components/LogInMessage";
-import { css } from "@emotion/css";
+import { WithHeader } from "../client/ui/WithHeader";
 import { useDefinyApp } from "../client/hook/useDefinyApp";
 import { useLanguage } from "../client/hook/useLanguage";
 
@@ -22,44 +20,24 @@ export const TopPage = (): React.ReactElement => {
           が目標のWebアプリ
         </title>
       </Head>
-      <div
-        className={css({
-          width: "100%",
-          height: "100%",
-          display: "grid",
-          overflow: "hidden",
-          gridTemplateRows: "48px 1fr",
-          backgroundColor: "#222",
-        })}
+      <WithHeader
+        logInState={useDefinyAppResult.logInState}
+        accountResource={useDefinyAppResult.accountResource}
+        location={d.Location.About}
+        language={language}
+        logIn={useDefinyAppResult.logIn}
+        titleItemList={[]}
       >
-        <Header
-          logInState={useDefinyAppResult.logInState}
+        <HomePage
+          topProjectsLoadingState={useDefinyAppResult.topProjectsLoadingState}
           accountResource={useDefinyAppResult.accountResource}
-          locationAndLanguage={{ location: d.Location.Home, language }}
-          titleItemList={[]}
-          onLogInButtonClick={useDefinyAppResult.logIn}
-        />
-        <LogInMessage
-          logInState={useDefinyAppResult.logInState}
           language={language}
+          logInState={useDefinyAppResult.logInState}
+          projectResource={useDefinyAppResult.projectResource}
+          requestTop50Project={useDefinyAppResult.requestTop50Project}
+          typePartResource={useDefinyAppResult.typePartResource}
         />
-        <div
-          className={css({
-            gridColumn: "1 / 2",
-            gridRow: "2 / 3",
-          })}
-        >
-          <HomePage
-            topProjectsLoadingState={useDefinyAppResult.topProjectsLoadingState}
-            accountResource={useDefinyAppResult.accountResource}
-            language={language}
-            logInState={useDefinyAppResult.logInState}
-            projectResource={useDefinyAppResult.projectResource}
-            requestTop50Project={useDefinyAppResult.requestTop50Project}
-            typePartResource={useDefinyAppResult.typePartResource}
-          />
-        </div>
-      </div>
+      </WithHeader>
     </>
   );
 };

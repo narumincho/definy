@@ -2,39 +2,50 @@ import * as React from "react";
 import * as d from "../localData";
 import { CSSObject, css } from "@emotion/css";
 import { commitUrl, nowMode, version } from "../out";
+import Head from "next/head";
+import { WithHeader } from "../client/ui/WithHeader";
+import { useDefinyApp } from "../client/hook/useDefinyApp";
 import { useLanguage } from "../client/hook/useLanguage";
 
 export const AboutPage = (): React.ReactElement => {
+  const useDefinyAppResult = useDefinyApp();
   const language = useLanguage();
   return (
-    <div
-      className={css({
-        display: "grid",
-        overflowY: "scroll",
-        alignContent: "start",
-        gap: 8,
-        padding: 16,
-        width: "100%",
-        height: "100%",
-      })}
-    >
-      <div>{aboutMessage(language)}</div>
-      <GitHubRepositoryLink githubAccountName="narumincho" repoName="definy" />
-      <div>
-        <div
-          className={css({
-            fontSize: 20,
-          })}
-        >
-          {versionMessage(language)}
+    <>
+      <Head>
+        <title>definy について</title>
+      </Head>
+      <WithHeader
+        logInState={useDefinyAppResult.logInState}
+        accountResource={useDefinyAppResult.accountResource}
+        location={d.Location.About}
+        language={language}
+        logIn={useDefinyAppResult.logIn}
+        titleItemList={[]}
+      >
+        <div className={css({ padding: 16, display: "grid", gap: 8 })}>
+          <div>{aboutMessage(language)}</div>
+          <GitHubRepositoryLink
+            githubAccountName="narumincho"
+            repoName="definy"
+          />
+          <div>
+            <div
+              className={css({
+                fontSize: 20,
+              })}
+            >
+              {versionMessage(language)}
+            </div>
+            {nowMode === d.Mode.Release ? (
+              <a href={commitUrl}>{version}</a>
+            ) : (
+              <div>{version}</div>
+            )}
+          </div>
         </div>
-        {nowMode === d.Mode.Release ? (
-          <a href={commitUrl}>{version}</a>
-        ) : (
-          <div>{version}</div>
-        )}
-      </div>
-    </div>
+      </WithHeader>
+    </>
   );
 };
 

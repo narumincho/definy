@@ -78,7 +78,7 @@ export const ProjectCard: React.FC<Props> = React.memo((props) => {
 });
 ProjectCard.displayName = "ProjectCard";
 
-export const ProjectCardSkeleton: React.VFC = React.memo(() => {
+export const ProjectCardSkeleton: React.FC = React.memo(() => {
   return (
     <div
       className={css({
