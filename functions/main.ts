@@ -1,10 +1,8 @@
-import * as commonUrl from "../common/url";
 import * as functions from "firebase-functions";
 import * as lib from "./lib";
 import * as mimeType from "../definy-output/typescript/mimeType";
 import { ApiCodec, apiCodec } from "../common/apiCodec";
-import { html as genHtml } from "../gen/main";
-import { generateHtml } from "./html";
+import next from "next";
 
 console.log("versions", JSON.stringify(process.versions));
 /*
@@ -19,17 +17,23 @@ console.log("versions", JSON.stringify(process.versions));
  * =====================================================================
  */
 
-export const html = functions.https.onRequest(async (request, response) => {
-  const requestUrl = new URL("https://" + request.hostname + request.url);
-  console.log("protocol を表示!", request.protocol);
-  console.log(request.headers.host, request.url, request.originalUrl);
-  const urlData = commonUrl.urlToUrlData(requestUrl);
-  console.log("requestUrl", requestUrl.toString());
-  const htmlAndIsNotFound = await generateHtml(urlData);
+const nextJsServer = next({
+  dev: true,
+  customServer: true,
+});
+const nextJsHandle = nextJsServer.getRequestHandler();
 
-  response.status(htmlAndIsNotFound.isNotFound ? 404 : 200);
-  response.setHeader("content-type", mimeType.html);
-  response.send(genHtml.htmlOptionToString(htmlAndIsNotFound.htmlOption));
+export const html = functions.https.onRequest((request, response) => {
+  const requestUrl = new URL("https://" + request.hostname + request.url);
+  console.log(
+    request.protocol,
+    request.headers.host,
+    request.url,
+    request.originalUrl
+  );
+  console.log("requestUrl", requestUrl.toString());
+
+  nextJsServer.prepare().then(() => nextJsHandle(request, response as any));
 });
 
 /*
