@@ -18,3 +18,4 @@ node_modules/
 /build/**/**.js
 /gen/**/**.js
 /core/**/**.js
+/.next/

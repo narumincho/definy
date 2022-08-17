@@ -16,7 +16,8 @@
     "storybook": "start-storybook --config-dir ./storybook",
     "update-package-json": "ncu -u",
     "start-definy": "npx tsc --project ./tsconfig-purs-ffi.json && npx spago run --main Definy.Start && firebase emulators:start --project definy-lang --config ./distribution/definy/firebase.json",
-    "package-vscode-extension": "cd ./distribution/definy-extension && npx vsce package"
+    "package-vscode-extension": "cd ./distribution/definy-extension && npx vsce package",
+    "dev": "npx next dev"
   },
   "engines": {
     "node": "16"
@@ -232,5 +233,9 @@
       ]
     }
   },
-  "packageManager": "pnpm@7.9.2"
+  "packageManager": "pnpm@7.9.2",
+  "dependencies": {
+    "@emotion/react": "^11.10.0",
+    "next": "^12.2.5"
+  }
 }
