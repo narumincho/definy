@@ -11,10 +11,14 @@ import {
 } from "../output/TypeScriptEntryPoint";
 import { structuredUrlToUrl, urlToStructuredUrl } from "../gen/url/main";
 import { clientScriptPath } from "../clientScriptHash";
-import { origin } from "../out";
 
 const languageQueryKey = "hl";
 export const defaultLanguage: d.Language = "English";
+
+const origin =
+  process.env.NODE_ENV === "development"
+    ? "http://localhost:2520"
+    : "https://definy.app";
 
 export const locationAndLanguageToUrl = (
   locationAndLanguage: d.LocationAndLanguage
