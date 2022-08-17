@@ -19,3 +19,4 @@ node_modules/
 /gen/**/**.js
 /core/**/**.js
 /.next/
+tsconfig.tsbuildinfo
