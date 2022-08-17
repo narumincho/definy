@@ -1,3 +1,5 @@
+React + PureScript 版 definy dev 環境へ最後のビルド? 
+
 # definy (VSCode 拡張機能版)
 
 [VSCode 拡張機能版 の説明](definyVSCodeExtension.md)
