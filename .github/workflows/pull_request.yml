@@ -13,7 +13,6 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: "16"
-          cache: pnpm
       - run: corepack enable
       - name: Install npm dependencies (pnpm install)
         run: pnpm install
