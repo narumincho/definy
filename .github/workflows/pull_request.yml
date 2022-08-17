@@ -13,9 +13,9 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: "16"
-          # cache: pnpm
+          cache: pnpm
       - run: corepack enable
-      - name: Install npm dependencies (npm ci)
+      - name: Install npm dependencies (pnpm install)
         run: pnpm install
       - name: PureScript FFI Code TypeScript → JavaScript
         run: npx tsc --project ./tsconfig-purs-ffi.json
