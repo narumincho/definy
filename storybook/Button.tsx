@@ -1,9 +1,8 @@
 import * as React from "react";
+import { ArgTypes, Meta, Story } from "@storybook/react";
 import { Button, Props } from "../client/ui/Button";
-import { Meta, Story } from "@storybook/react";
-import { ArgType } from "@storybook/addons";
 
-const argTypes: Record<"text", ArgType> = {
+const argTypes: Record<"text", ArgTypes[string]> = {
   text: {
     control: {
       type: "text",

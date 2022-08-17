@@ -1,7 +1,7 @@
 import * as React from "react";
 import * as d from "../localData";
+import { ArgTypes, Meta, Story } from "@storybook/react";
 import { HomePage, Props } from "../client/ui/HomePage";
-import { Meta, Story } from "@storybook/react";
 import {
   accountResource,
   project1Id,
@@ -9,10 +9,9 @@ import {
   projectResource,
   typePartResource,
 } from "./mockData";
-import { ArgType } from "@storybook/addons";
 import { action } from "@storybook/addon-actions";
 
-const argTypes: Record<keyof Pick<Props, "logInState">, ArgType> = {
+const argTypes: Record<keyof Pick<Props, "logInState">, ArgTypes[string]> = {
   logInState: { control: null },
 };
 

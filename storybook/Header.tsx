@@ -1,13 +1,12 @@
 import * as React from "react";
 import * as d from "../localData";
+import { ArgTypes, Meta, Story } from "@storybook/react";
 import { Header, Props } from "../client/ui/Header";
-import { Meta, Story } from "@storybook/react";
-import { ArgType } from "@storybook/addons";
 import { accountResource } from "./mockData";
 
 const argTypes: Record<
   keyof Pick<Props, "titleItemList" | "logInState">,
-  ArgType
+  ArgTypes[string]
 > = {
   titleItemList: {
     control: null,
