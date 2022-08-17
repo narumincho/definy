@@ -54,7 +54,12 @@ Definy is Web App for Web App.
 
 ## エミュレータの起動方法
 
-[Node.js LTS](https://nodejs.org/ja/) と [pnpm](https://pnpm.io/ja/),  Java (Firestore のエミュレータに必要) をインストールする必要がある.
+[Node.js LTS](https://nodejs.org/ja/), Java (Firestore のエミュレータに必要) をインストールする必要がある.
+
+```ps1
+corepack enable
+```
+を事前に実行することによって, pnpm が自動的にインストールされる
 
 Google でログインするための 鍵を, 1 つ上の階層のファイルに保存し, npm script の `start` を実行するを開発用にアプリが起動する. Ctrl + C キーを押すと エミュレータを停止することができる. VSCode の ゴミ箱ボタンだと, firestore のエミュレータが終了されないので注意. タスクマネージャーの Open JDK Platform binary などのそれっぽいものを停止すれば, firestore のエミュレータを停止させることができる.
 
