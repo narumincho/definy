@@ -1,5 +1,3 @@
-[![Gitpod ready-to-code](https://img.shields.io/badge/Gitpod-ready--to--code-blue?logo=gitpod)](https://gitpod.io/#https://github.com/narumincho/definy)
-
 # definy (VSCode 拡張機能版)
 
 [VSCode 拡張機能版 の説明](definyVSCodeExtension.md)
@@ -56,7 +54,7 @@ Definy is Web App for Web App.
 
 ## エミュレータの起動方法
 
-Node.js と Java (Firestore のエミュレータに必要) をインストールする必要がある.
+[Node.js LTS](https://nodejs.org/ja/) と [pnpm](https://pnpm.io/ja/),  Java (Firestore のエミュレータに必要) をインストールする必要がある.
 
 Google でログインするための 鍵を, 1 つ上の階層のファイルに保存し, npm script の `start` を実行するを開発用にアプリが起動する. Ctrl + C キーを押すと エミュレータを停止することができる. VSCode の ゴミ箱ボタンだと, firestore のエミュレータが終了されないので注意. タスクマネージャーの Open JDK Platform binary などのそれっぽいものを停止すれば, firestore のエミュレータを停止させることができる.
 

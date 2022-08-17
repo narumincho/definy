@@ -1,6 +1,6 @@
 import * as React from "react";
 import * as d from "../localData";
-import { Meta, Story } from "@storybook/react";
+import { ArgTypes, Meta, Story } from "@storybook/react";
 import {
   imageValue,
   listValue,
@@ -26,7 +26,6 @@ import {
   typePart1Id,
   typePartResource,
 } from "./mockData";
-import { ArgType } from "@storybook/addons";
 import { Editor } from "../client/ui/Editor";
 import type { Item } from "../client/editor/product";
 import { UseDefinyAppResult } from "../client/hook/useDefinyApp";
@@ -40,7 +39,7 @@ type ControlAndActionProps = {
 
 const argTypes: Record<
   keyof Pick<ControlAndActionProps, "language" | "onJump">,
-  ArgType
+  ArgTypes[string]
 > = {
   language: {
     description: "storybook 用. 言語",

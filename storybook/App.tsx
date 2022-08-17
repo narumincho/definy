@@ -1,7 +1,7 @@
 import * as React from "react";
 import * as d from "../localData";
 import { App, Props } from "../client/ui/App";
-import { Meta, Story } from "@storybook/react";
+import { ArgTypes, Meta, Story } from "@storybook/react";
 import {
   accountResource,
   project1Id,
@@ -10,7 +10,6 @@ import {
   typePartIdListInProjectResource,
   typePartResource,
 } from "./mockData";
-import { ArgType } from "@storybook/addons";
 import type { UseDefinyAppResult } from "../client/hook/useDefinyApp";
 import { action } from "@storybook/addon-actions";
 
@@ -39,13 +38,14 @@ const useDefinyAppResult: UseDefinyAppResult = {
 
 type ControlAndActionProps = Pick<UseDefinyAppResult, "language">;
 
-const argTypes: Record<keyof Props & "language", ArgType> = {
+const argTypes: Record<keyof Props & "language", ArgTypes[string]> = {
   useDefinyAppResult: {
-    control: null,
+    description: 32,
+    controls: null,
   },
 };
 
-const meta: Meta<Record<keyof Props & "language", ArgType>> = {
+const meta: Meta<Record<keyof Props & "language", ArgTypes[string]>> = {
   title: "App",
   component: App,
   argTypes,

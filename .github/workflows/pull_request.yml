@@ -13,9 +13,9 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: "16"
-          cache: npm
-      - name: Install npm dependencies (npm ci)
-        run: npm ci --legacy-peer-deps
+      - run: corepack enable
+      - name: Install npm dependencies (pnpm install)
+        run: pnpm install
       - name: PureScript FFI Code TypeScript → JavaScript
         run: npx tsc --project ./tsconfig-purs-ffi.json
       - name: PureScript Build
@@ -23,6 +23,6 @@ jobs:
       - name: Run build script
         run: npx spago run --main Definy.StartProductionMain
       - name: Type check
-        run: npm run typeCheck
+        run: pnpm run typeCheck
       - name: Test
-        run: npm run test
+        run: pnpm run test
