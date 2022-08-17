@@ -11,13 +11,13 @@
     "typeCheck": "tsc --project tsconfig.json --noEmit",
     "test": "jest",
     "generate-graph": "depcruise -X node_modules --output-type dot client/main.tsx functions/main.ts core/main.ts build/main.ts | dot -T svg > graph.svg",
-    "generate-local-data": "npx tsc --project ./tsconfig-purs-ffi.json & npx spago run --main DataTs.Build",
-    "build-node-package": "npx tsc --project ./tsconfig-purs-ffi.json & npx spago run --main BuildNodePackage",
+    "generate-local-data": "pnpm exec tsc --project ./tsconfig-purs-ffi.json & pnpm exec spago run --main DataTs.Build",
+    "build-node-package": "pnpm exec tsc --project ./tsconfig-purs-ffi.json & pnpm exec spago run --main BuildNodePackage",
     "storybook": "start-storybook --config-dir ./storybook",
     "update-package-json": "ncu -u",
-    "start-definy": "npx tsc --project ./tsconfig-purs-ffi.json && npx spago run --main Definy.Start && firebase emulators:start --project definy-lang --config ./distribution/definy/firebase.json",
-    "package-vscode-extension": "cd ./distribution/definy-extension && npx vsce package",
-    "dev": "npx next dev"
+    "start-definy": "pnpm tsc --project ./tsconfig-purs-ffi.json && pnpm exec spago run --main Definy.Start && firebase emulators:start --project definy-lang --config ./distribution/definy/firebase.json",
+    "package-vscode-extension": "cd ./distribution/definy-extension && pnpm exec vsce package",
+    "dev-local": "pnpm exec vercel dev"
   },
   "engines": {
     "node": "16"
@@ -69,6 +69,7 @@
     "ts-node": "10.9.1",
     "typed-admin-firestore": "1.2.2",
     "typescript": "4.7.4",
+    "vercel": "^28.1.0",
     "vsce": "2.10.0"
   },
   "jest": {
@@ -235,7 +236,7 @@
   },
   "packageManager": "pnpm@7.9.2",
   "dependencies": {
-    "@emotion/react": "^11.10.0",
-    "next": "^12.2.5"
+    "@emotion/react": "11.10.0",
+    "next": "12.2.5"
   }
 }
