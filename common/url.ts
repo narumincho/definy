@@ -1,14 +1,5 @@
 import * as d from "../localData";
 import * as s from "../staticResource";
-import {
-  english,
-  englishId,
-  esperanto,
-  esperantoId,
-  japanese,
-  japaneseId,
-  languageToIdString,
-} from "../output/TypeScriptEntryPoint";
 import { structuredUrlToUrl, urlToStructuredUrl } from "../gen/url/main";
 import { clientScriptPath } from "../clientScriptHash";
 
@@ -28,22 +19,20 @@ export const locationAndLanguageToUrl = (
     searchParams: new Map<string, string>([
       [
         languageQueryKey,
-        languageToIdString(
-          dataLanguageToPureLanguage(locationAndLanguage.language)
-        ),
+        dataLanguageToHlQueryValue(locationAndLanguage.language),
       ],
     ]),
   });
 };
 
-const dataLanguageToPureLanguage = (language: d.Language) => {
+const dataLanguageToHlQueryValue = (language: d.Language): string => {
   switch (language) {
     case "English":
-      return english;
+      return "en";
     case "Japanese":
-      return japanese;
+      return "ja";
     case "Esperanto":
-      return esperanto;
+      return "eo";
   }
 };
 
@@ -164,11 +153,11 @@ const locationFromUrl = (path: ReadonlyArray<string>): d.Location => {
 
 const languageFromIdString = (languageAsString: string): d.Language => {
   switch (languageAsString) {
-    case japaneseId:
+    case "ja":
       return "Japanese";
-    case englishId:
+    case "en":
       return "English";
-    case esperantoId:
+    case "eo":
       return "Esperanto";
   }
   return defaultLanguage;
