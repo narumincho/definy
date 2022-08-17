@@ -1,4 +1,4 @@
-/node_modules/
+node_modules/
 /distribution/
 *.log
 /out.ts
@@ -18,3 +18,5 @@
 /build/**/**.js
 /gen/**/**.js
 /core/**/**.js
+/.next/
+tsconfig.tsbuildinfo

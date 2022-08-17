@@ -1,1 +1,1 @@
-export { generateDataTsTypeScriptCode } from "../../build/dataTs";
+export { generateDataTsTypeScriptCode } from "../../dataTs";

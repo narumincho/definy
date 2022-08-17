@@ -1,6 +1,6 @@
-import * as d from "../localData";
-import { generateTypeScriptCode } from "../core/main";
-import { jsTs } from "../gen/main";
+import * as d from "./localData";
+import { generateTypeScriptCode } from "./core/main";
+import { jsTs } from "./gen/main";
 
 const coreProjectId: d.ProjectId = d.ProjectId.fromString(
   "96deb95f697e66f12a55e4d3910ea509"
