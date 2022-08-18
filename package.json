@@ -234,7 +234,7 @@
       ]
     }
   },
-  "packageManager": "pnpm@7.9.2",
+  "packageManager": "pnpm@7.9.3",
   "dependencies": {
     "@emotion/react": "11.10.0",
     "next": "12.2.5"
