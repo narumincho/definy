@@ -604,7 +604,7 @@ packages:
       '@babel/core': ^7.0.0-0
     dependencies:
       '@babel/core': 7.12.9
-      '@babel/helper-plugin-utils': 7.18.9
+      '@babel/helper-plugin-utils': 7.10.4
       '@babel/plugin-syntax-object-rest-spread': 7.8.3_@babel+core@7.12.9
       '@babel/plugin-transform-parameters': 7.18.8_@babel+core@7.12.9
     dev: true
@@ -1911,7 +1911,7 @@ packages:
     resolution: {integrity: sha512-XTX5z/P5kH802MDoVm/rqOil0UwYEOEjf9+NPgfmm5UINIxDzwYaXfVR6z8svCBG8Hlbu/FzkXqhP8J5xaWzSQ==}
     engines: {node: ^8.13.0 || >=10.10.0}
     dependencies:
-      '@grpc/proto-loader': 0.7.0
+      '@grpc/proto-loader': 0.7.2
       '@types/node': 18.7.6
     dev: true
 
@@ -1928,8 +1928,8 @@ packages:
     dev: true
     optional: true
 
-  /@grpc/proto-loader/0.7.0:
-    resolution: {integrity: sha512-SGPZtVmqOvNfPFOA/nNPn+0Weqa5wubBgQ56+JgTbeLY2VezwtMjwPPFzh0kvQccwWT3a2TXT0ZGK/pJoOTk1A==}
+  /@grpc/proto-loader/0.7.2:
+    resolution: {integrity: sha512-jCdyLIT/tdQ1zhrbTQnJNK5nbDf0GoBpy5jVNywBzzMDF+Vs6uEaHnfz46dMtDxkvwrF2hzk5Z67goliceH0sA==}
     engines: {node: '>=6'}
     hasBin: true
     dependencies:
@@ -4826,8 +4826,8 @@ packages:
     resolution: {integrity: sha512-ipixuVrh2OdNmauvtT51o3d8z12p6LtFW9in7U79der/kwejjdNchQC5UMn5u/KxNoM7VHHOs/l8KS8uHxhODQ==}
     dev: true
 
-  /@types/uglify-js/3.16.0:
-    resolution: {integrity: sha512-0yeUr92L3r0GLRnBOvtYK1v2SjqMIqQDHMl7GLb+l2L8+6LSFWEEWEIgVsPdMn5ImLM8qzWT8xFPtQYpp8co0g==}
+  /@types/uglify-js/3.17.0:
+    resolution: {integrity: sha512-3HO6rm0y+/cqvOyA8xcYLweF0TKXlAxmQASjbOi49Co51A1N4nR4bEwBgRoD9kNM+rqFGArjKr654SLp2CoGmQ==}
     dependencies:
       source-map: 0.6.1
     dev: true
@@ -4857,7 +4857,7 @@ packages:
     dependencies:
       '@types/node': 18.7.6
       '@types/tapable': 1.0.8
-      '@types/uglify-js': 3.16.0
+      '@types/uglify-js': 3.17.0
       '@types/webpack-sources': 3.2.0
       anymatch: 3.1.2
       source-map: 0.6.1
@@ -6465,7 +6465,7 @@ packages:
     hasBin: true
     dependencies:
       caniuse-lite: 1.0.30001378
-      electron-to-chromium: 1.4.222
+      electron-to-chromium: 1.4.223
       node-releases: 2.0.6
       update-browserslist-db: 1.0.5_browserslist@4.21.3
 
@@ -8109,8 +8109,8 @@ packages:
     resolution: {integrity: sha512-WMwm9LhRUo+WUaRN+vRuETqG89IgZphVSNkdFgeb6sS/E4OrDIN7t48CAewSHXc6C8lefD8KKfr5vY61brQlow==}
     dev: true
 
-  /electron-to-chromium/1.4.222:
-    resolution: {integrity: sha512-gEM2awN5HZknWdLbngk4uQCVfhucFAfFzuchP3wM3NN6eow1eDU0dFy2kts43FB20ZfhVFF0jmFSTb1h5OhyIg==}
+  /electron-to-chromium/1.4.223:
+    resolution: {integrity: sha512-uWa+i2Vz1odvE+zWXOe23rW9UPLh/5X7ESUVdK8wmNg+T6FfOZbhyZEK1GuC8JqaAZ4VBFUYaTYHFPrAX6y5bA==}
 
   /element-resize-detector/1.2.4:
     resolution: {integrity: sha512-Fl5Ftk6WwXE0wqCgNoseKWndjzZlDCwuPTcoVZfCP9R3EHQF8qUtr3YUPNETegRBOKqQKPW3n4kiIWngGi8tKg==}
@@ -10309,7 +10309,7 @@ packages:
     hasBin: true
     dependencies:
       '@grpc/grpc-js': 1.6.10
-      '@grpc/proto-loader': 0.7.0
+      '@grpc/proto-loader': 0.7.2
       '@types/long': 4.0.2
       abort-controller: 3.0.0
       duplexify: 4.1.2
@@ -12849,7 +12849,7 @@ packages:
       lru-cache: 7.14.0
       minipass: 3.3.4
       minipass-collect: 1.0.2
-      minipass-fetch: 2.1.0
+      minipass-fetch: 2.1.1
       minipass-flush: 1.0.5
       minipass-pipeline: 1.2.4
       negotiator: 0.6.3
@@ -13215,8 +13215,8 @@ packages:
       encoding: 0.1.13
     dev: true
 
-  /minipass-fetch/2.1.0:
-    resolution: {integrity: sha512-H9U4UVBGXEyyWJnqYDCLp1PwD8XIkJ4akNHp1aGVI+2Ym7wQMlxDKi4IB4JbmyU+pl9pEs/cVrK6cOuvmbK4Sg==}
+  /minipass-fetch/2.1.1:
+    resolution: {integrity: sha512-/kgtXVGS10PTFET6dAbOBWQtgH+iDiI4NhRqAftojRlsOJhk0y45sVVxqCaRQC+AMFH7JkHiWpuKJKQ+mojKiA==}
     engines: {node: ^12.13.0 || ^14.15.0 || >=16.0.0}
     dependencies:
       minipass: 3.3.4
@@ -13728,7 +13728,7 @@ packages:
     dependencies:
       make-fetch-happen: 10.2.1
       minipass: 3.3.4
-      minipass-fetch: 2.1.0
+      minipass-fetch: 2.1.1
       minipass-json-stream: 1.0.1
       minizlib: 2.1.2
       npm-package-arg: 9.1.0
