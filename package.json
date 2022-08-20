@@ -237,8 +237,14 @@
   "packageManager": "pnpm@7.9.3",
   "dependencies": {
     "@emotion/react": "11.10.0",
+    "@trpc/client": "9.27.1",
+    "@trpc/next": "9.27.1",
+    "@trpc/react": "9.27.1",
+    "@trpc/server": "9.27.1",
     "graphql": "16.6.0",
     "graphql-helix": "1.13.0",
-    "next": "12.2.5"
+    "next": "12.2.5",
+    "react-query": "3.39.2",
+    "zod": "3.18.0"
   }
 }

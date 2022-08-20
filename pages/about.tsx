@@ -1,13 +1,16 @@
 import * as React from "react";
 import * as d from "../localData";
-import { CSSObject } from "@emotion/react";
+import type { CSSObject } from "@emotion/react";
+import Link from "next/link";
 import { WithHeader } from "../components/WithHeader";
+import { trpc } from "../hooks/trpc";
 import { useDefinyApp } from "../client/hook/useDefinyApp";
 import { useLanguage } from "../hooks/useLanguage";
 
 export const AboutPage = (): React.ReactElement => {
   const useDefinyAppResult = useDefinyApp();
   const language = useLanguage();
+
   return (
     <WithHeader
       logInState={useDefinyAppResult.logInState}
@@ -25,10 +28,13 @@ export const AboutPage = (): React.ReactElement => {
           repoName="definy"
         />
         <div css={{ color: "white" }}>NI (Next.js + IoT向けの機能) 版</div>
+        <Version language={language} />
       </div>
     </WithHeader>
   );
 };
+
+export default AboutPage;
 
 const aboutMessage = (language: d.Language): string => {
   switch (language) {
@@ -98,4 +104,44 @@ export const GitHubIcon: React.FC<{
   );
 };
 
-export default AboutPage;
+const Version = (props: {
+  readonly language: d.Language;
+}): React.ReactElement => {
+  return (
+    <div>
+      <h2 css={{ color: "white", fontSize: 20 }}>
+        {versionMessage(props.language)}
+      </h2>
+      <VersionContent />
+    </div>
+  );
+};
+
+const versionMessage = (language: d.Language): string => {
+  switch (language) {
+    case "English":
+      return "version";
+
+    case "Japanese":
+      return "バージョン";
+
+    case "Esperanto":
+      return "versio";
+  }
+};
+
+const VersionContent = (): React.ReactElement => {
+  const response = trpc.useQuery(["gitCommitSha"]);
+
+  if (response.data === undefined) {
+    return <div css={{ color: "white" }}>...</div>;
+  }
+  if (response.data === null) {
+    return <div css={{ color: "white" }}>開発バージョン</div>;
+  }
+  return (
+    <Link href={"https://github.com/narumincho/definy/tree/" + response.data}>
+      <div css={{ color: "white" }}>ビルド元コミット {response.data}</div>
+    </Link>
+  );
+};
