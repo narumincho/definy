@@ -1,23 +1,30 @@
 import * as React from "react";
+import * as d from "../localData";
 import { Header, TitleItem } from "./Header";
-import { Language, Location } from "../localData";
 import Head from "next/head";
+import { Language } from "../common/zodType";
 import { LogInMessage } from "./LogInMessage";
 import type { UseDefinyAppResult } from "../client/hook/useDefinyApp";
 import iconPng from "../assets/icon.png";
+import { trpc } from "../hooks/trpc";
 
 export const WithHeader = (
-  props: Pick<
-    UseDefinyAppResult,
-    "accountResource" | "logInState" | "logIn"
-  > & {
+  props: Pick<UseDefinyAppResult, "accountResource" | "logInState"> & {
     readonly titleItemList: ReadonlyArray<TitleItem>;
-    readonly location: Location;
-    readonly language: Language;
+    readonly location: d.Location;
+    readonly language: d.Language;
     readonly children: React.ReactNode;
     readonly title: string;
   }
 ): React.ReactElement => {
+  const requestLogInUrl = trpc.useMutation("requestLogInUrl");
+
+  React.useEffect(() => {
+    if (requestLogInUrl.isSuccess) {
+      console.log("requestLogInUrl response", requestLogInUrl.data);
+    }
+  }, [requestLogInUrl.isSuccess, requestLogInUrl.data]);
+
   return (
     <>
       <Head>
@@ -42,7 +49,19 @@ export const WithHeader = (
             language: props.language,
           }}
           titleItemList={[]}
-          onLogInButtonClick={props.logIn}
+          onLogInButtonClick={() => {
+            if (props.location._ === "ToolList") {
+              requestLogInUrl.mutate({
+                location: { type: "tools" },
+                language: dataLanguageToZodLanguage(props.language),
+              });
+              return;
+            }
+            requestLogInUrl.mutate({
+              location: { type: "home" },
+              language: dataLanguageToZodLanguage(props.language),
+            });
+          }}
         />
         <LogInMessage logInState={props.logInState} language={props.language} />
         <div
@@ -51,7 +70,7 @@ export const WithHeader = (
             gridRow: "2 / 3",
           }}
         >
-          {props.children}
+          {requestLogInUrl.isLoading ? <></> : props.children}
         </div>
       </div>
     </>
@@ -65,4 +84,15 @@ const titleMessage = (message: string): string => {
     return appName;
   }
   return message + " | " + appName;
+};
+
+const dataLanguageToZodLanguage = (language: d.Language): Language => {
+  switch (language) {
+    case "English":
+      return "english";
+    case "Japanese":
+      return "japanese";
+    case "Esperanto":
+      return "esperanto";
+  }
 };

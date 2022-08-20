@@ -17,7 +17,6 @@ export const AboutPage = (): React.ReactElement => {
       accountResource={useDefinyAppResult.accountResource}
       location={d.Location.About}
       language={language}
-      logIn={useDefinyAppResult.logIn}
       titleItemList={[]}
       title="definy について"
     >

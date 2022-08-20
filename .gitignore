@@ -21,3 +21,5 @@ node_modules/
 /.next/
 tsconfig.tsbuildinfo
 /.vercel/
+
+.vercel
