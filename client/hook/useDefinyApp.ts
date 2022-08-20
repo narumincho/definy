@@ -2,11 +2,11 @@ import * as d from "../../localData";
 import * as indexedDB from "../indexedDB";
 import { AddMessage, useNotification } from "./useNotification";
 import { ReactElement, useCallback, useEffect, useMemo, useState } from "react";
-import { locationAndLanguageToUrl, urlToUrlData } from "../../common/url";
 import type { TypePartIdAndMessage } from "../../core/TypePartIdAndMessage";
 import { api } from "../api";
 import { generateTypeScriptCode } from "../../core/main";
 import { jsTs } from "../../gen/main";
+import { urlToUrlData } from "../../common/url";
 import { useResourceState } from "./resourceState";
 import { useTypePartIdListInProject } from "./typePartIdListInProject";
 
@@ -253,21 +253,16 @@ export const useDefinyApp = (): UseDefinyAppResult => {
    */
   const jump = useCallback(
     (newLocationAndLanguage: d.LocationAndLanguage): void => {
-      window.history.pushState(
-        undefined,
-        "",
-        locationAndLanguageToUrl(newLocationAndLanguage).toString()
+      console.log(
+        JSON.stringify(newLocationAndLanguage) + "にjump したいようだ"
       );
-      setLocationAndLanguage(newLocationAndLanguage);
     },
     []
   );
 
   const replace = (newLocationAndLanguage: d.LocationAndLanguage): void => {
-    window.history.replaceState(
-      undefined,
-      "",
-      locationAndLanguageToUrl(newLocationAndLanguage).toString()
+    console.log(
+      JSON.stringify(newLocationAndLanguage) + "にURLを変えたいようだ"
     );
     setLocationAndLanguage(newLocationAndLanguage);
   };

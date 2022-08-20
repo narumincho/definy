@@ -1,8 +1,8 @@
 import * as React from "react";
 import * as d from "../localData";
 import Head from "next/head";
-import { Header } from "../components/Header";
 import { Link } from "../components/Link";
+import { WithHeader } from "../components/WithHeader";
 import iconPng from "../assets/icon.png";
 import { useLanguage } from "../hooks/useLanguage";
 
@@ -25,7 +25,7 @@ const IndexPage = (): React.ReactElement => {
         }}
         lang="ja"
       >
-        <Header
+        <WithHeader
           accountResource={{
             getFromMemoryCache: () => undefined,
             requestToServerIfEmpty: () => {},
@@ -34,23 +34,20 @@ const IndexPage = (): React.ReactElement => {
           logInState={{
             _: "LoadingAccountTokenFromIndexedDB",
           }}
-          onLogInButtonClick={() => {
-            console.log("ログインボタンをクリックしたようだ");
-          }}
           titleItemList={[]}
-          locationAndLanguage={{
-            location: {
-              _: "Home",
-            },
-            language: "Japanese",
+          location={d.Location.Home}
+          language={language}
+          logIn={() => {
+            console.log("ログインしたようです");
           }}
-        />
-        <div>
-          <div css={{ padding: 16 }}>
-            <HomeLinkList language={language} />
+        >
+          <div>
+            <div css={{ padding: 16 }}>
+              <HomeLinkList language={language} />
+            </div>
+            definy 整備中...
           </div>
-          definy 整備中...
-        </div>
+        </WithHeader>
       </div>
     </>
   );
