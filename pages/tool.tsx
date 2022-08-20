@@ -13,18 +13,8 @@ export const ToolListPage = (): React.ReactElement => {
       title="definyとは直接関係ないツールたち"
       location={d.Location.ToolList}
       language={language}
-      accountResource={{
-        getFromMemoryCache: () => undefined,
-        requestToServerIfEmpty: () => {},
-        forciblyRequestToServer: () => {},
-      }}
-      logInState={{
-        _: "LoadingAccountTokenFromIndexedDB",
-      }}
+      logInState={d.LogInState.Guest}
       titleItemList={[]}
-      logIn={() => {
-        console.log("ログインしたようです");
-      }}
     >
       <h2 css={{ color: "white" }}>definyとは直接関係ないツール</h2>
       <div css={{ display: "grid", gap: 8, padding: 8 }}>

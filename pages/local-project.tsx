@@ -45,11 +45,7 @@ export const LocalProjectPage = (): React.ReactElement => {
     <WithHeader
       location={d.Location.ToolList}
       language={language}
-      accountResource={useDefinyAppResult.accountResource}
       logInState={useDefinyAppResult.logInState}
-      logIn={() => {
-        console.log("ログインしようとしたみたいです");
-      }}
       titleItemList={[]}
       title="ローカルファイルから開く"
     >
