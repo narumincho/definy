@@ -1,55 +1,48 @@
 import * as React from "react";
 import * as d from "../localData";
-import Head from "next/head";
 import { Link } from "../components/Link";
 import { WithHeader } from "../components/WithHeader";
-import iconPng from "../assets/icon.png";
 import { useLanguage } from "../hooks/useLanguage";
 
 const IndexPage = (): React.ReactElement => {
   const language = useLanguage();
 
   return (
-    <>
-      <Head>
-        <title>definy</title>
-        <link rel="icon" type="image/png" href={iconPng.src} />
-      </Head>
-      <div
-        css={{
-          display: "grid",
-          height: "100%",
-          color: "white",
-          backgroundColor: "black",
-          gridTemplateRows: "auto 1fr",
+    <div
+      css={{
+        display: "grid",
+        height: "100%",
+        color: "white",
+        backgroundColor: "black",
+        gridTemplateRows: "auto 1fr",
+      }}
+      lang="ja"
+    >
+      <WithHeader
+        title=""
+        accountResource={{
+          getFromMemoryCache: () => undefined,
+          requestToServerIfEmpty: () => {},
+          forciblyRequestToServer: () => {},
         }}
-        lang="ja"
+        logInState={{
+          _: "LoadingAccountTokenFromIndexedDB",
+        }}
+        titleItemList={[]}
+        location={d.Location.Home}
+        language={language}
+        logIn={() => {
+          console.log("ログインしたようです");
+        }}
       >
-        <WithHeader
-          accountResource={{
-            getFromMemoryCache: () => undefined,
-            requestToServerIfEmpty: () => {},
-            forciblyRequestToServer: () => {},
-          }}
-          logInState={{
-            _: "LoadingAccountTokenFromIndexedDB",
-          }}
-          titleItemList={[]}
-          location={d.Location.Home}
-          language={language}
-          logIn={() => {
-            console.log("ログインしたようです");
-          }}
-        >
-          <div>
-            <div css={{ padding: 16 }}>
-              <HomeLinkList language={language} />
-            </div>
-            definy 整備中...
+        <div>
+          <div css={{ padding: 16 }}>
+            <HomeLinkList language={language} />
           </div>
-        </WithHeader>
-      </div>
-    </>
+          definy 整備中...
+        </div>
+      </WithHeader>
+    </div>
   );
 };
 
