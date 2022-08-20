@@ -1,5 +1,6 @@
 import * as React from "react";
 import Head from "next/head";
+import { Header } from "../components/Header";
 import iconPng from "../assets/icon.png";
 
 const IndexPage = (): React.ReactElement => {
@@ -19,7 +20,27 @@ const IndexPage = (): React.ReactElement => {
         }}
         lang="ja"
       >
-        よさげ
+        <Header
+          accountResource={{
+            getFromMemoryCache: () => undefined,
+            requestToServerIfEmpty: () => {},
+            forciblyRequestToServer: () => {},
+          }}
+          logInState={{
+            _: "LoadingAccountTokenFromIndexedDB",
+          }}
+          onLogInButtonClick={() => {
+            console.log("ログインボタンをクリックしたようだ");
+          }}
+          titleItemList={[]}
+          locationAndLanguage={{
+            location: {
+              _: "Home",
+            },
+            language: "Japanese",
+          }}
+        />
+        definy 整備中...
       </div>
     </>
   );

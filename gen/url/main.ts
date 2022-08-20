@@ -1,3 +1,5 @@
+import type { UrlObject } from "node:url";
+
 /**
  * 構造化され, 単純化されたURL
  */
@@ -32,6 +34,18 @@ export const structuredUrlToUrl = (
 };
 
 /**
+ * Next.js で使ってる. Node の URL. (なんでWebのほうと別にあるんだろう?)
+ */
+export const structuredUrlToNodeUrlObject = (
+  structuredUrl: StructuredUrl
+): UrlObject => {
+  return {
+    pathname: "/" + structuredUrl.path.join("/"),
+    query: Object.fromEntries([...structuredUrl.searchParams]),
+  };
+};
+
+/**
  * 文字列の(パスと クエリパラメーター)が結合したものから, {@link StructuredUrl} を得る
  *
  * @param pathAndQueryAsString Cloud Functions for Firebase で使われているの express の `request.url`
@@ -63,5 +77,21 @@ export const urlToStructuredUrl = (
   return {
     path: pathList,
     searchParams: new Map([...new URLSearchParams(searchParamsAsString)]),
+  };
+};
+
+export const parsedUrlToStructuredUrl = (
+  pathAsString: string,
+  parsedSearchParams: { [key in string]: string | ReadonlyArray<string> }
+): StructuredUrl => {
+  const pathList = pathAsString.split("/").slice(1);
+  return {
+    path: pathList,
+    searchParams: new Map(
+      Object.entries(parsedSearchParams).flatMap(
+        ([key, value]): ReadonlyArray<readonly [string, string]> =>
+          typeof value === "string" ? [[key, value]] : []
+      )
+    ),
   };
 };
