@@ -141,7 +141,15 @@ const VersionContent = (): React.ReactElement => {
   }
   return (
     <Link href={"https://github.com/narumincho/definy/tree/" + response.data}>
-      <div css={{ color: "white" }}>ビルド元コミット {response.data}</div>
+      <div
+        css={{
+          color: "white",
+          textDecorationLine: "underline",
+          cursor: "pointer",
+        }}
+      >
+        ビルド元コミット {response.data}
+      </div>
     </Link>
   );
 };
