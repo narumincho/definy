@@ -10,10 +10,7 @@ export type TitleItem = {
   location: d.Location;
 };
 
-export type Props = Pick<
-  UseDefinyAppResult,
-  "accountResource" | "logInState"
-> & {
+export type Props = Pick<UseDefinyAppResult, "logInState"> & {
   onLogInButtonClick: UseDefinyAppResult["logIn"];
   titleItemList: ReadonlyArray<TitleItem>;
   locationAndLanguage: d.LocationAndLanguage;
@@ -71,7 +68,6 @@ export const Header: React.FC<Props> = React.memo((props) => {
       <UserViewOrLogInButton
         logInState={props.logInState}
         language={props.locationAndLanguage.language}
-        accountResource={props.accountResource}
         onLogInButtonClick={() => props.onLogInButtonClick()}
       />
     </div>
@@ -80,7 +76,7 @@ export const Header: React.FC<Props> = React.memo((props) => {
 Header.displayName = "Header";
 
 const UserViewOrLogInButton: React.FC<
-  Pick<UseDefinyAppResult, "logInState" | "accountResource"> & {
+  Pick<UseDefinyAppResult, "logInState"> & {
     onLogInButtonClick: () => void;
     language: d.Language;
   }
@@ -106,9 +102,9 @@ const UserViewOrLogInButton: React.FC<
       );
 
     case "LoggedIn": {
-      const accountResourceState = props.accountResource.getFromMemoryCache(
-        props.logInState.accountTokenAccountId.accountId
-      );
+      // APIを呼ぶようにする
+      const accountResourceState: d.ResourceState<d.Account> | undefined =
+        accountResourceStateFunc();
       if (
         accountResourceState === undefined ||
         accountResourceState._ !== "Loaded"
@@ -128,6 +124,10 @@ const UserViewOrLogInButton: React.FC<
     }
   }
   return <div css={userViewOrLogInButtonStyle}>ログインの準備中</div>;
+};
+
+const accountResourceStateFunc = (): d.ResourceState<d.Account> | undefined => {
+  return undefined;
 };
 
 const userViewOrLogInButtonStyle: CSSObject = {

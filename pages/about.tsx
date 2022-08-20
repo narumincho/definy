@@ -4,17 +4,14 @@ import type { CSSObject } from "@emotion/react";
 import Link from "next/link";
 import { WithHeader } from "../components/WithHeader";
 import { trpc } from "../hooks/trpc";
-import { useDefinyApp } from "../client/hook/useDefinyApp";
 import { useLanguage } from "../hooks/useLanguage";
 
 export const AboutPage = (): React.ReactElement => {
-  const useDefinyAppResult = useDefinyApp();
   const language = useLanguage();
 
   return (
     <WithHeader
-      logInState={useDefinyAppResult.logInState}
-      accountResource={useDefinyAppResult.accountResource}
+      logInState={d.LogInState.Guest}
       location={d.Location.About}
       language={language}
       titleItemList={[]}

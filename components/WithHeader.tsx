@@ -7,9 +7,10 @@ import { LogInMessage } from "./LogInMessage";
 import type { UseDefinyAppResult } from "../client/hook/useDefinyApp";
 import iconPng from "../assets/icon.png";
 import { trpc } from "../hooks/trpc";
+import { useRouter } from "next/router";
 
 export const WithHeader = (
-  props: Pick<UseDefinyAppResult, "accountResource" | "logInState"> & {
+  props: Pick<UseDefinyAppResult, "logInState"> & {
     readonly titleItemList: ReadonlyArray<TitleItem>;
     readonly location: d.Location;
     readonly language: d.Language;
@@ -18,12 +19,13 @@ export const WithHeader = (
   }
 ): React.ReactElement => {
   const requestLogInUrl = trpc.useMutation("requestLogInUrl");
+  const router = useRouter();
 
   React.useEffect(() => {
     if (requestLogInUrl.isSuccess) {
-      console.log("requestLogInUrl response", requestLogInUrl.data);
+      router.push(new URL(requestLogInUrl.data));
     }
-  }, [requestLogInUrl.isSuccess, requestLogInUrl.data]);
+  }, [requestLogInUrl.isSuccess, router, requestLogInUrl.data]);
 
   return (
     <>
@@ -43,7 +45,6 @@ export const WithHeader = (
       >
         <Header
           logInState={props.logInState}
-          accountResource={props.accountResource}
           locationAndLanguage={{
             location: props.location,
             language: props.language,
@@ -68,9 +69,14 @@ export const WithHeader = (
           css={{
             gridColumn: "1 / 2",
             gridRow: "2 / 3",
+            color: "white",
           }}
         >
-          {requestLogInUrl.isLoading ? <></> : props.children}
+          {requestLogInUrl.isLoading ? (
+            <div>ログインURLを取得中...</div>
+          ) : (
+            props.children
+          )}
         </div>
       </div>
     </>

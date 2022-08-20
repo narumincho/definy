@@ -20,20 +20,10 @@ const IndexPage = (): React.ReactElement => {
     >
       <WithHeader
         title=""
-        accountResource={{
-          getFromMemoryCache: () => undefined,
-          requestToServerIfEmpty: () => {},
-          forciblyRequestToServer: () => {},
-        }}
-        logInState={{
-          _: "LoadingAccountTokenFromIndexedDB",
-        }}
+        logInState={d.LogInState.Guest}
         titleItemList={[]}
         location={d.Location.Home}
         language={language}
-        logIn={() => {
-          console.log("ログインしたようです");
-        }}
       >
         <div>
           <div css={{ padding: 16 }}>

@@ -2,7 +2,10 @@ import * as i from "../../../functions/faunadb-interface";
 import * as trpc from "@trpc/server";
 import * as trpcNext from "@trpc/server/adapters/next";
 import { Language, Location } from "../../../common/zodType";
-import { VERCEL_GIT_COMMIT_SHA } from "../../../functions/environmentVariables";
+import {
+  VERCEL_GIT_COMMIT_SHA,
+  isProduction,
+} from "../../../functions/environmentVariables";
 import { z } from "zod";
 
 export const appRouter = trpc
@@ -38,7 +41,12 @@ const logInUrlFromOpenIdConnectProviderAndState = (state: string): URL => {
     new Map([
       ["response_type", "code"],
       ["client_id", googleClientId],
-      ["redirect_uri", "https://definy.app/logInCallback/Google"],
+      [
+        "redirect_uri",
+        isProduction
+          ? "https://definy.vercel.app/logInCallback/google"
+          : "http://localhost:3000/logInCallback/google",
+      ],
       ["scope", "profile openid"],
       ["state", state],
     ])
