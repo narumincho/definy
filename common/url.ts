@@ -1,9 +1,15 @@
 import * as d from "../localData";
 import * as s from "../staticResource";
-import { structuredUrlToUrl, urlToStructuredUrl } from "../gen/url/main";
+import {
+  StructuredUrl,
+  structuredUrlToNodeUrlObject,
+  structuredUrlToUrl,
+  urlToStructuredUrl,
+} from "../gen/url/main";
+import type { UrlObject } from "url";
 import { clientScriptPath } from "../clientScriptHash";
 
-const languageQueryKey = "hl";
+export const languageQueryKey = "hl";
 export const defaultLanguage: d.Language = "English";
 
 const origin =
@@ -19,21 +25,62 @@ export const locationAndLanguageToUrl = (
     searchParams: new Map<string, string>([
       [
         languageQueryKey,
-        dataLanguageToHlQueryValue(locationAndLanguage.language),
+        dataLanguageToQueryValue(locationAndLanguage.language),
       ],
     ]),
   });
 };
 
-const dataLanguageToHlQueryValue = (language: d.Language): string => {
+export const locationAndLanguageToStructuredUrl = (
+  locationAndLanguage: d.LocationAndLanguage
+): StructuredUrl => {
+  return {
+    path: locationToPathList(locationAndLanguage.location),
+    searchParams: new Map<string, string>([
+      [
+        languageQueryKey,
+        dataLanguageToQueryValue(locationAndLanguage.language),
+      ],
+    ]),
+  };
+};
+
+export const locationAndLanguageToNodeUrlObject = (
+  locationAndLanguage: d.LocationAndLanguage
+): UrlObject => {
+  return structuredUrlToNodeUrlObject(
+    locationAndLanguageToStructuredUrl(locationAndLanguage)
+  );
+};
+
+export const dataLanguageToQueryValue = (language: d.Language): string => {
   switch (language) {
     case "English":
-      return "en";
+      return englishId;
     case "Japanese":
-      return "ja";
+      return japaneseId;
     case "Esperanto":
-      return "eo";
+      return esperantoId;
   }
+};
+
+export const queryValueToDataLanguage = (language: string): d.Language => {
+  switch (language) {
+    case englishId:
+      return "English";
+    case japaneseId:
+      return "Japanese";
+    case esperantoId:
+      return "Esperanto";
+  }
+  return defaultLanguage;
+};
+
+export const isValidLanguageQueryValue = (value: unknown): boolean => {
+  if (typeof value !== "string") {
+    return false;
+  }
+  return new Set([englishId, japaneseId, esperantoId]).has(value);
 };
 
 const locationToPathList = (location: d.Location): ReadonlyArray<string> => {
@@ -76,7 +123,9 @@ const toolToPath = (toolName: d.ToolName): string => {
  * URLのパスを場所のデータに変換する
  * @param url `https://definy.app/project/580d8d6a54cf43e4452a0bba6694a4ed?hl=ja` のようなURL
  */
-export const urlToUrlData = (url: URL): d.UrlData => {
+export const urlToUrlData = (
+  url: Readonly<Pick<URL, "pathname" | "search">>
+): d.UrlData => {
   const structuredUrl = urlToStructuredUrl(url.pathname, url.search);
   if (
     structuredUrl.path[0] === "logInCallback" &&
@@ -153,11 +202,11 @@ const locationFromUrl = (path: ReadonlyArray<string>): d.Location => {
 
 const languageFromIdString = (languageAsString: string): d.Language => {
   switch (languageAsString) {
-    case "ja":
+    case japaneseId:
       return "Japanese";
-    case "en":
+    case englishId:
       return "English";
-    case "eo":
+    case esperantoId:
       return "Esperanto";
   }
   return defaultLanguage;
@@ -191,3 +240,7 @@ const localProjectPath = "local-project";
 const toolPath = "tool";
 const toolThemeColorRainbow = "theme-color-rainbow";
 const toolSoundQuiz = "sound-quiz";
+
+const englishId = "en";
+const esperantoId = "eo";
+const japaneseId = "ja";
