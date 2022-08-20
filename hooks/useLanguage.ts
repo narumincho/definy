@@ -4,7 +4,7 @@ import {
   languageQueryKey,
   queryValueToDataLanguage,
 } from "../common/url";
-import type { Language } from "../localData";
+import { Language } from "../localData";
 import { useQueryBasedState } from "./useQueryBasedState";
 
 /**
@@ -12,13 +12,17 @@ import { useQueryBasedState } from "./useQueryBasedState";
  * @returns
  */
 export const useLanguage = (): Language => {
-  const state = useQueryBasedState({
+  const state = useQueryBasedState<Language>({
     queryToStructuredQuery: (q) => queryValueToLanguage(q[languageQueryKey]),
     structuredQueryToQuery: (s) => ({
       [languageQueryKey]: dataLanguageToQueryValue(s),
     }),
+    isEqual: (oldLanguage, newLanguage) => oldLanguage === newLanguage,
   });
-  return state ?? defaultLanguage;
+  if (state.type === "loading") {
+    return defaultLanguage;
+  }
+  return state.value;
 };
 
 const queryValueToLanguage = (queryValue: unknown): Language => {

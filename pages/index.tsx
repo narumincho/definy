@@ -8,31 +8,20 @@ const IndexPage = (): React.ReactElement => {
   const language = useLanguage();
 
   return (
-    <div
-      css={{
-        display: "grid",
-        height: "100%",
-        color: "white",
-        backgroundColor: "black",
-        gridTemplateRows: "auto 1fr",
-      }}
-      lang="ja"
+    <WithHeader
+      title=""
+      logInState={d.LogInState.Guest}
+      titleItemList={[]}
+      location={d.Location.Home}
+      language={language}
     >
-      <WithHeader
-        title=""
-        logInState={d.LogInState.Guest}
-        titleItemList={[]}
-        location={d.Location.Home}
-        language={language}
-      >
-        <div>
-          <div css={{ padding: 16 }}>
-            <HomeLinkList language={language} />
-          </div>
-          definy 整備中...
+      <div>
+        <div css={{ padding: 16 }}>
+          <HomeLinkList language={language} />
         </div>
-      </WithHeader>
-    </div>
+        definy 整備中...
+      </div>
+    </WithHeader>
   );
 };
 

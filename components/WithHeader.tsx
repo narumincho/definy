@@ -5,6 +5,7 @@ import Head from "next/head";
 import { Language } from "../common/zodType";
 import { LogInMessage } from "./LogInMessage";
 import type { UseDefinyAppResult } from "../client/hook/useDefinyApp";
+import { dataLanguageToQueryValue } from "../common/url";
 import iconPng from "../assets/icon.png";
 import { trpc } from "../hooks/trpc";
 import { useRouter } from "next/router";
@@ -42,6 +43,7 @@ export const WithHeader = (
           gridTemplateRows: "48px 1fr",
           backgroundColor: "#222",
         }}
+        lang={dataLanguageToQueryValue(props.language)}
       >
         <Header
           logInState={props.logInState}
