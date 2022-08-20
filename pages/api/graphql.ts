@@ -7,6 +7,7 @@ import {
   sendResult,
   shouldRenderGraphiQL,
 } from "graphql-helix";
+import { VERCEL_GIT_COMMIT_SHA } from "../../functions/environmentVariables";
 
 export default (request: NextApiRequest, response: NextApiResponse): void => {
   const requestObject = {
@@ -17,14 +18,14 @@ export default (request: NextApiRequest, response: NextApiResponse): void => {
   };
 
   if (shouldRenderGraphiQL(requestObject)) {
-    response.send(renderGraphiQL());
+    response.send(renderGraphiQL({ endpoint: "/api/graphql" }));
     return;
   }
   const { operationName, query, variables } =
     getGraphQLParameters(requestObject);
 
   processRequest({
-    operationName: operationName ?? "",
+    operationName: operationName ?? "unknownOperationName",
     query: query ?? "unknown query...",
     variables: variables ?? {},
     request: requestObject,
@@ -32,9 +33,13 @@ export default (request: NextApiRequest, response: NextApiResponse): void => {
       query: new g.GraphQLObjectType({
         name: "Query",
         fields: {
-          hello: {
-            type: new g.GraphQLNonNull(g.GraphQLString),
-            resolve: () => "ok!",
+          gitCommitSha: {
+            type: g.GraphQLString,
+            description:
+              "ビルド元となった GitHub の Commit SHA. 開発時には null になる",
+            resolve: (): string => {
+              return VERCEL_GIT_COMMIT_SHA;
+            },
           },
         },
       }),
