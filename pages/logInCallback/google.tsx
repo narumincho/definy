@@ -57,7 +57,7 @@ export const LogInCallbackGoogle = (): React.ReactElement => {
       title="ログインコールバック"
     >
       <div css={{ padding: 16, display: "grid", gap: 8, color: "white" }}>
-        {queryBasedState === undefined
+        {queryBasedState.type === "loading"
           ? "???"
           : "Google でログインの後の処理をこれからする"}
       </div>

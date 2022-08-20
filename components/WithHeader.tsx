@@ -3,7 +3,7 @@ import * as d from "../localData";
 import { Header, TitleItem } from "./Header";
 import Head from "next/head";
 import { Language } from "../common/zodType";
-import { LogInMessage } from "./LogInMessage";
+import { LoadingBoxCenter } from "./LoadingBox";
 import type { UseDefinyAppResult } from "../client/hook/useDefinyApp";
 import { dataLanguageToQueryValue } from "../common/url";
 import iconPng from "../assets/icon.png";
@@ -66,7 +66,6 @@ export const WithHeader = (
             });
           }}
         />
-        <LogInMessage logInState={props.logInState} language={props.language} />
         <div
           css={{
             gridColumn: "1 / 2",
@@ -74,10 +73,16 @@ export const WithHeader = (
             color: "white",
           }}
         >
-          {requestLogInUrl.isLoading ? (
-            <div>ログインURLを取得中...</div>
+          {requestLogInUrl.status === "idle" ? props.children : <></>}
+          {requestLogInUrl.status === "loading" ? (
+            <LoadingBoxCenter message={logInMessage(props.language)} />
           ) : (
-            props.children
+            <></>
+          )}
+          {requestLogInUrl.status === "success" ? (
+            <LoadingBoxCenter message={jumpMessage(props.language)} />
+          ) : (
+            <></>
           )}
         </div>
       </div>
@@ -102,5 +107,27 @@ const dataLanguageToZodLanguage = (language: d.Language): Language => {
       return "japanese";
     case "Esperanto":
       return "esperanto";
+  }
+};
+
+const logInMessage = (language: d.Language): string => {
+  switch (language) {
+    case "English":
+      return `Preparing to log in to Google`;
+    case "Esperanto":
+      return `Preparante ensaluti al Google`;
+    case "Japanese":
+      return `Google へのログインを準備中……`;
+  }
+};
+
+const jumpMessage = (language: d.Language): string => {
+  switch (language) {
+    case "English":
+      return `Navigating to Google logIn page.`;
+    case "Esperanto":
+      return `Navigado al Google-ensaluta paĝo.`;
+    case "Japanese":
+      return `Google のログインページへ移動中……`;
   }
 };
