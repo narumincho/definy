@@ -8,7 +8,7 @@ export const Location = z.union([
     type: z.literal("tool"),
     value: z.enum(["themeColorRainbow", "soundQuiz"]),
   }),
-  z.object({ type: z.literal("new-account") }),
+  z.object({ type: z.literal("create-account") }),
   z.object({ type: z.literal("local-project") }),
 ]);
 

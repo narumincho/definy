@@ -6,6 +6,10 @@ import {
   VERCEL_GIT_COMMIT_SHA,
   isProduction,
 } from "../../../functions/environmentVariables";
+import {
+  getAccountDataInGoogleFromCode,
+  googleLogInClientId,
+} from "../../../functions/login";
 import { z } from "zod";
 
 export const appRouter = trpc
@@ -34,22 +38,28 @@ export const appRouter = trpc
   .mutation("logInByCodeAndState", {
     input: z.object({ code: z.string().min(1), state: z.string().min(1) }),
     output: zodType.LogInByCodeAndStatePayload,
-    resolve: ({ input: _ }): Promise<zodType.LogInByCodeAndStatePayload> => {
-      return Promise.resolve({
-        type: "notGeneratedState",
-      });
+    resolve: async ({ input }): Promise<zodType.LogInByCodeAndStatePayload> => {
+      const result = await i.getOpenConnectStateByState(input.state);
+      if (result === undefined) {
+        return {
+          type: "notGeneratedState",
+        };
+      }
+      const accountInGoogle = await getAccountDataInGoogleFromCode(input.code);
+      return {
+        type: "notExistsAccountInDefiny",
+        nameInProvider: accountInGoogle.name,
+        imageUrl: accountInGoogle.imageUrl.toString(),
+      };
     },
   });
-
-const googleClientId =
-  "8347840964-l3796imv2d11d0qi8cnb6r48n5jabk9t.apps.googleusercontent.com";
 
 const logInUrlFromOpenIdConnectProviderAndState = (state: string): URL => {
   return createUrl(
     "https://accounts.google.com/o/oauth2/v2/auth",
     new Map([
       ["response_type", "code"],
-      ["client_id", googleClientId],
+      ["client_id", googleLogInClientId],
       [
         "redirect_uri",
         isProduction

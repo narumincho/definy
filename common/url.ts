@@ -57,8 +57,8 @@ const zodTypeLocationToPathList = (location: zodType.Location): string => {
       return "/tool/sound-quiz";
     case "about":
       return "/about";
-    case "new-account":
-      return "/new-account";
+    case "create-account":
+      return "/create-account";
     case "local-project":
       return "/local-project";
   }
