@@ -1,4 +1,4 @@
-import { Dispatch, useEffect, useRef, useState } from "react";
+import { Dispatch, useEffect, useState } from "react";
 import { ParsedUrlQuery } from "node:querystring";
 import { useRouter } from "next/router";
 
@@ -7,9 +7,7 @@ type useQueryBasedStateResult<StructuredQuery> =
   | { readonly type: "loading" };
 
 /**
- * https://zenn.dev/honey32/articles/0d6a776171874a を参考に改良
- *
- * なぜか onUpdate が2回呼ばれてしまう...
+ * URLに含まれるクエリをもとにした処理をしたいときに使う
  */
 export const useQueryBasedState = <StructuredQuery>({
   queryToStructuredQuery,
@@ -17,9 +15,17 @@ export const useQueryBasedState = <StructuredQuery>({
   onUpdate,
   isEqual,
 }: {
-  readonly queryToStructuredQuery: (query: ParsedUrlQuery) => StructuredQuery;
-  readonly structuredQueryToQuery: (query: StructuredQuery) => ParsedUrlQuery;
+  /** クエリから使う情報(`StructuredQuery`)を取り出す */
+  readonly queryToStructuredQuery: (
+    query: ReadonlyMap<string, string>
+  ) => StructuredQuery;
+  /** `StructuredQuery`をもとにしてクエリを正規化する */
+  readonly structuredQueryToQuery: (
+    query: StructuredQuery
+  ) => ReadonlyMap<string, string>;
+  /** `StructuredQuery`が変更されたときに呼ばれる */
   readonly onUpdate?: Dispatch<StructuredQuery> | undefined;
+  /** `StructuredQuery` の比較関数 */
   readonly isEqual: (
     oldStructuredQuery: StructuredQuery,
     newStructuredQuery: StructuredQuery
@@ -34,53 +40,93 @@ export const useQueryBasedState = <StructuredQuery>({
     }
   );
 
-  /**
-   * クエリが一切ない場合は、最初のrenderの時点で isReady が true になっているので、
-   * その時には一回だけ useEffect で遅延させてstateを更新する
-   */
-  const [isCalledUpdate, setIsCalledUpdate] = useState<boolean>(false);
+  const [isReplacingQuery, setIsReplacingQuery] = useState<boolean>(false);
 
   useEffect(() => {
-    if (!router.isReady) return;
-    if (isCalledUpdate) return;
-    const structuredQuery = queryToStructuredQuery(router.query);
-    setState({ type: "loaded", value: structuredQuery });
-    onUpdate?.(structuredQuery);
-    setIsCalledUpdate(true);
+    if (!router.isReady || isReplacingQuery) {
+      return;
+    }
+    const nowQueryMap = parsedUrlQueryToMap(router.query);
+    const structuredQuery = queryToStructuredQuery(nowQueryMap);
+    const reFormattedQueryMap = structuredQueryToQuery(structuredQuery);
+    if (!isEqualMap(nowQueryMap, reFormattedQueryMap)) {
+      console.log("正規化", nowQueryMap, reFormattedQueryMap);
+      const replace = router.replace;
+      setIsReplacingQuery(true);
+      replace(
+        { query: Object.fromEntries([...reFormattedQueryMap]) },
+        undefined,
+        {
+          shallow: true,
+        }
+      ).then(() => {
+        setIsReplacingQuery(false);
+      });
+    }
   }, [
-    onUpdate,
+    isReplacingQuery,
+    queryToStructuredQuery,
     router.isReady,
     router.query,
-    queryToStructuredQuery,
-    isCalledUpdate,
+    router.replace,
+    structuredQueryToQuery,
   ]);
 
-  // hydrationが終了してクエリが読み込まれた時にstateを更新し、onUpdateを発火する
-  const [prevIsReady, setPrevIsReady] = useState<boolean>(router.isReady);
-
-  if (!prevIsReady && router.isReady) {
-    setPrevIsReady(router.isReady);
-    const structuredQuery = queryToStructuredQuery(router.query);
-    setState({ type: "loaded", value: structuredQuery });
-    // onUpdate 2回読んでるのが原因ぽい
-    onUpdate?.(structuredQuery);
-    setIsCalledUpdate(true);
-    router.replace(
-      { query: structuredQueryToQuery(structuredQuery) },
-      undefined,
-      { shallow: true }
+  useEffect(() => {
+    if (!router.isReady) {
+      return;
+    }
+    const structuredQuery = queryToStructuredQuery(
+      parsedUrlQueryToMap(router.query)
     );
-  }
-
-  // クエリの変化を検知してstateを更新し、onUpdateを発火する
-  if (
-    state.type === "loading" ||
-    !isEqual(state.value, queryToStructuredQuery(router.query))
-  ) {
-    const structuredQuery = queryToStructuredQuery(router.query);
-    setState({ type: "loaded", value: structuredQuery });
-    onUpdate?.(structuredQuery);
-  }
+    if (state.type === "loading" || !isEqual(state.value, structuredQuery)) {
+      setState({ type: "loaded", value: structuredQuery });
+      onUpdate?.(structuredQuery);
+    }
+  }, [
+    isEqual,
+    onUpdate,
+    queryToStructuredQuery,
+    router.isReady,
+    router.query,
+    state,
+  ]);
 
   return state;
+};
+
+const parsedUrlQueryToMap = (
+  parsedUrlQuery: ParsedUrlQuery
+): ReadonlyMap<string, string> => {
+  return new Map(
+    Object.entries(parsedUrlQuery).flatMap(([key, value]) => {
+      if (typeof value === "string") {
+        return [[key, value]];
+      }
+      if (value === undefined) {
+        return [[key, ""]];
+      }
+      const firstItem = value[0];
+      if (typeof firstItem === "string") {
+        return [[key, firstItem]];
+      }
+      return [];
+    })
+  );
+};
+
+const isEqualMap = (
+  a: ReadonlyMap<string, string>,
+  b: ReadonlyMap<string, string>
+): boolean => {
+  if (a.size !== b.size) {
+    return false;
+  }
+  for (const [aKey, aValue] of a) {
+    const bValue = b.get(aKey);
+    if (bValue === undefined || bValue !== aValue) {
+      return false;
+    }
+  }
+  return true;
 };

@@ -12,9 +12,35 @@ type CodeAndState = {
   readonly state: string;
 };
 
+const codeAndStateQueryToStructuredQuery = (
+  query: ReadonlyMap<string, string>
+): CodeAndState | undefined => {
+  const code = query.get("code");
+  const state = query.get("state");
+  if (typeof code === "string" && typeof state === "string") {
+    return { code, state };
+  }
+  return undefined;
+};
+
+const codeAndStateStructuredQueryToQuery = (): ReadonlyMap<string, string> =>
+  new Map();
+
+const codeAndStateIsEqual = (
+  oldCodeAndState: CodeAndState | undefined,
+  newCodeAndState: CodeAndState | undefined
+): boolean => {
+  if (oldCodeAndState === newCodeAndState) {
+    return true;
+  }
+  return (
+    oldCodeAndState?.code === newCodeAndState?.code &&
+    oldCodeAndState?.state === newCodeAndState?.state
+  );
+};
+
 export const LogInCallbackGoogle = (): React.ReactElement => {
   const logInByCodeAndState = trpc.useMutation("logInByCodeAndState");
-  const [isRequesting, setIsRequesting] = React.useState(false);
   const router = useRouter();
 
   React.useEffect(() => {
@@ -41,42 +67,25 @@ export const LogInCallbackGoogle = (): React.ReactElement => {
     }
   }, [logInByCodeAndState.isSuccess, router, logInByCodeAndState.data]);
 
-  const queryBasedState = useQueryBasedState<CodeAndState | undefined>({
-    queryToStructuredQuery: (query) => {
-      if (typeof query.code === "string" && typeof query.state === "string") {
-        return {
-          code: query.code,
-          state: query.state,
-        };
-      }
-      return undefined;
-    },
-    structuredQueryToQuery: () => {
-      return {};
-    },
-    onUpdate: (newQuery: CodeAndState | undefined) => {
-      if (
-        newQuery !== undefined &&
-        logInByCodeAndState.isIdle &&
-        !isRequesting
-      ) {
-        console.log("API呼び出し...", newQuery);
-        logInByCodeAndState.mutate({
-          code: newQuery.code,
-          state: newQuery.state,
+  const onUpdate = React.useCallback(
+    (newCodeAndState: CodeAndState | undefined) => {
+      if (newCodeAndState !== undefined && logInByCodeAndState.isIdle) {
+        console.log("API呼び出し...", newCodeAndState);
+        const mutate = logInByCodeAndState.mutate;
+        mutate({
+          code: newCodeAndState.code,
+          state: newCodeAndState.state,
         });
-        setIsRequesting(true);
       }
     },
-    isEqual: (oldCodeAndState, newCodeAndState) => {
-      if (oldCodeAndState === newCodeAndState) {
-        return true;
-      }
-      return (
-        oldCodeAndState?.code === newCodeAndState?.code &&
-        oldCodeAndState?.state === newCodeAndState?.state
-      );
-    },
+    [logInByCodeAndState.isIdle, logInByCodeAndState.mutate]
+  );
+
+  const queryBasedState = useQueryBasedState<CodeAndState | undefined>({
+    queryToStructuredQuery: codeAndStateQueryToStructuredQuery,
+    structuredQueryToQuery: codeAndStateStructuredQueryToQuery,
+    onUpdate,
+    isEqual: codeAndStateIsEqual,
   });
   return (
     <WithHeader

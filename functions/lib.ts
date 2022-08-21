@@ -176,10 +176,10 @@ const logInCallback = async ({
   if (stateData.createTime.toMillis() + 60 * 1000 < new Date().getTime()) {
     return d.Result.Error("definy do not generate state.");
   }
-  const providerUserData: AccountDataInProvider = await getUserDataFromCode(
-    openIdConnectProvider,
-    code
-  );
+  const providerUserData = await getAccountDataInGoogleFromCode(code);
+  if (providerUserData === undefined) {
+    throw new Error("google server response error?");
+  }
   const openIdConnectProviderAndIdQuery: OpenIdConnectProviderAndId = {
     idInProvider: providerUserData.id,
     provider: openIdConnectProvider,
@@ -211,16 +211,6 @@ const logInCallback = async ({
     locationAndLanguage: stateData.locationAndLanguage,
     accessToken: accessTokenData.accessToken,
   });
-};
-
-const getUserDataFromCode = (
-  openIdConnectProvider: d.OpenIdConnectProvider,
-  code: string
-): Promise<AccountDataInProvider> => {
-  switch (openIdConnectProvider) {
-    case "Google":
-      return getAccountDataInGoogleFromCode(code);
-  }
 };
 
 const createUser = async (
