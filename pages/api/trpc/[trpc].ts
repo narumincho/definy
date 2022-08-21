@@ -1,7 +1,7 @@
 import * as i from "../../../functions/faunadb-interface";
 import * as trpc from "@trpc/server";
 import * as trpcNext from "@trpc/server/adapters/next";
-import { Language, Location } from "../../../common/zodType";
+import * as zodType from "../../../common/zodType";
 import {
   VERCEL_GIT_COMMIT_SHA,
   isProduction,
@@ -12,7 +12,7 @@ export const appRouter = trpc
   .router()
   .query("gitCommitSha", {
     input: z.void(),
-    output: z.string().nullable(),
+    output: z.string().length(40).nullable(),
     resolve: () => {
       if (VERCEL_GIT_COMMIT_SHA === "") {
         return null;
@@ -21,14 +21,23 @@ export const appRouter = trpc
     },
   })
   .mutation("requestLogInUrl", {
-    input: z.object({ location: Location, language: Language }),
-    output: z.string(),
+    input: z.object({ location: zodType.Location, language: zodType.Language }),
+    output: z.string().url(),
     resolve: async ({ input }) => {
       const state = await i.openConnectStateCreate({
         location: input.location,
         language: input.language,
       });
       return logInUrlFromOpenIdConnectProviderAndState(state).toString();
+    },
+  })
+  .mutation("logInByCodeAndState", {
+    input: z.object({ code: z.string().min(1), state: z.string().min(1) }),
+    output: zodType.LogInByCodeAndStatePayload,
+    resolve: ({ input: _ }): Promise<zodType.LogInByCodeAndStatePayload> => {
+      return Promise.resolve({
+        type: "notGeneratedState",
+      });
     },
   });
 

@@ -1,5 +1,6 @@
 import * as React from "react";
 import * as d from "../localData";
+import * as zodType from "../common/zodType";
 import type { CSSObject } from "@emotion/react";
 import Link from "next/link";
 import { WithHeader } from "../components/WithHeader";
@@ -12,7 +13,7 @@ export const AboutPage = (): React.ReactElement => {
   return (
     <WithHeader
       logInState={d.LogInState.Guest}
-      location={d.Location.About}
+      location={{ type: "about" }}
       language={language}
       titleItemList={[]}
       title="definy について"
@@ -32,13 +33,13 @@ export const AboutPage = (): React.ReactElement => {
 
 export default AboutPage;
 
-const aboutMessage = (language: d.Language): string => {
+const aboutMessage = (language: zodType.Language): string => {
   switch (language) {
-    case "English":
+    case "english":
       return "definy is Web App for Web App";
-    case "Japanese":
+    case "japanese":
       return "definyはWebアプリのためのWebアプリです";
-    case "Esperanto":
+    case "esperanto":
       return "definy estas TTT-programo por TTT-programo";
   }
 };
@@ -101,7 +102,7 @@ export const GitHubIcon: React.FC<{
 };
 
 const Version = (props: {
-  readonly language: d.Language;
+  readonly language: zodType.Language;
 }): React.ReactElement => {
   return (
     <div>
@@ -113,15 +114,15 @@ const Version = (props: {
   );
 };
 
-const versionMessage = (language: d.Language): string => {
+const versionMessage = (language: zodType.Language): string => {
   switch (language) {
-    case "English":
+    case "english":
       return "version";
 
-    case "Japanese":
+    case "japanese":
       return "バージョン";
 
-    case "Esperanto":
+    case "esperanto":
       return "versio";
   }
 };

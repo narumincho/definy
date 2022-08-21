@@ -1,20 +1,19 @@
 import * as React from "react";
-import * as d from "../localData";
+import * as zodType from "../common/zodType";
 import { Header, TitleItem } from "./Header";
 import Head from "next/head";
-import { Language } from "../common/zodType";
 import { LoadingBoxCenter } from "./LoadingBox";
 import type { UseDefinyAppResult } from "../client/hook/useDefinyApp";
-import { dataLanguageToQueryValue } from "../common/url";
 import iconPng from "../assets/icon.png";
 import { trpc } from "../hooks/trpc";
 import { useRouter } from "next/router";
+import { zodLanguageToQueryValue } from "../common/url";
 
 export const WithHeader = (
   props: Pick<UseDefinyAppResult, "logInState"> & {
     readonly titleItemList: ReadonlyArray<TitleItem>;
-    readonly location: d.Location;
-    readonly language: d.Language;
+    readonly location: zodType.Location | undefined;
+    readonly language: zodType.Language;
     readonly children: React.ReactNode;
     readonly title: string;
   }
@@ -43,26 +42,24 @@ export const WithHeader = (
           gridTemplateRows: "48px 1fr",
           backgroundColor: "#222",
         }}
-        lang={dataLanguageToQueryValue(props.language)}
+        lang={zodLanguageToQueryValue(props.language)}
       >
         <Header
           logInState={props.logInState}
-          locationAndLanguage={{
-            location: props.location,
-            language: props.language,
-          }}
+          location={props.location}
+          language={props.language}
           titleItemList={[]}
           onLogInButtonClick={() => {
-            if (props.location._ === "ToolList") {
+            if (props.location?.type === "tools") {
               requestLogInUrl.mutate({
                 location: { type: "tools" },
-                language: dataLanguageToZodLanguage(props.language),
+                language: props.language,
               });
               return;
             }
             requestLogInUrl.mutate({
               location: { type: "home" },
-              language: dataLanguageToZodLanguage(props.language),
+              language: props.language,
             });
           }}
         />
@@ -99,35 +96,24 @@ const titleMessage = (message: string): string => {
   return message + " | " + appName;
 };
 
-const dataLanguageToZodLanguage = (language: d.Language): Language => {
+const logInMessage = (language: zodType.Language): string => {
   switch (language) {
-    case "English":
-      return "english";
-    case "Japanese":
-      return "japanese";
-    case "Esperanto":
-      return "esperanto";
-  }
-};
-
-const logInMessage = (language: d.Language): string => {
-  switch (language) {
-    case "English":
+    case "english":
       return `Preparing to log in to Google`;
-    case "Esperanto":
+    case "esperanto":
       return `Preparante ensaluti al Google`;
-    case "Japanese":
+    case "japanese":
       return `Google へのログインを準備中……`;
   }
 };
 
-const jumpMessage = (language: d.Language): string => {
+const jumpMessage = (language: zodType.Language): string => {
   switch (language) {
-    case "English":
+    case "english":
       return `Navigating to Google logIn page.`;
-    case "Esperanto":
+    case "esperanto":
       return `Navigado al Google-ensaluta paĝo.`;
-    case "Japanese":
+    case "japanese":
       return `Google のログインページへ移動中……`;
   }
 };

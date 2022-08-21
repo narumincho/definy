@@ -43,7 +43,7 @@ export const LocalProjectPage = (): React.ReactElement => {
 
   return (
     <WithHeader
-      location={d.Location.ToolList}
+      location={{ type: "tools" }}
       language={language}
       logInState={useDefinyAppResult.logInState}
       titleItemList={[]}

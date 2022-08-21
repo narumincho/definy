@@ -1,10 +1,9 @@
+import { Language, defaultLanguage } from "../common/zodType";
 import {
-  dataLanguageToQueryValue,
-  defaultLanguage,
   languageQueryKey,
-  queryValueToDataLanguage,
+  queryValueToZodLanguage,
+  zodLanguageToQueryValue,
 } from "../common/url";
-import { Language } from "../localData";
 import { useQueryBasedState } from "./useQueryBasedState";
 
 /**
@@ -13,9 +12,9 @@ import { useQueryBasedState } from "./useQueryBasedState";
  */
 export const useLanguage = (): Language => {
   const state = useQueryBasedState<Language>({
-    queryToStructuredQuery: (q) => queryValueToLanguage(q[languageQueryKey]),
+    queryToStructuredQuery: (q) => queryValueToZodLanguage(q[languageQueryKey]),
     structuredQueryToQuery: (s) => ({
-      [languageQueryKey]: dataLanguageToQueryValue(s),
+      [languageQueryKey]: zodLanguageToQueryValue(s),
     }),
     isEqual: (oldLanguage, newLanguage) => oldLanguage === newLanguage,
   });
@@ -23,11 +22,4 @@ export const useLanguage = (): Language => {
     return defaultLanguage;
   }
   return state.value;
-};
-
-const queryValueToLanguage = (queryValue: unknown): Language => {
-  if (typeof queryValue === "string") {
-    return queryValueToDataLanguage(queryValue);
-  }
-  return defaultLanguage;
 };

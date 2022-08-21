@@ -1,6 +1,6 @@
 import * as React from "react";
 import Head from "next/head";
-import { Language } from "../../localData";
+import { Language } from "../../common/zodType";
 import { css } from "@emotion/css";
 import { useLanguage } from "../../hooks/useLanguage";
 
@@ -97,11 +97,11 @@ export const ThemeColorRainbow = (): React.ReactElement => {
 
 const languageToMessage = (language: Language): string => {
   switch (language) {
-    case "Japanese":
+    case "japanese":
       return "テーマカラーレインボー!";
-    case "English":
+    case "english":
       return "Theme Color Rainbow";
-    case "Esperanto":
+    case "esperanto":
       return "temo koloro ĉielarko";
   }
 };

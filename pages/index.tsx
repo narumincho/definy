@@ -1,5 +1,6 @@
 import * as React from "react";
 import * as d from "../localData";
+import * as zodType from "../common/zodType";
 import { Link } from "../components/Link";
 import { WithHeader } from "../components/WithHeader";
 import { useLanguage } from "../hooks/useLanguage";
@@ -12,7 +13,7 @@ const IndexPage = (): React.ReactElement => {
       title=""
       logInState={d.LogInState.Guest}
       titleItemList={[]}
-      location={d.Location.Home}
+      location={{ type: "home" }}
       language={language}
     >
       <div>
@@ -28,7 +29,7 @@ const IndexPage = (): React.ReactElement => {
 export default IndexPage;
 
 const HomeLinkList = (props: {
-  readonly language: d.Language;
+  readonly language: zodType.Language;
 }): React.ReactElement => {
   return (
     <div
@@ -42,28 +43,22 @@ const HomeLinkList = (props: {
       }}
     >
       <Link
-        locationAndLanguage={{
-          location: d.Location.About,
-          language: props.language,
-        }}
+        location={{ type: "about" }}
+        language={props.language}
         style={{ padding: 4 }}
       >
         definyについて
       </Link>
       <Link
-        locationAndLanguage={{
-          location: d.Location.LocalProject,
-          language: props.language,
-        }}
+        location={{ type: "local-project" }}
+        language={props.language}
         style={{ padding: 4 }}
       >
         ファイルから開く
       </Link>
       <Link
-        locationAndLanguage={{
-          location: d.Location.ToolList,
-          language: props.language,
-        }}
+        location={{ type: "tools" }}
+        language={props.language}
         style={{ padding: 4 }}
       >
         ツール

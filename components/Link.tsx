@@ -1,18 +1,19 @@
 import * as React from "react";
-import * as d from "../localData";
+import * as zodType from "../common/zodType";
 import { CSSObject, css } from "@emotion/react";
 import NextLink from "next/link";
-import { locationAndLanguageToNodeUrlObject } from "../common/url";
+import { zodTypeLocationAndLanguageToUrl } from "../common/url";
 
 export const Link = (props: {
-  readonly locationAndLanguage: d.LocationAndLanguage;
+  readonly location: zodType.Location;
+  readonly language: zodType.Language;
   readonly style?: CSSObject;
   readonly isActive?: boolean;
   readonly children: React.ReactNode;
 }): React.ReactElement => {
   return (
     <NextLink
-      href={locationAndLanguageToNodeUrlObject(props.locationAndLanguage)}
+      href={zodTypeLocationAndLanguageToUrl(props.location, props.language)}
       passHref
     >
       <a
