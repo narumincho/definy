@@ -1,4 +1,5 @@
 import * as i from "../../../functions/faunadb-interface";
+
 import * as trpc from "@trpc/server";
 import * as trpcNext from "@trpc/server/adapters/next";
 import * as zodType from "../../../common/zodType";
@@ -10,10 +11,12 @@ import {
   getAccountDataInGoogleFromCode,
   googleLogInClientId,
 } from "../../../functions/login";
+import type { Client } from "faunadb";
+import { createRandomId } from "../../../common/util";
 import { z } from "zod";
 
 export const appRouter = trpc
-  .router()
+  .router<Client>()
   .query("gitCommitSha", {
     input: z.void(),
     output: z.string().length(40).nullable(),
@@ -27,8 +30,8 @@ export const appRouter = trpc
   .mutation("requestLogInUrl", {
     input: z.object({ location: zodType.Location, language: zodType.Language }),
     output: z.string().url(),
-    resolve: async ({ input }) => {
-      const state = await i.openConnectStateCreate({
+    resolve: async ({ ctx, input }) => {
+      const state = await i.openConnectStateCreate(ctx, {
         location: input.location,
         language: input.language,
       });
@@ -38,14 +41,24 @@ export const appRouter = trpc
   .mutation("logInByCodeAndState", {
     input: z.object({ code: z.string().min(1), state: z.string().min(1) }),
     output: zodType.LogInByCodeAndStatePayload,
-    resolve: async ({ input }): Promise<zodType.LogInByCodeAndStatePayload> => {
-      const result = await i.getOpenConnectStateByState(input.state);
+    resolve: async ({
+      ctx,
+      input,
+    }): Promise<zodType.LogInByCodeAndStatePayload> => {
+      const result = await i.getOpenConnectStateByState(ctx, input.state);
       if (result === undefined) {
         return {
           type: "notGeneratedState",
         };
       }
       const accountInGoogle = await getAccountDataInGoogleFromCode(input.code);
+      if (accountInGoogle === undefined) {
+        return {
+          type: "invalidCodeOrProviderResponseError",
+        };
+      }
+      const preAccountToken = createRandomId();
+      console.log("preAccountToken", preAccountToken);
       return {
         type: "notExistsAccountInDefiny",
         nameInProvider: accountInGoogle.name,
@@ -87,5 +100,5 @@ export type AppRouter = typeof appRouter;
 
 export default trpcNext.createNextApiHandler({
   router: appRouter,
-  createContext: () => null,
+  createContext: () => i.getFaunaClient(),
 });

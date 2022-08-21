@@ -14,6 +14,7 @@ type CodeAndState = {
 
 export const LogInCallbackGoogle = (): React.ReactElement => {
   const logInByCodeAndState = trpc.useMutation("logInByCodeAndState");
+  const [isRequesting, setIsRequesting] = React.useState(false);
   const router = useRouter();
 
   React.useEffect(() => {
@@ -40,18 +41,6 @@ export const LogInCallbackGoogle = (): React.ReactElement => {
     }
   }, [logInByCodeAndState.isSuccess, router, logInByCodeAndState.data]);
 
-  const onQueryUpdate = React.useCallback(
-    (newQuery: CodeAndState | undefined) => {
-      if (newQuery !== undefined) {
-        logInByCodeAndState.mutate({
-          code: newQuery.code,
-          state: newQuery.state,
-        });
-      }
-    },
-    [logInByCodeAndState]
-  );
-
   const queryBasedState = useQueryBasedState<CodeAndState | undefined>({
     queryToStructuredQuery: (query) => {
       if (typeof query.code === "string" && typeof query.state === "string") {
@@ -65,7 +54,20 @@ export const LogInCallbackGoogle = (): React.ReactElement => {
     structuredQueryToQuery: () => {
       return {};
     },
-    onUpdate: onQueryUpdate,
+    onUpdate: (newQuery: CodeAndState | undefined) => {
+      if (
+        newQuery !== undefined &&
+        logInByCodeAndState.isIdle &&
+        !isRequesting
+      ) {
+        console.log("API呼び出し...", newQuery);
+        logInByCodeAndState.mutate({
+          code: newQuery.code,
+          state: newQuery.state,
+        });
+        setIsRequesting(true);
+      }
+    },
     isEqual: (oldCodeAndState, newCodeAndState) => {
       if (oldCodeAndState === newCodeAndState) {
         return true;

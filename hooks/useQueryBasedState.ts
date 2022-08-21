@@ -8,6 +8,8 @@ type useQueryBasedStateResult<StructuredQuery> =
 
 /**
  * https://zenn.dev/honey32/articles/0d6a776171874a を参考に改良
+ *
+ * なぜか onUpdate が2回呼ばれてしまう...
  */
 export const useQueryBasedState = <StructuredQuery>({
   queryToStructuredQuery,
@@ -36,20 +38,21 @@ export const useQueryBasedState = <StructuredQuery>({
    * クエリが一切ない場合は、最初のrenderの時点で isReady が true になっているので、
    * その時には一回だけ useEffect で遅延させてstateを更新する
    */
-  const countRef = useRef(0);
+  const [isCalledUpdate, setIsCalledUpdate] = useState<boolean>(false);
+
   useEffect(() => {
     if (!router.isReady) return;
-    if (countRef.current > 0) return;
+    if (isCalledUpdate) return;
     const structuredQuery = queryToStructuredQuery(router.query);
     setState({ type: "loaded", value: structuredQuery });
     onUpdate?.(structuredQuery);
-    countRef.current += 1;
+    setIsCalledUpdate(true);
   }, [
     onUpdate,
     router.isReady,
     router.query,
     queryToStructuredQuery,
-    setState,
+    isCalledUpdate,
   ]);
 
   // hydrationが終了してクエリが読み込まれた時にstateを更新し、onUpdateを発火する
@@ -59,7 +62,9 @@ export const useQueryBasedState = <StructuredQuery>({
     setPrevIsReady(router.isReady);
     const structuredQuery = queryToStructuredQuery(router.query);
     setState({ type: "loaded", value: structuredQuery });
+    // onUpdate 2回読んでるのが原因ぽい
     onUpdate?.(structuredQuery);
+    setIsCalledUpdate(true);
     router.replace(
       { query: structuredQueryToQuery(structuredQuery) },
       undefined,

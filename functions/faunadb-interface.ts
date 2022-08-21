@@ -1,20 +1,22 @@
 import * as f from "faunadb";
 import { Language, Location } from "../common/zodType";
 import { FAUNA_SERVER_KEY } from "./environmentVariables";
+import { PreAccountToken } from "./login";
 
-const getFAunaClient = (): f.Client => {
+export const getFaunaClient = (): f.Client => {
   return new f.Client({
     secret: FAUNA_SERVER_KEY,
     domain: "db.us.fauna.com",
   });
 };
 
-export const openConnectStateCreate = async (param: {
-  readonly location: Location;
-  readonly language: Language;
-}): Promise<string> => {
-  const client = getFAunaClient();
-
+export const openConnectStateCreate = async (
+  client: f.Client,
+  param: {
+    readonly location: Location;
+    readonly language: Language;
+  }
+): Promise<string> => {
   const r = await client.query<{
     readonly ref: { readonly value: { readonly id: string } };
   }>(
@@ -26,10 +28,9 @@ export const openConnectStateCreate = async (param: {
 };
 
 export const getOpenConnectStateByState = async (
+  client: f.Client,
   state: string
 ): Promise<{ location: Location; language: Language } | undefined> => {
-  const client = getFAunaClient();
-
   const result = await client.query<
     | {
         readonly ref: { readonly value: { readonly id: string } };
@@ -48,3 +49,10 @@ export const getOpenConnectStateByState = async (
   }
   return { language: result.data.language, location: result.data.location };
 };
+
+export const createPreAccount = async (
+  client: f.Client,
+  param: {
+    readonly preAccountToken: PreAccountToken;
+  }
+): Promise<void> => {};
