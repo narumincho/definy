@@ -1,39 +1,25 @@
 import * as React from "react";
 import { Language, PreAccountToken, defaultLanguage } from "../common/zodType";
 import { Button } from "../client/ui/Button";
+import type { ParsedUrlQuery } from "node:querystring";
 import { Text } from "../components/Text";
 import { WithHeader } from "../components/WithHeader";
 import { trpc } from "../hooks/trpc";
-import { useQueryBasedState } from "../hooks/useQueryBasedState";
+import { useRouter } from "next/router";
 
-type NameAndImageUrl = {
-  readonly name: string;
+type Parameter = {
   readonly imageUrl: URL;
   readonly language: Language;
   readonly preAccountToken: PreAccountToken;
 };
 
-const nameAndImageUrlEqual = (
-  a: NameAndImageUrl | undefined,
-  b: NameAndImageUrl | undefined
-): boolean => {
-  if (a === undefined && b === undefined) {
-    return true;
-  }
-  return (
-    a?.name === b?.name &&
-    a?.imageUrl.toString() === b?.imageUrl.toString() &&
-    a?.language === b?.language
-  );
-};
-
-const nameAndImageUrlQueryToStructuredQuery = (
-  query: ReadonlyMap<string, string>
-): NameAndImageUrl | undefined => {
-  const name = query.get("name");
-  const imageUrl = query.get("imageUrl");
-  const language = query.get("language");
-  const preAccountToken = query.get("preAccountToken");
+const parsedUrlQueryToParameter = (
+  query: ParsedUrlQuery
+): (Parameter & { readonly name: string }) | undefined => {
+  const name = query.name;
+  const imageUrl = query.imageUrl;
+  const language = query.language;
+  const preAccountToken = query.preAccountToken;
   try {
     console.log("query のパースをした", query);
     if (typeof name === "string" && typeof imageUrl === "string") {
@@ -49,27 +35,18 @@ const nameAndImageUrlQueryToStructuredQuery = (
   }
 };
 
-const nameAndImageStructuredQueryToQuery = (): ReadonlyMap<string, string> => {
-  return new Map();
-};
-
 const CreateAccount = (): React.ReactElement => {
   const [name, setName] = React.useState<string | undefined>(undefined);
-  const onUpdate = React.useCallback(
-    (nameAndImageUrl: NameAndImageUrl | undefined) => {
-      if (nameAndImageUrl !== undefined) {
-        setName(nameAndImageUrl.name);
-      }
-    },
-    []
+  const [parameter, setParameter] = React.useState<Parameter | undefined>(
+    undefined
   );
+  const router = useRouter();
 
-  const queryBasedState = useQueryBasedState<NameAndImageUrl | undefined>({
-    queryToStructuredQuery: nameAndImageUrlQueryToStructuredQuery,
-    structuredQueryToQuery: nameAndImageStructuredQueryToQuery,
-    isEqual: nameAndImageUrlEqual,
-    onUpdate,
-  });
+  React.useEffect(() => {
+    const parameterAndName = parsedUrlQueryToParameter(router.query);
+    setParameter(parameterAndName);
+    setName(parameterAndName?.name);
+  }, [router.query]);
 
   const createAccount = trpc.useMutation("createAccount", {
     onSuccess: (response) => {
@@ -79,10 +56,7 @@ const CreateAccount = (): React.ReactElement => {
     },
   });
 
-  const language: Language =
-    (queryBasedState.type === "loaded"
-      ? queryBasedState.value?.language
-      : undefined) ?? defaultLanguage;
+  const language: Language = parameter?.language ?? defaultLanguage;
 
   return (
     <WithHeader
@@ -91,11 +65,7 @@ const CreateAccount = (): React.ReactElement => {
       }}
       titleItemList={[]}
       location={undefined}
-      language={
-        (queryBasedState.type === "loaded"
-          ? queryBasedState.value?.language
-          : undefined) ?? "english"
-      }
+      language={language}
       title={{
         japanese: "definy のアカウント作成",
         english: "Create a definy account",
@@ -157,11 +127,10 @@ const CreateAccount = (): React.ReactElement => {
               english="account picture"
               esperanto="konta bildo"
             />
-            {queryBasedState.type === "loaded" &&
-            queryBasedState.value?.imageUrl !== undefined ? (
-              <img src={queryBasedState.value.imageUrl.toString()} />
-            ) : (
+            {parameter === undefined ? (
               <div>...</div>
+            ) : (
+              <img src={parameter.imageUrl.toString()} />
             )}
           </label>
           <Button
@@ -171,15 +140,11 @@ const CreateAccount = (): React.ReactElement => {
               createAccount.isLoading
                 ? undefined
                 : () => {
-                    console.log("おされた", queryBasedState);
-                    if (
-                      typeof name === "string" &&
-                      queryBasedState.type === "loaded" &&
-                      queryBasedState.value !== undefined
-                    ) {
+                    console.log("おされた", parameter);
+                    if (typeof name === "string" && parameter !== undefined) {
                       createAccount.mutate({
                         name,
-                        preAccountToken: queryBasedState.value.preAccountToken,
+                        preAccountToken: parameter.preAccountToken,
                       });
                     }
                   }
