@@ -20,6 +20,12 @@ export type Language = z.TypeOf<typeof Language>;
 
 export const defaultLanguage: Language = "english";
 
+export const PreAccountToken = z
+  .string()
+  .length(64) as unknown as z.Schema<PreAccountToken>;
+
+export type PreAccountToken = string & { _preAccountToken: never };
+
 export const LogInByCodeAndStatePayload = z.union([
   z.object({ type: z.literal("notGeneratedState") }),
   z.object({ type: z.literal("invalidCodeOrProviderResponseError") }),
@@ -28,10 +34,20 @@ export const LogInByCodeAndStatePayload = z.union([
     nameInProvider: z.string(),
     imageUrl: z.string().url(),
     language: Language,
+    preAccountToken: PreAccountToken,
   }),
   z.object({ type: z.literal("logInOk") }),
 ]);
 
 export type LogInByCodeAndStatePayload = Readonly<
   z.TypeOf<typeof LogInByCodeAndStatePayload>
+>;
+
+export const CreateAccountPayload = z.union([
+  z.object({ type: z.literal("notGeneratedPreAccountToken") }),
+  z.object({ type: z.literal("ok"), accountToken: z.string() }),
+]);
+
+export type CreateAccountPayload = Readonly<
+  z.TypeOf<typeof CreateAccountPayload>
 >;

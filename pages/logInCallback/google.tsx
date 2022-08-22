@@ -61,6 +61,7 @@ export const LogInCallbackGoogle = (): React.ReactElement => {
                 name: logInByCodeAndState.data.nameInProvider,
                 imageUrl: logInByCodeAndState.data.imageUrl,
                 language: logInByCodeAndState.data.language,
+                preAccountToken: logInByCodeAndState.data.preAccountToken,
               },
             },
             {
@@ -77,7 +78,6 @@ export const LogInCallbackGoogle = (): React.ReactElement => {
   const onUpdate = React.useCallback(
     (newCodeAndState: CodeAndState | undefined) => {
       if (newCodeAndState !== undefined && logInByCodeAndState.isIdle) {
-        console.log("API呼び出し...", newCodeAndState);
         const mutate = logInByCodeAndState.mutate;
         mutate({
           code: newCodeAndState.code,

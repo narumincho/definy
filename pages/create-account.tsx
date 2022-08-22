@@ -1,13 +1,16 @@
 import * as React from "react";
-import { Language, defaultLanguage } from "../common/zodType";
+import { Language, PreAccountToken, defaultLanguage } from "../common/zodType";
+import { Button } from "../client/ui/Button";
 import { Text } from "../components/Text";
 import { WithHeader } from "../components/WithHeader";
+import { trpc } from "../hooks/trpc";
 import { useQueryBasedState } from "../hooks/useQueryBasedState";
 
 type NameAndImageUrl = {
   readonly name: string;
   readonly imageUrl: URL;
   readonly language: Language;
+  readonly preAccountToken: PreAccountToken;
 };
 
 const nameAndImageUrlEqual = (
@@ -30,15 +33,18 @@ const nameAndImageUrlQueryToStructuredQuery = (
   const name = query.get("name");
   const imageUrl = query.get("imageUrl");
   const language = query.get("language");
+  const preAccountToken = query.get("preAccountToken");
   try {
+    console.log("query のパースをした", query);
     if (typeof name === "string" && typeof imageUrl === "string") {
       return {
         name,
         imageUrl: new URL(imageUrl),
         language: Language.parse(language),
+        preAccountToken: PreAccountToken.parse(preAccountToken),
       };
     }
-  } catch {
+  } catch (e) {
     return undefined;
   }
 };
@@ -63,6 +69,14 @@ const CreateAccount = (): React.ReactElement => {
     structuredQueryToQuery: nameAndImageStructuredQueryToQuery,
     isEqual: nameAndImageUrlEqual,
     onUpdate,
+  });
+
+  const createAccount = trpc.useMutation("createAccount", {
+    onSuccess: (response) => {
+      if (response.type === "ok") {
+        console.log("アカウントの作成に成功!");
+      }
+    },
   });
 
   const language: Language =
@@ -100,12 +114,19 @@ const CreateAccount = (): React.ReactElement => {
         <div css={{ fontSize: 24 }}>
           <Text
             language={language}
-            english="version"
+            english="welcome to definy"
             japanese="definyへようこそ"
             esperanto="bonvenon difini"
           />
         </div>
-        <h1 css={{ margin: 0, fontSize: 32 }}>definyのアカウント作成</h1>
+        <h1 css={{ margin: 0, fontSize: 32 }}>
+          <Text
+            language={language}
+            english="Create a definy account"
+            japanese="definyのアカウント作成"
+            esperanto="Kreu definy-konton"
+          />
+        </h1>
         <div
           css={{
             display: "grid",
@@ -143,19 +164,65 @@ const CreateAccount = (): React.ReactElement => {
               <div>...</div>
             )}
           </label>
-          <button
-            disabled={name === undefined || name.trim().length === 0}
-            onClick={() => {
-              console.log("アカウントを", name, "で作成する");
-            }}
+          <Button
+            onClick={
+              name === undefined ||
+              name.trim().length === 0 ||
+              createAccount.isLoading
+                ? undefined
+                : () => {
+                    console.log("おされた", queryBasedState);
+                    if (
+                      typeof name === "string" &&
+                      queryBasedState.type === "loaded" &&
+                      queryBasedState.value !== undefined
+                    ) {
+                      createAccount.mutate({
+                        name,
+                        preAccountToken: queryBasedState.value.preAccountToken,
+                      });
+                    }
+                  }
+            }
           >
+            {createAccount.isLoading ? (
+              <Text
+                language={language}
+                japanese="アカウントを作成中..."
+                english="creating account..."
+                esperanto="Kreante konton..."
+              />
+            ) : (
+              <Text
+                language={language}
+                japanese="アカウントを作成する"
+                english="create account"
+                esperanto="Krei konton"
+              />
+            )}
+          </Button>
+          {createAccount.isError ||
+          (createAccount.isSuccess &&
+            createAccount.data.type === "notGeneratedPreAccountToken") ? (
             <Text
               language={language}
-              japanese="アカウントを作成する"
-              english="create an account"
-              esperanto="Krei konton"
+              japanese="アカウントの作成に失敗しました"
+              english="Failed to create account"
+              esperanto="Malsukcesis krei konton"
             />
-          </button>
+          ) : (
+            <></>
+          )}
+          {createAccount.isSuccess && createAccount.data.type === "ok" ? (
+            <Text
+              language={language}
+              japanese="アカウントの作成に成功! ここから先を作る"
+              english="Successfully created an account! Start here"
+              esperanto="Sukcese kreis konton! Komencu ĉi tie"
+            />
+          ) : (
+            <></>
+          )}
         </div>
       </div>
     </WithHeader>

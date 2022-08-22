@@ -24,6 +24,7 @@ export const Button = React.memo(
             color: "#dfdfdf",
           },
           font: "inherit",
+          borderRadius: 16,
         },
         props.style
       )}

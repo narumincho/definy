@@ -4,6 +4,7 @@ import {
   isProduction,
 } from "./environmentVariables";
 import axios, { AxiosResponse } from "axios";
+import { PreAccountToken } from "../common/zodType";
 import { createRandomToken } from "./uuid";
 
 export type AccountDataInProvider = {
@@ -11,8 +12,6 @@ export type AccountDataInProvider = {
   readonly name: string;
   readonly imageUrl: URL;
 };
-
-export type PreAccountToken = string & { _preAccountToken: never };
 
 export const cratePreAccountToken = (): PreAccountToken => {
   return createRandomToken() as PreAccountToken;
