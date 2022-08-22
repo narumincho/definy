@@ -1,13 +1,16 @@
 import * as React from "react";
 import * as d from "../localData";
 import * as zodType from "../common/zodType";
+import { Button } from "../client/ui/Button";
 import { Link } from "../components/Link";
 import { Text } from "../components/Text";
 import { WithHeader } from "../components/WithHeader";
+import { useAccountToken } from "../hooks/useAccountToken";
 import { useLanguage } from "../hooks/useLanguage";
 
 const IndexPage = (): React.ReactElement => {
   const language = useLanguage();
+  const useAccountTokenResult = useAccountToken();
 
   return (
     <WithHeader
@@ -31,6 +34,16 @@ const IndexPage = (): React.ReactElement => {
           english="Show project list here"
           esperanto="Montru projektoliston ĉi tie"
         />
+        {useAccountTokenResult.accountToken === undefined
+          ? "アカウントトークンはありません"
+          : "アカウントトークンがある!"}
+        <Button
+          onClick={() => {
+            useAccountTokenResult.deleteAccountToken();
+          }}
+        >
+          ログアウト
+        </Button>
       </div>
     </WithHeader>
   );

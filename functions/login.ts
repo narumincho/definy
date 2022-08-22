@@ -1,10 +1,10 @@
 import * as jsonWebToken from "jsonwebtoken";
+import type { AccountToken, PreAccountToken } from "../common/zodType";
 import {
   GOOGLE_LOGIN_CLIENT_SECRET,
   isProduction,
 } from "./environmentVariables";
 import axios, { AxiosResponse } from "axios";
-import { PreAccountToken } from "../common/zodType";
 import { createRandomToken } from "./uuid";
 
 export type AccountDataInProvider = {
@@ -15,6 +15,10 @@ export type AccountDataInProvider = {
 
 export const cratePreAccountToken = (): PreAccountToken => {
   return createRandomToken() as PreAccountToken;
+};
+
+export const crateAccountToken = (): AccountToken => {
+  return createRandomToken() as AccountToken;
 };
 
 export const googleLogInClientId =

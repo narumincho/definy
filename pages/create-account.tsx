@@ -5,7 +5,9 @@ import type { ParsedUrlQuery } from "node:querystring";
 import { Text } from "../components/Text";
 import { WithHeader } from "../components/WithHeader";
 import { trpc } from "../hooks/trpc";
+import { useAccountToken } from "../hooks/useAccountToken";
 import { useRouter } from "next/router";
+import { zodTypeLocationAndLanguageToUrl } from "../common/url";
 
 type Parameter = {
   readonly imageUrl: URL;
@@ -21,7 +23,6 @@ const parsedUrlQueryToParameter = (
   const language = query.language;
   const preAccountToken = query.preAccountToken;
   try {
-    console.log("query のパースをした", query);
     if (typeof name === "string" && typeof imageUrl === "string") {
       return {
         name,
@@ -48,15 +49,23 @@ const CreateAccount = (): React.ReactElement => {
     setName(parameterAndName?.name);
   }, [router.query]);
 
+  const useAccountTokenResult = useAccountToken();
+
+  const language: Language = parameter?.language ?? defaultLanguage;
+
   const createAccount = trpc.useMutation("createAccount", {
     onSuccess: (response) => {
       if (response.type === "ok") {
-        console.log("アカウントの作成に成功!");
+        useAccountTokenResult
+          .setAccountToken(response.accountToken)
+          .then(() => {
+            router.replace(
+              zodTypeLocationAndLanguageToUrl({ type: "home" }, language)
+            );
+          });
       }
     },
   });
-
-  const language: Language = parameter?.language ?? defaultLanguage;
 
   return (
     <WithHeader

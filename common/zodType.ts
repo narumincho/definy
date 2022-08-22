@@ -26,6 +26,12 @@ export const PreAccountToken = z
 
 export type PreAccountToken = string & { _preAccountToken: never };
 
+export const AccountToken = z
+  .string()
+  .length(64) as unknown as z.Schema<AccountToken>;
+
+export type AccountToken = string & { _accountToken: never };
+
 export const LogInByCodeAndStatePayload = z.union([
   z.object({ type: z.literal("notGeneratedState") }),
   z.object({ type: z.literal("invalidCodeOrProviderResponseError") }),
@@ -45,7 +51,7 @@ export type LogInByCodeAndStatePayload = Readonly<
 
 export const CreateAccountPayload = z.union([
   z.object({ type: z.literal("notGeneratedPreAccountToken") }),
-  z.object({ type: z.literal("ok"), accountToken: z.string() }),
+  z.object({ type: z.literal("ok"), accountToken: AccountToken }),
 ]);
 
 export type CreateAccountPayload = Readonly<
