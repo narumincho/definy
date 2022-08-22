@@ -1,33 +1,45 @@
 import * as React from "react";
 import * as d from "../localData";
+import * as zodType from "../common/zodType";
 import type { CSSObject } from "@emotion/react";
 import Link from "next/link";
+import { Text } from "../components/Text";
 import { WithHeader } from "../components/WithHeader";
 import { trpc } from "../hooks/trpc";
-import { useDefinyApp } from "../client/hook/useDefinyApp";
 import { useLanguage } from "../hooks/useLanguage";
 
 export const AboutPage = (): React.ReactElement => {
-  const useDefinyAppResult = useDefinyApp();
   const language = useLanguage();
 
   return (
     <WithHeader
-      logInState={useDefinyAppResult.logInState}
-      accountResource={useDefinyAppResult.accountResource}
-      location={d.Location.About}
+      logInState={d.LogInState.Guest}
+      location={{ type: "about" }}
       language={language}
-      logIn={useDefinyAppResult.logIn}
       titleItemList={[]}
-      title="definy について"
+      title={{
+        japanese: "definy について",
+        english: "about definy",
+        esperanto: "pri definy",
+      }}
     >
       <div css={{ padding: 16, display: "grid", gap: 8 }}>
-        <div css={{ color: "white" }}>{aboutMessage(language)}</div>
+        <Text
+          language={language}
+          japanese="definyはWebアプリのためのWebアプリです"
+          english="definy is Web App for Web App"
+          esperanto="definy estas TTT-programo por TTT-programo"
+        />
         <GitHubRepositoryLink
           githubAccountName="narumincho"
           repoName="definy"
         />
-        <div css={{ color: "white" }}>NI (Next.js + IoT向けの機能) 版</div>
+        <Text
+          language={language}
+          japanese="NI (Next.js + IoT向けの機能を実装すると決めた) 版"
+          english="definy Next.js version"
+          esperanto="definy Next.js-version"
+        />
         <Version language={language} />
       </div>
     </WithHeader>
@@ -35,17 +47,6 @@ export const AboutPage = (): React.ReactElement => {
 };
 
 export default AboutPage;
-
-const aboutMessage = (language: d.Language): string => {
-  switch (language) {
-    case "English":
-      return "definy is Web App for Web App";
-    case "Japanese":
-      return "definyはWebアプリのためのWebアプリです";
-    case "Esperanto":
-      return "definy estas TTT-programo por TTT-programo";
-  }
-};
 
 const GitHubRepositoryLink: React.FC<{
   githubAccountName: string;
@@ -105,29 +106,21 @@ export const GitHubIcon: React.FC<{
 };
 
 const Version = (props: {
-  readonly language: d.Language;
+  readonly language: zodType.Language;
 }): React.ReactElement => {
   return (
     <div>
       <h2 css={{ color: "white", fontSize: 20 }}>
-        {versionMessage(props.language)}
+        <Text
+          language={props.language}
+          english="version"
+          japanese="バージョン"
+          esperanto="versio"
+        />
       </h2>
       <VersionContent />
     </div>
   );
-};
-
-const versionMessage = (language: d.Language): string => {
-  switch (language) {
-    case "English":
-      return "version";
-
-    case "Japanese":
-      return "バージョン";
-
-    case "Esperanto":
-      return "versio";
-  }
 };
 
 const VersionContent = (): React.ReactElement => {

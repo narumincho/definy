@@ -141,8 +141,7 @@ export const groupBySize = <T>(
 
 /**
  * ランダムな ID の文字列を生成する
- * [crypto.getRandomValues()](https://developer.mozilla.org/en-US/docs/Web/API/Crypto/getRandomValues) を使っているので,
- * ブラウザか, Node.js v15 以降 の環境でのみ動く
+ * [crypto.getRandomValues()](https://developer.mozilla.org/en-US/docs/Web/API/Crypto/getRandomValues) を使っているので, ブラウザでのみ動く
  * @returns
  */
 export const createRandomId = (): string => {

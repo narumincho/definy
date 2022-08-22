@@ -1,5 +1,6 @@
 import * as d from "../localData";
 import * as s from "../staticResource";
+import * as zodType from "./zodType";
 import {
   StructuredUrl,
   structuredUrlToNodeUrlObject,
@@ -29,6 +30,38 @@ export const locationAndLanguageToUrl = (
       ],
     ]),
   });
+};
+
+export const zodTypeLocationAndLanguageToUrl = (
+  location: zodType.Location,
+  language: zodType.Language
+): UrlObject => {
+  return {
+    pathname: zodTypeLocationToPathList(location),
+    query: {
+      [languageQueryKey]: zodLanguageToQueryValue(language),
+    },
+  };
+};
+
+const zodTypeLocationToPathList = (location: zodType.Location): string => {
+  switch (location.type) {
+    case "home":
+      return "/";
+    case "tools":
+      return "/tool";
+    case "tool":
+      if (location.value === "themeColorRainbow") {
+        return "/tool/theme-color-rainbow";
+      }
+      return "/tool/sound-quiz";
+    case "about":
+      return "/about";
+    case "create-account":
+      return "/create-account";
+    case "local-project":
+      return "/local-project";
+  }
 };
 
 export const locationAndLanguageToStructuredUrl = (
@@ -64,6 +97,17 @@ export const dataLanguageToQueryValue = (language: d.Language): string => {
   }
 };
 
+export const zodLanguageToQueryValue = (language: zodType.Language): string => {
+  switch (language) {
+    case "english":
+      return englishId;
+    case "japanese":
+      return japaneseId;
+    case "esperanto":
+      return esperantoId;
+  }
+};
+
 export const queryValueToDataLanguage = (language: string): d.Language => {
   switch (language) {
     case englishId:
@@ -74,6 +118,20 @@ export const queryValueToDataLanguage = (language: string): d.Language => {
       return "Esperanto";
   }
   return defaultLanguage;
+};
+
+export const queryValueToZodLanguage = (
+  language: string | ReadonlyArray<string> | undefined
+): zodType.Language => {
+  switch (language) {
+    case englishId:
+      return "english";
+    case japaneseId:
+      return "japanese";
+    case esperantoId:
+      return "esperanto";
+  }
+  return zodType.defaultLanguage;
 };
 
 export const isValidLanguageQueryValue = (value: unknown): boolean => {

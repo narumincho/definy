@@ -1,50 +1,57 @@
 import * as React from "react";
 import * as d from "../localData";
 import { Link } from "../components/Link";
+import { Text } from "../components/Text";
 import { WithHeader } from "../components/WithHeader";
 import { useLanguage } from "../hooks/useLanguage";
 
 export const ToolListPage = (): React.ReactElement => {
   const language = useLanguage();
-  console.log("language in tool", language);
 
   return (
     <WithHeader
-      title="definyとは直接関係ないツールたち"
-      location={d.Location.ToolList}
+      title={{
+        japanese: "definy とは直接関係ないツールたち",
+        english: "Tools not directly related to definy",
+        esperanto: "Iloj ne rekte rilataj al definy",
+      }}
+      location={{ type: "tools" }}
       language={language}
-      accountResource={{
-        getFromMemoryCache: () => undefined,
-        requestToServerIfEmpty: () => {},
-        forciblyRequestToServer: () => {},
-      }}
-      logInState={{
-        _: "LoadingAccountTokenFromIndexedDB",
-      }}
+      logInState={d.LogInState.Guest}
       titleItemList={[]}
-      logIn={() => {
-        console.log("ログインしたようです");
-      }}
     >
-      <h2 css={{ color: "white" }}>definyとは直接関係ないツール</h2>
+      <h2>
+        <Text
+          language={language}
+          japanese="definy とは直接関係ないツールたち"
+          english="Tools not directly related to definy"
+          esperanto="Iloj ne rekte rilataj al definy"
+        />
+      </h2>
       <div css={{ display: "grid", gap: 8, padding: 8 }}>
         <Link
-          locationAndLanguage={{
-            location: d.Location.Tool(d.ToolName.ThemeColorRainbow),
-            language,
-          }}
+          location={{ type: "tool", value: "themeColorRainbow" }}
+          language={language}
           style={{ padding: 8 }}
         >
-          テーマカラーレインボー
+          <Text
+            language={language}
+            japanese="テーマカラーレインボー"
+            english="theme color rainbow"
+            esperanto="temo koloro ĉielarko"
+          />
         </Link>
         <Link
-          locationAndLanguage={{
-            location: d.Location.Tool(d.ToolName.SoundQuiz),
-            language,
-          }}
+          location={{ type: "tool", value: "soundQuiz" }}
+          language={language}
           style={{ padding: 8 }}
         >
-          音の周波数クイズ
+          <Text
+            language={language}
+            japanese="音の周波数クイズ"
+            english="sound frequency quiz"
+            esperanto="sonfrekvenca kvizo"
+          />
         </Link>
       </div>
     </WithHeader>

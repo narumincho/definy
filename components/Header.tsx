@@ -1,22 +1,22 @@
 import * as React from "react";
 import * as d from "../localData";
+import * as zodType from "../common/zodType";
 import type { CSSObject } from "@emotion/react";
 import { Image } from "./Image";
 import { Link } from "./Link";
 import type { UseDefinyAppResult } from "../client/hook/useDefinyApp";
 
 export type TitleItem = {
-  name: string;
-  location: d.Location;
+  readonly name: string;
+  readonly location: zodType.Location;
 };
 
-export type Props = Pick<
-  UseDefinyAppResult,
-  "accountResource" | "logInState"
-> & {
-  onLogInButtonClick: UseDefinyAppResult["logIn"];
-  titleItemList: ReadonlyArray<TitleItem>;
-  locationAndLanguage: d.LocationAndLanguage;
+export type Props = Pick<UseDefinyAppResult, "logInState"> & {
+  readonly onLogInButtonClick: UseDefinyAppResult["logIn"];
+  readonly titleItemList: ReadonlyArray<TitleItem>;
+  /** undefined でログインボタン非表示 */
+  readonly location: zodType.Location | undefined;
+  readonly language: zodType.Language;
 };
 
 export const Header: React.FC<Props> = React.memo((props) => {
@@ -42,10 +42,8 @@ export const Header: React.FC<Props> = React.memo((props) => {
           lineHeight: 1,
           alignItems: "center",
         }}
-        locationAndLanguage={{
-          language: props.locationAndLanguage.language,
-          location: d.Location.Home,
-        }}
+        location={{ type: "home" }}
+        language={props.language}
       >
         definy
       </Link>
@@ -57,10 +55,8 @@ export const Header: React.FC<Props> = React.memo((props) => {
               style={{
                 padding: 8,
               }}
-              locationAndLanguage={{
-                language: props.locationAndLanguage.language,
-                location: titleItem.location,
-              }}
+              location={titleItem.location}
+              language={props.language}
               key={`${titleItem.name}-link`}
             >
               {titleItem.name}
@@ -68,21 +64,24 @@ export const Header: React.FC<Props> = React.memo((props) => {
           ];
         })}
       </div>
-      <UserViewOrLogInButton
-        logInState={props.logInState}
-        language={props.locationAndLanguage.language}
-        accountResource={props.accountResource}
-        onLogInButtonClick={() => props.onLogInButtonClick()}
-      />
+      {props.location === undefined ? (
+        <></>
+      ) : (
+        <UserViewOrLogInButton
+          logInState={props.logInState}
+          language={props.language}
+          onLogInButtonClick={() => props.onLogInButtonClick()}
+        />
+      )}
     </div>
   );
 });
 Header.displayName = "Header";
 
 const UserViewOrLogInButton: React.FC<
-  Pick<UseDefinyAppResult, "logInState" | "accountResource"> & {
+  Pick<UseDefinyAppResult, "logInState"> & {
     onLogInButtonClick: () => void;
-    language: d.Language;
+    language: zodType.Language;
   }
 > = (props) => {
   switch (props.logInState._) {
@@ -106,9 +105,9 @@ const UserViewOrLogInButton: React.FC<
       );
 
     case "LoggedIn": {
-      const accountResourceState = props.accountResource.getFromMemoryCache(
-        props.logInState.accountTokenAccountId.accountId
-      );
+      // APIを呼ぶようにする
+      const accountResourceState: d.ResourceState<d.Account> | undefined =
+        accountResourceStateFunc();
       if (
         accountResourceState === undefined ||
         accountResourceState._ !== "Loaded"
@@ -130,6 +129,10 @@ const UserViewOrLogInButton: React.FC<
   return <div css={userViewOrLogInButtonStyle}>ログインの準備中</div>;
 };
 
+const accountResourceStateFunc = (): d.ResourceState<d.Account> | undefined => {
+  return undefined;
+};
+
 const userViewOrLogInButtonStyle: CSSObject = {
   justifySelf: "end",
   alignSelf: "center",
@@ -137,7 +140,7 @@ const userViewOrLogInButtonStyle: CSSObject = {
 
 const SettingLink: React.FC<{
   account: d.Account;
-  language: d.Language;
+  language: zodType.Language;
 }> = (props) => (
   <Link
     style={{
@@ -148,10 +151,9 @@ const SettingLink: React.FC<{
       padding: 8,
       gap: 8,
     }}
-    locationAndLanguage={{
-      language: props.language,
-      location: d.Location.Setting,
-    }}
+    language={props.language}
+    // 後に設定に変更する
+    location={{ type: "home" }}
   >
     <Image
       width={32}
@@ -165,7 +167,7 @@ const SettingLink: React.FC<{
 );
 
 const LogInButtonList: React.FC<{
-  readonly language: d.Language;
+  readonly language: zodType.Language;
   readonly onLogInButtonClick: () => void;
 }> = React.memo((props) => (
   <div
@@ -186,7 +188,7 @@ const LogInButtonList: React.FC<{
 LogInButtonList.displayName = "LogInButtonList";
 
 const GoogleLogInButton: React.FC<{
-  language: d.Language;
+  language: zodType.Language;
   onLogInButtonClick: () => void;
 }> = React.memo((props) => (
   <button
@@ -214,7 +216,7 @@ const GoogleLogInButton: React.FC<{
         lineHeight: 1,
       }}
     >
-      {logInMessage("Google", props.language)}
+      {logInMessage(props.language)}
     </div>
   </button>
 ));
@@ -255,16 +257,13 @@ const GoogleIcon: React.FC<Record<string, string>> = React.memo(() => (
 ));
 GoogleIcon.displayName = "GoogleIcon";
 
-const logInMessage = (
-  provider: d.OpenIdConnectProvider,
-  language: d.Language
-): string => {
+const logInMessage = (language: zodType.Language): string => {
   switch (language) {
-    case "English":
-      return `Sign in with ${provider}`;
-    case "Esperanto":
-      return `Ensalutu kun ${provider}`;
-    case "Japanese":
-      return `${provider}でログイン`;
+    case "english":
+      return `Sign in with Google`;
+    case "esperanto":
+      return `Ensalutu kun Google`;
+    case "japanese":
+      return `Google でログイン`;
   }
 };

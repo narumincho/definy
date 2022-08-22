@@ -2,13 +2,16 @@ import * as commonUrl from "../common/url";
 import * as core from "../core/main";
 import * as crypto from "node:crypto";
 import * as d from "../localData";
-import * as functions from "firebase-functions";
 import * as image from "./image";
 import * as jimp from "jimp";
-import * as jsonWebToken from "jsonwebtoken";
 import * as mimeType from "../definy-output/typescript/mimeType";
 import type * as typedFirestore from "typed-admin-firestore";
 import * as util from "../core/util";
+import {
+  AccountDataInProvider,
+  getAccountDataInGoogleFromCode,
+  googleLogInClientId,
+} from "./login";
 import { ApiCodecType, GetCodecType } from "../common/apiCodec";
 import { Timestamp, getFirestore } from "firebase-admin/firestore";
 import axios, { AxiosResponse } from "axios";
@@ -111,7 +114,7 @@ const logInUrlFromOpenIdConnectProviderAndState = (
         "https://accounts.google.com/o/oauth2/v2/auth",
         new Map([
           ["response_type", "code"],
-          ["client_id", getOpenIdConnectClientId("Google")],
+          ["client_id", googleLogInClientId],
           ["redirect_uri", commonUrl.logInRedirectUri("Google")],
           ["scope", "profile openid"],
           ["state", state],
@@ -173,10 +176,10 @@ const logInCallback = async ({
   if (stateData.createTime.toMillis() + 60 * 1000 < new Date().getTime()) {
     return d.Result.Error("definy do not generate state.");
   }
-  const providerUserData: ProviderUserData = await getUserDataFromCode(
-    openIdConnectProvider,
-    code
-  );
+  const providerUserData = await getAccountDataInGoogleFromCode(code);
+  if (providerUserData === undefined) {
+    throw new Error("google server response error?");
+  }
   const openIdConnectProviderAndIdQuery: OpenIdConnectProviderAndId = {
     idInProvider: providerUserData.id,
     provider: openIdConnectProvider,
@@ -210,78 +213,8 @@ const logInCallback = async ({
   });
 };
 
-type ProviderUserData = {
-  id: string;
-  name: string;
-  imageUrl: URL;
-};
-
-const getUserDataFromCode = (
-  openIdConnectProvider: d.OpenIdConnectProvider,
-  code: string
-): Promise<ProviderUserData> => {
-  switch (openIdConnectProvider) {
-    case "Google":
-      return getGoogleUserDataFromCode(code);
-  }
-};
-
-const getGoogleUserDataFromCode = async (
-  code: string
-): Promise<ProviderUserData> => {
-  const response = await axios.post<
-    URLSearchParams,
-    AxiosResponse<{ id_token: unknown }>
-  >(
-    "https://www.googleapis.com/oauth2/v4/token",
-    new URLSearchParams([
-      ["grant_type", "authorization_code"],
-      ["code", code],
-      ["redirect_uri", commonUrl.logInRedirectUri("Google")],
-      ["client_id", getOpenIdConnectClientId("Google")],
-      ["client_secret", getOpenIdConnectClientSecret("Google")],
-    ]),
-    {
-      headers: {
-        "content-type": "application/x-www-form-urlencoded",
-      },
-    }
-  );
-  const idToken = response.data.id_token;
-  if (typeof idToken !== "string") {
-    throw new Error("Google idToken not include in response");
-  }
-  const decoded = jsonWebToken.decode(idToken);
-  if (typeof decoded === "string" || decoded === null) {
-    throw new Error("Google idToken not include object");
-  }
-  const markedDecoded = decoded as {
-    iss: unknown;
-    sub: unknown;
-    name: unknown;
-    picture: unknown;
-  };
-  if (
-    markedDecoded.iss !== "https://accounts.google.com" ||
-    typeof markedDecoded.name !== "string" ||
-    typeof markedDecoded.sub !== "string" ||
-    typeof markedDecoded.picture !== "string"
-  ) {
-    console.error(
-      "Googleから送られてきたIDトークンがおかしい" + markedDecoded.toString()
-    );
-    throw new Error("Google idToken is invalid");
-  }
-
-  return {
-    id: markedDecoded.sub,
-    name: markedDecoded.name,
-    imageUrl: new URL(markedDecoded.picture),
-  };
-};
-
 const createUser = async (
-  providerUserData: ProviderUserData,
+  providerUserData: AccountDataInProvider,
   provider: d.OpenIdConnectProvider
 ): Promise<d.AccountToken> => {
   const imageHash = await getAndSaveUserImage(providerUserData.imageUrl);
@@ -338,26 +271,6 @@ export const createImageTokenFromUint8ArrayAndMimeType = (
       .update(mimeType.png, "utf8")
       .digest("hex")
   );
-
-/**
- * OpenIdConnectのclientSecretはfirebaseの環境変数に設定されている
- */
-const getOpenIdConnectClientSecret = (
-  openIdConnectProvider: d.OpenIdConnectProvider
-): string => {
-  return functions.config().openidconnectclientsecret[
-    openIdConnectProvider.toLowerCase()
-  ];
-};
-
-const getOpenIdConnectClientId = (
-  openIdConnectProvider: d.OpenIdConnectProvider
-): string => {
-  switch (openIdConnectProvider) {
-    case "Google":
-      return "8347840964-l3796imv2d11d0qi8cnb6r48n5jabk9t.apps.googleusercontent.com";
-  }
-};
 
 /**
  * アクセストークンを生成する
