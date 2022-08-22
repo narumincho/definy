@@ -3,6 +3,7 @@ import * as zodType from "../common/zodType";
 import { Header, TitleItem } from "./Header";
 import Head from "next/head";
 import { LoadingBoxCenter } from "./LoadingBox";
+import type { TextProps } from "./Text";
 import type { UseDefinyAppResult } from "../client/hook/useDefinyApp";
 import iconPng from "../assets/icon.png";
 import { trpc } from "../hooks/trpc";
@@ -15,7 +16,7 @@ export const WithHeader = (
     readonly location: zodType.Location | undefined;
     readonly language: zodType.Language;
     readonly children: React.ReactNode;
-    readonly title: string;
+    readonly title: TextProps;
   }
 ): React.ReactElement => {
   const requestLogInUrl = trpc.useMutation("requestLogInUrl");
@@ -30,7 +31,7 @@ export const WithHeader = (
   return (
     <>
       <Head>
-        <title>{titleMessage(props.title)}</title>
+        <title>{titleMessage(props.title[props.language])}</title>
         <link rel="icon" type="image/png" href={iconPng.src} />
       </Head>
       <div
@@ -87,13 +88,11 @@ export const WithHeader = (
   );
 };
 
-const appName = "definy NI 版";
-
 const titleMessage = (message: string): string => {
   if (message === "") {
-    return appName;
+    return "definy";
   }
-  return message + " | " + appName;
+  return message + " | definy";
 };
 
 const logInMessage = (language: zodType.Language): string => {

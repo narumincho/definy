@@ -1,5 +1,6 @@
 import * as React from "react";
-import { Language } from "../common/zodType";
+import { Language, defaultLanguage } from "../common/zodType";
+import { Text } from "../components/Text";
 import { WithHeader } from "../components/WithHeader";
 import { useQueryBasedState } from "../hooks/useQueryBasedState";
 
@@ -48,12 +49,10 @@ const nameAndImageStructuredQueryToQuery = (): ReadonlyMap<string, string> => {
 
 const CreateAccount = (): React.ReactElement => {
   const [name, setName] = React.useState<string | undefined>(undefined);
-  const [imageUrl, setImageUrl] = React.useState<URL | undefined>(undefined);
   const onUpdate = React.useCallback(
     (nameAndImageUrl: NameAndImageUrl | undefined) => {
       if (nameAndImageUrl !== undefined) {
         setName(nameAndImageUrl.name);
-        setImageUrl(nameAndImageUrl.imageUrl);
       }
     },
     []
@@ -65,6 +64,11 @@ const CreateAccount = (): React.ReactElement => {
     isEqual: nameAndImageUrlEqual,
     onUpdate,
   });
+
+  const language: Language =
+    (queryBasedState.type === "loaded"
+      ? queryBasedState.value?.language
+      : undefined) ?? defaultLanguage;
 
   return (
     <WithHeader
@@ -78,18 +82,30 @@ const CreateAccount = (): React.ReactElement => {
           ? queryBasedState.value?.language
           : undefined) ?? "english"
       }
-      title="definy のアカウント作成"
+      title={{
+        japanese: "definy のアカウント作成",
+        english: "Create a definy account",
+        esperanto: "Kreu definy-konton",
+      }}
     >
       <div
         css={{
           backgroundColor: "black",
           color: "white",
-          display: "gird",
-          gap: 16,
+          display: "grid",
+          gap: 24,
           padding: 16,
         }}
       >
-        <h1 css={{ margin: 0, padding: 8 }}>definyのアカウント作成</h1>
+        <div css={{ fontSize: 24 }}>
+          <Text
+            language={language}
+            english="version"
+            japanese="definyへようこそ"
+            esperanto="bonvenon difini"
+          />
+        </div>
+        <h1 css={{ margin: 0, fontSize: 32 }}>definyのアカウント作成</h1>
         <div
           css={{
             display: "grid",
@@ -97,7 +113,12 @@ const CreateAccount = (): React.ReactElement => {
           }}
         >
           <label>
-            アカウント名
+            <Text
+              language={language}
+              japanese="アカウント名"
+              english="account name"
+              esperanto="kontonomo"
+            />
             {name === undefined ? (
               <div>...</div>
             ) : (
@@ -109,11 +130,17 @@ const CreateAccount = (): React.ReactElement => {
             )}
           </label>
           <label>
-            アカウント画像
-            {imageUrl === undefined ? (
-              <div>...</div>
+            <Text
+              language={language}
+              japanese="アカウント画像"
+              english="account picture"
+              esperanto="konta bildo"
+            />
+            {queryBasedState.type === "loaded" &&
+            queryBasedState.value?.imageUrl !== undefined ? (
+              <img src={queryBasedState.value.imageUrl.toString()} />
             ) : (
-              <img src={imageUrl.toString()} />
+              <div>...</div>
             )}
           </label>
           <button
@@ -122,7 +149,12 @@ const CreateAccount = (): React.ReactElement => {
               console.log("アカウントを", name, "で作成する");
             }}
           >
-            アカウントを作成する
+            <Text
+              language={language}
+              japanese="アカウントを作成する"
+              english="create an account"
+              esperanto="Krei konton"
+            />
           </button>
         </div>
       </div>

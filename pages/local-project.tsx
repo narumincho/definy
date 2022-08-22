@@ -10,6 +10,7 @@ import { createRandomId, listDeleteAt } from "../common/util";
 import { Button } from "../client/ui/Button";
 import { Editor } from "../client/ui/Editor";
 import { ListItem } from "../client/editor/list";
+import { Text } from "../components/Text";
 import { WithHeader } from "../components/WithHeader";
 import { useDefinyApp } from "../client/hook/useDefinyApp";
 import { useLanguage } from "../hooks/useLanguage";
@@ -47,12 +48,26 @@ export const LocalProjectPage = (): React.ReactElement => {
       language={language}
       logInState={useDefinyAppResult.logInState}
       titleItemList={[]}
-      title="ローカルファイルから開く"
+      title={{
+        japanese: "ローカルファイルから開く",
+        english: "Open from local file",
+        esperanto: "Malfermu el loka dosiero",
+      }}
     >
-      <div>ファイルから始めるか, 空のプロジェクトから始めるか</div>
+      <Text
+        language={language}
+        japanese="ファイルから始めるか, 空のプロジェクトから始めるか"
+        english="Starting with a File or an Empty Project?"
+        esperanto="Komenci kun Dosiero aŭ Malplena Projekto?"
+      />
       <input type="file" ref={fileInputElement} onInput={onInputFile}></input>
       <Button onClick={onClickStartFromEmpty}>
-        空のプロジェクトから始める
+        <Text
+          language={language}
+          japanese="空のプロジェクトから始める"
+          english="start with an empty project"
+          esperanto="komenci per malplena projekto"
+        />
       </Button>
     </WithHeader>
   );

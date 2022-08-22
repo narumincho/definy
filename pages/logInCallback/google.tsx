@@ -1,11 +1,11 @@
 import * as React from "react";
 import * as d from "../../localData";
 import { LoadingBoxCenter } from "../../components/LoadingBox";
+import { Text } from "../../components/Text";
 import { WithHeader } from "../../components/WithHeader";
 import { trpc } from "../../hooks/trpc";
 import { useQueryBasedState } from "../../hooks/useQueryBasedState";
 import { useRouter } from "next/router";
-import { zodTypeLocationAndLanguageToUrl } from "../../common/url";
 
 type CodeAndState = {
   readonly code: string;
@@ -97,40 +97,49 @@ export const LogInCallbackGoogle = (): React.ReactElement => {
   return (
     <WithHeader
       logInState={d.LogInState.LoadingAccountData}
-      location={{ type: "about" }}
-      language={"english"}
+      location={undefined}
+      language="english"
       titleItemList={[]}
-      title="ログインコールバック"
+      title={{
+        japanese: "ログインコールバック",
+        english: "log in callback",
+        esperanto: "ensalutu revokon",
+      }}
     >
       <div css={{ padding: 16, display: "grid", gap: 8, color: "white" }}>
-        {queryBasedState.type === "loading" ? "パラメーター待ち" : <></>}
+        {queryBasedState.type === "loading" ? "reading query parameter" : <></>}
         {logInByCodeAndState.status === "loading" ? (
-          <LoadingBoxCenter message="アカウントが存在するか確認中..." />
+          <LoadingBoxCenter message="Checking if account exists..." />
         ) : (
           <></>
         )}
         {logInByCodeAndState.status === "success" &&
         logInByCodeAndState.data.type === "notGeneratedState" ? (
-          "definy 以外からログインURLを発行した?"
+          "Is the login URL issued from other than define?"
         ) : (
           <></>
         )}
         {logInByCodeAndState.status === "success" &&
         logInByCodeAndState.data.type === "notExistsAccountInDefiny" ? (
-          "アカウント作成画面へ推移中..."
+          <Text
+            language={logInByCodeAndState.data.language}
+            japanese="definyのアカウント作成画面へ推移中..."
+            english="Transitioning to the define account creation screen"
+            esperanto="Transiro al la ekrano pri kreado de kontoj de definy"
+          />
         ) : (
           <></>
         )}
         {logInByCodeAndState.status === "success" &&
         logInByCodeAndState.data.type ===
           "invalidCodeOrProviderResponseError" ? (
-          "サーバーでエラーが発生しました"
+          "An error occurred on the server"
         ) : (
           <></>
         )}
         {logInByCodeAndState.status === "success" &&
         logInByCodeAndState.data.type === "logInOk" ? (
-          "ログインに成功!"
+          "ログインに成功! この後の処理を作らなきゃ"
         ) : (
           <></>
         )}

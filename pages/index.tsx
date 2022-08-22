@@ -2,6 +2,7 @@ import * as React from "react";
 import * as d from "../localData";
 import * as zodType from "../common/zodType";
 import { Link } from "../components/Link";
+import { Text } from "../components/Text";
 import { WithHeader } from "../components/WithHeader";
 import { useLanguage } from "../hooks/useLanguage";
 
@@ -10,7 +11,11 @@ const IndexPage = (): React.ReactElement => {
 
   return (
     <WithHeader
-      title=""
+      title={{
+        japanese: "",
+        english: "",
+        esperanto: "",
+      }}
       logInState={d.LogInState.Guest}
       titleItemList={[]}
       location={{ type: "home" }}
@@ -20,7 +25,12 @@ const IndexPage = (): React.ReactElement => {
         <div css={{ padding: 16 }}>
           <HomeLinkList language={language} />
         </div>
-        definy 整備中...
+        <Text
+          language={language}
+          japanese="ここにプロジェクト一覧とか表示する"
+          english="Show project list here"
+          esperanto="Montru projektoliston ĉi tie"
+        />
       </div>
     </WithHeader>
   );
