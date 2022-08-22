@@ -54,11 +54,18 @@ export const LogInCallbackGoogle = (): React.ReactElement => {
           return;
         case "notExistsAccountInDefiny":
           // アカウント作成画面へ推移
-          router.push(
-            zodTypeLocationAndLanguageToUrl(
-              { type: "create-account" },
-              "japanese"
-            )
+          router.replace(
+            {
+              pathname: "/create-account",
+              query: {
+                name: logInByCodeAndState.data.nameInProvider,
+                imageUrl: logInByCodeAndState.data.imageUrl,
+                language: logInByCodeAndState.data.language,
+              },
+            },
+            {
+              pathname: "/create-account",
+            }
           );
           return;
         case "logInOk":

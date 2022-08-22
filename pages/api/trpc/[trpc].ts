@@ -58,11 +58,17 @@ export const appRouter = trpc
         };
       }
       const preAccountToken = cratePreAccountToken();
-      console.log("preAccountToken", preAccountToken);
+      await i.createPreAccount(ctx, {
+        idInProvider: accountInGoogle.id,
+        imageUrlInProvider: accountInGoogle.imageUrl,
+        nameInProvider: accountInGoogle.name,
+        preAccountToken,
+      });
       return {
         type: "notExistsAccountInDefiny",
         nameInProvider: accountInGoogle.name,
         imageUrl: accountInGoogle.imageUrl.toString(),
+        language: result.language,
       };
     },
   });

@@ -27,6 +27,7 @@ export const LogInByCodeAndStatePayload = z.union([
     type: z.literal("notExistsAccountInDefiny"),
     nameInProvider: z.string(),
     imageUrl: z.string().url(),
+    language: Language,
   }),
   z.object({ type: z.literal("logInOk") }),
 ]);

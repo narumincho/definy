@@ -61,5 +61,19 @@ export const createPreAccount = async (
   client: f.Client,
   param: {
     readonly preAccountToken: PreAccountToken;
+    readonly idInProvider: string;
+    readonly nameInProvider: string;
+    readonly imageUrlInProvider: URL;
   }
-): Promise<void> => {};
+): Promise<void> => {
+  await client.query(
+    f.Create(f.Ref(f.Collection("preAccount"), f.NewId()), {
+      data: {
+        preAccountToken: param.preAccountToken,
+        idInProvider: param.idInProvider,
+        nameInProvider: param.nameInProvider,
+        imageUrlInProvider: param.imageUrlInProvider.toString(),
+      },
+    })
+  );
+};
