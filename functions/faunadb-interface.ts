@@ -27,7 +27,7 @@ export const openConnectStateCreate = async (
   return r.ref.value.id;
 };
 
-export const getOpenConnectStateByState = async (
+export const getAndDeleteOpenConnectStateByState = async (
   client: f.Client,
   state: string
 ): Promise<{ location: Location; language: Language } | undefined> => {
@@ -41,7 +41,14 @@ export const getOpenConnectStateByState = async (
   >(
     f.Let(
       { ref: f.Ref(f.Collection("openConnectState"), state) },
-      f.If(f.Exists(f.Var("ref")), f.Get(f.Var("ref")), false)
+      f.If(
+        f.Exists(f.Var("ref")),
+        f.Let(
+          { refValue: f.Get(f.Var("ref")) },
+          f.Do(f.Delete(f.Var("ref")), f.Var("refValue"))
+        ),
+        false
+      )
     )
   );
   if (result === false) {

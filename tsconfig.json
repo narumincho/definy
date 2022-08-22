@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "target": "ES2021",
-    "lib": ["DOM", "DOM.Iterable", "ES2020"],
+    "lib": ["DOM", "DOM.Iterable", "ES2021"],
     "esModuleInterop": true,
     "strict": true,
     "forceConsistentCasingInFileNames": true,

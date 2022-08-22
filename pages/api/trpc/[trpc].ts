@@ -4,15 +4,12 @@ import * as trpc from "@trpc/server";
 import * as trpcNext from "@trpc/server/adapters/next";
 import * as zodType from "../../../common/zodType";
 import {
-  VERCEL_GIT_COMMIT_SHA,
-  isProduction,
-} from "../../../functions/environmentVariables";
-import {
+  cratePreAccountToken,
   getAccountDataInGoogleFromCode,
-  googleLogInClientId,
+  googleLogInUrl,
 } from "../../../functions/login";
 import type { Client } from "faunadb";
-import { createRandomId } from "../../../common/util";
+import { VERCEL_GIT_COMMIT_SHA } from "../../../functions/environmentVariables";
 import { z } from "zod";
 
 export const appRouter = trpc
@@ -35,7 +32,7 @@ export const appRouter = trpc
         location: input.location,
         language: input.language,
       });
-      return logInUrlFromOpenIdConnectProviderAndState(state).toString();
+      return googleLogInUrl(state).toString();
     },
   })
   .mutation("logInByCodeAndState", {
@@ -45,7 +42,10 @@ export const appRouter = trpc
       ctx,
       input,
     }): Promise<zodType.LogInByCodeAndStatePayload> => {
-      const result = await i.getOpenConnectStateByState(ctx, input.state);
+      const result = await i.getAndDeleteOpenConnectStateByState(
+        ctx,
+        input.state
+      );
       if (result === undefined) {
         return {
           type: "notGeneratedState",
@@ -57,7 +57,7 @@ export const appRouter = trpc
           type: "invalidCodeOrProviderResponseError",
         };
       }
-      const preAccountToken = createRandomId();
+      const preAccountToken = cratePreAccountToken();
       console.log("preAccountToken", preAccountToken);
       return {
         type: "notExistsAccountInDefiny",
@@ -66,35 +66,6 @@ export const appRouter = trpc
       };
     },
   });
-
-const logInUrlFromOpenIdConnectProviderAndState = (state: string): URL => {
-  return createUrl(
-    "https://accounts.google.com/o/oauth2/v2/auth",
-    new Map([
-      ["response_type", "code"],
-      ["client_id", googleLogInClientId],
-      [
-        "redirect_uri",
-        isProduction
-          ? "https://definy.vercel.app/logInCallback/google"
-          : "http://localhost:3000/logInCallback/google",
-      ],
-      ["scope", "profile openid"],
-      ["state", state],
-    ])
-  );
-};
-
-const createUrl = (
-  originAndPath: string,
-  query: ReadonlyMap<string, string>
-): URL => {
-  const url = new URL(originAndPath);
-  for (const [key, value] of query) {
-    url.searchParams.append(key, value);
-  }
-  return url;
-};
 
 export type AppRouter = typeof appRouter;
 

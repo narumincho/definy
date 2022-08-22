@@ -1,8 +1,10 @@
 import * as jsonWebToken from "jsonwebtoken";
+import {
+  GOOGLE_LOGIN_CLIENT_SECRET,
+  isProduction,
+} from "./environmentVariables";
 import axios, { AxiosResponse } from "axios";
-import { GOOGLE_LOGIN_CLIENT_SECRET } from "./environmentVariables";
-import { createRandomId } from "../common/util";
-import { logInRedirectUri } from "../common/url";
+import { createRandomToken } from "./uuid";
 
 export type AccountDataInProvider = {
   readonly id: string;
@@ -13,11 +15,39 @@ export type AccountDataInProvider = {
 export type PreAccountToken = string & { _preAccountToken: never };
 
 export const cratePreAccountToken = (): PreAccountToken => {
-  return createRandomId() as PreAccountToken;
+  return createRandomToken() as PreAccountToken;
 };
 
 export const googleLogInClientId =
   "8347840964-l3796imv2d11d0qi8cnb6r48n5jabk9t.apps.googleusercontent.com";
+
+const googleLogInRedirectUri = isProduction
+  ? "https://definy.vercel.app/logInCallback/google"
+  : "http://localhost:3000/logInCallback/google";
+
+export const googleLogInUrl = (state: string): URL => {
+  return createUrl(
+    "https://accounts.google.com/o/oauth2/v2/auth",
+    new Map([
+      ["response_type", "code"],
+      ["client_id", googleLogInClientId],
+      ["redirect_uri", googleLogInRedirectUri],
+      ["scope", "profile openid"],
+      ["state", state],
+    ])
+  );
+};
+
+const createUrl = (
+  originAndPath: string,
+  query: ReadonlyMap<string, string>
+): URL => {
+  const url = new URL(originAndPath);
+  for (const [key, value] of query) {
+    url.searchParams.append(key, value);
+  }
+  return url;
+};
 
 export const getAccountDataInGoogleFromCode = async (
   code: string
@@ -31,7 +61,7 @@ export const getAccountDataInGoogleFromCode = async (
       new URLSearchParams([
         ["grant_type", "authorization_code"],
         ["code", code],
-        ["redirect_uri", logInRedirectUri("Google")],
+        ["redirect_uri", googleLogInRedirectUri],
         ["client_id", googleLogInClientId],
         ["client_secret", GOOGLE_LOGIN_CLIENT_SECRET],
       ]),

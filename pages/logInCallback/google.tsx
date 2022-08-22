@@ -102,8 +102,28 @@ export const LogInCallbackGoogle = (): React.ReactElement => {
         ) : (
           <></>
         )}
-        {logInByCodeAndState.status === "success" ? (
-          "APIのリクエストが完了"
+        {logInByCodeAndState.status === "success" &&
+        logInByCodeAndState.data.type === "notGeneratedState" ? (
+          "definy 以外からログインURLを発行した?"
+        ) : (
+          <></>
+        )}
+        {logInByCodeAndState.status === "success" &&
+        logInByCodeAndState.data.type === "notExistsAccountInDefiny" ? (
+          "アカウント作成画面へ推移中..."
+        ) : (
+          <></>
+        )}
+        {logInByCodeAndState.status === "success" &&
+        logInByCodeAndState.data.type ===
+          "invalidCodeOrProviderResponseError" ? (
+          "サーバーでエラーが発生しました"
+        ) : (
+          <></>
+        )}
+        {logInByCodeAndState.status === "success" &&
+        logInByCodeAndState.data.type === "logInOk" ? (
+          "ログインに成功!"
         ) : (
           <></>
         )}
