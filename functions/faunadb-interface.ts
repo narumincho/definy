@@ -23,6 +23,7 @@ const accountCollection = f.Collection("account");
 type AccountDocument = {
   readonly name: string;
   readonly idIssueByGoogle: string;
+  readonly accountTokenHash: Uint8Array;
 };
 
 type FaunaId = string | number;

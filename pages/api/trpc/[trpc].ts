@@ -4,7 +4,7 @@ import * as trpc from "@trpc/server";
 import * as trpcNext from "@trpc/server/adapters/next";
 import * as zodType from "../../../common/zodType";
 import {
-  crateAccountToken,
+  crateAccountTokenAndHash,
   cratePreAccountToken,
   getAccountDataInGoogleFromCode,
   googleLogInUrl,
@@ -96,11 +96,13 @@ export const appRouter = trpc
       if (preAccount === undefined) {
         return { type: "notGeneratedPreAccountToken" };
       }
+      const accountTokenAndHash = crateAccountTokenAndHash();
       await i.createAccount(ctx, {
         name: input.name,
         idIssueByGoogle: preAccount.idIssueByGoogle,
+        accountTokenHash: accountTokenAndHash.accountTokenHash,
       });
-      return { type: "ok", accountToken: crateAccountToken() };
+      return { type: "ok", accountToken: accountTokenAndHash.accountToken };
     },
   });
 
