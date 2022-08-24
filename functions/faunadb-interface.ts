@@ -1,5 +1,10 @@
 import * as f from "faunadb";
-import { Language, Location, PreAccountToken } from "../common/zodType";
+import {
+  AccountId,
+  Language,
+  Location,
+  PreAccountToken,
+} from "../common/zodType";
 import { FAUNA_SERVER_KEY } from "./environmentVariables";
 
 export const getFaunaClient = (): f.Client => {
@@ -10,12 +15,20 @@ export const getFaunaClient = (): f.Client => {
 };
 
 const openConnectStateCollection = f.Collection("openConnectState");
+
+type OpenConnectState = {
+  readonly location: Location;
+  readonly language: Language;
+};
+
 const preAccountCollection = f.Collection("preAccount");
 
 type PreAccountDocument = {
   readonly preAccountToken: PreAccountToken;
   readonly idIssueByGoogle: string;
   readonly imageUrlInProvider: string;
+  readonly location: Location;
+  readonly language: Language;
 };
 
 const accountCollection = f.Collection("account");
@@ -32,16 +45,13 @@ const faunaIdToBigint = (faunaId: FaunaId): bigint => BigInt(faunaId);
 
 export const openConnectStateCreate = async (
   client: f.Client,
-  param: {
-    readonly location: Location;
-    readonly language: Language;
-  }
+  param: OpenConnectState
 ): Promise<string> => {
   const r = await client.query<{
     readonly ref: { readonly value: { readonly id: string } };
   }>(
     f.Create(f.Ref(openConnectStateCollection, f.NewId()), {
-      data: { location: param.location, language: param.language },
+      data: param,
     })
   );
   return r.ref.value.id;
@@ -50,22 +60,15 @@ export const openConnectStateCreate = async (
 export const getAndDeleteOpenConnectStateByState = async (
   client: f.Client,
   state: string
-): Promise<{ location: Location; language: Language } | undefined> => {
-  const result = await client.query<
-    | {
-        readonly ref: { readonly value: { readonly id: string } };
-        readonly ts: string;
-        readonly data: { location: Location; language: Language };
-      }
-    | false
-  >(
+): Promise<OpenConnectState | undefined> => {
+  const result = await client.query<OpenConnectState | false>(
     f.Let(
       { ref: f.Ref(openConnectStateCollection, state) },
       f.If(
         f.Exists(f.Var("ref")),
         f.Let(
           { refValue: f.Get(f.Var("ref")) },
-          f.Do(f.Delete(f.Var("ref")), f.Var("refValue"))
+          f.Do(f.Delete(f.Var("ref")), f.Select("data", f.Var("refValue")))
         ),
         false
       )
@@ -74,7 +77,7 @@ export const getAndDeleteOpenConnectStateByState = async (
   if (result === false) {
     return undefined;
   }
-  return { language: result.data.language, location: result.data.location };
+  return { language: result.language, location: result.location };
 };
 
 export const createPreAccount = async (
@@ -83,12 +86,16 @@ export const createPreAccount = async (
     readonly preAccountToken: PreAccountToken;
     readonly idIssueByGoogle: string;
     readonly imageUrlInProvider: URL;
+    readonly location: Location;
+    readonly language: Language;
   }
 ): Promise<void> => {
   const data: PreAccountDocument = {
     preAccountToken: param.preAccountToken,
     idIssueByGoogle: param.idIssueByGoogle,
     imageUrlInProvider: param.imageUrlInProvider.toString(),
+    location: param.location,
+    language: param.language,
   };
   await client.query(
     f.Create(f.Ref(preAccountCollection, f.NewId()), { data })
@@ -99,7 +106,12 @@ export const findAndDeletePreAccount = async (
   client: f.Client,
   preAccountToken: PreAccountToken
 ): Promise<
-  | { readonly idIssueByGoogle: string; readonly imageUrlInProvider: URL }
+  | {
+      readonly idIssueByGoogle: string;
+      readonly imageUrlInProvider: URL;
+      readonly location: Location;
+      readonly language: Language;
+    }
   | undefined
 > => {
   const result = await client.query<PreAccountDocument | false>(
@@ -139,13 +151,15 @@ export const findAndDeletePreAccount = async (
   return {
     idIssueByGoogle: result.idIssueByGoogle,
     imageUrlInProvider: new URL(result.imageUrlInProvider),
+    location: result.location,
+    language: result.language,
   };
 };
 
 export const createAccount = async (
   client: f.Client,
   param: AccountDocument
-): Promise<bigint> => {
+): Promise<AccountId> => {
   const result = await client.query<FaunaId>(
     f.Let(
       { id: f.NewId() },
@@ -157,13 +171,13 @@ export const createAccount = async (
       )
     )
   );
-  return faunaIdToBigint(result);
+  return faunaIdToBigint(result) as AccountId;
 };
 
 export const findAccountFromIdIssueByGoogle = async (
   client: f.Client,
   idInGoogle: string
-): Promise<{ readonly id: bigint; readonly name: string } | undefined> => {
+): Promise<{ readonly id: AccountId; readonly name: string } | undefined> => {
   const result = await client.query<
     | {
         readonly ref: { readonly id: FaunaId };
@@ -193,7 +207,21 @@ export const findAccountFromIdIssueByGoogle = async (
     return undefined;
   }
   return {
-    id: faunaIdToBigint(result.ref.id),
+    id: faunaIdToBigint(result.ref.id) as AccountId,
     name: result.data.name,
   };
+};
+
+export const updateAccountTokenHash = async (
+  client: f.Client,
+  param: { readonly id: AccountId; readonly accountTokenHash: Uint8Array }
+): Promise<void> => {
+  const data: Pick<AccountDocument, "accountTokenHash"> = {
+    accountTokenHash: param.accountTokenHash,
+  };
+  await client.query(
+    f.Update(f.Ref(accountCollection, param.id.toString()), {
+      data,
+    })
+  );
 };

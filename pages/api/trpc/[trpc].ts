@@ -43,11 +43,11 @@ export const appRouter = trpc
       ctx,
       input,
     }): Promise<zodType.LogInByCodeAndStatePayload> => {
-      const result = await i.getAndDeleteOpenConnectStateByState(
+      const openConnectState = await i.getAndDeleteOpenConnectStateByState(
         ctx,
         input.state
       );
-      if (result === undefined) {
+      if (openConnectState === undefined) {
         return {
           type: "notGeneratedState",
         };
@@ -62,9 +62,18 @@ export const appRouter = trpc
         ctx,
         accountInGoogle.id
       );
+
       if (accountInDefiny !== undefined) {
+        const accountTokenAndHash = crateAccountTokenAndHash();
+        i.updateAccountTokenHash(ctx, {
+          id: accountInDefiny.id,
+          accountTokenHash: accountTokenAndHash.accountTokenHash,
+        });
         return {
           type: "logInOk",
+          accountToken: accountTokenAndHash.accountToken,
+          language: openConnectState.language,
+          location: openConnectState.location,
         };
       }
       const preAccountToken = cratePreAccountToken();
@@ -72,12 +81,14 @@ export const appRouter = trpc
         idIssueByGoogle: accountInGoogle.id,
         imageUrlInProvider: accountInGoogle.imageUrl,
         preAccountToken,
+        location: openConnectState.location,
+        language: openConnectState.language,
       });
       return {
         type: "notExistsAccountInDefiny",
         nameInProvider: accountInGoogle.name,
         imageUrl: accountInGoogle.imageUrl.toString(),
-        language: result.language,
+        language: openConnectState.language,
         preAccountToken,
       };
     },
@@ -102,7 +113,12 @@ export const appRouter = trpc
         idIssueByGoogle: preAccount.idIssueByGoogle,
         accountTokenHash: accountTokenAndHash.accountTokenHash,
       });
-      return { type: "ok", accountToken: accountTokenAndHash.accountToken };
+      return {
+        type: "ok",
+        accountToken: accountTokenAndHash.accountToken,
+        language: preAccount.language,
+        location: preAccount.location,
+      };
     },
   });
 

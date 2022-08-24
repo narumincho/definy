@@ -4,8 +4,10 @@ import { LoadingBoxCenter } from "../../components/LoadingBox";
 import { Text } from "../../components/Text";
 import { WithHeader } from "../../components/WithHeader";
 import { trpc } from "../../hooks/trpc";
+import { useAccountToken } from "../../hooks/useAccountToken";
 import { useQueryBasedState } from "../../hooks/useQueryBasedState";
 import { useRouter } from "next/router";
+import { zodTypeLocationAndLanguageToUrl } from "../../common/url";
 
 type CodeAndState = {
   readonly code: string;
@@ -42,6 +44,7 @@ const codeAndStateIsEqual = (
 export const LogInCallbackGoogle = (): React.ReactElement => {
   const logInByCodeAndState = trpc.useMutation("logInByCodeAndState");
   const router = useRouter();
+  const { setAccountToken } = useAccountToken();
 
   React.useEffect(() => {
     if (logInByCodeAndState.isSuccess) {
@@ -69,11 +72,23 @@ export const LogInCallbackGoogle = (): React.ReactElement => {
             }
           );
           return;
-        case "logInOk":
-          console.log("ログイン成功扱い");
+        case "logInOk": {
+          setAccountToken(logInByCodeAndState.data.accountToken);
+          router.replace(
+            zodTypeLocationAndLanguageToUrl(
+              logInByCodeAndState.data.location,
+              logInByCodeAndState.data.language
+            )
+          );
+        }
       }
     }
-  }, [logInByCodeAndState.isSuccess, router, logInByCodeAndState.data]);
+  }, [
+    logInByCodeAndState.isSuccess,
+    router,
+    logInByCodeAndState.data,
+    setAccountToken,
+  ]);
 
   const onUpdate = React.useCallback(
     (newCodeAndState: CodeAndState | undefined) => {
