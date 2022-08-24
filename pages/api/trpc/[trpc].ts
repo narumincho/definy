@@ -58,9 +58,18 @@ export const appRouter = trpc
           type: "invalidCodeOrProviderResponseError",
         };
       }
+      const accountInDefiny = await i.findAccountFromIdIssueByGoogle(
+        ctx,
+        accountInGoogle.id
+      );
+      if (accountInDefiny !== undefined) {
+        return {
+          type: "logInOk",
+        };
+      }
       const preAccountToken = cratePreAccountToken();
       await i.createPreAccount(ctx, {
-        idInProvider: accountInGoogle.id,
+        idIssueByGoogle: accountInGoogle.id,
         imageUrlInProvider: accountInGoogle.imageUrl,
         preAccountToken,
       });
@@ -87,6 +96,10 @@ export const appRouter = trpc
       if (preAccount === undefined) {
         return { type: "notGeneratedPreAccountToken" };
       }
+      await i.createAccount(ctx, {
+        name: input.name,
+        idIssueByGoogle: preAccount.idIssueByGoogle,
+      });
       return { type: "ok", accountToken: crateAccountToken() };
     },
   });
