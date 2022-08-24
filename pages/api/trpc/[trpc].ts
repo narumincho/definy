@@ -4,6 +4,7 @@ import * as trpc from "@trpc/server";
 import * as trpcNext from "@trpc/server/adapters/next";
 import * as zodType from "../../../common/zodType";
 import {
+  crateAccountToken,
   cratePreAccountToken,
   getAccountDataInGoogleFromCode,
   googleLogInUrl,
@@ -61,7 +62,6 @@ export const appRouter = trpc
       await i.createPreAccount(ctx, {
         idInProvider: accountInGoogle.id,
         imageUrlInProvider: accountInGoogle.imageUrl,
-        nameInProvider: accountInGoogle.name,
         preAccountToken,
       });
       return {
@@ -69,7 +69,25 @@ export const appRouter = trpc
         nameInProvider: accountInGoogle.name,
         imageUrl: accountInGoogle.imageUrl.toString(),
         language: result.language,
+        preAccountToken,
       };
+    },
+  })
+  .mutation("createAccount", {
+    input: z.object({
+      name: z.string().min(1).max(100),
+      preAccountToken: zodType.PreAccountToken,
+    }),
+    output: zodType.CreateAccountPayload,
+    resolve: async ({ ctx, input }): Promise<zodType.CreateAccountPayload> => {
+      const preAccount = await i.findAndDeletePreAccount(
+        ctx,
+        input.preAccountToken
+      );
+      if (preAccount === undefined) {
+        return { type: "notGeneratedPreAccountToken" };
+      }
+      return { type: "ok", accountToken: crateAccountToken() };
     },
   });
 

@@ -1,4 +1,5 @@
 import * as jsonWebToken from "jsonwebtoken";
+import type { AccountToken, PreAccountToken } from "../common/zodType";
 import {
   GOOGLE_LOGIN_CLIENT_SECRET,
   isProduction,
@@ -12,10 +13,12 @@ export type AccountDataInProvider = {
   readonly imageUrl: URL;
 };
 
-export type PreAccountToken = string & { _preAccountToken: never };
-
 export const cratePreAccountToken = (): PreAccountToken => {
   return createRandomToken() as PreAccountToken;
+};
+
+export const crateAccountToken = (): AccountToken => {
+  return createRandomToken() as AccountToken;
 };
 
 export const googleLogInClientId =

@@ -1,74 +1,71 @@
 import * as React from "react";
-import { Language, defaultLanguage } from "../common/zodType";
+import { Language, PreAccountToken, defaultLanguage } from "../common/zodType";
+import { Button } from "../client/ui/Button";
+import type { ParsedUrlQuery } from "node:querystring";
 import { Text } from "../components/Text";
 import { WithHeader } from "../components/WithHeader";
-import { useQueryBasedState } from "../hooks/useQueryBasedState";
+import { trpc } from "../hooks/trpc";
+import { useAccountToken } from "../hooks/useAccountToken";
+import { useRouter } from "next/router";
+import { zodTypeLocationAndLanguageToUrl } from "../common/url";
 
-type NameAndImageUrl = {
-  readonly name: string;
+type Parameter = {
   readonly imageUrl: URL;
   readonly language: Language;
+  readonly preAccountToken: PreAccountToken;
 };
 
-const nameAndImageUrlEqual = (
-  a: NameAndImageUrl | undefined,
-  b: NameAndImageUrl | undefined
-): boolean => {
-  if (a === undefined && b === undefined) {
-    return true;
-  }
-  return (
-    a?.name === b?.name &&
-    a?.imageUrl.toString() === b?.imageUrl.toString() &&
-    a?.language === b?.language
-  );
-};
-
-const nameAndImageUrlQueryToStructuredQuery = (
-  query: ReadonlyMap<string, string>
-): NameAndImageUrl | undefined => {
-  const name = query.get("name");
-  const imageUrl = query.get("imageUrl");
-  const language = query.get("language");
+const parsedUrlQueryToParameter = (
+  query: ParsedUrlQuery
+): (Parameter & { readonly name: string }) | undefined => {
+  const name = query.name;
+  const imageUrl = query.imageUrl;
+  const language = query.language;
+  const preAccountToken = query.preAccountToken;
   try {
     if (typeof name === "string" && typeof imageUrl === "string") {
       return {
         name,
         imageUrl: new URL(imageUrl),
         language: Language.parse(language),
+        preAccountToken: PreAccountToken.parse(preAccountToken),
       };
     }
-  } catch {
+  } catch (e) {
     return undefined;
   }
 };
 
-const nameAndImageStructuredQueryToQuery = (): ReadonlyMap<string, string> => {
-  return new Map();
-};
-
 const CreateAccount = (): React.ReactElement => {
   const [name, setName] = React.useState<string | undefined>(undefined);
-  const onUpdate = React.useCallback(
-    (nameAndImageUrl: NameAndImageUrl | undefined) => {
-      if (nameAndImageUrl !== undefined) {
-        setName(nameAndImageUrl.name);
+  const [parameter, setParameter] = React.useState<Parameter | undefined>(
+    undefined
+  );
+  const router = useRouter();
+
+  React.useEffect(() => {
+    const parameterAndName = parsedUrlQueryToParameter(router.query);
+    setParameter(parameterAndName);
+    setName(parameterAndName?.name);
+  }, [router.query]);
+
+  const useAccountTokenResult = useAccountToken();
+
+  const language: Language = parameter?.language ?? defaultLanguage;
+
+  const createAccount = trpc.useMutation("createAccount", {
+    onSuccess: (response) => {
+      if (response.type === "ok") {
+        useAccountTokenResult
+          .setAccountToken(response.accountToken)
+          .then(() => {
+            router.replace(
+              zodTypeLocationAndLanguageToUrl({ type: "home" }, language)
+            );
+          });
       }
     },
-    []
-  );
-
-  const queryBasedState = useQueryBasedState<NameAndImageUrl | undefined>({
-    queryToStructuredQuery: nameAndImageUrlQueryToStructuredQuery,
-    structuredQueryToQuery: nameAndImageStructuredQueryToQuery,
-    isEqual: nameAndImageUrlEqual,
-    onUpdate,
   });
-
-  const language: Language =
-    (queryBasedState.type === "loaded"
-      ? queryBasedState.value?.language
-      : undefined) ?? defaultLanguage;
 
   return (
     <WithHeader
@@ -77,11 +74,7 @@ const CreateAccount = (): React.ReactElement => {
       }}
       titleItemList={[]}
       location={undefined}
-      language={
-        (queryBasedState.type === "loaded"
-          ? queryBasedState.value?.language
-          : undefined) ?? "english"
-      }
+      language={language}
       title={{
         japanese: "definy のアカウント作成",
         english: "Create a definy account",
@@ -100,12 +93,19 @@ const CreateAccount = (): React.ReactElement => {
         <div css={{ fontSize: 24 }}>
           <Text
             language={language}
-            english="version"
+            english="welcome to definy"
             japanese="definyへようこそ"
             esperanto="bonvenon difini"
           />
         </div>
-        <h1 css={{ margin: 0, fontSize: 32 }}>definyのアカウント作成</h1>
+        <h1 css={{ margin: 0, fontSize: 32 }}>
+          <Text
+            language={language}
+            english="Create a definy account"
+            japanese="definyのアカウント作成"
+            esperanto="Kreu definy-konton"
+          />
+        </h1>
         <div
           css={{
             display: "grid",
@@ -136,26 +136,67 @@ const CreateAccount = (): React.ReactElement => {
               english="account picture"
               esperanto="konta bildo"
             />
-            {queryBasedState.type === "loaded" &&
-            queryBasedState.value?.imageUrl !== undefined ? (
-              <img src={queryBasedState.value.imageUrl.toString()} />
-            ) : (
+            {parameter === undefined ? (
               <div>...</div>
+            ) : (
+              <img src={parameter.imageUrl.toString()} />
             )}
           </label>
-          <button
-            disabled={name === undefined || name.trim().length === 0}
-            onClick={() => {
-              console.log("アカウントを", name, "で作成する");
-            }}
+          <Button
+            onClick={
+              name === undefined ||
+              name.trim().length === 0 ||
+              createAccount.isLoading
+                ? undefined
+                : () => {
+                    console.log("おされた", parameter);
+                    if (typeof name === "string" && parameter !== undefined) {
+                      createAccount.mutate({
+                        name,
+                        preAccountToken: parameter.preAccountToken,
+                      });
+                    }
+                  }
+            }
           >
+            {createAccount.isLoading ? (
+              <Text
+                language={language}
+                japanese="アカウントを作成中..."
+                english="creating account..."
+                esperanto="Kreante konton..."
+              />
+            ) : (
+              <Text
+                language={language}
+                japanese="アカウントを作成する"
+                english="create account"
+                esperanto="Krei konton"
+              />
+            )}
+          </Button>
+          {createAccount.isError ||
+          (createAccount.isSuccess &&
+            createAccount.data.type === "notGeneratedPreAccountToken") ? (
             <Text
               language={language}
-              japanese="アカウントを作成する"
-              english="create an account"
-              esperanto="Krei konton"
+              japanese="アカウントの作成に失敗しました"
+              english="Failed to create account"
+              esperanto="Malsukcesis krei konton"
             />
-          </button>
+          ) : (
+            <></>
+          )}
+          {createAccount.isSuccess && createAccount.data.type === "ok" ? (
+            <Text
+              language={language}
+              japanese="アカウントの作成に成功! ここから先を作る"
+              english="Successfully created an account! Start here"
+              esperanto="Sukcese kreis konton! Komencu ĉi tie"
+            />
+          ) : (
+            <></>
+          )}
         </div>
       </div>
     </WithHeader>
