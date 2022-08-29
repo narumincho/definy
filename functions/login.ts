@@ -5,6 +5,7 @@ import {
   isProduction,
 } from "./environmentVariables";
 import axios, { AxiosResponse } from "axios";
+import { createHash } from "node:crypto";
 import { createRandomToken } from "./uuid";
 
 export type AccountDataInProvider = {
@@ -17,8 +18,15 @@ export const cratePreAccountToken = (): PreAccountToken => {
   return createRandomToken() as PreAccountToken;
 };
 
-export const crateAccountToken = (): AccountToken => {
-  return createRandomToken() as AccountToken;
+export const crateAccountTokenAndHash = (): {
+  accountToken: AccountToken;
+  accountTokenHash: Uint8Array;
+} => {
+  const accountToken = createRandomToken() as AccountToken;
+  return {
+    accountToken,
+    accountTokenHash: createHash("sha256").update(accountToken).digest(),
+  };
 };
 
 export const googleLogInClientId =

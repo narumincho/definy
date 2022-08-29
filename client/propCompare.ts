@@ -1,4 +1,7 @@
-export const compare = <Props>(prev: Props, next: Props): boolean => {
+export const compare = <Props extends object>(
+  prev: Props,
+  next: Props
+): boolean => {
   for (const key of new Set<keyof Props>([
     ...(Object.keys(prev) as unknown as ReadonlyArray<keyof Props>),
     ...(Object.keys(next) as unknown as ReadonlyArray<keyof Props>),
