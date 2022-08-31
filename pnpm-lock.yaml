@@ -10,6 +10,7 @@ specifiers:
   '@storybook/addon-essentials': 6.5.10
   '@storybook/addon-links': 6.5.10
   '@storybook/react': 6.5.10
+  '@swc-node/register': 1.5.1
   '@trpc/client': 9.27.2
   '@trpc/next': 9.27.2
   '@trpc/react': 9.27.2
@@ -78,6 +79,7 @@ devDependencies:
   '@storybook/addon-essentials': 6.5.10_vuognd74ufutscmc7mvmxw73yi
   '@storybook/addon-links': 6.5.10_biqbaboplfbrettd7655fr4n2y
   '@storybook/react': 6.5.10_5wchp6rdhw7eseandpdpblw2a4
+  '@swc-node/register': 1.5.1_typescript@4.8.2
   '@types/fs-extra': 9.0.13
   '@types/jest': 28.1.8
   '@types/jsonwebtoken': 8.5.9
@@ -4479,11 +4481,202 @@ packages:
       resolve-from: 5.0.0
     dev: true
 
+  /@swc-node/core/1.9.0:
+    resolution: {integrity: sha512-vRnvsMtL9OxybA/Wun1ZhlDvB6MNs4Zujnina0VKdGk+yI6s87KUhdTcbAY6dQMZhQTLFiC1Lnv/BuwCKcCEug==}
+    engines: {node: '>= 10'}
+    dependencies:
+      '@swc/core': 1.2.245
+    dev: true
+
+  /@swc-node/register/1.5.1_typescript@4.8.2:
+    resolution: {integrity: sha512-6IL5s4QShKGs08qAeNou3rDA3gbp2WHk6fo0XnJXQn/aC9k6FnVBbj/thGOIEDtgNhC/DKpZT8tCY1LpQnOZFg==}
+    peerDependencies:
+      typescript: '>= 4.3'
+    dependencies:
+      '@swc-node/core': 1.9.0
+      '@swc-node/sourcemap-support': 0.2.0
+      colorette: 2.0.19
+      debug: 4.3.4
+      pirates: 4.0.5
+      tslib: 2.4.0
+      typescript: 4.8.2
+    transitivePeerDependencies:
+      - supports-color
+    dev: true
+
+  /@swc-node/sourcemap-support/0.2.0:
+    resolution: {integrity: sha512-FNrxdI6XMYfoNt81L8eFKEm1d8P82I1nPwS3MrnBGzZoMWB+seQhQK+iN6M5RreJxXbfZw5lF86LRjHEQeGMqg==}
+    dependencies:
+      source-map-support: 0.5.21
+    dev: true
+
+  /@swc/core-android-arm-eabi/1.2.245:
+    resolution: {integrity: sha512-KpQVX1DdvOjNupJzoM1j6BqEnZjIJlGV0vINNE46bIybMrCMA14Q5OnsI8hGHH6WizSEV7FrMaFHpAQLwu+uhQ==}
+    engines: {node: '>=10'}
+    cpu: [arm]
+    os: [android]
+    requiresBuild: true
+    dependencies:
+      '@swc/wasm': 1.2.122
+    dev: true
+    optional: true
+
+  /@swc/core-android-arm64/1.2.245:
+    resolution: {integrity: sha512-QEK0aphFD+Z9zV+b38wasuM8nMrS9mixXybzXGZeRrGCUHOLxHeQzP69ksHocv8uBKLrega5NWcYxRwul7bueQ==}
+    engines: {node: '>=10'}
+    cpu: [arm64]
+    os: [android]
+    requiresBuild: true
+    dependencies:
+      '@swc/wasm': 1.2.130
+    dev: true
+    optional: true
+
+  /@swc/core-darwin-arm64/1.2.245:
+    resolution: {integrity: sha512-0qn4H9h6otyW3L+sFSCZ7pgp93fxizFIkBscxShjX1160zs4AScnK5hp4kNYfyjxr2tMCIA5WVttfL6NIYp6Uw==}
+    engines: {node: '>=10'}
+    cpu: [arm64]
+    os: [darwin]
+    requiresBuild: true
+    dev: true
+    optional: true
+
+  /@swc/core-darwin-x64/1.2.245:
+    resolution: {integrity: sha512-DkJHcGZi3pZkH+jl6QCWcXB00xP9Ntp8btpUuqsiRhtNkbQhTOk+2d8M3AzSJs/p2Jlr3Z24tBIq52q3CQJiCg==}
+    engines: {node: '>=10'}
+    cpu: [x64]
+    os: [darwin]
+    requiresBuild: true
+    dev: true
+    optional: true
+
+  /@swc/core-freebsd-x64/1.2.245:
+    resolution: {integrity: sha512-xKM7VDXzgZL4Mh3TAtQz1sHK8yxoinvddX5MRanmQXoEEGeIWaYKqKYymbhjw4DwIZakB58rc7MjYrpDLK6dOA==}
+    engines: {node: '>=10'}
+    cpu: [x64]
+    os: [freebsd]
+    requiresBuild: true
+    dependencies:
+      '@swc/wasm': 1.2.130
+    dev: true
+    optional: true
+
+  /@swc/core-linux-arm-gnueabihf/1.2.245:
+    resolution: {integrity: sha512-n9CE5AP4/xa5crPbEJovLIsS9UR1/zBrVERWXDTSUEvpS6yiV2KuMa8fWuJ+rJtS1soNhCKsS/8cHljBb4b77A==}
+    engines: {node: '>=10'}
+    cpu: [arm]
+    os: [linux]
+    requiresBuild: true
+    dependencies:
+      '@swc/wasm': 1.2.130
+    dev: true
+    optional: true
+
+  /@swc/core-linux-arm64-gnu/1.2.245:
+    resolution: {integrity: sha512-P0x8QKxGoZeLVLMxBR/XCJobiTjxS6QPCHJsWfhdktCZoxm/+3OtH858ns9b7lFNV3tggxAU6l9PtXdkvU6Cew==}
+    engines: {node: '>=10'}
+    cpu: [arm64]
+    os: [linux]
+    requiresBuild: true
+    dev: true
+    optional: true
+
+  /@swc/core-linux-arm64-musl/1.2.245:
+    resolution: {integrity: sha512-dHvYYpZHIMXPVfFrOz6kgTFVDEAq2SVjRwOl7aqpDpFfTRW7JEc7yuHh/W+kioMhVIiscMc6lXHFXSUlRA5qFA==}
+    engines: {node: '>=10'}
+    cpu: [arm64]
+    os: [linux]
+    requiresBuild: true
+    dev: true
+    optional: true
+
+  /@swc/core-linux-x64-gnu/1.2.245:
+    resolution: {integrity: sha512-NAgd4ImnWubYKdZE1sQi9hNvsSw8+z3nVm7WrZqhBx3OVQx/XQ2OQxUKIYvTe3LInUDxywX+ifRQ/syR/pFHUQ==}
+    engines: {node: '>=10'}
+    cpu: [x64]
+    os: [linux]
+    requiresBuild: true
+    dev: true
+    optional: true
+
+  /@swc/core-linux-x64-musl/1.2.245:
+    resolution: {integrity: sha512-jBThAr+TdmGRj5syD58IRlTu+N/9IcWT4GZ/YdujwDifyb2oZVj5Hop5D8wMBqBrDs1oWmK43sHp2suTfWdKBQ==}
+    engines: {node: '>=10'}
+    cpu: [x64]
+    os: [linux]
+    requiresBuild: true
+    dev: true
+    optional: true
+
+  /@swc/core-win32-arm64-msvc/1.2.245:
+    resolution: {integrity: sha512-m0cCHZHTay0J1PxUGEVeoe9Xr8Xmf2Ahdn+FPk3tp/bqA+65eT527kAQBRc6fsyJyu6tip3STVQHapFauD/w9g==}
+    engines: {node: '>=10'}
+    cpu: [arm64]
+    os: [win32]
+    requiresBuild: true
+    dependencies:
+      '@swc/wasm': 1.2.130
+    dev: true
+    optional: true
+
+  /@swc/core-win32-ia32-msvc/1.2.245:
+    resolution: {integrity: sha512-7mMwNFpD7eepMbbveSzeEIvOL5W2I2TPHD0kR6PKq//2mr4wR+LOrw6I4i0O159Go8bDVSrdRhCNzfY66oNJ7Q==}
+    engines: {node: '>=10'}
+    cpu: [ia32]
+    os: [win32]
+    requiresBuild: true
+    dependencies:
+      '@swc/wasm': 1.2.130
+    dev: true
+    optional: true
+
+  /@swc/core-win32-x64-msvc/1.2.245:
+    resolution: {integrity: sha512-vgresfVnySSZs7DO8SLpn3SB0aX+EN7N6n4YtF/rH37rFwH4WIJhNKRv6Wq4n/hzx33OT116+e/bIDMTg2cEoQ==}
+    engines: {node: '>=10'}
+    cpu: [x64]
+    os: [win32]
+    requiresBuild: true
+    dev: true
+    optional: true
+
+  /@swc/core/1.2.245:
+    resolution: {integrity: sha512-QbjqYkgC1AbJZqybzm3jWg13I5VhlRRODpeBb7H69h5GY1YUWdAb/mpKA5x5jh7j6VuGxJHDxYfry0Rv/MNz7w==}
+    engines: {node: '>=10'}
+    hasBin: true
+    requiresBuild: true
+    optionalDependencies:
+      '@swc/core-android-arm-eabi': 1.2.245
+      '@swc/core-android-arm64': 1.2.245
+      '@swc/core-darwin-arm64': 1.2.245
+      '@swc/core-darwin-x64': 1.2.245
+      '@swc/core-freebsd-x64': 1.2.245
+      '@swc/core-linux-arm-gnueabihf': 1.2.245
+      '@swc/core-linux-arm64-gnu': 1.2.245
+      '@swc/core-linux-arm64-musl': 1.2.245
+      '@swc/core-linux-x64-gnu': 1.2.245
+      '@swc/core-linux-x64-musl': 1.2.245
+      '@swc/core-win32-arm64-msvc': 1.2.245
+      '@swc/core-win32-ia32-msvc': 1.2.245
+      '@swc/core-win32-x64-msvc': 1.2.245
+    dev: true
+
   /@swc/helpers/0.4.3:
     resolution: {integrity: sha512-6JrF+fdUK2zbGpJIlN7G3v966PQjyx/dPt1T9km2wj+EUBqgrxCk3uX4Kct16MIm9gGxfKRcfax2hVf5jvlTzA==}
     dependencies:
       tslib: 2.4.0
     dev: false
+
+  /@swc/wasm/1.2.122:
+    resolution: {integrity: sha512-sM1VCWQxmNhFtdxME+8UXNyPNhxNu7zdb6ikWpz0YKAQQFRGT5ThZgJrubEpah335SUToNg8pkdDF7ibVCjxbQ==}
+    requiresBuild: true
+    dev: true
+    optional: true
+
+  /@swc/wasm/1.2.130:
+    resolution: {integrity: sha512-rNcJsBxS70+pv8YUWwf5fRlWX6JoY/HJc25HD/F8m6Kv7XhJdqPPMhyX6TKkUBPAG7TWlZYoxa+rHAjPy4Cj3Q==}
+    requiresBuild: true
+    dev: true
+    optional: true
 
   /@szmarczak/http-timer/1.1.2:
     resolution: {integrity: sha512-XIB2XbzHTN6ieIjfIMV9hlVcfPU26s2vafYWQcZHWXHOxiaRZYEDKEwdl129Zyg50+foYV2jCgtrqSA6qNuNSA==}
