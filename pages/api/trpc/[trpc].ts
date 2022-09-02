@@ -4,17 +4,21 @@ import * as trpc from "@trpc/server";
 import * as trpcNext from "@trpc/server/adapters/next";
 import * as zodType from "../../../common/zodType";
 import {
+  FAUNA_SERVER_KEY,
+  VERCEL_GIT_COMMIT_SHA,
+} from "../../../functions/environmentVariables";
+import {
   crateAccountTokenAndHash,
   cratePreAccountToken,
   getAccountDataInGoogleFromCode,
   googleLogInUrl,
+  hashAccountToken,
 } from "../../../functions/login";
-import type { Client } from "faunadb";
-import { VERCEL_GIT_COMMIT_SHA } from "../../../functions/environmentVariables";
+import type { TypedFaunaClient } from "../../../functions/typedFauna";
 import { z } from "zod";
 
 export const appRouter = trpc
-  .router<Client>()
+  .router<TypedFaunaClient>()
   .query("gitCommitSha", {
     input: z.void(),
     output: z.string().length(40).nullable(),
@@ -64,7 +68,7 @@ export const appRouter = trpc
       );
 
       if (accountInDefiny !== undefined) {
-        const accountTokenAndHash = crateAccountTokenAndHash();
+        const accountTokenAndHash = await crateAccountTokenAndHash();
         i.updateAccountTokenHash(ctx, {
           id: accountInDefiny.id,
           accountTokenHash: accountTokenAndHash.accountTokenHash,
@@ -107,7 +111,7 @@ export const appRouter = trpc
       if (preAccount === undefined) {
         return { type: "notGeneratedPreAccountToken" };
       }
-      const accountTokenAndHash = crateAccountTokenAndHash();
+      const accountTokenAndHash = await crateAccountTokenAndHash();
       await i.createAccount(ctx, {
         name: input.name,
         idIssueByGoogle: preAccount.idIssueByGoogle,
@@ -126,5 +130,5 @@ export type AppRouter = typeof appRouter;
 
 export default trpcNext.createNextApiHandler({
   router: appRouter,
-  createContext: () => i.getFaunaClient(),
+  createContext: () => i.getFaunaClient(FAUNA_SERVER_KEY),
 });

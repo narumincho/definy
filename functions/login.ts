@@ -5,8 +5,8 @@ import {
   isProduction,
 } from "./environmentVariables";
 import axios, { AxiosResponse } from "axios";
-import { createHash } from "node:crypto";
 import { createRandomToken } from "./uuid";
+import { webcrypto } from "node:crypto";
 
 export type AccountDataInProvider = {
   readonly id: string;
@@ -18,15 +18,26 @@ export const cratePreAccountToken = (): PreAccountToken => {
   return createRandomToken() as PreAccountToken;
 };
 
-export const crateAccountTokenAndHash = (): {
+export const crateAccountTokenAndHash = async (): Promise<{
   accountToken: AccountToken;
   accountTokenHash: Uint8Array;
-} => {
+}> => {
   const accountToken = createRandomToken() as AccountToken;
   return {
     accountToken,
-    accountTokenHash: createHash("sha256").update(accountToken).digest(),
+    accountTokenHash: await hashAccountToken(accountToken),
   };
+};
+
+export const hashAccountToken = async (
+  accountToken: AccountToken
+): Promise<Uint8Array> => {
+  return new Uint8Array(
+    await webcrypto.subtle.digest(
+      "SHA-256",
+      new TextEncoder().encode(accountToken)
+    )
+  );
 };
 
 export const googleLogInClientId =
