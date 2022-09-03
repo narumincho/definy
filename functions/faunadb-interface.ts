@@ -24,14 +24,21 @@ export const setup = async (client: f.TypedFaunaClient): Promise<void> => {
   );
 };
 
+const accountByIdIssueByGoogleIndex = f.Index<string>(
+  f.literal("accountByIdIssueByGoogle")
+);
+
 export const migration = async (client: f.TypedFaunaClient): Promise<void> => {
-  f.executeQuery(
+  await f.executeQuery(
     client,
-    f.CreateIndex({
-      name: "accountByIdIssueByGoogle",
-      source: f.Collection(f.literal("account")),
-      values: [{ field: ["data", "idIssueByGoogle"] }],
-    })
+    f.CreateIndex(
+      f.object({
+        name: f.literal("accountByIdIssueByGoogle"),
+        source: accountCollection,
+        terms: f.literal([{ field: ["data", "idIssueByGoogle"] }]),
+        values: f.literal([{ field: ["ref", "id"] }]),
+      })
+    )
   );
 };
 
@@ -145,11 +152,6 @@ export const findAndDeletePreAccount = async (
     }
   | undefined
 > => {
-  const rVarGuarded = f.Var<{
-    readonly ref: f.DocumentReference<PreAccountDocument>;
-    readonly data: PreAccountDocument;
-    readonly ts: string;
-  }>(f.literal("r"));
   const result = await f.executeQuery(
     client,
     f.letUtil(
@@ -178,12 +180,10 @@ export const findAndDeletePreAccount = async (
         f.literal(false)
       ),
       (r) =>
-        f.If<PreAccountDocument | false>(
-          f.IsBoolean(r),
-          f.literal(false),
+        f.ifIsBooleanGuarded(r, (rNotFalse) =>
           f.Do(
-            f.Delete(f.Select(f.literal("ref"), rVarGuarded)),
-            f.Select(f.literal("data"), rVarGuarded)
+            f.Delete(f.Select(f.literal("ref"), rNotFalse)),
+            f.Select(f.literal("data"), rNotFalse)
           )
         )
     )
@@ -277,10 +277,33 @@ export const updateAccountTokenHash = async (
   );
 };
 
-export const getAccountByAccountToken = (
+export const getAccountByAccountToken = async (
   client: f.TypedFaunaClient,
   accountTokenHash: Uint8Array
-): Promise<{ readonly name: string }> => {
-  // client(f.Filter(f.Paginate(f.Ref(accountCollection))));
-  return Promise.resolve({ name: "wip" });
+): Promise<{ readonly name: string } | undefined> => {
+  const result = await f.executeQuery(
+    client,
+    f.letUtil(
+      "accountId",
+      f.selectWithDefault(
+        f.literal(0),
+        f.Select(
+          f.literal("data"),
+          f.paginateSet(
+            f.Match(accountByIdIssueByGoogleIndex, f.literal(accountTokenHash)),
+            {}
+          )
+        ),
+        f.literal<false>(false)
+      ),
+      (accountId) =>
+        f.ifIsBooleanGuarded(accountId, (accountIdNotFalse) =>
+          f.Get(f.Ref(accountCollection, accountIdNotFalse))
+        )
+    )
+  );
+  if (result === false) {
+    return undefined;
+  }
+  return { name: result.data.name };
 };

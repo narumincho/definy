@@ -29,12 +29,15 @@ export type DocumentObject = {
 };
 
 export type DocumentValue =
+  | Scalar
+  | ReadonlyArray<DocumentValue>
+  | DocumentObject;
+
+export type Scalar =
   | boolean
   | null
   | number
   | string
-  | ReadonlyArray<DocumentValue>
-  | DocumentObject
   | Uint8Array
   | Date
   | Timestamp;
@@ -72,6 +75,10 @@ export type Set<T> = { _set: T };
 export type DocumentReference<data extends DocumentObject> = {
   readonly id: FaunaId;
   _documentReference: data;
+};
+
+export type IndexReference<data> = {
+  _indexReference: data;
 };
 
 export type Page<T> = {
@@ -197,6 +204,17 @@ export const If = <T>(
   return typedExprFrom(f.If(cond_expr, true_expr, false_expr));
 };
 
+export const ifIsBooleanGuarded = <T, R>(
+  expr: TypedExpr<T>,
+  resultExpr: (notBooleanExpr: TypedExpr<Exclude<T, boolean>>) => TypedExpr<R>
+): TypedExpr<R | false> => {
+  return If<R | false>(
+    IsBoolean(expr),
+    literal<false>(false),
+    resultExpr(typedExprFrom(expr))
+  );
+};
+
 /**
  * https://docs.fauna.com/fauna/current/api/fql/functions/exists?lang=javascript
  */
@@ -311,8 +329,9 @@ export const pageMap = <elementInput, elementOutput>(
  * @param parameter パラメーター自体に Expr を使用することはできない
  * @returns
  */
-export const paginateSet = <data extends DocumentObject>(
-  input: TypedExpr<Set<CollectionReference<data>>>,
+export const paginateSet = <data>(
+  input: TypedExpr<Set<data>>,
+  /** オブジェクトを直接式として指定することはできないようだ */
   parameter: {
     readonly ts?: TypedExpr<string> | undefined;
     readonly before?: TypedExpr<Cursor> | undefined;
@@ -321,7 +340,7 @@ export const paginateSet = <data extends DocumentObject>(
     readonly events?: TypedExpr<boolean> | undefined;
     readonly sources?: TypedExpr<boolean> | undefined;
   }
-): TypedExpr<Page<DocumentReference<data>>> => {
+): TypedExpr<Page<data>> => {
   return typedExprFrom(f.Paginate(input, parameter));
 };
 
@@ -330,7 +349,7 @@ export const paginateSet = <data extends DocumentObject>(
  */
 export const Documents = <data extends DocumentObject>(
   collection: TypedExpr<CollectionReference<data>>
-): TypedExpr<Set<CollectionReference<data>>> => {
+): TypedExpr<Set<DocumentReference<data>>> => {
   return typedExprFrom(f.Documents(collection));
 };
 
@@ -378,3 +397,118 @@ export const Equals = <T>(
 ): TypedExpr<boolean> => {
   return typedExprFrom(f.Equals(...params));
 };
+
+/**
+ * https://docs.fauna.com/fauna/current/api/fql/functions/createindex?lang=javascript
+ */
+export const CreateIndex = <data extends DocumentObject>(
+  param_object: TypedExpr<{
+    readonly name: string;
+    readonly source:
+      | CollectionReference<data>
+      | ReadonlyArray<CollectionReference<data>>;
+    readonly terms?: ReadonlyArray<{
+      readonly field: AllTuplePattern<{
+        readonly ref: DocumentReference<data>;
+        readonly data: data;
+        readonly ts: string;
+      }>;
+      readonly binding?: string;
+    }>;
+    readonly values?: ReadonlyArray<{
+      readonly field: AllTuplePattern<{
+        readonly ref: DocumentReference<data>;
+        readonly data: data;
+        readonly ts: string;
+      }>;
+      readonly binding?: string;
+      readonly reverse?: boolean;
+    }>;
+    readonly unique?: boolean;
+    readonly serialized?: boolean;
+    readonly data?: DocumentObject;
+    readonly ttl?: Timestamp;
+  }>
+): TypedExpr<{
+  readonly ref: IndexReference<data>;
+  readonly name: string;
+  readonly source:
+    | CollectionReference<data>
+    | ReadonlyArray<CollectionReference<data>>;
+  readonly ts: string;
+  readonly active: boolean;
+  readonly partitions: number;
+}> => {
+  return typedExprFrom(f.CreateIndex(param_object));
+};
+
+/**
+ * https://docs.fauna.com/fauna/current/api/fql/functions/match?lang=javascript
+ */
+export const Match = <data>(
+  index: TypedExpr<IndexReference<data>>,
+  terms: TypedExpr<Scalar | ReadonlyArray<Scalar>>
+): TypedExpr<Set<data>> => {
+  return typedExprFrom(f.Match(index, terms));
+};
+
+/**
+ * https://docs.fauna.com/fauna/current/api/fql/functions/iindex?lang=javascript
+ */
+export const Index = <data>(
+  name: TypedExpr<string>
+): TypedExpr<IndexReference<data>> => {
+  return typedExprFrom(f.Index(name));
+};
+
+type PickDeep<T, k> = T extends Record<string, unknown>
+  ? k extends [infer head extends keyof T, ...infer tail]
+    ? PickDeep<T[head], tail>
+    : never
+  : T;
+
+type AllTuplePattern<T> =
+  | keyof T
+  | ValueOf<{ [k in keyof T]: readonly [k, ...AllTuplePatternLoop<T[k]>] }>;
+
+type AllTuplePatternLoop<T> = T extends Record<string, unknown>
+  ? ValueOf<{ [k in keyof T]: [k, ...AllTuplePatternLoop<T[k]>] }>
+  : [];
+
+type ValueOf<V> = V[keyof V];
+
+type ExpectTrue<T extends true> = T;
+
+type Equal<X, Y> = (<T>() => T extends X ? 1 : 2) extends <T>() => T extends Y
+  ? 1
+  : 2
+  ? true
+  : false;
+
+/** 型のテストケース */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+type cases = [
+  ExpectTrue<
+    Equal<
+      AllTuplePattern<{ a: "aValue"; b: "bValue" }>,
+      "a" | "b" | readonly ["a"] | readonly ["b"]
+    >
+  >,
+  ExpectTrue<
+    Equal<
+      AllTuplePattern<{ a: { aA: 32; aB: 34 }; b: { bA: ""; bB: 38 } }>,
+      | "a"
+      | "b"
+      | readonly ["a", "aA"]
+      | readonly ["a", "aB"]
+      | readonly ["b", "bA"]
+      | readonly ["b", "bB"]
+    >
+  >,
+  ExpectTrue<
+    Equal<
+      AllTuplePattern<{ a0: { a1: { a2: { a3: "" } } } }>,
+      "a0" | readonly ["a0", "a1", "a2", "a3"]
+    >
+  >
+];

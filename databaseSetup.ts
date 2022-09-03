@@ -1,7 +1,8 @@
+import { getFaunaClient, migration } from "./functions/faunadb-interface";
 import { faunaServerKey } from "./databaseSetupSecret";
 
 export const main = async (): Promise<void> => {
-  // マイグレーションのコードとか呼び出す場所
+  await migration(getFaunaClient(faunaServerKey));
 };
 
 main();
