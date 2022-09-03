@@ -12,12 +12,12 @@ import { Editor } from "../client/ui/Editor";
 import { ListItem } from "../client/editor/list";
 import { Text } from "../components/Text";
 import { WithHeader } from "../components/WithHeader";
-import { useDefinyApp } from "../client/hook/useDefinyApp";
+import { useAccountToken } from "../hooks/useAccountToken";
 import { useLanguage } from "../hooks/useLanguage";
 
 export const LocalProjectPage = (): React.ReactElement => {
-  const useDefinyAppResult = useDefinyApp();
   const language = useLanguage();
+  const useAccountTokenResult = useAccountToken();
   const fileInputElement = React.useRef<HTMLInputElement>(null);
   const [isLoaded, setIsLoaded] = React.useState<boolean>(false);
 
@@ -46,13 +46,13 @@ export const LocalProjectPage = (): React.ReactElement => {
     <WithHeader
       location={{ type: "tools" }}
       language={language}
-      logInState={useDefinyAppResult.logInState}
       titleItemList={[]}
       title={{
         japanese: "ローカルファイルから開く",
         english: "Open from local file",
         esperanto: "Malfermu el loka dosiero",
       }}
+      useAccountTokenResult={useAccountTokenResult}
     >
       <Text
         language={language}

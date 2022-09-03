@@ -19,7 +19,7 @@ const IndexPage = (): React.ReactElement => {
         english: "",
         esperanto: "",
       }}
-      logInState={d.LogInState.Guest}
+      useAccountTokenResult={useAccountTokenResult}
       titleItemList={[]}
       location={{ type: "home" }}
       language={language}

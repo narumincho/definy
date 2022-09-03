@@ -1,27 +1,83 @@
-import * as f from "faunadb";
+import * as f from "./typedFauna";
 import {
   AccountId,
   Language,
   Location,
   PreAccountToken,
 } from "../common/zodType";
-import { FAUNA_SERVER_KEY } from "./environmentVariables";
 
-export const getFaunaClient = (): f.Client => {
-  return new f.Client({
-    secret: FAUNA_SERVER_KEY,
+export const getFaunaClient = (secret: string): f.TypedFaunaClient => {
+  return f.crateFaunaClient({
+    secret,
     domain: "db.us.fauna.com",
   });
 };
 
-const openConnectStateCollection = f.Collection("openConnectState");
+export const setup = async (client: f.TypedFaunaClient): Promise<void> => {
+  await f.executeQuery(
+    client,
+    f.Do(
+      f.CreateCollection(f.literal({ name: openConnectStateCollectionName })),
+      f.CreateCollection(f.literal({ name: preAccountCollectionName })),
+      f.CreateCollection(f.literal({ name: accountCollectionName }))
+    )
+  );
+};
+
+const accountByIdIssueByGoogleIndexName = "accountByIdIssueByGoogle";
+const accountByIdIssueByGoogleIndex = f.Index<readonly [string], string>(
+  f.literal(accountByIdIssueByGoogleIndexName)
+);
+
+const accountByAccountTokenName = "accountByAccountToken";
+const accountByAccountTokenIndex = f.Index<readonly [Uint8Array], string>(
+  f.literal(accountByAccountTokenName)
+);
+
+const createAccountByIdIssueByGoogleIndex = async (
+  client: f.TypedFaunaClient
+): Promise<void> => {
+  await f.executeQuery(
+    client,
+    f.CreateIndex(
+      f.object({
+        name: f.literal(accountByIdIssueByGoogleIndexName),
+        source: accountCollection,
+        terms: f.literal([{ field: ["data", "idIssueByGoogle"] }]),
+        values: f.literal([{ field: ["ref", "id"] }]),
+      })
+    )
+  );
+};
+
+export const migration = async (client: f.TypedFaunaClient): Promise<void> => {
+  await f.executeQuery(
+    client,
+    f.CreateIndex(
+      f.object({
+        name: f.literal(accountByAccountTokenName),
+        source: accountCollection,
+        terms: f.literal([{ field: ["data", "accountTokenHash"] }]),
+        values: f.literal([{ field: ["ref", "id"] }]),
+      })
+    )
+  );
+};
+
+const openConnectStateCollectionName = "openConnectState";
+const openConnectStateCollection = f.Collection<OpenConnectState>(
+  f.literal(openConnectStateCollectionName)
+);
 
 type OpenConnectState = {
   readonly location: Location;
   readonly language: Language;
 };
 
-const preAccountCollection = f.Collection("preAccount");
+const preAccountCollectionName = "preAccount";
+const preAccountCollection = f.Collection<PreAccountDocument>(
+  f.literal(preAccountCollectionName)
+);
 
 type PreAccountDocument = {
   readonly preAccountToken: PreAccountToken;
@@ -31,7 +87,10 @@ type PreAccountDocument = {
   readonly language: Language;
 };
 
-const accountCollection = f.Collection("account");
+const accountCollectionName = "account";
+const accountCollection = f.Collection<AccountDocument>(
+  f.literal(accountCollectionName)
+);
 
 type AccountDocument = {
   readonly name: string;
@@ -39,39 +98,39 @@ type AccountDocument = {
   readonly accountTokenHash: Uint8Array;
 };
 
-type FaunaId = string | number;
-
-const faunaIdToBigint = (faunaId: FaunaId): bigint => BigInt(faunaId);
-
 export const openConnectStateCreate = async (
-  client: f.Client,
+  client: f.TypedFaunaClient,
   param: OpenConnectState
 ): Promise<string> => {
-  const r = await client.query<{
-    readonly ref: { readonly value: { readonly id: string } };
-  }>(
-    f.Create(f.Ref(openConnectStateCollection, f.NewId()), {
-      data: param,
-    })
+  const r = await f.executeQuery(
+    client,
+    f.Create(
+      f.Ref(openConnectStateCollection, f.NewId()),
+      f.literal({
+        data: param,
+      })
+    )
   );
-  return r.ref.value.id;
+  return f.faunaIdToBigint(r.ref.id).toString();
 };
 
 export const getAndDeleteOpenConnectStateByState = async (
-  client: f.Client,
+  client: f.TypedFaunaClient,
   state: string
 ): Promise<OpenConnectState | undefined> => {
-  const result = await client.query<OpenConnectState | false>(
-    f.Let(
-      { ref: f.Ref(openConnectStateCollection, state) },
-      f.If(
-        f.Exists(f.Var("ref")),
-        f.Let(
-          { refValue: f.Get(f.Var("ref")) },
-          f.Do(f.Delete(f.Var("ref")), f.Select("data", f.Var("refValue")))
-        ),
-        false
-      )
+  const result = await f.executeQuery(
+    client,
+    f.letUtil(
+      "ref",
+      f.Ref(openConnectStateCollection, f.literal(state)),
+      (ref) =>
+        f.If<OpenConnectState | false>(
+          f.Exists(ref),
+          f.letUtil("refValue", f.Get(ref), (refValue) =>
+            f.Do(f.Delete(ref), f.Select(f.literal("data"), refValue))
+          ),
+          f.literal(false)
+        )
     )
   );
   if (result === false) {
@@ -81,7 +140,7 @@ export const getAndDeleteOpenConnectStateByState = async (
 };
 
 export const createPreAccount = async (
-  client: f.Client,
+  client: f.TypedFaunaClient,
   param: {
     readonly preAccountToken: PreAccountToken;
     readonly idIssueByGoogle: string;
@@ -97,13 +156,14 @@ export const createPreAccount = async (
     location: param.location,
     language: param.language,
   };
-  await client.query(
-    f.Create(f.Ref(preAccountCollection, f.NewId()), { data })
+  await f.executeQuery(
+    client,
+    f.Create(f.Ref(preAccountCollection, f.NewId()), f.literal({ data }))
   );
 };
 
 export const findAndDeletePreAccount = async (
-  client: f.Client,
+  client: f.TypedFaunaClient,
   preAccountToken: PreAccountToken
 ): Promise<
   | {
@@ -114,35 +174,40 @@ export const findAndDeletePreAccount = async (
     }
   | undefined
 > => {
-  const result = await client.query<PreAccountDocument | false>(
-    f.Let(
-      {
-        result: f.Select(
-          ["data", 0],
-          f.Filter(
-            f.Map(
-              f.Paginate(f.Documents(preAccountCollection)),
-              f.Lambda("document", f.Get(f.Var("document")))
+  const result = await f.executeQuery(
+    client,
+    f.letUtil(
+      "r",
+      f.selectWithFalse(
+        f.literal(0),
+        f.selectWithDefault(
+          f.literal("data"),
+          f.pageFilter(
+            f.pageMap(
+              f.paginateSet(f.Documents(preAccountCollection), {}),
+              f.lambdaUtil("document", (document) => f.Get(document))
             ),
-            f.Lambda(
-              "document",
+            f.lambdaUtil("document", (document) =>
               f.Equals(
-                f.Select(["data", "preAccountToken"], f.Var("document")),
-                preAccountToken
+                f.Select(
+                  f.literal("preAccountToken"),
+                  f.Select(f.literal("data"), document)
+                ),
+                f.literal(preAccountToken)
               )
             )
           ),
-          false
+          f.literal<false>(false)
         ),
-      },
-      f.If(
-        f.IsBoolean(f.Var("result")),
-        false,
-        f.Do(
-          f.Delete(f.Select("ref", f.Var("result"))),
-          f.Select("data", f.Var("result"))
+        f.literal(false)
+      ),
+      (r) =>
+        f.ifIsBooleanGuarded(r, (rNotFalse) =>
+          f.Do(
+            f.Delete(f.Select(f.literal("ref"), rNotFalse)),
+            f.Select(f.literal("data"), rNotFalse)
+          )
         )
-      )
     )
   );
   if (result === false) {
@@ -157,71 +222,112 @@ export const findAndDeletePreAccount = async (
 };
 
 export const createAccount = async (
-  client: f.Client,
+  client: f.TypedFaunaClient,
   param: AccountDocument
 ): Promise<AccountId> => {
-  const result = await client.query<FaunaId>(
-    f.Let(
-      { id: f.NewId() },
+  const result = await f.executeQuery(
+    client,
+    f.letUtil("id", f.NewId(), (id) =>
       f.Do(
-        f.Create(f.Ref(accountCollection, f.Var("id")), {
-          data: param,
-        }),
-        f.Var("id")
+        f.Create(
+          f.Ref(accountCollection, id),
+          f.object({
+            data: f.literal(param),
+          })
+        ),
+        id
       )
     )
   );
-  return faunaIdToBigint(result) as AccountId;
+  return f.faunaIdToBigint(result) as AccountId;
 };
 
 export const findAccountFromIdIssueByGoogle = async (
-  client: f.Client,
+  client: f.TypedFaunaClient,
   idInGoogle: string
 ): Promise<{ readonly id: AccountId; readonly name: string } | undefined> => {
-  const result = await client.query<
-    | {
-        readonly ref: { readonly id: FaunaId };
-        readonly data: AccountDocument;
-      }
-    | false
-  >(
-    f.Select(
-      ["data", 0],
-      f.Filter(
-        f.Map(
-          f.Paginate(f.Documents(accountCollection)),
-          f.Lambda("document", f.Get(f.Var("document")))
+  const result = await f.executeQuery(
+    client,
+    f.letUtil(
+      "accountId",
+      f.selectWithFalse(
+        f.literal(0),
+        f.selectWithFalse(
+          f.literal("data"),
+          f.paginateSet(
+            f.Match(
+              accountByIdIssueByGoogleIndex,
+              f.literal([idInGoogle] as const)
+            ),
+            { size: f.literal(1) }
+          ),
+          f.literal<false>(false)
         ),
-        f.Lambda(
-          "document",
-          f.Equals(
-            f.Select(["data", "idIssueByGoogle"], f.Var("document")),
-            idInGoogle
-          )
-        )
+        f.literal<false>(false)
       ),
-      false
+      (accountId) =>
+        f.ifIsBooleanGuarded(accountId, (accountIdNotFalse) =>
+          f.Get(f.Ref(accountCollection, accountIdNotFalse))
+        )
     )
   );
   if (result === false) {
     return undefined;
   }
   return {
-    id: faunaIdToBigint(result.ref.id) as AccountId,
+    id: f.faunaIdToBigint(result.ref.id) as AccountId,
     name: result.data.name,
   };
 };
 
 export const updateAccountTokenHash = async (
-  client: f.Client,
+  client: f.TypedFaunaClient,
   param: { readonly id: AccountId; readonly accountTokenHash: Uint8Array }
 ): Promise<void> => {
   const data: Pick<AccountDocument, "accountTokenHash"> = {
     accountTokenHash: param.accountTokenHash,
   };
-  await client.query(
-    f.Update(f.Ref(accountCollection, param.id.toString()), {
-      data,
-    })
+  await f.executeQuery(
+    client,
+    f.Update(
+      f.Ref(accountCollection, f.literal(param.id.toString())),
+      f.object({
+        data: f.literal(data),
+      })
+    )
   );
+};
+
+export const getAccountByAccountToken = async (
+  client: f.TypedFaunaClient,
+  accountTokenHash: Uint8Array
+): Promise<{ readonly name: string } | undefined> => {
+  const result = await f.executeQuery(
+    client,
+    f.letUtil(
+      "accountId",
+      f.selectWithDefault(
+        f.literal(0),
+        f.Select(
+          f.literal("data"),
+          f.paginateSet(
+            f.Match(
+              accountByAccountTokenIndex,
+              f.literal([accountTokenHash] as const)
+            ),
+            {}
+          )
+        ),
+        f.literal<false>(false)
+      ),
+      (accountId) =>
+        f.ifIsBooleanGuarded(accountId, (accountIdNotFalse) =>
+          f.Get(f.Ref(accountCollection, accountIdNotFalse))
+        )
+    )
+  );
+  if (result === false) {
+    return undefined;
+  }
+  return { name: result.data.name };
 };

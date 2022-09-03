@@ -17,7 +17,8 @@
     "update-package-json": "ncu -u",
     "start-definy": "pnpm tsc --project ./tsconfig-purs-ffi.json && pnpm exec spago run --main Definy.Start && firebase emulators:start --project definy-lang --config ./distribution/definy/firebase.json",
     "package-vscode-extension": "cd ./distribution/definy-extension && pnpm exec vsce package",
-    "dev-local": "pnpm exec vercel dev"
+    "dev-local": "pnpm exec vercel dev",
+    "database-setup": "node -r @swc-node/register ./databaseSetup.ts"
   },
   "engines": {
     "node": "16"
@@ -26,31 +27,31 @@
     "@babel/core": "7.18.13",
     "@emotion/css": "11.10.0",
     "@material-ui/core": "4.12.4",
+    "@next/eslint-plugin-next": "12.2.5",
     "@storybook/addon-a11y": "6.5.10",
     "@storybook/addon-actions": "6.5.10",
     "@storybook/addon-essentials": "6.5.10",
     "@storybook/addon-links": "6.5.10",
     "@storybook/react": "6.5.10",
+    "@swc-node/register": "1.5.1",
     "@types/fs-extra": "9.0.13",
-    "@types/jest": "28.1.8",
+    "@types/jest": "29.0.0",
     "@types/jsonwebtoken": "8.5.9",
-    "@types/node": "18.7.13",
-    "@types/react": "18.0.17",
+    "@types/node": "18.7.14",
+    "@types/react": "18.0.18",
     "@types/react-dom": "18.0.6",
-    "@types/vscode": "1.70.0",
-    "@typescript-eslint/eslint-plugin": "5.35.1",
-    "@typescript-eslint/parser": "5.35.1",
+    "@types/vscode": "1.71.0",
+    "@typescript-eslint/eslint-plugin": "5.36.1",
+    "@typescript-eslint/parser": "5.36.1",
     "axios": "0.27.2",
     "babel-loader": "8.2.5",
     "dependency-cruiser": "11.15.0",
-    "esbuild": "0.15.5",
+    "esbuild": "0.15.6",
     "eslint": "8.23.0",
     "eslint-config-prettier": "8.5.0",
     "eslint-plugin-prettier": "4.2.1",
-    "eslint-plugin-react": "7.31.1",
-    "eslint-plugin-react-hooks": "4.6.0",
     "firebase-admin": "11.0.1",
-    "firebase-functions": "3.22.0",
+    "firebase-functions": "3.23.0",
     "firebase-tools": "11.8.0",
     "fs-extra": "10.1.0",
     "jest": "29.0.1",
@@ -68,8 +69,8 @@
     "ts-jest": "28.0.8",
     "typed-admin-firestore": "1.2.2",
     "typescript": "4.8.2",
-    "vercel": "28.2.0",
-    "vsce": "2.10.2"
+    "vercel": "28.2.2",
+    "vsce": "2.11.0"
   },
   "jest": {
     "preset": "ts-jest"
@@ -79,8 +80,7 @@
       "eslint:all",
       "plugin:@typescript-eslint/recommended",
       "plugin:prettier/recommended",
-      "plugin:react/recommended",
-      "plugin:react-hooks/recommended"
+      "plugin:@next/next/recommended"
     ],
     "settings": {
       "react": {
@@ -235,7 +235,7 @@
   },
   "packageManager": "pnpm@7.9.5",
   "dependencies": {
-    "@emotion/react": "11.10.0",
+    "@emotion/react": "11.10.4",
     "@trpc/client": "9.27.2",
     "@trpc/next": "9.27.2",
     "@trpc/react": "9.27.2",

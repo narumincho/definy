@@ -1,25 +1,36 @@
 import * as React from "react";
-import * as d from "../localData";
 import * as zodType from "../common/zodType";
-import type { CSSObject } from "@emotion/react";
 import { Image } from "./Image";
 import { Link } from "./Link";
+import { UseAccountTokenResult } from "../hooks/useAccountToken";
 import type { UseDefinyAppResult } from "../client/hook/useDefinyApp";
+import { trpc } from "../hooks/trpc";
+import { useRouter } from "next/router";
 
 export type TitleItem = {
   readonly name: string;
   readonly location: zodType.Location;
 };
 
-export type Props = Pick<UseDefinyAppResult, "logInState"> & {
+export type Props = {
   readonly onLogInButtonClick: UseDefinyAppResult["logIn"];
   readonly titleItemList: ReadonlyArray<TitleItem>;
   /** undefined でログインボタン非表示 */
   readonly location: zodType.Location | undefined;
   readonly language: zodType.Language;
+  readonly useAccountTokenResult: UseAccountTokenResult;
 };
 
-export const Header: React.FC<Props> = React.memo((props) => {
+export const Header = (props: Props): React.ReactElement => {
+  const requestLogInUrl = trpc.useMutation("requestLogInUrl");
+  const { push: routerPush } = useRouter();
+
+  React.useEffect(() => {
+    if (requestLogInUrl.isSuccess) {
+      routerPush(new URL(requestLogInUrl.data));
+    }
+  }, [requestLogInUrl.isSuccess, routerPush, requestLogInUrl.data]);
+
   return (
     <div
       css={{
@@ -68,103 +79,71 @@ export const Header: React.FC<Props> = React.memo((props) => {
         <></>
       ) : (
         <UserViewOrLogInButton
-          logInState={props.logInState}
+          accountToken={props.useAccountTokenResult.accountToken}
           language={props.language}
           onLogInButtonClick={() => props.onLogInButtonClick()}
         />
       )}
     </div>
   );
-});
-Header.displayName = "Header";
-
-const UserViewOrLogInButton: React.FC<
-  Pick<UseDefinyAppResult, "logInState"> & {
-    onLogInButtonClick: () => void;
-    language: zodType.Language;
-  }
-> = (props) => {
-  switch (props.logInState._) {
-    case "LoadingAccountTokenFromIndexedDB":
-      return (
-        <div css={userViewOrLogInButtonStyle}>
-          アクセストークンをindexedDBから読み取り中……
-        </div>
-      );
-
-    case "Guest":
-      return (
-        <LogInButtonList
-          language={props.language}
-          onLogInButtonClick={props.onLogInButtonClick}
-        />
-      );
-    case "LoadingAccountData":
-      return (
-        <div css={userViewOrLogInButtonStyle}>アカウントの情報を取得中</div>
-      );
-
-    case "LoggedIn": {
-      // APIを呼ぶようにする
-      const accountResourceState: d.ResourceState<d.Account> | undefined =
-        accountResourceStateFunc();
-      if (
-        accountResourceState === undefined ||
-        accountResourceState._ !== "Loaded"
-      ) {
-        return (
-          <div css={userViewOrLogInButtonStyle}>
-            ログインしているアカウントを取得中……
-          </div>
-        );
-      }
-      return (
-        <SettingLink
-          language={props.language}
-          account={accountResourceState.dataWithTime.data}
-        />
-      );
-    }
-  }
-  return <div css={userViewOrLogInButtonStyle}>ログインの準備中</div>;
 };
 
-const accountResourceStateFunc = (): d.ResourceState<d.Account> | undefined => {
-  return undefined;
-};
-
-const userViewOrLogInButtonStyle: CSSObject = {
-  justifySelf: "end",
-  alignSelf: "center",
+const UserViewOrLogInButton = (props: {
+  readonly onLogInButtonClick: () => void;
+  readonly language: zodType.Language;
+  readonly accountToken: zodType.AccountToken | undefined | null;
+}): React.ReactElement => {
+  if (props.accountToken === null) {
+    return <div>...</div>;
+  }
+  if (props.accountToken === undefined) {
+    return (
+      <LogInButtonList
+        language={props.language}
+        onLogInButtonClick={props.onLogInButtonClick}
+      />
+    );
+  }
+  return (
+    <SettingLink language={props.language} accountToken={props.accountToken} />
+  );
 };
 
 const SettingLink: React.FC<{
-  account: d.Account;
+  accountToken: zodType.AccountToken;
   language: zodType.Language;
-}> = (props) => (
-  <Link
-    style={{
-      justifySelf: "end",
-      display: "grid",
-      gridTemplateColumns: "32px auto",
-      alignItems: "center",
-      padding: 8,
-      gap: 8,
-    }}
-    language={props.language}
-    // 後に設定に変更する
-    location={{ type: "home" }}
-  >
-    <Image
-      width={32}
-      height={32}
-      alt="設定"
-      imageHash={props.account.imageHash}
-      isCircle
-    />
-    <div>{props.account.name}</div>
-  </Link>
-);
+}> = (props) => {
+  const account = trpc.useQuery([
+    "getAccountFromAccountToken",
+    props.accountToken,
+  ]);
+  return (
+    <Link
+      style={{
+        justifySelf: "end",
+        display: "grid",
+        gridTemplateColumns: "32px auto",
+        alignItems: "center",
+        padding: 8,
+        gap: 8,
+      }}
+      language={props.language}
+      // 後に設定に変更する
+      location={{ type: "home" }}
+    >
+      <img
+        css={{
+          width: 32,
+          height: 32,
+          borderRadius: "50%",
+        }}
+        alt="設定"
+        src=""
+      />
+      <div>{account?.data?.name ?? "..."}</div>
+    </Link>
+  );
+};
 
 const LogInButtonList: React.FC<{
   readonly language: zodType.Language;
