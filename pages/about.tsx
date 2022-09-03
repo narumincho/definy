@@ -6,14 +6,15 @@ import Link from "next/link";
 import { Text } from "../components/Text";
 import { WithHeader } from "../components/WithHeader";
 import { trpc } from "../hooks/trpc";
+import { useAccountToken } from "../hooks/useAccountToken";
 import { useLanguage } from "../hooks/useLanguage";
 
 export const AboutPage = (): React.ReactElement => {
   const language = useLanguage();
+  const useAccountTokenResult = useAccountToken();
 
   return (
     <WithHeader
-      logInState={d.LogInState.Guest}
       location={{ type: "about" }}
       language={language}
       titleItemList={[]}
@@ -22,6 +23,7 @@ export const AboutPage = (): React.ReactElement => {
         english: "about definy",
         esperanto: "pri definy",
       }}
+      useAccountTokenResult={useAccountTokenResult}
     >
       <div css={{ padding: 16, display: "grid", gap: 8 }}>
         <Text

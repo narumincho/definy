@@ -4,29 +4,28 @@ import { Header, TitleItem } from "./Header";
 import Head from "next/head";
 import { LoadingBoxCenter } from "./LoadingBox";
 import type { TextProps } from "./Text";
-import type { UseDefinyAppResult } from "../client/hook/useDefinyApp";
+import { UseAccountTokenResult } from "../hooks/useAccountToken";
 import iconPng from "../assets/icon.png";
 import { trpc } from "../hooks/trpc";
 import { useRouter } from "next/router";
 import { zodLanguageToQueryValue } from "../common/url";
 
-export const WithHeader = (
-  props: Pick<UseDefinyAppResult, "logInState"> & {
-    readonly titleItemList: ReadonlyArray<TitleItem>;
-    readonly location: zodType.Location | undefined;
-    readonly language: zodType.Language;
-    readonly children: React.ReactNode;
-    readonly title: TextProps;
-  }
-): React.ReactElement => {
+export const WithHeader = (props: {
+  readonly titleItemList: ReadonlyArray<TitleItem>;
+  readonly location: zodType.Location | undefined;
+  readonly language: zodType.Language;
+  readonly children: React.ReactNode;
+  readonly title: TextProps;
+  readonly useAccountTokenResult: UseAccountTokenResult;
+}): React.ReactElement => {
   const requestLogInUrl = trpc.useMutation("requestLogInUrl");
-  const router = useRouter();
+  const { push: routerPush } = useRouter();
 
   React.useEffect(() => {
     if (requestLogInUrl.isSuccess) {
-      router.push(new URL(requestLogInUrl.data));
+      routerPush(new URL(requestLogInUrl.data));
     }
-  }, [requestLogInUrl.isSuccess, router, requestLogInUrl.data]);
+  }, [requestLogInUrl.isSuccess, routerPush, requestLogInUrl.data]);
 
   return (
     <>
@@ -46,7 +45,6 @@ export const WithHeader = (
         lang={zodLanguageToQueryValue(props.language)}
       >
         <Header
-          logInState={props.logInState}
           location={props.location}
           language={props.language}
           titleItemList={[]}
@@ -63,6 +61,7 @@ export const WithHeader = (
               language: props.language,
             });
           }}
+          useAccountTokenResult={props.useAccountTokenResult}
         />
         <div
           css={{

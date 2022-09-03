@@ -1,12 +1,13 @@
 import * as React from "react";
-import * as d from "../localData";
 import { Link } from "../components/Link";
 import { Text } from "../components/Text";
 import { WithHeader } from "../components/WithHeader";
+import { useAccountToken } from "../hooks/useAccountToken";
 import { useLanguage } from "../hooks/useLanguage";
 
 export const ToolListPage = (): React.ReactElement => {
   const language = useLanguage();
+  const useAccountTokenResult = useAccountToken();
 
   return (
     <WithHeader
@@ -17,7 +18,7 @@ export const ToolListPage = (): React.ReactElement => {
       }}
       location={{ type: "tools" }}
       language={language}
-      logInState={d.LogInState.Guest}
+      useAccountTokenResult={useAccountTokenResult}
       titleItemList={[]}
     >
       <h2>

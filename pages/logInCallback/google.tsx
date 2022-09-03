@@ -1,5 +1,4 @@
 import * as React from "react";
-import * as d from "../../localData";
 import { LoadingBoxCenter } from "../../components/LoadingBox";
 import { Text } from "../../components/Text";
 import { WithHeader } from "../../components/WithHeader";
@@ -44,7 +43,7 @@ const codeAndStateIsEqual = (
 export const LogInCallbackGoogle = (): React.ReactElement => {
   const logInByCodeAndState = trpc.useMutation("logInByCodeAndState");
   const router = useRouter();
-  const { setAccountToken } = useAccountToken();
+  const useAccountTokenResult = useAccountToken();
 
   React.useEffect(() => {
     if (logInByCodeAndState.isSuccess) {
@@ -73,6 +72,7 @@ export const LogInCallbackGoogle = (): React.ReactElement => {
           );
           return;
         case "logInOk": {
+          const setAccountToken = useAccountTokenResult.setAccountToken;
           setAccountToken(logInByCodeAndState.data.accountToken);
           router.replace(
             zodTypeLocationAndLanguageToUrl(
@@ -87,7 +87,7 @@ export const LogInCallbackGoogle = (): React.ReactElement => {
     logInByCodeAndState.isSuccess,
     router,
     logInByCodeAndState.data,
-    setAccountToken,
+    useAccountTokenResult.setAccountToken,
   ]);
 
   const onUpdate = React.useCallback(
@@ -111,7 +111,6 @@ export const LogInCallbackGoogle = (): React.ReactElement => {
   });
   return (
     <WithHeader
-      logInState={d.LogInState.LoadingAccountData}
       location={undefined}
       language="english"
       titleItemList={[]}
@@ -120,6 +119,7 @@ export const LogInCallbackGoogle = (): React.ReactElement => {
         english: "log in callback",
         esperanto: "ensalutu revokon",
       }}
+      useAccountTokenResult={useAccountTokenResult}
     >
       <div css={{ padding: 16, display: "grid", gap: 8, color: "white" }}>
         {queryBasedState.type === "loading" ? "reading query parameter" : <></>}

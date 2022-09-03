@@ -29,6 +29,24 @@ export const appRouter = trpc
       return VERCEL_GIT_COMMIT_SHA;
     },
   })
+  .query("getAccountFromAccountToken", {
+    input: zodType.AccountToken,
+    output: z.nullable(
+      z.object({
+        name: z.string(),
+      })
+    ),
+    resolve: async ({ ctx, input }) => {
+      const accountTokenHash = await hashAccountToken(input);
+      const account = await i.getAccountByAccountToken(ctx, accountTokenHash);
+      if (account === undefined) {
+        return null;
+      }
+      return {
+        name: account.name,
+      };
+    },
+  })
   .mutation("requestLogInUrl", {
     input: z.object({ location: zodType.Location, language: zodType.Language }),
     output: z.string().url(),

@@ -69,9 +69,6 @@ const CreateAccount = (): React.ReactElement => {
 
   return (
     <WithHeader
-      logInState={{
-        _: "LoadingAccountTokenFromIndexedDB",
-      }}
       titleItemList={[]}
       location={undefined}
       language={language}
@@ -80,6 +77,7 @@ const CreateAccount = (): React.ReactElement => {
         english: "Create a definy account",
         esperanto: "Kreu definy-konton",
       }}
+      useAccountTokenResult={useAccountTokenResult}
     >
       <div
         css={{
