@@ -1,5 +1,4 @@
 import * as React from "react";
-import * as d from "../localData";
 import * as zodType from "../common/zodType";
 import type { CSSObject } from "@emotion/react";
 import Link from "next/link";
