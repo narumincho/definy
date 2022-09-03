@@ -140,7 +140,7 @@ const SettingLink: React.FC<{
         alt="設定"
         src=""
       />
-      <div>アカウント名</div>
+      <div>{account?.data?.name ?? "..."}</div>
     </Link>
   );
 };

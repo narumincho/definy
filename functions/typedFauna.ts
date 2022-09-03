@@ -77,8 +77,9 @@ export type DocumentReference<data extends DocumentObject> = {
   _documentReference: data;
 };
 
-export type IndexReference<data> = {
-  _indexReference: data;
+export type IndexReference<terms extends ReadonlyArray<Scalar>, value> = {
+  _indexReference: value;
+  _indexReferenceTerms: terms;
 };
 
 export type Page<T> = {
@@ -430,7 +431,7 @@ export const CreateIndex = <data extends DocumentObject>(
     readonly ttl?: Timestamp;
   }>
 ): TypedExpr<{
-  readonly ref: IndexReference<data>;
+  readonly ref: IndexReference<ReadonlyArray<Scalar>, data>;
   readonly name: string;
   readonly source:
     | CollectionReference<data>
@@ -445,19 +446,19 @@ export const CreateIndex = <data extends DocumentObject>(
 /**
  * https://docs.fauna.com/fauna/current/api/fql/functions/match?lang=javascript
  */
-export const Match = <data>(
-  index: TypedExpr<IndexReference<data>>,
-  terms: TypedExpr<Scalar | ReadonlyArray<Scalar>>
-): TypedExpr<Set<data>> => {
+export const Match = <terms extends ReadonlyArray<Scalar>, value>(
+  index: TypedExpr<IndexReference<terms, value>>,
+  terms: TypedExpr<terms>
+): TypedExpr<Set<value>> => {
   return typedExprFrom(f.Match(index, terms));
 };
 
 /**
  * https://docs.fauna.com/fauna/current/api/fql/functions/iindex?lang=javascript
  */
-export const Index = <data>(
+export const Index = <terms extends ReadonlyArray<Scalar>, data>(
   name: TypedExpr<string>
-): TypedExpr<IndexReference<data>> => {
+): TypedExpr<IndexReference<terms, data>> => {
   return typedExprFrom(f.Index(name));
 };
 

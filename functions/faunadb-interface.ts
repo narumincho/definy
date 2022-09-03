@@ -24,18 +24,40 @@ export const setup = async (client: f.TypedFaunaClient): Promise<void> => {
   );
 };
 
-const accountByIdIssueByGoogleIndex = f.Index<string>(
-  f.literal("accountByIdIssueByGoogle")
+const accountByIdIssueByGoogleIndexName = "accountByIdIssueByGoogle";
+const accountByIdIssueByGoogleIndex = f.Index<readonly [string], string>(
+  f.literal(accountByIdIssueByGoogleIndexName)
 );
+
+const accountByAccountTokenName = "accountByAccountToken";
+const accountByAccountTokenIndex = f.Index<readonly [Uint8Array], string>(
+  f.literal(accountByAccountTokenName)
+);
+
+const createAccountByIdIssueByGoogleIndex = async (
+  client: f.TypedFaunaClient
+): Promise<void> => {
+  await f.executeQuery(
+    client,
+    f.CreateIndex(
+      f.object({
+        name: f.literal(accountByIdIssueByGoogleIndexName),
+        source: accountCollection,
+        terms: f.literal([{ field: ["data", "idIssueByGoogle"] }]),
+        values: f.literal([{ field: ["ref", "id"] }]),
+      })
+    )
+  );
+};
 
 export const migration = async (client: f.TypedFaunaClient): Promise<void> => {
   await f.executeQuery(
     client,
     f.CreateIndex(
       f.object({
-        name: f.literal("accountByIdIssueByGoogle"),
+        name: f.literal(accountByAccountTokenName),
         source: accountCollection,
-        terms: f.literal([{ field: ["data", "idIssueByGoogle"] }]),
+        terms: f.literal([{ field: ["data", "accountTokenHash"] }]),
         values: f.literal([{ field: ["ref", "id"] }]),
       })
     )
@@ -226,28 +248,27 @@ export const findAccountFromIdIssueByGoogle = async (
 ): Promise<{ readonly id: AccountId; readonly name: string } | undefined> => {
   const result = await f.executeQuery(
     client,
-    f.selectWithFalse(
-      f.literal(0),
-      f.selectWithDefault(
-        f.literal("data"),
-        f.pageFilter(
-          f.pageMap(
-            f.paginateSet(f.Documents(accountCollection), {}),
-            f.lambdaUtil("document", (document) => f.Get(document))
+    f.letUtil(
+      "accountId",
+      f.selectWithFalse(
+        f.literal(0),
+        f.selectWithFalse(
+          f.literal("data"),
+          f.paginateSet(
+            f.Match(
+              accountByIdIssueByGoogleIndex,
+              f.literal([idInGoogle] as const)
+            ),
+            { size: f.literal(1) }
           ),
-          f.lambdaUtil("document", (document) =>
-            f.Equals(
-              f.Select(
-                f.literal("idIssueByGoogle"),
-                f.Select(f.literal("data"), document)
-              ),
-              f.literal(idInGoogle)
-            )
-          )
+          f.literal<false>(false)
         ),
         f.literal<false>(false)
       ),
-      f.literal<false>(false)
+      (accountId) =>
+        f.ifIsBooleanGuarded(accountId, (accountIdNotFalse) =>
+          f.Get(f.Ref(accountCollection, accountIdNotFalse))
+        )
     )
   );
   if (result === false) {
@@ -290,7 +311,10 @@ export const getAccountByAccountToken = async (
         f.Select(
           f.literal("data"),
           f.paginateSet(
-            f.Match(accountByIdIssueByGoogleIndex, f.literal(accountTokenHash)),
+            f.Match(
+              accountByAccountTokenIndex,
+              f.literal([accountTokenHash] as const)
+            ),
             {}
           )
         ),
