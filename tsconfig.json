@@ -19,6 +19,6 @@
     "resolveJsonModule": true,
     "types": ["@emotion/react/types/css-prop", "@types/jest"]
   },
-  "exclude": ["distribution", "definy-output"],
+  "exclude": ["distribution", "definy-output", "/databaseSetup.ts"],
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx"]
 }
