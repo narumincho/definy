@@ -7,10 +7,25 @@ import { Text } from "../components/Text";
 import { WithHeader } from "../components/WithHeader";
 import { useAccountToken } from "../hooks/useAccountToken";
 import { useLanguage } from "../hooks/useLanguage";
+import { useMutation } from "react-query";
 
 const IndexPage = (): React.ReactElement => {
   const language = useLanguage();
   const useAccountTokenResult = useAccountToken();
+  const requestToDesktop = useMutation(
+    async () => {
+      const result = await fetch("http://[::1]:2520", {
+        method: "POST",
+        body: "bodyだよー",
+      });
+      return result;
+    },
+    {
+      onSuccess: (data) => {
+        console.log(data);
+      },
+    }
+  );
 
   return (
     <WithHeader
@@ -43,6 +58,13 @@ const IndexPage = (): React.ReactElement => {
           }}
         >
           ログアウト
+        </Button>
+        <Button
+          onClick={() => {
+            requestToDesktop.mutate();
+          }}
+        >
+          デスクトップアプリと通信する
         </Button>
       </div>
     </WithHeader>
