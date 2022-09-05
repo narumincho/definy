@@ -48,9 +48,6 @@ const IndexPage = (): React.ReactElement => {
           english="Show project list here"
           esperanto="Montru projektoliston ĉi tie"
         />
-        {useAccountTokenResult.accountToken === undefined
-          ? "アカウントトークンはありません"
-          : "アカウントトークンがある!"}
         {useAccountTokenResult.accountToken !== undefined && (
           <Button
             onClick={() => {
@@ -98,7 +95,12 @@ const HomeLinkList = (props: {
         language={props.language}
         style={{ padding: 4 }}
       >
-        definyについて
+        <Text
+          language={props.language}
+          japanese="definyについて"
+          english="about definy"
+          esperanto="pri definy"
+        />
       </Link>
       <Link
         location={{ type: "local-project" }}
@@ -112,7 +114,12 @@ const HomeLinkList = (props: {
         language={props.language}
         style={{ padding: 4 }}
       >
-        ツール
+        <Text
+          language={props.language}
+          japanese="ツール"
+          english="Tools"
+          esperanto="Iloj"
+        />
       </Link>
     </div>
   );

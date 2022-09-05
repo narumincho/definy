@@ -1,6 +1,7 @@
 import * as React from "react";
 import { Language, PreAccountToken, defaultLanguage } from "../common/zodType";
 import { Button } from "../client/ui/Button";
+import { OneLineTextEditor } from "../client/ui/OneLineTextEditor";
 import type { ParsedUrlQuery } from "node:querystring";
 import { Text } from "../components/Text";
 import { WithHeader } from "../components/WithHeader";
@@ -120,10 +121,10 @@ const CreateAccount = (): React.ReactElement => {
             {name === undefined ? (
               <div>...</div>
             ) : (
-              <input
-                type="text"
+              <OneLineTextEditor
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={(e) => setName(e)}
+                id="account-name"
               />
             )}
           </label>
@@ -137,7 +138,11 @@ const CreateAccount = (): React.ReactElement => {
             {parameter === undefined ? (
               <div>...</div>
             ) : (
-              <img src={parameter.imageUrl.toString()} />
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={parameter.imageUrl.toString()}
+                css={{ width: 128, height: 128, objectFit: "contain" }}
+              />
             )}
           </label>
           <Button
