@@ -1,5 +1,4 @@
 import * as React from "react";
-import * as d from "../localData";
 import * as zodType from "../common/zodType";
 import { Button } from "../client/ui/Button";
 import { Link } from "../components/Link";
@@ -52,13 +51,15 @@ const IndexPage = (): React.ReactElement => {
         {useAccountTokenResult.accountToken === undefined
           ? "アカウントトークンはありません"
           : "アカウントトークンがある!"}
-        <Button
-          onClick={() => {
-            useAccountTokenResult.deleteAccountToken();
-          }}
-        >
-          ログアウト
-        </Button>
+        {useAccountTokenResult.accountToken !== undefined && (
+          <Button
+            onClick={() => {
+              useAccountTokenResult.deleteAccountToken();
+            }}
+          >
+            ログアウト
+          </Button>
+        )}
         <Button
           onClick={() => {
             requestToDesktop.mutate();
@@ -66,6 +67,11 @@ const IndexPage = (): React.ReactElement => {
         >
           デスクトップアプリと通信する
         </Button>
+        {useAccountTokenResult.accountToken !== undefined && (
+          <Link language={language} location={{ type: "create-project" }}>
+            プロジェクトを作成する
+          </Link>
+        )}
       </div>
     </WithHeader>
   );
