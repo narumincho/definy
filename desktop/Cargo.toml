@@ -9,3 +9,5 @@ edition = "2021"
 tokio = { version = "1.21.0", features = ["full"] }
 hyper = { version = "0.14.20", features = ["full"] }
 http = "0.2.8"
+rand = "0.8.5"
+url = "2.2.2"

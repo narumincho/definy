@@ -1,3 +1,5 @@
+use rand::Rng;
+
 #[tokio::main]
 async fn main() {
     let addr = std::net::SocketAddr::V6(std::net::SocketAddrV6::new(
@@ -7,17 +9,35 @@ async fn main() {
         0,
     ));
 
+    let random_token: String = rand::thread_rng()
+        .sample_iter(&rand::distributions::Alphanumeric)
+        .take(30)
+        .map(char::from)
+        .collect();
+
     let make_svc = hyper::service::make_service_fn(|_conn| async {
         Ok::<_, std::convert::Infallible>(hyper::service::service_fn(handle_request))
     });
 
     let server = hyper::Server::bind(&addr).serve(make_svc);
 
-    println!("definy desktop start! http://{}", addr.to_string());
+    let uri_result = url::Url::parse_with_params(
+        &("http:".to_string() + &addr.to_string()),
+        vec![("token", random_token)],
+    );
 
-    // Run this server for... forever!
-    if let Err(e) = server.await {
-        eprintln!("server error: {}", e);
+    match uri_result {
+        Ok(uri) => {
+            println!("definy desktop start!\ncopy and pase url in https://definy.app !.\n下のURLをコピーしてhttps://definy.app で貼り付けて接続できる \n\n{}\n", uri);
+
+            // Run this server for... forever!
+            if let Err(e) = server.await {
+                eprintln!("server error: {}", e);
+            }
+        }
+        Err(err) => {
+            eprintln!("url build error: {}", err);
+        }
     }
 }
 
