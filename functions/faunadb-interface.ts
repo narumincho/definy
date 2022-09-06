@@ -4,6 +4,7 @@ import {
   Language,
   Location,
   PreAccountToken,
+  ProjectId,
 } from "../common/zodType";
 
 export const getFaunaClient = (secret: string): f.TypedFaunaClient => {
@@ -19,7 +20,19 @@ export const setup = async (client: f.TypedFaunaClient): Promise<void> => {
     f.Do(
       f.CreateCollection(f.literal({ name: openConnectStateCollectionName })),
       f.CreateCollection(f.literal({ name: preAccountCollectionName })),
-      f.CreateCollection(f.literal({ name: accountCollectionName }))
+      f.CreateCollection(f.literal({ name: accountCollectionName })),
+      f.CreateCollection(f.literal({ name: projectCollectionName }))
+    )
+  );
+  await f.executeQuery(
+    client,
+    f.CreateIndex(
+      f.object({
+        name: f.literal(accountByIdIssueByGoogleIndexName),
+        source: accountCollection,
+        terms: f.literal([{ field: ["data", "idIssueByGoogle"] }]),
+        values: f.literal([{ field: ["ref", "id"] }]),
+      })
     )
   );
 };
@@ -34,33 +47,10 @@ const accountByAccountTokenIndex = f.Index<readonly [Uint8Array], string>(
   f.literal(accountByAccountTokenName)
 );
 
-const createAccountByIdIssueByGoogleIndex = async (
-  client: f.TypedFaunaClient
-): Promise<void> => {
-  await f.executeQuery(
-    client,
-    f.CreateIndex(
-      f.object({
-        name: f.literal(accountByIdIssueByGoogleIndexName),
-        source: accountCollection,
-        terms: f.literal([{ field: ["data", "idIssueByGoogle"] }]),
-        values: f.literal([{ field: ["ref", "id"] }]),
-      })
-    )
-  );
-};
-
 export const migration = async (client: f.TypedFaunaClient): Promise<void> => {
   await f.executeQuery(
     client,
-    f.CreateIndex(
-      f.object({
-        name: f.literal(accountByAccountTokenName),
-        source: accountCollection,
-        terms: f.literal([{ field: ["data", "accountTokenHash"] }]),
-        values: f.literal([{ field: ["ref", "id"] }]),
-      })
-    )
+    f.CreateCollection(f.literal({ name: projectCollectionName }))
   );
 };
 
@@ -96,6 +86,17 @@ type AccountDocument = {
   readonly name: string;
   readonly idIssueByGoogle: string;
   readonly accountTokenHash: Uint8Array;
+  readonly createdAt: f.Timestamp;
+};
+
+const projectCollectionName = "project";
+const projectCollection = f.Collection<ProjectDocument>(
+  f.literal(projectCollectionName)
+);
+
+type ProjectDocument = {
+  readonly name: string;
+  readonly createdAt: f.Timestamp;
 };
 
 export const openConnectStateCreate = async (
@@ -223,23 +224,29 @@ export const findAndDeletePreAccount = async (
 
 export const createAccount = async (
   client: f.TypedFaunaClient,
-  param: AccountDocument
+  param: Omit<AccountDocument, "createdAt">
 ): Promise<AccountId> => {
+  const now = new Date();
   const result = await f.executeQuery(
     client,
     f.letUtil("id", f.NewId(), (id) =>
       f.Do(
-        f.Create(
+        f.Create<AccountDocument>(
           f.Ref(accountCollection, id),
           f.object({
-            data: f.literal(param),
+            data: f.object<AccountDocument>({
+              accountTokenHash: f.literal(param.accountTokenHash),
+              createdAt: f.time(now),
+              idIssueByGoogle: f.literal(param.idIssueByGoogle),
+              name: f.literal(param.name),
+            }),
           })
         ),
         id
       )
     )
   );
-  return f.faunaIdToBigint(result) as AccountId;
+  return f.faunaIdToBigint(result).toString() as AccountId;
 };
 
 export const findAccountFromIdIssueByGoogle = async (
@@ -275,7 +282,7 @@ export const findAccountFromIdIssueByGoogle = async (
     return undefined;
   }
   return {
-    id: f.faunaIdToBigint(result.ref.id) as AccountId,
+    id: f.faunaIdToBigint(result.ref.id).toString() as AccountId,
     name: result.data.name,
   };
 };
@@ -330,4 +337,29 @@ export const getAccountByAccountToken = async (
     return undefined;
   }
   return { name: result.data.name };
+};
+
+export const crateProject = async (
+  client: f.TypedFaunaClient,
+  projectName: string
+): Promise<ProjectId> => {
+  const now = new Date();
+  const projectId = await f.executeQuery(
+    client,
+    f.letUtil("id", f.NewId(), (id) =>
+      f.Do(
+        f.Create<ProjectDocument>(
+          f.Ref(projectCollection, id),
+          f.object({
+            data: f.object<ProjectDocument>({
+              name: f.literal(projectName),
+              createdAt: f.time(now),
+            }),
+          })
+        ),
+        id
+      )
+    )
+  );
+  return f.faunaIdToBigint(projectId).toString() as ProjectId;
 };

@@ -1,11 +1,11 @@
 {
   "compilerOptions": {
-    "target": "ES2021",
-    "lib": ["DOM", "DOM.Iterable", "ES2021"],
+    "target": "ES2022",
+    "lib": ["DOM", "DOM.Iterable", "ES2022"],
     "esModuleInterop": true,
     "strict": true,
     "forceConsistentCasingInFileNames": true,
-    "module": "ESNext",
+    "module": "CommonJS",
     "moduleResolution": "Node",
     "isolatedModules": true,
     "skipLibCheck": true,
@@ -19,6 +19,6 @@
     "resolveJsonModule": true,
     "types": ["@emotion/react/types/css-prop", "@types/jest"]
   },
-  "exclude": ["distribution", "definy-output", "databaseSetup.ts"],
+  "exclude": ["distribution", "definy-output", "databaseMigration.ts"],
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx"]
 }

@@ -33,9 +33,13 @@ export const AccountToken = z
 
 export type AccountToken = string & { _accountToken: never };
 
-export const AccountId = z.bigint() as unknown as z.Schema<AccountId>;
+export const AccountId = z.string().min(1) as unknown as z.Schema<AccountId>;
 
-export type AccountId = bigint & { _accountId: never };
+export type AccountId = string & { _accountId: never };
+
+export const ProjectId = z.string().min(1) as unknown as z.Schema<ProjectId>;
+
+export type ProjectId = string & { _projectId: never };
 
 export const LogInByCodeAndStatePayload = z.union([
   z.object({ type: z.literal("notGeneratedState") }),

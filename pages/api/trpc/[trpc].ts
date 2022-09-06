@@ -15,7 +15,6 @@ import {
   hashAccountToken,
 } from "../../../functions/login";
 import type { TypedFaunaClient } from "../../../functions/typedFauna";
-import { writeSampleFile } from "../../../functions/cloudstorage-interface";
 import { z } from "zod";
 
 export const appRouter = trpc
@@ -144,9 +143,18 @@ export const appRouter = trpc
       };
     },
   })
-  .mutation("writeSampleFile", {
-    resolve: async () => {
-      await writeSampleFile();
+  .mutation("createProject", {
+    input: z.object({
+      accountToken: zodType.AccountToken,
+      projectName: z.string(),
+    }),
+    output: z.object({ id: zodType.ProjectId, name: z.string().min(1) }),
+    resolve: async ({ ctx, input }) => {
+      const projectId = await i.crateProject(ctx, input.projectName);
+      return {
+        id: projectId,
+        name: input.projectName,
+      };
     },
   });
 

@@ -19,7 +19,7 @@
     "package-vscode-extension": "cd ./distribution/definy-extension && pnpm exec vsce package",
     "dev-local": "pnpm exec vercel dev",
     "desktop-start": "cd ./desktop && cargo run",
-    "database-setup": "node -r @swc-node/register ./databaseSetup.ts"
+    "database-migration": "node -r @swc-node/register ./databaseMigration.ts"
   },
   "engines": {
     "node": "16"
