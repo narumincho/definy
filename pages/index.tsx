@@ -48,15 +48,6 @@ const IndexPage = (): React.ReactElement => {
           english="Show project list here"
           esperanto="Montru projektoliston ĉi tie"
         />
-        {useAccountTokenResult.accountToken !== undefined && (
-          <Button
-            onClick={() => {
-              useAccountTokenResult.deleteAccountToken();
-            }}
-          >
-            ログアウト
-          </Button>
-        )}
         <Button
           onClick={() => {
             requestToDesktop.mutate();

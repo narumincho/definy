@@ -128,7 +128,7 @@ const SettingLink: React.FC<{
       }}
       language={props.language}
       // 後に設定に変更する
-      location={{ type: "home" }}
+      location={{ type: "setting" }}
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
