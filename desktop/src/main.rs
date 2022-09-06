@@ -1,5 +1,7 @@
 use rand::Rng;
 
+const TOKEN_QUERY_KEY: &str = "token";
+
 #[tokio::main]
 async fn main() {
     let addr = std::net::SocketAddr::V6(std::net::SocketAddrV6::new(
@@ -15,40 +17,81 @@ async fn main() {
         .map(char::from)
         .collect();
 
-    let make_svc = hyper::service::make_service_fn(|_conn| async {
-        Ok::<_, std::convert::Infallible>(hyper::service::service_fn(handle_request))
-    });
+    let server = hyper::Server::bind(&addr).serve(hyper::service::make_service_fn(|_conn| {
+        let rv = random_token.clone();
+        async {
+            Ok::<_, std::convert::Infallible>(hyper::service::service_fn(move |request| {
+                handle_request(request, rv.clone())
+            }))
+        }
+    }));
 
-    let server = hyper::Server::bind(&addr).serve(make_svc);
-
-    let uri_result = url::Url::parse_with_params(
+    let url = url::Url::parse_with_params(
         &("http:".to_string() + &addr.to_string()),
-        vec![("token", random_token)],
-    );
+        vec![(TOKEN_QUERY_KEY, random_token.clone())],
+    )
+    .expect("url build error");
 
-    match uri_result {
-        Ok(uri) => {
-            println!("definy desktop start!\ncopy and pase url in https://definy.app !.\n下のURLをコピーしてhttps://definy.app で貼り付けて接続できる \n\n{}\n", uri);
+    println!("definy desktop start!\ncopy and pase url in https://definy.app !.\n下のURLをコピーしてhttps://definy.app で貼り付けて接続できる \n\n{}\n", url);
 
-            // Run this server for... forever!
-            if let Err(e) = server.await {
-                eprintln!("server error: {}", e);
-            }
-        }
-        Err(err) => {
-            eprintln!("url build error: {}", err);
-        }
+    // Run this server for... forever!
+    if let Err(e) = server.await {
+        eprintln!("server error: {}", e);
     }
+
+    println!("end?");
 }
 
 async fn handle_request(
     request: hyper::Request<hyper::Body>,
-) -> Result<hyper::Response<hyper::Body>, std::convert::Infallible> {
-    let path = request.uri().path();
-    println!("request path: {}", path);
-    println!("request body: {:?}", request.body());
+    token: String,
+) -> Result<hyper::Response<hyper::Body>, url::ParseError> {
+    let path_and_query = uri_to_path_and_query(request.uri());
+
+    let origin_header_value = request
+        .headers()
+        .get(http::header::ORIGIN)
+        .map(|v| v.to_str());
+
+    let origin_value = match origin_header_value {
+        Some(Ok(v)) => Some(v.clone().to_string()),
+        _ => None,
+    };
+    handle_request_parsed(&path_and_query, &origin_value.as_deref(), &token).await
+}
+
+#[derive(Debug)]
+struct PathAndQuery {
+    path: String,
+    query: std::collections::HashMap<String, String>,
+}
+
+fn uri_to_path_and_query(uri: &hyper::Uri) -> PathAndQuery {
+    PathAndQuery {
+        path: uri.path().to_string(),
+        query: match uri.query() {
+            Some(query_string) => {
+                let r: std::collections::HashMap<String, String> =
+                    url::form_urlencoded::parse(query_string.as_bytes())
+                        .into_owned()
+                        .collect();
+                r
+            }
+            None => std::collections::HashMap::new(),
+        },
+    }
+}
+
+async fn handle_request_parsed(
+    path_and_query: &PathAndQuery,
+    origin: &Option<&str>,
+    token: &str,
+) -> Result<hyper::Response<hyper::Body>, url::ParseError> {
+    println!("request path: {:?}", path_and_query);
+    let token_by_url = { path_and_query.query.get(TOKEN_QUERY_KEY) };
+    let is_equal_token = token_by_url == Some(&token.to_string());
     let mut r = hyper::Response::new(hyper::Body::from(
-        "<!doctype html>
+        format!("<!doctype html>
 <html lang=\"ja\">
 
 <head>
@@ -56,31 +99,60 @@ async fn handle_request(
   <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">
   <title>definy desktop</title>
   <style>
-    body {
+    body {{
         background-color: black;
         color: white;
-    }
+    }}
 
-    a {
+    a {{
         color: skyblue;
-    }
+    }}
   </style>
 </head>
 
 <body>
-  definy desktop. <a href=\"https://definy.app\">definy.app</a> からリクエストを受けてブラウザからアクセスできないAPIを呼び出すためのもの.
+  definy desktop. <a href=\"https://definy.app\">definy.app</a> からリクエストを受けてブラウザからアクセスできないAPIを呼び出すためのもの. 
+  <div>{}</div>
 </body>
 
-</html>",
+</html>", if is_equal_token {"token が合っている!"} else {"token が合っていない..."})
     ));
     let headers_mut = r.headers_mut();
     headers_mut.insert(
         http::header::CONTENT_TYPE,
         http::HeaderValue::from_static("text/html"),
     );
-    headers_mut.insert(
-        http::header::ACCESS_CONTROL_ALLOW_ORIGIN,
-        http::HeaderValue::from_static("http://localhost:3000"),
-    );
+    let origin_header_value_result = http::HeaderValue::from_str(&origin_to_allow_origin(origin));
+    match origin_header_value_result {
+        Ok(origin_header_value) => {
+            headers_mut.insert(
+                http::header::ACCESS_CONTROL_ALLOW_ORIGIN,
+                origin_header_value,
+            );
+        }
+        Err(_) => {
+            eprintln!(
+                "ACCESS_CONTROL_ALLOW_ORIGIN を出力できなかった {:?}",
+                origin_header_value_result
+            )
+        }
+    };
     Ok(r)
+}
+
+fn origin_to_allow_origin(origin_option: &Option<&str>) -> String {
+    match origin_option {
+        Some(origin) => {
+            if origin.clone() == "http://localhost:3000" {
+                return "http://localhost:3000".to_string();
+            }
+            if origin.ends_with("-narumincho.vercel.app") {
+                return origin.to_string();
+            }
+            return "https://definy.app".to_string();
+        }
+        None => {
+            return "https://definy.app".to_string();
+        }
+    }
 }
