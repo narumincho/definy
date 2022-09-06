@@ -1,6 +1,5 @@
 import * as React from "react";
 import * as zodType from "../common/zodType";
-import { Image } from "./Image";
 import { Link } from "./Link";
 import { UseAccountTokenResult } from "../hooks/useAccountToken";
 import type { UseDefinyAppResult } from "../client/hook/useDefinyApp";
@@ -131,6 +130,7 @@ const SettingLink: React.FC<{
       // 後に設定に変更する
       location={{ type: "home" }}
     >
+      {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         css={{
           width: 32,
@@ -138,7 +138,7 @@ const SettingLink: React.FC<{
           borderRadius: "50%",
         }}
         alt="設定"
-        src=""
+        src={account?.data?.imageUrl}
       />
       <div>{account?.data?.name ?? "..."}</div>
     </Link>

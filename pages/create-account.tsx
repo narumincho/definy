@@ -138,13 +138,17 @@ const CreateAccount = (): React.ReactElement => {
             {parameter === undefined ? (
               <div>...</div>
             ) : (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={parameter.imageUrl.toString()}
-                css={{ width: 128, height: 128, objectFit: "contain" }}
-              />
+              <div>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={parameter.imageUrl.toString()}
+                  css={{ width: 128, height: 128, objectFit: "contain" }}
+                />
+                <div>{parameter.imageUrl.toString()}</div>
+              </div>
             )}
           </label>
+
           <Button
             onClick={
               name === undefined ||

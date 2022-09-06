@@ -34,6 +34,7 @@ export const appRouter = trpc
     output: z.nullable(
       z.object({
         name: z.string(),
+        imageUrl: z.string(),
       })
     ),
     resolve: async ({ ctx, input }) => {
@@ -44,6 +45,7 @@ export const appRouter = trpc
       }
       return {
         name: account.name,
+        imageUrl: account.imageUrl,
       };
     },
   })
@@ -134,6 +136,7 @@ export const appRouter = trpc
         name: input.name,
         idIssueByGoogle: preAccount.idIssueByGoogle,
         accountTokenHash: accountTokenAndHash.accountTokenHash,
+        imageUrl: preAccount.imageUrlInProvider.toString(),
       });
       return {
         type: "ok",

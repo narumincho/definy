@@ -84,6 +84,7 @@ const accountCollection = f.Collection<AccountDocument>(
 
 type AccountDocument = {
   readonly name: string;
+  readonly imageUrl: string;
   readonly idIssueByGoogle: string;
   readonly accountTokenHash: Uint8Array;
   readonly createdAt: f.Timestamp;
@@ -239,6 +240,7 @@ export const createAccount = async (
               createdAt: f.time(now),
               idIssueByGoogle: f.literal(param.idIssueByGoogle),
               name: f.literal(param.name),
+              imageUrl: f.literal(param.imageUrl),
             }),
           })
         ),
@@ -308,7 +310,9 @@ export const updateAccountTokenHash = async (
 export const getAccountByAccountToken = async (
   client: f.TypedFaunaClient,
   accountTokenHash: Uint8Array
-): Promise<{ readonly name: string } | undefined> => {
+): Promise<
+  { readonly name: string; readonly imageUrl: string } | undefined
+> => {
   const result = await f.executeQuery(
     client,
     f.letUtil(
@@ -336,7 +340,7 @@ export const getAccountByAccountToken = async (
   if (result === false) {
     return undefined;
   }
-  return { name: result.data.name };
+  return { name: result.data.name, imageUrl: result.data.imageUrl };
 };
 
 export const crateProject = async (
