@@ -14,7 +14,7 @@ export const writeSampleFile = (): Promise<void> =>
   new Promise((resolve) => {
     const bucket = storage.bucket("definy-lang.appspot.com");
     const writableStream = bucket.file("sample.txt").createWriteStream({});
-    writableStream.end("sample text", () => {
+    writableStream.end(new Date().toISOString(), () => {
       resolve();
     });
   });
