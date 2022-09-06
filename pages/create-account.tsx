@@ -152,7 +152,6 @@ const CreateAccount = (): React.ReactElement => {
               createAccount.isLoading
                 ? undefined
                 : () => {
-                    console.log("おされた", parameter);
                     if (typeof name === "string" && parameter !== undefined) {
                       createAccount.mutate({
                         name,
