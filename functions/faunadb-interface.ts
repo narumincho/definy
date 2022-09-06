@@ -97,6 +97,7 @@ const projectCollection = f.Collection<ProjectDocument>(
 
 type ProjectDocument = {
   readonly name: string;
+  readonly createdBy: AccountId;
   readonly createdAt: f.Timestamp;
 };
 
@@ -311,7 +312,8 @@ export const getAccountByAccountToken = async (
   client: f.TypedFaunaClient,
   accountTokenHash: Uint8Array
 ): Promise<
-  { readonly name: string; readonly imageUrl: string } | undefined
+  | { readonly id: AccountId; readonly name: string; readonly imageUrl: string }
+  | undefined
 > => {
   const result = await f.executeQuery(
     client,
@@ -340,12 +342,17 @@ export const getAccountByAccountToken = async (
   if (result === false) {
     return undefined;
   }
-  return { name: result.data.name, imageUrl: result.data.imageUrl };
+  return {
+    id: f.faunaIdToBigint(result.ref.id).toString() as AccountId,
+    name: result.data.name,
+    imageUrl: result.data.imageUrl,
+  };
 };
 
-export const crateProject = async (
+export const createProject = async (
   client: f.TypedFaunaClient,
-  projectName: string
+  projectName: string,
+  createdBy: AccountId
 ): Promise<ProjectId> => {
   const now = new Date();
   const projectId = await f.executeQuery(
@@ -358,6 +365,7 @@ export const crateProject = async (
             data: f.object<ProjectDocument>({
               name: f.literal(projectName),
               createdAt: f.time(now),
+              createdBy: f.literal(createdBy),
             }),
           })
         ),
@@ -366,4 +374,39 @@ export const crateProject = async (
     )
   );
   return f.faunaIdToBigint(projectId).toString() as ProjectId;
+};
+
+export const getAllProjectIds = async (
+  client: f.TypedFaunaClient
+): Promise<ReadonlyArray<ProjectId>> => {
+  const result = await f.executeQuery(
+    client,
+    f.paginateSet(f.Documents(projectCollection), {})
+  );
+  return result.data.map(
+    (doc) => f.faunaIdToBigint(doc.id).toString() as ProjectId
+  );
+};
+
+export const getProject = async (
+  client: f.TypedFaunaClient,
+  projectId: ProjectId
+): Promise<{ readonly name: string } | undefined> => {
+  const result = await f.executeQuery(
+    client,
+    f.If<ProjectDocument | false>(
+      f.Exists(f.Ref(projectCollection, f.literal(projectId))),
+      f.Select(
+        f.literal("data"),
+        f.Get(f.Ref(projectCollection, f.literal(projectId)))
+      ),
+      f.literal<false>(false)
+    )
+  );
+  if (result === false) {
+    return undefined;
+  }
+  return {
+    name: result.name,
+  };
 };

@@ -17,6 +17,13 @@ import {
 import type { TypedFaunaClient } from "../../../functions/typedFauna";
 import { z } from "zod";
 
+const getProjectByIdOutput = z.union([
+  z.object({ name: z.string().min(1) }),
+  z.null(),
+]);
+
+type GetProjectByIdOutput = z.TypeOf<typeof getProjectByIdOutput>;
+
 export const appRouter = trpc
   .router<TypedFaunaClient>()
   .query("gitCommitSha", {
@@ -153,11 +160,41 @@ export const appRouter = trpc
     }),
     output: z.object({ id: zodType.ProjectId, name: z.string().min(1) }),
     resolve: async ({ ctx, input }) => {
-      const projectId = await i.crateProject(ctx, input.projectName);
+      const account = await i.getAccountByAccountToken(
+        ctx,
+        await hashAccountToken(input.accountToken)
+      );
+      if (account === undefined) {
+        throw new Error("不明なアカウントトークンです");
+      }
+      const projectId = await i.createProject(
+        ctx,
+        input.projectName,
+        account.id
+      );
       return {
         id: projectId,
         name: input.projectName,
       };
+    },
+  })
+  .query("getAllProjectIds", {
+    input: z.undefined(),
+    output: z.array(zodType.ProjectId),
+    resolve: async ({ ctx }) => {
+      const allProjectIds = await i.getAllProjectIds(ctx);
+      return [...allProjectIds];
+    },
+  })
+  .query("getProjectById", {
+    input: zodType.ProjectId,
+    output: getProjectByIdOutput,
+    resolve: async ({ ctx, input }): Promise<GetProjectByIdOutput> => {
+      const result = await i.getProject(ctx, input);
+      if (result === undefined) {
+        return null;
+      }
+      return result;
     },
   });
 

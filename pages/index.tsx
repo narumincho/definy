@@ -2,8 +2,10 @@ import * as React from "react";
 import * as zodType from "../common/zodType";
 import { Button } from "../client/ui/Button";
 import { Link } from "../components/Link";
+import { ProjectCard } from "../components/ProjectCard";
 import { Text } from "../components/Text";
 import { WithHeader } from "../components/WithHeader";
+import { trpc } from "../hooks/trpc";
 import { useAccountToken } from "../hooks/useAccountToken";
 import { useLanguage } from "../hooks/useLanguage";
 import { useMutation } from "react-query";
@@ -25,6 +27,7 @@ const IndexPage = (): React.ReactElement => {
       },
     }
   );
+  const getAllProjectIds = trpc.useQuery(["getAllProjectIds"]);
 
   return (
     <WithHeader
@@ -55,6 +58,16 @@ const IndexPage = (): React.ReactElement => {
         >
           デスクトップアプリと通信する
         </Button>
+        {getAllProjectIds.data === undefined ? (
+          <div>プロジェクト一覧を取得中...</div>
+        ) : (
+          <div>
+            {getAllProjectIds.data.map((projectId) => (
+              <ProjectCard projectId={projectId} />
+            ))}
+          </div>
+        )}
+
         {useAccountTokenResult.accountToken !== undefined && (
           <Link language={language} location={{ type: "create-project" }}>
             プロジェクトを作成する
