@@ -1,6 +1,5 @@
 import * as React from "react";
 import * as zodType from "../common/zodType";
-import { Button } from "../client/ui/Button";
 import { Link } from "../components/Link";
 import { ProjectCard } from "../components/ProjectCard";
 import { Text } from "../components/Text";
@@ -8,25 +7,11 @@ import { WithHeader } from "../components/WithHeader";
 import { trpc } from "../hooks/trpc";
 import { useAccountToken } from "../hooks/useAccountToken";
 import { useLanguage } from "../hooks/useLanguage";
-import { useMutation } from "react-query";
 
 const IndexPage = (): React.ReactElement => {
   const language = useLanguage();
   const useAccountTokenResult = useAccountToken();
-  const requestToDesktop = useMutation(
-    async () => {
-      const result = await fetch("http://[::1]:2520", {
-        method: "POST",
-        body: "bodyだよー",
-      });
-      return result;
-    },
-    {
-      onSuccess: (data) => {
-        console.log(data);
-      },
-    }
-  );
+
   const getAllProjectIds = trpc.useQuery(["getAllProjectIds"]);
 
   return (
@@ -51,13 +36,7 @@ const IndexPage = (): React.ReactElement => {
           english="Show project list here"
           esperanto="Montru projektoliston ĉi tie"
         />
-        <Button
-          onClick={() => {
-            requestToDesktop.mutate();
-          }}
-        >
-          デスクトップアプリと通信する
-        </Button>
+
         {getAllProjectIds.data === undefined ? (
           <div>プロジェクト一覧を取得中...</div>
         ) : (
@@ -123,6 +102,18 @@ const HomeLinkList = (props: {
           japanese="ツール"
           english="Tools"
           esperanto="Iloj"
+        />
+      </Link>
+      <Link
+        location={{ type: "dev" }}
+        language={props.language}
+        style={{ padding: 4 }}
+      >
+        <Text
+          language={props.language}
+          japanese="開発用ページ"
+          english="development page"
+          esperanto="disvolva paĝo"
         />
       </Link>
     </div>

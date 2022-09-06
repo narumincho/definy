@@ -12,6 +12,7 @@ export const Location = z.union([
   z.object({ type: z.literal("local-project") }),
   z.object({ type: z.literal("create-project") }),
   z.object({ type: z.literal("setting") }),
+  z.object({ type: z.literal("dev") }),
 ]);
 
 export type Location = Readonly<z.TypeOf<typeof Location>>;
