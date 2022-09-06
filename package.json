@@ -27,6 +27,7 @@
   "devDependencies": {
     "@babel/core": "7.18.13",
     "@emotion/css": "11.10.0",
+    "@google-cloud/storage": "6.4.2",
     "@material-ui/core": "4.12.4",
     "@next/eslint-plugin-next": "12.2.5",
     "@storybook/addon-a11y": "6.5.10",
@@ -234,7 +235,7 @@
       ]
     }
   },
-  "packageManager": "pnpm@7.9.5",
+  "packageManager": "pnpm@7.11.0",
   "dependencies": {
     "@emotion/react": "11.10.4",
     "@trpc/client": "9.27.2",

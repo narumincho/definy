@@ -15,6 +15,7 @@ import {
   hashAccountToken,
 } from "../../../functions/login";
 import type { TypedFaunaClient } from "../../../functions/typedFauna";
+import { writeSampleFile } from "../../../functions/cloudstorage-interface";
 import { z } from "zod";
 
 export const appRouter = trpc
@@ -141,6 +142,11 @@ export const appRouter = trpc
         language: preAccount.language,
         location: preAccount.location,
       };
+    },
+  })
+  .mutation("writeSampleFile", {
+    resolve: async () => {
+      await writeSampleFile();
     },
   });
 

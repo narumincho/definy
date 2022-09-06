@@ -4,6 +4,7 @@ specifiers:
   '@babel/core': 7.18.13
   '@emotion/css': 11.10.0
   '@emotion/react': 11.10.4
+  '@google-cloud/storage': 6.4.2
   '@material-ui/core': 4.12.4
   '@next/eslint-plugin-next': 12.2.5
   '@storybook/addon-a11y': 6.5.10
@@ -72,6 +73,7 @@ dependencies:
 devDependencies:
   '@babel/core': 7.18.13
   '@emotion/css': 11.10.0_@babel+core@7.18.13
+  '@google-cloud/storage': 6.4.2
   '@material-ui/core': 4.12.4_63dfw6rfgd64rl77ptfma4cvt4
   '@next/eslint-plugin-next': 12.2.5
   '@storybook/addon-a11y': 6.5.10_biqbaboplfbrettd7655fr4n2y
@@ -1837,7 +1839,6 @@ packages:
       arrify: 2.0.1
       extend: 3.0.2
     dev: true
-    optional: true
 
   /@google-cloud/paginator/4.0.0:
     resolution: {integrity: sha512-wNmCZl+2G2DmgT/VlF+AROf80SoaC/CwS8trwmjNaq26VRNK8yPbU5F/Vy+R9oDAGKWQU2k8+Op5H4kFJVXFaQ==}
@@ -1866,7 +1867,6 @@ packages:
     resolution: {integrity: sha512-91ArYvRgXWb73YvEOBMmOcJc0bDRs5yiVHnqkwoG0f3nm7nZuipllz6e7BvFESBvjkDTBC0zMD8QxedUwNLc1A==}
     engines: {node: '>=12'}
     dev: true
-    optional: true
 
   /@google-cloud/pubsub/3.1.0:
     resolution: {integrity: sha512-SNrLRkZDrIxLwUYZ+PN1XZWzGdQOqCwPkFX2+bVUG5M66VmK+uCfQ5oMBDZ4pm1PZGOYaKMxINtpRNmMsBtejg==}
@@ -1892,10 +1892,9 @@ packages:
       - supports-color
     dev: true
 
-  /@google-cloud/storage/6.4.1:
-    resolution: {integrity: sha512-lAddmRJ8tvxPykUqJfONBQA5XGwGk0vut1POXublc64+nCdB5aQMxwuBMf7J1zubx19QGpYPQwW6wR7YTWrvLw==}
+  /@google-cloud/storage/6.4.2:
+    resolution: {integrity: sha512-rnwx++XIxy63t1CREGlY2+H+tvuvYmkiIqJdq0IRzGaah9bDetV+qJVl5Mvi5aPhgoqn3UNnKGv9SPcETimFgw==}
     engines: {node: '>=12'}
-    requiresBuild: true
     dependencies:
       '@google-cloud/paginator': 3.0.7
       '@google-cloud/projectify': 3.0.0
@@ -1919,7 +1918,6 @@ packages:
       - encoding
       - supports-color
     dev: true
-    optional: true
 
   /@grpc/grpc-js/1.6.10:
     resolution: {integrity: sha512-XTX5z/P5kH802MDoVm/rqOil0UwYEOEjf9+NPgfmm5UINIxDzwYaXfVR6z8svCBG8Hlbu/FzkXqhP8J5xaWzSQ==}
@@ -6170,7 +6168,6 @@ packages:
     dependencies:
       retry: 0.13.1
     dev: true
-    optional: true
 
   /async-sema/3.1.1:
     resolution: {integrity: sha512-tLRNUXati5MFePdAk8dw7Qt7DpxPB60ofAgn8WRhW6a2rcimZnYBP9oxHiv0OHy+Wz7kPMG+t4LGdt31+4EmGg==}
@@ -8476,7 +8473,6 @@ packages:
   /ent/2.2.0:
     resolution: {integrity: sha512-GHrMyVZQWvTIdDtpiEXdHZnFQKzeO09apj8Cbl4pKWy4i0Oprcq17usfDt5aO63swf0JOeMWjWQE/LzgSRuWpA==}
     dev: true
-    optional: true
 
   /entities/2.1.0:
     resolution: {integrity: sha512-hCx1oky9PFrJ611mf0ifBLBRW8lUUVRlFolb5gWRfIELabBlbp9xZvrqZLZAs+NxFnbfQoeGd8wDkygjg7U85w==}
@@ -9772,7 +9768,7 @@ packages:
       uuid: 8.3.2
     optionalDependencies:
       '@google-cloud/firestore': 5.0.2
-      '@google-cloud/storage': 6.4.1
+      '@google-cloud/storage': 6.4.2
     transitivePeerDependencies:
       - '@firebase/app-types'
       - encoding
@@ -13428,7 +13424,6 @@ packages:
     engines: {node: '>=10.0.0'}
     hasBin: true
     dev: true
-    optional: true
 
   /mimic-fn/1.2.0:
     resolution: {integrity: sha512-jf84uxzwiuiIVKiOLpfYk7N46TSy8ubTonmneY9vrpHNAnp0QBt2BxWV9dO3/j+BoVAb+a5G6YDPW3M5HOdMWQ==}
@@ -16793,7 +16788,6 @@ packages:
     dependencies:
       stubs: 3.0.0
     dev: true
-    optional: true
 
   /stream-http/2.8.3:
     resolution: {integrity: sha512-+TSkfINHDo4J+ZobQLWiMouQYB+UVYFttRA94FpEzzJ7ZdqcL4uUUQ7WkdkI4DSozGmgBUE/a47L+38PenXhUw==}
@@ -17003,7 +16997,6 @@ packages:
   /stubs/3.0.0:
     resolution: {integrity: sha512-PdHt7hHUJKxvTCgbKX9C1V/ftOcjJQgz8BZwNfV5c4B6dcGqlpelTbJ999jBGZ2jYiPAwcX5dP6oBwVlBlUbxw==}
     dev: true
-    optional: true
 
   /style-loader/1.3.0_webpack@4.46.0:
     resolution: {integrity: sha512-V7TCORko8rs9rIqkSrlMfkqA63DfoGBBJmK1kKGCcSi+BWb4cqz0SRsnp4l6rU5iwOEd0/2ePv68SV22VXon4Q==}
@@ -17210,7 +17203,6 @@ packages:
       - encoding
       - supports-color
     dev: true
-    optional: true
 
   /telejson/6.0.8:
     resolution: {integrity: sha512-nerNXi+j8NK1QEfBHtZUN/aLdDcyupA//9kAboYLrtzZlPLpUfqbVGWb9zz91f/mIjRbAYhbgtnJHY8I1b5MBg==}
