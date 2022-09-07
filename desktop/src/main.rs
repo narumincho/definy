@@ -1,3 +1,5 @@
+use std::env;
+
 use rand::Rng;
 
 const TOKEN_QUERY_KEY: &str = "token";
@@ -90,6 +92,50 @@ async fn handle_request_parsed(
     println!("request path: {:?}", path_and_query);
     let token_by_url = { path_and_query.query.get(TOKEN_QUERY_KEY) };
     let is_equal_token = token_by_url == Some(&token.to_string());
+
+    let mut handled_html = match path_and_query.path.as_str() {
+        "/" => handle_html(is_equal_token),
+        "/env" => handle_env(is_equal_token),
+        _ => handle_html(is_equal_token),
+    };
+
+    let headers_mut = handled_html.headers_mut();
+    let origin_header_value_result = http::HeaderValue::from_str(&origin_to_allow_origin(origin));
+    match origin_header_value_result {
+        Ok(origin_header_value) => {
+            headers_mut.insert(
+                http::header::ACCESS_CONTROL_ALLOW_ORIGIN,
+                origin_header_value,
+            );
+        }
+        Err(_) => {
+            eprintln!(
+                "ACCESS_CONTROL_ALLOW_ORIGIN を出力できなかった {:?}",
+                origin_header_value_result
+            )
+        }
+    };
+    Ok(handled_html)
+}
+
+fn origin_to_allow_origin(origin_option: &Option<&str>) -> String {
+    match origin_option {
+        Some(origin) => {
+            if origin.clone() == "http://localhost:3000" {
+                return "http://localhost:3000".to_string();
+            }
+            if origin.ends_with("-narumincho.vercel.app") {
+                return origin.to_string();
+            }
+            return "https://definy.app".to_string();
+        }
+        None => {
+            return "https://definy.app".to_string();
+        }
+    }
+}
+
+fn handle_html(is_equal_token: bool) -> http::Response<hyper::Body> {
     let mut r = hyper::Response::new(hyper::Body::from(
         format!("<!doctype html>
 <html lang=\"ja\">
@@ -122,37 +168,21 @@ async fn handle_request_parsed(
         http::header::CONTENT_TYPE,
         http::HeaderValue::from_static("text/html"),
     );
-    let origin_header_value_result = http::HeaderValue::from_str(&origin_to_allow_origin(origin));
-    match origin_header_value_result {
-        Ok(origin_header_value) => {
-            headers_mut.insert(
-                http::header::ACCESS_CONTROL_ALLOW_ORIGIN,
-                origin_header_value,
-            );
-        }
-        Err(_) => {
-            eprintln!(
-                "ACCESS_CONTROL_ALLOW_ORIGIN を出力できなかった {:?}",
-                origin_header_value_result
-            )
-        }
-    };
-    Ok(r)
+    r
 }
 
-fn origin_to_allow_origin(origin_option: &Option<&str>) -> String {
-    match origin_option {
-        Some(origin) => {
-            if origin.clone() == "http://localhost:3000" {
-                return "http://localhost:3000".to_string();
-            }
-            if origin.ends_with("-narumincho.vercel.app") {
-                return origin.to_string();
-            }
-            return "https://definy.app".to_string();
-        }
-        None => {
-            return "https://definy.app".to_string();
-        }
+fn handle_env(is_equal_token: bool) -> http::Response<hyper::Body> {
+    if !is_equal_token {
+        let mut response = hyper::Response::new(hyper::Body::from("invalid token"));
+        *response.status_mut() = http::status::StatusCode::UNAUTHORIZED;
+        return response;
     }
+    let envs: std::collections::HashMap<String, String> = env::vars().collect();
+    let json_content: String = serde_json::json!(envs).to_string();
+    let mut response = hyper::Response::new(hyper::Body::from(json_content));
+    response.headers_mut().insert(
+        http::header::CONTENT_TYPE,
+        http::HeaderValue::from_static("application/json"),
+    );
+    response
 }
