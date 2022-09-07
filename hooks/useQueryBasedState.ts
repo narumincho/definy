@@ -50,7 +50,8 @@ export const useQueryBasedState = <StructuredQuery>({
     const structuredQuery = queryToStructuredQuery(nowQueryMap);
     const reFormattedQueryMap = structuredQueryToQuery(structuredQuery);
     if (!isEqualMap(nowQueryMap, reFormattedQueryMap)) {
-      console.log("正規化", nowQueryMap, reFormattedQueryMap);
+      console.log("正規化したい...", nowQueryMap, reFormattedQueryMap);
+      return;
       const replace = router.replace;
       setIsReplacingQuery(true);
       replace(

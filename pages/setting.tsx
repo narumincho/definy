@@ -87,7 +87,12 @@ const SettingPage = (): React.ReactElement => {
               useAccountTokenResult.deleteAccountToken();
             }}
           >
-            ログアウト
+            <Text
+              language={language}
+              japanese="ログアウト"
+              english="logout"
+              esperanto="elsaluti"
+            />
           </Button>
         )}
       </div>
