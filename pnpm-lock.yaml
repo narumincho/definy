@@ -57,7 +57,7 @@ specifiers:
   typescript: 4.8.2
   vercel: 28.2.2
   vsce: 2.11.0
-  zod: 3.18.0
+  zod: 3.19.0
 
 dependencies:
   '@emotion/react': 11.10.4_p6fq7jdyqwnykllwwkx4b6uid4
@@ -68,7 +68,7 @@ dependencies:
   faunadb: 4.6.0
   next: 12.2.5_vyk55zyolcaieh7zfm7nf7uva4
   react-query: 3.39.2_biqbaboplfbrettd7655fr4n2y
-  zod: 3.18.0
+  zod: 3.19.0
 
 devDependencies:
   '@babel/core': 7.19.0
@@ -18818,8 +18818,8 @@ packages:
       readable-stream: 3.6.0
     dev: true
 
-  /zod/3.18.0:
-    resolution: {integrity: sha512-gwTm8RfUCe8l9rDwN5r2A17DkAa8Ez4Yl4yXqc5VqeGaXaJahzYYXbTwvhroZi0SNBqTwh/bKm2N0mpCzuw4bA==}
+  /zod/3.19.0:
+    resolution: {integrity: sha512-Yw0qvUsCNGBe5YacikdMt5gVYeUuaEFVDIHKMfElrGSaBhwR3CQK6vOzgfAJOjTdGIhEeoaj8GtT+NDZrepZbw==}
     dev: false
 
   /zwitch/1.0.5:

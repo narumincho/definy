@@ -23,25 +23,21 @@ export type Language = z.TypeOf<typeof Language>;
 
 export const defaultLanguage: Language = "english";
 
-export const PreAccountToken = z
-  .string()
-  .length(64) as unknown as z.Schema<PreAccountToken>;
+export const PreAccountToken = z.string().length(64).brand<"PreAccountToken">();
 
-export type PreAccountToken = string & { _preAccountToken: never };
+export type PreAccountToken = z.TypeOf<typeof PreAccountToken>;
 
-export const AccountToken = z
-  .string()
-  .length(64) as unknown as z.Schema<AccountToken>;
+export const AccountToken = z.string().length(64).brand<"AccountToken">();
 
-export type AccountToken = string & { _accountToken: never };
+export type AccountToken = z.TypeOf<typeof AccountToken>;
 
-export const AccountId = z.string().min(1) as unknown as z.Schema<AccountId>;
+export const AccountId = z.string().min(1).brand<"AccountId">();
 
-export type AccountId = string & { _accountId: never };
+export type AccountId = z.TypeOf<typeof AccountId>;
 
-export const ProjectId = z.string().min(1) as unknown as z.Schema<ProjectId>;
+export const ProjectId = z.string().min(1).brand<"ProjectId">();
 
-export type ProjectId = string & { _projectId: never };
+export type ProjectId = z.TypeOf<typeof ProjectId>;
 
 export const LogInByCodeAndStatePayload = z.union([
   z.object({ type: z.literal("notGeneratedState") }),
