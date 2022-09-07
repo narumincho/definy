@@ -15,6 +15,7 @@ import {
   hashAccountToken,
 } from "../../../functions/login";
 import type { TypedFaunaClient } from "../../../functions/typedFauna";
+import superjson from "superjson";
 import { z } from "zod";
 
 const getProjectByIdOutput = z.union([
@@ -26,6 +27,7 @@ type GetProjectByIdOutput = z.TypeOf<typeof getProjectByIdOutput>;
 
 export const appRouter = trpc
   .router<TypedFaunaClient>()
+  .transformer(superjson)
   .query("gitCommitSha", {
     input: z.void(),
     output: z.string().length(40).nullable(),
