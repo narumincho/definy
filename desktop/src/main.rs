@@ -95,7 +95,8 @@ async fn handle_request_parsed(
 
     let mut handled_html = match path_and_query.path.as_str() {
         "/" => handle_html(is_equal_token),
-        "/env" => handle_env(is_equal_token),
+        "/hello" => handle_hello(is_equal_token),
+        "/envs" => handle_env(is_equal_token),
         _ => handle_html(is_equal_token),
     };
 
@@ -169,6 +170,18 @@ fn handle_html(is_equal_token: bool) -> http::Response<hyper::Body> {
         http::HeaderValue::from_static("text/html"),
     );
     r
+}
+
+fn handle_hello(is_equal_token: bool) -> http::Response<hyper::Body> {
+    let json_content: String =
+        serde_json::json!({"name": "I am definy desktop!", "isValidToken": is_equal_token})
+            .to_string();
+    let mut response = hyper::Response::new(hyper::Body::from(json_content));
+    response.headers_mut().insert(
+        http::header::CONTENT_TYPE,
+        http::HeaderValue::from_static("application/json"),
+    );
+    response
 }
 
 fn handle_env(is_equal_token: bool) -> http::Response<hyper::Body> {

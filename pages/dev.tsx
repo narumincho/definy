@@ -7,23 +7,45 @@ import { useAccountToken } from "../hooks/useAccountToken";
 import { useLanguage } from "../hooks/useLanguage";
 import { useMutation } from "react-query";
 
+type DataFromDesktop =
+  | {
+      readonly type: "connection-error";
+    }
+  | {
+      readonly type: "ok";
+      readonly envs: ReadonlyMap<string, string>;
+    };
+
+const getDataFromDesktop = async (url: URL): Promise<DataFromDesktop> => {
+  try {
+    url.pathname = "/envs";
+    const result = await fetch(url);
+    const response: unknown = await result.json();
+    if (typeof response === "string" || typeof response === "number") {
+      return {
+        type: "connection-error",
+      };
+    }
+    return {
+      type: "ok",
+      envs: new Map(Object.entries(response as object)),
+    };
+  } catch (e) {
+    console.log(e);
+    return {
+      type: "connection-error",
+    };
+  }
+};
+
 const DevPage = (): React.ReactElement => {
   const language = useLanguage();
   const useAccountTokenResult = useAccountToken();
-  const requestToDesktop = useMutation(
-    async (url: URL) => {
-      const result = await fetch(url, {
-        method: "POST",
-        body: "bodyだよー",
-      });
-      return result.text();
+  const requestToDesktop = useMutation(getDataFromDesktop, {
+    onSuccess: (data) => {
+      console.log(data);
     },
-    {
-      onSuccess: (data) => {
-        console.log(data);
-      },
-    }
-  );
+  });
   const [desktopUrlRaw, setDesktopUrlRaw] = React.useState<string>("");
   const desktopUrl = textToUrl(desktopUrlRaw);
 
@@ -48,36 +70,79 @@ const DevPage = (): React.ReactElement => {
             esperanto="disvolva paĝo"
           />
         </h1>
-        <OneLineTextEditor
-          value={desktopUrlRaw}
-          onChange={(e) => {
-            setDesktopUrlRaw(e);
-          }}
-          id="desktop-url"
-        />
+        <label>
+          URL
+          <OneLineTextEditor
+            value={desktopUrlRaw}
+            onChange={(e) => {
+              setDesktopUrlRaw(e);
+            }}
+            id="desktop-url"
+            placeholder="http://[::1]:2520/?token=Y6sABu7um1zFKed3QqHGAvRMZyp90s"
+          />
+        </label>
+        {desktopUrl.type === "needToken"
+          ? "URLには token が必要です 例: http://[::1]:2520/?token=Y6sABu7um1zFKed3QqHGAvRMZyp90s"
+          : ""}
+        {desktopUrl.type === "notUrl" ? "URLではありません" : ""}
         <Button
           onClick={
-            desktopUrl === undefined || requestToDesktop.isLoading
+            desktopUrl.type !== "ok" || requestToDesktop.isLoading
               ? undefined
               : () => {
-                  requestToDesktop.mutate(desktopUrl);
+                  requestToDesktop.mutate(desktopUrl.url);
                 }
           }
         >
           デスクトップアプリと通信する
         </Button>
-        {requestToDesktop.isError ? "接続できなかった" : ""}
-        {requestToDesktop.data}
+        {requestToDesktop.data?.type === "connection-error"
+          ? "接続ができなかったか, 指定を間違えた"
+          : ""}
+        <div
+          css={{
+            overflow: "scroll",
+            height: 400,
+            width: 620,
+          }}
+        >
+          {requestToDesktop.data?.type === "ok" ? (
+            [...requestToDesktop.data.envs].map(([k, v]) => (
+              <div
+                key={k}
+                css={{
+                  display: "grid",
+                  gridAutoFlow: "column",
+                  padding: 8,
+                  width: "100%",
+                  gap: 8,
+                }}
+              >
+                <div css={{ overflowWrap: "break-word" }}>{k}</div>
+                <div css={{ overflowWrap: "break-word" }}>{v}</div>
+              </div>
+            ))
+          ) : (
+            <></>
+          )}
+        </div>
       </div>
     </WithHeader>
   );
 };
 
-const textToUrl = (text: string): URL | undefined => {
+const textToUrl = (
+  text: string
+): { type: "ok"; url: URL } | { type: "notUrl" } | { type: "needToken" } => {
   try {
-    return new URL(text);
+    const url = new URL(text);
+    const token = url.searchParams.get("token");
+    if (token === null || token === "") {
+      return { type: "needToken" };
+    }
+    return { type: "ok", url: new URL(text) };
   } catch {
-    return undefined;
+    return { type: "notUrl" };
   }
 };
 
