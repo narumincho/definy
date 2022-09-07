@@ -1,5 +1,6 @@
 import * as d from "../../localData";
 import * as indexedDB from "../indexedDB";
+import * as zodType from "../../common/zodType";
 import { AddMessage, useNotification } from "./useNotification";
 import { ReactElement, useCallback, useEffect, useMemo, useState } from "react";
 import type { TypePartIdAndMessage } from "../../core/TypePartIdAndMessage";
@@ -398,7 +399,7 @@ export const useDefinyApp = (): UseDefinyAppResult => {
         }
         verifyingAccountTokenAndGetAccount(
           setLogInState,
-          accountToken,
+          accountToken as unknown as d.AccountToken,
           accountDict.setLoaded,
           addMessage
         );
@@ -764,7 +765,7 @@ const verifyingAccountTokenAndGetAccount = (
       setLogInState(d.LogInState.Guest);
       return;
     }
-    indexedDB.setAccountToken(accountToken);
+    indexedDB.setAccountToken(accountToken as unknown as zodType.AccountToken);
     addMessage({
       text: `「${response.value.value.name}」としてログインしました`,
       type: "success",
@@ -794,7 +795,9 @@ const verifyingAccountTokenAndGetAccountFromCodeAndState = (
       setLogInState(d.LogInState.Guest);
       return;
     }
-    indexedDB.setAccountToken(response.value.value.accountToken);
+    indexedDB.setAccountToken(
+      response.value.value.accountToken as unknown as zodType.AccountToken
+    );
     addMessage({
       text: `「${response.value.value.account.name}」としてログインしました`,
       type: "success",
