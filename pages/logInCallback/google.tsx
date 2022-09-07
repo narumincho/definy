@@ -1,4 +1,5 @@
 import * as React from "react";
+import { Language } from "../../common/zodType";
 import { LoadingBoxCenter } from "../../components/LoadingBox";
 import { Text } from "../../components/Text";
 import { WithHeader } from "../../components/WithHeader";
@@ -154,13 +155,24 @@ export const LogInCallbackGoogle = (): React.ReactElement => {
         )}
         {logInByCodeAndState.status === "success" &&
         logInByCodeAndState.data.type === "logInOk" ? (
-          "ログインに成功! この後の処理を作らなきゃ"
+          logInOkMessage(logInByCodeAndState.data.language)
         ) : (
           <></>
         )}
       </div>
     </WithHeader>
   );
+};
+
+const logInOkMessage = (language: Language): string => {
+  switch (language) {
+    case "japanese":
+      return "ログインに成功";
+    case "english":
+      return "login successful";
+    case "esperanto":
+      return "ensaluto sukcesa";
+  }
 };
 
 export default LogInCallbackGoogle;

@@ -44,10 +44,12 @@ export const OneLineTextEditor: React.FC<{
   onChange: ((value: string) => void) | undefined;
   id: string;
   style?: CSSObject | undefined;
+  placeholder?: string | undefined;
 }> = React.memo((props) => (
   <input
     type="text"
     value={props.value}
+    placeholder={props.placeholder}
     className={css(
       {
         padding: 8,

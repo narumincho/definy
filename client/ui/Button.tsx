@@ -25,6 +25,11 @@ export const Button = React.memo(
           },
           font: "inherit",
           borderRadius: 16,
+          "&:disabled": {
+            cursor: "not-allowed",
+            backgroundColor: "#000",
+            borderRadius: 0,
+          },
         },
         props.style
       )}

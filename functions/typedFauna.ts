@@ -513,3 +513,7 @@ type cases = [
     >
   >
 ];
+
+export const time = (dateTime: Date): TypedExpr<Timestamp> => {
+  return typedExprFrom(f.Time(dateTime.toISOString()));
+};

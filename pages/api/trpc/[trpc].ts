@@ -17,6 +17,13 @@ import {
 import type { TypedFaunaClient } from "../../../functions/typedFauna";
 import { z } from "zod";
 
+const getProjectByIdOutput = z.union([
+  z.object({ name: z.string().min(1) }),
+  z.null(),
+]);
+
+type GetProjectByIdOutput = z.TypeOf<typeof getProjectByIdOutput>;
+
 export const appRouter = trpc
   .router<TypedFaunaClient>()
   .query("gitCommitSha", {
@@ -34,6 +41,7 @@ export const appRouter = trpc
     output: z.nullable(
       z.object({
         name: z.string(),
+        imageUrl: z.string(),
       })
     ),
     resolve: async ({ ctx, input }) => {
@@ -44,6 +52,7 @@ export const appRouter = trpc
       }
       return {
         name: account.name,
+        imageUrl: account.imageUrl,
       };
     },
   })
@@ -134,6 +143,7 @@ export const appRouter = trpc
         name: input.name,
         idIssueByGoogle: preAccount.idIssueByGoogle,
         accountTokenHash: accountTokenAndHash.accountTokenHash,
+        imageUrl: preAccount.imageUrlInProvider.toString(),
       });
       return {
         type: "ok",
@@ -141,6 +151,50 @@ export const appRouter = trpc
         language: preAccount.language,
         location: preAccount.location,
       };
+    },
+  })
+  .mutation("createProject", {
+    input: z.object({
+      accountToken: zodType.AccountToken,
+      projectName: z.string(),
+    }),
+    output: z.object({ id: zodType.ProjectId, name: z.string().min(1) }),
+    resolve: async ({ ctx, input }) => {
+      const account = await i.getAccountByAccountToken(
+        ctx,
+        await hashAccountToken(input.accountToken)
+      );
+      if (account === undefined) {
+        throw new Error("不明なアカウントトークンです");
+      }
+      const projectId = await i.createProject(
+        ctx,
+        input.projectName,
+        account.id
+      );
+      return {
+        id: projectId,
+        name: input.projectName,
+      };
+    },
+  })
+  .query("getAllProjectIds", {
+    input: z.undefined(),
+    output: z.array(zodType.ProjectId),
+    resolve: async ({ ctx }) => {
+      const allProjectIds = await i.getAllProjectIds(ctx);
+      return [...allProjectIds];
+    },
+  })
+  .query("getProjectById", {
+    input: zodType.ProjectId,
+    output: getProjectByIdOutput,
+    resolve: async ({ ctx, input }): Promise<GetProjectByIdOutput> => {
+      const result = await i.getProject(ctx, input);
+      if (result === undefined) {
+        return null;
+      }
+      return result;
     },
   });
 

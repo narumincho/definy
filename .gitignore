@@ -23,4 +23,5 @@ tsconfig.tsbuildinfo
 /.vercel/
 
 .vercel
-/databaseSetupSecret.ts
+/databaseMigrationSecret.ts
+target/

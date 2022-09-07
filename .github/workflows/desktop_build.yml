@@ -1,0 +1,54 @@
+# https://minerva.mamansoft.net/Notes/GitHub+Actions%E3%81%A7Rust%E3%82%92cross+compile%E3%83%93%E3%83%AB%E3%83%89 を参考にした
+name: Desktop Build
+
+on: workflow_dispatch
+
+jobs:
+  build:
+    name: Release binary
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            artifact_name: hibou
+            asset_name: hibou-x86_64-unknown-linux-gnu
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-musl
+            artifact_name: hibou
+            asset_name: hibou-x86_64-unknown-linux-musl
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            artifact_name: hibou.exe
+            asset_name: hibou-x86_64-pc-windows-msvc
+          - os: macos-latest
+            target: x86_64-apple-darwin
+            artifact_name: hibou
+            asset_name: hibou-x86_64-apple-darwin
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v2
+      - run: cd ./desktop
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+
+      - uses: Swatinem/rust-cache@v1
+
+      - name: Build
+        uses: actions-rs/cargo@v1
+        with:
+          use-cross: true
+          command: build
+          args: --release --target ${{ matrix.target }} --all-features --verbose
+      - name: Upload binaries to release
+        uses: svenstaro/upload-release-action@2.1.1
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: target/${{ matrix.target }}/release/${{ matrix.artifact_name }}
+          asset_name: ${{ matrix.asset_name }}
+          tag: ${{ github.ref }}
+          overwrite: true
