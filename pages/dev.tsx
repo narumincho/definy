@@ -70,8 +70,14 @@ const DevPage = (): React.ReactElement => {
             esperanto="disvolva paĝo"
           />
         </h1>
+        <a
+          href="https://narumincho.notion.site/definy-a0c64d59bf01408db879f25d9588a29d"
+          css={{ color: "skyblue" }}
+        >
+          デスクトップアプリのダウンロードはこちら
+        </a>
         <label>
-          URL
+          <div>URL</div>
           <OneLineTextEditor
             value={desktopUrlRaw}
             onChange={(e) => {
