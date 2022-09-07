@@ -11,20 +11,20 @@ jobs:
         include:
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
-            artifact_name: hibou
-            asset_name: hibou-x86_64-unknown-linux-gnu
+            artifact_name: definy-desktop
+            asset_name: definy-desktop-x86_64-unknown-linux-gnu
           - os: ubuntu-latest
             target: x86_64-unknown-linux-musl
-            artifact_name: hibou
-            asset_name: hibou-x86_64-unknown-linux-musl
+            artifact_name: definy-desktop
+            asset_name: definy-desktop-x86_64-unknown-linux-musl
           - os: windows-latest
             target: x86_64-pc-windows-msvc
-            artifact_name: hibou.exe
-            asset_name: hibou-x86_64-pc-windows-msvc
+            artifact_name: definy-desktop.exe
+            asset_name: definy-desktop-x86_64-pc-windows-msvc
           - os: macos-latest
             target: x86_64-apple-darwin
-            artifact_name: hibou
-            asset_name: hibou-x86_64-apple-darwin
+            artifact_name: definy-desktop
+            asset_name: definy-desktop-x86_64-apple-darwin
 
     runs-on: ${{ matrix.os }}
 
@@ -47,7 +47,7 @@ jobs:
         uses: svenstaro/upload-release-action@2.1.1
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: target/${{ matrix.target }}/release/${{ matrix.artifact_name }}
+          file: desktop/target/${{ matrix.target }}/release/${{ matrix.artifact_name }}
           asset_name: ${{ matrix.asset_name }}
           tag: ${{ github.ref }}
           overwrite: true
