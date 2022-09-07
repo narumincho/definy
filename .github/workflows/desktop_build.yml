@@ -1,7 +1,13 @@
 # https://minerva.mamansoft.net/Notes/GitHub+Actions%E3%81%A7Rust%E3%82%92cross+compile%E3%83%93%E3%83%AB%E3%83%89 を参考にした
 name: Desktop Build
 
-on: workflow_dispatch
+on:
+  workflow_dispatch:
+    inputs:
+      tagName:
+        description: "リリースにとして公開するタグ名"
+        required: false
+        type: string
 
 jobs:
   build:
@@ -49,5 +55,5 @@ jobs:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: desktop/target/${{ matrix.target }}/release/${{ matrix.artifact_name }}
           asset_name: ${{ matrix.asset_name }}
-          tag: ${{ github.ref }}
+          tag: ${{ inputs.tagName }}
           overwrite: true
