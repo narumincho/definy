@@ -30,7 +30,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
-      - run: cd ./desktop
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
@@ -43,7 +42,7 @@ jobs:
         with:
           use-cross: true
           command: build
-          args: --release --target ${{ matrix.target }} --all-features --verbose
+          args: --release --target ${{ matrix.target }} --all-features --verbose --manifest-path=./desktop/Cargo.toml
       - name: Upload binaries to release
         uses: svenstaro/upload-release-action@2.1.1
         with:
