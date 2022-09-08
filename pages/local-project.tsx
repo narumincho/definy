@@ -39,7 +39,21 @@ export const LocalProjectPage = (): React.ReactElement => {
   };
 
   if (isLoaded) {
-    return <LoadedLocalProjectPage />;
+    return (
+      <WithHeader
+        location={{ type: "tools" }}
+        language={language}
+        titleItemList={[]}
+        title={{
+          japanese: "ローカルファイルから開く",
+          english: "Open from local file",
+          esperanto: "Malfermu el loka dosiero",
+        }}
+        useAccountTokenResult={useAccountTokenResult}
+      >
+        <LoadedLocalProjectPage />
+      </WithHeader>
+    );
   }
 
   return (

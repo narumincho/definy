@@ -32,7 +32,10 @@ const ProjectPage = (): React.ReactElement => {
     >
       <div>
         <div>{query.id}</div>
-        <div>{JSON.stringify(projectQuery)}</div>
+        <div css={{ overflowWrap: "anywhere" }}>
+          {JSON.stringify(projectQuery)}
+        </div>
+        <div></div>
       </div>
     </WithHeader>
   );
