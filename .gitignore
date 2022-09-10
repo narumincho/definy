@@ -25,3 +25,4 @@ tsconfig.tsbuildinfo
 .vercel
 /databaseMigrationSecret.ts
 target/
+desktop-deno/npm/
