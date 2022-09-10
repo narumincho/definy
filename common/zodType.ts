@@ -1,20 +1,5 @@
 import { z } from "zod";
 
-export const Location = z.union([
-  z.object({ type: z.literal("home") }),
-  z.object({ type: z.literal("about") }),
-  z.object({ type: z.literal("tools") }),
-  z.object({
-    type: z.literal("tool"),
-    value: z.enum(["themeColorRainbow", "soundQuiz"]),
-  }),
-  z.object({ type: z.literal("create-account") }),
-  z.object({ type: z.literal("local-project") }),
-  z.object({ type: z.literal("create-project") }),
-  z.object({ type: z.literal("setting") }),
-  z.object({ type: z.literal("dev") }),
-]);
-
 export type Location = Readonly<z.TypeOf<typeof Location>>;
 
 export const Language = z.enum(["japanese", "english", "esperanto"]);
@@ -38,6 +23,22 @@ export type AccountId = z.TypeOf<typeof AccountId>;
 export const ProjectId = z.string().min(1).brand<"ProjectId">();
 
 export type ProjectId = z.TypeOf<typeof ProjectId>;
+
+export const Location = z.union([
+  z.object({ type: z.literal("home") }),
+  z.object({ type: z.literal("about") }),
+  z.object({ type: z.literal("tools") }),
+  z.object({
+    type: z.literal("tool"),
+    value: z.enum(["themeColorRainbow", "soundQuiz"]),
+  }),
+  z.object({ type: z.literal("create-account") }),
+  z.object({ type: z.literal("local-project") }),
+  z.object({ type: z.literal("project"), id: ProjectId.nullable() }),
+  z.object({ type: z.literal("create-project") }),
+  z.object({ type: z.literal("setting") }),
+  z.object({ type: z.literal("dev") }),
+]);
 
 export const LogInByCodeAndStatePayload = z.union([
   z.object({ type: z.literal("notGeneratedState") }),

@@ -7,5 +7,5 @@ export type TextProps = {
 export const Text = (
   props: TextProps & { readonly language: zodType.Language }
 ): JSX.Element => {
-  return <div css={{ color: "white" }}>{props[props.language]}</div>;
+  return <div>{props[props.language]}</div>;
 };

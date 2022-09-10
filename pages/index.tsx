@@ -26,7 +26,7 @@ const IndexPage = (): React.ReactElement => {
       location={{ type: "home" }}
       language={language}
     >
-      <div>
+      <div css={{ padding: 16 }}>
         <div css={{ padding: 16 }}>
           <HomeLinkList language={language} />
         </div>
@@ -42,14 +42,27 @@ const IndexPage = (): React.ReactElement => {
         ) : (
           <div>
             {getAllProjectIds.data.map((projectId) => (
-              <ProjectCard projectId={projectId} />
+              <ProjectCard
+                key={projectId}
+                projectId={projectId}
+                language={language}
+              />
             ))}
           </div>
         )}
 
         {useAccountTokenResult.accountToken !== undefined && (
-          <Link language={language} location={{ type: "create-project" }}>
-            プロジェクトを作成する
+          <Link
+            language={language}
+            location={{ type: "create-project" }}
+            style={{ padding: 8 }}
+          >
+            <Text
+              language={language}
+              japanese="+ プロジェクトを作成する"
+              english="+ Create a project"
+              esperanto="+ Kreu projekton"
+            />
           </Link>
         )}
       </div>
