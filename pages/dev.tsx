@@ -74,7 +74,7 @@ const DevPage = (): React.ReactElement => {
           href="https://narumincho.notion.site/definy-a0c64d59bf01408db879f25d9588a29d"
           css={{ color: "skyblue" }}
         >
-          デスクトップアプリのダウンロードはこちら
+          definy desktop proxy を実行する方法はこちら
         </a>
         <label>
           <div>URL</div>
@@ -100,7 +100,7 @@ const DevPage = (): React.ReactElement => {
                 }
           }
         >
-          デスクトップアプリと通信する
+          definy desktop proxy と通信する
         </Button>
         {requestToDesktop.data?.type === "connection-error"
           ? "接続ができなかったか, 指定を間違えた"
