@@ -22,7 +22,7 @@
   "exclude": [
     "distribution",
     "definy-output",
-    "desktop-deno",
+    "desktop-proxy",
     "databaseMigration.ts"
   ],
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx"]

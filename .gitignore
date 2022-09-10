@@ -24,4 +24,4 @@ tsconfig.tsbuildinfo
 
 .vercel
 /databaseMigrationSecret.ts
-target/
+desktop-proxy/npm/
