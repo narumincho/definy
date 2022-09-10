@@ -1,11 +1,5 @@
-export type Type = "string" | "number" | "unit";
+export type DefinyRpcType<in out t> = { dummy: t };
 
-export const string: Type = "string";
+export const string: DefinyRpcType<string> = { dummy: "" };
 
-export const number: Type = "number";
-
-export type TypeToTsType<T extends Type> = T extends "string"
-  ? string
-  : T extends "number"
-  ? number
-  : undefined;
+export const number: DefinyRpcType<number> = { dummy: 0 };

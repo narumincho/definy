@@ -1,33 +1,26 @@
-import { Type, TypeToTsType } from "./type.ts";
+import { DefinyRpcType } from "./type.ts";
 export * from "./type.ts";
 
-export type Api = {
-  readonly [key in string]: ApiFunction<Type, Type>;
+export type ApiFunctionObject = {
+  readonly [key in string]: ApiFunction<any, any>;
 };
 
-type ApiFunction<InputType extends Type, OutputType extends Type> = {
-  readonly input: InputType;
-  readonly output: OutputType;
+type ApiFunction<InputType, OutputType> = {
+  readonly input: DefinyRpcType<InputType>;
+  readonly output: DefinyRpcType<OutputType>;
   readonly description: string;
   readonly isMutation: boolean;
-  readonly resolve: (
-    input: TypeToTsType<InputType>
-  ) => Promise<TypeToTsType<Type>> | TypeToTsType<Type>;
+  readonly resolve: (input: InputType) => Promise<OutputType> | OutputType;
   readonly __apiFunctionBland: typeof apiFunctionBlandSymbol;
 };
 
 const apiFunctionBlandSymbol = Symbol();
 
-export const query = <
-  InputType extends Type,
-  OutputType extends Type
->(parameter: {
-  readonly input: InputType;
-  readonly output: OutputType;
+export const query = <InputType, OutputType>(parameter: {
+  readonly input: DefinyRpcType<InputType>;
+  readonly output: DefinyRpcType<OutputType>;
   readonly description: string;
-  readonly resolve: (
-    input: TypeToTsType<InputType>
-  ) => Promise<TypeToTsType<Type>> | TypeToTsType<Type>;
+  readonly resolve: (input: InputType) => Promise<OutputType> | OutputType;
 }): ApiFunction<InputType, OutputType> => {
   return {
     input: parameter.input,
@@ -39,16 +32,11 @@ export const query = <
   };
 };
 
-export const mutation = <
-  InputType extends Type,
-  OutputType extends Type
->(parameter: {
-  readonly input: InputType;
-  readonly output: OutputType;
+export const mutation = <InputType, OutputType>(parameter: {
+  readonly input: DefinyRpcType<InputType>;
+  readonly output: DefinyRpcType<OutputType>;
   readonly description: string;
-  readonly resolve: (
-    input: TypeToTsType<InputType>
-  ) => Promise<TypeToTsType<Type>> | TypeToTsType<Type>;
+  readonly resolve: (input: InputType) => Promise<OutputType> | OutputType;
 }): ApiFunction<InputType, OutputType> => {
   return {
     input: parameter.input,
@@ -61,11 +49,17 @@ export const mutation = <
 };
 
 export const createHttpServer =
-  (api: Api) =>
+  (api: { [key in string]: ApiFunctionObject }) =>
   (request: Request): Response => {
-    console.log("definyRpc called");
-    console.log(Object.keys(api));
-    return new Response(JSON.stringify(Object.keys(api)), {
+    const url = new URL(request.url);
+    const pathList = url.pathname.slice(1).split("/");
+    if (pathList[0] === "definyRpc" && pathList[1] === "namespaceList") {
+      return new Response(JSON.stringify(Object.keys(api)), {
+        headers: { "content-type": "application/json" },
+      });
+    }
+    return new Response(JSON.stringify("not found.."), {
+      status: 404,
       headers: { "content-type": "application/json" },
     });
   };
