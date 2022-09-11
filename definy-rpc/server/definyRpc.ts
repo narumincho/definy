@@ -1,4 +1,7 @@
 import { DefinyRpcType } from "./type.ts";
+import { clientBuildResult } from "./client.ts";
+import * as base64 from "https://denopkg.com/chiefbiiko/base64@master/mod.ts";
+
 export * from "./type.ts";
 
 export type ApiFunctionObject = {
@@ -53,6 +56,21 @@ export const createHttpServer =
   (request: Request): Response => {
     const url = new URL(request.url);
     const pathList = url.pathname.slice(1).split("/");
+    if (url.pathname === "/") {
+      return new Response(clientBuildResult.indexHtmlContent, {
+        headers: { "content-type": "text/html; charset=utf-8" },
+      });
+    }
+    if (url.pathname === clientBuildResult.iconPath) {
+      return new Response(base64.toUint8Array(clientBuildResult.iconContent), {
+        headers: { "content-type": "image/png" },
+      });
+    }
+    if (url.pathname === clientBuildResult.scriptPath) {
+      return new Response(clientBuildResult.scriptContent, {
+        headers: { "content-type": "text/javascript; charset=utf-8" },
+      });
+    }
     if (pathList[0] === "definyRpc" && pathList[1] === "namespaceList") {
       return new Response(JSON.stringify(Object.keys(api)), {
         headers: { "content-type": "application/json" },
