@@ -1,4 +1,4 @@
-import { DefinyRpcType, list, set, string, unit } from "./type.ts";
+import { DefinyRpcType, list, product, set, string, unit } from "./type.ts";
 import { clientBuildResult } from "./client.ts";
 import * as base64 from "https://denopkg.com/chiefbiiko/base64@master/mod.ts";
 
@@ -51,9 +51,13 @@ export const createHttpServer = (parameter: {
     }
     for (const func of all) {
       if (stringArrayEqual(pathList, [...func.namespace, func.name])) {
+        // input が undefined の型以外の場合は, 入力の関数を省く
         return new Response(
           JSON.stringify(
-            definyRpcTypeValueToSafeJsonValue(func.resolve("これから追加する"))
+            definyRpcTypeValueToSafeJsonValue(
+              func.output,
+              func.resolve(jsonValueToDefinyRpcTypeValue(func.input, ""))
+            )
           ),
           {
             headers: { "content-type": "application/json" },
@@ -68,6 +72,23 @@ export const createHttpServer = (parameter: {
   };
 };
 
+type FunctionByNameResult = {
+  readonly name: ReadonlyArray<string>;
+  readonly description: string;
+};
+
+const FunctionByNameResult = product<FunctionByNameResult>({
+  name: "FunctionByNameResult",
+  description: "functionByNameの結果",
+  fields: {
+    name: {
+      description: "名前空間付き, 関数名",
+      type: list<string>(string),
+    },
+    description: { description: "関数の説明文", type: string },
+  },
+});
+
 const addDefinyRpcApiFunction = (
   name: string,
   all: () => ReadonlyArray<ApiFunction<any, any>>
@@ -78,7 +99,7 @@ const addDefinyRpcApiFunction = (
       name: "namespaceList",
       description: "get namespace list",
       input: unit,
-      output: set(list(string)),
+      output: set<ReadonlyArray<string>>(list<string>(string)),
       isMutation: false,
       resolve: () => {
         return new Set(
@@ -92,16 +113,19 @@ const addDefinyRpcApiFunction = (
         );
       },
     }),
-    createApiFunction({
+    createApiFunction<string, ReadonlyArray<FunctionByNameResult>>({
       namespace: ["definyRpc"],
-      name: "functionByName",
+      name: "functionListByName",
       description: "名前から関数を検索する",
       input: string,
-      output: list(list(string)),
+      output: list<FunctionByNameResult>(FunctionByNameResult),
       isMutation: false,
       resolve: (_searchTerm) => {
         const allR = addDefinyRpcApiFunction(name, all);
-        return allR.map((f) => [...f.namespace, f.name]);
+        return allR.map((f) => ({
+          name: [...f.namespace, f.name],
+          description: f.description,
+        }));
       },
     }),
     ...all().map((func) => ({ ...func, namespace: [name, ...func.namespace] })),
@@ -123,35 +147,112 @@ const stringArrayEqual = (
   return true;
 };
 
-const definyRpcTypeValueToSafeJsonValue = (value: unknown): unknown => {
-  if (value instanceof Set) {
-    return [...value].map(definyRpcTypeValueToSafeJsonValue);
+const definyRpcTypeValueToSafeJsonValue = <T>(
+  type: DefinyRpcType<T>,
+  value: T
+): T => {
+  // 下の型に合わせて分岐をする
+  switch (type.type) {
+    case "string": {
+      if (typeof value !== "string") {
+        throw new Error("expect string");
+      }
+      return value;
+    }
+    case "number": {
+      if (typeof value !== "number") {
+        throw new Error("expect number");
+      }
+      return value;
+    }
+    case "unit": {
+      if (value !== undefined) {
+        throw new Error("expect undefined");
+      }
+      return null as unknown as T;
+    }
+    case "list": {
+      if (value instanceof Array) {
+        return value.map((e) =>
+          definyRpcTypeValueToSafeJsonValue(type.element, e)
+        ) as unknown as T;
+      }
+      throw new Error("expect array");
+    }
+    case "set": {
+      if (value instanceof Set) {
+        return [...value].map((e) =>
+          definyRpcTypeValueToSafeJsonValue(type.element, e)
+        ) as unknown as T;
+      }
+      throw new Error("expect set");
+    }
+    case "product": {
+      if (typeof value === "object" && value !== null) {
+        return Object.fromEntries(
+          Object.entries(type.fields).map(([fieldName, fieldValue]) => [
+            fieldName,
+            definyRpcTypeValueToSafeJsonValue<any>(
+              fieldValue.type,
+              (value as { [key in string]: unknown })[fieldName]
+            ),
+          ])
+        ) as unknown as T;
+      }
+      throw new Error("expect object in product");
+    }
   }
-  if (value instanceof Map) {
-    return Object.fromEntries(
-      [...value.entries()].map(([k, v]) => [
-        k,
-        definyRpcTypeValueToSafeJsonValue(v),
-      ])
-    );
+};
+
+const jsonValueToDefinyRpcTypeValue = <T>(
+  type: DefinyRpcType<T>,
+  value: unknown
+): T => {
+  switch (type.type) {
+    case "string": {
+      if (typeof value === "string") {
+        return value as unknown as T;
+      }
+      throw new Error("expect string in string");
+    }
+    case "number": {
+      if (typeof value === "number") {
+        return value as unknown as T;
+      }
+      throw new Error("expect number in number");
+    }
+    case "unit": {
+      return undefined as unknown as T;
+    }
+    case "list": {
+      if (value instanceof Array) {
+        return value.map((e) =>
+          jsonValueToDefinyRpcTypeValue(type.element, e)
+        ) as unknown as T;
+      }
+      throw new Error("expect array in array");
+    }
+    case "set": {
+      if (value instanceof Array) {
+        return new Set(
+          value.map((e) => jsonValueToDefinyRpcTypeValue(type.element, e))
+        ) as unknown as T;
+      }
+      throw new Error("expect array in set");
+    }
+    case "product": {
+      if (typeof value === "object" && value !== null) {
+        return Object.fromEntries(
+          Object.entries(type.fields).map(([fieldName, fieldValue]) => [
+            fieldName,
+            jsonValueToDefinyRpcTypeValue(
+              fieldValue.type,
+              (value as any)[fieldName]
+            ),
+          ])
+        ) as unknown as T;
+      }
+      throw new Error("expect object in product");
+    }
   }
-  if (value === undefined) {
-    return null;
-  }
-  if (typeof value === "string") {
-    return value;
-  }
-  if (typeof value === "number") {
-    return value;
-  }
-  if (value instanceof Array) {
-    return value.map(definyRpcTypeValueToSafeJsonValue);
-  }
-  if (typeof value === "object" && value !== null) {
-    return Object.entries(value).map(([k, v]) => [
-      k,
-      definyRpcTypeValueToSafeJsonValue(v),
-    ]);
-  }
-  return value;
 };

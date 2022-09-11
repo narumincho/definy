@@ -1,7 +1,12 @@
 import * as React from "react";
 
 export const Select = (props: {
-  readonly values: ReadonlyArray<string> | undefined;
+  readonly values:
+    | ReadonlyArray<{
+        readonly name: string;
+        readonly description: string;
+      }>
+    | undefined;
   readonly value: string | undefined;
   readonly onSelect: (value: string | undefined) => void;
 }): React.ReactElement => {
@@ -47,7 +52,12 @@ export const Select = (props: {
 };
 
 const SelectActive = (props: {
-  readonly values: ReadonlyArray<string> | undefined;
+  readonly values:
+    | ReadonlyArray<{
+        readonly name: string;
+        readonly description: string;
+      }>
+    | undefined;
   readonly value: string | undefined;
   readonly onSelect: (value: string | undefined) => void;
   readonly onSelectAndExit: (value: string | undefined) => void;
@@ -103,7 +113,6 @@ const SelectActive = (props: {
         value={inputText}
         onChange={onInput}
         onKeyDown={(e) => {
-          console.log(e.key);
           if (e.key === "ArrowDown") {
             if (props.values === undefined) {
               return;
@@ -206,17 +215,22 @@ const Suggestion = (props: {
   );
 };
 
-type SuggestionList = ReadonlyArray<{
+type SuggestionList = ReadonlyArray<SuggestionItem>;
+
+type SuggestionItem = {
   readonly value: string;
   readonly text: ReadonlyArray<{
     readonly text: string;
     readonly emphasis: boolean;
   }>;
   readonly point: number;
-}>;
+};
 
 const createSuggestionSorted = (parameter: {
-  readonly values: ReadonlyArray<string>;
+  readonly values: ReadonlyArray<{
+    readonly name: string;
+    readonly description: string;
+  }>;
   readonly inputText: string;
 }): SuggestionList => {
   const result = [...createSuggestionWithPoint(parameter)];
@@ -225,41 +239,44 @@ const createSuggestionSorted = (parameter: {
 };
 
 const createSuggestionWithPoint = (parameter: {
-  readonly values: ReadonlyArray<string>;
+  readonly values: ReadonlyArray<{
+    readonly name: string;
+    readonly description: string;
+  }>;
   readonly inputText: string;
 }): SuggestionList => {
   const normalizedSearchText = parameter.inputText.trim().toLocaleLowerCase();
-  return parameter.values.map((value) => {
-    const includeIndex = value
+  return parameter.values.map((value): SuggestionItem => {
+    const includeIndex = value.name
       .toLocaleLowerCase()
       .indexOf(normalizedSearchText);
     if (includeIndex === -1) {
       return {
-        value,
-        text: [{ text: value, emphasis: false }],
+        value: value.name,
+        text: [{ text: value.name, emphasis: false }],
         point: 0,
       };
     }
     return {
-      value,
+      value: value.name,
       text: [
-        { text: value.slice(0, includeIndex), emphasis: false },
+        { text: value.name.slice(0, includeIndex), emphasis: false },
         {
-          text: value.slice(
+          text: value.name.slice(
             includeIndex,
             includeIndex + normalizedSearchText.length
           ),
           emphasis: true,
         },
         {
-          text: value.slice(includeIndex + normalizedSearchText.length),
+          text: value.name.slice(includeIndex + normalizedSearchText.length),
           emphasis: false,
         },
       ],
       point:
-        value.length -
+        value.name.length -
         normalizedSearchText.length +
-        value.length -
+        value.name.length -
         includeIndex,
     };
   });
