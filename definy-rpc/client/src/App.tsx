@@ -2,9 +2,12 @@ import * as React from "react";
 import { Select } from "./Select";
 
 export const App = (): React.ReactElement => {
-  const [namespaceList, setNamespaceList] = React.useState<
+  const [functionList, setFunctionList] = React.useState<
     ReadonlyArray<string> | undefined
   >(undefined);
+  const [selectedFunc, setSelectedFunc] = React.useState<string | undefined>(
+    undefined
+  );
 
   React.useEffect(() => {
     fetch("http://localhost:2520/definyRpc/functionByName")
@@ -12,7 +15,9 @@ export const App = (): React.ReactElement => {
         return response.json();
       })
       .then((json: ReadonlyArray<ReadonlyArray<string>>) => {
-        setNamespaceList(json.map((n) => n.join(".")));
+        const result = json.map((n) => n.join("."));
+        setFunctionList(result);
+        setSelectedFunc(result[0]);
       });
   }, []);
 
@@ -29,9 +34,10 @@ export const App = (): React.ReactElement => {
       <h1 css={{ margin: 0 }}>definy RPC</h1>
 
       <Select
-        values={namespaceList}
-        value={namespaceList?.[0] ?? undefined}
+        values={functionList}
+        value={selectedFunc}
         onSelect={(e) => {
+          setSelectedFunc(e);
           console.log(e);
         }}
       />
