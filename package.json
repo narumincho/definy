@@ -20,7 +20,7 @@
     "dev-local": "pnpm exec vercel dev",
     "desktop-start": "cd ./desktop && cargo run",
     "database-migration": "node -r @swc-node/register ./databaseMigration.ts",
-    "definy-rpc-client": "cd ./definy-rpc/client && pnpm exec vite build",
+    "definy-rpc-client": "cd ./definy-rpc/client && vite",
     "definy-rpc-client-build": "cd ./definy-rpc/client && vite build"
   },
   "engines": {

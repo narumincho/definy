@@ -1,4 +1,5 @@
 import * as React from "react";
+import { Select } from "./Select";
 
 export const App = (): React.ReactElement => {
   const [namespaceList, setNamespaceList] = React.useState<
@@ -15,12 +16,23 @@ export const App = (): React.ReactElement => {
       });
   }, []);
   return (
-    <div>
-      {namespaceList === undefined
-        ? "loading..."
-        : namespaceList.map((namespace) => (
-            <div key={namespace}>{namespace}</div>
-          ))}
+    <div
+      css={{
+        backgroundColor: "black",
+        color: "white",
+        height: "100%",
+        padding: 8,
+      }}
+    >
+      <h1 css={{ margin: 0 }}>definy RPC</h1>
+      <div>namespace</div>
+      <Select
+        values={namespaceList}
+        value={namespaceList?.[0] ?? undefined}
+        onSelect={(e) => {
+          console.log(e);
+        }}
+      />
     </div>
   );
 };
