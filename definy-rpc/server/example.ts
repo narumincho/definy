@@ -12,6 +12,9 @@ const sampleDefinyRpcServer = definyRpc.createHttpServer({
       },
     }),
   },
+  dynamicA: {},
+  dynamicB: {},
+  dynamicC: {},
 });
 
 serve(
