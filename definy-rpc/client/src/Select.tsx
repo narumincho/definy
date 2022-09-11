@@ -7,9 +7,13 @@ export const Select = (props: {
 }): React.ReactElement => {
   const [isFocus, setIsFocus] = React.useState<boolean>(false);
 
-  const onBlur = React.useCallback(() => {
-    setIsFocus(false);
-  }, []);
+  const onBlur = React.useCallback(
+    (value: string | undefined) => {
+      props.onSelect(value);
+      setIsFocus(false);
+    },
+    [props.onSelect]
+  );
 
   if (isFocus) {
     return (
@@ -17,7 +21,7 @@ export const Select = (props: {
         values={props.values}
         value={props.value}
         onSelect={props.onSelect}
-        onBlur={onBlur}
+        onSelectAndExit={onBlur}
       />
     );
   }
@@ -32,9 +36,12 @@ export const Select = (props: {
         borderStyle: "solid",
         borderColor: "white",
         borderRadius: 8,
+        fontFamily: "monospace",
+        fontSize: 18,
+        padding: "4px 8px",
       }}
     >
-      <div>{props.value}</div>
+      <div>{props.value ?? "???"}</div>
     </div>
   );
 };
@@ -43,11 +50,14 @@ const SelectActive = (props: {
   readonly values: ReadonlyArray<string> | undefined;
   readonly value: string | undefined;
   readonly onSelect: (value: string | undefined) => void;
-  readonly onBlur: () => void;
+  readonly onSelectAndExit: (value: string | undefined) => void;
 }): React.ReactElement => {
   const [inputText, setInputText] = React.useState<string>(props.value ?? "");
   const inputElementRef = React.useRef<HTMLInputElement>(null);
   const [initValue] = React.useState<string | undefined>(props.value);
+  const [suggestionList, setSuggestionList] = React.useState<SuggestionList>(
+    createSuggestionSorted({ values: props.values ?? [], inputText })
+  );
 
   React.useEffect(() => {
     inputElementRef.current?.setSelectionRange(0, inputText.length);
@@ -60,12 +70,12 @@ const SelectActive = (props: {
       if (props.values === undefined) {
         return;
       }
-      props.onSelect(
-        createSuggestionSorted({
-          values: props.values,
-          inputText: newInputText,
-        })[0]?.value
-      );
+      const newSuggestionList = createSuggestionSorted({
+        values: props.values,
+        inputText: newInputText,
+      });
+      setSuggestionList(newSuggestionList);
+      props.onSelect(newSuggestionList[0]?.value);
     },
     [props.onSelect]
   );
@@ -86,9 +96,9 @@ const SelectActive = (props: {
         css={{
           fontFamily: "monospace",
           fontSize: 18,
-        }}
-        onBlur={() => {
-          props.onBlur();
+          padding: "0 8px",
+          backgroundColor: "#000",
+          color: "white",
         }}
         value={inputText}
         onChange={onInput}
@@ -98,74 +108,85 @@ const SelectActive = (props: {
             if (props.values === undefined) {
               return;
             }
-            const list = createSuggestionSorted({
-              values: props.values,
-              inputText,
-            });
-            const index = list.findIndex((s) => s.value === props.value);
+            const index = suggestionList.findIndex(
+              (s) => s.value === props.value
+            );
 
-            const newValue = list[(index + 1) % list.length]?.value;
+            const newValue =
+              suggestionList[(index + 1) % suggestionList.length]?.value;
             if (newValue !== undefined) {
               props.onSelect(newValue);
+              setInputText(newValue);
             }
           }
           if (e.key === "ArrowUp") {
             if (props.values === undefined) {
               return;
             }
-            const list = createSuggestionSorted({
-              values: props.values,
-              inputText,
-            });
-            const index = list.findIndex((s) => s.value === props.value);
+
+            const index = suggestionList.findIndex(
+              (s) => s.value === props.value
+            );
             const newValue =
-              list[(index - 1 + list.length) % list.length]?.value;
+              suggestionList[
+                (index - 1 + suggestionList.length) % suggestionList.length
+              ]?.value;
             if (newValue !== undefined) {
               props.onSelect(newValue);
+              setInputText(newValue);
             }
           }
           if (e.key === "Enter") {
-            props.onBlur();
+            props.onSelectAndExit(props.value);
           }
           if (e.key === "Escape") {
-            props.onSelect(initValue);
-            props.onBlur();
+            props.onSelectAndExit(initValue);
           }
         }}
       />
       <Suggestion
         value={props.value}
-        values={props.values}
+        suggestionList={props.values === undefined ? undefined : suggestionList}
         inputText={inputText}
+        onSelect={props.onSelectAndExit}
       />
     </div>
   );
 };
 
 const Suggestion = (props: {
-  readonly values: ReadonlyArray<string> | undefined;
+  readonly suggestionList: SuggestionList | undefined;
   readonly value: string | undefined;
   readonly inputText: string;
+  readonly onSelect: (value: string) => void;
 }) => {
-  if (props.values === undefined) {
+  if (props.suggestionList === undefined) {
     return <div>loading...</div>;
   }
-  if (props.values.length === 0) {
+  if (props.suggestionList.length === 0) {
     return <div>候補なし</div>;
   }
-  const suggestionList = createSuggestionSorted({
-    values: props.values,
-    inputText: props.inputText,
-  });
   return (
-    <div>
-      {suggestionList.map((v) => (
-        <div
+    <div css={{ display: "grid", gap: 1 }}>
+      {props.suggestionList.map((v) => (
+        <button
           key={v.value}
           css={{
             backgroundColor: v.value === props.value ? "#511" : "transparent",
             fontFamily: "monospace",
             fontSize: 18,
+            textAlign: "left",
+            cursor: "pointer",
+            ...(v.value === props.value
+              ? {}
+              : {
+                  ":hover": {
+                    backgroundColor: "#333",
+                  },
+                }),
+          }}
+          onClick={() => {
+            props.onSelect(v.value);
           }}
         >
           {v.text.map((s, index) => (
@@ -173,28 +194,31 @@ const Suggestion = (props: {
               key={index}
               css={{
                 color: s.emphasis ? "#faa" : "white",
+                fontWeight: s.emphasis ? "bold" : "normal",
               }}
             >
               {s.text}
             </span>
           ))}
-        </div>
+        </button>
       ))}
     </div>
   );
 };
 
-const createSuggestionSorted = (parameter: {
-  readonly values: ReadonlyArray<string>;
-  readonly inputText: string;
-}): ReadonlyArray<{
+type SuggestionList = ReadonlyArray<{
   readonly value: string;
   readonly text: ReadonlyArray<{
     readonly text: string;
     readonly emphasis: boolean;
   }>;
   readonly point: number;
-}> => {
+}>;
+
+const createSuggestionSorted = (parameter: {
+  readonly values: ReadonlyArray<string>;
+  readonly inputText: string;
+}): SuggestionList => {
   const result = [...createSuggestionWithPoint(parameter)];
   result.sort((a, b) => b.point - a.point);
   return result;
@@ -203,14 +227,7 @@ const createSuggestionSorted = (parameter: {
 const createSuggestionWithPoint = (parameter: {
   readonly values: ReadonlyArray<string>;
   readonly inputText: string;
-}): ReadonlyArray<{
-  readonly value: string;
-  readonly text: ReadonlyArray<{
-    readonly text: string;
-    readonly emphasis: boolean;
-  }>;
-  readonly point: number;
-}> => {
+}): SuggestionList => {
   const normalizedSearchText = parameter.inputText.trim().toLocaleLowerCase();
   return parameter.values.map((value) => {
     const includeIndex = value
