@@ -6,27 +6,52 @@ export const Select = (props: {
   readonly onSelect: (value: string | undefined) => void;
 }): React.ReactElement => {
   const [isFocus, setIsFocus] = React.useState<boolean>(false);
-  const [inputText, setInputText] = React.useState<string>("");
-  const divElementRef = React.useRef<HTMLDivElement>(null);
-  const inputElementRef = React.useRef<HTMLInputElement>(null);
 
-  const onFocus = React.useCallback<React.FocusEventHandler<HTMLDivElement>>(
-    (e) => {
-      if (e.target !== divElementRef.current) {
-        return;
-      }
-      setIsFocus(true);
-      const text = props.value ?? "";
-      setInputText(text);
-      requestAnimationFrame(() => {
-        if (inputElementRef.current !== null) {
-          inputElementRef.current.focus();
-          inputElementRef.current.setSelectionRange(0, text.length);
-        }
-      });
-    },
-    []
+  const onBlur = React.useCallback(() => {
+    setIsFocus(false);
+  }, []);
+
+  if (isFocus) {
+    return (
+      <SelectActive
+        values={props.values}
+        value={props.value}
+        onSelect={props.onSelect}
+        onBlur={onBlur}
+      />
+    );
+  }
+  return (
+    <div
+      onFocus={() => {
+        setIsFocus(true);
+      }}
+      tabIndex={-1}
+      css={{
+        display: "grid",
+        borderStyle: "solid",
+        borderColor: "white",
+        borderRadius: 8,
+      }}
+    >
+      <div>{props.value}</div>
+    </div>
   );
+};
+
+const SelectActive = (props: {
+  readonly values: ReadonlyArray<string> | undefined;
+  readonly value: string | undefined;
+  readonly onSelect: (value: string | undefined) => void;
+  readonly onBlur: () => void;
+}): React.ReactElement => {
+  const [inputText, setInputText] = React.useState<string>(props.value ?? "");
+  const inputElementRef = React.useRef<HTMLInputElement>(null);
+  const [initValue] = React.useState<string | undefined>(props.value);
+
+  React.useEffect(() => {
+    inputElementRef.current?.setSelectionRange(0, inputText.length);
+  }, [inputElementRef.current]);
 
   const onInput = React.useCallback<React.ChangeEventHandler<HTMLInputElement>>(
     (e) => {
@@ -47,9 +72,6 @@ export const Select = (props: {
 
   return (
     <div
-      onFocus={onFocus}
-      tabIndex={-1}
-      ref={divElementRef}
       css={{
         display: "grid",
         borderStyle: "solid",
@@ -57,28 +79,65 @@ export const Select = (props: {
         borderRadius: 8,
       }}
     >
-      {isFocus ? (
-        <input
-          ref={inputElementRef}
-          type="text"
-          onBlur={() => {
-            setIsFocus(false);
-          }}
-          value={inputText}
-          onChange={onInput}
-        />
-      ) : (
-        <div>{props.value}</div>
-      )}
-      {isFocus ? (
-        <Suggestion
-          value={props.value}
-          values={props.values}
-          inputText={inputText}
-        />
-      ) : (
-        <></>
-      )}
+      <input
+        autoFocus
+        ref={inputElementRef}
+        type="text"
+        css={{
+          fontFamily: "monospace",
+          fontSize: 18,
+        }}
+        onBlur={() => {
+          props.onBlur();
+        }}
+        value={inputText}
+        onChange={onInput}
+        onKeyDown={(e) => {
+          console.log(e.key);
+          if (e.key === "ArrowDown") {
+            if (props.values === undefined) {
+              return;
+            }
+            const list = createSuggestionSorted({
+              values: props.values,
+              inputText,
+            });
+            const index = list.findIndex((s) => s.value === props.value);
+
+            const newValue = list[(index + 1) % list.length]?.value;
+            if (newValue !== undefined) {
+              props.onSelect(newValue);
+            }
+          }
+          if (e.key === "ArrowUp") {
+            if (props.values === undefined) {
+              return;
+            }
+            const list = createSuggestionSorted({
+              values: props.values,
+              inputText,
+            });
+            const index = list.findIndex((s) => s.value === props.value);
+            const newValue =
+              list[(index - 1 + list.length) % list.length]?.value;
+            if (newValue !== undefined) {
+              props.onSelect(newValue);
+            }
+          }
+          if (e.key === "Enter") {
+            props.onBlur();
+          }
+          if (e.key === "Escape") {
+            props.onSelect(initValue);
+            props.onBlur();
+          }
+        }}
+      />
+      <Suggestion
+        value={props.value}
+        values={props.values}
+        inputText={inputText}
+      />
     </div>
   );
 };
@@ -105,6 +164,8 @@ const Suggestion = (props: {
           key={v.value}
           css={{
             backgroundColor: v.value === props.value ? "#511" : "transparent",
+            fontFamily: "monospace",
+            fontSize: 18,
           }}
         >
           {v.text.map((s, index) => (
