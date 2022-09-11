@@ -14,4 +14,15 @@ const sampleDefinyRpcServer = definyRpc.createHttpServer({
   },
 });
 
-serve(sampleDefinyRpcServer);
+serve(
+  (request) => {
+    const response = sampleDefinyRpcServer(request);
+
+    response.headers.append(
+      "access-control-allow-origin",
+      request.headers.get("origin") ?? new URL(request.url).origin
+    );
+    return response;
+  },
+  { port: 2520 }
+);
