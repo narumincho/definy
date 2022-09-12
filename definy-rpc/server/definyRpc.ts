@@ -1,4 +1,12 @@
-import { DefinyRpcType, list, product, set, string, unit } from "./type.ts";
+import {
+  DefinyRpcType,
+  list,
+  product,
+  set,
+  string,
+  sum,
+  unit,
+} from "./type.ts";
 import { clientBuildResult } from "./client.ts";
 import * as base64 from "https://denopkg.com/chiefbiiko/base64@master/mod.ts";
 
@@ -72,13 +80,24 @@ export const createHttpServer = (parameter: {
   };
 };
 
-type FunctionByNameResult = {
+const Type = sum({
+  fullName: ["definyRpc", "Type"],
+  description: "definyRpc で表現できる型",
+  patterns: {
+    string: {
+      description: "string. 文字列",
+      type: undefined,
+    },
+  },
+});
+
+type FunctionDetail = {
   readonly name: ReadonlyArray<string>;
   readonly description: string;
 };
 
-const FunctionByNameResult = product<FunctionByNameResult>({
-  name: "FunctionByNameResult",
+const FunctionDetail = product<FunctionDetail>({
+  fullName: ["definyRpc", "FunctionDetail"],
   description: "functionByNameの結果",
   fields: {
     name: {
@@ -86,6 +105,7 @@ const FunctionByNameResult = product<FunctionByNameResult>({
       type: list<string>(string),
     },
     description: { description: "関数の説明文", type: string },
+    input: { description: "関数の説明文", type: Type },
   },
 });
 
@@ -113,12 +133,12 @@ const addDefinyRpcApiFunction = (
         );
       },
     }),
-    createApiFunction<string, ReadonlyArray<FunctionByNameResult>>({
+    createApiFunction<string, ReadonlyArray<FunctionDetail>>({
       namespace: ["definyRpc"],
       name: "functionListByName",
       description: "名前から関数を検索する",
       input: string,
-      output: list<FunctionByNameResult>(FunctionByNameResult),
+      output: list<FunctionDetail>(FunctionDetail),
       isMutation: false,
       resolve: (_searchTerm) => {
         const allR = addDefinyRpcApiFunction(name, all);
@@ -201,6 +221,33 @@ const definyRpcTypeValueToSafeJsonValue = <T>(
       }
       throw new Error("expect object in product");
     }
+    case "sum": {
+      if (typeof value === "object" && value !== null) {
+        const objValue: { readonly type?: unknown; readonly value?: unknown } =
+          value;
+        if ("type" in objValue) {
+          if (typeof objValue.type !== "string") {
+            throw new Error("expect string type filed in sum");
+          }
+          const pattern = type.patterns[objValue.type];
+          if (pattern === undefined) {
+            throw new Error("unknown pattern in sum");
+          }
+          return {
+            type: objValue.type,
+            ...(pattern.type === undefined
+              ? {}
+              : {
+                  value: definyRpcTypeValueToSafeJsonValue(
+                    pattern.type,
+                    objValue.value
+                  ),
+                }),
+          } as unknown as T;
+        }
+      }
+      throw new Error("expect object in sum");
+    }
   }
 };
 
@@ -253,6 +300,37 @@ const jsonValueToDefinyRpcTypeValue = <T>(
         ) as unknown as T;
       }
       throw new Error("expect object in product");
+    }
+    case "sum": {
+      if (value === null) {
+        throw new Error("expect object in sum. but got null");
+      }
+      if (typeof value !== "object") {
+        throw new Error("expect object in sum");
+      }
+      const objValue: { readonly type?: unknown; readonly value?: unknown } =
+        value;
+      if ("type" in objValue) {
+        if (typeof objValue.type !== "string") {
+          throw new Error("expect string type filed in sum");
+        }
+        const pattern = type.patterns[objValue.type];
+        if (pattern === undefined) {
+          throw new Error("unknown pattern in sum");
+        }
+        return {
+          type: objValue.type,
+          ...(pattern.type === undefined
+            ? {}
+            : {
+                value: jsonValueToDefinyRpcTypeValue(
+                  pattern.type,
+                  objValue.value
+                ),
+              }),
+        } as unknown as T;
+      }
+      throw new Error("expect type field in sum");
     }
   }
 };

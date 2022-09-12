@@ -14,15 +14,26 @@ export type DefinyRpcType<t> =
           readonly element: DefinyRpcType<e>;
         }
       : never)
+  | {
+      readonly type: "sum";
+      readonly fullName: ReadonlyArray<string>;
+      readonly description: string;
+      readonly patterns: {
+        [key in string]: {
+          readonly description: string;
+          readonly type: DefinyRpcType<unknown> | undefined;
+        };
+      };
+    }
   | (t extends Record<string, unknown>
       ? {
           readonly type: "product";
-          readonly name: string;
+          readonly fullName: ReadonlyArray<string>;
           readonly description: string;
           readonly fields: {
             [key in keyof t]: {
               readonly description: string;
-              readonly type: t[key];
+              readonly type: DefinyRpcType<t[key]>;
             };
           };
         }
@@ -45,7 +56,7 @@ export const list = <element>(
 ): DefinyRpcType<ReadonlyArray<element>> => ({ type: "list", element });
 
 export const product = <objectType extends Record<string, unknown>>(parameter: {
-  readonly name: string;
+  readonly fullName: ReadonlyArray<string>;
   readonly description: string;
   readonly fields: {
     readonly [key in keyof objectType]: {
@@ -65,14 +76,46 @@ export const product = <objectType extends Record<string, unknown>>(parameter: {
   ) as {
     [key in keyof objectType]: {
       readonly description: string;
-      readonly type: objectType[key];
+      readonly type: DefinyRpcType<objectType[key]>;
     };
   };
 
   return {
     type: "product",
-    name: parameter.name,
+    fullName: parameter.fullName,
     description: parameter.description,
     fields,
   } as DefinyRpcType<objectType>;
 };
+
+export const sum = <T extends { [key in string]: unknown }>(parameter: {
+  readonly fullName: ReadonlyArray<string>;
+  readonly description: string;
+  readonly patterns: {
+    readonly [key in keyof T]: {
+      readonly description: string;
+      readonly type: DefinyRpcType<T[key]> | undefined;
+    };
+  };
+}): DefinyRpcType<
+  ValueOf<{
+    [key in keyof T]: T[key] extends undefined
+      ? { readonly type: key }
+      : { readonly type: key; readonly value: T[key] };
+  }>
+> => {
+  return {
+    type: "sum",
+    fullName: parameter.fullName,
+    description: parameter.description,
+    patterns: parameter.patterns,
+  } as unknown as DefinyRpcType<
+    ValueOf<{
+      [key in keyof T]: T[key] extends undefined
+        ? { readonly type: key }
+        : { readonly type: key; readonly value: T[key] };
+    }>
+  >;
+};
+
+type ValueOf<T> = T[keyof T];
