@@ -5,8 +5,7 @@ const sampleDefinyRpcServer = definyRpc.createHttpServer({
   name: "example",
   all: () => [
     definyRpc.createApiFunction({
-      name: "hello",
-      namespace: [],
+      fullName: ["hello"],
       description: "hello と挨拶が返ってくる",
       isMutation: false,
       input: definyRpc.unit,
@@ -16,8 +15,7 @@ const sampleDefinyRpcServer = definyRpc.createHttpServer({
       },
     }),
     definyRpc.createApiFunction({
-      name: "now",
-      namespace: [],
+      fullName: ["now"],
       description: "現在時刻を文字列で返す",
       isMutation: false,
       input: definyRpc.unit,
@@ -27,8 +25,7 @@ const sampleDefinyRpcServer = definyRpc.createHttpServer({
       },
     }),
     definyRpc.createApiFunction({
-      name: "repeat",
-      namespace: [],
+      fullName: ["repeat"],
       isMutation: false,
       input: definyRpc.number,
       output: definyRpc.string,

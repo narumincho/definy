@@ -55,6 +55,7 @@ export const string: DefinyRpcType<string> = {
     if (typeof json === "string") {
       return json;
     }
+    console.error(json);
     throw new Error("expect json string in string fromJson");
   },
   toJson: (value) => {
@@ -157,16 +158,16 @@ export const sum = <
     if (typeof value !== "object" || value === null) {
       throw new Error("sum object need object");
     }
-    const valueObj: { readonly key?: unknown; readonly value?: unknown } =
+    const valueObj: { readonly type?: unknown; readonly value?: unknown } =
       value;
-    if ("key" in valueObj) {
-      if (typeof valueObj.key !== "string") {
+    if ("type" in valueObj) {
+      if (typeof valueObj.type !== "string") {
         throw new Error("sum value's type field need string");
       }
       for (const [name, pattern] of objectEntriesSameValue(
         parameter.patternList
       )) {
-        if (name === valueObj.key) {
+        if (name === valueObj.type) {
           if (pattern.parameter == undefined) {
             return { type: name };
           }
@@ -178,6 +179,7 @@ export const sum = <
       }
       throw new Error("unknown sum type name");
     }
+    console.error(value);
     throw new Error("sum object need type field");
   },
   fromJson: (value) => {
@@ -186,16 +188,18 @@ export const sum = <
       value !== null &&
       !(value instanceof Array)
     ) {
-      const valueObj: { readonly key?: JsonValue; readonly value?: JsonValue } =
-        value;
-      if ("key" in valueObj) {
-        if (typeof valueObj.key !== "string") {
+      const valueObj: {
+        readonly type?: JsonValue;
+        readonly value?: JsonValue;
+      } = value;
+      if ("type" in valueObj) {
+        if (typeof valueObj.type !== "string") {
           throw new Error("sum value's type field need string");
         }
         for (const [name, pattern] of objectEntriesSameValue(
           parameter.patternList
         )) {
-          if (name === valueObj.key) {
+          if (name === valueObj.type) {
             if (pattern.parameter == undefined) {
               return { type: name } as t;
             }

@@ -1,14 +1,24 @@
-import { DefinyRpcType, list, product, set, string, sum } from "./type.ts";
+import {
+  DefinyRpcType,
+  list,
+  product,
+  set,
+  string,
+  sum,
+  TypeBody,
+  unit,
+} from "./type.ts";
 import { clientBuildResult } from "./client.ts";
 import * as base64 from "https://denopkg.com/chiefbiiko/base64@master/mod.ts";
+import { lazyGet } from "./lazy.ts";
+import { jsonParse } from "./typedJson.ts";
 
 export * from "./type.ts";
 
 const apiFunctionBlandSymbol = Symbol();
 
 type ApiFunction<InputType, OutputType> = {
-  readonly name: string;
-  readonly namespace: ReadonlyArray<string>;
+  readonly fullName: readonly [string, ...ReadonlyArray<string>];
   readonly input: DefinyRpcType<InputType>;
   readonly output: DefinyRpcType<OutputType>;
   readonly description: string;
@@ -17,10 +27,11 @@ type ApiFunction<InputType, OutputType> = {
   readonly [apiFunctionBlandSymbol]: typeof apiFunctionBlandSymbol;
 };
 
-type E = { [apiFunctionBlandSymbol]: "" };
-
 export const createApiFunction = <InputType, OutputType>(
-  parameter: Omit<ApiFunction<InputType, OutputType>, "__apiFunctionBland">
+  parameter: Omit<
+    ApiFunction<InputType, OutputType>,
+    typeof apiFunctionBlandSymbol
+  >
 ): ApiFunction<InputType, OutputType> => {
   return {
     ...parameter,
@@ -36,6 +47,9 @@ export const createHttpServer = (parameter: {
   return (request: Request): Response => {
     const url = new URL(request.url);
     const pathList = url.pathname.slice(1).split("/");
+    const paramJson = url.searchParams.get("param");
+    const paramJsonParsed =
+      (typeof paramJson === "string" ? jsonParse(paramJson) : null) ?? null;
     if (url.pathname === "/") {
       return new Response(clientBuildResult.indexHtmlContent, {
         headers: { "content-type": "text/html; charset=utf-8" },
@@ -52,13 +66,12 @@ export const createHttpServer = (parameter: {
       });
     }
     for (const func of all) {
-      if (stringArrayEqual(pathList, [...func.namespace, func.name])) {
+      if (stringArrayEqual(pathList, func.fullName)) {
         // input が undefined の型以外の場合は, 入力の関数を省く
         return new Response(
           JSON.stringify(
-            definyRpcTypeValueToSafeJsonValue(
-              func.output,
-              func.resolve(jsonValueToDefinyRpcTypeValue(func.input, ""))
+            func.output.toJson(
+              func.resolve(func.input.fromJson(paramJsonParsed))
             )
           ),
           {
@@ -87,6 +100,10 @@ type Type =
   | {
       readonly type: "list";
       readonly value: Type;
+    }
+  | {
+      /** 調整中 */
+      readonly type: "lazyType";
     };
 
 const Type = (): DefinyRpcType<Type> =>
@@ -109,6 +126,10 @@ const Type = (): DefinyRpcType<Type> =>
       list: {
         description: "リスト",
         parameter: () => Type(),
+      },
+      lazyType: {
+        description: "調整中... 再帰的な型をやられるとキツイ?",
+        parameter: undefined,
       },
     },
   });
@@ -138,8 +159,7 @@ const addDefinyRpcApiFunction = (
 ): ReadonlyArray<ApiFunction<any, any>> => {
   return [
     createApiFunction({
-      namespace: ["definyRpc"] as const,
-      name: "namespaceList",
+      fullName: ["definyRpc", "namespaceList"],
       description: "get namespace list",
       input: unit,
       output: set<ReadonlyArray<string>>(list<string>(string)),
@@ -149,30 +169,53 @@ const addDefinyRpcApiFunction = (
           [
             ...new Set(
               addDefinyRpcApiFunction(name, all).map((func) =>
-                func.namespace.join(".")
+                func.fullName.slice(0, -1).join(".")
               )
             ),
           ].map((e) => e.split("."))
         );
       },
     }),
-    createApiFunction<string, ReadonlyArray<FunctionDetail>>({
-      namespace: ["definyRpc"],
-      name: "functionListByName",
+    createApiFunction({
+      fullName: ["definyRpc", "functionListByName"],
       description: "名前から関数を検索する",
-      input: string,
+      input: unit,
       output: list<FunctionDetail>(FunctionDetail),
       isMutation: false,
-      resolve: (_searchTerm) => {
+      resolve: () => {
         const allR = addDefinyRpcApiFunction(name, all);
         return allR.map((f) => ({
-          name: [...f.namespace, f.name],
+          name: f.fullName,
           description: f.description,
+          input: definyRpcTypeBodyToType(f.input.body),
         }));
       },
     }),
-    ...all().map((func) => ({ ...func, namespace: [name, ...func.namespace] })),
+    ...all().map((func) => ({
+      ...func,
+      fullName: [name, ...func.fullName] as const,
+    })),
   ];
+};
+
+/**
+ * 無限の再帰に注意!
+ */
+const definyRpcTypeBodyToType = (typeBody: TypeBody): Type => {
+  switch (typeBody.type) {
+    case "string":
+      return { type: "string" };
+    case "number":
+      return { type: "number" };
+    case "unit":
+      return { type: "unit" };
+    case "list":
+      return {
+        type: "list",
+        value: definyRpcTypeBodyToType(lazyGet(typeBody.elementType).body),
+      };
+  }
+  return { type: "lazyType" };
 };
 
 const stringArrayEqual = (
@@ -188,172 +231,4 @@ const stringArrayEqual = (
     }
   }
   return true;
-};
-
-const definyRpcTypeValueToSafeJsonValue = <T>(
-  type: DefinyRpcType<T>,
-  value: T
-): T => {
-  // 下の型に合わせて分岐をする
-  switch (type.type) {
-    case "string": {
-      if (typeof value !== "string") {
-        throw new Error("expect string");
-      }
-      return value;
-    }
-    case "number": {
-      if (typeof value !== "number") {
-        throw new Error("expect number");
-      }
-      return value;
-    }
-    case "unit": {
-      if (value !== undefined) {
-        throw new Error("expect undefined");
-      }
-      return null as unknown as T;
-    }
-    case "list": {
-      if (value instanceof Array) {
-        return value.map((e) =>
-          definyRpcTypeValueToSafeJsonValue(type.element, e)
-        ) as unknown as T;
-      }
-      throw new Error("expect array");
-    }
-    case "set": {
-      if (value instanceof Set) {
-        return [...value].map((e) =>
-          definyRpcTypeValueToSafeJsonValue(type.element, e)
-        ) as unknown as T;
-      }
-      throw new Error("expect set");
-    }
-    case "product": {
-      if (typeof value === "object" && value !== null) {
-        return Object.fromEntries(
-          Object.entries(type.fields).map(([fieldName, fieldValue]) => [
-            fieldName,
-            definyRpcTypeValueToSafeJsonValue<any>(
-              fieldValue.type,
-              (value as { [key in string]: unknown })[fieldName]
-            ),
-          ])
-        ) as unknown as T;
-      }
-      throw new Error("expect object in product");
-    }
-    case "sum": {
-      if (typeof value === "object" && value !== null) {
-        const objValue: { readonly type?: unknown; readonly value?: unknown } =
-          value;
-        if ("type" in objValue) {
-          if (typeof objValue.type !== "string") {
-            throw new Error("expect string type filed in sum");
-          }
-          const pattern = type.patterns[objValue.type];
-          if (pattern === undefined) {
-            throw new Error("unknown pattern in sum");
-          }
-          return {
-            type: objValue.type,
-            ...(pattern.type === undefined
-              ? {}
-              : {
-                  value: definyRpcTypeValueToSafeJsonValue(
-                    pattern.type,
-                    objValue.value
-                  ),
-                }),
-          } as unknown as T;
-        }
-      }
-      throw new Error("expect object in sum");
-    }
-  }
-};
-
-const jsonValueToDefinyRpcTypeValue = <T>(
-  type: DefinyRpcType<T>,
-  value: unknown
-): T => {
-  switch (type.type) {
-    case "string": {
-      if (typeof value === "string") {
-        return value as unknown as T;
-      }
-      throw new Error("expect string in string");
-    }
-    case "number": {
-      if (typeof value === "number") {
-        return value as unknown as T;
-      }
-      throw new Error("expect number in number");
-    }
-    case "unit": {
-      return undefined as unknown as T;
-    }
-    case "list": {
-      if (value instanceof Array) {
-        return value.map((e) =>
-          jsonValueToDefinyRpcTypeValue(type.element, e)
-        ) as unknown as T;
-      }
-      throw new Error("expect array in array");
-    }
-    case "set": {
-      if (value instanceof Array) {
-        return new Set(
-          value.map((e) => jsonValueToDefinyRpcTypeValue(type.element, e))
-        ) as unknown as T;
-      }
-      throw new Error("expect array in set");
-    }
-    case "product": {
-      if (typeof value === "object" && value !== null) {
-        return Object.fromEntries(
-          Object.entries(type.fields).map(([fieldName, fieldValue]) => [
-            fieldName,
-            jsonValueToDefinyRpcTypeValue(
-              fieldValue.type,
-              (value as any)[fieldName]
-            ),
-          ])
-        ) as unknown as T;
-      }
-      throw new Error("expect object in product");
-    }
-    case "sum": {
-      if (value === null) {
-        throw new Error("expect object in sum. but got null");
-      }
-      if (typeof value !== "object") {
-        throw new Error("expect object in sum");
-      }
-      const objValue: { readonly type?: unknown; readonly value?: unknown } =
-        value;
-      if ("type" in objValue) {
-        if (typeof objValue.type !== "string") {
-          throw new Error("expect string type filed in sum");
-        }
-        const pattern = type.patterns[objValue.type];
-        if (pattern === undefined) {
-          throw new Error("unknown pattern in sum");
-        }
-        return {
-          type: objValue.type,
-          ...(pattern.type === undefined
-            ? {}
-            : {
-                value: jsonValueToDefinyRpcTypeValue(
-                  pattern.type,
-                  objValue.value
-                ),
-              }),
-        } as unknown as T;
-      }
-      throw new Error("expect type field in sum");
-    }
-  }
 };
