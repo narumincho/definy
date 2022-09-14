@@ -1,5 +1,4 @@
 import * as i from "../../../functions/faunadb-interface";
-
 import * as trpc from "@trpc/server";
 import * as trpcNext from "@trpc/server/adapters/next";
 import * as zodType from "../../../common/zodType";
@@ -15,11 +14,13 @@ import {
   hashAccountToken,
 } from "../../../functions/login";
 import type { TypedFaunaClient } from "../../../functions/typedFauna";
+import { createProjectIconAndImage } from "../../../functions/image";
+import { savePngFile } from "../../../functions/cloudstorage-interface";
 import superjson from "superjson";
 import { z } from "zod";
 
 const getProjectByIdOutput = z.union([
-  z.object({ name: z.string().min(1) }),
+  z.object({ name: zodType.ProjectName }),
   z.null(),
 ]);
 
@@ -158,9 +159,9 @@ export const appRouter = trpc
   .mutation("createProject", {
     input: z.object({
       accountToken: zodType.AccountToken,
-      projectName: z.string(),
+      projectName: zodType.ProjectName,
     }),
-    output: z.object({ id: zodType.ProjectId, name: z.string().min(1) }),
+    output: z.object({ id: zodType.ProjectId, name: zodType.ProjectName }),
     resolve: async ({ ctx, input }) => {
       const account = await i.getAccountByAccountToken(
         ctx,
@@ -169,11 +170,17 @@ export const appRouter = trpc
       if (account === undefined) {
         throw new Error("不明なアカウントトークンです");
       }
-      const projectId = await i.createProject(
-        ctx,
-        input.projectName,
-        account.id
-      );
+      const iconAndImage = await createProjectIconAndImage();
+      const [iconHash, imageHash] = await Promise.all([
+        savePngFile(iconAndImage.icon),
+        savePngFile(iconAndImage.image),
+      ]);
+      const projectId = await i.createProject(ctx, {
+        name: input.projectName,
+        createdBy: account.id,
+        iconHash,
+        imageHash,
+      });
       return {
         id: projectId,
         name: input.projectName,
