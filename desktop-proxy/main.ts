@@ -78,8 +78,12 @@ serve(
 const accessControlAllowOriginHeaderValue = (origin: string | null): string => {
   if (origin === "http://localhost:3000") {
     return "http://localhost:3000";
-  }
-  if (typeof origin === "string" && origin.endsWith("-narumincho.vercel.app")) {
+  } 
+  if (
+    typeof origin === "string" &&
+    (origin.endsWith("-narumincho.vercel.app") ||
+      origin === "https://definy.vercel.app")
+  ) {
     return origin;
   }
   return "https://definy.app";

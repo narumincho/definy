@@ -22,6 +22,7 @@
   "exclude": [
     "distribution",
     "definy-output",
+    "definy-rpc/server",
     "desktop-proxy",
     "databaseMigration.ts"
   ],
