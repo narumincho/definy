@@ -5,6 +5,7 @@ import { objectEntriesSameValue } from "./objectEntriesSameValue.ts";
 export type DefinyRpcType<in out t> = {
   readonly fullName: readonly [string, ...ReadonlyArray<string>];
   readonly description: string;
+  readonly parameters: ReadonlyArray<DefinyRpcType<any>>;
   readonly body: TypeBody;
   readonly toJson: (x: unknown) => JsonValue;
   readonly fromJson: (x: JsonValue) => t;
@@ -22,11 +23,9 @@ export type TypeBody =
     }
   | {
       readonly type: "list";
-      readonly elementType: Lazy<DefinyRpcType<any>>;
     }
   | {
       readonly type: "set";
-      readonly elementType: Lazy<DefinyRpcType<any>>;
     }
   | {
       readonly type: "product";
@@ -48,6 +47,7 @@ export type TypeBody =
 export const string: DefinyRpcType<string> = {
   fullName: ["definyRpc", "String"],
   description: "文字列",
+  parameters: [],
   body: {
     type: "string",
   },
@@ -82,6 +82,7 @@ export const product = <t extends Record<string, unknown>>(parameter: {
   return {
     fullName: parameter.fullName,
     description: parameter.description,
+    parameters: [],
     body: {
       type: "product",
       fieldList: objectEntriesSameValue(parameter.fieldList).map(
@@ -144,6 +145,7 @@ export const sum = <
 }): DefinyRpcType<t> => ({
   fullName: parameter.fullName,
   description: parameter.description,
+  parameters: [],
   body: {
     type: "sum",
     patternList: objectEntriesSameValue(parameter.patternList).map(
@@ -223,6 +225,7 @@ export const sum = <
 export const number: DefinyRpcType<number> = {
   fullName: ["definyRpc", "Number"],
   description: "64bit 浮動小数点数",
+  parameters: [],
   body: {
     type: "number",
   },
@@ -243,17 +246,19 @@ export const number: DefinyRpcType<number> = {
 export const unit: DefinyRpcType<undefined> = {
   fullName: ["definyRpc", "Unit"],
   description: "内部表現は, undefined. JSON 上では null",
+  parameters: [],
   body: { type: "unit" },
   toJson: () => null,
   fromJson: () => undefined,
 };
 
 export const set = <element>(
-  element: Lazy<DefinyRpcType<element>>
+  element: DefinyRpcType<element>
 ): DefinyRpcType<ReadonlySet<element>> => ({
   fullName: ["definyRpc", "Set"],
   description: "集合. Set",
-  body: { type: "set", elementType: element },
+  parameters: [element],
+  body: { type: "set" },
   toJson: (value) => {
     if (value instanceof Set) {
       return [...value].map((e) => lazyGet(element).toJson(e));
@@ -269,11 +274,12 @@ export const set = <element>(
 });
 
 export const list = <element>(
-  element: Lazy<DefinyRpcType<element>>
+  element: DefinyRpcType<element>
 ): DefinyRpcType<ReadonlyArray<element>> => ({
   fullName: ["definyRpc"],
   description: "リスト",
-  body: { type: "list", elementType: element },
+  parameters: [element],
+  body: { type: "list" },
   toJson: (value) => {
     if (value instanceof Array) {
       return value.map((e) => lazyGet(element).toJson(e));

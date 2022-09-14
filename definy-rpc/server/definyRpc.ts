@@ -87,57 +87,36 @@ export const createHttpServer = (parameter: {
   };
 };
 
-type Type =
-  | {
-      readonly type: "string";
-    }
-  | {
-      readonly type: "number";
-    }
-  | {
-      readonly type: "unit";
-    }
-  | {
-      readonly type: "list";
-      readonly value: Type;
-    }
-  | {
-      /** 調整中 */
-      readonly type: "lazyType";
-    };
+type Type = {
+  readonly fullName: ReadonlyArray<string>;
+  readonly description: string;
+  readonly parameters: ReadonlyArray<Type>;
+};
 
-const Type = (): DefinyRpcType<Type> =>
-  sum<Type>({
-    fullName: ["definyRpc", "Type"],
-    description: "definyRpc で表現できる型",
-    patternList: {
-      string: {
-        description: "string. 文字列",
-        parameter: undefined,
-      },
-      number: {
-        description: "number. 数値",
-        parameter: undefined,
-      },
-      unit: {
-        description: "unit. 1つの値 (undefined) しか取れない型",
-        parameter: undefined,
-      },
-      list: {
-        description: "リスト",
-        parameter: () => Type(),
-      },
-      lazyType: {
-        description: "調整中... 再帰的な型をやられるとキツイ?",
-        parameter: undefined,
-      },
+const Type: DefinyRpcType<Type> = product<Type>({
+  fullName: ["definyRpc", "Type"],
+  description: "definyRpc で表現できる型",
+  fieldList: {
+    fullName: {
+      type: list(string),
+      description: "完全名",
     },
-  });
+    description: {
+      type: string,
+      description: "",
+    },
+    parameters: {
+      type: () => list(Type),
+      description: "型パラメーター",
+    },
+  },
+});
 
 type FunctionDetail = {
   readonly name: ReadonlyArray<string>;
   readonly description: string;
   readonly input: Type;
+  readonly output: Type;
 };
 
 const FunctionDetail = product<FunctionDetail>({
@@ -149,7 +128,8 @@ const FunctionDetail = product<FunctionDetail>({
       type: list<string>(string),
     },
     description: { description: "関数の説明文", type: string },
-    input: { description: "関数の説明文", type: Type },
+    input: { description: "関数の入力の型", type: Type },
+    output: { description: "関数の出力の型", type: Type },
   },
 });
 
@@ -184,10 +164,11 @@ const addDefinyRpcApiFunction = (
       isMutation: false,
       resolve: () => {
         const allR = addDefinyRpcApiFunction(name, all);
-        return allR.map((f) => ({
+        return allR.map<FunctionDetail>((f) => ({
           name: f.fullName,
           description: f.description,
-          input: definyRpcTypeBodyToType(f.input.body),
+          input: definyRpcTypeBodyToType(f.input),
+          output: definyRpcTypeBodyToType(f.output),
         }));
       },
     }),
@@ -198,24 +179,12 @@ const addDefinyRpcApiFunction = (
   ];
 };
 
-/**
- * 無限の再帰に注意!
- */
-const definyRpcTypeBodyToType = (typeBody: TypeBody): Type => {
-  switch (typeBody.type) {
-    case "string":
-      return { type: "string" };
-    case "number":
-      return { type: "number" };
-    case "unit":
-      return { type: "unit" };
-    case "list":
-      return {
-        type: "list",
-        value: definyRpcTypeBodyToType(lazyGet(typeBody.elementType).body),
-      };
-  }
-  return { type: "lazyType" };
+const definyRpcTypeBodyToType = <t>(definyRpcType: DefinyRpcType<t>): Type => {
+  return {
+    fullName: definyRpcType.fullName,
+    description: definyRpcType.description,
+    parameters: definyRpcType.parameters.map(definyRpcTypeBodyToType),
+  };
 };
 
 const stringArrayEqual = (
