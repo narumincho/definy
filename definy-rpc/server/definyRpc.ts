@@ -1,16 +1,10 @@
-import {
-  DefinyRpcType,
-  list,
-  product,
-  set,
-  string,
-  sum,
-  unit,
-} from "./type.ts";
+import { DefinyRpcType, list, product, set, string, sum } from "./type.ts";
 import { clientBuildResult } from "./client.ts";
 import * as base64 from "https://denopkg.com/chiefbiiko/base64@master/mod.ts";
 
 export * from "./type.ts";
+
+const apiFunctionBlandSymbol = Symbol();
 
 type ApiFunction<InputType, OutputType> = {
   readonly name: string;
@@ -20,17 +14,17 @@ type ApiFunction<InputType, OutputType> = {
   readonly description: string;
   readonly isMutation: boolean;
   readonly resolve: (input: InputType) => Promise<OutputType> | OutputType;
-  readonly __apiFunctionBland: typeof apiFunctionBlandSymbol;
+  readonly [apiFunctionBlandSymbol]: typeof apiFunctionBlandSymbol;
 };
 
-const apiFunctionBlandSymbol = Symbol();
+type E = { [apiFunctionBlandSymbol]: "" };
 
 export const createApiFunction = <InputType, OutputType>(
   parameter: Omit<ApiFunction<InputType, OutputType>, "__apiFunctionBland">
 ): ApiFunction<InputType, OutputType> => {
   return {
     ...parameter,
-    __apiFunctionBland: apiFunctionBlandSymbol,
+    [apiFunctionBlandSymbol]: apiFunctionBlandSymbol,
   };
 };
 
@@ -80,26 +74,55 @@ export const createHttpServer = (parameter: {
   };
 };
 
-const Type = sum({
-  fullName: ["definyRpc", "Type"],
-  description: "definyRpc で表現できる型",
-  patterns: {
-    string: {
-      description: "string. 文字列",
-      type: undefined,
+type Type =
+  | {
+      readonly type: "string";
+    }
+  | {
+      readonly type: "number";
+    }
+  | {
+      readonly type: "unit";
+    }
+  | {
+      readonly type: "list";
+      readonly value: Type;
+    };
+
+const Type = (): DefinyRpcType<Type> =>
+  sum<Type>({
+    fullName: ["definyRpc", "Type"],
+    description: "definyRpc で表現できる型",
+    patternList: {
+      string: {
+        description: "string. 文字列",
+        parameter: undefined,
+      },
+      number: {
+        description: "number. 数値",
+        parameter: undefined,
+      },
+      unit: {
+        description: "unit. 1つの値 (undefined) しか取れない型",
+        parameter: undefined,
+      },
+      list: {
+        description: "リスト",
+        parameter: () => Type(),
+      },
     },
-  },
-});
+  });
 
 type FunctionDetail = {
   readonly name: ReadonlyArray<string>;
   readonly description: string;
+  readonly input: Type;
 };
 
 const FunctionDetail = product<FunctionDetail>({
   fullName: ["definyRpc", "FunctionDetail"],
   description: "functionByNameの結果",
-  fields: {
+  fieldList: {
     name: {
       description: "名前空間付き, 関数名",
       type: list<string>(string),
@@ -115,7 +138,7 @@ const addDefinyRpcApiFunction = (
 ): ReadonlyArray<ApiFunction<any, any>> => {
   return [
     createApiFunction({
-      namespace: ["definyRpc"],
+      namespace: ["definyRpc"] as const,
       name: "namespaceList",
       description: "get namespace list",
       input: unit,
