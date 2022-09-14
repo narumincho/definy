@@ -5,7 +5,7 @@ on: workflow_dispatch
 jobs:
   npm-publish:
     name: npm publish
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - name: checkout repository
         uses: actions/checkout@v3

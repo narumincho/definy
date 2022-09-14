@@ -5,7 +5,7 @@ on: pull_request
 jobs:
   type-check-and-build-test:
     name: type check and build test
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - name: checkout repository
         uses: actions/checkout@v3
