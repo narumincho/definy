@@ -427,7 +427,7 @@ export const getProject = async (
   if (result === false) {
     return undefined;
   }
-  console.table(result.createdAt.value);
+
   return {
     name: result.name,
     createdBy: result.createdBy,
