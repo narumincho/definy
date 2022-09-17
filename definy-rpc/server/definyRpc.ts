@@ -43,6 +43,7 @@ export const createApiFunction = <
 
 export const createHttpServer = (parameter: {
   readonly name: string;
+  // deno-lint-ignore no-explicit-any
   readonly all: () => ReadonlyArray<ApiFunction<any, any, boolean>>;
 }) => {
   const all = addDefinyRpcApiFunction(parameter.name, parameter.all);
@@ -67,6 +68,7 @@ export const createHttpServer = (parameter: {
         headers: { "content-type": "text/javascript; charset=utf-8" },
       });
     }
+    console.log(pathList);
     for (const func of all) {
       if (stringArrayEqual(pathList, func.fullName)) {
         // input が undefined の型以外の場合は, 入力の関数を省く
@@ -156,9 +158,36 @@ const FunctionDetail = product<FunctionDetail>({
 
 const addDefinyRpcApiFunction = (
   name: string,
+  // deno-lint-ignore no-explicit-any
   all: () => ReadonlyArray<ApiFunction<any, any, boolean>>
+  // deno-lint-ignore no-explicit-any
 ): ReadonlyArray<ApiFunction<any, any, boolean>> => {
   return [
+    ...builtInFunctions(name, all),
+    ...all().map((func) => ({
+      ...func,
+      fullName: [name, ...func.fullName] as const,
+    })),
+  ];
+};
+
+const builtInFunctions = (
+  name: string,
+  // deno-lint-ignore no-explicit-any
+  all: () => ReadonlyArray<ApiFunction<any, any, boolean>>
+) => {
+  return [
+    createApiFunction({
+      fullName: ["definyRpc", "name"],
+      description: "サーバー名の取得",
+      input: unit,
+      output: string,
+      needAuthentication: false,
+      isMutation: false,
+      resolve: () => {
+        return name;
+      },
+    }),
     createApiFunction({
       fullName: ["definyRpc", "namespaceList"],
       description:
@@ -213,10 +242,6 @@ const addDefinyRpcApiFunction = (
         }));
       },
     }),
-    ...all().map((func) => ({
-      ...func,
-      fullName: [name, ...func.fullName] as const,
-    })),
   ];
 };
 

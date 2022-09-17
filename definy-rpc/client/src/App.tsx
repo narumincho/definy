@@ -12,6 +12,7 @@ export const App = (): React.ReactElement => {
   const [selectedFunc, setSelectedFunc] = React.useState<string | undefined>(
     undefined
   );
+  const [serverName, setServerName] = React.useState<string | undefined>();
 
   React.useEffect(() => {
     fetch("http://localhost:2520/definyRpc/functionListByName")
@@ -31,6 +32,17 @@ export const App = (): React.ReactElement => {
       );
   }, []);
 
+  React.useEffect(() => {
+    fetch("http://localhost:2520/definyRpc/name")
+      .then((response) => {
+        return response.json();
+      })
+      .then((json: string) => {
+        console.log("name", json);
+        setServerName(json);
+      });
+  }, []);
+
   return (
     <div
       css={{
@@ -41,7 +53,23 @@ export const App = (): React.ReactElement => {
         boxSizing: "border-box",
       }}
     >
-      <h1 css={{ margin: 0 }}>definy RPC</h1>
+      <h1
+        css={{
+          margin: 0,
+          display: "grid",
+          gridAutoFlow: "column",
+          justifyContent: "start",
+          alignItems: "baseline",
+          gap: 16,
+        }}
+      >
+        {serverName === undefined ? (
+          <div css={{ backgroundColor: "gray" }}>...</div>
+        ) : (
+          <div>{serverName}</div>
+        )}
+        <div css={{ fontSize: 14, color: "#ddd" }}>definy RPC</div>
+      </h1>
 
       <div css={{ display: "grid", gridTemplateColumns: "1fr 1fr" }}>
         <div>
