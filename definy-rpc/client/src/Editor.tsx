@@ -11,9 +11,7 @@ export const Editor = (props: {
   const [selectedFunc, setSelectedFunc] = React.useState<string | undefined>(
     undefined
   );
-  const [runResponse, setRunResponse] = React.useState<string | undefined>(
-    undefined
-  );
+  const [runResponse, setRunResponse] = React.useState<unknown>(undefined);
 
   React.useEffect(() => {
     if (selectedFunc === undefined) {
@@ -52,7 +50,7 @@ export const Editor = (props: {
                     })
                     .then((json: unknown) => {
                       console.log("response", json);
-                      setRunResponse(JSON.stringify(json));
+                      setRunResponse(json);
                     })
                     .catch(() => {
                       setRunResponse(undefined);
@@ -63,7 +61,20 @@ export const Editor = (props: {
         >
           Run
         </Button>
-        {runResponse}
+        <div css={{ overflowWrap: "anywhere" }}>
+          {typeof runResponse === "string" ? (
+            <Button
+              onClick={() => {
+                navigator.clipboard.writeText(runResponse);
+              }}
+            >
+              クリップボードにコピー
+            </Button>
+          ) : (
+            <></>
+          )}
+          <div>{JSON.stringify(runResponse, undefined)}</div>
+        </div>
       </div>
 
       {props.functionList === undefined ? (

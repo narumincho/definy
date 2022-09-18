@@ -1,6 +1,8 @@
 import { ApiFunction, createApiFunction } from "./apiFunction.ts";
 import { set, string, unit, list, DefinyRpcType, product } from "./type.ts";
 
+const definyRpcNamespace = "definyRpc";
+
 type Type = {
   readonly fullName: ReadonlyArray<string>;
   readonly description: string;
@@ -8,7 +10,7 @@ type Type = {
 };
 
 const Type: DefinyRpcType<Type> = product<Type>({
-  fullName: ["definyRpc", "Type"],
+  fullName: [definyRpcNamespace, "Type"],
   description: "definyRpc で表現できる型",
   fieldList: {
     fullName: {
@@ -34,7 +36,7 @@ type FunctionDetail = {
 };
 
 const FunctionDetail = product<FunctionDetail>({
-  fullName: ["definyRpc", "FunctionDetail"],
+  fullName: [definyRpcNamespace, "FunctionDetail"],
   description: "functionByNameの結果",
   fieldList: {
     name: {
@@ -69,7 +71,7 @@ const builtInFunctions = (
 ) => {
   return [
     createApiFunction({
-      fullName: ["definyRpc", "name"],
+      fullName: [definyRpcNamespace, "name"],
       description: "サーバー名の取得",
       input: unit,
       output: string,
@@ -80,7 +82,7 @@ const builtInFunctions = (
       },
     }),
     createApiFunction({
-      fullName: ["definyRpc", "namespaceList"],
+      fullName: [definyRpcNamespace, "namespaceList"],
       description:
         "get namespace list. namespace は API の公開非公開, コード生成のモジュールを分けるチャンク",
       input: unit,
@@ -100,7 +102,7 @@ const builtInFunctions = (
       },
     }),
     createApiFunction({
-      fullName: ["definyRpc", "functionListByName"],
+      fullName: [definyRpcNamespace, "functionListByName"],
       description: "名前から関数を検索する (公開APIのみ)",
       input: unit,
       output: list<FunctionDetail>(FunctionDetail),
@@ -117,7 +119,7 @@ const builtInFunctions = (
       },
     }),
     createApiFunction({
-      fullName: ["definyRpc", "functionListByNamePrivate"],
+      fullName: [definyRpcNamespace, "functionListByNamePrivate"],
       description: "名前から関数を検索する (非公開API)",
       input: unit,
       output: list<FunctionDetail>(FunctionDetail),
@@ -134,7 +136,7 @@ const builtInFunctions = (
       },
     }),
     createApiFunction({
-      fullName: ["definyRpc", "generateCallDefinyRpcTypeScriptCode"],
+      fullName: [definyRpcNamespace, "generateCallDefinyRpcTypeScriptCode"],
       description:
         "名前空間「definyRpc」のApiFunctionを呼ぶ TypeScript のコードを生成する",
       input: unit,
@@ -142,7 +144,10 @@ const builtInFunctions = (
       isMutation: false,
       needAuthentication: false,
       resolve: () => {
-        return "ここにコードが出力される";
+        const allR = addDefinyRpcApiFunction(name, all).filter(
+          (f) => f.fullName[0] === definyRpcNamespace
+        );
+        return allR.map((f) => f.fullName.join(".")).join("/");
       },
     }),
   ];
