@@ -5,6 +5,7 @@ import { objectEntriesSameValue } from "./objectEntriesSameValue.ts";
 export type DefinyRpcType<in out t> = {
   readonly fullName: readonly [string, ...ReadonlyArray<string>];
   readonly description: string;
+  // deno-lint-ignore no-explicit-any
   readonly parameters: ReadonlyArray<DefinyRpcType<any>>;
   readonly body: TypeBody;
   readonly toJson: (x: unknown) => JsonValue;
@@ -32,6 +33,7 @@ export type TypeBody =
       readonly fieldList: ReadonlyArray<{
         readonly name: string;
         readonly description: string;
+        // deno-lint-ignore no-explicit-any
         readonly type: Lazy<DefinyRpcType<any>>;
       }>;
     }
@@ -40,6 +42,7 @@ export type TypeBody =
       readonly patternList: ReadonlyArray<{
         readonly name: string;
         readonly description: string;
+        // deno-lint-ignore no-explicit-any
         readonly parameter: Lazy<DefinyRpcType<any>> | undefined;
       }>;
     };
@@ -139,6 +142,7 @@ export const sum = <
   readonly patternList: {
     [key in t["type"]]: {
       readonly description: string;
+      // deno-lint-ignore no-explicit-any
       readonly parameter: Lazy<DefinyRpcType<any>> | undefined;
     };
   };

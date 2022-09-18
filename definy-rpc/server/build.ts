@@ -1,5 +1,4 @@
 import { build, emptyDir } from "https://deno.land/x/dnt@0.30.0/mod.ts";
-import * as fs from "https://deno.land/std@0.155.0/fs/mod.ts";
 import * as base64 from "https://denopkg.com/chiefbiiko/base64@master/mod.ts";
 
 type BuildClientResult = {
@@ -80,7 +79,7 @@ export const serverOrigin = ${JSON.stringify(serverOrigin)};
   };
 };
 
-const buildToNodeJs = async (): Promise<void> => {
+const _buildToNodeJs = async (): Promise<void> => {
   await emptyDir("./npm");
 
   await build({
