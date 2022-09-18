@@ -75,8 +75,15 @@ export const definyRpc: {
     url.pathname = "/definyRpc/name";
     return globalThis
       .fetch(url)
-      .then((response: globalThis.Response): globalThis.Promise<string> => {
-        response.json();
+      .then(
+        (response: globalThis.Response): globalThis.Promise<string> =>
+          response.json()
+      )
+      .then((jsonValue: unknown): string => {
+        if (typeof jsonValue === "string") {
+          return jsonValue;
+        }
+        throw new Error("parseError");
       })
       .catch((): globalThis.Promise<string> => {});
   },
@@ -94,12 +101,15 @@ export const definyRpc: {
     return globalThis
       .fetch(url)
       .then(
-        (
-          response: globalThis.Response
-        ): globalThis.Promise<globalThis.Set<undefined>> => {
-          response.json();
-        }
+        (response: globalThis.Response): globalThis.Promise<string> =>
+          response.json()
       )
+      .then((jsonValue: unknown): globalThis.Set<undefined> => {
+        if (typeof jsonValue === "string") {
+          return jsonValue;
+        }
+        throw new Error("parseError");
+      })
       .catch((): globalThis.Promise<globalThis.Set<undefined>> => {});
   },
   functionListByName: (parameter: {
@@ -116,12 +126,15 @@ export const definyRpc: {
     return globalThis
       .fetch(url)
       .then(
-        (
-          response: globalThis.Response
-        ): globalThis.Promise<globalThis.ReadonlyArray<undefined>> => {
-          response.json();
-        }
+        (response: globalThis.Response): globalThis.Promise<string> =>
+          response.json()
       )
+      .then((jsonValue: unknown): globalThis.ReadonlyArray<undefined> => {
+        if (typeof jsonValue === "string") {
+          return jsonValue;
+        }
+        throw new Error("parseError");
+      })
       .catch((): globalThis.Promise<globalThis.ReadonlyArray<undefined>> => {});
   },
   functionListByNamePrivate: (parameter: {
@@ -139,12 +152,15 @@ export const definyRpc: {
     return globalThis
       .fetch(url, { headers: { authorization: parameter.accountToken } })
       .then(
-        (
-          response: globalThis.Response
-        ): globalThis.Promise<globalThis.ReadonlyArray<undefined>> => {
-          response.json();
-        }
+        (response: globalThis.Response): globalThis.Promise<string> =>
+          response.json()
       )
+      .then((jsonValue: unknown): globalThis.ReadonlyArray<undefined> => {
+        if (typeof jsonValue === "string") {
+          return jsonValue;
+        }
+        throw new Error("parseError");
+      })
       .catch((): globalThis.Promise<globalThis.ReadonlyArray<undefined>> => {});
   },
   generateCallDefinyRpcTypeScriptCode: (parameter: {
@@ -160,8 +176,15 @@ export const definyRpc: {
     url.pathname = "/definyRpc/generateCallDefinyRpcTypeScriptCode";
     return globalThis
       .fetch(url)
-      .then((response: globalThis.Response): globalThis.Promise<string> => {
-        response.json();
+      .then(
+        (response: globalThis.Response): globalThis.Promise<string> =>
+          response.json()
+      )
+      .then((jsonValue: unknown): string => {
+        if (typeof jsonValue === "string") {
+          return jsonValue;
+        }
+        throw new Error("parseError");
       })
       .catch((): globalThis.Promise<string> => {});
   },

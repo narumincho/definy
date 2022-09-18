@@ -41,6 +41,9 @@ export const typeToString = (
     case "Undefined":
       return "undefined";
 
+    case "unknown":
+      return "unknown";
+
     case "Object":
       return typeObjectToString(type_.tsMemberTypeList, moduleMap);
 

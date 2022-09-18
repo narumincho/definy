@@ -174,6 +174,7 @@ export type TsType =
   | { readonly _: "Null" }
   | { readonly _: "Never" }
   | { readonly _: "Void" }
+  | { readonly _: "unknown" }
   | {
       readonly _: "Object";
       readonly tsMemberTypeList: ReadonlyArray<TsMemberType>;
@@ -239,7 +240,7 @@ export type UnaryOperatorExpr = {
 /**
  * JavaScriptの単項演算子
  */
-export type UnaryOperator = "Minus" | "BitwiseNot" | "LogicalNot";
+export type UnaryOperator = "Minus" | "BitwiseNot" | "LogicalNot" | "typeof";
 
 /**
  * 2項演算子と左右の式

@@ -217,6 +217,8 @@ const unaryOperatorToString = (unaryOperator: d.UnaryOperator): string => {
       return "~";
     case "LogicalNot":
       return "!";
+    case "typeof":
+      return "typeof ";
   }
 };
 

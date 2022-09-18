@@ -4,6 +4,7 @@ import { generateCodeAsString } from "./jsTs/main.ts";
 import { identifierFromString } from "./jsTs/identifier.ts";
 import {
   ExportDefinition,
+  LambdaExpr,
   TsExpr,
   TsMember,
   TsMemberType,
@@ -372,102 +373,117 @@ const funcExpr = <input, output>(
         },
         {
           _: "Return",
-          tsExpr: tsInterface.callMethod(
-            tsInterface.callMethod(
-              {
-                _: "Call",
-                callExpr: {
-                  expr: {
-                    _: "GlobalObjects",
-                    tsIdentifier: identifierFromString("fetch"),
+          tsExpr: tsInterface.callCatchMethod(
+            tsInterface.callThenMethod(
+              tsInterface.callThenMethod(
+                tsInterface.callFetch(
+                  {
+                    _: "Variable",
+                    tsIdentifier: identifierFromString("url"),
                   },
+                  func.needAuthentication
+                    ? tsInterface.objectLiteral([
+                        {
+                          _: "KeyValue",
+                          keyValue: {
+                            key: "headers",
+                            value: tsInterface.objectLiteral([
+                              {
+                                _: "KeyValue",
+                                keyValue: {
+                                  key: "authorization",
+                                  value: tsInterface.get(
+                                    {
+                                      _: "Variable",
+                                      tsIdentifier: parameterIdentifier,
+                                    },
+                                    "accountToken"
+                                  ),
+                                },
+                              },
+                            ]),
+                          },
+                        } as const,
+                      ])
+                    : undefined
+                ),
+                {
                   parameterList: [
                     {
-                      _: "Variable",
-                      tsIdentifier: identifierFromString("url"),
+                      name: identifierFromString("response"),
+                      type: tsInterface.responseType,
                     },
-                    ...(func.needAuthentication
-                      ? [
-                          tsInterface.objectLiteral([
-                            {
-                              _: "KeyValue",
-                              keyValue: {
-                                key: "headers",
-                                value: tsInterface.objectLiteral([
-                                  {
-                                    _: "KeyValue",
-                                    keyValue: {
-                                      key: "authorization",
-                                      value: tsInterface.get(
-                                        {
-                                          _: "Variable",
-                                          tsIdentifier: parameterIdentifier,
-                                        },
-                                        "accountToken"
-                                      ),
-                                    },
-                                  },
-                                ]),
-                              },
-                            } as const,
-                          ]),
-                        ]
-                      : []),
                   ],
-                },
-              },
-              "then",
-              [
-                {
-                  _: "Lambda",
-                  lambdaExpr: {
-                    parameterList: [
-                      {
-                        name: identifierFromString("response"),
-                        type: {
-                          _: "ScopeInGlobal",
-                          tsIdentifier: identifierFromString("Response"),
-                        },
-                      },
-                    ],
-                    returnType: tsInterface.promiseType(
-                      definyRpcTypeToTsType(func.output)
-                    ),
-                    typeParameterList: [],
-                    statementList: [
-                      {
-                        _: "EvaluateExpr",
-                        tsExpr: tsInterface.callMethod(
-                          {
-                            _: "Variable",
-                            tsIdentifier: identifierFromString("response"),
-                          },
-                          "json",
-                          []
-                        ),
-                      },
-                    ],
-                  },
-                },
-              ]
-            ),
-            "catch",
-            [
-              {
-                _: "Lambda",
-                lambdaExpr: {
-                  parameterList: [],
-                  returnType: tsInterface.promiseType(
-                    definyRpcTypeToTsType(func.output)
-                  ),
+                  returnType: tsInterface.promiseType({ _: "String" }),
                   typeParameterList: [],
-                  statementList: [],
-                },
-              },
-            ]
+                  statementList: [
+                    {
+                      _: "Return",
+                      tsExpr: tsInterface.callMethod(
+                        {
+                          _: "Variable",
+                          tsIdentifier: identifierFromString("response"),
+                        },
+                        "json",
+                        []
+                      ),
+                    },
+                  ],
+                }
+              ),
+              fetchThenExpr(func)
+            ),
+            {
+              parameterList: [],
+              returnType: tsInterface.promiseType(
+                definyRpcTypeToTsType(func.output)
+              ),
+              typeParameterList: [],
+              statementList: [],
+            }
           ),
         },
       ],
     },
+  };
+};
+
+const fetchThenExpr = <input, output>(
+  func: ApiFunction<input, output, boolean>
+): LambdaExpr => {
+  const jsonValueIdentifier = identifierFromString("jsonValue");
+  return {
+    parameterList: [
+      {
+        name: jsonValueIdentifier,
+        type: { _: "unknown" },
+      },
+    ],
+    returnType: definyRpcTypeToTsType(func.output),
+    typeParameterList: [],
+    statementList: [
+      {
+        _: "If",
+        ifStatement: {
+          condition: tsInterface.equal(
+            tsInterface.typeofExpr({
+              _: "Variable",
+              tsIdentifier: jsonValueIdentifier,
+            }),
+            {
+              _: "StringLiteral",
+              string: "string",
+            }
+          ),
+          thenStatementList: [
+            {
+              _: "Return",
+              tsExpr: { _: "Variable", tsIdentifier: jsonValueIdentifier },
+            },
+          ],
+        },
+      },
+      { _: "ThrowError", tsExpr: { _: "StringLiteral", string: "parseError" } },
+    ],
   };
 };

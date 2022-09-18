@@ -36,6 +36,34 @@ export const callMethod = (
 });
 
 /**
+ * `then` メソッドを呼ぶ
+ */
+export const callThenMethod = (
+  expr: d.TsExpr,
+  thenLambda: d.LambdaExpr
+): d.TsExpr => ({
+  _: "Call",
+  callExpr: {
+    expr: get(expr, "then"),
+    parameterList: [{ _: "Lambda", lambdaExpr: thenLambda }],
+  },
+});
+
+/**
+ * `catch` メソッドを呼ぶ
+ */
+export const callCatchMethod = (
+  expr: d.TsExpr,
+  thenLambda: d.LambdaExpr
+): d.TsExpr => ({
+  _: "Call",
+  callExpr: {
+    expr: get(expr, "catch"),
+    parameterList: [{ _: "Lambda", lambdaExpr: thenLambda }],
+  },
+});
+
+/**
  * 単項マイナス演算子 `-a`
  * @param expr 式
  */
@@ -67,6 +95,18 @@ export const logicalNot = (expr: d.TsExpr): d.TsExpr => ({
   _: "UnaryOperator",
   unaryOperatorExpr: {
     operator: "LogicalNot",
+    expr,
+  },
+});
+
+/**
+ * typeof 演算子 `typeof a`
+ * @param expr 式
+ */
+export const typeofExpr = (expr: d.TsExpr): d.TsExpr => ({
+  _: "UnaryOperator",
+  unaryOperatorExpr: {
+    operator: "typeof",
     expr,
   },
 });
@@ -408,6 +448,25 @@ export const newURL = (expr: d.TsExpr): d.TsExpr => ({
 
 /**
  * ```ts
+ * fetch(expr)
+ * ```
+ */
+export const callFetch = (
+  input: d.TsExpr,
+  init?: d.TsExpr | undefined
+): d.TsExpr => ({
+  _: "Call",
+  callExpr: {
+    expr: {
+      _: "GlobalObjects",
+      tsIdentifier: identifier.identifierFromString("fetch"),
+    },
+    parameterList: [input, ...(init === undefined ? [] : [init])],
+  },
+});
+
+/**
+ * ```ts
  * new Map(initKeyValueList)
  * ```
  */
@@ -496,6 +555,14 @@ export const uint8ArrayType: d.TsType = {
 export const urlType: d.TsType = {
   _: "ScopeInGlobal",
   tsIdentifier: identifier.identifierFromString("URL"),
+};
+
+/**
+ * `Response`
+ */
+export const responseType: d.TsType = {
+  _: "ScopeInGlobal",
+  tsIdentifier: identifier.identifierFromString("Response"),
 };
 
 /**

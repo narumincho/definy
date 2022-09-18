@@ -699,6 +699,7 @@ const collectInType = (
     case "Null":
     case "Never":
     case "Void":
+    case "unknown":
       return {
         modulePathSet: new Set(),
         usedNameSet: new Set(),
