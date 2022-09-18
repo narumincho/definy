@@ -1,3 +1,4 @@
+import { stringToValidProjectName } from "../core/main";
 import { z } from "zod";
 
 export type Location = Readonly<z.TypeOf<typeof Location>>;
@@ -20,9 +21,27 @@ export const AccountId = z.string().min(1).brand<"AccountId">();
 
 export type AccountId = z.TypeOf<typeof AccountId>;
 
+export const accountIdFromString = (v: string): AccountId => AccountId.parse(v);
+
 export const ProjectId = z.string().min(1).brand<"ProjectId">();
 
 export type ProjectId = z.TypeOf<typeof ProjectId>;
+
+export const projectIdFromString = (v: string): ProjectId => ProjectId.parse(v);
+
+const isValidProjectName = (v: unknown): v is string =>
+  typeof v === "string" && stringToValidProjectName(v) === v;
+
+export const ProjectName = z
+  .string()
+  .refine(isValidProjectName)
+  .brand<"ProjectName">();
+
+export type ProjectName = z.TypeOf<typeof ProjectName>;
+
+export const ImageHash = z.string().brand<"ImageHash">();
+
+export type ImageHash = z.TypeOf<typeof ImageHash>;
 
 export const Location = z.union([
   z.object({ type: z.literal("home") }),

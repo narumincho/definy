@@ -1,5 +1,5 @@
 import * as React from "react";
-import { AccountToken, Language } from "../common/zodType";
+import { AccountToken, Language, ProjectName } from "../common/zodType";
 import { Button } from "../client/ui/Button";
 import { OneLineTextEditor } from "../client/ui/OneLineTextEditor";
 import { Text } from "../components/Text";
@@ -53,6 +53,8 @@ const CreateProjectLoggedIn = (props: {
     },
   });
 
+  const parsedProjectName = ProjectName.safeParse(projectName);
+
   return (
     <div css={{ padding: 16 }}>
       <h1>
@@ -80,12 +82,12 @@ const CreateProjectLoggedIn = (props: {
       </label>
       <Button
         onClick={
-          projectName.trim().length === 0 || createProjectMutation.isLoading
+          !parsedProjectName.success || createProjectMutation.isLoading
             ? undefined
             : () => {
                 createProjectMutation.mutate({
                   accountToken: props.accountToken,
-                  projectName,
+                  projectName: parsedProjectName.data,
                 });
               }
         }

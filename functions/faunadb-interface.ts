@@ -1,10 +1,14 @@
 import * as f from "./typedFauna";
 import {
   AccountId,
+  ImageHash,
   Language,
   Location,
   PreAccountToken,
   ProjectId,
+  ProjectName,
+  accountIdFromString,
+  projectIdFromString,
 } from "../common/zodType";
 
 export const getFaunaClient = (secret: string): f.TypedFaunaClient => {
@@ -96,9 +100,11 @@ const projectCollection = f.Collection<ProjectDocument>(
 );
 
 type ProjectDocument = {
-  readonly name: string;
+  readonly name: ProjectName;
   readonly createdBy: AccountId;
   readonly createdAt: f.Timestamp;
+  readonly iconHash: ImageHash;
+  readonly imageHash: ImageHash;
 };
 
 export const openConnectStateCreate = async (
@@ -249,7 +255,7 @@ export const createAccount = async (
       )
     )
   );
-  return f.faunaIdToBigint(result).toString() as AccountId;
+  return accountIdFromString(f.faunaIdToBigint(result).toString());
 };
 
 export const findAccountFromIdIssueByGoogle = async (
@@ -285,7 +291,7 @@ export const findAccountFromIdIssueByGoogle = async (
     return undefined;
   }
   return {
-    id: f.faunaIdToBigint(result.ref.id).toString() as AccountId,
+    id: accountIdFromString(f.faunaIdToBigint(result.ref.id).toString()),
     name: result.data.name,
   };
 };
@@ -343,7 +349,7 @@ export const getAccountByAccountToken = async (
     return undefined;
   }
   return {
-    id: f.faunaIdToBigint(result.ref.id).toString() as AccountId,
+    id: accountIdFromString(f.faunaIdToBigint(result.ref.id).toString()),
     name: result.data.name,
     imageUrl: result.data.imageUrl,
   };
@@ -351,8 +357,12 @@ export const getAccountByAccountToken = async (
 
 export const createProject = async (
   client: f.TypedFaunaClient,
-  projectName: string,
-  createdBy: AccountId
+  project: {
+    readonly name: ProjectName;
+    readonly createdBy: AccountId;
+    readonly iconHash: ImageHash;
+    readonly imageHash: ImageHash;
+  }
 ): Promise<ProjectId> => {
   const now = new Date();
   const projectId = await f.executeQuery(
@@ -363,9 +373,11 @@ export const createProject = async (
           f.Ref(projectCollection, id),
           f.object({
             data: f.object<ProjectDocument>({
-              name: f.literal(projectName),
+              name: f.literal(project.name),
               createdAt: f.time(now),
-              createdBy: f.literal(createdBy),
+              createdBy: f.literal(project.createdBy),
+              iconHash: f.literal(project.iconHash),
+              imageHash: f.literal(project.imageHash),
             }),
           })
         ),
@@ -373,7 +385,7 @@ export const createProject = async (
       )
     )
   );
-  return f.faunaIdToBigint(projectId).toString() as ProjectId;
+  return projectIdFromString(f.faunaIdToBigint(projectId).toString());
 };
 
 export const getAllProjectIds = async (
@@ -383,15 +395,24 @@ export const getAllProjectIds = async (
     client,
     f.paginateSet(f.Documents(projectCollection), {})
   );
-  return result.data.map(
-    (doc) => f.faunaIdToBigint(doc.id).toString() as ProjectId
+  return result.data.map((doc) =>
+    projectIdFromString(f.faunaIdToBigint(doc.id).toString())
   );
 };
 
 export const getProject = async (
   client: f.TypedFaunaClient,
   projectId: ProjectId
-): Promise<{ readonly name: string } | undefined> => {
+): Promise<
+  | {
+      readonly name: ProjectName;
+      readonly createdBy: AccountId;
+      readonly createdAt: Date;
+      readonly iconHash: ImageHash;
+      readonly imageHash: ImageHash;
+    }
+  | undefined
+> => {
   const result = await f.executeQuery(
     client,
     f.If<ProjectDocument | false>(
@@ -406,7 +427,12 @@ export const getProject = async (
   if (result === false) {
     return undefined;
   }
+
   return {
     name: result.name,
+    createdBy: result.createdBy,
+    createdAt: f.timestampToDate(result.createdAt),
+    iconHash: result.iconHash,
+    imageHash: result.imageHash,
   };
 };

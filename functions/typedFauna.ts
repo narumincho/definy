@@ -62,7 +62,14 @@ export const object = <T extends object>(expr: {
   }>;
 };
 
-export type Timestamp = "Timestamp" & { _timestamp: never };
+export type Timestamp = "Timestamp" & { value: string; _timestamp: never };
+
+/**
+ * -271821年 以前の日付は変換できないがまあ良いだろう.
+ */
+export const timestampToDate = (timestamp: Timestamp): Date => {
+  return new Date(timestamp.value);
+};
 
 export type CollectionReference<data extends DocumentObject> = {
   /** コレクション名 */

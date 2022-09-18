@@ -7,6 +7,7 @@ const sampleDefinyRpcServer = definyRpc.createHttpServer({
     definyRpc.createApiFunction({
       fullName: ["hello"],
       description: "hello と挨拶が返ってくる",
+      needAuthentication: false,
       isMutation: false,
       input: definyRpc.unit,
       output: definyRpc.string,
@@ -17,6 +18,7 @@ const sampleDefinyRpcServer = definyRpc.createHttpServer({
     definyRpc.createApiFunction({
       fullName: ["now"],
       description: "現在時刻を文字列で返す",
+      needAuthentication: false,
       isMutation: false,
       input: definyRpc.unit,
       output: definyRpc.string,
@@ -26,10 +28,11 @@ const sampleDefinyRpcServer = definyRpc.createHttpServer({
     }),
     definyRpc.createApiFunction({
       fullName: ["repeat"],
+      description: '"ok"を指定した回数分繰り返して返す',
+      needAuthentication: false,
       isMutation: false,
       input: definyRpc.number,
       output: definyRpc.string,
-      description: '"ok"を指定した回数分繰り返して返す',
       resolve: (input) => {
         return "ok".repeat(input);
       },

@@ -1,101 +1,96 @@
 import * as React from "react";
-import { Select } from "./Select";
+import * as env from "./env";
+import { Button } from "../../../client/ui/Button";
+import { Editor } from "./Editor";
+import { FuncDetail } from "./FuncDetail";
+import { ServerOrigin } from "./ServerOrigin";
 
 export const App = (): React.ReactElement => {
   const [functionList, setFunctionList] = React.useState<
-    | ReadonlyArray<{
-        readonly name: string;
-        readonly description: string;
-      }>
-    | undefined
+    ReadonlyArray<FuncDetail> | undefined
   >(undefined);
-  const [selectedFunc, setSelectedFunc] = React.useState<string | undefined>(
-    undefined
+  const [serverName, setServerName] = React.useState<string | undefined>();
+  const [serverOrigin, setServerOrigin] = React.useState<string>(
+    env.serverOrigin
   );
+  const [editorCount, setEditorCount] = React.useState<number>(1);
 
   React.useEffect(() => {
-    fetch("http://localhost:2520/definyRpc/functionListByName")
+    const url = new URL(serverOrigin);
+    url.pathname = "/definyRpc/functionListByName";
+    fetch(url)
       .then((response) => {
         return response.json();
       })
-      .then(
-        (
-          json: ReadonlyArray<{
-            readonly name: ReadonlyArray<string>;
-            readonly description: string;
-          }>
-        ) => {
-          setFunctionList(json.map((e) => ({ ...e, name: e.name.join(".") })));
-          setSelectedFunc(json[0]?.name.join("."));
-        }
-      );
-  }, []);
+      .then((json: ReadonlyArray<FuncDetail>) => {
+        setFunctionList(json);
+      })
+      .catch(() => {
+        setFunctionList(undefined);
+      });
+  }, [serverOrigin]);
+
+  React.useEffect(() => {
+    const url = new URL(serverOrigin);
+    url.pathname = "/definyRpc/name";
+    fetch(url)
+      .then((response) => {
+        return response.json();
+      })
+      .then((json: string) => {
+        console.log("name", json);
+        setServerName(json);
+      })
+      .catch(() => {
+        setServerName(undefined);
+      });
+  }, [serverOrigin]);
 
   return (
     <div
       css={{
-        backgroundColor: "black",
+        backgroundColor: "#111",
         color: "white",
         height: "100%",
-        padding: 8,
         boxSizing: "border-box",
+        display: "grid",
+        gap: 16,
+        alignContent: "start",
+        overflowY: "scroll",
       }}
     >
-      <h1 css={{ margin: 0 }}>definy RPC</h1>
+      <h2
+        css={{
+          backgroundColor: "#5fb58a",
+          fontSize: 14,
+          color: "#000",
+          margin: 0,
+          padding: "0 8px",
+        }}
+      >
+        definy RPC Browser Client
+      </h2>
 
-      <div css={{ display: "grid", gridTemplateColumns: "1fr 1fr" }}>
-        <div>
-          <Select
-            values={functionList}
-            value={selectedFunc}
-            onSelect={(e) => {
-              setSelectedFunc(e);
-            }}
-          />
-          <button>Run まだ..</button>
-        </div>
-        {functionList === undefined ? (
-          <div>loading...</div>
-        ) : (
-          <DetailView
-            functionList={functionList}
-            selectedFuncName={selectedFunc}
-          />
-        )}
-      </div>
-    </div>
-  );
-};
+      <ServerOrigin
+        serverName={serverName}
+        serverOrigin={serverOrigin}
+        onChangeServerOrigin={setServerOrigin}
+      />
 
-const DetailView = (props: {
-  readonly functionList: ReadonlyArray<{
-    readonly name: string;
-    readonly description: string;
-  }>;
-  readonly selectedFuncName: string | undefined;
-}): React.ReactElement => {
-  if (props.selectedFuncName === undefined) {
-    return (
-      <div>
-        <h2>未選択</h2>
-      </div>
-    );
-  }
-  const selectedFuncDetail = props.functionList.find(
-    (func) => func.name === props.selectedFuncName
-  );
-
-  if (selectedFuncDetail === undefined) {
-    return (
-      <div>
-        <h2>不明な関数</h2>
-      </div>
-    );
-  }
-  return (
-    <div>
-      <h2>{selectedFuncDetail.name}</h2>
-      <div>{selectedFuncDetail.description}</div>
+      {Array.from({ length: editorCount }, (_, i) => (
+        <Editor
+          key={i}
+          functionList={functionList}
+          serverOrigin={serverOrigin}
+        />
+      ))}
+      <Button
+        onClick={() => {
+          setEditorCount((old) => old + 1);
+        }}
+      >
+        +
+      </Button>
     </div>
   );
 };

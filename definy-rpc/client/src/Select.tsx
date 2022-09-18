@@ -1,12 +1,8 @@
 import * as React from "react";
+import { FuncDetail } from "./FuncDetail";
 
 export const Select = (props: {
-  readonly values:
-    | ReadonlyArray<{
-        readonly name: string;
-        readonly description: string;
-      }>
-    | undefined;
+  readonly values: ReadonlyArray<FuncDetail> | undefined;
   readonly value: string | undefined;
   readonly onSelect: (value: string | undefined) => void;
 }): React.ReactElement => {
@@ -52,12 +48,7 @@ export const Select = (props: {
 };
 
 const SelectActive = (props: {
-  readonly values:
-    | ReadonlyArray<{
-        readonly name: string;
-        readonly description: string;
-      }>
-    | undefined;
+  readonly values: ReadonlyArray<FuncDetail> | undefined;
   readonly value: string | undefined;
   readonly onSelect: (value: string | undefined) => void;
   readonly onSelectAndExit: (value: string | undefined) => void;
@@ -227,10 +218,7 @@ type SuggestionItem = {
 };
 
 const createSuggestionSorted = (parameter: {
-  readonly values: ReadonlyArray<{
-    readonly name: string;
-    readonly description: string;
-  }>;
+  readonly values: ReadonlyArray<FuncDetail>;
   readonly inputText: string;
 }): SuggestionList => {
   const result = [...createSuggestionWithPoint(parameter)];
@@ -239,45 +227,38 @@ const createSuggestionSorted = (parameter: {
 };
 
 const createSuggestionWithPoint = (parameter: {
-  readonly values: ReadonlyArray<{
-    readonly name: string;
-    readonly description: string;
-  }>;
+  readonly values: ReadonlyArray<FuncDetail>;
   readonly inputText: string;
 }): SuggestionList => {
   const normalizedSearchText = parameter.inputText.trim().toLocaleLowerCase();
   return parameter.values.map((value): SuggestionItem => {
-    const includeIndex = value.name
-      .toLocaleLowerCase()
-      .indexOf(normalizedSearchText);
+    const name = value.name.join(".");
+    const includeIndex = name.toLocaleLowerCase().indexOf(normalizedSearchText);
     if (includeIndex === -1) {
       return {
-        value: value.name,
-        text: [{ text: value.name, emphasis: false }],
+        value: name,
+        text: [{ text: name, emphasis: false }],
         point: 0,
       };
     }
     return {
-      value: value.name,
+      value: name,
       text: [
-        { text: value.name.slice(0, includeIndex), emphasis: false },
+        { text: name.slice(0, includeIndex), emphasis: false },
         {
-          text: value.name.slice(
+          text: name.slice(
             includeIndex,
             includeIndex + normalizedSearchText.length
           ),
           emphasis: true,
         },
         {
-          text: value.name.slice(includeIndex + normalizedSearchText.length),
+          text: name.slice(includeIndex + normalizedSearchText.length),
           emphasis: false,
         },
       ],
       point:
-        value.name.length -
-        normalizedSearchText.length +
-        value.name.length -
-        includeIndex,
+        name.length - normalizedSearchText.length + name.length - includeIndex,
     };
   });
 };
