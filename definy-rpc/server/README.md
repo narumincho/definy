@@ -1,7 +1,7 @@
 サンプルのサーバーを起動
 
 ```ps1
-deno run --watch --allow-net ./example.ts
+deno run --check --watch --allow-net ./example.ts
 ```
 
 クライアントも含めてビルド

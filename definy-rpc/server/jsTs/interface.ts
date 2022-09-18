@@ -308,6 +308,18 @@ export const logicalOr = (left: d.TsExpr, right: d.TsExpr): d.TsExpr => ({
   },
 });
 
+export const nullishCoalescing = (
+  left: d.TsExpr,
+  right: d.TsExpr
+): d.TsExpr => ({
+  _: "BinaryOperator",
+  binaryOperatorExpr: {
+    operator: "??",
+    left,
+    right,
+  },
+});
+
 /**
  * ```ts
  * Number.parseInt(parameter)
@@ -375,6 +387,22 @@ export const newUint8Array = (lengthOrIterable: d.TsExpr): d.TsExpr => ({
       tsIdentifier: identifier.identifierFromString("Uint8Array"),
     },
     parameterList: [lengthOrIterable],
+  },
+});
+
+/**
+ * ```ts
+ * new URL(expr)
+ * ```
+ */
+export const newURL = (expr: d.TsExpr): d.TsExpr => ({
+  _: "New",
+  callExpr: {
+    expr: {
+      _: "GlobalObjects",
+      tsIdentifier: identifier.identifierFromString("URL"),
+    },
+    parameterList: [expr],
   },
 });
 
@@ -463,6 +491,14 @@ export const uint8ArrayType: d.TsType = {
 };
 
 /**
+ * `URL`
+ */
+export const urlType: d.TsType = {
+  _: "ScopeInGlobal",
+  tsIdentifier: identifier.identifierFromString("URL"),
+};
+
+/**
  * `Promise<returnType>`
  */
 export const promiseType = (returnType: d.TsType): d.TsType => ({
@@ -541,4 +577,11 @@ export const readonlySetType = (elementType: d.TsType): d.TsType => ({
     },
     typeParameterList: [elementType],
   },
+});
+
+export const objectLiteral = (
+  memberList: ReadonlyArray<d.TsMember>
+): d.TsExpr => ({
+  _: "ObjectLiteral",
+  tsMemberList: memberList,
 });
