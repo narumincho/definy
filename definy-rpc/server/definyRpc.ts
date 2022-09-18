@@ -11,8 +11,13 @@ export const createHttpServer = (parameter: {
   readonly name: string;
   // deno-lint-ignore no-explicit-any
   readonly all: () => ReadonlyArray<ApiFunction<any, any, boolean>>;
+  readonly originHint: string;
 }) => {
-  const all = addDefinyRpcApiFunction(parameter.name, parameter.all);
+  const all = addDefinyRpcApiFunction(
+    parameter.name,
+    parameter.all,
+    parameter.originHint
+  );
   return (request: Request): Response => {
     const url = new URL(request.url);
     const pathList = url.pathname.slice(1).split("/");

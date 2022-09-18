@@ -62,11 +62,12 @@ const FunctionDetail = product<FunctionDetail>({
 export const addDefinyRpcApiFunction = (
   name: string,
   // deno-lint-ignore no-explicit-any
-  all: () => ReadonlyArray<ApiFunction<any, any, boolean>>
+  all: () => ReadonlyArray<ApiFunction<any, any, boolean>>,
+  originHint: string
   // deno-lint-ignore no-explicit-any
 ): ReadonlyArray<ApiFunction<any, any, boolean>> => {
   return [
-    ...builtInFunctions(name, all),
+    ...builtInFunctions(name, all, originHint),
     ...all().map((func) => ({
       ...func,
       fullName: [name, ...func.fullName] as const,
@@ -77,7 +78,8 @@ export const addDefinyRpcApiFunction = (
 const builtInFunctions = (
   name: string,
   // deno-lint-ignore no-explicit-any
-  all: () => ReadonlyArray<ApiFunction<any, any, boolean>>
+  all: () => ReadonlyArray<ApiFunction<any, any, boolean>>,
+  originHint: string
 ) => {
   return [
     createApiFunction({
@@ -103,7 +105,7 @@ const builtInFunctions = (
         return new Set(
           [
             ...new Set(
-              addDefinyRpcApiFunction(name, all).map((func) =>
+              addDefinyRpcApiFunction(name, all, originHint).map((func) =>
                 func.fullName.slice(0, -1).join(".")
               )
             ),
@@ -119,7 +121,7 @@ const builtInFunctions = (
       isMutation: false,
       needAuthentication: false,
       resolve: () => {
-        const allFunc = addDefinyRpcApiFunction(name, all);
+        const allFunc = addDefinyRpcApiFunction(name, all, originHint);
         return allFunc.map<FunctionDetail>((f) => ({
           name: f.fullName,
           description: f.description,
@@ -136,7 +138,7 @@ const builtInFunctions = (
       isMutation: false,
       needAuthentication: true,
       resolve: (_, _accountToken) => {
-        const allFunc = addDefinyRpcApiFunction(name, all);
+        const allFunc = addDefinyRpcApiFunction(name, all, originHint);
         return allFunc.map<FunctionDetail>((f) => ({
           name: f.fullName,
           description: f.description,
@@ -154,10 +156,10 @@ const builtInFunctions = (
       isMutation: false,
       needAuthentication: false,
       resolve: () => {
-        const allFunc = addDefinyRpcApiFunction(name, all).filter(
+        const allFunc = addDefinyRpcApiFunction(name, all, originHint).filter(
           (f) => f.fullName[0] === definyRpcNamespace
         );
-        return apiFunctionListToCode(allFunc);
+        return apiFunctionListToCode(allFunc, originHint);
       },
     }),
   ];
@@ -172,7 +174,8 @@ const definyRpcTypeBodyToType = <t>(definyRpcType: DefinyRpcType<t>): Type => {
 };
 
 const apiFunctionListToCode = <input, output>(
-  apiFunctionList: ReadonlyArray<ApiFunction<input, output, boolean>>
+  apiFunctionList: ReadonlyArray<ApiFunction<input, output, boolean>>,
+  originHint: string
 ): string => {
   const needAuthentication = apiFunctionList.some(
     (func) => func.needAuthentication
@@ -197,20 +200,7 @@ const apiFunctionListToCode = <input, output>(
                     _: "Function",
                     functionType: {
                       typeParameterList: [],
-                      parameterList: [
-                        ...(func.input.body.type === "unit"
-                          ? []
-                          : [definyRpcTypeToTsType(func.input)]),
-                        ...(func.needAuthentication
-                          ? [
-                              {
-                                _: "ScopeInFile",
-                                tsIdentifier:
-                                  identifierFromString("AccountToken"),
-                              } as const,
-                            ]
-                          : []),
-                      ],
+                      parameterList: [funcParameterType(func, originHint)],
                       return: tsInterface.promiseType(
                         definyRpcTypeToTsType(func.output)
                       ),
@@ -226,7 +216,7 @@ const apiFunctionListToCode = <input, output>(
                   _: "KeyValue",
                   keyValue: {
                     key: func.fullName.slice(1).join("_"),
-                    value: funcExpr(func),
+                    value: funcExpr(func, originHint),
                   },
                 })
               ),
@@ -285,36 +275,101 @@ const accountTokenExportDefinition: ExportDefinition = {
   },
 };
 
+const funcParameterType = <input, output>(
+  func: ApiFunction<input, output, boolean>,
+  originHint: string
+): TsType => {
+  return {
+    _: "Object",
+    tsMemberTypeList: [
+      {
+        name: "origin",
+        document: `api end point
+@default ${originHint}`,
+        required: false,
+        type: { _: "Union", tsTypeList: [{ _: "String" }, { _: "Undefined" }] },
+      },
+      ...(func.input.body.type === "unit"
+        ? []
+        : [
+            {
+              name: "input",
+              document: "",
+              required: true,
+              type: definyRpcTypeToTsType(func.input),
+            },
+          ]),
+      ...(func.needAuthentication
+        ? [
+            {
+              name: "accountToken",
+              document: "",
+              required: true,
+              type: {
+                _: "ScopeInFile",
+                tsIdentifier: identifierFromString("AccountToken"),
+              } as const,
+            },
+          ]
+        : []),
+    ],
+  };
+};
+
 const funcExpr = <input, output>(
-  func: ApiFunction<input, output, boolean>
+  func: ApiFunction<input, output, boolean>,
+  originHint: string
 ): TsExpr => {
+  const parameterIdentifier = identifierFromString("parameter");
   return {
     _: "Lambda",
     lambdaExpr: {
       parameterList: [
-        ...(func.input.body.type === "unit"
-          ? []
-          : [
-              {
-                name: identifierFromString("input"),
-                type: definyRpcTypeToTsType(func.input),
-              },
-            ]),
-        ...(func.needAuthentication
-          ? ([
-              {
-                name: identifierFromString("input"),
-                type: {
-                  _: "ScopeInFile",
-                  tsIdentifier: identifierFromString("AccountToken"),
-                },
-              },
-            ] as const)
-          : []),
+        {
+          name: parameterIdentifier,
+          type: funcParameterType(func, originHint),
+        },
       ],
       returnType: tsInterface.promiseType(definyRpcTypeToTsType(func.output)),
       typeParameterList: [],
       statementList: [
+        {
+          _: "VariableDefinition",
+          variableDefinitionStatement: {
+            name: identifierFromString("url"),
+            expr: tsInterface.newURL(
+              tsInterface.nullishCoalescing(
+                tsInterface.get(
+                  {
+                    _: "Variable",
+                    tsIdentifier: parameterIdentifier,
+                  },
+                  "origin"
+                ),
+                { _: "StringLiteral", string: originHint }
+              )
+            ),
+            isConst: true,
+            type: tsInterface.urlType,
+          },
+        },
+        {
+          _: "Set",
+          setStatement: {
+            target: tsInterface.get(
+              {
+                _: "Variable",
+                tsIdentifier: identifierFromString("url"),
+              },
+              "pathname"
+            ),
+            operatorMaybe: undefined,
+            expr: {
+              _: "StringLiteral",
+              string: "/" + func.fullName.join("/"),
+            },
+          },
+        },
         {
           _: "Return",
           tsExpr: tsInterface.callMethod(
@@ -326,7 +381,39 @@ const funcExpr = <input, output>(
                     _: "GlobalObjects",
                     tsIdentifier: identifierFromString("fetch"),
                   },
-                  parameterList: [{ _: "StringLiteral", string: "...." }],
+                  parameterList: [
+                    {
+                      _: "Variable",
+                      tsIdentifier: identifierFromString("url"),
+                    },
+                    ...(func.needAuthentication
+                      ? [
+                          tsInterface.objectLiteral([
+                            {
+                              _: "KeyValue",
+                              keyValue: {
+                                key: "headers",
+                                value: tsInterface.objectLiteral([
+                                  {
+                                    _: "KeyValue",
+                                    keyValue: {
+                                      key: "authorization",
+                                      value: tsInterface.get(
+                                        {
+                                          _: "Variable",
+                                          tsIdentifier: parameterIdentifier,
+                                        },
+                                        "accountToken"
+                                      ),
+                                    },
+                                  },
+                                ]),
+                              },
+                            } as const,
+                          ]),
+                        ]
+                      : []),
+                  ],
                 },
               },
               "then",

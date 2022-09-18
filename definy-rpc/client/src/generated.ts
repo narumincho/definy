@@ -13,38 +13,86 @@ export const definyRpc: {
   /**
    * サーバー名の取得
    */
-  readonly name: () => globalThis.Promise<string>;
+  readonly name: (a: {
+    /**
+     * api end point
+     * @default http://localhost:2520
+     */
+    readonly origin?: string | undefined;
+  }) => globalThis.Promise<string>;
   /**
    * get namespace list. namespace は API の公開非公開, コード生成のモジュールを分けるチャンク
    */
-  readonly namespaceList: () => globalThis.Promise<globalThis.Set<undefined>>;
+  readonly namespaceList: (a: {
+    /**
+     * api end point
+     * @default http://localhost:2520
+     */
+    readonly origin?: string | undefined;
+  }) => globalThis.Promise<globalThis.Set<undefined>>;
   /**
    * 名前から関数を検索する (公開APIのみ)
    */
-  readonly functionListByName: () => globalThis.Promise<
-    globalThis.ReadonlyArray<undefined>
-  >;
+  readonly functionListByName: (a: {
+    /**
+     * api end point
+     * @default http://localhost:2520
+     */
+    readonly origin?: string | undefined;
+  }) => globalThis.Promise<globalThis.ReadonlyArray<undefined>>;
   /**
    * 名前から関数を検索する (非公開API)
    */
-  readonly functionListByNamePrivate: (
-    a: AccountToken
-  ) => globalThis.Promise<globalThis.ReadonlyArray<undefined>>;
+  readonly functionListByNamePrivate: (a: {
+    /**
+     * api end point
+     * @default http://localhost:2520
+     */
+    readonly origin?: string | undefined;
+    readonly accountToken: AccountToken;
+  }) => globalThis.Promise<globalThis.ReadonlyArray<undefined>>;
   /**
    * 名前空間「definyRpc」のApiFunctionを呼ぶ TypeScript のコードを生成する
    */
-  readonly generateCallDefinyRpcTypeScriptCode: () => globalThis.Promise<string>;
+  readonly generateCallDefinyRpcTypeScriptCode: (a: {
+    /**
+     * api end point
+     * @default http://localhost:2520
+     */
+    readonly origin?: string | undefined;
+  }) => globalThis.Promise<string>;
 } = {
-  name: (): globalThis.Promise<string> =>
-    globalThis
-      .fetch("....")
+  name: (parameter: {
+    /**
+     * api end point
+     * @default http://localhost:2520
+     */
+    readonly origin?: string | undefined;
+  }): globalThis.Promise<string> => {
+    const url: globalThis.URL = new globalThis.URL(
+      parameter.origin ?? "http://localhost:2520"
+    );
+    url.pathname = "/definyRpc/name";
+    return globalThis
+      .fetch(url)
       .then((response: globalThis.Response): globalThis.Promise<string> => {
         response.json();
       })
-      .catch((): globalThis.Promise<string> => {}),
-  namespaceList: (): globalThis.Promise<globalThis.Set<undefined>> =>
-    globalThis
-      .fetch("....")
+      .catch((): globalThis.Promise<string> => {});
+  },
+  namespaceList: (parameter: {
+    /**
+     * api end point
+     * @default http://localhost:2520
+     */
+    readonly origin?: string | undefined;
+  }): globalThis.Promise<globalThis.Set<undefined>> => {
+    const url: globalThis.URL = new globalThis.URL(
+      parameter.origin ?? "http://localhost:2520"
+    );
+    url.pathname = "/definyRpc/namespaceList";
+    return globalThis
+      .fetch(url)
       .then(
         (
           response: globalThis.Response
@@ -52,12 +100,21 @@ export const definyRpc: {
           response.json();
         }
       )
-      .catch((): globalThis.Promise<globalThis.Set<undefined>> => {}),
-  functionListByName: (): globalThis.Promise<
-    globalThis.ReadonlyArray<undefined>
-  > =>
-    globalThis
-      .fetch("....")
+      .catch((): globalThis.Promise<globalThis.Set<undefined>> => {});
+  },
+  functionListByName: (parameter: {
+    /**
+     * api end point
+     * @default http://localhost:2520
+     */
+    readonly origin?: string | undefined;
+  }): globalThis.Promise<globalThis.ReadonlyArray<undefined>> => {
+    const url: globalThis.URL = new globalThis.URL(
+      parameter.origin ?? "http://localhost:2520"
+    );
+    url.pathname = "/definyRpc/functionListByName";
+    return globalThis
+      .fetch(url)
       .then(
         (
           response: globalThis.Response
@@ -65,12 +122,22 @@ export const definyRpc: {
           response.json();
         }
       )
-      .catch((): globalThis.Promise<globalThis.ReadonlyArray<undefined>> => {}),
-  functionListByNamePrivate: (
-    input: AccountToken
-  ): globalThis.Promise<globalThis.ReadonlyArray<undefined>> =>
-    globalThis
-      .fetch("....")
+      .catch((): globalThis.Promise<globalThis.ReadonlyArray<undefined>> => {});
+  },
+  functionListByNamePrivate: (parameter: {
+    /**
+     * api end point
+     * @default http://localhost:2520
+     */
+    readonly origin?: string | undefined;
+    readonly accountToken: AccountToken;
+  }): globalThis.Promise<globalThis.ReadonlyArray<undefined>> => {
+    const url: globalThis.URL = new globalThis.URL(
+      parameter.origin ?? "http://localhost:2520"
+    );
+    url.pathname = "/definyRpc/functionListByNamePrivate";
+    return globalThis
+      .fetch(url, { headers: { authorization: parameter.accountToken } })
       .then(
         (
           response: globalThis.Response
@@ -78,12 +145,24 @@ export const definyRpc: {
           response.json();
         }
       )
-      .catch((): globalThis.Promise<globalThis.ReadonlyArray<undefined>> => {}),
-  generateCallDefinyRpcTypeScriptCode: (): globalThis.Promise<string> =>
-    globalThis
-      .fetch("....")
+      .catch((): globalThis.Promise<globalThis.ReadonlyArray<undefined>> => {});
+  },
+  generateCallDefinyRpcTypeScriptCode: (parameter: {
+    /**
+     * api end point
+     * @default http://localhost:2520
+     */
+    readonly origin?: string | undefined;
+  }): globalThis.Promise<string> => {
+    const url: globalThis.URL = new globalThis.URL(
+      parameter.origin ?? "http://localhost:2520"
+    );
+    url.pathname = "/definyRpc/generateCallDefinyRpcTypeScriptCode";
+    return globalThis
+      .fetch(url)
       .then((response: globalThis.Response): globalThis.Promise<string> => {
         response.json();
       })
-      .catch((): globalThis.Promise<string> => {}),
+      .catch((): globalThis.Promise<string> => {});
+  },
 };

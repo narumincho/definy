@@ -280,7 +280,8 @@ export type BinaryOperator =
   | "BitwiseXOr"
   | "BitwiseOr"
   | "LogicalAnd"
-  | "LogicalOr";
+  | "LogicalOr"
+  | "??";
 
 /**
  * ローカル変数定義
