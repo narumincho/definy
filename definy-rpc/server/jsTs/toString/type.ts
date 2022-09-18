@@ -1,3 +1,4 @@
+import * as d from "../data.ts";
 import {
   createIdentifier,
   initialIdentifierIndex,
@@ -15,7 +16,7 @@ import {
  * @param type_ 型の式
  */
 export const typeToString = (
-  type_: TsType,
+  type_: d.TsType,
   moduleMap: ReadonlyMap<string, TsIdentifier>
 ): string => {
   switch (type_._) {
@@ -71,10 +72,10 @@ export const typeToString = (
       );
 
     case "ScopeInFile":
-      return type_.tsIdentifier.string;
+      return type_.tsIdentifier;
 
     case "ScopeInGlobal":
-      return "globalThis." + type_.tsIdentifier.string;
+      return "globalThis." + type_.tsIdentifier;
 
     case "ImportedType": {
       const nameSpaceIdentifier = moduleMap.get(type_.importedType.moduleName);
@@ -85,7 +86,7 @@ export const typeToString = (
         );
       }
 
-      return nameSpaceIdentifier.string + "." + type_.importedType.name.string;
+      return nameSpaceIdentifier + "." + type_.importedType.name;
     }
 
     case "StringLiteral":
@@ -138,7 +139,7 @@ const functionTypeToString = (
     parameterList
       .map(
         (parameter) =>
-          parameter.name.string + ": " + typeToString(parameter.type, moduleMap)
+          parameter.name + ": " + typeToString(parameter.type, moduleMap)
       )
       .join(", ") +
     ") => " +

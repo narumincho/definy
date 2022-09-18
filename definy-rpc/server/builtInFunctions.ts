@@ -2,7 +2,14 @@ import { ApiFunction, createApiFunction } from "./apiFunction.ts";
 import { set, string, unit, list, DefinyRpcType, product } from "./type.ts";
 import { generateCodeAsString } from "./jsTs/main.ts";
 import { identifierFromString } from "./jsTs/identifier.ts";
-import { TsMember, TsMemberType } from "./jsTs/data.ts";
+import {
+  ExportDefinition,
+  TsExpr,
+  TsMember,
+  TsMemberType,
+  TsType,
+} from "./jsTs/data.ts";
+import * as tsInterface from "./jsTs/interface.ts";
 
 const definyRpcNamespace = "definyRpc";
 
@@ -164,12 +171,16 @@ const definyRpcTypeBodyToType = <t>(definyRpcType: DefinyRpcType<t>): Type => {
   };
 };
 
-const apiFunctionListToCode = (
-  apiFunctionList: ReadonlyArray<ApiFunction<any, any, boolean>>
+const apiFunctionListToCode = <input, output>(
+  apiFunctionList: ReadonlyArray<ApiFunction<input, output, boolean>>
 ): string => {
+  const needAuthentication = apiFunctionList.some(
+    (func) => func.needAuthentication
+  );
   return generateCodeAsString(
     {
       exportDefinitionList: [
+        ...(needAuthentication ? [accountTokenExportDefinition] : []),
         {
           type: "variable",
           variable: {
@@ -187,11 +198,22 @@ const apiFunctionListToCode = (
                     functionType: {
                       typeParameterList: [],
                       parameterList: [
-                        {
-                          _: "Boolean",
-                        },
+                        ...(func.input.body.type === "unit"
+                          ? []
+                          : [definyRpcTypeToTsType(func.input)]),
+                        ...(func.needAuthentication
+                          ? [
+                              {
+                                _: "ScopeInFile",
+                                tsIdentifier:
+                                  identifierFromString("AccountToken"),
+                              } as const,
+                            ]
+                          : []),
                       ],
-                      return: { _: "Boolean" },
+                      return: tsInterface.promiseType(
+                        definyRpcTypeToTsType(func.output)
+                      ),
                     },
                   },
                 })
@@ -204,7 +226,7 @@ const apiFunctionListToCode = (
                   _: "KeyValue",
                   keyValue: {
                     key: func.fullName.slice(1).join("_"),
-                    value: { _: "StringLiteral", string: "unknown..." },
+                    value: funcExpr(func),
                   },
                 })
               ),
@@ -216,4 +238,149 @@ const apiFunctionListToCode = (
     },
     "TypeScript"
   );
+};
+
+const definyRpcTypeToTsType = <t>(definyRpcType: DefinyRpcType<t>): TsType => {
+  switch (definyRpcType.body.type) {
+    case "string":
+      return { _: "String" };
+    case "number":
+      return { _: "Number" };
+    case "unit":
+      return { _: "Undefined" };
+    case "list":
+      return tsInterface.readonlyArrayType({ _: "Undefined" });
+    case "set":
+      return tsInterface.setType({ _: "Undefined" });
+    case "sum":
+      return { _: "Undefined" };
+    case "product":
+      return { _: "Undefined" };
+  }
+};
+
+const accountTokenExportDefinition: ExportDefinition = {
+  type: "typeAlias",
+  typeAlias: {
+    name: identifierFromString("AccountToken"),
+    document: "認証が必要なリクエストに使用する",
+    typeParameterList: [],
+    type: {
+      _: "Intersection",
+      intersectionType: {
+        left: { _: "String" },
+        right: {
+          _: "Object",
+          tsMemberTypeList: [
+            {
+              name: "__accountTokenBland",
+              document: "",
+              required: true,
+              type: { _: "Never" },
+            },
+          ],
+        },
+      },
+    },
+  },
+};
+
+const funcExpr = <input, output>(
+  func: ApiFunction<input, output, boolean>
+): TsExpr => {
+  return {
+    _: "Lambda",
+    lambdaExpr: {
+      parameterList: [
+        ...(func.input.body.type === "unit"
+          ? []
+          : [
+              {
+                name: identifierFromString("input"),
+                type: definyRpcTypeToTsType(func.input),
+              },
+            ]),
+        ...(func.needAuthentication
+          ? ([
+              {
+                name: identifierFromString("input"),
+                type: {
+                  _: "ScopeInFile",
+                  tsIdentifier: identifierFromString("AccountToken"),
+                },
+              },
+            ] as const)
+          : []),
+      ],
+      returnType: tsInterface.promiseType(definyRpcTypeToTsType(func.output)),
+      typeParameterList: [],
+      statementList: [
+        {
+          _: "Return",
+          tsExpr: tsInterface.callMethod(
+            tsInterface.callMethod(
+              {
+                _: "Call",
+                callExpr: {
+                  expr: {
+                    _: "GlobalObjects",
+                    tsIdentifier: identifierFromString("fetch"),
+                  },
+                  parameterList: [{ _: "StringLiteral", string: "...." }],
+                },
+              },
+              "then",
+              [
+                {
+                  _: "Lambda",
+                  lambdaExpr: {
+                    parameterList: [
+                      {
+                        name: identifierFromString("response"),
+                        type: {
+                          _: "ScopeInGlobal",
+                          tsIdentifier: identifierFromString("Response"),
+                        },
+                      },
+                    ],
+                    returnType: tsInterface.promiseType(
+                      definyRpcTypeToTsType(func.output)
+                    ),
+                    typeParameterList: [],
+                    statementList: [
+                      {
+                        _: "EvaluateExpr",
+                        tsExpr: tsInterface.callMethod(
+                          {
+                            _: "Variable",
+                            tsIdentifier: identifierFromString("response"),
+                          },
+                          "json",
+                          []
+                        ),
+                      },
+                    ],
+                  },
+                },
+              ]
+            ),
+            "catch",
+            [
+              {
+                _: "Lambda",
+                lambdaExpr: {
+                  parameterList: [],
+                  returnType: tsInterface.promiseType(
+                    definyRpcTypeToTsType(func.output)
+                  ),
+                  typeParameterList: [],
+                  statementList: [],
+                },
+              },
+            ]
+          ),
+        },
+      ],
+    },
+  };
 };
