@@ -1,5 +1,3 @@
-// ex. scripts/build_npm.ts
-import { copy } from "https://deno.land/std@0.111.0/bytes/mod.ts";
 import { build, emptyDir } from "https://deno.land/x/dnt@0.30.0/mod.ts";
 import * as fs from "https://deno.land/std@0.155.0/fs/mod.ts";
 import * as base64 from "https://denopkg.com/chiefbiiko/base64@master/mod.ts";
@@ -14,7 +12,17 @@ type BuildClientResult = {
 
 const clientDistPath = "../client/dist/";
 
-const buildClient = async (): Promise<BuildClientResult | undefined> => {
+const buildClient = async (
+  serverOrigin: string
+): Promise<BuildClientResult | undefined> => {
+  Deno.writeTextFile(
+    "../client/src/env.ts",
+    `// generated-code DO NOT EDIT!!
+// eslint-disable
+export const serverOrigin = ${JSON.stringify(serverOrigin)};
+`
+  );
+
   const viteBuildProcess = Deno.run({
     cwd: "../client",
     cmd: [
@@ -83,10 +91,9 @@ const buildToNodeJs = async (): Promise<void> => {
       undici: true,
     },
     package: {
-      // package.json properties
-      name: "your-package",
+      name: "definy-rpc-server",
       version: "0.0.0",
-      description: "Your package.",
+      description: "definy RPC server",
       license: "MIT",
       repository: {
         type: "git",
@@ -101,7 +108,7 @@ const buildToNodeJs = async (): Promise<void> => {
 };
 
 const main = async (): Promise<void> => {
-  const clientBuildResult = await buildClient();
+  const clientBuildResult = await buildClient("http://localhost:2520");
   Deno.writeTextFile(
     "./client.ts",
     `

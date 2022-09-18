@@ -1,5 +1,7 @@
 import * as React from "react";
+import * as env from "./env";
 import { Select } from "./Select";
+import { OneLineTextEditor } from "../../../client/ui/OneLineTextEditor";
 
 export const App = (): React.ReactElement => {
   const [functionList, setFunctionList] = React.useState<
@@ -13,9 +15,14 @@ export const App = (): React.ReactElement => {
     undefined
   );
   const [serverName, setServerName] = React.useState<string | undefined>();
+  const [serverOrigin, setServerOrigin] = React.useState<string>(
+    env.serverOrigin
+  );
 
   React.useEffect(() => {
-    fetch("http://localhost:2520/definyRpc/functionListByName")
+    const url = new URL(serverOrigin);
+    url.pathname = "/definyRpc/functionListByName";
+    fetch(url)
       .then((response) => {
         return response.json();
       })
@@ -29,49 +36,89 @@ export const App = (): React.ReactElement => {
           setFunctionList(json.map((e) => ({ ...e, name: e.name.join(".") })));
           setSelectedFunc(json[0]?.name.join("."));
         }
-      );
-  }, []);
+      )
+      .catch(() => {
+        setFunctionList(undefined);
+        setSelectedFunc(undefined);
+      });
+  }, [serverOrigin]);
 
   React.useEffect(() => {
-    fetch("http://localhost:2520/definyRpc/name")
+    const url = new URL(serverOrigin);
+    url.pathname = "/definyRpc/name";
+    fetch(url)
       .then((response) => {
         return response.json();
       })
       .then((json: string) => {
         console.log("name", json);
         setServerName(json);
+      })
+      .catch(() => {
+        setServerName(undefined);
       });
-  }, []);
+  }, [serverOrigin]);
 
   return (
     <div
       css={{
-        backgroundColor: "black",
+        backgroundColor: "#111",
         color: "white",
         height: "100%",
-        padding: 8,
         boxSizing: "border-box",
+        display: "grid",
+        gap: 16,
+        alignContent: "start",
       }}
     >
-      <h1
+      <h2
         css={{
+          backgroundColor: "#5fb58a",
+          fontSize: 14,
+          color: "#000",
           margin: 0,
-          display: "grid",
-          gridAutoFlow: "column",
-          justifyContent: "start",
-          alignItems: "baseline",
-          gap: 16,
+          padding: "0 8px",
         }}
       >
-        {serverName === undefined ? (
-          <div css={{ backgroundColor: "gray" }}>...</div>
-        ) : (
-          <div>{serverName}</div>
-        )}
-        <div css={{ fontSize: 14, color: "#ddd" }}>definy RPC</div>
-      </h1>
+        definy RPC Browser Client
+      </h2>
 
-      <div css={{ display: "grid", gridTemplateColumns: "1fr 1fr" }}>
+      <div css={{ padding: 16 }}>
+        <div>
+          <label
+            css={{
+              display: "grid",
+              gridAutoFlow: "column",
+              gap: 16,
+              justifyContent: "start",
+            }}
+          >
+            server origin
+            <OneLineTextEditor
+              id="server-origin"
+              value={serverOrigin}
+              css={{
+                fontFamily: "monospace",
+              }}
+              onChange={(value) => {
+                setServerOrigin(value);
+              }}
+            ></OneLineTextEditor>
+          </label>
+        </div>
+        <h1
+          css={{
+            margin: 0,
+            backgroundColor: serverName === undefined ? "#444" : "transparent",
+          }}
+        >
+          {serverName === undefined ? "..." : serverName}
+        </h1>
+      </div>
+
+      <div
+        css={{ padding: 16, display: "grid", gridTemplateColumns: "1fr 1fr" }}
+      >
         <div>
           <Select
             values={functionList}
