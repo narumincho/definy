@@ -25,7 +25,7 @@ export const DetailView = (props: {
   }
   return (
     <div>
-      <h2>{selectedFuncDetail.name}</h2>
+      <h2>{selectedFuncDetail.name.join(".")}</h2>
       <div>{selectedFuncDetail.description}</div>
       <div>{JSON.stringify(selectedFuncDetail.input)}</div>
     </div>

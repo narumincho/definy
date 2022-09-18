@@ -1,25 +1,19 @@
 import * as React from "react";
 import * as env from "./env";
 import { Button } from "../../../client/ui/Button";
-import { DetailView } from "./DetailView";
+import { Editor } from "./Editor";
 import { FuncDetail } from "./FuncDetail";
-import { Select } from "./Select";
 import { ServerOrigin } from "./ServerOrigin";
 
 export const App = (): React.ReactElement => {
   const [functionList, setFunctionList] = React.useState<
     ReadonlyArray<FuncDetail> | undefined
   >(undefined);
-  const [selectedFunc, setSelectedFunc] = React.useState<string | undefined>(
-    undefined
-  );
   const [serverName, setServerName] = React.useState<string | undefined>();
   const [serverOrigin, setServerOrigin] = React.useState<string>(
     env.serverOrigin
   );
-  const [runResponse, setRunResponse] = React.useState<string | undefined>(
-    undefined
-  );
+  const [editorCount, setEditorCount] = React.useState<number>(1);
 
   React.useEffect(() => {
     const url = new URL(serverOrigin);
@@ -30,11 +24,9 @@ export const App = (): React.ReactElement => {
       })
       .then((json: ReadonlyArray<FuncDetail>) => {
         setFunctionList(json);
-        setSelectedFunc(json[0]?.name.join("."));
       })
       .catch(() => {
         setFunctionList(undefined);
-        setSelectedFunc(undefined);
       });
   }, [serverOrigin]);
 
@@ -54,9 +46,6 @@ export const App = (): React.ReactElement => {
       });
   }, [serverOrigin]);
 
-  const selectedFuncDetail = functionList?.find(
-    (func) => func.name.join(".") === selectedFunc
-  );
   return (
     <div
       css={{
@@ -67,6 +56,7 @@ export const App = (): React.ReactElement => {
         display: "grid",
         gap: 16,
         alignContent: "start",
+        overflowY: "scroll",
       }}
     >
       <h2
@@ -87,52 +77,20 @@ export const App = (): React.ReactElement => {
         onChangeServerOrigin={setServerOrigin}
       />
 
-      <div
-        css={{ padding: 16, display: "grid", gridTemplateColumns: "1fr 1fr" }}
+      {Array.from({ length: editorCount }, (_, i) => (
+        <Editor
+          key={i}
+          functionList={functionList}
+          serverOrigin={serverOrigin}
+        />
+      ))}
+      <Button
+        onClick={() => {
+          setEditorCount((old) => old + 1);
+        }}
       >
-        <div css={{ display: "grid", alignContent: "start" }}>
-          <Select
-            values={functionList}
-            value={selectedFunc}
-            onSelect={(e) => {
-              setSelectedFunc(e);
-            }}
-          />
-          <Button
-            onClick={
-              selectedFuncDetail?.input.fullName.join(".") === "definyRpc.Unit"
-                ? () => {
-                    const url = new URL(serverOrigin);
-                    url.pathname = "/" + selectedFuncDetail.name.join("/");
-                    fetch(url)
-                      .then((response) => {
-                        return response.json();
-                      })
-                      .then((json: unknown) => {
-                        console.log("response", json);
-                        setRunResponse(JSON.stringify(json));
-                      })
-                      .catch(() => {
-                        setRunResponse(undefined);
-                      });
-                  }
-                : undefined
-            }
-          >
-            Run
-          </Button>
-          {runResponse}
-        </div>
-
-        {functionList === undefined ? (
-          <div>loading...</div>
-        ) : (
-          <DetailView
-            functionList={functionList}
-            selectedFuncName={selectedFunc}
-          />
-        )}
-      </div>
+        +
+      </Button>
     </div>
   );
 };
