@@ -1,3 +1,4 @@
+import * as d from "./data.ts";
 import * as identifier from "./identifier.ts";
 
 /**
@@ -14,11 +15,10 @@ export type UsedNameAndModulePathSet = {
  * @param expr 式
  * @param propertyName プロパティ名
  */
-export const get = (expr: TsExpr, propertyName: string): TsExpr =>
-  TsExpr.Get({
-    expr,
-    propertyExpr: TsExpr.StringLiteral(propertyName),
-  });
+export const get = (expr: d.TsExpr, propertyName: string): d.TsExpr => ({
+  _: "Get",
+  getExpr: { expr, propertyExpr: { _: "StringLiteral", string: propertyName } },
+});
 
 /**
  * メソッドを呼ぶ (getとcallのシンタックスシュガー)
@@ -27,251 +27,286 @@ export const get = (expr: TsExpr, propertyName: string): TsExpr =>
  * @param parameterList
  */
 export const callMethod = (
-  expr: TsExpr,
+  expr: d.TsExpr,
   methodName: string,
-  parameterList: ReadonlyArray<TsExpr>
-): TsExpr => TsExpr.Call({ expr: get(expr, methodName), parameterList });
+  parameterList: ReadonlyArray<d.TsExpr>
+): d.TsExpr => ({
+  _: "Call",
+  callExpr: { expr: get(expr, methodName), parameterList },
+});
 
 /**
  * 単項マイナス演算子 `-a`
  * @param expr 式
  */
-export const minus = (expr: TsExpr): TsExpr =>
-  TsExpr.UnaryOperator({
+export const minus = (expr: d.TsExpr): d.TsExpr => ({
+  _: "UnaryOperator",
+  unaryOperatorExpr: {
     operator: "Minus",
     expr,
-  });
+  },
+});
 
 /**
  * ビット否定 `~a`
  * @param expr 式
  */
-export const bitwiseNot = (expr: TsExpr): TsExpr =>
-  TsExpr.UnaryOperator({
+export const bitwiseNot = (expr: d.TsExpr): d.TsExpr => ({
+  _: "UnaryOperator",
+  unaryOperatorExpr: {
     operator: "BitwiseNot",
     expr,
-  });
+  },
+});
 
 /**
  * 論理否定 `!a`
- * @param left 左辺
- * @param right 右辺
+ * @param expr 式
  */
-export const logicalNot = (expr: TsExpr): TsExpr =>
-  TsExpr.UnaryOperator({
+export const logicalNot = (expr: d.TsExpr): d.TsExpr => ({
+  _: "UnaryOperator",
+  unaryOperatorExpr: {
     operator: "LogicalNot",
     expr,
-  });
+  },
+});
 
 /**
  * べき乗 `a ** b`
  * @param left
  * @param right
  */
-export const exponentiation = (left: TsExpr, right: TsExpr): TsExpr =>
-  TsExpr.BinaryOperator({
+export const exponentiation = (left: d.TsExpr, right: d.TsExpr): d.TsExpr => ({
+  _: "BinaryOperator",
+  binaryOperatorExpr: {
     operator: "Multiplication",
     left,
     right,
-  });
+  },
+});
 
 /**
  * 数値の掛け算 `a * b`
  * @param left 左辺
  * @param right 右辺
  */
-export const multiplication = (left: TsExpr, right: TsExpr): TsExpr =>
-  TsExpr.BinaryOperator({
-    operator: "Multiplication",
-    left,
-    right,
-  });
+export const multiplication = (left: d.TsExpr, right: d.TsExpr): d.TsExpr => ({
+  _: "BinaryOperator",
+  binaryOperatorExpr: { operator: "Multiplication", left, right },
+});
 
 /**
  * 数値の割り算 `a / b`
  * @param left 左辺
  * @param right 右辺
  */
-export const division = (left: TsExpr, right: TsExpr): TsExpr =>
-  TsExpr.BinaryOperator({
-    operator: "Division",
-    left,
-    right,
-  });
+export const division = (left: d.TsExpr, right: d.TsExpr): d.TsExpr => ({
+  _: "BinaryOperator",
+  binaryOperatorExpr: { operator: "Division", left, right },
+});
 
 /**
  * 剰余演算 `a % b`
  * @param left 左辺
  * @param right 右辺
  */
-export const modulo = (left: TsExpr, right: TsExpr): TsExpr =>
-  TsExpr.BinaryOperator({
-    operator: "Remainder",
-    left,
-    right,
-  });
+export const modulo = (left: d.TsExpr, right: d.TsExpr): d.TsExpr => ({
+  _: "BinaryOperator",
+  binaryOperatorExpr: { operator: "Remainder", left, right },
+});
 
 /**
  * 数値の足し算、文字列の結合 `a + b`
  * @param left 左辺
  * @param right 右辺
  */
-export const addition = (left: TsExpr, right: TsExpr): TsExpr =>
-  TsExpr.BinaryOperator({
-    operator: "Addition",
-    left,
-    right,
-  });
+export const addition = (left: d.TsExpr, right: d.TsExpr): d.TsExpr => ({
+  _: "BinaryOperator",
+  binaryOperatorExpr: { operator: "Addition", left, right },
+});
 
 /**
  * 数値の引き算 `a - b`
  * @param left 左辺
  * @param right 右辺
  */
-export const subtraction = (left: TsExpr, right: TsExpr): TsExpr =>
-  TsExpr.BinaryOperator({
+export const subtraction = (left: d.TsExpr, right: d.TsExpr): d.TsExpr => ({
+  _: "BinaryOperator",
+  binaryOperatorExpr: {
     operator: "Subtraction",
     left,
     right,
-  });
+  },
+});
 
 /**
  * 左シフト `a << b`
  * @param left 左辺
  * @param right 右辺
  */
-export const leftShift = (left: TsExpr, right: TsExpr): TsExpr =>
-  TsExpr.BinaryOperator({
+export const leftShift = (left: d.TsExpr, right: d.TsExpr): d.TsExpr => ({
+  _: "BinaryOperator",
+  binaryOperatorExpr: {
     operator: "LeftShift",
     left,
     right,
-  });
+  },
+});
 
 /**
  * 符号を維持する右シフト `a >> b`
  * @param left 左辺
  * @param right 右辺
  */
-export const signedRightShift = (left: TsExpr, right: TsExpr): TsExpr =>
-  TsExpr.BinaryOperator({
+export const signedRightShift = (
+  left: d.TsExpr,
+  right: d.TsExpr
+): d.TsExpr => ({
+  _: "BinaryOperator",
+  binaryOperatorExpr: {
     operator: "SignedRightShift",
     left,
     right,
-  });
+  },
+});
 
 /**
  * 符号を維持しない(0埋め)右シフト `a >>> b`
  * @param left 左辺
  * @param right 右辺
  */
-export const unsignedRightShift = (left: TsExpr, right: TsExpr): TsExpr =>
-  TsExpr.BinaryOperator({
+export const unsignedRightShift = (
+  left: d.TsExpr,
+  right: d.TsExpr
+): d.TsExpr => ({
+  _: "BinaryOperator",
+  binaryOperatorExpr: {
     operator: "UnsignedRightShift",
     left,
     right,
-  });
+  },
+});
 
 /**
  * 未満 `a < b`
  * @param left 左辺
  * @param right 右辺
  */
-export const lessThan = (left: TsExpr, right: TsExpr): TsExpr =>
-  TsExpr.BinaryOperator({
+export const lessThan = (left: d.TsExpr, right: d.TsExpr): d.TsExpr => ({
+  _: "BinaryOperator",
+  binaryOperatorExpr: {
     operator: "LessThan",
     left,
     right,
-  });
+  },
+});
 
 /**
  * 以下 `a <= b`
  * @param left 左辺
  * @param right 右辺
  */
-export const lessThanOrEqual = (left: TsExpr, right: TsExpr): TsExpr =>
-  TsExpr.BinaryOperator({
+export const lessThanOrEqual = (left: d.TsExpr, right: d.TsExpr): d.TsExpr => ({
+  _: "BinaryOperator",
+  binaryOperatorExpr: {
     operator: "LessThanOrEqual",
     left,
     right,
-  });
+  },
+});
+
 /**
  * 等号 `a === b`
  * @param left 左辺
  * @param right 右辺
  */
-export const equal = (left: TsExpr, right: TsExpr): TsExpr =>
-  TsExpr.BinaryOperator({
+export const equal = (left: d.TsExpr, right: d.TsExpr): d.TsExpr => ({
+  _: "BinaryOperator",
+  binaryOperatorExpr: {
     operator: "Equal",
     left,
     right,
-  });
+  },
+});
 
 /**
  * 不等号 `a !== b`
  * @param left 左辺
  * @param right 右辺
  */
-export const notEqual = (left: TsExpr, right: TsExpr): TsExpr =>
-  TsExpr.BinaryOperator({
+export const notEqual = (left: d.TsExpr, right: d.TsExpr): d.TsExpr => ({
+  _: "BinaryOperator",
+  binaryOperatorExpr: {
     operator: "NotEqual",
     left,
     right,
-  });
+  },
+});
 
 /**
  * ビットAND `a & b`
  * @param left 左辺
  * @param right 右辺
  */
-export const bitwiseAnd = (left: TsExpr, right: TsExpr): TsExpr =>
-  TsExpr.BinaryOperator({
+export const bitwiseAnd = (left: d.TsExpr, right: d.TsExpr): d.TsExpr => ({
+  _: "BinaryOperator",
+  binaryOperatorExpr: {
     operator: "BitwiseAnd",
     left,
     right,
-  });
+  },
+});
 
-export const bitwiseXOr = (left: TsExpr, right: TsExpr): TsExpr =>
-  TsExpr.BinaryOperator({
+export const bitwiseXOr = (left: d.TsExpr, right: d.TsExpr): d.TsExpr => ({
+  _: "BinaryOperator",
+  binaryOperatorExpr: {
     operator: "BitwiseXOr",
     left,
     right,
-  });
+  },
+});
 
 /**
  * ビットOR `a | b`
  * @param left 左辺
  * @param right 右辺
  */
-export const bitwiseOr = (left: TsExpr, right: TsExpr): TsExpr =>
-  TsExpr.BinaryOperator({
+export const bitwiseOr = (left: d.TsExpr, right: d.TsExpr): d.TsExpr => ({
+  _: "BinaryOperator",
+  binaryOperatorExpr: {
     operator: "BitwiseOr",
     left,
     right,
-  });
+  },
+});
 
 /**
  * 論理AND `a && b`
  * @param left 左辺
  * @param right 右辺
  */
-export const logicalAnd = (left: TsExpr, right: TsExpr): TsExpr =>
-  TsExpr.BinaryOperator({
+export const logicalAnd = (left: d.TsExpr, right: d.TsExpr): d.TsExpr => ({
+  _: "BinaryOperator",
+  binaryOperatorExpr: {
     operator: "LogicalAnd",
     left,
     right,
-  });
+  },
+});
 
 /**
  * 論理OR `a || b`
  * @param left 左辺
  * @param right 右辺
  */
-export const logicalOr = (left: TsExpr, right: TsExpr): TsExpr =>
-  TsExpr.BinaryOperator({
+export const logicalOr = (left: d.TsExpr, right: d.TsExpr): d.TsExpr => ({
+  _: "BinaryOperator",
+  binaryOperatorExpr: {
     operator: "LogicalOr",
     left,
     right,
-  });
+  },
+});
 
 /**
  * ```ts
@@ -281,10 +316,13 @@ export const logicalOr = (left: TsExpr, right: TsExpr): TsExpr =>
  */
 export const callNumberMethod = (
   methodName: string,
-  parameterList: ReadonlyArray<TsExpr>
-): TsExpr =>
+  parameterList: ReadonlyArray<d.TsExpr>
+): d.TsExpr =>
   callMethod(
-    TsExpr.GlobalObjects(identifier.identifierFromString("Number")),
+    {
+      _: "GlobalObjects",
+      tsIdentifier: identifier.identifierFromString("Number"),
+    },
     methodName,
     parameterList
   );
@@ -297,10 +335,13 @@ export const callNumberMethod = (
  */
 export const callMathMethod = (
   methodName: string,
-  parameterList: ReadonlyArray<TsExpr>
-): TsExpr =>
+  parameterList: ReadonlyArray<d.TsExpr>
+): d.TsExpr =>
   callMethod(
-    TsExpr.GlobalObjects(identifier.identifierFromString("Math")),
+    {
+      _: "GlobalObjects",
+      tsIdentifier: identifier.identifierFromString("Math"),
+    },
     methodName,
     parameterList
   );
@@ -310,133 +351,194 @@ export const callMathMethod = (
  * new Date()
  * ```
  */
-export const newDate: TsExpr = TsExpr.New({
-  expr: TsExpr.GlobalObjects(identifier.identifierFromString("Date")),
-  parameterList: [],
-});
+export const newDate: d.TsExpr = {
+  _: "New",
+  callExpr: {
+    expr: {
+      _: "GlobalObjects",
+      tsIdentifier: identifier.identifierFromString("Date"),
+    },
+    parameterList: [],
+  },
+};
 
 /**
  * ```ts
  * new Uint8Array(lengthOrIterable)
  * ```
  */
-export const newUint8Array = (lengthOrIterable: TsExpr): TsExpr =>
-  TsExpr.New({
-    expr: TsExpr.GlobalObjects(identifier.identifierFromString("Uint8Array")),
+export const newUint8Array = (lengthOrIterable: d.TsExpr): d.TsExpr => ({
+  _: "New",
+  callExpr: {
+    expr: {
+      _: "GlobalObjects",
+      tsIdentifier: identifier.identifierFromString("Uint8Array"),
+    },
     parameterList: [lengthOrIterable],
-  });
+  },
+});
 
 /**
  * ```ts
  * new Map(initKeyValueList)
  * ```
  */
-export const newMap = (initKeyValueList: TsExpr): TsExpr =>
-  TsExpr.New({
-    expr: TsExpr.GlobalObjects(identifier.identifierFromString("Map")),
+export const newMap = (initKeyValueList: d.TsExpr): d.TsExpr => ({
+  _: "New",
+  callExpr: {
+    expr: {
+      _: "GlobalObjects",
+      tsIdentifier: identifier.identifierFromString("Map"),
+    },
     parameterList: [initKeyValueList],
-  });
+  },
+});
 
 /**
  * ```ts
  * new Set(initValueList)
  * ```
  */
-export const newSet = (initValueList: TsExpr): TsExpr =>
-  TsExpr.New({
-    expr: TsExpr.GlobalObjects(identifier.identifierFromString("Set")),
+export const newSet = (initValueList: d.TsExpr): d.TsExpr => ({
+  _: "New",
+  callExpr: {
+    expr: {
+      _: "GlobalObjects",
+      tsIdentifier: identifier.identifierFromString("Set"),
+    },
     parameterList: [initValueList],
-  });
+  },
+});
 
 /**
  * ```ts
  * console.log(expr)
  * ```
  */
-export const consoleLog = (expr: TsExpr): Statement =>
-  Statement.EvaluateExpr(
-    callMethod(
-      TsExpr.GlobalObjects(identifier.identifierFromString("console")),
-      "log",
-      [expr]
-    )
-  );
-
+export const consoleLog = (expr: d.TsExpr): d.Statement => ({
+  _: "EvaluateExpr",
+  tsExpr: callMethod(
+    {
+      _: "GlobalObjects",
+      tsIdentifier: identifier.identifierFromString("console"),
+    },
+    "log",
+    [expr]
+  ),
+});
 /**
  * `Array<elementType>`
  */
-export const arrayType = (elementType: TsType): TsType =>
-  TsType.WithTypeParameter({
-    type: TsType.ScopeInGlobal(identifier.identifierFromString("Array")),
+export const arrayType = (elementType: d.TsType): d.TsType => ({
+  _: "WithTypeParameter",
+  tsTypeWithTypeParameter: {
+    type: {
+      _: "ScopeInGlobal",
+      tsIdentifier: identifier.identifierFromString("Array"),
+    },
     typeParameterList: [elementType],
-  });
+  },
+});
 
 /**
  * `ReadonlyArray<elementType>`
  */
-export const readonlyArrayType = (elementType: TsType): TsType =>
-  TsType.WithTypeParameter({
-    type: TsType.ScopeInGlobal(
-      identifier.identifierFromString("ReadonlyArray")
-    ),
+export const readonlyArrayType = (elementType: d.TsType): d.TsType => ({
+  _: "WithTypeParameter",
+  tsTypeWithTypeParameter: {
+    type: {
+      _: "ScopeInGlobal",
+      tsIdentifier: identifier.identifierFromString("ReadonlyArray"),
+    },
     typeParameterList: [elementType],
-  });
+  },
+});
 
 /**
  * `Uint8Array`
  */
-export const uint8ArrayType: TsType = TsType.ScopeInGlobal(
-  identifier.identifierFromString("Uint8Array")
-);
+export const uint8ArrayType: d.TsType = {
+  _: "ScopeInGlobal",
+  tsIdentifier: identifier.identifierFromString("Uint8Array"),
+};
 
 /**
  * `Promise<returnType>`
  */
-export const promiseType = (returnType: TsType): TsType =>
-  TsType.WithTypeParameter({
-    type: TsType.ScopeInGlobal(identifier.identifierFromString("Promise")),
+export const promiseType = (returnType: d.TsType): d.TsType => ({
+  _: "WithTypeParameter",
+  tsTypeWithTypeParameter: {
+    type: {
+      _: "ScopeInGlobal",
+      tsIdentifier: identifier.identifierFromString("Promise"),
+    },
     typeParameterList: [returnType],
-  });
+  },
+});
 
 /**
  * `Date`
  */
-export const dateType: TsType = TsType.ScopeInGlobal(
-  identifier.identifierFromString("Date")
-);
+export const dateType: d.TsType = {
+  _: "ScopeInGlobal",
+  tsIdentifier: identifier.identifierFromString("Date"),
+};
 
 /**
  * `Map<keyType, valueType>`
  */
-export const mapType = (keyType: TsType, valueType: TsType): TsType =>
-  TsType.WithTypeParameter({
-    type: TsType.ScopeInGlobal(identifier.identifierFromString("Map")),
+export const mapType = (keyType: d.TsType, valueType: d.TsType): d.TsType => ({
+  _: "WithTypeParameter",
+  tsTypeWithTypeParameter: {
+    type: {
+      _: "ScopeInGlobal",
+      tsIdentifier: identifier.identifierFromString("Map"),
+    },
     typeParameterList: [keyType, valueType],
-  });
+  },
+});
 
 /**
  * `ReadonlyMap<keyType, valueType>`
  */
-export const readonlyMapType = (keyType: TsType, valueType: TsType): TsType =>
-  TsType.WithTypeParameter({
-    type: TsType.ScopeInGlobal(identifier.identifierFromString("ReadonlyMap")),
+export const readonlyMapType = (
+  keyType: d.TsType,
+  valueType: d.TsType
+): d.TsType => ({
+  _: "WithTypeParameter",
+  tsTypeWithTypeParameter: {
+    type: {
+      _: "ScopeInGlobal",
+      tsIdentifier: identifier.identifierFromString("ReadonlyMap"),
+    },
     typeParameterList: [keyType, valueType],
-  });
+  },
+});
 
 /**
  * `Set<elementType>`
  */
-export const setType = (elementType: TsType): TsType =>
-  TsType.WithTypeParameter({
-    type: TsType.ScopeInGlobal(identifier.identifierFromString("Set")),
+export const setType = (elementType: d.TsType): d.TsType => ({
+  _: "WithTypeParameter",
+  tsTypeWithTypeParameter: {
+    type: {
+      _: "ScopeInGlobal",
+      tsIdentifier: identifier.identifierFromString("Set"),
+    },
     typeParameterList: [elementType],
-  });
+  },
+});
 
 /**
  * `ReadonlySet<elementType>`
  */
-export const readonlySetType = (elementType: TsType): TsType =>
-  TsType.WithTypeParameter({
-    type: TsType.ScopeInGlobal(identifier.identifierFromString("ReadonlySet")),
+export const readonlySetType = (elementType: d.TsType): d.TsType => ({
+  _: "WithTypeParameter",
+  tsTypeWithTypeParameter: {
+    type: {
+      _: "ScopeInGlobal",
+      tsIdentifier: identifier.identifierFromString("ReadonlySet"),
+    },
     typeParameterList: [elementType],
-  });
+  },
+});

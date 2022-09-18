@@ -6,7 +6,7 @@ import {
 import { UsedNameAndModulePathSet } from "./interface.ts";
 import { collectInCode } from "./collect.ts";
 import { toString } from "./toString.ts";
-
+import * as d from "./data.ts";
 export * from "./identifier.ts";
 export * from "./interface.ts";
 
