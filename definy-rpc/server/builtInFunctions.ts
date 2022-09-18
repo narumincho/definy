@@ -133,6 +133,18 @@ const builtInFunctions = (
         }));
       },
     }),
+    createApiFunction({
+      fullName: ["definyRpc", "generateCallDefinyRpcTypeScriptCode"],
+      description:
+        "名前空間「definyRpc」のApiFunctionを呼ぶ TypeScript のコードを生成する",
+      input: unit,
+      output: string,
+      isMutation: false,
+      needAuthentication: false,
+      resolve: () => {
+        return "ここにコードが出力される";
+      },
+    }),
   ];
 };
 

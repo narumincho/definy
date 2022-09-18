@@ -1,4 +1,3 @@
-import { DefinyRpcType, list, product, string } from "./type.ts";
 import { clientBuildResult } from "./client.ts";
 import * as base64 from "https://denopkg.com/chiefbiiko/base64@master/mod.ts";
 import { jsonParse } from "./typedJson.ts";

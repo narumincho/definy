@@ -27,7 +27,9 @@ export const DetailView = (props: {
     <div>
       <h2>{selectedFuncDetail.name.join(".")}</h2>
       <div>{selectedFuncDetail.description}</div>
-      <div>{JSON.stringify(selectedFuncDetail.input)}</div>
+      <div css={{ overflowWrap: "anywhere" }}>
+        {JSON.stringify(selectedFuncDetail.input)}
+      </div>
     </div>
   );
 };
