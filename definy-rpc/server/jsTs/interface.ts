@@ -6,7 +6,7 @@ import * as identifier from "./identifier.ts";
  * モジュールの識別子を作るのに使う
  */
 export type UsedNameAndModulePathSet = {
-  readonly usedNameSet: ReadonlySet<string>;
+  readonly usedNameSet: ReadonlySet<identifier.TsIdentifier>;
   readonly modulePathSet: ReadonlySet<string>;
 };
 
@@ -517,13 +517,10 @@ export const consoleLog = (expr: d.TsExpr): d.Statement => ({
  * `Array<elementType>`
  */
 export const arrayType = (elementType: d.TsType): d.TsType => ({
-  _: "WithTypeParameter",
-  tsTypeWithTypeParameter: {
-    type: {
-      _: "ScopeInGlobal",
-      tsIdentifier: identifier.identifierFromString("Array"),
-    },
-    typeParameterList: [elementType],
+  _: "ScopeInGlobal",
+  typeNameAndTypeParameter: {
+    name: identifier.identifierFromString("Array"),
+    arguments: [elementType],
   },
 });
 
@@ -531,13 +528,10 @@ export const arrayType = (elementType: d.TsType): d.TsType => ({
  * `ReadonlyArray<elementType>`
  */
 export const readonlyArrayType = (elementType: d.TsType): d.TsType => ({
-  _: "WithTypeParameter",
-  tsTypeWithTypeParameter: {
-    type: {
-      _: "ScopeInGlobal",
-      tsIdentifier: identifier.identifierFromString("ReadonlyArray"),
-    },
-    typeParameterList: [elementType],
+  _: "ScopeInGlobal",
+  typeNameAndTypeParameter: {
+    name: identifier.identifierFromString("ReadonlyArray"),
+    arguments: [elementType],
   },
 });
 
@@ -546,7 +540,10 @@ export const readonlyArrayType = (elementType: d.TsType): d.TsType => ({
  */
 export const uint8ArrayType: d.TsType = {
   _: "ScopeInGlobal",
-  tsIdentifier: identifier.identifierFromString("Uint8Array"),
+  typeNameAndTypeParameter: {
+    name: identifier.identifierFromString("Uint8Array"),
+    arguments: [],
+  },
 };
 
 /**
@@ -554,7 +551,10 @@ export const uint8ArrayType: d.TsType = {
  */
 export const urlType: d.TsType = {
   _: "ScopeInGlobal",
-  tsIdentifier: identifier.identifierFromString("URL"),
+  typeNameAndTypeParameter: {
+    name: identifier.identifierFromString("URL"),
+    arguments: [],
+  },
 };
 
 /**
@@ -562,20 +562,20 @@ export const urlType: d.TsType = {
  */
 export const responseType: d.TsType = {
   _: "ScopeInGlobal",
-  tsIdentifier: identifier.identifierFromString("Response"),
+  typeNameAndTypeParameter: {
+    name: identifier.identifierFromString("Response"),
+    arguments: [],
+  },
 };
 
 /**
  * `Promise<returnType>`
  */
 export const promiseType = (returnType: d.TsType): d.TsType => ({
-  _: "WithTypeParameter",
-  tsTypeWithTypeParameter: {
-    type: {
-      _: "ScopeInGlobal",
-      tsIdentifier: identifier.identifierFromString("Promise"),
-    },
-    typeParameterList: [returnType],
+  _: "ScopeInGlobal",
+  typeNameAndTypeParameter: {
+    name: identifier.identifierFromString("Promise"),
+    arguments: [returnType],
   },
 });
 
@@ -584,20 +584,20 @@ export const promiseType = (returnType: d.TsType): d.TsType => ({
  */
 export const dateType: d.TsType = {
   _: "ScopeInGlobal",
-  tsIdentifier: identifier.identifierFromString("Date"),
+  typeNameAndTypeParameter: {
+    name: identifier.identifierFromString("Date"),
+    arguments: [],
+  },
 };
 
 /**
  * `Map<keyType, valueType>`
  */
 export const mapType = (keyType: d.TsType, valueType: d.TsType): d.TsType => ({
-  _: "WithTypeParameter",
-  tsTypeWithTypeParameter: {
-    type: {
-      _: "ScopeInGlobal",
-      tsIdentifier: identifier.identifierFromString("Map"),
-    },
-    typeParameterList: [keyType, valueType],
+  _: "ScopeInGlobal",
+  typeNameAndTypeParameter: {
+    name: identifier.identifierFromString("Map"),
+    arguments: [keyType, valueType],
   },
 });
 
@@ -608,13 +608,10 @@ export const readonlyMapType = (
   keyType: d.TsType,
   valueType: d.TsType
 ): d.TsType => ({
-  _: "WithTypeParameter",
-  tsTypeWithTypeParameter: {
-    type: {
-      _: "ScopeInGlobal",
-      tsIdentifier: identifier.identifierFromString("ReadonlyMap"),
-    },
-    typeParameterList: [keyType, valueType],
+  _: "ScopeInGlobal",
+  typeNameAndTypeParameter: {
+    name: identifier.identifierFromString("ReadonlyMap"),
+    arguments: [keyType, valueType],
   },
 });
 
@@ -622,13 +619,10 @@ export const readonlyMapType = (
  * `Set<elementType>`
  */
 export const setType = (elementType: d.TsType): d.TsType => ({
-  _: "WithTypeParameter",
-  tsTypeWithTypeParameter: {
-    type: {
-      _: "ScopeInGlobal",
-      tsIdentifier: identifier.identifierFromString("Set"),
-    },
-    typeParameterList: [elementType],
+  _: "ScopeInGlobal",
+  typeNameAndTypeParameter: {
+    name: identifier.identifierFromString("Set"),
+    arguments: [elementType],
   },
 });
 
@@ -636,13 +630,10 @@ export const setType = (elementType: d.TsType): d.TsType => ({
  * `ReadonlySet<elementType>`
  */
 export const readonlySetType = (elementType: d.TsType): d.TsType => ({
-  _: "WithTypeParameter",
-  tsTypeWithTypeParameter: {
-    type: {
-      _: "ScopeInGlobal",
-      tsIdentifier: identifier.identifierFromString("ReadonlySet"),
-    },
-    typeParameterList: [elementType],
+  _: "ScopeInGlobal",
+  typeNameAndTypeParameter: {
+    name: identifier.identifierFromString("ReadonlySet"),
+    arguments: [elementType],
   },
 });
 

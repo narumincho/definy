@@ -59,6 +59,10 @@ export type Statement =
  */
 export type TypeAlias = {
   /**
+   * 名前空間
+   */
+  readonly namespace: ReadonlyArray<TsIdentifier>;
+  /**
    * 型の名前
    */
   readonly name: TsIdentifier;
@@ -180,15 +184,17 @@ export type TsType =
       readonly tsMemberTypeList: ReadonlyArray<TsMemberType>;
     }
   | { readonly _: "Function"; readonly functionType: FunctionType }
-  | {
-      readonly _: "WithTypeParameter";
-      readonly tsTypeWithTypeParameter: TsTypeWithTypeParameter;
-    }
   | { readonly _: "Union"; readonly tsTypeList: ReadonlyArray<TsType> }
   | { readonly _: "Intersection"; readonly intersectionType: IntersectionType }
   | { readonly _: "ImportedType"; readonly importedType: ImportedType }
-  | { readonly _: "ScopeInFile"; readonly tsIdentifier: TsIdentifier }
-  | { readonly _: "ScopeInGlobal"; readonly tsIdentifier: TsIdentifier }
+  | {
+      readonly _: "ScopeInFile";
+      readonly typeNameAndTypeParameter: TypeNameAndArguments;
+    }
+  | {
+      readonly _: "ScopeInGlobal";
+      readonly typeNameAndTypeParameter: TypeNameAndArguments;
+    }
   | { readonly _: "StringLiteral"; readonly string: string };
 
 /**
@@ -621,9 +627,14 @@ export type ImportedType = {
    */
   readonly moduleName: string;
   /**
-   * 型の名前
+   * 型の名前とパラメータ
    */
+  readonly nameAndArguments: TypeNameAndArguments;
+};
+
+export type TypeNameAndArguments = {
   readonly name: TsIdentifier;
+  readonly arguments: ReadonlyArray<TsType>;
 };
 
 /**

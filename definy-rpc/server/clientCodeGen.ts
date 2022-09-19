@@ -13,6 +13,7 @@ import * as tsInterface from "./jsTs/interface.ts";
 import { DefinyRpcType } from "./type.ts";
 import {
   collectDefinyRpcTypeFromFuncList,
+  CollectedDefinyRpcType,
   CollectedDefinyRpcTypeBody,
   CollectedDefinyRpcTypeUse,
 } from "./collectType.ts";
@@ -30,13 +31,8 @@ export const apiFunctionListToCode = <input, output>(
       exportDefinitionList: [
         resultExportDefinition,
         ...(needAuthentication ? [accountTokenExportDefinition] : []),
-        ...[...collectedTypeMap.entries()].map(([name, type]) =>
-          collectedTypeToDec({
-            name: name,
-            description: type.description,
-            body: type.body,
-            parameterCount: type.parameterCount,
-          })
+        ...[...collectedTypeMap.values()].map((type) =>
+          collectedTypeToDec(type)
         ),
         {
           type: "variable",
@@ -106,6 +102,7 @@ const definyRpcTypeToTsType = <t>(definyRpcType: DefinyRpcType<t>): TsType => {
 const accountTokenExportDefinition: ExportDefinition = {
   type: "typeAlias",
   typeAlias: {
+    namespace: [],
     name: identifierFromString("AccountToken"),
     document: "認証が必要なリクエストに使用する",
     typeParameterList: [],
@@ -134,6 +131,7 @@ const resultTypeName = identifierFromString("Result");
 const resultExportDefinition: ExportDefinition = {
   type: "typeAlias",
   typeAlias: {
+    namespace: [],
     name: resultTypeName,
     document: "取得した結果",
     typeParameterList: [
@@ -158,7 +156,10 @@ const resultExportDefinition: ExportDefinition = {
               required: true,
               type: {
                 _: "ScopeInFile",
-                tsIdentifier: identifierFromString("ok"),
+                typeNameAndTypeParameter: {
+                  name: identifierFromString("ok"),
+                  arguments: [],
+                },
               },
             },
           ],
@@ -178,7 +179,10 @@ const resultExportDefinition: ExportDefinition = {
               required: true,
               type: {
                 _: "ScopeInFile",
-                tsIdentifier: identifierFromString("error"),
+                typeNameAndTypeParameter: {
+                  name: identifierFromString("error"),
+                  arguments: [],
+                },
               },
             },
           ],
@@ -189,23 +193,19 @@ const resultExportDefinition: ExportDefinition = {
 };
 
 const resultType = (ok: TsType, error: TsType): TsType => ({
-  _: "WithTypeParameter",
-  tsTypeWithTypeParameter: {
-    type: { _: "ScopeInFile", tsIdentifier: resultTypeName },
-    typeParameterList: [ok, error],
+  _: "ScopeInFile",
+  typeNameAndTypeParameter: {
+    name: resultTypeName,
+    arguments: [ok, error],
   },
 });
 
-const collectedTypeToDec = (type: {
-  readonly name: string;
-  readonly description: string;
-  readonly parameterCount: number;
-  readonly body: CollectedDefinyRpcTypeBody;
-}): ExportDefinition => {
+const collectedTypeToDec = (type: CollectedDefinyRpcType): ExportDefinition => {
   return {
     type: "typeAlias",
     typeAlias: {
-      name: identifierFromString(type.name),
+      namespace: type.fullName.slice(0, -1).map(identifierFromString),
+      name: identifierFromString(type.fullName[type.fullName.length - 1]),
       document: type.description,
       typeParameterList: Array.from({ length: type.parameterCount }, (_, i) =>
         identifierFromString("p" + i)
@@ -228,12 +228,18 @@ const collectedDefinyRpcTypeBodyTo = (
     case "list":
       return {
         _: "ScopeInGlobal",
-        tsIdentifier: identifierFromString("ReadonlyArray"),
+        typeNameAndTypeParameter: {
+          name: identifierFromString("ReadonlyArray"),
+          arguments: [],
+        },
       };
     case "set":
       return {
         _: "ScopeInGlobal",
-        tsIdentifier: identifierFromString("ReadonlySet"),
+        typeNameAndTypeParameter: {
+          name: identifierFromString("ReadonlySet"),
+          arguments: [],
+        },
       };
     case "product":
       return {
@@ -281,13 +287,10 @@ const collectedDefinyRpcTypeUseToTsType = (
   collectedDefinyRpcTypeUse: CollectedDefinyRpcTypeUse
 ): TsType => {
   return {
-    _: "WithTypeParameter",
-    tsTypeWithTypeParameter: {
-      type: {
-        _: "ScopeInFile",
-        tsIdentifier: identifierFromString(collectedDefinyRpcTypeUse.fullName),
-      },
-      typeParameterList: collectedDefinyRpcTypeUse.parameters.map(
+    _: "ScopeInFile",
+    typeNameAndTypeParameter: {
+      name: identifierFromString(collectedDefinyRpcTypeUse.fullName),
+      arguments: collectedDefinyRpcTypeUse.parameters.map(
         collectedDefinyRpcTypeUseToTsType
       ),
     },
@@ -326,7 +329,10 @@ const funcParameterType = <input, output>(
               required: true,
               type: {
                 _: "ScopeInFile",
-                tsIdentifier: identifierFromString("AccountToken"),
+                typeNameAndTypeParameter: {
+                  name: identifierFromString("AccountToken"),
+                  arguments: [],
+                },
               } as const,
             },
           ]

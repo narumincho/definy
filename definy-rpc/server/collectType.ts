@@ -33,6 +33,7 @@ const collectFromDefinyRpcType = <t>(
     [
       typeFullName,
       {
+        fullName: type.fullName,
         description: type.description,
         parameterCount: type.parameters.length,
         body: typeBodyToCollectedDefinyRpcTypeBody(type.body),
@@ -106,6 +107,7 @@ export type CollectedDefinyRpcTypeMap = ReadonlyMap<
 /// 循環的構造があった場合, 見つけられないんじゃないか?
 /// 同じ名前が見つかったらストップ (パラメーターは見る)
 export type CollectedDefinyRpcType = {
+  readonly fullName: readonly [string, ...ReadonlyArray<string>];
   readonly description: string;
   readonly parameterCount: number;
   readonly body: CollectedDefinyRpcTypeBody;
