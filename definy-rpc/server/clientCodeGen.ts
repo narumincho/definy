@@ -11,6 +11,11 @@ import {
 } from "./jsTs/data.ts";
 import * as tsInterface from "./jsTs/interface.ts";
 import { DefinyRpcType } from "./type.ts";
+import {
+  collectDefinyRpcTypeFromFuncList,
+  CollectedDefinyRpcTypeBody,
+  CollectedDefinyRpcTypeUse,
+} from "./collectType.ts";
 
 export const apiFunctionListToCode = <input, output>(
   apiFunctionList: ReadonlyArray<ApiFunction<input, output, boolean>>,
@@ -19,11 +24,20 @@ export const apiFunctionListToCode = <input, output>(
   const needAuthentication = apiFunctionList.some(
     (func) => func.needAuthentication
   );
+  const collectedTypeMap = collectDefinyRpcTypeFromFuncList(apiFunctionList);
   return generateCodeAsString(
     {
       exportDefinitionList: [
         resultExportDefinition,
         ...(needAuthentication ? [accountTokenExportDefinition] : []),
+        ...[...collectedTypeMap.entries()].map(([name, type]) =>
+          collectedTypeToDec({
+            name: name,
+            description: type.description,
+            body: type.body,
+            parameterCount: type.parameterCount,
+          })
+        ),
         {
           type: "variable",
           variable: {
@@ -181,6 +195,104 @@ const resultType = (ok: TsType, error: TsType): TsType => ({
     typeParameterList: [ok, error],
   },
 });
+
+const collectedTypeToDec = (type: {
+  readonly name: string;
+  readonly description: string;
+  readonly parameterCount: number;
+  readonly body: CollectedDefinyRpcTypeBody;
+}): ExportDefinition => {
+  return {
+    type: "typeAlias",
+    typeAlias: {
+      name: identifierFromString(type.name),
+      document: type.description,
+      typeParameterList: Array.from({ length: type.parameterCount }, (_, i) =>
+        identifierFromString("p" + i)
+      ),
+      type: collectedDefinyRpcTypeBodyTo(type.body),
+    },
+  };
+};
+
+const collectedDefinyRpcTypeBodyTo = (
+  typeBody: CollectedDefinyRpcTypeBody
+): TsType => {
+  switch (typeBody.type) {
+    case "string":
+      return { _: "String" };
+    case "number":
+      return { _: "Number" };
+    case "unit":
+      return { _: "Undefined" };
+    case "list":
+      return {
+        _: "ScopeInGlobal",
+        tsIdentifier: identifierFromString("ReadonlyArray"),
+      };
+    case "set":
+      return {
+        _: "ScopeInGlobal",
+        tsIdentifier: identifierFromString("ReadonlySet"),
+      };
+    case "product":
+      return {
+        _: "Object",
+        tsMemberTypeList: typeBody.fieldList.map((field) => ({
+          name: field.name,
+          document: field.description,
+          required: true,
+          type: collectedDefinyRpcTypeUseToTsType(field.type),
+        })),
+      };
+    case "sum":
+      return {
+        _: "Union",
+        tsTypeList: typeBody.patternList.map(
+          (pattern): TsType => ({
+            _: "Object",
+            tsMemberTypeList: [
+              {
+                name: identifierFromString("type"),
+                document: pattern.description,
+                required: true,
+                type: { _: "StringLiteral", string: pattern.name },
+              },
+              ...(pattern.parameter === undefined
+                ? []
+                : [
+                    {
+                      name: identifierFromString("value"),
+                      document: pattern.description,
+                      required: true,
+                      type: collectedDefinyRpcTypeUseToTsType(
+                        pattern.parameter
+                      ),
+                    } as const,
+                  ]),
+            ],
+          })
+        ),
+      };
+  }
+};
+
+const collectedDefinyRpcTypeUseToTsType = (
+  collectedDefinyRpcTypeUse: CollectedDefinyRpcTypeUse
+): TsType => {
+  return {
+    _: "WithTypeParameter",
+    tsTypeWithTypeParameter: {
+      type: {
+        _: "ScopeInFile",
+        tsIdentifier: identifierFromString(collectedDefinyRpcTypeUse.fullName),
+      },
+      typeParameterList: collectedDefinyRpcTypeUse.parameters.map(
+        collectedDefinyRpcTypeUseToTsType
+      ),
+    },
+  };
+};
 
 const funcParameterType = <input, output>(
   func: ApiFunction<input, output, boolean>,

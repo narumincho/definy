@@ -14,6 +14,63 @@ export type Result<ok extends unknown, error extends unknown> =
 export type AccountToken = string & { readonly __accountTokenBland: never };
 
 /**
+ * 内部表現は, undefined. JSON 上では null
+ */
+export type definyRpc$2eUnit = undefined;
+
+/**
+ * 文字列
+ */
+export type definyRpc$2eString = string;
+
+/**
+ * 集合. Set
+ */
+export type definyRpc$2eSet<p0 extends unknown> = globalThis.ReadonlySet;
+
+/**
+ * リスト
+ */
+export type definyRpc<p0 extends unknown> = globalThis.ReadonlyArray;
+
+/**
+ * functionByNameの結果
+ */
+export type definyRpc$2eFunctionDetail = {
+  /**
+   * 名前空間付き, 関数名
+   */
+  readonly name: definyRpc<definyRpc$2eString>;
+  /**
+   * 関数の説明文
+   */
+  readonly description: definyRpc$2eString;
+  /**
+   * 関数の入力の型
+   */
+  readonly input: definyRpc$2eType;
+  /**
+   * 関数の出力の型
+   */
+  readonly output: definyRpc$2eType;
+};
+
+/**
+ * definyRpc で表現できる型
+ */
+export type definyRpc$2eType = {
+  /**
+   * 完全名
+   */
+  readonly fullName: definyRpc<definyRpc$2eString>;
+  readonly description: definyRpc$2eString;
+  /**
+   * 型パラメーター
+   */
+  readonly parameters: definyRpc<definyRpc$2eType>;
+};
+
+/**
  * definyRpc の ApiFunctions を呼ぶ
  */
 export const definyRpc: {
