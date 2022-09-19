@@ -22,6 +22,9 @@ export const Editor = (props: {
   const selectedFuncDetail = props.functionList?.find(
     (func) => func.name.join(".") === selectedFunc
   );
+  const [responseToClipboardLoading, setResponseToClipboardLoading] =
+    React.useState<boolean>(false);
+
   return (
     <div
       css={{
@@ -64,16 +67,32 @@ export const Editor = (props: {
         <div css={{ overflowWrap: "anywhere" }}>
           {typeof runResponse === "string" ? (
             <Button
-              onClick={() => {
-                navigator.clipboard.writeText(runResponse);
-              }}
+              onClick={
+                responseToClipboardLoading
+                  ? undefined
+                  : () => {
+                      setResponseToClipboardLoading(true);
+                      navigator.clipboard.writeText(runResponse).then(() => {
+                        setResponseToClipboardLoading(false);
+                      });
+                    }
+              }
             >
               クリップボードにコピー
             </Button>
           ) : (
             <></>
           )}
-          <div>{JSON.stringify(runResponse, undefined)}</div>
+          <div
+            css={{
+              whiteSpace: "pre-wrap",
+              borderStyle: "solid",
+              borderColor: "#ccc",
+              padding: 8,
+            }}
+          >
+            {JSON.stringify(runResponse, undefined)}
+          </div>
         </div>
       </div>
 
