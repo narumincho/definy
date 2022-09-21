@@ -21,7 +21,7 @@ export type DefinyRpcParameter = {
 
 export const createHttpServer = (parameter: DefinyRpcParameter) => {
   const all = addDefinyRpcApiFunction(parameter);
-  return (request: Request): Response => {
+  return async (request: Request): Promise<Response> => {
     const url = new URL(request.url);
     const pathList = url.pathname.slice(1).split("/");
     const paramJson = url.searchParams.get("param");
@@ -45,19 +45,16 @@ export const createHttpServer = (parameter: DefinyRpcParameter) => {
     console.log("request!: ", pathList);
     for (const func of all) {
       if (stringArrayEqual(pathList, func.fullName)) {
+        const apiFunctionResult = await func.resolve(
+          func.input.fromJson(paramJsonParsed),
+          getAuthorization(
+            func.needAuthentication,
+            request.headers.get("authorization") ?? undefined
+          )
+        );
         // input が undefined の型以外の場合は, 入力の関数を省く
         return new Response(
-          JSON.stringify(
-            func.output.toJson(
-              func.resolve(
-                func.input.fromJson(paramJsonParsed),
-                getAuthorization(
-                  func.needAuthentication,
-                  request.headers.get("authorization") ?? undefined
-                )
-              )
-            )
-          ),
+          JSON.stringify(func.output.toJson(apiFunctionResult)),
           {
             headers: { "content-type": "application/json" },
           }

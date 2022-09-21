@@ -1,4 +1,4 @@
-import { serve } from "https://deno.land/std@0.154.0/http/server.ts";
+import { serve } from "https://deno.land/std@0.156.0/http/server.ts";
 import { definyRpc } from "./mod.ts";
 
 const portNumber = 2520;
@@ -45,8 +45,8 @@ const sampleDefinyRpcServer = definyRpc.createHttpServer({
 });
 
 serve(
-  (request) => {
-    const response = sampleDefinyRpcServer(request);
+  async (request) => {
+    const response = await sampleDefinyRpcServer(request);
 
     response.headers.append(
       "access-control-allow-origin",

@@ -3,7 +3,6 @@ import { apiFunctionListToCode } from "./clientCodeGen.ts";
 import type { DefinyRpcParameter } from "./definyRpc.ts";
 import { set, string, unit, list, DefinyRpcType, product } from "./type.ts";
 import { ensureFile } from "https://deno.land/std@0.156.0/fs/mod.ts";
-import { denoRunByPowershellOrBash } from "./denoRun.ts";
 
 const definyRpcNamespace = "definyRpc";
 
@@ -146,7 +145,7 @@ const builtInFunctions = (parameter: DefinyRpcParameter) => {
         const allFunc = addDefinyRpcApiFunction(parameter).filter(
           (f) => f.fullName[0] === definyRpcNamespace
         );
-        return apiFunctionListToCode(allFunc, parameter.originHint);
+        return apiFunctionListToCode(allFunc, parameter.originHint, true);
       },
     }),
     ...(parameter.codeGenOutputFolderPath === undefined
@@ -173,9 +172,8 @@ const builtInFunctions = (parameter: DefinyRpcParameter) => {
               await ensureFile(path);
               await Deno.writeTextFile(
                 path,
-                apiFunctionListToCode(allFunc, parameter.originHint)
+                await apiFunctionListToCode(allFunc, parameter.originHint, true)
               );
-              denoRunByPowershellOrBash({ cmd: ["deno", "fmt", path] });
               return undefined;
             },
           }),

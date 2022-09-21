@@ -1,6 +1,6 @@
 import { build, emptyDir } from "https://deno.land/x/dnt@0.30.0/mod.ts";
 import * as base64 from "https://denopkg.com/chiefbiiko/base64@master/mod.ts";
-import { denoRunByPowershellOrBash } from "./denoRun.ts";
+import { shell } from "./shell.ts";
 
 type BuildClientResult = {
   readonly indexHtmlContent: string;
@@ -23,15 +23,10 @@ export const serverOrigin = ${JSON.stringify(serverOrigin)};
 `
   );
 
-  const viteBuildProcessStatus = await denoRunByPowershellOrBash({
+  const viteBuildProcessStatus = await Deno.run({
     cwd: "../client",
-    cmd: [
-      Deno.build.os === "windows" ? "powershell" : "bash",
-      "pnpm",
-      "run",
-      "definy-rpc-client-build",
-    ],
-  });
+    cmd: [shell, "pnpm", "run", "definy-rpc-client-build"],
+  }).status();
 
   console.log(viteBuildProcessStatus);
   const result: {
