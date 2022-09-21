@@ -1,3 +1,4 @@
+import { NonEmptyArray } from "../util.ts";
 import { TsIdentifier } from "./identifier.ts";
 
 /**
@@ -193,6 +194,11 @@ export type TsType =
     }
   | {
       readonly _: "ScopeInGlobal";
+      readonly typeNameAndTypeParameter: TypeNameAndArguments;
+    }
+  | {
+      readonly _: "WithNamespace";
+      readonly namespace: NonEmptyArray<TsIdentifier>;
       readonly typeNameAndTypeParameter: TypeNameAndArguments;
     }
   | { readonly _: "StringLiteral"; readonly string: string };

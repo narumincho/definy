@@ -81,6 +81,17 @@ export const typeToString = (
         )
       );
 
+    case "WithNamespace":
+      return (
+        type_.namespace.join(".") +
+        "." +
+        type_.typeNameAndTypeParameter.name +
+        typeArgumentsListToString(
+          type_.typeNameAndTypeParameter.arguments,
+          moduleMap
+        )
+      );
+
     case "ImportedType": {
       const nameSpaceIdentifier = moduleMap.get(type_.importedType.moduleName);
       if (nameSpaceIdentifier === undefined) {

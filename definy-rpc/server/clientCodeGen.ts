@@ -17,6 +17,7 @@ import {
   CollectedDefinyRpcTypeBody,
   CollectedDefinyRpcTypeUse,
 } from "./collectType.ts";
+import { nonEmptyArrayMap } from "./util.ts";
 
 export const apiFunctionListToCode = <input, output>(
   apiFunctionList: ReadonlyArray<ApiFunction<input, output, boolean>>,
@@ -204,18 +205,18 @@ const collectedTypeToDec = (type: CollectedDefinyRpcType): ExportDefinition => {
   return {
     type: "typeAlias",
     typeAlias: {
-      namespace: type.fullName.slice(0, -1).map(identifierFromString),
-      name: identifierFromString(type.fullName[type.fullName.length - 1]),
+      namespace: type.namespace.map(identifierFromString),
+      name: identifierFromString(type.name),
       document: type.description,
       typeParameterList: Array.from({ length: type.parameterCount }, (_, i) =>
         identifierFromString("p" + i)
       ),
-      type: collectedDefinyRpcTypeBodyTo(type.body),
+      type: collectedDefinyRpcTypeBodyToTsType(type.body),
     },
   };
 };
 
-const collectedDefinyRpcTypeBodyTo = (
+const collectedDefinyRpcTypeBodyToTsType = (
   typeBody: CollectedDefinyRpcTypeBody
 ): TsType => {
   switch (typeBody.type) {
@@ -287,9 +288,13 @@ const collectedDefinyRpcTypeUseToTsType = (
   collectedDefinyRpcTypeUse: CollectedDefinyRpcTypeUse
 ): TsType => {
   return {
-    _: "ScopeInFile",
+    _: "WithNamespace",
+    namespace: nonEmptyArrayMap(
+      collectedDefinyRpcTypeUse.namespace,
+      identifierFromString
+    ),
     typeNameAndTypeParameter: {
-      name: identifierFromString(collectedDefinyRpcTypeUse.fullName),
+      name: identifierFromString(collectedDefinyRpcTypeUse.name),
       arguments: collectedDefinyRpcTypeUse.parameters.map(
         collectedDefinyRpcTypeUseToTsType
       ),

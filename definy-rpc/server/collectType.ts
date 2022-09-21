@@ -1,6 +1,7 @@
 import { ApiFunction } from "./apiFunction.ts";
 import { lazyGet } from "./lazy.ts";
 import { DefinyRpcType, TypeBody } from "./type.ts";
+import { NonEmptyArray } from "./util.ts";
 
 export const collectDefinyRpcTypeFromFuncList = <input, output>(
   funcList: ReadonlyArray<ApiFunction<input, output, boolean>>
@@ -25,7 +26,7 @@ const collectFromDefinyRpcType = <t>(
   type: DefinyRpcType<t>,
   collectedNames: ReadonlySet<string>
 ): CollectedDefinyRpcTypeMap => {
-  const typeFullName = type.fullName.join(".");
+  const typeFullName = type.namespace.join(".") + "." + type.name;
   if (collectedNames.has(typeFullName)) {
     return collectFromDefinyRpcTypeList(type.parameters, collectedNames);
   }
@@ -33,7 +34,8 @@ const collectFromDefinyRpcType = <t>(
     [
       typeFullName,
       {
-        fullName: type.fullName,
+        namespace: type.namespace,
+        name: type.name,
         description: type.description,
         parameterCount: type.parameters.length,
         body: typeBodyToCollectedDefinyRpcTypeBody(type.body),
@@ -107,7 +109,8 @@ export type CollectedDefinyRpcTypeMap = ReadonlyMap<
 /// 循環的構造があった場合, 見つけられないんじゃないか?
 /// 同じ名前が見つかったらストップ (パラメーターは見る)
 export type CollectedDefinyRpcType = {
-  readonly fullName: readonly [string, ...ReadonlyArray<string>];
+  readonly namespace: NonEmptyArray<string>;
+  readonly name: string;
   readonly description: string;
   readonly parameterCount: number;
   readonly body: CollectedDefinyRpcTypeBody;
@@ -190,12 +193,14 @@ const definyRpcTypeToCollectedDefinyRpcTypeUse = <t>(
   type: DefinyRpcType<t>
 ): CollectedDefinyRpcTypeUse => {
   return {
-    fullName: type.fullName.join("."),
+    namespace: type.namespace,
+    name: type.name,
     parameters: type.parameters.map(definyRpcTypeToCollectedDefinyRpcTypeUse),
   };
 };
 
 export type CollectedDefinyRpcTypeUse = {
-  readonly fullName: string;
+  readonly namespace: NonEmptyArray<string>;
+  readonly name: string;
   readonly parameters: ReadonlyArray<CollectedDefinyRpcTypeUse>;
 };

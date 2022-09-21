@@ -31,11 +31,12 @@ export declare namespace definyRpc {
    */
   export type Set<p0 extends unknown> = globalThis.ReadonlySet;
 }
-/**
- * リスト
- */
-export type definyRpc<p0 extends unknown> = globalThis.ReadonlyArray;
-
+export declare namespace definyRpc {
+  /**
+   * リスト
+   */
+  export type List<p0 extends unknown> = globalThis.ReadonlyArray;
+}
 export declare namespace definyRpc {
   /**
    * functionByNameの結果
@@ -44,19 +45,19 @@ export declare namespace definyRpc {
     /**
      * 名前空間付き, 関数名
      */
-    readonly name: definyRpc<definyRpc$2eString>;
+    readonly name: definyRpc.List<definyRpc.String>;
     /**
      * 関数の説明文
      */
-    readonly description: definyRpc$2eString;
+    readonly description: definyRpc.String;
     /**
      * 関数の入力の型
      */
-    readonly input: definyRpc$2eType;
+    readonly input: definyRpc.Type;
     /**
      * 関数の出力の型
      */
-    readonly output: definyRpc$2eType;
+    readonly output: definyRpc.Type;
   };
 }
 export declare namespace definyRpc {
@@ -67,12 +68,12 @@ export declare namespace definyRpc {
     /**
      * 完全名
      */
-    readonly fullName: definyRpc<definyRpc$2eString>;
-    readonly description: definyRpc$2eString;
+    readonly fullName: definyRpc.List<definyRpc.String>;
+    readonly description: definyRpc.String;
     /**
      * 型パラメーター
      */
-    readonly parameters: definyRpc<definyRpc$2eType>;
+    readonly parameters: definyRpc.List<definyRpc.Type>;
   };
 }
 /**

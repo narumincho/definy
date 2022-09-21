@@ -776,6 +776,17 @@ const collectInType = (
         )
       );
 
+    case "WithNamespace":
+      return concatCollectData(
+        {
+          modulePathSet: new Set(),
+          usedNameSet: new Set([type_.typeNameAndTypeParameter.name]),
+        },
+        collectList(type_.typeNameAndTypeParameter.arguments, (parameter) =>
+          collectInType(parameter, rootScopeTypeNameSet, typeParameterSetList)
+        )
+      );
+
     case "ScopeInGlobal":
       return concatCollectData(
         {
@@ -793,34 +804,6 @@ const collectInType = (
         usedNameSet: new Set(),
       };
   }
-};
-
-const checkTypeIsDefinedOrThrow = (
-  rootScopeTypeNameSet: ReadonlySet<string>,
-  typeParameterSetList: ReadonlyArray<ReadonlySet<string>>,
-  typeName: TsIdentifier
-): void => {
-  const reversedTypeParameterSetList = [...typeParameterSetList].reverse();
-  for (const typeParameter of reversedTypeParameterSetList) {
-    if (typeParameter.has(typeName)) {
-      return;
-    }
-  }
-  if (rootScopeTypeNameSet.has(typeName)) {
-    return;
-  }
-  console.warn(
-    "存在しない型変数を指定されました typeName=" +
-      typeName +
-      " 存在している変数 =[ " +
-      typeParameterSetList
-        .map((scope) => "[ " + [...scope].join(",") + " ]")
-        .join(",") +
-      "]" +
-      "ファイルの直下に存在している型 =[ " +
-      [...rootScopeTypeNameSet].join(",") +
-      " ]"
-  );
 };
 
 const concatCollectData = (

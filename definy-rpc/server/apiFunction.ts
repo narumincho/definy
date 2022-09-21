@@ -1,11 +1,12 @@
 import { DefinyRpcType } from "./type.ts";
+import { NonEmptyArray } from "./util.ts";
 
 export type ApiFunction<
   InputType,
   OutputType,
   NeedAuthentication extends boolean
 > = {
-  readonly fullName: readonly [string, ...ReadonlyArray<string>];
+  readonly fullName: NonEmptyArray<string>;
   readonly input: DefinyRpcType<InputType>;
   readonly output: DefinyRpcType<OutputType>;
   /**

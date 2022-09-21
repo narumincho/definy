@@ -11,7 +11,8 @@ type Type = {
 };
 
 const Type: DefinyRpcType<Type> = product<Type>({
-  fullName: [definyRpcNamespace, "Type"],
+  namespace: [definyRpcNamespace],
+  name: "Type",
   description: "definyRpc で表現できる型",
   fieldList: {
     fullName: {
@@ -37,7 +38,8 @@ type FunctionDetail = {
 };
 
 const FunctionDetail = product<FunctionDetail>({
-  fullName: [definyRpcNamespace, "FunctionDetail"],
+  namespace: [definyRpcNamespace],
+  name: "FunctionDetail",
   description: "functionByNameの結果",
   fieldList: {
     name: {
@@ -158,7 +160,7 @@ const builtInFunctions = (
 
 const definyRpcTypeBodyToType = <t>(definyRpcType: DefinyRpcType<t>): Type => {
   return {
-    fullName: definyRpcType.fullName,
+    fullName: [...definyRpcType.namespace, definyRpcType.name],
     description: definyRpcType.description,
     parameters: definyRpcType.parameters.map(definyRpcTypeBodyToType),
   };
