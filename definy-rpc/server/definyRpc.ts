@@ -7,16 +7,20 @@ import { addDefinyRpcApiFunction } from "./builtInFunctions.ts";
 export * from "./type.ts";
 export * from "./apiFunction.ts";
 
-export const createHttpServer = (parameter: {
+export type DefinyRpcParameter = {
   readonly name: string;
   readonly all: () => ReadonlyArray<ApiFunction>;
   readonly originHint: string;
-}) => {
-  const all = addDefinyRpcApiFunction(
-    parameter.name,
-    parameter.all,
-    parameter.originHint
-  );
+  /**
+   * 実行環境とコードを編集している環境が同じ場合に, コードを生成ボタンを押したら生成できる機能
+   *
+   * 本番サーバーでは `undefined` を指定する
+   */
+  readonly codeGenOutputFolderPath: string | undefined;
+};
+
+export const createHttpServer = (parameter: DefinyRpcParameter) => {
+  const all = addDefinyRpcApiFunction(parameter);
   return (request: Request): Response => {
     const url = new URL(request.url);
     const pathList = url.pathname.slice(1).split("/");
@@ -38,7 +42,7 @@ export const createHttpServer = (parameter: {
         headers: { "content-type": "text/javascript; charset=utf-8" },
       });
     }
-    console.log(pathList);
+    console.log("request!: ", pathList);
     for (const func of all) {
       if (stringArrayEqual(pathList, func.fullName)) {
         // input が undefined の型以外の場合は, 入力の関数を省く

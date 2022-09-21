@@ -1,6 +1,8 @@
 import { ApiFunction, createApiFunction } from "./apiFunction.ts";
 import { apiFunctionListToCode } from "./clientCodeGen.ts";
+import type { DefinyRpcParameter } from "./definyRpc.ts";
 import { set, string, unit, list, DefinyRpcType, product } from "./type.ts";
+import { ensureFile } from "https://deno.land/std@0.156.0/fs/mod.ts";
 
 const definyRpcNamespace = "definyRpc";
 
@@ -53,24 +55,18 @@ const FunctionDetail = product<FunctionDetail>({
 });
 
 export const addDefinyRpcApiFunction = (
-  name: string,
-  all: () => ReadonlyArray<ApiFunction>,
-  originHint: string
+  parameter: DefinyRpcParameter
 ): ReadonlyArray<ApiFunction> => {
   return [
-    ...builtInFunctions(name, all, originHint),
-    ...all().map((func) => ({
+    ...builtInFunctions(parameter),
+    ...parameter.all().map((func) => ({
       ...func,
-      fullName: [name, ...func.fullName] as const,
+      fullName: [parameter.name, ...func.fullName] as const,
     })),
   ];
 };
 
-const builtInFunctions = (
-  name: string,
-  all: () => ReadonlyArray<ApiFunction>,
-  originHint: string
-) => {
+const builtInFunctions = (parameter: DefinyRpcParameter) => {
   return [
     createApiFunction({
       fullName: [definyRpcNamespace, "name"],
@@ -80,7 +76,7 @@ const builtInFunctions = (
       needAuthentication: false,
       isMutation: false,
       resolve: () => {
-        return name;
+        return parameter.name;
       },
     }),
     createApiFunction({
@@ -95,7 +91,7 @@ const builtInFunctions = (
         return new Set(
           [
             ...new Set(
-              addDefinyRpcApiFunction(name, all, originHint).map((func) =>
+              addDefinyRpcApiFunction(parameter).map((func) =>
                 func.fullName.slice(0, -1).join(".")
               )
             ),
@@ -111,7 +107,7 @@ const builtInFunctions = (
       isMutation: false,
       needAuthentication: false,
       resolve: () => {
-        const allFunc = addDefinyRpcApiFunction(name, all, originHint);
+        const allFunc = addDefinyRpcApiFunction(parameter);
         return allFunc.map<FunctionDetail>((f) => ({
           name: f.fullName,
           description: f.description,
@@ -128,7 +124,7 @@ const builtInFunctions = (
       isMutation: false,
       needAuthentication: true,
       resolve: (_, _accountToken) => {
-        const allFunc = addDefinyRpcApiFunction(name, all, originHint);
+        const allFunc = addDefinyRpcApiFunction(parameter);
         return allFunc.map<FunctionDetail>((f) => ({
           name: f.fullName,
           description: f.description,
@@ -146,12 +142,42 @@ const builtInFunctions = (
       isMutation: false,
       needAuthentication: false,
       resolve: () => {
-        const allFunc = addDefinyRpcApiFunction(name, all, originHint).filter(
+        const allFunc = addDefinyRpcApiFunction(parameter).filter(
           (f) => f.fullName[0] === definyRpcNamespace
         );
-        return apiFunctionListToCode(allFunc, originHint);
+        return apiFunctionListToCode(allFunc, parameter.originHint);
       },
     }),
+    ...(parameter.codeGenOutputFolderPath === undefined
+      ? []
+      : [
+          createApiFunction({
+            fullName: [
+              definyRpcNamespace,
+              "generateCodeAndWriteAsFileInServer",
+            ],
+            description:
+              "サーバーが実行している環境でコードを生成し, ファイルとして保存する",
+            input: unit,
+            output: unit,
+            isMutation: false,
+            needAuthentication: false,
+            resolve: async () => {
+              const allFunc = addDefinyRpcApiFunction(parameter).filter(
+                (f) => f.fullName[0] === definyRpcNamespace
+              );
+
+              const path =
+                parameter.codeGenOutputFolderPath + "/" + "definyRpc.ts";
+              await ensureFile(path);
+              await Deno.writeTextFile(
+                path,
+                apiFunctionListToCode(allFunc, parameter.originHint)
+              );
+              return undefined;
+            },
+          }),
+        ]),
   ];
 };
 

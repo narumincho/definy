@@ -7,12 +7,7 @@ export const collectDefinyRpcTypeFromFuncList = (
   funcList: ReadonlyArray<ApiFunction>
 ): CollectedDefinyRpcTypeMap => {
   return collectFromDefinyRpcTypeList(
-    funcList.flatMap((func) => [
-      // deno-lint-ignore no-explicit-any
-      func.input as DefinyRpcType<any>,
-      // deno-lint-ignore no-explicit-any
-      func.output as DefinyRpcType<any>,
-    ]),
+    funcList.flatMap((func) => [func.input, func.output]),
     new Set([])
   );
 };
