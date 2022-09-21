@@ -4,10 +4,9 @@
 /**
  * 取得した結果
  */
-export type Result<ok extends unknown, error extends unknown> = {
-  readonly type: "ok";
-  readonly ok: ok;
-} | { readonly type: "error"; readonly error: error };
+export type Result<ok extends unknown, error extends unknown> =
+  | { readonly type: "ok"; readonly ok: ok }
+  | { readonly type: "error"; readonly error: error };
 
 /**
  * 認証が必要なリクエストに使用する
@@ -151,20 +150,22 @@ export const definyRpc: {
     readonly origin?: string | undefined;
   }): globalThis.Promise<string> => {
     const url: globalThis.URL = new globalThis.URL(
-      parameter.origin ?? "http://localhost:2520",
+      parameter.origin ?? "http://localhost:2520"
     );
     url.pathname = "/definyRpc/name";
-    return globalThis.fetch(url).then((
-      response: globalThis.Response,
-    ): globalThis.Promise<string> => (response.json())).then(
-      (jsonValue: unknown): string => {
+    return globalThis
+      .fetch(url)
+      .then(
+        (response: globalThis.Response): globalThis.Promise<string> =>
+          response.json()
+      )
+      .then((jsonValue: unknown): string => {
         if (typeof jsonValue === "string") {
           return jsonValue;
         }
         throw new Error("parseError");
-      },
-    ).catch((): globalThis.Promise<string> => {
-    });
+      })
+      .catch((): globalThis.Promise<string> => {});
   },
   namespaceList: (parameter: {
     /**
@@ -174,20 +175,22 @@ export const definyRpc: {
     readonly origin?: string | undefined;
   }): globalThis.Promise<globalThis.Set<undefined>> => {
     const url: globalThis.URL = new globalThis.URL(
-      parameter.origin ?? "http://localhost:2520",
+      parameter.origin ?? "http://localhost:2520"
     );
     url.pathname = "/definyRpc/namespaceList";
-    return globalThis.fetch(url).then((
-      response: globalThis.Response,
-    ): globalThis.Promise<string> => (response.json())).then(
-      (jsonValue: unknown): globalThis.Set<undefined> => {
+    return globalThis
+      .fetch(url)
+      .then(
+        (response: globalThis.Response): globalThis.Promise<string> =>
+          response.json()
+      )
+      .then((jsonValue: unknown): globalThis.Set<undefined> => {
         if (typeof jsonValue === "string") {
           return jsonValue;
         }
         throw new Error("parseError");
-      },
-    ).catch((): globalThis.Promise<globalThis.Set<undefined>> => {
-    });
+      })
+      .catch((): globalThis.Promise<globalThis.Set<undefined>> => {});
   },
   functionListByName: (parameter: {
     /**
@@ -197,20 +200,22 @@ export const definyRpc: {
     readonly origin?: string | undefined;
   }): globalThis.Promise<globalThis.ReadonlyArray<undefined>> => {
     const url: globalThis.URL = new globalThis.URL(
-      parameter.origin ?? "http://localhost:2520",
+      parameter.origin ?? "http://localhost:2520"
     );
     url.pathname = "/definyRpc/functionListByName";
-    return globalThis.fetch(url).then((
-      response: globalThis.Response,
-    ): globalThis.Promise<string> => (response.json())).then(
-      (jsonValue: unknown): globalThis.ReadonlyArray<undefined> => {
+    return globalThis
+      .fetch(url)
+      .then(
+        (response: globalThis.Response): globalThis.Promise<string> =>
+          response.json()
+      )
+      .then((jsonValue: unknown): globalThis.ReadonlyArray<undefined> => {
         if (typeof jsonValue === "string") {
           return jsonValue;
         }
         throw new Error("parseError");
-      },
-    ).catch((): globalThis.Promise<globalThis.ReadonlyArray<undefined>> => {
-    });
+      })
+      .catch((): globalThis.Promise<globalThis.ReadonlyArray<undefined>> => {});
   },
   functionListByNamePrivate: (parameter: {
     /**
@@ -221,22 +226,22 @@ export const definyRpc: {
     readonly accountToken: AccountToken;
   }): globalThis.Promise<globalThis.ReadonlyArray<undefined>> => {
     const url: globalThis.URL = new globalThis.URL(
-      parameter.origin ?? "http://localhost:2520",
+      parameter.origin ?? "http://localhost:2520"
     );
     url.pathname = "/definyRpc/functionListByNamePrivate";
-    return globalThis.fetch(url, {
-      headers: { authorization: parameter.accountToken },
-    }).then((
-      response: globalThis.Response,
-    ): globalThis.Promise<string> => (response.json())).then(
-      (jsonValue: unknown): globalThis.ReadonlyArray<undefined> => {
+    return globalThis
+      .fetch(url, { headers: { authorization: parameter.accountToken } })
+      .then(
+        (response: globalThis.Response): globalThis.Promise<string> =>
+          response.json()
+      )
+      .then((jsonValue: unknown): globalThis.ReadonlyArray<undefined> => {
         if (typeof jsonValue === "string") {
           return jsonValue;
         }
         throw new Error("parseError");
-      },
-    ).catch((): globalThis.Promise<globalThis.ReadonlyArray<undefined>> => {
-    });
+      })
+      .catch((): globalThis.Promise<globalThis.ReadonlyArray<undefined>> => {});
   },
   generateCallDefinyRpcTypeScriptCode: (parameter: {
     /**
@@ -246,20 +251,22 @@ export const definyRpc: {
     readonly origin?: string | undefined;
   }): globalThis.Promise<string> => {
     const url: globalThis.URL = new globalThis.URL(
-      parameter.origin ?? "http://localhost:2520",
+      parameter.origin ?? "http://localhost:2520"
     );
     url.pathname = "/definyRpc/generateCallDefinyRpcTypeScriptCode";
-    return globalThis.fetch(url).then((
-      response: globalThis.Response,
-    ): globalThis.Promise<string> => (response.json())).then(
-      (jsonValue: unknown): string => {
+    return globalThis
+      .fetch(url)
+      .then(
+        (response: globalThis.Response): globalThis.Promise<string> =>
+          response.json()
+      )
+      .then((jsonValue: unknown): string => {
         if (typeof jsonValue === "string") {
           return jsonValue;
         }
         throw new Error("parseError");
-      },
-    ).catch((): globalThis.Promise<string> => {
-    });
+      })
+      .catch((): globalThis.Promise<string> => {});
   },
   generateCodeAndWriteAsFileInServer: (parameter: {
     /**
@@ -269,19 +276,21 @@ export const definyRpc: {
     readonly origin?: string | undefined;
   }): globalThis.Promise<undefined> => {
     const url: globalThis.URL = new globalThis.URL(
-      parameter.origin ?? "http://localhost:2520",
+      parameter.origin ?? "http://localhost:2520"
     );
     url.pathname = "/definyRpc/generateCodeAndWriteAsFileInServer";
-    return globalThis.fetch(url).then((
-      response: globalThis.Response,
-    ): globalThis.Promise<string> => (response.json())).then(
-      (jsonValue: unknown): undefined => {
+    return globalThis
+      .fetch(url)
+      .then(
+        (response: globalThis.Response): globalThis.Promise<string> =>
+          response.json()
+      )
+      .then((jsonValue: unknown): undefined => {
         if (typeof jsonValue === "string") {
           return jsonValue;
         }
         throw new Error("parseError");
-      },
-    ).catch((): globalThis.Promise<undefined> => {
-    });
+      })
+      .catch((): globalThis.Promise<undefined> => {});
   },
 };

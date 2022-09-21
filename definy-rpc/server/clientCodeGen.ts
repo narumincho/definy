@@ -19,22 +19,22 @@ import {
   CollectedDefinyRpcTypeUse,
 } from "./collectType.ts";
 import { nonEmptyArrayMap } from "./util.ts";
-import { formatCode } from "./denoFmt.ts";
+import { formatCode } from "./prettier.ts";
 
 export const apiFunctionListToCode = (
   apiFunctionList: ReadonlyArray<ApiFunction>,
   originHint: string,
   /** deno fmt を使う. `--allow-run` が必要 */
-  useDenoFmt: boolean
-): Promise<string> => {
+  usePrettier: boolean
+): string => {
   const code = generateCodeAsString(
     apiFunctionListToJsTsCode(apiFunctionList, originHint),
     "TypeScript"
   );
-  if (useDenoFmt) {
+  if (usePrettier) {
     return formatCode(code);
   }
-  return Promise.resolve(code);
+  return code;
 };
 
 export const apiFunctionListToJsTsCode = (
