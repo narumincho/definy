@@ -2,7 +2,6 @@ import {
   readAll,
   writeAll,
 } from "https://deno.land/std@0.156.0/streams/conversion.ts";
-import { shell } from "./shell.ts";
 
 /**
  * ```ps1
@@ -13,16 +12,14 @@ import { shell } from "./shell.ts";
  */
 export const formatCode = async (code: string): Promise<string> => {
   const process = Deno.run({
-    cmd: [shell, "deno", "fmt", "-"],
+    cmd: [Deno.execPath(), "fmt", "-"],
+    stdout: "piped",
+    stderr: "piped",
     stdin: "piped",
   });
 
   await writeAll(process.stdin, new TextEncoder().encode(code));
+  process.stdin.writable.close();
 
-  console.log("status", await process.status());
-
-  // const formattedCode = await readAll(process.stdout);
-  // console.log("コードをフォーマットできた?", formattedCode);
-  // return new TextDecoder().decode(formattedCode);
-  return new Date().toISOString();
+  return new TextDecoder().decode(await readAll(process.stdout));
 };
