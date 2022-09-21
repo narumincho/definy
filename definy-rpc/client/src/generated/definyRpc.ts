@@ -15,41 +15,17 @@ export type AccountToken = string & { readonly __accountTokenBland: never };
 
 export declare namespace definyRpc {
   /**
-   * 内部表現は, undefined. JSON 上では null
-   */
-  export type Unit = undefined;
-}
-export declare namespace definyRpc {
-  /**
-   * 文字列
-   */
-  export type String = string;
-}
-export declare namespace definyRpc {
-  /**
-   * 集合. Set
-   */
-  export type Set<p0 extends unknown> = globalThis.ReadonlySet;
-}
-export declare namespace definyRpc {
-  /**
-   * リスト
-   */
-  export type List<p0 extends unknown> = globalThis.ReadonlyArray;
-}
-export declare namespace definyRpc {
-  /**
    * functionByNameの結果
    */
   export type FunctionDetail = {
     /**
      * 名前空間付き, 関数名
      */
-    readonly name: definyRpc.List<definyRpc.String>;
+    readonly name: globalThis.ReadonlyArray<string>;
     /**
      * 関数の説明文
      */
-    readonly description: definyRpc.String;
+    readonly description: string;
     /**
      * 関数の入力の型
      */
@@ -68,12 +44,12 @@ export declare namespace definyRpc {
     /**
      * 完全名
      */
-    readonly fullName: definyRpc.List<definyRpc.String>;
-    readonly description: definyRpc.String;
+    readonly fullName: globalThis.ReadonlyArray<string>;
+    readonly description: string;
     /**
      * 型パラメーター
      */
-    readonly parameters: definyRpc.List<definyRpc.Type>;
+    readonly parameters: globalThis.ReadonlyArray<definyRpc.Type>;
   };
 }
 /**

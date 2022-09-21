@@ -9,6 +9,7 @@ import {
   TsMember,
   TsMemberType,
   TsType,
+  TypeAlias,
 } from "./jsTs/data.ts";
 import * as tsInterface from "./jsTs/interface.ts";
 import { DefinyRpcType } from "./type.ts";
@@ -16,6 +17,7 @@ import {
   collectDefinyRpcTypeFromFuncList,
   CollectedDefinyRpcType,
   CollectedDefinyRpcTypeBody,
+  CollectedDefinyRpcTypeMap,
   CollectedDefinyRpcTypeUse,
 } from "./collectType.ts";
 import { nonEmptyArrayMap } from "./util.ts";
@@ -49,7 +51,15 @@ export const apiFunctionListToJsTsCode = (
     exportDefinitionList: [
       resultExportDefinition,
       ...(needAuthentication ? [accountTokenExportDefinition] : []),
-      ...[...collectedTypeMap.values()].map((type) => collectedTypeToDec(type)),
+      ...[...collectedTypeMap.values()].flatMap(
+        (type): ReadonlyArray<ExportDefinition> => {
+          const typeAlias = collectedTypeToTypeAlias(type, collectedTypeMap);
+          if (typeAlias === undefined) {
+            return [];
+          }
+          return [{ type: "typeAlias", typeAlias }];
+        }
+      ),
       {
         type: "variable",
         variable: {
@@ -214,23 +224,33 @@ const resultType = (ok: TsType, error: TsType): TsType => ({
   },
 });
 
-const collectedTypeToDec = (type: CollectedDefinyRpcType): ExportDefinition => {
+const collectedTypeToTypeAlias = (
+  type: CollectedDefinyRpcType,
+  map: CollectedDefinyRpcTypeMap
+): TypeAlias | undefined => {
+  if (
+    type.body.type === "string" ||
+    type.body.type === "number" ||
+    type.body.type === "unit" ||
+    type.body.type === "list" ||
+    type.body.type === "set"
+  ) {
+    return undefined;
+  }
   return {
-    type: "typeAlias",
-    typeAlias: {
-      namespace: type.namespace.map(identifierFromString),
-      name: identifierFromString(type.name),
-      document: type.description,
-      typeParameterList: Array.from({ length: type.parameterCount }, (_, i) =>
-        identifierFromString("p" + i)
-      ),
-      type: collectedDefinyRpcTypeBodyToTsType(type.body),
-    },
+    namespace: type.namespace.map(identifierFromString),
+    name: identifierFromString(type.name),
+    document: type.description,
+    typeParameterList: Array.from({ length: type.parameterCount }, (_, i) =>
+      identifierFromString("p" + i)
+    ),
+    type: collectedDefinyRpcTypeBodyToTsType(type.body, map),
   };
 };
 
 const collectedDefinyRpcTypeBodyToTsType = (
-  typeBody: CollectedDefinyRpcTypeBody
+  typeBody: CollectedDefinyRpcTypeBody,
+  map: CollectedDefinyRpcTypeMap
 ): TsType => {
   switch (typeBody.type) {
     case "string":
@@ -262,7 +282,7 @@ const collectedDefinyRpcTypeBodyToTsType = (
           name: field.name,
           document: field.description,
           required: true,
-          type: collectedDefinyRpcTypeUseToTsType(field.type),
+          type: collectedDefinyRpcTypeUseToTsType(field.type, map),
         })),
       };
     case "sum":
@@ -286,7 +306,8 @@ const collectedDefinyRpcTypeBodyToTsType = (
                       document: pattern.description,
                       required: true,
                       type: collectedDefinyRpcTypeUseToTsType(
-                        pattern.parameter
+                        pattern.parameter,
+                        map
                       ),
                     } as const,
                   ]),
@@ -298,8 +319,56 @@ const collectedDefinyRpcTypeBodyToTsType = (
 };
 
 const collectedDefinyRpcTypeUseToTsType = (
-  collectedDefinyRpcTypeUse: CollectedDefinyRpcTypeUse
+  collectedDefinyRpcTypeUse: CollectedDefinyRpcTypeUse,
+  map: CollectedDefinyRpcTypeMap
 ): TsType => {
+  const typeDetail = map.get(
+    collectedDefinyRpcTypeUse.namespace.join(".") +
+      "." +
+      collectedDefinyRpcTypeUse.name
+  );
+  if (typeDetail === undefined) {
+    throw new Error("型を集計できなかった " + collectedDefinyRpcTypeUse.name);
+  }
+  if (typeDetail.body.type === "string") {
+    return { _: "String" };
+  }
+  if (typeDetail.body.type === "number") {
+    return { _: "Number" };
+  }
+  if (typeDetail.body.type === "unit") {
+    return { _: "Undefined" };
+  }
+  if (typeDetail.body.type === "list") {
+    const parameter = collectedDefinyRpcTypeUse.parameters[0];
+    if (
+      parameter === undefined ||
+      collectedDefinyRpcTypeUse.parameters.length !== 1
+    ) {
+      throw new Error(
+        "list need 1 parameters but got " +
+          collectedDefinyRpcTypeUse.parameters.length
+      );
+    }
+    return tsInterface.readonlyArrayType(
+      collectedDefinyRpcTypeUseToTsType(parameter, map)
+    );
+  }
+  if (typeDetail.body.type === "set") {
+    const parameter = collectedDefinyRpcTypeUse.parameters[0];
+    if (
+      parameter === undefined ||
+      collectedDefinyRpcTypeUse.parameters.length !== 1
+    ) {
+      throw new Error(
+        "set need 1 parameters but got " +
+          collectedDefinyRpcTypeUse.parameters.length
+      );
+    }
+    return tsInterface.readonlySetType(
+      collectedDefinyRpcTypeUseToTsType(parameter, map)
+    );
+  }
   return {
     _: "WithNamespace",
     namespace: nonEmptyArrayMap(
@@ -308,8 +377,8 @@ const collectedDefinyRpcTypeUseToTsType = (
     ),
     typeNameAndTypeParameter: {
       name: identifierFromString(collectedDefinyRpcTypeUse.name),
-      arguments: collectedDefinyRpcTypeUse.parameters.map(
-        collectedDefinyRpcTypeUseToTsType
+      arguments: collectedDefinyRpcTypeUse.parameters.map((use) =>
+        collectedDefinyRpcTypeUseToTsType(use, map)
       ),
     },
   };
