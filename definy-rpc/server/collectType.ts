@@ -3,10 +3,10 @@ import { lazyGet } from "./lazy.ts";
 import { DefinyRpcType, TypeBody } from "./type.ts";
 import { NonEmptyArray } from "./util.ts";
 
-export const collectDefinyRpcTypeFromFuncList = <input, output>(
-  funcList: ReadonlyArray<ApiFunction<input, output, boolean>>
+export const collectDefinyRpcTypeFromFuncList = (
+  funcList: ReadonlyArray<ApiFunction>
 ): CollectedDefinyRpcTypeMap => {
-  return collectFromDefinyRpcTypeList<input | output>(
+  return collectFromDefinyRpcTypeList(
     funcList.flatMap((func) => [
       // deno-lint-ignore no-explicit-any
       func.input as DefinyRpcType<any>,

@@ -54,11 +54,9 @@ const FunctionDetail = product<FunctionDetail>({
 
 export const addDefinyRpcApiFunction = (
   name: string,
-  // deno-lint-ignore no-explicit-any
-  all: () => ReadonlyArray<ApiFunction<any, any, boolean>>,
+  all: () => ReadonlyArray<ApiFunction>,
   originHint: string
-  // deno-lint-ignore no-explicit-any
-): ReadonlyArray<ApiFunction<any, any, boolean>> => {
+): ReadonlyArray<ApiFunction> => {
   return [
     ...builtInFunctions(name, all, originHint),
     ...all().map((func) => ({
@@ -70,8 +68,7 @@ export const addDefinyRpcApiFunction = (
 
 const builtInFunctions = (
   name: string,
-  // deno-lint-ignore no-explicit-any
-  all: () => ReadonlyArray<ApiFunction<any, any, boolean>>,
+  all: () => ReadonlyArray<ApiFunction>,
   originHint: string
 ) => {
   return [

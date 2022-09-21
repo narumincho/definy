@@ -19,8 +19,8 @@ import {
 } from "./collectType.ts";
 import { nonEmptyArrayMap } from "./util.ts";
 
-export const apiFunctionListToCode = <input, output>(
-  apiFunctionList: ReadonlyArray<ApiFunction<input, output, boolean>>,
+export const apiFunctionListToCode = (
+  apiFunctionList: ReadonlyArray<ApiFunction>,
   originHint: string
 ): string => {
   const needAuthentication = apiFunctionList.some(
@@ -302,10 +302,7 @@ const collectedDefinyRpcTypeUseToTsType = (
   };
 };
 
-const funcParameterType = <input, output>(
-  func: ApiFunction<input, output, boolean>,
-  originHint: string
-): TsType => {
+const funcParameterType = (func: ApiFunction, originHint: string): TsType => {
   return {
     _: "Object",
     tsMemberTypeList: [
@@ -346,10 +343,7 @@ const funcParameterType = <input, output>(
   };
 };
 
-const funcExpr = <input, output>(
-  func: ApiFunction<input, output, boolean>,
-  originHint: string
-): TsExpr => {
+const funcExpr = (func: ApiFunction, originHint: string): TsExpr => {
   const parameterIdentifier = identifierFromString("parameter");
   return {
     _: "Lambda",
@@ -477,9 +471,7 @@ const funcExpr = <input, output>(
   };
 };
 
-const fetchThenExpr = <input, output>(
-  func: ApiFunction<input, output, boolean>
-): LambdaExpr => {
+const fetchThenExpr = (func: ApiFunction): LambdaExpr => {
   const jsonValueIdentifier = identifierFromString("jsonValue");
   return {
     parameterList: [

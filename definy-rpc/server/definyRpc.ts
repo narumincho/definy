@@ -9,8 +9,7 @@ export * from "./apiFunction.ts";
 
 export const createHttpServer = (parameter: {
   readonly name: string;
-  // deno-lint-ignore no-explicit-any
-  readonly all: () => ReadonlyArray<ApiFunction<any, any, boolean>>;
+  readonly all: () => ReadonlyArray<ApiFunction>;
   readonly originHint: string;
 }) => {
   const all = addDefinyRpcApiFunction(
