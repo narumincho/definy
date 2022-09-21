@@ -3,6 +3,7 @@ import { apiFunctionListToCode } from "./clientCodeGen.ts";
 import type { DefinyRpcParameter } from "./definyRpc.ts";
 import { set, string, unit, list, DefinyRpcType, product } from "./type.ts";
 import { ensureFile } from "https://deno.land/std@0.156.0/fs/mod.ts";
+import { denoRunByPowershellOrBash } from "./denoRun.ts";
 
 const definyRpcNamespace = "definyRpc";
 
@@ -174,6 +175,7 @@ const builtInFunctions = (parameter: DefinyRpcParameter) => {
                 path,
                 apiFunctionListToCode(allFunc, parameter.originHint)
               );
+              denoRunByPowershellOrBash({ cmd: ["deno", "fmt", path] });
               return undefined;
             },
           }),

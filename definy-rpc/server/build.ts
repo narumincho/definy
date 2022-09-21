@@ -1,5 +1,6 @@
 import { build, emptyDir } from "https://deno.land/x/dnt@0.30.0/mod.ts";
 import * as base64 from "https://denopkg.com/chiefbiiko/base64@master/mod.ts";
+import { denoRunByPowershellOrBash } from "./denoRun.ts";
 
 type BuildClientResult = {
   readonly indexHtmlContent: string;
@@ -22,7 +23,7 @@ export const serverOrigin = ${JSON.stringify(serverOrigin)};
 `
   );
 
-  const viteBuildProcess = Deno.run({
+  const viteBuildProcessStatus = await denoRunByPowershellOrBash({
     cwd: "../client",
     cmd: [
       Deno.build.os === "windows" ? "powershell" : "bash",
@@ -32,7 +33,7 @@ export const serverOrigin = ${JSON.stringify(serverOrigin)};
     ],
   });
 
-  console.log(await viteBuildProcess.status());
+  console.log(viteBuildProcessStatus);
   const result: {
     -readonly [key in keyof BuildClientResult]:
       | BuildClientResult[key]
