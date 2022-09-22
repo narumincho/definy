@@ -1,8 +1,8 @@
 import { ApiFunction, createApiFunction } from "./apiFunction.ts";
+import { apiFunctionListToCode } from "./clientCodeGen.ts";
+import type { DefinyRpcParameter } from "./definyRpc.ts";
 import { set, string, unit, list, DefinyRpcType, product } from "./type.ts";
-import { generateCodeAsString } from "./jsTs/main.ts";
-import { identifierFromString } from "./jsTs/identifier.ts";
-import { TsMember, TsMemberType } from "./jsTs/data.ts";
+import { ensureFile } from "https://deno.land/std@0.156.0/fs/mod.ts";
 
 const definyRpcNamespace = "definyRpc";
 
@@ -13,7 +13,8 @@ type Type = {
 };
 
 const Type: DefinyRpcType<Type> = product<Type>({
-  fullName: [definyRpcNamespace, "Type"],
+  namespace: [definyRpcNamespace],
+  name: "Type",
   description: "definyRpc で表現できる型",
   fieldList: {
     fullName: {
@@ -39,7 +40,8 @@ type FunctionDetail = {
 };
 
 const FunctionDetail = product<FunctionDetail>({
-  fullName: [definyRpcNamespace, "FunctionDetail"],
+  namespace: [definyRpcNamespace],
+  name: "FunctionDetail",
   description: "functionByNameの結果",
   fieldList: {
     name: {
@@ -53,25 +55,18 @@ const FunctionDetail = product<FunctionDetail>({
 });
 
 export const addDefinyRpcApiFunction = (
-  name: string,
-  // deno-lint-ignore no-explicit-any
-  all: () => ReadonlyArray<ApiFunction<any, any, boolean>>
-  // deno-lint-ignore no-explicit-any
-): ReadonlyArray<ApiFunction<any, any, boolean>> => {
+  parameter: DefinyRpcParameter
+): ReadonlyArray<ApiFunction> => {
   return [
-    ...builtInFunctions(name, all),
-    ...all().map((func) => ({
+    ...builtInFunctions(parameter),
+    ...parameter.all().map((func) => ({
       ...func,
-      fullName: [name, ...func.fullName] as const,
+      fullName: [parameter.name, ...func.fullName] as const,
     })),
   ];
 };
 
-const builtInFunctions = (
-  name: string,
-  // deno-lint-ignore no-explicit-any
-  all: () => ReadonlyArray<ApiFunction<any, any, boolean>>
-) => {
+const builtInFunctions = (parameter: DefinyRpcParameter) => {
   return [
     createApiFunction({
       fullName: [definyRpcNamespace, "name"],
@@ -81,7 +76,7 @@ const builtInFunctions = (
       needAuthentication: false,
       isMutation: false,
       resolve: () => {
-        return name;
+        return parameter.name;
       },
     }),
     createApiFunction({
@@ -96,7 +91,7 @@ const builtInFunctions = (
         return new Set(
           [
             ...new Set(
-              addDefinyRpcApiFunction(name, all).map((func) =>
+              addDefinyRpcApiFunction(parameter).map((func) =>
                 func.fullName.slice(0, -1).join(".")
               )
             ),
@@ -112,7 +107,7 @@ const builtInFunctions = (
       isMutation: false,
       needAuthentication: false,
       resolve: () => {
-        const allFunc = addDefinyRpcApiFunction(name, all);
+        const allFunc = addDefinyRpcApiFunction(parameter);
         return allFunc.map<FunctionDetail>((f) => ({
           name: f.fullName,
           description: f.description,
@@ -129,7 +124,7 @@ const builtInFunctions = (
       isMutation: false,
       needAuthentication: true,
       resolve: (_, _accountToken) => {
-        const allFunc = addDefinyRpcApiFunction(name, all);
+        const allFunc = addDefinyRpcApiFunction(parameter);
         return allFunc.map<FunctionDetail>((f) => ({
           name: f.fullName,
           description: f.description,
@@ -147,73 +142,49 @@ const builtInFunctions = (
       isMutation: false,
       needAuthentication: false,
       resolve: () => {
-        const allFunc = addDefinyRpcApiFunction(name, all).filter(
+        const allFunc = addDefinyRpcApiFunction(parameter).filter(
           (f) => f.fullName[0] === definyRpcNamespace
         );
-        return apiFunctionListToCode(allFunc);
+        return apiFunctionListToCode(allFunc, parameter.originHint, true);
       },
     }),
+    ...(parameter.codeGenOutputFolderPath === undefined
+      ? []
+      : [
+          createApiFunction({
+            fullName: [
+              definyRpcNamespace,
+              "generateCodeAndWriteAsFileInServer",
+            ],
+            description:
+              "サーバーが実行している環境でコードを生成し, ファイルとして保存する",
+            input: unit,
+            output: unit,
+            isMutation: false,
+            needAuthentication: false,
+            resolve: async () => {
+              const allFunc = addDefinyRpcApiFunction(parameter).filter(
+                (f) => f.fullName[0] === definyRpcNamespace
+              );
+
+              const path =
+                parameter.codeGenOutputFolderPath + "/" + "definyRpc.ts";
+              await ensureFile(path);
+              await Deno.writeTextFile(
+                path,
+                await apiFunctionListToCode(allFunc, parameter.originHint, true)
+              );
+              return undefined;
+            },
+          }),
+        ]),
   ];
 };
 
 const definyRpcTypeBodyToType = <t>(definyRpcType: DefinyRpcType<t>): Type => {
   return {
-    fullName: definyRpcType.fullName,
+    fullName: [...definyRpcType.namespace, definyRpcType.name],
     description: definyRpcType.description,
     parameters: definyRpcType.parameters.map(definyRpcTypeBodyToType),
   };
-};
-
-const apiFunctionListToCode = (
-  apiFunctionList: ReadonlyArray<ApiFunction<any, any, boolean>>
-): string => {
-  return generateCodeAsString(
-    {
-      exportDefinitionList: [
-        {
-          type: "variable",
-          variable: {
-            name: identifierFromString(definyRpcNamespace),
-            document: "definyRpc の ApiFunctions を呼ぶ",
-            type: {
-              _: "Object",
-              tsMemberTypeList: apiFunctionList.map(
-                (func): TsMemberType => ({
-                  name: func.fullName.slice(1).join("_"),
-                  document: func.description,
-                  required: true,
-                  type: {
-                    _: "Function",
-                    functionType: {
-                      typeParameterList: [],
-                      parameterList: [
-                        {
-                          _: "Boolean",
-                        },
-                      ],
-                      return: { _: "Boolean" },
-                    },
-                  },
-                })
-              ),
-            },
-            expr: {
-              _: "ObjectLiteral",
-              tsMemberList: apiFunctionList.map(
-                (func): TsMember => ({
-                  _: "KeyValue",
-                  keyValue: {
-                    key: func.fullName.slice(1).join("_"),
-                    value: { _: "StringLiteral", string: "unknown..." },
-                  },
-                })
-              ),
-            },
-          },
-        },
-      ],
-      statementList: [],
-    },
-    "TypeScript"
-  );
 };

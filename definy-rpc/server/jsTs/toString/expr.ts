@@ -217,6 +217,8 @@ const unaryOperatorToString = (unaryOperator: d.UnaryOperator): string => {
       return "~";
     case "LogicalNot":
       return "!";
+    case "typeof":
+      return "typeof ";
   }
 };
 
@@ -297,6 +299,7 @@ const binaryOperatorCombineStrength = (
     case "LogicalAnd":
       return 6;
     case "LogicalOr":
+    case "??":
       return 5;
   }
 };
@@ -473,6 +476,7 @@ const binaryOperatorAssociativity = (
     case "BitwiseOr":
     case "LogicalAnd":
     case "LogicalOr":
+    case "??":
       return "LeftToRight";
   }
 };
@@ -517,5 +521,7 @@ export const binaryOperatorToString = (
       return "&&";
     case "LogicalOr":
       return "||";
+    case "??":
+      return "??";
   }
 };

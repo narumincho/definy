@@ -1,3 +1,9 @@
+/*
+ * ./definy-rpc/server/jsTs/main.ts に Deno 向け TypeScriptとして, 移植済み.
+ *
+ * このファイルは編集せず, 次に使うときは, Deno 向け TypeScript から自動生成したものを使う.
+ */
+
 import * as d from "../../localData";
 import { createIdentifier, initialIdentifierIndex } from "./identifier";
 import { UsedNameAndModulePathSet } from "./interface";

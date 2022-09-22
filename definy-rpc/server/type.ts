@@ -1,9 +1,11 @@
 import { JsonValue } from "./typedJson.ts";
 import { Lazy, lazyGet } from "./lazy.ts";
 import { objectEntriesSameValue } from "./objectEntriesSameValue.ts";
+import { NonEmptyArray } from "./util.ts";
 
 export type DefinyRpcType<in out t> = {
-  readonly fullName: readonly [string, ...ReadonlyArray<string>];
+  readonly namespace: NonEmptyArray<string>;
+  readonly name: string;
   readonly description: string;
   // deno-lint-ignore no-explicit-any
   readonly parameters: ReadonlyArray<DefinyRpcType<any>>;
@@ -48,7 +50,8 @@ export type TypeBody =
     };
 
 export const string: DefinyRpcType<string> = {
-  fullName: ["definyRpc", "String"],
+  namespace: ["definyRpc"],
+  name: "String",
   description: "文字列",
   parameters: [],
   body: {
@@ -73,7 +76,8 @@ export const string: DefinyRpcType<string> = {
  * struct, record
  */
 export const product = <t extends Record<string, unknown>>(parameter: {
-  readonly fullName: readonly [string, ...ReadonlyArray<string>];
+  readonly namespace: NonEmptyArray<string>;
+  readonly name: string;
   readonly description: string;
   readonly fieldList: {
     [key in keyof t & string]: {
@@ -83,7 +87,8 @@ export const product = <t extends Record<string, unknown>>(parameter: {
   };
 }): DefinyRpcType<t> => {
   return {
-    fullName: parameter.fullName,
+    namespace: parameter.namespace,
+    name: parameter.name,
     description: parameter.description,
     parameters: [],
     body: {
@@ -119,7 +124,11 @@ export const product = <t extends Record<string, unknown>>(parameter: {
             ([name, { type }]) => {
               const fieldValue = value[name];
               if (fieldValue === undefined) {
-                throw new Error(`${parameter.fullName} need ${name} field`);
+                throw new Error(
+                  `${parameter.namespace.join(".")}.${
+                    parameter.name
+                  } need ${name} field`
+                );
               }
               return [name, lazyGet(type).fromJson(fieldValue)];
             }
@@ -137,7 +146,8 @@ export const product = <t extends Record<string, unknown>>(parameter: {
 export const sum = <
   t extends { readonly type: string; readonly value?: unknown }
 >(parameter: {
-  readonly fullName: readonly [string, ...ReadonlyArray<string>];
+  readonly namespace: NonEmptyArray<string>;
+  readonly name: string;
   readonly description: string;
   readonly patternList: {
     [key in t["type"]]: {
@@ -147,7 +157,8 @@ export const sum = <
     };
   };
 }): DefinyRpcType<t> => ({
-  fullName: parameter.fullName,
+  namespace: parameter.namespace,
+  name: parameter.name,
   description: parameter.description,
   parameters: [],
   body: {
@@ -227,7 +238,8 @@ export const sum = <
 });
 
 export const number: DefinyRpcType<number> = {
-  fullName: ["definyRpc", "Number"],
+  namespace: ["definyRpc"],
+  name: "Number",
   description: "64bit 浮動小数点数",
   parameters: [],
   body: {
@@ -248,7 +260,8 @@ export const number: DefinyRpcType<number> = {
 };
 
 export const unit: DefinyRpcType<undefined> = {
-  fullName: ["definyRpc", "Unit"],
+  namespace: ["definyRpc"],
+  name: "Unit",
   description: "内部表現は, undefined. JSON 上では null",
   parameters: [],
   body: { type: "unit" },
@@ -259,7 +272,8 @@ export const unit: DefinyRpcType<undefined> = {
 export const set = <element>(
   element: DefinyRpcType<element>
 ): DefinyRpcType<ReadonlySet<element>> => ({
-  fullName: ["definyRpc", "Set"],
+  namespace: ["definyRpc"],
+  name: "Set",
   description: "集合. Set",
   parameters: [element],
   body: { type: "set" },
@@ -280,7 +294,8 @@ export const set = <element>(
 export const list = <element>(
   element: DefinyRpcType<element>
 ): DefinyRpcType<ReadonlyArray<element>> => ({
-  fullName: ["definyRpc"],
+  namespace: ["definyRpc"],
+  name: "List",
   description: "リスト",
   parameters: [element],
   body: { type: "list" },

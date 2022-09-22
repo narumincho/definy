@@ -1,3 +1,4 @@
+import { NonEmptyArray } from "../util.ts";
 import { TsIdentifier } from "./identifier.ts";
 
 /**
@@ -58,6 +59,10 @@ export type Statement =
  * TypeAlias. `export type T = {}`
  */
 export type TypeAlias = {
+  /**
+   * 名前空間
+   */
+  readonly namespace: ReadonlyArray<TsIdentifier>;
   /**
    * 型の名前
    */
@@ -174,20 +179,28 @@ export type TsType =
   | { readonly _: "Null" }
   | { readonly _: "Never" }
   | { readonly _: "Void" }
+  | { readonly _: "unknown" }
   | {
       readonly _: "Object";
       readonly tsMemberTypeList: ReadonlyArray<TsMemberType>;
     }
   | { readonly _: "Function"; readonly functionType: FunctionType }
-  | {
-      readonly _: "WithTypeParameter";
-      readonly tsTypeWithTypeParameter: TsTypeWithTypeParameter;
-    }
   | { readonly _: "Union"; readonly tsTypeList: ReadonlyArray<TsType> }
   | { readonly _: "Intersection"; readonly intersectionType: IntersectionType }
   | { readonly _: "ImportedType"; readonly importedType: ImportedType }
-  | { readonly _: "ScopeInFile"; readonly tsIdentifier: TsIdentifier }
-  | { readonly _: "ScopeInGlobal"; readonly tsIdentifier: TsIdentifier }
+  | {
+      readonly _: "ScopeInFile";
+      readonly typeNameAndTypeParameter: TypeNameAndArguments;
+    }
+  | {
+      readonly _: "ScopeInGlobal";
+      readonly typeNameAndTypeParameter: TypeNameAndArguments;
+    }
+  | {
+      readonly _: "WithNamespace";
+      readonly namespace: NonEmptyArray<TsIdentifier>;
+      readonly typeNameAndTypeParameter: TypeNameAndArguments;
+    }
   | { readonly _: "StringLiteral"; readonly string: string };
 
 /**
@@ -239,7 +252,7 @@ export type UnaryOperatorExpr = {
 /**
  * JavaScriptの単項演算子
  */
-export type UnaryOperator = "Minus" | "BitwiseNot" | "LogicalNot";
+export type UnaryOperator = "Minus" | "BitwiseNot" | "LogicalNot" | "typeof";
 
 /**
  * 2項演算子と左右の式
@@ -280,7 +293,8 @@ export type BinaryOperator =
   | "BitwiseXOr"
   | "BitwiseOr"
   | "LogicalAnd"
-  | "LogicalOr";
+  | "LogicalOr"
+  | "??";
 
 /**
  * ローカル変数定義
@@ -619,9 +633,14 @@ export type ImportedType = {
    */
   readonly moduleName: string;
   /**
-   * 型の名前
+   * 型の名前とパラメータ
    */
+  readonly nameAndArguments: TypeNameAndArguments;
+};
+
+export type TypeNameAndArguments = {
   readonly name: TsIdentifier;
+  readonly arguments: ReadonlyArray<TsType>;
 };
 
 /**

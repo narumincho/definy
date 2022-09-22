@@ -70,14 +70,26 @@ const definitionToString = (
 const typeAliasToString = (
   typeAlias: d.TypeAlias,
   moduleMap: ReadonlyMap<string, TsIdentifier>
-): string =>
-  documentToString(typeAlias.document) +
-  "export type " +
-  typeAlias.name +
-  typeParameterListToString(typeAlias.typeParameterList) +
-  " = " +
-  typeToString(typeAlias.type, moduleMap) +
-  ";\n\n";
+): string => {
+  const content =
+    documentToString(typeAlias.document) +
+    "export type " +
+    typeAlias.name +
+    typeParameterListToString(typeAlias.typeParameterList) +
+    " = " +
+    typeToString(typeAlias.type, moduleMap) +
+    ";\n\n";
+  if (typeAlias.namespace.length === 0) {
+    return content;
+  }
+  return (
+    "export declare namespace " +
+    typeAlias.namespace.join(".") +
+    " {\n" +
+    content +
+    "\n}"
+  );
+};
 
 const exportFunctionToString = (
   function_: d.Function,

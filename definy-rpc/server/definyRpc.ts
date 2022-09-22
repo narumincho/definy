@@ -7,13 +7,21 @@ import { addDefinyRpcApiFunction } from "./builtInFunctions.ts";
 export * from "./type.ts";
 export * from "./apiFunction.ts";
 
-export const createHttpServer = (parameter: {
+export type DefinyRpcParameter = {
   readonly name: string;
-  // deno-lint-ignore no-explicit-any
-  readonly all: () => ReadonlyArray<ApiFunction<any, any, boolean>>;
-}) => {
-  const all = addDefinyRpcApiFunction(parameter.name, parameter.all);
-  return (request: Request): Response => {
+  readonly all: () => ReadonlyArray<ApiFunction>;
+  readonly originHint: string;
+  /**
+   * 実行環境とコードを編集している環境が同じ場合に, コードを生成ボタンを押したら生成できる機能
+   *
+   * 本番サーバーでは `undefined` を指定する
+   */
+  readonly codeGenOutputFolderPath: string | undefined;
+};
+
+export const createHttpServer = (parameter: DefinyRpcParameter) => {
+  const all = addDefinyRpcApiFunction(parameter);
+  return async (request: Request): Promise<Response> => {
     const url = new URL(request.url);
     const pathList = url.pathname.slice(1).split("/");
     const paramJson = url.searchParams.get("param");
@@ -34,22 +42,19 @@ export const createHttpServer = (parameter: {
         headers: { "content-type": "text/javascript; charset=utf-8" },
       });
     }
-    console.log(pathList);
+    console.log("request!: ", pathList);
     for (const func of all) {
       if (stringArrayEqual(pathList, func.fullName)) {
+        const apiFunctionResult = await func.resolve(
+          func.input.fromJson(paramJsonParsed),
+          getAuthorization(
+            func.needAuthentication,
+            request.headers.get("authorization") ?? undefined
+          )
+        );
         // input が undefined の型以外の場合は, 入力の関数を省く
         return new Response(
-          JSON.stringify(
-            func.output.toJson(
-              func.resolve(
-                func.input.fromJson(paramJsonParsed),
-                getAuthorization(
-                  func.needAuthentication,
-                  request.headers.get("authorization") ?? undefined
-                )
-              )
-            )
-          ),
+          JSON.stringify(func.output.toJson(apiFunctionResult)),
           {
             headers: { "content-type": "application/json" },
           }

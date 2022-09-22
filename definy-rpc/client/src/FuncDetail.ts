@@ -4,4 +4,7 @@ export type FuncDetail = {
   readonly input: {
     readonly fullName: ReadonlyArray<string>;
   };
+  readonly output: {
+    readonly fullName: ReadonlyArray<string>;
+  };
 };

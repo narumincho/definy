@@ -27,8 +27,8 @@ export const collectInCode = (code: d.JsTsCode): UsedNameAndModulePathSet => {
 };
 
 type RootScopeIdentifierSet = {
-  rootScopeTypeNameSet: ReadonlySet<string>;
-  rootScopeVariableName: ReadonlySet<string>;
+  rootScopeTypeNameSet: ReadonlySet<TsIdentifier>;
+  rootScopeVariableName: ReadonlySet<TsIdentifier>;
 };
 
 /**
@@ -38,8 +38,8 @@ type RootScopeIdentifierSet = {
 const collectRootScopeIdentifier = (
   definitionList: ReadonlyArray<d.ExportDefinition>
 ): RootScopeIdentifierSet => {
-  const typeNameSet: Set<string> = new Set();
-  const variableNameSet: Set<string> = new Set();
+  const typeNameSet: Set<TsIdentifier> = new Set();
+  const variableNameSet: Set<TsIdentifier> = new Set();
   for (const definition of definitionList) {
     switch (definition.type) {
       case "typeAlias":
@@ -189,8 +189,8 @@ const collectInVariableDefinition = (
  */
 const collectInExpr = (
   expr: d.TsExpr,
-  localVariableNameSetList: ReadonlyArray<ReadonlySet<string>>,
-  typeParameterSetList: ReadonlyArray<ReadonlySet<string>>,
+  localVariableNameSetList: ReadonlyArray<ReadonlySet<TsIdentifier>>,
+  typeParameterSetList: ReadonlyArray<ReadonlySet<TsIdentifier>>,
   rootScopeIdentifierSet: RootScopeIdentifierSet
 ): UsedNameAndModulePathSet => {
   switch (expr._) {
@@ -398,8 +398,8 @@ const collectInExpr = (
 
 const collectCallExpr = (
   callExpr: d.CallExpr,
-  localVariableNameSetList: ReadonlyArray<ReadonlySet<string>>,
-  typeParameterSetList: ReadonlyArray<ReadonlySet<string>>,
+  localVariableNameSetList: ReadonlyArray<ReadonlySet<TsIdentifier>>,
+  typeParameterSetList: ReadonlyArray<ReadonlySet<TsIdentifier>>,
   rootScopeIdentifierSet: RootScopeIdentifierSet
 ) =>
   concatCollectData(
@@ -421,10 +421,10 @@ const collectCallExpr = (
 
 const collectStatementList = (
   statementList: ReadonlyArray<d.Statement>,
-  localVariableNameSetList: ReadonlyArray<ReadonlySet<string>>,
-  typeParameterSetList: ReadonlyArray<ReadonlySet<string>>,
+  localVariableNameSetList: ReadonlyArray<ReadonlySet<TsIdentifier>>,
+  typeParameterSetList: ReadonlyArray<ReadonlySet<TsIdentifier>>,
   rootScopeIdentifierSet: RootScopeIdentifierSet,
-  parameterNameSet: ReadonlySet<string>
+  parameterNameSet: ReadonlySet<TsIdentifier>
 ): UsedNameAndModulePathSet => {
   const newLocalVariableNameSetList = localVariableNameSetList.concat(
     new Set([...parameterNameSet, ...collectNameInStatement(statementList)])
@@ -441,8 +441,8 @@ const collectStatementList = (
 
 const collectNameInStatement = (
   statementList: ReadonlyArray<d.Statement>
-): ReadonlySet<string> => {
-  const identifierSet: Set<string> = new Set();
+): ReadonlySet<TsIdentifier> => {
+  const identifierSet: Set<TsIdentifier> = new Set();
   for (const statement of statementList) {
     switch (statement._) {
       case "VariableDefinition":
@@ -457,8 +457,8 @@ const collectNameInStatement = (
 
 const collectInStatement = (
   statement: d.Statement,
-  localVariableNameSetList: ReadonlyArray<ReadonlySet<string>>,
-  typeParameterSetList: ReadonlyArray<ReadonlySet<string>>,
+  localVariableNameSetList: ReadonlyArray<ReadonlySet<TsIdentifier>>,
+  typeParameterSetList: ReadonlyArray<ReadonlySet<TsIdentifier>>,
   rootScopeIdentifierSet: RootScopeIdentifierSet
 ): UsedNameAndModulePathSet => {
   switch (statement._) {
@@ -651,8 +651,8 @@ const collectInStatement = (
 };
 
 const checkVariableIsDefinedOrThrow = (
-  localVariableNameSetList: ReadonlyArray<ReadonlySet<string>>,
-  rootScopeNameSet: ReadonlySet<string>,
+  localVariableNameSetList: ReadonlyArray<ReadonlySet<TsIdentifier>>,
+  rootScopeNameSet: ReadonlySet<TsIdentifier>,
   variableName: TsIdentifier
 ): void => {
   const reversedLocalVariableNameSetList = [
@@ -666,7 +666,7 @@ const checkVariableIsDefinedOrThrow = (
   if (rootScopeNameSet.has(variableName)) {
     return;
   }
-  throw new Error(
+  console.warn(
     "存在しない変数を指定されました name=" +
       variableName +
       " スコープ内に存在している変数 =[ " +
@@ -699,6 +699,7 @@ const collectInType = (
     case "Null":
     case "Never":
     case "Void":
+    case "unknown":
       return {
         modulePathSet: new Set(),
         usedNameSet: new Set(),
@@ -732,20 +733,6 @@ const collectInType = (
       );
     }
 
-    case "WithTypeParameter":
-      return concatCollectData(
-        collectInType(
-          type_.tsTypeWithTypeParameter.type,
-          rootScopeTypeNameSet,
-          typeParameterSetList
-        ),
-        collectList(
-          type_.tsTypeWithTypeParameter.typeParameterList,
-          (parameter) =>
-            collectInType(parameter, rootScopeTypeNameSet, typeParameterSetList)
-        )
-      );
-
     case "Union":
       return collectList(type_.tsTypeList, (oneType) =>
         collectInType(oneType, rootScopeTypeNameSet, typeParameterSetList)
@@ -766,27 +753,50 @@ const collectInType = (
       );
 
     case "ImportedType":
-      return {
-        modulePathSet: new Set([type_.importedType.moduleName]),
-        usedNameSet: new Set([type_.importedType.name]),
-      };
+      return concatCollectData(
+        {
+          modulePathSet: new Set([type_.importedType.moduleName]),
+          usedNameSet: new Set([type_.importedType.nameAndArguments.name]),
+        },
+        collectList(
+          type_.importedType.nameAndArguments.arguments,
+          (parameter) =>
+            collectInType(parameter, rootScopeTypeNameSet, typeParameterSetList)
+        )
+      );
 
     case "ScopeInFile":
-      checkTypeIsDefinedOrThrow(
-        rootScopeTypeNameSet,
-        typeParameterSetList,
-        type_.tsIdentifier
+      return concatCollectData(
+        {
+          modulePathSet: new Set(),
+          usedNameSet: new Set([type_.typeNameAndTypeParameter.name]),
+        },
+        collectList(type_.typeNameAndTypeParameter.arguments, (parameter) =>
+          collectInType(parameter, rootScopeTypeNameSet, typeParameterSetList)
+        )
       );
-      return {
-        modulePathSet: new Set(),
-        usedNameSet: new Set([type_.tsIdentifier]),
-      };
+
+    case "WithNamespace":
+      return concatCollectData(
+        {
+          modulePathSet: new Set(),
+          usedNameSet: new Set([type_.typeNameAndTypeParameter.name]),
+        },
+        collectList(type_.typeNameAndTypeParameter.arguments, (parameter) =>
+          collectInType(parameter, rootScopeTypeNameSet, typeParameterSetList)
+        )
+      );
 
     case "ScopeInGlobal":
-      return {
-        modulePathSet: new Set(),
-        usedNameSet: new Set([type_.tsIdentifier]),
-      };
+      return concatCollectData(
+        {
+          modulePathSet: new Set(),
+          usedNameSet: new Set([type_.typeNameAndTypeParameter.name]),
+        },
+        collectList(type_.typeNameAndTypeParameter.arguments, (parameter) =>
+          collectInType(parameter, rootScopeTypeNameSet, typeParameterSetList)
+        )
+      );
 
     case "StringLiteral":
       return {
@@ -794,34 +804,6 @@ const collectInType = (
         usedNameSet: new Set(),
       };
   }
-};
-
-const checkTypeIsDefinedOrThrow = (
-  rootScopeTypeNameSet: ReadonlySet<string>,
-  typeParameterSetList: ReadonlyArray<ReadonlySet<string>>,
-  typeName: TsIdentifier
-): void => {
-  const reversedTypeParameterSetList = [...typeParameterSetList].reverse();
-  for (const typeParameter of reversedTypeParameterSetList) {
-    if (typeParameter.has(typeName)) {
-      return;
-    }
-  }
-  if (rootScopeTypeNameSet.has(typeName)) {
-    return;
-  }
-  throw new Error(
-    "存在しない型変数を指定されました typeName=" +
-      typeName +
-      " 存在している変数 =[ " +
-      typeParameterSetList
-        .map((scope) => "[ " + [...scope].join(",") + " ]")
-        .join(",") +
-      "]" +
-      "ファイルの直下に存在している型 =[ " +
-      [...rootScopeTypeNameSet].join(",") +
-      " ]"
-  );
 };
 
 const concatCollectData = (
@@ -843,7 +825,7 @@ const collectList = <Element>(
   collectFunc: (element: Element) => UsedNameAndModulePathSet
 ): UsedNameAndModulePathSet => {
   const modulePathSet: Set<string> = new Set();
-  const usedNameSet: Set<string> = new Set();
+  const usedNameSet: Set<TsIdentifier> = new Set();
   for (const element of list) {
     const result = collectFunc(element);
     for (const path of result.modulePathSet) {
@@ -867,8 +849,8 @@ const collectList = <Element>(
 const checkDuplicateIdentifier = (
   name: string,
   identifierList: ReadonlyArray<TsIdentifier>
-): ReadonlySet<string> => {
-  const set: Set<string> = new Set();
+): ReadonlySet<TsIdentifier> => {
+  const set: Set<TsIdentifier> = new Set();
   for (const identifier of identifierList) {
     if (set.has(identifier)) {
       throw new Error("Duplicate " + name + ". name = " + identifier);

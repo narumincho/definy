@@ -1,3 +1,4 @@
+import * as d from "../data.ts";
 import {
   createIdentifier,
   initialIdentifierIndex,
@@ -15,7 +16,7 @@ import {
  * @param type_ 型の式
  */
 export const typeToString = (
-  type_: TsType,
+  type_: d.TsType,
   moduleMap: ReadonlyMap<string, TsIdentifier>
 ): string => {
   switch (type_._) {
@@ -40,6 +41,9 @@ export const typeToString = (
     case "Undefined":
       return "undefined";
 
+    case "unknown":
+      return "unknown";
+
     case "Object":
       return typeObjectToString(type_.tsMemberTypeList, moduleMap);
 
@@ -58,23 +62,35 @@ export const typeToString = (
         typeToString(type_.intersectionType.right, moduleMap)
       );
 
-    case "WithTypeParameter":
+    case "ScopeInFile":
       return (
-        typeToString(type_.tsTypeWithTypeParameter.type, moduleMap) +
-        (type_.tsTypeWithTypeParameter.typeParameterList.length === 0
-          ? ""
-          : "<" +
-            type_.tsTypeWithTypeParameter.typeParameterList
-              .map((typeParameter) => typeToString(typeParameter, moduleMap))
-              .join(", ") +
-            ">")
+        type_.typeNameAndTypeParameter.name +
+        typeArgumentsListToString(
+          type_.typeNameAndTypeParameter.arguments,
+          moduleMap
+        )
       );
 
-    case "ScopeInFile":
-      return type_.tsIdentifier.string;
-
     case "ScopeInGlobal":
-      return "globalThis." + type_.tsIdentifier.string;
+      return (
+        "globalThis." +
+        type_.typeNameAndTypeParameter.name +
+        typeArgumentsListToString(
+          type_.typeNameAndTypeParameter.arguments,
+          moduleMap
+        )
+      );
+
+    case "WithNamespace":
+      return (
+        type_.namespace.join(".") +
+        "." +
+        type_.typeNameAndTypeParameter.name +
+        typeArgumentsListToString(
+          type_.typeNameAndTypeParameter.arguments,
+          moduleMap
+        )
+      );
 
     case "ImportedType": {
       const nameSpaceIdentifier = moduleMap.get(type_.importedType.moduleName);
@@ -85,12 +101,33 @@ export const typeToString = (
         );
       }
 
-      return nameSpaceIdentifier.string + "." + type_.importedType.name.string;
+      return (
+        nameSpaceIdentifier +
+        "." +
+        type_.importedType.nameAndArguments.name +
+        typeArgumentsListToString(
+          type_.importedType.nameAndArguments.arguments,
+          moduleMap
+        )
+      );
     }
 
     case "StringLiteral":
       return stringLiteralValueToString(type_.string);
   }
+};
+
+const typeArgumentsListToString = (
+  typeArguments: ReadonlyArray<d.TsType>,
+  moduleMap: ReadonlyMap<string, TsIdentifier>
+): string => {
+  return typeArguments.length === 0
+    ? ""
+    : "<" +
+        typeArguments
+          .map((argument) => typeToString(argument, moduleMap))
+          .join(", ") +
+        ">";
 };
 
 const typeObjectToString = (
@@ -138,7 +175,7 @@ const functionTypeToString = (
     parameterList
       .map(
         (parameter) =>
-          parameter.name.string + ": " + typeToString(parameter.type, moduleMap)
+          parameter.name + ": " + typeToString(parameter.type, moduleMap)
       )
       .join(", ") +
     ") => " +

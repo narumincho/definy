@@ -6,7 +6,7 @@ import * as identifier from "./identifier.ts";
  * モジュールの識別子を作るのに使う
  */
 export type UsedNameAndModulePathSet = {
-  readonly usedNameSet: ReadonlySet<string>;
+  readonly usedNameSet: ReadonlySet<identifier.TsIdentifier>;
   readonly modulePathSet: ReadonlySet<string>;
 };
 
@@ -33,6 +33,34 @@ export const callMethod = (
 ): d.TsExpr => ({
   _: "Call",
   callExpr: { expr: get(expr, methodName), parameterList },
+});
+
+/**
+ * `then` メソッドを呼ぶ
+ */
+export const callThenMethod = (
+  expr: d.TsExpr,
+  thenLambda: d.LambdaExpr
+): d.TsExpr => ({
+  _: "Call",
+  callExpr: {
+    expr: get(expr, "then"),
+    parameterList: [{ _: "Lambda", lambdaExpr: thenLambda }],
+  },
+});
+
+/**
+ * `catch` メソッドを呼ぶ
+ */
+export const callCatchMethod = (
+  expr: d.TsExpr,
+  thenLambda: d.LambdaExpr
+): d.TsExpr => ({
+  _: "Call",
+  callExpr: {
+    expr: get(expr, "catch"),
+    parameterList: [{ _: "Lambda", lambdaExpr: thenLambda }],
+  },
 });
 
 /**
@@ -67,6 +95,18 @@ export const logicalNot = (expr: d.TsExpr): d.TsExpr => ({
   _: "UnaryOperator",
   unaryOperatorExpr: {
     operator: "LogicalNot",
+    expr,
+  },
+});
+
+/**
+ * typeof 演算子 `typeof a`
+ * @param expr 式
+ */
+export const typeofExpr = (expr: d.TsExpr): d.TsExpr => ({
+  _: "UnaryOperator",
+  unaryOperatorExpr: {
+    operator: "typeof",
     expr,
   },
 });
@@ -308,6 +348,18 @@ export const logicalOr = (left: d.TsExpr, right: d.TsExpr): d.TsExpr => ({
   },
 });
 
+export const nullishCoalescing = (
+  left: d.TsExpr,
+  right: d.TsExpr
+): d.TsExpr => ({
+  _: "BinaryOperator",
+  binaryOperatorExpr: {
+    operator: "??",
+    left,
+    right,
+  },
+});
+
 /**
  * ```ts
  * Number.parseInt(parameter)
@@ -380,6 +432,41 @@ export const newUint8Array = (lengthOrIterable: d.TsExpr): d.TsExpr => ({
 
 /**
  * ```ts
+ * new URL(expr)
+ * ```
+ */
+export const newURL = (expr: d.TsExpr): d.TsExpr => ({
+  _: "New",
+  callExpr: {
+    expr: {
+      _: "GlobalObjects",
+      tsIdentifier: identifier.identifierFromString("URL"),
+    },
+    parameterList: [expr],
+  },
+});
+
+/**
+ * ```ts
+ * fetch(expr)
+ * ```
+ */
+export const callFetch = (
+  input: d.TsExpr,
+  init?: d.TsExpr | undefined
+): d.TsExpr => ({
+  _: "Call",
+  callExpr: {
+    expr: {
+      _: "GlobalObjects",
+      tsIdentifier: identifier.identifierFromString("fetch"),
+    },
+    parameterList: [input, ...(init === undefined ? [] : [init])],
+  },
+});
+
+/**
+ * ```ts
  * new Map(initKeyValueList)
  * ```
  */
@@ -430,13 +517,10 @@ export const consoleLog = (expr: d.TsExpr): d.Statement => ({
  * `Array<elementType>`
  */
 export const arrayType = (elementType: d.TsType): d.TsType => ({
-  _: "WithTypeParameter",
-  tsTypeWithTypeParameter: {
-    type: {
-      _: "ScopeInGlobal",
-      tsIdentifier: identifier.identifierFromString("Array"),
-    },
-    typeParameterList: [elementType],
+  _: "ScopeInGlobal",
+  typeNameAndTypeParameter: {
+    name: identifier.identifierFromString("Array"),
+    arguments: [elementType],
   },
 });
 
@@ -444,13 +528,10 @@ export const arrayType = (elementType: d.TsType): d.TsType => ({
  * `ReadonlyArray<elementType>`
  */
 export const readonlyArrayType = (elementType: d.TsType): d.TsType => ({
-  _: "WithTypeParameter",
-  tsTypeWithTypeParameter: {
-    type: {
-      _: "ScopeInGlobal",
-      tsIdentifier: identifier.identifierFromString("ReadonlyArray"),
-    },
-    typeParameterList: [elementType],
+  _: "ScopeInGlobal",
+  typeNameAndTypeParameter: {
+    name: identifier.identifierFromString("ReadonlyArray"),
+    arguments: [elementType],
   },
 });
 
@@ -459,20 +540,42 @@ export const readonlyArrayType = (elementType: d.TsType): d.TsType => ({
  */
 export const uint8ArrayType: d.TsType = {
   _: "ScopeInGlobal",
-  tsIdentifier: identifier.identifierFromString("Uint8Array"),
+  typeNameAndTypeParameter: {
+    name: identifier.identifierFromString("Uint8Array"),
+    arguments: [],
+  },
+};
+
+/**
+ * `URL`
+ */
+export const urlType: d.TsType = {
+  _: "ScopeInGlobal",
+  typeNameAndTypeParameter: {
+    name: identifier.identifierFromString("URL"),
+    arguments: [],
+  },
+};
+
+/**
+ * `Response`
+ */
+export const responseType: d.TsType = {
+  _: "ScopeInGlobal",
+  typeNameAndTypeParameter: {
+    name: identifier.identifierFromString("Response"),
+    arguments: [],
+  },
 };
 
 /**
  * `Promise<returnType>`
  */
 export const promiseType = (returnType: d.TsType): d.TsType => ({
-  _: "WithTypeParameter",
-  tsTypeWithTypeParameter: {
-    type: {
-      _: "ScopeInGlobal",
-      tsIdentifier: identifier.identifierFromString("Promise"),
-    },
-    typeParameterList: [returnType],
+  _: "ScopeInGlobal",
+  typeNameAndTypeParameter: {
+    name: identifier.identifierFromString("Promise"),
+    arguments: [returnType],
   },
 });
 
@@ -481,20 +584,20 @@ export const promiseType = (returnType: d.TsType): d.TsType => ({
  */
 export const dateType: d.TsType = {
   _: "ScopeInGlobal",
-  tsIdentifier: identifier.identifierFromString("Date"),
+  typeNameAndTypeParameter: {
+    name: identifier.identifierFromString("Date"),
+    arguments: [],
+  },
 };
 
 /**
  * `Map<keyType, valueType>`
  */
 export const mapType = (keyType: d.TsType, valueType: d.TsType): d.TsType => ({
-  _: "WithTypeParameter",
-  tsTypeWithTypeParameter: {
-    type: {
-      _: "ScopeInGlobal",
-      tsIdentifier: identifier.identifierFromString("Map"),
-    },
-    typeParameterList: [keyType, valueType],
+  _: "ScopeInGlobal",
+  typeNameAndTypeParameter: {
+    name: identifier.identifierFromString("Map"),
+    arguments: [keyType, valueType],
   },
 });
 
@@ -505,13 +608,10 @@ export const readonlyMapType = (
   keyType: d.TsType,
   valueType: d.TsType
 ): d.TsType => ({
-  _: "WithTypeParameter",
-  tsTypeWithTypeParameter: {
-    type: {
-      _: "ScopeInGlobal",
-      tsIdentifier: identifier.identifierFromString("ReadonlyMap"),
-    },
-    typeParameterList: [keyType, valueType],
+  _: "ScopeInGlobal",
+  typeNameAndTypeParameter: {
+    name: identifier.identifierFromString("ReadonlyMap"),
+    arguments: [keyType, valueType],
   },
 });
 
@@ -519,13 +619,10 @@ export const readonlyMapType = (
  * `Set<elementType>`
  */
 export const setType = (elementType: d.TsType): d.TsType => ({
-  _: "WithTypeParameter",
-  tsTypeWithTypeParameter: {
-    type: {
-      _: "ScopeInGlobal",
-      tsIdentifier: identifier.identifierFromString("Set"),
-    },
-    typeParameterList: [elementType],
+  _: "ScopeInGlobal",
+  typeNameAndTypeParameter: {
+    name: identifier.identifierFromString("Set"),
+    arguments: [elementType],
   },
 });
 
@@ -533,12 +630,16 @@ export const setType = (elementType: d.TsType): d.TsType => ({
  * `ReadonlySet<elementType>`
  */
 export const readonlySetType = (elementType: d.TsType): d.TsType => ({
-  _: "WithTypeParameter",
-  tsTypeWithTypeParameter: {
-    type: {
-      _: "ScopeInGlobal",
-      tsIdentifier: identifier.identifierFromString("ReadonlySet"),
-    },
-    typeParameterList: [elementType],
+  _: "ScopeInGlobal",
+  typeNameAndTypeParameter: {
+    name: identifier.identifierFromString("ReadonlySet"),
+    arguments: [elementType],
   },
+});
+
+export const objectLiteral = (
+  memberList: ReadonlyArray<d.TsMember>
+): d.TsExpr => ({
+  _: "ObjectLiteral",
+  tsMemberList: memberList,
 });
