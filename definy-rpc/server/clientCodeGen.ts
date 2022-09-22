@@ -26,7 +26,6 @@ import { formatCode } from "./prettier.ts";
 export const apiFunctionListToCode = (
   apiFunctionList: ReadonlyArray<ApiFunction>,
   originHint: string,
-  /** deno fmt を使う. `--allow-run` が必要 */
   usePrettier: boolean
 ): string => {
   const code = generateCodeAsString(
@@ -60,45 +59,6 @@ export const apiFunctionListToJsTsCode = (
           return [{ type: "typeAlias", typeAlias }];
         }
       ),
-      {
-        type: "variable",
-        variable: {
-          name: identifierFromString("definyRpc"),
-          document: "definyRpc の ApiFunctions を呼ぶ",
-          type: {
-            _: "Object",
-            tsMemberTypeList: apiFunctionList.map(
-              (func): TsMemberType => ({
-                name: func.fullName.slice(1).join("_"),
-                document: func.description,
-                required: true,
-                type: {
-                  _: "Function",
-                  functionType: {
-                    typeParameterList: [],
-                    parameterList: [funcParameterType(func, originHint)],
-                    return: tsInterface.promiseType(
-                      definyRpcTypeToTsType(func.output)
-                    ),
-                  },
-                },
-              })
-            ),
-          },
-          expr: {
-            _: "ObjectLiteral",
-            tsMemberList: apiFunctionList.map(
-              (func): TsMember => ({
-                _: "KeyValue",
-                keyValue: {
-                  key: func.fullName.slice(1).join("_"),
-                  value: funcExpr(func, originHint),
-                },
-              })
-            ),
-          },
-        },
-      },
     ],
     statementList: [],
   };
