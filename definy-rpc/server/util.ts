@@ -7,3 +7,8 @@ export const nonEmptyArrayMap = <Input, Output>(
   const [head, ...tail] = list;
   return [func(head), ...tail.map(func)];
 };
+
+export const getLast = <T>(list: NonEmptyArray<T>): T => {
+  const item = list[list.length - 1];
+  return item ?? list[0];
+};

@@ -5,11 +5,10 @@ import {
   ExportDefinition,
   JsTsCode,
   LambdaExpr,
-  TsExpr,
-  TsMember,
-  TsMemberType,
+  Function,
   TsType,
   TypeAlias,
+  TsExpr,
 } from "./jsTs/data.ts";
 import * as tsInterface from "./jsTs/interface.ts";
 import { DefinyRpcType } from "./type.ts";
@@ -20,7 +19,7 @@ import {
   CollectedDefinyRpcTypeMap,
   CollectedDefinyRpcTypeUse,
 } from "./collectType.ts";
-import { nonEmptyArrayMap } from "./util.ts";
+import { getLast } from "./util.ts";
 import { formatCode } from "./prettier.ts";
 
 export const apiFunctionListToCode = (
@@ -59,6 +58,10 @@ export const apiFunctionListToJsTsCode = (
           return [{ type: "typeAlias", typeAlias }];
         }
       ),
+      ...apiFunctionList.map<ExportDefinition>((func) => ({
+        type: "function",
+        function: apiFuncToTsFunction(func, originHint),
+      })),
     ],
     statementList: [],
   };
@@ -184,6 +187,34 @@ const resultType = (ok: TsType, error: TsType): TsType => ({
   },
 });
 
+const resultOk = (ok: TsExpr): TsExpr => ({
+  _: "ObjectLiteral",
+  tsMemberList: [
+    {
+      _: "KeyValue",
+      keyValue: { key: "type", value: { _: "StringLiteral", string: "ok" } },
+    },
+    {
+      _: "KeyValue",
+      keyValue: { key: "ok", value: ok },
+    },
+  ],
+});
+
+const resultError = (error: TsExpr): TsExpr => ({
+  _: "ObjectLiteral",
+  tsMemberList: [
+    {
+      _: "KeyValue",
+      keyValue: { key: "type", value: { _: "StringLiteral", string: "error" } },
+    },
+    {
+      _: "KeyValue",
+      keyValue: { key: "error", value: error },
+    },
+  ],
+});
+
 const collectedTypeToTypeAlias = (
   type: CollectedDefinyRpcType,
   map: CollectedDefinyRpcTypeMap
@@ -198,7 +229,7 @@ const collectedTypeToTypeAlias = (
     return undefined;
   }
   return {
-    namespace: type.namespace.map(identifierFromString),
+    namespace: [],
     name: identifierFromString(type.name),
     document: type.description,
     typeParameterList: Array.from({ length: type.parameterCount }, (_, i) =>
@@ -330,11 +361,7 @@ const collectedDefinyRpcTypeUseToTsType = (
     );
   }
   return {
-    _: "WithNamespace",
-    namespace: nonEmptyArrayMap(
-      collectedDefinyRpcTypeUse.namespace,
-      identifierFromString
-    ),
+    _: "ScopeInFile",
     typeNameAndTypeParameter: {
       name: identifierFromString(collectedDefinyRpcTypeUse.name),
       arguments: collectedDefinyRpcTypeUse.parameters.map((use) =>
@@ -385,131 +412,145 @@ const funcParameterType = (func: ApiFunction, originHint: string): TsType => {
   };
 };
 
-const funcExpr = (func: ApiFunction, originHint: string): TsExpr => {
+const apiFuncToTsFunction = (
+  func: ApiFunction,
+  originHint: string
+): Function => {
   const parameterIdentifier = identifierFromString("parameter");
   return {
-    _: "Lambda",
-    lambdaExpr: {
-      parameterList: [
-        {
-          name: parameterIdentifier,
-          type: funcParameterType(func, originHint),
-        },
-      ],
-      returnType: tsInterface.promiseType(definyRpcTypeToTsType(func.output)),
-      typeParameterList: [],
-      statementList: [
-        {
-          _: "VariableDefinition",
-          variableDefinitionStatement: {
-            name: identifierFromString("url"),
-            expr: tsInterface.newURL(
-              tsInterface.nullishCoalescing(
-                tsInterface.get(
-                  {
-                    _: "Variable",
-                    tsIdentifier: parameterIdentifier,
-                  },
-                  "origin"
-                ),
-                { _: "StringLiteral", string: originHint }
-              )
-            ),
-            isConst: true,
-            type: tsInterface.urlType,
-          },
-        },
-        {
-          _: "Set",
-          setStatement: {
-            target: tsInterface.get(
-              {
-                _: "Variable",
-                tsIdentifier: identifierFromString("url"),
-              },
-              "pathname"
-            ),
-            operatorMaybe: undefined,
-            expr: {
-              _: "StringLiteral",
-              string: "/" + func.fullName.join("/"),
-            },
-          },
-        },
-        {
-          _: "Return",
-          tsExpr: tsInterface.callCatchMethod(
-            tsInterface.callThenMethod(
-              tsInterface.callThenMethod(
-                tsInterface.callFetch(
-                  {
-                    _: "Variable",
-                    tsIdentifier: identifierFromString("url"),
-                  },
-                  func.needAuthentication
-                    ? tsInterface.objectLiteral([
-                        {
-                          _: "KeyValue",
-                          keyValue: {
-                            key: "headers",
-                            value: tsInterface.objectLiteral([
-                              {
-                                _: "KeyValue",
-                                keyValue: {
-                                  key: "authorization",
-                                  value: tsInterface.get(
-                                    {
-                                      _: "Variable",
-                                      tsIdentifier: parameterIdentifier,
-                                    },
-                                    "accountToken"
-                                  ),
-                                },
-                              },
-                            ]),
-                          },
-                        } as const,
-                      ])
-                    : undefined
-                ),
+    name: identifierFromString(getLast(func.fullName)),
+    document: func.description,
+    parameterList: [
+      {
+        name: parameterIdentifier,
+        document: "",
+        type: funcParameterType(func, originHint),
+      },
+    ],
+    returnType: tsInterface.promiseType(
+      resultType(definyRpcTypeToTsType(func.output), {
+        _: "StringLiteral",
+        string: "error",
+      })
+    ),
+    typeParameterList: [],
+    statementList: [
+      {
+        _: "VariableDefinition",
+        variableDefinitionStatement: {
+          name: identifierFromString("url"),
+          expr: tsInterface.newURL(
+            tsInterface.nullishCoalescing(
+              tsInterface.get(
                 {
-                  parameterList: [
-                    {
-                      name: identifierFromString("response"),
-                      type: tsInterface.responseType,
-                    },
-                  ],
-                  returnType: tsInterface.promiseType({ _: "String" }),
-                  typeParameterList: [],
-                  statementList: [
-                    {
-                      _: "Return",
-                      tsExpr: tsInterface.callMethod(
-                        {
-                          _: "Variable",
-                          tsIdentifier: identifierFromString("response"),
-                        },
-                        "json",
-                        []
-                      ),
-                    },
-                  ],
-                }
+                  _: "Variable",
+                  tsIdentifier: parameterIdentifier,
+                },
+                "origin"
               ),
-              fetchThenExpr(func)
-            ),
-            {
-              parameterList: [],
-              returnType: tsInterface.promiseType(
-                definyRpcTypeToTsType(func.output)
-              ),
-              typeParameterList: [],
-              statementList: [],
-            }
+              { _: "StringLiteral", string: originHint }
+            )
           ),
+          isConst: true,
+          type: tsInterface.urlType,
         },
-      ],
-    },
+      },
+      {
+        _: "Set",
+        setStatement: {
+          target: tsInterface.get(
+            {
+              _: "Variable",
+              tsIdentifier: identifierFromString("url"),
+            },
+            "pathname"
+          ),
+          operatorMaybe: undefined,
+          expr: {
+            _: "StringLiteral",
+            string: "/" + func.fullName.join("/"),
+          },
+        },
+      },
+      {
+        _: "Return",
+        tsExpr: tsInterface.callCatchMethod(
+          tsInterface.callThenMethod(
+            tsInterface.callThenMethod(
+              tsInterface.callFetch(
+                {
+                  _: "Variable",
+                  tsIdentifier: identifierFromString("url"),
+                },
+                func.needAuthentication
+                  ? tsInterface.objectLiteral([
+                      {
+                        _: "KeyValue",
+                        keyValue: {
+                          key: "headers",
+                          value: tsInterface.objectLiteral([
+                            {
+                              _: "KeyValue",
+                              keyValue: {
+                                key: "authorization",
+                                value: tsInterface.get(
+                                  {
+                                    _: "Variable",
+                                    tsIdentifier: parameterIdentifier,
+                                  },
+                                  "accountToken"
+                                ),
+                              },
+                            },
+                          ]),
+                        },
+                      } as const,
+                    ])
+                  : undefined
+              ),
+              {
+                parameterList: [
+                  {
+                    name: identifierFromString("response"),
+                    type: tsInterface.responseType,
+                  },
+                ],
+                returnType: tsInterface.promiseType({ _: "unknown" }),
+                typeParameterList: [],
+                statementList: [
+                  {
+                    _: "Return",
+                    tsExpr: tsInterface.callMethod(
+                      {
+                        _: "Variable",
+                        tsIdentifier: identifierFromString("response"),
+                      },
+                      "json",
+                      []
+                    ),
+                  },
+                ],
+              }
+            ),
+            fetchThenExpr(func)
+          ),
+          {
+            parameterList: [],
+            returnType: resultType(definyRpcTypeToTsType(func.output), {
+              _: "StringLiteral",
+              string: "error",
+            }),
+            typeParameterList: [],
+            statementList: [
+              {
+                _: "Return",
+                tsExpr: resultError({ _: "StringLiteral", string: "error" }),
+              },
+            ],
+          }
+        ),
+      },
+    ],
   };
 };
 
@@ -522,7 +563,10 @@ const fetchThenExpr = (func: ApiFunction): LambdaExpr => {
         type: { _: "unknown" },
       },
     ],
-    returnType: definyRpcTypeToTsType(func.output),
+    returnType: resultType(definyRpcTypeToTsType(func.output), {
+      _: "StringLiteral",
+      string: "error",
+    }),
     typeParameterList: [],
     statementList: [
       {
@@ -541,7 +585,10 @@ const fetchThenExpr = (func: ApiFunction): LambdaExpr => {
           thenStatementList: [
             {
               _: "Return",
-              tsExpr: { _: "Variable", tsIdentifier: jsonValueIdentifier },
+              tsExpr: resultOk({
+                _: "Variable",
+                tsIdentifier: jsonValueIdentifier,
+              }),
             },
           ],
         },
