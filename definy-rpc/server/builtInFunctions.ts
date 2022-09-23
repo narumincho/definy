@@ -1,5 +1,5 @@
 import { ApiFunction, createApiFunction } from "./apiFunction.ts";
-import { apiFunctionListToCode } from "./clientCodeGen.ts";
+import { apiFunctionListToCode } from "./clientCodeGen/main.ts";
 import type { DefinyRpcParameter } from "./definyRpc.ts";
 import { set, string, unit, list, DefinyRpcType, product } from "./type.ts";
 import { ensureFile } from "https://deno.land/std@0.156.0/fs/mod.ts";
