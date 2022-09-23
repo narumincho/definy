@@ -12,17 +12,7 @@ type BuildClientResult = {
 
 const clientDistPath = "../client/dist/";
 
-const buildClient = async (
-  serverOrigin: string
-): Promise<BuildClientResult | undefined> => {
-  Deno.writeTextFile(
-    "../client/src/env.ts",
-    `// generated-code DO NOT EDIT!!
-// eslint-disable
-export const serverOrigin = ${JSON.stringify(serverOrigin)};
-`
-  );
-
+const buildClient = async (): Promise<BuildClientResult | undefined> => {
   const viteBuildProcessStatus = await Deno.run({
     cwd: "../client",
     cmd: [shell, "pnpm", "run", "definy-rpc-client-build"],
@@ -103,7 +93,7 @@ const _buildToNodeJs = async (): Promise<void> => {
 };
 
 const main = async (): Promise<void> => {
-  const clientBuildResult = await buildClient("http://localhost:2520");
+  const clientBuildResult = await buildClient();
   Deno.writeTextFile(
     "./client.ts",
     `

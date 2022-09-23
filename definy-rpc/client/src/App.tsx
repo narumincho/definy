@@ -1,5 +1,4 @@
 import * as React from "react";
-import * as env from "./env";
 import { Button } from "../../../client/ui/Button";
 import { Editor } from "./Editor";
 import { FuncDetail } from "./FuncDetail";
@@ -11,7 +10,7 @@ export const App = (): React.ReactElement => {
   >(undefined);
   const [serverName, setServerName] = React.useState<string | undefined>();
   const [serverOrigin, setServerOrigin] = React.useState<string>(
-    env.serverOrigin
+    new URL(location.href).origin
   );
   const [editorCount, setEditorCount] = React.useState<number>(1);
 
@@ -73,7 +72,7 @@ export const App = (): React.ReactElement => {
 
       <ServerOrigin
         serverName={serverName}
-        serverOrigin={serverOrigin}
+        initServerOrigin={serverOrigin}
         onChangeServerOrigin={setServerOrigin}
       />
 
