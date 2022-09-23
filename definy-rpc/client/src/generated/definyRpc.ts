@@ -51,6 +51,58 @@ export type Type = {
 };
 
 /**
+ * 内部表現は, undefined. JSON 上では null
+ */
+export const Unit: unknown = {
+  description: "内部表現は, undefined. JSON 上では null",
+  fromJson: (unit: undefined): undefined => {},
+};
+
+/**
+ * 文字列
+ */
+export const String: unknown = {
+  description: "文字列",
+  fromJson: (string_: string): string => {},
+};
+
+/**
+ * 集合. Set
+ */
+export const Set: unknown = {
+  description: "集合. Set",
+  fromJson: <p0 extends unknown>(
+    set_: globalThis.ReadonlySet<p0>
+  ): globalThis.ReadonlySet<p0> => {},
+};
+
+/**
+ * リスト
+ */
+export const List: unknown = {
+  description: "リスト",
+  fromJson: <p0 extends unknown>(
+    list: globalThis.ReadonlyArray<p0>
+  ): globalThis.ReadonlyArray<p0> => {},
+};
+
+/**
+ * functionByNameの結果
+ */
+export const FunctionDetail: unknown = {
+  description: "functionByNameの結果",
+  fromJson: (functionDetail: FunctionDetail): FunctionDetail => {},
+};
+
+/**
+ * definyRpc で表現できる型
+ */
+export const Type: unknown = {
+  description: "definyRpc で表現できる型",
+  fromJson: (type_: Type): Type => {},
+};
+
+/**
  * サーバー名の取得
  */
 export const name = (parameter: {

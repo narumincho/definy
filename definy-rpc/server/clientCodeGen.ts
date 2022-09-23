@@ -9,6 +9,7 @@ import {
   TsType,
   TypeAlias,
   TsExpr,
+  Variable,
 } from "./jsTs/data.ts";
 import * as tsInterface from "./jsTs/interface.ts";
 import { DefinyRpcType } from "./type.ts";
@@ -19,8 +20,8 @@ import {
   CollectedDefinyRpcTypeMap,
   CollectedDefinyRpcTypeUse,
 } from "./collectType.ts";
-import { getLast } from "./util.ts";
 import { formatCode } from "./prettier.ts";
+import { arrayFromLength, getLast, firstLowerCase } from "../../common/util.ts";
 
 export const apiFunctionListToCode = (
   apiFunctionList: ReadonlyArray<ApiFunction>,
@@ -57,6 +58,12 @@ export const apiFunctionListToJsTsCode = (
           }
           return [{ type: "typeAlias", typeAlias }];
         }
+      ),
+      ...[...collectedTypeMap.values()].map(
+        (type): ExportDefinition => ({
+          type: "variable",
+          variable: typeToTypeVariable(type, collectedTypeMap),
+        })
       ),
       ...apiFunctionList.map<ExportDefinition>((func) => ({
         type: "function",
@@ -232,7 +239,7 @@ const collectedTypeToTypeAlias = (
     namespace: [],
     name: identifierFromString(type.name),
     document: type.description,
-    typeParameterList: Array.from({ length: type.parameterCount }, (_, i) =>
+    typeParameterList: arrayFromLength(type.parameterCount, (i) =>
       identifierFromString("p" + i)
     ),
     type: collectedDefinyRpcTypeBodyToTsType(type.body, map),
@@ -367,6 +374,108 @@ const collectedDefinyRpcTypeUseToTsType = (
       arguments: collectedDefinyRpcTypeUse.parameters.map((use) =>
         collectedDefinyRpcTypeUseToTsType(use, map)
       ),
+    },
+  };
+};
+
+const collectedDefinyRpcTypeToTsType = (
+  collectedDefinyRpcType: CollectedDefinyRpcType,
+  map: CollectedDefinyRpcTypeMap
+): TsType => {
+  const typeDetail = map.get(
+    collectedDefinyRpcType.namespace.join(".") +
+      "." +
+      collectedDefinyRpcType.name
+  );
+  if (typeDetail === undefined) {
+    throw new Error("型を集計できなかった " + collectedDefinyRpcType.name);
+  }
+  if (typeDetail.body.type === "string") {
+    return { _: "String" };
+  }
+  if (typeDetail.body.type === "number") {
+    return { _: "Number" };
+  }
+  if (typeDetail.body.type === "unit") {
+    return { _: "Undefined" };
+  }
+  if (typeDetail.body.type === "list") {
+    return tsInterface.readonlyArrayType({
+      _: "ScopeInFile",
+      typeNameAndTypeParameter: {
+        name: identifierFromString("p0"),
+        arguments: [],
+      },
+    });
+  }
+  if (typeDetail.body.type === "set") {
+    return tsInterface.readonlySetType({
+      _: "ScopeInFile",
+      typeNameAndTypeParameter: {
+        name: identifierFromString("p0"),
+        arguments: [],
+      },
+    });
+  }
+  return {
+    _: "ScopeInFile",
+    typeNameAndTypeParameter: {
+      name: identifierFromString(collectedDefinyRpcType.name),
+      arguments: arrayFromLength(
+        collectedDefinyRpcType.parameterCount,
+        (i) => ({
+          _: "ScopeInFile",
+          typeNameAndTypeParameter: {
+            name: identifierFromString("p" + i),
+            arguments: [],
+          },
+        })
+      ),
+    },
+  };
+};
+
+const typeToTypeVariable = (
+  type: CollectedDefinyRpcType,
+  map: CollectedDefinyRpcTypeMap
+): Variable => {
+  return {
+    name: identifierFromString(type.name),
+    document: type.description,
+    type: { _: "unknown" },
+    expr: {
+      _: "ObjectLiteral",
+      tsMemberList: [
+        {
+          _: "KeyValue",
+          keyValue: {
+            key: "description",
+            value: { _: "StringLiteral", string: type.description },
+          },
+        },
+        {
+          _: "KeyValue",
+          keyValue: {
+            key: "fromJson",
+            value: {
+              _: "Lambda",
+              lambdaExpr: {
+                parameterList: [
+                  {
+                    name: identifierFromString(firstLowerCase(type.name)),
+                    type: collectedDefinyRpcTypeToTsType(type, map),
+                  },
+                ],
+                returnType: collectedDefinyRpcTypeToTsType(type, map),
+                typeParameterList: arrayFromLength(type.parameterCount, (i) =>
+                  identifierFromString("p" + i)
+                ),
+                statementList: [],
+              },
+            },
+          },
+        },
+      ],
     },
   };
 };
