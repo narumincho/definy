@@ -18,10 +18,9 @@
     "start-definy": "pnpm tsc --project ./tsconfig-purs-ffi.json && pnpm exec spago run --main Definy.Start && firebase emulators:start --project definy-lang --config ./distribution/definy/firebase.json",
     "package-vscode-extension": "cd ./distribution/definy-extension && pnpm exec vsce package",
     "dev-local": "pnpm exec vercel dev",
-    "desktop-start": "cd ./desktop && cargo run",
     "database-migration": "node -r @swc-node/register ./databaseMigration.ts",
-    "definy-rpc-client": "cd ./definy-rpc/client && vite",
-    "definy-rpc-client-build": "cd ./definy-rpc/client && vite build"
+    "definy-rpc-client": "cd ./definy-rpc/browserClient && vite",
+    "definy-rpc-client-build": "cd ./definy-rpc/browserClient && vite build"
   },
   "engines": {
     "node": "16"
