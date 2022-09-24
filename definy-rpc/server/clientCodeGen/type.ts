@@ -17,6 +17,7 @@ import {
   CollectedDefinyRpcTypeUse,
 } from "../collectType.ts";
 import { arrayFromLength } from "../../../common/util.ts";
+import { structuredJsonValueType } from "./runtime.ts";
 
 export const collectedTypeToTypeAlias = (
   type: CollectedDefinyRpcType,
@@ -231,19 +232,6 @@ const collectedDefinyRpcTypeToTsType = (
   };
 };
 
-const runtimeModuleName = "./runtime";
-
-const structuredJsonValueType: TsType = {
-  _: "ImportedType",
-  importedType: {
-    moduleName: runtimeModuleName,
-    nameAndArguments: {
-      name: identifierFromString("StructuredJsonValue"),
-      arguments: [],
-    },
-  },
-};
-
 export const typeToTypeVariable = (
   type: CollectedDefinyRpcType,
   map: CollectedDefinyRpcTypeMap
@@ -343,7 +331,7 @@ const typeToFromJsonLambda = (
     ],
     returnType: collectedDefinyRpcTypeToTsType(type, map),
     typeParameterList: [],
-    statementList: typeToFromJsonStatementList(type, map),
+    statementList: typeToFromJsonStatementList(type),
   };
   if (type.parameterCount !== 0) {
     return {
@@ -396,8 +384,7 @@ const jsonValueVariableType = tsInterface.get(jsonValueVariable, "type");
 const jsonValueVariableValue = tsInterface.get(jsonValueVariable, "value");
 
 const typeToFromJsonStatementList = (
-  type: CollectedDefinyRpcType,
-  map: CollectedDefinyRpcTypeMap
+  type: CollectedDefinyRpcType
 ): ReadonlyArray<Statement> => {
   switch (type.body.type) {
     case "unit":
@@ -581,19 +568,10 @@ const typeToFromJsonStatementList = (
                 _: "KeyValue",
                 keyValue: {
                   key: field.name,
-                  value: tsInterface.callMethod(
-                    {
-                      _: "Variable",
-                      tsIdentifier: identifierFromString(field.type.name),
-                    },
-                    "fromJson",
-                    [
-                      {
-                        _: "Variable",
-                        tsIdentifier: identifierFromString(field.name),
-                      },
-                    ]
-                  ),
+                  value: useFromJson(field.type, {
+                    _: "Variable",
+                    tsIdentifier: identifierFromString(field.name),
+                  }),
                 },
               })
             ),
@@ -622,4 +600,39 @@ const typeToFromJsonStatementList = (
         },
       ];
   }
+};
+
+/**
+ * `型名`.fromJson を使用する
+ * @param type 型
+ * @param expr JSONの式
+ */
+export const useFromJson = (
+  type: CollectedDefinyRpcTypeUse,
+  expr: TsExpr
+): TsExpr => {
+  return {
+    _: "Call",
+    callExpr: { expr: getFromJsonFunction(type), parameterList: [expr] },
+  };
+};
+
+const getFromJsonFunction = (type: CollectedDefinyRpcTypeUse): TsExpr => {
+  if (type.parameters.length === 0) {
+    return tsInterface.get(
+      {
+        _: "Variable",
+        tsIdentifier: identifierFromString(type.name),
+      },
+      "fromJson"
+    );
+  }
+  return tsInterface.callMethod(
+    {
+      _: "Variable",
+      tsIdentifier: identifierFromString(type.name),
+    },
+    "fromJson",
+    type.parameters.map(getFromJsonFunction)
+  );
 };

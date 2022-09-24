@@ -5,6 +5,11 @@ import { identifierFromString } from "../jsTs/identifier.ts";
 import { LambdaExpr, Function, TsType } from "../jsTs/data.ts";
 import { DefinyRpcType } from "../type.ts";
 import { resultError, resultOk, resultType } from "./result.ts";
+import { useFromJson } from "./type.ts";
+import {
+  rawJsonValueType,
+  useRawJsonToStructuredJsonValue,
+} from "./runtime.ts";
 
 export const apiFuncToTsFunction = (
   func: ApiFunction,
@@ -109,7 +114,7 @@ export const apiFuncToTsFunction = (
                     type: tsInterface.responseType,
                   },
                 ],
-                returnType: tsInterface.promiseType({ _: "unknown" }),
+                returnType: tsInterface.promiseType(rawJsonValueType),
                 typeParameterList: [],
                 statementList: [
                   {
@@ -154,7 +159,7 @@ const fetchThenExpr = (func: ApiFunction): LambdaExpr => {
     parameterList: [
       {
         name: jsonValueIdentifier,
-        type: { _: "unknown" },
+        type: rawJsonValueType,
       },
     ],
     returnType: resultType(definyRpcTypeToTsType(func.output), {
@@ -164,30 +169,17 @@ const fetchThenExpr = (func: ApiFunction): LambdaExpr => {
     typeParameterList: [],
     statementList: [
       {
-        _: "If",
-        ifStatement: {
-          condition: tsInterface.equal(
-            tsInterface.typeofExpr({
+        _: "Return",
+        tsExpr: resultOk(
+          useFromJson(
+            func.output,
+            useRawJsonToStructuredJsonValue({
               _: "Variable",
               tsIdentifier: jsonValueIdentifier,
-            }),
-            {
-              _: "StringLiteral",
-              string: "string",
-            }
-          ),
-          thenStatementList: [
-            {
-              _: "Return",
-              tsExpr: resultOk({
-                _: "Variable",
-                tsIdentifier: jsonValueIdentifier,
-              }),
-            },
-          ],
-        },
+            })
+          )
+        ),
       },
-      { _: "ThrowError", tsExpr: { _: "StringLiteral", string: "parseError" } },
     ],
   };
 };
@@ -241,13 +233,35 @@ const definyRpcTypeToTsType = <t>(definyRpcType: DefinyRpcType<t>): TsType => {
       return { _: "Number" };
     case "unit":
       return { _: "Undefined" };
-    case "list":
-      return tsInterface.readonlyArrayType({ _: "Undefined" });
-    case "set":
-      return tsInterface.setType({ _: "Undefined" });
+    case "list": {
+      const parameter = definyRpcType.parameters[0];
+      if (parameter === undefined) {
+        throw new Error("list need one parameter");
+      }
+      return tsInterface.readonlyArrayType(definyRpcTypeToTsType(parameter));
+    }
+    case "set": {
+      const parameter = definyRpcType.parameters[0];
+      if (parameter === undefined) {
+        throw new Error("set need one parameter");
+      }
+      return tsInterface.readonlySetType(definyRpcTypeToTsType(parameter));
+    }
     case "sum":
-      return { _: "Undefined" };
+      return {
+        _: "ScopeInFile",
+        typeNameAndTypeParameter: {
+          name: identifierFromString(definyRpcType.name),
+          arguments: definyRpcType.parameters.map(definyRpcTypeToTsType),
+        },
+      };
     case "product":
-      return { _: "Undefined" };
+      return {
+        _: "ScopeInFile",
+        typeNameAndTypeParameter: {
+          name: identifierFromString(definyRpcType.name),
+          arguments: definyRpcType.parameters.map(definyRpcTypeToTsType),
+        },
+      };
   }
 };

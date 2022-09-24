@@ -185,7 +185,7 @@ export const FunctionDetail: {
       throw new Error("expected output field. in FunctionDetail.fromJson");
     }
     return {
-      name: List.fromJson(name),
+      name: List.fromJson(String.fromJson)(name),
       description: String.fromJson(description),
       input: Type.fromJson(input),
       output: Type.fromJson(output),
@@ -227,9 +227,9 @@ export const Type: {
       throw new Error("expected parameters field. in Type.fromJson");
     }
     return {
-      fullName: List.fromJson(fullName),
+      fullName: List.fromJson(String.fromJson)(fullName),
       description: String.fromJson(description),
-      parameters: List.fromJson(parameters),
+      parameters: List.fromJson(Type.fromJson)(parameters),
     };
   },
 };
@@ -251,15 +251,15 @@ export const name = (parameter: {
   return globalThis
     .fetch(url)
     .then(
-      (response: globalThis.Response): globalThis.Promise<unknown> =>
+      (response: globalThis.Response): globalThis.Promise<a.RawJsonValue> =>
         response.json()
     )
-    .then((jsonValue: unknown): Result<string, "error"> => {
-      if (typeof jsonValue === "string") {
-        return { type: "ok", ok: jsonValue };
-      }
-      throw new Error("parseError");
-    })
+    .then(
+      (jsonValue: a.RawJsonValue): Result<string, "error"> => ({
+        type: "ok",
+        ok: String.fromJson(a.rawJsonToStructuredJsonValue(jsonValue)),
+      })
+    )
     .catch((): Result<string, "error"> => ({ type: "error", error: "error" }));
 };
 
@@ -272,7 +272,9 @@ export const namespaceList = (parameter: {
    * @default http://localhost:2520
    */
   readonly origin?: string | undefined;
-}): globalThis.Promise<Result<globalThis.Set<undefined>, "error">> => {
+}): globalThis.Promise<
+  Result<globalThis.ReadonlySet<globalThis.ReadonlyArray<string>>, "error">
+> => {
   const url: globalThis.URL = new globalThis.URL(
     parameter.origin ?? "http://localhost:2520"
   );
@@ -280,20 +282,27 @@ export const namespaceList = (parameter: {
   return globalThis
     .fetch(url)
     .then(
-      (response: globalThis.Response): globalThis.Promise<unknown> =>
+      (response: globalThis.Response): globalThis.Promise<a.RawJsonValue> =>
         response.json()
     )
-    .then((jsonValue: unknown): Result<globalThis.Set<undefined>, "error"> => {
-      if (typeof jsonValue === "string") {
-        return { type: "ok", ok: jsonValue };
-      }
-      throw new Error("parseError");
-    })
-    .catch(
-      (): Result<globalThis.Set<undefined>, "error"> => ({
-        type: "error",
-        error: "error",
+    .then(
+      (
+        jsonValue: a.RawJsonValue
+      ): Result<
+        globalThis.ReadonlySet<globalThis.ReadonlyArray<string>>,
+        "error"
+      > => ({
+        type: "ok",
+        ok: Set.fromJson(List.fromJson(String.fromJson))(
+          a.rawJsonToStructuredJsonValue(jsonValue)
+        ),
       })
+    )
+    .catch(
+      (): Result<
+        globalThis.ReadonlySet<globalThis.ReadonlyArray<string>>,
+        "error"
+      > => ({ type: "error", error: "error" })
     );
 };
 
@@ -307,7 +316,7 @@ export const functionListByName = (parameter: {
    */
   readonly origin?: string | undefined;
 }): globalThis.Promise<
-  Result<globalThis.ReadonlyArray<undefined>, "error">
+  Result<globalThis.ReadonlyArray<FunctionDetail>, "error">
 > => {
   const url: globalThis.URL = new globalThis.URL(
     parameter.origin ?? "http://localhost:2520"
@@ -316,21 +325,21 @@ export const functionListByName = (parameter: {
   return globalThis
     .fetch(url)
     .then(
-      (response: globalThis.Response): globalThis.Promise<unknown> =>
+      (response: globalThis.Response): globalThis.Promise<a.RawJsonValue> =>
         response.json()
     )
     .then(
       (
-        jsonValue: unknown
-      ): Result<globalThis.ReadonlyArray<undefined>, "error"> => {
-        if (typeof jsonValue === "string") {
-          return { type: "ok", ok: jsonValue };
-        }
-        throw new Error("parseError");
-      }
+        jsonValue: a.RawJsonValue
+      ): Result<globalThis.ReadonlyArray<FunctionDetail>, "error"> => ({
+        type: "ok",
+        ok: List.fromJson(FunctionDetail.fromJson)(
+          a.rawJsonToStructuredJsonValue(jsonValue)
+        ),
+      })
     )
     .catch(
-      (): Result<globalThis.ReadonlyArray<undefined>, "error"> => ({
+      (): Result<globalThis.ReadonlyArray<FunctionDetail>, "error"> => ({
         type: "error",
         error: "error",
       })
@@ -348,7 +357,7 @@ export const functionListByNamePrivate = (parameter: {
   readonly origin?: string | undefined;
   readonly accountToken: AccountToken;
 }): globalThis.Promise<
-  Result<globalThis.ReadonlyArray<undefined>, "error">
+  Result<globalThis.ReadonlyArray<FunctionDetail>, "error">
 > => {
   const url: globalThis.URL = new globalThis.URL(
     parameter.origin ?? "http://localhost:2520"
@@ -357,21 +366,21 @@ export const functionListByNamePrivate = (parameter: {
   return globalThis
     .fetch(url, { headers: { authorization: parameter.accountToken } })
     .then(
-      (response: globalThis.Response): globalThis.Promise<unknown> =>
+      (response: globalThis.Response): globalThis.Promise<a.RawJsonValue> =>
         response.json()
     )
     .then(
       (
-        jsonValue: unknown
-      ): Result<globalThis.ReadonlyArray<undefined>, "error"> => {
-        if (typeof jsonValue === "string") {
-          return { type: "ok", ok: jsonValue };
-        }
-        throw new Error("parseError");
-      }
+        jsonValue: a.RawJsonValue
+      ): Result<globalThis.ReadonlyArray<FunctionDetail>, "error"> => ({
+        type: "ok",
+        ok: List.fromJson(FunctionDetail.fromJson)(
+          a.rawJsonToStructuredJsonValue(jsonValue)
+        ),
+      })
     )
     .catch(
-      (): Result<globalThis.ReadonlyArray<undefined>, "error"> => ({
+      (): Result<globalThis.ReadonlyArray<FunctionDetail>, "error"> => ({
         type: "error",
         error: "error",
       })
@@ -395,15 +404,15 @@ export const generateCallDefinyRpcTypeScriptCode = (parameter: {
   return globalThis
     .fetch(url)
     .then(
-      (response: globalThis.Response): globalThis.Promise<unknown> =>
+      (response: globalThis.Response): globalThis.Promise<a.RawJsonValue> =>
         response.json()
     )
-    .then((jsonValue: unknown): Result<string, "error"> => {
-      if (typeof jsonValue === "string") {
-        return { type: "ok", ok: jsonValue };
-      }
-      throw new Error("parseError");
-    })
+    .then(
+      (jsonValue: a.RawJsonValue): Result<string, "error"> => ({
+        type: "ok",
+        ok: String.fromJson(a.rawJsonToStructuredJsonValue(jsonValue)),
+      })
+    )
     .catch((): Result<string, "error"> => ({ type: "error", error: "error" }));
 };
 
@@ -424,15 +433,15 @@ export const generateCodeAndWriteAsFileInServer = (parameter: {
   return globalThis
     .fetch(url)
     .then(
-      (response: globalThis.Response): globalThis.Promise<unknown> =>
+      (response: globalThis.Response): globalThis.Promise<a.RawJsonValue> =>
         response.json()
     )
-    .then((jsonValue: unknown): Result<undefined, "error"> => {
-      if (typeof jsonValue === "string") {
-        return { type: "ok", ok: jsonValue };
-      }
-      throw new Error("parseError");
-    })
+    .then(
+      (jsonValue: a.RawJsonValue): Result<undefined, "error"> => ({
+        type: "ok",
+        ok: Unit.fromJson(a.rawJsonToStructuredJsonValue(jsonValue)),
+      })
+    )
     .catch(
       (): Result<undefined, "error"> => ({ type: "error", error: "error" })
     );
