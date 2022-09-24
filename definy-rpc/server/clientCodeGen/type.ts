@@ -4,6 +4,7 @@ import {
   Parameter,
   Statement,
   TsExpr,
+  TsMember,
   TsType,
   TypeAlias,
   Variable,
@@ -332,14 +333,19 @@ const typeToFromJsonLambda = (
   return main;
 };
 
+const jsonValueVariable: TsExpr = {
+  _: "Variable",
+  tsIdentifier: identifierFromString("jsonValue"),
+};
+
+const jsonValueVariableType = tsInterface.get(jsonValueVariable, "type");
+
+const jsonValueVariableValue = tsInterface.get(jsonValueVariable, "value");
+
 const typeToFromJsonStatementList = (
   type: CollectedDefinyRpcType,
   map: CollectedDefinyRpcTypeMap
 ): ReadonlyArray<Statement> => {
-  const jsonValueVariable: TsExpr = {
-    _: "Variable",
-    tsIdentifier: identifierFromString("jsonValue"),
-  };
   switch (type.body.type) {
     case "unit":
       return [{ _: "Return", tsExpr: { _: "UndefinedLiteral" } }];
@@ -348,14 +354,14 @@ const typeToFromJsonStatementList = (
         {
           _: "If",
           ifStatement: {
-            condition: tsInterface.equal(
-              tsInterface.get(jsonValueVariable, "type"),
-              { _: "StringLiteral", string: "number" }
-            ),
+            condition: tsInterface.equal(jsonValueVariableType, {
+              _: "StringLiteral",
+              string: "number",
+            }),
             thenStatementList: [
               {
                 _: "Return",
-                tsExpr: tsInterface.get(jsonValueVariable, "value"),
+                tsExpr: jsonValueVariableValue,
               },
             ],
           },
@@ -364,7 +370,7 @@ const typeToFromJsonStatementList = (
           _: "ThrowError",
           tsExpr: {
             _: "StringLiteral",
-            string: "expected number in Number json parse",
+            string: "expected number in Number json fromJson",
           },
         },
       ];
@@ -373,14 +379,14 @@ const typeToFromJsonStatementList = (
         {
           _: "If",
           ifStatement: {
-            condition: tsInterface.equal(
-              tsInterface.get(jsonValueVariable, "type"),
-              { _: "StringLiteral", string: "string" }
-            ),
+            condition: tsInterface.equal(jsonValueVariableType, {
+              _: "StringLiteral",
+              string: "string",
+            }),
             thenStatementList: [
               {
                 _: "Return",
-                tsExpr: tsInterface.get(jsonValueVariable, "value"),
+                tsExpr: jsonValueVariableValue,
               },
             ],
           },
@@ -389,7 +395,7 @@ const typeToFromJsonStatementList = (
           _: "ThrowError",
           tsExpr: {
             _: "StringLiteral",
-            string: "expected string in String json parse",
+            string: "expected string in String json fromJson",
           },
         },
       ];
@@ -398,20 +404,17 @@ const typeToFromJsonStatementList = (
         {
           _: "If",
           ifStatement: {
-            condition: tsInterface.equal(
-              tsInterface.get(jsonValueVariable, "type"),
-              { _: "StringLiteral", string: "array" }
-            ),
+            condition: tsInterface.equal(jsonValueVariableType, {
+              _: "StringLiteral",
+              string: "array",
+            }),
             thenStatementList: [
               {
                 _: "Return",
-                tsExpr: tsInterface.arrayMap(
-                  tsInterface.get(jsonValueVariable, "value"),
-                  {
-                    _: "Variable",
-                    tsIdentifier: identifierFromString("p0FromJson"),
-                  }
-                ),
+                tsExpr: tsInterface.arrayMap(jsonValueVariableValue, {
+                  _: "Variable",
+                  tsIdentifier: identifierFromString("p0FromJson"),
+                }),
               },
             ],
           },
@@ -420,7 +423,7 @@ const typeToFromJsonStatementList = (
           _: "ThrowError",
           tsExpr: {
             _: "StringLiteral",
-            string: "expected array in List json parse",
+            string: "expected array in List json fromJson",
           },
         },
       ];
@@ -429,21 +432,18 @@ const typeToFromJsonStatementList = (
         {
           _: "If",
           ifStatement: {
-            condition: tsInterface.equal(
-              tsInterface.get(jsonValueVariable, "type"),
-              { _: "StringLiteral", string: "array" }
-            ),
+            condition: tsInterface.equal(jsonValueVariableType, {
+              _: "StringLiteral",
+              string: "array",
+            }),
             thenStatementList: [
               {
                 _: "Return",
                 tsExpr: tsInterface.newSet(
-                  tsInterface.arrayMap(
-                    tsInterface.get(jsonValueVariable, "value"),
-                    {
-                      _: "Variable",
-                      tsIdentifier: identifierFromString("p0FromJson"),
-                    }
-                  )
+                  tsInterface.arrayMap(jsonValueVariableValue, {
+                    _: "Variable",
+                    tsIdentifier: identifierFromString("p0FromJson"),
+                  })
                 ),
               },
             ],
@@ -453,10 +453,120 @@ const typeToFromJsonStatementList = (
           _: "ThrowError",
           tsExpr: {
             _: "StringLiteral",
-            string: "expected array in Set json parse",
+            string: "expected array in Set json fromJson",
+          },
+        },
+      ];
+    case "product":
+      return [
+        {
+          _: "If",
+          ifStatement: {
+            condition: tsInterface.notEqual(jsonValueVariableType, {
+              _: "StringLiteral",
+              string: "object",
+            }),
+            thenStatementList: [
+              {
+                _: "ThrowError",
+                tsExpr: {
+                  _: "StringLiteral",
+                  string: "expected object in product fromJson",
+                },
+              },
+            ],
+          },
+        },
+        ...type.body.fieldList.flatMap(
+          (field): readonly [Statement, Statement] => [
+            {
+              _: "VariableDefinition",
+              variableDefinitionStatement: {
+                name: identifierFromString(field.name),
+                isConst: true,
+                type: {
+                  _: "Union",
+                  tsTypeList: [structuredJsonValueType, { _: "Undefined" }],
+                },
+                expr: tsInterface.callMethod(jsonValueVariableValue, "get", [
+                  {
+                    _: "StringLiteral",
+                    string: field.name,
+                  },
+                ]),
+              },
+            },
+            {
+              _: "If",
+              ifStatement: {
+                condition: tsInterface.equal(
+                  {
+                    _: "Variable",
+                    tsIdentifier: identifierFromString(field.name),
+                  },
+                  { _: "UndefinedLiteral" }
+                ),
+                thenStatementList: [
+                  {
+                    _: "ThrowError",
+                    tsExpr: {
+                      _: "StringLiteral",
+                      string: `expected in ${field.name} field. in ${type.name}.fromJson`,
+                    },
+                  },
+                ],
+              },
+            },
+          ]
+        ),
+        {
+          _: "Return",
+          tsExpr: {
+            _: "ObjectLiteral",
+            tsMemberList: type.body.fieldList.map(
+              (field): TsMember => ({
+                _: "KeyValue",
+                keyValue: {
+                  key: field.name,
+                  value: tsInterface.callMethod(
+                    {
+                      _: "Variable",
+                      tsIdentifier: identifierFromString(field.type.name),
+                    },
+                    "fromJson",
+                    [
+                      {
+                        _: "Variable",
+                        tsIdentifier: identifierFromString(field.name),
+                      },
+                    ]
+                  ),
+                },
+              })
+            ),
+          },
+        },
+      ];
+    case "sum":
+      return [
+        {
+          _: "If",
+          ifStatement: {
+            condition: tsInterface.notEqual(jsonValueVariableType, {
+              _: "StringLiteral",
+              string: "object",
+            }),
+            thenStatementList: [
+              {
+                _: "ThrowError",
+                tsExpr: {
+                  _: "StringLiteral",
+                  string: "expected object in sum fromJson",
+                },
+              },
+            ],
           },
         },
       ];
   }
-  return [];
 };

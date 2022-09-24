@@ -8,8 +8,17 @@ export * from "./type.ts";
 export * from "./apiFunction.ts";
 
 export type DefinyRpcParameter = {
+  /**
+   * サーバー名 (ルート直下の名前空間になる)
+   */
   readonly name: string;
+  /**
+   * サーバーを構築する関数たち
+   */
   readonly all: () => ReadonlyArray<ApiFunction>;
+  /**
+   * 生成するコードの リクエスト先オリジンのデフォルト値
+   */
   readonly originHint: string;
   /**
    * 実行環境とコードを編集している環境が同じ場合に, コードを生成ボタンを押したら生成できる機能

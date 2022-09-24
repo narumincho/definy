@@ -82,10 +82,10 @@ code ./for-deno.code-workspace
 
 ### サンプルのサーバーを起動
 
-カレントディレクトリは リポジトリのまま
+カレントディレクトリは リポジトリと同じ場所
 
 ```ps1
-deno run --check --watch --allow-net=0.0.0.0:2520 --allow-write=../browserClient/src/generated --allow-read ./definy-rpc/example/example.ts
+deno run --check --watch --allow-net=0.0.0.0:2520 --allow-write=./definy-rpc/browserClient/src/generated --allow-read ./definy-rpc/example/example.ts
 ```
 
 `--allow-write` `--allow-read` とかで指定しているのは, サーバーでコード生成したときに, ファイルを保存するため. 本番では必要ない

@@ -41,7 +41,7 @@ const sampleDefinyRpcServer = definyRpc.createHttpServer({
     }),
   ],
   originHint: `http://localhost:${portNumber}`,
-  codeGenOutputFolderPath: "../browserClient/src/generated",
+  codeGenOutputFolderPath: "./definy-rpc/browserClient/src/generated",
 });
 
 serve(

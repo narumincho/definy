@@ -199,7 +199,7 @@ const funcParameterType = (func: ApiFunction, originHint: string): TsType => {
       {
         name: "origin",
         document: `api end point
-    @default ${originHint}`,
+@default ${originHint}`,
         required: false,
         type: { _: "Union", tsTypeList: [{ _: "String" }, { _: "Undefined" }] },
       },

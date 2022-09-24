@@ -69,7 +69,7 @@ export const String: unknown = {
     if (jsonValue.type === "string") {
       return jsonValue.value;
     }
-    throw new Error("expected string in String json parse");
+    throw new Error("expected string in String json fromJson");
   },
 };
 
@@ -86,7 +86,7 @@ export const Set: unknown = {
       if (jsonValue.type === "array") {
         return new globalThis.Set(jsonValue.value.map(p0FromJson));
       }
-      throw new Error("expected array in Set json parse");
+      throw new Error("expected array in Set json fromJson");
     },
 };
 
@@ -103,7 +103,7 @@ export const List: unknown = {
       if (jsonValue.type === "array") {
         return jsonValue.value.map(p0FromJson);
       }
-      throw new Error("expected array in Set json parse");
+      throw new Error("expected array in List json fromJson");
     },
 };
 
@@ -112,7 +112,38 @@ export const List: unknown = {
  */
 export const FunctionDetail: unknown = {
   description: "functionByNameの結果",
-  fromJson: (jsonValue: a.StructuredJsonValue): FunctionDetail => {},
+  fromJson: (jsonValue: a.StructuredJsonValue): FunctionDetail => {
+    if (jsonValue.type !== "object") {
+      throw new Error("expected object in product fromJson");
+    }
+    const name: a.StructuredJsonValue | undefined = jsonValue.value.get("name");
+    if (name === undefined) {
+      throw new Error("expected in name field. in FunctionDetail.fromJson");
+    }
+    const description: a.StructuredJsonValue | undefined =
+      jsonValue.value.get("description");
+    if (description === undefined) {
+      throw new Error(
+        "expected in description field. in FunctionDetail.fromJson"
+      );
+    }
+    const input: a.StructuredJsonValue | undefined =
+      jsonValue.value.get("input");
+    if (input === undefined) {
+      throw new Error("expected in input field. in FunctionDetail.fromJson");
+    }
+    const output: a.StructuredJsonValue | undefined =
+      jsonValue.value.get("output");
+    if (output === undefined) {
+      throw new Error("expected in output field. in FunctionDetail.fromJson");
+    }
+    return {
+      name: List.fromJson(name),
+      description: String.fromJson(description),
+      input: Type.fromJson(input),
+      output: Type.fromJson(output),
+    };
+  },
 };
 
 /**
@@ -120,7 +151,31 @@ export const FunctionDetail: unknown = {
  */
 export const Type: unknown = {
   description: "definyRpc で表現できる型",
-  fromJson: (jsonValue: a.StructuredJsonValue): Type => {},
+  fromJson: (jsonValue: a.StructuredJsonValue): Type => {
+    if (jsonValue.type !== "object") {
+      throw new Error("expected object in product fromJson");
+    }
+    const fullName: a.StructuredJsonValue | undefined =
+      jsonValue.value.get("fullName");
+    if (fullName === undefined) {
+      throw new Error("expected in fullName field. in Type.fromJson");
+    }
+    const description: a.StructuredJsonValue | undefined =
+      jsonValue.value.get("description");
+    if (description === undefined) {
+      throw new Error("expected in description field. in Type.fromJson");
+    }
+    const parameters: a.StructuredJsonValue | undefined =
+      jsonValue.value.get("parameters");
+    if (parameters === undefined) {
+      throw new Error("expected in parameters field. in Type.fromJson");
+    }
+    return {
+      fullName: List.fromJson(fullName),
+      description: String.fromJson(description),
+      parameters: List.fromJson(parameters),
+    };
+  },
 };
 
 /**
@@ -129,7 +184,7 @@ export const Type: unknown = {
 export const name = (parameter: {
   /**
    * api end point
-   *     @default http://localhost:2520
+   * @default http://localhost:2520
    */
   readonly origin?: string | undefined;
 }): globalThis.Promise<Result<string, "error">> => {
@@ -158,7 +213,7 @@ export const name = (parameter: {
 export const namespaceList = (parameter: {
   /**
    * api end point
-   *     @default http://localhost:2520
+   * @default http://localhost:2520
    */
   readonly origin?: string | undefined;
 }): globalThis.Promise<Result<globalThis.Set<undefined>, "error">> => {
@@ -192,7 +247,7 @@ export const namespaceList = (parameter: {
 export const functionListByName = (parameter: {
   /**
    * api end point
-   *     @default http://localhost:2520
+   * @default http://localhost:2520
    */
   readonly origin?: string | undefined;
 }): globalThis.Promise<
@@ -232,7 +287,7 @@ export const functionListByName = (parameter: {
 export const functionListByNamePrivate = (parameter: {
   /**
    * api end point
-   *     @default http://localhost:2520
+   * @default http://localhost:2520
    */
   readonly origin?: string | undefined;
   readonly accountToken: AccountToken;
@@ -273,7 +328,7 @@ export const functionListByNamePrivate = (parameter: {
 export const generateCallDefinyRpcTypeScriptCode = (parameter: {
   /**
    * api end point
-   *     @default http://localhost:2520
+   * @default http://localhost:2520
    */
   readonly origin?: string | undefined;
 }): globalThis.Promise<Result<string, "error">> => {
@@ -302,7 +357,7 @@ export const generateCallDefinyRpcTypeScriptCode = (parameter: {
 export const generateCodeAndWriteAsFileInServer = (parameter: {
   /**
    * api end point
-   *     @default http://localhost:2520
+   * @default http://localhost:2520
    */
   readonly origin?: string | undefined;
 }): globalThis.Promise<Result<undefined, "error">> => {
