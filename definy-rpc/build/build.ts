@@ -10,11 +10,11 @@ type BuildClientResult = {
   readonly scriptContent: string;
 };
 
-const clientDistPath = "../browserClient/dist/";
+const clientDistPath = "./definy-rpc/browserClient/dist/";
 
 const buildClient = async (): Promise<BuildClientResult | undefined> => {
   const viteBuildProcessStatus = await Deno.run({
-    cwd: "../browserClient",
+    cwd: "./definy-rpc/browserClient",
     cmd: [shell, "pnpm", "run", "definy-rpc-client-build"],
   }).status();
 
