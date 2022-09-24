@@ -248,10 +248,63 @@ export const typeToTypeVariable = (
   type: CollectedDefinyRpcType,
   map: CollectedDefinyRpcTypeMap
 ): Variable => {
+  const fromJsonTypeMain: TsType = {
+    _: "Function",
+    functionType: {
+      typeParameterList: [],
+      parameterList: [structuredJsonValueType],
+      return: collectedDefinyRpcTypeToTsType(type, map),
+    },
+  };
   return {
     name: identifierFromString(type.name),
     document: type.description,
-    type: { _: "unknown" },
+    type: {
+      _: "Object",
+      tsMemberTypeList: [
+        {
+          name: "description",
+          document: `${type.name} の説明文`,
+          required: true,
+          type: { _: "String" },
+        },
+        {
+          name: "fromJson",
+          document: `Jsonから${type.name}に変換する. 失敗した場合はエラー`,
+          required: true,
+          type:
+            type.parameterCount === 0
+              ? fromJsonTypeMain
+              : {
+                  _: "Function",
+                  functionType: {
+                    parameterList: arrayFromLength(
+                      type.parameterCount,
+                      (i): TsType => ({
+                        _: "Function",
+                        functionType: {
+                          parameterList: [structuredJsonValueType],
+                          typeParameterList: [],
+                          return: {
+                            _: "ScopeInFile",
+                            typeNameAndTypeParameter: {
+                              name: identifierFromString("p" + i),
+                              arguments: [],
+                            },
+                          },
+                        },
+                      })
+                    ),
+                    return: fromJsonTypeMain,
+                    typeParameterList: arrayFromLength(
+                      type.parameterCount,
+                      (i) => identifierFromString("p" + i)
+                    ),
+                  },
+                },
+        },
+      ],
+    },
     expr: {
       _: "ObjectLiteral",
       tsMemberList: [
@@ -471,7 +524,7 @@ const typeToFromJsonStatementList = (
                 _: "ThrowError",
                 tsExpr: {
                   _: "StringLiteral",
-                  string: "expected object in product fromJson",
+                  string: `expected object in ${type.name}.fromJson`,
                 },
               },
             ],
@@ -511,7 +564,7 @@ const typeToFromJsonStatementList = (
                     _: "ThrowError",
                     tsExpr: {
                       _: "StringLiteral",
-                      string: `expected in ${field.name} field. in ${type.name}.fromJson`,
+                      string: `expected ${field.name} field. in ${type.name}.fromJson`,
                     },
                   },
                 ],
@@ -561,7 +614,7 @@ const typeToFromJsonStatementList = (
                 _: "ThrowError",
                 tsExpr: {
                   _: "StringLiteral",
-                  string: "expected object in sum fromJson",
+                  string: `expected object in ${type.name}.fromJson`,
                 },
               },
             ],

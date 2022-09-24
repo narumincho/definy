@@ -55,7 +55,16 @@ export type Type = {
 /**
  * 内部表現は, undefined. JSON 上では null
  */
-export const Unit: unknown = {
+export const Unit: {
+  /**
+   * Unit の説明文
+   */
+  readonly description: string;
+  /**
+   * JsonからUnitに変換する. 失敗した場合はエラー
+   */
+  readonly fromJson: (a: a.StructuredJsonValue) => undefined;
+} = {
   description: "内部表現は, undefined. JSON 上では null",
   fromJson: (jsonValue: a.StructuredJsonValue): undefined => undefined,
 };
@@ -63,7 +72,16 @@ export const Unit: unknown = {
 /**
  * 文字列
  */
-export const String: unknown = {
+export const String: {
+  /**
+   * String の説明文
+   */
+  readonly description: string;
+  /**
+   * JsonからStringに変換する. 失敗した場合はエラー
+   */
+  readonly fromJson: (a: a.StructuredJsonValue) => string;
+} = {
   description: "文字列",
   fromJson: (jsonValue: a.StructuredJsonValue): string => {
     if (jsonValue.type === "string") {
@@ -76,7 +94,18 @@ export const String: unknown = {
 /**
  * 集合. Set
  */
-export const Set: unknown = {
+export const Set: {
+  /**
+   * Set の説明文
+   */
+  readonly description: string;
+  /**
+   * JsonからSetに変換する. 失敗した場合はエラー
+   */
+  readonly fromJson: <p0 extends unknown>(
+    a: (a: a.StructuredJsonValue) => p0
+  ) => (a: a.StructuredJsonValue) => globalThis.ReadonlySet<p0>;
+} = {
   description: "集合. Set",
   fromJson:
     <p0 extends unknown>(
@@ -93,7 +122,18 @@ export const Set: unknown = {
 /**
  * リスト
  */
-export const List: unknown = {
+export const List: {
+  /**
+   * List の説明文
+   */
+  readonly description: string;
+  /**
+   * JsonからListに変換する. 失敗した場合はエラー
+   */
+  readonly fromJson: <p0 extends unknown>(
+    a: (a: a.StructuredJsonValue) => p0
+  ) => (a: a.StructuredJsonValue) => globalThis.ReadonlyArray<p0>;
+} = {
   description: "リスト",
   fromJson:
     <p0 extends unknown>(
@@ -110,32 +150,39 @@ export const List: unknown = {
 /**
  * functionByNameの結果
  */
-export const FunctionDetail: unknown = {
+export const FunctionDetail: {
+  /**
+   * FunctionDetail の説明文
+   */
+  readonly description: string;
+  /**
+   * JsonからFunctionDetailに変換する. 失敗した場合はエラー
+   */
+  readonly fromJson: (a: a.StructuredJsonValue) => FunctionDetail;
+} = {
   description: "functionByNameの結果",
   fromJson: (jsonValue: a.StructuredJsonValue): FunctionDetail => {
     if (jsonValue.type !== "object") {
-      throw new Error("expected object in product fromJson");
+      throw new Error("expected object in FunctionDetail.fromJson");
     }
     const name: a.StructuredJsonValue | undefined = jsonValue.value.get("name");
     if (name === undefined) {
-      throw new Error("expected in name field. in FunctionDetail.fromJson");
+      throw new Error("expected name field. in FunctionDetail.fromJson");
     }
     const description: a.StructuredJsonValue | undefined =
       jsonValue.value.get("description");
     if (description === undefined) {
-      throw new Error(
-        "expected in description field. in FunctionDetail.fromJson"
-      );
+      throw new Error("expected description field. in FunctionDetail.fromJson");
     }
     const input: a.StructuredJsonValue | undefined =
       jsonValue.value.get("input");
     if (input === undefined) {
-      throw new Error("expected in input field. in FunctionDetail.fromJson");
+      throw new Error("expected input field. in FunctionDetail.fromJson");
     }
     const output: a.StructuredJsonValue | undefined =
       jsonValue.value.get("output");
     if (output === undefined) {
-      throw new Error("expected in output field. in FunctionDetail.fromJson");
+      throw new Error("expected output field. in FunctionDetail.fromJson");
     }
     return {
       name: List.fromJson(name),
@@ -149,26 +196,35 @@ export const FunctionDetail: unknown = {
 /**
  * definyRpc で表現できる型
  */
-export const Type: unknown = {
+export const Type: {
+  /**
+   * Type の説明文
+   */
+  readonly description: string;
+  /**
+   * JsonからTypeに変換する. 失敗した場合はエラー
+   */
+  readonly fromJson: (a: a.StructuredJsonValue) => Type;
+} = {
   description: "definyRpc で表現できる型",
   fromJson: (jsonValue: a.StructuredJsonValue): Type => {
     if (jsonValue.type !== "object") {
-      throw new Error("expected object in product fromJson");
+      throw new Error("expected object in Type.fromJson");
     }
     const fullName: a.StructuredJsonValue | undefined =
       jsonValue.value.get("fullName");
     if (fullName === undefined) {
-      throw new Error("expected in fullName field. in Type.fromJson");
+      throw new Error("expected fullName field. in Type.fromJson");
     }
     const description: a.StructuredJsonValue | undefined =
       jsonValue.value.get("description");
     if (description === undefined) {
-      throw new Error("expected in description field. in Type.fromJson");
+      throw new Error("expected description field. in Type.fromJson");
     }
     const parameters: a.StructuredJsonValue | undefined =
       jsonValue.value.get("parameters");
     if (parameters === undefined) {
-      throw new Error("expected in parameters field. in Type.fromJson");
+      throw new Error("expected parameters field. in Type.fromJson");
     }
     return {
       fullName: List.fromJson(fullName),
