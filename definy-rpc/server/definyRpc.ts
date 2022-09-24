@@ -1,4 +1,4 @@
-import { clientBuildResult } from "./client.ts";
+import * as clientBuildResult from "./browserClient.json" assert { type: "json" };
 import * as base64 from "https://denopkg.com/chiefbiiko/base64@master/mod.ts";
 import { jsonParse } from "../../common/typedJson.ts";
 import { AccountToken, ApiFunction } from "./apiFunction.ts";

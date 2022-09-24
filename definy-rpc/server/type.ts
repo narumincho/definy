@@ -1,6 +1,6 @@
 import { JsonValue } from "../../common/typedJson.ts";
-import { Lazy, lazyGet } from "./lazy.ts";
-import { objectEntriesSameValue } from "./objectEntriesSameValue.ts";
+import { Lazy, lazyGet } from "../../common/lazy.ts";
+import { objectEntriesSameValue } from "../../common/objectEntriesSameValue.ts";
 import { NonEmptyArray } from "../../common/util.ts";
 
 export type DefinyRpcType<in out t> = {

@@ -94,12 +94,7 @@ const _buildToNodeJs = async (): Promise<void> => {
 
 const main = async (): Promise<void> => {
   const clientBuildResult = await buildClient();
-  Deno.writeTextFile(
-    "./client.ts",
-    `
-export const clientBuildResult = ${JSON.stringify(clientBuildResult)}
-`
-  );
+  Deno.writeTextFile("./browserClient.json", JSON.stringify(clientBuildResult));
 };
 
 await main();
