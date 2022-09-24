@@ -13,7 +13,9 @@ export const objectEntriesSameValue = <t extends Record<string, unknown>>(
 
 export type ValueOf<t> = t[keyof t];
 
-const _v: ReadonlyArray<["a", 32] | ["b", "sorena"]> = objectEntriesSameValue({
-  a: 32,
-  b: "sorena",
-} as const);
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const _v: ReadonlyArray<["a", 32] | ["b", "sampleText"]> =
+  objectEntriesSameValue({
+    a: 32,
+    b: "sampleText",
+  } as const);

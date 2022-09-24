@@ -1,4 +1,4 @@
-import { JsonValue } from "../../common/typedJson.ts";
+import { RawJsonValue } from "../../common/typedJson.ts";
 import { Lazy, lazyGet } from "../../common/lazy.ts";
 import { objectEntriesSameValue } from "../../common/objectEntriesSameValue.ts";
 import { NonEmptyArray } from "../../common/util.ts";
@@ -10,8 +10,8 @@ export type DefinyRpcType<in out t> = {
   // deno-lint-ignore no-explicit-any
   readonly parameters: ReadonlyArray<DefinyRpcType<any>>;
   readonly body: TypeBody;
-  readonly toJson: (x: unknown) => JsonValue;
-  readonly fromJson: (x: JsonValue) => t;
+  readonly toJson: (x: unknown) => RawJsonValue;
+  readonly fromJson: (x: RawJsonValue) => t;
 };
 
 export type TypeBody =
@@ -206,8 +206,8 @@ export const sum = <
       !(value instanceof Array)
     ) {
       const valueObj: {
-        readonly type?: JsonValue;
-        readonly value?: JsonValue;
+        readonly type?: RawJsonValue;
+        readonly value?: RawJsonValue;
       } = value;
       if ("type" in valueObj) {
         if (typeof valueObj.type !== "string") {

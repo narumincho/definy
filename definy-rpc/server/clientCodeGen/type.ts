@@ -1,5 +1,13 @@
 import { identifierFromString } from "../jsTs/identifier.ts";
-import { TsType, TypeAlias, Variable } from "../jsTs/data.ts";
+import {
+  LambdaExpr,
+  Parameter,
+  Statement,
+  TsExpr,
+  TsType,
+  TypeAlias,
+  Variable,
+} from "../jsTs/data.ts";
 import * as tsInterface from "../jsTs/interface.ts";
 import {
   CollectedDefinyRpcType,
@@ -7,7 +15,7 @@ import {
   CollectedDefinyRpcTypeMap,
   CollectedDefinyRpcTypeUse,
 } from "../collectType.ts";
-import { arrayFromLength, firstLowerCase } from "../../../common/util.ts";
+import { arrayFromLength } from "../../../common/util.ts";
 
 export const collectedTypeToTypeAlias = (
   type: CollectedDefinyRpcType,
@@ -222,6 +230,19 @@ const collectedDefinyRpcTypeToTsType = (
   };
 };
 
+const runtimeModuleName = "./runtime";
+
+const structuredJsonValueType: TsType = {
+  _: "ImportedType",
+  importedType: {
+    moduleName: runtimeModuleName,
+    nameAndArguments: {
+      name: identifierFromString("StructuredJsonValue"),
+      arguments: [],
+    },
+  },
+};
+
 export const typeToTypeVariable = (
   type: CollectedDefinyRpcType,
   map: CollectedDefinyRpcTypeMap
@@ -246,23 +267,196 @@ export const typeToTypeVariable = (
             key: "fromJson",
             value: {
               _: "Lambda",
-              lambdaExpr: {
-                parameterList: [
-                  {
-                    name: identifierFromString(firstLowerCase(type.name)),
-                    type: collectedDefinyRpcTypeToTsType(type, map),
-                  },
-                ],
-                returnType: collectedDefinyRpcTypeToTsType(type, map),
-                typeParameterList: arrayFromLength(type.parameterCount, (i) =>
-                  identifierFromString("p" + i)
-                ),
-                statementList: [],
-              },
+              lambdaExpr: typeToFromJsonLambda(type, map),
             },
           },
         },
       ],
     },
   };
+};
+
+const typeToFromJsonLambda = (
+  type: CollectedDefinyRpcType,
+  map: CollectedDefinyRpcTypeMap
+): LambdaExpr => {
+  const main: LambdaExpr = {
+    parameterList: [
+      {
+        name: identifierFromString("jsonValue"),
+        type: structuredJsonValueType,
+      },
+    ],
+    returnType: collectedDefinyRpcTypeToTsType(type, map),
+    typeParameterList: [],
+    statementList: typeToFromJsonStatementList(type, map),
+  };
+  if (type.parameterCount !== 0) {
+    return {
+      parameterList: arrayFromLength(
+        type.parameterCount,
+        (i): Parameter => ({
+          name: identifierFromString("p" + i + "FromJson"),
+          type: {
+            _: "Function",
+            functionType: {
+              parameterList: [structuredJsonValueType],
+              typeParameterList: [],
+              return: {
+                _: "ScopeInFile",
+                typeNameAndTypeParameter: {
+                  name: identifierFromString("p" + i),
+                  arguments: [],
+                },
+              },
+            },
+          },
+        })
+      ),
+      returnType: {
+        _: "Function",
+        functionType: {
+          typeParameterList: [],
+          parameterList: [structuredJsonValueType],
+          return: collectedDefinyRpcTypeToTsType(type, map),
+        },
+      },
+      statementList: [
+        { _: "Return", tsExpr: { _: "Lambda", lambdaExpr: main } },
+      ],
+      typeParameterList: arrayFromLength(type.parameterCount, (i) =>
+        identifierFromString("p" + i)
+      ),
+    };
+  }
+  return main;
+};
+
+const typeToFromJsonStatementList = (
+  type: CollectedDefinyRpcType,
+  map: CollectedDefinyRpcTypeMap
+): ReadonlyArray<Statement> => {
+  const jsonValueVariable: TsExpr = {
+    _: "Variable",
+    tsIdentifier: identifierFromString("jsonValue"),
+  };
+  switch (type.body.type) {
+    case "unit":
+      return [{ _: "Return", tsExpr: { _: "UndefinedLiteral" } }];
+    case "number":
+      return [
+        {
+          _: "If",
+          ifStatement: {
+            condition: tsInterface.equal(
+              tsInterface.get(jsonValueVariable, "type"),
+              { _: "StringLiteral", string: "number" }
+            ),
+            thenStatementList: [
+              {
+                _: "Return",
+                tsExpr: tsInterface.get(jsonValueVariable, "value"),
+              },
+            ],
+          },
+        },
+        {
+          _: "ThrowError",
+          tsExpr: {
+            _: "StringLiteral",
+            string: "expected number in Number json parse",
+          },
+        },
+      ];
+    case "string":
+      return [
+        {
+          _: "If",
+          ifStatement: {
+            condition: tsInterface.equal(
+              tsInterface.get(jsonValueVariable, "type"),
+              { _: "StringLiteral", string: "string" }
+            ),
+            thenStatementList: [
+              {
+                _: "Return",
+                tsExpr: tsInterface.get(jsonValueVariable, "value"),
+              },
+            ],
+          },
+        },
+        {
+          _: "ThrowError",
+          tsExpr: {
+            _: "StringLiteral",
+            string: "expected string in String json parse",
+          },
+        },
+      ];
+    case "list":
+      return [
+        {
+          _: "If",
+          ifStatement: {
+            condition: tsInterface.equal(
+              tsInterface.get(jsonValueVariable, "type"),
+              { _: "StringLiteral", string: "array" }
+            ),
+            thenStatementList: [
+              {
+                _: "Return",
+                tsExpr: tsInterface.arrayMap(
+                  tsInterface.get(jsonValueVariable, "value"),
+                  {
+                    _: "Variable",
+                    tsIdentifier: identifierFromString("p0FromJson"),
+                  }
+                ),
+              },
+            ],
+          },
+        },
+        {
+          _: "ThrowError",
+          tsExpr: {
+            _: "StringLiteral",
+            string: "expected array in List json parse",
+          },
+        },
+      ];
+    case "set":
+      return [
+        {
+          _: "If",
+          ifStatement: {
+            condition: tsInterface.equal(
+              tsInterface.get(jsonValueVariable, "type"),
+              { _: "StringLiteral", string: "array" }
+            ),
+            thenStatementList: [
+              {
+                _: "Return",
+                tsExpr: tsInterface.newSet(
+                  tsInterface.arrayMap(
+                    tsInterface.get(jsonValueVariable, "value"),
+                    {
+                      _: "Variable",
+                      tsIdentifier: identifierFromString("p0FromJson"),
+                    }
+                  )
+                ),
+              },
+            ],
+          },
+        },
+        {
+          _: "ThrowError",
+          tsExpr: {
+            _: "StringLiteral",
+            string: "expected array in Set json parse",
+          },
+        },
+      ];
+  }
+  return [];
 };
