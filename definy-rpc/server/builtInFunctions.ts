@@ -1,5 +1,5 @@
 import { ApiFunction, createApiFunction } from "./apiFunction.ts";
-import { apiFunctionListToCode } from "./clientCodeGen/main.ts";
+import { apiFunctionListToCode, runtimeCode } from "./clientCodeGen/main.ts";
 import type { DefinyRpcParameter } from "./definyRpc.ts";
 import { set, string, unit, list, DefinyRpcType, product } from "./type.ts";
 import { ensureFile } from "https://deno.land/std@0.157.0/fs/mod.ts";
@@ -167,13 +167,15 @@ const builtInFunctions = (parameter: DefinyRpcParameter) => {
                 (f) => f.fullName[0] === definyRpcNamespace
               );
 
-              const path =
-                parameter.codeGenOutputFolderPath + "/" + "definyRpc.ts";
-              await ensureFile(path);
-              await Deno.writeTextFile(
-                path,
-                await apiFunctionListToCode(allFunc, parameter.originHint, true)
+              await ensureAndWriteCode(
+                parameter.codeGenOutputFolderPath + "/" + "definyRpc.ts",
+                apiFunctionListToCode(allFunc, parameter.originHint, true)
               );
+              await ensureAndWriteCode(
+                parameter.codeGenOutputFolderPath + "/" + "runtime.ts",
+                runtimeCode
+              );
+
               return undefined;
             },
           }),
@@ -187,4 +189,12 @@ const definyRpcTypeBodyToType = <t>(definyRpcType: DefinyRpcType<t>): Type => {
     description: definyRpcType.description,
     parameters: definyRpcType.parameters.map(definyRpcTypeBodyToType),
   };
+};
+
+const ensureAndWriteCode = async (
+  path: string,
+  content: string
+): Promise<void> => {
+  await ensureFile(path);
+  await Deno.writeTextFile(path, content);
 };

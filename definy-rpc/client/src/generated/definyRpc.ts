@@ -108,7 +108,7 @@ export const Type: unknown = {
 export const name = (parameter: {
   /**
    * api end point
-   *   @default http://localhost:2520
+   *     @default http://localhost:2520
    */
   readonly origin?: string | undefined;
 }): globalThis.Promise<Result<string, "error">> => {
@@ -137,7 +137,7 @@ export const name = (parameter: {
 export const namespaceList = (parameter: {
   /**
    * api end point
-   *   @default http://localhost:2520
+   *     @default http://localhost:2520
    */
   readonly origin?: string | undefined;
 }): globalThis.Promise<Result<globalThis.Set<undefined>, "error">> => {
@@ -171,7 +171,7 @@ export const namespaceList = (parameter: {
 export const functionListByName = (parameter: {
   /**
    * api end point
-   *   @default http://localhost:2520
+   *     @default http://localhost:2520
    */
   readonly origin?: string | undefined;
 }): globalThis.Promise<
@@ -211,7 +211,7 @@ export const functionListByName = (parameter: {
 export const functionListByNamePrivate = (parameter: {
   /**
    * api end point
-   *   @default http://localhost:2520
+   *     @default http://localhost:2520
    */
   readonly origin?: string | undefined;
   readonly accountToken: AccountToken;
@@ -252,7 +252,7 @@ export const functionListByNamePrivate = (parameter: {
 export const generateCallDefinyRpcTypeScriptCode = (parameter: {
   /**
    * api end point
-   *   @default http://localhost:2520
+   *     @default http://localhost:2520
    */
   readonly origin?: string | undefined;
 }): globalThis.Promise<Result<string, "error">> => {
@@ -281,7 +281,7 @@ export const generateCallDefinyRpcTypeScriptCode = (parameter: {
 export const generateCodeAndWriteAsFileInServer = (parameter: {
   /**
    * api end point
-   *   @default http://localhost:2520
+   *     @default http://localhost:2520
    */
   readonly origin?: string | undefined;
 }): globalThis.Promise<Result<undefined, "error">> => {

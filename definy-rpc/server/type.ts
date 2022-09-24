@@ -1,4 +1,4 @@
-import { JsonValue } from "./typedJson.ts";
+import { JsonValue } from "../../common/typedJson.ts";
 import { Lazy, lazyGet } from "./lazy.ts";
 import { objectEntriesSameValue } from "./objectEntriesSameValue.ts";
 import { NonEmptyArray } from "../../common/util.ts";
