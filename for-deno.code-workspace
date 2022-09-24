@@ -1,0 +1,15 @@
+{
+  "folders": [
+    { "path": "./definy-rpc/server" },
+    { "path": "./definy-rpc/build" },
+    { "path": "./definy-rpc/example" }
+  ],
+  "extensions": {
+    "recommendations": ["denoland.vscode-deno"],
+    "unwantedRecommendations": ["dbaeumer.vscode-eslint"]
+  },
+  "settings": {
+    "deno.enable": true,
+    "eslint.enable": false
+  }
+}

@@ -59,6 +59,7 @@ Definy is Web App for Web App.
 ```ps1
 corepack enable
 ```
+
 を事前に実行することによって, pnpm が自動的にインストールされる
 
 Google でログインするための 鍵を, 1 つ上の階層のファイルに保存し, npm script の `start` を実行するを開発用にアプリが起動する. Ctrl + C キーを押すと エミュレータを停止することができる. VSCode の ゴミ箱ボタンだと, firestore のエミュレータが終了されないので注意. タスクマネージャーの Open JDK Platform binary などのそれっぽいものを停止すれば, firestore のエミュレータを停止させることができる.
@@ -66,3 +67,37 @@ Google でログインするための 鍵を, 1 つ上の階層のファイル�
 ## 各ファイルの依存関係
 
 ![各ファイルの依存関係のグラフ図](graph.svg)
+
+# definy RPC
+
+## 開発時
+
+### VSCode ワークスペース起動
+
+Deno と Node.js 向けの拡張機能は共存できないため, 別で VSCode を起動する必要がある
+
+```
+code ./for-deno.code-workspace
+```
+
+### サンプルのサーバーを起動
+
+カレントディレクトリは リポジトリのまま
+
+```ps1
+deno run --check --watch --allow-net=0.0.0.0:2520 --allow-write=../browserClient/src/generated --allow-read ./definy-rpc/example/example.ts
+```
+
+`--allow-write` `--allow-read` とかで指定しているのは, サーバーでコード生成したときに, ファイルを保存するため. 本番では必要ない
+
+### クライアントの起動
+
+```ps1
+pnpm run definy-rpc-client
+```
+
+## クライアントも含めてビルド
+
+```ps1
+deno run -A --check ./definy-rpc/build/build.ts
+```

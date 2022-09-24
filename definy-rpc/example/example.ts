@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.157.0/http/server.ts";
-import { definyRpc } from "./mod.ts";
+import { definyRpc } from "../server/mod.ts";
 
 const portNumber = 2520;
 
@@ -41,7 +41,7 @@ const sampleDefinyRpcServer = definyRpc.createHttpServer({
     }),
   ],
   originHint: `http://localhost:${portNumber}`,
-  codeGenOutputFolderPath: "../client/src/generated",
+  codeGenOutputFolderPath: "../browserClient/src/generated",
 });
 
 serve(
