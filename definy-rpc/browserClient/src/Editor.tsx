@@ -1,17 +1,18 @@
 import * as React from "react";
+import * as definyRpc from "./generated/definyRpc";
 import { Button } from "../../../client/ui/Button";
 import { DetailView } from "./DetailView";
-import { FuncDetail } from "./FuncDetail";
 import { Select } from "./Select";
 
 export const Editor = (props: {
   readonly serverOrigin: string;
-  readonly functionList: ReadonlyArray<FuncDetail> | undefined;
+  readonly functionList: ReadonlyArray<definyRpc.FunctionDetail> | undefined;
 }): React.ReactElement => {
   const [selectedFunc, setSelectedFunc] = React.useState<string | undefined>(
     undefined
   );
   const [runResponse, setRunResponse] = React.useState<unknown>(undefined);
+  const [isRequesting, setIsRequesting] = React.useState<boolean>(false);
 
   React.useEffect(() => {
     if (selectedFunc === undefined) {
@@ -43,8 +44,10 @@ export const Editor = (props: {
         />
         <Button
           onClick={
-            selectedFuncDetail?.input.fullName.join(".") === "definyRpc.Unit"
+            selectedFuncDetail?.input.fullName.join(".") === "definyRpc.Unit" &&
+            !isRequesting
               ? () => {
+                  setIsRequesting(true);
                   const url = new URL(props.serverOrigin);
                   url.pathname = "/" + selectedFuncDetail.name.join("/");
                   fetch(url)
@@ -54,6 +57,7 @@ export const Editor = (props: {
                     .then((json: unknown) => {
                       console.log("response", json);
                       setRunResponse(json);
+                      setIsRequesting(false);
                     })
                     .catch(() => {
                       setRunResponse(undefined);
@@ -83,15 +87,18 @@ export const Editor = (props: {
           ) : (
             <></>
           )}
-          <div
-            css={{
-              whiteSpace: "pre-wrap",
-              borderStyle: "solid",
-              borderColor: "#ccc",
-              padding: 8,
-            }}
-          >
-            {JSON.stringify(runResponse, undefined)}
+          <div>
+            {isRequesting ? <div>Requesting...</div> : <></>}
+            <div
+              css={{
+                whiteSpace: "pre-wrap",
+                borderStyle: "solid",
+                borderColor: "#ccc",
+                padding: 8,
+              }}
+            >
+              {JSON.stringify(runResponse, undefined)}
+            </div>
           </div>
         </div>
       </div>

@@ -10,6 +10,8 @@ export const ServerOrigin = (props: {
     props.initServerOrigin
   );
 
+  const origin = getSafeOrigin(originText);
+
   return (
     <div css={{ padding: 16 }}>
       <div>
@@ -30,15 +32,15 @@ export const ServerOrigin = (props: {
             }}
             onChange={(value) => {
               setOriginText(value);
-              if (isSafeOrigin(value)) {
-                props.onChangeServerOrigin(value);
+              if (origin !== undefined) {
+                props.onChangeServerOrigin(origin);
               }
             }}
           />
-          {isSafeOrigin(originText) ? (
-            <div>{originText}</div>
-          ) : (
+          {origin === undefined ? (
             <div>不正なオリジンです</div>
+          ) : (
+            <div>{origin}</div>
           )}
         </label>
       </div>
@@ -55,10 +57,10 @@ export const ServerOrigin = (props: {
   );
 };
 
-const isSafeOrigin = (text: string): boolean => {
+const getSafeOrigin = (text: string): string | undefined => {
   try {
-    return new URL(text).origin === text;
+    return new URL(text).origin;
   } catch {
-    return false;
+    return undefined;
   }
 };
