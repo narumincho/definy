@@ -99,11 +99,28 @@ const HomeLinkList = (props: {
         />
       </Link>
       <Link
+        location={{ type: "editor" }}
+        language={props.language}
+        style={{ padding: 4 }}
+      >
+        <Text
+          language={props.language}
+          japanese="汎用エディタテスト"
+          english="Generic editor test"
+          esperanto="Ĝenerala redaktisto-testo"
+        />
+      </Link>
+      <Link
         location={{ type: "local-project" }}
         language={props.language}
         style={{ padding: 4 }}
       >
-        ファイルから開く
+        <Text
+          language={props.language}
+          japanese="ローカルファイルから開く"
+          english="Open from local file"
+          esperanto="Malfermu el loka dosiero"
+        />
       </Link>
       <Link
         location={{ type: "tools" }}

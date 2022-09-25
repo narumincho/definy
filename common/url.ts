@@ -60,6 +60,8 @@ const zodTypeLocationToPathList = (location: zodType.Location): string => {
       return "/about";
     case "create-account":
       return "/create-account";
+    case "editor":
+      return "/editor";
     case "local-project":
       return "/local-project";
     case "create-project":

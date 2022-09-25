@@ -1,8 +1,8 @@
 import * as React from "react";
-import { FuncDetail } from "./FuncDetail";
+import * as definyRpc from "./generated/definyRpc";
 
 export const DetailView = (props: {
-  readonly functionList: ReadonlyArray<FuncDetail>;
+  readonly functionList: ReadonlyArray<definyRpc.FunctionDetail>;
   readonly selectedFuncName: string | undefined;
 }): React.ReactElement => {
   if (props.selectedFuncName === undefined) {
