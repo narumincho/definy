@@ -68,27 +68,39 @@ Google でログインするための 鍵を, 1 つ上の階層のファイル�
 
 ![各ファイルの依存関係のグラフ図](graph.svg)
 
-# definy RPC
-
-## 開発時
-
 ### VSCode ワークスペース起動
 
 Deno と Node.js 向けの拡張機能は共存できないため, 別で VSCode を起動する必要がある
 
-```
+Deno 向けワークスペースの起動
+
+```sp1
 code ./for-deno.code-workspace
 ```
+
+# definy desktop proxy
+
+起動
+
+```ps1
+deno run --watch --check --allow-env --allow-net=:2520 --allow-read --allow-write=./client/generated ./desktop-proxy/main.ts
+```
+
+# definy RPC
+
+## 開発時
 
 ### サンプルのサーバーを起動
 
 カレントディレクトリは リポジトリと同じ場所
 
 ```ps1
-deno run --check --watch --allow-net=0.0.0.0:2520 --allow-write=./definy-rpc/browserClient/src/generated --allow-read ./definy-rpc/example/example.ts
+deno run --check --watch --allow-net=:2520 --allow-write=./definy-rpc/browserClient/src/generated --allow-read ./definy-rpc/example/example.ts
 ```
 
 `--allow-write` `--allow-read` とかで指定しているのは, サーバーでコード生成したときに, ファイルを保存するため. 本番では必要ない
+
+http://localhost:2520 にアクセスすれば, ビルドしたクライアントでの起動になる
 
 ### クライアントの起動
 

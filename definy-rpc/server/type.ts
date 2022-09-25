@@ -171,7 +171,7 @@ export const sum = <
       })
     ),
   },
-  toJson: (value) => {
+  toJson: (value): RawJsonValue => {
     if (typeof value !== "object" || value === null) {
       throw new Error("sum object need object");
     }
