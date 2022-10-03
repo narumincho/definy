@@ -20,12 +20,36 @@ const EditorPage = (): React.ReactElement => {
       titleItemList={[]}
       location={{ type: "dev" }}
     >
-      <Editor
-        onSelect={() => {
-          console.log("onSelect");
-        }}
-      />
+      <SampleEditor />
     </WithHeader>
+  );
+};
+
+const SampleEditor = (): React.ReactElement => {
+  return (
+    <Editor
+      fields={[
+        {
+          name: "textField",
+          description: "テキストフィールド!",
+          body: {
+            type: "text",
+            value: "ああああ",
+          },
+        },
+        {
+          name: "textField2",
+          description: "本当に抽象エディタは必要なのだろうか",
+          body: {
+            type: "text",
+            value: "sorena",
+          },
+        },
+      ]}
+      onSelect={() => {
+        console.log("onSelect");
+      }}
+    />
   );
 };
 
