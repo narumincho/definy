@@ -1,6 +1,6 @@
-import { clientBuildResult } from "./client.ts";
+import clientBuildResult from "./browserClient.json" assert { type: "json" };
 import * as base64 from "https://denopkg.com/chiefbiiko/base64@master/mod.ts";
-import { jsonParse } from "./typedJson.ts";
+import { jsonParse } from "../../common/typedJson.ts";
 import { AccountToken, ApiFunction } from "./apiFunction.ts";
 import { addDefinyRpcApiFunction } from "./builtInFunctions.ts";
 
@@ -8,8 +8,17 @@ export * from "./type.ts";
 export * from "./apiFunction.ts";
 
 export type DefinyRpcParameter = {
+  /**
+   * サーバー名 (ルート直下の名前空間になる)
+   */
   readonly name: string;
+  /**
+   * サーバーを構築する関数たち
+   */
   readonly all: () => ReadonlyArray<ApiFunction>;
+  /**
+   * 生成するコードの リクエスト先オリジンのデフォルト値
+   */
   readonly originHint: string;
   /**
    * 実行環境とコードを編集している環境が同じ場合に, コードを生成ボタンを押したら生成できる機能
@@ -22,6 +31,9 @@ export type DefinyRpcParameter = {
 export const createHttpServer = (parameter: DefinyRpcParameter) => {
   const all = addDefinyRpcApiFunction(parameter);
   return async (request: Request): Promise<Response> => {
+    if (request.method === "OPTIONS") {
+      return new Response();
+    }
     const url = new URL(request.url);
     const pathList = url.pathname.slice(1).split("/");
     const paramJson = url.searchParams.get("param");
@@ -45,14 +57,30 @@ export const createHttpServer = (parameter: DefinyRpcParameter) => {
     console.log("request!: ", pathList);
     for (const func of all) {
       if (stringArrayEqual(pathList, func.fullName)) {
+        if (func.needAuthentication) {
+          console.log([...request.headers.entries()]);
+          const authorizationValue = request.headers.get("authorization");
+          console.log("authorizationValue", authorizationValue);
+          if (authorizationValue === null) {
+            return new Response(JSON.stringify("invalid account token"), {
+              status: 401,
+            });
+          }
+          const apiFunctionResult = await func.resolve(
+            func.input.fromJson(paramJsonParsed),
+            authorizationValue as AccountToken
+          );
+          return new Response(
+            JSON.stringify(func.output.toJson(apiFunctionResult)),
+            {
+              headers: { "content-type": "application/json" },
+            }
+          );
+        }
         const apiFunctionResult = await func.resolve(
           func.input.fromJson(paramJsonParsed),
-          getAuthorization(
-            func.needAuthentication,
-            request.headers.get("authorization") ?? undefined
-          )
+          undefined
         );
-        // input が undefined の型以外の場合は, 入力の関数を省く
         return new Response(
           JSON.stringify(func.output.toJson(apiFunctionResult)),
           {
@@ -66,19 +94,6 @@ export const createHttpServer = (parameter: DefinyRpcParameter) => {
       headers: { "content-type": "application/json" },
     });
   };
-};
-
-const getAuthorization = (
-  needAuthentication: boolean,
-  authorizationHeaderValue: string | undefined
-): AccountToken | undefined => {
-  if (needAuthentication) {
-    if (typeof authorizationHeaderValue === "string") {
-      return authorizationHeaderValue as AccountToken;
-    }
-    throw new Error("need authentication header value");
-  }
-  return undefined;
 };
 
 const stringArrayEqual = (

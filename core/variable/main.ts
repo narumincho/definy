@@ -9,6 +9,7 @@ import * as list from "../kernelType/list";
 import * as util from "../util";
 import { typePartIdMember, typePartIdMemberType } from "./typePartId";
 import { typePartSumTagExpr, typePartSumTagType } from "./tag";
+import { firstLowerCase } from "../../common/util";
 import { jsTs } from "../../gen/main";
 
 export const typePartMapToVariable = (
@@ -112,7 +113,7 @@ const typePartToVariableExpr = (
   switch (typePart.body._) {
     case "Product": {
       const parameterIdentifer = jsTs.identifierFromString(
-        util.firstLowerCase(typePart.name)
+        firstLowerCase(typePart.name)
       );
       /** ジェネリック付きの型 */
       const type = d.TsType.WithTypeParameter({

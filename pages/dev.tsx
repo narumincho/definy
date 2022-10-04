@@ -9,6 +9,9 @@ import { useMutation } from "react-query";
 
 type DataFromDesktop =
   | {
+      readonly type: "need-token-in-url";
+    }
+  | {
       readonly type: "connection-error";
     }
   | {
@@ -16,10 +19,16 @@ type DataFromDesktop =
       readonly envs: ReadonlyMap<string, string>;
     };
 
-const getDataFromDesktop = async (url: URL): Promise<DataFromDesktop> => {
+const getDataFromDesktop = async (originWithToken: {
+  readonly origin: string;
+  readonly token: string;
+}): Promise<DataFromDesktop> => {
   try {
-    url.pathname = "/envs";
-    const result = await fetch(url);
+    const url = new URL(originWithToken.origin);
+    url.pathname = "/definy-desktop-proxy/envs";
+    const result = await fetch(url, {
+      headers: { authorization: originWithToken.token },
+    });
     const response: unknown = await result.json();
     if (typeof response === "string" || typeof response === "number") {
       return {
@@ -96,7 +105,7 @@ const DevPage = (): React.ReactElement => {
             desktopUrl.type !== "ok" || requestToDesktop.isLoading
               ? undefined
               : () => {
-                  requestToDesktop.mutate(desktopUrl.url);
+                  requestToDesktop.mutate(desktopUrl);
                 }
           }
         >
@@ -139,14 +148,17 @@ const DevPage = (): React.ReactElement => {
 
 const textToUrl = (
   text: string
-): { type: "ok"; url: URL } | { type: "notUrl" } | { type: "needToken" } => {
+):
+  | { readonly type: "ok"; readonly origin: string; readonly token: string }
+  | { readonly type: "notUrl" }
+  | { readonly type: "needToken" } => {
   try {
     const url = new URL(text);
     const token = url.searchParams.get("token");
     if (token === null || token === "") {
       return { type: "needToken" };
     }
-    return { type: "ok", url: new URL(text) };
+    return { type: "ok", origin: new URL(text).origin, token };
   } catch {
     return { type: "notUrl" };
   }

@@ -23,6 +23,8 @@
     "distribution",
     "definy-output",
     "definy-rpc/server",
+    "definy-rpc/build",
+    "definy-rpc/example",
     "desktop-proxy",
     "databaseMigration.ts"
   ],

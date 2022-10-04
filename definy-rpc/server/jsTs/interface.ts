@@ -643,3 +643,12 @@ export const objectLiteral = (
   _: "ObjectLiteral",
   tsMemberList: memberList,
 });
+
+/**
+ * ```ts
+ * array.map(parameter)
+ * ```
+ */
+export const arrayMap = (array: d.TsExpr, parameter: d.TsExpr): d.TsExpr => {
+  return callMethod(array, "map", [parameter]);
+};

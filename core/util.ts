@@ -1,4 +1,5 @@
 import * as d from "../localData";
+import { firstLowerCase } from "../common/util";
 import { jsTs } from "../gen/main";
 
 const millisecondInDay = 1000 * 60 * 60 * 24;
@@ -172,9 +173,6 @@ export const isTagTypeAllNoParameter = (
 
 export const firstUpperCase = (text: string): string =>
   text.substring(0, 1).toUpperCase() + text.substring(1);
-
-export const firstLowerCase = (text: string): string =>
-  text.substring(0, 1).toLowerCase() + text.substring(1);
 
 export const isFirstUpperCaseName = (text: string): boolean => {
   const [firstChar] = text;

@@ -2,6 +2,7 @@ import * as codec from "./kernelType/codec";
 import * as d from "../localData";
 import * as util from "./util";
 import type { TypePartIdAndMessage } from "./TypePartIdAndMessage";
+import { firstLowerCase } from "../common/util";
 import { jsTs } from "../gen/main";
 
 export const typePartMapToTypeAlias = (
@@ -242,7 +243,7 @@ const typePartBodyKernelToTsType = (
         left: d.TsType.String,
         right: d.TsType.Object([
           {
-            name: "_" + util.firstLowerCase(typePart.name),
+            name: "_" + firstLowerCase(typePart.name),
             required: true,
             type: d.TsType.Never,
             document: "",

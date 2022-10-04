@@ -1,7 +1,7 @@
 import { ApiFunction } from "./apiFunction.ts";
-import { lazyGet } from "./lazy.ts";
+import { lazyGet } from "../../common/lazy.ts";
 import { DefinyRpcType, TypeBody } from "./type.ts";
-import { NonEmptyArray } from "./util.ts";
+import { NonEmptyArray } from "../../common/util.ts";
 
 export const collectDefinyRpcTypeFromFuncList = (
   funcList: ReadonlyArray<ApiFunction>

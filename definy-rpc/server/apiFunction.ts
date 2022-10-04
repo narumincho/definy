@@ -1,5 +1,5 @@
 import { DefinyRpcType } from "./type.ts";
-import { NonEmptyArray } from "./util.ts";
+import { NonEmptyArray } from "../../common/util.ts";
 
 const privateSymbol = Symbol();
 

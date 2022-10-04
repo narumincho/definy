@@ -24,6 +24,6 @@ tsconfig.tsbuildinfo
 
 .vercel
 /databaseMigrationSecret.ts
-/definy-rpc/client/dist/
+/definy-rpc/browserClient/dist/
 /definy-rpc/server/npm/
 /desktop-proxy/server/npm/

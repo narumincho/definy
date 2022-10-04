@@ -53,6 +53,7 @@ export const Location = z.union([
   }),
   z.object({ type: z.literal("create-account") }),
   z.object({ type: z.literal("local-project") }),
+  z.object({ type: z.literal("editor") }),
   z.object({ type: z.literal("project"), id: ProjectId.nullable() }),
   z.object({ type: z.literal("create-project") }),
   z.object({ type: z.literal("setting") }),

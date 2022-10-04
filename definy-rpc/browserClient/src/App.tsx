@@ -1,49 +1,37 @@
 import * as React from "react";
-import * as env from "./env";
+import * as definyRpc from "./generated/definyRpc";
 import { Button } from "../../../client/ui/Button";
 import { Editor } from "./Editor";
-import { FuncDetail } from "./FuncDetail";
 import { ServerOrigin } from "./ServerOrigin";
 
 export const App = (): React.ReactElement => {
   const [functionList, setFunctionList] = React.useState<
-    ReadonlyArray<FuncDetail> | undefined
+    ReadonlyArray<definyRpc.FunctionDetail> | undefined
   >(undefined);
   const [serverName, setServerName] = React.useState<string | undefined>();
   const [serverOrigin, setServerOrigin] = React.useState<string>(
-    env.serverOrigin
+    new URL(location.href).origin
   );
   const [editorCount, setEditorCount] = React.useState<number>(1);
 
   React.useEffect(() => {
-    const url = new URL(serverOrigin);
-    url.pathname = "/definyRpc/functionListByName";
-    fetch(url)
-      .then((response) => {
-        return response.json();
-      })
-      .then((json: ReadonlyArray<FuncDetail>) => {
-        setFunctionList(json);
-      })
-      .catch(() => {
+    definyRpc.functionListByName({ origin: serverOrigin }).then((result) => {
+      if (result.type === "ok") {
+        setFunctionList(result.ok);
+      } else {
         setFunctionList(undefined);
-      });
+      }
+    });
   }, [serverOrigin]);
 
   React.useEffect(() => {
-    const url = new URL(serverOrigin);
-    url.pathname = "/definyRpc/name";
-    fetch(url)
-      .then((response) => {
-        return response.json();
-      })
-      .then((json: string) => {
-        console.log("name", json);
-        setServerName(json);
-      })
-      .catch(() => {
+    definyRpc.name({ origin: serverOrigin }).then((result) => {
+      if (result.type === "ok") {
+        setServerName(result.ok);
+      } else {
         setServerName(undefined);
-      });
+      }
+    });
   }, [serverOrigin]);
 
   return (
@@ -73,7 +61,7 @@ export const App = (): React.ReactElement => {
 
       <ServerOrigin
         serverName={serverName}
-        serverOrigin={serverOrigin}
+        initServerOrigin={serverOrigin}
         onChangeServerOrigin={setServerOrigin}
       />
 

@@ -3,9 +3,15 @@ import { OneLineTextEditor } from "../../../client/ui/OneLineTextEditor";
 
 export const ServerOrigin = (props: {
   readonly serverName: string | undefined;
-  readonly serverOrigin: string;
+  readonly initServerOrigin: string;
   readonly onChangeServerOrigin: (newOrigin: string) => void;
 }): React.ReactElement => {
+  const [originText, setOriginText] = React.useState<string>(
+    props.initServerOrigin
+  );
+
+  const origin = getSafeOrigin(originText);
+
   return (
     <div css={{ padding: 16 }}>
       <div>
@@ -20,14 +26,22 @@ export const ServerOrigin = (props: {
           server origin
           <OneLineTextEditor
             id="server-origin"
-            value={props.serverOrigin}
+            value={originText}
             css={{
               fontFamily: "monospace",
             }}
             onChange={(value) => {
-              props.onChangeServerOrigin(value);
+              setOriginText(value);
+              if (origin !== undefined) {
+                props.onChangeServerOrigin(origin);
+              }
             }}
           />
+          {origin === undefined ? (
+            <div>不正なオリジンです</div>
+          ) : (
+            <div>{origin}</div>
+          )}
         </label>
       </div>
       <h1
@@ -41,4 +55,12 @@ export const ServerOrigin = (props: {
       </h1>
     </div>
   );
+};
+
+const getSafeOrigin = (text: string): string | undefined => {
+  try {
+    return new URL(text).origin;
+  } catch {
+    return undefined;
+  }
 };
