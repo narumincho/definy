@@ -12,6 +12,7 @@ const handler = (request: NextApiRequest, response: NextApiResponse) => {
     const imageHashParseResult = ImageHash.safeParse(hash);
     if (imageHashParseResult.success) {
       response.setHeader("content-type", "image/png");
+      response.setHeader("cache-control", "public, max-age=604800, immutable");
       getPngFileReadable(ImageHash.parse(imageHashParseResult.data)).pipe(
         response
       );

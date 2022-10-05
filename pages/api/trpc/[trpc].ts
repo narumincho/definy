@@ -27,7 +27,7 @@ const getProjectByIdOutput = z.union([
     iconHash: zodType.ImageHash,
     imageHash: zodType.ImageHash,
   }),
-  z.null(),
+  z.undefined(),
 ]);
 
 type GetProjectByIdOutput = z.TypeOf<typeof getProjectByIdOutput>;
@@ -207,7 +207,7 @@ export const appRouter = trpc
     resolve: async ({ ctx, input }): Promise<GetProjectByIdOutput> => {
       const result = await i.getProject(ctx, input);
       if (result === undefined) {
-        return null;
+        return undefined;
       }
       return result;
     },
