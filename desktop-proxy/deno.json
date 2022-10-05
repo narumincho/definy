@@ -1,0 +1,6 @@
+{
+    "compilerOptions": {
+        "noUncheckedIndexedAccess": true,
+        "exactOptionalPropertyTypes": true
+    }
+}

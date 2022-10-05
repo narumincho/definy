@@ -95,10 +95,10 @@ deno run --watch --check --allow-env --allow-net=:2520 --allow-read --allow-writ
 カレントディレクトリは リポジトリと同じ場所
 
 ```ps1
-deno run --check --watch --allow-net=:2520 --allow-write=./definy-rpc/browserClient/src/generated --allow-read ./definy-rpc/example/example.ts
+deno run --check --watch --allow-net=:2520 --allow-write=./definy-rpc/browserClient/src/generated --allow-read ./definy-rpc/example/exampleDev.ts
 ```
 
-`--allow-write` `--allow-read` とかで指定しているのは, サーバーでコード生成したときに, ファイルを保存するため. 本番では必要ない
+`--allow-write` `--allow-read` とかで指定しているのは, サーバーでコード生成したときに, ファイルを保存するため
 
 http://localhost:2520 にアクセスすれば, ビルドしたクライアントでの起動になる
 
