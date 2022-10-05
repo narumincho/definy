@@ -20,7 +20,13 @@ import superjson from "superjson";
 import { z } from "zod";
 
 const getProjectByIdOutput = z.union([
-  z.object({ name: zodType.ProjectName }),
+  z.object({
+    name: zodType.ProjectName,
+    createdBy: zodType.AccountId,
+    createdAt: z.date(),
+    iconHash: zodType.ImageHash,
+    imageHash: zodType.ImageHash,
+  }),
   z.null(),
 ]);
 
