@@ -1,6 +1,7 @@
 import * as crypto from "node:crypto";
 import * as zodType from "../common/zodType";
 import { GOOGLE_CLOUD_STORAGE_PRIVATE_KEY } from "./environmentVariables";
+import { Readable } from "node:stream";
 import { Storage } from "@google-cloud/storage";
 
 const storageBucket = new Storage({
@@ -35,6 +36,10 @@ export const savePngFile = async (
     contentType: "image/png",
   });
   return hash;
+};
+
+export const getPngFileReadable = (hash: zodType.ImageHash): Readable => {
+  return storageBucket.file(hash).createReadStream();
 };
 
 export const createImageTokenFromUint8ArrayAndMimeType = (

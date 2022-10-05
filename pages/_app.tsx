@@ -2,11 +2,17 @@ import "../globals.css";
 import * as React from "react";
 import type { AppProps } from "next/app";
 import type { AppRouter } from "./api/trpc/[trpc]";
+import { ReactQueryDevtools } from "react-query/devtools";
 import superjson from "superjson";
 import { withTRPC } from "@trpc/next";
 
 const MyApp = ({ Component, pageProps }: AppProps) => {
-  return <Component {...pageProps} />;
+  return (
+    <div css={{ height: "100%" }}>
+      <Component {...pageProps} />
+      <ReactQueryDevtools />
+    </div>
+  );
 };
 
 /** https://trpc.io/docs/nextjs を参考にした */

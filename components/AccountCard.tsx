@@ -1,15 +1,15 @@
 import * as React from "react";
-import { ImageHash, Language, ProjectId } from "../common/zodType";
-import { Link } from "../components/Link";
+import { AccountId, Language } from "../common/zodType";
+import { Link } from "./Link";
 import { trpc } from "../hooks/trpc";
 
-export const ProjectCard = (props: {
-  readonly projectId: ProjectId;
+export const AccountCard = (props: {
+  readonly accountId: AccountId;
   readonly language: Language;
 }): React.ReactElement => {
-  const project = trpc.useQuery(["getProjectById", props.projectId]);
+  const accountQueryResult = trpc.useQuery(["getAccountById", props.accountId]);
 
-  switch (project.status) {
+  switch (accountQueryResult.status) {
     case "error":
       return <div>error...</div>;
     case "idle":
@@ -18,40 +18,40 @@ export const ProjectCard = (props: {
       return <div>..</div>;
     case "success":
       return (
-        <ProjectCardLoaded
-          data={project.data}
+        <AccountCardLoaded
+          data={accountQueryResult.data}
           language={props.language}
-          projectId={props.projectId}
+          accountId={props.accountId}
         />
       );
   }
 };
 
-const ProjectCardLoaded = (props: {
+const AccountCardLoaded = (props: {
   readonly language: Language;
-  readonly projectId: ProjectId;
+  readonly accountId: AccountId;
   readonly data:
     | {
         readonly name: string;
-        readonly imageHash: ImageHash;
+        readonly imageUrl: string;
       }
     | undefined;
 }) => {
   if (props.data === undefined) {
-    return <div>プロジェクトが見つからなかった</div>;
+    return <div>アカウントが見つからなかった</div>;
   }
   return (
     <div css={{ padding: 8 }}>
       <Link
         language={props.language}
-        location={{ type: "project", id: props.projectId }}
+        location={{ type: "account", id: props.accountId }}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src={"/api/image/" + props.data.imageHash}
+          src={props.data.imageUrl}
           css={{
-            width: 160,
-            height: 90,
+            width: 48,
+            height: 48,
             objectFit: "contain",
           }}
         />

@@ -1,5 +1,10 @@
 import * as React from "react";
-import { Language, PreAccountToken, defaultLanguage } from "../common/zodType";
+import {
+  AccountName,
+  Language,
+  PreAccountToken,
+  defaultLanguage,
+} from "../common/zodType";
 import { Button } from "../client/ui/Button";
 import { OneLineTextEditor } from "../client/ui/OneLineTextEditor";
 import type { ParsedUrlQuery } from "node:querystring";
@@ -67,6 +72,8 @@ const CreateAccount = (): React.ReactElement => {
       }
     },
   });
+
+  const accountNameParseResult = AccountName.safeParse(name);
 
   return (
     <WithHeader
@@ -151,14 +158,12 @@ const CreateAccount = (): React.ReactElement => {
 
           <Button
             onClick={
-              name === undefined ||
-              name.trim().length === 0 ||
-              createAccount.isLoading
+              !accountNameParseResult.success || createAccount.isLoading
                 ? undefined
                 : () => {
                     if (typeof name === "string" && parameter !== undefined) {
                       createAccount.mutate({
-                        name,
+                        name: accountNameParseResult.data,
                         preAccountToken: parameter.preAccountToken,
                       });
                     }

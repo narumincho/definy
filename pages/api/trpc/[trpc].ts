@@ -20,11 +20,28 @@ import superjson from "superjson";
 import { z } from "zod";
 
 const getProjectByIdOutput = z.union([
-  z.object({ name: zodType.ProjectName }),
-  z.null(),
+  z.object({
+    name: zodType.ProjectName,
+    createdBy: zodType.AccountId,
+    createdAt: z.date(),
+    iconHash: zodType.ImageHash,
+    imageHash: zodType.ImageHash,
+  }),
+  z.undefined(),
 ]);
 
 type GetProjectByIdOutput = z.TypeOf<typeof getProjectByIdOutput>;
+
+const getAccountByIdOutput = z.union([
+  z.object({
+    name: zodType.AccountName,
+    createdAt: z.date(),
+    imageUrl: z.string().url(),
+  }),
+  z.undefined(),
+]);
+
+type GetAccountByIdOutput = z.TypeOf<typeof getAccountByIdOutput>;
 
 export const appRouter = trpc
   .router<TypedFaunaClient>()
@@ -129,7 +146,7 @@ export const appRouter = trpc
   })
   .mutation("createAccount", {
     input: z.object({
-      name: z.string().min(1).max(100),
+      name: zodType.AccountName,
       preAccountToken: zodType.PreAccountToken,
     }),
     output: zodType.CreateAccountPayload,
@@ -201,9 +218,24 @@ export const appRouter = trpc
     resolve: async ({ ctx, input }): Promise<GetProjectByIdOutput> => {
       const result = await i.getProject(ctx, input);
       if (result === undefined) {
-        return null;
+        return undefined;
       }
       return result;
+    },
+  })
+  .query("getAccountById", {
+    input: zodType.AccountId,
+    output: getAccountByIdOutput,
+    resolve: async ({ ctx, input }): Promise<GetAccountByIdOutput> => {
+      const result = await i.getAccount(ctx, input);
+      if (result === undefined) {
+        return undefined;
+      }
+      return {
+        name: result.name,
+        imageUrl: result.imageUrl,
+        createdAt: result.createdAt,
+      };
     },
   });
 
