@@ -1,4 +1,4 @@
-import { stringToValidProjectName } from "../core/main";
+import { stringToValidProjectName, stringToValidUserName } from "../core/main";
 import { z } from "zod";
 
 export type Location = Readonly<z.TypeOf<typeof Location>>;
@@ -22,6 +22,16 @@ export const AccountId = z.string().min(1).brand<"AccountId">();
 export type AccountId = z.TypeOf<typeof AccountId>;
 
 export const accountIdFromString = (v: string): AccountId => AccountId.parse(v);
+
+const isValidAccountName = (v: unknown): v is string =>
+  typeof v === "string" && stringToValidUserName(v) === v;
+
+export const AccountName = z
+  .string()
+  .refine(isValidAccountName)
+  .brand<"AccountName">();
+
+export type AccountName = z.TypeOf<typeof AccountName>;
 
 export const ProjectId = z.string().min(1).brand<"ProjectId">();
 
@@ -54,7 +64,8 @@ export const Location = z.union([
   z.object({ type: z.literal("create-account") }),
   z.object({ type: z.literal("local-project") }),
   z.object({ type: z.literal("editor") }),
-  z.object({ type: z.literal("project"), id: ProjectId.nullable() }),
+  z.object({ type: z.literal("project"), id: ProjectId }),
+  z.object({ type: z.literal("account"), id: AccountId }),
   z.object({ type: z.literal("create-project") }),
   z.object({ type: z.literal("setting") }),
   z.object({ type: z.literal("dev") }),

@@ -1,6 +1,7 @@
 import * as f from "./typedFauna";
 import {
   AccountId,
+  AccountName,
   ImageHash,
   Language,
   Location,
@@ -87,7 +88,7 @@ const accountCollection = f.Collection<AccountDocument>(
 );
 
 type AccountDocument = {
-  readonly name: string;
+  readonly name: AccountName;
   readonly imageUrl: string;
   readonly idIssueByGoogle: string;
   readonly accountTokenHash: Uint8Array;
@@ -352,6 +353,39 @@ export const getAccountByAccountToken = async (
     id: accountIdFromString(f.faunaIdToBigint(result.ref.id).toString()),
     name: result.data.name,
     imageUrl: result.data.imageUrl,
+  };
+};
+
+export const getAccount = async (
+  client: f.TypedFaunaClient,
+  accountId: AccountId
+): Promise<
+  | {
+      readonly name: AccountName;
+      readonly imageUrl: string;
+      readonly createdAt: Date;
+    }
+  | undefined
+> => {
+  const result = await f.executeQuery(
+    client,
+    f.If<AccountDocument | false>(
+      f.Exists(f.Ref(accountCollection, f.literal(accountId))),
+      f.Select(
+        f.literal("data"),
+        f.Get(f.Ref(accountCollection, f.literal(accountId)))
+      ),
+      f.literal<false>(false)
+    )
+  );
+  if (result === false) {
+    return undefined;
+  }
+
+  return {
+    name: result.name,
+    imageUrl: result.imageUrl,
+    createdAt: f.timestampToDate(result.createdAt),
   };
 };
 

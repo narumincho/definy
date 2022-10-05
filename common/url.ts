@@ -40,7 +40,8 @@ export const zodTypeLocationAndLanguageToUrl = (
     pathname: zodTypeLocationToPathList(location),
     query: {
       [languageQueryKey]: zodLanguageToQueryValue(language),
-      ...(location.type === "project" ? { id: location.id ?? "??" } : {}),
+      ...(location.type === "project" ? { id: location.id } : {}),
+      ...(location.type === "account" ? { id: location.id } : {}),
     },
   };
 };
@@ -72,6 +73,8 @@ const zodTypeLocationToPathList = (location: zodType.Location): string => {
       return "/dev";
     case "project":
       return "/project/[id]";
+    case "account":
+      return "/account/[id]";
   }
 };
 

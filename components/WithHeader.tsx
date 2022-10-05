@@ -12,6 +12,7 @@ import { zodLanguageToQueryValue } from "../common/url";
 
 export const WithHeader = (props: {
   readonly titleItemList: ReadonlyArray<TitleItem>;
+  /** ログインした先のページ場所 */
   readonly location: zodType.Location | undefined;
   readonly language: zodType.Language;
   readonly children: React.ReactNode;

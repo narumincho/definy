@@ -1,17 +1,16 @@
 import * as React from "react";
-import { Language, ProjectId } from "../../common/zodType";
-import { AccountCard } from "../../components/AccountCard";
+import { AccountId } from "../../common/zodType";
 import { WithHeader } from "../../components/WithHeader";
 import { trpc } from "../../hooks/trpc";
 import { useAccountToken } from "../../hooks/useAccountToken";
 import { useLanguage } from "../../hooks/useLanguage";
 import { useRouter } from "next/router";
 
-const ProjectPage = (): React.ReactElement => {
+const AccountPage = (): React.ReactElement => {
   const { query } = useRouter();
   const language = useLanguage();
   const useAccountTokenResult = useAccountToken();
-  const projectIdParseResult = ProjectId.safeParse(query.id);
+  const accountIdParseResult = AccountId.safeParse(query.id);
 
   return (
     <WithHeader
@@ -22,10 +21,10 @@ const ProjectPage = (): React.ReactElement => {
         esperanto: "Projekto kreita en definy",
       }}
       location={
-        projectIdParseResult.success
+        accountIdParseResult.success
           ? {
-              type: "project",
-              id: projectIdParseResult.data,
+              type: "account",
+              id: accountIdParseResult.data,
             }
           : {
               type: "home",
@@ -35,11 +34,11 @@ const ProjectPage = (): React.ReactElement => {
       useAccountTokenResult={useAccountTokenResult}
     >
       <div css={{ padding: 16 }}>
-        <div>プロジェクト {query.id}</div>
-        {projectIdParseResult.success ? (
-          <Content projectId={projectIdParseResult.data} language={language} />
+        <div>アカウント {query.id}</div>
+        {accountIdParseResult.success ? (
+          <Content accountId={accountIdParseResult.data} />
         ) : (
-          <div>プロジェクトIDが不正です</div>
+          <div>アカウントIDが不正です</div>
         )}
       </div>
     </WithHeader>
@@ -47,12 +46,11 @@ const ProjectPage = (): React.ReactElement => {
 };
 
 const Content = (props: {
-  readonly projectId: ProjectId;
-  readonly language: Language;
+  readonly accountId: AccountId;
 }): React.ReactElement => {
-  const projectQueryResult = trpc.useQuery(["getProjectById", props.projectId]);
+  const accountQueryResult = trpc.useQuery(["getAccountById", props.accountId]);
 
-  switch (projectQueryResult.status) {
+  switch (accountQueryResult.status) {
     case "error":
       return <div>エラーで取得できなかった</div>;
     case "idle":
@@ -60,23 +58,21 @@ const Content = (props: {
     case "loading":
       return <div>loading...</div>;
     case "success": {
-      if (projectQueryResult.data === undefined) {
-        return <div>プロジェクトが存在しなかった</div>;
+      if (accountQueryResult.data === undefined) {
+        return <div>アカウントが存在しなかった</div>;
       }
       return (
         <div>
-          <h1>{projectQueryResult.data.name}</h1>
-          <div>
-            プロジェクト作成者
-            <AccountCard
-              accountId={projectQueryResult.data.createdBy}
-              language={props.language}
-            />
-          </div>
+          <h1>{accountQueryResult.data.name}</h1>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={accountQueryResult.data.imageUrl}
+            css={{ width: 64, height: 64, objectFit: "contain" }}
+          />
         </div>
       );
     }
   }
 };
 
-export default ProjectPage;
+export default AccountPage;
