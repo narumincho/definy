@@ -10,10 +10,7 @@ const ProjectPage = (): React.ReactElement => {
   const { query } = useRouter();
   const language = useLanguage();
   const useAccountTokenResult = useAccountToken();
-  const projectQuery = trpc.useQuery([
-    "getProjectById",
-    (query.id ?? "??") as ProjectId,
-  ]);
+  const projectIdParseResult = ProjectId.safeParse(query.id);
 
   return (
     <WithHeader
@@ -30,15 +27,41 @@ const ProjectPage = (): React.ReactElement => {
       titleItemList={[]}
       useAccountTokenResult={useAccountTokenResult}
     >
-      <div>
-        <div>{query.id}</div>
-        <div css={{ overflowWrap: "anywhere" }}>
-          {JSON.stringify(projectQuery)}
-        </div>
-        <div></div>
+      <div css={{ padding: 16 }}>
+        <div>プロジェクト {query.id}</div>
+        {projectIdParseResult.success ? (
+          <Content projectId={projectIdParseResult.data} />
+        ) : (
+          <div>プロジェクトIDが不正です</div>
+        )}
       </div>
     </WithHeader>
   );
+};
+
+const Content = (props: {
+  readonly projectId: ProjectId;
+}): React.ReactElement => {
+  const projectQueryResult = trpc.useQuery(["getProjectById", props.projectId]);
+
+  switch (projectQueryResult.status) {
+    case "error":
+      return <div>エラーで取得できなかった</div>;
+    case "idle":
+      return <div>idle状態</div>;
+    case "loading":
+      return <div>loading...</div>;
+    case "success": {
+      if (projectQueryResult.data === undefined) {
+        return <div>プロジェクトが存在しなかった</div>;
+      }
+      return (
+        <div>
+          <h1>{projectQueryResult.data.name}</h1>
+        </div>
+      );
+    }
+  }
 };
 
 export default ProjectPage;

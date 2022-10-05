@@ -7,6 +7,8 @@ import { WithHeader } from "../components/WithHeader";
 import { trpc } from "../hooks/trpc";
 import { useAccountToken } from "../hooks/useAccountToken";
 import { useLanguage } from "../hooks/useLanguage";
+import { useRouter } from "next/router";
+import { zodTypeLocationAndLanguageToUrl } from "../common/url";
 
 const CreateProject = (): React.ReactElement => {
   const language = useLanguage();
@@ -47,9 +49,17 @@ const CreateProjectLoggedIn = (props: {
   readonly accountToken: AccountToken;
 }): React.ReactElement => {
   const [projectName, setProjectName] = React.useState<string>("");
+
+  const route = useRouter();
+
   const createProjectMutation = trpc.useMutation("createProject", {
     onSuccess: (response) => {
-      console.log("プロジェクトの作成に成功!", response);
+      route.push(
+        zodTypeLocationAndLanguageToUrl(
+          { type: "project", id: response.id },
+          props.language
+        )
+      );
     },
   });
 
