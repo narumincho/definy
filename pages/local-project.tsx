@@ -12,8 +12,8 @@ import { Editor } from "../client/ui/Editor";
 import { ListItem } from "../client/editor/list";
 import { Text } from "../components/Text";
 import { WithHeader } from "../components/WithHeader";
-import { useAccountToken } from "../hooks/useAccountToken";
-import { useLanguage } from "../hooks/useLanguage";
+import { useAccountToken } from "../client/hook/useAccountToken";
+import { useLanguage } from "../client/hook/useLanguage";
 
 export const LocalProjectPage = (): React.ReactElement => {
   const language = useLanguage();

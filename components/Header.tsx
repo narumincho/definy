@@ -1,9 +1,9 @@
 import * as React from "react";
 import * as zodType from "../common/zodType";
 import { Link } from "./Link";
-import { UseAccountTokenResult } from "../hooks/useAccountToken";
+import { UseAccountTokenResult } from "../client/hook/useAccountToken";
 import type { UseDefinyAppResult } from "../client/hook/useDefinyApp";
-import { trpc } from "../hooks/trpc";
+import { trpc } from "../client/hook/trpc";
 import { useRouter } from "next/router";
 
 export type TitleItem = {

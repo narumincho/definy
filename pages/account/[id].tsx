@@ -1,9 +1,9 @@
 import * as React from "react";
 import { AccountId } from "../../common/zodType";
 import { WithHeader } from "../../components/WithHeader";
-import { trpc } from "../../hooks/trpc";
-import { useAccountToken } from "../../hooks/useAccountToken";
-import { useLanguage } from "../../hooks/useLanguage";
+import { trpc } from "../../client/hook/trpc";
+import { useAccountToken } from "../../client/hook/useAccountToken";
+import { useLanguage } from "../../client/hook/useLanguage";
 import { useRouter } from "next/router";
 
 const AccountPage = (): React.ReactElement => {

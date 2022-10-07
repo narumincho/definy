@@ -3,8 +3,8 @@ import { Button } from "../client/ui/Button";
 import { OneLineTextEditor } from "../client/ui/OneLineTextEditor";
 import { Text } from "../components/Text";
 import { WithHeader } from "../components/WithHeader";
-import { useAccountToken } from "../hooks/useAccountToken";
-import { useLanguage } from "../hooks/useLanguage";
+import { useAccountToken } from "../client/hook/useAccountToken";
+import { useLanguage } from "../client/hook/useLanguage";
 import { useMutation } from "react-query";
 
 type DataFromDesktop =

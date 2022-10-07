@@ -4,9 +4,9 @@ import { Header, TitleItem } from "./Header";
 import Head from "next/head";
 import { LoadingBoxCenter } from "./LoadingBox";
 import type { TextProps } from "./Text";
-import { UseAccountTokenResult } from "../hooks/useAccountToken";
+import { UseAccountTokenResult } from "../client/hook/useAccountToken";
 import iconPng from "../assets/icon.png";
-import { trpc } from "../hooks/trpc";
+import { trpc } from "../client/hook/trpc";
 import { useRouter } from "next/router";
 import { zodLanguageToQueryValue } from "../common/url";
 

@@ -1,6 +1,6 @@
-import * as indexedDb from "../client/indexedDB";
+import * as indexedDb from "../indexedDB";
 import { useCallback, useEffect, useState } from "react";
-import { AccountToken } from "../common/zodType";
+import { AccountToken } from "../../common/zodType";
 
 export type UseAccountTokenResult = {
   readonly setAccountToken: (accountToken: AccountToken) => Promise<void>;

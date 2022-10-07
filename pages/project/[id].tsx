@@ -2,9 +2,9 @@ import * as React from "react";
 import { Language, ProjectId } from "../../common/zodType";
 import { AccountCard } from "../../components/AccountCard";
 import { WithHeader } from "../../components/WithHeader";
-import { trpc } from "../../hooks/trpc";
-import { useAccountToken } from "../../hooks/useAccountToken";
-import { useLanguage } from "../../hooks/useLanguage";
+import { trpc } from "../../client/hook/trpc";
+import { useAccountToken } from "../../client/hook/useAccountToken";
+import { useLanguage } from "../../client/hook/useLanguage";
 import { useRouter } from "next/router";
 
 const ProjectPage = (): React.ReactElement => {

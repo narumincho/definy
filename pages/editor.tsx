@@ -1,8 +1,8 @@
 import * as React from "react";
 import { Editor } from "../components/Editor";
 import { WithHeader } from "../components/WithHeader";
-import { useAccountToken } from "../hooks/useAccountToken";
-import { useLanguage } from "../hooks/useLanguage";
+import { useAccountToken } from "../client/hook/useAccountToken";
+import { useLanguage } from "../client/hook/useLanguage";
 
 const EditorPage = (): React.ReactElement => {
   const language = useLanguage();
@@ -26,6 +26,8 @@ const EditorPage = (): React.ReactElement => {
 };
 
 const SampleEditor = (): React.ReactElement => {
+  const [textFieldValue, setTextFieldValue] = React.useState("ああああ");
+
   return (
     <Editor
       fields={[
@@ -34,7 +36,7 @@ const SampleEditor = (): React.ReactElement => {
           description: "テキストフィールド!",
           body: {
             type: "text",
-            value: "ああああ",
+            value: textFieldValue,
           },
         },
         {
@@ -46,8 +48,10 @@ const SampleEditor = (): React.ReactElement => {
           },
         },
       ]}
-      onSelect={() => {
-        console.log("onSelect");
+      onChange={(fieldName, newValue) => {
+        if (fieldName === "textField") {
+          setTextFieldValue(newValue);
+        }
       }}
     />
   );

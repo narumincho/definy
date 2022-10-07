@@ -2,8 +2,8 @@ import * as React from "react";
 import { Link } from "../components/Link";
 import { Text } from "../components/Text";
 import { WithHeader } from "../components/WithHeader";
-import { useAccountToken } from "../hooks/useAccountToken";
-import { useLanguage } from "../hooks/useLanguage";
+import { useAccountToken } from "../client/hook/useAccountToken";
+import { useLanguage } from "../client/hook/useLanguage";
 
 export const ToolListPage = (): React.ReactElement => {
   const language = useLanguage();
