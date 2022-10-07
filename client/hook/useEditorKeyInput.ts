@@ -12,6 +12,7 @@ export const useEditorKeyInput = ({
   readonly onEnter: () => void;
 }) => {
   useEffect(() => {
+    console.log("reset!");
     const handleKeyEvent = (e: KeyboardEvent) => {
       // 入力中はなにもしない
       if (disabled) {

@@ -20,7 +20,9 @@ const EditorPage = (): React.ReactElement => {
       titleItemList={[]}
       location={{ type: "dev" }}
     >
-      <SampleEditor />
+      <div css={{ padding: 8 }}>
+        <SampleEditor />
+      </div>
     </WithHeader>
   );
 };
@@ -33,7 +35,6 @@ const SampleEditor = (): React.ReactElement => {
       fields={[
         {
           name: "textField",
-          description: "テキストフィールド!",
           body: {
             type: "text",
             value: textFieldValue,
@@ -41,7 +42,6 @@ const SampleEditor = (): React.ReactElement => {
         },
         {
           name: "textField2",
-          description: "本当に抽象エディタは必要なのだろうか",
           body: {
             type: "text",
             value: "sorena",
@@ -49,6 +49,7 @@ const SampleEditor = (): React.ReactElement => {
         },
       ]}
       onChange={(fieldName, newValue) => {
+        console.log("変更が届いた", fieldName, newValue);
         if (fieldName === "textField") {
           setTextFieldValue(newValue);
         }
