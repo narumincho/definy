@@ -20,7 +20,7 @@ const EditorPage = (): React.ReactElement => {
       titleItemList={[]}
       location={{ type: "dev" }}
     >
-      <div css={{ padding: 8 }}>
+      <div css={{ padding: 8, height: "100%" }}>
         <SampleEditor />
       </div>
     </WithHeader>

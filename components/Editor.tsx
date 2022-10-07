@@ -1,6 +1,7 @@
 import * as React from "react";
 import { EnterIcon } from "./icon/EnterIcon";
 import { useEditorKeyInput } from "../client/hook/useEditorKeyInput";
+import { useNotification } from "../client/hook/useNotification";
 
 export type Field = {
   readonly name: string;
@@ -57,33 +58,59 @@ export const Editor = (props: {
     },
   });
 
+  const { element: notificationElement, addMessage } = useNotification();
+
   return (
-    <div>
-      {[...props.fields].map((field) => (
-        <TextField
-          name={field.name}
-          value={field.body.value}
-          selectedName={selectedName}
-          isEditing={isEditing}
-          onSelected={() => {
-            console.log("onSelected", field.name);
-            setSelectedName(field.name);
-            setIsEditing(false);
-          }}
-          onUnSelected={() => {
-            console.log("onUnSelected", field.name);
-            setSelectedName(undefined);
-          }}
-          onStartEdit={() => {
-            console.log("onStartEdit", field.name);
-            setIsEditing(true);
-          }}
-          onChange={(newText) => {
-            props.onChange(field.name, newText);
-            setIsEditing(false);
-          }}
-        />
-      ))}
+    <div css={{ display: "grid", height: "100%" }}>
+      <div css={{ gridColumn: "1 / 2", gridRow: "1 / 2" }}>
+        {[...props.fields].map((field) => (
+          <TextField
+            name={field.name}
+            value={field.body.value}
+            selectedName={selectedName}
+            isEditing={isEditing}
+            onSelected={() => {
+              console.log("onSelected", field.name);
+              setSelectedName(field.name);
+              setIsEditing(false);
+            }}
+            onUnSelected={() => {
+              console.log("onUnSelected", field.name);
+              setSelectedName(undefined);
+            }}
+            onStartEdit={() => {
+              console.log("onStartEdit", field.name);
+              setIsEditing(true);
+            }}
+            onChange={(newText) => {
+              props.onChange(field.name, newText);
+              setIsEditing(false);
+            }}
+            onCopy={(text) => {
+              addMessage({
+                text: "「" + text + "」をコピーした",
+                type: "success",
+              });
+            }}
+            onPaste={(text) => {
+              addMessage({
+                text: "「" + text + "」を貼り付けた",
+                type: "success",
+              });
+            }}
+          />
+        ))}
+      </div>
+      <div
+        css={{
+          gridColumn: "1 / 2",
+          gridRow: "1 / 2",
+          justifySelf: "end",
+          alignSelf: "end",
+        }}
+      >
+        {notificationElement}
+      </div>
     </div>
   );
 };
@@ -97,6 +124,8 @@ const TextField = (props: {
   readonly onUnSelected: () => void;
   readonly onStartEdit: () => void;
   readonly onChange: (newText: string) => void;
+  readonly onPaste: (text: string) => void;
+  readonly onCopy: (text: string) => void;
 }) => {
   return (
     <div
@@ -118,12 +147,19 @@ const TextField = (props: {
         const textInClipboard = e.clipboardData.getData("text");
         console.log("div内 paste", e, textInClipboard);
         props.onChange(textInClipboard);
+        props.onPaste(textInClipboard);
+      }}
+      onCopy={(e) => {
+        e.preventDefault();
+        e.clipboardData.setData("text", props.value);
+        console.log("div 内 でcopy. 中身:", props.value);
+        props.onCopy(props.value);
       }}
       tabIndex={-1}
     >
       <div>{props.name}</div>
       <div css={{ paddingLeft: 8 }}>
-        <div css={{ display: "flex" }}>
+        <div css={{ display: "flex", gap: 4 }}>
           {props.selectedName === props.name && props.isEditing ? (
             <></>
           ) : (
@@ -138,6 +174,7 @@ const TextField = (props: {
                 padding: "0 8px",
                 display: "flex",
                 alignItems: "center",
+                gap: 2,
               }}
             >
               <EnterIcon stroke="white" height={24} />
@@ -148,7 +185,12 @@ const TextField = (props: {
           )}
         </div>
         {props.selectedName === props.name && props.isEditing ? (
-          <StyledInput value={props.value} onSubmit={props.onChange} />
+          <StyledInput
+            value={props.value}
+            onSubmit={props.onChange}
+            onCopy={props.onCopy}
+            onPaste={props.onPaste}
+          />
         ) : (
           <></>
         )}
@@ -160,6 +202,8 @@ const TextField = (props: {
 const StyledInput = (props: {
   readonly value: string;
   readonly onSubmit: (newText: string) => void;
+  readonly onPaste: (text: string) => void;
+  readonly onCopy: (text: string) => void;
 }): React.ReactElement => {
   const [editingText, setEditingText] = React.useState<string>(props.value);
 
@@ -176,15 +220,11 @@ const StyledInput = (props: {
         css={{
           padding: 8,
           fontSize: 16,
-          border: "2px solid #444",
           backgroundColor: "#222",
+          border: "none",
           color: "#eee",
           borderRadius: 8,
           width: "100%",
-          ":focus": {
-            border: "2px solid #f0932b",
-            outline: "none",
-          },
           ":hover": {
             backgroundColor: "#333",
           },
@@ -195,6 +235,20 @@ const StyledInput = (props: {
         }}
         onChange={(e) => {
           setEditingText(e.target.value);
+        }}
+        onPaste={(e) => {
+          props.onPaste(e.clipboardData.getData("text"));
+          e.stopPropagation();
+        }}
+        onCopy={(e) => {
+          const start = e.currentTarget.selectionStart;
+          const end = e.currentTarget.selectionEnd;
+          if (start === null || end === null) {
+            return;
+          }
+          console.log(start, end);
+          props.onCopy(e.currentTarget.value.slice(start, end));
+          e.stopPropagation();
         }}
       />
     </form>

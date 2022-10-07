@@ -32,8 +32,7 @@ export const useNotification = (): {
         })}
       >
         {[...messageList]
-          .reverse()
-          .slice(0, 4)
+          .slice(messageList.length - 4, messageList.length)
           .map((message) => (
             <div
               key={message.id}
