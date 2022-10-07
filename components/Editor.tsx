@@ -1,5 +1,4 @@
 import * as React from "react";
-import { OneLineTextEditor } from "../client/ui/OneLineTextEditor";
 
 export type Field = {
   readonly name: string;
@@ -16,16 +15,42 @@ export const Editor = (props: {
   readonly fields: ReadonlyArray<Field>;
   readonly onSelect: () => void;
 }): React.ReactElement => {
-  const [hoverFieldName, setHoverFieldName] = React.useState<
-    string | undefined
-  >(undefined);
   const [selectedName, setSelectedName] = React.useState<string | undefined>();
-  const [isEditMode, setIsEditMode] = React.useState<boolean>(false);
+  const [editingText, setEditingText] = React.useState<string | undefined>(
+    undefined
+  );
+
+  const ref = React.useRef<HTMLInputElement>(null);
 
   React.useEffect(() => {
     const handleKeyEvent = (e: KeyboardEvent) => {
+      // 入力中はなにもしない
+      if (editingText !== undefined) {
+        return;
+      }
       if (e.code === "Enter") {
-        setIsEditMode(true);
+        if (selectedName !== undefined) {
+          e.preventDefault();
+          setEditingText(
+            props.fields.find((f) => f.name === selectedName)?.body.value ?? ""
+          );
+          ref.current?.focus();
+        }
+      }
+      if (e.code === "ArrowDown" || e.code === "KeyS") {
+        e.preventDefault();
+        if (selectedName === undefined) {
+          const nextItemName = props.fields[0]?.name;
+          if (nextItemName !== undefined) {
+            setSelectedName(nextItemName);
+          }
+          return;
+        }
+        const index = props.fields.findIndex((f) => f.name === selectedName);
+        const nextItemName = props.fields[index + 1]?.name;
+        if (nextItemName !== undefined) {
+          setSelectedName(nextItemName);
+        }
       }
       console.log(e.code);
     };
@@ -34,54 +59,96 @@ export const Editor = (props: {
     return () => {
       document.removeEventListener("keydown", handleKeyEvent);
     };
-  }, []);
+  }, [selectedName, editingText === undefined]);
 
   return (
     <div>
-      {props.fields.map((field) => (
-        <div
-          key={field.name}
-          css={{
-            borderStyle: "solid",
-            borderColor: selectedName === field.name ? "orange" : "transparent",
-            borderRadius: 8,
-          }}
-          onFocus={() => {
+      {[...props.fields].map((field) => (
+        <TextField
+          name={field.name}
+          description={field.description}
+          value={field.body.value}
+          selectedName={selectedName}
+          onSelected={() => {
             setSelectedName(field.name);
-            setIsEditMode(false);
+            console.log("ほかを入力してキャンセル");
+            setEditingText(undefined);
           }}
-          tabIndex={-1}
-        >
-          <div
-            onPointerEnter={() => {
-              setHoverFieldName(field.name);
-            }}
-            onPointerLeave={() => {
-              setHoverFieldName(undefined);
-            }}
-          >
-            {field.name}
-          </div>
-          {hoverFieldName === field.name ? (
-            <div css={{ position: "absolute", backgroundColor: "gray" }}>
-              {field.description}
-            </div>
-          ) : (
-            <></>
-          )}
-          {selectedName === field.name && isEditMode ? (
-            <form
-              onSubmit={() => {
-                setIsEditMode(false);
-              }}
-            >
-              <input type="text" value={field.body.value} onChange={() => {}} />
-            </form>
-          ) : (
-            <div css={{ whiteSpace: "pre-wrap" }}>{field.body.value}</div>
-          )}
-        </div>
+          onUnSelected={() => {
+            setSelectedName(undefined);
+          }}
+        />
       ))}
+      {editingText === undefined ? (
+        <></>
+      ) : (
+        <form
+          onSubmit={(e) => {
+            setEditingText(undefined);
+            console.log("確定!");
+            e.preventDefault();
+          }}
+        >
+          <input
+            type="text"
+            ref={ref}
+            value={editingText}
+            onChange={(e) => {
+              setEditingText(e.target.value);
+            }}
+            autoFocus
+          />
+        </form>
+      )}
+    </div>
+  );
+};
+
+const TextField = (props: {
+  readonly name: string;
+  readonly description: string;
+  readonly value: string;
+  readonly selectedName: string | undefined;
+  readonly onSelected: () => void;
+  readonly onUnSelected: () => void;
+}) => {
+  const [isHover, setIsHover] = React.useState<boolean>(false);
+
+  return (
+    <div
+      key={props.name}
+      css={{
+        borderStyle: "solid",
+        borderColor:
+          props.selectedName === props.name ? "orange" : "transparent",
+        borderRadius: 8,
+      }}
+      onFocus={() => {
+        props.onSelected();
+      }}
+      tabIndex={-1}
+    >
+      <div
+        onPointerEnter={() => {
+          setIsHover(true);
+        }}
+        onPointerLeave={() => {
+          setIsHover(false);
+        }}
+      >
+        {props.name}
+      </div>
+      {isHover ? (
+        <div
+          css={{ position: "absolute", backgroundColor: "#444", padding: 8 }}
+        >
+          {props.description}
+        </div>
+      ) : (
+        <></>
+      )}
+
+      <div css={{ whiteSpace: "pre-wrap" }}>{props.value}</div>
     </div>
   );
 };
