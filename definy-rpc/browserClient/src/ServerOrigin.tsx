@@ -1,5 +1,7 @@
 import * as React from "react";
-import { OneLineTextEditor } from "../../../client/ui/OneLineTextEditor";
+import { Editor } from "../../../components/Editor";
+
+const serverOriginFieldId = "server-origin";
 
 export const ServerOrigin = (props: {
   readonly serverName: string | undefined;
@@ -23,14 +25,19 @@ export const ServerOrigin = (props: {
             justifyContent: "start",
           }}
         >
-          server origin
-          <OneLineTextEditor
-            id="server-origin"
-            value={originText}
-            css={{
-              fontFamily: "monospace",
-            }}
-            onChange={(value) => {
+          <Editor
+            fields={[
+              {
+                id: serverOriginFieldId,
+                name: "server origin",
+                body: {
+                  type: "text",
+                  value: originText,
+                },
+                readonly: false,
+              },
+            ]}
+            onChange={(fieldId, value) => {
               setOriginText(value);
               if (origin !== undefined) {
                 props.onChangeServerOrigin(origin);
