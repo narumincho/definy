@@ -17,39 +17,29 @@ export const ServerOrigin = (props: {
   return (
     <div css={{ padding: 16 }}>
       <div>
-        <label
-          css={{
-            display: "grid",
-            gridAutoFlow: "column",
-            gap: 16,
-            justifyContent: "start",
-          }}
-        >
-          <Editor
-            fields={[
-              {
-                id: serverOriginFieldId,
-                name: "server origin",
-                body: {
-                  type: "text",
-                  value: originText,
-                },
-                readonly: false,
+        <Editor
+          fields={[
+            {
+              id: serverOriginFieldId,
+              name: "server origin",
+              body: {
+                type: "text",
+                value: originText,
               },
-            ]}
-            onChange={(fieldId, value) => {
-              setOriginText(value);
-              if (origin !== undefined) {
-                props.onChangeServerOrigin(origin);
-              }
-            }}
-          />
-          {origin === undefined ? (
-            <div>不正なオリジンです</div>
-          ) : (
-            <div>{origin}</div>
-          )}
-        </label>
+              readonly: false,
+              errorMessage:
+                origin === undefined
+                  ? "不正なオリジンです. 例: http://localhost:3000"
+                  : undefined,
+            },
+          ]}
+          onChange={(fieldId, value) => {
+            setOriginText(value);
+            if (origin !== undefined) {
+              props.onChangeServerOrigin(origin);
+            }
+          }}
+        />
       </div>
       <h1
         css={{

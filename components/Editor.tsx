@@ -7,6 +7,7 @@ export type Field = {
   readonly id: string;
   readonly name: string;
   readonly readonly: boolean;
+  readonly errorMessage: string | undefined;
   readonly body: FieldBody;
 };
 
@@ -24,7 +25,7 @@ export const Editor = (props: {
 }): React.ReactElement => {
   const [selectedFieldId, setSelectedFieldId] = React.useState<
     string | undefined
-  >();
+  >(props.fields[0]?.id);
   const [isEditing, setIsEditing] = React.useState<boolean>(false);
 
   useEditorKeyInput({
@@ -82,9 +83,10 @@ export const Editor = (props: {
             selected={selectedFieldId === field.id}
             isEditing={isEditing}
             readonly={field.readonly}
+            errorMessage={field.errorMessage}
             onSelected={() => {
               console.log("onSelected", field.name);
-              setSelectedFieldId(field.name);
+              setSelectedFieldId(field.id);
               setIsEditing(false);
             }}
             onUnSelected={() => {
@@ -134,6 +136,7 @@ const TextField = (props: {
   readonly selected: boolean;
   readonly isEditing: boolean;
   readonly readonly: boolean;
+  readonly errorMessage: string | undefined;
   readonly onSelected: () => void;
   readonly onUnSelected: () => void;
   readonly onStartEdit: () => void;
@@ -177,7 +180,15 @@ const TextField = (props: {
           {props.selected && props.isEditing ? (
             <></>
           ) : (
-            <div css={{ whiteSpace: "pre-wrap" }} onClick={props.onStartEdit}>
+            <div
+              css={{
+                whiteSpace: "pre-wrap",
+                textDecoration: props.errorMessage
+                  ? "underline wavy red"
+                  : "none",
+              }}
+              onClick={props.onStartEdit}
+            >
               {props.value}
             </div>
           )}
@@ -196,6 +207,15 @@ const TextField = (props: {
             </div>
           ) : (
             <></>
+          )}
+          {props.errorMessage === undefined ? (
+            <></>
+          ) : (
+            <div
+              css={{ background: "#d37171", color: "#000", padding: "0 4px" }}
+            >
+              {props.errorMessage}
+            </div>
           )}
         </div>
         {props.selected && props.isEditing ? (

@@ -4,6 +4,9 @@ import { WithHeader } from "../components/WithHeader";
 import { useAccountToken } from "../client/hook/useAccountToken";
 import { useLanguage } from "../client/hook/useLanguage";
 
+const textFieldAId = "textFieldA";
+const textFieldBId = "textFieldB";
+
 const EditorPage = (): React.ReactElement => {
   const language = useLanguage();
   const useAccountTokenResult = useAccountToken();
@@ -34,9 +37,20 @@ const SampleEditor = (): React.ReactElement => {
     <Editor
       fields={[
         {
-          id: "textField",
-          name: "テキストフィールド",
+          id: textFieldAId,
+          name: "テキストフィールドA",
           readonly: false,
+          errorMessage: undefined,
+          body: {
+            type: "text",
+            value: textFieldValue,
+          },
+        },
+        {
+          id: textFieldBId,
+          name: "テキストフィールドB (Aと常に同じ値)",
+          readonly: false,
+          errorMessage: undefined,
           body: {
             type: "text",
             value: textFieldValue,
@@ -46,15 +60,26 @@ const SampleEditor = (): React.ReactElement => {
           id: "textFieldReadonly",
           name: "読み取り専用テキストフィールド",
           readonly: true,
+          errorMessage: undefined,
           body: {
             type: "text",
             value: "それな",
           },
         },
+        {
+          id: "withErrorField",
+          name: "エラーメッセージがあるフィールド",
+          readonly: false,
+          errorMessage: "カスタムエラーメッセージ",
+          body: {
+            type: "text",
+            value: "条件を満たさない値",
+          },
+        },
       ]}
-      onChange={(fieldName, newValue) => {
-        console.log("変更が届いた", fieldName, newValue);
-        if (fieldName === "textField") {
+      onChange={(fieldId, newValue) => {
+        console.log("変更が届いた", fieldId, newValue);
+        if (fieldId === textFieldAId || fieldId === textFieldBId) {
           setTextFieldValue(newValue);
         }
       }}
