@@ -15,6 +15,9 @@ export type FieldBody = {
   readonly value: string;
 };
 
+/**
+ * 汎用エディタ
+ */
 export const Editor = (props: {
   readonly fields: ReadonlyArray<Field>;
   readonly onChange: (fieldId: string, newValue: string) => void;
@@ -28,7 +31,11 @@ export const Editor = (props: {
     disabled: isEditing,
     onEnter: () => {
       console.log("onEnter", selectedFieldId);
-      setIsEditing(true);
+      if (
+        !props.fields.find((field) => field.id === selectedFieldId)?.readonly
+      ) {
+        setIsEditing(true);
+      }
     },
     onUp: () => {
       console.log("onUp");
@@ -72,8 +79,9 @@ export const Editor = (props: {
             key={field.id}
             name={field.name}
             value={field.body.value}
-            selectedName={selectedFieldId}
+            selected={selectedFieldId === field.id}
             isEditing={isEditing}
+            readonly={field.readonly}
             onSelected={() => {
               console.log("onSelected", field.name);
               setSelectedFieldId(field.name);
@@ -123,8 +131,9 @@ export const Editor = (props: {
 const TextField = (props: {
   readonly name: string;
   readonly value: string;
-  readonly selectedName: string | undefined;
+  readonly selected: boolean;
   readonly isEditing: boolean;
+  readonly readonly: boolean;
   readonly onSelected: () => void;
   readonly onUnSelected: () => void;
   readonly onStartEdit: () => void;
@@ -137,8 +146,7 @@ const TextField = (props: {
       key={props.name}
       css={{
         borderStyle: "solid",
-        borderColor:
-          props.selectedName === props.name ? "orange" : "transparent",
+        borderColor: props.selected ? "orange" : "transparent",
         borderRadius: 8,
         minHeight: 64,
         ":focus": {
@@ -166,14 +174,14 @@ const TextField = (props: {
       <div>{props.name}</div>
       <div css={{ paddingLeft: 8 }}>
         <div css={{ display: "flex", gap: 4 }}>
-          {props.selectedName === props.name && props.isEditing ? (
+          {props.selected && props.isEditing ? (
             <></>
           ) : (
             <div css={{ whiteSpace: "pre-wrap" }} onClick={props.onStartEdit}>
               {props.value}
             </div>
           )}
-          {props.selectedName === props.name && !props.isEditing ? (
+          {!props.readonly && props.selected && !props.isEditing ? (
             <div
               css={{
                 background: "#444",
@@ -190,7 +198,7 @@ const TextField = (props: {
             <></>
           )}
         </div>
-        {props.selectedName === props.name && props.isEditing ? (
+        {props.selected && props.isEditing ? (
           <StyledInput
             value={props.value}
             onSubmit={props.onChange}

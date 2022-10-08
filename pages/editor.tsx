@@ -34,16 +34,16 @@ const SampleEditor = (): React.ReactElement => {
     <Editor
       fields={[
         {
+          id: "textField",
           name: "テキストフィールド",
           readonly: false,
-          id: "textField",
           body: {
             type: "text",
             value: textFieldValue,
           },
         },
         {
-          id: "textField",
+          id: "textFieldReadonly",
           name: "読み取り専用テキストフィールド",
           readonly: true,
           body: {
