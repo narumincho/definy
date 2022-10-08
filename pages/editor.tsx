@@ -91,6 +91,74 @@ const SampleEditor = (): React.ReactElement => {
             value: "サンプルタイトル",
           },
         },
+        {
+          id: "product",
+          name: "子要素テスト",
+          readonly: false,
+          errorMessage: undefined,
+          isTitle: true,
+          body: {
+            type: "product",
+            value: [
+              {
+                id: "a",
+                name: "a",
+                body: {
+                  type: "text",
+                  value: "aValue",
+                },
+                errorMessage: undefined,
+                isTitle: false,
+                readonly: false,
+              },
+              {
+                id: "b",
+                name: "子要素テスト",
+                readonly: false,
+                errorMessage: undefined,
+                isTitle: true,
+                body: {
+                  type: "product",
+                  value: [
+                    {
+                      id: "a",
+                      name: "a",
+                      body: {
+                        type: "text",
+                        value: "aValue",
+                      },
+                      errorMessage: undefined,
+                      isTitle: false,
+                      readonly: false,
+                    },
+                    {
+                      id: "b",
+                      name: "b",
+                      body: {
+                        type: "text",
+                        value: "bValue",
+                      },
+                      errorMessage: undefined,
+                      isTitle: false,
+                      readonly: false,
+                    },
+                  ],
+                },
+              },
+              {
+                id: "c",
+                name: "c",
+                body: {
+                  type: "text",
+                  value: "cValue",
+                },
+                errorMessage: undefined,
+                isTitle: false,
+                readonly: false,
+              },
+            ],
+          },
+        },
       ]}
       onChange={(fieldId, newValue) => {
         console.log("変更が届いた", fieldId, newValue);

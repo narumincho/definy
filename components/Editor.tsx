@@ -15,10 +15,15 @@ export type Field = {
   readonly isTitle: boolean;
 };
 
-export type FieldBody = {
-  readonly type: "text";
-  readonly value: string;
-};
+export type FieldBody =
+  | {
+      readonly type: "text";
+      readonly value: string;
+    }
+  | {
+      readonly type: "product";
+      readonly value: ReadonlyArray<Field>;
+    };
 
 /**
  * 汎用エディタ
@@ -77,13 +82,13 @@ export const Editor = (props: {
   const { element: notificationElement, addMessage } = useNotification();
 
   return (
-    <div css={{ display: "grid", height: "100%" }}>
+    <div css={{ display: "grid", height: "100%", overflowY: "scroll" }}>
       <div css={{ gridColumn: "1 / 2", gridRow: "1 / 2" }}>
         {[...props.fields].map((field) => (
-          <TextField
+          <Field
             key={field.id}
             name={field.name}
-            value={field.body.value}
+            value={field.body}
             selected={selectedFieldId === field.id}
             isEditing={isEditing}
             isTitle={field.isTitle}
@@ -138,6 +143,60 @@ export const Editor = (props: {
   );
 };
 
+const Field = (props: {
+  readonly name: string;
+  readonly value: FieldBody;
+  readonly selected: boolean;
+  readonly isEditing: boolean;
+  readonly errorMessage: string | undefined;
+  readonly isTitle: boolean;
+  readonly onSelected: () => void;
+  readonly onUnSelected: () => void;
+  /**
+   * 読み取り専用の場合は `undefined`
+   */
+  readonly onStartEdit: (() => void) | undefined;
+  readonly onChange: (newText: string) => void;
+  readonly onPaste: (text: string) => void;
+  readonly onCopy: (text: string) => void;
+}): React.ReactElement => {
+  switch (props.value.type) {
+    case "text":
+      return (
+        <TextField
+          name={props.name}
+          value={props.value.value}
+          selected={props.selected}
+          errorMessage={props.errorMessage}
+          isEditing={props.isEditing}
+          isTitle={props.isTitle}
+          onChange={props.onChange}
+          onCopy={props.onCopy}
+          onPaste={props.onPaste}
+          onSelected={props.onSelected}
+          onStartEdit={props.onStartEdit}
+          onUnSelected={props.onUnSelected}
+        />
+      );
+    case "product":
+      return (
+        <ProductField
+          name={props.name}
+          value={props.value.value}
+          selected={props.selected}
+          errorMessage={props.errorMessage}
+          isTitle={props.isTitle}
+          onChange={props.onChange}
+          onCopy={props.onCopy}
+          onPaste={props.onPaste}
+          onSelected={props.onSelected}
+          onStartEdit={props.onStartEdit}
+          onUnSelected={props.onUnSelected}
+        />
+      );
+  }
+};
+
 const TextField = (props: {
   readonly name: string;
   readonly value: string;
@@ -155,9 +214,17 @@ const TextField = (props: {
   readonly onPaste: (text: string) => void;
   readonly onCopy: (text: string) => void;
 }) => {
+  const ref = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    if (props.selected) {
+      ref.current?.focus();
+    }
+  }, [props.selected, ref.current]);
+
   return (
     <div
-      key={props.name}
+      ref={ref}
       css={{
         borderStyle: "solid",
         borderColor: props.selected ? "orange" : "transparent",
@@ -236,6 +303,101 @@ const TextField = (props: {
         ) : (
           <></>
         )}
+      </div>
+    </div>
+  );
+};
+
+const ProductField = (props: {
+  readonly name: string;
+  readonly value: ReadonlyArray<Field>;
+  readonly selected: boolean;
+  readonly errorMessage: string | undefined;
+  readonly isTitle: boolean;
+  readonly onSelected: () => void;
+  readonly onUnSelected: () => void;
+  /**
+   * 読み取り専用の場合は `undefined`
+   */
+  readonly onStartEdit: (() => void) | undefined;
+  readonly onChange: (newText: string) => void;
+  readonly onPaste: (text: string) => void;
+  readonly onCopy: (text: string) => void;
+}) => {
+  const ref = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    if (props.selected) {
+      ref.current?.focus();
+    }
+  }, [props.selected, ref.current]);
+
+  return (
+    <div
+      ref={ref}
+      css={{
+        borderStyle: "solid",
+        borderColor: props.selected ? "orange" : "transparent",
+        borderRadius: 8,
+        minHeight: 64,
+        ":focus": {
+          borderBlockColor: "skyblue",
+        },
+        display: "grid",
+      }}
+      onFocus={() => {
+        props.onSelected();
+      }}
+      onPaste={(e) => {
+        const textInClipboard = e.clipboardData.getData("text");
+        console.log("div内 paste", e, textInClipboard);
+        props.onChange(textInClipboard);
+        props.onPaste(textInClipboard);
+      }}
+      onCopy={(e) => {
+        e.preventDefault();
+        e.clipboardData.setData("text", JSON.stringify(props.value));
+        console.log("div 内 でcopy. 中身:", props.value);
+        props.onCopy(JSON.stringify(props.value));
+      }}
+      tabIndex={-1}
+    >
+      <div>{props.name}</div>
+      <div css={{ paddingLeft: 8 }}>
+        {props.value.map((field) => (
+          <Field
+            key={field.id}
+            name={field.name}
+            value={field.body}
+            selected={false}
+            isEditing={false}
+            isTitle={field.isTitle}
+            errorMessage={field.errorMessage}
+            onSelected={() => {
+              console.log("onSelected", field.name);
+            }}
+            onUnSelected={() => {}}
+            onStartEdit={field.readonly ? undefined : () => {}}
+            onChange={(newText) => {
+              props.onChange(newText);
+            }}
+            onCopy={() => {}}
+            onPaste={() => {}}
+          />
+        ))}
+      </div>
+      <div css={{ paddingLeft: 8 }}>
+        <div css={{ display: "flex", gap: 4 }}>
+          {props.errorMessage === undefined ? (
+            <></>
+          ) : (
+            <div
+              css={{ background: "#d37171", color: "#000", padding: "0 4px" }}
+            >
+              {props.errorMessage}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

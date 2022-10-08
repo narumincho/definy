@@ -69,6 +69,7 @@ export const WithHeader = (props: {
             gridColumn: "1 / 2",
             gridRow: "2 / 3",
             color: "white",
+            overflow: "hidden",
           }}
         >
           {requestLogInUrl.status === "idle" ? props.children : <></>}
