@@ -41,6 +41,7 @@ const SampleEditor = (): React.ReactElement => {
           name: "テキストフィールドA",
           readonly: false,
           errorMessage: undefined,
+          isTitle: false,
           body: {
             type: "text",
             value: textFieldValue,
@@ -51,6 +52,7 @@ const SampleEditor = (): React.ReactElement => {
           name: "テキストフィールドB (Aと常に同じ値)",
           readonly: false,
           errorMessage: undefined,
+          isTitle: false,
           body: {
             type: "text",
             value: textFieldValue,
@@ -61,6 +63,7 @@ const SampleEditor = (): React.ReactElement => {
           name: "読み取り専用テキストフィールド",
           readonly: true,
           errorMessage: undefined,
+          isTitle: false,
           body: {
             type: "text",
             value: "それな",
@@ -71,9 +74,21 @@ const SampleEditor = (): React.ReactElement => {
           name: "エラーメッセージがあるフィールド",
           readonly: false,
           errorMessage: "カスタムエラーメッセージ",
+          isTitle: false,
           body: {
             type: "text",
             value: "条件を満たさない値",
+          },
+        },
+        {
+          id: "titleField",
+          name: "タイトル要素. 大きく値を表示する",
+          readonly: false,
+          errorMessage: undefined,
+          isTitle: true,
+          body: {
+            type: "text",
+            value: "サンプルタイトル",
           },
         },
       ]}

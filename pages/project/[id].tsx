@@ -1,6 +1,7 @@
 import * as React from "react";
 import { Language, ProjectId } from "../../common/zodType";
 import { AccountCard } from "../../components/AccountCard";
+import { Editor } from "../../components/Editor";
 import { WithHeader } from "../../components/WithHeader";
 import { trpc } from "../../client/hook/trpc";
 import { useAccountToken } from "../../client/hook/useAccountToken";
@@ -35,7 +36,27 @@ const ProjectPage = (): React.ReactElement => {
       useAccountTokenResult={useAccountTokenResult}
     >
       <div css={{ padding: 16 }}>
-        <div>プロジェクト {query.id}</div>
+        <Editor
+          fields={[
+            {
+              id: "projectId",
+              name: "projectId",
+              errorMessage: projectIdParseResult.success
+                ? undefined
+                : "invalid project id. 例: 344646621232889937",
+              isTitle: false,
+              readonly: true,
+              body: {
+                type: "text",
+                value: projectIdParseResult.success
+                  ? projectIdParseResult.data
+                  : JSON.stringify(query.id),
+              },
+            },
+          ]}
+          onChange={() => {}}
+        />
+
         {projectIdParseResult.success ? (
           <Content projectId={projectIdParseResult.data} language={language} />
         ) : (

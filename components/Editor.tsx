@@ -9,6 +9,10 @@ export type Field = {
   readonly readonly: boolean;
   readonly errorMessage: string | undefined;
   readonly body: FieldBody;
+  /**
+   * 大きく値を表示するかどうか
+   */
+  readonly isTitle: boolean;
 };
 
 export type FieldBody = {
@@ -82,7 +86,7 @@ export const Editor = (props: {
             value={field.body.value}
             selected={selectedFieldId === field.id}
             isEditing={isEditing}
-            readonly={field.readonly}
+            isTitle={field.isTitle}
             errorMessage={field.errorMessage}
             onSelected={() => {
               console.log("onSelected", field.name);
@@ -93,10 +97,14 @@ export const Editor = (props: {
               console.log("onUnSelected", field.name);
               setSelectedFieldId(undefined);
             }}
-            onStartEdit={() => {
-              console.log("onStartEdit", field.name);
-              setIsEditing(true);
-            }}
+            onStartEdit={
+              field.readonly
+                ? undefined
+                : () => {
+                    console.log("onStartEdit", field.name);
+                    setIsEditing(true);
+                  }
+            }
             onChange={(newText) => {
               props.onChange(field.id, newText);
               setIsEditing(false);
@@ -135,11 +143,14 @@ const TextField = (props: {
   readonly value: string;
   readonly selected: boolean;
   readonly isEditing: boolean;
-  readonly readonly: boolean;
   readonly errorMessage: string | undefined;
+  readonly isTitle: boolean;
   readonly onSelected: () => void;
   readonly onUnSelected: () => void;
-  readonly onStartEdit: () => void;
+  /**
+   * 読み取り専用の場合は `undefined`
+   */
+  readonly onStartEdit: (() => void) | undefined;
   readonly onChange: (newText: string) => void;
   readonly onPaste: (text: string) => void;
   readonly onCopy: (text: string) => void;
@@ -180,19 +191,16 @@ const TextField = (props: {
           {props.selected && props.isEditing ? (
             <></>
           ) : (
-            <div
-              css={{
-                whiteSpace: "pre-wrap",
-                textDecoration: props.errorMessage
-                  ? "underline wavy red"
-                  : "none",
-              }}
-              onClick={props.onStartEdit}
-            >
-              {props.value}
-            </div>
+            <TextFieldValue
+              isError={props.errorMessage !== undefined}
+              value={props.value}
+              isTitle={props.isTitle}
+              onStartEdit={props.onStartEdit}
+            />
           )}
-          {!props.readonly && props.selected && !props.isEditing ? (
+          {props.onStartEdit !== undefined &&
+          props.selected &&
+          !props.isEditing ? (
             <div
               css={{
                 background: "#444",
@@ -229,6 +237,41 @@ const TextField = (props: {
           <></>
         )}
       </div>
+    </div>
+  );
+};
+
+const TextFieldValue = (props: {
+  readonly value: string;
+  readonly isError: boolean;
+  readonly isTitle: boolean;
+  /** 読み取り専用の場合は `undefined` */
+  readonly onStartEdit: (() => void) | undefined;
+}) => {
+  if (props.isTitle) {
+    return (
+      <h2
+        css={{
+          whiteSpace: "pre-wrap",
+          textDecoration: props.isError ? "underline wavy red" : "none",
+          margin: 0,
+          fontSize: 32,
+        }}
+        onClick={props.onStartEdit}
+      >
+        {props.value}
+      </h2>
+    );
+  }
+  return (
+    <div
+      css={{
+        whiteSpace: "pre-wrap",
+        textDecoration: props.isError ? "underline wavy red" : "none",
+      }}
+      onClick={props.onStartEdit}
+    >
+      {props.value}
     </div>
   );
 };
