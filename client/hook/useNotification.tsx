@@ -17,17 +17,20 @@ export const useNotification = (): {
   const [messageList, setMessageList] = React.useState<ReadonlyArray<Message>>(
     []
   );
+
+  const addMessage = React.useCallback<AddMessage>((newMessage) => {
+    setMessageList((oldMessageList) => [
+      ...oldMessageList,
+      { ...newMessage, id: createRandomId() },
+    ]);
+  }, []);
+
   return {
-    addMessage: React.useCallback((newMessage) => {
-      setMessageList((oldMessageList) => [
-        ...oldMessageList,
-        { ...newMessage, id: createRandomId() },
-      ]);
-    }, []),
+    addMessage,
     element: (
       <div
         className={css({
-          display: "gird",
+          display: "grid",
           gap: 8,
         })}
       >
@@ -40,9 +43,25 @@ export const useNotification = (): {
                 backgroundColor: message.type === "success" ? "skyblue" : "red",
                 padding: 8,
                 color: "#111",
+                display: "flex",
               })}
             >
-              {message.text}
+              <div
+                className={css({
+                  flexGrow: 1,
+                })}
+              >
+                {message.text}
+              </div>
+              <button
+                onClick={() => {
+                  setMessageList((old) =>
+                    old.filter((m) => m.id !== message.id)
+                  );
+                }}
+              >
+                x
+              </button>
             </div>
           ))}
       </div>

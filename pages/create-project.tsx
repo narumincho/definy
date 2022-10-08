@@ -1,8 +1,8 @@
 import * as React from "react";
 import { AccountToken, Language, ProjectName } from "../common/zodType";
+import { Text, langText } from "../components/Text";
 import { Button } from "../client/ui/Button";
-import { OneLineTextEditor } from "../client/ui/OneLineTextEditor";
-import { Text } from "../components/Text";
+import { Editor } from "../components/Editor";
 import { WithHeader } from "../components/WithHeader";
 import { trpc } from "../client/hook/trpc";
 import { useAccountToken } from "../client/hook/useAccountToken";
@@ -44,6 +44,8 @@ const CreateProject = (): React.ReactElement => {
   );
 };
 
+const projectNameFieldId = "project-name";
+
 const CreateProjectLoggedIn = (props: {
   readonly language: Language;
   readonly accountToken: AccountToken;
@@ -76,18 +78,30 @@ const CreateProjectLoggedIn = (props: {
         />
       </h1>
       <label>
-        <Text
-          language={props.language}
-          japanese="プロジェクト名"
-          english="project name"
-          esperanto="projektonomo"
-        />
-        <OneLineTextEditor
-          value={projectName}
-          onChange={(newName) => {
-            setProjectName(newName);
+        <Editor
+          fields={[
+            {
+              id: projectNameFieldId,
+              name: langText(
+                {
+                  japanese: "プロジェクト名",
+                  english: "project name",
+                  esperanto: "projektonomo",
+                },
+                props.language
+              ),
+              readonly: false,
+              body: {
+                type: "text",
+                value: projectName,
+              },
+            },
+          ]}
+          onChange={(fieldId, newValue) => {
+            if (fieldId === projectNameFieldId) {
+              setProjectName(newValue);
+            }
           }}
-          id="project-name"
         />
       </label>
       <Button

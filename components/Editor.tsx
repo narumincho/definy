@@ -4,7 +4,9 @@ import { useEditorKeyInput } from "../client/hook/useEditorKeyInput";
 import { useNotification } from "../client/hook/useNotification";
 
 export type Field = {
+  readonly id: string;
   readonly name: string;
+  readonly readonly: boolean;
   readonly body: FieldBody;
 };
 
@@ -15,45 +17,47 @@ export type FieldBody = {
 
 export const Editor = (props: {
   readonly fields: ReadonlyArray<Field>;
-  readonly onChange: (fieldName: string, newValue: string) => void;
+  readonly onChange: (fieldId: string, newValue: string) => void;
 }): React.ReactElement => {
-  const [selectedName, setSelectedName] = React.useState<string | undefined>();
+  const [selectedFieldId, setSelectedFieldId] = React.useState<
+    string | undefined
+  >();
   const [isEditing, setIsEditing] = React.useState<boolean>(false);
 
   useEditorKeyInput({
     disabled: isEditing,
     onEnter: () => {
-      console.log("onEnter", selectedName);
+      console.log("onEnter", selectedFieldId);
       setIsEditing(true);
     },
     onUp: () => {
       console.log("onUp");
-      if (selectedName === undefined) {
-        const nextItemName = props.fields[props.fields.length - 1]?.name;
-        if (nextItemName !== undefined) {
-          setSelectedName(nextItemName);
+      if (selectedFieldId === undefined) {
+        const nextFieldId = props.fields[props.fields.length - 1]?.id;
+        if (nextFieldId !== undefined) {
+          setSelectedFieldId(nextFieldId);
         }
         return;
       }
-      const index = props.fields.findIndex((f) => f.name === selectedName);
-      const nextItemName = props.fields[index - 1]?.name;
-      if (nextItemName !== undefined) {
-        setSelectedName(nextItemName);
+      const index = props.fields.findIndex((f) => f.id === selectedFieldId);
+      const nextFieldId = props.fields[index - 1]?.id;
+      if (nextFieldId !== undefined) {
+        setSelectedFieldId(nextFieldId);
       }
     },
     onDown: () => {
       console.log("onDown");
-      if (selectedName === undefined) {
-        const nextItemName = props.fields[0]?.name;
-        if (nextItemName !== undefined) {
-          setSelectedName(nextItemName);
+      if (selectedFieldId === undefined) {
+        const nextFieldId = props.fields[0]?.id;
+        if (nextFieldId !== undefined) {
+          setSelectedFieldId(nextFieldId);
         }
         return;
       }
-      const index = props.fields.findIndex((f) => f.name === selectedName);
-      const nextItemName = props.fields[index + 1]?.name;
-      if (nextItemName !== undefined) {
-        setSelectedName(nextItemName);
+      const index = props.fields.findIndex((f) => f.id === selectedFieldId);
+      const nextFieldId = props.fields[index + 1]?.id;
+      if (nextFieldId !== undefined) {
+        setSelectedFieldId(nextFieldId);
       }
     },
   });
@@ -65,25 +69,26 @@ export const Editor = (props: {
       <div css={{ gridColumn: "1 / 2", gridRow: "1 / 2" }}>
         {[...props.fields].map((field) => (
           <TextField
+            key={field.id}
             name={field.name}
             value={field.body.value}
-            selectedName={selectedName}
+            selectedName={selectedFieldId}
             isEditing={isEditing}
             onSelected={() => {
               console.log("onSelected", field.name);
-              setSelectedName(field.name);
+              setSelectedFieldId(field.name);
               setIsEditing(false);
             }}
             onUnSelected={() => {
               console.log("onUnSelected", field.name);
-              setSelectedName(undefined);
+              setSelectedFieldId(undefined);
             }}
             onStartEdit={() => {
               console.log("onStartEdit", field.name);
               setIsEditing(true);
             }}
             onChange={(newText) => {
-              props.onChange(field.name, newText);
+              props.onChange(field.id, newText);
               setIsEditing(false);
             }}
             onCopy={(text) => {
@@ -139,6 +144,7 @@ const TextField = (props: {
         ":focus": {
           borderBlockColor: "skyblue",
         },
+        display: "grid",
       }}
       onFocus={() => {
         props.onSelected();
