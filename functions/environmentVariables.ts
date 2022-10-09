@@ -20,9 +20,9 @@ export const GOOGLE_LOGIN_CLIENT_SECRET = expectString(
   process.env.GOOGLE_LOGIN_CLIENT_SECRET
 );
 
-export const GOOGLE_CLOUD_STORAGE_PRIVATE_KEY = expectString(
-  "GOOGLE_CLOUD_STORAGE_PRIVATE_KEY",
-  process.env.GOOGLE_CLOUD_STORAGE_PRIVATE_KEY
+export const CLOUDFLARE_R2_SECRET_KEY = expectString(
+  "CLOUDFLARE_R2_SECRET_KEY",
+  process.env.CLOUDFLARE_R2_SECRET_KEY
 );
 
 export const isProduction: boolean = process.env.NODE_ENV === "production";

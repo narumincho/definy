@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { ImageHash } from "../../../common/zodType";
-import { getPngFileReadable } from "../../../functions/cloudstorage-interface";
+import { getPngFileReadable } from "../../../functions/object-storage-interface";
 
 /**
  * Cloud Storage に保存された PNG 画像を取得する
@@ -13,8 +13,8 @@ const handler = (request: NextApiRequest, response: NextApiResponse) => {
     if (imageHashParseResult.success) {
       response.setHeader("content-type", "image/png");
       response.setHeader("cache-control", "public, max-age=604800, immutable");
-      getPngFileReadable(ImageHash.parse(imageHashParseResult.data)).pipe(
-        response
+      getPngFileReadable(ImageHash.parse(imageHashParseResult.data)).then(
+        (readableStream) => readableStream.pipe(response)
       );
       return;
     }

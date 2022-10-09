@@ -1,4 +1,4 @@
-import { build, emptyDir } from "https://deno.land/x/dnt@0.30.0/mod.ts";
+import { build, emptyDir } from "https://deno.land/x/dnt@0.31.0/mod.ts";
 import * as base64 from "https://denopkg.com/chiefbiiko/base64@master/mod.ts";
 import { shell } from "./shell.ts";
 

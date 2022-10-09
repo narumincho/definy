@@ -15,7 +15,7 @@ import {
 } from "../../../functions/login";
 import type { TypedFaunaClient } from "../../../functions/typedFauna";
 import { createProjectIconAndImage } from "../../../functions/image";
-import { savePngFile } from "../../../functions/cloudstorage-interface";
+import { savePngFile } from "../../../functions/object-storage-interface";
 import superjson from "superjson";
 import { z } from "zod";
 
