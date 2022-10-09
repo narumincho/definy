@@ -16,6 +16,8 @@ jobs:
       - run: corepack enable
       - name: Install npm dependencies (pnpm install)
         run: pnpm install
+      - name: Deno to Node.js
+        run: deno run -A ./typed-fauna/build.ts
       - name: Type check
         run: pnpm run typeCheck
       - name: Test

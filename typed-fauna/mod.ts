@@ -1,4 +1,4 @@
-import * as f from "faunadb";
+import * as f from "https://cdn.skypack.dev/faunadb@4.7.0?dts";
 
 export type TypedFaunaClient = f.Client & { _typedFaunaClient: never };
 
@@ -49,15 +49,15 @@ const typedExprFrom = <T>(expr: f.Expr): TypedExpr<T> => {
 };
 
 export const literal = <T>(expr: T): TypedExpr<T> => {
-  return expr as TypedExpr<T>;
+  return expr as unknown as TypedExpr<T>;
 };
 
-export const object = <T extends object>(expr: {
+export const object = <T extends Record<string, unknown>>(expr: {
   readonly [key in keyof T]: TypedExpr<T[key]>;
 }): TypedExpr<{
   readonly [key in keyof T]: T[key];
 }> => {
-  return expr as TypedExpr<{
+  return expr as unknown as TypedExpr<{
     readonly [key in keyof T]: T[key];
   }>;
 };

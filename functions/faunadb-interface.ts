@@ -1,4 +1,4 @@
-import * as f from "./typedFauna";
+import * as f from "../typed-fauna/npm";
 import {
   AccountId,
   AccountName,
