@@ -21,7 +21,8 @@ jobs:
       - name: Install npm dependencies (pnpm install)
         run: pnpm install
       - name: Deno to Node.js
-        run: deno run --check -A ./typed-fauna/build.ts
+        run: deno run --check -A ./build.ts
+        working-directory: ./typed-fauna
       - name: Type check
         run: pnpm run typeCheck
       - name: Test
