@@ -17,7 +17,6 @@
     "update-package-json": "ncu -u",
     "start-definy": "pnpm tsc --project ./tsconfig-purs-ffi.json && pnpm exec spago run --main Definy.Start && firebase emulators:start --project definy-lang --config ./distribution/definy/firebase.json",
     "package-vscode-extension": "cd ./distribution/definy-extension && pnpm exec vsce package",
-    "build": "deno run -A ./typed-fauna/build.ts && pnpm exec next build",
     "dev-local": "pnpm exec vercel dev",
     "database-migration": "node -r @swc-node/register ./databaseMigration.ts",
     "definy-rpc-client": "cd ./definy-rpc/browserClient && vite",
