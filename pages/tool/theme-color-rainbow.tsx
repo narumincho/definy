@@ -2,7 +2,7 @@ import * as React from "react";
 import Head from "next/head";
 import { Language } from "../../common/zodType";
 import { css } from "@emotion/css";
-import { useLanguage } from "../../hooks/useLanguage";
+import { useLanguage } from "../../client/hook/useLanguage";
 
 const themeColorName = "theme-color";
 

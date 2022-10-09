@@ -1,7 +1,7 @@
 import * as React from "react";
 import { AccountId, Language } from "../common/zodType";
 import { Link } from "./Link";
-import { trpc } from "../hooks/trpc";
+import { trpc } from "../client/hook/trpc";
 
 export const AccountCard = (props: {
   readonly accountId: AccountId;

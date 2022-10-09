@@ -1,87 +1,495 @@
 import * as React from "react";
-import { OneLineTextEditor } from "../client/ui/OneLineTextEditor";
+import { EnterIcon } from "./icon/EnterIcon";
+import { useEditorKeyInput } from "../client/hook/useEditorKeyInput";
+import { useNotification } from "../client/hook/useNotification";
 
 export type Field = {
+  readonly id: string;
   readonly name: string;
-  readonly description: string;
+  readonly readonly: boolean;
+  readonly errorMessage: string | undefined;
   readonly body: FieldBody;
+  /**
+   * 大きく値を表示するかどうか
+   */
+  readonly isTitle: boolean;
 };
 
-export type FieldBody = {
-  readonly type: "text";
-  readonly value: string;
-};
+export type FieldBody =
+  | {
+      readonly type: "text";
+      readonly value: string;
+    }
+  | {
+      readonly type: "product";
+      readonly value: ReadonlyArray<Field>;
+    };
 
+/**
+ * 汎用エディタ
+ */
 export const Editor = (props: {
   readonly fields: ReadonlyArray<Field>;
-  readonly onSelect: () => void;
+  readonly onChange: (fieldId: string, newValue: string) => void;
 }): React.ReactElement => {
-  const [hoverFieldName, setHoverFieldName] = React.useState<
+  const [selectedFieldId, setSelectedFieldId] = React.useState<
     string | undefined
-  >(undefined);
-  const [selectedName, setSelectedName] = React.useState<string | undefined>();
-  const [isEditMode, setIsEditMode] = React.useState<boolean>(false);
+  >(props.fields[0]?.id);
+  const [isEditing, setIsEditing] = React.useState<boolean>(false);
 
-  React.useEffect(() => {
-    const handleKeyEvent = (e: KeyboardEvent) => {
-      if (e.code === "Enter") {
-        setIsEditMode(true);
+  useEditorKeyInput({
+    disabled: isEditing,
+    onEnter: () => {
+      console.log("onEnter", selectedFieldId);
+      if (
+        !props.fields.find((field) => field.id === selectedFieldId)?.readonly
+      ) {
+        setIsEditing(true);
       }
-      console.log(e.code);
-    };
-    document.addEventListener("keydown", handleKeyEvent);
+    },
+    onUp: () => {
+      console.log("onUp");
+      if (selectedFieldId === undefined) {
+        const nextFieldId = props.fields[props.fields.length - 1]?.id;
+        if (nextFieldId !== undefined) {
+          setSelectedFieldId(nextFieldId);
+        }
+        return;
+      }
+      const index = props.fields.findIndex((f) => f.id === selectedFieldId);
+      const nextFieldId = props.fields[index - 1]?.id;
+      if (nextFieldId !== undefined) {
+        setSelectedFieldId(nextFieldId);
+      }
+    },
+    onDown: () => {
+      console.log("onDown");
+      if (selectedFieldId === undefined) {
+        const nextFieldId = props.fields[0]?.id;
+        if (nextFieldId !== undefined) {
+          setSelectedFieldId(nextFieldId);
+        }
+        return;
+      }
+      const index = props.fields.findIndex((f) => f.id === selectedFieldId);
+      const nextFieldId = props.fields[index + 1]?.id;
+      if (nextFieldId !== undefined) {
+        setSelectedFieldId(nextFieldId);
+      }
+    },
+  });
 
-    return () => {
-      document.removeEventListener("keydown", handleKeyEvent);
-    };
-  }, []);
+  const { element: notificationElement, addMessage } = useNotification();
 
   return (
-    <div>
-      {props.fields.map((field) => (
-        <div
-          key={field.name}
-          css={{
-            borderStyle: "solid",
-            borderColor: selectedName === field.name ? "orange" : "transparent",
-            borderRadius: 8,
-          }}
-          onFocus={() => {
-            setSelectedName(field.name);
-            setIsEditMode(false);
-          }}
-          tabIndex={-1}
-        >
-          <div
-            onPointerEnter={() => {
-              setHoverFieldName(field.name);
+    <div css={{ display: "grid", height: "100%", overflowY: "scroll" }}>
+      <div css={{ gridColumn: "1 / 2", gridRow: "1 / 2" }}>
+        {[...props.fields].map((field) => (
+          <Field
+            key={field.id}
+            name={field.name}
+            value={field.body}
+            selected={selectedFieldId === field.id}
+            isEditing={isEditing}
+            isTitle={field.isTitle}
+            errorMessage={field.errorMessage}
+            onSelected={() => {
+              console.log("onSelected", field.name);
+              setSelectedFieldId(field.id);
+              setIsEditing(false);
             }}
-            onPointerLeave={() => {
-              setHoverFieldName(undefined);
+            onUnSelected={() => {
+              console.log("onUnSelected", field.name);
+              setSelectedFieldId(undefined);
             }}
-          >
-            {field.name}
-          </div>
-          {hoverFieldName === field.name ? (
-            <div css={{ position: "absolute", backgroundColor: "gray" }}>
-              {field.description}
+            onStartEdit={
+              field.readonly
+                ? undefined
+                : () => {
+                    console.log("onStartEdit", field.name);
+                    setIsEditing(true);
+                  }
+            }
+            onChange={(newText) => {
+              props.onChange(field.id, newText);
+              setIsEditing(false);
+            }}
+            onCopy={(text) => {
+              addMessage({
+                text: "「" + text + "」をコピーした",
+                type: "success",
+              });
+            }}
+            onPaste={(text) => {
+              addMessage({
+                text: "「" + text + "」を貼り付けた",
+                type: "success",
+              });
+            }}
+          />
+        ))}
+      </div>
+      <div
+        css={{
+          gridColumn: "1 / 2",
+          gridRow: "1 / 2",
+          justifySelf: "end",
+          alignSelf: "end",
+        }}
+      >
+        {notificationElement}
+      </div>
+    </div>
+  );
+};
+
+const Field = (props: {
+  readonly name: string;
+  readonly value: FieldBody;
+  readonly selected: boolean;
+  readonly isEditing: boolean;
+  readonly errorMessage: string | undefined;
+  readonly isTitle: boolean;
+  readonly onSelected: () => void;
+  readonly onUnSelected: () => void;
+  /**
+   * 読み取り専用の場合は `undefined`
+   */
+  readonly onStartEdit: (() => void) | undefined;
+  readonly onChange: (newText: string) => void;
+  readonly onPaste: (text: string) => void;
+  readonly onCopy: (text: string) => void;
+}): React.ReactElement => {
+  switch (props.value.type) {
+    case "text":
+      return (
+        <TextField
+          name={props.name}
+          value={props.value.value}
+          selected={props.selected}
+          errorMessage={props.errorMessage}
+          isEditing={props.isEditing}
+          isTitle={props.isTitle}
+          onChange={props.onChange}
+          onCopy={props.onCopy}
+          onPaste={props.onPaste}
+          onSelected={props.onSelected}
+          onStartEdit={props.onStartEdit}
+          onUnSelected={props.onUnSelected}
+        />
+      );
+    case "product":
+      return (
+        <ProductField
+          name={props.name}
+          value={props.value.value}
+          selected={props.selected}
+          errorMessage={props.errorMessage}
+          isTitle={props.isTitle}
+          onChange={props.onChange}
+          onCopy={props.onCopy}
+          onPaste={props.onPaste}
+          onSelected={props.onSelected}
+          onStartEdit={props.onStartEdit}
+          onUnSelected={props.onUnSelected}
+        />
+      );
+  }
+};
+
+const TextField = (props: {
+  readonly name: string;
+  readonly value: string;
+  readonly selected: boolean;
+  readonly isEditing: boolean;
+  readonly errorMessage: string | undefined;
+  readonly isTitle: boolean;
+  readonly onSelected: () => void;
+  readonly onUnSelected: () => void;
+  /**
+   * 読み取り専用の場合は `undefined`
+   */
+  readonly onStartEdit: (() => void) | undefined;
+  readonly onChange: (newText: string) => void;
+  readonly onPaste: (text: string) => void;
+  readonly onCopy: (text: string) => void;
+}) => {
+  const ref = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    if (props.selected) {
+      ref.current?.focus();
+    }
+  }, [props.selected, ref.current]);
+
+  return (
+    <div
+      ref={ref}
+      css={{
+        borderStyle: "solid",
+        borderColor: props.selected ? "orange" : "transparent",
+        borderRadius: 8,
+        minHeight: 64,
+        ":focus": {
+          borderBlockColor: "skyblue",
+        },
+        display: "grid",
+      }}
+      onFocus={() => {
+        props.onSelected();
+      }}
+      onPaste={(e) => {
+        const textInClipboard = e.clipboardData.getData("text");
+        console.log("div内 paste", e, textInClipboard);
+        props.onChange(textInClipboard);
+        props.onPaste(textInClipboard);
+      }}
+      onCopy={(e) => {
+        e.preventDefault();
+        e.clipboardData.setData("text", props.value);
+        console.log("div 内 でcopy. 中身:", props.value);
+        props.onCopy(props.value);
+      }}
+      tabIndex={-1}
+    >
+      <div>{props.name}</div>
+      <div css={{ paddingLeft: 8 }}>
+        <div css={{ display: "flex", gap: 4 }}>
+          {props.selected && props.isEditing ? (
+            <></>
+          ) : (
+            <TextFieldValue
+              isError={props.errorMessage !== undefined}
+              value={props.value}
+              isTitle={props.isTitle}
+              onStartEdit={props.onStartEdit}
+            />
+          )}
+          {props.onStartEdit !== undefined &&
+          props.selected &&
+          !props.isEditing ? (
+            <div
+              css={{
+                background: "#444",
+                padding: "0 8px",
+                display: "flex",
+                alignItems: "center",
+                gap: 2,
+              }}
+            >
+              <EnterIcon stroke="white" height={24} />
+              編集
             </div>
           ) : (
             <></>
           )}
-          {selectedName === field.name && isEditMode ? (
-            <form
-              onSubmit={() => {
-                setIsEditMode(false);
-              }}
-            >
-              <input type="text" value={field.body.value} onChange={() => {}} />
-            </form>
+          {props.errorMessage === undefined ? (
+            <></>
           ) : (
-            <div css={{ whiteSpace: "pre-wrap" }}>{field.body.value}</div>
+            <div
+              css={{ background: "#d37171", color: "#000", padding: "0 4px" }}
+            >
+              {props.errorMessage}
+            </div>
           )}
         </div>
-      ))}
+        {props.selected && props.isEditing ? (
+          <StyledInput
+            value={props.value}
+            onSubmit={props.onChange}
+            onCopy={props.onCopy}
+            onPaste={props.onPaste}
+          />
+        ) : (
+          <></>
+        )}
+      </div>
     </div>
+  );
+};
+
+const ProductField = (props: {
+  readonly name: string;
+  readonly value: ReadonlyArray<Field>;
+  readonly selected: boolean;
+  readonly errorMessage: string | undefined;
+  readonly isTitle: boolean;
+  readonly onSelected: () => void;
+  readonly onUnSelected: () => void;
+  /**
+   * 読み取り専用の場合は `undefined`
+   */
+  readonly onStartEdit: (() => void) | undefined;
+  readonly onChange: (newText: string) => void;
+  readonly onPaste: (text: string) => void;
+  readonly onCopy: (text: string) => void;
+}) => {
+  const ref = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    if (props.selected) {
+      ref.current?.focus();
+    }
+  }, [props.selected, ref.current]);
+
+  return (
+    <div
+      ref={ref}
+      css={{
+        borderStyle: "solid",
+        borderColor: props.selected ? "orange" : "transparent",
+        borderRadius: 8,
+        minHeight: 64,
+        ":focus": {
+          borderBlockColor: "skyblue",
+        },
+        display: "grid",
+      }}
+      onFocus={() => {
+        props.onSelected();
+      }}
+      onPaste={(e) => {
+        const textInClipboard = e.clipboardData.getData("text");
+        console.log("div内 paste", e, textInClipboard);
+        props.onChange(textInClipboard);
+        props.onPaste(textInClipboard);
+      }}
+      onCopy={(e) => {
+        e.preventDefault();
+        e.clipboardData.setData("text", JSON.stringify(props.value));
+        console.log("div 内 でcopy. 中身:", props.value);
+        props.onCopy(JSON.stringify(props.value));
+      }}
+      tabIndex={-1}
+    >
+      <div>{props.name}</div>
+      <div css={{ paddingLeft: 8 }}>
+        {props.value.map((field) => (
+          <Field
+            key={field.id}
+            name={field.name}
+            value={field.body}
+            selected={false}
+            isEditing={false}
+            isTitle={field.isTitle}
+            errorMessage={field.errorMessage}
+            onSelected={() => {
+              console.log("onSelected", field.name);
+            }}
+            onUnSelected={() => {}}
+            onStartEdit={field.readonly ? undefined : () => {}}
+            onChange={(newText) => {
+              props.onChange(newText);
+            }}
+            onCopy={() => {}}
+            onPaste={() => {}}
+          />
+        ))}
+      </div>
+      <div css={{ paddingLeft: 8 }}>
+        <div css={{ display: "flex", gap: 4 }}>
+          {props.errorMessage === undefined ? (
+            <></>
+          ) : (
+            <div
+              css={{ background: "#d37171", color: "#000", padding: "0 4px" }}
+            >
+              {props.errorMessage}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const TextFieldValue = (props: {
+  readonly value: string;
+  readonly isError: boolean;
+  readonly isTitle: boolean;
+  /** 読み取り専用の場合は `undefined` */
+  readonly onStartEdit: (() => void) | undefined;
+}) => {
+  if (props.isTitle) {
+    return (
+      <h2
+        css={{
+          whiteSpace: "pre-wrap",
+          textDecoration: props.isError ? "underline wavy red" : "none",
+          margin: 0,
+          fontSize: 32,
+        }}
+        onClick={props.onStartEdit}
+      >
+        {props.value}
+      </h2>
+    );
+  }
+  return (
+    <div
+      css={{
+        whiteSpace: "pre-wrap",
+        textDecoration: props.isError ? "underline wavy red" : "none",
+      }}
+      onClick={props.onStartEdit}
+    >
+      {props.value}
+    </div>
+  );
+};
+
+const StyledInput = (props: {
+  readonly value: string;
+  readonly onSubmit: (newText: string) => void;
+  readonly onPaste: (text: string) => void;
+  readonly onCopy: (text: string) => void;
+}): React.ReactElement => {
+  const [editingText, setEditingText] = React.useState<string>(props.value);
+
+  return (
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        props.onSubmit(editingText);
+      }}
+    >
+      <input
+        type="text"
+        value={editingText}
+        css={{
+          padding: 8,
+          fontSize: 16,
+          backgroundColor: "#222",
+          border: "none",
+          color: "#eee",
+          borderRadius: 8,
+          width: "100%",
+          ":hover": {
+            backgroundColor: "#333",
+          },
+        }}
+        autoFocus
+        onFocus={(e) => {
+          e.stopPropagation();
+        }}
+        onChange={(e) => {
+          setEditingText(e.target.value);
+        }}
+        onPaste={(e) => {
+          props.onPaste(e.clipboardData.getData("text"));
+          e.stopPropagation();
+        }}
+        onCopy={(e) => {
+          const start = e.currentTarget.selectionStart;
+          const end = e.currentTarget.selectionEnd;
+          if (start === null || end === null) {
+            return;
+          }
+          console.log(start, end);
+          props.onCopy(e.currentTarget.value.slice(start, end));
+          e.stopPropagation();
+        }}
+      />
+    </form>
   );
 };

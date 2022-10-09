@@ -1,7 +1,7 @@
 import * as React from "react";
 import { ImageHash, Language, ProjectId } from "../common/zodType";
 import { Link } from "../components/Link";
-import { trpc } from "../hooks/trpc";
+import { trpc } from "../client/hook/trpc";
 
 export const ProjectCard = (props: {
   readonly projectId: ProjectId;

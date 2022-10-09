@@ -1,9 +1,9 @@
-import { Language, defaultLanguage } from "../common/zodType";
+import { Language, defaultLanguage } from "../../common/zodType";
 import {
   languageQueryKey,
   queryValueToZodLanguage,
   zodLanguageToQueryValue,
-} from "../common/url";
+} from "../../common/url";
 import { useQueryBasedState } from "./useQueryBasedState";
 
 const languageStructuredQueryToQuery = (

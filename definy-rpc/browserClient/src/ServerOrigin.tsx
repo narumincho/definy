@@ -1,5 +1,7 @@
 import * as React from "react";
-import { OneLineTextEditor } from "../../../client/ui/OneLineTextEditor";
+import { Editor } from "../../../components/Editor";
+
+const serverOriginFieldId = "server-origin";
 
 export const ServerOrigin = (props: {
   readonly serverName: string | undefined;
@@ -14,45 +16,41 @@ export const ServerOrigin = (props: {
 
   return (
     <div css={{ padding: 16 }}>
-      <div>
-        <label
-          css={{
-            display: "grid",
-            gridAutoFlow: "column",
-            gap: 16,
-            justifyContent: "start",
-          }}
-        >
-          server origin
-          <OneLineTextEditor
-            id="server-origin"
-            value={originText}
-            css={{
-              fontFamily: "monospace",
-            }}
-            onChange={(value) => {
-              setOriginText(value);
-              if (origin !== undefined) {
-                props.onChangeServerOrigin(origin);
-              }
-            }}
-          />
-          {origin === undefined ? (
-            <div>不正なオリジンです</div>
-          ) : (
-            <div>{origin}</div>
-          )}
-        </label>
-      </div>
-      <h1
-        css={{
-          margin: 0,
-          backgroundColor:
-            props.serverName === undefined ? "#444" : "transparent",
+      <Editor
+        fields={[
+          {
+            id: serverOriginFieldId,
+            name: "server origin",
+            body: {
+              type: "text",
+              value: originText,
+            },
+            readonly: false,
+            isTitle: false,
+            errorMessage:
+              origin === undefined
+                ? "不正なオリジンです. 例: http://localhost:3000"
+                : undefined,
+          },
+          {
+            id: "server-name",
+            errorMessage: undefined,
+            name: "server name",
+            readonly: true,
+            isTitle: true,
+            body: {
+              type: "text",
+              value: props.serverName === undefined ? "..." : props.serverName,
+            },
+          },
+        ]}
+        onChange={(fieldId, value) => {
+          setOriginText(value);
+          if (origin !== undefined) {
+            props.onChangeServerOrigin(origin);
+          }
         }}
-      >
-        {props.serverName === undefined ? "..." : props.serverName}
-      </h1>
+      />
     </div>
   );
 };

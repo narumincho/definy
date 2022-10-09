@@ -4,9 +4,9 @@ import { Link } from "../components/Link";
 import { ProjectCard } from "../components/ProjectCard";
 import { Text } from "../components/Text";
 import { WithHeader } from "../components/WithHeader";
-import { trpc } from "../hooks/trpc";
-import { useAccountToken } from "../hooks/useAccountToken";
-import { useLanguage } from "../hooks/useLanguage";
+import { trpc } from "../client/hook/trpc";
+import { useAccountToken } from "../client/hook/useAccountToken";
+import { useLanguage } from "../client/hook/useLanguage";
 
 const IndexPage = (): React.ReactElement => {
   const language = useLanguage();

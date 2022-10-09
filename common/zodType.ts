@@ -33,7 +33,11 @@ export const AccountName = z
 
 export type AccountName = z.TypeOf<typeof AccountName>;
 
-export const ProjectId = z.string().min(1).brand<"ProjectId">();
+export const ProjectId = z
+  .string()
+  .regex(/[a-zA-Z0-9_]+/u)
+  .min(1)
+  .brand<"ProjectId">();
 
 export type ProjectId = z.TypeOf<typeof ProjectId>;
 
