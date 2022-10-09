@@ -90,6 +90,8 @@ const CreateProjectLoggedIn = (props: {
                 },
                 props.language
               ),
+              isTitle: true,
+              errorMessage: undefined,
               readonly: false,
               body: {
                 type: "text",
