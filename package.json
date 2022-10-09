@@ -10,7 +10,7 @@
   "scripts": {
     "typeCheck": "tsc --project tsconfig.json --noEmit",
     "test": "jest",
-    "generate-graph": "depcruise -X node_modules --output-type dot client/main.tsx functions/main.ts core/main.ts build/main.ts | dot -T svg > graph.svg",
+    "generate-graph": "depcruise -X node_modules --output-type dot client/main.tsx functions/main.ts core/main.ts pages/*.tsx | dot -T svg > graph.svg",
     "generate-local-data": "pnpm exec tsc --project ./tsconfig-purs-ffi.json & pnpm exec spago run --main DataTs.Build",
     "build-node-package": "pnpm exec tsc --project ./tsconfig-purs-ffi.json & pnpm exec spago run --main BuildNodePackage",
     "storybook": "start-storybook --config-dir ./storybook",
