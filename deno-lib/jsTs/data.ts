@@ -1,4 +1,4 @@
-import { NonEmptyArray } from "../../common/util.ts";
+import { NonEmptyArray } from "../../deno-lib/util.ts";
 import { TsIdentifier } from "./identifier.ts";
 
 /**

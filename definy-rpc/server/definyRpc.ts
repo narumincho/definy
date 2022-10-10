@@ -58,7 +58,7 @@ export const createHttpServer = (parameter: DefinyRpcParameter) => {
     for (const func of all) {
       if (stringArrayEqual(pathList, func.fullName)) {
         if (func.needAuthentication) {
-          console.log([...request.headers.entries()]);
+          console.log([...request.headers]);
           const authorizationValue = request.headers.get("authorization");
           console.log("authorizationValue", authorizationValue);
           if (authorizationValue === null) {

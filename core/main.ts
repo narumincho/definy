@@ -6,7 +6,7 @@ import { generateElmCode, generateElmCodeAsString } from "./elm";
 import type { TypePartIdAndMessage } from "./TypePartIdAndMessage";
 import { checkTypePartListValidation } from "./validation";
 import { exprToDebugString } from "./toDebugString";
-import { jsTs } from "../gen/main";
+import { jsTs } from "../deno-lib/npm";
 import { typePartMapToVariable } from "./variable/main";
 
 export const stringToValidUserName = (userName: string): string | null => {
@@ -112,7 +112,7 @@ export const generateJavaScriptCodeAsString = (
 
 export const generateTypeScriptCode = (
   typePartMap: ReadonlyMap<d.TypePartId, d.TypePart>
-): d.Result<d.JsTsCode, ReadonlyArray<TypePartIdAndMessage>> => {
+): d.Result<jsTs.data.JsTsCode, ReadonlyArray<TypePartIdAndMessage>> => {
   // バリデーション
   const validationResult = checkTypePartListValidation(typePartMap);
   if (validationResult.length !== 0) {
@@ -124,14 +124,24 @@ export const generateTypeScriptCode = (
     return d.Result.Error(typeAliasResult.error);
   }
 
-  return d.Result.Ok({
+  return d.Result.Ok<jsTs.data.JsTsCode, ReadonlyArray<TypePartIdAndMessage>>({
     exportDefinitionList: [
-      d.ExportDefinition.Function(hexString.encodeIdFunction),
-      d.ExportDefinition.Function(hexString.idDecodeFunction),
-      d.ExportDefinition.Function(hexString.tokenEncodeFunction),
-      d.ExportDefinition.Function(hexString.decodeTokenFunction),
-      ...typeAliasResult.ok.map(d.ExportDefinition.TypeAlias),
-      ...typePartMapToVariable(typePartMap).map(d.ExportDefinition.Variable),
+      { type: "function", function: hexString.encodeIdFunction },
+      { type: "function", function: hexString.idDecodeFunction },
+      { type: "function", function: hexString.tokenEncodeFunction },
+      { type: "function", function: hexString.decodeTokenFunction },
+      ...typeAliasResult.ok.map(
+        (t): jsTs.data.ExportDefinition => ({
+          type: "typeAlias",
+          typeAlias: t,
+        })
+      ),
+      ...typePartMapToVariable(typePartMap).map(
+        (variable): jsTs.data.ExportDefinition => ({
+          type: "variable",
+          variable,
+        })
+      ),
     ],
     statementList: [],
   });

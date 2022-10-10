@@ -15,7 +15,7 @@ import {
   responseType,
   urlType,
 } from "../../../deno-lib/jsTs/main.ts";
-import { getLast } from "../../../common/util.ts";
+import { getLast } from "../../../deno-lib/util.ts";
 import { ApiFunction } from "../apiFunction.ts";
 import { DefinyRpcType } from "../type.ts";
 import { resultError, resultOk, resultType } from "./result.ts";

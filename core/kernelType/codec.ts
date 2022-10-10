@@ -1,29 +1,39 @@
-import * as ts from "../../localData";
 import * as util from "../util";
-import { jsTs } from "../../gen/main";
+import { jsTs } from "../../deno-lib/npm";
 
 export const codecTypeWithTypeParameter = (
-  type_: ts.TsType,
+  typeName: jsTs.TsIdentifier,
   typeParameterList: ReadonlyArray<string>
-): ts.TsType => {
-  return typeParameterList.length === 0
-    ? codecType(type_)
-    : ts.TsType.Function({
-        typeParameterList: typeParameterList.map(jsTs.identifierFromString),
-        parameterList: typeParameterList.map((typeParameter) =>
-          codecType(
-            ts.TsType.ScopeInFile(jsTs.identifierFromString(typeParameter))
-          )
-        ),
-        return: codecType(
-          ts.TsType.WithTypeParameter({
-            type: type_,
-            typeParameterList: typeParameterList.map((typeParameter) =>
-              ts.TsType.ScopeInFile(jsTs.identifierFromString(typeParameter))
-            ),
-          })
-        ),
-      });
+): jsTs.data.TsType => {
+  if (typeParameterList.length === 0) {
+    codecType(jsTs.typeScopeInFileNoArguments(typeName));
+  }
+  return {
+    _: "Function",
+    functionType: {
+      typeParameterList: typeParameterList.map(jsTs.identifierFromString),
+      parameterList: typeParameterList.map((typeParameter) =>
+        codecType({
+          _: "ScopeInFile",
+          typeNameAndTypeParameter: {
+            name: jsTs.identifierFromString(typeParameter),
+            arguments: [],
+          },
+        })
+      ),
+      return: codecType({
+        _: "ScopeInFile",
+        typeNameAndTypeParameter: {
+          name: typeName,
+          arguments: typeParameterList.map((typeParameter) =>
+            jsTs.typeScopeInFileNoArguments(
+              jsTs.identifierFromString(typeParameter)
+            )
+          ),
+        },
+      }),
+    },
+  };
 };
 
 const codecName = jsTs.identifierFromString("Codec");
@@ -34,67 +44,97 @@ const codecName = jsTs.identifierFromString("Codec");
  * ```
  * を表す
  */
-export const codecType = (type_: ts.TsType): ts.TsType =>
-  ts.TsType.WithTypeParameter({
-    type: ts.TsType.ScopeInFile(codecName),
-    typeParameterList: [type_],
-  });
+export const codecType = (type_: jsTs.data.TsType): jsTs.data.TsType => ({
+  _: "ScopeInFile",
+  typeNameAndTypeParameter: {
+    name: codecName,
+    arguments: [type_],
+  },
+});
 
-export const codecTypeAlias = (): ts.TypeAlias => {
-  const typeParameterIdentifer = jsTs.identifierFromString("T");
+export const codecTypeAlias = (): jsTs.data.TypeAlias => {
+  const typeParameterIdentifier = jsTs.identifierFromString("T");
   return {
     name: codecName,
+    namespace: [],
     document: "バイナリと相互変換するための関数",
-    typeParameterList: [typeParameterIdentifer],
-    type: ts.TsType.Object([
-      {
-        name: util.encodePropertyName,
-        required: true,
-        type: encodeFunctionType(ts.TsType.ScopeInFile(typeParameterIdentifer)),
-        document: "",
-      },
-      {
-        name: util.decodePropertyName,
-        required: true,
-        type: decodeFunctionType(ts.TsType.ScopeInFile(typeParameterIdentifer)),
-        document: "",
-      },
-    ]),
+    typeParameterList: [typeParameterIdentifier],
+    type: {
+      _: "Object",
+      tsMemberTypeList: [
+        {
+          name: util.encodePropertyName,
+          required: true,
+          type: encodeFunctionType({
+            _: "ScopeInFile",
+            typeNameAndTypeParameter: {
+              name: typeParameterIdentifier,
+              arguments: [],
+            },
+          }),
+          document: "",
+        },
+        {
+          name: util.decodePropertyName,
+          required: true,
+          type: decodeFunctionType({
+            _: "ScopeInFile",
+            typeNameAndTypeParameter: {
+              name: typeParameterIdentifier,
+              arguments: [],
+            },
+          }),
+          document: "",
+        },
+      ],
+    },
   };
 };
 
 export const variableDefinition = (
-  name: ts.TsIdentifier,
-  type_: ts.TsType,
+  name: jsTs.TsIdentifier,
+  type_: jsTs.data.TsType,
   document: string,
   codecDocument: string,
-  encodeDefinition: ts.TsExpr,
-  decodeDefinition: ts.TsExpr
-): ts.Variable => ({
+  encodeDefinition: jsTs.data.TsExpr,
+  decodeDefinition: jsTs.data.TsExpr
+): jsTs.data.Variable => ({
   name,
   document,
-  type: ts.TsType.Object([
+  type: {
+    _: "Object",
+    tsMemberTypeList: [
+      {
+        name: util.codecPropertyName,
+        required: true,
+        type: codecType(type_),
+        document: codecDocument,
+      },
+    ],
+  },
+  expr: jsTs.objectLiteral([
     {
-      name: util.codecPropertyName,
-      required: true,
-      type: codecType(type_),
-      document: codecDocument,
+      _: "KeyValue",
+      keyValue: {
+        key: util.codecPropertyName,
+        value: jsTs.objectLiteral([
+          {
+            _: "KeyValue",
+            keyValue: {
+              key: util.encodePropertyName,
+              value: encodeDefinition,
+            },
+          },
+          {
+            _: "KeyValue",
+            keyValue: {
+              key: util.decodePropertyName,
+              value: decodeDefinition,
+            },
+          },
+        ]),
+      },
     },
-  ]),
-  expr: ts.TsExpr.ObjectLiteral([
-    ts.TsMember.KeyValue({
-      key: util.codecPropertyName,
-      value: ts.TsExpr.ObjectLiteral([
-        ts.TsMember.KeyValue({
-          key: util.encodePropertyName,
-          value: encodeDefinition,
-        }),
-        ts.TsMember.KeyValue({
-          key: util.decodePropertyName,
-          value: decodeDefinition,
-        }),
-      ]),
-    }),
   ]),
 });
 
@@ -103,46 +143,62 @@ export const variableDefinition = (
  * (a: type_) => Readonly<number>
  * ```
  */
-export const encodeFunctionType = (type_: ts.TsType): ts.TsType =>
-  ts.TsType.Function({
+export const encodeFunctionType = (
+  type_: jsTs.data.TsType
+): jsTs.data.TsType => ({
+  _: "Function",
+  functionType: {
     typeParameterList: [],
     parameterList: [type_],
     return: encodeReturnType,
-  });
+  },
+});
 
 export const encodeLambda = (
-  type_: ts.TsType,
-  statementList: (valueExpr: ts.TsExpr) => ReadonlyArray<ts.Statement>
-): ts.TsExpr => {
+  type_: jsTs.data.TsType,
+  statementList: (
+    valueExpr: jsTs.data.TsExpr
+  ) => ReadonlyArray<jsTs.data.Statement>
+): jsTs.data.TsExpr => {
   const valueName = jsTs.identifierFromString("value");
-  return ts.TsExpr.Lambda({
-    typeParameterList: [],
-    parameterList: [
-      {
-        name: valueName,
-        type: type_,
-      },
-    ],
-    returnType: encodeReturnType,
-    statementList: statementList(ts.TsExpr.Variable(valueName)),
-  });
+  return {
+    _: "Lambda",
+    lambdaExpr: {
+      typeParameterList: [],
+      parameterList: [
+        {
+          name: valueName,
+          type: type_,
+        },
+      ],
+      returnType: encodeReturnType,
+      statementList: statementList({ _: "Variable", tsIdentifier: valueName }),
+    },
+  };
 };
 
-export const encodeReturnType = jsTs.readonlyArrayType(ts.TsType.Number);
+export const encodeReturnType = jsTs.readonlyArrayType({ _: "Number" });
 /**
  * ```ts
  * (a: number, b: Uint8Array) => { readonly result: type_, readonly nextIndex: number }
  * ```
  */
-export const decodeFunctionType = (type_: ts.TsType): ts.TsType =>
-  ts.TsType.Function({
+export const decodeFunctionType = (
+  type_: jsTs.data.TsType
+): jsTs.data.TsType => ({
+  _: "Function",
+  functionType: {
     typeParameterList: [],
     parameterList: decodeParameterList.map((parameter) => parameter.type),
     return: decodeReturnType(type_),
-  });
+  },
+});
 
-export const decodeReturnType = (type_: ts.TsType): ts.TsType =>
-  ts.TsType.Object([
+export const decodeReturnType = (
+  type_: jsTs.data.TsType
+): jsTs.data.TsType => ({
+  _: "Object",
+  tsMemberTypeList: [
     {
       name: util.resultProperty,
       required: true,
@@ -152,29 +208,31 @@ export const decodeReturnType = (type_: ts.TsType): ts.TsType =>
     {
       name: util.nextIndexProperty,
       required: true,
-      type: ts.TsType.Number,
+      type: { _: "Number" },
       document: "",
     },
-  ]);
+  ],
+});
 
-export const indexIdentifer = jsTs.identifierFromString("index");
-export const binaryIdentifer = jsTs.identifierFromString("binary");
+export const indexIdentifier = jsTs.identifierFromString("index");
+export const binaryIdentifier = jsTs.identifierFromString("binary");
 
 /**
  * ( index: number, binary: Uint8Array )
  */
-export const decodeParameterList: ReadonlyArray<ts.ParameterWithDocument> = [
-  {
-    name: indexIdentifer,
-    type: ts.TsType.Number,
-    document: "バイナリを読み込み開始位置",
-  },
-  {
-    name: binaryIdentifer,
-    type: jsTs.uint8ArrayType,
-    document: "バイナリ",
-  },
-];
+export const decodeParameterList: ReadonlyArray<jsTs.data.ParameterWithDocument> =
+  [
+    {
+      name: indexIdentifier,
+      type: { _: "Number" },
+      document: "バイナリを読み込み開始位置",
+    },
+    {
+      name: binaryIdentifier,
+      type: jsTs.uint8ArrayType,
+      document: "バイナリ",
+    },
+  ];
 
 /**
  * ```ts
@@ -183,35 +241,35 @@ export const decodeParameterList: ReadonlyArray<ts.ParameterWithDocument> = [
  * を表現するコード
  */
 export const returnStatement = (
-  resultExpr: ts.TsExpr,
-  nextIndexExpr: ts.TsExpr
-): ts.Statement =>
-  ts.Statement.Return(
-    ts.TsExpr.ObjectLiteral([
-      ts.TsMember.KeyValue({ key: util.resultProperty, value: resultExpr }),
-      ts.TsMember.KeyValue({
-        key: util.nextIndexProperty,
-        value: nextIndexExpr,
-      }),
-    ])
-  );
+  resultExpr: jsTs.data.TsExpr,
+  nextIndexExpr: jsTs.data.TsExpr
+): jsTs.data.Statement => ({
+  _: "Return",
+  tsExpr: jsTs.objectLiteral([
+    jsTs.memberKeyValue(util.resultProperty, resultExpr),
+    jsTs.memberKeyValue(util.nextIndexProperty, nextIndexExpr),
+  ]),
+});
 
 export const decodeLambda = (
-  type: ts.TsType,
+  type: jsTs.data.TsType,
   statementList: (
-    parameterIndex: ts.TsExpr,
-    parameterBinary: ts.TsExpr
-  ) => ReadonlyArray<ts.Statement>
-): ts.TsExpr => {
-  return ts.TsExpr.Lambda({
-    typeParameterList: [],
-    parameterList: decodeParameterList,
-    returnType: decodeReturnType(type),
-    statementList: statementList(
-      ts.TsExpr.Variable(indexIdentifer),
-      ts.TsExpr.Variable(binaryIdentifer)
-    ),
-  });
+    parameterIndex: jsTs.data.TsExpr,
+    parameterBinary: jsTs.data.TsExpr
+  ) => ReadonlyArray<jsTs.data.Statement>
+): jsTs.data.TsExpr => {
+  return {
+    _: "Lambda",
+    lambdaExpr: {
+      typeParameterList: [],
+      parameterList: decodeParameterList,
+      returnType: decodeReturnType(type),
+      statementList: statementList(
+        jsTs.variable(indexIdentifier),
+        jsTs.variable(binaryIdentifier)
+      ),
+    },
+  };
 };
 
 /**
@@ -219,19 +277,21 @@ export const decodeLambda = (
  * expr.result
  * ```
  */
-export const getResult = (resultAndNextIndexExpr: ts.TsExpr): ts.TsExpr =>
-  jsTs.get(resultAndNextIndexExpr, util.resultProperty);
+export const getResult = (
+  resultAndNextIndexExpr: jsTs.data.TsExpr
+): jsTs.data.TsExpr => jsTs.get(resultAndNextIndexExpr, util.resultProperty);
 
 /**
  * ```ts
  * expr.nextIndex
  * ```
  */
-export const getNextIndex = (resultAndNextIndexExpr: ts.TsExpr): ts.TsExpr =>
-  jsTs.get(resultAndNextIndexExpr, util.nextIndexProperty);
+export const getNextIndex = (
+  resultAndNextIndexExpr: jsTs.data.TsExpr
+): jsTs.data.TsExpr => jsTs.get(resultAndNextIndexExpr, util.nextIndexProperty);
 
 /**
  * 名前の末尾に `Codec` をつける
  */
-export const codecParameterName = (name: string): ts.TsIdentifier =>
+export const codecParameterName = (name: string): jsTs.TsIdentifier =>
   jsTs.identifierFromString(name + "Codec");

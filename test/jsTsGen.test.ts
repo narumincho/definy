@@ -1,18 +1,30 @@
-import { d, jsTs } from "../gen/main";
+import { jsTs } from "../deno-lib/npm";
 
 describe("test", () => {
-  const expressRequest = d.TsType.ImportedType({
-    moduleName: "express",
-    name: jsTs.identifierFromString("Request"),
-  });
-  const expressResponse = d.TsType.ImportedType({
-    moduleName: "express",
-    name: jsTs.identifierFromString("Response"),
-  });
+  const expressRequest: jsTs.data.TsType = {
+    _: "ImportedType",
+    importedType: {
+      moduleName: "express",
+      nameAndArguments: {
+        name: jsTs.identifierFromString("Request"),
+        arguments: [],
+      },
+    },
+  };
+  const expressResponse: jsTs.data.TsType = {
+    _: "ImportedType",
+    importedType: {
+      moduleName: "express",
+      nameAndArguments: {
+        name: jsTs.identifierFromString("Response"),
+        arguments: [],
+      },
+    },
+  };
 
-  const sampleCode: d.JsTsCode = {
+  const sampleCode: jsTs.data.JsTsCode = {
     exportDefinitionList: [
-      d.ExportDefinition.Function({
+      jsTs.exportDefinitionFunction({
         name: jsTs.identifierFromString("middleware"),
         typeParameterList: [],
         parameterList: [
@@ -28,7 +40,7 @@ describe("test", () => {
           },
         ],
         document: "ミドルウェア",
-        returnType: d.TsType.Void,
+        returnType: { _: "Void" },
         statementList: [],
       }),
     ],
@@ -52,12 +64,12 @@ describe("test", () => {
     const codeAsString = jsTs.generateCodeAsString(
       {
         exportDefinitionList: [
-          d.ExportDefinition.Function({
+          jsTs.exportDefinitionFunction({
             name: jsTs.identifierFromString("new"),
             document: "newという名前の関数",
             typeParameterList: [],
             parameterList: [],
-            returnType: d.TsType.Void,
+            returnType: { _: "Void" },
             statementList: [],
           }),
         ],
@@ -73,12 +85,12 @@ describe("test", () => {
     const codeAsString = jsTs.generateCodeAsString(
       {
         exportDefinitionList: [
-          d.ExportDefinition.Function({
+          jsTs.exportDefinitionFunction({
             name: jsTs.identifierFromString("0name"),
             document: "0から始まる識別子",
             typeParameterList: [],
             parameterList: [],
-            returnType: d.TsType.Void,
+            returnType: { _: "Void" },
             statementList: [],
           }),
         ],
@@ -96,28 +108,31 @@ describe("test", () => {
       for (let i = 0; i < 999; i += 1) {
         const createIdentifierResult = jsTs.createIdentifier(index, reserved);
         index = createIdentifierResult.nextIdentifierIndex;
-        if (!jsTs.isIdentifier(createIdentifierResult.identifier.string)) {
+        if (!jsTs.isIdentifier(createIdentifierResult.identifier)) {
           throw new Error(
             "create not identifier. identifier=" +
-              createIdentifierResult.identifier.string
+              createIdentifierResult.identifier
           );
         }
       }
     }).not.toThrow();
   });
   it("escape string literal", () => {
-    const nodeJsCode: d.JsTsCode = {
+    const nodeJsCode: jsTs.data.JsTsCode = {
       exportDefinitionList: [
-        d.ExportDefinition.Variable({
-          name: jsTs.identifierFromString("stringValue"),
-          document: "文字列リテラルでエスケープしているか調べる",
-          type: d.TsType.String,
-          expr: d.TsExpr.StringLiteral(`
+        {
+          type: "variable",
+          variable: {
+            name: jsTs.identifierFromString("stringValue"),
+            document: "文字列リテラルでエスケープしているか調べる",
+            type: { _: "String" },
+            expr: jsTs.stringLiteral(`
 
           改行
           "ダブルクオーテーション"
   `),
-        }),
+          },
+        },
       ],
       statementList: [],
     };
@@ -128,9 +143,9 @@ describe("test", () => {
   });
 
   it("include function parameter name", () => {
-    const nodeJsCode: d.JsTsCode = {
+    const nodeJsCode: jsTs.data.JsTsCode = {
       exportDefinitionList: [
-        d.ExportDefinition.Function({
+        jsTs.exportDefinitionFunction({
           name: jsTs.identifierFromString("middleware"),
           document: "ミドルウェア",
           typeParameterList: [],
@@ -138,61 +153,77 @@ describe("test", () => {
             {
               name: jsTs.identifierFromString("request"),
               document: "リクエスト",
-              type: d.TsType.ImportedType({
-                moduleName: "express",
-                name: jsTs.identifierFromString("Request"),
-              }),
+              type: {
+                _: "ImportedType",
+                importedType: {
+                  moduleName: "express",
+                  nameAndArguments: {
+                    name: jsTs.identifierFromString("Request"),
+                    arguments: [],
+                  },
+                },
+              },
             },
             {
               name: jsTs.identifierFromString("response"),
               document: "レスポンス",
-              type: d.TsType.ImportedType({
-                moduleName: "express",
-                name: jsTs.identifierFromString("Response"),
-              }),
+              type: {
+                _: "ImportedType",
+                importedType: {
+                  moduleName: "express",
+                  nameAndArguments: {
+                    name: jsTs.identifierFromString("Response"),
+                    arguments: [],
+                  },
+                },
+              },
             },
           ],
-          returnType: d.TsType.Void,
+          returnType: { _: "Void" },
           statementList: [
-            d.Statement.VariableDefinition({
-              name: jsTs.identifierFromString("accept"),
-              type: d.TsType.Union([d.TsType.String, d.TsType.Undefined]),
-              isConst: true,
-              expr: jsTs.get(
-                jsTs.get(
-                  d.TsExpr.Variable(jsTs.identifierFromString("request")),
-                  "headers"
+            {
+              _: "VariableDefinition",
+              variableDefinitionStatement: {
+                name: jsTs.identifierFromString("accept"),
+                type: jsTs.typeUnion([{ _: "String" }, { _: "Undefined" }]),
+                isConst: true,
+                expr: jsTs.get(
+                  jsTs.get(
+                    jsTs.variable(jsTs.identifierFromString("request")),
+                    "headers"
+                  ),
+                  "accept"
                 ),
-                "accept"
-              ),
-            }),
-            d.Statement.If({
-              condition: d.TsExpr.BinaryOperator({
-                left: d.TsExpr.BinaryOperator({
-                  left: d.TsExpr.Variable(jsTs.identifierFromString("accept")),
-                  operator: "NotEqual",
-                  right: d.TsExpr.UndefinedLiteral,
-                }),
-                operator: "LogicalAnd",
-                right: jsTs.callMethod(
-                  d.TsExpr.Variable(jsTs.identifierFromString("accept")),
-                  "includes",
-                  [d.TsExpr.StringLiteral("text/html")]
-                ),
-              }),
-              thenStatementList: [
-                d.Statement.EvaluateExpr(
+              },
+            },
+            {
+              _: "If",
+              ifStatement: {
+                condition: jsTs.logicalAnd(
+                  jsTs.notEqual(
+                    jsTs.variable(jsTs.identifierFromString("accept")),
+                    { _: "UndefinedLiteral" }
+                  ),
                   jsTs.callMethod(
-                    d.TsExpr.Variable(jsTs.identifierFromString("response")),
-                    "setHeader",
-                    [
-                      d.TsExpr.StringLiteral("content-type"),
-                      d.TsExpr.StringLiteral("text/html"),
-                    ]
+                    jsTs.variable(jsTs.identifierFromString("accept")),
+                    "includes",
+                    [jsTs.stringLiteral("text/html")]
                   )
                 ),
-              ],
-            }),
+                thenStatementList: [
+                  jsTs.statementEvaluateExpr(
+                    jsTs.callMethod(
+                      jsTs.variable(jsTs.identifierFromString("response")),
+                      "setHeader",
+                      [
+                        jsTs.stringLiteral("content-type"),
+                        jsTs.stringLiteral("text/html"),
+                      ]
+                    )
+                  ),
+                ],
+              },
+            },
           ],
         }),
       ],
@@ -206,7 +237,7 @@ describe("test", () => {
     const code = jsTs.generateCodeAsString(
       {
         exportDefinitionList: [
-          d.ExportDefinition.Function({
+          jsTs.exportDefinitionFunction({
             name: jsTs.identifierFromString("getZeroIndexElement"),
             document: "Uint8Arrayの0番目の要素を取得する",
             typeParameterList: [],
@@ -217,14 +248,15 @@ describe("test", () => {
                 type: jsTs.uint8ArrayType,
               },
             ],
-            returnType: d.TsType.Number,
+            returnType: { _: "Number" },
             statementList: [
-              d.Statement.Return(
-                d.TsExpr.Get({
-                  expr: d.TsExpr.Variable(jsTs.identifierFromString("array")),
-                  propertyExpr: d.TsExpr.NumberLiteral(0),
-                })
-              ),
+              jsTs.statementReturn({
+                _: "Get",
+                getExpr: {
+                  expr: jsTs.variable(jsTs.identifierFromString("array")),
+                  propertyExpr: jsTs.numberLiteral(0),
+                },
+              }),
             ],
           }),
         ],
@@ -239,13 +271,16 @@ describe("test", () => {
     {
       exportDefinitionList: [],
       statementList: [
-        d.Statement.VariableDefinition({
-          name: jsTs.identifierFromString("sorena"),
-          isConst: false,
-          type: d.TsType.String,
-          expr: d.TsExpr.StringLiteral("それな"),
-        }),
-        jsTs.consoleLog(d.TsExpr.Variable(jsTs.identifierFromString("sorena"))),
+        {
+          _: "VariableDefinition",
+          variableDefinitionStatement: {
+            name: jsTs.identifierFromString("sorena"),
+            isConst: false,
+            type: { _: "String" },
+            expr: jsTs.stringLiteral("それな"),
+          },
+        },
+        jsTs.consoleLog(jsTs.variable(jsTs.identifierFromString("sorena"))),
       ],
     },
     "JavaScript"
@@ -262,12 +297,12 @@ describe("test", () => {
     const code = jsTs.generateCodeAsString(
       {
         exportDefinitionList: [
-          d.ExportDefinition.Function({
+          jsTs.exportDefinitionFunction({
             name: jsTs.identifierFromString("sample"),
             document: "",
             typeParameterList: [],
             parameterList: [],
-            returnType: jsTs.promiseType(d.TsType.String),
+            returnType: jsTs.promiseType({ _: "String" }),
             statementList: [],
           }),
         ],
@@ -283,16 +318,10 @@ describe("test", () => {
       {
         exportDefinitionList: [],
         statementList: [
-          d.Statement.EvaluateExpr(
-            d.TsExpr.ObjectLiteral([
-              d.TsMember.KeyValue({
-                key: "abc",
-                value: d.TsExpr.NumberLiteral(3),
-              }),
-              d.TsMember.KeyValue({
-                key: "a b c",
-                value: d.TsExpr.StringLiteral("separated"),
-              }),
+          jsTs.statementEvaluateExpr(
+            jsTs.objectLiteral([
+              jsTs.memberKeyValue("abc", jsTs.numberLiteral(3)),
+              jsTs.memberKeyValue("a b c", jsTs.stringLiteral("separated")),
             ])
           ),
         ],
@@ -307,36 +336,27 @@ describe("test", () => {
       {
         exportDefinitionList: [],
         statementList: [
-          d.Statement.EvaluateExpr(
+          jsTs.statementEvaluateExpr(
             jsTs.equal(
               jsTs.equal(
                 jsTs.addition(
                   jsTs.multiplication(
-                    d.TsExpr.NumberLiteral(3),
-                    d.TsExpr.NumberLiteral(9)
+                    jsTs.numberLiteral(3),
+                    jsTs.numberLiteral(9)
                   ),
                   jsTs.multiplication(
-                    d.TsExpr.NumberLiteral(7),
-                    d.TsExpr.NumberLiteral(6)
+                    jsTs.numberLiteral(7),
+                    jsTs.numberLiteral(6)
                   )
                 ),
                 jsTs.addition(
-                  jsTs.addition(
-                    d.TsExpr.NumberLiteral(2),
-                    d.TsExpr.NumberLiteral(3)
-                  ),
-                  jsTs.addition(
-                    d.TsExpr.NumberLiteral(5),
-                    d.TsExpr.NumberLiteral(8)
-                  )
+                  jsTs.addition(jsTs.numberLiteral(2), jsTs.numberLiteral(3)),
+                  jsTs.addition(jsTs.numberLiteral(5), jsTs.numberLiteral(8))
                 )
               ),
               jsTs.multiplication(
-                d.TsExpr.NumberLiteral(5),
-                jsTs.addition(
-                  d.TsExpr.NumberLiteral(7),
-                  d.TsExpr.NumberLiteral(8)
-                )
+                jsTs.numberLiteral(5),
+                jsTs.addition(jsTs.numberLiteral(7), jsTs.numberLiteral(8))
               )
             )
           ),
@@ -351,36 +371,30 @@ describe("test", () => {
     const code = jsTs.generateCodeAsString(
       {
         exportDefinitionList: [
-          d.ExportDefinition.Function({
+          jsTs.exportDefinitionFunction({
             name: jsTs.identifierFromString("returnObject"),
             document: "",
             typeParameterList: [],
             parameterList: [],
-            returnType: d.TsType.Object([
+            returnType: jsTs.typeObject([
               {
                 name: "name",
                 required: true,
-                type: d.TsType.String,
+                type: { _: "String" },
                 document: "",
               },
               {
                 name: "age",
                 required: true,
-                type: d.TsType.Number,
+                type: { _: "Number" },
                 document: "",
               },
             ]),
             statementList: [
-              d.Statement.Return(
-                d.TsExpr.ObjectLiteral([
-                  d.TsMember.KeyValue({
-                    key: "name",
-                    value: d.TsExpr.StringLiteral("mac"),
-                  }),
-                  d.TsMember.KeyValue({
-                    key: "age",
-                    value: d.TsExpr.NumberLiteral(10),
-                  }),
+              jsTs.statementReturn(
+                jsTs.objectLiteral([
+                  jsTs.memberKeyValue("name", jsTs.stringLiteral("mac")),
+                  jsTs.memberKeyValue("age", jsTs.numberLiteral(10)),
                 ])
               ),
             ],
@@ -399,22 +413,31 @@ describe("test", () => {
       {
         exportDefinitionList: [],
         statementList: [
-          d.Statement.VariableDefinition({
-            name: v,
-            type: d.TsType.Number,
-            expr: d.TsExpr.NumberLiteral(10),
-            isConst: false,
-          }),
-          d.Statement.Set({
-            target: d.TsExpr.Variable(v),
-            operatorMaybe: d.Maybe.Nothing(),
-            expr: d.TsExpr.NumberLiteral(30),
-          }),
-          d.Statement.Set({
-            target: d.TsExpr.Variable(v),
-            operatorMaybe: d.Maybe.Just<d.BinaryOperator>("Addition"),
-            expr: d.TsExpr.NumberLiteral(1),
-          }),
+          {
+            _: "VariableDefinition",
+            variableDefinitionStatement: {
+              name: v,
+              type: { _: "Number" },
+              expr: jsTs.numberLiteral(10),
+              isConst: false,
+            },
+          },
+          {
+            _: "Set",
+            setStatement: {
+              target: jsTs.variable(v),
+              operatorMaybe: undefined,
+              expr: jsTs.numberLiteral(30),
+            },
+          },
+          {
+            _: "Set",
+            setStatement: {
+              target: jsTs.variable(v),
+              operatorMaybe: "Addition",
+              expr: jsTs.numberLiteral(1),
+            },
+          },
         ],
       },
       "TypeScript"
@@ -423,29 +446,38 @@ describe("test", () => {
     expect(code).toMatch(/let v: number = 10;[\n ]*v = 30;[\n ]*v \+= 1;/u);
   });
   it("for of", () => {
-    const code: d.JsTsCode = {
+    const code: jsTs.data.JsTsCode = {
       exportDefinitionList: [],
       statementList: [
-        d.Statement.ForOf({
-          elementVariableName: jsTs.identifierFromString("element"),
-          iterableExpr: d.TsExpr.ArrayLiteral([
-            { expr: d.TsExpr.NumberLiteral(1), spread: false },
-            { expr: d.TsExpr.NumberLiteral(2), spread: false },
-            {
-              expr: d.TsExpr.ArrayLiteral([
-                { expr: d.TsExpr.NumberLiteral(3), spread: false },
-                { expr: d.TsExpr.NumberLiteral(4), spread: false },
-                { expr: d.TsExpr.NumberLiteral(5), spread: false },
-              ]),
-              spread: true,
+        {
+          _: "ForOf",
+          forOfStatement: {
+            elementVariableName: jsTs.identifierFromString("element"),
+            iterableExpr: {
+              _: "ArrayLiteral",
+              arrayItemList: [
+                { expr: jsTs.numberLiteral(1), spread: false },
+                { expr: jsTs.numberLiteral(2), spread: false },
+                {
+                  expr: {
+                    _: "ArrayLiteral",
+                    arrayItemList: [
+                      { expr: jsTs.numberLiteral(3), spread: false },
+                      { expr: jsTs.numberLiteral(4), spread: false },
+                      { expr: jsTs.numberLiteral(5), spread: false },
+                    ],
+                  },
+                  spread: true,
+                },
+              ],
             },
-          ]),
-          statementList: [
-            jsTs.consoleLog(
-              d.TsExpr.Variable(jsTs.identifierFromString("element"))
-            ),
-          ],
-        }),
+            statementList: [
+              jsTs.consoleLog(
+                jsTs.variable(jsTs.identifierFromString("element"))
+              ),
+            ],
+          },
+        },
       ],
     };
     const codeAsString = jsTs.generateCodeAsString(code, "TypeScript");
@@ -453,47 +485,55 @@ describe("test", () => {
     expect(codeAsString).toMatch(/for .* of \[1, 2, \.\.\.\[3, 4, 5\] *\]/u);
   });
   it("switch", () => {
-    const code: d.JsTsCode = {
+    const code: jsTs.data.JsTsCode = {
       exportDefinitionList: [
-        d.ExportDefinition.TypeAlias({
-          name: jsTs.identifierFromString("Result"),
-          document: "Result型",
-          typeParameterList: [
-            jsTs.identifierFromString("error"),
-            jsTs.identifierFromString("ok"),
-          ],
-          type: d.TsType.Union([
-            d.TsType.Object([
-              {
-                name: "_",
-                required: true,
-                type: d.TsType.StringLiteral("Ok"),
-                document: "",
-              },
-              {
-                name: "ok",
-                required: true,
-                type: d.TsType.ScopeInFile(jsTs.identifierFromString("ok")),
-                document: "",
-              },
+        {
+          type: "typeAlias",
+          typeAlias: {
+            name: jsTs.identifierFromString("Result"),
+            document: "Result型",
+            namespace: [],
+            typeParameterList: [
+              jsTs.identifierFromString("error"),
+              jsTs.identifierFromString("ok"),
+            ],
+            type: jsTs.typeUnion([
+              jsTs.typeObject([
+                {
+                  name: "_",
+                  required: true,
+                  type: { _: "StringLiteral", string: "Ok" },
+                  document: "",
+                },
+                {
+                  name: "ok",
+                  required: true,
+                  type: jsTs.typeScopeInFileNoArguments(
+                    jsTs.identifierFromString("ok")
+                  ),
+                  document: "",
+                },
+              ]),
+              jsTs.typeObject([
+                {
+                  name: "_",
+                  required: true,
+                  type: { _: "StringLiteral", string: "Error" },
+                  document: "Error",
+                },
+                {
+                  name: "error",
+                  required: true,
+                  type: jsTs.typeScopeInFileNoArguments(
+                    jsTs.identifierFromString("error")
+                  ),
+                  document: "",
+                },
+              ]),
             ]),
-            d.TsType.Object([
-              {
-                name: "_",
-                required: true,
-                type: d.TsType.StringLiteral("Error"),
-                document: "Error",
-              },
-              {
-                name: "error",
-                required: true,
-                type: d.TsType.ScopeInFile(jsTs.identifierFromString("error")),
-                document: "",
-              },
-            ]),
-          ]),
-        }),
-        d.ExportDefinition.Function({
+          },
+        },
+        jsTs.exportDefinitionFunction({
           name: jsTs.identifierFromString("switchSample"),
           document: "switch文のテスト",
           typeParameterList: [
@@ -504,57 +544,65 @@ describe("test", () => {
             {
               name: jsTs.identifierFromString("value"),
               document: "",
-              type: d.TsType.WithTypeParameter({
-                type: d.TsType.ScopeInGlobal(
-                  jsTs.identifierFromString("Result")
-                ),
-                typeParameterList: [
-                  d.TsType.ScopeInFile(jsTs.identifierFromString("ok")),
-                  d.TsType.ScopeInFile(jsTs.identifierFromString("error")),
-                ],
-              }),
+              type: {
+                _: "ScopeInGlobal",
+                typeNameAndTypeParameter: {
+                  name: jsTs.identifierFromString("Result"),
+                  arguments: [
+                    jsTs.typeScopeInFileNoArguments(
+                      jsTs.identifierFromString("ok")
+                    ),
+                    jsTs.typeScopeInFileNoArguments(
+                      jsTs.identifierFromString("error")
+                    ),
+                  ],
+                },
+              },
             },
           ],
-          returnType: d.TsType.String,
+          returnType: { _: "String" },
           statementList: [
-            d.Statement.Switch({
-              expr: jsTs.get(
-                d.TsExpr.Variable(jsTs.identifierFromString("value")),
-                "_"
-              ),
-              patternList: [
-                {
-                  caseString: "Ok",
-                  statementList: [
-                    d.Statement.Return(
-                      jsTs.callMethod(
-                        jsTs.get(
-                          d.TsExpr.Variable(jsTs.identifierFromString("value")),
-                          "ok"
-                        ),
-                        "toString",
-                        []
-                      )
-                    ),
-                  ],
-                },
-                {
-                  caseString: "Error",
-                  statementList: [
-                    d.Statement.Return(
-                      jsTs.callMethod(
-                        jsTs.get(
-                          d.TsExpr.Variable(jsTs.identifierFromString("value")),
-                          "error"
-                        ),
-                        "toString",
-                        []
-                      )
-                    ),
-                  ],
-                },
-              ],
-            }),
+            {
+              _: "Switch",
+              switchStatement: {
+                expr: jsTs.get(
+                  jsTs.variable(jsTs.identifierFromString("value")),
+                  "_"
+                ),
+                patternList: [
+                  {
+                    caseString: "Ok",
+                    statementList: [
+                      jsTs.statementReturn(
+                        jsTs.callMethod(
+                          jsTs.get(
+                            jsTs.variable(jsTs.identifierFromString("value")),
+                            "ok"
+                          ),
+                          "toString",
+                          []
+                        )
+                      ),
+                    ],
+                  },
+                  {
+                    caseString: "Error",
+                    statementList: [
+                      jsTs.statementReturn(
+                        jsTs.callMethod(
+                          jsTs.get(
+                            jsTs.variable(jsTs.identifierFromString("value")),
+                            "error"
+                          ),
+                          "toString",
+                          []
+                        )
+                      ),
+                    ],
+                  },
+                ],
+              },
+            },
           ],
         }),
       ],
@@ -565,15 +613,16 @@ describe("test", () => {
     expect(codeAsString).toMatch(/switch \(.+\) \{\n +case .+:/u);
   });
   it("Type Assertion", () => {
-    const code: d.JsTsCode = {
+    const code: jsTs.data.JsTsCode = {
       exportDefinitionList: [],
       statementList: [
-        d.Statement.EvaluateExpr(
-          d.TsExpr.TypeAssertion({
-            expr: d.TsExpr.ObjectLiteral([]),
+        jsTs.statementEvaluateExpr({
+          _: "TypeAssertion",
+          typeAssertion: {
+            expr: jsTs.objectLiteral([]),
             type: jsTs.dateType,
-          })
-        ),
+          },
+        }),
       ],
     };
     const codeAsString = jsTs.generateCodeAsString(code, "TypeScript");
@@ -581,56 +630,68 @@ describe("test", () => {
     expect(codeAsString).toMatch(/as globalThis.Date/u);
   });
   it("Type Intersection", () => {
-    const code: d.JsTsCode = d.JsTsCode.helper({
+    const code: jsTs.data.JsTsCode = {
       exportDefinitionList: [
-        d.ExportDefinition.TypeAlias({
-          name: jsTs.identifierFromString("SampleIntersectionType"),
-          document: "",
-          typeParameterList: [],
-          type: d.TsType.Intersection({
-            left: jsTs.dateType,
-            right: jsTs.uint8ArrayType,
-          }),
-        }),
+        {
+          type: "typeAlias",
+          typeAlias: {
+            name: jsTs.identifierFromString("SampleIntersectionType"),
+            document: "",
+            namespace: [],
+            typeParameterList: [],
+            type: {
+              _: "Intersection",
+              intersectionType: {
+                left: jsTs.dateType,
+                right: jsTs.uint8ArrayType,
+              },
+            },
+          },
+        },
       ],
       statementList: [],
-    });
+    };
     const codeAsString = jsTs.generateCodeAsString(code, "TypeScript");
     console.log(codeAsString);
     expect(codeAsString).toMatch(/globalThis.Date & globalThis.Uint8Array/u);
   });
 
   it("object literal spread syntax", () => {
-    const code: d.JsTsCode = {
+    const code: jsTs.data.JsTsCode = {
       exportDefinitionList: [],
       statementList: [
-        d.Statement.VariableDefinition({
-          name: jsTs.identifierFromString("value"),
-          isConst: true,
-          type: d.TsType.Object([
-            { name: "a", required: true, type: d.TsType.String, document: "" },
-            { name: "b", required: true, type: d.TsType.Number, document: "" },
-          ]),
-          expr: d.TsExpr.ObjectLiteral([
-            d.TsMember.KeyValue({
-              key: "a",
-              value: d.TsExpr.StringLiteral("aValue"),
-            }),
-            d.TsMember.KeyValue({
-              key: "b",
-              value: d.TsExpr.NumberLiteral(123),
-            }),
-          ]),
-        }),
+        {
+          _: "VariableDefinition",
+          variableDefinitionStatement: {
+            name: jsTs.identifierFromString("value"),
+            isConst: true,
+            type: jsTs.typeObject([
+              {
+                name: "a",
+                required: true,
+                type: { _: "String" },
+                document: "",
+              },
+              {
+                name: "b",
+                required: true,
+                type: { _: "Number" },
+                document: "",
+              },
+            ]),
+            expr: jsTs.objectLiteral([
+              jsTs.memberKeyValue("a", jsTs.stringLiteral("aValue")),
+              jsTs.memberKeyValue("b", jsTs.numberLiteral(123)),
+            ]),
+          },
+        },
         jsTs.consoleLog(
-          d.TsExpr.ObjectLiteral([
-            d.TsMember.Spread(
-              d.TsExpr.Variable(jsTs.identifierFromString("value"))
-            ),
-            d.TsMember.KeyValue({
-              key: "b",
-              value: d.TsExpr.NumberLiteral(987),
-            }),
+          jsTs.objectLiteral([
+            {
+              _: "Spread",
+              tsExpr: jsTs.variable(jsTs.identifierFromString("value")),
+            },
+            jsTs.memberKeyValue("b", jsTs.numberLiteral(987)),
           ])
         ),
       ],
@@ -641,27 +702,32 @@ describe("test", () => {
   });
 
   it("type property document", () => {
-    const code: d.JsTsCode = {
+    const code: jsTs.data.JsTsCode = {
       exportDefinitionList: [
-        d.ExportDefinition.TypeAlias({
-          name: jsTs.identifierFromString("Time"),
-          document: "初期のdefinyで使う時間の内部表現",
-          typeParameterList: [],
-          type: d.TsType.Object([
-            {
-              name: "day",
-              required: true,
-              type: d.TsType.Number,
-              document: "1970-01-01からの経過日数. マイナスになることもある",
-            },
-            {
-              name: "millisecond",
-              required: true,
-              type: d.TsType.Number,
-              document: "日にちの中のミリ秒. 0 to 86399999 (=1000*60*60*24-1)",
-            },
-          ]),
-        }),
+        {
+          type: "typeAlias",
+          typeAlias: {
+            name: jsTs.identifierFromString("Time"),
+            document: "初期のdefinyで使う時間の内部表現",
+            namespace: [],
+            typeParameterList: [],
+            type: jsTs.typeObject([
+              {
+                name: "day",
+                required: true,
+                type: { _: "Number" },
+                document: "1970-01-01からの経過日数. マイナスになることもある",
+              },
+              {
+                name: "millisecond",
+                required: true,
+                type: { _: "Number" },
+                document:
+                  "日にちの中のミリ秒. 0 to 86399999 (=1000*60*60*24-1)",
+              },
+            ]),
+          },
+        },
       ],
       statementList: [],
     };
@@ -673,64 +739,84 @@ describe("test", () => {
 
 it("output lambda type parameter", () => {
   const typeParameterIdentifier = jsTs.identifierFromString("t");
-  const code: d.JsTsCode = {
+  const code: jsTs.data.JsTsCode = {
     exportDefinitionList: [],
     statementList: [
-      d.Statement.VariableDefinition({
-        name: jsTs.identifierFromString("sampleFunction"),
-        isConst: true,
-        type: d.TsType.Function({
-          typeParameterList: [typeParameterIdentifier],
-          parameterList: [d.TsType.ScopeInFile(typeParameterIdentifier)],
-          return: d.TsType.Object([
-            {
-              name: "value",
-              required: true,
-              document: "",
-              type: d.TsType.ScopeInFile(typeParameterIdentifier),
+      {
+        _: "VariableDefinition",
+        variableDefinitionStatement: {
+          name: jsTs.identifierFromString("sampleFunction"),
+          isConst: true,
+          type: {
+            _: "Function",
+            functionType: {
+              typeParameterList: [typeParameterIdentifier],
+              parameterList: [
+                jsTs.typeScopeInFileNoArguments(typeParameterIdentifier),
+              ],
+              return: jsTs.typeObject([
+                {
+                  name: "value",
+                  required: true,
+                  document: "",
+                  type: jsTs.typeScopeInFileNoArguments(
+                    typeParameterIdentifier
+                  ),
+                },
+                {
+                  name: "s",
+                  required: true,
+                  document: "",
+                  type: {
+                    _: "ImportedType",
+                    importedType: {
+                      moduleName: "sampleModule",
+                      nameAndArguments: {
+                        name: jsTs.identifierFromString("Type"),
+                        arguments: [{ _: "Number" }],
+                      },
+                    },
+                  },
+                },
+              ]),
             },
-            {
-              name: "s",
-              required: true,
-              document: "",
-              type: d.TsType.WithTypeParameter({
-                type: d.TsType.ImportedType({
-                  moduleName: "sampleModule",
-                  name: jsTs.identifierFromString("Type"),
-                }),
-                typeParameterList: [d.TsType.Number],
-              }),
+          },
+          expr: {
+            _: "Lambda",
+            lambdaExpr: {
+              parameterList: [
+                {
+                  name: jsTs.identifierFromString("input"),
+                  type: jsTs.typeScopeInFileNoArguments(
+                    typeParameterIdentifier
+                  ),
+                },
+              ],
+              typeParameterList: [typeParameterIdentifier],
+              returnType: jsTs.typeObject([
+                {
+                  name: "value",
+                  required: true,
+                  document: "",
+                  type: jsTs.typeScopeInFileNoArguments(
+                    typeParameterIdentifier
+                  ),
+                },
+              ]),
+              statementList: [
+                jsTs.statementReturn(
+                  jsTs.objectLiteral([
+                    jsTs.memberKeyValue(
+                      "value",
+                      jsTs.variable(jsTs.identifierFromString("input"))
+                    ),
+                  ])
+                ),
+              ],
             },
-          ]),
-        }),
-        expr: d.TsExpr.Lambda({
-          parameterList: [
-            {
-              name: jsTs.identifierFromString("input"),
-              type: d.TsType.ScopeInFile(typeParameterIdentifier),
-            },
-          ],
-          typeParameterList: [typeParameterIdentifier],
-          returnType: d.TsType.Object([
-            {
-              name: "value",
-              required: true,
-              document: "",
-              type: d.TsType.ScopeInFile(typeParameterIdentifier),
-            },
-          ]),
-          statementList: [
-            d.Statement.Return(
-              d.TsExpr.ObjectLiteral([
-                d.TsMember.KeyValue({
-                  key: "value",
-                  value: d.TsExpr.Variable(jsTs.identifierFromString("input")),
-                }),
-              ])
-            ),
-          ],
-        }),
-      }),
+          },
+        },
+      },
     ],
   };
   const codeAsString = jsTs.generateCodeAsString(code, "TypeScript");
@@ -741,32 +827,32 @@ it("output lambda type parameter", () => {
 });
 
 it("output optional type member", () => {
-  const code: d.JsTsCode = {
+  const code: jsTs.data.JsTsCode = {
     exportDefinitionList: [
-      d.ExportDefinition.Variable({
-        name: jsTs.identifierFromString("value"),
-        document: "年齢があってもなくてもいいやつ",
-        type: d.TsType.Object([
-          {
-            name: "name",
-            required: true,
-            document: "名前",
-            type: d.TsType.String,
-          },
-          {
-            name: "age",
-            required: false,
-            document: "年齢",
-            type: d.TsType.Number,
-          },
-        ]),
-        expr: d.TsExpr.ObjectLiteral([
-          d.TsMember.KeyValue({
-            key: "name",
-            value: d.TsExpr.StringLiteral("narumincho"),
-          }),
-        ]),
-      }),
+      {
+        type: "variable",
+        variable: {
+          name: jsTs.identifierFromString("value"),
+          document: "年齢があってもなくてもいいやつ",
+          type: jsTs.typeObject([
+            {
+              name: "name",
+              required: true,
+              document: "名前",
+              type: { _: "String" },
+            },
+            {
+              name: "age",
+              required: false,
+              document: "年齢",
+              type: { _: "Number" },
+            },
+          ]),
+          expr: jsTs.objectLiteral([
+            jsTs.memberKeyValue("name", jsTs.stringLiteral("narumincho")),
+          ]),
+        },
+      },
     ],
     statementList: [],
   };
@@ -776,9 +862,9 @@ it("output optional type member", () => {
 });
 
 it("read me code", () => {
-  const serverCode: d.JsTsCode = {
+  const serverCode: jsTs.data.JsTsCode = {
     exportDefinitionList: [
-      d.ExportDefinition.Function({
+      jsTs.exportDefinitionFunction({
         name: jsTs.identifierFromString("middleware"),
         document: "ミドルウェア",
         typeParameterList: [],
@@ -786,59 +872,77 @@ it("read me code", () => {
           {
             name: jsTs.identifierFromString("request"),
             document: "リクエスト",
-            type: d.TsType.ImportedType({
-              moduleName: "express",
-              name: jsTs.identifierFromString("Request"),
-            }),
+            type: {
+              _: "ImportedType",
+              importedType: {
+                moduleName: "express",
+                nameAndArguments: {
+                  name: jsTs.identifierFromString("Request"),
+                  arguments: [],
+                },
+              },
+            },
           },
           {
             name: jsTs.identifierFromString("response"),
             document: "レスポンス",
-            type: d.TsType.ImportedType({
-              moduleName: "express",
-              name: jsTs.identifierFromString("Response"),
-            }),
+            type: {
+              _: "ImportedType",
+              importedType: {
+                moduleName: "express",
+                nameAndArguments: {
+                  name: jsTs.identifierFromString("Response"),
+                  arguments: [],
+                },
+              },
+            },
           },
         ],
-        returnType: d.TsType.Void,
+        returnType: { _: "Void" },
         statementList: [
-          d.Statement.VariableDefinition({
-            isConst: true,
-            name: jsTs.identifierFromString("accept"),
-            type: d.TsType.Union([d.TsType.String, d.TsType.Undefined]),
-            expr: jsTs.get(
-              jsTs.get(
-                d.TsExpr.Variable(jsTs.identifierFromString("request")),
-                "headers"
+          {
+            _: "VariableDefinition",
+            variableDefinitionStatement: {
+              isConst: true,
+              name: jsTs.identifierFromString("accept"),
+              type: jsTs.typeUnion([{ _: "String" }, { _: "Undefined" }]),
+              expr: jsTs.get(
+                jsTs.get(
+                  jsTs.variable(jsTs.identifierFromString("request")),
+                  "headers"
+                ),
+                "accept"
               ),
-              "accept"
-            ),
-          }),
-          d.Statement.If({
-            condition: jsTs.logicalAnd(
-              jsTs.notEqual(
-                d.TsExpr.Variable(jsTs.identifierFromString("accept")),
-                d.TsExpr.UndefinedLiteral
-              ),
-              jsTs.callMethod(
-                d.TsExpr.Variable(jsTs.identifierFromString("accept")),
-                "includes",
-                [d.TsExpr.StringLiteral("text/html")]
-              )
-            ),
-            thenStatementList: [
-              d.Statement.EvaluateExpr(
+            },
+          },
+          {
+            _: "If",
+            ifStatement: {
+              condition: jsTs.logicalAnd(
+                jsTs.notEqual(
+                  jsTs.variable(jsTs.identifierFromString("accept")),
+                  { _: "UndefinedLiteral" }
+                ),
                 jsTs.callMethod(
-                  d.TsExpr.Variable(jsTs.identifierFromString("response")),
-                  "setHeader",
-                  [
-                    d.TsExpr.StringLiteral("content-type"),
-                    d.TsExpr.StringLiteral("text/html"),
-                  ]
+                  jsTs.variable(jsTs.identifierFromString("accept")),
+                  "includes",
+                  [jsTs.stringLiteral("text/html")]
                 )
               ),
-            ],
-          }),
+              thenStatementList: [
+                jsTs.statementEvaluateExpr(
+                  jsTs.callMethod(
+                    jsTs.variable(jsTs.identifierFromString("response")),
+                    "setHeader",
+                    [
+                      jsTs.stringLiteral("content-type"),
+                      jsTs.stringLiteral("text/html"),
+                    ]
+                  )
+                ),
+              ],
+            },
+          },
         ],
       }),
     ],

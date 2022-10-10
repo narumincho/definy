@@ -1,45 +1,44 @@
 import * as c from "./codec";
 import * as string from "./string";
-import * as ts from "../../localData";
 import * as util from "../util";
-import { jsTs } from "../../gen/main";
+import { jsTs } from "../../deno-lib/npm";
 
 const name = jsTs.identifierFromString("Url");
 
-export const type = ts.TsType.ScopeInGlobal(name);
+export const type: jsTs.data.TsType = {
+  _: "ScopeInGlobal",
+  typeNameAndTypeParameter: { name, arguments: [] },
+};
 
 export const encodeDefinitionStatementList = (
-  valueVar: ts.TsExpr
-): ReadonlyArray<ts.Statement> => {
+  valueVar: jsTs.data.TsExpr
+): ReadonlyArray<jsTs.data.Statement> => {
   return [
-    ts.Statement.Return(
+    jsTs.statementReturn(
       util.callEncode(string.codec(), jsTs.callMethod(valueVar, "toString", []))
     ),
   ];
 };
 
 export const decodeDefinitionStatementList = (
-  parameterIndex: ts.TsExpr,
-  parameterBinary: ts.TsExpr
-): ReadonlyArray<ts.Statement> => {
+  parameterIndex: jsTs.data.TsExpr,
+  parameterBinary: jsTs.data.TsExpr
+): ReadonlyArray<jsTs.data.Statement> => {
   const resultAndNextIndexAsStringName = jsTs.identifierFromString(
     "resultAndNextIndexAsString"
   );
-  const resultAndNextIndexAsStringVar = ts.TsExpr.Variable(
+  const resultAndNextIndexAsStringVar = jsTs.variable(
     resultAndNextIndexAsStringName
   );
   return [
-    ts.Statement.VariableDefinition({
+    jsTs.statementVariableDefinition({
       isConst: true,
       name: resultAndNextIndexAsStringName,
       type: c.decodeReturnType(string.type),
       expr: util.callDecode(string.codec(), parameterIndex, parameterBinary),
     }),
     c.returnStatement(
-      ts.TsExpr.New({
-        expr: ts.TsExpr.GlobalObjects(jsTs.identifierFromString("URL")),
-        parameterList: [c.getResult(resultAndNextIndexAsStringVar)],
-      }),
+      jsTs.newURL(c.getResult(resultAndNextIndexAsStringVar)),
       c.getNextIndex(resultAndNextIndexAsStringVar)
     ),
   ];

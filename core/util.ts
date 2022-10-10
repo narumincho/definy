@@ -1,6 +1,6 @@
 import * as d from "../localData";
 import { firstLowerCase } from "../common/util";
-import { jsTs } from "../gen/main";
+import { jsTs } from "../deno-lib/npm";
 
 const millisecondInDay = 1000 * 60 * 60 * 24;
 
@@ -19,7 +19,7 @@ export const typeToTsType = (
   type: d.Type,
   typePartMap: ReadonlyMap<d.TypePartId, d.TypePart>,
   scopeTypePartDataTypeParameterList: ReadonlyArray<d.DataTypeParameter>
-): d.TsType => {
+): jsTs.data.TsType => {
   return dataTypeOrDataTypeParameterToTsType(
     type.output,
     typePartMap,
@@ -31,7 +31,7 @@ const dataTypeOrDataTypeParameterToTsType = (
   dataTypeOrDataTypeParameter: d.DataTypeOrDataTypeParameter,
   typePartMap: ReadonlyMap<d.TypePartId, d.TypePart>,
   scopeTypePartDataTypeParameterList: ReadonlyArray<d.DataTypeParameter>
-): d.TsType => {
+): jsTs.data.TsType => {
   switch (dataTypeOrDataTypeParameter._) {
     case "DataType": {
       const typePart = typePartMap.get(
@@ -43,17 +43,20 @@ const dataTypeOrDataTypeParameterToTsType = (
             dataTypeOrDataTypeParameter.dataType.typePartId
         );
       }
-      return d.TsType.WithTypeParameter({
-        type: d.TsType.ScopeInFile(jsTs.identifierFromString(typePart.name)),
-        typeParameterList: dataTypeOrDataTypeParameter.dataType.arguments.map(
-          (parameter) =>
-            dataTypeOrDataTypeParameterToTsType(
-              parameter,
-              typePartMap,
-              scopeTypePartDataTypeParameterList
-            )
-        ),
-      });
+      return {
+        _: "ScopeInFile",
+        typeNameAndTypeParameter: {
+          name: jsTs.identifierFromString(typePart.name),
+          arguments: dataTypeOrDataTypeParameter.dataType.arguments.map(
+            (parameter) =>
+              dataTypeOrDataTypeParameterToTsType(
+                parameter,
+                typePartMap,
+                scopeTypePartDataTypeParameterList
+              )
+          ),
+        },
+      };
     }
     case "DataTypeParameter": {
       const dataTypeParameter =
@@ -64,7 +67,7 @@ const dataTypeOrDataTypeParameterToTsType = (
         );
       }
 
-      return d.TsType.ScopeInFile(
+      return jsTs.typeScopeInFileNoArguments(
         jsTs.identifierFromString(dataTypeParameter.name)
       );
     }
@@ -96,8 +99,10 @@ export const fromStringPropertyName = "fromString";
  * codec.encode(value)
  * ```
  */
-export const callEncode = (codecExpr: d.TsExpr, value: d.TsExpr): d.TsExpr =>
-  jsTs.callMethod(codecExpr, encodePropertyName, [value]);
+export const callEncode = (
+  codecExpr: jsTs.data.TsExpr,
+  value: jsTs.data.TsExpr
+): jsTs.data.TsExpr => jsTs.callMethod(codecExpr, encodePropertyName, [value]);
 
 /**
  * デコードの関数を呼ぶ
@@ -106,10 +111,11 @@ export const callEncode = (codecExpr: d.TsExpr, value: d.TsExpr): d.TsExpr =>
  * ```
  */
 export const callDecode = (
-  codecExpr: d.TsExpr,
-  index: d.TsExpr,
-  binary: d.TsExpr
-): d.TsExpr => jsTs.callMethod(codecExpr, decodePropertyName, [index, binary]);
+  codecExpr: jsTs.data.TsExpr,
+  index: jsTs.data.TsExpr,
+  binary: jsTs.data.TsExpr
+): jsTs.data.TsExpr =>
+  jsTs.callMethod(codecExpr, decodePropertyName, [index, binary]);
 
 export const toTypeName = (
   type: d.Type,

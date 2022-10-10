@@ -16,7 +16,7 @@ import {
   CollectedDefinyRpcTypeMap,
   CollectedDefinyRpcTypeUse,
 } from "../collectType.ts";
-import { arrayFromLength } from "../../../common/util.ts";
+import { arrayFromLength } from "../../../deno-lib/util.ts";
 import { structuredJsonValueType } from "./runtime.ts";
 
 export const collectedTypeToTypeAlias = (
