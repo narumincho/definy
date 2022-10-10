@@ -9,6 +9,7 @@ import { toString } from "./toString.ts";
 import * as d from "./data.ts";
 export * from "./identifier.ts";
 export * from "./interface.ts";
+export * as data from "./data.ts";
 
 export const generateCodeAsString = (
   code: d.JsTsCode,

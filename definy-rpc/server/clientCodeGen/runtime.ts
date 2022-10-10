@@ -1,9 +1,8 @@
-import { TsExpr, TsType } from "../jsTs/data.ts";
-import { identifierFromString } from "../jsTs/identifier.ts";
+import { identifierFromString, data } from "../../../deno-lib/jsTs/main.ts";
 
 const runtimeModuleName = "./runtime";
 
-export const structuredJsonValueType: TsType = {
+export const structuredJsonValueType: data.TsType = {
   _: "ImportedType",
   importedType: {
     moduleName: runtimeModuleName,
@@ -14,7 +13,7 @@ export const structuredJsonValueType: TsType = {
   },
 };
 
-export const rawJsonValueType: TsType = {
+export const rawJsonValueType: data.TsType = {
   _: "ImportedType",
   importedType: {
     moduleName: runtimeModuleName,
@@ -26,8 +25,8 @@ export const rawJsonValueType: TsType = {
 };
 
 export const useRawJsonToStructuredJsonValue = (
-  rawJsonExpr: TsExpr
-): TsExpr => ({
+  rawJsonExpr: data.TsExpr
+): data.TsExpr => ({
   _: "Call",
   callExpr: {
     expr: {

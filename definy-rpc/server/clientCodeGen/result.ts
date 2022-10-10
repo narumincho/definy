@@ -1,9 +1,8 @@
-import { ExportDefinition, TsExpr, TsType } from "../jsTs/data.ts";
-import { identifierFromString } from "../jsTs/identifier.ts";
+import { identifierFromString, data } from "../../../deno-lib/jsTs/main.ts";
 
 const resultTypeName = identifierFromString("Result");
 
-export const resultExportDefinition: ExportDefinition = {
+export const resultExportDefinition: data.ExportDefinition = {
   type: "typeAlias",
   typeAlias: {
     namespace: [],
@@ -67,7 +66,10 @@ export const resultExportDefinition: ExportDefinition = {
   },
 };
 
-export const resultType = (ok: TsType, error: TsType): TsType => ({
+export const resultType = (
+  ok: data.TsType,
+  error: data.TsType
+): data.TsType => ({
   _: "ScopeInFile",
   typeNameAndTypeParameter: {
     name: resultTypeName,
@@ -75,7 +77,7 @@ export const resultType = (ok: TsType, error: TsType): TsType => ({
   },
 });
 
-export const resultOk = (ok: TsExpr): TsExpr => ({
+export const resultOk = (ok: data.TsExpr): data.TsExpr => ({
   _: "ObjectLiteral",
   tsMemberList: [
     {
@@ -89,7 +91,7 @@ export const resultOk = (ok: TsExpr): TsExpr => ({
   ],
 });
 
-export const resultError = (error: TsExpr): TsExpr => ({
+export const resultError = (error: data.TsExpr): data.TsExpr => ({
   _: "ObjectLiteral",
   tsMemberList: [
     {

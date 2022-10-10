@@ -1,15 +1,15 @@
-import { identifierFromString } from "../jsTs/identifier.ts";
 import {
-  LambdaExpr,
-  Parameter,
-  Statement,
-  TsExpr,
-  TsMember,
-  TsType,
-  TypeAlias,
-  Variable,
-} from "../jsTs/data.ts";
-import * as tsInterface from "../jsTs/interface.ts";
+  identifierFromString,
+  data,
+  readonlySetType,
+  readonlyArrayType,
+  get,
+  equal,
+  arrayMap,
+  newSet,
+  notEqual,
+  callMethod,
+} from "../../../deno-lib/jsTs/main.ts";
 import {
   CollectedDefinyRpcType,
   CollectedDefinyRpcTypeBody,
@@ -22,7 +22,7 @@ import { structuredJsonValueType } from "./runtime.ts";
 export const collectedTypeToTypeAlias = (
   type: CollectedDefinyRpcType,
   map: CollectedDefinyRpcTypeMap
-): TypeAlias | undefined => {
+): data.TypeAlias | undefined => {
   if (
     type.body.type === "string" ||
     type.body.type === "number" ||
@@ -46,7 +46,7 @@ export const collectedTypeToTypeAlias = (
 const collectedDefinyRpcTypeBodyToTsType = (
   typeBody: CollectedDefinyRpcTypeBody,
   map: CollectedDefinyRpcTypeMap
-): TsType => {
+): data.TsType => {
   switch (typeBody.type) {
     case "string":
       return { _: "String" };
@@ -84,7 +84,7 @@ const collectedDefinyRpcTypeBodyToTsType = (
       return {
         _: "Union",
         tsTypeList: typeBody.patternList.map(
-          (pattern): TsType => ({
+          (pattern): data.TsType => ({
             _: "Object",
             tsMemberTypeList: [
               {
@@ -116,7 +116,7 @@ const collectedDefinyRpcTypeBodyToTsType = (
 const collectedDefinyRpcTypeUseToTsType = (
   collectedDefinyRpcTypeUse: CollectedDefinyRpcTypeUse,
   map: CollectedDefinyRpcTypeMap
-): TsType => {
+): data.TsType => {
   const typeDetail = map.get(
     collectedDefinyRpcTypeUse.namespace.join(".") +
       "." +
@@ -145,9 +145,7 @@ const collectedDefinyRpcTypeUseToTsType = (
           collectedDefinyRpcTypeUse.parameters.length
       );
     }
-    return tsInterface.readonlyArrayType(
-      collectedDefinyRpcTypeUseToTsType(parameter, map)
-    );
+    return readonlyArrayType(collectedDefinyRpcTypeUseToTsType(parameter, map));
   }
   if (typeDetail.body.type === "set") {
     const parameter = collectedDefinyRpcTypeUse.parameters[0];
@@ -160,9 +158,7 @@ const collectedDefinyRpcTypeUseToTsType = (
           collectedDefinyRpcTypeUse.parameters.length
       );
     }
-    return tsInterface.readonlySetType(
-      collectedDefinyRpcTypeUseToTsType(parameter, map)
-    );
+    return readonlySetType(collectedDefinyRpcTypeUseToTsType(parameter, map));
   }
   return {
     _: "ScopeInFile",
@@ -178,7 +174,7 @@ const collectedDefinyRpcTypeUseToTsType = (
 const collectedDefinyRpcTypeToTsType = (
   collectedDefinyRpcType: CollectedDefinyRpcType,
   map: CollectedDefinyRpcTypeMap
-): TsType => {
+): data.TsType => {
   const typeDetail = map.get(
     collectedDefinyRpcType.namespace.join(".") +
       "." +
@@ -197,7 +193,7 @@ const collectedDefinyRpcTypeToTsType = (
     return { _: "Undefined" };
   }
   if (typeDetail.body.type === "list") {
-    return tsInterface.readonlyArrayType({
+    return readonlyArrayType({
       _: "ScopeInFile",
       typeNameAndTypeParameter: {
         name: identifierFromString("p0"),
@@ -206,7 +202,7 @@ const collectedDefinyRpcTypeToTsType = (
     });
   }
   if (typeDetail.body.type === "set") {
-    return tsInterface.readonlySetType({
+    return readonlySetType({
       _: "ScopeInFile",
       typeNameAndTypeParameter: {
         name: identifierFromString("p0"),
@@ -235,8 +231,8 @@ const collectedDefinyRpcTypeToTsType = (
 export const typeToTypeVariable = (
   type: CollectedDefinyRpcType,
   map: CollectedDefinyRpcTypeMap
-): Variable => {
-  const fromJsonTypeMain: TsType = {
+): data.Variable => {
+  const fromJsonTypeMain: data.TsType = {
     _: "Function",
     functionType: {
       typeParameterList: [],
@@ -268,7 +264,7 @@ export const typeToTypeVariable = (
                   functionType: {
                     parameterList: arrayFromLength(
                       type.parameterCount,
-                      (i): TsType => ({
+                      (i): data.TsType => ({
                         _: "Function",
                         functionType: {
                           parameterList: [structuredJsonValueType],
@@ -321,8 +317,8 @@ export const typeToTypeVariable = (
 const typeToFromJsonLambda = (
   type: CollectedDefinyRpcType,
   map: CollectedDefinyRpcTypeMap
-): LambdaExpr => {
-  const main: LambdaExpr = {
+): data.LambdaExpr => {
+  const main: data.LambdaExpr = {
     parameterList: [
       {
         name: identifierFromString("jsonValue"),
@@ -337,7 +333,7 @@ const typeToFromJsonLambda = (
     return {
       parameterList: arrayFromLength(
         type.parameterCount,
-        (i): Parameter => ({
+        (i): data.Parameter => ({
           name: identifierFromString("p" + i + "FromJson"),
           type: {
             _: "Function",
@@ -374,18 +370,18 @@ const typeToFromJsonLambda = (
   return main;
 };
 
-const jsonValueVariable: TsExpr = {
+const jsonValueVariable: data.TsExpr = {
   _: "Variable",
   tsIdentifier: identifierFromString("jsonValue"),
 };
 
-const jsonValueVariableType = tsInterface.get(jsonValueVariable, "type");
+const jsonValueVariableType = get(jsonValueVariable, "type");
 
-const jsonValueVariableValue = tsInterface.get(jsonValueVariable, "value");
+const jsonValueVariableValue = get(jsonValueVariable, "value");
 
 const typeToFromJsonStatementList = (
   type: CollectedDefinyRpcType
-): ReadonlyArray<Statement> => {
+): ReadonlyArray<data.Statement> => {
   switch (type.body.type) {
     case "unit":
       return [{ _: "Return", tsExpr: { _: "UndefinedLiteral" } }];
@@ -394,7 +390,7 @@ const typeToFromJsonStatementList = (
         {
           _: "If",
           ifStatement: {
-            condition: tsInterface.equal(jsonValueVariableType, {
+            condition: equal(jsonValueVariableType, {
               _: "StringLiteral",
               string: "number",
             }),
@@ -419,7 +415,7 @@ const typeToFromJsonStatementList = (
         {
           _: "If",
           ifStatement: {
-            condition: tsInterface.equal(jsonValueVariableType, {
+            condition: equal(jsonValueVariableType, {
               _: "StringLiteral",
               string: "string",
             }),
@@ -444,14 +440,14 @@ const typeToFromJsonStatementList = (
         {
           _: "If",
           ifStatement: {
-            condition: tsInterface.equal(jsonValueVariableType, {
+            condition: equal(jsonValueVariableType, {
               _: "StringLiteral",
               string: "array",
             }),
             thenStatementList: [
               {
                 _: "Return",
-                tsExpr: tsInterface.arrayMap(jsonValueVariableValue, {
+                tsExpr: arrayMap(jsonValueVariableValue, {
                   _: "Variable",
                   tsIdentifier: identifierFromString("p0FromJson"),
                 }),
@@ -472,15 +468,15 @@ const typeToFromJsonStatementList = (
         {
           _: "If",
           ifStatement: {
-            condition: tsInterface.equal(jsonValueVariableType, {
+            condition: equal(jsonValueVariableType, {
               _: "StringLiteral",
               string: "array",
             }),
             thenStatementList: [
               {
                 _: "Return",
-                tsExpr: tsInterface.newSet(
-                  tsInterface.arrayMap(jsonValueVariableValue, {
+                tsExpr: newSet(
+                  arrayMap(jsonValueVariableValue, {
                     _: "Variable",
                     tsIdentifier: identifierFromString("p0FromJson"),
                   })
@@ -502,7 +498,7 @@ const typeToFromJsonStatementList = (
         {
           _: "If",
           ifStatement: {
-            condition: tsInterface.notEqual(jsonValueVariableType, {
+            condition: notEqual(jsonValueVariableType, {
               _: "StringLiteral",
               string: "object",
             }),
@@ -518,7 +514,7 @@ const typeToFromJsonStatementList = (
           },
         },
         ...type.body.fieldList.flatMap(
-          (field): readonly [Statement, Statement] => [
+          (field): readonly [data.Statement, data.Statement] => [
             {
               _: "VariableDefinition",
               variableDefinitionStatement: {
@@ -528,7 +524,7 @@ const typeToFromJsonStatementList = (
                   _: "Union",
                   tsTypeList: [structuredJsonValueType, { _: "Undefined" }],
                 },
-                expr: tsInterface.callMethod(jsonValueVariableValue, "get", [
+                expr: callMethod(jsonValueVariableValue, "get", [
                   {
                     _: "StringLiteral",
                     string: field.name,
@@ -539,7 +535,7 @@ const typeToFromJsonStatementList = (
             {
               _: "If",
               ifStatement: {
-                condition: tsInterface.equal(
+                condition: equal(
                   {
                     _: "Variable",
                     tsIdentifier: identifierFromString(field.name),
@@ -564,7 +560,7 @@ const typeToFromJsonStatementList = (
           tsExpr: {
             _: "ObjectLiteral",
             tsMemberList: type.body.fieldList.map(
-              (field): TsMember => ({
+              (field): data.TsMember => ({
                 _: "KeyValue",
                 keyValue: {
                   key: field.name,
@@ -583,7 +579,7 @@ const typeToFromJsonStatementList = (
         {
           _: "If",
           ifStatement: {
-            condition: tsInterface.notEqual(jsonValueVariableType, {
+            condition: notEqual(jsonValueVariableType, {
               _: "StringLiteral",
               string: "object",
             }),
@@ -609,17 +605,17 @@ const typeToFromJsonStatementList = (
  */
 export const useFromJson = (
   type: CollectedDefinyRpcTypeUse,
-  expr: TsExpr
-): TsExpr => {
+  expr: data.TsExpr
+): data.TsExpr => {
   return {
     _: "Call",
     callExpr: { expr: getFromJsonFunction(type), parameterList: [expr] },
   };
 };
 
-const getFromJsonFunction = (type: CollectedDefinyRpcTypeUse): TsExpr => {
+const getFromJsonFunction = (type: CollectedDefinyRpcTypeUse): data.TsExpr => {
   if (type.parameters.length === 0) {
-    return tsInterface.get(
+    return get(
       {
         _: "Variable",
         tsIdentifier: identifierFromString(type.name),
@@ -627,7 +623,7 @@ const getFromJsonFunction = (type: CollectedDefinyRpcTypeUse): TsExpr => {
       "fromJson"
     );
   }
-  return tsInterface.callMethod(
+  return callMethod(
     {
       _: "Variable",
       tsIdentifier: identifierFromString(type.name),
