@@ -1,4 +1,4 @@
-import * as f from "../typed-fauna/npm";
+import * as f from "../deno-lib/npm";
 import {
   AccountId,
   AccountName,

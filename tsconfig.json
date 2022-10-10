@@ -28,7 +28,7 @@
     "desktop-proxy",
     "deno-library-check",
     "databaseMigration.ts",
-    "typed-fauna"
+    "deno-lib"
   ],
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx"]
 }

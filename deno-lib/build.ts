@@ -9,9 +9,9 @@ await build({
     undici: true,
   },
   package: {
-    name: "typed-fauna",
+    name: "deno-lib",
     version: "0.0.0",
-    description: "stronger type for fauna",
+    description: "deno code for definy",
     license: "MIT",
     repository: {
       type: "git",

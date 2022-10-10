@@ -22,7 +22,7 @@ jobs:
         run: pnpm install
       - name: Deno to Node.js
         run: deno run --check -A ./build.ts
-        working-directory: ./typed-fauna
+        working-directory: ./deno-lib
       - name: Type check
         run: pnpm run typeCheck
       - name: Test

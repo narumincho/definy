@@ -5,7 +5,7 @@
     { "path": "./definy-rpc/example" },
     { "path": "./desktop-proxy" },
     { "path": "./deno-library-check" },
-    { "path": "./typed-fauna" }
+    { "path": "./deno-lib" }
   ],
   "extensions": {
     "recommendations": ["denoland.vscode-deno"],
