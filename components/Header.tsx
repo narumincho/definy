@@ -1,10 +1,10 @@
 import * as React from "react";
-import * as zodType from "../common/zodType";
 import { Link } from "./Link";
 import { UseAccountTokenResult } from "../client/hook/useAccountToken";
 import type { UseDefinyAppResult } from "../client/hook/useDefinyApp";
 import { trpc } from "../client/hook/trpc";
 import { useRouter } from "next/router";
+import { zodType } from "../deno-lib/npm";
 
 export type TitleItem = {
   readonly name: string;

@@ -1,5 +1,4 @@
 import * as React from "react";
-import * as zodType from "../common/zodType";
 import { Header, TitleItem } from "./Header";
 import Head from "next/head";
 import { LoadingBoxCenter } from "./LoadingBox";
@@ -9,6 +8,7 @@ import iconPng from "../assets/icon.png";
 import { trpc } from "../client/hook/trpc";
 import { useRouter } from "next/router";
 import { zodLanguageToQueryValue } from "../common/url";
+import { zodType } from "../deno-lib/npm";
 
 export const WithHeader = (props: {
   readonly titleItemList: ReadonlyArray<TitleItem>;

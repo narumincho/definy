@@ -1,5 +1,4 @@
 import * as React from "react";
-import * as zodType from "../common/zodType";
 import { Link } from "../components/Link";
 import { ProjectCard } from "../components/ProjectCard";
 import { Text } from "../components/Text";
@@ -7,6 +6,7 @@ import { WithHeader } from "../components/WithHeader";
 import { trpc } from "../client/hook/trpc";
 import { useAccountToken } from "../client/hook/useAccountToken";
 import { useLanguage } from "../client/hook/useLanguage";
+import { zodType } from "../deno-lib/npm";
 
 const IndexPage = (): React.ReactElement => {
   const language = useLanguage();

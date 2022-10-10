@@ -1,5 +1,4 @@
 import * as React from "react";
-import { AccountToken, Language, ProjectName } from "../common/zodType";
 import { Text, langText } from "../components/Text";
 import { Button } from "../client/ui/Button";
 import { Editor } from "../components/Editor";
@@ -8,6 +7,7 @@ import { trpc } from "../client/hook/trpc";
 import { useAccountToken } from "../client/hook/useAccountToken";
 import { useLanguage } from "../client/hook/useLanguage";
 import { useRouter } from "next/router";
+import { zodType } from "../deno-lib/npm";
 import { zodTypeLocationAndLanguageToUrl } from "../common/url";
 
 const CreateProject = (): React.ReactElement => {
@@ -47,8 +47,8 @@ const CreateProject = (): React.ReactElement => {
 const projectNameFieldId = "project-name";
 
 const CreateProjectLoggedIn = (props: {
-  readonly language: Language;
-  readonly accountToken: AccountToken;
+  readonly language: zodType.Language;
+  readonly accountToken: zodType.AccountToken;
 }): React.ReactElement => {
   const [projectName, setProjectName] = React.useState<string>("");
 
@@ -65,7 +65,7 @@ const CreateProjectLoggedIn = (props: {
     },
   });
 
-  const parsedProjectName = ProjectName.safeParse(projectName);
+  const parsedProjectName = zodType.ProjectName.safeParse(projectName);
 
   return (
     <div css={{ padding: 16 }}>

@@ -1,16 +1,16 @@
 import * as React from "react";
-import { AccountId } from "../../common/zodType";
 import { WithHeader } from "../../components/WithHeader";
 import { trpc } from "../../client/hook/trpc";
 import { useAccountToken } from "../../client/hook/useAccountToken";
 import { useLanguage } from "../../client/hook/useLanguage";
 import { useRouter } from "next/router";
+import { zodType } from "../../deno-lib/npm";
 
 const AccountPage = (): React.ReactElement => {
   const { query } = useRouter();
   const language = useLanguage();
   const useAccountTokenResult = useAccountToken();
-  const accountIdParseResult = AccountId.safeParse(query.id);
+  const accountIdParseResult = zodType.AccountId.safeParse(query.id);
 
   return (
     <WithHeader
@@ -46,7 +46,7 @@ const AccountPage = (): React.ReactElement => {
 };
 
 const Content = (props: {
-  readonly accountId: AccountId;
+  readonly accountId: zodType.AccountId;
 }): React.ReactElement => {
   const accountQueryResult = trpc.useQuery(["getAccountById", props.accountId]);
 

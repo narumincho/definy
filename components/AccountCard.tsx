@@ -1,11 +1,11 @@
 import * as React from "react";
-import { AccountId, Language } from "../common/zodType";
 import { Link } from "./Link";
 import { trpc } from "../client/hook/trpc";
+import { zodType } from "../deno-lib/npm";
 
 export const AccountCard = (props: {
-  readonly accountId: AccountId;
-  readonly language: Language;
+  readonly accountId: zodType.AccountId;
+  readonly language: zodType.Language;
 }): React.ReactElement => {
   const accountQueryResult = trpc.useQuery(["getAccountById", props.accountId]);
 
@@ -28,8 +28,8 @@ export const AccountCard = (props: {
 };
 
 const AccountCardLoaded = (props: {
-  readonly language: Language;
-  readonly accountId: AccountId;
+  readonly language: zodType.Language;
+  readonly accountId: zodType.AccountId;
   readonly data:
     | {
         readonly name: string;

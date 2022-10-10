@@ -1,7 +1,5 @@
-import * as i from "../../../functions/faunadb-interface";
 import * as trpc from "@trpc/server";
 import * as trpcNext from "@trpc/server/adapters/next";
-import * as zodType from "../../../common/zodType";
 import {
   FAUNA_SERVER_KEY,
   VERCEL_GIT_COMMIT_SHA,
@@ -13,7 +11,11 @@ import {
   googleLogInUrl,
   hashAccountToken,
 } from "../../../functions/login";
-import type { TypedFaunaClient } from "../../../deno-lib/npm";
+import {
+  faunaInterface as i,
+  typedFauna,
+  zodType,
+} from "../../../deno-lib/npm";
 import { createProjectIconAndImage } from "../../../functions/image";
 import { savePngFile } from "../../../functions/object-storage-interface";
 import superjson from "superjson";
@@ -44,7 +46,7 @@ const getAccountByIdOutput = z.union([
 type GetAccountByIdOutput = z.TypeOf<typeof getAccountByIdOutput>;
 
 export const appRouter = trpc
-  .router<TypedFaunaClient>()
+  .router<typedFauna.TypedFaunaClient>()
   .transformer(superjson)
   .query("gitCommitSha", {
     input: z.void(),

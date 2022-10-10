@@ -1,4 +1,4 @@
-import * as d from "../common/zodType";
+import { zodType as d } from "../deno-lib/npm";
 
 const AccountTokenObjectStoreName = "AccountToken";
 const AccountTokenKeyName = "lastLogInUser";

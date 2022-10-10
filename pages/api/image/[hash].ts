@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { ImageHash } from "../../../common/zodType";
 import { getPngFileReadable } from "../../../functions/object-storage-interface";
+import { zodType } from "../../../deno-lib/npm";
 
 /**
  * Cloud Storage に保存された PNG 画像を取得する
@@ -9,13 +9,13 @@ import { getPngFileReadable } from "../../../functions/object-storage-interface"
 const handler = (request: NextApiRequest, response: NextApiResponse) => {
   const hash = request.query.hash;
   if (typeof hash === "string") {
-    const imageHashParseResult = ImageHash.safeParse(hash);
+    const imageHashParseResult = zodType.ImageHash.safeParse(hash);
     if (imageHashParseResult.success) {
       response.setHeader("content-type", "image/png");
       response.setHeader("cache-control", "public, max-age=604800, immutable");
-      getPngFileReadable(ImageHash.parse(imageHashParseResult.data)).then(
-        (readableStream) => readableStream.pipe(response)
-      );
+      getPngFileReadable(
+        zodType.ImageHash.parse(imageHashParseResult.data)
+      ).then((readableStream) => readableStream.pipe(response));
       return;
     }
     response.status(400).json({

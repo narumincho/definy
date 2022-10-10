@@ -1,7 +1,7 @@
 import * as React from "react";
-import * as zodType from "../common/zodType";
 import { CSSObject, css } from "@emotion/react";
 import NextLink from "next/link";
+import { zodType } from "../deno-lib/npm";
 import { zodTypeLocationAndLanguageToUrl } from "../common/url";
 
 export const Link = (props: {

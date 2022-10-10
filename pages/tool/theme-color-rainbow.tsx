@@ -1,8 +1,8 @@
 import * as React from "react";
 import Head from "next/head";
-import { Language } from "../../common/zodType";
 import { css } from "@emotion/css";
 import { useLanguage } from "../../client/hook/useLanguage";
+import { zodType } from "../../deno-lib/npm";
 
 const themeColorName = "theme-color";
 
@@ -95,7 +95,7 @@ export const ThemeColorRainbow = (): React.ReactElement => {
   );
 };
 
-const languageToMessage = (language: Language): string => {
+const languageToMessage = (language: zodType.Language): string => {
   switch (language) {
     case "japanese":
       return "テーマカラーレインボー!";

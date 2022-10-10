@@ -1,6 +1,5 @@
 import * as d from "../../localData";
 import * as indexedDB from "../indexedDB";
-import * as zodType from "../../common/zodType";
 import { AddMessage, useNotification } from "./useNotification";
 import { ReactElement, useCallback, useEffect, useMemo, useState } from "react";
 import type { TypePartIdAndMessage } from "../../core/TypePartIdAndMessage";
@@ -10,6 +9,7 @@ import { jsTs } from "../../gen/main";
 import { urlToUrlData } from "../../common/url";
 import { useResourceState } from "./resourceState";
 import { useTypePartIdListInProject } from "./typePartIdListInProject";
+import { zodType } from "../../deno-lib/npm";
 
 export type TopProjectsLoadingState =
   | { readonly _: "none" }

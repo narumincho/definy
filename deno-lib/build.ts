@@ -8,6 +8,7 @@ await build({
     deno: true,
     undici: true,
   },
+  typeCheck: false,
   package: {
     name: "deno-lib",
     version: "0.0.0",
@@ -25,8 +26,12 @@ await build({
   mappings: {
     "https://cdn.skypack.dev/faunadb@4.7.0?dts": {
       name: "faunadb",
-      version: ">=4.7.0",
+      version: "4.7.0",
       peerDependency: false,
+    },
+    "https://deno.land/x/zod@v3.19.1/mod.ts": {
+      name: "zod",
+      version: "3.19.1",
     },
   },
 });
