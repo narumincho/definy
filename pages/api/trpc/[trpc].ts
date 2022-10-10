@@ -13,7 +13,7 @@ import {
   googleLogInUrl,
   hashAccountToken,
 } from "../../../functions/login";
-import type { TypedFaunaClient } from "../../../functions/typedFauna";
+import type { TypedFaunaClient } from "../../../typed-fauna/npm";
 import { createProjectIconAndImage } from "../../../functions/image";
 import { savePngFile } from "../../../functions/object-storage-interface";
 import superjson from "superjson";
