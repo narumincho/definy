@@ -1,10 +1,10 @@
-name: deploy vercel
+name: deploy to vercel
 
 on: push
 
 jobs:
-  npm-publish:
-    name: npm publish
+  deploy-to-vercel:
+    name: deploy to vercel
     runs-on: ubuntu-22.04
     steps:
       - name: checkout repository
