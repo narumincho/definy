@@ -1,6 +1,5 @@
 import * as codec from "./codec";
 import { jsTs } from "../../deno-lib/npm";
-import { objectLiteral } from "../../deno-lib/npm/types/jsTs/interface";
 
 const encodeDefinition = (
   byteSize: number,
@@ -34,14 +33,11 @@ const encodeDefinition = (
           },
           "from",
           [
-            objectLiteral([
-              {
-                _: "KeyValue",
-                keyValue: {
-                  key: "length",
-                  value: { _: "NumberLiteral", int32: byteSize },
-                },
-              },
+            jsTs.objectLiteral([
+              jsTs.memberKeyValue("length", {
+                _: "NumberLiteral",
+                int32: byteSize,
+              }),
             ]),
             {
               _: "Lambda",
