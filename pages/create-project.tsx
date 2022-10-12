@@ -1,6 +1,5 @@
 import * as React from "react";
 import { Text, langText } from "../components/Text";
-import { Button } from "../client/ui/Button";
 import { Editor } from "../components/Editor";
 import { WithHeader } from "../components/WithHeader";
 import { trpc } from "../client/hook/trpc";

@@ -132,7 +132,11 @@ export const Editor = (props: {
               console.log("onUnSelected", field.name);
               setSelectedFieldId(undefined);
             }}
-            onStartEdit={onStartEdit}
+            onStartEdit={
+              field.body.type === "button" || field.body.readonly
+                ? undefined
+                : onStartEdit
+            }
             onChange={(newText) => {
               props.onChange(field.id, newText);
               setIsEditing(false);
@@ -211,7 +215,6 @@ const Field = (props: {
           onCopy={props.onCopy}
           onPaste={props.onPaste}
           onSelected={props.onSelected}
-          onStartEdit={props.onStartEdit}
           onUnSelected={props.onUnSelected}
         />
       );
@@ -351,10 +354,6 @@ const ButtonField = (props: {
   readonly errorMessage: string | undefined;
   readonly onSelected: () => void;
   readonly onUnSelected: () => void;
-  /**
-   * 読み取り専用の場合は `undefined`
-   */
-  readonly onStartEdit: (() => void) | undefined;
   readonly onChange: (newText: string) => void;
   readonly onPaste: (text: string) => void;
   readonly onCopy: (text: string) => void;
@@ -386,24 +385,11 @@ const ButtonField = (props: {
       tabIndex={-1}
     >
       <div>
-        <Button onClick={props.onStartEdit} css={{ display: "flex" }}>
-          {props.selected ? (
-            <div
-              css={{
-                background: "#444",
-                padding: "0 8px",
-                display: "flex",
-                alignItems: "center",
-                gap: 2,
-              }}
-            >
-              <EnterIcon stroke="white" height={24} />
-            </div>
-          ) : (
-            <></>
-          )}
-
-          <div>{props.name}</div>
+        <Button onClick={props.value}>
+          <div css={{ display: "flex", alignItems: "center", gap: 8 }}>
+            {props.selected ? <EnterIcon stroke="white" height={24} /> : <></>}
+            <div>{props.name}</div>
+          </div>
         </Button>
       </div>
     </div>
