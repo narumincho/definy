@@ -88,7 +88,10 @@
     "zod": "3.19.1"
   },
   "jest": {
-    "preset": "ts-jest"
+    "preset": "ts-jest",
+    "testPathIgnorePatterns": [
+      "<rootDir>/deno-lib/"
+    ]
   },
   "eslintConfig": {
     "extends": [
