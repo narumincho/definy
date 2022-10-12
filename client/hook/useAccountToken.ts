@@ -1,14 +1,16 @@
 import * as indexedDb from "../indexedDB";
 import { useCallback, useEffect, useState } from "react";
-import { AccountToken } from "../../common/zodType";
+import { zodType } from "../../deno-lib/npm";
 
 export type UseAccountTokenResult = {
-  readonly setAccountToken: (accountToken: AccountToken) => Promise<void>;
+  readonly setAccountToken: (
+    accountToken: zodType.AccountToken
+  ) => Promise<void>;
   readonly deleteAccountToken: () => Promise<void>;
   /**
    * `null` は indexedDBに保存されているか確認中
    */
-  readonly accountToken: AccountToken | undefined | null;
+  readonly accountToken: zodType.AccountToken | undefined | null;
 };
 
 /**
@@ -20,7 +22,7 @@ export const useAccountToken = (): UseAccountTokenResult => {
    * `null` は indexedDBに保存されているか確認中
    */
   const [accountToken, setAccountToken] = useState<
-    AccountToken | undefined | null
+    zodType.AccountToken | undefined | null
   >(undefined);
 
   useEffect(() => {

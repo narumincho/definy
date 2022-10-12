@@ -1,4 +1,3 @@
-import * as f from "./typedFauna";
 import {
   AccountId,
   AccountName,
@@ -10,7 +9,8 @@ import {
   ProjectName,
   accountIdFromString,
   projectIdFromString,
-} from "../common/zodType";
+} from "./zodType.ts";
+import * as f from "./typedFauna.ts";
 
 export const getFaunaClient = (secret: string): f.TypedFaunaClient => {
   return f.crateFaunaClient({

@@ -1,4 +1,5 @@
 import * as React from "react";
+import { Button } from "../client/ui/Button";
 import { EnterIcon } from "./icon/EnterIcon";
 import { useEditorKeyInput } from "../client/hook/useEditorKeyInput";
 import { useNotification } from "../client/hook/useNotification";
@@ -6,24 +7,40 @@ import { useNotification } from "../client/hook/useNotification";
 export type Field = {
   readonly id: string;
   readonly name: string;
-  readonly readonly: boolean;
   readonly errorMessage: string | undefined;
   readonly body: FieldBody;
-  /**
-   * 大きく値を表示するかどうか
-   */
-  readonly isTitle: boolean;
 };
 
 export type FieldBody =
   | {
       readonly type: "text";
       readonly value: string;
+      readonly readonly: boolean;
+      /**
+       * 大きく値を表示するかどうか
+       */
+      readonly isTitle: boolean;
+    }
+  | {
+      readonly type: "button";
+      readonly value: (() => void) | undefined;
     }
   | {
       readonly type: "product";
       readonly value: ReadonlyArray<Field>;
+      readonly readonly: boolean;
     };
+
+const isFieldAvailable = (field: Field): boolean => {
+  switch (field.body.type) {
+    case "button":
+      return field.body.value !== undefined;
+    case "text":
+    case "product": {
+      return !field.body.readonly;
+    }
+  }
+};
 
 /**
  * 汎用エディタ
@@ -37,16 +54,30 @@ export const Editor = (props: {
   >(props.fields[0]?.id);
   const [isEditing, setIsEditing] = React.useState<boolean>(false);
 
+  const onStartEdit = React.useCallback(() => {
+    console.log("onStartEdit", selectedFieldId);
+    const selectedField = props.fields.find(
+      (field) => field.id === selectedFieldId
+    );
+    if (selectedField === undefined) {
+      return;
+    }
+    switch (selectedField.body.type) {
+      case "button":
+        selectedField.body.value?.();
+        return;
+      case "text":
+      case "product": {
+        if (!selectedField.body.readonly) {
+          setIsEditing(true);
+        }
+      }
+    }
+  }, [props.fields, selectedFieldId]);
+
   useEditorKeyInput({
     disabled: isEditing,
-    onEnter: () => {
-      console.log("onEnter", selectedFieldId);
-      if (
-        !props.fields.find((field) => field.id === selectedFieldId)?.readonly
-      ) {
-        setIsEditing(true);
-      }
-    },
+    onEnter: onStartEdit,
     onUp: () => {
       console.log("onUp");
       if (selectedFieldId === undefined) {
@@ -91,7 +122,6 @@ export const Editor = (props: {
             value={field.body}
             selected={selectedFieldId === field.id}
             isEditing={isEditing}
-            isTitle={field.isTitle}
             errorMessage={field.errorMessage}
             onSelected={() => {
               console.log("onSelected", field.name);
@@ -103,12 +133,9 @@ export const Editor = (props: {
               setSelectedFieldId(undefined);
             }}
             onStartEdit={
-              field.readonly
+              field.body.type === "button" || field.body.readonly
                 ? undefined
-                : () => {
-                    console.log("onStartEdit", field.name);
-                    setIsEditing(true);
-                  }
+                : onStartEdit
             }
             onChange={(newText) => {
               props.onChange(field.id, newText);
@@ -149,7 +176,6 @@ const Field = (props: {
   readonly selected: boolean;
   readonly isEditing: boolean;
   readonly errorMessage: string | undefined;
-  readonly isTitle: boolean;
   readonly onSelected: () => void;
   readonly onUnSelected: () => void;
   /**
@@ -169,12 +195,26 @@ const Field = (props: {
           selected={props.selected}
           errorMessage={props.errorMessage}
           isEditing={props.isEditing}
-          isTitle={props.isTitle}
+          isTitle={props.value.isTitle}
           onChange={props.onChange}
           onCopy={props.onCopy}
           onPaste={props.onPaste}
           onSelected={props.onSelected}
           onStartEdit={props.onStartEdit}
+          onUnSelected={props.onUnSelected}
+        />
+      );
+    case "button":
+      return (
+        <ButtonField
+          name={props.name}
+          value={props.value.value}
+          selected={props.selected}
+          errorMessage={props.errorMessage}
+          onChange={props.onChange}
+          onCopy={props.onCopy}
+          onPaste={props.onPaste}
+          onSelected={props.onSelected}
           onUnSelected={props.onUnSelected}
         />
       );
@@ -185,7 +225,6 @@ const Field = (props: {
           value={props.value.value}
           selected={props.selected}
           errorMessage={props.errorMessage}
-          isTitle={props.isTitle}
           onChange={props.onChange}
           onCopy={props.onCopy}
           onPaste={props.onPaste}
@@ -308,12 +347,60 @@ const TextField = (props: {
   );
 };
 
+const ButtonField = (props: {
+  readonly name: string;
+  readonly value: (() => void) | undefined;
+  readonly selected: boolean;
+  readonly errorMessage: string | undefined;
+  readonly onSelected: () => void;
+  readonly onUnSelected: () => void;
+  readonly onChange: (newText: string) => void;
+  readonly onPaste: (text: string) => void;
+  readonly onCopy: (text: string) => void;
+}) => {
+  const ref = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    if (props.selected) {
+      ref.current?.focus();
+    }
+  }, [props.selected, ref.current]);
+
+  return (
+    <div
+      ref={ref}
+      css={{
+        borderStyle: "solid",
+        borderColor: props.selected ? "orange" : "transparent",
+        borderRadius: 8,
+        minHeight: 64,
+        ":focus": {
+          borderBlockColor: "skyblue",
+        },
+        display: "grid",
+      }}
+      onFocus={() => {
+        props.onSelected();
+      }}
+      tabIndex={-1}
+    >
+      <div>
+        <Button onClick={props.value}>
+          <div css={{ display: "flex", alignItems: "center", gap: 8 }}>
+            {props.selected ? <EnterIcon stroke="white" height={24} /> : <></>}
+            <div>{props.name}</div>
+          </div>
+        </Button>
+      </div>
+    </div>
+  );
+};
+
 const ProductField = (props: {
   readonly name: string;
   readonly value: ReadonlyArray<Field>;
   readonly selected: boolean;
   readonly errorMessage: string | undefined;
-  readonly isTitle: boolean;
   readonly onSelected: () => void;
   readonly onUnSelected: () => void;
   /**
@@ -371,13 +458,12 @@ const ProductField = (props: {
             value={field.body}
             selected={false}
             isEditing={false}
-            isTitle={field.isTitle}
             errorMessage={field.errorMessage}
             onSelected={() => {
               console.log("onSelected", field.name);
             }}
             onUnSelected={() => {}}
-            onStartEdit={field.readonly ? undefined : () => {}}
+            onStartEdit={isFieldAvailable(field) ? () => {} : undefined}
             onChange={(newText) => {
               props.onChange(newText);
             }}

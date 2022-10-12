@@ -3,15 +3,15 @@ import * as d from "../localData";
 import * as util from "./util";
 import type { TypePartIdAndMessage } from "./TypePartIdAndMessage";
 import { firstLowerCase } from "../common/util";
-import { jsTs } from "../gen/main";
+import { jsTs } from "../deno-lib/npm";
 
 export const typePartMapToTypeAlias = (
   typePartMap: ReadonlyMap<d.TypePartId, d.TypePart>
 ): d.Result<
-  ReadonlyArray<d.TypeAlias>,
+  ReadonlyArray<jsTs.data.TypeAlias>,
   ReadonlyArray<TypePartIdAndMessage>
 > => {
-  const typeAliasList: Array<d.TypeAlias> = [];
+  const typeAliasList: Array<jsTs.data.TypeAlias> = [];
   const errorList: Array<TypePartIdAndMessage> = [];
   for (const typePart of typePartMap.values()) {
     const result = typePartToTypeAlias(typePart, typePartMap);
@@ -33,13 +33,14 @@ export const typePartMapToTypeAlias = (
 export const typePartToTypeAlias = (
   typePart: d.TypePart,
   typePartMap: ReadonlyMap<d.TypePartId, d.TypePart>
-): d.Result<d.TypeAlias, string> => {
+): d.Result<jsTs.data.TypeAlias, string> => {
   const tsType = typePartToTsType(typePart, typePartMap);
   if (tsType._ === "Error") {
     return d.Result.Error(tsType.error);
   }
   return d.Result.Ok({
     name: jsTs.identifierFromString(typePart.name),
+    namespace: [],
     document: typePart.description + "\n@typePartId " + (typePart.id as string),
     typeParameterList: typePart.dataTypeParameterList.map((typeParameter) =>
       jsTs.identifierFromString(typeParameter.name)
@@ -51,7 +52,7 @@ export const typePartToTypeAlias = (
 const typePartToTsType = (
   typePart: d.TypePart,
   typePartMap: ReadonlyMap<d.TypePartId, d.TypePart>
-): d.Result<d.TsType, string> => {
+): d.Result<jsTs.data.TsType, string> => {
   if (typePart.attribute._ === "Just") {
     return typePartWithAttributeToTsType(
       typePart,
@@ -63,15 +64,18 @@ const typePartToTsType = (
     case "Sum":
       if (util.isTagTypeAllNoParameter(typePart.body.patternList)) {
         return d.Result.Ok(
-          d.TsType.Union(
-            typePart.body.patternList.map((pattern) =>
-              d.TsType.StringLiteral(pattern.name)
+          jsTs.typeUnion(
+            typePart.body.patternList.map(
+              (pattern): jsTs.data.TsType => ({
+                _: "StringLiteral",
+                string: pattern.name,
+              })
             )
           )
         );
       }
       return d.Result.Ok(
-        d.TsType.Union(
+        jsTs.typeUnion(
           typePart.body.patternList.map((pattern) =>
             patternListToObjectType(
               pattern,
@@ -83,7 +87,7 @@ const typePartToTsType = (
       );
     case "Product":
       return d.Result.Ok(
-        d.TsType.Object(
+        jsTs.typeObject(
           typePart.body.memberList.map((member) => ({
             name: member.name,
             required: true,
@@ -111,7 +115,7 @@ const typePartWithAttributeToTsType = (
   typePart: d.TypePart,
   typeAttribute: d.TypeAttribute,
   typePartMap: ReadonlyMap<d.TypePartId, d.TypePart>
-): d.Result<d.TsType, string> => {
+): d.Result<jsTs.data.TsType, string> => {
   switch (typeAttribute) {
     case "AsBoolean":
       if (
@@ -121,7 +125,7 @@ const typePartWithAttributeToTsType = (
           (pattern) => pattern.parameter._ === "Nothing"
         )
       ) {
-        return d.Result.Ok(d.TsType.Boolean);
+        return d.Result.Ok({ _: "Boolean" });
       }
       return d.Result.Error(
         "attribute == Just(AsBoolean) type part need sum, have 2 patterns, All pattern parameters are empty"
@@ -134,7 +138,7 @@ const typePartWithAttributeToTsType = (
           (pattern) => pattern.parameter._ === "Nothing"
         )
       ) {
-        return d.Result.Ok(d.TsType.Undefined);
+        return d.Result.Ok({ _: "Undefined" });
       }
       return d.Result.Error(
         "attribute == Just(AsUndefined) type part need sum and have 1 patterns, All pattern parameters are empty"
@@ -173,19 +177,20 @@ const typePartWithAttributeToTsType = (
         );
       }
 
-      return d.Result.Ok(
-        d.TsType.Intersection({
-          left: d.TsType.Number,
-          right: d.TsType.Object([
-            d.TsMemberType.helper({
+      return d.Result.Ok<jsTs.data.TsType, string>({
+        _: "Intersection",
+        intersectionType: {
+          left: { _: "Number" },
+          right: jsTs.typeObject([
+            {
               required: true,
               name: "_" + typePart.name,
               document: "",
-              type: d.TsType.Never,
-            }),
+              type: { _: "Never" },
+            },
           ]),
-        })
-      );
+        },
+      });
     }
   }
 };
@@ -194,70 +199,83 @@ const patternListToObjectType = (
   patternList: d.Pattern,
   typePartMap: ReadonlyMap<d.TypePartId, d.TypePart>,
   scopeTypePartDataTypeParameterList: ReadonlyArray<d.DataTypeParameter>
-): d.TsType => {
-  const tagField: d.TsMemberType = {
+): jsTs.data.TsType => {
+  const tagField: jsTs.data.TsMemberType = {
     name: "_",
     required: true,
     document: "",
-    type: d.TsType.StringLiteral(patternList.name),
+    type: { _: "StringLiteral", string: patternList.name },
   };
 
   switch (patternList.parameter._) {
     case "Just":
-      return d.TsType.Object([
-        tagField,
-        {
-          name: util.typeToMemberOrParameterName(
-            patternList.parameter.value,
-            typePartMap,
-            scopeTypePartDataTypeParameterList
-          ),
-          required: true,
-          document: "",
-          type: util.typeToTsType(
-            patternList.parameter.value,
-            typePartMap,
-            scopeTypePartDataTypeParameterList
-          ),
-        },
-      ]);
+      return {
+        _: "Object",
+        tsMemberTypeList: [
+          tagField,
+          {
+            name: util.typeToMemberOrParameterName(
+              patternList.parameter.value,
+              typePartMap,
+              scopeTypePartDataTypeParameterList
+            ),
+            required: true,
+            document: "",
+            type: util.typeToTsType(
+              patternList.parameter.value,
+              typePartMap,
+              scopeTypePartDataTypeParameterList
+            ),
+          },
+        ],
+      };
     case "Nothing":
-      return d.TsType.Object([tagField]);
+      return { _: "Object", tsMemberTypeList: [tagField] };
   }
 };
 
 const typePartBodyKernelToTsType = (
   typePart: d.TypePart,
   kernel: d.TypePartBodyKernel
-): d.TsType => {
+): jsTs.data.TsType => {
   switch (kernel) {
     case "Int32":
-      return d.TsType.Number;
+      return { _: "Number" };
     case "String":
-      return d.TsType.String;
+      return { _: "String" };
     case "Binary":
       return jsTs.uint8ArrayType;
     case "Id":
     case "Token":
-      return d.TsType.Intersection({
-        left: d.TsType.String,
-        right: d.TsType.Object([
-          {
-            name: "_" + firstLowerCase(typePart.name),
-            required: true,
-            type: d.TsType.Never,
-            document: "",
+      return {
+        _: "Intersection",
+        intersectionType: {
+          left: { _: "String" },
+          right: {
+            _: "Object",
+            tsMemberTypeList: [
+              {
+                name: "_" + firstLowerCase(typePart.name),
+                required: true,
+                type: { _: "Never" },
+                document: "",
+              },
+            ],
           },
-        ]),
-      });
+        },
+      };
     case "List": {
       const [elementType] = typePart.dataTypeParameterList;
       if (elementType === undefined) {
         throw new Error("List need one type parameter");
       }
-      return jsTs.readonlyArrayType(
-        d.TsType.ScopeInFile(jsTs.identifierFromString(elementType.name))
-      );
+      return jsTs.readonlyArrayType({
+        _: "ScopeInFile",
+        typeNameAndTypeParameter: {
+          name: jsTs.identifierFromString(elementType.name),
+          arguments: [],
+        },
+      });
     }
     case "Dict": {
       const [id, value] = typePart.dataTypeParameterList;
@@ -265,8 +283,20 @@ const typePartBodyKernelToTsType = (
         throw new Error("Dict need two type parameter");
       }
       return jsTs.readonlyMapType(
-        d.TsType.ScopeInFile(jsTs.identifierFromString(id.name)),
-        d.TsType.ScopeInFile(jsTs.identifierFromString(value.name))
+        {
+          _: "ScopeInFile",
+          typeNameAndTypeParameter: {
+            name: jsTs.identifierFromString(id.name),
+            arguments: [],
+          },
+        },
+        {
+          _: "ScopeInFile",
+          typeNameAndTypeParameter: {
+            name: jsTs.identifierFromString(value.name),
+            arguments: [],
+          },
+        }
       );
     }
   }

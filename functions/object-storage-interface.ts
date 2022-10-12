@@ -1,12 +1,12 @@
 import * as crypto from "node:crypto";
-import * as zodType from "../common/zodType";
+import {
+  GetObjectCommand,
+  PutObjectCommand,
+  S3Client,
+} from "@aws-sdk/client-s3";
 import { CLOUDFLARE_R2_SECRET_KEY } from "./environmentVariables";
 import { Readable } from "node:stream";
-import {
-  S3Client,
-  PutObjectCommand,
-  GetObjectCommand,
-} from "@aws-sdk/client-s3";
+import { zodType } from "../deno-lib/npm";
 
 /**
  * https://dash.cloudflare.com/6a8354084cc02bb1c5f9ca1bb3442704/r2/

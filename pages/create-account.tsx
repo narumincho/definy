@@ -1,10 +1,4 @@
 import * as React from "react";
-import {
-  AccountName,
-  Language,
-  PreAccountToken,
-  defaultLanguage,
-} from "../common/zodType";
 import { Button } from "../client/ui/Button";
 import { OneLineTextEditor } from "../client/ui/OneLineTextEditor";
 import type { ParsedUrlQuery } from "node:querystring";
@@ -13,12 +7,13 @@ import { WithHeader } from "../components/WithHeader";
 import { trpc } from "../client/hook/trpc";
 import { useAccountToken } from "../client/hook/useAccountToken";
 import { useRouter } from "next/router";
+import { zodType } from "../deno-lib/npm";
 import { zodTypeLocationAndLanguageToUrl } from "../common/url";
 
 type Parameter = {
   readonly imageUrl: URL;
-  readonly language: Language;
-  readonly preAccountToken: PreAccountToken;
+  readonly language: zodType.Language;
+  readonly preAccountToken: zodType.PreAccountToken;
 };
 
 const parsedUrlQueryToParameter = (
@@ -33,8 +28,8 @@ const parsedUrlQueryToParameter = (
       return {
         name,
         imageUrl: new URL(imageUrl),
-        language: Language.parse(language),
-        preAccountToken: PreAccountToken.parse(preAccountToken),
+        language: zodType.Language.parse(language),
+        preAccountToken: zodType.PreAccountToken.parse(preAccountToken),
       };
     }
   } catch (e) {
@@ -57,7 +52,8 @@ const CreateAccount = (): React.ReactElement => {
 
   const useAccountTokenResult = useAccountToken();
 
-  const language: Language = parameter?.language ?? defaultLanguage;
+  const language: zodType.Language =
+    parameter?.language ?? zodType.defaultLanguage;
 
   const createAccount = trpc.useMutation("createAccount", {
     onSuccess: (response) => {
@@ -73,7 +69,7 @@ const CreateAccount = (): React.ReactElement => {
     },
   });
 
-  const accountNameParseResult = AccountName.safeParse(name);
+  const accountNameParseResult = zodType.AccountName.safeParse(name);
 
   return (
     <WithHeader

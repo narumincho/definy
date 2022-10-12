@@ -1,6 +1,5 @@
 import * as d from "../localData";
 import * as s from "../staticResource";
-import * as zodType from "./zodType";
 import {
   StructuredUrl,
   structuredUrlToNodeUrlObject,
@@ -9,6 +8,7 @@ import {
 } from "../gen/url/main";
 import type { UrlObject } from "url";
 import { clientScriptPath } from "../clientScriptHash";
+import { zodType } from "../deno-lib/npm";
 
 export const languageQueryKey = "hl";
 export const defaultLanguage: d.Language = "English";

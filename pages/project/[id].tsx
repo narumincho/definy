@@ -1,5 +1,4 @@
 import * as React from "react";
-import { Language, ProjectId } from "../../common/zodType";
 import { AccountCard } from "../../components/AccountCard";
 import { Editor } from "../../components/Editor";
 import { WithHeader } from "../../components/WithHeader";
@@ -7,12 +6,13 @@ import { trpc } from "../../client/hook/trpc";
 import { useAccountToken } from "../../client/hook/useAccountToken";
 import { useLanguage } from "../../client/hook/useLanguage";
 import { useRouter } from "next/router";
+import { zodType } from "../../deno-lib/npm";
 
 const ProjectPage = (): React.ReactElement => {
   const { query } = useRouter();
   const language = useLanguage();
   const useAccountTokenResult = useAccountToken();
-  const projectIdParseResult = ProjectId.safeParse(query.id);
+  const projectIdParseResult = zodType.ProjectId.safeParse(query.id);
 
   return (
     <WithHeader
@@ -44,13 +44,13 @@ const ProjectPage = (): React.ReactElement => {
               errorMessage: projectIdParseResult.success
                 ? undefined
                 : "invalid project id. 例: 344646621232889937",
-              isTitle: false,
-              readonly: true,
               body: {
                 type: "text",
                 value: projectIdParseResult.success
                   ? projectIdParseResult.data
                   : JSON.stringify(query.id),
+                isTitle: false,
+                readonly: true,
               },
             },
           ]}
@@ -68,8 +68,8 @@ const ProjectPage = (): React.ReactElement => {
 };
 
 const Content = (props: {
-  readonly projectId: ProjectId;
-  readonly language: Language;
+  readonly projectId: zodType.ProjectId;
+  readonly language: zodType.Language;
 }): React.ReactElement => {
   const projectQueryResult = trpc.useQuery(["getProjectById", props.projectId]);
 

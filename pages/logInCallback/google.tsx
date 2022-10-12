@@ -1,5 +1,4 @@
 import * as React from "react";
-import { Language } from "../../common/zodType";
 import { LoadingBoxCenter } from "../../components/LoadingBox";
 import { Text } from "../../components/Text";
 import { WithHeader } from "../../components/WithHeader";
@@ -7,6 +6,7 @@ import { trpc } from "../../client/hook/trpc";
 import { useAccountToken } from "../../client/hook/useAccountToken";
 import { useQueryBasedState } from "../../client/hook/useQueryBasedState";
 import { useRouter } from "next/router";
+import { zodType } from "../../deno-lib/npm";
 import { zodTypeLocationAndLanguageToUrl } from "../../common/url";
 
 type CodeAndState = {
@@ -164,7 +164,7 @@ export const LogInCallbackGoogle = (): React.ReactElement => {
   );
 };
 
-const logInOkMessage = (language: Language): string => {
+const logInOkMessage = (language: zodType.Language): string => {
   switch (language) {
     case "japanese":
       return "ログインに成功";

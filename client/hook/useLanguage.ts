@@ -1,26 +1,26 @@
-import { Language, defaultLanguage } from "../../common/zodType";
 import {
   languageQueryKey,
   queryValueToZodLanguage,
   zodLanguageToQueryValue,
 } from "../../common/url";
 import { useQueryBasedState } from "./useQueryBasedState";
+import { zodType } from "../../deno-lib/npm";
 
 const languageStructuredQueryToQuery = (
-  language: Language
+  language: zodType.Language
 ): ReadonlyMap<string, string> =>
   new Map([[languageQueryKey, zodLanguageToQueryValue(language)]]);
 
 const languageQueryToStructuredQuery = (
   query: ReadonlyMap<string, string>
-): Language => queryValueToZodLanguage(query.get(languageQueryKey));
+): zodType.Language => queryValueToZodLanguage(query.get(languageQueryKey));
 
 const languageIsEqual = (
-  oldLanguage: Language,
-  newLanguage: Language
+  oldLanguage: zodType.Language,
+  newLanguage: zodType.Language
 ): boolean => oldLanguage === newLanguage;
 
-const onUpdate = (l: Language) => {
+const onUpdate = (l: zodType.Language) => {
   console.log("言語の変更/設定を検知!", l);
 };
 
@@ -28,15 +28,15 @@ const onUpdate = (l: Language) => {
  * Next.js の `useRouter` から言語のパラメータ(`hl`)を受け取り, 余計なパラメータを削除する
  * @returns
  */
-export const useLanguage = (): Language => {
-  const state = useQueryBasedState<Language>({
+export const useLanguage = (): zodType.Language => {
+  const state = useQueryBasedState<zodType.Language>({
     queryToStructuredQuery: languageQueryToStructuredQuery,
     structuredQueryToQuery: languageStructuredQueryToQuery,
     isEqual: languageIsEqual,
     onUpdate,
   });
   if (state.type === "loading") {
-    return defaultLanguage;
+    return zodType.defaultLanguage;
   }
   return state.value;
 };

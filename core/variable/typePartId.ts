@@ -1,22 +1,34 @@
 import * as d from "../../localData";
-import { jsTs } from "../../gen/main";
+import { jsTs } from "../../deno-lib/npm";
 
 const typePartIdPropertyName = "typePartId";
 
-export const typePartIdMemberType: d.TsMemberType = {
+export const typePartIdMemberType: jsTs.data.TsMemberType = {
   name: typePartIdPropertyName,
   required: true,
-  type: d.TsType.ScopeInFile(jsTs.identifierFromString("TypePartId")),
+  type: {
+    _: "ScopeInFile",
+    typeNameAndTypeParameter: {
+      name: jsTs.identifierFromString("TypePartId"),
+      arguments: [],
+    },
+  },
   document: "definy.app 内 の 型パーツの Id",
 };
 
-export const typePartIdMember = (typePartId: d.TypePartId): d.TsMember =>
-  d.TsMember.KeyValue({
-    key: typePartIdPropertyName,
-    value: d.TsExpr.TypeAssertion(
-      d.TypeAssertion.helper({
-        expr: d.TsExpr.StringLiteral(typePartId),
-        type: d.TsType.ScopeInFile(jsTs.identifierFromString("TypePartId")),
-      })
-    ),
+export const typePartIdMember = (
+  typePartId: d.TypePartId
+): jsTs.data.TsMember =>
+  jsTs.memberKeyValue(typePartIdPropertyName, {
+    _: "TypeAssertion",
+    typeAssertion: {
+      expr: { _: "StringLiteral", string: typePartId },
+      type: {
+        _: "ScopeInFile",
+        typeNameAndTypeParameter: {
+          name: jsTs.identifierFromString("TypePartId"),
+          arguments: [],
+        },
+      },
+    },
   });

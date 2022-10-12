@@ -1,7 +1,9 @@
 import { ApiFunction } from "../apiFunction.ts";
-import { generateCodeAsString } from "../jsTs/main.ts";
-import { identifierFromString } from "../jsTs/identifier.ts";
-import { ExportDefinition, JsTsCode } from "../jsTs/data.ts";
+import {
+  generateCodeAsString,
+  identifierFromString,
+  data,
+} from "../../../deno-lib/jsTs/main.ts";
 import { collectDefinyRpcTypeFromFuncList } from "../collectType.ts";
 import { formatCode } from "../prettier.ts";
 import { apiFuncToTsFunction } from "./func.ts";
@@ -28,7 +30,7 @@ export const apiFunctionListToCode = (
 export const apiFunctionListToJsTsCode = (
   apiFunctionList: ReadonlyArray<ApiFunction>,
   originHint: string
-): JsTsCode => {
+): data.JsTsCode => {
   const needAuthentication = apiFunctionList.some(
     (func) => func.needAuthentication
   );
@@ -38,7 +40,7 @@ export const apiFunctionListToJsTsCode = (
       resultExportDefinition,
       ...(needAuthentication ? [accountTokenExportDefinition] : []),
       ...[...collectedTypeMap.values()].flatMap(
-        (type): ReadonlyArray<ExportDefinition> => {
+        (type): ReadonlyArray<data.ExportDefinition> => {
           const typeAlias = collectedTypeToTypeAlias(type, collectedTypeMap);
           if (typeAlias === undefined) {
             return [];
@@ -47,12 +49,12 @@ export const apiFunctionListToJsTsCode = (
         }
       ),
       ...[...collectedTypeMap.values()].map(
-        (type): ExportDefinition => ({
+        (type): data.ExportDefinition => ({
           type: "variable",
           variable: typeToTypeVariable(type, collectedTypeMap),
         })
       ),
-      ...apiFunctionList.map<ExportDefinition>((func) => ({
+      ...apiFunctionList.map<data.ExportDefinition>((func) => ({
         type: "function",
         function: apiFuncToTsFunction(func, originHint),
       })),
@@ -61,7 +63,7 @@ export const apiFunctionListToJsTsCode = (
   };
 };
 
-const accountTokenExportDefinition: ExportDefinition = {
+const accountTokenExportDefinition: data.ExportDefinition = {
   type: "typeAlias",
   typeAlias: {
     namespace: [],

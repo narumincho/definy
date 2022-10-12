@@ -113,3 +113,11 @@ pnpm run definy-rpc-client
 ```ps1
 deno run -A --check ./definy-rpc/build/build.ts
 ```
+
+# deno-lib
+
+node 向けにビルド
+
+```ps1
+cd ./deno-lib && deno run -A --check ./build.ts
+```

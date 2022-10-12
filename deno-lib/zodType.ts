@@ -1,5 +1,5 @@
-import { stringToValidProjectName, stringToValidUserName } from "../core/main";
-import { z } from "zod";
+import { stringToValidProjectName, stringToValidUserName } from "./coreMain.ts";
+import { z } from "https://deno.land/x/zod@v3.19.1/mod.ts";
 
 export type Location = Readonly<z.TypeOf<typeof Location>>;
 

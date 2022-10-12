@@ -1,11 +1,11 @@
 import * as React from "react";
-import { ImageHash, Language, ProjectId } from "../common/zodType";
 import { Link } from "../components/Link";
 import { trpc } from "../client/hook/trpc";
+import { zodType } from "../deno-lib/npm";
 
 export const ProjectCard = (props: {
-  readonly projectId: ProjectId;
-  readonly language: Language;
+  readonly projectId: zodType.ProjectId;
+  readonly language: zodType.Language;
 }): React.ReactElement => {
   const project = trpc.useQuery(["getProjectById", props.projectId]);
 
@@ -28,12 +28,12 @@ export const ProjectCard = (props: {
 };
 
 const ProjectCardLoaded = (props: {
-  readonly language: Language;
-  readonly projectId: ProjectId;
+  readonly language: zodType.Language;
+  readonly projectId: zodType.ProjectId;
   readonly data:
     | {
         readonly name: string;
-        readonly imageHash: ImageHash;
+        readonly imageHash: zodType.ImageHash;
       }
     | undefined;
 }) => {
@@ -48,7 +48,7 @@ const ProjectCardLoaded = (props: {
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src={"/api/image/" + props.data.imageHash}
+          src={`/api/image/${props.data.imageHash}`}
           css={{
             width: 160,
             height: 90,

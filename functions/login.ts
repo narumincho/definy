@@ -1,5 +1,4 @@
 import * as jsonWebToken from "jsonwebtoken";
-import type { AccountToken, PreAccountToken } from "../common/zodType";
 import {
   GOOGLE_LOGIN_CLIENT_SECRET,
   isProduction,
@@ -7,6 +6,7 @@ import {
 import axios, { AxiosResponse } from "axios";
 import { createRandomToken } from "./uuid";
 import { webcrypto } from "node:crypto";
+import type { zodType } from "../deno-lib/npm";
 
 export type AccountDataInProvider = {
   readonly id: string;
@@ -14,15 +14,15 @@ export type AccountDataInProvider = {
   readonly imageUrl: URL;
 };
 
-export const cratePreAccountToken = (): PreAccountToken => {
-  return createRandomToken() as PreAccountToken;
+export const cratePreAccountToken = (): zodType.PreAccountToken => {
+  return createRandomToken() as zodType.PreAccountToken;
 };
 
 export const crateAccountTokenAndHash = async (): Promise<{
-  accountToken: AccountToken;
+  accountToken: zodType.AccountToken;
   accountTokenHash: Uint8Array;
 }> => {
-  const accountToken = createRandomToken() as AccountToken;
+  const accountToken = createRandomToken() as zodType.AccountToken;
   return {
     accountToken,
     accountTokenHash: await hashAccountToken(accountToken),
@@ -30,7 +30,7 @@ export const crateAccountTokenAndHash = async (): Promise<{
 };
 
 export const hashAccountToken = async (
-  accountToken: AccountToken
+  accountToken: zodType.AccountToken
 ): Promise<Uint8Array> => {
   return new Uint8Array(
     await webcrypto.subtle.digest(

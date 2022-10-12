@@ -1,6 +1,6 @@
-const expectString = (message: string, value: unknown) => {
+const expectString = (message: string, value: unknown): string => {
   if (typeof value !== "string") {
-    throw new Error(message + " が指定されていない!");
+    throw new Error("環境変数 " + message + " が指定されていない!");
   }
   return value;
 };

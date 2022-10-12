@@ -27,3 +27,4 @@ tsconfig.tsbuildinfo
 /definy-rpc/browserClient/dist/
 /definy-rpc/server/npm/
 /desktop-proxy/server/npm/
+/deno-lib/npm/

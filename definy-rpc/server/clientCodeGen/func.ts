@@ -1,8 +1,22 @@
-import * as tsInterface from "../jsTs/interface.ts";
-import { getLast } from "../../../common/util.ts";
+import {
+  callCatchMethod,
+  callFetch,
+  callMethod,
+  callThenMethod,
+  data,
+  get,
+  identifierFromString,
+  newURL,
+  nullishCoalescing,
+  objectLiteral,
+  promiseType,
+  readonlyArrayType,
+  readonlySetType,
+  responseType,
+  urlType,
+} from "../../../deno-lib/jsTs/main.ts";
+import { getLast } from "../../../deno-lib/util.ts";
 import { ApiFunction } from "../apiFunction.ts";
-import { identifierFromString } from "../jsTs/identifier.ts";
-import { LambdaExpr, Function, TsType } from "../jsTs/data.ts";
 import { DefinyRpcType } from "../type.ts";
 import { resultError, resultOk, resultType } from "./result.ts";
 import { useFromJson } from "./type.ts";
@@ -14,7 +28,7 @@ import {
 export const apiFuncToTsFunction = (
   func: ApiFunction,
   originHint: string
-): Function => {
+): data.Function => {
   const parameterIdentifier = identifierFromString("parameter");
   return {
     name: identifierFromString(getLast(func.fullName)),
@@ -26,7 +40,7 @@ export const apiFuncToTsFunction = (
         type: funcParameterType(func, originHint),
       },
     ],
-    returnType: tsInterface.promiseType(
+    returnType: promiseType(
       resultType(definyRpcTypeToTsType(func.output), {
         _: "StringLiteral",
         string: "error",
@@ -38,9 +52,9 @@ export const apiFuncToTsFunction = (
         _: "VariableDefinition",
         variableDefinitionStatement: {
           name: identifierFromString("url"),
-          expr: tsInterface.newURL(
-            tsInterface.nullishCoalescing(
-              tsInterface.get(
+          expr: newURL(
+            nullishCoalescing(
+              get(
                 {
                   _: "Variable",
                   tsIdentifier: parameterIdentifier,
@@ -51,13 +65,13 @@ export const apiFuncToTsFunction = (
             )
           ),
           isConst: true,
-          type: tsInterface.urlType,
+          type: urlType,
         },
       },
       {
         _: "Set",
         setStatement: {
-          target: tsInterface.get(
+          target: get(
             {
               _: "Variable",
               tsIdentifier: identifierFromString("url"),
@@ -73,26 +87,26 @@ export const apiFuncToTsFunction = (
       },
       {
         _: "Return",
-        tsExpr: tsInterface.callCatchMethod(
-          tsInterface.callThenMethod(
-            tsInterface.callThenMethod(
-              tsInterface.callFetch(
+        tsExpr: callCatchMethod(
+          callThenMethod(
+            callThenMethod(
+              callFetch(
                 {
                   _: "Variable",
                   tsIdentifier: identifierFromString("url"),
                 },
                 func.needAuthentication
-                  ? tsInterface.objectLiteral([
+                  ? objectLiteral([
                       {
                         _: "KeyValue",
                         keyValue: {
                           key: "headers",
-                          value: tsInterface.objectLiteral([
+                          value: objectLiteral([
                             {
                               _: "KeyValue",
                               keyValue: {
                                 key: "authorization",
-                                value: tsInterface.get(
+                                value: get(
                                   {
                                     _: "Variable",
                                     tsIdentifier: parameterIdentifier,
@@ -111,15 +125,15 @@ export const apiFuncToTsFunction = (
                 parameterList: [
                   {
                     name: identifierFromString("response"),
-                    type: tsInterface.responseType,
+                    type: responseType,
                   },
                 ],
-                returnType: tsInterface.promiseType(rawJsonValueType),
+                returnType: promiseType(rawJsonValueType),
                 typeParameterList: [],
                 statementList: [
                   {
                     _: "Return",
-                    tsExpr: tsInterface.callMethod(
+                    tsExpr: callMethod(
                       {
                         _: "Variable",
                         tsIdentifier: identifierFromString("response"),
@@ -153,7 +167,7 @@ export const apiFuncToTsFunction = (
   };
 };
 
-const fetchThenExpr = (func: ApiFunction): LambdaExpr => {
+const fetchThenExpr = (func: ApiFunction): data.LambdaExpr => {
   const jsonValueIdentifier = identifierFromString("jsonValue");
   return {
     parameterList: [
@@ -184,7 +198,10 @@ const fetchThenExpr = (func: ApiFunction): LambdaExpr => {
   };
 };
 
-const funcParameterType = (func: ApiFunction, originHint: string): TsType => {
+const funcParameterType = (
+  func: ApiFunction,
+  originHint: string
+): data.TsType => {
   return {
     _: "Object",
     tsMemberTypeList: [
@@ -225,7 +242,9 @@ const funcParameterType = (func: ApiFunction, originHint: string): TsType => {
   };
 };
 
-const definyRpcTypeToTsType = <t>(definyRpcType: DefinyRpcType<t>): TsType => {
+const definyRpcTypeToTsType = <t>(
+  definyRpcType: DefinyRpcType<t>
+): data.TsType => {
   switch (definyRpcType.body.type) {
     case "string":
       return { _: "String" };
@@ -238,14 +257,14 @@ const definyRpcTypeToTsType = <t>(definyRpcType: DefinyRpcType<t>): TsType => {
       if (parameter === undefined) {
         throw new Error("list need one parameter");
       }
-      return tsInterface.readonlyArrayType(definyRpcTypeToTsType(parameter));
+      return readonlyArrayType(definyRpcTypeToTsType(parameter));
     }
     case "set": {
       const parameter = definyRpcType.parameters[0];
       if (parameter === undefined) {
         throw new Error("set need one parameter");
       }
-      return tsInterface.readonlySetType(definyRpcTypeToTsType(parameter));
+      return readonlySetType(definyRpcTypeToTsType(parameter));
     }
     case "sum":
       return {

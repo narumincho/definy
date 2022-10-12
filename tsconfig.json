@@ -27,7 +27,8 @@
     "definy-rpc/example",
     "desktop-proxy",
     "deno-library-check",
-    "databaseMigration.ts"
+    "databaseMigration.ts",
+    "deno-lib"
   ],
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx"]
 }

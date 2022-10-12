@@ -39,66 +39,65 @@ const SampleEditor = (): React.ReactElement => {
         {
           id: textFieldAId,
           name: "テキストフィールドA",
-          readonly: false,
           errorMessage: undefined,
-          isTitle: false,
           body: {
             type: "text",
             value: textFieldValue,
+            readonly: false,
+            isTitle: false,
           },
         },
         {
           id: textFieldBId,
           name: "テキストフィールドB (Aと常に同じ値)",
-          readonly: false,
           errorMessage: undefined,
-          isTitle: false,
           body: {
             type: "text",
             value: textFieldValue,
+            isTitle: false,
+            readonly: false,
           },
         },
         {
           id: "textFieldReadonly",
           name: "読み取り専用テキストフィールド",
-          readonly: true,
           errorMessage: undefined,
-          isTitle: false,
           body: {
             type: "text",
             value: "それな",
+            readonly: true,
+            isTitle: false,
           },
         },
         {
           id: "withErrorField",
           name: "エラーメッセージがあるフィールド",
-          readonly: false,
           errorMessage: "カスタムエラーメッセージ",
-          isTitle: false,
           body: {
             type: "text",
             value: "条件を満たさない値",
+            readonly: false,
+            isTitle: false,
           },
         },
         {
           id: "titleField",
           name: "タイトル要素. 大きく値を表示する",
-          readonly: false,
           errorMessage: undefined,
-          isTitle: true,
           body: {
             type: "text",
             value: "サンプルタイトル",
+            readonly: false,
+            isTitle: true,
           },
         },
         {
           id: "product",
           name: "子要素テスト",
-          readonly: false,
           errorMessage: undefined,
-          isTitle: true,
           body: {
             type: "product",
+            readonly: false,
             value: [
               {
                 id: "a",
@@ -106,19 +105,18 @@ const SampleEditor = (): React.ReactElement => {
                 body: {
                   type: "text",
                   value: "aValue",
+                  isTitle: false,
+                  readonly: false,
                 },
                 errorMessage: undefined,
-                isTitle: false,
-                readonly: false,
               },
               {
                 id: "b",
                 name: "子要素テスト",
-                readonly: false,
                 errorMessage: undefined,
-                isTitle: true,
                 body: {
                   type: "product",
+                  readonly: false,
                   value: [
                     {
                       id: "a",
@@ -126,10 +124,10 @@ const SampleEditor = (): React.ReactElement => {
                       body: {
                         type: "text",
                         value: "aValue",
+                        isTitle: false,
+                        readonly: false,
                       },
                       errorMessage: undefined,
-                      isTitle: false,
-                      readonly: false,
                     },
                     {
                       id: "b",
@@ -137,10 +135,10 @@ const SampleEditor = (): React.ReactElement => {
                       body: {
                         type: "text",
                         value: "bValue",
+                        isTitle: false,
+                        readonly: false,
                       },
                       errorMessage: undefined,
-                      isTitle: false,
-                      readonly: false,
                     },
                   ],
                 },
@@ -151,10 +149,10 @@ const SampleEditor = (): React.ReactElement => {
                 body: {
                   type: "text",
                   value: "cValue",
+                  isTitle: false,
+                  readonly: false,
                 },
                 errorMessage: undefined,
-                isTitle: false,
-                readonly: false,
               },
             ],
           },

@@ -1,8 +1,8 @@
 import * as React from "react";
 import { Button } from "./Button";
 import type { CreateProjectState } from "../hook/useDefinyApp";
+import { coreMain } from "../../deno-lib/npm";
 import { css } from "@emotion/css";
-import { stringToValidProjectName } from "../../core/main";
 import { useOneLineTextEditor } from "./OneLineTextEditor";
 
 export type Props = {
@@ -18,7 +18,7 @@ export const CreateProjectPage: React.FC<Props> = (props) => {
       width: "100%",
     },
   });
-  const normalizedProjectName = stringToValidProjectName(text);
+  const normalizedProjectName = coreMain.stringToValidProjectName(text);
   const onCreateProject = props.onCreateProject;
   const onClickCreateButton = React.useCallback(() => {
     if (typeof normalizedProjectName === "string") {

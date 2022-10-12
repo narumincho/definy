@@ -1,5 +1,5 @@
 import * as React from "react";
-import * as zodType from "../common/zodType";
+import { zodType } from "../deno-lib/npm";
 export type TextProps = {
   readonly [language in zodType.Language]: string;
 };

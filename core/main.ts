@@ -6,37 +6,8 @@ import { generateElmCode, generateElmCodeAsString } from "./elm";
 import type { TypePartIdAndMessage } from "./TypePartIdAndMessage";
 import { checkTypePartListValidation } from "./validation";
 import { exprToDebugString } from "./toDebugString";
-import { jsTs } from "../gen/main";
+import { jsTs } from "../deno-lib/npm";
 import { typePartMapToVariable } from "./variable/main";
-
-export const stringToValidUserName = (userName: string): string | null => {
-  const normalized = normalizeOneLineString(userName);
-  const { length } = [...normalized];
-  if (length <= 0 || length > 50) {
-    return null;
-  }
-  return normalized;
-};
-
-export const stringToValidProjectName = (
-  projectName: string
-): string | null => {
-  const normalized = normalizeOneLineString(projectName);
-  const { length } = [...normalized];
-  if (length <= 0 || length > 50) {
-    return null;
-  }
-  return normalized;
-};
-
-export const stringToValidIdeaName = (ideaName: string): string | null => {
-  const normalized = normalizeOneLineString(ideaName);
-  const { length } = [...normalized];
-  if (length <= 0 || length > 100) {
-    return null;
-  }
-  return normalized;
-};
 
 export const stringToValidComment = (comment: string): string | null => {
   const normalized = normalizeMultiLineString(comment);
@@ -67,29 +38,6 @@ const normalizeMultiLineString = (text: string): string => {
   return result;
 };
 
-/**
- * NFKCで正規化して, 先頭末尾の空白をなくし, 空白の連続を1つの空白にまとめ, 改行を取り除く
- */
-export const normalizeOneLineString = (text: string): string => {
-  const normalized = text.normalize("NFKC").trim();
-  let result = "";
-  let beforeSpace = false;
-  for (const char of normalized) {
-    const codePoint = char.codePointAt(0);
-    // 制御文字
-    if (
-      codePoint !== undefined &&
-      ((codePoint > 0x1f && codePoint < 0x7f) || codePoint > 0xa0)
-    ) {
-      if (!(beforeSpace && char === " ")) {
-        result += char;
-        beforeSpace = char === " ";
-      }
-    }
-  }
-  return result;
-};
-
 export const generateTypeScriptCodeAsString = (
   typePartMap: ReadonlyMap<d.TypePartId, d.TypePart>
 ): d.Result<string, ReadonlyArray<TypePartIdAndMessage>> => {
@@ -112,7 +60,7 @@ export const generateJavaScriptCodeAsString = (
 
 export const generateTypeScriptCode = (
   typePartMap: ReadonlyMap<d.TypePartId, d.TypePart>
-): d.Result<d.JsTsCode, ReadonlyArray<TypePartIdAndMessage>> => {
+): d.Result<jsTs.data.JsTsCode, ReadonlyArray<TypePartIdAndMessage>> => {
   // バリデーション
   const validationResult = checkTypePartListValidation(typePartMap);
   if (validationResult.length !== 0) {
@@ -124,14 +72,24 @@ export const generateTypeScriptCode = (
     return d.Result.Error(typeAliasResult.error);
   }
 
-  return d.Result.Ok({
+  return d.Result.Ok<jsTs.data.JsTsCode, ReadonlyArray<TypePartIdAndMessage>>({
     exportDefinitionList: [
-      d.ExportDefinition.Function(hexString.encodeIdFunction),
-      d.ExportDefinition.Function(hexString.idDecodeFunction),
-      d.ExportDefinition.Function(hexString.tokenEncodeFunction),
-      d.ExportDefinition.Function(hexString.decodeTokenFunction),
-      ...typeAliasResult.ok.map(d.ExportDefinition.TypeAlias),
-      ...typePartMapToVariable(typePartMap).map(d.ExportDefinition.Variable),
+      { type: "function", function: hexString.encodeIdFunction },
+      { type: "function", function: hexString.idDecodeFunction },
+      { type: "function", function: hexString.tokenEncodeFunction },
+      { type: "function", function: hexString.decodeTokenFunction },
+      ...typeAliasResult.ok.map(
+        (t): jsTs.data.ExportDefinition => ({
+          type: "typeAlias",
+          typeAlias: t,
+        })
+      ),
+      ...typePartMapToVariable(typePartMap).map(
+        (variable): jsTs.data.ExportDefinition => ({
+          type: "variable",
+          variable,
+        })
+      ),
     ],
     statementList: [],
   });

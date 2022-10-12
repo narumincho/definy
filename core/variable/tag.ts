@@ -1,15 +1,15 @@
 import * as d from "../../localData";
 import * as util from "../util";
-import { jsTs } from "../../gen/main";
+import { jsTs } from "../../deno-lib/npm";
 
 /** 直和型の指定を簡単にする関数や定数の型を生成する */
 export const typePartSumTagType = (
   typePart: d.TypePart,
   patternList: ReadonlyArray<d.Pattern>,
   typePartMap: ReadonlyMap<d.TypePartId, d.TypePart>
-): ReadonlyArray<d.TsMemberType> => {
+): ReadonlyArray<jsTs.data.TsMemberType> => {
   return patternList.map(
-    (pattern): d.TsMemberType => ({
+    (pattern): jsTs.data.TsMemberType => ({
       name: pattern.name,
       required: true,
       type: patternToTagType(
@@ -25,45 +25,54 @@ export const typePartSumTagType = (
 };
 
 const patternToTagType = (
-  typeName: d.TsIdentifier,
+  typeName: jsTs.TsIdentifier,
   typeParameterList: ReadonlyArray<d.DataTypeParameter>,
   pattern: d.Pattern,
   typePartMap: ReadonlyMap<d.TypePartId, d.TypePart>,
   scopeTypePartDataTypeParameterList: ReadonlyArray<d.DataTypeParameter>
-) => {
-  const typeParameterIdentiferList = typeParameterList.map((typeParameter) =>
+): jsTs.data.TsType => {
+  const typeParameterIdentifierList = typeParameterList.map((typeParameter) =>
     jsTs.identifierFromString(typeParameter.name)
   );
-  const returnType = d.TsType.WithTypeParameter({
-    type: d.TsType.ScopeInFile(typeName),
-    typeParameterList: typeParameterIdentiferList.map(
-      (typeParameterIdentifer) => d.TsType.ScopeInFile(typeParameterIdentifer)
-    ),
-  });
+  const returnType: jsTs.data.TsType = {
+    _: "ScopeInFile",
+    typeNameAndTypeParameter: {
+      name: typeName,
+      arguments: typeParameterIdentifierList.map((typeParameterIdentifier) =>
+        jsTs.typeScopeInFileNoArguments(typeParameterIdentifier)
+      ),
+    },
+  };
 
   switch (pattern.parameter._) {
     case "Just":
-      return d.TsType.Function({
-        typeParameterList: typeParameterIdentiferList,
-        parameterList: [
-          util.typeToTsType(
-            pattern.parameter.value,
-            typePartMap,
-            scopeTypePartDataTypeParameterList
-          ),
-        ],
-        return: returnType,
-      });
+      return {
+        _: "Function",
+        functionType: {
+          typeParameterList: typeParameterIdentifierList,
+          parameterList: [
+            util.typeToTsType(
+              pattern.parameter.value,
+              typePartMap,
+              scopeTypePartDataTypeParameterList
+            ),
+          ],
+          return: returnType,
+        },
+      };
 
     case "Nothing":
       if (typeParameterList.length === 0) {
         return returnType;
       }
-      return d.TsType.Function({
-        typeParameterList: typeParameterIdentiferList,
-        parameterList: [],
-        return: returnType,
-      });
+      return {
+        _: "Function",
+        functionType: {
+          typeParameterList: typeParameterIdentifierList,
+          parameterList: [],
+          return: returnType,
+        },
+      };
   }
 };
 
@@ -72,18 +81,12 @@ export const typePartSumTagExpr = (
   typePart: d.TypePart,
   patternList: ReadonlyArray<d.Pattern>,
   typePartMap: ReadonlyMap<d.TypePartId, d.TypePart>
-): ReadonlyArray<d.TsMember> => {
+): ReadonlyArray<jsTs.data.TsMember> => {
   return patternList.map((pattern, index) =>
-    d.TsMember.KeyValue({
-      key: pattern.name,
-      value: patternToTagExpr(
-        typePart,
-        patternList,
-        pattern,
-        index,
-        typePartMap
-      ),
-    })
+    jsTs.memberKeyValue(
+      pattern.name,
+      patternToTagExpr(typePart, patternList, pattern, index, typePartMap)
+    )
   );
 };
 
@@ -93,7 +96,7 @@ const patternToTagExpr = (
   pattern: d.Pattern,
   patternIndex: number,
   typePartMap: ReadonlyMap<d.TypePartId, d.TypePart>
-): d.TsExpr => {
+): jsTs.data.TsExpr => {
   if (typePart.attribute._ === "Just") {
     return patternWithAttributeToTagExpr(
       typePart,
@@ -104,7 +107,7 @@ const patternToTagExpr = (
     );
   }
   if (util.isTagTypeAllNoParameter(patternList)) {
-    return d.TsExpr.StringLiteral(pattern.name);
+    return { _: "StringLiteral", string: pattern.name };
   }
   return patternWithParameterToTagExpr(typePart, pattern, typePartMap);
 };
@@ -115,53 +118,65 @@ const patternWithAttributeToTagExpr = (
   patternIndex: number,
   attribute: d.TypeAttribute,
   typePartMap: ReadonlyMap<d.TypePartId, d.TypePart>
-): d.TsExpr => {
+): jsTs.data.TsExpr => {
   switch (attribute) {
     case "AsBoolean":
-      return d.TsExpr.BooleanLiteral(patternIndex !== 0);
+      return { _: "BooleanLiteral", bool: patternIndex !== 0 };
     case "AsUndefined":
-      return d.TsExpr.UndefinedLiteral;
+      return { _: "UndefinedLiteral" };
     case "AsNumber": {
       if (pattern.parameter._ === "Nothing") {
         throw new Error("AsNumber need parameter type");
       }
-      const parameterIdentifer = jsTs.identifierFromString(
+      const parameterIdentifier = jsTs.identifierFromString(
         util.typeToMemberOrParameterName(
           pattern.parameter.value,
           typePartMap,
           typePart.dataTypeParameterList
         )
       );
-      const returnType = d.TsType.WithTypeParameter({
-        type: d.TsType.ScopeInFile(jsTs.identifierFromString(typePart.name)),
-        typeParameterList: typePart.dataTypeParameterList.map((typeParameter) =>
-          d.TsType.ScopeInFile(jsTs.identifierFromString(typeParameter.name))
-        ),
-      });
-      return d.TsExpr.Lambda({
-        typeParameterList: typePart.dataTypeParameterList.map((typeParameter) =>
-          jsTs.identifierFromString(typeParameter.name)
-        ),
-        parameterList: [
-          {
-            name: parameterIdentifer,
-            type: util.typeToTsType(
-              pattern.parameter.value,
-              typePartMap,
-              typePart.dataTypeParameterList
-            ),
-          },
-        ],
-        returnType,
-        statementList: [
-          d.Statement.Return(
-            d.TsExpr.TypeAssertion({
-              expr: d.TsExpr.Variable(parameterIdentifer),
-              type: returnType,
-            })
+      const returnType: jsTs.data.TsType = {
+        _: "ScopeInFile",
+        typeNameAndTypeParameter: {
+          name: jsTs.identifierFromString(typePart.name),
+          arguments: typePart.dataTypeParameterList.map((typeParameter) =>
+            jsTs.typeScopeInFileNoArguments(
+              jsTs.identifierFromString(typeParameter.name)
+            )
           ),
-        ],
-      });
+        },
+      };
+      return {
+        _: "Lambda",
+        lambdaExpr: {
+          typeParameterList: typePart.dataTypeParameterList.map(
+            (typeParameter) => jsTs.identifierFromString(typeParameter.name)
+          ),
+          parameterList: [
+            {
+              name: parameterIdentifier,
+              type: util.typeToTsType(
+                pattern.parameter.value,
+                typePartMap,
+                typePart.dataTypeParameterList
+              ),
+            },
+          ],
+          returnType,
+          statementList: [
+            {
+              _: "Return",
+              tsExpr: {
+                _: "TypeAssertion",
+                typeAssertion: {
+                  expr: jsTs.variable(parameterIdentifier),
+                  type: returnType,
+                },
+              },
+            },
+          ],
+        },
+      };
     }
   }
 };
@@ -170,73 +185,85 @@ const patternWithParameterToTagExpr = (
   typePart: d.TypePart,
   pattern: d.Pattern,
   typePartMap: ReadonlyMap<d.TypePartId, d.TypePart>
-): d.TsExpr => {
-  const tagMember: d.TsMember = d.TsMember.KeyValue({
-    key: "_",
-    value: d.TsExpr.StringLiteral(pattern.name),
+): jsTs.data.TsExpr => {
+  const tagMember = jsTs.memberKeyValue("_", {
+    _: "StringLiteral",
+    string: pattern.name,
   });
-  const returnType = d.TsType.WithTypeParameter({
-    type: d.TsType.ScopeInFile(jsTs.identifierFromString(typePart.name)),
-    typeParameterList: typePart.dataTypeParameterList.map((typeParameter) =>
-      d.TsType.ScopeInFile(jsTs.identifierFromString(typeParameter.name))
-    ),
-  });
+  const returnType: jsTs.data.TsType = {
+    _: "ScopeInFile",
+    typeNameAndTypeParameter: {
+      name: jsTs.identifierFromString(typePart.name),
+      arguments: typePart.dataTypeParameterList.map((typeParameter) =>
+        jsTs.typeScopeInFileNoArguments(
+          jsTs.identifierFromString(typeParameter.name)
+        )
+      ),
+    },
+  };
 
   switch (pattern.parameter._) {
     case "Just": {
-      const parameterIdentifer = jsTs.identifierFromString(
+      const parameterIdentifier = jsTs.identifierFromString(
         util.typeToMemberOrParameterName(
           pattern.parameter.value,
           typePartMap,
           typePart.dataTypeParameterList
         )
       );
-      return d.TsExpr.Lambda({
-        typeParameterList: typePart.dataTypeParameterList.map((typeParameter) =>
-          jsTs.identifierFromString(typeParameter.name)
-        ),
-        parameterList: [
-          {
-            name: parameterIdentifer,
-            type: util.typeToTsType(
-              pattern.parameter.value,
-              typePartMap,
-              typePart.dataTypeParameterList
-            ),
-          },
-        ],
-        returnType,
-        statementList: [
-          d.Statement.Return(
-            d.TsExpr.ObjectLiteral([
-              tagMember,
-              d.TsMember.KeyValue({
-                key: util.typeToMemberOrParameterName(
-                  pattern.parameter.value,
-                  typePartMap,
-                  typePart.dataTypeParameterList
-                ),
-                value: d.TsExpr.Variable(parameterIdentifer),
-              }),
-            ])
+      return {
+        _: "Lambda",
+        lambdaExpr: {
+          typeParameterList: typePart.dataTypeParameterList.map(
+            (typeParameter) => jsTs.identifierFromString(typeParameter.name)
           ),
-        ],
-      });
+          parameterList: [
+            {
+              name: parameterIdentifier,
+              type: util.typeToTsType(
+                pattern.parameter.value,
+                typePartMap,
+                typePart.dataTypeParameterList
+              ),
+            },
+          ],
+          returnType,
+          statementList: [
+            {
+              _: "Return",
+              tsExpr: jsTs.objectLiteral([
+                tagMember,
+                jsTs.memberKeyValue(
+                  util.typeToMemberOrParameterName(
+                    pattern.parameter.value,
+                    typePartMap,
+                    typePart.dataTypeParameterList
+                  ),
+                  jsTs.variable(parameterIdentifier)
+                ),
+              ]),
+            },
+          ],
+        },
+      };
     }
 
     case "Nothing":
       if (typePart.dataTypeParameterList.length === 0) {
-        return d.TsExpr.ObjectLiteral([tagMember]);
+        return jsTs.objectLiteral([tagMember]);
       }
-      return d.TsExpr.Lambda({
-        typeParameterList: typePart.dataTypeParameterList.map((typeParameter) =>
-          jsTs.identifierFromString(typeParameter.name)
-        ),
-        parameterList: [],
-        returnType,
-        statementList: [
-          d.Statement.Return(d.TsExpr.ObjectLiteral([tagMember])),
-        ],
-      });
+      return {
+        _: "Lambda",
+        lambdaExpr: {
+          typeParameterList: typePart.dataTypeParameterList.map(
+            (typeParameter) => jsTs.identifierFromString(typeParameter.name)
+          ),
+          parameterList: [],
+          returnType,
+          statementList: [
+            { _: "Return", tsExpr: jsTs.objectLiteral([tagMember]) },
+          ],
+        },
+      };
   }
 };

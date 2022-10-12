@@ -1,5 +1,4 @@
 import * as commonUrl from "../common/url";
-import * as core from "../core/main";
 import * as crypto from "node:crypto";
 import * as d from "../localData";
 import * as image from "./image";
@@ -16,6 +15,7 @@ import { ApiCodecType, GetCodecType } from "../common/apiCodec";
 import { Timestamp, getFirestore } from "firebase-admin/firestore";
 import axios, { AxiosResponse } from "axios";
 import type { Readable } from "node:stream";
+import { coreMain } from "../deno-lib/npm";
 import { getStorage } from "firebase-admin/storage";
 import { initializeApp } from "firebase-admin/app";
 
@@ -448,7 +448,7 @@ export const apiFunc: {
     switch (userDataMaybe._) {
       case "Just": {
         const userData = userDataMaybe.value;
-        const normalizedProjectName = core.stringToValidProjectName(
+        const normalizedProjectName = coreMain.stringToValidProjectName(
           parameter.projectName
         );
         const projectNameWithDefault =

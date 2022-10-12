@@ -652,3 +652,130 @@ export const objectLiteral = (
 export const arrayMap = (array: d.TsExpr, parameter: d.TsExpr): d.TsExpr => {
   return callMethod(array, "map", [parameter]);
 };
+
+export const variable = (name: identifier.TsIdentifier): d.TsExpr => ({
+  _: "Variable",
+  tsIdentifier: name,
+});
+
+export const memberKeyValue = (key: string, value: d.TsExpr): d.TsMember => ({
+  _: "KeyValue",
+  keyValue: {
+    key,
+    value,
+  },
+});
+
+export const typeScopeInFileNoArguments = (
+  name: identifier.TsIdentifier
+): d.TsType => ({
+  _: "ScopeInFile",
+  typeNameAndTypeParameter: {
+    name,
+    arguments: [],
+  },
+});
+
+export const statementReturn = (expr: d.TsExpr): d.Statement => ({
+  _: "Return",
+  tsExpr: expr,
+});
+
+export const statementEvaluateExpr = (expr: d.TsExpr): d.Statement => ({
+  _: "EvaluateExpr",
+  tsExpr: expr,
+});
+
+export const newTextDecoder: d.TsExpr = {
+  _: "New",
+  callExpr: {
+    expr: {
+      _: "GlobalObjects",
+      tsIdentifier: identifier.identifierFromString("TextDecoder"),
+    },
+    parameterList: [],
+  },
+};
+
+export const newTextEncoder: d.TsExpr = {
+  _: "New",
+  callExpr: {
+    expr: {
+      _: "GlobalObjects",
+      tsIdentifier: identifier.identifierFromString("TextEncoder"),
+    },
+    parameterList: [],
+  },
+};
+
+export const numberLiteral = (number: number): d.TsExpr => ({
+  _: "NumberLiteral",
+  int32: number,
+});
+
+export const stringLiteral = (string: string): d.TsExpr => ({
+  _: "StringLiteral",
+  string,
+});
+
+export const exportDefinitionFunction = (
+  func: d.Function
+): d.ExportDefinition => ({ type: "function", function: func });
+
+export const typeUnion = (tsTypeList: ReadonlyArray<d.TsType>): d.TsType => ({
+  _: "Union",
+  tsTypeList,
+});
+
+export const typeObject = (
+  tsMemberTypeList: ReadonlyArray<d.TsMemberType>
+): d.TsType => ({
+  _: "Object",
+  tsMemberTypeList,
+});
+
+export const call = (callExpr: d.CallExpr): d.TsExpr => ({
+  _: "Call",
+  callExpr,
+});
+
+export const statementIf = (ifStatement: d.IfStatement): d.Statement => ({
+  _: "If",
+  ifStatement,
+});
+
+export const statementVariableDefinition = (
+  variableDefinitionStatement: d.VariableDefinitionStatement
+): d.Statement => ({
+  _: "VariableDefinition",
+  variableDefinitionStatement,
+});
+
+export const statementFor = (forStatement: d.ForStatement): d.Statement => ({
+  _: "For",
+  forStatement,
+});
+
+export const statementForOf = (
+  forOfStatement: d.ForOfStatement
+): d.Statement => ({
+  _: "ForOf",
+  forOfStatement,
+});
+
+export const arrayLiteral = (
+  arrayItemList: ReadonlyArray<d.ArrayItem>
+): d.TsExpr => ({
+  _: "ArrayLiteral",
+  arrayItemList,
+});
+
+export const typeAssertion = (param: d.TypeAssertion): d.TsExpr => ({
+  _: "TypeAssertion",
+  typeAssertion: param,
+});
+
+export const statementSet = (setStatement: d.SetStatement): d.Statement => ({
+  _: "Set",
+  setStatement,
+});

@@ -1,6 +1,6 @@
 import * as d from "./localData";
 import { generateTypeScriptCode } from "./core/main";
-import { jsTs } from "./gen/main";
+import { jsTs } from "./deno-lib/npm";
 
 const coreProjectId: d.ProjectId = d.ProjectId.fromString(
   "96deb95f697e66f12a55e4d3910ea509"
