@@ -24,9 +24,9 @@ export const ServerOrigin = (props: {
             body: {
               type: "text",
               value: originText,
+              readonly: false,
+              isTitle: false,
             },
-            readonly: false,
-            isTitle: false,
             errorMessage:
               origin === undefined
                 ? "不正なオリジンです. 例: http://localhost:3000"
@@ -36,11 +36,11 @@ export const ServerOrigin = (props: {
             id: "server-name",
             errorMessage: undefined,
             name: "server name",
-            readonly: true,
-            isTitle: true,
             body: {
               type: "text",
               value: props.serverName === undefined ? "..." : props.serverName,
+              readonly: true,
+              isTitle: true,
             },
           },
         ]}

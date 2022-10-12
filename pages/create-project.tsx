@@ -90,12 +90,46 @@ const CreateProjectLoggedIn = (props: {
                 },
                 props.language
               ),
-              isTitle: true,
               errorMessage: undefined,
-              readonly: false,
               body: {
                 type: "text",
+                isTitle: true,
+                readonly: false,
                 value: projectName,
+              },
+            },
+            {
+              id: "create-project-button",
+              name: langText(
+                {
+                  japanese: createProjectMutation.isLoading
+                    ? `プロジェクト「${projectName}」を作成する`
+                    : `プロジェクト「${projectName}」を作成中...`,
+                  english: createProjectMutation.isLoading
+                    ? `Create a project "${projectName}"`
+                    : `Creating project "${projectName}"...`,
+                  esperanto: createProjectMutation.isLoading
+                    ? `Krei projekton "${projectName}"`
+                    : `Kreante projekton "${projectName}"...`,
+                },
+                props.language
+              ),
+              errorMessage: parsedProjectName.success
+                ? undefined
+                : "invalid project name",
+              body: {
+                type: "button",
+                value:
+                  !parsedProjectName.success || createProjectMutation.isLoading
+                    ? undefined
+                    : () => {
+                        if (parsedProjectName.success) {
+                          createProjectMutation.mutate({
+                            accountToken: props.accountToken,
+                            projectName: parsedProjectName.data,
+                          });
+                        }
+                      },
               },
             },
           ]}
@@ -106,34 +140,6 @@ const CreateProjectLoggedIn = (props: {
           }}
         />
       </label>
-      <Button
-        onClick={
-          !parsedProjectName.success || createProjectMutation.isLoading
-            ? undefined
-            : () => {
-                createProjectMutation.mutate({
-                  accountToken: props.accountToken,
-                  projectName: parsedProjectName.data,
-                });
-              }
-        }
-      >
-        {createProjectMutation.isLoading ? (
-          <Text
-            language={props.language}
-            japanese={`プロジェクト「${projectName}」を作成中...`}
-            english={`Creating project "${projectName}"...`}
-            esperanto={`Kreante projekton "${projectName}"...`}
-          />
-        ) : (
-          <Text
-            language={props.language}
-            japanese={`プロジェクト「${projectName}」を作成する`}
-            english={`Create a project "${projectName}"`}
-            esperanto={`Krei projekton "${projectName}"`}
-          />
-        )}
-      </Button>
     </div>
   );
 };

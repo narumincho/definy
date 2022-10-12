@@ -44,13 +44,13 @@ const ProjectPage = (): React.ReactElement => {
               errorMessage: projectIdParseResult.success
                 ? undefined
                 : "invalid project id. 例: 344646621232889937",
-              isTitle: false,
-              readonly: true,
               body: {
                 type: "text",
                 value: projectIdParseResult.success
                   ? projectIdParseResult.data
                   : JSON.stringify(query.id),
+                isTitle: false,
+                readonly: true,
               },
             },
           ]}
