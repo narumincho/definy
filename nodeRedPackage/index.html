@@ -1,6 +1,5 @@
 <script type="text/javascript">
-  console.log(process);
-  RED.nodes.registerType("definy", {
+  RED.nodes.registerType("send-to-definy", {
     category: "function",
     color: "#a6bbcf",
     defaults: {
@@ -15,13 +14,13 @@
   });
 </script>
 
-<script type="text/html" data-template-name="definy">
+<script type="text/html" data-template-name="send-to-definy">
   <div class="form-row">
     <label for="node-input-name"><i class="icon-tag"></i> Name</label>
     <input type="text" id="node-input-name" placeholder="Name" />
   </div>
 </script>
 
-<script type="text/html" data-help-name="definy">
+<script type="text/html" data-help-name="send-to-definy">
   <div>definy for Node RED</div>
 </script>
