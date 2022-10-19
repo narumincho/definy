@@ -1,0 +1,26 @@
+{
+  "name": "@definy/node-red",
+  "version": "1.0.3",
+  "description": "",
+  "main": "main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/narumincho/definy"
+  },
+  "keywords": [
+    "node-red"
+  ],
+  "author": "narumincho",
+  "license": "ISC",
+  "node-red": {
+    "nodes": {
+      "send-to-definy": "send-to-definy.js"
+    }
+  },
+  "dependencies": {
+    "undici": "5.11.0"
+  }
+}
