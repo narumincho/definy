@@ -28,7 +28,8 @@
     "desktop-proxy",
     "deno-library-check",
     "databaseMigration.ts",
-    "deno-lib"
+    "deno-lib",
+    "nodeRedPackage"
   ],
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx"]
 }
