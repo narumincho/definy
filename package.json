@@ -46,6 +46,7 @@
     "@types/jest": "29.1.2",
     "@types/jsonwebtoken": "8.5.9",
     "@types/node": "18.8.5",
+    "@types/node-red": "^1.2.1",
     "@types/react": "18.0.21",
     "@types/react-dom": "18.0.6",
     "@types/vscode": "1.72.0",

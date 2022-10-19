@@ -121,3 +121,11 @@ node 向けにビルド
 ```ps1
 cd ./deno-lib && deno run -A --check ./build.ts
 ```
+
+# @definy/node-red
+
+npm 向けにビルド
+
+```ps1
+cd ./deno-lib && deno run -A --check ./nodeRedBuild.ts
+```

@@ -21,6 +21,7 @@ specifiers:
   '@types/jest': 29.1.2
   '@types/jsonwebtoken': 8.5.9
   '@types/node': 18.8.5
+  '@types/node-red': ^1.2.1
   '@types/react': 18.0.21
   '@types/react-dom': 18.0.6
   '@types/vscode': 1.72.0
@@ -83,6 +84,7 @@ devDependencies:
   '@types/jest': 29.1.2
   '@types/jsonwebtoken': 8.5.9
   '@types/node': 18.8.5
+  '@types/node-red': 1.2.1
   '@types/react': 18.0.21
   '@types/react-dom': 18.0.6
   '@types/vscode': 1.72.0
@@ -5530,6 +5532,10 @@ packages:
       path-browserify: 1.0.1
     dev: true
 
+  /@types/ace/0.0.48:
+    resolution: {integrity: sha512-esV6hOWiDOZ6d7w5S11iLu6LQsPGe/9RPzhri7gNNLdrK1LFpO9/m7IZhQL6dat0JHICJ7l51zvHAiCgnPLLHA==}
+    dev: true
+
   /@types/babel__core/7.1.19:
     resolution: {integrity: sha512-WEOTgRsbYkvA/KCsDwVEGkd7WAr1e3g31VHQ8zy5gul/V1qKullU/BU5I68X5v7V3GnB9eotmom4v5a5gjxorw==}
     dependencies:
@@ -5694,6 +5700,12 @@ packages:
       pretty-format: 29.1.2
     dev: true
 
+  /@types/jquery/3.5.14:
+    resolution: {integrity: sha512-X1gtMRMbziVQkErhTQmSe2jFwwENA/Zr+PprCkF63vFq+Yt5PZ4AlKqgmeNlwgn7dhsXEK888eIW2520EpC+xg==}
+    dependencies:
+      '@types/sizzle': 2.3.3
+    dev: true
+
   /@types/json-buffer/3.0.0:
     resolution: {integrity: sha512-3YP80IxxFJB4b5tYC2SUPwkg0XQLiu0nWvhRgEatgjf+29IcWO9X1k8xRv5DGssJ/lCrjYTjQPcobJr2yWIVuQ==}
     dev: true
@@ -5758,6 +5770,59 @@ packages:
       form-data: 3.0.1
     dev: true
 
+  /@types/node-red/1.2.1:
+    resolution: {integrity: sha512-v9azjmzDqgBHbc3DRn3/4J8TkyeeiRbfzELNb9yQHqEAMhTDFkjAyEnc4ZtM05QYD/9PhO5K8/afezqkRMadpA==}
+    dependencies:
+      '@types/express': 4.17.13
+      '@types/node-red__editor-api': 1.1.1
+      '@types/node-red__editor-client': 1.1.6
+      '@types/node-red__registry': 1.2.1
+      '@types/node-red__runtime': 1.2.0
+      '@types/node-red__util': 1.2.0
+    dev: true
+
+  /@types/node-red__editor-api/1.1.1:
+    resolution: {integrity: sha512-O7MNsGwNWDY89sPxVjo2zXGfm8bw4owXrD4akp2NmM1cmrj6XvRKEu99Apw/RjZvteBFpxvLSVtOnYYPj4C7wg==}
+    dependencies:
+      '@types/express': 4.17.13
+      '@types/node-red__runtime': 1.2.0
+    dev: true
+
+  /@types/node-red__editor-client/1.1.6:
+    resolution: {integrity: sha512-XBUumG27Cikfd8yQ94BMZfoOTIPrHM+lMOueIUxwsn7b2r6c1cLxO6eyOpCYLh3LhsTg5IkVB/uUpiopxXE1Uw==}
+    dependencies:
+      '@types/ace': 0.0.48
+      '@types/jquery': 3.5.14
+      '@types/node-red__runtime': 1.2.0
+      '@types/node-red__util': 1.2.0
+    dev: true
+
+  /@types/node-red__registry/1.2.1:
+    resolution: {integrity: sha512-eSOUrKxuxLne1NyCGbPuaJxpstWs0Ds0n1xeSXVlfZAOc3zfwsg10FODsY3L08NHUrV5NlyN+gvwQ7RlHv4kOw==}
+    dependencies:
+      '@types/express': 4.17.13
+      '@types/node-red__runtime': 1.2.0
+      '@types/node-red__util': 1.2.0
+    dev: true
+
+  /@types/node-red__runtime/1.2.0:
+    resolution: {integrity: sha512-1jSmhrzsBiW6OaNpyAdXitq0H3Zt2LYFNBhsLQE0LHSp77F26/bni1mFNGnIuo684CT+CX71kP6ZjuMJyeM/bA==}
+    dependencies:
+      '@types/cors': 2.8.12
+      '@types/express': 4.17.13
+      '@types/node-red__editor-api': 1.1.1
+      '@types/node-red__util': 1.2.0
+      '@types/passport': 1.0.11
+    dev: true
+
+  /@types/node-red__util/1.2.0:
+    resolution: {integrity: sha512-jxxznqRl2UhmMimkv7+vvxcsi0fXS1EnTmiuQ2FwplTNvl2Ui+g4K2vbG/Jn/rsLujpM6oyPPjwzKPG1diPqUQ==}
+    dependencies:
+      '@types/node-red__registry': 1.2.1
+      '@types/node-red__runtime': 1.2.0
+      jsonata: 1.8.3
+    dev: true
+
   /@types/node/16.11.49:
     resolution: {integrity: sha512-Abq9fBviLV93OiXMu+f6r0elxCzRwc0RC5f99cU892uBITL44pTvgvEqlRlPRi8EGcO1z7Cp8A4d0s/p3J/+Nw==}
     dev: true
@@ -5784,6 +5849,12 @@ packages:
 
   /@types/parse5/5.0.3:
     resolution: {integrity: sha512-kUNnecmtkunAoQ3CnjmMkzNU/gtxG8guhi+Fk2U/kOpIKjIMKnXGp4IJCgQJrXSgMsWYimYG4TGjz/UzbGEBTw==}
+    dev: true
+
+  /@types/passport/1.0.11:
+    resolution: {integrity: sha512-pz1cx9ptZvozyGKKKIPLcVDVHwae4hrH5d6g5J+DkMRRjR3cVETb4jMabhXAUbg3Ov7T22nFHEgaK2jj+5CBpw==}
+    dependencies:
+      '@types/express': 4.17.13
     dev: true
 
   /@types/prettier/2.7.0:
@@ -5841,6 +5912,10 @@ packages:
     dependencies:
       '@types/mime': 3.0.1
       '@types/node': 18.8.5
+    dev: true
+
+  /@types/sizzle/2.3.3:
+    resolution: {integrity: sha512-JYM8x9EGF163bEyhdJBpR2QX1R5naCJHC8ucJylJ3w9/CVBaskdQ8WqBf8MmQrd1kRvp/a4TS8HJ+bxzR7ZJYQ==}
     dev: true
 
   /@types/source-list-map/0.1.2:
@@ -13245,6 +13320,11 @@ packages:
     resolution: {integrity: sha512-1hqLFMSrGHRHxav9q9gNjJ5EXznIxGVO09xQRrwplcS8qs28pZ8s8hupZAmqDwZUmVZ2Qb2jnyPOWcDH8m8dlA==}
     engines: {node: '>=6'}
     hasBin: true
+    dev: true
+
+  /jsonata/1.8.3:
+    resolution: {integrity: sha512-r6ztI6ohbpRo77AxBm6vMs3aHZi2L2PaakW7TCPwSkeGcuAZ/SxXGLWH2Npwqq5+YBM/fg/g0EXg/pI9HvXQ8Q==}
+    engines: {node: '>= 8'}
     dev: true
 
   /jsonfile/4.0.0:
