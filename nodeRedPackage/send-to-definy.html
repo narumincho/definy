@@ -5,6 +5,7 @@
     color: "#a6bbcf",
     defaults: {
       name: { value: "" },
+      custom: { value: "custom default value!" },
     },
     inputs: 1,
     outputs: 1,
@@ -24,13 +25,23 @@
 
 <script type="text/html" data-template-name="send-to-definy">
   <div class="form-row">
-    <label for="node-input-name"><i class="icon-tag"></i> Name</label>
+    <label for="node-input-name"><i class="icon-tag"></i>Name</label>
     <input type="text" id="node-input-name" />
-    <label for="definy-input-name">
+  </div>
+  <div class="form-row">
+    <label for="node-input-custom"><i class="icon-tag"></i>Custom</label>
+    <input type="text" id="node-input-custom" />
+  </div>
+  <div class="form-row">
+    <label for="definy-input-handle-test">
       <i class="icon-tag"></i>
       入力をハンドリングするよ
     </label>
-    <input type="text" id="definy-input-name" oninput="definyNodeOnInput()" />
+    <input
+      type="text"
+      id="definy-input-handle-test"
+      oninput="definyNodeOnInput()"
+    />
   </div>
 </script>
 

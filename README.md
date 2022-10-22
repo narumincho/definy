@@ -135,3 +135,12 @@ cd ./deno-lib && deno run -A --check ./nodeRedBuild.ts
 ```ps1
 cd ./nodeRedPackage && npm publish .
 ```
+
+Node RED を起動してデバッグ
+
+```ps1
+pnpm exec tsc --project ./nodeRedPackage --watch
+cd ~/.node-red
+node-red
+npm install path/to/nodeRedPackage
+```
