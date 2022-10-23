@@ -147,12 +147,10 @@ pnpm exec tsc --project ./nodeRedPackage --watch
 クライアントのビルド
 
 ```ps1
-cd ./nodeRedPackageClient && deno run -A build.ts
+deno run -A ./nodeRedPackageClient/build.ts
 ```
 
-```ps1
-
-```
+Node RED の起動と更新
 
 ```ps1
 cd ~/.node-red
