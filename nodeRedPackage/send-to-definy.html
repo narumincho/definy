@@ -1,47 +1,71 @@
 <script type="text/javascript">
+  const isValidUrl = (url) => {
+    try {
+      new URL(url);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  };
+
   // ブラウザで動作
   RED.nodes.registerType("send-to-definy", {
     category: "function",
     color: "#a6bbcf",
     defaults: {
-      name: { value: "" },
-      custom: { value: "custom default value!" },
+      originUrl: {
+        value: "",
+        required: true,
+        validate: isValidUrl,
+      },
     },
     inputs: 1,
     outputs: 1,
     label: function () {
       console.log(this);
-      this.outputs = this.name !== undefined ? this.name.length : 1;
-      return this.name ?? "definy";
+      return (
+        this.originUrl + "の definy RPC サーバーと接続する" ??
+        "definy RPC サーバーと接続. originUrl を設定してね"
+      );
+    },
+    oneditsave: function (e) {
+      const url = new URL(window.location.href);
+      url.pathname = "/definy";
+      fetch(url, { method: "POST", body: "custom message!" }).then(
+        (response) => {
+          console.log(response);
+          response.text().then(console.log);
+        }
+      );
+      console.log("oneditsave", this);
     },
   });
 
-  window.definyNodeOnInput = (e) => {
-    const inputElement = document.getElementById("definy-input-name");
-    console.log("definyNodeOnInputが呼ばれた", inputElement.value);
-    console.log(RED);
+  window.definyOriginUrlOnInput = (e) => {
+    const originUrl = document.getElementById("node-input-originUrl").value;
+    const validationResult = document.getElementById(
+      "definy-originUrl-validationResult"
+    );
+    if (isValidUrl(originUrl)) {
+      validationResult.textContent =
+        originUrl +
+        "は正当なURLです. このURLが示すサーバーが正しく definy RPC サーバーを実装できているかの確認はデプロイしたときに分かります (わかるようにします)";
+    } else {
+      validationResult.textContent = originUrl + "は正当なURLではありません";
+    }
   };
 </script>
 
 <script type="text/html" data-template-name="send-to-definy">
   <div class="form-row">
-    <label for="node-input-name"><i class="icon-tag"></i>Name</label>
-    <input type="text" id="node-input-name" />
-  </div>
-  <div class="form-row">
-    <label for="node-input-custom"><i class="icon-tag"></i>Custom</label>
-    <input type="text" id="node-input-custom" />
-  </div>
-  <div class="form-row">
-    <label for="definy-input-handle-test">
-      <i class="icon-tag"></i>
-      入力をハンドリングするよ
-    </label>
+    <label for="node-input-originUrl"><i class="icon-tag"></i>originUrl</label>
     <input
       type="text"
-      id="definy-input-handle-test"
-      oninput="definyNodeOnInput()"
+      id="node-input-originUrl"
+      placeholder="https://narumincho-definy.deno.dev/"
+      oninput="definyOriginUrlOnInput()"
     />
+    <div id="definy-originUrl-validationResult"></div>
   </div>
 </script>
 

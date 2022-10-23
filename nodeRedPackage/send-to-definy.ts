@@ -1,8 +1,24 @@
 import { Node, NodeAPI, NodeDef } from "node-red";
-import { request } from "undici";
+import { request as undiciRequest } from "undici";
 
 // Node.js 内で動作
 module.exports = (RED: NodeAPI) => {
+  RED.server.addListener("request", (request, response) => {
+    if (request.url !== "/definy") {
+      return;
+    }
+
+    request.on("data", (chunk) => {
+      console.log("チャンク到達", chunk);
+    });
+    request.on("end", (e: unknown) => {
+      console.log("end到達", e);
+      response.writeHead(200, { "Content-Type": "text/plain" });
+      response.end("Node.js からのメッセージだ!");
+    });
+    console.log("message.url", request.url);
+  });
+
   // eslint-disable-next-line func-style
   function CustomNode(
     this: Node<Record<string, unknown>>,
@@ -14,40 +30,46 @@ module.exports = (RED: NodeAPI) => {
   // eslint-disable-next-line func-style
   function SendToDefiny(
     this: Node<Record<string, unknown>>,
-    config: NodeDef & { custom: string }
+    config: NodeDef & { originUrl: string }
   ): void {
-    // browser to node.js
     RED.nodes.createNode(this, config);
-    config.custom = config.custom.repeat(2);
-
-    console.log("init SendToDefiny", config);
-    this.on("input", (msg) => {
-      console.log(this);
-      RED.nodes.registerType("definy-custom-" + config.custom, CustomNode);
-      request("https://narumincho.com")
-        .then((response) => {
-          return response.body.text();
-        })
-        .then((html) => {
-          const payload = (msg.payload as string).toLowerCase();
-          this.send({ payload: html });
-        });
-    });
   }
   RED.nodes.registerType("send-to-definy", SendToDefiny);
 
   setInterval(() => {
     RED.nodes.eachNode((node) => {
       if (node.type === "send-to-definy") {
-        // console.log("send-to-definy のノードを見つけた", node);
-        const nodeInstance = RED.nodes.getNode(node.id);
+        const nodeInstance = RED.nodes.getNode(node.id) as Node & {
+          originUrl: string;
+        };
 
-        nodeInstance.status({
-          text:
-            (nodeInstance.name ?? "不明な名前") +
-            " " +
-            new Date().toISOString(),
-        });
+        nodeInstance
+          .context()
+          .global.set(
+            "definy-set-by-node-js",
+            "in Node.js " + new Date().toISOString()
+          );
+
+        if (typeof nodeInstance.originUrl === "string") {
+          undiciRequest(nodeInstance.originUrl).then(
+            () => {
+              nodeInstance.status({
+                fill: "green",
+                shape: "ring",
+                text:
+                  nodeInstance.originUrl +
+                  " HTTP サーバーとして接続できたっぽいよ ",
+              });
+            },
+            (e) => {
+              nodeInstance.status({
+                fill: "red",
+                // eslint-disable-next-line @typescript-eslint/restrict-plus-operands
+                text: nodeInstance.originUrl + " " + e.toString(),
+              });
+            }
+          );
+        }
       }
     });
   }, 3000);
