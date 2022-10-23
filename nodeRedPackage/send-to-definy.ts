@@ -1,23 +1,61 @@
+import { IncomingMessage, RequestListener, ServerResponse } from "http";
 import { Node, NodeAPI, NodeDef } from "node-red";
 import { request as undiciRequest } from "undici";
 
-// Node.js 内で動作
-module.exports = (RED: NodeAPI) => {
-  RED.server.addListener("request", (request, response) => {
-    if (request.url !== "/definy") {
+/**
+ * Node RED の HTTP サーバーの処理に入り込んで, エディタとの通信をする
+ */
+const handleRequest: RequestListener<
+  typeof IncomingMessage,
+  typeof ServerResponse
+> = (request, response) => {
+  let requestBody = new Uint8Array();
+  if (request.url !== "/definy") {
+    return;
+  }
+  request.on("data", (chunk) => {
+    requestBody = new Uint8Array([...requestBody, ...chunk]);
+  });
+  request.on("end", async () => {
+    const requestBodyAsString = new TextDecoder().decode(requestBody);
+    console.log(requestBodyAsString);
+    const requestJson = JSON.parse(requestBodyAsString);
+    const originUrl: unknown = requestJson.originUrl;
+
+    if (typeof originUrl !== "string") {
+      response.writeHead(400, { "Content-Type": "application/json" });
+      response.end(JSON.stringify("need originUrl"));
       return;
     }
 
-    request.on("data", (chunk) => {
-      console.log("チャンク到達", chunk);
-    });
-    request.on("end", (e: unknown) => {
-      console.log("end到達", e);
-      response.writeHead(200, { "Content-Type": "text/plain" });
-      response.end("Node.js からのメッセージだ!");
-    });
-    console.log("message.url", request.url);
+    // await のあとに返すとエラーになってしまう
+    response.writeHead(200, { "Content-Type": "application/json" });
+
+    const connectionResult = await undiciRequest(originUrl).then(
+      () => {
+        console.log("接続チェック完了ok!");
+        return true;
+      },
+      (e) => {
+        console.log("接続チェック完了 だめっぽい", e);
+        return false;
+      }
+    );
+
+    console.log("connectionResult", connectionResult);
+
+    console.log("send 200");
+    response.end(
+      JSON.stringify({
+        connectionResult,
+      })
+    );
   });
+};
+
+// Node.js 内で動作
+module.exports = (RED: NodeAPI) => {
+  RED.server.addListener("request", handleRequest);
 
   // eslint-disable-next-line func-style
   function CustomNode(

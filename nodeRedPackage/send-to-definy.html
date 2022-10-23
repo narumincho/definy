@@ -8,6 +8,20 @@
     }
   };
 
+  const checkValidDefinyRpcServer = async (originUrl) => {
+    const url = new URL(window.location.href);
+    url.pathname = "/definy";
+    const responseJson = await (
+      await fetch(url, {
+        method: "POST",
+        body: "custom message!",
+        body: JSON.stringify({ originUrl: originUrl }),
+      })
+    ).json();
+
+    return responseJson.connectionResult;
+  };
+
   // ブラウザで動作
   RED.nodes.registerType("send-to-definy", {
     category: "function",
@@ -28,17 +42,7 @@
         "definy RPC サーバーと接続. originUrl を設定してね"
       );
     },
-    oneditsave: function (e) {
-      const url = new URL(window.location.href);
-      url.pathname = "/definy";
-      fetch(url, { method: "POST", body: "custom message!" }).then(
-        (response) => {
-          console.log(response);
-          response.text().then(console.log);
-        }
-      );
-      console.log("oneditsave", this);
-    },
+    oneditsave: function (e) {},
   });
 
   window.definyOriginUrlOnInput = (e) => {
@@ -46,13 +50,21 @@
     const validationResult = document.getElementById(
       "definy-originUrl-validationResult"
     );
-    if (isValidUrl(originUrl)) {
-      validationResult.textContent =
-        originUrl +
-        "は正当なURLです. このURLが示すサーバーが正しく definy RPC サーバーを実装できているかの確認はデプロイしたときに分かります (わかるようにします)";
-    } else {
+    if (!isValidUrl(originUrl)) {
       validationResult.textContent = originUrl + "は正当なURLではありません";
+      return;
     }
+    validationResult.textContent = originUrl + "に接続できるか試しています...";
+    checkValidDefinyRpcServer(originUrl).then((ok) => {
+      if (ok) {
+        validationResult.textContent =
+          originUrl +
+          "は正当なURLで HTTP サーバーを公開していることを確認しました. definy RPC サーバーを実装できているかの確認はそのうちできるようにします";
+        return;
+      }
+      validationResult.textContent =
+        originUrl + "は正当なURLですが接続できませんでした.";
+    });
   };
 </script>
 
