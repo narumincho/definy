@@ -138,13 +138,7 @@ cd ./nodeRedPackage && npm publish .
 
 ## Node RED を起動してデバッグ
 
-Node.js 内で動くコードのビルド
-
-```ps1
-pnpm exec tsc --project ./nodeRedPackage --watch
-```
-
-クライアントのビルド
+ビルド
 
 ```ps1
 deno run -A ./nodeRedPackageClient/build.ts
