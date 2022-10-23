@@ -29,3 +29,4 @@ tsconfig.tsbuildinfo
 /desktop-proxy/server/npm/
 /deno-lib/npm/
 /nodeRedPackage/send-to-definy.html
+/nodeRedServerForNode/

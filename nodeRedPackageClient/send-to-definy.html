@@ -1,0 +1,79 @@
+<script type="text/javascript">
+      // content.tsx
+var isValidUrl = (url) => {
+  try {
+    new URL(url);
+    return true;
+  } catch (e) {
+    return false;
+  }
+};
+var checkValidDefinyRpcServer = async (originUrl) => {
+  const url = new URL(window.location.href);
+  url.pathname = "/definy";
+  const responseJson = await (await fetch(url, {
+    method: "POST",
+    body: JSON.stringify({ originUrl })
+  })).json();
+  return responseJson.connectionResult;
+};
+RED.nodes.registerType("send-to-definy", {
+  category: "function",
+  color: "#a6bbcf",
+  defaults: {
+    originUrl: {
+      value: "",
+      required: true,
+      validate: isValidUrl
+    }
+  },
+  inputs: 1,
+  outputs: 1,
+  label: function() {
+    console.log(this);
+    return this.originUrl + "\u306E definy RPC \u30B5\u30FC\u30D0\u30FC\u3068\u63A5\u7D9A\u3059\u308B";
+  },
+  oneditsave: function() {
+  }
+});
+window.definyOriginUrlOnInput = () => {
+  const originUrl = document.getElementById("node-input-originUrl").value;
+  const validationResult = document.getElementById(
+    "definy-originUrl-validationResult"
+  );
+  if (validationResult === null) {
+    console.log("\u30D5\u30A9\u30FC\u30E0\u306E\u8868\u793A\u5148\u304C\u898B\u3064\u304B\u308A\u307E\u305B\u3093\u3067\u3057\u305F");
+    return;
+  }
+  if (!isValidUrl(originUrl)) {
+    validationResult.textContent = originUrl + "\u306F\u6B63\u5F53\u306AURL\u3067\u306F\u3042\u308A\u307E\u305B\u3093";
+    return;
+  }
+  validationResult.textContent = originUrl + "\u306B\u63A5\u7D9A\u3067\u304D\u308B\u304B\u8A66\u3057\u3066\u3044\u307E\u3059...";
+  checkValidDefinyRpcServer(originUrl).then((ok) => {
+    if (ok) {
+      validationResult.textContent = originUrl + "\u306F\u6B63\u5F53\u306AURL\u3067 HTTP \u30B5\u30FC\u30D0\u30FC\u3092\u516C\u958B\u3057\u3066\u3044\u308B\u3053\u3068\u3092\u78BA\u8A8D\u3057\u307E\u3057\u305F. definy RPC \u30B5\u30FC\u30D0\u30FC\u3092\u5B9F\u88C5\u3067\u304D\u3066\u3044\u308B\u304B\u306E\u78BA\u8A8D\u306F\u305D\u306E\u3046\u3061\u3067\u304D\u308B\u3088\u3046\u306B\u3057\u307E\u3059";
+      return;
+    }
+    validationResult.textContent = originUrl + "\u306F\u6B63\u5F53\u306AURL\u3067\u3059\u304C\u63A5\u7D9A\u3067\u304D\u307E\u305B\u3093\u3067\u3057\u305F.";
+  });
+};
+
+    </script>
+    
+    <script type="text/html" data-template-name="send-to-definy">
+      <div class="form-row">
+        <label for="node-input-originUrl"><i class="icon-tag"></i>originUrl</label>
+        <input
+          type="text"
+          id="node-input-originUrl"
+          placeholder="https://narumincho-definy.deno.dev/"
+          oninput="definyOriginUrlOnInput()"
+        />
+        <div id="definy-originUrl-validationResult"></div>
+      </div>
+    </script>
+    
+    <script type="text/html" data-help-name="send-to-definy">
+      <p>definy for Node RED</p>
+    </script>

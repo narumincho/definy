@@ -141,7 +141,7 @@ cd ./nodeRedPackage && npm publish .
 ビルド
 
 ```ps1
-deno run -A ./nodeRedPackageClient/build.ts
+cd ./nodeRedPackageClient && deno run -A ./build.ts
 ```
 
 Node RED の起動と更新
