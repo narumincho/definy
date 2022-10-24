@@ -118,7 +118,9 @@ deno run -A --check ./deno-lib/definyRpc/build.ts
 
 # deno-lib
 
-node 向けにビルド
+Deno で書かれたコード. Deno への移植をどんどん進めている
+
+### Node.js 向けにビルド
 
 ```ps1
 cd ./deno-lib && deno run -A --check ./build.ts
@@ -126,19 +128,23 @@ cd ./deno-lib && deno run -A --check ./build.ts
 
 # @definy/node-red
 
-npm 向けにビルド
+Node RED から definy RPC のサーバーにデータを送信できる (できるようにする) ライブラリ
+
+https://www.npmjs.com/package/@definy/node-red
+
+### Node.js 向けにビルド
 
 ```ps1
 cd ./deno-lib && deno run -A ./nodeRed/build.ts
 ```
 
-公開
+### npm に公開
 
 ```ps1
 cd ./nodeRedServerForNode && npm publish .
 ```
 
-Node RED の起動と更新
+### Node RED の起動とデバッグ
 
 ```ps1
 cd ~/.node-red

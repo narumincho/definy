@@ -41,7 +41,7 @@ const generateClientHtml = async (): Promise<string> => {
 
 emptyDir("../nodeRedServerForNode");
 
-const version = "1.0.4";
+const version = "1.0.5";
 
 await build({
   entryPoints: ["./nodeRed/server/main.ts"],
@@ -94,6 +94,9 @@ await Deno.writeTextFile(
 - npm v${version}: https://www.npmjs.com/package/@definy/node-red/v/${version}
 
 node-RED から definy にデータを送れるようにしたいー
+
+## できること
+- send-to-definy という名前のノードにURLを入力するとそのURLでHTTP サーバーが起動しているかわかる (デプロイボタンをいちいち押さなくても良い!)
 `
 );
 console.log("README.md ファイルの出力に成功");

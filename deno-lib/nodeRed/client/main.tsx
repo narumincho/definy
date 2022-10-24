@@ -1,4 +1,7 @@
 /// <reference lib="dom" />
+/*
+ * 同時に `./nodeRed.d.ts` を開くとエディタ上の型エラーがなくなる
+ */
 
 const isValidUrl = (url: string): boolean => {
   try {
