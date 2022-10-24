@@ -5,8 +5,7 @@
     { "path": "./definy-rpc/example" },
     { "path": "./desktop-proxy" },
     { "path": "./deno-library-check" },
-    { "path": "./deno-lib" },
-    { "path": "./nodeRedPackageClient" }
+    { "path": "./deno-lib" }
   ],
   "extensions": {
     "recommendations": ["denoland.vscode-deno"],

@@ -5,7 +5,7 @@ import { build, emptyDir } from "https://deno.land/x/dnt@0.31.0/mod.ts";
 const generateClientHtml = async (): Promise<string> => {
   const result = await esbuild.build({
     plugins: [denoPlugin()],
-    entryPoints: ["./content.tsx"],
+    entryPoints: ["./nodeRed/client/main.tsx"],
     write: false,
     bundle: true,
     format: "esm",
@@ -44,7 +44,7 @@ emptyDir("../nodeRedServerForNode");
 const version = "1.0.4";
 
 await build({
-  entryPoints: ["./server.ts"],
+  entryPoints: ["./nodeRed/server/main.ts"],
   outDir: "../nodeRedServerForNode",
   shims: {
     deno: true,
@@ -74,6 +74,7 @@ await build({
   typeCheck: false,
   declaration: false,
   esModule: false,
+  test: false,
 });
 
 console.log("Node.js 向けスクリプトの出力に成功");
@@ -87,10 +88,10 @@ console.log("HTML ファイルの出力に成功");
 
 await Deno.writeTextFile(
   "../nodeRedServerForNode/README.md",
-  `# @definy/node-red@${version}
+  `# @definy/node-red v${version}
 
-npm latest: https://www.npmjs.com/package/@definy/node-red
-npm v${version}: https://www.npmjs.com/package/@definy/node-red/v/${version}
+- npm latest: https://www.npmjs.com/package/@definy/node-red
+- npm v${version}: https://www.npmjs.com/package/@definy/node-red/v/${version}
 
 node-RED から definy にデータを送れるようにしたいー
 `

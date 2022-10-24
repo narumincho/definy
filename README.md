@@ -127,21 +127,13 @@ cd ./deno-lib && deno run -A --check ./build.ts
 npm 向けにビルド
 
 ```ps1
-cd ./deno-lib && deno run -A --check ./nodeRedBuild.ts
+cd ./deno-lib && deno run -A ./nodeRed/build.ts
 ```
 
 公開
 
 ```ps1
-cd ./nodeRedPackage && npm publish .
-```
-
-## Node RED を起動してデバッグ
-
-ビルド
-
-```ps1
-cd ./nodeRedPackageClient && deno run -A ./build.ts
+cd ./nodeRedServerForNode && npm publish .
 ```
 
 Node RED の起動と更新
@@ -149,5 +141,5 @@ Node RED の起動と更新
 ```ps1
 cd ~/.node-red
 node-red
-npm install path/to/nodeRedPackage
+npm install path/to/nodeRedServerForNode
 ```
