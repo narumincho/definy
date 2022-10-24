@@ -1,4 +1,4 @@
-import { identifierFromString, data } from "../../../deno-lib/jsTs/main.ts";
+import { identifierFromString, data } from "../../../jsTs/main.ts";
 
 const runtimeModuleName = "./runtime";
 

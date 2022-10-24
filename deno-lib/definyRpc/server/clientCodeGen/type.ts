@@ -9,14 +9,14 @@ import {
   newSet,
   notEqual,
   callMethod,
-} from "../../../deno-lib/jsTs/main.ts";
+} from "../../../jsTs/main.ts";
 import {
   CollectedDefinyRpcType,
   CollectedDefinyRpcTypeBody,
   CollectedDefinyRpcTypeMap,
   CollectedDefinyRpcTypeUse,
 } from "../collectType.ts";
-import { arrayFromLength } from "../../../deno-lib/util.ts";
+import { arrayFromLength } from "../../../util.ts";
 import { structuredJsonValueType } from "./runtime.ts";
 
 export const collectedTypeToTypeAlias = (

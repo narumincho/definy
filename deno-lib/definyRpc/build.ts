@@ -1,6 +1,6 @@
 import { build, emptyDir } from "https://deno.land/x/dnt@0.31.0/mod.ts";
 import * as base64 from "https://denopkg.com/chiefbiiko/base64@master/mod.ts";
-import { shell } from "./shell.ts";
+import { shell } from "../shell.ts";
 
 type BuildClientResult = {
   readonly indexHtmlContent: string;
@@ -94,7 +94,10 @@ const _buildToNodeJs = async (): Promise<void> => {
 
 const main = async (): Promise<void> => {
   const clientBuildResult = await buildClient();
-  Deno.writeTextFile("./browserClient.json", JSON.stringify(clientBuildResult));
+  Deno.writeTextFile(
+    "./deno-lib/definyRpc/server/browserClient.json",
+    JSON.stringify(clientBuildResult)
+  );
 };
 
 await main();

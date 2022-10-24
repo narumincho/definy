@@ -1,5 +1,5 @@
 import { DefinyRpcType } from "./type.ts";
-import { NonEmptyArray } from "../../deno-lib/util.ts";
+import { NonEmptyArray } from "../../util.ts";
 
 const privateSymbol = Symbol();
 

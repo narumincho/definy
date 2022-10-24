@@ -3,7 +3,7 @@ import {
   generateCodeAsString,
   identifierFromString,
   data,
-} from "../../../deno-lib/jsTs/main.ts";
+} from "../../../jsTs/main.ts";
 import { collectDefinyRpcTypeFromFuncList } from "../collectType.ts";
 import { formatCode } from "../prettier.ts";
 import { apiFuncToTsFunction } from "./func.ts";

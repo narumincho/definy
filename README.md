@@ -51,6 +51,8 @@ Definy is Web App for Web App.
 - `/gen`: データやコードを生成するプログラムのコード
 - `/static`: スタティックなファイルが置かれている
 - `/storybook`: UI の見た目や動作を確かめられる, storybook の設定や, ストーリーが書かれている
+- `/src` PureScript で書かれたコード
+- `/deno-lib` Deno で書かれたコード
 
 ## エミュレータの起動方法
 
@@ -95,7 +97,7 @@ deno run --watch --check --allow-env --allow-net=:2520 --allow-read --allow-writ
 カレントディレクトリは リポジトリと同じ場所
 
 ```ps1
-deno run --check --watch --allow-net=:2520 --allow-write=./definy-rpc/browserClient/src/generated --allow-read ./definy-rpc/example/exampleDev.ts
+deno run --check --watch --allow-net=:2520 --allow-write=./definy-rpc/browserClient/src/generated --allow-read ./deno-lib/definyRpc/example/exampleDev.ts
 ```
 
 `--allow-write` `--allow-read` とかで指定しているのは, サーバーでコード生成したときに, ファイルを保存するため
@@ -111,7 +113,7 @@ pnpm run definy-rpc-client
 ## クライアントも含めてビルド
 
 ```ps1
-deno run -A --check ./definy-rpc/build/build.ts
+deno run -A --check ./deno-lib/definyRpc/build.ts
 ```
 
 # deno-lib

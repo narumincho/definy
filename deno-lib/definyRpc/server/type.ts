@@ -1,7 +1,7 @@
-import { RawJsonValue } from "../../common/typedJson.ts";
-import { Lazy, lazyGet } from "../../common/lazy.ts";
-import { objectEntriesSameValue } from "../../common/objectEntriesSameValue.ts";
-import { NonEmptyArray } from "../../deno-lib/util.ts";
+import { RawJsonValue } from "../../../common/typedJson.ts";
+import { Lazy, lazyGet } from "../../../common/lazy.ts";
+import { objectEntriesSameValue } from "../../../common/objectEntriesSameValue.ts";
+import { NonEmptyArray } from "../../util.ts";
 
 export type DefinyRpcType<in out t> = {
   readonly namespace: NonEmptyArray<string>;
