@@ -65,7 +65,7 @@ await build({
     },
     "node-red": {
       nodes: {
-        "send-to-definy": "./script/server.js",
+        "send-to-definy": "./script/main.js",
       },
     },
     keywords: ["node-red"],
@@ -81,7 +81,7 @@ console.log("Node.js 向けスクリプトの出力に成功");
 
 const clientHtml = await generateClientHtml();
 await Deno.writeTextFile(
-  "../nodeRedServerForNode/script/server.html",
+  "../nodeRedServerForNode/script/main.html",
   clientHtml
 );
 console.log("HTML ファイルの出力に成功");
