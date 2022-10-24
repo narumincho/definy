@@ -15,25 +15,17 @@ const generateClientHtml = async (): Promise<string> => {
     if (outFile.path === "<stdout>") {
       const clientCode = new TextDecoder().decode(outFile.contents);
       return `<script type="text/javascript">
-      ${clientCode}
-    </script>
-    
-    <script type="text/html" data-template-name="send-to-definy">
-      <div class="form-row">
-        <label for="node-input-originUrl"><i class="icon-tag"></i>originUrl</label>
-        <input
-          type="text"
-          id="node-input-originUrl"
-          placeholder="https://narumincho-definy.deno.dev/"
-          oninput="definyOriginUrlOnInput()"
-        />
-        <div id="definy-originUrl-validationResult"></div>
-      </div>
-    </script>
-    
-    <script type="text/html" data-help-name="send-to-definy">
-      <p>definy for Node RED</p>
-    </script>`;
+  ${clientCode}
+</script>
+
+<script type="text/html" data-template-name="send-to-definy">
+  <div id="definy-form-root"></div>
+</script>
+
+<script type="text/html" data-help-name="send-to-definy">
+  <p>definy for Node RED</p>
+</script>
+`;
     }
   }
   throw new Error("client の ビルドに失敗した");
