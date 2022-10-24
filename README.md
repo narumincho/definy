@@ -83,7 +83,7 @@ code ./for-deno.code-workspace
 起動
 
 ```ps1
-deno run --watch --check --allow-env --allow-net=:2520 --allow-read --allow-write=./client/generated ./desktop-proxy/main.ts
+deno run --watch --check --allow-env --allow-net=:2520 --allow-read --allow-write=./client/generated ./deno-lib/definyDesktopProxy/main.ts
 ```
 
 # definy RPC

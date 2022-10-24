@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.160.0/http/server.ts";
-import { definyRpc } from "../definy-rpc/server/mod.ts";
+import { definyRpc } from "../../definy-rpc/server/mod.ts";
 
 const randomToken = [...crypto.getRandomValues(new Uint8Array(16))]
   .map((e) => e.toString(16).padStart(2, "0"))

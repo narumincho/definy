@@ -1,5 +1,5 @@
 import { S3Bucket } from "https://deno.land/x/s3@0.5.0/mod.ts";
-import { r2Secret } from "../databaseMigrationSecret.ts";
+import { r2Secret } from "../../databaseMigrationSecret.ts";
 
 const bucket = new S3Bucket({
   region: "auto",

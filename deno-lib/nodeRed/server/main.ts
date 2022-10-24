@@ -12,7 +12,8 @@ const handleRequest = (
   response: ServerResponse
 ): void => {
   let requestBody = new Uint8Array();
-  if (request.url !== "/definy") {
+  const pathList = request.url.split("/").slice(1);
+  if (pathList[0] !== "definy") {
     return;
   }
   request.on("data", (chunk) => {
