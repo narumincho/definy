@@ -9,13 +9,14 @@ const generateClientHtml = async (): Promise<string> => {
     write: false,
     bundle: true,
     format: "esm",
+    target: ["chrome106"],
   });
 
   for (const outFile of result.outputFiles) {
     if (outFile.path === "<stdout>") {
       const clientCode = new TextDecoder().decode(outFile.contents);
       return `<script type="text/javascript">
-  ${clientCode}
+  (()=>{${clientCode}})()
 </script>
 
 <script type="text/html" data-template-name="send-to-definy">

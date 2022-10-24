@@ -1,11 +1,84 @@
 /// <reference lib="dom" />
+/// <reference path="./nodeRed.d.ts" />
 
-import React from "https://cdn.skypack.dev/react@18.2.0?dts";
-import ReactDom from "https://cdn.skypack.dev/react-dom@18.2.0?dts";
+import React from "https://esm.sh/react@18.2.0";
+import { createRoot } from "https://esm.sh/react-dom@18.2.0/client";
 
-/*
- * 同時に `./nodeRed.d.ts` を開くとエディタ上の型エラーがなくなる
- */
+type State =
+  | {
+      readonly type: "initView";
+    }
+  | {
+      readonly type: "input";
+      readonly originUrl: string;
+      readonly checkingUrl: string;
+      readonly checkingUrlResult: UrlConnectionResult | undefined;
+    };
+
+type UrlConnectionResult = "invalidUrl" | "ok" | "error";
+
+const urlValidation = async (urlText: string): Promise<UrlConnectionResult> => {
+  if (!isValidUrl(urlText)) {
+    return "invalidUrl";
+  }
+  const ok = await checkValidDefinyRpcServer(urlText);
+  if (ok) {
+    return "ok";
+  }
+  return "error";
+};
+
+const App = (): React.ReactElement => {
+  const inputElementRef = React.useRef<HTMLInputElement>(null);
+  const [state, setState] = React.useState<State>({ type: "initView" });
+
+  React.useEffect(() => {
+    if (inputElementRef.current !== null) {
+      const originUrl = inputElementRef.current.value;
+      setState({
+        type: "input",
+        originUrl,
+        checkingUrl: originUrl,
+        checkingUrlResult: undefined,
+      });
+      urlValidation(originUrl).then((result) => {
+        setState((old) => {
+          if (old.type === "initView") {
+            return {
+              type: "input",
+              originUrl,
+              checkingUrl: originUrl,
+              checkingUrlResult: result,
+            };
+          }
+          return {
+            type: "input",
+            originUrl: old.originUrl,
+            checkingUrl: originUrl,
+            checkingUrlResult: result,
+          };
+        });
+      });
+    }
+  }, [inputElementRef.current]);
+
+  return (
+    <div className="form-row">
+      <label htmlFor="node-input-originUrl">
+        <i className="icon-tag"></i>originUrl
+      </label>
+      <input
+        type="text"
+        id="node-input-originUrl"
+        placeholder="https://narumincho-definy.deno.dev/"
+        ref={inputElementRef}
+      />
+      <div id="definy-originUrl-validationResult"></div>
+      <div>React でレンダリングしたよ</div>
+      <div>{JSON.stringify(state)}</div>
+    </div>
+  );
+};
 
 const isValidUrl = (url: string): boolean => {
   try {
@@ -57,48 +130,7 @@ RED.nodes.registerType<{ originUrl: string }>("send-to-definy", {
       console.log("formRoot見つからず");
       return;
     }
-    ReactDom.render(
-      <div className="form-row">
-        <label htmlFor="node-input-originUrl">
-          <i className="icon-tag"></i>originUrl
-        </label>
-        <input
-          type="text"
-          id="node-input-originUrl"
-          placeholder="https://narumincho-definy.deno.dev/"
-        />
-        <div id="definy-originUrl-validationResult"></div>
-        <div>React でレンダリングしたよ</div>
-      </div>,
-      formRoot
-    );
+    const reactRoot = createRoot(formRoot);
+    reactRoot.render(<App />);
   },
 });
-
-window.definyOriginUrlOnInput = () => {
-  const originUrl = (
-    document.getElementById("node-input-originUrl") as HTMLInputElement
-  ).value;
-  const validationResult = document.getElementById(
-    "definy-originUrl-validationResult"
-  );
-  if (validationResult === null) {
-    console.log("フォームの表示先が見つかりませんでした");
-    return;
-  }
-  if (!isValidUrl(originUrl)) {
-    validationResult.textContent = originUrl + "は正当なURLではありません";
-    return;
-  }
-  validationResult.textContent = originUrl + "に接続できるか試しています...";
-  checkValidDefinyRpcServer(originUrl).then((ok) => {
-    if (ok) {
-      validationResult.textContent =
-        originUrl +
-        "は正当なURLで HTTP サーバーを公開していることを確認しました. definy RPC サーバーを実装できているかの確認はそのうちできるようにします";
-      return;
-    }
-    validationResult.textContent =
-      originUrl + "は正当なURLですが接続できませんでした.";
-  });
-};
