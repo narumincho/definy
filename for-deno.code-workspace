@@ -1,12 +1,5 @@
 {
-  "folders": [
-    { "path": "./definy-rpc/server" },
-    { "path": "./definy-rpc/build" },
-    { "path": "./definy-rpc/example" },
-    { "path": "./desktop-proxy" },
-    { "path": "./deno-library-check" },
-    { "path": "./deno-lib" }
-  ],
+  "folders": [{ "path": "./deno-lib" }],
   "extensions": {
     "recommendations": ["denoland.vscode-deno"],
     "unwantedRecommendations": ["dbaeumer.vscode-eslint"]

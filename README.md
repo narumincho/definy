@@ -51,6 +51,8 @@ Definy is Web App for Web App.
 - `/gen`: データやコードを生成するプログラムのコード
 - `/static`: スタティックなファイルが置かれている
 - `/storybook`: UI の見た目や動作を確かめられる, storybook の設定や, ストーリーが書かれている
+- `/src` PureScript で書かれたコード
+- `/deno-lib` Deno で書かれたコード
 
 ## エミュレータの起動方法
 
@@ -83,7 +85,7 @@ code ./for-deno.code-workspace
 起動
 
 ```ps1
-deno run --watch --check --allow-env --allow-net=:2520 --allow-read --allow-write=./client/generated ./desktop-proxy/main.ts
+deno run --watch --check --allow-env --allow-net=:2520 --allow-read --allow-write=./client/generated ./deno-lib/definyDesktopProxy/main.ts
 ```
 
 # definy RPC
@@ -95,7 +97,7 @@ deno run --watch --check --allow-env --allow-net=:2520 --allow-read --allow-writ
 カレントディレクトリは リポジトリと同じ場所
 
 ```ps1
-deno run --check --watch --allow-net=:2520 --allow-write=./definy-rpc/browserClient/src/generated --allow-read ./definy-rpc/example/exampleDev.ts
+deno run --check --watch --allow-net=:2520 --allow-write=./definy-rpc/browserClient/src/generated --allow-read ./deno-lib/definyRpc/example/exampleDev.ts
 ```
 
 `--allow-write` `--allow-read` とかで指定しているのは, サーバーでコード生成したときに, ファイルを保存するため
@@ -111,12 +113,14 @@ pnpm run definy-rpc-client
 ## クライアントも含めてビルド
 
 ```ps1
-deno run -A --check ./definy-rpc/build/build.ts
+deno run -A --check ./deno-lib/definyRpc/build.ts
 ```
 
 # deno-lib
 
-node 向けにビルド
+Deno で書かれたコード. Deno への移植をどんどん進めている
+
+### Node.js 向けにビルド
 
 ```ps1
 cd ./deno-lib && deno run -A --check ./build.ts
@@ -124,14 +128,26 @@ cd ./deno-lib && deno run -A --check ./build.ts
 
 # @definy/node-red
 
-npm 向けにビルド
+Node RED から definy RPC のサーバーにデータを送信できる (できるようにする) ライブラリ
+
+https://www.npmjs.com/package/@definy/node-red
+
+### Node.js 向けにビルド
 
 ```ps1
-cd ./deno-lib && deno run -A --check ./nodeRedBuild.ts
+cd ./deno-lib && deno run -A ./nodeRed/build.ts
 ```
 
-公開
+### npm に公開
 
 ```ps1
-cd ./nodeRedPackage && npm publish .
+cd ./nodeRedServerForNode && npm publish .
+```
+
+### Node RED の起動とデバッグ
+
+```ps1
+cd ~/.node-red
+node-red
+npm install path/to/nodeRedServerForNode
 ```
