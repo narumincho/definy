@@ -26,6 +26,16 @@ export type DefinyRpcParameter = {
    * 本番サーバーでは `undefined` を指定する
    */
   readonly codeGenOutputFolderPath: string | undefined;
+  /**
+   * 処理するパス
+   *
+   * 同一のオリジンで他の処理をしたいときに使う
+   * @example
+   * "/definy"
+   *
+   * @default "/"
+   */
+  readonly pathPrefix?: string | undefined;
 };
 
 export const createHttpServer = (parameter: DefinyRpcParameter) => {
@@ -35,21 +45,53 @@ export const createHttpServer = (parameter: DefinyRpcParameter) => {
       return new Response();
     }
     const url = new URL(request.url);
-    const pathList = url.pathname.slice(1).split("/");
     const paramJson = url.searchParams.get("param");
     const paramJsonParsed =
       (typeof paramJson === "string" ? jsonParse(paramJson) : null) ?? null;
-    if (url.pathname === "/") {
-      return new Response(clientBuildResult.indexHtmlContent, {
-        headers: { "content-type": "text/html; charset=utf-8" },
-      });
+    const pathPrefix = parameter.pathPrefix ?? "/";
+    if (!url.pathname.startsWith(pathPrefix)) {
+      return new Response();
     }
-    if (url.pathname === clientBuildResult.iconPath) {
+    const pathNameRemovePrefix = url.pathname.slice(pathPrefix.length);
+    const pathList = pathNameRemovePrefix.split("/");
+
+    if (pathNameRemovePrefix === "/" || pathNameRemovePrefix === "") {
+      return new Response(
+        `<!doctype html>
+      <html lang="en">
+        <head>
+          <meta charset="UTF-8" />
+          <link rel="icon" type="image/png" href="${
+            pathPrefix + clientBuildResult.iconPath
+          }" />
+          <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+          <title>definy RPC</title>
+          
+          <style>
+            * {
+              box-sizing: border-box;
+            }
+          </style>
+          <script type="module" src=${
+            pathPrefix + clientBuildResult.scriptPath
+          }></script>
+        </head>
+        <body>
+          <noscript>Need JavaScript</noscript>
+        </body>
+      </html>
+      `,
+        {
+          headers: { "content-type": "text/html; charset=utf-8" },
+        }
+      );
+    }
+    if (pathNameRemovePrefix === clientBuildResult.iconPath) {
       return new Response(base64.toUint8Array(clientBuildResult.iconContent), {
         headers: { "content-type": "image/png" },
       });
     }
-    if (url.pathname === clientBuildResult.scriptPath) {
+    if (pathNameRemovePrefix === clientBuildResult.scriptPath) {
       return new Response(clientBuildResult.scriptContent, {
         headers: { "content-type": "text/javascript; charset=utf-8" },
       });
