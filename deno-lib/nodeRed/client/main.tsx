@@ -1,8 +1,11 @@
 /// <reference lib="dom" />
 /// <reference path="./nodeRed.d.ts" />
 
+/** @jsx jsx */
+
 import React from "https://esm.sh/react@18.2.0";
 import { createRoot } from "https://esm.sh/react-dom@18.2.0/client";
+import { jsx } from "https://esm.sh/@emotion/react@11.10.4";
 
 type State =
   | {
@@ -31,6 +34,7 @@ const urlValidation = async (urlText: string): Promise<UrlConnectionResult> => {
 const App = (): React.ReactElement => {
   const inputElementRef = React.useRef<HTMLInputElement>(null);
   const [state, setState] = React.useState<State>({ type: "initView" });
+  const [count, setCount] = React.useState<number>(0);
 
   React.useEffect(() => {
     if (inputElementRef.current !== null) {
@@ -76,6 +80,18 @@ const App = (): React.ReactElement => {
       <div id="definy-originUrl-validationResult"></div>
       <div>React でレンダリングしたよ</div>
       <div>{JSON.stringify(state)}</div>
+      <div>カウンター: {count}</div>
+      <button
+        onClick={() => {
+          setCount((prev) => prev + 1);
+        }}
+        css={{
+          padding: 8,
+          background: "red",
+        }}
+      >
+        +
+      </button>
     </div>
   );
 };
