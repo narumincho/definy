@@ -1,11 +1,9 @@
 /// <reference lib="dom" />
 /// <reference path="./nodeRed.d.ts" />
 
-/** @jsx jsx */
-
 import React from "https://esm.sh/react@18.2.0";
 import { createRoot } from "https://esm.sh/react-dom@18.2.0/client";
-import { jsx } from "https://esm.sh/@emotion/react@11.10.4";
+import { TypedInput } from "./TypedInput.tsx";
 
 type State =
   | {
@@ -34,6 +32,7 @@ const urlValidation = async (urlText: string): Promise<UrlConnectionResult> => {
 const App = (): React.ReactElement => {
   const inputElementRef = React.useRef<HTMLInputElement>(null);
   const [state, setState] = React.useState<State>({ type: "initView" });
+  const [originText, setOriginText] = React.useState<string>("");
   const [count, setCount] = React.useState<number>(0);
 
   React.useEffect(() => {
@@ -45,6 +44,7 @@ const App = (): React.ReactElement => {
         checkingUrl: originUrl,
         checkingUrlResult: undefined,
       });
+      setOriginText(originText);
       urlValidation(originUrl).then((result) => {
         setState((old) => {
           if (old.type === "initView") {
@@ -66,6 +66,27 @@ const App = (): React.ReactElement => {
     }
   }, [inputElementRef.current]);
 
+  React.useEffect(() => {
+    urlValidation(originText).then((result) => {
+      setState((old) => {
+        if (old.type === "initView") {
+          return {
+            type: "input",
+            originUrl: originText,
+            checkingUrl: originText,
+            checkingUrlResult: result,
+          };
+        }
+        return {
+          type: "input",
+          originUrl: old.originUrl,
+          checkingUrl: originText,
+          checkingUrlResult: result,
+        };
+      });
+    });
+  }, [originText]);
+
   return (
     <div className="form-row">
       <label htmlFor="node-input-originUrl">
@@ -76,22 +97,33 @@ const App = (): React.ReactElement => {
         id="node-input-originUrl"
         placeholder="https://narumincho-definy.deno.dev/"
         ref={inputElementRef}
+        onChange={(e) => {
+          setOriginText(e.target.value);
+        }}
       />
       <div id="definy-originUrl-validationResult"></div>
       <div>React でレンダリングしたよ</div>
       <div>{JSON.stringify(state)}</div>
-      <div>カウンター: {count}</div>
-      <button
-        onClick={() => {
-          setCount((prev) => prev + 1);
-        }}
-        css={{
-          padding: 8,
-          background: "red",
-        }}
-      >
-        +
-      </button>
+      <div>
+        <div>カウンター: {count}</div>
+        <button
+          onClick={() => {
+            setCount((prev) => prev + 1);
+          }}
+        >
+          +
+        </button>
+      </div>
+      <div>
+        <button
+          onClick={() => {
+            createNodeDynamic();
+          }}
+        >
+          ダイナミックノードの作成
+        </button>
+      </div>
+      <TypedInput id="node-input-example1" />
     </div>
   );
 };
@@ -150,3 +182,29 @@ RED.nodes.registerType<{ originUrl: string }>("send-to-definy", {
     reactRoot.render(<App />);
   },
 });
+
+const createNodeDynamic = () => {
+  RED.nodes.registerType<{ originUrl: string }>("definy-dynamic-node", {
+    category: "function",
+    color: "#a6bbcf",
+    defaults: {
+      sample: {
+        value: "",
+        required: true,
+        validate: isValidUrl,
+      },
+    },
+    inputs: 1,
+    outputs: 1,
+    label: "definy-dynamic-node",
+    oneditprepare: function () {
+      const formRoot = document.getElementById("definy-form-root");
+      if (formRoot === null) {
+        console.log("formRoot見つからず");
+        return;
+      }
+      const reactRoot = createRoot(formRoot);
+      reactRoot.render(<App />);
+    },
+  });
+};

@@ -74,6 +74,11 @@ export default function (RED: NodeAPI) {
   }
   RED.nodes.registerType("send-to-definy", SendToDefiny);
 
+  RED.nodes.registerType("definy-dynamic-node", function DynamicNode(config) {
+    console.log("definy-dynamic-node!");
+    RED.nodes.createNode(this, config);
+  });
+
   setInterval(() => {
     RED.nodes.eachNode((node) => {
       if (node.type === "send-to-definy") {
