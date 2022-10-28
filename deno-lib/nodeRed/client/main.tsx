@@ -67,25 +67,35 @@ const App = (): React.ReactElement => {
   }, [inputElementRef.current]);
 
   React.useEffect(() => {
-    urlValidation(originText).then((result) => {
-      setState((old) => {
-        if (old.type === "initView") {
-          return {
-            type: "input",
-            originUrl: originText,
-            checkingUrl: originText,
-            checkingUrlResult: result,
-          };
-        }
-        return {
+    if (state.type === "input") {
+      if (state.checkingUrl !== originText) {
+        setState({
           type: "input",
-          originUrl: old.originUrl,
           checkingUrl: originText,
-          checkingUrlResult: result,
-        };
-      });
-    });
-  }, [originText]);
+          checkingUrlResult: state.checkingUrlResult,
+          originUrl: originText,
+        });
+        urlValidation(originText).then((result) => {
+          setState((old) => {
+            if (old.type === "initView") {
+              return {
+                type: "input",
+                originUrl: originText,
+                checkingUrl: originText,
+                checkingUrlResult: result,
+              };
+            }
+            return {
+              type: "input",
+              originUrl: old.originUrl,
+              checkingUrl: originText,
+              checkingUrlResult: result,
+            };
+          });
+        });
+      }
+    }
+  }, [state, originText]);
 
   return (
     <div className="form-row">
@@ -197,14 +207,6 @@ const createNodeDynamic = () => {
     inputs: 1,
     outputs: 1,
     label: "definy-dynamic-node",
-    oneditprepare: function () {
-      const formRoot = document.getElementById("definy-form-root");
-      if (formRoot === null) {
-        console.log("formRoot見つからず");
-        return;
-      }
-      const reactRoot = createRoot(formRoot);
-      reactRoot.render(<App />);
-    },
+    oneditprepare: function () {},
   });
 };

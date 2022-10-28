@@ -43,6 +43,17 @@ await build({
     deno: true,
     undici: true,
   },
+  mappings: {
+    "https://esm.sh/prettier@2.7.1": {
+      name: "prettier",
+      version: "2.7.1",
+    },
+    "https://esm.sh/prettier@2.7.1/parser-typescript": {
+      name: "prettier",
+      subPath: "parser-typescript",
+      version: "2.7.1",
+    },
+  },
   package: {
     name: "@definy/node-red",
     version,
@@ -58,7 +69,7 @@ await build({
     },
     "node-red": {
       nodes: {
-        "send-to-definy": "./script/main.js",
+        "send-to-definy": "./script/deno-lib/nodeRed/server/main.js",
       },
     },
     keywords: ["node-red"],
@@ -74,7 +85,7 @@ console.log("Node.js 向けスクリプトの出力に成功");
 
 const clientHtml = await generateClientHtml();
 await Deno.writeTextFile(
-  "../nodeRedServerForNode/script/main.html",
+  "../nodeRedServerForNode/script/deno-lib/nodeRed/server/main.html",
   clientHtml
 );
 console.log("HTML ファイルの出力に成功");

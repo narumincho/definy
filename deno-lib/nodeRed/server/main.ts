@@ -3,57 +3,48 @@ import type {
   IncomingMessage,
   ServerResponse,
 } from "https://deno.land/std@0.160.0/node/http.ts";
+import { definyRpc } from "../../definyRpc/server/mod.ts";
 
 /**
  * Node RED の HTTP サーバーの処理に入り込んで, エディタとの通信をする
  */
 const handleRequest = (
-  request: IncomingMessage,
+  incomingMessage: IncomingMessage,
   response: ServerResponse
 ): void => {
-  let requestBody = new Uint8Array();
-  const pathList = request.url.split("/").slice(1);
-  if (pathList[0] !== "definy") {
+  const simpleRequest =
+    definyRpc.incomingMessageToSimpleRequest(incomingMessage);
+  if (simpleRequest === undefined) {
+    console.log("definy RPC が処理できない Request が来たようだ");
     return;
   }
-  request.on("data", (chunk) => {
-    requestBody = new Uint8Array([...requestBody, ...chunk]);
-  });
-  request.on("end", async () => {
-    const requestBodyAsString = new TextDecoder().decode(requestBody);
-    console.log(requestBodyAsString);
-    const requestJson = JSON.parse(requestBodyAsString);
-    const originUrl: unknown = requestJson.originUrl;
-
-    if (typeof originUrl !== "string") {
-      response.writeHead(400, { "Content-Type": "application/json" });
-      response.end(JSON.stringify("need originUrl"));
-      return;
-    }
-
-    // await のあとに返すとエラーになってしまう
-    response.writeHead(200, { "Content-Type": "application/json" });
-
-    const connectionResult = await fetch(originUrl).then(
-      () => {
-        console.log("接続チェック完了ok!");
-        return true;
-      },
-      (e) => {
-        console.log("接続チェック完了 だめっぽい", e);
-        return false;
-      }
-    );
-
-    console.log("connectionResult", connectionResult);
-
-    console.log("send 200");
-    response.end(
-      JSON.stringify({
-        connectionResult,
-      })
-    );
-  });
+  const simpleResponse = definyRpc.handleRequest(
+    {
+      all: () => [
+        definyRpc.createApiFunction({
+          fullName: ["sampleFunc"],
+          description: "sample func",
+          input: definyRpc.unit,
+          output: definyRpc.string,
+          isMutation: false,
+          needAuthentication: false,
+          resolve: () => {
+            return Promise.resolve("");
+          },
+        }),
+      ],
+      codeGenOutputFolderPath: undefined,
+      name: "definyRpcInNodeRed",
+      originHint: "http://localhost:5000",
+      pathPrefix: ["definy"],
+    },
+    simpleRequest
+  );
+  if (simpleResponse === undefined) {
+    return;
+  }
+  console.log(simpleRequest, simpleResponse);
+  definyRpc.simpleResponseHandleServerResponse(simpleResponse, response);
 };
 
 // Node.js 内で動作

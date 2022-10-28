@@ -1,6 +1,5 @@
-// @deno-types="https://cdn.skypack.dev/prettier@2.7.1?dts"
-import prettier from "https://unpkg.com/prettier@2.7.1/esm/standalone.mjs";
-import parserTypeScript from "https://unpkg.com/prettier@2.7.1/esm/parser-typescript.mjs";
+import prettier from "https://esm.sh/prettier@2.7.1";
+import parserTypeScript from "https://esm.sh/prettier@2.7.1/parser-typescript";
 
 /**
  * Prettier を使って コードを整形する
