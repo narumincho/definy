@@ -79,8 +79,8 @@ export const handleRequest = (
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/png" href="${
-      pathPrefix + clientBuildResult.iconPath
+    <link rel="icon" type="image/png" href="/${
+      pathPrefix.join("/") + clientBuildResult.iconPath
     }" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>${parameter.name} | definy RPC</title>
@@ -90,9 +90,9 @@ export const handleRequest = (
         box-sizing: border-box;
       }
     </style>
-    <script type="module" src=${
-      pathPrefix + clientBuildResult.scriptPath
-    }></script>
+    <script type="module" src="/${
+      pathPrefix.join("/") + clientBuildResult.scriptPath
+    }"></script>
   </head>
   <body>
     <noscript>Need JavaScript</noscript>

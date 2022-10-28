@@ -145,7 +145,12 @@ const builtInFunctions = (parameter: DefinyRpcParameter) => {
         const allFunc = addDefinyRpcApiFunction(parameter).filter(
           (f) => f.fullName[0] === definyRpcNamespace
         );
-        return apiFunctionListToCode(allFunc, parameter.originHint, true);
+        return apiFunctionListToCode({
+          apiFunctionList: allFunc,
+          originHint: parameter.originHint,
+          pathPrefix: parameter.pathPrefix ?? [],
+          usePrettier: true,
+        });
       },
     }),
     ...(parameter.codeGenOutputFolderPath === undefined
@@ -169,7 +174,12 @@ const builtInFunctions = (parameter: DefinyRpcParameter) => {
 
               await ensureAndWriteCode(
                 parameter.codeGenOutputFolderPath + "/" + "definyRpc.ts",
-                apiFunctionListToCode(allFunc, parameter.originHint, true)
+                apiFunctionListToCode({
+                  apiFunctionList: allFunc,
+                  originHint: parameter.originHint,
+                  pathPrefix: parameter.pathPrefix ?? [],
+                  usePrettier: true,
+                })
               );
               await ensureAndWriteCode(
                 parameter.codeGenOutputFolderPath + "/" + "runtime.ts",
