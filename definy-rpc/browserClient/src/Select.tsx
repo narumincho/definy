@@ -1,5 +1,5 @@
 import * as React from "react";
-import * as definyRpc from "./generated/definyRpc";
+import * as definyRpc from "./definyRpc";
 
 export const Select = (props: {
   readonly values: ReadonlyArray<definyRpc.FunctionDetail> | undefined;

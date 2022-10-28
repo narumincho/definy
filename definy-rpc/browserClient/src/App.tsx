@@ -1,5 +1,5 @@
 import * as React from "react";
-import * as definyRpc from "./generated/definyRpc";
+import * as definyRpc from "./definyRpc";
 import { Button } from "../../../client/ui/Button";
 import { Editor } from "./Editor";
 import { ServerOrigin } from "./ServerOrigin";
