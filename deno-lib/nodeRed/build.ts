@@ -5,7 +5,7 @@ import { build, emptyDir } from "https://deno.land/x/dnt@0.31.0/mod.ts";
 const generateClientHtml = async (): Promise<string> => {
   const result = await esbuild.build({
     plugins: [denoPlugin()],
-    entryPoints: ["./nodeRed/client/main.tsx"],
+    entryPoints: ["./deno-lib/nodeRed/client/main.tsx"],
     write: false,
     bundle: true,
     format: "esm",
@@ -32,13 +32,13 @@ const generateClientHtml = async (): Promise<string> => {
   throw new Error("client の ビルドに失敗した");
 };
 
-emptyDir("../nodeRedServerForNode");
+emptyDir("./nodeRedServerForNode");
 
 const version = "1.0.6";
 
 await build({
-  entryPoints: ["./nodeRed/server/main.ts"],
-  outDir: "../nodeRedServerForNode",
+  entryPoints: ["./deno-lib/nodeRed/server/main.ts"],
+  outDir: "./nodeRedServerForNode",
   shims: {
     deno: true,
     undici: true,
@@ -69,7 +69,7 @@ await build({
     },
     "node-red": {
       nodes: {
-        "send-to-definy": "./script/deno-lib/nodeRed/server/main.js",
+        "send-to-definy": "./script/nodeRed/server/main.js",
       },
     },
     keywords: ["node-red"],
@@ -85,13 +85,13 @@ console.log("Node.js 向けスクリプトの出力に成功");
 
 const clientHtml = await generateClientHtml();
 await Deno.writeTextFile(
-  "../nodeRedServerForNode/script/deno-lib/nodeRed/server/main.html",
+  "./nodeRedServerForNode/script/nodeRed/server/main.html",
   clientHtml
 );
 console.log("HTML ファイルの出力に成功");
 
 await Deno.writeTextFile(
-  "../nodeRedServerForNode/README.md",
+  "./nodeRedServerForNode/README.md",
   `# @definy/node-red v${version}
 
 - npm latest: https://www.npmjs.com/package/@definy/node-red

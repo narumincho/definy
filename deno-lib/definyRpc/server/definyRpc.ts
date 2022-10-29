@@ -1,6 +1,6 @@
 import clientBuildResult from "./browserClient.json" assert { type: "json" };
 import * as base64 from "https://denopkg.com/chiefbiiko/base64@master/mod.ts";
-import { jsonParse } from "../../../common/typedJson.ts";
+import { jsonParse } from "../../typedJson.ts";
 import { AccountToken, ApiFunction } from "./apiFunction.ts";
 import { addDefinyRpcApiFunction } from "./builtInFunctions.ts";
 import { SimpleRequest } from "./simpleRequest.ts";

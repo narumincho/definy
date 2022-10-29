@@ -24,9 +24,9 @@ await build({
   },
   skipSourceOutput: true,
   mappings: {
-    "https://cdn.skypack.dev/faunadb@4.7.0?dts": {
+    "https://cdn.skypack.dev/faunadb@4.7.1?dts": {
       name: "faunadb",
-      version: "4.7.0",
+      version: "4.7.1",
       peerDependency: false,
     },
     "https://deno.land/x/zod@v3.19.1/mod.ts": {
