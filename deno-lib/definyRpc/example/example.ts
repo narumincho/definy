@@ -4,16 +4,29 @@ import { funcList } from "./exampleFunc.ts";
 
 const portNumber = 2520;
 
-const sampleDefinyRpcServer = definyRpc.createHttpServer({
+const sampleDefinyRpcServerParameter: definyRpc.DefinyRpcParameter = {
   name: "example",
   all: funcList,
   originHint: `https://narumincho-definy.deno.dev`,
   codeGenOutputFolderPath: undefined,
-});
+};
 
 serve(
   (request) => {
-    return sampleDefinyRpcServer(request);
+    const simpleRequest = definyRpc.requestObjectToSimpleRequest(request);
+    if (simpleRequest === undefined) {
+      return new Response("simpleRequestに変換できなかった", { status: 400 });
+    }
+    const simpleResponse = definyRpc.handleRequest(
+      sampleDefinyRpcServerParameter,
+      simpleRequest
+    );
+    if (simpleResponse === undefined) {
+      return new Response("特に処理すること必要がないリクエストだった", {
+        status: 400,
+      });
+    }
+    return definyRpc.simpleResponseToResponse(simpleResponse);
   },
   { port: portNumber }
 );

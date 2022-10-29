@@ -4,16 +4,29 @@ import { funcList } from "./exampleFunc.ts";
 
 const portNumber = 2520;
 
-const sampleDefinyRpcServer = definyRpc.createHttpServer({
+const sampleDefinyRpcServerParameter: definyRpc.DefinyRpcParameter = {
   name: "exampleDev",
   all: funcList,
   originHint: `http://localhost:${portNumber}`,
   codeGenOutputFolderPath: "./definy-rpc/browserClient/src/generated",
-});
+};
 
 serve(
   async (request) => {
-    const response = await sampleDefinyRpcServer(request);
+    const simpleRequest = definyRpc.requestObjectToSimpleRequest(request);
+    if (simpleRequest === undefined) {
+      return new Response("simpleRequestに変換できなかった", { status: 400 });
+    }
+    const simpleResponse = definyRpc.handleRequest(
+      sampleDefinyRpcServerParameter,
+      simpleRequest
+    );
+    if (simpleResponse === undefined) {
+      return new Response("特に処理すること必要がないリクエストだった", {
+        status: 400,
+      });
+    }
+    const response = await definyRpc.simpleResponseToResponse(simpleResponse);
 
     response.headers.append(
       "access-control-allow-origin",

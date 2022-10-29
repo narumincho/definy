@@ -7,7 +7,7 @@ const randomToken = [...crypto.getRandomValues(new Uint8Array(16))]
 
 const portNumber = 2520;
 
-const desktopProxyServer = definyRpc.createHttpServer({
+const desktopProxyRpcParameter: definyRpc.DefinyRpcParameter = {
   name: "definy-desktop-proxy",
   all: () => [
     definyRpc.createApiFunction({
@@ -27,11 +27,24 @@ const desktopProxyServer = definyRpc.createHttpServer({
   ],
   originHint: `http://localhost:${portNumber}`,
   codeGenOutputFolderPath: "./client/generated",
-});
+};
 
 serve(
   async (request) => {
-    const response = await desktopProxyServer(request);
+    const simpleRequest = definyRpc.requestObjectToSimpleRequest(request);
+    if (simpleRequest === undefined) {
+      return new Response("simpleRequestに変換できなかった", { status: 400 });
+    }
+    const simpleResponse = definyRpc.handleRequest(
+      desktopProxyRpcParameter,
+      simpleRequest
+    );
+    if (simpleResponse === undefined) {
+      return new Response("特に処理すること必要がないリクエストだった", {
+        status: 400,
+      });
+    }
+    const response = await definyRpc.simpleResponseToResponse(simpleResponse);
 
     response.headers.append(
       "access-control-allow-origin",
