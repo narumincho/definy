@@ -1,4 +1,4 @@
-import type { IncomingMessage } from "https://deno.land/std@0.160.0/node/http.ts";
+import type { IncomingMessage } from "https://deno.land/std@0.161.0/node/http.ts";
 
 /**
  * 標準の Request オブジェクトから {@link SimpleRequest} を生成します

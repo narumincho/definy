@@ -2,7 +2,7 @@ import type { NodeAPI, NodeDef, Node } from "./nodeRedServer.ts";
 import type {
   IncomingMessage,
   ServerResponse,
-} from "https://deno.land/std@0.160.0/node/http.ts";
+} from "https://deno.land/std@0.161.0/node/http.ts";
 import { definyRpc } from "../../definyRpc/server/mod.ts";
 
 /**

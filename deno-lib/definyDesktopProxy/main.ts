@@ -1,4 +1,4 @@
-import { serve } from "https://deno.land/std@0.160.0/http/server.ts";
+import { serve } from "https://deno.land/std@0.161.0/http/server.ts";
 import { definyRpc } from "../definyRpc/server/mod.ts";
 
 const randomToken = [...crypto.getRandomValues(new Uint8Array(16))]

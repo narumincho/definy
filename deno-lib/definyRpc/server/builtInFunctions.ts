@@ -2,7 +2,7 @@ import { ApiFunction, createApiFunction } from "./apiFunction.ts";
 import { apiFunctionListToCode, runtimeCode } from "./clientCodeGen/main.ts";
 import type { DefinyRpcParameter } from "./definyRpc.ts";
 import { set, string, unit, list, DefinyRpcType, product } from "./type.ts";
-import { ensureFile } from "https://deno.land/std@0.160.0/fs/mod.ts";
+import { ensureFile } from "https://deno.land/std@0.161.0/fs/mod.ts";
 
 const definyRpcNamespace = "definyRpc";
 
