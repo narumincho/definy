@@ -12,29 +12,33 @@ import { collectedTypeToTypeAlias, typeToTypeVariable } from "./type.ts";
 
 export { runtimeCode } from "./runtime.ts";
 
-export const apiFunctionListToCode = (
-  apiFunctionList: ReadonlyArray<ApiFunction>,
-  originHint: string,
-  usePrettier: boolean
-): string => {
+export const apiFunctionListToCode = (parameter: {
+  readonly apiFunctionList: ReadonlyArray<ApiFunction>;
+  readonly originHint: string;
+  readonly pathPrefix: ReadonlyArray<string>;
+  readonly usePrettier: boolean;
+}): string => {
   const code = generateCodeAsString(
-    apiFunctionListToJsTsCode(apiFunctionList, originHint),
+    apiFunctionListToJsTsCode(parameter),
     "TypeScript"
   );
-  if (usePrettier) {
+  if (parameter.usePrettier) {
     return formatCode(code);
   }
   return code;
 };
 
-export const apiFunctionListToJsTsCode = (
-  apiFunctionList: ReadonlyArray<ApiFunction>,
-  originHint: string
-): data.JsTsCode => {
-  const needAuthentication = apiFunctionList.some(
+export const apiFunctionListToJsTsCode = (parameter: {
+  readonly apiFunctionList: ReadonlyArray<ApiFunction>;
+  readonly originHint: string;
+  readonly pathPrefix: ReadonlyArray<string>;
+}): data.JsTsCode => {
+  const needAuthentication = parameter.apiFunctionList.some(
     (func) => func.needAuthentication
   );
-  const collectedTypeMap = collectDefinyRpcTypeFromFuncList(apiFunctionList);
+  const collectedTypeMap = collectDefinyRpcTypeFromFuncList(
+    parameter.apiFunctionList
+  );
   return {
     exportDefinitionList: [
       resultExportDefinition,
@@ -54,9 +58,13 @@ export const apiFunctionListToJsTsCode = (
           variable: typeToTypeVariable(type, collectedTypeMap),
         })
       ),
-      ...apiFunctionList.map<data.ExportDefinition>((func) => ({
+      ...parameter.apiFunctionList.map<data.ExportDefinition>((func) => ({
         type: "function",
-        function: apiFuncToTsFunction(func, originHint),
+        function: apiFuncToTsFunction({
+          func,
+          originHint: parameter.originHint,
+          pathPrefix: parameter.pathPrefix,
+        }),
       })),
     ],
     statementList: [],

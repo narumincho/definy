@@ -1,4 +1,4 @@
-import f from "https://cdn.skypack.dev/faunadb@4.7.0?dts";
+import f from "https://cdn.skypack.dev/faunadb@4.7.1?dts";
 
 export type TypedFaunaClient = f.Client & { _typedFaunaClient: never };
 

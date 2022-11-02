@@ -1,9 +1,10 @@
 import * as React from "react";
-import * as definyRpc from "./generated/definyRpc";
+import * as definyRpc from "./definyRpc";
 import { Button } from "../../../client/ui/Button";
 import { DetailView } from "./DetailView";
 import { Result } from "./Result";
 import { Select } from "./Select";
+import { definyRpcServerPathPrefixAsString } from "./global";
 
 export const Editor = (props: {
   readonly serverOrigin: string;
@@ -48,7 +49,10 @@ export const Editor = (props: {
               ? () => {
                   setIsRequesting(true);
                   const url = new URL(props.serverOrigin);
-                  url.pathname = "/" + selectedFuncDetail.name.join("/");
+                  url.pathname =
+                    definyRpcServerPathPrefixAsString +
+                    "/" +
+                    selectedFuncDetail.name.join("/");
                   fetch(url)
                     .then((response) => {
                       return response.json();

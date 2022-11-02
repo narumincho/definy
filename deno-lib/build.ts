@@ -24,14 +24,23 @@ await build({
   },
   skipSourceOutput: true,
   mappings: {
-    "https://cdn.skypack.dev/faunadb@4.7.0?dts": {
+    "https://cdn.skypack.dev/faunadb@4.7.1?dts": {
       name: "faunadb",
-      version: "4.7.0",
+      version: "4.7.1",
       peerDependency: false,
     },
     "https://deno.land/x/zod@v3.19.1/mod.ts": {
       name: "zod",
       version: "3.19.1",
+    },
+    "https://esm.sh/prettier@2.7.1": {
+      name: "prettier",
+      version: "2.7.1",
+    },
+    "https://esm.sh/prettier@2.7.1/parser-typescript": {
+      name: "prettier",
+      subPath: "parser-typescript.js",
+      version: "2.7.1",
     },
   },
 });

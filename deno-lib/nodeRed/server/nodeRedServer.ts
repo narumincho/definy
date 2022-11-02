@@ -1,16 +1,8 @@
-import type { EventEmitter } from "https://deno.land/std@0.160.0/node/events.ts";
-import type {
-  IncomingMessage,
-  ServerResponse,
-} from "https://deno.land/std@0.160.0/node/http.ts";
+import type { EventEmitter } from "https://deno.land/std@0.161.0/node/events.ts";
+import { Server } from "../../nodeType.ts";
 
 export type NodeAPI = {
-  readonly server: {
-    readonly addListener: (
-      name: "request",
-      callback: (request: IncomingMessage, response: ServerResponse) => void
-    ) => void;
-  };
+  readonly server: Server;
   readonly nodes: {
     /**
      * Called from a Node's constructor function, invokes the super-class
