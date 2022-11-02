@@ -33,5 +33,14 @@ await build({
       name: "zod",
       version: "3.19.1",
     },
+    "https://esm.sh/prettier@2.7.1": {
+      name: "prettier",
+      version: "2.7.1",
+    },
+    "https://esm.sh/prettier@2.7.1/parser-typescript": {
+      name: "prettier",
+      subPath: "parser-typescript.js",
+      version: "2.7.1",
+    },
   },
 });

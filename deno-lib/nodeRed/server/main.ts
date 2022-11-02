@@ -1,9 +1,6 @@
 import type { NodeAPI, NodeDef, Node } from "./nodeRedServer.ts";
-import type {
-  IncomingMessage,
-  ServerResponse,
-} from "https://deno.land/std@0.161.0/node/http.ts";
 import { definyRpc } from "../../definyRpc/server/mod.ts";
+import { IncomingMessage, ServerResponse } from "../../nodeType.ts";
 
 /**
  * Node RED の HTTP サーバーの処理に入り込んで, エディタとの通信をする

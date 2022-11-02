@@ -1,4 +1,4 @@
-import type { ServerResponse } from "https://deno.land/std@0.161.0/node/http.ts";
+import { ServerResponse } from "../../nodeType.ts";
 
 export type SimpleResponse = {
   readonly status: 200 | 400 | 401 | 404;
