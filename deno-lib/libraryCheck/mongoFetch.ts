@@ -22,7 +22,7 @@ const result = await (
         "api-key": mongodbDataApiKey,
       },
       body: JSON.stringify({
-        dataSource: "definy",
+        dataSource: "definy-serverless-instance",
         database: "db",
         collection: "sampleCollection",
         document: {
