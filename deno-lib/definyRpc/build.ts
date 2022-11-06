@@ -1,71 +1,60 @@
 import * as base64 from "https://denopkg.com/chiefbiiko/base64@master/mod.ts";
-import { shell } from "../shell.ts";
+import * as esbuild from "https://deno.land/x/esbuild@v0.15.12/mod.js";
+import { denoPlugin } from "https://deno.land/x/esbuild_deno_loader@0.6.0/mod.ts";
+import { hashBinary } from "../sha256.ts";
 
 type BuildClientResult = {
-  readonly iconPath: string;
+  readonly iconHash: string;
   readonly iconContent: string;
-  readonly scriptPath: string;
+  readonly scriptHash: string;
   readonly scriptContent: string;
 };
 
-const clientDistPath = "./definy-rpc/browserClient/dist/";
+const clientDistPath = "./deno-lib/definyRpc/clientEditor/";
 
-const buildClient = async (): Promise<BuildClientResult | undefined> => {
-  const viteBuildProcessStatus = await Deno.run({
-    cwd: "./definy-rpc/browserClient",
-    cmd: [shell, "pnpm", "run", "definy-rpc-client-build"],
-  }).status();
+const buildClientEditor = async (): Promise<BuildClientResult> => {
+  const iconContent = await Deno.readFile(clientDistPath + "assets/icon.png");
+  const iconHash = await hashBinary(iconContent);
 
-  console.log(viteBuildProcessStatus);
-  const result: {
-    -readonly [key in keyof BuildClientResult]:
-      | BuildClientResult[key]
-      | undefined;
-  } = {
-    iconContent: undefined,
-    iconPath: undefined,
-    scriptContent: undefined,
-    scriptPath: undefined,
-  };
+  const esbuildResult = await esbuild.build({
+    entryPoints: [clientDistPath + "main.tsx"],
+    plugins: [denoPlugin()],
+    write: false,
+    bundle: true,
+    format: "esm",
+    target: ["chrome106"],
+    jsxFactory: "jsx",
+    inject: [clientDistPath + "emotion-shim.ts"],
+  });
 
-  for (const dist of Deno.readDirSync(clientDistPath + "assets")) {
-    if (dist.name.endsWith(".png")) {
-      console.log("png 発見", dist.name);
-      result.iconPath = "/assets/" + dist.name;
-      result.iconContent = base64.fromUint8Array(
-        await Deno.readFile(clientDistPath + "assets/" + dist.name)
+  for (const esbuildResultFile of esbuildResult.outputFiles) {
+    if (esbuildResultFile.path === "<stdout>") {
+      const hash = await hashBinary(esbuildResultFile.contents);
+      console.log("js 発見");
+      const scriptContent = new TextDecoder().decode(
+        esbuildResultFile.contents
       );
-    } else if (dist.name.endsWith(".js")) {
-      console.log("js 発見", dist.name);
-      result.scriptPath = "/assets/" + dist.name;
-      result.scriptContent = await Deno.readTextFile(
-        clientDistPath + "assets/" + dist.name
-      );
+
+      return {
+        iconContent: base64.fromUint8Array(iconContent),
+        iconHash,
+        scriptHash: hash,
+        scriptContent: scriptContent,
+      };
     }
   }
-
-  if (
-    result.iconPath === undefined ||
-    result.iconContent === undefined ||
-    result.scriptPath === undefined ||
-    result.scriptContent === undefined
-  ) {
-    throw new Error("build dist 足りない...");
-  }
-  return {
-    iconContent: result.iconContent,
-    iconPath: result.iconPath,
-    scriptPath: result.scriptPath,
-    scriptContent: result.scriptContent,
-  };
+  throw new Error("esbuild で <stdout> の出力を取得できなかった...");
 };
 
 const main = async (): Promise<void> => {
-  const clientBuildResult = await buildClient();
-  Deno.writeTextFile(
+  const clientBuildResult = await buildClientEditor();
+  console.log("clientEditor のビルドデータ生成完了");
+  await Deno.writeTextFile(
     "./deno-lib/definyRpc/server/browserClient.json",
     JSON.stringify(clientBuildResult)
   );
+  console.log("ファイルに保存した");
+  Deno.exit();
 };
 
-await main();
+main();

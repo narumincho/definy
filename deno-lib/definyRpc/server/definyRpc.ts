@@ -12,6 +12,8 @@ export * from "./apiFunction.ts";
 export * from "./simpleRequest.ts";
 export * from "./simpleResponse.ts";
 
+const editorPath = "_editor";
+
 export type DefinyRpcParameter = {
   /**
    * サーバー名 (ルート直下の名前空間になる)
@@ -79,8 +81,8 @@ export const handleRequest = (
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/png" href="/${
-      pathPrefix.join("/") + clientBuildResult.iconPath
+    <link rel="icon" type="image/png" href="${
+      editorPathPrefix(pathPrefix) + clientBuildResult.iconHash
     }" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>${parameter.name} | definy RPC</title>
@@ -90,8 +92,8 @@ export const handleRequest = (
         box-sizing: border-box;
       }
     </style>
-    <script type="module" src="/${
-      pathPrefix.join("/") + clientBuildResult.scriptPath
+    <script type="module" src="${
+      editorPathPrefix(pathPrefix) + clientBuildResult.scriptHash
     }"></script>
   </head>
   <body>
@@ -103,10 +105,10 @@ export const handleRequest = (
     };
   }
   if (
-    stringArrayEqual(
-      pathListRemovePrefix,
-      clientBuildResult.iconPath.split("/").filter((e) => e !== "")
-    )
+    stringArrayEqual(pathListRemovePrefix, [
+      editorPath,
+      clientBuildResult.iconHash,
+    ])
   ) {
     return {
       status: 200,
@@ -116,10 +118,10 @@ export const handleRequest = (
     };
   }
   if (
-    stringArrayEqual(
-      pathListRemovePrefix,
-      clientBuildResult.scriptPath.split("/").filter((e) => e !== "")
-    )
+    stringArrayEqual(pathListRemovePrefix, [
+      editorPath,
+      clientBuildResult.scriptHash,
+    ])
   ) {
     return {
       status: 200,
@@ -202,4 +204,11 @@ export const handleRequest = (
         )
       ),
   };
+};
+
+const editorPathPrefix = (pathPrefix: ReadonlyArray<string>) => {
+  if (pathPrefix.length === 0) {
+    return "/" + editorPath + "/";
+  }
+  return "/" + pathPrefix.join("/") + "/" + editorPath + "/";
 };
