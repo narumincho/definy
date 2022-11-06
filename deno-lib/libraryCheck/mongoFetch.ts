@@ -20,6 +20,7 @@ const result = await (
       headers: {
         "Content-Type": "application/ejson",
         "api-key": mongodbDataApiKey,
+        Accept: "application/ejson",
       },
       body: JSON.stringify({
         dataSource: "definy-serverless-instance",

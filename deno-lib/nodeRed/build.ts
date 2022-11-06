@@ -15,7 +15,7 @@ const generateClientHtml = async (): Promise<string> => {
   for (const outFile of result.outputFiles) {
     if (outFile.path === "<stdout>") {
       const clientCode = new TextDecoder().decode(outFile.contents);
-      return `<script type="text/javascript">
+      return `<script type="module">
   (()=>{${clientCode}})()
 </script>
 
