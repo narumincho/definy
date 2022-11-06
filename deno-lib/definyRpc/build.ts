@@ -1,5 +1,5 @@
 import * as base64 from "https://denopkg.com/chiefbiiko/base64@master/mod.ts";
-import * as esbuild from "https://deno.land/x/esbuild@v0.15.12/mod.js";
+import * as esbuild from "https://deno.land/x/esbuild@v0.15.13/mod.js";
 import { denoPlugin } from "https://deno.land/x/esbuild_deno_loader@0.6.0/mod.ts";
 import { hashBinary } from "../sha256.ts";
 
@@ -23,8 +23,6 @@ const buildClientEditor = async (): Promise<BuildClientResult> => {
     bundle: true,
     format: "esm",
     target: ["chrome106"],
-    jsxFactory: "jsx",
-    inject: [clientDistPath + "emotion-shim.ts"],
   });
 
   for (const esbuildResultFile of esbuildResult.outputFiles) {

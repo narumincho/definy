@@ -1,4 +1,6 @@
 /* @jsx jsx */
+/// <reference lib="dom" />
+
 import React from "https://esm.sh/react@18.2.0";
 import { jsx } from "https://esm.sh/@emotion/react@11.10.5";
 import { Button } from "../editor/Button.tsx";

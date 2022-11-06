@@ -6,6 +6,7 @@ import * as definyRpc from "./definyRpc.ts";
 import { Button } from "../../editor/Button.tsx";
 import { Editor } from "./Editor.tsx";
 import { ServerOrigin } from "./ServerOrigin.tsx";
+import { SampleChart } from "./Chart.tsx";
 
 export const App = (): React.ReactElement => {
   const [functionList, setFunctionList] = React.useState<
@@ -61,13 +62,14 @@ export const App = (): React.ReactElement => {
       >
         definy RPC Browser Client
       </h2>
-
+      <section style={{ height: 200 }}>
+        <SampleChart />
+      </section>
       <ServerOrigin
         serverName={serverName}
         initServerOrigin={serverOrigin}
         onChangeServerOrigin={setServerOrigin}
       />
-
       {Array.from({ length: editorCount }, (_, i) => (
         <Editor
           key={i}
