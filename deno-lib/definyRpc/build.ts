@@ -49,7 +49,7 @@ const main = async (): Promise<void> => {
   console.log("clientEditor のビルドデータ生成完了");
   await Deno.writeTextFile(
     "./deno-lib/definyRpc/server/browserClient.json",
-    JSON.stringify(clientBuildResult)
+    JSON.stringify(clientBuildResult, undefined, 2)
   );
   console.log("ファイルに保存した");
   Deno.exit();
