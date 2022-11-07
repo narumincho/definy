@@ -1,7 +1,12 @@
-import * as React from "react";
-import { Editor } from "../../../components/Editor";
+import React from "https://esm.sh/react@18.2.0";
+import { Editor } from "../../editor/Editor.tsx";
+import { c, toStyleAndHash } from "../../cssInJs/mod.ts";
 
 const serverOriginFieldId = "server-origin";
+
+const containerStyle = toStyleAndHash({
+  padding: 16,
+});
 
 export const ServerOrigin = (props: {
   readonly serverName: string | undefined;
@@ -15,7 +20,7 @@ export const ServerOrigin = (props: {
   const origin = getSafeOrigin(originText);
 
   return (
-    <div css={{ padding: 16 }}>
+    <div className={c(containerStyle)}>
       <Editor
         fields={[
           {

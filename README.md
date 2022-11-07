@@ -104,12 +104,6 @@ deno run --check --watch --allow-net=:2520 --allow-write=./definy-rpc/browserCli
 
 http://localhost:2520 にアクセスすれば, ビルドしたクライアントでの起動になる
 
-### クライアントの起動
-
-```ps1
-pnpm run definy-rpc-client
-```
-
 ## クライアントも含めてビルド
 
 ```ps1

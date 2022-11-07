@@ -1,10 +1,22 @@
-import * as React from "react";
-import * as definyRpc from "./definyRpc";
-import { Button } from "../../../client/ui/Button";
-import { DetailView } from "./DetailView";
-import { Result } from "./Result";
-import { Select } from "./Select";
-import { definyRpcServerPathPrefixAsString } from "./global";
+import React from "https://esm.sh/react@18.2.0";
+import * as definyRpc from "./definyRpc.ts";
+import { Button } from "../../editor/Button.tsx";
+import { DetailView } from "./DetailView.tsx";
+import { Result } from "./Result.tsx";
+import { Select } from "./Select.tsx";
+import { definyRpcServerPathPrefixAsString } from "./global.ts";
+import { toStyleAndHash, c } from "../../cssInJs/mod.ts";
+
+const containerStyle = toStyleAndHash({
+  padding: 16,
+  display: "grid",
+  gridTemplateColumns: "1fr 1fr",
+});
+
+const contentStyle = toStyleAndHash({
+  display: "grid",
+  alignContent: "start",
+});
 
 export const Editor = (props: {
   readonly serverOrigin: string;
@@ -27,14 +39,8 @@ export const Editor = (props: {
   );
 
   return (
-    <div
-      css={{
-        padding: 16,
-        display: "grid",
-        gridTemplateColumns: "1fr 1fr",
-      }}
-    >
-      <div css={{ display: "grid", alignContent: "start" }}>
+    <div className={c(containerStyle)}>
+      <div className={c(contentStyle)}>
         <Select
           values={props.functionList}
           value={selectedFunc}

@@ -1,5 +1,5 @@
-import * as a from "./generated/runtime";
-import { definyRpcServerPathPrefixAsString } from "./global";
+import * as a from "./generated/runtime.ts";
+import { definyRpcServerPathPrefixAsString } from "./global.ts";
 
 /**
  * 取得した結果
@@ -243,9 +243,7 @@ export const name = (parameter: {
    */
   readonly origin?: string | undefined;
 }): globalThis.Promise<Result<string, "error">> => {
-  const url: globalThis.URL = new globalThis.URL(
-    parameter.origin ?? "http://localhost:2520"
-  );
+  const url: URL = new URL(parameter.origin ?? "http://localhost:2520");
   url.pathname = definyRpcServerPathPrefixAsString + "/definyRpc/name";
   return globalThis
     .fetch(url)
@@ -274,9 +272,7 @@ export const namespaceList = (parameter: {
 }): globalThis.Promise<
   Result<globalThis.ReadonlySet<globalThis.ReadonlyArray<string>>, "error">
 > => {
-  const url: globalThis.URL = new globalThis.URL(
-    parameter.origin ?? "http://localhost:2520"
-  );
+  const url: URL = new URL(parameter.origin ?? "http://localhost:2520");
   url.pathname = definyRpcServerPathPrefixAsString + "/definyRpc/namespaceList";
   return globalThis
     .fetch(url)
@@ -317,9 +313,7 @@ export const functionListByName = (parameter: {
 }): globalThis.Promise<
   Result<globalThis.ReadonlyArray<FunctionDetail>, "error">
 > => {
-  const url: globalThis.URL = new globalThis.URL(
-    parameter.origin ?? "http://localhost:2520"
-  );
+  const url: URL = new URL(parameter.origin ?? "http://localhost:2520");
   url.pathname =
     definyRpcServerPathPrefixAsString + "/definyRpc/functionListByName";
   return globalThis
@@ -359,9 +353,7 @@ export const functionListByNamePrivate = (parameter: {
 }): globalThis.Promise<
   Result<globalThis.ReadonlyArray<FunctionDetail>, "error">
 > => {
-  const url: globalThis.URL = new globalThis.URL(
-    parameter.origin ?? "http://localhost:2520"
-  );
+  const url: URL = new URL(parameter.origin ?? "http://localhost:2520");
   url.pathname =
     definyRpcServerPathPrefixAsString + "/definyRpc/functionListByNamePrivate";
   return globalThis
@@ -398,9 +390,7 @@ export const generateCallDefinyRpcTypeScriptCode = (parameter: {
    */
   readonly origin?: string | undefined;
 }): globalThis.Promise<Result<string, "error">> => {
-  const url: globalThis.URL = new globalThis.URL(
-    parameter.origin ?? "http://localhost:2520"
-  );
+  const url: URL = new URL(parameter.origin ?? "http://localhost:2520");
   url.pathname =
     definyRpcServerPathPrefixAsString +
     "/definyRpc/generateCallDefinyRpcTypeScriptCode";
@@ -429,9 +419,7 @@ export const generateCodeAndWriteAsFileInServer = (parameter: {
    */
   readonly origin?: string | undefined;
 }): globalThis.Promise<Result<undefined, "error">> => {
-  const url: globalThis.URL = new globalThis.URL(
-    parameter.origin ?? "http://localhost:2520"
-  );
+  const url: URL = new URL(parameter.origin ?? "http://localhost:2520");
   url.pathname =
     definyRpcServerPathPrefixAsString +
     "/definyRpc/generateCodeAndWriteAsFileInServer";

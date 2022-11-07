@@ -1,9 +1,3 @@
 {
-  "recommendations": [
-    "dbaeumer.vscode-eslint",
-    "esbenp.prettier-vscode",
-    "nwolverson.ide-purescript",
-    "nwolverson.language-purescript",
-    "mvakula.vscode-purty"
-  ]
+  "recommendations": ["dbaeumer.vscode-eslint", "esbenp.prettier-vscode"]
 }

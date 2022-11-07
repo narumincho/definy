@@ -1,5 +1,43 @@
-import * as React from "react";
-import * as definyRpc from "./definyRpc";
+import React from "https://esm.sh/react@18.2.0";
+import * as definyRpc from "./definyRpc.ts";
+import { c, toStyleAndHash } from "../../cssInJs/mod.ts";
+
+const readonlyStyle = toStyleAndHash({
+  display: "grid",
+  borderStyle: "solid",
+  borderColor: "white",
+  borderRadius: 8,
+  fontFamily: "monospace",
+  fontSize: 18,
+  padding: "4px 8px",
+});
+
+const containerStyle = toStyleAndHash({
+  display: "grid",
+  borderStyle: "solid",
+  borderColor: "white",
+  borderRadius: 8,
+});
+
+const inputStyle = toStyleAndHash({
+  fontFamily: "monospace",
+  fontSize: 18,
+  padding: "0 8px",
+  backgroundColor: "#000",
+  color: "white",
+});
+
+const suggestionContainerStyle = toStyleAndHash({
+  display: "grid",
+  gap: 1,
+});
+
+const suggestionItemStyle = toStyleAndHash({
+  fontFamily: "monospace",
+  fontSize: 18,
+  textAlign: "left",
+  cursor: "pointer",
+});
 
 export const Select = (props: {
   readonly values: ReadonlyArray<definyRpc.FunctionDetail> | undefined;
@@ -32,15 +70,7 @@ export const Select = (props: {
         setIsFocus(true);
       }}
       tabIndex={-1}
-      css={{
-        display: "grid",
-        borderStyle: "solid",
-        borderColor: "white",
-        borderRadius: 8,
-        fontFamily: "monospace",
-        fontSize: 18,
-        padding: "4px 8px",
-      }}
+      className={c(readonlyStyle)}
     >
       <div>{props.value ?? "???"}</div>
     </div>
@@ -82,25 +112,12 @@ const SelectActive = (props: {
   );
 
   return (
-    <div
-      css={{
-        display: "grid",
-        borderStyle: "solid",
-        borderColor: "white",
-        borderRadius: 8,
-      }}
-    >
+    <div className={c(containerStyle)}>
       <input
         autoFocus
         ref={inputElementRef}
         type="text"
-        css={{
-          fontFamily: "monospace",
-          fontSize: 18,
-          padding: "0 8px",
-          backgroundColor: "#000",
-          color: "white",
-        }}
+        className={c(inputStyle)}
         value={inputText}
         onChange={onInput}
         onKeyDown={(e) => {
@@ -167,24 +184,26 @@ const Suggestion = (props: {
     return <div>候補なし</div>;
   }
   return (
-    <div css={{ display: "grid", gap: 1 }}>
+    <div className={c(suggestionContainerStyle)}>
       {props.suggestionList.map((v) => (
         <button
           key={v.value}
-          css={{
-            backgroundColor: v.value === props.value ? "#511" : "transparent",
-            fontFamily: "monospace",
-            fontSize: 18,
-            textAlign: "left",
-            cursor: "pointer",
-            ...(v.value === props.value
-              ? {}
-              : {
-                  ":hover": {
-                    backgroundColor: "#333",
-                  },
-                }),
-          }}
+          className={c(
+            toStyleAndHash({
+              backgroundColor: v.value === props.value ? "#511" : "transparent",
+              fontFamily: "monospace",
+              fontSize: 18,
+              textAlign: "left",
+              cursor: "pointer",
+              ...(v.value === props.value
+                ? {}
+                : {
+                    ":hover": {
+                      backgroundColor: "#333",
+                    },
+                  }),
+            })
+          )}
           onClick={() => {
             props.onSelect(v.value);
           }}
@@ -192,10 +211,12 @@ const Suggestion = (props: {
           {v.text.map((s, index) => (
             <span
               key={index}
-              css={{
-                color: s.emphasis ? "#faa" : "white",
-                fontWeight: s.emphasis ? "bold" : "normal",
-              }}
+              className={c(
+                toStyleAndHash({
+                  color: s.emphasis ? "#faa" : "white",
+                  fontWeight: s.emphasis ? "bold" : "normal",
+                })
+              )}
             >
               {s.text}
             </span>
