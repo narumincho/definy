@@ -6,12 +6,37 @@ const definyCssInJsId = "definy-css-in-js";
 export type Style = {
   readonly cursor?: "pointer" | "not-allowed" | undefined;
   readonly border?: "none" | undefined;
-  readonly padding?: number | undefined;
+  readonly padding?: number | string | undefined;
+  readonly margin?: 0 | undefined;
   readonly textAlign?: "left" | undefined;
   readonly fontSize?: number | undefined;
   readonly backgroundColor?: string | undefined;
   readonly color?: string | undefined;
   readonly borderRadius?: number | undefined;
+  readonly width?: number | string | undefined;
+  readonly height?: number | string | undefined;
+  readonly boxSizing?: "border-box" | undefined;
+  readonly display?: "grid" | "flex" | undefined;
+  readonly gap?: number | undefined;
+  readonly alignContent?: "start" | undefined;
+  readonly overflowY?: "scroll" | undefined;
+  readonly overflowWrap?: "anywhere" | undefined;
+  readonly gridTemplateColumns?: string | undefined;
+  readonly whiteSpace?: "pre-wrap" | undefined;
+  readonly borderStyle?: "solid" | undefined;
+  readonly borderColor?: string | undefined;
+  readonly fontFamily?: "monospace" | undefined;
+  readonly fontWeight?: "bold" | "normal" | undefined;
+  readonly gridColumn?: string | undefined;
+  readonly gridRow?: string | undefined;
+  readonly justifySelf?: "end" | undefined;
+  readonly alignSelf?: "end" | undefined;
+  readonly minHeight?: number | undefined;
+  readonly alignItems?: "center" | undefined;
+  readonly paddingLeft?: number | undefined;
+  readonly textDecoration?: string | undefined;
+  readonly stroke?: string | undefined;
+  readonly flexGrow?: number | undefined;
 };
 
 const stylePropertyNameCamelCaseToKebabCaseMap: ReadonlyMap<string, string> =
@@ -20,10 +45,30 @@ const stylePropertyNameCamelCaseToKebabCaseMap: ReadonlyMap<string, string> =
     ["fontSize", "font-size"],
     ["backgroundColor", "background-color"],
     ["borderRadius", "border-radius"],
+    ["boxSizing", "box-sizing"],
+    ["alignContent", "align-content"],
+    ["overflowY", "overflow-y"],
+    ["overflowWrap", "overflow-wrap"],
+    ["gridTemplateColumns", "grid-template-columns"],
+    ["whiteSpace", "white-space"],
+    ["borderStyle", "border-style"],
+    ["borderColor", "border-color"],
+    ["fontFamily", "font-family"],
+    ["fontWeight", "font-weight"],
+    ["gridColumn", "grid-column"],
+    ["gridRow", "grid-row"],
+    ["justifySelf", "justify-self"],
+    ["alignSelf", "align-self"],
+    ["minHeight", "min-height"],
+    ["alignItems", "align-items"],
+    ["paddingLeft", "padding-left"],
+    ["textDecoration", "text-decoration"],
+    ["flexGrow", "flex-grow"],
   ]);
 
 export type StateStyle = {
   readonly hover: Style;
+  readonly focus: Style;
   readonly disabled: Style;
 };
 
@@ -51,6 +96,8 @@ const insertedStyle = new Map<
  * スタイルのハッシュ値を計算する. c に渡すことによって `className` を得ることができる
  *
  * コンポーネントの外で使うとパフォーマンスが良くなるが, 動的な場合は中で使うことができる
+ *
+ * @pure
  */
 export const toStyleAndHash = (
   style: Style,
@@ -59,6 +106,7 @@ export const toStyleAndHash = (
   const stateStyle: StateStyle = {
     hover: state?.hover ?? {},
     disabled: state?.disabled ?? {},
+    focus: state?.focus ?? {},
   };
   const hash = hashStyle(style, stateStyle);
   return {
@@ -69,7 +117,7 @@ export const toStyleAndHash = (
 };
 
 /**
- * CSS からクラス名を生成する
+ * {@link toStyleAndHash} で生成した {@link StyleAndHash} からクラス名を生成する
  *
  * Deno で esbuild でバンドルしたときに styled-component, emotion など動かなかっため自作した
  */
@@ -93,10 +141,11 @@ export const c = (styleAndHash: StyleAndHash): string => {
   console.log(cssString);
   const styleElement = document.getElementById(definyCssInJsId);
   if (styleElement instanceof HTMLStyleElement) {
-    styleElement.textContent = cssString;
+    styleElement.append(cssString);
     return className;
   }
   const createdStyleElement = document.createElement("style");
+  createdStyleElement.id = definyCssInJsId;
   document.head.appendChild(createdStyleElement);
   createdStyleElement.textContent = cssString;
   return className;

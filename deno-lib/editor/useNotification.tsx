@@ -1,6 +1,5 @@
-/* @jsx jsx */
-import { useState, useCallback } from "https://esm.sh/react@18.2.0";
-import { jsx } from "https://esm.sh/@emotion/react@11.10.5";
+import React from "https://esm.sh/react@18.2.0";
+import { c, toStyleAndHash } from "../cssInJs/mod.ts";
 import { createRandomId } from "../util.ts";
 
 export type Message = {
@@ -11,13 +10,24 @@ export type Message = {
 
 export type AddMessage = (message: Pick<Message, "type" | "text">) => void;
 
+const containerStyle = toStyleAndHash({
+  display: "grid",
+  gap: 8,
+});
+
+const messageStyle = toStyleAndHash({
+  flexGrow: 1,
+});
+
 export const useNotification = (): {
   readonly addMessage: AddMessage;
   readonly element: React.ReactElement;
 } => {
-  const [messageList, setMessageList] = useState<ReadonlyArray<Message>>([]);
+  const [messageList, setMessageList] = React.useState<ReadonlyArray<Message>>(
+    []
+  );
 
-  const addMessage = useCallback<AddMessage>((newMessage) => {
+  const addMessage = React.useCallback<AddMessage>((newMessage) => {
     setMessageList((oldMessageList) => [
       ...oldMessageList,
       { ...newMessage, id: createRandomId() },
@@ -27,31 +37,23 @@ export const useNotification = (): {
   return {
     addMessage,
     element: (
-      <div
-        css={{
-          display: "grid",
-          gap: 8,
-        }}
-      >
+      <div className={c(containerStyle)}>
         {[...messageList]
           .slice(messageList.length - 4, messageList.length)
           .map((message) => (
             <div
               key={message.id}
-              css={{
-                backgroundColor: message.type === "success" ? "skyblue" : "red",
-                padding: 8,
-                color: "#111",
-                display: "flex",
-              }}
+              className={c(
+                toStyleAndHash({
+                  backgroundColor:
+                    message.type === "success" ? "skyblue" : "red",
+                  padding: 8,
+                  color: "#111",
+                  display: "flex",
+                })
+              )}
             >
-              <div
-                css={{
-                  flexGrow: 1,
-                }}
-              >
-                {message.text}
-              </div>
+              <div className={c(messageStyle)}>{message.text}</div>
               <button
                 onClick={() => {
                   setMessageList((old) =>

@@ -1,12 +1,29 @@
-/* @jsx jsx */
-
 import React from "https://esm.sh/react@18.2.0";
-import { jsx } from "https://esm.sh/@emotion/react@11.10.5";
+import { c, toStyleAndHash } from "../../cssInJs/mod.ts";
 import * as definyRpc from "./definyRpc.ts";
 import { Button } from "../../editor/Button.tsx";
 import { Editor } from "./Editor.tsx";
 import { ServerOrigin } from "./ServerOrigin.tsx";
 import { SampleChart } from "./Chart.tsx";
+
+const containerStyle = toStyleAndHash({
+  backgroundColor: "#111",
+  color: "white",
+  height: "100%",
+  boxSizing: "border-box",
+  display: "grid",
+  gap: 16,
+  alignContent: "start",
+  overflowY: "scroll",
+});
+
+const titleStyle = toStyleAndHash({
+  backgroundColor: "#5fb58a",
+  fontSize: 14,
+  color: "#000",
+  margin: 0,
+  padding: "0 8px",
+});
 
 export const App = (): React.ReactElement => {
   const [functionList, setFunctionList] = React.useState<
@@ -39,32 +56,9 @@ export const App = (): React.ReactElement => {
   }, [serverOrigin]);
 
   return (
-    <div
-      css={{
-        backgroundColor: "#111",
-        color: "white",
-        height: "100%",
-        boxSizing: "border-box",
-        display: "grid",
-        gap: 16,
-        alignContent: "start",
-        overflowY: "scroll",
-      }}
-    >
-      <h2
-        css={{
-          backgroundColor: "#5fb58a",
-          fontSize: 14,
-          color: "#000",
-          margin: 0,
-          padding: "0 8px",
-        }}
-      >
-        definy RPC Browser Client
-      </h2>
-      <section style={{ height: 200 }}>
-        <SampleChart />
-      </section>
+    <div className={c(containerStyle)}>
+      <h2 className={c(titleStyle)}>definy RPC Browser Client</h2>
+
       <ServerOrigin
         serverName={serverName}
         initServerOrigin={serverOrigin}
@@ -84,6 +78,8 @@ export const App = (): React.ReactElement => {
       >
         +
       </Button>
+
+      <SampleChart />
     </div>
   );
 };

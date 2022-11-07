@@ -1,8 +1,7 @@
-/* @jsx jsx */
 /// <reference lib="dom" />
 
 import React from "https://esm.sh/react@18.2.0";
-import { jsx } from "https://esm.sh/@emotion/react@11.10.5";
+import { c, toStyleAndHash } from "../cssInJs/mod.ts";
 import { Button } from "../editor/Button.tsx";
 import { EnterIcon } from "./EnterIcon.tsx";
 import { useEditorKeyInput } from "./useEditorKeyInput.ts";
@@ -45,6 +44,24 @@ const isFieldAvailable = (field: Field): boolean => {
     }
   }
 };
+
+const containerStyle = toStyleAndHash({
+  display: "grid",
+  height: "100%",
+  overflowY: "scroll",
+});
+
+const editorMainStyle = toStyleAndHash({
+  gridColumn: "1 / 2",
+  gridRow: "1 / 2",
+});
+
+const notificationStyle = toStyleAndHash({
+  gridColumn: "1 / 2",
+  gridRow: "1 / 2",
+  justifySelf: "end",
+  alignSelf: "end",
+});
 
 /**
  * 汎用エディタ
@@ -117,8 +134,8 @@ export const Editor = (props: {
   const { element: notificationElement, addMessage } = useNotification();
 
   return (
-    <div css={{ display: "grid", height: "100%", overflowY: "scroll" }}>
-      <div css={{ gridColumn: "1 / 2", gridRow: "1 / 2" }}>
+    <div className={c(containerStyle)}>
+      <div className={c(editorMainStyle)}>
         {[...props.fields].map((field) => (
           <Field
             key={field.id}
@@ -160,16 +177,7 @@ export const Editor = (props: {
           />
         ))}
       </div>
-      <div
-        css={{
-          gridColumn: "1 / 2",
-          gridRow: "1 / 2",
-          justifySelf: "end",
-          alignSelf: "end",
-        }}
-      >
-        {notificationElement}
-      </div>
+      <div className={c(notificationStyle)}>{notificationElement}</div>
     </div>
   );
 };
@@ -240,6 +248,29 @@ const Field = (props: {
   }
 };
 
+const textFieldEnterIconContainer = toStyleAndHash({
+  backgroundColor: "#444",
+  padding: "0 8px",
+  display: "flex",
+  alignItems: "center",
+  gap: 2,
+});
+
+const textFieldContainerOut = toStyleAndHash({
+  paddingLeft: 8,
+});
+
+const textFieldContainerIn = toStyleAndHash({
+  display: "flex",
+  gap: 4,
+});
+
+const errorMessageStyle = toStyleAndHash({
+  backgroundColor: "#d37171",
+  color: "#000",
+  padding: "0 4px",
+});
+
 const TextField = (props: {
   readonly name: string;
   readonly value: string;
@@ -268,16 +299,22 @@ const TextField = (props: {
   return (
     <div
       ref={ref}
-      css={{
-        borderStyle: "solid",
-        borderColor: props.selected ? "orange" : "transparent",
-        borderRadius: 8,
-        minHeight: 64,
-        ":focus": {
-          borderBlockColor: "skyblue",
-        },
-        display: "grid",
-      }}
+      className={c(
+        toStyleAndHash(
+          {
+            borderStyle: "solid",
+            borderColor: props.selected ? "orange" : "transparent",
+            borderRadius: 8,
+            minHeight: 64,
+            display: "grid",
+          },
+          {
+            focus: {
+              borderColor: "skyblue",
+            },
+          }
+        )
+      )}
       onFocus={() => {
         props.onSelected();
       }}
@@ -296,8 +333,8 @@ const TextField = (props: {
       tabIndex={-1}
     >
       <div>{props.name}</div>
-      <div css={{ paddingLeft: 8 }}>
-        <div css={{ display: "flex", gap: 4 }}>
+      <div className={c(textFieldContainerOut)}>
+        <div className={c(textFieldContainerIn)}>
           {props.selected && props.isEditing ? (
             false
           ) : (
@@ -311,25 +348,13 @@ const TextField = (props: {
           {props.onStartEdit !== undefined &&
             props.selected &&
             !props.isEditing && (
-              <div
-                css={{
-                  background: "#444",
-                  padding: "0 8px",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 2,
-                }}
-              >
+              <div className={c(textFieldEnterIconContainer)}>
                 <EnterIcon stroke="white" height={24} />
                 編集
               </div>
             )}
           {props.errorMessage !== undefined && (
-            <div
-              css={{ background: "#d37171", color: "#000", padding: "0 4px" }}
-            >
-              {props.errorMessage}
-            </div>
+            <div className={c(errorMessageStyle)}>{props.errorMessage}</div>
           )}
         </div>
         {props.selected && props.isEditing && (
@@ -344,6 +369,12 @@ const TextField = (props: {
     </div>
   );
 };
+
+const buttonFieldIconContainerStyle = toStyleAndHash({
+  display: "flex",
+  alignItems: "center",
+  gap: 8,
+});
 
 const ButtonField = (props: {
   readonly name: string;
@@ -367,16 +398,22 @@ const ButtonField = (props: {
   return (
     <div
       ref={ref}
-      css={{
-        borderStyle: "solid",
-        borderColor: props.selected ? "orange" : "transparent",
-        borderRadius: 8,
-        minHeight: 64,
-        ":focus": {
-          borderBlockColor: "skyblue",
-        },
-        display: "grid",
-      }}
+      className={c(
+        toStyleAndHash(
+          {
+            borderStyle: "solid",
+            borderColor: props.selected ? "orange" : "transparent",
+            borderRadius: 8,
+            minHeight: 64,
+            display: "grid",
+          },
+          {
+            focus: {
+              borderColor: "skyblue",
+            },
+          }
+        )
+      )}
       onFocus={() => {
         props.onSelected();
       }}
@@ -384,7 +421,7 @@ const ButtonField = (props: {
     >
       <div>
         <Button onClick={props.value}>
-          <div css={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <div className={c(buttonFieldIconContainerStyle)}>
             {props.selected && <EnterIcon stroke="white" height={24} />}
             <div>{props.name}</div>
           </div>
@@ -393,6 +430,21 @@ const ButtonField = (props: {
     </div>
   );
 };
+
+const productFieldStyle = toStyleAndHash({
+  paddingLeft: 8,
+});
+
+const productFieldErrorMessageContainerStyle = toStyleAndHash({
+  display: "flex",
+  gap: 4,
+});
+
+const productFieldErrorMessageStyle = toStyleAndHash({
+  backgroundColor: "#d37171",
+  color: "#000",
+  padding: "0 4px",
+});
 
 const ProductField = (props: {
   readonly name: string;
@@ -420,16 +472,22 @@ const ProductField = (props: {
   return (
     <div
       ref={ref}
-      css={{
-        borderStyle: "solid",
-        borderColor: props.selected ? "orange" : "transparent",
-        borderRadius: 8,
-        minHeight: 64,
-        ":focus": {
-          borderBlockColor: "skyblue",
-        },
-        display: "grid",
-      }}
+      className={c(
+        toStyleAndHash(
+          {
+            borderStyle: "solid",
+            borderColor: props.selected ? "orange" : "transparent",
+            borderRadius: 8,
+            minHeight: 64,
+            display: "grid",
+          },
+          {
+            focus: {
+              borderColor: "skyblue",
+            },
+          }
+        )
+      )}
       onFocus={() => {
         props.onSelected();
       }}
@@ -448,7 +506,7 @@ const ProductField = (props: {
       tabIndex={-1}
     >
       <div>{props.name}</div>
-      <div css={{ paddingLeft: 8 }}>
+      <div className={c(productFieldStyle)}>
         {props.value.map((field) => (
           <Field
             key={field.id}
@@ -470,14 +528,10 @@ const ProductField = (props: {
           />
         ))}
       </div>
-      <div css={{ paddingLeft: 8 }}>
-        <div css={{ display: "flex", gap: 4 }}>
-          {props.errorMessage === undefined ? (
-            false
-          ) : (
-            <div
-              css={{ background: "#d37171", color: "#000", padding: "0 4px" }}
-            >
+      <div className={c(productFieldStyle)}>
+        <div className={c(productFieldErrorMessageContainerStyle)}>
+          {props.errorMessage !== undefined && (
+            <div className={c(productFieldErrorMessageStyle)}>
               {props.errorMessage}
             </div>
           )}
@@ -497,12 +551,14 @@ const TextFieldValue = (props: {
   if (props.isTitle) {
     return (
       <h2
-        css={{
-          whiteSpace: "pre-wrap",
-          textDecoration: props.isError ? "underline wavy red" : "none",
-          margin: 0,
-          fontSize: 32,
-        }}
+        className={c(
+          toStyleAndHash({
+            whiteSpace: "pre-wrap",
+            textDecoration: props.isError ? "underline wavy red" : "none",
+            margin: 0,
+            fontSize: 32,
+          })
+        )}
         onClick={props.onStartEdit}
       >
         {props.value}
@@ -511,16 +567,35 @@ const TextFieldValue = (props: {
   }
   return (
     <div
-      css={{
-        whiteSpace: "pre-wrap",
-        textDecoration: props.isError ? "underline wavy red" : "none",
-      }}
+      className={c(
+        toStyleAndHash({
+          whiteSpace: "pre-wrap",
+          textDecoration: props.isError ? "underline wavy red" : "none",
+        })
+      )}
       onClick={props.onStartEdit}
     >
       {props.value}
     </div>
   );
 };
+
+const inputStyle = toStyleAndHash(
+  {
+    padding: 8,
+    fontSize: 16,
+    backgroundColor: "#222",
+    border: "none",
+    color: "#eee",
+    borderRadius: 8,
+    width: "100%",
+  },
+  {
+    hover: {
+      backgroundColor: "#333",
+    },
+  }
+);
 
 const StyledInput = (props: {
   readonly value: string;
@@ -540,18 +615,7 @@ const StyledInput = (props: {
       <input
         type="text"
         value={editingText}
-        css={{
-          padding: 8,
-          fontSize: 16,
-          backgroundColor: "#222",
-          border: "none",
-          color: "#eee",
-          borderRadius: 8,
-          width: "100%",
-          ":hover": {
-            backgroundColor: "#333",
-          },
-        }}
+        className={c(inputStyle)}
         autoFocus
         onFocus={(e) => {
           e.stopPropagation();

@@ -1,9 +1,21 @@
-/* @jsx jsx */
 /// <reference lib="dom" />
 
 import React from "https://esm.sh/react@18.2.0";
 import { Button } from "../../editor/Button.tsx";
-import { jsx } from "https://esm.sh/@emotion/react@11.10.5";
+import { c, toStyleAndHash } from "../../cssInJs/mod.ts";
+
+const requestingStyle = toStyleAndHash({
+  backgroundColor: "gray",
+  height: 32,
+});
+
+const resultStyle = toStyleAndHash({
+  whiteSpace: "pre-wrap",
+  borderStyle: "solid",
+  borderColor: "#ccc",
+  padding: 8,
+  overflowWrap: "anywhere",
+});
 
 export const Result = (props: {
   readonly data: unknown;
@@ -13,7 +25,7 @@ export const Result = (props: {
     React.useState<boolean>(false);
 
   if (props.requesting) {
-    return <div css={{ backgroundColor: "gray", height: 32 }} />;
+    return <div className={c(requestingStyle)} />;
   }
   const data = props.data;
   return (
@@ -34,15 +46,8 @@ export const Result = (props: {
           クリップボードにコピー
         </Button>
       )}
-      <div css={{ overflowWrap: "anywhere" }}>
-        <div
-          css={{
-            whiteSpace: "pre-wrap",
-            borderStyle: "solid",
-            borderColor: "#ccc",
-            padding: 8,
-          }}
-        >
+      <div>
+        <div className={c(resultStyle)}>
           {typeof data === "string" ? data : JSON.stringify(data, undefined)}
         </div>
       </div>

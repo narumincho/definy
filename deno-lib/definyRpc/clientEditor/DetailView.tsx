@@ -1,8 +1,10 @@
-/* @jsx jsx */
-
 import React from "https://esm.sh/react@18.2.0";
 import * as definyRpc from "./definyRpc.ts";
-import { jsx } from "https://esm.sh/@emotion/react@11.10.5";
+import { c, toStyleAndHash } from "../../cssInJs/mod.ts";
+
+const containerStyle = toStyleAndHash({
+  overflowWrap: "anywhere",
+});
 
 export const DetailView = (props: {
   readonly functionList: ReadonlyArray<definyRpc.FunctionDetail>;
@@ -27,7 +29,7 @@ export const DetailView = (props: {
     );
   }
   return (
-    <div css={{ overflowWrap: "anywhere" }}>
+    <div className={c(containerStyle)}>
       <h2>{selectedFuncDetail.name.join(".")}</h2>
       <div>{selectedFuncDetail.description}</div>
       <div>入力 input: {selectedFuncDetail.input.fullName.join(".")}</div>
