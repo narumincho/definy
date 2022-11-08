@@ -19,12 +19,12 @@ const generateClientHtml = async (): Promise<string> => {
   (()=>{${clientCode}})()
 </script>
 
-<script type="text/html" data-template-name="send-to-definy">
+<script type="text/html" data-template-name="create-definy-rpc-node">
   <div id="definy-form-root"></div>
 </script>
 
-<script type="text/html" data-help-name="send-to-definy">
-  <p>definy for Node RED</p>
+<script type="text/html" data-help-name="create-definy-rpc-node">
+  <p>definy RPC のサーバーに接続するためのノードを作成する</p>
 </script>
 `;
     }
@@ -43,17 +43,7 @@ await build({
     deno: true,
     undici: true,
   },
-  mappings: {
-    "https://esm.sh/prettier@2.7.1": {
-      name: "prettier",
-      version: "2.7.1",
-    },
-    "https://esm.sh/prettier@2.7.1/parser-typescript": {
-      name: "prettier",
-      subPath: "parser-typescript",
-      version: "2.7.1",
-    },
-  },
+  mappings: {},
   package: {
     name: "@definy/node-red",
     version,
@@ -69,7 +59,7 @@ await build({
     },
     "node-red": {
       nodes: {
-        "send-to-definy": "./script/nodeRed/server/main.js",
+        "create-definy-rpc-node": "./script/nodeRed/server/main.js",
       },
     },
     keywords: ["node-red"],
@@ -100,7 +90,7 @@ await Deno.writeTextFile(
 node-RED から definy にデータを送れるようにしたいー
 
 ## できること
-- send-to-definy という名前のノードにURLを入力するとそのURLでHTTP サーバーが起動しているかわかる (デプロイボタンをいちいち押さなくても良い!)
+- create-definy-rpc-node という名前のノードにURLを入力するとそのURLでHTTP サーバーが起動しているかわかる (デプロイボタンをいちいち押さなくても良い!)
 - /definy のパス ( http://127.0.0.1:1880/definy など) で definy RPC の起動がされる
 `
 );

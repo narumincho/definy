@@ -304,8 +304,8 @@ interface NodeMessageParts {
   count?: number | undefined;
 }
 
-type NodeStatusFill = "red" | "green" | "yellow" | "blue" | "grey";
-type NodeStatusShape = "ring" | "dot";
+export type NodeStatusFill = "red" | "green" | "yellow" | "blue" | "grey";
+export type NodeStatusShape = "ring" | "dot";
 
 interface NodeStatus {
   fill?: NodeStatusFill | undefined;

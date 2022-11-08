@@ -1,107 +1,27 @@
 import type { NodeAPI, NodeDef, Node } from "./nodeRedServer.ts";
-import { definyRpc } from "../../definyRpc/server/mod.ts";
-import { IncomingMessage, ServerResponse } from "../../nodeType.ts";
-
-/**
- * Node RED の HTTP サーバーの処理に入り込んで, エディタとの通信をする
- */
-const handleRequest = (
-  incomingMessage: IncomingMessage,
-  response: ServerResponse
-): void => {
-  const simpleRequest =
-    definyRpc.incomingMessageToSimpleRequest(incomingMessage);
-  if (simpleRequest === undefined) {
-    console.log("definy RPC が処理できない Request が来たようだ");
-    return;
-  }
-  const simpleResponse = definyRpc.handleRequest(
-    {
-      all: () => [
-        definyRpc.createApiFunction({
-          fullName: ["sampleFunc"],
-          description: "sample func",
-          input: definyRpc.unit,
-          output: definyRpc.string,
-          isMutation: false,
-          needAuthentication: false,
-          resolve: () => {
-            return Promise.resolve("");
-          },
-        }),
-      ],
-      codeGenOutputFolderPath: undefined,
-      name: "definyRpcInNodeRed",
-      originHint: "http://localhost:5000",
-      pathPrefix: ["definy"],
-    },
-    simpleRequest
-  );
-  if (simpleResponse === undefined) {
-    return;
-  }
-  console.log(simpleRequest, simpleResponse);
-  definyRpc.simpleResponseHandleServerResponse(simpleResponse, response);
-};
 
 // Node.js 内で動作
 export default function (RED: NodeAPI) {
-  RED.server.addListener("request", handleRequest);
-
   // eslint-disable-next-line func-style
   function CustomNode(this: Node, config: NodeDef): void {
     RED.nodes.createNode(this, config);
   }
 
   // eslint-disable-next-line func-style
-  function SendToDefiny(
+  function CreateDefinyRpcNode(
     this: Node,
-    config: NodeDef & { originUrl: string }
+    config: NodeDef & { url: string }
   ): void {
+    RED.nodes.registerType("definy-dynamic", CustomNode);
     RED.nodes.createNode(this, config);
-  }
-  RED.nodes.registerType("send-to-definy", SendToDefiny);
-
-  RED.nodes.registerType("definy-dynamic-node", function DynamicNode(config) {
-    console.log("definy-dynamic-node!");
-    RED.nodes.createNode(this, config);
-  });
-
-  setInterval(() => {
-    RED.nodes.eachNode((node) => {
-      if (node.type === "send-to-definy") {
-        const nodeInstance = RED.nodes.getNode(node.id) as Node & {
-          originUrl: string;
-        };
-
-        nodeInstance
-          .context()
-          .global.set(
-            "definy-set-by-node-js",
-            "in Node.js " + new Date().toISOString()
-          );
-
-        if (typeof nodeInstance.originUrl === "string") {
-          fetch(nodeInstance.originUrl).then(
-            () => {
-              nodeInstance.status({
-                fill: "green",
-                shape: "ring",
-                text:
-                  nodeInstance.originUrl +
-                  " HTTP サーバーとして接続できたっぽいよ ",
-              });
-            },
-            (e) => {
-              nodeInstance.status({
-                fill: "red",
-                // eslint-disable-next-line @typescript-eslint/restrict-plus-operands
-                text: nodeInstance.originUrl + " " + e.toString(),
-              });
-            }
-          );
-        }
-      }
+    console.log(this);
+    this.status({
+      shape: "dot",
+      fill: "green",
+      text: JSON.stringify({
+        node: [{ name: "a" }, { name: "b" }, { name: "c" }],
+      }),
     });
-  }, 3000);
+  }
+  RED.nodes.registerType("create-definy-rpc-node", CreateDefinyRpcNode);
 }
