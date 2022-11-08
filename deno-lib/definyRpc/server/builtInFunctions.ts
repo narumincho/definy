@@ -1,5 +1,5 @@
 import { ApiFunction, createApiFunction } from "./apiFunction.ts";
-import { apiFunctionListToCode, runtimeCode } from "./clientCodeGen/main.ts";
+import { apiFunctionListToCode } from "./clientCodeGen/main.ts";
 import type { DefinyRpcParameter } from "./definyRpc.ts";
 import { set, string, unit, list, DefinyRpcType, product } from "./type.ts";
 import { ensureFile } from "https://deno.land/std@0.161.0/fs/mod.ts";
@@ -180,10 +180,6 @@ const builtInFunctions = (parameter: DefinyRpcParameter) => {
                   pathPrefix: parameter.pathPrefix ?? [],
                   usePrettier: true,
                 })
-              );
-              await ensureAndWriteCode(
-                parameter.codeGenOutputFolderPath + "/" + "runtime.ts",
-                runtimeCode
               );
 
               return undefined;

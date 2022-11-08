@@ -61,7 +61,7 @@ export const apiFuncToTsFunction = (parameter: {
                   _: "Variable",
                   tsIdentifier: parameterIdentifier,
                 },
-                "origin"
+                "url"
               ),
               { _: "StringLiteral", string: parameter.originHint }
             )
@@ -225,7 +225,7 @@ const funcParameterType = (
     _: "Object",
     tsMemberTypeList: [
       {
-        name: "origin",
+        name: "url",
         document: `api end point
 @default ${originHint}`,
         required: false,

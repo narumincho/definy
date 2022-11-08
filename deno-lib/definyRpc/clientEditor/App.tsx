@@ -36,7 +36,7 @@ export const App = (): React.ReactElement => {
   const [editorCount, setEditorCount] = React.useState<number>(1);
 
   React.useEffect(() => {
-    definyRpc.functionListByName({ origin: serverOrigin }).then((result) => {
+    definyRpc.functionListByName({ url: serverOrigin }).then((result) => {
       if (result.type === "ok") {
         setFunctionList(result.ok);
       } else {
@@ -46,7 +46,7 @@ export const App = (): React.ReactElement => {
   }, [serverOrigin]);
 
   React.useEffect(() => {
-    definyRpc.name({ origin: serverOrigin }).then((result) => {
+    definyRpc.name({ url: serverOrigin }).then((result) => {
       if (result.type === "ok") {
         setServerName(result.ok);
       } else {
