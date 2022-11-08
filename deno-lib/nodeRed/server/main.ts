@@ -1,4 +1,6 @@
+import { urlFromString } from "../client/urlFromString.ts";
 import type { NodeAPI, NodeDef, Node } from "./nodeRedServer.ts";
+import type { Status } from "./status.ts";
 
 // Node.js 内で動作
 export default function (RED: NodeAPI) {
@@ -12,16 +14,37 @@ export default function (RED: NodeAPI) {
     this: Node,
     config: NodeDef & { url: string }
   ): void {
-    RED.nodes.registerType("definy-dynamic", CustomNode);
     RED.nodes.createNode(this, config);
-    console.log(this);
+    const url = urlFromString(config.url);
+    if (url === undefined) {
+      this.status({
+        shape: "ring",
+        fill: "red",
+        text: config.url + " は不正なURLです",
+      });
+      return;
+    }
     this.status({
-      shape: "dot",
-      fill: "green",
-      text: JSON.stringify({
-        node: [{ name: "a" }, { name: "b" }, { name: "c" }],
-      }),
+      shape: "ring",
+      fill: "grey",
+      text: "APIの情報を取得中...",
     });
+
+    url.pathname = url.pathname + "/definyRpc/name";
+    fetch(url)
+      .then((response) => response.json())
+      .then((json) => {
+        const status: Status = {
+          name: json,
+        };
+        RED.nodes.registerType("definy-" + status.name, CustomNode);
+
+        this.status({
+          shape: "dot",
+          fill: "green",
+          text: JSON.stringify(status),
+        });
+      });
   }
   RED.nodes.registerType("create-definy-rpc-node", CreateDefinyRpcNode);
 }

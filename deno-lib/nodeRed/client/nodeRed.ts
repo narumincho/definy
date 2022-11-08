@@ -15,8 +15,12 @@ export const red = (
             readonly defaults: Record<string, unknown>;
             readonly inputs: number;
             readonly outputs: number;
-            readonly label: ((this: customProperty) => string) | string;
-            readonly oneditsave?: ((this: customProperty) => void) | undefined;
+            readonly label:
+              | ((this: customProperty & ClientNode) => string)
+              | string;
+            readonly oneditsave?:
+              | ((this: customProperty & ClientNode) => void)
+              | undefined;
             readonly oneditprepare?:
               | ((this: customProperty & ClientNode) => void)
               | undefined;

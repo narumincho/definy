@@ -1,5 +1,5 @@
 import React from "https://esm.sh/react@18.2.0";
-import { isValidUrl } from "./isValidUrl.ts";
+import { urlFromString } from "./urlFromString.ts";
 import { c, toStyleAndHash } from "../../cssInJs/mod.ts";
 
 const errorStyle = toStyleAndHash({
@@ -38,7 +38,7 @@ export const Form = (props: {
           }}
         />
       </div>
-      {isValidUrl(urlText) ? (
+      {urlFromString(urlText) ? (
         <></>
       ) : (
         <div className={c(errorStyle)}>
