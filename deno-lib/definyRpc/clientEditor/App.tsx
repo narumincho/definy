@@ -1,6 +1,6 @@
 import React from "https://esm.sh/react@18.2.0";
 import { c, toStyleAndHash } from "../../cssInJs/mod.ts";
-import * as definyRpc from "./definyRpc.ts";
+import * as definyRpc from "../client/generated/definyRpc.ts";
 import { Button } from "../../editor/Button.tsx";
 import { Editor } from "./Editor.tsx";
 import { ServerOrigin } from "./ServerOrigin.tsx";

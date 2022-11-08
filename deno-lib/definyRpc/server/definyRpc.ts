@@ -128,11 +128,7 @@ export const handleRequest = (
       headers: { ContentType: "text/javascript; charset=utf-8" },
       body: () =>
         Promise.resolve(
-          new TextEncoder().encode(
-            `window.definyRpcServerPathPrefix = ${JSON.stringify(
-              parameter.pathPrefix ?? []
-            )};\n` + clientBuildResult.scriptContent
-          )
+          new TextEncoder().encode(clientBuildResult.scriptContent)
         ),
     };
   }

@@ -8,7 +8,7 @@ const sampleDefinyRpcServerParameter: definyRpc.DefinyRpcParameter = {
   name: "exampleDev",
   all: funcList,
   originHint: `http://localhost:${portNumber}`,
-  codeGenOutputFolderPath: "./definy-rpc/browserClient/src/generated",
+  codeGenOutputFolderPath: "./deno-lib/definyRpc/client/generated",
 };
 
 serve(

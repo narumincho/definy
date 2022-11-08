@@ -10,7 +10,7 @@ import { apiFuncToTsFunction } from "./func.ts";
 import { resultExportDefinition } from "./result.ts";
 import { collectedTypeToTypeAlias, typeToTypeVariable } from "./type.ts";
 
-export { runtimeCode } from "./runtime.ts";
+export { runtimeCode } from "./useRuntime.ts";
 
 export const apiFunctionListToCode = (parameter: {
   readonly apiFunctionList: ReadonlyArray<ApiFunction>;

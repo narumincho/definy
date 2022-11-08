@@ -1,6 +1,6 @@
 import { identifierFromString, data } from "../../../jsTs/main.ts";
 
-const runtimeModuleName = "./runtime";
+const runtimeModuleName = "./runtime.ts";
 
 export const structuredJsonValueType: data.TsType = {
   _: "ImportedType",

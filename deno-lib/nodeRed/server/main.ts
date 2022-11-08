@@ -1,6 +1,7 @@
 import { urlFromString } from "../client/urlFromString.ts";
 import type { NodeAPI, NodeDef, Node } from "./nodeRedServer.ts";
 import type { Status } from "./status.ts";
+import * as definyRpcClient from "../../definyRpc/client/definyRpc.ts";
 
 // Node.js 内で動作
 export default function (RED: NodeAPI) {
@@ -30,21 +31,29 @@ export default function (RED: NodeAPI) {
       text: "APIの情報を取得中...",
     });
 
-    url.pathname = url.pathname + "/definyRpc/name";
-    fetch(url)
-      .then((response) => response.json())
-      .then((json) => {
-        const status: Status = {
-          name: json,
-        };
-        RED.nodes.registerType("definy-" + status.name, CustomNode);
-
+    Promise.all([
+      definyRpcClient.name({ url: url.toString() }),
+      definyRpcClient.functionListByName({ url: url.toString() }),
+    ]).then(([name, functionList]) => {
+      if (name.type === "error" || functionList.type === "error") {
         this.status({
-          shape: "dot",
-          fill: "green",
-          text: JSON.stringify(status),
+          shape: "ring",
+          fill: "red",
+          text: config.url + " は definy RPC のサーバーではありません",
         });
+        return;
+      }
+      const status: Status = {
+        name: name.ok,
+        functionList: functionList.ok,
+      };
+      RED.nodes.registerType("definy-" + status.name, CustomNode);
+      this.status({
+        shape: "dot",
+        fill: "green",
+        text: JSON.stringify(status),
       });
+    });
   }
   RED.nodes.registerType("create-definy-rpc-node", CreateDefinyRpcNode);
 }

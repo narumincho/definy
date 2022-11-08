@@ -14,6 +14,7 @@ import {
   readonlySetType,
   responseType,
   urlType,
+  addition,
 } from "../../../jsTs/main.ts";
 import { getLast } from "../../../util.ts";
 import { ApiFunction } from "../apiFunction.ts";
@@ -23,7 +24,7 @@ import { useFromJson } from "./type.ts";
 import {
   rawJsonValueType,
   useRawJsonToStructuredJsonValue,
-} from "./runtime.ts";
+} from "./useRuntime.ts";
 
 export const apiFuncToTsFunction = (parameter: {
   readonly func: ApiFunction;
@@ -80,15 +81,24 @@ export const apiFuncToTsFunction = (parameter: {
             "pathname"
           ),
           operatorMaybe: undefined,
-          expr: {
-            _: "StringLiteral",
-            string:
-              "/" +
-              (parameter.pathPrefix.length === 0
-                ? ""
-                : parameter.pathPrefix.join("/") + "/") +
-              parameter.func.fullName.join("/"),
-          },
+          expr: addition(
+            get(
+              {
+                _: "Variable",
+                tsIdentifier: identifierFromString("url"),
+              },
+              "pathname"
+            ),
+            {
+              _: "StringLiteral",
+              string:
+                "/" +
+                (parameter.pathPrefix.length === 0
+                  ? ""
+                  : parameter.pathPrefix.join("/") + "/") +
+                parameter.func.fullName.join("/"),
+            }
+          ),
         },
       },
       {
