@@ -35,6 +35,8 @@ const generateClientHtml = async (): Promise<string> => {
 <script type="text/html" data-help-name="create-definy-rpc-node">
   <p>definy RPC のサーバーに接続するためのノードを作成する</p>
 </script>
+
+<div id="definy-html-output"></div>
 `;
     }
   }

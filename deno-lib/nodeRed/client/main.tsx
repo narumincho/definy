@@ -7,10 +7,37 @@ import { red } from "./nodeRed.ts";
 import { Status } from "../server/status.ts";
 import { GeneratedNodeForm } from "./GeneratedNodeForm.tsx";
 
+const escapeHtml = (text: string): string => {
+  return text.replace(/[&'`"<>]/ug, (match) => {
+    return {
+      "&": "&amp;",
+      "'": "&#x27;",
+      "`": "&#x60;",
+      '"': "&quot;",
+      "<": "&lt;",
+      ">": "&gt;",
+    }[match] as string;
+  });
+};
+
 const createNodeFromStatus = (statusAsString: string): void => {
   const status: Status = JSON.parse(statusAsString);
+
   for (const func of status.functionList) {
     const id = "definy-" + func.name.join("-");
+
+    const scriptElement = document.createElement("script");
+    scriptElement.type = "text/html";
+    scriptElement.dataset["helpName"] = id;
+    scriptElement.textContent = `<div>
+  <h2>${escapeHtml(func.name.join("."))}</h2>
+  <div>${escapeHtml(func.description)}</div>
+</>`;
+    document.getElementById("definy-html-output")
+      ?.appendChild(
+        scriptElement,
+      );
+
     red.nodes.registerType<unknown>(id, {
       category: "definyGenerated",
       color: "#a6bbcf",
