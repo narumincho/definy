@@ -5,19 +5,36 @@ import { urlFromString } from "./urlFromString.ts";
 import { Form } from "./Form.tsx";
 import { red } from "./nodeRed.ts";
 import { Status } from "../server/status.ts";
+import { GeneratedNodeForm } from "./GeneratedNodeForm.tsx";
 
 const createNodeFromStatus = (statusAsString: string): void => {
   const status: Status = JSON.parse(statusAsString);
-  red.nodes.registerType<unknown>("definy-" + status.name, {
-    category: "definyGenerated",
-    color: "#a6bbcf",
-    defaults: {},
-    inputs: 0,
-    outputs: 0,
-    label: function () {
-      return status.name;
-    },
-  });
+  for (const func of status.functionList) {
+    const id = "definy-" + func.name.join("-");
+    red.nodes.registerType<unknown>(id, {
+      category: "definyGenerated",
+      color: "#a6bbcf",
+      defaults: {},
+      inputs: 0,
+      outputs: 0,
+      label: function () {
+        return id;
+      },
+      oneditprepare: () => {
+        const formRoot = document.getElementById("dialog-form");
+        if (formRoot === null) {
+          console.log("id=dialog-form 見つからず");
+          return;
+        }
+        const reactRoot = createRoot(formRoot);
+        reactRoot.render(
+          <GeneratedNodeForm
+            functionDetail={func}
+          />,
+        );
+      },
+    });
+  }
 };
 
 let editingUrl = "";
@@ -59,7 +76,7 @@ red.nodes.registerType<{ url: string }>("create-definy-rpc-node", {
         onChangeUrl={(newUrl) => {
           editingUrl = newUrl;
         }}
-      />
+      />,
     );
   },
   oneditsave: function () {

@@ -15,17 +15,17 @@ export type NodeAPI = {
       TNode extends Node<TCreds>,
       TNodeDef extends NodeDef,
       TSets,
-      TCreds extends Record<never, never>
+      TCreds extends Record<never, never>,
     >(
       type: string,
       constructor: NodeConstructor<TNode, TNodeDef, TCreds>,
       opts?: {
         credentials?: NodeCredentials<TCreds> | undefined;
         settings?: NodeSettings<TSets> | undefined;
-      }
+      },
     ) => void;
     eachNode: (cb: (node: NodeDef) => void) => void;
-    getNode: (id: string) => Node;
+    getNode: (id: string) => Node | null;
   };
 };
 
@@ -42,7 +42,7 @@ export type NodeDef = {
 interface NodeConstructor<
   TNode extends Node<TCred>,
   TNodeDef extends NodeDef,
-  TCred extends Record<never, never>
+  TCred extends Record<never, never>,
 > {
   (this: TNode, nodeDef: TNodeDef): void;
 }
@@ -97,7 +97,7 @@ interface NodeContextData {
   get(
     key: string,
     storeName: string | undefined,
-    cb: (err: Error, value: unknown) => void
+    cb: (err: Error, value: unknown) => void,
   ): void;
   /**
    * Get multiple values from context asynchronously, when multiple context stores are used
@@ -105,7 +105,7 @@ interface NodeContextData {
   get(
     keys: string[],
     storeName: string | undefined,
-    cb: (err: Error, value: unknown[]) => void
+    cb: (err: Error, value: unknown[]) => void,
   ): void;
 
   /**
@@ -134,7 +134,7 @@ interface NodeContextData {
     key: string,
     value: unknown,
     storeName: string | undefined,
-    cb?: (err: Error) => void
+    cb?: (err: Error) => void,
   ): void;
   /**
    * Set multiple values in context, when multiple context stores are used
@@ -147,7 +147,7 @@ interface NodeContextData {
     keys: string[],
     values: unknown[],
     storeName: string | undefined,
-    cb?: (err: Error) => void
+    cb?: (err: Error) => void,
   ): void;
 
   /**
@@ -164,12 +164,12 @@ interface NodeContextData {
    */
   keys(
     storeName: string | undefined,
-    cb: (err: Error, value: unknown[]) => void
+    cb: (err: Error, value: unknown[]) => void,
   ): void;
 }
 
 export interface Node<
-  TCreds extends Record<never, never> = Record<never, never>
+  TCreds extends Record<never, never> = Record<never, never>,
 > extends EventEmitter {
   id: string;
   type: string;
@@ -248,10 +248,10 @@ export interface Node<
     listener: (
       msg: NodeMessageInFlow,
       send: (
-        msg: NodeMessage | Array<NodeMessage | NodeMessage[] | null>
+        msg: NodeMessage | Array<NodeMessage | NodeMessage[] | null>,
       ) => void,
-      done: (err?: Error) => void
-    ) => void
+      done: (err?: Error) => void,
+    ) => void,
   ): this;
 
   /**
@@ -276,7 +276,7 @@ export interface Node<
    */
   on(
     event: "close",
-    listener: (removed: boolean, done: () => void) => void
+    listener: (removed: boolean, done: () => void) => void,
   ): this; // tslint:disable-line:unified-signatures
 }
 

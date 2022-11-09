@@ -6,6 +6,11 @@
   },
   "settings": {
     "deno.enable": true,
-    "eslint.enable": false
+    "eslint.enable": false,
+    "prettier.enable": false,
+    "editor.formatOnSave": true,
+    "[typescript]": {
+      "editor.defaultFormatter": "denoland.vscode-deno"
+    }
   }
 }

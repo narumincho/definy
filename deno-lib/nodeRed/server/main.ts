@@ -1,8 +1,10 @@
 import { urlFromString } from "../client/urlFromString.ts";
-import type { NodeAPI, NodeDef, Node } from "./nodeRedServer.ts";
+import type { Node, NodeAPI, NodeDef } from "./nodeRedServer.ts";
 import type { Status } from "./status.ts";
 import * as definyRpcClient from "../../definyRpc/client/generated/definyRpc.ts";
 import { jsonStringify } from "../../typedJson.ts";
+
+const createdServer = new Set<string>();
 
 // Node.js 内で動作
 export default function (RED: NodeAPI) {
@@ -14,7 +16,7 @@ export default function (RED: NodeAPI) {
   // eslint-disable-next-line func-style
   function CreateDefinyRpcNode(
     this: Node,
-    config: NodeDef & { url: string }
+    config: NodeDef & { url: string },
   ): void {
     RED.nodes.createNode(this, config);
     const url = urlFromString(config.url);
@@ -48,7 +50,13 @@ export default function (RED: NodeAPI) {
         name: name.ok,
         functionList: functionList.ok,
       };
-      RED.nodes.registerType("definy-" + status.name, CustomNode);
+      console.log(createdServer, url.toString());
+      if (!createdServer.has(url.toString())) {
+        createdServer.add(url.toString());
+        for (const func of functionList.ok) {
+          RED.nodes.registerType("definy-" + func.name.join("-"), CustomNode);
+        }
+      }
       this.status({
         shape: "dot",
         fill: "green",
@@ -56,5 +64,9 @@ export default function (RED: NodeAPI) {
       });
     });
   }
-  RED.nodes.registerType("create-definy-rpc-node", CreateDefinyRpcNode);
+
+  RED.nodes.registerType(
+    "create-definy-rpc-node",
+    CreateDefinyRpcNode,
+  );
 }
