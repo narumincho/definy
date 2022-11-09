@@ -129,7 +129,7 @@ https://www.npmjs.com/package/@definy/node-red
 ### Node.js 向けにビルド
 
 ```ps1
-deno run  --check -A ./deno-lib/nodeRed/build.ts
+deno run --check -A ./deno-lib/nodeRed/build.ts
 ```
 
 ### npm に公開

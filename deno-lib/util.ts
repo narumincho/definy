@@ -210,3 +210,13 @@ export const stringArrayMatchPrefix = (
   }
   return true;
 };
+
+/**
+ * DenoのファイルのAPIでサポートされれば不要
+ * 先頭の
+ * @example
+ * removeFilePrefix("file:///")
+ */
+export const removeFileProtocol = (pathWithFileProtocol: string) => {
+  return new URL(pathWithFileProtocol).pathname;
+};
