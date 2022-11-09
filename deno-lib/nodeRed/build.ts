@@ -47,7 +47,7 @@ const outDir = fromFileUrl(import.meta.resolve("../../nodeRedServerForNode"));
 
 emptyDir(outDir);
 
-const version = "1.0.7";
+const version = "1.1.0";
 
 await build({
   entryPoints: [fromFileUrl(import.meta.resolve("./server/main.ts"))],
