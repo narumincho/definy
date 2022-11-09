@@ -14,7 +14,7 @@ const generateClientHtml = async (): Promise<string> => {
     entryPoints: [
       relative(
         Deno.cwd(),
-        fromFileUrl(import.meta.resolve("./client/main.tsx"))
+        fromFileUrl(import.meta.resolve("./client/main.tsx")),
       ),
     ],
     write: false,
@@ -45,7 +45,7 @@ const outDir = fromFileUrl(import.meta.resolve("../../nodeRedServerForNode"));
 
 emptyDir(outDir);
 
-const version = "1.0.6";
+const version = "1.0.7";
 
 await build({
   entryPoints: [fromFileUrl(import.meta.resolve("./server/main.ts"))],
@@ -87,7 +87,7 @@ console.log("Node.js 向けスクリプトの出力に成功");
 const clientHtml = await generateClientHtml();
 await writeTextFile(
   join(outDir, "./script/nodeRed/server/main.html"),
-  clientHtml
+  clientHtml,
 );
 
 await writeTextFile(
@@ -101,7 +101,7 @@ node-RED から definy にデータを送れるようにしたいー
 
 ## できること
 - create-definy-rpc-node という名前のノードにURLを入力し, デプロイボタンを押したあとにその APIを呼ぶノードが生成される
-`
+`,
 );
 
 Deno.exit();
