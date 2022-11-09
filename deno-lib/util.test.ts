@@ -15,18 +15,3 @@ Deno.test("stringArrayMatchPrefix not match", () => {
 Deno.test("stringArrayMatchPrefix empty", () => {
   assert(stringArrayMatchPrefix(["a", "b", "c"], []));
 });
-
-Deno.test("removeFileProtocol windows", () => {
-  assertEquals(
-    removeFileProtocol("file:///C:/Users/narum/repo/definy/deno-lib/build.ts"),
-    "C:/Users/narum/repo/definy/deno-lib/build.ts"
-  );
-});
-
-Deno.test("removeFileProtocol linux", () => {
-  // Linux でも動くようにしたいね
-  assertEquals(
-    removeFileProtocol("file:///C:/Users/narum/repo/definy/deno-lib/build.ts"),
-    "C:/Users/narum/repo/definy/deno-lib/build.ts"
-  );
-});

@@ -1,12 +1,14 @@
 import * as esbuild from "https://deno.land/x/esbuild@v0.15.13/mod.js";
 import { denoPlugin } from "https://deno.land/x/esbuild_deno_loader@0.6.0/mod.ts";
 import { jsonStringify } from "../typedJson.ts";
+import { writeTextFile } from "../writeFileAndLog.ts";
+
+// esbuild が動作するか確かめている
 
 const handleBuildResult = (result: esbuild.BuildResult | null) => {
   result?.outputFiles?.forEach((file) => {
     if (file.path === "<stdout>") {
-      console.log("ビルドに成功!");
-      Deno.writeTextFile(
+      writeTextFile(
         "./out.js",
         jsonStringify({
           scriptContent: new TextDecoder().decode(file.contents),
