@@ -1,6 +1,6 @@
 import clientBuildResult from "./browserClient.json" assert { type: "json" };
 import * as base64 from "https://denopkg.com/chiefbiiko/base64@master/mod.ts";
-import { jsonParse } from "../../typedJson.ts";
+import { jsonParse, jsonStringify } from "../../typedJson.ts";
 import { AccountToken, ApiFunction } from "./apiFunction.ts";
 import { addDefinyRpcApiFunction } from "./builtInFunctions.ts";
 import { SimpleRequest } from "./simpleRequest.ts";
@@ -146,9 +146,7 @@ export const handleRequest = (
             },
             body: () =>
               Promise.resolve(
-                new TextEncoder().encode(
-                  JSON.stringify("invalid account token")
-                )
+                new TextEncoder().encode(jsonStringify("invalid account token"))
               ),
           };
         }
@@ -163,7 +161,7 @@ export const handleRequest = (
               authorizationValue as AccountToken
             );
             return new TextEncoder().encode(
-              JSON.stringify(func.output.toJson(apiFunctionResult))
+              jsonStringify(func.output.toJson(apiFunctionResult))
             );
           },
         };
@@ -179,7 +177,7 @@ export const handleRequest = (
             undefined
           );
           return new TextEncoder().encode(
-            JSON.stringify(func.output.toJson(apiFunctionResult))
+            jsonStringify(func.output.toJson(apiFunctionResult))
           );
         },
       };
@@ -193,7 +191,7 @@ export const handleRequest = (
     body: () =>
       Promise.resolve(
         new TextEncoder().encode(
-          JSON.stringify({
+          jsonStringify({
             message: "not found...",
             functionFullName: pathListRemovePrefix,
           })

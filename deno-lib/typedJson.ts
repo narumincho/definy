@@ -70,6 +70,12 @@ export const rawJsonToStructuredJsonValue = (
   };
 };
 
-export const jsonStringify = (jsonValue: RawJsonValue): string => {
+export const jsonStringify = (
+  jsonValue: RawJsonValue,
+  indent = false
+): string => {
+  if (indent) {
+    return JSON.stringify(jsonValue, undefined, 2);
+  }
   return JSON.stringify(jsonValue);
 };

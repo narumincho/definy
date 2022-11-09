@@ -2,6 +2,7 @@ import { urlFromString } from "../client/urlFromString.ts";
 import type { NodeAPI, NodeDef, Node } from "./nodeRedServer.ts";
 import type { Status } from "./status.ts";
 import * as definyRpcClient from "../../definyRpc/client/generated/definyRpc.ts";
+import { jsonStringify } from "../../typedJson.ts";
 
 // Node.js 内で動作
 export default function (RED: NodeAPI) {
@@ -32,8 +33,8 @@ export default function (RED: NodeAPI) {
     });
 
     Promise.all([
-      definyRpcClient.name({ origin: url.toString() }),
-      definyRpcClient.functionListByName({ origin: url.toString() }),
+      definyRpcClient.name({ url: url.toString() }),
+      definyRpcClient.functionListByName({ url: url.toString() }),
     ]).then(([name, functionList]) => {
       if (name.type === "error" || functionList.type === "error") {
         this.status({
@@ -51,7 +52,7 @@ export default function (RED: NodeAPI) {
       this.status({
         shape: "dot",
         fill: "green",
-        text: JSON.stringify(status),
+        text: jsonStringify(status),
       });
     });
   }

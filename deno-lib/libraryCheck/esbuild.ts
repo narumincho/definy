@@ -1,5 +1,6 @@
 import * as esbuild from "https://deno.land/x/esbuild@v0.15.13/mod.js";
 import { denoPlugin } from "https://deno.land/x/esbuild_deno_loader@0.6.0/mod.ts";
+import { jsonStringify } from "../typedJson.ts";
 
 const handleBuildResult = (result: esbuild.BuildResult | null) => {
   result?.outputFiles?.forEach((file) => {
@@ -7,7 +8,7 @@ const handleBuildResult = (result: esbuild.BuildResult | null) => {
       console.log("ビルドに成功!");
       Deno.writeTextFile(
         "./out.js",
-        JSON.stringify({
+        jsonStringify({
           scriptContent: new TextDecoder().decode(file.contents),
         })
       );

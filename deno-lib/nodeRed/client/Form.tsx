@@ -1,6 +1,7 @@
 import React from "https://esm.sh/react@18.2.0";
 import { urlFromString } from "./urlFromString.ts";
 import { c, toStyleAndHash } from "../../cssInJs/mod.ts";
+import { jsonStringify } from "../../typedJson.ts";
 
 const errorStyle = toStyleAndHash({
   borderStyle: "solid",
@@ -48,7 +49,7 @@ export const Form = (props: {
       <div className={c(noteStyle)}>
         デプロイをしたあとにノードが生成されます
       </div>
-      <div>{JSON.stringify(props.statusText)}</div>
+      <div>{jsonStringify(props.statusText)}</div>
     </div>
   );
 };

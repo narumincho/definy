@@ -2,6 +2,7 @@ import * as base64 from "https://denopkg.com/chiefbiiko/base64@master/mod.ts";
 import * as esbuild from "https://deno.land/x/esbuild@v0.15.13/mod.js";
 import { denoPlugin } from "https://deno.land/x/esbuild_deno_loader@0.6.0/mod.ts";
 import { hashBinary } from "../sha256.ts";
+import { jsonStringify } from "../typedJson.ts";
 
 type BuildClientResult = {
   readonly iconHash: string;
@@ -49,7 +50,7 @@ const main = async (): Promise<void> => {
   console.log("clientEditor のビルドデータ生成完了");
   await Deno.writeTextFile(
     "./deno-lib/definyRpc/server/browserClient.json",
-    JSON.stringify(clientBuildResult, undefined, 2)
+    jsonStringify(clientBuildResult, true)
   );
   console.log("ファイルに保存した");
   Deno.exit();
