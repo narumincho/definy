@@ -3,6 +3,7 @@
 import React from "https://esm.sh/react@18.2.0";
 import { Button } from "../../editor/Button.tsx";
 import { c, toStyleAndHash } from "../../cssInJs/mod.ts";
+import { jsonStringify, RawJsonValue } from "../../typedJson.ts";
 
 const requestingStyle = toStyleAndHash({
   backgroundColor: "gray",
@@ -18,7 +19,7 @@ const resultStyle = toStyleAndHash({
 });
 
 export const Result = (props: {
-  readonly data: unknown;
+  readonly data: RawJsonValue;
   readonly requesting: boolean;
 }) => {
   const [responseToClipboardLoading, setResponseToClipboardLoading] =
@@ -48,7 +49,7 @@ export const Result = (props: {
       )}
       <div>
         <div className={c(resultStyle)}>
-          {typeof data === "string" ? data : JSON.stringify(data, undefined)}
+          {typeof data === "string" ? data : jsonStringify(data)}
         </div>
       </div>
     </div>

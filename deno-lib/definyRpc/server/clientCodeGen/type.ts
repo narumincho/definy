@@ -17,7 +17,7 @@ import {
   CollectedDefinyRpcTypeUse,
 } from "../collectType.ts";
 import { arrayFromLength } from "../../../util.ts";
-import { structuredJsonValueType } from "./runtime.ts";
+import { structuredJsonValueType } from "./useTypedJson.ts";
 
 export const collectedTypeToTypeAlias = (
   type: CollectedDefinyRpcType,

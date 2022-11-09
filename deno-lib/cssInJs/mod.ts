@@ -152,7 +152,9 @@ export const c = (styleAndHash: StyleAndHash): string => {
 };
 
 const hashStyle = (style: Style, state: StateStyle): string => {
-  return murmurHash3(JSON.stringify({ style, state })).toString(16);
+  return murmurHash3(styleAndStateStyleToCssString("", style, state)).toString(
+    16
+  );
 };
 
 const styleAndStateStyleToCssString = (

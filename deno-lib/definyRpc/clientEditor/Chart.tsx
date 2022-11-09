@@ -15,11 +15,6 @@ export const SampleChart = () => {
         nodes: [
           { id: "aId", label: "a", shape: "circle" },
           { id: "bId", label: "b", shape: "circle" },
-          {
-            id: "j",
-            label: "少し長めのラベル名も行けるかな...?",
-            shape: "circle",
-          },
         ],
         edges: [{ id: "edgeId", arrows: "to", from: "aId", to: "bId" }],
       },

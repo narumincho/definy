@@ -1,11 +1,22 @@
 import * as esbuild from "https://deno.land/x/esbuild@v0.15.13/mod.js";
 import { denoPlugin } from "https://deno.land/x/esbuild_deno_loader@0.6.0/mod.ts";
 import { build, emptyDir } from "https://deno.land/x/dnt@0.31.0/mod.ts";
+import {
+  fromFileUrl,
+  join,
+  relative,
+} from "https://deno.land/std@0.143.0/path/mod.ts";
+import { writeTextFile } from "../writeFileAndLog.ts";
 
 const generateClientHtml = async (): Promise<string> => {
   const result = await esbuild.build({
     plugins: [denoPlugin()],
-    entryPoints: ["./deno-lib/nodeRed/client/main.tsx"],
+    entryPoints: [
+      relative(
+        Deno.cwd(),
+        fromFileUrl(import.meta.resolve("./client/main.tsx")),
+      ),
+    ],
     write: false,
     bundle: true,
     format: "esm",
@@ -15,45 +26,37 @@ const generateClientHtml = async (): Promise<string> => {
   for (const outFile of result.outputFiles) {
     if (outFile.path === "<stdout>") {
       const clientCode = new TextDecoder().decode(outFile.contents);
-      return `<script type="module">
-  (()=>{${clientCode}})()
-</script>
+      return `<script type="module">${clientCode}</script>
 
-<script type="text/html" data-template-name="send-to-definy">
+<script type="text/html" data-template-name="create-definy-rpc-node">
   <div id="definy-form-root"></div>
 </script>
 
-<script type="text/html" data-help-name="send-to-definy">
-  <p>definy for Node RED</p>
+<script type="text/html" data-help-name="create-definy-rpc-node">
+  <p>definy RPC のサーバーに接続するためのノードを作成する</p>
 </script>
+
+<div id="definy-html-output"></div>
 `;
     }
   }
   throw new Error("client の ビルドに失敗した");
 };
 
-emptyDir("./nodeRedServerForNode");
+const outDir = fromFileUrl(import.meta.resolve("../../nodeRedServerForNode"));
 
-const version = "1.0.6";
+emptyDir(outDir);
+
+const version = "1.0.7";
 
 await build({
-  entryPoints: ["./deno-lib/nodeRed/server/main.ts"],
-  outDir: "./nodeRedServerForNode",
+  entryPoints: [fromFileUrl(import.meta.resolve("./server/main.ts"))],
+  outDir,
   shims: {
     deno: true,
     undici: true,
   },
-  mappings: {
-    "https://esm.sh/prettier@2.7.1": {
-      name: "prettier",
-      version: "2.7.1",
-    },
-    "https://esm.sh/prettier@2.7.1/parser-typescript": {
-      name: "prettier",
-      subPath: "parser-typescript",
-      version: "2.7.1",
-    },
-  },
+  mappings: {},
   package: {
     name: "@definy/node-red",
     version,
@@ -69,7 +72,7 @@ await build({
     },
     "node-red": {
       nodes: {
-        "send-to-definy": "./script/nodeRed/server/main.js",
+        "create-definy-rpc-node": "./script/nodeRed/server/main.js",
       },
     },
     keywords: ["node-red"],
@@ -84,14 +87,13 @@ await build({
 console.log("Node.js 向けスクリプトの出力に成功");
 
 const clientHtml = await generateClientHtml();
-await Deno.writeTextFile(
-  "./nodeRedServerForNode/script/nodeRed/server/main.html",
-  clientHtml
+await writeTextFile(
+  join(outDir, "./script/nodeRed/server/main.html"),
+  clientHtml,
 );
-console.log("HTML ファイルの出力に成功");
 
-await Deno.writeTextFile(
-  "./nodeRedServerForNode/README.md",
+await writeTextFile(
+  join(outDir, "./README.md"),
   `# @definy/node-red v${version}
 
 - npm latest: https://www.npmjs.com/package/@definy/node-red
@@ -100,10 +102,8 @@ await Deno.writeTextFile(
 node-RED から definy にデータを送れるようにしたいー
 
 ## できること
-- send-to-definy という名前のノードにURLを入力するとそのURLでHTTP サーバーが起動しているかわかる (デプロイボタンをいちいち押さなくても良い!)
-- /definy のパス ( http://127.0.0.1:1880/definy など) で definy RPC の起動がされる
-`
+- create-definy-rpc-node という名前のノードにURLを入力し, デプロイボタンを押したあとにその APIを呼ぶノードが生成される
+`,
 );
-console.log("README.md ファイルの出力に成功");
 
 Deno.exit();

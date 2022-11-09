@@ -3,6 +3,7 @@
 import React from "https://esm.sh/react@18.2.0";
 import { c, toStyleAndHash } from "../cssInJs/mod.ts";
 import { Button } from "../editor/Button.tsx";
+import { jsonStringify, RawJsonValue } from "../typedJson.ts";
 import { EnterIcon } from "./EnterIcon.tsx";
 import { useEditorKeyInput } from "./useEditorKeyInput.ts";
 import { useNotification } from "./useNotification.tsx";
@@ -499,9 +500,10 @@ const ProductField = (props: {
       }}
       onCopy={(e) => {
         e.preventDefault();
-        e.clipboardData.setData("text", JSON.stringify(props.value));
+        const serialized = props.value.map(serializeField);
+        e.clipboardData.setData("text", jsonStringify(serialized, true));
         console.log("div 内 でcopy. 中身:", props.value);
-        props.onCopy(JSON.stringify(props.value));
+        props.onCopy(jsonStringify(serialized, true));
       }}
       tabIndex={-1}
     >
@@ -539,6 +541,28 @@ const ProductField = (props: {
       </div>
     </div>
   );
+};
+
+const serializeField = (field: Field): RawJsonValue => {
+  return {
+    id: field.id,
+    name: field.name,
+    body: serializeBody(field.body),
+  };
+};
+
+const serializeBody = (body: FieldBody): RawJsonValue => {
+  switch (body.type) {
+    case "text":
+      return {
+        type: "text",
+        value: body.value,
+      };
+    case "button":
+      return null;
+    case "product":
+      return { type: "text", value: body.value.map(serializeField) };
+  }
 };
 
 const TextFieldValue = (props: {

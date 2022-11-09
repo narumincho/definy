@@ -1,5 +1,5 @@
 import React from "https://esm.sh/react@18.2.0";
-import * as definyRpc from "./definyRpc.ts";
+import { FunctionDetail } from "../client/generated/definyRpc.ts";
 import { c, toStyleAndHash } from "../../cssInJs/mod.ts";
 
 const readonlyStyle = toStyleAndHash({
@@ -40,7 +40,7 @@ const suggestionItemStyle = toStyleAndHash({
 });
 
 export const Select = (props: {
-  readonly values: ReadonlyArray<definyRpc.FunctionDetail> | undefined;
+  readonly values: ReadonlyArray<FunctionDetail> | undefined;
   readonly value: string | undefined;
   readonly onSelect: (value: string | undefined) => void;
 }): React.ReactElement => {
@@ -78,7 +78,7 @@ export const Select = (props: {
 };
 
 const SelectActive = (props: {
-  readonly values: ReadonlyArray<definyRpc.FunctionDetail> | undefined;
+  readonly values: ReadonlyArray<FunctionDetail> | undefined;
   readonly value: string | undefined;
   readonly onSelect: (value: string | undefined) => void;
   readonly onSelectAndExit: (value: string | undefined) => void;
@@ -239,7 +239,7 @@ type SuggestionItem = {
 };
 
 const createSuggestionSorted = (parameter: {
-  readonly values: ReadonlyArray<definyRpc.FunctionDetail>;
+  readonly values: ReadonlyArray<FunctionDetail>;
   readonly inputText: string;
 }): SuggestionList => {
   const result = [...createSuggestionWithPoint(parameter)];
@@ -248,7 +248,7 @@ const createSuggestionSorted = (parameter: {
 };
 
 const createSuggestionWithPoint = (parameter: {
-  readonly values: ReadonlyArray<definyRpc.FunctionDetail>;
+  readonly values: ReadonlyArray<FunctionDetail>;
   readonly inputText: string;
 }): SuggestionList => {
   const normalizedSearchText = parameter.inputText.trim().toLocaleLowerCase();

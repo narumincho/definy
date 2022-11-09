@@ -1,4 +1,4 @@
-import { serve } from "https://deno.land/std@0.161.0/http/server.ts";
+import { serve } from "https://deno.land/std@0.163.0/http/server.ts";
 import { definyRpc } from "../server/mod.ts";
 import { funcList } from "./exampleFunc.ts";
 
@@ -8,7 +8,7 @@ const sampleDefinyRpcServerParameter: definyRpc.DefinyRpcParameter = {
   name: "exampleDev",
   all: funcList,
   originHint: `http://localhost:${portNumber}`,
-  codeGenOutputFolderPath: "./definy-rpc/browserClient/src/generated",
+  codeGenOutputFolderPath: "./deno-lib/definyRpc/client/generated",
 };
 
 serve(

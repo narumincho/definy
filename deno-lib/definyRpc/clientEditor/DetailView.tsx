@@ -1,5 +1,5 @@
 import React from "https://esm.sh/react@18.2.0";
-import * as definyRpc from "./definyRpc.ts";
+import { FunctionDetail } from "../client/generated/definyRpc.ts";
 import { c, toStyleAndHash } from "../../cssInJs/mod.ts";
 
 const containerStyle = toStyleAndHash({
@@ -7,7 +7,7 @@ const containerStyle = toStyleAndHash({
 });
 
 export const DetailView = (props: {
-  readonly functionList: ReadonlyArray<definyRpc.FunctionDetail>;
+  readonly functionList: ReadonlyArray<FunctionDetail>;
   readonly selectedFuncName: string | undefined;
 }): React.ReactElement => {
   if (props.selectedFuncName === undefined) {

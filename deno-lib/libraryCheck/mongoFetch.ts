@@ -1,5 +1,6 @@
 import { mongodbDataApiKey } from "../../databaseMigrationSecret.ts";
 import * as base64 from "https://denopkg.com/chiefbiiko/base64@master/mod.ts";
+import { jsonStringify } from "../typedJson.ts";
 
 const crateUUID = () => {
   return {
@@ -22,7 +23,7 @@ const result = await (
         "api-key": mongodbDataApiKey,
         Accept: "application/ejson",
       },
-      body: JSON.stringify({
+      body: jsonStringify({
         dataSource: "definy-serverless-instance",
         database: "db",
         collection: "sampleCollection",

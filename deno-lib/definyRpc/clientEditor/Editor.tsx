@@ -1,10 +1,9 @@
 import React from "https://esm.sh/react@18.2.0";
-import * as definyRpc from "./definyRpc.ts";
+import * as definyRpc from "../client/generated/definyRpc.ts";
 import { Button } from "../../editor/Button.tsx";
 import { DetailView } from "./DetailView.tsx";
 import { Result } from "./Result.tsx";
 import { Select } from "./Select.tsx";
-import { definyRpcServerPathPrefixAsString } from "./global.ts";
 import { toStyleAndHash, c } from "../../cssInJs/mod.ts";
 
 const containerStyle = toStyleAndHash({
@@ -56,9 +55,7 @@ export const Editor = (props: {
                   setIsRequesting(true);
                   const url = new URL(props.serverOrigin);
                   url.pathname =
-                    definyRpcServerPathPrefixAsString +
-                    "/" +
-                    selectedFuncDetail.name.join("/");
+                    url.pathname + "/" + selectedFuncDetail.name.join("/");
                   fetch(url)
                     .then((response) => {
                       return response.json();

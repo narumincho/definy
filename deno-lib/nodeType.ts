@@ -5,7 +5,7 @@
 // import type {
 //   IncomingMessage,
 //   ServerResponse,
-// } from "https://deno.land/std@0.161.0/node/http.ts";
+// } from "https://deno.land/std@0.163.0/node/http.ts";
 // ```
 // と指定すると dnt のビルドが失敗してしまうので, 代わりの型の定義をここに書く
 

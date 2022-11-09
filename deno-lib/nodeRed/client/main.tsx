@@ -1,186 +1,93 @@
 /// <reference lib="dom" />
-/// <reference path="./nodeRed.d.ts" />
-
 import React from "https://esm.sh/react@18.2.0";
 import { createRoot } from "https://esm.sh/react-dom@18.2.0/client";
-import { TypedInput } from "./TypedInput.tsx";
+import { urlFromString } from "./urlFromString.ts";
+import { Form } from "./Form.tsx";
+import { red } from "./nodeRed.ts";
+import { Status } from "../server/status.ts";
+import { GeneratedNodeForm } from "./GeneratedNodeForm.tsx";
 
-type State =
-  | {
-      readonly type: "initView";
-    }
-  | {
-      readonly type: "input";
-      readonly originUrl: string;
-      readonly checkingUrl: string;
-      readonly checkingUrlResult: UrlConnectionResult | undefined;
-    };
-
-type UrlConnectionResult = "invalidUrl" | "ok" | "error";
-
-const urlValidation = async (urlText: string): Promise<UrlConnectionResult> => {
-  if (!isValidUrl(urlText)) {
-    return "invalidUrl";
-  }
-  const ok = await checkValidDefinyRpcServer(urlText);
-  if (ok) {
-    return "ok";
-  }
-  return "error";
+const escapeHtml = (text: string): string => {
+  return text.replace(/[&'`"<>]/ug, (match) => {
+    return {
+      "&": "&amp;",
+      "'": "&#x27;",
+      "`": "&#x60;",
+      '"': "&quot;",
+      "<": "&lt;",
+      ">": "&gt;",
+    }[match] as string;
+  });
 };
 
-const App = (): React.ReactElement => {
-  const inputElementRef = React.useRef<HTMLInputElement>(null);
-  const [state, setState] = React.useState<State>({ type: "initView" });
-  const [originText, setOriginText] = React.useState<string>("");
-  const [count, setCount] = React.useState<number>(0);
+const createNodeFromStatus = (statusAsString: string): void => {
+  const status: Status = JSON.parse(statusAsString);
 
-  React.useEffect(() => {
-    if (inputElementRef.current !== null) {
-      const originUrl = inputElementRef.current.value;
-      setState({
-        type: "input",
-        originUrl,
-        checkingUrl: originUrl,
-        checkingUrlResult: undefined,
-      });
-      setOriginText(originText);
-      urlValidation(originUrl).then((result) => {
-        setState((old) => {
-          if (old.type === "initView") {
-            return {
-              type: "input",
-              originUrl,
-              checkingUrl: originUrl,
-              checkingUrlResult: result,
-            };
-          }
-          return {
-            type: "input",
-            originUrl: old.originUrl,
-            checkingUrl: originUrl,
-            checkingUrlResult: result,
-          };
-        });
-      });
-    }
-  }, [inputElementRef.current]);
+  for (const func of status.functionList) {
+    const id = "definy-" + func.name.join("-");
 
-  React.useEffect(() => {
-    if (state.type === "input") {
-      if (state.checkingUrl !== originText) {
-        setState({
-          type: "input",
-          checkingUrl: originText,
-          checkingUrlResult: state.checkingUrlResult,
-          originUrl: originText,
-        });
-        urlValidation(originText).then((result) => {
-          setState((old) => {
-            if (old.type === "initView") {
-              return {
-                type: "input",
-                originUrl: originText,
-                checkingUrl: originText,
-                checkingUrlResult: result,
-              };
-            }
-            return {
-              type: "input",
-              originUrl: old.originUrl,
-              checkingUrl: originText,
-              checkingUrlResult: result,
-            };
-          });
-        });
-      }
-    }
-  }, [state, originText]);
+    const scriptElement = document.createElement("script");
+    scriptElement.type = "text/html";
+    scriptElement.dataset["helpName"] = id;
+    scriptElement.textContent = `<div>
+  <h2>${escapeHtml(func.name.join("."))}</h2>
+  <div>${escapeHtml(func.description)}</div>
+</>`;
+    document.getElementById("definy-html-output")
+      ?.appendChild(
+        scriptElement,
+      );
 
-  return (
-    <div className="form-row">
-      <label htmlFor="node-input-originUrl">
-        <i className="icon-tag"></i>originUrl
-      </label>
-      <input
-        type="text"
-        id="node-input-originUrl"
-        placeholder="https://narumincho-definy.deno.dev/"
-        ref={inputElementRef}
-        onChange={(e) => {
-          setOriginText(e.target.value);
-        }}
-      />
-      <div id="definy-originUrl-validationResult"></div>
-      <div>React でレンダリングしたよ</div>
-      <div>{JSON.stringify(state)}</div>
-      <div>
-        <div>カウンター: {count}</div>
-        <button
-          onClick={() => {
-            setCount((prev) => prev + 1);
-          }}
-        >
-          +
-        </button>
-      </div>
-      <div>
-        <button
-          onClick={() => {
-            createNodeDynamic();
-          }}
-        >
-          ダイナミックノードの作成
-        </button>
-      </div>
-      <TypedInput id="node-input-example1" />
-    </div>
-  );
-};
-
-const isValidUrl = (url: string): boolean => {
-  try {
-    new URL(url);
-    return true;
-  } catch (e) {
-    return false;
+    red.nodes.registerType<unknown>(id, {
+      category: "definyGenerated",
+      color: "#a6bbcf",
+      defaults: {},
+      inputs: 0,
+      outputs: 0,
+      label: function () {
+        return id;
+      },
+      oneditprepare: () => {
+        const formRoot = document.getElementById("dialog-form");
+        if (formRoot === null) {
+          console.log("id=dialog-form 見つからず");
+          return;
+        }
+        const reactRoot = createRoot(formRoot);
+        reactRoot.render(
+          <GeneratedNodeForm
+            functionDetail={func}
+          />,
+        );
+      },
+    });
   }
 };
 
-const checkValidDefinyRpcServer = async (
-  originUrl: string
-): Promise<boolean> => {
-  const url = new URL(window.location.href);
-  url.pathname = "/definy";
-  const responseJson = await (
-    await fetch(url, {
-      method: "POST",
-      body: JSON.stringify({ originUrl: originUrl }),
-    })
-  ).json();
-
-  return responseJson.connectionResult;
-};
+let editingUrl = "";
+let creating = false;
 
 // ブラウザで動作
-RED.nodes.registerType<{ originUrl: string }>("send-to-definy", {
-  category: "function",
+red.nodes.registerType<{ url: string }>("create-definy-rpc-node", {
+  category: "definy",
   color: "#a6bbcf",
   defaults: {
-    originUrl: {
-      value: "",
+    url: {
+      value: "https://narumincho-definy.deno.dev/",
       required: true,
-      validate: isValidUrl,
+      validate: urlFromString,
     },
   },
-  inputs: 1,
-  outputs: 1,
+  inputs: 0,
+  outputs: 0,
   label: function () {
     console.log(this);
-    return (
-      this.originUrl + "の definy RPC サーバーと接続する" ??
-      "definy RPC サーバーと接続. originUrl を設定してね"
-    );
+    if (this.status.fill === "green" && !creating) {
+      creating = true;
+      createNodeFromStatus(this.status.text);
+      return "ノードを作成中...?";
+    }
+    return (this.url ?? "definy RPC") + " の ノードを作成する";
   },
   oneditprepare: function () {
     const formRoot = document.getElementById("definy-form-root");
@@ -189,24 +96,17 @@ RED.nodes.registerType<{ originUrl: string }>("send-to-definy", {
       return;
     }
     const reactRoot = createRoot(formRoot);
-    reactRoot.render(<App />);
+    reactRoot.render(
+      <Form
+        statusText={this.status.text}
+        initUrl={this.url}
+        onChangeUrl={(newUrl) => {
+          editingUrl = newUrl;
+        }}
+      />,
+    );
+  },
+  oneditsave: function () {
+    this.url = editingUrl;
   },
 });
-
-const createNodeDynamic = () => {
-  RED.nodes.registerType<{ originUrl: string }>("definy-dynamic-node", {
-    category: "function",
-    color: "#a6bbcf",
-    defaults: {
-      sample: {
-        value: "",
-        required: true,
-        validate: isValidUrl,
-      },
-    },
-    inputs: 1,
-    outputs: 1,
-    label: "definy-dynamic-node",
-    oneditprepare: function () {},
-  });
-};

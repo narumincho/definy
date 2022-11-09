@@ -1,9 +1,10 @@
+import { fromFileUrl } from "https://deno.land/std@0.143.0/path/mod.ts";
 import { build, emptyDir } from "https://deno.land/x/dnt@0.31.0/mod.ts";
 
-await emptyDir("./npm");
+await emptyDir(fromFileUrl(import.meta.resolve("./npm")));
 await build({
-  entryPoints: ["./mod.ts"],
-  outDir: "./npm",
+  entryPoints: [fromFileUrl(import.meta.resolve("./mod.ts"))],
+  outDir: fromFileUrl(import.meta.resolve("./npm")),
   shims: {
     deno: true,
     undici: true,
