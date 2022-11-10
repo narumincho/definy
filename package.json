@@ -13,7 +13,6 @@
     "generate-graph": "depcruise -X node_modules --output-type dot client/main.tsx functions/main.ts core/main.ts pages/*.tsx | dot -T svg > graph.svg",
     "generate-local-data": "pnpm exec tsc --project ./tsconfig-purs-ffi.json & pnpm exec spago run --main DataTs.Build",
     "build-node-package": "pnpm exec tsc --project ./tsconfig-purs-ffi.json & pnpm exec spago run --main BuildNodePackage",
-    "storybook": "start-storybook --config-dir ./storybook",
     "update-package-json": "ncu -u",
     "start-definy": "pnpm tsc --project ./tsconfig-purs-ffi.json && pnpm exec spago run --main Definy.Start && firebase emulators:start --project definy-lang --config ./distribution/definy/firebase.json",
     "package-vscode-extension": "cd ./distribution/definy-extension && pnpm exec vsce package",
@@ -25,16 +24,10 @@
   },
   "devDependencies": {
     "@aws-sdk/client-s3": "3.204.0",
-    "@babel/core": "7.20.2",
     "@emotion/css": "11.10.5",
     "@emotion/react": "11.10.5",
     "@material-ui/core": "4.12.4",
     "@next/eslint-plugin-next": "13.0.2",
-    "@storybook/addon-a11y": "6.5.13",
-    "@storybook/addon-actions": "6.5.13",
-    "@storybook/addon-essentials": "6.5.13",
-    "@storybook/addon-links": "6.5.13",
-    "@storybook/react": "6.5.13",
     "@swc-node/register": "1.5.4",
     "@trpc/client": "9.27.4",
     "@trpc/next": "9.27.4",
@@ -75,7 +68,6 @@
     "react-query": "3.39.2",
     "sha256-uint8array": "0.10.3",
     "spago": "0.20.9",
-    "storybook-dark-mode": "1.1.2",
     "superjson": "1.11.0",
     "ts-jest": "29.0.3",
     "typed-admin-firestore": "1.2.2",
@@ -249,5 +241,5 @@
       ]
     }
   },
-  "packageManager": "pnpm@7.14.2"
+  "packageManager": "pnpm@7.15.0"
 }

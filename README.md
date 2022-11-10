@@ -47,10 +47,9 @@ Definy is Web App for Web App.
 - `/client`: TypeScript で書かれたクライアント用のコード
 - `/common`: クライアントとサーバーの共通のコード
 - `/core`: コンパイラのような処理が書かれている
-- `/functions`: サーバーのコード
+- `/functions`: Cloud Functions 向けのコード (未使用)
 - `/gen`: データやコードを生成するプログラムのコード
-- `/static`: スタティックなファイルが置かれている
-- `/storybook`: UI の見た目や動作を確かめられる, storybook の設定や, ストーリーが書かれている
+- `/assets`: スタティックなファイルが置かれている
 - `/src` PureScript で書かれたコード
 - `/deno-lib` Deno で書かれたコード
 
