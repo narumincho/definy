@@ -29,7 +29,7 @@ export const get = (expr: d.TsExpr, propertyName: string): d.TsExpr => ({
 export const callMethod = (
   expr: d.TsExpr,
   methodName: string,
-  parameterList: ReadonlyArray<d.TsExpr>
+  parameterList: ReadonlyArray<d.TsExpr>,
 ): d.TsExpr => ({
   _: "Call",
   callExpr: { expr: get(expr, methodName), parameterList },
@@ -40,7 +40,7 @@ export const callMethod = (
  */
 export const callThenMethod = (
   expr: d.TsExpr,
-  thenLambda: d.LambdaExpr
+  thenLambda: d.LambdaExpr,
 ): d.TsExpr => ({
   _: "Call",
   callExpr: {
@@ -54,7 +54,7 @@ export const callThenMethod = (
  */
 export const callCatchMethod = (
   expr: d.TsExpr,
-  thenLambda: d.LambdaExpr
+  thenLambda: d.LambdaExpr,
 ): d.TsExpr => ({
   _: "Call",
   callExpr: {
@@ -200,7 +200,7 @@ export const leftShift = (left: d.TsExpr, right: d.TsExpr): d.TsExpr => ({
  */
 export const signedRightShift = (
   left: d.TsExpr,
-  right: d.TsExpr
+  right: d.TsExpr,
 ): d.TsExpr => ({
   _: "BinaryOperator",
   binaryOperatorExpr: {
@@ -217,7 +217,7 @@ export const signedRightShift = (
  */
 export const unsignedRightShift = (
   left: d.TsExpr,
-  right: d.TsExpr
+  right: d.TsExpr,
 ): d.TsExpr => ({
   _: "BinaryOperator",
   binaryOperatorExpr: {
@@ -350,7 +350,7 @@ export const logicalOr = (left: d.TsExpr, right: d.TsExpr): d.TsExpr => ({
 
 export const nullishCoalescing = (
   left: d.TsExpr,
-  right: d.TsExpr
+  right: d.TsExpr,
 ): d.TsExpr => ({
   _: "BinaryOperator",
   binaryOperatorExpr: {
@@ -368,7 +368,7 @@ export const nullishCoalescing = (
  */
 export const callNumberMethod = (
   methodName: string,
-  parameterList: ReadonlyArray<d.TsExpr>
+  parameterList: ReadonlyArray<d.TsExpr>,
 ): d.TsExpr =>
   callMethod(
     {
@@ -376,7 +376,7 @@ export const callNumberMethod = (
       tsIdentifier: identifier.identifierFromString("Number"),
     },
     methodName,
-    parameterList
+    parameterList,
   );
 
 /**
@@ -387,7 +387,7 @@ export const callNumberMethod = (
  */
 export const callMathMethod = (
   methodName: string,
-  parameterList: ReadonlyArray<d.TsExpr>
+  parameterList: ReadonlyArray<d.TsExpr>,
 ): d.TsExpr =>
   callMethod(
     {
@@ -395,7 +395,7 @@ export const callMathMethod = (
       tsIdentifier: identifier.identifierFromString("Math"),
     },
     methodName,
-    parameterList
+    parameterList,
   );
 
 /**
@@ -439,7 +439,7 @@ export const newURL = (expr: d.TsExpr): d.TsExpr => ({
   _: "New",
   callExpr: {
     expr: {
-      _: "GlobalObjects",
+      _: "Variable",
       tsIdentifier: identifier.identifierFromString("URL"),
     },
     parameterList: [expr],
@@ -453,7 +453,7 @@ export const newURL = (expr: d.TsExpr): d.TsExpr => ({
  */
 export const callFetch = (
   input: d.TsExpr,
-  init?: d.TsExpr | undefined
+  init?: d.TsExpr | undefined,
 ): d.TsExpr => ({
   _: "Call",
   callExpr: {
@@ -510,7 +510,7 @@ export const consoleLog = (expr: d.TsExpr): d.Statement => ({
       tsIdentifier: identifier.identifierFromString("console"),
     },
     "log",
-    [expr]
+    [expr],
   ),
 });
 /**
@@ -606,7 +606,7 @@ export const mapType = (keyType: d.TsType, valueType: d.TsType): d.TsType => ({
  */
 export const readonlyMapType = (
   keyType: d.TsType,
-  valueType: d.TsType
+  valueType: d.TsType,
 ): d.TsType => ({
   _: "ScopeInGlobal",
   typeNameAndTypeParameter: {
@@ -638,7 +638,7 @@ export const readonlySetType = (elementType: d.TsType): d.TsType => ({
 });
 
 export const objectLiteral = (
-  memberList: ReadonlyArray<d.TsMember>
+  memberList: ReadonlyArray<d.TsMember>,
 ): d.TsExpr => ({
   _: "ObjectLiteral",
   tsMemberList: memberList,
@@ -667,7 +667,7 @@ export const memberKeyValue = (key: string, value: d.TsExpr): d.TsMember => ({
 });
 
 export const typeScopeInFileNoArguments = (
-  name: identifier.TsIdentifier
+  name: identifier.TsIdentifier,
 ): d.TsType => ({
   _: "ScopeInFile",
   typeNameAndTypeParameter: {
@@ -719,7 +719,7 @@ export const stringLiteral = (string: string): d.TsExpr => ({
 });
 
 export const exportDefinitionFunction = (
-  func: d.Function
+  func: d.Function,
 ): d.ExportDefinition => ({ type: "function", function: func });
 
 export const typeUnion = (tsTypeList: ReadonlyArray<d.TsType>): d.TsType => ({
@@ -728,7 +728,7 @@ export const typeUnion = (tsTypeList: ReadonlyArray<d.TsType>): d.TsType => ({
 });
 
 export const typeObject = (
-  tsMemberTypeList: ReadonlyArray<d.TsMemberType>
+  tsMemberTypeList: ReadonlyArray<d.TsMemberType>,
 ): d.TsType => ({
   _: "Object",
   tsMemberTypeList,
@@ -745,7 +745,7 @@ export const statementIf = (ifStatement: d.IfStatement): d.Statement => ({
 });
 
 export const statementVariableDefinition = (
-  variableDefinitionStatement: d.VariableDefinitionStatement
+  variableDefinitionStatement: d.VariableDefinitionStatement,
 ): d.Statement => ({
   _: "VariableDefinition",
   variableDefinitionStatement,
@@ -757,14 +757,14 @@ export const statementFor = (forStatement: d.ForStatement): d.Statement => ({
 });
 
 export const statementForOf = (
-  forOfStatement: d.ForOfStatement
+  forOfStatement: d.ForOfStatement,
 ): d.Statement => ({
   _: "ForOf",
   forOfStatement,
 });
 
 export const arrayLiteral = (
-  arrayItemList: ReadonlyArray<d.ArrayItem>
+  arrayItemList: ReadonlyArray<d.ArrayItem>,
 ): d.TsExpr => ({
   _: "ArrayLiteral",
   arrayItemList,

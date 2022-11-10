@@ -4,8 +4,8 @@ export type RawJsonValue =
   | number
   | boolean
   | {
-      readonly [K in string]: RawJsonValue;
-    }
+    readonly [K in string]: RawJsonValue;
+  }
   | ReadonlyArray<RawJsonValue>;
 
 export type StructuredJsonValue =
@@ -14,13 +14,13 @@ export type StructuredJsonValue =
   | { readonly type: "number"; readonly value: number }
   | { readonly type: "boolean"; readonly value: boolean }
   | {
-      readonly type: "object";
-      readonly value: ReadonlyMap<string, StructuredJsonValue>;
-    }
+    readonly type: "object";
+    readonly value: ReadonlyMap<string, StructuredJsonValue>;
+  }
   | {
-      readonly type: "array";
-      readonly value: ReadonlyArray<StructuredJsonValue>;
-    };
+    readonly type: "array";
+    readonly value: ReadonlyArray<StructuredJsonValue>;
+  };
 
 export const jsonParse = (value: string): RawJsonValue | undefined => {
   try {
@@ -32,7 +32,7 @@ export const jsonParse = (value: string): RawJsonValue | undefined => {
 };
 
 export const structuredJsonParse = (
-  value: string
+  value: string,
 ): StructuredJsonValue | undefined => {
   const rawJson = jsonParse(value);
   if (rawJson === undefined) {
@@ -42,7 +42,7 @@ export const structuredJsonParse = (
 };
 
 export const rawJsonToStructuredJsonValue = (
-  rawJson: RawJsonValue
+  rawJson: RawJsonValue,
 ): StructuredJsonValue => {
   if (rawJson === null) {
     return { type: "null" };
@@ -65,17 +65,46 @@ export const rawJsonToStructuredJsonValue = (
       Object.entries(rawJson).map(([k, v]) => [
         k,
         rawJsonToStructuredJsonValue(v),
-      ])
+      ]),
     ),
   };
 };
 
 export const jsonStringify = (
   jsonValue: RawJsonValue,
-  indent = false
+  indent = false,
 ): string => {
   if (indent) {
     return JSON.stringify(jsonValue, undefined, 2);
   }
   return JSON.stringify(jsonValue);
+};
+
+export const structuredJsonStringify = (
+  structuredJsonValue: StructuredJsonValue,
+): string => {
+  return jsonStringify(structuredJsonValueToRawJson(structuredJsonValue));
+};
+
+export const structuredJsonValueToRawJson = (
+  structuredJsonValue: StructuredJsonValue,
+): RawJsonValue => {
+  switch (structuredJsonValue.type) {
+    case "null":
+      return null;
+    case "string":
+      return structuredJsonValue.value;
+    case "number":
+      return structuredJsonValue.value;
+    case "boolean":
+      return structuredJsonValue.value;
+    case "array":
+      return structuredJsonValue.value.map(structuredJsonValueToRawJson);
+    case "object":
+      return Object.fromEntries(
+        [...structuredJsonValue.value.entries()].map(
+          ([k, v]) => [k, structuredJsonValueToRawJson(v)],
+        ),
+      );
+  }
 };

@@ -1,6 +1,12 @@
 import clientBuildResult from "./browserClient.json" assert { type: "json" };
 import * as base64 from "https://denopkg.com/chiefbiiko/base64@master/mod.ts";
-import { jsonParse, jsonStringify } from "../../typedJson.ts";
+import {
+  jsonParse,
+  jsonStringify,
+  structuredJsonParse,
+  structuredJsonStringify,
+  StructuredJsonValue,
+} from "../../typedJson.ts";
 import { AccountToken, ApiFunction } from "./apiFunction.ts";
 import { addDefinyRpcApiFunction } from "./builtInFunctions.ts";
 import { SimpleRequest } from "./simpleRequest.ts";
@@ -67,8 +73,10 @@ export const handleRequest = (
   }
 
   const paramJson = request.query.get("param");
-  const paramJsonParsed =
-    (typeof paramJson === "string" ? jsonParse(paramJson) : null) ?? null;
+  const paramJsonParsed: StructuredJsonValue =
+    (typeof paramJson === "string"
+      ? structuredJsonParse(paramJson)
+      : undefined) ?? { type: "null" };
 
   if (stringArrayEqual(pathListRemovePrefix, [])) {
     return {
@@ -160,11 +168,13 @@ export const handleRequest = (
           },
           body: async () => {
             const apiFunctionResult = await func.resolve(
-              func.input.fromJson(paramJsonParsed),
+              func.input.fromStructuredJsonValue(paramJsonParsed),
               authorizationValue as AccountToken,
             );
             return new TextEncoder().encode(
-              jsonStringify(func.output.toJson(apiFunctionResult)),
+              structuredJsonStringify(
+                func.output.toStructuredJsonValue(apiFunctionResult),
+              ),
             );
           },
         };
@@ -176,11 +186,13 @@ export const handleRequest = (
         },
         body: async () => {
           const apiFunctionResult = await func.resolve(
-            func.input.fromJson(paramJsonParsed),
+            func.input.fromStructuredJsonValue(paramJsonParsed),
             undefined,
           );
           return new TextEncoder().encode(
-            jsonStringify(func.output.toJson(apiFunctionResult)),
+            structuredJsonStringify(
+              func.output.toStructuredJsonValue(apiFunctionResult),
+            ),
           );
         },
       };

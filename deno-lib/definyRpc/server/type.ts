@@ -1,4 +1,4 @@
-import { RawJsonValue } from "../../typedJson.ts";
+import { RawJsonValue, StructuredJsonValue } from "../../typedJson.ts";
 import { Lazy } from "../../lazy.ts";
 import { NonEmptyArray } from "../../util.ts";
 
@@ -9,8 +9,8 @@ export type DefinyRpcType<in out t> = {
   // deno-lint-ignore no-explicit-any
   readonly parameters: ReadonlyArray<DefinyRpcType<any>>;
   readonly body: TypeBody;
-  readonly toJson: (x: unknown) => RawJsonValue;
-  readonly fromJson: (x: RawJsonValue) => t;
+  readonly toStructuredJsonValue: (x: unknown) => StructuredJsonValue;
+  readonly fromStructuredJsonValue: (x: StructuredJsonValue) => t;
 };
 
 export type TypeBody =

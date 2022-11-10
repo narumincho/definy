@@ -14,10 +14,7 @@ import {
   unit,
 } from "./builtInType.ts";
 import { definyRpcNamespace } from "./definyRpcNamespace.ts";
-import {
-  rawJsonToStructuredJsonValue,
-  StructuredJsonValue,
-} from "../../typedJson.ts";
+import { StructuredJsonValue } from "../../typedJson.ts";
 
 type Type = {
   readonly fullName: ReadonlyArray<string>;
@@ -180,9 +177,9 @@ const builtInFunctions = (parameter: DefinyRpcParameter) => {
             ) {
               return { type: "string", value: "need input parameter" };
             }
-            return rawJsonToStructuredJsonValue(
-              func.output.toJson(await func.resolve(undefined, undefined)),
-            );
+            return (func.output.toStructuredJsonValue(
+              await func.resolve(undefined, undefined),
+            ));
           }
         }
         return { type: "string", value: "error: not found" };

@@ -13,18 +13,18 @@ export const string: DefinyRpcType<string> = {
   body: {
     type: "string",
   },
-  fromJson: (json) => {
-    if (typeof json === "string") {
-      return json;
+  toStructuredJsonValue: (value) => {
+    if (typeof value === "string") {
+      return { type: "string", value };
+    }
+    throw new Error("expect string in string toJson");
+  },
+  fromStructuredJsonValue: (json) => {
+    if (json.type === "string") {
+      return json.value;
     }
     console.error(json);
     throw new Error("expect json string in string fromJson");
-  },
-  toJson: (value) => {
-    if (typeof value === "string") {
-      return value;
-    }
-    throw new Error("expect string in string toJson");
   },
 };
 
@@ -36,18 +36,18 @@ export const bool: DefinyRpcType<boolean> = {
   body: {
     type: "boolean",
   },
-  fromJson: (json) => {
-    if (typeof json === "boolean") {
-      return json;
+  toStructuredJsonValue: (value) => {
+    if (typeof value === "boolean") {
+      return { type: "boolean", value };
+    }
+    throw new Error("expect boolean in boolean toJson");
+  },
+  fromStructuredJsonValue: (json) => {
+    if (json.type === "boolean") {
+      return json.value;
     }
     console.error(json);
     throw new Error("expect json boolean in boolean fromJson");
-  },
-  toJson: (value) => {
-    if (typeof value === "boolean") {
-      return value;
-    }
-    throw new Error("expect boolean in boolean toJson");
   },
 };
 
@@ -80,41 +80,43 @@ export const product = <t extends Record<string, unknown>>(parameter: {
         }),
       ),
     },
-    toJson: (value) => {
+    toStructuredJsonValue: (value) => {
       if (typeof value !== "object" || value === null) {
         throw new Error("product object need object");
       }
       const valueObj: { [k in string]?: unknown } = value;
-      return Object.fromEntries(
-        objectEntriesSameValue(parameter.fieldList).map(([name, { type }]) => [
-          name,
-          lazyGet(type).toJson(valueObj[name]),
-        ]),
-      );
+      return {
+        type: "object",
+        value: new Map(
+          objectEntriesSameValue(parameter.fieldList).map((
+            [name, { type }],
+          ) => [
+            name,
+            lazyGet(type).toStructuredJsonValue(valueObj[name]),
+          ]),
+        ),
+      };
     },
-    fromJson: (value) => {
-      if (
-        typeof value === "object" &&
-        value !== null &&
-        !(value instanceof Array)
-      ) {
-        return Object.fromEntries(
-          objectEntriesSameValue(parameter.fieldList).map(
-            ([name, { type }]) => {
-              const fieldValue = value[name];
-              if (fieldValue === undefined) {
-                throw new Error(
-                  `${
-                    parameter.namespace.join(".")
-                  }.${parameter.name} need ${name} field`,
-                );
-              }
-              return [name, lazyGet(type).fromJson(fieldValue)];
-            },
-          ),
-        ) as t;
+    fromStructuredJsonValue: (value) => {
+      if (value.type !== "object") {
+        throw new Error("product object need object");
       }
-      throw new Error("product object need object");
+
+      return Object.fromEntries(
+        objectEntriesSameValue(parameter.fieldList).map(
+          ([name, { type }]) => {
+            const fieldValue = value.value.get(name);
+            if (fieldValue === undefined) {
+              throw new Error(
+                `${
+                  parameter.namespace.join(".")
+                }.${parameter.name} need ${name} field`,
+              );
+            }
+            return [name, lazyGet(type).fromStructuredJsonValue(fieldValue)];
+          },
+        ),
+      ) as t;
     },
   };
 };
@@ -150,7 +152,7 @@ export const sum = <
       }),
     ),
   },
-  toJson: (value): RawJsonValue => {
+  toStructuredJsonValue: (value): StructuredJsonValue => {
     if (typeof value !== "object" || value === null) {
       throw new Error("sum object need object");
     }
@@ -167,11 +169,19 @@ export const sum = <
       ) {
         if (name === valueObj.type) {
           if (pattern.parameter == undefined) {
-            return { type: name };
+            return {
+              type: "object",
+              value: new Map([["type", { type: "string", value: name }]]),
+            };
           }
           return {
-            type: name,
-            value: lazyGet(pattern.parameter).toJson(valueObj.value),
+            type: "object",
+            value: new Map([["type", { type: "string", value: name }], [
+              "value",
+              lazyGet(pattern.parameter).toStructuredJsonValue(
+                valueObj.value,
+              ),
+            ]]),
           };
         }
       }
@@ -180,43 +190,40 @@ export const sum = <
     console.error(value);
     throw new Error("sum object need type field");
   },
-  fromJson: (value) => {
-    if (
-      typeof value === "object" &&
-      value !== null &&
-      !(value instanceof Array)
-    ) {
-      const valueObj: {
-        readonly type?: RawJsonValue;
-        readonly value?: RawJsonValue;
-      } = value;
-      if ("type" in valueObj) {
-        if (typeof valueObj.type !== "string") {
-          throw new Error("sum value's type field need string");
-        }
-        for (
-          const [name, pattern] of objectEntriesSameValue(
-            parameter.patternList,
-          )
-        ) {
-          if (name === valueObj.type) {
-            if (pattern.parameter == undefined) {
-              return { type: name } as t;
-            }
-            if (valueObj.value === undefined) {
-              throw new Error("unknown sum type value");
-            }
-            return {
-              type: name,
-              value: lazyGet(pattern.parameter).fromJson(valueObj.value),
-            } as t;
-          }
-        }
-        throw new Error("unknown sum type name");
-      }
+  fromStructuredJsonValue: (structuredJsonValue) => {
+    if (structuredJsonValue.type !== "object") {
+      throw new Error("sum object need object");
+    }
+    const type = structuredJsonValue.value.get("type");
+    if (type === undefined) {
       throw new Error("sum object need type field");
     }
-    throw new Error("sum object need object");
+    if (type.type !== "string") {
+      throw new Error("sum value's type field need string");
+    }
+    const value = structuredJsonValue.value.get("value");
+
+    for (
+      const [name, pattern] of objectEntriesSameValue(
+        parameter.patternList,
+      )
+    ) {
+      if (name === type.value) {
+        if (pattern.parameter == undefined) {
+          return { type: name } as t;
+        }
+        if (value === undefined) {
+          throw new Error("unknown sum type value");
+        }
+        return {
+          type: name,
+          value: lazyGet(pattern.parameter).fromStructuredJsonValue(
+            value,
+          ),
+        } as t;
+      }
+    }
+    throw new Error("unknown sum type name");
   },
 });
 
@@ -228,15 +235,15 @@ export const number: DefinyRpcType<number> = {
   body: {
     type: "number",
   },
-  toJson: (value) => {
+  toStructuredJsonValue: (value) => {
     if (typeof value === "number") {
-      return value;
+      return { type: "number", value };
     }
     throw new Error("number need number");
   },
-  fromJson: (value) => {
-    if (typeof value === "number") {
-      return value;
+  fromStructuredJsonValue: (value) => {
+    if (value.type === "number") {
+      return value.value;
     }
     throw new Error("number need number");
   },
@@ -248,8 +255,8 @@ export const unit: DefinyRpcType<undefined> = {
   description: "内部表現は, undefined. JSON 上では null",
   parameters: [],
   body: { type: "unit" },
-  toJson: () => null,
-  fromJson: () => undefined,
+  toStructuredJsonValue: () => ({ type: "null" }),
+  fromStructuredJsonValue: () => undefined,
 };
 
 export const set = <element>(
@@ -260,15 +267,20 @@ export const set = <element>(
   description: "集合. Set",
   parameters: [element],
   body: { type: "set" },
-  toJson: (value) => {
+  toStructuredJsonValue: (value) => {
     if (value instanceof Set) {
-      return [...value].map((e) => lazyGet(element).toJson(e));
+      return {
+        type: "array",
+        value: [...value].map((e) => lazyGet(element).toStructuredJsonValue(e)),
+      };
     }
     throw new Error("set need Set");
   },
-  fromJson: (value) => {
-    if (value instanceof Array) {
-      return new Set(value.map((e) => lazyGet(element).fromJson(e)));
+  fromStructuredJsonValue: (value) => {
+    if (value.type === "array") {
+      return new Set(
+        value.value.map((e) => lazyGet(element).fromStructuredJsonValue(e)),
+      );
     }
     throw new Error("set need json Array");
   },
@@ -282,15 +294,20 @@ export const list = <element>(
   description: "リスト",
   parameters: [element],
   body: { type: "list" },
-  toJson: (value) => {
+  toStructuredJsonValue: (value) => {
     if (value instanceof Array) {
-      return value.map((e) => lazyGet(element).toJson(e));
+      return {
+        type: "array",
+        value: value.map((e) => lazyGet(element).toStructuredJsonValue(e)),
+      };
     }
     throw new Error("Array need Array");
   },
-  fromJson: (value) => {
-    if (value instanceof Array) {
-      return value.map((e) => lazyGet(element).fromJson(e));
+  fromStructuredJsonValue: (value) => {
+    if (value.type === "array") {
+      return value.value.map((e) =>
+        lazyGet(element).fromStructuredJsonValue(e)
+      );
     }
     throw new Error("Array need json Array");
   },
@@ -304,23 +321,28 @@ export const stringMap = <element>(
   description: "キーが string の ReadonlyMap",
   parameters: [element],
   body: { type: "stringMap", valueType: element },
-  toJson: (value) => {
+  toStructuredJsonValue: (value) => {
     if (value instanceof Map) {
-      return Object.fromEntries(
-        [...value.entries()].map(([k, v]) => [k, lazyGet(element).toJson(v)]),
-      );
+      return {
+        type: "object",
+        value: new Map(
+          [...value.entries()].map((
+            [k, v],
+          ) => [k, lazyGet(element).toStructuredJsonValue(v)]),
+        ),
+      };
     }
-    throw new Error("Dict need Map");
+    throw new Error("stingMap need Map");
   },
-  fromJson: (value) => {
-    if (typeof value === "object" && value !== null) {
+  fromStructuredJsonValue: (value) => {
+    if (value.type === "object") {
       return new Map(
-        Object.entries(value).map((
+        [...value.value].map((
           [k, v],
-        ) => [k, lazyGet(element).fromJson(v)]),
+        ) => [k, lazyGet(element).fromStructuredJsonValue(v)]),
       );
     }
-    throw new Error("Dict need json Object");
+    throw new Error("stingMap need json Object");
   },
 });
 
