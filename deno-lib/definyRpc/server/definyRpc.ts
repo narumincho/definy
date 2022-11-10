@@ -11,6 +11,7 @@ export * from "./type.ts";
 export * from "./apiFunction.ts";
 export * from "./simpleRequest.ts";
 export * from "./simpleResponse.ts";
+export * from "./builtInType.ts";
 
 const editorPath = "_editor";
 
@@ -48,7 +49,7 @@ export type DefinyRpcParameter = {
 
 export const handleRequest = (
   parameter: DefinyRpcParameter,
-  request: SimpleRequest
+  request: SimpleRequest,
 ): SimpleResponse | undefined => {
   const pathPrefix = parameter.pathPrefix ?? [];
   if (!stringArrayMatchPrefix(request.path, pathPrefix)) {
@@ -82,8 +83,8 @@ export const handleRequest = (
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/png" href="${
-      editorPathPrefix(pathPrefix) + clientBuildResult.iconHash
-    }" />
+            editorPathPrefix(pathPrefix) + clientBuildResult.iconHash
+          }" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>${parameter.name} | definy RPC</title>
     
@@ -93,14 +94,14 @@ export const handleRequest = (
       }
     </style>
     <script type="module" src="${
-      editorPathPrefix(pathPrefix) + clientBuildResult.scriptHash
-    }"></script>
+            editorPathPrefix(pathPrefix) + clientBuildResult.scriptHash
+          }"></script>
   </head>
   <body>
     <noscript>Need JavaScript</noscript>
   </body>
 </html>
-`)
+`),
         ),
     };
   }
@@ -128,7 +129,7 @@ export const handleRequest = (
       headers: { ContentType: "text/javascript; charset=utf-8" },
       body: () =>
         Promise.resolve(
-          new TextEncoder().encode(clientBuildResult.scriptContent)
+          new TextEncoder().encode(clientBuildResult.scriptContent),
         ),
     };
   }
@@ -146,7 +147,9 @@ export const handleRequest = (
             },
             body: () =>
               Promise.resolve(
-                new TextEncoder().encode(jsonStringify("invalid account token"))
+                new TextEncoder().encode(
+                  jsonStringify("invalid account token"),
+                ),
               ),
           };
         }
@@ -158,10 +161,10 @@ export const handleRequest = (
           body: async () => {
             const apiFunctionResult = await func.resolve(
               func.input.fromJson(paramJsonParsed),
-              authorizationValue as AccountToken
+              authorizationValue as AccountToken,
             );
             return new TextEncoder().encode(
-              jsonStringify(func.output.toJson(apiFunctionResult))
+              jsonStringify(func.output.toJson(apiFunctionResult)),
             );
           },
         };
@@ -174,10 +177,10 @@ export const handleRequest = (
         body: async () => {
           const apiFunctionResult = await func.resolve(
             func.input.fromJson(paramJsonParsed),
-            undefined
+            undefined,
           );
           return new TextEncoder().encode(
-            jsonStringify(func.output.toJson(apiFunctionResult))
+            jsonStringify(func.output.toJson(apiFunctionResult)),
           );
         },
       };
@@ -194,8 +197,8 @@ export const handleRequest = (
           jsonStringify({
             message: "not found...",
             functionFullName: pathListRemovePrefix,
-          })
-        )
+          }),
+        ),
       ),
   };
 };

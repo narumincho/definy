@@ -1,11 +1,23 @@
 import { ApiFunction, createApiFunction } from "./apiFunction.ts";
 import { apiFunctionListToCode } from "./clientCodeGen/main.ts";
 import type { DefinyRpcParameter } from "./definyRpc.ts";
-import { set, string, unit, list, DefinyRpcType, product } from "./type.ts";
+import { DefinyRpcType } from "./type.ts";
 import { ensureFile } from "https://deno.land/std@0.163.0/fs/mod.ts";
 import { writeTextFile } from "../../writeFileAndLog.ts";
-
-const definyRpcNamespace = "definyRpc";
+import { stringArrayEqual } from "../../util.ts";
+import {
+  list,
+  product,
+  set,
+  string,
+  structuredJsonValue,
+  unit,
+} from "./builtInType.ts";
+import { definyRpcNamespace } from "./definyRpcNamespace.ts";
+import {
+  rawJsonToStructuredJsonValue,
+  StructuredJsonValue,
+} from "../../typedJson.ts";
 
 type Type = {
   readonly fullName: ReadonlyArray<string>;
@@ -56,7 +68,7 @@ const FunctionDetail = product<FunctionDetail>({
 });
 
 export const addDefinyRpcApiFunction = (
-  parameter: DefinyRpcParameter
+  parameter: DefinyRpcParameter,
 ): ReadonlyArray<ApiFunction> => {
   return [
     ...builtInFunctions(parameter),
@@ -94,9 +106,9 @@ const builtInFunctions = (parameter: DefinyRpcParameter) => {
             ...new Set(
               addDefinyRpcApiFunction(parameter).map((func) =>
                 func.fullName.slice(0, -1).join(".")
-              )
+              ),
             ),
-          ].map((e) => e.split("."))
+          ].map((e) => e.split(".")),
         );
       },
     }),
@@ -136,15 +148,14 @@ const builtInFunctions = (parameter: DefinyRpcParameter) => {
     }),
     createApiFunction({
       fullName: [definyRpcNamespace, "generateCallDefinyRpcTypeScriptCode"],
-      description:
-        "名前空間「definyRpc」のApiFunctionを呼ぶ TypeScript のコードを生成する",
+      description: "名前空間「definyRpc」のApiFunctionを呼ぶ TypeScript のコードを生成する",
       input: unit,
       output: string,
       isMutation: false,
       needAuthentication: false,
       resolve: () => {
         const allFunc = addDefinyRpcApiFunction(parameter).filter(
-          (f) => f.fullName[0] === definyRpcNamespace
+          (f) => f.fullName[0] === definyRpcNamespace,
         );
         return apiFunctionListToCode({
           apiFunctionList: allFunc,
@@ -154,39 +165,59 @@ const builtInFunctions = (parameter: DefinyRpcParameter) => {
         });
       },
     }),
-    ...(parameter.codeGenOutputFolderPath === undefined
-      ? []
-      : [
-          createApiFunction({
-            fullName: [
-              definyRpcNamespace,
-              "generateCodeAndWriteAsFileInServer",
-            ],
-            description:
-              "サーバーが実行している環境でコードを生成し, ファイルとして保存する",
-            input: unit,
-            output: unit,
-            isMutation: false,
-            needAuthentication: false,
-            resolve: async () => {
-              const allFunc = addDefinyRpcApiFunction(parameter).filter(
-                (f) => f.fullName[0] === definyRpcNamespace
-              );
+    createApiFunction({
+      fullName: [definyRpcNamespace, "callQuery"],
+      description: "指定した名前の関数を呼ぶ",
+      input: list(string),
+      output: structuredJsonValue,
+      isMutation: false,
+      needAuthentication: false,
+      resolve: async (input): Promise<StructuredJsonValue> => {
+        for (const func of addDefinyRpcApiFunction(parameter)) {
+          if (stringArrayEqual(func.fullName, input)) {
+            if (
+              func.input.name !== "unit"
+            ) {
+              return { type: "string", value: "need input parameter" };
+            }
+            return rawJsonToStructuredJsonValue(
+              func.output.toJson(await func.resolve(undefined, undefined)),
+            );
+          }
+        }
+        return { type: "string", value: "error: not found" };
+      },
+    }),
+    ...(parameter.codeGenOutputFolderPath === undefined ? [] : [
+      createApiFunction({
+        fullName: [
+          definyRpcNamespace,
+          "generateCodeAndWriteAsFileInServer",
+        ],
+        description: "サーバーが実行している環境でコードを生成し, ファイルとして保存する",
+        input: unit,
+        output: unit,
+        isMutation: false,
+        needAuthentication: false,
+        resolve: async () => {
+          const allFunc = addDefinyRpcApiFunction(parameter).filter(
+            (f) => f.fullName[0] === definyRpcNamespace,
+          );
 
-              await ensureAndWriteCode(
-                parameter.codeGenOutputFolderPath + "/" + "definyRpc.ts",
-                apiFunctionListToCode({
-                  apiFunctionList: allFunc,
-                  originHint: parameter.originHint,
-                  pathPrefix: parameter.pathPrefix ?? [],
-                  usePrettier: true,
-                })
-              );
+          await ensureAndWriteCode(
+            parameter.codeGenOutputFolderPath + "/" + "definyRpc.ts",
+            apiFunctionListToCode({
+              apiFunctionList: allFunc,
+              originHint: parameter.originHint,
+              pathPrefix: parameter.pathPrefix ?? [],
+              usePrettier: true,
+            }),
+          );
 
-              return undefined;
-            },
-          }),
-        ]),
+          return undefined;
+        },
+      }),
+    ]),
   ];
 };
 
@@ -200,7 +231,7 @@ const definyRpcTypeBodyToType = <t>(definyRpcType: DefinyRpcType<t>): Type => {
 
 const ensureAndWriteCode = async (
   path: string,
-  content: string
+  content: string,
 ): Promise<void> => {
   await ensureFile(path);
   await writeTextFile(path, content);

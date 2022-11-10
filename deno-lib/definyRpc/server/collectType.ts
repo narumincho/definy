@@ -4,11 +4,11 @@ import { DefinyRpcType, TypeBody } from "./type.ts";
 import { NonEmptyArray } from "../../util.ts";
 
 export const collectDefinyRpcTypeFromFuncList = (
-  funcList: ReadonlyArray<ApiFunction>
+  funcList: ReadonlyArray<ApiFunction>,
 ): CollectedDefinyRpcTypeMap => {
   return collectFromDefinyRpcTypeList(
     funcList.flatMap((func) => [func.input, func.output]),
-    new Set([])
+    new Set([]),
   );
 };
 
@@ -19,7 +19,7 @@ export const collectDefinyRpcTypeFromFuncList = (
  */
 const collectFromDefinyRpcType = <t>(
   type: DefinyRpcType<t>,
-  collectedNames: ReadonlySet<string>
+  collectedNames: ReadonlySet<string>,
 ): CollectedDefinyRpcTypeMap => {
   const typeFullName = type.namespace.join(".") + "." + type.name;
   if (collectedNames.has(typeFullName)) {
@@ -46,7 +46,7 @@ const collectFromDefinyRpcType = <t>(
           ...type.parameters,
           ...type.body.fieldList.map((filed) => lazyGet(filed.type)),
         ],
-        newCollectedNames
+        newCollectedNames,
       ),
     ]);
   }
@@ -60,7 +60,7 @@ const collectFromDefinyRpcType = <t>(
             pattern.parameter === undefined ? [] : lazyGet(pattern.parameter)
           ),
         ],
-        newCollectedNames
+        newCollectedNames,
       ),
     ]);
   }
@@ -82,7 +82,7 @@ type CollectInListState = {
  */
 const collectFromDefinyRpcTypeList = <t>(
   typeList: ReadonlyArray<DefinyRpcType<t>>,
-  collectedNames: ReadonlySet<string>
+  collectedNames: ReadonlySet<string>,
 ): CollectedDefinyRpcTypeMap => {
   return typeList.reduce<CollectInListState>(
     (prev, type): CollectInListState => {
@@ -92,7 +92,7 @@ const collectFromDefinyRpcTypeList = <t>(
         map: new Map([...prev.map, ...resultMap]),
       };
     },
-    { collectedNames, map: new Map() }
+    { collectedNames, map: new Map() },
   ).map;
 };
 
@@ -113,51 +113,62 @@ export type CollectedDefinyRpcType = {
 
 export type CollectedDefinyRpcTypeBody =
   | {
-      readonly type: "string";
-    }
+    readonly type: "string";
+  }
   | {
-      readonly type: "number";
-    }
+    readonly type: "number";
+  }
+  | { readonly type: "boolean" }
   | {
-      readonly type: "unit";
-    }
+    readonly type: "unit";
+  }
   | {
-      readonly type: "list";
-    }
+    readonly type: "list";
+  }
   | {
-      readonly type: "set";
-    }
+    readonly type: "set";
+  }
+  | { readonly type: "stringMap"; valueType: CollectedDefinyRpcTypeUse }
   | {
-      readonly type: "product";
-      readonly fieldList: ReadonlyArray<{
-        readonly name: string;
-        readonly description: string;
-        readonly type: CollectedDefinyRpcTypeUse;
-      }>;
-    }
+    readonly type: "product";
+    readonly fieldList: ReadonlyArray<{
+      readonly name: string;
+      readonly description: string;
+      readonly type: CollectedDefinyRpcTypeUse;
+    }>;
+  }
   | {
-      readonly type: "sum";
-      readonly patternList: ReadonlyArray<{
-        readonly name: string;
-        readonly description: string;
-        readonly parameter: CollectedDefinyRpcTypeUse | undefined;
-      }>;
-    };
+    readonly type: "sum";
+    readonly patternList: ReadonlyArray<{
+      readonly name: string;
+      readonly description: string;
+      readonly parameter: CollectedDefinyRpcTypeUse | undefined;
+    }>;
+  };
 
 const typeBodyToCollectedDefinyRpcTypeBody = (
-  typeBody: TypeBody
+  typeBody: TypeBody,
 ): CollectedDefinyRpcTypeBody => {
   switch (typeBody.type) {
     case "string":
       return { type: "string" };
     case "number":
       return { type: "number" };
+    case "boolean":
+      return { type: "boolean" };
     case "unit":
       return { type: "unit" };
     case "list":
       return { type: "list" };
     case "set":
       return { type: "set" };
+    case "stringMap":
+      return {
+        type: "stringMap",
+        valueType: definyRpcTypeToCollectedDefinyRpcTypeUse(
+          lazyGet(typeBody.valueType),
+        ),
+      };
     case "product":
       return {
         type: "product",
@@ -173,19 +184,18 @@ const typeBodyToCollectedDefinyRpcTypeBody = (
         patternList: typeBody.patternList.map((pattern) => ({
           name: pattern.name,
           description: pattern.description,
-          parameter:
-            pattern.parameter === undefined
-              ? undefined
-              : definyRpcTypeToCollectedDefinyRpcTypeUse(
-                  lazyGet(pattern.parameter)
-                ),
+          parameter: pattern.parameter === undefined
+            ? undefined
+            : definyRpcTypeToCollectedDefinyRpcTypeUse(
+              lazyGet(pattern.parameter),
+            ),
         })),
       };
   }
 };
 
 const definyRpcTypeToCollectedDefinyRpcTypeUse = <t>(
-  type: DefinyRpcType<t>
+  type: DefinyRpcType<t>,
 ): CollectedDefinyRpcTypeUse => {
   return {
     namespace: type.namespace,
