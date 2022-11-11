@@ -8,7 +8,7 @@ import {
 } from "../gen/url/main";
 import type { UrlObject } from "url";
 import { clientScriptPath } from "../clientScriptHash";
-import { zodType } from "../deno-lib/npm/types/mod";
+import { zodType } from "../deno-lib/npm";
 
 export const languageQueryKey = "hl";
 export const defaultLanguage: d.Language = "English";
