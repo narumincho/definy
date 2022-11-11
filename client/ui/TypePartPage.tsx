@@ -14,10 +14,10 @@ import {
   typeValue,
 } from "../editor/common";
 import { ListItem, listItem } from "../editor/list";
-import { listDeleteAt, listUpdateAt } from "../../common/util";
 import { Editor } from "./Editor";
 import { SumTagItem } from "../editor/sum";
 import { UseDefinyAppResult } from "../hook/useDefinyApp";
+import { util } from "../../deno-lib/npm";
 
 export type Props = Pick<
   UseDefinyAppResult,
@@ -319,7 +319,7 @@ const parameterListValue = (
                 text: typeParameter.name,
                 onChange: (newName) => {
                   option.setTypeParameterList((before) =>
-                    listUpdateAt(before, index, (param) => ({
+                    util.listUpdateAt(before, index, (param) => ({
                       name: newName,
                       description: param.description,
                     }))
@@ -334,7 +334,7 @@ const parameterListValue = (
                   text: typeParameter.description,
                   onChange: (newDescription) => {
                     option.setTypeParameterList((before) =>
-                      listUpdateAt(before, index, (param) => ({
+                      util.listUpdateAt(before, index, (param) => ({
                         name: param.name,
                         description: newDescription,
                       }))
@@ -466,7 +466,7 @@ const patternListValue = (
       (pattern, index): ListItem =>
         listItem(
           patternValue(context, pattern, (func) => {
-            setPatternList((prev) => listUpdateAt(prev, index, func));
+            setPatternList((prev) => util.listUpdateAt(prev, index, func));
           }),
           pattern.name
         )
@@ -485,7 +485,7 @@ const patternListValue = (
       setPatternList(() => []);
     },
     deleteAt: (index) => {
-      setPatternList((prevList) => listDeleteAt(prevList, index));
+      setPatternList((prevList) => util.listDeleteAt(prevList, index));
     },
   });
 };
@@ -589,7 +589,7 @@ const memberListValue = (
       (member, index): ListItem =>
         listItem(
           memberValue(context, member, (func) => {
-            setMemberList((prev) => listUpdateAt(prev, index, func));
+            setMemberList((prev) => util.listUpdateAt(prev, index, func));
           }),
           member.name
         )
@@ -614,7 +614,7 @@ const memberListValue = (
       setMemberList(() => []);
     },
     deleteAt: (index) => {
-      setMemberList((prev) => listDeleteAt(prev, index));
+      setMemberList((prev) => util.listDeleteAt(prev, index));
     },
   });
 };

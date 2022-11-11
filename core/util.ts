@@ -1,6 +1,5 @@
 import * as d from "../localData";
-import { firstLowerCase } from "../common/util";
-import { jsTs } from "../deno-lib/npm";
+import { jsTs, util } from "../deno-lib/npm";
 
 const millisecondInDay = 1000 * 60 * 60 * 24;
 
@@ -79,7 +78,7 @@ export const typeToMemberOrParameterName = (
   typePartMap: ReadonlyMap<d.TypePartId, d.TypePart>,
   scopeTypePartDataTypeParameterList: ReadonlyArray<d.DataTypeParameter>
 ): string => {
-  return firstLowerCase(
+  return util.firstLowerCase(
     toTypeName(type, typePartMap, scopeTypePartDataTypeParameterList)
   );
 };

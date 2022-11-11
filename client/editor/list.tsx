@@ -3,7 +3,7 @@ import { CommonSelection, CommonValue, commonElement } from "./common";
 import { Button } from "../ui/Button";
 import type { ElementOperation } from "./ElementOperation";
 import { css } from "@emotion/css";
-import { normalizeSearchText } from "../../common/searchText";
+import { searchText as libSearchText } from "../../deno-lib/npm";
 import { useOneLineTextEditor } from "../ui/OneLineTextEditor";
 
 export type ListSelection = {
@@ -125,7 +125,8 @@ const ListSelectionView: ElementOperation<
     id: "search",
     initText: "",
   });
-  const normalizedSearchQueryText = normalizeSearchText(searchQueryText);
+  const normalizedSearchQueryText =
+    libSearchText.normalizeSearchText(searchQueryText);
 
   return (
     <div>
@@ -146,9 +147,9 @@ const ListSelectionView: ElementOperation<
       >
         {props.value.items.flatMap((v, index) => {
           if (
-            normalizeSearchText(v.searchText).includes(
-              normalizedSearchQueryText
-            )
+            libSearchText
+              .normalizeSearchText(v.searchText)
+              .includes(normalizedSearchQueryText)
           ) {
             return [
               <SelectionItem

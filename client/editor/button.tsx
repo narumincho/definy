@@ -1,7 +1,7 @@
 import * as React from "react";
 import { Button } from "../ui/Button";
 import { ElementOperation } from "./ElementOperation";
-import { neverFunc } from "../../common/util";
+import { util } from "../../deno-lib/npm";
 
 export type ButtonSelection = never;
 
@@ -32,8 +32,8 @@ const ButtonDetailView: ElementOperation<
 ButtonDetailView.displayName = "ButtonDetailView";
 
 export const buttonOperation: ElementOperation<ButtonSelection, ButtonValue> = {
-  moveUp: neverFunc,
-  moveDown: neverFunc,
+  moveUp: util.neverFunc,
+  moveDown: util.neverFunc,
   moveFirstChild: () => undefined,
   moveParent: () => undefined,
   selectionView: ButtonSelectionView,

@@ -1,12 +1,12 @@
 import * as React from "react";
 import * as d from "../../localData";
-import { listUpdateAt, neverFunc } from "../../common/util";
 import { Button } from "../ui/Button";
 import { ElementOperation } from "./ElementOperation";
 import { Link } from "../ui/Link";
 import { OneLineTextEditor } from "../ui/OneLineTextEditor";
 import type { UseDefinyAppResult } from "../hook/useDefinyApp";
 import { css } from "@emotion/css";
+import { util } from "../../deno-lib/npm";
 
 export type DataTypeOrDataTypeParameterSelection = {
   readonly index: number;
@@ -372,7 +372,7 @@ const setTypePartAtSelectionDataType = (
   }
   return d.DataTypeOrDataTypeParameter.DataType({
     typePartId: currentType.typePartId,
-    arguments: listUpdateAt(currentType.arguments, selection.index, (t) =>
+    arguments: util.listUpdateAt(currentType.arguments, selection.index, (t) =>
       setTypePartAtSelection(t, selection.typeSelection, dataType)
     ),
   });
@@ -715,8 +715,8 @@ export const dataTypeOrDataTypeParameterOperation: ElementOperation<
   DataTypeOrDataTypeParameterSelection,
   DataTypeOrDataTypeParameterValue
 > = {
-  moveDown: neverFunc,
-  moveUp: neverFunc,
+  moveDown: util.neverFunc,
+  moveUp: util.neverFunc,
   moveFirstChild: () => undefined,
   moveParent: () => undefined,
   selectionView: DataTypeSelectionView,

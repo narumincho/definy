@@ -8,7 +8,7 @@ import { trpc } from "../client/hook/trpc";
 import { useAccountToken } from "../client/hook/useAccountToken";
 import { useRouter } from "next/router";
 import { zodType } from "../deno-lib/npm";
-import { zodTypeLocationAndLanguageToUrl } from "../common/url";
+import { zodTypeLocationAndLanguageToUrl } from "../client/url";
 
 type Parameter = {
   readonly imageUrl: URL;

@@ -19,7 +19,7 @@ import {
 } from "./typePartId";
 import { TypeSelection, TypeValue, typeOperation } from "./type";
 import type { ElementOperation } from "./ElementOperation";
-import { maybeMap } from "../../common/util";
+import { util } from "../../deno-lib/npm";
 
 export type CommonSelection =
   | {
@@ -225,7 +225,7 @@ const moveFirstChild = (
 ): CommonSelection | undefined => {
   switch (value.type) {
     case "list":
-      return maybeMap(
+      return util.maybeMap(
         listOperation.moveFirstChild(
           selection !== undefined && selection.tag === "list"
             ? selection.listSelection
@@ -235,7 +235,7 @@ const moveFirstChild = (
         selectionList
       );
     case "product":
-      return maybeMap(
+      return util.maybeMap(
         productOperation.moveFirstChild(
           selection !== undefined && selection.tag === "product"
             ? selection.productSelection
@@ -245,7 +245,7 @@ const moveFirstChild = (
         selectionProduct
       );
     case "sum":
-      return maybeMap(
+      return util.maybeMap(
         sumOperation.moveFirstChild(
           selection !== undefined && selection.tag === "sum"
             ? selection.sumSelection
@@ -262,19 +262,19 @@ const moveParent: ElementOperation<
   CommonValue
 >["moveParent"] = (selection, value) => {
   if (selection.tag === "list" && value.type === "list") {
-    return maybeMap(
+    return util.maybeMap(
       listOperation.moveParent(selection.listSelection, value.value),
       selectionList
     );
   }
   if (selection.tag === "product" && value.type === "product") {
-    return maybeMap(
+    return util.maybeMap(
       productOperation.moveParent(selection.productSelection, value.value),
       selectionProduct
     );
   }
   if (selection.tag === "sum" && value.type === "sum") {
-    return maybeMap(
+    return util.maybeMap(
       sumOperation.moveParent(selection.sumSelection, value.value),
       selectionSum
     );

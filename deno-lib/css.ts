@@ -5,18 +5,18 @@ export type Declaration = {
 
 export type Selector =
   | {
-      readonly type: "class";
-      readonly className: string;
-      readonly isHover: boolean;
-    }
+    readonly type: "class";
+    readonly className: string;
+    readonly isHover: boolean;
+  }
   | {
-      readonly type: "type";
-      readonly elementName: string;
-    };
+    readonly type: "type";
+    readonly elementName: string;
+  };
 
 export const classSelector = (
   className: string,
-  isHover: boolean
+  isHover: boolean,
 ): Selector => {
   return {
     type: "class",
@@ -45,7 +45,7 @@ export const declarationToString = (declaration: Declaration): string => {
  * style 属性に直接指定するときに使う
  */
 export const declarationListToString = (
-  declarationList: ReadonlyArray<Declaration>
+  declarationList: ReadonlyArray<Declaration>,
 ): string => {
   return declarationList.map(declarationToString).join("");
 };
@@ -101,9 +101,11 @@ const keyFramesToString = (keyframes: Keyframes): string => {
 };
 
 export const keyFrameToString = (keyframe: Keyframe): string => {
-  return `${keyframe.percentage}% {${declarationListToString(
-    keyframe.declarationList
-  )}}`;
+  return `${keyframe.percentage}% {${
+    declarationListToString(
+      keyframe.declarationList,
+    )
+  }}`;
 };
 
 export const widthRem = (value: number): Declaration => {
@@ -151,7 +153,7 @@ const remValueToCssValue = (value: number): string => {
 };
 
 export const alignItems = (
-  value: "stretch" | "center" | "start"
+  value: "stretch" | "center" | "start",
 ): Declaration => ({
   property: "align-items",
   value,

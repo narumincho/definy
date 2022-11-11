@@ -2,7 +2,7 @@ import * as React from "react";
 import { CSSObject, css } from "@emotion/react";
 import NextLink from "next/link";
 import { zodType } from "../deno-lib/npm";
-import { zodTypeLocationAndLanguageToUrl } from "../common/url";
+import { zodTypeLocationAndLanguageToUrl } from "../client/url";
 
 export const Link = (props: {
   readonly location: zodType.Location;

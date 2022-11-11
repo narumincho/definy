@@ -1,4 +1,4 @@
-import { coreMain } from "../deno-lib/npm";
+import { normalizeOneLineString } from "./coreMain.ts";
 
 const mapChar = (char: string): string => {
   switch (char) {
@@ -18,7 +18,7 @@ const mapChar = (char: string): string => {
  * 検索をしやすくするように正規化する
  */
 export const normalizeSearchText = (searchQueryText: string): string => {
-  return [...coreMain.normalizeOneLineString(searchQueryText).toLowerCase()]
+  return [...normalizeOneLineString(searchQueryText).toLowerCase()]
     .map(mapChar)
     .join("");
 };

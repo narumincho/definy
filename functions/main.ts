@@ -1,4 +1,4 @@
-import * as commonUrl from "../common/url";
+import * as commonUrl from "../client/url";
 import * as functions from "firebase-functions";
 import * as lib from "./lib";
 import * as mimeType from "../definy-output/typescript/mimeType";

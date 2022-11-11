@@ -1,7 +1,7 @@
 import * as React from "react";
 import { ElementOperation } from "./ElementOperation";
 import { css } from "@emotion/css";
-import { neverFunc } from "../../common/util";
+import { util } from "../../deno-lib/npm";
 
 export type IdValue = {
   readonly id: string;
@@ -95,8 +95,8 @@ const IdDetailView: ElementOperation<never, IdValue>["detailView"] = (
 };
 
 export const idOperation: ElementOperation<never, IdValue> = {
-  moveUp: neverFunc,
-  moveDown: neverFunc,
+  moveUp: util.neverFunc,
+  moveDown: util.neverFunc,
   moveFirstChild: () => undefined,
   moveParent: () => undefined,
   selectionView: IdSelectionView,

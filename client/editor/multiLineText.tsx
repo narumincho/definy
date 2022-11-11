@@ -2,7 +2,7 @@ import * as React from "react";
 import { Button } from "../ui/Button";
 import type { ElementOperation } from "./ElementOperation";
 import { css } from "@emotion/css";
-import { neverFunc } from "../../common/util";
+import { util } from "../../deno-lib/npm";
 
 export type MultiLineTextSelection = never;
 
@@ -148,8 +148,8 @@ export const multiLineTextOperation: ElementOperation<
   MultiLineTextSelection,
   MultiLineTextValue
 > = {
-  moveUp: neverFunc,
-  moveDown: neverFunc,
+  moveUp: util.neverFunc,
+  moveDown: util.neverFunc,
   moveFirstChild: () => undefined,
   moveParent: () => undefined,
   selectionView: MultiLineTextSelectionView,

@@ -40,10 +40,8 @@ Definy is Web App for Web App.
 
 ## フォルダとファイルの説明
 
-- `/.github/workflows/deploy_firebase.yml`: Firebase へのデプロイの処理が書かれている
-- `/.github/workflows/deploy_gen.yml`: npm パッケージ `@narumincho/gen` へのデプロイの処理が書かれている
+- `/.github/workflows/deploy_to_vercel.yml`: Vercel へのデプロイの処理が書かれている
 - `/.github/workflows/pull_request`: Pull Request したときに実行されるテストの処理が書かれている
-- `/build`: ビルドのスクリプト
 - `/client`: TypeScript で書かれたクライアント用のコード
 - `/common`: クライアントとサーバーの共通のコード
 - `/core`: コンパイラのような処理が書かれている

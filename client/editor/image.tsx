@@ -3,7 +3,7 @@ import * as d from "../../localData";
 import type { ElementOperation } from "./ElementOperation";
 import { Image } from "../ui/Image";
 import { css } from "@emotion/css";
-import { neverFunc } from "../../common/util";
+import { util } from "../../deno-lib/npm";
 
 export type ImageSelection = never;
 export type ImageValue = {
@@ -57,8 +57,8 @@ const ImageDetailView: ElementOperation<
 ImageDetailView.displayName = "ImageDetailView";
 
 export const imageOperation: ElementOperation<ImageSelection, ImageValue> = {
-  moveUp: neverFunc,
-  moveDown: neverFunc,
+  moveUp: util.neverFunc,
+  moveDown: util.neverFunc,
   moveFirstChild: () => undefined,
   moveParent: () => undefined,
   selectionView: ImageSelectionView,
