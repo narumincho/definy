@@ -1,6 +1,6 @@
 import * as React from "react";
-import { createRandomId } from "../../common/util";
 import { css } from "@emotion/css";
+import { util } from "../../deno-lib/npm";
 
 export type Message = {
   readonly id: string;
@@ -21,7 +21,7 @@ export const useNotification = (): {
   const addMessage = React.useCallback<AddMessage>((newMessage) => {
     setMessageList((oldMessageList) => [
       ...oldMessageList,
-      { ...newMessage, id: createRandomId() },
+      { ...newMessage, id: util.createRandomId() },
     ]);
   }, []);
 

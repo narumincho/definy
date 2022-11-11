@@ -6,7 +6,6 @@ import {
   listValue,
   oneLineTextValue,
 } from "../client/editor/common";
-import { createRandomId, listDeleteAt } from "../common/util";
 import { Button } from "../client/ui/Button";
 import { Editor } from "../client/ui/Editor";
 import { ListItem } from "../client/editor/list";
@@ -14,6 +13,7 @@ import { Text } from "../components/Text";
 import { WithHeader } from "../components/WithHeader";
 import { useAccountToken } from "../client/hook/useAccountToken";
 import { useLanguage } from "../client/hook/useLanguage";
+import { util } from "../deno-lib/npm";
 
 export const LocalProjectPage = (): React.ReactElement => {
   const language = useLanguage();
@@ -232,7 +232,7 @@ const typePartListEditor = (
       }),
     })),
     deleteAt: (index) => {
-      setTypePartList(listDeleteAt(typePartList, index));
+      setTypePartList(util.listDeleteAt(typePartList, index));
     },
     deleteAll: () => {
       setTypePartList([]);
@@ -259,7 +259,7 @@ const partListEditor = (
       }),
     })),
     deleteAt: (index) => {
-      setPartList(listDeleteAt(partList, index));
+      setPartList(util.listDeleteAt(partList, index));
     },
     deleteAll: () => {
       setPartList([]);
@@ -271,11 +271,11 @@ const partListEditor = (
 };
 
 const createRandomTypePartId = (): d.TypePartId => {
-  return d.TypePartId.fromString(createRandomId());
+  return d.TypePartId.fromString(util.createRandomId());
 };
 
 const createRandomPartId = (): d.PartId => {
-  return d.PartId.fromString(createRandomId());
+  return d.PartId.fromString(util.createRandomId());
 };
 
 export default LocalProjectPage;

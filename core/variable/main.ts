@@ -7,10 +7,9 @@ import * as int32 from "../kernelType/int32";
 import * as kernelString from "../kernelType/string";
 import * as list from "../kernelType/list";
 import * as util from "../util";
+import { util as dUtil, jsTs } from "../../deno-lib/npm";
 import { typePartIdMember, typePartIdMemberType } from "./typePartId";
 import { typePartSumTagExpr, typePartSumTagType } from "./tag";
-import { firstLowerCase } from "../../common/util";
-import { jsTs } from "../../deno-lib/npm";
 
 export const typePartMapToVariable = (
   typePartMap: ReadonlyMap<d.TypePartId, d.TypePart>
@@ -125,7 +124,7 @@ const typePartToVariableExpr = (
   switch (typePart.body._) {
     case "Product": {
       const parameterIdentifier = jsTs.identifierFromString(
-        firstLowerCase(typePart.name)
+        dUtil.firstLowerCase(typePart.name)
       );
       /** ジェネリック付きの型 */
       const type: jsTs.data.TsType = {

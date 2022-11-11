@@ -2,7 +2,7 @@ import * as React from "react";
 import type { ElementOperation } from "./ElementOperation";
 import { OneLineTextEditor } from "../ui/OneLineTextEditor";
 import { css } from "@emotion/css";
-import { neverFunc } from "../../common/util";
+import { util } from "../../deno-lib/npm";
 
 export type OneLineTextSelection = never;
 
@@ -49,8 +49,8 @@ export const oneLineTextOperation: ElementOperation<
   OneLineTextSelection,
   OneLineTextValue
 > = {
-  moveUp: neverFunc,
-  moveDown: neverFunc,
+  moveUp: util.neverFunc,
+  moveDown: util.neverFunc,
   moveFirstChild: () => undefined,
   moveParent: () => undefined,
   selectionView: TextSelectionView,

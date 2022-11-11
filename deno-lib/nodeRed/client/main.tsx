@@ -32,6 +32,8 @@ const createNodeFromStatus = (statusAsString: string): void => {
     scriptElement.textContent = `<div>
   <h2>${escapeHtml(func.name.join("."))}</h2>
   <div>${escapeHtml(func.description)}</div>
+  <div>input: ${escapeHtml(func.input.fullName.join("."))}</div>
+  <div>output: ${escapeHtml(func.output.fullName.join("."))}</div>
 </>`;
     document.getElementById("definy-html-output")
       ?.appendChild(
@@ -39,11 +41,11 @@ const createNodeFromStatus = (statusAsString: string): void => {
       );
 
     red.nodes.registerType<unknown>(id, {
-      category: "definyGenerated",
+      category: "definyGenerated" + status.name.toUpperCase(),
       color: "#a6bbcf",
       defaults: {},
-      inputs: 0,
-      outputs: 0,
+      inputs: 1,
+      outputs: 1,
       label: function () {
         return id;
       },
@@ -82,7 +84,7 @@ red.nodes.registerType<{ url: string }>("create-definy-rpc-node", {
   outputs: 0,
   label: function () {
     console.log(this);
-    if (this.status.fill === "green" && !creating) {
+    if (this.status?.fill === "green" && !creating) {
       creating = true;
       createNodeFromStatus(this.status.text);
       return "ノードを作成中...?";
@@ -98,7 +100,7 @@ red.nodes.registerType<{ url: string }>("create-definy-rpc-node", {
     const reactRoot = createRoot(formRoot);
     reactRoot.render(
       <Form
-        statusText={this.status.text}
+        statusText={this.status?.text ?? "ステータス未設定"}
         initUrl={this.url}
         onChangeUrl={(newUrl) => {
           editingUrl = newUrl;

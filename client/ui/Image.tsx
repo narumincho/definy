@@ -1,7 +1,7 @@
 import * as React from "react";
 import * as d from "../../localData";
 import { CSSObject, css } from "@emotion/css";
-import { pngFilePath } from "../../common/url";
+import { pngFilePath } from "../url";
 
 export const Image: React.FC<{
   imageHash: d.ImageHash;

@@ -1,4 +1,4 @@
-import { NodeStatusFill } from "../server/nodeRedServer.ts";
+import { NodeStatusFill, NodeStatusShape } from "../server/nodeRedServer.ts";
 
 /**
  * エディタ内で読み取れるNode RED の API
@@ -24,7 +24,7 @@ export const red = (
             readonly oneditprepare?:
               | ((this: customProperty & ClientNode) => void)
               | undefined;
-          }
+          },
         ) => void;
       };
     };
@@ -32,7 +32,9 @@ export const red = (
 ).RED;
 
 type ClientNode = {
-  readonly status: { fill: NodeStatusFill; shape: "dot"; text: string };
+  readonly status:
+    | { fill: NodeStatusFill; shape: NodeStatusShape; text: string }
+    | undefined;
 };
 
 interface Window {

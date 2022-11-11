@@ -1,8 +1,8 @@
-import * as commonUrl from "../common/url";
+import * as commonUrl from "../client/url";
 import * as d from "../localData";
 import * as lib from "./lib";
+import { definyAppGlobalStyle } from "../deno-lib/npm";
 import { html as genHtml } from "../gen/main";
-import { globalStyle } from "../common/globalStyle";
 
 /**
  * OGP の 情報が含まれている HTML を返す
@@ -30,7 +30,7 @@ export const generateHtml = async (
           ? urlData.locationAndLanguage.language
           : d.Language.English,
       url: undefined,
-      style: globalStyle,
+      style: definyAppGlobalStyle.globalStyle,
       themeColor: undefined,
       children: [
         genHtml.div(

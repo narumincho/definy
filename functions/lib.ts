@@ -1,4 +1,4 @@
-import * as commonUrl from "../common/url";
+import * as commonUrl from "../client/url";
 import * as crypto from "node:crypto";
 import * as d from "../localData";
 import * as image from "./image";

@@ -2,7 +2,7 @@ import * as React from "react";
 import * as d from "../../localData";
 import { TimeCard, TimeDetail } from "../ui/TimeCard";
 import type { ElementOperation } from "./ElementOperation";
-import { neverFunc } from "../../common/util";
+import { util } from "../../deno-lib/npm";
 
 /**
  * 年, 月, 日, 時, 分, 秒, ミリ秒選べると良いような気がしなくもない
@@ -29,8 +29,8 @@ const TimeDetailView: ElementOperation<TimeSelection, TimeValue>["detailView"] =
 TimeDetailView.displayName = "TimeDetailView";
 
 export const timeOperation: ElementOperation<TimeSelection, TimeValue> = {
-  moveUp: neverFunc,
-  moveDown: neverFunc,
+  moveUp: util.neverFunc,
+  moveDown: util.neverFunc,
   moveFirstChild: () => undefined,
   moveParent: () => undefined,
   selectionView: TimeSelectionView,

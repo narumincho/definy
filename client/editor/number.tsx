@@ -1,7 +1,7 @@
 import * as React from "react";
 import type { ElementOperation } from "./ElementOperation";
 import { css } from "@emotion/css";
-import { neverFunc } from "../../common/util";
+import { util } from "../../deno-lib/npm";
 
 export type NumberSelection = never;
 export type NumberValue = {
@@ -34,8 +34,8 @@ const NumberDetailView: ElementOperation<
 NumberDetailView.displayName = "NumberDetailView";
 
 export const numberOperation: ElementOperation<NumberSelection, NumberValue> = {
-  moveUp: neverFunc,
-  moveDown: neverFunc,
+  moveUp: util.neverFunc,
+  moveDown: util.neverFunc,
   moveFirstChild: () => undefined,
   moveParent: () => undefined,
   selectionView: NumberSelectionView,

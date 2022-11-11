@@ -6,7 +6,7 @@ import { jsTs, zodType } from "../../deno-lib/npm";
 import type { TypePartIdAndMessage } from "../../core/TypePartIdAndMessage";
 import { api } from "../api";
 import { generateTypeScriptCode } from "../../core/main";
-import { urlToUrlData } from "../../common/url";
+import { urlToUrlData } from "../url";
 import { useResourceState } from "./resourceState";
 import { useTypePartIdListInProject } from "./typePartIdListInProject";
 

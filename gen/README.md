@@ -12,4 +12,4 @@
 - 対応している構文は一部だけ
 - var などの古い構文を出力せず, 新しいスタイルのコードを生成する
 
-サンプルコードは, https://github.com/narumincho/definy/tree/main/test のコードを見るべし
+サンプルコードは, https://github.com/narumincho/definy/blob/main/deno-lib/jsTs/test.ts のコードを見るべし

@@ -1,4 +1,5 @@
 import {
+  addition,
   callCatchMethod,
   callFetch,
   callMethod,
@@ -11,10 +12,10 @@ import {
   objectLiteral,
   promiseType,
   readonlyArrayType,
+  readonlyMapType,
   readonlySetType,
   responseType,
   urlType,
-  addition,
 } from "../../../jsTs/main.ts";
 import { getLast } from "../../../util.ts";
 import { ApiFunction } from "../apiFunction.ts";
@@ -46,7 +47,7 @@ export const apiFuncToTsFunction = (parameter: {
       resultType(definyRpcTypeToTsType(parameter.func.output), {
         _: "StringLiteral",
         string: "error",
-      })
+      }),
     ),
     typeParameterList: [],
     statementList: [
@@ -61,10 +62,10 @@ export const apiFuncToTsFunction = (parameter: {
                   _: "Variable",
                   tsIdentifier: parameterIdentifier,
                 },
-                "url"
+                "url",
               ),
-              { _: "StringLiteral", string: parameter.originHint }
-            )
+              { _: "StringLiteral", string: parameter.originHint },
+            ),
           ),
           isConst: true,
           type: urlType,
@@ -78,7 +79,7 @@ export const apiFuncToTsFunction = (parameter: {
               _: "Variable",
               tsIdentifier: identifierFromString("url"),
             },
-            "pathname"
+            "pathname",
           ),
           operatorMaybe: undefined,
           expr: addition(
@@ -87,17 +88,16 @@ export const apiFuncToTsFunction = (parameter: {
                 _: "Variable",
                 tsIdentifier: identifierFromString("url"),
               },
-              "pathname"
+              "pathname",
             ),
             {
               _: "StringLiteral",
-              string:
-                "/" +
+              string: "/" +
                 (parameter.pathPrefix.length === 0
                   ? ""
                   : parameter.pathPrefix.join("/") + "/") +
                 parameter.func.fullName.join("/"),
-            }
+            },
           ),
         },
       },
@@ -113,29 +113,29 @@ export const apiFuncToTsFunction = (parameter: {
                 },
                 parameter.func.needAuthentication
                   ? objectLiteral([
-                      {
-                        _: "KeyValue",
-                        keyValue: {
-                          key: "headers",
-                          value: objectLiteral([
-                            {
-                              _: "KeyValue",
-                              keyValue: {
-                                key: "authorization",
-                                value: get(
-                                  {
-                                    _: "Variable",
-                                    tsIdentifier: parameterIdentifier,
-                                  },
-                                  "accountToken"
-                                ),
-                              },
+                    {
+                      _: "KeyValue",
+                      keyValue: {
+                        key: "headers",
+                        value: objectLiteral([
+                          {
+                            _: "KeyValue",
+                            keyValue: {
+                              key: "authorization",
+                              value: get(
+                                {
+                                  _: "Variable",
+                                  tsIdentifier: parameterIdentifier,
+                                },
+                                "accountToken",
+                              ),
                             },
-                          ]),
-                        },
-                      } as const,
-                    ])
-                  : undefined
+                          },
+                        ]),
+                      },
+                    } as const,
+                  ])
+                  : undefined,
               ),
               {
                 parameterList: [
@@ -155,13 +155,13 @@ export const apiFuncToTsFunction = (parameter: {
                         tsIdentifier: identifierFromString("response"),
                       },
                       "json",
-                      []
+                      [],
                     ),
                   },
                 ],
-              }
+              },
             ),
-            fetchThenExpr(parameter.func)
+            fetchThenExpr(parameter.func),
           ),
           {
             parameterList: [],
@@ -170,7 +170,7 @@ export const apiFuncToTsFunction = (parameter: {
               {
                 _: "StringLiteral",
                 string: "error",
-              }
+              },
             ),
             typeParameterList: [],
             statementList: [
@@ -179,7 +179,7 @@ export const apiFuncToTsFunction = (parameter: {
                 tsExpr: resultError({ _: "StringLiteral", string: "error" }),
               },
             ],
-          }
+          },
         ),
       },
     ],
@@ -209,8 +209,8 @@ const fetchThenExpr = (func: ApiFunction): data.LambdaExpr => {
             useRawJsonToStructuredJsonValue({
               _: "Variable",
               tsIdentifier: jsonValueIdentifier,
-            })
-          )
+            }),
+          ),
         ),
       },
     ],
@@ -219,7 +219,7 @@ const fetchThenExpr = (func: ApiFunction): data.LambdaExpr => {
 
 const funcParameterType = (
   func: ApiFunction,
-  originHint: string
+  originHint: string,
 ): data.TsType => {
   return {
     _: "Object",
@@ -231,44 +231,44 @@ const funcParameterType = (
         required: false,
         type: { _: "Union", tsTypeList: [{ _: "String" }, { _: "Undefined" }] },
       },
-      ...(func.input.body.type === "unit"
-        ? []
-        : [
-            {
-              name: "input",
-              document: "",
-              required: true,
-              type: definyRpcTypeToTsType(func.input),
-            },
-          ]),
+      ...(func.input.body.type === "unit" ? [] : [
+        {
+          name: "input",
+          document: "",
+          required: true,
+          type: definyRpcTypeToTsType(func.input),
+        },
+      ]),
       ...(func.needAuthentication
         ? [
-            {
-              name: "accountToken",
-              document: "",
-              required: true,
-              type: {
-                _: "ScopeInFile",
-                typeNameAndTypeParameter: {
-                  name: identifierFromString("AccountToken"),
-                  arguments: [],
-                },
-              } as const,
-            },
-          ]
+          {
+            name: "accountToken",
+            document: "",
+            required: true,
+            type: {
+              _: "ScopeInFile",
+              typeNameAndTypeParameter: {
+                name: identifierFromString("AccountToken"),
+                arguments: [],
+              },
+            } as const,
+          },
+        ]
         : []),
     ],
   };
 };
 
 const definyRpcTypeToTsType = <t>(
-  definyRpcType: DefinyRpcType<t>
+  definyRpcType: DefinyRpcType<t>,
 ): data.TsType => {
   switch (definyRpcType.body.type) {
     case "string":
       return { _: "String" };
     case "number":
       return { _: "Number" };
+    case "boolean":
+      return { _: "Boolean" };
     case "unit":
       return { _: "Undefined" };
     case "list": {
@@ -284,6 +284,13 @@ const definyRpcTypeToTsType = <t>(
         throw new Error("set need one parameter");
       }
       return readonlySetType(definyRpcTypeToTsType(parameter));
+    }
+    case "stringMap": {
+      const parameter = definyRpcType.parameters[0];
+      if (parameter === undefined) {
+        throw new Error("stringMap need one parameter");
+      }
+      return readonlyMapType({ _: "String" }, definyRpcTypeToTsType(parameter));
     }
     case "sum":
       return {

@@ -6,10 +6,10 @@ import {
   listValue,
   oneLineTextValue,
 } from "../editor/common";
-import { createRandomId, listDeleteAt, listUpdateAt } from "../../common/util";
 import { Button } from "./Button";
 import { Editor } from "./Editor";
 import { ListItem } from "../editor/list";
+import { util } from "../../deno-lib/npm";
 
 export const LocalProjectPage = (): React.ReactElement => {
   const fileInputElement = React.useRef<HTMLInputElement>(null);
@@ -194,7 +194,7 @@ const typePartListEditor = (
       }),
     })),
     deleteAt: (index) => {
-      setTypePartList(listDeleteAt(typePartList, index));
+      setTypePartList(util.listDeleteAt(typePartList, index));
     },
     deleteAll: () => {
       setTypePartList([]);
@@ -221,7 +221,7 @@ const partListEditor = (
       }),
     })),
     deleteAt: (index) => {
-      setPartList(listDeleteAt(partList, index));
+      setPartList(util.listDeleteAt(partList, index));
     },
     deleteAll: () => {
       setPartList([]);
@@ -233,9 +233,9 @@ const partListEditor = (
 };
 
 const createRandomTypePartId = (): d.TypePartId => {
-  return d.TypePartId.fromString(createRandomId());
+  return d.TypePartId.fromString(util.createRandomId());
 };
 
 const createRandomPartId = (): d.PartId => {
-  return d.PartId.fromString(createRandomId());
+  return d.PartId.fromString(util.createRandomId());
 };

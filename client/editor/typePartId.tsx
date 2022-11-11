@@ -4,7 +4,7 @@ import type { ElementOperation } from "./ElementOperation";
 import { Link } from "../ui/Link";
 import type { UseDefinyAppResult } from "../hook/useDefinyApp";
 import { css } from "@emotion/css";
-import { neverFunc } from "../../common/util";
+import { util } from "../../deno-lib/npm";
 
 export type TypePartIdSelection = never;
 export type TypePartIdValue = {
@@ -104,8 +104,8 @@ export const typePartIdOperation: ElementOperation<
   TypePartIdSelection,
   TypePartIdValue
 > = {
-  moveUp: neverFunc,
-  moveDown: neverFunc,
+  moveUp: util.neverFunc,
+  moveDown: util.neverFunc,
   moveFirstChild: () => undefined,
   moveParent: () => undefined,
   selectionView: TypePartIdSelectionView,

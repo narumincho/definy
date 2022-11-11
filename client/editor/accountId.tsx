@@ -7,7 +7,7 @@ import { Link } from "../ui/Link";
 import { NextIcon } from "../ui/NextIcon";
 import type { UseDefinyAppResult } from "../hook/useDefinyApp";
 import { css } from "@emotion/css";
-import { neverFunc } from "../../common/util";
+import { util } from "../../deno-lib/npm";
 
 export type AccountIdSelection = never;
 
@@ -98,8 +98,8 @@ export const accountIdOperation: ElementOperation<
   AccountIdSelection,
   AccountIdValue
 > = {
-  moveDown: neverFunc,
-  moveUp: neverFunc,
+  moveDown: util.neverFunc,
+  moveUp: util.neverFunc,
   moveFirstChild: () => undefined,
   moveParent: () => undefined,
   selectionView: AccountIdSelectionView,

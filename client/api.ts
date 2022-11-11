@@ -1,4 +1,4 @@
-import * as commonUrl from "../common/url";
+import * as commonUrl from "./url";
 import * as d from "../localData";
 import { ApiCodecType, GetCodecType, apiCodec } from "../common/apiCodec";
 

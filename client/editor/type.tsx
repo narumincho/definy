@@ -4,7 +4,7 @@ import { ElementOperation } from "./ElementOperation";
 import type { UseDefinyAppResult } from "../hook/useDefinyApp";
 import { css } from "@emotion/css";
 import { dataTypeOrDataTypeParameterOperation } from "./dataTypeOrDataTypeParameter";
-import { neverFunc } from "../../common/util";
+import { util } from "../../deno-lib/npm";
 
 export type TypeSelection = {
   readonly index: number;
@@ -101,8 +101,8 @@ const TypeDetailView: ElementOperation<TypeSelection, TypeValue>["detailView"] =
 TypeDetailView.displayName = "TypeDetailView";
 
 export const typeOperation: ElementOperation<TypeSelection, TypeValue> = {
-  moveDown: neverFunc,
-  moveUp: neverFunc,
+  moveDown: util.neverFunc,
+  moveUp: util.neverFunc,
   moveFirstChild: () => undefined,
   moveParent: () => undefined,
   selectionView: TypeSelectionView,

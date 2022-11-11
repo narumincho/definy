@@ -3,7 +3,7 @@ import * as d from "../../localData";
 import type { ElementOperation } from "./ElementOperation";
 import { ProjectCard } from "../ui/ProjectCard";
 import type { UseDefinyAppResult } from "../hook/useDefinyApp";
-import { neverFunc } from "../../common/util";
+import { util } from "../../deno-lib/npm";
 
 /** プロジェクト内の要素を選択することはなさそう */
 export type ProjectIdSelection = never;
@@ -47,8 +47,8 @@ export const projectIdOperation: ElementOperation<
   ProjectIdSelection,
   ProjectIdValue
 > = {
-  moveUp: neverFunc,
-  moveDown: neverFunc,
+  moveUp: util.neverFunc,
+  moveDown: util.neverFunc,
   moveFirstChild: () => undefined,
   moveParent: () => undefined,
   selectionView: ProjectIdSelectionView,

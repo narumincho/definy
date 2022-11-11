@@ -7,7 +7,7 @@ import { useAccountToken } from "../../client/hook/useAccountToken";
 import { useQueryBasedState } from "../../client/hook/useQueryBasedState";
 import { useRouter } from "next/router";
 import { zodType } from "../../deno-lib/npm";
-import { zodTypeLocationAndLanguageToUrl } from "../../common/url";
+import { zodTypeLocationAndLanguageToUrl } from "../../client/url";
 
 type CodeAndState = {
   readonly code: string;

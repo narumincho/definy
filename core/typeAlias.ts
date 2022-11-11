@@ -1,9 +1,8 @@
 import * as codec from "./kernelType/codec";
 import * as d from "../localData";
 import * as util from "./util";
+import { util as dUtil, jsTs } from "../deno-lib/npm";
 import type { TypePartIdAndMessage } from "./TypePartIdAndMessage";
-import { firstLowerCase } from "../common/util";
-import { jsTs } from "../deno-lib/npm";
 
 export const typePartMapToTypeAlias = (
   typePartMap: ReadonlyMap<d.TypePartId, d.TypePart>
@@ -255,7 +254,7 @@ const typePartBodyKernelToTsType = (
             _: "Object",
             tsMemberTypeList: [
               {
-                name: "_" + firstLowerCase(typePart.name),
+                name: "_" + dUtil.firstLowerCase(typePart.name),
                 required: true,
                 type: { _: "Never" },
                 document: "",

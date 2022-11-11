@@ -1,6 +1,6 @@
 import * as React from "react";
 import * as d from "../localData";
-import { pngFilePath } from "../common/url";
+import { pngFilePath } from "../client/url";
 
 export const Image: React.FC<{
   imageHash: d.ImageHash;

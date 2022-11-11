@@ -1,7 +1,7 @@
 import * as React from "react";
 import * as d from "../../localData";
 import { CSSObject, css } from "@emotion/css";
-import { locationAndLanguageToUrl } from "../../common/url";
+import { locationAndLanguageToUrl } from "../url";
 
 export const Link = React.memo(
   (props: {

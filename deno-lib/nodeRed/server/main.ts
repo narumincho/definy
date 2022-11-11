@@ -8,27 +8,37 @@ const createdServer = new Set<string>();
 
 // Node.js 内で動作
 export default function (RED: NodeAPI) {
-  // eslint-disable-next-line func-style
-  function CustomNode(this: Node, config: NodeDef): void {
-    RED.nodes.createNode(this, config);
-  }
+  const generateNode = (
+    parameter: {
+      readonly url: URL;
+      readonly functionDetail: definyRpcClient.FunctionDetail;
+    },
+  ) => {
+    // eslint-disable-next-line func-style
+    return function (this: Node, config: NodeDef): void {
+      RED.nodes.createNode(this, config);
+      this.on("input", (_msg, send) => {
+        const apiUrl = new URL(parameter.url);
+        apiUrl.pathname = apiUrl.pathname + "/" +
+          parameter.functionDetail.name.join("/");
+        fetch(apiUrl).then((response) => response.json()).then((json) => {
+          send({ payload: json });
+        });
+      });
+    };
+  };
 
-  // eslint-disable-next-line func-style
-  function CreateDefinyRpcNode(
-    this: Node,
-    config: NodeDef & { url: string },
-  ): void {
-    RED.nodes.createNode(this, config);
-    const url = urlFromString(config.url);
+  const generateNodesFromUrl = (urlText: string, setStatus: Node["status"]) => {
+    const url = urlFromString(urlText);
     if (url === undefined) {
-      this.status({
+      setStatus({
         shape: "ring",
         fill: "red",
-        text: config.url + " は不正なURLです",
+        text: urlText + " は不正なURLです",
       });
       return;
     }
-    this.status({
+    setStatus({
       shape: "ring",
       fill: "grey",
       text: "APIの情報を取得中...",
@@ -39,10 +49,10 @@ export default function (RED: NodeAPI) {
       definyRpcClient.functionListByName({ url: url.toString() }),
     ]).then(([name, functionList]) => {
       if (name.type === "error" || functionList.type === "error") {
-        this.status({
+        setStatus({
           shape: "ring",
           fill: "red",
-          text: config.url + " は definy RPC のサーバーではありません",
+          text: urlText + " は definy RPC のサーバーではありません",
         });
         return;
       }
@@ -54,19 +64,40 @@ export default function (RED: NodeAPI) {
       if (!createdServer.has(url.toString())) {
         createdServer.add(url.toString());
         for (const func of functionList.ok) {
-          RED.nodes.registerType("definy-" + func.name.join("-"), CustomNode);
+          RED.nodes.registerType(
+            "definy-" + func.name.join("-"),
+            generateNode({ url, functionDetail: func }),
+          );
         }
       }
-      this.status({
+      setStatus({
         shape: "dot",
         fill: "green",
         text: jsonStringify(status),
       });
     });
+  };
+
+  // eslint-disable-next-line func-style
+  function CreateDefinyRpcNode(
+    this: Node,
+    config: NodeDef & { url: string },
+  ): void {
+    RED.nodes.createNode(this, config);
+    generateNodesFromUrl(config.url, (e) => this.status(e));
   }
 
   RED.nodes.registerType(
     "create-definy-rpc-node",
     CreateDefinyRpcNode,
   );
+
+  console.log(RED);
+  // RED.nodes.eachNode((node) => {
+  //   console.log("e", node);
+  //   if (node.type === "create-definy-rpc-node") {
+  //     console.log("matched node ", node);
+  //     console.log("matched node get ", RED.nodes.getNode(node.id));
+  //   }
+  // });
 }

@@ -7,7 +7,7 @@ import { useAccountToken } from "../client/hook/useAccountToken";
 import { useLanguage } from "../client/hook/useLanguage";
 import { useRouter } from "next/router";
 import { zodType } from "../deno-lib/npm";
-import { zodTypeLocationAndLanguageToUrl } from "../common/url";
+import { zodTypeLocationAndLanguageToUrl } from "../client/url";
 
 const CreateProject = (): React.ReactElement => {
   const language = useLanguage();

@@ -2,7 +2,7 @@ import {
   languageQueryKey,
   queryValueToZodLanguage,
   zodLanguageToQueryValue,
-} from "../../common/url";
+} from "../url";
 import { useQueryBasedState } from "./useQueryBasedState";
 import { zodType } from "../../deno-lib/npm";
 
