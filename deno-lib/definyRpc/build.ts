@@ -3,8 +3,8 @@ import * as esbuild from "https://deno.land/x/esbuild@v0.15.13/mod.js";
 import { denoPlugin } from "https://deno.land/x/esbuild_deno_loader@0.6.0/mod.ts";
 import { hashBinary } from "../sha256.ts";
 import { jsonStringify } from "../typedJson.ts";
-import { fromFileUrl, join } from "https://deno.land/std@0.156.0/path/mod.ts";
-import { relative } from "https://deno.land/std@0.156.0/path/win32.ts";
+import { fromFileUrl, join } from "https://deno.land/std@0.163.0/path/mod.ts";
+import { relative } from "https://deno.land/std@0.163.0/path/win32.ts";
 import { writeTextFile } from "../writeFileAndLog.ts";
 
 type BuildClientResult = {
@@ -18,12 +18,12 @@ const clientEditorPath = fromFileUrl(import.meta.resolve("./clientEditor/"));
 
 const buildClientEditor = async (): Promise<BuildClientResult> => {
   const iconContent = await Deno.readFile(
-    join(clientEditorPath + "./assets/icon.png")
+    join(clientEditorPath, "./assets/icon.png"),
   );
   const iconHash = await hashBinary(iconContent);
 
   const esbuildResult = await esbuild.build({
-    entryPoints: [relative(Deno.cwd(), join(clientEditorPath + "./main.tsx"))],
+    entryPoints: [relative(Deno.cwd(), join(clientEditorPath, "./main.tsx"))],
     plugins: [denoPlugin()],
     write: false,
     bundle: true,
@@ -36,7 +36,7 @@ const buildClientEditor = async (): Promise<BuildClientResult> => {
       const hash = await hashBinary(esbuildResultFile.contents);
       console.log("js 発見");
       const scriptContent = new TextDecoder().decode(
-        esbuildResultFile.contents
+        esbuildResultFile.contents,
       );
 
       return {
@@ -55,7 +55,7 @@ const main = async (): Promise<void> => {
   console.log("clientEditor のビルドデータ生成完了");
   await writeTextFile(
     fromFileUrl(import.meta.resolve("./server/browserClient.json")),
-    jsonStringify(clientBuildResult, true)
+    jsonStringify(clientBuildResult, true),
   );
   console.log("ファイルに保存した");
   Deno.exit();
