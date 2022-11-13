@@ -94,7 +94,7 @@ deno run --watch --check --allow-env --allow-net=:2520 --allow-read --allow-writ
 カレントディレクトリは リポジトリと同じ場所
 
 ```ps1
-deno run --check --watch --allow-net=:2520 --allow-write=./deno-lib/definyRpc/client/generated --allow-read ./deno-lib/definyRpc/example/exampleDev.ts
+deno run --check --watch --allow-net=:2520 --allow-write=./deno-lib/definyRpc/client/generated --allow-read ./deno-lib/definyRpc/dev.ts
 ```
 
 `--allow-write` `--allow-read` とかで指定しているのは, サーバーでコード生成したときに, ファイルを保存するため
@@ -142,3 +142,5 @@ cd ~/.node-red
 node-red
 npm install path/to/nodeRedServerForNode
 ```
+
+[/deno-lib/README.md](./deno-lib/README.md) にも説明あり

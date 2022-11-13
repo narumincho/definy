@@ -1,4 +1,4 @@
-import { definyRpc } from "../server/mod.ts";
+import { definyRpc } from "./server/mod.ts";
 
 export const funcList = (): ReadonlyArray<definyRpc.ApiFunction> => {
   return [

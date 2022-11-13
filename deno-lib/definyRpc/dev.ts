@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.163.0/http/server.ts";
-import { definyRpc } from "../server/mod.ts";
+import { definyRpc } from "./server/mod.ts";
 import { funcList } from "./exampleFunc.ts";
 
 const portNumber = 2520;
@@ -19,7 +19,7 @@ serve(
     }
     const simpleResponse = definyRpc.handleRequest(
       sampleDefinyRpcServerParameter,
-      simpleRequest
+      simpleRequest,
     );
     if (simpleResponse === undefined) {
       return new Response("特に処理すること必要がないリクエストだった", {
@@ -30,9 +30,9 @@ serve(
 
     response.headers.append(
       "access-control-allow-origin",
-      request.headers.get("origin") ?? new URL(request.url).origin
+      request.headers.get("origin") ?? new URL(request.url).origin,
     );
     return response;
   },
-  { port: portNumber }
+  { port: portNumber },
 );
