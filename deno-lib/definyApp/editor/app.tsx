@@ -1,5 +1,6 @@
 import React from "https://esm.sh/react@18.2.0";
 import { c, toStyleAndHash } from "../../cssInJs/mod.ts";
+import { GoogleLogInButton } from "./components/googleLogInButton.tsx";
 
 const containerStyle = toStyleAndHash({
   backgroundColor: "black",
@@ -10,12 +11,21 @@ const containerStyle = toStyleAndHash({
   gridTemplateRows: "48px 1fr",
 });
 
+const headerStyle = toStyleAndHash({
+  display: "flex",
+  alignItems: "center",
+  backgroundColor: "#333",
+  padding: "0 8px",
+});
+
 const logoStyle = toStyleAndHash({
   color: "#b9d09b",
   fontSize: 32,
-  padding: 8,
-  backgroundColor: "#333",
-  lingHeight: "1",
+  lineHeight: "1",
+});
+
+const spacer = toStyleAndHash({
+  flexGrow: "1",
 });
 
 type Props = {
@@ -29,9 +39,23 @@ type LocationAndLanguage = {
 
 export const App = (): React.ReactElement => {
   const [count, setCount] = React.useState<number>(0);
+  const [isRequestLogInUrl, setIsRequestLogInUrl] = React.useState<boolean>(
+    false,
+  );
+
   return (
     <div className={c(containerStyle)}>
-      <div className={c(logoStyle)}>definy</div>
+      <div className={c(headerStyle)}>
+        <div className={c(logoStyle)}>definy</div>
+        <div className={c(spacer)}></div>
+        <GoogleLogInButton
+          language="ja"
+          onClick={() => {
+            setIsRequestLogInUrl(true);
+          }}
+        />
+      </div>
+      {isRequestLogInUrl && <div>ログインURLをリクエストするAPIを呼ぶ</div>}
       <div>
         <div>{count}</div>
         <button

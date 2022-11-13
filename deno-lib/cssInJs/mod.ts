@@ -11,7 +11,7 @@ export type Style = {
   readonly textAlign?: "left" | undefined;
   readonly fontSize?: number | undefined;
   /** px をつけないようにするため */
-  readonly lingHeight?: "1" | undefined;
+  readonly lineHeight?: "1" | undefined;
   readonly backgroundColor?: string | undefined;
   readonly color?: string | undefined;
   readonly borderRadius?: number | undefined;
@@ -39,14 +39,14 @@ export type Style = {
   readonly paddingLeft?: number | undefined;
   readonly textDecoration?: string | undefined;
   readonly stroke?: string | undefined;
-  readonly flexGrow?: number | undefined;
+  readonly flexGrow?: "1" | undefined;
 };
 
 const stylePropertyNameCamelCaseToKebabCaseMap: ReadonlyMap<string, string> =
   new Map<keyof Style, string>([
     ["textAlign", "text-align"],
     ["fontSize", "font-size"],
-    ["lingHeight", "ling-height"],
+    ["lineHeight", "line-height"],
     ["backgroundColor", "background-color"],
     ["borderRadius", "border-radius"],
     ["boxSizing", "box-sizing"],
