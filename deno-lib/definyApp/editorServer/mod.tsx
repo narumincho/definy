@@ -12,6 +12,7 @@ export const startEditorServer = (
       return new Response(dist.scriptContent, {
         headers: {
           "Content-Type": "text/javascript; charset=utf-8",
+          "Cache-Control": "public, max-age=604800, immutable",
         },
       });
     }
@@ -19,6 +20,7 @@ export const startEditorServer = (
       <html>
         <head>
           <title>definy editor</title>
+          <meta name="viewport" content="width=device-width, initial-scale=1" />
           <script type="module" src={"/" + dist.scriptHash} />
         </head>
         <body>
@@ -27,7 +29,10 @@ export const startEditorServer = (
       </html>,
     );
     return new Response(stream, {
-      headers: { "Content-Type": "text/html; charset=utf-8" },
+      headers: {
+        "Content-Type": "text/html; charset=utf-8",
+        "Cache-Control": "public, max-age=5",
+      },
     });
   }, option.port === undefined ? {} : { port: option.port });
 };

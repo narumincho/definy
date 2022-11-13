@@ -52,7 +52,8 @@ const watchAndBuild = async (
       plugins: [denoPlugin()],
       write: false,
       bundle: true,
-      format: "esm",
+      minify: true,
+      format: "iife",
       target: ["chrome106"],
       watch: {
         onRebuild: (error, result) => {
