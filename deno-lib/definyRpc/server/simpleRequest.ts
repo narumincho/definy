@@ -1,10 +1,15 @@
+/// <reference no-default-lib="true"/>
+/// <reference lib="dom" />
+/// <reference lib="dom.iterable" />
+/// <reference lib="deno.ns" />
+
 import { IncomingMessage } from "../../nodeType.ts";
 
 /**
  * 標準の Request オブジェクトから {@link SimpleRequest} を生成します
  */
 export const requestObjectToSimpleRequest = (
-  request: Request
+  request: Request,
 ): SimpleRequest | undefined => {
   const headers = new Map<string, string>();
   request.headers.forEach((key, value) => {
@@ -19,7 +24,7 @@ export const requestObjectToSimpleRequest = (
 };
 
 export const incomingMessageToSimpleRequest = (
-  incomingMessage: IncomingMessage
+  incomingMessage: IncomingMessage,
 ): SimpleRequest | undefined => {
   return commonObjectToSimpleRequest({
     method: incomingMessage.method,
@@ -44,10 +49,6 @@ const commonObjectToSimpleRequest = (request: {
     return undefined;
   }
   const url = new URL(request.url);
-  const query = new Map<string, string>();
-  url.searchParams.forEach((key, value) => {
-    query.set(key, value);
-  });
 
   return {
     method: request.method,
@@ -56,7 +57,7 @@ const commonObjectToSimpleRequest = (request: {
       Authorization: request.headers.get("Authorization"),
     },
     path: url.pathname.split("/").filter((item) => item !== ""),
-    query: query,
+    query: new Map([...url.searchParams]),
   };
 };
 

@@ -7,6 +7,18 @@ export const Language = z.enum(["japanese", "english", "esperanto"]);
 
 export type Language = z.TypeOf<typeof Language>;
 
+export const languageFromId = (value: unknown): Language => {
+  switch (value) {
+    case "en":
+      return "english";
+    case "ja":
+      return "japanese";
+    case "eo":
+      return "esperanto";
+  }
+  return "english";
+};
+
 export const defaultLanguage: Language = "english";
 
 export const PreAccountToken = z.string().length(64).brand<"PreAccountToken">();

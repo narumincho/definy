@@ -11,12 +11,14 @@ import dist from "./dist.json" assert { type: "json" };
 import { getRenderedCss, resetInsertedStyle } from "../../cssInJs/mod.ts";
 import { requestObjectToSimpleRequest } from "../../definyRpc/server/simpleRequest.ts";
 import { stringArrayEqual } from "../../util.ts";
+import { languageFromId } from "../../zodType.ts";
 
 export const startEditorServer = (
   option: { readonly port: number | undefined },
 ): void => {
   serve((request) => {
     const simpleRequest = requestObjectToSimpleRequest(request);
+    console.log(simpleRequest);
     if (stringArrayEqual(simpleRequest?.path ?? [], [dist.scriptHash])) {
       return new Response(dist.scriptContent, {
         headers: {
@@ -43,7 +45,11 @@ export const startEditorServer = (
     }
 
     resetInsertedStyle();
-    const body = renderToString(<App />);
+    const body = renderToString(
+      <App
+        language={languageFromId(simpleRequest?.query.get("hl"))}
+      />,
+    );
     return new Response(
       `<!doctype html>
 <html>

@@ -1,7 +1,7 @@
 import React from "https://esm.sh/react@18.2.0";
 
 import { c, toStyleAndHash } from "../../../cssInJs/mod.ts";
-import { Language } from "../type/language.ts";
+import { Language } from "../../../zodType.ts";
 
 const containerStyle = toStyleAndHash({
   display: "grid",
@@ -27,7 +27,7 @@ const textStyle = toStyleAndHash({
 
 export const GoogleLogInButton = (
   props: {
-    readonly language: "eo" | "en" | "ja";
+    readonly language: Language;
     readonly onClick: () => void;
   },
 ) => (
@@ -48,11 +48,11 @@ const logInMessage = (
   language: Language,
 ): string => {
   switch (language) {
-    case "en":
+    case "english":
       return `Sign in with Google`;
-    case "eo":
+    case "esperanto":
       return `Ensalutu kun Google`;
-    case "ja":
+    case "japanese":
       return `Google でログイン`;
   }
 };

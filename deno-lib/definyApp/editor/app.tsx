@@ -1,5 +1,6 @@
 import React from "https://esm.sh/react@18.2.0";
 import { c, toStyleAndHash } from "../../cssInJs/mod.ts";
+import { Language } from "../../zodType.ts";
 import { GoogleLogInButton } from "./components/googleLogInButton.tsx";
 
 const containerStyle = toStyleAndHash({
@@ -28,16 +29,11 @@ const spacer = toStyleAndHash({
   flexGrow: "1",
 });
 
-type Props = {
-  readonly locationAndLanguage: LocationAndLanguage;
+type AppProps = {
+  readonly language: Language;
 };
 
-type LocationAndLanguage = {
-  readonly language: "en" | "ja" | "eo";
-  readonly location: "top" | "toolsClock" | "tool";
-};
-
-export const App = (): React.ReactElement => {
+export const App = (props: AppProps): React.ReactElement => {
   const [count, setCount] = React.useState<number>(0);
   const [isRequestLogInUrl, setIsRequestLogInUrl] = React.useState<boolean>(
     false,
@@ -49,7 +45,7 @@ export const App = (): React.ReactElement => {
         <div className={c(logoStyle)}>definy</div>
         <div className={c(spacer)}></div>
         <GoogleLogInButton
-          language="ja"
+          language={props.language}
           onClick={() => {
             setIsRequestLogInUrl(true);
           }}
