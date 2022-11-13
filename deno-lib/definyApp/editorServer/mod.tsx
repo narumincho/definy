@@ -8,12 +8,15 @@ import { renderToString } from "https://esm.sh/react-dom@18.2.0/server";
 import { App } from "../editor/app.tsx";
 import dist from "./dist.json" assert { type: "json" };
 import { getRenderedCss, resetInsertedStyle } from "../../cssInJs/mod.ts";
+import { requestObjectToSimpleRequest } from "../../definyRpc/server/simpleRequest.ts";
+import { stringArrayEqual } from "../../util.ts";
 
 export const startEditorServer = (
   option: { readonly port: number | undefined },
 ): void => {
   serve((request) => {
-    if (new URL(request.url).pathname === "/" + dist.scriptHash) {
+    const simpleRequest = requestObjectToSimpleRequest(request);
+    if (stringArrayEqual(simpleRequest?.path ?? [], [dist.scriptHash])) {
       return new Response(dist.scriptContent, {
         headers: {
           "Content-Type": "text/javascript; charset=utf-8",
@@ -21,6 +24,23 @@ export const startEditorServer = (
         },
       });
     }
+    if (stringArrayEqual(simpleRequest?.path ?? [], [dist.iconHash])) {
+      return new Response(dist.iconContent, {
+        headers: {
+          "Content-Type": "image/png",
+          "Cache-Control": "public, max-age=604800, immutable",
+        },
+      });
+    }
+    if (stringArrayEqual(simpleRequest?.path ?? [], [dist.fontHash])) {
+      return new Response(dist.iconContent, {
+        headers: {
+          "Content-Type": "font/woff2",
+          "Cache-Control": "public, max-age=604800, immutable",
+        },
+      });
+    }
+
     resetInsertedStyle();
     const body = renderToString(<App />);
     return new Response(
@@ -29,23 +49,34 @@ export const startEditorServer = (
   <head>
     <title>definy editor</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <script type="module" src=${"/" + dist.scriptHash}></script>
+    <link rel="icon" type="image/png" href="/${dist.iconHash}" />
+    <script type="module" src="/${dist.scriptHash}"></script>
     <style>${getRenderedCss()}</style>
     <style>
-html {
+html, body, #root {
   height: 100%;
 }
 
 body {
   margin: 0;
-  height: 100%;
+}
+
+/*
+  Hack typeface https://github.com/source-foundry/Hack
+  License: https://github.com/source-foundry/Hack/blob/master/LICENSE.md
+*/
+@font-face {
+  font-family: "Hack";
+  font-weight: 400;
+  font-style: normal;
+  src: url("/${dist.fontHash}") format("woff2");
 }
     </style>
   </head>
   <body>
-    ${body}
+    <div id="root">${body}</div>
   </body>
-  </html>,
+</html>
 `,
       {
         headers: {

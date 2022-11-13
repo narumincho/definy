@@ -1,22 +1,24 @@
 import * as base64 from "https://denopkg.com/chiefbiiko/base64@master/mod.ts";
 import * as esbuild from "https://deno.land/x/esbuild@v0.15.13/mod.js";
 import { denoPlugin } from "https://deno.land/x/esbuild_deno_loader@0.6.0/mod.ts";
-import { hashBinary } from "../../sha256.ts";
+import { Hash, hashBinary } from "../../sha256.ts";
 import { jsonStringify } from "../../typedJson.ts";
 import { fromFileUrl } from "https://deno.land/std@0.163.0/path/mod.ts";
 import { relative } from "https://deno.land/std@0.163.0/path/win32.ts";
 import { writeTextFile } from "../../writeFileAndLog.ts";
 
 type BuildClientResult = {
-  readonly iconHash: string;
+  readonly iconHash: Hash;
   readonly iconContent: string;
-  readonly scriptHash: string;
+  readonly scriptHash: Hash;
   readonly scriptContent: string;
+  readonly fontHash: Hash;
+  readonly fontContent: string;
 };
 
 const outputFilesToScriptFile = async (
   outputFiles: ReadonlyArray<esbuild.OutputFile>,
-): Promise<{ readonly hash: string; readonly scriptContent: string }> => {
+): Promise<{ readonly hash: Hash; readonly scriptContent: string }> => {
   for (const esbuildResultFile of outputFiles) {
     if (esbuildResultFile.path === "<stdout>") {
       const hash = await hashBinary(esbuildResultFile.contents);
@@ -40,6 +42,13 @@ const watchAndBuild = async (
     fromFileUrl(import.meta.resolve("./assets/icon.png")),
   );
   const iconHash = await hashBinary(iconContent);
+  const iconContentAsBase64 = base64.fromUint8Array(iconContent);
+
+  const fontContent = await Deno.readFile(
+    fromFileUrl(import.meta.resolve("./assets/hack_regular_subset.woff2")),
+  );
+  const fontHash = await hashBinary(fontContent);
+  const fontContentAsBase64 = base64.fromUint8Array(fontContent);
 
   const scriptHashAndContent = await outputFilesToScriptFile(
     (await esbuild.build({
@@ -65,8 +74,10 @@ const watchAndBuild = async (
               result.outputFiles ?? [],
             ).then((hashAndContent) => {
               onBuild({
-                iconContent: base64.fromUint8Array(iconContent),
                 iconHash,
+                iconContent: iconContentAsBase64,
+                fontHash,
+                fontContent: fontContentAsBase64,
                 scriptHash: hashAndContent.hash,
                 scriptContent: hashAndContent.scriptContent,
               });
@@ -77,8 +88,10 @@ const watchAndBuild = async (
     })).outputFiles,
   );
   onBuild({
-    iconContent: base64.fromUint8Array(iconContent),
     iconHash,
+    iconContent: iconContentAsBase64,
+    fontHash,
+    fontContent: fontContentAsBase64,
     scriptHash: scriptHashAndContent.hash,
     scriptContent: scriptHashAndContent.scriptContent,
   });

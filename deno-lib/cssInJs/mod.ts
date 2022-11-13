@@ -10,6 +10,8 @@ export type Style = {
   readonly margin?: 0 | undefined;
   readonly textAlign?: "left" | undefined;
   readonly fontSize?: number | undefined;
+  /** px をつけないようにするため */
+  readonly lingHeight?: "1" | undefined;
   readonly backgroundColor?: string | undefined;
   readonly color?: string | undefined;
   readonly borderRadius?: number | undefined;
@@ -22,10 +24,11 @@ export type Style = {
   readonly overflowY?: "scroll" | undefined;
   readonly overflowWrap?: "anywhere" | undefined;
   readonly gridTemplateColumns?: string | undefined;
+  readonly gridTemplateRows?: string | undefined;
   readonly whiteSpace?: "pre-wrap" | undefined;
   readonly borderStyle?: "solid" | undefined;
   readonly borderColor?: string | undefined;
-  readonly fontFamily?: "monospace" | undefined;
+  readonly fontFamily?: "monospace" | string | undefined;
   readonly fontWeight?: "bold" | "normal" | undefined;
   readonly gridColumn?: string | undefined;
   readonly gridRow?: string | undefined;
@@ -43,6 +46,7 @@ const stylePropertyNameCamelCaseToKebabCaseMap: ReadonlyMap<string, string> =
   new Map<keyof Style, string>([
     ["textAlign", "text-align"],
     ["fontSize", "font-size"],
+    ["lingHeight", "ling-height"],
     ["backgroundColor", "background-color"],
     ["borderRadius", "border-radius"],
     ["boxSizing", "box-sizing"],
@@ -50,6 +54,7 @@ const stylePropertyNameCamelCaseToKebabCaseMap: ReadonlyMap<string, string> =
     ["overflowY", "overflow-y"],
     ["overflowWrap", "overflow-wrap"],
     ["gridTemplateColumns", "grid-template-columns"],
+    ["gridTemplateRows", "grid-template-rows"],
     ["whiteSpace", "white-space"],
     ["borderStyle", "border-style"],
     ["borderColor", "border-color"],
