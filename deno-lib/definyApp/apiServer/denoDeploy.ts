@@ -1,5 +1,11 @@
-import { serve } from "https://deno.land/std@0.163.0/http/server.ts";
+import { main } from "./mod.ts";
 
-serve(() => {
-  return new Response("ここで definy.app の API サーバーを公開する");
-});
+const expectString = (key: string): string => {
+  const value = Deno.env.get(key);
+  if (value === undefined) {
+    throw new Error("環境変数 " + key + " が指定されていない!");
+  }
+  return value;
+};
+
+main({ isDev: false, faunaSecret: expectString("FAUNA_KEY") });
