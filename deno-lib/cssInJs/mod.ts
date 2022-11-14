@@ -10,6 +10,8 @@ export type Style = {
   readonly margin?: 0 | undefined;
   readonly textAlign?: "left" | undefined;
   readonly fontSize?: number | undefined;
+  /** px をつけないようにするため */
+  readonly lineHeight?: "1" | undefined;
   readonly backgroundColor?: string | undefined;
   readonly color?: string | undefined;
   readonly borderRadius?: number | undefined;
@@ -22,10 +24,11 @@ export type Style = {
   readonly overflowY?: "scroll" | undefined;
   readonly overflowWrap?: "anywhere" | undefined;
   readonly gridTemplateColumns?: string | undefined;
+  readonly gridTemplateRows?: string | undefined;
   readonly whiteSpace?: "pre-wrap" | undefined;
   readonly borderStyle?: "solid" | undefined;
   readonly borderColor?: string | undefined;
-  readonly fontFamily?: "monospace" | undefined;
+  readonly fontFamily?: "monospace" | string | undefined;
   readonly fontWeight?: "bold" | "normal" | undefined;
   readonly gridColumn?: string | undefined;
   readonly gridRow?: string | undefined;
@@ -36,13 +39,14 @@ export type Style = {
   readonly paddingLeft?: number | undefined;
   readonly textDecoration?: string | undefined;
   readonly stroke?: string | undefined;
-  readonly flexGrow?: number | undefined;
+  readonly flexGrow?: "1" | undefined;
 };
 
 const stylePropertyNameCamelCaseToKebabCaseMap: ReadonlyMap<string, string> =
   new Map<keyof Style, string>([
     ["textAlign", "text-align"],
     ["fontSize", "font-size"],
+    ["lineHeight", "line-height"],
     ["backgroundColor", "background-color"],
     ["borderRadius", "border-radius"],
     ["boxSizing", "box-sizing"],
@@ -50,6 +54,7 @@ const stylePropertyNameCamelCaseToKebabCaseMap: ReadonlyMap<string, string> =
     ["overflowY", "overflow-y"],
     ["overflowWrap", "overflow-wrap"],
     ["gridTemplateColumns", "grid-template-columns"],
+    ["gridTemplateRows", "grid-template-rows"],
     ["whiteSpace", "white-space"],
     ["borderStyle", "border-style"],
     ["borderColor", "border-color"],
@@ -82,8 +87,18 @@ export const resetInsertedStyle = (): void => {
   insertedStyle.clear();
 };
 
+export const getRenderedCss = (): string => {
+  return [...insertedStyle.entries()].map(([hash, styleAndState]): string => {
+    return styleAndStateStyleToCssString(
+      hashToClassName(hash),
+      styleAndState.style,
+      styleAndState.state,
+    );
+  }).join("\n");
+};
+
 /**
- * すでに追加したスタイルの辞書
+ * すでに追加したスタイルの辞書. キーはハッシュ値
  *
  * SSRのために, スタイル本体まで保持している
  */
@@ -91,6 +106,8 @@ const insertedStyle = new Map<
   string,
   { readonly style: Style; readonly state: StateStyle }
 >();
+
+const hashToClassName = (hash: string): string => "d_" + hash;
 
 /**
  * スタイルのハッシュ値を計算する. c に渡すことによって `className` を得ることができる
@@ -101,7 +118,7 @@ const insertedStyle = new Map<
  */
 export const toStyleAndHash = (
   style: Style,
-  state?: Partial<StateStyle>
+  state?: Partial<StateStyle>,
 ): StyleAndHash => {
   const stateStyle: StateStyle = {
     hover: state?.hover ?? {},
@@ -122,7 +139,7 @@ export const toStyleAndHash = (
  * Deno で esbuild でバンドルしたときに styled-component, emotion など動かなかっため自作した
  */
 export const c = (styleAndHash: StyleAndHash): string => {
-  const className = "d_" + styleAndHash.hash;
+  const className = hashToClassName(styleAndHash.hash);
   if (insertedStyle.has(styleAndHash.hash)) {
     return className;
   }
@@ -136,7 +153,7 @@ export const c = (styleAndHash: StyleAndHash): string => {
   const cssString = styleAndStateStyleToCssString(
     className,
     styleAndHash.style,
-    styleAndHash.stateStyle
+    styleAndHash.stateStyle,
   );
   console.log(cssString);
   const styleElement = document.getElementById(definyCssInJsId);
@@ -153,14 +170,14 @@ export const c = (styleAndHash: StyleAndHash): string => {
 
 const hashStyle = (style: Style, state: StateStyle): string => {
   return murmurHash3(styleAndStateStyleToCssString("", style, state)).toString(
-    16
+    16,
   );
 };
 
 const styleAndStateStyleToCssString = (
   className: string,
   style: Style,
-  stateStyle: StateStyle
+  stateStyle: StateStyle,
 ): string => {
   return (
     styleToCssString("." + className, style) +
