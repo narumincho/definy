@@ -1,3 +1,4 @@
+/// <reference no-default-lib="true"/>
 /// <reference lib="dom" />
 
 import React from "https://esm.sh/react@18.2.0";
@@ -22,8 +23,8 @@ export const Result = (props: {
   readonly data: RawJsonValue;
   readonly requesting: boolean;
 }) => {
-  const [responseToClipboardLoading, setResponseToClipboardLoading] =
-    React.useState<boolean>(false);
+  const [responseToClipboardLoading, setResponseToClipboardLoading] = React
+    .useState<boolean>(false);
 
   if (props.requesting) {
     return <div className={c(requestingStyle)} />;
@@ -33,16 +34,12 @@ export const Result = (props: {
     <div>
       {typeof data === "string" && (
         <Button
-          onClick={
-            responseToClipboardLoading
-              ? undefined
-              : () => {
-                  setResponseToClipboardLoading(true);
-                  navigator.clipboard.writeText(data).then(() => {
-                    setResponseToClipboardLoading(false);
-                  });
-                }
-          }
+          onClick={responseToClipboardLoading ? undefined : () => {
+            setResponseToClipboardLoading(true);
+            navigator.clipboard.writeText(data).then(() => {
+              setResponseToClipboardLoading(false);
+            });
+          }}
         >
           クリップボードにコピー
         </Button>
