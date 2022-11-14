@@ -1,6 +1,8 @@
 import { serve } from "https://deno.land/std@0.163.0/http/server.ts";
 import { definyRpc } from "./server/mod.ts";
 import { funcList } from "./exampleFunc.ts";
+import { requestObjectToSimpleRequest } from "../simpleRequestResponse/simpleRequest.ts";
+import { simpleResponseToResponse } from "../simpleRequestResponse/simpleResponse.ts";
 
 const portNumber = 2520;
 
@@ -13,7 +15,7 @@ const sampleDefinyRpcServerParameter: definyRpc.DefinyRpcParameter = {
 
 serve(
   async (request) => {
-    const simpleRequest = definyRpc.requestObjectToSimpleRequest(request);
+    const simpleRequest = requestObjectToSimpleRequest(request);
     if (simpleRequest === undefined) {
       return new Response("simpleRequestに変換できなかった", { status: 400 });
     }
@@ -26,7 +28,7 @@ serve(
         status: 400,
       });
     }
-    const response = await definyRpc.simpleResponseToResponse(simpleResponse);
+    const response = await simpleResponseToResponse(simpleResponse);
 
     response.headers.append(
       "access-control-allow-origin",

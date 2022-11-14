@@ -39,19 +39,19 @@ export type Statement =
   | { readonly _: "ReturnVoid" }
   | { readonly _: "Continue" }
   | {
-      readonly _: "VariableDefinition";
-      readonly variableDefinitionStatement: VariableDefinitionStatement;
-    }
+    readonly _: "VariableDefinition";
+    readonly variableDefinitionStatement: VariableDefinitionStatement;
+  }
   | {
-      readonly _: "FunctionDefinition";
-      readonly functionDefinitionStatement: FunctionDefinitionStatement;
-    }
+    readonly _: "FunctionDefinition";
+    readonly functionDefinitionStatement: FunctionDefinitionStatement;
+  }
   | { readonly _: "For"; readonly forStatement: ForStatement }
   | { readonly _: "ForOf"; readonly forOfStatement: ForOfStatement }
   | {
-      readonly _: "WhileTrue";
-      readonly statementList: ReadonlyArray<Statement>;
-    }
+    readonly _: "WhileTrue";
+    readonly statementList: ReadonlyArray<Statement>;
+  }
   | { readonly _: "Break" }
   | { readonly _: "Switch"; readonly switchStatement: SwitchStatement };
 
@@ -121,36 +121,37 @@ export type TsExpr =
   | { readonly _: "NullLiteral" }
   | { readonly _: "UndefinedLiteral" }
   | {
-      readonly _: "UnaryOperator";
-      readonly unaryOperatorExpr: UnaryOperatorExpr;
-    }
+    readonly _: "UnaryOperator";
+    readonly unaryOperatorExpr: UnaryOperatorExpr;
+  }
   | {
-      readonly _: "BinaryOperator";
-      readonly binaryOperatorExpr: BinaryOperatorExpr;
-    }
+    readonly _: "BinaryOperator";
+    readonly binaryOperatorExpr: BinaryOperatorExpr;
+  }
   | {
-      readonly _: "ConditionalOperator";
-      readonly conditionalOperatorExpr: ConditionalOperatorExpr;
-    }
+    readonly _: "ConditionalOperator";
+    readonly conditionalOperatorExpr: ConditionalOperatorExpr;
+  }
   | {
-      readonly _: "ArrayLiteral";
-      readonly arrayItemList: ReadonlyArray<ArrayItem>;
-    }
+    readonly _: "ArrayLiteral";
+    readonly arrayItemList: ReadonlyArray<ArrayItem>;
+  }
   | {
-      readonly _: "ObjectLiteral";
-      readonly tsMemberList: ReadonlyArray<TsMember>;
-    }
+    readonly _: "ObjectLiteral";
+    readonly tsMemberList: ReadonlyArray<TsMember>;
+  }
   | { readonly _: "Lambda"; readonly lambdaExpr: LambdaExpr }
   | { readonly _: "Variable"; readonly tsIdentifier: TsIdentifier }
   | { readonly _: "GlobalObjects"; readonly tsIdentifier: TsIdentifier }
   | {
-      readonly _: "ImportedVariable";
-      readonly importedVariable: ImportedVariable;
-    }
+    readonly _: "ImportedVariable";
+    readonly importedVariable: ImportedVariable;
+  }
   | { readonly _: "Get"; readonly getExpr: GetExpr }
   | { readonly _: "Call"; readonly callExpr: CallExpr }
   | { readonly _: "New"; readonly callExpr: CallExpr }
-  | { readonly _: "TypeAssertion"; readonly typeAssertion: TypeAssertion };
+  | { readonly _: "TypeAssertion"; readonly typeAssertion: TypeAssertion }
+  | { readonly _: "this" };
 
 export type Variable = {
   /**
@@ -181,26 +182,26 @@ export type TsType =
   | { readonly _: "Void" }
   | { readonly _: "unknown" }
   | {
-      readonly _: "Object";
-      readonly tsMemberTypeList: ReadonlyArray<TsMemberType>;
-    }
+    readonly _: "Object";
+    readonly tsMemberTypeList: ReadonlyArray<TsMemberType>;
+  }
   | { readonly _: "Function"; readonly functionType: FunctionType }
   | { readonly _: "Union"; readonly tsTypeList: ReadonlyArray<TsType> }
   | { readonly _: "Intersection"; readonly intersectionType: IntersectionType }
   | { readonly _: "ImportedType"; readonly importedType: ImportedType }
   | {
-      readonly _: "ScopeInFile";
-      readonly typeNameAndTypeParameter: TypeNameAndArguments;
-    }
+    readonly _: "ScopeInFile";
+    readonly typeNameAndTypeParameter: TypeNameAndArguments;
+  }
   | {
-      readonly _: "ScopeInGlobal";
-      readonly typeNameAndTypeParameter: TypeNameAndArguments;
-    }
+    readonly _: "ScopeInGlobal";
+    readonly typeNameAndTypeParameter: TypeNameAndArguments;
+  }
   | {
-      readonly _: "WithNamespace";
-      readonly namespace: NonEmptyArray<TsIdentifier>;
-      readonly typeNameAndTypeParameter: TypeNameAndArguments;
-    }
+    readonly _: "WithNamespace";
+    readonly namespace: NonEmptyArray<TsIdentifier>;
+    readonly typeNameAndTypeParameter: TypeNameAndArguments;
+  }
   | { readonly _: "StringLiteral"; readonly string: string };
 
 /**
@@ -498,6 +499,8 @@ export type LambdaExpr = {
    * ラムダ式本体
    */
   readonly statementList: ReadonlyArray<Statement>;
+
+  readonly thisType?: TsType | undefined;
 };
 
 /**

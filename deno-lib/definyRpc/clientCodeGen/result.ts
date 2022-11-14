@@ -1,4 +1,4 @@
-import { identifierFromString, data } from "../../../jsTs/main.ts";
+import { data, identifierFromString } from "../../jsTs/main.ts";
 
 const resultTypeName = identifierFromString("Result");
 
@@ -68,7 +68,7 @@ export const resultExportDefinition: data.ExportDefinition = {
 
 export const resultType = (
   ok: data.TsType,
-  error: data.TsType
+  error: data.TsType,
 ): data.TsType => ({
   _: "ScopeInFile",
   typeNameAndTypeParameter: {

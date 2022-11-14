@@ -1,6 +1,11 @@
 import { DefinyRpcType } from "./type.ts";
 import { NonEmptyArray } from "../../util.ts";
 
+export type FunctionAndTypeList = {
+  readonly functionsList: ReadonlyArray<ApiFunction>;
+  readonly typeList: ReadonlyArray<DefinyRpcType<any>>;
+};
+
 const privateSymbol = Symbol();
 
 /**
@@ -22,7 +27,7 @@ export type ApiFunction = {
   readonly resolve: (
     // deno-lint-ignore no-explicit-any
     input: any,
-    accountToken: AccountToken | undefined
+    accountToken: AccountToken | undefined,
     // deno-lint-ignore no-explicit-any
   ) => Promise<any> | any;
   readonly [Symbol.toStringTag]: "ApiFunction";
@@ -34,7 +39,7 @@ export type AccountToken = string & { __accountToken: never };
 export const createApiFunction = <
   InputType,
   OutputType,
-  NeedAuthentication extends boolean
+  NeedAuthentication extends boolean,
 >(parameter: {
   readonly fullName: NonEmptyArray<string>;
   readonly input: DefinyRpcType<InputType>;
@@ -48,7 +53,7 @@ export const createApiFunction = <
   readonly isMutation: boolean;
   readonly resolve: (
     input: InputType,
-    accountToken: NeedAuthentication extends true ? AccountToken : undefined
+    accountToken: NeedAuthentication extends true ? AccountToken : undefined,
   ) => Promise<OutputType> | OutputType;
 }): ApiFunction => {
   return {
@@ -61,9 +66,8 @@ export const createApiFunction = <
     resolve: (input, accountToken) =>
       parameter.resolve(
         input,
-        accountToken as NeedAuthentication extends true
-          ? AccountToken
-          : undefined
+        accountToken as NeedAuthentication extends true ? AccountToken
+          : undefined,
       ),
     [Symbol.toStringTag]: "ApiFunction",
     [privateSymbol]: privateSymbol,

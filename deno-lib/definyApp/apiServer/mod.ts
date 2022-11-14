@@ -2,6 +2,8 @@ import { serve } from "https://deno.land/std@0.163.0/http/server.ts";
 import { definyRpc } from "../../definyRpc/server/mod.ts";
 import { funcList } from "./funcList.ts";
 import * as f from "../../typedFauna.ts";
+import { requestObjectToSimpleRequest } from "../../simpleRequestResponse/simpleRequest.ts";
+import { simpleResponseToResponse } from "../../simpleRequestResponse/simpleResponse.ts";
 
 const devPortNumber = 2528;
 
@@ -24,7 +26,7 @@ export const main = (
   };
   serve(
     async (request) => {
-      const simpleRequest = definyRpc.requestObjectToSimpleRequest(request);
+      const simpleRequest = requestObjectToSimpleRequest(request);
       if (simpleRequest === undefined) {
         return new Response("simpleRequestに変換できなかった", { status: 400 });
       }
@@ -37,7 +39,7 @@ export const main = (
           status: 400,
         });
       }
-      const response = await definyRpc.simpleResponseToResponse(simpleResponse);
+      const response = await simpleResponseToResponse(simpleResponse);
 
       response.headers.append(
         "access-control-allow-origin",

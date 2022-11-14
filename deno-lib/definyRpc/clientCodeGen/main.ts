@@ -1,11 +1,11 @@
-import { ApiFunction } from "../apiFunction.ts";
+import { ApiFunction } from "../core/apiFunction.ts";
 import {
+  data,
   generateCodeAsString,
   identifierFromString,
-  data,
-} from "../../../jsTs/main.ts";
-import { collectDefinyRpcTypeFromFuncList } from "../collectType.ts";
-import { formatCode } from "../prettier.ts";
+} from "../../jsTs/main.ts";
+import { collectDefinyRpcTypeFromFuncList } from "../core/collectType.ts";
+import { formatCode } from "../../prettier.ts";
 import { apiFuncToTsFunction } from "./func.ts";
 import { resultExportDefinition } from "./result.ts";
 import { collectedTypeToTypeAlias, typeToTypeVariable } from "./type.ts";
@@ -18,7 +18,7 @@ export const apiFunctionListToCode = (parameter: {
 }): string => {
   const code = generateCodeAsString(
     apiFunctionListToJsTsCode(parameter),
-    "TypeScript"
+    "TypeScript",
   );
   if (parameter.usePrettier) {
     return formatCode(code);
@@ -32,10 +32,10 @@ export const apiFunctionListToJsTsCode = (parameter: {
   readonly pathPrefix: ReadonlyArray<string>;
 }): data.JsTsCode => {
   const needAuthentication = parameter.apiFunctionList.some(
-    (func) => func.needAuthentication
+    (func) => func.needAuthentication,
   );
   const collectedTypeMap = collectDefinyRpcTypeFromFuncList(
-    parameter.apiFunctionList
+    parameter.apiFunctionList,
   );
   return {
     exportDefinitionList: [
@@ -48,13 +48,13 @@ export const apiFunctionListToJsTsCode = (parameter: {
             return [];
           }
           return [{ type: "typeAlias", typeAlias }];
-        }
+        },
       ),
       ...[...collectedTypeMap.values()].map(
         (type): data.ExportDefinition => ({
           type: "variable",
           variable: typeToTypeVariable(type, collectedTypeMap),
-        })
+        }),
       ),
       ...parameter.apiFunctionList.map<data.ExportDefinition>((func) => ({
         type: "function",

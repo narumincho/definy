@@ -1,4 +1,4 @@
-import { RawJsonValue, StructuredJsonValue } from "../../typedJson.ts";
+import { StructuredJsonValue } from "../../typedJson.ts";
 import { Lazy, lazyGet } from "../../lazy.ts";
 import { objectEntriesSameValue } from "../../objectEntriesSameValue.ts";
 import { NonEmptyArray } from "../../util.ts";

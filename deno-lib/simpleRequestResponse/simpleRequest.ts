@@ -3,7 +3,7 @@
 /// <reference lib="dom.iterable" />
 /// <reference lib="deno.ns" />
 
-import { IncomingMessage } from "../../nodeType.ts";
+import { IncomingMessage } from "../nodeType.ts";
 
 /**
  * 標準の Request オブジェクトから {@link SimpleRequest} を生成します
