@@ -22,6 +22,8 @@ jobs:
         uses: denoland/setup-deno@v1
         with:
           deno-version: v1.28.0
+      - run: deno test .
+        working-directory: ./deno-lib
       - name: Install npm dependencies (pnpm install)
         run: pnpm install --frozen-lockfile
       - name: Deno to Node.js

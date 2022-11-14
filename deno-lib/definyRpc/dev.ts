@@ -3,10 +3,7 @@ import { definyRpc } from "./server/mod.ts";
 import { funcList } from "./exampleFunc.ts";
 import { requestObjectToSimpleRequest } from "../simpleRequestResponse/simpleRequest.ts";
 import { simpleResponseToResponse } from "../simpleRequestResponse/simpleResponse.ts";
-import {
-  fromFileUrl,
-  relative,
-} from "https://deno.land/std@0.164.0/path/mod.ts";
+import { fromFileUrl } from "https://deno.land/std@0.164.0/path/mod.ts";
 
 const portNumber = 2520;
 
