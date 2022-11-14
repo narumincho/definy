@@ -2,7 +2,7 @@
 /// <reference lib="dom" />
 /// <reference lib="deno.ns" />
 
-import { serve } from "https://deno.land/std@0.163.0/http/server.ts";
+import { serve } from "https://deno.land/std@0.164.0/http/server.ts";
 import React from "https://esm.sh/react@18.2.0";
 import { renderToString } from "https://esm.sh/react-dom@18.2.0/server";
 import * as base64 from "https://denopkg.com/chiefbiiko/base64@master/mod.ts";

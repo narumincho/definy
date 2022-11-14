@@ -1,4 +1,4 @@
-import { serve } from "https://deno.land/std@0.163.0/http/server.ts";
+import { serve } from "https://deno.land/std@0.164.0/http/server.ts";
 import { definyRpc } from "../../definyRpc/server/mod.ts";
 import { funcList } from "./funcList.ts";
 import * as f from "../../typedFauna.ts";

@@ -5,7 +5,7 @@ import {
   fromFileUrl,
   join,
   relative,
-} from "https://deno.land/std@0.143.0/path/mod.ts";
+} from "https://deno.land/std@0.164.0/path/mod.ts";
 import { writeTextFile } from "../writeFileAndLog.ts";
 
 const generateClientHtml = async (): Promise<string> => {

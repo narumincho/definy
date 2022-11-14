@@ -3,7 +3,7 @@ import {
   assertEquals,
   assertMatch,
   assertNotMatch,
-} from "https://deno.land/std@0.163.0/testing/asserts.ts";
+} from "https://deno.land/std@0.164.0/testing/asserts.ts";
 // ./mod.ts から import するとなぜか lib のライブラリが競合する
 import * as jsTs from "./main.ts";
 
@@ -54,7 +54,7 @@ const sampleCode: jsTs.data.JsTsCode = {
 };
 const nodeJsTypeScriptCode = jsTs.generateCodeAsString(
   sampleCode,
-  "TypeScript"
+  "TypeScript",
 );
 console.log(nodeJsTypeScriptCode);
 Deno.test("return string", () => {
@@ -84,7 +84,7 @@ Deno.test("not include revered word", () => {
       ],
       statementList: [],
     },
-    "TypeScript"
+    "TypeScript",
   );
 
   console.log("new code", codeAsString);
@@ -106,7 +106,7 @@ Deno.test("識別子として使えない文字は, 変更される", () => {
       ],
       statementList: [],
     },
-    "TypeScript"
+    "TypeScript",
   );
   console.log(codeAsString);
   assertNotMatch(codeAsString, /const 0name/u);
@@ -119,7 +119,8 @@ Deno.test("識別子の生成で識別子に使えない文字が含まれてい
     index = createIdentifierResult.nextIdentifierIndex;
     if (!jsTs.isIdentifier(createIdentifierResult.identifier)) {
       throw new Error(
-        "create not identifier. identifier=" + createIdentifierResult.identifier
+        "create not identifier. identifier=" +
+          createIdentifierResult.identifier,
       );
     }
   }
@@ -197,9 +198,9 @@ Deno.test("include function parameter name", () => {
               expr: jsTs.get(
                 jsTs.get(
                   jsTs.variable(jsTs.identifierFromString("request")),
-                  "headers"
+                  "headers",
                 ),
-                "accept"
+                "accept",
               ),
             },
           },
@@ -209,13 +210,13 @@ Deno.test("include function parameter name", () => {
               condition: jsTs.logicalAnd(
                 jsTs.notEqual(
                   jsTs.variable(jsTs.identifierFromString("accept")),
-                  { _: "UndefinedLiteral" }
+                  { _: "UndefinedLiteral" },
                 ),
                 jsTs.callMethod(
                   jsTs.variable(jsTs.identifierFromString("accept")),
                   "includes",
-                  [jsTs.stringLiteral("text/html")]
-                )
+                  [jsTs.stringLiteral("text/html")],
+                ),
               ),
               thenStatementList: [
                 jsTs.statementEvaluateExpr(
@@ -225,8 +226,8 @@ Deno.test("include function parameter name", () => {
                     [
                       jsTs.stringLiteral("content-type"),
                       jsTs.stringLiteral("text/html"),
-                    ]
-                  )
+                    ],
+                  ),
                 ),
               ],
             },
@@ -269,7 +270,7 @@ Deno.test("get array index", () => {
       ],
       statementList: [],
     },
-    "TypeScript"
+    "TypeScript",
   );
   console.log(code);
   assertMatch(code, /\[0\]/u);
@@ -290,7 +291,7 @@ const scopedCode = jsTs.generateCodeAsString(
       jsTs.consoleLog(jsTs.variable(jsTs.identifierFromString("sorena"))),
     ],
   },
-  "JavaScript"
+  "JavaScript",
 );
 
 Deno.test("statementList in { } scope curly braces", () => {
@@ -315,7 +316,7 @@ Deno.test("type parameter", () => {
       ],
       statementList: [],
     },
-    "TypeScript"
+    "TypeScript",
   );
   console.log(code);
   assertMatch(code, /Promise<string>/u);
@@ -329,11 +330,11 @@ Deno.test("object literal key is escaped", () => {
           jsTs.objectLiteral([
             jsTs.memberKeyValue("abc", jsTs.numberLiteral(3)),
             jsTs.memberKeyValue("a b c", jsTs.stringLiteral("separated")),
-          ])
+          ]),
         ),
       ],
     },
-    "TypeScript"
+    "TypeScript",
   );
   console.log(code);
   assertMatch(code, /"a b c"/u);
@@ -349,27 +350,27 @@ Deno.test("binary operator combine", () => {
               jsTs.addition(
                 jsTs.multiplication(
                   jsTs.numberLiteral(3),
-                  jsTs.numberLiteral(9)
+                  jsTs.numberLiteral(9),
                 ),
                 jsTs.multiplication(
                   jsTs.numberLiteral(7),
-                  jsTs.numberLiteral(6)
-                )
+                  jsTs.numberLiteral(6),
+                ),
               ),
               jsTs.addition(
                 jsTs.addition(jsTs.numberLiteral(2), jsTs.numberLiteral(3)),
-                jsTs.addition(jsTs.numberLiteral(5), jsTs.numberLiteral(8))
-              )
+                jsTs.addition(jsTs.numberLiteral(5), jsTs.numberLiteral(8)),
+              ),
             ),
             jsTs.multiplication(
               jsTs.numberLiteral(5),
-              jsTs.addition(jsTs.numberLiteral(7), jsTs.numberLiteral(8))
-            )
-          )
+              jsTs.addition(jsTs.numberLiteral(7), jsTs.numberLiteral(8)),
+            ),
+          ),
         ),
       ],
     },
-    "JavaScript"
+    "JavaScript",
   );
   console.log(code);
   assert(code.includes("3 * 9 + 7 * 6 === 2 + 3 + (5 + 8) === 5 * (7 + 8)"));
@@ -402,14 +403,14 @@ Deno.test("object literal return need parenthesis", () => {
               jsTs.objectLiteral([
                 jsTs.memberKeyValue("name", jsTs.stringLiteral("mac")),
                 jsTs.memberKeyValue("age", jsTs.numberLiteral(10)),
-              ])
+              ]),
             ),
           ],
         }),
       ],
       statementList: [],
     },
-    "TypeScript"
+    "TypeScript",
   );
   console.log(code);
   assertMatch(code, /\(\{.*\}\)/u);
@@ -447,7 +448,7 @@ Deno.test("let variable", () => {
         },
       ],
     },
-    "TypeScript"
+    "TypeScript",
   );
   console.log(code);
   assertMatch(code, /let v: number = 10;[\n ]*v = 30;[\n ]*v \+= 1;/u);
@@ -480,7 +481,7 @@ Deno.test("for of", () => {
           },
           statementList: [
             jsTs.consoleLog(
-              jsTs.variable(jsTs.identifierFromString("element"))
+              jsTs.variable(jsTs.identifierFromString("element")),
             ),
           ],
         },
@@ -516,7 +517,7 @@ Deno.test("switch", () => {
                 name: "ok",
                 required: true,
                 type: jsTs.typeScopeInFileNoArguments(
-                  jsTs.identifierFromString("ok")
+                  jsTs.identifierFromString("ok"),
                 ),
                 document: "",
               },
@@ -532,7 +533,7 @@ Deno.test("switch", () => {
                 name: "error",
                 required: true,
                 type: jsTs.typeScopeInFileNoArguments(
-                  jsTs.identifierFromString("error")
+                  jsTs.identifierFromString("error"),
                 ),
                 document: "",
               },
@@ -557,10 +558,10 @@ Deno.test("switch", () => {
                 name: jsTs.identifierFromString("Result"),
                 arguments: [
                   jsTs.typeScopeInFileNoArguments(
-                    jsTs.identifierFromString("ok")
+                    jsTs.identifierFromString("ok"),
                   ),
                   jsTs.typeScopeInFileNoArguments(
-                    jsTs.identifierFromString("error")
+                    jsTs.identifierFromString("error"),
                   ),
                 ],
               },
@@ -574,7 +575,7 @@ Deno.test("switch", () => {
             switchStatement: {
               expr: jsTs.get(
                 jsTs.variable(jsTs.identifierFromString("value")),
-                "_"
+                "_",
               ),
               patternList: [
                 {
@@ -584,11 +585,11 @@ Deno.test("switch", () => {
                       jsTs.callMethod(
                         jsTs.get(
                           jsTs.variable(jsTs.identifierFromString("value")),
-                          "ok"
+                          "ok",
                         ),
                         "toString",
-                        []
-                      )
+                        [],
+                      ),
                     ),
                   ],
                 },
@@ -599,11 +600,11 @@ Deno.test("switch", () => {
                       jsTs.callMethod(
                         jsTs.get(
                           jsTs.variable(jsTs.identifierFromString("value")),
-                          "error"
+                          "error",
                         ),
                         "toString",
-                        []
-                      )
+                        [],
+                      ),
                     ),
                   ],
                 },
@@ -699,7 +700,7 @@ Deno.test("object literal spread syntax", () => {
             tsExpr: jsTs.variable(jsTs.identifierFromString("value")),
           },
           jsTs.memberKeyValue("b", jsTs.numberLiteral(987)),
-        ])
+        ]),
       ),
     ],
   };
@@ -765,7 +766,7 @@ Deno.test("output lambda type parameter", () => {
                   required: true,
                   document: "",
                   type: jsTs.typeScopeInFileNoArguments(
-                    typeParameterIdentifier
+                    typeParameterIdentifier,
                   ),
                 },
                 {
@@ -793,7 +794,7 @@ Deno.test("output lambda type parameter", () => {
                 {
                   name: jsTs.identifierFromString("input"),
                   type: jsTs.typeScopeInFileNoArguments(
-                    typeParameterIdentifier
+                    typeParameterIdentifier,
                   ),
                 },
               ],
@@ -804,7 +805,7 @@ Deno.test("output lambda type parameter", () => {
                   required: true,
                   document: "",
                   type: jsTs.typeScopeInFileNoArguments(
-                    typeParameterIdentifier
+                    typeParameterIdentifier,
                   ),
                 },
               ]),
@@ -813,9 +814,9 @@ Deno.test("output lambda type parameter", () => {
                   jsTs.objectLiteral([
                     jsTs.memberKeyValue(
                       "value",
-                      jsTs.variable(jsTs.identifierFromString("input"))
+                      jsTs.variable(jsTs.identifierFromString("input")),
                     ),
-                  ])
+                  ]),
                 ),
               ],
             },
@@ -828,7 +829,7 @@ Deno.test("output lambda type parameter", () => {
   console.log(codeAsString);
   assertMatch(
     codeAsString,
-    /<t extends unknown>\(input: t\): \{ readonly value: t \} =>/u
+    /<t extends unknown>\(input: t\): \{ readonly value: t \} =>/u,
   );
 });
 
@@ -915,9 +916,9 @@ Deno.test("read me code", () => {
               expr: jsTs.get(
                 jsTs.get(
                   jsTs.variable(jsTs.identifierFromString("request")),
-                  "headers"
+                  "headers",
                 ),
-                "accept"
+                "accept",
               ),
             },
           },
@@ -927,13 +928,13 @@ Deno.test("read me code", () => {
               condition: jsTs.logicalAnd(
                 jsTs.notEqual(
                   jsTs.variable(jsTs.identifierFromString("accept")),
-                  { _: "UndefinedLiteral" }
+                  { _: "UndefinedLiteral" },
                 ),
                 jsTs.callMethod(
                   jsTs.variable(jsTs.identifierFromString("accept")),
                   "includes",
-                  [jsTs.stringLiteral("text/html")]
-                )
+                  [jsTs.stringLiteral("text/html")],
+                ),
               ),
               thenStatementList: [
                 jsTs.statementEvaluateExpr(
@@ -943,8 +944,8 @@ Deno.test("read me code", () => {
                     [
                       jsTs.stringLiteral("content-type"),
                       jsTs.stringLiteral("text/html"),
-                    ]
-                  )
+                    ],
+                  ),
                 ),
               ],
             },
@@ -974,6 +975,6 @@ export const middleware = (request: a.Request, response: a.Response): void => {
 };
 
 
-`
+`,
   );
 });

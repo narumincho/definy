@@ -1,8 +1,12 @@
-import { serve } from "https://deno.land/std@0.163.0/http/server.ts";
+import { serve } from "https://deno.land/std@0.164.0/http/server.ts";
 import { definyRpc } from "./server/mod.ts";
 import { funcList } from "./exampleFunc.ts";
 import { requestObjectToSimpleRequest } from "../simpleRequestResponse/simpleRequest.ts";
 import { simpleResponseToResponse } from "../simpleRequestResponse/simpleResponse.ts";
+import {
+  fromFileUrl,
+  relative,
+} from "https://deno.land/std@0.164.0/path/mod.ts";
 
 const portNumber = 2520;
 
@@ -10,7 +14,7 @@ const sampleDefinyRpcServerParameter: definyRpc.DefinyRpcParameter = {
   name: "exampleDev",
   all: funcList,
   originHint: `http://localhost:${portNumber}`,
-  codeGenOutputFolderPath: "./deno-lib/definyRpc/client/generated",
+  codeGenOutputFolderPath: fromFileUrl(import.meta.resolve("./generated")),
 };
 
 serve(
