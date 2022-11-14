@@ -13,13 +13,14 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: "16"
+          cache: "pnpm"
       - run: corepack enable
       - name: setup Deno
         uses: denoland/setup-deno@v1
         with:
-          deno-version: v1.27.2
+          deno-version: v1.28.0
       - name: Install npm dependencies (pnpm install)
-        run: pnpm install
+        run: pnpm install --frozen-lockfile
       - name: Deno to Node.js
         run: deno run -A ./build.ts
         working-directory: ./deno-lib
