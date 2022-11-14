@@ -1,4 +1,4 @@
-import { serve } from "https://deno.land/std@0.163.0/http/server.ts";
+import { serve } from "https://deno.land/std@0.164.0/http/server.ts";
 import { definyRpc } from "../definyRpc/server/mod.ts";
 
 const randomToken = [...crypto.getRandomValues(new Uint8Array(16))]
@@ -37,7 +37,7 @@ serve(
     }
     const simpleResponse = definyRpc.handleRequest(
       desktopProxyRpcParameter,
-      simpleRequest
+      simpleRequest,
     );
     if (simpleResponse === undefined) {
       return new Response("特に処理すること必要がないリクエストだった", {
@@ -48,7 +48,7 @@ serve(
 
     response.headers.append(
       "access-control-allow-origin",
-      accessControlAllowOriginHeaderValue(request.headers.get("origin"))
+      accessControlAllowOriginHeaderValue(request.headers.get("origin")),
     );
     response.headers.append("access-control-request-method", "GET");
     response.headers.append("access-control-allow-headers", "authorization");
@@ -61,10 +61,10 @@ serve(
       const url = new URL(`http://localhost:${port}`);
       url.searchParams.append("token", randomToken);
       console.log(
-        `definy desktop start!\ncopy and pase url in https://definy.app !.\n下のURLをコピーしてhttps://definy.app で貼り付けて接続できる \n\n${url}`
+        `definy desktop start!\ncopy and pase url in https://definy.app !.\n下のURLをコピーしてhttps://definy.app で貼り付けて接続できる \n\n${url}`,
       );
     },
-  }
+  },
 );
 
 const accessControlAllowOriginHeaderValue = (origin: string | null): string => {

@@ -22,9 +22,10 @@ export const identifierFromString = (word: string): TsIdentifier => {
   const slicedWord = word.slice(1);
   for (const char of slicedWord) {
     result +=
-      "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ$_0123456789".includes(
-        char
-      )
+      "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ$_0123456789"
+          .includes(
+            char,
+          )
         ? char
         : escapeChar(char);
   }
@@ -98,7 +99,6 @@ const reservedByLanguageWordSet: ReadonlySet<string> = new Set([
   "set",
   "string",
   "symbol",
-  "type",
   "from",
   "of",
   "as",
@@ -126,7 +126,7 @@ export const initialIdentifierIndex = 0 as IdentifierIndex;
  */
 export const createIdentifier = (
   identifierIndex: IdentifierIndex,
-  reserved: ReadonlySet<string>
+  reserved: ReadonlySet<string>,
 ): { identifier: TsIdentifier; nextIdentifierIndex: IdentifierIndex } => {
   let index: number = identifierIndex;
   while (true) {
@@ -196,7 +196,7 @@ export const isSafePropertyName = (word: string): boolean => {
   }
   if (
     !"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ$_".includes(
-      firstChar
+      firstChar,
     )
   ) {
     return false;
@@ -204,9 +204,10 @@ export const isSafePropertyName = (word: string): boolean => {
   const slicedWord = word.slice(1);
   for (const char of slicedWord) {
     if (
-      !"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ$_0123456789".includes(
-        char
-      )
+      !"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ$_0123456789"
+        .includes(
+          char,
+        )
     ) {
       return false;
     }

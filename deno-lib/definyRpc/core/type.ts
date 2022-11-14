@@ -1,4 +1,4 @@
-import { RawJsonValue, StructuredJsonValue } from "../../typedJson.ts";
+import { StructuredJsonValue } from "../../typedJson.ts";
 import { Lazy } from "../../lazy.ts";
 import { NonEmptyArray } from "../../util.ts";
 
@@ -54,3 +54,7 @@ export type TypeBody =
       readonly parameter: Lazy<DefinyRpcType<any>> | undefined;
     }>;
   };
+
+export const definyRpcTypeToMapKey = <t>(type: DefinyRpcType<t>): string => {
+  return type.namespace.join(".") + "." + type.name;
+};

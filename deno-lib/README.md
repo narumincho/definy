@@ -17,3 +17,9 @@ deno run --check --watch -A ./definyApp/editor/watchBuild.ts
 ```ps1
 deno run --check --watch -A ./definyApp/apiServer/dev.ts
 ```
+
+## definy RPC サンプルサーバーの起動
+
+```ps1
+deno run --check --watch --allow-net=:2520 --allow-write --allow-read ./definyRpc/dev.ts
+```

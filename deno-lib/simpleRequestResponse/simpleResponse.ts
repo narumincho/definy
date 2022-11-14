@@ -1,4 +1,4 @@
-import { ServerResponse } from "../../nodeType.ts";
+import { ServerResponse } from "../nodeType.ts";
 
 export type SimpleResponse = {
   readonly status: 200 | 400 | 401 | 404;
@@ -9,7 +9,7 @@ export type SimpleResponse = {
 };
 
 export const simpleResponseToResponse = async (
-  simpleResponse: SimpleResponse
+  simpleResponse: SimpleResponse,
 ): Promise<Response> => {
   const bodyBinary = await simpleResponse.body?.();
   const headers = new Headers();
@@ -24,14 +24,12 @@ export const simpleResponseToResponse = async (
 
 export const simpleResponseHandleServerResponse = async (
   simpleResponse: SimpleResponse,
-  serverResponse: ServerResponse
+  serverResponse: ServerResponse,
 ): Promise<void> => {
   serverResponse.writeHead(simpleResponse.status, {
-    ...(simpleResponse.headers.ContentType === undefined
-      ? {}
-      : {
-          "content-type": simpleResponse.headers.ContentType,
-        }),
+    ...(simpleResponse.headers.ContentType === undefined ? {} : {
+      "content-type": simpleResponse.headers.ContentType,
+    }),
   });
   const bodyBinary = await simpleResponse.body?.();
   serverResponse.end(bodyBinary);

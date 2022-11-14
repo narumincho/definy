@@ -1,3 +1,4 @@
+/// <reference no-default-lib="true"/>
 /// <reference lib="dom" />
 
 import React from "https://esm.sh/react@18.2.0";
@@ -17,23 +18,23 @@ export type Field = {
 
 export type FieldBody =
   | {
-      readonly type: "text";
-      readonly value: string;
-      readonly readonly: boolean;
-      /**
-       * 大きく値を表示するかどうか
-       */
-      readonly isTitle: boolean;
-    }
+    readonly type: "text";
+    readonly value: string;
+    readonly readonly: boolean;
+    /**
+     * 大きく値を表示するかどうか
+     */
+    readonly isTitle: boolean;
+  }
   | {
-      readonly type: "button";
-      readonly value: (() => void) | undefined;
-    }
+    readonly type: "button";
+    readonly value: (() => void) | undefined;
+  }
   | {
-      readonly type: "product";
-      readonly value: ReadonlyArray<Field>;
-      readonly readonly: boolean;
-    };
+    readonly type: "product";
+    readonly value: ReadonlyArray<Field>;
+    readonly readonly: boolean;
+  };
 
 const isFieldAvailable = (field: Field): boolean => {
   switch (field.body.type) {
@@ -79,7 +80,7 @@ export const Editor = (props: {
   const onStartEdit = React.useCallback(() => {
     console.log("onStartEdit", selectedFieldId);
     const selectedField = props.fields.find(
-      (field) => field.id === selectedFieldId
+      (field) => field.id === selectedFieldId,
     );
     if (selectedField === undefined) {
       return;
@@ -154,11 +155,9 @@ export const Editor = (props: {
               console.log("onUnSelected", field.name);
               setSelectedFieldId(undefined);
             }}
-            onStartEdit={
-              field.body.type === "button" || field.body.readonly
-                ? undefined
-                : onStartEdit
-            }
+            onStartEdit={field.body.type === "button" || field.body.readonly
+              ? undefined
+              : onStartEdit}
             onChange={(newText) => {
               props.onChange(field.id, newText);
               setIsEditing(false);
@@ -313,8 +312,8 @@ const TextField = (props: {
             focus: {
               borderColor: "skyblue",
             },
-          }
-        )
+          },
+        ),
       )}
       onFocus={() => {
         props.onSelected();
@@ -336,24 +335,26 @@ const TextField = (props: {
       <div>{props.name}</div>
       <div className={c(textFieldContainerOut)}>
         <div className={c(textFieldContainerIn)}>
-          {props.selected && props.isEditing ? (
-            false
-          ) : (
-            <TextFieldValue
-              isError={props.errorMessage !== undefined}
-              value={props.value}
-              isTitle={props.isTitle}
-              onStartEdit={props.onStartEdit}
-            />
-          )}
+          {props.selected && props.isEditing
+            ? (
+              false
+            )
+            : (
+              <TextFieldValue
+                isError={props.errorMessage !== undefined}
+                value={props.value}
+                isTitle={props.isTitle}
+                onStartEdit={props.onStartEdit}
+              />
+            )}
           {props.onStartEdit !== undefined &&
             props.selected &&
             !props.isEditing && (
-              <div className={c(textFieldEnterIconContainer)}>
-                <EnterIcon stroke="white" height={24} />
-                編集
-              </div>
-            )}
+            <div className={c(textFieldEnterIconContainer)}>
+              <EnterIcon stroke="white" height={24} />
+              編集
+            </div>
+          )}
           {props.errorMessage !== undefined && (
             <div className={c(errorMessageStyle)}>{props.errorMessage}</div>
           )}
@@ -412,8 +413,8 @@ const ButtonField = (props: {
             focus: {
               borderColor: "skyblue",
             },
-          }
-        )
+          },
+        ),
       )}
       onFocus={() => {
         props.onSelected();
@@ -486,8 +487,8 @@ const ProductField = (props: {
             focus: {
               borderColor: "skyblue",
             },
-          }
-        )
+          },
+        ),
       )}
       onFocus={() => {
         props.onSelected();
@@ -581,7 +582,7 @@ const TextFieldValue = (props: {
             textDecoration: props.isError ? "underline wavy red" : "none",
             margin: 0,
             fontSize: 32,
-          })
+          }),
         )}
         onClick={props.onStartEdit}
       >
@@ -595,7 +596,7 @@ const TextFieldValue = (props: {
         toStyleAndHash({
           whiteSpace: "pre-wrap",
           textDecoration: props.isError ? "underline wavy red" : "none",
-        })
+        }),
       )}
       onClick={props.onStartEdit}
     >
@@ -618,7 +619,7 @@ const inputStyle = toStyleAndHash(
     hover: {
       backgroundColor: "#333",
     },
-  }
+  },
 );
 
 const StyledInput = (props: {

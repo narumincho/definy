@@ -1,23 +1,20 @@
 import clientBuildResult from "./browserClient.json" assert { type: "json" };
 import * as base64 from "https://denopkg.com/chiefbiiko/base64@master/mod.ts";
 import {
-  jsonParse,
   jsonStringify,
   structuredJsonParse,
   structuredJsonStringify,
   StructuredJsonValue,
 } from "../../typedJson.ts";
-import { AccountToken, ApiFunction } from "./apiFunction.ts";
-import { addDefinyRpcApiFunction } from "./builtInFunctions.ts";
-import { SimpleRequest } from "./simpleRequest.ts";
-import { SimpleResponse } from "./simpleResponse.ts";
+import { AccountToken, FunctionAndTypeList } from "../core/apiFunction.ts";
+import { addDefinyRpcApiFunction } from "../core/builtInFunctions.ts";
+import { SimpleRequest } from "../../simpleRequestResponse/simpleRequest.ts";
+import { SimpleResponse } from "../../simpleRequestResponse/simpleResponse.ts";
 import { stringArrayEqual, stringArrayMatchPrefix } from "../../util.ts";
 
-export * from "./type.ts";
-export * from "./apiFunction.ts";
-export * from "./simpleRequest.ts";
-export * from "./simpleResponse.ts";
-export * from "./builtInType.ts";
+export * from "../core/type.ts";
+export * from "../core/apiFunction.ts";
+export * from "../core/builtInType.ts";
 
 const editorPath = "_editor";
 
@@ -29,7 +26,7 @@ export type DefinyRpcParameter = {
   /**
    * サーバーを構築する関数たち
    */
-  readonly all: () => ReadonlyArray<ApiFunction>;
+  readonly all: () => FunctionAndTypeList;
   /**
    * 生成するコードの リクエスト先オリジンのデフォルト値
    */
@@ -142,7 +139,7 @@ export const handleRequest = (
     };
   }
   console.log("request!: ", pathListRemovePrefix);
-  for (const func of all) {
+  for (const func of all.functionsList) {
     if (stringArrayEqual(pathListRemovePrefix, func.fullName)) {
       if (func.needAuthentication) {
         const authorizationValue = request.headers.Authorization;

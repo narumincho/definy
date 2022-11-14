@@ -10,14 +10,14 @@ import {
   readonlyArrayType,
   readonlyMapType,
   readonlySetType,
-} from "../../../jsTs/main.ts";
+} from "../../jsTs/main.ts";
 import {
   CollectedDefinyRpcType,
   CollectedDefinyRpcTypeBody,
   CollectedDefinyRpcTypeMap,
   CollectedDefinyRpcTypeUse,
-} from "../collectType.ts";
-import { arrayFromLength } from "../../../util.ts";
+} from "../core/collectType.ts";
+import { arrayFromLength } from "../../util.ts";
 import { structuredJsonValueType } from "./useTypedJson.ts";
 
 export const collectedTypeToTypeAlias = (

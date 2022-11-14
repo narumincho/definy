@@ -5,7 +5,7 @@
 // import type {
 //   IncomingMessage,
 //   ServerResponse,
-// } from "https://deno.land/std@0.163.0/node/http.ts";
+// } from "https://deno.land/std@0.164.0/node/http.ts";
 // ```
 // と指定すると dnt のビルドが失敗してしまうので, 代わりの型の定義をここに書く
 
@@ -30,7 +30,7 @@ export type Server = {
     name: "request",
     callBack: (
       incomingMessage: IncomingMessage,
-      response: ServerResponse
-    ) => void
+      response: ServerResponse,
+    ) => void,
   ) => void;
 };

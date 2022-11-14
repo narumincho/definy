@@ -20,7 +20,7 @@ export const exprToString = (
   expr: d.TsExpr,
   indent: number,
   moduleMap: ReadonlyMap<string, TsIdentifier>,
-  codeType: d.CodeType
+  codeType: d.CodeType,
 ): string => {
   switch (expr._) {
     case "NumberLiteral":
@@ -43,7 +43,7 @@ export const exprToString = (
         expr.arrayItemList,
         indent,
         moduleMap,
-        codeType
+        codeType,
       );
 
     case "ObjectLiteral":
@@ -51,7 +51,7 @@ export const exprToString = (
         expr.tsMemberList,
         indent,
         moduleMap,
-        codeType
+        codeType,
       );
 
     case "UnaryOperator":
@@ -62,7 +62,7 @@ export const exprToString = (
           expr.unaryOperatorExpr.expr,
           indent,
           moduleMap,
-          codeType
+          codeType,
         )
       );
     case "BinaryOperator":
@@ -70,7 +70,7 @@ export const exprToString = (
         expr.binaryOperatorExpr,
         indent,
         moduleMap,
-        codeType
+        codeType,
       );
 
     case "ConditionalOperator":
@@ -78,30 +78,57 @@ export const exprToString = (
         expr.conditionalOperatorExpr,
         indent,
         moduleMap,
-        codeType
+        codeType,
       );
 
-    case "Lambda":
+    case "Lambda": {
+      if (expr.lambdaExpr.thisType === undefined || codeType === "JavaScript") {
+        return (
+          typeParameterListToString(expr.lambdaExpr.typeParameterList) +
+          "(" +
+          expr.lambdaExpr.parameterList
+            .map(
+              (parameter) =>
+                parameter.name +
+                typeAnnotation(parameter.type, codeType, moduleMap),
+            )
+            .join(", ") +
+          ")" +
+          typeAnnotation(expr.lambdaExpr.returnType, codeType, moduleMap) +
+          " => " +
+          lambdaBodyToString(
+            expr.lambdaExpr.statementList,
+            indent,
+            moduleMap,
+            codeType,
+          )
+        );
+      }
       return (
+        "function " +
         typeParameterListToString(expr.lambdaExpr.typeParameterList) +
         "(" +
-        expr.lambdaExpr.parameterList
-          .map(
-            (parameter) =>
-              parameter.name +
-              typeAnnotation(parameter.type, codeType, moduleMap)
-          )
+        [
+          "this" +
+          typeAnnotation(expr.lambdaExpr.thisType, codeType, moduleMap),
+          ...expr.lambdaExpr.parameterList
+            .map(
+              (parameter) =>
+                parameter.name +
+                typeAnnotation(parameter.type, codeType, moduleMap),
+            ),
+        ]
           .join(", ") +
         ")" +
         typeAnnotation(expr.lambdaExpr.returnType, codeType, moduleMap) +
-        " => " +
-        lambdaBodyToString(
+        statementListToString(
           expr.lambdaExpr.statementList,
           indent,
           moduleMap,
-          codeType
+          codeType,
         )
       );
+    }
 
     case "Variable":
       return expr.tsIdentifier;
@@ -111,12 +138,12 @@ export const exprToString = (
 
     case "ImportedVariable": {
       const nameSpaceIdentifier = moduleMap.get(
-        expr.importedVariable.moduleName
+        expr.importedVariable.moduleName,
       );
       if (nameSpaceIdentifier === undefined) {
         throw Error(
           "収集されなかった, モジュールがある moduleName=" +
-            expr.importedVariable.moduleName
+            expr.importedVariable.moduleName,
         );
       }
       return nameSpaceIdentifier + "." + expr.importedVariable.name;
@@ -129,13 +156,13 @@ export const exprToString = (
           expr.getExpr.expr,
           indent,
           moduleMap,
-          codeType
+          codeType,
         ) +
         indexAccessToString(
           expr.getExpr.propertyExpr,
           indent,
           moduleMap,
-          codeType
+          codeType,
         )
       );
 
@@ -155,6 +182,9 @@ export const exprToString = (
           ? " as " + typeToString(expr.typeAssertion.type, moduleMap)
           : "")
       );
+
+    case "this":
+      return "this";
   }
 };
 
@@ -162,14 +192,14 @@ const arrayLiteralToString = (
   itemList: ReadonlyArray<d.ArrayItem>,
   indent: number,
   moduleMap: ReadonlyMap<string, TsIdentifier>,
-  codeType: d.CodeType
+  codeType: d.CodeType,
 ): string =>
   "[" +
   itemList
     .map(
       (item) =>
         (item.spread ? "..." : "") +
-        exprToString(item.expr, indent, moduleMap, codeType)
+        exprToString(item.expr, indent, moduleMap, codeType),
     )
     .join(", ") +
   "]";
@@ -178,7 +208,7 @@ const objectLiteralToString = (
   memberList: ReadonlyArray<d.TsMember>,
   indent: number,
   moduleMap: ReadonlyMap<string, TsIdentifier>,
-  codeType: d.CodeType
+  codeType: d.CodeType,
 ): string =>
   "{ " +
   memberList
@@ -227,7 +257,7 @@ const exprToStringWithCombineStrength = (
   target: d.TsExpr,
   indent: number,
   moduleMap: ReadonlyMap<string, TsIdentifier>,
-  codeType: d.CodeType
+  codeType: d.CodeType,
 ): string => {
   const text = exprToString(target, indent, moduleMap, codeType);
   if (exprCombineStrength(expr) > exprCombineStrength(target)) {
@@ -247,6 +277,7 @@ const exprCombineStrength = (expr: d.TsExpr): number => {
     case "Variable":
     case "GlobalObjects":
     case "ImportedVariable":
+    case "this":
       return 23;
     case "Lambda":
       return 22;
@@ -268,7 +299,7 @@ const exprCombineStrength = (expr: d.TsExpr): number => {
 };
 
 const binaryOperatorCombineStrength = (
-  binaryOperator: d.BinaryOperator
+  binaryOperator: d.BinaryOperator,
 ): number => {
   switch (binaryOperator) {
     case "Exponentiation":
@@ -308,7 +339,7 @@ const binaryOperatorExprToString = (
   binaryOperatorExpr: d.BinaryOperatorExpr,
   indent: number,
   moduleMap: ReadonlyMap<string, TsIdentifier>,
-  codeType: d.CodeType
+  codeType: d.CodeType,
 ): string => {
   const operatorExprCombineStrength = exprCombineStrength({
     _: "BinaryOperator",
@@ -316,16 +347,16 @@ const binaryOperatorExprToString = (
   });
   const leftExprCombineStrength = exprCombineStrength(binaryOperatorExpr.left);
   const rightExprCombineStrength = exprCombineStrength(
-    binaryOperatorExpr.right
+    binaryOperatorExpr.right,
   );
   const associativity = binaryOperatorAssociativity(
-    binaryOperatorExpr.operator
+    binaryOperatorExpr.operator,
   );
 
   return (
     (operatorExprCombineStrength > leftExprCombineStrength ||
-    (operatorExprCombineStrength === leftExprCombineStrength &&
-      associativity === "RightToLeft")
+        (operatorExprCombineStrength === leftExprCombineStrength &&
+          associativity === "RightToLeft")
       ? "(" +
         exprToString(binaryOperatorExpr.left, indent, moduleMap, codeType) +
         ")"
@@ -334,8 +365,8 @@ const binaryOperatorExprToString = (
     binaryOperatorToString(binaryOperatorExpr.operator) +
     " " +
     (operatorExprCombineStrength > rightExprCombineStrength ||
-    (operatorExprCombineStrength === rightExprCombineStrength &&
-      associativity === "LeftToRight")
+        (operatorExprCombineStrength === rightExprCombineStrength &&
+          associativity === "LeftToRight")
       ? "(" +
         exprToString(binaryOperatorExpr.right, indent, moduleMap, codeType) +
         ")"
@@ -347,7 +378,7 @@ const conditionalOperatorToString = (
   conditionalOperator: d.ConditionalOperatorExpr,
   indent: number,
   moduleMap: ReadonlyMap<string, TsIdentifier>,
-  codeType: d.CodeType
+  codeType: d.CodeType,
 ): string => {
   const expr: d.TsExpr = {
     _: "ConditionalOperator",
@@ -359,7 +390,7 @@ const conditionalOperatorToString = (
       conditionalOperator.condition,
       indent,
       moduleMap,
-      codeType
+      codeType,
     ) +
     "?" +
     exprToStringWithCombineStrength(
@@ -367,7 +398,7 @@ const conditionalOperatorToString = (
       conditionalOperator.thenExpr,
       indent,
       moduleMap,
-      codeType
+      codeType,
     ) +
     ":" +
     exprToStringWithCombineStrength(
@@ -375,7 +406,7 @@ const conditionalOperatorToString = (
       conditionalOperator.elseExpr,
       indent,
       moduleMap,
-      codeType
+      codeType,
     )
   );
 };
@@ -389,7 +420,7 @@ export const lambdaBodyToString = (
   statementList: ReadonlyArray<d.Statement>,
   indent: number,
   moduleMap: ReadonlyMap<string, TsIdentifier>,
-  codeType: d.CodeType
+  codeType: d.CodeType,
 ): string => {
   const [firstStatement] = statementList;
   if (firstStatement !== undefined && firstStatement._ === "Return") {
@@ -406,7 +437,7 @@ export const lambdaBodyToString = (
       firstStatement.tsExpr,
       indent,
       moduleMap,
-      codeType
+      codeType,
     );
   }
   return statementListToString(statementList, indent, moduleMap, codeType);
@@ -417,14 +448,14 @@ const callExprToString = (
   callExpr: d.CallExpr,
   indent: number,
   moduleMap: ReadonlyMap<string, TsIdentifier>,
-  codeType: d.CodeType
+  codeType: d.CodeType,
 ) =>
   exprToStringWithCombineStrength(
     expr,
     callExpr.expr,
     indent,
     moduleMap,
-    codeType
+    codeType,
   ) +
   "(" +
   callExpr.parameterList
@@ -443,7 +474,7 @@ const indexAccessToString = (
   indexExpr: d.TsExpr,
   indent: number,
   moduleMap: ReadonlyMap<string, TsIdentifier>,
-  codeType: d.CodeType
+  codeType: d.CodeType,
 ): string => {
   if (indexExpr._ === "StringLiteral" && isSafePropertyName(indexExpr.string)) {
     return "." + indexExpr.string;
@@ -454,7 +485,7 @@ const indexAccessToString = (
 type Associativity = "LeftToRight" | "RightToLeft";
 
 const binaryOperatorAssociativity = (
-  binaryOperator: d.BinaryOperator
+  binaryOperator: d.BinaryOperator,
 ): Associativity => {
   switch (binaryOperator) {
     case "Exponentiation":
@@ -482,7 +513,7 @@ const binaryOperatorAssociativity = (
 };
 
 export const binaryOperatorToString = (
-  binaryOperator: d.BinaryOperator
+  binaryOperator: d.BinaryOperator,
 ): string => {
   switch (binaryOperator) {
     case "Exponentiation":

@@ -1,6 +1,6 @@
 import { ApiFunction } from "./apiFunction.ts";
 import { lazyGet } from "../../lazy.ts";
-import { DefinyRpcType, TypeBody } from "./type.ts";
+import { DefinyRpcType, definyRpcTypeToMapKey, TypeBody } from "./type.ts";
 import { NonEmptyArray } from "../../util.ts";
 
 export const collectDefinyRpcTypeFromFuncList = (
@@ -21,7 +21,7 @@ const collectFromDefinyRpcType = <t>(
   type: DefinyRpcType<t>,
   collectedNames: ReadonlySet<string>,
 ): CollectedDefinyRpcTypeMap => {
-  const typeFullName = type.namespace.join(".") + "." + type.name;
+  const typeFullName = definyRpcTypeToMapKey(type);
   if (collectedNames.has(typeFullName)) {
     return collectFromDefinyRpcTypeList(type.parameters, collectedNames);
   }
@@ -80,7 +80,7 @@ type CollectInListState = {
  * @param typeList
  * @param collectedNames すでに見つけた型の名前 `.` 区切り
  */
-const collectFromDefinyRpcTypeList = <t>(
+export const collectFromDefinyRpcTypeList = <t>(
   typeList: ReadonlyArray<DefinyRpcType<t>>,
   collectedNames: ReadonlySet<string>,
 ): CollectedDefinyRpcTypeMap => {

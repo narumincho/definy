@@ -1,3 +1,4 @@
+/// <reference no-default-lib="true"/>
 /// <reference lib="dom" />
 
 import { App } from "./App.tsx";
@@ -14,5 +15,5 @@ rootElement.style.height = "100%";
 createRoot(rootElement).render(
   <React.StrictMode>
     <App />
-  </React.StrictMode>
+  </React.StrictMode>,
 );

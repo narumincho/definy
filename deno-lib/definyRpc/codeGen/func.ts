@@ -16,10 +16,10 @@ import {
   readonlySetType,
   responseType,
   urlType,
-} from "../../../jsTs/main.ts";
-import { getLast } from "../../../util.ts";
-import { ApiFunction } from "../apiFunction.ts";
-import { DefinyRpcType } from "../type.ts";
+} from "../../jsTs/main.ts";
+import { getLast } from "../../util.ts";
+import { ApiFunction } from "../core/apiFunction.ts";
+import { DefinyRpcType } from "../core/type.ts";
 import { resultError, resultOk, resultType } from "./result.ts";
 import { useFromJson } from "./type.ts";
 import {
