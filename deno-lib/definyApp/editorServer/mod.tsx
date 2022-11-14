@@ -9,9 +9,9 @@ import * as base64 from "https://denopkg.com/chiefbiiko/base64@master/mod.ts";
 import { App } from "../editor/app.tsx";
 import dist from "./dist.json" assert { type: "json" };
 import { getRenderedCss, resetInsertedStyle } from "../../cssInJs/mod.ts";
-import { requestObjectToSimpleRequest } from "../../definyRpc/server/simpleRequest.ts";
 import { stringArrayEqual } from "../../util.ts";
 import { languageFromId } from "../../zodType.ts";
+import { requestObjectToSimpleRequest } from "../../simpleRequestResponse/simpleRequest.ts";
 
 export const startEditorServer = (
   option: { readonly port: number | undefined },
