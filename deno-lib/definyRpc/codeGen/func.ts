@@ -25,7 +25,7 @@ import { useFromJson } from "./type.ts";
 import {
   rawJsonValueType,
   useRawJsonToStructuredJsonValue,
-} from "../typeCodeGen/useTypedJson.ts";
+} from "./useTypedJson.ts";
 
 export const apiFuncToTsFunction = (parameter: {
   readonly func: ApiFunction;
