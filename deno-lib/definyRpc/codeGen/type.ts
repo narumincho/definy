@@ -27,6 +27,7 @@ export const collectedTypeToTypeAlias = (
   if (
     type.body.type === "string" ||
     type.body.type === "number" ||
+    type.body.type === "boolean" ||
     type.body.type === "unit" ||
     type.body.type === "list" ||
     type.body.type === "set"

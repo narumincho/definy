@@ -118,11 +118,6 @@ export type StructuredJsonValue =
     };
 
 /**
- * Bool. boolean. 真偽値. True か False
- */
-export type Bool = boolean;
-
-/**
  * キーが string の ReadonlyMap
  */
 export type StringMap<p0 extends unknown> = globalThis.ReadonlyMap<
