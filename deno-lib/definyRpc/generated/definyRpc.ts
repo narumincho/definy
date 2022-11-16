@@ -35,6 +35,7 @@ export type FunctionDetail = {
    * 関数の出力の型
    */
   readonly output: Type;
+  readonly __FunctionDetailBland: never;
 };
 
 /**
@@ -50,6 +51,7 @@ export type Type = {
    * 型パラメーター
    */
   readonly parameters: globalThis.ReadonlyArray<Type>;
+  readonly __TypeBland: never;
 };
 
 /**
@@ -230,6 +232,12 @@ export const FunctionDetail: {
    */
   readonly description: string;
   /**
+   * オブジェクトから作成する. 余計なフィールドがレスポンスに含まれてしまうのを防ぐ. 型のチェックはしない
+   */
+  readonly from: (
+    a: globalThis.Omit<FunctionDetail, "__FunctionDetailBland">
+  ) => FunctionDetail;
+  /**
    * JsonからFunctionDetailに変換する. 失敗した場合はエラー
    */
   readonly fromStructuredJsonValue: (
@@ -237,6 +245,15 @@ export const FunctionDetail: {
   ) => FunctionDetail;
 } = {
   description: "functionByNameの結果",
+  from: (
+    obj: globalThis.Omit<FunctionDetail, "__FunctionDetailBland">
+  ): FunctionDetail =>
+    ({
+      name: obj.name,
+      description: obj.description,
+      input: obj.input,
+      output: obj.output,
+    } as FunctionDetail),
   fromStructuredJsonValue: (
     jsonValue: a.StructuredJsonValue
   ): FunctionDetail => {
@@ -262,12 +279,12 @@ export const FunctionDetail: {
     if (output === undefined) {
       throw new Error("expected output field. in FunctionDetail.fromJson");
     }
-    return {
+    return FunctionDetail.from({
       name: List.fromStructuredJsonValue(String.fromStructuredJsonValue)(name),
       description: String.fromStructuredJsonValue(description),
       input: Type.fromStructuredJsonValue(input),
       output: Type.fromStructuredJsonValue(output),
-    };
+    });
   },
 };
 
@@ -280,11 +297,21 @@ export const Type: {
    */
   readonly description: string;
   /**
+   * オブジェクトから作成する. 余計なフィールドがレスポンスに含まれてしまうのを防ぐ. 型のチェックはしない
+   */
+  readonly from: (a: globalThis.Omit<Type, "__TypeBland">) => Type;
+  /**
    * JsonからTypeに変換する. 失敗した場合はエラー
    */
   readonly fromStructuredJsonValue: (a: a.StructuredJsonValue) => Type;
 } = {
   description: "definyRpc で表現できる型",
+  from: (obj: globalThis.Omit<Type, "__TypeBland">): Type =>
+    ({
+      fullName: obj.fullName,
+      description: obj.description,
+      parameters: obj.parameters,
+    } as Type),
   fromStructuredJsonValue: (jsonValue: a.StructuredJsonValue): Type => {
     if (jsonValue.type !== "object") {
       throw new Error("expected object in Type.fromJson");
@@ -304,7 +331,7 @@ export const Type: {
     if (parameters === undefined) {
       throw new Error("expected parameters field. in Type.fromJson");
     }
-    return {
+    return Type.from({
       fullName: List.fromStructuredJsonValue(String.fromStructuredJsonValue)(
         fullName
       ),
@@ -312,7 +339,7 @@ export const Type: {
       parameters: List.fromStructuredJsonValue(Type.fromStructuredJsonValue)(
         parameters
       ),
-    };
+    });
   },
 };
 
@@ -325,6 +352,12 @@ export const StructuredJsonValue: {
    */
   readonly description: string;
   /**
+   * オブジェクトから作成する. 余計なフィールドがレスポンスに含まれてしまうのを防ぐ. 型のチェックはしない
+   */
+  readonly from: (
+    a: globalThis.Omit<StructuredJsonValue, "__StructuredJsonValueBland">
+  ) => StructuredJsonValue;
+  /**
    * JsonからStructuredJsonValueに変換する. 失敗した場合はエラー
    */
   readonly fromStructuredJsonValue: (
@@ -332,6 +365,24 @@ export const StructuredJsonValue: {
   ) => StructuredJsonValue;
 } = {
   description: "構造化されたJSON",
+  from: (
+    obj: globalThis.Omit<StructuredJsonValue, "__StructuredJsonValueBland">
+  ): StructuredJsonValue => {
+    switch (obj.type) {
+      case "string": {
+      }
+      case "array": {
+      }
+      case "boolean": {
+      }
+      case "null": {
+      }
+      case "number": {
+      }
+      case "object": {
+      }
+    }
+  },
   fromStructuredJsonValue: (
     jsonValue: a.StructuredJsonValue
   ): StructuredJsonValue => {
