@@ -1,15 +1,19 @@
 import {
   arrayMap,
+  bitwiseAnd,
   callMethod,
   data,
   equal,
   get,
   identifierFromString,
+  logicalOr,
   newSet,
   notEqual,
   readonlyArrayType,
   readonlyMapType,
   readonlySetType,
+  stringLiteral,
+  typeUnion,
 } from "../../jsTs/main.ts";
 import {
   CollectedDefinyRpcType,
@@ -628,19 +632,65 @@ const typeToFromJsonStatementList = (
         {
           _: "If",
           ifStatement: {
-            condition: notEqual(jsonValueVariableType, {
-              _: "StringLiteral",
-              string: "object",
-            }),
+            condition: notEqual(jsonValueVariableType, stringLiteral("object")),
             thenStatementList: [
               {
                 _: "ThrowError",
-                tsExpr: {
-                  _: "StringLiteral",
-                  string: `expected object in ${type.name}.fromJson`,
-                },
+                tsExpr: stringLiteral(
+                  `expected object in ${type.name}.fromJson`,
+                ),
               },
             ],
+          },
+        },
+        {
+          _: "VariableDefinition",
+          variableDefinitionStatement: {
+            isConst: true,
+            name: identifierFromString("type"),
+            type: typeUnion([structuredJsonValueType, { _: "Undefined" }]),
+            expr: callMethod(jsonValueVariableValue, "get", [
+              stringLiteral("type"),
+            ]),
+          },
+        },
+        {
+          _: "If",
+          ifStatement: {
+            condition: logicalOr(
+              equal({
+                _: "Variable",
+                tsIdentifier: identifierFromString("type"),
+              }, { _: "UndefinedLiteral" }),
+              notEqual(
+                get({
+                  _: "Variable",
+                  tsIdentifier: identifierFromString("type"),
+                }, "type"),
+                stringLiteral("string"),
+              ),
+            ),
+            thenStatementList: [
+              {
+                _: "ThrowError",
+                tsExpr: stringLiteral(
+                  `expected type property type is string`,
+                ),
+              },
+            ],
+          },
+        },
+        {
+          _: "Switch",
+          switchStatement: {
+            expr: get({
+              _: "Variable",
+              tsIdentifier: identifierFromString("type"),
+            }, "value"),
+            patternList: type.body.patternList.map((pattern) => ({
+              caseString: pattern.name,
+              statementList: [],
+            })),
           },
         },
       ];

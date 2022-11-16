@@ -325,6 +325,24 @@ export const StructuredJsonValue: {
     if (jsonValue.type !== "object") {
       throw new Error("expected object in StructuredJsonValue.fromJson");
     }
+    const type: a.StructuredJsonValue | undefined = jsonValue.value.get("type");
+    if (type === undefined || type.type !== "string") {
+      throw new Error("expected type property type is string");
+    }
+    switch (type.value) {
+      case "string": {
+      }
+      case "array": {
+      }
+      case "boolean": {
+      }
+      case "null": {
+      }
+      case "number": {
+      }
+      case "object": {
+      }
+    }
   },
 };
 
