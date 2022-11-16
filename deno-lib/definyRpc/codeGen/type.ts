@@ -136,6 +136,9 @@ const collectedDefinyRpcTypeUseToTsType = (
   if (typeDetail.body.type === "string") {
     return { _: "String" };
   }
+  if (typeDetail.body.type === "boolean") {
+    return { _: "Boolean" };
+  }
   if (typeDetail.body.type === "number") {
     return { _: "Number" };
   }
@@ -196,6 +199,9 @@ const collectedDefinyRpcTypeToTsType = (
   }
   if (typeDetail.body.type === "number") {
     return { _: "Number" };
+  }
+  if (typeDetail.body.type === "boolean") {
+    return { _: "Boolean" };
   }
   if (typeDetail.body.type === "unit") {
     return { _: "Undefined" };

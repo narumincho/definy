@@ -84,7 +84,7 @@ export type StructuredJsonValue =
       /**
        * boolean
        */
-      readonly value: Bool;
+      readonly value: boolean;
     }
   | {
       /**
@@ -339,10 +339,10 @@ export const Bool: {
   /**
    * JsonからBoolに変換する. 失敗した場合はエラー
    */
-  readonly fromJson: (a: a.StructuredJsonValue) => Bool;
+  readonly fromJson: (a: a.StructuredJsonValue) => boolean;
 } = {
   description: "Bool. boolean. 真偽値. True か False",
-  fromJson: (jsonValue: a.StructuredJsonValue): Bool => {
+  fromJson: (jsonValue: a.StructuredJsonValue): boolean => {
     if (jsonValue.type === "boolean") {
       return jsonValue.value;
     }
