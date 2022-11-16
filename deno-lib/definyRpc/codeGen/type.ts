@@ -1,6 +1,7 @@
 import {
+  addition,
   arrayMap,
-  bitwiseAnd,
+  call,
   callMethod,
   data,
   equal,
@@ -9,11 +10,13 @@ import {
   logicalOr,
   newSet,
   notEqual,
+  objectLiteral,
   readonlyArrayType,
   readonlyMapType,
   readonlySetType,
   stringLiteral,
   typeUnion,
+  variable,
 } from "../../jsTs/main.ts";
 import {
   CollectedDefinyRpcType,
@@ -683,15 +686,81 @@ const typeToFromJsonStatementList = (
         {
           _: "Switch",
           switchStatement: {
-            expr: get({
-              _: "Variable",
-              tsIdentifier: identifierFromString("type"),
-            }, "value"),
-            patternList: type.body.patternList.map((pattern) => ({
+            expr: get(variable(identifierFromString("type")), "value"),
+            patternList: type.body.patternList.map((
+              pattern,
+            ): data.TsPattern => ({
               caseString: pattern.name,
-              statementList: [],
+              statementList: pattern.parameter === undefined
+                ? [{
+                  _: "Return",
+                  tsExpr: objectLiteral([{
+                    _: "KeyValue",
+                    keyValue: {
+                      key: "type",
+                      value: stringLiteral(pattern.name),
+                    },
+                  }]),
+                }]
+                : [{
+                  _: "VariableDefinition",
+                  variableDefinitionStatement: {
+                    isConst: true,
+                    name: identifierFromString("value"),
+                    type: typeUnion([structuredJsonValueType, {
+                      _: "Undefined",
+                    }]),
+                    expr: callMethod(jsonValueVariableValue, "get", [
+                      stringLiteral("value"),
+                    ]),
+                  },
+                }, {
+                  _: "If",
+                  ifStatement: {
+                    condition: equal(variable(identifierFromString("value")), {
+                      _: "UndefinedLiteral",
+                    }),
+                    thenStatementList: [{
+                      _: "ThrowError",
+                      tsExpr: stringLiteral(
+                        "expected value property in sum parameter",
+                      ),
+                    }],
+                  },
+                }, {
+                  _: "Return",
+                  tsExpr: objectLiteral([{
+                    _: "KeyValue",
+                    keyValue: {
+                      key: "type",
+                      value: stringLiteral(pattern.name),
+                    },
+                  }, {
+                    _: "KeyValue",
+                    keyValue: {
+                      key: "value",
+                      value: call({
+                        expr: getFromJsonFunction(pattern.parameter),
+                        parameterList: [
+                          variable(identifierFromString("value")),
+                        ],
+                      }),
+                    },
+                  }]),
+                }],
             })),
           },
+        },
+        {
+          _: "ThrowError",
+          tsExpr: addition(
+            stringLiteral(
+              "unknown type value expected [" +
+                type.body.patternList.map((pattern) => pattern.name).join(",") +
+                "] but got ",
+            ),
+            get(variable(identifierFromString("type")), "value"),
+          ),
         },
       ];
   }

@@ -331,18 +331,64 @@ export const StructuredJsonValue: {
     }
     switch (type.value) {
       case "string": {
+        const value: a.StructuredJsonValue | undefined =
+          jsonValue.value.get("value");
+        if (value === undefined) {
+          throw new Error("expected value property in sum parameter");
+        }
+        return { type: "string", value: String.fromJson(value) };
       }
       case "array": {
+        const value: a.StructuredJsonValue | undefined =
+          jsonValue.value.get("value");
+        if (value === undefined) {
+          throw new Error("expected value property in sum parameter");
+        }
+        return {
+          type: "array",
+          value: List.fromJson(StructuredJsonValue.fromJson)(value),
+        };
       }
       case "boolean": {
+        const value: a.StructuredJsonValue | undefined =
+          jsonValue.value.get("value");
+        if (value === undefined) {
+          throw new Error("expected value property in sum parameter");
+        }
+        return { type: "boolean", value: Bool.fromJson(value) };
       }
       case "null": {
+        const value: a.StructuredJsonValue | undefined =
+          jsonValue.value.get("value");
+        if (value === undefined) {
+          throw new Error("expected value property in sum parameter");
+        }
+        return { type: "null", value: Unit.fromJson(value) };
       }
       case "number": {
+        const value: a.StructuredJsonValue | undefined =
+          jsonValue.value.get("value");
+        if (value === undefined) {
+          throw new Error("expected value property in sum parameter");
+        }
+        return { type: "number", value: Number.fromJson(value) };
       }
       case "object": {
+        const value: a.StructuredJsonValue | undefined =
+          jsonValue.value.get("value");
+        if (value === undefined) {
+          throw new Error("expected value property in sum parameter");
+        }
+        return {
+          type: "object",
+          value: StringMap.fromJson(StructuredJsonValue.fromJson)(value),
+        };
       }
     }
+    throw new Error(
+      "unknown type value expected [string,array,boolean,null,number,object] but got " +
+        type.value
+    );
   },
 };
 
