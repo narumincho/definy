@@ -1,7 +1,7 @@
 import { urlFromString } from "../client/urlFromString.ts";
 import type { Node, NodeAPI, NodeDef } from "./nodeRedServer.ts";
 import type { Status } from "./status.ts";
-import * as definyRpcClient from "../../definyRpc/client/generated/definyRpc.ts";
+import * as definyRpcClient from "../../definyRpc/generated/definyRpc.ts";
 import { jsonStringify } from "../../typedJson.ts";
 
 const createdServer = new Set<string>();
