@@ -21,10 +21,11 @@ export const Unit: {
   /**
    * JsonからUnitに変換する. 失敗した場合はエラー
    */
-  readonly fromJson: (a: a.StructuredJsonValue) => undefined;
+  readonly fromStructuredJsonValue: (a: a.StructuredJsonValue) => undefined;
 } = {
   description: "内部表現は, undefined. JSON 上では null",
-  fromJson: (jsonValue: a.StructuredJsonValue): undefined => undefined,
+  fromStructuredJsonValue: (jsonValue: a.StructuredJsonValue): undefined =>
+    undefined,
 };
 
 /**
@@ -38,10 +39,10 @@ export const String: {
   /**
    * JsonからStringに変換する. 失敗した場合はエラー
    */
-  readonly fromJson: (a: a.StructuredJsonValue) => string;
+  readonly fromStructuredJsonValue: (a: a.StructuredJsonValue) => string;
 } = {
   description: "文字列",
-  fromJson: (jsonValue: a.StructuredJsonValue): string => {
+  fromStructuredJsonValue: (jsonValue: a.StructuredJsonValue): string => {
     if (jsonValue.type === "string") {
       return jsonValue.value;
     }
@@ -60,10 +61,10 @@ export const Number: {
   /**
    * JsonからNumberに変換する. 失敗した場合はエラー
    */
-  readonly fromJson: (a: a.StructuredJsonValue) => number;
+  readonly fromStructuredJsonValue: (a: a.StructuredJsonValue) => number;
 } = {
   description: "64bit 浮動小数点数",
-  fromJson: (jsonValue: a.StructuredJsonValue): number => {
+  fromStructuredJsonValue: (jsonValue: a.StructuredJsonValue): number => {
     if (jsonValue.type === "number") {
       return jsonValue.value;
     }
@@ -92,7 +93,9 @@ export const hello = (parameter: {
     .then(
       (jsonValue: a.RawJsonValue): Result<string, "error"> => ({
         type: "ok",
-        ok: String.fromJson(a.rawJsonToStructuredJsonValue(jsonValue)),
+        ok: String.fromStructuredJsonValue(
+          a.rawJsonToStructuredJsonValue(jsonValue)
+        ),
       })
     )
     .catch((): Result<string, "error"> => ({ type: "error", error: "error" }));
@@ -119,7 +122,9 @@ export const now = (parameter: {
     .then(
       (jsonValue: a.RawJsonValue): Result<string, "error"> => ({
         type: "ok",
-        ok: String.fromJson(a.rawJsonToStructuredJsonValue(jsonValue)),
+        ok: String.fromStructuredJsonValue(
+          a.rawJsonToStructuredJsonValue(jsonValue)
+        ),
       })
     )
     .catch((): Result<string, "error"> => ({ type: "error", error: "error" }));
@@ -147,7 +152,9 @@ export const repeat = (parameter: {
     .then(
       (jsonValue: a.RawJsonValue): Result<string, "error"> => ({
         type: "ok",
-        ok: String.fromJson(a.rawJsonToStructuredJsonValue(jsonValue)),
+        ok: String.fromStructuredJsonValue(
+          a.rawJsonToStructuredJsonValue(jsonValue)
+        ),
       })
     )
     .catch((): Result<string, "error"> => ({ type: "error", error: "error" }));

@@ -274,7 +274,7 @@ export const typeToTypeVariable = (
           type: { _: "String" },
         },
         {
-          name: "fromJson",
+          name: "fromStructuredJsonValue",
           document: `Jsonから${type.name}に変換する. 失敗した場合はエラー`,
           required: true,
           type: type.parameterCount === 0 ? fromJsonTypeMain : {
@@ -320,10 +320,10 @@ export const typeToTypeVariable = (
         {
           _: "KeyValue",
           keyValue: {
-            key: "fromJson",
+            key: "fromStructuredJsonValue",
             value: {
               _: "Lambda",
-              lambdaExpr: typeToFromJsonLambda(type, map),
+              lambdaExpr: typeToFromStructuredJsonValueLambda(type, map),
             },
           },
         },
@@ -332,7 +332,7 @@ export const typeToTypeVariable = (
   };
 };
 
-const typeToFromJsonLambda = (
+const typeToFromStructuredJsonValueLambda = (
   type: CollectedDefinyRpcType,
   map: CollectedDefinyRpcTypeMap,
 ): data.LambdaExpr => {
@@ -620,7 +620,7 @@ const typeToFromJsonStatementList = (
                 _: "KeyValue",
                 keyValue: {
                   key: field.name,
-                  value: useFromJson(field.type, {
+                  value: useFromStructuredJsonValue(field.type, {
                     _: "Variable",
                     tsIdentifier: identifierFromString(field.name),
                   }),
@@ -740,7 +740,7 @@ const typeToFromJsonStatementList = (
                     keyValue: {
                       key: "value",
                       value: call({
-                        expr: getFromJsonFunction(pattern.parameter),
+                        expr: getStructuredJsonValueFunction(pattern.parameter),
                         parameterList: [
                           variable(identifierFromString("value")),
                         ],
@@ -767,28 +767,33 @@ const typeToFromJsonStatementList = (
 };
 
 /**
- * `型名`.fromJson を使用する
+ * `型名`.fromStructuredJsonValue を使用する
  * @param type 型
  * @param expr JSONの式
  */
-export const useFromJson = (
+export const useFromStructuredJsonValue = (
   type: CollectedDefinyRpcTypeUse,
   expr: data.TsExpr,
 ): data.TsExpr => {
   return {
     _: "Call",
-    callExpr: { expr: getFromJsonFunction(type), parameterList: [expr] },
+    callExpr: {
+      expr: getStructuredJsonValueFunction(type),
+      parameterList: [expr],
+    },
   };
 };
 
-const getFromJsonFunction = (type: CollectedDefinyRpcTypeUse): data.TsExpr => {
+const getStructuredJsonValueFunction = (
+  type: CollectedDefinyRpcTypeUse,
+): data.TsExpr => {
   if (type.parameters.length === 0) {
     return get(
       {
         _: "Variable",
         tsIdentifier: identifierFromString(type.name),
       },
-      "fromJson",
+      "fromStructuredJsonValue",
     );
   }
   return callMethod(
@@ -796,7 +801,7 @@ const getFromJsonFunction = (type: CollectedDefinyRpcTypeUse): data.TsExpr => {
       _: "Variable",
       tsIdentifier: identifierFromString(type.name),
     },
-    "fromJson",
-    type.parameters.map(getFromJsonFunction),
+    "fromStructuredJsonValue",
+    type.parameters.map(getStructuredJsonValueFunction),
   );
 };
