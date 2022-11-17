@@ -2,6 +2,7 @@ import React from "https://esm.sh/react@18.2.0";
 import { c, toStyleAndHash } from "../../cssInJs/mod.ts";
 import { Language } from "../../zodType.ts";
 import { GoogleLogInButton } from "./components/googleLogInButton.tsx";
+import { Clock24 } from "./pages/clock24.tsx";
 
 const containerStyle = toStyleAndHash({
   backgroundColor: "black",
@@ -31,6 +32,7 @@ const spacer = toStyleAndHash({
 
 type AppProps = {
   readonly language: Language;
+  readonly isClock24: boolean;
 };
 
 export const App = (props: AppProps): React.ReactElement => {
@@ -38,6 +40,10 @@ export const App = (props: AppProps): React.ReactElement => {
   const [isRequestLogInUrl, setIsRequestLogInUrl] = React.useState<boolean>(
     false,
   );
+
+  if (props.isClock24) {
+    return <Clock24 />;
+  }
 
   return (
     <div className={c(containerStyle)}>

@@ -10,8 +10,12 @@ const main = () => {
     return;
   }
   const hl = new URLSearchParams(window.location.search).get("hl");
+  const isClock24 = window.location.pathname === "/clock24";
 
-  hydrateRoot(rootElement, <App language={languageFromId(hl)} />);
+  hydrateRoot(
+    rootElement,
+    <App language={languageFromId(hl)} isClock24={isClock24} />,
+  );
 };
 
 main();

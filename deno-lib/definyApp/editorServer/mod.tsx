@@ -48,6 +48,7 @@ export const startEditorServer = (
     const body = renderToString(
       <App
         language={languageFromId(simpleRequest?.query.get("hl"))}
+        isClock24={stringArrayEqual(simpleRequest?.path ?? [], ["clock24"])}
       />,
     );
     return new Response(
