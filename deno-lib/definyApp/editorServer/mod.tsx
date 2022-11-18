@@ -80,18 +80,19 @@ export const startEditorServer = (
     <title>${title}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="icon" type="image/png" href="/${dist.iconHash}">
-    <meta name="twitter:card" content="summary">
+    <meta name="description" content="${new Date().toISOString()}">
+    <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:site" content="@naru_mincho">
     <meta name="twitter:creator" content="@naru_mincho">
-    <meta property="og:url" content="${request.url}" />
-    <meta property="og:title" content="${title}" />
-    <meta property="og:description" content="${new Date().toISOString()}" />
+    <meta property="og:url" content="${request.url}">
+    <meta property="og:title" content="${title}">
     <meta property="og:image" content="${
         new URL(request.url).origin + "/" +
         (isClock24
           ? (await getOrCreateImageFromText("test")).hash
           : dist.iconHash)
-      }" />
+      }">
+    <meta property="og:description" content="${new Date().toISOString()}">
     <script type="module" src="/${dist.scriptHash}"></script>
     <style>${getRenderedCss()}</style>
     <style>
