@@ -143,3 +143,7 @@ export const Clock24 = (): React.ReactElement => {
     </div>
   );
 };
+
+export const clock24Title = () => {
+  return "タイトル";
+};

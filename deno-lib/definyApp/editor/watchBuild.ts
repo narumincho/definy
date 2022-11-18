@@ -14,6 +14,7 @@ type BuildClientResult = {
   readonly scriptContent: string;
   readonly fontHash: Hash;
   readonly fontContent: string;
+  readonly notoSansContent: string;
 };
 
 const outputFilesToScriptFile = async (
@@ -50,6 +51,11 @@ const watchAndBuild = async (
   const fontHash = await hashBinary(fontContent);
   const fontContentAsBase64 = base64.fromUint8Array(fontContent);
 
+  const notoSans = await Deno.readFile(
+    fromFileUrl(import.meta.resolve("./assets/NotoSansJP-Regular.otf")),
+  );
+  const notoSansAsBase64 = base64.fromUint8Array(notoSans);
+
   const scriptHashAndContent = await outputFilesToScriptFile(
     (await esbuild.build({
       entryPoints: [
@@ -80,6 +86,7 @@ const watchAndBuild = async (
                 fontContent: fontContentAsBase64,
                 scriptHash: hashAndContent.hash,
                 scriptContent: hashAndContent.scriptContent,
+                notoSansContent: notoSansAsBase64,
               });
             });
           }
@@ -94,6 +101,7 @@ const watchAndBuild = async (
     fontContent: fontContentAsBase64,
     scriptHash: scriptHashAndContent.hash,
     scriptContent: scriptHashAndContent.scriptContent,
+    notoSansContent: notoSansAsBase64,
   });
 };
 

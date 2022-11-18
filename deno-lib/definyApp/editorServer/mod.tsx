@@ -12,11 +12,14 @@ import { getRenderedCss, resetInsertedStyle } from "../../cssInJs/mod.ts";
 import { stringArrayEqual } from "../../util.ts";
 import { languageFromId } from "../../zodType.ts";
 import { requestObjectToSimpleRequest } from "../../simpleRequestResponse/simpleRequest.ts";
+import { clock24Title } from "../editor/pages/clock24.tsx";
+import { hashFromString } from "../../sha256.ts";
+import { getImageFromHash, getOrCreateImageFromText } from "./ogpImage.tsx";
 
 export const startEditorServer = (
   option: { readonly port: number | undefined },
 ): void => {
-  serve((request) => {
+  serve(async (request) => {
     const simpleRequest = requestObjectToSimpleRequest(request);
     console.log(simpleRequest);
     if (stringArrayEqual(simpleRequest?.path ?? [], [dist.scriptHash])) {
@@ -43,21 +46,52 @@ export const startEditorServer = (
         },
       });
     }
+    const pathFirst = simpleRequest?.path?.[0];
+    const pathHash = pathFirst === undefined
+      ? undefined
+      : hashFromString(pathFirst);
+    if (pathHash !== undefined) {
+      const image = getImageFromHash(pathHash);
+      if (image !== undefined) {
+        return new Response(image, {
+          headers: {
+            "Content-Type": "image/png",
+            "Cache-Control": "public, max-age=604800, immutable",
+          },
+        });
+      }
+    }
 
     resetInsertedStyle();
+
+    const isClock24 = stringArrayEqual(simpleRequest?.path ?? [], ["clock24"]);
     const body = renderToString(
       <App
         language={languageFromId(simpleRequest?.query.get("hl"))}
-        isClock24={stringArrayEqual(simpleRequest?.path ?? [], ["clock24"])}
+        isClock24={isClock24}
       />,
     );
+    const title = isClock24 ? clock24Title() : "definy editor";
+
     return new Response(
       `<!doctype html>
 <html>
   <head>
-    <title>definy editor</title>
+    <title>${title}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="icon" type="image/png" href="/${dist.iconHash}" />
+    <link rel="icon" type="image/png" href="/${dist.iconHash}">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:site" content="@naru_mincho">
+    <meta name="twitter:creator" content="@naru_mincho">
+    <meta property="og:url" content="${request.url}" />
+    <meta property="og:title" content="${title}" />
+    <meta property="og:description" content="${new Date().toISOString()}" />
+    <meta property="og:image" content="${
+        new URL(request.url).origin + "/" +
+        (isClock24
+          ? (await getOrCreateImageFromText("test")).hash
+          : dist.iconHash)
+      }" />
     <script type="module" src="/${dist.scriptHash}"></script>
     <style>${getRenderedCss()}</style>
     <style>
