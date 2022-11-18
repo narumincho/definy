@@ -1,4 +1,4 @@
-import * as base64 from "https://denopkg.com/chiefbiiko/base64@master/mod.ts";
+import { toBase64 } from "https://deno.land/x/fast_base64@v0.1.7/mod.ts";
 import * as esbuild from "https://deno.land/x/esbuild@v0.15.13/mod.js";
 import { denoPlugin } from "https://deno.land/x/esbuild_deno_loader@0.6.0/mod.ts";
 import { hashBinary } from "../sha256.ts";
@@ -40,7 +40,7 @@ const buildClientEditor = async (): Promise<BuildClientResult> => {
       );
 
       return {
-        iconContent: base64.fromUint8Array(iconContent),
+        iconContent: await toBase64(iconContent),
         iconHash,
         scriptHash: hash,
         scriptContent: scriptContent,

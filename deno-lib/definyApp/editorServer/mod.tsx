@@ -5,7 +5,7 @@
 import { serve } from "https://deno.land/std@0.165.0/http/server.ts";
 import React from "https://esm.sh/react@18.2.0";
 import { renderToString } from "https://esm.sh/react-dom@18.2.0/server";
-import * as base64 from "https://denopkg.com/chiefbiiko/base64@master/mod.ts";
+import { toBytes } from "https://deno.land/x/fast_base64@v0.1.7/mod.ts";
 import { App } from "../editor/app.tsx";
 import dist from "./dist.json" assert { type: "json" };
 import { getRenderedCss, resetInsertedStyle } from "../../cssInJs/mod.ts";
@@ -31,7 +31,7 @@ export const startEditorServer = (
       });
     }
     if (stringArrayEqual(simpleRequest?.path ?? [], [dist.iconHash])) {
-      return new Response(base64.toUint8Array(dist.iconContent), {
+      return new Response(await toBytes(dist.iconContent), {
         headers: {
           "Content-Type": "image/png",
           "Cache-Control": "public, max-age=604800, immutable",
@@ -39,7 +39,7 @@ export const startEditorServer = (
       });
     }
     if (stringArrayEqual(simpleRequest?.path ?? [], [dist.fontHash])) {
-      return new Response(base64.toUint8Array(dist.fontContent), {
+      return new Response(await toBytes(dist.fontContent), {
         headers: {
           "Content-Type": "font/woff2",
           "Cache-Control": "public, max-age=604800, immutable",

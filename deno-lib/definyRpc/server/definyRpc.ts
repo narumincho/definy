@@ -1,5 +1,5 @@
 import clientBuildResult from "./browserClient.json" assert { type: "json" };
-import * as base64 from "https://denopkg.com/chiefbiiko/base64@master/mod.ts";
+import { toBytes } from "https://deno.land/x/fast_base64@v0.1.7/mod.ts";
 import {
   jsonStringify,
   structuredJsonParse,
@@ -119,8 +119,7 @@ export const handleRequest = (
     return {
       status: 200,
       headers: { ContentType: "image/png" },
-      body: () =>
-        Promise.resolve(base64.toUint8Array(clientBuildResult.iconContent)),
+      body: () => toBytes(clientBuildResult.iconContent),
     };
   }
   if (

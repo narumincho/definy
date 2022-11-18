@@ -1,11 +1,11 @@
 import { mongodbDataApiKey } from "../../databaseMigrationSecret.ts";
-import * as base64 from "https://denopkg.com/chiefbiiko/base64@master/mod.ts";
+import { toBase64 } from "https://deno.land/x/fast_base64@v0.1.7/mod.ts";
 import { jsonStringify } from "../typedJson.ts";
 
-const crateUUID = () => {
+const crateUUID = async () => {
   return {
     $binary: {
-      base64: base64.fromUint8Array(crypto.getRandomValues(new Uint8Array(16))),
+      base64: await toBase64(crypto.getRandomValues(new Uint8Array(16))),
       subType: "04",
     },
   };
@@ -36,10 +36,10 @@ const result = await (
             },
           },
           createdAt: { $date: { $numberLong: "1638551310749" } },
-          _id: crateUUID(),
+          _id: await crateUUID(),
         },
       }),
-    }
+    },
   )
 ).json();
 
