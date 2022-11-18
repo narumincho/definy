@@ -1,5 +1,5 @@
-import React from "https://esm.sh/react@18.2.0";
-import { FunctionDetail } from "../../definyRpc/client/generated/definyRpc.ts";
+import { React } from "../../deps.ts";
+import { FunctionDetail } from "../../definyRpc/generated/definyRpc.ts";
 
 export const GeneratedNodeForm = (
   props: { readonly functionDetail: FunctionDetail },

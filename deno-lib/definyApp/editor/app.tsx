@@ -1,4 +1,4 @@
-import React from "https://esm.sh/react@18.2.0";
+import { React } from "../../deps.ts";
 import { c, toStyleAndHash } from "../../cssInJs/mod.ts";
 import { Language } from "../../zodType.ts";
 import { GoogleLogInButton } from "./components/googleLogInButton.tsx";

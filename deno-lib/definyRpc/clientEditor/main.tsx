@@ -2,8 +2,7 @@
 /// <reference lib="dom" />
 
 import { App } from "./App.tsx";
-import React from "https://esm.sh/react@18.2.0";
-import { createRoot } from "https://esm.sh/react-dom@18.2.0/client";
+import { createRoot, React } from "../../deps.ts";
 
 const rootElement = document.createElement("div");
 document.body.style.height = "100%";

@@ -1,5 +1,7 @@
-import { serve } from "https://deno.land/std@0.165.0/http/server.ts";
 import { definyRpc } from "../definyRpc/server/mod.ts";
+import { server } from "../deps.ts";
+import { requestObjectToSimpleRequest } from "../simpleRequestResponse/simpleRequest.ts";
+import { simpleResponseToResponse } from "../simpleRequestResponse/simpleResponse.ts";
 
 const randomToken = [...crypto.getRandomValues(new Uint8Array(16))]
   .map((e) => e.toString(16).padStart(2, "0"))
@@ -9,8 +11,8 @@ const portNumber = 2520;
 
 const desktopProxyRpcParameter: definyRpc.DefinyRpcParameter = {
   name: "definy-desktop-proxy",
-  all: () => [
-    definyRpc.createApiFunction({
+  all: () => ({
+    functionsList: [definyRpc.createApiFunction({
       fullName: ["envs"],
       description: "環境変数を取得する",
       needAuthentication: true,
@@ -23,15 +25,16 @@ const desktopProxyRpcParameter: definyRpc.DefinyRpcParameter = {
         }
         return new Set();
       },
-    }),
-  ],
+    })],
+    typeList: [],
+  }),
   originHint: `http://localhost:${portNumber}`,
   codeGenOutputFolderPath: "./client/generated",
 };
 
-serve(
+server.serve(
   async (request) => {
-    const simpleRequest = definyRpc.requestObjectToSimpleRequest(request);
+    const simpleRequest = requestObjectToSimpleRequest(request);
     if (simpleRequest === undefined) {
       return new Response("simpleRequestに変換できなかった", { status: 400 });
     }
@@ -44,7 +47,7 @@ serve(
         status: 400,
       });
     }
-    const response = await definyRpc.simpleResponseToResponse(simpleResponse);
+    const response = await simpleResponseToResponse(simpleResponse);
 
     response.headers.append(
       "access-control-allow-origin",

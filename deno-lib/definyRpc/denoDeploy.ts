@@ -1,8 +1,8 @@
-import { serve } from "https://deno.land/std@0.165.0/http/server.ts";
 import { definyRpc } from "./server/mod.ts";
 import { funcList } from "./exampleFunc.ts";
 import { requestObjectToSimpleRequest } from "../simpleRequestResponse/simpleRequest.ts";
 import { simpleResponseToResponse } from "../simpleRequestResponse/simpleResponse.ts";
+import { server } from "../deps.ts";
 
 const portNumber = 2520;
 
@@ -13,7 +13,7 @@ const sampleDefinyRpcServerParameter: definyRpc.DefinyRpcParameter = {
   codeGenOutputFolderPath: undefined,
 };
 
-serve(
+server.serve(
   (request) => {
     const simpleRequest = requestObjectToSimpleRequest(request);
     if (simpleRequest === undefined) {

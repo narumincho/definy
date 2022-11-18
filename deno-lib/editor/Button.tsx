@@ -1,4 +1,4 @@
-import React from "https://esm.sh/react@18.2.0";
+import { React } from "../deps.ts";
 import { c, toStyleAndHash } from "../cssInJs/mod.ts";
 
 export type Props = {
@@ -28,7 +28,7 @@ const style = toStyleAndHash(
       backgroundColor: "#000",
       borderRadius: 0,
     },
-  }
+  },
 );
 
 export const Button = (props: Props): React.ReactElement => (

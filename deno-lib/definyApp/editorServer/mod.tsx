@@ -2,10 +2,7 @@
 /// <reference lib="dom" />
 /// <reference lib="deno.ns" />
 
-import { serve } from "https://deno.land/std@0.165.0/http/server.ts";
-import React from "https://esm.sh/react@18.2.0";
-import { renderToString } from "https://esm.sh/react-dom@18.2.0/server";
-import { toBytes } from "https://deno.land/x/fast_base64@v0.1.7/mod.ts";
+import { fast_base64, React, renderToString, server } from "../../deps.ts";
 import { App } from "../editor/app.tsx";
 import dist from "./dist.json" assert { type: "json" };
 import { getRenderedCss, resetInsertedStyle } from "../../cssInJs/mod.ts";
@@ -19,7 +16,7 @@ import { getImageFromHash, getOrCreateImageFromText } from "./ogpImage.tsx";
 export const startEditorServer = (
   option: { readonly port: number | undefined },
 ): void => {
-  serve(async (request) => {
+  server.serve(async (request) => {
     const simpleRequest = requestObjectToSimpleRequest(request);
     console.log(simpleRequest);
     if (stringArrayEqual(simpleRequest?.path ?? [], [dist.scriptHash])) {
@@ -31,7 +28,7 @@ export const startEditorServer = (
       });
     }
     if (stringArrayEqual(simpleRequest?.path ?? [], [dist.iconHash])) {
-      return new Response(await toBytes(dist.iconContent), {
+      return new Response(await fast_base64.toBytes(dist.iconContent), {
         headers: {
           "Content-Type": "image/png",
           "Cache-Control": "public, max-age=604800, immutable",
@@ -39,7 +36,7 @@ export const startEditorServer = (
       });
     }
     if (stringArrayEqual(simpleRequest?.path ?? [], [dist.fontHash])) {
-      return new Response(await toBytes(dist.fontContent), {
+      return new Response(await fast_base64.toBytes(dist.fontContent), {
         headers: {
           "Content-Type": "font/woff2",
           "Cache-Control": "public, max-age=604800, immutable",

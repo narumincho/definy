@@ -1,5 +1,4 @@
-import * as esbuild from "https://deno.land/x/esbuild@v0.15.13/mod.js";
-import { denoPlugin } from "https://deno.land/x/esbuild_deno_loader@0.6.0/mod.ts";
+import { denoPlugin, esbuild } from "../deps.ts";
 import { jsonStringify } from "../typedJson.ts";
 import { writeTextFile } from "../writeFileAndLog.ts";
 
@@ -12,7 +11,7 @@ const handleBuildResult = (result: esbuild.BuildResult | null) => {
         "./out.js",
         jsonStringify({
           scriptContent: new TextDecoder().decode(file.contents),
-        })
+        }),
       );
     }
   });
@@ -32,7 +31,7 @@ handleBuildResult(
     },
     format: "esm",
     target: ["chrome106"],
-  })
+  }),
 );
 
 console.log("終了");

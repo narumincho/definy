@@ -1,6 +1,6 @@
-import React from "https://esm.sh/react@18.2.0";
+import { React } from "../../deps.ts";
 import { c, toStyleAndHash } from "../../cssInJs/mod.ts";
-import * as definyRpc from "../client/generated/definyRpc.ts";
+import * as definyRpc from "../generated/definyRpc.ts";
 import { Button } from "../../editor/Button.tsx";
 import { Editor } from "./Editor.tsx";
 import { ServerOrigin } from "./ServerOrigin.tsx";
@@ -31,7 +31,7 @@ export const App = (): React.ReactElement => {
   >(undefined);
   const [serverName, setServerName] = React.useState<string | undefined>();
   const [serverOrigin, setServerOrigin] = React.useState<string>(
-    new URL(location.href).origin
+    new URL(location.href).origin,
   );
   const [editorCount, setEditorCount] = React.useState<number>(1);
 

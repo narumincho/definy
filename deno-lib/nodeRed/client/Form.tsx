@@ -1,4 +1,4 @@
-import React from "https://esm.sh/react@18.2.0";
+import { React } from "../../deps.ts";
 import { urlFromString } from "./urlFromString.ts";
 import { c, toStyleAndHash } from "../../cssInJs/mod.ts";
 import { jsonStringify } from "../../typedJson.ts";
@@ -39,9 +39,7 @@ export const Form = (props: {
           }}
         />
       </div>
-      {urlFromString(urlText) ? (
-        <></>
-      ) : (
+      {urlFromString(urlText) ? <></> : (
         <div className={c(errorStyle)}>
           {urlText} はURLとして不正です. 例: https://narumincho-definy.deno.dev/
         </div>

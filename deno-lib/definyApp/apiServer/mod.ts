@@ -1,9 +1,9 @@
-import { serve } from "https://deno.land/std@0.165.0/http/server.ts";
 import { definyRpc } from "../../definyRpc/server/mod.ts";
 import { funcList } from "./funcList.ts";
 import * as f from "../../typedFauna.ts";
 import { requestObjectToSimpleRequest } from "../../simpleRequestResponse/simpleRequest.ts";
 import { simpleResponseToResponse } from "../../simpleRequestResponse/simpleResponse.ts";
+import { server } from "../../deps.ts";
 
 const devPortNumber = 2528;
 
@@ -24,7 +24,7 @@ export const main = (
       ? "./definyApp/apiClient"
       : undefined,
   };
-  serve(
+  server.serve(
     async (request) => {
       const simpleRequest = requestObjectToSimpleRequest(request);
       if (simpleRequest === undefined) {

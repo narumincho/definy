@@ -1,5 +1,4 @@
-import React from "https://esm.sh/react@18.2.0";
-import { Network } from "https://esm.sh/vis-network@9.1.2";
+import { Network, React } from "../../deps.ts";
 
 export const SampleChart = () => {
   const ref = React.useRef<HTMLDivElement>(null);
@@ -18,7 +17,7 @@ export const SampleChart = () => {
         ],
         edges: [{ id: "edgeId", arrows: "to", from: "aId", to: "bId" }],
       },
-      { width: "200", height: "200" }
+      { width: "200", height: "200" },
     );
     console.log(graph2d);
   }, [ref.current]);

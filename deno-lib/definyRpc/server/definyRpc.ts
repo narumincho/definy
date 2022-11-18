@@ -1,5 +1,4 @@
 import clientBuildResult from "./browserClient.json" assert { type: "json" };
-import { toBytes } from "https://deno.land/x/fast_base64@v0.1.7/mod.ts";
 import {
   jsonStringify,
   structuredJsonParse,
@@ -11,6 +10,7 @@ import { addDefinyRpcApiFunction } from "../core/builtInFunctions.ts";
 import { SimpleRequest } from "../../simpleRequestResponse/simpleRequest.ts";
 import { SimpleResponse } from "../../simpleRequestResponse/simpleResponse.ts";
 import { stringArrayEqual, stringArrayMatchPrefix } from "../../util.ts";
+import { fast_base64 } from "../../deps.ts";
 
 export * from "../core/type.ts";
 export * from "../core/apiFunction.ts";
@@ -119,7 +119,7 @@ export const handleRequest = (
     return {
       status: 200,
       headers: { ContentType: "image/png" },
-      body: () => toBytes(clientBuildResult.iconContent),
+      body: () => fast_base64.toBytes(clientBuildResult.iconContent),
     };
   }
   if (

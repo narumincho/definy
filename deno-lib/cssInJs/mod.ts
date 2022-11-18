@@ -1,7 +1,4 @@
-/// <reference no-default-lib="true"/>
-/// <reference lib="dom" />
-
-import { murmurHash3 } from "https://deno.land/x/murmur_hash_3@1.0.0/mod.ts";
+import { murmurHash3 } from "../deps.ts";
 
 const definyCssInJsId = "definy-css-in-js";
 

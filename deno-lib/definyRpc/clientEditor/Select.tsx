@@ -1,5 +1,5 @@
-import React from "https://esm.sh/react@18.2.0";
-import { FunctionDetail } from "../client/generated/definyRpc.ts";
+import { React } from "../../deps.ts";
+import { FunctionDetail } from "../generated/definyRpc.ts";
 import { c, toStyleAndHash } from "../../cssInJs/mod.ts";
 
 const readonlyStyle = toStyleAndHash({
@@ -51,7 +51,7 @@ export const Select = (props: {
       props.onSelect(value);
       setIsFocus(false);
     },
-    [props.onSelect]
+    [props.onSelect],
   );
 
   if (isFocus) {
@@ -87,7 +87,7 @@ const SelectActive = (props: {
   const inputElementRef = React.useRef<HTMLInputElement>(null);
   const [initValue] = React.useState<string | undefined>(props.value);
   const [suggestionList, setSuggestionList] = React.useState<SuggestionList>(
-    createSuggestionSorted({ values: props.values ?? [], inputText })
+    createSuggestionSorted({ values: props.values ?? [], inputText }),
   );
 
   React.useEffect(() => {
@@ -108,7 +108,7 @@ const SelectActive = (props: {
       setSuggestionList(newSuggestionList);
       props.onSelect(newSuggestionList[0]?.value);
     },
-    [props.onSelect]
+    [props.onSelect],
   );
 
   return (
@@ -126,11 +126,11 @@ const SelectActive = (props: {
               return;
             }
             const index = suggestionList.findIndex(
-              (s) => s.value === props.value
+              (s) => s.value === props.value,
             );
 
-            const newValue =
-              suggestionList[(index + 1) % suggestionList.length]?.value;
+            const newValue = suggestionList[(index + 1) % suggestionList.length]
+              ?.value;
             if (newValue !== undefined) {
               props.onSelect(newValue);
               setInputText(newValue);
@@ -142,12 +142,11 @@ const SelectActive = (props: {
             }
 
             const index = suggestionList.findIndex(
-              (s) => s.value === props.value
+              (s) => s.value === props.value,
             );
-            const newValue =
-              suggestionList[
-                (index - 1 + suggestionList.length) % suggestionList.length
-              ]?.value;
+            const newValue = suggestionList[
+              (index - 1 + suggestionList.length) % suggestionList.length
+            ]?.value;
             if (newValue !== undefined) {
               props.onSelect(newValue);
               setInputText(newValue);
@@ -195,14 +194,12 @@ const Suggestion = (props: {
               fontSize: 18,
               textAlign: "left",
               cursor: "pointer",
-              ...(v.value === props.value
-                ? {}
-                : {
-                    ":hover": {
-                      backgroundColor: "#333",
-                    },
-                  }),
-            })
+              ...(v.value === props.value ? {} : {
+                ":hover": {
+                  backgroundColor: "#333",
+                },
+              }),
+            }),
           )}
           onClick={() => {
             props.onSelect(v.value);
@@ -215,7 +212,7 @@ const Suggestion = (props: {
                 toStyleAndHash({
                   color: s.emphasis ? "#faa" : "white",
                   fontWeight: s.emphasis ? "bold" : "normal",
-                })
+                }),
               )}
             >
               {s.text}
@@ -269,7 +266,7 @@ const createSuggestionWithPoint = (parameter: {
         {
           text: name.slice(
             includeIndex,
-            includeIndex + normalizedSearchText.length
+            includeIndex + normalizedSearchText.length,
           ),
           emphasis: true,
         },
@@ -278,8 +275,8 @@ const createSuggestionWithPoint = (parameter: {
           emphasis: false,
         },
       ],
-      point:
-        name.length - normalizedSearchText.length + name.length - includeIndex,
+      point: name.length - normalizedSearchText.length + name.length -
+        includeIndex,
     };
   });
 };

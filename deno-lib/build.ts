@@ -1,10 +1,9 @@
-import { fromFileUrl } from "https://deno.land/std@0.165.0/path/mod.ts";
-import { build, emptyDir } from "https://deno.land/x/dnt@0.31.0/mod.ts";
+import { dnt, path } from "./deps.ts";
 
-await emptyDir(fromFileUrl(import.meta.resolve("./npm")));
-await build({
-  entryPoints: [fromFileUrl(import.meta.resolve("./mod.ts"))],
-  outDir: fromFileUrl(import.meta.resolve("./npm")),
+await dnt.emptyDir(path.fromFileUrl(import.meta.resolve("./npm")));
+await dnt.build({
+  entryPoints: [path.fromFileUrl(import.meta.resolve("./mod.ts"))],
+  outDir: path.fromFileUrl(import.meta.resolve("./npm")),
   shims: {
     deno: true,
     undici: true,

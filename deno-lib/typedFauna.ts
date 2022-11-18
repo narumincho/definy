@@ -1,4 +1,4 @@
-import f from "https://cdn.skypack.dev/faunadb@4.7.1?dts";
+import { faunadb as f } from "./deps.ts";
 
 export type TypedFaunaClient = f.Client & { _typedFaunaClient: never };
 
@@ -15,7 +15,7 @@ export const crateFaunaClient = (parameter: {
 
 export const executeQuery = <T>(
   client: TypedFaunaClient,
-  expr: TypedExpr<T>
+  expr: TypedExpr<T>,
 ): Promise<T> => {
   return client.query<T>(expr);
 };
@@ -52,14 +52,20 @@ export const literal = <T>(expr: T): TypedExpr<T> => {
   return expr as unknown as TypedExpr<T>;
 };
 
-export const object = <T extends Record<string, unknown>>(expr: {
-  readonly [key in keyof T]: TypedExpr<T[key]>;
-}): TypedExpr<{
-  readonly [key in keyof T]: T[key];
-}> => {
-  return expr as unknown as TypedExpr<{
+export const object = <T extends Record<string, unknown>>(
+  expr: {
+    readonly [key in keyof T]: TypedExpr<T[key]>;
+  },
+): TypedExpr<
+  {
     readonly [key in keyof T]: T[key];
-  }>;
+  }
+> => {
+  return expr as unknown as TypedExpr<
+    {
+      readonly [key in keyof T]: T[key];
+    }
+  >;
 };
 
 export type Timestamp = "Timestamp" & { value: string; _timestamp: never };
@@ -122,7 +128,7 @@ export const CreateCollection = <data extends DocumentObject>(
     readonly history_days?: number | undefined | null;
     readonly ttl?: Timestamp | undefined | null;
     readonly ttl_days?: number | undefined | null;
-  }>
+  }>,
 ): TypedExpr<{
   readonly ref: CollectionReference<data>;
   readonly name: string;
@@ -136,7 +142,7 @@ export const CreateCollection = <data extends DocumentObject>(
  * https://docs.fauna.com/fauna/current/api/fql/functions/collection?lang=javascript
  */
 export const Collection = <data extends DocumentObject>(
-  name: TypedExpr<string>
+  name: TypedExpr<string>,
 ): TypedExpr<CollectionReference<data>> => {
   return typedExprFrom(f.Collection(name));
 };
@@ -149,7 +155,7 @@ export const Create = <data extends DocumentObject>(
   param_object: TypedExpr<{
     readonly data: data;
     readonly ttl?: Timestamp | undefined | null;
-  }>
+  }>,
 ): TypedExpr<{
   readonly ref: DocumentReference<data>;
   readonly data: data;
@@ -163,7 +169,7 @@ export const Create = <data extends DocumentObject>(
  */
 export const Ref = <data extends DocumentObject>(
   schema_ref: TypedExpr<CollectionReference<data>>,
-  document_id: TypedExpr<FaunaId>
+  document_id: TypedExpr<FaunaId>,
 ): TypedExpr<DocumentReference<data>> => {
   return typedExprFrom(f.Ref(schema_ref, document_id));
 };
@@ -180,7 +186,7 @@ export const NewId = (): TypedExpr<FaunaId> => {
  */
 export const Let = <T>(
   bindings: TypedExpr<Record<string, unknown>>,
-  inExpr: TypedExpr<T>
+  inExpr: TypedExpr<T>,
 ): TypedExpr<T> => {
   return typedExprFrom(f.Let(bindings, inExpr));
 };
@@ -191,13 +197,13 @@ export const Let = <T>(
 export const letUtil = <varType, T>(
   variableName: string,
   variableExpr: TypedExpr<varType>,
-  inExpression: (variable: TypedExpr<varType>) => TypedExpr<T>
+  inExpression: (variable: TypedExpr<varType>) => TypedExpr<T>,
 ): TypedExpr<T> => {
   return typedExprFrom(
     f.Let(
       { [variableName]: variableExpr },
-      inExpression(Var(literal(variableName)))
-    )
+      inExpression(Var(literal(variableName))),
+    ),
   );
 };
 
@@ -207,19 +213,19 @@ export const letUtil = <varType, T>(
 export const If = <T>(
   cond_expr: TypedExpr<boolean>,
   true_expr: TypedExpr<T>,
-  false_expr: TypedExpr<T>
+  false_expr: TypedExpr<T>,
 ): TypedExpr<T> => {
   return typedExprFrom(f.If(cond_expr, true_expr, false_expr));
 };
 
 export const ifIsBooleanGuarded = <T, R>(
   expr: TypedExpr<T>,
-  resultExpr: (notBooleanExpr: TypedExpr<Exclude<T, boolean>>) => TypedExpr<R>
+  resultExpr: (notBooleanExpr: TypedExpr<Exclude<T, boolean>>) => TypedExpr<R>,
 ): TypedExpr<R | false> => {
   return If<R | false>(
     IsBoolean(expr),
     literal<false>(false),
-    resultExpr(typedExprFrom(expr))
+    resultExpr(typedExprFrom(expr)),
   );
 };
 
@@ -228,7 +234,7 @@ export const ifIsBooleanGuarded = <T, R>(
  */
 export const Exists = <data extends DocumentObject>(
   ref: TypedExpr<DocumentReference<data>>,
-  ts?: TypedExpr<string | Timestamp>
+  ts?: TypedExpr<string | Timestamp>,
 ): TypedExpr<boolean> => {
   return typedExprFrom(f.Exists(ref, ts));
 };
@@ -245,7 +251,7 @@ export const Var = <T>(name: TypedExpr<string>): TypedExpr<T> => {
  */
 export const Get = <data extends DocumentObject>(
   ref: TypedExpr<DocumentReference<data>>,
-  ts?: TypedExpr<string | Timestamp>
+  ts?: TypedExpr<string | Timestamp>,
 ): TypedExpr<{
   readonly ref: DocumentReference<data>;
   readonly data: data;
@@ -258,7 +264,7 @@ export const Get = <data extends DocumentObject>(
  * https://docs.fauna.com/fauna/current/api/fql/functions/delete?lang=javascript
  */
 export const Delete = <data extends DocumentObject>(
-  ref: TypedExpr<DocumentReference<data>>
+  ref: TypedExpr<DocumentReference<data>>,
 ): TypedExpr<{
   readonly ref: DocumentReference<data>;
   readonly ts: string;
@@ -272,7 +278,7 @@ export const Delete = <data extends DocumentObject>(
 export const Select = <T, key extends keyof T>(
   key: TypedExpr<key>,
   from: TypedExpr<T>,
-  defaultExpr?: TypedExpr<T[key]>
+  defaultExpr?: TypedExpr<T[key]>,
 ): TypedExpr<T[key]> => {
   return typedExprFrom(f.Select(key, from, defaultExpr));
 };
@@ -284,7 +290,7 @@ export const Select = <T, key extends keyof T>(
 export const selectWithDefault = <T, key extends keyof T, R>(
   key: TypedExpr<key>,
   from: TypedExpr<T>,
-  defaultExpr: TypedExpr<R>
+  defaultExpr: TypedExpr<R>,
 ): TypedExpr<T[key] | R> => {
   return typedExprFrom(f.Select(key, from, defaultExpr));
 };
@@ -296,7 +302,7 @@ export const selectWithDefault = <T, key extends keyof T, R>(
 export const selectWithFalse = <T, key extends keyof Exclude<T, false>, R>(
   key: TypedExpr<key>,
   from: TypedExpr<T>,
-  defaultExpr: TypedExpr<R>
+  defaultExpr: TypedExpr<R>,
 ): TypedExpr<Exclude<T, false>[key] | R> => {
   return typedExprFrom(f.Select(key, from, defaultExpr));
 };
@@ -314,7 +320,7 @@ export const IsBoolean = (expr: TypedExpr<unknown>): TypedExpr<boolean> => {
  */
 export const pageFilter = <T>(
   arrayOrSet: TypedExpr<Page<T>>,
-  lambda: TypedExpr<Lambda<T, boolean>>
+  lambda: TypedExpr<Lambda<T, boolean>>,
 ): TypedExpr<Page<T>> => {
   return typedExprFrom(f.Filter(arrayOrSet, lambda));
 };
@@ -325,7 +331,7 @@ export const pageFilter = <T>(
  */
 export const pageMap = <elementInput, elementOutput>(
   array: TypedExpr<Page<elementInput>>,
-  lambda: TypedExpr<Lambda<elementInput, elementOutput>>
+  lambda: TypedExpr<Lambda<elementInput, elementOutput>>,
 ): TypedExpr<Page<elementOutput>> => {
   return typedExprFrom(f.Map(array, lambda));
 };
@@ -347,7 +353,7 @@ export const paginateSet = <data>(
     readonly size?: TypedExpr<number> | undefined;
     readonly events?: TypedExpr<boolean> | undefined;
     readonly sources?: TypedExpr<boolean> | undefined;
-  }
+  },
 ): TypedExpr<Page<data>> => {
   return typedExprFrom(f.Paginate(input, parameter));
 };
@@ -356,7 +362,7 @@ export const paginateSet = <data>(
  * https://docs.fauna.com/fauna/current/api/fql/functions/documents?lang=javascript
  */
 export const Documents = <data extends DocumentObject>(
-  collection: TypedExpr<CollectionReference<data>>
+  collection: TypedExpr<CollectionReference<data>>,
 ): TypedExpr<Set<DocumentReference<data>>> => {
   return typedExprFrom(f.Documents(collection));
 };
@@ -366,17 +372,17 @@ export const Documents = <data extends DocumentObject>(
  */
 export const Lambda = <inputType, outputType>(
   params: ReadonlyArray<string> | string,
-  expression: TypedExpr<outputType>
+  expression: TypedExpr<outputType>,
 ): TypedExpr<Lambda<inputType, outputType>> => {
   return typedExprFrom(f.Lambda(params, expression));
 };
 
 export const lambdaUtil = <inputType, outputType>(
   paramName: string,
-  expressionFunc: (param: TypedExpr<inputType>) => TypedExpr<outputType>
+  expressionFunc: (param: TypedExpr<inputType>) => TypedExpr<outputType>,
 ): TypedExpr<Lambda<inputType, outputType>> => {
   return typedExprFrom(
-    f.Lambda(paramName, expressionFunc(Var<inputType>(literal(paramName))))
+    f.Lambda(paramName, expressionFunc(Var<inputType>(literal(paramName)))),
   );
 };
 
@@ -388,7 +394,7 @@ export const Update = <data extends DocumentObject>(
   param_object: TypedExpr<{
     readonly data: { readonly [P in keyof data]?: data[P] };
     readonly ttl?: string | undefined;
-  }>
+  }>,
 ): TypedExpr<{
   readonly ref: DocumentReference<data>;
   readonly data: data;
@@ -436,7 +442,7 @@ export const CreateIndex = <data extends DocumentObject>(
     readonly serialized?: boolean;
     readonly data?: DocumentObject;
     readonly ttl?: Timestamp;
-  }>
+  }>,
 ): TypedExpr<{
   readonly ref: IndexReference<ReadonlyArray<Scalar>, data>;
   readonly name: string;
@@ -455,7 +461,7 @@ export const CreateIndex = <data extends DocumentObject>(
  */
 export const Match = <terms extends ReadonlyArray<Scalar>, value>(
   index: TypedExpr<IndexReference<terms, value>>,
-  terms: TypedExpr<terms>
+  terms: TypedExpr<terms>,
 ): TypedExpr<Set<value>> => {
   return typedExprFrom(f.Match(index, terms));
 };
@@ -464,7 +470,7 @@ export const Match = <terms extends ReadonlyArray<Scalar>, value>(
  * https://docs.fauna.com/fauna/current/api/fql/functions/iindex?lang=javascript
  */
 export const Index = <terms extends ReadonlyArray<Scalar>, data>(
-  name: TypedExpr<string>
+  name: TypedExpr<string>,
 ): TypedExpr<IndexReference<terms, data>> => {
   return typedExprFrom(f.Index(name));
 };
@@ -472,7 +478,7 @@ export const Index = <terms extends ReadonlyArray<Scalar>, data>(
 type PickDeep<T, k> = T extends Record<string, unknown>
   ? k extends [infer head extends keyof T, ...infer tail]
     ? PickDeep<T[head], tail>
-    : never
+  : never
   : T;
 
 type AllTuplePattern<T> =
@@ -487,10 +493,9 @@ type ValueOf<V> = V[keyof V];
 
 type ExpectTrue<T extends true> = T;
 
-type Equal<X, Y> = (<T>() => T extends X ? 1 : 2) extends <T>() => T extends Y
-  ? 1
-  : 2
-  ? true
+type Equal<X, Y> = (<T>() => T extends X ? 1 : 2) extends
+  <T>() => T extends Y ? 1
+    : 2 ? true
   : false;
 
 /** 型のテストケース */
@@ -518,7 +523,7 @@ type cases = [
       AllTuplePattern<{ a0: { a1: { a2: { a3: "" } } } }>,
       "a0" | readonly ["a0", "a1", "a2", "a3"]
     >
-  >
+  >,
 ];
 
 export const time = (dateTime: Date): TypedExpr<Timestamp> => {

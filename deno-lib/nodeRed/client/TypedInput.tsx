@@ -1,4 +1,4 @@
-import React from "https://esm.sh/react@18.2.0";
+import React from "../../deps.ts";
 import { dollar } from "./nodeRed.ts";
 
 export const TypedInput = (props: {
