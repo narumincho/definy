@@ -21,7 +21,7 @@ jobs:
       - name: setup Deno
         uses: denoland/setup-deno@v1
         with:
-          deno-version: v1.28.0
+          deno-version: v1.28.1
       - run: deno test .
         working-directory: ./deno-lib
       - name: Install npm dependencies (pnpm install)

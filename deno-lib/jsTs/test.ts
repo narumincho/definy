@@ -3,7 +3,7 @@ import {
   assertEquals,
   assertMatch,
   assertNotMatch,
-} from "https://deno.land/std@0.164.0/testing/asserts.ts";
+} from "https://deno.land/std@0.165.0/testing/asserts.ts";
 // ./mod.ts から import するとなぜか lib のライブラリが競合する
 import * as jsTs from "./main.ts";
 

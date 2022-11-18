@@ -1,4 +1,4 @@
-import { fromFileUrl } from "https://deno.land/std@0.164.0/path/mod.ts";
+import { fromFileUrl } from "https://deno.land/std@0.165.0/path/mod.ts";
 import { build, emptyDir } from "https://deno.land/x/dnt@0.31.0/mod.ts";
 
 await emptyDir(fromFileUrl(import.meta.resolve("./npm")));

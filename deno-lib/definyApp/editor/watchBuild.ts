@@ -3,8 +3,8 @@ import * as esbuild from "https://deno.land/x/esbuild@v0.15.13/mod.js";
 import { denoPlugin } from "https://deno.land/x/esbuild_deno_loader@0.6.0/mod.ts";
 import { Hash, hashBinary } from "../../sha256.ts";
 import { jsonStringify } from "../../typedJson.ts";
-import { fromFileUrl } from "https://deno.land/std@0.164.0/path/mod.ts";
-import { relative } from "https://deno.land/std@0.164.0/path/mod.ts";
+import { fromFileUrl } from "https://deno.land/std@0.165.0/path/mod.ts";
+import { relative } from "https://deno.land/std@0.165.0/path/mod.ts";
 import { writeTextFile } from "../../writeFileAndLog.ts";
 
 type BuildClientResult = {

@@ -1,4 +1,4 @@
-import { serve } from "https://deno.land/std@0.164.0/http/server.ts";
+import { serve } from "https://deno.land/std@0.165.0/http/server.ts";
 import { definyRpc } from "./server/mod.ts";
 import { funcList } from "./exampleFunc.ts";
 import { requestObjectToSimpleRequest } from "../simpleRequestResponse/simpleRequest.ts";
