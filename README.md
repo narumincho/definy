@@ -77,45 +77,6 @@ Deno 向けワークスペースの起動
 code ./for-deno.code-workspace
 ```
 
-# definy desktop proxy
-
-起動
-
-```ps1
-deno run --watch --check --allow-env --allow-net=:2520 --allow-read --allow-write=./client/generated ./deno-lib/definyDesktopProxy/main.ts
-```
-
-# definy RPC
-
-## 開発時
-
-### サンプルのサーバーを起動
-
-カレントディレクトリは リポジトリと同じ場所
-
-```ps1
-deno run --check --watch --allow-net=:2520 --allow-write=./deno-lib/definyRpc/client/generated --allow-read ./deno-lib/definyRpc/dev.ts
-```
-
-`--allow-write` `--allow-read` とかで指定しているのは, サーバーでコード生成したときに, ファイルを保存するため
-
-http://localhost:2520 にアクセスすれば, ビルドしたクライアントでの起動になる
-
-## クライアントも含めてビルド
-
-```ps1
-deno run -A --check ./deno-lib/definyRpc/build.ts
-```
-
-# deno-lib
-
-Deno で書かれたコード. Deno への移植をどんどん進めている
-
-### Node.js 向けにビルド
-
-```ps1
-cd ./deno-lib && deno run -A --check ./build.ts
-```
 
 # @definy/node-red
 
