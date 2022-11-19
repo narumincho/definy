@@ -1,4 +1,4 @@
-import React from "https://esm.sh/react@18.2.0";
+import React from "https://esm.sh/react@18.2.0?pin=v99";
 import { c, toStyleAndHash } from "../cssInJs/mod.ts";
 
 export const EnterIcon = (props: {
@@ -9,7 +9,7 @@ export const EnterIcon = (props: {
     <svg
       viewBox="0 0 38 32"
       className={c(
-        toStyleAndHash({ stroke: props.stroke, height: props.height })
+        toStyleAndHash({ stroke: props.stroke, height: props.height }),
       )}
     >
       <polygon points="4,4 34,4 34,28 12,28 12,16 4,16" fill="none"></polygon>

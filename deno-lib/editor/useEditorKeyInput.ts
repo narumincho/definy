@@ -1,4 +1,4 @@
-import { useEffect } from "https://esm.sh/react@18.2.0";
+import React from "https://esm.sh/react@18.2.0?pin=v99";
 
 export const useEditorKeyInput = ({
   disabled,
@@ -11,7 +11,7 @@ export const useEditorKeyInput = ({
   readonly onUp: () => void;
   readonly onEnter: () => void;
 }) => {
-  useEffect(() => {
+  React.useEffect(() => {
     console.log("reset!");
     const handleKeyEvent = (e: KeyboardEvent) => {
       // 入力中はなにもしない

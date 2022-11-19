@@ -1,51 +1,57 @@
-import { definyRpc } from "../../definyRpc/server/mod.ts";
+import {
+  createApiFunction,
+  FunctionAndTypeList,
+  number,
+  string,
+  unit,
+} from "../../definyRpc/server/definyRpc.ts";
 import * as f from "../../typedFauna.ts";
 
 export const funcList = (
   faunaClient: f.TypedFaunaClient,
-): definyRpc.FunctionAndTypeList => {
+): FunctionAndTypeList => {
   return {
     functionsList: [
-      definyRpc.createApiFunction({
+      createApiFunction({
         fullName: ["hello"],
         description: "hello と挨拶が返ってくる",
         needAuthentication: false,
         isMutation: false,
-        input: definyRpc.unit,
-        output: definyRpc.string,
+        input: unit,
+        output: string,
         resolve: () => {
           return "hello";
         },
       }),
-      definyRpc.createApiFunction({
+      createApiFunction({
         fullName: ["now"],
         description: "現在時刻を文字列で返す",
         needAuthentication: false,
         isMutation: false,
-        input: definyRpc.unit,
-        output: definyRpc.string,
+        input: unit,
+        output: string,
         resolve: () => {
           return new Date().toISOString();
         },
       }),
-      definyRpc.createApiFunction({
+      createApiFunction({
         fullName: ["repeat"],
         description: '"ok"を指定した回数分繰り返して返す',
         needAuthentication: false,
         isMutation: false,
-        input: definyRpc.number,
-        output: definyRpc.string,
+        input: number,
+        output: string,
         resolve: (input) => {
           return "ok".repeat(input);
         },
       }),
-      definyRpc.createApiFunction({
+      createApiFunction({
         fullName: ["getDataFromDatabase"],
         description: "fauna からデータを取得する",
         needAuthentication: false,
         isMutation: false,
-        input: definyRpc.unit,
-        output: definyRpc.string,
+        input: unit,
+        output: string,
         resolve: async (_) => {
           const result = await faunaClient.query<{
             readonly ref: f.DocumentReference<{

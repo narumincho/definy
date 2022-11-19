@@ -1,4 +1,4 @@
-import * as css from "../css.ts";
+import * as css from "../cssInJs/css.ts";
 import { hack_regular_subsetWoff2 } from "../staticResource.ts";
 
 export const globalStyle = `

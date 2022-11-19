@@ -1,4 +1,4 @@
-import React from "https://esm.sh/react@18.2.0";
+import React from "https://esm.sh/react@18.2.0?pin=v99";
 import { Editor } from "../../editor/Editor.tsx";
 import { c, toStyleAndHash } from "../../cssInJs/mod.ts";
 
@@ -14,7 +14,7 @@ export const ServerOrigin = (props: {
   readonly onChangeServerOrigin: (newOrigin: string) => void;
 }): React.ReactElement => {
   const [originText, setOriginText] = React.useState<string>(
-    props.initServerOrigin
+    props.initServerOrigin,
   );
 
   const origin = getSafeOrigin(originText);
@@ -32,10 +32,9 @@ export const ServerOrigin = (props: {
               readonly: false,
               isTitle: false,
             },
-            errorMessage:
-              origin === undefined
-                ? "不正なオリジンです. 例: http://localhost:3000"
-                : undefined,
+            errorMessage: origin === undefined
+              ? "不正なオリジンです. 例: http://localhost:3000"
+              : undefined,
           },
           {
             id: "server-name",

@@ -35,6 +35,7 @@ export type FunctionDetail = {
    * 関数の出力の型
    */
   readonly output: Type;
+  readonly __FunctionDetailBland: never;
 };
 
 /**
@@ -50,6 +51,7 @@ export type Type = {
    * 型パラメーター
    */
   readonly parameters: globalThis.ReadonlyArray<Type>;
+  readonly __TypeBland: never;
 };
 
 /**
@@ -84,7 +86,7 @@ export type StructuredJsonValue =
       /**
        * boolean
        */
-      readonly value: Bool;
+      readonly value: boolean;
     }
   | {
       /**
@@ -106,7 +108,7 @@ export type StructuredJsonValue =
        */
       readonly value: number;
     }
-  | {
+  | ({
       /**
        * object
        */
@@ -115,12 +117,7 @@ export type StructuredJsonValue =
        * object
        */
       readonly value: StringMap<StructuredJsonValue>;
-    };
-
-/**
- * Bool. boolean. 真偽値. True か False
- */
-export type Bool = boolean;
+    } & { readonly __StructuredJsonValueBland: never });
 
 /**
  * キーが string の ReadonlyMap
@@ -141,10 +138,11 @@ export const Unit: {
   /**
    * JsonからUnitに変換する. 失敗した場合はエラー
    */
-  readonly fromJson: (a: a.StructuredJsonValue) => undefined;
+  readonly fromStructuredJsonValue: (a: a.StructuredJsonValue) => undefined;
 } = {
   description: "内部表現は, undefined. JSON 上では null",
-  fromJson: (jsonValue: a.StructuredJsonValue): undefined => undefined,
+  fromStructuredJsonValue: (jsonValue: a.StructuredJsonValue): undefined =>
+    undefined,
 };
 
 /**
@@ -158,10 +156,10 @@ export const String: {
   /**
    * JsonからStringに変換する. 失敗した場合はエラー
    */
-  readonly fromJson: (a: a.StructuredJsonValue) => string;
+  readonly fromStructuredJsonValue: (a: a.StructuredJsonValue) => string;
 } = {
   description: "文字列",
-  fromJson: (jsonValue: a.StructuredJsonValue): string => {
+  fromStructuredJsonValue: (jsonValue: a.StructuredJsonValue): string => {
     if (jsonValue.type === "string") {
       return jsonValue.value;
     }
@@ -180,12 +178,12 @@ export const Set: {
   /**
    * JsonからSetに変換する. 失敗した場合はエラー
    */
-  readonly fromJson: <p0 extends unknown>(
+  readonly fromStructuredJsonValue: <p0 extends unknown>(
     a: (a: a.StructuredJsonValue) => p0
   ) => (a: a.StructuredJsonValue) => globalThis.ReadonlySet<p0>;
 } = {
   description: "集合. Set",
-  fromJson:
+  fromStructuredJsonValue:
     <p0 extends unknown>(
       p0FromJson: (a: a.StructuredJsonValue) => p0
     ): ((a: a.StructuredJsonValue) => globalThis.ReadonlySet<p0>) =>
@@ -208,12 +206,12 @@ export const List: {
   /**
    * JsonからListに変換する. 失敗した場合はエラー
    */
-  readonly fromJson: <p0 extends unknown>(
+  readonly fromStructuredJsonValue: <p0 extends unknown>(
     a: (a: a.StructuredJsonValue) => p0
   ) => (a: a.StructuredJsonValue) => globalThis.ReadonlyArray<p0>;
 } = {
   description: "リスト",
-  fromJson:
+  fromStructuredJsonValue:
     <p0 extends unknown>(
       p0FromJson: (a: a.StructuredJsonValue) => p0
     ): ((a: a.StructuredJsonValue) => globalThis.ReadonlyArray<p0>) =>
@@ -234,12 +232,31 @@ export const FunctionDetail: {
    */
   readonly description: string;
   /**
+   * オブジェクトから作成する. 余計なフィールドがレスポンスに含まれてしまうのを防ぐ. 型のチェックはしない
+   */
+  readonly from: (
+    a: globalThis.Omit<FunctionDetail, "__FunctionDetailBland">
+  ) => FunctionDetail;
+  /**
    * JsonからFunctionDetailに変換する. 失敗した場合はエラー
    */
-  readonly fromJson: (a: a.StructuredJsonValue) => FunctionDetail;
+  readonly fromStructuredJsonValue: (
+    a: a.StructuredJsonValue
+  ) => FunctionDetail;
 } = {
   description: "functionByNameの結果",
-  fromJson: (jsonValue: a.StructuredJsonValue): FunctionDetail => {
+  from: (
+    obj: globalThis.Omit<FunctionDetail, "__FunctionDetailBland">
+  ): FunctionDetail =>
+    ({
+      name: obj.name,
+      description: obj.description,
+      input: obj.input,
+      output: obj.output,
+    } as FunctionDetail),
+  fromStructuredJsonValue: (
+    jsonValue: a.StructuredJsonValue
+  ): FunctionDetail => {
     if (jsonValue.type !== "object") {
       throw new Error("expected object in FunctionDetail.fromJson");
     }
@@ -262,12 +279,12 @@ export const FunctionDetail: {
     if (output === undefined) {
       throw new Error("expected output field. in FunctionDetail.fromJson");
     }
-    return {
-      name: List.fromJson(String.fromJson)(name),
-      description: String.fromJson(description),
-      input: Type.fromJson(input),
-      output: Type.fromJson(output),
-    };
+    return FunctionDetail.from({
+      name: List.fromStructuredJsonValue(String.fromStructuredJsonValue)(name),
+      description: String.fromStructuredJsonValue(description),
+      input: Type.fromStructuredJsonValue(input),
+      output: Type.fromStructuredJsonValue(output),
+    });
   },
 };
 
@@ -280,12 +297,22 @@ export const Type: {
    */
   readonly description: string;
   /**
+   * オブジェクトから作成する. 余計なフィールドがレスポンスに含まれてしまうのを防ぐ. 型のチェックはしない
+   */
+  readonly from: (a: globalThis.Omit<Type, "__TypeBland">) => Type;
+  /**
    * JsonからTypeに変換する. 失敗した場合はエラー
    */
-  readonly fromJson: (a: a.StructuredJsonValue) => Type;
+  readonly fromStructuredJsonValue: (a: a.StructuredJsonValue) => Type;
 } = {
   description: "definyRpc で表現できる型",
-  fromJson: (jsonValue: a.StructuredJsonValue): Type => {
+  from: (obj: globalThis.Omit<Type, "__TypeBland">): Type =>
+    ({
+      fullName: obj.fullName,
+      description: obj.description,
+      parameters: obj.parameters,
+    } as Type),
+  fromStructuredJsonValue: (jsonValue: a.StructuredJsonValue): Type => {
     if (jsonValue.type !== "object") {
       throw new Error("expected object in Type.fromJson");
     }
@@ -304,11 +331,15 @@ export const Type: {
     if (parameters === undefined) {
       throw new Error("expected parameters field. in Type.fromJson");
     }
-    return {
-      fullName: List.fromJson(String.fromJson)(fullName),
-      description: String.fromJson(description),
-      parameters: List.fromJson(Type.fromJson)(parameters),
-    };
+    return Type.from({
+      fullName: List.fromStructuredJsonValue(String.fromStructuredJsonValue)(
+        fullName
+      ),
+      description: String.fromStructuredJsonValue(description),
+      parameters: List.fromStructuredJsonValue(Type.fromStructuredJsonValue)(
+        parameters
+      ),
+    });
   },
 };
 
@@ -321,15 +352,489 @@ export const StructuredJsonValue: {
    */
   readonly description: string;
   /**
+   * オブジェクトから作成する. 余計なフィールドがレスポンスに含まれてしまうのを防ぐ. 型のチェックはしない
+   */
+  readonly from: (
+    a: globalThis.Omit<StructuredJsonValue, "__StructuredJsonValueBland">
+  ) => StructuredJsonValue;
+  /**
    * JsonからStructuredJsonValueに変換する. 失敗した場合はエラー
    */
-  readonly fromJson: (a: a.StructuredJsonValue) => StructuredJsonValue;
+  readonly fromStructuredJsonValue: (
+    a: a.StructuredJsonValue
+  ) => StructuredJsonValue;
 } = {
   description: "構造化されたJSON",
-  fromJson: (jsonValue: a.StructuredJsonValue): StructuredJsonValue => {
+  from: (
+    obj: globalThis.Omit<StructuredJsonValue, "__StructuredJsonValueBland">
+  ): StructuredJsonValue => {
+    switch (obj.type) {
+      case "string": {
+        return { type: "string", value: obj.value } as
+          | {
+              /**
+               * string
+               */
+              readonly type: "string";
+              /**
+               * string
+               */
+              readonly value: string;
+            }
+          | {
+              /**
+               * array
+               */
+              readonly type: "array";
+              /**
+               * array
+               */
+              readonly value: globalThis.ReadonlyArray<StructuredJsonValue>;
+            }
+          | {
+              /**
+               * boolean
+               */
+              readonly type: "boolean";
+              /**
+               * boolean
+               */
+              readonly value: boolean;
+            }
+          | {
+              /**
+               * null
+               */
+              readonly type: "null";
+              /**
+               * null
+               */
+              readonly value: undefined;
+            }
+          | {
+              /**
+               * number
+               */
+              readonly type: "number";
+              /**
+               * number
+               */
+              readonly value: number;
+            }
+          | ({
+              /**
+               * object
+               */
+              readonly type: "object";
+              /**
+               * object
+               */
+              readonly value: StringMap<StructuredJsonValue>;
+            } & { readonly __StructuredJsonValueBland: never });
+      }
+      case "array": {
+        return { type: "array", value: obj.value } as
+          | {
+              /**
+               * string
+               */
+              readonly type: "string";
+              /**
+               * string
+               */
+              readonly value: string;
+            }
+          | {
+              /**
+               * array
+               */
+              readonly type: "array";
+              /**
+               * array
+               */
+              readonly value: globalThis.ReadonlyArray<StructuredJsonValue>;
+            }
+          | {
+              /**
+               * boolean
+               */
+              readonly type: "boolean";
+              /**
+               * boolean
+               */
+              readonly value: boolean;
+            }
+          | {
+              /**
+               * null
+               */
+              readonly type: "null";
+              /**
+               * null
+               */
+              readonly value: undefined;
+            }
+          | {
+              /**
+               * number
+               */
+              readonly type: "number";
+              /**
+               * number
+               */
+              readonly value: number;
+            }
+          | ({
+              /**
+               * object
+               */
+              readonly type: "object";
+              /**
+               * object
+               */
+              readonly value: StringMap<StructuredJsonValue>;
+            } & { readonly __StructuredJsonValueBland: never });
+      }
+      case "boolean": {
+        return { type: "boolean", value: obj.value } as
+          | {
+              /**
+               * string
+               */
+              readonly type: "string";
+              /**
+               * string
+               */
+              readonly value: string;
+            }
+          | {
+              /**
+               * array
+               */
+              readonly type: "array";
+              /**
+               * array
+               */
+              readonly value: globalThis.ReadonlyArray<StructuredJsonValue>;
+            }
+          | {
+              /**
+               * boolean
+               */
+              readonly type: "boolean";
+              /**
+               * boolean
+               */
+              readonly value: boolean;
+            }
+          | {
+              /**
+               * null
+               */
+              readonly type: "null";
+              /**
+               * null
+               */
+              readonly value: undefined;
+            }
+          | {
+              /**
+               * number
+               */
+              readonly type: "number";
+              /**
+               * number
+               */
+              readonly value: number;
+            }
+          | ({
+              /**
+               * object
+               */
+              readonly type: "object";
+              /**
+               * object
+               */
+              readonly value: StringMap<StructuredJsonValue>;
+            } & { readonly __StructuredJsonValueBland: never });
+      }
+      case "null": {
+        return { type: "null", value: undefined } as
+          | {
+              /**
+               * string
+               */
+              readonly type: "string";
+              /**
+               * string
+               */
+              readonly value: string;
+            }
+          | {
+              /**
+               * array
+               */
+              readonly type: "array";
+              /**
+               * array
+               */
+              readonly value: globalThis.ReadonlyArray<StructuredJsonValue>;
+            }
+          | {
+              /**
+               * boolean
+               */
+              readonly type: "boolean";
+              /**
+               * boolean
+               */
+              readonly value: boolean;
+            }
+          | {
+              /**
+               * null
+               */
+              readonly type: "null";
+              /**
+               * null
+               */
+              readonly value: undefined;
+            }
+          | {
+              /**
+               * number
+               */
+              readonly type: "number";
+              /**
+               * number
+               */
+              readonly value: number;
+            }
+          | ({
+              /**
+               * object
+               */
+              readonly type: "object";
+              /**
+               * object
+               */
+              readonly value: StringMap<StructuredJsonValue>;
+            } & { readonly __StructuredJsonValueBland: never });
+      }
+      case "number": {
+        return { type: "number", value: obj.value } as
+          | {
+              /**
+               * string
+               */
+              readonly type: "string";
+              /**
+               * string
+               */
+              readonly value: string;
+            }
+          | {
+              /**
+               * array
+               */
+              readonly type: "array";
+              /**
+               * array
+               */
+              readonly value: globalThis.ReadonlyArray<StructuredJsonValue>;
+            }
+          | {
+              /**
+               * boolean
+               */
+              readonly type: "boolean";
+              /**
+               * boolean
+               */
+              readonly value: boolean;
+            }
+          | {
+              /**
+               * null
+               */
+              readonly type: "null";
+              /**
+               * null
+               */
+              readonly value: undefined;
+            }
+          | {
+              /**
+               * number
+               */
+              readonly type: "number";
+              /**
+               * number
+               */
+              readonly value: number;
+            }
+          | ({
+              /**
+               * object
+               */
+              readonly type: "object";
+              /**
+               * object
+               */
+              readonly value: StringMap<StructuredJsonValue>;
+            } & { readonly __StructuredJsonValueBland: never });
+      }
+      case "object": {
+        return { type: "object", value: obj.value } as
+          | {
+              /**
+               * string
+               */
+              readonly type: "string";
+              /**
+               * string
+               */
+              readonly value: string;
+            }
+          | {
+              /**
+               * array
+               */
+              readonly type: "array";
+              /**
+               * array
+               */
+              readonly value: globalThis.ReadonlyArray<StructuredJsonValue>;
+            }
+          | {
+              /**
+               * boolean
+               */
+              readonly type: "boolean";
+              /**
+               * boolean
+               */
+              readonly value: boolean;
+            }
+          | {
+              /**
+               * null
+               */
+              readonly type: "null";
+              /**
+               * null
+               */
+              readonly value: undefined;
+            }
+          | {
+              /**
+               * number
+               */
+              readonly type: "number";
+              /**
+               * number
+               */
+              readonly value: number;
+            }
+          | ({
+              /**
+               * object
+               */
+              readonly type: "object";
+              /**
+               * object
+               */
+              readonly value: StringMap<StructuredJsonValue>;
+            } & { readonly __StructuredJsonValueBland: never });
+      }
+    }
+  },
+  fromStructuredJsonValue: (
+    jsonValue: a.StructuredJsonValue
+  ): StructuredJsonValue => {
     if (jsonValue.type !== "object") {
       throw new Error("expected object in StructuredJsonValue.fromJson");
     }
+    const type: a.StructuredJsonValue | undefined = jsonValue.value.get("type");
+    if (type === undefined || type.type !== "string") {
+      throw new Error("expected type property type is string");
+    }
+    switch (type.value) {
+      case "string": {
+        const value: a.StructuredJsonValue | undefined =
+          jsonValue.value.get("value");
+        if (value === undefined) {
+          throw new Error("expected value property in sum parameter");
+        }
+        return {
+          type: "string",
+          value: String.fromStructuredJsonValue(value),
+        } as StructuredJsonValue;
+      }
+      case "array": {
+        const value: a.StructuredJsonValue | undefined =
+          jsonValue.value.get("value");
+        if (value === undefined) {
+          throw new Error("expected value property in sum parameter");
+        }
+        return {
+          type: "array",
+          value: List.fromStructuredJsonValue(
+            StructuredJsonValue.fromStructuredJsonValue
+          )(value),
+        } as StructuredJsonValue;
+      }
+      case "boolean": {
+        const value: a.StructuredJsonValue | undefined =
+          jsonValue.value.get("value");
+        if (value === undefined) {
+          throw new Error("expected value property in sum parameter");
+        }
+        return {
+          type: "boolean",
+          value: Bool.fromStructuredJsonValue(value),
+        } as StructuredJsonValue;
+      }
+      case "null": {
+        const value: a.StructuredJsonValue | undefined =
+          jsonValue.value.get("value");
+        if (value === undefined) {
+          throw new Error("expected value property in sum parameter");
+        }
+        return {
+          type: "null",
+          value: Unit.fromStructuredJsonValue(value),
+        } as StructuredJsonValue;
+      }
+      case "number": {
+        const value: a.StructuredJsonValue | undefined =
+          jsonValue.value.get("value");
+        if (value === undefined) {
+          throw new Error("expected value property in sum parameter");
+        }
+        return {
+          type: "number",
+          value: Number.fromStructuredJsonValue(value),
+        } as StructuredJsonValue;
+      }
+      case "object": {
+        const value: a.StructuredJsonValue | undefined =
+          jsonValue.value.get("value");
+        if (value === undefined) {
+          throw new Error("expected value property in sum parameter");
+        }
+        return {
+          type: "object",
+          value: StringMap.fromStructuredJsonValue(
+            StructuredJsonValue.fromStructuredJsonValue
+          )(value),
+        } as StructuredJsonValue;
+      }
+    }
+    throw new Error(
+      "unknown type value expected [string,array,boolean,null,number,object] but got " +
+        type.value
+    );
   },
 };
 
@@ -344,10 +849,10 @@ export const Bool: {
   /**
    * JsonからBoolに変換する. 失敗した場合はエラー
    */
-  readonly fromJson: (a: a.StructuredJsonValue) => Bool;
+  readonly fromStructuredJsonValue: (a: a.StructuredJsonValue) => boolean;
 } = {
   description: "Bool. boolean. 真偽値. True か False",
-  fromJson: (jsonValue: a.StructuredJsonValue): Bool => {
+  fromStructuredJsonValue: (jsonValue: a.StructuredJsonValue): boolean => {
     if (jsonValue.type === "boolean") {
       return jsonValue.value;
     }
@@ -366,10 +871,10 @@ export const Number: {
   /**
    * JsonからNumberに変換する. 失敗した場合はエラー
    */
-  readonly fromJson: (a: a.StructuredJsonValue) => number;
+  readonly fromStructuredJsonValue: (a: a.StructuredJsonValue) => number;
 } = {
   description: "64bit 浮動小数点数",
-  fromJson: (jsonValue: a.StructuredJsonValue): number => {
+  fromStructuredJsonValue: (jsonValue: a.StructuredJsonValue): number => {
     if (jsonValue.type === "number") {
       return jsonValue.value;
     }
@@ -388,12 +893,12 @@ export const StringMap: {
   /**
    * JsonからStringMapに変換する. 失敗した場合はエラー
    */
-  readonly fromJson: <p0 extends unknown>(
+  readonly fromStructuredJsonValue: <p0 extends unknown>(
     a: (a: a.StructuredJsonValue) => p0
   ) => (a: a.StructuredJsonValue) => StringMap<p0>;
 } = {
   description: "キーが string の ReadonlyMap",
-  fromJson:
+  fromStructuredJsonValue:
     <p0 extends unknown>(
       p0FromJson: (a: a.StructuredJsonValue) => p0
     ): ((a: a.StructuredJsonValue) => StringMap<p0>) =>
@@ -423,7 +928,9 @@ export const name = (parameter: {
     .then(
       (jsonValue: a.RawJsonValue): Result<string, "error"> => ({
         type: "ok",
-        ok: String.fromJson(a.rawJsonToStructuredJsonValue(jsonValue)),
+        ok: String.fromStructuredJsonValue(
+          a.rawJsonToStructuredJsonValue(jsonValue)
+        ),
       })
     )
     .catch((): Result<string, "error"> => ({ type: "error", error: "error" }));
@@ -457,9 +964,9 @@ export const namespaceList = (parameter: {
         "error"
       > => ({
         type: "ok",
-        ok: Set.fromJson(List.fromJson(String.fromJson))(
-          a.rawJsonToStructuredJsonValue(jsonValue)
-        ),
+        ok: Set.fromStructuredJsonValue(
+          List.fromStructuredJsonValue(String.fromStructuredJsonValue)
+        )(a.rawJsonToStructuredJsonValue(jsonValue)),
       })
     )
     .catch(
@@ -495,9 +1002,9 @@ export const functionListByName = (parameter: {
         jsonValue: a.RawJsonValue
       ): Result<globalThis.ReadonlyArray<FunctionDetail>, "error"> => ({
         type: "ok",
-        ok: List.fromJson(FunctionDetail.fromJson)(
-          a.rawJsonToStructuredJsonValue(jsonValue)
-        ),
+        ok: List.fromStructuredJsonValue(
+          FunctionDetail.fromStructuredJsonValue
+        )(a.rawJsonToStructuredJsonValue(jsonValue)),
       })
     )
     .catch(
@@ -534,9 +1041,9 @@ export const functionListByNamePrivate = (parameter: {
         jsonValue: a.RawJsonValue
       ): Result<globalThis.ReadonlyArray<FunctionDetail>, "error"> => ({
         type: "ok",
-        ok: List.fromJson(FunctionDetail.fromJson)(
-          a.rawJsonToStructuredJsonValue(jsonValue)
-        ),
+        ok: List.fromStructuredJsonValue(
+          FunctionDetail.fromStructuredJsonValue
+        )(a.rawJsonToStructuredJsonValue(jsonValue)),
       })
     )
     .catch(
@@ -569,7 +1076,9 @@ export const generateCallDefinyRpcTypeScriptCode = (parameter: {
     .then(
       (jsonValue: a.RawJsonValue): Result<string, "error"> => ({
         type: "ok",
-        ok: String.fromJson(a.rawJsonToStructuredJsonValue(jsonValue)),
+        ok: String.fromStructuredJsonValue(
+          a.rawJsonToStructuredJsonValue(jsonValue)
+        ),
       })
     )
     .catch((): Result<string, "error"> => ({ type: "error", error: "error" }));
@@ -597,7 +1106,7 @@ export const callQuery = (parameter: {
     .then(
       (jsonValue: a.RawJsonValue): Result<StructuredJsonValue, "error"> => ({
         type: "ok",
-        ok: StructuredJsonValue.fromJson(
+        ok: StructuredJsonValue.fromStructuredJsonValue(
           a.rawJsonToStructuredJsonValue(jsonValue)
         ),
       })
@@ -632,7 +1141,9 @@ export const generateCodeAndWriteAsFileInServer = (parameter: {
     .then(
       (jsonValue: a.RawJsonValue): Result<undefined, "error"> => ({
         type: "ok",
-        ok: Unit.fromJson(a.rawJsonToStructuredJsonValue(jsonValue)),
+        ok: Unit.fromStructuredJsonValue(
+          a.rawJsonToStructuredJsonValue(jsonValue)
+        ),
       })
     )
     .catch(

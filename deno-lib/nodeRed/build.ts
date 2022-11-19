@@ -1,12 +1,12 @@
-import * as esbuild from "https://deno.land/x/esbuild@v0.15.13/mod.js";
+import { writeTextFile } from "../writeFileAndLog.ts";
+import * as esbuild from "https://deno.land/x/esbuild@v0.15.14/mod.js";
 import { denoPlugin } from "https://deno.land/x/esbuild_deno_loader@0.6.0/mod.ts";
-import { build, emptyDir } from "https://deno.land/x/dnt@0.31.0/mod.ts";
 import {
   fromFileUrl,
   join,
   relative,
-} from "https://deno.land/std@0.164.0/path/mod.ts";
-import { writeTextFile } from "../writeFileAndLog.ts";
+} from "https://deno.land/std@0.156.0/path/mod.ts";
+import * as dnt from "https://deno.land/x/dnt@0.31.0/mod.ts";
 
 const generateClientHtml = async (): Promise<string> => {
   const result = await esbuild.build({
@@ -43,13 +43,15 @@ const generateClientHtml = async (): Promise<string> => {
   throw new Error("client の ビルドに失敗した");
 };
 
-const outDir = fromFileUrl(import.meta.resolve("../../nodeRedServerForNode"));
+const outDir = fromFileUrl(
+  import.meta.resolve("../../nodeRedServerForNode"),
+);
 
-emptyDir(outDir);
+dnt.emptyDir(outDir);
 
 const version = "1.1.0";
 
-await build({
+await dnt.build({
   entryPoints: [fromFileUrl(import.meta.resolve("./server/main.ts"))],
   outDir,
   shims: {

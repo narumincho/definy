@@ -3,8 +3,7 @@ import {
   assertEquals,
   assertMatch,
   assertNotMatch,
-} from "https://deno.land/std@0.164.0/testing/asserts.ts";
-// ./mod.ts から import するとなぜか lib のライブラリが競合する
+} from "https://deno.land/std@0.165.0/testing/asserts.ts";
 import * as jsTs from "./main.ts";
 
 const expressRequest: jsTs.data.TsType = {
@@ -373,7 +372,9 @@ Deno.test("binary operator combine", () => {
     "JavaScript",
   );
   console.log(code);
-  assert(code.includes("3 * 9 + 7 * 6 === 2 + 3 + (5 + 8) === 5 * (7 + 8)"));
+  assert(
+    code.includes("3 * 9 + 7 * 6 === 2 + 3 + (5 + 8) === 5 * (7 + 8)"),
+  );
 });
 Deno.test("object literal return need parenthesis", () => {
   const code = jsTs.generateCodeAsString(

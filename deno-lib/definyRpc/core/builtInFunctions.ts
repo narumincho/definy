@@ -2,7 +2,6 @@ import { createApiFunction, FunctionAndTypeList } from "./apiFunction.ts";
 import { apiFunctionListToCode } from "../codeGen/main.ts";
 import type { DefinyRpcParameter } from "../server/definyRpc.ts";
 import { DefinyRpcType } from "./type.ts";
-import { ensureFile } from "https://deno.land/std@0.164.0/fs/mod.ts";
 import { writeTextFile } from "../../writeFileAndLog.ts";
 import { stringArrayEqual } from "../../util.ts";
 import {
@@ -15,9 +14,10 @@ import {
 } from "./builtInType.ts";
 import { definyRpcNamespace } from "./definyRpcNamespace.ts";
 import { StructuredJsonValue } from "../../typedJson.ts";
-import { groupBy } from "https://deno.land/std@0.164.0/collections/group_by.ts";
 import { objectEntriesSameValue } from "../../objectEntriesSameValue.ts";
-import { join } from "https://deno.land/std@0.164.0/path/mod.ts";
+import { join } from "https://deno.land/std@0.156.0/path/mod.ts";
+import { ensureFile } from "https://deno.land/std@0.165.0/fs/mod.ts";
+import { groupBy } from "https://deno.land/std@0.165.0/collections/group_by.ts";
 
 type Type = {
   readonly fullName: ReadonlyArray<string>;

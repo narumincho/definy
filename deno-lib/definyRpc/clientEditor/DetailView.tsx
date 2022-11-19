@@ -1,5 +1,5 @@
-import React from "https://esm.sh/react@18.2.0";
-import { FunctionDetail } from "../client/generated/definyRpc.ts";
+import React from "https://esm.sh/react@18.2.0?pin=v99";
+import { FunctionDetail } from "../generated/definyRpc.ts";
 import { c, toStyleAndHash } from "../../cssInJs/mod.ts";
 
 const containerStyle = toStyleAndHash({
@@ -18,7 +18,7 @@ export const DetailView = (props: {
     );
   }
   const selectedFuncDetail = props.functionList.find(
-    (func) => func.name.join(".") === props.selectedFuncName
+    (func) => func.name.join(".") === props.selectedFuncName,
   );
 
   if (selectedFuncDetail === undefined) {

@@ -1,11 +1,13 @@
-import * as base64 from "https://denopkg.com/chiefbiiko/base64@master/mod.ts";
-import * as esbuild from "https://deno.land/x/esbuild@v0.15.13/mod.js";
-import { denoPlugin } from "https://deno.land/x/esbuild_deno_loader@0.6.0/mod.ts";
 import { Hash, hashBinary } from "../../sha256.ts";
 import { jsonStringify } from "../../typedJson.ts";
-import { fromFileUrl } from "https://deno.land/std@0.164.0/path/mod.ts";
-import { relative } from "https://deno.land/std@0.164.0/path/mod.ts";
 import { writeTextFile } from "../../writeFileAndLog.ts";
+import * as esbuild from "https://deno.land/x/esbuild@v0.15.14/mod.js";
+import { denoPlugin } from "https://deno.land/x/esbuild_deno_loader@0.6.0/mod.ts";
+import {
+  fromFileUrl,
+  relative,
+} from "https://deno.land/std@0.156.0/path/mod.ts";
+import { toBase64 } from "https://deno.land/x/fast_base64@v0.1.7/mod.ts";
 
 type BuildClientResult = {
   readonly iconHash: Hash;
@@ -14,6 +16,7 @@ type BuildClientResult = {
   readonly scriptContent: string;
   readonly fontHash: Hash;
   readonly fontContent: string;
+  readonly notoSansContent: string;
 };
 
 const outputFilesToScriptFile = async (
@@ -42,13 +45,18 @@ const watchAndBuild = async (
     fromFileUrl(import.meta.resolve("./assets/icon.png")),
   );
   const iconHash = await hashBinary(iconContent);
-  const iconContentAsBase64 = base64.fromUint8Array(iconContent);
+  const iconContentAsBase64 = await toBase64(iconContent);
 
   const fontContent = await Deno.readFile(
     fromFileUrl(import.meta.resolve("./assets/hack_regular_subset.woff2")),
   );
   const fontHash = await hashBinary(fontContent);
-  const fontContentAsBase64 = base64.fromUint8Array(fontContent);
+  const fontContentAsBase64 = await toBase64(fontContent);
+
+  const notoSans = await Deno.readFile(
+    fromFileUrl(import.meta.resolve("./assets/NotoSansJP-Regular.otf")),
+  );
+  const notoSansAsBase64 = await toBase64(notoSans);
 
   const scriptHashAndContent = await outputFilesToScriptFile(
     (await esbuild.build({
@@ -80,6 +88,7 @@ const watchAndBuild = async (
                 fontContent: fontContentAsBase64,
                 scriptHash: hashAndContent.hash,
                 scriptContent: hashAndContent.scriptContent,
+                notoSansContent: notoSansAsBase64,
               });
             });
           }
@@ -94,6 +103,7 @@ const watchAndBuild = async (
     fontContent: fontContentAsBase64,
     scriptHash: scriptHashAndContent.hash,
     scriptContent: scriptHashAndContent.scriptContent,
+    notoSansContent: notoSansAsBase64,
   });
 };
 

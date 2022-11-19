@@ -1,10 +1,11 @@
-import React from "https://esm.sh/react@18.2.0";
-import * as definyRpc from "../client/generated/definyRpc.ts";
+import React from "https://esm.sh/react@18.2.0?pin=v99";
+import * as definyRpc from "../generated/definyRpc.ts";
 import { Button } from "../../editor/Button.tsx";
 import { DetailView } from "./DetailView.tsx";
 import { Result } from "./Result.tsx";
 import { Select } from "./Select.tsx";
-import { toStyleAndHash, c } from "../../cssInJs/mod.ts";
+import { c, toStyleAndHash } from "../../cssInJs/mod.ts";
+import { RawJsonValue } from "../../typedJson.ts";
 
 const containerStyle = toStyleAndHash({
   padding: 16,
@@ -22,7 +23,7 @@ export const Editor = (props: {
   readonly functionList: ReadonlyArray<definyRpc.FunctionDetail> | undefined;
 }): React.ReactElement => {
   const [selectedFunc, setSelectedFunc] = React.useState<string | undefined>(
-    undefined
+    undefined,
   );
   const [runResponse, setRunResponse] = React.useState<unknown>(undefined);
   const [isRequesting, setIsRequesting] = React.useState<boolean>(false);
@@ -34,7 +35,7 @@ export const Editor = (props: {
   }, [selectedFunc, props.functionList]);
 
   const selectedFuncDetail = props.functionList?.find(
-    (func) => func.name.join(".") === selectedFunc
+    (func) => func.name.join(".") === selectedFunc,
   );
 
   return (
@@ -48,38 +49,35 @@ export const Editor = (props: {
           }}
         />
         <Button
-          onClick={
-            selectedFuncDetail?.input.fullName.join(".") === "definyRpc.Unit" &&
-            !isRequesting
-              ? () => {
-                  setIsRequesting(true);
-                  const url = new URL(props.serverOrigin);
-                  url.pathname =
-                    url.pathname + "/" + selectedFuncDetail.name.join("/");
-                  fetch(url)
-                    .then((response) => {
-                      return response.json();
-                    })
-                    .then((json: unknown) => {
-                      console.log("response", json);
-                      setRunResponse(json);
-                      setIsRequesting(false);
-                    })
-                    .catch(() => {
-                      setRunResponse(undefined);
-                    });
-                }
-              : undefined
-          }
+          onClick={selectedFuncDetail?.input.fullName.join(".") ===
+                "definyRpc.Unit" &&
+              !isRequesting
+            ? () => {
+              setIsRequesting(true);
+              const url = new URL(props.serverOrigin);
+              url.pathname = url.pathname + "/" +
+                selectedFuncDetail.name.join("/");
+              fetch(url)
+                .then((response) => {
+                  return response.json();
+                })
+                .then((json: unknown) => {
+                  console.log("response", json);
+                  setRunResponse(json);
+                  setIsRequesting(false);
+                })
+                .catch(() => {
+                  setRunResponse(undefined);
+                });
+            }
+            : undefined}
         >
           Run
         </Button>
-        <Result data={runResponse} requesting={isRequesting} />
+        <Result data={runResponse as RawJsonValue} requesting={isRequesting} />
       </div>
 
-      {props.functionList === undefined ? (
-        <div>loading...</div>
-      ) : (
+      {props.functionList === undefined ? <div>loading...</div> : (
         <DetailView
           functionList={props.functionList}
           selectedFuncName={selectedFunc}

@@ -1,4 +1,4 @@
-import React from "https://esm.sh/react@18.2.0";
+import React from "https://esm.sh/react@18.2.0?pin=v99";
 import { c, toStyleAndHash } from "../cssInJs/mod.ts";
 import { createRandomId } from "../util.ts";
 
@@ -16,7 +16,7 @@ const containerStyle = toStyleAndHash({
 });
 
 const messageStyle = toStyleAndHash({
-  flexGrow: 1,
+  flexGrow: "1",
 });
 
 export const useNotification = (): {
@@ -24,7 +24,7 @@ export const useNotification = (): {
   readonly element: React.ReactElement;
 } => {
   const [messageList, setMessageList] = React.useState<ReadonlyArray<Message>>(
-    []
+    [],
   );
 
   const addMessage = React.useCallback<AddMessage>((newMessage) => {
@@ -45,12 +45,13 @@ export const useNotification = (): {
               key={message.id}
               className={c(
                 toStyleAndHash({
-                  backgroundColor:
-                    message.type === "success" ? "skyblue" : "red",
+                  backgroundColor: message.type === "success"
+                    ? "skyblue"
+                    : "red",
                   padding: 8,
                   color: "#111",
                   display: "flex",
-                })
+                }),
               )}
             >
               <div className={c(messageStyle)}>{message.text}</div>

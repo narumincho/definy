@@ -1,9 +1,6 @@
-/// <reference no-default-lib="true"/>
-/// <reference lib="dom" />
-
+import React from "https://esm.sh/react@18.2.0?pin=v99";
+import { createRoot } from "https://esm.sh/react-dom@18.2.0/client?pin=v99";
 import { App } from "./App.tsx";
-import React from "https://esm.sh/react@18.2.0";
-import { createRoot } from "https://esm.sh/react-dom@18.2.0/client";
 
 const rootElement = document.createElement("div");
 document.body.style.height = "100%";
