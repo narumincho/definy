@@ -8,7 +8,6 @@ import { stringArrayEqual } from "../../util.ts";
 import { languageFromId } from "../../zodType.ts";
 import { requestObjectToSimpleRequest } from "../../simpleRequestResponse/simpleRequest.ts";
 import { clock24Title } from "../editor/pages/clock24.tsx";
-import { hashFromString } from "../../sha256.ts";
 import { createImageFromText } from "./ogpImage.tsx";
 import { toBytes } from "https://deno.land/x/fast_base64@v0.1.7/mod.ts";
 import { extractOgpUrl, toOgpImageUrl } from "./url.ts";
@@ -81,8 +80,10 @@ export const startEditorServer = (
     <meta property="og:site_name" content="definy">
     <meta name="twitter:card" content="summary_large_image">
     <meta property="og:image" content="${
-        new URL(request.url).origin + "/" +
-        (isClock24 ? toOgpImageUrl(new Date().toISOString()) : dist.iconHash)
+        new URL(request.url).origin +
+        (isClock24
+          ? toOgpImageUrl(simpleRequest?.query.get("text") ?? new Date().toISOString())
+          : dist.iconHash)
       }">
     <meta name="twitter:creator" content="@naru_mincho">
     <script type="module" src="/${dist.scriptHash}"></script>
