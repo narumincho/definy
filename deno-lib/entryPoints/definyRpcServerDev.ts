@@ -14,7 +14,9 @@ const sampleDefinyRpcServerParameter: DefinyRpcParameter = {
   name: "exampleDev",
   all: funcList,
   originHint: `http://localhost:${portNumber}`,
-  codeGenOutputFolderPath: fromFileUrl(import.meta.resolve("./generated")),
+  codeGenOutputFolderPath: fromFileUrl(
+    import.meta.resolve("../definyRpc/generated"),
+  ),
 };
 
 serve(

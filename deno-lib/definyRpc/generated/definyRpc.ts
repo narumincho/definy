@@ -108,7 +108,7 @@ export type StructuredJsonValue =
        */
       readonly value: number;
     }
-  | {
+  | ({
       /**
        * object
        */
@@ -117,7 +117,7 @@ export type StructuredJsonValue =
        * object
        */
       readonly value: StringMap<StructuredJsonValue>;
-    };
+    } & { readonly __StructuredJsonValueBland: never });
 
 /**
  * キーが string の ReadonlyMap
@@ -370,16 +370,382 @@ export const StructuredJsonValue: {
   ): StructuredJsonValue => {
     switch (obj.type) {
       case "string": {
+        return { type: "string", value: obj.value } as
+          | {
+              /**
+               * string
+               */
+              readonly type: "string";
+              /**
+               * string
+               */
+              readonly value: string;
+            }
+          | {
+              /**
+               * array
+               */
+              readonly type: "array";
+              /**
+               * array
+               */
+              readonly value: globalThis.ReadonlyArray<StructuredJsonValue>;
+            }
+          | {
+              /**
+               * boolean
+               */
+              readonly type: "boolean";
+              /**
+               * boolean
+               */
+              readonly value: boolean;
+            }
+          | {
+              /**
+               * null
+               */
+              readonly type: "null";
+              /**
+               * null
+               */
+              readonly value: undefined;
+            }
+          | {
+              /**
+               * number
+               */
+              readonly type: "number";
+              /**
+               * number
+               */
+              readonly value: number;
+            }
+          | ({
+              /**
+               * object
+               */
+              readonly type: "object";
+              /**
+               * object
+               */
+              readonly value: StringMap<StructuredJsonValue>;
+            } & { readonly __StructuredJsonValueBland: never });
       }
       case "array": {
+        return { type: "array", value: obj.value } as
+          | {
+              /**
+               * string
+               */
+              readonly type: "string";
+              /**
+               * string
+               */
+              readonly value: string;
+            }
+          | {
+              /**
+               * array
+               */
+              readonly type: "array";
+              /**
+               * array
+               */
+              readonly value: globalThis.ReadonlyArray<StructuredJsonValue>;
+            }
+          | {
+              /**
+               * boolean
+               */
+              readonly type: "boolean";
+              /**
+               * boolean
+               */
+              readonly value: boolean;
+            }
+          | {
+              /**
+               * null
+               */
+              readonly type: "null";
+              /**
+               * null
+               */
+              readonly value: undefined;
+            }
+          | {
+              /**
+               * number
+               */
+              readonly type: "number";
+              /**
+               * number
+               */
+              readonly value: number;
+            }
+          | ({
+              /**
+               * object
+               */
+              readonly type: "object";
+              /**
+               * object
+               */
+              readonly value: StringMap<StructuredJsonValue>;
+            } & { readonly __StructuredJsonValueBland: never });
       }
       case "boolean": {
+        return { type: "boolean", value: obj.value } as
+          | {
+              /**
+               * string
+               */
+              readonly type: "string";
+              /**
+               * string
+               */
+              readonly value: string;
+            }
+          | {
+              /**
+               * array
+               */
+              readonly type: "array";
+              /**
+               * array
+               */
+              readonly value: globalThis.ReadonlyArray<StructuredJsonValue>;
+            }
+          | {
+              /**
+               * boolean
+               */
+              readonly type: "boolean";
+              /**
+               * boolean
+               */
+              readonly value: boolean;
+            }
+          | {
+              /**
+               * null
+               */
+              readonly type: "null";
+              /**
+               * null
+               */
+              readonly value: undefined;
+            }
+          | {
+              /**
+               * number
+               */
+              readonly type: "number";
+              /**
+               * number
+               */
+              readonly value: number;
+            }
+          | ({
+              /**
+               * object
+               */
+              readonly type: "object";
+              /**
+               * object
+               */
+              readonly value: StringMap<StructuredJsonValue>;
+            } & { readonly __StructuredJsonValueBland: never });
       }
       case "null": {
+        return { type: "null", value: undefined } as
+          | {
+              /**
+               * string
+               */
+              readonly type: "string";
+              /**
+               * string
+               */
+              readonly value: string;
+            }
+          | {
+              /**
+               * array
+               */
+              readonly type: "array";
+              /**
+               * array
+               */
+              readonly value: globalThis.ReadonlyArray<StructuredJsonValue>;
+            }
+          | {
+              /**
+               * boolean
+               */
+              readonly type: "boolean";
+              /**
+               * boolean
+               */
+              readonly value: boolean;
+            }
+          | {
+              /**
+               * null
+               */
+              readonly type: "null";
+              /**
+               * null
+               */
+              readonly value: undefined;
+            }
+          | {
+              /**
+               * number
+               */
+              readonly type: "number";
+              /**
+               * number
+               */
+              readonly value: number;
+            }
+          | ({
+              /**
+               * object
+               */
+              readonly type: "object";
+              /**
+               * object
+               */
+              readonly value: StringMap<StructuredJsonValue>;
+            } & { readonly __StructuredJsonValueBland: never });
       }
       case "number": {
+        return { type: "number", value: obj.value } as
+          | {
+              /**
+               * string
+               */
+              readonly type: "string";
+              /**
+               * string
+               */
+              readonly value: string;
+            }
+          | {
+              /**
+               * array
+               */
+              readonly type: "array";
+              /**
+               * array
+               */
+              readonly value: globalThis.ReadonlyArray<StructuredJsonValue>;
+            }
+          | {
+              /**
+               * boolean
+               */
+              readonly type: "boolean";
+              /**
+               * boolean
+               */
+              readonly value: boolean;
+            }
+          | {
+              /**
+               * null
+               */
+              readonly type: "null";
+              /**
+               * null
+               */
+              readonly value: undefined;
+            }
+          | {
+              /**
+               * number
+               */
+              readonly type: "number";
+              /**
+               * number
+               */
+              readonly value: number;
+            }
+          | ({
+              /**
+               * object
+               */
+              readonly type: "object";
+              /**
+               * object
+               */
+              readonly value: StringMap<StructuredJsonValue>;
+            } & { readonly __StructuredJsonValueBland: never });
       }
       case "object": {
+        return { type: "object", value: obj.value } as
+          | {
+              /**
+               * string
+               */
+              readonly type: "string";
+              /**
+               * string
+               */
+              readonly value: string;
+            }
+          | {
+              /**
+               * array
+               */
+              readonly type: "array";
+              /**
+               * array
+               */
+              readonly value: globalThis.ReadonlyArray<StructuredJsonValue>;
+            }
+          | {
+              /**
+               * boolean
+               */
+              readonly type: "boolean";
+              /**
+               * boolean
+               */
+              readonly value: boolean;
+            }
+          | {
+              /**
+               * null
+               */
+              readonly type: "null";
+              /**
+               * null
+               */
+              readonly value: undefined;
+            }
+          | {
+              /**
+               * number
+               */
+              readonly type: "number";
+              /**
+               * number
+               */
+              readonly value: number;
+            }
+          | ({
+              /**
+               * object
+               */
+              readonly type: "object";
+              /**
+               * object
+               */
+              readonly value: StringMap<StructuredJsonValue>;
+            } & { readonly __StructuredJsonValueBland: never });
       }
     }
   },
@@ -400,7 +766,10 @@ export const StructuredJsonValue: {
         if (value === undefined) {
           throw new Error("expected value property in sum parameter");
         }
-        return { type: "string", value: String.fromStructuredJsonValue(value) };
+        return {
+          type: "string",
+          value: String.fromStructuredJsonValue(value),
+        } as StructuredJsonValue;
       }
       case "array": {
         const value: a.StructuredJsonValue | undefined =
@@ -413,7 +782,7 @@ export const StructuredJsonValue: {
           value: List.fromStructuredJsonValue(
             StructuredJsonValue.fromStructuredJsonValue
           )(value),
-        };
+        } as StructuredJsonValue;
       }
       case "boolean": {
         const value: a.StructuredJsonValue | undefined =
@@ -421,7 +790,10 @@ export const StructuredJsonValue: {
         if (value === undefined) {
           throw new Error("expected value property in sum parameter");
         }
-        return { type: "boolean", value: Bool.fromStructuredJsonValue(value) };
+        return {
+          type: "boolean",
+          value: Bool.fromStructuredJsonValue(value),
+        } as StructuredJsonValue;
       }
       case "null": {
         const value: a.StructuredJsonValue | undefined =
@@ -429,7 +801,10 @@ export const StructuredJsonValue: {
         if (value === undefined) {
           throw new Error("expected value property in sum parameter");
         }
-        return { type: "null", value: Unit.fromStructuredJsonValue(value) };
+        return {
+          type: "null",
+          value: Unit.fromStructuredJsonValue(value),
+        } as StructuredJsonValue;
       }
       case "number": {
         const value: a.StructuredJsonValue | undefined =
@@ -437,7 +812,10 @@ export const StructuredJsonValue: {
         if (value === undefined) {
           throw new Error("expected value property in sum parameter");
         }
-        return { type: "number", value: Number.fromStructuredJsonValue(value) };
+        return {
+          type: "number",
+          value: Number.fromStructuredJsonValue(value),
+        } as StructuredJsonValue;
       }
       case "object": {
         const value: a.StructuredJsonValue | undefined =
@@ -450,7 +828,7 @@ export const StructuredJsonValue: {
           value: StringMap.fromStructuredJsonValue(
             StructuredJsonValue.fromStructuredJsonValue
           )(value),
-        };
+        } as StructuredJsonValue;
       }
     }
     throw new Error(

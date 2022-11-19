@@ -23,10 +23,12 @@ import {
   CollectedDefinyRpcType,
   CollectedDefinyRpcTypeBody,
   CollectedDefinyRpcTypeMap,
+  collectedDefinyRpcTypeMapGet,
   CollectedDefinyRpcTypeUse,
 } from "../core/collectType.ts";
-import { arrayFromLength } from "../../util.ts";
+import { arrayFromLength, NonEmptyArray } from "../../util.ts";
 import { structuredJsonValueType } from "./useTypedJson.ts";
+import { TsExpr } from "../../jsTs/data.ts";
 
 export const collectedTypeToTypeAlias = (
   type: CollectedDefinyRpcType,
@@ -109,31 +111,45 @@ const collectedDefinyRpcTypeBodyToTsType = (
       };
     case "sum":
       return {
-        _: "Union",
-        tsTypeList: typeBody.patternList.map(
-          (pattern): data.TsType => ({
+        _: "Intersection",
+        intersectionType: {
+          left: {
+            _: "Union",
+            tsTypeList: typeBody.patternList.map(
+              (pattern): data.TsType => ({
+                _: "Object",
+                tsMemberTypeList: [
+                  {
+                    name: identifierFromString("type"),
+                    document: pattern.description,
+                    required: true,
+                    type: { _: "StringLiteral", string: pattern.name },
+                  },
+                  ...(pattern.parameter === undefined ? [] : [
+                    {
+                      name: identifierFromString("value"),
+                      document: pattern.description,
+                      required: true,
+                      type: collectedDefinyRpcTypeUseToTsType(
+                        pattern.parameter,
+                        map,
+                      ),
+                    } as const,
+                  ]),
+                ],
+              }),
+            ),
+          },
+          right: {
             _: "Object",
-            tsMemberTypeList: [
-              {
-                name: identifierFromString("type"),
-                document: pattern.description,
-                required: true,
-                type: { _: "StringLiteral", string: pattern.name },
-              },
-              ...(pattern.parameter === undefined ? [] : [
-                {
-                  name: identifierFromString("value"),
-                  document: pattern.description,
-                  required: true,
-                  type: collectedDefinyRpcTypeUseToTsType(
-                    pattern.parameter,
-                    map,
-                  ),
-                } as const,
-              ]),
-            ],
-          }),
-        ),
+            tsMemberTypeList: [{
+              name: blandMemberName(typeName),
+              document: "",
+              required: true,
+              type: { _: "Never" },
+            }],
+          },
+        },
       };
   }
 };
@@ -146,10 +162,10 @@ const collectedDefinyRpcTypeUseToTsType = (
   collectedDefinyRpcTypeUse: CollectedDefinyRpcTypeUse,
   map: CollectedDefinyRpcTypeMap,
 ): data.TsType => {
-  const typeDetail = map.get(
-    collectedDefinyRpcTypeUse.namespace.join(".") +
-      "." +
-      collectedDefinyRpcTypeUse.name,
+  const typeDetail = collectedDefinyRpcTypeMapGet(
+    map,
+    collectedDefinyRpcTypeUse.namespace,
+    collectedDefinyRpcTypeUse.name,
   );
   if (typeDetail === undefined) {
     throw new Error("型を集計できなかった " + collectedDefinyRpcTypeUse.name);
@@ -470,7 +486,39 @@ const typeToFromLambdaSumStatement = (
           pattern,
         ): data.TsPattern => ({
           caseString: pattern.name,
-          statementList: [],
+          statementList: [
+            {
+              _: "Return",
+              tsExpr: typeAssertion({
+                expr: objectLiteral([
+                  {
+                    _: "KeyValue",
+                    keyValue: {
+                      key: "type",
+                      value: stringLiteral(pattern.name),
+                    },
+                  },
+                  ...(pattern.parameter === undefined ? [] : [{
+                    _: "KeyValue",
+                    keyValue: {
+                      key: "value",
+                      value: useFrom(
+                        pattern.parameter.namespace,
+                        pattern.parameter.name,
+                        map,
+                        get(variable(identifierFromString("obj")), "value"),
+                      ),
+                    },
+                  }] as const),
+                ]),
+                type: collectedDefinyRpcTypeBodyToTsType(
+                  type.name,
+                  type.body,
+                  map,
+                ),
+              }),
+            },
+          ],
         })),
       },
     },
@@ -490,7 +538,7 @@ const typeToFromStructuredJsonValueLambda = (
     ],
     returnType: collectedDefinyRpcTypeToTsType(type, map),
     typeParameterList: [],
-    statementList: typeToFromJsonStatementList(type),
+    statementList: typeToFromJsonStatementList(type, map),
   };
   if (type.parameterCount !== 0) {
     return {
@@ -545,6 +593,7 @@ const jsonValueVariableValue = get(jsonValueVariable, "value");
 
 const typeToFromJsonStatementList = (
   type: CollectedDefinyRpcType,
+  map: CollectedDefinyRpcTypeMap,
 ): ReadonlyArray<data.Statement> => {
   switch (type.body.type) {
     case "unit":
@@ -758,13 +807,11 @@ const typeToFromJsonStatementList = (
         ),
         {
           _: "Return",
-          tsExpr: callMethod(
+          tsExpr: useFrom(
+            type.namespace,
+            type.name,
+            map,
             {
-              _: "Variable",
-              tsIdentifier: identifierFromString(type.name),
-            },
-            "from",
-            [{
               _: "ObjectLiteral",
               tsMemberList: type.body.fieldList.map(
                 (field): data.TsMember => ({
@@ -778,7 +825,7 @@ const typeToFromJsonStatementList = (
                   },
                 }),
               ),
-            }],
+            },
           ),
         },
       ];
@@ -881,24 +928,29 @@ const typeToFromJsonStatementList = (
                   },
                 }, {
                   _: "Return",
-                  tsExpr: objectLiteral([{
-                    _: "KeyValue",
-                    keyValue: {
-                      key: "type",
-                      value: stringLiteral(pattern.name),
-                    },
-                  }, {
-                    _: "KeyValue",
-                    keyValue: {
-                      key: "value",
-                      value: call({
-                        expr: getStructuredJsonValueFunction(pattern.parameter),
-                        parameterList: [
-                          variable(identifierFromString("value")),
-                        ],
-                      }),
-                    },
-                  }]),
+                  tsExpr: typeAssertion({
+                    expr: objectLiteral([{
+                      _: "KeyValue",
+                      keyValue: {
+                        key: "type",
+                        value: stringLiteral(pattern.name),
+                      },
+                    }, {
+                      _: "KeyValue",
+                      keyValue: {
+                        key: "value",
+                        value: call({
+                          expr: getStructuredJsonValueFunction(
+                            pattern.parameter,
+                          ),
+                          parameterList: [
+                            variable(identifierFromString("value")),
+                          ],
+                        }),
+                      },
+                    }]),
+                    type: collectedDefinyRpcTypeToTsType(type, map),
+                  }),
                 }],
             })),
           },
@@ -956,4 +1008,51 @@ const getStructuredJsonValueFunction = (
     "fromStructuredJsonValue",
     type.parameters.map(getStructuredJsonValueFunction),
   );
+};
+
+const useFrom = (
+  namespace: NonEmptyArray<string>,
+  typeName: string,
+  map: CollectedDefinyRpcTypeMap,
+  object: TsExpr,
+): TsExpr => {
+  const typeDetail = collectedDefinyRpcTypeMapGet(
+    map,
+    namespace,
+    typeName,
+  );
+  if (typeDetail === undefined) {
+    return stringLiteral("unknown type from function");
+  }
+  switch (typeDetail.body.type) {
+    case "boolean":
+    case "list":
+    case "number":
+      return object;
+    case "product":
+      return callMethod(
+        {
+          _: "Variable",
+          tsIdentifier: identifierFromString(typeName),
+        },
+        "from",
+        [object],
+      );
+    case "set":
+    case "string":
+      return object;
+    case "stringMap":
+      return object;
+    case "sum":
+      return callMethod(
+        {
+          _: "Variable",
+          tsIdentifier: identifierFromString(typeName),
+        },
+        "from",
+        [object],
+      );
+    case "unit":
+      return { _: "UndefinedLiteral" };
+  }
 };

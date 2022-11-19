@@ -101,6 +101,18 @@ export type CollectedDefinyRpcTypeMap = ReadonlyMap<
   CollectedDefinyRpcType
 >;
 
+export const collectedDefinyRpcTypeMapGet = (
+  map: CollectedDefinyRpcTypeMap,
+  namespace: NonEmptyArray<string>,
+  name: string,
+): CollectedDefinyRpcType | undefined => {
+  return map.get(
+    namespace.join(".") +
+      "." +
+      name,
+  );
+};
+
 /**
  * 循環的構造があった場合, 見つけられないんじゃないか?
  * 同じ名前が見つかったらストップ (パラメーターは見る)

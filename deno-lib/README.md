@@ -43,7 +43,7 @@ deno run --allow-net ./apiServer.ts
 ## definy RPC サンプルサーバーの起動
 
 ```ps1
-deno run --check --watch --allow-net=:2520 --allow-write --allow-read ./definyRpc/dev.ts
+deno run --check --watch --allow-net=:2520 --allow-write --allow-read ./entryPoints/definyRpcServerDev.ts
 ```
 
 definy RPC クライアントビルド
