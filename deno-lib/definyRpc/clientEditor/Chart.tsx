@@ -1,5 +1,5 @@
 import React from "https://esm.sh/react@18.2.0?pin=v99";
-import { Network } from "https://esm.sh/vis-network@9.1.2";
+import { Network } from "https://cdn.skypack.dev/vis-network@9.1.2?dts";
 
 export const SampleChart = () => {
   const ref = React.useRef<HTMLDivElement>(null);
