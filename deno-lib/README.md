@@ -1,3 +1,10 @@
+# Deno の TypeScript で書かれた definy
+
+全体の型チェックと, deno.lock の生成
+```ps1
+deno run --allow-run --allow-read ./entryPoints/check.ts
+```
+
 ## deno 版 definy.app
 
 開発用 editor サーバーを起動
