@@ -10,7 +10,13 @@ deno run --allow-run --allow-read ./entryPoints/check.ts
 開発用 editor サーバーを起動
 
 ```ps1
-deno run --watch --allow-net=:2500,deno.land ./definyApp/editorServer/dev.ts
+deno run --watch --allow-net=:2500,deno.land ./entryPoints/definyAppEditorServerDev.ts
+```
+
+開発用 editor browser client の watch ビルド
+
+```ps1
+deno run --watch -A ./entryPoints/definyAppEditorWatchBuild.ts
 ```
 
 editor サーバーを起動

@@ -4,12 +4,26 @@ import { c, toStyleAndHash } from "../../../cssInJs/mod.ts";
 const containerStyle = toStyleAndHash({
   backgroundColor: "#724242",
   height: "100%",
+  display: "grid",
 });
 
 const svgStyle = toStyleAndHash({
+  gridColumn: "1 / 2",
+  gridRow: "1 / 2",
   width: "100%",
   height: "100%",
   display: "grid",
+});
+
+const buttonContainerStyle = toStyleAndHash({
+  gridColumn: "1 / 2",
+  gridRow: "1 / 2",
+  justifySelf: "end",
+});
+
+const settingStyle = toStyleAndHash({
+  gridColumn: "1 / 2",
+  gridRow: "1 / 2",
 });
 
 const useAnimationFrame = (callback = () => {}) => {
@@ -37,6 +51,7 @@ const removeInt = (value: number): number => {
 };
 
 export const Clock24 = (): React.ReactElement => {
+  const [isSettingMode, setIsSettingMode] = React.useState<boolean>(false);
   const [now, setNow] = React.useState<Date>(new Date());
 
   useAnimationFrame(() => {
@@ -136,6 +151,16 @@ export const Clock24 = (): React.ReactElement => {
           );
         })}
       </svg>
+      <div className={c(buttonContainerStyle)}>
+        <button
+          onClick={() => {
+            setIsSettingMode((prev) => !prev);
+          }}
+        >
+          setting
+        </button>
+      </div>
+      {isSettingMode ? <div className={c(settingStyle)}>設定</div> : <></>}
     </div>
   );
 };
