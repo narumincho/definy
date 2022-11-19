@@ -1,4 +1,4 @@
-import React from "https://esm.sh/react@18.2.0";
+import React from "https://esm.sh/react@18.2.0?pin=v99";
 import { FunctionDetail } from "../../definyRpc/generated/definyRpc.ts";
 
 export const GeneratedNodeForm = (

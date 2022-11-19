@@ -1,5 +1,5 @@
-import React from "https://esm.sh/react@18.2.0";
-import { renderToString } from "https://esm.sh/react-dom@18.2.0/server";
+import React from "https://esm.sh/react@18.2.0?pin=v99";
+import { renderToString } from "https://esm.sh/react-dom@18.2.0/server?pin=v99";
 import { serve } from "https://deno.land/std@0.165.0/http/server.ts";
 import { App } from "../editor/app.tsx";
 import dist from "./dist.json" assert { type: "json" };
