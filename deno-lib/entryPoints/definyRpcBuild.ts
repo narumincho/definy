@@ -18,7 +18,7 @@ type BuildClientResult = {
 };
 
 const clientEditorPath = fromFileUrl(
-  import.meta.resolve("./clientEditor/"),
+  import.meta.resolve("../definyRpc/clientEditor"),
 );
 
 const buildClientEditor = async (): Promise<BuildClientResult> => {
@@ -61,7 +61,7 @@ const main = async (): Promise<void> => {
   const clientBuildResult = await buildClientEditor();
   console.log("clientEditor のビルドデータ生成完了");
   await writeTextFile(
-    fromFileUrl(import.meta.resolve("./server/browserClient.json")),
+    fromFileUrl(import.meta.resolve("../definyRpc/server/browserClient.json")),
     jsonStringify(clientBuildResult, true),
   );
   console.log("ファイルに保存した");

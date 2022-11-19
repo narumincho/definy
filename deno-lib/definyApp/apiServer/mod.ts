@@ -1,14 +1,20 @@
-import { definyRpc } from "../../definyRpc/server/mod.ts";
+import * as definyRpc from "../../definyRpc/server/definyRpc.ts";
 import { funcList } from "./funcList.ts";
 import * as f from "../../typedFauna.ts";
 import { requestObjectToSimpleRequest } from "../../simpleRequestResponse/simpleRequest.ts";
 import { simpleResponseToResponse } from "../../simpleRequestResponse/simpleResponse.ts";
 import { serve } from "https://deno.land/std@0.165.0/http/server.ts";
+import { fromFileUrl } from "https://deno.land/std@0.156.0/path/mod.ts";
 
 const devPortNumber = 2528;
 
 export const main = (
-  parameter: { readonly isDev: boolean; readonly faunaSecret: string },
+  parameter: {
+    /** 開発モードかどうか */
+    readonly isDev: boolean;
+    /** データベースのfaunaのシークレットキー */
+    readonly faunaSecret: string;
+  },
 ): void => {
   const sampleDefinyRpcServerParameter: definyRpc.DefinyRpcParameter = {
     name: parameter.isDev ? "definyApiDev" : "definyApi",
@@ -21,7 +27,7 @@ export const main = (
       ),
     originHint: parameter.isDev ? `http://localhost:${devPortNumber}` : "",
     codeGenOutputFolderPath: parameter.isDev
-      ? "./definyApp/apiClient"
+      ? fromFileUrl(import.meta.resolve("../apiClient"))
       : undefined,
   };
   serve(

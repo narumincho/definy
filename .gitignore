@@ -28,5 +28,6 @@ tsconfig.tsbuildinfo
 /definy-rpc/server/npm/
 /desktop-proxy/server/npm/
 /deno-lib/npm/
+/deno-lib/entryPoints/definyApiServerDev.ts
 /nodeRedPackage/send-to-definy.html
 /nodeRedServerForNode/

@@ -1,8 +1,8 @@
 import { assertEquals } from "https://deno.land/std@0.165.0/testing/asserts.ts";
-import { definyRpc } from "./server/mod.ts";
+import { handleRequest } from "./server/definyRpc.ts";
 
 Deno.test("get server name", async () => {
-  const response = definyRpc.handleRequest(
+  const response = handleRequest(
     {
       all: () => ({ functionsList: [], typeList: [] }),
       codeGenOutputFolderPath: undefined,
@@ -30,7 +30,7 @@ Deno.test("get server name", async () => {
 });
 
 Deno.test("index.html", () => {
-  const response = definyRpc.handleRequest(
+  const response = handleRequest(
     {
       all: () => ({ functionsList: [], typeList: [] }),
       codeGenOutputFolderPath: undefined,
@@ -54,7 +54,7 @@ Deno.test("index.html", () => {
 });
 
 Deno.test("with pathPrefix index.html", () => {
-  const response = definyRpc.handleRequest(
+  const response = handleRequest(
     {
       all: () => ({ functionsList: [], typeList: [] }),
       codeGenOutputFolderPath: undefined,
@@ -79,7 +79,7 @@ Deno.test("with pathPrefix index.html", () => {
 });
 
 Deno.test("with pathPrefix get server name", async () => {
-  const response = definyRpc.handleRequest(
+  const response = handleRequest(
     {
       all: () => ({ functionsList: [], typeList: [] }),
       codeGenOutputFolderPath: undefined,
@@ -109,7 +109,7 @@ Deno.test("with pathPrefix get server name", async () => {
 
 Deno.test("ignore with pathPrefix", () => {
   assertEquals(
-    definyRpc.handleRequest(
+    handleRequest(
       {
         all: () => ({ functionsList: [], typeList: [] }),
         codeGenOutputFolderPath: undefined,

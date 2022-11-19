@@ -1,5 +1,8 @@
-import { definyRpc } from "./server/mod.ts";
-import { funcList } from "./exampleFunc.ts";
+import {
+  DefinyRpcParameter,
+  handleRequest,
+} from "../definyRpc/server/definyRpc.ts";
+import { funcList } from "../definyRpc/exampleFunc.ts";
 import { requestObjectToSimpleRequest } from "../simpleRequestResponse/simpleRequest.ts";
 import { simpleResponseToResponse } from "../simpleRequestResponse/simpleResponse.ts";
 import { serve } from "https://deno.land/std@0.165.0/http/server.ts";
@@ -7,7 +10,7 @@ import { fromFileUrl } from "https://deno.land/std@0.156.0/path/mod.ts";
 
 const portNumber = 2520;
 
-const sampleDefinyRpcServerParameter: definyRpc.DefinyRpcParameter = {
+const sampleDefinyRpcServerParameter: DefinyRpcParameter = {
   name: "exampleDev",
   all: funcList,
   originHint: `http://localhost:${portNumber}`,
@@ -20,7 +23,7 @@ serve(
     if (simpleRequest === undefined) {
       return new Response("simpleRequestに変換できなかった", { status: 400 });
     }
-    const simpleResponse = definyRpc.handleRequest(
+    const simpleResponse = handleRequest(
       sampleDefinyRpcServerParameter,
       simpleRequest,
     );

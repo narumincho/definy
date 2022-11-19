@@ -1,5 +1,5 @@
 import { FunctionAndTypeList } from "./server/definyRpc.ts";
-import { definyRpc } from "./server/mod.ts";
+import * as definyRpc from "./server/definyRpc.ts";
 
 export const funcList = (): FunctionAndTypeList => {
   return {

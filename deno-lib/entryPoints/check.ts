@@ -30,4 +30,7 @@ const rootPath = fromFileUrl(import.meta.resolve("../"));
 
 const tsFilePathSet = await collectTsOrTsxFilePath(rootPath);
 
-await Deno.run({ cmd: ["deno", "check", ...tsFilePathSet] }).status();
+const processStatus = await Deno.run({
+  cmd: ["deno", "check", ...tsFilePathSet],
+}).status();
+Deno.exit(processStatus.code);

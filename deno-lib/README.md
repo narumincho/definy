@@ -1,6 +1,6 @@
 # Deno の TypeScript で書かれた definy
 
-全体の型チェックと, deno.lock の生成
+全体の型チェックと, deno.lock の生成 (CI環境ではチェック)
 ```ps1
 deno run --allow-run --allow-read ./entryPoints/check.ts
 ```
@@ -27,14 +27,27 @@ deno.land への接続はおそらく imagescript が wasm のダウンロード
 deno run --check --watch -A ./definyApp/editor/watchBuild.ts
 ```
 
-開発用 definy API サーバーを起動
+definy API サーバーを起動
+
+`./apiServer.ts`
+```ts
+import { main } from "../definyApp/apiServer/mod.ts";
+
+main({ isDev: false, faunaSecret: "..." });
+```
 
 ```ps1
-deno run --check --watch -A ./definyApp/apiServer/dev.ts
+deno run --allow-net ./apiServer.ts
 ```
 
 ## definy RPC サンプルサーバーの起動
 
 ```ps1
 deno run --check --watch --allow-net=:2520 --allow-write --allow-read ./definyRpc/dev.ts
+```
+
+definy RPC クライアントビルド
+
+```ps1
+deno run --check --watch -A ./entryPoints/definyRpcBuild.ts
 ```
