@@ -1,20 +1,23 @@
-import { asserts } from "./deps.ts";
+import {
+  assert,
+  assertEquals,
+} from "https://deno.land/std@0.165.0/testing/asserts.ts";
 import { listDeleteAt, listSetAt, stringArrayMatchPrefix } from "./util.ts";
 
 Deno.test("stringArrayMatchPrefix match", () => {
-  asserts.assert(stringArrayMatchPrefix(["a", "b", "c"], ["a"]));
+  assert(stringArrayMatchPrefix(["a", "b", "c"], ["a"]));
 });
 
 Deno.test("stringArrayMatchPrefix not match", () => {
-  asserts.assertEquals(stringArrayMatchPrefix(["a", "b", "c"], ["k"]), false);
+  assertEquals(stringArrayMatchPrefix(["a", "b", "c"], ["k"]), false);
 });
 
 Deno.test("stringArrayMatchPrefix empty", () => {
-  asserts.assert(stringArrayMatchPrefix(["a", "b", "c"], []));
+  assert(stringArrayMatchPrefix(["a", "b", "c"], []));
 });
 
 Deno.test("util listDeleteAt center", () => {
-  asserts.assertEquals(listDeleteAt(["あ", "い", "う", "え", "お"], 1), [
+  assertEquals(listDeleteAt(["あ", "い", "う", "え", "お"], 1), [
     "あ",
     "う",
     "え",
@@ -23,7 +26,7 @@ Deno.test("util listDeleteAt center", () => {
 });
 
 Deno.test("util listDeleteAt first", () => {
-  asserts.assertEquals(listDeleteAt(["あ", "い", "う", "え", "お"], 0), [
+  assertEquals(listDeleteAt(["あ", "い", "う", "え", "お"], 0), [
     "い",
     "う",
     "え",
@@ -31,7 +34,7 @@ Deno.test("util listDeleteAt first", () => {
   ]);
 });
 Deno.test("util listDeleteAt last", () => {
-  asserts.assertEquals(listDeleteAt(["あ", "い", "う", "え", "お"], 4), [
+  assertEquals(listDeleteAt(["あ", "い", "う", "え", "お"], 4), [
     "あ",
     "い",
     "う",
@@ -39,31 +42,31 @@ Deno.test("util listDeleteAt last", () => {
   ]);
 });
 Deno.test("util listDeleteAt out of index", () => {
-  asserts.assertEquals(listDeleteAt(["あ", "い", "う"], 3), ["あ", "い", "う"]);
+  assertEquals(listDeleteAt(["あ", "い", "う"], 3), ["あ", "い", "う"]);
 });
 Deno.test("util listSetAt center", () => {
-  asserts.assertEquals(listSetAt(["あ", "い", "う"], 1, "それな"), [
+  assertEquals(listSetAt(["あ", "い", "う"], 1, "それな"), [
     "あ",
     "それな",
     "う",
   ]);
 });
 Deno.test("util listSetAt first", () => {
-  asserts.assertEquals(listSetAt(["あ", "い", "う"], 0, "それな"), [
+  assertEquals(listSetAt(["あ", "い", "う"], 0, "それな"), [
     "それな",
     "い",
     "う",
   ]);
 });
 Deno.test("util listSetAt last", () => {
-  asserts.assertEquals(listSetAt(["あ", "い", "う"], 2, "それな"), [
+  assertEquals(listSetAt(["あ", "い", "う"], 2, "それな"), [
     "あ",
     "い",
     "それな",
   ]);
 });
 Deno.test("util listSetAt out of index", () => {
-  asserts.assertEquals(listSetAt(["あ", "い", "う"], 3, "それな"), [
+  assertEquals(listSetAt(["あ", "い", "う"], 3, "それな"), [
     "あ",
     "い",
     "う",

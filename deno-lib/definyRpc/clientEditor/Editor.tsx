@@ -1,10 +1,11 @@
-import { React } from "../../deps.ts";
+import React from "https://esm.sh/react@18.2.0";
 import * as definyRpc from "../generated/definyRpc.ts";
 import { Button } from "../../editor/Button.tsx";
 import { DetailView } from "./DetailView.tsx";
 import { Result } from "./Result.tsx";
 import { Select } from "./Select.tsx";
 import { c, toStyleAndHash } from "../../cssInJs/mod.ts";
+import { RawJsonValue } from "../../typedJson.ts";
 
 const containerStyle = toStyleAndHash({
   padding: 16,
@@ -73,7 +74,7 @@ export const Editor = (props: {
         >
           Run
         </Button>
-        <Result data={runResponse} requesting={isRequesting} />
+        <Result data={runResponse as RawJsonValue} requesting={isRequesting} />
       </div>
 
       {props.functionList === undefined ? <div>loading...</div> : (

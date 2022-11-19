@@ -1,4 +1,4 @@
-import { asserts } from "../deps.ts";
+import { assertEquals } from "https://deno.land/std@0.165.0/testing/asserts.ts";
 import { definyRpc } from "./server/mod.ts";
 
 Deno.test("get server name", async () => {
@@ -19,11 +19,11 @@ Deno.test("get server name", async () => {
       query: new Map(),
     },
   );
-  asserts.assertEquals(response?.status, 200);
-  asserts.assertEquals(response?.headers, {
+  assertEquals(response?.status, 200);
+  assertEquals(response?.headers, {
     ContentType: "application/json",
   });
-  asserts.assertEquals(
+  assertEquals(
     JSON.parse(new TextDecoder().decode(await response?.body!())),
     "serverName",
   );
@@ -47,8 +47,8 @@ Deno.test("index.html", () => {
       query: new Map(),
     },
   );
-  asserts.assertEquals(response?.status, 200);
-  asserts.assertEquals(response?.headers, {
+  assertEquals(response?.status, 200);
+  assertEquals(response?.headers, {
     ContentType: "text/html; charset=utf-8",
   });
 });
@@ -72,8 +72,8 @@ Deno.test("with pathPrefix index.html", () => {
       query: new Map(),
     },
   );
-  asserts.assertEquals(response?.status, 200);
-  asserts.assertEquals(response?.headers, {
+  assertEquals(response?.status, 200);
+  assertEquals(response?.headers, {
     ContentType: "text/html; charset=utf-8",
   });
 });
@@ -97,18 +97,18 @@ Deno.test("with pathPrefix get server name", async () => {
       query: new Map(),
     },
   );
-  asserts.assertEquals(response?.status, 200);
-  asserts.assertEquals(response?.headers, {
+  assertEquals(response?.status, 200);
+  assertEquals(response?.headers, {
     ContentType: "application/json",
   });
-  asserts.assertEquals(
+  assertEquals(
     JSON.parse(new TextDecoder().decode(await response?.body!())),
     "test",
   );
 });
 
 Deno.test("ignore with pathPrefix", () => {
-  asserts.assertEquals(
+  assertEquals(
     definyRpc.handleRequest(
       {
         all: () => ({ functionsList: [], typeList: [] }),

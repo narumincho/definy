@@ -15,7 +15,9 @@ import {
 import { definyRpcNamespace } from "./definyRpcNamespace.ts";
 import { StructuredJsonValue } from "../../typedJson.ts";
 import { objectEntriesSameValue } from "../../objectEntriesSameValue.ts";
-import { ensureFile, groupBy, path } from "../../deps.ts";
+import { join } from "https://deno.land/std@0.156.0/path/mod.ts";
+import { ensureFile } from "https://deno.land/std@0.165.0/fs/mod.ts";
+import { groupBy } from "https://deno.land/std@0.165.0/collections/group_by.ts";
 
 type Type = {
   readonly fullName: ReadonlyArray<string>;
@@ -219,7 +221,7 @@ const builtInFunctions = (parameter: DefinyRpcParameter) => {
                   return;
                 }
                 await ensureAndWriteCode(
-                  path.join(
+                  join(
                     codeGenOutputFolderPath,
                     ...firstFunc.fullName.slice(0, -2),
                     firstFunc.fullName.at(-2) + ".ts",

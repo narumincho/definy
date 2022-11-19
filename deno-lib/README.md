@@ -3,8 +3,16 @@
 開発用 editor サーバーを起動
 
 ```ps1
-deno run --check --watch --allow-net=:2500 ./definyApp/editorServer/dev.ts
+deno run --watch --allow-net=:2500,deno.land ./definyApp/editorServer/dev.ts
 ```
+
+editor サーバーを起動
+
+```ps1
+deno run --watch --allow-net=:2500,deno.land https://raw.githubusercontent.com/narumincho/definy/main/deno-lib/definyApp/editorServer/dev.ts
+```
+
+deno.land への接続はおそらく imagescript が wasm のダウンロードに使うため必要
 
 開発用 editor クライアントスクリプトビルドを起動
 

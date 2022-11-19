@@ -1,4 +1,4 @@
-import { React } from "../deps.ts";
+import React from "https://esm.sh/react@18.2.0";
 
 export const useEditorKeyInput = ({
   disabled,

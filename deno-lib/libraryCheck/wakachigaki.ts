@@ -1,4 +1,4 @@
-import { wakachigaki } from "../deps.ts";
+import * as wakachigaki from "https://cdn.skypack.dev/wakachigaki@1.3.2?dts";
 
 const text = "あおいりんごがなっていた";
 const splitLevels = wakachigaki.predictProba(wakachigaki.features(text));

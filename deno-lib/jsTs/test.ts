@@ -1,5 +1,9 @@
-// ./mod.ts から import するとなぜか lib のライブラリが競合する
-import { asserts } from "../deps.ts";
+import {
+  assert,
+  assertEquals,
+  assertMatch,
+  assertNotMatch,
+} from "https://deno.land/std@0.165.0/testing/asserts.ts";
 import * as jsTs from "./main.ts";
 
 const expressRequest: jsTs.data.TsType = {
@@ -53,15 +57,15 @@ const nodeJsTypeScriptCode = jsTs.generateCodeAsString(
 );
 console.log(nodeJsTypeScriptCode);
 Deno.test("return string", () => {
-  asserts.assertEquals(typeof nodeJsTypeScriptCode, "string");
+  assertEquals(typeof nodeJsTypeScriptCode, "string");
 });
 
 Deno.test("include import keyword", () => {
-  asserts.assertMatch(nodeJsTypeScriptCode, /import/u);
+  assertMatch(nodeJsTypeScriptCode, /import/u);
 });
 
 Deno.test("include import path", () => {
-  asserts.assertMatch(nodeJsTypeScriptCode, /express/u);
+  assertMatch(nodeJsTypeScriptCode, /express/u);
 });
 
 Deno.test("not include revered word", () => {
@@ -83,7 +87,7 @@ Deno.test("not include revered word", () => {
   );
 
   console.log("new code", codeAsString);
-  asserts.assertNotMatch(codeAsString, /const new =/u);
+  assertNotMatch(codeAsString, /const new =/u);
 });
 
 Deno.test("識別子として使えない文字は, 変更される", () => {
@@ -104,7 +108,7 @@ Deno.test("識別子として使えない文字は, 変更される", () => {
     "TypeScript",
   );
   console.log(codeAsString);
-  asserts.assertNotMatch(codeAsString, /const 0name/u);
+  assertNotMatch(codeAsString, /const 0name/u);
 });
 Deno.test("識別子の生成で識別子に使えない文字が含まれているかどうか", () => {
   const reserved: ReadonlySet<string> = new Set();
@@ -141,8 +145,8 @@ Deno.test("escape string literal", () => {
   };
   const codeAsString = jsTs.generateCodeAsString(nodeJsCode, "TypeScript");
   console.log(codeAsString);
-  asserts.assertMatch(codeAsString, /\\"/u);
-  asserts.assertMatch(codeAsString, /\\n/u);
+  assertMatch(codeAsString, /\\"/u);
+  assertMatch(codeAsString, /\\n/u);
 });
 
 Deno.test("include function parameter name", () => {
@@ -234,7 +238,7 @@ Deno.test("include function parameter name", () => {
   };
   const code = jsTs.generateCodeAsString(nodeJsCode, "TypeScript");
   console.log(code);
-  asserts.assertMatch(code, /request/u);
+  assertMatch(code, /request/u);
 });
 Deno.test("get array index", () => {
   const code = jsTs.generateCodeAsString(
@@ -268,7 +272,7 @@ Deno.test("get array index", () => {
     "TypeScript",
   );
   console.log(code);
-  asserts.assertMatch(code, /\[0\]/u);
+  assertMatch(code, /\[0\]/u);
 });
 const scopedCode = jsTs.generateCodeAsString(
   {
@@ -291,10 +295,10 @@ const scopedCode = jsTs.generateCodeAsString(
 
 Deno.test("statementList in { } scope curly braces", () => {
   console.log(scopedCode);
-  asserts.assertMatch(scopedCode, /\{[^{]*"それな[^}]*\}/u);
+  assertMatch(scopedCode, /\{[^{]*"それな[^}]*\}/u);
 });
 Deno.test("ESModules Browser Code not include type ", () => {
-  asserts.assertNotMatch(scopedCode, /string/);
+  assertNotMatch(scopedCode, /string/);
 });
 Deno.test("type parameter", () => {
   const code = jsTs.generateCodeAsString(
@@ -314,7 +318,7 @@ Deno.test("type parameter", () => {
     "TypeScript",
   );
   console.log(code);
-  asserts.assertMatch(code, /Promise<string>/u);
+  assertMatch(code, /Promise<string>/u);
 });
 Deno.test("object literal key is escaped", () => {
   const code = jsTs.generateCodeAsString(
@@ -332,7 +336,7 @@ Deno.test("object literal key is escaped", () => {
     "TypeScript",
   );
   console.log(code);
-  asserts.assertMatch(code, /"a b c"/u);
+  assertMatch(code, /"a b c"/u);
 });
 Deno.test("binary operator combine", () => {
   const code = jsTs.generateCodeAsString(
@@ -368,7 +372,7 @@ Deno.test("binary operator combine", () => {
     "JavaScript",
   );
   console.log(code);
-  asserts.assert(
+  assert(
     code.includes("3 * 9 + 7 * 6 === 2 + 3 + (5 + 8) === 5 * (7 + 8)"),
   );
 });
@@ -410,7 +414,7 @@ Deno.test("object literal return need parenthesis", () => {
     "TypeScript",
   );
   console.log(code);
-  asserts.assertMatch(code, /\(\{.*\}\)/u);
+  assertMatch(code, /\(\{.*\}\)/u);
 });
 Deno.test("let variable", () => {
   const v = jsTs.identifierFromString("v");
@@ -448,7 +452,7 @@ Deno.test("let variable", () => {
     "TypeScript",
   );
   console.log(code);
-  asserts.assertMatch(code, /let v: number = 10;[\n ]*v = 30;[\n ]*v \+= 1;/u);
+  assertMatch(code, /let v: number = 10;[\n ]*v = 30;[\n ]*v \+= 1;/u);
 });
 Deno.test("for of", () => {
   const code: jsTs.data.JsTsCode = {
@@ -487,7 +491,7 @@ Deno.test("for of", () => {
   };
   const codeAsString = jsTs.generateCodeAsString(code, "TypeScript");
   console.log(codeAsString);
-  asserts.assertMatch(codeAsString, /for .* of \[1, 2, \.\.\.\[3, 4, 5\] *\]/u);
+  assertMatch(codeAsString, /for .* of \[1, 2, \.\.\.\[3, 4, 5\] *\]/u);
 });
 Deno.test("switch", () => {
   const code: jsTs.data.JsTsCode = {
@@ -615,7 +619,7 @@ Deno.test("switch", () => {
   };
   const codeAsString = jsTs.generateCodeAsString(code, "TypeScript");
   console.log(codeAsString);
-  asserts.assertMatch(codeAsString, /switch \(.+\) \{\n +case .+:/u);
+  assertMatch(codeAsString, /switch \(.+\) \{\n +case .+:/u);
 });
 Deno.test("Type Assertion", () => {
   const code: jsTs.data.JsTsCode = {
@@ -632,7 +636,7 @@ Deno.test("Type Assertion", () => {
   };
   const codeAsString = jsTs.generateCodeAsString(code, "TypeScript");
   console.log(codeAsString);
-  asserts.assertMatch(codeAsString, /as globalThis.Date/u);
+  assertMatch(codeAsString, /as globalThis.Date/u);
 });
 Deno.test("Type Intersection", () => {
   const code: jsTs.data.JsTsCode = {
@@ -658,7 +662,7 @@ Deno.test("Type Intersection", () => {
   };
   const codeAsString = jsTs.generateCodeAsString(code, "TypeScript");
   console.log(codeAsString);
-  asserts.assertMatch(codeAsString, /globalThis.Date & globalThis.Uint8Array/u);
+  assertMatch(codeAsString, /globalThis.Date & globalThis.Uint8Array/u);
 });
 
 Deno.test("object literal spread syntax", () => {
@@ -703,7 +707,7 @@ Deno.test("object literal spread syntax", () => {
   };
   const codeAsString = jsTs.generateCodeAsString(code, "TypeScript");
   console.log(codeAsString);
-  asserts.assertMatch(codeAsString, /\{ *\.\.\.value *, *b: 987 \}/u);
+  assertMatch(codeAsString, /\{ *\.\.\.value *, *b: 987 \}/u);
 });
 
 Deno.test("type property document", () => {
@@ -737,7 +741,7 @@ Deno.test("type property document", () => {
   };
   const codeAsString = jsTs.generateCodeAsString(code, "TypeScript");
   console.log(codeAsString);
-  asserts.assertMatch(codeAsString, /日にちの中のミリ秒. 0 to 86399999/u);
+  assertMatch(codeAsString, /日にちの中のミリ秒. 0 to 86399999/u);
 });
 
 Deno.test("output lambda type parameter", () => {
@@ -824,7 +828,7 @@ Deno.test("output lambda type parameter", () => {
   };
   const codeAsString = jsTs.generateCodeAsString(code, "TypeScript");
   console.log(codeAsString);
-  asserts.assertMatch(
+  assertMatch(
     codeAsString,
     /<t extends unknown>\(input: t\): \{ readonly value: t \} =>/u,
   );
@@ -862,7 +866,7 @@ Deno.test("output optional type member", () => {
   };
   const codeAsString = jsTs.generateCodeAsString(code, "TypeScript");
   console.log(codeAsString);
-  asserts.assertMatch(codeAsString, /readonly age\?: number/u);
+  assertMatch(codeAsString, /readonly age\?: number/u);
 });
 
 Deno.test("read me code", () => {
@@ -952,7 +956,7 @@ Deno.test("read me code", () => {
     ],
     statementList: [],
   };
-  asserts.assertEquals(
+  assertEquals(
     jsTs.generateCodeAsString(serverCode, "TypeScript"),
     `/* eslint-disable */
 /* generated by definy. Do not edit! */

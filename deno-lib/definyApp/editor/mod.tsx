@@ -1,8 +1,14 @@
-import { hydrateRoot, React } from "../../deps.ts";
+import React from "https://esm.sh/react@18.2.0";
+import { hydrateRoot } from "https://esm.sh/react-dom@18.2.0/client";
 import { App } from "./app.tsx";
 import { languageFromId } from "../../zodType.ts";
 
-const main = () => {
+/**
+ * definy のエディターを動かす
+ *
+ * ブラウザ内で動かす必要がある
+ */
+export const startEditor = (): void => {
   const rootElement = document.getElementById("root");
   if (rootElement === null) {
     console.error("rootElement を見つからなかった");
@@ -16,5 +22,3 @@ const main = () => {
     <App language={languageFromId(hl)} isClock24={isClock24} />,
   );
 };
-
-main();

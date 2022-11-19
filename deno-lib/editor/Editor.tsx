@@ -1,7 +1,4 @@
-/// <reference no-default-lib="true"/>
-/// <reference lib="dom" />
-
-import { React } from "../deps.ts";
+import React from "https://esm.sh/react@18.2.0";
 import { c, toStyleAndHash } from "../cssInJs/mod.ts";
 import { Button } from "../editor/Button.tsx";
 import { jsonStringify, RawJsonValue } from "../typedJson.ts";

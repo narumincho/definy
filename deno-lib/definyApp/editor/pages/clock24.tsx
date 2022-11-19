@@ -1,8 +1,4 @@
-/// <reference no-default-lib="true"/>
-/// <reference lib="dom" />
-/// <reference lib="deno.ns" />
-
-import { React } from "../../../deps.ts";
+import React from "https://esm.sh/react@18.2.0";
 import { c, toStyleAndHash } from "../../../cssInJs/mod.ts";
 
 const containerStyle = toStyleAndHash({

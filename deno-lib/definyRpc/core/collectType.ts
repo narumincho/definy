@@ -101,8 +101,10 @@ export type CollectedDefinyRpcTypeMap = ReadonlyMap<
   CollectedDefinyRpcType
 >;
 
-/// 循環的構造があった場合, 見つけられないんじゃないか?
-/// 同じ名前が見つかったらストップ (パラメーターは見る)
+/**
+ * 循環的構造があった場合, 見つけられないんじゃないか?
+ * 同じ名前が見つかったらストップ (パラメーターは見る)
+ */
 export type CollectedDefinyRpcType = {
   readonly namespace: NonEmptyArray<string>;
   readonly name: string;

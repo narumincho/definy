@@ -1,7 +1,13 @@
 import { Hash, hashBinary } from "../../sha256.ts";
 import { jsonStringify } from "../../typedJson.ts";
 import { writeTextFile } from "../../writeFileAndLog.ts";
-import { denoPlugin, esbuild, fast_base64, path } from "../../deps.ts";
+import * as esbuild from "https://deno.land/x/esbuild@v0.15.14/mod.js";
+import { denoPlugin } from "https://deno.land/x/esbuild_deno_loader@0.6.0/mod.ts";
+import {
+  fromFileUrl,
+  relative,
+} from "https://deno.land/std@0.156.0/path/mod.ts";
+import { toBase64 } from "https://deno.land/x/fast_base64@v0.1.7/mod.ts";
 
 type BuildClientResult = {
   readonly iconHash: Hash;
@@ -36,28 +42,28 @@ const watchAndBuild = async (
   onBuild: (result: BuildClientResult) => void,
 ): Promise<void> => {
   const iconContent = await Deno.readFile(
-    path.fromFileUrl(import.meta.resolve("./assets/icon.png")),
+    fromFileUrl(import.meta.resolve("./assets/icon.png")),
   );
   const iconHash = await hashBinary(iconContent);
-  const iconContentAsBase64 = await fast_base64.toBase64(iconContent);
+  const iconContentAsBase64 = await toBase64(iconContent);
 
   const fontContent = await Deno.readFile(
-    path.fromFileUrl(import.meta.resolve("./assets/hack_regular_subset.woff2")),
+    fromFileUrl(import.meta.resolve("./assets/hack_regular_subset.woff2")),
   );
   const fontHash = await hashBinary(fontContent);
-  const fontContentAsBase64 = await fast_base64.toBase64(fontContent);
+  const fontContentAsBase64 = await toBase64(fontContent);
 
   const notoSans = await Deno.readFile(
-    path.fromFileUrl(import.meta.resolve("./assets/NotoSansJP-Regular.otf")),
+    fromFileUrl(import.meta.resolve("./assets/NotoSansJP-Regular.otf")),
   );
-  const notoSansAsBase64 = await fast_base64.toBase64(notoSans);
+  const notoSansAsBase64 = await toBase64(notoSans);
 
   const scriptHashAndContent = await outputFilesToScriptFile(
     (await esbuild.build({
       entryPoints: [
-        path.relative(
+        relative(
           Deno.cwd(),
-          path.fromFileUrl(import.meta.resolve("./start.tsx")),
+          fromFileUrl(import.meta.resolve("./start.tsx")),
         ),
       ],
       plugins: [denoPlugin()],
@@ -104,7 +110,7 @@ const watchAndBuild = async (
 const main = async (): Promise<void> => {
   await watchAndBuild((clientBuildResult) => {
     writeTextFile(
-      path.fromFileUrl(import.meta.resolve("../editorServer/dist.json")),
+      fromFileUrl(import.meta.resolve("../editorServer/dist.json")),
       jsonStringify(clientBuildResult, true),
     );
   });

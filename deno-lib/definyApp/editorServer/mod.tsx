@@ -1,8 +1,6 @@
-/// <reference no-default-lib="true"/>
-/// <reference lib="dom" />
-/// <reference lib="deno.ns" />
-
-import { fast_base64, React, renderToString, server } from "../../deps.ts";
+import React from "https://esm.sh/react@18.2.0";
+import { renderToString } from "https://esm.sh/react-dom@18.2.0/server";
+import { serve } from "https://deno.land/std@0.165.0/http/server.ts";
 import { App } from "../editor/app.tsx";
 import dist from "./dist.json" assert { type: "json" };
 import { getRenderedCss, resetInsertedStyle } from "../../cssInJs/mod.ts";
@@ -12,11 +10,12 @@ import { requestObjectToSimpleRequest } from "../../simpleRequestResponse/simple
 import { clock24Title } from "../editor/pages/clock24.tsx";
 import { hashFromString } from "../../sha256.ts";
 import { getImageFromHash, getOrCreateImageFromText } from "./ogpImage.tsx";
+import { toBytes } from "https://deno.land/x/fast_base64@v0.1.7/mod.ts";
 
 export const startEditorServer = (
   option: { readonly port: number | undefined },
 ): void => {
-  server.serve(async (request) => {
+  serve(async (request) => {
     const simpleRequest = requestObjectToSimpleRequest(request);
     console.log(simpleRequest);
     if (stringArrayEqual(simpleRequest?.path ?? [], [dist.scriptHash])) {
@@ -28,7 +27,7 @@ export const startEditorServer = (
       });
     }
     if (stringArrayEqual(simpleRequest?.path ?? [], [dist.iconHash])) {
-      return new Response(await fast_base64.toBytes(dist.iconContent), {
+      return new Response(await toBytes(dist.iconContent), {
         headers: {
           "Content-Type": "image/png",
           "Cache-Control": "public, max-age=604800, immutable",
@@ -36,7 +35,7 @@ export const startEditorServer = (
       });
     }
     if (stringArrayEqual(simpleRequest?.path ?? [], [dist.fontHash])) {
-      return new Response(await fast_base64.toBytes(dist.fontContent), {
+      return new Response(await toBytes(dist.fontContent), {
         headers: {
           "Content-Type": "font/woff2",
           "Cache-Control": "public, max-age=604800, immutable",

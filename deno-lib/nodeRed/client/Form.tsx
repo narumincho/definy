@@ -1,4 +1,4 @@
-import { React } from "../../deps.ts";
+import React from "https://esm.sh/react@18.2.0";
 import { urlFromString } from "./urlFromString.ts";
 import { c, toStyleAndHash } from "../../cssInJs/mod.ts";
 import { jsonStringify } from "../../typedJson.ts";

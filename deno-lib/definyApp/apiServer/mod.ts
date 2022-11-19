@@ -3,7 +3,7 @@ import { funcList } from "./funcList.ts";
 import * as f from "../../typedFauna.ts";
 import { requestObjectToSimpleRequest } from "../../simpleRequestResponse/simpleRequest.ts";
 import { simpleResponseToResponse } from "../../simpleRequestResponse/simpleResponse.ts";
-import { server } from "../../deps.ts";
+import { serve } from "https://deno.land/std@0.165.0/http/server.ts";
 
 const devPortNumber = 2528;
 
@@ -24,7 +24,7 @@ export const main = (
       ? "./definyApp/apiClient"
       : undefined,
   };
-  server.serve(
+  serve(
     async (request) => {
       const simpleRequest = requestObjectToSimpleRequest(request);
       if (simpleRequest === undefined) {

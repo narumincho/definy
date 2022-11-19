@@ -1,4 +1,4 @@
-import { React } from "../deps.ts";
+import React from "https://esm.sh/react@18.2.0";
 import { c, toStyleAndHash } from "../cssInJs/mod.ts";
 
 export const EnterIcon = (props: {

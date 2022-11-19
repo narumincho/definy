@@ -1,4 +1,5 @@
-import { murmurHash3 } from "../deps.ts";
+export * as css from "./css.ts";
+import { murmurHash3 } from "https://deno.land/x/murmur_hash_3@1.0.0/mod.ts";
 
 const definyCssInJsId = "definy-css-in-js";
 

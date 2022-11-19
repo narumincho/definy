@@ -1,5 +1,5 @@
+import * as faunadb from "https://cdn.skypack.dev/faunadb@4.7.1?dts";
 import { faunaServerKey } from "../../databaseMigrationSecret.ts";
-import { faunadb } from "../deps.ts";
 
 const client = new faunadb.Client({
   secret: faunaServerKey,
