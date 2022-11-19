@@ -1,5 +1,5 @@
 import React from "https://esm.sh/react@18.2.0?pin=v99";
-import { hydrateRoot } from "https://esm.sh/react-dom@18.2.0/client";
+import { hydrateRoot } from "https://esm.sh/react-dom@18.2.0/client?pin=v99";
 import { App } from "./app.tsx";
 import { languageFromId } from "../../zodType.ts";
 
