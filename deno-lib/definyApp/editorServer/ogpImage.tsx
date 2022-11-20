@@ -11,13 +11,13 @@ export const createImageFromText = async (parameter: {
   readonly message: string | undefined;
 }): Promise<Uint8Array> => {
   const fontByte = await toBytes(dist.notoSansContent);
-  const backGroundImage = new Image(1200, 630).fill(0x000000ff);
+  const backGroundImage = new Image(600, 315).fill(0x000000ff);
 
   // 時刻とメッセージ両方指定
   if (parameter.message !== undefined && parameter.date !== undefined) {
     const messageImage = Image.renderText(
       fontByte,
-      120,
+      60,
       parameter.message,
       0xffffffff,
     );
@@ -50,7 +50,7 @@ export const createImageFromText = async (parameter: {
   if (parameter.message !== undefined) {
     const textImage = Image.renderText(
       fontByte,
-      120,
+      60,
       parameter.message,
       Image.hslToColor(Math.random(), 0.8, 0.7),
     );
@@ -64,7 +64,7 @@ export const createImageFromText = async (parameter: {
 
   return Image.renderText(
     fontByte,
-    120,
+    60,
     "messageとdateを指定してね",
     0xff0000ff,
   ).encode();
@@ -74,18 +74,18 @@ const dateToLimitDateImage = (fontBytes: Uint8Array, date: Date): Image => {
   const valueAndUnit = timeToDisplayText(date);
   const prefixImage = Image.renderText(
     fontBytes,
-    100,
+    50,
     valueAndUnit.after ? "から" : "まで",
     0xffffffff,
   );
   const valueAndUnitImage = Image.renderText(
     fontBytes,
-    150,
+    75,
     valueAndUnit.value + valueAndUnit.unit,
     0xff0000ff,
   );
   const imageHeight = Math.max(prefixImage.height, valueAndUnitImage.height);
-  const gap = 64;
+  const gap = 32;
   return new Image(
     prefixImage.width + gap + valueAndUnitImage.width,
     prefixImage.height + valueAndUnitImage.height,
