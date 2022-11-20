@@ -231,5 +231,5 @@ export const Needle = (
 };
 
 export const clock24Title = () => {
-  return "タイトル";
+  return "1周24時間の時計";
 };
