@@ -63,10 +63,6 @@ corepack enable
 
 Google でログインするための 鍵を, 1 つ上の階層のファイルに保存し, npm script の `start` を実行するを開発用にアプリが起動する. Ctrl + C キーを押すと エミュレータを停止することができる. VSCode の ゴミ箱ボタンだと, firestore のエミュレータが終了されないので注意. タスクマネージャーの Open JDK Platform binary などのそれっぽいものを停止すれば, firestore のエミュレータを停止させることができる.
 
-## 各ファイルの依存関係
-
-![各ファイルの依存関係のグラフ図](graph.svg)
-
 ### VSCode ワークスペース起動
 
 Deno と Node.js 向けの拡張機能は共存できないため, 別で VSCode を起動する必要がある
