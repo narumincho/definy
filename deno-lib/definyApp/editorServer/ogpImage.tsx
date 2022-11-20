@@ -26,11 +26,11 @@ export const createImageFromText = async (parameter: {
     return backGroundImage.composite(
       messageImage,
       (backGroundImage.width - messageImage.width) / 2,
-      (backGroundImage.height / 4) - (messageImage.height / 2),
+      (backGroundImage.height / 3) - (messageImage.height / 2),
     ).composite(
       dateImage,
       (backGroundImage.width - dateImage.width) / 2,
-      (backGroundImage.height / 4 * 3) - (messageImage.height / 2),
+      (backGroundImage.height / 3 * 2) - (messageImage.height / 2),
     )
       .encode();
   }

@@ -84,6 +84,35 @@ export const Clock24 = (
     <div className={c(containerStyle)}>
       <svg className={c(svgStyle)} viewBox="-100 -100 200 200">
         <circle cx={0} cy={0} r={93} stroke="#ca8484" fill="#b56566" />
+        {Array.from({ length: 24 }).map((_, index) => {
+          const angle = index / 24 * Math.PI * 2 - Math.PI / 2;
+          return (
+            <text
+              text-anchor="middle"
+              alignment-baseline="middle"
+              x={Math.cos(angle) * 75}
+              y={Math.sin(angle) * 75}
+              fill="#000"
+              fontSize={12}
+            >
+              {index}
+            </text>
+          );
+        })}
+        {Array.from({ length: 60 }).map((_, index) => {
+          const angle = index / 60 * Math.PI * 2 - Math.PI / 2;
+          const isFive = index % 5 === 0;
+          return (
+            <line
+              x1={Math.cos(angle) * (isFive ? 85 : 87)}
+              y1={Math.sin(angle) * (isFive ? 85 : 87)}
+              x2={Math.cos(angle) * 93}
+              y2={Math.sin(angle) * 93}
+              strokeWidth={isFive ? 2 : 1}
+              stroke="#000"
+            />
+          );
+        })}
         <Needle
           angle0To1={seconds / (1000 * 60)}
           color="#FA2222"
@@ -101,12 +130,6 @@ export const Clock24 = (
           color="#60554A"
           length={50}
           width={3}
-        />
-        <Needle
-          angle0To1={seconds / (1000 * 60 * 60 * 24 * 365)}
-          color="#B7DCF5"
-          length={30}
-          width={1}
         />
         <text
           x={0}
@@ -167,35 +190,6 @@ export const Clock24 = (
             "0",
           )}:{(Math.floor(seconds / (1000)) % 60).toString().padStart(2, "0")}
         </text>
-        {Array.from({ length: 24 }).map((_, index) => {
-          const angle = index / 24 * Math.PI * 2 - Math.PI / 2;
-          return (
-            <text
-              text-anchor="middle"
-              alignment-baseline="middle"
-              x={Math.cos(angle) * 75}
-              y={Math.sin(angle) * 75}
-              fill="#000"
-              fontSize={12}
-            >
-              {index}
-            </text>
-          );
-        })}
-        {Array.from({ length: 60 }).map((_, index) => {
-          const angle = index / 60 * Math.PI * 2 - Math.PI / 2;
-          const isFive = index % 5 === 0;
-          return (
-            <line
-              x1={Math.cos(angle) * (isFive ? 85 : 87)}
-              y1={Math.sin(angle) * (isFive ? 85 : 87)}
-              x2={Math.cos(angle) * 93}
-              y2={Math.sin(angle) * 93}
-              strokeWidth={isFive ? 2 : 1}
-              stroke="#000"
-            />
-          );
-        })}
       </svg>
       {isSettingMode
         ? (
