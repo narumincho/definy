@@ -69,7 +69,7 @@ Deno と Node.js 向けの拡張機能は共存できないため, 別で VSCode
 
 Deno 向けワークスペースの起動
 
-```sp1
+```ps1
 code ./for-deno.code-workspace
 ```
 

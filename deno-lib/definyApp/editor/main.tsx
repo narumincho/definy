@@ -19,6 +19,8 @@ export const startEditor = (): void => {
 
   hydrateRoot(
     rootElement,
-    <App language={languageFromId(hl)} isClock24={isClock24} />,
+    <React.StrictMode>
+      <App language={languageFromId(hl)} isClock24={isClock24} />
+    </React.StrictMode>,
   );
 };

@@ -19,7 +19,7 @@ export type Style = {
   readonly boxSizing?: "border-box" | undefined;
   readonly display?: "grid" | "flex" | undefined;
   readonly gap?: number | undefined;
-  readonly alignContent?: "start" | undefined;
+  readonly alignContent?: "start" | "end" | undefined;
   readonly overflowY?: "scroll" | undefined;
   readonly overflowWrap?: "anywhere" | undefined;
   readonly gridTemplateColumns?: string | undefined;
@@ -39,6 +39,8 @@ export type Style = {
   readonly textDecoration?: string | undefined;
   readonly stroke?: string | undefined;
   readonly flexGrow?: "1" | undefined;
+  readonly backdropFilter?: string;
+  readonly zIndex?: string;
 };
 
 const stylePropertyNameCamelCaseToKebabCaseMap: ReadonlyMap<string, string> =
@@ -68,6 +70,8 @@ const stylePropertyNameCamelCaseToKebabCaseMap: ReadonlyMap<string, string> =
     ["paddingLeft", "padding-left"],
     ["textDecoration", "text-decoration"],
     ["flexGrow", "flex-grow"],
+    ["backdropFilter", "backdrop-filter"],
+    ["zIndex", "z-index"],
   ]);
 
 export type StateStyle = {

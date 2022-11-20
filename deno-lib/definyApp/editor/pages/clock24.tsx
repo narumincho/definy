@@ -1,5 +1,6 @@
 import React from "https://esm.sh/react@18.2.0?pin=v99";
 import { c, toStyleAndHash } from "../../../cssInJs/mod.ts";
+import { ClockSetting } from "../components/clockSetting.tsx";
 
 const containerStyle = toStyleAndHash({
   backgroundColor: "#724242",
@@ -19,11 +20,18 @@ const buttonContainerStyle = toStyleAndHash({
   gridColumn: "1 / 2",
   gridRow: "1 / 2",
   justifySelf: "end",
+  zIndex: "1",
+});
+
+const buttonStyle = toStyleAndHash({
+  padding: 16,
+  cursor: "pointer",
 });
 
 const settingStyle = toStyleAndHash({
   gridColumn: "1 / 2",
   gridRow: "1 / 2",
+  backdropFilter: "blur(8px)",
 });
 
 const useAnimationFrame = (callback = () => {}) => {
@@ -59,53 +67,50 @@ export const Clock24 = (): React.ReactElement => {
   });
   const seconds = now.getTime() - now.getTimezoneOffset() * 60 * 1000;
 
-  const shortAngle = (seconds / (1000 * 60 * 60 * 24) * Math.PI * 2) -
-    Math.PI / 2;
-  const longAngle = removeInt(seconds / (1000 * 60 * 60)) * Math.PI * 2 -
-    Math.PI / 2;
-
-  const secondsAngle = removeInt(seconds / (1000 * 60)) * Math.PI * 2 -
-    Math.PI / 2;
-
   return (
     <div className={c(containerStyle)}>
       <svg className={c(svgStyle)} viewBox="-100 -100 200 200">
         <circle cx={0} cy={0} r={93} stroke="#ca8484" fill="#b56566" />
-        <polygon
-          points={`0 0 ${Math.cos(shortAngle) * 50} ${
-            Math.sin(shortAngle) * 50
-          } 0 1`}
-          stroke="#dcd5dc"
-          strokeWidth={0.5}
+        <Needle
+          angle0To1={seconds / (1000 * 60)}
+          color="#FA2222"
+          length={90}
+          width={1}
         />
-        <line
-          x1={0}
-          y1={0}
-          x2={Math.cos(longAngle) * 70}
-          y2={Math.sin(longAngle) * 70}
-          stroke="#3f383f"
-          strokeWidth={2}
+        <Needle
+          angle0To1={seconds / (1000 * 60 * 60)}
+          color="#FAE080"
+          length={70}
+          width={2}
         />
-        <line
-          x1={0}
-          y1={0}
-          x2={Math.cos(secondsAngle) * 90}
-          y2={Math.sin(secondsAngle) * 90}
-          stroke="red"
+        <Needle
+          angle0To1={seconds / (1000 * 60 * 60 * 24)}
+          color="#60554A"
+          length={50}
+          width={3}
+        />
+        <Needle
+          angle0To1={seconds / (1000 * 60 * 60 * 24 * 365)}
+          color="#B7DCF5"
+          length={30}
+          width={1}
         />
         <text
           x={0}
-          y={-20}
+          y={15}
           textAnchor="middle"
           alignmentBaseline="middle"
-          fill="white"
+          fill="#400488"
+          stroke="white"
+          strokeWidth={0.2}
           fontSize={8}
+          fontWeight="bold"
         >
           {now.getFullYear()}/{now.getMonth() + 1}/{now.getDate()}
         </text>
         <text
           x={0}
-          y={20}
+          y={30}
           textAnchor="middle"
           alignmentBaseline="middle"
           fill="#400488"
@@ -151,8 +156,16 @@ export const Clock24 = (): React.ReactElement => {
           );
         })}
       </svg>
+      {isSettingMode
+        ? (
+          <div className={c(settingStyle)}>
+            <ClockSetting />
+          </div>
+        )
+        : <></>}
       <div className={c(buttonContainerStyle)}>
         <button
+          className={c(buttonStyle)}
           onClick={() => {
             setIsSettingMode((prev) => !prev);
           }}
@@ -160,8 +173,25 @@ export const Clock24 = (): React.ReactElement => {
           setting
         </button>
       </div>
-      {isSettingMode ? <div className={c(settingStyle)}>設定</div> : <></>}
     </div>
+  );
+};
+
+export const Needle = (
+  props: {
+    readonly angle0To1: number;
+    readonly color: string;
+    readonly length: number;
+    readonly width: number;
+  },
+) => {
+  return (
+    <g transform={`rotate(${(props.angle0To1 * 360 + 270) % 360})`}>
+      <polygon
+        points={`-5 0 0 -${props.width} ${props.length} 0 0 ${props.width} -5 0`}
+        fill={props.color}
+      />
+    </g>
   );
 };
 
