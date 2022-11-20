@@ -14,13 +14,32 @@ export const startEditor = (): void => {
     console.error("rootElement を見つからなかった");
     return;
   }
-  const hl = new URLSearchParams(window.location.search).get("hl");
-  const isClock24 = window.location.pathname === "/clock24";
 
   hydrateRoot(
     rootElement,
+    <AppWithHandleLocation />,
+  );
+};
+
+const AppWithHandleLocation = (): React.ReactElement => {
+  const [url, setUrl] = React.useState<URL>(new URL(window.location.href));
+
+  const hl = url.searchParams.get("hl");
+  const isClock24 = url.pathname === "/clock24";
+
+  const date = new Date(url.searchParams.get("time") ?? "");
+  return (
     <React.StrictMode>
-      <App language={languageFromId(hl)} isClock24={isClock24} />
-    </React.StrictMode>,
+      <App
+        language={languageFromId(hl)}
+        message={url.searchParams.get("message") ?? ""}
+        date={Number.isNaN(date.getTime()) ? undefined : date}
+        isClock24={isClock24}
+        onChangeUrl={(newUrl) => {
+          window.history.replaceState(undefined, "", newUrl.toString());
+          setUrl(newUrl);
+        }}
+      />
+    </React.StrictMode>
   );
 };

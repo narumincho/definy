@@ -26,17 +26,21 @@ const inputStyle = toStyleAndHash({
 });
 
 const getTimezoneOffsetText = (): string => {
-  const offset = Math.floor((0 - new Date().getTimezoneOffset()) / 60);
+  const timezoneOffset = new Date().getTimezoneOffset();
+  const isPlus = timezoneOffset <= 0;
+  const timezoneOffsetAbs = Math.abs(timezoneOffset);
 
-  return offset >= 0
-    ? "+" + offset.toString().padStart(2, "0")
-    : "-" + (-offset).toString().padStart(2, "0");
+  const offsetHour = Math.floor(timezoneOffsetAbs / 60);
+  const offsetMinute = Math.floor(timezoneOffsetAbs % 60);
+
+  return (isPlus ? "+" : "-") + offsetHour.toString().padStart(2, "0") + ":" +
+    offsetMinute.toString().padStart(2, "0");
 };
 
 const updateUrl = (
   parameter: { readonly dateTimeLocal: string; readonly message: string },
+  onChangeUrl: (newURL: URL) => void,
 ): void => {
-  console.log(parameter.dateTimeLocal);
   const newUrl = new URL(location.href);
   newUrl.searchParams.set(
     "time",
@@ -44,13 +48,22 @@ const updateUrl = (
   );
   newUrl.searchParams.set("message", parameter.message);
   newUrl.searchParams.set("random", crypto.randomUUID());
-  window.history.replaceState(undefined, "", newUrl.toString());
+  onChangeUrl(newUrl);
 };
 
-export const ClockSetting = (): React.ReactElement => {
-  const [dateTimeLocal, setDateTimeLocal] = React.useState<string>("");
-  const [message, setMessage] = React.useState<string>("");
+const getLocalIsoDateString = (date: Date): string => {
+  return new Date(
+    date.getTime() - new Date().getTimezoneOffset() * 60 * 1000,
+  ).toISOString().slice(0, 19);
+};
 
+export const ClockSetting = (
+  props: {
+    readonly message: string;
+    readonly date: Date | undefined;
+    readonly onChangeUrl: (newURL: URL) => void;
+  },
+): React.ReactElement => {
   return (
     <div className={c(containerStyle)}>
       <label className={c(labelStyle)}>
@@ -58,12 +71,13 @@ export const ClockSetting = (): React.ReactElement => {
         <input
           type="datetime-local"
           className={c(inputStyle)}
-          value={dateTimeLocal}
+          value={props.date ? getLocalIsoDateString(props.date) : undefined}
           onChange={(e) => {
             const newValue = e.target.value;
-            setDateTimeLocal(newValue);
-
-            updateUrl({ dateTimeLocal: newValue, message });
+            updateUrl(
+              { dateTimeLocal: newValue, message: props.message },
+              props.onChangeUrl,
+            );
           }}
         />
         <div>{getTimezoneOffsetText()}</div>
@@ -73,11 +87,16 @@ export const ClockSetting = (): React.ReactElement => {
         <input
           type="text"
           className={c(inputStyle)}
-          value={message}
+          value={props.message}
           onChange={(e) => {
             const newMessage = e.target.value;
-            setMessage(newMessage);
-            updateUrl({ dateTimeLocal, message: newMessage });
+            updateUrl(
+              {
+                dateTimeLocal: props.date?.toLocaleString() ?? "???",
+                message: newMessage,
+              },
+              props.onChangeUrl,
+            );
           }}
         />
       </label>

@@ -58,10 +58,13 @@ export const startEditorServer = (
     resetInsertedStyle();
 
     const isClock24 = stringArrayEqual(simpleRequest?.path ?? [], ["clock24"]);
+    const queryDate = new Date(simpleRequest?.query.get("date") ?? "");
     const body = renderToString(
       <App
         language={languageFromId(simpleRequest?.query.get("hl"))}
         isClock24={isClock24}
+        date={Number.isNaN(queryDate.getTime()) ? undefined : queryDate}
+        message={simpleRequest?.query.get("message") ?? ""}
       />,
     );
     const title = isClock24 ? clock24Title() : "definy editor";
@@ -82,7 +85,9 @@ export const startEditorServer = (
     <meta property="og:image" content="${
         new URL(request.url).origin +
         (isClock24
-          ? toOgpImageUrl(simpleRequest?.query.get("text") ?? new Date().toISOString())
+          ? toOgpImageUrl(
+            simpleRequest?.query.get("text") ?? new Date().toISOString(),
+          )
           : dist.iconHash)
       }">
     <meta name="twitter:creator" content="@naru_mincho">

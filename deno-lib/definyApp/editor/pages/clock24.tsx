@@ -1,6 +1,7 @@
 import React from "https://esm.sh/react@18.2.0?pin=v99";
 import { c, toStyleAndHash } from "../../../cssInJs/mod.ts";
 import { ClockSetting } from "../components/clockSetting.tsx";
+import { timeToDisplayText } from "../logic.ts";
 
 const containerStyle = toStyleAndHash({
   backgroundColor: "#724242",
@@ -58,7 +59,13 @@ const removeInt = (value: number): number => {
   return value - Math.floor(value);
 };
 
-export const Clock24 = (): React.ReactElement => {
+export const Clock24 = (
+  props: {
+    readonly message: string;
+    readonly date: Date | undefined;
+    readonly onChangeUrl: (newURL: URL) => void;
+  },
+): React.ReactElement => {
   const [isSettingMode, setIsSettingMode] = React.useState<boolean>(false);
   const [now, setNow] = React.useState<Date>(new Date());
 
@@ -66,6 +73,11 @@ export const Clock24 = (): React.ReactElement => {
     setNow(new Date());
   });
   const seconds = now.getTime() - now.getTimezoneOffset() * 60 * 1000;
+
+  const limitValueAndUnit = props.date === undefined
+    ? undefined
+    : timeToDisplayText(props.date);
+  console.log("limitValueAndUnit", props.date);
 
   return (
     <div className={c(containerStyle)}>
@@ -95,6 +107,34 @@ export const Clock24 = (): React.ReactElement => {
           length={30}
           width={1}
         />
+        <text
+          x={0}
+          y={-30}
+          textAnchor="middle"
+          alignmentBaseline="middle"
+          fill="#400488"
+          stroke="white"
+          strokeWidth={0.5}
+          fontSize={18}
+        >
+          {props.message}
+        </text>
+        {limitValueAndUnit && (
+          <text
+            x={0}
+            y={-10}
+            textAnchor="middle"
+            alignmentBaseline="middle"
+            fill="#400488"
+            stroke="white"
+            strokeWidth={0.5}
+            fontSize={18}
+          >
+            あと
+            {limitValueAndUnit.value}
+            {limitValueAndUnit.unit}
+          </text>
+        )}
         <text
           x={0}
           y={15}
@@ -159,7 +199,7 @@ export const Clock24 = (): React.ReactElement => {
       {isSettingMode
         ? (
           <div className={c(settingStyle)}>
-            <ClockSetting />
+            <ClockSetting {...props} />
           </div>
         )
         : <></>}

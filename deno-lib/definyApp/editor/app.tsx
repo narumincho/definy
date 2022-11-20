@@ -32,7 +32,10 @@ const spacer = toStyleAndHash({
 
 type AppProps = {
   readonly language: Language;
+  readonly message: string;
+  readonly date: Date | undefined;
   readonly isClock24: boolean;
+  readonly onChangeUrl?: ((newURL: URL) => void) | undefined;
 };
 
 export const App = (props: AppProps): React.ReactElement => {
@@ -42,7 +45,13 @@ export const App = (props: AppProps): React.ReactElement => {
   );
 
   if (props.isClock24) {
-    return <Clock24 />;
+    return (
+      <Clock24
+        message={props.message}
+        date={props.date}
+        onChangeUrl={props.onChangeUrl ?? (() => {})}
+      />
+    );
   }
 
   return (
