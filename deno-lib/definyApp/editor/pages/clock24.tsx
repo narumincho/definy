@@ -27,6 +27,8 @@ const buttonContainerStyle = toStyleAndHash({
 const buttonStyle = toStyleAndHash({
   padding: 16,
   cursor: "pointer",
+  backgroundColor: "black",
+  fontSize: 24,
 });
 
 const settingStyle = toStyleAndHash({
@@ -77,7 +79,6 @@ export const Clock24 = (
   const limitValueAndUnit = props.date === undefined
     ? undefined
     : timeToDisplayText(props.date);
-  console.log("limitValueAndUnit", props.date);
 
   return (
     <div className={c(containerStyle)}>
@@ -130,7 +131,7 @@ export const Clock24 = (
             strokeWidth={0.5}
             fontSize={18}
           >
-            あと
+            {limitValueAndUnit.after ? "から" : "まで"}
             {limitValueAndUnit.value}
             {limitValueAndUnit.unit}
           </text>
@@ -210,7 +211,7 @@ export const Clock24 = (
             setIsSettingMode((prev) => !prev);
           }}
         >
-          setting
+          ⚙️
         </button>
       </div>
     </div>

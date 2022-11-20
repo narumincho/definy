@@ -43,7 +43,7 @@ const updateUrl = (
 ): void => {
   const newUrl = new URL(location.href);
   newUrl.searchParams.set(
-    "time",
+    "date",
     parameter.dateTimeLocal + getTimezoneOffsetText(),
   );
   newUrl.searchParams.set("message", parameter.message);
@@ -67,7 +67,7 @@ export const ClockSetting = (
   return (
     <div className={c(containerStyle)}>
       <label className={c(labelStyle)}>
-        <div className={c(labelTextStyle)}>time</div>
+        <div className={c(labelTextStyle)}>date</div>
         <input
           type="datetime-local"
           className={c(inputStyle)}

@@ -24,10 +24,18 @@ export const startEditor = (): void => {
 const AppWithHandleLocation = (): React.ReactElement => {
   const [url, setUrl] = React.useState<URL>(new URL(window.location.href));
 
+  React.useEffect(() => {
+    const url = new URL(window.location.href);
+    if (url.searchParams.has("random")) {
+      url.searchParams.set("random", crypto.randomUUID());
+    }
+    window.history.replaceState(undefined, "", url);
+  }, []);
+
   const hl = url.searchParams.get("hl");
   const isClock24 = url.pathname === "/clock24";
 
-  const date = new Date(url.searchParams.get("time") ?? "");
+  const date = new Date(url.searchParams.get("date") ?? "");
   return (
     <React.StrictMode>
       <App

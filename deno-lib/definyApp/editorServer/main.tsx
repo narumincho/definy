@@ -86,7 +86,7 @@ export const startEditorServer = (
         new URL(request.url).origin +
         (isClock24
           ? toOgpImageUrl(
-            simpleRequest?.query.get("text") ?? new Date().toISOString(),
+            simpleRequest?.query ?? new Map(),
           )
           : dist.iconHash)
       }">
