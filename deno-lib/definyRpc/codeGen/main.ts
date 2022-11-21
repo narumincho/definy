@@ -84,7 +84,7 @@ const accountTokenExportDefinition: data.ExportDefinition = {
           _: "Object",
           tsMemberTypeList: [
             {
-              name: "__accountTokenBland",
+              name: { type: "string", value: "__accountTokenBland" },
               document: "",
               required: true,
               type: { _: "Never" },

@@ -142,15 +142,30 @@ const typeObjectToString = (
       (member) =>
         documentToString(member.document) +
         "readonly " +
-        (isSafePropertyName(member.name)
-          ? member.name
-          : stringLiteralValueToString(member.name)) +
+        propertyNameToString(member.name, moduleMap) +
         (member.required ? "" : "?") +
         ": " +
         typeToString(member.type, moduleMap),
     )
     .join("; ") +
   " }";
+
+const propertyNameToString = (
+  propertyName: d.PropertyName,
+  moduleMap: ReadonlyMap<string, TsIdentifier>,
+): string => {
+  switch (propertyName.type) {
+    case "symbolExpr":
+      return "[" +
+        exprToString(propertyName.value, 0, moduleMap, "TypeScript") + "]";
+    case "string": {
+      if (isSafePropertyName(propertyName.value)) {
+        return propertyName.value;
+      }
+      return stringLiteralValueToString(propertyName.value);
+    }
+  }
+};
 
 /** 関数の引数と戻り値の型を文字列にする */
 const functionTypeToString = (

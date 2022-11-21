@@ -564,7 +564,7 @@ export type TsMemberType = {
   /**
    * プロパティ名
    */
-  readonly name: string;
+  readonly name: PropertyName;
   /**
    * 必須かどうか falseの場合 ? がつく
    */
@@ -577,6 +577,14 @@ export type TsMemberType = {
    * ドキュメント
    */
   readonly document: string;
+};
+
+export type PropertyName = {
+  readonly type: "string";
+  readonly value: string;
+} | {
+  readonly type: "symbolExpr";
+  readonly value: TsExpr;
 };
 
 /**

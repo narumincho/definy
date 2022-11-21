@@ -96,13 +96,13 @@ const collectedDefinyRpcTypeBodyToTsType = (
         _: "Object",
         tsMemberTypeList: [
           ...typeBody.fieldList.map((field) => ({
-            name: field.name,
+            name: { type: "string", value: field.name } as const,
             document: field.description,
             required: true,
             type: collectedDefinyRpcTypeUseToTsType(field.type, map),
           })),
           {
-            name: blandMemberName(typeName),
+            name: { type: "string", value: blandMemberName(typeName) },
             document: "",
             required: true,
             type: { _: "Never" },
@@ -120,14 +120,20 @@ const collectedDefinyRpcTypeBodyToTsType = (
                 _: "Object",
                 tsMemberTypeList: [
                   {
-                    name: identifierFromString("type"),
+                    name: {
+                      type: "string",
+                      value: identifierFromString("type"),
+                    },
                     document: pattern.description,
                     required: true,
                     type: { _: "StringLiteral", string: pattern.name },
                   },
                   ...(pattern.parameter === undefined ? [] : [
                     {
-                      name: identifierFromString("value"),
+                      name: {
+                        type: "string",
+                        value: identifierFromString("value"),
+                      },
                       document: pattern.description,
                       required: true,
                       type: collectedDefinyRpcTypeUseToTsType(
@@ -143,7 +149,7 @@ const collectedDefinyRpcTypeBodyToTsType = (
           right: {
             _: "Object",
             tsMemberTypeList: [{
-              name: blandMemberName(typeName),
+              name: { type: "string", value: blandMemberName(typeName) },
               document: "",
               required: true,
               type: { _: "Never" },
@@ -300,14 +306,14 @@ export const typeToTypeVariable = (
       _: "Object",
       tsMemberTypeList: [
         {
-          name: "description",
+          name: { type: "string", value: "description" },
           document: `${type.name} の説明文`,
           required: true,
           type: { _: "String" },
         },
         ...(fromType === undefined ? [] : [fromType]),
         {
-          name: "fromStructuredJsonValue",
+          name: { type: "string", value: "fromStructuredJsonValue" },
           document: `Jsonから${type.name}に変換する. 失敗した場合はエラー`,
           required: true,
           type: type.parameterCount === 0 ? fromJsonTypeMain : {
@@ -386,7 +392,7 @@ const typeToFromType = (
   }
 
   return {
-    name: "from",
+    name: { type: "string", value: "from" },
     document: "オブジェクトから作成する. 余計なフィールドがレスポンスに含まれてしまうのを防ぐ. 型のチェックはしない",
     required: true,
     type: {

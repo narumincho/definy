@@ -19,13 +19,13 @@ export const resultExportDefinition: data.ExportDefinition = {
           _: "Object",
           tsMemberTypeList: [
             {
-              name: "type",
+              name: { type: "string", value: "type" },
               document: "",
               required: true,
               type: { _: "StringLiteral", string: "ok" },
             },
             {
-              name: "ok",
+              name: { type: "string", value: "ok" },
               document: "",
               required: true,
               type: {
@@ -42,13 +42,13 @@ export const resultExportDefinition: data.ExportDefinition = {
           _: "Object",
           tsMemberTypeList: [
             {
-              name: "type",
+              name: { type: "string", value: "type" },
               document: "",
               required: true,
               type: { _: "StringLiteral", string: "error" },
             },
             {
-              name: "error",
+              name: { type: "string", value: "error" },
               document: "",
               required: true,
               type: {

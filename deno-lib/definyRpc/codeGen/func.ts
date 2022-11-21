@@ -225,7 +225,7 @@ const funcParameterType = (
     _: "Object",
     tsMemberTypeList: [
       {
-        name: "url",
+        name: { type: "string", value: "url" },
         document: `api end point
 @default ${originHint}`,
         required: false,
@@ -233,16 +233,16 @@ const funcParameterType = (
       },
       ...(func.input.body.type === "unit" ? [] : [
         {
-          name: "input",
+          name: { type: "string", value: "input" },
           document: "",
           required: true,
           type: definyRpcTypeToTsType(func.input),
-        },
+        } as const,
       ]),
       ...(func.needAuthentication
         ? [
           {
-            name: "accountToken",
+            name: { type: "string", value: "accountToken" },
             document: "",
             required: true,
             type: {
@@ -251,8 +251,8 @@ const funcParameterType = (
                 name: identifierFromString("AccountToken"),
                 arguments: [],
               },
-            } as const,
-          },
+            },
+          } as const,
         ]
         : []),
     ],
