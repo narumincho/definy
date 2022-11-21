@@ -82,7 +82,9 @@ export const hello = (parameter: {
    */
   readonly url?: string | undefined;
 }): globalThis.Promise<Result<string, "error">> => {
-  const url: globalThis.URL = new URL(parameter.url ?? "http://localhost:2528");
+  const url: globalThis.URL = new globalThis.URL(
+    parameter.url ?? "http://localhost:2528"
+  );
   url.pathname = url.pathname + "/definyApiDev/hello";
   return globalThis
     .fetch(url)
@@ -111,7 +113,9 @@ export const now = (parameter: {
    */
   readonly url?: string | undefined;
 }): globalThis.Promise<Result<string, "error">> => {
-  const url: globalThis.URL = new URL(parameter.url ?? "http://localhost:2528");
+  const url: globalThis.URL = new globalThis.URL(
+    parameter.url ?? "http://localhost:2528"
+  );
   url.pathname = url.pathname + "/definyApiDev/now";
   return globalThis
     .fetch(url)
@@ -141,7 +145,9 @@ export const repeat = (parameter: {
   readonly url?: string | undefined;
   readonly input: number;
 }): globalThis.Promise<Result<string, "error">> => {
-  const url: globalThis.URL = new URL(parameter.url ?? "http://localhost:2528");
+  const url: globalThis.URL = new globalThis.URL(
+    parameter.url ?? "http://localhost:2528"
+  );
   url.pathname = url.pathname + "/definyApiDev/repeat";
   return globalThis
     .fetch(url)
@@ -170,7 +176,9 @@ export const getDataFromDatabase = (parameter: {
    */
   readonly url?: string | undefined;
 }): globalThis.Promise<Result<string, "error">> => {
-  const url: globalThis.URL = new URL(parameter.url ?? "http://localhost:2528");
+  const url: globalThis.URL = new globalThis.URL(
+    parameter.url ?? "http://localhost:2528"
+  );
   url.pathname = url.pathname + "/definyApiDev/getDataFromDatabase";
   return globalThis
     .fetch(url)

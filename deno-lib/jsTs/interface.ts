@@ -439,7 +439,7 @@ export const newURL = (expr: d.TsExpr): d.TsExpr => ({
   _: "New",
   callExpr: {
     expr: {
-      _: "Variable",
+      _: "GlobalObjects",
       tsIdentifier: identifier.identifierFromString("URL"),
     },
     parameterList: [expr],

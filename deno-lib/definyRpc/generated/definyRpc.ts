@@ -917,7 +917,9 @@ export const name = (parameter: {
    */
   readonly url?: string | undefined;
 }): globalThis.Promise<Result<string, "error">> => {
-  const url: globalThis.URL = new URL(parameter.url ?? "http://localhost:2520");
+  const url: globalThis.URL = new globalThis.URL(
+    parameter.url ?? "http://localhost:2520"
+  );
   url.pathname = url.pathname + "/definyRpc/name";
   return globalThis
     .fetch(url)
@@ -948,7 +950,9 @@ export const namespaceList = (parameter: {
 }): globalThis.Promise<
   Result<globalThis.ReadonlySet<globalThis.ReadonlyArray<string>>, "error">
 > => {
-  const url: globalThis.URL = new URL(parameter.url ?? "http://localhost:2520");
+  const url: globalThis.URL = new globalThis.URL(
+    parameter.url ?? "http://localhost:2520"
+  );
   url.pathname = url.pathname + "/definyRpc/namespaceList";
   return globalThis
     .fetch(url)
@@ -989,7 +993,9 @@ export const functionListByName = (parameter: {
 }): globalThis.Promise<
   Result<globalThis.ReadonlyArray<FunctionDetail>, "error">
 > => {
-  const url: globalThis.URL = new URL(parameter.url ?? "http://localhost:2520");
+  const url: globalThis.URL = new globalThis.URL(
+    parameter.url ?? "http://localhost:2520"
+  );
   url.pathname = url.pathname + "/definyRpc/functionListByName";
   return globalThis
     .fetch(url)
@@ -1028,7 +1034,9 @@ export const functionListByNamePrivate = (parameter: {
 }): globalThis.Promise<
   Result<globalThis.ReadonlyArray<FunctionDetail>, "error">
 > => {
-  const url: globalThis.URL = new URL(parameter.url ?? "http://localhost:2520");
+  const url: globalThis.URL = new globalThis.URL(
+    parameter.url ?? "http://localhost:2520"
+  );
   url.pathname = url.pathname + "/definyRpc/functionListByNamePrivate";
   return globalThis
     .fetch(url, { headers: { authorization: parameter.accountToken } })
@@ -1064,7 +1072,9 @@ export const generateCallDefinyRpcTypeScriptCode = (parameter: {
    */
   readonly url?: string | undefined;
 }): globalThis.Promise<Result<string, "error">> => {
-  const url: globalThis.URL = new URL(parameter.url ?? "http://localhost:2520");
+  const url: globalThis.URL = new globalThis.URL(
+    parameter.url ?? "http://localhost:2520"
+  );
   url.pathname =
     url.pathname + "/definyRpc/generateCallDefinyRpcTypeScriptCode";
   return globalThis
@@ -1095,7 +1105,9 @@ export const callQuery = (parameter: {
   readonly url?: string | undefined;
   readonly input: globalThis.ReadonlyArray<string>;
 }): globalThis.Promise<Result<StructuredJsonValue, "error">> => {
-  const url: globalThis.URL = new URL(parameter.url ?? "http://localhost:2520");
+  const url: globalThis.URL = new globalThis.URL(
+    parameter.url ?? "http://localhost:2520"
+  );
   url.pathname = url.pathname + "/definyRpc/callQuery";
   return globalThis
     .fetch(url)
@@ -1130,7 +1142,9 @@ export const generateCodeAndWriteAsFileInServer = (parameter: {
    */
   readonly url?: string | undefined;
 }): globalThis.Promise<Result<undefined, "error">> => {
-  const url: globalThis.URL = new URL(parameter.url ?? "http://localhost:2520");
+  const url: globalThis.URL = new globalThis.URL(
+    parameter.url ?? "http://localhost:2520"
+  );
   url.pathname = url.pathname + "/definyRpc/generateCodeAndWriteAsFileInServer";
   return globalThis
     .fetch(url)
