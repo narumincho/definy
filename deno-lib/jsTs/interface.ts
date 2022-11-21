@@ -779,3 +779,17 @@ export const statementSet = (setStatement: d.SetStatement): d.Statement => ({
   _: "Set",
   setStatement,
 });
+
+/**
+ * ラムダ式の型を抽出する
+ */
+export const lambdaToType = (lambda: d.LambdaExpr): d.TsType => {
+  return {
+    _: "Function",
+    functionType: {
+      parameterList: lambda.parameterList.map((parameter) => parameter.type),
+      return: lambda.returnType,
+      typeParameterList: lambda.typeParameterList,
+    },
+  };
+};

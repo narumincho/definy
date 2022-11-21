@@ -9,25 +9,20 @@ import {
 import {
   CodeGenContext,
   CollectedDefinyRpcType,
-  CollectedDefinyRpcTypeUse,
   Field,
 } from "../../core/collectType.ts";
 import { collectedDefinyRpcTypeToTsType } from "../type/use.ts";
 
-export const createFromLambdaAndType = (
+export const createFromLambda = (
   type: CollectedDefinyRpcType,
   context: CodeGenContext,
 ):
-  | { readonly lambda: data.LambdaExpr; readonly type: data.TsType }
+  | data.LambdaExpr
   | undefined => {
   if (type.body.type !== "product") {
     return undefined;
   }
-  type.body.fieldList;
-  return {
-    lambda: typeToFromLambda(type, type.body.fieldList, context),
-    type: typeToFromType(type, context),
-  };
+  return typeToFromLambda(type, type.body.fieldList, context);
 };
 
 const typeToFromLambda = (
@@ -86,27 +81,4 @@ const typeToFromLambdaProductStatement = (
 
 export const blandMemberName = (typeName: string): string => {
   return "__" + typeName + "Bland";
-};
-
-const typeToFromType = (
-  type: CollectedDefinyRpcType,
-  context: CodeGenContext,
-): data.TsType => {
-  return {
-    _: "Function",
-    functionType: {
-      typeParameterList: [],
-      parameterList: [{
-        _: "ScopeInGlobal",
-        typeNameAndTypeParameter: {
-          name: identifierFromString("Omit"),
-          arguments: [collectedDefinyRpcTypeToTsType(type, context), {
-            _: "StringLiteral",
-            string: blandMemberName(type.name),
-          }],
-        },
-      }],
-      return: collectedDefinyRpcTypeToTsType(type, context),
-    },
-  };
 };

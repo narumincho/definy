@@ -7,6 +7,7 @@ import {
   equal,
   get,
   identifierFromString,
+  lambdaToType,
   logicalOr,
   newSet,
   notEqual,
@@ -30,11 +31,9 @@ import {
 import { arrayFromLength, NonEmptyArray } from "../../util.ts";
 import { structuredJsonValueType } from "./useTypedJson.ts";
 import { TsExpr } from "../../jsTs/data.ts";
-import {
-  blandMemberName,
-  createFromLambdaAndType,
-} from "./typeVariable/from.ts";
+import { blandMemberName, createFromLambda } from "./typeVariable/from.ts";
 import { collectedDefinyRpcTypeToTsType } from "./type/use.ts";
+import { createTagExprList } from "./typeVariable/tag.ts";
 
 export const collectedTypeToTypeAlias = (
   type: CollectedDefinyRpcType,
@@ -239,7 +238,8 @@ export const typeToTypeVariable = (
       return: collectedDefinyRpcTypeToTsType(type, context),
     },
   };
-  const fromLambdaAndType = createFromLambdaAndType(type, context);
+  const fromLambda = createFromLambda(type, context);
+  const tagList = createTagExprList(type, context) ?? [];
   return {
     name: identifierFromString(type.name),
     document: type.description,
@@ -252,11 +252,11 @@ export const typeToTypeVariable = (
           required: true,
           type: { _: "String" },
         },
-        ...(fromLambdaAndType === undefined ? [] : [{
+        ...(fromLambda === undefined ? [] : [{
           name: { type: "string", value: "from" } as const,
           document: "オブジェクトから作成する. 余計なフィールドがレスポンスに含まれてしまうのを防ぐ. 型のチェックはしない",
           required: true,
-          type: fromLambdaAndType.type,
+          type: lambdaToType(fromLambda),
         }]),
         {
           name: { type: "string", value: "fromStructuredJsonValue" },
@@ -290,6 +290,7 @@ export const typeToTypeVariable = (
             },
           },
         },
+        ...tagList.map((tag) => tag.memberType),
       ],
     },
     expr: {
@@ -302,14 +303,14 @@ export const typeToTypeVariable = (
             value: { _: "StringLiteral", string: type.description },
           },
         },
-        ...(fromLambdaAndType === undefined ? [] : [
+        ...(fromLambda === undefined ? [] : [
           {
             _: "KeyValue",
             keyValue: {
               key: "from",
               value: {
                 _: "Lambda",
-                lambdaExpr: fromLambdaAndType.lambda,
+                lambdaExpr: fromLambda,
               },
             },
           } as const,
@@ -324,6 +325,7 @@ export const typeToTypeVariable = (
             },
           },
         },
+        ...tagList.map((tag) => tag.member),
       ],
     },
   };

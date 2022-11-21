@@ -147,17 +147,19 @@ export type CollectedDefinyRpcTypeBody =
   }
   | {
     readonly type: "sum";
-    readonly patternList: ReadonlyArray<{
-      readonly name: string;
-      readonly description: string;
-      readonly parameter: CollectedDefinyRpcTypeUse | undefined;
-    }>;
+    readonly patternList: ReadonlyArray<Pattern>;
   };
 
 export type Field = {
   readonly name: string;
   readonly description: string;
   readonly type: CollectedDefinyRpcTypeUse;
+};
+
+export type Pattern = {
+  readonly name: string;
+  readonly description: string;
+  readonly parameter: CollectedDefinyRpcTypeUse | undefined;
 };
 
 const typeBodyToCollectedDefinyRpcTypeBody = (
