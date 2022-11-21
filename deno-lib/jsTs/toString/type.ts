@@ -10,6 +10,7 @@ import {
   stringLiteralValueToString,
   typeParameterListToString,
 } from "./common.ts";
+import { exprToString } from "./expr.ts";
 
 /**
  * 型の式をコードに変換する
@@ -17,7 +18,7 @@ import {
  */
 export const typeToString = (
   type_: d.TsType,
-  moduleMap: ReadonlyMap<string, TsIdentifier>
+  moduleMap: ReadonlyMap<string, TsIdentifier>,
 ): string => {
   switch (type_._) {
     case "Number":
@@ -67,7 +68,7 @@ export const typeToString = (
         type_.typeNameAndTypeParameter.name +
         typeArgumentsListToString(
           type_.typeNameAndTypeParameter.arguments,
-          moduleMap
+          moduleMap,
         )
       );
 
@@ -77,7 +78,7 @@ export const typeToString = (
         type_.typeNameAndTypeParameter.name +
         typeArgumentsListToString(
           type_.typeNameAndTypeParameter.arguments,
-          moduleMap
+          moduleMap,
         )
       );
 
@@ -88,7 +89,7 @@ export const typeToString = (
         type_.typeNameAndTypeParameter.name +
         typeArgumentsListToString(
           type_.typeNameAndTypeParameter.arguments,
-          moduleMap
+          moduleMap,
         )
       );
 
@@ -97,7 +98,7 @@ export const typeToString = (
       if (nameSpaceIdentifier === undefined) {
         throw Error(
           "収集されなかった, モジュールがある moduleName=" +
-            type_.importedType.moduleName
+            type_.importedType.moduleName,
         );
       }
 
@@ -107,32 +108,33 @@ export const typeToString = (
         type_.importedType.nameAndArguments.name +
         typeArgumentsListToString(
           type_.importedType.nameAndArguments.arguments,
-          moduleMap
+          moduleMap,
         )
       );
     }
 
     case "StringLiteral":
       return stringLiteralValueToString(type_.string);
+
+    case "typeof":
+      return "typeof " + exprToString(type_.expr, 0, moduleMap, "TypeScript");
   }
 };
 
 const typeArgumentsListToString = (
   typeArguments: ReadonlyArray<d.TsType>,
-  moduleMap: ReadonlyMap<string, TsIdentifier>
+  moduleMap: ReadonlyMap<string, TsIdentifier>,
 ): string => {
-  return typeArguments.length === 0
-    ? ""
-    : "<" +
-        typeArguments
-          .map((argument) => typeToString(argument, moduleMap))
-          .join(", ") +
-        ">";
+  return typeArguments.length === 0 ? "" : "<" +
+    typeArguments
+      .map((argument) => typeToString(argument, moduleMap))
+      .join(", ") +
+    ">";
 };
 
 const typeObjectToString = (
   memberList: ReadonlyArray<d.TsMemberType>,
-  moduleMap: ReadonlyMap<string, TsIdentifier>
+  moduleMap: ReadonlyMap<string, TsIdentifier>,
 ): string =>
   "{ " +
   memberList
@@ -145,7 +147,7 @@ const typeObjectToString = (
           : stringLiteralValueToString(member.name)) +
         (member.required ? "" : "?") +
         ": " +
-        typeToString(member.type, moduleMap)
+        typeToString(member.type, moduleMap),
     )
     .join("; ") +
   " }";
@@ -153,7 +155,7 @@ const typeObjectToString = (
 /** 関数の引数と戻り値の型を文字列にする */
 const functionTypeToString = (
   functionType: d.FunctionType,
-  moduleMap: ReadonlyMap<string, TsIdentifier>
+  moduleMap: ReadonlyMap<string, TsIdentifier>,
 ): string => {
   let index = initialIdentifierIndex;
   const parameterList: Array<{
@@ -175,7 +177,7 @@ const functionTypeToString = (
     parameterList
       .map(
         (parameter) =>
-          parameter.name + ": " + typeToString(parameter.type, moduleMap)
+          parameter.name + ": " + typeToString(parameter.type, moduleMap),
       )
       .join(", ") +
     ") => " +
@@ -189,7 +191,7 @@ const functionTypeToString = (
 export const typeAnnotation = (
   type_: d.TsType,
   codeType: d.CodeType,
-  moduleMap: ReadonlyMap<string, TsIdentifier>
+  moduleMap: ReadonlyMap<string, TsIdentifier>,
 ): string => {
   switch (codeType) {
     case "JavaScript":

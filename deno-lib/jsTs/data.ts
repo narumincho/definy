@@ -201,7 +201,8 @@ export type TsType =
     readonly namespace: NonEmptyArray<TsIdentifier>;
     readonly typeNameAndTypeParameter: TypeNameAndArguments;
   }
-  | { readonly _: "StringLiteral"; readonly string: string };
+  | { readonly _: "StringLiteral"; readonly string: string }
+  | { readonly _: "typeof"; readonly expr: TsExpr };
 
 /**
  * 代入文

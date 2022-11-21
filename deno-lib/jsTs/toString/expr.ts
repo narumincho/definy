@@ -15,7 +15,6 @@ import { statementListToString } from "./statement.ts";
  * 式をコードに変換する
  * @param expr 式
  */
-// eslint-disable-next-line complexity
 export const exprToString = (
   expr: d.TsExpr,
   indent: number,
