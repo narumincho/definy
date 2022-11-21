@@ -199,7 +199,6 @@ const collectInExpr = (
     case "BooleanLiteral":
     case "NullLiteral":
     case "UndefinedLiteral":
-    case "this":
       return {
         modulePathSet: new Set(),
         usedNameSet: new Set(),

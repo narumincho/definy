@@ -150,8 +150,7 @@ export type TsExpr =
   | { readonly _: "Get"; readonly getExpr: GetExpr }
   | { readonly _: "Call"; readonly callExpr: CallExpr }
   | { readonly _: "New"; readonly callExpr: CallExpr }
-  | { readonly _: "TypeAssertion"; readonly typeAssertion: TypeAssertion }
-  | { readonly _: "this" };
+  | { readonly _: "TypeAssertion"; readonly typeAssertion: TypeAssertion };
 
 export type Variable = {
   /**

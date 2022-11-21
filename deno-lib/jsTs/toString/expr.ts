@@ -182,9 +182,6 @@ export const exprToString = (
           ? " as " + typeToString(expr.typeAssertion.type, moduleMap)
           : "")
       );
-
-    case "this":
-      return "this";
   }
 };
 
@@ -277,7 +274,6 @@ const exprCombineStrength = (expr: d.TsExpr): number => {
     case "Variable":
     case "GlobalObjects":
     case "ImportedVariable":
-    case "this":
       return 23;
     case "Lambda":
       return 22;
