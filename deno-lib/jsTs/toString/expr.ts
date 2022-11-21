@@ -82,46 +82,20 @@ export const exprToString = (
       );
 
     case "Lambda": {
-      if (expr.lambdaExpr.thisType === undefined || codeType === "JavaScript") {
-        return (
-          typeParameterListToString(expr.lambdaExpr.typeParameterList) +
-          "(" +
-          expr.lambdaExpr.parameterList
-            .map(
-              (parameter) =>
-                parameter.name +
-                typeAnnotation(parameter.type, codeType, moduleMap),
-            )
-            .join(", ") +
-          ")" +
-          typeAnnotation(expr.lambdaExpr.returnType, codeType, moduleMap) +
-          " => " +
-          lambdaBodyToString(
-            expr.lambdaExpr.statementList,
-            indent,
-            moduleMap,
-            codeType,
-          )
-        );
-      }
       return (
-        "function " +
         typeParameterListToString(expr.lambdaExpr.typeParameterList) +
         "(" +
-        [
-          "this" +
-          typeAnnotation(expr.lambdaExpr.thisType, codeType, moduleMap),
-          ...expr.lambdaExpr.parameterList
-            .map(
-              (parameter) =>
-                parameter.name +
-                typeAnnotation(parameter.type, codeType, moduleMap),
-            ),
-        ]
+        expr.lambdaExpr.parameterList
+          .map(
+            (parameter) =>
+              parameter.name +
+              typeAnnotation(parameter.type, codeType, moduleMap),
+          )
           .join(", ") +
         ")" +
         typeAnnotation(expr.lambdaExpr.returnType, codeType, moduleMap) +
-        statementListToString(
+        " => " +
+        lambdaBodyToString(
           expr.lambdaExpr.statementList,
           indent,
           moduleMap,

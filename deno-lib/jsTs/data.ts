@@ -498,8 +498,6 @@ export type LambdaExpr = {
    * ラムダ式本体
    */
   readonly statementList: ReadonlyArray<Statement>;
-
-  readonly thisType?: TsType | undefined;
 };
 
 /**
