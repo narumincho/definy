@@ -15,6 +15,7 @@ export const apiFunctionListToCode = (parameter: {
   readonly originHint: string;
   readonly pathPrefix: ReadonlyArray<string>;
   readonly usePrettier: boolean;
+  readonly namespace: ReadonlyArray<string>;
 }): string => {
   const code = generateCodeAsString(
     apiFunctionListToJsTsCode(parameter),
@@ -30,6 +31,7 @@ export const apiFunctionListToJsTsCode = (parameter: {
   readonly apiFunctionList: ReadonlyArray<ApiFunction>;
   readonly originHint: string;
   readonly pathPrefix: ReadonlyArray<string>;
+  readonly namespace: ReadonlyArray<string>;
 }): data.JsTsCode => {
   const needAuthentication = parameter.apiFunctionList.some(
     (func) => func.needAuthentication,
@@ -53,7 +55,10 @@ export const apiFunctionListToJsTsCode = (parameter: {
       ...[...collectedTypeMap.values()].map(
         (type): data.ExportDefinition => ({
           type: "variable",
-          variable: typeToTypeVariable(type, collectedTypeMap),
+          variable: typeToTypeVariable(type, {
+            map: collectedTypeMap,
+            currentModule: parameter.namespace,
+          }),
         }),
       ),
       ...parameter.apiFunctionList.map<data.ExportDefinition>((func) => ({

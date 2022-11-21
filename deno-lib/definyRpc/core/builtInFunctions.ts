@@ -160,13 +160,14 @@ const builtInFunctions = (parameter: DefinyRpcParameter) => {
       needAuthentication: false,
       resolve: () => {
         const allFunc = addDefinyRpcApiFunction(parameter).functionsList.filter(
-          (f) => f.fullName[0] === definyRpcNamespace,
+          (f) => stringArrayEqual(f.fullName, [definyRpcNamespace]),
         );
         return apiFunctionListToCode({
           apiFunctionList: allFunc,
           originHint: parameter.originHint,
           pathPrefix: parameter.pathPrefix ?? [],
           usePrettier: true,
+          namespace: [definyRpcNamespace],
         });
       },
     }),
@@ -231,6 +232,7 @@ const builtInFunctions = (parameter: DefinyRpcParameter) => {
                     originHint: parameter.originHint,
                     pathPrefix: parameter.pathPrefix ?? [],
                     usePrettier: true,
+                    namespace: namespace.split("/"),
                   }),
                 );
               },
