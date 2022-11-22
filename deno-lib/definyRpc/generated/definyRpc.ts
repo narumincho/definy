@@ -35,7 +35,7 @@ export type FunctionDetail = {
    * 関数の出力の型
    */
   readonly output: Type;
-  readonly __FunctionDetailBland: never;
+  readonly [globalThis.Symbol.toStringTag]: "definyRpc.FunctionDetail";
 };
 
 /**
@@ -51,7 +51,7 @@ export type Type = {
    * 型パラメーター
    */
   readonly parameters: globalThis.ReadonlyArray<Type>;
-  readonly __TypeBland: never;
+  readonly [globalThis.Symbol.toStringTag]: "definyRpc.Type";
 };
 
 /**
@@ -67,6 +67,7 @@ export type StructuredJsonValue =
        * string
        */
       readonly value: string;
+      readonly [globalThis.Symbol.toStringTag]: "definyRpc.StructuredJsonValue";
     }
   | {
       /**
@@ -77,6 +78,7 @@ export type StructuredJsonValue =
        * array
        */
       readonly value: globalThis.ReadonlyArray<StructuredJsonValue>;
+      readonly [globalThis.Symbol.toStringTag]: "definyRpc.StructuredJsonValue";
     }
   | {
       /**
@@ -87,6 +89,7 @@ export type StructuredJsonValue =
        * boolean
        */
       readonly value: boolean;
+      readonly [globalThis.Symbol.toStringTag]: "definyRpc.StructuredJsonValue";
     }
   | {
       /**
@@ -97,6 +100,7 @@ export type StructuredJsonValue =
        * null
        */
       readonly value: undefined;
+      readonly [globalThis.Symbol.toStringTag]: "definyRpc.StructuredJsonValue";
     }
   | {
       /**
@@ -107,8 +111,9 @@ export type StructuredJsonValue =
        * number
        */
       readonly value: number;
+      readonly [globalThis.Symbol.toStringTag]: "definyRpc.StructuredJsonValue";
     }
-  | ({
+  | {
       /**
        * object
        */
@@ -117,7 +122,8 @@ export type StructuredJsonValue =
        * object
        */
       readonly value: StringMap<StructuredJsonValue>;
-    } & { readonly __StructuredJsonValueBland: never });
+      readonly [globalThis.Symbol.toStringTag]: "definyRpc.StructuredJsonValue";
+    };
 
 /**
  * キーが string の ReadonlyMap
@@ -235,7 +241,7 @@ export const FunctionDetail: {
    * オブジェクトから作成する. 余計なフィールドがレスポンスに含まれてしまうのを防ぐ. 型のチェックはしない
    */
   readonly from: (
-    a: globalThis.Omit<FunctionDetail, "__FunctionDetailBland">
+    a: globalThis.Omit<FunctionDetail, typeof globalThis.Symbol.toStringTag>
   ) => FunctionDetail;
   /**
    * JsonからFunctionDetailに変換する. 失敗した場合はエラー
@@ -246,14 +252,14 @@ export const FunctionDetail: {
 } = {
   description: "functionByNameの結果",
   from: (
-    obj: globalThis.Omit<FunctionDetail, "__FunctionDetailBland">
-  ): FunctionDetail =>
-    ({
-      name: obj.name,
-      description: obj.description,
-      input: obj.input,
-      output: obj.output,
-    } as FunctionDetail),
+    obj: globalThis.Omit<FunctionDetail, typeof globalThis.Symbol.toStringTag>
+  ): FunctionDetail => ({
+    name: obj.name,
+    description: obj.description,
+    input: obj.input,
+    output: obj.output,
+    [globalThis.Symbol.toStringTag]: "definyRpc.FunctionDetail",
+  }),
   fromStructuredJsonValue: (
     jsonValue: a.StructuredJsonValue
   ): FunctionDetail => {
@@ -299,19 +305,23 @@ export const Type: {
   /**
    * オブジェクトから作成する. 余計なフィールドがレスポンスに含まれてしまうのを防ぐ. 型のチェックはしない
    */
-  readonly from: (a: globalThis.Omit<Type, "__TypeBland">) => Type;
+  readonly from: (
+    a: globalThis.Omit<Type, typeof globalThis.Symbol.toStringTag>
+  ) => Type;
   /**
    * JsonからTypeに変換する. 失敗した場合はエラー
    */
   readonly fromStructuredJsonValue: (a: a.StructuredJsonValue) => Type;
 } = {
   description: "definyRpc で表現できる型",
-  from: (obj: globalThis.Omit<Type, "__TypeBland">): Type =>
-    ({
-      fullName: obj.fullName,
-      description: obj.description,
-      parameters: obj.parameters,
-    } as Type),
+  from: (
+    obj: globalThis.Omit<Type, typeof globalThis.Symbol.toStringTag>
+  ): Type => ({
+    fullName: obj.fullName,
+    description: obj.description,
+    parameters: obj.parameters,
+    [globalThis.Symbol.toStringTag]: "definyRpc.Type",
+  }),
   fromStructuredJsonValue: (jsonValue: a.StructuredJsonValue): Type => {
     if (jsonValue.type !== "object") {
       throw new Error("expected object in Type.fromJson");
@@ -360,7 +370,7 @@ export const StructuredJsonValue: {
   /**
    * string
    */
-  readonly string_: (a: string) => StructuredJsonValue;
+  readonly string: (a: string) => StructuredJsonValue;
   /**
    * array
    */
@@ -370,15 +380,15 @@ export const StructuredJsonValue: {
   /**
    * boolean
    */
-  readonly boolean_: (a: boolean) => StructuredJsonValue;
+  readonly boolean: (a: boolean) => StructuredJsonValue;
   /**
    * null
    */
-  readonly null_: (a: undefined) => StructuredJsonValue;
+  readonly null: (a: undefined) => StructuredJsonValue;
   /**
    * number
    */
-  readonly number_: (a: number) => StructuredJsonValue;
+  readonly number: (a: number) => StructuredJsonValue;
   /**
    * object
    */
@@ -474,16 +484,40 @@ export const StructuredJsonValue: {
         type.value
     );
   },
-  string: (p: string): StructuredJsonValue => ({ type: "string", value: p }),
+  string: (p: string): StructuredJsonValue => ({
+    type: "string",
+    [globalThis.Symbol.toStringTag]: "definyRpc.StructuredJsonValue",
+    value: p,
+  }),
   array: (
     p: globalThis.ReadonlyArray<StructuredJsonValue>
-  ): StructuredJsonValue => ({ type: "array", value: p }),
-  boolean: (p: boolean): StructuredJsonValue => ({ type: "boolean", value: p }),
-  null: (p: undefined): StructuredJsonValue => ({ type: "null", value: p }),
-  number: (p: number): StructuredJsonValue => ({ type: "number", value: p }),
+  ): StructuredJsonValue => ({
+    type: "array",
+    [globalThis.Symbol.toStringTag]: "definyRpc.StructuredJsonValue",
+    value: p,
+  }),
+  boolean: (p: boolean): StructuredJsonValue => ({
+    type: "boolean",
+    [globalThis.Symbol.toStringTag]: "definyRpc.StructuredJsonValue",
+    value: p,
+  }),
+  null: (p: undefined): StructuredJsonValue => ({
+    type: "null",
+    [globalThis.Symbol.toStringTag]: "definyRpc.StructuredJsonValue",
+    value: p,
+  }),
+  number: (p: number): StructuredJsonValue => ({
+    type: "number",
+    [globalThis.Symbol.toStringTag]: "definyRpc.StructuredJsonValue",
+    value: p,
+  }),
   object: (
     p: globalThis.ReadonlyMap<string, StructuredJsonValue>
-  ): StructuredJsonValue => ({ type: "object", value: p }),
+  ): StructuredJsonValue => ({
+    type: "object",
+    [globalThis.Symbol.toStringTag]: "definyRpc.StructuredJsonValue",
+    value: p,
+  }),
 };
 
 /**
@@ -577,7 +611,7 @@ export const name = (parameter: {
     )
     .then(
       (jsonValue: a.RawJsonValue): Result<string, "error"> => ({
-        KeyValue: "ok",
+        type: "ok",
         ok: String.fromStructuredJsonValue(
           a.rawJsonToStructuredJsonValue(jsonValue)
         ),
@@ -615,7 +649,7 @@ export const namespaceList = (parameter: {
         globalThis.ReadonlySet<globalThis.ReadonlyArray<string>>,
         "error"
       > => ({
-        KeyValue: "ok",
+        type: "ok",
         ok: Set.fromStructuredJsonValue(
           List.fromStructuredJsonValue(String.fromStructuredJsonValue)
         )(a.rawJsonToStructuredJsonValue(jsonValue)),
@@ -655,7 +689,7 @@ export const functionListByName = (parameter: {
       (
         jsonValue: a.RawJsonValue
       ): Result<globalThis.ReadonlyArray<FunctionDetail>, "error"> => ({
-        KeyValue: "ok",
+        type: "ok",
         ok: List.fromStructuredJsonValue(
           FunctionDetail.fromStructuredJsonValue
         )(a.rawJsonToStructuredJsonValue(jsonValue)),
@@ -696,7 +730,7 @@ export const functionListByNamePrivate = (parameter: {
       (
         jsonValue: a.RawJsonValue
       ): Result<globalThis.ReadonlyArray<FunctionDetail>, "error"> => ({
-        KeyValue: "ok",
+        type: "ok",
         ok: List.fromStructuredJsonValue(
           FunctionDetail.fromStructuredJsonValue
         )(a.rawJsonToStructuredJsonValue(jsonValue)),
@@ -733,7 +767,7 @@ export const generateCallDefinyRpcTypeScriptCode = (parameter: {
     )
     .then(
       (jsonValue: a.RawJsonValue): Result<string, "error"> => ({
-        KeyValue: "ok",
+        type: "ok",
         ok: String.fromStructuredJsonValue(
           a.rawJsonToStructuredJsonValue(jsonValue)
         ),
@@ -765,7 +799,7 @@ export const callQuery = (parameter: {
     )
     .then(
       (jsonValue: a.RawJsonValue): Result<StructuredJsonValue, "error"> => ({
-        KeyValue: "ok",
+        type: "ok",
         ok: StructuredJsonValue.fromStructuredJsonValue(
           a.rawJsonToStructuredJsonValue(jsonValue)
         ),
@@ -802,7 +836,7 @@ export const generateCodeAndWriteAsFileInServer = (parameter: {
     )
     .then(
       (jsonValue: a.RawJsonValue): Result<undefined, "error"> => ({
-        KeyValue: "ok",
+        type: "ok",
         ok: Unit.fromStructuredJsonValue(
           a.rawJsonToStructuredJsonValue(jsonValue)
         ),

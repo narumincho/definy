@@ -793,3 +793,8 @@ export const lambdaToType = (lambda: d.LambdaExpr): d.TsType => {
     },
   };
 };
+
+export const symbolToStringTag: d.TsExpr = get({
+  _: "GlobalObjects",
+  tsIdentifier: identifier.identifierFromString("Symbol"),
+}, "toStringTag");

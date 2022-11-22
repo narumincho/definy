@@ -85,7 +85,7 @@ export const resultType = (
 export const resultOk = (ok: data.TsExpr): data.TsExpr => ({
   _: "ObjectLiteral",
   tsMemberList: [
-    memberKeyValue("KeyValue", stringLiteral("ok")),
+    memberKeyValue("type", stringLiteral("ok")),
     memberKeyValue("ok", ok),
   ],
 });

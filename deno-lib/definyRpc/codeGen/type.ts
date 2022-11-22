@@ -17,6 +17,7 @@ import {
   readonlyMapType,
   readonlySetType,
   stringLiteral,
+  symbolToStringTag,
   typeAssertion,
   typeUnion,
   variable,
@@ -32,7 +33,10 @@ import {
 import { arrayFromLength, NonEmptyArray } from "../../util.ts";
 import { structuredJsonValueType } from "./useTypedJson.ts";
 import { TsExpr } from "../../jsTs/data.ts";
-import { blandMemberName, createFromLambda } from "./typeVariable/from.ts";
+import {
+  createFromLambda,
+  symbolToStringTagAndTypeName,
+} from "./typeVariable/from.ts";
 import { collectedDefinyRpcTypeToTsType } from "./type/use.ts";
 import { createTagExprList } from "./typeVariable/tag.ts";
 
@@ -58,11 +62,17 @@ export const collectedTypeToTypeAlias = (
       type.parameterCount,
       (i) => identifierFromString("p" + i),
     ),
-    type: collectedDefinyRpcTypeBodyToTsType(type.name, type.body, map),
+    type: collectedDefinyRpcTypeBodyToTsType(
+      type.namespace,
+      type.name,
+      type.body,
+      map,
+    ),
   };
 };
 
 const collectedDefinyRpcTypeBodyToTsType = (
+  namespace: ReadonlyArray<string>,
   typeName: string,
   typeBody: CollectedDefinyRpcTypeBody,
   map: CollectedDefinyRpcTypeMap,
@@ -108,60 +118,64 @@ const collectedDefinyRpcTypeBodyToTsType = (
             type: collectedDefinyRpcTypeUseToTsType(field.type, map),
           })),
           {
-            name: { type: "string", value: blandMemberName(typeName) },
+            name: {
+              type: "symbolExpr",
+              value: symbolToStringTag,
+            },
             document: "",
             required: true,
-            type: { _: "Never" },
+            type: {
+              _: "StringLiteral",
+              string: symbolToStringTagAndTypeName(namespace, typeName),
+            },
           },
         ],
       };
     case "sum":
       return {
-        _: "Intersection",
-        intersectionType: {
-          left: {
-            _: "Union",
-            tsTypeList: typeBody.patternList.map(
-              (pattern): data.TsType => ({
-                _: "Object",
-                tsMemberTypeList: [
-                  {
-                    name: {
-                      type: "string",
-                      value: identifierFromString("type"),
-                    },
-                    document: pattern.description,
-                    required: true,
-                    type: { _: "StringLiteral", string: pattern.name },
-                  },
-                  ...(pattern.parameter === undefined ? [] : [
-                    {
-                      name: {
-                        type: "string",
-                        value: identifierFromString("value"),
-                      },
-                      document: pattern.description,
-                      required: true,
-                      type: collectedDefinyRpcTypeUseToTsType(
-                        pattern.parameter,
-                        map,
-                      ),
-                    } as const,
-                  ]),
-                ],
-              }),
-            ),
-          },
-          right: {
+        _: "Union",
+        tsTypeList: typeBody.patternList.map(
+          (pattern): data.TsType => ({
             _: "Object",
-            tsMemberTypeList: [{
-              name: { type: "string", value: blandMemberName(typeName) },
-              document: "",
-              required: true,
-              type: { _: "Never" },
-            }],
-          },
-        },
+            tsMemberTypeList: [
+              {
+                name: {
+                  type: "string",
+                  value: identifierFromString("type"),
+                },
+                document: pattern.description,
+                required: true,
+                type: { _: "StringLiteral", string: pattern.name },
+              },
+              ...(pattern.parameter === undefined ? [] : [
+                {
+                  name: {
+                    type: "string",
+                    value: identifierFromString("value"),
+                  },
+                  document: pattern.description,
+                  required: true,
+                  type: collectedDefinyRpcTypeUseToTsType(
+                    pattern.parameter,
+                    map,
+                  ),
+                } as const,
+              ]),
+              {
+                name: {
+                  type: "symbolExpr",
+                  value: symbolToStringTag,
+                },
+                document: "",
+                required: true,
+                type: {
+                  _: "StringLiteral",
+                  string: symbolToStringTagAndTypeName(namespace, typeName),
+                },
+              },
+            ],
+          }),
+        ),
       };
   }
 };

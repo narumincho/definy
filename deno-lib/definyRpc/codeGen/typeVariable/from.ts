@@ -1,9 +1,12 @@
+import { TsExpr } from "../../../jsTs/data.ts";
 import {
   data,
   get,
   identifierFromString,
   memberKeyValue,
   objectLiteral,
+  stringLiteral,
+  symbolToStringTag,
   typeAssertion,
   variable,
 } from "../../../jsTs/main.ts";
@@ -39,8 +42,8 @@ const typeToFromLambda = (
         typeNameAndTypeParameter: {
           name: identifierFromString("Omit"),
           arguments: [collectedDefinyRpcTypeToTsType(type, context), {
-            _: "StringLiteral",
-            string: blandMemberName(type.name),
+            _: "typeof",
+            expr: symbolToStringTag,
           }],
         },
       },
@@ -49,7 +52,6 @@ const typeToFromLambda = (
     statementList: typeToFromLambdaProductStatement(
       type,
       fieldList,
-      context,
     ),
     typeParameterList: [],
   };
@@ -58,29 +60,37 @@ const typeToFromLambda = (
 const typeToFromLambdaProductStatement = (
   type: CollectedDefinyRpcType,
   fieldList: ReadonlyArray<Field>,
-  context: CodeGenContext,
 ): ReadonlyArray<data.Statement> => {
   return [
     {
       _: "Return",
-      tsExpr: typeAssertion({
-        expr: objectLiteral(
-          fieldList.map((field) =>
-            memberKeyValue(
+      tsExpr: objectLiteral([
+        ...fieldList.map((field) =>
+          memberKeyValue(
+            field.name,
+            get(
+              variable(identifierFromString("obj")),
               field.name,
-              get(
-                variable(identifierFromString("obj")),
-                field.name,
-              ),
-            )
-          ),
+            ),
+          )
         ),
-        type: collectedDefinyRpcTypeToTsType(type, context),
-      }),
+        {
+          _: "KeyValue",
+          keyValue: {
+            key: symbolToStringTag,
+            value: stringLiteral(
+              symbolToStringTagAndTypeName(type.namespace, type.name),
+            ),
+          },
+        },
+      ]),
     },
   ];
 };
 
-export const blandMemberName = (typeName: string): string => {
-  return "__" + typeName + "Bland";
+export const symbolToStringTagAndTypeName = (
+  namespace: ReadonlyArray<string>,
+  typeName: string,
+): string => {
+  return namespace.join(".") + "." + typeName;
 };
