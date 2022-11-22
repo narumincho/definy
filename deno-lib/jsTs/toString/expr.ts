@@ -188,21 +188,31 @@ const objectLiteralToString = (
           return (
             "..." + exprToString(member.tsExpr, indent, moduleMap, codeType)
           );
-        case "KeyValue":
+        case "KeyValue": {
+          if (member.keyValue.key._ !== "StringLiteral") {
+            return "[" + exprToString(
+              member.keyValue.key,
+              indent,
+              moduleMap,
+              codeType,
+            ) +
+              "]: " +
+              exprToString(member.keyValue.value, indent, moduleMap, codeType);
+          }
+          const key = member.keyValue.key.string;
           if (
-            isIdentifier(member.keyValue.key) &&
+            isIdentifier(key) &&
             member.keyValue.value._ === "Variable" &&
-            member.keyValue.key === member.keyValue.value.tsIdentifier
+            key === member.keyValue.value.tsIdentifier
           ) {
             return member.keyValue.key;
           }
           return (
-            (isSafePropertyName(member.keyValue.key)
-              ? member.keyValue.key
-              : stringLiteralValueToString(member.keyValue.key)) +
+            (isSafePropertyName(key) ? key : stringLiteralValueToString(key)) +
             ": " +
             exprToString(member.keyValue.value, indent, moduleMap, codeType)
           );
+        }
       }
     })
     .join(", ") +

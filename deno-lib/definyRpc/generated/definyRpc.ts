@@ -474,16 +474,16 @@ export const StructuredJsonValue: {
         type.value
     );
   },
-  string: (p: string): StructuredJsonValue => ({ "": "string" }),
+  string: (p: string): StructuredJsonValue => ({ type: "string", value: p }),
   array: (
     p: globalThis.ReadonlyArray<StructuredJsonValue>
-  ): StructuredJsonValue => ({ "": "array" }),
-  boolean: (p: boolean): StructuredJsonValue => ({ "": "boolean" }),
-  null: (p: undefined): StructuredJsonValue => ({ "": "null" }),
-  number: (p: number): StructuredJsonValue => ({ "": "number" }),
+  ): StructuredJsonValue => ({ type: "array", value: p }),
+  boolean: (p: boolean): StructuredJsonValue => ({ type: "boolean", value: p }),
+  null: (p: undefined): StructuredJsonValue => ({ type: "null", value: p }),
+  number: (p: number): StructuredJsonValue => ({ type: "number", value: p }),
   object: (
     p: globalThis.ReadonlyMap<string, StructuredJsonValue>
-  ): StructuredJsonValue => ({ "": "object" }),
+  ): StructuredJsonValue => ({ type: "object", value: p }),
 };
 
 /**
@@ -577,7 +577,7 @@ export const name = (parameter: {
     )
     .then(
       (jsonValue: a.RawJsonValue): Result<string, "error"> => ({
-        type: "ok",
+        KeyValue: "ok",
         ok: String.fromStructuredJsonValue(
           a.rawJsonToStructuredJsonValue(jsonValue)
         ),
@@ -615,7 +615,7 @@ export const namespaceList = (parameter: {
         globalThis.ReadonlySet<globalThis.ReadonlyArray<string>>,
         "error"
       > => ({
-        type: "ok",
+        KeyValue: "ok",
         ok: Set.fromStructuredJsonValue(
           List.fromStructuredJsonValue(String.fromStructuredJsonValue)
         )(a.rawJsonToStructuredJsonValue(jsonValue)),
@@ -655,7 +655,7 @@ export const functionListByName = (parameter: {
       (
         jsonValue: a.RawJsonValue
       ): Result<globalThis.ReadonlyArray<FunctionDetail>, "error"> => ({
-        type: "ok",
+        KeyValue: "ok",
         ok: List.fromStructuredJsonValue(
           FunctionDetail.fromStructuredJsonValue
         )(a.rawJsonToStructuredJsonValue(jsonValue)),
@@ -696,7 +696,7 @@ export const functionListByNamePrivate = (parameter: {
       (
         jsonValue: a.RawJsonValue
       ): Result<globalThis.ReadonlyArray<FunctionDetail>, "error"> => ({
-        type: "ok",
+        KeyValue: "ok",
         ok: List.fromStructuredJsonValue(
           FunctionDetail.fromStructuredJsonValue
         )(a.rawJsonToStructuredJsonValue(jsonValue)),
@@ -733,7 +733,7 @@ export const generateCallDefinyRpcTypeScriptCode = (parameter: {
     )
     .then(
       (jsonValue: a.RawJsonValue): Result<string, "error"> => ({
-        type: "ok",
+        KeyValue: "ok",
         ok: String.fromStructuredJsonValue(
           a.rawJsonToStructuredJsonValue(jsonValue)
         ),
@@ -765,7 +765,7 @@ export const callQuery = (parameter: {
     )
     .then(
       (jsonValue: a.RawJsonValue): Result<StructuredJsonValue, "error"> => ({
-        type: "ok",
+        KeyValue: "ok",
         ok: StructuredJsonValue.fromStructuredJsonValue(
           a.rawJsonToStructuredJsonValue(jsonValue)
         ),
@@ -802,7 +802,7 @@ export const generateCodeAndWriteAsFileInServer = (parameter: {
     )
     .then(
       (jsonValue: a.RawJsonValue): Result<undefined, "error"> => ({
-        type: "ok",
+        KeyValue: "ok",
         ok: Unit.fromStructuredJsonValue(
           a.rawJsonToStructuredJsonValue(jsonValue)
         ),

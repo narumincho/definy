@@ -1,4 +1,9 @@
-import { data, identifierFromString } from "../../jsTs/main.ts";
+import {
+  data,
+  identifierFromString,
+  memberKeyValue,
+  stringLiteral,
+} from "../../jsTs/main.ts";
 
 const resultTypeName = identifierFromString("Result");
 
@@ -80,27 +85,15 @@ export const resultType = (
 export const resultOk = (ok: data.TsExpr): data.TsExpr => ({
   _: "ObjectLiteral",
   tsMemberList: [
-    {
-      _: "KeyValue",
-      keyValue: { key: "type", value: { _: "StringLiteral", string: "ok" } },
-    },
-    {
-      _: "KeyValue",
-      keyValue: { key: "ok", value: ok },
-    },
+    memberKeyValue("KeyValue", stringLiteral("ok")),
+    memberKeyValue("ok", ok),
   ],
 });
 
 export const resultError = (error: data.TsExpr): data.TsExpr => ({
   _: "ObjectLiteral",
   tsMemberList: [
-    {
-      _: "KeyValue",
-      keyValue: { key: "type", value: { _: "StringLiteral", string: "error" } },
-    },
-    {
-      _: "KeyValue",
-      keyValue: { key: "error", value: error },
-    },
+    memberKeyValue("type", stringLiteral("error")),
+    memberKeyValue("error", error),
   ],
 });

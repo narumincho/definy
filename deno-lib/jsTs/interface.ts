@@ -661,7 +661,7 @@ export const variable = (name: identifier.TsIdentifier): d.TsExpr => ({
 export const memberKeyValue = (key: string, value: d.TsExpr): d.TsMember => ({
   _: "KeyValue",
   keyValue: {
-    key,
+    key: stringLiteral(key),
     value,
   },
 });

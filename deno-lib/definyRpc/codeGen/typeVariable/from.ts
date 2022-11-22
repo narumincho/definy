@@ -2,6 +2,7 @@ import {
   data,
   get,
   identifierFromString,
+  memberKeyValue,
   objectLiteral,
   typeAssertion,
   variable,
@@ -63,16 +64,17 @@ const typeToFromLambdaProductStatement = (
     {
       _: "Return",
       tsExpr: typeAssertion({
-        expr: objectLiteral(fieldList.map((field) => ({
-          _: "KeyValue",
-          keyValue: {
-            key: field.name,
-            value: get(
-              variable(identifierFromString("obj")),
+        expr: objectLiteral(
+          fieldList.map((field) =>
+            memberKeyValue(
               field.name,
-            ),
-          },
-        }))),
+              get(
+                variable(identifierFromString("obj")),
+                field.name,
+              ),
+            )
+          ),
+        ),
         type: collectedDefinyRpcTypeToTsType(type, context),
       }),
     },

@@ -7,6 +7,7 @@ import {
   data,
   get,
   identifierFromString,
+  memberKeyValue,
   newURL,
   nullishCoalescing,
   objectLiteral,
@@ -113,27 +114,21 @@ export const apiFuncToTsFunction = (parameter: {
                 },
                 parameter.func.needAuthentication
                   ? objectLiteral([
-                    {
-                      _: "KeyValue",
-                      keyValue: {
-                        key: "headers",
-                        value: objectLiteral([
-                          {
-                            _: "KeyValue",
-                            keyValue: {
-                              key: "authorization",
-                              value: get(
-                                {
-                                  _: "Variable",
-                                  tsIdentifier: parameterIdentifier,
-                                },
-                                "accountToken",
-                              ),
+                    memberKeyValue(
+                      "headers",
+                      objectLiteral([
+                        memberKeyValue(
+                          "authorization",
+                          get(
+                            {
+                              _: "Variable",
+                              tsIdentifier: parameterIdentifier,
                             },
-                          },
-                        ]),
-                      },
-                    } as const,
+                            "accountToken",
+                          ),
+                        ),
+                      ]),
+                    ),
                   ])
                   : undefined,
               ),

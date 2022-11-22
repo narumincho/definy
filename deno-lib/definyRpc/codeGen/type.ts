@@ -9,6 +9,7 @@ import {
   identifierFromString,
   lambdaToType,
   logicalOr,
+  memberKeyValue,
   newSet,
   notEqual,
   objectLiteral,
@@ -296,35 +297,26 @@ export const typeToTypeVariable = (
     expr: {
       _: "ObjectLiteral",
       tsMemberList: [
-        {
-          _: "KeyValue",
-          keyValue: {
-            key: "description",
-            value: { _: "StringLiteral", string: type.description },
-          },
-        },
+        memberKeyValue(
+          "description",
+          stringLiteral(type.description),
+        ),
         ...(fromLambda === undefined ? [] : [
-          {
-            _: "KeyValue",
-            keyValue: {
-              key: "from",
-              value: {
-                _: "Lambda",
-                lambdaExpr: fromLambda,
-              },
-            },
-          } as const,
-        ]),
-        {
-          _: "KeyValue",
-          keyValue: {
-            key: "fromStructuredJsonValue",
-            value: {
+          memberKeyValue(
+            "from",
+            {
               _: "Lambda",
-              lambdaExpr: typeToFromStructuredJsonValueLambda(type, context),
+              lambdaExpr: fromLambda,
             },
+          ),
+        ]),
+        memberKeyValue(
+          "fromStructuredJsonValue",
+          {
+            _: "Lambda",
+            lambdaExpr: typeToFromStructuredJsonValueLambda(type, context),
           },
-        },
+        ),
         ...tagList.map((tag) => tag.member),
       ],
     },
@@ -620,16 +612,14 @@ const typeToFromJsonStatementList = (
             {
               _: "ObjectLiteral",
               tsMemberList: type.body.fieldList.map(
-                (field): data.TsMember => ({
-                  _: "KeyValue",
-                  keyValue: {
-                    key: field.name,
-                    value: useFromStructuredJsonValue(field.type, {
+                (field) =>
+                  memberKeyValue(
+                    field.name,
+                    useFromStructuredJsonValue(field.type, {
                       _: "Variable",
                       tsIdentifier: identifierFromString(field.name),
                     }),
-                  },
-                }),
+                  ),
               ),
             },
           ),
@@ -699,13 +689,9 @@ const typeToFromJsonStatementList = (
               statementList: pattern.parameter === undefined
                 ? [{
                   _: "Return",
-                  tsExpr: objectLiteral([{
-                    _: "KeyValue",
-                    keyValue: {
-                      key: "type",
-                      value: stringLiteral(pattern.name),
-                    },
-                  }]),
+                  tsExpr: objectLiteral([
+                    memberKeyValue("type", stringLiteral(pattern.name)),
+                  ]),
                 }]
                 : [{
                   _: "VariableDefinition",
@@ -735,17 +721,11 @@ const typeToFromJsonStatementList = (
                 }, {
                   _: "Return",
                   tsExpr: typeAssertion({
-                    expr: objectLiteral([{
-                      _: "KeyValue",
-                      keyValue: {
-                        key: "type",
-                        value: stringLiteral(pattern.name),
-                      },
-                    }, {
-                      _: "KeyValue",
-                      keyValue: {
-                        key: "value",
-                        value: call({
+                    expr: objectLiteral([
+                      memberKeyValue("type", stringLiteral(pattern.name)),
+                      memberKeyValue(
+                        "value",
+                        call({
                           expr: getStructuredJsonValueFunction(
                             pattern.parameter,
                           ),
@@ -753,8 +733,8 @@ const typeToFromJsonStatementList = (
                             variable(identifierFromString("value")),
                           ],
                         }),
-                      },
-                    }]),
+                      ),
+                    ]),
                     type: collectedDefinyRpcTypeToTsType(type, context),
                   }),
                 }],

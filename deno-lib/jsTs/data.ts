@@ -473,7 +473,7 @@ export type KeyValue = {
   /**
    * key
    */
-  readonly key: string;
+  readonly key: TsExpr;
   /**
    * value
    */

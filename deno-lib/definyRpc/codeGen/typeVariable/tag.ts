@@ -2,8 +2,10 @@ import {
   data,
   identifierFromString,
   lambdaToType,
+  memberKeyValue,
   objectLiteral,
   stringLiteral,
+  variable,
 } from "../../../jsTs/main.ts";
 import { arrayFromLength } from "../../../util.ts";
 import {
@@ -34,13 +36,7 @@ export const createTagExprList = (
     (pattern): TsMemberAndType => {
       const exprAndType = patternToTagExprAndType(pattern, type, context);
       return {
-        member: {
-          _: "KeyValue",
-          keyValue: {
-            key: pattern.name,
-            value: exprAndType.memberExpr,
-          },
-        },
+        member: memberKeyValue(pattern.name, exprAndType.memberExpr),
         memberType: {
           name: { type: "string", value: identifierFromString(pattern.name) },
           document: pattern.description,
@@ -62,10 +58,9 @@ const patternToTagExprAndType = (
 } => {
   if (type.parameterCount === 0 && pattern.parameter === undefined) {
     return {
-      memberExpr: objectLiteral([{
-        _: "KeyValue",
-        keyValue: { key: "", value: stringLiteral(pattern.name) },
-      }]),
+      memberExpr: objectLiteral([
+        memberKeyValue("type", stringLiteral(pattern.name)),
+      ]),
       type: collectedDefinyRpcTypeToTsType(type, context),
     };
   }
@@ -77,10 +72,10 @@ const patternToTagExprAndType = (
     returnType: collectedDefinyRpcTypeToTsType(type, context),
     statementList: [{
       _: "Return",
-      tsExpr: objectLiteral([{
-        _: "KeyValue",
-        keyValue: { key: "", value: stringLiteral(pattern.name) },
-      }]),
+      tsExpr: objectLiteral([
+        memberKeyValue("type", stringLiteral(pattern.name)),
+        memberKeyValue("value", variable(identifierFromString("p"))),
+      ]),
     }],
     typeParameterList: arrayFromLength(
       type.parameterCount,

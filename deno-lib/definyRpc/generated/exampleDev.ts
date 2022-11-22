@@ -94,7 +94,7 @@ export const hello = (parameter: {
     )
     .then(
       (jsonValue: a.RawJsonValue): Result<string, "error"> => ({
-        type: "ok",
+        KeyValue: "ok",
         ok: String.fromStructuredJsonValue(
           a.rawJsonToStructuredJsonValue(jsonValue)
         ),
@@ -125,7 +125,7 @@ export const now = (parameter: {
     )
     .then(
       (jsonValue: a.RawJsonValue): Result<string, "error"> => ({
-        type: "ok",
+        KeyValue: "ok",
         ok: String.fromStructuredJsonValue(
           a.rawJsonToStructuredJsonValue(jsonValue)
         ),
@@ -157,7 +157,7 @@ export const repeat = (parameter: {
     )
     .then(
       (jsonValue: a.RawJsonValue): Result<string, "error"> => ({
-        type: "ok",
+        KeyValue: "ok",
         ok: String.fromStructuredJsonValue(
           a.rawJsonToStructuredJsonValue(jsonValue)
         ),
