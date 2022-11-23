@@ -24,9 +24,11 @@ Firefox <-- 操作 --> UserB
 
 PowerShell, bash などで カレントディレクトリをこの ./README.md が書かれているディレクトリに変更したあとに実行する必要がある
 
-**開発用** がついてないコマンドは, [deno](https://deno.land/) をインストールすれば, リポジトリをクローンしなくても実行することができる
+**開発用** がついてないコマンドは, [deno](https://deno.land/) をインストールすれば,
+リポジトリをクローンしなくても実行することができる
 
-### **開発用** 全体の型チェックと, deno.lock の生成 (CI環境ではチェック) 
+### **開発用** 全体の型チェックと, deno.lock の生成 (CI環境ではチェック)
+
 ```ps1
 deno run --allow-run --allow-read ./entryPoints/check.ts
 ```
@@ -51,7 +53,8 @@ deno run --watch -A ./entryPoints/definyAppEditorWatchBuild.ts
 deno run --check --allow-net=:8000,deno.land https://raw.githubusercontent.com/narumincho/definy/main/deno-lib/entryPoints/definyAppEditorServerDenoDeploy.ts
 ```
 
-`deno.land` への接続は [imagescript](https://github.com/matmen/ImageScript) が wasm のダウンロードに使うため必要 (埋め込んでくれれば良いのに...)
+`deno.land` への接続は [imagescript](https://github.com/matmen/ImageScript) が wasm
+のダウンロードに使うため必要 (埋め込んでくれれば良いのに...)
 
 ### **開発用** editor クライアントスクリプトビルドを起動
 
@@ -64,13 +67,19 @@ deno run --check --watch -A ./definyApp/editor/watchBuild.ts
 設定のためにTypeScript を書く必要あり
 
 `./apiServer.ts`
+
 ```ts
 import { startDefinyApiServer } from "https://raw.githubusercontent.com/narumincho/definy/main/deno-lib/definyApp/apiServer/main.ts";
 
-startDefinyApiServer({ mode: { type: "denoDeploy" }, faunaSecret: "..." });
+startDefinyApiServer({
+  mode: { type: "dev", port: 3000 },
+  faunaSecret: "...",
+  googleLogInClientSecret: "...",
+});
 ```
 
 PowerShell, bash など
+
 ```ps1
 deno run --allow-net ./apiServer.ts
 ```

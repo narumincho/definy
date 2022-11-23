@@ -5,15 +5,20 @@ import { requestObjectToSimpleRequest } from "../../simpleRequestResponse/simple
 import { simpleResponseToResponse } from "../../simpleRequestResponse/simpleResponse.ts";
 import { serve } from "https://deno.land/std@0.165.0/http/server.ts";
 import { fromFileUrl } from "https://deno.land/std@0.156.0/path/mod.ts";
+import { Mode } from "./mode.ts";
 
 export const startDefinyApiServer = (
   parameter: {
     /** 開発モードかどうか */
-    readonly mode:
-      | { readonly type: "dev"; readonly port: number }
-      | { readonly type: "denoDeploy" };
+    readonly mode: Mode;
     /** データベースのfaunaのシークレットキー */
     readonly faunaSecret: string;
+    /**
+     * Google でログイン のクライアントシークレット
+     * Google Cloud Console の設定画面で 起動するオリジン+ /definyApi/logInCallback
+     * のコールバックURLを許可する必要あり
+     */
+    readonly googleLogInClientSecret: string;
   },
 ): void => {
   const sampleDefinyRpcServerParameter: definyRpc.DefinyRpcParameter = {
@@ -24,10 +29,13 @@ export const startDefinyApiServer = (
           domain: "db.us.fauna.com",
           secret: parameter.faunaSecret,
         }),
+        parameter.mode,
       ),
     originHint: parameter.mode.type === "dev"
       ? `http://localhost:${parameter.mode.port}`
-      : "",
+      // Deno Deploy で 現在の環境のオリジンを取得することができれば...
+      // https://github.com/denoland/deploy_feedback/issues/245
+      : "https://definy-api.deno.dev",
     codeGenOutputFolderPath: parameter.mode.type === "dev"
       ? fromFileUrl(import.meta.resolve("../apiClient"))
       : undefined,

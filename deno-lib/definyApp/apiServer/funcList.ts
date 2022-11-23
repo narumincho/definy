@@ -6,9 +6,13 @@ import {
   unit,
 } from "../../definyRpc/server/definyRpc.ts";
 import * as f from "../../typedFauna.ts";
+import { openConnectStateCreate } from "./faunaInterface.ts";
+import { googleLogInUrl } from "./logIn.ts";
+import { Mode } from "./mode.ts";
 
 export const funcList = (
   faunaClient: f.TypedFaunaClient,
+  mode: Mode,
 ): FunctionAndTypeList => {
   return {
     functionsList: [
@@ -43,6 +47,18 @@ export const funcList = (
         output: string,
         resolve: (input) => {
           return "ok".repeat(input);
+        },
+      }),
+      createApiFunction({
+        fullName: ["createGoogleLogInUrl"],
+        description: "Google でログインするためのURLを発行し取得する",
+        needAuthentication: false,
+        isMutation: true,
+        input: unit,
+        output: string,
+        resolve: async (_) => {
+          const state = await openConnectStateCreate(faunaClient);
+          return googleLogInUrl(state, mode).toString();
         },
       }),
       createApiFunction({
