@@ -1,6 +1,6 @@
 import { Hash, hashBinary } from "../sha256.ts";
 import { jsonStringify } from "../typedJson.ts";
-import { writeTextFile } from "../writeFileAndLog.ts";
+import { writeTextFileWithLog } from "../writeFileAndLog.ts";
 import * as esbuild from "https://deno.land/x/esbuild@v0.15.14/mod.js";
 import { denoPlugin } from "https://deno.land/x/esbuild_deno_loader@0.6.0/mod.ts";
 import {
@@ -115,7 +115,7 @@ const watchAndBuild = async (
 
 const main = async (): Promise<void> => {
   await watchAndBuild((clientBuildResult) => {
-    writeTextFile(
+    writeTextFileWithLog(
       fromFileUrl(import.meta.resolve("../definyApp/editorServer/dist.json")),
       jsonStringify(clientBuildResult, true),
     );

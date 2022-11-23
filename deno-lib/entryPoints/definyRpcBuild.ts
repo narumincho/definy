@@ -8,7 +8,7 @@ import { build as esBuild } from "https://deno.land/x/esbuild@v0.15.14/mod.js";
 import { toBase64 } from "https://deno.land/x/fast_base64@v0.1.7/mod.ts";
 import { hashBinary } from "../sha256.ts";
 import { jsonStringify } from "../typedJson.ts";
-import { writeTextFile } from "../writeFileAndLog.ts";
+import { writeTextFileWithLog } from "../writeFileAndLog.ts";
 
 type BuildClientResult = {
   readonly iconHash: string;
@@ -60,7 +60,7 @@ const buildClientEditor = async (): Promise<BuildClientResult> => {
 const main = async (): Promise<void> => {
   const clientBuildResult = await buildClientEditor();
   console.log("clientEditor のビルドデータ生成完了");
-  await writeTextFile(
+  await writeTextFileWithLog(
     fromFileUrl(import.meta.resolve("../definyRpc/server/browserClient.json")),
     jsonStringify(clientBuildResult, true),
   );
