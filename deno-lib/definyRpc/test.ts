@@ -21,7 +21,7 @@ Deno.test("get server name", async () => {
   );
   assertEquals(response?.status, 200);
   assertEquals(response?.headers, {
-    ContentType: "application/json",
+    contentType: "application/json",
   });
   assertEquals(
     JSON.parse(new TextDecoder().decode(response?.body)),
@@ -49,7 +49,7 @@ Deno.test("index.html", async () => {
   );
   assertEquals(response?.status, 200);
   assertEquals(response?.headers, {
-    ContentType: "text/html; charset=utf-8",
+    contentType: "text/html; charset=utf-8",
   });
 });
 
@@ -74,7 +74,7 @@ Deno.test("with pathPrefix index.html", async () => {
   );
   assertEquals(response?.status, 200);
   assertEquals(response?.headers, {
-    ContentType: "text/html; charset=utf-8",
+    contentType: "text/html; charset=utf-8",
   });
 });
 
@@ -99,7 +99,7 @@ Deno.test("with pathPrefix get server name", async () => {
   );
   assertEquals(response?.status, 200);
   assertEquals(response?.headers, {
-    ContentType: "application/json",
+    contentType: "application/json",
   });
   assertEquals(
     JSON.parse(new TextDecoder().decode(response?.body)),
