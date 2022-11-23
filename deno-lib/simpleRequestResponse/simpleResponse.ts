@@ -15,7 +15,7 @@ export type SimpleResponse = {
   };
   readonly body: Uint8Array | undefined;
 } | {
-  readonly status: 302;
+  readonly status: 301;
   readonly headers: {
     readonly location: string | undefined;
   };
@@ -36,7 +36,7 @@ export const simpleResponseHtml = (html: string): SimpleResponse => ({
 
 export const simpleResponseRedirect = (url: URL): SimpleResponse => {
   return {
-    status: 302,
+    status: 301,
     headers: { location: url.toString() },
     body: undefined,
   };
@@ -97,13 +97,13 @@ export const simpleResponseToResponse = (
 ): Response => {
   const headers = new Headers();
   if (
-    simpleResponse.status !== 302 &&
+    simpleResponse.status !== 301 &&
     simpleResponse.headers.contentType !== undefined
   ) {
     headers.append("content-type", simpleResponse.headers.contentType);
   }
   if (
-    simpleResponse.status === 302 &&
+    simpleResponse.status === 301 &&
     simpleResponse.headers.location !== undefined
   ) {
     headers.append("location", simpleResponse.headers.location);
