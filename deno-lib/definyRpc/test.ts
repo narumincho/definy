@@ -12,8 +12,8 @@ Deno.test("get server name", async () => {
     {
       path: ["definyRpc", "name"],
       headers: {
-        Accept: undefined,
-        Authorization: undefined,
+        accept: undefined,
+        authorization: undefined,
       },
       method: "GET",
       query: new Map(),
@@ -40,8 +40,8 @@ Deno.test("index.html", async () => {
     {
       path: [],
       headers: {
-        Accept: undefined,
-        Authorization: undefined,
+        accept: undefined,
+        authorization: undefined,
       },
       method: "GET",
       query: new Map(),
@@ -65,8 +65,8 @@ Deno.test("with pathPrefix index.html", async () => {
     {
       path: ["prefix"],
       headers: {
-        Accept: undefined,
-        Authorization: undefined,
+        accept: undefined,
+        authorization: undefined,
       },
       method: "GET",
       query: new Map(),
@@ -90,8 +90,8 @@ Deno.test("with pathPrefix get server name", async () => {
     {
       path: ["prefix", "definyRpc", "name"],
       headers: {
-        Accept: undefined,
-        Authorization: undefined,
+        accept: undefined,
+        authorization: undefined,
       },
       method: "GET",
       query: new Map(),
@@ -107,9 +107,9 @@ Deno.test("with pathPrefix get server name", async () => {
   );
 });
 
-Deno.test("ignore with pathPrefix", () => {
+Deno.test("ignore with pathPrefix", async () => {
   assertEquals(
-    handleRequest(
+    await handleRequest(
       {
         all: () => ({ functionsList: [], typeList: [] }),
         codeGenOutputFolderPath: undefined,
@@ -120,8 +120,8 @@ Deno.test("ignore with pathPrefix", () => {
       {
         path: [],
         headers: {
-          Accept: undefined,
-          Authorization: undefined,
+          accept: undefined,
+          authorization: undefined,
         },
         method: "GET",
         query: new Map(),

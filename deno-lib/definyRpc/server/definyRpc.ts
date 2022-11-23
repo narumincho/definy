@@ -1,10 +1,5 @@
 import clientBuildResult from "./browserClient.json" assert { type: "json" };
-import {
-  jsonStringify,
-  structuredJsonParse,
-  structuredJsonStringify,
-  StructuredJsonValue,
-} from "../../typedJson.ts";
+import { structuredJsonParse, StructuredJsonValue } from "../../typedJson.ts";
 import { AccountToken, FunctionAndTypeList } from "../core/apiFunction.ts";
 import { addDefinyRpcApiFunction } from "../core/builtInFunctions.ts";
 import { SimpleRequest } from "../../simpleRequestResponse/simpleRequest.ts";
@@ -129,10 +124,17 @@ export const handleRequest = async (
   for (const func of all.functionsList) {
     if (stringArrayEqual(pathListRemovePrefix, func.fullName)) {
       if (func.needAuthentication) {
-        const authorizationValue = request.headers.Authorization;
+        const authorizationHeaderValue = request.headers.authorization;
+        if (typeof authorizationHeaderValue !== "string") {
+          return unauthorized("require account token in Authorization header");
+        }
+        const [authorizationType, authorizationValue] = authorizationHeaderValue
+          .split(" ");
         console.log("authorizationValue", authorizationValue);
-        if (authorizationValue === null) {
-          return unauthorized("invalid account token");
+        if (
+          authorizationValue === undefined || authorizationType !== "Bearer"
+        ) {
+          return unauthorized("invalid account token in Authorization header");
         }
         const apiFunctionResult = await func.resolve(
           func.input.fromStructuredJsonValue(paramJsonParsed),

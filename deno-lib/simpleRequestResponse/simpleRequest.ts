@@ -48,8 +48,8 @@ const commonObjectToSimpleRequest = (request: {
   return {
     method: request.method,
     headers: {
-      Accept: request.headers.get("Accept"),
-      Authorization: request.headers.get("Authorization"),
+      accept: request.headers.get("Accept"),
+      authorization: request.headers.get("Authorization"),
     },
     path: url.pathname.split("/").filter((item) => item !== ""),
     query: new Map([...url.searchParams]),
@@ -66,7 +66,7 @@ export type SimpleRequest = {
   readonly path: ReadonlyArray<string>;
   readonly query: ReadonlyMap<string, string>;
   readonly headers: {
-    readonly Accept: string | undefined;
-    readonly Authorization: string | undefined;
+    readonly accept: string | undefined;
+    readonly authorization: string | undefined;
   };
 };
