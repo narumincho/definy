@@ -25,7 +25,7 @@ serve(
     if (simpleRequest === undefined) {
       return new Response("simpleRequestに変換できなかった", { status: 400 });
     }
-    const simpleResponse = handleRequest(
+    const simpleResponse = await handleRequest(
       sampleDefinyRpcServerParameter,
       simpleRequest,
     );
@@ -34,7 +34,7 @@ serve(
         status: 400,
       });
     }
-    const response = await simpleResponseToResponse(simpleResponse);
+    const response = simpleResponseToResponse(simpleResponse);
 
     response.headers.append(
       "access-control-allow-origin",

@@ -4,6 +4,7 @@ import { objectEntriesSameValue } from "../../objectEntriesSameValue.ts";
 import { NonEmptyArray } from "../../util.ts";
 import { DefinyRpcType } from "./type.ts";
 import { definyRpcNamespace } from "./definyRpcNamespace.ts";
+import { StructuredJsonValue as generatedStructuredJsonValue } from "../generated/definyRpc.ts";
 
 export const string: DefinyRpcType<string> = {
   namespace: [definyRpcNamespace],
@@ -377,3 +378,51 @@ export const structuredJsonValue: DefinyRpcType<StructuredJsonValue> = sum({
     },
   },
 });
+
+export const url: DefinyRpcType<URL> = {
+  namespace: [definyRpcNamespace],
+  name: "Url",
+  description:
+    "含むデータはURLだが, ApiFunctions の戻り値に指定するとリダイレクトのレスポンスを返す. ログインコールバックでよく使われる",
+  parameters: [],
+  body: {
+    type: "url",
+  },
+  toStructuredJsonValue: (value) => {
+    if (value instanceof URL) {
+      return generatedStructuredJsonValue.string(value.toString());
+    }
+    throw new Error("expect string in string toJson");
+  },
+  fromStructuredJsonValue: (json) => {
+    if (json.type === "string") {
+      return new URL(json.value);
+    }
+    console.error(json);
+    throw new Error("expect json string in redirectUrl fromJson");
+  },
+};
+
+export const redirectUrl: DefinyRpcType<URL> = {
+  namespace: [definyRpcNamespace],
+  name: "RedirectUrl",
+  description:
+    "含むデータはURLだが, ApiFunctions の戻り値に指定するとリダイレクトのレスポンスを返す. ログインコールバックでよく使われる",
+  parameters: [],
+  body: {
+    type: "url",
+  },
+  toStructuredJsonValue: (value) => {
+    if (value instanceof URL) {
+      return generatedStructuredJsonValue.string(value.toString());
+    }
+    throw new Error("expect string in string toJson");
+  },
+  fromStructuredJsonValue: (json) => {
+    if (json.type === "string") {
+      return new URL(json.value);
+    }
+    console.error(json);
+    throw new Error("expect json string in redirectUrl fromJson");
+  },
+};

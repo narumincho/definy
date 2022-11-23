@@ -2,6 +2,7 @@ import {
   createApiFunction,
   FunctionAndTypeList,
   number,
+  redirectUrl,
   string,
   unit,
 } from "../../definyRpc/server/definyRpc.ts";
@@ -59,6 +60,18 @@ export const funcList = (
         resolve: async (_) => {
           const state = await openConnectStateCreate(faunaClient);
           return googleLogInUrl(state, mode).toString();
+        },
+      }),
+      createApiFunction({
+        fullName: ["logInCallback"],
+        description: "Google からのログイン (リダイレクトさせる必要がある...)",
+        needAuthentication: false,
+        // GET でも動作させるため
+        isMutation: false,
+        input: unit,
+        output: redirectUrl,
+        resolve: (_) => {
+          return new URL("https://narumincho.com/");
         },
       }),
       createApiFunction({

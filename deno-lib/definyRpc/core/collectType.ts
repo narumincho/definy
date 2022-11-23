@@ -148,7 +148,8 @@ export type CollectedDefinyRpcTypeBody =
   | {
     readonly type: "sum";
     readonly patternList: ReadonlyArray<Pattern>;
-  };
+  }
+  | { readonly type: "url" };
 
 export type Field = {
   readonly name: string;
@@ -207,6 +208,8 @@ const typeBodyToCollectedDefinyRpcTypeBody = (
             ),
         })),
       };
+    case "url":
+      return { type: "url" };
   }
 };
 

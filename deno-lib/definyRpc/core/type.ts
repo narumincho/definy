@@ -53,6 +53,9 @@ export type TypeBody =
       // deno-lint-ignore no-explicit-any
       readonly parameter: Lazy<DefinyRpcType<any>> | undefined;
     }>;
+  }
+  | {
+    readonly type: "url";
   };
 
 export const definyRpcTypeToMapKey = <t>(type: DefinyRpcType<t>): string => {

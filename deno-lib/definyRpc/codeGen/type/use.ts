@@ -4,6 +4,7 @@ import {
   readonlyArrayType,
   readonlyMapType,
   readonlySetType,
+  urlType,
 } from "../../../jsTs/main.ts";
 import { arrayFromLength } from "../../../util.ts";
 import {
@@ -113,6 +114,8 @@ export const collectedDefinyRpcTypeToTsType = (
         },
       };
     }
+    case "url":
+      return urlType;
   }
 };
 
@@ -204,5 +207,7 @@ export const collectedDefinyRpcTypeUseToTsType = (
         },
       };
     }
+    case "url":
+      return urlType;
   }
 };

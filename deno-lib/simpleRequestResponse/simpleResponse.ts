@@ -5,32 +5,30 @@ export type SimpleResponse = {
   readonly headers: {
     readonly ContentType: string | undefined;
   };
-  readonly body: (() => Promise<Uint8Array>) | undefined;
+  readonly body: Uint8Array | undefined;
 };
 
-export const simpleResponseToResponse = async (
+export const simpleResponseToResponse = (
   simpleResponse: SimpleResponse,
-): Promise<Response> => {
-  const bodyBinary = await simpleResponse.body?.();
+): Response => {
   const headers = new Headers();
   if (simpleResponse.headers.ContentType !== undefined) {
     headers.append("content-type", simpleResponse.headers.ContentType);
   }
-  return new Response(bodyBinary, {
+  return new Response(simpleResponse.body, {
     status: simpleResponse.status,
     headers,
   });
 };
 
-export const simpleResponseHandleServerResponse = async (
+export const simpleResponseHandleServerResponse = (
   simpleResponse: SimpleResponse,
   serverResponse: ServerResponse,
-): Promise<void> => {
+): void => {
   serverResponse.writeHead(simpleResponse.status, {
     ...(simpleResponse.headers.ContentType === undefined ? {} : {
       "content-type": simpleResponse.headers.ContentType,
     }),
   });
-  const bodyBinary = await simpleResponse.body?.();
-  serverResponse.end(bodyBinary);
+  serverResponse.end(simpleResponse.body);
 };

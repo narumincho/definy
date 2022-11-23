@@ -50,10 +50,13 @@ export type DefinyRpcParameter = {
   readonly pathPrefix?: ReadonlyArray<string>;
 };
 
-export const handleRequest = (
+/**
+ * HTTP リクエストを definyRPC なりに解釈し, HTTPレスポンス を返す
+ */
+export const handleRequest = async (
   parameter: DefinyRpcParameter,
   request: SimpleRequest,
-): SimpleResponse | undefined => {
+): Promise<SimpleResponse | undefined> => {
   const pathPrefix = parameter.pathPrefix ?? [];
   if (!stringArrayMatchPrefix(request.path, pathPrefix)) {
     return undefined;
@@ -81,15 +84,13 @@ export const handleRequest = (
       headers: {
         ContentType: "text/html; charset=utf-8",
       },
-      body: () =>
-        Promise.resolve(
-          new TextEncoder().encode(`<!doctype html>
+      body: new TextEncoder().encode(`<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/png" href="${
-            editorPathPrefix(pathPrefix) + clientBuildResult.iconHash
-          }" />
+        editorPathPrefix(pathPrefix) + clientBuildResult.iconHash
+      }" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>${parameter.name} | definy RPC</title>
     
@@ -99,15 +100,14 @@ export const handleRequest = (
       }
     </style>
     <script type="module" src="${
-            editorPathPrefix(pathPrefix) + clientBuildResult.scriptHash
-          }"></script>
+        editorPathPrefix(pathPrefix) + clientBuildResult.scriptHash
+      }"></script>
   </head>
   <body>
     <noscript>Need JavaScript</noscript>
   </body>
 </html>
 `),
-        ),
     };
   }
   if (
@@ -119,7 +119,7 @@ export const handleRequest = (
     return {
       status: 200,
       headers: { ContentType: "image/png" },
-      body: () => toBytes(clientBuildResult.iconContent),
+      body: await toBytes(clientBuildResult.iconContent),
     };
   }
   if (
@@ -131,10 +131,7 @@ export const handleRequest = (
     return {
       status: 200,
       headers: { ContentType: "text/javascript; charset=utf-8" },
-      body: () =>
-        Promise.resolve(
-          new TextEncoder().encode(clientBuildResult.scriptContent),
-        ),
+      body: new TextEncoder().encode(clientBuildResult.scriptContent),
     };
   }
   console.log("request!: ", pathListRemovePrefix);
@@ -149,48 +146,43 @@ export const handleRequest = (
             headers: {
               ContentType: "application/json",
             },
-            body: () =>
-              Promise.resolve(
-                new TextEncoder().encode(
-                  jsonStringify("invalid account token"),
-                ),
-              ),
+            body: new TextEncoder().encode(
+              jsonStringify("invalid account token"),
+            ),
           };
         }
+        const apiFunctionResult = await func.resolve(
+          func.input.fromStructuredJsonValue(paramJsonParsed),
+          authorizationValue as AccountToken,
+        );
+        const body = new TextEncoder().encode(
+          structuredJsonStringify(
+            func.output.toStructuredJsonValue(apiFunctionResult),
+          ),
+        );
         return {
           status: 200,
           headers: {
             ContentType: "application/json",
           },
-          body: async () => {
-            const apiFunctionResult = await func.resolve(
-              func.input.fromStructuredJsonValue(paramJsonParsed),
-              authorizationValue as AccountToken,
-            );
-            return new TextEncoder().encode(
-              structuredJsonStringify(
-                func.output.toStructuredJsonValue(apiFunctionResult),
-              ),
-            );
-          },
+          body,
         };
       }
+      const apiFunctionResult = await func.resolve(
+        func.input.fromStructuredJsonValue(paramJsonParsed),
+        undefined,
+      );
+      const body = new TextEncoder().encode(
+        structuredJsonStringify(
+          func.output.toStructuredJsonValue(apiFunctionResult),
+        ),
+      );
       return {
         status: 200,
         headers: {
           ContentType: "application/json",
         },
-        body: async () => {
-          const apiFunctionResult = await func.resolve(
-            func.input.fromStructuredJsonValue(paramJsonParsed),
-            undefined,
-          );
-          return new TextEncoder().encode(
-            structuredJsonStringify(
-              func.output.toStructuredJsonValue(apiFunctionResult),
-            ),
-          );
-        },
+        body,
       };
     }
   }
@@ -199,15 +191,12 @@ export const handleRequest = (
     headers: {
       ContentType: "application/json",
     },
-    body: () =>
-      Promise.resolve(
-        new TextEncoder().encode(
-          jsonStringify({
-            message: "not found...",
-            functionFullName: pathListRemovePrefix,
-          }),
-        ),
-      ),
+    body: new TextEncoder().encode(
+      jsonStringify({
+        message: "not found...",
+        functionFullName: pathListRemovePrefix,
+      }),
+    ),
   };
 };
 

@@ -17,12 +17,12 @@ const sampleDefinyRpcServerParameter: DefinyRpcParameter = {
 };
 
 serve(
-  (request) => {
+  async (request) => {
     const simpleRequest = requestObjectToSimpleRequest(request);
     if (simpleRequest === undefined) {
       return new Response("simpleRequestに変換できなかった", { status: 400 });
     }
-    const simpleResponse = handleRequest(
+    const simpleResponse = await handleRequest(
       sampleDefinyRpcServerParameter,
       simpleRequest,
     );

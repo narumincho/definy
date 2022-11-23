@@ -303,5 +303,7 @@ const definyRpcTypeToTsType = <t>(
           arguments: definyRpcType.parameters.map(definyRpcTypeToTsType),
         },
       };
+    case "url":
+      return urlType;
   }
 };

@@ -22,7 +22,7 @@ export const startDefinyApiServer = (
   },
 ): void => {
   const sampleDefinyRpcServerParameter: definyRpc.DefinyRpcParameter = {
-    name: parameter.mode.type === "dev" ? "definyApiDev" : "definyApi",
+    name: "definyApi",
     all: () =>
       funcList(
         f.crateFaunaClient({
@@ -46,7 +46,7 @@ export const startDefinyApiServer = (
       if (simpleRequest === undefined) {
         return new Response("simpleRequestに変換できなかった", { status: 400 });
       }
-      const simpleResponse = definyRpc.handleRequest(
+      const simpleResponse = await definyRpc.handleRequest(
         sampleDefinyRpcServerParameter,
         simpleRequest,
       );
@@ -55,7 +55,7 @@ export const startDefinyApiServer = (
           status: 400,
         });
       }
-      const response = await simpleResponseToResponse(simpleResponse);
+      const response = simpleResponseToResponse(simpleResponse);
 
       response.headers.append(
         "access-control-allow-origin",

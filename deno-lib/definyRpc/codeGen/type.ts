@@ -20,6 +20,7 @@ import {
   symbolToStringTag,
   typeAssertion,
   typeUnion,
+  urlType,
   variable,
 } from "../../jsTs/main.ts";
 import {
@@ -177,6 +178,8 @@ const collectedDefinyRpcTypeBodyToTsType = (
           }),
         ),
       };
+    case "url":
+      return urlType;
   }
 };
 
@@ -767,6 +770,8 @@ const typeToFromJsonStatementList = (
           ),
         },
       ];
+    case "url":
+      return [{ _: "Return", tsExpr: stringLiteral("url wip") }];
   }
 };
 
@@ -828,6 +833,7 @@ const useFrom = (
     case "boolean":
     case "list":
     case "number":
+    case "url":
       return object;
     case "product":
       return callMethod(
