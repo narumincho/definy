@@ -1,4 +1,4 @@
-import { writeTextFile } from "../writeFileAndLog.ts";
+import { writeTextFileWithLog } from "../writeFileAndLog.ts";
 import * as esbuild from "https://deno.land/x/esbuild@v0.15.14/mod.js";
 import { denoPlugin } from "https://deno.land/x/esbuild_deno_loader@0.6.0/mod.ts";
 import {
@@ -89,12 +89,12 @@ await dnt.build({
 console.log("Node.js 向けスクリプトの出力に成功");
 
 const clientHtml = await generateClientHtml();
-await writeTextFile(
+await writeTextFileWithLog(
   join(outDir, "./script/nodeRed/server/main.html"),
   clientHtml,
 );
 
-await writeTextFile(
+await writeTextFileWithLog(
   join(outDir, "./README.md"),
   `# @definy/node-red v${version}
 

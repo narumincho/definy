@@ -101,6 +101,11 @@ export type CollectedDefinyRpcTypeMap = ReadonlyMap<
   CollectedDefinyRpcType
 >;
 
+export type CodeGenContext = {
+  readonly map: CollectedDefinyRpcTypeMap;
+  readonly currentModule: ReadonlyArray<string>;
+};
+
 export const collectedDefinyRpcTypeMapGet = (
   map: CollectedDefinyRpcTypeMap,
   namespace: NonEmptyArray<string>,
@@ -126,39 +131,37 @@ export type CollectedDefinyRpcType = {
 };
 
 export type CollectedDefinyRpcTypeBody =
-  | {
-    readonly type: "string";
-  }
-  | {
-    readonly type: "number";
-  }
+  | { readonly type: "string" }
+  | { readonly type: "number" }
   | { readonly type: "boolean" }
+  | { readonly type: "unit" }
+  | { readonly type: "list" }
+  | { readonly type: "set" }
   | {
-    readonly type: "unit";
+    readonly type: "stringMap";
+    readonly valueType: CollectedDefinyRpcTypeUse;
   }
-  | {
-    readonly type: "list";
-  }
-  | {
-    readonly type: "set";
-  }
-  | { readonly type: "stringMap"; valueType: CollectedDefinyRpcTypeUse }
   | {
     readonly type: "product";
-    readonly fieldList: ReadonlyArray<{
-      readonly name: string;
-      readonly description: string;
-      readonly type: CollectedDefinyRpcTypeUse;
-    }>;
+    readonly fieldList: ReadonlyArray<Field>;
   }
   | {
     readonly type: "sum";
-    readonly patternList: ReadonlyArray<{
-      readonly name: string;
-      readonly description: string;
-      readonly parameter: CollectedDefinyRpcTypeUse | undefined;
-    }>;
-  };
+    readonly patternList: ReadonlyArray<Pattern>;
+  }
+  | { readonly type: "url" };
+
+export type Field = {
+  readonly name: string;
+  readonly description: string;
+  readonly type: CollectedDefinyRpcTypeUse;
+};
+
+export type Pattern = {
+  readonly name: string;
+  readonly description: string;
+  readonly parameter: CollectedDefinyRpcTypeUse | undefined;
+};
 
 const typeBodyToCollectedDefinyRpcTypeBody = (
   typeBody: TypeBody,
@@ -205,6 +208,8 @@ const typeBodyToCollectedDefinyRpcTypeBody = (
             ),
         })),
       };
+    case "url":
+      return { type: "url" };
   }
 };
 

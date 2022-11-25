@@ -1,6 +1,6 @@
 import { startDefinyApiServer } from "../definyApp/apiServer/main.ts";
 
-const expectString = (key: string): string => {
+const readEnv = (key: string): string => {
   const value = Deno.env.get(key);
   if (value === undefined) {
     throw new Error("環境変数 " + key + " が指定されていない!");
@@ -10,5 +10,6 @@ const expectString = (key: string): string => {
 
 startDefinyApiServer({
   mode: { type: "denoDeploy" },
-  faunaSecret: expectString("FAUNA_KEY"),
+  faunaSecret: readEnv("FAUNA_KEY"),
+  googleLogInClientSecret: readEnv("GOOGLE_LOGIN_CLIENT_SECRET"),
 });

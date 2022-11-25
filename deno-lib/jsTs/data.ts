@@ -150,8 +150,7 @@ export type TsExpr =
   | { readonly _: "Get"; readonly getExpr: GetExpr }
   | { readonly _: "Call"; readonly callExpr: CallExpr }
   | { readonly _: "New"; readonly callExpr: CallExpr }
-  | { readonly _: "TypeAssertion"; readonly typeAssertion: TypeAssertion }
-  | { readonly _: "this" };
+  | { readonly _: "TypeAssertion"; readonly typeAssertion: TypeAssertion };
 
 export type Variable = {
   /**
@@ -202,7 +201,8 @@ export type TsType =
     readonly namespace: NonEmptyArray<TsIdentifier>;
     readonly typeNameAndTypeParameter: TypeNameAndArguments;
   }
-  | { readonly _: "StringLiteral"; readonly string: string };
+  | { readonly _: "StringLiteral"; readonly string: string }
+  | { readonly _: "typeof"; readonly expr: TsExpr };
 
 /**
  * 代入文
@@ -473,7 +473,7 @@ export type KeyValue = {
   /**
    * key
    */
-  readonly key: string;
+  readonly key: TsExpr;
   /**
    * value
    */
@@ -499,8 +499,6 @@ export type LambdaExpr = {
    * ラムダ式本体
    */
   readonly statementList: ReadonlyArray<Statement>;
-
-  readonly thisType?: TsType | undefined;
 };
 
 /**
@@ -566,7 +564,7 @@ export type TsMemberType = {
   /**
    * プロパティ名
    */
-  readonly name: string;
+  readonly name: PropertyName;
   /**
    * 必須かどうか falseの場合 ? がつく
    */
@@ -579,6 +577,14 @@ export type TsMemberType = {
    * ドキュメント
    */
   readonly document: string;
+};
+
+export type PropertyName = {
+  readonly type: "string";
+  readonly value: string;
+} | {
+  readonly type: "symbolExpr";
+  readonly value: TsExpr;
 };
 
 /**

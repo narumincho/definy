@@ -3,7 +3,7 @@ import {
   assertEquals,
   assertMatch,
   assertNotMatch,
-} from "https://deno.land/std@0.165.0/testing/asserts.ts";
+} from "https://deno.land/std@0.166.0/testing/asserts.ts";
 import * as jsTs from "./main.ts";
 
 const expressRequest: jsTs.data.TsType = {
@@ -387,13 +387,13 @@ Deno.test("object literal return need parenthesis", () => {
           parameterList: [],
           returnType: jsTs.typeObject([
             {
-              name: "name",
+              name: { type: "string", value: "name" },
               required: true,
               type: { _: "String" },
               document: "",
             },
             {
-              name: "age",
+              name: { type: "string", value: "age" },
               required: true,
               type: { _: "Number" },
               document: "",
@@ -509,13 +509,13 @@ Deno.test("switch", () => {
           type: jsTs.typeUnion([
             jsTs.typeObject([
               {
-                name: "_",
+                name: { type: "string", value: "_" },
                 required: true,
                 type: { _: "StringLiteral", string: "Ok" },
                 document: "",
               },
               {
-                name: "ok",
+                name: { type: "string", value: "ok" },
                 required: true,
                 type: jsTs.typeScopeInFileNoArguments(
                   jsTs.identifierFromString("ok"),
@@ -525,13 +525,13 @@ Deno.test("switch", () => {
             ]),
             jsTs.typeObject([
               {
-                name: "_",
+                name: { type: "string", value: "_" },
                 required: true,
                 type: { _: "StringLiteral", string: "Error" },
                 document: "Error",
               },
               {
-                name: "error",
+                name: { type: "string", value: "error" },
                 required: true,
                 type: jsTs.typeScopeInFileNoArguments(
                   jsTs.identifierFromString("error"),
@@ -676,13 +676,13 @@ Deno.test("object literal spread syntax", () => {
           isConst: true,
           type: jsTs.typeObject([
             {
-              name: "a",
+              name: { type: "string", value: "a" },
               required: true,
               type: { _: "String" },
               document: "",
             },
             {
-              name: "b",
+              name: { type: "string", value: "b" },
               required: true,
               type: { _: "Number" },
               document: "",
@@ -722,13 +722,13 @@ Deno.test("type property document", () => {
           typeParameterList: [],
           type: jsTs.typeObject([
             {
-              name: "day",
+              name: { type: "string", value: "day" },
               required: true,
               type: { _: "Number" },
               document: "1970-01-01からの経過日数. マイナスになることもある",
             },
             {
-              name: "millisecond",
+              name: { type: "string", value: "millisecond" },
               required: true,
               type: { _: "Number" },
               document: "日にちの中のミリ秒. 0 to 86399999 (=1000*60*60*24-1)",
@@ -763,7 +763,7 @@ Deno.test("output lambda type parameter", () => {
               ],
               return: jsTs.typeObject([
                 {
-                  name: "value",
+                  name: { type: "string", value: "value" },
                   required: true,
                   document: "",
                   type: jsTs.typeScopeInFileNoArguments(
@@ -771,7 +771,7 @@ Deno.test("output lambda type parameter", () => {
                   ),
                 },
                 {
-                  name: "s",
+                  name: { type: "string", value: "s" },
                   required: true,
                   document: "",
                   type: {
@@ -802,7 +802,7 @@ Deno.test("output lambda type parameter", () => {
               typeParameterList: [typeParameterIdentifier],
               returnType: jsTs.typeObject([
                 {
-                  name: "value",
+                  name: { type: "string", value: "value" },
                   required: true,
                   document: "",
                   type: jsTs.typeScopeInFileNoArguments(
@@ -844,13 +844,13 @@ Deno.test("output optional type member", () => {
           document: "年齢があってもなくてもいいやつ",
           type: jsTs.typeObject([
             {
-              name: "name",
+              name: { type: "string", value: "name" },
               required: true,
               document: "名前",
               type: { _: "String" },
             },
             {
-              name: "age",
+              name: { type: "string", value: "age" },
               required: false,
               document: "年齢",
               type: { _: "Number" },

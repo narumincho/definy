@@ -35,7 +35,7 @@ export type FunctionDetail = {
    * 関数の出力の型
    */
   readonly output: Type;
-  readonly __FunctionDetailBland: never;
+  readonly [globalThis.Symbol.toStringTag]: "definyRpc.FunctionDetail";
 };
 
 /**
@@ -51,7 +51,7 @@ export type Type = {
    * 型パラメーター
    */
   readonly parameters: globalThis.ReadonlyArray<Type>;
-  readonly __TypeBland: never;
+  readonly [globalThis.Symbol.toStringTag]: "definyRpc.Type";
 };
 
 /**
@@ -67,6 +67,7 @@ export type StructuredJsonValue =
        * string
        */
       readonly value: string;
+      readonly [globalThis.Symbol.toStringTag]: "definyRpc.StructuredJsonValue";
     }
   | {
       /**
@@ -77,6 +78,7 @@ export type StructuredJsonValue =
        * array
        */
       readonly value: globalThis.ReadonlyArray<StructuredJsonValue>;
+      readonly [globalThis.Symbol.toStringTag]: "definyRpc.StructuredJsonValue";
     }
   | {
       /**
@@ -87,6 +89,7 @@ export type StructuredJsonValue =
        * boolean
        */
       readonly value: boolean;
+      readonly [globalThis.Symbol.toStringTag]: "definyRpc.StructuredJsonValue";
     }
   | {
       /**
@@ -97,6 +100,7 @@ export type StructuredJsonValue =
        * null
        */
       readonly value: undefined;
+      readonly [globalThis.Symbol.toStringTag]: "definyRpc.StructuredJsonValue";
     }
   | {
       /**
@@ -107,8 +111,9 @@ export type StructuredJsonValue =
        * number
        */
       readonly value: number;
+      readonly [globalThis.Symbol.toStringTag]: "definyRpc.StructuredJsonValue";
     }
-  | ({
+  | {
       /**
        * object
        */
@@ -117,7 +122,8 @@ export type StructuredJsonValue =
        * object
        */
       readonly value: StringMap<StructuredJsonValue>;
-    } & { readonly __StructuredJsonValueBland: never });
+      readonly [globalThis.Symbol.toStringTag]: "definyRpc.StructuredJsonValue";
+    };
 
 /**
  * キーが string の ReadonlyMap
@@ -235,7 +241,7 @@ export const FunctionDetail: {
    * オブジェクトから作成する. 余計なフィールドがレスポンスに含まれてしまうのを防ぐ. 型のチェックはしない
    */
   readonly from: (
-    a: globalThis.Omit<FunctionDetail, "__FunctionDetailBland">
+    a: globalThis.Omit<FunctionDetail, typeof globalThis.Symbol.toStringTag>
   ) => FunctionDetail;
   /**
    * JsonからFunctionDetailに変換する. 失敗した場合はエラー
@@ -246,14 +252,14 @@ export const FunctionDetail: {
 } = {
   description: "functionByNameの結果",
   from: (
-    obj: globalThis.Omit<FunctionDetail, "__FunctionDetailBland">
-  ): FunctionDetail =>
-    ({
-      name: obj.name,
-      description: obj.description,
-      input: obj.input,
-      output: obj.output,
-    } as FunctionDetail),
+    obj: globalThis.Omit<FunctionDetail, typeof globalThis.Symbol.toStringTag>
+  ): FunctionDetail => ({
+    name: obj.name,
+    description: obj.description,
+    input: obj.input,
+    output: obj.output,
+    [globalThis.Symbol.toStringTag]: "definyRpc.FunctionDetail",
+  }),
   fromStructuredJsonValue: (
     jsonValue: a.StructuredJsonValue
   ): FunctionDetail => {
@@ -299,19 +305,23 @@ export const Type: {
   /**
    * オブジェクトから作成する. 余計なフィールドがレスポンスに含まれてしまうのを防ぐ. 型のチェックはしない
    */
-  readonly from: (a: globalThis.Omit<Type, "__TypeBland">) => Type;
+  readonly from: (
+    a: globalThis.Omit<Type, typeof globalThis.Symbol.toStringTag>
+  ) => Type;
   /**
    * JsonからTypeに変換する. 失敗した場合はエラー
    */
   readonly fromStructuredJsonValue: (a: a.StructuredJsonValue) => Type;
 } = {
   description: "definyRpc で表現できる型",
-  from: (obj: globalThis.Omit<Type, "__TypeBland">): Type =>
-    ({
-      fullName: obj.fullName,
-      description: obj.description,
-      parameters: obj.parameters,
-    } as Type),
+  from: (
+    obj: globalThis.Omit<Type, typeof globalThis.Symbol.toStringTag>
+  ): Type => ({
+    fullName: obj.fullName,
+    description: obj.description,
+    parameters: obj.parameters,
+    [globalThis.Symbol.toStringTag]: "definyRpc.Type",
+  }),
   fromStructuredJsonValue: (jsonValue: a.StructuredJsonValue): Type => {
     if (jsonValue.type !== "object") {
       throw new Error("expected object in Type.fromJson");
@@ -352,403 +362,41 @@ export const StructuredJsonValue: {
    */
   readonly description: string;
   /**
-   * オブジェクトから作成する. 余計なフィールドがレスポンスに含まれてしまうのを防ぐ. 型のチェックはしない
-   */
-  readonly from: (
-    a: globalThis.Omit<StructuredJsonValue, "__StructuredJsonValueBland">
-  ) => StructuredJsonValue;
-  /**
    * JsonからStructuredJsonValueに変換する. 失敗した場合はエラー
    */
   readonly fromStructuredJsonValue: (
     a: a.StructuredJsonValue
   ) => StructuredJsonValue;
+  /**
+   * string
+   */
+  readonly string: (a: string) => StructuredJsonValue;
+  /**
+   * array
+   */
+  readonly array: (
+    a: globalThis.ReadonlyArray<StructuredJsonValue>
+  ) => StructuredJsonValue;
+  /**
+   * boolean
+   */
+  readonly boolean: (a: boolean) => StructuredJsonValue;
+  /**
+   * null
+   */
+  readonly null: (a: undefined) => StructuredJsonValue;
+  /**
+   * number
+   */
+  readonly number: (a: number) => StructuredJsonValue;
+  /**
+   * object
+   */
+  readonly object: (
+    a: globalThis.ReadonlyMap<string, StructuredJsonValue>
+  ) => StructuredJsonValue;
 } = {
   description: "構造化されたJSON",
-  from: (
-    obj: globalThis.Omit<StructuredJsonValue, "__StructuredJsonValueBland">
-  ): StructuredJsonValue => {
-    switch (obj.type) {
-      case "string": {
-        return { type: "string", value: obj.value } as
-          | {
-              /**
-               * string
-               */
-              readonly type: "string";
-              /**
-               * string
-               */
-              readonly value: string;
-            }
-          | {
-              /**
-               * array
-               */
-              readonly type: "array";
-              /**
-               * array
-               */
-              readonly value: globalThis.ReadonlyArray<StructuredJsonValue>;
-            }
-          | {
-              /**
-               * boolean
-               */
-              readonly type: "boolean";
-              /**
-               * boolean
-               */
-              readonly value: boolean;
-            }
-          | {
-              /**
-               * null
-               */
-              readonly type: "null";
-              /**
-               * null
-               */
-              readonly value: undefined;
-            }
-          | {
-              /**
-               * number
-               */
-              readonly type: "number";
-              /**
-               * number
-               */
-              readonly value: number;
-            }
-          | ({
-              /**
-               * object
-               */
-              readonly type: "object";
-              /**
-               * object
-               */
-              readonly value: StringMap<StructuredJsonValue>;
-            } & { readonly __StructuredJsonValueBland: never });
-      }
-      case "array": {
-        return { type: "array", value: obj.value } as
-          | {
-              /**
-               * string
-               */
-              readonly type: "string";
-              /**
-               * string
-               */
-              readonly value: string;
-            }
-          | {
-              /**
-               * array
-               */
-              readonly type: "array";
-              /**
-               * array
-               */
-              readonly value: globalThis.ReadonlyArray<StructuredJsonValue>;
-            }
-          | {
-              /**
-               * boolean
-               */
-              readonly type: "boolean";
-              /**
-               * boolean
-               */
-              readonly value: boolean;
-            }
-          | {
-              /**
-               * null
-               */
-              readonly type: "null";
-              /**
-               * null
-               */
-              readonly value: undefined;
-            }
-          | {
-              /**
-               * number
-               */
-              readonly type: "number";
-              /**
-               * number
-               */
-              readonly value: number;
-            }
-          | ({
-              /**
-               * object
-               */
-              readonly type: "object";
-              /**
-               * object
-               */
-              readonly value: StringMap<StructuredJsonValue>;
-            } & { readonly __StructuredJsonValueBland: never });
-      }
-      case "boolean": {
-        return { type: "boolean", value: obj.value } as
-          | {
-              /**
-               * string
-               */
-              readonly type: "string";
-              /**
-               * string
-               */
-              readonly value: string;
-            }
-          | {
-              /**
-               * array
-               */
-              readonly type: "array";
-              /**
-               * array
-               */
-              readonly value: globalThis.ReadonlyArray<StructuredJsonValue>;
-            }
-          | {
-              /**
-               * boolean
-               */
-              readonly type: "boolean";
-              /**
-               * boolean
-               */
-              readonly value: boolean;
-            }
-          | {
-              /**
-               * null
-               */
-              readonly type: "null";
-              /**
-               * null
-               */
-              readonly value: undefined;
-            }
-          | {
-              /**
-               * number
-               */
-              readonly type: "number";
-              /**
-               * number
-               */
-              readonly value: number;
-            }
-          | ({
-              /**
-               * object
-               */
-              readonly type: "object";
-              /**
-               * object
-               */
-              readonly value: StringMap<StructuredJsonValue>;
-            } & { readonly __StructuredJsonValueBland: never });
-      }
-      case "null": {
-        return { type: "null", value: undefined } as
-          | {
-              /**
-               * string
-               */
-              readonly type: "string";
-              /**
-               * string
-               */
-              readonly value: string;
-            }
-          | {
-              /**
-               * array
-               */
-              readonly type: "array";
-              /**
-               * array
-               */
-              readonly value: globalThis.ReadonlyArray<StructuredJsonValue>;
-            }
-          | {
-              /**
-               * boolean
-               */
-              readonly type: "boolean";
-              /**
-               * boolean
-               */
-              readonly value: boolean;
-            }
-          | {
-              /**
-               * null
-               */
-              readonly type: "null";
-              /**
-               * null
-               */
-              readonly value: undefined;
-            }
-          | {
-              /**
-               * number
-               */
-              readonly type: "number";
-              /**
-               * number
-               */
-              readonly value: number;
-            }
-          | ({
-              /**
-               * object
-               */
-              readonly type: "object";
-              /**
-               * object
-               */
-              readonly value: StringMap<StructuredJsonValue>;
-            } & { readonly __StructuredJsonValueBland: never });
-      }
-      case "number": {
-        return { type: "number", value: obj.value } as
-          | {
-              /**
-               * string
-               */
-              readonly type: "string";
-              /**
-               * string
-               */
-              readonly value: string;
-            }
-          | {
-              /**
-               * array
-               */
-              readonly type: "array";
-              /**
-               * array
-               */
-              readonly value: globalThis.ReadonlyArray<StructuredJsonValue>;
-            }
-          | {
-              /**
-               * boolean
-               */
-              readonly type: "boolean";
-              /**
-               * boolean
-               */
-              readonly value: boolean;
-            }
-          | {
-              /**
-               * null
-               */
-              readonly type: "null";
-              /**
-               * null
-               */
-              readonly value: undefined;
-            }
-          | {
-              /**
-               * number
-               */
-              readonly type: "number";
-              /**
-               * number
-               */
-              readonly value: number;
-            }
-          | ({
-              /**
-               * object
-               */
-              readonly type: "object";
-              /**
-               * object
-               */
-              readonly value: StringMap<StructuredJsonValue>;
-            } & { readonly __StructuredJsonValueBland: never });
-      }
-      case "object": {
-        return { type: "object", value: obj.value } as
-          | {
-              /**
-               * string
-               */
-              readonly type: "string";
-              /**
-               * string
-               */
-              readonly value: string;
-            }
-          | {
-              /**
-               * array
-               */
-              readonly type: "array";
-              /**
-               * array
-               */
-              readonly value: globalThis.ReadonlyArray<StructuredJsonValue>;
-            }
-          | {
-              /**
-               * boolean
-               */
-              readonly type: "boolean";
-              /**
-               * boolean
-               */
-              readonly value: boolean;
-            }
-          | {
-              /**
-               * null
-               */
-              readonly type: "null";
-              /**
-               * null
-               */
-              readonly value: undefined;
-            }
-          | {
-              /**
-               * number
-               */
-              readonly type: "number";
-              /**
-               * number
-               */
-              readonly value: number;
-            }
-          | ({
-              /**
-               * object
-               */
-              readonly type: "object";
-              /**
-               * object
-               */
-              readonly value: StringMap<StructuredJsonValue>;
-            } & { readonly __StructuredJsonValueBland: never });
-      }
-    }
-  },
   fromStructuredJsonValue: (
     jsonValue: a.StructuredJsonValue
   ): StructuredJsonValue => {
@@ -836,6 +484,40 @@ export const StructuredJsonValue: {
         type.value
     );
   },
+  string: (p: string): StructuredJsonValue => ({
+    type: "string",
+    [globalThis.Symbol.toStringTag]: "definyRpc.StructuredJsonValue",
+    value: p,
+  }),
+  array: (
+    p: globalThis.ReadonlyArray<StructuredJsonValue>
+  ): StructuredJsonValue => ({
+    type: "array",
+    [globalThis.Symbol.toStringTag]: "definyRpc.StructuredJsonValue",
+    value: p,
+  }),
+  boolean: (p: boolean): StructuredJsonValue => ({
+    type: "boolean",
+    [globalThis.Symbol.toStringTag]: "definyRpc.StructuredJsonValue",
+    value: p,
+  }),
+  null: (p: undefined): StructuredJsonValue => ({
+    type: "null",
+    [globalThis.Symbol.toStringTag]: "definyRpc.StructuredJsonValue",
+    value: p,
+  }),
+  number: (p: number): StructuredJsonValue => ({
+    type: "number",
+    [globalThis.Symbol.toStringTag]: "definyRpc.StructuredJsonValue",
+    value: p,
+  }),
+  object: (
+    p: globalThis.ReadonlyMap<string, StructuredJsonValue>
+  ): StructuredJsonValue => ({
+    type: "object",
+    [globalThis.Symbol.toStringTag]: "definyRpc.StructuredJsonValue",
+    value: p,
+  }),
 };
 
 /**
@@ -895,14 +577,14 @@ export const StringMap: {
    */
   readonly fromStructuredJsonValue: <p0 extends unknown>(
     a: (a: a.StructuredJsonValue) => p0
-  ) => (a: a.StructuredJsonValue) => StringMap<p0>;
+  ) => (a: a.StructuredJsonValue) => globalThis.ReadonlyMap<string, p0>;
 } = {
   description: "キーが string の ReadonlyMap",
   fromStructuredJsonValue:
     <p0 extends unknown>(
       p0FromJson: (a: a.StructuredJsonValue) => p0
-    ): ((a: a.StructuredJsonValue) => StringMap<p0>) =>
-    (jsonValue: a.StructuredJsonValue): StringMap<p0> => {
+    ): ((a: a.StructuredJsonValue) => globalThis.ReadonlyMap<string, p0>) =>
+    (jsonValue: a.StructuredJsonValue): globalThis.ReadonlyMap<string, p0> => {
       throw new Error("expected stringMap in stringMap json fromJson");
     },
 };
@@ -917,7 +599,9 @@ export const name = (parameter: {
    */
   readonly url?: string | undefined;
 }): globalThis.Promise<Result<string, "error">> => {
-  const url: globalThis.URL = new URL(parameter.url ?? "http://localhost:2520");
+  const url: globalThis.URL = new globalThis.URL(
+    parameter.url ?? "http://localhost:2520"
+  );
   url.pathname = url.pathname + "/definyRpc/name";
   return globalThis
     .fetch(url)
@@ -948,7 +632,9 @@ export const namespaceList = (parameter: {
 }): globalThis.Promise<
   Result<globalThis.ReadonlySet<globalThis.ReadonlyArray<string>>, "error">
 > => {
-  const url: globalThis.URL = new URL(parameter.url ?? "http://localhost:2520");
+  const url: globalThis.URL = new globalThis.URL(
+    parameter.url ?? "http://localhost:2520"
+  );
   url.pathname = url.pathname + "/definyRpc/namespaceList";
   return globalThis
     .fetch(url)
@@ -989,7 +675,9 @@ export const functionListByName = (parameter: {
 }): globalThis.Promise<
   Result<globalThis.ReadonlyArray<FunctionDetail>, "error">
 > => {
-  const url: globalThis.URL = new URL(parameter.url ?? "http://localhost:2520");
+  const url: globalThis.URL = new globalThis.URL(
+    parameter.url ?? "http://localhost:2520"
+  );
   url.pathname = url.pathname + "/definyRpc/functionListByName";
   return globalThis
     .fetch(url)
@@ -1028,7 +716,9 @@ export const functionListByNamePrivate = (parameter: {
 }): globalThis.Promise<
   Result<globalThis.ReadonlyArray<FunctionDetail>, "error">
 > => {
-  const url: globalThis.URL = new URL(parameter.url ?? "http://localhost:2520");
+  const url: globalThis.URL = new globalThis.URL(
+    parameter.url ?? "http://localhost:2520"
+  );
   url.pathname = url.pathname + "/definyRpc/functionListByNamePrivate";
   return globalThis
     .fetch(url, { headers: { authorization: parameter.accountToken } })
@@ -1064,7 +754,9 @@ export const generateCallDefinyRpcTypeScriptCode = (parameter: {
    */
   readonly url?: string | undefined;
 }): globalThis.Promise<Result<string, "error">> => {
-  const url: globalThis.URL = new URL(parameter.url ?? "http://localhost:2520");
+  const url: globalThis.URL = new globalThis.URL(
+    parameter.url ?? "http://localhost:2520"
+  );
   url.pathname =
     url.pathname + "/definyRpc/generateCallDefinyRpcTypeScriptCode";
   return globalThis
@@ -1095,7 +787,9 @@ export const callQuery = (parameter: {
   readonly url?: string | undefined;
   readonly input: globalThis.ReadonlyArray<string>;
 }): globalThis.Promise<Result<StructuredJsonValue, "error">> => {
-  const url: globalThis.URL = new URL(parameter.url ?? "http://localhost:2520");
+  const url: globalThis.URL = new globalThis.URL(
+    parameter.url ?? "http://localhost:2520"
+  );
   url.pathname = url.pathname + "/definyRpc/callQuery";
   return globalThis
     .fetch(url)
@@ -1130,7 +824,9 @@ export const generateCodeAndWriteAsFileInServer = (parameter: {
    */
   readonly url?: string | undefined;
 }): globalThis.Promise<Result<undefined, "error">> => {
-  const url: globalThis.URL = new URL(parameter.url ?? "http://localhost:2520");
+  const url: globalThis.URL = new globalThis.URL(
+    parameter.url ?? "http://localhost:2520"
+  );
   url.pathname = url.pathname + "/definyRpc/generateCodeAndWriteAsFileInServer";
   return globalThis
     .fetch(url)

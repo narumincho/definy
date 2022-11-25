@@ -1,4 +1,9 @@
-import { data, identifierFromString } from "../../jsTs/main.ts";
+import {
+  data,
+  identifierFromString,
+  memberKeyValue,
+  stringLiteral,
+} from "../../jsTs/main.ts";
 
 const resultTypeName = identifierFromString("Result");
 
@@ -19,13 +24,13 @@ export const resultExportDefinition: data.ExportDefinition = {
           _: "Object",
           tsMemberTypeList: [
             {
-              name: "type",
+              name: { type: "string", value: "type" },
               document: "",
               required: true,
               type: { _: "StringLiteral", string: "ok" },
             },
             {
-              name: "ok",
+              name: { type: "string", value: "ok" },
               document: "",
               required: true,
               type: {
@@ -42,13 +47,13 @@ export const resultExportDefinition: data.ExportDefinition = {
           _: "Object",
           tsMemberTypeList: [
             {
-              name: "type",
+              name: { type: "string", value: "type" },
               document: "",
               required: true,
               type: { _: "StringLiteral", string: "error" },
             },
             {
-              name: "error",
+              name: { type: "string", value: "error" },
               document: "",
               required: true,
               type: {
@@ -80,27 +85,15 @@ export const resultType = (
 export const resultOk = (ok: data.TsExpr): data.TsExpr => ({
   _: "ObjectLiteral",
   tsMemberList: [
-    {
-      _: "KeyValue",
-      keyValue: { key: "type", value: { _: "StringLiteral", string: "ok" } },
-    },
-    {
-      _: "KeyValue",
-      keyValue: { key: "ok", value: ok },
-    },
+    memberKeyValue("type", stringLiteral("ok")),
+    memberKeyValue("ok", ok),
   ],
 });
 
 export const resultError = (error: data.TsExpr): data.TsExpr => ({
   _: "ObjectLiteral",
   tsMemberList: [
-    {
-      _: "KeyValue",
-      keyValue: { key: "type", value: { _: "StringLiteral", string: "error" } },
-    },
-    {
-      _: "KeyValue",
-      keyValue: { key: "error", value: error },
-    },
+    memberKeyValue("type", stringLiteral("error")),
+    memberKeyValue("error", error),
   ],
 });

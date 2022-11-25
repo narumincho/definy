@@ -439,7 +439,7 @@ export const newURL = (expr: d.TsExpr): d.TsExpr => ({
   _: "New",
   callExpr: {
     expr: {
-      _: "Variable",
+      _: "GlobalObjects",
       tsIdentifier: identifier.identifierFromString("URL"),
     },
     parameterList: [expr],
@@ -661,7 +661,7 @@ export const variable = (name: identifier.TsIdentifier): d.TsExpr => ({
 export const memberKeyValue = (key: string, value: d.TsExpr): d.TsMember => ({
   _: "KeyValue",
   keyValue: {
-    key,
+    key: stringLiteral(key),
     value,
   },
 });
@@ -779,3 +779,22 @@ export const statementSet = (setStatement: d.SetStatement): d.Statement => ({
   _: "Set",
   setStatement,
 });
+
+/**
+ * ラムダ式の型を抽出する
+ */
+export const lambdaToType = (lambda: d.LambdaExpr): d.TsType => {
+  return {
+    _: "Function",
+    functionType: {
+      parameterList: lambda.parameterList.map((parameter) => parameter.type),
+      return: lambda.returnType,
+      typeParameterList: lambda.typeParameterList,
+    },
+  };
+};
+
+export const symbolToStringTag: d.TsExpr = get({
+  _: "GlobalObjects",
+  tsIdentifier: identifier.identifierFromString("Symbol"),
+}, "toStringTag");

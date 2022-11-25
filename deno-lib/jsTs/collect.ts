@@ -84,7 +84,7 @@ const collectInDefinition = (
     case "typeAlias":
       return collectInTypeAlias(
         definition.typeAlias,
-        rootScopeIdentifierSet.rootScopeTypeNameSet,
+        rootScopeIdentifierSet,
       );
 
     case "function":
@@ -103,14 +103,14 @@ const collectInDefinition = (
 
 const collectInTypeAlias = (
   typeAlias: d.TypeAlias,
-  rootScopeTypeNameSet: ReadonlySet<string>,
+  rootScopeIdentifierSet: RootScopeIdentifierSet,
 ): UsedNameAndModulePathSet =>
   concatCollectData(
     {
       usedNameSet: new Set([typeAlias.name]),
       modulePathSet: new Set(),
     },
-    collectInType(typeAlias.type, rootScopeTypeNameSet, [
+    collectInType(typeAlias.type, rootScopeIdentifierSet, [
       new Set(typeAlias.typeParameterList),
     ]),
   );
@@ -142,14 +142,14 @@ const collectInFunctionDefinition = (
             },
             collectInType(
               parameter.type,
-              rootScopeIdentifierSet.rootScopeTypeNameSet,
+              rootScopeIdentifierSet,
               [typeParameterNameSet],
             ),
           )),
       ),
       collectInType(
         function_.returnType,
-        rootScopeIdentifierSet.rootScopeTypeNameSet,
+        rootScopeIdentifierSet,
         [typeParameterNameSet],
       ),
     ),
@@ -175,7 +175,7 @@ const collectInVariableDefinition = (
       },
       collectInType(
         variable.type,
-        rootScopeIdentifierSet.rootScopeTypeNameSet,
+        rootScopeIdentifierSet,
         [new Set()],
       ),
     ),
@@ -199,7 +199,6 @@ const collectInExpr = (
     case "BooleanLiteral":
     case "NullLiteral":
     case "UndefinedLiteral":
-    case "this":
       return {
         modulePathSet: new Set(),
         usedNameSet: new Set(),
@@ -305,14 +304,14 @@ const collectInExpr = (
                 },
                 collectInType(
                   oneParameter.type,
-                  rootScopeIdentifierSet.rootScopeTypeNameSet,
+                  rootScopeIdentifierSet,
                   newTypeParameterSetList,
                 ),
               ),
           ),
           collectInType(
             expr.lambdaExpr.returnType,
-            rootScopeIdentifierSet.rootScopeTypeNameSet,
+            rootScopeIdentifierSet,
             newTypeParameterSetList,
           ),
         ),
@@ -391,7 +390,7 @@ const collectInExpr = (
         ),
         collectInType(
           expr.typeAssertion.type,
-          rootScopeIdentifierSet.rootScopeTypeNameSet,
+          rootScopeIdentifierSet,
           typeParameterSetList,
         ),
       );
@@ -536,7 +535,7 @@ const collectInStatement = (
         ),
         collectInType(
           statement.variableDefinitionStatement.type,
-          rootScopeIdentifierSet.rootScopeTypeNameSet,
+          rootScopeIdentifierSet,
           typeParameterSetList,
         ),
       );
@@ -560,14 +559,14 @@ const collectInStatement = (
           (parameter) =>
             collectInType(
               parameter.type,
-              rootScopeIdentifierSet.rootScopeTypeNameSet,
+              rootScopeIdentifierSet,
               newTypeParameterSetList,
             ),
         ),
         concatCollectData(
           collectInType(
             statement.functionDefinitionStatement.returnType,
-            rootScopeIdentifierSet.rootScopeTypeNameSet,
+            rootScopeIdentifierSet,
             newTypeParameterSetList,
           ),
           collectStatementList(
@@ -686,12 +685,11 @@ const checkVariableIsDefinedOrThrow = (
 /**
  * グローバル空間(グローバル変数、直下の関数の引数名)に出ている型の名前を集める
  * @param type_ 型の式
- * @param scanData グローバルで使われている名前の集合などのコード全体の情報の収集データ。上書きする
  */
 const collectInType = (
   type_: d.TsType,
-  rootScopeTypeNameSet: ReadonlySet<string>,
-  typeParameterSetList: ReadonlyArray<ReadonlySet<string>>,
+  rootScopeIdentifierSet: RootScopeIdentifierSet,
+  typeParameterSetList: ReadonlyArray<ReadonlySet<TsIdentifier>>,
 ): UsedNameAndModulePathSet => {
   switch (type_._) {
     case "Number":
@@ -713,7 +711,7 @@ const collectInType = (
         (member) =>
           collectInType(
             member.type,
-            rootScopeTypeNameSet,
+            rootScopeIdentifierSet,
             typeParameterSetList,
           ),
       );
@@ -731,13 +729,13 @@ const collectInType = (
           (parameter) =>
             collectInType(
               parameter,
-              rootScopeTypeNameSet,
+              rootScopeIdentifierSet,
               newTypeParameterSetList,
             ),
         ),
         collectInType(
           type_.functionType.return,
-          rootScopeTypeNameSet,
+          rootScopeIdentifierSet,
           newTypeParameterSetList,
         ),
       );
@@ -747,19 +745,19 @@ const collectInType = (
       return collectList(
         type_.tsTypeList,
         (oneType) =>
-          collectInType(oneType, rootScopeTypeNameSet, typeParameterSetList),
+          collectInType(oneType, rootScopeIdentifierSet, typeParameterSetList),
       );
 
     case "Intersection":
       return concatCollectData(
         collectInType(
           type_.intersectionType.left,
-          rootScopeTypeNameSet,
+          rootScopeIdentifierSet,
           typeParameterSetList,
         ),
         collectInType(
           type_.intersectionType.right,
-          rootScopeTypeNameSet,
+          rootScopeIdentifierSet,
           typeParameterSetList,
         ),
       );
@@ -775,7 +773,7 @@ const collectInType = (
           (parameter) =>
             collectInType(
               parameter,
-              rootScopeTypeNameSet,
+              rootScopeIdentifierSet,
               typeParameterSetList,
             ),
         ),
@@ -792,7 +790,7 @@ const collectInType = (
           (parameter) =>
             collectInType(
               parameter,
-              rootScopeTypeNameSet,
+              rootScopeIdentifierSet,
               typeParameterSetList,
             ),
         ),
@@ -809,7 +807,7 @@ const collectInType = (
           (parameter) =>
             collectInType(
               parameter,
-              rootScopeTypeNameSet,
+              rootScopeIdentifierSet,
               typeParameterSetList,
             ),
         ),
@@ -826,7 +824,7 @@ const collectInType = (
           (parameter) =>
             collectInType(
               parameter,
-              rootScopeTypeNameSet,
+              rootScopeIdentifierSet,
               typeParameterSetList,
             ),
         ),
@@ -837,6 +835,14 @@ const collectInType = (
         modulePathSet: new Set(),
         usedNameSet: new Set(),
       };
+
+    case "typeof":
+      return collectInExpr(
+        type_.expr,
+        [],
+        typeParameterSetList,
+        rootScopeIdentifierSet,
+      );
   }
 };
 

@@ -1,14 +1,18 @@
 import clientBuildResult from "./browserClient.json" assert { type: "json" };
-import {
-  jsonStringify,
-  structuredJsonParse,
-  structuredJsonStringify,
-  StructuredJsonValue,
-} from "../../typedJson.ts";
+import { structuredJsonParse, StructuredJsonValue } from "../../typedJson.ts";
 import { AccountToken, FunctionAndTypeList } from "../core/apiFunction.ts";
 import { addDefinyRpcApiFunction } from "../core/builtInFunctions.ts";
 import { SimpleRequest } from "../../simpleRequestResponse/simpleRequest.ts";
-import { SimpleResponse } from "../../simpleRequestResponse/simpleResponse.ts";
+import {
+  notFound,
+  SimpleResponse,
+  simpleResponseHtml,
+  simpleResponseJavaScript,
+  simpleResponseJson,
+  simpleResponseOkEmpty,
+  simpleResponsePng,
+  unauthorized,
+} from "../../simpleRequestResponse/simpleResponse.ts";
 import { stringArrayEqual, stringArrayMatchPrefix } from "../../util.ts";
 import { toBytes } from "https://deno.land/x/fast_base64@v0.1.7/mod.ts";
 
@@ -50,10 +54,13 @@ export type DefinyRpcParameter = {
   readonly pathPrefix?: ReadonlyArray<string>;
 };
 
-export const handleRequest = (
+/**
+ * HTTP リクエストを definyRPC なりに解釈し, HTTPレスポンス を返す
+ */
+export const handleRequest = async (
   parameter: DefinyRpcParameter,
   request: SimpleRequest,
-): SimpleResponse | undefined => {
+): Promise<SimpleResponse | undefined> => {
   const pathPrefix = parameter.pathPrefix ?? [];
   if (!stringArrayMatchPrefix(request.path, pathPrefix)) {
     return undefined;
@@ -62,11 +69,7 @@ export const handleRequest = (
 
   const all = addDefinyRpcApiFunction(parameter);
   if (request.method === "OPTIONS") {
-    return {
-      status: 200,
-      headers: { ContentType: undefined },
-      body: undefined,
-    };
+    return simpleResponseOkEmpty;
   }
 
   const paramJson = request.query.get("param");
@@ -76,20 +79,13 @@ export const handleRequest = (
       : undefined) ?? { type: "null" };
 
   if (stringArrayEqual(pathListRemovePrefix, [])) {
-    return {
-      status: 200,
-      headers: {
-        ContentType: "text/html; charset=utf-8",
-      },
-      body: () =>
-        Promise.resolve(
-          new TextEncoder().encode(`<!doctype html>
+    return simpleResponseHtml(`<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/png" href="${
-            editorPathPrefix(pathPrefix) + clientBuildResult.iconHash
-          }" />
+      editorPathPrefix(pathPrefix) + clientBuildResult.iconHash
+    }" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>${parameter.name} | definy RPC</title>
     
@@ -99,16 +95,14 @@ export const handleRequest = (
       }
     </style>
     <script type="module" src="${
-            editorPathPrefix(pathPrefix) + clientBuildResult.scriptHash
-          }"></script>
+      editorPathPrefix(pathPrefix) + clientBuildResult.scriptHash
+    }"></script>
   </head>
   <body>
     <noscript>Need JavaScript</noscript>
   </body>
 </html>
-`),
-        ),
-    };
+`);
   }
   if (
     stringArrayEqual(pathListRemovePrefix, [
@@ -116,11 +110,7 @@ export const handleRequest = (
       clientBuildResult.iconHash,
     ])
   ) {
-    return {
-      status: 200,
-      headers: { ContentType: "image/png" },
-      body: () => toBytes(clientBuildResult.iconContent),
-    };
+    return simpleResponsePng(await toBytes(clientBuildResult.iconContent));
   }
   if (
     stringArrayEqual(pathListRemovePrefix, [
@@ -128,87 +118,45 @@ export const handleRequest = (
       clientBuildResult.scriptHash,
     ])
   ) {
-    return {
-      status: 200,
-      headers: { ContentType: "text/javascript; charset=utf-8" },
-      body: () =>
-        Promise.resolve(
-          new TextEncoder().encode(clientBuildResult.scriptContent),
-        ),
-    };
+    return simpleResponseJavaScript(clientBuildResult.scriptContent);
   }
   console.log("request!: ", pathListRemovePrefix);
   for (const func of all.functionsList) {
     if (stringArrayEqual(pathListRemovePrefix, func.fullName)) {
       if (func.needAuthentication) {
-        const authorizationValue = request.headers.Authorization;
-        console.log("authorizationValue", authorizationValue);
-        if (authorizationValue === null) {
-          return {
-            status: 401,
-            headers: {
-              ContentType: "application/json",
-            },
-            body: () =>
-              Promise.resolve(
-                new TextEncoder().encode(
-                  jsonStringify("invalid account token"),
-                ),
-              ),
-          };
+        const authorizationHeaderValue = request.headers.authorization;
+        if (typeof authorizationHeaderValue !== "string") {
+          return unauthorized("require account token in Authorization header");
         }
-        return {
-          status: 200,
-          headers: {
-            ContentType: "application/json",
-          },
-          body: async () => {
-            const apiFunctionResult = await func.resolve(
-              func.input.fromStructuredJsonValue(paramJsonParsed),
-              authorizationValue as AccountToken,
-            );
-            return new TextEncoder().encode(
-              structuredJsonStringify(
-                func.output.toStructuredJsonValue(apiFunctionResult),
-              ),
-            );
-          },
-        };
+        const [authorizationType, authorizationValue] = authorizationHeaderValue
+          .split(" ");
+        console.log("authorizationValue", authorizationValue);
+        if (
+          authorizationValue === undefined || authorizationType !== "Bearer"
+        ) {
+          return unauthorized("invalid account token in Authorization header");
+        }
+        const apiFunctionResult = await func.resolve(
+          func.input.fromStructuredJsonValue(paramJsonParsed),
+          authorizationValue as AccountToken,
+        );
+        return simpleResponseJson(
+          func.output.toStructuredJsonValue(apiFunctionResult),
+        );
       }
-      return {
-        status: 200,
-        headers: {
-          ContentType: "application/json",
-        },
-        body: async () => {
-          const apiFunctionResult = await func.resolve(
-            func.input.fromStructuredJsonValue(paramJsonParsed),
-            undefined,
-          );
-          return new TextEncoder().encode(
-            structuredJsonStringify(
-              func.output.toStructuredJsonValue(apiFunctionResult),
-            ),
-          );
-        },
-      };
+      const apiFunctionResult = await func.resolve(
+        func.input.fromStructuredJsonValue(paramJsonParsed),
+        undefined,
+      );
+      return simpleResponseJson(
+        func.output.toStructuredJsonValue(apiFunctionResult),
+      );
     }
   }
-  return {
-    status: 404,
-    headers: {
-      ContentType: "application/json",
-    },
-    body: () =>
-      Promise.resolve(
-        new TextEncoder().encode(
-          jsonStringify({
-            message: "not found...",
-            functionFullName: pathListRemovePrefix,
-          }),
-        ),
-      ),
-  };
+  return notFound({
+    examples: all.functionsList.map((func) => func.fullName),
+    specified: pathListRemovePrefix,
+  });
 };
 
 const editorPathPrefix = (pathPrefix: ReadonlyArray<string>) => {

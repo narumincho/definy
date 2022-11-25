@@ -1,36 +1,118 @@
-import { ServerResponse } from "../nodeType.ts";
+import {
+  jsonStringify,
+  RawJsonValue,
+  structuredJsonStringify,
+  StructuredJsonValue,
+} from "../typedJson.ts";
 
+/**
+ * {@link Response} のサブセット
+ */
 export type SimpleResponse = {
   readonly status: 200 | 400 | 401 | 404;
   readonly headers: {
-    readonly ContentType: string | undefined;
+    readonly contentType: string | undefined;
   };
-  readonly body: (() => Promise<Uint8Array>) | undefined;
+  readonly body: Uint8Array | undefined;
+} | {
+  readonly status: 301;
+  readonly headers: {
+    readonly location: string | undefined;
+  };
+  readonly body: undefined;
 };
 
-export const simpleResponseToResponse = async (
-  simpleResponse: SimpleResponse,
-): Promise<Response> => {
-  const bodyBinary = await simpleResponse.body?.();
-  const headers = new Headers();
-  if (simpleResponse.headers.ContentType !== undefined) {
-    headers.append("content-type", simpleResponse.headers.ContentType);
-  }
-  return new Response(bodyBinary, {
-    status: simpleResponse.status,
-    headers,
-  });
+export const simpleResponseOkEmpty: SimpleResponse = {
+  status: 200,
+  headers: { contentType: undefined },
+  body: undefined,
 };
 
-export const simpleResponseHandleServerResponse = async (
-  simpleResponse: SimpleResponse,
-  serverResponse: ServerResponse,
-): Promise<void> => {
-  serverResponse.writeHead(simpleResponse.status, {
-    ...(simpleResponse.headers.ContentType === undefined ? {} : {
-      "content-type": simpleResponse.headers.ContentType,
+export const simpleResponseHtml = (html: string): SimpleResponse => ({
+  status: 200,
+  headers: { contentType: "text/html; charset=utf-8" },
+  body: new TextEncoder().encode(html),
+});
+
+export const simpleResponseRedirect = (url: URL): SimpleResponse => {
+  return {
+    status: 301,
+    headers: { location: url.toString() },
+    body: undefined,
+  };
+};
+
+export const simpleResponsePng = (body: Uint8Array): SimpleResponse => ({
+  status: 200,
+  headers: { contentType: "image/png" },
+  body,
+});
+
+export const simpleResponseJavaScript = (code: string): SimpleResponse => ({
+  status: 200,
+  headers: { contentType: "text/javascript; charset=utf-8" },
+  body: new TextEncoder().encode(code),
+});
+
+export const simpleResponseJson = (
+  structuredJsonValue: StructuredJsonValue,
+): SimpleResponse => ({
+  status: 200,
+  headers: {
+    contentType: "application/json",
+  },
+  body: new TextEncoder().encode(
+    structuredJsonStringify(structuredJsonValue),
+  ),
+});
+
+export const unauthorized = (message: string): SimpleResponse => ({
+  status: 401,
+  headers: {
+    contentType: "application/json",
+  },
+  body: new TextEncoder().encode(
+    jsonStringify(message),
+  ),
+});
+
+export const notFound = (
+  message: { specified: RawJsonValue; examples: ReadonlyArray<RawJsonValue> },
+): SimpleResponse => ({
+  status: 404,
+  headers: {
+    contentType: "application/json",
+  },
+  body: new TextEncoder().encode(
+    jsonStringify({
+      message: "not found",
+      specified: message.specified,
+      examples: message.examples,
     }),
-  });
-  const bodyBinary = await simpleResponse.body?.();
-  serverResponse.end(bodyBinary);
+  ),
+});
+
+export const simpleResponseToResponse = (
+  simpleResponse: SimpleResponse,
+): Response => {
+  const headers = new Headers();
+  if (
+    simpleResponse.status !== 301 &&
+    simpleResponse.headers.contentType !== undefined
+  ) {
+    headers.append("content-type", simpleResponse.headers.contentType);
+  }
+  if (
+    simpleResponse.status === 301 &&
+    simpleResponse.headers.location !== undefined
+  ) {
+    headers.append("location", simpleResponse.headers.location);
+  }
+  return new Response(
+    simpleResponse.body,
+    {
+      status: simpleResponse.status,
+      headers,
+    },
+  );
 };

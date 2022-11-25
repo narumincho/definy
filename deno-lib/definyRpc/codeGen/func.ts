@@ -7,6 +7,7 @@ import {
   data,
   get,
   identifierFromString,
+  memberKeyValue,
   newURL,
   nullishCoalescing,
   objectLiteral,
@@ -113,27 +114,21 @@ export const apiFuncToTsFunction = (parameter: {
                 },
                 parameter.func.needAuthentication
                   ? objectLiteral([
-                    {
-                      _: "KeyValue",
-                      keyValue: {
-                        key: "headers",
-                        value: objectLiteral([
-                          {
-                            _: "KeyValue",
-                            keyValue: {
-                              key: "authorization",
-                              value: get(
-                                {
-                                  _: "Variable",
-                                  tsIdentifier: parameterIdentifier,
-                                },
-                                "accountToken",
-                              ),
+                    memberKeyValue(
+                      "headers",
+                      objectLiteral([
+                        memberKeyValue(
+                          "authorization",
+                          get(
+                            {
+                              _: "Variable",
+                              tsIdentifier: parameterIdentifier,
                             },
-                          },
-                        ]),
-                      },
-                    } as const,
+                            "accountToken",
+                          ),
+                        ),
+                      ]),
+                    ),
                   ])
                   : undefined,
               ),
@@ -225,7 +220,7 @@ const funcParameterType = (
     _: "Object",
     tsMemberTypeList: [
       {
-        name: "url",
+        name: { type: "string", value: "url" },
         document: `api end point
 @default ${originHint}`,
         required: false,
@@ -233,16 +228,16 @@ const funcParameterType = (
       },
       ...(func.input.body.type === "unit" ? [] : [
         {
-          name: "input",
+          name: { type: "string", value: "input" },
           document: "",
           required: true,
           type: definyRpcTypeToTsType(func.input),
-        },
+        } as const,
       ]),
       ...(func.needAuthentication
         ? [
           {
-            name: "accountToken",
+            name: { type: "string", value: "accountToken" },
             document: "",
             required: true,
             type: {
@@ -251,8 +246,8 @@ const funcParameterType = (
                 name: identifierFromString("AccountToken"),
                 arguments: [],
               },
-            } as const,
-          },
+            },
+          } as const,
         ]
         : []),
     ],
@@ -308,5 +303,7 @@ const definyRpcTypeToTsType = <t>(
           arguments: definyRpcType.parameters.map(definyRpcTypeToTsType),
         },
       };
+    case "url":
+      return urlType;
   }
 };

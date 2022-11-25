@@ -1,8 +1,12 @@
-import { createApiFunction, FunctionAndTypeList } from "./apiFunction.ts";
+import {
+  ApiFunction,
+  createApiFunction,
+  FunctionAndTypeList,
+} from "./apiFunction.ts";
 import { apiFunctionListToCode } from "../codeGen/main.ts";
 import type { DefinyRpcParameter } from "../server/definyRpc.ts";
 import { DefinyRpcType } from "./type.ts";
-import { writeTextFile } from "../../writeFileAndLog.ts";
+import { writeTextFileWithLog } from "../../writeFileAndLog.ts";
 import { stringArrayEqual } from "../../util.ts";
 import {
   list,
@@ -10,14 +14,14 @@ import {
   set,
   string,
   structuredJsonValue,
+  sum,
   unit,
 } from "./builtInType.ts";
 import { definyRpcNamespace } from "./definyRpcNamespace.ts";
 import { StructuredJsonValue } from "../../typedJson.ts";
 import { objectEntriesSameValue } from "../../objectEntriesSameValue.ts";
 import { join } from "https://deno.land/std@0.156.0/path/mod.ts";
-import { ensureFile } from "https://deno.land/std@0.165.0/fs/mod.ts";
-import { groupBy } from "https://deno.land/std@0.165.0/collections/group_by.ts";
+import { groupBy } from "https://deno.land/std@0.166.0/collections/group_by.ts";
 
 type Type = {
   readonly fullName: ReadonlyArray<string>;
@@ -67,6 +71,28 @@ const FunctionDetail = product<FunctionDetail>({
   },
 });
 
+/**
+ * ApiFunction で指定されていない型
+ */
+const builtInTypes: ReadonlyArray<DefinyRpcType<any>> = [
+  sum({
+    namespace: [definyRpcNamespace],
+    name: "ResultImpl",
+    description: "",
+    // パラメーターを考慮していない!
+    patternList: {
+      ok: {
+        description: "okってこと",
+        parameter: undefined,
+      },
+      error: {
+        description: "errorってこと",
+        parameter: undefined,
+      },
+    },
+  }),
+];
+
 export const addDefinyRpcApiFunction = (
   parameter: DefinyRpcParameter,
 ): FunctionAndTypeList => {
@@ -79,11 +105,19 @@ export const addDefinyRpcApiFunction = (
         fullName: [parameter.name, ...func.fullName] as const,
       })),
     ],
-    typeList: all.typeList,
+    typeList: [
+      ...builtInTypes,
+      ...all.typeList.map((type) => ({
+        ...type,
+        namespace: [parameter.name, ...type.namespace] as const,
+      })),
+    ],
   };
 };
 
-const builtInFunctions = (parameter: DefinyRpcParameter) => {
+const builtInFunctions = (
+  parameter: DefinyRpcParameter,
+): ReadonlyArray<ApiFunction> => {
   const codeGenOutputFolderPath = parameter.codeGenOutputFolderPath;
   return [
     createApiFunction({
@@ -160,13 +194,14 @@ const builtInFunctions = (parameter: DefinyRpcParameter) => {
       needAuthentication: false,
       resolve: () => {
         const allFunc = addDefinyRpcApiFunction(parameter).functionsList.filter(
-          (f) => f.fullName[0] === definyRpcNamespace,
+          (f) => stringArrayEqual(f.fullName, [definyRpcNamespace]),
         );
         return apiFunctionListToCode({
           apiFunctionList: allFunc,
           originHint: parameter.originHint,
           pathPrefix: parameter.pathPrefix ?? [],
           usePrettier: true,
+          namespace: [definyRpcNamespace],
         });
       },
     }),
@@ -220,7 +255,7 @@ const builtInFunctions = (parameter: DefinyRpcParameter) => {
                 if (firstFunc === undefined) {
                   return;
                 }
-                await ensureAndWriteCode(
+                await writeTextFileWithLog(
                   join(
                     codeGenOutputFolderPath,
                     ...firstFunc.fullName.slice(0, -2),
@@ -231,6 +266,7 @@ const builtInFunctions = (parameter: DefinyRpcParameter) => {
                     originHint: parameter.originHint,
                     pathPrefix: parameter.pathPrefix ?? [],
                     usePrettier: true,
+                    namespace: namespace.split("/"),
                   }),
                 );
               },
@@ -250,12 +286,4 @@ const definyRpcTypeBodyToType = <t>(definyRpcType: DefinyRpcType<t>): Type => {
     description: definyRpcType.description,
     parameters: definyRpcType.parameters.map(definyRpcTypeBodyToType),
   };
-};
-
-const ensureAndWriteCode = async (
-  path: string,
-  content: string,
-): Promise<void> => {
-  await ensureFile(path);
-  await writeTextFile(path, content);
 };

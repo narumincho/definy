@@ -15,7 +15,6 @@ import { statementListToString } from "./statement.ts";
  * 式をコードに変換する
  * @param expr 式
  */
-// eslint-disable-next-line complexity
 export const exprToString = (
   expr: d.TsExpr,
   indent: number,
@@ -82,46 +81,20 @@ export const exprToString = (
       );
 
     case "Lambda": {
-      if (expr.lambdaExpr.thisType === undefined || codeType === "JavaScript") {
-        return (
-          typeParameterListToString(expr.lambdaExpr.typeParameterList) +
-          "(" +
-          expr.lambdaExpr.parameterList
-            .map(
-              (parameter) =>
-                parameter.name +
-                typeAnnotation(parameter.type, codeType, moduleMap),
-            )
-            .join(", ") +
-          ")" +
-          typeAnnotation(expr.lambdaExpr.returnType, codeType, moduleMap) +
-          " => " +
-          lambdaBodyToString(
-            expr.lambdaExpr.statementList,
-            indent,
-            moduleMap,
-            codeType,
-          )
-        );
-      }
       return (
-        "function " +
         typeParameterListToString(expr.lambdaExpr.typeParameterList) +
         "(" +
-        [
-          "this" +
-          typeAnnotation(expr.lambdaExpr.thisType, codeType, moduleMap),
-          ...expr.lambdaExpr.parameterList
-            .map(
-              (parameter) =>
-                parameter.name +
-                typeAnnotation(parameter.type, codeType, moduleMap),
-            ),
-        ]
+        expr.lambdaExpr.parameterList
+          .map(
+            (parameter) =>
+              parameter.name +
+              typeAnnotation(parameter.type, codeType, moduleMap),
+          )
           .join(", ") +
         ")" +
         typeAnnotation(expr.lambdaExpr.returnType, codeType, moduleMap) +
-        statementListToString(
+        " => " +
+        lambdaBodyToString(
           expr.lambdaExpr.statementList,
           indent,
           moduleMap,
@@ -182,9 +155,6 @@ export const exprToString = (
           ? " as " + typeToString(expr.typeAssertion.type, moduleMap)
           : "")
       );
-
-    case "this":
-      return "this";
   }
 };
 
@@ -218,21 +188,31 @@ const objectLiteralToString = (
           return (
             "..." + exprToString(member.tsExpr, indent, moduleMap, codeType)
           );
-        case "KeyValue":
+        case "KeyValue": {
+          if (member.keyValue.key._ !== "StringLiteral") {
+            return "[" + exprToString(
+              member.keyValue.key,
+              indent,
+              moduleMap,
+              codeType,
+            ) +
+              "]: " +
+              exprToString(member.keyValue.value, indent, moduleMap, codeType);
+          }
+          const key = member.keyValue.key.string;
           if (
-            isIdentifier(member.keyValue.key) &&
+            isIdentifier(key) &&
             member.keyValue.value._ === "Variable" &&
-            member.keyValue.key === member.keyValue.value.tsIdentifier
+            key === member.keyValue.value.tsIdentifier
           ) {
             return member.keyValue.key;
           }
           return (
-            (isSafePropertyName(member.keyValue.key)
-              ? member.keyValue.key
-              : stringLiteralValueToString(member.keyValue.key)) +
+            (isSafePropertyName(key) ? key : stringLiteralValueToString(key)) +
             ": " +
             exprToString(member.keyValue.value, indent, moduleMap, codeType)
           );
+        }
       }
     })
     .join(", ") +
@@ -277,7 +257,6 @@ const exprCombineStrength = (expr: d.TsExpr): number => {
     case "Variable":
     case "GlobalObjects":
     case "ImportedVariable":
-    case "this":
       return 23;
     case "Lambda":
       return 22;

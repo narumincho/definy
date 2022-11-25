@@ -5,7 +5,7 @@ import {
 import { funcList } from "../definyRpc/exampleFunc.ts";
 import { requestObjectToSimpleRequest } from "../simpleRequestResponse/simpleRequest.ts";
 import { simpleResponseToResponse } from "../simpleRequestResponse/simpleResponse.ts";
-import { serve } from "https://deno.land/std@0.165.0/http/server.ts";
+import { serve } from "https://deno.land/std@0.166.0/http/server.ts";
 import { fromFileUrl } from "https://deno.land/std@0.156.0/path/mod.ts";
 
 const portNumber = 2520;
@@ -25,7 +25,7 @@ serve(
     if (simpleRequest === undefined) {
       return new Response("simpleRequestに変換できなかった", { status: 400 });
     }
-    const simpleResponse = handleRequest(
+    const simpleResponse = await handleRequest(
       sampleDefinyRpcServerParameter,
       simpleRequest,
     );
@@ -34,7 +34,7 @@ serve(
         status: 400,
       });
     }
-    const response = await simpleResponseToResponse(simpleResponse);
+    const response = simpleResponseToResponse(simpleResponse);
 
     response.headers.append(
       "access-control-allow-origin",
