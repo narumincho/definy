@@ -1,4 +1,4 @@
-import { startDefinyApiServer } from "../definyApp/apiServer/main.ts";
+import { startDefinyServer } from "../definyApp/server/main.ts";
 
 const readEnv = (key: string): string => {
   const value = Deno.env.get(key);
@@ -8,7 +8,7 @@ const readEnv = (key: string): string => {
   return value;
 };
 
-startDefinyApiServer({
+startDefinyServer({
   mode: { type: "denoDeploy" },
   faunaSecret: readEnv("FAUNA_KEY"),
   googleLogInClientSecret: readEnv("GOOGLE_LOGIN_CLIENT_SECRET"),

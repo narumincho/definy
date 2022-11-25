@@ -7,16 +7,13 @@ GoogleChrome(Google Chrome)
 UserA(User A)
 UserB(User B)
 Firefox(Firefox...)
-editorServer(editorServer)
-apiServer(apiServer)
+server(server)
 fauna(fauna データベース)
 
-fauna <-- HTTP --> apiServer
-editorServer <-- HTTP --> GoogleChrome
-apiServer <-- HTTP --> GoogleChrome
+fauna <-- HTTP --> server
+server <-- HTTP --> GoogleChrome
 GoogleChrome <-- 操作 --> UserA
-editorServer <-- HTTP --> Firefox
-apiServer <-- HTTP --> Firefox
+server <-- HTTP --> Firefox
 Firefox <-- 操作 --> UserB
 ```
 
@@ -33,43 +30,37 @@ PowerShell, bash などで カレントディレクトリをこの ./README.md �
 deno run --allow-run --allow-read ./entryPoints/check.ts
 ```
 
-## deno 版 definy.app editorServer
+## deno 版 definy.app
 
-### **開発用** editor サーバーを起動
-
-```ps1
-deno run --watch --allow-net=:2500,deno.land ./entryPoints/definyAppEditorServerDev.ts
-```
-
-### **開発用** editor browser client の watch ビルド
+### **開発用** 起動
 
 ```ps1
-deno run --watch -A ./entryPoints/definyAppEditorWatchBuild.ts
+deno run --check -A --watch ./entryPoints/definyDev.ts
 ```
 
-### editor サーバーを起動
+`./entryPoints/definyDev.ts` の内容はこんなような感じ
 
-```ps1
-deno run --check --allow-net=:8000,deno.land https://raw.githubusercontent.com/narumincho/definy/main/deno-lib/entryPoints/definyAppEditorServerDenoDeploy.ts
+```ts
+import { startDefinyServer } from "../definyApp/server/main.ts";
+import { editorWatchBuild } from "../definyApp/editorWatchBuild.ts";
+
+startDefinyServer({
+  mode: { type: "dev", port: 2528 },
+  faunaSecret: "...",
+  googleLogInClientSecret: "...",
+});
+
+editorWatchBuild();
 ```
 
-`deno.land` への接続は [imagescript](https://github.com/matmen/ImageScript) が wasm
-のダウンロードに使うため必要 (埋め込んでくれれば良いのに...)
-
-### **開発用** editor クライアントスクリプトビルドを起動
-
-```ps1
-deno run --check --watch -A ./definyApp/editor/watchBuild.ts
-```
-
-## deno 版 definy.app apiServer を起動
+### 起動
 
 設定のためにTypeScript を書く必要あり
 
-`./apiServer.ts`
+`./server.ts`
 
 ```ts
-import { startDefinyApiServer } from "https://raw.githubusercontent.com/narumincho/definy/main/deno-lib/definyApp/apiServer/main.ts";
+import { startDefinyApiServer } from "https://raw.githubusercontent.com/narumincho/definy/main/deno-lib/definyApp/server/main.ts";
 
 startDefinyApiServer({
   mode: { type: "dev", port: 3000 },
@@ -81,7 +72,7 @@ startDefinyApiServer({
 PowerShell, bash など
 
 ```ps1
-deno run --allow-net ./apiServer.ts
+deno run --allow-net ./server.ts
 ```
 
 ## definy RPC

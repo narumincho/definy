@@ -1,5 +1,3 @@
-import { stringArrayMatchPrefix } from "../util.ts";
-
 /**
  * 標準の Request オブジェクトから {@link SimpleRequest} を生成します
  */
