@@ -14,6 +14,7 @@ Deno.test("get server name", async () => {
       headers: {
         accept: undefined,
         authorization: undefined,
+        origin: undefined,
       },
       method: "GET",
       query: new Map(),
@@ -42,6 +43,7 @@ Deno.test("index.html", async () => {
       headers: {
         accept: undefined,
         authorization: undefined,
+        origin: undefined,
       },
       method: "GET",
       query: new Map(),
@@ -67,6 +69,7 @@ Deno.test("with pathPrefix index.html", async () => {
       headers: {
         accept: undefined,
         authorization: undefined,
+        origin: undefined,
       },
       method: "GET",
       query: new Map(),
@@ -92,6 +95,7 @@ Deno.test("with pathPrefix get server name", async () => {
       headers: {
         accept: undefined,
         authorization: undefined,
+        origin: undefined,
       },
       method: "GET",
       query: new Map(),
@@ -122,6 +126,7 @@ Deno.test("ignore with pathPrefix", async () => {
         headers: {
           accept: undefined,
           authorization: undefined,
+          origin: undefined,
         },
         method: "GET",
         query: new Map(),

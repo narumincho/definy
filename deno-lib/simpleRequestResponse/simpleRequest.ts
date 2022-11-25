@@ -1,4 +1,4 @@
-import { IncomingMessage } from "../nodeType.ts";
+import { stringArrayMatchPrefix } from "../util.ts";
 
 /**
  * 標準の Request オブジェクトから {@link SimpleRequest} を生成します
@@ -18,16 +18,6 @@ export const requestObjectToSimpleRequest = (
   });
 };
 
-export const incomingMessageToSimpleRequest = (
-  incomingMessage: IncomingMessage,
-): SimpleRequest | undefined => {
-  return commonObjectToSimpleRequest({
-    method: incomingMessage.method,
-    headers: new Map(Object.entries(incomingMessage.headers)),
-    url: new URL("https://narumincho.com" + incomingMessage.url),
-  });
-};
-
 const commonObjectToSimpleRequest = (request: {
   readonly method: string;
   readonly headers: ReadonlyMap<string, string>;
@@ -44,12 +34,21 @@ const commonObjectToSimpleRequest = (request: {
     return undefined;
   }
   const url = new URL(request.url);
+  const [authorizationType, authorizationCredentials] =
+    request.headers.get("Authorization")?.split(" ") ?? [];
 
   return {
     method: request.method,
     headers: {
       accept: request.headers.get("Accept"),
-      authorization: request.headers.get("Authorization"),
+      authorization: authorizationType !== "Bearer" ||
+          authorizationCredentials === undefined
+        ? undefined
+        : {
+          type: authorizationType,
+          credentials: authorizationCredentials,
+        },
+      origin: request.headers.get("Origin"),
     },
     path: url.pathname.split("/").filter((item) => item !== ""),
     query: new Map([...url.searchParams]),
@@ -67,6 +66,9 @@ export type SimpleRequest = {
   readonly query: ReadonlyMap<string, string>;
   readonly headers: {
     readonly accept: string | undefined;
-    readonly authorization: string | undefined;
+    readonly authorization:
+      | { readonly type: "Bearer"; readonly credentials: string }
+      | undefined;
+    readonly origin: string | undefined;
   };
 };
