@@ -11,11 +11,6 @@ export type Result<ok extends unknown, error extends unknown> =
   | { readonly type: "error"; readonly error: error };
 
 /**
- * 含むデータはURLだが, ApiFunctions の戻り値に指定するとリダイレクトのレスポンスを返す. ログインコールバックでよく使われる
- */
-export type RedirectUrl = globalThis.URL;
-
-/**
  * 内部表現は, undefined. JSON 上では null
  */
 export const Unit: {
@@ -51,7 +46,7 @@ export const String: {
     if (jsonValue.type === "string") {
       return jsonValue.value;
     }
-    throw new Error("expected string in String json fromJson");
+    throw new Error("expected string in String.fromStructuredJsonValue");
   },
 };
 
@@ -73,29 +68,8 @@ export const Number: {
     if (jsonValue.type === "number") {
       return jsonValue.value;
     }
-    throw new Error("expected number in Number json fromJson");
+    throw new Error("expected number in Number.fromStructuredJsonValue");
   },
-};
-
-/**
- * 含むデータはURLだが, ApiFunctions の戻り値に指定するとリダイレクトのレスポンスを返す. ログインコールバックでよく使われる
- */
-export const RedirectUrl: {
-  /**
-   * RedirectUrl の説明文
-   */
-  readonly description: string;
-  /**
-   * JsonからRedirectUrlに変換する. 失敗した場合はエラー
-   */
-  readonly fromStructuredJsonValue: (
-    a: a.StructuredJsonValue
-  ) => globalThis.URL;
-} = {
-  description:
-    "含むデータはURLだが, ApiFunctions の戻り値に指定するとリダイレクトのレスポンスを返す. ログインコールバックでよく使われる",
-  fromStructuredJsonValue: (jsonValue: a.StructuredJsonValue): globalThis.URL =>
-    "url wip",
 };
 
 /**
@@ -221,39 +195,6 @@ export const createGoogleLogInUrl = (parameter: {
       })
     )
     .catch((): Result<string, "error"> => ({ type: "error", error: "error" }));
-};
-
-/**
- * Google からのログイン (リダイレクトさせる必要がある...)
- */
-export const logInCallback = (parameter: {
-  /**
-   * api end point
-   * @default http://localhost:2528
-   */
-  readonly url?: string | undefined;
-}): globalThis.Promise<Result<globalThis.URL, "error">> => {
-  const url: globalThis.URL = new globalThis.URL(
-    parameter.url ?? "http://localhost:2528"
-  );
-  url.pathname = url.pathname + "/api/definyApi/logInCallback";
-  return globalThis
-    .fetch(url)
-    .then(
-      (response: globalThis.Response): globalThis.Promise<a.RawJsonValue> =>
-        response.json()
-    )
-    .then(
-      (jsonValue: a.RawJsonValue): Result<globalThis.URL, "error"> => ({
-        type: "ok",
-        ok: RedirectUrl.fromStructuredJsonValue(
-          a.rawJsonToStructuredJsonValue(jsonValue)
-        ),
-      })
-    )
-    .catch(
-      (): Result<globalThis.URL, "error"> => ({ type: "error", error: "error" })
-    );
 };
 
 /**
