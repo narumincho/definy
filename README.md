@@ -1,22 +1,21 @@
-# definy (VSCode 拡張機能版)
-
-[VSCode 拡張機能版 の説明](definyVSCodeExtension.md)
-
 # definy.app (Web アプリ版)
 
 ![definyのスクリーンショット](https://repository-images.githubusercontent.com/168463361/72534f00-ec72-11e9-94f3-370ab473bc28)
 
 Definy is Web App for Web App.
 
-[Latest Version](https://definy.app/?hl=en)
+ゲームとツールを手軽に作れて公開できるプログラミング言語とエディタ,ゲームエンジン,SNS. [Elm](https://elm-lang.org/),
+[PureScript](https://www.purescript.org/)で作っていた時期もあったが, 今は Deno の React で作られている
+Web アプリ. **まだ, ぜんぜんできていない...**
 
-[Old Version](https://definy-old.web.app/)
+- [Deno Version](https://definy.deno.dev/)
 
-ゲームとツールを手軽に作れて公開できるプログラミング言語とエディタ,ゲームエンジン,SNS. [Elm](https://elm-lang.org/)で作っていた時期もあったが, 今は React で作られている Web アプリ. PureScript に移行中. **まだ, ぜんぜんできていない**
+- [Next Version](https://definy.vercel.app/?hl=ja)
 
-[ここ](https://definy.app/?hl=ja)で動作を確認できる
+- [Firebase Version](https://definy.app/?hl=ja)
 
-[古いバージョン](https://definy-old.web.app/)では WebAssembly を使って数値の足し算, 引き算, 掛け算ができる
+- [Old Version](https://definy-old.web.app/) WebAssembly を使って数値の足し算, 引き算,
+  掛け算ができる
 
 ## 特徴
 
@@ -53,7 +52,8 @@ Definy is Web App for Web App.
 
 ## エミュレータの起動方法
 
-[Node.js LTS](https://nodejs.org/ja/), Java (Firestore のエミュレータに必要) をインストールする必要がある.
+[Node.js LTS](https://nodejs.org/ja/), Java (Firestore のエミュレータに必要)
+をインストールする必要がある.
 
 ```ps1
 corepack enable
@@ -61,7 +61,10 @@ corepack enable
 
 を事前に実行することによって, pnpm が自動的にインストールされる
 
-Google でログインするための 鍵を, 1 つ上の階層のファイルに保存し, npm script の `start` を実行するを開発用にアプリが起動する. Ctrl + C キーを押すと エミュレータを停止することができる. VSCode の ゴミ箱ボタンだと, firestore のエミュレータが終了されないので注意. タスクマネージャーの Open JDK Platform binary などのそれっぽいものを停止すれば, firestore のエミュレータを停止させることができる.
+Google でログインするための 鍵を, 1 つ上の階層のファイルに保存し, npm script の `start` を実行するを開発用にアプリが起動する.
+Ctrl + C キーを押すと エミュレータを停止することができる. VSCode の ゴミ箱ボタンだと, firestore
+のエミュレータが終了されないので注意. タスクマネージャーの Open JDK Platform binary などのそれっぽいものを停止すれば,
+firestore のエミュレータを停止させることができる.
 
 ### VSCode ワークスペース起動
 
@@ -72,7 +75,6 @@ Deno 向けワークスペースの起動
 ```ps1
 code ./for-deno.code-workspace
 ```
-
 
 # @definy/node-red
 
@@ -101,3 +103,7 @@ npm install path/to/nodeRedServerForNode
 ```
 
 [/deno-lib/README.md](./deno-lib/README.md) にも説明あり
+
+# definy (VSCode 拡張機能版) 開発やめた
+
+[VSCode 拡張機能版 の説明](definyVSCodeExtension.md)
