@@ -21,7 +21,7 @@ import { definyRpcNamespace } from "./definyRpcNamespace.ts";
 import { StructuredJsonValue } from "../../typedJson.ts";
 import { objectEntriesSameValue } from "../../objectEntriesSameValue.ts";
 import { join } from "https://deno.land/std@0.156.0/path/mod.ts";
-import { groupBy } from "https://deno.land/std@0.165.0/collections/group_by.ts";
+import { groupBy } from "https://deno.land/std@0.166.0/collections/group_by.ts";
 
 type Type = {
   readonly fullName: ReadonlyArray<string>;
