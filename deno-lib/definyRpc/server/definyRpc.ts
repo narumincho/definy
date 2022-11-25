@@ -125,20 +125,17 @@ export const handleRequest = async (
     if (stringArrayEqual(pathListRemovePrefix, func.fullName)) {
       if (func.needAuthentication) {
         const authorizationHeaderValue = request.headers.authorization;
-        if (typeof authorizationHeaderValue !== "string") {
+        if (authorizationHeaderValue === undefined) {
           return unauthorized("require account token in Authorization header");
         }
-        const [authorizationType, authorizationValue] = authorizationHeaderValue
-          .split(" ");
-        console.log("authorizationValue", authorizationValue);
         if (
-          authorizationValue === undefined || authorizationType !== "Bearer"
+          authorizationHeaderValue.type !== "Bearer"
         ) {
           return unauthorized("invalid account token in Authorization header");
         }
         const apiFunctionResult = await func.resolve(
           func.input.fromStructuredJsonValue(paramJsonParsed),
-          authorizationValue as AccountToken,
+          authorizationHeaderValue.credentials as AccountToken,
         );
         return simpleResponseJson(
           func.output.toStructuredJsonValue(apiFunctionResult),

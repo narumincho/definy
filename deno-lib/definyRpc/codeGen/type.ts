@@ -11,11 +11,13 @@ import {
   logicalOr,
   memberKeyValue,
   newSet,
+  newURL,
   notEqual,
   objectLiteral,
   readonlyArrayType,
   readonlyMapType,
   readonlySetType,
+  statementReturn,
   stringLiteral,
   symbolToStringTag,
   typeAssertion,
@@ -434,7 +436,7 @@ const typeToFromJsonStatementList = (
           _: "ThrowError",
           tsExpr: {
             _: "StringLiteral",
-            string: "expected number in Number json fromJson",
+            string: `expected number in ${type.name}.fromStructuredJsonValue`,
           },
         },
       ];
@@ -459,7 +461,7 @@ const typeToFromJsonStatementList = (
           _: "ThrowError",
           tsExpr: {
             _: "StringLiteral",
-            string: "expected string in String json fromJson",
+            string: `expected string in ${type.name}.fromStructuredJsonValue`,
           },
         },
       ];
@@ -484,7 +486,7 @@ const typeToFromJsonStatementList = (
           _: "ThrowError",
           tsExpr: {
             _: "StringLiteral",
-            string: "expected boolean in boolean json fromJson",
+            string: `expected boolean in ${type.name}.fromStructuredJsonValue`,
           },
         },
       ];
@@ -512,7 +514,7 @@ const typeToFromJsonStatementList = (
           _: "ThrowError",
           tsExpr: {
             _: "StringLiteral",
-            string: "expected array in List json fromJson",
+            string: `expected array in ${type.name}.fromStructuredJsonValue`,
           },
         },
       ];
@@ -542,7 +544,7 @@ const typeToFromJsonStatementList = (
           _: "ThrowError",
           tsExpr: {
             _: "StringLiteral",
-            string: "expected array in Set json fromJson",
+            string: `expected array in ${type.name}.fromStructuredJsonValue`,
           },
         },
       ];
@@ -552,7 +554,8 @@ const typeToFromJsonStatementList = (
           _: "ThrowError",
           tsExpr: {
             _: "StringLiteral",
-            string: "expected stringMap in stringMap json fromJson",
+            string:
+              `expected stringMap in ${type.name}.fromStructuredJsonValue`,
           },
         },
       ];
@@ -571,7 +574,8 @@ const typeToFromJsonStatementList = (
                 _: "ThrowError",
                 tsExpr: {
                   _: "StringLiteral",
-                  string: `expected object in ${type.name}.fromJson`,
+                  string:
+                    `expected object in ${type.name}.fromStructuredJsonValue`,
                 },
               },
             ],
@@ -612,7 +616,7 @@ const typeToFromJsonStatementList = (
                     tsExpr: {
                       _: "StringLiteral",
                       string:
-                        `expected ${field.name} field. in ${type.name}.fromJson`,
+                        `expected ${field.name} field. in ${type.name}.fromStructuredJsonValue`,
                     },
                   },
                 ],
@@ -771,7 +775,26 @@ const typeToFromJsonStatementList = (
         },
       ];
     case "url":
-      return [{ _: "Return", tsExpr: stringLiteral("url wip") }];
+      return [{
+        _: "If",
+        ifStatement: {
+          condition: equal(jsonValueVariableType, {
+            _: "StringLiteral",
+            string: "string",
+          }),
+          thenStatementList: [
+            statementReturn(
+              newURL(jsonValueVariableValue),
+            ),
+          ],
+        },
+      }, {
+        _: "ThrowError",
+        tsExpr: {
+          _: "StringLiteral",
+          string: `expected string in ${type.name}.fromStructuredJsonValue`,
+        },
+      }];
   }
 };
 

@@ -30,30 +30,30 @@ export const App = (): React.ReactElement => {
     ReadonlyArray<definyRpc.FunctionDetail> | undefined
   >(undefined);
   const [serverName, setServerName] = React.useState<string | undefined>();
-  const [serverOrigin, setServerOrigin] = React.useState<string>(
-    new URL(location.href).origin,
+  const [serverUrl, setServerUrl] = React.useState<string>(
+    new URL(location.href).toString(),
   );
   const [editorCount, setEditorCount] = React.useState<number>(1);
 
   React.useEffect(() => {
-    definyRpc.functionListByName({ url: serverOrigin }).then((result) => {
+    definyRpc.functionListByName({ url: serverUrl }).then((result) => {
       if (result.type === "ok") {
         setFunctionList(result.ok);
       } else {
         setFunctionList(undefined);
       }
     });
-  }, [serverOrigin]);
+  }, [serverUrl]);
 
   React.useEffect(() => {
-    definyRpc.name({ url: serverOrigin }).then((result) => {
+    definyRpc.name({ url: serverUrl }).then((result) => {
       if (result.type === "ok") {
         setServerName(result.ok);
       } else {
         setServerName(undefined);
       }
     });
-  }, [serverOrigin]);
+  }, [serverUrl]);
 
   return (
     <div className={c(containerStyle)}>
@@ -61,14 +61,14 @@ export const App = (): React.ReactElement => {
 
       <ServerOrigin
         serverName={serverName}
-        initServerOrigin={serverOrigin}
-        onChangeServerOrigin={setServerOrigin}
+        initServerOrigin={serverUrl}
+        onChangeServerOrigin={setServerUrl}
       />
       {Array.from({ length: editorCount }, (_, i) => (
         <Editor
           key={i}
           functionList={functionList}
-          serverOrigin={serverOrigin}
+          serverOrigin={serverUrl}
         />
       ))}
       <Button

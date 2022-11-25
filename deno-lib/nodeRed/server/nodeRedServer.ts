@@ -1,5 +1,5 @@
 import type { EventEmitter } from "https://deno.land/std@0.166.0/node/events.ts";
-import { Server } from "../../nodeType.ts";
+import type { Server } from "../../nodeType.ts";
 
 export type NodeAPI = {
   readonly server: Server;
