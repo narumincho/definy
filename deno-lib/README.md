@@ -35,22 +35,20 @@ deno run --allow-run --allow-read ./entryPoints/check.ts
 ### **開発用** 起動
 
 ```ps1
-deno run --check -A --watch ./entryPoints/definyDev.ts
+deno run --check --watch --allow-net=deno.land,:2528 --allow-write=./definyApp/apiClient/ ./entryPoints/definyDev.ts
+deno run --check -A ./entryPoints/definyEditorWatchBuild.ts
 ```
 
 `./entryPoints/definyDev.ts` の内容はこんなような感じ
 
 ```ts
 import { startDefinyServer } from "../definyApp/server/main.ts";
-import { editorWatchBuild } from "../definyApp/editorWatchBuild.ts";
 
 startDefinyServer({
   mode: { type: "dev", port: 2528 },
   faunaSecret: "...",
   googleLogInClientSecret: "...",
 });
-
-editorWatchBuild();
 ```
 
 ### 起動

@@ -41,7 +41,7 @@ const outputFilesToScriptFile = async (
 
 const assetsFolder = relative(
   Deno.cwd(),
-  fromFileUrl(import.meta.resolve("./editor/assets")),
+  fromFileUrl(import.meta.resolve("../definyApp/editor/assets")),
 );
 
 const watchAndBuild = async (
@@ -70,7 +70,7 @@ const watchAndBuild = async (
         relative(
           Deno.cwd(),
           fromFileUrl(
-            import.meta.resolve("../entryPoints/definyEditorInBrowser.tsx"),
+            import.meta.resolve("./definyEditorInBrowser.tsx"),
           ),
         ),
       ],
@@ -115,11 +115,13 @@ const watchAndBuild = async (
   });
 };
 
-export const editorWatchBuild = async (): Promise<void> => {
+const editorWatchBuild = async (): Promise<void> => {
   await watchAndBuild((clientBuildResult) => {
     writeTextFileWithLog(
-      fromFileUrl(import.meta.resolve("./server/dist.json")),
+      fromFileUrl(import.meta.resolve("../definyApp/server/dist.json")),
       jsonStringify(clientBuildResult, true),
     );
   });
 };
+
+editorWatchBuild();

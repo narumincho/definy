@@ -1,4 +1,4 @@
-import { startDefinyServer } from "../definyApp/server/main.ts";
+import { startDefinyServer } from "../definyApp/server/main.tsx";
 
 const readEnv = (key: string): string => {
   const value = Deno.env.get(key);
