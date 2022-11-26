@@ -1,8 +1,8 @@
 import { toBytes } from "https://deno.land/x/fast_base64@v0.1.7/mod.ts";
 import { Image } from "https://deno.land/x/imagescript@v1.2.14/mod.ts";
 import { timeToDisplayText } from "../editor/logic.ts";
+import { Clock24Parameter, Deadline } from "../editor/url.ts";
 import dist from "./dist.json" assert { type: "json" };
-import { Clock24Parameter, Deadline } from "./url.ts";
 
 /**
  * 時刻によって生成する画像が変化する

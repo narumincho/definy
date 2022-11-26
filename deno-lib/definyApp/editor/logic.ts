@@ -1,4 +1,4 @@
-import { Deadline } from "../server/url.ts";
+import { Deadline } from "./url.ts";
 
 export const timeToDisplayText = (
   deadline: Deadline,

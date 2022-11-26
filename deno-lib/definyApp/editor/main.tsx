@@ -1,8 +1,7 @@
 import React from "https://esm.sh/react@18.2.0?pin=v99";
 import { hydrateRoot } from "https://esm.sh/react-dom@18.2.0/client?pin=v99";
 import { App } from "./app.tsx";
-import { UrlLocation } from "../server/url.ts";
-import { simpleUrlToUrlData } from "../server/url.ts";
+import { simpleUrlToUrlLocation, UrlLocation } from "./url.ts";
 import { urlToSimpleUrl } from "../../simpleRequestResponse/simpleUrl.ts";
 
 /**
@@ -26,13 +25,13 @@ export const startEditor = (): void => {
 const AppWithHandleLocation = (): React.ReactElement => {
   const [urlLocation, setUrlLocation] = React.useState<UrlLocation>(
     () => {
-      const simpleUrlData = simpleUrlToUrlData(
+      const urlLocation = simpleUrlToUrlLocation(
         urlToSimpleUrl(new URL(window.location.href)),
       );
-      if (simpleUrlData === undefined || simpleUrlData.type !== "html") {
+      if (urlLocation === undefined) {
         return { type: "top" };
       }
-      return simpleUrlData.location;
+      return urlLocation;
     },
   );
 
@@ -49,13 +48,13 @@ const AppWithHandleLocation = (): React.ReactElement => {
         onChangeUrl={(newUrl) => {
           window.history.replaceState(undefined, "", newUrl.toString());
           setUrlLocation(() => {
-            const simpleUrlData = simpleUrlToUrlData(
+            const urlLocation = simpleUrlToUrlLocation(
               urlToSimpleUrl(new URL(window.location.href)),
             );
-            if (simpleUrlData === undefined || simpleUrlData.type !== "html") {
+            if (urlLocation === undefined) {
               return { type: "top" };
             }
-            return simpleUrlData.location;
+            return urlLocation;
           });
         }}
       />
