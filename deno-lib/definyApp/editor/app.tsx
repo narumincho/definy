@@ -33,7 +33,7 @@ const spacer = toStyleAndHash({
 
 export type AppProps = {
   readonly language: Language;
-  readonly location: UrlLocation;
+  readonly location: UrlLocation | undefined;
   readonly onChangeUrl?: ((newURL: URL) => void) | undefined;
 };
 
@@ -42,6 +42,10 @@ export const App = (props: AppProps): React.ReactElement => {
   const [isRequestLogInUrl, setIsRequestLogInUrl] = React.useState<boolean>(
     false,
   );
+
+  if (props.location === undefined) {
+    return <div className={c(containerStyle)}>not found... 見つからなかった</div>;
+  }
 
   switch (props.location.type) {
     case "clock24":

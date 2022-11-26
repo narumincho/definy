@@ -23,16 +23,11 @@ export const startEditor = (): void => {
 };
 
 const AppWithHandleLocation = (): React.ReactElement => {
-  const [urlLocation, setUrlLocation] = React.useState<UrlLocation>(
-    () => {
-      const urlLocation = simpleUrlToUrlLocation(
+  const [urlLocation, setUrlLocation] = React.useState<UrlLocation | undefined>(
+    () =>
+      simpleUrlToUrlLocation(
         urlToSimpleUrl(new URL(window.location.href)),
-      );
-      if (urlLocation === undefined) {
-        return { type: "top" };
-      }
-      return urlLocation;
-    },
+      ),
   );
 
   React.useEffect(() => {
@@ -47,15 +42,11 @@ const AppWithHandleLocation = (): React.ReactElement => {
         location={urlLocation}
         onChangeUrl={(newUrl) => {
           window.history.replaceState(undefined, "", newUrl.toString());
-          setUrlLocation(() => {
-            const urlLocation = simpleUrlToUrlLocation(
+          setUrlLocation(() =>
+            simpleUrlToUrlLocation(
               urlToSimpleUrl(new URL(window.location.href)),
-            );
-            if (urlLocation === undefined) {
-              return { type: "top" };
-            }
-            return urlLocation;
-          });
+            )
+          );
         }}
       />
     </React.StrictMode>
