@@ -5,6 +5,7 @@ import { Form } from "./Form.tsx";
 import { red } from "./nodeRed.ts";
 import { Status } from "../server/status.ts";
 import { GeneratedNodeForm } from "./GeneratedNodeForm.tsx";
+import { CssProvider } from "../../cssInJs/mod.tsx";
 
 const escapeHtml = (text: string): string => {
   return text.replace(/[&'`"<>]/ug, (match) => {
@@ -98,13 +99,15 @@ red.nodes.registerType<{ url: string }>("create-definy-rpc-node", {
     }
     const reactRoot = createRoot(formRoot);
     reactRoot.render(
-      <Form
-        statusText={this.status?.text ?? "ステータス未設定"}
-        initUrl={this.url}
-        onChangeUrl={(newUrl) => {
-          editingUrl = newUrl;
-        }}
-      />,
+      <CssProvider>
+        <Form
+          statusText={this.status?.text ?? "ステータス未設定"}
+          initUrl={this.url}
+          onChangeUrl={(newUrl) => {
+            editingUrl = newUrl;
+          }}
+        />
+      </CssProvider>,
     );
   },
   oneditsave: function () {

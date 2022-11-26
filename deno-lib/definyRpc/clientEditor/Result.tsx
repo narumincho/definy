@@ -1,6 +1,6 @@
 import React from "https://esm.sh/react@18.2.0?pin=v99";
 import { Button } from "../../editor/Button.tsx";
-import { c, toStyleAndHash } from "../../cssInJs/mod.ts";
+import { toStyleAndHash, useCssInJs } from "../../cssInJs/mod.tsx";
 import { jsonStringify, RawJsonValue } from "../../typedJson.ts";
 
 const requestingStyle = toStyleAndHash({
@@ -20,6 +20,7 @@ export const Result = (props: {
   readonly data: RawJsonValue;
   readonly requesting: boolean;
 }) => {
+  const c = useCssInJs();
   const [responseToClipboardLoading, setResponseToClipboardLoading] = React
     .useState<boolean>(false);
 

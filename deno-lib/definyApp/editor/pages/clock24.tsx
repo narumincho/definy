@@ -1,5 +1,5 @@
 import React from "https://esm.sh/react@18.2.0?pin=v99";
-import { c, toStyleAndHash } from "../../../cssInJs/mod.ts";
+import { toStyleAndHash, useCssInJs } from "../../../cssInJs/mod.tsx";
 import { ClockSetting } from "../components/clockSetting.tsx";
 import { timeToDisplayText } from "../logic.ts";
 import { Clock24Parameter } from "../url.ts";
@@ -68,6 +68,7 @@ export const Clock24 = (
     readonly onChangeUrl: (newURL: URL) => void;
   },
 ): React.ReactElement => {
+  const c = useCssInJs();
   const [isSettingMode, setIsSettingMode] = React.useState<boolean>(false);
   const [now, setNow] = React.useState<Date>(new Date());
 

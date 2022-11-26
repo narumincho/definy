@@ -1,5 +1,5 @@
 import React from "https://esm.sh/react@18.2.0?pin=v99";
-import { c, toStyleAndHash } from "../../cssInJs/mod.ts";
+import { toStyleAndHash, useCssInJs } from "../../cssInJs/mod.tsx";
 import * as definyRpc from "../generated/definyRpc.ts";
 import { Button } from "../../editor/Button.tsx";
 import { Editor } from "./Editor.tsx";
@@ -29,6 +29,7 @@ export const App = (): React.ReactElement => {
   const [functionList, setFunctionList] = React.useState<
     ReadonlyArray<definyRpc.FunctionDetail> | undefined
   >(undefined);
+  const c = useCssInJs();
   const [serverName, setServerName] = React.useState<string | undefined>();
   const [serverUrl, setServerUrl] = React.useState<string>(
     new URL(location.href).toString(),

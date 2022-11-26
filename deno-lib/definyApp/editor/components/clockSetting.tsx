@@ -1,5 +1,5 @@
 import React from "https://esm.sh/react@18.2.0?pin=v99";
-import { c, toStyleAndHash } from "../../../cssInJs/mod.ts";
+import { toStyleAndHash, useCssInJs } from "../../../cssInJs/mod.tsx";
 import { Clock24Parameter } from "../url.ts";
 
 const containerStyle = toStyleAndHash({
@@ -64,6 +64,7 @@ export const ClockSetting = (
     readonly onChangeUrl: (newURL: URL) => void;
   },
 ): React.ReactElement => {
+  const c = useCssInJs();
   return (
     <div className={c(containerStyle)}>
       <label className={c(labelStyle)}>

@@ -1,5 +1,5 @@
 import React from "https://esm.sh/react@18.2.0?pin=v99";
-import { c, toStyleAndHash } from "../cssInJs/mod.ts";
+import { toStyleAndHash, useCssInJs } from "../cssInJs/mod.tsx";
 import { createRandomId } from "../util.ts";
 
 export type Message = {
@@ -23,6 +23,7 @@ export const useNotification = (): {
   readonly addMessage: AddMessage;
   readonly element: React.ReactElement;
 } => {
+  const c = useCssInJs();
   const [messageList, setMessageList] = React.useState<ReadonlyArray<Message>>(
     [],
   );

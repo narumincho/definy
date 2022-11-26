@@ -1,5 +1,5 @@
 import React from "https://esm.sh/react@18.2.0?pin=v99";
-import { c, toStyleAndHash } from "../cssInJs/mod.ts";
+import { toStyleAndHash, useCssInJs } from "../cssInJs/mod.tsx";
 import { Button } from "../editor/Button.tsx";
 import { jsonStringify, RawJsonValue } from "../typedJson.ts";
 import { EnterIcon } from "./EnterIcon.tsx";
@@ -69,6 +69,7 @@ export const Editor = (props: {
   readonly fields: ReadonlyArray<Field>;
   readonly onChange: (fieldId: string, newValue: string) => void;
 }): React.ReactElement => {
+  const c = useCssInJs();
   const [selectedFieldId, setSelectedFieldId] = React.useState<
     string | undefined
   >(props.fields[0]?.id);
@@ -285,6 +286,7 @@ const TextField = (props: {
   readonly onPaste: (text: string) => void;
   readonly onCopy: (text: string) => void;
 }) => {
+  const c = useCssInJs();
   const ref = React.useRef<HTMLDivElement>(null);
 
   React.useEffect(() => {
@@ -386,6 +388,7 @@ const ButtonField = (props: {
   readonly onPaste: (text: string) => void;
   readonly onCopy: (text: string) => void;
 }) => {
+  const c = useCssInJs();
   const ref = React.useRef<HTMLDivElement>(null);
 
   React.useEffect(() => {
@@ -460,6 +463,7 @@ const ProductField = (props: {
   readonly onPaste: (text: string) => void;
   readonly onCopy: (text: string) => void;
 }) => {
+  const c = useCssInJs();
   const ref = React.useRef<HTMLDivElement>(null);
 
   React.useEffect(() => {
@@ -570,6 +574,7 @@ const TextFieldValue = (props: {
   /** 読み取り専用の場合は `undefined` */
   readonly onStartEdit: (() => void) | undefined;
 }) => {
+  const c = useCssInJs();
   if (props.isTitle) {
     return (
       <h2
@@ -625,6 +630,7 @@ const StyledInput = (props: {
   readonly onPaste: (text: string) => void;
   readonly onCopy: (text: string) => void;
 }): React.ReactElement => {
+  const c = useCssInJs();
   const [editingText, setEditingText] = React.useState<string>(props.value);
 
   return (

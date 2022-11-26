@@ -1,5 +1,5 @@
 import React from "https://esm.sh/react@18.2.0?pin=v99";
-import { c, toStyleAndHash } from "../../cssInJs/mod.ts";
+import { CssProvider, toStyleAndHash, useCssInJs } from "../../cssInJs/mod.tsx";
 import { Language } from "../../zodType.ts";
 import { GoogleLogInButton } from "./components/googleLogInButton.tsx";
 import { Clock24 } from "./pages/clock24.tsx";
@@ -38,6 +38,15 @@ export type AppProps = {
 };
 
 export const App = (props: AppProps): React.ReactElement => {
+  return (
+    <CssProvider>
+      <AppContent {...props} />
+    </CssProvider>
+  );
+};
+
+const AppContent = (props: AppProps): React.ReactElement => {
+  const c = useCssInJs();
   const [count, setCount] = React.useState<number>(0);
   const [isRequestLogInUrl, setIsRequestLogInUrl] = React.useState<boolean>(
     false,

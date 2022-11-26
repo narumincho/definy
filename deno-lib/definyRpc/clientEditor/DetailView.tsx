@@ -1,6 +1,6 @@
 import React from "https://esm.sh/react@18.2.0?pin=v99";
 import { FunctionDetail } from "../generated/definyRpc.ts";
-import { c, toStyleAndHash } from "../../cssInJs/mod.ts";
+import { toStyleAndHash, useCssInJs } from "../../cssInJs/mod.tsx";
 
 const containerStyle = toStyleAndHash({
   overflowWrap: "anywhere",
@@ -10,6 +10,7 @@ export const DetailView = (props: {
   readonly functionList: ReadonlyArray<FunctionDetail>;
   readonly selectedFuncName: string | undefined;
 }): React.ReactElement => {
+  const c = useCssInJs();
   if (props.selectedFuncName === undefined) {
     return (
       <div>

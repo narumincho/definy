@@ -1,6 +1,6 @@
 import React from "https://esm.sh/react@18.2.0?pin=v99";
 import { urlFromString } from "./urlFromString.ts";
-import { c, toStyleAndHash } from "../../cssInJs/mod.ts";
+import { toStyleAndHash, useCssInJs } from "../../cssInJs/mod.tsx";
 import { jsonStringify } from "../../typedJson.ts";
 
 const errorStyle = toStyleAndHash({
@@ -20,6 +20,7 @@ export const Form = (props: {
   readonly initUrl: string;
   readonly onChangeUrl: (text: string) => void;
 }): React.ReactElement => {
+  const c = useCssInJs();
   const [urlText, setUrlText] = React.useState<string>(props.initUrl);
 
   return (

@@ -1,6 +1,6 @@
 import React from "https://esm.sh/react@18.2.0?pin=v99";
 import { FunctionDetail } from "../generated/definyRpc.ts";
-import { c, toStyleAndHash } from "../../cssInJs/mod.ts";
+import { toStyleAndHash, useCssInJs } from "../../cssInJs/mod.tsx";
 
 const readonlyStyle = toStyleAndHash({
   display: "grid",
@@ -44,6 +44,7 @@ export const Select = (props: {
   readonly value: string | undefined;
   readonly onSelect: (value: string | undefined) => void;
 }): React.ReactElement => {
+  const c = useCssInJs();
   const [isFocus, setIsFocus] = React.useState<boolean>(false);
 
   const onBlur = React.useCallback(
@@ -83,6 +84,7 @@ const SelectActive = (props: {
   readonly onSelect: (value: string | undefined) => void;
   readonly onSelectAndExit: (value: string | undefined) => void;
 }): React.ReactElement => {
+  const c = useCssInJs();
   const [inputText, setInputText] = React.useState<string>(props.value ?? "");
   const inputElementRef = React.useRef<HTMLInputElement>(null);
   const [initValue] = React.useState<string | undefined>(props.value);
@@ -176,6 +178,8 @@ const Suggestion = (props: {
   readonly inputText: string;
   readonly onSelect: (value: string) => void;
 }) => {
+  const c = useCssInJs();
+
   if (props.suggestionList === undefined) {
     return <div>loading...</div>;
   }

@@ -1,4 +1,60 @@
 import { murmurHash3 } from "https://deno.land/x/murmur_hash_3@1.0.0/mod.ts";
+import React from "https://esm.sh/react@18.2.0?pin=v99";
+
+/**
+ * 自作の CSS in JS
+ * Deno で esbuild でバンドルしたときに styled-component, emotion など動かなかっため自作した
+ */
+
+export type StyleMap = ReadonlyMap<
+  string,
+  { readonly style: Style; readonly state: StateStyle }
+>;
+
+const CssContext = React.createContext<
+  (styleAndHash: StyleAndHash) => string
+>(() => "...");
+
+export const useCssInJs = () => React.useContext(CssContext);
+
+export const CssProvider = (
+  props: { readonly children: React.ReactElement },
+) => {
+  const [insertedStyle, setInsertedStyle] = React.useState<StyleMap>(new Map());
+
+  console.log("CssProvider.build", insertedStyle.size);
+
+  const c = React.useCallback((styleAndHash: StyleAndHash): string => {
+    const className = hashToClassName(styleAndHash.hash);
+    if (insertedStyle.has(styleAndHash.hash)) {
+      return className;
+    }
+    setInsertedStyle((old) => {
+      const newMap = new Map(old);
+      newMap.set(styleAndHash.hash, {
+        style: styleAndHash.style,
+        state: styleAndHash.stateStyle,
+      });
+      return newMap;
+    });
+    return className;
+  }, [insertedStyle]);
+
+  return (
+    <CssContext.Provider value={c}>
+      <style>
+        {[...insertedStyle].map(([k, v]) => {
+          return styleAndStateStyleToCssString(
+            hashToClassName(k),
+            v.style,
+            v.state,
+          );
+        })}
+      </style>
+      {props.children}
+    </CssContext.Provider>
+  );
+};
 
 const definyCssInJsId = "definy-css-in-js";
 
@@ -86,20 +142,6 @@ export type StyleAndHash = {
   readonly hash: string;
 };
 
-export const resetInsertedStyle = (): void => {
-  insertedStyle.clear();
-};
-
-export const getRenderedCss = (): string => {
-  return [...insertedStyle.entries()].map(([hash, styleAndState]): string => {
-    return styleAndStateStyleToCssString(
-      hashToClassName(hash),
-      styleAndState.style,
-      styleAndState.state,
-    );
-  }).join("\n");
-};
-
 /**
  * すでに追加したスタイルの辞書. キーはハッシュ値
  *
@@ -134,41 +176,6 @@ export const toStyleAndHash = (
     stateStyle,
     hash,
   };
-};
-
-/**
- * {@link toStyleAndHash} で生成した {@link StyleAndHash} からクラス名を生成する
- *
- * Deno で esbuild でバンドルしたときに styled-component, emotion など動かなかっため自作した
- */
-export const c = (styleAndHash: StyleAndHash): string => {
-  const className = hashToClassName(styleAndHash.hash);
-  if (insertedStyle.has(styleAndHash.hash)) {
-    return className;
-  }
-  insertedStyle.set(styleAndHash.hash, {
-    style: styleAndHash.style,
-    state: styleAndHash.stateStyle,
-  });
-  if (globalThis.document === undefined) {
-    return className;
-  }
-  const cssString = styleAndStateStyleToCssString(
-    className,
-    styleAndHash.style,
-    styleAndHash.stateStyle,
-  );
-  console.log(cssString);
-  const styleElement = document.getElementById(definyCssInJsId);
-  if (styleElement instanceof HTMLStyleElement) {
-    styleElement.append(cssString);
-    return className;
-  }
-  const createdStyleElement = document.createElement("style");
-  createdStyleElement.id = definyCssInJsId;
-  document.head.appendChild(createdStyleElement);
-  createdStyleElement.textContent = cssString;
-  return className;
 };
 
 const hashStyle = (style: Style, state: StateStyle): string => {

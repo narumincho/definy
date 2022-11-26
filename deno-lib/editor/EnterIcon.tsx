@@ -1,10 +1,11 @@
 import React from "https://esm.sh/react@18.2.0?pin=v99";
-import { c, toStyleAndHash } from "../cssInJs/mod.ts";
+import { toStyleAndHash, useCssInJs } from "../cssInJs/mod.tsx";
 
 export const EnterIcon = (props: {
   readonly stroke: string;
   readonly height: number;
 }) => {
+  const c = useCssInJs();
   return (
     <svg
       viewBox="0 0 38 32"

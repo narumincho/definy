@@ -4,7 +4,7 @@ import { Button } from "../../editor/Button.tsx";
 import { DetailView } from "./DetailView.tsx";
 import { Result } from "./Result.tsx";
 import { Select } from "./Select.tsx";
-import { c, toStyleAndHash } from "../../cssInJs/mod.ts";
+import { toStyleAndHash, useCssInJs } from "../../cssInJs/mod.tsx";
 import { RawJsonValue } from "../../typedJson.ts";
 
 const containerStyle = toStyleAndHash({
@@ -22,6 +22,7 @@ export const Editor = (props: {
   readonly serverOrigin: string;
   readonly functionList: ReadonlyArray<definyRpc.FunctionDetail> | undefined;
 }): React.ReactElement => {
+  const c = useCssInJs();
   const [selectedFunc, setSelectedFunc] = React.useState<string | undefined>(
     undefined,
   );

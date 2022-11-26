@@ -1,5 +1,5 @@
 import React from "https://esm.sh/react@18.2.0?pin=v99";
-import { c, toStyleAndHash } from "../cssInJs/mod.ts";
+import { toStyleAndHash, useCssInJs } from "../cssInJs/mod.tsx";
 
 export type Props = {
   readonly onClick: (() => void) | undefined;
@@ -31,12 +31,15 @@ const style = toStyleAndHash(
   },
 );
 
-export const Button = (props: Props): React.ReactElement => (
-  <button
-    className={c(style)}
-    onClick={props.onClick}
-    disabled={props.onClick === undefined}
-  >
-    {props.children}
-  </button>
-);
+export const Button = (props: Props): React.ReactElement => {
+  const c = useCssInJs();
+  return (
+    <button
+      className={c(style)}
+      onClick={props.onClick}
+      disabled={props.onClick === undefined}
+    >
+      {props.children}
+    </button>
+  );
+};

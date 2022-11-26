@@ -1,6 +1,6 @@
 import React from "https://esm.sh/react@18.2.0?pin=v99";
 import { Editor } from "../../editor/Editor.tsx";
-import { c, toStyleAndHash } from "../../cssInJs/mod.ts";
+import { toStyleAndHash, useCssInJs } from "../../cssInJs/mod.tsx";
 
 const serverOriginFieldId = "server-origin";
 
@@ -13,6 +13,7 @@ export const ServerOrigin = (props: {
   readonly initServerOrigin: string;
   readonly onChangeServerOrigin: (newOrigin: string) => void;
 }): React.ReactElement => {
+  const c = useCssInJs();
   const [originText, setOriginText] = React.useState<string>(
     props.initServerOrigin,
   );

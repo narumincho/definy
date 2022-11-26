@@ -21,11 +21,10 @@ import React from "https://esm.sh/react@18.2.0?pin=v99";
 import { renderToString } from "https://esm.sh/react-dom@18.2.0/server?pin=v99";
 import { App } from "../editor/app.tsx";
 import dist from "./dist.json" assert { type: "json" };
-import { getRenderedCss, resetInsertedStyle } from "../../cssInJs/mod.ts";
 import { clock24Title } from "../editor/pages/clock24.tsx";
 import { createImageFromText } from "./ogpImage.tsx";
 import { toBytes } from "https://deno.land/x/fast_base64@v0.1.7/mod.ts";
-import { simpleUrlToUrlData, UrlData, urlDataToSimpleUrl } from "./url.ts";
+import { simpleUrlToUrlData, urlDataToSimpleUrl } from "./url.ts";
 import {
   SimpleUrl,
   simpleUrlToUrlText,
@@ -151,10 +150,6 @@ const createHtml = (
   },
   body: React.ReactElement,
 ) => {
-  resetInsertedStyle();
-
-  const bodyAsHtml = renderToString(body);
-
   return "<!doctype html>" + renderToString(
     <html>
       <head>
@@ -182,7 +177,6 @@ const createHtml = (
           </>
         )}
         <script type="module" src={dist.scriptHash}></script>
-        <style dangerouslySetInnerHTML={{ __html: getRenderedCss() }}></style>
         <style
           dangerouslySetInnerHTML={{
             __html: `
@@ -209,13 +203,7 @@ body {
         </style>
       </head>
       <body>
-        <div
-          id="root"
-          dangerouslySetInnerHTML={{
-            __html: bodyAsHtml,
-          }}
-        >
-        </div>
+        <div id="root">{body}</div>
       </body>
     </html>,
   );
