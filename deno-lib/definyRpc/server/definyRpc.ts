@@ -6,11 +6,12 @@ import { SimpleRequest } from "../../simpleRequestResponse/simpleRequest.ts";
 import {
   notFound,
   SimpleResponse,
+  simpleResponseCache5SecJson,
   simpleResponseHtml,
-  simpleResponseJavaScript,
-  simpleResponseJson,
+  simpleResponseImmutableJavaScript,
+  simpleResponseImmutablePng,
   simpleResponseOkEmpty,
-  simpleResponsePng,
+  simpleResponsePrivateJson,
   unauthorized,
 } from "../../simpleRequestResponse/simpleResponse.ts";
 import { stringArrayEqual, stringArrayMatchPrefix } from "../../util.ts";
@@ -62,17 +63,17 @@ export const handleRequest = async (
   request: SimpleRequest,
 ): Promise<SimpleResponse | undefined> => {
   const pathPrefix = parameter.pathPrefix ?? [];
-  if (!stringArrayMatchPrefix(request.path, pathPrefix)) {
+  if (!stringArrayMatchPrefix(request.url.path, pathPrefix)) {
     return undefined;
   }
-  const pathListRemovePrefix = request.path.slice(pathPrefix.length);
+  const pathListRemovePrefix = request.url.path.slice(pathPrefix.length);
 
   const all = addDefinyRpcApiFunction(parameter);
   if (request.method === "OPTIONS") {
     return simpleResponseOkEmpty;
   }
 
-  const paramJson = request.query.get("param");
+  const paramJson = request.url.query.get("param");
   const paramJsonParsed: StructuredJsonValue =
     (typeof paramJson === "string"
       ? structuredJsonParse(paramJson)
@@ -110,7 +111,9 @@ export const handleRequest = async (
       clientBuildResult.iconHash,
     ])
   ) {
-    return simpleResponsePng(await toBytes(clientBuildResult.iconContent));
+    return simpleResponseImmutablePng(
+      await toBytes(clientBuildResult.iconContent),
+    );
   }
   if (
     stringArrayEqual(pathListRemovePrefix, [
@@ -118,7 +121,7 @@ export const handleRequest = async (
       clientBuildResult.scriptHash,
     ])
   ) {
-    return simpleResponseJavaScript(clientBuildResult.scriptContent);
+    return simpleResponseImmutableJavaScript(clientBuildResult.scriptContent);
   }
   console.log("request!: ", pathListRemovePrefix);
   for (const func of all.functionsList) {
@@ -137,7 +140,7 @@ export const handleRequest = async (
           func.input.fromStructuredJsonValue(paramJsonParsed),
           authorizationHeaderValue.credentials as AccountToken,
         );
-        return simpleResponseJson(
+        return simpleResponsePrivateJson(
           func.output.toStructuredJsonValue(apiFunctionResult),
         );
       }
@@ -145,7 +148,7 @@ export const handleRequest = async (
         func.input.fromStructuredJsonValue(paramJsonParsed),
         undefined,
       );
-      return simpleResponseJson(
+      return simpleResponseCache5SecJson(
         func.output.toStructuredJsonValue(apiFunctionResult),
       );
     }
