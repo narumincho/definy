@@ -75,6 +75,7 @@ const watchAndBuild = async (
         ),
       ],
       plugins: [denoPlugin()],
+      jsxFactory: "jsx",
       write: false,
       bundle: true,
       minify: true,

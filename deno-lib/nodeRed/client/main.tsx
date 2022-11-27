@@ -1,5 +1,5 @@
-import React from "https://esm.sh/react@18.2.0?pin=v99";
 import { createRoot } from "https://esm.sh/react-dom@18.2.0/client?pin=v99";
+import { jsx } from "https://esm.sh/@emotion/react@11.10.5?pin=v99";
 import { urlFromString } from "./urlFromString.ts";
 import { Form } from "./Form.tsx";
 import { red } from "./nodeRed.ts";

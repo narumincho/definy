@@ -1,26 +1,22 @@
-import React from "https://esm.sh/react@18.2.0?pin=v99";
+import { useState } from "https://esm.sh/react@18.2.0?pin=v99";
+import { jsx } from "https://esm.sh/@emotion/react@11.10.5?pin=v99";
 import { Editor } from "../../editor/Editor.tsx";
-import { c, toStyleAndHash } from "../../cssInJs/mod.ts";
 
 const serverOriginFieldId = "server-origin";
-
-const containerStyle = toStyleAndHash({
-  padding: 16,
-});
 
 export const ServerOrigin = (props: {
   readonly serverName: string | undefined;
   readonly initServerOrigin: string;
   readonly onChangeServerOrigin: (newOrigin: string) => void;
 }): React.ReactElement => {
-  const [originText, setOriginText] = React.useState<string>(
+  const [originText, setOriginText] = useState<string>(
     props.initServerOrigin,
   );
 
   const origin = getSafeOrigin(originText);
 
   return (
-    <div className={c(containerStyle)}>
+    <div css={{ padding: 16 }}>
       <Editor
         fields={[
           {

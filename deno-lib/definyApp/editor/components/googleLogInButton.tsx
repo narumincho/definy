@@ -1,6 +1,7 @@
 import { c, toStyleAndHash } from "../../../cssInJs/mod.ts";
 import { Language } from "../../../zodType.ts";
 import React from "https://esm.sh/react@18.2.0?pin=v99";
+import { jsx } from "https://esm.sh/@emotion/react@11.10.5?pin=v99";
 
 const containerStyle = toStyleAndHash({
   display: "grid",

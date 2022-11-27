@@ -1,4 +1,5 @@
 import React from "https://esm.sh/react@18.2.0?pin=v99";
+import { jsx } from "https://esm.sh/@emotion/react@11.10.5?pin=v99";
 import { renderToString } from "https://esm.sh/react-dom@18.2.0/server?pin=v99";
 
 const App = () => {

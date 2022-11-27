@@ -1,35 +1,9 @@
 import React from "https://esm.sh/react@18.2.0?pin=v99";
-import { c, toStyleAndHash } from "../../cssInJs/mod.ts";
+import { jsx } from "https://esm.sh/@emotion/react@11.10.5?pin=v99";
 import { Language } from "../../zodType.ts";
 import { GoogleLogInButton } from "./components/googleLogInButton.tsx";
 import { Clock24 } from "./pages/clock24.tsx";
 import { UrlLocation } from "./url.ts";
-
-const containerStyle = toStyleAndHash({
-  backgroundColor: "black",
-  color: "white",
-  height: "100%",
-  fontFamily: "Hack",
-  display: "grid",
-  gridTemplateRows: "48px 1fr",
-});
-
-const headerStyle = toStyleAndHash({
-  display: "flex",
-  alignItems: "center",
-  backgroundColor: "#333",
-  padding: "0 8px",
-});
-
-const logoStyle = toStyleAndHash({
-  color: "#b9d09b",
-  fontSize: 32,
-  lineHeight: "1",
-});
-
-const spacer = toStyleAndHash({
-  flexGrow: "1",
-});
 
 export type AppProps = {
   readonly language: Language;
@@ -44,7 +18,21 @@ export const App = (props: AppProps): React.ReactElement => {
   );
 
   if (props.location === undefined) {
-    return <div className={c(containerStyle)}>not found... 見つからなかった</div>;
+    return (
+      <div
+        css={{
+          backgroundColor: "black",
+          color: "white",
+          height: "100%",
+          fontFamily: "Hack",
+          display: "grid",
+          placeContent: "center",
+          fontSize: 32,
+        }}
+      >
+        not found... 見つからなかった
+      </div>
+    );
   }
 
   switch (props.location.type) {
@@ -57,10 +45,30 @@ export const App = (props: AppProps): React.ReactElement => {
       );
     case "top":
       return (
-        <div className={c(containerStyle)}>
-          <div className={c(headerStyle)}>
-            <div className={c(logoStyle)}>definy</div>
-            <div className={c(spacer)}></div>
+        <div
+          css={{
+            backgroundColor: "black",
+            color: "white",
+            height: "100%",
+            fontFamily: "Hack",
+            display: "grid",
+            gridTemplateRows: "48px 1fr",
+          }}
+        >
+          <div
+            css={{
+              display: "flex",
+              alignItems: "center",
+              backgroundColor: "#333",
+              padding: "0 8px",
+            }}
+          >
+            <div
+              css={{ color: "#b9d09b", fontSize: 32, lineHeight: "1" }}
+            >
+              definy
+            </div>
+            <div css={{ flexGrow: "1" }}></div>
             <GoogleLogInButton
               language={props.language}
               onClick={() => {
