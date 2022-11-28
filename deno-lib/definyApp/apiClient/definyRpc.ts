@@ -59,71 +59,71 @@ export type Type = {
  */
 export type StructuredJsonValue =
   | {
-      /**
-       * string
-       */
-      readonly type: "string";
-      /**
-       * string
-       */
-      readonly value: string;
-      readonly [globalThis.Symbol.toStringTag]: "definyRpc.StructuredJsonValue";
-    }
+    /**
+     * string
+     */
+    readonly type: "string";
+    /**
+     * string
+     */
+    readonly value: string;
+    readonly [globalThis.Symbol.toStringTag]: "definyRpc.StructuredJsonValue";
+  }
   | {
-      /**
-       * array
-       */
-      readonly type: "array";
-      /**
-       * array
-       */
-      readonly value: globalThis.ReadonlyArray<StructuredJsonValue>;
-      readonly [globalThis.Symbol.toStringTag]: "definyRpc.StructuredJsonValue";
-    }
+    /**
+     * array
+     */
+    readonly type: "array";
+    /**
+     * array
+     */
+    readonly value: globalThis.ReadonlyArray<StructuredJsonValue>;
+    readonly [globalThis.Symbol.toStringTag]: "definyRpc.StructuredJsonValue";
+  }
   | {
-      /**
-       * boolean
-       */
-      readonly type: "boolean";
-      /**
-       * boolean
-       */
-      readonly value: boolean;
-      readonly [globalThis.Symbol.toStringTag]: "definyRpc.StructuredJsonValue";
-    }
+    /**
+     * boolean
+     */
+    readonly type: "boolean";
+    /**
+     * boolean
+     */
+    readonly value: boolean;
+    readonly [globalThis.Symbol.toStringTag]: "definyRpc.StructuredJsonValue";
+  }
   | {
-      /**
-       * null
-       */
-      readonly type: "null";
-      /**
-       * null
-       */
-      readonly value: undefined;
-      readonly [globalThis.Symbol.toStringTag]: "definyRpc.StructuredJsonValue";
-    }
+    /**
+     * null
+     */
+    readonly type: "null";
+    /**
+     * null
+     */
+    readonly value: undefined;
+    readonly [globalThis.Symbol.toStringTag]: "definyRpc.StructuredJsonValue";
+  }
   | {
-      /**
-       * number
-       */
-      readonly type: "number";
-      /**
-       * number
-       */
-      readonly value: number;
-      readonly [globalThis.Symbol.toStringTag]: "definyRpc.StructuredJsonValue";
-    }
+    /**
+     * number
+     */
+    readonly type: "number";
+    /**
+     * number
+     */
+    readonly value: number;
+    readonly [globalThis.Symbol.toStringTag]: "definyRpc.StructuredJsonValue";
+  }
   | {
-      /**
-       * object
-       */
-      readonly type: "object";
-      /**
-       * object
-       */
-      readonly value: StringMap<StructuredJsonValue>;
-      readonly [globalThis.Symbol.toStringTag]: "definyRpc.StructuredJsonValue";
-    };
+    /**
+     * object
+     */
+    readonly type: "object";
+    /**
+     * object
+     */
+    readonly value: StringMap<StructuredJsonValue>;
+    readonly [globalThis.Symbol.toStringTag]: "definyRpc.StructuredJsonValue";
+  };
 
 /**
  * キーが string の ReadonlyMap
@@ -185,20 +185,19 @@ export const Set: {
    * JsonからSetに変換する. 失敗した場合はエラー
    */
   readonly fromStructuredJsonValue: <p0 extends unknown>(
-    a: (a: a.StructuredJsonValue) => p0
+    a: (a: a.StructuredJsonValue) => p0,
   ) => (a: a.StructuredJsonValue) => globalThis.ReadonlySet<p0>;
 } = {
   description: "集合. Set",
-  fromStructuredJsonValue:
-    <p0 extends unknown>(
-      p0FromJson: (a: a.StructuredJsonValue) => p0
-    ): ((a: a.StructuredJsonValue) => globalThis.ReadonlySet<p0>) =>
-    (jsonValue: a.StructuredJsonValue): globalThis.ReadonlySet<p0> => {
-      if (jsonValue.type === "array") {
-        return new globalThis.Set(jsonValue.value.map(p0FromJson));
-      }
-      throw new Error("expected array in Set.fromStructuredJsonValue");
-    },
+  fromStructuredJsonValue: <p0 extends unknown>(
+    p0FromJson: (a: a.StructuredJsonValue) => p0,
+  ): (a: a.StructuredJsonValue) => globalThis.ReadonlySet<p0> =>
+  (jsonValue: a.StructuredJsonValue): globalThis.ReadonlySet<p0> => {
+    if (jsonValue.type === "array") {
+      return new globalThis.Set(jsonValue.value.map(p0FromJson));
+    }
+    throw new Error("expected array in Set.fromStructuredJsonValue");
+  },
 };
 
 /**
@@ -213,20 +212,19 @@ export const List: {
    * JsonからListに変換する. 失敗した場合はエラー
    */
   readonly fromStructuredJsonValue: <p0 extends unknown>(
-    a: (a: a.StructuredJsonValue) => p0
+    a: (a: a.StructuredJsonValue) => p0,
   ) => (a: a.StructuredJsonValue) => globalThis.ReadonlyArray<p0>;
 } = {
   description: "リスト",
-  fromStructuredJsonValue:
-    <p0 extends unknown>(
-      p0FromJson: (a: a.StructuredJsonValue) => p0
-    ): ((a: a.StructuredJsonValue) => globalThis.ReadonlyArray<p0>) =>
-    (jsonValue: a.StructuredJsonValue): globalThis.ReadonlyArray<p0> => {
-      if (jsonValue.type === "array") {
-        return jsonValue.value.map(p0FromJson);
-      }
-      throw new Error("expected array in List.fromStructuredJsonValue");
-    },
+  fromStructuredJsonValue: <p0 extends unknown>(
+    p0FromJson: (a: a.StructuredJsonValue) => p0,
+  ): (a: a.StructuredJsonValue) => globalThis.ReadonlyArray<p0> =>
+  (jsonValue: a.StructuredJsonValue): globalThis.ReadonlyArray<p0> => {
+    if (jsonValue.type === "array") {
+      return jsonValue.value.map(p0FromJson);
+    }
+    throw new Error("expected array in List.fromStructuredJsonValue");
+  },
 };
 
 /**
@@ -241,18 +239,18 @@ export const FunctionDetail: {
    * オブジェクトから作成する. 余計なフィールドがレスポンスに含まれてしまうのを防ぐ. 型のチェックはしない
    */
   readonly from: (
-    a: globalThis.Omit<FunctionDetail, typeof globalThis.Symbol.toStringTag>
+    a: globalThis.Omit<FunctionDetail, typeof globalThis.Symbol.toStringTag>,
   ) => FunctionDetail;
   /**
    * JsonからFunctionDetailに変換する. 失敗した場合はエラー
    */
   readonly fromStructuredJsonValue: (
-    a: a.StructuredJsonValue
+    a: a.StructuredJsonValue,
   ) => FunctionDetail;
 } = {
   description: "functionByNameの結果",
   from: (
-    obj: globalThis.Omit<FunctionDetail, typeof globalThis.Symbol.toStringTag>
+    obj: globalThis.Omit<FunctionDetail, typeof globalThis.Symbol.toStringTag>,
   ): FunctionDetail => ({
     name: obj.name,
     description: obj.description,
@@ -261,38 +259,41 @@ export const FunctionDetail: {
     [globalThis.Symbol.toStringTag]: "definyRpc.FunctionDetail",
   }),
   fromStructuredJsonValue: (
-    jsonValue: a.StructuredJsonValue
+    jsonValue: a.StructuredJsonValue,
   ): FunctionDetail => {
     if (jsonValue.type !== "object") {
       throw new Error(
-        "expected object in FunctionDetail.fromStructuredJsonValue"
+        "expected object in FunctionDetail.fromStructuredJsonValue",
       );
     }
     const name: a.StructuredJsonValue | undefined = jsonValue.value.get("name");
     if (name === undefined) {
       throw new Error(
-        "expected name field. in FunctionDetail.fromStructuredJsonValue"
+        "expected name field. in FunctionDetail.fromStructuredJsonValue",
       );
     }
-    const description: a.StructuredJsonValue | undefined =
-      jsonValue.value.get("description");
+    const description: a.StructuredJsonValue | undefined = jsonValue.value.get(
+      "description",
+    );
     if (description === undefined) {
       throw new Error(
-        "expected description field. in FunctionDetail.fromStructuredJsonValue"
+        "expected description field. in FunctionDetail.fromStructuredJsonValue",
       );
     }
-    const input: a.StructuredJsonValue | undefined =
-      jsonValue.value.get("input");
+    const input: a.StructuredJsonValue | undefined = jsonValue.value.get(
+      "input",
+    );
     if (input === undefined) {
       throw new Error(
-        "expected input field. in FunctionDetail.fromStructuredJsonValue"
+        "expected input field. in FunctionDetail.fromStructuredJsonValue",
       );
     }
-    const output: a.StructuredJsonValue | undefined =
-      jsonValue.value.get("output");
+    const output: a.StructuredJsonValue | undefined = jsonValue.value.get(
+      "output",
+    );
     if (output === undefined) {
       throw new Error(
-        "expected output field. in FunctionDetail.fromStructuredJsonValue"
+        "expected output field. in FunctionDetail.fromStructuredJsonValue",
       );
     }
     return FunctionDetail.from({
@@ -316,7 +317,7 @@ export const Type: {
    * オブジェクトから作成する. 余計なフィールドがレスポンスに含まれてしまうのを防ぐ. 型のチェックはしない
    */
   readonly from: (
-    a: globalThis.Omit<Type, typeof globalThis.Symbol.toStringTag>
+    a: globalThis.Omit<Type, typeof globalThis.Symbol.toStringTag>,
   ) => Type;
   /**
    * JsonからTypeに変換する. 失敗した場合はエラー
@@ -325,7 +326,7 @@ export const Type: {
 } = {
   description: "definyRpc で表現できる型",
   from: (
-    obj: globalThis.Omit<Type, typeof globalThis.Symbol.toStringTag>
+    obj: globalThis.Omit<Type, typeof globalThis.Symbol.toStringTag>,
   ): Type => ({
     fullName: obj.fullName,
     description: obj.description,
@@ -336,34 +337,37 @@ export const Type: {
     if (jsonValue.type !== "object") {
       throw new Error("expected object in Type.fromStructuredJsonValue");
     }
-    const fullName: a.StructuredJsonValue | undefined =
-      jsonValue.value.get("fullName");
+    const fullName: a.StructuredJsonValue | undefined = jsonValue.value.get(
+      "fullName",
+    );
     if (fullName === undefined) {
       throw new Error(
-        "expected fullName field. in Type.fromStructuredJsonValue"
+        "expected fullName field. in Type.fromStructuredJsonValue",
       );
     }
-    const description: a.StructuredJsonValue | undefined =
-      jsonValue.value.get("description");
+    const description: a.StructuredJsonValue | undefined = jsonValue.value.get(
+      "description",
+    );
     if (description === undefined) {
       throw new Error(
-        "expected description field. in Type.fromStructuredJsonValue"
+        "expected description field. in Type.fromStructuredJsonValue",
       );
     }
-    const parameters: a.StructuredJsonValue | undefined =
-      jsonValue.value.get("parameters");
+    const parameters: a.StructuredJsonValue | undefined = jsonValue.value.get(
+      "parameters",
+    );
     if (parameters === undefined) {
       throw new Error(
-        "expected parameters field. in Type.fromStructuredJsonValue"
+        "expected parameters field. in Type.fromStructuredJsonValue",
       );
     }
     return Type.from({
       fullName: List.fromStructuredJsonValue(String.fromStructuredJsonValue)(
-        fullName
+        fullName,
       ),
       description: String.fromStructuredJsonValue(description),
       parameters: List.fromStructuredJsonValue(Type.fromStructuredJsonValue)(
-        parameters
+        parameters,
       ),
     });
   },
@@ -381,7 +385,7 @@ export const StructuredJsonValue: {
    * JsonからStructuredJsonValueに変換する. 失敗した場合はエラー
    */
   readonly fromStructuredJsonValue: (
-    a: a.StructuredJsonValue
+    a: a.StructuredJsonValue,
   ) => StructuredJsonValue;
   /**
    * string
@@ -391,7 +395,7 @@ export const StructuredJsonValue: {
    * array
    */
   readonly array: (
-    a: globalThis.ReadonlyArray<StructuredJsonValue>
+    a: globalThis.ReadonlyArray<StructuredJsonValue>,
   ) => StructuredJsonValue;
   /**
    * boolean
@@ -409,12 +413,12 @@ export const StructuredJsonValue: {
    * object
    */
   readonly object: (
-    a: globalThis.ReadonlyMap<string, StructuredJsonValue>
+    a: globalThis.ReadonlyMap<string, StructuredJsonValue>,
   ) => StructuredJsonValue;
 } = {
   description: "構造化されたJSON",
   fromStructuredJsonValue: (
-    jsonValue: a.StructuredJsonValue
+    jsonValue: a.StructuredJsonValue,
   ): StructuredJsonValue => {
     if (jsonValue.type !== "object") {
       throw new Error("expected object in StructuredJsonValue.fromJson");
@@ -425,8 +429,9 @@ export const StructuredJsonValue: {
     }
     switch (type.value) {
       case "string": {
-        const value: a.StructuredJsonValue | undefined =
-          jsonValue.value.get("value");
+        const value: a.StructuredJsonValue | undefined = jsonValue.value.get(
+          "value",
+        );
         if (value === undefined) {
           throw new Error("expected value property in sum parameter");
         }
@@ -436,21 +441,23 @@ export const StructuredJsonValue: {
         } as StructuredJsonValue;
       }
       case "array": {
-        const value: a.StructuredJsonValue | undefined =
-          jsonValue.value.get("value");
+        const value: a.StructuredJsonValue | undefined = jsonValue.value.get(
+          "value",
+        );
         if (value === undefined) {
           throw new Error("expected value property in sum parameter");
         }
         return {
           type: "array",
           value: List.fromStructuredJsonValue(
-            StructuredJsonValue.fromStructuredJsonValue
+            StructuredJsonValue.fromStructuredJsonValue,
           )(value),
         } as StructuredJsonValue;
       }
       case "boolean": {
-        const value: a.StructuredJsonValue | undefined =
-          jsonValue.value.get("value");
+        const value: a.StructuredJsonValue | undefined = jsonValue.value.get(
+          "value",
+        );
         if (value === undefined) {
           throw new Error("expected value property in sum parameter");
         }
@@ -460,8 +467,9 @@ export const StructuredJsonValue: {
         } as StructuredJsonValue;
       }
       case "null": {
-        const value: a.StructuredJsonValue | undefined =
-          jsonValue.value.get("value");
+        const value: a.StructuredJsonValue | undefined = jsonValue.value.get(
+          "value",
+        );
         if (value === undefined) {
           throw new Error("expected value property in sum parameter");
         }
@@ -471,8 +479,9 @@ export const StructuredJsonValue: {
         } as StructuredJsonValue;
       }
       case "number": {
-        const value: a.StructuredJsonValue | undefined =
-          jsonValue.value.get("value");
+        const value: a.StructuredJsonValue | undefined = jsonValue.value.get(
+          "value",
+        );
         if (value === undefined) {
           throw new Error("expected value property in sum parameter");
         }
@@ -482,22 +491,23 @@ export const StructuredJsonValue: {
         } as StructuredJsonValue;
       }
       case "object": {
-        const value: a.StructuredJsonValue | undefined =
-          jsonValue.value.get("value");
+        const value: a.StructuredJsonValue | undefined = jsonValue.value.get(
+          "value",
+        );
         if (value === undefined) {
           throw new Error("expected value property in sum parameter");
         }
         return {
           type: "object",
           value: StringMap.fromStructuredJsonValue(
-            StructuredJsonValue.fromStructuredJsonValue
+            StructuredJsonValue.fromStructuredJsonValue,
           )(value),
         } as StructuredJsonValue;
       }
     }
     throw new Error(
       "unknown type value expected [string,array,boolean,null,number,object] but got " +
-        type.value
+        type.value,
     );
   },
   string: (p: string): StructuredJsonValue => ({
@@ -506,7 +516,7 @@ export const StructuredJsonValue: {
     value: p,
   }),
   array: (
-    p: globalThis.ReadonlyArray<StructuredJsonValue>
+    p: globalThis.ReadonlyArray<StructuredJsonValue>,
   ): StructuredJsonValue => ({
     type: "array",
     [globalThis.Symbol.toStringTag]: "definyRpc.StructuredJsonValue",
@@ -528,7 +538,7 @@ export const StructuredJsonValue: {
     value: p,
   }),
   object: (
-    p: globalThis.ReadonlyMap<string, StructuredJsonValue>
+    p: globalThis.ReadonlyMap<string, StructuredJsonValue>,
   ): StructuredJsonValue => ({
     type: "object",
     [globalThis.Symbol.toStringTag]: "definyRpc.StructuredJsonValue",
@@ -592,19 +602,18 @@ export const StringMap: {
    * JsonからStringMapに変換する. 失敗した場合はエラー
    */
   readonly fromStructuredJsonValue: <p0 extends unknown>(
-    a: (a: a.StructuredJsonValue) => p0
+    a: (a: a.StructuredJsonValue) => p0,
   ) => (a: a.StructuredJsonValue) => globalThis.ReadonlyMap<string, p0>;
 } = {
   description: "キーが string の ReadonlyMap",
-  fromStructuredJsonValue:
-    <p0 extends unknown>(
-      p0FromJson: (a: a.StructuredJsonValue) => p0
-    ): ((a: a.StructuredJsonValue) => globalThis.ReadonlyMap<string, p0>) =>
-    (jsonValue: a.StructuredJsonValue): globalThis.ReadonlyMap<string, p0> => {
-      throw new Error(
-        "expected stringMap in StringMap.fromStructuredJsonValue"
-      );
-    },
+  fromStructuredJsonValue: <p0 extends unknown>(
+    p0FromJson: (a: a.StructuredJsonValue) => p0,
+  ): (a: a.StructuredJsonValue) => globalThis.ReadonlyMap<string, p0> =>
+  (jsonValue: a.StructuredJsonValue): globalThis.ReadonlyMap<string, p0> => {
+    throw new Error(
+      "expected stringMap in StringMap.fromStructuredJsonValue",
+    );
+  },
 };
 
 /**
@@ -618,22 +627,22 @@ export const name = (parameter: {
   readonly url?: string | undefined;
 }): globalThis.Promise<Result<string, "error">> => {
   const url: globalThis.URL = new globalThis.URL(
-    parameter.url ?? "http://localhost:2528"
+    parameter.url ?? "http://localhost:2528",
   );
   url.pathname = url.pathname + "/api/definyRpc/name";
   return globalThis
     .fetch(url)
     .then(
       (response: globalThis.Response): globalThis.Promise<a.RawJsonValue> =>
-        response.json()
+        response.json(),
     )
     .then(
       (jsonValue: a.RawJsonValue): Result<string, "error"> => ({
         type: "ok",
         ok: String.fromStructuredJsonValue(
-          a.rawJsonToStructuredJsonValue(jsonValue)
+          a.rawJsonToStructuredJsonValue(jsonValue),
         ),
-      })
+      }),
     )
     .catch((): Result<string, "error"> => ({ type: "error", error: "error" }));
 };
@@ -651,33 +660,33 @@ export const namespaceList = (parameter: {
   Result<globalThis.ReadonlySet<globalThis.ReadonlyArray<string>>, "error">
 > => {
   const url: globalThis.URL = new globalThis.URL(
-    parameter.url ?? "http://localhost:2528"
+    parameter.url ?? "http://localhost:2528",
   );
   url.pathname = url.pathname + "/api/definyRpc/namespaceList";
   return globalThis
     .fetch(url)
     .then(
       (response: globalThis.Response): globalThis.Promise<a.RawJsonValue> =>
-        response.json()
+        response.json(),
     )
     .then(
       (
-        jsonValue: a.RawJsonValue
+        jsonValue: a.RawJsonValue,
       ): Result<
         globalThis.ReadonlySet<globalThis.ReadonlyArray<string>>,
         "error"
       > => ({
         type: "ok",
         ok: Set.fromStructuredJsonValue(
-          List.fromStructuredJsonValue(String.fromStructuredJsonValue)
+          List.fromStructuredJsonValue(String.fromStructuredJsonValue),
         )(a.rawJsonToStructuredJsonValue(jsonValue)),
-      })
+      }),
     )
     .catch(
       (): Result<
         globalThis.ReadonlySet<globalThis.ReadonlyArray<string>>,
         "error"
-      > => ({ type: "error", error: "error" })
+      > => ({ type: "error", error: "error" }),
     );
 };
 
@@ -694,30 +703,30 @@ export const functionListByName = (parameter: {
   Result<globalThis.ReadonlyArray<FunctionDetail>, "error">
 > => {
   const url: globalThis.URL = new globalThis.URL(
-    parameter.url ?? "http://localhost:2528"
+    parameter.url ?? "http://localhost:2528",
   );
   url.pathname = url.pathname + "/api/definyRpc/functionListByName";
   return globalThis
     .fetch(url)
     .then(
       (response: globalThis.Response): globalThis.Promise<a.RawJsonValue> =>
-        response.json()
+        response.json(),
     )
     .then(
       (
-        jsonValue: a.RawJsonValue
+        jsonValue: a.RawJsonValue,
       ): Result<globalThis.ReadonlyArray<FunctionDetail>, "error"> => ({
         type: "ok",
         ok: List.fromStructuredJsonValue(
-          FunctionDetail.fromStructuredJsonValue
+          FunctionDetail.fromStructuredJsonValue,
         )(a.rawJsonToStructuredJsonValue(jsonValue)),
-      })
+      }),
     )
     .catch(
       (): Result<globalThis.ReadonlyArray<FunctionDetail>, "error"> => ({
         type: "error",
         error: "error",
-      })
+      }),
     );
 };
 
@@ -735,30 +744,30 @@ export const functionListByNamePrivate = (parameter: {
   Result<globalThis.ReadonlyArray<FunctionDetail>, "error">
 > => {
   const url: globalThis.URL = new globalThis.URL(
-    parameter.url ?? "http://localhost:2528"
+    parameter.url ?? "http://localhost:2528",
   );
   url.pathname = url.pathname + "/api/definyRpc/functionListByNamePrivate";
   return globalThis
     .fetch(url, { headers: { authorization: parameter.accountToken } })
     .then(
       (response: globalThis.Response): globalThis.Promise<a.RawJsonValue> =>
-        response.json()
+        response.json(),
     )
     .then(
       (
-        jsonValue: a.RawJsonValue
+        jsonValue: a.RawJsonValue,
       ): Result<globalThis.ReadonlyArray<FunctionDetail>, "error"> => ({
         type: "ok",
         ok: List.fromStructuredJsonValue(
-          FunctionDetail.fromStructuredJsonValue
+          FunctionDetail.fromStructuredJsonValue,
         )(a.rawJsonToStructuredJsonValue(jsonValue)),
-      })
+      }),
     )
     .catch(
       (): Result<globalThis.ReadonlyArray<FunctionDetail>, "error"> => ({
         type: "error",
         error: "error",
-      })
+      }),
     );
 };
 
@@ -773,25 +782,54 @@ export const generateCallDefinyRpcTypeScriptCode = (parameter: {
   readonly url?: string | undefined;
 }): globalThis.Promise<Result<string, "error">> => {
   const url: globalThis.URL = new globalThis.URL(
-    parameter.url ?? "http://localhost:2528"
+    parameter.url ?? "http://localhost:2528",
   );
-  url.pathname =
-    url.pathname + "/api/definyRpc/generateCallDefinyRpcTypeScriptCode";
+  url.pathname = url.pathname +
+    "/api/definyRpc/generateCallDefinyRpcTypeScriptCode";
   return globalThis
     .fetch(url)
     .then(
       (response: globalThis.Response): globalThis.Promise<a.RawJsonValue> =>
-        response.json()
+        response.json(),
     )
     .then(
       (jsonValue: a.RawJsonValue): Result<string, "error"> => ({
         type: "ok",
         ok: String.fromStructuredJsonValue(
-          a.rawJsonToStructuredJsonValue(jsonValue)
+          a.rawJsonToStructuredJsonValue(jsonValue),
         ),
-      })
+      }),
     )
     .catch((): Result<string, "error"> => ({ type: "error", error: "error" }));
+};
+
+const requestQuery = <T>(
+  parameter: {
+    readonly url: URL;
+    readonly fullName: ReadonlyArray<string>;
+    readonly fromStructuredJsonValue: (a: a.StructuredJsonValue) => T;
+  },
+) => {
+  const url: globalThis.URL = new globalThis.URL(
+    parameter.url.toString(),
+  );
+  url.pathname = url.pathname +
+    "/" + parameter.fullName.join("/");
+  return globalThis
+    .fetch(url)
+    .then(
+      (response: globalThis.Response): globalThis.Promise<a.RawJsonValue> =>
+        response.json(),
+    )
+    .then(
+      (jsonValue: a.RawJsonValue): Result<T, "error"> => ({
+        type: "ok",
+        ok: parameter.fromStructuredJsonValue(
+          a.rawJsonToStructuredJsonValue(jsonValue),
+        ),
+      }),
+    )
+    .catch((): Result<T, "error"> => ({ type: "error", error: "error" }));
 };
 
 /**
@@ -806,28 +844,28 @@ export const callQuery = (parameter: {
   readonly input: globalThis.ReadonlyArray<string>;
 }): globalThis.Promise<Result<StructuredJsonValue, "error">> => {
   const url: globalThis.URL = new globalThis.URL(
-    parameter.url ?? "http://localhost:2528"
+    parameter.url ?? "http://localhost:2528",
   );
   url.pathname = url.pathname + "/api/definyRpc/callQuery";
   return globalThis
     .fetch(url)
     .then(
       (response: globalThis.Response): globalThis.Promise<a.RawJsonValue> =>
-        response.json()
+        response.json(),
     )
     .then(
       (jsonValue: a.RawJsonValue): Result<StructuredJsonValue, "error"> => ({
         type: "ok",
         ok: StructuredJsonValue.fromStructuredJsonValue(
-          a.rawJsonToStructuredJsonValue(jsonValue)
+          a.rawJsonToStructuredJsonValue(jsonValue),
         ),
-      })
+      }),
     )
     .catch(
       (): Result<StructuredJsonValue, "error"> => ({
         type: "error",
         error: "error",
-      })
+      }),
     );
 };
 
@@ -843,25 +881,25 @@ export const generateCodeAndWriteAsFileInServer = (parameter: {
   readonly url?: string | undefined;
 }): globalThis.Promise<Result<undefined, "error">> => {
   const url: globalThis.URL = new globalThis.URL(
-    parameter.url ?? "http://localhost:2528"
+    parameter.url ?? "http://localhost:2528",
   );
-  url.pathname =
-    url.pathname + "/api/definyRpc/generateCodeAndWriteAsFileInServer";
+  url.pathname = url.pathname +
+    "/api/definyRpc/generateCodeAndWriteAsFileInServer";
   return globalThis
     .fetch(url)
     .then(
       (response: globalThis.Response): globalThis.Promise<a.RawJsonValue> =>
-        response.json()
+        response.json(),
     )
     .then(
       (jsonValue: a.RawJsonValue): Result<undefined, "error"> => ({
         type: "ok",
         ok: Unit.fromStructuredJsonValue(
-          a.rawJsonToStructuredJsonValue(jsonValue)
+          a.rawJsonToStructuredJsonValue(jsonValue),
         ),
-      })
+      }),
     )
     .catch(
-      (): Result<undefined, "error"> => ({ type: "error", error: "error" })
+      (): Result<undefined, "error"> => ({ type: "error", error: "error" }),
     );
 };

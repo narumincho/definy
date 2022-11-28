@@ -10,6 +10,38 @@ export type Result<ok extends unknown, error extends unknown> =
   | { readonly type: "ok"; readonly ok: ok }
   | { readonly type: "error"; readonly error: error };
 
+export const requestQuery = <T extends unknown>(parameter: {
+  readonly url: globalThis.URL;
+  readonly fullName: globalThis.ReadonlyArray<string>;
+  readonly fromStructuredJsonValue: (a: a.StructuredJsonValue) => T;
+  /**
+   * 認証が必要な場合のみ付与して呼ぶ
+   */
+  readonly accountToken?: string | undefined;
+}): globalThis.Promise<Result<T, "error">> => {
+  const url: globalThis.URL = new globalThis.URL(parameter.url.toString());
+  url.pathname = url.pathname + ("/" + parameter.fullName.join("/"));
+  return globalThis
+    .fetch(url, {
+      ...(parameter.accountToken === undefined
+        ? {}
+        : { headers: { authorization: parameter.accountToken } }),
+    })
+    .then(
+      (response: globalThis.Response): globalThis.Promise<a.RawJsonValue> =>
+        response.json()
+    )
+    .then(
+      (jsonValue: a.RawJsonValue): Result<T, "error"> => ({
+        type: "ok",
+        ok: parameter.fromStructuredJsonValue(
+          a.rawJsonToStructuredJsonValue(jsonValue)
+        ),
+      })
+    )
+    .catch((): Result<T, "error"> => ({ type: "error", error: "error" }));
+};
+
 /**
  * 認証が必要なリクエストに使用する
  */
