@@ -5,15 +5,18 @@ import {
   data,
   get,
   identifierFromString,
-  stringLiteral,
   variable,
 } from "../../../jsTs/main.ts";
 import { NonEmptyArray } from "../../../util.ts";
 import {
-  CollectedDefinyRpcTypeMap,
+  CodeGenContext,
   collectedDefinyRpcTypeMapGet,
   CollectedDefinyRpcTypeUse,
 } from "../../core/collectType.ts";
+import {
+  namespaceRelative,
+  relativeNamespaceToTypeScriptModuleName,
+} from "../namespace.ts";
 
 /**
  * product の表現の型の値を生成する
@@ -21,49 +24,61 @@ import {
 export const useFrom = (
   namespace: NonEmptyArray<string>,
   typeName: string,
-  map: CollectedDefinyRpcTypeMap,
+  context: CodeGenContext,
   object: TsExpr,
 ): TsExpr => {
-  const typeDetail = collectedDefinyRpcTypeMapGet(
-    map,
-    namespace,
-    typeName,
+  return callMethod(getTypeVariable(namespace, typeName, context), "from", [
+    object,
+  ]);
+};
+
+export const useTag = (
+  namespace: NonEmptyArray<string>,
+  typeName: string,
+  context: CodeGenContext,
+  tag: string,
+  value: TsExpr | undefined,
+): TsExpr => {
+  if (value === undefined) {
+    const typeDetail = collectedDefinyRpcTypeMapGet(
+      context.map,
+      namespace,
+      typeName,
+    );
+    if (typeDetail?.parameterCount === 0) {
+      return get(getTypeVariable(namespace, typeName, context), tag);
+    }
+    return callMethod(getTypeVariable(namespace, typeName, context), tag, []);
+  }
+  return callMethod(getTypeVariable(namespace, typeName, context), tag, [
+    value,
+  ]);
+};
+
+const getTypeVariable = (
+  namespace: NonEmptyArray<string>,
+  typeName: string,
+  context: CodeGenContext,
+): TsExpr => {
+  const moduleName = relativeNamespaceToTypeScriptModuleName(
+    namespaceRelative(
+      context.currentModule,
+      namespace,
+    ),
   );
-  if (typeDetail === undefined) {
-    return stringLiteral("unknown type from function");
+  if (moduleName === undefined) {
+    return {
+      _: "Variable",
+      tsIdentifier: identifierFromString(typeName),
+    };
   }
-  switch (typeDetail.body.type) {
-    case "boolean":
-    case "list":
-    case "number":
-    case "url":
-      return object;
-    case "product":
-      return callMethod(
-        {
-          _: "Variable",
-          tsIdentifier: identifierFromString(typeName),
-        },
-        "from",
-        [object],
-      );
-    case "set":
-    case "string":
-      return object;
-    case "stringMap":
-      return object;
-    case "sum":
-      return callMethod(
-        {
-          _: "Variable",
-          tsIdentifier: identifierFromString(typeName),
-        },
-        "from",
-        [object],
-      );
-    case "unit":
-      return { _: "UndefinedLiteral" };
-  }
+  return {
+    _: "ImportedVariable",
+    importedVariable: {
+      moduleName: moduleName,
+      name: identifierFromString(typeName),
+    },
+  };
 };
 
 /**

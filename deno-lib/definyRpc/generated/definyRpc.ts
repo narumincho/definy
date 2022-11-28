@@ -18,6 +18,10 @@ export const requestQuery = <T extends unknown>(parameter: {
    * 認証が必要な場合のみ付与して呼ぶ
    */
   readonly accountToken?: string | undefined;
+  /**
+   * StructuredJson にした input
+   */
+  readonly input?: a.StructuredJsonValue;
 }): globalThis.Promise<Result<T, "error">> => {
   const url: globalThis.URL = new globalThis.URL(parameter.url.toString());
   url.pathname = url.pathname + ("/" + parameter.fullName.join("/"));
@@ -462,10 +466,9 @@ export const StructuredJsonValue: {
         if (value === undefined) {
           throw new Error("expected value property in sum parameter");
         }
-        return {
-          type: "string",
-          value: String.fromStructuredJsonValue(value),
-        } as StructuredJsonValue;
+        return StructuredJsonValue.string(
+          String.fromStructuredJsonValue(value)
+        );
       }
       case "array": {
         const value: a.StructuredJsonValue | undefined =
@@ -473,12 +476,11 @@ export const StructuredJsonValue: {
         if (value === undefined) {
           throw new Error("expected value property in sum parameter");
         }
-        return {
-          type: "array",
-          value: List.fromStructuredJsonValue(
+        return StructuredJsonValue.array(
+          List.fromStructuredJsonValue(
             StructuredJsonValue.fromStructuredJsonValue
-          )(value),
-        } as StructuredJsonValue;
+          )(value)
+        );
       }
       case "boolean": {
         const value: a.StructuredJsonValue | undefined =
@@ -486,10 +488,7 @@ export const StructuredJsonValue: {
         if (value === undefined) {
           throw new Error("expected value property in sum parameter");
         }
-        return {
-          type: "boolean",
-          value: Bool.fromStructuredJsonValue(value),
-        } as StructuredJsonValue;
+        return StructuredJsonValue.boolean(Bool.fromStructuredJsonValue(value));
       }
       case "null": {
         const value: a.StructuredJsonValue | undefined =
@@ -497,10 +496,7 @@ export const StructuredJsonValue: {
         if (value === undefined) {
           throw new Error("expected value property in sum parameter");
         }
-        return {
-          type: "null",
-          value: Unit.fromStructuredJsonValue(value),
-        } as StructuredJsonValue;
+        return StructuredJsonValue.null(Unit.fromStructuredJsonValue(value));
       }
       case "number": {
         const value: a.StructuredJsonValue | undefined =
@@ -508,10 +504,9 @@ export const StructuredJsonValue: {
         if (value === undefined) {
           throw new Error("expected value property in sum parameter");
         }
-        return {
-          type: "number",
-          value: Number.fromStructuredJsonValue(value),
-        } as StructuredJsonValue;
+        return StructuredJsonValue.number(
+          Number.fromStructuredJsonValue(value)
+        );
       }
       case "object": {
         const value: a.StructuredJsonValue | undefined =
@@ -519,12 +514,11 @@ export const StructuredJsonValue: {
         if (value === undefined) {
           throw new Error("expected value property in sum parameter");
         }
-        return {
-          type: "object",
-          value: StringMap.fromStructuredJsonValue(
+        return StructuredJsonValue.object(
+          StringMap.fromStructuredJsonValue(
             StructuredJsonValue.fromStructuredJsonValue
-          )(value),
-        } as StructuredJsonValue;
+          )(value)
+        );
       }
     }
     throw new Error(

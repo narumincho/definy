@@ -24,7 +24,7 @@ import {
 } from "../../core/collectType.ts";
 import { collectedDefinyRpcTypeToTsType } from "../type/use.ts";
 import { structuredJsonValueType } from "../useTypedJson.ts";
-import { useFrom, useFromStructuredJsonValue } from "./use.ts";
+import { useFrom, useFromStructuredJsonValue, useTag } from "./use.ts";
 
 const jsonValueVariable: data.TsExpr = {
   _: "Variable",
@@ -313,7 +313,7 @@ const typeToFromJsonStatementList = (
           tsExpr: useFrom(
             type.namespace,
             type.name,
-            context.map,
+            context,
             objectLiteral(
               type.body.fieldList.map(
                 (field) =>
@@ -397,49 +397,48 @@ const typeToFromJsonStatementList = (
                     memberKeyValue("type", stringLiteral(pattern.name)),
                   ]),
                 }]
-                : [{
-                  _: "VariableDefinition",
-                  variableDefinitionStatement: {
-                    isConst: true,
-                    name: identifierFromString("value"),
-                    type: typeUnion([structuredJsonValueType, {
-                      _: "Undefined",
-                    }]),
-                    expr: callMethod(jsonValueVariableValue, "get", [
-                      stringLiteral("value"),
-                    ]),
+                : [
+                  {
+                    _: "VariableDefinition",
+                    variableDefinitionStatement: {
+                      isConst: true,
+                      name: identifierFromString("value"),
+                      type: typeUnion([structuredJsonValueType, {
+                        _: "Undefined",
+                      }]),
+                      expr: callMethod(jsonValueVariableValue, "get", [
+                        stringLiteral("value"),
+                      ]),
+                    },
                   },
-                }, {
-                  _: "If",
-                  ifStatement: {
-                    condition: equal(variable(identifierFromString("value")), {
-                      _: "UndefinedLiteral",
-                    }),
-                    thenStatementList: [{
-                      _: "ThrowError",
-                      tsExpr: stringLiteral(
-                        "expected value property in sum parameter",
+                  {
+                    _: "If",
+                    ifStatement: {
+                      condition: equal(
+                        variable(identifierFromString("value")),
+                        {
+                          _: "UndefinedLiteral",
+                        },
                       ),
-                    }],
+                      thenStatementList: [{
+                        _: "ThrowError",
+                        tsExpr: stringLiteral(
+                          "expected value property in sum parameter",
+                        ),
+                      }],
+                    },
                   },
-                }, {
-                  _: "Return",
-                  tsExpr: useFrom(
+                  statementReturn(useTag(
                     type.namespace,
                     type.name,
-                    context.map,
-                    objectLiteral([
-                      memberKeyValue("type", stringLiteral(pattern.name)),
-                      memberKeyValue(
-                        "value",
-                        useFromStructuredJsonValue(
-                          pattern.parameter,
-                          variable(identifierFromString("value")),
-                        ),
-                      ),
-                    ]),
-                  ),
-                }],
+                    context,
+                    pattern.name,
+                    useFromStructuredJsonValue(
+                      pattern.parameter,
+                      variable(identifierFromString("value")),
+                    ),
+                  )),
+                ],
             })),
           },
         },
