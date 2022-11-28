@@ -23,7 +23,7 @@ import { getLast } from "../../util.ts";
 import { ApiFunction } from "../core/apiFunction.ts";
 import { DefinyRpcType } from "../core/type.ts";
 import { resultError, resultOk, resultType } from "./result.ts";
-import { useFromStructuredJsonValue } from "./type.ts";
+import { useFromStructuredJsonValue } from "./typeVariable/use.ts";
 import {
   rawJsonValueType,
   useRawJsonToStructuredJsonValue,

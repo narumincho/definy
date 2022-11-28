@@ -82,8 +82,12 @@ export const jsonStringify = (
 
 export const structuredJsonStringify = (
   structuredJsonValue: StructuredJsonValue,
+  indent = false,
 ): string => {
-  return jsonStringify(structuredJsonValueToRawJson(structuredJsonValue));
+  return jsonStringify(
+    structuredJsonValueToRawJson(structuredJsonValue),
+    indent,
+  );
 };
 
 export const structuredJsonValueToRawJson = (

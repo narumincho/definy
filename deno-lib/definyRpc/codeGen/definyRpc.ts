@@ -116,6 +116,11 @@ const requestQuery: data.ExportDefinition = {
         required: false,
         document: "認証が必要な場合のみ付与して呼ぶ",
         type: typeUnion([{ _: "String" }, { _: "Undefined" }]),
+      }, {
+        name: { type: "string", value: "input" },
+        required: false,
+        document: "StructuredJson にした input",
+        type: structuredJsonValueType,
       }]),
     }],
     returnType: promiseType(

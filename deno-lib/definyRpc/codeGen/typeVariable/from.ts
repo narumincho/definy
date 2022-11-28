@@ -1,4 +1,3 @@
-import { TsExpr } from "../../../jsTs/data.ts";
 import {
   data,
   get,
@@ -7,7 +6,6 @@ import {
   objectLiteral,
   stringLiteral,
   symbolToStringTag,
-  typeAssertion,
   variable,
 } from "../../../jsTs/main.ts";
 import {
