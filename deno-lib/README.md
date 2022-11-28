@@ -35,7 +35,7 @@ deno run --allow-run --allow-read ./entryPoints/check.ts
 ### **開発用** 起動
 
 ```ps1
-deno run --check --watch --allow-net=deno.land,:2528 --allow-write=./definyApp/apiClient/ ./entryPoints/definyDev.ts
+deno run --check --watch --allow-net=deno.land,:2528,db.us.fauna.com --allow-write=./definyApp/apiClient/ ./entryPoints/definyDev.ts
 deno run --check -A ./entryPoints/definyEditorWatchBuild.ts
 ```
 

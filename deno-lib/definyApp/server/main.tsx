@@ -116,7 +116,7 @@ const handleSimpleRequest = async (
           title: urlData.location.type === "clock24"
             ? clock24Title(urlData.location.parameter)
             : "definy editor",
-          meta: {
+          meta: urlData.location.type === "logInCallback" ? undefined : {
             description: "definy は 開発中です...",
             image: urlDataToSimpleUrl(
               simpleRequest.url.origin,

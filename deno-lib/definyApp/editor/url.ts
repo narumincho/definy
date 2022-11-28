@@ -6,6 +6,9 @@ export type UrlLocation = {
 } | {
   readonly type: "clock24";
   readonly parameter: Clock24Parameter;
+} | {
+  readonly type: "logInCallback";
+  readonly parameter: CodeAndState;
 };
 
 export type Clock24Parameter = {
@@ -21,7 +24,14 @@ export type Deadline = {
   readonly at: Date;
 };
 
+export type CodeAndState = {
+  readonly code: string;
+  readonly state: string;
+};
+
 const clock24Path = "clock24";
+
+const logInCallbackPath = "logInCallback";
 
 export const simpleUrlToUrlLocation = (
   url: SimpleUrl,
@@ -49,6 +59,15 @@ export const simpleUrlToUrlLocation = (
               timezoneOffset,
               at,
             },
+      },
+    };
+  }
+  if (stringArrayEqual(url.path, [logInCallbackPath])) {
+    return {
+      type: "logInCallback",
+      parameter: {
+        code: url.query.get("code") ?? "",
+        state: url.query.get("state") ?? "",
       },
     };
   }
@@ -80,6 +99,12 @@ export const urlLocationToSimpleUrl = (
             ["at", urlLocation.parameter.deadline.at.toISOString()],
           ] as const),
         ]),
+      };
+    case "logInCallback":
+      return {
+        origin,
+        path: [logInCallbackPath],
+        query: new Map(),
       };
   }
 };

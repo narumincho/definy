@@ -1,8 +1,10 @@
 import React from "https://esm.sh/react@18.2.0?pin=v99";
 import { c, toStyleAndHash } from "../../cssInJs/mod.ts";
 import { Language } from "../../zodType.ts";
+import { createGoogleLogInUrl } from "../apiClient/definyApi.ts";
 import { GoogleLogInButton } from "./components/googleLogInButton.tsx";
 import { Clock24 } from "./pages/clock24.tsx";
+import { LogInCallback } from "./pages/logInCallback.tsx";
 import { UrlLocation } from "./url.ts";
 
 const containerStyle = toStyleAndHash({
@@ -37,10 +39,12 @@ export type AppProps = {
   readonly onChangeUrl?: ((newURL: URL) => void) | undefined;
 };
 
+type LogInState = "noLogIn" | "requestingLogInUrl" | "jumping" | "error";
+
 export const App = (props: AppProps): React.ReactElement => {
   const [count, setCount] = React.useState<number>(0);
-  const [isRequestLogInUrl, setIsRequestLogInUrl] = React.useState<boolean>(
-    false,
+  const [isRequestLogInUrl, setIsRequestLogInUrl] = React.useState<LogInState>(
+    "noLogIn",
   );
 
   if (props.location === undefined) {
@@ -64,11 +68,24 @@ export const App = (props: AppProps): React.ReactElement => {
             <GoogleLogInButton
               language={props.language}
               onClick={() => {
-                setIsRequestLogInUrl(true);
+                setIsRequestLogInUrl("requestingLogInUrl");
+                createGoogleLogInUrl({ url: new URL(location.href).origin })
+                  .then((response) => {
+                    if (response.type === "ok") {
+                      setIsRequestLogInUrl("jumping");
+                      window.location.href = response.ok;
+                    } else {
+                      setIsRequestLogInUrl("error");
+                    }
+                  });
               }}
             />
           </div>
-          {isRequestLogInUrl && <div>ログインURLをリクエストするAPIを呼ぶ</div>}
+          {isRequestLogInUrl === "error" && <div>ログインURLの発行に失敗しました</div>}
+          {isRequestLogInUrl === "jumping" && <div>ログイン画面に推移中...</div>}
+          {isRequestLogInUrl === "requestingLogInUrl" && (
+            <div>ログインURLを発行中...</div>
+          )}
           <div>
             <div>{count}</div>
             <button
@@ -81,5 +98,7 @@ export const App = (props: AppProps): React.ReactElement => {
           </div>
         </div>
       );
+    case "logInCallback":
+      return <LogInCallback parameter={props.location.parameter} />;
   }
 };
