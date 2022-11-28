@@ -4,6 +4,11 @@ import {
   memberKeyValue,
   stringLiteral,
 } from "../../jsTs/main.ts";
+import { definyRpcNamespace } from "../core/definyRpcNamespace.ts";
+import {
+  namespaceRelative,
+  relativeNamespaceToTypeScriptModuleName,
+} from "./namespace.ts";
 
 const resultTypeName = identifierFromString("Result");
 
@@ -74,13 +79,32 @@ export const resultExportDefinition: data.ExportDefinition = {
 export const resultType = (
   ok: data.TsType,
   error: data.TsType,
-): data.TsType => ({
-  _: "ScopeInFile",
-  typeNameAndTypeParameter: {
-    name: resultTypeName,
-    arguments: [ok, error],
-  },
-});
+  namespace: ReadonlyArray<string>,
+): data.TsType => {
+  console.log("namespace!", namespace);
+  const moduleName = relativeNamespaceToTypeScriptModuleName(
+    namespaceRelative(namespace, [definyRpcNamespace]),
+  );
+  if (moduleName === undefined) {
+    return ({
+      _: "ScopeInFile",
+      typeNameAndTypeParameter: {
+        name: resultTypeName,
+        arguments: [ok, error],
+      },
+    });
+  }
+  return ({
+    _: "ImportedType",
+    importedType: {
+      moduleName,
+      nameAndArguments: {
+        name: resultTypeName,
+        arguments: [ok, error],
+      },
+    },
+  });
+};
 
 export const resultOk = (ok: data.TsExpr): data.TsExpr => ({
   _: "ObjectLiteral",

@@ -25,8 +25,8 @@ export const relativeNamespaceToTypeScriptModuleName = (
   if (relativeNamespace.path.length === 0 && relativeNamespace.upCount === 0) {
     return undefined;
   }
-  const prefix = relativeNamespace.upCount === 0
+  const prefix = relativeNamespace.upCount <= 1
     ? "./"
-    : "../".repeat(relativeNamespace.upCount);
+    : "../".repeat(relativeNamespace.upCount - 1);
   return prefix + relativeNamespace.path.join("/") + ".ts";
 };

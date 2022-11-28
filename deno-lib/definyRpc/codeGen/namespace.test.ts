@@ -1,5 +1,8 @@
 import { assertEquals } from "https://deno.land/std@0.166.0/testing/asserts.ts";
-import { namespaceRelative } from "./namespace.ts";
+import {
+  namespaceRelative,
+  relativeNamespaceToTypeScriptModuleName,
+} from "./namespace.ts";
 
 Deno.test("namespaceRelative same", () => {
   assertEquals(namespaceRelative(["a", "b"], ["a", "b"]), {
@@ -34,4 +37,11 @@ Deno.test("namespaceRelative up and down 2", () => {
     upCount: 2,
     path: ["pathA"],
   });
+});
+
+Deno.test("relativeNamespaceToTypeScriptModuleName a to b", () => {
+  assertEquals(
+    relativeNamespaceToTypeScriptModuleName(namespaceRelative(["a"], ["b"])),
+    "./b.ts",
+  );
 });

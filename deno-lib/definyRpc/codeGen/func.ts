@@ -16,6 +16,7 @@ import {
   readonlyMapType,
   readonlySetType,
   responseType,
+  stringLiteral,
   urlType,
 } from "../../jsTs/main.ts";
 import { getLast } from "../../util.ts";
@@ -45,10 +46,11 @@ export const apiFuncToTsFunction = (parameter: {
       },
     ],
     returnType: promiseType(
-      resultType(definyRpcTypeToTsType(parameter.func.output), {
-        _: "StringLiteral",
-        string: "error",
-      }),
+      resultType(
+        definyRpcTypeToTsType(parameter.func.output),
+        { _: "StringLiteral", string: "error" },
+        parameter.func.fullName.slice(0, -1),
+      ),
     ),
     typeParameterList: [],
     statementList: [
@@ -65,7 +67,7 @@ export const apiFuncToTsFunction = (parameter: {
                 },
                 "url",
               ),
-              { _: "StringLiteral", string: parameter.originHint },
+              stringLiteral(parameter.originHint),
             ),
           ),
           isConst: true,
@@ -162,10 +164,8 @@ export const apiFuncToTsFunction = (parameter: {
             parameterList: [],
             returnType: resultType(
               definyRpcTypeToTsType(parameter.func.output),
-              {
-                _: "StringLiteral",
-                string: "error",
-              },
+              { _: "StringLiteral", string: "error" },
+              parameter.func.fullName.slice(0, -1),
             ),
             typeParameterList: [],
             statementList: [
@@ -190,10 +190,11 @@ const fetchThenExpr = (func: ApiFunction): data.LambdaExpr => {
         type: rawJsonValueType,
       },
     ],
-    returnType: resultType(definyRpcTypeToTsType(func.output), {
-      _: "StringLiteral",
-      string: "error",
-    }),
+    returnType: resultType(
+      definyRpcTypeToTsType(func.output),
+      { _: "StringLiteral", string: "error" },
+      func.fullName.slice(0, -1),
+    ),
     typeParameterList: [],
     statementList: [
       {

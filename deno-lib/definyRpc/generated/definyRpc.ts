@@ -169,7 +169,7 @@ export const String: {
     if (jsonValue.type === "string") {
       return jsonValue.value;
     }
-    throw new Error("expected string in String json fromJson");
+    throw new Error("expected string in String.fromStructuredJsonValue");
   },
 };
 
@@ -197,7 +197,7 @@ export const Set: {
       if (jsonValue.type === "array") {
         return new globalThis.Set(jsonValue.value.map(p0FromJson));
       }
-      throw new Error("expected array in Set json fromJson");
+      throw new Error("expected array in Set.fromStructuredJsonValue");
     },
 };
 
@@ -225,7 +225,7 @@ export const List: {
       if (jsonValue.type === "array") {
         return jsonValue.value.map(p0FromJson);
       }
-      throw new Error("expected array in List json fromJson");
+      throw new Error("expected array in List.fromStructuredJsonValue");
     },
 };
 
@@ -264,26 +264,36 @@ export const FunctionDetail: {
     jsonValue: a.StructuredJsonValue
   ): FunctionDetail => {
     if (jsonValue.type !== "object") {
-      throw new Error("expected object in FunctionDetail.fromJson");
+      throw new Error(
+        "expected object in FunctionDetail.fromStructuredJsonValue"
+      );
     }
     const name: a.StructuredJsonValue | undefined = jsonValue.value.get("name");
     if (name === undefined) {
-      throw new Error("expected name field. in FunctionDetail.fromJson");
+      throw new Error(
+        "expected name field. in FunctionDetail.fromStructuredJsonValue"
+      );
     }
     const description: a.StructuredJsonValue | undefined =
       jsonValue.value.get("description");
     if (description === undefined) {
-      throw new Error("expected description field. in FunctionDetail.fromJson");
+      throw new Error(
+        "expected description field. in FunctionDetail.fromStructuredJsonValue"
+      );
     }
     const input: a.StructuredJsonValue | undefined =
       jsonValue.value.get("input");
     if (input === undefined) {
-      throw new Error("expected input field. in FunctionDetail.fromJson");
+      throw new Error(
+        "expected input field. in FunctionDetail.fromStructuredJsonValue"
+      );
     }
     const output: a.StructuredJsonValue | undefined =
       jsonValue.value.get("output");
     if (output === undefined) {
-      throw new Error("expected output field. in FunctionDetail.fromJson");
+      throw new Error(
+        "expected output field. in FunctionDetail.fromStructuredJsonValue"
+      );
     }
     return FunctionDetail.from({
       name: List.fromStructuredJsonValue(String.fromStructuredJsonValue)(name),
@@ -324,22 +334,28 @@ export const Type: {
   }),
   fromStructuredJsonValue: (jsonValue: a.StructuredJsonValue): Type => {
     if (jsonValue.type !== "object") {
-      throw new Error("expected object in Type.fromJson");
+      throw new Error("expected object in Type.fromStructuredJsonValue");
     }
     const fullName: a.StructuredJsonValue | undefined =
       jsonValue.value.get("fullName");
     if (fullName === undefined) {
-      throw new Error("expected fullName field. in Type.fromJson");
+      throw new Error(
+        "expected fullName field. in Type.fromStructuredJsonValue"
+      );
     }
     const description: a.StructuredJsonValue | undefined =
       jsonValue.value.get("description");
     if (description === undefined) {
-      throw new Error("expected description field. in Type.fromJson");
+      throw new Error(
+        "expected description field. in Type.fromStructuredJsonValue"
+      );
     }
     const parameters: a.StructuredJsonValue | undefined =
       jsonValue.value.get("parameters");
     if (parameters === undefined) {
-      throw new Error("expected parameters field. in Type.fromJson");
+      throw new Error(
+        "expected parameters field. in Type.fromStructuredJsonValue"
+      );
     }
     return Type.from({
       fullName: List.fromStructuredJsonValue(String.fromStructuredJsonValue)(
@@ -538,7 +554,7 @@ export const Bool: {
     if (jsonValue.type === "boolean") {
       return jsonValue.value;
     }
-    throw new Error("expected boolean in boolean json fromJson");
+    throw new Error("expected boolean in Bool.fromStructuredJsonValue");
   },
 };
 
@@ -560,7 +576,7 @@ export const Number: {
     if (jsonValue.type === "number") {
       return jsonValue.value;
     }
-    throw new Error("expected number in Number json fromJson");
+    throw new Error("expected number in Number.fromStructuredJsonValue");
   },
 };
 
@@ -585,7 +601,9 @@ export const StringMap: {
       p0FromJson: (a: a.StructuredJsonValue) => p0
     ): ((a: a.StructuredJsonValue) => globalThis.ReadonlyMap<string, p0>) =>
     (jsonValue: a.StructuredJsonValue): globalThis.ReadonlyMap<string, p0> => {
-      throw new Error("expected stringMap in stringMap json fromJson");
+      throw new Error(
+        "expected stringMap in StringMap.fromStructuredJsonValue"
+      );
     },
 };
 

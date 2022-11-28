@@ -9,6 +9,9 @@ import { formatCode } from "../../prettier.ts";
 import { apiFuncToTsFunction } from "./func.ts";
 import { resultExportDefinition } from "./result.ts";
 import { collectedTypeToTypeAlias, typeToTypeVariable } from "./type.ts";
+import { stringArrayEqual } from "../../util.ts";
+import { definyRpcNamespace } from "../core/definyRpcNamespace.ts";
+import { definyRpcExportDefinitionList } from "./definyRpc.ts";
 
 export const apiFunctionListToCode = (parameter: {
   readonly apiFunctionList: ReadonlyArray<ApiFunction>;
@@ -41,7 +44,9 @@ export const apiFunctionListToJsTsCode = (parameter: {
   );
   return {
     exportDefinitionList: [
-      resultExportDefinition,
+      ...(stringArrayEqual(parameter.namespace, [definyRpcNamespace])
+        ? definyRpcExportDefinitionList
+        : []),
       ...(needAuthentication ? [accountTokenExportDefinition] : []),
       ...[...collectedTypeMap.values()].flatMap(
         (type): ReadonlyArray<data.ExportDefinition> => {

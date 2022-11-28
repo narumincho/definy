@@ -81,10 +81,12 @@ deno run --allow-net ./server.ts
 deno run --check --watch --allow-net=:2520 --allow-write --allow-read ./entryPoints/definyRpcServerDev.ts
 ```
 
+コード生成をする場合は `--watch` を指定しない
+
 ### サンプルサーバーの起動
 
 ```ps1
-deno run --check --allow-net=:2520 --allow-write --allow-read https://raw.githubusercontent.com/narumincho/definy/main/deno-lib/entryPoints/definyRpcServerDenoDeploy.ts
+deno run --check --allow-net=:2520 https://raw.githubusercontent.com/narumincho/definy/main/deno-lib/entryPoints/definyRpcServerDenoDeploy.ts
 ```
 
 ### **開発用** definy RPC クライアントビルド
