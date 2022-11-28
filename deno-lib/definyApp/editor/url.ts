@@ -1,5 +1,6 @@
 import { SimpleUrl } from "../../simpleRequestResponse/simpleUrl.ts";
 import { stringArrayEqual } from "../../util.ts";
+import { CodeAndState } from "../apiClient/definyApi.ts";
 
 export type UrlLocation = {
   readonly type: "top";
@@ -22,11 +23,6 @@ export type Deadline = {
   readonly date: Date;
   readonly timezoneOffset: number;
   readonly at: Date;
-};
-
-export type CodeAndState = {
-  readonly code: string;
-  readonly state: string;
 };
 
 const clock24Path = "clock24";
@@ -65,10 +61,10 @@ export const simpleUrlToUrlLocation = (
   if (stringArrayEqual(url.path, [logInCallbackPath])) {
     return {
       type: "logInCallback",
-      parameter: {
+      parameter: CodeAndState.from({
         code: url.query.get("code") ?? "",
         state: url.query.get("state") ?? "",
-      },
+      }),
     };
   }
 };

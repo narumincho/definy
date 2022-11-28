@@ -261,6 +261,21 @@ export const Get = <data extends DocumentObject>(
 };
 
 /**
+ * https://docs.fauna.com/fauna/current/api/fql/functions/get?lang=javascript
+ */
+export const getCollection = <data extends DocumentObject>(
+  ref: TypedExpr<CollectionReference<data>>,
+  ts?: TypedExpr<string | Timestamp>,
+): TypedExpr<{
+  readonly ref: CollectionReference<data>;
+  readonly ts: string;
+  readonly history_days: number;
+  readonly name: string;
+}> => {
+  return typedExprFrom(f.Get(ref, ts));
+};
+
+/**
  * https://docs.fauna.com/fauna/current/api/fql/functions/delete?lang=javascript
  */
 export const Delete = <data extends DocumentObject>(

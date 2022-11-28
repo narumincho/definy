@@ -2,6 +2,7 @@ import {
   createApiFunction,
   FunctionAndTypeList,
   number,
+  product,
   string,
   unit,
 } from "../../definyRpc/server/definyRpc.ts";
@@ -59,6 +60,33 @@ export const funcList = (
         resolve: async (_) => {
           const state = await openConnectStateCreate(faunaClient);
           return googleLogInUrl(state, mode).toString();
+        },
+      }),
+      createApiFunction({
+        fullName: ["logInByCodeAndState"],
+        description:
+          "logInCallback にやってきたときにパラメーターから得ることができる code と state を使ってログインする",
+        needAuthentication: false,
+        isMutation: true,
+        input: product<{ code: string; state: string }>({
+          namespace: ["definyApi"],
+          name: "CodeAndState",
+          description: "ログインコールバック時にURLにつけられる code と state",
+          fieldList: {
+            code: {
+              type: () => string,
+              description: "毎回発行されるキー. Google から情報を得るために必要",
+            },
+            state: {
+              type: () => string,
+              description: "このサーバーが発行したものか判別するためのキー",
+            },
+          },
+        }),
+        output: string,
+        resolve: (codeAndState) => {
+          console.log(codeAndState);
+          return "wip...";
         },
       }),
       createApiFunction({
