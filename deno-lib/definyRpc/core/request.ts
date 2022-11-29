@@ -102,3 +102,48 @@ const structuredJsonValueToUrlSearchNoLimit = (
     }
   }
 };
+
+export const requestMutation = async <T extends unknown>(parameter: {
+  readonly url: URL;
+  readonly fullName: ReadonlyArray<string>;
+  readonly fromStructuredJsonValue: (a: StructuredJsonValue) => T;
+  /**
+   * 認証が必要な場合のみ付与して呼ぶ
+   */
+  readonly accountToken?: string | undefined;
+  /**
+   * StructuredJson にした input
+   */
+  readonly input: StructuredJsonValue;
+}): Promise<Result<T, "error">> => {
+  const url = new URL(parameter.url.toString());
+  url.pathname = url.pathname + ("/" + parameter.fullName.join("/"));
+
+  try {
+    const response = await fetch(url, {
+      method: "POST",
+      body: structuredJsonStringify(
+        parameter.accountToken === undefined
+          ? StructuredJsonValue.object(new Map([["input", parameter.input]]))
+          : StructuredJsonValue.object(
+            new Map([[
+              "accountToken",
+              StructuredJsonValue.string(parameter.accountToken),
+            ], [
+              "input",
+              parameter.input,
+            ]]),
+          ),
+      ),
+    });
+    const jsonValue = await response.json();
+    return ({
+      type: "ok",
+      ok: parameter.fromStructuredJsonValue(
+        rawJsonToStructuredJsonValue(jsonValue),
+      ),
+    });
+  } catch {
+    return ({ type: "error", error: "error" });
+  }
+};

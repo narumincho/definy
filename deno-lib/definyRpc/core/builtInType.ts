@@ -347,38 +347,6 @@ export const stringMap = <element>(
   },
 });
 
-export const structuredJsonValue: DefinyRpcType<StructuredJsonValue> = sum({
-  namespace: [definyRpcNamespace],
-  name: "StructuredJsonValue",
-  description: "構造化されたJSON",
-  patternList: {
-    string: {
-      description: "string",
-      parameter: string,
-    },
-    array: {
-      description: "array",
-      parameter: () => list(structuredJsonValue),
-    },
-    boolean: {
-      description: "boolean",
-      parameter: bool,
-    },
-    null: {
-      description: "null",
-      parameter: unit,
-    },
-    number: {
-      description: "number",
-      parameter: number,
-    },
-    object: {
-      description: "object",
-      parameter: () => stringMap(structuredJsonValue),
-    },
-  },
-});
-
 export const url: DefinyRpcType<URL> = {
   namespace: [definyRpcNamespace],
   name: "Url",

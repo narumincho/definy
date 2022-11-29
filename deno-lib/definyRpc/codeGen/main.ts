@@ -4,10 +4,12 @@ import {
   generateCodeAsString,
   identifierFromString,
 } from "../../jsTs/main.ts";
-import { collectDefinyRpcTypeFromFuncList } from "../core/collectType.ts";
+import {
+  collectDefinyRpcTypeFromFuncList,
+  CollectedDefinyRpcType,
+} from "../core/collectType.ts";
 import { formatCode } from "../../prettier.ts";
 import { apiFuncToTsFunction } from "./func.ts";
-import { resultExportDefinition } from "./result.ts";
 import { collectedTypeToTypeAlias, typeToTypeVariable } from "./type.ts";
 import { stringArrayEqual } from "../../util.ts";
 import { definyRpcNamespace } from "../core/definyRpcNamespace.ts";
@@ -19,6 +21,7 @@ export const apiFunctionListToCode = (parameter: {
   readonly pathPrefix: ReadonlyArray<string>;
   readonly usePrettier: boolean;
   readonly namespace: ReadonlyArray<string>;
+  readonly typeList: ReadonlyArray<CollectedDefinyRpcType>;
 }): string => {
   const code = generateCodeAsString(
     apiFunctionListToJsTsCode(parameter),
@@ -35,13 +38,22 @@ export const apiFunctionListToJsTsCode = (parameter: {
   readonly originHint: string;
   readonly pathPrefix: ReadonlyArray<string>;
   readonly namespace: ReadonlyArray<string>;
+  readonly typeList: ReadonlyArray<CollectedDefinyRpcType>;
 }): data.JsTsCode => {
   const needAuthentication = parameter.apiFunctionList.some(
     (func) => func.needAuthentication,
   );
-  const collectedTypeMap = collectDefinyRpcTypeFromFuncList(
-    parameter.apiFunctionList,
-  );
+  const collectedTypeMap = new Map<string, CollectedDefinyRpcType>([
+    ...collectDefinyRpcTypeFromFuncList(
+      parameter.apiFunctionList,
+    ),
+    ...parameter.typeList.map((
+      t,
+    ): [string, CollectedDefinyRpcType] => [
+      t.namespace.join(".") + "." + t.name,
+      t,
+    ]),
+  ]);
   return {
     exportDefinitionList: [
       ...(stringArrayEqual(parameter.namespace, [definyRpcNamespace])
