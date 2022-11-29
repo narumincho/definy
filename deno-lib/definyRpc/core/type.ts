@@ -1,9 +1,9 @@
-import { StructuredJsonValue } from "../../typedJson.ts";
 import { Lazy } from "../../lazy.ts";
-import { NonEmptyArray } from "../../util.ts";
+import { Namespace, namespaceToString } from "../codeGen/namespace.ts";
+import { StructuredJsonValue } from "./generated.ts";
 
 export type DefinyRpcType<in out t> = {
-  readonly namespace: NonEmptyArray<string>;
+  readonly namespace: Namespace;
   readonly name: string;
   readonly description: string;
   // deno-lint-ignore no-explicit-any
@@ -59,5 +59,5 @@ export type TypeBody =
   };
 
 export const definyRpcTypeToMapKey = <t>(type: DefinyRpcType<t>): string => {
-  return type.namespace.join(".") + "." + type.name;
+  return namespaceToString(type.namespace) + "." + type.name;
 };

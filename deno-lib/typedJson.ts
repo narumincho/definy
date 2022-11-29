@@ -1,4 +1,4 @@
-import { StructuredJsonValue } from "./definyRpc/generated/definyRpc.ts";
+import { StructuredJsonValue } from "./definyRpc/core/generated.ts";
 
 export type RawJsonValue =
   | null
@@ -33,7 +33,7 @@ export const rawJsonToStructuredJsonValue = (
   rawJson: RawJsonValue,
 ): StructuredJsonValue => {
   if (rawJson === null) {
-    return StructuredJsonValue.null(undefined);
+    return StructuredJsonValue.null;
   }
   if (typeof rawJson === "boolean") {
     return StructuredJsonValue.boolean(rawJson);

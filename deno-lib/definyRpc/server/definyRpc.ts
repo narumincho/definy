@@ -1,5 +1,5 @@
 import clientBuildResult from "./browserClient.json" assert { type: "json" };
-import { structuredJsonParse, StructuredJsonValue } from "../../typedJson.ts";
+import { structuredJsonParse } from "../../typedJson.ts";
 import { AccountToken, FunctionAndTypeList } from "../core/apiFunction.ts";
 import { addDefinyRpcApiFunction } from "../core/builtInFunctions.ts";
 import { SimpleRequest } from "../../simpleRequestResponse/simpleRequest.ts";
@@ -16,6 +16,7 @@ import {
 } from "../../simpleRequestResponse/simpleResponse.ts";
 import { stringArrayEqual, stringArrayMatchPrefix } from "../../util.ts";
 import { toBytes } from "https://deno.land/x/fast_base64@v0.1.7/mod.ts";
+import { StructuredJsonValue } from "../core/generated.ts";
 
 export * from "../core/type.ts";
 export * from "../core/apiFunction.ts";

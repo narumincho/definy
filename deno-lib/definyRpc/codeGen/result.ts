@@ -6,8 +6,9 @@ import {
 } from "../../jsTs/main.ts";
 import { definyRpcNamespace } from "../core/definyRpcNamespace.ts";
 import {
+  Namespace,
+  namespaceFromAndToToTypeScriptModuleName,
   namespaceRelative,
-  relativeNamespaceToTypeScriptModuleName,
 } from "./namespace.ts";
 
 const resultTypeName = identifierFromString("Result");
@@ -79,11 +80,12 @@ export const resultExportDefinition: data.ExportDefinition = {
 export const resultType = (
   ok: data.TsType,
   error: data.TsType,
-  namespace: ReadonlyArray<string>,
+  namespace: Namespace,
 ): data.TsType => {
   console.log("namespace!", namespace);
-  const moduleName = relativeNamespaceToTypeScriptModuleName(
-    namespaceRelative(namespace, [definyRpcNamespace]),
+  const moduleName = namespaceFromAndToToTypeScriptModuleName(
+    namespace,
+    { type: "coreType" },
   );
   if (moduleName === undefined) {
     return ({

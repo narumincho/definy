@@ -3,10 +3,8 @@ import { writeTextFileWithLog } from "../../writeFileAndLog.ts";
 import { apiFunctionListToCode } from "../codeGen/main.ts";
 import { CollectedDefinyRpcType } from "./collectType.ts";
 
-const definyRpcCoreNamespace = "definyRpcCore";
-
 const string: CollectedDefinyRpcType = {
-  namespace: [definyRpcCoreNamespace],
+  namespace: { type: "coreType" },
   name: "String",
   description: "文字列",
   parameterCount: 0,
@@ -14,7 +12,7 @@ const string: CollectedDefinyRpcType = {
 };
 
 const bool: CollectedDefinyRpcType = {
-  namespace: [definyRpcCoreNamespace],
+  namespace: { type: "coreType" },
   name: "Bool",
   description: "Bool. boolean. 真偽値. True か False",
   parameterCount: 0,
@@ -22,7 +20,7 @@ const bool: CollectedDefinyRpcType = {
 };
 
 const number: CollectedDefinyRpcType = {
-  namespace: [definyRpcCoreNamespace],
+  namespace: { type: "coreType" },
   name: "Number",
   description: "64bit 浮動小数点数",
   parameterCount: 0,
@@ -32,7 +30,7 @@ const number: CollectedDefinyRpcType = {
 };
 
 const structuredJsonValue: CollectedDefinyRpcType = ({
-  namespace: [definyRpcCoreNamespace],
+  namespace: { type: "coreType" },
   name: "StructuredJsonValue",
   description: "構造化されたJSON",
   parameterCount: 0,
@@ -53,7 +51,7 @@ const structuredJsonValue: CollectedDefinyRpcType = ({
         description: "array",
         parameter: {
           name: "StructuredJsonValue",
-          namespace: [definyRpcCoreNamespace],
+          namespace: { type: "coreType" },
           parameters: [],
         },
       },
@@ -75,7 +73,7 @@ const structuredJsonValue: CollectedDefinyRpcType = ({
         name: "number",
         description: "number",
         parameter: {
-          namespace: number.namespace,
+          namespace: { type: "coreType" },
           name: number.name,
           parameters: [],
         },
@@ -84,11 +82,11 @@ const structuredJsonValue: CollectedDefinyRpcType = ({
         name: "object",
         description: "object",
         parameter: {
-          namespace: [definyRpcCoreNamespace],
+          namespace: { type: "coreType" },
           name: "StringMap",
           parameters: [{
             name: "StructuredJsonValue",
-            namespace: [definyRpcCoreNamespace],
+            namespace: { type: "coreType" },
             parameters: [],
           }],
         },
@@ -98,7 +96,7 @@ const structuredJsonValue: CollectedDefinyRpcType = ({
 });
 
 const stringMap: CollectedDefinyRpcType = {
-  namespace: [definyRpcCoreNamespace],
+  namespace: { type: "coreType" },
   name: "StringMap",
   description: "キーが string の ReadonlyMap",
   parameterCount: 1,
@@ -106,7 +104,7 @@ const stringMap: CollectedDefinyRpcType = {
     type: "stringMap",
     valueType: {
       name: "StructuredJsonValue",
-      namespace: [definyRpcCoreNamespace],
+      namespace: { type: "coreType" },
       parameters: [],
     },
   },
@@ -115,7 +113,7 @@ const stringMap: CollectedDefinyRpcType = {
 export const generateCoreCode = async (): Promise<void> => {
   const code = apiFunctionListToCode({
     apiFunctionList: [],
-    namespace: [definyRpcCoreNamespace],
+    namespace: { type: "coreType" },
     originHint: "",
     pathPrefix: [],
     usePrettier: true,

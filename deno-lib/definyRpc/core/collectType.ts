@@ -1,7 +1,7 @@
 import { ApiFunction } from "./apiFunction.ts";
 import { lazyGet } from "../../lazy.ts";
 import { DefinyRpcType, definyRpcTypeToMapKey, TypeBody } from "./type.ts";
-import { NonEmptyArray } from "../../util.ts";
+import { Namespace, namespaceToString } from "../codeGen/namespace.ts";
 
 export const collectDefinyRpcTypeFromFuncList = (
   funcList: ReadonlyArray<ApiFunction>,
@@ -103,16 +103,16 @@ export type CollectedDefinyRpcTypeMap = ReadonlyMap<
 
 export type CodeGenContext = {
   readonly map: CollectedDefinyRpcTypeMap;
-  readonly currentModule: ReadonlyArray<string>;
+  readonly currentModule: Namespace;
 };
 
 export const collectedDefinyRpcTypeMapGet = (
   map: CollectedDefinyRpcTypeMap,
-  namespace: NonEmptyArray<string>,
+  namespace: Namespace,
   name: string,
 ): CollectedDefinyRpcType | undefined => {
   return map.get(
-    namespace.join(".") +
+    namespaceToString(namespace) +
       "." +
       name,
   );
@@ -123,7 +123,7 @@ export const collectedDefinyRpcTypeMapGet = (
  * 同じ名前が見つかったらストップ (パラメーターは見る)
  */
 export type CollectedDefinyRpcType = {
-  readonly namespace: NonEmptyArray<string>;
+  readonly namespace: Namespace;
   readonly name: string;
   readonly description: string;
   readonly parameterCount: number;
@@ -224,7 +224,7 @@ const definyRpcTypeToCollectedDefinyRpcTypeUse = <t>(
 };
 
 export type CollectedDefinyRpcTypeUse = {
-  readonly namespace: NonEmptyArray<string>;
+  readonly namespace: Namespace;
   readonly name: string;
   readonly parameters: ReadonlyArray<CollectedDefinyRpcTypeUse>;
 };

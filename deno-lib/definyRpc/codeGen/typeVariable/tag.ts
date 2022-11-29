@@ -58,21 +58,21 @@ const patternToTagExprAndType = (
   readonly memberExpr: data.TsExpr;
   readonly type: data.TsType;
 } => {
-  const typeAndSymbolToStringTagMember: ReadonlyArray<data.TsMember> = [
-    memberKeyValue("type", stringLiteral(pattern.name)),
-    {
-      _: "KeyValue",
-      keyValue: {
-        key: symbolToStringTag,
-        value: stringLiteral(
-          symbolToStringTagAndTypeName(type.namespace, type.name),
-        ),
-      },
+  const symbolToStringTagMember: data.TsMember = {
+    _: "KeyValue",
+    keyValue: {
+      key: symbolToStringTag,
+      value: stringLiteral(
+        symbolToStringTagAndTypeName(type.namespace, type.name),
+      ),
     },
-  ];
+  };
   if (type.parameterCount === 0 && pattern.parameter === undefined) {
     return {
-      memberExpr: objectLiteral(typeAndSymbolToStringTagMember),
+      memberExpr: objectLiteral([
+        memberKeyValue("type", stringLiteral(pattern.name)),
+        symbolToStringTagMember,
+      ]),
       type: collectedDefinyRpcTypeToTsType(type, context),
     };
   }
@@ -85,8 +85,9 @@ const patternToTagExprAndType = (
     statementList: [{
       _: "Return",
       tsExpr: objectLiteral([
-        ...typeAndSymbolToStringTagMember,
+        memberKeyValue("type", stringLiteral(pattern.name)),
         memberKeyValue("value", variable(identifierFromString("p"))),
+        symbolToStringTagMember,
       ]),
     }],
     typeParameterList: arrayFromLength(

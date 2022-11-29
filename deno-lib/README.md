@@ -98,5 +98,5 @@ deno run --check --watch -A ./entryPoints/definyRpcBuild.ts
 ### **開発用*** definy RPC core コード生成
 
 ```ps1
-deno run --allow-write=./definyRpc/core/generated.ts ./entryPoints/definyRpcCoreGenerate.ts
+deno run --check --allow-write=./definyRpc/coreGenerated/coreType.ts ./entryPoints/definyRpcCoreGenerate.ts
 ```

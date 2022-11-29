@@ -14,8 +14,8 @@ import {
   CollectedDefinyRpcTypeUse,
 } from "../../core/collectType.ts";
 import {
+  namespaceFromAndToToTypeScriptModuleName,
   namespaceRelative,
-  relativeNamespaceToTypeScriptModuleName,
 } from "../namespace.ts";
 
 /**
@@ -70,11 +70,9 @@ export const collectedDefinyRpcTypeToTsType = (
       });
     case "product":
     case "sum": {
-      const moduleName = relativeNamespaceToTypeScriptModuleName(
-        namespaceRelative(
-          context.currentModule,
-          collectedDefinyRpcType.namespace,
-        ),
+      const moduleName = namespaceFromAndToToTypeScriptModuleName(
+        context.currentModule,
+        collectedDefinyRpcType.namespace,
       );
       if (moduleName === undefined) {
         return {
@@ -177,11 +175,9 @@ export const collectedDefinyRpcTypeUseToTsType = (
     }
     case "product":
     case "sum": {
-      const moduleName = relativeNamespaceToTypeScriptModuleName(
-        namespaceRelative(
-          context.currentModule,
-          type.namespace,
-        ),
+      const moduleName = namespaceFromAndToToTypeScriptModuleName(
+        context.currentModule,
+        type.namespace,
       );
       if (moduleName === undefined) {
         return {
