@@ -13,6 +13,7 @@ import {
   CollectedDefinyRpcType,
   Field,
 } from "../../core/collectType.ts";
+import { Namespace, namespaceToString } from "../namespace.ts";
 import { collectedDefinyRpcTypeToTsType } from "../type/use.ts";
 
 export const createFromLambda = (
@@ -87,8 +88,8 @@ const typeToFromLambdaProductStatement = (
 };
 
 export const symbolToStringTagAndTypeName = (
-  namespace: ReadonlyArray<string>,
+  namespace: Namespace,
   typeName: string,
 ): string => {
-  return namespace.join(".") + "." + typeName;
+  return namespaceToString(namespace) + "." + typeName;
 };

@@ -393,9 +393,13 @@ const typeToFromJsonStatementList = (
               statementList: pattern.parameter === undefined
                 ? [{
                   _: "Return",
-                  tsExpr: objectLiteral([
-                    memberKeyValue("type", stringLiteral(pattern.name)),
-                  ]),
+                  tsExpr: useTag(
+                    type.namespace,
+                    type.name,
+                    context,
+                    pattern.name,
+                    undefined,
+                  ),
                 }]
                 : [
                   {

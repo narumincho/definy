@@ -16,8 +16,7 @@ export type StructuredJsonValue =
        * string
        */
       readonly value: string;
-      readonly [globalThis.Symbol
-        .toStringTag]: "definyRpcCore.StructuredJsonValue";
+      readonly [globalThis.Symbol.toStringTag]: "*coreType.StructuredJsonValue";
     }
   | {
       /**
@@ -27,9 +26,8 @@ export type StructuredJsonValue =
       /**
        * array
        */
-      readonly value: StructuredJsonValue;
-      readonly [globalThis.Symbol
-        .toStringTag]: "definyRpcCore.StructuredJsonValue";
+      readonly value: globalThis.ReadonlyArray<StructuredJsonValue>;
+      readonly [globalThis.Symbol.toStringTag]: "*coreType.StructuredJsonValue";
     }
   | {
       /**
@@ -40,16 +38,14 @@ export type StructuredJsonValue =
        * boolean
        */
       readonly value: boolean;
-      readonly [globalThis.Symbol
-        .toStringTag]: "definyRpcCore.StructuredJsonValue";
+      readonly [globalThis.Symbol.toStringTag]: "*coreType.StructuredJsonValue";
     }
   | {
       /**
        * null
        */
       readonly type: "null";
-      readonly [globalThis.Symbol
-        .toStringTag]: "definyRpcCore.StructuredJsonValue";
+      readonly [globalThis.Symbol.toStringTag]: "*coreType.StructuredJsonValue";
     }
   | {
       /**
@@ -60,8 +56,7 @@ export type StructuredJsonValue =
        * number
        */
       readonly value: number;
-      readonly [globalThis.Symbol
-        .toStringTag]: "definyRpcCore.StructuredJsonValue";
+      readonly [globalThis.Symbol.toStringTag]: "*coreType.StructuredJsonValue";
     }
   | {
       /**
@@ -72,8 +67,7 @@ export type StructuredJsonValue =
        * object
        */
       readonly value: StringMap<StructuredJsonValue>;
-      readonly [globalThis.Symbol
-        .toStringTag]: "definyRpcCore.StructuredJsonValue";
+      readonly [globalThis.Symbol.toStringTag]: "*coreType.StructuredJsonValue";
     };
 
 /**
@@ -81,7 +75,7 @@ export type StructuredJsonValue =
  */
 export type StringMap<p0 extends unknown> = globalThis.ReadonlyMap<
   string,
-  StructuredJsonValue
+  unknown
 >;
 
 /**
@@ -171,7 +165,9 @@ export const StructuredJsonValue: {
   /**
    * array
    */
-  readonly array: (a: StructuredJsonValue) => StructuredJsonValue;
+  readonly array: (
+    a: globalThis.ReadonlyArray<StructuredJsonValue>
+  ) => StructuredJsonValue;
   /**
    * boolean
    */
@@ -220,7 +216,9 @@ export const StructuredJsonValue: {
           throw new Error("expected value property in sum parameter");
         }
         return StructuredJsonValue.array(
-          StructuredJsonValue.fromStructuredJsonValue(value)
+          List.fromStructuredJsonValue(
+            StructuredJsonValue.fromStructuredJsonValue
+          )(value)
         );
       }
       case "boolean": {
@@ -232,7 +230,7 @@ export const StructuredJsonValue: {
         return StructuredJsonValue.boolean(Bool.fromStructuredJsonValue(value));
       }
       case "null": {
-        return { type: "null" };
+        return StructuredJsonValue.null;
       }
       case "number": {
         const value: a.StructuredJsonValue | undefined =
@@ -264,34 +262,36 @@ export const StructuredJsonValue: {
   },
   string: (p: string): StructuredJsonValue => ({
     type: "string",
-    [globalThis.Symbol.toStringTag]: "definyRpcCore.StructuredJsonValue",
     value: p,
+    [globalThis.Symbol.toStringTag]: "*coreType.StructuredJsonValue",
   }),
-  array: (p: StructuredJsonValue): StructuredJsonValue => ({
+  array: (
+    p: globalThis.ReadonlyArray<StructuredJsonValue>
+  ): StructuredJsonValue => ({
     type: "array",
-    [globalThis.Symbol.toStringTag]: "definyRpcCore.StructuredJsonValue",
     value: p,
+    [globalThis.Symbol.toStringTag]: "*coreType.StructuredJsonValue",
   }),
   boolean: (p: boolean): StructuredJsonValue => ({
     type: "boolean",
-    [globalThis.Symbol.toStringTag]: "definyRpcCore.StructuredJsonValue",
     value: p,
+    [globalThis.Symbol.toStringTag]: "*coreType.StructuredJsonValue",
   }),
   null: {
     type: "null",
-    [globalThis.Symbol.toStringTag]: "definyRpcCore.StructuredJsonValue",
+    [globalThis.Symbol.toStringTag]: "*coreType.StructuredJsonValue",
   },
   number: (p: number): StructuredJsonValue => ({
     type: "number",
-    [globalThis.Symbol.toStringTag]: "definyRpcCore.StructuredJsonValue",
     value: p,
+    [globalThis.Symbol.toStringTag]: "*coreType.StructuredJsonValue",
   }),
   object: (
     p: globalThis.ReadonlyMap<string, StructuredJsonValue>
   ): StructuredJsonValue => ({
     type: "object",
-    [globalThis.Symbol.toStringTag]: "definyRpcCore.StructuredJsonValue",
     value: p,
+    [globalThis.Symbol.toStringTag]: "*coreType.StructuredJsonValue",
   }),
 };
 
@@ -319,5 +319,33 @@ export const StringMap: {
       throw new Error(
         "expected stringMap in StringMap.fromStructuredJsonValue"
       );
+    },
+};
+
+/**
+ * リスト
+ */
+export const List: {
+  /**
+   * List の説明文
+   */
+  readonly description: string;
+  /**
+   * JsonからListに変換する. 失敗した場合はエラー
+   */
+  readonly fromStructuredJsonValue: <p0 extends unknown>(
+    a: (a: a.StructuredJsonValue) => p0
+  ) => (a: a.StructuredJsonValue) => globalThis.ReadonlyArray<p0>;
+} = {
+  description: "リスト",
+  fromStructuredJsonValue:
+    <p0 extends unknown>(
+      p0FromJson: (a: a.StructuredJsonValue) => p0
+    ): ((a: a.StructuredJsonValue) => globalThis.ReadonlyArray<p0>) =>
+    (jsonValue: a.StructuredJsonValue): globalThis.ReadonlyArray<p0> => {
+      if (jsonValue.type === "array") {
+        return jsonValue.value.map(p0FromJson);
+      }
+      throw new Error("expected array in List.fromStructuredJsonValue");
     },
 };

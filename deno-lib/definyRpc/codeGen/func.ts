@@ -19,7 +19,6 @@ import {
   stringLiteral,
   urlType,
 } from "../../jsTs/main.ts";
-import { getLast } from "../../util.ts";
 import { ApiFunction } from "../core/apiFunction.ts";
 import { DefinyRpcType } from "../core/type.ts";
 import { resultError, resultOk, resultType } from "./result.ts";
@@ -36,7 +35,7 @@ export const apiFuncToTsFunction = (parameter: {
 }): data.Function => {
   const parameterIdentifier = identifierFromString("parameter");
   return {
-    name: identifierFromString(getLast(parameter.func.fullName)),
+    name: identifierFromString(parameter.func.name),
     document: parameter.func.description,
     parameterList: [
       {
@@ -49,7 +48,7 @@ export const apiFuncToTsFunction = (parameter: {
       resultType(
         definyRpcTypeToTsType(parameter.func.output),
         { _: "StringLiteral", string: "error" },
-        parameter.func.fullName.slice(0, -1),
+        { type: "local", path: parameter.func.namespace },
       ),
     ),
     typeParameterList: [],
@@ -99,7 +98,7 @@ export const apiFuncToTsFunction = (parameter: {
                 (parameter.pathPrefix.length === 0
                   ? ""
                   : parameter.pathPrefix.join("/") + "/") +
-                parameter.func.fullName.join("/"),
+                parameter.func.namespace.join("/") + "/" + parameter.func.name,
             },
           ),
         },
@@ -165,7 +164,7 @@ export const apiFuncToTsFunction = (parameter: {
             returnType: resultType(
               definyRpcTypeToTsType(parameter.func.output),
               { _: "StringLiteral", string: "error" },
-              parameter.func.fullName.slice(0, -1),
+              { type: "local", path: parameter.func.namespace },
             ),
             typeParameterList: [],
             statementList: [
@@ -193,7 +192,7 @@ const fetchThenExpr = (func: ApiFunction): data.LambdaExpr => {
     returnType: resultType(
       definyRpcTypeToTsType(func.output),
       { _: "StringLiteral", string: "error" },
-      func.fullName.slice(0, -1),
+      { type: "local", path: func.namespace },
     ),
     typeParameterList: [],
     statementList: [

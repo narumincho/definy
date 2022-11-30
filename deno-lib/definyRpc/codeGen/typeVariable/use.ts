@@ -7,22 +7,21 @@ import {
   identifierFromString,
   variable,
 } from "../../../jsTs/main.ts";
-import { NonEmptyArray } from "../../../util.ts";
 import {
   CodeGenContext,
   collectedDefinyRpcTypeMapGet,
   CollectedDefinyRpcTypeUse,
 } from "../../core/collectType.ts";
 import {
-  namespaceRelative,
-  relativeNamespaceToTypeScriptModuleName,
+  Namespace,
+  namespaceFromAndToToTypeScriptModuleName,
 } from "../namespace.ts";
 
 /**
  * product の表現の型の値を生成する
  */
 export const useFrom = (
-  namespace: NonEmptyArray<string>,
+  namespace: Namespace,
   typeName: string,
   context: CodeGenContext,
   object: TsExpr,
@@ -33,7 +32,7 @@ export const useFrom = (
 };
 
 export const useTag = (
-  namespace: NonEmptyArray<string>,
+  namespace: Namespace,
   typeName: string,
   context: CodeGenContext,
   tag: string,
@@ -56,15 +55,13 @@ export const useTag = (
 };
 
 const getTypeVariable = (
-  namespace: NonEmptyArray<string>,
+  namespace: Namespace,
   typeName: string,
   context: CodeGenContext,
 ): TsExpr => {
-  const moduleName = relativeNamespaceToTypeScriptModuleName(
-    namespaceRelative(
-      context.currentModule,
-      namespace,
-    ),
+  const moduleName = namespaceFromAndToToTypeScriptModuleName(
+    context.currentModule,
+    namespace,
   );
   if (moduleName === undefined) {
     return {

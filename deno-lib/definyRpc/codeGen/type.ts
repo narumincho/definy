@@ -27,6 +27,7 @@ import {
 import { collectedDefinyRpcTypeToTsType } from "./type/use.ts";
 import { createTagExprList } from "./typeVariable/tag.ts";
 import { createFromStructuredJsonValueLambda } from "./typeVariable/fromStructuredJsonValue.ts";
+import { Namespace } from "./namespace.ts";
 
 export const collectedTypeToTypeAlias = (
   type: CollectedDefinyRpcType,
@@ -60,7 +61,7 @@ export const collectedTypeToTypeAlias = (
 };
 
 const collectedDefinyRpcTypeBodyToTsType = (
-  namespace: ReadonlyArray<string>,
+  namespace: Namespace,
   typeName: string,
   typeBody: CollectedDefinyRpcTypeBody,
   map: CollectedDefinyRpcTypeMap,
@@ -93,7 +94,7 @@ const collectedDefinyRpcTypeBodyToTsType = (
     case "stringMap":
       return readonlyMapType(
         { _: "String" },
-        collectedDefinyRpcTypeUseToTsType(typeBody.valueType, map),
+        { _: "unknown" },
       );
     case "product":
       return {

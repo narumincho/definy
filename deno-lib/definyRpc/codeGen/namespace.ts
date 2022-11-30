@@ -39,10 +39,13 @@ export const namespaceFromAndToToTypeScriptModuleName = (
       return toCoreTypeModuleName(from);
 
     case "request":
-      return namespaceFromAndToCoreFuncToTypeScriptModuleName(from);
+      return toRequest(from);
+
+    case "typedJson":
+      return toTypedJson(from);
 
     case "local":
-      return namespaceFromAndToLocalToTypeScriptModuleName(from, to.path);
+      return toLocal(from, to.path);
   }
 };
 
@@ -54,29 +57,42 @@ const toCoreTypeModuleName = (
       return undefined;
     case "request":
     case "typedJson":
-      return "./coreType.ts";
+      throw new Error("この方向には参照しない!");
     case "local":
-      return "https://coreFuncまだ作成中";
+      return "https://raw.githubusercontent.com/narumincho/definy/cc9b0e4b75583067ce72c7d75b393118d21e5f72/deno-lib/definyRpc/core/coreType.ts";
   }
 };
 
-const namespaceFromAndToCoreTypeToTypeScriptModuleName = (
+const toRequest = (
   from: Namespace,
-): string | undefined => {
+): string => {
   switch (from.type) {
-    case "coreFunc":
-      return "./coreType.ts";
     case "coreType":
-      return undefined;
+      throw new Error("この方向には参照しない!");
+    case "typedJson":
+    case "request":
+      throw new Error("コード生成しない!");
     case "local":
-      return "https://coreTypeまだ作成中";
+      return "https://raw.githubusercontent.com/narumincho/definy/cc9b0e4b75583067ce72c7d75b393118d21e5f72/deno-lib/definyRpc/core/request.ts";
   }
 };
 
-const namespaceFromAndToLocalToTypeScriptModuleName = (
+const toTypedJson = (from: Namespace): string => {
+  switch (from.type) {
+    case "typedJson":
+    case "request":
+      throw new Error("コード生成しない!");
+    case "coreType":
+      throw new Error("この方向には参照しない!");
+    case "local":
+      return "https://raw.githubusercontent.com/narumincho/definy/cc9b0e4b75583067ce72c7d75b393118d21e5f72/deno-lib/definyRpc/core/request.ts";
+  }
+};
+
+const toLocal = (
   from: Namespace,
   to: ReadonlyArray<string>,
-): string | undefined => {
+): string => {
   switch (from.type) {
     case "request":
     case "typedJson":
@@ -92,7 +108,7 @@ const namespaceFromAndToLocalToTypeScriptModuleName = (
   }
 };
 
-export const namespaceToString = (namespace: Namespace) => {
+export const namespaceToString = (namespace: Namespace): string => {
   switch (namespace.type) {
     case "typedJson":
       return "*typedJson";
@@ -105,6 +121,6 @@ export const namespaceToString = (namespace: Namespace) => {
   }
 };
 
-export const namespaceEqual = (a: Namespace, b: Namespace) => {
+export const namespaceEqual = (a: Namespace, b: Namespace): boolean => {
   return namespaceToString(a) === namespaceToString(b);
 };
