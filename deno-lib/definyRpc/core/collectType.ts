@@ -139,7 +139,6 @@ export type CollectedDefinyRpcTypeBody =
   | { readonly type: "set" }
   | {
     readonly type: "stringMap";
-    readonly valueType: CollectedDefinyRpcTypeUse;
   }
   | {
     readonly type: "product";
@@ -180,12 +179,7 @@ const typeBodyToCollectedDefinyRpcTypeBody = (
     case "set":
       return { type: "set" };
     case "stringMap":
-      return {
-        type: "stringMap",
-        valueType: definyRpcTypeToCollectedDefinyRpcTypeUse(
-          lazyGet(typeBody.valueType),
-        ),
-      };
+      return { type: "stringMap" };
     case "product":
       return {
         type: "product",

@@ -245,7 +245,7 @@ const builtInFunctions = (
 
           await Promise.all(
             objectEntriesSameValue(
-              groupBy(allFunc, (f) => f.fullName.slice(0, -1).join("/")),
+              groupBy(allFunc, (f) => f.namespace.join(".")),
             ).map(
               async ([namespace, funcList]) => {
                 if (funcList === undefined) {
@@ -258,15 +258,16 @@ const builtInFunctions = (
                 await writeTextFileWithLog(
                   join(
                     codeGenOutputFolderPath,
-                    ...firstFunc.fullName.slice(0, -2),
-                    firstFunc.fullName.at(-2) + ".ts",
+                    ...firstFunc.namespace.slice(0, -1),
+                    firstFunc.namespace.at(-1) + ".ts",
                   ),
                   apiFunctionListToCode({
                     apiFunctionList: funcList,
                     originHint: parameter.originHint,
                     pathPrefix: parameter.pathPrefix ?? [],
                     usePrettier: true,
-                    namespace: namespace.split("/"),
+                    namespace: { type: "local", path: namespace.split(".") },
+                    typeList: [],
                   }),
                 );
               },

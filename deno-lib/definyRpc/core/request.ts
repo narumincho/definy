@@ -2,7 +2,8 @@ import {
   rawJsonToStructuredJsonValue,
   structuredJsonStringify,
 } from "../../typedJson.ts";
-import { Result, StructuredJsonValue } from "../generated/definyRpc.ts";
+import { Result } from "../generated/definyRpc.ts";
+import { StructuredJsonValue } from "./coreType.ts";
 
 export const requestQuery = async <T extends unknown>(parameter: {
   readonly url: URL;

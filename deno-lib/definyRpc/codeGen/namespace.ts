@@ -36,9 +36,9 @@ export const namespaceFromAndToToTypeScriptModuleName = (
 ): string | undefined => {
   switch (to.type) {
     case "coreType":
-      return namespaceFromAndToCoreTypeToTypeScriptModuleName(from);
+      return toCoreTypeModuleName(from);
 
-    case "":
+    case "request":
       return namespaceFromAndToCoreFuncToTypeScriptModuleName(from);
 
     case "local":
@@ -46,14 +46,15 @@ export const namespaceFromAndToToTypeScriptModuleName = (
   }
 };
 
-const namespaceFromAndToCoreFuncToTypeScriptModuleName = (
+const toCoreTypeModuleName = (
   from: Namespace,
 ): string | undefined => {
   switch (from.type) {
-    case "coreFunc":
-      return undefined;
     case "coreType":
-      return "./coreFunc.ts";
+      return undefined;
+    case "request":
+    case "typedJson":
+      return "./coreType.ts";
     case "local":
       return "https://coreFuncまだ作成中";
   }

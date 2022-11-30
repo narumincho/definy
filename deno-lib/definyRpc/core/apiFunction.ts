@@ -12,7 +12,8 @@ const privateSymbol = Symbol();
  * definy Rpc の内容を構成する関数
  */
 export type ApiFunction = {
-  readonly fullName: NonEmptyArray<string>;
+  readonly namespace: NonEmptyArray<string>;
+  readonly name: string;
   // deno-lint-ignore no-explicit-any
   readonly input: DefinyRpcType<any>;
   // deno-lint-ignore no-explicit-any
@@ -41,7 +42,8 @@ export const createApiFunction = <
   OutputType,
   NeedAuthentication extends boolean,
 >(parameter: {
-  readonly fullName: NonEmptyArray<string>;
+  readonly namespace: NonEmptyArray<string>;
+  readonly name: string;
   readonly input: DefinyRpcType<InputType>;
   readonly output: DefinyRpcType<OutputType>;
   /**
@@ -57,7 +59,8 @@ export const createApiFunction = <
   ) => Promise<OutputType> | OutputType;
 }): ApiFunction => {
   return {
-    fullName: parameter.fullName,
+    namespace: parameter.namespace,
+    name: parameter.name,
     input: parameter.input,
     output: parameter.output,
     needAuthentication: parameter.needAuthentication,

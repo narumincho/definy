@@ -1,4 +1,4 @@
-import { StructuredJsonValue } from "./definyRpc/core/generated.ts";
+import { StructuredJsonValue } from "./definyRpc/core/coreType.ts";
 
 export type RawJsonValue =
   | null

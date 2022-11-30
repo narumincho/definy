@@ -16,7 +16,7 @@ import {
 } from "../../simpleRequestResponse/simpleResponse.ts";
 import { stringArrayEqual, stringArrayMatchPrefix } from "../../util.ts";
 import { toBytes } from "https://deno.land/x/fast_base64@v0.1.7/mod.ts";
-import { StructuredJsonValue } from "../core/generated.ts";
+import { StructuredJsonValue } from "../core/coreType.ts";
 
 export * from "../core/type.ts";
 export * from "../core/apiFunction.ts";
@@ -78,7 +78,7 @@ export const handleRequest = async (
   const paramJsonParsed: StructuredJsonValue =
     (typeof paramJson === "string"
       ? structuredJsonParse(paramJson)
-      : undefined) ?? { type: "null" };
+      : undefined) ?? StructuredJsonValue.null;
 
   if (stringArrayEqual(pathListRemovePrefix, [])) {
     return simpleResponseHtml(`<!doctype html>
@@ -126,7 +126,9 @@ export const handleRequest = async (
   }
   console.log("request!: ", pathListRemovePrefix);
   for (const func of all.functionsList) {
-    if (stringArrayEqual(pathListRemovePrefix, func.fullName)) {
+    if (
+      stringArrayEqual(pathListRemovePrefix, [...func.namespace, func.name])
+    ) {
       if (func.needAuthentication) {
         const authorizationHeaderValue = request.headers.authorization;
         if (authorizationHeaderValue === undefined) {
@@ -155,7 +157,7 @@ export const handleRequest = async (
     }
   }
   return notFound({
-    examples: all.functionsList.map((func) => func.fullName),
+    examples: all.functionsList.map((func) => [...func.namespace, func.name]),
     specified: pathListRemovePrefix,
   });
 };

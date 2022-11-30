@@ -50,9 +50,13 @@ const structuredJsonValue: CollectedDefinyRpcType = ({
         name: "array",
         description: "array",
         parameter: {
-          name: "StructuredJsonValue",
+          name: "List",
           namespace: { type: "coreType" },
-          parameters: [],
+          parameters: [{
+            name: "StructuredJsonValue",
+            namespace: { type: "coreType" },
+            parameters: [],
+          }],
         },
       },
       {
@@ -100,13 +104,16 @@ const stringMap: CollectedDefinyRpcType = {
   name: "StringMap",
   description: "キーが string の ReadonlyMap",
   parameterCount: 1,
+  body: { type: "stringMap" },
+};
+
+const list: CollectedDefinyRpcType = {
+  namespace: { type: "coreType" },
+  name: "List",
+  description: "リスト",
+  parameterCount: 1,
   body: {
-    type: "stringMap",
-    valueType: {
-      name: "StructuredJsonValue",
-      namespace: { type: "coreType" },
-      parameters: [],
-    },
+    type: "list",
   },
 };
 
@@ -117,10 +124,10 @@ export const generateCoreCode = async (): Promise<void> => {
     originHint: "",
     pathPrefix: [],
     usePrettier: true,
-    typeList: [string, bool, number, structuredJsonValue, stringMap],
+    typeList: [string, bool, number, structuredJsonValue, stringMap, list],
   });
   await writeTextFileWithLog(
-    fromFileUrl(import.meta.resolve("./generated.ts")),
+    fromFileUrl(import.meta.resolve("./coreType.ts")),
     code,
   );
 };
