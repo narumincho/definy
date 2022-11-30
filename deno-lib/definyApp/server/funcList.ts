@@ -11,6 +11,8 @@ import { openConnectStateCreate } from "./faunaInterface.ts";
 import { googleLogInUrl } from "./logIn.ts";
 import { Mode } from "./mode.ts";
 
+const definyAppNamespace = ["definyApi"] as const;
+
 export const funcList = (
   faunaClient: f.TypedFaunaClient,
   mode: Mode,
@@ -18,7 +20,8 @@ export const funcList = (
   return {
     functionsList: [
       createApiFunction({
-        fullName: ["hello"],
+        namespace: definyAppNamespace,
+        name: "hello",
         description: "hello と挨拶が返ってくる",
         needAuthentication: false,
         isMutation: false,
@@ -29,7 +32,8 @@ export const funcList = (
         },
       }),
       createApiFunction({
-        fullName: ["now"],
+        namespace: definyAppNamespace,
+        name: "now",
         description: "現在時刻を文字列で返す",
         needAuthentication: false,
         isMutation: false,
@@ -40,7 +44,8 @@ export const funcList = (
         },
       }),
       createApiFunction({
-        fullName: ["repeat"],
+        namespace: definyAppNamespace,
+        name: "repeat",
         description: '"ok"を指定した回数分繰り返して返す',
         needAuthentication: false,
         isMutation: false,
@@ -51,7 +56,8 @@ export const funcList = (
         },
       }),
       createApiFunction({
-        fullName: ["createGoogleLogInUrl"],
+        namespace: definyAppNamespace,
+        name: "createGoogleLogInUrl",
         description: "Google でログインするためのURLを発行し取得する",
         needAuthentication: false,
         isMutation: true,
@@ -63,7 +69,8 @@ export const funcList = (
         },
       }),
       createApiFunction({
-        fullName: ["logInByCodeAndState"],
+        namespace: definyAppNamespace,
+        name: "logInByCodeAndState",
         description:
           "logInCallback にやってきたときにパラメーターから得ることができる code と state を使ってログインする",
         needAuthentication: false,
@@ -90,7 +97,8 @@ export const funcList = (
         },
       }),
       createApiFunction({
-        fullName: ["getDataFromDatabase"],
+        namespace: definyAppNamespace,
+        name: "getDataFromDatabase",
         description: "fauna からデータを取得する",
         needAuthentication: false,
         isMutation: false,

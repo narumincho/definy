@@ -39,7 +39,7 @@ export const collectedTypeToTypeAlias = (
     type.body.type === "boolean" ||
     type.body.type === "unit" ||
     type.body.type === "list" ||
-    type.body.type === "set"
+    type.body.type === "set" || type.body.type === "stringMap"
   ) {
     return undefined;
   }
@@ -240,7 +240,7 @@ export const typeToTypeVariable = (
     _: "Function",
     functionType: {
       typeParameterList: [],
-      parameterList: [structuredJsonValueType],
+      parameterList: [structuredJsonValueType(context)],
       return: collectedDefinyRpcTypeToTsType(type, context),
     },
   };
@@ -276,7 +276,7 @@ export const typeToTypeVariable = (
                 (i): data.TsType => ({
                   _: "Function",
                   functionType: {
-                    parameterList: [structuredJsonValueType],
+                    parameterList: [structuredJsonValueType(context)],
                     typeParameterList: [],
                     return: {
                       _: "ScopeInFile",

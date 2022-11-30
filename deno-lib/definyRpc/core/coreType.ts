@@ -8,74 +8,74 @@ import * as a from "https://raw.githubusercontent.com/narumincho/definy/61351534
  */
 export type StructuredJsonValue =
   | {
-      /**
-       * string
-       */
-      readonly type: "string";
-      /**
-       * string
-       */
-      readonly value: string;
-      readonly [globalThis.Symbol.toStringTag]: "*coreType.StructuredJsonValue";
-    }
+    /**
+     * string
+     */
+    readonly type: "string";
+    /**
+     * string
+     */
+    readonly value: string;
+    readonly [globalThis.Symbol.toStringTag]: "*coreType.StructuredJsonValue";
+  }
   | {
-      /**
-       * array
-       */
-      readonly type: "array";
-      /**
-       * array
-       */
-      readonly value: globalThis.ReadonlyArray<StructuredJsonValue>;
-      readonly [globalThis.Symbol.toStringTag]: "*coreType.StructuredJsonValue";
-    }
+    /**
+     * array
+     */
+    readonly type: "array";
+    /**
+     * array
+     */
+    readonly value: globalThis.ReadonlyArray<StructuredJsonValue>;
+    readonly [globalThis.Symbol.toStringTag]: "*coreType.StructuredJsonValue";
+  }
   | {
-      /**
-       * boolean
-       */
-      readonly type: "boolean";
-      /**
-       * boolean
-       */
-      readonly value: boolean;
-      readonly [globalThis.Symbol.toStringTag]: "*coreType.StructuredJsonValue";
-    }
+    /**
+     * boolean
+     */
+    readonly type: "boolean";
+    /**
+     * boolean
+     */
+    readonly value: boolean;
+    readonly [globalThis.Symbol.toStringTag]: "*coreType.StructuredJsonValue";
+  }
   | {
-      /**
-       * null
-       */
-      readonly type: "null";
-      readonly [globalThis.Symbol.toStringTag]: "*coreType.StructuredJsonValue";
-    }
+    /**
+     * null
+     */
+    readonly type: "null";
+    readonly [globalThis.Symbol.toStringTag]: "*coreType.StructuredJsonValue";
+  }
   | {
-      /**
-       * number
-       */
-      readonly type: "number";
-      /**
-       * number
-       */
-      readonly value: number;
-      readonly [globalThis.Symbol.toStringTag]: "*coreType.StructuredJsonValue";
-    }
+    /**
+     * number
+     */
+    readonly type: "number";
+    /**
+     * number
+     */
+    readonly value: number;
+    readonly [globalThis.Symbol.toStringTag]: "*coreType.StructuredJsonValue";
+  }
   | {
-      /**
-       * object
-       */
-      readonly type: "object";
-      /**
-       * object
-       */
-      readonly value: StringMap<StructuredJsonValue>;
-      readonly [globalThis.Symbol.toStringTag]: "*coreType.StructuredJsonValue";
-    };
+    /**
+     * object
+     */
+    readonly type: "object";
+    /**
+     * object
+     */
+    readonly value: StringMap<StructuredJsonValue>;
+    readonly [globalThis.Symbol.toStringTag]: "*coreType.StructuredJsonValue";
+  };
 
 /**
  * キーが string の ReadonlyMap
  */
 export type StringMap<p0 extends unknown> = globalThis.ReadonlyMap<
   string,
-  unknown
+  p0
 >;
 
 /**
@@ -156,7 +156,7 @@ export const StructuredJsonValue: {
    * JsonからStructuredJsonValueに変換する. 失敗した場合はエラー
    */
   readonly fromStructuredJsonValue: (
-    a: a.StructuredJsonValue
+    a: a.StructuredJsonValue,
   ) => StructuredJsonValue;
   /**
    * string
@@ -166,7 +166,7 @@ export const StructuredJsonValue: {
    * array
    */
   readonly array: (
-    a: globalThis.ReadonlyArray<StructuredJsonValue>
+    a: globalThis.ReadonlyArray<StructuredJsonValue>,
   ) => StructuredJsonValue;
   /**
    * boolean
@@ -184,12 +184,12 @@ export const StructuredJsonValue: {
    * object
    */
   readonly object: (
-    a: globalThis.ReadonlyMap<string, StructuredJsonValue>
+    a: globalThis.ReadonlyMap<string, StructuredJsonValue>,
   ) => StructuredJsonValue;
 } = {
   description: "構造化されたJSON",
   fromStructuredJsonValue: (
-    jsonValue: a.StructuredJsonValue
+    jsonValue: a.StructuredJsonValue,
   ): StructuredJsonValue => {
     if (jsonValue.type !== "object") {
       throw new Error("expected object in StructuredJsonValue.fromJson");
@@ -200,30 +200,33 @@ export const StructuredJsonValue: {
     }
     switch (type.value) {
       case "string": {
-        const value: a.StructuredJsonValue | undefined =
-          jsonValue.value.get("value");
+        const value: a.StructuredJsonValue | undefined = jsonValue.value.get(
+          "value",
+        );
         if (value === undefined) {
           throw new Error("expected value property in sum parameter");
         }
         return StructuredJsonValue.string(
-          String.fromStructuredJsonValue(value)
+          String.fromStructuredJsonValue(value),
         );
       }
       case "array": {
-        const value: a.StructuredJsonValue | undefined =
-          jsonValue.value.get("value");
+        const value: a.StructuredJsonValue | undefined = jsonValue.value.get(
+          "value",
+        );
         if (value === undefined) {
           throw new Error("expected value property in sum parameter");
         }
         return StructuredJsonValue.array(
           List.fromStructuredJsonValue(
-            StructuredJsonValue.fromStructuredJsonValue
-          )(value)
+            StructuredJsonValue.fromStructuredJsonValue,
+          )(value),
         );
       }
       case "boolean": {
-        const value: a.StructuredJsonValue | undefined =
-          jsonValue.value.get("value");
+        const value: a.StructuredJsonValue | undefined = jsonValue.value.get(
+          "value",
+        );
         if (value === undefined) {
           throw new Error("expected value property in sum parameter");
         }
@@ -233,31 +236,33 @@ export const StructuredJsonValue: {
         return StructuredJsonValue.null;
       }
       case "number": {
-        const value: a.StructuredJsonValue | undefined =
-          jsonValue.value.get("value");
+        const value: a.StructuredJsonValue | undefined = jsonValue.value.get(
+          "value",
+        );
         if (value === undefined) {
           throw new Error("expected value property in sum parameter");
         }
         return StructuredJsonValue.number(
-          Number.fromStructuredJsonValue(value)
+          Number.fromStructuredJsonValue(value),
         );
       }
       case "object": {
-        const value: a.StructuredJsonValue | undefined =
-          jsonValue.value.get("value");
+        const value: a.StructuredJsonValue | undefined = jsonValue.value.get(
+          "value",
+        );
         if (value === undefined) {
           throw new Error("expected value property in sum parameter");
         }
         return StructuredJsonValue.object(
           StringMap.fromStructuredJsonValue(
-            StructuredJsonValue.fromStructuredJsonValue
-          )(value)
+            StructuredJsonValue.fromStructuredJsonValue,
+          )(value),
         );
       }
     }
     throw new Error(
       "unknown type value expected [string,array,boolean,null,number,object] but got " +
-        type.value
+        type.value,
     );
   },
   string: (p: string): StructuredJsonValue => ({
@@ -266,7 +271,7 @@ export const StructuredJsonValue: {
     [globalThis.Symbol.toStringTag]: "*coreType.StructuredJsonValue",
   }),
   array: (
-    p: globalThis.ReadonlyArray<StructuredJsonValue>
+    p: globalThis.ReadonlyArray<StructuredJsonValue>,
   ): StructuredJsonValue => ({
     type: "array",
     value: p,
@@ -287,7 +292,7 @@ export const StructuredJsonValue: {
     [globalThis.Symbol.toStringTag]: "*coreType.StructuredJsonValue",
   }),
   object: (
-    p: globalThis.ReadonlyMap<string, StructuredJsonValue>
+    p: globalThis.ReadonlyMap<string, StructuredJsonValue>,
   ): StructuredJsonValue => ({
     type: "object",
     value: p,
@@ -307,19 +312,18 @@ export const StringMap: {
    * JsonからStringMapに変換する. 失敗した場合はエラー
    */
   readonly fromStructuredJsonValue: <p0 extends unknown>(
-    a: (a: a.StructuredJsonValue) => p0
+    a: (a: a.StructuredJsonValue) => p0,
   ) => (a: a.StructuredJsonValue) => globalThis.ReadonlyMap<string, p0>;
 } = {
   description: "キーが string の ReadonlyMap",
-  fromStructuredJsonValue:
-    <p0 extends unknown>(
-      p0FromJson: (a: a.StructuredJsonValue) => p0
-    ): ((a: a.StructuredJsonValue) => globalThis.ReadonlyMap<string, p0>) =>
-    (jsonValue: a.StructuredJsonValue): globalThis.ReadonlyMap<string, p0> => {
-      throw new Error(
-        "expected stringMap in StringMap.fromStructuredJsonValue"
-      );
-    },
+  fromStructuredJsonValue: <p0 extends unknown>(
+    p0FromJson: (a: a.StructuredJsonValue) => p0,
+  ): (a: a.StructuredJsonValue) => globalThis.ReadonlyMap<string, p0> =>
+  (jsonValue: a.StructuredJsonValue): globalThis.ReadonlyMap<string, p0> => {
+    throw new Error(
+      "expected stringMap in StringMap.fromStructuredJsonValue",
+    );
+  },
 };
 
 /**
@@ -334,18 +338,17 @@ export const List: {
    * JsonからListに変換する. 失敗した場合はエラー
    */
   readonly fromStructuredJsonValue: <p0 extends unknown>(
-    a: (a: a.StructuredJsonValue) => p0
+    a: (a: a.StructuredJsonValue) => p0,
   ) => (a: a.StructuredJsonValue) => globalThis.ReadonlyArray<p0>;
 } = {
   description: "リスト",
-  fromStructuredJsonValue:
-    <p0 extends unknown>(
-      p0FromJson: (a: a.StructuredJsonValue) => p0
-    ): ((a: a.StructuredJsonValue) => globalThis.ReadonlyArray<p0>) =>
-    (jsonValue: a.StructuredJsonValue): globalThis.ReadonlyArray<p0> => {
-      if (jsonValue.type === "array") {
-        return jsonValue.value.map(p0FromJson);
-      }
-      throw new Error("expected array in List.fromStructuredJsonValue");
-    },
+  fromStructuredJsonValue: <p0 extends unknown>(
+    p0FromJson: (a: a.StructuredJsonValue) => p0,
+  ): (a: a.StructuredJsonValue) => globalThis.ReadonlyArray<p0> =>
+  (jsonValue: a.StructuredJsonValue): globalThis.ReadonlyArray<p0> => {
+    if (jsonValue.type === "array") {
+      return jsonValue.value.map(p0FromJson);
+    }
+    throw new Error("expected array in List.fromStructuredJsonValue");
+  },
 };

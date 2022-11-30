@@ -20,6 +20,7 @@ import {
   urlType,
 } from "../../jsTs/main.ts";
 import { ApiFunction } from "../core/apiFunction.ts";
+import { CodeGenContext } from "../core/collectType.ts";
 import { DefinyRpcType } from "../core/type.ts";
 import { resultError, resultOk, resultType } from "./result.ts";
 import { useFromStructuredJsonValue } from "./typeVariable/use.ts";
@@ -32,6 +33,7 @@ export const apiFuncToTsFunction = (parameter: {
   readonly func: ApiFunction;
   readonly originHint: string;
   readonly pathPrefix: ReadonlyArray<string>;
+  readonly context: CodeGenContext;
 }): data.Function => {
   const parameterIdentifier = identifierFromString("parameter");
   return {
@@ -140,7 +142,7 @@ export const apiFuncToTsFunction = (parameter: {
                     type: responseType,
                   },
                 ],
-                returnType: promiseType(rawJsonValueType),
+                returnType: promiseType(rawJsonValueType(parameter.context)),
                 typeParameterList: [],
                 statementList: [
                   {
@@ -157,7 +159,7 @@ export const apiFuncToTsFunction = (parameter: {
                 ],
               },
             ),
-            fetchThenExpr(parameter.func),
+            fetchThenExpr(parameter.func, parameter.context),
           ),
           {
             parameterList: [],
@@ -180,13 +182,16 @@ export const apiFuncToTsFunction = (parameter: {
   };
 };
 
-const fetchThenExpr = (func: ApiFunction): data.LambdaExpr => {
+const fetchThenExpr = (
+  func: ApiFunction,
+  context: CodeGenContext,
+): data.LambdaExpr => {
   const jsonValueIdentifier = identifierFromString("jsonValue");
   return {
     parameterList: [
       {
         name: jsonValueIdentifier,
-        type: rawJsonValueType,
+        type: rawJsonValueType(context),
       },
     ],
     returnType: resultType(
@@ -204,7 +209,7 @@ const fetchThenExpr = (func: ApiFunction): data.LambdaExpr => {
             useRawJsonToStructuredJsonValue({
               _: "Variable",
               tsIdentifier: jsonValueIdentifier,
-            }),
+            }, context),
           ),
         ),
       },

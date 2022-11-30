@@ -43,7 +43,7 @@ export const createFromStructuredJsonValueLambda = (
     parameterList: [
       {
         name: identifierFromString("jsonValue"),
-        type: structuredJsonValueType,
+        type: structuredJsonValueType(context),
       },
     ],
     returnType: collectedDefinyRpcTypeToTsType(type, context),
@@ -59,7 +59,7 @@ export const createFromStructuredJsonValueLambda = (
           type: {
             _: "Function",
             functionType: {
-              parameterList: [structuredJsonValueType],
+              parameterList: [structuredJsonValueType(context)],
               typeParameterList: [],
               return: {
                 _: "ScopeInFile",
@@ -76,7 +76,7 @@ export const createFromStructuredJsonValueLambda = (
         _: "Function",
         functionType: {
           typeParameterList: [],
-          parameterList: [structuredJsonValueType],
+          parameterList: [structuredJsonValueType(context)],
           return: collectedDefinyRpcTypeToTsType(type, context),
         },
       },
@@ -274,7 +274,9 @@ const typeToFromJsonStatementList = (
                 isConst: true,
                 type: {
                   _: "Union",
-                  tsTypeList: [structuredJsonValueType, { _: "Undefined" }],
+                  tsTypeList: [structuredJsonValueType(context), {
+                    _: "Undefined",
+                  }],
                 },
                 expr: callMethod(jsonValueVariableValue, "get", [
                   {
@@ -350,7 +352,9 @@ const typeToFromJsonStatementList = (
           variableDefinitionStatement: {
             isConst: true,
             name: identifierFromString("type"),
-            type: typeUnion([structuredJsonValueType, { _: "Undefined" }]),
+            type: typeUnion([structuredJsonValueType(context), {
+              _: "Undefined",
+            }]),
             expr: callMethod(jsonValueVariableValue, "get", [
               stringLiteral("type"),
             ]),
@@ -407,7 +411,7 @@ const typeToFromJsonStatementList = (
                     variableDefinitionStatement: {
                       isConst: true,
                       name: identifierFromString("value"),
-                      type: typeUnion([structuredJsonValueType, {
+                      type: typeUnion([structuredJsonValueType(context), {
                         _: "Undefined",
                       }]),
                       expr: callMethod(jsonValueVariableValue, "get", [

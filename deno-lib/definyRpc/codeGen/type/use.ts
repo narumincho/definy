@@ -13,10 +13,7 @@ import {
   collectedDefinyRpcTypeMapGet,
   CollectedDefinyRpcTypeUse,
 } from "../../core/collectType.ts";
-import {
-  namespaceFromAndToToTypeScriptModuleName,
-  namespaceRelative,
-} from "../namespace.ts";
+import { namespaceFromAndToToTypeScriptModuleName } from "../namespace.ts";
 
 /**
  * パラメーターは p0, p1 ... というように勝手に指定される

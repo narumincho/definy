@@ -127,7 +127,7 @@ export const generateCoreCode = async (): Promise<void> => {
     typeList: [string, bool, number, structuredJsonValue, stringMap, list],
   });
   await writeTextFileWithLog(
-    fromFileUrl(import.meta.resolve("./coreType.ts")),
+    fromFileUrl(import.meta.resolve("./coreTypeNew.ts")),
     code,
   );
 };

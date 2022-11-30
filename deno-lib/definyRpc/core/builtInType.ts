@@ -1,12 +1,11 @@
 import { Lazy, lazyGet } from "../../lazy.ts";
 import { objectEntriesSameValue } from "../../objectEntriesSameValue.ts";
-import { NonEmptyArray } from "../../util.ts";
 import { DefinyRpcType } from "./type.ts";
-import { definyRpcNamespace } from "./definyRpcNamespace.ts";
-import { StructuredJsonValue as generatedStructuredJsonValue } from "../generated/definyRpc.ts";
+import { StructuredJsonValue } from "./coreType.ts";
+import { namespaceToString } from "../codeGen/namespace.ts";
 
 export const string: DefinyRpcType<string> = {
-  namespace: [definyRpcNamespace],
+  namespace: { type: "coreType" },
   name: "String",
   description: "文字列",
   parameters: [],
@@ -15,7 +14,7 @@ export const string: DefinyRpcType<string> = {
   },
   toStructuredJsonValue: (value) => {
     if (typeof value === "string") {
-      return { type: "string", value };
+      return StructuredJsonValue.string(value);
     }
     throw new Error("expect string in string toJson");
   },
@@ -29,7 +28,7 @@ export const string: DefinyRpcType<string> = {
 };
 
 export const bool: DefinyRpcType<boolean> = {
-  namespace: [definyRpcNamespace],
+  namespace: { type: "coreType" },
   name: "Bool",
   description: "Bool. boolean. 真偽値. True か False",
   parameters: [],
@@ -38,7 +37,7 @@ export const bool: DefinyRpcType<boolean> = {
   },
   toStructuredJsonValue: (value) => {
     if (typeof value === "boolean") {
-      return { type: "boolean", value };
+      return StructuredJsonValue.boolean(value);
     }
     throw new Error("expect boolean in boolean toJson");
   },
@@ -55,7 +54,12 @@ export const bool: DefinyRpcType<boolean> = {
  * struct, record
  */
 export const product = <t extends Record<string, unknown>>(parameter: {
-  readonly namespace: NonEmptyArray<string>;
+  readonly namespace: {
+    readonly type: "local";
+    readonly path: ReadonlyArray<string>;
+  } | {
+    readonly type: "meta";
+  };
   readonly name: string;
   readonly description: string;
   readonly fieldList: {
@@ -85,9 +89,8 @@ export const product = <t extends Record<string, unknown>>(parameter: {
         throw new Error("product object need object");
       }
       const valueObj: { [k in string]?: unknown } = value;
-      return {
-        type: "object",
-        value: new Map(
+      return StructuredJsonValue.object(
+        new Map(
           objectEntriesSameValue(parameter.fieldList).map((
             [name, { type }],
           ) => [
@@ -95,7 +98,7 @@ export const product = <t extends Record<string, unknown>>(parameter: {
             lazyGet(type).toStructuredJsonValue(valueObj[name]),
           ]),
         ),
-      };
+      );
     },
     fromStructuredJsonValue: (value) => {
       if (value.type !== "object") {
@@ -109,7 +112,7 @@ export const product = <t extends Record<string, unknown>>(parameter: {
             if (fieldValue === undefined) {
               throw new Error(
                 `${
-                  parameter.namespace.join(".")
+                  namespaceToString(parameter.namespace)
                 }.${parameter.name} need ${name} field`,
               );
             }
@@ -127,7 +130,12 @@ export const product = <t extends Record<string, unknown>>(parameter: {
 export const sum = <
   t extends { readonly type: string; readonly value?: unknown },
 >(parameter: {
-  readonly namespace: NonEmptyArray<string>;
+  readonly namespace: {
+    readonly type: "local";
+    readonly path: ReadonlyArray<string>;
+  } | {
+    readonly type: "meta";
+  };
   readonly name: string;
   readonly description: string;
   readonly patternList: {
@@ -169,20 +177,18 @@ export const sum = <
       ) {
         if (name === valueObj.type) {
           if (pattern.parameter == undefined) {
-            return {
-              type: "object",
-              value: new Map([["type", { type: "string", value: name }]]),
-            };
+            return StructuredJsonValue.object(
+              new Map([["type", StructuredJsonValue.string(name)]]),
+            );
           }
-          return {
-            type: "object",
-            value: new Map([["type", { type: "string", value: name }], [
+          return StructuredJsonValue.object(
+            new Map([["type", StructuredJsonValue.string(name)], [
               "value",
               lazyGet(pattern.parameter).toStructuredJsonValue(
                 valueObj.value,
               ),
             ]]),
-          };
+          );
         }
       }
       throw new Error("unknown sum type name");
@@ -228,7 +234,7 @@ export const sum = <
 });
 
 export const number: DefinyRpcType<number> = {
-  namespace: [definyRpcNamespace],
+  namespace: { type: "coreType" },
   name: "Number",
   description: "64bit 浮動小数点数",
   parameters: [],
@@ -237,7 +243,7 @@ export const number: DefinyRpcType<number> = {
   },
   toStructuredJsonValue: (value) => {
     if (typeof value === "number") {
-      return { type: "number", value };
+      return StructuredJsonValue.number(value);
     }
     throw new Error("number need number");
   },
@@ -250,29 +256,28 @@ export const number: DefinyRpcType<number> = {
 };
 
 export const unit: DefinyRpcType<undefined> = {
-  namespace: [definyRpcNamespace],
+  namespace: { type: "coreType" },
   name: "Unit",
   description: "内部表現は, undefined. JSON 上では null",
   parameters: [],
   body: { type: "unit" },
-  toStructuredJsonValue: () => ({ type: "null" }),
+  toStructuredJsonValue: () => StructuredJsonValue.null,
   fromStructuredJsonValue: () => undefined,
 };
 
 export const set = <element>(
   element: DefinyRpcType<element>,
 ): DefinyRpcType<ReadonlySet<element>> => ({
-  namespace: [definyRpcNamespace],
+  namespace: { type: "coreType" },
   name: "Set",
   description: "集合. Set",
   parameters: [element],
   body: { type: "set" },
   toStructuredJsonValue: (value) => {
     if (value instanceof Set) {
-      return {
-        type: "array",
-        value: [...value].map((e) => lazyGet(element).toStructuredJsonValue(e)),
-      };
+      return StructuredJsonValue.array(
+        [...value].map((e) => lazyGet(element).toStructuredJsonValue(e)),
+      );
     }
     throw new Error("set need Set");
   },
@@ -289,17 +294,16 @@ export const set = <element>(
 export const list = <element>(
   element: DefinyRpcType<element>,
 ): DefinyRpcType<ReadonlyArray<element>> => ({
-  namespace: [definyRpcNamespace],
+  namespace: { type: "coreType" },
   name: "List",
   description: "リスト",
   parameters: [element],
   body: { type: "list" },
   toStructuredJsonValue: (value) => {
     if (value instanceof Array) {
-      return {
-        type: "array",
-        value: value.map((e) => lazyGet(element).toStructuredJsonValue(e)),
-      };
+      return StructuredJsonValue.array(
+        value.map((e) => lazyGet(element).toStructuredJsonValue(e)),
+      );
     }
     throw new Error("Array need Array");
   },
@@ -313,41 +317,8 @@ export const list = <element>(
   },
 });
 
-export const stringMap = <element>(
-  element: DefinyRpcType<element>,
-): DefinyRpcType<ReadonlyMap<string, element>> => ({
-  namespace: [definyRpcNamespace],
-  name: "StringMap",
-  description: "キーが string の ReadonlyMap",
-  parameters: [element],
-  body: { type: "stringMap", valueType: element },
-  toStructuredJsonValue: (value) => {
-    if (value instanceof Map) {
-      return {
-        type: "object",
-        value: new Map(
-          [...value.entries()].map((
-            [k, v],
-          ) => [k, lazyGet(element).toStructuredJsonValue(v)]),
-        ),
-      };
-    }
-    throw new Error("stingMap need Map");
-  },
-  fromStructuredJsonValue: (value) => {
-    if (value.type === "object") {
-      return new Map(
-        [...value.value].map((
-          [k, v],
-        ) => [k, lazyGet(element).fromStructuredJsonValue(v)]),
-      );
-    }
-    throw new Error("stingMap need json Object");
-  },
-});
-
 export const url: DefinyRpcType<URL> = {
-  namespace: [definyRpcNamespace],
+  namespace: { type: "coreType" },
   name: "Url",
   description: "URL",
   parameters: [],
@@ -356,7 +327,7 @@ export const url: DefinyRpcType<URL> = {
   },
   toStructuredJsonValue: (value) => {
     if (value instanceof URL) {
-      return generatedStructuredJsonValue.string(value.toString());
+      return StructuredJsonValue.string(value.toString());
     }
     throw new Error("expect string in string toJson");
   },

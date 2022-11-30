@@ -7,6 +7,8 @@ export type Namespace = {
   readonly type: "typedJson";
 } | {
   readonly type: "request";
+} | {
+  readonly type: "meta";
 };
 
 export type RelativeNamespace = {
@@ -46,6 +48,9 @@ export const namespaceFromAndToToTypeScriptModuleName = (
 
     case "local":
       return toLocal(from, to.path);
+
+    case "meta":
+      return toMeta(from);
   }
 };
 
@@ -59,7 +64,8 @@ const toCoreTypeModuleName = (
     case "typedJson":
       throw new Error("この方向には参照しない!");
     case "local":
-      return "https://raw.githubusercontent.com/narumincho/definy/cc9b0e4b75583067ce72c7d75b393118d21e5f72/deno-lib/definyRpc/core/coreType.ts";
+    case "meta":
+      return "https://raw.githubusercontent.com/narumincho/definy/5840d129ba7df67ad4d3f5d01074f8ceb20cd7c6/deno-lib/definyRpc/core/coreType.ts";
   }
 };
 
@@ -73,7 +79,8 @@ const toRequest = (
     case "request":
       throw new Error("コード生成しない!");
     case "local":
-      return "https://raw.githubusercontent.com/narumincho/definy/cc9b0e4b75583067ce72c7d75b393118d21e5f72/deno-lib/definyRpc/core/request.ts";
+    case "meta":
+      return "https://raw.githubusercontent.com/narumincho/definy/5840d129ba7df67ad4d3f5d01074f8ceb20cd7c6/deno-lib/definyRpc/core/request.ts";
   }
 };
 
@@ -85,7 +92,8 @@ const toTypedJson = (from: Namespace): string => {
     case "coreType":
       throw new Error("この方向には参照しない!");
     case "local":
-      return "https://raw.githubusercontent.com/narumincho/definy/cc9b0e4b75583067ce72c7d75b393118d21e5f72/deno-lib/definyRpc/core/request.ts";
+    case "meta":
+      return "https://raw.githubusercontent.com/narumincho/definy/5840d129ba7df67ad4d3f5d01074f8ceb20cd7c6/deno-lib/definyRpc/core/request.ts";
   }
 };
 
@@ -97,9 +105,31 @@ const toLocal = (
     case "request":
     case "typedJson":
     case "coreType":
+    case "meta":
       throw new Error("その方向には参照できない!");
     case "local": {
       const relativeNamespace = namespaceRelative(from.path, to);
+      const prefix = relativeNamespace.upCount <= 1
+        ? "./"
+        : "../".repeat(relativeNamespace.upCount - 1);
+      return prefix + relativeNamespace.path.join("/") + ".ts";
+    }
+  }
+};
+
+export const toMeta = (from: Namespace) => {
+  switch (from.type) {
+    case "request":
+    case "typedJson":
+    case "coreType":
+      throw new Error("その方向には参照できない!");
+    case "local": {
+      const relativeNamespace = namespaceRelative(
+        ["serverName", ...from.path],
+        [
+          "meta.ts",
+        ],
+      );
       const prefix = relativeNamespace.upCount <= 1
         ? "./"
         : "../".repeat(relativeNamespace.upCount - 1);
@@ -116,6 +146,8 @@ export const namespaceToString = (namespace: Namespace): string => {
       return "*request";
     case "coreType":
       return "*coreType";
+    case "meta":
+      return "*meta";
     case "local":
       return namespace.path.join(".");
   }

@@ -5,6 +5,7 @@ import {
   identifierFromString,
 } from "../../jsTs/main.ts";
 import {
+  CodeGenContext,
   collectDefinyRpcTypeFromFuncList,
   CollectedDefinyRpcType,
 } from "../core/collectType.ts";
@@ -54,6 +55,12 @@ export const apiFunctionListToJsTsCode = (parameter: {
       t,
     ]),
   ]);
+
+  const context: CodeGenContext = {
+    map: collectedTypeMap,
+    currentModule: parameter.namespace,
+  };
+
   return {
     exportDefinitionList: [
       ...(namespaceEqual(parameter.namespace, {
@@ -75,10 +82,7 @@ export const apiFunctionListToJsTsCode = (parameter: {
       ...[...collectedTypeMap.values()].map(
         (type): data.ExportDefinition => ({
           type: "variable",
-          variable: typeToTypeVariable(type, {
-            map: collectedTypeMap,
-            currentModule: parameter.namespace,
-          }),
+          variable: typeToTypeVariable(type, context),
         }),
       ),
       ...parameter.apiFunctionList.map<data.ExportDefinition>((func) => ({
@@ -87,6 +91,7 @@ export const apiFunctionListToJsTsCode = (parameter: {
           func,
           originHint: parameter.originHint,
           pathPrefix: parameter.pathPrefix,
+          context,
         }),
       })),
     ],
