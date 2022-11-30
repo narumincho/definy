@@ -90,10 +90,10 @@ const toTypedJson = (from: Namespace): string => {
     case "request":
       throw new Error("コード生成しない!");
     case "coreType":
-      throw new Error("この方向には参照しない!");
+      return "../../typedJson.ts";
     case "local":
     case "meta":
-      return "https://raw.githubusercontent.com/narumincho/definy/5840d129ba7df67ad4d3f5d01074f8ceb20cd7c6/deno-lib/definyRpc/core/request.ts";
+      return "https://raw.githubusercontent.com/narumincho/definy/5840d129ba7df67ad4d3f5d01074f8ceb20cd7c6/deno-lib/typedJson.ts";
   }
 };
 

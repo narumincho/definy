@@ -232,7 +232,7 @@ const typeToFromJsonStatementList = (
           },
         },
       ];
-    case "stringMap": {
+    case "map": {
       return [
         {
           _: "ThrowError",

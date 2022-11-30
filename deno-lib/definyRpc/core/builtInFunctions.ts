@@ -8,7 +8,7 @@ import type { DefinyRpcParameter } from "../server/definyRpc.ts";
 import { DefinyRpcType } from "./type.ts";
 import { writeTextFileWithLog } from "../../writeFileAndLog.ts";
 import { stringArrayEqual } from "../../util.ts";
-import { list, product, set, string, sum, unit } from "./builtInType.ts";
+import { list, product, set, string, unit } from "./builtInType.ts";
 import { definyRpcNamespace } from "./definyRpcNamespace.ts";
 import { objectEntriesSameValue } from "../../objectEntriesSameValue.ts";
 import { join } from "https://deno.land/std@0.156.0/path/mod.ts";
@@ -73,28 +73,6 @@ const FunctionDetail = product<FunctionDetail>({
   },
 });
 
-/**
- * ApiFunction で指定されていない型
- */
-const builtInTypes: ReadonlyArray<DefinyRpcType<any>> = [
-  sum({
-    namespace: [definyRpcNamespace],
-    name: "ResultImpl",
-    description: "",
-    // パラメーターを考慮していない!
-    patternList: {
-      ok: {
-        description: "okってこと",
-        parameter: undefined,
-      },
-      error: {
-        description: "errorってこと",
-        parameter: undefined,
-      },
-    },
-  }),
-];
-
 export const addDefinyRpcApiFunction = (
   parameter: DefinyRpcParameter,
 ): FunctionAndTypeList => {
@@ -104,10 +82,7 @@ export const addDefinyRpcApiFunction = (
       ...builtInFunctions(parameter),
       ...all.functionsList,
     ],
-    typeList: [
-      ...builtInTypes,
-      ...all.typeList,
-    ],
+    typeList: all.typeList,
   };
 };
 

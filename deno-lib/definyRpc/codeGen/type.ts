@@ -33,13 +33,20 @@ export const collectedTypeToTypeAlias = (
   type: CollectedDefinyRpcType,
   map: CollectedDefinyRpcTypeMap,
 ): data.TypeAlias | undefined => {
+  const tsType = collectedDefinyRpcTypeBodyToTsType(
+    type.namespace,
+    type.name,
+    type.body,
+    map,
+  );
   if (
+    tsType === undefined ||
     type.body.type === "string" ||
     type.body.type === "number" ||
     type.body.type === "boolean" ||
     type.body.type === "unit" ||
     type.body.type === "list" ||
-    type.body.type === "set" || type.body.type === "stringMap"
+    type.body.type === "set" || type.body.type === "map"
   ) {
     return undefined;
   }
@@ -51,12 +58,7 @@ export const collectedTypeToTypeAlias = (
       type.parameterCount,
       (i) => identifierFromString("p" + i),
     ),
-    type: collectedDefinyRpcTypeBodyToTsType(
-      type.namespace,
-      type.name,
-      type.body,
-      map,
-    ),
+    type: tsType,
   };
 };
 
@@ -65,37 +67,17 @@ const collectedDefinyRpcTypeBodyToTsType = (
   typeName: string,
   typeBody: CollectedDefinyRpcTypeBody,
   map: CollectedDefinyRpcTypeMap,
-): data.TsType => {
+): data.TsType | undefined => {
   switch (typeBody.type) {
     case "string":
-      return { _: "String" };
     case "number":
-      return { _: "Number" };
     case "boolean":
-      return { _: "Boolean" };
     case "unit":
-      return { _: "Undefined" };
     case "list":
-      return {
-        _: "ScopeInGlobal",
-        typeNameAndTypeParameter: {
-          name: identifierFromString("ReadonlyArray"),
-          arguments: [],
-        },
-      };
     case "set":
-      return {
-        _: "ScopeInGlobal",
-        typeNameAndTypeParameter: {
-          name: identifierFromString("ReadonlySet"),
-          arguments: [],
-        },
-      };
-    case "stringMap":
-      return readonlyMapType(
-        { _: "String" },
-        { _: "unknown" },
-      );
+    case "map":
+    case "url":
+      return undefined;
     case "product":
       return {
         _: "Object",
@@ -166,8 +148,6 @@ const collectedDefinyRpcTypeBodyToTsType = (
           }),
         ),
       };
-    case "url":
-      return urlType;
   }
 };
 
@@ -183,53 +163,73 @@ const collectedDefinyRpcTypeUseToTsType = (
   if (typeDetail === undefined) {
     throw new Error("型を集計できなかった " + collectedDefinyRpcTypeUse.name);
   }
-  if (typeDetail.body.type === "string") {
-    return { _: "String" };
-  }
-  if (typeDetail.body.type === "boolean") {
-    return { _: "Boolean" };
-  }
-  if (typeDetail.body.type === "number") {
-    return { _: "Number" };
-  }
-  if (typeDetail.body.type === "unit") {
-    return { _: "Undefined" };
-  }
-  if (typeDetail.body.type === "list") {
-    const parameter = collectedDefinyRpcTypeUse.parameters[0];
-    if (
-      parameter === undefined ||
-      collectedDefinyRpcTypeUse.parameters.length !== 1
-    ) {
-      throw new Error(
-        "list need 1 parameters but got " +
-          collectedDefinyRpcTypeUse.parameters.length,
+  switch (typeDetail.body.type) {
+    case "string":
+      return { _: "String" };
+    case "boolean":
+      return { _: "Boolean" };
+    case "number":
+      return { _: "Number" };
+    case "unit":
+      return { _: "Undefined" };
+    case "list": {
+      const parameter = collectedDefinyRpcTypeUse.parameters[0];
+      if (
+        parameter === undefined ||
+        collectedDefinyRpcTypeUse.parameters.length !== 1
+      ) {
+        throw new Error(
+          "list need 1 parameters but got " +
+            collectedDefinyRpcTypeUse.parameters.length,
+        );
+      }
+      return readonlyArrayType(
+        collectedDefinyRpcTypeUseToTsType(parameter, map),
       );
     }
-    return readonlyArrayType(collectedDefinyRpcTypeUseToTsType(parameter, map));
-  }
-  if (typeDetail.body.type === "set") {
-    const parameter = collectedDefinyRpcTypeUse.parameters[0];
-    if (
-      parameter === undefined ||
-      collectedDefinyRpcTypeUse.parameters.length !== 1
-    ) {
-      throw new Error(
-        "set need 1 parameters but got " +
-          collectedDefinyRpcTypeUse.parameters.length,
+    case "set": {
+      const parameter = collectedDefinyRpcTypeUse.parameters[0];
+      if (
+        parameter === undefined ||
+        collectedDefinyRpcTypeUse.parameters.length !== 1
+      ) {
+        throw new Error(
+          "set need 1 parameters but got " +
+            collectedDefinyRpcTypeUse.parameters.length,
+        );
+      }
+      return readonlySetType(collectedDefinyRpcTypeUseToTsType(parameter, map));
+    }
+    case "map": {
+      const [key, value] = collectedDefinyRpcTypeUse.parameters;
+      if (
+        key === undefined || value === undefined ||
+        collectedDefinyRpcTypeUse.parameters.length !== 2
+      ) {
+        throw new Error(
+          "map need 2 parameters but got " +
+            collectedDefinyRpcTypeUse.parameters.length,
+        );
+      }
+      return readonlyMapType(
+        collectedDefinyRpcTypeUseToTsType(key, map),
+        collectedDefinyRpcTypeUseToTsType(value, map),
       );
     }
-    return readonlySetType(collectedDefinyRpcTypeUseToTsType(parameter, map));
+    case "url":
+      return urlType;
+    case "product":
+    case "sum":
+      return {
+        _: "ScopeInFile",
+        typeNameAndTypeParameter: {
+          name: identifierFromString(collectedDefinyRpcTypeUse.name),
+          arguments: collectedDefinyRpcTypeUse.parameters.map((use) =>
+            collectedDefinyRpcTypeUseToTsType(use, map)
+          ),
+        },
+      };
   }
-  return {
-    _: "ScopeInFile",
-    typeNameAndTypeParameter: {
-      name: identifierFromString(collectedDefinyRpcTypeUse.name),
-      arguments: collectedDefinyRpcTypeUse.parameters.map((use) =>
-        collectedDefinyRpcTypeUseToTsType(use, map)
-      ),
-    },
-  };
 };
 
 export const typeToTypeVariable = (

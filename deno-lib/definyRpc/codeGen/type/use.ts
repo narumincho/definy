@@ -55,13 +55,17 @@ export const collectedDefinyRpcTypeToTsType = (
           arguments: [],
         },
       });
-    case "stringMap":
+    case "map":
       return readonlyMapType({
-        _: "String",
-      }, {
         _: "ScopeInFile",
         typeNameAndTypeParameter: {
           name: identifierFromString("p0"),
+          arguments: [],
+        },
+      }, {
+        _: "ScopeInFile",
+        typeNameAndTypeParameter: {
+          name: identifierFromString("p1"),
           arguments: [],
         },
       });
@@ -155,17 +159,19 @@ export const collectedDefinyRpcTypeUseToTsType = (
         context,
       ));
     }
-    case "stringMap": {
-      const parameter = type.parameters[0];
-      if (parameter === undefined) {
-        throw new Error("stringMapには型パラメーターを指定する必要があります");
+    case "map": {
+      const key = type.parameters[0];
+      const value = type.parameters[1];
+      if (key === undefined || value === undefined) {
+        throw new Error("Mapには型パラメーターを2つ指定する必要があります");
       }
       return readonlyMapType(
-        {
-          _: "String",
-        },
         collectedDefinyRpcTypeUseToTsType(
-          parameter,
+          key,
+          context,
+        ),
+        collectedDefinyRpcTypeUseToTsType(
+          value,
           context,
         ),
       );

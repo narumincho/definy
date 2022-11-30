@@ -8,12 +8,12 @@ export const structuredJsonValueType = (
   const moduleName = namespaceFromAndToToTypeScriptModuleName(
     context.currentModule,
     {
-      type: "typedJson",
+      type: "coreType",
     },
   );
   if (moduleName === undefined) {
     return {
-      _: "ScopeInGlobal",
+      _: "ScopeInFile",
       typeNameAndTypeParameter: {
         name: identifierFromString("StructuredJsonValue"),
         arguments: [],

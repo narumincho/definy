@@ -87,8 +87,12 @@ const structuredJsonValue: CollectedDefinyRpcType = ({
         description: "object",
         parameter: {
           namespace: { type: "coreType" },
-          name: "StringMap",
+          name: "Map",
           parameters: [{
+            name: "String",
+            namespace: { type: "coreType" },
+            parameters: [],
+          }, {
             name: "StructuredJsonValue",
             namespace: { type: "coreType" },
             parameters: [],
@@ -98,14 +102,6 @@ const structuredJsonValue: CollectedDefinyRpcType = ({
     ],
   },
 });
-
-const stringMap: CollectedDefinyRpcType = {
-  namespace: { type: "coreType" },
-  name: "StringMap",
-  description: "キーが string の ReadonlyMap",
-  parameterCount: 1,
-  body: { type: "stringMap" },
-};
 
 const list: CollectedDefinyRpcType = {
   namespace: { type: "coreType" },
@@ -117,6 +113,16 @@ const list: CollectedDefinyRpcType = {
   },
 };
 
+export const map: CollectedDefinyRpcType = {
+  namespace: { type: "coreType" },
+  name: "Map",
+  description: "辞書型. Map, Dictionary",
+  parameterCount: 2,
+  body: {
+    type: "map",
+  },
+};
+
 export const generateCoreCode = async (): Promise<void> => {
   const code = apiFunctionListToCode({
     apiFunctionList: [],
@@ -124,7 +130,7 @@ export const generateCoreCode = async (): Promise<void> => {
     originHint: "",
     pathPrefix: [],
     usePrettier: true,
-    typeList: [string, bool, number, structuredJsonValue, stringMap, list],
+    typeList: [string, bool, number, structuredJsonValue, list, map],
   });
   await writeTextFileWithLog(
     fromFileUrl(import.meta.resolve("./coreTypeNew.ts")),

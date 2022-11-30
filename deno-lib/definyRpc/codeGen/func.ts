@@ -274,23 +274,27 @@ const definyRpcTypeToTsType = <t>(
     case "list": {
       const parameter = definyRpcType.parameters[0];
       if (parameter === undefined) {
-        throw new Error("list need one parameter");
+        throw new Error("list need 1 parameter");
       }
       return readonlyArrayType(definyRpcTypeToTsType(parameter));
     }
     case "set": {
       const parameter = definyRpcType.parameters[0];
       if (parameter === undefined) {
-        throw new Error("set need one parameter");
+        throw new Error("set need 1 parameter");
       }
       return readonlySetType(definyRpcTypeToTsType(parameter));
     }
-    case "stringMap": {
-      const parameter = definyRpcType.parameters[0];
-      if (parameter === undefined) {
-        throw new Error("stringMap need one parameter");
+    case "map": {
+      const key = definyRpcType.parameters[0];
+      const value = definyRpcType.parameters[1];
+      if (key === undefined || value === undefined) {
+        throw new Error("Map need 2 parameter");
       }
-      return readonlyMapType({ _: "String" }, definyRpcTypeToTsType(parameter));
+      return readonlyMapType(
+        definyRpcTypeToTsType(key),
+        definyRpcTypeToTsType(value),
+      );
     }
     case "sum":
       return {

@@ -33,7 +33,7 @@ export type TypeBody =
     readonly type: "set";
   }
   | {
-    readonly type: "stringMap";
+    readonly type: "map";
     readonly valueType: Lazy<DefinyRpcType<any>>;
   }
   | {

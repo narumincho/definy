@@ -138,7 +138,7 @@ export type CollectedDefinyRpcTypeBody =
   | { readonly type: "list" }
   | { readonly type: "set" }
   | {
-    readonly type: "stringMap";
+    readonly type: "map";
   }
   | {
     readonly type: "product";
@@ -178,8 +178,8 @@ const typeBodyToCollectedDefinyRpcTypeBody = (
       return { type: "list" };
     case "set":
       return { type: "set" };
-    case "stringMap":
-      return { type: "stringMap" };
+    case "map":
+      return { type: "map" };
     case "product":
       return {
         type: "product",
