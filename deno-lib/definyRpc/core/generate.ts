@@ -277,8 +277,14 @@ const typeBody: CollectedDefinyRpcType = {
         description: "product",
         parameter: {
           namespace: Namespace.coreType,
-          name: "Field",
-          parameters: [],
+          name: "List",
+          parameters: [
+            {
+              namespace: Namespace.coreType,
+              name: "Field",
+              parameters: [],
+            },
+          ],
         },
       },
       {
@@ -286,8 +292,12 @@ const typeBody: CollectedDefinyRpcType = {
         description: "sum",
         parameter: {
           namespace: Namespace.coreType,
-          name: "Pattern",
-          parameters: [],
+          name: "List",
+          parameters: [{
+            namespace: Namespace.coreType,
+            name: "Pattern",
+            parameters: [],
+          }],
         },
       },
     ],

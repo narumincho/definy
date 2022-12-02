@@ -216,7 +216,7 @@ export type TypeBody =
       /**
        * product
        */
-      readonly value: Field;
+      readonly value: globalThis.ReadonlyArray<Field>;
       readonly [globalThis.Symbol.toStringTag]: "*coreType.TypeBody";
     }
   | {
@@ -227,7 +227,7 @@ export type TypeBody =
       /**
        * sum
        */
-      readonly value: Pattern;
+      readonly value: globalThis.ReadonlyArray<Pattern>;
       readonly [globalThis.Symbol.toStringTag]: "*coreType.TypeBody";
     };
 
@@ -799,11 +799,11 @@ export const TypeBody: {
   /**
    * product
    */
-  readonly product: (a: Field) => TypeBody;
+  readonly product: (a: globalThis.ReadonlyArray<Field>) => TypeBody;
   /**
    * sum
    */
-  readonly sum: (a: Pattern) => TypeBody;
+  readonly sum: (a: globalThis.ReadonlyArray<Pattern>) => TypeBody;
 } = {
   description: "型の構造を表現する",
   fromStructuredJsonValue: (jsonValue: StructuredJsonValue): TypeBody => {
@@ -845,7 +845,9 @@ export const TypeBody: {
         if (value === undefined) {
           throw new Error("expected value property in sum parameter");
         }
-        return TypeBody.product(Field.fromStructuredJsonValue(value));
+        return TypeBody.product(
+          List.fromStructuredJsonValue(Field.fromStructuredJsonValue)(value)
+        );
       }
       case "sum": {
         const value: StructuredJsonValue | undefined =
@@ -853,7 +855,9 @@ export const TypeBody: {
         if (value === undefined) {
           throw new Error("expected value property in sum parameter");
         }
-        return TypeBody.sum(Pattern.fromStructuredJsonValue(value));
+        return TypeBody.sum(
+          List.fromStructuredJsonValue(Pattern.fromStructuredJsonValue)(value)
+        );
       }
     }
     throw new Error(
@@ -878,12 +882,12 @@ export const TypeBody: {
   set: { type: "set", [globalThis.Symbol.toStringTag]: "*coreType.TypeBody" },
   map: { type: "map", [globalThis.Symbol.toStringTag]: "*coreType.TypeBody" },
   url: { type: "url", [globalThis.Symbol.toStringTag]: "*coreType.TypeBody" },
-  product: (p: Field): TypeBody => ({
+  product: (p: globalThis.ReadonlyArray<Field>): TypeBody => ({
     type: "product",
     value: p,
     [globalThis.Symbol.toStringTag]: "*coreType.TypeBody",
   }),
-  sum: (p: Pattern): TypeBody => ({
+  sum: (p: globalThis.ReadonlyArray<Pattern>): TypeBody => ({
     type: "sum",
     value: p,
     [globalThis.Symbol.toStringTag]: "*coreType.TypeBody",

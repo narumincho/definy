@@ -3,18 +3,13 @@ import {
   identifierFromString,
   lambdaToType,
   memberKeyValue,
-  readonlyArrayType,
-  readonlyMapType,
-  readonlySetType,
   stringLiteral,
   symbolToStringTag,
-  urlType,
 } from "../../jsTs/main.ts";
 import {
   CodeGenContext,
   CollectedDefinyRpcType,
   CollectedDefinyRpcTypeBody,
-  CollectedDefinyRpcTypeMap,
 } from "../core/collectType.ts";
 import { arrayFromLength } from "../../util.ts";
 import { structuredJsonValueType } from "./useTypedJson.ts";
