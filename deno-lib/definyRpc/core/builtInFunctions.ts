@@ -12,7 +12,7 @@ import { list, product, set, string, unit } from "./builtInType.ts";
 import { definyRpcNamespace } from "./definyRpcNamespace.ts";
 import { objectEntriesSameValue } from "../../objectEntriesSameValue.ts";
 import { join } from "https://deno.land/std@0.156.0/path/mod.ts";
-import { groupBy } from "https://deno.land/std@0.166.0/collections/group_by.ts";
+import { groupBy } from "https://deno.land/std@0.167.0/collections/group_by.ts";
 import { StructuredJsonValue } from "./coreType.ts";
 
 type Type = {

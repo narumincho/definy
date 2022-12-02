@@ -5,7 +5,7 @@ import {
 import { funcList } from "../definyRpc/exampleFunc.ts";
 import { requestObjectToSimpleRequest } from "../simpleRequestResponse/simpleRequest.ts";
 import { simpleResponseToResponse } from "../simpleRequestResponse/simpleResponse.ts";
-import { serve } from "https://deno.land/std@0.166.0/http/server.ts";
+import { serve } from "https://deno.land/std@0.167.0/http/server.ts";
 
 const portNumber = 2520;
 
