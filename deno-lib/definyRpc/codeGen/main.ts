@@ -73,7 +73,7 @@ export const apiFunctionListToJsTsCode = (parameter: {
       ...(needAuthentication ? [accountTokenExportDefinition] : []),
       ...[...collectedTypeMap.values()].flatMap(
         (type): ReadonlyArray<data.ExportDefinition> => {
-          const typeAlias = collectedTypeToTypeAlias(type, collectedTypeMap);
+          const typeAlias = collectedTypeToTypeAlias(type, context);
           if (typeAlias === undefined) {
             return [];
           }

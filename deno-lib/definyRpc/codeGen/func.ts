@@ -211,6 +211,7 @@ const fetchThenExpr = (
               _: "Variable",
               tsIdentifier: jsonValueIdentifier,
             }, context),
+            context,
           ),
         ),
       },

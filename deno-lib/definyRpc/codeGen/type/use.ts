@@ -13,6 +13,7 @@ import {
   collectedDefinyRpcTypeMapGet,
   CollectedDefinyRpcTypeUse,
 } from "../../core/collectType.ts";
+import { Namespace } from "../../core/coreType.ts";
 import { namespaceFromAndToToTypeScriptModuleName } from "../namespace.ts";
 
 /**
@@ -28,7 +29,10 @@ export const collectedDefinyRpcTypeToTsType = (
     collectedDefinyRpcType.name,
   );
   if (typeDetail === undefined) {
-    throw new Error("型を集計できなかった " + collectedDefinyRpcType.name);
+    throw new Error(
+      "型を集計できなかった " + collectedDefinyRpcType.name +
+        " in collectedDefinyRpcTypeToTsType",
+    );
   }
   switch (typeDetail.body.type) {
     case "string":
@@ -122,13 +126,37 @@ export const collectedDefinyRpcTypeUseToTsType = (
   type: CollectedDefinyRpcTypeUse,
   context: CodeGenContext,
 ): data.TsType => {
+  if (type.namespace.type == "maybe") {
+    const moduleName = namespaceFromAndToToTypeScriptModuleName(
+      context.currentModule,
+      Namespace.maybe,
+    );
+    if (moduleName === undefined) {
+      throw new Error("maybe はコード生成できない");
+    }
+    return {
+      _: "ImportedType",
+      importedType: {
+        moduleName,
+        nameAndArguments: {
+          name: identifierFromString(type.name),
+          arguments: type.parameters.map((p) =>
+            collectedDefinyRpcTypeUseToTsType(p, context)
+          ),
+        },
+      },
+    };
+  }
+
   const typeDetail = collectedDefinyRpcTypeMapGet(
     context.map,
     type.namespace,
     type.name,
   );
   if (typeDetail === undefined) {
-    throw new Error("型を集計できなかった " + type.name);
+    throw new Error(
+      "型を集計できなかった " + type.name + " in collectedDefinyRpcTypeUseToTsType",
+    );
   }
   switch (typeDetail.body.type) {
     case "string":

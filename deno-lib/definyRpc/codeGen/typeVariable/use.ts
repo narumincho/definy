@@ -5,7 +5,6 @@ import {
   data,
   get,
   identifierFromString,
-  variable,
 } from "../../../jsTs/main.ts";
 import {
   CodeGenContext,
@@ -84,25 +83,27 @@ const getTypeVariable = (
 export const useFromStructuredJsonValue = (
   type: CollectedDefinyRpcTypeUse,
   expr: data.TsExpr,
+  context: CodeGenContext,
 ): data.TsExpr => {
   return call({
-    expr: getStructuredJsonValueFunction(type),
+    expr: getStructuredJsonValueFunction(type, context),
     parameterList: [expr],
   });
 };
 
 const getStructuredJsonValueFunction = (
   type: CollectedDefinyRpcTypeUse,
+  context: CodeGenContext,
 ): data.TsExpr => {
   if (type.parameters.length === 0) {
     return get(
-      variable(identifierFromString(type.name)),
+      getTypeVariable(type.namespace, type.name, context),
       "fromStructuredJsonValue",
     );
   }
   return callMethod(
-    variable(identifierFromString(type.name)),
+    getTypeVariable(type.namespace, type.name, context),
     "fromStructuredJsonValue",
-    type.parameters.map(getStructuredJsonValueFunction),
+    type.parameters.map((t) => getStructuredJsonValueFunction(t, context)),
   );
 };

@@ -324,7 +324,7 @@ const typeToFromJsonStatementList = (
                     useFromStructuredJsonValue(field.type, {
                       _: "Variable",
                       tsIdentifier: identifierFromString(field.name),
-                    }),
+                    }, context),
                   ),
               ),
             ),
@@ -444,6 +444,7 @@ const typeToFromJsonStatementList = (
                     useFromStructuredJsonValue(
                       pattern.parameter,
                       variable(identifierFromString("value")),
+                      context,
                     ),
                   )),
                 ],

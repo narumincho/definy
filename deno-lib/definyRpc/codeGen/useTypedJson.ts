@@ -8,7 +8,7 @@ export const structuredJsonValueType = (
 ): data.TsType => {
   const moduleName = namespaceFromAndToToTypeScriptModuleName(
     context.currentModule,
-    Namespace.typedJson,
+    Namespace.coreType,
   );
   if (moduleName === undefined) {
     return {

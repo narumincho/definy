@@ -15,8 +15,6 @@ import {
   CollectedDefinyRpcType,
   CollectedDefinyRpcTypeBody,
   CollectedDefinyRpcTypeMap,
-  collectedDefinyRpcTypeMapGet,
-  CollectedDefinyRpcTypeUse,
 } from "../core/collectType.ts";
 import { arrayFromLength } from "../../util.ts";
 import { structuredJsonValueType } from "./useTypedJson.ts";
@@ -24,20 +22,23 @@ import {
   createFromLambda,
   symbolToStringTagAndTypeName,
 } from "./typeVariable/from.ts";
-import { collectedDefinyRpcTypeToTsType } from "./type/use.ts";
+import {
+  collectedDefinyRpcTypeToTsType,
+  collectedDefinyRpcTypeUseToTsType,
+} from "./type/use.ts";
 import { createTagExprList } from "./typeVariable/tag.ts";
 import { createFromStructuredJsonValueLambda } from "./typeVariable/fromStructuredJsonValue.ts";
 import { Namespace } from "../core/coreType.ts";
 
 export const collectedTypeToTypeAlias = (
   type: CollectedDefinyRpcType,
-  map: CollectedDefinyRpcTypeMap,
+  context: CodeGenContext,
 ): data.TypeAlias | undefined => {
   const tsType = collectedDefinyRpcTypeBodyToTsType(
     type.namespace,
     type.name,
     type.body,
-    map,
+    context,
   );
   if (
     tsType === undefined ||
@@ -66,7 +67,7 @@ const collectedDefinyRpcTypeBodyToTsType = (
   namespace: Namespace,
   typeName: string,
   typeBody: CollectedDefinyRpcTypeBody,
-  map: CollectedDefinyRpcTypeMap,
+  context: CodeGenContext,
 ): data.TsType | undefined => {
   switch (typeBody.type) {
     case "string":
@@ -86,7 +87,7 @@ const collectedDefinyRpcTypeBodyToTsType = (
             name: { type: "string", value: field.name } as const,
             document: field.description,
             required: true,
-            type: collectedDefinyRpcTypeUseToTsType(field.type, map),
+            type: collectedDefinyRpcTypeUseToTsType(field.type, context),
           })),
           {
             name: {
@@ -128,7 +129,7 @@ const collectedDefinyRpcTypeBodyToTsType = (
                   required: true,
                   type: collectedDefinyRpcTypeUseToTsType(
                     pattern.parameter,
-                    map,
+                    context,
                   ),
                 } as const,
               ]),
@@ -147,87 +148,6 @@ const collectedDefinyRpcTypeBodyToTsType = (
             ],
           }),
         ),
-      };
-  }
-};
-
-const collectedDefinyRpcTypeUseToTsType = (
-  collectedDefinyRpcTypeUse: CollectedDefinyRpcTypeUse,
-  map: CollectedDefinyRpcTypeMap,
-): data.TsType => {
-  const typeDetail = collectedDefinyRpcTypeMapGet(
-    map,
-    collectedDefinyRpcTypeUse.namespace,
-    collectedDefinyRpcTypeUse.name,
-  );
-  if (typeDetail === undefined) {
-    throw new Error("型を集計できなかった " + collectedDefinyRpcTypeUse.name);
-  }
-  switch (typeDetail.body.type) {
-    case "string":
-      return { _: "String" };
-    case "boolean":
-      return { _: "Boolean" };
-    case "number":
-      return { _: "Number" };
-    case "unit":
-      return { _: "Undefined" };
-    case "list": {
-      const parameter = collectedDefinyRpcTypeUse.parameters[0];
-      if (
-        parameter === undefined ||
-        collectedDefinyRpcTypeUse.parameters.length !== 1
-      ) {
-        throw new Error(
-          "list need 1 parameters but got " +
-            collectedDefinyRpcTypeUse.parameters.length,
-        );
-      }
-      return readonlyArrayType(
-        collectedDefinyRpcTypeUseToTsType(parameter, map),
-      );
-    }
-    case "set": {
-      const parameter = collectedDefinyRpcTypeUse.parameters[0];
-      if (
-        parameter === undefined ||
-        collectedDefinyRpcTypeUse.parameters.length !== 1
-      ) {
-        throw new Error(
-          "set need 1 parameters but got " +
-            collectedDefinyRpcTypeUse.parameters.length,
-        );
-      }
-      return readonlySetType(collectedDefinyRpcTypeUseToTsType(parameter, map));
-    }
-    case "map": {
-      const [key, value] = collectedDefinyRpcTypeUse.parameters;
-      if (
-        key === undefined || value === undefined ||
-        collectedDefinyRpcTypeUse.parameters.length !== 2
-      ) {
-        throw new Error(
-          "map need 2 parameters but got " +
-            collectedDefinyRpcTypeUse.parameters.length,
-        );
-      }
-      return readonlyMapType(
-        collectedDefinyRpcTypeUseToTsType(key, map),
-        collectedDefinyRpcTypeUseToTsType(value, map),
-      );
-    }
-    case "url":
-      return urlType;
-    case "product":
-    case "sum":
-      return {
-        _: "ScopeInFile",
-        typeNameAndTypeParameter: {
-          name: identifierFromString(collectedDefinyRpcTypeUse.name),
-          arguments: collectedDefinyRpcTypeUse.parameters.map((use) =>
-            collectedDefinyRpcTypeUseToTsType(use, map)
-          ),
-        },
       };
   }
 };

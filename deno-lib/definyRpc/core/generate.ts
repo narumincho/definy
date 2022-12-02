@@ -167,6 +167,252 @@ const nameSpace: CollectedDefinyRpcType = {
   },
 };
 
+const definyRpcTypeInfo: CollectedDefinyRpcType = {
+  name: "DefinyRpcTypeInfo",
+  namespace: Namespace.coreType,
+  description: "definy RPC 型の構造",
+  parameterCount: 0,
+  body: {
+    type: "product",
+    fieldList: [
+      {
+        name: "namespace",
+        description: "型が所属する名前空間",
+        type: {
+          namespace: Namespace.coreType,
+          name: "Namespace",
+          parameters: [],
+        },
+      },
+      {
+        name: "name",
+        description: "型の名前",
+        type: {
+          namespace: Namespace.coreType,
+          name: "String",
+          parameters: [],
+        },
+      },
+      {
+        name: "description",
+        description: "説明文. コメントなどに出力される",
+        type: {
+          namespace: Namespace.coreType,
+          name: "String",
+          parameters: [],
+        },
+      },
+      {
+        name: "parameterCount",
+        description: "パラメーターの数. パラメーター名やドキュメントはまたいつか復活させる",
+        type: {
+          namespace: Namespace.coreType,
+          name: "Number",
+          parameters: [],
+        },
+      },
+      {
+        name: "body",
+        description: "型の構造を表現する",
+        type: {
+          namespace: Namespace.coreType,
+          name: "TypeBody",
+          parameters: [],
+        },
+      },
+    ],
+  },
+};
+
+const typeBody: CollectedDefinyRpcType = {
+  namespace: Namespace.coreType,
+  name: "TypeBody",
+  description: "型の構造を表現する",
+  parameterCount: 0,
+  body: {
+    type: "sum",
+    patternList: [
+      {
+        name: "string",
+        description: "string",
+        parameter: undefined,
+      },
+      {
+        name: "number",
+        description: "number",
+        parameter: undefined,
+      },
+      {
+        name: "boolean",
+        description: "boolean",
+        parameter: undefined,
+      },
+      {
+        name: "unit",
+        description: "unit",
+        parameter: undefined,
+      },
+      {
+        name: "list",
+        description: "list",
+        parameter: undefined,
+      },
+      {
+        name: "set",
+        description: "set",
+        parameter: undefined,
+      },
+      {
+        name: "map",
+        description: "map",
+        parameter: undefined,
+      },
+      {
+        name: "url",
+        description: "url",
+        parameter: undefined,
+      },
+      {
+        name: "product",
+        description: "product",
+        parameter: {
+          namespace: Namespace.coreType,
+          name: "Field",
+          parameters: [],
+        },
+      },
+      {
+        name: "sum",
+        description: "sum",
+        parameter: {
+          namespace: Namespace.coreType,
+          name: "Pattern",
+          parameters: [],
+        },
+      },
+    ],
+  },
+};
+
+const field: CollectedDefinyRpcType = {
+  namespace: Namespace.coreType,
+  name: "Field",
+  description: "product 直積型で使う",
+  parameterCount: 0,
+  body: {
+    type: "product",
+    fieldList: [{
+      name: "name",
+      description: "フィールド名",
+      type: {
+        namespace: Namespace.coreType,
+        name: "String",
+        parameters: [],
+      },
+    }, {
+      name: "description",
+      description: "フィールドの説明",
+      type: {
+        namespace: Namespace.coreType,
+        name: "String",
+        parameters: [],
+      },
+    }, {
+      name: "type",
+      description: "型",
+      type: {
+        namespace: Namespace.coreType,
+        name: "Type",
+        parameters: [],
+      },
+    }],
+  },
+};
+
+const pattern: CollectedDefinyRpcType = {
+  namespace: Namespace.coreType,
+  name: "Pattern",
+  description: "直和型の表現",
+  parameterCount: 0,
+  body: {
+    type: "product",
+    fieldList: [
+      {
+        name: "name",
+        description: "パターン名",
+        type: {
+          namespace: Namespace.coreType,
+          name: "String",
+          parameters: [],
+        },
+      },
+      {
+        name: "description",
+        description: "説明",
+        type: {
+          namespace: Namespace.coreType,
+          name: "String",
+          parameters: [],
+        },
+      },
+      {
+        name: "parameter",
+        description: "パラメーター",
+        type: {
+          namespace: Namespace.maybe,
+          name: "Maybe",
+          parameters: [{
+            namespace: Namespace.coreType,
+            name: "Type",
+            parameters: [],
+          }],
+        },
+      },
+    ],
+  },
+};
+
+const type: CollectedDefinyRpcType = {
+  namespace: Namespace.coreType,
+  name: "Type",
+  description: "型",
+  parameterCount: 0,
+  body: {
+    type: "product",
+    fieldList: [{
+      name: "namespace",
+      description: "名前空間",
+      type: {
+        namespace: Namespace.coreType,
+        name: "Namespace",
+        parameters: [],
+      },
+    }, {
+      name: "name",
+      description: "型の名前",
+      type: {
+        namespace: Namespace.coreType,
+        name: "String",
+        parameters: [],
+      },
+    }, {
+      name: "parameters",
+      description: "型パラメータ",
+      type: {
+        namespace: Namespace.coreType,
+        name: "List",
+        parameters: [
+          {
+            namespace: Namespace.coreType,
+            name: "Type",
+            parameters: [],
+          },
+        ],
+      },
+    }],
+  },
+};
+
 export const generateCoreCode = async (): Promise<void> => {
   const code = apiFunctionListToCode({
     apiFunctionList: [],
@@ -174,7 +420,20 @@ export const generateCoreCode = async (): Promise<void> => {
     originHint: "",
     pathPrefix: [],
     usePrettier: true,
-    typeList: [string, bool, number, structuredJsonValue, list, map, nameSpace],
+    typeList: [
+      string,
+      bool,
+      number,
+      structuredJsonValue,
+      list,
+      map,
+      nameSpace,
+      definyRpcTypeInfo,
+      typeBody,
+      field,
+      pattern,
+      type,
+    ],
   });
   await writeTextFileWithLog(
     fromFileUrl(import.meta.resolve("./coreTypeNew.ts")),
