@@ -2,7 +2,14 @@ import { ApiFunction } from "./apiFunction.ts";
 import { lazyGet } from "../../lazy.ts";
 import { DefinyRpcType, definyRpcTypeToMapKey, TypeBody } from "./type.ts";
 import { namespaceToString } from "../codeGen/namespace.ts";
-import { Namespace } from "./coreType.ts";
+import {
+  DefinyRpcTypeInfo,
+  Field,
+  Namespace,
+  Pattern,
+  Type,
+  TypeBody as CTypedBody,
+} from "./coreType.ts";
 
 export const collectDefinyRpcTypeFromFuncList = (
   funcList: ReadonlyArray<ApiFunction>,
@@ -29,13 +36,13 @@ const collectFromDefinyRpcType = <t>(
   const newMap: CollectedDefinyRpcTypeMap = new Map([
     [
       typeFullName,
-      {
+      DefinyRpcTypeInfo.from({
         namespace: type.namespace,
         name: type.name,
         description: type.description,
         parameterCount: type.parameters.length,
         body: typeBodyToCollectedDefinyRpcTypeBody(type.body),
-      },
+      }),
     ],
   ]);
   const newCollectedNames = new Set([...collectedNames, typeFullName]);
@@ -99,7 +106,7 @@ export const collectFromDefinyRpcTypeList = <t>(
 
 export type CollectedDefinyRpcTypeMap = ReadonlyMap<
   string,
-  CollectedDefinyRpcType
+  DefinyRpcTypeInfo
 >;
 
 export type CodeGenContext = {
@@ -111,7 +118,7 @@ export const collectedDefinyRpcTypeMapGet = (
   map: CollectedDefinyRpcTypeMap,
   namespace: Namespace,
   name: string,
-): CollectedDefinyRpcType | undefined => {
+): DefinyRpcTypeInfo | undefined => {
   return map.get(
     namespaceToString(namespace) +
       "." +
@@ -119,107 +126,58 @@ export const collectedDefinyRpcTypeMapGet = (
   );
 };
 
-/**
- * 循環的構造があった場合, 見つけられないんじゃないか?
- * 同じ名前が見つかったらストップ (パラメーターは見る)
- */
-export type CollectedDefinyRpcType = {
-  readonly namespace: Namespace;
-  readonly name: string;
-  readonly description: string;
-  readonly parameterCount: number;
-  readonly body: CollectedDefinyRpcTypeBody;
-};
-
-export type CollectedDefinyRpcTypeBody =
-  | { readonly type: "string" }
-  | { readonly type: "number" }
-  | { readonly type: "boolean" }
-  | { readonly type: "unit" }
-  | { readonly type: "list" }
-  | { readonly type: "set" }
-  | {
-    readonly type: "map";
-  }
-  | {
-    readonly type: "product";
-    readonly fieldList: ReadonlyArray<Field>;
-  }
-  | {
-    readonly type: "sum";
-    readonly patternList: ReadonlyArray<Pattern>;
-  }
-  | { readonly type: "url" };
-
-export type Field = {
-  readonly name: string;
-  readonly description: string;
-  readonly type: CollectedDefinyRpcTypeUse;
-};
-
-export type Pattern = {
-  readonly name: string;
-  readonly description: string;
-  readonly parameter: CollectedDefinyRpcTypeUse | undefined;
-};
-
 const typeBodyToCollectedDefinyRpcTypeBody = (
   typeBody: TypeBody,
-): CollectedDefinyRpcTypeBody => {
+): CTypedBody => {
   switch (typeBody.type) {
     case "string":
-      return { type: "string" };
+      return CTypedBody.string;
     case "number":
-      return { type: "number" };
+      return CTypedBody.number;
     case "boolean":
-      return { type: "boolean" };
+      return CTypedBody.boolean;
     case "unit":
-      return { type: "unit" };
+      return CTypedBody.unit;
     case "list":
-      return { type: "list" };
+      return CTypedBody.list;
     case "set":
-      return { type: "set" };
+      return CTypedBody.set;
     case "map":
-      return { type: "map" };
+      return CTypedBody.map;
     case "product":
-      return {
-        type: "product",
-        fieldList: typeBody.fieldList.map((field) => ({
-          name: field.name,
-          description: field.description,
-          type: definyRpcTypeToCollectedDefinyRpcTypeUse(lazyGet(field.type)),
-        })),
-      };
+      return CTypedBody.product(
+        typeBody.fieldList.map((field) =>
+          Field.from({
+            name: field.name,
+            description: field.description,
+            type: definyRpcTypeToCollectedDefinyRpcTypeUse(lazyGet(field.type)),
+          })
+        ),
+      );
     case "sum":
-      return {
-        type: "sum",
-        patternList: typeBody.patternList.map((pattern) => ({
+      return CTypedBody.sum(typeBody.patternList.map((pattern) =>
+        Pattern.from({
           name: pattern.name,
           description: pattern.description,
-          parameter: pattern.parameter === undefined
-            ? undefined
-            : definyRpcTypeToCollectedDefinyRpcTypeUse(
+          parameter: pattern.parameter === undefined ? { type: "nothing" } : {
+            type: "just",
+            value: definyRpcTypeToCollectedDefinyRpcTypeUse(
               lazyGet(pattern.parameter),
             ),
-        })),
-      };
+          },
+        })
+      ));
     case "url":
-      return { type: "url" };
+      return CTypedBody.url;
   }
 };
 
-const definyRpcTypeToCollectedDefinyRpcTypeUse = <t>(
+export const definyRpcTypeToCollectedDefinyRpcTypeUse = <t>(
   type: DefinyRpcType<t>,
-): CollectedDefinyRpcTypeUse => {
-  return {
+): Type => {
+  return Type.from({
     namespace: type.namespace,
     name: type.name,
     parameters: type.parameters.map(definyRpcTypeToCollectedDefinyRpcTypeUse),
-  };
-};
-
-export type CollectedDefinyRpcTypeUse = {
-  readonly namespace: Namespace;
-  readonly name: string;
-  readonly parameters: ReadonlyArray<CollectedDefinyRpcTypeUse>;
+  });
 };

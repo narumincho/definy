@@ -9,9 +9,8 @@ import {
 import {
   CodeGenContext,
   collectedDefinyRpcTypeMapGet,
-  CollectedDefinyRpcTypeUse,
 } from "../../core/collectType.ts";
-import { Namespace } from "../../core/coreType.ts";
+import { Namespace, Type } from "../../core/coreType.ts";
 import { namespaceFromAndToToTypeScriptModuleName } from "../namespace.ts";
 
 /**
@@ -81,7 +80,7 @@ const getTypeVariable = (
  * @param expr JSONの式
  */
 export const useFromStructuredJsonValue = (
-  type: CollectedDefinyRpcTypeUse,
+  type: Type,
   expr: data.TsExpr,
   context: CodeGenContext,
 ): data.TsExpr => {
@@ -92,7 +91,7 @@ export const useFromStructuredJsonValue = (
 };
 
 const getStructuredJsonValueFunction = (
-  type: CollectedDefinyRpcTypeUse,
+  type: Type,
   context: CodeGenContext,
 ): data.TsExpr => {
   if (type.parameters.length === 0) {

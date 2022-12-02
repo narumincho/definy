@@ -20,7 +20,10 @@ import {
   urlType,
 } from "../../jsTs/main.ts";
 import { ApiFunction } from "../core/apiFunction.ts";
-import { CodeGenContext } from "../core/collectType.ts";
+import {
+  CodeGenContext,
+  definyRpcTypeToCollectedDefinyRpcTypeUse,
+} from "../core/collectType.ts";
 import { Namespace } from "../core/coreType.ts";
 import { DefinyRpcType } from "../core/type.ts";
 import { resultError, resultOk, resultType } from "./result.ts";
@@ -206,7 +209,7 @@ const fetchThenExpr = (
         _: "Return",
         tsExpr: resultOk(
           useFromStructuredJsonValue(
-            func.output,
+            definyRpcTypeToCollectedDefinyRpcTypeUse(func.output),
             useRawJsonToStructuredJsonValue({
               _: "Variable",
               tsIdentifier: jsonValueIdentifier,

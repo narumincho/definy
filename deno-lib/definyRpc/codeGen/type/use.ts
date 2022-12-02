@@ -9,18 +9,16 @@ import {
 import { arrayFromLength } from "../../../util.ts";
 import {
   CodeGenContext,
-  CollectedDefinyRpcType,
   collectedDefinyRpcTypeMapGet,
-  CollectedDefinyRpcTypeUse,
 } from "../../core/collectType.ts";
-import { Namespace } from "../../core/coreType.ts";
+import { DefinyRpcTypeInfo, Namespace, Type } from "../../core/coreType.ts";
 import { namespaceFromAndToToTypeScriptModuleName } from "../namespace.ts";
 
 /**
  * パラメーターは p0, p1 ... というように勝手に指定される
  */
 export const collectedDefinyRpcTypeToTsType = (
-  collectedDefinyRpcType: CollectedDefinyRpcType,
+  collectedDefinyRpcType: DefinyRpcTypeInfo,
   context: CodeGenContext,
 ): data.TsType => {
   const typeDetail = collectedDefinyRpcTypeMapGet(
@@ -123,7 +121,7 @@ export const collectedDefinyRpcTypeToTsType = (
 };
 
 export const collectedDefinyRpcTypeUseToTsType = (
-  type: CollectedDefinyRpcTypeUse,
+  type: Type,
   context: CodeGenContext,
 ): data.TsType => {
   if (type.namespace.type == "maybe") {

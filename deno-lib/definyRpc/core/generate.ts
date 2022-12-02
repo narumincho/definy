@@ -1,427 +1,448 @@
 import { fromFileUrl } from "https://deno.land/std@0.156.0/path/mod.ts";
 import { writeTextFileWithLog } from "../../writeFileAndLog.ts";
 import { apiFunctionListToCode } from "../codeGen/main.ts";
-import { CollectedDefinyRpcType } from "./collectType.ts";
-import { Namespace } from "./coreType.ts";
+import {
+  DefinyRpcTypeInfo,
+  Field,
+  Namespace,
+  Pattern,
+  Type,
+  TypeBody,
+} from "./coreType.ts";
 
-const string: CollectedDefinyRpcType = {
+const string = DefinyRpcTypeInfo.from({
   namespace: Namespace.coreType,
   name: "String",
   description: "文字列",
   parameterCount: 0,
-  body: { type: "string" },
-};
+  body: TypeBody.string,
+});
 
-const bool: CollectedDefinyRpcType = {
+const bool = DefinyRpcTypeInfo.from({
   namespace: Namespace.coreType,
   name: "Bool",
   description: "Bool. boolean. 真偽値. True か False",
   parameterCount: 0,
-  body: { type: "boolean" },
-};
+  body: TypeBody.boolean,
+});
 
-const number: CollectedDefinyRpcType = {
+const number = DefinyRpcTypeInfo.from({
   namespace: Namespace.coreType,
   name: "Number",
   description: "64bit 浮動小数点数",
   parameterCount: 0,
-  body: {
-    type: "number",
-  },
-};
+  body: TypeBody.number,
+});
 
-const structuredJsonValue: CollectedDefinyRpcType = ({
+const structuredJsonValue = DefinyRpcTypeInfo.from({
   namespace: Namespace.coreType,
   name: "StructuredJsonValue",
   description: "構造化されたJSON",
   parameterCount: 0,
-  body: {
-    type: "sum",
-    patternList: [
-      {
-        name: "string",
-        description: "string",
-        parameter: {
+  body: TypeBody.sum([
+    Pattern.from({
+      name: "string",
+      description: "string",
+      parameter: {
+        type: "just",
+        value: Type.from({
           namespace: string.namespace,
           name: string.name,
           parameters: [],
-        },
+        }),
       },
-      {
-        name: "array",
-        description: "array",
-        parameter: {
+    }),
+    Pattern.from({
+      name: "array",
+      description: "array",
+      parameter: {
+        type: "just",
+        value: Type.from({
           name: "List",
           namespace: Namespace.coreType,
-          parameters: [{
+          parameters: [Type.from({
             name: "StructuredJsonValue",
             namespace: Namespace.coreType,
             parameters: [],
-          }],
-        },
+          })],
+        }),
       },
-      {
-        name: "boolean",
-        description: "boolean",
-        parameter: {
+    }),
+    Pattern.from({
+      name: "boolean",
+      description: "boolean",
+      parameter: {
+        type: "just",
+        value: Type.from({
           namespace: bool.namespace,
           name: bool.name,
           parameters: [],
-        },
+        }),
       },
-      {
-        name: "null",
-        description: "null",
-        parameter: undefined,
-      },
-      {
-        name: "number",
-        description: "number",
-        parameter: {
+    }),
+    Pattern.from({
+      name: "null",
+      description: "null",
+      parameter: { type: "nothing" },
+    }),
+    Pattern.from({
+      name: "number",
+      description: "number",
+      parameter: {
+        type: "just",
+        value: Type.from({
           namespace: Namespace.coreType,
           name: number.name,
           parameters: [],
-        },
+        }),
       },
-      {
-        name: "object",
-        description: "object",
-        parameter: {
+    }),
+    Pattern.from({
+      name: "object",
+      description: "object",
+      parameter: {
+        type: "just",
+        value: Type.from({
           namespace: Namespace.coreType,
           name: "Map",
-          parameters: [{
-            name: "String",
-            namespace: Namespace.coreType,
-            parameters: [],
-          }, {
-            name: "StructuredJsonValue",
-            namespace: Namespace.coreType,
-            parameters: [],
-          }],
-        },
+          parameters: [
+            Type.from({
+              name: "String",
+              namespace: Namespace.coreType,
+              parameters: [],
+            }),
+            Type.from({
+              name: "StructuredJsonValue",
+              namespace: Namespace.coreType,
+              parameters: [],
+            }),
+          ],
+        }),
       },
-    ],
-  },
+    }),
+  ]),
 });
 
-const list: CollectedDefinyRpcType = {
+const list = DefinyRpcTypeInfo.from({
   namespace: Namespace.coreType,
   name: "List",
   description: "リスト",
   parameterCount: 1,
-  body: {
-    type: "list",
-  },
-};
+  body: TypeBody.list,
+});
 
-const map: CollectedDefinyRpcType = {
+const map = DefinyRpcTypeInfo.from({
   namespace: Namespace.coreType,
   name: "Map",
   description: "辞書型. Map, Dictionary",
   parameterCount: 2,
-  body: {
-    type: "map",
-  },
-};
+  body: TypeBody.map,
+});
 
-const nameSpace: CollectedDefinyRpcType = {
+const nameSpace = DefinyRpcTypeInfo.from({
   namespace: Namespace.coreType,
   name: "Namespace",
   description: "名前空間. ユーザーが生成するものがこっちが用意するものか",
   parameterCount: 0,
-  body: {
-    type: "sum",
-    patternList: [{
+  body: TypeBody.sum([
+    Pattern.from({
       name: "local",
       description: "ユーザーが作ったAPIがあるところ",
       parameter: {
-        namespace: Namespace.coreType,
-        name: "List",
-        parameters: [{
+        type: "just",
+        value: Type.from({
           namespace: Namespace.coreType,
-          name: "String",
-          parameters: [],
-        }],
+          name: "List",
+          parameters: [Type.from({
+            namespace: Namespace.coreType,
+            name: "String",
+            parameters: [],
+          })],
+        }),
       },
-    }, {
+    }),
+    Pattern.from({
       name: "coreType",
       description: "definyRpc 共通で使われる型",
-      parameter: undefined,
-    }, {
+      parameter: { type: "nothing" },
+    }),
+    Pattern.from({
       name: "typedJson",
       description: "型安全なJSONのコーデック",
-      parameter: undefined,
-    }, {
+      parameter: { type: "nothing" },
+    }),
+    Pattern.from({
       name: "request",
       description: "HTTP経路でAPI呼ぶときに使うコード",
-      parameter: undefined,
-    }, {
+      parameter: { type: "nothing" },
+    }),
+    Pattern.from({
       name: "maybe",
       description: "MaybeとResultがある (一時的対処. coreTypeに入れたい)",
-      parameter: undefined,
-    }, {
+      parameter: { type: "nothing" },
+    }),
+    Pattern.from({
       name: "meta",
       description: "各サーバーにアクセスし型情報を取得する",
-      parameter: undefined,
-    }],
-  },
-};
+      parameter: { type: "nothing" },
+    }),
+  ]),
+});
 
-const definyRpcTypeInfo: CollectedDefinyRpcType = {
+const definyRpcTypeInfo = DefinyRpcTypeInfo.from({
   name: "DefinyRpcTypeInfo",
   namespace: Namespace.coreType,
   description: "definy RPC 型の構造",
   parameterCount: 0,
-  body: {
-    type: "product",
-    fieldList: [
-      {
-        name: "namespace",
-        description: "型が所属する名前空間",
-        type: {
-          namespace: Namespace.coreType,
-          name: "Namespace",
-          parameters: [],
-        },
-      },
-      {
-        name: "name",
-        description: "型の名前",
-        type: {
-          namespace: Namespace.coreType,
-          name: "String",
-          parameters: [],
-        },
-      },
-      {
-        name: "description",
-        description: "説明文. コメントなどに出力される",
-        type: {
-          namespace: Namespace.coreType,
-          name: "String",
-          parameters: [],
-        },
-      },
-      {
-        name: "parameterCount",
-        description: "パラメーターの数. パラメーター名やドキュメントはまたいつか復活させる",
-        type: {
-          namespace: Namespace.coreType,
-          name: "Number",
-          parameters: [],
-        },
-      },
-      {
-        name: "body",
-        description: "型の構造を表現する",
-        type: {
-          namespace: Namespace.coreType,
-          name: "TypeBody",
-          parameters: [],
-        },
-      },
-    ],
-  },
-};
+  body: TypeBody.product([
+    Field.from({
+      name: "namespace",
+      description: "型が所属する名前空間",
+      type: Type.from({
+        namespace: Namespace.coreType,
+        name: "Namespace",
+        parameters: [],
+      }),
+    }),
+    Field.from({
+      name: "name",
+      description: "型の名前",
+      type: Type.from({
+        namespace: Namespace.coreType,
+        name: "String",
+        parameters: [],
+      }),
+    }),
+    Field.from({
+      name: "description",
+      description: "説明文. コメントなどに出力される",
+      type: Type.from({
+        namespace: Namespace.coreType,
+        name: "String",
+        parameters: [],
+      }),
+    }),
+    Field.from({
+      name: "parameterCount",
+      description: "パラメーターの数. パラメーター名やドキュメントはまたいつか復活させる",
+      type: Type.from({
+        namespace: Namespace.coreType,
+        name: "Number",
+        parameters: [],
+      }),
+    }),
+    Field.from({
+      name: "body",
+      description: "型の構造を表現する",
+      type: Type.from({
+        namespace: Namespace.coreType,
+        name: "TypeBody",
+        parameters: [],
+      }),
+    }),
+  ]),
+});
 
-const typeBody: CollectedDefinyRpcType = {
+const typeBody = DefinyRpcTypeInfo.from({
   namespace: Namespace.coreType,
   name: "TypeBody",
   description: "型の構造を表現する",
   parameterCount: 0,
-  body: {
-    type: "sum",
-    patternList: [
-      {
-        name: "string",
-        description: "string",
-        parameter: undefined,
-      },
-      {
-        name: "number",
-        description: "number",
-        parameter: undefined,
-      },
-      {
-        name: "boolean",
-        description: "boolean",
-        parameter: undefined,
-      },
-      {
-        name: "unit",
-        description: "unit",
-        parameter: undefined,
-      },
-      {
-        name: "list",
-        description: "list",
-        parameter: undefined,
-      },
-      {
-        name: "set",
-        description: "set",
-        parameter: undefined,
-      },
-      {
-        name: "map",
-        description: "map",
-        parameter: undefined,
-      },
-      {
-        name: "url",
-        description: "url",
-        parameter: undefined,
-      },
-      {
-        name: "product",
-        description: "product",
-        parameter: {
+  body: TypeBody.sum([
+    Pattern.from({
+      name: "string",
+      description: "string",
+      parameter: { type: "nothing" },
+    }),
+    Pattern.from({
+      name: "number",
+      description: "number",
+      parameter: { type: "nothing" },
+    }),
+    Pattern.from({
+      name: "boolean",
+      description: "boolean",
+      parameter: { type: "nothing" },
+    }),
+    Pattern.from({
+      name: "unit",
+      description: "unit",
+      parameter: { type: "nothing" },
+    }),
+    Pattern.from({
+      name: "list",
+      description: "list",
+      parameter: { type: "nothing" },
+    }),
+    Pattern.from({
+      name: "set",
+      description: "set",
+      parameter: { type: "nothing" },
+    }),
+    Pattern.from({
+      name: "map",
+      description: "map",
+      parameter: { type: "nothing" },
+    }),
+    Pattern.from({
+      name: "url",
+      description: "url",
+      parameter: { type: "nothing" },
+    }),
+    Pattern.from({
+      name: "product",
+      description: "product",
+      parameter: {
+        type: "just",
+        value: Type.from({
           namespace: Namespace.coreType,
           name: "List",
           parameters: [
-            {
+            Type.from({
               namespace: Namespace.coreType,
               name: "Field",
               parameters: [],
-            },
+            }),
           ],
-        },
+        }),
       },
-      {
-        name: "sum",
-        description: "sum",
-        parameter: {
+    }),
+    Pattern.from({
+      name: "sum",
+      description: "sum",
+      parameter: {
+        type: "just",
+        value: Type.from({
           namespace: Namespace.coreType,
           name: "List",
-          parameters: [{
+          parameters: [Type.from({
             namespace: Namespace.coreType,
             name: "Pattern",
             parameters: [],
-          }],
-        },
+          })],
+        }),
       },
-    ],
-  },
-};
+    }),
+  ]),
+});
 
-const field: CollectedDefinyRpcType = {
+const field = DefinyRpcTypeInfo.from({
   namespace: Namespace.coreType,
   name: "Field",
   description: "product 直積型で使う",
   parameterCount: 0,
-  body: {
-    type: "product",
-    fieldList: [{
+  body: TypeBody.product([
+    Field.from({
       name: "name",
       description: "フィールド名",
-      type: {
+      type: Type.from({
         namespace: Namespace.coreType,
         name: "String",
         parameters: [],
-      },
-    }, {
+      }),
+    }),
+    Field.from({
       name: "description",
       description: "フィールドの説明",
-      type: {
+      type: Type.from({
         namespace: Namespace.coreType,
         name: "String",
         parameters: [],
-      },
-    }, {
+      }),
+    }),
+    Field.from({
       name: "type",
       description: "型",
-      type: {
+      type: Type.from({
         namespace: Namespace.coreType,
         name: "Type",
         parameters: [],
-      },
-    }],
-  },
-};
+      }),
+    }),
+  ]),
+});
 
-const pattern: CollectedDefinyRpcType = {
+const pattern = DefinyRpcTypeInfo.from({
   namespace: Namespace.coreType,
   name: "Pattern",
   description: "直和型の表現",
   parameterCount: 0,
-  body: {
-    type: "product",
-    fieldList: [
-      {
-        name: "name",
-        description: "パターン名",
-        type: {
+  body: TypeBody.product([
+    Field.from({
+      name: "name",
+      description: "パターン名",
+      type: Type.from({
+        namespace: Namespace.coreType,
+        name: "String",
+        parameters: [],
+      }),
+    }),
+    Field.from({
+      name: "description",
+      description: "説明",
+      type: Type.from({
+        namespace: Namespace.coreType,
+        name: "String",
+        parameters: [],
+      }),
+    }),
+    Field.from({
+      name: "parameter",
+      description: "パラメーター",
+      type: Type.from({
+        namespace: Namespace.maybe,
+        name: "Maybe",
+        parameters: [Type.from({
           namespace: Namespace.coreType,
-          name: "String",
+          name: "Type",
           parameters: [],
-        },
-      },
-      {
-        name: "description",
-        description: "説明",
-        type: {
-          namespace: Namespace.coreType,
-          name: "String",
-          parameters: [],
-        },
-      },
-      {
-        name: "parameter",
-        description: "パラメーター",
-        type: {
-          namespace: Namespace.maybe,
-          name: "Maybe",
-          parameters: [{
-            namespace: Namespace.coreType,
-            name: "Type",
-            parameters: [],
-          }],
-        },
-      },
-    ],
-  },
-};
+        })],
+      }),
+    }),
+  ]),
+});
 
-const type: CollectedDefinyRpcType = {
+const type = DefinyRpcTypeInfo.from({
   namespace: Namespace.coreType,
   name: "Type",
   description: "型",
   parameterCount: 0,
-  body: {
-    type: "product",
-    fieldList: [{
+  body: TypeBody.product([
+    Field.from({
       name: "namespace",
       description: "名前空間",
-      type: {
+      type: Type.from({
         namespace: Namespace.coreType,
         name: "Namespace",
         parameters: [],
-      },
-    }, {
+      }),
+    }),
+    Field.from({
       name: "name",
       description: "型の名前",
-      type: {
+      type: Type.from({
         namespace: Namespace.coreType,
         name: "String",
         parameters: [],
-      },
-    }, {
+      }),
+    }),
+    Field.from({
       name: "parameters",
       description: "型パラメータ",
-      type: {
+      type: Type.from({
         namespace: Namespace.coreType,
         name: "List",
         parameters: [
-          {
+          Type.from({
             namespace: Namespace.coreType,
             name: "Type",
             parameters: [],
-          },
+          }),
         ],
-      },
-    }],
-  },
-};
+      }),
+    }),
+  ]),
+});
 
 export const generateCoreCode = async (): Promise<void> => {
   const code = apiFunctionListToCode({

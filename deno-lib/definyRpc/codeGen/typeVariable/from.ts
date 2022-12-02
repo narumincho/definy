@@ -8,17 +8,13 @@ import {
   symbolToStringTag,
   variable,
 } from "../../../jsTs/main.ts";
-import {
-  CodeGenContext,
-  CollectedDefinyRpcType,
-  Field,
-} from "../../core/collectType.ts";
-import { Namespace } from "../../core/coreType.ts";
+import { CodeGenContext } from "../../core/collectType.ts";
+import { DefinyRpcTypeInfo, Field, Namespace } from "../../core/coreType.ts";
 import { namespaceToString } from "../namespace.ts";
 import { collectedDefinyRpcTypeToTsType } from "../type/use.ts";
 
 export const createFromLambda = (
-  type: CollectedDefinyRpcType,
+  type: DefinyRpcTypeInfo,
   context: CodeGenContext,
 ):
   | data.LambdaExpr
@@ -26,11 +22,11 @@ export const createFromLambda = (
   if (type.body.type !== "product") {
     return undefined;
   }
-  return typeToFromLambda(type, type.body.fieldList, context);
+  return typeToFromLambda(type, type.body.value, context);
 };
 
 const typeToFromLambda = (
-  type: CollectedDefinyRpcType,
+  type: DefinyRpcTypeInfo,
   fieldList: ReadonlyArray<Field>,
   context: CodeGenContext,
 ): data.LambdaExpr => {
@@ -58,7 +54,7 @@ const typeToFromLambda = (
 };
 
 const typeToFromLambdaProductStatement = (
-  type: CollectedDefinyRpcType,
+  type: DefinyRpcTypeInfo,
   fieldList: ReadonlyArray<Field>,
 ): ReadonlyArray<data.Statement> => {
   return [

@@ -6,11 +6,7 @@ import {
   stringLiteral,
   symbolToStringTag,
 } from "../../jsTs/main.ts";
-import {
-  CodeGenContext,
-  CollectedDefinyRpcType,
-  CollectedDefinyRpcTypeBody,
-} from "../core/collectType.ts";
+import { CodeGenContext } from "../core/collectType.ts";
 import { arrayFromLength } from "../../util.ts";
 import { structuredJsonValueType } from "./useTypedJson.ts";
 import {
@@ -23,10 +19,14 @@ import {
 } from "./type/use.ts";
 import { createTagExprList } from "./typeVariable/tag.ts";
 import { createFromStructuredJsonValueLambda } from "./typeVariable/fromStructuredJsonValue.ts";
-import { Namespace } from "../core/coreType.ts";
+import {
+  DefinyRpcTypeInfo,
+  Namespace,
+  TypeBody as CTypeBody,
+} from "../core/coreType.ts";
 
 export const collectedTypeToTypeAlias = (
-  type: CollectedDefinyRpcType,
+  type: DefinyRpcTypeInfo,
   context: CodeGenContext,
 ): data.TypeAlias | undefined => {
   const tsType = collectedDefinyRpcTypeBodyToTsType(
@@ -61,7 +61,7 @@ export const collectedTypeToTypeAlias = (
 const collectedDefinyRpcTypeBodyToTsType = (
   namespace: Namespace,
   typeName: string,
-  typeBody: CollectedDefinyRpcTypeBody,
+  typeBody: CTypeBody,
   context: CodeGenContext,
 ): data.TsType | undefined => {
   switch (typeBody.type) {
@@ -78,7 +78,7 @@ const collectedDefinyRpcTypeBodyToTsType = (
       return {
         _: "Object",
         tsMemberTypeList: [
-          ...typeBody.fieldList.map((field) => ({
+          ...typeBody.value.map((field) => ({
             name: { type: "string", value: field.name } as const,
             document: field.description,
             required: true,
@@ -101,7 +101,7 @@ const collectedDefinyRpcTypeBodyToTsType = (
     case "sum":
       return {
         _: "Union",
-        tsTypeList: typeBody.patternList.map(
+        tsTypeList: typeBody.value.map(
           (pattern): data.TsType => ({
             _: "Object",
             tsMemberTypeList: [
@@ -114,7 +114,7 @@ const collectedDefinyRpcTypeBodyToTsType = (
                 required: true,
                 type: { _: "StringLiteral", string: pattern.name },
               },
-              ...(pattern.parameter === undefined ? [] : [
+              ...(pattern.parameter.type === "nothing" ? [] : [
                 {
                   name: {
                     type: "string",
@@ -123,7 +123,7 @@ const collectedDefinyRpcTypeBodyToTsType = (
                   document: pattern.description,
                   required: true,
                   type: collectedDefinyRpcTypeUseToTsType(
-                    pattern.parameter,
+                    pattern.parameter.value,
                     context,
                   ),
                 } as const,
@@ -148,7 +148,7 @@ const collectedDefinyRpcTypeBodyToTsType = (
 };
 
 export const typeToTypeVariable = (
-  type: CollectedDefinyRpcType,
+  type: DefinyRpcTypeInfo,
   context: CodeGenContext,
 ): data.Variable => {
   const fromJsonTypeMain: data.TsType = {

@@ -13,6 +13,9 @@ export type DefinyRpcType<in out t> = {
   readonly fromStructuredJsonValue: (x: StructuredJsonValue) => t;
 };
 
+/**
+ * zod 的な 型の参照ではなく型の表現を含めた参照. 削除したい
+ */
 export type TypeBody =
   | {
     readonly type: "string";

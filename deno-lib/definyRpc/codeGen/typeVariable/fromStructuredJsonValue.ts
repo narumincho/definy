@@ -18,10 +18,8 @@ import {
   variable,
 } from "../../../jsTs/main.ts";
 import { arrayFromLength } from "../../../util.ts";
-import {
-  CodeGenContext,
-  CollectedDefinyRpcType,
-} from "../../core/collectType.ts";
+import { CodeGenContext } from "../../core/collectType.ts";
+import { DefinyRpcTypeInfo } from "../../core/coreType.ts";
 import { collectedDefinyRpcTypeToTsType } from "../type/use.ts";
 import { structuredJsonValueType } from "../useTypedJson.ts";
 import { useFrom, useFromStructuredJsonValue, useTag } from "./use.ts";
@@ -36,7 +34,7 @@ const jsonValueVariableType = get(jsonValueVariable, "type");
 const jsonValueVariableValue = get(jsonValueVariable, "value");
 
 export const createFromStructuredJsonValueLambda = (
-  type: CollectedDefinyRpcType,
+  type: DefinyRpcTypeInfo,
   context: CodeGenContext,
 ): data.LambdaExpr => {
   const main: data.LambdaExpr = {
@@ -93,7 +91,7 @@ export const createFromStructuredJsonValueLambda = (
 };
 
 const typeToFromJsonStatementList = (
-  type: CollectedDefinyRpcType,
+  type: DefinyRpcTypeInfo,
   context: CodeGenContext,
 ): ReadonlyArray<data.Statement> => {
   switch (type.body.type) {
@@ -265,7 +263,7 @@ const typeToFromJsonStatementList = (
             ],
           },
         },
-        ...type.body.fieldList.flatMap(
+        ...type.body.value.flatMap(
           (field): readonly [data.Statement, data.Statement] => [
             {
               _: "VariableDefinition",
@@ -317,7 +315,7 @@ const typeToFromJsonStatementList = (
             type.name,
             context,
             objectLiteral(
-              type.body.fieldList.map(
+              type.body.value.map(
                 (field) =>
                   memberKeyValue(
                     field.name,
@@ -390,11 +388,11 @@ const typeToFromJsonStatementList = (
           _: "Switch",
           switchStatement: {
             expr: get(variable(identifierFromString("type")), "value"),
-            patternList: type.body.patternList.map((
+            patternList: type.body.value.map((
               pattern,
             ): data.TsPattern => ({
               caseString: pattern.name,
-              statementList: pattern.parameter === undefined
+              statementList: pattern.parameter.type === "nothing"
                 ? [{
                   _: "Return",
                   tsExpr: useTag(
@@ -442,7 +440,7 @@ const typeToFromJsonStatementList = (
                     context,
                     pattern.name,
                     useFromStructuredJsonValue(
-                      pattern.parameter,
+                      pattern.parameter.value,
                       variable(identifierFromString("value")),
                       context,
                     ),
@@ -456,7 +454,7 @@ const typeToFromJsonStatementList = (
           tsExpr: addition(
             stringLiteral(
               "unknown type value expected [" +
-                type.body.patternList.map((pattern) => pattern.name).join(",") +
+                type.body.value.map((pattern) => pattern.name).join(",") +
                 "] but got ",
             ),
             get(variable(identifierFromString("type")), "value"),
