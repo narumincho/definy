@@ -4,7 +4,7 @@
  * 一時的対処. coreTypeに入れたい
  */
 
-import { StructuredJsonValue } from "./coreType.ts";
+import { Namespace, StructuredJsonValue, Type } from "./coreType.ts";
 
 export type Maybe<T extends unknown> = {
   readonly type: "just";
@@ -44,6 +44,12 @@ export const Maybe = {
     }
     throw new Error("unknown type value");
   },
+  type: (p1: Type): Type =>
+    Type.from({
+      namespace: Namespace.maybe,
+      name: "Maybe",
+      parameters: [p1],
+    }),
 };
 
 export type Result<Ok extends unknown, Error extends unknown> = {

@@ -50,6 +50,17 @@ export const useTag = (
   ]);
 };
 
+export const typeToTypeExpr = (
+  type: Type,
+  context: CodeGenContext,
+): TsExpr => {
+  return callMethod(
+    getTypeVariable(type.namespace, type.name, context),
+    "type",
+    type.parameters.map((t) => typeToTypeExpr(t, context)),
+  );
+};
+
 const getTypeVariable = (
   namespace: Namespace,
   typeName: string,

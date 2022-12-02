@@ -3,7 +3,6 @@ import {
   identifierFromString,
   lambdaToType,
   memberKeyValue,
-  stringLiteral,
   symbolToStringTag,
 } from "../../jsTs/main.ts";
 import { CodeGenContext } from "../core/collectType.ts";
@@ -24,6 +23,8 @@ import {
   Namespace,
   TypeBody as CTypeBody,
 } from "../core/coreType.ts";
+import { createTypeInfo } from "./typeVariable/typeInfo.ts";
+import { createTypeLambda } from "./typeVariable/type.ts";
 
 export const collectedTypeToTypeAlias = (
   type: DefinyRpcTypeInfo,
@@ -161,6 +162,9 @@ export const typeToTypeVariable = (
   };
   const fromLambda = createFromLambda(type, context);
   const tagList = createTagExprList(type, context) ?? [];
+  const typeInfo = createTypeInfo(type, context);
+  const typeLambda = createTypeLambda(type, context);
+
   return {
     name: identifierFromString(type.name),
     document: type.description,
@@ -168,10 +172,16 @@ export const typeToTypeVariable = (
       _: "Object",
       tsMemberTypeList: [
         {
-          name: { type: "string", value: "description" },
-          document: `${type.name} の説明文`,
+          name: { type: "string", value: "typeInfo" },
+          document: `${type.name} の型の表現`,
           required: true,
-          type: { _: "String" },
+          type: lambdaToType(typeInfo),
+        },
+        {
+          name: { type: "string", value: "type" },
+          document: `${type.name} の型`,
+          required: true,
+          type: lambdaToType(typeLambda),
         },
         ...(fromLambda === undefined ? [] : [{
           name: { type: "string", value: "from" } as const,
@@ -218,9 +228,10 @@ export const typeToTypeVariable = (
       _: "ObjectLiteral",
       tsMemberList: [
         memberKeyValue(
-          "description",
-          stringLiteral(type.description),
+          "typeInfo",
+          { _: "Lambda", lambdaExpr: typeInfo },
         ),
+        memberKeyValue("type", { _: "Lambda", lambdaExpr: typeLambda }),
         ...(fromLambda === undefined ? [] : [
           memberKeyValue(
             "from",
