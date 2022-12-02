@@ -1,17 +1,4 @@
-export type Namespace = {
-  readonly type: "local";
-  readonly path: ReadonlyArray<string>;
-} | {
-  readonly type: "coreType";
-} | {
-  readonly type: "typedJson";
-} | {
-  readonly type: "request";
-} | {
-  readonly type: "maybe";
-} | {
-  readonly type: "meta";
-};
+import { Namespace } from "../core/coreType.ts";
 
 export type RelativeNamespace = {
   readonly upCount: number;
@@ -52,7 +39,7 @@ export const namespaceFromAndToToTypeScriptModuleName = (
       return toMaybe(from);
 
     case "local":
-      return toLocal(from, to.path);
+      return toLocal(from, to.value);
 
     case "meta":
       return toMeta(from);
@@ -130,7 +117,7 @@ const toLocal = (
     case "meta":
       throw new Error("その方向には参照できない!");
     case "local": {
-      const relativeNamespace = namespaceRelative(from.path, to);
+      const relativeNamespace = namespaceRelative(from.value, to);
       const prefix = relativeNamespace.upCount <= 1
         ? "./"
         : "../".repeat(relativeNamespace.upCount - 1);
@@ -148,7 +135,7 @@ export const toMeta = (from: Namespace) => {
       throw new Error("その方向には参照できない!");
     case "local": {
       const relativeNamespace = namespaceRelative(
-        ["serverName", ...from.path],
+        ["serverName", ...from.value],
         [
           "meta.ts",
         ],
@@ -174,7 +161,7 @@ export const namespaceToString = (namespace: Namespace): string => {
     case "meta":
       return "*meta";
     case "local":
-      return namespace.path.join(".");
+      return namespace.value.join(".");
   }
 };
 

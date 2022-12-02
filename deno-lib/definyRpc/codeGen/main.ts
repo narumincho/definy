@@ -14,7 +14,8 @@ import { apiFuncToTsFunction } from "./func.ts";
 import { collectedTypeToTypeAlias, typeToTypeVariable } from "./type.ts";
 import { definyRpcNamespace } from "../core/definyRpcNamespace.ts";
 import { definyRpcExportDefinitionList } from "./definyRpc.ts";
-import { Namespace, namespaceEqual, namespaceToString } from "./namespace.ts";
+import { namespaceEqual, namespaceToString } from "./namespace.ts";
+import { Namespace } from "../core/coreType.ts";
 
 export const apiFunctionListToCode = (parameter: {
   readonly apiFunctionList: ReadonlyArray<ApiFunction>;
@@ -63,10 +64,10 @@ export const apiFunctionListToJsTsCode = (parameter: {
 
   return {
     exportDefinitionList: [
-      ...(namespaceEqual(parameter.namespace, {
-          type: "local",
-          path: [definyRpcNamespace],
-        })
+      ...(namespaceEqual(
+          parameter.namespace,
+          Namespace.local([definyRpcNamespace]),
+        )
         ? definyRpcExportDefinitionList
         : []),
       ...(needAuthentication ? [accountTokenExportDefinition] : []),

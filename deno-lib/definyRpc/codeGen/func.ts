@@ -21,6 +21,7 @@ import {
 } from "../../jsTs/main.ts";
 import { ApiFunction } from "../core/apiFunction.ts";
 import { CodeGenContext } from "../core/collectType.ts";
+import { Namespace } from "../core/coreType.ts";
 import { DefinyRpcType } from "../core/type.ts";
 import { resultError, resultOk, resultType } from "./result.ts";
 import { useFromStructuredJsonValue } from "./typeVariable/use.ts";
@@ -50,7 +51,7 @@ export const apiFuncToTsFunction = (parameter: {
       resultType(
         definyRpcTypeToTsType(parameter.func.output),
         { _: "StringLiteral", string: "error" },
-        { type: "local", path: parameter.func.namespace },
+        Namespace.local(parameter.func.namespace),
       ),
     ),
     typeParameterList: [],
@@ -166,7 +167,7 @@ export const apiFuncToTsFunction = (parameter: {
             returnType: resultType(
               definyRpcTypeToTsType(parameter.func.output),
               { _: "StringLiteral", string: "error" },
-              { type: "local", path: parameter.func.namespace },
+              Namespace.local(parameter.func.namespace),
             ),
             typeParameterList: [],
             statementList: [
@@ -197,7 +198,7 @@ const fetchThenExpr = (
     returnType: resultType(
       definyRpcTypeToTsType(func.output),
       { _: "StringLiteral", string: "error" },
-      { type: "local", path: func.namespace },
+      Namespace.local(func.namespace),
     ),
     typeParameterList: [],
     statementList: [

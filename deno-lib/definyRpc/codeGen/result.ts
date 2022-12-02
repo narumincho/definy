@@ -4,12 +4,8 @@ import {
   memberKeyValue,
   stringLiteral,
 } from "../../jsTs/main.ts";
-import { definyRpcNamespace } from "../core/definyRpcNamespace.ts";
-import {
-  Namespace,
-  namespaceFromAndToToTypeScriptModuleName,
-  namespaceRelative,
-} from "./namespace.ts";
+import { Namespace } from "../core/coreType.ts";
+import { namespaceFromAndToToTypeScriptModuleName } from "./namespace.ts";
 
 const resultTypeName = identifierFromString("Result");
 
@@ -85,7 +81,7 @@ export const resultType = (
   console.log("namespace!", namespace);
   const moduleName = namespaceFromAndToToTypeScriptModuleName(
     namespace,
-    { type: "coreType" },
+    Namespace.coreType,
   );
   if (moduleName === undefined) {
     return ({

@@ -12,10 +12,8 @@ import {
   collectedDefinyRpcTypeMapGet,
   CollectedDefinyRpcTypeUse,
 } from "../../core/collectType.ts";
-import {
-  Namespace,
-  namespaceFromAndToToTypeScriptModuleName,
-} from "../namespace.ts";
+import { Namespace } from "../../core/coreType.ts";
+import { namespaceFromAndToToTypeScriptModuleName } from "../namespace.ts";
 
 /**
  * product の表現の型の値を生成する

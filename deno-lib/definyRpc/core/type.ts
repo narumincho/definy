@@ -1,6 +1,6 @@
 import { Lazy } from "../../lazy.ts";
-import { Namespace, namespaceToString } from "../codeGen/namespace.ts";
-import { StructuredJsonValue } from "./coreType.ts";
+import { namespaceToString } from "../codeGen/namespace.ts";
+import { Namespace, StructuredJsonValue } from "./coreType.ts";
 
 export type DefinyRpcType<in out t> = {
   readonly namespace: Namespace;

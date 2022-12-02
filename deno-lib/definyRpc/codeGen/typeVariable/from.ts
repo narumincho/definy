@@ -13,7 +13,8 @@ import {
   CollectedDefinyRpcType,
   Field,
 } from "../../core/collectType.ts";
-import { Namespace, namespaceToString } from "../namespace.ts";
+import { Namespace } from "../../core/coreType.ts";
+import { namespaceToString } from "../namespace.ts";
 import { collectedDefinyRpcTypeToTsType } from "../type/use.ts";
 
 export const createFromLambda = (

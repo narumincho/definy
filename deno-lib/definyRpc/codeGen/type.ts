@@ -27,7 +27,7 @@ import {
 import { collectedDefinyRpcTypeToTsType } from "./type/use.ts";
 import { createTagExprList } from "./typeVariable/tag.ts";
 import { createFromStructuredJsonValueLambda } from "./typeVariable/fromStructuredJsonValue.ts";
-import { Namespace } from "./namespace.ts";
+import { Namespace } from "../core/coreType.ts";
 
 export const collectedTypeToTypeAlias = (
   type: CollectedDefinyRpcType,

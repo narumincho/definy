@@ -1,7 +1,8 @@
 import { ApiFunction } from "./apiFunction.ts";
 import { lazyGet } from "../../lazy.ts";
 import { DefinyRpcType, definyRpcTypeToMapKey, TypeBody } from "./type.ts";
-import { Namespace, namespaceToString } from "../codeGen/namespace.ts";
+import { namespaceToString } from "../codeGen/namespace.ts";
+import { Namespace } from "./coreType.ts";
 
 export const collectDefinyRpcTypeFromFuncList = (
   funcList: ReadonlyArray<ApiFunction>,

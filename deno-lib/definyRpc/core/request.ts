@@ -2,7 +2,7 @@ import {
   rawJsonToStructuredJsonValue,
   structuredJsonStringify,
 } from "../../typedJson.ts";
-import { Result } from "../generated/definyRpc.ts";
+import { Result } from "./maybe.ts";
 import { StructuredJsonValue } from "./coreType.ts";
 
 export const requestQuery = async <T extends unknown>(parameter: {
@@ -32,7 +32,7 @@ export const requestQuery = async <T extends unknown>(parameter: {
         const jsonValue = await response.json();
         return ({
           type: "ok",
-          ok: parameter.fromStructuredJsonValue(
+          value: parameter.fromStructuredJsonValue(
             rawJsonToStructuredJsonValue(jsonValue),
           ),
         });
@@ -57,12 +57,12 @@ export const requestQuery = async <T extends unknown>(parameter: {
     const jsonValue = await response.json();
     return ({
       type: "ok",
-      ok: parameter.fromStructuredJsonValue(
+      value: parameter.fromStructuredJsonValue(
         rawJsonToStructuredJsonValue(jsonValue),
       ),
     });
   } catch {
-    return ({ type: "error", error: "error" });
+    return ({ type: "error", value: "error" });
   }
 };
 
@@ -140,11 +140,11 @@ export const requestMutation = async <T extends unknown>(parameter: {
     const jsonValue = await response.json();
     return ({
       type: "ok",
-      ok: parameter.fromStructuredJsonValue(
+      value: parameter.fromStructuredJsonValue(
         rawJsonToStructuredJsonValue(jsonValue),
       ),
     });
   } catch {
-    return ({ type: "error", error: "error" });
+    return ({ type: "error", value: "error" });
   }
 };

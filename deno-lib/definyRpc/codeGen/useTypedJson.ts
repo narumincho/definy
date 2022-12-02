@@ -1,5 +1,6 @@
 import { data, identifierFromString, variable } from "../../jsTs/main.ts";
 import { CodeGenContext } from "../core/collectType.ts";
+import { Namespace } from "../core/coreType.ts";
 import { namespaceFromAndToToTypeScriptModuleName } from "./namespace.ts";
 
 export const structuredJsonValueType = (
@@ -7,9 +8,7 @@ export const structuredJsonValueType = (
 ): data.TsType => {
   const moduleName = namespaceFromAndToToTypeScriptModuleName(
     context.currentModule,
-    {
-      type: "coreType",
-    },
+    Namespace.typedJson,
   );
   if (moduleName === undefined) {
     return {
@@ -37,9 +36,7 @@ export const rawJsonValueType = (
 ): data.TsType => {
   const moduleName = namespaceFromAndToToTypeScriptModuleName(
     context.currentModule,
-    {
-      type: "typedJson",
-    },
+    Namespace.typedJson,
   );
   if (moduleName === undefined) {
     return {
@@ -68,9 +65,7 @@ export const useRawJsonToStructuredJsonValue = (
 ): data.TsExpr => {
   const moduleName = namespaceFromAndToToTypeScriptModuleName(
     context.currentModule,
-    {
-      type: "typedJson",
-    },
+    Namespace.typedJson,
   );
   if (moduleName === undefined) {
     return {

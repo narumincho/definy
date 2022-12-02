@@ -69,6 +69,57 @@ export type StructuredJsonValue =
     };
 
 /**
+ * 名前空間. ユーザーが生成するものがこっちが用意するものか
+ */
+export type Namespace =
+  | {
+      /**
+       * ユーザーが作ったAPIがあるところ
+       */
+      readonly type: "local";
+      /**
+       * ユーザーが作ったAPIがあるところ
+       */
+      readonly value: globalThis.ReadonlyArray<string>;
+      readonly [globalThis.Symbol.toStringTag]: "*coreType.Namespace";
+    }
+  | {
+      /**
+       * definyRpc 共通で使われる型
+       */
+      readonly type: "coreType";
+      readonly [globalThis.Symbol.toStringTag]: "*coreType.Namespace";
+    }
+  | {
+      /**
+       * 型安全なJSONのコーデック
+       */
+      readonly type: "typedJson";
+      readonly [globalThis.Symbol.toStringTag]: "*coreType.Namespace";
+    }
+  | {
+      /**
+       * HTTP経路でAPI呼ぶときに使うコード
+       */
+      readonly type: "request";
+      readonly [globalThis.Symbol.toStringTag]: "*coreType.Namespace";
+    }
+  | {
+      /**
+       * MaybeとResultがある (一時的対処. coreTypeに入れたい)
+       */
+      readonly type: "maybe";
+      readonly [globalThis.Symbol.toStringTag]: "*coreType.Namespace";
+    }
+  | {
+      /**
+       * 各サーバーにアクセスし型情報を取得する
+       */
+      readonly type: "meta";
+      readonly [globalThis.Symbol.toStringTag]: "*coreType.Namespace";
+    };
+
+/**
  * 文字列
  */
 export const String: {
@@ -339,4 +390,109 @@ export const Map: {
     (jsonValue: StructuredJsonValue): globalThis.ReadonlyMap<p0, p1> => {
       throw new Error("expected stringMap in Map.fromStructuredJsonValue");
     },
+};
+
+/**
+ * 名前空間. ユーザーが生成するものがこっちが用意するものか
+ */
+export const Namespace: {
+  /**
+   * Namespace の説明文
+   */
+  readonly description: string;
+  /**
+   * JsonからNamespaceに変換する. 失敗した場合はエラー
+   */
+  readonly fromStructuredJsonValue: (a: StructuredJsonValue) => Namespace;
+  /**
+   * ユーザーが作ったAPIがあるところ
+   */
+  readonly local: (a: globalThis.ReadonlyArray<string>) => Namespace;
+  /**
+   * definyRpc 共通で使われる型
+   */
+  readonly coreType: Namespace;
+  /**
+   * 型安全なJSONのコーデック
+   */
+  readonly typedJson: Namespace;
+  /**
+   * HTTP経路でAPI呼ぶときに使うコード
+   */
+  readonly request: Namespace;
+  /**
+   * MaybeとResultがある (一時的対処. coreTypeに入れたい)
+   */
+  readonly maybe: Namespace;
+  /**
+   * 各サーバーにアクセスし型情報を取得する
+   */
+  readonly meta: Namespace;
+} = {
+  description: "名前空間. ユーザーが生成するものがこっちが用意するものか",
+  fromStructuredJsonValue: (jsonValue: StructuredJsonValue): Namespace => {
+    if (jsonValue.type !== "object") {
+      throw new Error("expected object in Namespace.fromJson");
+    }
+    const type: StructuredJsonValue | undefined = jsonValue.value.get("type");
+    if (type === undefined || type.type !== "string") {
+      throw new Error("expected type property type is string");
+    }
+    switch (type.value) {
+      case "local": {
+        const value: StructuredJsonValue | undefined =
+          jsonValue.value.get("value");
+        if (value === undefined) {
+          throw new Error("expected value property in sum parameter");
+        }
+        return Namespace.local(
+          List.fromStructuredJsonValue(String.fromStructuredJsonValue)(value)
+        );
+      }
+      case "coreType": {
+        return Namespace.coreType;
+      }
+      case "typedJson": {
+        return Namespace.typedJson;
+      }
+      case "request": {
+        return Namespace.request;
+      }
+      case "maybe": {
+        return Namespace.maybe;
+      }
+      case "meta": {
+        return Namespace.meta;
+      }
+    }
+    throw new Error(
+      "unknown type value expected [local,coreType,typedJson,request,maybe,meta] but got " +
+        type.value
+    );
+  },
+  local: (p: globalThis.ReadonlyArray<string>): Namespace => ({
+    type: "local",
+    value: p,
+    [globalThis.Symbol.toStringTag]: "*coreType.Namespace",
+  }),
+  coreType: {
+    type: "coreType",
+    [globalThis.Symbol.toStringTag]: "*coreType.Namespace",
+  },
+  typedJson: {
+    type: "typedJson",
+    [globalThis.Symbol.toStringTag]: "*coreType.Namespace",
+  },
+  request: {
+    type: "request",
+    [globalThis.Symbol.toStringTag]: "*coreType.Namespace",
+  },
+  maybe: {
+    type: "maybe",
+    [globalThis.Symbol.toStringTag]: "*coreType.Namespace",
+  },
+  meta: {
+    type: "meta",
+    [globalThis.Symbol.toStringTag]: "*coreType.Namespace",
+  },
 };

@@ -2,9 +2,10 @@ import { fromFileUrl } from "https://deno.land/std@0.156.0/path/mod.ts";
 import { writeTextFileWithLog } from "../../writeFileAndLog.ts";
 import { apiFunctionListToCode } from "../codeGen/main.ts";
 import { CollectedDefinyRpcType } from "./collectType.ts";
+import { Namespace } from "./coreType.ts";
 
 const string: CollectedDefinyRpcType = {
-  namespace: { type: "coreType" },
+  namespace: Namespace.coreType,
   name: "String",
   description: "文字列",
   parameterCount: 0,
@@ -12,7 +13,7 @@ const string: CollectedDefinyRpcType = {
 };
 
 const bool: CollectedDefinyRpcType = {
-  namespace: { type: "coreType" },
+  namespace: Namespace.coreType,
   name: "Bool",
   description: "Bool. boolean. 真偽値. True か False",
   parameterCount: 0,
@@ -20,7 +21,7 @@ const bool: CollectedDefinyRpcType = {
 };
 
 const number: CollectedDefinyRpcType = {
-  namespace: { type: "coreType" },
+  namespace: Namespace.coreType,
   name: "Number",
   description: "64bit 浮動小数点数",
   parameterCount: 0,
@@ -30,7 +31,7 @@ const number: CollectedDefinyRpcType = {
 };
 
 const structuredJsonValue: CollectedDefinyRpcType = ({
-  namespace: { type: "coreType" },
+  namespace: Namespace.coreType,
   name: "StructuredJsonValue",
   description: "構造化されたJSON",
   parameterCount: 0,
@@ -51,10 +52,10 @@ const structuredJsonValue: CollectedDefinyRpcType = ({
         description: "array",
         parameter: {
           name: "List",
-          namespace: { type: "coreType" },
+          namespace: Namespace.coreType,
           parameters: [{
             name: "StructuredJsonValue",
-            namespace: { type: "coreType" },
+            namespace: Namespace.coreType,
             parameters: [],
           }],
         },
@@ -77,7 +78,7 @@ const structuredJsonValue: CollectedDefinyRpcType = ({
         name: "number",
         description: "number",
         parameter: {
-          namespace: { type: "coreType" },
+          namespace: Namespace.coreType,
           name: number.name,
           parameters: [],
         },
@@ -86,15 +87,15 @@ const structuredJsonValue: CollectedDefinyRpcType = ({
         name: "object",
         description: "object",
         parameter: {
-          namespace: { type: "coreType" },
+          namespace: Namespace.coreType,
           name: "Map",
           parameters: [{
             name: "String",
-            namespace: { type: "coreType" },
+            namespace: Namespace.coreType,
             parameters: [],
           }, {
             name: "StructuredJsonValue",
-            namespace: { type: "coreType" },
+            namespace: Namespace.coreType,
             parameters: [],
           }],
         },
@@ -104,7 +105,7 @@ const structuredJsonValue: CollectedDefinyRpcType = ({
 });
 
 const list: CollectedDefinyRpcType = {
-  namespace: { type: "coreType" },
+  namespace: Namespace.coreType,
   name: "List",
   description: "リスト",
   parameterCount: 1,
@@ -113,8 +114,8 @@ const list: CollectedDefinyRpcType = {
   },
 };
 
-export const map: CollectedDefinyRpcType = {
-  namespace: { type: "coreType" },
+const map: CollectedDefinyRpcType = {
+  namespace: Namespace.coreType,
   name: "Map",
   description: "辞書型. Map, Dictionary",
   parameterCount: 2,
@@ -123,14 +124,57 @@ export const map: CollectedDefinyRpcType = {
   },
 };
 
+const nameSpace: CollectedDefinyRpcType = {
+  namespace: Namespace.coreType,
+  name: "Namespace",
+  description: "名前空間. ユーザーが生成するものがこっちが用意するものか",
+  parameterCount: 0,
+  body: {
+    type: "sum",
+    patternList: [{
+      name: "local",
+      description: "ユーザーが作ったAPIがあるところ",
+      parameter: {
+        namespace: Namespace.coreType,
+        name: "List",
+        parameters: [{
+          namespace: Namespace.coreType,
+          name: "String",
+          parameters: [],
+        }],
+      },
+    }, {
+      name: "coreType",
+      description: "definyRpc 共通で使われる型",
+      parameter: undefined,
+    }, {
+      name: "typedJson",
+      description: "型安全なJSONのコーデック",
+      parameter: undefined,
+    }, {
+      name: "request",
+      description: "HTTP経路でAPI呼ぶときに使うコード",
+      parameter: undefined,
+    }, {
+      name: "maybe",
+      description: "MaybeとResultがある (一時的対処. coreTypeに入れたい)",
+      parameter: undefined,
+    }, {
+      name: "meta",
+      description: "各サーバーにアクセスし型情報を取得する",
+      parameter: undefined,
+    }],
+  },
+};
+
 export const generateCoreCode = async (): Promise<void> => {
   const code = apiFunctionListToCode({
     apiFunctionList: [],
-    namespace: { type: "coreType" },
+    namespace: Namespace.coreType,
     originHint: "",
     pathPrefix: [],
     usePrettier: true,
-    typeList: [string, bool, number, structuredJsonValue, list, map],
+    typeList: [string, bool, number, structuredJsonValue, list, map, nameSpace],
   });
   await writeTextFileWithLog(
     fromFileUrl(import.meta.resolve("./coreTypeNew.ts")),
