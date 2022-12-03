@@ -22,11 +22,7 @@ export const createTypeInfo = (
   return {
     parameterList: [],
     returnType: collectedDefinyRpcTypeUseToTsType(
-      Type.from({
-        namespace: Namespace.coreType,
-        name: "DefinyRpcTypeInfo",
-        parameters: [],
-      }),
+      DefinyRpcTypeInfo.type(),
       context,
     ),
     typeParameterList: [],

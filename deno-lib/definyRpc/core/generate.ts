@@ -2,10 +2,14 @@ import { fromFileUrl } from "https://deno.land/std@0.156.0/path/mod.ts";
 import { writeTextFileWithLog } from "../../writeFileAndLog.ts";
 import { apiFunctionListToCode } from "../codeGen/main.ts";
 import {
+  Bool,
   DefinyRpcTypeInfo,
   Field,
+  List,
   Namespace,
   Pattern,
+  String,
+  StructuredJsonValue,
   Type,
   TypeBody,
 } from "./coreType.ts";
@@ -45,11 +49,7 @@ const structuredJsonValue = DefinyRpcTypeInfo.from({
       description: "string",
       parameter: {
         type: "just",
-        value: Type.from({
-          namespace: string.namespace,
-          name: string.name,
-          parameters: [],
-        }),
+        value: String.type(),
       },
     }),
     Pattern.from({
@@ -57,15 +57,7 @@ const structuredJsonValue = DefinyRpcTypeInfo.from({
       description: "array",
       parameter: {
         type: "just",
-        value: Type.from({
-          name: "List",
-          namespace: Namespace.coreType,
-          parameters: [Type.from({
-            name: "StructuredJsonValue",
-            namespace: Namespace.coreType,
-            parameters: [],
-          })],
-        }),
+        value: List.type(StructuredJsonValue.type()),
       },
     }),
     Pattern.from({
@@ -73,11 +65,7 @@ const structuredJsonValue = DefinyRpcTypeInfo.from({
       description: "boolean",
       parameter: {
         type: "just",
-        value: Type.from({
-          namespace: bool.namespace,
-          name: bool.name,
-          parameters: [],
-        }),
+        value: Bool.type(),
       },
     }),
     Pattern.from({

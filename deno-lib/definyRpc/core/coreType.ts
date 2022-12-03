@@ -293,15 +293,32 @@ export type Type = {
  */
 export const String: {
   /**
-   * String の説明文
+   * String の型の表現
    */
-  readonly description: string;
+  readonly typeInfo: () => DefinyRpcTypeInfo;
+  /**
+   * String の型
+   */
+  readonly type: () => Type;
   /**
    * JsonからStringに変換する. 失敗した場合はエラー
    */
   readonly fromStructuredJsonValue: (a: StructuredJsonValue) => string;
 } = {
-  description: "文字列",
+  typeInfo: (): DefinyRpcTypeInfo =>
+    DefinyRpcTypeInfo.from({
+      namespace: Namespace.coreType,
+      name: "String",
+      description: "文字列",
+      parameterCount: 0,
+      body: TypeBody.string,
+    }),
+  type: (): Type =>
+    Type.from({
+      namespace: Namespace.coreType,
+      name: "String",
+      parameters: [],
+    }),
   fromStructuredJsonValue: (jsonValue: StructuredJsonValue): string => {
     if (jsonValue.type === "string") {
       return jsonValue.value;
@@ -315,15 +332,28 @@ export const String: {
  */
 export const Bool: {
   /**
-   * Bool の説明文
+   * Bool の型の表現
    */
-  readonly description: string;
+  readonly typeInfo: () => DefinyRpcTypeInfo;
+  /**
+   * Bool の型
+   */
+  readonly type: () => Type;
   /**
    * JsonからBoolに変換する. 失敗した場合はエラー
    */
   readonly fromStructuredJsonValue: (a: StructuredJsonValue) => boolean;
 } = {
-  description: "Bool. boolean. 真偽値. True か False",
+  typeInfo: (): DefinyRpcTypeInfo =>
+    DefinyRpcTypeInfo.from({
+      namespace: Namespace.coreType,
+      name: "Bool",
+      description: "Bool. boolean. 真偽値. True か False",
+      parameterCount: 0,
+      body: TypeBody.boolean,
+    }),
+  type: (): Type =>
+    Type.from({ namespace: Namespace.coreType, name: "Bool", parameters: [] }),
   fromStructuredJsonValue: (jsonValue: StructuredJsonValue): boolean => {
     if (jsonValue.type === "boolean") {
       return jsonValue.value;
@@ -337,15 +367,32 @@ export const Bool: {
  */
 export const Number: {
   /**
-   * Number の説明文
+   * Number の型の表現
    */
-  readonly description: string;
+  readonly typeInfo: () => DefinyRpcTypeInfo;
+  /**
+   * Number の型
+   */
+  readonly type: () => Type;
   /**
    * JsonからNumberに変換する. 失敗した場合はエラー
    */
   readonly fromStructuredJsonValue: (a: StructuredJsonValue) => number;
 } = {
-  description: "64bit 浮動小数点数",
+  typeInfo: (): DefinyRpcTypeInfo =>
+    DefinyRpcTypeInfo.from({
+      namespace: Namespace.coreType,
+      name: "Number",
+      description: "64bit 浮動小数点数",
+      parameterCount: 0,
+      body: TypeBody.number,
+    }),
+  type: (): Type =>
+    Type.from({
+      namespace: Namespace.coreType,
+      name: "Number",
+      parameters: [],
+    }),
   fromStructuredJsonValue: (jsonValue: StructuredJsonValue): number => {
     if (jsonValue.type === "number") {
       return jsonValue.value;
@@ -359,9 +406,13 @@ export const Number: {
  */
 export const StructuredJsonValue: {
   /**
-   * StructuredJsonValue の説明文
+   * StructuredJsonValue の型の表現
    */
-  readonly description: string;
+  readonly typeInfo: () => DefinyRpcTypeInfo;
+  /**
+   * StructuredJsonValue の型
+   */
+  readonly type: () => Type;
   /**
    * JsonからStructuredJsonValueに変換する. 失敗した場合はエラー
    */
@@ -397,7 +448,57 @@ export const StructuredJsonValue: {
     a: globalThis.ReadonlyMap<string, StructuredJsonValue>
   ) => StructuredJsonValue;
 } = {
-  description: "構造化されたJSON",
+  typeInfo: (): DefinyRpcTypeInfo =>
+    DefinyRpcTypeInfo.from({
+      namespace: Namespace.coreType,
+      name: "StructuredJsonValue",
+      description: "構造化されたJSON",
+      parameterCount: 0,
+      body: TypeBody.sum([
+        Pattern.from({
+          name: "string",
+          description: "string",
+          parameter: { type: "just", value: String.type() },
+        }),
+        Pattern.from({
+          name: "array",
+          description: "array",
+          parameter: {
+            type: "just",
+            value: List.type(StructuredJsonValue.type()),
+          },
+        }),
+        Pattern.from({
+          name: "boolean",
+          description: "boolean",
+          parameter: { type: "just", value: Bool.type() },
+        }),
+        Pattern.from({
+          name: "null",
+          description: "null",
+          parameter: { type: "nothing" },
+        }),
+        Pattern.from({
+          name: "number",
+          description: "number",
+          parameter: { type: "just", value: Number.type() },
+        }),
+        Pattern.from({
+          name: "object",
+          description: "object",
+          parameter: {
+            type: "just",
+            value: Map.type(String.type(), StructuredJsonValue.type()),
+          },
+        }),
+      ]),
+    }),
+  type: (): Type =>
+    Type.from({
+      namespace: Namespace.coreType,
+      name: "StructuredJsonValue",
+      parameters: [],
+    }),
   fromStructuredJsonValue: (
     jsonValue: StructuredJsonValue
   ): StructuredJsonValue => {
@@ -511,9 +612,13 @@ export const StructuredJsonValue: {
  */
 export const List: {
   /**
-   * List の説明文
+   * List の型の表現
    */
-  readonly description: string;
+  readonly typeInfo: () => DefinyRpcTypeInfo;
+  /**
+   * List の型
+   */
+  readonly type: (a: Type) => Type;
   /**
    * JsonからListに変換する. 失敗した場合はエラー
    */
@@ -521,7 +626,20 @@ export const List: {
     a: (a: StructuredJsonValue) => p0
   ) => (a: StructuredJsonValue) => globalThis.ReadonlyArray<p0>;
 } = {
-  description: "リスト",
+  typeInfo: (): DefinyRpcTypeInfo =>
+    DefinyRpcTypeInfo.from({
+      namespace: Namespace.coreType,
+      name: "List",
+      description: "リスト",
+      parameterCount: 1,
+      body: TypeBody.list,
+    }),
+  type: (p0: Type): Type =>
+    Type.from({
+      namespace: Namespace.coreType,
+      name: "List",
+      parameters: [p0],
+    }),
   fromStructuredJsonValue:
     <p0 extends unknown>(
       p0FromJson: (a: StructuredJsonValue) => p0
@@ -539,9 +657,13 @@ export const List: {
  */
 export const Map: {
   /**
-   * Map の説明文
+   * Map の型の表現
    */
-  readonly description: string;
+  readonly typeInfo: () => DefinyRpcTypeInfo;
+  /**
+   * Map の型
+   */
+  readonly type: (a: Type, b: Type) => Type;
   /**
    * JsonからMapに変換する. 失敗した場合はエラー
    */
@@ -550,7 +672,20 @@ export const Map: {
     b: (a: StructuredJsonValue) => p1
   ) => (a: StructuredJsonValue) => globalThis.ReadonlyMap<p0, p1>;
 } = {
-  description: "辞書型. Map, Dictionary",
+  typeInfo: (): DefinyRpcTypeInfo =>
+    DefinyRpcTypeInfo.from({
+      namespace: Namespace.coreType,
+      name: "Map",
+      description: "辞書型. Map, Dictionary",
+      parameterCount: 2,
+      body: TypeBody.map,
+    }),
+  type: (p0: Type, p1: Type): Type =>
+    Type.from({
+      namespace: Namespace.coreType,
+      name: "Map",
+      parameters: [p0, p1],
+    }),
   fromStructuredJsonValue:
     <p0 extends unknown, p1 extends unknown>(
       p0FromJson: (a: StructuredJsonValue) => p0,
@@ -566,9 +701,13 @@ export const Map: {
  */
 export const Namespace: {
   /**
-   * Namespace の説明文
+   * Namespace の型の表現
    */
-  readonly description: string;
+  readonly typeInfo: () => DefinyRpcTypeInfo;
+  /**
+   * Namespace の型
+   */
+  readonly type: () => Type;
   /**
    * JsonからNamespaceに変換する. 失敗した場合はエラー
    */
@@ -598,7 +737,51 @@ export const Namespace: {
    */
   readonly meta: Namespace;
 } = {
-  description: "名前空間. ユーザーが生成するものがこっちが用意するものか",
+  typeInfo: (): DefinyRpcTypeInfo =>
+    DefinyRpcTypeInfo.from({
+      namespace: Namespace.coreType,
+      name: "Namespace",
+      description: "名前空間. ユーザーが生成するものがこっちが用意するものか",
+      parameterCount: 0,
+      body: TypeBody.sum([
+        Pattern.from({
+          name: "local",
+          description: "ユーザーが作ったAPIがあるところ",
+          parameter: { type: "just", value: List.type(String.type()) },
+        }),
+        Pattern.from({
+          name: "coreType",
+          description: "definyRpc 共通で使われる型",
+          parameter: { type: "nothing" },
+        }),
+        Pattern.from({
+          name: "typedJson",
+          description: "型安全なJSONのコーデック",
+          parameter: { type: "nothing" },
+        }),
+        Pattern.from({
+          name: "request",
+          description: "HTTP経路でAPI呼ぶときに使うコード",
+          parameter: { type: "nothing" },
+        }),
+        Pattern.from({
+          name: "maybe",
+          description: "MaybeとResultがある (一時的対処. coreTypeに入れたい)",
+          parameter: { type: "nothing" },
+        }),
+        Pattern.from({
+          name: "meta",
+          description: "各サーバーにアクセスし型情報を取得する",
+          parameter: { type: "nothing" },
+        }),
+      ]),
+    }),
+  type: (): Type =>
+    Type.from({
+      namespace: Namespace.coreType,
+      name: "Namespace",
+      parameters: [],
+    }),
   fromStructuredJsonValue: (jsonValue: StructuredJsonValue): Namespace => {
     if (jsonValue.type !== "object") {
       throw new Error("expected object in Namespace.fromJson");
@@ -671,9 +854,13 @@ export const Namespace: {
  */
 export const DefinyRpcTypeInfo: {
   /**
-   * DefinyRpcTypeInfo の説明文
+   * DefinyRpcTypeInfo の型の表現
    */
-  readonly description: string;
+  readonly typeInfo: () => DefinyRpcTypeInfo;
+  /**
+   * DefinyRpcTypeInfo の型
+   */
+  readonly type: () => Type;
   /**
    * オブジェクトから作成する. 余計なフィールドがレスポンスに含まれてしまうのを防ぐ. 型のチェックはしない
    */
@@ -687,7 +874,47 @@ export const DefinyRpcTypeInfo: {
     a: StructuredJsonValue
   ) => DefinyRpcTypeInfo;
 } = {
-  description: "definy RPC 型の構造",
+  typeInfo: (): DefinyRpcTypeInfo =>
+    DefinyRpcTypeInfo.from({
+      namespace: Namespace.coreType,
+      name: "DefinyRpcTypeInfo",
+      description: "definy RPC 型の構造",
+      parameterCount: 0,
+      body: TypeBody.product([
+        Field.from({
+          name: "namespace",
+          description: "型が所属する名前空間",
+          type: Namespace.type(),
+        }),
+        Field.from({
+          name: "name",
+          description: "型の名前",
+          type: String.type(),
+        }),
+        Field.from({
+          name: "description",
+          description: "説明文. コメントなどに出力される",
+          type: String.type(),
+        }),
+        Field.from({
+          name: "parameterCount",
+          description:
+            "パラメーターの数. パラメーター名やドキュメントはまたいつか復活させる",
+          type: Number.type(),
+        }),
+        Field.from({
+          name: "body",
+          description: "型の構造を表現する",
+          type: TypeBody.type(),
+        }),
+      ]),
+    }),
+  type: (): Type =>
+    Type.from({
+      namespace: Namespace.coreType,
+      name: "DefinyRpcTypeInfo",
+      parameters: [],
+    }),
   from: (
     obj: globalThis.Omit<
       DefinyRpcTypeInfo,
@@ -757,9 +984,13 @@ export const DefinyRpcTypeInfo: {
  */
 export const TypeBody: {
   /**
-   * TypeBody の説明文
+   * TypeBody の型の表現
    */
-  readonly description: string;
+  readonly typeInfo: () => DefinyRpcTypeInfo;
+  /**
+   * TypeBody の型
+   */
+  readonly type: () => Type;
   /**
    * JsonからTypeBodyに変換する. 失敗した場合はエラー
    */
@@ -805,7 +1036,71 @@ export const TypeBody: {
    */
   readonly sum: (a: globalThis.ReadonlyArray<Pattern>) => TypeBody;
 } = {
-  description: "型の構造を表現する",
+  typeInfo: (): DefinyRpcTypeInfo =>
+    DefinyRpcTypeInfo.from({
+      namespace: Namespace.coreType,
+      name: "TypeBody",
+      description: "型の構造を表現する",
+      parameterCount: 0,
+      body: TypeBody.sum([
+        Pattern.from({
+          name: "string",
+          description: "string",
+          parameter: { type: "nothing" },
+        }),
+        Pattern.from({
+          name: "number",
+          description: "number",
+          parameter: { type: "nothing" },
+        }),
+        Pattern.from({
+          name: "boolean",
+          description: "boolean",
+          parameter: { type: "nothing" },
+        }),
+        Pattern.from({
+          name: "unit",
+          description: "unit",
+          parameter: { type: "nothing" },
+        }),
+        Pattern.from({
+          name: "list",
+          description: "list",
+          parameter: { type: "nothing" },
+        }),
+        Pattern.from({
+          name: "set",
+          description: "set",
+          parameter: { type: "nothing" },
+        }),
+        Pattern.from({
+          name: "map",
+          description: "map",
+          parameter: { type: "nothing" },
+        }),
+        Pattern.from({
+          name: "url",
+          description: "url",
+          parameter: { type: "nothing" },
+        }),
+        Pattern.from({
+          name: "product",
+          description: "product",
+          parameter: { type: "just", value: List.type(Field.type()) },
+        }),
+        Pattern.from({
+          name: "sum",
+          description: "sum",
+          parameter: { type: "just", value: List.type(Pattern.type()) },
+        }),
+      ]),
+    }),
+  type: (): Type =>
+    Type.from({
+      namespace: Namespace.coreType,
+      name: "TypeBody",
+      parameters: [],
+    }),
   fromStructuredJsonValue: (jsonValue: StructuredJsonValue): TypeBody => {
     if (jsonValue.type !== "object") {
       throw new Error("expected object in TypeBody.fromJson");
@@ -899,9 +1194,13 @@ export const TypeBody: {
  */
 export const Field: {
   /**
-   * Field の説明文
+   * Field の型の表現
    */
-  readonly description: string;
+  readonly typeInfo: () => DefinyRpcTypeInfo;
+  /**
+   * Field の型
+   */
+  readonly type: () => Type;
   /**
    * オブジェクトから作成する. 余計なフィールドがレスポンスに含まれてしまうのを防ぐ. 型のチェックはしない
    */
@@ -913,7 +1212,28 @@ export const Field: {
    */
   readonly fromStructuredJsonValue: (a: StructuredJsonValue) => Field;
 } = {
-  description: "product 直積型で使う",
+  typeInfo: (): DefinyRpcTypeInfo =>
+    DefinyRpcTypeInfo.from({
+      namespace: Namespace.coreType,
+      name: "Field",
+      description: "product 直積型で使う",
+      parameterCount: 0,
+      body: TypeBody.product([
+        Field.from({
+          name: "name",
+          description: "フィールド名",
+          type: String.type(),
+        }),
+        Field.from({
+          name: "description",
+          description: "フィールドの説明",
+          type: String.type(),
+        }),
+        Field.from({ name: "type", description: "型", type: Type.type() }),
+      ]),
+    }),
+  type: (): Type =>
+    Type.from({ namespace: Namespace.coreType, name: "Field", parameters: [] }),
   from: (
     obj: globalThis.Omit<Field, typeof globalThis.Symbol.toStringTag>
   ): Field => ({
@@ -954,9 +1274,13 @@ export const Field: {
  */
 export const Pattern: {
   /**
-   * Pattern の説明文
+   * Pattern の型の表現
    */
-  readonly description: string;
+  readonly typeInfo: () => DefinyRpcTypeInfo;
+  /**
+   * Pattern の型
+   */
+  readonly type: () => Type;
   /**
    * オブジェクトから作成する. 余計なフィールドがレスポンスに含まれてしまうのを防ぐ. 型のチェックはしない
    */
@@ -968,7 +1292,36 @@ export const Pattern: {
    */
   readonly fromStructuredJsonValue: (a: StructuredJsonValue) => Pattern;
 } = {
-  description: "直和型の表現",
+  typeInfo: (): DefinyRpcTypeInfo =>
+    DefinyRpcTypeInfo.from({
+      namespace: Namespace.coreType,
+      name: "Pattern",
+      description: "直和型の表現",
+      parameterCount: 0,
+      body: TypeBody.product([
+        Field.from({
+          name: "name",
+          description: "パターン名",
+          type: String.type(),
+        }),
+        Field.from({
+          name: "description",
+          description: "説明",
+          type: String.type(),
+        }),
+        Field.from({
+          name: "parameter",
+          description: "パラメーター",
+          type: a.Maybe.type(Type.type()),
+        }),
+      ]),
+    }),
+  type: (): Type =>
+    Type.from({
+      namespace: Namespace.coreType,
+      name: "Pattern",
+      parameters: [],
+    }),
   from: (
     obj: globalThis.Omit<Pattern, typeof globalThis.Symbol.toStringTag>
   ): Pattern => ({
@@ -1016,9 +1369,13 @@ export const Pattern: {
  */
 export const Type: {
   /**
-   * Type の説明文
+   * Type の型の表現
    */
-  readonly description: string;
+  readonly typeInfo: () => DefinyRpcTypeInfo;
+  /**
+   * Type の型
+   */
+  readonly type: () => Type;
   /**
    * オブジェクトから作成する. 余計なフィールドがレスポンスに含まれてしまうのを防ぐ. 型のチェックはしない
    */
@@ -1030,7 +1387,32 @@ export const Type: {
    */
   readonly fromStructuredJsonValue: (a: StructuredJsonValue) => Type;
 } = {
-  description: "型",
+  typeInfo: (): DefinyRpcTypeInfo =>
+    DefinyRpcTypeInfo.from({
+      namespace: Namespace.coreType,
+      name: "Type",
+      description: "型",
+      parameterCount: 0,
+      body: TypeBody.product([
+        Field.from({
+          name: "namespace",
+          description: "名前空間",
+          type: Namespace.type(),
+        }),
+        Field.from({
+          name: "name",
+          description: "型の名前",
+          type: String.type(),
+        }),
+        Field.from({
+          name: "parameters",
+          description: "型パラメータ",
+          type: List.type(Type.type()),
+        }),
+      ]),
+    }),
+  type: (): Type =>
+    Type.from({ namespace: Namespace.coreType, name: "Type", parameters: [] }),
   from: (
     obj: globalThis.Omit<Type, typeof globalThis.Symbol.toStringTag>
   ): Type => ({
