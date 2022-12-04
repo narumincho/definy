@@ -4,6 +4,7 @@ import {
   lambdaToType,
   memberKeyValue,
   symbolToStringTag,
+  variable,
 } from "../../jsTs/main.ts";
 import { CodeGenContext } from "../core/collectType.ts";
 import { arrayFromLength } from "../../util.ts";
@@ -59,6 +60,22 @@ export const collectedTypeToTypeAlias = (
   };
 };
 
+const typeSymbolMember: data.TsMemberType = {
+  name: {
+    type: "symbolExpr",
+    value: variable(identifierFromString("neverSymbol")),
+  },
+  document: "",
+  required: true,
+  type: {
+    _: "ScopeInFile",
+    typeNameAndTypeParameter: {
+      name: identifierFromString("p0"),
+      arguments: [],
+    },
+  },
+};
+
 const collectedDefinyRpcTypeBodyToTsType = (
   namespace: Namespace,
   typeName: string,
@@ -97,6 +114,9 @@ const collectedDefinyRpcTypeBodyToTsType = (
               string: symbolToStringTagAndTypeName(namespace, typeName),
             },
           },
+          ...(namespace.type === "coreType" && typeName === "Type"
+            ? [typeSymbolMember]
+            : []),
         ],
       };
     case "sum":

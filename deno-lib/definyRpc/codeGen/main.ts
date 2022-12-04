@@ -1,5 +1,6 @@
 import { ApiFunction } from "../core/apiFunction.ts";
 import {
+  call,
   data,
   generateCodeAsString,
   identifierFromString,
@@ -11,9 +12,7 @@ import {
 import { formatCode } from "../../prettier.ts";
 import { apiFuncToTsFunction } from "./func.ts";
 import { collectedTypeToTypeAlias, typeToTypeVariable } from "./type.ts";
-import { definyRpcNamespace } from "../core/definyRpcNamespace.ts";
-import { definyRpcExportDefinitionList } from "./definyRpc.ts";
-import { namespaceEqual, namespaceToString } from "./namespace.ts";
+import { namespaceToString } from "./namespace.ts";
 import { DefinyRpcTypeInfo, Namespace } from "../core/coreType.ts";
 
 export const apiFunctionListToCode = (parameter: {
@@ -32,6 +31,23 @@ export const apiFunctionListToCode = (parameter: {
     return formatCode(code);
   }
   return code;
+};
+
+const neverSymbolDefinition: data.ExportDefinition = {
+  type: "variable",
+  variable: {
+    name: identifierFromString("neverSymbol"),
+    document: "",
+    expr: call({
+      expr: {
+        _: "GlobalObjects",
+        tsIdentifier: identifierFromString("Symbol"),
+      },
+      parameterList: [],
+    }),
+    type: undefined,
+    private: true,
+  },
 };
 
 export const apiFunctionListToJsTsCode = (parameter: {
@@ -63,12 +79,7 @@ export const apiFunctionListToJsTsCode = (parameter: {
 
   return {
     exportDefinitionList: [
-      ...(namespaceEqual(
-          parameter.namespace,
-          Namespace.local([definyRpcNamespace]),
-        )
-        ? definyRpcExportDefinitionList
-        : []),
+      ...parameter.namespace.type === "coreType" ? [neverSymbolDefinition] : [],
       ...(needAuthentication ? [accountTokenExportDefinition] : []),
       ...[...collectedTypeMap.values()].flatMap(
         (type): ReadonlyArray<data.ExportDefinition> => {

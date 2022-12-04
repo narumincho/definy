@@ -20,7 +20,7 @@ export type JsTsCode = {
 };
 
 /**
- * 外部に公開する定義
+ * 外部に公開する定義 (外部に後悔しない定義も作れる!?)
  */
 export type ExportDefinition =
   | { readonly type: "typeAlias"; readonly typeAlias: TypeAlias }
@@ -164,11 +164,13 @@ export type Variable = {
   /**
    * 変数の型
    */
-  readonly type: TsType;
+  readonly type: TsType | undefined;
   /**
    * 変数の式
    */
   readonly expr: TsExpr;
+  /** 外部に公開しないか */
+  readonly private?: boolean;
 };
 
 export type TsType =

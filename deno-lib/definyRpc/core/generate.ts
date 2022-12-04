@@ -394,7 +394,7 @@ const type = DefinyRpcTypeInfo.from({
   namespace: Namespace.coreType,
   name: "Type",
   description: "型",
-  parameterCount: 0,
+  parameterCount: 1,
   body: TypeBody.product([
     Field.from({
       name: "namespace",

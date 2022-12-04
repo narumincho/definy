@@ -173,10 +173,14 @@ const collectInVariableDefinition = (
         modulePathSet: new Set(),
         usedNameSet: new Set([variable.name]),
       },
-      collectInType(
-        variable.type,
-        rootScopeIdentifierSet,
-        [new Set()],
+      collectList(
+        variable.type === undefined ? [] : [variable.type],
+        (element) =>
+          collectInType(
+            element,
+            rootScopeIdentifierSet,
+            [new Set()],
+          ),
       ),
     ),
     collectInExpr(variable.expr, [], [], rootScopeIdentifierSet),
