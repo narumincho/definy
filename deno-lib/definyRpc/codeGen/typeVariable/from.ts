@@ -6,6 +6,7 @@ import {
   objectLiteral,
   stringLiteral,
   symbolToStringTag,
+  typeAssertion,
   variable,
 } from "../../../jsTs/main.ts";
 import { CodeGenContext } from "../../core/collectType.ts";
@@ -37,19 +38,58 @@ const typeToFromLambda = (
         _: "ScopeInGlobal",
         typeNameAndTypeParameter: {
           name: identifierFromString("Omit"),
-          arguments: [collectedDefinyRpcTypeToTsType(type, context), {
-            _: "typeof",
-            expr: symbolToStringTag,
-          }],
+          arguments: type.namespace.type == "coreType" && type.name === "Type"
+            ? [{
+              _: "ScopeInFile",
+              typeNameAndTypeParameter: {
+                name: identifierFromString("Type"),
+                arguments: [{
+                  _: "ScopeInFile",
+                  typeNameAndTypeParameter: {
+                    name: identifierFromString("p0"),
+                    arguments: [],
+                  },
+                }],
+              },
+            }, {
+              _: "Union",
+              tsTypeList: [{
+                _: "typeof",
+                expr: variable(identifierFromString("neverSymbol")),
+              }, {
+                _: "typeof",
+                expr: symbolToStringTag,
+              }],
+            }]
+            : [collectedDefinyRpcTypeToTsType(type, context), {
+              _: "typeof",
+              expr: symbolToStringTag,
+            }],
         },
       },
     }],
-    returnType: collectedDefinyRpcTypeToTsType(type, context),
+    returnType: type.namespace.type == "coreType" && type.name === "Type"
+      ? {
+        _: "ScopeInFile",
+        typeNameAndTypeParameter: {
+          name: identifierFromString("Type"),
+          arguments: [{
+            _: "ScopeInFile",
+            typeNameAndTypeParameter: {
+              name: identifierFromString("p0"),
+              arguments: [],
+            },
+          }],
+        },
+      }
+      : collectedDefinyRpcTypeToTsType(type, context),
     statementList: typeToFromLambdaProductStatement(
       type,
       fieldList,
     ),
-    typeParameterList: [],
+    typeParameterList: type.namespace.type == "coreType" && type.name === "Type"
+      ? [identifierFromString("p0")]
+      : [],
   };
 };
 
@@ -79,6 +119,26 @@ const typeToFromLambdaProductStatement = (
             ),
           },
         },
+        ...(type.namespace.type == "coreType" && type.name === "Type"
+          ? [
+            {
+              _: "KeyValue",
+              keyValue: {
+                key: variable(identifierFromString("neverSymbol")),
+                value: typeAssertion({
+                  expr: objectLiteral([]),
+                  type: {
+                    _: "ScopeInFile",
+                    typeNameAndTypeParameter: {
+                      name: identifierFromString("p0"),
+                      arguments: [],
+                    },
+                  },
+                }),
+              },
+            } as const,
+          ]
+          : []),
       ]),
     },
   ];

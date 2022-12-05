@@ -1,9 +1,5 @@
 import * as d from "../data.ts";
-import {
-  isIdentifier,
-  isSafePropertyName,
-  TsIdentifier,
-} from "../identifier.ts";
+import { isIdentifier, isSafePropertyName } from "../identifier.ts";
 import {
   stringLiteralValueToString,
   typeParameterListToString,

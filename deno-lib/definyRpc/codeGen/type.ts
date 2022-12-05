@@ -52,10 +52,13 @@ export const collectedTypeToTypeAlias = (
     namespace: [],
     name: identifierFromString(type.name),
     document: type.description,
-    typeParameterList: arrayFromLength(
-      type.parameterCount,
-      (i) => identifierFromString("p" + i),
-    ),
+    typeParameterList:
+      context.currentModule.type === "coreType" && type.name === "Type"
+        ? [identifierFromString("p0")]
+        : arrayFromLength(
+          type.parameterCount,
+          (i) => identifierFromString("p" + i),
+        ),
     type: tsType,
   };
 };

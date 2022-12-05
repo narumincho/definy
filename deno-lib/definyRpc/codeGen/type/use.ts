@@ -21,6 +21,35 @@ export const collectedDefinyRpcTypeToTsType = (
   collectedDefinyRpcType: DefinyRpcTypeInfo,
   context: CodeGenContext,
 ): data.TsType => {
+  if (
+    context.currentModule.type == "coreType" &&
+    collectedDefinyRpcType.name === "Type"
+  ) {
+    const moduleName = namespaceFromAndToToTypeScriptModuleName(
+      context.currentModule,
+      Namespace.coreType,
+    );
+    if (moduleName === undefined) {
+      return {
+        _: "ScopeInFile",
+        typeNameAndTypeParameter: {
+          name: identifierFromString("Type"),
+          arguments: [{ _: "unknown" }],
+        },
+      };
+    }
+    return {
+      _: "ImportedType",
+      importedType: {
+        moduleName,
+        nameAndArguments: {
+          name: identifierFromString("Type"),
+          arguments: [{ _: "unknown" }],
+        },
+      },
+    };
+  }
+
   const typeDetail = collectedDefinyRpcTypeMapGet(
     context.map,
     collectedDefinyRpcType.namespace,
@@ -141,6 +170,31 @@ export const collectedDefinyRpcTypeUseToTsType = (
           arguments: type.parameters.map((p) =>
             collectedDefinyRpcTypeUseToTsType(p, context)
           ),
+        },
+      },
+    };
+  }
+  if (type.namespace.type == "coreType" && type.name === "Type") {
+    const moduleName = namespaceFromAndToToTypeScriptModuleName(
+      context.currentModule,
+      Namespace.coreType,
+    );
+    if (moduleName === undefined) {
+      return {
+        _: "ScopeInFile",
+        typeNameAndTypeParameter: {
+          name: identifierFromString(type.name),
+          arguments: [{ _: "unknown" }],
+        },
+      };
+    }
+    return {
+      _: "ImportedType",
+      importedType: {
+        moduleName,
+        nameAndArguments: {
+          name: identifierFromString(type.name),
+          arguments: [{ _: "unknown" }],
         },
       },
     };

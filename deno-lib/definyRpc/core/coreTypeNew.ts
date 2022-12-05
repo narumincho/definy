@@ -247,7 +247,7 @@ export type Field = {
   /**
    * 型
    */
-  readonly type: Type;
+  readonly type: Type<unknown>;
   readonly [Symbol.toStringTag]: "*coreType.Field";
 };
 
@@ -266,7 +266,7 @@ export type Pattern = {
   /**
    * パラメーター
    */
-  readonly parameter: a.Maybe<Type>;
+  readonly parameter: a.Maybe<Type<unknown>>;
   readonly [Symbol.toStringTag]: "*coreType.Pattern";
 };
 
@@ -285,7 +285,7 @@ export type Type<p0 extends unknown> = {
   /**
    * 型パラメータ
    */
-  readonly parameters: globalThis.ReadonlyArray<Type>;
+  readonly parameters: globalThis.ReadonlyArray<Type<unknown>>;
   readonly [Symbol.toStringTag]: "*coreType.Type";
   readonly [neverSymbol]: p0;
 };
@@ -301,7 +301,7 @@ export const String: {
   /**
    * String の型
    */
-  readonly type: () => Type;
+  readonly type: () => Type<string>;
   /**
    * JsonからStringに変換する. 失敗した場合はエラー
    */
@@ -315,7 +315,7 @@ export const String: {
       parameterCount: 0,
       body: TypeBody.string,
     }),
-  type: (): Type =>
+  type: (): Type<string> =>
     Type.from({
       namespace: Namespace.coreType,
       name: "String",
@@ -340,7 +340,7 @@ export const Bool: {
   /**
    * Bool の型
    */
-  readonly type: () => Type;
+  readonly type: () => Type<boolean>;
   /**
    * JsonからBoolに変換する. 失敗した場合はエラー
    */
@@ -354,7 +354,7 @@ export const Bool: {
       parameterCount: 0,
       body: TypeBody.boolean,
     }),
-  type: (): Type =>
+  type: (): Type<boolean> =>
     Type.from({ namespace: Namespace.coreType, name: "Bool", parameters: [] }),
   fromStructuredJsonValue: (jsonValue: StructuredJsonValue): boolean => {
     if (jsonValue.type === "boolean") {
@@ -375,7 +375,7 @@ export const Number: {
   /**
    * Number の型
    */
-  readonly type: () => Type;
+  readonly type: () => Type<number>;
   /**
    * JsonからNumberに変換する. 失敗した場合はエラー
    */
@@ -389,7 +389,7 @@ export const Number: {
       parameterCount: 0,
       body: TypeBody.number,
     }),
-  type: (): Type =>
+  type: (): Type<number> =>
     Type.from({
       namespace: Namespace.coreType,
       name: "Number",
@@ -414,7 +414,7 @@ export const StructuredJsonValue: {
   /**
    * StructuredJsonValue の型
    */
-  readonly type: () => Type;
+  readonly type: () => Type<StructuredJsonValue>;
   /**
    * JsonからStructuredJsonValueに変換する. 失敗した場合はエラー
    */
@@ -495,7 +495,7 @@ export const StructuredJsonValue: {
         }),
       ]),
     }),
-  type: (): Type =>
+  type: (): Type<StructuredJsonValue> =>
     Type.from({
       namespace: Namespace.coreType,
       name: "StructuredJsonValue",
@@ -617,7 +617,9 @@ export const List: {
   /**
    * List の型
    */
-  readonly type: (a: Type) => Type;
+  readonly type: <p0 extends unknown>(
+    a: Type<p0>
+  ) => Type<globalThis.ReadonlyArray<p0>>;
   /**
    * JsonからListに変換する. 失敗した場合はエラー
    */
@@ -633,7 +635,9 @@ export const List: {
       parameterCount: 1,
       body: TypeBody.list,
     }),
-  type: (p0: Type): Type =>
+  type: <p0 extends unknown>(
+    p0: Type<p0>
+  ): Type<globalThis.ReadonlyArray<p0>> =>
     Type.from({
       namespace: Namespace.coreType,
       name: "List",
@@ -662,7 +666,10 @@ export const Map: {
   /**
    * Map の型
    */
-  readonly type: (a: Type, b: Type) => Type;
+  readonly type: <p0 extends unknown, p1 extends unknown>(
+    a: Type<p0>,
+    b: Type<p1>
+  ) => Type<globalThis.ReadonlyMap<p0, p1>>;
   /**
    * JsonからMapに変換する. 失敗した場合はエラー
    */
@@ -679,7 +686,10 @@ export const Map: {
       parameterCount: 2,
       body: TypeBody.map,
     }),
-  type: (p0: Type, p1: Type): Type =>
+  type: <p0 extends unknown, p1 extends unknown>(
+    p0: Type<p0>,
+    p1: Type<p1>
+  ): Type<globalThis.ReadonlyMap<p0, p1>> =>
     Type.from({
       namespace: Namespace.coreType,
       name: "Map",
@@ -706,7 +716,7 @@ export const Namespace: {
   /**
    * Namespace の型
    */
-  readonly type: () => Type;
+  readonly type: () => Type<Namespace>;
   /**
    * JsonからNamespaceに変換する. 失敗した場合はエラー
    */
@@ -775,7 +785,7 @@ export const Namespace: {
         }),
       ]),
     }),
-  type: (): Type =>
+  type: (): Type<Namespace> =>
     Type.from({
       namespace: Namespace.coreType,
       name: "Namespace",
@@ -844,7 +854,7 @@ export const DefinyRpcTypeInfo: {
   /**
    * DefinyRpcTypeInfo の型
    */
-  readonly type: () => Type;
+  readonly type: () => Type<DefinyRpcTypeInfo>;
   /**
    * オブジェクトから作成する. 余計なフィールドがレスポンスに含まれてしまうのを防ぐ. 型のチェックはしない
    */
@@ -893,7 +903,7 @@ export const DefinyRpcTypeInfo: {
         }),
       ]),
     }),
-  type: (): Type =>
+  type: (): Type<DefinyRpcTypeInfo> =>
     Type.from({
       namespace: Namespace.coreType,
       name: "DefinyRpcTypeInfo",
@@ -971,7 +981,7 @@ export const TypeBody: {
   /**
    * TypeBody の型
    */
-  readonly type: () => Type;
+  readonly type: () => Type<TypeBody>;
   /**
    * JsonからTypeBodyに変換する. 失敗した場合はエラー
    */
@@ -1076,7 +1086,7 @@ export const TypeBody: {
         }),
       ]),
     }),
-  type: (): Type =>
+  type: (): Type<TypeBody> =>
     Type.from({
       namespace: Namespace.coreType,
       name: "TypeBody",
@@ -1172,7 +1182,7 @@ export const Field: {
   /**
    * Field の型
    */
-  readonly type: () => Type;
+  readonly type: () => Type<Field>;
   /**
    * オブジェクトから作成する. 余計なフィールドがレスポンスに含まれてしまうのを防ぐ. 型のチェックはしない
    */
@@ -1204,7 +1214,7 @@ export const Field: {
         Field.from({ name: "type", description: "型", type: Type.type() }),
       ]),
     }),
-  type: (): Type =>
+  type: (): Type<Field> =>
     Type.from({ namespace: Namespace.coreType, name: "Field", parameters: [] }),
   from: (obj: globalThis.Omit<Field, typeof Symbol.toStringTag>): Field => ({
     name: obj.name,
@@ -1250,7 +1260,7 @@ export const Pattern: {
   /**
    * Pattern の型
    */
-  readonly type: () => Type;
+  readonly type: () => Type<Pattern>;
   /**
    * オブジェクトから作成する. 余計なフィールドがレスポンスに含まれてしまうのを防ぐ. 型のチェックはしない
    */
@@ -1286,7 +1296,7 @@ export const Pattern: {
         }),
       ]),
     }),
-  type: (): Type =>
+  type: (): Type<Pattern> =>
     Type.from({
       namespace: Namespace.coreType,
       name: "Pattern",
@@ -1345,26 +1355,24 @@ export const Type: {
   /**
    * Type の型
    */
-  readonly type: (a: Type) => Type;
+  readonly type: () => Type<Type<unknown>>;
   /**
    * オブジェクトから作成する. 余計なフィールドがレスポンスに含まれてしまうのを防ぐ. 型のチェックはしない
    */
-  readonly from: (
-    a: globalThis.Omit<Type<p0>, typeof Symbol.toStringTag>
+  readonly from: <p0 extends unknown>(
+    a: globalThis.Omit<Type<p0>, typeof neverSymbol | typeof Symbol.toStringTag>
   ) => Type<p0>;
   /**
    * JsonからTypeに変換する. 失敗した場合はエラー
    */
-  readonly fromStructuredJsonValue: <p0 extends unknown>(
-    a: (a: StructuredJsonValue) => p0
-  ) => (a: StructuredJsonValue) => Type<p0>;
+  readonly fromStructuredJsonValue: (a: StructuredJsonValue) => Type<unknown>;
 } = {
   typeInfo: (): DefinyRpcTypeInfo =>
     DefinyRpcTypeInfo.from({
       namespace: Namespace.coreType,
       name: "Type",
       description: "型",
-      parameterCount: 1,
+      parameterCount: 0,
       body: TypeBody.product([
         Field.from({
           name: "namespace",
@@ -1383,52 +1391,48 @@ export const Type: {
         }),
       ]),
     }),
-  type: (p0: Type): Type =>
-    Type.from({
-      namespace: Namespace.coreType,
-      name: "Type",
-      parameters: [p0],
-    }),
-  from: (
-    obj: globalThis.Omit<Type<p0>, typeof Symbol.toStringTag>
+  type: (): Type<Type<unknown>> =>
+    Type.from({ namespace: Namespace.coreType, name: "Type", parameters: [] }),
+  from: <p0 extends unknown>(
+    obj: globalThis.Omit<
+      Type<p0>,
+      typeof neverSymbol | typeof Symbol.toStringTag
+    >
   ): Type<p0> => ({
     namespace: obj.namespace,
     name: obj.name,
     parameters: obj.parameters,
     [Symbol.toStringTag]: "*coreType.Type",
+    [neverSymbol]: {} as p0,
   }),
-  fromStructuredJsonValue:
-    <p0 extends unknown>(
-      p0FromJson: (a: StructuredJsonValue) => p0
-    ): ((a: StructuredJsonValue) => Type<p0>) =>
-    (jsonValue: StructuredJsonValue): Type<p0> => {
-      if (jsonValue.type !== "object") {
-        throw new Error("expected object in Type.fromStructuredJsonValue");
-      }
-      const namespace: StructuredJsonValue | undefined =
-        jsonValue.value.get("namespace");
-      if (namespace === undefined) {
-        throw new Error(
-          "expected namespace field. in Type.fromStructuredJsonValue"
-        );
-      }
-      const name: StructuredJsonValue | undefined = jsonValue.value.get("name");
-      if (name === undefined) {
-        throw new Error("expected name field. in Type.fromStructuredJsonValue");
-      }
-      const parameters: StructuredJsonValue | undefined =
-        jsonValue.value.get("parameters");
-      if (parameters === undefined) {
-        throw new Error(
-          "expected parameters field. in Type.fromStructuredJsonValue"
-        );
-      }
-      return Type.from({
-        namespace: Namespace.fromStructuredJsonValue(namespace),
-        name: String.fromStructuredJsonValue(name),
-        parameters: List.fromStructuredJsonValue(Type.fromStructuredJsonValue)(
-          parameters
-        ),
-      });
-    },
+  fromStructuredJsonValue: (jsonValue: StructuredJsonValue): Type<unknown> => {
+    if (jsonValue.type !== "object") {
+      throw new Error("expected object in Type.fromStructuredJsonValue");
+    }
+    const namespace: StructuredJsonValue | undefined =
+      jsonValue.value.get("namespace");
+    if (namespace === undefined) {
+      throw new Error(
+        "expected namespace field. in Type.fromStructuredJsonValue"
+      );
+    }
+    const name: StructuredJsonValue | undefined = jsonValue.value.get("name");
+    if (name === undefined) {
+      throw new Error("expected name field. in Type.fromStructuredJsonValue");
+    }
+    const parameters: StructuredJsonValue | undefined =
+      jsonValue.value.get("parameters");
+    if (parameters === undefined) {
+      throw new Error(
+        "expected parameters field. in Type.fromStructuredJsonValue"
+      );
+    }
+    return Type.from({
+      namespace: Namespace.fromStructuredJsonValue(namespace),
+      name: String.fromStructuredJsonValue(name),
+      parameters: List.fromStructuredJsonValue(Type.fromStructuredJsonValue)(
+        parameters
+      ),
+    });
+  },
 };

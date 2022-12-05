@@ -10,8 +10,9 @@ import {
 } from "../../../jsTs/main.ts";
 import { arrayFromLength } from "../../../util.ts";
 import { CodeGenContext } from "../../core/collectType.ts";
-import { DefinyRpcTypeInfo, Namespace, Type } from "../../core/coreType.ts";
-import { collectedDefinyRpcTypeUseToTsType } from "../type/use.ts";
+import { DefinyRpcTypeInfo, Namespace } from "../../core/coreType.ts";
+import { namespaceFromAndToToTypeScriptModuleName } from "../namespace.ts";
+import { collectedDefinyRpcTypeToTsType } from "../type/use.ts";
 import { namespaceToNamespaceExpr } from "../useNamespace.ts";
 import { useFrom } from "./use.ts";
 
@@ -19,22 +20,92 @@ export const createTypeLambda = (
   type: DefinyRpcTypeInfo,
   context: CodeGenContext,
 ): data.LambdaExpr => {
-  const typeType = collectedDefinyRpcTypeUseToTsType(
-    Type.from({
-      namespace: Namespace.coreType,
-      name: "Type",
-      parameters: [],
-    }),
-    context,
+  const typeWithParameters: data.TsType =
+    context.currentModule.type === "coreType" && type.name === "Type"
+      ? {
+        _: "ScopeInFile",
+        typeNameAndTypeParameter: {
+          name: identifierFromString("Type"),
+          arguments: [{ _: "unknown" }],
+        },
+      }
+      : collectedDefinyRpcTypeToTsType(
+        type,
+        context,
+      );
+  const typeModuleName = namespaceFromAndToToTypeScriptModuleName(
+    context.currentModule,
+    Namespace.coreType,
   );
+  const returnType: data.TsType = typeModuleName === undefined
+    ? {
+      _: "ScopeInFile",
+      typeNameAndTypeParameter: {
+        name: identifierFromString("Type"),
+        arguments: [typeWithParameters],
+      },
+    }
+    : {
+      _: "ImportedType",
+      importedType: {
+        moduleName: typeModuleName,
+        nameAndArguments: {
+          name: identifierFromString("Type"),
+          arguments: [typeWithParameters],
+        },
+      },
+    };
 
   return {
-    parameterList: arrayFromLength(
-      type.parameterCount,
-      (index) => ({ name: identifierFromString("p" + index), type: typeType }),
-    ),
-    returnType: typeType,
-    typeParameterList: [],
+    parameterList:
+      context.currentModule.type === "coreType" && type.name === "Type"
+        ? []
+        : arrayFromLength(
+          type.parameterCount,
+          (index): data.Parameter => {
+            return {
+              name: identifierFromString("p" + index),
+              type: typeModuleName === undefined
+                ? {
+                  _: "ScopeInFile",
+                  typeNameAndTypeParameter: {
+                    name: identifierFromString("Type"),
+                    arguments: [{
+                      _: "ScopeInFile",
+                      typeNameAndTypeParameter: {
+                        name: identifierFromString("p" + index),
+                        arguments: [],
+                      },
+                    }],
+                  },
+                }
+                : {
+                  _: "ImportedType",
+                  importedType: {
+                    moduleName: typeModuleName,
+                    nameAndArguments: {
+                      name: identifierFromString("Type"),
+                      arguments: [{
+                        _: "ScopeInFile",
+                        typeNameAndTypeParameter: {
+                          name: identifierFromString("p" + index),
+                          arguments: [],
+                        },
+                      }],
+                    },
+                  },
+                },
+            };
+          },
+        ),
+    returnType: returnType,
+    typeParameterList:
+      context.currentModule.type === "coreType" && type.name === "Type"
+        ? []
+        : arrayFromLength(
+          type.parameterCount,
+          (index) => identifierFromString("p" + index),
+        ),
     statementList: [
       statementReturn(
         useFrom(
