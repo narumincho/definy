@@ -10,6 +10,7 @@ import {
   stringLiteralValueToString,
   typeParameterListToString,
 } from "./common.ts";
+import { Context } from "./context.ts";
 import { exprToString } from "./expr.ts";
 
 /**
@@ -18,7 +19,7 @@ import { exprToString } from "./expr.ts";
  */
 export const typeToString = (
   type_: d.TsType,
-  moduleMap: ReadonlyMap<string, TsIdentifier>,
+  context: Context,
 ): string => {
   switch (type_._) {
     case "Number":
@@ -46,21 +47,21 @@ export const typeToString = (
       return "unknown";
 
     case "Object":
-      return typeObjectToString(type_.tsMemberTypeList, moduleMap);
+      return typeObjectToString(type_.tsMemberTypeList, context);
 
     case "Function":
-      return functionTypeToString(type_.functionType, moduleMap);
+      return functionTypeToString(type_.functionType, context);
 
     case "Union":
       return type_.tsTypeList
-        .map((pattern) => typeToString(pattern, moduleMap))
+        .map((pattern) => typeToString(pattern, context))
         .join(" | ");
 
     case "Intersection":
       return (
-        typeToString(type_.intersectionType.left, moduleMap) +
+        typeToString(type_.intersectionType.left, context) +
         " & " +
-        typeToString(type_.intersectionType.right, moduleMap)
+        typeToString(type_.intersectionType.right, context)
       );
 
     case "ScopeInFile":
@@ -68,19 +69,29 @@ export const typeToString = (
         type_.typeNameAndTypeParameter.name +
         typeArgumentsListToString(
           type_.typeNameAndTypeParameter.arguments,
-          moduleMap,
+          context,
         )
       );
 
-    case "ScopeInGlobal":
+    case "ScopeInGlobal": {
+      if (context.usedNameSet.has(type_.typeNameAndTypeParameter.name)) {
+        return (
+          "globalThis." +
+          type_.typeNameAndTypeParameter.name +
+          typeArgumentsListToString(
+            type_.typeNameAndTypeParameter.arguments,
+            context,
+          )
+        );
+      }
       return (
-        "globalThis." +
         type_.typeNameAndTypeParameter.name +
         typeArgumentsListToString(
           type_.typeNameAndTypeParameter.arguments,
-          moduleMap,
+          context,
         )
       );
+    }
 
     case "WithNamespace":
       return (
@@ -89,12 +100,14 @@ export const typeToString = (
         type_.typeNameAndTypeParameter.name +
         typeArgumentsListToString(
           type_.typeNameAndTypeParameter.arguments,
-          moduleMap,
+          context,
         )
       );
 
     case "ImportedType": {
-      const nameSpaceIdentifier = moduleMap.get(type_.importedType.moduleName);
+      const nameSpaceIdentifier = context.moduleMap.get(
+        type_.importedType.moduleName,
+      );
       if (nameSpaceIdentifier === undefined) {
         throw Error(
           "収集されなかった, モジュールがある moduleName=" +
@@ -108,7 +121,7 @@ export const typeToString = (
         type_.importedType.nameAndArguments.name +
         typeArgumentsListToString(
           type_.importedType.nameAndArguments.arguments,
-          moduleMap,
+          context,
         )
       );
     }
@@ -117,24 +130,24 @@ export const typeToString = (
       return stringLiteralValueToString(type_.string);
 
     case "typeof":
-      return "typeof " + exprToString(type_.expr, 0, moduleMap, "TypeScript");
+      return "typeof " + exprToString(type_.expr, 0, context);
   }
 };
 
 const typeArgumentsListToString = (
   typeArguments: ReadonlyArray<d.TsType>,
-  moduleMap: ReadonlyMap<string, TsIdentifier>,
+  context: Context,
 ): string => {
   return typeArguments.length === 0 ? "" : "<" +
     typeArguments
-      .map((argument) => typeToString(argument, moduleMap))
+      .map((argument) => typeToString(argument, context))
       .join(", ") +
     ">";
 };
 
 const typeObjectToString = (
   memberList: ReadonlyArray<d.TsMemberType>,
-  moduleMap: ReadonlyMap<string, TsIdentifier>,
+  context: Context,
 ): string =>
   "{ " +
   memberList
@@ -142,22 +155,22 @@ const typeObjectToString = (
       (member) =>
         documentToString(member.document) +
         "readonly " +
-        propertyNameToString(member.name, moduleMap) +
+        propertyNameToString(member.name, context) +
         (member.required ? "" : "?") +
         ": " +
-        typeToString(member.type, moduleMap),
+        typeToString(member.type, context),
     )
     .join("; ") +
   " }";
 
 const propertyNameToString = (
   propertyName: d.PropertyName,
-  moduleMap: ReadonlyMap<string, TsIdentifier>,
+  context: Context,
 ): string => {
   switch (propertyName.type) {
     case "symbolExpr":
       return "[" +
-        exprToString(propertyName.value, 0, moduleMap, "TypeScript") + "]";
+        exprToString(propertyName.value, 0, context) + "]";
     case "string": {
       if (isSafePropertyName(propertyName.value)) {
         return propertyName.value;
@@ -170,7 +183,7 @@ const propertyNameToString = (
 /** 関数の引数と戻り値の型を文字列にする */
 const functionTypeToString = (
   functionType: d.FunctionType,
-  moduleMap: ReadonlyMap<string, TsIdentifier>,
+  context: Context,
 ): string => {
   let index = initialIdentifierIndex;
   const parameterList: Array<{
@@ -192,11 +205,11 @@ const functionTypeToString = (
     parameterList
       .map(
         (parameter) =>
-          parameter.name + ": " + typeToString(parameter.type, moduleMap),
+          parameter.name + ": " + typeToString(parameter.type, context),
       )
       .join(", ") +
     ") => " +
-    typeToString(functionType.return, moduleMap)
+    typeToString(functionType.return, context)
   );
 };
 
@@ -205,13 +218,12 @@ const functionTypeToString = (
  */
 export const typeAnnotation = (
   type_: d.TsType,
-  codeType: d.CodeType,
-  moduleMap: ReadonlyMap<string, TsIdentifier>,
+  context: Context,
 ): string => {
-  switch (codeType) {
+  switch (context.codeType) {
     case "JavaScript":
       return "";
     case "TypeScript":
-      return ": " + typeToString(type_, moduleMap);
+      return ": " + typeToString(type_, context);
   }
 };
