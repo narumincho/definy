@@ -38,6 +38,14 @@ const number = DefinyRpcTypeInfo.from({
   body: TypeBody.number,
 });
 
+const unit = DefinyRpcTypeInfo.from({
+  namespace: Namespace.coreType,
+  name: "Unit",
+  description: "値が1つだけ",
+  parameterCount: 0,
+  body: TypeBody.unit,
+});
+
 const structuredJsonValue = DefinyRpcTypeInfo.from({
   namespace: Namespace.coreType,
   name: "StructuredJsonValue",
@@ -441,6 +449,7 @@ export const generateCoreCode = async (): Promise<void> => {
     usePrettier: true,
     typeList: [
       string,
+      unit,
       bool,
       number,
       structuredJsonValue,

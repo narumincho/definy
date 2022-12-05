@@ -330,6 +330,37 @@ export const String: {
 };
 
 /**
+ * 値が1つだけ
+ */
+export const Unit: {
+  /**
+   * Unit の型の表現
+   */
+  readonly typeInfo: () => DefinyRpcTypeInfo;
+  /**
+   * Unit の型
+   */
+  readonly type: () => Type<undefined>;
+  /**
+   * JsonからUnitに変換する. 失敗した場合はエラー
+   */
+  readonly fromStructuredJsonValue: (a: StructuredJsonValue) => undefined;
+} = {
+  typeInfo: (): DefinyRpcTypeInfo =>
+    DefinyRpcTypeInfo.from({
+      namespace: Namespace.coreType,
+      name: "Unit",
+      description: "値が1つだけ",
+      parameterCount: 0,
+      body: TypeBody.unit,
+    }),
+  type: (): Type<undefined> =>
+    Type.from({ namespace: Namespace.coreType, name: "Unit", parameters: [] }),
+  fromStructuredJsonValue: (jsonValue: StructuredJsonValue): undefined =>
+    undefined,
+};
+
+/**
  * Bool. boolean. 真偽値. True か False
  */
 export const Bool: {
