@@ -44,7 +44,7 @@ export const Maybe = {
     }
     throw new Error("unknown type value");
   },
-  type: (p1: Type): Type =>
+  type: <p0>(p1: Type<p0>): Type<Maybe<p0>> =>
     Type.from({
       namespace: Namespace.maybe,
       name: "Maybe",

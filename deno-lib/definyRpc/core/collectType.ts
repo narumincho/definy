@@ -174,7 +174,7 @@ const typeBodyToCollectedDefinyRpcTypeBody = (
 
 export const definyRpcTypeToCollectedDefinyRpcTypeUse = <t>(
   type: DefinyRpcType<t>,
-): Type => {
+): Type<unknown> => {
   return Type.from({
     namespace: type.namespace,
     name: type.name,

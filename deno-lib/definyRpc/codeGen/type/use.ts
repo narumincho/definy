@@ -150,7 +150,7 @@ export const collectedDefinyRpcTypeToTsType = (
 };
 
 export const collectedDefinyRpcTypeUseToTsType = (
-  type: Type,
+  type: Type<unknown>,
   context: CodeGenContext,
 ): data.TsType => {
   if (type.namespace.type == "maybe") {

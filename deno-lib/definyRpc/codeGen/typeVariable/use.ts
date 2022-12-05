@@ -51,7 +51,7 @@ export const useTag = (
 };
 
 export const typeToTypeExpr = (
-  type: Type,
+  type: Type<unknown>,
   context: CodeGenContext,
 ): TsExpr => {
   return callMethod(
@@ -91,7 +91,7 @@ const getTypeVariable = (
  * @param expr JSONの式
  */
 export const useFromStructuredJsonValue = (
-  type: Type,
+  type: Type<unknown>,
   expr: data.TsExpr,
   context: CodeGenContext,
 ): data.TsExpr => {
@@ -102,7 +102,7 @@ export const useFromStructuredJsonValue = (
 };
 
 const getStructuredJsonValueFunction = (
-  type: Type,
+  type: Type<unknown>,
   context: CodeGenContext,
 ): data.TsExpr => {
   if (type.parameters.length === 0) {
