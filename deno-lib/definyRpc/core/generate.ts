@@ -440,6 +440,81 @@ const type = DefinyRpcTypeInfo.from({
   ]),
 });
 
+const functionNamespace = DefinyRpcTypeInfo.from({
+  namespace: Namespace.coreType,
+  description: "出力されるAPI関数のモジュール名",
+  parameterCount: 0,
+  name: "FunctionNamespace",
+  body: TypeBody.sum([
+    Pattern.from({
+      name: "meta",
+      description: "APIがどんな構造で表現されているかを取得するためのAPI",
+      parameter: { type: "nothing" },
+    }),
+    Pattern.from({
+      name: "local",
+      description: "definy RPC を利用するユーザーが定義したモジュール",
+      parameter: { type: "just", value: List.type(String.type()) },
+    }),
+  ]),
+});
+
+/*{
+  readonly namespace: ReadonlyArray<string>;
+  readonly name: string;
+  readonly description: string;
+  readonly input: Type;
+  readonly output: Type;
+} */
+
+const functionDetail = DefinyRpcTypeInfo.from({
+  name: "FunctionDetail",
+  description: "関数のデータ functionByNameの結果",
+  parameterCount: 0,
+  namespace: Namespace.coreType,
+  body: TypeBody.product([
+    Field.from({
+      name: "namespace",
+      description: "名前空間",
+      type: Type.from({
+        namespace: Namespace.coreType,
+        name: "FunctionNamespace",
+        parameters: [],
+      }),
+    }),
+    Field.from({
+      name: "name",
+      description: "api名",
+      type: String.type(),
+    }),
+    Field.from({
+      name: "description",
+      description: "説明文",
+      type: String.type(),
+    }),
+    Field.from({
+      name: "input",
+      description: "入力の型",
+      type: Type.type(),
+    }),
+    Field.from({
+      name: "output",
+      description: "出力の型",
+      type: Type.type(),
+    }),
+    Field.from({
+      name: "needAuthentication",
+      description: "認証が必要かどうか (キャッシュしなくなる)",
+      type: Bool.type(),
+    }),
+    Field.from({
+      name: "isMutation",
+      description: "単なるデータの取得ではなく, 変更するようなものか",
+      type: Bool.type(),
+    }),
+  ]),
+});
+
 export const generateCoreCode = async (): Promise<void> => {
   const code = apiFunctionListToCode({
     apiFunctionList: [],
@@ -461,6 +536,8 @@ export const generateCoreCode = async (): Promise<void> => {
       field,
       pattern,
       type,
+      functionNamespace,
+      functionDetail,
     ],
   });
   await writeTextFileWithLog(

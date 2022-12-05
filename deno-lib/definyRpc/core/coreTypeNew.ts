@@ -291,6 +291,64 @@ export type Type<p0 extends unknown> = {
 };
 
 /**
+ * 出力されるAPI関数のモジュール名
+ */
+export type FunctionNamespace =
+  | {
+      /**
+       * APIがどんな構造で表現されているかを取得するためのAPI
+       */
+      readonly type: "meta";
+      readonly [Symbol.toStringTag]: "*coreType.FunctionNamespace";
+    }
+  | {
+      /**
+       * definy RPC を利用するユーザーが定義したモジュール
+       */
+      readonly type: "local";
+      /**
+       * definy RPC を利用するユーザーが定義したモジュール
+       */
+      readonly value: globalThis.ReadonlyArray<string>;
+      readonly [Symbol.toStringTag]: "*coreType.FunctionNamespace";
+    };
+
+/**
+ * 関数のデータ functionByNameの結果
+ */
+export type FunctionDetail = {
+  /**
+   * 名前空間
+   */
+  readonly namespace: FunctionNamespace;
+  /**
+   * api名
+   */
+  readonly name: string;
+  /**
+   * 説明文
+   */
+  readonly description: string;
+  /**
+   * 入力の型
+   */
+  readonly input: Type<unknown>;
+  /**
+   * 出力の型
+   */
+  readonly output: Type<unknown>;
+  /**
+   * 認証が必要かどうか (キャッシュしなくなる)
+   */
+  readonly needAuthentication: boolean;
+  /**
+   * 単なるデータの取得ではなく, 変更するようなものか
+   */
+  readonly isMutation: boolean;
+  readonly [Symbol.toStringTag]: "*coreType.FunctionDetail";
+};
+
+/**
  * 文字列
  */
 export const String: {
@@ -1464,6 +1522,241 @@ export const Type: {
       parameters: List.fromStructuredJsonValue(Type.fromStructuredJsonValue)(
         parameters
       ),
+    });
+  },
+};
+
+/**
+ * 出力されるAPI関数のモジュール名
+ */
+export const FunctionNamespace: {
+  /**
+   * FunctionNamespace の型の表現
+   */
+  readonly typeInfo: () => DefinyRpcTypeInfo;
+  /**
+   * FunctionNamespace の型
+   */
+  readonly type: () => Type<FunctionNamespace>;
+  /**
+   * JsonからFunctionNamespaceに変換する. 失敗した場合はエラー
+   */
+  readonly fromStructuredJsonValue: (
+    a: StructuredJsonValue
+  ) => FunctionNamespace;
+  /**
+   * APIがどんな構造で表現されているかを取得するためのAPI
+   */
+  readonly meta: FunctionNamespace;
+  /**
+   * definy RPC を利用するユーザーが定義したモジュール
+   */
+  readonly local: (a: globalThis.ReadonlyArray<string>) => FunctionNamespace;
+} = {
+  typeInfo: (): DefinyRpcTypeInfo =>
+    DefinyRpcTypeInfo.from({
+      namespace: Namespace.coreType,
+      name: "FunctionNamespace",
+      description: "出力されるAPI関数のモジュール名",
+      parameterCount: 0,
+      body: TypeBody.sum([
+        Pattern.from({
+          name: "meta",
+          description: "APIがどんな構造で表現されているかを取得するためのAPI",
+          parameter: { type: "nothing" },
+        }),
+        Pattern.from({
+          name: "local",
+          description: "definy RPC を利用するユーザーが定義したモジュール",
+          parameter: { type: "just", value: List.type(String.type()) },
+        }),
+      ]),
+    }),
+  type: (): Type<FunctionNamespace> =>
+    Type.from({
+      namespace: Namespace.coreType,
+      name: "FunctionNamespace",
+      parameters: [],
+    }),
+  fromStructuredJsonValue: (
+    jsonValue: StructuredJsonValue
+  ): FunctionNamespace => {
+    if (jsonValue.type !== "object") {
+      throw new Error("expected object in FunctionNamespace.fromJson");
+    }
+    const type: StructuredJsonValue | undefined = jsonValue.value.get("type");
+    if (type === undefined || type.type !== "string") {
+      throw new Error("expected type property type is string");
+    }
+    switch (type.value) {
+      case "meta": {
+        return FunctionNamespace.meta;
+      }
+      case "local": {
+        const value: StructuredJsonValue | undefined =
+          jsonValue.value.get("value");
+        if (value === undefined) {
+          throw new Error("expected value property in sum parameter");
+        }
+        return FunctionNamespace.local(
+          List.fromStructuredJsonValue(String.fromStructuredJsonValue)(value)
+        );
+      }
+    }
+    throw new Error(
+      "unknown type value expected [meta,local] but got " + type.value
+    );
+  },
+  meta: { type: "meta", [Symbol.toStringTag]: "*coreType.FunctionNamespace" },
+  local: (p: globalThis.ReadonlyArray<string>): FunctionNamespace => ({
+    type: "local",
+    value: p,
+    [Symbol.toStringTag]: "*coreType.FunctionNamespace",
+  }),
+};
+
+/**
+ * 関数のデータ functionByNameの結果
+ */
+export const FunctionDetail: {
+  /**
+   * FunctionDetail の型の表現
+   */
+  readonly typeInfo: () => DefinyRpcTypeInfo;
+  /**
+   * FunctionDetail の型
+   */
+  readonly type: () => Type<FunctionDetail>;
+  /**
+   * オブジェクトから作成する. 余計なフィールドがレスポンスに含まれてしまうのを防ぐ. 型のチェックはしない
+   */
+  readonly from: (
+    a: globalThis.Omit<FunctionDetail, typeof Symbol.toStringTag>
+  ) => FunctionDetail;
+  /**
+   * JsonからFunctionDetailに変換する. 失敗した場合はエラー
+   */
+  readonly fromStructuredJsonValue: (a: StructuredJsonValue) => FunctionDetail;
+} = {
+  typeInfo: (): DefinyRpcTypeInfo =>
+    DefinyRpcTypeInfo.from({
+      namespace: Namespace.coreType,
+      name: "FunctionDetail",
+      description: "関数のデータ functionByNameの結果",
+      parameterCount: 0,
+      body: TypeBody.product([
+        Field.from({
+          name: "namespace",
+          description: "名前空間",
+          type: FunctionNamespace.type(),
+        }),
+        Field.from({ name: "name", description: "api名", type: String.type() }),
+        Field.from({
+          name: "description",
+          description: "説明文",
+          type: String.type(),
+        }),
+        Field.from({
+          name: "input",
+          description: "入力の型",
+          type: Type.type(),
+        }),
+        Field.from({
+          name: "output",
+          description: "出力の型",
+          type: Type.type(),
+        }),
+        Field.from({
+          name: "needAuthentication",
+          description: "認証が必要かどうか (キャッシュしなくなる)",
+          type: Bool.type(),
+        }),
+        Field.from({
+          name: "isMutation",
+          description: "単なるデータの取得ではなく, 変更するようなものか",
+          type: Bool.type(),
+        }),
+      ]),
+    }),
+  type: (): Type<FunctionDetail> =>
+    Type.from({
+      namespace: Namespace.coreType,
+      name: "FunctionDetail",
+      parameters: [],
+    }),
+  from: (
+    obj: globalThis.Omit<FunctionDetail, typeof Symbol.toStringTag>
+  ): FunctionDetail => ({
+    namespace: obj.namespace,
+    name: obj.name,
+    description: obj.description,
+    input: obj.input,
+    output: obj.output,
+    needAuthentication: obj.needAuthentication,
+    isMutation: obj.isMutation,
+    [Symbol.toStringTag]: "*coreType.FunctionDetail",
+  }),
+  fromStructuredJsonValue: (jsonValue: StructuredJsonValue): FunctionDetail => {
+    if (jsonValue.type !== "object") {
+      throw new Error(
+        "expected object in FunctionDetail.fromStructuredJsonValue"
+      );
+    }
+    const namespace: StructuredJsonValue | undefined =
+      jsonValue.value.get("namespace");
+    if (namespace === undefined) {
+      throw new Error(
+        "expected namespace field. in FunctionDetail.fromStructuredJsonValue"
+      );
+    }
+    const name: StructuredJsonValue | undefined = jsonValue.value.get("name");
+    if (name === undefined) {
+      throw new Error(
+        "expected name field. in FunctionDetail.fromStructuredJsonValue"
+      );
+    }
+    const description: StructuredJsonValue | undefined =
+      jsonValue.value.get("description");
+    if (description === undefined) {
+      throw new Error(
+        "expected description field. in FunctionDetail.fromStructuredJsonValue"
+      );
+    }
+    const input: StructuredJsonValue | undefined = jsonValue.value.get("input");
+    if (input === undefined) {
+      throw new Error(
+        "expected input field. in FunctionDetail.fromStructuredJsonValue"
+      );
+    }
+    const output: StructuredJsonValue | undefined =
+      jsonValue.value.get("output");
+    if (output === undefined) {
+      throw new Error(
+        "expected output field. in FunctionDetail.fromStructuredJsonValue"
+      );
+    }
+    const needAuthentication: StructuredJsonValue | undefined =
+      jsonValue.value.get("needAuthentication");
+    if (needAuthentication === undefined) {
+      throw new Error(
+        "expected needAuthentication field. in FunctionDetail.fromStructuredJsonValue"
+      );
+    }
+    const isMutation: StructuredJsonValue | undefined =
+      jsonValue.value.get("isMutation");
+    if (isMutation === undefined) {
+      throw new Error(
+        "expected isMutation field. in FunctionDetail.fromStructuredJsonValue"
+      );
+    }
+    return FunctionDetail.from({
+      namespace: FunctionNamespace.fromStructuredJsonValue(namespace),
+      name: String.fromStructuredJsonValue(name),
+      description: String.fromStructuredJsonValue(description),
+      input: Type.fromStructuredJsonValue(input),
+      output: Type.fromStructuredJsonValue(output),
+      needAuthentication: Bool.fromStructuredJsonValue(needAuthentication),
+      isMutation: Bool.fromStructuredJsonValue(isMutation),
     });
   },
 };
