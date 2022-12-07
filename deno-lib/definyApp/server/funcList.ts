@@ -1,17 +1,24 @@
 import {
+  DefinyRpcTypeInfo,
+  Field,
+  FunctionNamespace,
+  Namespace,
+  Number,
+  String,
+  Type,
+  TypeBody,
+  Unit,
+} from "../../definyRpc/core/coreType.ts";
+import {
   createApiFunction,
   FunctionAndTypeList,
-  number,
-  product,
-  string,
-  unit,
-} from "../../definyRpc/server/definyRpc.ts";
+} from "../../definyRpc/core/apiFunction.ts";
 import * as f from "../../typedFauna.ts";
 import { openConnectStateCreate } from "./faunaInterface.ts";
 import { googleLogInUrl } from "./logIn.ts";
 import { Mode } from "./mode.ts";
 
-const definyAppNamespace = ["definyApi"] as const;
+const definyAppNamespace = FunctionNamespace.local(["definyApi"]);
 
 export const funcList = (
   faunaClient: f.TypedFaunaClient,
@@ -25,8 +32,8 @@ export const funcList = (
         description: "hello と挨拶が返ってくる",
         needAuthentication: false,
         isMutation: false,
-        input: unit,
-        output: string,
+        input: String.type(),
+        output: String.type(),
         resolve: () => {
           return "hello";
         },
@@ -37,8 +44,8 @@ export const funcList = (
         description: "現在時刻を文字列で返す",
         needAuthentication: false,
         isMutation: false,
-        input: unit,
-        output: string,
+        input: String.type(),
+        output: String.type(),
         resolve: () => {
           return new Date().toISOString();
         },
@@ -49,8 +56,8 @@ export const funcList = (
         description: '"ok"を指定した回数分繰り返して返す',
         needAuthentication: false,
         isMutation: false,
-        input: number,
-        output: string,
+        input: Number.type(),
+        output: String.type(),
         resolve: (input) => {
           return "ok".repeat(input);
         },
@@ -61,8 +68,8 @@ export const funcList = (
         description: "Google でログインするためのURLを発行し取得する",
         needAuthentication: false,
         isMutation: true,
-        input: unit,
-        output: string,
+        input: String.type(),
+        output: String.type(),
         resolve: async (_) => {
           const state = await openConnectStateCreate(faunaClient);
           return googleLogInUrl(state, mode).toString();
@@ -75,22 +82,12 @@ export const funcList = (
           "logInCallback にやってきたときにパラメーターから得ることができる code と state を使ってログインする",
         needAuthentication: false,
         isMutation: true,
-        input: product<{ code: string; state: string }>({
-          namespace: ["definyApi"],
+        input: Type.from({
           name: "CodeAndState",
-          description: "ログインコールバック時にURLにつけられる code と state",
-          fieldList: {
-            code: {
-              type: () => string,
-              description: "毎回発行されるキー. Google から情報を得るために必要",
-            },
-            state: {
-              type: () => string,
-              description: "このサーバーが発行したものか判別するためのキー",
-            },
-          },
+          namespace: Namespace.local(["main"]),
+          parameters: [],
         }),
-        output: string,
+        output: String.type(),
         resolve: (codeAndState) => {
           console.log(codeAndState);
           return "wip...";
@@ -102,9 +99,9 @@ export const funcList = (
         description: "fauna からデータを取得する",
         needAuthentication: false,
         isMutation: false,
-        input: unit,
-        output: string,
-        resolve: async (_) => {
+        input: Unit.type(),
+        output: String.type(),
+        resolve: async () => {
           const result = await faunaClient.query<{
             readonly ref: f.DocumentReference<{
               name: string;
@@ -125,6 +122,25 @@ export const funcList = (
         },
       }),
     ],
-    typeList: [],
+    typeList: [
+      DefinyRpcTypeInfo.from({
+        name: "CodeAndState",
+        description: "ログインコールバック時にURLにつけられる code と state",
+        namespace: Namespace.local(["main"]),
+        parameterCount: 0,
+        body: TypeBody.product([
+          Field.from({
+            name: "code",
+            description: "毎回発行されるキー. Google から情報を得るために必要",
+            type: String.type(),
+          }),
+          Field.from({
+            name: "state",
+            description: "このサーバーが発行したものか判別するためのキー",
+            type: String.type(),
+          }),
+        ]),
+      }),
+    ],
   };
 };

@@ -78,10 +78,9 @@ export const resultType = (
   error: data.TsType,
   namespace: Namespace,
 ): data.TsType => {
-  console.log("namespace!", namespace);
   const moduleName = namespaceFromAndToToTypeScriptModuleName(
     namespace,
-    Namespace.coreType,
+    Namespace.maybe,
   );
   if (moduleName === undefined) {
     return ({

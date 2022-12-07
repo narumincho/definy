@@ -22,10 +22,10 @@ import {
 import { ApiFunction } from "../core/apiFunction.ts";
 import {
   CodeGenContext,
-  definyRpcTypeToCollectedDefinyRpcTypeUse,
+  collectedDefinyRpcTypeMapGet,
 } from "../core/collectType.ts";
-import { Namespace } from "../core/coreType.ts";
-import { DefinyRpcType } from "../core/type.ts";
+import { Namespace, Type } from "../core/coreType.ts";
+import { fromFunctionNamespace } from "./namespace.ts";
 import { resultError, resultOk, resultType } from "./result.ts";
 import { useFromStructuredJsonValue } from "./typeVariable/use.ts";
 import {
@@ -40,6 +40,7 @@ export const apiFuncToTsFunction = (parameter: {
   readonly context: CodeGenContext;
 }): data.Function => {
   const parameterIdentifier = identifierFromString("parameter");
+  const functionNamespace = parameter.func.namespace;
   return {
     name: identifierFromString(parameter.func.name),
     document: parameter.func.description,
@@ -47,14 +48,18 @@ export const apiFuncToTsFunction = (parameter: {
       {
         name: parameterIdentifier,
         document: "",
-        type: funcParameterType(parameter.func, parameter.originHint),
+        type: funcParameterType(
+          parameter.func,
+          parameter.originHint,
+          parameter.context,
+        ),
       },
     ],
     returnType: promiseType(
       resultType(
-        definyRpcTypeToTsType(parameter.func.output),
+        definyRpcTypeToTsType(parameter.func.output, parameter.context),
         { _: "StringLiteral", string: "error" },
-        Namespace.local(parameter.func.namespace),
+        fromFunctionNamespace(parameter.func.namespace),
       ),
     ),
     typeParameterList: [],
@@ -104,7 +109,10 @@ export const apiFuncToTsFunction = (parameter: {
                 (parameter.pathPrefix.length === 0
                   ? ""
                   : parameter.pathPrefix.join("/") + "/") +
-                parameter.func.namespace.join("/") + "/" + parameter.func.name,
+                (functionNamespace.type === "meta"
+                  ? "__meta__"
+                  : functionNamespace.value.join("/") + "/" +
+                    parameter.func.name),
             },
           ),
         },
@@ -168,9 +176,9 @@ export const apiFuncToTsFunction = (parameter: {
           {
             parameterList: [],
             returnType: resultType(
-              definyRpcTypeToTsType(parameter.func.output),
+              definyRpcTypeToTsType(parameter.func.output, parameter.context),
               { _: "StringLiteral", string: "error" },
-              Namespace.local(parameter.func.namespace),
+              fromFunctionNamespace(parameter.func.namespace),
             ),
             typeParameterList: [],
             statementList: [
@@ -199,9 +207,9 @@ const fetchThenExpr = (
       },
     ],
     returnType: resultType(
-      definyRpcTypeToTsType(func.output),
+      definyRpcTypeToTsType(func.output, context),
       { _: "StringLiteral", string: "error" },
-      Namespace.local(func.namespace),
+      fromFunctionNamespace(func.namespace),
     ),
     typeParameterList: [],
     statementList: [
@@ -209,7 +217,7 @@ const fetchThenExpr = (
         _: "Return",
         tsExpr: resultOk(
           useFromStructuredJsonValue(
-            definyRpcTypeToCollectedDefinyRpcTypeUse(func.output),
+            func.output,
             useRawJsonToStructuredJsonValue({
               _: "Variable",
               tsIdentifier: jsonValueIdentifier,
@@ -225,7 +233,13 @@ const fetchThenExpr = (
 const funcParameterType = (
   func: ApiFunction,
   originHint: string,
+  context: CodeGenContext,
 ): data.TsType => {
+  const inputTypeInfo = collectedDefinyRpcTypeMapGet(
+    context.map,
+    func.input.namespace,
+    func.input.name,
+  );
   return {
     _: "Object",
     tsMemberTypeList: [
@@ -236,12 +250,12 @@ const funcParameterType = (
         required: false,
         type: { _: "Union", tsTypeList: [{ _: "String" }, { _: "Undefined" }] },
       },
-      ...(func.input.body.type === "unit" ? [] : [
+      ...(inputTypeInfo.body.type === "unit" ? [] : [
         {
           name: { type: "string", value: "input" },
           document: "",
           required: true,
-          type: definyRpcTypeToTsType(func.input),
+          type: definyRpcTypeToTsType(func.input, context),
         } as const,
       ]),
       ...(func.needAuthentication
@@ -265,9 +279,15 @@ const funcParameterType = (
 };
 
 const definyRpcTypeToTsType = <t>(
-  definyRpcType: DefinyRpcType<t>,
+  definyRpcType: Type<t>,
+  context: CodeGenContext,
 ): data.TsType => {
-  switch (definyRpcType.body.type) {
+  const typeInfo = collectedDefinyRpcTypeMapGet(
+    context.map,
+    definyRpcType.namespace,
+    definyRpcType.name,
+  );
+  switch (typeInfo.body.type) {
     case "string":
       return { _: "String" };
     case "number":
@@ -281,14 +301,14 @@ const definyRpcTypeToTsType = <t>(
       if (parameter === undefined) {
         throw new Error("list need 1 parameter");
       }
-      return readonlyArrayType(definyRpcTypeToTsType(parameter));
+      return readonlyArrayType(definyRpcTypeToTsType(parameter, context));
     }
     case "set": {
       const parameter = definyRpcType.parameters[0];
       if (parameter === undefined) {
         throw new Error("set need 1 parameter");
       }
-      return readonlySetType(definyRpcTypeToTsType(parameter));
+      return readonlySetType(definyRpcTypeToTsType(parameter, context));
     }
     case "map": {
       const key = definyRpcType.parameters[0];
@@ -297,8 +317,8 @@ const definyRpcTypeToTsType = <t>(
         throw new Error("Map need 2 parameter");
       }
       return readonlyMapType(
-        definyRpcTypeToTsType(key),
-        definyRpcTypeToTsType(value),
+        definyRpcTypeToTsType(key, context),
+        definyRpcTypeToTsType(value, context),
       );
     }
     case "sum":
@@ -306,7 +326,9 @@ const definyRpcTypeToTsType = <t>(
         _: "ScopeInFile",
         typeNameAndTypeParameter: {
           name: identifierFromString(definyRpcType.name),
-          arguments: definyRpcType.parameters.map(definyRpcTypeToTsType),
+          arguments: definyRpcType.parameters.map(
+            (parameter) => definyRpcTypeToTsType(parameter, context),
+          ),
         },
       };
     case "product":
@@ -314,7 +336,9 @@ const definyRpcTypeToTsType = <t>(
         _: "ScopeInFile",
         typeNameAndTypeParameter: {
           name: identifierFromString(definyRpcType.name),
-          arguments: definyRpcType.parameters.map(definyRpcTypeToTsType),
+          arguments: definyRpcType.parameters.map((parameter) =>
+            definyRpcTypeToTsType(parameter, context)
+          ),
         },
       };
     case "url":

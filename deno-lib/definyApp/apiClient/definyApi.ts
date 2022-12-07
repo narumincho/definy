@@ -99,7 +99,7 @@ export const CodeAndState: {
    * オブジェクトから作成する. 余計なフィールドがレスポンスに含まれてしまうのを防ぐ. 型のチェックはしない
    */
   readonly from: (
-    a: globalThis.Omit<CodeAndState, typeof globalThis.Symbol.toStringTag>
+    a: globalThis.Omit<CodeAndState, typeof globalThis.Symbol.toStringTag>,
   ) => CodeAndState;
   /**
    * JsonからCodeAndStateに変換する. 失敗した場合はエラー
@@ -108,7 +108,7 @@ export const CodeAndState: {
 } = {
   description: "ログインコールバック時にURLにつけられる code と state",
   from: (
-    obj: globalThis.Omit<CodeAndState, typeof globalThis.Symbol.toStringTag>
+    obj: globalThis.Omit<CodeAndState, typeof globalThis.Symbol.toStringTag>,
   ): CodeAndState => ({
     code: obj.code,
     state: obj.state,
@@ -117,20 +117,21 @@ export const CodeAndState: {
   fromStructuredJsonValue: (jsonValue: a.StructuredJsonValue): CodeAndState => {
     if (jsonValue.type !== "object") {
       throw new Error(
-        "expected object in CodeAndState.fromStructuredJsonValue"
+        "expected object in CodeAndState.fromStructuredJsonValue",
       );
     }
     const code: a.StructuredJsonValue | undefined = jsonValue.value.get("code");
     if (code === undefined) {
       throw new Error(
-        "expected code field. in CodeAndState.fromStructuredJsonValue"
+        "expected code field. in CodeAndState.fromStructuredJsonValue",
       );
     }
-    const state: a.StructuredJsonValue | undefined =
-      jsonValue.value.get("state");
+    const state: a.StructuredJsonValue | undefined = jsonValue.value.get(
+      "state",
+    );
     if (state === undefined) {
       throw new Error(
-        "expected state field. in CodeAndState.fromStructuredJsonValue"
+        "expected state field. in CodeAndState.fromStructuredJsonValue",
       );
     }
     return CodeAndState.from({
@@ -151,22 +152,22 @@ export const hello = (parameter: {
   readonly url?: string | undefined;
 }): globalThis.Promise<Result<string, "error">> => {
   const url: globalThis.URL = new globalThis.URL(
-    parameter.url ?? "http://localhost:2528"
+    parameter.url ?? "http://localhost:2528",
   );
   url.pathname = url.pathname + "/api/definyApi/hello";
   return globalThis
     .fetch(url)
     .then(
       (response: globalThis.Response): globalThis.Promise<a.RawJsonValue> =>
-        response.json()
+        response.json(),
     )
     .then(
       (jsonValue: a.RawJsonValue): Result<string, "error"> => ({
         type: "ok",
         ok: String.fromStructuredJsonValue(
-          a.rawJsonToStructuredJsonValue(jsonValue)
+          a.rawJsonToStructuredJsonValue(jsonValue),
         ),
-      })
+      }),
     )
     .catch((): Result<string, "error"> => ({ type: "error", error: "error" }));
 };
@@ -182,22 +183,22 @@ export const now = (parameter: {
   readonly url?: string | undefined;
 }): globalThis.Promise<Result<string, "error">> => {
   const url: globalThis.URL = new globalThis.URL(
-    parameter.url ?? "http://localhost:2528"
+    parameter.url ?? "http://localhost:2528",
   );
   url.pathname = url.pathname + "/api/definyApi/now";
   return globalThis
     .fetch(url)
     .then(
       (response: globalThis.Response): globalThis.Promise<a.RawJsonValue> =>
-        response.json()
+        response.json(),
     )
     .then(
       (jsonValue: a.RawJsonValue): Result<string, "error"> => ({
         type: "ok",
         ok: String.fromStructuredJsonValue(
-          a.rawJsonToStructuredJsonValue(jsonValue)
+          a.rawJsonToStructuredJsonValue(jsonValue),
         ),
-      })
+      }),
     )
     .catch((): Result<string, "error"> => ({ type: "error", error: "error" }));
 };
@@ -214,22 +215,22 @@ export const repeat = (parameter: {
   readonly input: number;
 }): globalThis.Promise<Result<string, "error">> => {
   const url: globalThis.URL = new globalThis.URL(
-    parameter.url ?? "http://localhost:2528"
+    parameter.url ?? "http://localhost:2528",
   );
   url.pathname = url.pathname + "/api/definyApi/repeat";
   return globalThis
     .fetch(url)
     .then(
       (response: globalThis.Response): globalThis.Promise<a.RawJsonValue> =>
-        response.json()
+        response.json(),
     )
     .then(
       (jsonValue: a.RawJsonValue): Result<string, "error"> => ({
         type: "ok",
         ok: String.fromStructuredJsonValue(
-          a.rawJsonToStructuredJsonValue(jsonValue)
+          a.rawJsonToStructuredJsonValue(jsonValue),
         ),
-      })
+      }),
     )
     .catch((): Result<string, "error"> => ({ type: "error", error: "error" }));
 };
@@ -245,22 +246,22 @@ export const createGoogleLogInUrl = (parameter: {
   readonly url?: string | undefined;
 }): globalThis.Promise<Result<string, "error">> => {
   const url: globalThis.URL = new globalThis.URL(
-    parameter.url ?? "http://localhost:2528"
+    parameter.url ?? "http://localhost:2528",
   );
   url.pathname = url.pathname + "/api/definyApi/createGoogleLogInUrl";
   return globalThis
     .fetch(url)
     .then(
       (response: globalThis.Response): globalThis.Promise<a.RawJsonValue> =>
-        response.json()
+        response.json(),
     )
     .then(
       (jsonValue: a.RawJsonValue): Result<string, "error"> => ({
         type: "ok",
         ok: String.fromStructuredJsonValue(
-          a.rawJsonToStructuredJsonValue(jsonValue)
+          a.rawJsonToStructuredJsonValue(jsonValue),
         ),
-      })
+      }),
     )
     .catch((): Result<string, "error"> => ({ type: "error", error: "error" }));
 };
@@ -277,22 +278,22 @@ export const logInByCodeAndState = (parameter: {
   readonly input: CodeAndState;
 }): globalThis.Promise<Result<string, "error">> => {
   const url: globalThis.URL = new globalThis.URL(
-    parameter.url ?? "http://localhost:2528"
+    parameter.url ?? "http://localhost:2528",
   );
   url.pathname = url.pathname + "/api/definyApi/logInByCodeAndState";
   return globalThis
     .fetch(url)
     .then(
       (response: globalThis.Response): globalThis.Promise<a.RawJsonValue> =>
-        response.json()
+        response.json(),
     )
     .then(
       (jsonValue: a.RawJsonValue): Result<string, "error"> => ({
         type: "ok",
         ok: String.fromStructuredJsonValue(
-          a.rawJsonToStructuredJsonValue(jsonValue)
+          a.rawJsonToStructuredJsonValue(jsonValue),
         ),
-      })
+      }),
     )
     .catch((): Result<string, "error"> => ({ type: "error", error: "error" }));
 };
@@ -308,22 +309,22 @@ export const getDataFromDatabase = (parameter: {
   readonly url?: string | undefined;
 }): globalThis.Promise<Result<string, "error">> => {
   const url: globalThis.URL = new globalThis.URL(
-    parameter.url ?? "http://localhost:2528"
+    parameter.url ?? "http://localhost:2528",
   );
   url.pathname = url.pathname + "/api/definyApi/getDataFromDatabase";
   return globalThis
     .fetch(url)
     .then(
       (response: globalThis.Response): globalThis.Promise<a.RawJsonValue> =>
-        response.json()
+        response.json(),
     )
     .then(
       (jsonValue: a.RawJsonValue): Result<string, "error"> => ({
         type: "ok",
         ok: String.fromStructuredJsonValue(
-          a.rawJsonToStructuredJsonValue(jsonValue)
+          a.rawJsonToStructuredJsonValue(jsonValue),
         ),
-      })
+      }),
     )
     .catch((): Result<string, "error"> => ({ type: "error", error: "error" }));
 };

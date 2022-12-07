@@ -5,73 +5,22 @@ import {
 } from "./apiFunction.ts";
 import { apiFunctionListToCode } from "../codeGen/main.ts";
 import type { DefinyRpcParameter } from "../server/definyRpc.ts";
-import { DefinyRpcType } from "./type.ts";
 import { writeTextFileWithLog } from "../../writeFileAndLog.ts";
-import { stringArrayEqual } from "../../util.ts";
-import { list, product, set, string, unit } from "./builtInType.ts";
-import { definyRpcNamespace } from "./definyRpcNamespace.ts";
 import { objectEntriesSameValue } from "../../objectEntriesSameValue.ts";
-import { join } from "https://deno.land/std@0.156.0/path/mod.ts";
+import { join } from "https://deno.land/std@0.167.0/path/mod.ts";
 import { groupBy } from "https://deno.land/std@0.167.0/collections/group_by.ts";
-import { StructuredJsonValue } from "./coreType.ts";
-
-type Type = {
-  readonly namespace: ReadonlyArray<string>;
-  readonly name: string;
-  readonly description: string;
-  readonly parameters: ReadonlyArray<Type>;
-};
-
-const Type: DefinyRpcType<Type> = product<Type>({
-  namespace: [definyRpcNamespace],
-  name: "Type",
-  description: "definyRpc で表現できる型",
-  fieldList: {
-    namespace: {
-      type: list(string),
-      description: "名前空間",
-    },
-    name: {
-      type: string,
-      description: "型の名前",
-    },
-    description: {
-      type: string,
-      description: "説明文",
-    },
-    parameters: {
-      type: () => list(Type),
-      description: "型パラメーター",
-    },
-  },
-});
-
-type FunctionDetail = {
-  readonly namespace: ReadonlyArray<string>;
-  readonly name: string;
-  readonly description: string;
-  readonly input: Type;
-  readonly output: Type;
-};
-
-const FunctionDetail = product<FunctionDetail>({
-  namespace: [definyRpcNamespace],
-  name: "FunctionDetail",
-  description: "functionByNameの結果",
-  fieldList: {
-    namespace: {
-      description: "名前空間",
-      type: list<string>(string),
-    },
-    name: {
-      description: "関数名",
-      type: string,
-    },
-    description: { description: "関数の説明文", type: string },
-    input: { description: "関数の入力の型", type: Type },
-    output: { description: "関数の出力の型", type: Type },
-  },
-});
+import {
+  FunctionDetail,
+  FunctionNamespace,
+  List,
+  Namespace,
+  String,
+  Unit,
+} from "./coreType.ts";
+import {
+  fromFunctionNamespace,
+  functionNamespaceToString,
+} from "../codeGen/namespace.ts";
 
 export const addDefinyRpcApiFunction = (
   parameter: DefinyRpcParameter,
@@ -92,11 +41,11 @@ const builtInFunctions = (
   const codeGenOutputFolderPath = parameter.codeGenOutputFolderPath;
   return [
     createApiFunction({
-      namespace: [definyRpcNamespace],
+      namespace: FunctionNamespace.meta,
       name: "name",
       description: "サーバー名の取得",
-      input: unit,
-      output: string,
+      input: Unit.type(),
+      output: String.type(),
       needAuthentication: false,
       isMutation: false,
       resolve: () => {
@@ -104,120 +53,101 @@ const builtInFunctions = (
       },
     }),
     createApiFunction({
-      namespace: [definyRpcNamespace],
+      namespace: FunctionNamespace.meta,
       name: "namespaceList",
       description:
-        "get namespace list. namespace は API の公開非公開, コード生成のモジュールを分けるチャンク",
-      input: unit,
-      output: set<ReadonlyArray<string>>(list<string>(string)),
+        "get namespace list. namespace は API の公開非公開, コード生成のモジュールを分けるチャンク. JavaScriptのSetの仕様上, オブジェクトのSetはうまく扱えないので List にしている",
+      input: Unit.type(),
+      output: List.type(FunctionNamespace.type()),
       needAuthentication: false,
       isMutation: false,
       resolve: () => {
-        return new Set(
-          [
-            ...new Set(
-              addDefinyRpcApiFunction(parameter).functionsList.map((func) =>
-                func.namespace.join(".")
-              ),
-            ),
-          ].map((e) => e.split(".")),
+        return [...new Map(
+          addDefinyRpcApiFunction(parameter).functionsList.map((
+            func,
+          ) => [
+            functionNamespaceToString(func.namespace),
+            func.namespace,
+          ]),
+        ).values()];
+      },
+    }),
+    createApiFunction({
+      namespace: FunctionNamespace.meta,
+      name: "functionListByName",
+      description: "名前から関数を検索する (公開APIのみ)",
+      input: Unit.type(),
+      output: List.type(FunctionDetail.type()),
+      isMutation: false,
+      needAuthentication: false,
+      resolve: () => {
+        const allFunc = addDefinyRpcApiFunction(parameter);
+        return allFunc.functionsList.map<FunctionDetail>((f) =>
+          FunctionDetail.from({
+            namespace: f.namespace,
+            name: f.name,
+            description: f.description,
+            input: f.input,
+            output: f.output,
+            isMutation: f.isMutation,
+            needAuthentication: f.needAuthentication,
+          })
         );
       },
     }),
     createApiFunction({
-      namespace: [definyRpcNamespace],
-      name: "functionListByName",
-      description: "名前から関数を検索する (公開APIのみ)",
-      input: unit,
-      output: list<FunctionDetail>(FunctionDetail),
-      isMutation: false,
-      needAuthentication: false,
-      resolve: () => {
-        const allFunc = addDefinyRpcApiFunction(parameter);
-        return allFunc.functionsList.map<FunctionDetail>((f) => ({
-          namespace: f.namespace,
-          name: f.name,
-          description: f.description,
-          input: definyRpcTypeBodyToType(f.input),
-          output: definyRpcTypeBodyToType(f.output),
-        }));
-      },
-    }),
-    createApiFunction({
-      namespace: [definyRpcNamespace],
+      namespace: FunctionNamespace.meta,
       name: "functionListByNamePrivate",
       description: "名前から関数を検索する (非公開API)",
-      input: unit,
-      output: list<FunctionDetail>(FunctionDetail),
+      input: Unit.type(),
+      output: List.type(FunctionDetail.type()),
       isMutation: false,
       needAuthentication: true,
       resolve: (_, _accountToken) => {
         const allFunc = addDefinyRpcApiFunction(parameter);
-        return allFunc.functionsList.map<FunctionDetail>((f) => ({
-          namespace: f.namespace,
-          name: f.name,
-          description: f.description,
-          input: definyRpcTypeBodyToType(f.input),
-          output: definyRpcTypeBodyToType(f.output),
-        }));
+        return allFunc.functionsList.map<FunctionDetail>((f) =>
+          FunctionDetail.from({
+            namespace: f.namespace,
+            name: f.name,
+            description: f.description,
+            input: f.input,
+            output: f.output,
+            isMutation: f.isMutation,
+            needAuthentication: f.needAuthentication,
+          })
+        );
       },
     }),
     createApiFunction({
-      namespace: [definyRpcNamespace],
+      namespace: FunctionNamespace.meta,
       name: "generateCallDefinyRpcTypeScriptCode",
       description: "名前空間「definyRpc」のApiFunctionを呼ぶ TypeScript のコードを生成する",
-      input: unit,
-      output: string,
+      input: Unit.type(),
+      output: String.type(),
       isMutation: false,
       needAuthentication: false,
       resolve: () => {
         const allFunc = addDefinyRpcApiFunction(parameter).functionsList.filter(
-          (f) => stringArrayEqual(f.namespace, [definyRpcNamespace]),
+          (f) => f.namespace.type === "meta",
         );
         return apiFunctionListToCode({
           apiFunctionList: allFunc,
           originHint: parameter.originHint,
           pathPrefix: parameter.pathPrefix ?? [],
           usePrettier: true,
-          namespace: { type: "local", path: [definyRpcNamespace] },
+          namespace: Namespace.meta,
           typeList: [],
         });
       },
     }),
-    createApiFunction({
-      namespace: [definyRpcNamespace],
-      name: "callQuery",
-      description: "指定した名前の関数を呼ぶ",
-      input: list(string),
-      output: structuredJsonValue,
-      isMutation: false,
-      needAuthentication: false,
-      resolve: async (input): Promise<StructuredJsonValue> => {
-        for (const func of addDefinyRpcApiFunction(parameter).functionsList) {
-          if (stringArrayEqual([...func.namespace, func.name], input)) {
-            if (
-              func.input.name !== "unit"
-            ) {
-              return StructuredJsonValue.string(
-                "need input parameter. まだサポートしてない",
-              );
-            }
-            return (func.output.toStructuredJsonValue(
-              await func.resolve(undefined, undefined),
-            ));
-          }
-        }
-        return StructuredJsonValue.string("error: not found");
-      },
-    }),
     ...(codeGenOutputFolderPath === undefined ? [] : [
       createApiFunction({
-        namespace: [definyRpcNamespace],
+        namespace: FunctionNamespace.meta,
         name: "generateCodeAndWriteAsFileInServer",
         description: "サーバーが実行している環境でコードを生成し, ファイルとして保存する. \n 保存先:" +
           codeGenOutputFolderPath,
-        input: unit,
-        output: unit,
+        input: Unit.type(),
+        output: Unit.type(),
         isMutation: false,
         needAuthentication: false,
         resolve: async () => {
@@ -225,9 +155,9 @@ const builtInFunctions = (
 
           await Promise.all(
             objectEntriesSameValue(
-              groupBy(allFunc, (f) => f.namespace.join(".")),
+              groupBy(allFunc, (f) => functionNamespaceToString(f.namespace)),
             ).map(
-              async ([namespace, funcList]) => {
+              async ([_, funcList]) => {
                 if (funcList === undefined) {
                   return;
                 }
@@ -238,15 +168,17 @@ const builtInFunctions = (
                 await writeTextFileWithLog(
                   join(
                     codeGenOutputFolderPath,
-                    ...firstFunc.namespace.slice(0, -1),
-                    firstFunc.namespace.at(-1) + ".ts",
-                  ),
+                    firstFunc.namespace.type === "meta"
+                      ? "meta"
+                      : parameter.name + "/" +
+                        firstFunc.namespace.value.join("/"),
+                  ) + ".ts",
                   apiFunctionListToCode({
                     apiFunctionList: funcList,
                     originHint: parameter.originHint,
                     pathPrefix: parameter.pathPrefix ?? [],
                     usePrettier: true,
-                    namespace: { type: "local", path: namespace.split(".") },
+                    namespace: fromFunctionNamespace(firstFunc.namespace),
                     typeList: [],
                   }),
                 );
@@ -259,13 +191,4 @@ const builtInFunctions = (
       }),
     ]),
   ];
-};
-
-const definyRpcTypeBodyToType = <t>(definyRpcType: DefinyRpcType<t>): Type => {
-  return {
-    namespace: definyRpcType.namespace,
-    name: definyRpcType.name,
-    description: definyRpcType.description,
-    parameters: definyRpcType.parameters.map(definyRpcTypeBodyToType),
-  };
 };

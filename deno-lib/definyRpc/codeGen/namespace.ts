@@ -1,4 +1,4 @@
-import { Namespace } from "../core/coreType.ts";
+import { FunctionNamespace, Namespace } from "../core/coreType.ts";
 
 export type RelativeNamespace = {
   readonly upCount: number;
@@ -167,4 +167,22 @@ export const namespaceToString = (namespace: Namespace): string => {
 
 export const namespaceEqual = (a: Namespace, b: Namespace): boolean => {
   return namespaceToString(a) === namespaceToString(b);
+};
+
+export const fromFunctionNamespace = (
+  functionNamespace: FunctionNamespace,
+): Namespace => {
+  if (functionNamespace.type === "meta") {
+    return Namespace.meta;
+  }
+  return Namespace.local(functionNamespace.value);
+};
+
+export const functionNamespaceToString = (
+  functionNamespace: FunctionNamespace,
+): string => {
+  return functionNamespace.type + "(" +
+    (functionNamespace.type === "local"
+      ? functionNamespace.value.join(".")
+      : "");
 };

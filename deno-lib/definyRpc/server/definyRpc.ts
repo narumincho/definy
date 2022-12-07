@@ -16,11 +16,12 @@ import {
 } from "../../simpleRequestResponse/simpleResponse.ts";
 import { stringArrayEqual, stringArrayMatchPrefix } from "../../util.ts";
 import { toBytes } from "https://deno.land/x/fast_base64@v0.1.7/mod.ts";
-import { StructuredJsonValue } from "../core/coreType.ts";
-
-export * from "../core/type.ts";
-export * from "../core/apiFunction.ts";
-export * from "../core/builtInType.ts";
+import { FunctionNamespace, StructuredJsonValue } from "../core/coreType.ts";
+import {
+  fromStructuredJsonValue,
+  toStructuredJsonValue,
+} from "../core/structuredJsonCodec.ts";
+import { createTypeKey } from "../core/collectType.ts";
 
 const editorPath = "_editor";
 
@@ -124,11 +125,14 @@ export const handleRequest = async (
   ) {
     return simpleResponseImmutableJavaScript(clientBuildResult.scriptContent);
   }
+  const typeMap = new Map(
+    all.typeList.map((
+      type,
+    ) => [createTypeKey(type.namespace, type.name), type]),
+  );
   console.log("request!: ", pathListRemovePrefix);
   for (const func of all.functionsList) {
-    if (
-      stringArrayEqual(pathListRemovePrefix, [...func.namespace, func.name])
-    ) {
+    if (isMatchFunction(func.namespace, func.name, pathListRemovePrefix)) {
       if (func.needAuthentication) {
         const authorizationHeaderValue = request.headers.authorization;
         if (authorizationHeaderValue === undefined) {
@@ -140,24 +144,24 @@ export const handleRequest = async (
           return unauthorized("invalid account token in Authorization header");
         }
         const apiFunctionResult = await func.resolve(
-          func.input.fromStructuredJsonValue(paramJsonParsed),
+          fromStructuredJsonValue(func.input, typeMap, paramJsonParsed),
           authorizationHeaderValue.credentials as AccountToken,
         );
         return simpleResponsePrivateJson(
-          func.output.toStructuredJsonValue(apiFunctionResult),
+          toStructuredJsonValue(func.output, typeMap, apiFunctionResult),
         );
       }
       const apiFunctionResult = await func.resolve(
-        func.input.fromStructuredJsonValue(paramJsonParsed),
+        fromStructuredJsonValue(func.input, typeMap, paramJsonParsed),
         undefined,
       );
       return simpleResponseCache5SecJson(
-        func.output.toStructuredJsonValue(apiFunctionResult),
+        toStructuredJsonValue(func.output, typeMap, apiFunctionResult),
       );
     }
   }
   return notFound({
-    examples: all.functionsList.map((func) => [...func.namespace, func.name]),
+    examples: all.functionsList.map((func) => [func.namespace, func.name]),
     specified: pathListRemovePrefix,
   });
 };
@@ -167,4 +171,15 @@ const editorPathPrefix = (pathPrefix: ReadonlyArray<string>) => {
     return "/" + editorPath + "/";
   }
   return "/" + pathPrefix.join("/") + "/" + editorPath + "/";
+};
+
+export const isMatchFunction = (
+  functionNamespace: FunctionNamespace,
+  functionName: string,
+  pathList: ReadonlyArray<string>,
+): boolean => {
+  if (functionNamespace.type === "meta") {
+    return stringArrayEqual(["__meta__", functionName], pathList);
+  }
+  return stringArrayEqual([...functionNamespace.value, functionName], pathList);
 };

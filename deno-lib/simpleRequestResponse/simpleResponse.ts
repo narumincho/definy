@@ -1,8 +1,8 @@
+import { StructuredJsonValue } from "../definyRpc/core/coreType.ts";
 import {
   jsonStringify,
   RawJsonValue,
   structuredJsonStringify,
-  StructuredJsonValue,
 } from "../typedJson.ts";
 
 /**

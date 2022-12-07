@@ -15,7 +15,7 @@ import {
   simpleResponseToResponse,
 } from "../../simpleRequestResponse/simpleResponse.ts";
 import { serve } from "https://deno.land/std@0.167.0/http/server.ts";
-import { fromFileUrl } from "https://deno.land/std@0.156.0/path/mod.ts";
+import { fromFileUrl } from "https://deno.land/std@0.167.0/path/mod.ts";
 import { Mode } from "./mode.ts";
 import React from "https://esm.sh/react@18.2.0?pin=v99";
 import { renderToString } from "https://esm.sh/react-dom@18.2.0/server?pin=v99";

@@ -7,7 +7,7 @@ import {
   fromFileUrl,
   join,
   relative,
-} from "https://deno.land/std@0.156.0/path/mod.ts";
+} from "https://deno.land/std@0.167.0/path/mod.ts";
 import { toBase64 } from "https://deno.land/x/fast_base64@v0.1.7/mod.ts";
 
 type BuildClientResult = {

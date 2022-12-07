@@ -5,7 +5,7 @@ import {
   fromFileUrl,
   join,
   relative,
-} from "https://deno.land/std@0.156.0/path/mod.ts";
+} from "https://deno.land/std@0.167.0/path/mod.ts";
 import * as dnt from "https://deno.land/x/dnt@0.31.0/mod.ts";
 
 const generateClientHtml = async (): Promise<string> => {

@@ -40,7 +40,7 @@ export const useTag = (
       namespace,
       typeName,
     );
-    if (typeDetail?.parameterCount === 0) {
+    if (typeDetail.parameterCount === 0) {
       return get(getTypeVariable(namespace, typeName, context), tag);
     }
     return callMethod(getTypeVariable(namespace, typeName, context), tag, []);

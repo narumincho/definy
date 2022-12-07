@@ -5,10 +5,7 @@ import {
   generateCodeAsString,
   identifierFromString,
 } from "../../jsTs/main.ts";
-import {
-  CodeGenContext,
-  collectDefinyRpcTypeFromFuncList,
-} from "../core/collectType.ts";
+import { CodeGenContext } from "../core/collectType.ts";
 import { formatCode } from "../../prettier.ts";
 import { apiFuncToTsFunction } from "./func.ts";
 import { collectedTypeToTypeAlias, typeToTypeVariable } from "./type.ts";
@@ -60,17 +57,14 @@ export const apiFunctionListToJsTsCode = (parameter: {
   const needAuthentication = parameter.apiFunctionList.some(
     (func) => func.needAuthentication,
   );
-  const collectedTypeMap = new Map<string, DefinyRpcTypeInfo>([
-    ...collectDefinyRpcTypeFromFuncList(
-      parameter.apiFunctionList,
-    ),
-    ...parameter.typeList.map((
+  const collectedTypeMap = new Map<string, DefinyRpcTypeInfo>(
+    parameter.typeList.map((
       t,
     ): [string, DefinyRpcTypeInfo] => [
       namespaceToString(t.namespace) + "." + t.name,
       t,
     ]),
-  ]);
+  );
 
   const context: CodeGenContext = {
     map: collectedTypeMap,
