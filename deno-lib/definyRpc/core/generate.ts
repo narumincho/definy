@@ -135,6 +135,14 @@ const map = DefinyRpcTypeInfo.from({
   body: TypeBody.map,
 });
 
+const set = DefinyRpcTypeInfo.from({
+  namespace: Namespace.coreType,
+  name: "Set",
+  description: "Set. 集合",
+  parameterCount: 1,
+  body: TypeBody.set,
+});
+
 const nameSpace = DefinyRpcTypeInfo.from({
   namespace: Namespace.coreType,
   name: "Namespace",
@@ -530,6 +538,7 @@ export const generateCoreCode = async (): Promise<void> => {
       structuredJsonValue,
       list,
       map,
+      set,
       nameSpace,
       definyRpcTypeInfo,
       typeBody,

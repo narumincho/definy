@@ -795,6 +795,49 @@ export const Map: {
 };
 
 /**
+ * Set. 集合
+ */
+export const Set: {
+  /**
+   * Set の型の表現
+   */
+  readonly typeInfo: () => DefinyRpcTypeInfo;
+  /**
+   * Set の型
+   */
+  readonly type: <p0 extends unknown>(
+    a: Type<p0>
+  ) => Type<globalThis.ReadonlySet<p0>>;
+  /**
+   * JsonからSetに変換する. 失敗した場合はエラー
+   */
+  readonly fromStructuredJsonValue: <p0 extends unknown>(
+    a: (a: StructuredJsonValue) => p0
+  ) => (a: StructuredJsonValue) => globalThis.ReadonlySet<p0>;
+} = {
+  typeInfo: (): DefinyRpcTypeInfo =>
+    DefinyRpcTypeInfo.from({
+      namespace: Namespace.coreType,
+      name: "Set",
+      description: "Set. 集合",
+      parameterCount: 1,
+      body: TypeBody.set,
+    }),
+  type: <p0 extends unknown>(p0: Type<p0>): Type<globalThis.ReadonlySet<p0>> =>
+    Type.from({ namespace: Namespace.coreType, name: "Set", parameters: [p0] }),
+  fromStructuredJsonValue:
+    <p0 extends unknown>(
+      p0FromJson: (a: StructuredJsonValue) => p0
+    ): ((a: StructuredJsonValue) => globalThis.ReadonlySet<p0>) =>
+    (jsonValue: StructuredJsonValue): globalThis.ReadonlySet<p0> => {
+      if (jsonValue.type === "array") {
+        return new globalThis.Set(jsonValue.value.map(p0FromJson));
+      }
+      throw new Error("expected array in Set.fromStructuredJsonValue");
+    },
+};
+
+/**
  * 名前空間. ユーザーが生成するものがこっちが用意するものか
  */
 export const Namespace: {
