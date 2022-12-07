@@ -1,4 +1,3 @@
-import { NonEmptyArray } from "../../util.ts";
 import { DefinyRpcTypeInfo, FunctionNamespace, Type } from "./coreType.ts";
 
 export type FunctionAndTypeList = {
