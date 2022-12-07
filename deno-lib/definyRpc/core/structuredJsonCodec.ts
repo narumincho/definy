@@ -1,10 +1,15 @@
-import { structuredJsonParse } from "../../typedJson.ts";
+import {
+  structuredJsonParse,
+  structuredJsonStringify,
+} from "../../typedJson.ts";
 import {
   CollectedDefinyRpcTypeMap,
   collectedDefinyRpcTypeMapGet,
   createTypeKey,
 } from "./collectType.ts";
-import { StructuredJsonValue, Type } from "./coreType.ts";
+import { Field, Pattern, StructuredJsonValue, Type } from "./coreType.ts";
+
+const changeType = <T>(type: Type<unknown>): Type<T> => type as Type<T>;
 
 export const fromStructuredJsonValue = <T>(
   type: Type<T>,
@@ -94,57 +99,13 @@ export const fromStructuredJsonValue = <T>(
         ),
       ) as T;
     }
-    case "map": {
-      const [keyType, valueType] = type.parameters;
-      if (keyType === undefined || valueType === undefined) {
-        throw new Error(
-          `expected 2 type parameter in Map type (${
-            createTypeKey(type.namespace, type.name)
-          })`,
-        );
-      }
-      if (jsonValue.type !== "object") {
-        throw new Error(
-          `expected json object in Map type (${
-            createTypeKey(type.namespace, type.name)
-          })`,
-        );
-      }
-      return new Map(
-        [...jsonValue.value].map(
-          ([key, valueJson]): readonly [unknown, unknown] => {
-            const keyTypeInfo = collectedDefinyRpcTypeMapGet(
-              typeMap,
-              keyType.namespace,
-              keyType.name,
-            );
-            if (keyTypeInfo.body.type === "string") {
-              return [
-                key,
-                fromStructuredJsonValue(valueType, typeMap, valueJson),
-              ];
-            }
-            const keyJson = structuredJsonParse(key);
-            if (keyJson === undefined) {
-              throw new Error(
-                `Map 型のときに key が string 以外での場合は json として解釈できる文字列である必要があります (${
-                  createTypeKey(type.namespace, type.name)
-                })`,
-              );
-            }
-
-            return [
-              fromStructuredJsonValue(
-                keyType,
-                typeMap,
-                keyJson,
-              ),
-              fromStructuredJsonValue(valueType, typeMap, valueJson),
-            ];
-          },
-        ),
+    case "map":
+      return toMap(
+        changeType<ReadonlyMap<unknown, unknown>>(type),
+        typeMap,
+        jsonValue,
       ) as T;
-    }
+
     case "url": {
       if (jsonValue.type !== "string") {
         throw new Error(
@@ -155,126 +116,406 @@ export const fromStructuredJsonValue = <T>(
       }
       return new URL(jsonValue.value) as T;
     }
-    case "product": {
-      if (jsonValue.type !== "object") {
-        throw new Error(
-          `expected json object in product (${
-            createTypeKey(type.namespace, type.name)
-          })`,
+    case "product":
+      return toProduct(
+        changeType<Record<string, unknown>>(type),
+        typeMap,
+        jsonValue,
+        typeInfo.body.value,
+      ) as T;
+    case "sum":
+      return toSum(
+        changeType<
+          {
+            readonly type: string;
+            readonly value?: unknown;
+            readonly [Symbol.toStringTag]: string;
+          }
+        >(type),
+        typeMap,
+        jsonValue,
+        typeInfo.body.value,
+      ) as T;
+  }
+};
+
+const toMap = <K, V>(
+  type: Type<ReadonlyMap<K, V>>,
+  typeMap: CollectedDefinyRpcTypeMap,
+  jsonValue: StructuredJsonValue,
+): ReadonlyMap<K, V> => {
+  const [keyType, valueType] = type.parameters;
+  if (keyType === undefined || valueType === undefined) {
+    throw new Error(
+      `expected 2 type parameter in Map type (${
+        createTypeKey(type.namespace, type.name)
+      })`,
+    );
+  }
+  if (jsonValue.type !== "object") {
+    throw new Error(
+      `expected json object in Map type (${
+        createTypeKey(type.namespace, type.name)
+      })`,
+    );
+  }
+  return new Map<K, V>(
+    [...jsonValue.value].map(
+      ([key, valueJson]): readonly [K, V] => {
+        const keyTypeInfo = collectedDefinyRpcTypeMapGet(
+          typeMap,
+          keyType.namespace,
+          keyType.name,
         );
-      }
-      return Object.fromEntries([
-        ...typeInfo.body.value.map((field): [string, unknown] => {
-          const fieldValueJson = jsonValue.value.get(field.name);
-          if (fieldValueJson === undefined) {
-            throw new Error(
-              `${
-                createTypeKey(type.namespace, type.name)
-              } need ${field.name} field (${
-                createTypeKey(type.namespace, type.name)
-              })`,
-            );
-          }
-          return [field.name, fieldValueJson];
-        }),
-        [
-          Symbol.toStringTag,
-          createTypeKey(typeInfo.namespace, type.name),
-        ],
-      ]) as T;
-    }
-    case "sum": {
-      if (jsonValue.type === "string") {
-        for (const pattern of typeInfo.body.value) {
-          if (pattern.name === jsonValue.value) {
-            if (pattern.parameter.type === "just") {
-              throw new Error(
-                `expected json object in sum pattern with parameter (${
-                  createTypeKey(type.namespace, type.name)
-                })`,
-              );
-            }
-            return {
-              type: pattern.name,
-              [Symbol.toStringTag]: createTypeKey(
-                typeInfo.namespace,
-                typeInfo.name,
-              ),
-            } as T;
-          }
+        if (keyTypeInfo.body.type === "string") {
+          return [
+            key as K,
+            fromStructuredJsonValue<V>(
+              changeType<V>(valueType),
+              typeMap,
+              valueJson,
+            ),
+          ];
         }
-        throw new Error(
-          `unknown pattern name expected [${
-            typeInfo.body.value.map((p) => p.name).join(",")
-          }] but got ${jsonValue.value} (${
-            createTypeKey(type.namespace, type.name)
-          })`,
-        );
-      }
-      if (jsonValue.type === "object") {
-        const typeFieldJson = jsonValue.value.get("type");
-        if (typeFieldJson?.type !== "string") {
+        const keyJson = structuredJsonParse(key);
+        if (keyJson === undefined) {
           throw new Error(
-            `expected json string in sum pattern key (${
+            `Map 型のときに key が string 以外での場合は json として解釈できる文字列である必要があります (${
               createTypeKey(type.namespace, type.name)
             })`,
           );
         }
-        for (const pattern of typeInfo.body.value) {
-          if (pattern.name === typeFieldJson.value) {
-            if (pattern.parameter.type === "just") {
-              const valueJson = jsonValue.value.get("value");
-              if (valueJson === undefined) {
-                throw new Error(
-                  `expected value field in sum pattern with parameter (${
-                    createTypeKey(type.namespace, type.name)
-                  })`,
-                );
-              }
-              return {
-                type: pattern.name,
-                value: fromStructuredJsonValue(
-                  pattern.parameter.value,
-                  typeMap,
-                  valueJson,
-                ),
-                [Symbol.toStringTag]: createTypeKey(
-                  typeInfo.namespace,
-                  typeInfo.name,
-                ),
-              } as T;
-            }
-            return {
-              type: pattern.name,
-              [Symbol.toStringTag]: createTypeKey(
-                typeInfo.namespace,
-                typeInfo.name,
-              ),
-            } as T;
-          }
-        }
+
+        return [
+          fromStructuredJsonValue<K>(
+            changeType<K>(keyType),
+            typeMap,
+            keyJson,
+          ),
+          fromStructuredJsonValue<V>(
+            changeType<V>(valueType),
+            typeMap,
+            valueJson,
+          ),
+        ];
+      },
+    ),
+  );
+};
+
+const toProduct = <T extends Record<string, unknown>>(
+  type: Type<T>,
+  typeMap: CollectedDefinyRpcTypeMap,
+  jsonValue: StructuredJsonValue,
+  fields: ReadonlyArray<Field>,
+): T => {
+  if (jsonValue.type !== "object") {
+    throw new Error(
+      `expected json object in product (${
+        createTypeKey(type.namespace, type.name)
+      })`,
+    );
+  }
+  return Object.fromEntries([
+    ...fields.map((field): [string, unknown] => {
+      const fieldValueJson = jsonValue.value.get(field.name);
+      if (fieldValueJson === undefined) {
         throw new Error(
-          `unknown pattern name expected [${
-            typeInfo.body.value.map((p) => p.name).join(",")
-          }] but got ${jsonValue.value} (${
+          `${
+            createTypeKey(type.namespace, type.name)
+          } need ${field.name} field (${
             createTypeKey(type.namespace, type.name)
           })`,
         );
       }
+      return [
+        field.name,
+        fromStructuredJsonValue(
+          changeType(field.type),
+          typeMap,
+          fieldValueJson,
+        ),
+      ];
+    }),
+    [
+      Symbol.toStringTag,
+      createTypeKey(type.namespace, type.name),
+    ],
+  ]) as T;
+};
+
+const toSum = <
+  T extends {
+    readonly type: string;
+    readonly value?: unknown;
+    readonly [Symbol.toStringTag]: string;
+  },
+>(
+  type: Type<T>,
+  typeMap: CollectedDefinyRpcTypeMap,
+  jsonValue: StructuredJsonValue,
+  patternList: ReadonlyArray<Pattern>,
+): {
+  readonly type: string;
+  readonly value?: unknown;
+  readonly [Symbol.toStringTag]: string;
+} => {
+  if (jsonValue.type === "string") {
+    for (const pattern of patternList) {
+      if (pattern.name === jsonValue.value) {
+        if (pattern.parameter.type === "just") {
+          throw new Error(
+            `expected json object in sum pattern with parameter (${
+              createTypeKey(type.namespace, type.name)
+            })`,
+          );
+        }
+        return {
+          type: pattern.name,
+          [Symbol.toStringTag]: createTypeKey(
+            type.namespace,
+            type.name,
+          ),
+        };
+      }
+    }
+    throw new Error(
+      `unknown pattern name expected [${
+        patternList.map((p) => p.name).join(",")
+      }] but got ${jsonValue.value} (${
+        createTypeKey(type.namespace, type.name)
+      })`,
+    );
+  }
+  if (jsonValue.type === "object") {
+    const typeFieldJson = jsonValue.value.get("type");
+    if (typeFieldJson?.type !== "string") {
       throw new Error(
-        `expected json object or string in sum (${
+        `expected json string in sum pattern key (${
           createTypeKey(type.namespace, type.name)
         })`,
       );
     }
+    for (const pattern of patternList) {
+      if (pattern.name === typeFieldJson.value) {
+        if (pattern.parameter.type === "just") {
+          const valueJson = jsonValue.value.get("value");
+          if (valueJson === undefined) {
+            throw new Error(
+              `expected value field in sum pattern with parameter (${
+                createTypeKey(type.namespace, type.name)
+              })`,
+            );
+          }
+          return {
+            type: pattern.name,
+            value: fromStructuredJsonValue(
+              pattern.parameter.value,
+              typeMap,
+              valueJson,
+            ),
+            [Symbol.toStringTag]: createTypeKey(
+              type.namespace,
+              type.name,
+            ),
+          } as T;
+        }
+        return {
+          type: pattern.name,
+          [Symbol.toStringTag]: createTypeKey(
+            type.namespace,
+            type.name,
+          ),
+        } as T;
+      }
+    }
+    throw new Error(
+      `unknown pattern name expected [${
+        patternList.map((p) => p.name).join(",")
+      }] but got ${jsonValue.value} (${
+        createTypeKey(type.namespace, type.name)
+      })`,
+    );
   }
+  throw new Error(
+    `expected json object or string in sum (${
+      createTypeKey(type.namespace, type.name)
+    })`,
+  );
 };
 
-// TODO
 export const toStructuredJsonValue = <t>(
   type: Type<t>,
   typeMap: CollectedDefinyRpcTypeMap,
   value: t,
 ): StructuredJsonValue => {
-  return StructuredJsonValue.null;
+  const typeInfo = collectedDefinyRpcTypeMapGet(
+    typeMap,
+    type.namespace,
+    type.name,
+  );
+  switch (typeInfo.body.type) {
+    case "string":
+      if (typeof value !== "string") {
+        throw new Error("expected string in toStructuredJsonValue");
+      }
+      return StructuredJsonValue.string(value);
+    case "number":
+      if (typeof value !== "number") {
+        throw new Error("expected number in toStructuredJsonValue");
+      }
+      return StructuredJsonValue.number(value);
+    case "boolean":
+      if (typeof value !== "boolean") {
+        throw new Error("expected boolean in toStructuredJsonValue");
+      }
+      return StructuredJsonValue.boolean(value);
+    case "unit":
+      return StructuredJsonValue.null;
+    case "list": {
+      if (!(value instanceof Array)) {
+        throw new Error("expected Array in toStructuredJsonValue");
+      }
+      const [elementType] = type.parameters;
+      if (elementType === undefined) {
+        throw new Error(
+          `expected type parameter in List type (${
+            createTypeKey(type.namespace, type.name)
+          })`,
+        );
+      }
+      return StructuredJsonValue.array(
+        value.map((element) =>
+          toStructuredJsonValue(elementType, typeMap, element)
+        ),
+      );
+    }
+    case "set": {
+      if (!(value instanceof Set)) {
+        throw new Error("expected Set in toStructuredJsonValue");
+      }
+      const [elementType] = type.parameters;
+      if (elementType === undefined) {
+        throw new Error(
+          `expected type parameter in Set type (${
+            createTypeKey(type.namespace, type.name)
+          })`,
+        );
+      }
+      return StructuredJsonValue.array(
+        [...value].map((element) =>
+          toStructuredJsonValue(elementType, typeMap, element)
+        ),
+      );
+    }
+    case "map": {
+      if (!(value instanceof Map)) {
+        throw new Error("expected Map in toStructuredJsonValue");
+      }
+      const [keyType, valueType] = type.parameters;
+      if (keyType === undefined || valueType === undefined) {
+        throw new Error(
+          `expected 2 type parameter in Map type (${
+            createTypeKey(type.namespace, type.name)
+          })`,
+        );
+      }
+      const keyTypeInfo = collectedDefinyRpcTypeMapGet(
+        typeMap,
+        keyType.namespace,
+        keyType.name,
+      );
+      if (keyTypeInfo.body.type === "string") {
+        return StructuredJsonValue.object(
+          new Map(
+            [...value].map((
+              [key, value],
+            ): [string, StructuredJsonValue] => [
+              key,
+              toStructuredJsonValue(valueType, typeMap, value),
+            ]),
+          ),
+        );
+      }
+
+      return StructuredJsonValue.object(
+        new Map(
+          [...value].map((
+            [key, value],
+          ): [string, StructuredJsonValue] => [
+            structuredJsonStringify(
+              toStructuredJsonValue(keyType, typeMap, key),
+            ),
+            toStructuredJsonValue(valueType, typeMap, value),
+          ]),
+        ),
+      );
+    }
+    case "url": {
+      if (!(value instanceof URL)) {
+        throw new Error("expected Map in toStructuredJsonValue");
+      }
+      return StructuredJsonValue.string(value.toString());
+    }
+    case "product": {
+      return StructuredJsonValue.object(
+        new Map(
+          typeInfo.body.value.map((
+            field,
+          ): readonly [string, StructuredJsonValue] => [
+            field.name,
+            toStructuredJsonValue(
+              field.type,
+              typeMap,
+              (value as Record<string, unknown>)[field.name],
+            ),
+          ]),
+        ),
+      );
+    }
+    case "sum": {
+      const valueObj = value as {
+        readonly type: string;
+        readonly value?: unknown;
+      };
+      if (
+        typeInfo.body.value.every((pattern) =>
+          pattern.parameter.type === "nothing"
+        )
+      ) {
+        return StructuredJsonValue.string(valueObj.type);
+      }
+      for (const pattern of typeInfo.body.value) {
+        if (pattern.name === valueObj.type) {
+          if (pattern.parameter.type === "just") {
+            return StructuredJsonValue.object(
+              new Map([
+                ["type", StructuredJsonValue.string(pattern.name)],
+                [
+                  "value",
+                  toStructuredJsonValue(
+                    pattern.parameter.value,
+                    typeMap,
+                    valueObj.value,
+                  ),
+                ],
+              ]),
+            );
+          }
+          return StructuredJsonValue.object(
+            new Map([
+              ["type", StructuredJsonValue.string(pattern.name)],
+            ]),
+          );
+        }
+      }
+      throw new Error(
+        `unknown pattern name expected [${
+          typeInfo.body.value.map((p) => p.name).join(",")
+        }] but got ${valueObj.type} (${
+          createTypeKey(type.namespace, type.name)
+        })`,
+      );
+    }
+  }
 };
