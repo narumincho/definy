@@ -179,7 +179,10 @@ export const isMatchFunction = (
   pathList: ReadonlyArray<string>,
 ): boolean => {
   if (functionNamespace.type === "meta") {
-    return stringArrayEqual(["__meta__", functionName], pathList);
+    return stringArrayEqual(["meta", functionName], pathList);
   }
-  return stringArrayEqual([...functionNamespace.value, functionName], pathList);
+  return stringArrayEqual(
+    ["api", ...functionNamespace.value, functionName],
+    pathList,
+  );
 };

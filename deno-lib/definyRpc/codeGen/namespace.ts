@@ -181,8 +181,8 @@ export const fromFunctionNamespace = (
 export const functionNamespaceToString = (
   functionNamespace: FunctionNamespace,
 ): string => {
-  return functionNamespace.type + "(" +
-    (functionNamespace.type === "local"
-      ? functionNamespace.value.join(".")
-      : "");
+  if (functionNamespace.type === "meta") {
+    return "*meta";
+  }
+  return functionNamespace.value.join(".");
 };

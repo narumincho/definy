@@ -1,6 +1,7 @@
 import React from "https://esm.sh/react@18.2.0?pin=v99";
-import { FunctionDetail } from "../generated/definyRpc.ts";
 import { c, toStyleAndHash } from "../../cssInJs/mod.ts";
+import { functionNamespaceToString } from "../codeGen/namespace.ts";
+import { FunctionDetail } from "../core/coreType.ts";
 
 const readonlyStyle = toStyleAndHash({
   display: "grid",
@@ -250,7 +251,8 @@ const createSuggestionWithPoint = (parameter: {
 }): SuggestionList => {
   const normalizedSearchText = parameter.inputText.trim().toLocaleLowerCase();
   return parameter.values.map((value): SuggestionItem => {
-    const name = value.name.join(".");
+    const name = functionNamespaceToString(value.namespace) + "." +
+      value.name;
     const includeIndex = name.toLocaleLowerCase().indexOf(normalizedSearchText);
     if (includeIndex === -1) {
       return {

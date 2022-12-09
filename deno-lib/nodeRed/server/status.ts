@@ -1,4 +1,4 @@
-import type { FunctionDetail } from "../../definyRpc/generated/definyRpc.ts";
+import { FunctionDetail } from "../../definyRpc/core/coreType.ts";
 
 export type Status = {
   readonly name: string;

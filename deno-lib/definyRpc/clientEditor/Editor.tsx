@@ -1,11 +1,17 @@
 import React from "https://esm.sh/react@18.2.0?pin=v99";
-import * as definyRpc from "../generated/definyRpc.ts";
 import { Button } from "../../editor/Button.tsx";
 import { DetailView } from "./DetailView.tsx";
 import { Result } from "./Result.tsx";
 import { Select } from "./Select.tsx";
 import { c, toStyleAndHash } from "../../cssInJs/mod.ts";
 import { RawJsonValue } from "../../typedJson.ts";
+import {
+  DefinyRpcTypeInfo,
+  FunctionDetail,
+  StructuredJsonValue,
+} from "../core/coreType.ts";
+import { functionNamespaceToString } from "../codeGen/namespace.ts";
+import { requestQuery } from "../core/request.ts";
 
 const containerStyle = toStyleAndHash({
   padding: 16,
@@ -20,7 +26,10 @@ const contentStyle = toStyleAndHash({
 
 export const Editor = (props: {
   readonly serverOrigin: string;
-  readonly functionList: ReadonlyArray<definyRpc.FunctionDetail> | undefined;
+  readonly functionAndTypeList: {
+    funcList: ReadonlyArray<FunctionDetail>;
+    typeList: ReadonlyArray<DefinyRpcTypeInfo>;
+  } | undefined;
 }): React.ReactElement => {
   const [selectedFunc, setSelectedFunc] = React.useState<string | undefined>(
     undefined,
@@ -30,45 +39,54 @@ export const Editor = (props: {
 
   React.useEffect(() => {
     if (selectedFunc === undefined) {
-      setSelectedFunc(props.functionList?.[0]?.name.join("."));
+      const first = props.functionAndTypeList?.funcList?.[0];
+      if (first === undefined) {
+        setSelectedFunc(undefined);
+      } else {
+        setSelectedFunc(
+          functionNamespaceToString(first.namespace) + "." + first.name,
+        );
+      }
     }
-  }, [selectedFunc, props.functionList]);
+  }, [selectedFunc, props.functionAndTypeList]);
 
-  const selectedFuncDetail = props.functionList?.find(
-    (func) => func.name.join(".") === selectedFunc,
+  const selectedFuncDetail = props.functionAndTypeList?.funcList?.find(
+    (func) =>
+      functionNamespaceToString(func.namespace) + "." + func.name ===
+        selectedFunc,
   );
 
   return (
     <div className={c(containerStyle)}>
       <div className={c(contentStyle)}>
         <Select
-          values={props.functionList}
+          values={props.functionAndTypeList?.funcList}
           value={selectedFunc}
           onSelect={(e) => {
             setSelectedFunc(e);
           }}
         />
         <Button
-          onClick={selectedFuncDetail?.input.fullName.join(".") ===
-                "definyRpc.Unit" &&
+          onClick={selectedFuncDetail?.input.name ===
+                "Unit" &&
+              selectedFuncDetail?.input.namespace.type === "coreType" &&
               !isRequesting
             ? () => {
               setIsRequesting(true);
-              const url = new URL(props.serverOrigin);
-              url.pathname = url.pathname + "/" +
-                selectedFuncDetail.name.join("/");
-              fetch(url)
-                .then((response) => {
-                  return response.json();
-                })
-                .then((json: unknown) => {
-                  console.log("response", json);
-                  setRunResponse(json);
-                  setIsRequesting(false);
-                })
-                .catch(() => {
-                  setRunResponse(undefined);
-                });
+              requestQuery({
+                url: new URL(props.serverOrigin),
+                fromStructuredJsonValue: () => {
+                  console.log("型のリストを受け取る必要あり");
+                  return null;
+                },
+                name: selectedFuncDetail.name,
+                namespace: selectedFuncDetail.namespace,
+                input: StructuredJsonValue.null,
+              }).then((json) => {
+                console.log("response", json);
+                setRunResponse(json);
+                setIsRequesting(false);
+              });
             }
             : undefined}
         >
@@ -77,12 +95,14 @@ export const Editor = (props: {
         <Result data={runResponse as RawJsonValue} requesting={isRequesting} />
       </div>
 
-      {props.functionList === undefined ? <div>loading...</div> : (
-        <DetailView
-          functionList={props.functionList}
-          selectedFuncName={selectedFunc}
-        />
-      )}
+      {props.functionAndTypeList === undefined
+        ? <div>loading...</div>
+        : (
+          <DetailView
+            functionList={props.functionAndTypeList.funcList}
+            selectedFuncName={selectedFunc}
+          />
+        )}
     </div>
   );
 };

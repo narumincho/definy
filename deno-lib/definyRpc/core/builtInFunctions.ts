@@ -10,6 +10,7 @@ import { objectEntriesSameValue } from "../../objectEntriesSameValue.ts";
 import { join } from "https://deno.land/std@0.167.0/path/mod.ts";
 import { groupBy } from "https://deno.land/std@0.167.0/collections/group_by.ts";
 import {
+  DefinyRpcTypeInfo,
   FunctionDetail,
   FunctionNamespace,
   List,
@@ -21,6 +22,7 @@ import {
   fromFunctionNamespace,
   functionNamespaceToString,
 } from "../codeGen/namespace.ts";
+import { coreTypeInfoList } from "./coreTypeInfo.ts";
 
 export const addDefinyRpcApiFunction = (
   parameter: DefinyRpcParameter,
@@ -31,7 +33,10 @@ export const addDefinyRpcApiFunction = (
       ...builtInFunctions(parameter),
       ...all.functionsList,
     ],
-    typeList: all.typeList,
+    typeList: [
+      ...all.typeList,
+      ...coreTypeInfoList,
+    ],
   };
 };
 

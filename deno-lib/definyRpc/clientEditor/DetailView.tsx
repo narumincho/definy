@@ -1,6 +1,10 @@
 import React from "https://esm.sh/react@18.2.0?pin=v99";
-import { FunctionDetail } from "../generated/definyRpc.ts";
 import { c, toStyleAndHash } from "../../cssInJs/mod.ts";
+import { FunctionDetail } from "../core/coreType.ts";
+import {
+  functionNamespaceToString,
+  namespaceToString,
+} from "../codeGen/namespace.ts";
 
 const containerStyle = toStyleAndHash({
   overflowWrap: "anywhere",
@@ -18,7 +22,9 @@ export const DetailView = (props: {
     );
   }
   const selectedFuncDetail = props.functionList.find(
-    (func) => func.name.join(".") === props.selectedFuncName,
+    (func) =>
+      functionNamespaceToString(func.namespace) + "." + func.name ===
+        props.selectedFuncName,
   );
 
   if (selectedFuncDetail === undefined) {
@@ -30,10 +36,18 @@ export const DetailView = (props: {
   }
   return (
     <div className={c(containerStyle)}>
-      <h2>{selectedFuncDetail.name.join(".")}</h2>
+      <div>{functionNamespaceToString(selectedFuncDetail.namespace)}</div>
+      <h2>{selectedFuncDetail.name}</h2>
       <div>{selectedFuncDetail.description}</div>
-      <div>入力 input: {selectedFuncDetail.input.fullName.join(".")}</div>
-      <div>出力 output: {selectedFuncDetail.output.fullName.join(".")}</div>
+      <div>
+        入力 input: {namespaceToString(selectedFuncDetail.input.namespace) + "." +
+          selectedFuncDetail.input.name}
+      </div>
+      <div>
+        出力 output:{" "}
+        {namespaceToString(selectedFuncDetail.output.namespace) + "." +
+          selectedFuncDetail.output.name}
+      </div>
     </div>
   );
 };

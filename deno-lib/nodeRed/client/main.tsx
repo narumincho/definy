@@ -5,6 +5,10 @@ import { Form } from "./Form.tsx";
 import { red } from "./nodeRed.ts";
 import { Status } from "../server/status.ts";
 import { GeneratedNodeForm } from "./GeneratedNodeForm.tsx";
+import {
+  functionNamespaceToString,
+  namespaceToString,
+} from "../../definyRpc/codeGen/namespace.ts";
 
 const escapeHtml = (text: string): string => {
   return text.replace(/[&'`"<>]/ug, (match) => {
@@ -23,16 +27,24 @@ const createNodeFromStatus = (statusAsString: string): void => {
   const status: Status = JSON.parse(statusAsString);
 
   for (const func of status.functionList) {
-    const id = "definy-" + func.name.join("-");
+    const id = "definy-" + functionNamespaceToString(func.namespace) + "." +
+      func.name;
 
     const scriptElement = document.createElement("script");
     scriptElement.type = "text/html";
     scriptElement.dataset["helpName"] = id;
     scriptElement.textContent = `<div>
-  <h2>${escapeHtml(func.name.join("."))}</h2>
+  <div>${escapeHtml(functionNamespaceToString(func.namespace))}</div>
+  <h2>${escapeHtml(func.name)}</h2>
   <div>${escapeHtml(func.description)}</div>
-  <div>input: ${escapeHtml(func.input.fullName.join("."))}</div>
-  <div>output: ${escapeHtml(func.output.fullName.join("."))}</div>
+  <div>input: ${
+      escapeHtml(
+        namespaceToString(func.input.namespace) + "." + func.input.name,
+      )
+    }</div>
+  <div>output: ${
+      namespaceToString(func.output.namespace) + "." + func.output.name
+    }</div>
 </>`;
     document.getElementById("definy-html-output")
       ?.appendChild(

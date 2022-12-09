@@ -3,11 +3,12 @@ import {
   structuredJsonStringify,
 } from "../../typedJson.ts";
 import { Result } from "./maybe.ts";
-import { StructuredJsonValue } from "./coreType.ts";
+import { FunctionNamespace, StructuredJsonValue } from "./coreType.ts";
 
 export const requestQuery = async <T extends unknown>(parameter: {
   readonly url: URL;
-  readonly fullName: ReadonlyArray<string>;
+  readonly namespace: FunctionNamespace;
+  readonly name: string;
   readonly fromStructuredJsonValue: (a: StructuredJsonValue) => T;
   /**
    * 認証が必要な場合のみ付与して呼ぶ
@@ -19,7 +20,11 @@ export const requestQuery = async <T extends unknown>(parameter: {
   readonly input: StructuredJsonValue;
 }): Promise<Result<T, "error">> => {
   const url = new URL(parameter.url.toString());
-  url.pathname = url.pathname + ("/" + parameter.fullName.join("/"));
+  url.pathname = url.pathname + "/" +
+    (parameter.namespace.type === "meta"
+      ? "meta/"
+      : "api" + parameter.namespace.value.join("/") + "/") +
+    parameter.name;
 
   try {
     if (parameter.accountToken !== undefined) {

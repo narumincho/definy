@@ -1,10 +1,10 @@
 import React from "https://esm.sh/react@18.2.0?pin=v99";
 import { c, toStyleAndHash } from "../../cssInJs/mod.ts";
-import * as definyRpc from "../generated/definyRpc.ts";
 import { Button } from "../../editor/Button.tsx";
 import { Editor } from "./Editor.tsx";
 import { ServerOrigin } from "./ServerOrigin.tsx";
 import { SampleChart } from "./Chart.tsx";
+import { FunctionDetail } from "../core/coreType.ts";
 
 const containerStyle = toStyleAndHash({
   backgroundColor: "#111",
@@ -27,7 +27,7 @@ const titleStyle = toStyleAndHash({
 
 export const App = (): React.ReactElement => {
   const [functionList, setFunctionList] = React.useState<
-    ReadonlyArray<definyRpc.FunctionDetail> | undefined
+    ReadonlyArray<FunctionDetail> | undefined
   >(undefined);
   const [serverName, setServerName] = React.useState<string | undefined>();
   const [serverUrl, setServerUrl] = React.useState<string>(
@@ -36,22 +36,12 @@ export const App = (): React.ReactElement => {
   const [editorCount, setEditorCount] = React.useState<number>(1);
 
   React.useEffect(() => {
-    definyRpc.functionListByName({ url: serverUrl }).then((result) => {
-      if (result.type === "ok") {
-        setFunctionList(result.ok);
-      } else {
-        setFunctionList(undefined);
-      }
-    });
-  }, [serverUrl]);
-
-  React.useEffect(() => {
-    definyRpc.name({ url: serverUrl }).then((result) => {
-      if (result.type === "ok") {
-        setServerName(result.ok);
-      } else {
-        setServerName(undefined);
-      }
+    fetch(serverUrl + "/meta/functionListByName").then((response) =>
+      response.json()
+    ).then((result) => {
+      setFunctionList(result.ok);
+    }).catch(() => {
+      setFunctionList(undefined);
     });
   }, [serverUrl]);
 
@@ -67,7 +57,9 @@ export const App = (): React.ReactElement => {
       {Array.from({ length: editorCount }, (_, i) => (
         <Editor
           key={i}
-          functionList={functionList}
+          functionAndTypeList={functionList === undefined
+            ? undefined
+            : { funcList: functionList, typeList: [] }}
           serverOrigin={serverUrl}
         />
       ))}

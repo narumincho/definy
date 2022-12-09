@@ -1,5 +1,5 @@
-import { createApiFunction, FunctionAndTypeList } from "./core/apiFunction.ts";
-import { FunctionNamespace, Number, String, Unit } from "./core/coreType.ts";
+import { createApiFunction, FunctionAndTypeList } from "../core/apiFunction.ts";
+import { FunctionNamespace, Number, String, Unit } from "../core/coreType.ts";
 
 export const mainNamespace = FunctionNamespace.local(["main"]);
 

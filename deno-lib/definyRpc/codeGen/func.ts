@@ -110,9 +110,10 @@ export const apiFuncToTsFunction = (parameter: {
                   ? ""
                   : parameter.pathPrefix.join("/") + "/") +
                 (functionNamespace.type === "meta"
-                  ? "__meta__"
-                  : functionNamespace.value.join("/") + "/" +
-                    parameter.func.name),
+                  ? "meta"
+                  : "api/" + functionNamespace.value.join("/")) +
+                "/" +
+                parameter.func.name,
             },
           ),
         },
