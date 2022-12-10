@@ -10,8 +10,12 @@ import {
   FunctionDetail,
   StructuredJsonValue,
 } from "../core/coreType.ts";
-import { functionNamespaceToString } from "../codeGen/namespace.ts";
+import {
+  functionNamespaceToString,
+  namespaceToString,
+} from "../codeGen/namespace.ts";
 import { requestQuery } from "../core/request.ts";
+import { coreTypeInfoList } from "../core/coreTypeInfo.ts";
 
 const containerStyle = toStyleAndHash({
   padding: 16,
@@ -75,10 +79,16 @@ export const Editor = (props: {
               setIsRequesting(true);
               requestQuery({
                 url: new URL(props.serverOrigin),
-                fromStructuredJsonValue: () => {
-                  console.log("型のリストを受け取る必要あり");
-                  return null;
-                },
+                inputType: selectedFuncDetail.input,
+                outputType: selectedFuncDetail.output,
+                typeMap: new Map(
+                  coreTypeInfoList.map((
+                    info,
+                  ) => [
+                    namespaceToString(info.namespace) + "." + info.name,
+                    info,
+                  ]),
+                ),
                 name: selectedFuncDetail.name,
                 namespace: selectedFuncDetail.namespace,
                 input: StructuredJsonValue.null,

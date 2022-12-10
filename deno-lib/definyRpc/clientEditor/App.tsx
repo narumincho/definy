@@ -8,6 +8,7 @@ import {
   FunctionDetail,
   FunctionNamespace,
   List,
+  String,
   Unit,
 } from "../core/coreType.ts";
 import { requestQuery } from "../core/request.ts";
@@ -66,6 +67,29 @@ export const App = (): React.ReactElement => {
         }
       }).catch(() => {
         setFunctionList(undefined);
+      });
+    requestQuery({
+      url: new URL(serverUrl),
+      input: undefined,
+      inputType: Unit.type(),
+      name: "name",
+      namespace: FunctionNamespace.meta,
+      outputType: String.type(),
+      typeMap: new Map(
+        coreTypeInfoList.map((
+          info,
+        ) => [namespaceToString(info.namespace) + "." + info.name, info]),
+      ),
+    })
+      .then((result) => {
+        if (result.type === "ok") {
+          console.log("result.value", result.value);
+          setServerName(result.value);
+        } else {
+          setServerName(undefined);
+        }
+      }).catch(() => {
+        setServerName(undefined);
       });
   }, [serverUrl]);
 
