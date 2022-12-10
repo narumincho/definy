@@ -1,4 +1,3 @@
-import { fromFileUrl } from "https://deno.land/std@0.167.0/path/mod.ts";
 import { writeTextFileWithLog } from "../../writeFileAndLog.ts";
 import { apiFunctionListToCode } from "../codeGen/main.ts";
 import { coreTypeInfoList } from "./coreTypeInfo.ts";
@@ -17,7 +16,7 @@ export const generateCoreCode = async (): Promise<void> => {
     typeList: coreTypeInfoList,
   });
   await writeTextFileWithLog(
-    fromFileUrl(import.meta.resolve("./coreTypeNew.ts")),
+    new URL(import.meta.resolve("./coreTypeNew.ts")),
     code,
   );
 };

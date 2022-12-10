@@ -41,9 +41,11 @@ export type DefinyRpcParameter = {
   /**
    * 実行環境とコードを編集している環境が同じ場合に, コードを生成ボタンを押したら生成できる機能
    *
+   * 相対パスではなく `file://` で始まるURLを指定する必要がある
+   *
    * 本番サーバーでは `undefined` を指定する
    */
-  readonly codeGenOutputFolderPath: string | undefined;
+  readonly codeGenOutputFolderPath: URL | undefined;
   /**
    * 処理するパス
    *

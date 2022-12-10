@@ -7,10 +7,8 @@ import { apiFunctionListToCode } from "../codeGen/main.ts";
 import type { DefinyRpcParameter } from "../server/definyRpc.ts";
 import { writeTextFileWithLog } from "../../writeFileAndLog.ts";
 import { objectEntriesSameValue } from "../../objectEntriesSameValue.ts";
-import { join } from "https://deno.land/std@0.167.0/path/mod.ts";
 import { groupBy } from "https://deno.land/std@0.167.0/collections/group_by.ts";
 import {
-  DefinyRpcTypeInfo,
   FunctionDetail,
   FunctionNamespace,
   List,
@@ -150,7 +148,7 @@ const builtInFunctions = (
         namespace: FunctionNamespace.meta,
         name: "generateCodeAndWriteAsFileInServer",
         description: "サーバーが実行している環境でコードを生成し, ファイルとして保存する. \n 保存先:" +
-          codeGenOutputFolderPath,
+          codeGenOutputFolderPath.toString(),
         input: Unit.type(),
         output: Unit.type(),
         isMutation: false,
@@ -171,13 +169,13 @@ const builtInFunctions = (
                   return;
                 }
                 await writeTextFileWithLog(
-                  join(
-                    codeGenOutputFolderPath,
-                    firstFunc.namespace.type === "meta"
+                  new URL(
+                    (firstFunc.namespace.type === "meta"
                       ? "meta"
                       : parameter.name + "/" +
-                        firstFunc.namespace.value.join("/"),
-                  ) + ".ts",
+                        firstFunc.namespace.value.join("/")) + ".ts",
+                    codeGenOutputFolderPath,
+                  ),
                   apiFunctionListToCode({
                     apiFunctionList: funcList,
                     originHint: parameter.originHint,

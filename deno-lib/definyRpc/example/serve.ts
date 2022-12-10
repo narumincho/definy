@@ -7,7 +7,7 @@ import { serve } from "https://deno.land/std@0.167.0/http/server.ts";
 export const startExampleServer = (
   parameter: {
     readonly portNumber?: number;
-    readonly codeGenOutputFolderPath?: string;
+    readonly codeGenOutputFolderPath?: URL;
   },
 ): void => {
   serve(

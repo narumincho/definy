@@ -1,21 +1,14 @@
 import { writeTextFileWithLog } from "../writeFileAndLog.ts";
 import * as esbuild from "https://deno.land/x/esbuild@v0.15.14/mod.js";
 import { denoPlugin } from "https://deno.land/x/esbuild_deno_loader@0.6.0/mod.ts";
-import {
-  fromFileUrl,
-  join,
-  relative,
-} from "https://deno.land/std@0.167.0/path/mod.ts";
+import { fromFileUrl } from "https://deno.land/std@0.167.0/path/posix.ts";
 import * as dnt from "https://deno.land/x/dnt@0.31.0/mod.ts";
 
 const generateClientHtml = async (): Promise<string> => {
   const result = await esbuild.build({
     plugins: [denoPlugin()],
     entryPoints: [
-      relative(
-        Deno.cwd(),
-        fromFileUrl(import.meta.resolve("./client/main.tsx")),
-      ),
+      fromFileUrl(import.meta.resolve("./client/main.tsx")),
     ],
     write: false,
     bundle: true,
@@ -43,17 +36,15 @@ const generateClientHtml = async (): Promise<string> => {
   throw new Error("client の ビルドに失敗した");
 };
 
-const outDir = fromFileUrl(
-  import.meta.resolve("../../nodeRedServerForNode"),
-);
+const outDir = new URL(import.meta.resolve("../../nodeRedServerForNode"));
 
-dnt.emptyDir(outDir);
+dnt.emptyDir(fromFileUrl(outDir));
 
 const version = "1.1.0";
 
 await dnt.build({
   entryPoints: [fromFileUrl(import.meta.resolve("./server/main.ts"))],
-  outDir,
+  outDir: fromFileUrl(outDir),
   shims: {
     deno: true,
     undici: true,
@@ -90,12 +81,12 @@ console.log("Node.js 向けスクリプトの出力に成功");
 
 const clientHtml = await generateClientHtml();
 await writeTextFileWithLog(
-  join(outDir, "./script/nodeRed/server/main.html"),
+  new URL("./script/nodeRed/server/main.html", outDir),
   clientHtml,
 );
 
 await writeTextFileWithLog(
-  join(outDir, "./README.md"),
+  new URL("./README.md", outDir),
   `# @definy/node-red v${version}
 
 - npm latest: https://www.npmjs.com/package/@definy/node-red
