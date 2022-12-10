@@ -4,7 +4,15 @@ import { Button } from "../../editor/Button.tsx";
 import { Editor } from "./Editor.tsx";
 import { ServerOrigin } from "./ServerOrigin.tsx";
 import { SampleChart } from "./Chart.tsx";
-import { FunctionDetail } from "../core/coreType.ts";
+import {
+  FunctionDetail,
+  FunctionNamespace,
+  List,
+  Unit,
+} from "../core/coreType.ts";
+import { requestQuery } from "../core/request.ts";
+import { coreTypeInfoList } from "../core/coreTypeInfo.ts";
+import { namespaceToString } from "../codeGen/namespace.ts";
 
 const containerStyle = toStyleAndHash({
   backgroundColor: "#111",
@@ -36,13 +44,29 @@ export const App = (): React.ReactElement => {
   const [editorCount, setEditorCount] = React.useState<number>(1);
 
   React.useEffect(() => {
-    fetch(serverUrl + "/meta/functionListByName").then((response) =>
-      response.json()
-    ).then((result) => {
-      setFunctionList(result.ok);
-    }).catch(() => {
-      setFunctionList(undefined);
-    });
+    requestQuery({
+      url: new URL(serverUrl),
+      input: undefined,
+      inputType: Unit.type(),
+      name: "functionListByName",
+      namespace: FunctionNamespace.meta,
+      outputType: List.type(FunctionDetail.type()),
+      typeMap: new Map(
+        coreTypeInfoList.map((
+          info,
+        ) => [namespaceToString(info.namespace) + "." + info.name, info]),
+      ),
+    })
+      .then((result) => {
+        if (result.type === "ok") {
+          console.log("result.value", result.value);
+          setFunctionList(result.value);
+        } else {
+          setFunctionList(undefined);
+        }
+      }).catch(() => {
+        setFunctionList(undefined);
+      });
   }, [serverUrl]);
 
   return (

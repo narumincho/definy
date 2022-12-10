@@ -96,7 +96,7 @@ deno run --check --allow-net=:2520 https://raw.githubusercontent.com/narumincho/
 ### **開発用** definy RPC クライアントビルド
 
 ```ps1
-deno run --check --watch -A ./entryPoints/definyRpcBuild.ts
+deno run --check -A ./entryPoints/definyRpcBuild.ts
 ```
 
 ### **開発用*** definy RPC coreType.ts コード生成

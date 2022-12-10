@@ -3,13 +3,17 @@ import {
   structuredJsonStringify,
 } from "../../typedJson.ts";
 import { Result } from "./maybe.ts";
-import { FunctionNamespace, StructuredJsonValue } from "./coreType.ts";
+import { FunctionNamespace, StructuredJsonValue, Type } from "./coreType.ts";
+import {
+  fromStructuredJsonValue,
+  toStructuredJsonValue,
+} from "./structuredJsonCodec.ts";
+import { CollectedDefinyRpcTypeMap } from "./collectType.ts";
 
-export const requestQuery = async <T extends unknown>(parameter: {
+export const requestQuery = async <Input, Output>(parameter: {
   readonly url: URL;
   readonly namespace: FunctionNamespace;
   readonly name: string;
-  readonly fromStructuredJsonValue: (a: StructuredJsonValue) => T;
   /**
    * 認証が必要な場合のみ付与して呼ぶ
    */
@@ -17,18 +21,29 @@ export const requestQuery = async <T extends unknown>(parameter: {
   /**
    * StructuredJson にした input
    */
-  readonly input: StructuredJsonValue;
-}): Promise<Result<T, "error">> => {
+  readonly input: Input;
+  readonly inputType: Type<Input>;
+  readonly outputType: Type<Output>;
+  readonly typeMap: CollectedDefinyRpcTypeMap;
+}): Promise<Result<Output, "error">> => {
   const url = new URL(parameter.url.toString());
   url.pathname = url.pathname + "/" +
     (parameter.namespace.type === "meta"
       ? "meta/"
-      : "api" + parameter.namespace.value.join("/") + "/") +
+      : "api/" + parameter.namespace.value.join("/") + "/") +
     parameter.name;
+
+  const inputAsStructuredJson = toStructuredJsonValue(
+    parameter.inputType,
+    parameter.typeMap,
+    parameter.input,
+  );
 
   try {
     if (parameter.accountToken !== undefined) {
-      const search = structuredJsonValueToUrlSearch(parameter.input);
+      const search = structuredJsonValueToUrlSearch(
+        inputAsStructuredJson,
+      );
       if (search !== undefined) {
         for (const [key, value] of search) {
           url.searchParams.set(key, value);
@@ -37,7 +52,9 @@ export const requestQuery = async <T extends unknown>(parameter: {
         const jsonValue = await response.json();
         return ({
           type: "ok",
-          value: parameter.fromStructuredJsonValue(
+          value: fromStructuredJsonValue(
+            parameter.outputType,
+            parameter.typeMap,
             rawJsonToStructuredJsonValue(jsonValue),
           ),
         });
@@ -47,14 +64,16 @@ export const requestQuery = async <T extends unknown>(parameter: {
       method: "POST",
       body: structuredJsonStringify(
         parameter.accountToken === undefined
-          ? StructuredJsonValue.object(new Map([["input", parameter.input]]))
+          ? StructuredJsonValue.object(
+            new Map([["input", inputAsStructuredJson]]),
+          )
           : StructuredJsonValue.object(
             new Map([[
               "accountToken",
               StructuredJsonValue.string(parameter.accountToken),
             ], [
               "input",
-              parameter.input,
+              inputAsStructuredJson,
             ]]),
           ),
       ),
@@ -62,7 +81,9 @@ export const requestQuery = async <T extends unknown>(parameter: {
     const jsonValue = await response.json();
     return ({
       type: "ok",
-      value: parameter.fromStructuredJsonValue(
+      value: fromStructuredJsonValue(
+        parameter.outputType,
+        parameter.typeMap,
         rawJsonToStructuredJsonValue(jsonValue),
       ),
     });

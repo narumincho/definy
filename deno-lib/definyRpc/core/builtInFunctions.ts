@@ -5,9 +5,6 @@ import {
 } from "./apiFunction.ts";
 import { apiFunctionListToCode } from "../codeGen/main.ts";
 import type { DefinyRpcParameter } from "../server/definyRpc.ts";
-import { writeTextFileWithLog } from "../../writeFileAndLog.ts";
-import { objectEntriesSameValue } from "../../objectEntriesSameValue.ts";
-import { groupBy } from "https://deno.land/std@0.167.0/collections/group_by.ts";
 import {
   FunctionDetail,
   FunctionNamespace,
@@ -16,11 +13,9 @@ import {
   String,
   Unit,
 } from "./coreType.ts";
-import {
-  fromFunctionNamespace,
-  functionNamespaceToString,
-} from "../codeGen/namespace.ts";
+import { functionNamespaceToString } from "../codeGen/namespace.ts";
 import { coreTypeInfoList } from "./coreTypeInfo.ts";
+import { generateMetaAndLocalCode } from "./generateMetaAndLocalCode.ts";
 
 export const addDefinyRpcApiFunction = (
   parameter: DefinyRpcParameter,
@@ -154,42 +149,10 @@ const builtInFunctions = (
         isMutation: false,
         needAuthentication: false,
         resolve: async () => {
-          const allFunc = addDefinyRpcApiFunction(parameter).functionsList;
-
-          await Promise.all(
-            objectEntriesSameValue(
-              groupBy(allFunc, (f) => functionNamespaceToString(f.namespace)),
-            ).map(
-              async ([_, funcList]) => {
-                if (funcList === undefined) {
-                  return;
-                }
-                const firstFunc = funcList[0];
-                if (firstFunc === undefined) {
-                  return;
-                }
-                await writeTextFileWithLog(
-                  new URL(
-                    (firstFunc.namespace.type === "meta"
-                      ? "meta"
-                      : parameter.name + "/" +
-                        firstFunc.namespace.value.join("/")) + ".ts",
-                    codeGenOutputFolderPath,
-                  ),
-                  apiFunctionListToCode({
-                    apiFunctionList: funcList,
-                    originHint: parameter.originHint,
-                    pathPrefix: parameter.pathPrefix ?? [],
-                    usePrettier: true,
-                    namespace: fromFunctionNamespace(firstFunc.namespace),
-                    typeList: [],
-                  }),
-                );
-              },
-            ),
-          );
-
-          return undefined;
+          await generateMetaAndLocalCode({
+            ...parameter,
+            codeGenOutputFolderPath,
+          });
         },
       }),
     ]),
