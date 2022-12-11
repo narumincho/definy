@@ -27,7 +27,30 @@ export const name = (parameter: {
     inputType: c.Unit.type(),
     outputType: c.String.type(),
     input: undefined,
-    typeMap: new Map([]),
+    typeMap: new Map([
+      [
+        "*coreType.String",
+        c.DefinyRpcTypeInfo.from({
+          namespace: c.Namespace.coreType,
+          name: "String",
+          description: "文字列",
+          parameterCount: 0,
+          attribute: { type: "nothing" },
+          body: c.TypeBody.string,
+        }),
+      ],
+      [
+        "*coreType.Unit",
+        c.DefinyRpcTypeInfo.from({
+          namespace: c.Namespace.coreType,
+          name: "Unit",
+          description: "値が1つだけ",
+          parameterCount: 0,
+          attribute: { type: "nothing" },
+          body: c.TypeBody.unit,
+        }),
+      ],
+    ]),
   });
 
 /**
@@ -49,7 +72,53 @@ export const namespaceList = (parameter: {
     inputType: c.Unit.type(),
     outputType: c.List.type(c.FunctionNamespace.type()),
     input: undefined,
-    typeMap: new Map([]),
+    typeMap: new Map([
+      [
+        "*coreType.Unit",
+        c.DefinyRpcTypeInfo.from({
+          namespace: c.Namespace.coreType,
+          name: "Unit",
+          description: "値が1つだけ",
+          parameterCount: 0,
+          attribute: { type: "nothing" },
+          body: c.TypeBody.unit,
+        }),
+      ],
+      [
+        "*coreType.List",
+        c.DefinyRpcTypeInfo.from({
+          namespace: c.Namespace.coreType,
+          name: "List",
+          description: "リスト",
+          parameterCount: 1,
+          attribute: { type: "nothing" },
+          body: c.TypeBody.list,
+        }),
+      ],
+      [
+        "*coreType.FunctionNamespace",
+        c.DefinyRpcTypeInfo.from({
+          namespace: c.Namespace.coreType,
+          name: "FunctionNamespace",
+          description: "出力されるAPI関数のモジュール名",
+          parameterCount: 0,
+          attribute: { type: "nothing" },
+          body: c.TypeBody.sum([
+            c.Pattern.from({
+              name: "meta",
+              description:
+                "APIがどんな構造で表現されているかを取得するためのAPI",
+              parameter: { type: "nothing" },
+            }),
+            c.Pattern.from({
+              name: "local",
+              description: "definy RPC を利用するユーザーが定義したモジュール",
+              parameter: { type: "just", value: c.List.type(c.String.type()) },
+            }),
+          ]),
+        }),
+      ],
+    ]),
   });
 
 /**
@@ -71,7 +140,77 @@ export const functionListByName = (parameter: {
     inputType: c.Unit.type(),
     outputType: c.List.type(c.FunctionDetail.type()),
     input: undefined,
-    typeMap: new Map([]),
+    typeMap: new Map([
+      [
+        "*coreType.Unit",
+        c.DefinyRpcTypeInfo.from({
+          namespace: c.Namespace.coreType,
+          name: "Unit",
+          description: "値が1つだけ",
+          parameterCount: 0,
+          attribute: { type: "nothing" },
+          body: c.TypeBody.unit,
+        }),
+      ],
+      [
+        "*coreType.List",
+        c.DefinyRpcTypeInfo.from({
+          namespace: c.Namespace.coreType,
+          name: "List",
+          description: "リスト",
+          parameterCount: 1,
+          attribute: { type: "nothing" },
+          body: c.TypeBody.list,
+        }),
+      ],
+      [
+        "*coreType.FunctionDetail",
+        c.DefinyRpcTypeInfo.from({
+          namespace: c.Namespace.coreType,
+          name: "FunctionDetail",
+          description: "関数のデータ functionByNameの結果",
+          parameterCount: 0,
+          attribute: { type: "nothing" },
+          body: c.TypeBody.product([
+            c.Field.from({
+              name: "namespace",
+              description: "名前空間",
+              type: c.FunctionNamespace.type(),
+            }),
+            c.Field.from({
+              name: "name",
+              description: "api名",
+              type: c.String.type(),
+            }),
+            c.Field.from({
+              name: "description",
+              description: "説明文",
+              type: c.String.type(),
+            }),
+            c.Field.from({
+              name: "input",
+              description: "入力の型",
+              type: c.Type.type(),
+            }),
+            c.Field.from({
+              name: "output",
+              description: "出力の型",
+              type: c.Type.type(),
+            }),
+            c.Field.from({
+              name: "needAuthentication",
+              description: "認証が必要かどうか (キャッシュしなくなる)",
+              type: c.Bool.type(),
+            }),
+            c.Field.from({
+              name: "isMutation",
+              description: "単なるデータの取得ではなく, 変更するようなものか",
+              type: c.Bool.type(),
+            }),
+          ]),
+        }),
+      ],
+    ]),
   });
 
 /**
@@ -94,7 +233,77 @@ export const functionListByNamePrivate = (parameter: {
     inputType: c.Unit.type(),
     outputType: c.List.type(c.FunctionDetail.type()),
     input: undefined,
-    typeMap: new Map([]),
+    typeMap: new Map([
+      [
+        "*coreType.Unit",
+        c.DefinyRpcTypeInfo.from({
+          namespace: c.Namespace.coreType,
+          name: "Unit",
+          description: "値が1つだけ",
+          parameterCount: 0,
+          attribute: { type: "nothing" },
+          body: c.TypeBody.unit,
+        }),
+      ],
+      [
+        "*coreType.List",
+        c.DefinyRpcTypeInfo.from({
+          namespace: c.Namespace.coreType,
+          name: "List",
+          description: "リスト",
+          parameterCount: 1,
+          attribute: { type: "nothing" },
+          body: c.TypeBody.list,
+        }),
+      ],
+      [
+        "*coreType.FunctionDetail",
+        c.DefinyRpcTypeInfo.from({
+          namespace: c.Namespace.coreType,
+          name: "FunctionDetail",
+          description: "関数のデータ functionByNameの結果",
+          parameterCount: 0,
+          attribute: { type: "nothing" },
+          body: c.TypeBody.product([
+            c.Field.from({
+              name: "namespace",
+              description: "名前空間",
+              type: c.FunctionNamespace.type(),
+            }),
+            c.Field.from({
+              name: "name",
+              description: "api名",
+              type: c.String.type(),
+            }),
+            c.Field.from({
+              name: "description",
+              description: "説明文",
+              type: c.String.type(),
+            }),
+            c.Field.from({
+              name: "input",
+              description: "入力の型",
+              type: c.Type.type(),
+            }),
+            c.Field.from({
+              name: "output",
+              description: "出力の型",
+              type: c.Type.type(),
+            }),
+            c.Field.from({
+              name: "needAuthentication",
+              description: "認証が必要かどうか (キャッシュしなくなる)",
+              type: c.Bool.type(),
+            }),
+            c.Field.from({
+              name: "isMutation",
+              description: "単なるデータの取得ではなく, 変更するようなものか",
+              type: c.Bool.type(),
+            }),
+          ]),
+        }),
+      ],
+    ]),
     accountToken: parameter.accountToken,
   });
 
@@ -115,7 +324,30 @@ export const generateCallDefinyRpcTypeScriptCode = (parameter: {
     inputType: c.Unit.type(),
     outputType: c.String.type(),
     input: undefined,
-    typeMap: new Map([]),
+    typeMap: new Map([
+      [
+        "*coreType.String",
+        c.DefinyRpcTypeInfo.from({
+          namespace: c.Namespace.coreType,
+          name: "String",
+          description: "文字列",
+          parameterCount: 0,
+          attribute: { type: "nothing" },
+          body: c.TypeBody.string,
+        }),
+      ],
+      [
+        "*coreType.Unit",
+        c.DefinyRpcTypeInfo.from({
+          namespace: c.Namespace.coreType,
+          name: "Unit",
+          description: "値が1つだけ",
+          parameterCount: 0,
+          attribute: { type: "nothing" },
+          body: c.TypeBody.unit,
+        }),
+      ],
+    ]),
   });
 
 /**
@@ -136,5 +368,17 @@ export const generateCodeAndWriteAsFileInServer = (parameter: {
     inputType: c.Unit.type(),
     outputType: c.Unit.type(),
     input: undefined,
-    typeMap: new Map([]),
+    typeMap: new Map([
+      [
+        "*coreType.Unit",
+        c.DefinyRpcTypeInfo.from({
+          namespace: c.Namespace.coreType,
+          name: "Unit",
+          description: "値が1つだけ",
+          parameterCount: 0,
+          attribute: { type: "nothing" },
+          body: c.TypeBody.unit,
+        }),
+      ],
+    ]),
   });

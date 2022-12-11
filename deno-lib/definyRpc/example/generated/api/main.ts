@@ -22,7 +22,30 @@ export const hello = (parameter: {
     inputType: c.Unit.type(),
     outputType: c.String.type(),
     input: undefined,
-    typeMap: new Map([]),
+    typeMap: new Map([
+      [
+        "*coreType.String",
+        c.DefinyRpcTypeInfo.from({
+          namespace: c.Namespace.coreType,
+          name: "String",
+          description: "文字列",
+          parameterCount: 0,
+          attribute: { type: "nothing" },
+          body: c.TypeBody.string,
+        }),
+      ],
+      [
+        "*coreType.Unit",
+        c.DefinyRpcTypeInfo.from({
+          namespace: c.Namespace.coreType,
+          name: "Unit",
+          description: "値が1つだけ",
+          parameterCount: 0,
+          attribute: { type: "nothing" },
+          body: c.TypeBody.unit,
+        }),
+      ],
+    ]),
   });
 
 /**
@@ -42,7 +65,30 @@ export const now = (parameter: {
     inputType: c.Unit.type(),
     outputType: c.String.type(),
     input: undefined,
-    typeMap: new Map([]),
+    typeMap: new Map([
+      [
+        "*coreType.String",
+        c.DefinyRpcTypeInfo.from({
+          namespace: c.Namespace.coreType,
+          name: "String",
+          description: "文字列",
+          parameterCount: 0,
+          attribute: { type: "nothing" },
+          body: c.TypeBody.string,
+        }),
+      ],
+      [
+        "*coreType.Unit",
+        c.DefinyRpcTypeInfo.from({
+          namespace: c.Namespace.coreType,
+          name: "Unit",
+          description: "値が1つだけ",
+          parameterCount: 0,
+          attribute: { type: "nothing" },
+          body: c.TypeBody.unit,
+        }),
+      ],
+    ]),
   });
 
 /**
@@ -63,5 +109,28 @@ export const repeat = (parameter: {
     inputType: c.Number.type(),
     outputType: c.String.type(),
     input: parameter.input,
-    typeMap: new Map([]),
+    typeMap: new Map([
+      [
+        "*coreType.String",
+        c.DefinyRpcTypeInfo.from({
+          namespace: c.Namespace.coreType,
+          name: "String",
+          description: "文字列",
+          parameterCount: 0,
+          attribute: { type: "nothing" },
+          body: c.TypeBody.string,
+        }),
+      ],
+      [
+        "*coreType.Number",
+        c.DefinyRpcTypeInfo.from({
+          namespace: c.Namespace.coreType,
+          name: "Number",
+          description: "64bit 浮動小数点数",
+          parameterCount: 0,
+          attribute: { type: "nothing" },
+          body: c.TypeBody.number,
+        }),
+      ],
+    ]),
   });
