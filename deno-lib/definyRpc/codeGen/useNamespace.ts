@@ -1,7 +1,7 @@
 import { TsExpr } from "../../jsTs/data.ts";
 import { arrayLiteral, stringLiteral } from "../../jsTs/interface.ts";
 import { CodeGenContext } from "../core/collectType.ts";
-import { Namespace } from "../core/coreType.ts";
+import { FunctionNamespace, Namespace } from "../core/coreType.ts";
 import { useTag } from "./typeVariable/use.ts";
 
 export const namespaceToNamespaceExpr = (
@@ -16,6 +16,26 @@ export const namespaceToNamespaceExpr = (
     namespace.type === "local"
       ? arrayLiteral(
         namespace.value.map((v) => ({
+          expr: stringLiteral(v),
+          spread: false,
+        })),
+      )
+      : undefined,
+  );
+};
+
+export const functionNamespaceToExpr = (
+  functionNamespace: FunctionNamespace,
+  context: CodeGenContext,
+): TsExpr => {
+  return useTag(
+    Namespace.coreType,
+    "FunctionNamespace",
+    context,
+    functionNamespace.type,
+    functionNamespace.type === "local"
+      ? arrayLiteral(
+        functionNamespace.value.map((v) => ({
           expr: stringLiteral(v),
           spread: false,
         })),

@@ -1,13 +1,11 @@
 import {
-  addition,
-  callCatchMethod,
-  callFetch,
-  callMethod,
-  callThenMethod,
+  arrayLiteral,
+  call,
   data,
   get,
   identifierFromString,
   memberKeyValue,
+  newMap,
   newURL,
   nullishCoalescing,
   objectLiteral,
@@ -15,23 +13,20 @@ import {
   readonlyArrayType,
   readonlyMapType,
   readonlySetType,
-  responseType,
   stringLiteral,
   urlType,
+  variable,
 } from "../../jsTs/main.ts";
 import { ApiFunction } from "../core/apiFunction.ts";
 import {
   CodeGenContext,
   collectedDefinyRpcTypeMapGet,
 } from "../core/collectType.ts";
-import { Namespace, Type } from "../core/coreType.ts";
-import { fromFunctionNamespace } from "./namespace.ts";
-import { resultError, resultOk, resultType } from "./result.ts";
-import { useFromStructuredJsonValue } from "./typeVariable/use.ts";
-import {
-  rawJsonValueType,
-  useRawJsonToStructuredJsonValue,
-} from "./useTypedJson.ts";
+import { Type } from "../core/coreType.ts";
+import { fromFunctionNamespace, toRequest } from "./namespace.ts";
+import { resultType } from "./result.ts";
+import { typeToTypeExpr } from "./typeVariable/use.ts";
+import { functionNamespaceToExpr } from "./useNamespace.ts";
 
 export const apiFuncToTsFunction = (parameter: {
   readonly func: ApiFunction;
@@ -40,7 +35,12 @@ export const apiFuncToTsFunction = (parameter: {
   readonly context: CodeGenContext;
 }): data.Function => {
   const parameterIdentifier = identifierFromString("parameter");
-  const functionNamespace = parameter.func.namespace;
+  const inputTypeInfo = collectedDefinyRpcTypeMapGet(
+    parameter.context.map,
+    parameter.func.input.namespace,
+    parameter.func.input.name,
+  );
+
   return {
     name: identifierFromString(parameter.func.name),
     document: parameter.func.description,
@@ -65,167 +65,68 @@ export const apiFuncToTsFunction = (parameter: {
     typeParameterList: [],
     statementList: [
       {
-        _: "VariableDefinition",
-        variableDefinitionStatement: {
-          name: identifierFromString("url"),
-          expr: newURL(
-            nullishCoalescing(
-              get(
-                {
-                  _: "Variable",
-                  tsIdentifier: parameterIdentifier,
-                },
-                "url",
-              ),
-              stringLiteral(parameter.originHint),
-            ),
-          ),
-          isConst: true,
-          type: urlType,
-        },
-      },
-      {
-        _: "Set",
-        setStatement: {
-          target: get(
-            {
-              _: "Variable",
-              tsIdentifier: identifierFromString("url"),
-            },
-            "pathname",
-          ),
-          operatorMaybe: undefined,
-          expr: addition(
-            get(
-              {
-                _: "Variable",
-                tsIdentifier: identifierFromString("url"),
-              },
-              "pathname",
-            ),
-            {
-              _: "StringLiteral",
-              string: "/" +
-                (parameter.pathPrefix.length === 0
-                  ? ""
-                  : parameter.pathPrefix.join("/") + "/") +
-                (functionNamespace.type === "meta"
-                  ? "meta"
-                  : "api/" + functionNamespace.value.join("/")) +
-                "/" +
-                parameter.func.name,
-            },
-          ),
-        },
-      },
-      {
         _: "Return",
-        tsExpr: callCatchMethod(
-          callThenMethod(
-            callThenMethod(
-              callFetch(
-                {
-                  _: "Variable",
-                  tsIdentifier: identifierFromString("url"),
-                },
-                parameter.func.needAuthentication
-                  ? objectLiteral([
-                    memberKeyValue(
-                      "headers",
-                      objectLiteral([
-                        memberKeyValue(
-                          "authorization",
-                          get(
-                            {
-                              _: "Variable",
-                              tsIdentifier: parameterIdentifier,
-                            },
-                            "accountToken",
-                          ),
-                        ),
-                      ]),
-                    ),
-                  ])
-                  : undefined,
+        tsExpr: call({
+          expr: {
+            _: "ImportedVariable",
+            importedVariable: {
+              moduleName: toRequest(
+                fromFunctionNamespace(parameter.func.namespace),
               ),
-              {
-                parameterList: [
-                  {
-                    name: identifierFromString("response"),
-                    type: responseType,
-                  },
-                ],
-                returnType: promiseType(rawJsonValueType(parameter.context)),
-                typeParameterList: [],
-                statementList: [
-                  {
-                    _: "Return",
-                    tsExpr: callMethod(
-                      {
-                        _: "Variable",
-                        tsIdentifier: identifierFromString("response"),
-                      },
-                      "json",
-                      [],
-                    ),
-                  },
-                ],
-              },
-            ),
-            fetchThenExpr(parameter.func, parameter.context),
-          ),
-          {
-            parameterList: [],
-            returnType: resultType(
-              definyRpcTypeToTsType(parameter.func.output, parameter.context),
-              { _: "StringLiteral", string: "error" },
-              fromFunctionNamespace(parameter.func.namespace),
-            ),
-            typeParameterList: [],
-            statementList: [
-              {
-                _: "Return",
-                tsExpr: resultError({ _: "StringLiteral", string: "error" }),
-              },
-            ],
+              name: parameter.func.isMutation
+                ? identifierFromString("requestMutation")
+                : identifierFromString("requestQuery"),
+            },
           },
-        ),
-      },
-    ],
-  };
-};
-
-const fetchThenExpr = (
-  func: ApiFunction,
-  context: CodeGenContext,
-): data.LambdaExpr => {
-  const jsonValueIdentifier = identifierFromString("jsonValue");
-  return {
-    parameterList: [
-      {
-        name: jsonValueIdentifier,
-        type: rawJsonValueType(context),
-      },
-    ],
-    returnType: resultType(
-      definyRpcTypeToTsType(func.output, context),
-      { _: "StringLiteral", string: "error" },
-      fromFunctionNamespace(func.namespace),
-    ),
-    typeParameterList: [],
-    statementList: [
-      {
-        _: "Return",
-        tsExpr: resultOk(
-          useFromStructuredJsonValue(
-            func.output,
-            useRawJsonToStructuredJsonValue({
-              _: "Variable",
-              tsIdentifier: jsonValueIdentifier,
-            }, context),
-            context,
-          ),
-        ),
+          parameterList: [
+            objectLiteral([
+              memberKeyValue(
+                "url",
+                nullishCoalescing(
+                  get(variable(identifierFromString("parameter")), "url"),
+                  newURL(stringLiteral(parameter.originHint)),
+                ),
+              ),
+              memberKeyValue(
+                "namespace",
+                functionNamespaceToExpr(
+                  parameter.func.namespace,
+                  parameter.context,
+                ),
+              ),
+              memberKeyValue("name", stringLiteral(parameter.func.name)),
+              memberKeyValue(
+                "inputType",
+                typeToTypeExpr(parameter.func.input, parameter.context),
+              ),
+              memberKeyValue(
+                "outputType",
+                typeToTypeExpr(parameter.func.output, parameter.context),
+              ),
+              memberKeyValue(
+                "input",
+                inputTypeInfo.body.type === "unit"
+                  ? { _: "UndefinedLiteral" }
+                  : get(variable(identifierFromString("parameter")), "input"),
+              ),
+              memberKeyValue(
+                "typeMap",
+                newMap(arrayLiteral([])),
+              ),
+              ...(parameter.func.needAuthentication
+                ? [
+                  memberKeyValue(
+                    "accountToken",
+                    get(
+                      variable(identifierFromString("parameter")),
+                      "accountToken",
+                    ),
+                  ),
+                ]
+                : []),
+            ]),
+          ],
+        }),
       },
     ],
   };
@@ -247,9 +148,9 @@ const funcParameterType = (
       {
         name: { type: "string", value: "url" },
         document: `api end point
-@default ${originHint}`,
+@default new URL("${originHint}")`,
         required: false,
-        type: { _: "Union", tsTypeList: [{ _: "String" }, { _: "Undefined" }] },
+        type: { _: "Union", tsTypeList: [urlType, { _: "Undefined" }] },
       },
       ...(inputTypeInfo.body.type === "unit" ? [] : [
         {

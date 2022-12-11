@@ -348,6 +348,11 @@ export const logicalOr = (left: d.TsExpr, right: d.TsExpr): d.TsExpr => ({
   },
 });
 
+/**
+ * ```ts
+ * a ?? b
+ * ```
+ */
 export const nullishCoalescing = (
   left: d.TsExpr,
   right: d.TsExpr,

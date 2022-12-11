@@ -61,7 +61,7 @@ const toCoreTypeModuleName = (
   }
 };
 
-const toRequest = (
+export const toRequest = (
   from: Namespace,
 ): string => {
   switch (from.type) {
