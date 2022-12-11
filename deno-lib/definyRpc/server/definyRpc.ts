@@ -1,7 +1,7 @@
 import clientBuildResult from "./browserClient.json" assert { type: "json" };
 import { structuredJsonParse } from "../../typedJson.ts";
 import { AccountToken, FunctionAndTypeList } from "../core/apiFunction.ts";
-import { addDefinyRpcApiFunction } from "../core/builtInFunctions.ts";
+import { addMetaFunctionAndCoreType } from "../core/builtInFunctions.ts";
 import { SimpleRequest } from "../../simpleRequestResponse/simpleRequest.ts";
 import {
   notFound,
@@ -74,7 +74,7 @@ export const handleRequest = async (
   }
   const pathListRemovePrefix = request.url.path.slice(pathPrefix.length);
 
-  const all = addDefinyRpcApiFunction(parameter);
+  const all = addMetaFunctionAndCoreType(parameter);
   if (request.method === "OPTIONS") {
     return simpleResponseOkEmpty;
   }

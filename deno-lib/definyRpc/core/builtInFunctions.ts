@@ -3,7 +3,7 @@ import {
   createApiFunction,
   FunctionAndTypeList,
 } from "./apiFunction.ts";
-import { apiFunctionListToCode } from "../codeGen/main.ts";
+import { generateCodeInNamespace } from "../codeGen/main.ts";
 import type { DefinyRpcParameter } from "../server/definyRpc.ts";
 import {
   FunctionDetail,
@@ -13,11 +13,14 @@ import {
   String,
   Unit,
 } from "./coreType.ts";
-import { functionNamespaceToString } from "../codeGen/namespace.ts";
+import {
+  functionNamespaceToString,
+  namespaceToString,
+} from "../codeGen/namespace.ts";
 import { coreTypeInfoList } from "./coreTypeInfo.ts";
 import { generateMetaAndLocalCode } from "./generateMetaAndLocalCode.ts";
 
-export const addDefinyRpcApiFunction = (
+export const addMetaFunctionAndCoreType = (
   parameter: DefinyRpcParameter,
 ): FunctionAndTypeList => {
   const all = parameter.all();
@@ -61,7 +64,7 @@ const builtInFunctions = (
       isMutation: false,
       resolve: () => {
         return [...new Map(
-          addDefinyRpcApiFunction(parameter).functionsList.map((
+          addMetaFunctionAndCoreType(parameter).functionsList.map((
             func,
           ) => [
             functionNamespaceToString(func.namespace),
@@ -79,7 +82,7 @@ const builtInFunctions = (
       isMutation: false,
       needAuthentication: false,
       resolve: () => {
-        const allFunc = addDefinyRpcApiFunction(parameter);
+        const allFunc = addMetaFunctionAndCoreType(parameter);
         return allFunc.functionsList.map<FunctionDetail>((f) =>
           FunctionDetail.from({
             namespace: f.namespace,
@@ -102,7 +105,7 @@ const builtInFunctions = (
       isMutation: false,
       needAuthentication: true,
       resolve: (_, _accountToken) => {
-        const allFunc = addDefinyRpcApiFunction(parameter);
+        const allFunc = addMetaFunctionAndCoreType(parameter);
         return allFunc.functionsList.map<FunctionDetail>((f) =>
           FunctionDetail.from({
             namespace: f.namespace,
@@ -125,16 +128,18 @@ const builtInFunctions = (
       isMutation: false,
       needAuthentication: false,
       resolve: () => {
-        const allFunc = addDefinyRpcApiFunction(parameter).functionsList.filter(
-          (f) => f.namespace.type === "meta",
-        );
-        return apiFunctionListToCode({
-          apiFunctionList: allFunc,
+        const added = addMetaFunctionAndCoreType(parameter);
+        return generateCodeInNamespace({
+          apiFunctionList: added.functionsList,
           originHint: parameter.originHint,
           pathPrefix: parameter.pathPrefix ?? [],
           usePrettier: true,
           namespace: Namespace.meta,
-          typeList: [],
+          typeMap: new Map(
+            added.typeList.map((
+              type,
+            ) => [namespaceToString(type.namespace) + "." + type.name, type]),
+          ),
         });
       },
     }),

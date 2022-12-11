@@ -5,20 +5,26 @@ import {
   generateCodeAsString,
   identifierFromString,
 } from "../../jsTs/main.ts";
-import { CodeGenContext } from "../core/collectType.ts";
+import {
+  CodeGenContext,
+  CollectedDefinyRpcTypeMap,
+} from "../core/collectType.ts";
 import { formatCode } from "../../prettier.ts";
 import { apiFuncToTsFunction } from "./func.ts";
 import { collectedTypeToTypeAlias, typeToTypeVariable } from "./type.ts";
-import { namespaceToString } from "./namespace.ts";
+import { namespaceEqual } from "./namespace.ts";
 import { DefinyRpcTypeInfo, Namespace } from "../core/coreType.ts";
 
-export const apiFunctionListToCode = (parameter: {
+/**
+ * 指定した名前空間のコードを生成する
+ */
+export const generateCodeInNamespace = (parameter: {
   readonly apiFunctionList: ReadonlyArray<ApiFunction>;
   readonly originHint: string;
   readonly pathPrefix: ReadonlyArray<string>;
   readonly usePrettier: boolean;
   readonly namespace: Namespace;
-  readonly typeList: ReadonlyArray<DefinyRpcTypeInfo>;
+  readonly typeMap: CollectedDefinyRpcTypeMap;
 }): string => {
   const code = generateCodeAsString(
     apiFunctionListToJsTsCode(parameter),
@@ -52,30 +58,33 @@ export const apiFunctionListToJsTsCode = (parameter: {
   readonly originHint: string;
   readonly pathPrefix: ReadonlyArray<string>;
   readonly namespace: Namespace;
-  readonly typeList: ReadonlyArray<DefinyRpcTypeInfo>;
+  readonly typeMap: CollectedDefinyRpcTypeMap;
 }): data.JsTsCode => {
   const needAuthentication = parameter.apiFunctionList.some(
     (func) => func.needAuthentication,
   );
-  const collectedTypeMap = new Map<string, DefinyRpcTypeInfo>(
-    parameter.typeList.map((
-      t,
-    ): [string, DefinyRpcTypeInfo] => [
-      namespaceToString(t.namespace) + "." + t.name,
-      t,
-    ]),
-  );
 
   const context: CodeGenContext = {
-    map: collectedTypeMap,
+    map: parameter.typeMap,
     currentModule: parameter.namespace,
   };
+
+  const typeListInNamespace: ReadonlyArray<DefinyRpcTypeInfo> = [
+    ...parameter.typeMap,
+  ].flatMap(
+    ([_, typeInfo]) => {
+      if (namespaceEqual(typeInfo.namespace, parameter.namespace)) {
+        return [typeInfo];
+      }
+      return [];
+    },
+  );
 
   return {
     exportDefinitionList: [
       ...parameter.namespace.type === "coreType" ? [neverSymbolDefinition] : [],
       ...(needAuthentication ? [accountTokenExportDefinition] : []),
-      ...[...collectedTypeMap.values()].flatMap(
+      ...typeListInNamespace.flatMap(
         (type): ReadonlyArray<data.ExportDefinition> => {
           const typeAlias = collectedTypeToTypeAlias(type, context);
           if (typeAlias === undefined) {
@@ -84,7 +93,7 @@ export const apiFunctionListToJsTsCode = (parameter: {
           return [{ type: "typeAlias", typeAlias }];
         },
       ),
-      ...[...collectedTypeMap.values()].map(
+      ...typeListInNamespace.map(
         (type): data.ExportDefinition => ({
           type: "variable",
           variable: typeToTypeVariable(type, context),

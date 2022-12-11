@@ -1,7 +1,7 @@
 import { groupBy } from "https://deno.land/std@0.167.0/collections/group_by.ts";
 import { objectEntriesSameValue } from "../../objectEntriesSameValue.ts";
 import { writeTextFileWithLog } from "../../writeFileAndLog.ts";
-import { apiFunctionListToCode } from "../codeGen/main.ts";
+import { generateCodeInNamespace } from "../codeGen/main.ts";
 import {
   fromFunctionNamespace,
   functionNamespaceToString,
@@ -9,7 +9,7 @@ import {
 } from "../codeGen/namespace.ts";
 import { DefinyRpcParameter } from "../server/definyRpc.ts";
 import { ApiFunction } from "./apiFunction.ts";
-import { addDefinyRpcApiFunction } from "./builtInFunctions.ts";
+import { addMetaFunctionAndCoreType } from "./builtInFunctions.ts";
 import { DefinyRpcTypeInfo } from "./coreType.ts";
 
 export const generateMetaAndLocalCode = async (
@@ -17,7 +17,7 @@ export const generateMetaAndLocalCode = async (
     codeGenOutputFolderPath: URL;
   },
 ): Promise<void> => {
-  const allFuncAndType = addDefinyRpcApiFunction(parameter);
+  const allFuncAndType = addMetaFunctionAndCoreType(parameter);
 
   await Promise.all(
     objectEntriesSameValue(
@@ -62,7 +62,7 @@ export const generateMetaAndLocalCode = async (
               firstFuncOrType.value.namespace.value.join("/")) + ".ts",
             parameter.codeGenOutputFolderPath,
           ),
-          apiFunctionListToCode({
+          generateCodeInNamespace({
             apiFunctionList: funcOrTypeList.flatMap((funcOrType) =>
               funcOrType.type === "function" ? [funcOrType.value] : []
             ),
@@ -72,10 +72,11 @@ export const generateMetaAndLocalCode = async (
             namespace: firstFuncOrType.type === "function"
               ? fromFunctionNamespace(firstFuncOrType.value.namespace)
               : firstFuncOrType.value.namespace,
-            typeList: allFuncAndType.typeList,
-            // typeList: funcOrTypeList.flatMap((funcOrType) =>
-            //   funcOrType.type === "type" ? [funcOrType.value] : []
-            // ),
+            typeMap: new Map(
+              allFuncAndType.typeList.map((
+                type,
+              ) => [namespaceToString(type.namespace) + "." + type.name, type]),
+            ),
           }),
         );
       },
