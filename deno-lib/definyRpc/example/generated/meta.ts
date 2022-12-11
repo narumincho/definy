@@ -63,7 +63,7 @@ export const namespaceList = (parameter: {
    */
   readonly url?: globalThis.URL | undefined;
 }): globalThis.Promise<
-  a.Result<globalThis.ReadonlyArray<FunctionNamespace>, "error">
+  a.Result<globalThis.ReadonlyArray<c.FunctionNamespace>, "error">
 > =>
   b.requestQuery({
     url: parameter.url ?? new globalThis.URL("http://localhost:2520"),
@@ -131,7 +131,7 @@ export const functionListByName = (parameter: {
    */
   readonly url?: globalThis.URL | undefined;
 }): globalThis.Promise<
-  a.Result<globalThis.ReadonlyArray<FunctionDetail>, "error">
+  a.Result<globalThis.ReadonlyArray<c.FunctionDetail>, "error">
 > =>
   b.requestQuery({
     url: parameter.url ?? new globalThis.URL("http://localhost:2520"),
@@ -224,7 +224,7 @@ export const functionListByNamePrivate = (parameter: {
   readonly url?: globalThis.URL | undefined;
   readonly accountToken: AccountToken;
 }): globalThis.Promise<
-  a.Result<globalThis.ReadonlyArray<FunctionDetail>, "error">
+  a.Result<globalThis.ReadonlyArray<c.FunctionDetail>, "error">
 > =>
   b.requestQuery({
     url: parameter.url ?? new globalThis.URL("http://localhost:2520"),
