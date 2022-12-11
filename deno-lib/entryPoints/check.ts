@@ -3,19 +3,24 @@ import { extname } from "https://deno.land/std@0.167.0/path/posix.ts";
 const collectTsOrTsxFilePath = async (
   directoryPath: URL,
 ): Promise<ReadonlySet<string>> => {
+  console.log(directoryPath.href);
   const pathSet = new Set<string>();
   for await (const fileOrDirectory of Deno.readDir(directoryPath)) {
-    const fullPath = new URL(
-      fileOrDirectory.name,
-      directoryPath,
-    );
     if (fileOrDirectory.isDirectory) {
+      const fullPath = new URL(
+        fileOrDirectory.name + "/",
+        directoryPath,
+      );
       for (
         const path of await collectTsOrTsxFilePath(fullPath)
       ) {
         pathSet.add(path);
       }
     } else {
+      const fullPath = new URL(
+        fileOrDirectory.name,
+        directoryPath,
+      );
       const extension = extname(fileOrDirectory.name);
       if (extension === ".ts" || extension === ".tsx") {
         pathSet.add(fullPath.toString());

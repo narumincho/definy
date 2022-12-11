@@ -24,7 +24,6 @@ import {
   Namespace,
   TypeBody as CTypeBody,
 } from "../core/coreType.ts";
-import { createTypeInfo } from "./typeVariable/typeInfo.ts";
 import { createTypeLambda } from "./typeVariable/type.ts";
 
 export const collectedTypeToTypeAlias = (
@@ -185,7 +184,6 @@ export const typeToTypeVariable = (
   };
   const fromLambda = createFromLambda(type, context);
   const tagList = createTagExprList(type, context) ?? [];
-  const typeInfo = createTypeInfo(type, context);
   const typeLambda = createTypeLambda(type, context);
 
   return {
@@ -194,12 +192,6 @@ export const typeToTypeVariable = (
     type: {
       _: "Object",
       tsMemberTypeList: [
-        {
-          name: { type: "string", value: "typeInfo" },
-          document: `${type.name} の型の表現`,
-          required: true,
-          type: lambdaToType(typeInfo),
-        },
         {
           name: { type: "string", value: "type" },
           document: `${type.name} の型`,
@@ -250,10 +242,6 @@ export const typeToTypeVariable = (
     expr: {
       _: "ObjectLiteral",
       tsMemberList: [
-        memberKeyValue(
-          "typeInfo",
-          { _: "Lambda", lambdaExpr: typeInfo },
-        ),
         memberKeyValue("type", { _: "Lambda", lambdaExpr: typeLambda }),
         ...(fromLambda === undefined ? [] : [
           memberKeyValue(

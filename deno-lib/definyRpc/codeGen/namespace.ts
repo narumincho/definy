@@ -101,7 +101,7 @@ const toMaybe = (from: Namespace): string => {
       return "./maybe.ts";
     case "local":
     case "meta":
-      return "https://raw.githubusercontent.com/narumincho/definy/c98453da243cdd8aac772e0cb8e83abcbf1c3957/deno-lib/maybe.ts";
+      return "https://raw.githubusercontent.com/narumincho/definy/c98453da243cdd8aac772e0cb8e83abcbf1c3957/deno-lib/definyRpc/core/maybe.ts";
   }
 };
 
