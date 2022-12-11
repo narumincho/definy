@@ -32,10 +32,12 @@ deno run --allow-run --allow-read ./entryPoints/check.ts
 
 ## deno 版 definy.app
 
+![definy-app-deno](./assets/definy-app-deno.png)
+
 ### **開発用** 起動
 
 ```ps1
-deno run --check --watch --allow-net=deno.land,:2528 --allow-write=./definyApp/apiClient/ ./entryPoints/definyDev.ts
+deno run --check --watch --allow-net=deno.land,:2528,db.us.fauna.com --allow-write=./definyApp/apiClient/ ./entryPoints/definyDev.ts
 deno run --check -A ./entryPoints/definyEditorWatchBuild.ts
 ```
 
@@ -75,20 +77,30 @@ deno run --allow-net ./server.ts
 
 ## definy RPC
 
+![definy-rpc](./assets/definy-rpc.png)
+
 ### **開発用** サンプルサーバーの起動
 
 ```ps1
 deno run --check --watch --allow-net=:2520 --allow-write --allow-read ./entryPoints/definyRpcServerDev.ts
 ```
 
+コード生成をする場合は `--watch` を指定しない
+
 ### サンプルサーバーの起動
 
 ```ps1
-deno run --check --allow-net=:2520 --allow-write --allow-read https://raw.githubusercontent.com/narumincho/definy/main/deno-lib/entryPoints/definyRpcServerDenoDeploy.ts
+deno run --check --allow-net=:2520 https://raw.githubusercontent.com/narumincho/definy/main/deno-lib/entryPoints/definyRpcServerDenoDeploy.ts
 ```
 
 ### **開発用** definy RPC クライアントビルド
 
 ```ps1
-deno run --check --watch -A ./entryPoints/definyRpcBuild.ts
+deno run --check -A ./entryPoints/definyRpcBuild.ts
+```
+
+### **開発用*** definy RPC coreType.ts コード生成
+
+```ps1
+deno run --check ./entryPoints/definyRpcCoreGenerate.ts
 ```

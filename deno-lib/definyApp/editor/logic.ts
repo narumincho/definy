@@ -1,11 +1,13 @@
+import { Deadline } from "./url.ts";
+
 export const timeToDisplayText = (
-  date: Date,
+  deadline: Deadline,
 ): {
   readonly value: number;
   readonly unit: string;
   readonly after: boolean;
 } => {
-  const diff = date.getTime() - new Date().getTime();
+  const diff = deadline.date.getTime() - deadline.at.getTime();
   const after = diff < 0;
   const diffAbs = Math.abs(diff);
   const diffDay = Math.floor(diffAbs / (1000 * 60 * 60 * 24));

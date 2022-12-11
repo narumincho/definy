@@ -1,3 +1,5 @@
+import { StructuredJsonValue } from "./definyRpc/core/coreType.ts";
+
 export type RawJsonValue =
   | null
   | string
@@ -7,20 +9,6 @@ export type RawJsonValue =
     readonly [K in string]: RawJsonValue;
   }
   | ReadonlyArray<RawJsonValue>;
-
-export type StructuredJsonValue =
-  | { readonly type: "null" }
-  | { readonly type: "string"; readonly value: string }
-  | { readonly type: "number"; readonly value: number }
-  | { readonly type: "boolean"; readonly value: boolean }
-  | {
-    readonly type: "object";
-    readonly value: ReadonlyMap<string, StructuredJsonValue>;
-  }
-  | {
-    readonly type: "array";
-    readonly value: ReadonlyArray<StructuredJsonValue>;
-  };
 
 export const jsonParse = (value: string): RawJsonValue | undefined => {
   try {
@@ -45,29 +33,28 @@ export const rawJsonToStructuredJsonValue = (
   rawJson: RawJsonValue,
 ): StructuredJsonValue => {
   if (rawJson === null) {
-    return { type: "null" };
+    return StructuredJsonValue.null;
   }
   if (typeof rawJson === "boolean") {
-    return { type: "boolean", value: rawJson };
+    return StructuredJsonValue.boolean(rawJson);
   }
   if (typeof rawJson === "string") {
-    return { type: "string", value: rawJson };
+    return StructuredJsonValue.string(rawJson);
   }
   if (typeof rawJson === "number") {
-    return { type: "number", value: rawJson };
+    return StructuredJsonValue.number(rawJson);
   }
   if (rawJson instanceof Array) {
-    return { type: "array", value: rawJson.map(rawJsonToStructuredJsonValue) };
+    return StructuredJsonValue.array(rawJson.map(rawJsonToStructuredJsonValue));
   }
-  return {
-    type: "object",
-    value: new Map(
+  return StructuredJsonValue.object(
+    new Map(
       Object.entries(rawJson).map(([k, v]) => [
         k,
         rawJsonToStructuredJsonValue(v),
       ]),
     ),
-  };
+  );
 };
 
 export const jsonStringify = (
@@ -82,8 +69,12 @@ export const jsonStringify = (
 
 export const structuredJsonStringify = (
   structuredJsonValue: StructuredJsonValue,
+  indent = false,
 ): string => {
-  return jsonStringify(structuredJsonValueToRawJson(structuredJsonValue));
+  return jsonStringify(
+    structuredJsonValueToRawJson(structuredJsonValue),
+    indent,
+  );
 };
 
 export const structuredJsonValueToRawJson = (

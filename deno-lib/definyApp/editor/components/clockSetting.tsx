@@ -1,5 +1,6 @@
 import React from "https://esm.sh/react@18.2.0?pin=v99";
 import { c, toStyleAndHash } from "../../../cssInJs/mod.ts";
+import { Clock24Parameter } from "../url.ts";
 
 const containerStyle = toStyleAndHash({
   padding: 16,
@@ -59,8 +60,7 @@ const getLocalIsoDateString = (date: Date): string => {
 
 export const ClockSetting = (
   props: {
-    readonly message: string;
-    readonly date: Date | undefined;
+    readonly parameter: Clock24Parameter;
     readonly onChangeUrl: (newURL: URL) => void;
   },
 ): React.ReactElement => {
@@ -71,11 +71,13 @@ export const ClockSetting = (
         <input
           type="datetime-local"
           className={c(inputStyle)}
-          value={props.date ? getLocalIsoDateString(props.date) : undefined}
+          value={props.parameter.deadline === undefined
+            ? undefined
+            : getLocalIsoDateString(props.parameter.deadline.date)}
           onChange={(e) => {
             const newValue = e.target.value;
             updateUrl(
-              { dateTimeLocal: newValue, message: props.message },
+              { dateTimeLocal: newValue, message: props.parameter.message },
               props.onChangeUrl,
             );
           }}
@@ -87,12 +89,13 @@ export const ClockSetting = (
         <input
           type="text"
           className={c(inputStyle)}
-          value={props.message}
+          value={props.parameter.message}
           onChange={(e) => {
             const newMessage = e.target.value;
             updateUrl(
               {
-                dateTimeLocal: props.date?.toLocaleString() ?? "???",
+                dateTimeLocal:
+                  props.parameter.deadline?.date?.toLocaleString() ?? "???",
                 message: newMessage,
               },
               props.onChangeUrl,

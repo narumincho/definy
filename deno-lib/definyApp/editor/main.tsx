@@ -1,7 +1,8 @@
 import React from "https://esm.sh/react@18.2.0?pin=v99";
 import { hydrateRoot } from "https://esm.sh/react-dom@18.2.0/client?pin=v99";
 import { App } from "./app.tsx";
-import { languageFromId } from "../../zodType.ts";
+import { simpleUrlToUrlLocation, UrlLocation } from "./url.ts";
+import { urlToSimpleUrl } from "../../simpleRequestResponse/simpleUrl.ts";
 
 /**
  * definy のエディターを動かす
@@ -22,30 +23,30 @@ export const startEditor = (): void => {
 };
 
 const AppWithHandleLocation = (): React.ReactElement => {
-  const [url, setUrl] = React.useState<URL>(new URL(window.location.href));
+  const [urlLocation, setUrlLocation] = React.useState<UrlLocation | undefined>(
+    () =>
+      simpleUrlToUrlLocation(
+        urlToSimpleUrl(new URL(window.location.href)),
+      ),
+  );
 
   React.useEffect(() => {
     const url = new URL(window.location.href);
-    if (url.searchParams.has("random")) {
-      url.searchParams.set("random", crypto.randomUUID());
-    }
     window.history.replaceState(undefined, "", url);
   }, []);
 
-  const hl = url.searchParams.get("hl");
-  const isClock24 = url.pathname === "/clock24";
-
-  const date = new Date(url.searchParams.get("date") ?? "");
   return (
     <React.StrictMode>
       <App
-        language={languageFromId(hl)}
-        message={url.searchParams.get("message") ?? ""}
-        date={Number.isNaN(date.getTime()) ? undefined : date}
-        isClock24={isClock24}
+        language="english"
+        location={urlLocation}
         onChangeUrl={(newUrl) => {
           window.history.replaceState(undefined, "", newUrl.toString());
-          setUrl(newUrl);
+          setUrlLocation(() =>
+            simpleUrlToUrlLocation(
+              urlToSimpleUrl(new URL(window.location.href)),
+            )
+          );
         }}
       />
     </React.StrictMode>

@@ -1,4 +1,4 @@
-import { assertEquals } from "https://deno.land/std@0.166.0/testing/asserts.ts";
+import { assertEquals } from "https://deno.land/std@0.167.0/testing/asserts.ts";
 import { handleRequest } from "./server/definyRpc.ts";
 
 Deno.test("get server name", async () => {
@@ -10,20 +10,24 @@ Deno.test("get server name", async () => {
       originHint: "",
     },
     {
-      path: ["definyRpc", "name"],
+      url: {
+        origin: "https://narumincho.com",
+        path: ["meta", "name"],
+        query: new Map(),
+      },
       headers: {
         accept: undefined,
         authorization: undefined,
         origin: undefined,
       },
       method: "GET",
-      query: new Map(),
     },
   );
   assertEquals(response?.status, 200);
-  assertEquals(response?.headers, {
-    contentType: "application/json",
-  });
+  assertEquals(
+    response?.status === 200 ? response.headers.contentType : undefined,
+    "application/json",
+  );
   assertEquals(
     JSON.parse(new TextDecoder().decode(response?.body)),
     "serverName",
@@ -39,20 +43,24 @@ Deno.test("index.html", async () => {
       originHint: "",
     },
     {
-      path: [],
+      url: {
+        origin: "https://narumincho.com",
+        path: [],
+        query: new Map(),
+      },
       headers: {
         accept: undefined,
         authorization: undefined,
         origin: undefined,
       },
       method: "GET",
-      query: new Map(),
     },
   );
   assertEquals(response?.status, 200);
-  assertEquals(response?.headers, {
-    contentType: "text/html; charset=utf-8",
-  });
+  assertEquals(
+    response?.status === 200 ? response.headers.contentType : undefined,
+    "text/html; charset=utf-8",
+  );
 });
 
 Deno.test("with pathPrefix index.html", async () => {
@@ -65,20 +73,24 @@ Deno.test("with pathPrefix index.html", async () => {
       pathPrefix: ["prefix"],
     },
     {
-      path: ["prefix"],
+      url: {
+        origin: "https://narumincho.com",
+        path: ["prefix"],
+        query: new Map(),
+      },
       headers: {
         accept: undefined,
         authorization: undefined,
         origin: undefined,
       },
       method: "GET",
-      query: new Map(),
     },
   );
   assertEquals(response?.status, 200);
-  assertEquals(response?.headers, {
-    contentType: "text/html; charset=utf-8",
-  });
+  assertEquals(
+    response?.status === 200 ? response.headers.contentType : undefined,
+    "text/html; charset=utf-8",
+  );
 });
 
 Deno.test("with pathPrefix get server name", async () => {
@@ -91,20 +103,24 @@ Deno.test("with pathPrefix get server name", async () => {
       pathPrefix: ["prefix"],
     },
     {
-      path: ["prefix", "definyRpc", "name"],
+      url: {
+        origin: "https://narumincho.com",
+        path: ["prefix", "meta", "name"],
+        query: new Map(),
+      },
       headers: {
         accept: undefined,
         authorization: undefined,
         origin: undefined,
       },
       method: "GET",
-      query: new Map(),
     },
   );
   assertEquals(response?.status, 200);
-  assertEquals(response?.headers, {
-    contentType: "application/json",
-  });
+  assertEquals(
+    response?.status === 200 ? response.headers.contentType : undefined,
+    "application/json",
+  );
   assertEquals(
     JSON.parse(new TextDecoder().decode(response?.body)),
     "test",
@@ -122,14 +138,17 @@ Deno.test("ignore with pathPrefix", async () => {
         pathPrefix: ["prefix"],
       },
       {
-        path: [],
+        url: {
+          origin: "https://narumincho.com",
+          path: [],
+          query: new Map(),
+        },
         headers: {
           accept: undefined,
           authorization: undefined,
           origin: undefined,
         },
         method: "GET",
-        query: new Map(),
       },
     ),
     undefined,

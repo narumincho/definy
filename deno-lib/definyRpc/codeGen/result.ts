@@ -4,6 +4,8 @@ import {
   memberKeyValue,
   stringLiteral,
 } from "../../jsTs/main.ts";
+import { Namespace } from "../core/coreType.ts";
+import { namespaceFromAndToToTypeScriptModuleName } from "./namespace.ts";
 
 const resultTypeName = identifierFromString("Result");
 
@@ -74,13 +76,32 @@ export const resultExportDefinition: data.ExportDefinition = {
 export const resultType = (
   ok: data.TsType,
   error: data.TsType,
-): data.TsType => ({
-  _: "ScopeInFile",
-  typeNameAndTypeParameter: {
-    name: resultTypeName,
-    arguments: [ok, error],
-  },
-});
+  namespace: Namespace,
+): data.TsType => {
+  const moduleName = namespaceFromAndToToTypeScriptModuleName(
+    namespace,
+    Namespace.maybe,
+  );
+  if (moduleName === undefined) {
+    return ({
+      _: "ScopeInFile",
+      typeNameAndTypeParameter: {
+        name: resultTypeName,
+        arguments: [ok, error],
+      },
+    });
+  }
+  return ({
+    _: "ImportedType",
+    importedType: {
+      moduleName,
+      nameAndArguments: {
+        name: resultTypeName,
+        arguments: [ok, error],
+      },
+    },
+  });
+};
 
 export const resultOk = (ok: data.TsExpr): data.TsExpr => ({
   _: "ObjectLiteral",

@@ -1,8 +1,11 @@
 import React from "https://esm.sh/react@18.2.0?pin=v99";
 import { c, toStyleAndHash } from "../../cssInJs/mod.ts";
 import { Language } from "../../zodType.ts";
+import { createGoogleLogInUrl } from "../apiClient/api/main.ts";
 import { GoogleLogInButton } from "./components/googleLogInButton.tsx";
 import { Clock24 } from "./pages/clock24.tsx";
+import { LogInCallback } from "./pages/logInCallback.tsx";
+import { UrlLocation } from "./url.ts";
 
 const containerStyle = toStyleAndHash({
   backgroundColor: "black",
@@ -30,53 +33,75 @@ const spacer = toStyleAndHash({
   flexGrow: "1",
 });
 
-type AppProps = {
+export type AppProps = {
   readonly language: Language;
-  readonly message: string;
-  readonly date: Date | undefined;
-  readonly isClock24: boolean;
+  readonly location: UrlLocation | undefined;
   readonly onChangeUrl?: ((newURL: URL) => void) | undefined;
 };
 
+type LogInState = "noLogIn" | "requestingLogInUrl" | "jumping" | "error";
+
 export const App = (props: AppProps): React.ReactElement => {
   const [count, setCount] = React.useState<number>(0);
-  const [isRequestLogInUrl, setIsRequestLogInUrl] = React.useState<boolean>(
-    false,
+  const [isRequestLogInUrl, setIsRequestLogInUrl] = React.useState<LogInState>(
+    "noLogIn",
   );
 
-  if (props.isClock24) {
-    return (
-      <Clock24
-        message={props.message}
-        date={props.date}
-        onChangeUrl={props.onChangeUrl ?? (() => {})}
-      />
-    );
+  if (props.location === undefined) {
+    return <div className={c(containerStyle)}>not found... 見つからなかった</div>;
   }
 
-  return (
-    <div className={c(containerStyle)}>
-      <div className={c(headerStyle)}>
-        <div className={c(logoStyle)}>definy</div>
-        <div className={c(spacer)}></div>
-        <GoogleLogInButton
-          language={props.language}
-          onClick={() => {
-            setIsRequestLogInUrl(true);
-          }}
+  switch (props.location.type) {
+    case "clock24":
+      return (
+        <Clock24
+          parameter={props.location.parameter}
+          onChangeUrl={props.onChangeUrl ?? (() => {})}
         />
-      </div>
-      {isRequestLogInUrl && <div>ログインURLをリクエストするAPIを呼ぶ</div>}
-      <div>
-        <div>{count}</div>
-        <button
-          onClick={() => {
-            setCount((prev) => prev + 1);
-          }}
-        >
-          数値を1増やす
-        </button>
-      </div>
-    </div>
-  );
+      );
+    case "top":
+      return (
+        <div className={c(containerStyle)}>
+          <div className={c(headerStyle)}>
+            <div className={c(logoStyle)}>definy</div>
+            <div className={c(spacer)}></div>
+            <GoogleLogInButton
+              language={props.language}
+              onClick={() => {
+                setIsRequestLogInUrl("requestingLogInUrl");
+                createGoogleLogInUrl({
+                  url: new URL(new URL(location.href).origin),
+                  input: "???",
+                })
+                  .then((response) => {
+                    if (response.type === "ok") {
+                      setIsRequestLogInUrl("jumping");
+                      window.location.href = response.value;
+                    } else {
+                      setIsRequestLogInUrl("error");
+                    }
+                  });
+              }}
+            />
+          </div>
+          {isRequestLogInUrl === "error" && <div>ログインURLの発行に失敗しました</div>}
+          {isRequestLogInUrl === "jumping" && <div>ログイン画面に推移中...</div>}
+          {isRequestLogInUrl === "requestingLogInUrl" && (
+            <div>ログインURLを発行中...</div>
+          )}
+          <div>
+            <div>{count}</div>
+            <button
+              onClick={() => {
+                setCount((prev) => prev + 1);
+              }}
+            >
+              数値を1増やす
+            </button>
+          </div>
+        </div>
+      );
+    case "logInCallback":
+      return <LogInCallback parameter={props.location.parameter} />;
+  }
 };

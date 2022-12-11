@@ -1,42 +1,92 @@
-import { data, identifierFromString } from "../../jsTs/main.ts";
+import { data, identifierFromString, variable } from "../../jsTs/main.ts";
+import { CodeGenContext } from "../core/collectType.ts";
+import { Namespace } from "../core/coreType.ts";
+import { namespaceFromAndToToTypeScriptModuleName } from "./namespace.ts";
 
-const runtimeModuleName =
-  "https://raw.githubusercontent.com/narumincho/definy/61351534fba3e0549319fe11feee7c3dc823d7c1/deno-lib/typedJson.ts";
-
-export const structuredJsonValueType: data.TsType = {
-  _: "ImportedType",
-  importedType: {
-    moduleName: runtimeModuleName,
-    nameAndArguments: {
-      name: identifierFromString("StructuredJsonValue"),
-      arguments: [],
+export const structuredJsonValueType = (
+  context: CodeGenContext,
+): data.TsType => {
+  const moduleName = namespaceFromAndToToTypeScriptModuleName(
+    context.currentModule,
+    Namespace.coreType,
+  );
+  if (moduleName === undefined) {
+    return {
+      _: "ScopeInFile",
+      typeNameAndTypeParameter: {
+        name: identifierFromString("StructuredJsonValue"),
+        arguments: [],
+      },
+    };
+  }
+  return {
+    _: "ImportedType",
+    importedType: {
+      moduleName: moduleName,
+      nameAndArguments: {
+        name: identifierFromString("StructuredJsonValue"),
+        arguments: [],
+      },
     },
-  },
+  };
 };
 
-export const rawJsonValueType: data.TsType = {
-  _: "ImportedType",
-  importedType: {
-    moduleName: runtimeModuleName,
-    nameAndArguments: {
-      name: identifierFromString("RawJsonValue"),
-      arguments: [],
+export const rawJsonValueType = (
+  context: CodeGenContext,
+): data.TsType => {
+  const moduleName = namespaceFromAndToToTypeScriptModuleName(
+    context.currentModule,
+    Namespace.typedJson,
+  );
+  if (moduleName === undefined) {
+    return {
+      _: "ScopeInGlobal",
+      typeNameAndTypeParameter: {
+        name: identifierFromString("RawJsonValue"),
+        arguments: [],
+      },
+    };
+  }
+  return {
+    _: "ImportedType",
+    importedType: {
+      moduleName,
+      nameAndArguments: {
+        name: identifierFromString("RawJsonValue"),
+        arguments: [],
+      },
     },
-  },
+  };
 };
 
 export const useRawJsonToStructuredJsonValue = (
   rawJsonExpr: data.TsExpr,
-): data.TsExpr => ({
-  _: "Call",
-  callExpr: {
-    expr: {
-      _: "ImportedVariable",
-      importedVariable: {
-        moduleName: runtimeModuleName,
-        name: identifierFromString("rawJsonToStructuredJsonValue"),
+  context: CodeGenContext,
+): data.TsExpr => {
+  const moduleName = namespaceFromAndToToTypeScriptModuleName(
+    context.currentModule,
+    Namespace.typedJson,
+  );
+  if (moduleName === undefined) {
+    return {
+      _: "Call",
+      callExpr: {
+        expr: variable(identifierFromString("rawJsonToStructuredJsonValue")),
+        parameterList: [rawJsonExpr],
       },
+    };
+  }
+  return {
+    _: "Call",
+    callExpr: {
+      expr: {
+        _: "ImportedVariable",
+        importedVariable: {
+          moduleName: moduleName,
+          name: identifierFromString("rawJsonToStructuredJsonValue"),
+        },
+      },
+      parameterList: [rawJsonExpr],
     },
-    parameterList: [rawJsonExpr],
-  },
-});
+  };
+};

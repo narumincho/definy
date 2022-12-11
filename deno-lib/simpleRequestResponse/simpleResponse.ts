@@ -1,8 +1,8 @@
+import { StructuredJsonValue } from "../definyRpc/core/coreType.ts";
 import {
   jsonStringify,
   RawJsonValue,
   structuredJsonStringify,
-  StructuredJsonValue,
 } from "../typedJson.ts";
 
 /**
@@ -12,6 +12,11 @@ export type SimpleResponse = {
   readonly status: 200 | 400 | 401 | 404;
   readonly headers: {
     readonly contentType: string | undefined;
+    readonly cacheControl:
+      | "public, max-age=604800, immutable"
+      | "public, max-age=5"
+      | "private"
+      | undefined;
   };
   readonly body: Uint8Array | undefined;
 } | {
@@ -24,13 +29,25 @@ export type SimpleResponse = {
 
 export const simpleResponseOkEmpty: SimpleResponse = {
   status: 200,
-  headers: { contentType: undefined },
+  headers: { contentType: undefined, cacheControl: undefined },
   body: undefined,
 };
 
 export const simpleResponseHtml = (html: string): SimpleResponse => ({
   status: 200,
-  headers: { contentType: "text/html; charset=utf-8" },
+  headers: {
+    contentType: "text/html; charset=utf-8",
+    cacheControl: "public, max-age=5",
+  },
+  body: new TextEncoder().encode(html),
+});
+
+export const simpleResponseNotFoundHtml = (html: string): SimpleResponse => ({
+  status: 404,
+  headers: {
+    contentType: "text/html; charset=utf-8",
+    cacheControl: "public, max-age=5",
+  },
   body: new TextEncoder().encode(html),
 });
 
@@ -42,24 +59,61 @@ export const simpleResponseRedirect = (url: URL): SimpleResponse => {
   };
 };
 
-export const simpleResponsePng = (body: Uint8Array): SimpleResponse => ({
+export const simpleResponseImmutablePng = (
+  body: Uint8Array,
+): SimpleResponse => ({
   status: 200,
-  headers: { contentType: "image/png" },
+  headers: {
+    contentType: "image/png",
+    cacheControl: "public, max-age=604800, immutable",
+  },
   body,
 });
 
-export const simpleResponseJavaScript = (code: string): SimpleResponse => ({
+export const simpleResponseImmutableJavaScript = (
+  code: string,
+): SimpleResponse => ({
   status: 200,
-  headers: { contentType: "text/javascript; charset=utf-8" },
+  headers: {
+    contentType: "text/javascript; charset=utf-8",
+    cacheControl: "public, max-age=604800, immutable",
+  },
   body: new TextEncoder().encode(code),
 });
 
-export const simpleResponseJson = (
+export const simpleResponseImmutableWoff2Font = (
+  body: Uint8Array,
+): SimpleResponse => {
+  return {
+    status: 200,
+    headers: {
+      contentType: "font/woff2",
+      cacheControl: "public, max-age=604800, immutable",
+    },
+    body,
+  };
+};
+
+export const simpleResponseCache5SecJson = (
   structuredJsonValue: StructuredJsonValue,
 ): SimpleResponse => ({
   status: 200,
   headers: {
     contentType: "application/json",
+    cacheControl: "public, max-age=5",
+  },
+  body: new TextEncoder().encode(
+    structuredJsonStringify(structuredJsonValue),
+  ),
+});
+
+export const simpleResponsePrivateJson = (
+  structuredJsonValue: StructuredJsonValue,
+): SimpleResponse => ({
+  status: 200,
+  headers: {
+    contentType: "application/json",
+    cacheControl: "private",
   },
   body: new TextEncoder().encode(
     structuredJsonStringify(structuredJsonValue),
@@ -70,6 +124,7 @@ export const unauthorized = (message: string): SimpleResponse => ({
   status: 401,
   headers: {
     contentType: "application/json",
+    cacheControl: undefined,
   },
   body: new TextEncoder().encode(
     jsonStringify(message),
@@ -82,6 +137,7 @@ export const notFound = (
   status: 404,
   headers: {
     contentType: "application/json",
+    cacheControl: "public, max-age=5",
   },
   body: new TextEncoder().encode(
     jsonStringify({
@@ -101,6 +157,12 @@ export const simpleResponseToResponse = (
     simpleResponse.headers.contentType !== undefined
   ) {
     headers.append("content-type", simpleResponse.headers.contentType);
+  }
+  if (
+    simpleResponse.status !== 301 &&
+    simpleResponse.headers.cacheControl !== undefined
+  ) {
+    headers.append("cache-control", simpleResponse.headers.cacheControl);
   }
   if (
     simpleResponse.status === 301 &&

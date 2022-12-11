@@ -1,32 +1,36 @@
-import {
-  extname,
-  fromFileUrl,
-  join,
-} from "https://deno.land/std@0.166.0/path/mod.ts";
+import { extname } from "https://deno.land/std@0.167.0/path/posix.ts";
 
 const collectTsOrTsxFilePath = async (
-  directoryPath: string,
+  directoryPath: URL,
 ): Promise<ReadonlySet<string>> => {
+  console.log(directoryPath.href);
   const pathSet = new Set<string>();
   for await (const fileOrDirectory of Deno.readDir(directoryPath)) {
-    const fullPath = join(directoryPath, fileOrDirectory.name);
     if (fileOrDirectory.isDirectory) {
+      const fullPath = new URL(
+        fileOrDirectory.name + "/",
+        directoryPath,
+      );
       for (
         const path of await collectTsOrTsxFilePath(fullPath)
       ) {
         pathSet.add(path);
       }
     } else {
+      const fullPath = new URL(
+        fileOrDirectory.name,
+        directoryPath,
+      );
       const extension = extname(fileOrDirectory.name);
       if (extension === ".ts" || extension === ".tsx") {
-        pathSet.add(fullPath);
+        pathSet.add(fullPath.toString());
       }
     }
   }
   return pathSet;
 };
 
-const rootPath = fromFileUrl(import.meta.resolve("../"));
+const rootPath = new URL(import.meta.resolve("../"));
 
 const tsFilePathSet = await collectTsOrTsxFilePath(rootPath);
 

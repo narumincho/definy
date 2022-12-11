@@ -47,9 +47,9 @@ export const googleLogInClientId =
 
 const createRedirectUri = (mode: Mode): URL => {
   if (mode.type === "denoDeploy") {
-    return new URL(`https://definy-api.deno.dev/definyApi/logInCallback`);
+    return new URL(`https://definy.deno.dev/logInCallback`);
   }
-  return new URL(`http://localhost:${mode.port}/definyApi/logInCallback`);
+  return new URL(`http://localhost:${mode.port}/logInCallback`);
 };
 
 export const googleLogInUrl = (state: string, mode: Mode): URL => {

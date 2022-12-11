@@ -10,13 +10,12 @@ import {
   typeParameterListToString,
 } from "./common.ts";
 import { typeAnnotation } from "./type.ts";
-import { TsIdentifier } from "../identifier.ts";
+import { Context } from "./context.ts";
 
 export const statementListToString = (
   statementList: ReadonlyArray<d.Statement>,
   indent: number,
-  moduleMap: ReadonlyMap<string, TsIdentifier>,
-  codeType: d.CodeType
+  context: Context,
 ): string =>
   "{\n" +
   statementList
@@ -24,8 +23,7 @@ export const statementListToString = (
       statementToTypeScriptCodeAsString(
         statement,
         indent + 1,
-        moduleMap,
-        codeType
+        context,
       )
     )
     .join("\n") +
@@ -40,15 +38,14 @@ export const statementListToString = (
 const statementToTypeScriptCodeAsString = (
   statement: d.Statement,
   indent: number,
-  moduleMap: ReadonlyMap<string, TsIdentifier>,
-  codeType: d.CodeType
+  context: Context,
 ): string => {
   const indentString = indentNumberToString(indent);
   switch (statement._) {
     case "EvaluateExpr":
       return (
         indentString +
-        exprToString(statement.tsExpr, indent, moduleMap, codeType) +
+        exprToString(statement.tsExpr, indent, context) +
         ";"
       );
 
@@ -58,15 +55,14 @@ const statementToTypeScriptCodeAsString = (
         exprToString(
           statement.setStatement.target,
           indent,
-          moduleMap,
-          codeType
+          context,
         ) +
         " " +
         (statement.setStatement.operatorMaybe !== undefined
           ? binaryOperatorToString(statement.setStatement.operatorMaybe)
           : "") +
         "= " +
-        exprToString(statement.setStatement.expr, indent, moduleMap, codeType) +
+        exprToString(statement.setStatement.expr, indent, context) +
         ";"
       );
 
@@ -77,15 +73,13 @@ const statementToTypeScriptCodeAsString = (
         exprToString(
           statement.ifStatement.condition,
           indent,
-          moduleMap,
-          codeType
+          context,
         ) +
         ") " +
         statementListToString(
           statement.ifStatement.thenStatementList,
           indent,
-          moduleMap,
-          codeType
+          context,
         )
       );
 
@@ -93,7 +87,7 @@ const statementToTypeScriptCodeAsString = (
       return (
         indentString +
         "throw new Error(" +
-        exprToString(statement.tsExpr, indent, moduleMap, codeType) +
+        exprToString(statement.tsExpr, indent, context) +
         ");"
       );
 
@@ -101,7 +95,7 @@ const statementToTypeScriptCodeAsString = (
       return (
         indentString +
         "return " +
-        exprToString(statement.tsExpr, indent, moduleMap, codeType) +
+        exprToString(statement.tsExpr, indent, context) +
         ";"
       );
 
@@ -119,15 +113,13 @@ const statementToTypeScriptCodeAsString = (
         statement.variableDefinitionStatement.name +
         typeAnnotation(
           statement.variableDefinitionStatement.type,
-          codeType,
-          moduleMap
+          context,
         ) +
         " = " +
         exprToString(
           statement.variableDefinitionStatement.expr,
           indent,
-          moduleMap,
-          codeType
+          context,
         ) +
         ";"
       );
@@ -136,8 +128,7 @@ const statementToTypeScriptCodeAsString = (
       return functionDefinitionStatementToString(
         statement.functionDefinitionStatement,
         indent,
-        moduleMap,
-        codeType
+        context,
       );
 
     case "For":
@@ -151,8 +142,7 @@ const statementToTypeScriptCodeAsString = (
         exprToString(
           statement.forStatement.untilExpr,
           indent,
-          moduleMap,
-          codeType
+          context,
         ) +
         "; " +
         statement.forStatement.counterVariableName +
@@ -160,8 +150,7 @@ const statementToTypeScriptCodeAsString = (
         statementListToString(
           statement.forStatement.statementList,
           indent,
-          moduleMap,
-          codeType
+          context,
         )
       );
 
@@ -174,15 +163,13 @@ const statementToTypeScriptCodeAsString = (
         exprToString(
           statement.forOfStatement.iterableExpr,
           indent,
-          moduleMap,
-          codeType
+          context,
         ) +
         ")" +
         statementListToString(
           statement.forOfStatement.statementList,
           indent,
-          moduleMap,
-          codeType
+          context,
         )
       );
 
@@ -193,8 +180,7 @@ const statementToTypeScriptCodeAsString = (
         statementListToString(
           statement.statementList,
           indent,
-          moduleMap,
-          codeType
+          context,
         )
       );
 
@@ -205,8 +191,7 @@ const statementToTypeScriptCodeAsString = (
       return switchToString(
         statement.switchStatement,
         indent,
-        moduleMap,
-        codeType
+        context,
       );
   }
 };
@@ -214,8 +199,7 @@ const statementToTypeScriptCodeAsString = (
 const functionDefinitionStatementToString = (
   functionDefinition: d.FunctionDefinitionStatement,
   indent: number,
-  moduleMap: ReadonlyMap<string, TsIdentifier>,
-  codeType: d.CodeType
+  context: Context,
 ): string =>
   indentNumberToString(indent) +
   "const " +
@@ -225,26 +209,23 @@ const functionDefinitionStatementToString = (
   "(" +
   functionDefinition.parameterList
     .map(
-      (parameter) =>
-        parameter.name + typeAnnotation(parameter.type, codeType, moduleMap)
+      (parameter) => parameter.name + typeAnnotation(parameter.type, context),
     )
     .join(", ") +
   ")" +
-  typeAnnotation(functionDefinition.returnType, codeType, moduleMap) +
+  typeAnnotation(functionDefinition.returnType, context) +
   " => " +
   lambdaBodyToString(
     functionDefinition.statementList,
     indent,
-    moduleMap,
-    codeType
+    context,
   ) +
   ";";
 
 const switchToString = (
   switch_: d.SwitchStatement,
   indent: number,
-  moduleMap: ReadonlyMap<string, TsIdentifier>,
-  codeType: d.CodeType
+  context: Context,
 ): string => {
   const indentString = indentNumberToString(indent);
   const caseIndentNumber = indent + 1;
@@ -252,7 +233,7 @@ const switchToString = (
   return (
     indentString +
     "switch (" +
-    exprToString(switch_.expr, indent, moduleMap, codeType) +
+    exprToString(switch_.expr, indent, context) +
     ") {\n" +
     switch_.patternList
       .map(
@@ -264,9 +245,8 @@ const switchToString = (
           statementListToString(
             pattern.statementList,
             caseIndentNumber,
-            moduleMap,
-            codeType
-          )
+            context,
+          ),
       )
       .join("\n") +
     "\n" +

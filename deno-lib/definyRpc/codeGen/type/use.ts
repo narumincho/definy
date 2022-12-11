@@ -9,29 +9,62 @@ import {
 import { arrayFromLength } from "../../../util.ts";
 import {
   CodeGenContext,
-  CollectedDefinyRpcType,
   collectedDefinyRpcTypeMapGet,
-  CollectedDefinyRpcTypeUse,
 } from "../../core/collectType.ts";
 import {
-  namespaceRelative,
-  relativeNamespaceToTypeScriptModuleName,
-} from "../namespace.ts";
+  DefinyRpcTypeInfo,
+  Namespace,
+  Type,
+  TypeAttribute,
+} from "../../core/coreType.ts";
+import { namespaceFromAndToToTypeScriptModuleName } from "../namespace.ts";
 
 /**
  * パラメーターは p0, p1 ... というように勝手に指定される
  */
 export const collectedDefinyRpcTypeToTsType = (
-  collectedDefinyRpcType: CollectedDefinyRpcType,
+  typeInfo: DefinyRpcTypeInfo,
   context: CodeGenContext,
 ): data.TsType => {
+  if (
+    typeInfo.attribute.type === "just" &&
+    typeInfo.attribute.value.type === TypeAttribute.asType.type
+  ) {
+    const moduleName = namespaceFromAndToToTypeScriptModuleName(
+      context.currentModule,
+      Namespace.coreType,
+    );
+    if (moduleName === undefined) {
+      return {
+        _: "ScopeInFile",
+        typeNameAndTypeParameter: {
+          name: identifierFromString(typeInfo.name),
+          arguments: [{ _: "unknown" }],
+        },
+      };
+    }
+    return {
+      _: "ImportedType",
+      importedType: {
+        moduleName,
+        nameAndArguments: {
+          name: identifierFromString(typeInfo.name),
+          arguments: [{ _: "unknown" }],
+        },
+      },
+    };
+  }
+
   const typeDetail = collectedDefinyRpcTypeMapGet(
     context.map,
-    collectedDefinyRpcType.namespace,
-    collectedDefinyRpcType.name,
+    typeInfo.namespace,
+    typeInfo.name,
   );
   if (typeDetail === undefined) {
-    throw new Error("型を集計できなかった " + collectedDefinyRpcType.name);
+    throw new Error(
+      "型を集計できなかった " + typeInfo.name +
+        " in collectedDefinyRpcTypeToTsType",
+    );
   }
   switch (typeDetail.body.type) {
     case "string":
@@ -58,31 +91,33 @@ export const collectedDefinyRpcTypeToTsType = (
           arguments: [],
         },
       });
-    case "stringMap":
+    case "map":
       return readonlyMapType({
-        _: "String",
-      }, {
         _: "ScopeInFile",
         typeNameAndTypeParameter: {
           name: identifierFromString("p0"),
           arguments: [],
         },
+      }, {
+        _: "ScopeInFile",
+        typeNameAndTypeParameter: {
+          name: identifierFromString("p1"),
+          arguments: [],
+        },
       });
     case "product":
     case "sum": {
-      const moduleName = relativeNamespaceToTypeScriptModuleName(
-        namespaceRelative(
-          context.currentModule,
-          collectedDefinyRpcType.namespace,
-        ),
+      const moduleName = namespaceFromAndToToTypeScriptModuleName(
+        context.currentModule,
+        typeInfo.namespace,
       );
       if (moduleName === undefined) {
         return {
           _: "ScopeInFile",
           typeNameAndTypeParameter: {
-            name: identifierFromString(collectedDefinyRpcType.name),
+            name: identifierFromString(typeInfo.name),
             arguments: arrayFromLength(
-              collectedDefinyRpcType.parameterCount,
+              typeInfo.parameterCount,
               (i) => ({
                 _: "ScopeInFile",
                 typeNameAndTypeParameter: {
@@ -99,9 +134,9 @@ export const collectedDefinyRpcTypeToTsType = (
         importedType: {
           moduleName: moduleName,
           nameAndArguments: {
-            name: identifierFromString(collectedDefinyRpcType.name),
+            name: identifierFromString(typeInfo.name),
             arguments: arrayFromLength(
-              collectedDefinyRpcType.parameterCount,
+              typeInfo.parameterCount,
               (i) => ({
                 _: "ScopeInFile",
                 typeNameAndTypeParameter: {
@@ -120,18 +155,71 @@ export const collectedDefinyRpcTypeToTsType = (
 };
 
 export const collectedDefinyRpcTypeUseToTsType = (
-  type: CollectedDefinyRpcTypeUse,
+  type: Type<unknown>,
   context: CodeGenContext,
 ): data.TsType => {
-  const typeDetail = collectedDefinyRpcTypeMapGet(
+  if (type.namespace.type == "maybe") {
+    const moduleName = namespaceFromAndToToTypeScriptModuleName(
+      context.currentModule,
+      Namespace.maybe,
+    );
+    if (moduleName === undefined) {
+      throw new Error("maybe はコード生成できない");
+    }
+    return {
+      _: "ImportedType",
+      importedType: {
+        moduleName,
+        nameAndArguments: {
+          name: identifierFromString(type.name),
+          arguments: type.parameters.map((p) =>
+            collectedDefinyRpcTypeUseToTsType(p, context)
+          ),
+        },
+      },
+    };
+  }
+
+  const typeInfo = collectedDefinyRpcTypeMapGet(
     context.map,
     type.namespace,
     type.name,
   );
-  if (typeDetail === undefined) {
-    throw new Error("型を集計できなかった " + type.name);
+  if (typeInfo === undefined) {
+    throw new Error(
+      "型を集計できなかった " + type.name + " in collectedDefinyRpcTypeUseToTsType",
+    );
   }
-  switch (typeDetail.body.type) {
+  if (
+    typeInfo.attribute.type === "just" &&
+    typeInfo.attribute.value.type === TypeAttribute.asType.type
+  ) {
+    const moduleName = namespaceFromAndToToTypeScriptModuleName(
+      context.currentModule,
+      Namespace.coreType,
+    );
+    if (moduleName === undefined) {
+      return {
+        _: "ScopeInFile",
+        typeNameAndTypeParameter: {
+          name: identifierFromString(type.name),
+          arguments: [{ _: "unknown" }],
+        },
+      };
+    }
+    return {
+      _: "ImportedType",
+      importedType: {
+        moduleName,
+        nameAndArguments: {
+          name: identifierFromString(type.name),
+          arguments: [{ _: "unknown" }],
+        },
+      },
+    };
+  }
+
+  switch (typeInfo.body.type) {
     case "string":
       return { _: "String" };
     case "number":
@@ -160,28 +248,28 @@ export const collectedDefinyRpcTypeUseToTsType = (
         context,
       ));
     }
-    case "stringMap": {
-      const parameter = type.parameters[0];
-      if (parameter === undefined) {
-        throw new Error("stringMapには型パラメーターを指定する必要があります");
+    case "map": {
+      const key = type.parameters[0];
+      const value = type.parameters[1];
+      if (key === undefined || value === undefined) {
+        throw new Error("Mapには型パラメーターを2つ指定する必要があります");
       }
       return readonlyMapType(
-        {
-          _: "String",
-        },
         collectedDefinyRpcTypeUseToTsType(
-          parameter,
+          key,
+          context,
+        ),
+        collectedDefinyRpcTypeUseToTsType(
+          value,
           context,
         ),
       );
     }
     case "product":
     case "sum": {
-      const moduleName = relativeNamespaceToTypeScriptModuleName(
-        namespaceRelative(
-          context.currentModule,
-          type.namespace,
-        ),
+      const moduleName = namespaceFromAndToToTypeScriptModuleName(
+        context.currentModule,
+        type.namespace,
       );
       if (moduleName === undefined) {
         return {

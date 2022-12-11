@@ -1,4 +1,3 @@
-import { TsExpr } from "../../../jsTs/data.ts";
 import {
   data,
   get,
@@ -10,15 +9,13 @@ import {
   typeAssertion,
   variable,
 } from "../../../jsTs/main.ts";
-import {
-  CodeGenContext,
-  CollectedDefinyRpcType,
-  Field,
-} from "../../core/collectType.ts";
+import { CodeGenContext } from "../../core/collectType.ts";
+import { DefinyRpcTypeInfo, Field, Namespace } from "../../core/coreType.ts";
+import { namespaceToString } from "../namespace.ts";
 import { collectedDefinyRpcTypeToTsType } from "../type/use.ts";
 
 export const createFromLambda = (
-  type: CollectedDefinyRpcType,
+  type: DefinyRpcTypeInfo,
   context: CodeGenContext,
 ):
   | data.LambdaExpr
@@ -26,11 +23,11 @@ export const createFromLambda = (
   if (type.body.type !== "product") {
     return undefined;
   }
-  return typeToFromLambda(type, type.body.fieldList, context);
+  return typeToFromLambda(type, type.body.value, context);
 };
 
 const typeToFromLambda = (
-  type: CollectedDefinyRpcType,
+  type: DefinyRpcTypeInfo,
   fieldList: ReadonlyArray<Field>,
   context: CodeGenContext,
 ): data.LambdaExpr => {
@@ -41,24 +38,63 @@ const typeToFromLambda = (
         _: "ScopeInGlobal",
         typeNameAndTypeParameter: {
           name: identifierFromString("Omit"),
-          arguments: [collectedDefinyRpcTypeToTsType(type, context), {
-            _: "typeof",
-            expr: symbolToStringTag,
-          }],
+          arguments: type.namespace.type == "coreType" && type.name === "Type"
+            ? [{
+              _: "ScopeInFile",
+              typeNameAndTypeParameter: {
+                name: identifierFromString("Type"),
+                arguments: [{
+                  _: "ScopeInFile",
+                  typeNameAndTypeParameter: {
+                    name: identifierFromString("p0"),
+                    arguments: [],
+                  },
+                }],
+              },
+            }, {
+              _: "Union",
+              tsTypeList: [{
+                _: "typeof",
+                expr: variable(identifierFromString("neverSymbol")),
+              }, {
+                _: "typeof",
+                expr: symbolToStringTag,
+              }],
+            }]
+            : [collectedDefinyRpcTypeToTsType(type, context), {
+              _: "typeof",
+              expr: symbolToStringTag,
+            }],
         },
       },
     }],
-    returnType: collectedDefinyRpcTypeToTsType(type, context),
+    returnType: type.namespace.type == "coreType" && type.name === "Type"
+      ? {
+        _: "ScopeInFile",
+        typeNameAndTypeParameter: {
+          name: identifierFromString("Type"),
+          arguments: [{
+            _: "ScopeInFile",
+            typeNameAndTypeParameter: {
+              name: identifierFromString("p0"),
+              arguments: [],
+            },
+          }],
+        },
+      }
+      : collectedDefinyRpcTypeToTsType(type, context),
     statementList: typeToFromLambdaProductStatement(
       type,
       fieldList,
     ),
-    typeParameterList: [],
+    typeParameterList: type.namespace.type == "coreType" && type.name === "Type"
+      ? [identifierFromString("p0")]
+      : [],
   };
 };
 
 const typeToFromLambdaProductStatement = (
-  type: CollectedDefinyRpcType,
+  type: DefinyRpcTypeInfo,
   fieldList: ReadonlyArray<Field>,
 ): ReadonlyArray<data.Statement> => {
   return [
@@ -83,14 +119,34 @@ const typeToFromLambdaProductStatement = (
             ),
           },
         },
+        ...(type.namespace.type == "coreType" && type.name === "Type"
+          ? [
+            {
+              _: "KeyValue",
+              keyValue: {
+                key: variable(identifierFromString("neverSymbol")),
+                value: typeAssertion({
+                  expr: objectLiteral([]),
+                  type: {
+                    _: "ScopeInFile",
+                    typeNameAndTypeParameter: {
+                      name: identifierFromString("p0"),
+                      arguments: [],
+                    },
+                  },
+                }),
+              },
+            } as const,
+          ]
+          : []),
       ]),
     },
   ];
 };
 
 export const symbolToStringTagAndTypeName = (
-  namespace: ReadonlyArray<string>,
+  namespace: Namespace,
   typeName: string,
 ): string => {
-  return namespace.join(".") + "." + typeName;
+  return namespaceToString(namespace) + "." + typeName;
 };

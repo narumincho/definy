@@ -173,10 +173,14 @@ const collectInVariableDefinition = (
         modulePathSet: new Set(),
         usedNameSet: new Set([variable.name]),
       },
-      collectInType(
-        variable.type,
-        rootScopeIdentifierSet,
-        [new Set()],
+      collectList(
+        variable.type === undefined ? [] : [variable.type],
+        (element) =>
+          collectInType(
+            element,
+            rootScopeIdentifierSet,
+            [new Set()],
+          ),
       ),
     ),
     collectInExpr(variable.expr, [], [], rootScopeIdentifierSet),
@@ -184,8 +188,6 @@ const collectInVariableDefinition = (
 
 /**
  * グローバルで使われているものを収集したり、インポートしているものを収集する
- * @param expr 式
- * @param scanData グローバルで使われている名前の集合などのコード全体の情報の収集データ。上書きする
  */
 const collectInExpr = (
   expr: d.TsExpr,
@@ -339,7 +341,7 @@ const collectInExpr = (
     case "GlobalObjects":
       return {
         modulePathSet: new Set(),
-        usedNameSet: new Set([expr.tsIdentifier]),
+        usedNameSet: new Set(),
       };
 
     case "ImportedVariable":

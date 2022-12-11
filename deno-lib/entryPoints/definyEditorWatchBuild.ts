@@ -3,11 +3,7 @@ import { jsonStringify } from "../typedJson.ts";
 import { writeTextFileWithLog } from "../writeFileAndLog.ts";
 import * as esbuild from "https://deno.land/x/esbuild@v0.15.14/mod.js";
 import { denoPlugin } from "https://deno.land/x/esbuild_deno_loader@0.6.0/mod.ts";
-import {
-  fromFileUrl,
-  join,
-  relative,
-} from "https://deno.land/std@0.156.0/path/mod.ts";
+import { fromFileUrl } from "https://deno.land/std@0.167.0/path/posix.ts";
 import { toBase64 } from "https://deno.land/x/fast_base64@v0.1.7/mod.ts";
 
 type BuildClientResult = {
@@ -39,39 +35,35 @@ const outputFilesToScriptFile = async (
   throw new Error("esbuild で <stdout> の出力を取得できなかった...");
 };
 
-const assetsFolder = relative(
-  Deno.cwd(),
-  fromFileUrl(import.meta.resolve("../definyApp/editor/assets")),
+const assetsFolder = new URL(
+  import.meta.resolve("../definyApp/editor/assets/"),
 );
 
 const watchAndBuild = async (
   onBuild: (result: BuildClientResult) => void,
 ): Promise<void> => {
-  const iconContent = await Deno.readFile(
-    join(assetsFolder, "./icon.png"),
-  );
+  const iconContent = await (await fetch(
+    new URL("./icon.png", assetsFolder),
+  )).arrayBuffer();
   const iconHash = await hashBinary(iconContent);
   const iconContentAsBase64 = await toBase64(iconContent);
 
-  const fontContent = await Deno.readFile(
-    join(assetsFolder, "./hack_regular_subset.woff2"),
-  );
+  const fontContent = await (await fetch(
+    new URL("./hack_regular_subset.woff2", assetsFolder),
+  )).arrayBuffer();
   const fontHash = await hashBinary(fontContent);
   const fontContentAsBase64 = await toBase64(fontContent);
 
-  const notoSans = await Deno.readFile(
-    join(assetsFolder, "./NotoSansJP-Regular.otf"),
-  );
+  const notoSans = await (await fetch(
+    new URL("./NotoSansJP-Regular.otf", assetsFolder),
+  )).arrayBuffer();
   const notoSansAsBase64 = await toBase64(notoSans);
 
   const scriptHashAndContent = await outputFilesToScriptFile(
     (await esbuild.build({
       entryPoints: [
-        relative(
-          Deno.cwd(),
-          fromFileUrl(
-            import.meta.resolve("./definyEditorInBrowser.tsx"),
-          ),
+        fromFileUrl(
+          import.meta.resolve("./definyEditorInBrowser.tsx"),
         ),
       ],
       plugins: [denoPlugin()],
@@ -118,7 +110,7 @@ const watchAndBuild = async (
 const editorWatchBuild = async (): Promise<void> => {
   await watchAndBuild((clientBuildResult) => {
     writeTextFileWithLog(
-      fromFileUrl(import.meta.resolve("../definyApp/server/dist.json")),
+      new URL(import.meta.resolve("../definyApp/server/dist.json")),
       jsonStringify(clientBuildResult, true),
     );
   });

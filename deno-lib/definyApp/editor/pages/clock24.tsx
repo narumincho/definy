@@ -2,6 +2,7 @@ import React from "https://esm.sh/react@18.2.0?pin=v99";
 import { c, toStyleAndHash } from "../../../cssInJs/mod.ts";
 import { ClockSetting } from "../components/clockSetting.tsx";
 import { timeToDisplayText } from "../logic.ts";
+import { Clock24Parameter } from "../url.ts";
 
 const containerStyle = toStyleAndHash({
   backgroundColor: "#724242",
@@ -63,8 +64,7 @@ const removeInt = (value: number): number => {
 
 export const Clock24 = (
   props: {
-    readonly message: string;
-    readonly date: Date | undefined;
+    readonly parameter: Clock24Parameter;
     readonly onChangeUrl: (newURL: URL) => void;
   },
 ): React.ReactElement => {
@@ -76,9 +76,9 @@ export const Clock24 = (
   });
   const seconds = now.getTime() - now.getTimezoneOffset() * 60 * 1000;
 
-  const limitValueAndUnit = props.date === undefined
+  const limitValueAndUnit = props.parameter.deadline === undefined
     ? undefined
-    : timeToDisplayText(props.date);
+    : timeToDisplayText(props.parameter.deadline);
 
   return (
     <div className={c(containerStyle)}>
@@ -141,7 +141,7 @@ export const Clock24 = (
           strokeWidth={0.5}
           fontSize={18}
         >
-          {props.message}
+          {props.parameter.message}
         </text>
         {limitValueAndUnit && (
           <text
@@ -230,6 +230,6 @@ export const Needle = (
   );
 };
 
-export const clock24Title = () => {
-  return "1周24時間の時計";
+export const clock24Title = (parameter: Clock24Parameter) => {
+  return parameter.message + " | 1周24時間の時計 | definy";
 };

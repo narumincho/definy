@@ -13,15 +13,18 @@ export * as data from "./data.ts";
 
 export const generateCodeAsString = (
   code: d.JsTsCode,
-  codeType: d.CodeType
+  codeType: d.CodeType,
 ): string => {
   // グローバル空間にある名前とimportしたモジュールのパスを集める
   const usedNameAndModulePath: UsedNameAndModulePathSet = collectInCode(code);
 
   return toString(
     code,
-    createImportedModuleName(usedNameAndModulePath),
-    codeType
+    {
+      moduleMap: createImportedModuleName(usedNameAndModulePath),
+      usedNameSet: usedNameAndModulePath.usedNameSet,
+      codeType,
+    },
   );
 };
 
@@ -30,18 +33,18 @@ export const generateCodeAsString = (
  * @param usedNameAndModulePath
  */
 const createImportedModuleName = (
-  usedNameAndModulePath: UsedNameAndModulePathSet
+  usedNameAndModulePath: UsedNameAndModulePathSet,
 ): ReadonlyMap<string, TsIdentifier> => {
   let identifierIndex = initialIdentifierIndex;
   const importedModuleNameMap = new Map<string, TsIdentifier>();
   for (const modulePath of usedNameAndModulePath.modulePathSet) {
     const identifierAndNextIdentifierIndex = createIdentifier(
       identifierIndex,
-      usedNameAndModulePath.usedNameSet
+      usedNameAndModulePath.usedNameSet,
     );
     importedModuleNameMap.set(
       modulePath,
-      identifierAndNextIdentifierIndex.identifier
+      identifierAndNextIdentifierIndex.identifier,
     );
     identifierIndex = identifierAndNextIdentifierIndex.nextIdentifierIndex;
   }

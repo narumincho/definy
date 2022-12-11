@@ -1,24 +1,27 @@
 import clientBuildResult from "./browserClient.json" assert { type: "json" };
-import { structuredJsonParse, StructuredJsonValue } from "../../typedJson.ts";
+import { structuredJsonParse } from "../../typedJson.ts";
 import { AccountToken, FunctionAndTypeList } from "../core/apiFunction.ts";
-import { addDefinyRpcApiFunction } from "../core/builtInFunctions.ts";
+import { addMetaFunctionAndCoreType } from "../core/builtInFunctions.ts";
 import { SimpleRequest } from "../../simpleRequestResponse/simpleRequest.ts";
 import {
   notFound,
   SimpleResponse,
+  simpleResponseCache5SecJson,
   simpleResponseHtml,
-  simpleResponseJavaScript,
-  simpleResponseJson,
+  simpleResponseImmutableJavaScript,
+  simpleResponseImmutablePng,
   simpleResponseOkEmpty,
-  simpleResponsePng,
+  simpleResponsePrivateJson,
   unauthorized,
 } from "../../simpleRequestResponse/simpleResponse.ts";
 import { stringArrayEqual, stringArrayMatchPrefix } from "../../util.ts";
 import { toBytes } from "https://deno.land/x/fast_base64@v0.1.7/mod.ts";
-
-export * from "../core/type.ts";
-export * from "../core/apiFunction.ts";
-export * from "../core/builtInType.ts";
+import { FunctionNamespace, StructuredJsonValue } from "../core/coreType.ts";
+import {
+  fromStructuredJsonValue,
+  toStructuredJsonValue,
+} from "../core/structuredJsonCodec.ts";
+import { createTypeKey } from "../core/collectType.ts";
 
 const editorPath = "_editor";
 
@@ -36,11 +39,15 @@ export type DefinyRpcParameter = {
    */
   readonly originHint: string;
   /**
-   * 実行環境とコードを編集している環境が同じ場合に, コードを生成ボタンを押したら生成できる機能
+   * 実行環境とコードを編集している環境が同じ場合に, コードを生成ボタンを押したら生成できる機能を有効化する
+   *
+   * 相対パスではなく `file://` で始まるURLを指定する必要がある
+   *
+   * 末尾のスラッシュを忘れずに
    *
    * 本番サーバーでは `undefined` を指定する
    */
-  readonly codeGenOutputFolderPath: string | undefined;
+  readonly codeGenOutputFolderPath: URL | undefined;
   /**
    * 処理するパス
    *
@@ -62,21 +69,21 @@ export const handleRequest = async (
   request: SimpleRequest,
 ): Promise<SimpleResponse | undefined> => {
   const pathPrefix = parameter.pathPrefix ?? [];
-  if (!stringArrayMatchPrefix(request.path, pathPrefix)) {
+  if (!stringArrayMatchPrefix(request.url.path, pathPrefix)) {
     return undefined;
   }
-  const pathListRemovePrefix = request.path.slice(pathPrefix.length);
+  const pathListRemovePrefix = request.url.path.slice(pathPrefix.length);
 
-  const all = addDefinyRpcApiFunction(parameter);
+  const all = addMetaFunctionAndCoreType(parameter);
   if (request.method === "OPTIONS") {
     return simpleResponseOkEmpty;
   }
 
-  const paramJson = request.query.get("param");
+  const paramJson = request.url.query.get("param");
   const paramJsonParsed: StructuredJsonValue =
     (typeof paramJson === "string"
       ? structuredJsonParse(paramJson)
-      : undefined) ?? { type: "null" };
+      : undefined) ?? StructuredJsonValue.null;
 
   if (stringArrayEqual(pathListRemovePrefix, [])) {
     return simpleResponseHtml(`<!doctype html>
@@ -110,7 +117,9 @@ export const handleRequest = async (
       clientBuildResult.iconHash,
     ])
   ) {
-    return simpleResponsePng(await toBytes(clientBuildResult.iconContent));
+    return simpleResponseImmutablePng(
+      await toBytes(clientBuildResult.iconContent),
+    );
   }
   if (
     stringArrayEqual(pathListRemovePrefix, [
@@ -118,11 +127,16 @@ export const handleRequest = async (
       clientBuildResult.scriptHash,
     ])
   ) {
-    return simpleResponseJavaScript(clientBuildResult.scriptContent);
+    return simpleResponseImmutableJavaScript(clientBuildResult.scriptContent);
   }
+  const typeMap = new Map(
+    all.typeList.map((
+      type,
+    ) => [createTypeKey(type.namespace, type.name), type]),
+  );
   console.log("request!: ", pathListRemovePrefix);
   for (const func of all.functionsList) {
-    if (stringArrayEqual(pathListRemovePrefix, func.fullName)) {
+    if (isMatchFunction(func.namespace, func.name, pathListRemovePrefix)) {
       if (func.needAuthentication) {
         const authorizationHeaderValue = request.headers.authorization;
         if (authorizationHeaderValue === undefined) {
@@ -134,24 +148,24 @@ export const handleRequest = async (
           return unauthorized("invalid account token in Authorization header");
         }
         const apiFunctionResult = await func.resolve(
-          func.input.fromStructuredJsonValue(paramJsonParsed),
+          fromStructuredJsonValue(func.input, typeMap, paramJsonParsed),
           authorizationHeaderValue.credentials as AccountToken,
         );
-        return simpleResponseJson(
-          func.output.toStructuredJsonValue(apiFunctionResult),
+        return simpleResponsePrivateJson(
+          toStructuredJsonValue(func.output, typeMap, apiFunctionResult),
         );
       }
       const apiFunctionResult = await func.resolve(
-        func.input.fromStructuredJsonValue(paramJsonParsed),
+        fromStructuredJsonValue(func.input, typeMap, paramJsonParsed),
         undefined,
       );
-      return simpleResponseJson(
-        func.output.toStructuredJsonValue(apiFunctionResult),
+      return simpleResponseCache5SecJson(
+        toStructuredJsonValue(func.output, typeMap, apiFunctionResult),
       );
     }
   }
   return notFound({
-    examples: all.functionsList.map((func) => func.fullName),
+    examples: all.functionsList.map((func) => [func.namespace, func.name]),
     specified: pathListRemovePrefix,
   });
 };
@@ -161,4 +175,18 @@ const editorPathPrefix = (pathPrefix: ReadonlyArray<string>) => {
     return "/" + editorPath + "/";
   }
   return "/" + pathPrefix.join("/") + "/" + editorPath + "/";
+};
+
+export const isMatchFunction = (
+  functionNamespace: FunctionNamespace,
+  functionName: string,
+  pathList: ReadonlyArray<string>,
+): boolean => {
+  if (functionNamespace.type === "meta") {
+    return stringArrayEqual(["meta", functionName], pathList);
+  }
+  return stringArrayEqual(
+    ["api", ...functionNamespace.value, functionName],
+    pathList,
+  );
 };

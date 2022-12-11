@@ -1,9 +1,8 @@
-import { DefinyRpcType } from "./type.ts";
-import { NonEmptyArray } from "../../util.ts";
+import { DefinyRpcTypeInfo, FunctionNamespace, Type } from "./coreType.ts";
 
 export type FunctionAndTypeList = {
   readonly functionsList: ReadonlyArray<ApiFunction>;
-  readonly typeList: ReadonlyArray<DefinyRpcType<any>>;
+  readonly typeList: ReadonlyArray<DefinyRpcTypeInfo>;
 };
 
 const privateSymbol = Symbol();
@@ -12,11 +11,10 @@ const privateSymbol = Symbol();
  * definy Rpc の内容を構成する関数
  */
 export type ApiFunction = {
-  readonly fullName: NonEmptyArray<string>;
-  // deno-lint-ignore no-explicit-any
-  readonly input: DefinyRpcType<any>;
-  // deno-lint-ignore no-explicit-any
-  readonly output: DefinyRpcType<any>;
+  readonly namespace: FunctionNamespace;
+  readonly name: string;
+  readonly input: Type<unknown>;
+  readonly output: Type<unknown>;
   /**
    * 認証が必要かどうか
    * https://narumincho.notion.site/c5cbc02963c24733abe93fcd2fab2b73?v=3ec614a2ca0046c9bae9efbf8c0ea4e3
@@ -41,9 +39,10 @@ export const createApiFunction = <
   OutputType,
   NeedAuthentication extends boolean,
 >(parameter: {
-  readonly fullName: NonEmptyArray<string>;
-  readonly input: DefinyRpcType<InputType>;
-  readonly output: DefinyRpcType<OutputType>;
+  readonly namespace: FunctionNamespace;
+  readonly name: string;
+  readonly input: Type<InputType>;
+  readonly output: Type<OutputType>;
   /**
    * 認証が必要かどうか
    * https://narumincho.notion.site/c5cbc02963c24733abe93fcd2fab2b73?v=3ec614a2ca0046c9bae9efbf8c0ea4e3
@@ -57,7 +56,8 @@ export const createApiFunction = <
   ) => Promise<OutputType> | OutputType;
 }): ApiFunction => {
   return {
-    fullName: parameter.fullName,
+    namespace: parameter.namespace,
+    name: parameter.name,
     input: parameter.input,
     output: parameter.output,
     needAuthentication: parameter.needAuthentication,

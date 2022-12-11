@@ -1,8 +1,14 @@
 import { urlFromString } from "../client/urlFromString.ts";
 import type { Node, NodeAPI, NodeDef } from "./nodeRedServer.ts";
 import type { Status } from "./status.ts";
-import * as definyRpcClient from "../../definyRpc/generated/definyRpc.ts";
 import { jsonStringify } from "../../typedJson.ts";
+import { FunctionDetail } from "../../definyRpc/core/coreType.ts";
+import { requestQuery } from "../../definyRpc/core/request.ts";
+import { functionNamespaceToString } from "../../definyRpc/codeGen/namespace.ts";
+import {
+  functionListByName,
+  name,
+} from "../../definyRpc/example/generated/meta.ts";
 
 const createdServer = new Set<string>();
 
@@ -11,17 +17,22 @@ export default function (RED: NodeAPI) {
   const generateNode = (
     parameter: {
       readonly url: URL;
-      readonly functionDetail: definyRpcClient.FunctionDetail;
+      readonly functionDetail: FunctionDetail;
     },
   ) => {
     // eslint-disable-next-line func-style
     return function (this: Node, config: NodeDef): void {
       RED.nodes.createNode(this, config);
-      this.on("input", (_msg, send) => {
-        const apiUrl = new URL(parameter.url);
-        apiUrl.pathname = apiUrl.pathname + "/" +
-          parameter.functionDetail.name.join("/");
-        fetch(apiUrl).then((response) => response.json()).then((json) => {
+      this.on("input", (msg, send) => {
+        requestQuery({
+          url: new URL(parameter.url),
+          input: msg,
+          namespace: parameter.functionDetail.namespace,
+          name: parameter.functionDetail.name,
+          inputType: parameter.functionDetail.input,
+          outputType: parameter.functionDetail.output,
+          typeMap: new Map(),
+        }).then((json) => {
           send({ payload: json });
         });
       });
@@ -45,8 +56,8 @@ export default function (RED: NodeAPI) {
     });
 
     Promise.all([
-      definyRpcClient.name({ url: url.toString() }),
-      definyRpcClient.functionListByName({ url: url.toString() }),
+      name({ url }),
+      functionListByName({ url }),
     ]).then(([name, functionList]) => {
       if (name.type === "error" || functionList.type === "error") {
         setStatus({
@@ -57,15 +68,20 @@ export default function (RED: NodeAPI) {
         return;
       }
       const status: Status = {
-        name: name.ok,
-        functionList: functionList.ok,
+        // TODO
+        name: name.value as unknown as string,
+        // TODO
+        functionList: functionList.value as unknown as ReadonlyArray<
+          FunctionDetail
+        >,
       };
       console.log(createdServer, url.toString());
       if (!createdServer.has(url.toString())) {
         createdServer.add(url.toString());
-        for (const func of functionList.ok) {
+        for (const func of status.functionList) {
           RED.nodes.registerType(
-            "definy-" + func.name.join("-"),
+            "definy-" + functionNamespaceToString(func.namespace) + "." +
+              func.name,
             generateNode({ url, functionDetail: func }),
           );
         }

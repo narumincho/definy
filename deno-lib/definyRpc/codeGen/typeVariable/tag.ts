@@ -9,11 +9,8 @@ import {
   variable,
 } from "../../../jsTs/main.ts";
 import { arrayFromLength } from "../../../util.ts";
-import {
-  CodeGenContext,
-  CollectedDefinyRpcType,
-  Pattern,
-} from "../../core/collectType.ts";
+import { CodeGenContext } from "../../core/collectType.ts";
+import { DefinyRpcTypeInfo, Pattern } from "../../core/coreType.ts";
 import {
   collectedDefinyRpcTypeToTsType,
   collectedDefinyRpcTypeUseToTsType,
@@ -26,7 +23,7 @@ type TsMemberAndType = {
 };
 
 export const createTagExprList = (
-  type: CollectedDefinyRpcType,
+  type: DefinyRpcTypeInfo,
   context: CodeGenContext,
 ):
   | ReadonlyArray<TsMemberAndType>
@@ -34,7 +31,7 @@ export const createTagExprList = (
   if (type.body.type !== "sum") {
     return undefined;
   }
-  return type.body.patternList.map<TsMemberAndType>(
+  return type.body.value.map<TsMemberAndType>(
     (pattern): TsMemberAndType => {
       const exprAndType = patternToTagExprAndType(pattern, type, context);
       return {
@@ -52,41 +49,42 @@ export const createTagExprList = (
 
 const patternToTagExprAndType = (
   pattern: Pattern,
-  type: CollectedDefinyRpcType,
+  type: DefinyRpcTypeInfo,
   context: CodeGenContext,
 ): {
   readonly memberExpr: data.TsExpr;
   readonly type: data.TsType;
 } => {
-  const typeAndSymbolToStringTagMember: ReadonlyArray<data.TsMember> = [
-    memberKeyValue("type", stringLiteral(pattern.name)),
-    {
-      _: "KeyValue",
-      keyValue: {
-        key: symbolToStringTag,
-        value: stringLiteral(
-          symbolToStringTagAndTypeName(type.namespace, type.name),
-        ),
-      },
+  const symbolToStringTagMember: data.TsMember = {
+    _: "KeyValue",
+    keyValue: {
+      key: symbolToStringTag,
+      value: stringLiteral(
+        symbolToStringTagAndTypeName(type.namespace, type.name),
+      ),
     },
-  ];
-  if (type.parameterCount === 0 && pattern.parameter === undefined) {
+  };
+  if (type.parameterCount === 0 && pattern.parameter.type === "nothing") {
     return {
-      memberExpr: objectLiteral(typeAndSymbolToStringTagMember),
+      memberExpr: objectLiteral([
+        memberKeyValue("type", stringLiteral(pattern.name)),
+        symbolToStringTagMember,
+      ]),
       type: collectedDefinyRpcTypeToTsType(type, context),
     };
   }
   const lambdaExpr: data.LambdaExpr = {
-    parameterList: pattern.parameter === undefined ? [] : [{
+    parameterList: pattern.parameter.type === "nothing" ? [] : [{
       name: identifierFromString("p"),
-      type: collectedDefinyRpcTypeUseToTsType(pattern.parameter, context),
+      type: collectedDefinyRpcTypeUseToTsType(pattern.parameter.value, context),
     }],
     returnType: collectedDefinyRpcTypeToTsType(type, context),
     statementList: [{
       _: "Return",
       tsExpr: objectLiteral([
-        ...typeAndSymbolToStringTagMember,
+        memberKeyValue("type", stringLiteral(pattern.name)),
         memberKeyValue("value", variable(identifierFromString("p"))),
+        symbolToStringTagMember,
       ]),
     }],
     typeParameterList: arrayFromLength(
