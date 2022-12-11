@@ -345,6 +345,13 @@
     "https://esm.sh/v99/react-dom@18.2.0/deno/client.js": "2769c0e803c11ffd493087a4a8142b4a127a76c729e7f8bfb93157505bd6c919",
     "https://esm.sh/v99/react-dom@18.2.0/deno/server.js": "bf1ce0fcb084be382713a3bbf9df8d6564cddad331ef30e9307f1c8eaa1e513d",
     "https://esm.sh/v99/scheduler@0.23.0/deno/scheduler.js": "4c366114b6fc3cf2bdcd2f60aa4382ade0c8b62ddffcb9b64f244d92a5160b0e",
-    "https://raw.githubusercontent.com/narumincho/definy/61351534fba3e0549319fe11feee7c3dc823d7c1/deno-lib/typedJson.ts": "c2299cb7b135fb1f03b7e8ca38e21fae2e5e40d38012deaee02886f7f6fa9b01"
+    "https://raw.githubusercontent.com/narumincho/definy/61351534fba3e0549319fe11feee7c3dc823d7c1/deno-lib/typedJson.ts": "c2299cb7b135fb1f03b7e8ca38e21fae2e5e40d38012deaee02886f7f6fa9b01",
+    "https://raw.githubusercontent.com/narumincho/definy/d6d8ab20628f332bb6c07c445d4159d86261eb81/deno-lib/definyRpc/codeGen/namespace.ts": "a76de6facb27f73eca9e82f14e1136e042092b1d0d35f59e51bcb69a5e03e263",
+    "https://raw.githubusercontent.com/narumincho/definy/d6d8ab20628f332bb6c07c445d4159d86261eb81/deno-lib/definyRpc/core/collectType.ts": "038f26fb9f1b2684bbe4d91d1a748a88baf035d9d4a7061fdaa5d70f89fbf87d",
+    "https://raw.githubusercontent.com/narumincho/definy/d6d8ab20628f332bb6c07c445d4159d86261eb81/deno-lib/definyRpc/core/coreType.ts": "3f4c2f3f6125fc09e8ce450f361a4a7c4b39203ab15118e1728c02a78bf01c85",
+    "https://raw.githubusercontent.com/narumincho/definy/d6d8ab20628f332bb6c07c445d4159d86261eb81/deno-lib/definyRpc/core/maybe.ts": "43d80692a81cb6ae4479933f1d55b9d658acdb8ab433c5a9fd77c99b689f2b8e",
+    "https://raw.githubusercontent.com/narumincho/definy/d6d8ab20628f332bb6c07c445d4159d86261eb81/deno-lib/definyRpc/core/request.ts": "db97eb2435ce74efd3a185d24a3b3ac33da3794c72f54124fa15b1bfc83d3225",
+    "https://raw.githubusercontent.com/narumincho/definy/d6d8ab20628f332bb6c07c445d4159d86261eb81/deno-lib/definyRpc/core/structuredJsonCodec.ts": "5745f0a4c845c1658900a02e42fd5b38e4e262dde20577a9f4e3a1a00ffb42e6",
+    "https://raw.githubusercontent.com/narumincho/definy/d6d8ab20628f332bb6c07c445d4159d86261eb81/deno-lib/typedJson.ts": "fd631a66c9183600272f0834370b8a0bef99c367a6bb8615071bba9fb5d3f404"
   }
 }

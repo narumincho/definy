@@ -2,13 +2,13 @@ import { urlFromString } from "../client/urlFromString.ts";
 import type { Node, NodeAPI, NodeDef } from "./nodeRedServer.ts";
 import type { Status } from "./status.ts";
 import { jsonStringify } from "../../typedJson.ts";
-import {
-  FunctionDetail,
-  FunctionNamespace,
-  StructuredJsonValue,
-} from "../../definyRpc/core/coreType.ts";
+import { FunctionDetail } from "../../definyRpc/core/coreType.ts";
 import { requestQuery } from "../../definyRpc/core/request.ts";
 import { functionNamespaceToString } from "../../definyRpc/codeGen/namespace.ts";
+import {
+  functionListByName,
+  name,
+} from "../../definyRpc/example/generated/meta.ts";
 
 const createdServer = new Set<string>();
 
@@ -26,11 +26,12 @@ export default function (RED: NodeAPI) {
       this.on("input", (msg, send) => {
         requestQuery({
           url: new URL(parameter.url),
-          fromStructuredJsonValue: (e) => e,
-          // TODO
-          input: msg as unknown as StructuredJsonValue,
+          input: msg,
           namespace: parameter.functionDetail.namespace,
           name: parameter.functionDetail.name,
+          inputType: parameter.functionDetail.input,
+          outputType: parameter.functionDetail.output,
+          typeMap: new Map(),
         }).then((json) => {
           send({ payload: json });
         });
@@ -55,20 +56,8 @@ export default function (RED: NodeAPI) {
     });
 
     Promise.all([
-      requestQuery({
-        url: url,
-        namespace: FunctionNamespace.meta,
-        name: "name",
-        fromStructuredJsonValue: (e) => e,
-        input: StructuredJsonValue.null,
-      }),
-      requestQuery({
-        url: url,
-        namespace: FunctionNamespace.meta,
-        name: "functionListByName",
-        fromStructuredJsonValue: (e) => e,
-        input: StructuredJsonValue.null,
-      }),
+      name({ url }),
+      functionListByName({ url }),
     ]).then(([name, functionList]) => {
       if (name.type === "error" || functionList.type === "error") {
         setStatus({

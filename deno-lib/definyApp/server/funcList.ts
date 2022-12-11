@@ -128,6 +128,7 @@ export const funcList = (
         description: "ログインコールバック時にURLにつけられる code と state",
         namespace: Namespace.local(["main"]),
         parameterCount: 0,
+        attribute: { type: "nothing" },
         body: TypeBody.product([
           Field.from({
             name: "code",
