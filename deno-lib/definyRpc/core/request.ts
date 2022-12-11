@@ -145,7 +145,7 @@ export const requestMutation = async <Input, Output>(parameter: {
   readonly inputType: Type<Input>;
   readonly outputType: Type<Output>;
   readonly typeMap: CollectedDefinyRpcTypeMap;
-}): Promise<Result<T, "error">> => {
+}): Promise<Result<Output, "error">> => {
   const url = new URL(parameter.url.toString());
   url.pathname = url.pathname + "/" +
     (parameter.namespace.type === "meta"

@@ -1,6 +1,6 @@
 import { SimpleUrl } from "../../simpleRequestResponse/simpleUrl.ts";
 import { stringArrayEqual } from "../../util.ts";
-import { CodeAndState } from "../apiClient/definyApi.ts";
+import { CodeAndState } from "../apiClient/api/main.ts";
 
 export type UrlLocation = {
   readonly type: "top";

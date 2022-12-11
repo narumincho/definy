@@ -1,7 +1,7 @@
 import React from "https://esm.sh/react@18.2.0?pin=v99";
 import { c, toStyleAndHash } from "../../cssInJs/mod.ts";
 import { Language } from "../../zodType.ts";
-import { createGoogleLogInUrl } from "../apiClient/definyApi.ts";
+import { createGoogleLogInUrl } from "../apiClient/api/main.ts";
 import { GoogleLogInButton } from "./components/googleLogInButton.tsx";
 import { Clock24 } from "./pages/clock24.tsx";
 import { LogInCallback } from "./pages/logInCallback.tsx";
@@ -69,11 +69,14 @@ export const App = (props: AppProps): React.ReactElement => {
               language={props.language}
               onClick={() => {
                 setIsRequestLogInUrl("requestingLogInUrl");
-                createGoogleLogInUrl({ url: new URL(location.href).origin })
+                createGoogleLogInUrl({
+                  url: new URL(new URL(location.href).origin),
+                  input: "???",
+                })
                   .then((response) => {
                     if (response.type === "ok") {
                       setIsRequestLogInUrl("jumping");
-                      window.location.href = response.ok;
+                      window.location.href = response.value;
                     } else {
                       setIsRequestLogInUrl("error");
                     }
