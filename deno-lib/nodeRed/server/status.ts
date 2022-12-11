@@ -1,6 +1,10 @@
-import { FunctionDetail } from "../../definyRpc/core/coreType.ts";
+import {
+  DefinyRpcTypeInfo,
+  FunctionDetail,
+} from "../../definyRpc/core/coreType.ts";
 
 export type Status = {
   readonly name: string;
   readonly functionList: ReadonlyArray<FunctionDetail>;
+  readonly typeList: ReadonlyArray<DefinyRpcTypeInfo>;
 };

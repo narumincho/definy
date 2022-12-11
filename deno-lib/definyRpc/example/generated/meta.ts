@@ -308,6 +308,94 @@ export const functionListByNamePrivate = (parameter: {
   });
 
 /**
+ * 型のリストを返す
+ */
+export const typeList = (parameter: {
+  /**
+   * api end point
+   * @default new URL("http://localhost:2520")
+   */
+  readonly url?: globalThis.URL | undefined;
+}): globalThis.Promise<
+  a.Result<globalThis.ReadonlyArray<c.DefinyRpcTypeInfo>, "error">
+> =>
+  b.requestQuery({
+    url: parameter.url ?? new globalThis.URL("http://localhost:2520"),
+    namespace: c.FunctionNamespace.meta,
+    name: "typeList",
+    inputType: c.Unit.type(),
+    outputType: c.List.type(c.DefinyRpcTypeInfo.type()),
+    input: undefined,
+    typeMap: new Map([
+      [
+        "*coreType.Unit",
+        c.DefinyRpcTypeInfo.from({
+          namespace: c.Namespace.coreType,
+          name: "Unit",
+          description: "値が1つだけ",
+          parameterCount: 0,
+          attribute: { type: "nothing" },
+          body: c.TypeBody.unit,
+        }),
+      ],
+      [
+        "*coreType.List",
+        c.DefinyRpcTypeInfo.from({
+          namespace: c.Namespace.coreType,
+          name: "List",
+          description: "リスト",
+          parameterCount: 1,
+          attribute: { type: "nothing" },
+          body: c.TypeBody.list,
+        }),
+      ],
+      [
+        "*coreType.DefinyRpcTypeInfo",
+        c.DefinyRpcTypeInfo.from({
+          namespace: c.Namespace.coreType,
+          name: "DefinyRpcTypeInfo",
+          description: "definy RPC 型の構造",
+          parameterCount: 0,
+          attribute: { type: "nothing" },
+          body: c.TypeBody.product([
+            c.Field.from({
+              name: "namespace",
+              description: "型が所属する名前空間",
+              type: c.Namespace.type(),
+            }),
+            c.Field.from({
+              name: "name",
+              description: "型の名前",
+              type: c.String.type(),
+            }),
+            c.Field.from({
+              name: "description",
+              description: "説明文. コメントなどに出力される",
+              type: c.String.type(),
+            }),
+            c.Field.from({
+              name: "parameterCount",
+              description:
+                "パラメーターの数. パラメーター名やドキュメントはまたいつか復活させる",
+              type: c.Number.type(),
+            }),
+            c.Field.from({
+              name: "attribute",
+              description: "特殊な扱いをする",
+              type: a.Maybe.type(c.TypeAttribute.type()),
+            }),
+            c.Field.from({
+              name: "body",
+              description: "型の構造を表現する",
+              type: c.TypeBody.type(),
+            }),
+          ]),
+        }),
+      ],
+    ]),
+  });
+
+/**
  * 名前空間「definyRpc」のApiFunctionを呼ぶ TypeScript のコードを生成する
  */
 export const generateCallDefinyRpcTypeScriptCode = (parameter: {

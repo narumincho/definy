@@ -96,6 +96,7 @@ await writeTextFileWithLog(
 
 - npm latest: https://www.npmjs.com/package/@definy/node-red
 - npm v${version}: https://www.npmjs.com/package/@definy/node-red/v/${version}
+- node red flow: https://flows.nodered.org/node/@definy/node-red
 
 node-RED から definy にデータを送れるようにしたいー
 

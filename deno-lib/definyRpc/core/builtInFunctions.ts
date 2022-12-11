@@ -6,11 +6,13 @@ import {
 import { generateCodeInNamespace } from "../codeGen/main.ts";
 import type { DefinyRpcParameter } from "../server/definyRpc.ts";
 import {
+  DefinyRpcTypeInfo,
   FunctionDetail,
   FunctionNamespace,
   List,
   Namespace,
   String,
+  Type,
   Unit,
 } from "./coreType.ts";
 import {
@@ -117,6 +119,19 @@ const builtInFunctions = (
             needAuthentication: f.needAuthentication,
           })
         );
+      },
+    }),
+    createApiFunction({
+      namespace: FunctionNamespace.meta,
+      name: "typeList",
+      description: "型のリストを返す",
+      input: Unit.type(),
+      output: List.type(DefinyRpcTypeInfo.type()),
+      isMutation: false,
+      needAuthentication: false,
+      resolve: () => {
+        const allFunc = addMetaFunctionAndCoreType(parameter);
+        return allFunc.typeList;
       },
     }),
     createApiFunction({
