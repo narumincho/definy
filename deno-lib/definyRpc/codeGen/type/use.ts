@@ -11,19 +11,24 @@ import {
   CodeGenContext,
   collectedDefinyRpcTypeMapGet,
 } from "../../core/collectType.ts";
-import { DefinyRpcTypeInfo, Namespace, Type } from "../../core/coreType.ts";
+import {
+  DefinyRpcTypeInfo,
+  Namespace,
+  Type,
+  TypeAttribute,
+} from "../../core/coreType.ts";
 import { namespaceFromAndToToTypeScriptModuleName } from "../namespace.ts";
 
 /**
  * パラメーターは p0, p1 ... というように勝手に指定される
  */
 export const collectedDefinyRpcTypeToTsType = (
-  collectedDefinyRpcType: DefinyRpcTypeInfo,
+  typeInfo: DefinyRpcTypeInfo,
   context: CodeGenContext,
 ): data.TsType => {
   if (
-    context.currentModule.type == "coreType" &&
-    collectedDefinyRpcType.name === "Type"
+    typeInfo.attribute.type === "just" &&
+    typeInfo.attribute.value.type === TypeAttribute.asType.type
   ) {
     const moduleName = namespaceFromAndToToTypeScriptModuleName(
       context.currentModule,
@@ -33,7 +38,7 @@ export const collectedDefinyRpcTypeToTsType = (
       return {
         _: "ScopeInFile",
         typeNameAndTypeParameter: {
-          name: identifierFromString("Type"),
+          name: identifierFromString(typeInfo.name),
           arguments: [{ _: "unknown" }],
         },
       };
@@ -43,7 +48,7 @@ export const collectedDefinyRpcTypeToTsType = (
       importedType: {
         moduleName,
         nameAndArguments: {
-          name: identifierFromString("Type"),
+          name: identifierFromString(typeInfo.name),
           arguments: [{ _: "unknown" }],
         },
       },
@@ -52,12 +57,12 @@ export const collectedDefinyRpcTypeToTsType = (
 
   const typeDetail = collectedDefinyRpcTypeMapGet(
     context.map,
-    collectedDefinyRpcType.namespace,
-    collectedDefinyRpcType.name,
+    typeInfo.namespace,
+    typeInfo.name,
   );
   if (typeDetail === undefined) {
     throw new Error(
-      "型を集計できなかった " + collectedDefinyRpcType.name +
+      "型を集計できなかった " + typeInfo.name +
         " in collectedDefinyRpcTypeToTsType",
     );
   }
@@ -104,15 +109,15 @@ export const collectedDefinyRpcTypeToTsType = (
     case "sum": {
       const moduleName = namespaceFromAndToToTypeScriptModuleName(
         context.currentModule,
-        collectedDefinyRpcType.namespace,
+        typeInfo.namespace,
       );
       if (moduleName === undefined) {
         return {
           _: "ScopeInFile",
           typeNameAndTypeParameter: {
-            name: identifierFromString(collectedDefinyRpcType.name),
+            name: identifierFromString(typeInfo.name),
             arguments: arrayFromLength(
-              collectedDefinyRpcType.parameterCount,
+              typeInfo.parameterCount,
               (i) => ({
                 _: "ScopeInFile",
                 typeNameAndTypeParameter: {
@@ -129,9 +134,9 @@ export const collectedDefinyRpcTypeToTsType = (
         importedType: {
           moduleName: moduleName,
           nameAndArguments: {
-            name: identifierFromString(collectedDefinyRpcType.name),
+            name: identifierFromString(typeInfo.name),
             arguments: arrayFromLength(
-              collectedDefinyRpcType.parameterCount,
+              typeInfo.parameterCount,
               (i) => ({
                 _: "ScopeInFile",
                 typeNameAndTypeParameter: {
@@ -174,7 +179,21 @@ export const collectedDefinyRpcTypeUseToTsType = (
       },
     };
   }
-  if (type.namespace.type == "coreType" && type.name === "Type") {
+
+  const typeInfo = collectedDefinyRpcTypeMapGet(
+    context.map,
+    type.namespace,
+    type.name,
+  );
+  if (typeInfo === undefined) {
+    throw new Error(
+      "型を集計できなかった " + type.name + " in collectedDefinyRpcTypeUseToTsType",
+    );
+  }
+  if (
+    typeInfo.attribute.type === "just" &&
+    typeInfo.attribute.value.type === TypeAttribute.asType.type
+  ) {
     const moduleName = namespaceFromAndToToTypeScriptModuleName(
       context.currentModule,
       Namespace.coreType,
@@ -200,17 +219,7 @@ export const collectedDefinyRpcTypeUseToTsType = (
     };
   }
 
-  const typeDetail = collectedDefinyRpcTypeMapGet(
-    context.map,
-    type.namespace,
-    type.name,
-  );
-  if (typeDetail === undefined) {
-    throw new Error(
-      "型を集計できなかった " + type.name + " in collectedDefinyRpcTypeUseToTsType",
-    );
-  }
-  switch (typeDetail.body.type) {
+  switch (typeInfo.body.type) {
     case "string":
       return { _: "String" };
     case "number":

@@ -19,11 +19,7 @@ import {
 } from "./type/use.ts";
 import { createTagExprList } from "./typeVariable/tag.ts";
 import { createFromStructuredJsonValueLambda } from "./typeVariable/fromStructuredJsonValue.ts";
-import {
-  DefinyRpcTypeInfo,
-  Namespace,
-  TypeBody as CTypeBody,
-} from "../core/coreType.ts";
+import { DefinyRpcTypeInfo, TypeAttribute } from "../core/coreType.ts";
 import { createTypeLambda } from "./typeVariable/type.ts";
 
 export const collectedTypeToTypeAlias = (
@@ -31,9 +27,7 @@ export const collectedTypeToTypeAlias = (
   context: CodeGenContext,
 ): data.TypeAlias | undefined => {
   const tsType = collectedDefinyRpcTypeBodyToTsType(
-    type.namespace,
-    type.name,
-    type.body,
+    type,
     context,
   );
   if (
@@ -51,13 +45,13 @@ export const collectedTypeToTypeAlias = (
     namespace: [],
     name: identifierFromString(type.name),
     document: type.description,
-    typeParameterList:
-      context.currentModule.type === "coreType" && type.name === "Type"
-        ? [identifierFromString("p0")]
-        : arrayFromLength(
-          type.parameterCount,
-          (i) => identifierFromString("p" + i),
-        ),
+    typeParameterList: type.attribute.type === "just" &&
+        type.attribute.value.type === TypeAttribute.asType.type
+      ? [identifierFromString("p0")]
+      : arrayFromLength(
+        type.parameterCount,
+        (i) => identifierFromString("p" + i),
+      ),
     type: tsType,
   };
 };
@@ -79,12 +73,10 @@ const typeSymbolMember: data.TsMemberType = {
 };
 
 const collectedDefinyRpcTypeBodyToTsType = (
-  namespace: Namespace,
-  typeName: string,
-  typeBody: CTypeBody,
+  type: DefinyRpcTypeInfo,
   context: CodeGenContext,
 ): data.TsType | undefined => {
-  switch (typeBody.type) {
+  switch (type.body.type) {
     case "string":
     case "number":
     case "boolean":
@@ -98,7 +90,7 @@ const collectedDefinyRpcTypeBodyToTsType = (
       return {
         _: "Object",
         tsMemberTypeList: [
-          ...typeBody.value.map((field) => ({
+          ...type.body.value.map((field) => ({
             name: { type: "string", value: field.name } as const,
             document: field.description,
             required: true,
@@ -113,10 +105,11 @@ const collectedDefinyRpcTypeBodyToTsType = (
             required: true,
             type: {
               _: "StringLiteral",
-              string: symbolToStringTagAndTypeName(namespace, typeName),
+              string: symbolToStringTagAndTypeName(type.namespace, type.name),
             },
           },
-          ...(namespace.type === "coreType" && typeName === "Type"
+          ...(type.attribute.type === "just" &&
+              type.attribute.value.type === TypeAttribute.asType.type
             ? [typeSymbolMember]
             : []),
         ],
@@ -124,7 +117,7 @@ const collectedDefinyRpcTypeBodyToTsType = (
     case "sum":
       return {
         _: "Union",
-        tsTypeList: typeBody.value.map(
+        tsTypeList: type.body.value.map(
           (pattern): data.TsType => ({
             _: "Object",
             tsMemberTypeList: [
@@ -160,7 +153,10 @@ const collectedDefinyRpcTypeBodyToTsType = (
                 required: true,
                 type: {
                   _: "StringLiteral",
-                  string: symbolToStringTagAndTypeName(namespace, typeName),
+                  string: symbolToStringTagAndTypeName(
+                    type.namespace,
+                    type.name,
+                  ),
                 },
               },
             ],
