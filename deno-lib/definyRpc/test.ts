@@ -12,7 +12,7 @@ Deno.test("get server name", async () => {
     {
       url: {
         origin: "https://narumincho.com",
-        path: ["definyRpc", "name"],
+        path: ["meta", "name"],
         query: new Map(),
       },
       headers: {
@@ -105,7 +105,7 @@ Deno.test("with pathPrefix get server name", async () => {
     {
       url: {
         origin: "https://narumincho.com",
-        path: ["prefix", "definyRpc", "name"],
+        path: ["prefix", "meta", "name"],
         query: new Map(),
       },
       headers: {
