@@ -19,7 +19,7 @@ export const requestQuery = async <Input, Output>(parameter: {
    */
   readonly accountToken?: string | undefined;
   /**
-   * StructuredJson にした input
+   * API を提供するサーバーに送るデータ
    */
   readonly input: Input;
   readonly inputType: Type<Input>;
@@ -130,35 +130,50 @@ const structuredJsonValueToUrlSearchNoLimit = (
   }
 };
 
-export const requestMutation = async <T extends unknown>(parameter: {
+export const requestMutation = async <Input, Output>(parameter: {
   readonly url: URL;
-  readonly fullName: ReadonlyArray<string>;
-  readonly fromStructuredJsonValue: (a: StructuredJsonValue) => T;
+  readonly namespace: FunctionNamespace;
+  readonly name: string;
   /**
    * 認証が必要な場合のみ付与して呼ぶ
    */
   readonly accountToken?: string | undefined;
   /**
-   * StructuredJson にした input
+   * API を提供するサーバーに送るデータ
    */
-  readonly input: StructuredJsonValue;
+  readonly input: Input;
+  readonly inputType: Type<Input>;
+  readonly outputType: Type<Output>;
+  readonly typeMap: CollectedDefinyRpcTypeMap;
 }): Promise<Result<T, "error">> => {
   const url = new URL(parameter.url.toString());
-  url.pathname = url.pathname + ("/" + parameter.fullName.join("/"));
+  url.pathname = url.pathname + "/" +
+    (parameter.namespace.type === "meta"
+      ? "meta/"
+      : "api/" + parameter.namespace.value.join("/") + "/") +
+    parameter.name;
+
+  const inputAsStructuredJson = toStructuredJsonValue(
+    parameter.inputType,
+    parameter.typeMap,
+    parameter.input,
+  );
 
   try {
     const response = await fetch(url, {
       method: "POST",
       body: structuredJsonStringify(
         parameter.accountToken === undefined
-          ? StructuredJsonValue.object(new Map([["input", parameter.input]]))
+          ? StructuredJsonValue.object(
+            new Map([["input", inputAsStructuredJson]]),
+          )
           : StructuredJsonValue.object(
             new Map([[
               "accountToken",
               StructuredJsonValue.string(parameter.accountToken),
             ], [
               "input",
-              parameter.input,
+              inputAsStructuredJson,
             ]]),
           ),
       ),
@@ -166,7 +181,9 @@ export const requestMutation = async <T extends unknown>(parameter: {
     const jsonValue = await response.json();
     return ({
       type: "ok",
-      value: parameter.fromStructuredJsonValue(
+      value: fromStructuredJsonValue(
+        parameter.outputType,
+        parameter.typeMap,
         rawJsonToStructuredJsonValue(jsonValue),
       ),
     });
