@@ -1,14 +1,15 @@
 import { writeTextFileWithLog } from "../writeFileAndLog.ts";
 import * as esbuild from "https://deno.land/x/esbuild@v0.15.14/mod.js";
 import { denoPlugin } from "https://deno.land/x/esbuild_deno_loader@0.6.0/mod.ts";
-import { fromFileUrl } from "https://deno.land/std@0.167.0/path/posix.ts";
-import * as dnt from "https://deno.land/x/dnt@0.31.0/mod.ts";
+import { fromFileUrl as fromFileUrlPosix } from "https://deno.land/std@0.167.0/path/posix.ts";
+import { fromFileUrl } from "https://deno.land/std@0.167.0/path/mod.ts";
+import { build, emptyDir } from "https://deno.land/x/dnt@0.32.0/mod.ts";
 
 const generateClientHtml = async (): Promise<string> => {
   const result = await esbuild.build({
     plugins: [denoPlugin()],
     entryPoints: [
-      fromFileUrl(import.meta.resolve("./client/main.tsx")),
+      fromFileUrlPosix(import.meta.resolve("./client/main.tsx")),
     ],
     write: false,
     bundle: true,
@@ -36,14 +37,18 @@ const generateClientHtml = async (): Promise<string> => {
   throw new Error("client の ビルドに失敗した");
 };
 
-const outDir = new URL(import.meta.resolve("../../nodeRedServerForNode"));
+const outDir = new URL(import.meta.resolve("../../nodeRedServerForNode/"));
 
-dnt.emptyDir(fromFileUrl(outDir));
+await emptyDir(outDir);
 
 const version = "1.1.0";
 
-await dnt.build({
-  entryPoints: [fromFileUrl(import.meta.resolve("./server/main.ts"))],
+const entry = import.meta.resolve("./server/main.ts");
+
+console.log(entry.toString(), fromFileUrl(entry));
+
+await build({
+  entryPoints: [fromFileUrl(entry)],
   outDir: fromFileUrl(outDir),
   shims: {
     deno: true,
