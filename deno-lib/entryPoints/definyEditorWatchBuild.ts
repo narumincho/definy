@@ -35,7 +35,9 @@ const outputFilesToScriptFile = async (
   throw new Error("esbuild で <stdout> の出力を取得できなかった...");
 };
 
-const assetsFolder = new URL(import.meta.resolve("../definyApp/editor/assets"));
+const assetsFolder = new URL(
+  import.meta.resolve("../definyApp/editor/assets/"),
+);
 
 const watchAndBuild = async (
   onBuild: (result: BuildClientResult) => void,

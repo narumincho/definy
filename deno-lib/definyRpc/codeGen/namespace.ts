@@ -108,7 +108,7 @@ const toMaybe = (from: Namespace): string => {
 const toLocal = (
   from: Namespace,
   to: ReadonlyArray<string>,
-): string => {
+): string | undefined => {
   switch (from.type) {
     case "request":
     case "typedJson":
@@ -118,6 +118,11 @@ const toLocal = (
       throw new Error("その方向には参照できない!");
     case "local": {
       const relativeNamespace = namespaceRelative(from.value, to);
+      if (
+        relativeNamespace.path.length === 0 && relativeNamespace.upCount === 0
+      ) {
+        return undefined;
+      }
       const prefix = relativeNamespace.upCount <= 1
         ? "./"
         : "../".repeat(relativeNamespace.upCount - 1);

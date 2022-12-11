@@ -18,7 +18,7 @@ import { openConnectStateCreate } from "./faunaInterface.ts";
 import { googleLogInUrl } from "./logIn.ts";
 import { Mode } from "./mode.ts";
 
-const definyAppNamespace = FunctionNamespace.local(["definyApi"]);
+const definyAppNamespace = FunctionNamespace.local(["main"]);
 
 export const funcList = (
   faunaClient: f.TypedFaunaClient,

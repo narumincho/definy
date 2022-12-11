@@ -60,7 +60,7 @@ export const startDefinyServer = (
       // https://github.com/denoland/deploy_feedback/issues/245
       : "https://definy-api.deno.dev",
     codeGenOutputFolderPath: parameter.mode.type === "dev"
-      ? new URL(import.meta.resolve("../apiClient"))
+      ? new URL(import.meta.resolve("../apiClient/"))
       : undefined,
     pathPrefix: ["api"],
   };
