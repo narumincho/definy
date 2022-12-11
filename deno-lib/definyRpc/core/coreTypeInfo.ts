@@ -8,6 +8,7 @@ import {
   String,
   StructuredJsonValue,
   Type,
+  TypeAttribute,
   TypeBody,
 } from "./coreType.ts";
 import { Maybe } from "./maybe.ts";
@@ -446,7 +447,7 @@ const type = DefinyRpcTypeInfo.from({
   name: "Type",
   description: "型",
   parameterCount: 0,
-  attribute: { type: "nothing" },
+  attribute: { type: "just", value: TypeAttribute.asType },
   body: TypeBody.product([
     Field.from({
       name: "namespace",
