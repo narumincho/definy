@@ -250,7 +250,26 @@ const typeInfoToExpr = (
       ),
       memberKeyValue("name", stringLiteral(typeInfo.name)),
       memberKeyValue("description", stringLiteral(typeInfo.description)),
-      memberKeyValue("parameterCount", numberLiteral(typeInfo.parameterCount)),
+      memberKeyValue(
+        "parameter",
+        arrayLiteral(
+          typeInfo.parameter.map((parameter) => ({
+            expr: useFrom(
+              Namespace.coreType,
+              "TypeParameterInfo",
+              context,
+              objectLiteral([
+                memberKeyValue("name", stringLiteral(parameter.name)),
+                memberKeyValue(
+                  "description",
+                  stringLiteral(parameter.description),
+                ),
+              ]),
+            ),
+            spread: false,
+          })),
+        ),
+      ),
       memberKeyValue(
         "attribute",
         typeInfo.attribute.type === "just"

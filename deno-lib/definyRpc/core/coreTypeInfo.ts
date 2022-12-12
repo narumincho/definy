@@ -10,6 +10,7 @@ import {
   Type,
   TypeAttribute,
   TypeBody,
+  TypeParameterInfo,
 } from "./coreType.ts";
 import { Maybe } from "./maybe.ts";
 
@@ -17,7 +18,7 @@ const string = DefinyRpcTypeInfo.from({
   namespace: Namespace.coreType,
   name: "String",
   description: "文字列",
-  parameterCount: 0,
+  parameter: [],
   attribute: { type: "nothing" },
   body: TypeBody.string,
 });
@@ -26,7 +27,7 @@ const bool = DefinyRpcTypeInfo.from({
   namespace: Namespace.coreType,
   name: "Bool",
   description: "Bool. boolean. 真偽値. True か False",
-  parameterCount: 0,
+  parameter: [],
   attribute: { type: "nothing" },
   body: TypeBody.boolean,
 });
@@ -35,7 +36,7 @@ const number = DefinyRpcTypeInfo.from({
   namespace: Namespace.coreType,
   name: "Number",
   description: "64bit 浮動小数点数",
-  parameterCount: 0,
+  parameter: [],
   attribute: { type: "nothing" },
   body: TypeBody.number,
 });
@@ -44,7 +45,7 @@ const unit = DefinyRpcTypeInfo.from({
   namespace: Namespace.coreType,
   name: "Unit",
   description: "値が1つだけ",
-  parameterCount: 0,
+  parameter: [],
   attribute: { type: "nothing" },
   body: TypeBody.unit,
 });
@@ -53,7 +54,7 @@ const structuredJsonValue = DefinyRpcTypeInfo.from({
   namespace: Namespace.coreType,
   name: "StructuredJsonValue",
   description: "構造化されたJSON",
-  parameterCount: 0,
+  parameter: [],
   attribute: { type: "nothing" },
   body: TypeBody.sum([
     Pattern.from({
@@ -127,7 +128,10 @@ const list = DefinyRpcTypeInfo.from({
   namespace: Namespace.coreType,
   name: "List",
   description: "リスト",
-  parameterCount: 1,
+  parameter: [TypeParameterInfo.from({
+    name: "element",
+    description: "要素の型",
+  })],
   attribute: { type: "nothing" },
   body: TypeBody.list,
 });
@@ -136,7 +140,16 @@ const map = DefinyRpcTypeInfo.from({
   namespace: Namespace.coreType,
   name: "Map",
   description: "辞書型. Map, Dictionary",
-  parameterCount: 2,
+  parameter: [
+    TypeParameterInfo.from({
+      name: "key",
+      description: "キーの型",
+    }),
+    TypeParameterInfo.from({
+      name: "value",
+      description: "値の型",
+    }),
+  ],
   attribute: { type: "nothing" },
   body: TypeBody.map,
 });
@@ -145,7 +158,10 @@ const set = DefinyRpcTypeInfo.from({
   namespace: Namespace.coreType,
   name: "Set",
   description: "Set. 集合",
-  parameterCount: 1,
+  parameter: [TypeParameterInfo.from({
+    name: "element",
+    description: "集合に含まれる要素の型",
+  })],
   attribute: { type: "nothing" },
   body: TypeBody.set,
 });
@@ -154,7 +170,7 @@ const nameSpace = DefinyRpcTypeInfo.from({
   namespace: Namespace.coreType,
   name: "Namespace",
   description: "名前空間. ユーザーが生成するものがこっちが用意するものか",
-  parameterCount: 0,
+  parameter: [],
   attribute: { type: "nothing" },
   body: TypeBody.sum([
     Pattern.from({
@@ -205,7 +221,7 @@ const definyRpcTypeInfo = DefinyRpcTypeInfo.from({
   name: "DefinyRpcTypeInfo",
   namespace: Namespace.coreType,
   description: "definy RPC 型の構造",
-  parameterCount: 0,
+  parameter: [],
   attribute: { type: "nothing" },
   body: TypeBody.product([
     Field.from({
@@ -236,13 +252,13 @@ const definyRpcTypeInfo = DefinyRpcTypeInfo.from({
       }),
     }),
     Field.from({
-      name: "parameterCount",
-      description: "パラメーターの数. パラメーター名やドキュメントはまたいつか復活させる",
-      type: Type.from({
+      name: "parameter",
+      description: "パラメーター",
+      type: List.type(Type.from({
         namespace: Namespace.coreType,
-        name: "Number",
+        name: "TypeParameterInfo",
         parameters: [],
-      }),
+      })),
     }),
     Field.from({
       name: "attribute",
@@ -265,11 +281,31 @@ const definyRpcTypeInfo = DefinyRpcTypeInfo.from({
   ]),
 });
 
+const typeParameterInfo = DefinyRpcTypeInfo.from({
+  name: "TypeParameterInfo",
+  description: "型パラメータ名と説明文",
+  namespace: Namespace.coreType,
+  parameter: [],
+  attribute: { type: "nothing" },
+  body: TypeBody.product([
+    Field.from({
+      name: "name",
+      description: "型パラメーター名",
+      type: String.type(),
+    }),
+    Field.from({
+      name: "description",
+      description: "型パラメーター説明",
+      type: String.type(),
+    }),
+  ]),
+});
+
 const typeAttribute = DefinyRpcTypeInfo.from({
   name: "TypeAttribute",
   description: "型をどのような特殊な扱いをするかどうか",
   namespace: Namespace.coreType,
-  parameterCount: 0,
+  parameter: [],
   attribute: { type: "nothing" },
   body: TypeBody.sum([
     Pattern.from({
@@ -284,7 +320,7 @@ const typeBody = DefinyRpcTypeInfo.from({
   namespace: Namespace.coreType,
   name: "TypeBody",
   description: "型の構造を表現する",
-  parameterCount: 0,
+  parameter: [],
   attribute: { type: "nothing" },
   body: TypeBody.sum([
     Pattern.from({
@@ -368,7 +404,7 @@ const field = DefinyRpcTypeInfo.from({
   namespace: Namespace.coreType,
   name: "Field",
   description: "product 直積型で使う",
-  parameterCount: 0,
+  parameter: [],
   attribute: { type: "nothing" },
   body: TypeBody.product([
     Field.from({
@@ -405,7 +441,7 @@ const pattern = DefinyRpcTypeInfo.from({
   namespace: Namespace.coreType,
   name: "Pattern",
   description: "直和型の表現",
-  parameterCount: 0,
+  parameter: [],
   attribute: { type: "nothing" },
   body: TypeBody.product([
     Field.from({
@@ -446,7 +482,7 @@ const type = DefinyRpcTypeInfo.from({
   namespace: Namespace.coreType,
   name: "Type",
   description: "型",
-  parameterCount: 0,
+  parameter: [],
   attribute: { type: "just", value: TypeAttribute.asType },
   body: TypeBody.product([
     Field.from({
@@ -488,7 +524,7 @@ const type = DefinyRpcTypeInfo.from({
 const functionNamespace = DefinyRpcTypeInfo.from({
   namespace: Namespace.coreType,
   description: "出力されるAPI関数のモジュール名",
-  parameterCount: 0,
+  parameter: [],
   attribute: { type: "nothing" },
   name: "FunctionNamespace",
   body: TypeBody.sum([
@@ -505,18 +541,10 @@ const functionNamespace = DefinyRpcTypeInfo.from({
   ]),
 });
 
-/*{
-  readonly namespace: ReadonlyArray<string>;
-  readonly name: string;
-  readonly description: string;
-  readonly input: Type;
-  readonly output: Type;
-} */
-
 const functionDetail = DefinyRpcTypeInfo.from({
   name: "FunctionDetail",
   description: "関数のデータ functionByNameの結果",
-  parameterCount: 0,
+  parameter: [],
   attribute: { type: "nothing" },
   namespace: Namespace.coreType,
   body: TypeBody.product([
@@ -576,6 +604,7 @@ export const coreTypeInfoList: ReadonlyArray<DefinyRpcTypeInfo> = [
   set,
   nameSpace,
   definyRpcTypeInfo,
+  typeParameterInfo,
   typeAttribute,
   typeBody,
   field,

@@ -138,9 +138,9 @@ export type DefinyRpcTypeInfo = {
    */
   readonly description: string;
   /**
-   * パラメーターの数. パラメーター名やドキュメントはまたいつか復活させる
+   * パラメーター
    */
-  readonly parameterCount: number;
+  readonly parameter: globalThis.ReadonlyArray<TypeParameterInfo>;
   /**
    * 特殊な扱いをする
    */
@@ -150,6 +150,21 @@ export type DefinyRpcTypeInfo = {
    */
   readonly body: TypeBody;
   readonly [Symbol.toStringTag]: "*coreType.DefinyRpcTypeInfo";
+};
+
+/**
+ * 型パラメータ名と説明文
+ */
+export type TypeParameterInfo = {
+  /**
+   * 型パラメーター名
+   */
+  readonly name: string;
+  /**
+   * 型パラメーター説明
+   */
+  readonly description: string;
+  readonly [Symbol.toStringTag]: "*coreType.TypeParameterInfo";
 };
 
 /**
@@ -849,7 +864,7 @@ export const DefinyRpcTypeInfo: {
     namespace: obj.namespace,
     name: obj.name,
     description: obj.description,
-    parameterCount: obj.parameterCount,
+    parameter: obj.parameter,
     attribute: obj.attribute,
     body: obj.body,
     [Symbol.toStringTag]: "*coreType.DefinyRpcTypeInfo",
@@ -882,11 +897,11 @@ export const DefinyRpcTypeInfo: {
         "expected description field. in DefinyRpcTypeInfo.fromStructuredJsonValue"
       );
     }
-    const parameterCount: StructuredJsonValue | undefined =
-      jsonValue.value.get("parameterCount");
-    if (parameterCount === undefined) {
+    const parameter: StructuredJsonValue | undefined =
+      jsonValue.value.get("parameter");
+    if (parameter === undefined) {
       throw new Error(
-        "expected parameterCount field. in DefinyRpcTypeInfo.fromStructuredJsonValue"
+        "expected parameter field. in DefinyRpcTypeInfo.fromStructuredJsonValue"
       );
     }
     const attribute: StructuredJsonValue | undefined =
@@ -906,11 +921,75 @@ export const DefinyRpcTypeInfo: {
       namespace: Namespace.fromStructuredJsonValue(namespace),
       name: String.fromStructuredJsonValue(name),
       description: String.fromStructuredJsonValue(description),
-      parameterCount: Number.fromStructuredJsonValue(parameterCount),
+      parameter: List.fromStructuredJsonValue(
+        TypeParameterInfo.fromStructuredJsonValue
+      )(parameter),
       attribute: a.Maybe.fromStructuredJsonValue(
         TypeAttribute.fromStructuredJsonValue
       )(attribute),
       body: TypeBody.fromStructuredJsonValue(body),
+    });
+  },
+};
+
+/**
+ * 型パラメータ名と説明文
+ */
+export const TypeParameterInfo: {
+  /**
+   * TypeParameterInfo の型
+   */
+  readonly type: () => Type<TypeParameterInfo>;
+  /**
+   * オブジェクトから作成する. 余計なフィールドがレスポンスに含まれてしまうのを防ぐ. 型のチェックはしない
+   */
+  readonly from: (
+    a: globalThis.Omit<TypeParameterInfo, typeof Symbol.toStringTag>
+  ) => TypeParameterInfo;
+  /**
+   * JsonからTypeParameterInfoに変換する. 失敗した場合はエラー
+   */
+  readonly fromStructuredJsonValue: (
+    a: StructuredJsonValue
+  ) => TypeParameterInfo;
+} = {
+  type: (): Type<TypeParameterInfo> =>
+    Type.from({
+      namespace: Namespace.coreType,
+      name: "TypeParameterInfo",
+      parameters: [],
+    }),
+  from: (
+    obj: globalThis.Omit<TypeParameterInfo, typeof Symbol.toStringTag>
+  ): TypeParameterInfo => ({
+    name: obj.name,
+    description: obj.description,
+    [Symbol.toStringTag]: "*coreType.TypeParameterInfo",
+  }),
+  fromStructuredJsonValue: (
+    jsonValue: StructuredJsonValue
+  ): TypeParameterInfo => {
+    if (jsonValue.type !== "object") {
+      throw new Error(
+        "expected object in TypeParameterInfo.fromStructuredJsonValue"
+      );
+    }
+    const name: StructuredJsonValue | undefined = jsonValue.value.get("name");
+    if (name === undefined) {
+      throw new Error(
+        "expected name field. in TypeParameterInfo.fromStructuredJsonValue"
+      );
+    }
+    const description: StructuredJsonValue | undefined =
+      jsonValue.value.get("description");
+    if (description === undefined) {
+      throw new Error(
+        "expected description field. in TypeParameterInfo.fromStructuredJsonValue"
+      );
+    }
+    return TypeParameterInfo.from({
+      name: String.fromStructuredJsonValue(name),
+      description: String.fromStructuredJsonValue(description),
     });
   },
 };

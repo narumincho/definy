@@ -17,7 +17,6 @@ import {
   typeUnion,
   variable,
 } from "../../../jsTs/main.ts";
-import { arrayFromLength } from "../../../util.ts";
 import { CodeGenContext } from "../../core/collectType.ts";
 import { DefinyRpcTypeInfo } from "../../core/coreType.ts";
 import { collectedDefinyRpcTypeToTsType } from "../type/use.ts";
@@ -48,28 +47,25 @@ export const createFromStructuredJsonValueLambda = (
     typeParameterList: [],
     statementList: typeToFromJsonStatementList(type, context),
   };
-  if (type.parameterCount !== 0) {
+  if (type.parameter.length !== 0) {
     return {
-      parameterList: arrayFromLength(
-        type.parameterCount,
-        (i): data.Parameter => ({
-          name: identifierFromString("p" + i + "FromJson"),
-          type: {
-            _: "Function",
-            functionType: {
-              parameterList: [structuredJsonValueType(context)],
-              typeParameterList: [],
-              return: {
-                _: "ScopeInFile",
-                typeNameAndTypeParameter: {
-                  name: identifierFromString("p" + i),
-                  arguments: [],
-                },
+      parameterList: type.parameter.map((parameter): data.Parameter => ({
+        name: identifierFromString(parameter.name + "FromJson"),
+        type: {
+          _: "Function",
+          functionType: {
+            parameterList: [structuredJsonValueType(context)],
+            typeParameterList: [],
+            return: {
+              _: "ScopeInFile",
+              typeNameAndTypeParameter: {
+                name: identifierFromString(parameter.name),
+                arguments: [],
               },
             },
           },
-        }),
-      ),
+        },
+      })),
       returnType: {
         _: "Function",
         functionType: {
@@ -81,9 +77,8 @@ export const createFromStructuredJsonValueLambda = (
       statementList: [
         { _: "Return", tsExpr: { _: "Lambda", lambdaExpr: main } },
       ],
-      typeParameterList: arrayFromLength(
-        type.parameterCount,
-        (i) => identifierFromString("p" + i),
+      typeParameterList: type.parameter.map((parameter) =>
+        identifierFromString(parameter.name)
       ),
     };
   }

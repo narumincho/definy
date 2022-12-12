@@ -8,7 +8,6 @@ import {
   symbolToStringTag,
   variable,
 } from "../../../jsTs/main.ts";
-import { arrayFromLength } from "../../../util.ts";
 import { CodeGenContext } from "../../core/collectType.ts";
 import { DefinyRpcTypeInfo, Pattern } from "../../core/coreType.ts";
 import {
@@ -64,7 +63,7 @@ const patternToTagExprAndType = (
       ),
     },
   };
-  if (type.parameterCount === 0 && pattern.parameter.type === "nothing") {
+  if (type.parameter.length === 0 && pattern.parameter.type === "nothing") {
     return {
       memberExpr: objectLiteral([
         memberKeyValue("type", stringLiteral(pattern.name)),
@@ -87,9 +86,8 @@ const patternToTagExprAndType = (
         symbolToStringTagMember,
       ]),
     }],
-    typeParameterList: arrayFromLength(
-      type.parameterCount,
-      (i) => identifierFromString("p" + i),
+    typeParameterList: type.parameter.map((parameter) =>
+      identifierFromString(parameter.name)
     ),
   };
   return {

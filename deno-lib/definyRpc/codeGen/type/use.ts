@@ -6,7 +6,6 @@ import {
   readonlySetType,
   urlType,
 } from "../../../jsTs/main.ts";
-import { arrayFromLength } from "../../../util.ts";
 import {
   CodeGenContext,
   collectedDefinyRpcTypeMapGet,
@@ -75,36 +74,51 @@ export const collectedDefinyRpcTypeToTsType = (
       return { _: "Boolean" };
     case "unit":
       return { _: "Undefined" };
-    case "list":
+    case "list": {
+      const elementType = typeDetail.parameter[0];
+      if (elementType === undefined) {
+        throw new Error("list には 1つの型パラメータが必要です");
+      }
       return readonlyArrayType({
         _: "ScopeInFile",
         typeNameAndTypeParameter: {
-          name: identifierFromString("p0"),
+          name: identifierFromString(elementType.name),
           arguments: [],
         },
       });
-    case "set":
+    }
+    case "set": {
+      const elementType = typeDetail.parameter[0];
+      if (elementType === undefined) {
+        throw new Error("set には 1つの型パラメータが必要です");
+      }
       return readonlySetType({
         _: "ScopeInFile",
         typeNameAndTypeParameter: {
-          name: identifierFromString("p0"),
+          name: identifierFromString(elementType.name),
           arguments: [],
         },
       });
-    case "map":
+    }
+    case "map": {
+      const [keyType, valueType] = typeDetail.parameter;
+      if (keyType === undefined || valueType === undefined) {
+        throw new Error("map には 2つの型パラメータが必要です");
+      }
       return readonlyMapType({
         _: "ScopeInFile",
         typeNameAndTypeParameter: {
-          name: identifierFromString("p0"),
+          name: identifierFromString(keyType.name),
           arguments: [],
         },
       }, {
         _: "ScopeInFile",
         typeNameAndTypeParameter: {
-          name: identifierFromString("p1"),
+          name: identifierFromString(valueType.name),
           arguments: [],
         },
       });
+    }
     case "product":
     case "sum": {
       const moduleName = namespaceFromAndToToTypeScriptModuleName(
@@ -116,12 +130,11 @@ export const collectedDefinyRpcTypeToTsType = (
           _: "ScopeInFile",
           typeNameAndTypeParameter: {
             name: identifierFromString(typeInfo.name),
-            arguments: arrayFromLength(
-              typeInfo.parameterCount,
-              (i) => ({
+            arguments: typeInfo.parameter.map(
+              (parameter) => ({
                 _: "ScopeInFile",
                 typeNameAndTypeParameter: {
-                  name: identifierFromString("p" + i),
+                  name: identifierFromString(parameter.name),
                   arguments: [],
                 },
               }),
@@ -135,12 +148,11 @@ export const collectedDefinyRpcTypeToTsType = (
           moduleName: moduleName,
           nameAndArguments: {
             name: identifierFromString(typeInfo.name),
-            arguments: arrayFromLength(
-              typeInfo.parameterCount,
-              (i) => ({
+            arguments: typeInfo.parameter.map(
+              (parameter) => ({
                 _: "ScopeInFile",
                 typeNameAndTypeParameter: {
-                  name: identifierFromString("p" + i),
+                  name: identifierFromString(parameter.name),
                   arguments: [],
                 },
               }),
