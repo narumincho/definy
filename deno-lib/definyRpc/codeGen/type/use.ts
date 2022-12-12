@@ -299,3 +299,5 @@ export const collectedDefinyRpcTypeUseToTsType = (
       return urlType;
   }
 };
+
+export const typeVariableMemberName = "__typeVariable";

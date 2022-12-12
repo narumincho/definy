@@ -12,7 +12,10 @@ import {
 import { CodeGenContext } from "../../core/collectType.ts";
 import { DefinyRpcTypeInfo, Field, Namespace } from "../../core/coreType.ts";
 import { namespaceToString } from "../namespace.ts";
-import { collectedDefinyRpcTypeToTsType } from "../type/use.ts";
+import {
+  collectedDefinyRpcTypeToTsType,
+  typeVariableMemberName,
+} from "../type/use.ts";
 
 export const createFromLambda = (
   type: DefinyRpcTypeInfo,
@@ -54,8 +57,8 @@ const typeToFromLambda = (
             }, {
               _: "Union",
               tsTypeList: [{
-                _: "typeof",
-                expr: variable(identifierFromString("neverSymbol")),
+                _: "StringLiteral",
+                string: typeVariableMemberName,
               }, {
                 _: "typeof",
                 expr: symbolToStringTag,
@@ -121,22 +124,19 @@ const typeToFromLambdaProductStatement = (
         },
         ...(type.namespace.type == "coreType" && type.name === "Type"
           ? [
-            {
-              _: "KeyValue",
-              keyValue: {
-                key: variable(identifierFromString("neverSymbol")),
-                value: typeAssertion({
-                  expr: objectLiteral([]),
-                  type: {
-                    _: "ScopeInFile",
-                    typeNameAndTypeParameter: {
-                      name: identifierFromString("p0"),
-                      arguments: [],
-                    },
+            memberKeyValue(
+              typeVariableMemberName,
+              typeAssertion({
+                expr: objectLiteral([]),
+                type: {
+                  _: "ScopeInFile",
+                  typeNameAndTypeParameter: {
+                    name: identifierFromString("p0"),
+                    arguments: [],
                   },
-                }),
-              },
-            } as const,
+                },
+              }),
+            ),
           ]
           : []),
       ]),

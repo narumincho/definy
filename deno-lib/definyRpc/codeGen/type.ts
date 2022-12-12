@@ -16,6 +16,7 @@ import {
 import {
   collectedDefinyRpcTypeToTsType,
   collectedDefinyRpcTypeUseToTsType,
+  typeVariableMemberName,
 } from "./type/use.ts";
 import { createTagExprList } from "./typeVariable/tag.ts";
 import { createFromStructuredJsonValueLambda } from "./typeVariable/fromStructuredJsonValue.ts";
@@ -58,10 +59,10 @@ export const collectedTypeToTypeAlias = (
 
 const typeSymbolMember: data.TsMemberType = {
   name: {
-    type: "symbolExpr",
-    value: variable(identifierFromString("neverSymbol")),
+    type: "string",
+    value: typeVariableMemberName,
   },
-  document: "",
+  document: "TypeScript で区別するために用意したパラメータ. 実行時には型の要件を満たさなくて意味のない値が入る",
   required: true,
   type: {
     _: "ScopeInFile",
