@@ -1,7 +1,6 @@
 import { urlFromString } from "../client/urlFromString.ts";
 import type { Node, NodeAPI, NodeDef } from "./nodeRedServer.ts";
 import type { Status } from "./status.ts";
-import { jsonStringify } from "../../typedJson.ts";
 import {
   DefinyRpcTypeInfo,
   FunctionDetail,
@@ -90,11 +89,8 @@ export default function (RED: NodeAPI) {
       }
       const status: Status = {
         name: name.value,
-        // TODO
-        functionList: functionList.value as unknown as ReadonlyArray<
-          FunctionDetail
-        >,
-        typeList: typeList.value as unknown as ReadonlyArray<DefinyRpcTypeInfo>,
+        functionList: functionList.value,
+        typeList: typeList.value,
       };
       console.log(createdServer, url.toString());
       if (!createdServer.has(url.toString())) {
@@ -110,7 +106,7 @@ export default function (RED: NodeAPI) {
       setStatus({
         shape: "dot",
         fill: "green",
-        text: jsonStringify(status),
+        text: JSON.stringify(status),
       });
     });
   };

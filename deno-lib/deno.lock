@@ -408,6 +408,13 @@
     "https://raw.githubusercontent.com/narumincho/definy/d6d8ab20628f332bb6c07c445d4159d86261eb81/deno-lib/definyRpc/core/maybe.ts": "43d80692a81cb6ae4479933f1d55b9d658acdb8ab433c5a9fd77c99b689f2b8e",
     "https://raw.githubusercontent.com/narumincho/definy/d6d8ab20628f332bb6c07c445d4159d86261eb81/deno-lib/definyRpc/core/request.ts": "db97eb2435ce74efd3a185d24a3b3ac33da3794c72f54124fa15b1bfc83d3225",
     "https://raw.githubusercontent.com/narumincho/definy/d6d8ab20628f332bb6c07c445d4159d86261eb81/deno-lib/definyRpc/core/structuredJsonCodec.ts": "5745f0a4c845c1658900a02e42fd5b38e4e262dde20577a9f4e3a1a00ffb42e6",
-    "https://raw.githubusercontent.com/narumincho/definy/d6d8ab20628f332bb6c07c445d4159d86261eb81/deno-lib/typedJson.ts": "fd631a66c9183600272f0834370b8a0bef99c367a6bb8615071bba9fb5d3f404"
+    "https://raw.githubusercontent.com/narumincho/definy/d6d8ab20628f332bb6c07c445d4159d86261eb81/deno-lib/typedJson.ts": "fd631a66c9183600272f0834370b8a0bef99c367a6bb8615071bba9fb5d3f404",
+    "https://raw.githubusercontent.com/narumincho/definy/dd558e03186b4b6639684081ee5e84fb336898d3/deno-lib/definyRpc/codeGen/namespace.ts": "b407ba2db442cae02ecde182a3177226f0eab4583d7be8d1d5039cab024bd73e",
+    "https://raw.githubusercontent.com/narumincho/definy/dd558e03186b4b6639684081ee5e84fb336898d3/deno-lib/definyRpc/core/collectType.ts": "038f26fb9f1b2684bbe4d91d1a748a88baf035d9d4a7061fdaa5d70f89fbf87d",
+    "https://raw.githubusercontent.com/narumincho/definy/dd558e03186b4b6639684081ee5e84fb336898d3/deno-lib/definyRpc/core/coreType.ts": "341ebcb8184df34df544dbc948345da81796873daef78d53d8113f0c6f384996",
+    "https://raw.githubusercontent.com/narumincho/definy/dd558e03186b4b6639684081ee5e84fb336898d3/deno-lib/definyRpc/core/maybe.ts": "43d80692a81cb6ae4479933f1d55b9d658acdb8ab433c5a9fd77c99b689f2b8e",
+    "https://raw.githubusercontent.com/narumincho/definy/dd558e03186b4b6639684081ee5e84fb336898d3/deno-lib/definyRpc/core/request.ts": "fa9d51ebc8675b4c93a583fc19e7155eeaf2611abb05f4b279404a54f24c2988",
+    "https://raw.githubusercontent.com/narumincho/definy/dd558e03186b4b6639684081ee5e84fb336898d3/deno-lib/definyRpc/core/structuredJsonCodec.ts": "5745f0a4c845c1658900a02e42fd5b38e4e262dde20577a9f4e3a1a00ffb42e6",
+    "https://raw.githubusercontent.com/narumincho/definy/dd558e03186b4b6639684081ee5e84fb336898d3/deno-lib/typedJson.ts": "fd631a66c9183600272f0834370b8a0bef99c367a6bb8615071bba9fb5d3f404"
   }
 }
