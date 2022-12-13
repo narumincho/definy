@@ -57,7 +57,7 @@ const toCoreTypeModuleName = (
       throw new Error("この方向には参照しない!");
     case "local":
     case "meta":
-      return "https://raw.githubusercontent.com/narumincho/definy/dd558e03186b4b6639684081ee5e84fb336898d3/deno-lib/definyRpc/core/coreType.ts";
+      return "https://raw.githubusercontent.com/narumincho/definy/f9d7aaa5a3f1aba6dc0c478908ab96883eb5fad0/deno-lib/definyRpc/core/coreType.ts";
   }
 };
 
@@ -73,7 +73,7 @@ export const toRequest = (
       throw new Error("コード生成しない!");
     case "local":
     case "meta":
-      return "https://raw.githubusercontent.com/narumincho/definy/dd558e03186b4b6639684081ee5e84fb336898d3/deno-lib/definyRpc/core/request.ts";
+      return "https://raw.githubusercontent.com/narumincho/definy/f9d7aaa5a3f1aba6dc0c478908ab96883eb5fad0/deno-lib/definyRpc/core/request.ts";
   }
 };
 
@@ -87,7 +87,7 @@ const toTypedJson = (from: Namespace): string => {
       return "../../typedJson.ts";
     case "local":
     case "meta":
-      return "https://raw.githubusercontent.com/narumincho/definy/dd558e03186b4b6639684081ee5e84fb336898d3/deno-lib/typedJson.ts";
+      return "https://raw.githubusercontent.com/narumincho/definy/f9d7aaa5a3f1aba6dc0c478908ab96883eb5fad0/deno-lib/typedJson.ts";
   }
 };
 
@@ -101,7 +101,7 @@ const toMaybe = (from: Namespace): string => {
       return "./maybe.ts";
     case "local":
     case "meta":
-      return "https://raw.githubusercontent.com/narumincho/definy/dd558e03186b4b6639684081ee5e84fb336898d3/deno-lib/definyRpc/core/maybe.ts";
+      return "https://raw.githubusercontent.com/narumincho/definy/f9d7aaa5a3f1aba6dc0c478908ab96883eb5fad0/deno-lib/definyRpc/core/maybe.ts";
   }
 };
 
