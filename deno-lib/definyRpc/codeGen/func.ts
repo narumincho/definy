@@ -281,8 +281,9 @@ const typeInfoToExpr = (
               typeInfo.attribute.value.type,
               undefined,
             ),
+            context,
           )
-          : nothing,
+          : nothing(context),
       ),
       memberKeyValue(
         "body",
@@ -309,8 +310,9 @@ const typeInfoToExpr = (
                       pattern.parameter.type === "just"
                         ? just(
                           typeToTypeExpr(pattern.parameter.value, context),
+                          context,
                         )
-                        : nothing,
+                        : nothing(context),
                     ),
                   ]),
                 ),
