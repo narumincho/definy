@@ -70,6 +70,17 @@ export type StructuredJsonValue =
       readonly [Symbol.toStringTag]: "*coreType.StructuredJsonValue";
     };
 
+export type Maybe<element extends unknown> =
+  | {
+      readonly type: "just";
+      readonly value: element;
+      readonly [Symbol.toStringTag]: "*coreType.Maybe";
+    }
+  | {
+      readonly type: "nothing";
+      readonly [Symbol.toStringTag]: "*coreType.Maybe";
+    };
+
 /**
  * 名前空間. ユーザーが生成するものがこっちが用意するものか
  */
@@ -578,6 +589,35 @@ export const Set: {
       name: "Set",
       parameters: [element],
     }),
+};
+
+export const Maybe: {
+  /**
+   * Maybe の型
+   */
+  readonly type: <element extends unknown>(
+    a: Type<element>
+  ) => Type<Maybe<element>>;
+  readonly just: <element extends unknown>(a: element) => Maybe<element>;
+  readonly nothing: <element extends unknown>() => Maybe<element>;
+} = {
+  type: <element extends unknown>(
+    element: Type<element>
+  ): Type<Maybe<element>> =>
+    Type.from({
+      namespace: Namespace.coreType,
+      name: "Maybe",
+      parameters: [element],
+    }),
+  just: <element extends unknown>(p: element): Maybe<element> => ({
+    type: "just",
+    value: p,
+    [Symbol.toStringTag]: "*coreType.Maybe",
+  }),
+  nothing: <element extends unknown>(): Maybe<element> => ({
+    type: "nothing",
+    [Symbol.toStringTag]: "*coreType.Maybe",
+  }),
 };
 
 /**

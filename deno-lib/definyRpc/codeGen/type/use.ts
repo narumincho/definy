@@ -1,3 +1,4 @@
+import { TsType } from "../../../jsTs/data.ts";
 import {
   data,
   identifierFromString,
@@ -170,6 +171,9 @@ export const collectedDefinyRpcTypeUseToTsType = (
   type: Type<unknown>,
   context: CodeGenContext,
 ): data.TsType => {
+  if (type.name[0]?.toLocaleLowerCase() === type.name[0]) {
+    return useType(type, context);
+  }
   if (type.namespace.type == "maybe") {
     const moduleName = namespaceFromAndToToTypeScriptModuleName(
       context.currentModule,
@@ -278,38 +282,42 @@ export const collectedDefinyRpcTypeUseToTsType = (
       );
     }
     case "product":
-    case "sum": {
-      const moduleName = namespaceFromAndToToTypeScriptModuleName(
-        context.currentModule,
-        type.namespace,
-      );
-      if (moduleName === undefined) {
-        return {
-          _: "ScopeInFile",
-          typeNameAndTypeParameter: {
-            name: identifierFromString(type.name),
-            arguments: type.parameters.map((parameter) =>
-              collectedDefinyRpcTypeUseToTsType(parameter, context)
-            ),
-          },
-        };
-      }
-      return {
-        _: "ImportedType",
-        importedType: {
-          moduleName: moduleName,
-          nameAndArguments: {
-            name: identifierFromString(type.name),
-            arguments: type.parameters.map((parameter) =>
-              collectedDefinyRpcTypeUseToTsType(parameter, context)
-            ),
-          },
-        },
-      };
-    }
+    case "sum":
+      return useType(type, context);
+
     case "url":
       return urlType;
   }
+};
+
+const useType = <T>(type: Type<T>, context: CodeGenContext): TsType => {
+  const moduleName = namespaceFromAndToToTypeScriptModuleName(
+    context.currentModule,
+    type.namespace,
+  );
+  if (moduleName === undefined) {
+    return {
+      _: "ScopeInFile",
+      typeNameAndTypeParameter: {
+        name: identifierFromString(type.name),
+        arguments: type.parameters.map((parameter) =>
+          collectedDefinyRpcTypeUseToTsType(parameter, context)
+        ),
+      },
+    };
+  }
+  return {
+    _: "ImportedType",
+    importedType: {
+      moduleName: moduleName,
+      nameAndArguments: {
+        name: identifierFromString(type.name),
+        arguments: type.parameters.map((parameter) =>
+          collectedDefinyRpcTypeUseToTsType(parameter, context)
+        ),
+      },
+    },
+  };
 };
 
 export const typeVariableMemberName = "__typeVariable";

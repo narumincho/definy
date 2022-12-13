@@ -82,7 +82,9 @@ const patternToTagExprAndType = (
       _: "Return",
       tsExpr: objectLiteral([
         memberKeyValue("type", stringLiteral(pattern.name)),
-        memberKeyValue("value", variable(identifierFromString("p"))),
+        ...(pattern.parameter.type === "just"
+          ? [memberKeyValue("value", variable(identifierFromString("p")))]
+          : []),
         symbolToStringTagMember,
       ]),
     }],

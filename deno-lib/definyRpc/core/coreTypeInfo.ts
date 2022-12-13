@@ -166,6 +166,35 @@ const set = DefinyRpcTypeInfo.from({
   body: TypeBody.set,
 });
 
+const maybe = DefinyRpcTypeInfo.from({
+  namespace: Namespace.coreType,
+  name: "Maybe",
+  description: "",
+  parameter: [
+    TypeParameterInfo.from({ name: "element", description: "justのときに入る値の型" }),
+  ],
+  attribute: { type: "nothing" },
+  body: TypeBody.sum([
+    Pattern.from({
+      name: "just",
+      description: "",
+      parameter: {
+        type: "just",
+        value: Type.from({
+          namespace: Namespace.coreType,
+          name: "element",
+          parameters: [],
+        }),
+      },
+    }),
+    Pattern.from({
+      name: "nothing",
+      description: "",
+      parameter: { type: "nothing" },
+    }),
+  ]),
+});
+
 const nameSpace = DefinyRpcTypeInfo.from({
   namespace: Namespace.coreType,
   name: "Namespace",
@@ -602,6 +631,7 @@ export const coreTypeInfoList: ReadonlyArray<DefinyRpcTypeInfo> = [
   list,
   map,
   set,
+  maybe,
   nameSpace,
   definyRpcTypeInfo,
   typeParameterInfo,

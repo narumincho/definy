@@ -6,13 +6,11 @@ import {
   symbolToStringTag,
 } from "../../jsTs/main.ts";
 import { CodeGenContext } from "../core/collectType.ts";
-import { structuredJsonValueType } from "./useTypedJson.ts";
 import {
   createFromLambda,
   symbolToStringTagAndTypeName,
 } from "./typeVariable/from.ts";
 import {
-  collectedDefinyRpcTypeToTsType,
   collectedDefinyRpcTypeUseToTsType,
   typeVariableMemberName,
 } from "./type/use.ts";
@@ -165,14 +163,6 @@ export const typeToTypeVariable = (
   type: DefinyRpcTypeInfo,
   context: CodeGenContext,
 ): data.Variable => {
-  const fromJsonTypeMain: data.TsType = {
-    _: "Function",
-    functionType: {
-      typeParameterList: [],
-      parameterList: [structuredJsonValueType(context)],
-      return: collectedDefinyRpcTypeToTsType(type, context),
-    },
-  };
   const fromLambda = createFromLambda(type, context);
   const tagList = createTagExprList(type, context) ?? [];
   const typeLambda = createTypeLambda(type, context);
