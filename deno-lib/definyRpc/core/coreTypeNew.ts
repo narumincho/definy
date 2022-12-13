@@ -81,6 +81,18 @@ export type Maybe<element extends unknown> =
       readonly [Symbol.toStringTag]: "*coreType.Maybe";
     };
 
+export type Result<ok extends unknown, error extends unknown> =
+  | {
+      readonly type: "ok";
+      readonly value: ok;
+      readonly [Symbol.toStringTag]: "*coreType.Result";
+    }
+  | {
+      readonly type: "error";
+      readonly value: error;
+      readonly [Symbol.toStringTag]: "*coreType.Result";
+    };
+
 /**
  * 名前空間. ユーザーが生成するものがこっちが用意するものか
  */
@@ -617,6 +629,46 @@ export const Maybe: {
   nothing: <element extends unknown>(): Maybe<element> => ({
     type: "nothing",
     [Symbol.toStringTag]: "*coreType.Maybe",
+  }),
+};
+
+export const Result: {
+  /**
+   * Result の型
+   */
+  readonly type: <ok extends unknown, error extends unknown>(
+    a: Type<ok>,
+    b: Type<error>
+  ) => Type<Result<ok, error>>;
+  readonly ok: <ok extends unknown, error extends unknown>(
+    a: ok
+  ) => Result<ok, error>;
+  readonly error: <ok extends unknown, error extends unknown>(
+    a: error
+  ) => Result<ok, error>;
+} = {
+  type: <ok extends unknown, error extends unknown>(
+    ok: Type<ok>,
+    error: Type<error>
+  ): Type<Result<ok, error>> =>
+    Type.from({
+      namespace: Namespace.coreType,
+      name: "Result",
+      parameters: [ok, error],
+    }),
+  ok: <ok extends unknown, error extends unknown>(
+    p: ok
+  ): Result<ok, error> => ({
+    type: "ok",
+    value: p,
+    [Symbol.toStringTag]: "*coreType.Result",
+  }),
+  error: <ok extends unknown, error extends unknown>(
+    p: error
+  ): Result<ok, error> => ({
+    type: "error",
+    value: p,
+    [Symbol.toStringTag]: "*coreType.Result",
   }),
 };
 
