@@ -2,8 +2,12 @@ import {
   rawJsonToStructuredJsonValue,
   structuredJsonStringify,
 } from "../../typedJson.ts";
-import { Result } from "./maybe.ts";
-import { FunctionNamespace, StructuredJsonValue, Type } from "./coreType.ts";
+import {
+  FunctionNamespace,
+  Result,
+  StructuredJsonValue,
+  Type,
+} from "./coreType.ts";
 import {
   fromStructuredJsonValue,
   toStructuredJsonValue,
@@ -50,14 +54,11 @@ export const requestQuery = async <Input, Output>(parameter: {
         }
         const response = await fetch(url);
         const jsonValue = await response.json();
-        return ({
-          type: "ok",
-          value: fromStructuredJsonValue(
-            parameter.outputType,
-            parameter.typeMap,
-            rawJsonToStructuredJsonValue(jsonValue),
-          ),
-        });
+        return Result.ok(fromStructuredJsonValue(
+          parameter.outputType,
+          parameter.typeMap,
+          rawJsonToStructuredJsonValue(jsonValue),
+        ));
       }
     }
     const response = await fetch(url, {
@@ -79,16 +80,13 @@ export const requestQuery = async <Input, Output>(parameter: {
       ),
     });
     const jsonValue = await response.json();
-    return ({
-      type: "ok",
-      value: fromStructuredJsonValue(
-        parameter.outputType,
-        parameter.typeMap,
-        rawJsonToStructuredJsonValue(jsonValue),
-      ),
-    });
+    return Result.ok(fromStructuredJsonValue(
+      parameter.outputType,
+      parameter.typeMap,
+      rawJsonToStructuredJsonValue(jsonValue),
+    ));
   } catch {
-    return ({ type: "error", value: "error" });
+    return Result.error("error");
   }
 };
 
@@ -179,15 +177,12 @@ export const requestMutation = async <Input, Output>(parameter: {
       ),
     });
     const jsonValue = await response.json();
-    return ({
-      type: "ok",
-      value: fromStructuredJsonValue(
-        parameter.outputType,
-        parameter.typeMap,
-        rawJsonToStructuredJsonValue(jsonValue),
-      ),
-    });
+    return Result.ok(fromStructuredJsonValue(
+      parameter.outputType,
+      parameter.typeMap,
+      rawJsonToStructuredJsonValue(jsonValue),
+    ));
   } catch {
-    return ({ type: "error", value: "error" });
+    return Result.error("error");
   }
 };

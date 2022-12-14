@@ -174,27 +174,6 @@ export const collectedDefinyRpcTypeUseToTsType = (
   if (type.name[0]?.toLocaleLowerCase() === type.name[0]) {
     return useType(type, context);
   }
-  if (type.namespace.type == "maybe") {
-    const moduleName = namespaceFromAndToToTypeScriptModuleName(
-      context.currentModule,
-      Namespace.maybe,
-    );
-    if (moduleName === undefined) {
-      throw new Error("maybe はコード生成できない");
-    }
-    return {
-      _: "ImportedType",
-      importedType: {
-        moduleName,
-        nameAndArguments: {
-          name: identifierFromString(type.name),
-          arguments: type.parameters.map((p) =>
-            collectedDefinyRpcTypeUseToTsType(p, context)
-          ),
-        },
-      },
-    };
-  }
 
   const typeInfo = collectedDefinyRpcTypeMapGet(
     context.map,
