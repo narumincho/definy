@@ -8,10 +8,8 @@ import {
   StructuredJsonValue,
   Type,
 } from "./coreType.ts";
-import {
-  fromStructuredJsonValue,
-  toStructuredJsonValue,
-} from "./structuredJsonCodec.ts";
+import { fromStructuredJsonValue } from "./fromStructuredJson.ts";
+import { toStructuredJsonValue } from "./toStructuredJson.ts";
 import { CollectedDefinyRpcTypeMap } from "./collectType.ts";
 
 export const requestQuery = async <Input, Output>(parameter: {

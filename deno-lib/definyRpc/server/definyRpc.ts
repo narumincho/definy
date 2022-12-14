@@ -17,10 +17,8 @@ import {
 import { stringArrayEqual, stringArrayMatchPrefix } from "../../util.ts";
 import { toBytes } from "https://deno.land/x/fast_base64@v0.1.7/mod.ts";
 import { FunctionNamespace, StructuredJsonValue } from "../core/coreType.ts";
-import {
-  fromStructuredJsonValue,
-  toStructuredJsonValue,
-} from "../core/structuredJsonCodec.ts";
+import { fromStructuredJsonValue } from "../core/fromStructuredJson.ts";
+import { toStructuredJsonValue } from "../core/toStructuredJson.ts";
 import { createTypeKey } from "../core/collectType.ts";
 
 const editorPath = "_editor";
