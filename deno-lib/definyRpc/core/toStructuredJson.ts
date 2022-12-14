@@ -216,7 +216,7 @@ export const toStructuredJsonValue = <t>(
   }
 };
 
-export const toStructuredJsonValueConsiderTypeParameter = <t>(
+const toStructuredJsonValueConsiderTypeParameter = <t>(
   typeParameters: ReadonlyArray<Type<unknown>>,
   typeParameterInfoList: ReadonlyArray<TypeParameterInfo>,
   type: Type<t>,

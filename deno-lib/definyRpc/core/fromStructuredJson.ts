@@ -4,7 +4,14 @@ import {
   collectedDefinyRpcTypeMapGet,
   createTypeKey,
 } from "./collectType.ts";
-import { Field, Pattern, StructuredJsonValue, Type } from "./coreType.ts";
+import {
+  DefinyRpcTypeInfo,
+  Field,
+  Pattern,
+  StructuredJsonValue,
+  Type,
+  TypeParameterInfo,
+} from "./coreType.ts";
 
 const changeType = <T>(type: Type<unknown>): Type<T> => type as Type<T>;
 
@@ -70,7 +77,13 @@ export const fromStructuredJsonValue = <T>(
         );
       }
       return jsonValue.value.map((element) =>
-        fromStructuredJsonValue(elementType, typeMap, element)
+        fromStructuredJsonValueConsiderTypeParameter(
+          type.parameters,
+          typeInfo.parameter,
+          elementType,
+          typeMap,
+          element,
+        )
       ) as T;
     }
     case "set": {
@@ -92,13 +105,20 @@ export const fromStructuredJsonValue = <T>(
       // パラメータを受け取らないとな...
       return new Set(
         jsonValue.value.map((element) =>
-          fromStructuredJsonValue(elementType, typeMap, element)
+          fromStructuredJsonValueConsiderTypeParameter(
+            type.parameters,
+            typeInfo.parameter,
+            elementType,
+            typeMap,
+            element,
+          )
         ),
       ) as T;
     }
     case "map":
       return toMap(
         changeType<ReadonlyMap<unknown, unknown>>(type),
+        typeInfo,
         typeMap,
         jsonValue,
       ) as T;
@@ -116,6 +136,7 @@ export const fromStructuredJsonValue = <T>(
     case "product":
       return toProduct(
         changeType<Record<string, unknown>>(type),
+        typeInfo,
         typeMap,
         jsonValue,
         typeInfo.body.value,
@@ -129,6 +150,7 @@ export const fromStructuredJsonValue = <T>(
             readonly [Symbol.toStringTag]: string;
           }
         >(type),
+        typeInfo,
         typeMap,
         jsonValue,
         typeInfo.body.value,
@@ -138,6 +160,7 @@ export const fromStructuredJsonValue = <T>(
 
 const toMap = <K, V>(
   type: Type<ReadonlyMap<K, V>>,
+  typeInfo: DefinyRpcTypeInfo,
   typeMap: CollectedDefinyRpcTypeMap,
   jsonValue: StructuredJsonValue,
 ): ReadonlyMap<K, V> => {
@@ -167,7 +190,9 @@ const toMap = <K, V>(
         if (keyTypeInfo.body.type === "string") {
           return [
             key as K,
-            fromStructuredJsonValue<V>(
+            fromStructuredJsonValueConsiderTypeParameter(
+              type.parameters,
+              typeInfo.parameter,
               changeType<V>(valueType),
               typeMap,
               valueJson,
@@ -184,12 +209,16 @@ const toMap = <K, V>(
         }
 
         return [
-          fromStructuredJsonValue<K>(
+          fromStructuredJsonValueConsiderTypeParameter(
+            type.parameters,
+            typeInfo.parameter,
             changeType<K>(keyType),
             typeMap,
             keyJson,
           ),
-          fromStructuredJsonValue<V>(
+          fromStructuredJsonValueConsiderTypeParameter(
+            type.parameters,
+            typeInfo.parameter,
             changeType<V>(valueType),
             typeMap,
             valueJson,
@@ -202,6 +231,7 @@ const toMap = <K, V>(
 
 const toProduct = <T extends Record<string, unknown>>(
   type: Type<T>,
+  typeInfo: DefinyRpcTypeInfo,
   typeMap: CollectedDefinyRpcTypeMap,
   jsonValue: StructuredJsonValue,
   fields: ReadonlyArray<Field>,
@@ -227,7 +257,9 @@ const toProduct = <T extends Record<string, unknown>>(
       }
       return [
         field.name,
-        fromStructuredJsonValue(
+        fromStructuredJsonValueConsiderTypeParameter(
+          type.parameters,
+          typeInfo.parameter,
           changeType(field.type),
           typeMap,
           fieldValueJson,
@@ -249,6 +281,7 @@ const toSum = <
   },
 >(
   type: Type<T>,
+  typeInfo: DefinyRpcTypeInfo,
   typeMap: CollectedDefinyRpcTypeMap,
   jsonValue: StructuredJsonValue,
   patternList: ReadonlyArray<Pattern>,
@@ -306,7 +339,9 @@ const toSum = <
           }
           return {
             type: pattern.name,
-            value: fromStructuredJsonValue(
+            value: fromStructuredJsonValueConsiderTypeParameter(
+              type.parameters,
+              typeInfo.parameter,
               pattern.parameter.value,
               typeMap,
               valueJson,
@@ -338,5 +373,38 @@ const toSum = <
     `expected json object or string in sum (${
       createTypeKey(type.namespace, type.name)
     })`,
+  );
+};
+
+const fromStructuredJsonValueConsiderTypeParameter = <T>(
+  typeParameters: ReadonlyArray<Type<unknown>>,
+  typeParameterInfoList: ReadonlyArray<TypeParameterInfo>,
+  type: Type<T>,
+  typeMap: CollectedDefinyRpcTypeMap,
+  jsonValue: StructuredJsonValue,
+): T => {
+  if (typeParameters.length !== typeParameterInfoList.length) {
+    throw new Error(
+      "型パラメータの数が合わない! expected:" + typeParameterInfoList.length + " but got:" +
+        typeParameters.length,
+    );
+  }
+  for (const [index, typeParameter] of typeParameterInfoList.entries()) {
+    if (typeParameter.name === type.name) {
+      const matchedTypeParameter = typeParameters[index];
+      if (matchedTypeParameter === undefined) {
+        throw new Error("型パラメータの数が合わない?");
+      }
+      return fromStructuredJsonValue(
+        changeType<T>(matchedTypeParameter),
+        typeMap,
+        jsonValue,
+      );
+    }
+  }
+  return fromStructuredJsonValue(
+    type,
+    typeMap,
+    jsonValue,
   );
 };
