@@ -1,13 +1,18 @@
 import React from "https://esm.sh/react@18.2.0?pin=v99";
 import { c, toStyleAndHash } from "../../cssInJs/mod.ts";
-import { FunctionDetail } from "../core/coreType.ts";
+import { FunctionDetail, Type } from "../core/coreType.ts";
 import {
   functionNamespaceToString,
   namespaceToString,
 } from "../codeGen/namespace.ts";
+import { isParameter } from "https://deno.land/x/ts_morph@17.0.1/common/typescript";
 
 const containerStyle = toStyleAndHash({
   overflowWrap: "anywhere",
+});
+
+const box = toStyleAndHash({
+  padding: 8,
 });
 
 export const DetailView = (props: {
@@ -40,13 +45,32 @@ export const DetailView = (props: {
       <h2>{selectedFuncDetail.name}</h2>
       <div>{selectedFuncDetail.description}</div>
       <div>
-        入力 input: {namespaceToString(selectedFuncDetail.input.namespace) + "." +
-          selectedFuncDetail.input.name}
+        入力 input:
+        <TypeView type={selectedFuncDetail.input} />
       </div>
       <div>
-        出力 output:{" "}
-        {namespaceToString(selectedFuncDetail.output.namespace) + "." +
-          selectedFuncDetail.output.name}
+        出力 output:
+        <TypeView type={selectedFuncDetail.output} />
+      </div>
+    </div>
+  );
+};
+
+const TypeView = <T extends unknown>(
+  props: { readonly type: Type<T> },
+): React.ReactElement => {
+  return (
+    <div className={c(box)}>
+      <div>
+        {namespaceToString(props.type.namespace) + "." + props.type.name}
+      </div>
+      <div className={c(box)}>
+        {props.type.parameters.map((parameter, index) => (
+          <TypeView
+            key={index}
+            type={parameter}
+          />
+        ))}
       </div>
     </div>
   );
