@@ -6,7 +6,6 @@ import {
 import { exprToString, lambdaBodyToString } from "./toString/expr.ts";
 import { typeAnnotation, typeToString } from "./toString/type.ts";
 import { statementListToString } from "./toString/statement.ts";
-import { TsIdentifier } from "./identifier.ts";
 import { Context } from "./toString/context.ts";
 
 /**

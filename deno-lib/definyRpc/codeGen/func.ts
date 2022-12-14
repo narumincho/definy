@@ -9,7 +9,6 @@ import {
   newMap,
   newURL,
   nullishCoalescing,
-  numberLiteral,
   objectLiteral,
   promiseType,
   stringLiteral,

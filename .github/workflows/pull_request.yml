@@ -16,5 +16,7 @@ jobs:
       - name: Deno type check
         run: deno run --allow-run --allow-read ./entryPoints/check.ts
         working-directory: ./deno-lib
+      - run: deno lint .
+        working-directory: ./deno-lib
       - run: deno test .
         working-directory: ./deno-lib
