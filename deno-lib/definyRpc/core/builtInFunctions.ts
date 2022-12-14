@@ -12,7 +12,6 @@ import {
   List,
   Namespace,
   String,
-  Type,
   Unit,
 } from "./coreType.ts";
 import {
@@ -130,8 +129,8 @@ const builtInFunctions = (
       isMutation: false,
       needAuthentication: false,
       resolve: () => {
-        const allFunc = addMetaFunctionAndCoreType(parameter);
-        return allFunc.typeList;
+        const allFuncAndType = addMetaFunctionAndCoreType(parameter);
+        return allFuncAndType.typeList;
       },
     }),
     createApiFunction({

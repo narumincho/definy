@@ -7,7 +7,13 @@ import {
   collectedDefinyRpcTypeMapGet,
   createTypeKey,
 } from "./collectType.ts";
-import { Field, Pattern, StructuredJsonValue, Type } from "./coreType.ts";
+import {
+  Field,
+  Pattern,
+  StructuredJsonValue,
+  Type,
+  TypeParameterInfo,
+} from "./coreType.ts";
 
 const changeType = <T>(type: Type<unknown>): Type<T> => type as Type<T>;
 
@@ -386,7 +392,13 @@ export const toStructuredJsonValue = <t>(
       }
       return StructuredJsonValue.array(
         value.map((element) =>
-          toStructuredJsonValue(elementType, typeMap, element)
+          toStructuredJsonValueConsiderTypeParameter(
+            type.parameters,
+            typeInfo.parameter,
+            elementType,
+            typeMap,
+            element,
+          )
         ),
       );
     }
@@ -404,7 +416,13 @@ export const toStructuredJsonValue = <t>(
       }
       return StructuredJsonValue.array(
         [...value].map((element) =>
-          toStructuredJsonValue(elementType, typeMap, element)
+          toStructuredJsonValueConsiderTypeParameter(
+            type.parameters,
+            typeInfo.parameter,
+            elementType,
+            typeMap,
+            element,
+          )
         ),
       );
     }
@@ -432,7 +450,13 @@ export const toStructuredJsonValue = <t>(
               [key, value],
             ): [string, StructuredJsonValue] => [
               key,
-              toStructuredJsonValue(valueType, typeMap, value),
+              toStructuredJsonValueConsiderTypeParameter(
+                type.parameters,
+                typeInfo.parameter,
+                valueType,
+                typeMap,
+                value,
+              ),
             ]),
           ),
         );
@@ -444,9 +468,21 @@ export const toStructuredJsonValue = <t>(
             [key, value],
           ): [string, StructuredJsonValue] => [
             structuredJsonStringify(
-              toStructuredJsonValue(keyType, typeMap, key),
+              toStructuredJsonValueConsiderTypeParameter(
+                type.parameters,
+                typeInfo.parameter,
+                keyType,
+                typeMap,
+                key,
+              ),
             ),
-            toStructuredJsonValue(valueType, typeMap, value),
+            toStructuredJsonValueConsiderTypeParameter(
+              type.parameters,
+              typeInfo.parameter,
+              valueType,
+              typeMap,
+              value,
+            ),
           ]),
         ),
       );
@@ -464,7 +500,9 @@ export const toStructuredJsonValue = <t>(
             field,
           ): readonly [string, StructuredJsonValue] => [
             field.name,
-            toStructuredJsonValue(
+            toStructuredJsonValueConsiderTypeParameter(
+              type.parameters,
+              typeInfo.parameter,
               field.type,
               typeMap,
               (value as Record<string, unknown>)[field.name],
@@ -493,7 +531,9 @@ export const toStructuredJsonValue = <t>(
                 ["type", StructuredJsonValue.string(pattern.name)],
                 [
                   "value",
-                  toStructuredJsonValue(
+                  toStructuredJsonValueConsiderTypeParameter(
+                    type.parameters,
+                    typeInfo.parameter,
                     pattern.parameter.value,
                     typeMap,
                     valueObj.value,
@@ -518,4 +558,37 @@ export const toStructuredJsonValue = <t>(
       );
     }
   }
+};
+
+export const toStructuredJsonValueConsiderTypeParameter = <t>(
+  typeParameters: ReadonlyArray<Type<unknown>>,
+  typeParameterInfoList: ReadonlyArray<TypeParameterInfo>,
+  type: Type<t>,
+  typeMap: CollectedDefinyRpcTypeMap,
+  value: t,
+): StructuredJsonValue => {
+  if (typeParameters.length !== typeParameterInfoList.length) {
+    throw new Error(
+      "型パラメータの数が合わない! expected:" + typeParameterInfoList.length + " but got:" +
+        typeParameters.length,
+    );
+  }
+  for (const [index, typeParameter] of typeParameterInfoList.entries()) {
+    if (typeParameter.name === type.name) {
+      const matchedTypeParameter = typeParameters[index];
+      if (matchedTypeParameter === undefined) {
+        throw new Error("型パラメータの数が合わない?");
+      }
+      return toStructuredJsonValue(
+        matchedTypeParameter,
+        typeMap,
+        value,
+      );
+    }
+  }
+  return toStructuredJsonValue(
+    type,
+    typeMap,
+    value,
+  );
 };
