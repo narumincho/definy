@@ -3,6 +3,7 @@ import {
   DefinyRpcTypeInfo,
   Field,
   List,
+  Maybe,
   Namespace,
   Pattern,
   String,
@@ -10,15 +11,15 @@ import {
   Type,
   TypeAttribute,
   TypeBody,
+  TypeParameterInfo,
 } from "./coreType.ts";
-import { Maybe } from "./maybe.ts";
 
 const string = DefinyRpcTypeInfo.from({
   namespace: Namespace.coreType,
   name: "String",
   description: "文字列",
-  parameterCount: 0,
-  attribute: { type: "nothing" },
+  parameter: [],
+  attribute: Maybe.nothing(),
   body: TypeBody.string,
 });
 
@@ -26,8 +27,8 @@ const bool = DefinyRpcTypeInfo.from({
   namespace: Namespace.coreType,
   name: "Bool",
   description: "Bool. boolean. 真偽値. True か False",
-  parameterCount: 0,
-  attribute: { type: "nothing" },
+  parameter: [],
+  attribute: Maybe.nothing(),
   body: TypeBody.boolean,
 });
 
@@ -35,8 +36,8 @@ const number = DefinyRpcTypeInfo.from({
   namespace: Namespace.coreType,
   name: "Number",
   description: "64bit 浮動小数点数",
-  parameterCount: 0,
-  attribute: { type: "nothing" },
+  parameter: [],
+  attribute: Maybe.nothing(),
   body: TypeBody.number,
 });
 
@@ -44,8 +45,8 @@ const unit = DefinyRpcTypeInfo.from({
   namespace: Namespace.coreType,
   name: "Unit",
   description: "値が1つだけ",
-  parameterCount: 0,
-  attribute: { type: "nothing" },
+  parameter: [],
+  attribute: Maybe.nothing(),
   body: TypeBody.unit,
 });
 
@@ -53,72 +54,61 @@ const structuredJsonValue = DefinyRpcTypeInfo.from({
   namespace: Namespace.coreType,
   name: "StructuredJsonValue",
   description: "構造化されたJSON",
-  parameterCount: 0,
-  attribute: { type: "nothing" },
+  parameter: [],
+  attribute: Maybe.nothing(),
   body: TypeBody.sum([
     Pattern.from({
       name: "string",
       description: "string",
-      parameter: {
-        type: "just",
-        value: String.type(),
-      },
+      parameter: Maybe.just(String.type()),
     }),
     Pattern.from({
       name: "array",
       description: "array",
-      parameter: {
-        type: "just",
-        value: List.type(StructuredJsonValue.type()),
-      },
+      parameter: Maybe.just(
+        List.type(StructuredJsonValue.type()),
+      ),
     }),
     Pattern.from({
       name: "boolean",
       description: "boolean",
-      parameter: {
-        type: "just",
-        value: Bool.type(),
-      },
+      parameter: Maybe.just(Bool.type()),
     }),
     Pattern.from({
       name: "null",
       description: "null",
-      parameter: { type: "nothing" },
+      parameter: Maybe.nothing(),
     }),
     Pattern.from({
       name: "number",
       description: "number",
-      parameter: {
-        type: "just",
-        value: Type.from({
+      parameter: Maybe.just(
+        Type.from({
           namespace: Namespace.coreType,
           name: number.name,
           parameters: [],
         }),
-      },
+      ),
     }),
     Pattern.from({
       name: "object",
       description: "object",
-      parameter: {
-        type: "just",
-        value: Type.from({
-          namespace: Namespace.coreType,
-          name: "Map",
-          parameters: [
-            Type.from({
-              name: "String",
-              namespace: Namespace.coreType,
-              parameters: [],
-            }),
-            Type.from({
-              name: "StructuredJsonValue",
-              namespace: Namespace.coreType,
-              parameters: [],
-            }),
-          ],
-        }),
-      },
+      parameter: Maybe.just(Type.from({
+        namespace: Namespace.coreType,
+        name: "Map",
+        parameters: [
+          Type.from({
+            name: "String",
+            namespace: Namespace.coreType,
+            parameters: [],
+          }),
+          Type.from({
+            name: "StructuredJsonValue",
+            namespace: Namespace.coreType,
+            parameters: [],
+          }),
+        ],
+      })),
     }),
   ]),
 });
@@ -127,8 +117,11 @@ const list = DefinyRpcTypeInfo.from({
   namespace: Namespace.coreType,
   name: "List",
   description: "リスト",
-  parameterCount: 1,
-  attribute: { type: "nothing" },
+  parameter: [TypeParameterInfo.from({
+    name: "element",
+    description: "要素の型",
+  })],
+  attribute: Maybe.nothing(),
   body: TypeBody.list,
 });
 
@@ -136,8 +129,17 @@ const map = DefinyRpcTypeInfo.from({
   namespace: Namespace.coreType,
   name: "Map",
   description: "辞書型. Map, Dictionary",
-  parameterCount: 2,
-  attribute: { type: "nothing" },
+  parameter: [
+    TypeParameterInfo.from({
+      name: "key",
+      description: "キーの型",
+    }),
+    TypeParameterInfo.from({
+      name: "value",
+      description: "値の型",
+    }),
+  ],
+  attribute: Maybe.nothing(),
   body: TypeBody.map,
 });
 
@@ -145,24 +147,85 @@ const set = DefinyRpcTypeInfo.from({
   namespace: Namespace.coreType,
   name: "Set",
   description: "Set. 集合",
-  parameterCount: 1,
-  attribute: { type: "nothing" },
+  parameter: [TypeParameterInfo.from({
+    name: "element",
+    description: "集合に含まれる要素の型",
+  })],
+  attribute: Maybe.nothing(),
   body: TypeBody.set,
+});
+
+const maybe = DefinyRpcTypeInfo.from({
+  namespace: Namespace.coreType,
+  name: "Maybe",
+  description: "",
+  parameter: [
+    TypeParameterInfo.from({ name: "element", description: "justのときに入る値の型" }),
+  ],
+  attribute: Maybe.nothing(),
+  body: TypeBody.sum([
+    Pattern.from({
+      name: "just",
+      description: "",
+      parameter: Maybe.just(Type.from({
+        namespace: Namespace.coreType,
+        name: "element",
+        parameters: [],
+      })),
+    }),
+    Pattern.from({
+      name: "nothing",
+      description: "",
+      parameter: Maybe.nothing(),
+    }),
+  ]),
+});
+
+const result = DefinyRpcTypeInfo.from({
+  namespace: Namespace.coreType,
+  name: "Result",
+  description: "",
+  parameter: [
+    TypeParameterInfo.from({ name: "ok", description: "okのときに入る値" }),
+    TypeParameterInfo.from({ name: "error", description: "errorのときに入る値の型" }),
+  ],
+  attribute: Maybe.nothing(),
+  body: TypeBody.sum([
+    Pattern.from({
+      name: "ok",
+      description: "",
+      parameter: Maybe.just(
+        Type.from({
+          namespace: Namespace.coreType,
+          name: "ok",
+          parameters: [],
+        }),
+      ),
+    }),
+    Pattern.from({
+      name: "error",
+      description: "",
+      parameter: Maybe.just(Type.from({
+        namespace: Namespace.coreType,
+        name: "error",
+        parameters: [],
+      })),
+    }),
+  ]),
 });
 
 const nameSpace = DefinyRpcTypeInfo.from({
   namespace: Namespace.coreType,
   name: "Namespace",
   description: "名前空間. ユーザーが生成するものがこっちが用意するものか",
-  parameterCount: 0,
-  attribute: { type: "nothing" },
+  parameter: [],
+  attribute: Maybe.nothing(),
   body: TypeBody.sum([
     Pattern.from({
       name: "local",
       description: "ユーザーが作ったAPIがあるところ",
-      parameter: {
-        type: "just",
-        value: Type.from({
+      parameter: Maybe.just(
+        Type.from({
           namespace: Namespace.coreType,
           name: "List",
           parameters: [Type.from({
@@ -171,32 +234,27 @@ const nameSpace = DefinyRpcTypeInfo.from({
             parameters: [],
           })],
         }),
-      },
+      ),
     }),
     Pattern.from({
       name: "coreType",
       description: "definyRpc 共通で使われる型",
-      parameter: { type: "nothing" },
+      parameter: Maybe.nothing(),
     }),
     Pattern.from({
       name: "typedJson",
       description: "型安全なJSONのコーデック",
-      parameter: { type: "nothing" },
+      parameter: Maybe.nothing(),
     }),
     Pattern.from({
       name: "request",
       description: "HTTP経路でAPI呼ぶときに使うコード",
-      parameter: { type: "nothing" },
-    }),
-    Pattern.from({
-      name: "maybe",
-      description: "MaybeとResultがある (一時的対処. coreTypeに入れたい)",
-      parameter: { type: "nothing" },
+      parameter: Maybe.nothing(),
     }),
     Pattern.from({
       name: "meta",
       description: "各サーバーにアクセスし型情報を取得する",
-      parameter: { type: "nothing" },
+      parameter: Maybe.nothing(),
     }),
   ]),
 });
@@ -205,8 +263,8 @@ const definyRpcTypeInfo = DefinyRpcTypeInfo.from({
   name: "DefinyRpcTypeInfo",
   namespace: Namespace.coreType,
   description: "definy RPC 型の構造",
-  parameterCount: 0,
-  attribute: { type: "nothing" },
+  parameter: [],
+  attribute: Maybe.nothing(),
   body: TypeBody.product([
     Field.from({
       name: "namespace",
@@ -236,13 +294,13 @@ const definyRpcTypeInfo = DefinyRpcTypeInfo.from({
       }),
     }),
     Field.from({
-      name: "parameterCount",
-      description: "パラメーターの数. パラメーター名やドキュメントはまたいつか復活させる",
-      type: Type.from({
+      name: "parameter",
+      description: "パラメーター",
+      type: List.type(Type.from({
         namespace: Namespace.coreType,
-        name: "Number",
+        name: "TypeParameterInfo",
         parameters: [],
-      }),
+      })),
     }),
     Field.from({
       name: "attribute",
@@ -265,17 +323,37 @@ const definyRpcTypeInfo = DefinyRpcTypeInfo.from({
   ]),
 });
 
+const typeParameterInfo = DefinyRpcTypeInfo.from({
+  name: "TypeParameterInfo",
+  description: "型パラメータ名と説明文",
+  namespace: Namespace.coreType,
+  parameter: [],
+  attribute: Maybe.nothing(),
+  body: TypeBody.product([
+    Field.from({
+      name: "name",
+      description: "型パラメーター名",
+      type: String.type(),
+    }),
+    Field.from({
+      name: "description",
+      description: "型パラメーター説明",
+      type: String.type(),
+    }),
+  ]),
+});
+
 const typeAttribute = DefinyRpcTypeInfo.from({
   name: "TypeAttribute",
   description: "型をどのような特殊な扱いをするかどうか",
   namespace: Namespace.coreType,
-  parameterCount: 0,
-  attribute: { type: "nothing" },
+  parameter: [],
+  attribute: Maybe.nothing(),
   body: TypeBody.sum([
     Pattern.from({
       name: "asType",
       description: "型のデータ. 型パラメータを付与する",
-      parameter: { type: "nothing" },
+      parameter: Maybe.nothing(),
     }),
   ]),
 });
@@ -284,82 +362,76 @@ const typeBody = DefinyRpcTypeInfo.from({
   namespace: Namespace.coreType,
   name: "TypeBody",
   description: "型の構造を表現する",
-  parameterCount: 0,
-  attribute: { type: "nothing" },
+  parameter: [],
+  attribute: Maybe.nothing(),
   body: TypeBody.sum([
     Pattern.from({
       name: "string",
       description: "string",
-      parameter: { type: "nothing" },
+      parameter: Maybe.nothing(),
     }),
     Pattern.from({
       name: "number",
       description: "number",
-      parameter: { type: "nothing" },
+      parameter: Maybe.nothing(),
     }),
     Pattern.from({
       name: "boolean",
       description: "boolean",
-      parameter: { type: "nothing" },
+      parameter: Maybe.nothing(),
     }),
     Pattern.from({
       name: "unit",
       description: "unit",
-      parameter: { type: "nothing" },
+      parameter: Maybe.nothing(),
     }),
     Pattern.from({
       name: "list",
       description: "list",
-      parameter: { type: "nothing" },
+      parameter: Maybe.nothing(),
     }),
     Pattern.from({
       name: "set",
       description: "set",
-      parameter: { type: "nothing" },
+      parameter: Maybe.nothing(),
     }),
     Pattern.from({
       name: "map",
       description: "map",
-      parameter: { type: "nothing" },
+      parameter: Maybe.nothing(),
     }),
     Pattern.from({
       name: "url",
       description: "url",
-      parameter: { type: "nothing" },
+      parameter: Maybe.nothing(),
     }),
     Pattern.from({
       name: "product",
       description: "product",
-      parameter: {
-        type: "just",
-        value: Type.from({
-          namespace: Namespace.coreType,
-          name: "List",
-          parameters: [
-            Type.from({
-              namespace: Namespace.coreType,
-              name: "Field",
-              parameters: [],
-            }),
-          ],
-        }),
-      },
+      parameter: Maybe.just(Type.from({
+        namespace: Namespace.coreType,
+        name: "List",
+        parameters: [
+          Type.from({
+            namespace: Namespace.coreType,
+            name: "Field",
+            parameters: [],
+          }),
+        ],
+      })),
     }),
     Pattern.from({
       name: "sum",
       description: "sum",
-      parameter: {
-        type: "just",
-        value: Type.from({
+      parameter: Maybe.just(Type.from({
+        namespace: Namespace.coreType,
+        name: "List",
+        parameters: [Type.from({
           namespace: Namespace.coreType,
-          name: "List",
-          parameters: [Type.from({
-            namespace: Namespace.coreType,
-            name: "Pattern",
-            parameters: [],
-          })],
-        }),
-      },
+          name: "Pattern",
+          parameters: [],
+        })],
+      })),
     }),
   ]),
 });
@@ -368,8 +440,8 @@ const field = DefinyRpcTypeInfo.from({
   namespace: Namespace.coreType,
   name: "Field",
   description: "product 直積型で使う",
-  parameterCount: 0,
-  attribute: { type: "nothing" },
+  parameter: [],
+  attribute: Maybe.nothing(),
   body: TypeBody.product([
     Field.from({
       name: "name",
@@ -405,8 +477,8 @@ const pattern = DefinyRpcTypeInfo.from({
   namespace: Namespace.coreType,
   name: "Pattern",
   description: "直和型の表現",
-  parameterCount: 0,
-  attribute: { type: "nothing" },
+  parameter: [],
+  attribute: Maybe.nothing(),
   body: TypeBody.product([
     Field.from({
       name: "name",
@@ -429,15 +501,7 @@ const pattern = DefinyRpcTypeInfo.from({
     Field.from({
       name: "parameter",
       description: "パラメーター",
-      type: Type.from({
-        namespace: Namespace.maybe,
-        name: "Maybe",
-        parameters: [Type.from({
-          namespace: Namespace.coreType,
-          name: "Type",
-          parameters: [],
-        })],
-      }),
+      type: Maybe.type(Type.type()),
     }),
   ]),
 });
@@ -446,8 +510,8 @@ const type = DefinyRpcTypeInfo.from({
   namespace: Namespace.coreType,
   name: "Type",
   description: "型",
-  parameterCount: 0,
-  attribute: { type: "just", value: TypeAttribute.asType },
+  parameter: [],
+  attribute: Maybe.just(TypeAttribute.asType),
   body: TypeBody.product([
     Field.from({
       name: "namespace",
@@ -488,36 +552,28 @@ const type = DefinyRpcTypeInfo.from({
 const functionNamespace = DefinyRpcTypeInfo.from({
   namespace: Namespace.coreType,
   description: "出力されるAPI関数のモジュール名",
-  parameterCount: 0,
-  attribute: { type: "nothing" },
+  parameter: [],
+  attribute: Maybe.nothing(),
   name: "FunctionNamespace",
   body: TypeBody.sum([
     Pattern.from({
       name: "meta",
       description: "APIがどんな構造で表現されているかを取得するためのAPI",
-      parameter: { type: "nothing" },
+      parameter: Maybe.nothing(),
     }),
     Pattern.from({
       name: "local",
       description: "definy RPC を利用するユーザーが定義したモジュール",
-      parameter: { type: "just", value: List.type(String.type()) },
+      parameter: Maybe.just(List.type(String.type())),
     }),
   ]),
 });
 
-/*{
-  readonly namespace: ReadonlyArray<string>;
-  readonly name: string;
-  readonly description: string;
-  readonly input: Type;
-  readonly output: Type;
-} */
-
 const functionDetail = DefinyRpcTypeInfo.from({
   name: "FunctionDetail",
   description: "関数のデータ functionByNameの結果",
-  parameterCount: 0,
-  attribute: { type: "nothing" },
+  parameter: [],
+  attribute: Maybe.nothing(),
   namespace: Namespace.coreType,
   body: TypeBody.product([
     Field.from({
@@ -574,8 +630,11 @@ export const coreTypeInfoList: ReadonlyArray<DefinyRpcTypeInfo> = [
   list,
   map,
   set,
+  maybe,
+  result,
   nameSpace,
   definyRpcTypeInfo,
+  typeParameterInfo,
   typeAttribute,
   typeBody,
   field,

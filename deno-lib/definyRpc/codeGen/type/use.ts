@@ -1,3 +1,4 @@
+import { TsType } from "../../../jsTs/data.ts";
 import {
   data,
   identifierFromString,
@@ -6,7 +7,6 @@ import {
   readonlySetType,
   urlType,
 } from "../../../jsTs/main.ts";
-import { arrayFromLength } from "../../../util.ts";
 import {
   CodeGenContext,
   collectedDefinyRpcTypeMapGet,
@@ -75,36 +75,51 @@ export const collectedDefinyRpcTypeToTsType = (
       return { _: "Boolean" };
     case "unit":
       return { _: "Undefined" };
-    case "list":
+    case "list": {
+      const elementType = typeDetail.parameter[0];
+      if (elementType === undefined) {
+        throw new Error("list には 1つの型パラメータが必要です");
+      }
       return readonlyArrayType({
         _: "ScopeInFile",
         typeNameAndTypeParameter: {
-          name: identifierFromString("p0"),
+          name: identifierFromString(elementType.name),
           arguments: [],
         },
       });
-    case "set":
+    }
+    case "set": {
+      const elementType = typeDetail.parameter[0];
+      if (elementType === undefined) {
+        throw new Error("set には 1つの型パラメータが必要です");
+      }
       return readonlySetType({
         _: "ScopeInFile",
         typeNameAndTypeParameter: {
-          name: identifierFromString("p0"),
+          name: identifierFromString(elementType.name),
           arguments: [],
         },
       });
-    case "map":
+    }
+    case "map": {
+      const [keyType, valueType] = typeDetail.parameter;
+      if (keyType === undefined || valueType === undefined) {
+        throw new Error("map には 2つの型パラメータが必要です");
+      }
       return readonlyMapType({
         _: "ScopeInFile",
         typeNameAndTypeParameter: {
-          name: identifierFromString("p0"),
+          name: identifierFromString(keyType.name),
           arguments: [],
         },
       }, {
         _: "ScopeInFile",
         typeNameAndTypeParameter: {
-          name: identifierFromString("p1"),
+          name: identifierFromString(valueType.name),
           arguments: [],
         },
       });
+    }
     case "product":
     case "sum": {
       const moduleName = namespaceFromAndToToTypeScriptModuleName(
@@ -116,12 +131,11 @@ export const collectedDefinyRpcTypeToTsType = (
           _: "ScopeInFile",
           typeNameAndTypeParameter: {
             name: identifierFromString(typeInfo.name),
-            arguments: arrayFromLength(
-              typeInfo.parameterCount,
-              (i) => ({
+            arguments: typeInfo.parameter.map(
+              (parameter) => ({
                 _: "ScopeInFile",
                 typeNameAndTypeParameter: {
-                  name: identifierFromString("p" + i),
+                  name: identifierFromString(parameter.name),
                   arguments: [],
                 },
               }),
@@ -135,12 +149,11 @@ export const collectedDefinyRpcTypeToTsType = (
           moduleName: moduleName,
           nameAndArguments: {
             name: identifierFromString(typeInfo.name),
-            arguments: arrayFromLength(
-              typeInfo.parameterCount,
-              (i) => ({
+            arguments: typeInfo.parameter.map(
+              (parameter) => ({
                 _: "ScopeInFile",
                 typeNameAndTypeParameter: {
-                  name: identifierFromString("p" + i),
+                  name: identifierFromString(parameter.name),
                   arguments: [],
                 },
               }),
@@ -158,26 +171,8 @@ export const collectedDefinyRpcTypeUseToTsType = (
   type: Type<unknown>,
   context: CodeGenContext,
 ): data.TsType => {
-  if (type.namespace.type == "maybe") {
-    const moduleName = namespaceFromAndToToTypeScriptModuleName(
-      context.currentModule,
-      Namespace.maybe,
-    );
-    if (moduleName === undefined) {
-      throw new Error("maybe はコード生成できない");
-    }
-    return {
-      _: "ImportedType",
-      importedType: {
-        moduleName,
-        nameAndArguments: {
-          name: identifierFromString(type.name),
-          arguments: type.parameters.map((p) =>
-            collectedDefinyRpcTypeUseToTsType(p, context)
-          ),
-        },
-      },
-    };
+  if (type.name[0]?.toLocaleLowerCase() === type.name[0]) {
+    return useType(type, context);
   }
 
   const typeInfo = collectedDefinyRpcTypeMapGet(
@@ -266,36 +261,42 @@ export const collectedDefinyRpcTypeUseToTsType = (
       );
     }
     case "product":
-    case "sum": {
-      const moduleName = namespaceFromAndToToTypeScriptModuleName(
-        context.currentModule,
-        type.namespace,
-      );
-      if (moduleName === undefined) {
-        return {
-          _: "ScopeInFile",
-          typeNameAndTypeParameter: {
-            name: identifierFromString(type.name),
-            arguments: type.parameters.map((parameter) =>
-              collectedDefinyRpcTypeUseToTsType(parameter, context)
-            ),
-          },
-        };
-      }
-      return {
-        _: "ImportedType",
-        importedType: {
-          moduleName: moduleName,
-          nameAndArguments: {
-            name: identifierFromString(type.name),
-            arguments: type.parameters.map((parameter) =>
-              collectedDefinyRpcTypeUseToTsType(parameter, context)
-            ),
-          },
-        },
-      };
-    }
+    case "sum":
+      return useType(type, context);
+
     case "url":
       return urlType;
   }
 };
+
+const useType = <T>(type: Type<T>, context: CodeGenContext): TsType => {
+  const moduleName = namespaceFromAndToToTypeScriptModuleName(
+    context.currentModule,
+    type.namespace,
+  );
+  if (moduleName === undefined) {
+    return {
+      _: "ScopeInFile",
+      typeNameAndTypeParameter: {
+        name: identifierFromString(type.name),
+        arguments: type.parameters.map((parameter) =>
+          collectedDefinyRpcTypeUseToTsType(parameter, context)
+        ),
+      },
+    };
+  }
+  return {
+    _: "ImportedType",
+    importedType: {
+      moduleName: moduleName,
+      nameAndArguments: {
+        name: identifierFromString(type.name),
+        arguments: type.parameters.map((parameter) =>
+          collectedDefinyRpcTypeUseToTsType(parameter, context)
+        ),
+      },
+    },
+  };
+};
+
+export const typeVariableMemberName = "__typeVariable";

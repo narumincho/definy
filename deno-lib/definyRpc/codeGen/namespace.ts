@@ -35,9 +35,6 @@ export const namespaceFromAndToToTypeScriptModuleName = (
     case "typedJson":
       return toTypedJson(from);
 
-    case "maybe":
-      return toMaybe(from);
-
     case "local":
       return toLocal(from, to.value);
 
@@ -57,7 +54,7 @@ const toCoreTypeModuleName = (
       throw new Error("この方向には参照しない!");
     case "local":
     case "meta":
-      return "https://raw.githubusercontent.com/narumincho/definy/0056123589a92392d4e12dbfafbb815c42ce17f8/deno-lib/definyRpc/core/coreType.ts";
+      return "https://raw.githubusercontent.com/narumincho/definy/aaa899eaa65c13b6eabb9f3f28bc2e01e1f04009/deno-lib/definyRpc/core/coreType.ts";
   }
 };
 
@@ -69,11 +66,10 @@ export const toRequest = (
       throw new Error("この方向には参照しない!");
     case "typedJson":
     case "request":
-    case "maybe":
       throw new Error("コード生成しない!");
     case "local":
     case "meta":
-      return "https://raw.githubusercontent.com/narumincho/definy/0056123589a92392d4e12dbfafbb815c42ce17f8/deno-lib/definyRpc/core/request.ts";
+      return "https://raw.githubusercontent.com/narumincho/definy/aaa899eaa65c13b6eabb9f3f28bc2e01e1f04009/deno-lib/definyRpc/core/request.ts";
   }
 };
 
@@ -81,27 +77,12 @@ const toTypedJson = (from: Namespace): string => {
   switch (from.type) {
     case "typedJson":
     case "request":
-    case "maybe":
       throw new Error("コード生成しない!");
     case "coreType":
       return "../../typedJson.ts";
     case "local":
     case "meta":
-      return "https://raw.githubusercontent.com/narumincho/definy/0056123589a92392d4e12dbfafbb815c42ce17f8/deno-lib/typedJson.ts";
-  }
-};
-
-const toMaybe = (from: Namespace): string => {
-  switch (from.type) {
-    case "typedJson":
-    case "request":
-    case "maybe":
-      throw new Error("コード生成しない!");
-    case "coreType":
-      return "./maybe.ts";
-    case "local":
-    case "meta":
-      return "https://raw.githubusercontent.com/narumincho/definy/0056123589a92392d4e12dbfafbb815c42ce17f8/deno-lib/definyRpc/core/maybe.ts";
+      return "https://raw.githubusercontent.com/narumincho/definy/aaa899eaa65c13b6eabb9f3f28bc2e01e1f04009/deno-lib/typedJson.ts";
   }
 };
 
@@ -113,7 +94,6 @@ const toLocal = (
     case "request":
     case "typedJson":
     case "coreType":
-    case "maybe":
     case "meta":
       throw new Error("その方向には参照できない!");
     case "local": {
@@ -136,7 +116,6 @@ export const toMeta = (from: Namespace) => {
     case "request":
     case "typedJson":
     case "coreType":
-    case "maybe":
       throw new Error("その方向には参照できない!");
     case "local": {
       const relativeNamespace = namespaceRelative(
@@ -161,8 +140,6 @@ export const namespaceToString = (namespace: Namespace): string => {
       return "*request";
     case "coreType":
       return "*coreType";
-    case "maybe":
-      return "*maybe";
     case "meta":
       return "*meta";
     case "local":

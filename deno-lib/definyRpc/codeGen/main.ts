@@ -1,6 +1,5 @@
 import { ApiFunction } from "../core/apiFunction.ts";
 import {
-  call,
   data,
   generateCodeAsString,
   identifierFromString,
@@ -36,23 +35,6 @@ export const generateCodeInNamespace = (parameter: {
   return code;
 };
 
-const neverSymbolDefinition: data.ExportDefinition = {
-  type: "variable",
-  variable: {
-    name: identifierFromString("neverSymbol"),
-    document: "",
-    expr: call({
-      expr: {
-        _: "GlobalObjects",
-        tsIdentifier: identifierFromString("Symbol"),
-      },
-      parameterList: [],
-    }),
-    type: undefined,
-    private: true,
-  },
-};
-
 export const apiFunctionListToJsTsCode = (parameter: {
   readonly apiFunctionList: ReadonlyArray<ApiFunction>;
   readonly originHint: string;
@@ -82,7 +64,6 @@ export const apiFunctionListToJsTsCode = (parameter: {
 
   return {
     exportDefinitionList: [
-      ...parameter.namespace.type === "coreType" ? [neverSymbolDefinition] : [],
       ...(needAuthentication ? [accountTokenExportDefinition] : []),
       ...typeListInNamespace.flatMap(
         (type): ReadonlyArray<data.ExportDefinition> => {

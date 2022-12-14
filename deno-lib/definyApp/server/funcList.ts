@@ -2,6 +2,7 @@ import {
   DefinyRpcTypeInfo,
   Field,
   FunctionNamespace,
+  Maybe,
   Namespace,
   Number,
   String,
@@ -127,8 +128,8 @@ export const funcList = (
         name: "CodeAndState",
         description: "ログインコールバック時にURLにつけられる code と state",
         namespace: Namespace.local(["main"]),
-        parameterCount: 0,
-        attribute: { type: "nothing" },
+        parameter: [],
+        attribute: Maybe.nothing(),
         body: TypeBody.product([
           Field.from({
             name: "code",

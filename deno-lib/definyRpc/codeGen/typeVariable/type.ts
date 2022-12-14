@@ -8,7 +8,6 @@ import {
   stringLiteral,
   variable,
 } from "../../../jsTs/main.ts";
-import { arrayFromLength } from "../../../util.ts";
 import { CodeGenContext } from "../../core/collectType.ts";
 import { DefinyRpcTypeInfo, Namespace } from "../../core/coreType.ts";
 import { namespaceFromAndToToTypeScriptModuleName } from "../namespace.ts";
@@ -20,19 +19,19 @@ export const createTypeLambda = (
   type: DefinyRpcTypeInfo,
   context: CodeGenContext,
 ): data.LambdaExpr => {
-  const typeWithParameters: data.TsType =
-    context.currentModule.type === "coreType" && type.name === "Type"
-      ? {
-        _: "ScopeInFile",
-        typeNameAndTypeParameter: {
-          name: identifierFromString("Type"),
-          arguments: [{ _: "unknown" }],
-        },
-      }
-      : collectedDefinyRpcTypeToTsType(
-        type,
-        context,
-      );
+  const typeWithParameters: data.TsType = type.attribute.type === "just" &&
+      type.attribute.value.type === "asType"
+    ? {
+      _: "ScopeInFile",
+      typeNameAndTypeParameter: {
+        name: identifierFromString("Type"),
+        arguments: [{ _: "unknown" }],
+      },
+    }
+    : collectedDefinyRpcTypeToTsType(
+      type,
+      context,
+    );
   const typeModuleName = namespaceFromAndToToTypeScriptModuleName(
     context.currentModule,
     Namespace.coreType,
@@ -57,54 +56,51 @@ export const createTypeLambda = (
     };
 
   return {
-    parameterList:
-      context.currentModule.type === "coreType" && type.name === "Type"
-        ? []
-        : arrayFromLength(
-          type.parameterCount,
-          (index): data.Parameter => {
-            return {
-              name: identifierFromString("p" + index),
-              type: typeModuleName === undefined
-                ? {
+    parameterList: type.attribute.type === "just" &&
+        type.attribute.value.type === "asType"
+      ? []
+      : type.parameter.map((parameter) => {
+        return {
+          name: identifierFromString(parameter.name),
+          type: typeModuleName === undefined
+            ? {
+              _: "ScopeInFile",
+              typeNameAndTypeParameter: {
+                name: identifierFromString("Type"),
+                arguments: [{
                   _: "ScopeInFile",
                   typeNameAndTypeParameter: {
-                    name: identifierFromString("Type"),
-                    arguments: [{
-                      _: "ScopeInFile",
-                      typeNameAndTypeParameter: {
-                        name: identifierFromString("p" + index),
-                        arguments: [],
-                      },
-                    }],
+                    name: identifierFromString(parameter.name),
+                    arguments: [],
                   },
-                }
-                : {
-                  _: "ImportedType",
-                  importedType: {
-                    moduleName: typeModuleName,
-                    nameAndArguments: {
-                      name: identifierFromString("Type"),
-                      arguments: [{
-                        _: "ScopeInFile",
-                        typeNameAndTypeParameter: {
-                          name: identifierFromString("p" + index),
-                          arguments: [],
-                        },
-                      }],
+                }],
+              },
+            }
+            : {
+              _: "ImportedType",
+              importedType: {
+                moduleName: typeModuleName,
+                nameAndArguments: {
+                  name: identifierFromString("Type"),
+                  arguments: [{
+                    _: "ScopeInFile",
+                    typeNameAndTypeParameter: {
+                      name: identifierFromString(parameter.name),
+                      arguments: [],
                     },
-                  },
+                  }],
                 },
-            };
-          },
-        ),
+              },
+            },
+        };
+      }),
+
     returnType: returnType,
     typeParameterList:
       context.currentModule.type === "coreType" && type.name === "Type"
         ? []
-        : arrayFromLength(
-          type.parameterCount,
-          (index) => identifierFromString("p" + index),
+        : type.parameter.map((parameter) =>
+          identifierFromString(parameter.name)
         ),
     statementList: [
       statementReturn(
@@ -120,13 +116,12 @@ export const createTypeLambda = (
             memberKeyValue("name", stringLiteral(type.name)),
             memberKeyValue(
               "parameters",
-              arrayLiteral(arrayFromLength(
-                type.parameterCount,
-                (index) => ({
-                  expr: variable(identifierFromString("p" + index)),
+              arrayLiteral(
+                type.parameter.map((parameter) => ({
+                  expr: variable(identifierFromString(parameter.name)),
                   spread: false,
-                }),
-              )),
+                })),
+              ),
             ),
           ]),
         ),

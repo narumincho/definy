@@ -4,13 +4,17 @@ import {
   objectLiteral,
   stringLiteral,
 } from "../../jsTs/main.ts";
+import { CodeGenContext } from "../core/collectType.ts";
+import { Namespace } from "../core/coreType.ts";
+import { useTag } from "./typeVariable/use.ts";
 
-export const just = (expr: data.TsExpr): data.TsExpr =>
-  objectLiteral([
-    memberKeyValue("type", stringLiteral("just")),
-    memberKeyValue("value", expr),
-  ]);
+export const just = (
+  expr: data.TsExpr,
+  context: CodeGenContext,
+): data.TsExpr => {
+  return useTag(Namespace.coreType, "Maybe", context, "just", expr);
+};
 
-export const nothing: data.TsExpr = objectLiteral([
-  memberKeyValue("type", stringLiteral("nothing")),
-]);
+export const nothing = (context: CodeGenContext): data.TsExpr => {
+  return useTag(Namespace.coreType, "Maybe", context, "nothing", undefined);
+};

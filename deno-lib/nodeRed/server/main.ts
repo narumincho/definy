@@ -1,16 +1,25 @@
 import { urlFromString } from "../client/urlFromString.ts";
 import type { Node, NodeAPI, NodeDef } from "./nodeRedServer.ts";
 import type { Status } from "./status.ts";
-import { jsonStringify } from "../../typedJson.ts";
-import { FunctionDetail } from "../../definyRpc/core/coreType.ts";
+import {
+  DefinyRpcTypeInfo,
+  FunctionDetail,
+} from "../../definyRpc/core/coreType.ts";
 import { requestQuery } from "../../definyRpc/core/request.ts";
-import { functionNamespaceToString } from "../../definyRpc/codeGen/namespace.ts";
+import {
+  functionNamespaceToString,
+  namespaceToString,
+} from "../../definyRpc/codeGen/namespace.ts";
 import {
   functionListByName,
   name,
+  typeList,
 } from "../../definyRpc/example/generated/meta.ts";
 
-const createdServer = new Set<string>();
+const createdServer = new Map<
+  string,
+  { readonly typeList: ReadonlyArray<DefinyRpcTypeInfo> }
+>();
 
 // Node.js 内で動作
 export default function (RED: NodeAPI) {
@@ -23,6 +32,7 @@ export default function (RED: NodeAPI) {
     // eslint-disable-next-line func-style
     return function (this: Node, config: NodeDef): void {
       RED.nodes.createNode(this, config);
+
       this.on("input", (msg, send) => {
         requestQuery({
           url: new URL(parameter.url),
@@ -31,7 +41,13 @@ export default function (RED: NodeAPI) {
           name: parameter.functionDetail.name,
           inputType: parameter.functionDetail.input,
           outputType: parameter.functionDetail.output,
-          typeMap: new Map(),
+          typeMap: new Map(
+            createdServer.get(parameter.url.toString())?.typeList.map(
+              (
+                type,
+              ) => [namespaceToString(type.namespace) + "." + type.name, type],
+            ) ?? [],
+          ),
         }).then((json) => {
           send({ payload: json });
         });
@@ -58,26 +74,27 @@ export default function (RED: NodeAPI) {
     Promise.all([
       name({ url }),
       functionListByName({ url }),
-    ]).then(([name, functionList]) => {
-      if (name.type === "error" || functionList.type === "error") {
+      typeList({ url }),
+    ]).then(([name, functionList, typeList]) => {
+      if (
+        name.type === "error" || functionList.type === "error" ||
+        typeList.type === "error"
+      ) {
         setStatus({
           shape: "ring",
           fill: "red",
-          text: urlText + " は definy RPC のサーバーではありません",
+          text: urlText + " は definy RPC のサーバーではないか, エラーが発生しました",
         });
         return;
       }
       const status: Status = {
-        // TODO
-        name: name.value as unknown as string,
-        // TODO
-        functionList: functionList.value as unknown as ReadonlyArray<
-          FunctionDetail
-        >,
+        name: name.value,
+        functionList: functionList.value,
+        typeList: typeList.value,
       };
       console.log(createdServer, url.toString());
       if (!createdServer.has(url.toString())) {
-        createdServer.add(url.toString());
+        createdServer.set(url.toString(), { typeList: status.typeList });
         for (const func of status.functionList) {
           RED.nodes.registerType(
             "definy-" + functionNamespaceToString(func.namespace) + "." +
@@ -89,7 +106,7 @@ export default function (RED: NodeAPI) {
       setStatus({
         shape: "dot",
         fill: "green",
-        text: jsonStringify(status),
+        text: JSON.stringify(status),
       });
     });
   };

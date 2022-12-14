@@ -4,21 +4,17 @@ import {
   lambdaToType,
   memberKeyValue,
   symbolToStringTag,
-  variable,
 } from "../../jsTs/main.ts";
 import { CodeGenContext } from "../core/collectType.ts";
-import { arrayFromLength } from "../../util.ts";
-import { structuredJsonValueType } from "./useTypedJson.ts";
 import {
   createFromLambda,
   symbolToStringTagAndTypeName,
 } from "./typeVariable/from.ts";
 import {
-  collectedDefinyRpcTypeToTsType,
   collectedDefinyRpcTypeUseToTsType,
+  typeVariableMemberName,
 } from "./type/use.ts";
 import { createTagExprList } from "./typeVariable/tag.ts";
-import { createFromStructuredJsonValueLambda } from "./typeVariable/fromStructuredJsonValue.ts";
 import { DefinyRpcTypeInfo, TypeAttribute } from "../core/coreType.ts";
 import { createTypeLambda } from "./typeVariable/type.ts";
 
@@ -48,20 +44,17 @@ export const collectedTypeToTypeAlias = (
     typeParameterList: type.attribute.type === "just" &&
         type.attribute.value.type === TypeAttribute.asType.type
       ? [identifierFromString("p0")]
-      : arrayFromLength(
-        type.parameterCount,
-        (i) => identifierFromString("p" + i),
-      ),
+      : type.parameter.map((parameter) => identifierFromString(parameter.name)),
     type: tsType,
   };
 };
 
 const typeSymbolMember: data.TsMemberType = {
   name: {
-    type: "symbolExpr",
-    value: variable(identifierFromString("neverSymbol")),
+    type: "string",
+    value: typeVariableMemberName,
   },
-  document: "",
+  document: "TypeScript で区別するために用意したパラメータ. 実行時には型の要件を満たさなくて意味のない値が入る",
   required: true,
   type: {
     _: "ScopeInFile",
@@ -170,14 +163,6 @@ export const typeToTypeVariable = (
   type: DefinyRpcTypeInfo,
   context: CodeGenContext,
 ): data.Variable => {
-  const fromJsonTypeMain: data.TsType = {
-    _: "Function",
-    functionType: {
-      typeParameterList: [],
-      parameterList: [structuredJsonValueType(context)],
-      return: collectedDefinyRpcTypeToTsType(type, context),
-    },
-  };
   const fromLambda = createFromLambda(type, context);
   const tagList = createTagExprList(type, context) ?? [];
   const typeLambda = createTypeLambda(type, context);
@@ -200,38 +185,6 @@ export const typeToTypeVariable = (
           required: true,
           type: lambdaToType(fromLambda),
         }]),
-        {
-          name: { type: "string", value: "fromStructuredJsonValue" },
-          document: `Jsonから${type.name}に変換する. 失敗した場合はエラー`,
-          required: true,
-          type: type.parameterCount === 0 ? fromJsonTypeMain : {
-            _: "Function",
-            functionType: {
-              parameterList: arrayFromLength(
-                type.parameterCount,
-                (i): data.TsType => ({
-                  _: "Function",
-                  functionType: {
-                    parameterList: [structuredJsonValueType(context)],
-                    typeParameterList: [],
-                    return: {
-                      _: "ScopeInFile",
-                      typeNameAndTypeParameter: {
-                        name: identifierFromString("p" + i),
-                        arguments: [],
-                      },
-                    },
-                  },
-                }),
-              ),
-              return: fromJsonTypeMain,
-              typeParameterList: arrayFromLength(
-                type.parameterCount,
-                (i) => identifierFromString("p" + i),
-              ),
-            },
-          },
-        },
         ...tagList.map((tag) => tag.memberType),
       ],
     },
@@ -248,13 +201,6 @@ export const typeToTypeVariable = (
             },
           ),
         ]),
-        memberKeyValue(
-          "fromStructuredJsonValue",
-          {
-            _: "Lambda",
-            lambdaExpr: createFromStructuredJsonValueLambda(type, context),
-          },
-        ),
         ...tagList.map((tag) => tag.member),
       ],
     },

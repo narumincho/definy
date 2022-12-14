@@ -1,11 +1,8 @@
-import {
-  data,
-  identifierFromString,
-  memberKeyValue,
-  stringLiteral,
-} from "../../jsTs/main.ts";
+import { data, identifierFromString } from "../../jsTs/main.ts";
+import { CodeGenContext } from "../core/collectType.ts";
 import { Namespace } from "../core/coreType.ts";
 import { namespaceFromAndToToTypeScriptModuleName } from "./namespace.ts";
+import { useTag } from "./typeVariable/use.ts";
 
 const resultTypeName = identifierFromString("Result");
 
@@ -80,7 +77,7 @@ export const resultType = (
 ): data.TsType => {
   const moduleName = namespaceFromAndToToTypeScriptModuleName(
     namespace,
-    Namespace.maybe,
+    Namespace.coreType,
   );
   if (moduleName === undefined) {
     return ({
@@ -103,18 +100,12 @@ export const resultType = (
   });
 };
 
-export const resultOk = (ok: data.TsExpr): data.TsExpr => ({
-  _: "ObjectLiteral",
-  tsMemberList: [
-    memberKeyValue("type", stringLiteral("ok")),
-    memberKeyValue("ok", ok),
-  ],
-});
+export const resultOk = (
+  ok: data.TsExpr,
+  context: CodeGenContext,
+): data.TsExpr => useTag(Namespace.coreType, "Result", context, "ok", ok);
 
-export const resultError = (error: data.TsExpr): data.TsExpr => ({
-  _: "ObjectLiteral",
-  tsMemberList: [
-    memberKeyValue("type", stringLiteral("error")),
-    memberKeyValue("error", error),
-  ],
-});
+export const resultError = (
+  error: data.TsExpr,
+  context: CodeGenContext,
+): data.TsExpr => useTag(Namespace.coreType, "Result", context, "error", error);
