@@ -5,7 +5,6 @@ import {
   functionNamespaceToString,
   namespaceToString,
 } from "../codeGen/namespace.ts";
-import { isParameter } from "https://deno.land/x/ts_morph@17.0.1/common/typescript";
 
 const containerStyle = toStyleAndHash({
   overflowWrap: "anywhere",
