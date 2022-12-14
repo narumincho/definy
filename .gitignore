@@ -30,5 +30,4 @@ tsconfig.tsbuildinfo
 /deno-lib/npm/
 /deno-lib/entryPoints/definyDev.ts
 /deno-lib/entryPoints/migrationStart.ts
-/nodeRedPackage/send-to-definy.html
-/nodeRedServerForNode/
+/deno-lib/nodeRedPackage/

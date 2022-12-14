@@ -70,36 +70,10 @@ firestore のエミュレータを停止させることができる.
 
 Deno と Node.js 向けの拡張機能は共存できないため, 別で VSCode を起動する必要がある
 
-Deno 向けワークスペースの起動
+Deno 向け VSCode ワークスペースの起動
 
 ```ps1
 code ./for-deno.code-workspace
-```
-
-# @definy/node-red
-
-Node RED から definy RPC のサーバーにデータを送信できる (できるようにする) ライブラリ
-
-https://www.npmjs.com/package/@definy/node-red
-
-### Node.js 向けにビルド
-
-```ps1
-deno run --check -A ./deno-lib/nodeRed/build.ts
-```
-
-### npm に公開
-
-```ps1
-cd ./nodeRedServerForNode && npm publish .
-```
-
-### Node RED の起動とデバッグ
-
-```ps1
-cd ~/.node-red
-node-red
-npm install path/to/nodeRedServerForNode
 ```
 
 [/deno-lib/README.md](./deno-lib/README.md) にも説明あり
