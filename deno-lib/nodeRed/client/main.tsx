@@ -7,7 +7,6 @@ import { Status } from "../server/status.ts";
 import { GeneratedNodeForm } from "./GeneratedNodeForm.tsx";
 import {
   functionNamespaceToString,
-  namespaceToString,
 } from "../../definyRpc/codeGen/namespace.ts";
 import { TypeView } from "../../definyRpc/clientEditor/DetailView.tsx";
 import { renderToString } from "https://esm.sh/react-dom@18.2.0/server?pin=v99";
@@ -27,8 +26,12 @@ const createNodeFromStatus = (statusAsString: string): void => {
         <div>{functionNamespaceToString(func.namespace)}</div>
         <h2>{func.name}</h2>
         <div>{func.description}</div>
-        <div>input: {<TypeView type={func.input} />}</div>
-        <div>output: {<TypeView type={func.output} />}</div>
+        <div>
+          input: {<TypeView type={func.input} typeList={status.typeList} />}
+        </div>
+        <div>
+          output: {<TypeView type={func.output} typeList={status.typeList} />}
+        </div>
       </div>,
     );
     document.getElementById("definy-html-output")
@@ -55,6 +58,7 @@ const createNodeFromStatus = (statusAsString: string): void => {
         reactRoot.render(
           <GeneratedNodeForm
             functionDetail={func}
+            typeList={status.typeList}
           />,
         );
       },

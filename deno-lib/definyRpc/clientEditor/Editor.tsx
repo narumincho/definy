@@ -28,12 +28,14 @@ const contentStyle = toStyleAndHash({
   alignContent: "start",
 });
 
+export type FunctionAndTypeList = {
+  readonly funcList: ReadonlyArray<FunctionDetail>;
+  readonly typeList: ReadonlyArray<DefinyRpcTypeInfo>;
+};
+
 export const Editor = (props: {
   readonly serverOrigin: string;
-  readonly functionAndTypeList: {
-    funcList: ReadonlyArray<FunctionDetail>;
-    typeList: ReadonlyArray<DefinyRpcTypeInfo>;
-  } | undefined;
+  readonly functionAndTypeList: FunctionAndTypeList | undefined;
 }): React.ReactElement => {
   const [selectedFunc, setSelectedFunc] = React.useState<string | undefined>(
     undefined,
@@ -111,6 +113,7 @@ export const Editor = (props: {
           <DetailView
             functionList={props.functionAndTypeList.funcList}
             selectedFuncName={selectedFunc}
+            typeList={props.functionAndTypeList.typeList}
           />
         )}
     </div>
