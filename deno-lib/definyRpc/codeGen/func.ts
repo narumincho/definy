@@ -74,7 +74,7 @@ export const apiFuncToTsFunction = (parameter: {
           parameter.func.output,
           parameter.context,
         ),
-        { _: "StringLiteral", string: "error" },
+        { _: "String" },
         fromFunctionNamespace(parameter.func.namespace),
       ),
     ),

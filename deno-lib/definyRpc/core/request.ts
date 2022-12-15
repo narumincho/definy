@@ -27,7 +27,7 @@ export const requestQuery = async <Input, Output>(parameter: {
   readonly inputType: Type<Input>;
   readonly outputType: Type<Output>;
   readonly typeMap: CollectedDefinyRpcTypeMap;
-}): Promise<Result<Output, "error">> => {
+}): Promise<Result<Output, string>> => {
   const url = new URL(parameter.url.toString());
   url.pathname = url.pathname + "/" +
     (parameter.namespace.type === "meta"
@@ -83,8 +83,8 @@ export const requestQuery = async <Input, Output>(parameter: {
       parameter.typeMap,
       rawJsonToStructuredJsonValue(jsonValue),
     ));
-  } catch {
-    return Result.error("error");
+  } catch (e) {
+    return Result.error(e.toString());
   }
 };
 
@@ -141,7 +141,7 @@ export const requestMutation = async <Input, Output>(parameter: {
   readonly inputType: Type<Input>;
   readonly outputType: Type<Output>;
   readonly typeMap: CollectedDefinyRpcTypeMap;
-}): Promise<Result<Output, "error">> => {
+}): Promise<Result<Output, string>> => {
   const url = new URL(parameter.url.toString());
   url.pathname = url.pathname + "/" +
     (parameter.namespace.type === "meta"
@@ -180,7 +180,7 @@ export const requestMutation = async <Input, Output>(parameter: {
       parameter.typeMap,
       rawJsonToStructuredJsonValue(jsonValue),
     ));
-  } catch {
-    return Result.error("error");
+  } catch (e) {
+    return Result.error(e.toString());
   }
 };
