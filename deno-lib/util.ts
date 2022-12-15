@@ -3,7 +3,7 @@
  */
 export const listAddSeparator = <Element>(
   list: ReadonlyArray<Element>,
-  separator: Element
+  separator: Element,
 ): ReadonlyArray<Element> => {
   const first = list[0];
   if (first === undefined) {
@@ -22,7 +22,7 @@ export const listAddSeparator = <Element>(
  */
 export const maybeMap = <Input, Output>(
   value: Input | undefined,
-  func: (input: Input) => Output
+  func: (input: Input) => Output,
 ): Output | undefined => {
   if (value === undefined) {
     return undefined;
@@ -37,7 +37,7 @@ export const maybeMap = <Input, Output>(
  */
 export const listDeleteAt = <Element>(
   list: ReadonlyArray<Element>,
-  index: number
+  index: number,
 ): ReadonlyArray<Element> => {
   return [
     ...list.slice(0, Math.max(0, index)),
@@ -48,7 +48,7 @@ export const listDeleteAt = <Element>(
 export const listUpdateAt = <Element>(
   list: ReadonlyArray<Element>,
   index: number,
-  func: (e: Element) => Element
+  func: (e: Element) => Element,
 ): ReadonlyArray<Element> => {
   const element = list[index];
   if (element === undefined) {
@@ -65,7 +65,7 @@ export const listUpdateAtOverAutoCreate = <Element>(
   list: ReadonlyArray<Element>,
   index: number,
   func: (e: Element | undefined) => Element,
-  fillElement: Element
+  fillElement: Element,
 ): ReadonlyArray<Element> => {
   const element = list[index];
   if (element === undefined) {
@@ -88,7 +88,7 @@ export const listUpdateAtOverAutoCreate = <Element>(
 export const listSetAt = <Element>(
   list: ReadonlyArray<Element>,
   index: number,
-  newElement: Element
+  newElement: Element,
 ): ReadonlyArray<Element> => {
   if (index < 0 || list.length <= index) {
     return list;
@@ -115,7 +115,7 @@ export const neverFunc = (): never => {
  */
 export const group = <T>(
   list: ReadonlyArray<T>,
-  groupIndexFunc: (element: T, index: number) => number
+  groupIndexFunc: (element: T, index: number) => number,
 ): ReadonlyArray<ReadonlyArray<T>> =>
   list.reduce<ReadonlyArray<ReadonlyArray<T>>>(
     (result, cur, index): ReadonlyArray<ReadonlyArray<T>> => {
@@ -123,15 +123,15 @@ export const group = <T>(
         result,
         groupIndexFunc(cur, index),
         (item) => [...(item ?? []), cur],
-        []
+        [],
       );
     },
-    []
+    [],
   );
 
 export const groupBySize = <T>(
   list: ReadonlyArray<T>,
-  size: number
+  size: number,
 ): ReadonlyArray<ReadonlyArray<T>> => {
   if (size < 0) {
     throw new Error("size need +");
@@ -156,11 +156,17 @@ export const createRandomId = (): string => {
 export const firstLowerCase = (text: string): string =>
   text.substring(0, 1).toLowerCase() + text.substring(1);
 
+/**
+ * 文字列の先頭が小文字かどうか
+ */
+export const isFirstLowerCase = (text: string): boolean =>
+  firstLowerCase(text) === text;
+
 export type NonEmptyArray<T> = readonly [T, ...ReadonlyArray<T>];
 
 export const nonEmptyArrayMap = <Input, Output>(
   list: NonEmptyArray<Input>,
-  func: (input: Input) => Output
+  func: (input: Input) => Output,
 ): NonEmptyArray<Output> => {
   const [head, ...tail] = list;
   return [func(head), ...tail.map(func)];
@@ -173,7 +179,7 @@ export const getLast = <T>(list: NonEmptyArray<T>): T => {
 
 export const arrayFromLength = <T>(
   length: number,
-  func: (index: number) => T
+  func: (index: number) => T,
 ): ReadonlyArray<T> => {
   return Array.from({ length }, (_, i) => func(i));
 };
@@ -186,7 +192,7 @@ export const arrayFromLength = <T>(
  */
 export const stringArrayEqual = (
   a: ReadonlyArray<string>,
-  b: ReadonlyArray<string>
+  b: ReadonlyArray<string>,
 ): boolean => {
   if (a.length !== b.length) {
     return false;
@@ -201,7 +207,7 @@ export const stringArrayEqual = (
 
 export const stringArrayMatchPrefix = (
   list: ReadonlyArray<string>,
-  prefix: ReadonlyArray<string>
+  prefix: ReadonlyArray<string>,
 ): boolean => {
   for (let i = 0; i < prefix.length; i += 1) {
     if (list[i] !== prefix[i]) {

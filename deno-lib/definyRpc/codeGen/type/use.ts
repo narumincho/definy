@@ -7,6 +7,7 @@ import {
   readonlySetType,
   urlType,
 } from "../../../jsTs/main.ts";
+import { isFirstLowerCase } from "../../../util.ts";
 import {
   CodeGenContext,
   collectedDefinyRpcTypeMapGet,
@@ -171,7 +172,7 @@ export const collectedDefinyRpcTypeUseToTsType = (
   type: Type<unknown>,
   context: CodeGenContext,
 ): data.TsType => {
-  if (type.name[0]?.toLocaleLowerCase() === type.name[0]) {
+  if (isFirstLowerCase(type.name)) {
     return useType(type, context);
   }
 
