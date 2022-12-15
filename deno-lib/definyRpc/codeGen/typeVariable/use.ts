@@ -1,17 +1,23 @@
 import { TsExpr } from "../../../jsTs/data.ts";
 import {
+  arrayLiteral,
   call,
   callMethod,
   data,
   get,
   identifierFromString,
+  memberKeyValue,
+  objectLiteral,
+  stringLiteral,
 } from "../../../jsTs/main.ts";
+import { isFirstLowerCase } from "../../../util.ts";
 import {
   CodeGenContext,
   collectedDefinyRpcTypeMapGet,
 } from "../../core/collectType.ts";
 import { Namespace, Type } from "../../core/coreType.ts";
 import { namespaceFromAndToToTypeScriptModuleName } from "../namespace.ts";
+import { namespaceToNamespaceExpr } from "../useNamespace.ts";
 
 /**
  * product の表現の型の値を生成する
@@ -54,6 +60,29 @@ export const typeToTypeExpr = (
   type: Type<unknown>,
   context: CodeGenContext,
 ): TsExpr => {
+  if (isFirstLowerCase(type.name)) {
+    return useFrom(
+      Namespace.coreType,
+      "Type",
+      context,
+      objectLiteral([
+        memberKeyValue(
+          "namespace",
+          namespaceToNamespaceExpr(type.namespace, context),
+        ),
+        memberKeyValue("name", stringLiteral(type.name)),
+        memberKeyValue(
+          "parameters",
+          arrayLiteral(
+            type.parameters.map((t) => ({
+              spread: false,
+              expr: typeToTypeExpr(t, context),
+            })),
+          ),
+        ),
+      ]),
+    );
+  }
   return callMethod(
     getTypeVariable(type.namespace, type.name, context),
     "type",

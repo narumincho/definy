@@ -1,4 +1,18 @@
 {
+    "lint": {
+        "files": {
+            "exclude": [
+                "nodeRedPackage/"
+            ]
+        }
+    },
+    "test": {
+        "files": {
+            "exclude": [
+                "nodeRedPackage/"
+            ]
+        }
+    },
     "compilerOptions": {
         "noUncheckedIndexedAccess": true,
         "exactOptionalPropertyTypes": true,

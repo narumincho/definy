@@ -3,9 +3,5 @@
   "editor.codeActionsOnSave": {
     "source.fixAll.eslint": true
   },
-  "purescript.addNpmPath": true,
-  "[purescript]": {
-    "editor.defaultFormatter": "mvakula.vscode-purty"
-  },
   "cSpell.words": ["concat"]
 }

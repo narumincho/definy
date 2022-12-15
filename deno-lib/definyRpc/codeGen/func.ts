@@ -9,7 +9,6 @@ import {
   newMap,
   newURL,
   nullishCoalescing,
-  numberLiteral,
   objectLiteral,
   promiseType,
   stringLiteral,
@@ -36,6 +35,7 @@ import {
 } from "./useNamespace.ts";
 import { just, nothing } from "./useMaybe.ts";
 import { collectedDefinyRpcTypeUseToTsType } from "./type/use.ts";
+import { isFirstLowerCase } from "../../util.ts";
 
 export const apiFuncToTsFunction = (parameter: {
   readonly func: ApiFunction;
@@ -50,10 +50,18 @@ export const apiFuncToTsFunction = (parameter: {
     parameter.func.input.name,
   );
 
-  const usedTypeSet: ReadonlySet<string> = new Set([
-    ...collectUsedTypeInType(parameter.func.input, parameter.context.map),
-    ...collectUsedTypeInType(parameter.func.output, parameter.context.map),
-  ]);
+  const inputUsedTypeIdSet = collectUsedTypeInTypeWithParameters(
+    parameter.func.input,
+    parameter.context.map,
+    new Set(),
+  );
+
+  const usedTypeIdSet: ReadonlySet<string> =
+    collectUsedTypeInTypeWithParameters(
+      parameter.func.output,
+      parameter.context.map,
+      inputUsedTypeIdSet,
+    );
 
   return {
     name: identifierFromString(parameter.func.name),
@@ -75,7 +83,7 @@ export const apiFuncToTsFunction = (parameter: {
           parameter.func.output,
           parameter.context,
         ),
-        { _: "StringLiteral", string: "error" },
+        { _: "String" },
         fromFunctionNamespace(parameter.func.namespace),
       ),
     ),
@@ -132,7 +140,7 @@ export const apiFuncToTsFunction = (parameter: {
                   arrayLiteral(
                     [...parameter.context.map].flatMap(
                       ([typeId, typeInfo]): ReadonlyArray<ArrayItem> => {
-                        if (usedTypeSet.has(typeId)) {
+                        if (usedTypeIdSet.has(typeId)) {
                           return [{
                             expr: arrayLiteral([{
                               expr: stringLiteral(typeId),
@@ -219,17 +227,83 @@ const funcParameterType = (
 
 /**
  * 型の構造で使われている型の集合を返す
+ *
+ * @param set すでに回収した型の名前. 無限ループを避けるため
  */
-const collectUsedTypeInType = <T>(
+const collectUsedTypeInTypeWithParameters = <T>(
   type: Type<T>,
   map: CollectedDefinyRpcTypeMap,
+  set: ReadonlySet<string>,
 ): ReadonlySet<string> => {
-  return new Set([
-    namespaceToString(type.namespace) + "." + type.name,
-    ...type.parameters.flatMap((
-      parameter,
-    ) => [...collectUsedTypeInType(parameter, map)]),
-  ]);
+  return type.parameters.reduce(
+    (prev, parameter) =>
+      collectUsedTypeInTypeWithParameters(parameter, map, prev),
+    collectUsedTypeInType(type.namespace, type.name, map, set),
+  );
+};
+
+/**
+ * 型の構造で使われている型の集合を返す
+ *
+ * @param set すでに回収した型の名前. 無限ループを避けるため
+ */
+const collectUsedTypeInType = <T>(
+  typeNamespace: Namespace,
+  typeName: string,
+  map: CollectedDefinyRpcTypeMap,
+  set: ReadonlySet<string>,
+): ReadonlySet<string> => {
+  const typeInfo = collectedDefinyRpcTypeMapGet(map, typeNamespace, typeName);
+  const typeId = namespaceToString(typeNamespace) + "." + typeName;
+  if (set.has(typeId)) {
+    return set;
+  }
+  const addedSet: ReadonlySet<string> = new Set([...set, typeId]);
+
+  switch (typeInfo.body.type) {
+    case "string":
+    case "boolean":
+    case "number":
+    case "url":
+    case "unit":
+    case "list":
+    case "set":
+    case "map":
+      return addedSet;
+    case "product": {
+      return typeInfo.body.value.flatMap((f) => {
+        if (isFirstLowerCase(f.type.name)) {
+          return [];
+        }
+        return [f.type];
+      })
+        .reduce((prev, t) => {
+          return collectUsedTypeInTypeWithParameters(
+            t,
+            map,
+            prev,
+          );
+        }, addedSet);
+    }
+    case "sum": {
+      return typeInfo.body.value.flatMap((pattern) => {
+        if (
+          pattern.parameter.type === "nothing" ||
+          isFirstLowerCase(pattern.parameter.value.name)
+        ) {
+          return [];
+        }
+        return [pattern.parameter.value];
+      })
+        .reduce((prev, t) => {
+          return collectUsedTypeInTypeWithParameters(
+            t,
+            map,
+            prev,
+          );
+        }, addedSet);
+    }
+  }
 };
 
 const typeInfoToExpr = (

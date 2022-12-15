@@ -26,7 +26,8 @@ export const collectedDefinyRpcTypeMapGet = (
   const typeInfo = map.get(createTypeKey(namespace, typeName));
   if (typeInfo === undefined) {
     throw new Error(
-      "type (" + createTypeKey(namespace, typeName) + ") not found",
+      "type (" + createTypeKey(namespace, typeName) + ") not found. in [" +
+        [...map.keys()].join(", ") + "]",
     );
   }
   return typeInfo;

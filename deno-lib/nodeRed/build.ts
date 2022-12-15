@@ -41,7 +41,7 @@ const outDir = new URL(import.meta.resolve("../nodeRedPackage/"));
 
 await emptyDir(outDir);
 
-const version = "1.1.0";
+const version = "1.2.0";
 
 const entry = import.meta.resolve("./server/main.ts");
 

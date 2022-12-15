@@ -29,28 +29,34 @@ export default function (RED: NodeAPI) {
       readonly functionDetail: FunctionDetail;
     },
   ) => {
-    // eslint-disable-next-line func-style
     return function (this: Node, config: NodeDef): void {
       RED.nodes.createNode(this, config);
 
       this.on("input", (msg, send) => {
-        requestQuery({
-          url: new URL(parameter.url),
-          input: msg,
-          namespace: parameter.functionDetail.namespace,
-          name: parameter.functionDetail.name,
-          inputType: parameter.functionDetail.input,
-          outputType: parameter.functionDetail.output,
-          typeMap: new Map(
-            createdServer.get(parameter.url.toString())?.typeList.map(
-              (
-                type,
-              ) => [namespaceToString(type.namespace) + "." + type.name, type],
-            ) ?? [],
-          ),
-        }).then((json) => {
-          send({ payload: json });
-        });
+        try {
+          requestQuery({
+            url: new URL(parameter.url),
+            input: msg.payload,
+            namespace: parameter.functionDetail.namespace,
+            name: parameter.functionDetail.name,
+            inputType: parameter.functionDetail.input,
+            outputType: parameter.functionDetail.output,
+            typeMap: new Map(
+              createdServer.get(parameter.url.toString())?.typeList.map(
+                (
+                  type,
+                ) => [
+                  namespaceToString(type.namespace) + "." + type.name,
+                  type,
+                ],
+              ) ?? [],
+            ),
+          }).then((json) => {
+            send({ payload: json });
+          });
+        } catch (e) {
+          console.error(e);
+        }
       });
     };
   };
@@ -83,7 +89,12 @@ export default function (RED: NodeAPI) {
         setStatus({
           shape: "ring",
           fill: "red",
-          text: urlText + " は definy RPC のサーバーではないか, エラーが発生しました",
+          text: urlText + " は definy RPC のサーバーではないか, エラーが発生しました..." +
+            JSON.stringify({
+              name: name.value,
+              functionList: functionList.value,
+              typeList: typeList.value,
+            }),
         });
         return;
       }
@@ -111,7 +122,6 @@ export default function (RED: NodeAPI) {
     });
   };
 
-  // eslint-disable-next-line func-style
   function CreateDefinyRpcNode(
     this: Node,
     config: NodeDef & { url: string },
@@ -124,13 +134,4 @@ export default function (RED: NodeAPI) {
     "create-definy-rpc-node",
     CreateDefinyRpcNode,
   );
-
-  console.log(RED);
-  // RED.nodes.eachNode((node) => {
-  //   console.log("e", node);
-  //   if (node.type === "create-definy-rpc-node") {
-  //     console.log("matched node ", node);
-  //     console.log("matched node get ", RED.nodes.getNode(node.id));
-  //   }
-  // });
 }

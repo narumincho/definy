@@ -1,9 +1,4 @@
-import {
-  data,
-  memberKeyValue,
-  objectLiteral,
-  stringLiteral,
-} from "../../jsTs/main.ts";
+import { data } from "../../jsTs/main.ts";
 import { CodeGenContext } from "../core/collectType.ts";
 import { Namespace } from "../core/coreType.ts";
 import { useTag } from "./typeVariable/use.ts";
