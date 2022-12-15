@@ -1,16 +1,5 @@
-import {
-  assert,
-  assertEquals,
-} from "https://deno.land/std@0.167.0/testing/asserts.ts";
-import { serve } from "https://deno.land/std@0.167.0/http/server.ts";
+import { assertEquals } from "https://deno.land/std@0.167.0/testing/asserts.ts";
 import { handleRequest } from "./server/definyRpc.ts";
-import { simpleResponseToResponse } from "../simpleRequestResponse/simpleResponse.ts";
-import { requestObjectToSimpleRequest } from "../simpleRequestResponse/simpleRequest.ts";
-import { name } from "./example/generated/meta.ts";
-import { requestQuery } from "./core/request.ts";
-import { FunctionNamespace, String, Unit } from "./core/coreType.ts";
-import { coreTypeInfoList } from "./core/coreTypeInfo.ts";
-import { namespaceToString } from "./codeGen/namespace.ts";
 
 Deno.test("get server name", async () => {
   const response = await handleRequest(
