@@ -29,11 +29,7 @@ export const requestQuery = async <Input, Output>(parameter: {
   readonly typeMap: CollectedDefinyRpcTypeMap;
 }): Promise<Result<Output, string>> => {
   const url = new URL(parameter.url.toString());
-  url.pathname = url.pathname + "/" +
-    (parameter.namespace.type === "meta"
-      ? "meta/"
-      : "api/" + parameter.namespace.value.join("/") + "/") +
-    parameter.name;
+  url.pathname = requestPath(url.pathname, parameter.namespace, parameter.name);
 
   const inputAsStructuredJson = toStructuredJsonValue(
     parameter.inputType,
@@ -143,11 +139,7 @@ export const requestMutation = async <Input, Output>(parameter: {
   readonly typeMap: CollectedDefinyRpcTypeMap;
 }): Promise<Result<Output, string>> => {
   const url = new URL(parameter.url.toString());
-  url.pathname = url.pathname + "/" +
-    (parameter.namespace.type === "meta"
-      ? "meta/"
-      : "api/" + parameter.namespace.value.join("/") + "/") +
-    parameter.name;
+  url.pathname = requestPath(url.pathname, parameter.namespace, parameter.name);
 
   const inputAsStructuredJson = toStructuredJsonValue(
     parameter.inputType,
@@ -183,4 +175,16 @@ export const requestMutation = async <Input, Output>(parameter: {
   } catch (e) {
     return Result.error(e.toString());
   }
+};
+
+const requestPath = (
+  pathname: string,
+  namespace: FunctionNamespace,
+  name: string,
+): string => {
+  return pathname + (pathname.endsWith("/") ? "" : "/") +
+    (namespace.type === "meta"
+      ? "meta/"
+      : "api/" + namespace.value.join("/") + "/") +
+    name;
 };
