@@ -16,10 +16,18 @@ import {
 } from "../../simpleRequestResponse/simpleResponse.ts";
 import { stringArrayEqual, stringArrayMatchPrefix } from "../../util.ts";
 import { toBytes } from "https://deno.land/x/fast_base64@v0.1.7/mod.ts";
-import { FunctionNamespace, StructuredJsonValue } from "../core/coreType.ts";
+import {
+  FunctionNamespace,
+  StructuredJsonValue,
+  Type,
+} from "../core/coreType.ts";
 import { fromStructuredJsonValue } from "../core/fromStructuredJson.ts";
 import { toStructuredJsonValue } from "../core/toStructuredJson.ts";
-import { createTypeKey } from "../core/collectType.ts";
+import {
+  CollectedDefinyRpcTypeMap,
+  collectedDefinyRpcTypeMapGet,
+  createTypeKey,
+} from "../core/collectType.ts";
 
 const editorPath = "_editor";
 
@@ -76,12 +84,6 @@ export const handleRequest = async (
   if (request.method === "OPTIONS") {
     return simpleResponseOkEmpty;
   }
-
-  const paramJson = request.url.query.get("param");
-  const paramJsonParsed: StructuredJsonValue =
-    (typeof paramJson === "string"
-      ? structuredJsonParse(paramJson)
-      : undefined) ?? StructuredJsonValue.null;
 
   if (stringArrayEqual(pathListRemovePrefix, [])) {
     return simpleResponseHtml(`<!doctype html>
@@ -145,16 +147,40 @@ export const handleRequest = async (
         ) {
           return unauthorized("invalid account token in Authorization header");
         }
+        const input = getInputFromInputTypeAndSimpleRequest(
+          typeMap,
+          func.input,
+          request,
+        );
+        if (input === undefined) {
+          throw new Error("request として解釈できなかった");
+        }
         const apiFunctionResult = await func.resolve(
-          fromStructuredJsonValue(func.input, typeMap, paramJsonParsed),
+          fromStructuredJsonValue(
+            func.input,
+            typeMap,
+            input,
+          ),
           authorizationHeaderValue.credentials as AccountToken,
         );
         return simpleResponsePrivateJson(
           toStructuredJsonValue(func.output, typeMap, apiFunctionResult),
         );
       }
+      const input = getInputFromInputTypeAndSimpleRequest(
+        typeMap,
+        func.input,
+        request,
+      );
+      if (input === undefined) {
+        throw new Error("request として解釈できなかった");
+      }
       const apiFunctionResult = await func.resolve(
-        fromStructuredJsonValue(func.input, typeMap, paramJsonParsed),
+        fromStructuredJsonValue(
+          func.input,
+          typeMap,
+          input,
+        ),
         undefined,
       );
       return simpleResponseCache5SecJson(
@@ -187,4 +213,61 @@ export const isMatchFunction = (
     ["api", ...functionNamespace.value, functionName],
     pathList,
   );
+};
+
+const getInputFromInputTypeAndSimpleRequest = <T>(
+  typeMap: CollectedDefinyRpcTypeMap,
+  inputType: Type<T>,
+  request: SimpleRequest,
+): StructuredJsonValue | undefined => {
+  const inputTypeInfo = collectedDefinyRpcTypeMapGet(
+    typeMap,
+    inputType.namespace,
+    inputType.name,
+  );
+  return getInputFromSimpleRequest(
+    request,
+    inputTypeInfo.body.type === "string"
+      ? "string"
+      : inputTypeInfo.body.type === "number"
+      ? "number"
+      : "other",
+  );
+};
+
+const getInputFromSimpleRequest = (
+  request: SimpleRequest,
+  type: "string" | "number" | "other",
+): StructuredJsonValue | undefined => {
+  if (request.method === "GET") {
+    switch (type) {
+      case "string": {
+        const qValue = request.url.query.get("q");
+        if (qValue === undefined) {
+          return undefined;
+        }
+        return StructuredJsonValue.string(qValue);
+      }
+      case "number": {
+        const qValue = Number.parseInt(request.url.query.get("q") ?? "", 10);
+        if (Number.isNaN(qValue)) {
+          return undefined;
+        }
+        return StructuredJsonValue.number(qValue);
+      }
+      case "other": {
+        return StructuredJsonValue.object(
+          new Map(
+            [...request.url.query].map((
+              [key, value],
+            ) => [key, StructuredJsonValue.string(value)]),
+          ),
+        );
+      }
+    }
+  }
+  if (request.body === undefined) {
+    return undefined;
+  }
+  return structuredJsonParse(new TextDecoder().decode(request.body));
 };

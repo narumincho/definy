@@ -6,6 +6,13 @@
             ]
         }
     },
+    "test": {
+        "files": {
+            "exclude": [
+                "nodeRedPackage/"
+            ]
+        }
+    },
     "compilerOptions": {
         "noUncheckedIndexedAccess": true,
         "exactOptionalPropertyTypes": true,

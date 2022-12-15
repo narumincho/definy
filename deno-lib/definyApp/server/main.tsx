@@ -66,7 +66,7 @@ export const startDefinyServer = (
   };
   serve(
     async (request) => {
-      const simpleRequest = requestObjectToSimpleRequest(request);
+      const simpleRequest = await requestObjectToSimpleRequest(request);
       if (simpleRequest === undefined) {
         return new Response("simpleRequestに変換できなかった", { status: 400 });
       }

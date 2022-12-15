@@ -29,7 +29,6 @@ export default function (RED: NodeAPI) {
       readonly functionDetail: FunctionDetail;
     },
   ) => {
-    // eslint-disable-next-line func-style
     return function (this: Node, config: NodeDef): void {
       RED.nodes.createNode(this, config);
 
@@ -76,6 +75,7 @@ export default function (RED: NodeAPI) {
       functionListByName({ url }),
       typeList({ url }),
     ]).then(([name, functionList, typeList]) => {
+      console.log(name, functionList, typeList);
       if (
         name.type === "error" || functionList.type === "error" ||
         typeList.type === "error"
@@ -83,7 +83,7 @@ export default function (RED: NodeAPI) {
         setStatus({
           shape: "ring",
           fill: "red",
-          text: urlText + " は definy RPC のサーバーではないか, エラーが発生しました",
+          text: urlText + " は definy RPC のサーバーではないか, エラーが発生しました...",
         });
         return;
       }
@@ -111,7 +111,6 @@ export default function (RED: NodeAPI) {
     });
   };
 
-  // eslint-disable-next-line func-style
   function CreateDefinyRpcNode(
     this: Node,
     config: NodeDef & { url: string },
@@ -124,13 +123,4 @@ export default function (RED: NodeAPI) {
     "create-definy-rpc-node",
     CreateDefinyRpcNode,
   );
-
-  console.log(RED);
-  // RED.nodes.eachNode((node) => {
-  //   console.log("e", node);
-  //   if (node.type === "create-definy-rpc-node") {
-  //     console.log("matched node ", node);
-  //     console.log("matched node get ", RED.nodes.getNode(node.id));
-  //   }
-  // });
 }

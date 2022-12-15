@@ -7,6 +7,9 @@ const collectTsOrTsxFilePath = async (
   const pathSet = new Set<string>();
   for await (const fileOrDirectory of Deno.readDir(directoryPath)) {
     if (fileOrDirectory.isDirectory) {
+      if (fileOrDirectory.name === "nodeRedPackage") {
+        continue;
+      }
       const fullPath = new URL(
         fileOrDirectory.name + "/",
         directoryPath,

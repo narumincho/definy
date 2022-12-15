@@ -42,7 +42,7 @@ export const requestQuery = async <Input, Output>(parameter: {
   );
 
   try {
-    if (parameter.accountToken !== undefined) {
+    if (parameter.accountToken === undefined) {
       const search = structuredJsonValueToUrlSearch(
         inputAsStructuredJson,
       );
