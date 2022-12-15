@@ -33,23 +33,30 @@ export default function (RED: NodeAPI) {
       RED.nodes.createNode(this, config);
 
       this.on("input", (msg, send) => {
-        requestQuery({
-          url: new URL(parameter.url),
-          input: msg,
-          namespace: parameter.functionDetail.namespace,
-          name: parameter.functionDetail.name,
-          inputType: parameter.functionDetail.input,
-          outputType: parameter.functionDetail.output,
-          typeMap: new Map(
-            createdServer.get(parameter.url.toString())?.typeList.map(
-              (
-                type,
-              ) => [namespaceToString(type.namespace) + "." + type.name, type],
-            ) ?? [],
-          ),
-        }).then((json) => {
-          send({ payload: json });
-        });
+        try {
+          requestQuery({
+            url: new URL(parameter.url),
+            input: msg.payload,
+            namespace: parameter.functionDetail.namespace,
+            name: parameter.functionDetail.name,
+            inputType: parameter.functionDetail.input,
+            outputType: parameter.functionDetail.output,
+            typeMap: new Map(
+              createdServer.get(parameter.url.toString())?.typeList.map(
+                (
+                  type,
+                ) => [
+                  namespaceToString(type.namespace) + "." + type.name,
+                  type,
+                ],
+              ) ?? [],
+            ),
+          }).then((json) => {
+            send({ payload: json });
+          });
+        } catch (e) {
+          console.error(e);
+        }
       });
     };
   };
@@ -75,7 +82,6 @@ export default function (RED: NodeAPI) {
       functionListByName({ url }),
       typeList({ url }),
     ]).then(([name, functionList, typeList]) => {
-      console.log(name, functionList, typeList);
       if (
         name.type === "error" || functionList.type === "error" ||
         typeList.type === "error"
@@ -83,7 +89,12 @@ export default function (RED: NodeAPI) {
         setStatus({
           shape: "ring",
           fill: "red",
-          text: urlText + " は definy RPC のサーバーではないか, エラーが発生しました...",
+          text: urlText + " は definy RPC のサーバーではないか, エラーが発生しました..." +
+            JSON.stringify({
+              name: name.value,
+              functionList: functionList.value,
+              typeList: typeList.value,
+            }),
         });
         return;
       }

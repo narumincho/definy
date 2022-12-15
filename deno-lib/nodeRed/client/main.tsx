@@ -9,19 +9,8 @@ import {
   functionNamespaceToString,
   namespaceToString,
 } from "../../definyRpc/codeGen/namespace.ts";
-
-const escapeHtml = (text: string): string => {
-  return text.replace(/[&'`"<>]/ug, (match) => {
-    return {
-      "&": "&amp;",
-      "'": "&#x27;",
-      "`": "&#x60;",
-      '"': "&quot;",
-      "<": "&lt;",
-      ">": "&gt;",
-    }[match] as string;
-  });
-};
+import { TypeView } from "../../definyRpc/clientEditor/DetailView.tsx";
+import { renderToString } from "https://esm.sh/react-dom@18.2.0/server?pin=v99";
 
 const createNodeFromStatus = (statusAsString: string): void => {
   const status: Status = JSON.parse(statusAsString);
@@ -33,19 +22,15 @@ const createNodeFromStatus = (statusAsString: string): void => {
     const scriptElement = document.createElement("script");
     scriptElement.type = "text/html";
     scriptElement.dataset["helpName"] = id;
-    scriptElement.textContent = `<div>
-  <div>${escapeHtml(functionNamespaceToString(func.namespace))}</div>
-  <h2>${escapeHtml(func.name)}</h2>
-  <div>${escapeHtml(func.description)}</div>
-  <div>input: ${
-      escapeHtml(
-        namespaceToString(func.input.namespace) + "." + func.input.name,
-      )
-    }</div>
-  <div>output: ${
-      namespaceToString(func.output.namespace) + "." + func.output.name
-    }</div>
-</>`;
+    scriptElement.textContent = renderToString(
+      <div>
+        <div>{functionNamespaceToString(func.namespace)}</div>
+        <h2>{func.name}</h2>
+        <div>{func.description}</div>
+        <div>input: {<TypeView type={func.input} />}</div>
+        <div>output: {<TypeView type={func.output} />}</div>
+      </div>,
+    );
     document.getElementById("definy-html-output")
       ?.appendChild(
         scriptElement,

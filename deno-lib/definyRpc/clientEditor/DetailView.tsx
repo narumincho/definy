@@ -55,7 +55,7 @@ export const DetailView = (props: {
   );
 };
 
-const TypeView = <T extends unknown>(
+export const TypeView = <T extends unknown>(
   props: { readonly type: Type<T> },
 ): React.ReactElement => {
   return (
