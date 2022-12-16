@@ -1,6 +1,6 @@
-import { extname } from "https://deno.land/std@0.167.0/path/posix.ts";
+import { extname } from "https://deno.land/std@0.168.0/path/posix.ts";
 
-const collectTsOrTsxFilePath = async (
+export const collectTsOrTsxFilePath = async (
   directoryPath: URL,
 ): Promise<ReadonlySet<string>> => {
   console.log(directoryPath.href);
