@@ -9,7 +9,7 @@ const generateClientHtml = async (): Promise<string> => {
   const result = await esbuild.build({
     plugins: [denoPlugin()],
     entryPoints: [
-      fromFileUrlPosix(import.meta.resolve("./client/main.tsx")),
+      fromFileUrlPosix(import.meta.resolve("../nodeRed/client/main.tsx")),
     ],
     write: false,
     bundle: true,
@@ -43,7 +43,7 @@ await emptyDir(outDir);
 
 const version = "1.2.0";
 
-const entry = import.meta.resolve("./server/main.ts");
+const entry = import.meta.resolve("../nodeRed/server/main.ts");
 
 console.log(entry.toString(), fromFileUrl(entry));
 
