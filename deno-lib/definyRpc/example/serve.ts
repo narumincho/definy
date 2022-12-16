@@ -1,5 +1,5 @@
 import { DefinyRpcParameter, handleRequest } from "../server/definyRpc.ts";
-import { funcList } from "./exampleFunc.ts";
+import { functionAndTypeList } from "./exampleFunc.ts";
 import { requestObjectToSimpleRequest } from "../../simpleRequestResponse/simpleRequest.ts";
 import { simpleResponseToResponse } from "../../simpleRequestResponse/simpleResponse.ts";
 import { serve } from "https://deno.land/std@0.167.0/http/server.ts";
@@ -14,7 +14,7 @@ export const startExampleServer = (
     async (request) => {
       const sampleDefinyRpcServerParameter: DefinyRpcParameter = {
         name: "example",
-        all: funcList,
+        all: functionAndTypeList,
         originHint: new URL(request.url).origin,
         codeGenOutputFolderPath: parameter?.codeGenOutputFolderPath,
       };

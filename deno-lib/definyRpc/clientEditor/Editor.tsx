@@ -84,12 +84,16 @@ export const Editor = (props: {
                 inputType: selectedFuncDetail.input,
                 outputType: selectedFuncDetail.output,
                 typeMap: new Map(
-                  coreTypeInfoList.map((
-                    info,
-                  ) => [
-                    namespaceToString(info.namespace) + "." + info.name,
-                    info,
-                  ]),
+                  [
+                    ...coreTypeInfoList,
+                    ...props.functionAndTypeList?.typeList ?? [],
+                  ]
+                    .map((
+                      info,
+                    ) => [
+                      namespaceToString(info.namespace) + "." + info.name,
+                      info,
+                    ]),
                 ),
                 name: selectedFuncDetail.name,
                 namespace: selectedFuncDetail.namespace,

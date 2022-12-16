@@ -1,11 +1,42 @@
 import { createApiFunction, FunctionAndTypeList } from "../core/apiFunction.ts";
-import { FunctionNamespace, Number, String, Unit } from "../core/coreType.ts";
+import {
+  DefinyRpcTypeInfo,
+  Field,
+  FunctionNamespace,
+  Maybe,
+  Namespace,
+  Number,
+  String,
+  TypeBody,
+  Unit,
+} from "../core/coreType.ts";
+import { Account } from "./generated/api/main.ts";
 
 export const mainNamespace = FunctionNamespace.local(["main"]);
 
-export const funcList = (): FunctionAndTypeList => {
+export const functionAndTypeList = (): FunctionAndTypeList => {
   return {
-    typeList: [],
+    typeList: [
+      DefinyRpcTypeInfo.from({
+        namespace: Namespace.local(["main"]),
+        name: "Account",
+        description: "アカウント",
+        attribute: Maybe.nothing(),
+        parameter: [],
+        body: TypeBody.product([
+          Field.from({
+            name: "name",
+            description: "アカウント名",
+            type: String.type(),
+          }),
+          Field.from({
+            name: "age",
+            description: "年齢",
+            type: Number.type(),
+          }),
+        ]),
+      }),
+    ],
     functionsList: [
       createApiFunction({
         namespace: mainNamespace,
@@ -41,6 +72,21 @@ export const funcList = (): FunctionAndTypeList => {
         output: String.type(),
         resolve: (input) => {
           return "ok".repeat(input);
+        },
+      }),
+      createApiFunction({
+        namespace: FunctionNamespace.local(["main"]),
+        description: "カスタムAPI Function",
+        name: "useCustomType",
+        input: Unit.type(),
+        output: Account.type(),
+        isMutation: false,
+        needAuthentication: false,
+        resolve: () => {
+          return Account.from({
+            name: "ラフィーア",
+            age: 18,
+          });
         },
       }),
     ],
