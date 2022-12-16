@@ -5,6 +5,51 @@ import * as a from "https://raw.githubusercontent.com/narumincho/definy/f662850e
 import * as b from "https://raw.githubusercontent.com/narumincho/definy/f662850e6a0cb9ec7a69e60f424624c07dd417fa/deno-lib/definyRpc/core/request.ts";
 
 /**
+ * アカウント
+ */
+export type Account = {
+  /**
+   * アカウント名
+   */
+  readonly name: string;
+  /**
+   * 年齢
+   */
+  readonly age: number;
+  readonly [Symbol.toStringTag]: "main.Account";
+};
+
+/**
+ * アカウント
+ */
+export const Account: {
+  /**
+   * Account の型
+   */
+  readonly type: () => a.Type<Account>;
+  /**
+   * オブジェクトから作成する. 余計なフィールドがレスポンスに含まれてしまうのを防ぐ. 型のチェックはしない
+   */
+  readonly from: (
+    a: globalThis.Omit<Account, typeof Symbol.toStringTag>
+  ) => Account;
+} = {
+  type: (): a.Type<Account> =>
+    a.Type.from({
+      namespace: a.Namespace.local(["main"]),
+      name: "Account",
+      parameters: [],
+    }),
+  from: (
+    obj: globalThis.Omit<Account, typeof Symbol.toStringTag>
+  ): Account => ({
+    name: obj.name,
+    age: obj.age,
+    [Symbol.toStringTag]: "main.Account",
+  }),
+};
+
+/**
  * hello と挨拶が返ってくる
  */
 export const hello = (parameter: {
@@ -118,6 +163,82 @@ export const repeat = (parameter: {
           parameter: [],
           attribute: a.Maybe.nothing(),
           body: a.TypeBody.string,
+        }),
+      ],
+      [
+        "*coreType.Number",
+        a.DefinyRpcTypeInfo.from({
+          namespace: a.Namespace.coreType,
+          name: "Number",
+          description: "64bit 浮動小数点数",
+          parameter: [],
+          attribute: a.Maybe.nothing(),
+          body: a.TypeBody.number,
+        }),
+      ],
+    ]),
+  });
+
+/**
+ * カスタムAPI Function
+ */
+export const useCustomType = (parameter: {
+  /**
+   * api end point
+   * @default new URL("http://localhost:2520")
+   */
+  readonly url?: globalThis.URL | undefined;
+}): globalThis.Promise<a.Result<Account, string>> =>
+  b.requestQuery({
+    url: parameter.url ?? new globalThis.URL("http://localhost:2520"),
+    namespace: a.FunctionNamespace.local(["main"]),
+    name: "useCustomType",
+    inputType: a.Unit.type(),
+    outputType: Account.type(),
+    input: undefined,
+    typeMap: new Map([
+      [
+        "main.Account",
+        a.DefinyRpcTypeInfo.from({
+          namespace: a.Namespace.local(["main"]),
+          name: "Account",
+          description: "アカウント",
+          parameter: [],
+          attribute: a.Maybe.nothing(),
+          body: a.TypeBody.product([
+            a.Field.from({
+              name: "name",
+              description: "アカウント名",
+              type: a.String.type(),
+            }),
+            a.Field.from({
+              name: "age",
+              description: "年齢",
+              type: a.Number.type(),
+            }),
+          ]),
+        }),
+      ],
+      [
+        "*coreType.String",
+        a.DefinyRpcTypeInfo.from({
+          namespace: a.Namespace.coreType,
+          name: "String",
+          description: "文字列",
+          parameter: [],
+          attribute: a.Maybe.nothing(),
+          body: a.TypeBody.string,
+        }),
+      ],
+      [
+        "*coreType.Unit",
+        a.DefinyRpcTypeInfo.from({
+          namespace: a.Namespace.coreType,
+          name: "Unit",
+          description: "値が1つだけ",
+          parameter: [],
+          attribute: a.Maybe.nothing(),
+          body: a.TypeBody.unit,
         }),
       ],
       [
