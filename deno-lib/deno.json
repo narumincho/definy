@@ -2,14 +2,16 @@
     "lint": {
         "files": {
             "exclude": [
-                "nodeRedPackage/"
+                "nodeRedPackage/",
+                "npm/"
             ]
         }
     },
     "test": {
         "files": {
             "exclude": [
-                "nodeRedPackage/"
+                "nodeRedPackage/",
+                "npm/"
             ]
         }
     },
