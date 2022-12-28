@@ -1,7 +1,7 @@
 import {
   assert,
   assertEquals,
-} from "https://deno.land/std@0.168.0/testing/asserts.ts";
+} from "https://deno.land/std@0.170.0/testing/asserts.ts";
 import { listDeleteAt, listSetAt, stringArrayMatchPrefix } from "./util.ts";
 
 Deno.test("stringArrayMatchPrefix match", () => {

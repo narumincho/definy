@@ -1,4 +1,4 @@
-import React from "https://esm.sh/react@18.2.0?pin=v99";
+import React from "https://esm.sh/react@18.2.0?pin=v102";
 import { TypeView } from "../../definyRpc/clientEditor/DetailView.tsx";
 import {
   DefinyRpcTypeInfo,
@@ -16,8 +16,7 @@ export const GeneratedNodeForm = (
       <h2>{props.functionDetail.name}</h2>
       <div>{props.functionDetail.description}</div>
       <div>
-        input:{" "}
-        {
+        input: {
           <TypeView
             type={props.functionDetail.input}
             typeList={props.typeList}
@@ -25,8 +24,7 @@ export const GeneratedNodeForm = (
         }
       </div>
       <div>
-        output:{" "}
-        {
+        output: {
           <TypeView
             type={props.functionDetail.output}
             typeList={props.typeList}
