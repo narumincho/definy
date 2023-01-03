@@ -19,10 +19,11 @@ Firefox <-- 操作 --> UserB
 
 **開発用** がついているコマンドは, このリポジトリをクローンしたあとに
 
-PowerShell, bash などで カレントディレクトリをこの ./README.md が書かれているディレクトリに変更したあとに実行する必要がある
+PowerShell, bash などで カレントディレクトリをこの ./README.md
+が書かれているディレクトリに変更したあとに実行する必要がある
 
-**開発用** がついてないコマンドは, [deno](https://deno.land/) をインストールすれば,
-リポジトリをクローンしなくても実行することができる
+**開発用** がついてないコマンドは, [deno](https://deno.land/)
+をインストールすれば, リポジトリをクローンしなくても実行することができる
 
 ### **開発用** 全体の型チェックと, deno.lock の生成 (CI環境ではチェック)
 
@@ -107,14 +108,15 @@ deno run --check ./entryPoints/definyRpcCoreGenerate.ts
 
 ## @definy/node-red
 
-Node RED から definy RPC のサーバーにデータを送信できる (できるようにする) ライブラリ
+Node RED から definy RPC のサーバーにデータを送信できる (できるようにする)
+ライブラリ
 
 https://www.npmjs.com/package/@definy/node-red
 
 ### **開発用*** Node.js 向けにビルド
 
 ```ps1
-deno run --check -A ./nodeRed/build.ts
+deno run --check -A ./entryPoints/nodeRedBuild.ts
 ```
 
 ### **開発用*** npm に公開
@@ -129,4 +131,10 @@ cd ./nodeRedPackage && npm publish .
 cd ~/.node-red
 node-red
 npm install path/to/nodeRedPackage
+```
+
+### Node.js から利用できるようにするための npm パッケージ definy
+
+```ps1
+deno run --check -A ./entryPoints/buildForNpm.ts
 ```

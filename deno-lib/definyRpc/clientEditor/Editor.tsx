@@ -1,4 +1,4 @@
-import React from "https://esm.sh/react@18.2.0?pin=v99";
+import React from "https://esm.sh/react@18.2.0?pin=v102";
 import { Button } from "../../editor/Button.tsx";
 import { DetailView } from "./DetailView.tsx";
 import { Result } from "./Result.tsx";

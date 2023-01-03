@@ -1,4 +1,4 @@
-import React from "https://esm.sh/react@18.2.0?pin=v99";
+import React from "https://esm.sh/react@18.2.0?pin=v102";
 import { c, toStyleAndHash } from "../../cssInJs/mod.ts";
 import { Language } from "../../zodType.ts";
 import { createGoogleLogInUrl } from "../apiClient/api/main.ts";
@@ -48,7 +48,9 @@ export const App = (props: AppProps): React.ReactElement => {
   );
 
   if (props.location === undefined) {
-    return <div className={c(containerStyle)}>not found... 見つからなかった</div>;
+    return (
+      <div className={c(containerStyle)}>not found... 見つからなかった</div>
+    );
   }
 
   switch (props.location.type) {
@@ -84,8 +86,11 @@ export const App = (props: AppProps): React.ReactElement => {
               }}
             />
           </div>
-          {isRequestLogInUrl === "error" && <div>ログインURLの発行に失敗しました</div>}
-          {isRequestLogInUrl === "jumping" && <div>ログイン画面に推移中...</div>}
+          {isRequestLogInUrl === "error" && (
+            <div>ログインURLの発行に失敗しました</div>
+          )}
+          {isRequestLogInUrl === "jumping" && <div>ログイン画面に推移中...
+          </div>}
           {isRequestLogInUrl === "requestingLogInUrl" && (
             <div>ログインURLを発行中...</div>
           )}

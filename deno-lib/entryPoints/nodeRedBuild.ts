@@ -1,15 +1,15 @@
 import { writeTextFileWithLog } from "../writeFileAndLog.ts";
 import * as esbuild from "https://deno.land/x/esbuild@v0.15.14/mod.js";
 import { denoPlugin } from "https://deno.land/x/esbuild_deno_loader@0.6.0/mod.ts";
-import { fromFileUrl as fromFileUrlPosix } from "https://deno.land/std@0.167.0/path/posix.ts";
-import { fromFileUrl } from "https://deno.land/std@0.167.0/path/mod.ts";
+import { fromFileUrl as fromFileUrlPosix } from "https://deno.land/std@0.170.0/path/posix.ts";
+import { fromFileUrl } from "https://deno.land/std@0.170.0/path/mod.ts";
 import { build, emptyDir } from "https://deno.land/x/dnt@0.32.0/mod.ts";
 
 const generateClientHtml = async (): Promise<string> => {
   const result = await esbuild.build({
     plugins: [denoPlugin()],
     entryPoints: [
-      fromFileUrlPosix(import.meta.resolve("./client/main.tsx")),
+      fromFileUrlPosix(import.meta.resolve("../nodeRed/client/main.tsx")),
     ],
     write: false,
     bundle: true,
@@ -43,7 +43,7 @@ await emptyDir(outDir);
 
 const version = "1.2.0";
 
-const entry = import.meta.resolve("./server/main.ts");
+const entry = import.meta.resolve("../nodeRed/server/main.ts");
 
 console.log(entry.toString(), fromFileUrl(entry));
 
