@@ -313,7 +313,11 @@
     "https://deno.land/x/imagescript@v1.2.14/v2/util/mem.mjs": "4968d400dae069b4bf0ef4767c1802fd2cc7d15d90eda4cfadf5b4cd19b96c6d",
     "https://deno.land/x/importmap@0.2.1/_util.ts": "ada9a9618b537e6c0316c048a898352396c882b9f2de38aba18fd3f2950ede89",
     "https://deno.land/x/importmap@0.2.1/mod.ts": "ae3d1cd7eabd18c01a4960d57db471126b020f23b37ef14e1359bbb949227ade",
+    "https://deno.land/x/lz4@v0.1.2/mod.ts": "4decfc1a3569d03fd1813bd39128b71c8f082850fe98ecfdde20025772916582",
+    "https://deno.land/x/lz4@v0.1.2/wasm.js": "b9c65605327ba273f0c76a6dc596ec534d4cda0f0225d7a94ebc606782319e46",
     "https://deno.land/x/murmur_hash_3@1.0.0/mod.ts": "ef3b4e11c6107e28bdd1f79cef29583a621252aedaaa727205fe116e33cee5e0",
+    "https://deno.land/x/swc@0.2.1/lib/deno_swc.generated.js": "a112eb5a4871bcbd5b660d3fd9d7afdd5cf2bb9e135eb9b04aceaa24d16481a0",
+    "https://deno.land/x/swc@0.2.1/mod.ts": "9e03f5daf4c2a25208e34e19ce3e997d2e23a5a11ee8c8ed58023b0e3626073f",
     "https://deno.land/x/ts_morph@17.0.1/bootstrap/mod.ts": "b53aad517f106c4079971fcd4a81ab79fadc40b50061a3ab2b741a09119d51e9",
     "https://deno.land/x/ts_morph@17.0.1/bootstrap/ts_morph_bootstrap.d.ts": "607e651c5ae5aa57c2ac4090759a6379e809c0cdc42114742ac67353b1a75038",
     "https://deno.land/x/ts_morph@17.0.1/bootstrap/ts_morph_bootstrap.js": "91a954daa993c5acb3361aa5279394f81ea6fe18b3854345c86111b336491cfc",
@@ -336,6 +340,7 @@
     "https://deno.land/x/zod@v3.19.1/locales/en.ts": "152ea350b7df6ce14f2806fc8c0972f56c9b2de6a3dd1129795287f50dee4374",
     "https://deno.land/x/zod@v3.19.1/mod.ts": "64e55237cb4410e17d968cd08975566059f27638ebb0b86048031b987ba251c4",
     "https://deno.land/x/zod@v3.19.1/types.ts": "ab062fe1640d2172f49ca593fb325a22f8927145201f29b02b62353c79db2501",
+    "https://esm.sh/@swc/core@1.2.212/types.d.ts": "57ab440b40e26a05350f1e06d3977742c249ab20ea46b9103dad876d5d4e5dd5",
     "https://esm.sh/prettier@2.7.1/parser-typescript?pin=v102": "2014e7c8c7c7fd78a206807343d11ceece9057833da66e6fa31885450726c1a5",
     "https://esm.sh/prettier@2.7.1?pin=v102": "839e2a63f54227ff7c19ae32f28c7462168324d69b00ee2b5c61350b7d566c9c",
     "https://esm.sh/react-dom@18.2.0/client?pin=v102": "206e0bbe968211d58610037326f1cbd796f36a88d2e22b0f68c25b94c58d216b",
@@ -374,5 +379,72 @@
     "https://raw.githubusercontent.com/narumincho/definy/f662850e6a0cb9ec7a69e60f424624c07dd417fa/deno-lib/definyRpc/core/request.ts": "572ddced3f44dfcc4619108b343315bd71ca81612cd061e3f0791fcdc5086b5f",
     "https://raw.githubusercontent.com/narumincho/definy/f662850e6a0cb9ec7a69e60f424624c07dd417fa/deno-lib/definyRpc/core/toStructuredJson.ts": "c6cae03c73a660f2a141f040c4139a8335151f3c775008d4e7d4d16f190ba88c",
     "https://raw.githubusercontent.com/narumincho/definy/f662850e6a0cb9ec7a69e60f424624c07dd417fa/deno-lib/typedJson.ts": "fd631a66c9183600272f0834370b8a0bef99c367a6bb8615071bba9fb5d3f404"
+  },
+  "npm": {
+    "specifiers": {
+      "@swc/core": "@swc/core@1.3.24",
+      "@swc/wasm-web": "@swc/wasm-web@1.3.24"
+    },
+    "packages": {
+      "@swc/core-darwin-arm64@1.3.24": {
+        "integrity": "sha512-rR+9UpWm+fGXcipsjCst2hIL1GYIbo0YTLhJZWdIpQD6KRHHJMFXiydMgQQkDj2Ml7HpqUVgxj6m4ZWYL8b0OA==",
+        "dependencies": {}
+      },
+      "@swc/core-darwin-x64@1.3.24": {
+        "integrity": "sha512-px+5vkGtgPH0m3FkkTBHynlRdS5rRz+lK+wiXIuBZFJSySWFl6RkKbvwkD+sf0MpazQlqwlv/rTOGJBw6oDffg==",
+        "dependencies": {}
+      },
+      "@swc/core-linux-arm-gnueabihf@1.3.24": {
+        "integrity": "sha512-jLs8ZOdTV4UW4J12E143QJ4mOMONQtqgAnuhBbRuWFzQ3ny1dfoC3P1jNWAJ2Xi59XdxAIXn0PggPNH4Kh34kw==",
+        "dependencies": {}
+      },
+      "@swc/core-linux-arm64-gnu@1.3.24": {
+        "integrity": "sha512-A/v0h70BekrwGpp1DlzIFGcHQ3QQ2PexXcnnuIBZeMc9gNmHlcZmg3EcwAnaUDiokhNuSUFA/wV94yk1OqmSkw==",
+        "dependencies": {}
+      },
+      "@swc/core-linux-arm64-musl@1.3.24": {
+        "integrity": "sha512-pbc9eArWPTiMrbpS/pJo0IiQNAKAQBcBIDjWBGP1tcw2iDXYLw4bruwz9kI/VjakbshWb8MoE4T5ClkeuULvSw==",
+        "dependencies": {}
+      },
+      "@swc/core-linux-x64-gnu@1.3.24": {
+        "integrity": "sha512-pP5pOLlY1xd352qo7rTlpVPUI9/9VhOd4b3Lk+LzfZDq9bTL2NDlGfyrPiwa5DGHMSzrugH56K2J68eutkxYVA==",
+        "dependencies": {}
+      },
+      "@swc/core-linux-x64-musl@1.3.24": {
+        "integrity": "sha512-phNbP7zGp+Wcyxq1Qxlpe5KkxO7WLT2kVQUC7aDFGlVdCr+xdXsfH1MzheHtnr0kqTVQX1aiM8XXXHfFxR0oNA==",
+        "dependencies": {}
+      },
+      "@swc/core-win32-arm64-msvc@1.3.24": {
+        "integrity": "sha512-qhbiJTWAOqyR+K9xnGmCkOWSz2EmWpDBstEJCEOTc6FZiEdbiTscDmqTcMbCKaTHGu8t+6erVA4t65/Eg6uWPA==",
+        "dependencies": {}
+      },
+      "@swc/core-win32-ia32-msvc@1.3.24": {
+        "integrity": "sha512-JfghIlscE4Rz+Lc08lSoDh+R0cWxrISed5biogFfE6vZqhaDnw3E5Qshqw7O3pIaiq8L2u1nmzuyP581ZmpbRA==",
+        "dependencies": {}
+      },
+      "@swc/core-win32-x64-msvc@1.3.24": {
+        "integrity": "sha512-3AmJRr0hwciwDBbzUNqaftvppzS8v9X/iv/Wl7YaVLBVpPfQvaZzfqLycvNMGLZb5vIKXR/u58txg3dRBGsJtw==",
+        "dependencies": {}
+      },
+      "@swc/core@1.3.24": {
+        "integrity": "sha512-QMOTd0AgiUT3K1crxLRqd3gw0f3FC8hhH1vvlIlryvYqU4c+FJ/T2G4ZhMKLxQlZ/jX6Rhk0gKINZRBxy2GFyQ==",
+        "dependencies": {
+          "@swc/core-darwin-arm64": "@swc/core-darwin-arm64@1.3.24",
+          "@swc/core-darwin-x64": "@swc/core-darwin-x64@1.3.24",
+          "@swc/core-linux-arm-gnueabihf": "@swc/core-linux-arm-gnueabihf@1.3.24",
+          "@swc/core-linux-arm64-gnu": "@swc/core-linux-arm64-gnu@1.3.24",
+          "@swc/core-linux-arm64-musl": "@swc/core-linux-arm64-musl@1.3.24",
+          "@swc/core-linux-x64-gnu": "@swc/core-linux-x64-gnu@1.3.24",
+          "@swc/core-linux-x64-musl": "@swc/core-linux-x64-musl@1.3.24",
+          "@swc/core-win32-arm64-msvc": "@swc/core-win32-arm64-msvc@1.3.24",
+          "@swc/core-win32-ia32-msvc": "@swc/core-win32-ia32-msvc@1.3.24",
+          "@swc/core-win32-x64-msvc": "@swc/core-win32-x64-msvc@1.3.24"
+        }
+      },
+      "@swc/wasm-web@1.3.24": {
+        "integrity": "sha512-hIj6TIf1hIHXI8u9MVFCch6y6pAYBHEGByQ/vRlOSsrEpUE4bq9zd258tVvVY7S90EWw1p5xD4pF+3PdwaO5Lw==",
+        "dependencies": {}
+      }
+    }
   }
 }
