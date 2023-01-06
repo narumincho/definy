@@ -4,11 +4,15 @@ import {
   Network,
   Node,
 } from "https://cdn.skypack.dev/vis-network@9.1.2?dts";
-import { DefinyRpcTypeInfo, Namespace } from "../core/coreType.ts";
-import { namespaceToString } from "../codeGen/namespace.ts";
+import { DefinyRpcTypeInfo, Namespace, Type } from "../core/coreType.ts";
+import {
+  fromFunctionNamespace,
+  namespaceToString,
+} from "../codeGen/namespace.ts";
+import { FunctionAndTypeList } from "./Editor.tsx";
 
 export const SampleChart = (
-  props: { readonly typeList: ReadonlyArray<DefinyRpcTypeInfo> },
+  props: { readonly functionAndTypeList: FunctionAndTypeList },
 ) => {
   const ref = React.useRef<HTMLDivElement>(null);
   React.useEffect(() => {
@@ -17,91 +21,129 @@ export const SampleChart = (
       return;
     }
 
-    console.log("net", {
-      nodes: props.typeList.map((type): Node => ({
-        id: typeToId(type.namespace, type.name),
-        label: namespaceToString(type.namespace) + "." + type.name,
-      })),
-      edges: props.typeList.flatMap(typeInfoToEdge),
-    });
-
     const graph2d = new Network(
       container,
       {
-        nodes: props.typeList.map((type): Node => ({
-          id: typeToId(type.namespace, type.name),
-          label: namespaceToString(type.namespace) + "." + type.name,
-        })),
-        edges: props.typeList.flatMap(typeInfoToEdge),
+        nodes: [
+          ...props.functionAndTypeList.typeList.map((type): Node => ({
+            id: namespaceAndNameToId(type.namespace, type.name),
+            label: namespaceAndNameToId(type.namespace, type.name),
+          })),
+          ...props.functionAndTypeList.funcList.map((func): Node => ({
+            id: namespaceAndNameToId(
+              fromFunctionNamespace(func.namespace),
+              func.name,
+            ),
+            label: namespaceAndNameToId(
+              fromFunctionNamespace(func.namespace),
+              func.name,
+            ),
+            color: "orange",
+          })),
+        ],
+        edges: [
+          ...props.functionAndTypeList.typeList.flatMap(typeInfoToEdge),
+          ...props.functionAndTypeList.funcList.flatMap((
+            func,
+          ): ReadonlyArray<Edge> => [
+            ...typeToEdgeList({
+              id: namespaceAndNameToId(
+                fromFunctionNamespace(func.namespace),
+                func.name,
+              ) + "-input",
+              to: namespaceAndNameToId(
+                fromFunctionNamespace(func.namespace),
+                func.name,
+              ),
+              label: "input",
+              type: func.input,
+            }),
+            ...typeToEdgeList({
+              id: namespaceAndNameToId(
+                fromFunctionNamespace(func.namespace),
+                func.name,
+              ) + "-output",
+              to: namespaceAndNameToId(
+                fromFunctionNamespace(func.namespace),
+                func.name,
+              ),
+              label: "output",
+              type: func.output,
+            }),
+          ]),
+        ],
       },
       { width: "512", height: "512" },
     );
     console.log(graph2d);
-  }, [ref.current, props.typeList]);
+  }, [ref.current, props.functionAndTypeList]);
 
   return <div ref={ref}></div>;
 };
 
 const typeInfoToEdge = (typeInfo: DefinyRpcTypeInfo): ReadonlyArray<Edge> => {
-  const toTypeId = typeToId(
+  const toTypeId = namespaceAndNameToId(
     typeInfo.namespace,
     typeInfo.name,
   );
   switch (typeInfo.body.type) {
     case "product":
-      return typeInfo.body.value.flatMap((field): ReadonlyArray<Edge> => [
-        {
-          id: typeInfo.name + "SEPARATE" + field.name,
-          arrows: "to",
-          from: typeToId(
-            field.type.namespace,
-            field.type.name,
-          ),
+      return typeInfo.body.value.flatMap((field): ReadonlyArray<Edge> =>
+        typeToEdgeList({
+          id: toTypeId + "-product-" + field.name,
           to: toTypeId,
           label: field.name,
-        },
-        ...field.type.parameters.map((parameter, index): Edge => ({
-          id: typeInfo.name + "SEPARATE" + field.name + index,
-          arrows: "to",
-          from: typeToId(
-            parameter.namespace,
-            parameter.name,
-          ),
-          to: toTypeId,
-          label: field.name,
-        })),
-      ]);
+          type: field.type,
+        })
+      );
     case "sum":
       return typeInfo.body.value.flatMap((
         pattern,
-      ): ReadonlyArray<Edge> => (pattern.parameter.type === "nothing" ? [] : [
-        {
-          id: typeInfo.name + "SEPARATE" + pattern.name,
-          arrows: "to",
-          from: typeToId(
-            pattern.parameter.value.namespace,
-            pattern.parameter.value.name,
-          ),
-          to: toTypeId,
-          label: pattern.name,
-        },
-        ...(pattern.parameter.value.parameters.map(
-          (parameter, index): Edge => ({
-            id: typeInfo.name + "SEPARATE" + pattern.name + index,
-            arrows: "to",
-            from: typeToId(
-              parameter.namespace,
-              parameter.name,
-            ),
-            to: toTypeId,
-            label: pattern.name,
-          }),
-        )),
-      ]));
+      ): ReadonlyArray<
+        Edge
+      > => (pattern.parameter.type === "nothing" ? [] : typeToEdgeList({
+        id: toTypeId + "-sum-" + pattern.name,
+        to: toTypeId,
+        label: pattern.name,
+        type: pattern.parameter.value,
+      })));
   }
   return [];
 };
 
-const typeToId = (typeNamespace: Namespace, typeName: string): string => {
+const typeToEdgeList = <t extends unknown>(parameter: {
+  readonly id: string;
+  readonly to: string;
+  readonly label: string;
+  readonly type: Type<t>;
+}): ReadonlyArray<Edge> => {
+  return [
+    {
+      id: parameter.id,
+      arrows: "to",
+      from: namespaceAndNameToId(
+        parameter.type.namespace,
+        parameter.type.name,
+      ),
+      to: parameter.to,
+      label: parameter.label,
+    },
+    ...parameter.type.parameters.map((param, index): Edge => ({
+      id: parameter.id + "-" + index,
+      arrows: "to",
+      from: namespaceAndNameToId(
+        param.namespace,
+        param.name,
+      ),
+      to: parameter.to,
+      label: parameter.label + "[" + index + "]",
+    })),
+  ];
+};
+
+const namespaceAndNameToId = (
+  typeNamespace: Namespace,
+  typeName: string,
+): string => {
   return namespaceToString(typeNamespace) + "." + typeName;
 };
