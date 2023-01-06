@@ -1,4 +1,4 @@
-import { extname } from "https://deno.land/std@0.170.0/path/posix.ts";
+import { extname } from "https://deno.land/std@0.171.0/path/posix.ts";
 
 export const collectTsOrTsxFilePath = async (
   directoryPath: URL,
