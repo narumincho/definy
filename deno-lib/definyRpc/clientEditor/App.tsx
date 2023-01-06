@@ -89,6 +89,8 @@ export const App = (): React.ReactElement => {
       });
   }, [serverUrl]);
 
+  console.log("functionAndTypeList?.typeList", functionAndTypeList?.typeList);
+
   return (
     <div className={c(containerStyle)}>
       <h2 className={c(titleStyle)}>definy RPC Browser Client</h2>
@@ -113,7 +115,7 @@ export const App = (): React.ReactElement => {
         +
       </Button>
 
-      <SampleChart />
+      <SampleChart typeList={functionAndTypeList?.typeList ?? []} />
     </div>
   );
 };

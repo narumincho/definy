@@ -7,10 +7,10 @@
       "request": "launch",
       "runtimeExecutable": "${execPath}",
       "args": [
-        "--extensionDevelopmentPath=${workspaceFolder}/distribution/definy-extension",
+        "--extensionDevelopmentPath=${workspaceFolder}/deno-lib/vscodeExtensionDistribution/",
         "--extensionDevelopmentKind=web"
-      ],
-      "preLaunchTask": "vscode-extension-build"
+      ]
+      // "preLaunchTask": "vscode-extension-build"
     }
   ]
 }

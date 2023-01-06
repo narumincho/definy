@@ -138,3 +138,11 @@ npm install path/to/nodeRedPackage
 ```ps1
 deno run --check -A ./entryPoints/buildForNpm.ts
 ```
+
+## VSCode 版 definy
+
+ビルド
+
+```ps1
+deno run --check -A ./entryPoints/buildVscodeExtension.ts
+```

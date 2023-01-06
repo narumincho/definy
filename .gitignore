@@ -31,3 +31,4 @@ tsconfig.tsbuildinfo
 /deno-lib/entryPoints/definyDev.ts
 /deno-lib/entryPoints/migrationStart.ts
 /deno-lib/nodeRedPackage/
+/deno-lib/vscodeExtensionDistribution/
