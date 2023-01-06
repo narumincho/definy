@@ -1,4 +1,4 @@
-import React from "https://esm.sh/react@18.2.0?pin=v102";
+import React, { useCallback } from "https://esm.sh/react@18.2.0?pin=v102";
 import { Button } from "../../editor/Button.tsx";
 import { DetailView } from "./DetailView.tsx";
 import { Result } from "./Result.tsx";
@@ -9,9 +9,11 @@ import {
   DefinyRpcTypeInfo,
   FunctionDetail,
   StructuredJsonValue,
+  Type,
 } from "../core/coreType.ts";
 import {
   functionNamespaceToString,
+  namespaceEqual,
   namespaceToString,
 } from "../codeGen/namespace.ts";
 import { requestQuery } from "../core/request.ts";
@@ -61,6 +63,8 @@ export const Editor = (props: {
       functionNamespaceToString(func.namespace) + "." + func.name ===
         selectedFunc,
   );
+
+  const inputType = selectedFuncDetail?.input;
 
   return (
     <div className={c(containerStyle)}>
@@ -122,4 +126,59 @@ export const Editor = (props: {
         )}
     </div>
   );
+};
+
+const initValue = <t extends unknown>(
+  typeList: ReadonlyArray<DefinyRpcTypeInfo>,
+  type: Type<t>,
+): t => {
+  const typeInfo = typeList.find((t) =>
+    namespaceEqual(t.namespace, type.namespace) &&
+    t.name === type.name
+  );
+  if (typeInfo === undefined) {
+    throw new Error("not found " + type.name);
+  }
+  switch (typeInfo.body.type) {
+    case "string":
+      return "" as t;
+    case "number":
+      return 0 as t;
+    case "boolean":
+      return "false" as t;
+    case "list":
+      return [] as t;
+    case "set":
+      return new Set() as t;
+    case "url":
+      return new URL("https://definy.app/") as t;
+    case "unit":
+      return undefined as t;
+    case "map":
+      return new Map() as t;
+    case "product":
+      return "wip" as t;
+    case "sum":
+      return "wip" as t;
+  }
+};
+
+const InputEditor = <t extends unknown>(props: {
+  readonly typeList: ReadonlyArray<DefinyRpcTypeInfo>;
+  readonly type: Type<t>;
+  readonly onChange: (value: t) => void;
+}): React.ReactElement => {
+  const typeInfo = props.typeList.find((t) =>
+    namespaceEqual(t.namespace, props.type.namespace) &&
+    t.name === props.type.name
+  );
+  switch (typeInfo?.body.type) {
+    case "boolean":
+      return <input type="checkbox" checked={false} />;
+    case "string":
+      return <input type="text" />;
+    case "number":
+      return <input type="number" />;
+  }
+  return <></>;
 };

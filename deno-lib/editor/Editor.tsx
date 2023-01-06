@@ -332,18 +332,14 @@ const TextField = (props: {
       <div>{props.name}</div>
       <div className={c(textFieldContainerOut)}>
         <div className={c(textFieldContainerIn)}>
-          {props.selected && props.isEditing
-            ? (
-              false
-            )
-            : (
-              <TextFieldValue
-                isError={props.errorMessage !== undefined}
-                value={props.value}
-                isTitle={props.isTitle}
-                onStartEdit={props.onStartEdit}
-              />
-            )}
+          {props.selected && props.isEditing ? <></> : (
+            <TextFieldValue
+              isError={props.errorMessage !== undefined}
+              value={props.value}
+              isTitle={props.isTitle}
+              onStartEdit={props.onStartEdit}
+            />
+          )}
           {props.onStartEdit !== undefined &&
             props.selected &&
             !props.isEditing && (
@@ -591,6 +587,7 @@ const TextFieldValue = (props: {
     <div
       className={c(
         toStyleAndHash({
+          fontFamily: "Hack",
           whiteSpace: "pre-wrap",
           textDecoration: props.isError ? "underline wavy red" : "none",
         }),
@@ -604,6 +601,7 @@ const TextFieldValue = (props: {
 
 const inputStyle = toStyleAndHash(
   {
+    fontFamily: "Hack",
     padding: 8,
     fontSize: 16,
     backgroundColor: "#222",
