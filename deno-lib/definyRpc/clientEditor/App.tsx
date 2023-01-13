@@ -115,7 +115,9 @@ export const App = (): React.ReactElement => {
         +
       </Button>
 
-      <SampleChart typeList={functionAndTypeList?.typeList ?? []} />
+      {functionAndTypeList && (
+        <SampleChart functionAndTypeList={functionAndTypeList} />
+      )}
     </div>
   );
 };
