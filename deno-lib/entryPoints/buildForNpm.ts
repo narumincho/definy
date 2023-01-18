@@ -1,7 +1,7 @@
 import { build, emptyDir } from "https://deno.land/x/dnt@0.32.0/mod.ts";
-import { fromFileUrl } from "https://deno.land/std@0.171.0/path/mod.ts";
+import { fromFileUrl } from "https://deno.land/std@0.173.0/path/mod.ts";
 import { collectTsOrTsxFilePath } from "../collectTsOrTsxFilePath.ts";
-import { relative } from "https://deno.land/std@0.171.0/path/posix.ts";
+import { relative } from "https://deno.land/std@0.173.0/path/posix.ts";
 
 const outDir = new URL(import.meta.resolve("../npm"));
 

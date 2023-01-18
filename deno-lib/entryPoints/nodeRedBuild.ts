@@ -1,8 +1,8 @@
 import { writeTextFileWithLog } from "../writeFileAndLog.ts";
 import * as esbuild from "https://deno.land/x/esbuild@v0.15.14/mod.js";
 import { denoPlugin } from "https://deno.land/x/esbuild_deno_loader@0.6.0/mod.ts";
-import { fromFileUrl as fromFileUrlPosix } from "https://deno.land/std@0.171.0/path/posix.ts";
-import { fromFileUrl } from "https://deno.land/std@0.171.0/path/mod.ts";
+import { fromFileUrl as fromFileUrlPosix } from "https://deno.land/std@0.173.0/path/posix.ts";
+import { fromFileUrl } from "https://deno.land/std@0.173.0/path/mod.ts";
 import { build, emptyDir } from "https://deno.land/x/dnt@0.32.0/mod.ts";
 
 const generateClientHtml = async (): Promise<string> => {

@@ -2,6 +2,7 @@ import React from "https://esm.sh/react@18.2.0?pin=v102";
 import { Button } from "../../editor/Button.tsx";
 import { c, toStyleAndHash } from "../../cssInJs/mod.ts";
 import { jsonStringify, RawJsonValue } from "../../typedJson.ts";
+import { Editor } from "../../editor/Editor.tsx";
 
 const requestingStyle = toStyleAndHash({
   backgroundColor: "gray",
@@ -27,20 +28,23 @@ export const Result = (props: {
     return <div className={c(requestingStyle)} />;
   }
   const data = props.data;
+  if (data === undefined) {
+    return <div />;
+  }
   return (
     <div>
-      {typeof data === "string" && (
-        <Button
-          onClick={responseToClipboardLoading ? undefined : () => {
-            setResponseToClipboardLoading(true);
-            navigator.clipboard.writeText(data).then(() => {
-              setResponseToClipboardLoading(false);
-            });
-          }}
-        >
-          クリップボードにコピー
-        </Button>
-      )}
+      <Button
+        onClick={responseToClipboardLoading ? undefined : () => {
+          setResponseToClipboardLoading(true);
+          navigator.clipboard.writeText(
+            typeof data === "string" ? data : JSON.stringify(data),
+          ).then(() => {
+            setResponseToClipboardLoading(false);
+          });
+        }}
+      >
+        クリップボードにコピー
+      </Button>
       <div>
         <div className={c(resultStyle)}>
           {typeof data === "string" ? data : jsonStringify(data)}

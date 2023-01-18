@@ -30,6 +30,10 @@ const contentStyle = toStyleAndHash({
   alignContent: "start",
 });
 
+const spacerStyle = toStyleAndHash({
+  height: 16,
+});
+
 export type FunctionAndTypeList = {
   readonly funcList: ReadonlyArray<FunctionDetail>;
   readonly typeList: ReadonlyArray<DefinyRpcTypeInfo>;
@@ -112,6 +116,7 @@ export const Editor = (props: {
         >
           Run
         </Button>
+        <div className={c(spacerStyle)}></div>
         <Result data={runResponse as RawJsonValue} requesting={isRequesting} />
       </div>
 
