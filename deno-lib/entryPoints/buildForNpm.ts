@@ -3,13 +3,13 @@ import { fromFileUrl } from "https://deno.land/std@0.173.0/path/mod.ts";
 import { collectTsOrTsxFilePath } from "../collectTsOrTsxFilePath.ts";
 import { relative } from "https://deno.land/std@0.173.0/path/posix.ts";
 
-const outDir = new URL(import.meta.resolve("../npm"));
+const outDir = new URL("../npm", import.meta.url);
 
 await emptyDir(new URL(outDir));
 
 const pathList: string[] = [
   ...await collectTsOrTsxFilePath(
-    new URL(import.meta.resolve("../")),
+    new URL("../", import.meta.url),
     new Set([
       "/nodeRedPackage",
       "/entryPoints",

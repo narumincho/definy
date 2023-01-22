@@ -36,7 +36,8 @@ const outputFilesToScriptFile = async (
 };
 
 const assetsFolder = new URL(
-  import.meta.resolve("../definyApp/editor/assets/"),
+  "../definyApp/editor/assets/",
+  import.meta.url,
 );
 
 const watchAndBuild = async (
@@ -110,7 +111,7 @@ const watchAndBuild = async (
 const editorWatchBuild = async (): Promise<void> => {
   await watchAndBuild((clientBuildResult) => {
     writeTextFileWithLog(
-      new URL(import.meta.resolve("../definyApp/server/dist.json")),
+      new URL("../definyApp/server/dist.json", import.meta.url),
       jsonStringify(clientBuildResult, true),
     );
   });

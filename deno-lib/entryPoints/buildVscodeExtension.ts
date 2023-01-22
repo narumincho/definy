@@ -5,14 +5,15 @@ import { jsonStringify } from "../typedJson.ts";
 import { writeTextFileWithLog } from "../writeFileAndLog.ts";
 
 const distributionPath = new URL(
-  import.meta.resolve("../vscodeExtensionDistribution/"),
+  "../vscodeExtensionDistribution/",
+  import.meta.url,
 );
 
 const build = async (): Promise<string> => {
   const esbuildResult = await esBuild({
     entryPoints: [
       fromFileUrl(
-        new URL("./main.ts", import.meta.resolve("../vscodeExtension/main.ts")),
+        new URL("../vscodeExtension/main.ts", import.meta.url),
       ),
     ],
     plugins: [denoPlugin()],

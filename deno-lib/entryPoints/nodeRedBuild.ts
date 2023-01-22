@@ -37,7 +37,7 @@ const generateClientHtml = async (): Promise<string> => {
   throw new Error("client の ビルドに失敗した");
 };
 
-const outDir = new URL(import.meta.resolve("../nodeRedPackage/"));
+const outDir = new URL("../nodeRedPackage/", import.meta.url);
 
 await emptyDir(outDir);
 

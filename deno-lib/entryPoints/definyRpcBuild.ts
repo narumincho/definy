@@ -57,7 +57,7 @@ const main = async (): Promise<void> => {
   const clientBuildResult = await buildClientEditor();
   console.log("clientEditor のビルドデータ生成完了");
   await writeTextFileWithLog(
-    new URL(import.meta.resolve("../definyRpc/server/browserClient.json")),
+    new URL("../definyRpc/server/browserClient.json", import.meta.url),
     jsonStringify(clientBuildResult, true),
   );
   console.log("ファイルに保存した");
