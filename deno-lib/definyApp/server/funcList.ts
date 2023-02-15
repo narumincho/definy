@@ -4,7 +4,6 @@ import {
   FunctionNamespace,
   Maybe,
   Namespace,
-  Number,
   String,
   Type,
   TypeBody,

@@ -1,4 +1,4 @@
-import { fromFileUrl } from "https://deno.land/std@0.173.0/path/posix.ts";
+import { fromFileUrl } from "https://deno.land/std@0.177.0/path/posix.ts";
 import { denoPlugin } from "https://deno.land/x/esbuild_deno_loader@0.6.0/mod.ts";
 import { build as esBuild } from "https://deno.land/x/esbuild@v0.15.14/mod.js";
 import { toBase64 } from "https://deno.land/x/fast_base64@v0.1.7/mod.ts";

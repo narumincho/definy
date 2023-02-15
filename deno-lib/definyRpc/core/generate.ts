@@ -12,7 +12,6 @@ export const generateCoreCode = async (): Promise<void> => {
     apiFunctionList: [],
     namespace: Namespace.coreType,
     originHint: "",
-    pathPrefix: [],
     usePrettier: true,
     typeMap: new Map(coreTypeInfoList.map(
       (typeInfo) => [

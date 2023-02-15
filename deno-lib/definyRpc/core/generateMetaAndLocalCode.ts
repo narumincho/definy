@@ -1,4 +1,4 @@
-import { groupBy } from "https://deno.land/std@0.173.0/collections/group_by.ts";
+import { groupBy } from "https://deno.land/std@0.177.0/collections/group_by.ts";
 import { objectEntriesSameValue } from "../../objectEntriesSameValue.ts";
 import { writeTextFileWithLog } from "../../writeFileAndLog.ts";
 import { generateCodeInNamespace } from "../codeGen/main.ts";
