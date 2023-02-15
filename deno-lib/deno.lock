@@ -341,7 +341,7 @@
     "https://esm.sh/react-dom@18.2.0/client?pin=v106": "8ae455d98eb96d1dc47f2f553b3431be647f2e7dc377556f35a217d55282f832",
     "https://esm.sh/react-dom@18.2.0/server?pin=v106": "fd466de2edcac867a437748173ab4c21916e2ad9efba440d2c411ac61d1c6d05",
     "https://esm.sh/react@18.2.0?pin=v106": "84aa07282d2f3c843f7d56daeae0be41ceae768391c4418f7358dd64e8fe4eca",
-    "https://esm.sh/stable/react@18.2.0/deno/react.js": "806868069cfdb815e028419cf07ebc7a7bcba7f9e31dec9e3a045b9f8e82c1ed",
+    "https://esm.sh/stable/react@18.2.0/deno/react.js": "0113c672572d23a90490f1b03731866a18bbbfe2ab4ff8e52c2e91b60c4188f0",
     "https://esm.sh/v106/@types/prettier@2.7.2/index.d.ts": "bc88e4049153bc4dddb4503ed7e624eb141edfa9064b3659d6c86e900fe9e621",
     "https://esm.sh/v106/@types/prettier@2.7.2/parser-typescript~.d.ts": "39b32b7e7e804787afd891865071a345f1cb6dafb9175edebb8407eb83a5c1ba",
     "https://esm.sh/v106/@types/prop-types@15.7.5/index.d.ts": "6a386ff939f180ae8ef064699d8b7b6e62bc2731a62d7fbf5e02589383838dea",
