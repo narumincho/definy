@@ -67,7 +67,6 @@ export const generateMetaAndLocalCode = async (
               funcOrType.type === "function" ? [funcOrType.value] : []
             ),
             originHint: parameter.originHint,
-            pathPrefix: parameter.pathPrefix ?? [],
             usePrettier: true,
             namespace: firstFuncOrType.type === "function"
               ? fromFunctionNamespace(firstFuncOrType.value.namespace)

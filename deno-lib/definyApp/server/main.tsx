@@ -55,10 +55,10 @@ export const startDefinyServer = (
         parameter.mode,
       ),
     originHint: parameter.mode.type === "dev"
-      ? `http://localhost:${parameter.mode.port}`
+      ? `http://localhost:${parameter.mode.port}/api`
       // Deno Deploy で 現在の環境のオリジンを取得することができれば...
       // https://github.com/denoland/deploy_feedback/issues/245
-      : "https://definy-api.deno.dev",
+      : "https://definy-api.deno.dev/api",
     codeGenOutputFolderPath: parameter.mode.type === "dev"
       ? new URL("../apiClient/", import.meta.url)
       : undefined,

@@ -1,6 +1,7 @@
 import React from "https://esm.sh/react@18.2.0?pin=v102";
 import { c, toStyleAndHash } from "../../../cssInJs/mod.ts";
 import { CodeAndState, logInByCodeAndState } from "../../apiClient/api/main.ts";
+import { apiUrl } from "../url.ts";
 
 const containerStyle = toStyleAndHash({
   backgroundColor: "black",
@@ -32,7 +33,7 @@ export const LogInCallback = (
     }
     setRequestingState({ type: "requesting" });
     logInByCodeAndState({
-      url: new URL(new URL(location.href).origin),
+      url: apiUrl(),
       input: props.parameter,
     }).then(
       (response) => {

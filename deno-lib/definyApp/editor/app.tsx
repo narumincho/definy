@@ -5,7 +5,7 @@ import { createGoogleLogInUrl } from "../apiClient/api/main.ts";
 import { GoogleLogInButton } from "./components/googleLogInButton.tsx";
 import { Clock24 } from "./pages/clock24.tsx";
 import { LogInCallback } from "./pages/logInCallback.tsx";
-import { UrlLocation } from "./url.ts";
+import { apiUrl, UrlLocation } from "./url.ts";
 
 const containerStyle = toStyleAndHash({
   backgroundColor: "black",
@@ -71,10 +71,7 @@ export const App = (props: AppProps): React.ReactElement => {
               language={props.language}
               onClick={() => {
                 setIsRequestLogInUrl("requestingLogInUrl");
-                createGoogleLogInUrl({
-                  url: new URL(new URL(location.href).origin),
-                  input: "???",
-                })
+                createGoogleLogInUrl({ url: apiUrl() })
                   .then((response) => {
                     if (response.type === "ok") {
                       setIsRequestLogInUrl("jumping");
@@ -89,8 +86,11 @@ export const App = (props: AppProps): React.ReactElement => {
           {isRequestLogInUrl === "error" && (
             <div>ログインURLの発行に失敗しました</div>
           )}
-          {isRequestLogInUrl === "jumping" && <div>ログイン画面に推移中...
-          </div>}
+          {isRequestLogInUrl === "jumping" && (
+            <div>
+              ログイン画面に推移中...
+            </div>
+          )}
           {isRequestLogInUrl === "requestingLogInUrl" && (
             <div>ログインURLを発行中...</div>
           )}

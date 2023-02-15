@@ -20,7 +20,6 @@ import { DefinyRpcTypeInfo, Namespace } from "../core/coreType.ts";
 export const generateCodeInNamespace = (parameter: {
   readonly apiFunctionList: ReadonlyArray<ApiFunction>;
   readonly originHint: string;
-  readonly pathPrefix: ReadonlyArray<string>;
   readonly usePrettier: boolean;
   readonly namespace: Namespace;
   readonly typeMap: CollectedDefinyRpcTypeMap;
@@ -38,7 +37,6 @@ export const generateCodeInNamespace = (parameter: {
 export const apiFunctionListToJsTsCode = (parameter: {
   readonly apiFunctionList: ReadonlyArray<ApiFunction>;
   readonly originHint: string;
-  readonly pathPrefix: ReadonlyArray<string>;
   readonly namespace: Namespace;
   readonly typeMap: CollectedDefinyRpcTypeMap;
 }): data.JsTsCode => {
@@ -85,7 +83,6 @@ export const apiFunctionListToJsTsCode = (parameter: {
         function: apiFuncToTsFunction({
           func,
           originHint: parameter.originHint,
-          pathPrefix: parameter.pathPrefix,
           context,
         }),
       })),
