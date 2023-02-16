@@ -4,7 +4,6 @@ import {
   FunctionNamespace,
   Maybe,
   Namespace,
-  Number,
   String,
   Type,
   TypeBody,
@@ -53,25 +52,13 @@ export const funcList = (
       }),
       createApiFunction({
         namespace: definyAppNamespace,
-        name: "repeat",
-        description: '"ok"を指定した回数分繰り返して返す',
-        needAuthentication: false,
-        isMutation: false,
-        input: Number.type(),
-        output: String.type(),
-        resolve: (input) => {
-          return "ok".repeat(input);
-        },
-      }),
-      createApiFunction({
-        namespace: definyAppNamespace,
         name: "createGoogleLogInUrl",
         description: "Google でログインするためのURLを発行し取得する",
         needAuthentication: false,
         isMutation: true,
-        input: String.type(),
+        input: Unit.type(),
         output: String.type(),
-        resolve: async (_) => {
+        resolve: async () => {
           const state = await openConnectStateCreate(faunaClient);
           return googleLogInUrl(state, mode).toString();
         },

@@ -1,6 +1,6 @@
 import { collectTsOrTsxFilePath } from "../collectTsOrTsxFilePath.ts";
 
-const rootPath = new URL(import.meta.resolve("../"));
+const rootPath = new URL("../", import.meta.url);
 
 const tsFilePathSet = await collectTsOrTsxFilePath(
   rootPath,

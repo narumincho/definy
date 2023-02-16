@@ -136,7 +136,8 @@ const builtInFunctions = (
     createApiFunction({
       namespace: FunctionNamespace.meta,
       name: "generateCallDefinyRpcTypeScriptCode",
-      description: "名前空間「definyRpc」のApiFunctionを呼ぶ TypeScript のコードを生成する",
+      description:
+        "名前空間「definyRpc」のApiFunctionを呼ぶ TypeScript のコードを生成する",
       input: Unit.type(),
       output: String.type(),
       isMutation: false,
@@ -146,7 +147,6 @@ const builtInFunctions = (
         return generateCodeInNamespace({
           apiFunctionList: added.functionsList,
           originHint: parameter.originHint,
-          pathPrefix: parameter.pathPrefix ?? [],
           usePrettier: true,
           namespace: Namespace.meta,
           typeMap: new Map(
@@ -161,7 +161,8 @@ const builtInFunctions = (
       createApiFunction({
         namespace: FunctionNamespace.meta,
         name: "generateCodeAndWriteAsFileInServer",
-        description: "サーバーが実行している環境でコードを生成し, ファイルとして保存する. \n 保存先:" +
+        description:
+          "サーバーが実行している環境でコードを生成し, ファイルとして保存する. \n 保存先:" +
           codeGenOutputFolderPath.toString(),
         input: Unit.type(),
         output: Unit.type(),

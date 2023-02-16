@@ -3,7 +3,7 @@ import { jsonStringify } from "../typedJson.ts";
 import { writeTextFileWithLog } from "../writeFileAndLog.ts";
 import * as esbuild from "https://deno.land/x/esbuild@v0.15.14/mod.js";
 import { denoPlugin } from "https://deno.land/x/esbuild_deno_loader@0.6.0/mod.ts";
-import { fromFileUrl } from "https://deno.land/std@0.173.0/path/posix.ts";
+import { fromFileUrl } from "https://deno.land/std@0.177.0/path/posix.ts";
 import { toBase64 } from "https://deno.land/x/fast_base64@v0.1.7/mod.ts";
 
 type BuildClientResult = {
@@ -36,7 +36,8 @@ const outputFilesToScriptFile = async (
 };
 
 const assetsFolder = new URL(
-  import.meta.resolve("../definyApp/editor/assets/"),
+  "../definyApp/editor/assets/",
+  import.meta.url,
 );
 
 const watchAndBuild = async (
@@ -110,7 +111,7 @@ const watchAndBuild = async (
 const editorWatchBuild = async (): Promise<void> => {
   await watchAndBuild((clientBuildResult) => {
     writeTextFileWithLog(
-      new URL(import.meta.resolve("../definyApp/server/dist.json")),
+      new URL("../definyApp/server/dist.json", import.meta.url),
       jsonStringify(clientBuildResult, true),
     );
   });

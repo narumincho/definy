@@ -104,3 +104,9 @@ export const urlLocationToSimpleUrl = (
       };
   }
 };
+
+export const apiUrl = (): URL => {
+  const url = new URL(new URL(location.href).origin);
+  url.pathname = "/api";
+  return url;
+};

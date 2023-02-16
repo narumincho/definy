@@ -1,18 +1,19 @@
-import { fromFileUrl } from "https://deno.land/std@0.173.0/path/posix.ts";
+import { fromFileUrl } from "https://deno.land/std@0.177.0/path/posix.ts";
 import { denoPlugin } from "https://deno.land/x/esbuild_deno_loader@0.6.0/mod.ts";
 import { build as esBuild } from "https://deno.land/x/esbuild@v0.15.14/mod.js";
 import { jsonStringify } from "../typedJson.ts";
 import { writeTextFileWithLog } from "../writeFileAndLog.ts";
 
 const distributionPath = new URL(
-  import.meta.resolve("../vscodeExtensionDistribution/"),
+  "../vscodeExtensionDistribution/",
+  import.meta.url,
 );
 
 const build = async (): Promise<string> => {
   const esbuildResult = await esBuild({
     entryPoints: [
       fromFileUrl(
-        new URL("./main.ts", import.meta.resolve("../vscodeExtension/main.ts")),
+        new URL("../vscodeExtension/main.ts", import.meta.url),
       ),
     ],
     plugins: [denoPlugin()],

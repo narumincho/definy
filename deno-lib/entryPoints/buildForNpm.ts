@@ -1,15 +1,15 @@
 import { build, emptyDir } from "https://deno.land/x/dnt@0.32.0/mod.ts";
-import { fromFileUrl } from "https://deno.land/std@0.173.0/path/mod.ts";
+import { fromFileUrl } from "https://deno.land/std@0.177.0/path/mod.ts";
 import { collectTsOrTsxFilePath } from "../collectTsOrTsxFilePath.ts";
-import { relative } from "https://deno.land/std@0.173.0/path/posix.ts";
+import { relative } from "https://deno.land/std@0.177.0/path/posix.ts";
 
-const outDir = new URL(import.meta.resolve("../npm"));
+const outDir = new URL("../npm", import.meta.url);
 
 await emptyDir(new URL(outDir));
 
 const pathList: string[] = [
   ...await collectTsOrTsxFilePath(
-    new URL(import.meta.resolve("../")),
+    new URL("../", import.meta.url),
     new Set([
       "/nodeRedPackage",
       "/entryPoints",
@@ -42,25 +42,25 @@ await build({
   },
   skipSourceOutput: true,
   mappings: {
-    "https://esm.sh/prettier@2.7.1?pin=v102": {
+    "https://esm.sh/prettier@2.7.1?pin=v106": {
       name: "prettier",
       version: "^2.7.1",
     },
-    "https://esm.sh/prettier@2.7.1/parser-typescript?pin=v102": {
+    "https://esm.sh/prettier@2.7.1/parser-typescript?pin=v106": {
       name: "prettier",
       version: "^2.7.1",
       subPath: "parser-typescript.js",
     },
-    "https://esm.sh/react@18.2.0?pin=v102": {
+    "https://esm.sh/react@18.2.0?pin=v106": {
       name: "react",
       version: "^18.2.0",
     },
-    "https://esm.sh/react-dom@18.2.0/client?pin=v102": {
+    "https://esm.sh/react-dom@18.2.0/client?pin=v106": {
       name: "react-dom",
       version: "^18.2.0",
       subPath: "client.js",
     },
-    "https://esm.sh/react-dom@18.2.0/server?pin=v102": {
+    "https://esm.sh/react-dom@18.2.0/server?pin=v106": {
       name: "react-dom",
       version: "^18.2.0",
       subPath: "server.js",

@@ -1,4 +1,4 @@
-import { groupBy } from "https://deno.land/std@0.173.0/collections/group_by.ts";
+import { groupBy } from "https://deno.land/std@0.177.0/collections/group_by.ts";
 import { objectEntriesSameValue } from "../../objectEntriesSameValue.ts";
 import { writeTextFileWithLog } from "../../writeFileAndLog.ts";
 import { generateCodeInNamespace } from "../codeGen/main.ts";
@@ -67,7 +67,6 @@ export const generateMetaAndLocalCode = async (
               funcOrType.type === "function" ? [funcOrType.value] : []
             ),
             originHint: parameter.originHint,
-            pathPrefix: parameter.pathPrefix ?? [],
             usePrettier: true,
             namespace: firstFuncOrType.type === "function"
               ? fromFunctionNamespace(firstFuncOrType.value.namespace)

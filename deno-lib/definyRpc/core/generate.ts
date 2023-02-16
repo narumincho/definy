@@ -12,7 +12,6 @@ export const generateCoreCode = async (): Promise<void> => {
     apiFunctionList: [],
     namespace: Namespace.coreType,
     originHint: "",
-    pathPrefix: [],
     usePrettier: true,
     typeMap: new Map(coreTypeInfoList.map(
       (typeInfo) => [
@@ -22,7 +21,7 @@ export const generateCoreCode = async (): Promise<void> => {
     )),
   });
   await writeTextFileWithLog(
-    new URL(import.meta.resolve("./coreTypeNew.ts")),
+    new URL("./coreTypeNew.ts", import.meta.url),
     code,
   );
 };

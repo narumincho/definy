@@ -40,7 +40,6 @@ import { isFirstLowerCase } from "../../util.ts";
 export const apiFuncToTsFunction = (parameter: {
   readonly func: ApiFunction;
   readonly originHint: string;
-  readonly pathPrefix: ReadonlyArray<string>;
   readonly context: CodeGenContext;
 }): data.Function => {
   const parameterIdentifier = identifierFromString("parameter");

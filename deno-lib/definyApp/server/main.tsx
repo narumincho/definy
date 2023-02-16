@@ -14,10 +14,10 @@ import {
   simpleResponseNotFoundHtml,
   simpleResponseToResponse,
 } from "../../simpleRequestResponse/simpleResponse.ts";
-import { serve } from "https://deno.land/std@0.173.0/http/server.ts";
+import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { Mode } from "./mode.ts";
-import React from "https://esm.sh/react@18.2.0?pin=v102";
-import { renderToString } from "https://esm.sh/react-dom@18.2.0/server?pin=v102";
+import React from "https://esm.sh/react@18.2.0?pin=v106";
+import { renderToString } from "https://esm.sh/react-dom@18.2.0/server?pin=v106";
 import { App } from "../editor/app.tsx";
 import dist from "./dist.json" assert { type: "json" };
 import { getRenderedCss, resetInsertedStyle } from "../../cssInJs/mod.ts";
@@ -55,12 +55,12 @@ export const startDefinyServer = (
         parameter.mode,
       ),
     originHint: parameter.mode.type === "dev"
-      ? `http://localhost:${parameter.mode.port}`
+      ? `http://localhost:${parameter.mode.port}/api`
       // Deno Deploy で 現在の環境のオリジンを取得することができれば...
       // https://github.com/denoland/deploy_feedback/issues/245
-      : "https://definy-api.deno.dev",
+      : "https://definy-api.deno.dev/api",
     codeGenOutputFolderPath: parameter.mode.type === "dev"
-      ? new URL(import.meta.resolve("../apiClient/"))
+      ? new URL("../apiClient/", import.meta.url)
       : undefined,
     pathPrefix: ["api"],
   };

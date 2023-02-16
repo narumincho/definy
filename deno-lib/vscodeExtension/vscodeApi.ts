@@ -12,7 +12,9 @@ export type VSCodeApi = {
   };
 };
 
-export type Context = {};
+export type Context = {
+  something: "???";
+};
 
 export type TextDocument = {
   getText: () => string;
