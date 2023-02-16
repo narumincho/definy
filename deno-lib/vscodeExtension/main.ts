@@ -6,7 +6,7 @@ if (vscode === undefined) {
   throw new Error("VSCode 内で呼んでください");
 }
 
-export const activate = (context: Context) => {
+export const activate = (_context: Context) => {
   vscode.commands.registerCommand("definy.webview", () => {
     vscode.window.registerCustomEditorProvider(
       "definy.webview-test",
@@ -23,7 +23,7 @@ export const deactivate = () => {
   console.log("無効化します");
 };
 
-const updatePanel = (panel: WebviewPanel, text: string) => {
+const updatePanel = (panel: WebviewPanel, _text: string) => {
   panel.title = "任意のタイトル!";
   panel.webview.html = `<!doctype html>
   <html lang="ja">
