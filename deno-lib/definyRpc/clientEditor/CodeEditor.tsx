@@ -34,6 +34,7 @@ export const CodeEditor = (): React.ReactElement => {
       const editor = window.monaco.editor.create(div, {
         value: "console.log('sample code')",
         language: "typescript",
+        theme: "vs-dark",
       });
       console.log("editor", editor);
     });
