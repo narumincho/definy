@@ -105,6 +105,7 @@ export const handleRequest = async (
         color-scheme: dark;
       }
     </style>
+    <script src="https://cdn.bootcdn.net/ajax/libs/monaco-editor/0.35.0/min/vs/loader.min.js"></script>
     <script type="module" src="${
       editorPathPrefix(pathPrefix) + clientBuildResult.scriptHash
     }"></script>

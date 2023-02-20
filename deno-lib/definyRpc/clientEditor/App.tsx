@@ -9,6 +9,7 @@ import {
   typeList,
 } from "../example/generated/meta.ts";
 import { styled } from "./style.ts";
+import { CodeEditor } from "./CodeEditor.tsx";
 
 const Container = styled("div", {
   backgroundColor: "#111",
@@ -108,6 +109,7 @@ export const App = (): React.ReactElement => {
       {functionAndTypeList && (
         <SampleChart functionAndTypeList={functionAndTypeList} />
       )}
+      <CodeEditor />
     </Container>
   );
 };
