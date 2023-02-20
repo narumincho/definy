@@ -1,9 +1,9 @@
 import React from "https://esm.sh/react@18.2.0?pin=v106";
-import { c, toStyleAndHash } from "../../../cssInJs/mod.ts";
 import { CodeAndState, logInByCodeAndState } from "../../apiClient/api/main.ts";
+import { styled } from "../style.ts";
 import { apiUrl } from "../url.ts";
 
-const containerStyle = toStyleAndHash({
+const Container = styled("div", {
   backgroundColor: "black",
   color: "white",
   height: "100%",
@@ -42,9 +42,9 @@ export const LogInCallback = (
     );
   }, [requestingState]);
   return (
-    <div className={c(containerStyle)}>
+    <Container>
       ログインしているかの確認は....
       {JSON.stringify(requestingState)}
-    </div>
+    </Container>
   );
 };

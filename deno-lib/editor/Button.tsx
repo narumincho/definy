@@ -1,5 +1,5 @@
 import React from "https://esm.sh/react@18.2.0?pin=v106";
-import { c, toStyleAndHash } from "../cssInJs/mod.ts";
+import { styled } from "https://esm.sh/@stitches/react@1.2.8?pin=v106";
 
 export type Props = {
   readonly onClick: (() => void) | undefined;
@@ -7,36 +7,31 @@ export type Props = {
   readonly children: React.ReactNode;
 };
 
-const style = toStyleAndHash(
-  {
-    cursor: "pointer",
-    border: "none",
-    padding: 8,
-    textAlign: "left",
-    fontSize: 16,
-    backgroundColor: "#333",
-    color: "#ddd",
-    borderRadius: 16,
+const StyledButton = styled("button", {
+  cursor: "pointer",
+  border: "none",
+  padding: 8,
+  textAlign: "left",
+  fontSize: 16,
+  backgroundColor: "#333",
+  color: "#ddd",
+  borderRadius: 16,
+  "&:hover": {
+    backgroundColor: "#444",
+    color: "#dfdfdf",
   },
-  {
-    hover: {
-      backgroundColor: "#444",
-      color: "#dfdfdf",
-    },
-    disabled: {
-      cursor: "not-allowed",
-      backgroundColor: "#000",
-      borderRadius: 0,
-    },
+  "&:disabled": {
+    cursor: "not-allowed",
+    backgroundColor: "#000",
+    borderRadius: 0,
   },
-);
+});
 
 export const Button = (props: Props): React.ReactElement => (
-  <button
-    className={c(style)}
+  <StyledButton
     onClick={props.onClick}
     disabled={props.onClick === undefined}
   >
     {props.children}
-  </button>
+  </StyledButton>
 );

@@ -1,16 +1,16 @@
 import React from "https://esm.sh/react@18.2.0?pin=v106";
-import { c, toStyleAndHash } from "../../../cssInJs/mod.ts";
 import { ClockSetting } from "../components/clockSetting.tsx";
 import { timeToDisplayText } from "../logic.ts";
+import { styled } from "../style.ts";
 import { Clock24Parameter } from "../url.ts";
 
-const containerStyle = toStyleAndHash({
+const Container = styled("div", {
   backgroundColor: "#724242",
   height: "100%",
   display: "grid",
 });
 
-const svgStyle = toStyleAndHash({
+const StyledSvg = styled("svg", {
   gridColumn: "1 / 2",
   gridRow: "1 / 2",
   width: "100%",
@@ -18,21 +18,21 @@ const svgStyle = toStyleAndHash({
   display: "grid",
 });
 
-const buttonContainerStyle = toStyleAndHash({
+const StyledButtonContainer = styled("div", {
   gridColumn: "1 / 2",
   gridRow: "1 / 2",
   justifySelf: "end",
   zIndex: "1",
 });
 
-const buttonStyle = toStyleAndHash({
+const StyledButton = styled("button", {
   padding: 16,
   cursor: "pointer",
   backgroundColor: "black",
   fontSize: 24,
 });
 
-const settingStyle = toStyleAndHash({
+const StyledSetting = styled("div", {
   gridColumn: "1 / 2",
   gridRow: "1 / 2",
   backdropFilter: "blur(8px)",
@@ -81,8 +81,8 @@ export const Clock24 = (
     : timeToDisplayText(props.parameter.deadline);
 
   return (
-    <div className={c(containerStyle)}>
-      <svg className={c(svgStyle)} viewBox="-100 -100 200 200">
+    <Container>
+      <StyledSvg viewBox="-100 -100 200 200">
         <circle cx={0} cy={0} r={93} stroke="#ca8484" fill="#b56566" />
         {Array.from({ length: 24 }).map((_, index) => {
           const angle = index / 24 * Math.PI * 2 - Math.PI / 2;
@@ -190,25 +190,24 @@ export const Clock24 = (
             "0",
           )}:{(Math.floor(seconds / (1000)) % 60).toString().padStart(2, "0")}
         </text>
-      </svg>
+      </StyledSvg>
       {isSettingMode
         ? (
-          <div className={c(settingStyle)}>
+          <StyledSetting>
             <ClockSetting {...props} />
-          </div>
+          </StyledSetting>
         )
         : <></>}
-      <div className={c(buttonContainerStyle)}>
-        <button
-          className={c(buttonStyle)}
+      <StyledButtonContainer>
+        <StyledButton
           onClick={() => {
             setIsSettingMode((prev) => !prev);
           }}
         >
           ⚙️
-        </button>
-      </div>
-    </div>
+        </StyledButton>
+      </StyledButtonContainer>
+    </Container>
   );
 };
 

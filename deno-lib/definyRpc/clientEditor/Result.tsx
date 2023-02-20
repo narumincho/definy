@@ -1,15 +1,14 @@
 import React from "https://esm.sh/react@18.2.0?pin=v106";
 import { Button } from "../../editor/Button.tsx";
-import { c, toStyleAndHash } from "../../cssInJs/mod.ts";
 import { jsonStringify, RawJsonValue } from "../../typedJson.ts";
-import { Editor } from "../../editor/Editor.tsx";
+import { styled } from "./style.ts";
 
-const requestingStyle = toStyleAndHash({
+const Requesting = styled("div", {
   backgroundColor: "gray",
   height: 32,
 });
 
-const resultStyle = toStyleAndHash({
+const ResultText = styled("div", {
   whiteSpace: "pre-wrap",
   borderStyle: "solid",
   borderColor: "#ccc",
@@ -25,7 +24,7 @@ export const Result = (props: {
     .useState<boolean>(false);
 
   if (props.requesting) {
-    return <div className={c(requestingStyle)} />;
+    return <Requesting />;
   }
   const data = props.data;
   if (data === undefined) {
@@ -46,9 +45,9 @@ export const Result = (props: {
         クリップボードにコピー
       </Button>
       <div>
-        <div className={c(resultStyle)}>
+        <ResultText>
           {typeof data === "string" ? data : jsonStringify(data)}
-        </div>
+        </ResultText>
       </div>
     </div>
   );

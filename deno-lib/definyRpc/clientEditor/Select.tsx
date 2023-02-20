@@ -1,9 +1,9 @@
 import React from "https://esm.sh/react@18.2.0?pin=v106";
-import { c, toStyleAndHash } from "../../cssInJs/mod.ts";
 import { functionNamespaceToString } from "../codeGen/namespace.ts";
 import { FunctionDetail } from "../core/coreType.ts";
+import { styled } from "./style.ts";
 
-const readonlyStyle = toStyleAndHash({
+const Readonly = styled("div", {
   display: "grid",
   borderStyle: "solid",
   borderColor: "white",
@@ -13,14 +13,14 @@ const readonlyStyle = toStyleAndHash({
   padding: "4px 8px",
 });
 
-const containerStyle = toStyleAndHash({
+const Container = styled("div", {
   display: "grid",
   borderStyle: "solid",
   borderColor: "white",
   borderRadius: 8,
 });
 
-const inputStyle = toStyleAndHash({
+const Input = styled("input", {
   fontFamily: "monospace",
   fontSize: 18,
   padding: "0 8px",
@@ -28,16 +28,9 @@ const inputStyle = toStyleAndHash({
   color: "white",
 });
 
-const suggestionContainerStyle = toStyleAndHash({
+const SuggestionContainer = styled("div", {
   display: "grid",
   gap: 1,
-});
-
-const suggestionItemStyle = toStyleAndHash({
-  fontFamily: "monospace",
-  fontSize: 18,
-  textAlign: "left",
-  cursor: "pointer",
 });
 
 export const Select = (props: {
@@ -66,15 +59,14 @@ export const Select = (props: {
     );
   }
   return (
-    <div
+    <Readonly
       onFocus={() => {
         setIsFocus(true);
       }}
       tabIndex={-1}
-      className={c(readonlyStyle)}
     >
       <div>{props.value ?? "???"}</div>
-    </div>
+    </Readonly>
   );
 };
 
@@ -113,12 +105,11 @@ const SelectActive = (props: {
   );
 
   return (
-    <div className={c(containerStyle)}>
-      <input
+    <Container>
+      <Input
         autoFocus
         ref={inputElementRef}
         type="text"
-        className={c(inputStyle)}
         value={inputText}
         onChange={onInput}
         onKeyDown={(e) => {
@@ -167,9 +158,44 @@ const SelectActive = (props: {
         inputText={inputText}
         onSelect={props.onSelectAndExit}
       />
-    </div>
+    </Container>
   );
 };
+
+const SuggestionButton = styled("button", {
+  backgroundColor: "transparent",
+  fontFamily: "monospace",
+  fontSize: 18,
+  textAlign: "left",
+  cursor: "pointer",
+  variants: {
+    select: {
+      select: {
+        backgroundColor: "#511",
+      },
+      noSelect: {
+        ":hover": {
+          backgroundColor: "#333",
+        },
+      },
+    },
+  },
+});
+
+const SuggestionButtonText = styled("span", {
+  variants: {
+    emphasis: {
+      emphasis: {
+        color: "#faa",
+        fontWeight: "bold",
+      },
+      noEmphasis: {
+        color: "white",
+        fontWeight: "normal",
+      },
+    },
+  },
+});
 
 const Suggestion = (props: {
   readonly suggestionList: SuggestionList | undefined;
@@ -184,44 +210,26 @@ const Suggestion = (props: {
     return <div>候補なし</div>;
   }
   return (
-    <div className={c(suggestionContainerStyle)}>
+    <SuggestionContainer>
       {props.suggestionList.map((v) => (
-        <button
+        <SuggestionButton
           key={v.value}
-          className={c(
-            toStyleAndHash({
-              backgroundColor: v.value === props.value ? "#511" : "transparent",
-              fontFamily: "monospace",
-              fontSize: 18,
-              textAlign: "left",
-              cursor: "pointer",
-              ...(v.value === props.value ? {} : {
-                ":hover": {
-                  backgroundColor: "#333",
-                },
-              }),
-            }),
-          )}
+          select={v.value === props.value ? "select" : "noSelect"}
           onClick={() => {
             props.onSelect(v.value);
           }}
         >
           {v.text.map((s, index) => (
-            <span
+            <SuggestionButtonText
               key={index}
-              className={c(
-                toStyleAndHash({
-                  color: s.emphasis ? "#faa" : "white",
-                  fontWeight: s.emphasis ? "bold" : "normal",
-                }),
-              )}
+              emphasis={s.emphasis ? "emphasis" : "noEmphasis"}
             >
               {s.text}
-            </span>
+            </SuggestionButtonText>
           ))}
-        </button>
+        </SuggestionButton>
       ))}
-    </div>
+    </SuggestionContainer>
   );
 };
 
