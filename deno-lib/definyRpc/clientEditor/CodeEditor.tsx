@@ -2,10 +2,14 @@ import React from "https://esm.sh/react@18.2.0?pin=v106";
 import { styled } from "./style.ts";
 
 const EditorBox = styled("div", {
-  height: 300,
-  width: 600,
+  height: 500,
+  width: 700,
   border: "solid red 2px",
 });
+
+const state: { created: boolean } = {
+  created: false,
+};
 
 export const CodeEditor = (): React.ReactElement => {
   const ref = React.useRef<HTMLDivElement>(null);
@@ -22,9 +26,10 @@ export const CodeEditor = (): React.ReactElement => {
     });
 
     require(["vs/editor/editor.main"], () => {
-      if (globalThis.Deno !== undefined) {
+      if (state.created) {
         return;
       }
+      state.created = true;
       console.log("monaco!", window.monaco);
       const editor = window.monaco.editor.create(div, {
         value: "console.log('sample code')",
