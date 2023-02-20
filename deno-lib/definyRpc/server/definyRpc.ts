@@ -100,6 +100,10 @@ export const handleRequest = async (
       * {
         box-sizing: border-box;
       }
+
+      :root {
+        color-scheme: dark;
+      }
     </style>
     <script type="module" src="${
       editorPathPrefix(pathPrefix) + clientBuildResult.scriptHash

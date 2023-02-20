@@ -190,6 +190,10 @@ body {
   margin: 0;
 }
 
+:root {
+  color-scheme: dark;
+}
+
 /*
   Hack typeface https://github.com/source-foundry/Hack
   License: https://github.com/source-foundry/Hack/blob/master/LICENSE.md
