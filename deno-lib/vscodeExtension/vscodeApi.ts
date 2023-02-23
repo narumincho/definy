@@ -27,11 +27,10 @@ export type WebviewPanel = {
   };
 };
 
-declare global {
-  const require: ((path: "vscode") => VSCodeApi) | undefined;
-}
-
 export const importVscode = (): VSCodeApi | undefined => {
+  const require =
+    (globalThis as unknown as { require: (path: "vscode") => VSCodeApi })
+      .require;
   if (typeof require === "undefined") {
     return;
   }

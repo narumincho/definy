@@ -19,6 +19,12 @@ export const CodeEditor = (): React.ReactElement => {
     if (div === null) {
       return;
     }
+    const require = (globalThis as unknown as {
+      readonly require: {
+        readonly config: (a: unknown) => void;
+        (a: ReadonlyArray<string>, loaded: () => void): void;
+      };
+    }).require;
     require.config({
       paths: {
         "vs": "https://cdn.bootcdn.net/ajax/libs/monaco-editor/0.35.0/min/vs",
@@ -30,8 +36,19 @@ export const CodeEditor = (): React.ReactElement => {
         return;
       }
       state.created = true;
-      console.log("monaco!", window.monaco);
-      const editor = window.monaco.editor.create(div, {
+      const monaco = (globalThis as unknown as {
+        readonly monaco: {
+          readonly editor: {
+            create: (a: HTMLElement, b: {
+              readonly value: string;
+              readonly language: "typescript";
+              readonly theme: "vs-dark";
+            }) => void;
+          };
+        };
+      }).monaco;
+      console.log("monaco!", monaco);
+      const editor = monaco.editor.create(div, {
         value: "console.log('sample code')",
         language: "typescript",
         theme: "vs-dark",
@@ -42,17 +59,3 @@ export const CodeEditor = (): React.ReactElement => {
 
   return <EditorBox ref={ref} />;
 };
-
-declare global {
-  // deno-lint-ignore no-var
-  var monaco: {
-    editor: {
-      create: (a: HTMLElement, b: {}) => void;
-    };
-  };
-  // deno-lint-ignore no-var
-  var require: {
-    config: (a: unknown) => void;
-    (a: ReadonlyArray<string>, loaded: () => void): void;
-  };
-}
