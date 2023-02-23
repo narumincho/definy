@@ -20,15 +20,15 @@ import React from "https://esm.sh/react@18.2.0?pin=v106";
 import { renderToString } from "https://esm.sh/react-dom@18.2.0/server?pin=v106";
 import { App } from "../editor/app.tsx";
 import dist from "./dist.json" assert { type: "json" };
-import { getRenderedCss, resetInsertedStyle } from "../../cssInJs/mod.ts";
 import { clock24Title } from "../editor/pages/clock24.tsx";
 import { createImageFromText } from "./ogpImage.tsx";
 import { toBytes } from "https://deno.land/x/fast_base64@v0.1.7/mod.ts";
-import { simpleUrlToUrlData, UrlData, urlDataToSimpleUrl } from "./url.ts";
+import { simpleUrlToUrlData, urlDataToSimpleUrl } from "./url.ts";
 import {
   SimpleUrl,
   simpleUrlToUrlText,
 } from "../../simpleRequestResponse/simpleUrl.ts";
+import { getCssText } from "../editor/style.ts";
 
 export const startDefinyServer = (
   parameter: {
@@ -150,8 +150,6 @@ const createHtml = (
   },
   body: React.ReactElement,
 ) => {
-  resetInsertedStyle();
-
   const bodyAsHtml = renderToString(body);
 
   return "<!doctype html>" + renderToString(
@@ -180,8 +178,7 @@ const createHtml = (
             />
           </>
         )}
-        <script type="module" src={dist.scriptHash}></script>
-        <style dangerouslySetInnerHTML={{ __html: getRenderedCss() }}></style>
+        <script type="module" src={dist.scriptHash} />
         <style
           dangerouslySetInnerHTML={{
             __html: `
@@ -191,6 +188,10 @@ html, body, #root {
 
 body {
   margin: 0;
+}
+
+:root {
+  color-scheme: dark;
 }
 
 /*
@@ -204,8 +205,8 @@ body {
   src: url("/${dist.fontHash}") format("woff2");
 }`,
           }}
-        >
-        </style>
+        />
+        <style dangerouslySetInnerHTML={{ __html: getCssText() }} />
       </head>
       <body>
         <div

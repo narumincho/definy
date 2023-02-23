@@ -1,26 +1,17 @@
 import React from "https://esm.sh/react@18.2.0?pin=v106";
-import { c, toStyleAndHash } from "../../cssInJs/mod.ts";
 import { Button } from "../../editor/Button.tsx";
 import { Editor, FunctionAndTypeList } from "./Editor.tsx";
 import { ServerOrigin } from "./ServerOrigin.tsx";
 import { SampleChart } from "./Chart.tsx";
 import {
-  FunctionDetail,
-  FunctionNamespace,
-  List,
-  String,
-  Unit,
-} from "../core/coreType.ts";
-import { requestQuery } from "../core/request.ts";
-import { coreTypeInfoList } from "../core/coreTypeInfo.ts";
-import { namespaceToString } from "../codeGen/namespace.ts";
-import {
   functionListByName,
   name,
   typeList,
 } from "../example/generated/meta.ts";
+import { styled } from "./style.ts";
+import { CodeEditor } from "./CodeEditor.tsx";
 
-const containerStyle = toStyleAndHash({
+const Container = styled("div", {
   backgroundColor: "#111",
   color: "white",
   height: "100%",
@@ -31,7 +22,7 @@ const containerStyle = toStyleAndHash({
   overflowY: "scroll",
 });
 
-const titleStyle = toStyleAndHash({
+const StyledTitle = styled("h2", {
   backgroundColor: "#5fb58a",
   fontSize: 14,
   color: "#000",
@@ -92,8 +83,8 @@ export const App = (): React.ReactElement => {
   console.log("functionAndTypeList?.typeList", functionAndTypeList?.typeList);
 
   return (
-    <div className={c(containerStyle)}>
-      <h2 className={c(titleStyle)}>definy RPC Browser Client</h2>
+    <Container>
+      <StyledTitle>definy RPC Browser Client</StyledTitle>
 
       <ServerOrigin
         serverName={serverName}
@@ -118,6 +109,7 @@ export const App = (): React.ReactElement => {
       {functionAndTypeList && (
         <SampleChart functionAndTypeList={functionAndTypeList} />
       )}
-    </div>
+      <CodeEditor />
+    </Container>
   );
 };

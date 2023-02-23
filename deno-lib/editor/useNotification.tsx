@@ -1,5 +1,5 @@
 import React from "https://esm.sh/react@18.2.0?pin=v106";
-import { c, toStyleAndHash } from "../cssInJs/mod.ts";
+import { styled } from "https://esm.sh/@stitches/react@1.2.8?pin=v106";
 import { createRandomId } from "../util.ts";
 
 export type Message = {
@@ -10,13 +10,29 @@ export type Message = {
 
 export type AddMessage = (message: Pick<Message, "type" | "text">) => void;
 
-const containerStyle = toStyleAndHash({
+const Container = styled("div", {
   display: "grid",
   gap: 8,
 });
 
-const messageStyle = toStyleAndHash({
+const StyledMessage = styled("div", {
   flexGrow: "1",
+});
+
+const StyledItem = styled("div", {
+  padding: 8,
+  color: "#111",
+  display: "flex",
+  variants: {
+    type: {
+      success: {
+        backgroundColor: "skyblue",
+      },
+      error: {
+        backgroundColor: "red",
+      },
+    },
+  },
 });
 
 export const useNotification = (): {
@@ -37,24 +53,15 @@ export const useNotification = (): {
   return {
     addMessage,
     element: (
-      <div className={c(containerStyle)}>
+      <Container>
         {[...messageList]
           .slice(messageList.length - 4, messageList.length)
           .map((message) => (
-            <div
+            <StyledItem
               key={message.id}
-              className={c(
-                toStyleAndHash({
-                  backgroundColor: message.type === "success"
-                    ? "skyblue"
-                    : "red",
-                  padding: 8,
-                  color: "#111",
-                  display: "flex",
-                }),
-              )}
+              type={message.type}
             >
-              <div className={c(messageStyle)}>{message.text}</div>
+              <StyledMessage>{message.text}</StyledMessage>
               <button
                 onClick={() => {
                   setMessageList((old) =>
@@ -64,9 +71,9 @@ export const useNotification = (): {
               >
                 x
               </button>
-            </div>
+            </StyledItem>
           ))}
-      </div>
+      </Container>
     ),
   };
 };

@@ -1,8 +1,8 @@
 import React from "https://esm.sh/react@18.2.0?pin=v106";
-import { c, toStyleAndHash } from "../../../cssInJs/mod.ts";
+import { styled } from "../style.ts";
 import { Clock24Parameter } from "../url.ts";
 
-const containerStyle = toStyleAndHash({
+const Container = styled("div", {
   padding: 16,
   height: "100%",
   boxSizing: "border-box",
@@ -11,17 +11,17 @@ const containerStyle = toStyleAndHash({
   gap: 16,
 });
 
-const labelStyle = toStyleAndHash({
+const StyledLabel = styled("label", {
   display: "flex",
   gap: 8,
   alignItems: "center",
 });
 
-const labelTextStyle = toStyleAndHash({
+const StyledLabelText = styled("div", {
   width: 80,
 });
 
-const inputStyle = toStyleAndHash({
+const StyledInput = styled("input", {
   padding: 4,
   fontSize: 16,
 });
@@ -65,12 +65,11 @@ export const ClockSetting = (
   },
 ): React.ReactElement => {
   return (
-    <div className={c(containerStyle)}>
-      <label className={c(labelStyle)}>
-        <div className={c(labelTextStyle)}>date</div>
-        <input
+    <Container>
+      <StyledLabel>
+        <StyledLabelText>date</StyledLabelText>
+        <StyledInput
           type="datetime-local"
-          className={c(inputStyle)}
           value={props.parameter.deadline === undefined
             ? undefined
             : getLocalIsoDateString(props.parameter.deadline.date)}
@@ -83,12 +82,11 @@ export const ClockSetting = (
           }}
         />
         <div>{getTimezoneOffsetText()}</div>
-      </label>
-      <label className={c(labelStyle)}>
-        <div className={c(labelTextStyle)}>message</div>
-        <input
+      </StyledLabel>
+      <StyledLabel>
+        <StyledLabelText>message</StyledLabelText>
+        <StyledInput
           type="text"
-          className={c(inputStyle)}
           value={props.parameter.message}
           onChange={(e) => {
             const newMessage = e.target.value;
@@ -102,7 +100,7 @@ export const ClockSetting = (
             );
           }}
         />
-      </label>
-    </div>
+      </StyledLabel>
+    </Container>
   );
 };

@@ -1,8 +1,8 @@
-import { c, toStyleAndHash } from "../../../cssInJs/mod.ts";
 import { Language } from "../../../zodType.ts";
 import React from "https://esm.sh/react@18.2.0?pin=v106";
+import { styled } from "../style.ts";
 
-const containerStyle = toStyleAndHash({
+const StyledButton = styled("button", {
   display: "grid",
   border: "none",
   gridTemplateColumns: "32px 160px",
@@ -12,13 +12,12 @@ const containerStyle = toStyleAndHash({
   padding: 0,
   cursor: "pointer",
   alignItems: "center",
-}, {
-  hover: {
+  "&:hover": {
     backgroundColor: "#5190f8",
   },
 });
 
-const textStyle = toStyleAndHash({
+const Message = styled("div", {
   fontSize: 16,
   color: "#fff",
   lineHeight: "1",
@@ -30,17 +29,12 @@ export const GoogleLogInButton = (
     readonly onClick: () => void;
   },
 ) => (
-  <button
-    className={c(containerStyle)}
-    onClick={props.onClick}
-  >
+  <StyledButton onClick={props.onClick}>
     <GoogleIcon />
-    <div
-      className={c(textStyle)}
-    >
+    <Message>
       {logInMessage(props.language)}
-    </div>
-  </button>
+    </Message>
+  </StyledButton>
 );
 
 const logInMessage = (
@@ -56,7 +50,7 @@ const logInMessage = (
   }
 };
 
-const iconStyle = toStyleAndHash({
+const StyledSvg = styled("svg", {
   width: 32,
   height: 32,
   padding: 4,
@@ -65,10 +59,7 @@ const iconStyle = toStyleAndHash({
 });
 
 const GoogleIcon: React.FC<Record<string, string>> = React.memo(() => (
-  <svg
-    viewBox="0 0 20 20"
-    className={c(iconStyle)}
-  >
+  <StyledSvg viewBox="0 0 20 20">
     {/** blue */}
     <path
       d="M19.6 10.23c0-.82-.1-1.42-.25-2.05H10v3.72h5.5c-.15.96-.74 2.31-2.04 3.22v2.45h3.16c1.89-1.73 2.98-4.3 2.98-7.34z"
@@ -89,5 +80,5 @@ const GoogleIcon: React.FC<Record<string, string>> = React.memo(() => (
       d="M10 3.88c1.88 0 3.13.81 3.85 1.48l2.84-2.76C14.96.99 12.7 0 10 0 6.09 0 2.72 2.25 1.07 5.51l3.24 2.52C5.12 5.62 7.36 3.88 10 3.88z"
       fill="rgb(234, 67, 53)"
     />
-  </svg>
+  </StyledSvg>
 ));

@@ -1,10 +1,10 @@
 import React from "https://esm.sh/react@18.2.0?pin=v106";
 import { Editor } from "../../editor/Editor.tsx";
-import { c, toStyleAndHash } from "../../cssInJs/mod.ts";
+import { styled } from "./style.ts";
 
 const serverOriginFieldId = "server-origin";
 
-const containerStyle = toStyleAndHash({
+const Container = styled("div", {
   padding: 16,
 });
 
@@ -20,7 +20,7 @@ export const ServerOrigin = (props: {
   const origin = getSafeOrigin(originText);
 
   return (
-    <div className={c(containerStyle)}>
+    <Container>
       <Editor
         fields={[
           {
@@ -55,7 +55,7 @@ export const ServerOrigin = (props: {
           }
         }}
       />
-    </div>
+    </Container>
   );
 };
 

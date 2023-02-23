@@ -1,16 +1,16 @@
 import React from "https://esm.sh/react@18.2.0?pin=v106";
 import { urlFromString } from "./urlFromString.ts";
-import { c, toStyleAndHash } from "../../cssInJs/mod.ts";
+import { styled } from "https://esm.sh/@stitches/react@1.2.8?pin=v106";
 import { jsonStringify } from "../../typedJson.ts";
 
-const errorStyle = toStyleAndHash({
+const StyledError = styled("div", {
   borderStyle: "solid",
   borderColor: "red",
   borderRadius: 8,
   padding: 4,
 });
 
-const noteStyle = toStyleAndHash({
+const StyledNote = styled("div", {
   backgroundColor: "#d4ecf6",
   padding: 8,
 });
@@ -40,13 +40,13 @@ export const Form = (props: {
         />
       </div>
       {urlFromString(urlText) ? <></> : (
-        <div className={c(errorStyle)}>
+        <StyledError>
           {urlText} はURLとして不正です. 例: https://narumincho-definy.deno.dev/
-        </div>
+        </StyledError>
       )}
-      <div className={c(noteStyle)}>
+      <StyledNote>
         デプロイをしたあとにノードが生成されます
-      </div>
+      </StyledNote>
       <div>{jsonStringify(props.statusText)}</div>
     </div>
   );

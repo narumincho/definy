@@ -3,7 +3,6 @@ import { Button } from "../../editor/Button.tsx";
 import { DetailView } from "./DetailView.tsx";
 import { Result } from "./Result.tsx";
 import { Select } from "./Select.tsx";
-import { c, toStyleAndHash } from "../../cssInJs/mod.ts";
 import { RawJsonValue } from "../../typedJson.ts";
 import {
   DefinyRpcTypeInfo,
@@ -18,19 +17,20 @@ import {
 } from "../codeGen/namespace.ts";
 import { requestQuery } from "../core/request.ts";
 import { coreTypeInfoList } from "../core/coreTypeInfo.ts";
+import { styled } from "./style.ts";
 
-const containerStyle = toStyleAndHash({
+const Container = styled("div", {
   padding: 16,
   display: "grid",
   gridTemplateColumns: "1fr 1fr",
 });
 
-const contentStyle = toStyleAndHash({
+const Content = styled("div", {
   display: "grid",
   alignContent: "start",
 });
 
-const spacerStyle = toStyleAndHash({
+const Spacer = styled("div", {
   height: 16,
 });
 
@@ -71,8 +71,8 @@ export const Editor = (props: {
   const inputType = selectedFuncDetail?.input;
 
   return (
-    <div className={c(containerStyle)}>
-      <div className={c(contentStyle)}>
+    <Container>
+      <Content>
         <Select
           values={props.functionAndTypeList?.funcList}
           value={selectedFunc}
@@ -116,9 +116,9 @@ export const Editor = (props: {
         >
           Run
         </Button>
-        <div className={c(spacerStyle)}></div>
+        <Spacer />
         <Result data={runResponse as RawJsonValue} requesting={isRequesting} />
-      </div>
+      </Content>
 
       {props.functionAndTypeList === undefined
         ? <div>loading...</div>
@@ -129,7 +129,7 @@ export const Editor = (props: {
             typeList={props.functionAndTypeList.typeList}
           />
         )}
-    </div>
+    </Container>
   );
 };
 

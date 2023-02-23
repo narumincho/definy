@@ -1,5 +1,4 @@
 import React from "https://esm.sh/react@18.2.0?pin=v106";
-import { c, toStyleAndHash } from "../../cssInJs/mod.ts";
 import {
   DefinyRpcTypeInfo,
   FunctionDetail,
@@ -11,12 +10,13 @@ import {
   namespaceEqual,
   namespaceToString,
 } from "../codeGen/namespace.ts";
+import { styled } from "./style.ts";
 
-const containerStyle = toStyleAndHash({
+const Container = styled("div", {
   overflowWrap: "anywhere",
 });
 
-const box = toStyleAndHash({
+const StyledBox = styled("div", {
   padding: 8,
 });
 
@@ -46,7 +46,7 @@ export const DetailView = (props: {
     );
   }
   return (
-    <div className={c(containerStyle)}>
+    <Container>
       <div>{functionNamespaceToString(selectedFuncDetail.namespace)}</div>
       <h2>{selectedFuncDetail.name}</h2>
       <div>{selectedFuncDetail.description}</div>
@@ -58,7 +58,7 @@ export const DetailView = (props: {
         出力 output:
         <TypeView type={selectedFuncDetail.output} typeList={props.typeList} />
       </div>
-    </div>
+    </Container>
   );
 };
 
@@ -76,7 +76,7 @@ export const TypeView = <T extends unknown>(
   );
 
   return (
-    <div className={c(box)}>
+    <StyledBox>
       <div>
         {namespaceToString(props.type.namespace) + "." + props.type.name}
       </div>
@@ -108,7 +108,7 @@ export const TypeView = <T extends unknown>(
             </button>
           </div>
         )}
-      <div className={c(box)}>
+      <StyledBox>
         {props.type.parameters.map((parameter, index) => (
           <TypeView
             key={index}
@@ -116,8 +116,8 @@ export const TypeView = <T extends unknown>(
             typeList={props.typeList}
           />
         ))}
-      </div>
-    </div>
+      </StyledBox>
+    </StyledBox>
   );
 };
 

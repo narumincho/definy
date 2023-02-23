@@ -1,13 +1,13 @@
 import React from "https://esm.sh/react@18.2.0?pin=v106";
-import { c, toStyleAndHash } from "../../cssInJs/mod.ts";
 import { Language } from "../../zodType.ts";
 import { createGoogleLogInUrl } from "../apiClient/api/main.ts";
 import { GoogleLogInButton } from "./components/googleLogInButton.tsx";
 import { Clock24 } from "./pages/clock24.tsx";
 import { LogInCallback } from "./pages/logInCallback.tsx";
 import { apiUrl, UrlLocation } from "./url.ts";
+import { styled } from "https://esm.sh/@stitches/react@1.2.8?pin=v106";
 
-const containerStyle = toStyleAndHash({
+const StyledContainer = styled("div", {
   backgroundColor: "black",
   color: "white",
   height: "100%",
@@ -16,20 +16,20 @@ const containerStyle = toStyleAndHash({
   gridTemplateRows: "48px 1fr",
 });
 
-const headerStyle = toStyleAndHash({
+const StyledHeader = styled("div", {
   display: "flex",
   alignItems: "center",
   backgroundColor: "#333",
   padding: "0 8px",
 });
 
-const logoStyle = toStyleAndHash({
+const StyledLogo = styled("div", {
   color: "#b9d09b",
   fontSize: 32,
   lineHeight: "1",
 });
 
-const spacer = toStyleAndHash({
+const Spacer = styled("div", {
   flexGrow: "1",
 });
 
@@ -48,9 +48,7 @@ export const App = (props: AppProps): React.ReactElement => {
   );
 
   if (props.location === undefined) {
-    return (
-      <div className={c(containerStyle)}>not found... 見つからなかった</div>
-    );
+    return <StyledContainer>not found... 見つからなかった</StyledContainer>;
   }
 
   switch (props.location.type) {
@@ -63,10 +61,10 @@ export const App = (props: AppProps): React.ReactElement => {
       );
     case "top":
       return (
-        <div className={c(containerStyle)}>
-          <div className={c(headerStyle)}>
-            <div className={c(logoStyle)}>definy</div>
-            <div className={c(spacer)}></div>
+        <StyledContainer>
+          <StyledHeader>
+            <StyledLogo>definy</StyledLogo>
+            <Spacer />
             <GoogleLogInButton
               language={props.language}
               onClick={() => {
@@ -82,7 +80,7 @@ export const App = (props: AppProps): React.ReactElement => {
                   });
               }}
             />
-          </div>
+          </StyledHeader>
           {isRequestLogInUrl === "error" && (
             <div>ログインURLの発行に失敗しました</div>
           )}
@@ -104,7 +102,7 @@ export const App = (props: AppProps): React.ReactElement => {
               数値を1増やす
             </button>
           </div>
-        </div>
+        </StyledContainer>
       );
     case "logInCallback":
       return <LogInCallback parameter={props.location.parameter} />;
