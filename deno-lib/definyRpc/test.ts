@@ -1,4 +1,4 @@
-import { assertEquals } from "https://deno.land/std@0.177.0/testing/asserts.ts";
+import { assertEquals } from "https://deno.land/std@0.182.0/testing/asserts.ts";
 import { handleRequest } from "./server/definyRpc.ts";
 
 Deno.test("get server name", async () => {
