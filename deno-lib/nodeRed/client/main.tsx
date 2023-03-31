@@ -1,5 +1,5 @@
-import React from "https://esm.sh/react@18.2.0?pin=v106";
-import { createRoot } from "https://esm.sh/react-dom@18.2.0/client?pin=v106";
+import React from "https://esm.sh/react@18.2.0?pin=v111";
+import { createRoot } from "https://esm.sh/react-dom@18.2.0/client?pin=v111";
 import { urlFromString } from "./urlFromString.ts";
 import { Form } from "./Form.tsx";
 import { red } from "./nodeRed.ts";
@@ -9,7 +9,7 @@ import {
   functionNamespaceToString,
 } from "../../definyRpc/codeGen/namespace.ts";
 import { TypeView } from "../../definyRpc/clientEditor/DetailView.tsx";
-import { renderToString } from "https://esm.sh/react-dom@18.2.0/server?pin=v106";
+import { renderToString } from "https://esm.sh/react-dom@18.2.0/server?pin=v111";
 
 const createNodeFromStatus = (statusAsString: string): void => {
   const status: Status = JSON.parse(statusAsString);

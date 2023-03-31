@@ -1,5 +1,5 @@
-import React from "https://esm.sh/react@18.2.0?pin=v106";
-import { createRoot } from "https://esm.sh/react-dom@18.2.0/client?pin=v106";
+import React from "https://esm.sh/react@18.2.0?pin=v111";
+import { createRoot } from "https://esm.sh/react-dom@18.2.0/client?pin=v111";
 import { App } from "./App.tsx";
 
 const rootElement = document.createElement("div");
