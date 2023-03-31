@@ -1,11 +1,11 @@
-import React from "https://esm.sh/react@18.2.0?pin=v106";
+import React from "https://esm.sh/react@18.2.0?pin=v111";
 import { Language } from "../../zodType.ts";
 import { createGoogleLogInUrl } from "../apiClient/api/main.ts";
 import { GoogleLogInButton } from "./components/googleLogInButton.tsx";
 import { Clock24 } from "./pages/clock24.tsx";
 import { LogInCallback } from "./pages/logInCallback.tsx";
 import { apiUrl, UrlLocation } from "./url.ts";
-import { styled } from "https://esm.sh/@stitches/react@1.2.8?pin=v106";
+import { styled } from "https://esm.sh/@stitches/react@1.2.8?pin=v111";
 
 const StyledContainer = styled("div", {
   backgroundColor: "black",

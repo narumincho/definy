@@ -1,4 +1,4 @@
-import React from "https://esm.sh/react@18.2.0?pin=v106";
+import React from "https://esm.sh/react@18.2.0?pin=v111";
 import { Editor } from "../../editor/Editor.tsx";
 import { styled } from "./style.ts";
 

@@ -1,5 +1,5 @@
-import prettier from "https://esm.sh/prettier@2.7.1?pin=v106";
-import parserTypeScript from "https://esm.sh/prettier@2.7.1/parser-typescript?pin=v106";
+import prettier from "https://esm.sh/prettier@2.8.7?pin=v111";
+import parserTypeScript from "https://esm.sh/prettier@2.8.7/parser-typescript?pin=v111";
 
 /**
  * Prettier を使って コードを整形する

@@ -1,5 +1,5 @@
-import React from "https://esm.sh/react@18.2.0?pin=v106";
-import { hydrateRoot } from "https://esm.sh/react-dom@18.2.0/client?pin=v106";
+import React from "https://esm.sh/react@18.2.0?pin=v111";
+import { hydrateRoot } from "https://esm.sh/react-dom@18.2.0/client?pin=v111";
 import { App } from "./app.tsx";
 import { simpleUrlToUrlLocation, UrlLocation } from "./url.ts";
 import { urlToSimpleUrl } from "../../simpleRequestResponse/simpleUrl.ts";
