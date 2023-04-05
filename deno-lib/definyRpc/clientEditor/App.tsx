@@ -9,6 +9,7 @@ import {
 } from "../example/generated/meta.ts";
 import { styled } from "./style.ts";
 import { ServerOrigin } from "./ServerOrigin.tsx";
+import { ChatView } from "./ChatView.tsx";
 
 const Container = styled("div", {
   backgroundColor: "#111",
@@ -17,7 +18,7 @@ const Container = styled("div", {
   boxSizing: "border-box",
   display: "grid",
   alignContent: "start",
-  overflowY: "scroll",
+  gridTemplateRows: "auto auto 1fr",
 });
 
 const StyledTitle = styled("h2", {
@@ -185,6 +186,6 @@ const TabContent = (props: {
       return <SampleChart functionAndTypeList={props.functionAndTypeList} />;
     }
     case "chat":
-      return <div>chat ui</div>;
+      return <ChatView functionAndTypeList={props.functionAndTypeList} />;
   }
 };
