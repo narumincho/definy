@@ -1,7 +1,6 @@
 import React from "https://esm.sh/react@18.2.0?pin=v111";
 import { Button } from "../../editor/Button.tsx";
 import { Editor, FunctionAndTypeList } from "./Editor.tsx";
-import { ServerOrigin } from "./ServerOrigin.tsx";
 import { SampleChart } from "./Chart.tsx";
 import {
   functionListByName,
@@ -9,7 +8,7 @@ import {
   typeList,
 } from "../example/generated/meta.ts";
 import { styled } from "./style.ts";
-import { CodeEditor } from "./CodeEditor.tsx";
+import { ServerOrigin } from "./ServerOrigin.tsx";
 
 const Container = styled("div", {
   backgroundColor: "#111",
@@ -30,6 +29,31 @@ const StyledTitle = styled("h2", {
   padding: "0 8px",
 });
 
+const Tab = styled("div", {
+  display: "grid",
+  gridTemplateColumns: "1fr 1fr 1fr",
+});
+
+const TabItem = styled("a", {
+  padding: 8,
+  textAlign: "center",
+  "&:hover": {
+    background: "gray",
+  },
+  variants: {
+    selected: {
+      selected: {
+        background: "red",
+      },
+      notSelected: {},
+    },
+  },
+});
+
+type TabValue = typeof allTabValues[number];
+
+const allTabValues = ["old", "chat", "documents"] as const;
+
 export const App = (): React.ReactElement => {
   const [functionAndTypeList, setFunctionAndTypeList] = React.useState<
     FunctionAndTypeList | undefined
@@ -39,6 +63,9 @@ export const App = (): React.ReactElement => {
     new URL(location.href).toString(),
   );
   const [editorCount, setEditorCount] = React.useState<number>(1);
+  const [selectedTabValue, setSelectedTabValue] = React.useState<TabValue>(
+    "old",
+  );
 
   React.useEffect(() => {
     functionListByName({ url: new URL(serverUrl) }).then((result) => {
@@ -85,12 +112,27 @@ export const App = (): React.ReactElement => {
   return (
     <Container>
       <StyledTitle>definy RPC Browser Client</StyledTitle>
-
+      <Tab>
+        {allTabValues.map((tabValue) => (
+          <TabItem
+            key={tabValue}
+            selected={tabValue === selectedTabValue
+              ? "selected"
+              : "notSelected"}
+            onClick={() => {
+              setSelectedTabValue(tabValue);
+            }}
+          >
+            {tabValue}
+          </TabItem>
+        ))}
+      </Tab>
       <ServerOrigin
         serverName={serverName}
         initServerOrigin={serverUrl}
         onChangeServerOrigin={setServerUrl}
       />
+
       {Array.from({ length: editorCount }, (_, i) => (
         <Editor
           key={i}
@@ -106,10 +148,11 @@ export const App = (): React.ReactElement => {
         +
       </Button>
 
+      ちゃっと風 UIに変えたいな.
+
       {functionAndTypeList && (
         <SampleChart functionAndTypeList={functionAndTypeList} />
       )}
-      <CodeEditor />
     </Container>
   );
 };
