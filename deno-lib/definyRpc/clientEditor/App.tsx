@@ -186,6 +186,11 @@ const TabContent = (props: {
       return <SampleChart functionAndTypeList={props.functionAndTypeList} />;
     }
     case "chat":
-      return <ChatView functionAndTypeList={props.functionAndTypeList} />;
+      return (
+        <ChatView
+          functionAndTypeList={props.functionAndTypeList}
+          serverOrigin={props.serverUrl}
+        />
+      );
   }
 };
