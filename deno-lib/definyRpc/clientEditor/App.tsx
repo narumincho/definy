@@ -16,7 +16,6 @@ const Container = styled("div", {
   height: "100%",
   boxSizing: "border-box",
   display: "grid",
-  gap: 16,
   alignContent: "start",
   overflowY: "scroll",
 });
@@ -37,13 +36,18 @@ const Tab = styled("div", {
 const TabItem = styled("a", {
   padding: 8,
   textAlign: "center",
+  background: "#444",
+  borderBottomStyle: "solid",
+  borderColor: "#666",
   "&:hover": {
-    background: "gray",
+    background: "#222",
   },
   variants: {
     selected: {
       selected: {
-        background: "red",
+        background: "#000",
+        borderStyle: "solid",
+        borderBottomStyle: "none",
       },
       notSelected: {},
     },
@@ -52,7 +56,7 @@ const TabItem = styled("a", {
 
 type TabValue = typeof allTabValues[number];
 
-const allTabValues = ["old", "chat", "documents"] as const;
+const allTabValues = ["old", "chat", "graph"] as const;
 
 export const App = (): React.ReactElement => {
   const [functionAndTypeList, setFunctionAndTypeList] = React.useState<
@@ -127,32 +131,60 @@ export const App = (): React.ReactElement => {
           </TabItem>
         ))}
       </Tab>
-      <ServerOrigin
+      <TabContent
+        selectedTabValue={selectedTabValue}
         serverName={serverName}
-        initServerOrigin={serverUrl}
-        onChangeServerOrigin={setServerUrl}
+        serverUrl={serverUrl}
+        setServerUrl={setServerUrl}
+        editorCount={editorCount}
+        functionAndTypeList={functionAndTypeList}
+        setEditorCount={setEditorCount}
       />
-
-      {Array.from({ length: editorCount }, (_, i) => (
-        <Editor
-          key={i}
-          functionAndTypeList={functionAndTypeList}
-          serverOrigin={serverUrl}
-        />
-      ))}
-      <Button
-        onClick={() => {
-          setEditorCount((old) => old + 1);
-        }}
-      >
-        +
-      </Button>
-
-      ちゃっと風 UIに変えたいな.
-
-      {functionAndTypeList && (
-        <SampleChart functionAndTypeList={functionAndTypeList} />
-      )}
     </Container>
   );
+};
+
+const TabContent = (props: {
+  readonly selectedTabValue: TabValue;
+  readonly serverName: string | undefined;
+  readonly serverUrl: string;
+  readonly setServerUrl: React.Dispatch<React.SetStateAction<string>>;
+  readonly editorCount: number;
+  readonly functionAndTypeList: FunctionAndTypeList | undefined;
+  readonly setEditorCount: React.Dispatch<React.SetStateAction<number>>;
+}): React.ReactElement => {
+  switch (props.selectedTabValue) {
+    case "old":
+      return (
+        <div>
+          <ServerOrigin
+            serverName={props.serverName}
+            initServerOrigin={props.serverUrl}
+            onChangeServerOrigin={props.setServerUrl}
+          />
+          {Array.from({ length: props.editorCount }, (_, i) => (
+            <Editor
+              key={i}
+              functionAndTypeList={props.functionAndTypeList}
+              serverOrigin={props.serverUrl}
+            />
+          ))}
+          <Button
+            onClick={() => {
+              props.setEditorCount((old) => old + 1);
+            }}
+          >
+            +
+          </Button>
+        </div>
+      );
+    case "graph": {
+      if (!props.functionAndTypeList) {
+        return <div>loading...</div>;
+      }
+      return <SampleChart functionAndTypeList={props.functionAndTypeList} />;
+    }
+    case "chat":
+      return <div>chat ui</div>;
+  }
 };
