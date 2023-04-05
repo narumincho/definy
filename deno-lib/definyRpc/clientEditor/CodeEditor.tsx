@@ -1,5 +1,6 @@
 import React from "https://esm.sh/react@18.2.0?pin=v111";
 import { styled } from "./style.ts";
+import monaco from "npm:monaco-editor@0.36.1";
 
 const EditorBox = styled("div", {
   height: 500,
@@ -27,7 +28,7 @@ export const CodeEditor = (): React.ReactElement => {
     }).require;
     require.config({
       paths: {
-        "vs": "https://cdn.bootcdn.net/ajax/libs/monaco-editor/0.35.0/min/vs",
+        "vs": "https://cdn.bootcdn.net/ajax/libs/monaco-editor/0.36.1/min/vs",
       },
     });
 
@@ -38,6 +39,7 @@ export const CodeEditor = (): React.ReactElement => {
       state.created = true;
       const monaco = (globalThis as unknown as {
         readonly monaco: {
+          readonly languages: any;
           readonly editor: {
             create: (a: HTMLElement, b: {
               readonly value: string;
@@ -54,6 +56,13 @@ export const CodeEditor = (): React.ReactElement => {
         theme: "vs-dark",
       });
       console.log("editor", editor);
+      monaco.languages.typescript.javascriptDefaults.addExtraLib(
+        `declare global {
+        const sampleType = "sorean";
+      }
+      `,
+        "file:///node_modules/@types/math/index.d.ts",
+      );
     });
   }, [ref.current]);
 
