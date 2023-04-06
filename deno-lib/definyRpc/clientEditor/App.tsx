@@ -1,7 +1,6 @@
 import React from "https://esm.sh/react@18.2.0?pin=v111";
 import { Button } from "../../editor/Button.tsx";
 import { Editor, FunctionAndTypeList } from "./Editor.tsx";
-import { ServerOrigin } from "./ServerOrigin.tsx";
 import { SampleChart } from "./Chart.tsx";
 import {
   functionListByName,
@@ -9,7 +8,8 @@ import {
   typeList,
 } from "../example/generated/meta.ts";
 import { styled } from "./style.ts";
-import { CodeEditor } from "./CodeEditor.tsx";
+import { ServerOrigin } from "./ServerOrigin.tsx";
+import { ChatView } from "./ChatView.tsx";
 
 const Container = styled("div", {
   backgroundColor: "#111",
@@ -17,9 +17,8 @@ const Container = styled("div", {
   height: "100%",
   boxSizing: "border-box",
   display: "grid",
-  gap: 16,
   alignContent: "start",
-  overflowY: "scroll",
+  gridTemplateRows: "auto auto 1fr",
 });
 
 const StyledTitle = styled("h2", {
@@ -30,6 +29,36 @@ const StyledTitle = styled("h2", {
   padding: "0 8px",
 });
 
+const Tab = styled("div", {
+  display: "grid",
+  gridTemplateColumns: "1fr 1fr 1fr",
+});
+
+const TabItem = styled("a", {
+  padding: 8,
+  textAlign: "center",
+  background: "#444",
+  borderBottomStyle: "solid",
+  borderColor: "#666",
+  "&:hover": {
+    background: "#222",
+  },
+  variants: {
+    selected: {
+      selected: {
+        background: "#000",
+        borderStyle: "solid",
+        borderBottomStyle: "none",
+      },
+      notSelected: {},
+    },
+  },
+});
+
+type TabValue = typeof allTabValues[number];
+
+const allTabValues = ["old", "chat", "graph"] as const;
+
 export const App = (): React.ReactElement => {
   const [functionAndTypeList, setFunctionAndTypeList] = React.useState<
     FunctionAndTypeList | undefined
@@ -39,6 +68,9 @@ export const App = (): React.ReactElement => {
     new URL(location.href).toString(),
   );
   const [editorCount, setEditorCount] = React.useState<number>(1);
+  const [selectedTabValue, setSelectedTabValue] = React.useState<TabValue>(
+    "old",
+  );
 
   React.useEffect(() => {
     functionListByName({ url: new URL(serverUrl) }).then((result) => {
@@ -85,31 +117,80 @@ export const App = (): React.ReactElement => {
   return (
     <Container>
       <StyledTitle>definy RPC Browser Client</StyledTitle>
-
-      <ServerOrigin
+      <Tab>
+        {allTabValues.map((tabValue) => (
+          <TabItem
+            key={tabValue}
+            selected={tabValue === selectedTabValue
+              ? "selected"
+              : "notSelected"}
+            onClick={() => {
+              setSelectedTabValue(tabValue);
+            }}
+          >
+            {tabValue}
+          </TabItem>
+        ))}
+      </Tab>
+      <TabContent
+        selectedTabValue={selectedTabValue}
         serverName={serverName}
-        initServerOrigin={serverUrl}
-        onChangeServerOrigin={setServerUrl}
+        serverUrl={serverUrl}
+        setServerUrl={setServerUrl}
+        editorCount={editorCount}
+        functionAndTypeList={functionAndTypeList}
+        setEditorCount={setEditorCount}
       />
-      {Array.from({ length: editorCount }, (_, i) => (
-        <Editor
-          key={i}
-          functionAndTypeList={functionAndTypeList}
-          serverOrigin={serverUrl}
-        />
-      ))}
-      <Button
-        onClick={() => {
-          setEditorCount((old) => old + 1);
-        }}
-      >
-        +
-      </Button>
-
-      {functionAndTypeList && (
-        <SampleChart functionAndTypeList={functionAndTypeList} />
-      )}
-      <CodeEditor />
     </Container>
   );
+};
+
+const TabContent = (props: {
+  readonly selectedTabValue: TabValue;
+  readonly serverName: string | undefined;
+  readonly serverUrl: string;
+  readonly setServerUrl: React.Dispatch<React.SetStateAction<string>>;
+  readonly editorCount: number;
+  readonly functionAndTypeList: FunctionAndTypeList | undefined;
+  readonly setEditorCount: React.Dispatch<React.SetStateAction<number>>;
+}): React.ReactElement => {
+  switch (props.selectedTabValue) {
+    case "old":
+      return (
+        <div>
+          <ServerOrigin
+            serverName={props.serverName}
+            initServerOrigin={props.serverUrl}
+            onChangeServerOrigin={props.setServerUrl}
+          />
+          {Array.from({ length: props.editorCount }, (_, i) => (
+            <Editor
+              key={i}
+              functionAndTypeList={props.functionAndTypeList}
+              serverOrigin={props.serverUrl}
+            />
+          ))}
+          <Button
+            onClick={() => {
+              props.setEditorCount((old) => old + 1);
+            }}
+          >
+            +
+          </Button>
+        </div>
+      );
+    case "graph": {
+      if (!props.functionAndTypeList) {
+        return <div>loading...</div>;
+      }
+      return <SampleChart functionAndTypeList={props.functionAndTypeList} />;
+    }
+    case "chat":
+      return (
+        <ChatView
+          functionAndTypeList={props.functionAndTypeList}
+          serverOrigin={props.serverUrl}
+        />
+      );
+  }
 };

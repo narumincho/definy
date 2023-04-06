@@ -11,6 +11,7 @@ const Readonly = styled("div", {
   fontFamily: "monospace",
   fontSize: 18,
   padding: "4px 8px",
+  height: 30,
 });
 
 const Container = styled("div", {
@@ -33,6 +34,9 @@ const SuggestionContainer = styled("div", {
   gap: 1,
 });
 
+/**
+ * テキストで絞り込める選択UI
+ */
 export const Select = (props: {
   readonly values: ReadonlyArray<FunctionDetail> | undefined;
   readonly value: string | undefined;
@@ -65,7 +69,7 @@ export const Select = (props: {
       }}
       tabIndex={-1}
     >
-      <div>{props.value ?? "???"}</div>
+      {props.value}
     </Readonly>
   );
 };
@@ -168,13 +172,14 @@ const SuggestionButton = styled("button", {
   fontSize: 18,
   textAlign: "left",
   cursor: "pointer",
+  border: "none",
   variants: {
     select: {
       select: {
         backgroundColor: "#511",
       },
       noSelect: {
-        ":hover": {
+        "&:hover": {
           backgroundColor: "#333",
         },
       },
