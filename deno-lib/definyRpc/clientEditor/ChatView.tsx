@@ -38,7 +38,11 @@ export const ChatView = (
     undefined,
   );
   const [isRequesting, setIsRequesting] = React.useState<boolean>(false);
-  const [responseList, setResponseList] = React.useState<ReadonlyArray<any>>(
+  const [historyList, setHistoryList] = React.useState<
+    ReadonlyArray<
+      { readonly type: "request" | "response"; readonly value: unknown }
+    >
+  >(
     [],
   );
 
@@ -51,9 +55,24 @@ export const ChatView = (
   return (
     <Container>
       <HistoryArea>
-        {responseList.map((response, index) => (
-          <ResponseBalloon key={index} text={JSON.stringify(response)} />
-        ))}
+        {historyList.map((history, index) => {
+          switch (history.type) {
+            case "response":
+              return (
+                <ResponseBalloon
+                  key={index}
+                  text={JSON.stringify(history.value)}
+                />
+              );
+            case "request":
+              return (
+                <RequestBalloon
+                  key={index}
+                  text={JSON.stringify(history.value)}
+                />
+              );
+          }
+        })}
       </HistoryArea>
       <InputArea>
         <Select
@@ -70,6 +89,10 @@ export const ChatView = (
               !isRequesting
             ? () => {
               setIsRequesting(true);
+              setHistoryList((prev) => [
+                ...prev,
+                { type: "request", value: selectedFuncDetail },
+              ]);
               requestQuery({
                 url: new URL(props.serverOrigin),
                 inputType: selectedFuncDetail.input,
@@ -91,9 +114,9 @@ export const ChatView = (
                 input: StructuredJsonValue.null,
               }).then((json) => {
                 console.log("response", json);
-                setResponseList((prev) => [
+                setHistoryList((prev) => [
                   ...prev,
-                  json,
+                  { type: "response", value: json },
                 ]);
                 setIsRequesting(false);
               });
@@ -109,23 +132,16 @@ export const ChatView = (
 
 const ResponseBalloonContainer = styled("div", {
   display: "flex",
-  gap: 24,
 });
 
-const LeftBalloon = styled("div", {
+const Balloon = styled("div", {
   borderRadius: 8,
   padding: 16,
-  position: "relative",
   backgroundColor: "#333",
-  "&:before": {
-    content: "",
-    position: "absolute",
-    top: "50%",
-    left: -30,
-    marginTop: -15,
-    border: "15px solid transparent",
-    borderRight: "15px solid #333",
-  },
+});
+
+const WidthSpace = styled("div", {
+  width: 16,
 });
 
 const ResponseBalloon = (props: {
@@ -134,7 +150,31 @@ const ResponseBalloon = (props: {
   return (
     <ResponseBalloonContainer>
       <div>server icon</div>
-      <LeftBalloon>{props.text}</LeftBalloon>
+      <WidthSpace />
+      <svg viewBox="0 0 10 10" width={32}>
+        <polygon fill="#333" points="0,5 10,0 10,10" />
+      </svg>
+      <Balloon>{props.text}</Balloon>
     </ResponseBalloonContainer>
+  );
+};
+
+const RequestBalloonContainer = styled("div", {
+  display: "flex",
+  flexDirection: "row-reverse",
+});
+
+const RequestBalloon = (props: {
+  readonly text: string;
+}): React.ReactElement => {
+  return (
+    <RequestBalloonContainer>
+      <div>client icon</div>
+      <WidthSpace />
+      <svg viewBox="0 0 10 10" width={32}>
+        <polygon fill="#333" points="10,5 0,0 0,10" />
+      </svg>
+      <Balloon>{props.text}</Balloon>
+    </RequestBalloonContainer>
   );
 };
