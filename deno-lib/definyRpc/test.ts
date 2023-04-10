@@ -1,4 +1,8 @@
 import { assertEquals } from "https://deno.land/std@0.182.0/testing/asserts.ts";
+import {
+  decode,
+  encode,
+} from "https://deno.land/std@0.182.0/encoding/base64url.ts";
 import { handleRequest } from "./server/definyRpc.ts";
 
 Deno.test("get server name", async () => {
@@ -153,6 +157,50 @@ Deno.test("ignore with pathPrefix", async () => {
     ),
     undefined,
   );
+});
+
+const toUrlPath = (text: string): string => {
+  let includeBase64store = "";
+  let result = "";
+
+  for (const char of [...text]) {
+    if (/[a-zA-Z0-9-.]/.test(char)) {
+      if (0 < includeBase64store.length) {
+        result += "_" + encode(includeBase64store).replaceAll("_", ".") + "_";
+        includeBase64store = "";
+      }
+      result += char;
+    } else {
+      includeBase64store += char;
+    }
+  }
+  if (0 < includeBase64store.length) {
+    result += "_" + encode(includeBase64store).replaceAll("_", ".") + "_";
+  }
+  return result;
+};
+
+const fromUrlPath = (path: string): string => {
+  return path.split("_").map((segment, index) => {
+    if (segment.length === 0) {
+      return "";
+    }
+    const isBase64 = index % 2 === 1;
+    if (isBase64) {
+      return new TextDecoder().decode(decode(segment.replaceAll(".", "_")));
+    }
+    return segment;
+  }).join("");
+};
+
+Deno.test("new request style", () => {
+  const sampleJson = JSON.stringify({ "getChunkData": { x: 32.5, y: -16 } });
+  const encoded = toUrlPath(sampleJson);
+  console.log(encoded);
+  const decoded = fromUrlPath(encoded);
+  console.log(decoded);
+
+  assertEquals(sampleJson, decoded);
 });
 
 /*
