@@ -84,37 +84,35 @@ export const handleRequest = async (
   if (request.method === "OPTIONS") {
     return simpleResponseOkEmpty;
   }
-
-  if (stringArrayEqual(pathListRemovePrefix, [])) {
+  if (request.htmlAccept) {
     return simpleResponseHtml(`<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/png" href="${
+    <html lang="en">
+      <head>
+        <meta charset="UTF-8" />
+        <link rel="icon" type="image/png" href="${
       editorPathPrefix(pathPrefix) + clientBuildResult.iconHash
     }" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>${parameter.name} | definy RPC</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>${parameter.name} | definy RPC</title>
+        
+        <style>
+          * {
+            box-sizing: border-box;
+          }
     
-    <style>
-      * {
-        box-sizing: border-box;
-      }
-
-      :root {
-        color-scheme: dark;
-      }
-    </style>
-    <script src="https://cdn.bootcdn.net/ajax/libs/monaco-editor/0.35.0/min/vs/loader.min.js"></script>
-    <script type="module" src="${
+          :root {
+            color-scheme: dark;
+          }
+        </style>
+        <script type="module" src="${
       editorPathPrefix(pathPrefix) + clientBuildResult.scriptHash
     }"></script>
-  </head>
-  <body>
-    <noscript>Need JavaScript</noscript>
-  </body>
-</html>
-`);
+      </head>
+      <body>
+        <noscript>Need JavaScript</noscript>
+      </body>
+    </html>
+    `);
   }
   if (
     stringArrayEqual(pathListRemovePrefix, [

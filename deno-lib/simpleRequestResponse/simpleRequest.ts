@@ -19,12 +19,16 @@ export const requestObjectToSimpleRequest = async (
     return undefined;
   }
 
+  const htmlAccept = request.headers.get("accept")?.includes("text/html") ??
+    false;
+
   if (request.method === "POST") {
     return {
       method: request.method,
       url: urlToSimpleUrl(new URL(request.url)),
       headers: toSimpleRequestHeader(request.headers),
       body: new Uint8Array(await request.arrayBuffer()),
+      htmlAccept,
     };
   }
 
@@ -33,6 +37,7 @@ export const requestObjectToSimpleRequest = async (
     url: urlToSimpleUrl(new URL(request.url)),
     headers: toSimpleRequestHeader(request.headers),
     body: undefined,
+    htmlAccept,
   };
 };
 
@@ -59,11 +64,13 @@ export type SimpleRequest = {
   readonly url: SimpleUrl;
   readonly headers: SimpleRequestHeader;
   readonly body: undefined;
+  readonly htmlAccept: boolean;
 } | {
   readonly method: "POST";
   readonly url: SimpleUrl;
   readonly headers: SimpleRequestHeader;
   readonly body: Uint8Array;
+  readonly htmlAccept: boolean;
 };
 
 export type SimpleRequestHeader = {

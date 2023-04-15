@@ -25,6 +25,7 @@ Deno.test("get server name", async () => {
       },
       method: "GET",
       body: undefined,
+      htmlAccept: false,
     },
   );
   assertEquals(response?.status, 200);
@@ -58,6 +59,7 @@ Deno.test("index.html", async () => {
       },
       method: "GET",
       body: undefined,
+      htmlAccept: false,
     },
   );
   assertEquals(response?.status, 200);
@@ -88,6 +90,7 @@ Deno.test("with pathPrefix index.html", async () => {
       },
       method: "GET",
       body: undefined,
+      htmlAccept: false,
     },
   );
   assertEquals(response?.status, 200);
@@ -118,6 +121,7 @@ Deno.test("with pathPrefix get server name", async () => {
       },
       method: "GET",
       body: undefined,
+      htmlAccept: false,
     },
   );
   assertEquals(response?.status, 200);
@@ -153,6 +157,7 @@ Deno.test("ignore with pathPrefix", async () => {
         },
         method: "GET",
         body: undefined,
+        htmlAccept: false,
       },
     ),
     undefined,
