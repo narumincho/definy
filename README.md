@@ -4,9 +4,10 @@
 
 Definy is Web App for Web App.
 
-ゲームとツールを手軽に作れて公開できるプログラミング言語とエディタ,ゲームエンジン,SNS. [Elm](https://elm-lang.org/),
-[PureScript](https://www.purescript.org/)で作っていた時期もあったが, 今は Deno の React で作られている
-Web アプリ. **まだ, ぜんぜんできていない...**
+ゲームとツールを手軽に作れて公開できるプログラミング言語とエディタ,ゲームエンジン,SNS.
+[Elm](https://elm-lang.org/),
+[PureScript](https://www.purescript.org/)で作っていた時期もあったが, 今は Deno
+の React で作られている Web アプリ. **まだ, ぜんぜんできていない...**
 
 - [Deno Version](https://definy.deno.dev/)
 
@@ -14,8 +15,8 @@ Web アプリ. **まだ, ぜんぜんできていない...**
 
 - [Firebase Version](https://definy.app/?hl=ja)
 
-- [Old Version](https://definy-old.web.app/) WebAssembly を使って数値の足し算, 引き算,
-  掛け算ができる
+- [Old Version](https://definy-old.web.app/) WebAssembly を使って数値の足し算,
+  引き算, 掛け算ができる
 
 ## 特徴
 
@@ -26,7 +27,9 @@ Web アプリ. **まだ, ぜんぜんできていない...**
 - 純粋関数型言語であり, 全てが不変データなため動作が予想しやすい
 - エラーは Result 型で表現するため, 実行時エラーがかなり少ない
 - 言語機能と結びついた構造化されたバージョン管理システムが付属している
-- コードが文字列でなく, AST のような構造化されたデータをコードとして編集するので, 文法エラー, 参照不明のエラーがない
+- コードが文字列でなく, AST
+  のような構造化されたデータをコードとして編集するので, 文法エラー,
+  参照不明のエラーがない
 - コード整形ツールが不要
 - 式の評価過程をエディタ上で確認できる
 - 独自のリテラルを作れる
@@ -39,8 +42,8 @@ Web アプリ. **まだ, ぜんぜんできていない...**
 
 ## フォルダとファイルの説明
 
-- `/.github/workflows/deploy_to_vercel.yml`: Vercel へのデプロイの処理が書かれている
-- `/.github/workflows/pull_request`: Pull Request したときに実行されるテストの処理が書かれている
+- `/.github/workflows/pull_request`: Pull Request
+  したときに実行されるテストの処理が書かれている
 - `/client`: TypeScript で書かれたクライアント用のコード
 - `/common`: クライアントとサーバーの共通のコード
 - `/core`: コンパイラのような処理が書かれている
@@ -61,14 +64,17 @@ corepack enable
 
 を事前に実行することによって, pnpm が自動的にインストールされる
 
-Google でログインするための 鍵を, 1 つ上の階層のファイルに保存し, npm script の `start` を実行するを開発用にアプリが起動する.
-Ctrl + C キーを押すと エミュレータを停止することができる. VSCode の ゴミ箱ボタンだと, firestore
-のエミュレータが終了されないので注意. タスクマネージャーの Open JDK Platform binary などのそれっぽいものを停止すれば,
-firestore のエミュレータを停止させることができる.
+Google でログインするための 鍵を, 1 つ上の階層のファイルに保存し, npm script の
+`start` を実行するを開発用にアプリが起動する. Ctrl + C キーを押すと
+エミュレータを停止することができる. VSCode の ゴミ箱ボタンだと, firestore
+のエミュレータが終了されないので注意. タスクマネージャーの Open JDK Platform
+binary などのそれっぽいものを停止すれば, firestore
+のエミュレータを停止させることができる.
 
 ### VSCode ワークスペース起動
 
-Deno と Node.js 向けの拡張機能は共存できないため, 別で VSCode を起動する必要がある
+Deno と Node.js 向けの拡張機能は共存できないため, 別で VSCode
+を起動する必要がある
 
 Deno 向け VSCode ワークスペースの起動
 
