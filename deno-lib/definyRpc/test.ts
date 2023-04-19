@@ -1,8 +1,8 @@
-import { assertEquals } from "https://deno.land/std@0.182.0/testing/asserts.ts";
+import { assertEquals } from "https://deno.land/std@0.184.0/testing/asserts.ts";
 import {
   decode,
   encode,
-} from "https://deno.land/std@0.182.0/encoding/base64url.ts";
+} from "https://deno.land/std@0.184.0/encoding/base64url.ts";
 import { handleRequest } from "./server/definyRpc.ts";
 
 Deno.test("get server name", async () => {

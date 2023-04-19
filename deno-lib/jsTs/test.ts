@@ -3,7 +3,7 @@ import {
   assertEquals,
   assertMatch,
   assertNotMatch,
-} from "https://deno.land/std@0.182.0/testing/asserts.ts";
+} from "https://deno.land/std@0.184.0/testing/asserts.ts";
 import * as jsTs from "./main.ts";
 
 const expressRequest: jsTs.data.TsType = {

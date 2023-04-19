@@ -1,4 +1,4 @@
-import { assertEquals } from "https://deno.land/std@0.182.0/testing/asserts.ts";
+import { assertEquals } from "https://deno.land/std@0.184.0/testing/asserts.ts";
 import { Namespace } from "../core/coreType.ts";
 import {
   namespaceFromAndToToTypeScriptModuleName,
