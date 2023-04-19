@@ -1,5 +1,5 @@
 import type { EventEmitter } from "node:events";
-import type { Server } from "../../nodeType.ts";
+import type { Server } from "node:http";
 
 export type NodeAPI = {
   readonly server: Server;
