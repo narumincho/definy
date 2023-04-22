@@ -1,4 +1,4 @@
-import React from "https://esm.sh/react@18.2.0?pin=v111";
+import React from "https://esm.sh/react@18.2.0?pin=v117";
 import { Button } from "../../editor/Button.tsx";
 import { Editor, FunctionAndTypeList } from "./Editor.tsx";
 import { SampleChart } from "./Chart.tsx";
