@@ -42,25 +42,25 @@ await build({
   },
   skipSourceOutput: true,
   mappings: {
-    "https://esm.sh/prettier@2.8.7?pin=v111": {
+    "https://esm.sh/prettier@2.8.7?pin=v117": {
       name: "prettier",
       version: "^2.7.1",
     },
-    "https://esm.sh/prettier@2.8.7/parser-typescript?pin=v111": {
+    "https://esm.sh/prettier@2.8.7/parser-typescript?pin=v117": {
       name: "prettier",
       version: "^2.7.1",
       subPath: "parser-typescript.js",
     },
-    "https://esm.sh/react@18.2.0?pin=v111": {
+    "https://esm.sh/react@18.2.0?pin=v117": {
       name: "react",
       version: "^18.2.0",
     },
-    "https://esm.sh/react-dom@18.2.0/client?pin=v111": {
+    "https://esm.sh/react-dom@18.2.0/client?pin=v117": {
       name: "react-dom",
       version: "^18.2.0",
       subPath: "client.js",
     },
-    "https://esm.sh/react-dom@18.2.0/server?pin=v111": {
+    "https://esm.sh/react-dom@18.2.0/server?pin=v117": {
       name: "react-dom",
       version: "^18.2.0",
       subPath: "server.js",
