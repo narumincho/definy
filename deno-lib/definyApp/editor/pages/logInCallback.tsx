@@ -1,4 +1,4 @@
-import React from "https://esm.sh/react@18.2.0?pin=v117";
+import React from "https://esm.sh/react@18.2.0?pin=v118";
 import { CodeAndState, logInByCodeAndState } from "../../apiClient/api/main.ts";
 import { styled } from "../style.ts";
 import { apiUrl } from "../url.ts";

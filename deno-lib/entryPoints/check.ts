@@ -10,7 +10,9 @@ const tsFilePathSet = await collectTsOrTsxFilePath(
   ]),
 );
 
-const processStatus = await Deno.run({
-  cmd: ["deno", "check", ...tsFilePathSet],
-}).status();
-Deno.exit(processStatus.code);
+const process = new Deno.Command(Deno.execPath(), {
+  args: ["check", ...tsFilePathSet],
+  stderr: "inherit",
+  stdout: "inherit",
+}).spawn();
+Deno.exit((await process.status).code);

@@ -1,5 +1,5 @@
-import React from "https://esm.sh/react@18.2.0?pin=v117";
-import { createRoot } from "https://esm.sh/react-dom@18.2.0/client?pin=v117";
+import React from "https://esm.sh/react@18.2.0?pin=v118";
+import { createRoot } from "https://esm.sh/react-dom@18.2.0/client?pin=v118";
 import { App } from "./App.tsx";
 
 export const start = () => {

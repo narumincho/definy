@@ -2,7 +2,7 @@ import { DefinyRpcParameter, handleRequest } from "../server/definyRpc.ts";
 import { functionAndTypeList } from "./exampleFunc.ts";
 import { requestObjectToSimpleRequest } from "../../simpleRequestResponse/simpleRequest.ts";
 import { simpleResponseToResponse } from "../../simpleRequestResponse/simpleResponse.ts";
-import { serve } from "https://deno.land/std@0.184.0/http/server.ts";
+import { serve } from "https://deno.land/std@0.185.0/http/server.ts";
 
 export const startExampleServer = (
   parameter: {
