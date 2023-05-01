@@ -1,5 +1,5 @@
-import React from "https://esm.sh/react@18.2.0?pin=v117";
-import { styled } from "https://esm.sh/@stitches/react@1.2.8?pin=v117";
+import React from "https://esm.sh/react@18.2.0?pin=v118";
+import { styled } from "https://esm.sh/@stitches/react@1.2.8?pin=v118";
 
 export type Props = {
   readonly onClick: (() => void) | undefined;

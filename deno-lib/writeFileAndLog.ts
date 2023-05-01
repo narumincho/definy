@@ -1,4 +1,4 @@
-import { ensureFile } from "https://deno.land/std@0.184.0/fs/mod.ts";
+import { ensureFile } from "https://deno.land/std@0.185.0/fs/mod.ts";
 
 export const writeTextFileWithLog = async (
   path: URL,
