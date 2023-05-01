@@ -146,3 +146,9 @@ deno run --check -A ./entryPoints/buildForNpm.ts
 ```ps1
 deno run --check -A ./entryPoints/buildVscodeExtension.ts
 ```
+
+## dart のコード生成のための型の生成の definy RPC を起動
+
+```ps1
+deno run --check --watch -A ./entryPoints/dartGenTypeRpc.ts
+```
