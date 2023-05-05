@@ -1,5 +1,9 @@
 export type RequestExpr<T> = UntypedRequestExpr & { __typeBlend: T };
 
+export const typeAssert = <T>(
+  untypedRequestExpr: UntypedRequestExpr,
+): RequestExpr<T> => untypedRequestExpr as RequestExpr<T>;
+
 export type UntypedRequestExpr = {
   readonly type: "call";
   readonly functionId: string;

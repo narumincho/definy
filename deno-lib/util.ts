@@ -205,14 +205,19 @@ export const stringArrayEqual = (
   return true;
 };
 
+/**
+ * 文字列の配列を比較し,
+ * - prefix に指定したもので始まっている場合は のこりの部分の配列を返す
+ * - 始まっていない場合は undefined を返す
+ */
 export const stringArrayMatchPrefix = (
   list: ReadonlyArray<string>,
   prefix: ReadonlyArray<string>,
-): boolean => {
+): ReadonlyArray<string> | undefined => {
   for (let i = 0; i < prefix.length; i += 1) {
     if (list[i] !== prefix[i]) {
-      return false;
+      return undefined;
     }
   }
-  return true;
+  return list.slice(prefix.length);
 };

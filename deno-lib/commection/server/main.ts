@@ -1,6 +1,6 @@
 import { SchemaType, Type } from "./schemaType.ts";
 
-export const handler = async <ImplementType>(
+export const handler = async <ImplementType extends Record<string, unknown>>(
   request: Request,
   option: {
     schema: SchemaType<ImplementType>;

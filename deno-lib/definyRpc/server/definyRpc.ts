@@ -75,10 +75,13 @@ export const handleRequest = async (
   request: SimpleRequest,
 ): Promise<SimpleResponse | undefined> => {
   const pathPrefix = parameter.pathPrefix ?? [];
-  if (!stringArrayMatchPrefix(request.url.path, pathPrefix)) {
+  const pathListRemovePrefix = stringArrayMatchPrefix(
+    request.url.path,
+    pathPrefix,
+  );
+  if (pathListRemovePrefix === undefined) {
     return undefined;
   }
-  const pathListRemovePrefix = request.url.path.slice(pathPrefix.length);
 
   const all = addMetaFunctionAndCoreType(parameter);
   if (request.method === "OPTIONS") {

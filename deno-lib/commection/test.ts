@@ -1,9 +1,13 @@
 import { assertEquals } from "https://deno.land/std@0.185.0/testing/asserts.ts";
-import {
-  decode,
-  encode,
-} from "https://deno.land/std@0.185.0/encoding/base64url.ts";
-import { handler } from "./server/main.ts";
+import { requestParse } from "./server/requestParse.ts";
+import { schemaEmpty } from "./server/main.ts";
 
-Deno.test("", () => {
+Deno.test("request parse skip", async () => {
+  assertEquals(
+    (await requestParse(new Request(new URL("https://narumincho.com/sample")), {
+      pathPrefix: ["api"],
+      schema: schemaEmpty,
+    })).type,
+    "skip",
+  );
 });

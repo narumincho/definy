@@ -1,11 +1,12 @@
 // ブラウザとか関係なしにリクエストするためのクライアント
 
-import { RequestExpr } from "../requestExpr.ts";
+import { RequestExpr, typeAssert } from "../requestExpr.ts";
 
-export const textLiteral = (value: string): RequestExpr<string> => ({
-  type: "textLiteral",
-  value,
-});
+export const textLiteral = (value: string): RequestExpr<string> =>
+  typeAssert<string>({
+    type: "textLiteral",
+    value,
+  });
 
 export const request = async <T>(
   requestExpr: RequestExpr<T>,

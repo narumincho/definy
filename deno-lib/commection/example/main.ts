@@ -6,7 +6,7 @@ serve(async (request) => {
   return await handler(request, {
     schema: schema,
     implementation: {
-      hello: async () => "",
+      hello: () => Promise.resolve("ok"),
     },
   });
 });

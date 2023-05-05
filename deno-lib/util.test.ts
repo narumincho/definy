@@ -1,19 +1,23 @@
-import {
-  assert,
-  assertEquals,
-} from "https://deno.land/std@0.185.0/testing/asserts.ts";
+import { assertEquals } from "https://deno.land/std@0.185.0/testing/asserts.ts";
 import { listDeleteAt, listSetAt, stringArrayMatchPrefix } from "./util.ts";
 
 Deno.test("stringArrayMatchPrefix match", () => {
-  assert(stringArrayMatchPrefix(["a", "b", "c"], ["a"]));
+  assertEquals(stringArrayMatchPrefix(["a", "b", "c"], ["a"]), ["b", "c"]);
 });
 
 Deno.test("stringArrayMatchPrefix not match", () => {
-  assertEquals(stringArrayMatchPrefix(["a", "b", "c"], ["k"]), false);
+  assertEquals(stringArrayMatchPrefix(["a", "b", "c"], ["k"]), undefined);
 });
 
 Deno.test("stringArrayMatchPrefix empty", () => {
-  assert(stringArrayMatchPrefix(["a", "b", "c"], []));
+  assertEquals(stringArrayMatchPrefix(["a", "b", "c"], []), ["a", "b", "c"]);
+});
+
+Deno.test("stringArrayMatchPrefix long prefix", () => {
+  assertEquals(
+    stringArrayMatchPrefix(["test"], ["test", "more", "aaaa"]),
+    undefined,
+  );
 });
 
 Deno.test("util listDeleteAt center", () => {

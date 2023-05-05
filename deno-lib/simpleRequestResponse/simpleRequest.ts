@@ -3,6 +3,8 @@ import { SimpleUrl, urlToSimpleUrl } from "./simpleUrl.ts";
 /**
  * 標準の Request オブジェクトから {@link SimpleRequest} を生成します
  * method が PUT などの対応していない場合は `undefined` を返す
+ *
+ * body を全て読み込むために待っている
  */
 export const requestObjectToSimpleRequest = async (
   request: Request,
