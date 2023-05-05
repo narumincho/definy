@@ -1,0 +1,14 @@
+{
+    "$schema": "./schema.json",
+    "types": [
+        {
+            "id": "4c3b71792d1a48dd9799dc82278a280a",
+            "name": "SampleType",
+            "fields": [
+                {
+                    "id": "4c3b71792d1a48dd9799dc82278a280a"
+                }
+            ]
+        }
+    ]
+}
