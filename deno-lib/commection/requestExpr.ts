@@ -6,7 +6,7 @@ export const typeAssert = <T>(
 
 export type UntypedRequestExpr = {
   readonly type: "call";
-  readonly functionId: string;
+  readonly functionName: string;
   readonly arguments: ReadonlyArray<RequestExpr<unknown>>;
 } | {
   readonly type: "textLiteral";
