@@ -11,8 +11,12 @@ export const textLiteral = (value: string): RequestExpr<string> =>
 export const request = async <T>(
   requestExpr: RequestExpr<T>,
 ): Promise<Result<T>> => {
-  await fetch("");
-  return {};
+  await fetch("", { body: requestExpr.toString() });
+  return {
+    type: "ok",
+  };
 };
 
-export type Result<T> = {};
+export type Result<T> = {
+  readonly type: "ok";
+};

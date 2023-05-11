@@ -1,3 +1,4 @@
+import { requestParse } from "./requestParse.ts";
 import { SchemaType, Type } from "./schemaType.ts";
 
 export const handler = async <ImplementType extends Record<string, unknown>>(
@@ -5,9 +6,19 @@ export const handler = async <ImplementType extends Record<string, unknown>>(
   option: {
     schema: SchemaType<ImplementType>;
     implementation: ImplementType;
+    pathPrefix: ReadonlyArray<string>;
   },
 ): Promise<Response> => {
   option.schema.functionDefinitions;
+  const requestParsed = await requestParse(request, {
+    pathPrefix: option.pathPrefix,
+    schema: option.schema,
+  });
+  switch (requestParsed.type) {
+    case "editorHtml": {
+      return new Response("html を返したい");
+    }
+  }
   return new Response("wipppppp");
 };
 

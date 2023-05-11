@@ -1,4 +1,3 @@
-import { coreTypeInfoList } from "../../definyRpc/core/coreTypeInfo.ts";
 import { text } from "../server/main.ts";
 import { SchemaType, Type } from "../server/schemaType.ts";
 
@@ -6,7 +5,7 @@ import { SchemaType, Type } from "../server/schemaType.ts";
 /// 直接これを編集しても良いが, 開発モードでブラウザ上でスキーマを編集したときには, 展開された形になる.
 
 /** */
-const typeAccount: Type = {
+const _typeAccount: Type = {
   id: "7fdffdd73d19422993948fd472e0eefc",
   arguments: [],
 };
@@ -30,7 +29,7 @@ export const schema: SchemaType<ImplementType> = {
     description: "アカウントだよ",
     body: {
       type: "product",
-      fields: [],
+      fields: [{ name: "name", description: "アカウント名", type: text }],
     },
   }],
   functionDefinitions: [
