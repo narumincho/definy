@@ -8,5 +8,6 @@ serve(async (request) => {
     implementation: {
       hello: () => Promise.resolve("ok"),
     },
+    pathPrefix: [],
   });
 });
