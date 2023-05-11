@@ -1,4 +1,4 @@
-import React from "https://esm.sh/react@18.2.0?pin=v118";
+import React from "https://esm.sh/react@18.2.0?pin=v119";
 import { functionNamespaceToString } from "../codeGen/namespace.ts";
 import { FunctionDetail } from "../core/coreType.ts";
 import { styled } from "./style.ts";

@@ -25,7 +25,7 @@ PowerShell, bash などで カレントディレクトリをこの ./README.md
 **開発用** がついてないコマンドは, [deno](https://deno.land/)
 をインストールすれば, リポジトリをクローンしなくても実行することができる
 
-### **開発用** 全体の型チェックと, deno.lock の生成 (CI環境ではチェック)
+### **開発用** 全体の型チェックと, deno.lock の生成 (CI環境では deno.lock のチェック)
 
 ```ps1
 deno run --allow-run --allow-read ./entryPoints/check.ts
@@ -145,4 +145,10 @@ deno run --check -A ./entryPoints/buildForNpm.ts
 
 ```ps1
 deno run --check -A ./entryPoints/buildVscodeExtension.ts
+```
+
+## dart のコード生成のための型の生成の definy RPC を起動
+
+```ps1
+deno run --check --watch -A ./entryPoints/dartGenTypeRpc.ts
 ```

@@ -1,6 +1,6 @@
-import React from "https://esm.sh/react@18.2.0?pin=v118";
+import React from "https://esm.sh/react@18.2.0?pin=v119";
 import { urlFromString } from "./urlFromString.ts";
-import { styled } from "https://esm.sh/@stitches/react@1.2.8?pin=v118";
+import { styled } from "https://esm.sh/@stitches/react@1.2.8?pin=v119";
 import { jsonStringify } from "../../typedJson.ts";
 
 const StyledError = styled("div", {

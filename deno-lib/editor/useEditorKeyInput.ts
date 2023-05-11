@@ -1,4 +1,4 @@
-import React from "https://esm.sh/react@18.2.0?pin=v118";
+import React from "https://esm.sh/react@18.2.0?pin=v119";
 
 export const useEditorKeyInput = ({
   disabled,
