@@ -12,6 +12,7 @@ export const request = async <T>(
   requestExpr: RequestExpr<T>,
 ): Promise<Result<T>> => {
   await fetch("");
+  return {};
 };
 
 export type Result<T> = {};

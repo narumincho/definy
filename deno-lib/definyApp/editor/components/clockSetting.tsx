@@ -1,4 +1,4 @@
-import React from "https://esm.sh/react@18.2.0?pin=v118";
+import React from "https://esm.sh/react@18.2.0?pin=v119";
 import { styled } from "../style.ts";
 import { Clock24Parameter } from "../url.ts";
 

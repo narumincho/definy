@@ -1,4 +1,4 @@
-import React, { useCallback } from "https://esm.sh/react@18.2.0?pin=v118";
+import React, { useCallback } from "https://esm.sh/react@18.2.0?pin=v119";
 import { Button } from "../../editor/Button.tsx";
 import { DetailView } from "./DetailView.tsx";
 import { Result } from "./Result.tsx";
