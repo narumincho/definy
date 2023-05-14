@@ -1,4 +1,4 @@
-import { build, emptyDir } from "https://deno.land/x/dnt@0.32.0/mod.ts";
+import { build, emptyDir } from "https://deno.land/x/dnt@0.35.0/mod.ts";
 import { fromFileUrl } from "https://deno.land/std@0.186.0/path/mod.ts";
 import { collectTsOrTsxFilePath } from "../collectTsOrTsxFilePath.ts";
 import { relative } from "https://deno.land/std@0.186.0/path/posix.ts";
@@ -16,6 +16,9 @@ const pathList: string[] = [
       "/npm",
       "/definyApp",
       "/definyRpc/core/generate.ts",
+      "/html/data.ts",
+      "/html/interface.ts",
+      "/html/toString.ts",
     ]),
   ),
 ].map((path) => {
