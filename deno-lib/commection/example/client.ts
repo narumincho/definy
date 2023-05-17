@@ -1,6 +1,10 @@
-import { RequestExpr, typeAssert } from "../requestExpr.ts";
+import { RequestExpr, typeAssert } from "../core/requestExpr.ts";
+import { ServerKey } from "./schema.ts";
 
-export const hello: RequestExpr<string> = typeAssert<string>({
+export const hello: RequestExpr<ServerKey, string> = typeAssert<
+  ServerKey,
+  string
+>({
   type: "call",
   functionName: "hello",
   arguments: [],

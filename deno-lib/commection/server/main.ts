@@ -1,5 +1,5 @@
 import { requestParse } from "./requestParse.ts";
-import { SchemaType, Type } from "./schemaType.ts";
+import { SchemaType, Type } from "../core/schemaType.ts";
 
 export const handler = async <ImplementType extends Record<string, unknown>>(
   request: Request,
@@ -38,7 +38,7 @@ export const text: Type = {
   arguments: [],
 };
 
-/** ファイル配信サーバーで動かせるパラメーター */
+/** ファイル配信サーバーで動かせるように [a-zA-Z0-9_] に限った文字列型 */
 export const simpleText: Type = {
   id: "0f0fa0fc5d134c78ac68907c9106f140",
   arguments: [],

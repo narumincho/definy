@@ -17,9 +17,15 @@ export type TypeAttribute = "";
 
 export type TypeStructure = {
   readonly type: "sum";
+  readonly pattern: ReadonlyArray<Pattern>;
 } | {
   readonly type: "product";
   readonly fields: ReadonlyArray<Field>;
+};
+
+export type Pattern = {
+  readonly name: string;
+  readonly description: string;
 };
 
 export type Field = {

@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg viewBox="0 0 1600 900" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1600" height="33.583" style="fill: rgb(105, 111, 0);"/>
+  <text style="fill: rgb(255, 255, 255); font-family: &quot;Roboto Slab&quot;; font-size: 21px; white-space: pre;" x="16.151" y="24.531">米 commection browser editor ?</text>
+  <rect y="95" width="793.235" height="805" style="fill: rgb(216, 216, 216); stroke: rgb(0, 0, 0); stroke-width: 5px;"/>
+  <rect y="95" width="806.765" height="804.755" style="stroke: rgb(0, 0, 0); stroke-width: 5px; fill: rgb(112, 108, 108);" x="793.235"/>
+  <rect x="903.26" y="544.532" width="579.533" height="63.876" style="fill: rgb(163, 108, 108);"/>
+  <rect x="901.795" y="450.901" width="537.227" height="63.876" style="fill: rgb(202, 84, 84); stroke: rgb(0, 0, 0);"/>
+  <rect x="1526.518" y="544.532" width="61.965" height="63.876" style="fill: rgb(163, 108, 108);"/>
+  <rect x="815.414" y="450.901" width="56.37" height="63.876" style="fill: rgb(202, 84, 84);"/>
+  <polyline style="stroke: rgb(0, 0, 0); fill: rgb(177, 59, 59);" points="903.260009765625 449.2850036621094 877.60302734375 460.010986328125 902.1519775390625 474.3059997558594"/>
+  <rect x="793.235" y="95" width="806.765" height="60.743" style="fill: rgb(216, 216, 216);"/>
+  <text x="978.184" y="255.423" style="white-space: pre; fill: rgb(51, 51, 51); font-family: &quot;Roboto Slab&quot;; font-size: 28px;">チャット風 サーバーとの通信履歴</text>
+  <text x="815.425" y="135.25" style="white-space: pre; fill: rgb(51, 51, 51); font-family: &quot;Roboto Slab&quot;; font-size: 28px;">フィルター条件 エディタの操作を含むかどうか</text>
+  <rect y="34.172" width="1600" height="60.828" style="fill: rgb(216, 216, 216); stroke: rgb(0, 0, 0); stroke-width: 3px;"/>
+  <text x="33.654" y="70.9" style="white-space: pre; fill: rgb(51, 51, 51); font-family: &quot;Roboto Slab&quot;; font-size: 28px;">タブ</text>
+  <rect x="793.235" y="836.559" width="806.765" height="63.441" style="fill: rgb(216, 216, 216);"/>
+  <text x="836.532" y="867.04" style="white-space: pre; fill: rgb(51, 51, 51); font-family: &quot;Roboto Slab&quot;; font-size: 28px;">@serverA 入力欄</text>
+  <rect x="33.641" y="165.819" width="698.078" height="613.447" style="fill: rgb(216, 216, 216); stroke: rgb(0, 0, 0); stroke-width: 3px;"/>
+  <rect x="33.641" y="165.819" width="698.078" height="60.337" style="stroke: rgb(0, 0, 0); stroke-width: 3px; fill: rgb(176, 176, 176);"/>
+  <text x="33.649" y="143.162" style="white-space: pre; fill: rgb(51, 51, 51); font-family: &quot;Roboto Slab&quot;; font-size: 28px;">serverA / Resource</text>
+  <rect x="1538.035" y="836.859" width="61.965" height="63.876" style="fill: rgb(163, 108, 108);"/>
+  <text x="1352.51" y="808.979" style="white-space: pre; fill: rgb(51, 51, 51); font-family: &quot;Roboto Slab&quot;; font-size: 28px;">自身のRole設定 ↓</text>
+  <text x="770.613" y="956.384" style="white-space: pre; fill: rgb(51, 51, 51); font-family: &quot;Roboto Slab&quot;; font-size: 28px;">↑サッシ 左右に動かせる</text>
+  <text x="1448.501" y="70.911" style="white-space: pre; fill: rgb(51, 51, 51); font-family: &quot;Roboto Slab&quot;; font-size: 28px;">何でも検索</text>
+</svg>

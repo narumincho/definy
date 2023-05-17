@@ -10,8 +10,7 @@ GraphQL 以上を目指す問い合わせライブラリ
 
 - Deno 向けには `Deno.writeTextFile` とか `Request` `Response` を使う形にし,
   - deno.land に commection を公開
-- Node.js 向けには, `node:fs` とか `handler: (req, res) => Promise<void>`
-  の形になるのかな.
+- Node.js 向けには, dnt で変換したものを使う
   - npm に commection を公開
 
 graphql-http が参考になるかも

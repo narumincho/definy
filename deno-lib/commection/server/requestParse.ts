@@ -1,7 +1,7 @@
 import { requestObjectToSimpleRequest } from "../../simpleRequestResponse/simpleRequest.ts";
 import { stringArrayEqual, stringArrayMatchPrefix } from "../../util.ts";
-import { UntypedRequestExpr } from "../requestExpr.ts";
-import { SchemaType } from "./schemaType.ts";
+import { UntypedRequestExpr } from "../core/requestExpr.ts";
+import { SchemaType } from "../core/schemaType.ts";
 
 export const requestParse = async <T>(
   request: Request,

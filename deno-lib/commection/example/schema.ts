@@ -1,5 +1,5 @@
 import { text } from "../server/main.ts";
-import { SchemaType, Type } from "../server/schemaType.ts";
+import { SchemaType, Type } from "../core/schemaType.ts";
 
 /// これは コード生成されたコードにする
 /// 直接これを編集しても良いが, 開発モードでブラウザ上でスキーマを編集したときには, 展開された形になる.
@@ -48,3 +48,5 @@ export type ImplementType = {
 };
 
 export type HelloFunctionType = () => Promise<string>;
+
+export type ServerKey = "serverName";
