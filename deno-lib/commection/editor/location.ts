@@ -4,7 +4,9 @@ export type PageLocation = {
   type: "top";
 };
 
-export const simpleUrlToPageLocation = (simpleUrl: SimpleUrl): PageLocation => {
+export const simpleUrlToPageLocation = (
+  _simpleUrl: SimpleUrl,
+): PageLocation => {
   return {
     type: "top",
   };

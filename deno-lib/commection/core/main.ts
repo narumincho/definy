@@ -19,8 +19,8 @@ export type Result<T> = {
  * SSR とかで使う
  */
 export const executeCommand = async <ImplementType, ServerKey, ResponseType>(
-  server: Server<ImplementType, ServerKey>,
-  request: RequestExpr<ServerKey, ResponseType>,
+  _server: Server<ImplementType, ServerKey>,
+  _request: RequestExpr<ServerKey, ResponseType>,
 ): Promise<Result<ResponseType>> => {
   await (() => {});
   return {

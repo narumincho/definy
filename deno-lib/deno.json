@@ -1,19 +1,17 @@
 {
     "lint": {
-        "files": {
-            "exclude": [
-                "nodeRedPackage/",
-                "npm/"
-            ]
-        }
+        "exclude": [
+            "nodeRedPackage/",
+            "npm/",
+            "vscodeExtensionDistribution/"
+        ]
     },
     "test": {
-        "files": {
-            "exclude": [
-                "nodeRedPackage/",
-                "npm/"
-            ]
-        }
+        "exclude": [
+            "nodeRedPackage/",
+            "npm/",
+            "vscodeExtensionDistribution/"
+        ]
     },
     "compilerOptions": {
         "noUncheckedIndexedAccess": true,
