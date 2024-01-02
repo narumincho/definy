@@ -1,5 +1,5 @@
-import React from "https://esm.sh/react@18.2.0?pin=v119";
-import { styled } from "https://esm.sh/@stitches/react@1.2.8?pin=v119";
+import React from "https://esm.sh/react@18.2.0?pin=v135";
+import { styled } from "https://esm.sh/@stitches/react@1.2.8?pin=v135";
 import { Button } from "../editor/Button.tsx";
 import { jsonStringify, RawJsonValue } from "../typedJson.ts";
 import { EnterIcon } from "./EnterIcon.tsx";

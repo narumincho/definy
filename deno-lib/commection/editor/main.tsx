@@ -1,7 +1,7 @@
 // definy RPC と同様にクライアントのコードを React で書く
 // OGP 対応やGoogle検索のために SSR をする
-import React from "https://esm.sh/react@18.2.0?pin=v119";
-import { hydrateRoot } from "https://esm.sh/react-dom@18.2.0/client?pin=v119";
+import React from "https://esm.sh/react@18.2.0?pin=v135";
+import { hydrateRoot } from "https://esm.sh/react-dom@18.2.0/client?pin=v135";
 import { App } from "./app.tsx";
 import { PageLocation, simpleUrlToPageLocation } from "./location.ts";
 import { urlToSimpleUrl } from "../../simpleRequestResponse/simpleUrl.ts";

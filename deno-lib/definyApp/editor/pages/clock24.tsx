@@ -1,4 +1,4 @@
-import React from "https://esm.sh/react@18.2.0?pin=v119";
+import React from "https://esm.sh/react@18.2.0?pin=v135";
 import { ClockSetting } from "../components/clockSetting.tsx";
 import { timeToDisplayText } from "../logic.ts";
 import { styled } from "../style.ts";
