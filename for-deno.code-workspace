@@ -15,13 +15,5 @@
     "[typescriptreact]": {
       "editor.defaultFormatter": "denoland.vscode-deno"
     },
-    "deno.inlayHints.parameterNames.enabled": "none",
-    "deno.inlayHints.variableTypes.suppressWhenTypeMatchesName": false,
-    "deno.inlayHints.variableTypes.enabled": false,
-    "deno.inlayHints.parameterTypes.enabled": false,
-    "deno.inlayHints.propertyDeclarationTypes.enabled": false,
-    "deno.inlayHints.parameterNames.suppressWhenArgumentMatchesName": false,
-    "deno.inlayHints.enumMemberValues.enabled": false,
-    "deno.inlayHints.functionLikeReturnTypes.enabled": false
   }
 }
