@@ -8,15 +8,12 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - name: checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: setup Deno
         uses: denoland/setup-deno@v1
         with:
           deno-version: v1.39.1
       - name: Deno type check
-        run: deno run --allow-run --allow-read ./entryPoints/check.ts
-        working-directory: ./deno-lib
+        run: deno run --allow-run --allow-read ./typeCheck.ts
       - run: deno lint .
-        working-directory: ./deno-lib
       - run: deno test .
-        working-directory: ./deno-lib
