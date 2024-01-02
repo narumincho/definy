@@ -8,5 +8,9 @@ export const operatorToString = (operator: Operator): string => {
       return "!=";
     case "equal":
       return "==";
+    case "add":
+      return "+";
+    case "logicalAnd":
+      return "&&";
   }
 };

@@ -3,6 +3,7 @@ import {
   DefinyRpcTypeInfo,
   Maybe,
   Namespace,
+  Number,
   Pattern,
   TypeBody,
 } from "../definyRpc/core/coreType.ts";
@@ -13,6 +14,7 @@ import {
 import { requestObjectToSimpleRequest } from "../simpleRequestResponse/simpleRequest.ts";
 import { simpleResponseToResponse } from "../simpleRequestResponse/simpleResponse.ts";
 
+// やっぱ Pattern の構造が変わる今. definy RPC を使って作る意味はないかな.
 const typeList: ReadonlyArray<DefinyRpcTypeInfo> = [
   DefinyRpcTypeInfo.from({
     name: "Operator",
@@ -35,6 +37,40 @@ const typeList: ReadonlyArray<DefinyRpcTypeInfo> = [
         name: "equal",
         description: "==",
         parameter: Maybe.nothing(),
+      }),
+      Pattern.from({
+        name: "add",
+        description: "+",
+        parameter: Maybe.nothing(),
+      }),
+      Pattern.from({
+        name: "logicalAnd",
+        description: "&&",
+        parameter: Maybe.nothing(),
+      }),
+    ]),
+  }),
+  DefinyRpcTypeInfo.from({
+    name: "Expr",
+    description: "式",
+    attribute: Maybe.nothing(),
+    namespace: Namespace.local(["dart"]),
+    parameter: [],
+    body: TypeBody.sum([
+      Pattern.from({
+        name: "IntLiteral",
+        description: "0, 123, 28",
+        parameter: Maybe.just(Number.type()),
+      }),
+      Pattern.from({
+        name: "StringLiteral",
+        description: "0, 123, 28",
+        parameter: Maybe.just(Number.type()),
+      }),
+      Pattern.from({
+        name: "StringLiteral",
+        description: "0, 123, 28",
+        parameter: Maybe.just(Number.type()),
       }),
     ]),
   }),

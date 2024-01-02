@@ -27,6 +27,20 @@ export type Operator =
        */
       readonly type: "equal";
       readonly [Symbol.toStringTag]: "dart.Operator";
+    }
+  | {
+      /**
+       * +
+       */
+      readonly type: "add";
+      readonly [Symbol.toStringTag]: "dart.Operator";
+    }
+  | {
+      /**
+       * &&
+       */
+      readonly type: "logicalAnd";
+      readonly [Symbol.toStringTag]: "dart.Operator";
     };
 
 /**
@@ -49,6 +63,14 @@ export const Operator: {
    * ==
    */
   readonly equal: Operator;
+  /**
+   * +
+   */
+  readonly add: Operator;
+  /**
+   * &&
+   */
+  readonly logicalAnd: Operator;
 } = {
   type: (): a.Type<Operator> =>
     a.Type.from({
@@ -62,4 +84,6 @@ export const Operator: {
   },
   notEqual: { type: "notEqual", [Symbol.toStringTag]: "dart.Operator" },
   equal: { type: "equal", [Symbol.toStringTag]: "dart.Operator" },
+  add: { type: "add", [Symbol.toStringTag]: "dart.Operator" },
+  logicalAnd: { type: "logicalAnd", [Symbol.toStringTag]: "dart.Operator" },
 };
