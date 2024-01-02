@@ -106,33 +106,6 @@ deno run --check -A ./entryPoints/definyRpcBuild.ts
 deno run --check ./entryPoints/definyRpcCoreGenerate.ts
 ```
 
-## @definy/node-red
-
-Node RED から definy RPC のサーバーにデータを送信できる (できるようにする)
-ライブラリ
-
-https://www.npmjs.com/package/@definy/node-red
-
-### **開発用*** Node.js 向けにビルド
-
-```ps1
-deno run --check -A ./entryPoints/nodeRedBuild.ts
-```
-
-### **開発用*** npm に公開
-
-```ps1
-cd ./nodeRedPackage && npm publish .
-```
-
-### **開発用*** Node RED の起動とデバッグ
-
-```ps1
-cd ~/.node-red
-node-red
-npm install path/to/nodeRedPackage
-```
-
 ### Node.js から利用できるようにするための npm パッケージ definy
 
 ```ps1

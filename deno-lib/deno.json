@@ -1,16 +1,12 @@
 {
     "lint": {
         "exclude": [
-            "nodeRedPackage/",
-            "npm/",
-            "vscodeExtensionDistribution/"
+            "npm/"
         ]
     },
     "test": {
         "exclude": [
-            "nodeRedPackage/",
-            "npm/",
-            "vscodeExtensionDistribution/"
+            "npm/"
         ]
     },
     "compilerOptions": {
