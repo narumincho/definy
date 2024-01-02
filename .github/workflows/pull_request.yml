@@ -14,6 +14,6 @@ jobs:
         with:
           deno-version: v1.39.1
       - name: Deno type check
-        run: deno run --allow-run --allow-read ./typeCheck.ts
+        run: deno run --allow-run --allow-read=. ./script/typeCheck.ts
       - run: deno lint .
       - run: deno test .
