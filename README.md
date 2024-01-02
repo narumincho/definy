@@ -11,8 +11,6 @@ Definy is Web App for Web App.
 
 - [Deno Version](https://definy.deno.dev/)
 
-- [Next Version](https://definy.vercel.app/?hl=ja)
-
 - [Firebase Version](https://definy.app/?hl=ja)
 
 - [Old Version](https://definy-old.web.app/) WebAssembly を使って数値の足し算,
