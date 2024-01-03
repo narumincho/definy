@@ -11,6 +11,26 @@
 - [Old Version](https://definy-old.web.app/) WebAssembly を使って数値の足し算,
   引き算, 掛け算ができる
 
+## start server
+
+`/script/startInLocal.ts`
+
+```ts:
+import { startDefinyServer } from "../server/main.ts";
+
+startDefinyServer();
+```
+
+```sh
+deno run -A ./script/startInLocal.ts
+```
+
+## client build
+
+```sh
+deno run -A ./script/buildClient.ts
+```
+
 ## フォルダとファイルの説明
 
 - `/.github/workflows/pull_request.yml`: Pull Request したときに実行されるテストの処理が書かれている
