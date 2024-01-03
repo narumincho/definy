@@ -57,18 +57,21 @@ export const locationFromPathAndQuery = (
       hl: searchQueryValueToLanguage(pathAndQuery.query.get("hl")),
     };
   }
-  if (segment0 === "file") {
-    return {
-      type: "file",
-      hash: pathAndQuery.pathSegments?.[1] ?? "",
-    };
-  }
   if (segment0 === "expr") {
     return {
       type: "expr",
       hl: searchQueryValueToLanguage(pathAndQuery.query.get("hl")),
       expr: pathAndQuery.query.get("expr") ?? "",
     };
+  }
+  if (segment0 === "file") {
+    return {
+      type: "file",
+      hash: pathAndQuery.pathSegments?.[1] ?? "",
+    };
+  }
+  if (segment0 === "graphql") {
+    return { type: "graphql" };
   }
   const idMatchResult = segment0?.match(/[0-9a-f]{32}/u);
   if (idMatchResult) {
