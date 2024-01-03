@@ -12,6 +12,7 @@ import { printSchema } from "npm:graphql";
 import { createHandler } from "npm:graphql-http/lib/use/fetch";
 import { Context, createContext } from "./context.ts";
 import { schema } from "./schema.ts";
+import { decodeBase64 } from "https://deno.land/std@0.210.0/encoding/base64.ts";
 
 const globalStyle = `
 html, body {
@@ -28,13 +29,6 @@ html, body {
   height: 100%;
 }
 `;
-
-const scriptUrl = pathAndQueryToPathAndQueryString(
-  locationToPathAndQuery({
-    type: "file",
-    hash: dist.clientJsHash,
-  }),
-);
 
 export const startDefinyServer = () => {
   Deno.serve(async (request) => {
@@ -54,10 +48,17 @@ export const startDefinyServer = () => {
       return Response.redirect(new URL(normalizedPathAndQuery, request.url));
     }
     if (location.type === "file") {
-      if (location.hash === dist.clientJsHash) {
-        return new Response(dist.clientJsCode, {
+      if (location.hash === dist.clientJs.hash) {
+        return new Response(dist.clientJs.code, {
           headers: {
             "Content-Type": "text/javascript",
+          },
+        });
+      }
+      if (location.hash === dist.icon.hash) {
+        return new Response(decodeBase64(dist.icon.base64), {
+          headers: {
+            "Content-Type": "image/png",
           },
         });
       }
@@ -92,10 +93,23 @@ export const startDefinyServer = () => {
             content: "width=device-width, initial-scale=1.0",
           }),
           h("title", {}, "definy"),
-          h("link", { rel: "icon", href: "" }),
+          h("link", {
+            rel: "icon",
+            href: pathAndQueryToPathAndQueryString(
+              locationToPathAndQuery({
+                type: "file",
+                hash: dist.icon.hash,
+              }),
+            ),
+          }),
           h("script", {
             type: "module",
-            src: scriptUrl,
+            src: pathAndQueryToPathAndQueryString(
+              locationToPathAndQuery({
+                type: "file",
+                hash: dist.clientJs.hash,
+              }),
+            ),
           }),
           h("style", {}, globalStyle),
         ]),
@@ -126,7 +140,7 @@ const apolloStudioEmbeddedHtml = (schemaAsString: string) => `
       target: "#embedded-explorer",
       endpointUrl: location.href,
       schema: \`${
-  schemaAsString.replace(/\<\/script>/gu, "<\\/script>").replace(/`/gu, "\\`")
+  schemaAsString.replace(/<\/script>/gu, "<\\/script>").replace(/`/gu, "\\`")
 }\`,
       includeCookies: false,
     });
