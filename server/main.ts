@@ -8,6 +8,10 @@ import {
   pathAndQueryFromUrl,
   pathAndQueryToPathAndQueryString,
 } from "../app/location.ts";
+import { printSchema } from "npm:graphql";
+import { createHandler } from "npm:graphql-http/lib/use/fetch";
+import { Context, createContext } from "./context.ts";
+import { schema } from "./schema.ts";
 
 const globalStyle = `
 html, body {
@@ -33,7 +37,7 @@ const scriptUrl = pathAndQueryToPathAndQueryString(
 );
 
 export const startDefinyServer = () => {
-  Deno.serve((request) => {
+  Deno.serve(async (request) => {
     console.log(request.url);
     const url = new URL(request.url);
     const location = locationFromPathAndQuery(pathAndQueryFromUrl(url));
@@ -59,6 +63,25 @@ export const startDefinyServer = () => {
       }
       return new Response("file Not Found", { status: 404 });
     }
+    if (location.type === "graphql") {
+      // エディタを返す
+      if (request.headers.get("accept")?.includes("html")) {
+        return new Response(apolloStudioEmbeddedHtml(printSchema(schema)), {
+          headers: {
+            "content-type": "text/html; charset=utf-8",
+          },
+        });
+      }
+
+      // GraphQL の処理をする
+      return await createHandler<Context>({
+        schema,
+        context: () =>
+          createContext({
+            authHeaderValue: request.headers.get("authorization") ?? undefined,
+          }),
+      })(request);
+    }
 
     return new Response(
       "<!doctype html>" + renderToString(h("html", {}, [
@@ -69,6 +92,7 @@ export const startDefinyServer = () => {
             content: "width=device-width, initial-scale=1.0",
           }),
           h("title", {}, "definy"),
+          h("link", { rel: "icon", href: "" }),
           h("script", {
             type: "module",
             src: scriptUrl,
@@ -76,7 +100,9 @@ export const startDefinyServer = () => {
           h("style", {}, globalStyle),
         ]),
         h("body", {}, [
-          h("div", { id: "app" }, [h(App, { location })]),
+          h("div", { id: "app", "data-props": JSON.stringify({ location }) }, [
+            h(App, { location }),
+          ]),
         ]),
       ])),
       {
@@ -87,3 +113,24 @@ export const startDefinyServer = () => {
     );
   });
 };
+
+const apolloStudioEmbeddedHtml = (schemaAsString: string) => `
+<!doctype html>
+<html style="height: 100%; overflow: hidden;">
+<head></head>
+<body style="height: 100%; margin: 0;">
+  <div style="width: 100%; height: 100%;" id="embedded-explorer"></div>
+  <script src="https://embeddable-explorer.cdn.apollographql.com/_latest/embeddable-explorer.umd.production.min.js"></script> 
+  <script>
+    new window.EmbeddedExplorer({
+      target: "#embedded-explorer",
+      endpointUrl: location.href,
+      schema: \`${
+  schemaAsString.replace(/\<\/script>/gu, "<\\/script>").replace(/`/gu, "\\`")
+}\`,
+      includeCookies: false,
+    });
+  </script>
+</body>
+</html>
+`;

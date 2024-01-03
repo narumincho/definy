@@ -25,8 +25,18 @@ export type Location = { readonly type: "top"; readonly hl: Language } | {
   readonly type: "about";
   readonly hl: Language;
 } | {
+  readonly type: "expr";
+  readonly hl: Language;
+  readonly expr: string;
+} | {
+  readonly type: "id";
+  readonly hl: Language;
+  readonly id: string;
+} | {
   readonly type: "file";
   readonly hash: string;
+} | {
+  readonly type: "graphql";
 };
 
 export type Language = "en" | "eo" | "ja";
@@ -40,18 +50,35 @@ export const locationFromPathAndQuery = (
       hl: searchQueryValueToLanguage(pathAndQuery.query.get("hl")),
     };
   }
-  if (pathAndQuery.pathSegments[0] === "about") {
+  const segment0 = pathAndQuery.pathSegments[0];
+  if (segment0 === "about") {
     return {
       type: "about",
       hl: searchQueryValueToLanguage(pathAndQuery.query.get("hl")),
     };
   }
-  if (pathAndQuery.pathSegments[0] === "file") {
+  if (segment0 === "file") {
     return {
       type: "file",
-      hash: pathAndQuery.pathSegments?.[1],
+      hash: pathAndQuery.pathSegments?.[1] ?? "",
     };
   }
+  if (segment0 === "expr") {
+    return {
+      type: "expr",
+      hl: searchQueryValueToLanguage(pathAndQuery.query.get("hl")),
+      expr: pathAndQuery.query.get("expr") ?? "",
+    };
+  }
+  const idMatchResult = segment0?.match(/[0-9a-f]{32}/u);
+  if (idMatchResult) {
+    return {
+      type: "id",
+      hl: searchQueryValueToLanguage(pathAndQuery.query.get("hl")),
+      id: idMatchResult[0],
+    };
+  }
+
   return {
     type: "top",
     hl: searchQueryValueToLanguage(pathAndQuery.query.get("hl")),
@@ -83,9 +110,24 @@ export const locationToPathAndQuery = (location: Location): PathAndQuery => {
         pathSegments: ["about"],
         query: new Map([["hl", location.hl]]),
       };
+    case "expr":
+      return {
+        pathSegments: ["expr"],
+        query: new Map([["hl", location.hl], ["expr", location.expr]]),
+      };
+    case "id":
+      return {
+        pathSegments: [location.id],
+        query: new Map([["hl", location.hl]]),
+      };
     case "file":
       return {
         pathSegments: ["file", location.hash],
+        query: new Map(),
+      };
+    case "graphql":
+      return {
+        pathSegments: ["graphql"],
         query: new Map(),
       };
   }

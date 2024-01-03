@@ -1,5 +1,12 @@
 {
-  "compilerOption": {
-    "noIndexAccess": ""
+  "compilerOptions": {
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "deno.ns",
+      "deno.unstable"
+    ]
   }
 }
