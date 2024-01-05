@@ -22,17 +22,18 @@ startDefinyServer();
 ```
 
 ```sh
-deno run -A ./script/startInLocal.ts
+deno run --check --watch -A ./script/startInLocal.ts
 ```
 
 ## client build
 
 ```sh
-deno run -A ./script/buildClient.ts
+deno run --check -A ./script/buildClient.ts
 ```
 
 ## フォルダとファイルの説明
 
-- `/.github/workflows/pull_request.yml`: Pull Request したときに実行されるテストの処理が書かれている
+- `/.github/workflows/pull_request.yml`: Pull Request
+  したときに実行されるテストの処理が書かれている
 - `/.vscode`: VSCode 向けの設定
 - `/assets`: スタティックなファイルが置かれている

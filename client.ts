@@ -22,7 +22,25 @@ const AppWithState = () => {
   useEffect(() => {
   });
 
-  return h(App, { location });
+  return h(App, {
+    location,
+    logInState: { type: "loading" },
+    onClickCreateIdea: () => {
+      console.log("click");
+      // fetch("/graphql", {
+      //   method: "POST",
+      //   headers: { "Content-Type": "application/json" },
+      //   body: JSON.stringify({
+      //     query:
+      //       'mutation { createIdea(input: { title: "test", description: "test" }) { id } }',
+      //   }),
+      // });
+    },
+  });
 };
 
-hydrate(AppWithState, appElement);
+// 結局自動アカウント作成機能を作るの?
+
+hydrate(h(AppWithState, {}), appElement);
+
+console.log("client.ts");

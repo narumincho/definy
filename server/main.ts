@@ -115,7 +115,11 @@ export const startDefinyServer = () => {
         ]),
         h("body", {}, [
           h("div", { id: "app", "data-props": JSON.stringify({ location }) }, [
-            h(App, { location }),
+            h(App, {
+              location,
+              logInState: { type: "guest" },
+              onClickCreateIdea: () => {},
+            }),
           ]),
         ]),
       ])),

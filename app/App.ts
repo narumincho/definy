@@ -4,11 +4,24 @@ import { Top } from "./page/top.ts";
 import { About } from "./page/about.ts";
 import { ExprPage } from "./page/expr.ts";
 import { IdPage } from "./page/id.ts";
+import { LogInState } from "./component/LogInStateView.ts";
 
-export const App = (props: { readonly location: Location }) => {
+export type Props = {
+  readonly location: Location;
+  readonly onClickCreateIdea: () => void;
+  readonly logInState: LogInState;
+};
+
+export const App = (
+  props: Props,
+) => {
   switch (props.location.type) {
     case "top":
-      return h(Top, { hl: props.location.hl });
+      return h(Top, {
+        hl: props.location.hl,
+        logInState: props.logInState,
+        onClickCreateIdea: props.onClickCreateIdea,
+      });
     case "about":
       return h(About, { hl: props.location.hl });
     case "expr":
