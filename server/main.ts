@@ -145,8 +145,10 @@ export const startDefinyServer = () => {
             h(App, {
               location,
               logInState: { type: "guest" },
+              languageDropdownIsOpen: false,
               onClickCreateIdea: () => {},
               onLocationMove: () => {},
+              onSetLanguageDropdownIsOpen: () => {},
             }),
           ]),
         ]),

@@ -25,6 +25,9 @@ const props: { readonly location: Location } = JSON.parse(propsValue);
 
 const AppWithState = () => {
   const [location, setLocation] = useState<Location>(props.location);
+  const [languageDropdownIsOpen, setIsOpenLanguageDropdown] = useState<boolean>(
+    false,
+  );
 
   useEffect(() => {
     addEventListener("popstate", (e) => {
@@ -53,6 +56,10 @@ const AppWithState = () => {
       //       'mutation { createIdea(input: { title: "test", description: "test" }) { id } }',
       //   }),
       // });
+    },
+    languageDropdownIsOpen,
+    onSetLanguageDropdownIsOpen: (isOpen: boolean) => {
+      setIsOpenLanguageDropdown(isOpen);
     },
     onLocationMove: (location) => {
       setLocation(location);

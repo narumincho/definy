@@ -3,10 +3,13 @@ import { Language } from "../location.ts";
 import { Header } from "../component/Header.ts";
 import { LogInState } from "../component/LogInStateView.ts";
 import { Location } from "../location.ts";
+import { LanguageDropdown } from "../component/LanguageDropdown.ts";
 
 export const About = (props: {
   readonly hl: Language;
   readonly logInState: LogInState;
+  readonly languageDropdownIsOpen: boolean;
+  readonly onSetLanguageDropdownIsOpen: (isOpen: boolean) => void;
   readonly onLocationMove: (location: Location) => void;
 }) => {
   return h(
@@ -21,13 +24,25 @@ export const About = (props: {
       "div",
       { style: "padding:8px" },
       h(
-        "h1",
-        {},
-        {
-          en: "About definy",
-          eo: "Pri definy",
-          ja: "definy について",
-        }[props.hl],
+        "div",
+        { style: "display:flex" },
+        h(
+          "h1",
+          {},
+          {
+            en: "About definy",
+            eo: "Pri definy",
+            ja: "definy について",
+          }[props.hl],
+        ),
+        h("div", { style: "flex-grow:1" }),
+        h(LanguageDropdown, {
+          hl: props.hl,
+          onLocationMove: props.onLocationMove,
+          locationFunc: (hl) => ({ type: "about", hl }),
+          isOpen: props.languageDropdownIsOpen,
+          setIsOpen: props.onSetLanguageDropdownIsOpen,
+        }),
       ),
       h(
         "div",
