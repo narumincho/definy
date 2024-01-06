@@ -17,6 +17,9 @@ export const Link = (
       locationToPathAndQuery(props.location),
     ),
     onClick: (e) => {
+      if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) {
+        return;
+      }
       e.preventDefault();
       props.onLocationMove(props.location);
     },

@@ -1,6 +1,7 @@
 # definy
 
-いろいろ整理中...
+いろいろ整理中... いろいろ調整する前
+https://github.com/narumincho/definy/tree/prev2023
 
 ![definyのスクリーンショット](https://repository-images.githubusercontent.com/168463361/72534f00-ec72-11e9-94f3-370ab473bc28)
 
