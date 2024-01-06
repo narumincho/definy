@@ -25,7 +25,11 @@ export const App = (
         onLocationMove: props.onLocationMove,
       });
     case "about":
-      return h(About, { hl: props.location.hl, logInState: props.logInState });
+      return h(About, {
+        hl: props.location.hl,
+        logInState: props.logInState,
+        onLocationMove: props.onLocationMove,
+      });
     case "expr":
       return h(ExprPage, { hl: props.location.hl, expr: props.location.expr });
     case "id":

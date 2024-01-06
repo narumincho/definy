@@ -1,0 +1,24 @@
+{
+  // Use IntelliSense to learn about possible attributes.
+  // Hover to view descriptions of existing attributes.
+  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "start server",
+      "type": "node",
+      "request": "launch",
+      "cwd": "${workspaceFolder}",
+      "runtimeExecutable": "deno",
+      "runtimeArgs": [
+        "run",
+        // "--watch", // ファイルの変更を監視して自動で再起動したかったが, なぜか動かない
+        "--inspect",
+        "--check",
+        "--allow-net=:8000"
+      ],
+      "program": "${workspaceFolder}/script/startInLocal.ts",
+      "attachSimplePort": 9229
+    }
+  ]
+}

@@ -23,13 +23,19 @@ startDefinyServer();
 ```
 
 ```sh
-deno run --check --watch -A ./script/startInLocal.ts
+deno run --check --watch --allow-net=:8000 ./script/startInLocal.ts
 ```
 
 ## client build
 
 ```sh
-deno run --check -A ./script/buildClient.ts
+deno run --check --allow-env --allow-net --allow-read --allow-write=./dist.json ./script/buildClient.ts
+```
+
+## type check
+
+```sh
+deno run --allow-run --allow-read ./script/typeCheck.ts
 ```
 
 ## フォルダとファイルの説明
