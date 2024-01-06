@@ -1,7 +1,21 @@
 {
-  "typescript.tsdk": "node_modules/typescript/lib",
-  "editor.codeActionsOnSave": {
-    "source.fixAll.eslint": "explicit"
+  "deno.enable": true,
+  "eslint.enable": false,
+  "prettier.enable": false,
+  "editor.formatOnSave": true,
+  "[json]": {
+    "editor.defaultFormatter": "denoland.vscode-deno"
   },
-  "cSpell.words": ["concat"]
+  "[jsonc]": {
+    "editor.defaultFormatter": "denoland.vscode-deno"
+  },
+  "[typescript]": {
+    "editor.defaultFormatter": "denoland.vscode-deno"
+  },
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "denoland.vscode-deno"
+  },
+  "[markdown]": {
+    "editor.defaultFormatter": "denoland.vscode-deno"
+  }
 }
