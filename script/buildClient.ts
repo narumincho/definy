@@ -1,6 +1,6 @@
-import { ensureFile } from "https://deno.land/std@0.210.0/fs/mod.ts";
-import { encodeHex } from "https://deno.land/std@0.210.0/encoding/hex.ts";
-import { encodeBase64 } from "https://deno.land/std@0.210.0/encoding/base64.ts";
+import { ensureFile } from "https://deno.land/std@0.211.0/fs/mod.ts";
+import { encodeHex } from "https://deno.land/std@0.211.0/encoding/hex.ts";
+import { encodeBase64 } from "https://deno.land/std@0.211.0/encoding/base64.ts";
 import { bundle } from "https://deno.land/x/emit@0.32.0/mod.ts";
 
 export const writeTextFileWithLog = async (

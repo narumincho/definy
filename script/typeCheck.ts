@@ -1,4 +1,4 @@
-import { extname, join } from "https://deno.land/std@0.210.0/path/mod.ts";
+import { extname, join } from "https://deno.land/std@0.211.0/path/mod.ts";
 
 /**
  * Recursively collects the paths of all TypeScript (.ts) and TypeScript JSX (.tsx) files

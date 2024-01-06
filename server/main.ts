@@ -12,7 +12,7 @@ import { printSchema } from "npm:graphql";
 import { createHandler } from "npm:graphql-http/lib/use/fetch";
 import { Context, createContext } from "./context.ts";
 import { schema } from "./schema.ts";
-import { decodeBase64 } from "https://deno.land/std@0.210.0/encoding/base64.ts";
+import { decodeBase64 } from "https://deno.land/std@0.211.0/encoding/base64.ts";
 
 const globalStyle = `
 /*
