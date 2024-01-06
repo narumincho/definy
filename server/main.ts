@@ -15,6 +15,18 @@ import { schema } from "./schema.ts";
 import { decodeBase64 } from "https://deno.land/std@0.210.0/encoding/base64.ts";
 
 const globalStyle = `
+/*
+  Hack typeface https://github.com/source-foundry/Hack
+  License: https://github.com/source-foundry/Hack/blob/master/LICENSE.md
+*/
+
+@font-face {
+  font-family: "Hack";
+  font-weight: 400;
+  font-style: normal;
+  src: url("/file/${dist.font.hash}") format("woff2");
+}
+
 html, body {
   margin: 0;
   padding: 0;
@@ -22,6 +34,11 @@ html, body {
   height: 100%;
   background-color: #080808;
   color: #f0f0f0;
+}
+
+* {
+  box-sizing: border-box;
+  color: white;
 }
 
 #app {
@@ -52,6 +69,7 @@ export const startDefinyServer = () => {
         return new Response(dist.clientJs.code, {
           headers: {
             "Content-Type": "text/javascript",
+            "Cache-Control": "public, max-age=604800, immutable",
           },
         });
       }
@@ -59,6 +77,15 @@ export const startDefinyServer = () => {
         return new Response(decodeBase64(dist.icon.base64), {
           headers: {
             "Content-Type": "image/png",
+            "Cache-Control": "public, max-age=604800, immutable",
+          },
+        });
+      }
+      if (location.hash === dist.font.hash) {
+        return new Response(decodeBase64(dist.font.base64), {
+          headers: {
+            "Content-Type": "font/woff2",
+            "Cache-Control": "public, max-age=604800, immutable",
           },
         });
       }

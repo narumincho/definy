@@ -39,8 +39,6 @@ const AppWithState = () => {
   });
 };
 
-// 結局自動アカウント作成機能を作るの?
-
 hydrate(h(AppWithState, {}), appElement);
 
 console.log("client.ts");

@@ -13,7 +13,7 @@ export const writeTextFileWithLog = async (
   console.log(path.toString() + " に書き込み完了!");
 };
 
-const [clientJs, icon] = await Promise.all([
+const [clientJs, icon, font] = await Promise.all([
   bundle(new URL("../client.ts", import.meta.url)).then(async (emit) => ({
     code: emit.code,
     hash: encodeHex(
@@ -25,12 +25,23 @@ const [clientJs, icon] = await Promise.all([
   })),
   fetch(new URL("../assets/icon.png", import.meta.url)).then(
     (response) => response.arrayBuffer(),
-  ).then(async (iconBinary) => ({
-    base64: encodeBase64(iconBinary),
+  ).then(async (binary) => ({
+    base64: encodeBase64(binary),
     hash: encodeHex(
       await crypto.subtle.digest(
         "SHA-256",
-        iconBinary,
+        binary,
+      ),
+    ),
+  })),
+  fetch(new URL("../assets/hack_regular_subset.woff2", import.meta.url)).then(
+    (response) => response.arrayBuffer(),
+  ).then(async (binary) => ({
+    base64: encodeBase64(binary),
+    hash: encodeHex(
+      await crypto.subtle.digest(
+        "SHA-256",
+        binary,
       ),
     ),
   })),
@@ -38,5 +49,5 @@ const [clientJs, icon] = await Promise.all([
 
 await writeTextFileWithLog(
   "./dist.json",
-  JSON.stringify({ clientJs, icon }),
+  JSON.stringify({ clientJs, icon, font }),
 );
