@@ -11,6 +11,8 @@ export type Props = {
   readonly onClickCreateIdea: () => void;
   readonly logInState: LogInState;
   readonly onLocationMove: (location: Location) => void;
+  readonly languageDropdownIsOpen: boolean;
+  readonly onSetLanguageDropdownIsOpen: (isOpen: boolean) => void;
 };
 
 export const App = (
@@ -25,7 +27,13 @@ export const App = (
         onLocationMove: props.onLocationMove,
       });
     case "about":
-      return h(About, { hl: props.location.hl, logInState: props.logInState });
+      return h(About, {
+        hl: props.location.hl,
+        logInState: props.logInState,
+        onLocationMove: props.onLocationMove,
+        languageDropdownIsOpen: props.languageDropdownIsOpen,
+        onSetLanguageDropdownIsOpen: props.onSetLanguageDropdownIsOpen,
+      });
     case "expr":
       return h(ExprPage, { hl: props.location.hl, expr: props.location.expr });
     case "id":

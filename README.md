@@ -1,6 +1,7 @@
 # definy
 
-いろいろ整理中...
+いろいろ整理中... いろいろ調整する前
+https://github.com/narumincho/definy/tree/prev2023
 
 ![definyのスクリーンショット](https://repository-images.githubusercontent.com/168463361/72534f00-ec72-11e9-94f3-370ab473bc28)
 
@@ -22,13 +23,19 @@ startDefinyServer();
 ```
 
 ```sh
-deno run --check --watch -A ./script/startInLocal.ts
+deno run --check --watch --allow-net=:8000 ./script/startInLocal.ts
 ```
 
 ## client build
 
 ```sh
-deno run --check -A ./script/buildClient.ts
+deno run --check --allow-env --allow-net --allow-read --allow-write=./dist.json ./script/buildClient.ts
+```
+
+## type check
+
+```sh
+deno run --allow-run --allow-read ./script/typeCheck.ts
 ```
 
 ## フォルダとファイルの説明

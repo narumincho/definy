@@ -8,7 +8,9 @@ import {
 export const Link = (
   props: {
     readonly location: Location;
-    children: ComponentChildren;
+    readonly children: ComponentChildren;
+    /** @default false */
+    readonly removeUnderline?: boolean;
     readonly onLocationMove: (location: Location) => void;
   },
 ) => {
@@ -17,8 +19,12 @@ export const Link = (
       locationToPathAndQuery(props.location),
     ),
     onClick: (e) => {
+      if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) {
+        return;
+      }
       e.preventDefault();
       props.onLocationMove(props.location);
     },
+    ...(props.removeUnderline ? { "style": "text-decoration:none" } : {}),
   }, props.children);
 };

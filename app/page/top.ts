@@ -13,7 +13,11 @@ export const Top = (props: {
   return h(
     "div",
     {},
-    h(Header, { logInState: props.logInState }),
+    h(Header, {
+      logInState: props.logInState,
+      hl: props.hl,
+      onLocationMove: props.onLocationMove,
+    }),
     h(
       "div",
       {},
