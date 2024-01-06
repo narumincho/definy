@@ -146,6 +146,7 @@ export const startDefinyServer = () => {
               location,
               logInState: { type: "guest" },
               onClickCreateIdea: () => {},
+              onLocationMove: () => {},
             }),
           ]),
         ]),

@@ -10,6 +10,7 @@ export type Props = {
   readonly location: Location;
   readonly onClickCreateIdea: () => void;
   readonly logInState: LogInState;
+  readonly onLocationMove: (location: Location) => void;
 };
 
 export const App = (
@@ -21,9 +22,10 @@ export const App = (
         hl: props.location.hl,
         logInState: props.logInState,
         onClickCreateIdea: props.onClickCreateIdea,
+        onLocationMove: props.onLocationMove,
       });
     case "about":
-      return h(About, { hl: props.location.hl });
+      return h(About, { hl: props.location.hl, logInState: props.logInState });
     case "expr":
       return h(ExprPage, { hl: props.location.hl, expr: props.location.expr });
     case "id":

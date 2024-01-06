@@ -1,6 +1,12 @@
 import { h, hydrate } from "https://esm.sh/preact@10.19.3";
 import { useEffect, useState } from "https://esm.sh/preact@10.19.3/hooks";
-import { Location } from "./app/location.ts";
+import {
+  Location,
+  locationFromPathAndQuery,
+  locationToPathAndQuery,
+  pathAndQueryFromUrl,
+  pathAndQueryToPathAndQueryString,
+} from "./app/location.ts";
 import { App } from "./app/App.ts";
 
 const appElement = document.getElementById("app");
@@ -19,7 +25,19 @@ const props: { readonly location: Location } = JSON.parse(propsValue);
 
 const AppWithState = () => {
   const [location, setLocation] = useState<Location>(props.location);
+
   useEffect(() => {
+    addEventListener("popstate", (e) => {
+      const location = locationFromPathAndQuery(
+        pathAndQueryFromUrl(new URL(window.location.href)),
+      );
+      if (location === undefined) {
+        console.warn("location is undefined");
+        e.preventDefault();
+        return;
+      }
+      setLocation(location);
+    });
   });
 
   return h(App, {
@@ -35,6 +53,14 @@ const AppWithState = () => {
       //       'mutation { createIdea(input: { title: "test", description: "test" }) { id } }',
       //   }),
       // });
+    },
+    onLocationMove: (location) => {
+      setLocation(location);
+      history.pushState(
+        {},
+        "",
+        pathAndQueryToPathAndQueryString(locationToPathAndQuery(location)),
+      );
     },
   });
 };

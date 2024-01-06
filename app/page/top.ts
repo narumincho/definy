@@ -1,35 +1,29 @@
 import { h } from "https://esm.sh/preact@10.19.3";
-import { Language } from "../location.ts";
-import { LogInState, LogInStateView } from "../component/LogInStateView.ts";
+import { Language, Location } from "../location.ts";
+import { LogInState } from "../component/LogInStateView.ts";
+import { Header } from "../component/Header.ts";
+import { Link } from "../component/Link.ts";
 
 export const Top = (props: {
   readonly hl: Language;
   readonly logInState: LogInState;
   readonly onClickCreateIdea: () => void;
+  readonly onLocationMove: (location: Location) => void;
 }) => {
   return h(
     "div",
     {},
-    h(
-      "header",
-      { style: "background: #333;display: flex" },
-      h(
-        "h2",
-        {
-          style:
-            "font-family:'Hack';font-size:32px;font-weight: normal;color: #b9d09b;margin:0;line-height:1;padding:8px",
-        },
-        "definy",
-      ),
-      h("div", { style: "flex-grow:1" }),
-      h("div", {}, "ログイン状態: " + JSON.stringify(props.logInState)),
-    ),
+    h(Header, { logInState: props.logInState }),
     h(
       "div",
       {},
       `ここはトップページ. 最近投稿されたアイデアなどを表示したい hl=${props.hl}`,
     ),
-    h("div", {}, h(LogInStateView, { logInState: props.logInState })),
+    h(Link, {
+      location: { type: "about", hl: props.hl },
+      onLocationMove: props.onLocationMove,
+      children: "about",
+    }),
     h(
       "button",
       { onClick: props.onClickCreateIdea },
