@@ -19,6 +19,13 @@
       ],
       "program": "${workspaceFolder}/script/startInLocal.ts",
       "attachSimplePort": 9229
+    },
+    {
+      "name": "start client",
+      "request": "launch",
+      "type": "dart",
+      "flutterMode": "debug",
+      "args": []
     }
   ]
 }
