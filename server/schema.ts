@@ -1,5 +1,6 @@
 import * as g from "npm:graphql";
 import { now } from "./query/now.ts";
+import { createAccount } from "./mutation/createAccount.ts";
 
 const query = new g.GraphQLObjectType({
   name: "Query",
@@ -10,7 +11,7 @@ const query = new g.GraphQLObjectType({
 const mutation = new g.GraphQLObjectType({
   name: "Mutation",
   description: "データを作成、更新ができる",
-  fields: { now },
+  fields: { createAccount },
 });
 
 export const schema = new g.GraphQLSchema({

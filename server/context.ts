@@ -1,7 +1,9 @@
-export type Context = Record<never, unknown>;
+export type Context = {
+  readonly denoKv: Deno.Kv;
+};
 
-export const createContext = (_parameter: {
+export const createContext = async (_parameter: {
   readonly authHeaderValue: string | undefined;
-}): Context => {
-  return {};
+}): Promise<Context> => {
+  return { denoKv: await Deno.openKv() };
 };
