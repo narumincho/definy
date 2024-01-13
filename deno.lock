@@ -28,6 +28,9 @@
   "remote": {
     "https://deno.land/std@0.211.0/encoding/_util.ts": "beacef316c1255da9bc8e95afb1fa56ed69baef919c88dc06ae6cb7a6103d376",
     "https://deno.land/std@0.211.0/encoding/base64.ts": "0ec6d6e6b68fc38f6396277e5184bcd47c1a9db0222fd0b563487eb67e352741",
+    "https://deno.land/x/totp@1.0.1/base32.ts": "6c675077ab4eb286f5befdd469935fe37e7c8ecc8a23ca0fb5e6e2b9361c5329",
+    "https://deno.land/x/totp@1.0.1/mod.ts": "8295580c3cadd6d9a0f7c52b997cad223e18170c19a7d240745b9e7fa0dfc64b",
+    "https://deno.land/x/totp@1.0.1/totp.ts": "5957de480d854f258aeed1f3acea59aabb677d7cb7b5fe48620857035f0cd344",
     "https://esm.sh/preact-render-to-string@6.3.1": "0271e7b46cc287b7402e0ff3f6cb7acc2d705c88507c40ebb6492b4b6994a7eb",
     "https://esm.sh/preact@10.19.3": "8a3e9b595ba7e875e03693798b455d7846e54e34e1946e20c87a4945677ffea5",
     "https://esm.sh/stable/preact@10.19.2/denonext/preact.mjs": "dc999b6432dc04d74ad7b692a8801f346294d815266dff915d0f222c120fd0b0",

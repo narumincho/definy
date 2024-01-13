@@ -15,6 +15,7 @@
         // "--watch", // ファイルの変更を監視して自動で再起動したかったが, なぜか動かない
         "--inspect",
         "--check",
+        "--unstable",
         "--allow-net=:8000"
       ],
       "program": "${workspaceFolder}/script/startInLocal.ts",

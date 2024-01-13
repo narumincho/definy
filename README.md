@@ -23,7 +23,7 @@ startDefinyServer();
 ```
 
 ```sh
-deno run --check --watch --allow-net=:8000 ./script/startInLocal.ts
+deno run --check --watch --unstable --allow-net=:8000 ./script/startInLocal.ts
 ```
 
 ## client build

@@ -6,6 +6,7 @@ import { accountIdFrom } from "../type/id.ts";
 import { AccountCode } from "../type/accountCode.ts";
 import { AccountDisplayName } from "../type/accountDisplayName.ts";
 import { getAccountByCodeResolve } from "../query/accountByCode.ts";
+import  {TemporaryKeyId} from "../type/id.ts";
 
 export const createAccount: g.GraphQLFieldConfig<
   void,
@@ -13,6 +14,9 @@ export const createAccount: g.GraphQLFieldConfig<
   { readonly code: AccountCode; readonly displayName: AccountDisplayName }
 > = {
   args: {
+    keyId: {
+      type: new g.GraphQLNonNull(TemporaryKeyId)
+    },
     code: {
       type: new g.GraphQLNonNull(AccountCode),
       description: "アカウントコード. 既存のアカウントと重複してはいけない",

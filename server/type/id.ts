@@ -7,3 +7,11 @@ export const AccountId = createIdGraphQLScalarType<AccountId>(
 );
 
 export const accountIdFrom = (id: string): AccountId => id as AccountId;
+
+export type TemporaryKeyId = string & { readonly TemporaryKeyId: unique symbol };
+
+export const TemporaryKeyId = createIdGraphQLScalarType<TemporaryKeyId>(
+  "TemporaryKeyId",
+);
+
+export const temporaryKeyIdFrom = (id: string): TemporaryKeyId => id as TemporaryKeyId;
