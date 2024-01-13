@@ -26,11 +26,29 @@ class AccountPage extends StatelessWidget {
               ),
               Link(
                 uri: Uri.parse(
-                  'otpauth://totp/Example:hoge@example.com?secret=JBSWY3DPEHPK3PXP&issuer=Example',
+                  'otpauth://totp/definy:example_totp_user?secret=JBSWY3DPEHPK3PXP&issuer=definy',
                 ),
                 builder: (context, followLink) => TextButton(
                   onPressed: followLink,
-                  child: const Text('otpauth url テスト'),
+                  child: const Text('otpauth totp url テスト'),
+                ),
+              ),
+              Link(
+                uri: Uri.parse(
+                  'otpauth://totp/definy:example_totp_sha256_user?secret=JBSWY3DPEHPK3PXP&issuer=definy&algorithm=SHA256',
+                ),
+                builder: (context, followLink) => TextButton(
+                  onPressed: followLink,
+                  child: const Text('otpauth totp 256 url テスト'),
+                ),
+              ),
+              Link(
+                uri: Uri.parse(
+                  'otpauth://hotp/definy:example_hotp_user@example.com?secret=JBSWY3DPEHPK3PXP&issuer=definy&counter=28',
+                ),
+                builder: (context, followLink) => TextButton(
+                  onPressed: followLink,
+                  child: const Text('otpauth hotp url テスト'),
                 ),
               )
             ],
