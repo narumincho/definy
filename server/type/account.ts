@@ -1,8 +1,8 @@
 import * as g from "npm:graphql";
 import { DateTime } from "npm:@narumincho/simple-graphql-server-common@0.1.2";
 import { AccountId } from "./id.ts";
-import { AccountDisplayName } from "./AccountDisplayName.ts";
-import { AccountCode } from "./AccountCode.ts";
+import { AccountDisplayName } from "./accountDisplayName.ts";
+import { AccountCode } from "./accountCode.ts";
 
 export type Account = {
   readonly id: AccountId;
@@ -20,7 +20,8 @@ export const Account = new g.GraphQLObjectType({
     },
     code: {
       type: new g.GraphQLNonNull(AccountCode),
-      description: "アカウントコード. ある時点では重複はしないが, 永久欠番ではない",
+      description:
+        "アカウントコード. ある時点では重複はしないが, 永久欠番ではない",
     },
     displayName: {
       type: new g.GraphQLNonNull(AccountDisplayName),

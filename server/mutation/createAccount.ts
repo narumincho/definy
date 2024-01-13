@@ -3,9 +3,9 @@ import * as g from "npm:graphql";
 import { Context } from "../context.ts";
 import { Account } from "../type/account.ts";
 import { accountIdFrom } from "../type/id.ts";
-import { AccountCode } from "../type/AccountCode.ts";
+import { AccountCode } from "../type/accountCode.ts";
 import { AccountDisplayName } from "../type/accountDisplayName.ts";
-import {getAccountByCodeResolve} from "../query/accountByCode.ts";
+import { getAccountByCodeResolve } from "../query/accountByCode.ts";
 
 export const createAccount: g.GraphQLFieldConfig<
   void,
@@ -28,7 +28,9 @@ export const createAccount: g.GraphQLFieldConfig<
       code: args.code,
       denoKv,
     });
-    const displayName = AccountDisplayName.parseValue(args.displayName || args.code);
+    const displayName = AccountDisplayName.parseValue(
+      args.displayName || args.code,
+    );
     const accountId = accountIdFrom(createRandomId());
     const createDateTime = new Date();
     await denoKv.set(["account", accountId], {
