@@ -1,31 +1,46 @@
-import { createRandomId } from "npm:@narumincho/simple-graphql-server-common";
+import { createRandomId } from "npm:@narumincho/simple-graphql-server-common@0.1.2";
 import * as g from "npm:graphql";
 import { Context } from "../context.ts";
 import { Account } from "../type/account.ts";
 import { accountIdFrom } from "../type/id.ts";
+import { AccountCode } from "../type/AccountCode.ts";
+import { AccountDisplayName } from "../type/accountDisplayName.ts";
+import {getAccountByCodeResolve} from "../query/accountByCode.ts";
 
 export const createAccount: g.GraphQLFieldConfig<
   void,
   Context,
-  { readonly name: string }
+  { readonly code: AccountCode; readonly displayName: AccountDisplayName }
 > = {
   args: {
-    name: {
-      type: new g.GraphQLNonNull(g.GraphQLString),
-      description: "アカウント名. 既存のアカウントと名前が重複しても問題ない",
+    code: {
+      type: new g.GraphQLNonNull(AccountCode),
+      description: "アカウントコード. 既存のアカウントと重複してはいけない",
+    },
+    displayName: {
+      type: AccountDisplayName,
+      description: "アカウントの表示名",
     },
   },
   type: new g.GraphQLNonNull(Account),
   resolve: async (_, args, { denoKv }): Promise<Account> => {
+    const existingAccountId = getAccountByCodeResolve({
+      code: args.code,
+      denoKv,
+    });
+    const displayName = AccountDisplayName.parseValue(args.displayName || args.code);
     const accountId = accountIdFrom(createRandomId());
     const createDateTime = new Date();
     await denoKv.set(["account", accountId], {
-      name: args.name,
+      code: args.code,
+      displayName,
       createDateTime,
     });
+    await denoKv.set(["cache", "accountByCode", args.code], accountId);
     return {
       id: accountId,
-      name: args.name,
+      code: args.code,
+      displayName: displayName,
       createDateTime,
     };
   },

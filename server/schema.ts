@@ -1,11 +1,12 @@
 import * as g from "npm:graphql";
 import { now } from "./query/now.ts";
 import { createAccount } from "./mutation/createAccount.ts";
+import { accountByCode } from "./query/accountByCode.ts";
 
 const query = new g.GraphQLObjectType({
   name: "Query",
   description: "データを取得できる. データを取得するのみで, データを変更しない",
-  fields: { now },
+  fields: { now,accountByCode },
 });
 
 const mutation = new g.GraphQLObjectType({

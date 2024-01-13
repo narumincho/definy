@@ -1,10 +1,13 @@
 import * as g from "npm:graphql";
-import { DateTime } from "npm:@narumincho/simple-graphql-server-common";
+import { DateTime } from "npm:@narumincho/simple-graphql-server-common@0.1.2";
 import { AccountId } from "./id.ts";
+import { AccountDisplayName } from "./AccountDisplayName.ts";
+import { AccountCode } from "./AccountCode.ts";
 
 export type Account = {
   readonly id: AccountId;
-  readonly name: string;
+  readonly code: AccountCode;
+  readonly displayName: AccountDisplayName;
   readonly createDateTime: Date;
 };
 
@@ -15,8 +18,12 @@ export const Account = new g.GraphQLObjectType({
     id: {
       type: new g.GraphQLNonNull(AccountId),
     },
-    name: {
-      type: new g.GraphQLNonNull(g.GraphQLString),
+    code: {
+      type: new g.GraphQLNonNull(AccountCode),
+      description: "アカウントコード. ある時点では重複はしないが, 永久欠番ではない",
+    },
+    displayName: {
+      type: new g.GraphQLNonNull(AccountDisplayName),
       description: "アカウント名. 重複する可能性あり",
     },
     createDateTime: {
