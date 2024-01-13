@@ -25,63 +25,74 @@ class _DefinyAppState extends State<DefinyApp> {
 
   @override
   Widget build(BuildContext context) {
-    return DefinyAppPresentation(
-      logInState: _logInState,
+    return MaterialApp(
+      title: 'definy',
+      onGenerateTitle: (context) {
+        print('onGenerateTitle');
+        return switch (_logInState) {
+          LogInStateNotLoggedIn() => 'top - definy',
+          LogInStateLoading() => 'アカウント - definy'
+        };
+      },
+      onGenerateRoute: (settings) => MaterialPageRoute(
+        builder: (context) => DefinyAppPresentation(
+          logInState: _logInState,
+          routeSettings: settings,
+        ),
+      ),
     );
   }
 }
 
 class DefinyAppPresentation extends StatelessWidget {
-  const DefinyAppPresentation({required this.logInState, super.key});
+  const DefinyAppPresentation({
+    required this.logInState,
+    required this.routeSettings,
+    super.key,
+  });
 
   final LogInState logInState;
+  final RouteSettings routeSettings;
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'definy',
-      key: Key(logInState.toString()),
-      onGenerateTitle: (context) {
-        print('onGenerateTitle');
-        return switch (logInState) {
-          LogInStateNotLoggedIn() => 'definy',
-          LogInStateLoading() => 'アカウント - definy'
-        };
-      },
-      onGenerateRoute: (settings) => MaterialPageRoute(
-        builder: (context) => Scaffold(
-          appBar: AppBar(
-            backgroundColor: const Color(0xff333333),
-            title: const SelectableText(
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: const Color(0xff333333),
+        title: Link(
+          uri: Uri.parse('/'),
+          builder: (context, followLink) => TextButton(
+            onPressed: followLink,
+            child: const Text(
               'definy',
               style: TextStyle(color: Color(0xffb9d09b)),
             ),
-            actions: [
-              Link(
-                uri: Uri.parse('/account'),
-                builder: (context, followLink) => switch (logInState) {
-                  LogInStateNotLoggedIn() => TextButton(
-                      onPressed: followLink,
-                      child: const Text(
-                        'ゲスト',
-                        style: TextStyle(color: Colors.white),
-                      ),
-                    ),
-                  LogInStateLoading() => IconButton(
-                      onPressed: followLink,
-                      icon: const CircularProgressIndicator(),
-                    ),
-                },
-              ),
-            ],
           ),
-          body: settings.name == '/account'
-              ? AccountPage(logInState: logInState)
-              : Center(
-                  child: SelectableText('いろいろ表示したい $settings'),
-                ),
         ),
+        actions: [
+          Link(
+            uri: Uri.parse('/account'),
+            builder: (context, followLink) => switch (logInState) {
+              LogInStateNotLoggedIn() => TextButton(
+                  onPressed: followLink,
+                  child: const Text(
+                    'ゲスト',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                ),
+              LogInStateLoading() => IconButton(
+                  onPressed: followLink,
+                  icon: const CircularProgressIndicator(),
+                ),
+            },
+          ),
+        ],
       ),
+      body: routeSettings.name == '/account'
+          ? AccountPage(logInState: logInState)
+          : Center(
+              child: SelectableText('いろいろ表示したい $routeSettings'),
+            ),
     );
   }
 }

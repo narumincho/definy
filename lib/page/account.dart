@@ -1,5 +1,6 @@
 import 'package:definy/model/log_in_state.dart';
 import 'package:flutter/material.dart';
+import 'package:url_launcher/link.dart';
 
 class AccountPage extends StatelessWidget {
   final LogInState logInState;
@@ -11,7 +12,29 @@ class AccountPage extends StatelessWidget {
     return Column(
       children: [
         const Text('アカウントページ'),
-        Text(logInState.toString()),
+        ...switch (logInState) {
+          LogInStateLoading() => [const Text('ログイン状態を確認中...')],
+          LogInStateNotLoggedIn() => [
+              const Text('ログインしていません'),
+              ElevatedButton(
+                onPressed: () {},
+                child: const Text('ログイン'),
+              ),
+              ElevatedButton(
+                onPressed: () {},
+                child: const Text('新規登録'),
+              ),
+              Link(
+                uri: Uri.parse(
+                  'otpauth://totp/Example:hoge@example.com?secret=JBSWY3DPEHPK3PXP&issuer=Example',
+                ),
+                builder: (context, followLink) => TextButton(
+                  onPressed: followLink,
+                  child: const Text('otpauth url テスト'),
+                ),
+              )
+            ],
+        },
       ],
     );
   }
