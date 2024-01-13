@@ -6,16 +6,22 @@ import { accountIdFrom } from "../type/id.ts";
 import { AccountCode } from "../type/accountCode.ts";
 import { AccountDisplayName } from "../type/accountDisplayName.ts";
 import { getAccountByCodeResolve } from "../query/accountByCode.ts";
-import  {TemporaryKeyId} from "../type/id.ts";
+import  {TotpKeyId} from "../type/id.ts";
+import { CreateAccountDuplicateCode, CreateAccountNotFoundTotpKeyId } from "../type/createAccountResult.ts";
+import { CreateAccountResult } from "../type/createAccountResult.ts";
+import { TotpSecret } from "../type/totpSecret.ts";
+import { TotpCode } from "../type/totpCode.ts";
+import { TOTP } from "https://deno.land/x/totp@1.0.1/totp.ts";
 
 export const createAccount: g.GraphQLFieldConfig<
   void,
   Context,
-  { readonly code: AccountCode; readonly displayName: AccountDisplayName }
+  { readonly totpKeyId: TotpKeyId, readonly totpCode: TotpCode, readonly accountCode: AccountCode; readonly displayName: AccountDisplayName }
 > = {
   args: {
-    keyId: {
-      type: new g.GraphQLNonNull(TemporaryKeyId)
+    totpKeyId: {
+      type: new g.GraphQLNonNull(TotpKeyId),
+      description: "TOTPのキーID",
     },
     code: {
       type: new g.GraphQLNonNull(AccountCode),
@@ -27,27 +33,50 @@ export const createAccount: g.GraphQLFieldConfig<
     },
   },
   type: new g.GraphQLNonNull(Account),
-  resolve: async (_, args, { denoKv }): Promise<Account> => {
-    const existingAccountId = getAccountByCodeResolve({
-      code: args.code,
+  resolve: async (_, args, { denoKv }): Promise<CreateAccountResult> => {
+    const existingAccountId = await getAccountByCodeResolve({
+      accountCode: args.accountCode,
       denoKv,
     });
+    if(existingAccountId === null) {
+      return {
+        __typename: "CreateAccountDuplicateCode",
+        accountCode: args.accountCode,
+      };
+    }
+    const totpKey = (await denoKv.get<TotpSecret>(["temporaryTotpKey", args.totpKeyId])).value;
+    if(totpKey=== null) {
+      return {
+        __typename: "CreateAccountNotFoundTotpKeyId",
+        keyId: args.totpKeyId,
+      
+      };
+    }
+    const isValidTotpCode = await TOTP.verifyTOTP(await TOTP.importKey(totpKey), args.totpCode);
+    if(!isValidTotpCode) {
+      return {
+        __typename: "CreateAccountInvalidCode",
+        accountCode: args.accountCode,
+      };
+    }
     const displayName = AccountDisplayName.parseValue(
-      args.displayName || args.code,
+      args.displayName || args.accountCode,
     );
     const accountId = accountIdFrom(createRandomId());
     const createDateTime = new Date();
-    await denoKv.set(["account", accountId], {
-      code: args.code,
+    await denoKv.atomic().delete(["temporaryTotpKey", args.totpKeyId]).set(["account", accountId], {
+      code: args.accountCode,
       displayName,
       createDateTime,
-    });
-    await denoKv.set(["cache", "accountByCode", args.code], accountId);
+    }).set(["cache", "accountByCode", args.accountCode], accountId).commit();
     return {
-      id: accountId,
-      code: args.code,
-      displayName: displayName,
-      createDateTime,
+      __typename: "CreateAccountResultOk",
+      account: {
+        id: accountId,
+        code: args.accountCode,
+        displayName: displayName,
+        createDateTime,
+      }
     };
   },
   description: "アカウントを作成する",

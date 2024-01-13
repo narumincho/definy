@@ -8,10 +8,10 @@ export const AccountId = createIdGraphQLScalarType<AccountId>(
 
 export const accountIdFrom = (id: string): AccountId => id as AccountId;
 
-export type TemporaryKeyId = string & { readonly TemporaryKeyId: unique symbol };
+export type TotpKeyId = string & { readonly TotpKeyId: unique symbol };
 
-export const TemporaryKeyId = createIdGraphQLScalarType<TemporaryKeyId>(
-  "TemporaryKeyId",
+export const TotpKeyId = createIdGraphQLScalarType<TotpKeyId>(
+  "TotpKeyId",
 );
 
-export const temporaryKeyIdFrom = (id: string): TemporaryKeyId => id as TemporaryKeyId;
+export const totpKeyIdIdFrom = (id: string): TotpKeyId => id as TotpKeyId;

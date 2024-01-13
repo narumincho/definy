@@ -2,20 +2,21 @@ import { createRandomId } from "npm:@narumincho/simple-graphql-server-common@0.1
 import * as g from "npm:graphql";
 import { Context } from "../context.ts";
 import { TOTP } from "https://deno.land/x/totp@1.0.1/mod.ts";
-import { TemporaryKey } from "../type/tempKey.ts";
-import { temporaryKeyIdFrom } from "../type/id.ts";
+import { TotpKeyAndId } from "../type/totpKeyAndId.ts";
+import { totpKeyIdIdFrom } from "../type/id.ts";
+import { totpSecretFrom } from "../type/totpSecret.ts";
 
-export const createPreAccount: g.GraphQLFieldConfig<
+export const createTotpKey: g.GraphQLFieldConfig<
   void,
   Context,
   {}
 > = {
   args: {},
-  type: new g.GraphQLNonNull(g.GraphQLString),
-  resolve: async (_, __, { denoKv }): Promise<TemporaryKey> => {
-    const key = await TOTP.exportKey(await TOTP.generateKey(32));
-    const id = temporaryKeyIdFrom(createRandomId());
-    await denoKv.set(["temporaryKey", id], key, { expireIn:
+  type: new g.GraphQLNonNull(TotpKeyAndId),
+  resolve: async (_, __, { denoKv }): Promise<TotpKeyAndId> => {
+    const key = totpSecretFrom(await TOTP.exportKey(await TOTP.generateKey(32)));
+    const id = totpKeyIdIdFrom(createRandomId());
+    await denoKv.set(["temporaryTotpKey", id], key, { expireIn:
         // 30min
          30 * 60 * 1000, });
     return {
@@ -23,5 +24,5 @@ export const createPreAccount: g.GraphQLFieldConfig<
         secret: key,
     };
   },
-  description: "TOTPのキーを生成して",
+  description: "TOTPのキーを生成してデータベースに保存する",
 };

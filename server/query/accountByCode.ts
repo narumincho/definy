@@ -19,7 +19,7 @@ export const accountByCode: g.GraphQLFieldConfig<
   type: Account,
   resolve: async (_, args, { denoKv }): Promise<{ readonly id: AccountId }> => {
     const accountId = await getAccountByCodeResolve({
-      code: args.code,
+      accountCode: args.code,
       denoKv,
     });
     if (accountId === null) {
@@ -30,11 +30,11 @@ export const accountByCode: g.GraphQLFieldConfig<
 };
 
 export const getAccountByCodeResolve = async (
-  parameter: { readonly code: AccountCode; readonly denoKv: Deno.Kv },
+  parameter: { readonly accountCode: AccountCode; readonly denoKv: Deno.Kv },
 ): Promise<AccountId | null> => {
   return (await parameter.denoKv.get<AccountId>([
     "cache",
     "accountByCode",
-    parameter.code,
+    parameter.accountCode,
   ])).value;
 };

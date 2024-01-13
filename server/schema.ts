@@ -2,7 +2,7 @@ import * as g from "npm:graphql";
 import { now } from "./query/now.ts";
 import { createAccount } from "./mutation/createAccount.ts";
 import { accountByCode } from "./query/accountByCode.ts";
-import { createPreAccount } from "./mutation/createPreAccount.ts";
+import { createTotpKey } from "./mutation/createPreAccount.ts";
 
 const query = new g.GraphQLObjectType({
   name: "Query",
@@ -13,7 +13,7 @@ const query = new g.GraphQLObjectType({
 const mutation = new g.GraphQLObjectType({
   name: "Mutation",
   description: "データを作成、更新ができる",
-  fields: { createAccount, createPreAccount },
+  fields: { createAccount, createTotpKey },
 });
 
 export const schema = new g.GraphQLSchema({
