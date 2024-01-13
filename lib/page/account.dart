@@ -1,6 +1,7 @@
 import 'package:definy/model/log_in_state.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/link.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 
 class AccountPage extends StatelessWidget {
   final LogInState logInState;
@@ -9,17 +10,29 @@ class AccountPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        const Text('アカウントページ'),
-        ...switch (logInState) {
-          LogInStateLoading() => [const Text('ログイン状態を確認中...')],
-          LogInStateNotLoggedIn() => [
+    return Column(children: [
+      const Text('アカウントページ'),
+      switch (logInState) {
+        LogInStateLoading() => const Text('ログイン状態を確認中...'),
+        LogInStateNotLoggedIn() => Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(children: [
               const Text('ログインしていません'),
+              TextFormField(
+                decoration: const InputDecoration(
+                  labelText: 'account code',
+                ),
+              ),
+              TextFormField(
+                decoration: const InputDecoration(
+                  labelText: 'totp code',
+                ),
+              ),
               ElevatedButton(
                 onPressed: () {},
                 child: const Text('ログイン'),
               ),
+              const Text('or'),
               ElevatedButton(
                 onPressed: () {},
                 child: const Text('新規登録'),
@@ -50,10 +63,16 @@ class AccountPage extends StatelessWidget {
                   onPressed: followLink,
                   child: const Text('otpauth hotp url テスト'),
                 ),
-              )
-            ],
-        },
-      ],
-    );
+              ),
+              QrImageView(
+                data:
+                    'otpauth://totp/definy:example_totp_user?secret=JBSWY3DPEHPK3PXP&issuer=definy',
+                version: QrVersions.auto,
+                size: 200.0,
+              ),
+            ]),
+          ),
+      },
+    ]);
   }
 }

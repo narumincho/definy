@@ -1,5 +1,6 @@
 import 'package:definy/model/log_in_state.dart';
 import 'package:definy/page/account.dart';
+import 'package:definy/widget/login_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/link.dart';
 
@@ -70,22 +71,21 @@ class DefinyAppPresentation extends StatelessWidget {
           ),
         ),
         actions: [
-          Link(
-            uri: Uri.parse('/account'),
-            builder: (context, followLink) => switch (logInState) {
-              LogInStateNotLoggedIn() => TextButton(
-                  onPressed: followLink,
-                  child: const Text(
-                    'ゲスト',
-                    style: TextStyle(color: Colors.white),
-                  ),
+          switch (logInState) {
+            LogInStateNotLoggedIn() => TextButton(
+                onPressed: () {
+                  showDialog(
+                    context: context,
+                    builder: (context) => const LoginDialog(),
+                  );
+                },
+                child: const Text(
+                  'ログイン',
+                  style: TextStyle(color: Colors.white),
                 ),
-              LogInStateLoading() => IconButton(
-                  onPressed: followLink,
-                  icon: const CircularProgressIndicator(),
-                ),
-            },
-          ),
+              ),
+            LogInStateLoading() => const CircularProgressIndicator(),
+          },
         ],
       ),
       body: routeSettings.name == '/account'

@@ -1,16 +1,10 @@
-import { createRandomId } from "npm:@narumincho/simple-graphql-server-common@0.1.2";
 import * as g from "npm:graphql";
 import { Context } from "../context.ts";
-import { Account } from "../type/account.ts";
 import { accountIdFrom } from "../type/id.ts";
 import { AccountCode } from "../type/accountCode.ts";
 import { AccountDisplayName } from "../type/accountDisplayName.ts";
 import { getAccountByCodeResolve } from "../query/accountByCode.ts";
 import { TotpKeyId } from "../type/id.ts";
-import {
-  CreateAccountDuplicateCode,
-  CreateAccountNotFoundTotpKeyId,
-} from "../type/createAccountResult.ts";
 import { CreateAccountResult } from "../type/createAccountResult.ts";
 import { TotpSecret } from "../type/totpSecret.ts";
 import { TotpCode } from "../type/totpCode.ts";
@@ -78,7 +72,7 @@ export const createAccount: g.GraphQLFieldConfig<
     const displayName = AccountDisplayName.parseValue(
       args.displayName || args.accountCode,
     );
-    const accountId = accountIdFrom(createRandomId());
+    const accountId = accountIdFrom(crypto.randomUUID().replaceAll("-", ""));
     const createDateTime = new Date();
     await denoKv.atomic().delete(["temporaryTotpKey", args.totpKeyId]).set([
       "account",

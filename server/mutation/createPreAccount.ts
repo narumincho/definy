@@ -17,7 +17,7 @@ export const createTotpKey: g.GraphQLFieldConfig<
     const key = totpSecretFrom(
       await TOTP.exportKey(await TOTP.generateKey(32)),
     );
-    const id = totpKeyIdIdFrom(createRandomId());
+    const id = totpKeyIdIdFrom(crypto.randomUUID().replaceAll("-", ""));
     await denoKv.set(["temporaryTotpKey", id], key, {
       expireIn:
         // 30min
