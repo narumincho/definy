@@ -6,8 +6,11 @@ import { accountIdFrom } from "../type/id.ts";
 import { AccountCode } from "../type/accountCode.ts";
 import { AccountDisplayName } from "../type/accountDisplayName.ts";
 import { getAccountByCodeResolve } from "../query/accountByCode.ts";
-import  {TotpKeyId} from "../type/id.ts";
-import { CreateAccountDuplicateCode, CreateAccountNotFoundTotpKeyId } from "../type/createAccountResult.ts";
+import { TotpKeyId } from "../type/id.ts";
+import {
+  CreateAccountDuplicateCode,
+  CreateAccountNotFoundTotpKeyId,
+} from "../type/createAccountResult.ts";
 import { CreateAccountResult } from "../type/createAccountResult.ts";
 import { TotpSecret } from "../type/totpSecret.ts";
 import { TotpCode } from "../type/totpCode.ts";
@@ -16,14 +19,23 @@ import { TOTP } from "https://deno.land/x/totp@1.0.1/totp.ts";
 export const createAccount: g.GraphQLFieldConfig<
   void,
   Context,
-  { readonly totpKeyId: TotpKeyId, readonly totpCode: TotpCode, readonly accountCode: AccountCode; readonly displayName: AccountDisplayName }
+  {
+    readonly totpKeyId: TotpKeyId;
+    readonly totpCode: TotpCode;
+    readonly accountCode: AccountCode;
+    readonly displayName: AccountDisplayName;
+  }
 > = {
   args: {
     totpKeyId: {
       type: new g.GraphQLNonNull(TotpKeyId),
       description: "TOTPのキーID",
     },
-    code: {
+    totpCode: {
+      type: new g.GraphQLNonNull(TotpCode),
+      description: "TOTPのコード",
+    },
+    accountCode: {
       type: new g.GraphQLNonNull(AccountCode),
       description: "アカウントコード. 既存のアカウントと重複してはいけない",
     },
@@ -32,28 +44,32 @@ export const createAccount: g.GraphQLFieldConfig<
       description: "アカウントの表示名",
     },
   },
-  type: new g.GraphQLNonNull(Account),
+  type: new g.GraphQLNonNull(CreateAccountResult),
   resolve: async (_, args, { denoKv }): Promise<CreateAccountResult> => {
     const existingAccountId = await getAccountByCodeResolve({
       accountCode: args.accountCode,
       denoKv,
     });
-    if(existingAccountId === null) {
+    if (existingAccountId !== null) {
       return {
         __typename: "CreateAccountDuplicateCode",
         accountCode: args.accountCode,
       };
     }
-    const totpKey = (await denoKv.get<TotpSecret>(["temporaryTotpKey", args.totpKeyId])).value;
-    if(totpKey=== null) {
+    const totpKey =
+      (await denoKv.get<TotpSecret>(["temporaryTotpKey", args.totpKeyId]))
+        .value;
+    if (totpKey === null) {
       return {
         __typename: "CreateAccountNotFoundTotpKeyId",
         keyId: args.totpKeyId,
-      
       };
     }
-    const isValidTotpCode = await TOTP.verifyTOTP(await TOTP.importKey(totpKey), args.totpCode);
-    if(!isValidTotpCode) {
+    const isValidTotpCode = await TOTP.verifyTOTP(
+      await TOTP.importKey(totpKey),
+      args.totpCode,
+    );
+    if (!isValidTotpCode) {
       return {
         __typename: "CreateAccountInvalidCode",
         accountCode: args.accountCode,
@@ -64,7 +80,10 @@ export const createAccount: g.GraphQLFieldConfig<
     );
     const accountId = accountIdFrom(createRandomId());
     const createDateTime = new Date();
-    await denoKv.atomic().delete(["temporaryTotpKey", args.totpKeyId]).set(["account", accountId], {
+    await denoKv.atomic().delete(["temporaryTotpKey", args.totpKeyId]).set([
+      "account",
+      accountId,
+    ], {
       code: args.accountCode,
       displayName,
       createDateTime,
@@ -76,7 +95,7 @@ export const createAccount: g.GraphQLFieldConfig<
         code: args.accountCode,
         displayName: displayName,
         createDateTime,
-      }
+      },
     };
   },
   description: "アカウントを作成する",

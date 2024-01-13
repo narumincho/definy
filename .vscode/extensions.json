@@ -3,5 +3,5 @@
     "denoland.vscode-deno",
     "mhutchie.git-graph",
     "github.vscode-github-actions"
-  ],
+  ]
 }

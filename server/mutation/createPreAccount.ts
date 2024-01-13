@@ -14,14 +14,18 @@ export const createTotpKey: g.GraphQLFieldConfig<
   args: {},
   type: new g.GraphQLNonNull(TotpKeyAndId),
   resolve: async (_, __, { denoKv }): Promise<TotpKeyAndId> => {
-    const key = totpSecretFrom(await TOTP.exportKey(await TOTP.generateKey(32)));
+    const key = totpSecretFrom(
+      await TOTP.exportKey(await TOTP.generateKey(32)),
+    );
     const id = totpKeyIdIdFrom(createRandomId());
-    await denoKv.set(["temporaryTotpKey", id], key, { expireIn:
+    await denoKv.set(["temporaryTotpKey", id], key, {
+      expireIn:
         // 30min
-         30 * 60 * 1000, });
+        30 * 60 * 1000,
+    });
     return {
-        id,
-        secret: key,
+      id,
+      secret: key,
     };
   },
   description: "TOTPのキーを生成してデータベースに保存する",
