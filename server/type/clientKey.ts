@@ -11,5 +11,7 @@ export const ClientKey = createRegExpType<ClientKey>({
 const clientKeyFrom = (id: string): ClientKey => id as ClientKey;
 
 export const createClientKey = (): ClientKey => {
-    return clientKeyFrom((crypto.randomUUID() + crypto.randomUUID()).replaceAll("-", ""));
-}
+  return clientKeyFrom(
+    (crypto.randomUUID() + crypto.randomUUID()).replaceAll("-", ""),
+  );
+};

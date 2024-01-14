@@ -35,11 +35,13 @@ deno run --check --allow-env --allow-net --allow-read --allow-write=./dist.json 
 ## client graphql codegen
 
 ### step 1 query gen
+
 ```sh
 fvm flutter pub run ./lib/codegen.dart && fvm dart fix --apply && fvm dart format .
 ```
 
 ### step 1 api gen
+
 ```sh
 fvm flutter pub run ./lib/codegen_api.dart && fvm dart fix --apply && fvm dart format .
 ```

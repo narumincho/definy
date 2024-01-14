@@ -8,5 +8,8 @@
       "deno.ns",
       "deno.unstable"
     ]
+  },
+  "fmt": {
+    "include": ["**"]
   }
 }
