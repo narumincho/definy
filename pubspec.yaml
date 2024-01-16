@@ -28,6 +28,9 @@ dependencies:
   fast_immutable_collections: ^9.2.0
   simple_graphql_client_gen: ^0.7.8
   qr_flutter: ^4.1.0
+  flutter_localizations:
+      sdk: flutter
+  universal_io: ^2.2.2
 
 dev_dependencies:
   flutter_test:
