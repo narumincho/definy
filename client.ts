@@ -6,7 +6,7 @@ import {
   locationToPathAndQuery,
   pathAndQueryFromUrl,
   pathAndQueryToPathAndQueryString,
-} from "./app/location.ts";
+} from "./server/location.ts";
 import { App } from "./app/App.ts";
 
 const appElement = document.getElementById("app");

@@ -32,7 +32,7 @@ class LoginDialog extends StatelessWidget {
             const SizedBox(height: 16),
             TextButton(
               onPressed: () {
-                showDialog(
+                showDialog<void>(
                   context: context,
                   builder: (context) => const SignUpDialog(),
                 );
