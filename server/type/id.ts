@@ -1,19 +1,23 @@
-import { createIdGraphQLScalarType } from "npm:@narumincho/simple-graphql-server-common@0.1.0";
+import { createRegExpType } from "npm:@narumincho/simple-graphql-server-common@0.1.2";
 
-const parseId = <const typeName extends string>(value: unknown) => {
-  if (typeof value === "string" && /^[0-9a-f]{32}$/u.test(value)) {
-    return value as typeName;
-  }
-  throw new Error(`Invalid Id
-actual: ${JSON.stringify(value)}
-expected: "ffffffffffffffffffffffffffffffff"`);
-};
+const idRegExp = /^[0-9a-f]{32}$/;
 
 export type AccountId = string & { readonly AccountId: unique symbol };
 
-export const AccountId = createIdGraphQLScalarType(
-  parseId<AccountId>,
-  "AccountId",
-);
+export const AccountId = createRegExpType<AccountId>({
+  name: "AccountId",
+  description: "",
+  regexp: idRegExp,
+});
 
 export const accountIdFrom = (id: string): AccountId => id as AccountId;
+
+export type TotpKeyId = string & { readonly TotpKeyId: unique symbol };
+
+export const TotpKeyId = createRegExpType<TotpKeyId>({
+  name: "TotpKeyId",
+  description: "",
+  regexp: idRegExp,
+});
+
+export const totpKeyIdIdFrom = (id: string): TotpKeyId => id as TotpKeyId;

@@ -15,10 +15,18 @@
         // "--watch", // ファイルの変更を監視して自動で再起動したかったが, なぜか動かない
         "--inspect",
         "--check",
+        "--unstable",
         "--allow-net=:8000"
       ],
       "program": "${workspaceFolder}/script/startInLocal.ts",
       "attachSimplePort": 9229
+    },
+    {
+      "name": "start client",
+      "request": "launch",
+      "type": "dart",
+      "flutterMode": "debug",
+      "args": []
     }
   ]
 }
