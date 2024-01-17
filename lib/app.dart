@@ -20,7 +20,7 @@ class _DefinyAppState extends State<DefinyApp> {
   @override
   void initState() {
     super.initState();
-    Future.delayed(const Duration(seconds: 5)).then((_) {
+    Future<void>.delayed(const Duration(seconds: 5)).then((_) {
       setState(() {
         _logInState = const LogInStateNotLoggedIn();
       });
@@ -99,7 +99,7 @@ class DefinyAppPresentation extends StatelessWidget {
           switch (logInState) {
             LogInStateNotLoggedIn() => TextButton(
                 onPressed: () {
-                  showDialog(
+                  showDialog<void>(
                     context: context,
                     builder: (context) => const LoginDialog(),
                   );
