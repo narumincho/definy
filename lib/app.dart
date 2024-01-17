@@ -1,6 +1,8 @@
 import 'package:definy/localization.dart';
 import 'package:definy/model/log_in_state.dart';
+import 'package:definy/page/about.dart';
 import 'package:definy/page/account.dart';
+import 'package:definy/widget/language_dropdown.dart';
 import 'package:definy/widget/login_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -34,14 +36,14 @@ class _DefinyAppState extends State<DefinyApp> {
       title: 'definy',
       locale: _locale,
       supportedLocales: SupportedLanguage.values.map(
-        ((language) => Locale(language.name)),
+        (language) => Locale(language.name),
       ),
       localizationsDelegates: const [
         AppLocalizationsDelegate(),
         MaterialLocalizationsLocalizationsDelegateAddEo(),
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
-        // GlobalCupertinoLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
       ],
       onGenerateTitle: (context) {
         print('onGenerateTitle');
@@ -57,7 +59,7 @@ class _DefinyAppState extends State<DefinyApp> {
           onLanguageChanged: (selected) {
             print('onLanguageChanged $selected');
             setState(() {
-              _locale = Locale(selected);
+              _locale = Locale(selected.name);
             });
           },
         ),
@@ -76,7 +78,7 @@ class DefinyAppPresentation extends StatelessWidget {
 
   final LogInState logInState;
   final RouteSettings routeSettings;
-  final ValueChanged<String> onLanguageChanged;
+  final ValueChanged<SupportedLanguage> onLanguageChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -113,34 +115,26 @@ class DefinyAppPresentation extends StatelessWidget {
           },
         ],
       ),
-      body: routeSettings.name == '/account'
-          ? AccountPage(logInState: logInState)
-          : Column(children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  DropdownButton<String>(
-                    value: Localizations.localeOf(context).languageCode,
-                    items: const [
-                      DropdownMenuItem(value: 'en', child: Text('English')),
-                      DropdownMenuItem(value: 'eo', child: Text('Esperanto')),
-                      DropdownMenuItem(value: 'ja', child: Text('日本語')),
-                    ],
-                    onChanged: (selected) {
-                      if (selected != null) {
-                        onLanguageChanged(selected);
-                      }
-                    },
-                  ),
-                ],
-              ),
-              Center(
-                child: SelectableText(
-                    '${AppLocalization.of(context).helloWorld} $routeSettings'),
-              ),
-              Text(
-                  'Localizations.localeOf(context).languageCode ${Localizations.localeOf(context).languageCode}'),
-            ]),
+      body: switch (routeSettings.name) {
+        '/account' => AccountPage(logInState: logInState),
+        '/about' => AboutPage(
+            onLanguageChanged: onLanguageChanged,
+          ),
+        _ => Column(children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                LanguageDropDown(onLanguageChanged: onLanguageChanged),
+              ],
+            ),
+            Center(
+              child: SelectableText(
+                  '${AppLocalization.of(context).helloWorld} $routeSettings'),
+            ),
+            Text(
+                'Localizations.localeOf(context).languageCode ${Localizations.localeOf(context).languageCode}'),
+          ]),
+      },
     );
   }
 }

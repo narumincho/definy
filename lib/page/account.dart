@@ -1,12 +1,12 @@
 import 'package:definy/model/log_in_state.dart';
 import 'package:flutter/material.dart';
-import 'package:url_launcher/link.dart';
 import 'package:qr_flutter/qr_flutter.dart';
+import 'package:url_launcher/link.dart';
 
 class AccountPage extends StatelessWidget {
-  final LogInState logInState;
-
   const AccountPage({required this.logInState, super.key});
+
+  final LogInState logInState;
 
   @override
   Widget build(BuildContext context) {

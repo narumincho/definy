@@ -4,9 +4,12 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
 enum SupportedLanguage {
-  en,
-  eo,
-  ja,
+  en('English'),
+  eo('Esperanto'),
+  ja('日本語');
+
+  const SupportedLanguage(this.label);
+  final String label;
 }
 
 @immutable
@@ -23,6 +26,15 @@ class AppLocalization {
         SupportedLanguage.en => 'Hello World!',
         SupportedLanguage.eo => 'Saluton mondo!',
         SupportedLanguage.ja => 'こんにちは世界！',
+      };
+
+  String get aboutDescription => switch (language) {
+        SupportedLanguage.en =>
+          '"Programming language + development environment that is not limited to strings" being developed by Narumincho. Under development...',
+        SupportedLanguage.eo =>
+          '"Programlingvo + disvolva medio kiu ne estas limigita al ŝnuroj" disvolvata de Narumincho. Sub evoluo...',
+        SupportedLanguage.ja =>
+          'ナルミンチョが開発している「文字列にとらわれないプログラミング言語+開発環境」. 開発中...',
       };
 }
 
@@ -80,8 +92,7 @@ class MaterialLocalizationEo extends MaterialLocalizations {
       throw UnimplementedError('anteMeridiemAbbreviation');
 
   @override
-  // TODO: implement
-  String get backButtonTooltip => throw UnimplementedError('backButtonTooltip');
+  String get backButtonTooltip => 'Reen';
 
   @override
   // TODO: implement
@@ -477,8 +488,7 @@ class MaterialLocalizationEo extends MaterialLocalizations {
   }
 
   @override
-  // TODO: implement licensesPageTitle
-  String get licensesPageTitle => throw UnimplementedError();
+  String get licensesPageTitle => 'Permesilo';
 
   @override
   // TODO: implement lookUpButtonLabel
