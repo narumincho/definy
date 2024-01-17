@@ -30,7 +30,6 @@ dependencies:
   qr_flutter: ^4.1.0
   flutter_localizations:
       sdk: flutter
-  universal_io: ^2.2.2
 
 dev_dependencies:
   flutter_test:
