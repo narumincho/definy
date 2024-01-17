@@ -113,21 +113,18 @@ class RequestingAccountCodeResultNone implements RequestingAccountCodeResult {
 
 class RequestingAccountCodeResultRequesting
     implements RequestingAccountCodeResult {
-  final AccountCode code;
-
   const RequestingAccountCodeResultRequesting(this.code);
+  final AccountCode code;
 }
 
 class RequestingAccountCodeResultSuccess
     implements RequestingAccountCodeResult {
-  final AccountCode code;
-
   const RequestingAccountCodeResultSuccess(this.code);
+  final AccountCode code;
 }
 
 class RequestingAccountCodeResultDuplicate
     implements RequestingAccountCodeResult {
-  final AccountCode code;
-
   const RequestingAccountCodeResultDuplicate(this.code);
+  final AccountCode code;
 }

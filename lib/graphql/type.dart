@@ -5,25 +5,25 @@ import 'package:narumincho_json/narumincho_json.dart' as narumincho_json;
 import 'package:simple_graphql_client_gen/query_string.dart' as query_string;
 import 'package:simple_graphql_client_gen/text.dart' as text;
 
-/// UUID のハイフン無し文字列
+///
 ///
 /// ### simpleGraphQLClientGenAnnotation
 /// ```json
-/// {"$schema":"https://raw.githubusercontent.com/narumincho/simple_graphql_server_common/main/schema.json","type":"uuid"}
+/// {"$schema":"https://raw.githubusercontent.com/narumincho/simple_graphql_server_common/main/schema.json","type":"regexp","pattern":"^[0-9a-f]{32}$"}
 /// ```
 @immutable
 final class AccountId implements query_string.IntoQueryInput {
-  /// UUID のハイフン無し文字列
+  ///
   ///
   /// ### simpleGraphQLClientGenAnnotation
   /// ```json
-  /// {"$schema":"https://raw.githubusercontent.com/narumincho/simple_graphql_server_common/main/schema.json","type":"uuid"}
+  /// {"$schema":"https://raw.githubusercontent.com/narumincho/simple_graphql_server_common/main/schema.json","type":"regexp","pattern":"^[0-9a-f]{32}$"}
   /// ```
   const AccountId._(
     this.value,
   );
 
-  /// 内部表現の文字列. 例: `25c8b0b108ad4c0f82be9a5b21ae985f`
+  /// 内部表現の文字列
   final String value;
 
   @override
@@ -37,7 +37,7 @@ final class AccountId implements query_string.IntoQueryInput {
   bool operator ==(
     Object other,
   ) {
-    return ((other is AccountId) && (value == other.value));
+    return (other is AccountId) && (value == other.value);
   }
 
   @override
@@ -51,11 +51,10 @@ final class AccountId implements query_string.IntoQueryInput {
   static AccountId? fromString(
     String value,
   ) {
-    final normalized = RegExp('^[0-9a-f]{32}\$').stringMatch(value);
-    if ((normalized == null)) {
-      return null;
+    if (RegExp(r'^[0-9a-f]{32}$').hasMatch(value)) {
+      return AccountId._(value);
     }
-    return AccountId._(normalized);
+    return null;
   }
 
   @override
@@ -109,7 +108,7 @@ final class AccountCode implements query_string.IntoQueryInput {
   bool operator ==(
     Object other,
   ) {
-    return ((other is AccountCode) && (value == other.value));
+    return (other is AccountCode) && (value == other.value);
   }
 
   @override
@@ -123,11 +122,10 @@ final class AccountCode implements query_string.IntoQueryInput {
   static AccountCode? fromString(
     String value,
   ) {
-    if (RegExp('^[a-z0-9._]{2,31}\$').hasMatch(value)) {
+    if (RegExp(r'^[a-z0-9._]{2,31}$').hasMatch(value)) {
       return AccountCode._(value);
     }
-    throw Exception(
-        'Invalid AccountCode. \nactual: $value\nexpected: RegExp: pattern=^[a-z0-9._]{2,31}\$ flags=');
+    return null;
   }
 
   @override
@@ -181,7 +179,7 @@ final class AccountDisplayName implements query_string.IntoQueryInput {
   bool operator ==(
     Object other,
   ) {
-    return ((other is AccountDisplayName) && (value == other.value));
+    return (other is AccountDisplayName) && (value == other.value);
   }
 
   @override
@@ -199,7 +197,7 @@ final class AccountDisplayName implements query_string.IntoQueryInput {
       value,
       maxLength: 64,
     );
-    if ((normalized == null)) {
+    if (normalized == null) {
       return null;
     }
     return AccountDisplayName._(normalized);
@@ -224,25 +222,25 @@ final class AccountDisplayName implements query_string.IntoQueryInput {
   }
 }
 
-/// UUID のハイフン無し文字列
+///
 ///
 /// ### simpleGraphQLClientGenAnnotation
 /// ```json
-/// {"$schema":"https://raw.githubusercontent.com/narumincho/simple_graphql_server_common/main/schema.json","type":"uuid"}
+/// {"$schema":"https://raw.githubusercontent.com/narumincho/simple_graphql_server_common/main/schema.json","type":"regexp","pattern":"^[0-9a-f]{32}$"}
 /// ```
 @immutable
 final class TotpKeyId implements query_string.IntoQueryInput {
-  /// UUID のハイフン無し文字列
+  ///
   ///
   /// ### simpleGraphQLClientGenAnnotation
   /// ```json
-  /// {"$schema":"https://raw.githubusercontent.com/narumincho/simple_graphql_server_common/main/schema.json","type":"uuid"}
+  /// {"$schema":"https://raw.githubusercontent.com/narumincho/simple_graphql_server_common/main/schema.json","type":"regexp","pattern":"^[0-9a-f]{32}$"}
   /// ```
   const TotpKeyId._(
     this.value,
   );
 
-  /// 内部表現の文字列. 例: `25c8b0b108ad4c0f82be9a5b21ae985f`
+  /// 内部表現の文字列
   final String value;
 
   @override
@@ -256,7 +254,7 @@ final class TotpKeyId implements query_string.IntoQueryInput {
   bool operator ==(
     Object other,
   ) {
-    return ((other is TotpKeyId) && (value == other.value));
+    return (other is TotpKeyId) && (value == other.value);
   }
 
   @override
@@ -270,11 +268,10 @@ final class TotpKeyId implements query_string.IntoQueryInput {
   static TotpKeyId? fromString(
     String value,
   ) {
-    final normalized = RegExp('^[0-9a-f]{32}\$').stringMatch(value);
-    if ((normalized == null)) {
-      return null;
+    if (RegExp(r'^[0-9a-f]{32}$').hasMatch(value)) {
+      return TotpKeyId._(value);
     }
-    return TotpKeyId._(normalized);
+    return null;
   }
 
   @override
@@ -328,7 +325,7 @@ final class TotpCode implements query_string.IntoQueryInput {
   bool operator ==(
     Object other,
   ) {
-    return ((other is TotpCode) && (value == other.value));
+    return (other is TotpCode) && (value == other.value);
   }
 
   @override
@@ -342,11 +339,10 @@ final class TotpCode implements query_string.IntoQueryInput {
   static TotpCode? fromString(
     String value,
   ) {
-    if (RegExp('^[0-9]{6}\$').hasMatch(value)) {
+    if (RegExp(r'^[0-9]{6}$').hasMatch(value)) {
       return TotpCode._(value);
     }
-    throw Exception(
-        'Invalid TotpCode. \nactual: $value\nexpected: RegExp: pattern=^[0-9]{6}\$ flags=');
+    return null;
   }
 
   @override
@@ -410,7 +406,7 @@ enum GraphQL__TypeKind implements query_string.IntoQueryInput {
   static GraphQL__TypeKind fromJsonValue(
     narumincho_json.JsonValue jsonValue,
   ) {
-    return (switch (jsonValue.asStringOrNull()) {
+    return switch (jsonValue.asStringOrNull()) {
       'SCALAR' => GraphQL__TypeKind.SCALAR,
       'OBJECT' => GraphQL__TypeKind.OBJECT,
       'INTERFACE' => GraphQL__TypeKind.INTERFACE,
@@ -419,9 +415,9 @@ enum GraphQL__TypeKind implements query_string.IntoQueryInput {
       'INPUT_OBJECT' => GraphQL__TypeKind.INPUT_OBJECT,
       'LIST' => GraphQL__TypeKind.LIST,
       'NON_NULL' => GraphQL__TypeKind.NON_NULL,
-      _ => (throw Exception(
-          'unknown Enum Value. typeName __TypeKind. expected "SCALAR" or "OBJECT" or "INTERFACE" or "UNION" or "ENUM" or "INPUT_OBJECT" or "LIST" or "NON_NULL". but got ${jsonValue.encode()}')),
-    });
+      _ => throw Exception(
+          'unknown Enum Value. typeName __TypeKind. expected "SCALAR" or "OBJECT" or "INTERFACE" or "UNION" or "ENUM" or "INPUT_OBJECT" or "LIST" or "NON_NULL". but got ${jsonValue.encode()}'),
+    };
   }
 }
 
@@ -500,7 +496,7 @@ enum GraphQL__DirectiveLocation implements query_string.IntoQueryInput {
   static GraphQL__DirectiveLocation fromJsonValue(
     narumincho_json.JsonValue jsonValue,
   ) {
-    return (switch (jsonValue.asStringOrNull()) {
+    return switch (jsonValue.asStringOrNull()) {
       'QUERY' => GraphQL__DirectiveLocation.QUERY,
       'MUTATION' => GraphQL__DirectiveLocation.MUTATION,
       'SUBSCRIPTION' => GraphQL__DirectiveLocation.SUBSCRIPTION,
@@ -521,8 +517,8 @@ enum GraphQL__DirectiveLocation implements query_string.IntoQueryInput {
       'INPUT_OBJECT' => GraphQL__DirectiveLocation.INPUT_OBJECT,
       'INPUT_FIELD_DEFINITION' =>
         GraphQL__DirectiveLocation.INPUT_FIELD_DEFINITION,
-      _ => (throw Exception(
-          'unknown Enum Value. typeName __DirectiveLocation. expected "QUERY" or "MUTATION" or "SUBSCRIPTION" or "FIELD" or "FRAGMENT_DEFINITION" or "FRAGMENT_SPREAD" or "INLINE_FRAGMENT" or "VARIABLE_DEFINITION" or "SCHEMA" or "SCALAR" or "OBJECT" or "FIELD_DEFINITION" or "ARGUMENT_DEFINITION" or "INTERFACE" or "UNION" or "ENUM" or "ENUM_VALUE" or "INPUT_OBJECT" or "INPUT_FIELD_DEFINITION". but got ${jsonValue.encode()}')),
-    });
+      _ => throw Exception(
+          'unknown Enum Value. typeName __DirectiveLocation. expected "QUERY" or "MUTATION" or "SUBSCRIPTION" or "FIELD" or "FRAGMENT_DEFINITION" or "FRAGMENT_SPREAD" or "INLINE_FRAGMENT" or "VARIABLE_DEFINITION" or "SCHEMA" or "SCALAR" or "OBJECT" or "FIELD_DEFINITION" or "ARGUMENT_DEFINITION" or "INTERFACE" or "UNION" or "ENUM" or "ENUM_VALUE" or "INPUT_OBJECT" or "INPUT_FIELD_DEFINITION". but got ${jsonValue.encode()}'),
+    };
   }
 }

@@ -67,8 +67,7 @@ class AccountPage extends StatelessWidget {
               QrImageView(
                 data:
                     'otpauth://totp/definy:example_totp_user?secret=JBSWY3DPEHPK3PXP&issuer=definy',
-                version: QrVersions.auto,
-                size: 200.0,
+                size: 200,
               ),
             ]),
           ),

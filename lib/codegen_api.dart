@@ -2,11 +2,11 @@
 
 import 'dart:io';
 
+import 'package:definy/graphql/query.dart' as query;
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:simple_dart_code_gen/simple_dart_code_gen.dart';
 import 'package:simple_graphql_client_gen/query_string.dart';
 import 'package:simple_graphql_client_gen/simple_graphql_client_gen.dart';
-import 'package:definy/graphql/query.dart' as query;
 
 const IMap<String, GraphQLRootObject> _apiMap = IMapConst({
   'accountByCode': query.Query(

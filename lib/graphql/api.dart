@@ -33,11 +33,11 @@ abstract class Api {
       variables: IMap({'code': code.toJsonValue()}),
     );
     final errors = response.errors;
-    if ((errors != null)) {
+    if (errors != null) {
       throw errors;
     }
     final data = response.data;
-    if ((data == null)) {
+    if (data == null) {
       throw Exception('accountByCode response data empty');
     }
     return QueryAccountByCode.fromJsonValue(data);
@@ -58,7 +58,7 @@ final class Account {
   Account copyWith({
     type.AccountId? id,
   }) {
-    return Account(id: (id ?? this.id));
+    return Account(id: id ?? this.id);
   }
 
   /// `Account` のフィールドを変更したものを新しく返す
@@ -80,7 +80,7 @@ final class Account {
   bool operator ==(
     Object other,
   ) {
-    return ((other is Account) && (id == other.id));
+    return (other is Account) && (id == other.id);
   }
 
   @override
@@ -139,8 +139,8 @@ final class QueryAccountByCode {
   bool operator ==(
     Object other,
   ) {
-    return ((other is QueryAccountByCode) &&
-        (accountByCode == other.accountByCode));
+    return (other is QueryAccountByCode) &&
+        (accountByCode == other.accountByCode);
   }
 
   @override
@@ -154,9 +154,9 @@ final class QueryAccountByCode {
     narumincho_json.JsonValue value,
   ) {
     return QueryAccountByCode(
-        accountByCode: (switch (value.getObjectValueOrThrow('accountByCode')) {
+        accountByCode: switch (value.getObjectValueOrThrow('accountByCode')) {
       narumincho_json.JsonNull() => null,
       final jsonValue => Account.fromJsonValue(jsonValue),
-    }));
+    });
   }
 }
