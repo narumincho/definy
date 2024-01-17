@@ -51,10 +51,10 @@ class MaterialLocalizationsLocalizationsDelegateAddEo
   const MaterialLocalizationsLocalizationsDelegateAddEo();
 
   @override
-  isSupported(locale) => locale.languageCode == 'eo';
+  bool isSupported(Locale locale) => locale.languageCode == 'eo';
 
   @override
-  load(locale) async {
+  Future<MaterialLocalizations> load(Locale locale) async {
     if (locale.languageCode == 'eo') {
       return MaterialLocalizationEo();
     }
@@ -62,7 +62,9 @@ class MaterialLocalizationsLocalizationsDelegateAddEo
   }
 
   @override
-  shouldReload(old) => false;
+  bool shouldReload(
+          covariant LocalizationsDelegate<MaterialLocalizations> old) =>
+      false;
 }
 
 class MaterialLocalizationEo extends MaterialLocalizations {
@@ -70,8 +72,7 @@ class MaterialLocalizationEo extends MaterialLocalizations {
   String aboutListTileTitle(String applicationName) => 'Pri $applicationName';
 
   @override
-  // TODO: implement
-  String get alertDialogLabel => throw UnimplementedError('alertDialogLabel');
+  String get alertDialogLabel => 'Atentigo';
 
   @override
   // TODO: implement
