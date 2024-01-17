@@ -10,6 +10,11 @@
     ]
   },
   "fmt": {
-    "include": ["**"]
+    "include": ["**"],
+    "exclude": ["build/**", ".dart_tool/**", ".fvm/**"]
+  },
+  "lint": {
+    "include": ["**"],
+    "exclude": ["build/**", ".dart_tool/**", ".fvm/**"]
   }
 }

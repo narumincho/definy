@@ -1,4 +1,3 @@
-import { createRandomId } from "npm:@narumincho/simple-graphql-server-common@0.1.2";
 import * as g from "npm:graphql";
 import { Context } from "../context.ts";
 import { TOTP } from "https://deno.land/x/totp@1.0.1/mod.ts";
@@ -9,7 +8,7 @@ import { totpSecretFrom } from "../type/totpSecret.ts";
 export const createTotpKey: g.GraphQLFieldConfig<
   void,
   Context,
-  {}
+  Record<never, unknown>
 > = {
   args: {},
   type: new g.GraphQLNonNull(TotpKeyAndId),
