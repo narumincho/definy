@@ -43,7 +43,6 @@ linter:
     - tighten_type_of_initializing_formals
     - type_annotate_public_apis
     - unawaited_futures
-    - unnecessary_await_in_return
     - unnecessary_parenthesis
     - unnecessary_raw_strings
     - use_colored_box
