@@ -42,31 +42,88 @@ abstract class Api {
     }
     return QueryAccountByCode.fromJsonValue(data);
   }
+
+  /// ```
+  /// mutation ($totpKeyId: TotpKeyId!, $totpCode: TotpCode!, $accountCode: AccountCode!, $displayName: AccountDisplayName) {
+  ///   createAccount(totpKeyId: $totpKeyId, totpCode: $totpCode, accountCode: $accountCode, displayName: $displayName) {
+  ///     __typename
+  ///     ... on CreateAccountNotFoundTotpKeyId {
+  ///       keyId
+  ///     }
+  ///     ... on CreateAccountDuplicateCode {
+  ///       accountCode
+  ///     }
+  ///     ... on CreateAccountInvalidCode {
+  ///       accountCode
+  ///     }
+  ///     ... on CreateAccountResultOk {
+  ///       account {
+  ///         id
+  ///         code
+  ///         displayName
+  ///         createDateTime
+  ///       }
+  ///     }
+  ///   }
+  /// }
+  /// ```
+  static Future<QueryCreateAccount> createAccount(
+    Uri url,
+    String? auth, {
+    required type.TotpKeyId totpKeyId,
+    required type.TotpCode totpCode,
+    required type.AccountCode accountCode,
+    required type.AccountDisplayName? displayName,
+  }) async {
+    final response = await graphql_post.graphQLPost(
+      uri: url,
+      auth: auth,
+      query:
+          'mutation (\$totpKeyId: TotpKeyId!, \$totpCode: TotpCode!, \$accountCode: AccountCode!, \$displayName: AccountDisplayName) {\n  createAccount(totpKeyId: \$totpKeyId, totpCode: \$totpCode, accountCode: \$accountCode, displayName: \$displayName) {\n    __typename\n    ... on CreateAccountNotFoundTotpKeyId {\n      keyId\n    }\n    ... on CreateAccountDuplicateCode {\n      accountCode\n    }\n    ... on CreateAccountInvalidCode {\n      accountCode\n    }\n    ... on CreateAccountResultOk {\n      account {\n        id\n        code\n        displayName\n        createDateTime\n      }\n    }\n  }\n}\n',
+      variables: IMap({
+        'totpKeyId': totpKeyId.toJsonValue(),
+        'totpCode': totpCode.toJsonValue(),
+        'accountCode': accountCode.toJsonValue(),
+        'displayName': ((displayName == null)
+            ? const narumincho_json.JsonNull()
+            : displayName.toJsonValue()),
+      }),
+    );
+    final errors = response.errors;
+    if (errors != null) {
+      throw errors;
+    }
+    final data = response.data;
+    if (data == null) {
+      throw Exception('createAccount response data empty');
+    }
+    return QueryCreateAccount.fromJsonValue(data);
+  }
 }
 
 /// definy のアカウント
 @immutable
-final class Account {
+final class AccountOnlyId {
   /// definy のアカウント
-  const Account({
+  const AccountOnlyId({
     required this.id,
   });
   final type.AccountId id;
 
-  /// `Account` を複製する
+  /// `AccountOnlyId` を複製する
   @useResult
-  Account copyWith({
+  AccountOnlyId copyWith({
     type.AccountId? id,
   }) {
-    return Account(id: id ?? this.id);
+    return AccountOnlyId(id: id ?? this.id);
   }
 
-  /// `Account` のフィールドを変更したものを新しく返す
+  /// `AccountOnlyId` のフィールドを変更したものを新しく返す
   @useResult
-  Account updateFields({
+  AccountOnlyId updateFields({
     type.AccountId Function(type.AccountId prevId)? id,
   }) {
-    return Account(id: ((id == null) ? this.id : id(this.id)));
+    return AccountOnlyId(id: ((id == null) ? this.id : id(this.id)));
   }
 
   @override
@@ -80,20 +137,20 @@ final class Account {
   bool operator ==(
     Object other,
   ) {
-    return (other is Account) && (id == other.id);
+    return (other is AccountOnlyId) && (id == other.id);
   }
 
   @override
   @useResult
   String toString() {
-    return 'Account(id: $id, )';
+    return 'AccountOnlyId(id: $id, )';
   }
 
-  /// JsonValue から Accountを生成する. 失敗した場合はエラーが発生する
-  static Account fromJsonValue(
+  /// JsonValue から AccountOnlyIdを生成する. 失敗した場合はエラーが発生する
+  static AccountOnlyId fromJsonValue(
     narumincho_json.JsonValue value,
   ) {
-    return Account(
+    return AccountOnlyId(
         id: type.AccountId.fromJsonValue(value.getObjectValueOrThrow('id')));
   }
 }
@@ -105,12 +162,12 @@ final class QueryAccountByCode {
   const QueryAccountByCode({
     required this.accountByCode,
   });
-  final Account? accountByCode;
+  final AccountOnlyId? accountByCode;
 
   /// `QueryAccountByCode` を複製する
   @useResult
   QueryAccountByCode copyWith({
-    (Account?,)? accountByCode,
+    (AccountOnlyId?,)? accountByCode,
   }) {
     return QueryAccountByCode(
         accountByCode:
@@ -120,7 +177,7 @@ final class QueryAccountByCode {
   /// `QueryAccountByCode` のフィールドを変更したものを新しく返す
   @useResult
   QueryAccountByCode updateFields({
-    Account? Function(Account? prevAccountByCode)? accountByCode,
+    AccountOnlyId? Function(AccountOnlyId? prevAccountByCode)? accountByCode,
   }) {
     return QueryAccountByCode(
         accountByCode: ((accountByCode == null)
@@ -156,7 +213,432 @@ final class QueryAccountByCode {
     return QueryAccountByCode(
         accountByCode: switch (value.getObjectValueOrThrow('accountByCode')) {
       narumincho_json.JsonNull() => null,
-      final jsonValue => Account.fromJsonValue(jsonValue),
+      final jsonValue => AccountOnlyId.fromJsonValue(jsonValue),
     });
+  }
+}
+
+@immutable
+final class CreateAccountNotFoundTotpKeyId implements CreateAccountResult {
+  const CreateAccountNotFoundTotpKeyId({
+    required this.keyId,
+  });
+  final type.TotpKeyId keyId;
+
+  /// `CreateAccountNotFoundTotpKeyId` を複製する
+  @useResult
+  CreateAccountNotFoundTotpKeyId copyWith({
+    type.TotpKeyId? keyId,
+  }) {
+    return CreateAccountNotFoundTotpKeyId(keyId: keyId ?? this.keyId);
+  }
+
+  /// `CreateAccountNotFoundTotpKeyId` のフィールドを変更したものを新しく返す
+  @useResult
+  CreateAccountNotFoundTotpKeyId updateFields({
+    type.TotpKeyId Function(type.TotpKeyId prevKeyId)? keyId,
+  }) {
+    return CreateAccountNotFoundTotpKeyId(
+        keyId: ((keyId == null) ? this.keyId : keyId(this.keyId)));
+  }
+
+  @override
+  @useResult
+  int get hashCode {
+    return keyId.hashCode;
+  }
+
+  @override
+  @useResult
+  bool operator ==(
+    Object other,
+  ) {
+    return (other is CreateAccountNotFoundTotpKeyId) && (keyId == other.keyId);
+  }
+
+  @override
+  @useResult
+  String toString() {
+    return 'CreateAccountNotFoundTotpKeyId(keyId: $keyId, )';
+  }
+
+  /// JsonValue から CreateAccountNotFoundTotpKeyIdを生成する. 失敗した場合はエラーが発生する
+  static CreateAccountNotFoundTotpKeyId fromJsonValue(
+    narumincho_json.JsonValue value,
+  ) {
+    return CreateAccountNotFoundTotpKeyId(
+        keyId:
+            type.TotpKeyId.fromJsonValue(value.getObjectValueOrThrow('keyId')));
+  }
+}
+
+@immutable
+final class CreateAccountDuplicateCode implements CreateAccountResult {
+  const CreateAccountDuplicateCode({
+    required this.accountCode,
+  });
+  final type.AccountCode accountCode;
+
+  /// `CreateAccountDuplicateCode` を複製する
+  @useResult
+  CreateAccountDuplicateCode copyWith({
+    type.AccountCode? accountCode,
+  }) {
+    return CreateAccountDuplicateCode(
+        accountCode: accountCode ?? this.accountCode);
+  }
+
+  /// `CreateAccountDuplicateCode` のフィールドを変更したものを新しく返す
+  @useResult
+  CreateAccountDuplicateCode updateFields({
+    type.AccountCode Function(type.AccountCode prevAccountCode)? accountCode,
+  }) {
+    return CreateAccountDuplicateCode(
+        accountCode: ((accountCode == null)
+            ? this.accountCode
+            : accountCode(this.accountCode)));
+  }
+
+  @override
+  @useResult
+  int get hashCode {
+    return accountCode.hashCode;
+  }
+
+  @override
+  @useResult
+  bool operator ==(
+    Object other,
+  ) {
+    return (other is CreateAccountDuplicateCode) &&
+        (accountCode == other.accountCode);
+  }
+
+  @override
+  @useResult
+  String toString() {
+    return 'CreateAccountDuplicateCode(accountCode: $accountCode, )';
+  }
+
+  /// JsonValue から CreateAccountDuplicateCodeを生成する. 失敗した場合はエラーが発生する
+  static CreateAccountDuplicateCode fromJsonValue(
+    narumincho_json.JsonValue value,
+  ) {
+    return CreateAccountDuplicateCode(
+        accountCode: type.AccountCode.fromJsonValue(
+            value.getObjectValueOrThrow('accountCode')));
+  }
+}
+
+@immutable
+final class CreateAccountInvalidCode implements CreateAccountResult {
+  const CreateAccountInvalidCode({
+    required this.accountCode,
+  });
+  final type.AccountCode accountCode;
+
+  /// `CreateAccountInvalidCode` を複製する
+  @useResult
+  CreateAccountInvalidCode copyWith({
+    type.AccountCode? accountCode,
+  }) {
+    return CreateAccountInvalidCode(
+        accountCode: accountCode ?? this.accountCode);
+  }
+
+  /// `CreateAccountInvalidCode` のフィールドを変更したものを新しく返す
+  @useResult
+  CreateAccountInvalidCode updateFields({
+    type.AccountCode Function(type.AccountCode prevAccountCode)? accountCode,
+  }) {
+    return CreateAccountInvalidCode(
+        accountCode: ((accountCode == null)
+            ? this.accountCode
+            : accountCode(this.accountCode)));
+  }
+
+  @override
+  @useResult
+  int get hashCode {
+    return accountCode.hashCode;
+  }
+
+  @override
+  @useResult
+  bool operator ==(
+    Object other,
+  ) {
+    return (other is CreateAccountInvalidCode) &&
+        (accountCode == other.accountCode);
+  }
+
+  @override
+  @useResult
+  String toString() {
+    return 'CreateAccountInvalidCode(accountCode: $accountCode, )';
+  }
+
+  /// JsonValue から CreateAccountInvalidCodeを生成する. 失敗した場合はエラーが発生する
+  static CreateAccountInvalidCode fromJsonValue(
+    narumincho_json.JsonValue value,
+  ) {
+    return CreateAccountInvalidCode(
+        accountCode: type.AccountCode.fromJsonValue(
+            value.getObjectValueOrThrow('accountCode')));
+  }
+}
+
+/// definy のアカウント
+@immutable
+final class Account {
+  /// definy のアカウント
+  const Account({
+    required this.id,
+    required this.code,
+    required this.displayName,
+    required this.createDateTime,
+  });
+  final type.AccountId id;
+
+  /// アカウントコード. ある時点では重複はしないが, 永久欠番ではない
+  final type.AccountCode code;
+
+  /// アカウント名. 重複する可能性あり
+  final type.AccountDisplayName displayName;
+
+  /// アカウントが作成された日時
+  final DateTime createDateTime;
+
+  /// `Account` を複製する
+  @useResult
+  Account copyWith({
+    type.AccountId? id,
+    type.AccountCode? code,
+    type.AccountDisplayName? displayName,
+    DateTime? createDateTime,
+  }) {
+    return Account(
+      id: id ?? this.id,
+      code: code ?? this.code,
+      displayName: displayName ?? this.displayName,
+      createDateTime: createDateTime ?? this.createDateTime,
+    );
+  }
+
+  /// `Account` のフィールドを変更したものを新しく返す
+  @useResult
+  Account updateFields({
+    type.AccountId Function(type.AccountId prevId)? id,
+    type.AccountCode Function(type.AccountCode prevCode)? code,
+    type.AccountDisplayName Function(type.AccountDisplayName prevDisplayName)?
+        displayName,
+    DateTime Function(DateTime prevCreateDateTime)? createDateTime,
+  }) {
+    return Account(
+      id: ((id == null) ? this.id : id(this.id)),
+      code: ((code == null) ? this.code : code(this.code)),
+      displayName: ((displayName == null)
+          ? this.displayName
+          : displayName(this.displayName)),
+      createDateTime: ((createDateTime == null)
+          ? this.createDateTime
+          : createDateTime(this.createDateTime)),
+    );
+  }
+
+  @override
+  @useResult
+  int get hashCode {
+    return Object.hash(
+      id,
+      code,
+      displayName,
+      createDateTime,
+    );
+  }
+
+  @override
+  @useResult
+  bool operator ==(
+    Object other,
+  ) {
+    return ((((other is Account) && (id == other.id)) &&
+                (code == other.code)) &&
+            (displayName == other.displayName)) &&
+        (createDateTime == other.createDateTime);
+  }
+
+  @override
+  @useResult
+  String toString() {
+    return 'Account(id: $id, code: $code, displayName: $displayName, createDateTime: $createDateTime, )';
+  }
+
+  /// JsonValue から Accountを生成する. 失敗した場合はエラーが発生する
+  static Account fromJsonValue(
+    narumincho_json.JsonValue value,
+  ) {
+    return Account(
+      id: type.AccountId.fromJsonValue(value.getObjectValueOrThrow('id')),
+      code: type.AccountCode.fromJsonValue(value.getObjectValueOrThrow('code')),
+      displayName: type.AccountDisplayName.fromJsonValue(
+          value.getObjectValueOrThrow('displayName')),
+      createDateTime: DateTime.fromMillisecondsSinceEpoch(value
+          .getObjectValueOrThrow('createDateTime')
+          .asDoubleOrThrow()
+          .floor()),
+    );
+  }
+}
+
+@immutable
+final class CreateAccountResultOk implements CreateAccountResult {
+  const CreateAccountResultOk({
+    required this.account,
+  });
+  final Account account;
+
+  /// `CreateAccountResultOk` を複製する
+  @useResult
+  CreateAccountResultOk copyWith({
+    Account? account,
+  }) {
+    return CreateAccountResultOk(account: account ?? this.account);
+  }
+
+  /// `CreateAccountResultOk` のフィールドを変更したものを新しく返す
+  @useResult
+  CreateAccountResultOk updateFields({
+    Account Function(Account prevAccount)? account,
+  }) {
+    return CreateAccountResultOk(
+        account: ((account == null) ? this.account : account(this.account)));
+  }
+
+  @override
+  @useResult
+  int get hashCode {
+    return account.hashCode;
+  }
+
+  @override
+  @useResult
+  bool operator ==(
+    Object other,
+  ) {
+    return (other is CreateAccountResultOk) && (account == other.account);
+  }
+
+  @override
+  @useResult
+  String toString() {
+    return 'CreateAccountResultOk(account: $account, )';
+  }
+
+  /// JsonValue から CreateAccountResultOkを生成する. 失敗した場合はエラーが発生する
+  static CreateAccountResultOk fromJsonValue(
+    narumincho_json.JsonValue value,
+  ) {
+    return CreateAccountResultOk(
+        account: Account.fromJsonValue(value.getObjectValueOrThrow('account')));
+  }
+}
+
+@immutable
+sealed class CreateAccountResult {
+  const CreateAccountResult();
+
+  /// JsonValue から CreateAccountResultを生成する. 失敗した場合はエラーが発生する
+  static CreateAccountResult fromJsonValue(
+    narumincho_json.JsonValue value,
+  ) {
+    final typeName =
+        value.getObjectValueOrThrow('__typename').asStringOrThrow();
+    switch (typeName) {
+      case 'CreateAccountNotFoundTotpKeyId':
+        {
+          return CreateAccountNotFoundTotpKeyId.fromJsonValue(value);
+        }
+
+      case 'CreateAccountDuplicateCode':
+        {
+          return CreateAccountDuplicateCode.fromJsonValue(value);
+        }
+
+      case 'CreateAccountInvalidCode':
+        {
+          return CreateAccountInvalidCode.fromJsonValue(value);
+        }
+
+      case 'CreateAccountResultOk':
+        {
+          return CreateAccountResultOk.fromJsonValue(value);
+        }
+    }
+    throw Exception(
+        'invalid __typename in CreateAccountResult. __typename=$typeName');
+  }
+}
+
+/// データを作成、更新ができる
+@immutable
+final class QueryCreateAccount {
+  /// データを作成、更新ができる
+  const QueryCreateAccount({
+    required this.createAccount,
+  });
+
+  /// アカウントを作成する
+  final CreateAccountResult createAccount;
+
+  /// `QueryCreateAccount` を複製する
+  @useResult
+  QueryCreateAccount copyWith({
+    CreateAccountResult? createAccount,
+  }) {
+    return QueryCreateAccount(
+        createAccount: createAccount ?? this.createAccount);
+  }
+
+  /// `QueryCreateAccount` のフィールドを変更したものを新しく返す
+  @useResult
+  QueryCreateAccount updateFields({
+    CreateAccountResult Function(CreateAccountResult prevCreateAccount)?
+        createAccount,
+  }) {
+    return QueryCreateAccount(
+        createAccount: ((createAccount == null)
+            ? this.createAccount
+            : createAccount(this.createAccount)));
+  }
+
+  @override
+  @useResult
+  int get hashCode {
+    return createAccount.hashCode;
+  }
+
+  @override
+  @useResult
+  bool operator ==(
+    Object other,
+  ) {
+    return (other is QueryCreateAccount) &&
+        (createAccount == other.createAccount);
+  }
+
+  @override
+  @useResult
+  String toString() {
+    return 'QueryCreateAccount(createAccount: $createAccount, )';
+  }
+
+  /// JsonValue から QueryCreateAccountを生成する. 失敗した場合はエラーが発生する
+  static QueryCreateAccount fromJsonValue(
+    narumincho_json.JsonValue value,
+  ) {
+    return QueryCreateAccount(
+        createAccount: CreateAccountResult.fromJsonValue(
+            value.getObjectValueOrThrow('createAccount')));
   }
 }

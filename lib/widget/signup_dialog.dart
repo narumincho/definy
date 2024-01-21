@@ -21,6 +21,10 @@ class _SignUpDialogState extends State<SignUpDialog> {
     _accountCodeController.addListener(() {
       final accountCode = AccountCode.fromString(_accountCodeController.text);
       if (accountCode == null) {
+        setState(() {
+          _requestingAccountCodeResult =
+              const RequestingAccountCodeResultError();
+        });
         return;
       }
       setState(() {
@@ -31,28 +35,37 @@ class _SignUpDialogState extends State<SignUpDialog> {
         code: accountCode,
         Uri.parse('http://127.0.0.1:8000/graphql'),
         null,
-      ).then((response) {
-        switch (_requestingAccountCodeResult) {
-          case RequestingAccountCodeResultNone():
-          case RequestingAccountCodeResultSuccess():
-          case RequestingAccountCodeResultDuplicate():
-            return;
-          case RequestingAccountCodeResultRequesting(:final code):
-            if (code == accountCode) {
-              if (response.accountByCode == null) {
+      ).then(
+        (response) {
+          switch (_requestingAccountCodeResult) {
+            case RequestingAccountCodeResultNone():
+            case RequestingAccountCodeResultError():
+            case RequestingAccountCodeResultSuccess():
+            case RequestingAccountCodeResultDuplicate():
+              return;
+            case RequestingAccountCodeResultRequesting(:final code):
+              if (code == accountCode) {
+                if (response.accountByCode == null) {
+                  setState(() {
+                    _requestingAccountCodeResult =
+                        RequestingAccountCodeResultDuplicate(accountCode);
+                  });
+                  return;
+                }
                 setState(() {
                   _requestingAccountCodeResult =
-                      RequestingAccountCodeResultDuplicate(accountCode);
+                      RequestingAccountCodeResultSuccess(accountCode);
                 });
-                return;
               }
-              setState(() {
-                _requestingAccountCodeResult =
-                    RequestingAccountCodeResultRequesting(accountCode);
-              });
-            }
-        }
-      });
+          }
+        },
+        onError: (error) {
+          setState(() {
+            _requestingAccountCodeResult =
+                RequestingAccountCodeResultSuccess(accountCode);
+          });
+        },
+      );
     });
   }
 
@@ -68,16 +81,16 @@ class _SignUpDialogState extends State<SignUpDialog> {
               controller: _accountCodeController,
               decoration: InputDecoration(
                   labelText: 'アカウントコード (識別用名前)',
-                  helperText: '半角英数字と_.のみ',
-                  counterText: '2～31',
-                  icon: switch (_requestingAccountCodeResult) {
+                  helperText: '2文字以上31以内の半角英数字と_.のみ',
+                  helperStyle: const TextStyle(fontSize: 12),
+                  counterText: '${_accountCodeController.text.trim().length}',
+                  errorText: switch (_requestingAccountCodeResult) {
                     RequestingAccountCodeResultNone() => null,
-                    RequestingAccountCodeResultRequesting() =>
-                      const CircularProgressIndicator(),
-                    RequestingAccountCodeResultSuccess() =>
-                      const Icon(Icons.check),
-                    RequestingAccountCodeResultDuplicate() =>
-                      const Icon(Icons.error),
+                    RequestingAccountCodeResultError() =>
+                      '2文字以上31以内の半角英数字と_.のみ',
+                    RequestingAccountCodeResultRequesting() => null,
+                    RequestingAccountCodeResultSuccess() => null,
+                    RequestingAccountCodeResultDuplicate() => '重複しています',
                   }),
             ),
             TextFormField(
@@ -85,11 +98,6 @@ class _SignUpDialogState extends State<SignUpDialog> {
                 labelText: '表示名',
               ),
             ),
-            // TextFormField(
-            //   decoration: const InputDecoration(
-            //     labelText: 'totp code',
-            //   ),
-            // ),
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: () {},
@@ -109,6 +117,10 @@ sealed class RequestingAccountCodeResult {
 
 class RequestingAccountCodeResultNone implements RequestingAccountCodeResult {
   const RequestingAccountCodeResultNone();
+}
+
+class RequestingAccountCodeResultError implements RequestingAccountCodeResult {
+  const RequestingAccountCodeResultError();
 }
 
 class RequestingAccountCodeResultRequesting
