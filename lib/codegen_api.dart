@@ -25,11 +25,11 @@ const IMap<String, GraphQLRootObject> _apiMap = IMapConst({
   'createTotpKey': query.Mutation(
     'MutationCreateTotpKey',
     IMapConst({}),
-    createTotpKey: query.Mutation_createTotpKey(query.TotpKey(
+    createTotpKey: query.Mutation_createTotpKey(query.TotpKeyAndId(
       'TotpKey',
       IMapConst({}),
-      id: query.TotpKey_id(),
-      secret: query.TotpKey_secret(),
+      id: query.TotpKeyAndId_id(),
+      secret: query.TotpKeyAndId_secret(),
     )),
   ),
   'createAccount': query.Mutation(

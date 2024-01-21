@@ -246,24 +246,24 @@ final class QueryAccountByCode {
   }
 }
 
-/// 鍵
+/// 鍵. 新規登録時の一時的に保存する部分で使う
 @immutable
 final class TotpKey {
-  /// 鍵
+  /// 鍵. 新規登録時の一時的に保存する部分で使う
   const TotpKey({
     required this.id,
     required this.secret,
   });
-  final type.AccountId id;
+  final type.TotpKeyId id;
 
   /// 生成した鍵. TOTPの生成に使う
-  final type.AccountCode secret;
+  final type.TotpSecret secret;
 
   /// `TotpKey` を複製する
   @useResult
   TotpKey copyWith({
-    type.AccountId? id,
-    type.AccountCode? secret,
+    type.TotpKeyId? id,
+    type.TotpSecret? secret,
   }) {
     return TotpKey(
       id: id ?? this.id,
@@ -274,8 +274,8 @@ final class TotpKey {
   /// `TotpKey` のフィールドを変更したものを新しく返す
   @useResult
   TotpKey updateFields({
-    type.AccountId Function(type.AccountId prevId)? id,
-    type.AccountCode Function(type.AccountCode prevSecret)? secret,
+    type.TotpKeyId Function(type.TotpKeyId prevId)? id,
+    type.TotpSecret Function(type.TotpSecret prevSecret)? secret,
   }) {
     return TotpKey(
       id: ((id == null) ? this.id : id(this.id)),
@@ -311,9 +311,9 @@ final class TotpKey {
     narumincho_json.JsonValue value,
   ) {
     return TotpKey(
-      id: type.AccountId.fromJsonValue(value.getObjectValueOrThrow('id')),
+      id: type.TotpKeyId.fromJsonValue(value.getObjectValueOrThrow('id')),
       secret:
-          type.AccountCode.fromJsonValue(value.getObjectValueOrThrow('secret')),
+          type.TotpSecret.fromJsonValue(value.getObjectValueOrThrow('secret')),
     );
   }
 }

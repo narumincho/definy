@@ -364,6 +364,79 @@ final class TotpCode implements query_string.IntoQueryInput {
   }
 }
 
+/// Base32でエンコードされたTOTPのシークレット
+///
+/// ### simpleGraphQLClientGenAnnotation
+/// ```json
+/// {"$schema":"https://raw.githubusercontent.com/narumincho/simple_graphql_server_common/main/schema.json","type":"regexp","pattern":"^(?:[A-Z2-7]{8})*(?:[A-Z2-7][AEIMQUY4]={6}|[A-Z2-7]{3}[AQ]={4}|[A-Z2-7]{4}[ACEGIKMOQSUWY246]={3}|[A-Z2-7]{6}[AIQY]=)?$"}
+/// ```
+@immutable
+final class TotpSecret implements query_string.IntoQueryInput {
+  /// Base32でエンコードされたTOTPのシークレット
+  ///
+  /// ### simpleGraphQLClientGenAnnotation
+  /// ```json
+  /// {"$schema":"https://raw.githubusercontent.com/narumincho/simple_graphql_server_common/main/schema.json","type":"regexp","pattern":"^(?:[A-Z2-7]{8})*(?:[A-Z2-7][AEIMQUY4]={6}|[A-Z2-7]{3}[AQ]={4}|[A-Z2-7]{4}[ACEGIKMOQSUWY246]={3}|[A-Z2-7]{6}[AIQY]=)?$"}
+  /// ```
+  const TotpSecret._(
+    this.value,
+  );
+
+  /// 内部表現の文字列
+  final String value;
+
+  @override
+  @useResult
+  int get hashCode {
+    return value.hashCode;
+  }
+
+  @override
+  @useResult
+  bool operator ==(
+    Object other,
+  ) {
+    return (other is TotpSecret) && (value == other.value);
+  }
+
+  @override
+  @useResult
+  String toString() {
+    return 'TotpSecret($value, )';
+  }
+
+  /// String からバリデーションして変換する. 変換できない場合は null が返される
+  @useResult
+  static TotpSecret? fromString(
+    String value,
+  ) {
+    if (RegExp(
+            r'^(?:[A-Z2-7]{8})*(?:[A-Z2-7][AEIMQUY4]={6}|[A-Z2-7]{3}[AQ]={4}|[A-Z2-7]{4}[ACEGIKMOQSUWY246]={3}|[A-Z2-7]{6}[AIQY]=)?$')
+        .hasMatch(value)) {
+      return TotpSecret._(value);
+    }
+    return null;
+  }
+
+  @override
+  @useResult
+  query_string.QueryInput toQueryInput() {
+    return query_string.QueryInputString(value);
+  }
+
+  @override
+  @useResult
+  narumincho_json.JsonValue toJsonValue() {
+    return narumincho_json.JsonString(value);
+  }
+
+  static TotpSecret fromJsonValue(
+    narumincho_json.JsonValue jsonValue,
+  ) {
+    return TotpSecret._(jsonValue.asStringOrThrow());
+  }
+}
+
 /// An enum describing what kind of type a given `__Type` is.
 enum GraphQL__TypeKind implements query_string.IntoQueryInput {
   /// Indicates this type is a scalar.

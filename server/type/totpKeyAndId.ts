@@ -1,6 +1,5 @@
 import * as g from "npm:graphql";
-import { AccountId, TotpKeyId } from "./id.ts";
-import { AccountCode } from "./accountCode.ts";
+import { TotpKeyId } from "./id.ts";
 import { TotpSecret } from "./totpSecret.ts";
 
 export type TotpKeyAndId = {
@@ -9,14 +8,14 @@ export type TotpKeyAndId = {
 };
 
 export const TotpKeyAndId = new g.GraphQLObjectType({
-  name: "TotpKey",
-  description: "鍵",
+  name: "TotpKeyAndId",
+  description: "鍵. 新規登録時の一時的に保存する部分で使う",
   fields: {
     id: {
-      type: new g.GraphQLNonNull(AccountId),
+      type: new g.GraphQLNonNull(TotpKeyId),
     },
     secret: {
-      type: new g.GraphQLNonNull(AccountCode),
+      type: new g.GraphQLNonNull(TotpSecret),
       description: "生成した鍵. TOTPの生成に使う",
     },
   },

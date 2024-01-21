@@ -963,21 +963,21 @@ final class Mutation_createAccount implements Mutation_Field {
 
 /// TOTPのキーを生成してデータベースに保存する
 ///
-/// type: `type.TotpKey`
+/// type: `type.TotpKeyAndId`
 @immutable
 final class Mutation_createTotpKey implements Mutation_Field {
   /// TOTPのキーを生成してデータベースに保存する
   ///
-  /// type: `type.TotpKey`
+  /// type: `type.TotpKeyAndId`
   const Mutation_createTotpKey(
     this.return_,
   );
-  final TotpKey return_;
+  final TotpKeyAndId return_;
 
   /// `Mutation_createTotpKey` を複製する
   @useResult
   Mutation_createTotpKey copyWith({
-    TotpKey? return_,
+    TotpKeyAndId? return_,
   }) {
     return Mutation_createTotpKey(return_ ?? this.return_);
   }
@@ -985,7 +985,7 @@ final class Mutation_createTotpKey implements Mutation_Field {
   /// `Mutation_createTotpKey` のフィールドを変更したものを新しく返す
   @useResult
   Mutation_createTotpKey updateFields({
-    TotpKey Function(TotpKey prevReturn_)? return_,
+    TotpKeyAndId Function(TotpKeyAndId prevReturn_)? return_,
   }) {
     return Mutation_createTotpKey(
         (return_ == null) ? this.return_ : return_(this.return_));
@@ -1821,11 +1821,11 @@ final class CreateAccountResultOk_account
   }
 }
 
-/// 鍵
+/// 鍵. 新規登録時の一時的に保存する部分で使う
 @immutable
-final class TotpKey implements query_string.GraphQLObjectType {
-  /// 鍵
-  const TotpKey(
+final class TotpKeyAndId implements query_string.GraphQLObjectType {
+  /// 鍵. 新規登録時の一時的に保存する部分で使う
+  const TotpKeyAndId(
     this.typeName__,
     this.extra__, {
     this.id,
@@ -1835,23 +1835,23 @@ final class TotpKey implements query_string.GraphQLObjectType {
   /// この構造の型につける型の名前. ※同じ名前で違う構造にするとエラーになるので注意!
   final String typeName__;
 
-  final TotpKey_id? id;
+  final TotpKeyAndId_id? id;
 
   /// 生成した鍵. TOTPの生成に使う
-  final TotpKey_secret? secret;
+  final TotpKeyAndId_secret? secret;
 
   /// フィールド名を変更する場合などに使う 未実装 https://graphql.org/learn/queries/#aliases
-  final IMap<String, TotpKey_Field> extra__;
+  final IMap<String, TotpKeyAndId_Field> extra__;
 
-  /// `TotpKey` を複製する
+  /// `TotpKeyAndId` を複製する
   @useResult
-  TotpKey copyWith({
+  TotpKeyAndId copyWith({
     String? typeName__,
-    (TotpKey_id?,)? id,
-    (TotpKey_secret?,)? secret,
-    IMap<String, TotpKey_Field>? extra__,
+    (TotpKeyAndId_id?,)? id,
+    (TotpKeyAndId_secret?,)? secret,
+    IMap<String, TotpKeyAndId_Field>? extra__,
   }) {
-    return TotpKey(
+    return TotpKeyAndId(
       typeName__ ?? this.typeName__,
       extra__ ?? this.extra__,
       id: ((id == null) ? this.id : id.$1),
@@ -1859,17 +1859,17 @@ final class TotpKey implements query_string.GraphQLObjectType {
     );
   }
 
-  /// `TotpKey` のフィールドを変更したものを新しく返す
+  /// `TotpKeyAndId` のフィールドを変更したものを新しく返す
   @useResult
-  TotpKey updateFields({
+  TotpKeyAndId updateFields({
     String Function(String prevTypeName__)? typeName__,
-    TotpKey_id? Function(TotpKey_id? prevId)? id,
-    TotpKey_secret? Function(TotpKey_secret? prevSecret)? secret,
-    IMap<String, TotpKey_Field> Function(
-            IMap<String, TotpKey_Field> prevExtra__)?
+    TotpKeyAndId_id? Function(TotpKeyAndId_id? prevId)? id,
+    TotpKeyAndId_secret? Function(TotpKeyAndId_secret? prevSecret)? secret,
+    IMap<String, TotpKeyAndId_Field> Function(
+            IMap<String, TotpKeyAndId_Field> prevExtra__)?
         extra__,
   }) {
-    return TotpKey(
+    return TotpKeyAndId(
       ((typeName__ == null) ? this.typeName__ : typeName__(this.typeName__)),
       ((extra__ == null) ? this.extra__ : extra__(this.extra__)),
       id: ((id == null) ? this.id : id(this.id)),
@@ -1893,7 +1893,7 @@ final class TotpKey implements query_string.GraphQLObjectType {
   bool operator ==(
     Object other,
   ) {
-    return ((((other is TotpKey) && (typeName__ == other.typeName__)) &&
+    return ((((other is TotpKeyAndId) && (typeName__ == other.typeName__)) &&
                 (id == other.id)) &&
             (secret == other.secret)) &&
         (extra__ == other.extra__);
@@ -1902,7 +1902,7 @@ final class TotpKey implements query_string.GraphQLObjectType {
   @override
   @useResult
   String toString() {
-    return 'TotpKey($typeName__, $extra__, id: $id, secret: $secret, )';
+    return 'TotpKeyAndId($typeName__, $extra__, id: $id, secret: $secret, )';
   }
 
   @override
@@ -1932,26 +1932,26 @@ final class TotpKey implements query_string.GraphQLObjectType {
   @override
   @useResult
   String getDescription() {
-    return '鍵';
+    return '鍵. 新規登録時の一時的に保存する部分で使う';
   }
 }
 
-/// 鍵
+/// 鍵. 新規登録時の一時的に保存する部分で使う
 @immutable
-sealed class TotpKey_Field implements query_string.IntoGraphQLField {
-  /// 鍵
-  const TotpKey_Field();
+sealed class TotpKeyAndId_Field implements query_string.IntoGraphQLField {
+  /// 鍵. 新規登録時の一時的に保存する部分で使う
+  const TotpKeyAndId_Field();
 }
 
 ///
 ///
-/// type: `type.AccountId`
+/// type: `type.TotpKeyId`
 @immutable
-final class TotpKey_id implements TotpKey_Field {
+final class TotpKeyAndId_id implements TotpKeyAndId_Field {
   ///
   ///
-  /// type: `type.AccountId`
-  const TotpKey_id();
+  /// type: `type.TotpKeyId`
+  const TotpKeyAndId_id();
   @override
   @useResult
   int get hashCode {
@@ -1963,13 +1963,13 @@ final class TotpKey_id implements TotpKey_Field {
   bool operator ==(
     Object other,
   ) {
-    return other is TotpKey_id;
+    return other is TotpKeyAndId_id;
   }
 
   @override
   @useResult
   String toString() {
-    return 'TotpKey_id()';
+    return 'TotpKeyAndId_id()';
   }
 
   @override
@@ -1979,7 +1979,7 @@ final class TotpKey_id implements TotpKey_Field {
       'id',
       description: '',
       return_: query_string.GraphQLOutputTypeConsiderListNull(
-        query_string.GraphQLOutputTypeNotObject('AccountId'),
+        query_string.GraphQLOutputTypeNotObject('TotpKeyId'),
         graphql_type.ListType.notList,
         false,
       ),
@@ -1989,13 +1989,13 @@ final class TotpKey_id implements TotpKey_Field {
 
 /// 生成した鍵. TOTPの生成に使う
 ///
-/// type: `type.AccountCode`
+/// type: `type.TotpSecret`
 @immutable
-final class TotpKey_secret implements TotpKey_Field {
+final class TotpKeyAndId_secret implements TotpKeyAndId_Field {
   /// 生成した鍵. TOTPの生成に使う
   ///
-  /// type: `type.AccountCode`
-  const TotpKey_secret();
+  /// type: `type.TotpSecret`
+  const TotpKeyAndId_secret();
   @override
   @useResult
   int get hashCode {
@@ -2007,13 +2007,13 @@ final class TotpKey_secret implements TotpKey_Field {
   bool operator ==(
     Object other,
   ) {
-    return other is TotpKey_secret;
+    return other is TotpKeyAndId_secret;
   }
 
   @override
   @useResult
   String toString() {
-    return 'TotpKey_secret()';
+    return 'TotpKeyAndId_secret()';
   }
 
   @override
@@ -2023,7 +2023,7 @@ final class TotpKey_secret implements TotpKey_Field {
       'secret',
       description: '生成した鍵. TOTPの生成に使う',
       return_: query_string.GraphQLOutputTypeConsiderListNull(
-        query_string.GraphQLOutputTypeNotObject('AccountCode'),
+        query_string.GraphQLOutputTypeNotObject('TotpSecret'),
         graphql_type.ListType.notList,
         false,
       ),
