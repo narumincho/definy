@@ -10,8 +10,76 @@ class SignUpDialog extends StatefulWidget {
 }
 
 class _SignUpDialogState extends State<SignUpDialog> {
-  final TextEditingController _accountCodeController = TextEditingController();
+  InputAccountCodeAndDisplayNameResult? accountCodeAndDisplayName;
 
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('新規登録'),
+      content: Padding(
+        padding: const EdgeInsets.all(16),
+        child: switch (accountCodeAndDisplayName) {
+          null => InputAccountCodeAndDisplayName(
+              onCompleted: (e) {
+                setState(() {
+                  accountCodeAndDisplayName = e;
+                });
+              },
+            ),
+          final result => Column(children: [
+              TextButton(
+                  onPressed: () {
+                    setState(() {
+                      accountCodeAndDisplayName = null;
+                    });
+                  },
+                  child: const Icon(Icons.arrow_back)),
+              Text('ここに${result.accountCode.value}のQRコードを表示したい'),
+              TextFormField(
+                decoration: const InputDecoration(
+                  labelText: '認証アプリで表示されたコード',
+                ),
+              ),
+              const SizedBox(height: 16),
+              const ElevatedButton(
+                onPressed: null,
+                child: Text('新規登録'),
+              ),
+            ]),
+        },
+      ),
+    );
+  }
+}
+
+@immutable
+class InputAccountCodeAndDisplayNameResult {
+  const InputAccountCodeAndDisplayNameResult({
+    required this.accountCode,
+    required this.displayName,
+  });
+  final AccountCode accountCode;
+  final String displayName;
+}
+
+/// アカウントコードと表示名を入力する画面
+class InputAccountCodeAndDisplayName extends StatefulWidget {
+  const InputAccountCodeAndDisplayName({
+    required this.onCompleted,
+    super.key,
+  });
+
+  final ValueSetter<InputAccountCodeAndDisplayNameResult> onCompleted;
+
+  @override
+  State<InputAccountCodeAndDisplayName> createState() =>
+      _InputAccountCodeAndDisplayNameState();
+}
+
+class _InputAccountCodeAndDisplayNameState
+    extends State<InputAccountCodeAndDisplayName> {
+  final TextEditingController _accountCodeController = TextEditingController();
+  final TextEditingController _displayNameController = TextEditingController();
   RequestingAccountCodeResult _requestingAccountCodeResult =
       const RequestingAccountCodeResultNone();
 
@@ -71,41 +139,45 @@ class _SignUpDialogState extends State<SignUpDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('新規登録'),
-      content: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            TextFormField(
-              controller: _accountCodeController,
-              decoration: InputDecoration(
-                  labelText: 'アカウントコード (識別用名前)',
-                  helperText: '2文字以上31以内の半角英数字と_.のみ',
-                  helperStyle: const TextStyle(fontSize: 12),
-                  counterText: '${_accountCodeController.text.trim().length}',
-                  errorText: switch (_requestingAccountCodeResult) {
-                    RequestingAccountCodeResultNone() => null,
-                    RequestingAccountCodeResultError() =>
-                      '2文字以上31以内の半角英数字と_.のみ',
-                    RequestingAccountCodeResultRequesting() => null,
-                    RequestingAccountCodeResultSuccess() => null,
-                    RequestingAccountCodeResultDuplicate() => '重複しています',
-                  }),
-            ),
-            TextFormField(
-              decoration: const InputDecoration(
-                labelText: '表示名',
-              ),
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: () {},
-              child: const Text('新規登録'),
-            ),
-          ],
+    return Column(
+      children: [
+        TextFormField(
+          controller: _accountCodeController,
+          decoration: InputDecoration(
+              labelText: 'アカウントコード (識別用名前)',
+              helperText: '2文字以上31以内の半角英数字と_.のみ',
+              helperStyle: const TextStyle(fontSize: 12),
+              counterText: '${_accountCodeController.text.trim().length}',
+              errorText: switch (_requestingAccountCodeResult) {
+                RequestingAccountCodeResultNone() => null,
+                RequestingAccountCodeResultError() => '2文字以上31以内の半角英数字と_.のみ',
+                RequestingAccountCodeResultRequesting() => null,
+                RequestingAccountCodeResultSuccess() => null,
+                RequestingAccountCodeResultDuplicate() => '重複しています',
+              }),
         ),
-      ),
+        TextFormField(
+          controller: _displayNameController,
+          decoration: const InputDecoration(
+            labelText: '表示名',
+          ),
+        ),
+        const SizedBox(height: 16),
+        ElevatedButton(
+          onPressed: switch ((
+            _requestingAccountCodeResult,
+            _displayNameController.text.trim().isEmpty
+          )) {
+            (RequestingAccountCodeResultSuccess(:final code), false) => () {
+                widget.onCompleted(InputAccountCodeAndDisplayNameResult(
+                    accountCode: code,
+                    displayName: _displayNameController.text.trim()));
+              },
+            (_, _) => null,
+          },
+          child: const Text('次へ'),
+        ),
+      ],
     );
   }
 }
@@ -140,3 +212,5 @@ class RequestingAccountCodeResultDuplicate
   const RequestingAccountCodeResultDuplicate(this.code);
   final AccountCode code;
 }
+
+enum Step { inputAccountCode, logInCheck }
