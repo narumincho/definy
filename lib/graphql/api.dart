@@ -44,6 +44,34 @@ abstract class Api {
   }
 
   /// ```
+  /// mutation {
+  ///   createTotpKey {
+  ///     id
+  ///     secret
+  ///   }
+  /// }
+  /// ```
+  static Future<MutationCreateTotpKey> createTotpKey(
+    Uri url,
+    String? auth,
+  ) async {
+    final response = await graphql_post.graphQLPost(
+      uri: url,
+      auth: auth,
+      query: 'mutation {\n  createTotpKey {\n    id\n    secret\n  }\n}\n',
+    );
+    final errors = response.errors;
+    if (errors != null) {
+      throw errors;
+    }
+    final data = response.data;
+    if (data == null) {
+      throw Exception('createTotpKey response data empty');
+    }
+    return MutationCreateTotpKey.fromJsonValue(data);
+  }
+
+  /// ```
   /// mutation ($totpKeyId: TotpKeyId!, $totpCode: TotpCode!, $accountCode: AccountCode!, $displayName: AccountDisplayName) {
   ///   createAccount(totpKeyId: $totpKeyId, totpCode: $totpCode, accountCode: $accountCode, displayName: $displayName) {
   ///     __typename
@@ -215,6 +243,140 @@ final class QueryAccountByCode {
       narumincho_json.JsonNull() => null,
       final jsonValue => AccountOnlyId.fromJsonValue(jsonValue),
     });
+  }
+}
+
+/// 鍵
+@immutable
+final class TotpKey {
+  /// 鍵
+  const TotpKey({
+    required this.id,
+    required this.secret,
+  });
+  final type.AccountId id;
+
+  /// 生成した鍵. TOTPの生成に使う
+  final type.AccountCode secret;
+
+  /// `TotpKey` を複製する
+  @useResult
+  TotpKey copyWith({
+    type.AccountId? id,
+    type.AccountCode? secret,
+  }) {
+    return TotpKey(
+      id: id ?? this.id,
+      secret: secret ?? this.secret,
+    );
+  }
+
+  /// `TotpKey` のフィールドを変更したものを新しく返す
+  @useResult
+  TotpKey updateFields({
+    type.AccountId Function(type.AccountId prevId)? id,
+    type.AccountCode Function(type.AccountCode prevSecret)? secret,
+  }) {
+    return TotpKey(
+      id: ((id == null) ? this.id : id(this.id)),
+      secret: ((secret == null) ? this.secret : secret(this.secret)),
+    );
+  }
+
+  @override
+  @useResult
+  int get hashCode {
+    return Object.hash(
+      id,
+      secret,
+    );
+  }
+
+  @override
+  @useResult
+  bool operator ==(
+    Object other,
+  ) {
+    return ((other is TotpKey) && (id == other.id)) && (secret == other.secret);
+  }
+
+  @override
+  @useResult
+  String toString() {
+    return 'TotpKey(id: $id, secret: $secret, )';
+  }
+
+  /// JsonValue から TotpKeyを生成する. 失敗した場合はエラーが発生する
+  static TotpKey fromJsonValue(
+    narumincho_json.JsonValue value,
+  ) {
+    return TotpKey(
+      id: type.AccountId.fromJsonValue(value.getObjectValueOrThrow('id')),
+      secret:
+          type.AccountCode.fromJsonValue(value.getObjectValueOrThrow('secret')),
+    );
+  }
+}
+
+/// データを作成、更新ができる
+@immutable
+final class MutationCreateTotpKey {
+  /// データを作成、更新ができる
+  const MutationCreateTotpKey({
+    required this.createTotpKey,
+  });
+
+  /// TOTPのキーを生成してデータベースに保存する
+  final TotpKey createTotpKey;
+
+  /// `MutationCreateTotpKey` を複製する
+  @useResult
+  MutationCreateTotpKey copyWith({
+    TotpKey? createTotpKey,
+  }) {
+    return MutationCreateTotpKey(
+        createTotpKey: createTotpKey ?? this.createTotpKey);
+  }
+
+  /// `MutationCreateTotpKey` のフィールドを変更したものを新しく返す
+  @useResult
+  MutationCreateTotpKey updateFields({
+    TotpKey Function(TotpKey prevCreateTotpKey)? createTotpKey,
+  }) {
+    return MutationCreateTotpKey(
+        createTotpKey: ((createTotpKey == null)
+            ? this.createTotpKey
+            : createTotpKey(this.createTotpKey)));
+  }
+
+  @override
+  @useResult
+  int get hashCode {
+    return createTotpKey.hashCode;
+  }
+
+  @override
+  @useResult
+  bool operator ==(
+    Object other,
+  ) {
+    return (other is MutationCreateTotpKey) &&
+        (createTotpKey == other.createTotpKey);
+  }
+
+  @override
+  @useResult
+  String toString() {
+    return 'MutationCreateTotpKey(createTotpKey: $createTotpKey, )';
+  }
+
+  /// JsonValue から MutationCreateTotpKeyを生成する. 失敗した場合はエラーが発生する
+  static MutationCreateTotpKey fromJsonValue(
+    narumincho_json.JsonValue value,
+  ) {
+    return MutationCreateTotpKey(
+        createTotpKey: TotpKey.fromJsonValue(
+            value.getObjectValueOrThrow('createTotpKey')));
   }
 }
 

@@ -16,37 +16,42 @@ class _SignUpDialogState extends State<SignUpDialog> {
   Widget build(BuildContext context) {
     return AlertDialog(
       title: const Text('新規登録'),
-      content: Padding(
-        padding: const EdgeInsets.all(16),
-        child: switch (accountCodeAndDisplayName) {
-          null => InputAccountCodeAndDisplayName(
-              onCompleted: (e) {
-                setState(() {
-                  accountCodeAndDisplayName = e;
-                });
-              },
-            ),
-          final result => Column(children: [
-              TextButton(
-                  onPressed: () {
-                    setState(() {
-                      accountCodeAndDisplayName = null;
-                    });
-                  },
-                  child: const Icon(Icons.arrow_back)),
-              Text('ここに${result.accountCode.value}のQRコードを表示したい'),
-              TextFormField(
-                decoration: const InputDecoration(
-                  labelText: '認証アプリで表示されたコード',
+      content: Container(
+        constraints: const BoxConstraints(maxWidth: 400),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: switch (accountCodeAndDisplayName) {
+            null => InputAccountCodeAndDisplayName(
+                onCompleted: (e) {
+                  setState(() {
+                    accountCodeAndDisplayName = e;
+                  });
+                },
+              ),
+            final result => Column(children: [
+                Row(children: [
+                  TextButton(
+                      onPressed: () {
+                        setState(() {
+                          accountCodeAndDisplayName = null;
+                        });
+                      },
+                      child: const Icon(Icons.arrow_back))
+                ]),
+                Text('ここに${result.accountCode.value}のQRコードを表示したい'),
+                TextFormField(
+                  decoration: const InputDecoration(
+                    labelText: '認証アプリで表示されたコード',
+                  ),
                 ),
-              ),
-              const SizedBox(height: 16),
-              const ElevatedButton(
-                onPressed: null,
-                child: Text('新規登録'),
-              ),
-            ]),
-        },
+                const SizedBox(height: 16),
+                const ElevatedButton(
+                  onPressed: null,
+                  child: Text('新規登録'),
+                ),
+              ]),
+          },
+        ),
       ),
     );
   }
@@ -57,9 +62,11 @@ class InputAccountCodeAndDisplayNameResult {
   const InputAccountCodeAndDisplayNameResult({
     required this.accountCode,
     required this.displayName,
+    required this.totpKey,
   });
   final AccountCode accountCode;
   final String displayName;
+  final TotpKey totpKey;
 }
 
 /// アカウントコードと表示名を入力する画面
@@ -80,8 +87,9 @@ class _InputAccountCodeAndDisplayNameState
     extends State<InputAccountCodeAndDisplayName> {
   final TextEditingController _accountCodeController = TextEditingController();
   final TextEditingController _displayNameController = TextEditingController();
-  RequestingAccountCodeResult _requestingAccountCodeResult =
-      const RequestingAccountCodeResultNone();
+  RequestStateAccountCodeResult _requestingAccountCodeResult =
+      const RequestStateAccountCodeResultNone();
+  RequestStateTotp _requestStateTotp = const RequestStateTotpNone();
 
   @override
   void initState() {
@@ -91,13 +99,13 @@ class _InputAccountCodeAndDisplayNameState
       if (accountCode == null) {
         setState(() {
           _requestingAccountCodeResult =
-              const RequestingAccountCodeResultError();
+              const RequestStateAccountCodeResultError();
         });
         return;
       }
       setState(() {
         _requestingAccountCodeResult =
-            RequestingAccountCodeResultRequesting(accountCode);
+            RequestStateAccountCodeResultRequesting(accountCode);
       });
       Api.accountByCode(
         code: accountCode,
@@ -106,12 +114,12 @@ class _InputAccountCodeAndDisplayNameState
       ).then(
         (response) {
           switch (_requestingAccountCodeResult) {
-            case RequestingAccountCodeResultNone():
-            case RequestingAccountCodeResultError():
-            case RequestingAccountCodeResultSuccess():
+            case RequestStateAccountCodeResultNone():
+            case RequestStateAccountCodeResultError():
+            case RequestStateAccountCodeResultSuccess():
             case RequestingAccountCodeResultDuplicate():
               return;
-            case RequestingAccountCodeResultRequesting(:final code):
+            case RequestStateAccountCodeResultRequesting(:final code):
               if (code == accountCode) {
                 if (response.accountByCode == null) {
                   setState(() {
@@ -122,7 +130,7 @@ class _InputAccountCodeAndDisplayNameState
                 }
                 setState(() {
                   _requestingAccountCodeResult =
-                      RequestingAccountCodeResultSuccess(accountCode);
+                      RequestStateAccountCodeResultSuccess(accountCode);
                 });
               }
           }
@@ -130,87 +138,151 @@ class _InputAccountCodeAndDisplayNameState
         onError: (error) {
           setState(() {
             _requestingAccountCodeResult =
-                RequestingAccountCodeResultSuccess(accountCode);
+                RequestStateAccountCodeResultSuccess(accountCode);
           });
         },
       );
+    });
+    _displayNameController.addListener(() {
+      setState(() {});
     });
   }
 
   @override
   Widget build(BuildContext context) {
+    final displayNameValid = _displayNameController.text.trim().isNotEmpty;
+
     return Column(
       children: [
         TextFormField(
           controller: _accountCodeController,
           decoration: InputDecoration(
               labelText: 'アカウントコード (識別用名前)',
-              helperText: '2文字以上31以内の半角英数字と_.のみ',
+              helperText: '${switch (_requestingAccountCodeResult) {
+                RequestStateAccountCodeResultRequesting() => '確認中...',
+                RequestStateAccountCodeResultSuccess() => '使用可能です',
+                _ => '',
+              }} 2文字以上31以内の半角英数字と_.のみ ',
               helperStyle: const TextStyle(fontSize: 12),
               counterText: '${_accountCodeController.text.trim().length}',
               errorText: switch (_requestingAccountCodeResult) {
-                RequestingAccountCodeResultNone() => null,
-                RequestingAccountCodeResultError() => '2文字以上31以内の半角英数字と_.のみ',
-                RequestingAccountCodeResultRequesting() => null,
-                RequestingAccountCodeResultSuccess() => null,
+                RequestStateAccountCodeResultNone() => null,
+                RequestStateAccountCodeResultError() => '2文字以上31以内の半角英数字と_.のみ',
+                RequestStateAccountCodeResultRequesting() => null,
+                RequestStateAccountCodeResultSuccess() => null,
                 RequestingAccountCodeResultDuplicate() => '重複しています',
               }),
         ),
         TextFormField(
           controller: _displayNameController,
-          decoration: const InputDecoration(
+          decoration: InputDecoration(
             labelText: '表示名',
+            helperText: '1文字以上',
+            counterText: '${_displayNameController.text.trim().length}',
+            error: displayNameValid ? null : const Text('1文字以上'),
           ),
         ),
         const SizedBox(height: 16),
         ElevatedButton(
           onPressed: switch ((
             _requestingAccountCodeResult,
-            _displayNameController.text.trim().isEmpty
+            displayNameValid,
+            _requestStateTotp,
           )) {
-            (RequestingAccountCodeResultSuccess(:final code), false) => () {
-                widget.onCompleted(InputAccountCodeAndDisplayNameResult(
-                    accountCode: code,
-                    displayName: _displayNameController.text.trim()));
+            (
+              RequestStateAccountCodeResultSuccess(:final code),
+              true,
+              RequestStateTotpNone(),
+            ) =>
+              () async {
+                setState(() {
+                  _requestStateTotp = const RequestStateTotpRequesting();
+                });
+                try {
+                  final totpKey = (await Api.createTotpKey(
+                    Uri.parse('http://localhost:8000'),
+                    null,
+                  ))
+                      .createTotpKey;
+                  widget.onCompleted(
+                    InputAccountCodeAndDisplayNameResult(
+                      accountCode: code,
+                      displayName: _displayNameController.text.trim(),
+                      totpKey: totpKey,
+                    ),
+                  );
+                } catch (error) {
+                  setState(() {
+                    _requestStateTotp = RequestStateTotpError(error);
+                  });
+                }
               },
-            (_, _) => null,
+            (_, _, _) => null,
           },
-          child: const Text('次へ'),
+          child: switch (_requestStateTotp) {
+            RequestStateTotpNone() => const Text('次へ'),
+            RequestStateTotpRequesting() => const Text('鍵を作成中...'),
+            RequestStateTotpError() => const Text('次へ'),
+          },
         ),
+        switch (_requestStateTotp) {
+          RequestStateTotpNone() => const SizedBox(),
+          RequestStateTotpRequesting() => const SizedBox(),
+          RequestStateTotpError(:final error) => Text('$error'),
+        },
       ],
     );
   }
 }
 
 @immutable
-sealed class RequestingAccountCodeResult {
-  const RequestingAccountCodeResult();
+sealed class RequestStateAccountCodeResult {
+  const RequestStateAccountCodeResult();
 }
 
-class RequestingAccountCodeResultNone implements RequestingAccountCodeResult {
-  const RequestingAccountCodeResultNone();
+class RequestStateAccountCodeResultNone
+    implements RequestStateAccountCodeResult {
+  const RequestStateAccountCodeResultNone();
 }
 
-class RequestingAccountCodeResultError implements RequestingAccountCodeResult {
-  const RequestingAccountCodeResultError();
+class RequestStateAccountCodeResultError
+    implements RequestStateAccountCodeResult {
+  const RequestStateAccountCodeResultError();
 }
 
-class RequestingAccountCodeResultRequesting
-    implements RequestingAccountCodeResult {
-  const RequestingAccountCodeResultRequesting(this.code);
+class RequestStateAccountCodeResultRequesting
+    implements RequestStateAccountCodeResult {
+  const RequestStateAccountCodeResultRequesting(this.code);
   final AccountCode code;
 }
 
-class RequestingAccountCodeResultSuccess
-    implements RequestingAccountCodeResult {
-  const RequestingAccountCodeResultSuccess(this.code);
+class RequestStateAccountCodeResultSuccess
+    implements RequestStateAccountCodeResult {
+  const RequestStateAccountCodeResultSuccess(this.code);
   final AccountCode code;
 }
 
 class RequestingAccountCodeResultDuplicate
-    implements RequestingAccountCodeResult {
+    implements RequestStateAccountCodeResult {
   const RequestingAccountCodeResultDuplicate(this.code);
   final AccountCode code;
 }
 
-enum Step { inputAccountCode, logInCheck }
+@immutable
+sealed class RequestStateTotp {
+  const RequestStateTotp();
+}
+
+class RequestStateTotpNone implements RequestStateTotp {
+  const RequestStateTotpNone();
+}
+
+class RequestStateTotpRequesting implements RequestStateTotp {
+  const RequestStateTotpRequesting();
+}
+
+class RequestStateTotpError implements RequestStateTotp {
+  const RequestStateTotpError(this.error);
+
+  final Object error;
+}
