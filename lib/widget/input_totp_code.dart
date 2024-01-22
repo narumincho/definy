@@ -1,3 +1,4 @@
+import 'package:definy/env.dart';
 import 'package:definy/graphql/api.dart';
 import 'package:definy/graphql/type.dart';
 import 'package:definy/widget/input_account_code_and_display_name.dart';
@@ -31,7 +32,7 @@ class _InputTotpCodeState extends State<InputTotpCode> {
       final totpCode = TotpCode.fromString(_totpCodeController.text);
       if (totpCode != null) {
         Api.createAccount(
-          Uri.parse('http://localhost:8000'),
+          originUri,
           null,
           totpCode: totpCode,
           displayName: widget.beforeResult.displayName,
@@ -89,7 +90,7 @@ class _InputTotpCodeState extends State<InputTotpCode> {
                   _requestState = const _RequestStateRequesting();
                 });
                 final response = await Api.createAccount(
-                  Uri.parse('http://localhost:8000'),
+                  originUri,
                   null,
                   totpKeyId: widget.beforeResult.totpKey.id,
                   totpCode: totpCode,

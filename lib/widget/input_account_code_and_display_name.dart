@@ -1,3 +1,4 @@
+import 'package:definy/env.dart';
 import 'package:definy/graphql/api.dart';
 import 'package:definy/graphql/type.dart';
 import 'package:flutter/material.dart';
@@ -54,7 +55,7 @@ class _InputAccountCodeAndDisplayNameState
       });
       Api.accountByCode(
         code: accountCode,
-        Uri.parse('http://127.0.0.1:8000/graphql'),
+        originUri,
         null,
       ).then(
         (response) {
@@ -149,7 +150,7 @@ class _InputAccountCodeAndDisplayNameState
                 });
                 try {
                   final totpKey = (await Api.createTotpKey(
-                    Uri.parse('http://localhost:8000'),
+                    originUri,
                     null,
                   ))
                       .createTotpKey;
