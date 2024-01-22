@@ -21,6 +21,7 @@ class InputTotpCode extends StatefulWidget {
 
 class _InputTotpCodeState extends State<InputTotpCode> {
   final TextEditingController _totpCodeController = TextEditingController();
+  _RequestState _requestState = const _RequestStateNone();
 
   @override
   void initState() {
@@ -43,6 +44,8 @@ class _InputTotpCodeState extends State<InputTotpCode> {
 
   @override
   Widget build(BuildContext context) {
+    final totpCode = TotpCode.fromString(_totpCodeController.text.trim());
+
     final uri = Uri(
       scheme: 'otpauth',
       host: 'totp',
@@ -53,10 +56,17 @@ class _InputTotpCodeState extends State<InputTotpCode> {
       },
     );
     return Column(children: [
-      // QrImageView(
-      //   data: uri.toString(),
-      //   size: 200,
-      // ),
+      const SelectableText(
+        'Google AuthenticatorやOracle Mobile Authenticatorなどで以下のリンクをクリックか、QRコードを読み取ってキーを保存してください',
+      ),
+      SizedBox(
+        width: 200,
+        height: 200,
+        child: QrImageView(
+          data: uri.toString(),
+          size: 200,
+        ),
+      ),
       Link(
         uri: uri,
         builder: (context, followLink) => TextButton(
@@ -67,20 +77,70 @@ class _InputTotpCodeState extends State<InputTotpCode> {
       TextFormField(
         controller: _totpCodeController,
         decoration: const InputDecoration(
-          labelText: '認証アプリで表示されたコード',
+          labelText: '認証アプリで表示された6桁のコード',
         ),
       ),
       const SizedBox(height: 16),
       ElevatedButton(
-        onPressed: () {
-          final totpCode = TotpCode.fromString(_totpCodeController.text);
-          if (totpCode == null) {
-            return;
-          }
-          widget.onCompleted();
-        },
-        child: const Text('新規登録'),
+        onPressed: totpCode == null || _requestState is _RequestStateRequesting
+            ? null
+            : () async {
+                setState(() {
+                  _requestState = const _RequestStateRequesting();
+                });
+                final response = await Api.createAccount(
+                  Uri.parse('http://localhost:8000'),
+                  null,
+                  totpKeyId: widget.beforeResult.totpKey.id,
+                  totpCode: totpCode,
+                  accountCode: widget.beforeResult.accountCode,
+                  displayName: widget.beforeResult.displayName,
+                );
+                switch (response.createAccount) {
+                  case CreateAccountNotFoundTotpKeyId():
+                    setState(() {
+                      _requestState =
+                          const _RequestStateError('totpKeyIdが見つかりませんでした');
+                    });
+                    return;
+                  case CreateAccountDuplicateCode():
+                    setState(() {
+                      _requestState =
+                          const _RequestStateError('accountCodeが重複しています');
+                    });
+                    return;
+                  case CreateAccountInvalidCode():
+                    setState(() {
+                      _requestState = const _RequestStateError('totpCodeが不正です');
+                    });
+                    return;
+                  case CreateAccountResultOk():
+                    widget.onCompleted();
+                }
+              },
+        child: Text(_requestState is _RequestStateRequesting
+            ? 'アカウント ${widget.beforeResult.accountCode} を作成中...'
+            : '新規登録'),
       ),
     ]);
   }
+}
+
+@immutable
+sealed class _RequestState {
+  const _RequestState();
+}
+
+class _RequestStateNone extends _RequestState {
+  const _RequestStateNone();
+}
+
+class _RequestStateRequesting extends _RequestState {
+  const _RequestStateRequesting();
+}
+
+class _RequestStateError extends _RequestState {
+  const _RequestStateError(this.error);
+
+  final Object error;
 }
