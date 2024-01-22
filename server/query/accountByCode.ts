@@ -18,10 +18,10 @@ export const accountByCode: g.GraphQLFieldConfig<
   description: "",
   type: Account,
   resolve: async (_, args, { denoKv }): Promise<{ readonly id: AccountId }> => {
-    const accountId = await getAccountByCodeResolve({
+    const accountId = (await getAccountByCodeResolve({
       accountCode: args.code,
       denoKv,
-    });
+    })).value;
     if (accountId === null) {
       throw new Error("アカウントが見つかりませんでした");
     }
@@ -31,10 +31,10 @@ export const accountByCode: g.GraphQLFieldConfig<
 
 export const getAccountByCodeResolve = async (
   parameter: { readonly accountCode: AccountCode; readonly denoKv: Deno.Kv },
-): Promise<AccountId | null> => {
+): Promise<Deno.KvEntryMaybe<AccountId>> => {
   return (await parameter.denoKv.get<AccountId>([
     "cache",
     "accountByCode",
     parameter.accountCode,
-  ])).value;
+  ]));
 };

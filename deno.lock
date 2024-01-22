@@ -3,6 +3,7 @@
   "packages": {
     "specifiers": {
       "npm:@narumincho/simple-graphql-server-common@0.1.2": "npm:@narumincho/simple-graphql-server-common@0.1.2",
+      "npm:dataloader": "npm:dataloader@2.2.2",
       "npm:graphql": "npm:graphql@16.8.1",
       "npm:graphql-http": "npm:graphql-http@1.22.0_graphql@16.8.1"
     },
@@ -12,6 +13,10 @@
         "dependencies": {
           "graphql": "graphql@16.8.1"
         }
+      },
+      "dataloader@2.2.2": {
+        "integrity": "sha512-8YnDaaf7N3k/q5HnTJVuzSyLETjoZjVmHc4AeKAzOvKHEFQKcn64OKBfzHYtE9zGjctNM7V9I0MfnUVLpi7M5g==",
+        "dependencies": {}
       },
       "graphql-http@1.22.0_graphql@16.8.1": {
         "integrity": "sha512-9RBUlGJWBFqz9LwfpmAbjJL/8j/HCNkZwPBU5+Bfmwez+1Ay43DocMNQYpIWsWqH0Ftv6PTNAh2aRnnMCBJgLw==",
