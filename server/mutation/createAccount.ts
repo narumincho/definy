@@ -6,7 +6,6 @@ import { AccountDisplayName } from "../type/accountDisplayName.ts";
 import { getAccountByCodeResolve } from "../query/accountByCode.ts";
 import { TotpKeyId } from "../type/id.ts";
 import { CreateAccountResult } from "../type/createAccountResult.ts";
-import { TotpSecret } from "../type/totpSecret.ts";
 import { TotpCode } from "../type/totpCode.ts";
 import { TOTP } from "https://deno.land/x/totp@1.0.1/totp.ts";
 import {
@@ -14,6 +13,7 @@ import {
   cacheAccountByCodeKey,
   entityKey,
   temporaryTotpKeyKey,
+  TemporaryTotpKeyValue,
 } from "../kv.ts";
 
 export const createAccount: g.GraphQLFieldConfig<
@@ -56,9 +56,10 @@ export const createAccount: g.GraphQLFieldConfig<
         accountCode: args.accountCode,
       };
     }
-    const totpKey =
-      (await denoKv.get<TotpSecret>(["temporaryTotpKey", args.totpKeyId]))
-        .value;
+    const totpKey = (await denoKv.get<TemporaryTotpKeyValue>(
+      temporaryTotpKeyKey(args.totpKeyId),
+    ))
+      .value;
     if (totpKey === null) {
       return {
         __typename: "CreateAccountNotFoundTotpKeyId",

@@ -2,7 +2,7 @@ import * as g from "npm:graphql";
 import { now } from "./query/now.ts";
 import { createAccount } from "./mutation/createAccount.ts";
 import { accountByCode } from "./query/accountByCode.ts";
-import { createTotpKey } from "./mutation/createPreAccount.ts";
+import { createTotpKey } from "./mutation/createTotpKey.ts";
 import { entities } from "./query/entities.ts";
 
 const query = new g.GraphQLObjectType({

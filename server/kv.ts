@@ -1,6 +1,7 @@
 import { AccountCode } from "./type/accountCode.ts";
 import { AccountDisplayName } from "./type/accountDisplayName.ts";
 import { TotpKeyId } from "./type/id.ts";
+import { TotpSecret } from "./type/totpSecret.ts";
 
 export type Idea = {
   readonly title: string;
@@ -34,7 +35,7 @@ export const temporaryTotpKeyKey = (
   totpKeyId: TotpKeyId,
 ) => ["temporaryTotpKey", totpKeyId];
 
-export type temporaryTotpKeyValue = {};
+export type TemporaryTotpKeyValue = TotpSecret;
 
 export const cacheAccountByCodeKey = (
   accountCode: AccountCode,
