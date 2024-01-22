@@ -1,7 +1,8 @@
 import { AccountCode } from "./type/accountCode.ts";
 import { AccountDisplayName } from "./type/accountDisplayName.ts";
-import { TotpKeyId } from "./type/id.ts";
+import { AccountId, TotpKeyId } from "./type/id.ts";
 import { TotpSecret } from "./type/totpSecret.ts";
+import { ClientKey } from "./type/clientKey.ts";
 
 export type Idea = {
   readonly title: string;
@@ -29,6 +30,11 @@ export type Account = {
   readonly displayName: AccountDisplayName;
   readonly code: AccountCode;
   readonly createDateTime: Date;
+  readonly clients: ReadonlyArray<{
+    readonly key: ClientKey;
+    readonly name: string;
+    readonly issueDateTime: Date;
+  }>;
 };
 
 export const temporaryTotpKeyKey = (
@@ -41,4 +47,10 @@ export const cacheAccountByCodeKey = (
   accountCode: AccountCode,
 ) => ["cache", "accountByCode", accountCode];
 
-export type CacheAccountByCodeValue = string;
+export type CacheAccountByCodeValue = AccountId;
+
+export const cacheAccountByClientKeyKey = (
+  clientKey: ClientKey,
+) => ["cache", "accountByClientKey", clientKey];
+
+export type CacheAccountByClientKeyValue = AccountId;

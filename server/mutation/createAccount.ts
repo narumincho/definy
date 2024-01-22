@@ -15,6 +15,9 @@ import {
   temporaryTotpKeyKey,
   TemporaryTotpKeyValue,
 } from "../kv.ts";
+import { createClientKey } from "../type/clientKey.ts";
+import { cacheAccountByClientKeyKey } from "../kv.ts";
+import { CacheAccountByClientKeyValue } from "../kv.ts";
 
 export const createAccount: g.GraphQLFieldConfig<
   void,
@@ -81,6 +84,7 @@ export const createAccount: g.GraphQLFieldConfig<
     );
     const accountId = accountIdFrom(crypto.randomUUID().replaceAll("-", ""));
     const createDateTime = new Date();
+    const clientKey = createClientKey();
     const result = await denoKv.atomic().check({
       key: cacheAccountByCodeKey(args.accountCode),
       versionstamp: null,
@@ -92,8 +96,19 @@ export const createAccount: g.GraphQLFieldConfig<
           code: args.accountCode,
           displayName,
           createDateTime,
+          clients: [{
+            key: clientKey,
+            name: "initial client",
+            issueDateTime: createDateTime,
+          }],
         } satisfies Account,
-      ).set(cacheAccountByCodeKey(args.accountCode), accountId).commit();
+      ).set(
+        cacheAccountByCodeKey(args.accountCode),
+        accountId satisfies CacheAccountByClientKeyValue,
+      ).set(
+        cacheAccountByClientKeyKey(clientKey),
+        accountId satisfies CacheAccountByClientKeyValue,
+      ).commit();
     if (!result.ok) {
       return {
         __typename: "CreateAccountDuplicateCode",
@@ -110,6 +125,7 @@ export const createAccount: g.GraphQLFieldConfig<
         displayName: displayName,
         createDateTime,
       },
+      clientKey,
     };
   },
   description: "アカウントを作成する",

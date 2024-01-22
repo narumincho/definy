@@ -2,6 +2,7 @@ import * as g from "npm:graphql";
 import { TotpKeyId } from "./id.ts";
 import { AccountCode } from "./accountCode.ts";
 import { Account } from "./account.ts";
+import { ClientKey } from "./clientKey.ts";
 
 export type CreateAccountDuplicateCode = {
   readonly __typename: "CreateAccountDuplicateCode";
@@ -54,6 +55,7 @@ export const CreateAccountInvalidCode = new g.GraphQLObjectType({
 export type CreateAccountResultOk = {
   readonly __typename: "CreateAccountResultOk";
   readonly account: Account;
+  readonly clientKey: ClientKey;
 };
 
 export const CreateAccountResultOk = new g.GraphQLObjectType({
@@ -62,6 +64,10 @@ export const CreateAccountResultOk = new g.GraphQLObjectType({
   fields: {
     account: {
       type: new g.GraphQLNonNull(Account),
+      description: "",
+    },
+    clientKey: {
+      type: new g.GraphQLNonNull(ClientKey),
       description: "",
     },
   },
