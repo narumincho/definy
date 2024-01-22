@@ -1,5 +1,4 @@
 import * as g from "npm:graphql";
-import { Entity } from "../type/entity.ts";
 import { Context } from "../context.ts";
 import { entityKeyPrefix, EntityValue, pickEntityKeyId } from "../kv.ts";
 import { Cursor, cursorFrom } from "../type/cursor.ts";
@@ -24,7 +23,7 @@ export const entities: g.GraphQLFieldConfig<
     },
   },
   description: "Entity一覧",
-  type: Entity,
+  type: EntityPage,
   resolve: async (
     _,
     { cursor, size },
