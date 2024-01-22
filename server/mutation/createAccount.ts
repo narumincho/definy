@@ -6,9 +6,15 @@ import { AccountDisplayName } from "../type/accountDisplayName.ts";
 import { getAccountByCodeResolve } from "../query/accountByCode.ts";
 import { TotpKeyId } from "../type/id.ts";
 import { CreateAccountResult } from "../type/createAccountResult.ts";
-import { TotpSecret } from "../type/totpSecret.ts";
 import { TotpCode } from "../type/totpCode.ts";
 import { TOTP } from "https://deno.land/x/totp@1.0.1/totp.ts";
+import {
+  Account,
+  cacheAccountByCodeKey,
+  entityKey,
+  temporaryTotpKeyKey,
+  TemporaryTotpKeyValue,
+} from "../kv.ts";
 
 export const createAccount: g.GraphQLFieldConfig<
   void,
@@ -40,19 +46,20 @@ export const createAccount: g.GraphQLFieldConfig<
   },
   type: new g.GraphQLNonNull(CreateAccountResult),
   resolve: async (_, args, { denoKv }): Promise<CreateAccountResult> => {
-    const existingAccountId = await getAccountByCodeResolve({
+    const existingAccountId = (await getAccountByCodeResolve({
       accountCode: args.accountCode,
       denoKv,
-    });
+    })).value;
     if (existingAccountId !== null) {
       return {
         __typename: "CreateAccountDuplicateCode",
         accountCode: args.accountCode,
       };
     }
-    const totpKey =
-      (await denoKv.get<TotpSecret>(["temporaryTotpKey", args.totpKeyId]))
-        .value;
+    const totpKey = (await denoKv.get<TemporaryTotpKeyValue>(
+      temporaryTotpKeyKey(args.totpKeyId),
+    ))
+      .value;
     if (totpKey === null) {
       return {
         __typename: "CreateAccountNotFoundTotpKeyId",
@@ -74,17 +81,30 @@ export const createAccount: g.GraphQLFieldConfig<
     );
     const accountId = accountIdFrom(crypto.randomUUID().replaceAll("-", ""));
     const createDateTime = new Date();
-    await denoKv.atomic().delete(["temporaryTotpKey", args.totpKeyId]).set([
-      "account",
-      accountId,
-    ], {
-      code: args.accountCode,
-      displayName,
-      createDateTime,
-    }).set(["cache", "accountByCode", args.accountCode], accountId).commit();
+    const result = await denoKv.atomic().check({
+      key: cacheAccountByCodeKey(args.accountCode),
+      versionstamp: null,
+    }).delete(temporaryTotpKeyKey(args.totpKeyId))
+      .set(
+        entityKey(accountId),
+        {
+          type: "account",
+          code: args.accountCode,
+          displayName,
+          createDateTime,
+        } satisfies Account,
+      ).set(cacheAccountByCodeKey(args.accountCode), accountId).commit();
+    if (!result.ok) {
+      return {
+        __typename: "CreateAccountDuplicateCode",
+        accountCode: args.accountCode,
+      };
+    }
+
     return {
       __typename: "CreateAccountResultOk",
       account: {
+        __typename: "Account",
         id: accountId,
         code: args.accountCode,
         displayName: displayName,

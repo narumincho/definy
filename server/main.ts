@@ -3,7 +3,9 @@ import { createHandler } from "npm:graphql-http/lib/use/fetch";
 import { Context, createContext } from "./context.ts";
 import { schema } from "./schema.ts";
 
-export const startDefinyServer = () => {
+export const startDefinyServer = (parameter: {
+  readonly denoKvDatabasePath: string | undefined;
+}) => {
   Deno.serve(async (request) => {
     const cors = supportCrossOriginResourceSharing(request);
     if (cors.type === "skipMainProcess") {
@@ -25,6 +27,7 @@ export const startDefinyServer = () => {
       context: () =>
         createContext({
           authHeaderValue: request.headers.get("authorization") ?? undefined,
+          denoKvDatabasePath: parameter.denoKvDatabasePath,
         }),
     })(request);
     for (const [key, value] of cors.headers.entries()) {

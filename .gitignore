@@ -46,3 +46,4 @@ app.*.map.json
 
 /.fvm/flutter_sdk
 /script/startInLocal.ts
+/local.sqlite*

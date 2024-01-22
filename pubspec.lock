@@ -273,18 +273,18 @@ packages:
     dependency: transitive
     description:
       name: simple_dart_code_gen
-      sha256: d200aed091c7392c62cc1d5fb99fed81ef343efdcd9162a49d0e34ade35d696b
+      sha256: "44789d9d52ce9ddf5982b71b221bf0829e968f3581a52d88b114bc3f13221a7a"
       url: "https://pub.dev"
     source: hosted
-    version: "0.5.4"
+    version: "0.6.1"
   simple_graphql_client_gen:
     dependency: "direct main"
     description:
       name: simple_graphql_client_gen
-      sha256: "42de566c47469e7adf5c7f9de7060916d199be63820d0224b968de9cc721a17f"
+      sha256: f4294f483f3fc77be38adcc844e2b57560a0348afe18a5d7c1b4e80043fc54d5
       url: "https://pub.dev"
     source: hosted
-    version: "0.7.9"
+    version: "0.8.0"
   sky_engine:
     dependency: transitive
     description: flutter

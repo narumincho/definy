@@ -16,7 +16,9 @@
         "--inspect",
         "--check",
         "--unstable",
-        "--allow-net=:8000"
+        "--allow-net=:8000",
+        "--allow-read=local.sqlite*",
+        "--allow-write=local.sqlite*"
       ],
       "program": "${workspaceFolder}/script/startInLocal.ts",
       "attachSimplePort": 9229

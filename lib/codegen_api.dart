@@ -4,21 +4,74 @@ import 'dart:io';
 
 import 'package:definy/graphql/query.dart' as query;
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
+// ignore: depend_on_referenced_packages
 import 'package:simple_dart_code_gen/simple_dart_code_gen.dart';
 import 'package:simple_graphql_client_gen/query_string.dart';
 import 'package:simple_graphql_client_gen/simple_graphql_client_gen.dart';
 
 const IMap<String, GraphQLRootObject> _apiMap = IMapConst({
   'accountByCode': query.Query(
-    name: 'QueryAccountByCode',
-    IListConst([
-      query.Query_accountByCode(
-        code: Variable('code'),
-        query.Account(IListConst([
-          query.Account_id(),
-        ])),
+    'QueryAccountByCode',
+    IMapConst({}),
+    accountByCode: query.Query_accountByCode(
+      code: Variable('code'),
+      query.Account(
+        'AccountOnlyId',
+        IMapConst({}),
+        id: query.Account_id(),
       ),
-    ]),
+    ),
+  ),
+  'createTotpKey': query.Mutation(
+    'MutationCreateTotpKey',
+    IMapConst({}),
+    createTotpKey: query.Mutation_createTotpKey(query.TotpKeyAndId(
+      'TotpKey',
+      IMapConst({}),
+      id: query.TotpKeyAndId_id(),
+      secret: query.TotpKeyAndId_secret(),
+    )),
+  ),
+  'createAccount': query.Mutation(
+    'QueryCreateAccount',
+    IMapConst({}),
+    createAccount: query.Mutation_createAccount(
+      totpCode: Variable('totpCode'),
+      accountCode: Variable('accountCode'),
+      totpKeyId: Variable('totpKeyId'),
+      displayName: Variable('displayName'),
+      query.CreateAccountResult(
+        createAccountDuplicateCode: query.CreateAccountDuplicateCode(
+          'CreateAccountDuplicateCode',
+          IMapConst({}),
+          accountCode: query.CreateAccountDuplicateCode_accountCode(),
+        ),
+        createAccountInvalidCode: query.CreateAccountInvalidCode(
+          'CreateAccountInvalidCode',
+          IMapConst({}),
+          accountCode: query.CreateAccountInvalidCode_accountCode(),
+        ),
+        createAccountNotFoundTotpKeyId: query.CreateAccountNotFoundTotpKeyId(
+          'CreateAccountNotFoundTotpKeyId',
+          IMapConst({}),
+          keyId: query.CreateAccountNotFoundTotpKeyId_keyId(),
+        ),
+        createAccountResultOk: query.CreateAccountResultOk(
+          'CreateAccountResultOk',
+          IMapConst({}),
+          account: query.CreateAccountResultOk_account(
+            query.Account(
+              'Account',
+              IMapConst({}),
+              id: query.Account_id(),
+              code: query.Account_code(),
+              createDateTime: query.Account_createDateTime(),
+              displayName: query.Account_displayName(),
+            ),
+          ),
+        ),
+      ),
+    ),
   ),
 });
 
