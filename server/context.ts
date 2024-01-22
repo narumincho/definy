@@ -6,10 +6,11 @@ export type Context = {
   readonly kvDataLoader: DataLoader<string, Deno.KvEntryMaybe<EntityValue>>;
 };
 
-export const createContext = async (_parameter: {
+export const createContext = async (parameter: {
   readonly authHeaderValue: string | undefined;
+  readonly denoKvDatabasePath: string | undefined;
 }): Promise<Context> => {
-  const denoKv = await Deno.openKv();
+  const denoKv = await Deno.openKv(parameter.denoKvDatabasePath);
 
   return {
     denoKv,
