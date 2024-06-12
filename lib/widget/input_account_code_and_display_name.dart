@@ -128,8 +128,8 @@ class _InputAccountCodeAndDisplayNameState
             counterText:
                 '${displayName?.value.length ?? _displayNameController.text.trim().length}',
             error: displayName == null
-                ? null
-                : const Text('1文字以上64文字以内である必要があります'),
+                ? const Text('1文字以上64文字以内である必要があります')
+                : null,
           ),
         ),
         const SizedBox(height: 16),
