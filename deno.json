@@ -9,12 +9,8 @@
       "deno.unstable"
     ]
   },
-  "fmt": {
-    "include": ["**"],
-    "exclude": ["build/**", ".dart_tool/**", ".fvm/**"]
-  },
-  "lint": {
-    "include": ["**"],
-    "exclude": ["build/**", ".dart_tool/**", ".fvm/**"]
+  "tasks": {
+    "server-dev": "deno run --check --watch --allow-env --allow-net --allow-read --allow-write=./dist.json ./script/startInLocal.ts",
+    "client-build": "deno run --check --allow-env --allow-net --allow-read --allow-write=./dist.json ./script/buildClient.ts"
   }
 }

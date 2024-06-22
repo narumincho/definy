@@ -2,11 +2,45 @@ import { printSchema } from "npm:graphql";
 import { createHandler } from "npm:graphql-http/lib/use/fetch";
 import { Context, createContext } from "./context.ts";
 import { schema } from "./schema.ts";
+import { renderToString } from "https://esm.sh/react-dom@18.3.1/server";
+import * as React from "https://esm.sh/react@18.3.1";
+import { App } from "../client/main.tsx";
+import dist from "../dist.json" with { type: "json" };
 
 export const startDefinyServer = (parameter: {
   readonly denoKvDatabasePath: string | undefined;
 }) => {
   Deno.serve(async (request) => {
+    const pathname = new URL(request.url).pathname;
+    switch (pathname) {
+      case "/":
+        return new Response(
+          "<!doctype html>\n" + renderToString(
+            <html>
+              <head>
+                <title>definy</title>
+                <script type="module" src="/script" />
+              </head>
+              <body>
+                <div id="root">
+                  <App />
+                </div>
+              </body>
+            </html>,
+          ),
+          {
+            headers: {
+              "content-type": "text/html; charset=utf-8",
+            },
+          },
+        );
+      case "/script":
+        return new Response(dist.code, {
+          headers: {
+            "content-type": "application/javascript; charset=utf-8",
+          },
+        });
+    }
     const cors = supportCrossOriginResourceSharing(request);
     if (cors.type === "skipMainProcess") {
       return cors.response;
