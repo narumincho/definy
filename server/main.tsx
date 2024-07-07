@@ -41,13 +41,15 @@ dialog::backdrop {
                 }}
               >
                 <div id="root">
-                  <App
-                    state={0}
-                    privateKey={null}
-                    setState={() => {}}
-                    signUp={() => {}}
-                    copyPassword={() => {}}
-                  />
+                  <div>
+                    <App
+                      state={0}
+                      privateKey={null}
+                      setState={() => {}}
+                      signUp={() => {}}
+                      copyPassword={() => {}}
+                    />
+                  </div>
                 </div>
               </body>
             </html>,
