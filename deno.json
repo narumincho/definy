@@ -12,6 +12,6 @@
   },
   "tasks": {
     "server-dev": "deno run --check --watch --allow-env --allow-net --allow-read --allow-write=./dist.json ./script/startInLocal.ts",
-    "client-build": "deno run --check --allow-env --allow-net --allow-read --allow-write=./dist.json ./script/buildClient.ts"
+    "client-build": "deno run --check --allow-run --allow-env --allow-net --allow-read --allow-write=./dist.json --watch=client ./script/buildClient.ts"
   }
 }

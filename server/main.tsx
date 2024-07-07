@@ -4,7 +4,7 @@ import { Context, createContext } from "./context.ts";
 import { schema } from "./schema.ts";
 import { renderToString } from "npm:preact-render-to-string";
 import { h } from "https://esm.sh/preact@10.22.1?pin=v135";
-import { App } from "../client/main.tsx";
+import { App } from "../client/app.tsx";
 import dist from "../dist.json" with { type: "json" };
 
 export const startDefinyServer = (parameter: {
@@ -24,10 +24,23 @@ export const startDefinyServer = (parameter: {
               <head>
                 <title>definy</title>
                 <script type="module" src={`/${dist.clientJavaScriptHash}`} />
+                <style>
+                  {`
+dialog::backdrop {
+  backdrop-filter: blur(8px);
+}
+`}
+                </style>
               </head>
               <body>
                 <div id="root">
-                  <App state={0} setState={() => {}} />
+                  <App
+                    state={0}
+                    privateKey={null}
+                    setState={() => {}}
+                    signUp={() => {}}
+                    copyPassword={() => {}}
+                  />
                 </div>
               </body>
             </html>,
