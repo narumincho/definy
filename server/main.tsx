@@ -20,7 +20,9 @@ export const startDefinyServer = (parameter: {
       case "/":
         return new Response(
           "<!doctype html>\n" + renderToString(
-            <html>
+            <html
+              style={{ height: "100%" }}
+            >
               <head>
                 <title>definy</title>
                 <script type="module" src={`/${dist.clientJavaScriptHash}`} />
@@ -32,7 +34,12 @@ dialog::backdrop {
 `}
                 </style>
               </head>
-              <body>
+              <body
+                style={{
+                  margin: 0,
+                  height: "100%",
+                }}
+              >
                 <div id="root">
                   <App
                     state={0}

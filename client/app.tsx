@@ -19,7 +19,14 @@ export const App = (props: {
         gap: 16,
       }}
     >
-      <h1>definy</h1>
+      <h1
+        style={{
+          margin: 0,
+          padding: 16,
+        }}
+      >
+        definy
+      </h1>
       <button
         type="button"
         onClick={() => {
@@ -38,6 +45,10 @@ export const App = (props: {
           style={{
             width: "80%",
             boxShadow: "0px 20px 36px 0px rgba(0, 0, 0, 0.6)",
+            position: "absolute",
+            left: "50%",
+            top: "50%",
+            transform: "translate(-50%, -50%)",
           }}
         >
           <form
