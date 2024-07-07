@@ -46,6 +46,23 @@ export const SignUpDialog = (props: {
           gap: 16,
         }}
       >
+        <div
+          style={{
+            display: "flex",
+          }}
+        >
+          <h2
+            style={{
+              margin: 0,
+              flexGrow: 1,
+            }}
+          >
+            Sign Up
+          </h2>
+          <button type="button" onClick={props.onClose}>
+            x
+          </button>
+        </div>
         <label>
           <div>Username</div>
           <input type="text" />

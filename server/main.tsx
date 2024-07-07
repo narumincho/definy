@@ -31,6 +31,10 @@ export const startDefinyServer = (parameter: {
 dialog::backdrop {
   backdrop-filter: blur(8px);
 }
+
+:root {
+  color-scheme: dark;
+}
 `}
                 </style>
               </head>
