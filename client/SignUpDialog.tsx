@@ -14,8 +14,17 @@ export const SignUpDialog = (props: {
 
   useEffect(() => {
     ref.current?.addEventListener("close", props.onClose);
+    const clickHandler = (event: MouseEvent) => {
+      if (event.target instanceof HTMLElement) {
+        if (event.target.closest("form") === null) {
+          props.onClose();
+        }
+      }
+    };
+    ref.current?.addEventListener("click", clickHandler);
     return () => {
       ref.current?.removeEventListener("close", props.onClose);
+      ref.current?.removeEventListener("click", clickHandler);
     };
   }, [props.onClose, ref.current]);
 
