@@ -2,8 +2,8 @@ import { printSchema } from "npm:graphql";
 import { createHandler } from "npm:graphql-http/lib/use/fetch";
 import { Context, createContext } from "./context.ts";
 import { schema } from "./schema.ts";
-import { renderToString } from "https://esm.sh/react-dom@18.3.1/server";
-import * as React from "https://esm.sh/react@18.3.1";
+import { renderToString } from "npm:preact-render-to-string";
+import { h } from "https://esm.sh/preact@10.22.1?pin=v135";
 import { App } from "../client/main.tsx";
 import dist from "../dist.json" with { type: "json" };
 
@@ -11,6 +11,10 @@ export const startDefinyServer = (parameter: {
   readonly denoKvDatabasePath: string | undefined;
 }) => {
   Deno.serve(async (request) => {
+    const cors = supportCrossOriginResourceSharing(request);
+    if (cors.type === "skipMainProcess") {
+      return cors.response;
+    }
     const pathname = new URL(request.url).pathname;
     switch (pathname) {
       case "/":
@@ -19,11 +23,11 @@ export const startDefinyServer = (parameter: {
             <html>
               <head>
                 <title>definy</title>
-                <script type="module" src="/script" />
+                <script type="module" src={`/${dist.clientJavaScriptHash}`} />
               </head>
               <body>
                 <div id="root">
-                  <App />
+                  <App state={0} setState={() => {}} />
                 </div>
               </body>
             </html>,
@@ -34,16 +38,12 @@ export const startDefinyServer = (parameter: {
             },
           },
         );
-      case "/script":
-        return new Response(dist.code, {
+      case `/${dist.clientJavaScriptHash}`:
+        return new Response(dist.clientJavaScript, {
           headers: {
             "content-type": "application/javascript; charset=utf-8",
           },
         });
-    }
-    const cors = supportCrossOriginResourceSharing(request);
-    if (cors.type === "skipMainProcess") {
-      return cors.response;
     }
 
     if (request.headers.get("accept")?.includes("html")) {

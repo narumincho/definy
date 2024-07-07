@@ -2,6 +2,7 @@
   "deno.enable": true,
   "eslint.enable": false,
   "prettier.enable": false,
+  "editor.tabSize": 2,
   "editor.formatOnSave": true,
   "[json]": {
     "editor.defaultFormatter": "denoland.vscode-deno"
@@ -17,5 +18,5 @@
   },
   "[markdown]": {
     "editor.defaultFormatter": "denoland.vscode-deno"
-  },
+  }
 }

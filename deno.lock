@@ -3,17 +3,22 @@
   "packages": {
     "specifiers": {
       "jsr:@deno/cache-dir@0.8": "jsr:@deno/cache-dir@0.8.0",
+      "jsr:@deno/emit": "jsr:@deno/emit@0.41.0",
       "jsr:@deno/graph@^0.69.7": "jsr:@deno/graph@0.69.10",
       "jsr:@std/assert@^0.218.2": "jsr:@std/assert@0.218.2",
+      "jsr:@std/assert@^0.223.0": "jsr:@std/assert@0.223.0",
       "jsr:@std/bytes@^0.218.2": "jsr:@std/bytes@0.218.2",
+      "jsr:@std/encoding": "jsr:@std/encoding@0.224.3",
       "jsr:@std/fmt@^0.218.2": "jsr:@std/fmt@0.218.2",
       "jsr:@std/fs@^0.218.2": "jsr:@std/fs@0.218.2",
       "jsr:@std/io@^0.218.2": "jsr:@std/io@0.218.2",
       "jsr:@std/path@^0.218.2": "jsr:@std/path@0.218.2",
+      "jsr:@std/path@^0.223.0": "jsr:@std/path@0.223.0",
       "npm:@narumincho/simple-graphql-server-common@0.1.2": "npm:@narumincho/simple-graphql-server-common@0.1.2",
       "npm:dataloader": "npm:dataloader@2.2.2",
       "npm:graphql": "npm:graphql@16.8.1",
       "npm:graphql-http": "npm:graphql-http@1.22.0_graphql@16.8.1",
+      "npm:preact-render-to-string": "npm:preact-render-to-string@6.5.5_preact@10.22.1",
       "npm:react": "npm:react@18.3.1",
       "npm:react-dom": "npm:react-dom@18.3.1_react@18.3.1"
     },
@@ -28,14 +33,27 @@
           "jsr:@std/path@^0.218.2"
         ]
       },
+      "@deno/emit@0.41.0": {
+        "integrity": "174a2db3ae0bfa62a7c30bfabd740143ad60ea88880dbe6e8bb16b7baaeb519c",
+        "dependencies": [
+          "jsr:@deno/cache-dir@0.8",
+          "jsr:@std/path@^0.223.0"
+        ]
+      },
       "@deno/graph@0.69.10": {
         "integrity": "38fe22ac5686f6ece5daeec5a4df65c6314d7d32adcc33f77917a13cfaffa26f"
       },
       "@std/assert@0.218.2": {
         "integrity": "7f0a5a1a8cf86607cd6c2c030584096e1ffad27fc9271429a8cb48cfbdee5eaf"
       },
+      "@std/assert@0.223.0": {
+        "integrity": "eb8d6d879d76e1cc431205bd346ed4d88dc051c6366365b1af47034b0670be24"
+      },
       "@std/bytes@0.218.2": {
         "integrity": "91fe54b232dcca73856b79a817247f4a651dbb60d51baafafb6408c137241670"
+      },
+      "@std/encoding@0.224.3": {
+        "integrity": "5e861b6d81be5359fad4155e591acf17c0207b595112d1840998bb9f476dbdaf"
       },
       "@std/fmt@0.218.2": {
         "integrity": "99526449d2505aa758b6cbef81e7dd471d8b28ec0dcb1491d122b284c548788a"
@@ -54,6 +72,12 @@
         "integrity": "b568fd923d9e53ad76d17c513e7310bda8e755a3e825e6289a0ce536404e2662",
         "dependencies": [
           "jsr:@std/assert@^0.218.2"
+        ]
+      },
+      "@std/path@0.223.0": {
+        "integrity": "593963402d7e6597f5a6e620931661053572c982fc014000459edc1f93cc3989",
+        "dependencies": [
+          "jsr:@std/assert@^0.223.0"
         ]
       }
     },
@@ -87,6 +111,16 @@
         "dependencies": {
           "js-tokens": "js-tokens@4.0.0"
         }
+      },
+      "preact-render-to-string@6.5.5_preact@10.22.1": {
+        "integrity": "sha512-KiMFTKNTmT/ccE79BURR/r6XRc2I2TCTZ0MpeWqHW2XnllbeghXvwGsdAfF/MzMilUcTfODtSmMxgoRFL9TM5g==",
+        "dependencies": {
+          "preact": "preact@10.22.1"
+        }
+      },
+      "preact@10.22.1": {
+        "integrity": "sha512-jRYbDDgMpIb5LHq3hkI0bbl+l/TQ9UnkdQ0ww+lp+4MMOdqaUYdFc5qeyP+IV8FAd/2Em7drVPeKdQxsiWCf/A==",
+        "dependencies": {}
       },
       "react-dom@18.3.1_react@18.3.1": {
         "integrity": "sha512-5m4nQKp+rZRb09LNH59GM4BxTh9251/ylbKIbpe7TpGxfJ+9kv6BLkLBXIjjspbgbnIBNqlI23tRnTWT0snUIw==",
@@ -286,11 +320,17 @@
     "https://deno.land/x/totp@1.0.1/totp.ts": "5957de480d854f258aeed1f3acea59aabb677d7cb7b5fe48620857035f0cd344",
     "https://deno.land/x/wasmbuild@0.15.1/cache.ts": "9d01b5cb24e7f2a942bbd8d14b093751fa690a6cde8e21709ddc97667e6669ed",
     "https://deno.land/x/wasmbuild@0.15.1/loader.ts": "8c2fc10e21678e42f84c5135d8ab6ab7dc92424c3f05d2354896a29ccfd02a63",
+    "https://esm.sh/preact@10.22.1/hooks?pin=v135": "391c9f21c7d5f1a5725d96ba54bc903c0855c3c3727b54d6691fa9f8fa1ba488",
+    "https://esm.sh/preact@10.22.1?pin=v135": "c82def411ae2b4030ca15b6b19743ce83b8edb749c1ebc6014faa76b84acface",
     "https://esm.sh/react-dom@18.2.0": "f6b0d147f7c364819144f06e24839ed89354ce25d8b6608de57871130b19a0b2",
     "https://esm.sh/react-dom@18.3.1/client": "3e23a449c16029111f8fa64809dd83ea5f896a4065f956b6b6d87998854efa1e",
     "https://esm.sh/react-dom@18.3.1/server": "90e374c5323303d5315c780b19e5d6297ec5a569f9cee1df28ee1030dd23af9c",
+    "https://esm.sh/react-dom@18.3.1/server?pin=v135": "90e374c5323303d5315c780b19e5d6297ec5a569f9cee1df28ee1030dd23af9c",
     "https://esm.sh/react@18.2.0": "8950a34a030620fce8349d6bd3913b3bdb186c5ec7968fa5ba4d054e22d78e6c",
     "https://esm.sh/react@18.3.1": "52480d4c00855e4f76843caa4f2818eb001671523740cbf064cbd108721c29c8",
+    "https://esm.sh/react@18.3.1?pin=v135": "52480d4c00855e4f76843caa4f2818eb001671523740cbf064cbd108721c29c8",
+    "https://esm.sh/stable/preact@10.22.1/denonext/hooks.js": "5c79b37c4b13be590576ba53bd4093beb6e95c10ee475cddf5af5051a6e040fa",
+    "https://esm.sh/stable/preact@10.22.1/denonext/preact.mjs": "516caa8df1109e0b82becdb053e7d956802ee2f3e3fa7f6925291e4d4a527706",
     "https://esm.sh/stable/react@18.2.0/denonext/react.mjs": "3c4f23bcfc53b256fcfaf6f834fa9f584c3bb7be667b2682c6cb6ba8ef88f8e6",
     "https://esm.sh/stable/react@18.3.1/denonext/react.mjs": "fc048ffc55366baf7669519127d186761db72046e2bebf35fe8d0de3964defa3",
     "https://esm.sh/v135/react-dom@18.2.0/denonext/react-dom.mjs": "8191fc377ea7083cca5640699c4abd75de033089eb932799e29aa04bb136838f",
