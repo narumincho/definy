@@ -4,49 +4,21 @@ import {
   useRef,
 } from "https://esm.sh/preact@10.22.1/hooks?pin=v135";
 import { encodeBase64Url } from "jsr:@std/encoding/base64url";
+import { Dialog } from "./Dialog.tsx";
 
 export const SignUpDialog = (props: {
   readonly privateKey: Uint8Array | null;
   readonly copyPassword: () => void;
   readonly onClose: () => void;
 }): JSX.Element | null => {
-  const ref = useRef<HTMLDialogElement>(null);
-
-  useEffect(() => {
-    ref.current?.addEventListener("close", props.onClose);
-    const clickHandler = (event: MouseEvent) => {
-      if (event.target instanceof HTMLElement) {
-        if (event.target.closest("form") === null) {
-          props.onClose();
-        }
-      }
-    };
-    ref.current?.addEventListener("click", clickHandler);
-    return () => {
-      ref.current?.removeEventListener("close", props.onClose);
-      ref.current?.removeEventListener("click", clickHandler);
-    };
-  }, [props.onClose, ref.current]);
-
-  useEffect(() => {
-    if (props.privateKey === null) {
-      ref.current?.close();
-    } else {
-      ref.current?.showModal();
-    }
-  }, [props.privateKey]);
-
   if (props.privateKey === null) {
     return null;
   }
 
   return (
-    <dialog
-      ref={ref}
-      style={{
-        width: "80%",
-        boxShadow: "0px 20px 36px 0px rgba(0, 0, 0, 0.6)",
-      }}
+    <Dialog
+      isOpen={props.privateKey !== null}
+      onClose={props.onClose}
     >
       <form
         method="dialog"
@@ -74,7 +46,7 @@ export const SignUpDialog = (props: {
         </div>
         <label>
           <div>Username</div>
-          <input type="text" />
+          <input type="text" required={true} />
         </label>
         <label>
           <div>
@@ -93,6 +65,6 @@ export const SignUpDialog = (props: {
         </label>
         <button type="submit">Sign Up</button>
       </form>
-    </dialog>
+    </Dialog>
   );
 };
