@@ -6,6 +6,7 @@ import { renderToString } from "npm:preact-render-to-string";
 import { h } from "https://esm.sh/preact@10.22.1?pin=v135";
 import { App } from "../client/app.tsx";
 import dist from "../dist.json" with { type: "json" };
+import { vdomToHtml } from "../client/vdom.ts";
 
 export const startDefinyServer = (parameter: {
   readonly denoKvDatabasePath: string | undefined;
@@ -19,45 +20,75 @@ export const startDefinyServer = (parameter: {
     switch (pathname) {
       case "/":
         return new Response(
-          "<!doctype html>\n" + renderToString(
-            <html
-              style={{ height: "100%" }}
-            >
-              <head>
-                <title>definy</title>
-                <script type="module" src={`/${dist.clientJavaScriptHash}`} />
-                <style>
-                  {`
-dialog::backdrop {
+          vdomToHtml({
+            elementName: "html",
+            attributeMap: new Map([["style", "height: 100%"]]),
+            children: [
+              {
+                elementName: "head",
+                attributeMap: new Map(),
+                children: [
+                  {
+                    elementName: "title",
+                    attributeMap: new Map(),
+                    children: [],
+                  },
+                  {
+                    elementName: "script",
+                    attributeMap: new Map([
+                      ["type", "module"],
+                      ["src", `/${dist.clientJavaScriptHash}`],
+                    ]),
+                    children: [],
+                  },
+                  {
+                    elementName: "style",
+                    attributeMap: new Map(),
+                    children: `dialog::backdrop {
   backdrop-filter: blur(8px);
 }
 
 :root {
   color-scheme: dark;
 }
-`}
-                </style>
-              </head>
-              <body
-                style={{
-                  margin: 0,
-                  height: "100%",
-                }}
-              >
-                <div id="root">
-                  <div>
-                    <App
-                      state={0}
-                      privateKey={null}
-                      setState={() => {}}
-                      signUp={() => {}}
-                      copyPassword={() => {}}
-                    />
-                  </div>
-                </div>
-              </body>
-            </html>,
-          ),
+`,
+                  },
+                ],
+              },
+              {
+                elementName: "body",
+                attributeMap: new Map([["style", "margin:0; height:100%"]]),
+                children: [
+                  {
+                    elementName: "div",
+                    attributeMap: new Map([["id", "A"]]),
+                    children: "A",
+                  },
+                  {
+                    elementName: "div",
+                    attributeMap: new Map([["id", "B"]]),
+                    children: "B",
+                  },
+                  {
+                    elementName: "div",
+                    attributeMap: new Map([["id", "C"]]),
+                    children: [
+                      {
+                        elementName: "div",
+                        attributeMap: new Map([["id", "C-A"]]),
+                        children: "C-A",
+                      },
+                      {
+                        elementName: "div",
+                        attributeMap: new Map([["id", "C-B"]]),
+                        children: "C-B",
+                      },
+                    ],
+                  },
+                ],
+              },
+            ],
+          }),
           {
             headers: {
               "content-type": "text/html; charset=utf-8",

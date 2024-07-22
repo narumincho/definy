@@ -1,0 +1,4 @@
+const app = () => {
+};
+
+document.documentElement;

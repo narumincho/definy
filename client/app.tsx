@@ -11,6 +11,7 @@ export const App = (props: {
   readonly signUp: () => void;
   readonly copyPassword: () => void;
 }) => {
+  console.log("render App", props);
   return (
     <div
       style={{

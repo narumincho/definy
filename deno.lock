@@ -6,6 +6,7 @@
       "jsr:@deno/emit": "jsr:@deno/emit@0.41.0",
       "jsr:@deno/graph@^0.69.7": "jsr:@deno/graph@0.69.10",
       "jsr:@luca/esbuild-deno-loader": "jsr:@luca/esbuild-deno-loader@0.10.3",
+      "jsr:@std/assert": "jsr:@std/assert@0.223.0",
       "jsr:@std/assert@^0.213.1": "jsr:@std/assert@0.213.1",
       "jsr:@std/assert@^0.218.2": "jsr:@std/assert@0.218.2",
       "jsr:@std/assert@^0.223.0": "jsr:@std/assert@0.223.0",
@@ -13,6 +14,7 @@
       "jsr:@std/encoding": "jsr:@std/encoding@0.224.3",
       "jsr:@std/encoding@0.213": "jsr:@std/encoding@0.213.1",
       "jsr:@std/fmt@^0.218.2": "jsr:@std/fmt@0.218.2",
+      "jsr:@std/fmt@^0.223.0": "jsr:@std/fmt@0.223.0",
       "jsr:@std/fs@^0.218.2": "jsr:@std/fs@0.218.2",
       "jsr:@std/io@^0.218.2": "jsr:@std/io@0.218.2",
       "jsr:@std/json@^0.213.1": "jsr:@std/json@0.213.1",
@@ -25,6 +27,7 @@
       "npm:esbuild": "npm:esbuild@0.23.0",
       "npm:graphql": "npm:graphql@16.8.1",
       "npm:graphql-http": "npm:graphql-http@1.22.0_graphql@16.8.1",
+      "npm:hyperapp": "npm:hyperapp@2.0.22",
       "npm:preact-render-to-string": "npm:preact-render-to-string@6.5.5_preact@10.22.1",
       "npm:react": "npm:react@18.3.1",
       "npm:react-dom": "npm:react-dom@18.3.1_react@18.3.1"
@@ -65,7 +68,10 @@
         "integrity": "7f0a5a1a8cf86607cd6c2c030584096e1ffad27fc9271429a8cb48cfbdee5eaf"
       },
       "@std/assert@0.223.0": {
-        "integrity": "eb8d6d879d76e1cc431205bd346ed4d88dc051c6366365b1af47034b0670be24"
+        "integrity": "eb8d6d879d76e1cc431205bd346ed4d88dc051c6366365b1af47034b0670be24",
+        "dependencies": [
+          "jsr:@std/fmt@^0.223.0"
+        ]
       },
       "@std/bytes@0.218.2": {
         "integrity": "91fe54b232dcca73856b79a817247f4a651dbb60d51baafafb6408c137241670"
@@ -78,6 +84,9 @@
       },
       "@std/fmt@0.218.2": {
         "integrity": "99526449d2505aa758b6cbef81e7dd471d8b28ec0dcb1491d122b284c548788a"
+      },
+      "@std/fmt@0.223.0": {
+        "integrity": "6deb37794127dfc7d7bded2586b9fc6f5d50e62a8134846608baf71ffc1a5208"
       },
       "@std/fs@0.218.2": {
         "integrity": "dd9431453f7282e8c577cc22c9e6d036055a9a980b5549f887d6012969fabcca"
@@ -262,6 +271,10 @@
       },
       "graphql@16.8.1": {
         "integrity": "sha512-59LZHPdGZVh695Ud9lRzPBVTtlX9ZCV150Er2W43ro37wVof0ctenSaskPPjN7lVTIN8mSZt8PHUNKZuNQUuxw==",
+        "dependencies": {}
+      },
+      "hyperapp@2.0.22": {
+        "integrity": "sha512-3uf9HjnjrhbfykowFNEObZewBEo4DXJIM+9FnGkiR9E4H2eh2f921SzMCMS69X5nN3A7KFfmZc9KCKh/7TQBFA==",
         "dependencies": {}
       },
       "js-tokens@4.0.0": {
