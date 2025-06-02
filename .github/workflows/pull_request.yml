@@ -10,9 +10,9 @@ jobs:
       - name: checkout repository
         uses: actions/checkout@v4
       - name: setup Deno
-        uses: denoland/setup-deno@v1
+        uses: denoland/setup-deno@v2
         with:
-          deno-version: v1.39.1
+          deno-version: v2.x
       - name: Deno type check
         run: deno run --allow-run --allow-read ./script/typeCheck.ts
       - run: deno lint .
