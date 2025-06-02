@@ -1,8 +1,5 @@
-import {
-  Dispatch,
-  StateUpdater,
-} from "https://esm.sh/preact@10.22.1/hooks?pin=v135";
-import { h } from "https://esm.sh/preact@10.22.1?pin=v135";
+import { Dispatch, StateUpdater } from "preact/hooks";
+import { h } from "preact";
 
 export const App = (props: {
   readonly state: number;

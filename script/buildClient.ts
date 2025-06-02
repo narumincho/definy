@@ -1,6 +1,6 @@
-import { encodeHex } from "jsr:@std/encoding/hex";
+import { encodeHex } from "@std/encoding/hex";
 import * as esbuild from "npm:esbuild";
-import { denoPlugins } from "jsr:@luca/esbuild-deno-loader";
+import { denoPlugins } from "@luca/esbuild-deno-loader";
 
 const buildResult = await esbuild.build({
   entryPoints: ["./client/start.tsx"],

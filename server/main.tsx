@@ -3,7 +3,7 @@ import { createHandler } from "npm:graphql-http/lib/use/fetch";
 import { Context, createContext } from "./context.ts";
 import { schema } from "./schema.ts";
 import { renderToString } from "npm:preact-render-to-string";
-import { h } from "https://esm.sh/preact@10.22.1?pin=v135";
+import { h } from "preact";
 import { App } from "../client/app.tsx";
 import dist from "../dist.json" with { type: "json" };
 

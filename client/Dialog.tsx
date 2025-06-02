@@ -1,8 +1,5 @@
-import { h, JSX } from "https://esm.sh/preact@10.22.1?pin=v135";
-import {
-  useEffect,
-  useRef,
-} from "https://esm.sh/preact@10.22.1/hooks?pin=v135";
+import { h, JSX } from "preact";
+import { useEffect, useRef } from "preact/hooks";
 
 export const Dialog = (props: {
   readonly isOpen: boolean;

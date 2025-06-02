@@ -1,9 +1,5 @@
-import { h, JSX } from "https://esm.sh/preact@10.22.1?pin=v135";
-import {
-  useEffect,
-  useRef,
-} from "https://esm.sh/preact@10.22.1/hooks?pin=v135";
-import { encodeBase64Url } from "jsr:@std/encoding/base64url";
+import { h, JSX } from "preact";
+import { encodeBase64Url } from "@std/encoding/base64url";
 import { Dialog } from "./Dialog.tsx";
 
 export const SignUpDialog = (props: {
@@ -46,7 +42,7 @@ export const SignUpDialog = (props: {
         </div>
         <label>
           <div>Username</div>
-          <input type="text" required={true} />
+          <input type="text" required />
         </label>
         <label>
           <div>
@@ -56,7 +52,7 @@ export const SignUpDialog = (props: {
           <input
             type="password"
             value={encodeBase64Url(props.privateKey)}
-            readOnly={true}
+            readOnly
             autoComplete="new-password"
           />
           <button type="button" onClick={props.copyPassword}>
