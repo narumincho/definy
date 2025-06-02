@@ -1,15 +1,11 @@
 import { encodeBase64Url } from "@std/encoding/base64url";
 import { Dialog } from "./Dialog.tsx";
 
-export const SignUpDialog = (props: {
-  readonly privateKey: Uint8Array | null;
+export const CreateAccountDialog = (props: {
+  readonly privateKey: Uint8Array;
   readonly copyPassword: () => void;
   readonly onClose: () => void;
 }) => {
-  if (props.privateKey === null) {
-    return null;
-  }
-
   return (
     <Dialog
       isOpen={props.privateKey !== null}
@@ -33,7 +29,7 @@ export const SignUpDialog = (props: {
               flexGrow: 1,
             }}
           >
-            Sign Up
+            Sign up
           </h2>
           <button type="button" onClick={props.onClose}>
             x
@@ -58,7 +54,7 @@ export const SignUpDialog = (props: {
             copy password
           </button>
         </label>
-        <button type="submit">Sign Up</button>
+        <button type="submit">Sign up</button>
       </form>
     </Dialog>
   );

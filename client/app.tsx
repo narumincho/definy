@@ -1,10 +1,16 @@
-export const App = (props: {
-  readonly state: number;
-  readonly privateKey: Uint8Array | null;
-  readonly setState: (updateFunc: (prev: number) => number) => void;
-  readonly signUp: () => void;
-  readonly copyPassword: () => void;
-}) => {
+export const App = (
+  {
+    state,
+    setState,
+    onOpenCreateAccountDialog,
+    onOpenSigninDialog,
+  }: {
+    readonly state: number;
+    readonly setState: (updateFunc: (prev: number) => number) => void;
+    readonly onOpenCreateAccountDialog: () => void;
+    readonly onOpenSigninDialog: () => void;
+  },
+) => {
   return (
     <div
       style={{
@@ -23,13 +29,16 @@ export const App = (props: {
       <button
         type="button"
         onClick={() => {
-          props.setState((prev) => prev + 1);
+          setState((prev) => prev + 1);
         }}
       >
-        count: {props.state}
+        count: {state}
       </button>
-      <button type="button" onClick={props.signUp}>
-        Sign Up
+      <button type="button" onClick={onOpenCreateAccountDialog}>
+        Create Account
+      </button>
+      <button type="button" onClick={onOpenSigninDialog}>
+        Log in
       </button>
     </div>
   );

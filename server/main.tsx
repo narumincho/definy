@@ -13,10 +13,9 @@ app.get("/", (c) => {
       <body>
         <App
           state={0}
-          privateKey={new Uint8Array()}
           setState={() => {}}
-          signUp={() => {}}
-          copyPassword={() => {}}
+          onOpenCreateAccountDialog={() => {}}
+          onOpenSigninDialog={() => {}}
         />
       </body>
     </html>,
