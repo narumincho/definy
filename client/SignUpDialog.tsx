@@ -1,4 +1,3 @@
-import { h, JSX } from "preact";
 import { encodeBase64Url } from "@std/encoding/base64url";
 import { Dialog } from "./Dialog.tsx";
 
@@ -6,7 +5,7 @@ export const SignUpDialog = (props: {
   readonly privateKey: Uint8Array | null;
   readonly copyPassword: () => void;
   readonly onClose: () => void;
-}): JSX.Element | null => {
+}) => {
   if (props.privateKey === null) {
     return null;
   }

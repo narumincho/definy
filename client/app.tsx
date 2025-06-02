@@ -1,10 +1,7 @@
-import { Dispatch, StateUpdater } from "preact/hooks";
-import { h } from "preact";
-
 export const App = (props: {
   readonly state: number;
   readonly privateKey: Uint8Array | null;
-  readonly setState: Dispatch<StateUpdater<number>>;
+  readonly setState: (updateFunc: (prev: number) => number) => void;
   readonly signUp: () => void;
   readonly copyPassword: () => void;
 }) => {

@@ -2,17 +2,20 @@
   "version": "5",
   "specifiers": {
     "jsr:@luca/esbuild-deno-loader@~0.11.1": "0.11.1",
+    "jsr:@noble/secp256k1@^2.2.3": "2.2.3",
+    "jsr:@std/assert@^1.0.13": "1.0.13",
     "jsr:@std/bytes@^1.0.2": "1.0.5",
     "jsr:@std/encoding@^1.0.10": "1.0.10",
     "jsr:@std/encoding@^1.0.5": "1.0.10",
+    "jsr:@std/internal@^1.0.6": "1.0.6",
     "jsr:@std/path@^1.0.6": "1.1.0",
+    "jsr:@std/path@^1.1.0": "1.1.0",
     "npm:@narumincho/simple-graphql-server-common@0.1.2": "0.1.2",
     "npm:dataloader@*": "2.2.3",
     "npm:esbuild@*": "0.25.3",
     "npm:graphql-http@*": "1.22.4_graphql@16.11.0",
     "npm:graphql@*": "16.11.0",
-    "npm:preact-render-to-string@*": "6.5.13_preact@10.26.8",
-    "npm:preact@^10.26.8": "10.26.8"
+    "npm:hono@^4.7.11": "4.7.11"
   },
   "jsr": {
     "@luca/esbuild-deno-loader@0.11.1": {
@@ -20,7 +23,16 @@
       "dependencies": [
         "jsr:@std/bytes",
         "jsr:@std/encoding@^1.0.5",
-        "jsr:@std/path"
+        "jsr:@std/path@^1.0.6"
+      ]
+    },
+    "@noble/secp256k1@2.2.3": {
+      "integrity": "830435da513d7d65fa6868061a0048b0f3ade456646c0f79a0675e7f4e965600"
+    },
+    "@std/assert@1.0.13": {
+      "integrity": "ae0d31e41919b12c656c742b22522c32fb26ed0cba32975cb0de2a273cb68b29",
+      "dependencies": [
+        "jsr:@std/internal"
       ]
     },
     "@std/bytes@1.0.5": {
@@ -28,6 +40,9 @@
     },
     "@std/encoding@1.0.10": {
       "integrity": "8783c6384a2d13abd5e9e87a7ae0520a30e9f56aeeaa3bdf910a3eaaf5c811a1"
+    },
+    "@std/internal@1.0.6": {
+      "integrity": "9533b128f230f73bd209408bb07a4b12f8d4255ab2a4d22a1fd6d87304aca9a4"
     },
     "@std/path@1.1.0": {
       "integrity": "ddc94f8e3c275627281cbc23341df6b8bcc874d70374f75fec2533521e3d6886"
@@ -209,14 +224,8 @@
     "graphql@16.11.0": {
       "integrity": "sha512-mS1lbMsxgQj6hge1XZ6p7GPhbrtFwUFYi3wRzXAC/FmYnyXMTvvI3td3rjmQ2u8ewXueaSvRPWaEcgVVOT9Jnw=="
     },
-    "preact-render-to-string@6.5.13_preact@10.26.8": {
-      "integrity": "sha512-iGPd+hKPMFKsfpR2vL4kJ6ZPcFIoWZEcBf0Dpm3zOpdVvj77aY8RlLiQji5OMrngEyaxGogeakTb54uS2FvA6w==",
-      "dependencies": [
-        "preact"
-      ]
-    },
-    "preact@10.26.8": {
-      "integrity": "sha512-1nMfdFjucm5hKvq0IClqZwK4FJkGXhRrQstOQ3P4vp8HxKrJEMFcY6RdBRVTdfQS/UlnX6gfbPuTvaqx/bDoeQ=="
+    "hono@4.7.11": {
+      "integrity": "sha512-rv0JMwC0KALbbmwJDEnxvQCeJh+xbS3KEWW5PC9cMJ08Ur9xgatI0HmtgYZfOdOSOeYsp5LO2cOhdI8cLEbDEQ=="
     }
   },
   "remote": {
@@ -231,7 +240,7 @@
       "jsr:@std/assert@^1.0.13",
       "jsr:@std/encoding@^1.0.10",
       "jsr:@std/path@^1.1.0",
-      "npm:preact@^10.26.8"
+      "npm:hono@^4.7.11"
     ]
   }
 }

@@ -1,5 +1,1 @@
-import { startDefinyServer } from "../server/main.tsx";
-
-startDefinyServer({
-  denoKvDatabasePath: undefined,
-});
+import "../server/main.tsx";

@@ -1,16 +1,11 @@
 import { App } from "./app.tsx";
-import { h, hydrate, JSX } from "preact";
-import { useState } from "preact/hooks";
 import { utils } from "@noble/secp256k1";
 import { encodeBase64Url } from "@std/encoding/base64url";
 import { SignUpDialog } from "./SignUpDialog.tsx";
+import { FC, useState } from "hono/jsx";
+import { render } from "hono/jsx/dom";
 
-const root = document.getElementById("root");
-if (root === null) {
-  throw new Error("root element not found");
-}
-
-const AppWithState = (): JSX.Element => {
+const AppWithState: FC = () => {
   const [state, setState] = useState(0);
   const [privateKey, setPrivateKey] = useState<Uint8Array | null>(null);
 
@@ -44,4 +39,4 @@ const AppWithState = (): JSX.Element => {
   );
 };
 
-hydrate(<AppWithState />, root);
+render(<AppWithState />, document.body);

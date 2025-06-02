@@ -7,7 +7,9 @@ const buildResult = await esbuild.build({
   bundle: true,
   plugins: [...denoPlugins()],
   write: false,
-  jsxFactory: "h",
+  jsx: "automatic",
+  jsxFactory: "jsx",
+  jsxImportSource: "hono/jsx/dom",
 });
 
 const code = buildResult.outputFiles[0]?.text ?? "";
