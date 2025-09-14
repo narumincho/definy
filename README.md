@@ -9,8 +9,8 @@ https://github.com/narumincho/definy/tree/prev2023
 
 - [Firebase Version](https://definy.app/?hl=ja)
 
-- [Old Version](https://definy-old.web.app/) WebAssembly を使って数値の足し算,
-  引き算, 掛け算ができる
+- [Old Version](https://definy-old.narumincho.com/)
+  WebAssemblyを使って数値の足し算, 引き算, 掛け算ができる
 
 ## start server
 
