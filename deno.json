@@ -12,6 +12,7 @@
     "jsxImportSource": "hono/jsx"
   },
   "tasks": {
+    "build": "deno run --check --unstable-bundle --allow-read=./generated --allow-write=./generated ./script/build.ts",
     "build-watch": "deno run --check --unstable-bundle --allow-read=./generated --allow-write=./generated --watch=client ./script/build.ts",
     "dev": "deno run --check --watch --allow-env --allow-net --allow-read --allow-write=./dist.json ./script/startInLocal.ts"
   },
