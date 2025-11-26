@@ -1,30 +1,44 @@
-import { encodeHex } from "@std/encoding/hex";
-import * as esbuild from "npm:esbuild";
-import { denoPlugins } from "@luca/esbuild-deno-loader";
+import { emptyDir } from "@std/fs";
+import { join } from "@std/path/posix";
 
-const buildResult = await esbuild.build({
-  entryPoints: ["./client/start.tsx"],
-  bundle: true,
-  plugins: [...denoPlugins()],
-  write: false,
-  jsx: "automatic",
-  jsxFactory: "jsx",
-  jsxImportSource: "hono/jsx/dom",
-});
+const generatedDir = join("./generated");
 
-const code = buildResult.outputFiles[0]?.text ?? "";
+async function clientScriptBuild(): Promise<void> {
+  await emptyDir(generatedDir);
 
-await Deno.writeTextFile(
-  new URL("../dist.json", import.meta.url),
-  JSON.stringify({
-    clientJavaScript: code,
-    clientJavaScriptHash: encodeHex(
-      await crypto.subtle.digest(
-        "SHA-256",
-        new TextEncoder().encode(code),
-      ),
-    ),
-  }),
-);
+  const output = await Deno.bundle({
+    entrypoints: ["./client/start.tsx"],
+  });
 
-await esbuild.stop();
+  for (const error of output.errors) {
+    console.error(error.text);
+  }
+
+  for (const warning of output.warnings) {
+    console.error(warning.text);
+  }
+
+  const clientScript = output.outputFiles?.find(
+    ({ path }) => path === "<stdout>",
+  )?.contents;
+
+  if (!clientScript) {
+    throw new Error("Client script not found in bundle output");
+  }
+
+  await Deno.writeTextFile(
+    join(generatedDir, "hash.json"),
+    JSON.stringify({
+      clientScriptHash: new Uint8Array(
+        await crypto.subtle.digest("SHA-256", clientScript),
+      ).toBase64({ alphabet: "base64url" }),
+    }),
+  );
+
+  await Deno.writeTextFile(
+    join(generatedDir, "clientScript.js"),
+    new TextDecoder().decode(clientScript),
+  );
+}
+
+await clientScriptBuild();

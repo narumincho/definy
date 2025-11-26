@@ -1,4 +1,3 @@
-import { encodeBase64Url } from "@std/encoding/base64url";
 import { Dialog } from "./Dialog.tsx";
 
 export const CreateAccountDialog = (props: {
@@ -46,7 +45,7 @@ export const CreateAccountDialog = (props: {
           </div>
           <input
             type="password"
-            value={encodeBase64Url(props.privateKey)}
+            value={props.privateKey.toBase64({ alphabet: "base64url" })}
             readOnly
             autoComplete="new-password"
           />

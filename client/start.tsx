@@ -1,6 +1,5 @@
 import { App } from "./app.tsx";
-import { utils } from "@noble/secp256k1";
-import { encodeBase64Url } from "@std/encoding/base64url";
+
 import { CreateAccountDialog } from "./CreateAccountDialog.tsx";
 import { FC, useState } from "hono/jsx";
 import { render } from "hono/jsx/dom";
@@ -19,17 +18,19 @@ const AppWithState: FC = () => {
     DialogOpenState | null
   >(null);
 
+  const handleOpenCreateAccountDialog = () => {
+    setDialogOpenState({
+      type: "createAccount",
+      privateKey: crypto.getRandomValues(new Uint8Array(32)),
+    });
+  };
+
   return (
     <div>
       <App
         state={state}
         setState={setState}
-        onOpenCreateAccountDialog={() => {
-          setDialogOpenState({
-            type: "createAccount",
-            privateKey: utils.randomPrivateKey(),
-          });
-        }}
+        onOpenCreateAccountDialog={handleOpenCreateAccountDialog}
         onOpenSigninDialog={() => {
           setDialogOpenState({
             type: "login",
@@ -45,7 +46,7 @@ const AppWithState: FC = () => {
                 return;
               }
               navigator.clipboard.writeText(
-                encodeBase64Url(dialogOpenState.privateKey),
+                dialogOpenState.privateKey.toBase64({ alphabet: "base64url" }),
               );
             }}
             onClose={() => setDialogOpenState(null)}

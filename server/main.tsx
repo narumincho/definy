@@ -1,5 +1,5 @@
 import { App } from "../client/app.tsx";
-import dist from "../dist.json" with { type: "json" };
+import hash from "../generated/hash.json" with { type: "json" };
 import { Hono } from "hono";
 
 const app = new Hono();
@@ -8,7 +8,7 @@ app.get("/", (c) => {
   return c.html(
     <html>
       <head>
-        <script type="module" src={`/script-${dist.clientJavaScriptHash}`} />
+        <script type="module" src={`/script-${hash.clientScriptHash}`} />
       </head>
       <body>
         <App
@@ -21,13 +21,16 @@ app.get("/", (c) => {
     </html>,
   );
 }).get(
-  `script-${dist.clientJavaScriptHash}`,
-  (c) =>
-    c.text(dist.clientJavaScript, 200, {
+  `script-${hash.clientScriptHash}`,
+  async (c) => {
+    // Deno Deploy で Raw imports がサポートされるまで
+    const clientScript = await Deno.readTextFile(
+      "../generated/clientScript.js",
+    );
+    return c.text(clientScript, 200, {
       "Content-Type": "application/javascript; charset=utf-8",
-    }),
+    });
+  },
 );
-
-export type app = typeof app;
 
 Deno.serve(app.fetch);
