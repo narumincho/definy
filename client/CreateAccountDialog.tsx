@@ -6,6 +6,7 @@ export const CreateAccountDialog = ({ privateKey, onClose }: {
   readonly onClose: () => void;
 }) => {
   const [isCopied, setIsCopied] = useState(false);
+
   return (
     <Dialog
       isOpen={privateKey !== null}
