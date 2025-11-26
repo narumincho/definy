@@ -25,7 +25,7 @@ app.get("/", (c) => {
   async (c) => {
     // Deno Deploy で Raw imports がサポートされるまで
     const clientScript = await Deno.readTextFile(
-      "../generated/clientScript.js",
+      "./generated/clientScript.js",
     );
     return c.text(clientScript, 200, {
       "Content-Type": "application/javascript; charset=utf-8",
