@@ -1,4 +1,4 @@
-import { App } from "./App.tsx";
+import { App } from "./AppN.tsx";
 
 import { CreateAccountDialog } from "./CreateAccountDialog.tsx";
 import { FC, useState } from "hono/jsx";
