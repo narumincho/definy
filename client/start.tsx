@@ -1,4 +1,4 @@
-import { App } from "./app.tsx";
+import { App } from "./App.tsx";
 
 import { CreateAccountDialog } from "./CreateAccountDialog.tsx";
 import { FC, useState } from "hono/jsx";
@@ -41,14 +41,6 @@ const AppWithState: FC = () => {
         (
           <CreateAccountDialog
             privateKey={dialogOpenState.privateKey}
-            copyPassword={() => {
-              if (dialogOpenState === null) {
-                return;
-              }
-              navigator.clipboard.writeText(
-                dialogOpenState.privateKey.toBase64({ alphabet: "base64url" }),
-              );
-            }}
             onClose={() => setDialogOpenState(null)}
           />
         )}

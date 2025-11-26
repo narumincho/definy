@@ -1,4 +1,4 @@
-export const App = (
+export function App(
   {
     state,
     setState,
@@ -10,7 +10,7 @@ export const App = (
     readonly onOpenCreateAccountDialog: () => void;
     readonly onOpenSigninDialog: () => void;
   },
-) => {
+) {
   return (
     <div
       style={{
@@ -42,4 +42,4 @@ export const App = (
       </button>
     </div>
   );
-};
+}

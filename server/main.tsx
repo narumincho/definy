@@ -1,4 +1,4 @@
-import { App } from "../client/app.tsx";
+import { App } from "../client/App.tsx";
 import hash from "../generated/hash.json" with { type: "json" };
 import { Hono } from "hono";
 

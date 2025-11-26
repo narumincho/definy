@@ -1,14 +1,15 @@
 import { Dialog } from "./Dialog.tsx";
+import { useState } from "hono/jsx";
 
-export const CreateAccountDialog = (props: {
+export const CreateAccountDialog = ({ privateKey, onClose }: {
   readonly privateKey: Uint8Array;
-  readonly copyPassword: () => void;
   readonly onClose: () => void;
 }) => {
+  const [isCopied, setIsCopied] = useState(false);
   return (
     <Dialog
-      isOpen={props.privateKey !== null}
-      onClose={props.onClose}
+      isOpen={privateKey !== null}
+      onClose={onClose}
     >
       <form
         method="dialog"
@@ -30,7 +31,7 @@ export const CreateAccountDialog = (props: {
           >
             Sign up
           </h2>
-          <button type="button" onClick={props.onClose}>
+          <button type="button" onClick={onClose}>
             x
           </button>
         </div>
@@ -45,12 +46,27 @@ export const CreateAccountDialog = (props: {
           </div>
           <input
             type="password"
-            value={props.privateKey.toBase64({ alphabet: "base64url" })}
+            value={privateKey.toBase64({ alphabet: "base64url" })}
             readOnly
             autoComplete="new-password"
           />
-          <button type="button" onClick={props.copyPassword}>
-            copy password
+          <button
+            type="button"
+            onClick={() => {
+              navigator.clipboard.writeText(
+                privateKey.toBase64({ alphabet: "base64url" }),
+              ).then(() => {
+                setIsCopied(true);
+                setTimeout(() => {
+                  setIsCopied(false);
+                }, 2000);
+              }).catch((e) => {
+                console.error("Failed to copy", e);
+                alert("Failed to copy password");
+              });
+            }}
+          >
+            {isCopied ? "Copied!" : "copy password"}
           </button>
         </label>
         <button type="submit">Sign up</button>
