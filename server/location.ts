@@ -35,8 +35,6 @@ export type Location = { readonly type: "top"; readonly hl: Language } | {
 } | {
   readonly type: "file";
   readonly hash: string;
-} | {
-  readonly type: "graphql";
 };
 
 export type Language = "en" | "eo" | "ja";
@@ -69,9 +67,6 @@ export const locationFromPathAndQuery = (
       type: "file",
       hash: pathAndQuery.pathSegments?.[1] ?? "",
     };
-  }
-  if (segment0 === "graphql") {
-    return { type: "graphql" };
   }
   const idMatchResult = segment0?.match(/[0-9a-f]{32}/u);
   if (idMatchResult) {
@@ -126,11 +121,6 @@ export const locationToPathAndQuery = (location: Location): PathAndQuery => {
     case "file":
       return {
         pathSegments: ["file", location.hash],
-        query: new Map(),
-      };
-    case "graphql":
-      return {
-        pathSegments: ["graphql"],
         query: new Map(),
       };
   }
