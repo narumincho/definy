@@ -5,15 +5,15 @@ on: pull_request
 jobs:
   type-check-and-build-test:
     name: type check and test
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-slim
     steps:
       - name: checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: setup Deno
-        uses: denoland/setup-deno@v1
+        uses: denoland/setup-deno@v2
         with:
-          deno-version: v1.39.1
-      - name: Deno type check
-        run: deno run --allow-run --allow-read ./script/typeCheck.ts
-      - run: deno lint .
-      - run: deno test .
+          deno-version: v2.x
+      - run: deno task build
+      - run: deno check
+      - run: deno lint
+      - run: deno test
