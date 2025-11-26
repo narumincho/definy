@@ -8,7 +8,7 @@
       "deno.ns",
       "deno.unstable"
     ],
-    "jsx": "precompile",
+    "jsx": "react-jsx",
     "jsxImportSource": "hono/jsx"
   },
   "tasks": {
