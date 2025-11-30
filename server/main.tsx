@@ -1,6 +1,6 @@
 import { App } from "../client/App.tsx";
 import hash from "../generated/hash.json" with { type: "json" };
-import { Hono } from "hono";
+import { Hono } from "@hono/hono";
 
 const app = new Hono();
 

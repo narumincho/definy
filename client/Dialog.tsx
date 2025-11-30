@@ -1,4 +1,4 @@
-import { PropsWithChildren, useEffect, useRef } from "hono/jsx";
+import { PropsWithChildren, useEffect, useRef } from "@hono/hono/jsx";
 
 export const Dialog = (
   props: PropsWithChildren<{

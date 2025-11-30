@@ -1,8 +1,8 @@
 import { App } from "./App.tsx";
 
 import { CreateAccountDialog } from "./CreateAccountDialog.tsx";
-import { FC, useState } from "hono/jsx";
-import { render } from "hono/jsx/dom";
+import { FC, useState } from "@hono/hono/jsx";
+import { render } from "@hono/hono/jsx/dom";
 import { SigInDialog } from "./SigInDialog.tsx";
 
 type DialogOpenState = {
