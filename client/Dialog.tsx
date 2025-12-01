@@ -1,10 +1,11 @@
-import { PropsWithChildren, useEffect, useRef } from "@hono/hono/jsx";
+import { useEffect, useRef } from "preact/hooks";
 
 export const Dialog = (
-  props: PropsWithChildren<{
+  props: {
     readonly isOpen: boolean;
     readonly onClose: () => void;
-  }>,
+    readonly children: preact.ComponentChildren;
+  },
 ) => {
   const ref = useRef<HTMLDialogElement>(null);
 

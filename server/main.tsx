@@ -1,36 +1,47 @@
 import { App } from "../client/App.tsx";
 import hash from "../generated/hash.json" with { type: "json" };
-import { Hono } from "@hono/hono";
+import { render } from "preact-render-to-string";
 
-const app = new Hono();
-
-app.get("/", (c) => {
-  return c.html(
-    <html>
-      <head>
-        <script type="module" src={`/script-${hash.clientScriptHash}`} />
-      </head>
-      <body>
-        <App
-          state={0}
-          setState={() => {}}
-          onOpenCreateAccountDialog={() => {}}
-          onOpenSigninDialog={() => {}}
-        />
-      </body>
-    </html>,
-  );
-}).get(
-  `script-${hash.clientScriptHash}`,
-  async (c) => {
-    // Deno Deploy で Raw imports がサポートされるまで
-    const clientScript = await Deno.readTextFile(
-      "./generated/clientScript.js",
-    );
-    return c.text(clientScript, 200, {
-      "Content-Type": "application/javascript; charset=utf-8",
-    });
-  },
-);
-
-Deno.serve(app.fetch);
+Deno.serve(async (request): Promise<Response> => {
+  const url = new URL(request.url);
+  switch (url.pathname) {
+    case "/":
+      return new Response(
+        render(
+          <html>
+            <head>
+              <script type="module" src={`/script-${hash.clientScriptHash}`} />
+            </head>
+            <body>
+              <App
+                state={0}
+                setState={() => {}}
+                onOpenCreateAccountDialog={() => {}}
+                onOpenSigninDialog={() => {}}
+              />
+            </body>
+          </html>,
+        ),
+        {
+          status: 200,
+          headers: {
+            "Content-Type": "text/html; charset=utf-8",
+          },
+        },
+      );
+    case `/script-${hash.clientScriptHash}`: {
+      // Deno Deploy で Raw imports がサポートされるまで
+      const clientScript = await Deno.readTextFile(
+        "./generated/clientScript.js",
+      );
+      return new Response(clientScript, {
+        status: 200,
+        headers: {
+          "Content-Type": "application/javascript; charset=utf-8",
+        },
+      });
+    }
+    default:
+      return new Response("Not Found", { status: 404 });
+  }
+});

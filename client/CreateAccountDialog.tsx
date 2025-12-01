@@ -1,5 +1,5 @@
 import { Dialog } from "./Dialog.tsx";
-import { useState } from "@hono/hono/jsx";
+import { useState } from "preact/hooks";
 
 export const CreateAccountDialog = ({ privateKey, onClose }: {
   readonly privateKey: Uint8Array;

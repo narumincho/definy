@@ -1,8 +1,8 @@
 import { App } from "./App.tsx";
 
 import { CreateAccountDialog } from "./CreateAccountDialog.tsx";
-import { FC, useState } from "@hono/hono/jsx";
-import { render } from "@hono/hono/jsx/dom";
+import { useState } from "preact/hooks";
+import { hydrate } from "preact";
 import { SigInDialog } from "./SigInDialog.tsx";
 
 type DialogOpenState = {
@@ -12,7 +12,7 @@ type DialogOpenState = {
   readonly type: "login";
 };
 
-const AppWithState: FC = () => {
+const AppWithState = () => {
   const [state, setState] = useState(0);
   const [dialogOpenState, setDialogOpenState] = useState<
     DialogOpenState | null
@@ -38,7 +38,7 @@ const AppWithState: FC = () => {
   };
 
   return (
-    <div>
+    <>
       <App
         state={state}
         setState={setState}
@@ -63,11 +63,11 @@ const AppWithState: FC = () => {
             }}
           />
         )}
-    </div>
+    </>
   );
 };
 
-render(<AppWithState />, document.body);
+hydrate(<AppWithState />, document.body);
 
 const ED25519_PKCS8_HEADER = new Uint8Array([
   48,
