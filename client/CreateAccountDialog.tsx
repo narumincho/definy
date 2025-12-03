@@ -1,12 +1,12 @@
 import { Dialog } from "./Dialog.tsx";
 import { useEffect, useState } from "preact/hooks";
-import { ExportablePrivateKey, generateExportablePrivateKey } from "./key.ts";
+import { generateExportablePrivateKey, GenerateKeyResult } from "./key.ts";
 
 export const CreateAccountDialog = ({ onClose }: {
   readonly onClose: () => void;
 }) => {
   const [privateKey, setPrivateKey] = useState<
-    ExportablePrivateKey | undefined
+    GenerateKeyResult | undefined
   >(undefined);
   const [isCopied, setIsCopied] = useState(false);
 
@@ -46,7 +46,7 @@ export const CreateAccountDialog = ({ onClose }: {
           </div>
           <label>
             <div>Account ID</div>
-            <div>{privateKey.accountId}</div>
+            <div>{privateKey.publicKeyAsBase64}</div>
           </label>
           <label>
             <div>Username</div>
@@ -59,7 +59,7 @@ export const CreateAccountDialog = ({ onClose }: {
             </div>
             <input
               type="password"
-              value={privateKey.base64}
+              value={privateKey.privateKeyAsBase64}
               readOnly
               autoComplete="new-password"
             />
@@ -67,7 +67,7 @@ export const CreateAccountDialog = ({ onClose }: {
               type="button"
               onClick={() => {
                 navigator.clipboard.writeText(
-                  privateKey.base64,
+                  privateKey.privateKeyAsBase64,
                 ).then(() => {
                   setIsCopied(true);
                   setTimeout(() => {

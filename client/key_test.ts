@@ -4,7 +4,12 @@ import { assertEquals } from "@std/assert";
 Deno.test("check accountId is same", async () => {
   const exportableKey = await generateExportablePrivateKey();
 
-  const derivedAccountId = await stringToPrivateKey(exportableKey.base64);
+  const derivedAccountId = await stringToPrivateKey(
+    exportableKey.privateKeyAsBase64,
+  );
 
-  assertEquals(exportableKey.accountId, derivedAccountId.accountId);
+  assertEquals(
+    exportableKey.publicKeyAsBase64,
+    derivedAccountId.publicKeyAsBase64,
+  );
 });

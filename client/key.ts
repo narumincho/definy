@@ -17,15 +17,18 @@ const ED25519_PKCS8_HEADER = new Uint8Array([
   32,
 ]);
 
-export type ExportablePrivateKey = {
-  readonly cryptoKey: CryptoKey;
+export type GenerateKeyResult = {
+  readonly privateKey: CryptoKey;
   readonly publicKey: CryptoKey;
-  readonly base64: string;
-  readonly accountId: string;
+  readonly privateKeyAsBase64: string;
+  /**
+   * accountId
+   */
+  readonly publicKeyAsBase64: string;
 };
 
 export async function generateExportablePrivateKey(): Promise<
-  ExportablePrivateKey
+  GenerateKeyResult
 > {
   const keyPair = await crypto.subtle.generateKey(
     {
@@ -36,22 +39,22 @@ export async function generateExportablePrivateKey(): Promise<
   );
 
   return {
-    cryptoKey: keyPair.privateKey,
+    privateKey: keyPair.privateKey,
     publicKey: keyPair.publicKey,
-    base64: new Uint8Array(
+    privateKeyAsBase64: new Uint8Array(
       await crypto.subtle.exportKey("pkcs8", keyPair.privateKey),
       ED25519_PKCS8_HEADER.length,
     )
       .toBase64({
         alphabet: "base64url",
       }),
-    accountId: await publicKeyToAccountId(keyPair.publicKey),
+    publicKeyAsBase64: await publicKeyToAccountId(keyPair.publicKey),
   };
 }
 
 export async function stringToPrivateKey(
   privateKeyAsBase64: string,
-): Promise<ExportablePrivateKey> {
+): Promise<GenerateKeyResult> {
   const privateKey = await crypto.subtle.importKey(
     "pkcs8",
     new Uint8Array([
@@ -66,10 +69,10 @@ export async function stringToPrivateKey(
   );
   const publicKey = await privateKeyToPublicKey(privateKey);
   return {
-    cryptoKey: privateKey,
+    privateKey: privateKey,
     publicKey,
-    base64: privateKeyAsBase64,
-    accountId: await publicKeyToAccountId(publicKey),
+    privateKeyAsBase64: privateKeyAsBase64,
+    publicKeyAsBase64: await publicKeyToAccountId(publicKey),
   };
 }
 

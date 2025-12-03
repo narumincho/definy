@@ -4,7 +4,7 @@ import { CreateAccountDialog } from "./CreateAccountDialog.tsx";
 import { useEffect, useState } from "preact/hooks";
 import { hydrate } from "preact";
 import { SigInDialog } from "./SigInDialog.tsx";
-import { ExportablePrivateKey, stringToPrivateKey } from "./key.ts";
+import { GenerateKeyResult, stringToPrivateKey } from "./key.ts";
 
 type DialogOpenState = {
   readonly type: "createAccount";
@@ -17,7 +17,7 @@ const AppWithState = () => {
   const [dialogOpenState, setDialogOpenState] = useState<
     DialogOpenState | null
   >(null);
-  const [privateKey, setPrivateKey] = useState<ExportablePrivateKey | null>(
+  const [privateKey, setPrivateKey] = useState<GenerateKeyResult | null>(
     null,
   );
 
@@ -51,7 +51,7 @@ const AppWithState = () => {
       <App
         state={state}
         setState={setState}
-        accountId={privateKey?.accountId ?? null}
+        accountId={privateKey?.publicKeyAsBase64 ?? null}
         onOpenCreateAccountDialog={handleOpenCreateAccountDialog}
         onOpenSigninDialog={handleOpenSigninDialog}
       />
@@ -83,7 +83,7 @@ hydrate(<AppWithState />, document.body);
  * @returns 秘密鍵
  */
 async function loginByNavigatorCredentialsGet(): Promise<
-  ExportablePrivateKey | undefined
+  GenerateKeyResult | undefined
 > {
   const credential = (await navigator.credentials.get(
     { password: true } as CredentialRequestOptions,
