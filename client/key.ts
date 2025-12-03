@@ -19,36 +19,40 @@ const ED25519_PKCS8_HEADER = new Uint8Array([
 
 export type ExportablePrivateKey = {
   readonly cryptoKey: CryptoKey;
+  readonly publicKey: CryptoKey;
   readonly base64: string;
+  readonly accountId: string;
 };
 
 export async function generateExportablePrivateKey(): Promise<
   ExportablePrivateKey
 > {
-  const cryptoKey = (await crypto.subtle.generateKey(
+  const keyPair = await crypto.subtle.generateKey(
     {
       name: "Ed25519",
     },
     true,
-    ["sign"],
-  )).privateKey;
+    ["sign", "verify"],
+  );
 
   return {
-    cryptoKey,
+    cryptoKey: keyPair.privateKey,
+    publicKey: keyPair.publicKey,
     base64: new Uint8Array(
-      await crypto.subtle.exportKey("pkcs8", cryptoKey),
+      await crypto.subtle.exportKey("pkcs8", keyPair.privateKey),
       ED25519_PKCS8_HEADER.length,
     )
       .toBase64({
         alphabet: "base64url",
       }),
+    accountId: await publicKeyToAccountId(keyPair.publicKey),
   };
 }
 
 export async function stringToPrivateKey(
   privateKeyAsBase64: string,
-): Promise<CryptoKey> {
-  return await crypto.subtle.importKey(
+): Promise<ExportablePrivateKey> {
+  const privateKey = await crypto.subtle.importKey(
     "pkcs8",
     new Uint8Array([
       ...ED25519_PKCS8_HEADER,
@@ -57,11 +61,42 @@ export async function stringToPrivateKey(
       }),
     ]).buffer,
     { name: "Ed25519" },
-    false,
+    true,
     ["sign"],
+  );
+  const publicKey = await privateKeyToPublicKey(privateKey);
+  return {
+    cryptoKey: privateKey,
+    publicKey,
+    base64: privateKeyAsBase64,
+    accountId: await publicKeyToAccountId(publicKey),
+  };
+}
+
+export async function privateKeyToPublicKey(
+  privateKey: CryptoKey,
+): Promise<CryptoKey> {
+  const jwk = await crypto.subtle.exportKey("jwk", privateKey);
+  return await crypto.subtle.importKey(
+    "jwk" as any,
+    {
+      kty: jwk.kty,
+      crv: jwk.crv,
+      x: jwk.x,
+      ext: true,
+      key_ops: ["verify"],
+    } as any,
+    { name: "Ed25519" },
+    true,
+    ["verify"],
   );
 }
 
-export function privateKeyToPublicKey(privateKey: CryptoKey): CryptoKey {
-  // TODO
+export async function publicKeyToAccountId(
+  publicKey: CryptoKey,
+): Promise<string> {
+  return new Uint8Array(await crypto.subtle.exportKey("raw", publicKey))
+    .toBase64({
+      alphabet: "base64url",
+    });
 }

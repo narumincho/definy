@@ -2,13 +2,13 @@ export function App(
   {
     state,
     setState,
-    publicKey,
+    accountId,
     onOpenCreateAccountDialog,
     onOpenSigninDialog,
   }: {
     readonly state: number;
     readonly setState: (updateFunc: (prev: number) => number) => void;
-    readonly publicKey: CryptoKey | null;
+    readonly accountId: string | null;
     readonly onOpenCreateAccountDialog: () => void;
     readonly onOpenSigninDialog: () => void;
   },
@@ -36,7 +36,7 @@ export function App(
       >
         count: {state}
       </button>
-      {publicKey ? <div>ログイン中</div> : (
+      {accountId ? <div>ログイン中 アカウントID: {accountId}</div> : (
         <>
           <button type="button" onClick={onOpenCreateAccountDialog}>
             Create Account

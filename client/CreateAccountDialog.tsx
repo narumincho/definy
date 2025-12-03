@@ -45,6 +45,10 @@ export const CreateAccountDialog = ({ onClose }: {
             </button>
           </div>
           <label>
+            <div>Account ID</div>
+            <div>{privateKey.accountId}</div>
+          </label>
+          <label>
             <div>Username</div>
             <input type="text" required />
           </label>

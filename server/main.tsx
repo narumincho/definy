@@ -16,7 +16,7 @@ Deno.serve(async (request): Promise<Response> => {
               <App
                 state={0}
                 setState={() => {}}
-                publicKey={null}
+                accountId={null}
                 onOpenCreateAccountDialog={() => {}}
                 onOpenSigninDialog={() => {}}
               />
