@@ -1,13 +1,13 @@
 import { App } from "./App.tsx";
 
 import { CreateAccountDialog } from "./CreateAccountDialog.tsx";
-import { useState } from "preact/hooks";
+import { useEffect, useState } from "preact/hooks";
 import { hydrate } from "preact";
 import { SigInDialog } from "./SigInDialog.tsx";
+import { stringToPrivateKey } from "./key.ts";
 
 type DialogOpenState = {
   readonly type: "createAccount";
-  readonly privateKey: Uint8Array;
 } | {
   readonly type: "login";
 };
@@ -19,10 +19,17 @@ const AppWithState = () => {
   >(null);
   const [privateKey, setPrivateKey] = useState<CryptoKey | null>(null);
 
-  const handleOpenCreateAccountDialog = () => {
+  useEffect(() => {
+    loginByNavigatorCredentialsGet().then((privateKey) => {
+      if (privateKey) {
+        setPrivateKey(privateKey);
+      }
+    });
+  }, []);
+
+  const handleOpenCreateAccountDialog = async () => {
     setDialogOpenState({
       type: "createAccount",
-      privateKey: crypto.getRandomValues(new Uint8Array(32)),
     });
   };
 
@@ -42,13 +49,13 @@ const AppWithState = () => {
       <App
         state={state}
         setState={setState}
+        publicKey={privateKey}
         onOpenCreateAccountDialog={handleOpenCreateAccountDialog}
         onOpenSigninDialog={handleOpenSigninDialog}
       />
       {dialogOpenState?.type === "createAccount" &&
         (
           <CreateAccountDialog
-            privateKey={dialogOpenState.privateKey}
             onClose={() => {
               setDialogOpenState(null);
             }}
@@ -69,25 +76,10 @@ const AppWithState = () => {
 
 hydrate(<AppWithState />, document.body);
 
-const ED25519_PKCS8_HEADER = new Uint8Array([
-  48,
-  46,
-  2,
-  1,
-  0,
-  48,
-  5,
-  6,
-  3,
-  43,
-  101,
-  112,
-  4,
-  34,
-  4,
-  32,
-]);
-
+/**
+ * Web Credential APIを使用してログインする
+ * @returns 秘密鍵
+ */
 async function loginByNavigatorCredentialsGet(): Promise<
   CryptoKey | undefined
 > {
@@ -99,21 +91,7 @@ async function loginByNavigatorCredentialsGet(): Promise<
   if (!credential?.password) {
     return;
   }
-  const privateKeyAsBase64 = credential.password;
-  const privateKeyAsBinary = Uint8Array.fromBase64(privateKeyAsBase64, {
-    alphabet: "base64url",
-  });
-  const privateKeyAsPicks8 = new Uint8Array([
-    ...ED25519_PKCS8_HEADER,
-    ...privateKeyAsBinary,
-  ]).buffer;
-  const privateKeyAsCryptoKey = await crypto.subtle.importKey(
-    "pkcs8",
-    privateKeyAsPicks8,
-    { name: "Ed25519" },
-    false,
-    ["sign"],
+  return await stringToPrivateKey(
+    credential.password,
   );
-
-  return privateKeyAsCryptoKey;
 }

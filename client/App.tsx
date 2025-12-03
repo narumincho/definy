@@ -2,11 +2,13 @@ export function App(
   {
     state,
     setState,
+    publicKey,
     onOpenCreateAccountDialog,
     onOpenSigninDialog,
   }: {
     readonly state: number;
     readonly setState: (updateFunc: (prev: number) => number) => void;
+    readonly publicKey: CryptoKey | null;
     readonly onOpenCreateAccountDialog: () => void;
     readonly onOpenSigninDialog: () => void;
   },
@@ -34,12 +36,16 @@ export function App(
       >
         count: {state}
       </button>
-      <button type="button" onClick={onOpenCreateAccountDialog}>
-        Create Account
-      </button>
-      <button type="button" onClick={onOpenSigninDialog}>
-        Log in
-      </button>
+      {publicKey ? <div>ログイン中</div> : (
+        <>
+          <button type="button" onClick={onOpenCreateAccountDialog}>
+            Create Account
+          </button>
+          <button type="button" onClick={onOpenSigninDialog}>
+            Log in
+          </button>
+        </>
+      )}
     </div>
   );
 }
