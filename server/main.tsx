@@ -1,6 +1,12 @@
 import { App } from "../client/App.tsx";
 import hash from "../generated/hash.json" with { type: "json" };
 import { render } from "preact-render-to-string";
+import { CreateAccountEventSchema } from "../schema.ts";
+
+// Deno Deploy で Raw imports がサポートされるまで
+const clientScript = await Deno.readTextFile(
+  "./generated/clientScript.js",
+);
 
 Deno.serve(async (request): Promise<Response> => {
   const url = new URL(request.url);
@@ -31,16 +37,22 @@ Deno.serve(async (request): Promise<Response> => {
         },
       );
     case `/script-${hash.clientScriptHash}`: {
-      // Deno Deploy で Raw imports がサポートされるまで
-      const clientScript = await Deno.readTextFile(
-        "./generated/clientScript.js",
-      );
       return new Response(clientScript, {
         status: 200,
         headers: {
           "Content-Type": "application/javascript; charset=utf-8",
         },
       });
+    }
+    case "/events": {
+      if (request.method !== "POST") {
+        return new Response("Method Not Allowed", { status: 405 });
+      }
+      const body = CreateAccountEventSchema.deserialize(
+        new Uint8Array(await request.arrayBuffer()),
+      );
+      console.log(body);
+      return new Response("OK", { status: 200 });
     }
     default:
       return new Response("Not Found", { status: 404 });

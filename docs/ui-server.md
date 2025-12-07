@@ -26,4 +26,4 @@
 
 # 結論
 
-Deno Deploy
+Deno Deploy, たくさん使われるようになったら Cloudflare Workers?

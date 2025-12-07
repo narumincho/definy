@@ -1,6 +1,8 @@
 import { Dialog } from "./Dialog.tsx";
-import { useEffect, useState } from "preact/hooks";
+import { useCallback, useEffect, useState } from "preact/hooks";
 import { generateExportablePrivateKey, GenerateKeyResult } from "./key.ts";
+import { CreateAccountEventSchema } from "../schema.ts";
+import { TargetedEvent } from "preact";
 
 export const CreateAccountDialog = ({ onClose }: {
   readonly onClose: () => void;
@@ -8,11 +10,37 @@ export const CreateAccountDialog = ({ onClose }: {
   const [privateKey, setPrivateKey] = useState<
     GenerateKeyResult | undefined
   >(undefined);
-  const [isCopied, setIsCopied] = useState(false);
+  const [isCopied, setIsCopied] = useState<boolean>(false);
+  const [submitting, setSubmitting] = useState<boolean>(false);
 
   useEffect(() => {
     generateExportablePrivateKey().then(setPrivateKey);
   }, []);
+
+  const onSubmit = useCallback(
+    (e: TargetedEvent<HTMLFormElement, Event>) => {
+      e.preventDefault();
+      setSubmitting(true);
+      const usernameInput = e.currentTarget.elements.namedItem("username");
+      if (usernameInput instanceof HTMLInputElement) {
+        const event = CreateAccountEventSchema.serialize({
+          name: usernameInput.value,
+        });
+        console.log(event);
+        // TODO ここで署名をする
+        fetch("/events", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/octet-stream",
+          },
+          body: new Uint8Array(event),
+        }).then(() => {
+          onClose();
+        });
+      }
+    },
+    [],
+  );
 
   return (
     <Dialog
@@ -26,6 +54,7 @@ export const CreateAccountDialog = ({ onClose }: {
             display: "grid",
             gap: 16,
           }}
+          onSubmit={onSubmit}
         >
           <div
             style={{
@@ -40,7 +69,7 @@ export const CreateAccountDialog = ({ onClose }: {
             >
               Sign up
             </h2>
-            <button type="button" onClick={onClose}>
+            <button type="button" disabled={submitting} onClick={onClose}>
               x
             </button>
           </div>
@@ -50,7 +79,7 @@ export const CreateAccountDialog = ({ onClose }: {
           </label>
           <label>
             <div>Username</div>
-            <input type="text" required />
+            <input type="text" name="username" required disabled={submitting} />
           </label>
           <label>
             <div>
@@ -62,6 +91,7 @@ export const CreateAccountDialog = ({ onClose }: {
               value={privateKey.privateKeyAsBase64}
               readOnly
               autoComplete="new-password"
+              disabled={submitting}
             />
             <button
               type="button"
@@ -82,9 +112,10 @@ export const CreateAccountDialog = ({ onClose }: {
               {isCopied ? "Copied!" : "copy password"}
             </button>
           </label>
-          <button type="submit">Sign up</button>
+          <button type="submit" disabled={submitting}>Sign up</button>
         </form>
       )}
+      {submitting && <div>Signing up...</div>}
     </Dialog>
   );
 };
