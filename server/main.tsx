@@ -1,7 +1,7 @@
 import { App } from "../client/App.tsx";
 import hash from "../generated/hash.json" with { type: "json" };
 import { render } from "preact-render-to-string";
-import { CreateAccountEventSchema } from "../schema.ts";
+import { decodeCreateAccountEvent } from "../event/main.ts";
 
 // Deno Deploy で Raw imports がサポートされるまで
 const clientScript = await Deno.readTextFile(
@@ -48,7 +48,7 @@ Deno.serve(async (request): Promise<Response> => {
       if (request.method !== "POST") {
         return new Response("Method Not Allowed", { status: 405 });
       }
-      const body = CreateAccountEventSchema.deserialize(
+      const body = decodeCreateAccountEvent(
         new Uint8Array(await request.arrayBuffer()),
       );
       console.log(body);

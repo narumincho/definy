@@ -1,7 +1,7 @@
 import { Dialog } from "./Dialog.tsx";
 import { useCallback, useEffect, useState } from "preact/hooks";
 import { generateExportablePrivateKey, GenerateKeyResult } from "./key.ts";
-import { CreateAccountEventSchema } from "../schema.ts";
+import { encodeCreateAccountEvent } from "../event/main.ts";
 import { TargetedEvent } from "preact";
 
 export const CreateAccountDialog = ({ onClose }: {
@@ -23,7 +23,7 @@ export const CreateAccountDialog = ({ onClose }: {
       setSubmitting(true);
       const usernameInput = e.currentTarget.elements.namedItem("username");
       if (usernameInput instanceof HTMLInputElement) {
-        const event = CreateAccountEventSchema.serialize({
+        const event = encodeCreateAccountEvent({
           name: usernameInput.value,
         });
         console.log(event);
