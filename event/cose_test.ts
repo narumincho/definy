@@ -5,10 +5,10 @@ import {
 } from "./main.ts";
 import { generateKeyPair } from "./key.ts";
 import { assertEquals, assertRejects } from "@std/assert";
-import { decodeCbor } from "@std/cbor";
+import { decodeCbor, encodeCbor } from "@std/cbor";
 
 Deno.test("sign and verify create account event", async () => {
-  const { secretKey, publicKey } = await generateKeyPair();
+  const { secretKey } = await generateKeyPair();
   const eventData: CreateAccountEvent = { name: "test-user" };
 
   // Sign
@@ -18,7 +18,7 @@ Deno.test("sign and verify create account event", async () => {
   );
 
   // Verify
-  const verifiedEvent = await verifyCreateAccountEvent(signedEvent, publicKey);
+  const verifiedEvent = await verifyCreateAccountEvent(signedEvent);
 
   assertEquals(verifiedEvent, eventData);
 });
@@ -54,7 +54,7 @@ Deno.test("header should contain publicKey", async () => {
   assertEquals(header["4"], publicKey);
 });
 
-Deno.test("verify should fail with wrong key", async () => {
+Deno.test("verify should fail with wrong key (tampered header)", async () => {
   const { secretKey } = await generateKeyPair();
   const { publicKey: wrongPublicKey } = await generateKeyPair();
   const eventData: CreateAccountEvent = { name: "test-user" };
@@ -64,9 +64,31 @@ Deno.test("verify should fail with wrong key", async () => {
     secretKey,
   );
 
+  const decoded = decodeCbor(signedEvent);
+  if (!Array.isArray(decoded)) throw new Error("Invalid COSE");
+
+  // Replace the public key in the unprotected header (index 1)
+  const header = decoded[1] as
+    | Map<number, Uint8Array>
+    | Record<number, Uint8Array>;
+
+  // We need to re-encode this with the wrong key
+  // Since we can't easily modify the encoded bytes without re-encoding,
+  // let's manually construct a tampered COSE object or modify the decoded structure and re-encode using encodeCbor from @std/cbor
+  // Note: encodeCreateAccountEventWithSignature uses signCose which does encoding.
+
+  // Let's rely on decoding -> modifying -> encoding
+  if (header instanceof Map) {
+    header.set(4, wrongPublicKey);
+  } else {
+    (header as Record<string, unknown>)["4"] = wrongPublicKey;
+  }
+
+  const tamperedEvent = encodeCbor(decoded);
+
   await assertRejects(
     async () => {
-      await verifyCreateAccountEvent(signedEvent, wrongPublicKey);
+      await verifyCreateAccountEvent(tamperedEvent);
     },
     Error,
     "Invalid signature",
@@ -74,7 +96,7 @@ Deno.test("verify should fail with wrong key", async () => {
 });
 
 Deno.test("verify should fail with tampered payload", async () => {
-  const { secretKey, publicKey } = await generateKeyPair();
+  const { secretKey } = await generateKeyPair();
   const eventData: CreateAccountEvent = { name: "test-user" };
 
   const signedEvent = await encodeCreateAccountEventWithSignature(
@@ -94,7 +116,7 @@ Deno.test("verify should fail with tampered payload", async () => {
 
   await assertRejects(
     async () => {
-      await verifyCreateAccountEvent(tampered, publicKey);
+      await verifyCreateAccountEvent(tampered);
     },
     Error,
     "Invalid signature", // or decode error depending on what we hit

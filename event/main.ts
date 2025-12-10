@@ -1,6 +1,6 @@
 import * as v from "valibot";
 import { decodeCbor, encodeCbor } from "@std/cbor";
-import { PublicKey, SecretKey } from "./key.ts";
+import { SecretKey } from "./key.ts";
 import { signCose, verifyCose } from "./cose.ts";
 
 export const CreateAccountEventSchema = v.object({
@@ -26,9 +26,8 @@ export async function encodeCreateAccountEventWithSignature(
 
 export async function verifyCreateAccountEvent(
   event: Uint8Array,
-  publicKey: PublicKey,
 ): Promise<CreateAccountEvent> {
-  const payload = await verifyCose(event, publicKey);
+  const payload = await verifyCose(event);
   return v.parse(CreateAccountEventSchema, decodeCbor(payload));
 }
 

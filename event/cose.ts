@@ -57,7 +57,6 @@ export async function signCose(
 
 export async function verifyCose(
   coseData: Uint8Array,
-  publicKey: PublicKey,
 ): Promise<Uint8Array> {
   const decoded = decodeCbor(coseData);
 
@@ -65,8 +64,13 @@ export async function verifyCose(
     throw new Error("Invalid COSE_Sign1 structure");
   }
 
-  const [protectedHeaderBytes, _unprotectedHeader, payload, signature] =
-    decoded as [Uint8Array, unknown, Uint8Array, Uint8Array];
+  const [protectedHeaderBytes, unprotectedHeader, payload, signature] =
+    decoded as [
+      Uint8Array,
+      { 4?: Uint8Array } | Map<number, Uint8Array>,
+      Uint8Array,
+      Uint8Array,
+    ];
 
   // Verify Protected Header contains EdDSA alg
   const protectedHeaderMap = decodeCbor(protectedHeaderBytes);
@@ -75,6 +79,29 @@ export async function verifyCose(
     protectedHeaderMap.get(COSE_HEADER_ALG) !== COSE_ALG_EDDSA
   ) {
     throw new Error("Unsupported algorithm or invalid protected header");
+  }
+
+  // Extract Public Key from Unprotected Header
+  let publicKey: PublicKey | undefined;
+  if (unprotectedHeader instanceof Map) {
+    const key = unprotectedHeader.get(4);
+    if (key instanceof Uint8Array) {
+      publicKey = key as PublicKey;
+    }
+  } else if (
+    typeof unprotectedHeader === "object" && ui8a(unprotectedHeader[4])
+  ) {
+    publicKey = unprotectedHeader[4] as PublicKey;
+  } else if (
+    typeof unprotectedHeader === "object" &&
+    isIndex4Uint8Array(unprotectedHeader)
+  ) {
+    // CBOR decoding of map with int keys might result in object with string keys "4"
+    publicKey = unprotectedHeader["4"] as PublicKey;
+  }
+
+  if (!publicKey) {
+    throw new Error("Public key not found in COSE header");
   }
 
   // Reconstruct Sig_structure
@@ -93,4 +120,12 @@ export async function verifyCose(
   }
 
   return payload;
+}
+
+function ui8a(v: unknown): v is Uint8Array {
+  return v instanceof Uint8Array;
+}
+
+function isIndex4Uint8Array(v: object): v is { "4": Uint8Array } {
+  return "4" in v && ui8a((v as Record<string, unknown>)["4"]);
 }
