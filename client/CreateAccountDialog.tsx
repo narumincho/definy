@@ -1,20 +1,20 @@
 import { Dialog } from "./Dialog.tsx";
 import { useCallback, useEffect, useState } from "preact/hooks";
-import { generateExportablePrivateKey, GenerateKeyResult } from "./key.ts";
 import { encodeCreateAccountEvent } from "../event/main.ts";
 import { TargetedEvent } from "preact";
+import { generateKeyPair, PublicKey, SecretKey } from "./key.ts";
 
 export const CreateAccountDialog = ({ onClose }: {
   readonly onClose: () => void;
 }) => {
-  const [privateKey, setPrivateKey] = useState<
-    GenerateKeyResult | undefined
+  const [keyPair, setKeyPair] = useState<
+    { secretKey: SecretKey; publicKey: PublicKey } | undefined
   >(undefined);
   const [isCopied, setIsCopied] = useState<boolean>(false);
   const [submitting, setSubmitting] = useState<boolean>(false);
 
   useEffect(() => {
-    generateExportablePrivateKey().then(setPrivateKey);
+    generateKeyPair().then(setKeyPair);
   }, []);
 
   const onSubmit = useCallback(
@@ -47,7 +47,7 @@ export const CreateAccountDialog = ({ onClose }: {
       isOpen
       onClose={onClose}
     >
-      {privateKey === undefined ? <div>Generating key...</div> : (
+      {keyPair === undefined ? <div>Generating key...</div> : (
         <form
           method="dialog"
           style={{
@@ -75,7 +75,7 @@ export const CreateAccountDialog = ({ onClose }: {
           </div>
           <label>
             <div>Account ID</div>
-            <div>{privateKey.publicKeyAsBase64}</div>
+            <div>{keyPair.publicKey.toBase64({ alphabet: "base64url" })}</div>
           </label>
           <label>
             <div>Username</div>
@@ -88,7 +88,7 @@ export const CreateAccountDialog = ({ onClose }: {
             </div>
             <input
               type="password"
-              value={privateKey.privateKeyAsBase64}
+              value={keyPair.secretKey.toBase64({ alphabet: "base64url" })}
               readOnly
               autoComplete="new-password"
               disabled={submitting}
@@ -97,7 +97,7 @@ export const CreateAccountDialog = ({ onClose }: {
               type="button"
               onClick={() => {
                 navigator.clipboard.writeText(
-                  privateKey.privateKeyAsBase64,
+                  keyPair.secretKey.toBase64({ alphabet: "base64url" }),
                 ).then(() => {
                   setIsCopied(true);
                   setTimeout(() => {

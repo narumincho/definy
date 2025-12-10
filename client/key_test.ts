@@ -1,15 +1,17 @@
-import { generateExportablePrivateKey, stringToPrivateKey } from "./key.ts";
-import { assertEquals } from "@std/assert";
+import { generateKeyPair, secretKeyToPublicKey } from "./key.ts";
+import { assertEquals, assertNotEquals } from "@std/assert";
 
 Deno.test("check accountId is same", async () => {
-  const exportableKey = await generateExportablePrivateKey();
-
-  const derivedAccountId = await stringToPrivateKey(
-    exportableKey.privateKeyAsBase64,
-  );
+  const { secretKey: secretKeyA } = await generateKeyPair();
+  const { secretKey: secretKeyB } = await generateKeyPair();
 
   assertEquals(
-    exportableKey.publicKeyAsBase64,
-    derivedAccountId.publicKeyAsBase64,
+    await secretKeyToPublicKey(secretKeyA),
+    await secretKeyToPublicKey(secretKeyA),
+  );
+
+  assertNotEquals(
+    await secretKeyToPublicKey(secretKeyA),
+    await secretKeyToPublicKey(secretKeyB),
   );
 });
