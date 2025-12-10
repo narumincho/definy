@@ -4,7 +4,7 @@ import { CreateAccountDialog } from "./CreateAccountDialog.tsx";
 import { useEffect, useState } from "preact/hooks";
 import { hydrate } from "preact";
 import { SigInDialog } from "./SigInDialog.tsx";
-import { GenerateKeyResult, stringToPrivateKey } from "./key.ts";
+import { GenerateKeyResult, stringToPrivateKey } from "../event/key.ts";
 
 type DialogOpenState = {
   readonly type: "createAccount";

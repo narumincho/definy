@@ -2,7 +2,7 @@ import { Dialog } from "./Dialog.tsx";
 import { useCallback, useEffect, useState } from "preact/hooks";
 import { encodeCreateAccountEvent } from "../event/main.ts";
 import { TargetedEvent } from "preact";
-import { generateKeyPair, PublicKey, SecretKey } from "./key.ts";
+import { generateKeyPair, PublicKey, SecretKey } from "../event/key.ts";
 
 export const CreateAccountDialog = ({ onClose }: {
   readonly onClose: () => void;

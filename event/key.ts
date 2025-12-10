@@ -1,4 +1,9 @@
-import { Bytes, getPublicKeyAsync, keygenAsync } from "@noble/ed25519";
+import {
+  Bytes,
+  getPublicKeyAsync,
+  keygenAsync,
+  signAsync,
+} from "@noble/ed25519";
 
 const publicKeySymbol = Symbol("publicKey");
 
@@ -36,4 +41,14 @@ export async function secretKeyToPublicKey(
   secretKey: SecretKey,
 ): Promise<PublicKey> {
   return publicKeyFromBytes(await getPublicKeyAsync(secretKey));
+}
+
+/**
+ * データを署名する
+ */
+export async function sign(
+  data: Bytes,
+  secretKey: SecretKey,
+): Promise<Bytes> {
+  return await signAsync(data, secretKey);
 }

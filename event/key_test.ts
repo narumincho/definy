@@ -1,4 +1,4 @@
-import { generateKeyPair, secretKeyToPublicKey } from "./key.ts";
+import { generateKeyPair, secretKeyToPublicKey } from "../event/key.ts";
 import { assertEquals, assertNotEquals } from "@std/assert";
 
 Deno.test("check accountId is same", async () => {
