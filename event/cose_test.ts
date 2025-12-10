@@ -5,6 +5,7 @@ import {
 } from "./main.ts";
 import { generateKeyPair } from "./key.ts";
 import { assertEquals, assertRejects } from "@std/assert";
+import { decodeCbor } from "@std/cbor";
 
 Deno.test("sign and verify create account event", async () => {
   const { secretKey, publicKey } = await generateKeyPair();
@@ -20,6 +21,37 @@ Deno.test("sign and verify create account event", async () => {
   const verifiedEvent = await verifyCreateAccountEvent(signedEvent, publicKey);
 
   assertEquals(verifiedEvent, eventData);
+});
+
+Deno.test("header should contain publicKey", async () => {
+  const { secretKey, publicKey } = await generateKeyPair();
+  const eventData: CreateAccountEvent = { name: "test-user" };
+
+  const signedEvent = await encodeCreateAccountEventWithSignature(
+    eventData,
+    secretKey,
+  );
+
+  const decoded = decodeCbor(signedEvent);
+  if (!Array.isArray(decoded)) throw new Error("Invalid COSE");
+  const unwrappedHeader = decoded[1] as
+    | Map<number, Uint8Array>
+    | Record<number, Uint8Array>;
+
+  // Unprotected header is the second element.
+  // It can be a Map or Object depending on cbor implementation, but @std/cbor uses Object for maps with string keys?
+  // Wait, cbor maps with integer keys might be Maps or Objects.
+  // Let's assume Map first or check.
+  // In `cose.ts`, we used `{ 4: publicKey }`.
+
+  // If we used Object literal in `cose.ts`, @std/cbor usually decodes map with string keys as Object,
+  // but integer keys might be tricky.
+  // Let's check what `decodeCbor` returns for `{ 4: val }`.
+  // Actually, standard JS objects only support string/symbol keys.
+  // If the key is number 4, it will be coerced to string "4".
+
+  const header = unwrappedHeader as Record<string, Uint8Array>;
+  assertEquals(header["4"], publicKey);
 });
 
 Deno.test("verify should fail with wrong key", async () => {

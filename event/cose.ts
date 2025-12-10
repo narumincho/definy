@@ -1,6 +1,6 @@
 import { decodeCbor, encodeCbor } from "@std/cbor";
 import { signAsync, verifyAsync } from "@noble/ed25519";
-import { PublicKey, SecretKey } from "./key.ts";
+import { PublicKey, SecretKey, secretKeyToPublicKey } from "./key.ts";
 
 const COSE_ALG_EDDSA = -8;
 const COSE_HEADER_ALG = 1;
@@ -47,7 +47,7 @@ export async function signCose(
   // [protected, unprotected, payload, signature]
   const coseSign1 = [
     protectedHeaderBytes,
-    {}, // unprotected header (empty map)
+    { 4: await secretKeyToPublicKey(secretKey) }, // unprotected header (kid: public key)
     payload,
     signature,
   ];
