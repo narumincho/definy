@@ -1,7 +1,7 @@
 import { App } from "../client/App.tsx";
 import hash from "../generated/hash.json" with { type: "json" };
 import { render } from "preact-render-to-string";
-import { decodeCreateAccountEvent } from "../event/main.ts";
+import { decodeCreateAccountEvent } from "../event/event.ts";
 
 // Deno Deploy で Raw imports がサポートされるまで
 const clientScript = await Deno.readTextFile(

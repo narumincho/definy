@@ -3,6 +3,7 @@ import {
   getPublicKeyAsync,
   keygenAsync,
   signAsync,
+  verifyAsync,
 } from "@noble/ed25519";
 
 const publicKeySymbol = Symbol("publicKey");
@@ -51,4 +52,15 @@ export async function sign(
   secretKey: SecretKey,
 ): Promise<Bytes> {
   return await signAsync(data, secretKey);
+}
+
+/**
+ * データを検証する
+ */
+export async function verify(
+  data: Bytes,
+  signature: Bytes,
+  publicKey: PublicKey,
+): Promise<boolean> {
+  return await verifyAsync(data, signature, publicKey);
 }

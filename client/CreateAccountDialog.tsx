@@ -1,6 +1,6 @@
 import { Dialog } from "./Dialog.tsx";
 import { useCallback, useEffect, useState } from "preact/hooks";
-import { encodeCreateAccountEvent } from "../event/main.ts";
+import { encodeCreateAccountEvent } from "../event/event.ts";
 import { TargetedEvent } from "preact";
 import { generateKeyPair, PublicKey, SecretKey } from "../event/key.ts";
 

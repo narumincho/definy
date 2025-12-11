@@ -1,15 +1,16 @@
-import {
-  CreateAccountEvent,
-  encodeCreateAccountEventWithSignature,
-  verifyCreateAccountEvent,
-} from "./main.ts";
+import { CreateAccountEvent } from "./event.ts";
 import { generateKeyPair } from "./key.ts";
 import { assertEquals, assertRejects } from "@std/assert";
 import { decodeCbor, encodeCbor } from "@std/cbor";
 
 Deno.test("sign and verify create account event", async () => {
   const { secretKey } = await generateKeyPair();
-  const eventData: CreateAccountEvent = { name: "test-user" };
+  const eventData: CreateAccountEvent = {
+    type: "create_account",
+    accountId: new Uint8Array(),
+    name: "test-user",
+    time: new Date(),
+  };
 
   // Sign
   const signedEvent = await encodeCreateAccountEventWithSignature(
@@ -25,7 +26,12 @@ Deno.test("sign and verify create account event", async () => {
 
 Deno.test("header should contain publicKey", async () => {
   const { secretKey, publicKey } = await generateKeyPair();
-  const eventData: CreateAccountEvent = { name: "test-user" };
+  const eventData: CreateAccountEvent = {
+    type: "create_account",
+    accountId: new Uint8Array(),
+    name: "test-user",
+    time: new Date(),
+  };
 
   const signedEvent = await encodeCreateAccountEventWithSignature(
     eventData,
@@ -57,7 +63,12 @@ Deno.test("header should contain publicKey", async () => {
 Deno.test("verify should fail with wrong key (tampered header)", async () => {
   const { secretKey } = await generateKeyPair();
   const { publicKey: wrongPublicKey } = await generateKeyPair();
-  const eventData: CreateAccountEvent = { name: "test-user" };
+  const eventData: CreateAccountEvent = {
+    type: "create_account",
+    accountId: new Uint8Array(),
+    name: "test-user",
+    time: new Date(),
+  };
 
   const signedEvent = await encodeCreateAccountEventWithSignature(
     eventData,
@@ -97,7 +108,12 @@ Deno.test("verify should fail with wrong key (tampered header)", async () => {
 
 Deno.test("verify should fail with tampered payload", async () => {
   const { secretKey } = await generateKeyPair();
-  const eventData: CreateAccountEvent = { name: "test-user" };
+  const eventData: CreateAccountEvent = {
+    type: "create_account",
+    accountId: new Uint8Array(),
+    name: "test-user",
+    time: new Date(),
+  };
 
   const signedEvent = await encodeCreateAccountEventWithSignature(
     eventData,

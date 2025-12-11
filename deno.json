@@ -23,8 +23,8 @@
     "@std/cbor": "jsr:@std/cbor@^0.1.9",
     "@std/fs": "jsr:@std/fs@^1.0.20",
     "@std/path": "jsr:@std/path@^1.1.3",
+    "@valibot/valibot": "jsr:@valibot/valibot@^1.2.0",
     "preact": "npm:preact@^10.27.2",
-    "preact-render-to-string": "npm:preact-render-to-string@^6.6.3",
-    "valibot": "npm:valibot@^1.2.0"
+    "preact-render-to-string": "npm:preact-render-to-string@^6.6.3"
   }
 }
