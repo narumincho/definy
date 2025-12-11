@@ -3,10 +3,17 @@ import { SecretKey, sign, verify } from "./key.ts";
 import * as v from "@valibot/valibot";
 import { Event, EventSchema } from "./event.ts";
 
+const EventAsCborSchema = v.pipe(
+  v.instance(Uint8Array),
+  v.brand("EventAsCbor"),
+);
+
+type EventAsCbor = v.InferOutput<typeof EventAsCborSchema>;
+
 const SignatureSchema = v.pipe(v.instance(Uint8Array), v.brand("Signature"));
 
 const SignedEventShema = v.object({
-  event: EventSchema,
+  event: EventAsCborSchema,
   signature: SignatureSchema,
 });
 
@@ -16,16 +23,14 @@ export async function signEvent(
   event: Event,
   secretKey: SecretKey,
 ): Promise<Uint8Array> {
+  const eventAsCbor = encodeCbor(v.parse(EventSchema, event));
   const signature = v.parse(
     SignatureSchema,
-    await sign(
-      encodeCbor(v.parse(EventSchema, event)),
-      secretKey,
-    ),
+    await sign(eventAsCbor, secretKey),
   );
 
   const signedEvent: SignedEvent = {
-    event,
+    event: eventAsCbor,
     signature,
   };
 
