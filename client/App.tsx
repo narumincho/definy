@@ -1,18 +1,33 @@
+import { useEffect, useState } from "preact/hooks";
+import { AccountId, SecretKey, secretKeyToAccountId } from "../event/key.ts";
+
 export function App(
   {
     state,
     setState,
-    accountId,
+    secretKey,
     onOpenCreateAccountDialog,
     onOpenSigninDialog,
+    onLogout,
   }: {
     readonly state: number;
     readonly setState: (updateFunc: (prev: number) => number) => void;
-    readonly accountId: string | null;
+    readonly secretKey: SecretKey | null;
     readonly onOpenCreateAccountDialog: () => void;
     readonly onOpenSigninDialog: () => void;
+    readonly onLogout: () => void;
   },
 ) {
+  const [accountId, setAccountId] = useState<AccountId | null>(null);
+
+  useEffect(() => {
+    if (secretKey) {
+      secretKeyToAccountId(secretKey).then((accountId) => {
+        setAccountId(accountId);
+      });
+    }
+  }, [secretKey]);
+
   return (
     <div
       style={{
@@ -36,16 +51,26 @@ export function App(
       >
         count: {state}
       </button>
-      {accountId ? <div>ログイン中 アカウントID: {accountId}</div> : (
-        <>
-          <button type="button" onClick={onOpenCreateAccountDialog}>
-            Create Account
-          </button>
-          <button type="button" onClick={onOpenSigninDialog}>
-            Log in
-          </button>
-        </>
-      )}
+      {secretKey
+        ? (
+          <div>
+            <button type="button" onClick={onLogout}>
+              Log out
+            </button>
+            ログイン中 アカウントID:{" "}
+            {accountId?.toBase64({ alphabet: "base64url" })}
+          </div>
+        )
+        : (
+          <>
+            <button type="button" onClick={onOpenCreateAccountDialog}>
+              Create Account
+            </button>
+            <button type="button" onClick={onOpenSigninDialog}>
+              Log in
+            </button>
+          </>
+        )}
     </div>
   );
 }

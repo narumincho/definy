@@ -1,4 +1,4 @@
-import { generateKeyPair, secretKeyToPublicKey } from "../event/key.ts";
+import { generateKeyPair, secretKeyToAccountId } from "../event/key.ts";
 import { assertEquals, assertNotEquals } from "@std/assert";
 
 Deno.test("check accountId is same", async () => {
@@ -6,12 +6,12 @@ Deno.test("check accountId is same", async () => {
   const { secretKey: secretKeyB } = await generateKeyPair();
 
   assertEquals(
-    await secretKeyToPublicKey(secretKeyA),
-    await secretKeyToPublicKey(secretKeyA),
+    await secretKeyToAccountId(secretKeyA),
+    await secretKeyToAccountId(secretKeyA),
   );
 
   assertNotEquals(
-    await secretKeyToPublicKey(secretKeyA),
-    await secretKeyToPublicKey(secretKeyB),
+    await secretKeyToAccountId(secretKeyA),
+    await secretKeyToAccountId(secretKeyB),
   );
 });

@@ -1,11 +1,11 @@
 import { signEvent, verifyAndParseEvent } from "./signedEvent.ts";
-import { generateKeyPair, secretKeyToPublicKey } from "./key.ts";
+import { generateKeyPair, secretKeyToAccountId } from "./key.ts";
 import { assertEquals, assertRejects } from "@std/assert";
 import { CreateAccountEvent } from "./event.ts";
 
 Deno.test("sign and verify event", async () => {
   const { secretKey } = await generateKeyPair();
-  const accountId = await secretKeyToPublicKey(secretKey);
+  const accountId = await secretKeyToAccountId(secretKey);
   const createAccountEvent: CreateAccountEvent = {
     type: "create_account",
     name: "test-user",
@@ -22,7 +22,7 @@ Deno.test("sign and verify event", async () => {
 
 Deno.test("verify should fail with tampered signature", async () => {
   const { secretKey } = await generateKeyPair();
-  const accountId = await secretKeyToPublicKey(secretKey);
+  const accountId = await secretKeyToAccountId(secretKey);
   const createAccountEvent: CreateAccountEvent = {
     type: "create_account",
     name: "test-user",

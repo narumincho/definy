@@ -1,14 +1,17 @@
 import { Dialog } from "./Dialog.tsx";
 import { useCallback, useEffect, useState } from "preact/hooks";
-import { encodeCreateAccountEvent } from "../event/event.ts";
 import { TargetedEvent } from "preact";
-import { generateKeyPair, PublicKey, SecretKey } from "../event/key.ts";
+import { AccountId, generateKeyPair, SecretKey } from "../event/key.ts";
+import { signEvent } from "../event/signedEvent.ts";
 
 export const CreateAccountDialog = ({ onClose }: {
   readonly onClose: () => void;
 }) => {
   const [keyPair, setKeyPair] = useState<
-    { secretKey: SecretKey; publicKey: PublicKey } | undefined
+    {
+      secretKey: SecretKey;
+      accountId: AccountId;
+    } | undefined
   >(undefined);
   const [isCopied, setIsCopied] = useState<boolean>(false);
   const [submitting, setSubmitting] = useState<boolean>(false);
@@ -18,22 +21,27 @@ export const CreateAccountDialog = ({ onClose }: {
   }, []);
 
   const onSubmit = useCallback(
-    (e: TargetedEvent<HTMLFormElement, Event>) => {
+    async (e: TargetedEvent<HTMLFormElement, Event>) => {
       e.preventDefault();
+      if (!keyPair) {
+        return;
+      }
       setSubmitting(true);
       const usernameInput = e.currentTarget.elements.namedItem("username");
       if (usernameInput instanceof HTMLInputElement) {
-        const event = encodeCreateAccountEvent({
-          name: usernameInput.value,
-        });
-        console.log(event);
-        // TODO ここで署名をする
         fetch("/events", {
           method: "POST",
           headers: {
             "Content-Type": "application/octet-stream",
           },
-          body: new Uint8Array(event),
+          body: new Uint8Array(
+            await signEvent({
+              type: "create_account",
+              name: usernameInput.value,
+              accountId: keyPair.accountId,
+              time: new Date(),
+            }, keyPair.secretKey),
+          ),
         }).then(() => {
           onClose();
         });
@@ -75,16 +83,16 @@ export const CreateAccountDialog = ({ onClose }: {
           </div>
           <label>
             <div>Account ID</div>
-            <div>{keyPair.publicKey.toBase64({ alphabet: "base64url" })}</div>
+            <div>{keyPair.accountId.toBase64({ alphabet: "base64url" })}</div>
           </label>
           <label>
-            <div>Username</div>
+            <div>Account Name</div>
             <input type="text" name="username" required disabled={submitting} />
           </label>
           <label>
             <div>
-              Password (auto created. If you lose this password, you will not be
-              able to log in.)
+              Secret Key (auto created. If you lose this secret key, you will
+              not be able to log in.)
             </div>
             <input
               type="password"

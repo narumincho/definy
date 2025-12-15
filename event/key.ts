@@ -5,13 +5,17 @@ import {
   signAsync,
   verifyAsync,
 } from "@noble/ed25519";
+import * as v from "@valibot/valibot";
 
-const publicKeySymbol = Symbol("publicKey");
+/**
+ * definy では nostr と同様に公開鍵とアカウントIDは同一
+ */
+export const AccountId = v.pipe(v.instance(Uint8Array), v.brand("AccountId"));
 
-export type PublicKey = Uint8Array & { [publicKeySymbol]: never };
+export type AccountId = v.InferOutput<typeof AccountId>;
 
-function publicKeyFromBytes(bytes: Bytes): PublicKey {
-  return bytes as PublicKey;
+function accountIdFromBytes(bytes: Bytes): AccountId {
+  return bytes as AccountId;
 }
 
 const secretKeySymbol = Symbol("secretKey");
@@ -22,26 +26,32 @@ function secretKeyFromBytes(bytes: Bytes): SecretKey {
   return bytes as SecretKey;
 }
 
+export function secretKeyFromBase64(base64: string): SecretKey {
+  return secretKeyFromBytes(
+    Uint8Array.fromBase64(base64, { alphabet: "base64url" }),
+  );
+}
+
 /**
  * ランダムな秘密鍵を生成する
  */
 export async function generateKeyPair(): Promise<
-  { secretKey: SecretKey; publicKey: PublicKey }
+  { secretKey: SecretKey; accountId: AccountId }
 > {
   const { secretKey, publicKey } = await keygenAsync();
   return {
     secretKey: secretKeyFromBytes(secretKey),
-    publicKey: publicKeyFromBytes(publicKey),
+    accountId: accountIdFromBytes(publicKey),
   };
 }
 
 /**
  * 秘密鍵から公開鍵を導出する
  */
-export async function secretKeyToPublicKey(
+export async function secretKeyToAccountId(
   secretKey: SecretKey,
-): Promise<PublicKey> {
-  return publicKeyFromBytes(await getPublicKeyAsync(secretKey));
+): Promise<AccountId> {
+  return accountIdFromBytes(await getPublicKeyAsync(secretKey));
 }
 
 /**
@@ -60,7 +70,7 @@ export async function sign(
 export async function verify(
   data: Bytes,
   signature: Bytes,
-  publicKey: PublicKey,
+  accountId: AccountId,
 ): Promise<boolean> {
-  return await verifyAsync(data, signature, publicKey);
+  return await verifyAsync(data, signature, accountId);
 }

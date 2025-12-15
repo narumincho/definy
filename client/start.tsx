@@ -4,7 +4,7 @@ import { CreateAccountDialog } from "./CreateAccountDialog.tsx";
 import { useEffect, useState } from "preact/hooks";
 import { hydrate } from "preact";
 import { SigInDialog } from "./SigInDialog.tsx";
-import { GenerateKeyResult, stringToPrivateKey } from "../event/key.ts";
+import { SecretKey, secretKeyFromBase64 } from "../event/key.ts";
 
 type DialogOpenState = {
   readonly type: "createAccount";
@@ -17,7 +17,7 @@ const AppWithState = () => {
   const [dialogOpenState, setDialogOpenState] = useState<
     DialogOpenState | null
   >(null);
-  const [privateKey, setPrivateKey] = useState<GenerateKeyResult | null>(
+  const [privateKey, setPrivateKey] = useState<SecretKey | null>(
     null,
   );
 
@@ -29,7 +29,7 @@ const AppWithState = () => {
     });
   }, []);
 
-  const handleOpenCreateAccountDialog = async () => {
+  const handleOpenCreateAccountDialog = () => {
     setDialogOpenState({
       type: "createAccount",
     });
@@ -46,14 +46,20 @@ const AppWithState = () => {
     });
   };
 
+  const handleLogout = () => {
+    setPrivateKey(null);
+    setDialogOpenState(null);
+  };
+
   return (
     <>
       <App
         state={state}
         setState={setState}
-        accountId={privateKey?.publicKeyAsBase64 ?? null}
+        secretKey={privateKey}
         onOpenCreateAccountDialog={handleOpenCreateAccountDialog}
         onOpenSigninDialog={handleOpenSigninDialog}
+        onLogout={handleLogout}
       />
       {dialogOpenState?.type === "createAccount" &&
         (
@@ -83,7 +89,7 @@ hydrate(<AppWithState />, document.body);
  * @returns 秘密鍵
  */
 async function loginByNavigatorCredentialsGet(): Promise<
-  GenerateKeyResult | undefined
+  SecretKey | undefined
 > {
   const credential = (await navigator.credentials.get(
     { password: true } as CredentialRequestOptions,
@@ -93,7 +99,5 @@ async function loginByNavigatorCredentialsGet(): Promise<
   if (!credential?.password) {
     return;
   }
-  return await stringToPrivateKey(
-    credential.password,
-  );
+  return secretKeyFromBase64(credential.password);
 }

@@ -1,18 +1,17 @@
 import * as v from "@valibot/valibot";
+import { AccountId } from "./key.ts";
 
-export const Uint8ArraySchema = v.instance(Uint8Array);
-
-export const CreateAccountEventSchema = v.object({
+export const CreateAccountEvent = v.object({
   type: v.literal("create_account"),
-  accountId: Uint8ArraySchema,
+  accountId: AccountId,
   name: v.string(),
   time: v.date(),
 });
 
-export const EventSchema = v.union([CreateAccountEventSchema]);
+export const Event = v.union([CreateAccountEvent]);
 
 export type CreateAccountEvent = v.InferOutput<
-  typeof CreateAccountEventSchema
+  typeof CreateAccountEvent
 >;
 
-export type Event = v.InferOutput<typeof EventSchema>;
+export type Event = v.InferOutput<typeof Event>;
