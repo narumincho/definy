@@ -35,14 +35,9 @@ export function secretKeyFromBase64(base64: string): SecretKey {
 /**
  * ランダムな秘密鍵を生成する
  */
-export async function generateKeyPair(): Promise<
-  { secretKey: SecretKey; accountId: AccountId }
-> {
-  const { secretKey, publicKey } = await keygenAsync();
-  return {
-    secretKey: secretKeyFromBytes(secretKey),
-    accountId: accountIdFromBytes(publicKey),
-  };
+export async function generateSecretKey(): Promise<SecretKey> {
+  const { secretKey } = await keygenAsync();
+  return secretKeyFromBytes(secretKey);
 }
 
 /**

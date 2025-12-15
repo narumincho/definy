@@ -1,29 +1,29 @@
 import { Dialog } from "./Dialog.tsx";
 import { useCallback, useEffect, useState } from "preact/hooks";
 import { TargetedEvent } from "preact";
-import { AccountId, generateKeyPair, SecretKey } from "../event/key.ts";
+import {
+  AccountId,
+  generateSecretKey,
+  SecretKey,
+  secretKeyToAccountId,
+} from "../event/key.ts";
 import { signEvent } from "../event/signedEvent.ts";
 
 export const CreateAccountDialog = ({ onClose }: {
   readonly onClose: () => void;
 }) => {
-  const [keyPair, setKeyPair] = useState<
-    {
-      secretKey: SecretKey;
-      accountId: AccountId;
-    } | undefined
-  >(undefined);
+  const [secretKey, setSecretKey] = useState<SecretKey | undefined>(undefined);
   const [isCopied, setIsCopied] = useState<boolean>(false);
   const [submitting, setSubmitting] = useState<boolean>(false);
 
   useEffect(() => {
-    generateKeyPair().then(setKeyPair);
+    generateSecretKey().then(setSecretKey);
   }, []);
 
   const onSubmit = useCallback(
     async (e: TargetedEvent<HTMLFormElement, Event>) => {
       e.preventDefault();
-      if (!keyPair) {
+      if (!secretKey) {
         return;
       }
       setSubmitting(true);
@@ -38,9 +38,9 @@ export const CreateAccountDialog = ({ onClose }: {
             await signEvent({
               type: "create_account",
               name: usernameInput.value,
-              accountId: keyPair.accountId,
+              accountId: await secretKeyToAccountId(secretKey),
               time: new Date(),
-            }, keyPair.secretKey),
+            }, secretKey),
           ),
         }).then(() => {
           onClose();
@@ -55,7 +55,7 @@ export const CreateAccountDialog = ({ onClose }: {
       isOpen
       onClose={onClose}
     >
-      {keyPair === undefined ? <div>Generating key...</div> : (
+      {secretKey === undefined ? <div>Generating key...</div> : (
         <form
           method="dialog"
           style={{
@@ -83,7 +83,7 @@ export const CreateAccountDialog = ({ onClose }: {
           </div>
           <label>
             <div>Account ID</div>
-            <div>{keyPair.accountId.toBase64({ alphabet: "base64url" })}</div>
+            <AccountIdView secretKey={secretKey} />
           </label>
           <label>
             <div>Account Name</div>
@@ -96,7 +96,7 @@ export const CreateAccountDialog = ({ onClose }: {
             </div>
             <input
               type="password"
-              value={keyPair.secretKey.toBase64({ alphabet: "base64url" })}
+              value={secretKey.toBase64({ alphabet: "base64url" })}
               readOnly
               autoComplete="new-password"
               disabled={submitting}
@@ -105,7 +105,7 @@ export const CreateAccountDialog = ({ onClose }: {
               type="button"
               onClick={() => {
                 navigator.clipboard.writeText(
-                  keyPair.secretKey.toBase64({ alphabet: "base64url" }),
+                  secretKey.toBase64({ alphabet: "base64url" }),
                 ).then(() => {
                   setIsCopied(true);
                   setTimeout(() => {
@@ -127,3 +127,17 @@ export const CreateAccountDialog = ({ onClose }: {
     </Dialog>
   );
 };
+
+function AccountIdView({ secretKey }: { readonly secretKey: SecretKey }) {
+  const [accountId, setAccountId] = useState<AccountId | null>(null);
+
+  useEffect(() => {
+    secretKeyToAccountId(secretKey).then(setAccountId);
+  }, []);
+
+  return (
+    <div>
+      {accountId?.toBase64({ alphabet: "base64url" })}
+    </div>
+  );
+}
