@@ -47,7 +47,7 @@ export async function verifyAndParseEvent(
   );
   const event = v.parse(Event, decodeCbor(eventAsCbor));
 
-  const isValid = await verify(signature, eventAsCbor, event.accountId);
+  const isValid = await verify(eventAsCbor, signature, event.accountId);
 
   if (!isValid) {
     throw new Error("Invalid signature");
