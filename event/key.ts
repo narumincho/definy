@@ -67,5 +67,5 @@ export async function verify(
   signature: Bytes,
   accountId: AccountId,
 ): Promise<boolean> {
-  return await verifyAsync(data, signature, accountId);
+  return await verifyAsync(signature, data, accountId);
 }

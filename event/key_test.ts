@@ -1,17 +1,19 @@
-import { generateKeyPair, secretKeyToAccountId } from "../event/key.ts";
-import { assertEquals, assertNotEquals } from "@std/assert";
+import { assert } from "@std/assert";
+import {
+  generateSecretKey,
+  secretKeyToAccountId,
+  sign,
+  verify,
+} from "./key.ts";
 
-Deno.test("check accountId is same", async () => {
-  const { secretKey: secretKeyA } = await generateKeyPair();
-  const { secretKey: secretKeyB } = await generateKeyPair();
+Deno.test("sign and verify", async () => {
+  const secretKey = await generateSecretKey();
+  const accountId = await secretKeyToAccountId(secretKey);
+  const data = new TextEncoder().encode("hello world");
 
-  assertEquals(
-    await secretKeyToAccountId(secretKeyA),
-    await secretKeyToAccountId(secretKeyA),
-  );
+  const signature = await sign(data, secretKey);
 
-  assertNotEquals(
-    await secretKeyToAccountId(secretKeyA),
-    await secretKeyToAccountId(secretKeyB),
-  );
+  const isValid = await verify(data, signature, accountId);
+
+  assert(isValid, "Signature should be valid");
 });

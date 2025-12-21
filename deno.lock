@@ -1,7 +1,9 @@
 {
   "version": "5",
   "specifiers": {
+    "jsr:@narumincho/type-lint@*": "1.0.0",
     "jsr:@noble/ed25519@3": "3.0.0",
+    "jsr:@std/assert@*": "1.0.16",
     "jsr:@std/assert@^1.0.16": "1.0.16",
     "jsr:@std/bytes@^1.0.6": "1.0.6",
     "jsr:@std/cbor@~0.1.9": "0.1.9",
@@ -14,6 +16,9 @@
     "npm:preact@^10.27.2": "10.27.2"
   },
   "jsr": {
+    "@narumincho/type-lint@1.0.0": {
+      "integrity": "6550ca44b49c2453c1142ec194219be5cb045de8b76519370f8bc195ecaac26a"
+    },
     "@noble/ed25519@3.0.0": {
       "integrity": "cf3cc8022e0ab17649af2064be922b9653af8a2bbe695bd02f88317746dc619e"
     },

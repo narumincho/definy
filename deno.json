@@ -26,5 +26,8 @@
     "@valibot/valibot": "jsr:@valibot/valibot@^1.2.0",
     "preact": "npm:preact@^10.27.2",
     "preact-render-to-string": "npm:preact-render-to-string@^6.6.3"
+  },
+  "lint": {
+    "plugins": ["jsr:@narumincho/type-lint"]
   }
 }
