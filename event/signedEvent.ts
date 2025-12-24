@@ -10,12 +10,12 @@ const EventAsCborSchema = v.pipe(
 
 const SignatureSchema = v.pipe(v.instance(Uint8Array), v.brand("Signature"));
 
-const SignedEventShema = v.object({
-  event: EventAsCborSchema,
+const SignedEventSchema = v.object({
+  eventAsCbor: EventAsCborSchema,
   signature: SignatureSchema,
 });
 
-type SignedEvent = v.InferOutput<typeof SignedEventShema>;
+export type SignedEvent = v.InferOutput<typeof SignedEventSchema>;
 
 export async function signEvent(
   event: Event,
@@ -31,7 +31,7 @@ export async function signEvent(
   );
 
   const signedEvent: SignedEvent = {
-    event: eventAsCbor,
+    eventAsCbor,
     signature,
   };
 
@@ -40,9 +40,9 @@ export async function signEvent(
 
 export async function verifyAndParseEvent(
   cborData: Uint8Array,
-): Promise<Event> {
-  const { event: eventAsCbor, signature } = v.parse(
-    SignedEventShema,
+): Promise<{ eventAsCbor: Uint8Array; event: Event }> {
+  const { eventAsCbor, signature } = v.parse(
+    SignedEventSchema,
     decodeCbor(cborData),
   );
   const event = v.parse(Event, decodeCbor(eventAsCbor));
@@ -53,5 +53,5 @@ export async function verifyAndParseEvent(
     throw new Error("Invalid signature");
   }
 
-  return event;
+  return { eventAsCbor, event };
 }

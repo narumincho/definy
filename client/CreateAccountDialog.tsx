@@ -17,19 +17,23 @@ export const CreateAccountDialog = ({ onClose }: {
   const [submitting, setSubmitting] = useState<boolean>(false);
 
   useEffect(() => {
-    generateSecretKey().then(setSecretKey);
+    (async () => {
+      setSecretKey(await generateSecretKey());
+    })();
   }, []);
 
   const onSubmit = useCallback(
     async (e: TargetedEvent<HTMLFormElement, Event>) => {
       e.preventDefault();
+
+      console.log(secretKey);
       if (!secretKey) {
         return;
       }
       setSubmitting(true);
       const usernameInput = e.currentTarget.elements.namedItem("username");
       if (usernameInput instanceof HTMLInputElement) {
-        fetch("/events", {
+        await fetch("/events", {
           method: "POST",
           headers: {
             "Content-Type": "application/octet-stream",
@@ -42,12 +46,11 @@ export const CreateAccountDialog = ({ onClose }: {
               time: new Date(),
             }, secretKey),
           ),
-        }).then(() => {
-          onClose();
         });
+        onClose();
       }
     },
-    [],
+    [secretKey, onClose],
   );
 
   return (
@@ -87,7 +90,13 @@ export const CreateAccountDialog = ({ onClose }: {
           </label>
           <label>
             <div>Account Name</div>
-            <input type="text" name="username" required disabled={submitting} />
+            <input
+              type="text"
+              name="username"
+              autocomplete="username"
+              required
+              disabled={submitting}
+            />
           </label>
           <label>
             <div>

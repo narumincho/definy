@@ -2,6 +2,7 @@ import { App } from "../client/App.tsx";
 import { verifyAndParseEvent } from "../event/signedEvent.ts";
 import hash from "../generated/hash.json" with { type: "json" };
 import { render } from "preact-render-to-string";
+import { saveEvent } from "./database.ts";
 
 // Deno Deploy で Raw imports がサポートされるまで
 const clientScript = await Deno.readTextFile(
@@ -49,10 +50,14 @@ Deno.serve(async (request): Promise<Response> => {
       if (request.method !== "POST") {
         return new Response("Method Not Allowed", { status: 405 });
       }
-      const body = await verifyAndParseEvent(
-        new Uint8Array(await request.arrayBuffer()),
+      const body = new Uint8Array(await request.arrayBuffer());
+
+      const { eventAsCbor, event } = await verifyAndParseEvent(
+        new Uint8Array(body),
       );
-      console.log(body);
+
+      await saveEvent({ eventAsCbor, event });
+
       return new Response("OK", { status: 200 });
     }
     default:
