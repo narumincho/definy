@@ -13,7 +13,6 @@ type DialogOpenState = {
 };
 
 const AppWithState = () => {
-  const [state, setState] = useState(0);
   const [dialogOpenState, setDialogOpenState] = useState<
     DialogOpenState | null
   >(null);
@@ -54,8 +53,6 @@ const AppWithState = () => {
   return (
     <>
       <App
-        state={state}
-        setState={setState}
         secretKey={privateKey}
         onOpenCreateAccountDialog={handleOpenCreateAccountDialog}
         onOpenSigninDialog={handleOpenSigninDialog}

@@ -21,8 +21,6 @@ Deno.serve(async (request): Promise<Response> => {
             </head>
             <body>
               <App
-                state={0}
-                setState={() => {}}
                 secretKey={null}
                 onOpenCreateAccountDialog={() => {}}
                 onOpenSigninDialog={() => {}}
@@ -52,11 +50,11 @@ Deno.serve(async (request): Promise<Response> => {
       }
       const body = new Uint8Array(await request.arrayBuffer());
 
-      const { eventAsCbor, event } = await verifyAndParseEvent(
+      const { signedEvent, event } = await verifyAndParseEvent(
         new Uint8Array(body),
       );
 
-      await saveEvent({ eventAsCbor, event });
+      await saveEvent({ signedEvent });
 
       return new Response("OK", { status: 200 });
     }

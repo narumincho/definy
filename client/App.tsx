@@ -3,15 +3,11 @@ import { AccountId, SecretKey, secretKeyToAccountId } from "../event/key.ts";
 
 export function App(
   {
-    state,
-    setState,
     secretKey,
     onOpenCreateAccountDialog,
     onOpenSigninDialog,
     onLogout,
   }: {
-    readonly state: number;
-    readonly setState: (updateFunc: (prev: number) => number) => void;
     readonly secretKey: SecretKey | null;
     readonly onOpenCreateAccountDialog: () => void;
     readonly onOpenSigninDialog: () => void;
@@ -43,14 +39,6 @@ export function App(
       >
         definy
       </h1>
-      <button
-        type="button"
-        onClick={() => {
-          setState((prev) => prev + 1);
-        }}
-      >
-        count: {state}
-      </button>
       {secretKey
         ? (
           <div>
