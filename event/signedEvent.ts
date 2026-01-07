@@ -8,11 +8,13 @@ const EventAsCborSchema = v.pipe(
   v.brand("EventAsCbor"),
 );
 
-const SignatureSchema = v.pipe(v.instance(Uint8Array), v.brand("Signature"));
+export const Signature = v.pipe(v.instance(Uint8Array), v.brand("Signature"));
+
+export type Signature = v.InferOutput<typeof Signature>;
 
 const SignedEventSchema = v.object({
   eventAsCbor: EventAsCborSchema,
-  signature: SignatureSchema,
+  signature: Signature,
 });
 
 export type SignedEvent = v.InferOutput<typeof SignedEventSchema>;
@@ -26,7 +28,7 @@ export async function signEvent(
     encodeCbor(v.parse(Event, event)),
   );
   const signature = v.parse(
-    SignatureSchema,
+    Signature,
     await sign(eventAsCbor, secretKey),
   );
 
@@ -57,3 +59,10 @@ export async function verifyAndParseEvent(
 
   return { signedEvent, event };
 }
+
+export const SignedEventAsCbor = v.pipe(
+  v.instance(Uint8Array),
+  v.brand("SignedEventAsCbor"),
+);
+
+export type SignedEventAsCbor = v.InferOutput<typeof SignedEventAsCbor>;

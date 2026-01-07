@@ -14,8 +14,7 @@
   "tasks": {
     "build": "deno run --check --unstable-bundle --allow-read=./generated --allow-write=./generated ./script/build.ts",
     "build-watch": "deno run --check --unstable-bundle --allow-read=./generated --allow-write=./generated --watch=client ./script/build.ts",
-    "start": "deno run --check --allow-net --allow-read=./generated ./server/main.tsx",
-    "start-watch": "deno run --check --watch --allow-net --allow-read=./generated ./server/main.tsx"
+    "start-watch": "deno run --tunnel --check --watch --allow-net --allow-read=./generated --allow-env ./server/main.tsx"
   },
   "imports": {
     "@noble/ed25519": "jsr:@noble/ed25519@^3.0.0",

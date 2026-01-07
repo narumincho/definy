@@ -1,4 +1,9 @@
-import { SignedEvent } from "../event/signedEvent.ts";
+import {
+  Signature,
+  SignedEvent,
+  SignedEventAsCbor,
+} from "../event/signedEvent.ts";
+import { Event } from "../event/event.ts";
 import { Pool } from "pg";
 
 const user = Deno.env.get("DATABASE_USER");
@@ -39,13 +44,37 @@ o/bKiIz+Fq8=
   },
 });
 
-console.log((await pool.query("SELECT * FROM public.flow")).rows);
-
 export async function saveEvent(
-  { signedEvent }: {
-    signedEvent: SignedEvent;
+  { signedEventAsCbor, event }: {
+    signedEventAsCbor: SignedEventAsCbor;
+    event: Event;
   },
 ) {
+  const id = await crypto.subtle.digest("SHA-256", signedEventAsCbor);
+  await pool.query(
+    `
+    INSERT INTO definy_local.create_account_event (
+        id,
+        signedEventAsCbor,
+        account_id,
+        name,
+        time
+    ) VALUES (
+        $1,
+        $2,
+        $3,
+        $4,
+        $5
+    )
+  `,
+    [
+      id,
+      signedEventAsCbor,
+      event.accountId,
+      event.name,
+      event.time,
+    ],
+  );
 }
 
 export async function getEvents() {
