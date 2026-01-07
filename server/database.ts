@@ -2,8 +2,8 @@ import {
   Signature,
   SignedEvent,
   SignedEventAsCbor,
-} from "../event/signedEvent.ts";
-import { Event } from "../event/event.ts";
+} from "../common/signedEvent.ts";
+import { Event } from "../common/event.ts";
 import { Pool } from "pg";
 
 const user = Deno.env.get("DATABASE_USER");

@@ -8,7 +8,7 @@ import {
   SecretKey,
   secretKeyFromBase64,
   secretKeyToAccountId,
-} from "../event/key.ts";
+} from "../common/key.ts";
 
 type DialogOpenState = {
   readonly type: "createAccount";

@@ -1,4 +1,4 @@
-import { AccountId, SecretKey } from "../event/key.ts";
+import { AccountId, SecretKey } from "../common/key.ts";
 
 export type LogInState = {
   readonly type: "loading";

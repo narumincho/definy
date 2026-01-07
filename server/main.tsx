@@ -2,7 +2,7 @@ import { App } from "../client/App.tsx";
 import {
   SignedEventAsCbor,
   verifyAndParseEvent,
-} from "../event/signedEvent.ts";
+} from "../common/signedEvent.ts";
 import hash from "../generated/hash.json" with { type: "json" };
 import { render } from "preact-render-to-string";
 import { saveEvent } from "./database.ts";

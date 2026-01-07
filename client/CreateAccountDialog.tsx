@@ -6,8 +6,8 @@ import {
   generateSecretKey,
   SecretKey,
   secretKeyToAccountId,
-} from "../event/key.ts";
-import { signEvent } from "../event/signedEvent.ts";
+} from "../common/key.ts";
+import { signEvent } from "../common/signedEvent.ts";
 
 export const CreateAccountDialog = ({ onClose }: {
   readonly onClose: () => void;
