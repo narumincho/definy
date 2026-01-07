@@ -50,7 +50,9 @@ export async function saveEvent(
     event: Event;
   },
 ) {
-  const id = await crypto.subtle.digest("SHA-256", signedEventAsCbor);
+  const id = new Uint8Array(
+    await crypto.subtle.digest("SHA-256", signedEventAsCbor),
+  );
   await pool.query(
     `
     INSERT INTO definy_local.create_account_event (
