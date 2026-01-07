@@ -1,29 +1,28 @@
-import { useEffect, useState } from "preact/hooks";
-import { AccountId, SecretKey, secretKeyToAccountId } from "../event/key.ts";
+import { AccountId, SecretKey } from "../event/key.ts";
+
+export type LogInState = {
+  readonly type: "loading";
+} | {
+  readonly type: "noLogIn";
+} | {
+  readonly type: "logIn";
+  readonly secretKey: SecretKey;
+  readonly accountId: AccountId | undefined;
+};
 
 export function App(
   {
-    secretKey,
+    logInState,
     onOpenCreateAccountDialog,
     onOpenSigninDialog,
     onLogout,
   }: {
-    readonly secretKey: SecretKey | null;
+    readonly logInState: LogInState;
     readonly onOpenCreateAccountDialog: () => void;
     readonly onOpenSigninDialog: () => void;
     readonly onLogout: () => void;
   },
 ) {
-  const [accountId, setAccountId] = useState<AccountId | null>(null);
-
-  useEffect(() => {
-    if (secretKey) {
-      secretKeyToAccountId(secretKey).then((accountId) => {
-        setAccountId(accountId);
-      });
-    }
-  }, [secretKey]);
-
   return (
     <div
       style={{
@@ -39,25 +38,33 @@ export function App(
       >
         definy
       </h1>
-      {secretKey
+      開発中...
+
+      {logInState.type === "loading"
+        ? (
+          <div>
+            ログイン状態を読み込み中...
+          </div>
+        )
+        : logInState.type === "logIn"
         ? (
           <div>
             <button type="button" onClick={onLogout}>
-              Log out
+              ログアウト
             </button>
             ログイン中 アカウントID:{" "}
-            {accountId?.toBase64({ alphabet: "base64url" })}
+            {logInState.accountId?.toBase64({ alphabet: "base64url" })}
           </div>
         )
         : (
-          <>
+          <div>
             <button type="button" onClick={onOpenCreateAccountDialog}>
-              Create Account
+              アカウントを作成する
             </button>
             <button type="button" onClick={onOpenSigninDialog}>
-              Log in
+              ログインする
             </button>
-          </>
+          </div>
         )}
     </div>
   );

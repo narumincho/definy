@@ -1,10 +1,14 @@
-import { App } from "./App.tsx";
+import { App, LogInState } from "./App.tsx";
 
 import { CreateAccountDialog } from "./CreateAccountDialog.tsx";
 import { useEffect, useState } from "preact/hooks";
 import { hydrate } from "preact";
 import { SigInDialog } from "./SigInDialog.tsx";
-import { SecretKey, secretKeyFromBase64 } from "../event/key.ts";
+import {
+  SecretKey,
+  secretKeyFromBase64,
+  secretKeyToAccountId,
+} from "../event/key.ts";
 
 type DialogOpenState = {
   readonly type: "createAccount";
@@ -12,18 +16,31 @@ type DialogOpenState = {
   readonly type: "login";
 };
 
-const AppWithState = () => {
+function AppWithState() {
   const [dialogOpenState, setDialogOpenState] = useState<
     DialogOpenState | null
   >(null);
-  const [privateKey, setPrivateKey] = useState<SecretKey | null>(
-    null,
-  );
+  const [logInState, setLogInState] = useState<LogInState>({
+    type: "loading",
+  });
 
   useEffect(() => {
-    loginByNavigatorCredentialsGet().then((privateKey) => {
-      if (privateKey) {
-        setPrivateKey(privateKey);
+    if (logInState?.type === "logIn" && !logInState.accountId) {
+      secretKeyToAccountId(logInState.secretKey).then((accountId) => {
+        setLogInState({
+          type: "logIn",
+          secretKey: logInState.secretKey,
+          accountId,
+        });
+      });
+    }
+  }, [logInState]);
+
+  useEffect(() => {
+    loginByNavigatorCredentialsGet().then((secretKey) => {
+      if (secretKey) {
+        console.log("Web Credential APIによる自動ログインをしました");
+        setLogInState({ type: "logIn", secretKey, accountId: undefined });
       }
     });
   }, []);
@@ -35,25 +52,20 @@ const AppWithState = () => {
   };
 
   const handleOpenSigninDialog = async () => {
-    const privateKey = await loginByNavigatorCredentialsGet();
-    if (privateKey) {
-      setPrivateKey(privateKey);
-      return;
-    }
     setDialogOpenState({
       type: "login",
     });
   };
 
   const handleLogout = () => {
-    setPrivateKey(null);
+    setLogInState({ type: "noLogIn" });
     setDialogOpenState(null);
   };
 
   return (
     <>
       <App
-        secretKey={privateKey}
+        logInState={logInState}
         onOpenCreateAccountDialog={handleOpenCreateAccountDialog}
         onOpenSigninDialog={handleOpenSigninDialog}
         onLogout={handleLogout}
@@ -77,7 +89,7 @@ const AppWithState = () => {
         )}
     </>
   );
-};
+}
 
 hydrate(<AppWithState />, document.body);
 

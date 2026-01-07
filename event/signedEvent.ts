@@ -42,12 +42,11 @@ export async function signEvent(
 
 export async function verifyAndParseEvent(
   cborData: Uint8Array,
-): Promise<{ signedEvent: SignedEvent; event: Event }> {
-  const signedEvent = v.parse(
+): Promise<Event> {
+  const { eventAsCbor, signature } = v.parse(
     SignedEventSchema,
     decodeCbor(cborData),
   );
-  const { eventAsCbor, signature } = signedEvent;
 
   const event = v.parse(Event, decodeCbor(eventAsCbor));
 
@@ -57,7 +56,7 @@ export async function verifyAndParseEvent(
     throw new Error("Invalid signature");
   }
 
-  return { signedEvent, event };
+  return event;
 }
 
 export const SignedEventAsCbor = v.pipe(
