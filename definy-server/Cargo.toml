@@ -10,3 +10,4 @@ http-body-util = "0.1"
 hyper-util = { version = "0.1", features = ["full"] }
 definy-ui = { path = "../definy-ui" }
 narumincho-vdom = { path = "../narumincho-vdom" }
+sha2 = "0.10.9"

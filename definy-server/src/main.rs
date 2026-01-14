@@ -32,28 +32,37 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     }
 }
 
+const JAVASCRIPT_CONTENT: &[u8] = include_bytes!("../../web-distribution/definy_client.js");
+
+const JAVASCRIPT_HASH: &'static str =
+    include_str!("../../web-distribution/definy_client.js.sha256");
+
+const WASM_CONTENT: &[u8] = include_bytes!("../../web-distribution/definy_client_bg.wasm");
+
+const WASM_HASH: &'static str = include_str!("../../web-distribution/definy_client_bg.wasm.sha256");
+
 async fn handler(
     request: Request<hyper::body::Incoming>,
 ) -> Result<Response<Full<Bytes>>, hyper::http::Error> {
-    match request.uri().path() {
-        "/" => Response::builder()
+    let path = request.uri().path();
+    println!("Received request for path: {}", path);
+    match path.trim_start_matches('/') {
+        "" => Response::builder()
             .header("Content-Type", "text/html; charset=utf-8")
             .body(Full::new(Bytes::from(narumincho_vdom::to_html(
                 &definy_ui::app(),
             )))),
-        "/script.js" => Response::builder()
+        JAVASCRIPT_HASH => Response::builder()
             .header("Content-Type", "application/javascript; charset=utf-8")
-            .body(Full::new(Bytes::from(include_str!(
-                "../../web-distribution/definy_client.js"
-            )))),
-        "/definy_client_bg.wasm" => Response::builder()
+            .header("Cache-Control", "public, max-age=31536000, immutable")
+            .body(Full::new(Bytes::from_static(JAVASCRIPT_CONTENT))),
+        WASM_HASH => Response::builder()
             .header("Content-Type", "application/wasm")
-            .body(Full::new(Bytes::from_static(include_bytes!(
-                "../../web-distribution/definy_client_bg.wasm"
-            )))),
+            .body(Full::new(Bytes::from_static(WASM_CONTENT))),
         _ => Response::builder()
             .status(404)
             .header("Content-Type", "text/html; charset=utf-8")
+            .header("Cache-Control", "public, max-age=31536000, immutable")
             .body(Full::new(Bytes::from("404 Not Found"))),
     }
 }

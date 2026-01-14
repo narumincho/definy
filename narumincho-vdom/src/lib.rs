@@ -21,8 +21,8 @@ pub fn h(
     })
 }
 
-pub fn text(text: &str) -> Node {
-    Node::Text(text.to_string())
+pub fn text(text: impl Into<String>) -> Node {
+    Node::Text(text.into())
 }
 
 pub fn to_html(node: &Node) -> String {

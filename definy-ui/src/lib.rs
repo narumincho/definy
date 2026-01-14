@@ -14,10 +14,12 @@ pub fn app() -> narumincho_vdom::Node {
                     h(
                         "script",
                         [("type".to_string(), "module".to_string())],
-                        [text(
-                            "import init from './script.js';
-init();",
-                        )],
+                        [text(format!(
+                            "import init from './{}';
+init(\"{}\");",
+                            include_str!("../../web-distribution/definy_client.js.sha256"),
+                            include_str!("../../web-distribution/definy_client_bg.wasm.sha256"),
+                        ))],
                     ),
                 ],
             ),

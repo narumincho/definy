@@ -1,4 +1,10 @@
 [workspace]
 
-members = ["definy-client", "definy-server", "definy-ui", "narumincho-vdom"]
+members = [
+  "definy-build",
+  "definy-client",
+  "definy-server",
+  "definy-ui",
+  "narumincho-vdom",
+]
 resolver = "3"
