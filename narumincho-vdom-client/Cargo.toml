@@ -1,12 +1,10 @@
 [package]
-name = "definy-client"
+name = "narumincho-vdom-client"
 version = "0.1.0"
 edition = "2024"
 
-[lib]
-crate-type = ["cdylib"]
-
 [dependencies]
+narumincho-vdom = { path = "../narumincho-vdom" }
 js-sys = "0.3.83"
 wasm-bindgen = "0.2.106"
 web-sys = { version = "0.3.83", features = [
@@ -18,5 +16,3 @@ web-sys = { version = "0.3.83", features = [
   "NodeList",
   "HtmlElement",
 ] }
-definy-ui = { path = "../definy-ui" }
-narumincho-vdom-client = { path = "../narumincho-vdom-client" }

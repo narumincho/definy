@@ -94,7 +94,9 @@ dependencies = [
 name = "definy-client"
 version = "0.1.0"
 dependencies = [
+ "definy-ui",
  "js-sys",
+ "narumincho-vdom-client",
  "wasm-bindgen",
  "web-sys",
 ]
@@ -381,6 +383,16 @@ dependencies = [
 [[package]]
 name = "narumincho-vdom"
 version = "0.1.0"
+
+[[package]]
+name = "narumincho-vdom-client"
+version = "0.1.0"
+dependencies = [
+ "js-sys",
+ "narumincho-vdom",
+ "wasm-bindgen",
+ "web-sys",
+]
 
 [[package]]
 name = "once_cell"

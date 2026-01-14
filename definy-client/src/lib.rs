@@ -9,5 +9,7 @@ fn run() -> Result<(), wasm_bindgen::JsValue> {
 
     body.append_child(&val)?;
 
+    narumincho_vdom_client::render(&definy_ui::app());
+
     Ok(())
 }

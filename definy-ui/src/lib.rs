@@ -32,7 +32,7 @@ init(\"{}\");",
             body(
                 [],
                 [
-                    h1([], [text("aa")]),
+                    h1([], [text("definy")]),
                     Button::new()
                         .command_for("create-account-dialog")
                         .command("show-modal")
