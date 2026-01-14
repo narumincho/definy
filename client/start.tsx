@@ -1,54 +1,112 @@
-import { App } from "./App.tsx";
+import { App, LogInState } from "./App.tsx";
 
 import { CreateAccountDialog } from "./CreateAccountDialog.tsx";
-import { FC, useState } from "hono/jsx";
-import { render } from "hono/jsx/dom";
+import { useEffect, useState } from "preact/hooks";
+import { hydrate } from "preact";
 import { SigInDialog } from "./SigInDialog.tsx";
+import {
+  SecretKey,
+  secretKeyFromBase64,
+  secretKeyToAccountId,
+} from "../common/key.ts";
 
 type DialogOpenState = {
   readonly type: "createAccount";
-  readonly privateKey: Uint8Array;
 } | {
   readonly type: "login";
 };
 
-const AppWithState: FC = () => {
-  const [state, setState] = useState(0);
+function AppWithState() {
   const [dialogOpenState, setDialogOpenState] = useState<
     DialogOpenState | null
   >(null);
+  const [logInState, setLogInState] = useState<LogInState>({
+    type: "loading",
+  });
+
+  useEffect(() => {
+    if (logInState?.type === "logIn" && !logInState.accountId) {
+      secretKeyToAccountId(logInState.secretKey).then((accountId) => {
+        setLogInState({
+          type: "logIn",
+          secretKey: logInState.secretKey,
+          accountId,
+        });
+      });
+    }
+  }, [logInState]);
+
+  useEffect(() => {
+    loginByNavigatorCredentialsGet().then((secretKey) => {
+      if (secretKey) {
+        console.log("Web Credential APIによる自動ログインをしました");
+        setLogInState({ type: "logIn", secretKey, accountId: undefined });
+      }
+    });
+  }, []);
 
   const handleOpenCreateAccountDialog = () => {
     setDialogOpenState({
       type: "createAccount",
-      privateKey: crypto.getRandomValues(new Uint8Array(32)),
     });
   };
 
+  const handleOpenSigninDialog = async () => {
+    setDialogOpenState({
+      type: "login",
+    });
+  };
+
+  const handleLogout = () => {
+    setLogInState({ type: "noLogIn" });
+    setDialogOpenState(null);
+  };
+
   return (
-    <div>
+    <>
       <App
-        state={state}
-        setState={setState}
+        logInState={logInState}
         onOpenCreateAccountDialog={handleOpenCreateAccountDialog}
-        onOpenSigninDialog={() => {
-          setDialogOpenState({
-            type: "login",
-          });
-        }}
+        onOpenSigninDialog={handleOpenSigninDialog}
+        onLogout={handleLogout}
       />
       {dialogOpenState?.type === "createAccount" &&
         (
           <CreateAccountDialog
-            privateKey={dialogOpenState.privateKey}
-            onClose={() => setDialogOpenState(null)}
+            onClose={() => {
+              setDialogOpenState(null);
+            }}
           />
         )}
 
       {dialogOpenState?.type === "login" &&
-        <SigInDialog onClose={() => setDialogOpenState(null)} />}
-    </div>
+        (
+          <SigInDialog
+            onClose={() => {
+              setDialogOpenState(null);
+            }}
+          />
+        )}
+    </>
   );
-};
+}
 
-render(<AppWithState />, document.body);
+hydrate(<AppWithState />, document.body);
+
+/**
+ * Web Credential APIを使用してログインする
+ * @returns 秘密鍵
+ */
+async function loginByNavigatorCredentialsGet(): Promise<
+  SecretKey | undefined
+> {
+  const credential = (await navigator.credentials.get(
+    { password: true } as CredentialRequestOptions,
+  )) as {
+    password?: string;
+  } | null;
+  if (!credential?.password) {
+    return;
+  }
+  return secretKeyFromBase64(credential.password);
+}

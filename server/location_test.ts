@@ -1,4 +1,3 @@
-// url_test.ts
 import { assertEquals } from "@std/assert";
 import { pathAndQueryFromUrl } from "./location.ts";
 

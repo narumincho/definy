@@ -1,14 +1,26 @@
+import { AccountId, SecretKey } from "../common/key.ts";
+
+export type LogInState = {
+  readonly type: "loading";
+} | {
+  readonly type: "noLogIn";
+} | {
+  readonly type: "logIn";
+  readonly secretKey: SecretKey;
+  readonly accountId: AccountId | undefined;
+};
+
 export function App(
   {
-    state,
-    setState,
+    logInState,
     onOpenCreateAccountDialog,
     onOpenSigninDialog,
+    onLogout,
   }: {
-    readonly state: number;
-    readonly setState: (updateFunc: (prev: number) => number) => void;
+    readonly logInState: LogInState;
     readonly onOpenCreateAccountDialog: () => void;
     readonly onOpenSigninDialog: () => void;
+    readonly onLogout: () => void;
   },
 ) {
   return (
@@ -26,20 +38,34 @@ export function App(
       >
         definy
       </h1>
-      <button
-        type="button"
-        onClick={() => {
-          setState((prev) => prev + 1);
-        }}
-      >
-        count: {state}
-      </button>
-      <button type="button" onClick={onOpenCreateAccountDialog}>
-        Create Account
-      </button>
-      <button type="button" onClick={onOpenSigninDialog}>
-        Log in
-      </button>
+      開発中...
+
+      {logInState.type === "loading"
+        ? (
+          <div>
+            ログイン状態を読み込み中...
+          </div>
+        )
+        : logInState.type === "logIn"
+        ? (
+          <div>
+            <button type="button" onClick={onLogout}>
+              ログアウト
+            </button>
+            ログイン中 アカウントID:{" "}
+            {logInState.accountId?.toBase64({ alphabet: "base64url" })}
+          </div>
+        )
+        : (
+          <div>
+            <button type="button" onClick={onOpenCreateAccountDialog}>
+              アカウントを作成する
+            </button>
+            <button type="button" onClick={onOpenSigninDialog}>
+              ログインする
+            </button>
+          </div>
+        )}
     </div>
   );
 }
