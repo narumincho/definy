@@ -6,8 +6,6 @@ use hyper::server::conn::http1;
 use hyper::service::service_fn;
 use hyper::{Request, Response};
 use hyper_util::rt::TokioIo;
-use narumincho_vdom::h;
-use narumincho_vdom::text;
 use tokio::net::TcpListener;
 
 #[tokio::main]
@@ -39,11 +37,7 @@ async fn handler(
 ) -> Result<Response<Full<Bytes>>, hyper::http::Error> {
     Response::builder()
         .header("Content-Type", "text/html; charset=utf-8")
-        .body(Full::new(Bytes::from(narumincho_vdom::to_html(&h(
-            "html",
-            vec![
-                h("head", [h("title", [text("Definy Server")])]),
-                h("body", [h("h1", [text("aa")])]),
-            ],
-        )))))
+        .body(Full::new(Bytes::from(narumincho_vdom::to_html(
+            &definy_ui::app(),
+        ))))
 }
