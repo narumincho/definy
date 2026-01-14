@@ -33,30 +33,22 @@ init(\"{}\");",
                 [],
                 [
                     h1([], [text("aa")]),
-                    button(
-                        [
-                            (
-                                "commandFor".to_string(),
-                                "create-account-dialog".to_string(),
-                            ),
-                            ("command".to_string(), "show-modal".to_string()),
-                        ],
-                        [text("アカウント作成")],
-                    ),
+                    Button::new()
+                        .command_for("create-account-dialog")
+                        .command("show-modal")
+                        .type_("button")
+                        .children([text("アカウント作成")])
+                        .into_node(),
                     dialog(
                         [("id".to_string(), "create-account-dialog".to_string())],
                         [
-                            text("アカウント作成ダイアログだよ"),
-                            button(
-                                [
-                                    (
-                                        "commandFor".to_string(),
-                                        "create-account-dialog".to_string(),
-                                    ),
-                                    ("command".to_string(), "close".to_string()),
-                                ],
-                                [text("閉じる")],
-                            ),
+                            "アカウント作成ダイアログだよ".to_string().into(),
+                            Button::new()
+                                .command_for("create-account-dialog")
+                                .command("close")
+                                .type_("button")
+                                .children([text("閉じる")])
+                                .into_node(),
                         ],
                     ),
                 ],

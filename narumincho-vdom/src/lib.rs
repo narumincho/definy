@@ -79,6 +79,59 @@ pub fn dialog(
     h("dialog", attributes, children)
 }
 
+pub struct Button {
+    pub attributes: Vec<(String, String)>,
+    pub children: Vec<Node>,
+}
+
+impl Button {
+    pub fn new() -> Self {
+        Self {
+            attributes: Vec::new(),
+            children: Vec::new(),
+        }
+    }
+
+    pub fn command_for(mut self, command_for: &str) -> Self {
+        self.attributes
+            .push(("commandFor".to_string(), command_for.to_string()));
+        self
+    }
+
+    pub fn command(mut self, command: &str) -> Self {
+        self.attributes
+            .push(("command".to_string(), command.to_string()));
+        self
+    }
+
+    pub fn type_(mut self, type_: &str) -> Self {
+        self.attributes
+            .push(("type".to_string(), type_.to_string()));
+        self
+    }
+
+    pub fn children(mut self, children: impl Into<Vec<Node>>) -> Self {
+        self.children = children.into();
+        self
+    }
+
+    pub fn into_node(self) -> Node {
+        button(self.attributes, self.children)
+    }
+}
+
+impl Into<Node> for Button {
+    fn into(self) -> Node {
+        button(self.attributes, self.children)
+    }
+}
+
+impl Into<Node> for String {
+    fn into(self) -> Node {
+        text(self)
+    }
+}
+
 pub fn to_html(node: &Node) -> String {
     "<!doctype html>".to_string() + &to_string(node)
 }
