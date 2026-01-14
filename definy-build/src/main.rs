@@ -41,5 +41,13 @@ fn main() {
         })
         .expect("Failed to compute and write JS hash");
 
+    std::fs::read("./assets/icon.png")
+        .and_then(|icon_bytes| {
+            let hash = sha2::Sha256::digest(&icon_bytes);
+            let hash_hex = base64::engine::general_purpose::URL_SAFE.encode(hash);
+            std::fs::write("./web-distribution/icon.png.sha256", hash_hex)
+        })
+        .expect("Failed to compute and write icon hash");
+
     println!("Build completed successfully.");
 }

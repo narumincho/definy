@@ -12,6 +12,17 @@ pub fn app() -> narumincho_vdom::Node {
                 [
                     h("title", [], [text("definy Server")]),
                     h(
+                        "link",
+                        [
+                            ("rel".to_string(), "icon".to_string()),
+                            (
+                                "href".to_string(),
+                                include_str!("../../web-distribution/icon.png.sha256").to_string(),
+                            ),
+                        ],
+                        [],
+                    ),
+                    h(
                         "script",
                         [("type".to_string(), "module".to_string())],
                         [text(format!(

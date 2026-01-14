@@ -41,6 +41,10 @@ const WASM_CONTENT: &[u8] = include_bytes!("../../web-distribution/definy_client
 
 const WASM_HASH: &'static str = include_str!("../../web-distribution/definy_client_bg.wasm.sha256");
 
+const ICON_CONTENT: &[u8] = include_bytes!("../../assets/icon.png");
+
+const ICON_HASH: &'static str = include_str!("../../web-distribution/icon.png.sha256");
+
 async fn handler(
     request: Request<hyper::body::Incoming>,
 ) -> Result<Response<Full<Bytes>>, hyper::http::Error> {
@@ -58,11 +62,15 @@ async fn handler(
             .body(Full::new(Bytes::from_static(JAVASCRIPT_CONTENT))),
         WASM_HASH => Response::builder()
             .header("Content-Type", "application/wasm")
+            .header("Cache-Control", "public, max-age=31536000, immutable")
             .body(Full::new(Bytes::from_static(WASM_CONTENT))),
+        ICON_HASH => Response::builder()
+            .header("Content-Type", "image/png")
+            .header("Cache-Control", "public, max-age=31536000, immutable")
+            .body(Full::new(Bytes::from_static(ICON_CONTENT))),
         _ => Response::builder()
             .status(404)
             .header("Content-Type", "text/html; charset=utf-8")
-            .header("Cache-Control", "public, max-age=31536000, immutable")
             .body(Full::new(Bytes::from("404 Not Found"))),
     }
 }
