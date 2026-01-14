@@ -39,7 +39,7 @@ pub fn to_string(node: &Node) -> String {
                 html.push(' ');
                 html.push_str(key);
                 html.push_str("=\"");
-                html.push_str(&html_escape(value));
+                html.push_str(&attribute_escape(value));
                 html.push('"');
             }
             html.push('>');
@@ -51,16 +51,20 @@ pub fn to_string(node: &Node) -> String {
             html.push('>');
             html
         }
-        Node::Text(text) => html_escape(text),
+        Node::Text(text) => text_escape(text),
     }
 }
 
-fn html_escape(text: &str) -> String {
+fn attribute_escape(text: &str) -> String {
+    text.replace("&", "&amp;")
+        .replace("\"", "&quot;")
+        .replace("'", "&#39;")
+}
+
+fn text_escape(text: &str) -> String {
     text.replace("&", "&amp;")
         .replace("<", "&lt;")
         .replace(">", "&gt;")
-        .replace("\"", "&quot;")
-        .replace("'", "&#39;")
 }
 
 #[cfg(test)]

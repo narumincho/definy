@@ -4,19 +4,29 @@ use narumincho_vdom::text;
 pub fn app() -> narumincho_vdom::Node {
     h(
         "html",
-        vec![],
-        vec![
+        [],
+        [
             h(
                 "head",
-                vec![],
-                [h("title", vec![], [text("definy Server")])],
+                [],
+                [
+                    h("title", [], [text("definy Server")]),
+                    h(
+                        "script",
+                        [("type".to_string(), "module".to_string())],
+                        [text(
+                            "import init from './script.js';
+init();",
+                        )],
+                    ),
+                ],
             ),
             h(
                 "body",
-                vec![],
+                [],
                 [h(
                     "h1",
-                    vec![("id".to_string(), "app".to_string())],
+                    [("id".to_string(), "app".to_string())],
                     [text("aa")],
                 )],
             ),

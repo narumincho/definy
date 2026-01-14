@@ -1,5 +1,5 @@
 ```sh
-cargo build --target wasm32-unknown-unknown --release
-wasm-bindgen --target bundler ./target/wasm32-unknown-unknown/release/server.wasm --out-dir ./out
-deno run ./out/server.js
+cargo build -p definy-client --target wasm32-unknown-unknown --release
+wasm-bindgen --target web ./target/wasm32-unknown-unknown/release/definy-client.wasm --out-dir ./web-distribution
+cargo run -p definy-server
 ```

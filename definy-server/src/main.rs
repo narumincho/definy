@@ -33,11 +33,27 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 }
 
 async fn handler(
-    _: Request<hyper::body::Incoming>,
+    request: Request<hyper::body::Incoming>,
 ) -> Result<Response<Full<Bytes>>, hyper::http::Error> {
-    Response::builder()
-        .header("Content-Type", "text/html; charset=utf-8")
-        .body(Full::new(Bytes::from(narumincho_vdom::to_html(
-            &definy_ui::app(),
-        ))))
+    match request.uri().path() {
+        "/" => Response::builder()
+            .header("Content-Type", "text/html; charset=utf-8")
+            .body(Full::new(Bytes::from(narumincho_vdom::to_html(
+                &definy_ui::app(),
+            )))),
+        "/script.js" => Response::builder()
+            .header("Content-Type", "application/javascript; charset=utf-8")
+            .body(Full::new(Bytes::from(include_str!(
+                "../../web-distribution/definy-client.js"
+            )))),
+        "/definy-client_bg.wasm" => Response::builder()
+            .header("Content-Type", "application/wasm")
+            .body(Full::new(Bytes::from_static(include_bytes!(
+                "../../web-distribution/definy-client_bg.wasm"
+            )))),
+        _ => Response::builder()
+            .status(404)
+            .header("Content-Type", "text/html; charset=utf-8")
+            .body(Full::new(Bytes::from("404 Not Found"))),
+    }
 }
