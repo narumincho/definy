@@ -6,6 +6,8 @@ use hyper::server::conn::http1;
 use hyper::service::service_fn;
 use hyper::{Request, Response};
 use hyper_util::rt::TokioIo;
+use narumincho_vdom::VDomChild::*;
+use narumincho_vdom::h;
 use tokio::net::TcpListener;
 
 #[tokio::main]
@@ -37,16 +39,14 @@ async fn handler(
 ) -> Result<Response<Full<Bytes>>, hyper::http::Error> {
     Response::builder()
         .header("Content-Type", "text/html; charset=utf-8")
-        .body(Full::new(Bytes::from(
-            "<!doctype html>
-<html>
-<head>
-  <title>definy server by rust</title>
-</head>
-<body>
-  <h1>definy server by rust</h1>
-</body>
-
-</html>",
-        )))
+        .body(Full::new(Bytes::from(narumincho_vdom::to_html(&h(
+            "html",
+            vec![
+                Element(h(
+                    "head",
+                    [Element(h("title", [Text("Definy Server".to_string())]))],
+                )),
+                Element(h("body", [Element(h("h1", [Text("aa".to_string())]))])),
+            ],
+        )))))
 }
