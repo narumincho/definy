@@ -37,11 +37,38 @@ init(\"{}\");",
             h(
                 "body",
                 [],
-                [h(
-                    "h1",
-                    [("id".to_string(), "app".to_string())],
-                    [text("aa")],
-                )],
+                [
+                    h("h1", [], [text("aa")]),
+                    h(
+                        "button",
+                        [
+                            (
+                                "commandFor".to_string(),
+                                "create-account-dialog".to_string(),
+                            ),
+                            ("command".to_string(), "show-modal".to_string()),
+                        ],
+                        [text("アカウント作成")],
+                    ),
+                    h(
+                        "dialog",
+                        [("id".to_string(), "create-account-dialog".to_string())],
+                        [
+                            text("アカウント作成ダイアログだよ"),
+                            h(
+                                "button",
+                                [
+                                    (
+                                        "commandFor".to_string(),
+                                        "create-account-dialog".to_string(),
+                                    ),
+                                    ("command".to_string(), "close".to_string()),
+                                ],
+                                [text("閉じる")],
+                            ),
+                        ],
+                    ),
+                ],
             ),
         ],
     )
