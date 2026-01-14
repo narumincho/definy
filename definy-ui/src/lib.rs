@@ -4,9 +4,22 @@ use narumincho_vdom::text;
 pub fn app() -> narumincho_vdom::Node {
     h(
         "html",
+        vec![],
         vec![
-            h("head", [h("title", [text("definy Server")])]),
-            h("body", [h("h1", [text("aa")])]),
+            h(
+                "head",
+                vec![],
+                [h("title", vec![], [text("definy Server")])],
+            ),
+            h(
+                "body",
+                vec![],
+                [h(
+                    "h1",
+                    vec![("id".to_string(), "app".to_string())],
+                    [text("aa")],
+                )],
+            ),
         ],
     )
 }
