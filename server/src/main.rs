@@ -1,4 +1,3 @@
-use std::convert::Infallible;
 use std::net::SocketAddr;
 
 use http_body_util::Full;
@@ -24,7 +23,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 
         tokio::task::spawn(async move {
             if let Err(err) = http1::Builder::new()
-                .serve_connection(io, service_fn(hello))
+                .serve_connection(io, service_fn(handler))
                 .await
             {
                 eprintln!("Error serving connection: {:?}", err);
@@ -33,8 +32,21 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     }
 }
 
-async fn hello(_: Request<hyper::body::Incoming>) -> Result<Response<Full<Bytes>>, Infallible> {
-    Ok(Response::new(Full::new(Bytes::from(
-        "deify server by rust",
-    ))))
+async fn handler(
+    _: Request<hyper::body::Incoming>,
+) -> Result<Response<Full<Bytes>>, hyper::http::Error> {
+    Response::builder()
+        .header("Content-Type", "text/html; charset=utf-8")
+        .body(Full::new(Bytes::from(
+            "<!doctype html>
+<html>
+<head>
+  <title>definy server by rust</title>
+</head>
+<body>
+  <h1>definy server by rust</h1>
+</body>
+
+</html>",
+        )))
 }
