@@ -6,8 +6,8 @@ use hyper::server::conn::http1;
 use hyper::service::service_fn;
 use hyper::{Request, Response};
 use hyper_util::rt::TokioIo;
-use narumincho_vdom::VDomChild::*;
 use narumincho_vdom::h;
+use narumincho_vdom::text;
 use tokio::net::TcpListener;
 
 #[tokio::main]
@@ -42,11 +42,8 @@ async fn handler(
         .body(Full::new(Bytes::from(narumincho_vdom::to_html(&h(
             "html",
             vec![
-                Element(h(
-                    "head",
-                    [Element(h("title", [Text("Definy Server".to_string())]))],
-                )),
-                Element(h("body", [Element(h("h1", [Text("aa".to_string())]))])),
+                h("head", [h("title", [text("Definy Server")])]),
+                h("body", [h("h1", [text("aa")])]),
             ],
         )))))
 }

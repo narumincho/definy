@@ -1,39 +1,45 @@
-pub struct VDomElement {
+pub struct Element {
     pub element_name: String,
-    pub children: Vec<VDomChild>,
+    pub children: Vec<Node>,
 }
 
-pub enum VDomChild {
-    Element(VDomElement),
+pub enum Node {
+    Element(Element),
     Text(String),
 }
 
-pub fn h(element_name: &str, children: impl Into<Vec<VDomChild>>) -> VDomElement {
-    VDomElement {
+pub fn h(element_name: &str, children: impl Into<Vec<Node>>) -> Node {
+    Node::Element(Element {
         element_name: element_name.to_string(),
         children: children.into(),
-    }
+    })
 }
 
-pub fn to_html(vdom: &VDomElement) -> String {
-    "<!doctype html>".to_string() + &to_string(vdom)
+pub fn text(text: &str) -> Node {
+    Node::Text(text.to_string())
 }
 
-pub fn to_string(vdom: &VDomElement) -> String {
-    let mut html = String::new();
-    html.push_str(&format!("<{}>", vdom.element_name));
-    for child in &vdom.children {
-        match child {
-            VDomChild::Element(child_element) => {
-                html.push_str(&to_string(child_element));
+pub fn to_html(node: &Node) -> String {
+    "<!doctype html>".to_string() + &to_string(node)
+}
+
+pub fn to_string(node: &Node) -> String {
+    match node {
+        Node::Element(vdom) => {
+            let mut html = String::new();
+            html.push('<');
+            html.push_str(&vdom.element_name);
+            html.push('>');
+            for child in &vdom.children {
+                html.push_str(&to_string(child));
             }
-            VDomChild::Text(text) => {
-                html.push_str(&html_escape(text));
-            }
+            html.push_str("</");
+            html.push_str(&vdom.element_name);
+            html.push('>');
+            html
         }
+        Node::Text(text) => html_escape(text),
     }
-    html.push_str(&format!("</{}>", vdom.element_name));
-    html
 }
 
 fn html_escape(text: &str) -> String {
