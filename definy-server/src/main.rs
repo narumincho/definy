@@ -44,12 +44,12 @@ async fn handler(
         "/script.js" => Response::builder()
             .header("Content-Type", "application/javascript; charset=utf-8")
             .body(Full::new(Bytes::from(include_str!(
-                "../../web-distribution/definy-client.js"
+                "../../web-distribution/definy_client.js"
             )))),
-        "/definy-client_bg.wasm" => Response::builder()
+        "/definy_client_bg.wasm" => Response::builder()
             .header("Content-Type", "application/wasm")
             .body(Full::new(Bytes::from_static(include_bytes!(
-                "../../web-distribution/definy-client_bg.wasm"
+                "../../web-distribution/definy_client_bg.wasm"
             )))),
         _ => Response::builder()
             .status(404)
