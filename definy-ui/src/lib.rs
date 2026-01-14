@@ -1,18 +1,14 @@
-use narumincho_vdom::h;
-use narumincho_vdom::text;
+use narumincho_vdom::*;
 
-pub fn app() -> narumincho_vdom::Node {
-    h(
-        "html",
+pub fn app() -> Node {
+    html(
         [],
         [
-            h(
-                "head",
+            head(
                 [],
                 [
-                    h("title", [], [text("definy Server")]),
-                    h(
-                        "link",
+                    title([], [text("definy Server")]),
+                    link(
                         [
                             ("rel".to_string(), "icon".to_string()),
                             (
@@ -22,8 +18,7 @@ pub fn app() -> narumincho_vdom::Node {
                         ],
                         [],
                     ),
-                    h(
-                        "script",
+                    script(
                         [("type".to_string(), "module".to_string())],
                         [text(format!(
                             "import init from './{}';
@@ -34,13 +29,11 @@ init(\"{}\");",
                     ),
                 ],
             ),
-            h(
-                "body",
+            body(
                 [],
                 [
-                    h("h1", [], [text("aa")]),
-                    h(
-                        "button",
+                    h1([], [text("aa")]),
+                    button(
                         [
                             (
                                 "commandFor".to_string(),
@@ -50,13 +43,11 @@ init(\"{}\");",
                         ],
                         [text("アカウント作成")],
                     ),
-                    h(
-                        "dialog",
+                    dialog(
                         [("id".to_string(), "create-account-dialog".to_string())],
                         [
                             text("アカウント作成ダイアログだよ"),
-                            h(
-                                "button",
+                            button(
                                 [
                                     (
                                         "commandFor".to_string(),
