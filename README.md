@@ -18,8 +18,12 @@ https://github.com/narumincho/definy/tree/prev2023
   したときに実行されるテストの処理が書かれている
 - `.vscode`: VSCode 向けの設定
 - `assets`: スタティックなファイルが置かれている
-- `client`: ブラウザで動かすコード
-- `server`: サーバーで動かすコード
-- `generated`: `script/build.ts`
-  でビルドした結果のファイルがこのフォルダに生成される
-- `script`: スクリプトファイルが置かれている
+- `definy-build`: ビルドスクリプト
+- `definy-client`: ブラウザで動かすコード
+- `definy-server`: サーバーで動かすコード
+- `definy-ui`: ブラウザとサーバーでレンダリングする共通のUIコンポーネント
+- `docs`: ドキュメントが置かれている
+- `narumincho-vdom`: 仮想DOMのライブラリ
+- `narumincho-vdom-client`: ブラウザで動かす仮想DOMのライブラリ
+
+- `web-distribution`: definy-build で生成したファイル (gitignore している)
