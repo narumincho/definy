@@ -27,7 +27,10 @@ fn run() -> Result<(), JsValue> {
                         *state.borrow_mut() += 1;
                         let new_vdom = definy_ui::app(*state.borrow());
                         let patches = narumincho_vdom::diff(&vdom.borrow(), &new_vdom);
-                        narumincho_vdom_client::apply(&document, patches);
+                        let root = document
+                            .document_element()
+                            .expect("should have a document element");
+                        narumincho_vdom_client::apply(&root, patches);
                         *vdom.borrow_mut() = new_vdom;
                     }
                 }
