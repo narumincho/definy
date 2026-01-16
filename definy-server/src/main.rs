@@ -54,7 +54,7 @@ async fn handler(
         "" => Response::builder()
             .header("Content-Type", "text/html; charset=utf-8")
             .body(Full::new(Bytes::from(narumincho_vdom::to_html(
-                &definy_ui::app(),
+                &definy_ui::app(0),
             )))),
         JAVASCRIPT_HASH => Response::builder()
             .header("Content-Type", "application/javascript; charset=utf-8")

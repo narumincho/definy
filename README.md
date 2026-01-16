@@ -27,3 +27,10 @@ https://github.com/narumincho/definy/tree/prev2023
 - `narumincho-vdom-client`: ブラウザで動かす仮想DOMのライブラリ
 
 - `web-distribution`: definy-build で生成したファイル (gitignore している)
+
+## ビルド&起動方法
+
+```sh
+cargo run -p definy-build
+cargo run -p definy-server
+```

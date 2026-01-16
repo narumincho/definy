@@ -1,6 +1,6 @@
 use narumincho_vdom::*;
 
-pub fn app() -> Node {
+pub fn app(count: i32) -> Node {
     html(
         [],
         [
@@ -51,6 +51,11 @@ init(\"{}\");",
                                 .into_node(),
                         ],
                     ),
+                    Button::new()
+                        .command("increment")
+                        .type_("button")
+                        .children([text(format!("count: {}", count))])
+                        .into_node(),
                 ],
             ),
         ],

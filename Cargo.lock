@@ -96,6 +96,7 @@ version = "0.1.0"
 dependencies = [
  "definy-ui",
  "js-sys",
+ "narumincho-vdom",
  "narumincho-vdom-client",
  "wasm-bindgen",
  "web-sys",

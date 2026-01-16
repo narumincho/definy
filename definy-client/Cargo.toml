@@ -17,6 +17,8 @@ web-sys = { version = "0.3.83", features = [
   "Node",
   "NodeList",
   "HtmlElement",
+  "Event",
 ] }
 definy-ui = { path = "../definy-ui" }
 narumincho-vdom-client = { path = "../narumincho-vdom-client" }
+narumincho-vdom = { path = "../narumincho-vdom" }
