@@ -209,7 +209,19 @@ pub fn create_account_dialog(secret_key: Option<String>) -> Node {
                                 ])
                                 .class("hint")
                                 .into_node(),
-                            password_input.into_node(),
+                            Div::new()
+                                .attribute("style", "display: flex; gap: 0.5rem;")
+                                .children([
+                                    password_input
+                                        .attribute("style", "flex: 1;")
+                                        .into_node(),
+                                    Button::new()
+                                        .command("copy-private-key")
+                                        .type_("button")
+                                        .children([text("コピー")])
+                                        .into_node(),
+                                ])
+                                .into_node(),
                         ])
                         .into_node(),
                     Div::new()

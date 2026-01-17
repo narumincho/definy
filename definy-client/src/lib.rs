@@ -18,6 +18,7 @@ fn run() -> Result<(), JsValue> {
         let state = state.clone();
         let vdom = vdom.clone();
         let document = document.clone();
+        let window = window.clone();
         move |event: web_sys::Event| {
             let target = event
                 .target()
@@ -36,6 +37,12 @@ fn run() -> Result<(), JsValue> {
                         use base64::{Engine as _, engine::general_purpose};
                         let encoded = general_purpose::URL_SAFE_NO_PAD.encode(secret);
                         state.borrow_mut().generated_key = Some(encoded);
+                    } else if command == "copy-private-key" {
+                        if let Some(key) = &state.borrow().generated_key {
+                            let navigator = window.navigator();
+                            let clipboard: web_sys::Clipboard = navigator.clipboard();
+                            let _ = clipboard.write_text(key);
+                        }
                     }
 
                     match command.as_str() {
