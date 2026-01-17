@@ -142,7 +142,7 @@ init(\"{}\");",
                         .command("show-modal")
                         .children([text("アカウント作成")])
                         .into_node(),
-                    create_account_dialog(state.generated_key),
+                    create_account_dialog(state.generated_key, state.generated_public_key),
                     Div::new()
                         .attribute("style", "margin-top: 1rem;")
                         .children([Button::new()
@@ -161,10 +161,11 @@ init(\"{}\");",
 pub struct AppState {
     pub count: i32,
     pub generated_key: Option<String>,
+    pub generated_public_key: Option<String>,
 }
 
 /// アカウント作成ダイアログ
-pub fn create_account_dialog(secret_key: Option<String>) -> Node {
+pub fn create_account_dialog(secret_key: Option<String>, public_key: Option<String>) -> Node {
     let mut password_input = Input::new()
         .type_("password")
         .name("password")
@@ -174,6 +175,16 @@ pub fn create_account_dialog(secret_key: Option<String>) -> Node {
 
     if let Some(key) = secret_key {
         password_input = password_input.attribute("value", &key);
+    }
+
+    let mut user_id_input = Input::new()
+        .type_("text")
+        .name("userId")
+        .readonly()
+        .attribute("style", "font-family: monospace; font-size: 0.9rem;");
+
+    if let Some(pk) = public_key {
+        user_id_input = user_id_input.attribute("value", &pk);
     }
 
     Dialog::new()
@@ -201,6 +212,15 @@ pub fn create_account_dialog(secret_key: Option<String>) -> Node {
                         .class("form-group")
                         .children([
                             Label::new()
+                                .children([text("ユーザーID (公開鍵)")])
+                                .into_node(),
+                            user_id_input.into_node(),
+                        ])
+                         .into_node(),
+                    Div::new()
+                        .class("form-group")
+                        .children([
+                            Label::new()
                                 .children([
                                     text("秘密鍵"),
                                     text(
@@ -219,6 +239,11 @@ pub fn create_account_dialog(secret_key: Option<String>) -> Node {
                                         .command("copy-private-key")
                                         .type_("button")
                                         .children([text("コピー")])
+                                        .into_node(),
+                                    Button::new()
+                                        .command("regenerate-key")
+                                        .type_("button")
+                                        .children([text("再生成")])
                                         .into_node(),
                                 ])
                                 .into_node(),

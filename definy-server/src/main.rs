@@ -57,6 +57,7 @@ async fn handler(
                 &definy_ui::app(definy_ui::AppState {
                     count: 0,
                     generated_key: None,
+                    generated_public_key: None,
                 }),
             )))),
         JAVASCRIPT_HASH => Response::builder()
