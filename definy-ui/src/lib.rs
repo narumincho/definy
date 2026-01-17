@@ -1,38 +1,29 @@
 use narumincho_vdom::*;
 
 pub fn app(count: i32) -> Node {
-    html(
-        [],
-        [
-            head(
-                [],
-                [
-                    title([], [text("definy Server")]),
-                    link(
-                        [
-                            ("rel".to_string(), "icon".to_string()),
-                            (
-                                "href".to_string(),
-                                include_str!("../../web-distribution/icon.png.sha256").to_string(),
-                            ),
-                        ],
-                        [],
-                    ),
-                    script(
-                        [("type".to_string(), "module".to_string())],
-                        [text(format!(
+    Html::new()
+        .children([
+            Head::new()
+                .children([
+                    Title::new().children([text("definy")]).into_node(),
+                    Link::new()
+                        .rel("icon")
+                        .href(include_str!("../../web-distribution/icon.png.sha256"))
+                        .into_node(),
+                    Script::new()
+                        .type_("module")
+                        .children([text(format!(
                             "import init from './{}';
 init(\"{}\");",
                             include_str!("../../web-distribution/definy_client.js.sha256"),
                             include_str!("../../web-distribution/definy_client_bg.wasm.sha256"),
-                        ))],
-                    ),
-                ],
-            ),
-            body(
-                [],
-                [
-                    h1([], [text("definy")]),
+                        ))])
+                        .into_node(),
+                ])
+                .into_node(),
+            Body::new()
+                .children([
+                    H1::new().children([text("definy")]).into_node(),
                     Button::new()
                         .command_for("create-account-dialog")
                         .command("show-modal")
@@ -45,61 +36,58 @@ init(\"{}\");",
                         .type_("button")
                         .children([text(format!("count: {}", count))])
                         .into_node(),
-                ],
-            ),
-        ],
-    )
+                ])
+                .into_node(),
+        ])
+        .into_node()
 }
 
 /// アカウント作成ダイアログ
 pub fn create_account_dialog() -> Node {
-    dialog(
-        [("id".to_string(), "create-account-dialog".to_string())],
-        [
+    Dialog::new()
+        .id("create-account-dialog")
+        .children([
             "アカウント作成ダイアログだよ".to_string().into(),
-            form(
-                [],
-                [
-                    label(
-                        [],
-                        [
+            Form::new()
+                .children([
+                    Label::new()
+                        .children([
                             text("ユーザー名"),
-                            input([
-                                ("type".to_string(), "text".to_string()),
-                                ("name".to_string(), "username".to_string()),
-                                ("autocomplete".to_string(), "username".to_string()),
-                                ("required".to_string(), "required".to_string()),
-                            ]),
-                            label(
-                                [],
-                                [
+                            Input::new()
+                                .type_("text")
+                                .name("username")
+                                .autocomplete("username")
+                                .required()
+                                .into_node(),
+                            Label::new()
+                                .children([
                                     text("秘密鍵"),
                                     text(
                                         "分散システムのため秘密鍵を失うとログインすることができなくなってしまいます",
                                     ),
-                                    input([
-                                        ("type".to_string(), "password".to_string()),
-                                        ("name".to_string(), "password".to_string()),
-                                        ("autocomplete".to_string(), "new-password".to_string()),
-                                        ("required".to_string(), "required".to_string()),
-                                        ("readonly".to_string(), "readonly".to_string()),
-                                    ]),
-                                ],
-                            ),
-                        ],
-                    ),
+                                    Input::new()
+                                        .type_("password")
+                                        .name("password")
+                                        .autocomplete("new-password")
+                                        .required()
+                                        .readonly()
+                                        .into_node(),
+                                ])
+                                .into_node(),
+                        ])
+                        .into_node(),
                     Button::new()
                         .type_("submit")
                         .children([text("送信")])
                         .into_node(),
-                ],
-            ),
+                ])
+                .into_node(),
             Button::new()
                 .command_for("create-account-dialog")
                 .command("close")
                 .type_("button")
                 .children([text("閉じる")])
                 .into_node(),
-        ],
-    )
+        ])
+        .into_node()
 }

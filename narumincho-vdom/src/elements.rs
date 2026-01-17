@@ -1,0 +1,142 @@
+use crate::node::{Element, Node};
+
+macro_rules! define_element {
+    ($name:ident, $tag:expr, $doc:expr) => {
+        #[doc = $doc]
+        pub struct $name {
+            pub attributes: Vec<(String, String)>,
+            pub children: Vec<Node>,
+        }
+
+        impl $name {
+            pub fn new() -> Self {
+                Self {
+                    attributes: Vec::new(),
+                    children: Vec::new(),
+                }
+            }
+
+            pub fn attribute(mut self, key: &str, value: &str) -> Self {
+                self.attributes.push((key.to_string(), value.to_string()));
+                self
+            }
+
+            pub fn id(self, id: &str) -> Self {
+                self.attribute("id", id)
+            }
+
+            pub fn class(self, class: &str) -> Self {
+                self.attribute("class", class)
+            }
+
+            pub fn type_(self, type_: &str) -> Self {
+                self.attribute("type", type_)
+            }
+
+            pub fn children(mut self, children: impl Into<Vec<Node>>) -> Self {
+                self.children = children.into();
+                self
+            }
+
+            pub fn into_node(self) -> Node {
+                Node::Element(Element {
+                    element_name: $tag.to_string(),
+                    attributes: self.attributes,
+                    children: self.children,
+                })
+            }
+        }
+
+        impl Into<Node> for $name {
+            fn into(self) -> Node {
+                self.into_node()
+            }
+        }
+    };
+}
+
+define_element!(
+    Html,
+    "html",
+    "https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/html"
+);
+define_element!(
+    Head,
+    "head",
+    "https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/head"
+);
+define_element!(
+    Title,
+    "title",
+    "https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/title"
+);
+define_element!(
+    Link,
+    "link",
+    "https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/link"
+);
+define_element!(
+    Script,
+    "script",
+    "https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/script"
+);
+define_element!(
+    Body,
+    "body",
+    "https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/body"
+);
+define_element!(
+    H1,
+    "h1",
+    "https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/h1"
+);
+define_element!(
+    Dialog,
+    "dialog",
+    "https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/dialog"
+);
+define_element!(
+    Input,
+    "input",
+    "https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/input"
+);
+define_element!(
+    Label,
+    "label",
+    "https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/label"
+);
+define_element!(
+    Form,
+    "form",
+    "https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/form"
+);
+
+// Link specific
+impl Link {
+    pub fn rel(self, rel: &str) -> Self {
+        self.attribute("rel", rel)
+    }
+
+    pub fn href(self, href: &str) -> Self {
+        self.attribute("href", href)
+    }
+}
+
+// Input specific
+impl Input {
+    pub fn name(self, name: &str) -> Self {
+        self.attribute("name", name)
+    }
+
+    pub fn autocomplete(self, autocomplete: &str) -> Self {
+        self.attribute("autocomplete", autocomplete)
+    }
+
+    pub fn required(self) -> Self {
+        self.attribute("required", "required")
+    }
+
+    pub fn readonly(self) -> Self {
+        self.attribute("readonly", "readonly")
+    }
+}
