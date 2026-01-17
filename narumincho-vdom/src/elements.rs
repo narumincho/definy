@@ -110,6 +110,16 @@ define_element!(
     "form",
     "https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/form"
 );
+define_element!(
+    Style,
+    "style",
+    "https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/style"
+);
+define_element!(
+    Div,
+    "div",
+    "https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/div"
+);
 
 // Link specific
 impl Link {
