@@ -1,22 +1,15 @@
-#[derive(Debug, PartialEq, Clone)]
-pub struct Element {
-    pub element_name: String,
-    pub attributes: Vec<(String, String)>,
-    pub children: Vec<Node>,
-}
+mod button;
+mod node;
 
-#[derive(Debug, PartialEq, Clone)]
-pub enum Node {
-    Element(Element),
-    Text(String),
-}
+pub use button::Button;
+pub use node::Node;
 
 pub fn h(
     element_name: &str,
     attributes: impl Into<Vec<(String, String)>>,
     children: impl Into<Vec<Node>>,
 ) -> Node {
-    Node::Element(Element {
+    Node::Element(node::Element {
         element_name: element_name.to_string(),
         attributes: attributes.into(),
         children: children.into(),
@@ -65,14 +58,6 @@ pub fn h1(attributes: impl Into<Vec<(String, String)>>, children: impl Into<Vec<
     h("h1", attributes, children)
 }
 
-/// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/button
-pub fn button(
-    attributes: impl Into<Vec<(String, String)>>,
-    children: impl Into<Vec<Node>>,
-) -> Node {
-    h("button", attributes, children)
-}
-
 /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/dialog
 pub fn dialog(
     attributes: impl Into<Vec<(String, String)>>,
@@ -94,53 +79,6 @@ pub fn label(attributes: impl Into<Vec<(String, String)>>, children: impl Into<V
 /// https://developer.mozilla.org/ja/docs/Web/HTML/Element/form
 pub fn form(attributes: impl Into<Vec<(String, String)>>, children: impl Into<Vec<Node>>) -> Node {
     h("form", attributes, children)
-}
-
-pub struct Button {
-    pub attributes: Vec<(String, String)>,
-    pub children: Vec<Node>,
-}
-
-impl Button {
-    pub fn new() -> Self {
-        Self {
-            attributes: Vec::new(),
-            children: Vec::new(),
-        }
-    }
-
-    pub fn command_for(mut self, command_for: &str) -> Self {
-        self.attributes
-            .push(("commandFor".to_string(), command_for.to_string()));
-        self
-    }
-
-    pub fn command(mut self, command: &str) -> Self {
-        self.attributes
-            .push(("command".to_string(), command.to_string()));
-        self
-    }
-
-    pub fn type_(mut self, type_: &str) -> Self {
-        self.attributes
-            .push(("type".to_string(), type_.to_string()));
-        self
-    }
-
-    pub fn children(mut self, children: impl Into<Vec<Node>>) -> Self {
-        self.children = children.into();
-        self
-    }
-
-    pub fn into_node(self) -> Node {
-        button(self.attributes, self.children)
-    }
-}
-
-impl Into<Node> for Button {
-    fn into(self) -> Node {
-        button(self.attributes, self.children)
-    }
 }
 
 impl Into<Node> for String {
