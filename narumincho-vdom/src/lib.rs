@@ -81,6 +81,21 @@ pub fn dialog(
     h("dialog", attributes, children)
 }
 
+/// https://developer.mozilla.org/ja/docs/Web/HTML/Reference/Elements/input
+pub fn input(attributes: impl Into<Vec<(String, String)>>) -> Node {
+    h("input", attributes, Vec::new())
+}
+
+/// https://developer.mozilla.org/ja/docs/Web/HTML/Element/label
+pub fn label(attributes: impl Into<Vec<(String, String)>>, children: impl Into<Vec<Node>>) -> Node {
+    h("label", attributes, children)
+}
+
+/// https://developer.mozilla.org/ja/docs/Web/HTML/Element/form
+pub fn form(attributes: impl Into<Vec<(String, String)>>, children: impl Into<Vec<Node>>) -> Node {
+    h("form", attributes, children)
+}
+
 pub struct Button {
     pub attributes: Vec<(String, String)>,
     pub children: Vec<Node>,
