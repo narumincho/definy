@@ -36,24 +36,6 @@ fn run() -> Result<(), JsValue> {
                         use base64::{Engine as _, engine::general_purpose};
                         let encoded = general_purpose::URL_SAFE_NO_PAD.encode(secret);
                         state.borrow_mut().generated_key = Some(encoded);
-
-                        if let Some(command_for) = element.get_attribute("commandfor") {
-                            if let Some(dialog) = document.get_element_by_id(&command_for) {
-                                if let Ok(dialog) = dialog.dyn_into::<web_sys::HtmlDialogElement>()
-                                {
-                                    dialog.show_modal().expect("failed to show modal");
-                                }
-                            }
-                        }
-                    } else if command == "close" {
-                        if let Some(command_for) = element.get_attribute("commandfor") {
-                            if let Some(dialog) = document.get_element_by_id(&command_for) {
-                                if let Ok(dialog) = dialog.dyn_into::<web_sys::HtmlDialogElement>()
-                                {
-                                    dialog.close();
-                                }
-                            }
-                        }
                     }
 
                     match command.as_str() {
