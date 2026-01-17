@@ -18,7 +18,12 @@ web-sys = { version = "0.3.83", features = [
   "NodeList",
   "HtmlElement",
   "Event",
+  "HtmlDialogElement",
 ] }
 definy-ui = { path = "../definy-ui" }
 narumincho-vdom-client = { path = "../narumincho-vdom-client" }
 narumincho-vdom = { path = "../narumincho-vdom" }
+ed25519-dalek = { version = "2.1", features = ["rand_core"] }
+rand = { version = "0.8", features = ["std_rng"] }
+getrandom = { version = "0.2", features = ["js"] }
+base64 = "0.22"

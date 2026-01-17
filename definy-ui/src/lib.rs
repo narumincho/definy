@@ -1,6 +1,6 @@
 use narumincho_vdom::*;
 
-pub fn app(count: i32) -> Node {
+pub fn app(state: AppState) -> Node {
     Html::new()
         .children([
             Head::new()
@@ -142,13 +142,13 @@ init(\"{}\");",
                         .command("show-modal")
                         .children([text("アカウント作成")])
                         .into_node(),
-                    create_account_dialog(),
+                    create_account_dialog(state.generated_key),
                     Div::new()
                         .attribute("style", "margin-top: 1rem;")
                         .children([Button::new()
                             .command("increment")
                             .type_("button")
-                            .children([text(format!("count: {}", count))])
+                            .children([text(format!("count: {}", state.count))])
                             .into_node()])
                         .into_node(),
                 ])
@@ -157,8 +157,25 @@ init(\"{}\");",
         .into_node()
 }
 
+#[derive(Clone)]
+pub struct AppState {
+    pub count: i32,
+    pub generated_key: Option<String>,
+}
+
 /// アカウント作成ダイアログ
-pub fn create_account_dialog() -> Node {
+pub fn create_account_dialog(secret_key: Option<String>) -> Node {
+    let mut password_input = Input::new()
+        .type_("password")
+        .name("password")
+        .autocomplete("new-password")
+        .required()
+        .readonly();
+
+    if let Some(key) = secret_key {
+        password_input = password_input.attribute("value", &key);
+    }
+
     Dialog::new()
         .id("create-account-dialog")
         .children([
@@ -192,13 +209,7 @@ pub fn create_account_dialog() -> Node {
                                 ])
                                 .class("hint")
                                 .into_node(),
-                            Input::new()
-                                .type_("password")
-                                .name("password")
-                                .autocomplete("new-password")
-                                .required()
-                                .readonly()
-                                .into_node(),
+                            password_input.into_node(),
                         ])
                         .into_node(),
                     Div::new()
