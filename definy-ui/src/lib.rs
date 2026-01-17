@@ -39,73 +39,7 @@ init(\"{}\");",
                         .type_("button")
                         .children([text("アカウント作成")])
                         .into_node(),
-                    dialog(
-                        [("id".to_string(), "create-account-dialog".to_string())],
-                        [
-                            "アカウント作成ダイアログだよ".to_string().into(),
-                            form(
-                                [],
-                                [
-                                    label(
-                                        [],
-                                        [
-                                            text("ユーザー名"),
-                                            input([
-                                                ("type".to_string(), "text".to_string()),
-                                                ("name".to_string(), "username".to_string()),
-                                                (
-                                                    "autocomplete".to_string(),
-                                                    "username".to_string(),
-                                                ),
-                                                ("required".to_string(), "required".to_string()),
-                                            ]),
-                                            label(
-                                                [],
-                                                [
-                                                    text("秘密鍵"),
-                                                    text(
-                                                        "分散システムのため秘密鍵を失うとログインすることができなくなってしまいます",
-                                                    ),
-                                                    input([
-                                                        (
-                                                            "type".to_string(),
-                                                            "password".to_string(),
-                                                        ),
-                                                        (
-                                                            "name".to_string(),
-                                                            "password".to_string(),
-                                                        ),
-                                                        (
-                                                            "autocomplete".to_string(),
-                                                            "new-password".to_string(),
-                                                        ),
-                                                        (
-                                                            "required".to_string(),
-                                                            "required".to_string(),
-                                                        ),
-                                                        (
-                                                            "readonly".to_string(),
-                                                            "readonly".to_string(),
-                                                        ),
-                                                    ]),
-                                                ],
-                                            ),
-                                        ],
-                                    ),
-                                    Button::new()
-                                        .type_("submit")
-                                        .children([text("送信")])
-                                        .into_node(),
-                                ],
-                            ),
-                            Button::new()
-                                .command_for("create-account-dialog")
-                                .command("close")
-                                .type_("button")
-                                .children([text("閉じる")])
-                                .into_node(),
-                        ],
-                    ),
+                    create_account_dialog(),
                     Button::new()
                         .command("increment")
                         .type_("button")
@@ -113,6 +47,59 @@ init(\"{}\");",
                         .into_node(),
                 ],
             ),
+        ],
+    )
+}
+
+/// アカウント作成ダイアログ
+pub fn create_account_dialog() -> Node {
+    dialog(
+        [("id".to_string(), "create-account-dialog".to_string())],
+        [
+            "アカウント作成ダイアログだよ".to_string().into(),
+            form(
+                [],
+                [
+                    label(
+                        [],
+                        [
+                            text("ユーザー名"),
+                            input([
+                                ("type".to_string(), "text".to_string()),
+                                ("name".to_string(), "username".to_string()),
+                                ("autocomplete".to_string(), "username".to_string()),
+                                ("required".to_string(), "required".to_string()),
+                            ]),
+                            label(
+                                [],
+                                [
+                                    text("秘密鍵"),
+                                    text(
+                                        "分散システムのため秘密鍵を失うとログインすることができなくなってしまいます",
+                                    ),
+                                    input([
+                                        ("type".to_string(), "password".to_string()),
+                                        ("name".to_string(), "password".to_string()),
+                                        ("autocomplete".to_string(), "new-password".to_string()),
+                                        ("required".to_string(), "required".to_string()),
+                                        ("readonly".to_string(), "readonly".to_string()),
+                                    ]),
+                                ],
+                            ),
+                        ],
+                    ),
+                    Button::new()
+                        .type_("submit")
+                        .children([text("送信")])
+                        .into_node(),
+                ],
+            ),
+            Button::new()
+                .command_for("create-account-dialog")
+                .command("close")
+                .type_("button")
+                .children([text("閉じる")])
+                .into_node(),
         ],
     )
 }
