@@ -120,9 +120,15 @@ fn apply_patch<Message: Clone + 'static>(
                 for (event_name, msg) in events {
                     let msg = msg.clone();
                     let dispatch = dispatch.clone();
-                    let closure = Closure::wrap(Box::new(move || {
+                    let event_name_clone = event_name.clone();
+                    let closure = Closure::wrap(Box::new(move |event: web_sys::Event| {
+                        // For form submit events, call preventDefault
+                        if event_name_clone == "submit" {
+                            event.prevent_default();
+                        }
                         dispatch(&msg);
-                    }) as Box<dyn FnMut()>);
+                    })
+                        as Box<dyn FnMut(web_sys::Event)>);
                     element
                         .add_event_listener_with_callback(
                             &event_name,
@@ -183,11 +189,16 @@ fn create_web_sys_node<Message: Clone + 'static>(
             for (event_name, msg) in &el.events {
                 let msg = msg.clone();
                 let dispatch = dispatch.clone();
-                let closure = Closure::wrap(Box::new(move || {
+                let event_name_clone = event_name.clone();
+                let closure = Closure::wrap(Box::new(move |event: web_sys::Event| {
+                    // For form submit events, call preventDefault
+                    if event_name_clone == "submit" {
+                        event.prevent_default();
+                    }
                     dispatch(&msg);
-                }) as Box<dyn FnMut()>);
+                }) as Box<dyn FnMut(web_sys::Event)>);
                 element
-                    .add_event_listener_with_callback(event_name, closure.as_ref().unchecked_ref())
+                    .add_event_listener_with_callback(&event_name, closure.as_ref().unchecked_ref())
                     .unwrap();
                 Reflect::set(&element, &callback_key_symbol, closure.as_ref()).unwrap();
                 closure.forget();

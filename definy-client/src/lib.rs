@@ -40,6 +40,7 @@ fn update(state: &AppState, msg: &Message) -> AppState {
             state.clone()
         }
         Message::SubmitCreateAccountForm => {
+            web_sys::console::log_1(&"SubmitCreateAccountForm called".into());
             // アカウント作成フォームの送信処理（未実装）
             state.clone()
         }
