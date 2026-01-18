@@ -14,7 +14,7 @@ fn run() -> Result<(), JsValue> {
     Ok(())
 }
 
-fn update(state: &AppState, msg: Message) -> AppState {
+fn update(state: &AppState, msg: &Message) -> AppState {
     match msg {
         Message::Increment => AppState {
             count: state.count + 1,

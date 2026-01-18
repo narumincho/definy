@@ -7,7 +7,7 @@ mod diff;
 pub fn start<State: Clone + 'static, Message: PartialEq + Clone + 'static>(
     initial_state: &State,
     render_fn: impl Fn(&State) -> Node<Message> + 'static,
-    update_fn: impl Fn(&State, Message) -> State + 'static,
+    update_fn: impl Fn(&State, &Message) -> State + 'static,
 ) {
     let window = web_sys::window().expect("no global `window` exists");
     let document = window.document().expect("should have a document on window");
@@ -20,16 +20,16 @@ pub fn start<State: Clone + 'static, Message: PartialEq + Clone + 'static>(
 
     let first_patches = diff::add_event_listener_patches(&vdom);
 
-    let dispatch = std::rc::Rc::new(std::cell::RefCell::new(None::<Box<dyn Fn(Message)>>));
+    let dispatch = std::rc::Rc::new(std::cell::RefCell::new(None::<Box<dyn Fn(&Message)>>));
     let dispatch_clone = dispatch.clone();
     let html_element_clone = html_element.clone();
     let state_clone = state.clone();
     let vdom_rc = std::rc::Rc::new(std::cell::RefCell::new(vdom));
     let vdom_clone = vdom_rc.clone();
 
-    *dispatch.borrow_mut() = Some(Box::new(move |msg: Message| {
+    *dispatch.borrow_mut() = Some(Box::new(move |msg: &Message| {
         let mut current_state = state_clone.borrow_mut();
-        *current_state = update_fn(&current_state, msg);
+        *current_state = update_fn(&current_state, &msg);
         let new_vdom = render_fn(&*current_state);
         let old_vdom = vdom_clone.borrow();
         let patches = diff::diff(&old_vdom, &new_vdom);
@@ -53,10 +53,10 @@ pub fn start<State: Clone + 'static, Message: PartialEq + Clone + 'static>(
     );
 }
 
-pub fn apply<T: Clone + 'static>(
+pub fn apply<Message: Clone + 'static>(
     root: &web_sys::Node,
-    patches: Vec<(Vec<usize>, diff::Patch<T>)>,
-    dispatch: impl Fn(T) + Clone,
+    patches: Vec<(Vec<usize>, diff::Patch<Message>)>,
+    dispatch: impl Fn(&Message) + Clone,
 ) {
     for (path, patch) in patches {
         if let Some(node) = find_node(root, &path) {
@@ -85,10 +85,10 @@ fn find_node(root: &web_sys::Node, path: &[usize]) -> Option<web_sys::Node> {
     Some(current)
 }
 
-fn apply_patch<T: Clone + 'static>(
+fn apply_patch<Message: Clone + 'static>(
     node: web_sys::Node,
-    patch: diff::Patch<T>,
-    dispatch: impl Fn(T) + Clone,
+    patch: diff::Patch<Message>,
+    dispatch: impl Fn(&Message) + Clone,
     callback_key_symbol: &js_sys::Symbol,
 ) {
     match patch {
@@ -121,7 +121,7 @@ fn apply_patch<T: Clone + 'static>(
                     let msg = msg.clone();
                     let dispatch = dispatch.clone();
                     let closure = Closure::wrap(Box::new(move || {
-                        dispatch(msg.clone());
+                        dispatch(&msg);
                     }) as Box<dyn FnMut()>);
                     element
                         .add_event_listener_with_callback(
@@ -166,9 +166,9 @@ fn apply_patch<T: Clone + 'static>(
     }
 }
 
-fn create_web_sys_node<T: Clone + 'static>(
-    vdom: &Node<T>,
-    dispatch: impl Fn(T) + Clone,
+fn create_web_sys_node<Message: Clone + 'static>(
+    vdom: &Node<Message>,
+    dispatch: impl Fn(&Message) + Clone,
     callback_key_symbol: &js_sys::Symbol,
 ) -> web_sys::Node {
     let window = web_sys::window().expect("no global `window` exists");
@@ -184,7 +184,7 @@ fn create_web_sys_node<T: Clone + 'static>(
                 let msg = msg.clone();
                 let dispatch = dispatch.clone();
                 let closure = Closure::wrap(Box::new(move || {
-                    dispatch(msg.clone());
+                    dispatch(&msg);
                 }) as Box<dyn FnMut()>);
                 element
                     .add_event_listener_with_callback(event_name, closure.as_ref().unchecked_ref())
