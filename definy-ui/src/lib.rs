@@ -127,7 +127,7 @@ input:focus {
                         .type_("module")
                         .children([text(format!(
                             "import init from './{}';
-init(\"{}\");",
+init({{ module_or_path: \"{}\" }});",
                             include_str!("../../web-distribution/definy_client.js.sha256"),
                             include_str!("../../web-distribution/definy_client_bg.wasm.sha256"),
                         ))])
@@ -211,10 +211,10 @@ pub fn create_account_dialog(
             Form::new()
                 .on_submit(Message::SubmitCreateAccountForm) 
                 .children([
-                    Div::new()
+                    Label::new()
                         .class("form-group")
                         .children([
-                            Label::new().children([text("ユーザー名")]).into_node(),
+                            text("ユーザー名"),
                             Input::new()
                                 .type_("text")
                                 .name("username")
@@ -223,26 +223,22 @@ pub fn create_account_dialog(
                                 .into_node(),
                         ])
                         .into_node(),
-                    Div::new()
+                    Label::new()
                         .class("form-group")
                         .children([
-                            Label::new()
-                                .children([text("ユーザーID (公開鍵)")])
-                                .into_node(),
+                            text("ユーザーID (公開鍵)"),
                             user_id_input.into_node(),
                         ])
-                         .into_node(),
-                    Div::new()
+                        .into_node(),
+                    Label::new()
                         .class("form-group")
                         .children([
-                            Label::new()
-                                .children([
-                                    text("秘密鍵"),
-                                    text(
-                                        " (分散システムのため秘密鍵を失うとログインすることができなくなってしまいます)",
-                                    ),
-                                ])
+                            text("秘密鍵"),
+                            Div::new()
                                 .class("hint")
+                                .children([
+                                    text("分散システムのため秘密鍵を失うとログインすることができなくなってしまいます"),
+                                ])
                                 .into_node(),
                             Div::new()
                                 .attribute("style", "display: flex; gap: 0.5rem;")
