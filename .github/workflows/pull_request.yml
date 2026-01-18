@@ -4,12 +4,13 @@ on: pull_request
 
 jobs:
   test:
-    name: type check and test
     runs-on: ubuntu-24.04
     steps:
       - name: checkout repository
         uses: actions/checkout@v6
       - run: cargo --version
       - run: cargo install wasm-bindgen-cli
+      - run: rustup target add wasm32-unknown-unknown
       - run: cargo run -p definy-build
       - run: cargo test
+      - uses: Swatinem/rust-cache@v2
