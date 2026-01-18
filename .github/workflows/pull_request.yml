@@ -9,11 +9,5 @@ jobs:
     steps:
       - name: checkout repository
         uses: actions/checkout@v6
-      - name: setup Deno
-        uses: denoland/setup-deno@v2
-        with:
-          deno-version: v2.x
-      - run: deno task build
-      - run: deno check
-      - run: deno lint
-      - run: deno test
+      - run: cargo --version
+      - run: cargo test
