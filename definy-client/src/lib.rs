@@ -26,7 +26,7 @@ impl narumincho_vdom_client::App<AppState, Message> for DefinyApp {
         definy_ui::app(state, &None)
     }
 
-    fn update(state: &AppState, msg: &Message) -> AppState {
+    fn update(state: &AppState, msg: &Message, fire: &dyn Fn(&Message)) -> AppState {
         match msg {
             Message::Increment => AppState {
                 count: state.count + 1,
@@ -60,6 +60,7 @@ impl narumincho_vdom_client::App<AppState, Message> for DefinyApp {
             }
             Message::SubmitCreateAccountForm => {
                 web_sys::console::log_1(&"SubmitCreateAccountForm called".into());
+                fire(&Message::Increment);
                 // アカウント作成フォームの送信処理（未実装）
                 state.clone()
             }

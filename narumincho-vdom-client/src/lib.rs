@@ -2,12 +2,13 @@ use js_sys::Reflect;
 use narumincho_vdom::Node;
 use wasm_bindgen::closure::Closure;
 use wasm_bindgen::{JsCast, JsValue};
+
 mod diff;
 
 pub trait App<State: Clone + 'static, Message: PartialEq + Clone + 'static> {
     fn initial_state() -> State;
     fn render(state: &State) -> Node<Message>;
-    fn update(state: &State, msg: &Message) -> State;
+    fn update(state: &State, msg: &Message, fire: &dyn Fn(&Message)) -> State;
 }
 
 pub fn start<
@@ -33,21 +34,40 @@ pub fn start<
     let vdom_rc = std::rc::Rc::new(std::cell::RefCell::new(vdom));
     let vdom_clone = vdom_rc.clone();
 
+    let message_queue = std::rc::Rc::new(std::cell::RefCell::new(Vec::<Message>::new()));
+    let queue_clone = message_queue.clone();
+
     *dispatch.borrow_mut() = Some(Box::new(move |msg: &Message| {
-        let mut current_state = state_clone.borrow_mut();
-        *current_state = A::update(&current_state, &msg);
-        let new_vdom = A::render(&*current_state);
+        // ---- 1. update ----
+        let new_state = {
+            let current_state = state_clone.borrow();
+            let fire = |m: &Message| {
+                queue_clone.borrow_mut().push(m.clone());
+            };
+            A::update(&current_state, msg, &fire)
+        };
+
+        *state_clone.borrow_mut() = new_state;
+
+        // ---- 2. VDOM diff & patch ----
+        let new_vdom = A::render(&state_clone.borrow());
         let old_vdom = vdom_clone.borrow();
         let patches = diff::diff(&old_vdom, &new_vdom);
         drop(old_vdom);
         *vdom_clone.borrow_mut() = new_vdom;
 
-        match *dispatch_clone.borrow() {
-            Some(ref d) => {
-                apply(&html_element_clone.clone().into(), patches, d);
-            }
-            None => {
-                web_sys::console::error_1(&JsValue::from_str("Dispatch function is not set."));
+        if let Some(ref d) = *dispatch_clone.borrow() {
+            apply(&html_element_clone.clone().into(), patches, d);
+        }
+
+        // ---- 3. キューを drain して dispatch ----
+        let mut queued = queue_clone.borrow_mut();
+        let messages: Vec<_> = queued.drain(..).collect();
+        drop(queued);
+
+        if let Some(ref d) = *dispatch_clone.borrow() {
+            for m in messages {
+                d(&m);
             }
         }
     }));
