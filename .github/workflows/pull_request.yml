@@ -10,6 +10,6 @@ jobs:
       - name: checkout repository
         uses: actions/checkout@v6
       - run: cargo --version
-      - run: cargo binstall wasm-bindgen-cli
+      - run: cargo install wasm-bindgen-cli
       - run: cargo run -p definy-build
       - run: cargo test
