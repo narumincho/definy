@@ -2,6 +2,8 @@ use definy_ui::{AppState, Message};
 use js_sys::Reflect;
 use wasm_bindgen::JsValue;
 use wasm_bindgen::prelude::*;
+use wasm_bindgen_futures::JsFuture;
+use web_sys::window;
 
 #[wasm_bindgen(start)]
 fn run() -> Result<(), JsValue> {
@@ -26,14 +28,17 @@ impl narumincho_vdom_client::App<AppState, Message> for DefinyApp {
         definy_ui::app(state, &None)
     }
 
-    fn update(state: &AppState, msg: &Message, fire: &dyn Fn(&Message)) -> AppState {
+    fn update(state: &AppState, msg: &Message, fire: &std::rc::Rc<dyn Fn(Message)>) -> AppState {
         match msg {
-            Message::Increment => AppState {
-                count: state.count + 1,
-                generated_key: state.generated_key.clone(),
-                generated_public_key: state.generated_public_key.clone(),
-                username: state.username.clone(),
-            },
+            Message::Increment => {
+                web_sys::console::log_1(&format!("Increment {}", state.count + 1).into());
+                AppState {
+                    count: state.count + 1,
+                    generated_key: state.generated_key.clone(),
+                    generated_public_key: state.generated_public_key.clone(),
+                    username: state.username.clone(),
+                }
+            }
             Message::ShowCreateAccountDialog => {
                 let key = generate_key();
                 AppState {
@@ -59,9 +64,13 @@ impl narumincho_vdom_client::App<AppState, Message> for DefinyApp {
                 state.clone()
             }
             Message::SubmitCreateAccountForm => {
-                web_sys::console::log_1(&"SubmitCreateAccountForm called".into());
-                fire(&Message::Increment);
-                // アカウント作成フォームの送信処理（未実装）
+                let fire = fire.clone();
+
+                wasm_bindgen_futures::spawn_local(async move {
+                    fire(Message::Increment);
+                    handle_submit_create_account_form(&fire).await;
+                });
+
                 state.clone()
             }
             Message::UpdateUsername(_) => {
@@ -107,4 +116,24 @@ fn generate_key() -> Key {
         encoded_secret,
         encoded_public,
     }
+}
+
+async fn handle_submit_create_account_form(fire: &std::rc::Rc<dyn Fn(Message)>) {
+    web_sys::console::log_1(&"SubmitCreateAccountForm called".into());
+    fire(Message::Increment);
+    let request_init = web_sys::RequestInit::new();
+    request_init.set_method("POST");
+    let response_raw = JsFuture::from(
+        window()
+            .unwrap()
+            .fetch_with_str_and_init("samplePost", &request_init),
+    )
+    .await
+    .unwrap();
+
+    let response: web_sys::Response = response_raw.dyn_into().unwrap();
+
+    web_sys::console::log_1(&response);
+
+    fire(Message::Increment)
 }

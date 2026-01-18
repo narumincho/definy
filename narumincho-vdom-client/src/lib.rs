@@ -1,14 +1,16 @@
+use std::rc::Rc;
+
 use js_sys::Reflect;
 use narumincho_vdom::Node;
+use wasm_bindgen::JsCast;
 use wasm_bindgen::closure::Closure;
-use wasm_bindgen::{JsCast, JsValue};
 
 mod diff;
 
 pub trait App<State: Clone + 'static, Message: PartialEq + Clone + 'static> {
     fn initial_state() -> State;
     fn render(state: &State) -> Node<Message>;
-    fn update(state: &State, msg: &Message, fire: &dyn Fn(&Message)) -> State;
+    fn update(state: &State, msg: &Message, fire: &Rc<dyn Fn(Message)>) -> State;
 }
 
 pub fn start<
@@ -22,27 +24,30 @@ pub fn start<
         .document_element()
         .expect("should have a document element");
 
-    let state = std::rc::Rc::new(std::cell::RefCell::new(A::initial_state()));
+    let state = Rc::new(std::cell::RefCell::new(A::initial_state()));
     let vdom = A::render(&state.borrow());
 
     let first_patches = diff::add_event_listener_patches(&vdom);
 
-    let dispatch = std::rc::Rc::new(std::cell::RefCell::new(None::<Box<dyn Fn(&Message)>>));
+    let dispatch = Rc::new(std::cell::RefCell::new(None::<Box<dyn Fn(&Message)>>));
     let dispatch_clone = dispatch.clone();
     let html_element_clone = html_element.clone();
     let state_clone = state.clone();
-    let vdom_rc = std::rc::Rc::new(std::cell::RefCell::new(vdom));
+    let vdom_rc = Rc::new(std::cell::RefCell::new(vdom));
     let vdom_clone = vdom_rc.clone();
 
-    let message_queue = std::rc::Rc::new(std::cell::RefCell::new(Vec::<Message>::new()));
+    let message_queue = Rc::new(std::cell::RefCell::new(Vec::<Message>::new()));
     let queue_clone = message_queue.clone();
 
     *dispatch.borrow_mut() = Some(Box::new(move |msg: &Message| {
         // ---- 1. update ----
         let new_state = {
             let current_state = state_clone.borrow();
-            let fire = |m: &Message| {
-                queue_clone.borrow_mut().push(m.clone());
+            let fire: Rc<dyn Fn(Message)> = {
+                let queue_clone = queue_clone.clone();
+                Rc::new(move |m: Message| {
+                    queue_clone.borrow_mut().push(m);
+                })
             };
             A::update(&current_state, msg, &fire)
         };
