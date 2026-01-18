@@ -152,6 +152,11 @@ impl<Message> Input<Message> {
     pub fn readonly(self) -> Self {
         self.attribute("readonly", "readonly")
     }
+
+    pub fn on_change(mut self, msg: Message) -> Self {
+        self.events.push(("change".to_string(), msg));
+        self
+    }
 }
 
 impl<Message> Form<Message> {

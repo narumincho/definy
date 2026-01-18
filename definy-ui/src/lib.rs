@@ -143,7 +143,7 @@ init({{ module_or_path: \"{}\" }});",
                         .on_click(Message::ShowCreateAccountDialog)
                         .children([text("アカウント作成")])
                         .into_node(),
-                    create_account_dialog(&state.generated_key, &state.generated_public_key),
+                    create_account_dialog(state, &state.generated_key, &state.generated_public_key),
                     Div::new()
                         .attribute("style", "margin-top: 1rem;")
                         .children([Button::new()
@@ -163,6 +163,7 @@ pub struct AppState {
     pub count: i32,
     pub generated_key: Option<String>,
     pub generated_public_key: Option<String>,
+    pub username: String,
 }
 
 #[derive(Debug, PartialEq, Clone)]
@@ -173,10 +174,12 @@ pub enum Message {
     RegenerateKey,
     CopyPrivateKey,
     SubmitCreateAccountForm,
+    UpdateUsername(String),
 }
 
 /// アカウント作成ダイアログ
 pub fn create_account_dialog(
+    state: &AppState,
     secret_key: &Option<String>,
     public_key: &Option<String>,
 ) -> Node<Message> {
@@ -220,6 +223,8 @@ pub fn create_account_dialog(
                                 .name("username")
                                 .autocomplete("username")
                                 .required()
+                                .attribute("value", &state.username)
+                                .on_change(Message::UpdateUsername(String::new()))
                                 .into_node(),
                         ])
                         .into_node(),

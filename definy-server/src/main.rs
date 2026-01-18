@@ -58,6 +58,7 @@ async fn handler(
                     count: 0,
                     generated_key: None,
                     generated_public_key: None,
+                    username: String::new(),
                 }),
             )))),
         JAVASCRIPT_HASH => Response::builder()
