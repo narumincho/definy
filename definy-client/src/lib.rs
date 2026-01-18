@@ -39,6 +39,10 @@ fn update(state: &AppState, msg: Message) -> AppState {
             }
             state.clone()
         }
+        Message::SubmitCreateAccountForm => {
+            // アカウント作成フォームの送信処理（未実装）
+            state.clone()
+        }
     }
 }
 

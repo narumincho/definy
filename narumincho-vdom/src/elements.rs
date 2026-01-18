@@ -3,13 +3,13 @@ use crate::node::{Element, Node};
 macro_rules! define_element {
     ($name:ident, $tag:expr, $doc:expr) => {
         #[doc = $doc]
-        pub struct $name<T> {
+        pub struct $name<Message> {
             pub attributes: Vec<(String, String)>,
-            pub events: Vec<(String, T)>,
-            pub children: Vec<Node<T>>,
+            pub events: Vec<(String, Message)>,
+            pub children: Vec<Node<Message>>,
         }
 
-        impl<T> $name<T> {
+        impl<Message> $name<Message> {
             pub fn new() -> Self {
                 Self {
                     attributes: Vec::new(),
@@ -35,12 +35,12 @@ macro_rules! define_element {
                 self.attribute("type", type_)
             }
 
-            pub fn children(mut self, children: impl Into<Vec<Node<T>>>) -> Self {
+            pub fn children(mut self, children: impl Into<Vec<Node<Message>>>) -> Self {
                 self.children = children.into();
                 self
             }
 
-            pub fn into_node(self) -> Node<T> {
+            pub fn into_node(self) -> Node<Message> {
                 Node::Element(Element {
                     element_name: $tag.to_string(),
                     attributes: self.attributes,
@@ -125,7 +125,7 @@ define_element!(
 );
 
 // Link specific
-impl<T> Link<T> {
+impl<Message> Link<Message> {
     pub fn rel(self, rel: &str) -> Self {
         self.attribute("rel", rel)
     }
@@ -136,7 +136,7 @@ impl<T> Link<T> {
 }
 
 // Input specific
-impl<T> Input<T> {
+impl<Message> Input<Message> {
     pub fn name(self, name: &str) -> Self {
         self.attribute("name", name)
     }
@@ -151,5 +151,13 @@ impl<T> Input<T> {
 
     pub fn readonly(self) -> Self {
         self.attribute("readonly", "readonly")
+    }
+}
+
+impl<Message> Form<Message> {
+    /// https://developer.mozilla.org/docs/Web/API/HTMLFormElement/submit_event
+    pub fn on_submit(mut self, msg: Message) -> Self {
+        self.events.push(("submit".to_string(), msg));
+        self
     }
 }

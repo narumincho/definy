@@ -172,6 +172,7 @@ pub enum Message {
     CloseCreateAccountDialog,
     RegenerateKey,
     CopyPrivateKey,
+    SubmitCreateAccountForm,
 }
 
 /// アカウント作成ダイアログ
@@ -208,6 +209,7 @@ pub fn create_account_dialog(
                 .attribute("style", "margin-top: 0; font-size: 1.5rem;")
                 .into_node(),
             Form::new()
+                .on_submit(Message::SubmitCreateAccountForm) 
                 .children([
                     Div::new()
                         .class("form-group")

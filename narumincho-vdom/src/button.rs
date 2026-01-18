@@ -1,12 +1,12 @@
 use crate::node;
 
-pub struct Button<T> {
+pub struct Button<Message> {
     pub attributes: Vec<(String, String)>,
-    pub events: Vec<(String, T)>,
-    pub children: Vec<node::Node<T>>,
+    pub events: Vec<(String, Message)>,
+    pub children: Vec<node::Node<Message>>,
 }
 
-impl<T> Button<T> {
+impl<Message> Button<Message> {
     /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/button
     pub fn new() -> Self {
         Self {
@@ -37,17 +37,18 @@ impl<T> Button<T> {
         self
     }
 
-    pub fn on_click(mut self, msg: T) -> Self {
+    /// https://developer.mozilla.org/docs/Web/API/Element/click_event
+    pub fn on_click(mut self, msg: Message) -> Self {
         self.events.push(("click".to_string(), msg));
         self
     }
 
-    pub fn children(mut self, children: impl Into<Vec<node::Node<T>>>) -> Self {
+    pub fn children(mut self, children: impl Into<Vec<node::Node<Message>>>) -> Self {
         self.children = children.into();
         self
     }
 
-    pub fn into_node(self) -> node::Node<T> {
+    pub fn into_node(self) -> node::Node<Message> {
         println!("Creating button with attributes: {:?}", self.attributes);
         node::Node::Element(node::Element {
             element_name: "button".to_string(),
