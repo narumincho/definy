@@ -274,7 +274,7 @@ pub fn create_account_dialog(
                                 .into_node(),
                             Button::new()
                                 .type_("submit") 
-                                .children([text("作成")])
+                                .children([text("登録 (未実装)")])
                                 .into_node(),
                         ])
                         .into_node(),

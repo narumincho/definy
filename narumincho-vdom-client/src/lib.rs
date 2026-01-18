@@ -60,7 +60,12 @@ pub fn apply<T: Clone + 'static>(
 ) {
     for (path, patch) in patches {
         if let Some(node) = find_node(root, &path) {
-            apply_patch(node, patch, dispatch.clone());
+            apply_patch(
+                node,
+                patch,
+                dispatch.clone(),
+                &js_sys::Symbol::for_("__narumincho_callback_key"),
+            );
         } else {
             web_sys::console::error_1(&format!("Node not found at path {:?}", path).into());
         }
@@ -84,11 +89,12 @@ fn apply_patch<T: Clone + 'static>(
     node: web_sys::Node,
     patch: diff::Patch<T>,
     dispatch: impl Fn(T) + Clone,
+    callback_key_symbol: &js_sys::Symbol,
 ) {
     match patch {
         diff::Patch::Replace(new_node) => {
             if let Some(parent) = node.parent_node() {
-                let new_web_node = create_web_sys_node(&new_node, dispatch);
+                let new_web_node = create_web_sys_node(&new_node, dispatch, callback_key_symbol);
                 parent.replace_child(&new_web_node, &node).unwrap();
             }
         }
@@ -123,14 +129,7 @@ fn apply_patch<T: Clone + 'static>(
                             closure.as_ref().unchecked_ref(),
                         )
                         .unwrap();
-                    // Store closure to prevent drop, and enable future removal
-                    // We use a property key like "__narumincho_event_{event_name}"
-                    Reflect::set(
-                        element,
-                        &JsValue::from_str(&format!("__narumincho_event_{}", event_name)),
-                        closure.as_ref(),
-                    )
-                    .unwrap();
+                    Reflect::set(element, callback_key_symbol, closure.as_ref()).unwrap();
                     closure.forget();
                 }
             }
@@ -138,21 +137,20 @@ fn apply_patch<T: Clone + 'static>(
         diff::Patch::RemoveEventListeners(event_names) => {
             if let Some(element) = node.dyn_ref::<web_sys::Element>() {
                 for event_name in event_names {
-                    let key = format!("__narumincho_event_{}", event_name);
-                    if let Ok(value) = Reflect::get(element, &JsValue::from_str(&key)) {
+                    if let Ok(value) = Reflect::get(element, &callback_key_symbol) {
                         if let Some(func) = value.dyn_ref::<js_sys::Function>() {
                             element
                                 .remove_event_listener_with_callback(&event_name, func)
                                 .unwrap();
                         }
-                        Reflect::delete_property(element, &JsValue::from_str(&key)).unwrap();
+                        Reflect::delete_property(element, callback_key_symbol).unwrap();
                     }
                 }
             }
         }
         diff::Patch::AppendChildren(children) => {
             for child in children {
-                let child_node = create_web_sys_node(&child, dispatch.clone());
+                let child_node = create_web_sys_node(&child, dispatch.clone(), callback_key_symbol);
                 node.append_child(&child_node).unwrap();
             }
         }
@@ -171,6 +169,7 @@ fn apply_patch<T: Clone + 'static>(
 fn create_web_sys_node<T: Clone + 'static>(
     vdom: &Node<T>,
     dispatch: impl Fn(T) + Clone,
+    callback_key_symbol: &js_sys::Symbol,
 ) -> web_sys::Node {
     let window = web_sys::window().expect("no global `window` exists");
     let document = window.document().expect("should have a document on window");
@@ -190,17 +189,16 @@ fn create_web_sys_node<T: Clone + 'static>(
                 element
                     .add_event_listener_with_callback(event_name, closure.as_ref().unchecked_ref())
                     .unwrap();
-                Reflect::set(
-                    &element,
-                    &JsValue::from_str(&format!("__narumincho_event_{}", event_name)),
-                    closure.as_ref(),
-                )
-                .unwrap();
+                Reflect::set(&element, &callback_key_symbol, closure.as_ref()).unwrap();
                 closure.forget();
             }
             for child in &el.children {
                 element
-                    .append_child(&create_web_sys_node(child, dispatch.clone()))
+                    .append_child(&create_web_sys_node(
+                        child,
+                        dispatch.clone(),
+                        callback_key_symbol,
+                    ))
                     .unwrap();
             }
             element.into()
