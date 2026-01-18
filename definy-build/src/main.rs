@@ -2,6 +2,10 @@ use base64::Engine;
 use sha2::Digest;
 
 fn main() {
+    let _ = std::fs::remove_dir_all("./web-distribution");
+
+    std::fs::create_dir("web-distribution").unwrap();
+
     std::fs::read("./assets/icon.png")
         .and_then(|icon_bytes| {
             let hash = sha2::Sha256::digest(&icon_bytes);
