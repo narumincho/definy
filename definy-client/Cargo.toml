@@ -21,6 +21,8 @@ web-sys = { version = "0.3.83", features = [
   "HtmlDialogElement",
   "Navigator",
   "Clipboard",
+  "Request",
+  "RequestInit",
 ] }
 definy-ui = { path = "../definy-ui" }
 narumincho-vdom-client = { path = "../narumincho-vdom-client" }

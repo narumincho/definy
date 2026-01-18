@@ -4,19 +4,25 @@ use wasm_bindgen::closure::Closure;
 use wasm_bindgen::{JsCast, JsValue};
 mod diff;
 
-pub fn start<State: Clone + 'static, Message: PartialEq + Clone + 'static>(
-    initial_state: &State,
-    render_fn: impl Fn(&State) -> Node<Message> + 'static,
-    update_fn: impl Fn(&State, &Message) -> State + 'static,
-) {
+pub trait App<State: Clone + 'static, Message: PartialEq + Clone + 'static> {
+    fn initial_state() -> State;
+    fn render(state: &State) -> Node<Message>;
+    fn update(state: &State, msg: &Message) -> State;
+}
+
+pub fn start<
+    State: Clone + 'static,
+    Message: PartialEq + Clone + 'static,
+    A: App<State, Message>,
+>() {
     let window = web_sys::window().expect("no global `window` exists");
     let document = window.document().expect("should have a document on window");
     let html_element = document
         .document_element()
         .expect("should have a document element");
 
-    let state = std::rc::Rc::new(std::cell::RefCell::new(initial_state.clone()));
-    let vdom = render_fn(&state.borrow());
+    let state = std::rc::Rc::new(std::cell::RefCell::new(A::initial_state()));
+    let vdom = A::render(&state.borrow());
 
     let first_patches = diff::add_event_listener_patches(&vdom);
 
@@ -29,8 +35,8 @@ pub fn start<State: Clone + 'static, Message: PartialEq + Clone + 'static>(
 
     *dispatch.borrow_mut() = Some(Box::new(move |msg: &Message| {
         let mut current_state = state_clone.borrow_mut();
-        *current_state = update_fn(&current_state, &msg);
-        let new_vdom = render_fn(&*current_state);
+        *current_state = A::update(&current_state, &msg);
+        let new_vdom = A::render(&*current_state);
         let old_vdom = vdom_clone.borrow();
         let patches = diff::diff(&old_vdom, &new_vdom);
         drop(old_vdom);
