@@ -1,6 +1,6 @@
 use narumincho_vdom::*;
 
-pub fn app(state: AppState) -> Node {
+pub fn app(state: &AppState) -> Node<Message> {
     Html::new()
         .children([
             Head::new()
@@ -140,13 +140,14 @@ init(\"{}\");",
                     Button::new()
                         .command_for("create-account-dialog")
                         .command("show-modal")
+                        .on_click(Message::ShowCreateAccountDialog)
                         .children([text("アカウント作成")])
                         .into_node(),
-                    create_account_dialog(state.generated_key, state.generated_public_key),
+                    create_account_dialog(&state.generated_key, &state.generated_public_key),
                     Div::new()
                         .attribute("style", "margin-top: 1rem;")
                         .children([Button::new()
-                            .command("increment")
+                            .on_click(Message::Increment)
                             .type_("button")
                             .children([text(format!("count: {}", state.count))])
                             .into_node()])
@@ -164,8 +165,20 @@ pub struct AppState {
     pub generated_public_key: Option<String>,
 }
 
+#[derive(Debug, PartialEq, Clone)]
+pub enum Message {
+    Increment,
+    ShowCreateAccountDialog,
+    CloseCreateAccountDialog,
+    RegenerateKey,
+    CopyPrivateKey,
+}
+
 /// アカウント作成ダイアログ
-pub fn create_account_dialog(secret_key: Option<String>, public_key: Option<String>) -> Node {
+pub fn create_account_dialog(
+    secret_key: &Option<String>,
+    public_key: &Option<String>,
+) -> Node<Message> {
     let mut password_input = Input::new()
         .type_("password")
         .name("password")
@@ -236,12 +249,12 @@ pub fn create_account_dialog(secret_key: Option<String>, public_key: Option<Stri
                                         .attribute("style", "flex: 1;")
                                         .into_node(),
                                     Button::new()
-                                        .command("copy-private-key")
+                                        .on_click(Message::CopyPrivateKey)
                                         .type_("button")
                                         .children([text("コピー")])
                                         .into_node(),
                                     Button::new()
-                                        .command("regenerate-key")
+                                        .on_click(Message::RegenerateKey)
                                         .type_("button")
                                         .children([text("再生成")])
                                         .into_node(),
@@ -254,12 +267,13 @@ pub fn create_account_dialog(secret_key: Option<String>, public_key: Option<Stri
                         .children([
                             Button::new()
                                 .command_for("create-account-dialog")
-                                .command("close")
+                                .command("close") 
                                 .type_("button")
+                                .on_click(Message::CloseCreateAccountDialog)
                                 .children([text("キャンセル")])
                                 .into_node(),
                             Button::new()
-                                .type_("submit")
+                                .type_("submit") 
                                 .children([text("作成")])
                                 .into_node(),
                         ])

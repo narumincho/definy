@@ -1,15 +1,17 @@
 use crate::node;
 
-pub struct Button {
+pub struct Button<T> {
     pub attributes: Vec<(String, String)>,
-    pub children: Vec<node::Node>,
+    pub events: Vec<(String, T)>,
+    pub children: Vec<node::Node<T>>,
 }
 
-impl Button {
+impl<T> Button<T> {
     /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/button
     pub fn new() -> Self {
         Self {
             attributes: Vec::new(),
+            events: Vec::new(),
             children: Vec::new(),
         }
     }
@@ -35,15 +37,22 @@ impl Button {
         self
     }
 
-    pub fn children(mut self, children: impl Into<Vec<node::Node>>) -> Self {
+    pub fn on_click(mut self, msg: T) -> Self {
+        self.events.push(("click".to_string(), msg));
+        self
+    }
+
+    pub fn children(mut self, children: impl Into<Vec<node::Node<T>>>) -> Self {
         self.children = children.into();
         self
     }
 
-    pub fn into_node(self) -> node::Node {
+    pub fn into_node(self) -> node::Node<T> {
+        println!("Creating button with attributes: {:?}", self.attributes);
         node::Node::Element(node::Element {
             element_name: "button".to_string(),
             attributes: self.attributes,
+            events: self.events,
             children: self.children,
         })
     }

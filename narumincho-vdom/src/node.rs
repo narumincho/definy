@@ -1,12 +1,13 @@
 #[derive(Debug, PartialEq, Clone)]
-pub struct Element {
+pub struct Element<T> {
     pub element_name: String,
     pub attributes: Vec<(String, String)>,
-    pub children: Vec<Node>,
+    pub events: Vec<(String, T)>,
+    pub children: Vec<Node<T>>,
 }
 
 #[derive(Debug, PartialEq, Clone)]
-pub enum Node {
-    Element(Element),
+pub enum Node<T> {
+    Element(Element<T>),
     Text(String),
 }

@@ -3,15 +3,17 @@ use crate::node::{Element, Node};
 macro_rules! define_element {
     ($name:ident, $tag:expr, $doc:expr) => {
         #[doc = $doc]
-        pub struct $name {
+        pub struct $name<T> {
             pub attributes: Vec<(String, String)>,
-            pub children: Vec<Node>,
+            pub events: Vec<(String, T)>,
+            pub children: Vec<Node<T>>,
         }
 
-        impl $name {
+        impl<T> $name<T> {
             pub fn new() -> Self {
                 Self {
                     attributes: Vec::new(),
+                    events: Vec::new(),
                     children: Vec::new(),
                 }
             }
@@ -33,22 +35,23 @@ macro_rules! define_element {
                 self.attribute("type", type_)
             }
 
-            pub fn children(mut self, children: impl Into<Vec<Node>>) -> Self {
+            pub fn children(mut self, children: impl Into<Vec<Node<T>>>) -> Self {
                 self.children = children.into();
                 self
             }
 
-            pub fn into_node(self) -> Node {
+            pub fn into_node(self) -> Node<T> {
                 Node::Element(Element {
                     element_name: $tag.to_string(),
                     attributes: self.attributes,
+                    events: self.events,
                     children: self.children,
                 })
             }
         }
 
-        impl Into<Node> for $name {
-            fn into(self) -> Node {
+        impl<T> Into<Node<T>> for $name<T> {
+            fn into(self) -> Node<T> {
                 self.into_node()
             }
         }
@@ -122,7 +125,7 @@ define_element!(
 );
 
 // Link specific
-impl Link {
+impl<T> Link<T> {
     pub fn rel(self, rel: &str) -> Self {
         self.attribute("rel", rel)
     }
@@ -133,7 +136,7 @@ impl Link {
 }
 
 // Input specific
-impl Input {
+impl<T> Input<T> {
     pub fn name(self, name: &str) -> Self {
         self.attribute("name", name)
     }
