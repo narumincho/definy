@@ -1,11 +1,13 @@
 use narumincho_vdom::*;
 
-pub fn app(state: &AppState) -> Node<Message> {
-    Html::new()
-        .children([
-            Head::new()
-                .children([
-                    Title::new().children([text("definy")]).into_node(),
+pub struct ResourceHash {
+    pub js: String,
+    pub wasm: String
+}
+
+pub fn app(state: &AppState, resource_hash: &Option<ResourceHash>) -> Node<Message> {
+    let mut head_children = vec![
+            Title::<Message>::new().children([text("definy")]).into_node(),
                     Link::new()
                         .rel("icon")
                         .href(include_str!("../../web-distribution/icon.png.sha256"))
@@ -123,16 +125,22 @@ input:focus {
 ",
                         )])
                         .into_node(),
-                    Script::new()
+    ]; 
+    match resource_hash {
+        Some(r) => {
+            head_children.push(   Script::new()
                         .type_("module")
                         .children([text(format!(
                             "import init from './{}';
-init({{ module_or_path: \"{}\" }});",
-                            include_str!("../../web-distribution/definy_client.js.sha256"),
-                            include_str!("../../web-distribution/definy_client_bg.wasm.sha256"),
-                        ))])
-                        .into_node(),
-                ])
+init({{ module_or_path: \"{}\" }});", r.js, r.wasm))])
+                        .into_node());
+        },
+        _ => {}
+    }
+    Html::new()
+        .children([
+            Head::new()
+                .children(head_children)
                 .into_node(),
             Body::new()
                 .children([

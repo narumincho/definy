@@ -2,6 +2,16 @@ use base64::Engine;
 use sha2::Digest;
 
 fn main() {
+    std::fs::read("./assets/icon.png")
+        .and_then(|icon_bytes| {
+            let hash = sha2::Sha256::digest(&icon_bytes);
+            let hash_hex = base64::engine::general_purpose::URL_SAFE.encode(hash);
+            std::fs::write("./web-distribution/icon.png.sha256", hash_hex)
+        })
+        .expect("Failed to compute and write icon hash");
+
+    println!("icon hash write ok");
+
     std::process::Command::new("cargo")
         .args(&[
             "build",
@@ -14,6 +24,8 @@ fn main() {
         .status()
         .expect("Failed to build project");
 
+    println!("wasm build ok");
+
     std::process::Command::new("wasm-bindgen")
         .args(&[
             "--out-dir",
@@ -25,6 +37,8 @@ fn main() {
         .status()
         .expect("Failed to run wasm-bindgen");
 
+    println!("wasm-bindgen ok");
+
     std::fs::read("./web-distribution/definy_client_bg.wasm")
         .and_then(|wasm_bytes| {
             let hash = sha2::Sha256::digest(&wasm_bytes);
@@ -32,6 +46,8 @@ fn main() {
             std::fs::write("./web-distribution/definy_client_bg.wasm.sha256", hash_hex)
         })
         .expect("Failed to compute and write wasm hash");
+
+    println!("wasm hash write ok");
 
     std::fs::read("./web-distribution/definy_client.js")
         .and_then(|js_bytes| {
@@ -41,13 +57,7 @@ fn main() {
         })
         .expect("Failed to compute and write JS hash");
 
-    std::fs::read("./assets/icon.png")
-        .and_then(|icon_bytes| {
-            let hash = sha2::Sha256::digest(&icon_bytes);
-            let hash_hex = base64::engine::general_purpose::URL_SAFE.encode(hash);
-            std::fs::write("./web-distribution/icon.png.sha256", hash_hex)
-        })
-        .expect("Failed to compute and write icon hash");
+    println!("js hash write ok");
 
     println!("Build completed successfully.");
 }

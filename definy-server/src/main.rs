@@ -54,12 +54,18 @@ async fn handler(
         "" => Response::builder()
             .header("Content-Type", "text/html; charset=utf-8")
             .body(Full::new(Bytes::from(narumincho_vdom::to_html(
-                &definy_ui::app(&definy_ui::AppState {
-                    count: 0,
-                    generated_key: None,
-                    generated_public_key: None,
-                    username: String::new(),
-                }),
+                &definy_ui::app(
+                    &definy_ui::AppState {
+                        count: 0,
+                        generated_key: None,
+                        generated_public_key: None,
+                        username: String::new(),
+                    },
+                    &Some(definy_ui::ResourceHash {
+                        js: JAVASCRIPT_HASH.to_string(),
+                        wasm: WASM_HASH.to_string(),
+                    }),
+                ),
             )))),
         JAVASCRIPT_HASH => Response::builder()
             .header("Content-Type", "application/javascript; charset=utf-8")
