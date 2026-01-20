@@ -127,9 +127,12 @@ async fn handle_submit_create_account_form(username: String, fire: &dyn Fn(Messa
     let request_init = web_sys::RequestInit::new();
     request_init.set_method("POST");
     request_init.set_body(&js_sys::Uint8Array::from(
-        definy_event::serialize(definy_event::CreateAccountEvent { name: username })
-            .unwrap()
-            .as_slice(),
+        definy_event::serialize(definy_event::CreateAccountEvent {
+            name: username,
+            time: chrono::Utc::now(),
+        })
+        .unwrap()
+        .as_slice(),
     ));
     let response_raw = JsFuture::from(
         window()

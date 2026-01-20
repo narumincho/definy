@@ -34,3 +34,4 @@ rand = { version = "0.8", features = ["std_rng"] }
 getrandom = { version = "0.2", features = ["js"] }
 base64 = "0.22"
 wasm-bindgen-futures = "0.4.58"
+chrono = "0.4.43"

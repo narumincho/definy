@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 pub struct CreateAccountEvent {
     // pub account_id: AccountId,
     pub name: String,
-    // pub time: Date,
+    pub time: chrono::DateTime<chrono::Utc>,
 }
 
 // #[derive(Serialize, Deserialize)]
