@@ -3,6 +3,7 @@
 members = [
   "definy-build",
   "definy-client",
+  "definy-event",
   "definy-server",
   "definy-ui",
   "narumincho-vdom",

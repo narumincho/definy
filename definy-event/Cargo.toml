@@ -1,0 +1,8 @@
+[package]
+name = "definy-event"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_cbor = { version = "0.10" }

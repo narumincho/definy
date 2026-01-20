@@ -1,6 +1,6 @@
 use std::net::SocketAddr;
 
-use http_body_util::Full;
+use http_body_util::{BodyExt, Full};
 use hyper::body::Bytes;
 use hyper::server::conn::http1;
 use hyper::service::service_fn;
@@ -46,7 +46,7 @@ const ICON_CONTENT: &[u8] = include_bytes!("../../assets/icon.png");
 const ICON_HASH: &'static str = include_str!("../../web-distribution/icon.png.sha256");
 
 async fn handler(
-    request: Request<hyper::body::Incoming>,
+    request: Request<impl hyper::body::Body>,
 ) -> Result<Response<Full<Bytes>>, hyper::http::Error> {
     let path = request.uri().path();
     println!("Received request for path: {}", path);
@@ -67,6 +67,29 @@ async fn handler(
                     }),
                 ),
             )))),
+        "samplePost" => {
+            let body = request.into_body();
+            match body.collect().await {
+                Ok(collected) => {
+                    let bytes = collected.to_bytes();
+                    match serde_cbor::from_slice::<definy_event::CreateAccountEvent>(&bytes) {
+                        Ok(data) => {
+                            println!("Received CBOR data: {:?}", data);
+                            Response::builder().body(Full::new(Bytes::from("Data received")))
+                        }
+                        Err(e) => {
+                            eprintln!("Failed to parse CBOR: {:?}", e);
+                            Response::builder()
+                                .status(400)
+                                .body(Full::new(Bytes::from("Invalid CBOR")))
+                        }
+                    }
+                }
+                Err(_) => Response::builder()
+                    .status(500)
+                    .body(Full::new(Bytes::from("Failed to read body"))),
+            }
+        }
         JAVASCRIPT_HASH => Response::builder()
             .header("Content-Type", "application/javascript; charset=utf-8")
             .header("Cache-Control", "public, max-age=31536000, immutable")

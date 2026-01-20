@@ -65,10 +65,11 @@ impl narumincho_vdom_client::App<AppState, Message> for DefinyApp {
             }
             Message::SubmitCreateAccountForm => {
                 let fire = fire.clone();
+                let username = state.username.clone();
 
                 wasm_bindgen_futures::spawn_local(async move {
                     fire(Message::Increment);
-                    handle_submit_create_account_form(&fire).await;
+                    handle_submit_create_account_form(&username, &fire).await;
                 });
 
                 state.clone()
@@ -118,11 +119,18 @@ fn generate_key() -> Key {
     }
 }
 
-async fn handle_submit_create_account_form(fire: &std::rc::Rc<dyn Fn(Message)>) {
+async fn handle_submit_create_account_form(username: &String, fire: &std::rc::Rc<dyn Fn(Message)>) {
     web_sys::console::log_1(&"SubmitCreateAccountForm called".into());
     fire(Message::Increment);
     let request_init = web_sys::RequestInit::new();
     request_init.set_method("POST");
+    request_init.set_body(&js_sys::Uint8Array::from(
+        definy_event::serialize(definy_event::CreateAccountEvent {
+            name: username.clone(),
+        })
+        .unwrap()
+        .as_slice(),
+    ));
     let response_raw = JsFuture::from(
         window()
             .unwrap()

@@ -9,5 +9,8 @@ tokio = { version = "1", features = ["full"] }
 http-body-util = "0.1"
 hyper-util = { version = "0.1", features = ["full"] }
 definy-ui = { path = "../definy-ui" }
+definy-event = { path = "../definy-event" }
 narumincho-vdom = { path = "../narumincho-vdom" }
 sha2 = "0.10.9"
+serde = { version = "1", features = ["derive"] }
+serde_cbor = "0.10"

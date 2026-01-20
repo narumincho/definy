@@ -30,21 +30,21 @@ pub fn start<
     let first_patches = diff::add_event_listener_patches(&vdom);
 
     let dispatch = Rc::new(std::cell::RefCell::new(None::<Box<dyn Fn(&Message)>>));
-    let dispatch_clone = dispatch.clone();
+    let dispatch_clone = Rc::clone(&dispatch);
     let html_element_clone = html_element.clone();
-    let state_clone = state.clone();
+    let state_clone = Rc::clone(&state);
     let vdom_rc = Rc::new(std::cell::RefCell::new(vdom));
-    let vdom_clone = vdom_rc.clone();
+    let vdom_clone = Rc::clone(&vdom_rc);
 
     let message_queue = Rc::new(std::cell::RefCell::new(Vec::<Message>::new()));
-    let queue_clone = message_queue.clone();
+    let queue_clone = Rc::clone(&message_queue);
 
     *dispatch.borrow_mut() = Some(Box::new(move |msg: &Message| {
         // ---- 1. update ----
         let new_state = {
             let current_state = state_clone.borrow();
             let fire: Rc<dyn Fn(Message)> = {
-                let queue_clone = queue_clone.clone();
+                let queue_clone = Rc::clone(&queue_clone);
                 Rc::new(move |m: Message| {
                     queue_clone.borrow_mut().push(m);
                 })

@@ -26,6 +26,7 @@ web-sys = { version = "0.3.83", features = [
   "Response",
 ] }
 definy-ui = { path = "../definy-ui" }
+definy-event = { path = "../definy-event" }
 narumincho-vdom-client = { path = "../narumincho-vdom-client" }
 narumincho-vdom = { path = "../narumincho-vdom" }
 ed25519-dalek = { version = "2.1", features = ["rand_core"] }
