@@ -152,7 +152,7 @@ init({{ module_or_path: \"{}\" }});", r.js, r.wasm))])
                         .on_click(Message::ShowCreateAccountDialog)
                         .children([text("アカウント作成")])
                         .into_node(),
-                    create_account_dialog(state, &state.generated_key, &state.generated_public_key),
+                    create_account_dialog(state, &state.generated_secret, &state.generated_public),
                     Div::new()
                         .attribute("style", "margin-top: 1rem;")
                         .children([Button::new()
@@ -170,8 +170,8 @@ init({{ module_or_path: \"{}\" }});", r.js, r.wasm))])
 #[derive(Clone)]
 pub struct AppState {
     pub count: i32,
-    pub generated_key: Option<String>,
-    pub generated_public_key: Option<String>,
+    pub generated_secret: Option<[u8; 32]>,
+    pub generated_public: Option<[u8; 32]>,
     pub username: String,
 }
 
@@ -189,8 +189,8 @@ pub enum Message {
 /// アカウント作成ダイアログ
 pub fn create_account_dialog(
     state: &AppState,
-    secret_key: &Option<String>,
-    public_key: &Option<String>,
+    secret_key: &Option<[u8; 32]>,
+    public_key: &Option<[u8; 32]>,
 ) -> Node<Message> {
     let mut password_input = Input::new()
         .type_("password")
@@ -200,7 +200,9 @@ pub fn create_account_dialog(
         .readonly();
 
     if let Some(key) = secret_key {
-        password_input = password_input.attribute("value", &key);
+        password_input = password_input.attribute("value", 
+            &base64::Engine::encode(&base64::engine::general_purpose::URL_SAFE_NO_PAD, key)
+        );
     }
 
     let mut user_id_input = Input::new()
@@ -210,7 +212,9 @@ pub fn create_account_dialog(
         .attribute("style", "font-family: monospace; font-size: 0.9rem;");
 
     if let Some(pk) = public_key {
-        user_id_input = user_id_input.attribute("value", &pk);
+        user_id_input = user_id_input.attribute("value", 
+            &base64::Engine::encode(&base64::engine::general_purpose::URL_SAFE_NO_PAD, pk)
+        );
     }
 
     Dialog::new()

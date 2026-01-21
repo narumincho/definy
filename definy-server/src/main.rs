@@ -1,3 +1,5 @@
+mod init_db;
+
 use std::net::SocketAddr;
 
 use http_body_util::{BodyExt, Full};
@@ -6,30 +8,13 @@ use hyper::server::conn::http1;
 use hyper::service::service_fn;
 use hyper::{Request, Response};
 use hyper_util::rt::TokioIo;
-use sqlx::Connection;
 use tokio::net::TcpListener;
 
 #[tokio::main]
 async fn main() -> Result<(), anyhow::Error> {
     println!("Starting definy server...");
 
-    println!("Connecting to postgresql...");
-
-    let mut pool = sqlx::postgres::PgConnection::connect(
-        std::env::var("DATABASE_URL")
-            .expect("environment variable DATABASE_URL must be set")
-            .as_str(),
-    )
-    .await?;
-
-    let rows = sqlx::query("select * from version()")
-        .fetch_all(&mut pool)
-        .await?;
-    for row in rows {
-        println!("{:?}", row);
-    }
-
-    println!("Connecting to postgresql... done");
+    init_db::init_db().await?;
 
     let addr = SocketAddr::from(([127, 0, 0, 1], 8000));
 
@@ -78,8 +63,8 @@ async fn handler(
                 &definy_ui::app(
                     &definy_ui::AppState {
                         count: 0,
-                        generated_key: None,
-                        generated_public_key: None,
+                        generated_secret: None,
+                        generated_public: None,
                         username: String::new(),
                     },
                     &Some(definy_ui::ResourceHash {
@@ -96,7 +81,7 @@ async fn handler(
                     match serde_cbor::from_slice::<definy_event::CreateAccountEvent>(&bytes) {
                         Ok(data) => {
                             println!("Received CBOR data: {:?}", data);
-                            Response::builder().body(Full::new(Bytes::from("Data received")))
+                            Response::builder().body(Full::new(bytes))
                         }
                         Err(e) => {
                             eprintln!("Failed to parse CBOR: {:?}", e);

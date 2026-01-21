@@ -20,8 +20,8 @@ impl narumincho_vdom_client::App<AppState, Message> for DefinyApp {
     fn initial_state() -> AppState {
         AppState {
             count: 0,
-            generated_key: None,
-            generated_public_key: None,
+            generated_secret: None,
+            generated_public: None,
             username: String::new(),
         }
     }
@@ -36,16 +36,16 @@ impl narumincho_vdom_client::App<AppState, Message> for DefinyApp {
                 web_sys::console::log_1(&format!("Increment {}", state.count + 1).into());
                 AppState {
                     count: state.count + 1,
-                    generated_key: state.generated_key.clone(),
-                    generated_public_key: state.generated_public_key.clone(),
+                    generated_secret: state.generated_secret.clone(),
+                    generated_public: state.generated_public.clone(),
                     username: state.username.clone(),
                 }
             }
             Message::ShowCreateAccountDialog => {
                 let key = generate_key();
                 AppState {
-                    generated_key: Some(key.encoded_secret),
-                    generated_public_key: Some(key.encoded_public),
+                    generated_secret: Some(key.secret),
+                    generated_public: Some(key.public),
                     ..state.clone()
                 }
             }
@@ -53,15 +53,21 @@ impl narumincho_vdom_client::App<AppState, Message> for DefinyApp {
             Message::RegenerateKey => {
                 let key = generate_key();
                 AppState {
-                    generated_key: Some(key.encoded_secret),
-                    generated_public_key: Some(key.encoded_public),
+                    generated_secret: Some(key.secret),
+                    generated_public: Some(key.public),
                     ..state.clone()
                 }
             }
             Message::CopyPrivateKey => {
                 let window = web_sys::window().expect("no global `window` exists");
-                if let Some(key) = &state.generated_key {
-                    let _ = window.navigator().clipboard().write_text(key);
+                if let Some(secret) = &state.generated_secret {
+                    let _ = window
+                        .navigator()
+                        .clipboard()
+                        .write_text(&base64::Engine::encode(
+                            &base64::engine::general_purpose::URL_SAFE_NO_PAD,
+                            secret,
+                        ));
                 }
                 state.clone()
             }
@@ -69,10 +75,17 @@ impl narumincho_vdom_client::App<AppState, Message> for DefinyApp {
                 let fire = Rc::clone(&fire);
                 let username = state.username.clone();
 
-                wasm_bindgen_futures::spawn_local(async move {
-                    fire(Message::Increment);
-                    handle_submit_create_account_form(username, fire.as_ref()).await;
-                });
+                if let Some(public_key) = state.generated_public {
+                    wasm_bindgen_futures::spawn_local(async move {
+                        fire(Message::Increment);
+                        handle_submit_create_account_form(
+                            username.as_str(),
+                            public_key,
+                            fire.as_ref(),
+                        )
+                        .await;
+                    });
+                }
 
                 state.clone()
             }
@@ -87,8 +100,8 @@ impl narumincho_vdom_client::App<AppState, Message> for DefinyApp {
                             );
                             return AppState {
                                 count: state.count,
-                                generated_key: state.generated_key.clone(),
-                                generated_public_key: state.generated_public_key.clone(),
+                                generated_secret: state.generated_secret.clone(),
+                                generated_public: state.generated_public.clone(),
                                 username,
                             };
                         }
@@ -101,8 +114,8 @@ impl narumincho_vdom_client::App<AppState, Message> for DefinyApp {
 }
 
 struct Key {
-    encoded_secret: String,
-    encoded_public: String,
+    secret: [u8; 32],
+    public: [u8; 32],
 }
 
 fn generate_key() -> Key {
@@ -111,25 +124,23 @@ fn generate_key() -> Key {
     let secret = signing_key.to_bytes();
     let public = signing_key.verifying_key().to_bytes();
 
-    use base64::{Engine as _, engine::general_purpose};
-    let encoded_secret = general_purpose::URL_SAFE_NO_PAD.encode(secret);
-    let encoded_public = general_purpose::URL_SAFE_NO_PAD.encode(public);
-
-    Key {
-        encoded_secret,
-        encoded_public,
-    }
+    Key { secret, public }
 }
 
-async fn handle_submit_create_account_form(username: String, fire: &dyn Fn(Message)) {
+async fn handle_submit_create_account_form(
+    username: &str,
+    generated_public_key: [u8; 32],
+    fire: &dyn Fn(Message),
+) {
     web_sys::console::log_1(&"SubmitCreateAccountForm called".into());
     fire(Message::Increment);
     let request_init = web_sys::RequestInit::new();
     request_init.set_method("POST");
     request_init.set_body(&js_sys::Uint8Array::from(
         definy_event::serialize(definy_event::CreateAccountEvent {
-            name: username,
-            time: chrono::Utc::now(),
+            account_id: definy_event::AccountId(generated_public_key),
+            name: username.into(),
+            time: definy_event::DateTime(chrono::Utc::now()),
         })
         .unwrap()
         .as_slice(),
