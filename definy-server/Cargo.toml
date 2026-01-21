@@ -14,3 +14,9 @@ narumincho-vdom = { path = "../narumincho-vdom" }
 sha2 = "0.10.9"
 serde = { version = "1", features = ["derive"] }
 serde_cbor = "0.10"
+sqlx = { version = "0.8.6", features = [
+  "postgres",
+  "runtime-tokio-rustls",
+  "macros",
+] }
+anyhow = "1.0.100"

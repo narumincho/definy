@@ -42,9 +42,7 @@ cargo install wasm-bindgen-cli
 
 psql にパスが通るように
 
-## ビルド&起動方法
-
 ```sh
 cargo run -p definy-build
-cargo run -p definy-server
+DATABASE_URL=postgres://postgres:password@localhost:5432/postgres cargo run -p definy-server
 ```

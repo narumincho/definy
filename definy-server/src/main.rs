@@ -6,10 +6,31 @@ use hyper::server::conn::http1;
 use hyper::service::service_fn;
 use hyper::{Request, Response};
 use hyper_util::rt::TokioIo;
+use sqlx::Connection;
 use tokio::net::TcpListener;
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+async fn main() -> Result<(), anyhow::Error> {
+    println!("Starting definy server...");
+
+    println!("Connecting to postgresql...");
+
+    let mut pool = sqlx::postgres::PgConnection::connect(
+        std::env::var("DATABASE_URL")
+            .expect("environment variable DATABASE_URL must be set")
+            .as_str(),
+    )
+    .await?;
+
+    let rows = sqlx::query("select * from version()")
+        .fetch_all(&mut pool)
+        .await?;
+    for row in rows {
+        println!("{:?}", row);
+    }
+
+    println!("Connecting to postgresql... done");
+
     let addr = SocketAddr::from(([127, 0, 0, 1], 8000));
 
     let listener = TcpListener::bind(addr).await?;
