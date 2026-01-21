@@ -137,11 +137,14 @@ async fn handle_submit_create_account_form(
     let request_init = web_sys::RequestInit::new();
     request_init.set_method("POST");
     request_init.set_body(&js_sys::Uint8Array::from(
-        definy_event::serialize(definy_event::CreateAccountEvent {
-            account_id: definy_event::AccountId(generated_public_key),
-            name: username.into(),
-            time: definy_event::DateTime(chrono::Utc::now()),
-        })
+        definy_event::sign_and_serialize(
+            definy_event::CreateAccountEvent {
+                account_id: definy_event::AccountId(Box::new(generated_public_key)),
+                account_name: username.into(),
+                time: chrono::Utc::now(),
+            },
+            ed25519_dalek::SigningKey::from_bytes(&generated_public_key),
+        )
         .unwrap()
         .as_slice(),
     ));

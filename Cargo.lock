@@ -241,6 +241,7 @@ dependencies = [
 name = "definy-client"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "base64",
  "chrono",
  "definy-event",
@@ -260,7 +261,9 @@ dependencies = [
 name = "definy-event"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "chrono",
+ "ed25519-dalek",
  "serde",
  "serde_cbor 0.11.2",
 ]

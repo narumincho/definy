@@ -35,3 +35,4 @@ getrandom = { version = "0.2", features = ["js"] }
 base64 = "0.22"
 wasm-bindgen-futures = "0.4.58"
 chrono = "0.4.43"
+anyhow = "1.0.100"

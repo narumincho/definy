@@ -78,16 +78,16 @@ async fn handler(
             match body.collect().await {
                 Ok(collected) => {
                     let bytes = collected.to_bytes();
-                    match serde_cbor::from_slice::<definy_event::CreateAccountEvent>(&bytes) {
+                    match definy_event::verify_and_deserialize(&bytes) {
                         Ok(data) => {
                             println!("Received CBOR data: {:?}", data);
                             Response::builder().body(Full::new(bytes))
                         }
                         Err(e) => {
-                            eprintln!("Failed to parse CBOR: {:?}", e);
+                            eprintln!("Failed to parse or verify CBOR: {:?}", e);
                             Response::builder()
                                 .status(400)
-                                .body(Full::new(Bytes::from("Invalid CBOR")))
+                                .body(Full::new(Bytes::from("Failed to parse or verify CBOR")))
                         }
                     }
                 }
