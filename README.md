@@ -28,6 +28,20 @@ https://github.com/narumincho/definy/tree/prev2023
 
 - `web-distribution`: definy-build で生成したファイル (gitignore している)
 
+## 事前にインストールが必要
+
+- [Rust言語(rustup)](https://rust-lang.org/ja/tools/install/)
+
+- [wasm-bindgen-cli](https://wasm-bindgen.github.io/wasm-bindgen/)
+
+```sh
+cargo install wasm-bindgen-cli
+```
+
+- [PostgreSQL 17](https://www.postgresql.org/download/)
+
+psql にパスが通るように
+
 ## ビルド&起動方法
 
 ```sh
