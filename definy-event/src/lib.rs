@@ -27,7 +27,11 @@ impl<'de> serde::Deserialize<'de> for DateTime {
     where
         D: serde::Deserializer<'de>,
     {
-        // TODO
+        let tagged = serde_cbor::tags::Tagged::<i64>::deserialize(deserializer)?;
+        match chrono::DateTime::from_timestamp_millis(tagged.value) {
+            Some(datetime) => Ok(DateTime(datetime)),
+            None => Err(serde::de::Error::custom("Invalid timestamp")),
+        }
     }
 }
 
