@@ -7,13 +7,14 @@ pub struct ResourceHash {
 
 pub fn app(state: &AppState, resource_hash: &Option<ResourceHash>) -> Node<Message> {
     let mut head_children = vec![
-            Title::<Message>::new().children([text("definy")]).into_node(),
-                    Link::new()
-                        .rel("icon")
-                        .href(include_str!("../../web-distribution/icon.png.sha256"))
-                        .into_node(),
-                    Style::new()
-                        .children([text(
+        Title::<Message>::new().children([text("definy")]).into_node(),
+        Meta::new("viewport", "width=device-width,initial-scale=1.0"),
+        Link::new()
+            .rel("icon")
+            .href(include_str!("../../web-distribution/icon.png.sha256"))
+            .into_node(),
+        Style::new()
+            .children([text(
                             ":root {
     --background: #121212;
     --surface: #1E1E1E;
@@ -123,8 +124,8 @@ input:focus {
     display: block;
 }
 ",
-                        )])
-                        .into_node(),
+            )])
+            .into_node(),
     ]; 
     match resource_hash {
         Some(r) => {

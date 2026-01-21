@@ -1,9 +1,11 @@
 mod button;
 mod elements;
+mod meta;
 mod node;
 
 pub use button::Button;
 pub use elements::*;
+pub use meta::Meta;
 pub use node::Node;
 
 pub fn h<Message>(
