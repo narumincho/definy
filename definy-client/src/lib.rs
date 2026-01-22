@@ -62,7 +62,7 @@ impl narumincho_vdom_client::App<AppState, Message> for DefinyApp {
                         .clipboard()
                         .write_text(&base64::Engine::encode(
                             &base64::engine::general_purpose::URL_SAFE_NO_PAD,
-                            key.secret.to_scalar_bytes(),
+                            key.to_scalar_bytes(),
                         ));
                 }
                 state.clone()
@@ -106,20 +106,14 @@ impl narumincho_vdom_client::App<AppState, Message> for DefinyApp {
     }
 }
 
-fn generate_key() -> definy_ui::Key {
+fn generate_key() -> ed25519_dalek::SigningKey {
     let mut csprng = rand::rngs::OsRng;
-    let signing_key: ed25519_dalek::SigningKey = ed25519_dalek::SigningKey::generate(&mut csprng);
-    let public = signing_key.verifying_key().to_bytes();
-
-    definy_ui::Key {
-        secret: signing_key,
-        public,
-    }
+    ed25519_dalek::SigningKey::generate(&mut csprng)
 }
 
 async fn handle_submit_create_account_form(
     username: &str,
-    generated_key: &definy_ui::Key,
+    generated_key: &ed25519_dalek::SigningKey,
     fire: &dyn Fn(Message),
 ) {
     web_sys::console::log_1(&"SubmitCreateAccountForm called".into());
@@ -129,11 +123,13 @@ async fn handle_submit_create_account_form(
     request_init.set_body(&js_sys::Uint8Array::from(
         definy_event::sign_and_serialize(
             definy_event::CreateAccountEvent {
-                account_id: definy_event::AccountId(Box::new(generated_key.public)),
+                account_id: definy_event::AccountId(Box::new(
+                    generated_key.verifying_key().to_bytes(),
+                )),
                 account_name: username.into(),
                 time: chrono::Utc::now(),
             },
-            &generated_key.secret,
+            &generated_key,
         )
         .unwrap()
         .as_slice(),

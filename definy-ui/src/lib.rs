@@ -170,14 +170,8 @@ init({{ module_or_path: \"{}\" }});", r.js, r.wasm))])
 #[derive(Clone)]
 pub struct AppState {
     pub count: i32,
-    pub generated_key: Option<Key>,
+    pub generated_key: Option<ed25519_dalek::SigningKey>,
     pub username: String,
-}
-
-#[derive(Clone)]
-pub struct Key {
-   pub secret: ed25519_dalek::SigningKey,
-   pub public: [u8; 32],
 }
 
 #[derive(Debug, PartialEq, Clone)]
@@ -194,7 +188,7 @@ pub enum Message {
 /// アカウント作成ダイアログ
 pub fn create_account_dialog(
     state: &AppState,
-    key: &Option<Key>,
+    key: &Option<ed25519_dalek::SigningKey>,
 ) -> Node<Message> {
     let mut password_input = Input::new()
         .type_("password")
@@ -205,7 +199,7 @@ pub fn create_account_dialog(
 
     if let Some(key) = key {
         password_input = password_input.attribute("value", 
-            &base64::Engine::encode(&base64::engine::general_purpose::URL_SAFE_NO_PAD, key.secret.as_bytes())
+            &base64::Engine::encode(&base64::engine::general_purpose::URL_SAFE_NO_PAD, key.to_bytes())
         );
     }
 
@@ -217,7 +211,7 @@ pub fn create_account_dialog(
 
     if let Some(key) = key {
         user_id_input = user_id_input.attribute("value", 
-            &base64::Engine::encode(&base64::engine::general_purpose::URL_SAFE_NO_PAD, key.public)
+            &base64::Engine::encode(&base64::engine::general_purpose::URL_SAFE_NO_PAD, key.verifying_key().to_bytes())
         );
     }
 
