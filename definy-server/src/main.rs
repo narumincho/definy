@@ -63,8 +63,7 @@ async fn handler(
                 &definy_ui::app(
                     &definy_ui::AppState {
                         count: 0,
-                        generated_secret: None,
-                        generated_public: None,
+                        generated_key: None,
                         username: String::new(),
                     },
                     &Some(definy_ui::ResourceHash {

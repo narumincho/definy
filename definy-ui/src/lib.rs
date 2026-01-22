@@ -152,7 +152,7 @@ init({{ module_or_path: \"{}\" }});", r.js, r.wasm))])
                         .on_click(Message::ShowCreateAccountDialog)
                         .children([text("アカウント作成")])
                         .into_node(),
-                    create_account_dialog(state, &state.generated_secret, &state.generated_public),
+                    create_account_dialog(state, &state.generated_key),
                     Div::new()
                         .attribute("style", "margin-top: 1rem;")
                         .children([Button::new()
@@ -166,13 +166,18 @@ init({{ module_or_path: \"{}\" }});", r.js, r.wasm))])
         ])
         .into_node()
 }
-
+ 
 #[derive(Clone)]
 pub struct AppState {
     pub count: i32,
-    pub generated_secret: Option<[u8; 32]>,
-    pub generated_public: Option<[u8; 32]>,
+    pub generated_key: Option<Key>,
     pub username: String,
+}
+
+#[derive(Clone)]
+pub struct Key {
+   pub secret: ed25519_dalek::SigningKey,
+   pub public: [u8; 32],
 }
 
 #[derive(Debug, PartialEq, Clone)]
@@ -189,8 +194,7 @@ pub enum Message {
 /// アカウント作成ダイアログ
 pub fn create_account_dialog(
     state: &AppState,
-    secret_key: &Option<[u8; 32]>,
-    public_key: &Option<[u8; 32]>,
+    key: &Option<Key>,
 ) -> Node<Message> {
     let mut password_input = Input::new()
         .type_("password")
@@ -199,9 +203,9 @@ pub fn create_account_dialog(
         .required()
         .readonly();
 
-    if let Some(key) = secret_key {
+    if let Some(key) = key {
         password_input = password_input.attribute("value", 
-            &base64::Engine::encode(&base64::engine::general_purpose::URL_SAFE_NO_PAD, key)
+            &base64::Engine::encode(&base64::engine::general_purpose::URL_SAFE_NO_PAD, key.secret.as_bytes())
         );
     }
 
@@ -211,9 +215,9 @@ pub fn create_account_dialog(
         .readonly()
         .attribute("style", "font-family: monospace; font-size: 0.9rem;");
 
-    if let Some(pk) = public_key {
+    if let Some(key) = key {
         user_id_input = user_id_input.attribute("value", 
-            &base64::Engine::encode(&base64::engine::general_purpose::URL_SAFE_NO_PAD, pk)
+            &base64::Engine::encode(&base64::engine::general_purpose::URL_SAFE_NO_PAD, key.public)
         );
     }
 
