@@ -153,6 +153,14 @@ impl<Message> Input<Message> {
         self.attribute("readonly", "readonly")
     }
 
+    pub fn disabled(self, disabled: bool) -> Self {
+        if disabled {
+            self.attribute("disabled", "disabled")
+        } else {
+            self
+        }
+    }
+
     pub fn on_change(mut self, msg: Message) -> Self {
         self.events.push(("change".to_string(), msg));
         self

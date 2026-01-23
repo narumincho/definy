@@ -153,14 +153,6 @@ init({{ module_or_path: \"{}\" }});", r.js, r.wasm))])
                         .children([text("アカウント作成")])
                         .into_node(),
                     create_account_dialog(state, &state.generated_key),
-                    Div::new()
-                        .attribute("style", "margin-top: 1rem;")
-                        .children([Button::new()
-                            .on_click(Message::Increment)
-                            .type_("button")
-                            .children([text(format!("count: {}", state.count))])
-                            .into_node()])
-                        .into_node(),
                 ])
                 .into_node(),
         ])
@@ -172,17 +164,18 @@ pub struct AppState {
     pub count: i32,
     pub generated_key: Option<ed25519_dalek::SigningKey>,
     pub username: String,
+    pub creating_account: bool,
 }
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum Message {
-    Increment,
     ShowCreateAccountDialog,
     CloseCreateAccountDialog,
     RegenerateKey,
     CopyPrivateKey,
-    SubmitCreateAccountForm,
     UpdateUsername(String),
+    SubmitCreateAccountForm,
+    ResponseCreateAccount,
 }
 
 /// アカウント作成ダイアログ
@@ -199,14 +192,16 @@ pub fn create_account_dialog(
 
     if let Some(key) = key {
         password_input = password_input.attribute("value", 
-            &base64::Engine::encode(&base64::engine::general_purpose::URL_SAFE_NO_PAD, key.to_bytes())
-        );
+        &"*".repeat(
+            base64::Engine::encode(&base64::engine::general_purpose::URL_SAFE_NO_PAD, key.to_bytes()).len()
+        ));
     }
 
     let mut user_id_input = Input::new()
         .type_("text")
         .name("userId")
         .readonly()
+        .disabled(state.creating_account)
         .attribute("style", "font-family: monospace; font-size: 0.9rem;");
 
     if let Some(key) = key {
@@ -270,6 +265,7 @@ pub fn create_account_dialog(
                                     Button::new()
                                         .on_click(Message::RegenerateKey)
                                         .type_("button")
+                                        .disabled(state.creating_account)
                                         .children([text("再生成")])
                                         .into_node(),
                                 ])
@@ -288,7 +284,8 @@ pub fn create_account_dialog(
                                 .into_node(),
                             Button::new()
                                 .type_("submit") 
-                                .children([text("登録 (未実装)")])
+                                .disabled(state.creating_account)
+                                .children([text(if state.creating_account { "登録中..." } else { "登録" })])
                                 .into_node(),
                         ])
                         .into_node(),

@@ -37,6 +37,15 @@ impl<Message> Button<Message> {
         self
     }
 
+    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Attributes/disabled
+    pub fn disabled(mut self, disabled: bool) -> Self {
+        if disabled {
+            self.attributes
+                .push(("disabled".to_string(), "".to_string()));
+        }
+        self
+    }
+
     /// https://developer.mozilla.org/docs/Web/API/Element/click_event
     pub fn on_click(mut self, msg: Message) -> Self {
         self.events.push(("click".to_string(), msg));

@@ -1,4 +1,4 @@
-mod init_db;
+mod db;
 
 use std::net::SocketAddr;
 
@@ -14,7 +14,7 @@ use tokio::net::TcpListener;
 async fn main() -> Result<(), anyhow::Error> {
     println!("Starting definy server...");
 
-    init_db::init_db().await?;
+    let pool = db::init_db().await?;
 
     let addr = SocketAddr::from(([127, 0, 0, 1], 8000));
 
@@ -26,10 +26,14 @@ async fn main() -> Result<(), anyhow::Error> {
         let (stream, _) = listener.accept().await?;
 
         let io = TokioIo::new(stream);
+        let pool = pool.clone();
 
         tokio::task::spawn(async move {
             if let Err(err) = http1::Builder::new()
-                .serve_connection(io, service_fn(handler))
+                .serve_connection(
+                    io,
+                    service_fn(move |request| handler(request, pool.clone())),
+                )
                 .await
             {
                 eprintln!("Error serving connection: {:?}", err);
@@ -53,6 +57,7 @@ const ICON_HASH: &'static str = include_str!("../../web-distribution/icon.png.sh
 
 async fn handler(
     request: Request<impl hyper::body::Body>,
+    pool: sqlx::postgres::PgPool,
 ) -> Result<Response<Full<Bytes>>, hyper::http::Error> {
     let path = request.uri().path();
     println!("Received request for path: {}", path);
@@ -65,6 +70,7 @@ async fn handler(
                         count: 0,
                         generated_key: None,
                         username: String::new(),
+                        creating_account: false,
                     },
                     &Some(definy_ui::ResourceHash {
                         js: JAVASCRIPT_HASH.to_string(),
@@ -72,7 +78,7 @@ async fn handler(
                     }),
                 ),
             )))),
-        "samplePost" => {
+        "events" => {
             let body = request.into_body();
             match body.collect().await {
                 Ok(collected) => {
@@ -80,18 +86,29 @@ async fn handler(
                     match definy_event::verify_and_deserialize(&bytes) {
                         Ok(data) => {
                             println!("Received CBOR data: {:?}", data);
-                            Response::builder().body(Full::new(bytes))
+                            match db::save_event(&bytes, &pool).await {
+                                Ok(()) => Response::builder().body(Full::new(Bytes::from("OK"))),
+                                Err(e) => {
+                                    eprintln!("Failed to save event: {:?}", e);
+                                    Response::builder()
+                                        .status(500)
+                                        .header("content-type", "text/plain; charset=utf-8")
+                                        .body(Full::new(Bytes::from("Internal Server Error")))
+                                }
+                            }
                         }
                         Err(e) => {
                             eprintln!("Failed to parse or verify CBOR: {:?}", e);
                             Response::builder()
                                 .status(400)
+                                .header("content-type", "text/plain; charset=utf-8")
                                 .body(Full::new(Bytes::from("Failed to parse or verify CBOR")))
                         }
                     }
                 }
                 Err(_) => Response::builder()
                     .status(500)
+                    .header("content-type", "text/plain; charset=utf-8")
                     .body(Full::new(Bytes::from("Failed to read body"))),
             }
         }

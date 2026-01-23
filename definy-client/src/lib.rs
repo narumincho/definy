@@ -22,6 +22,7 @@ impl narumincho_vdom_client::App<AppState, Message> for DefinyApp {
             count: 0,
             generated_key: None,
             username: String::new(),
+            creating_account: false,
         }
     }
 
@@ -31,14 +32,6 @@ impl narumincho_vdom_client::App<AppState, Message> for DefinyApp {
 
     fn update(state: &AppState, msg: &Message, fire: &std::rc::Rc<dyn Fn(Message)>) -> AppState {
         match msg {
-            Message::Increment => {
-                web_sys::console::log_1(&format!("Increment {}", state.count + 1).into());
-                AppState {
-                    count: state.count + 1,
-                    generated_key: state.generated_key.clone(),
-                    username: state.username.clone(),
-                }
-            }
             Message::ShowCreateAccountDialog => {
                 let key = generate_key();
                 AppState {
@@ -75,13 +68,15 @@ impl narumincho_vdom_client::App<AppState, Message> for DefinyApp {
                     let key = key.clone();
 
                     wasm_bindgen_futures::spawn_local(async move {
-                        fire(Message::Increment);
                         handle_submit_create_account_form(username.as_str(), &key, fire.as_ref())
                             .await;
                     });
                 }
 
-                state.clone()
+                AppState {
+                    creating_account: true,
+                    ..state.clone()
+                }
             }
             Message::UpdateUsername(_) => {
                 let window = web_sys::window().expect("no global `window` exists");
@@ -93,15 +88,18 @@ impl narumincho_vdom_client::App<AppState, Message> for DefinyApp {
                                 &format!("Username updated: {}", username).into(),
                             );
                             return AppState {
-                                count: state.count,
-                                generated_key: state.generated_key.clone(),
                                 username,
+                                ..state.clone()
                             };
                         }
                     }
                 }
                 state.clone()
             }
+            Message::ResponseCreateAccount => AppState {
+                creating_account: false,
+                ..state.clone()
+            },
         }
     }
 }
@@ -117,9 +115,11 @@ async fn handle_submit_create_account_form(
     fire: &dyn Fn(Message),
 ) {
     web_sys::console::log_1(&"SubmitCreateAccountForm called".into());
-    fire(Message::Increment);
+    let headers = web_sys::Headers::new().unwrap();
+    headers.set("Content-Type", "application/cbor").unwrap();
     let request_init = web_sys::RequestInit::new();
     request_init.set_method("POST");
+    request_init.set_headers(&headers);
     request_init.set_body(&js_sys::Uint8Array::from(
         definy_event::sign_and_serialize(
             definy_event::CreateAccountEvent {
@@ -137,7 +137,7 @@ async fn handle_submit_create_account_form(
     let response_raw = JsFuture::from(
         window()
             .unwrap()
-            .fetch_with_str_and_init("samplePost", &request_init),
+            .fetch_with_str_and_init("events", &request_init),
     )
     .await
     .unwrap();
@@ -146,5 +146,5 @@ async fn handle_submit_create_account_form(
 
     web_sys::console::log_1(&response);
 
-    fire(Message::Increment)
+    fire(Message::ResponseCreateAccount)
 }
