@@ -154,12 +154,19 @@ init({{ module_or_path: \"{}\" }});",
     Html::new()
         .children([
             Head::new().children(head_children).into_node(),
-            Body::new()
-                .children({
-                    let mut vec = vec![H1::new().children([text("definy")]).into_node()];
-                    vec.extend(state.created_account_events.iter().map(|(_, event)| {
+            Body::new().children([
+                H1::new().children([text("definy")]).into_node(),
+                 Button::new()
+                    .command_for("create-account-dialog")
+                    .command("show-modal")
+                    .on_click(Message::ShowCreateAccountDialog)
+                    .children([text("アカウント作成")])
+                    .into_node(),
+                Div::new()
+                    .style("display: grid; gap: 0.5rem;")
+                    .children(state.created_account_events.iter().map(|(_, event)| {
                         Div::new()
-                            .attribute(key, value)
+                            .style("border: 1px solid var(--border); border-radius: 4px; padding: 0.5rem; color: var(--text); font-size: 1rem;")
                             .children([
                                 Div::new()
                                     .children([
@@ -173,22 +180,12 @@ init({{ module_or_path: \"{}\" }});",
                                     .into_node(),
                             ])
                             .into_node()
-                    }));
-                    vec.push(
-                        Button::new()
-                            .command_for("create-account-dialog")
-                            .command("show-modal")
-                            .on_click(Message::ShowCreateAccountDialog)
-                            .children([text("アカウント作成")])
-                            .into_node(),
-                    );
-                    vec.push(create_account_dialog::create_account_dialog(
-                        state,
-                        &state.generated_key,
-                    ));
-                    vec
-                })
-                .into_node(),
+                    }).collect::<Vec<Node<Message>>>()).into_node(),
+                create_account_dialog::create_account_dialog(
+                    state,
+                    &state.generated_key,
+                )
+            ]).into_node(),
         ])
         .into_node()
 }

@@ -17,7 +17,7 @@ pub fn create_account_dialog(
         .readonly();
 
     if let Some(key) = key {
-        password_input = password_input.attribute("value", 
+        password_input = password_input.value( 
         &"*".repeat(
             base64::Engine::encode(&base64::engine::general_purpose::URL_SAFE_NO_PAD, key.to_bytes()).len()
         ));
@@ -28,10 +28,10 @@ pub fn create_account_dialog(
         .name("userId")
         .readonly()
         .disabled(state.creating_account)
-        .attribute("style", "font-family: monospace; font-size: 0.9rem;");
+        .style("font-family: monospace; font-size: 0.9rem;");
 
     if let Some(key) = key {
-        user_id_input = user_id_input.attribute("value", 
+        user_id_input = user_id_input.value(
             &base64::Engine::encode(&base64::engine::general_purpose::URL_SAFE_NO_PAD, key.verifying_key().to_bytes())
         );
     }
@@ -41,7 +41,7 @@ pub fn create_account_dialog(
         .children([
             H1::new()
                 .children([text("アカウント作成")])
-                .attribute("style", "margin-top: 0; font-size: 1.5rem;")
+                .style("margin-top: 0; font-size: 1.5rem;")
                 .into_node(),
             Form::new()
                 .on_submit(Message::SubmitCreateAccountForm) 
@@ -55,7 +55,7 @@ pub fn create_account_dialog(
                                 .name("username")
                                 .autocomplete("username")
                                 .required()
-                                .attribute("value", &state.username)
+                                .value(&state.username)
                                 .on_change(Message::UpdateUsername(String::new()))
                                 .into_node(),
                         ])
@@ -78,10 +78,10 @@ pub fn create_account_dialog(
                                 ])
                                 .into_node(),
                             Div::new()
-                                .attribute("style", "display: flex; gap: 0.5rem;")
+                                .style("display: flex; gap: 0.5rem;")
                                 .children([
                                     password_input
-                                        .attribute("style", "flex: 1;")
+                                        .style("flex: 1;")
                                         .into_node(),
                                     Button::new()
                                         .on_click(Message::CopyPrivateKey)

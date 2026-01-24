@@ -18,7 +18,7 @@ macro_rules! define_element {
                 }
             }
 
-            pub fn attribute(mut self, key: &str, value: &str) -> Self {
+            fn attribute(mut self, key: &str, value: &str) -> Self {
                 self.attributes.push((key.to_string(), value.to_string()));
                 self
             }
@@ -33,6 +33,13 @@ macro_rules! define_element {
 
             pub fn type_(self, type_: &str) -> Self {
                 self.attribute("type", type_)
+            }
+
+            /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/style
+            pub fn style(mut self, style: &str) -> Self {
+                self.attributes
+                    .push(("style".to_string(), style.to_string()));
+                self
             }
 
             pub fn children(mut self, children: impl Into<Vec<Node<Message>>>) -> Self {
@@ -139,6 +146,10 @@ impl<Message> Link<Message> {
 impl<Message> Input<Message> {
     pub fn name(self, name: &str) -> Self {
         self.attribute("name", name)
+    }
+
+    pub fn value(self, value: &str) -> Self {
+        self.attribute("value", value)
     }
 
     pub fn autocomplete(self, autocomplete: &str) -> Self {
