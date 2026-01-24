@@ -3,7 +3,7 @@ use narumincho_vdom::Node;
 #[derive(Debug, PartialEq, Clone)]
 pub enum Patch<T> {
     Replace(Node<T>),
-    UpdateText(String),
+    UpdateText(Box<str>),
     AddAttributes(Vec<(String, String)>),
     RemoveAttributes(Vec<String>),
     AddEventListeners(Vec<(String, T)>),
@@ -206,10 +206,7 @@ mod tests {
         let old: Node<std::convert::Infallible> = text("hello");
         let new: Node<std::convert::Infallible> = text("world");
         let patches = diff(&old, &new);
-        assert_eq!(
-            patches,
-            vec![(vec![], Patch::UpdateText("world".to_string()))]
-        );
+        assert_eq!(patches, vec![(vec![], Patch::UpdateText("world".into()))]);
     }
 
     #[test]
@@ -282,10 +279,7 @@ mod tests {
         let old: Node<std::convert::Infallible> = h("div", vec![], vec![text("hello")]);
         let new: Node<std::convert::Infallible> = h("div", vec![], vec![text("world")]);
         let patches = diff(&old, &new);
-        assert_eq!(
-            patches,
-            vec![(vec![0], Patch::UpdateText("world".to_string()))]
-        );
+        assert_eq!(patches, vec![(vec![0], Patch::UpdateText("world".into()))]);
     }
 
     #[test]
@@ -318,7 +312,7 @@ mod tests {
         let patches = diff(&old, &new);
         assert_eq!(
             patches,
-            vec![(vec![0, 0], Patch::UpdateText("world".to_string()))]
+            vec![(vec![0, 0], Patch::UpdateText("world".into()))]
         );
     }
 }

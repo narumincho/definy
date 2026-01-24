@@ -22,7 +22,7 @@ pub fn h<Message>(
 }
 
 pub fn text<Message>(text: impl Into<String>) -> Node<Message> {
-    Node::Text(text.into())
+    Node::Text(text.into().into())
 }
 
 pub fn to_html<Message>(node: &Node<Message>) -> String {

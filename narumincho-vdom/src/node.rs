@@ -9,5 +9,5 @@ pub struct Element<T> {
 #[derive(Debug, PartialEq, Clone)]
 pub enum Node<T> {
     Element(Element<T>),
-    Text(String),
+    Text(Box<str>),
 }
