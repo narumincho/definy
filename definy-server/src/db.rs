@@ -1,3 +1,5 @@
+use sqlx::Row;
+
 pub async fn init_db() -> Result<sqlx::postgres::PgPool, anyhow::Error> {
     println!("Connecting to postgresql...");
 
@@ -43,4 +45,22 @@ pub async fn save_create_account_event(
         .await?;
 
     Ok(())
+}
+
+pub async fn get_events(pool: &sqlx::postgres::PgPool) -> Result<Box<[Vec<u8>]>, anyhow::Error> {
+    let rows = sqlx::query("select (event_binary) from events")
+        .fetch_all(pool)
+        .await?;
+
+    let events = rows
+        .into_iter()
+        .map(|row| {
+            println!("event: {:?}", row);
+            let event_binary_vec: Vec<u8> = row.try_get("event_binary").unwrap();
+            println!("event_binary: {:?}", event_binary_vec);
+            event_binary_vec
+        })
+        .collect();
+
+    Ok(events)
 }

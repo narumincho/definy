@@ -103,7 +103,7 @@ async fn handle_events(
     pool: &sqlx::postgres::PgPool,
 ) -> Result<Response<Full<Bytes>>, hyper::http::Error> {
     match request.method() {
-        &hyper::Method::GET => handle_events_get(request, pool).await,
+        &hyper::Method::GET => handle_events_get(pool).await,
         &hyper::Method::POST => handle_events_post(request, pool).await,
         _ => Response::builder()
             .status(405)
@@ -113,13 +113,36 @@ async fn handle_events(
 }
 
 async fn handle_events_get(
-    request: Request<impl hyper::body::Body>,
     pool: &sqlx::postgres::PgPool,
 ) -> Result<Response<Full<Bytes>>, hyper::http::Error> {
-    Response::builder()
-        .status(200)
-        .header("Content-Type", "text/html; charset=utf-8")
-        .body(Full::new(Bytes::from("GET /events")))
+    match db::get_events(pool).await {
+        Ok(events) => {
+            let events_for_cbor = events
+                .iter()
+                .map(|event_raw| serde_cbor::Value::Bytes(event_raw.to_vec()))
+                .collect::<Vec<serde_cbor::Value>>();
+            match serde_cbor::to_vec(&events_for_cbor) {
+                Ok(cbor) => Response::builder()
+                    .status(200)
+                    .header("Content-Type", "application/cbor")
+                    .body(Full::new(Bytes::from(cbor))),
+                Err(e) => {
+                    eprintln!("Failed to serialize events: {:?}", e);
+                    Response::builder()
+                        .status(500)
+                        .header("Content-Type", "text/html; charset=utf-8")
+                        .body(Full::new(Bytes::from("Internal Server Error")))
+                }
+            }
+        }
+        Err(e) => {
+            eprintln!("Failed to get events: {:?}", e);
+            Response::builder()
+                .status(500)
+                .header("Content-Type", "text/html; charset=utf-8")
+                .body(Full::new(Bytes::from("Internal Server Error")))
+        }
+    }
 }
 
 async fn handle_events_post(
@@ -132,7 +155,6 @@ async fn handle_events_post(
             let bytes = collected.to_bytes();
             match definy_event::verify_and_deserialize(&bytes) {
                 Ok((data, signature)) => {
-                    println!("Received CBOR data: {:?}", data);
                     match db::save_create_account_event(&data, &signature, &bytes, pool).await {
                         Ok(()) => Response::builder()
                             .header("content-type", "text/plain; charset=utf-8")
