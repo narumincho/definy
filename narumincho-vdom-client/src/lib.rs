@@ -93,7 +93,7 @@ pub fn start<
 
         // ---- 3. キューを drain して dispatch ----
         let mut queued = queue_clone.borrow_mut();
-        let messages: Vec<_> = queued.drain(..).collect();
+        let messages: Vec<Message> = queued.drain(..).collect();
         drop(queued);
 
         if let Some(ref d) = *dispatch_clone.borrow() {
