@@ -54,13 +54,8 @@ pub async fn get_events(pool: &sqlx::postgres::PgPool) -> Result<Box<[Vec<u8>]>,
 
     let events = rows
         .into_iter()
-        .map(|row| {
-            println!("event: {:?}", row);
-            let event_binary_vec: Vec<u8> = row.try_get("event_binary").unwrap();
-            println!("event_binary: {:?}", event_binary_vec);
-            event_binary_vec
-        })
-        .collect();
+        .map(|row| row.try_get("event_binary"))
+        .collect::<Result<Box<[Vec<u8>]>, sqlx::Error>>()?;
 
     Ok(events)
 }

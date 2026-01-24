@@ -1,11 +1,11 @@
+mod fetch;
+
 use std::rc::Rc;
 
 use definy_ui::{AppState, Message};
 use js_sys::Reflect;
 use wasm_bindgen::JsValue;
 use wasm_bindgen::prelude::*;
-use wasm_bindgen_futures::JsFuture;
-use web_sys::window;
 
 #[wasm_bindgen(start)]
 fn run() -> Result<(), JsValue> {
@@ -17,7 +17,11 @@ fn run() -> Result<(), JsValue> {
 struct DefinyApp {}
 
 impl narumincho_vdom_client::App<AppState, Message> for DefinyApp {
-    fn initial_state() -> AppState {
+    fn initial_state(_fire: &std::rc::Rc<dyn Fn(Message)>) -> AppState {
+        wasm_bindgen_futures::spawn_local(async move {
+            let events = fetch::get_events().await.unwrap();
+            web_sys::console::log_1(&JsValue::from_str(&format!("Events: {:?}", events)));
+        });
         AppState {
             count: 0,
             generated_key: None,
@@ -115,12 +119,8 @@ async fn handle_submit_create_account_form(
     fire: &dyn Fn(Message),
 ) {
     web_sys::console::log_1(&"SubmitCreateAccountForm called".into());
-    let headers = web_sys::Headers::new().unwrap();
-    headers.set("Content-Type", "application/cbor").unwrap();
-    let request_init = web_sys::RequestInit::new();
-    request_init.set_method("POST");
-    request_init.set_headers(&headers);
-    request_init.set_body(&js_sys::Uint8Array::from(
+
+    let status = fetch::post_event(
         definy_event::sign_and_serialize(
             definy_event::CreateAccountEvent {
                 account_id: definy_event::AccountId(Box::new(
@@ -133,18 +133,11 @@ async fn handle_submit_create_account_form(
         )
         .unwrap()
         .as_slice(),
-    ));
-    let response_raw = JsFuture::from(
-        window()
-            .unwrap()
-            .fetch_with_str_and_init("events", &request_init),
     )
     .await
     .unwrap();
 
-    let response: web_sys::Response = response_raw.dyn_into().unwrap();
-
-    web_sys::console::log_1(&response);
+    web_sys::console::log_1(&JsValue::from_f64(status as f64));
 
     fire(Message::ResponseCreateAccount)
 }

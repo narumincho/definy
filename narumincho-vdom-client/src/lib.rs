@@ -8,7 +8,7 @@ use wasm_bindgen::closure::Closure;
 mod diff;
 
 pub trait App<State: Clone + 'static, Message: PartialEq + Clone + 'static> {
-    fn initial_state() -> State;
+    fn initial_state(fire: &Rc<dyn Fn(Message)>) -> State;
     fn render(state: &State) -> Node<Message>;
     fn update(state: &State, msg: &Message, fire: &Rc<dyn Fn(Message)>) -> State;
 }
@@ -24,7 +24,17 @@ pub fn start<
         .document_element()
         .expect("should have a document element");
 
-    let state = Rc::new(std::cell::RefCell::new(A::initial_state()));
+    let message_queue = Rc::new(std::cell::RefCell::new(Vec::<Message>::new()));
+    let queue_clone = Rc::clone(&message_queue);
+
+    let fire: Rc<dyn Fn(Message)> = {
+        let queue_clone = Rc::clone(&queue_clone);
+        Rc::new(move |m: Message| {
+            queue_clone.borrow_mut().push(m);
+        })
+    };
+
+    let state = Rc::new(std::cell::RefCell::new(A::initial_state(&fire)));
     let vdom = A::render(&state.borrow());
 
     let first_patches = diff::add_event_listener_patches(&vdom);
@@ -35,9 +45,6 @@ pub fn start<
     let state_clone = Rc::clone(&state);
     let vdom_rc = Rc::new(std::cell::RefCell::new(vdom));
     let vdom_clone = Rc::clone(&vdom_rc);
-
-    let message_queue = Rc::new(std::cell::RefCell::new(Vec::<Message>::new()));
-    let queue_clone = Rc::clone(&message_queue);
 
     *dispatch.borrow_mut() = Some(Box::new(move |msg: &Message| {
         // ---- 1. update ----
@@ -82,6 +89,18 @@ pub fn start<
         first_patches,
         dispatch.borrow().as_ref().unwrap(),
     );
+
+    {
+        let mut queued = message_queue.borrow_mut();
+        let messages: Vec<_> = queued.drain(..).collect();
+        drop(queued);
+
+        if let Some(ref d) = *dispatch.borrow() {
+            for m in messages {
+                d(&m);
+            }
+        }
+    }
 }
 
 pub fn apply<Message: Clone + 'static>(

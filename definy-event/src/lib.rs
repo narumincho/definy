@@ -136,7 +136,7 @@ mod tests {
         )
         .unwrap();
 
-        let deserialized = verify_and_deserialize(&serialized).unwrap();
+        let (deserialized, _) = verify_and_deserialize(&serialized).unwrap();
 
         assert_eq!(deserialized.account_id.0, event.account_id.0);
         assert_eq!(deserialized.account_name, event.account_name);
