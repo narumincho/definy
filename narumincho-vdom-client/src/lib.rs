@@ -32,28 +32,26 @@ pub fn start<
     let queue_clone = Rc::clone(&message_queue);
 
     let state_holder = Rc::new(std::cell::RefCell::new(None::<State>));
-    let state_holder_weak = Rc::downgrade(&state_holder);
 
     // Placeholder for update_view function
     let update_view_holder = Rc::new(std::cell::RefCell::new(None::<Box<dyn Fn()>>));
-    let update_view_holder_weak = Rc::downgrade(&update_view_holder);
 
-    let fire_state_update: Rc<dyn Fn(Box<dyn FnOnce(State) -> State>)> = Rc::new(move |updater| {
-        if let Some(state_cell) = state_holder_weak.upgrade() {
-            let mut borrow = state_cell.borrow_mut();
+    let fire_state_update: Rc<dyn Fn(Box<dyn FnOnce(State) -> State>)> = {
+        let state_holder = Rc::clone(&state_holder);
+        let update_view_holder = Rc::clone(&update_view_holder);
+        Rc::new(move |updater| {
+            let mut borrow = state_holder.borrow_mut();
             if let Some(old_state) = borrow.take() {
                 let new_state = updater(old_state);
                 *borrow = Some(new_state);
                 drop(borrow);
 
-                if let Some(view_updater_cell) = update_view_holder_weak.upgrade() {
-                    if let Some(view_updater) = view_updater_cell.borrow().as_ref() {
-                        view_updater();
-                    }
+                if let Some(view_updater) = update_view_holder.borrow().as_ref() {
+                    view_updater();
                 }
             }
-        }
-    });
+        })
+    };
 
     let initial_s = A::initial_state(&fire_state_update);
     *state_holder.borrow_mut() = Some(initial_s);

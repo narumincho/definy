@@ -23,7 +23,6 @@ impl narumincho_vdom_client::App<AppState, Message> for DefinyApp {
         let fire = std::rc::Rc::clone(fire);
         wasm_bindgen_futures::spawn_local(async move {
             let events = fetch::get_events().await.unwrap();
-            web_sys::console::log_1(&JsValue::from_str(&format!("Events: {:?}", events)));
             fire(Box::new(move |state| AppState {
                 created_account_events: events,
                 ..state.clone()
