@@ -20,3 +20,4 @@ sqlx = { version = "0.8.6", features = [
   "macros",
 ] }
 anyhow = "1.0.100"
+ed25519-dalek = { version = "2.2" }

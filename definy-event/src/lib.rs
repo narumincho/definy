@@ -54,13 +54,15 @@ pub fn sign_and_serialize(
     serde_cbor::to_vec(&serde_cbor::Value::Map(map))
 }
 
-pub fn verify_and_deserialize(data: &[u8]) -> anyhow::Result<CreateAccountEvent> {
+pub fn verify_and_deserialize(
+    data: &[u8],
+) -> anyhow::Result<(CreateAccountEvent, ed25519_dalek::Signature)> {
     let map: BTreeMap<String, serde_cbor::Value> = serde_cbor::from_slice(data)?;
     let data = match map.get("data") {
         Some(serde_cbor::Value::Bytes(b)) => b,
         _ => anyhow::bail!("data not found or not bytes"),
     };
-    let signature = match map.get("signature") {
+    let signature_bytes = match map.get("signature") {
         Some(serde_cbor::Value::Bytes(b)) => b,
         _ => anyhow::bail!("signature not found or not bytes"),
     };
@@ -72,30 +74,33 @@ pub fn verify_and_deserialize(data: &[u8]) -> anyhow::Result<CreateAccountEvent>
         None => anyhow::bail!("account_id not found"),
     });
     let public_key = ed25519_dalek::VerifyingKey::from_bytes(account_id.0.as_ref())?;
-    public_key.verify(
-        &data,
-        &ed25519_dalek::Signature::from_bytes(signature.as_slice().try_into()?),
-    )?;
+    let signature = ed25519_dalek::Signature::from_bytes(signature_bytes.as_slice().try_into()?);
+    public_key.verify(&data, &signature)?;
 
-    Ok(CreateAccountEvent {
-        account_id,
-        account_name: match map.get("account_name") {
-            Some(serde_cbor::Value::Text(account_name)) => account_name.clone().into_boxed_str(),
-            Some(_) => anyhow::bail!("account_name is not text"),
-            None => anyhow::bail!("account_name not found"),
-        },
-        time: match map.get("time") {
-            Some(serde_cbor::Value::Tag(_, box_value)) => match box_value.as_ref() {
-                serde_cbor::Value::Integer(time) => {
-                    chrono::DateTime::<chrono::Utc>::from_timestamp_millis(*time as i64)
-                        .ok_or(anyhow::anyhow!("time not found"))?
+    Ok((
+        CreateAccountEvent {
+            account_id,
+            account_name: match map.get("account_name") {
+                Some(serde_cbor::Value::Text(account_name)) => {
+                    account_name.clone().into_boxed_str()
                 }
-                _ => anyhow::bail!("time is not integer"),
+                Some(_) => anyhow::bail!("account_name is not text"),
+                None => anyhow::bail!("account_name not found"),
             },
-            Some(_) => anyhow::bail!("time is not integer"),
-            None => anyhow::bail!("time not found"),
+            time: match map.get("time") {
+                Some(serde_cbor::Value::Tag(_, box_value)) => match box_value.as_ref() {
+                    serde_cbor::Value::Integer(time) => {
+                        chrono::DateTime::<chrono::Utc>::from_timestamp_millis(*time as i64)
+                            .ok_or(anyhow::anyhow!("time not found"))?
+                    }
+                    _ => anyhow::bail!("time is not integer"),
+                },
+                Some(_) => anyhow::bail!("time is not integer"),
+                None => anyhow::bail!("time not found"),
+            },
         },
-    })
+        signature,
+    ))
 }
 
 #[cfg(test)]

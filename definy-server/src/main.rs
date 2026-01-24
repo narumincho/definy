@@ -78,40 +78,7 @@ async fn handler(
                     }),
                 ),
             )))),
-        "events" => {
-            let body = request.into_body();
-            match body.collect().await {
-                Ok(collected) => {
-                    let bytes = collected.to_bytes();
-                    match definy_event::verify_and_deserialize(&bytes) {
-                        Ok(data) => {
-                            println!("Received CBOR data: {:?}", data);
-                            match db::save_event(&bytes, &pool).await {
-                                Ok(()) => Response::builder().body(Full::new(Bytes::from("OK"))),
-                                Err(e) => {
-                                    eprintln!("Failed to save event: {:?}", e);
-                                    Response::builder()
-                                        .status(500)
-                                        .header("content-type", "text/plain; charset=utf-8")
-                                        .body(Full::new(Bytes::from("Internal Server Error")))
-                                }
-                            }
-                        }
-                        Err(e) => {
-                            eprintln!("Failed to parse or verify CBOR: {:?}", e);
-                            Response::builder()
-                                .status(400)
-                                .header("content-type", "text/plain; charset=utf-8")
-                                .body(Full::new(Bytes::from("Failed to parse or verify CBOR")))
-                        }
-                    }
-                }
-                Err(_) => Response::builder()
-                    .status(500)
-                    .header("content-type", "text/plain; charset=utf-8")
-                    .body(Full::new(Bytes::from("Failed to read body"))),
-            }
-        }
+        "events" => handle_events(request, &pool).await,
         JAVASCRIPT_HASH => Response::builder()
             .header("Content-Type", "application/javascript; charset=utf-8")
             .header("Cache-Control", "public, max-age=31536000, immutable")
@@ -128,5 +95,69 @@ async fn handler(
             .status(404)
             .header("Content-Type", "text/html; charset=utf-8")
             .body(Full::new(Bytes::from("404 Not Found"))),
+    }
+}
+
+async fn handle_events(
+    request: Request<impl hyper::body::Body>,
+    pool: &sqlx::postgres::PgPool,
+) -> Result<Response<Full<Bytes>>, hyper::http::Error> {
+    match request.method() {
+        &hyper::Method::GET => handle_events_get(request, pool).await,
+        &hyper::Method::POST => handle_events_post(request, pool).await,
+        _ => Response::builder()
+            .status(405)
+            .header("Content-Type", "text/html; charset=utf-8")
+            .body(Full::new(Bytes::from("405 Method Not Allowed"))),
+    }
+}
+
+async fn handle_events_get(
+    request: Request<impl hyper::body::Body>,
+    pool: &sqlx::postgres::PgPool,
+) -> Result<Response<Full<Bytes>>, hyper::http::Error> {
+    Response::builder()
+        .status(200)
+        .header("Content-Type", "text/html; charset=utf-8")
+        .body(Full::new(Bytes::from("GET /events")))
+}
+
+async fn handle_events_post(
+    request: Request<impl hyper::body::Body>,
+    pool: &sqlx::postgres::PgPool,
+) -> Result<Response<Full<Bytes>>, hyper::http::Error> {
+    let body = request.into_body();
+    match body.collect().await {
+        Ok(collected) => {
+            let bytes = collected.to_bytes();
+            match definy_event::verify_and_deserialize(&bytes) {
+                Ok((data, signature)) => {
+                    println!("Received CBOR data: {:?}", data);
+                    match db::save_create_account_event(&data, &signature, &bytes, pool).await {
+                        Ok(()) => Response::builder()
+                            .header("content-type", "text/plain; charset=utf-8")
+                            .body(Full::new(Bytes::from("OK"))),
+                        Err(e) => {
+                            eprintln!("Failed to save event: {:?}", e);
+                            Response::builder()
+                                .status(500)
+                                .header("content-type", "text/plain; charset=utf-8")
+                                .body(Full::new(Bytes::from("Internal Server Error")))
+                        }
+                    }
+                }
+                Err(e) => {
+                    eprintln!("Failed to parse or verify CBOR: {:?}", e);
+                    Response::builder()
+                        .status(400)
+                        .header("content-type", "text/plain; charset=utf-8")
+                        .body(Full::new(Bytes::from("Failed to parse or verify CBOR")))
+                }
+            }
+        }
+        Err(_) => Response::builder()
+            .status(500)
+            .header("content-type", "text/plain; charset=utf-8")
+            .body(Full::new(Bytes::from("Failed to read body"))),
     }
 }

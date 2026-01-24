@@ -276,6 +276,7 @@ dependencies = [
  "anyhow",
  "definy-event",
  "definy-ui",
+ "ed25519-dalek",
  "http-body-util",
  "hyper",
  "hyper-util",

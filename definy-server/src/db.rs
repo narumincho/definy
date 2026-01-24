@@ -8,45 +8,39 @@ pub async fn init_db() -> Result<sqlx::postgres::PgPool, anyhow::Error> {
     )
     .await?;
 
-    log_and_query(&pool, "select * from version()", None).await?;
-    log_and_query(
-        &pool,
-        "create table if not exists events (id serial primary key, event_binary bytea)",
-        None,
-    )
-    .await?;
+    let result = sqlx::query("select * from version()")
+        .fetch_one(&pool)
+        .await?;
+
+    println!("PostgreSQL version: {:?}", result);
 
     println!("Connecting to postgresql... done");
+
+    println!("Migrating database...");
+
+    sqlx::query(
+        "create table if not exists events (id bytea primary key, account_id bytea, event_binary bytea)",
+    )
+    .execute(&pool)
+    .await?;
+
+    println!("Migrating database... done");
 
     Ok(pool)
 }
 
-pub async fn log_and_query(
-    pool: &sqlx::postgres::PgPool,
-    sql: &str,
-    value: Option<&[u8]>,
-) -> Result<Vec<sqlx::postgres::PgRow>, anyhow::Error> {
-    println!("Executing query: {}", sql);
-
-    let rows = sqlx::query(sql).bind(value).fetch_all(pool).await?;
-
-    for row in &rows {
-        println!("{:?}", row);
-    }
-
-    Ok(rows)
-}
-
-pub async fn save_event(
+pub async fn save_create_account_event(
+    event: &definy_event::CreateAccountEvent,
+    signature: &ed25519_dalek::Signature,
     event_binary: &[u8],
     pool: &sqlx::postgres::PgPool,
 ) -> Result<(), anyhow::Error> {
-    log_and_query(
-        pool,
-        "insert into events (event_binary) values ($1)",
-        Some(event_binary),
-    )
-    .await?;
+    sqlx::query("insert into events (id, account_id, event_binary) values ($1, $2, $3)")
+        .bind(signature.to_bytes())
+        .bind(event.account_id.0.as_ref())
+        .bind(event_binary)
+        .execute(pool)
+        .await?;
 
     Ok(())
 }
