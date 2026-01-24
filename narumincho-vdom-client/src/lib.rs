@@ -7,6 +7,12 @@ use wasm_bindgen::closure::Closure;
 
 mod diff;
 
+const DOCUMENT: std::sync::LazyLock<web_sys::Document> = std::sync::LazyLock::new(|| {
+    let window = web_sys::window().expect("no global `window` exists");
+    let document = window.document().expect("should have a document on window");
+    document
+});
+
 pub trait App<State: Clone + 'static, Message: PartialEq + Clone + 'static> {
     fn initial_state(fire: &Rc<dyn Fn(Message)>) -> State;
     fn render(state: &State) -> Node<Message>;
@@ -18,19 +24,35 @@ pub fn start<
     Message: PartialEq + Clone + 'static,
     A: App<State, Message>,
 >() {
-    let window = web_sys::window().expect("no global `window` exists");
-    let document = window.document().expect("should have a document on window");
-    let html_element = document
+    let html_element = DOCUMENT
         .document_element()
         .expect("should have a document element");
 
     let message_queue = Rc::new(std::cell::RefCell::new(Vec::<Message>::new()));
     let queue_clone = Rc::clone(&message_queue);
 
+    let dispatch = Rc::new(std::cell::RefCell::new(None::<Box<dyn Fn(&Message)>>));
+    let dispatch_weak = Rc::downgrade(&dispatch);
+
+    let is_updating = Rc::new(std::cell::Cell::new(false));
+    let is_updating_clone = Rc::clone(&is_updating);
+
     let fire: Rc<dyn Fn(Message)> = {
         let queue_clone = Rc::clone(&queue_clone);
         Rc::new(move |m: Message| {
-            queue_clone.borrow_mut().push(m);
+            if is_updating_clone.get() {
+                queue_clone.borrow_mut().push(m);
+            } else {
+                if let Some(dispatch) = dispatch_weak.upgrade() {
+                    if let Some(d) = dispatch.borrow().as_ref() {
+                        d(&m);
+                    } else {
+                        queue_clone.borrow_mut().push(m);
+                    }
+                } else {
+                    queue_clone.borrow_mut().push(m);
+                }
+            }
         })
     };
 
@@ -39,24 +61,21 @@ pub fn start<
 
     let first_patches = diff::add_event_listener_patches(&vdom);
 
-    let dispatch = Rc::new(std::cell::RefCell::new(None::<Box<dyn Fn(&Message)>>));
     let dispatch_clone = Rc::clone(&dispatch);
     let html_element_clone = html_element.clone();
     let state_clone = Rc::clone(&state);
     let vdom_rc = Rc::new(std::cell::RefCell::new(vdom));
     let vdom_clone = Rc::clone(&vdom_rc);
+    let fire_clone = Rc::clone(&fire);
 
     *dispatch.borrow_mut() = Some(Box::new(move |msg: &Message| {
         // ---- 1. update ----
         let new_state = {
             let current_state = state_clone.borrow();
-            let fire: Rc<dyn Fn(Message)> = {
-                let queue_clone = Rc::clone(&queue_clone);
-                Rc::new(move |m: Message| {
-                    queue_clone.borrow_mut().push(m);
-                })
-            };
-            A::update(&current_state, msg, &fire)
+            is_updating.set(true);
+            let state = A::update(&current_state, msg, &fire_clone);
+            is_updating.set(false);
+            state
         };
 
         *state_clone.borrow_mut() = new_state;
@@ -227,12 +246,9 @@ fn create_web_sys_node<Message: Clone + 'static>(
     dispatch: impl Fn(&Message) + Clone,
     callback_key_symbol: &js_sys::Symbol,
 ) -> web_sys::Node {
-    let window = web_sys::window().expect("no global `window` exists");
-    let document = window.document().expect("should have a document on window");
-
     match vdom {
         Node::Element(el) => {
-            let element = document.create_element(&el.element_name).unwrap();
+            let element = DOCUMENT.create_element(&el.element_name).unwrap();
             for (key, value) in &el.attributes {
                 element.set_attribute(key, value).unwrap();
             }
@@ -264,6 +280,6 @@ fn create_web_sys_node<Message: Clone + 'static>(
             }
             element.into()
         }
-        Node::Text(text) => document.create_text_node(text).into(),
+        Node::Text(text) => DOCUMENT.create_text_node(text).into(),
     }
 }

@@ -118,8 +118,6 @@ async fn handle_submit_create_account_form(
     generated_key: &ed25519_dalek::SigningKey,
     fire: &dyn Fn(Message),
 ) {
-    web_sys::console::log_1(&"SubmitCreateAccountForm called".into());
-
     let status = fetch::post_event(
         definy_event::sign_and_serialize(
             definy_event::CreateAccountEvent {
