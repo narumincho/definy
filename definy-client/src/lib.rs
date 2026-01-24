@@ -3,6 +3,7 @@ mod fetch;
 use std::rc::Rc;
 
 use definy_ui::{AppState, Message};
+use definy_ui::{CreatingAccountState, LoginOrCreateAccountDialogState};
 use js_sys::Reflect;
 use wasm_bindgen::JsValue;
 use wasm_bindgen::prelude::*;
@@ -29,10 +30,11 @@ impl narumincho_vdom_client::App<AppState, Message> for DefinyApp {
             }));
         });
         AppState {
-            count: 0,
-            generated_key: None,
-            username: String::new(),
-            creating_account: false,
+            login_or_create_account_dialog_state: LoginOrCreateAccountDialogState {
+                creating_account: CreatingAccountState::NotStarted,
+                username: String::new(),
+                generated_key: None,
+            },
             created_account_events: Vec::new(),
         }
     }
@@ -46,7 +48,10 @@ impl narumincho_vdom_client::App<AppState, Message> for DefinyApp {
             Message::ShowCreateAccountDialog => {
                 let key = generate_key();
                 AppState {
-                    generated_key: Some(key),
+                    login_or_create_account_dialog_state: LoginOrCreateAccountDialogState {
+                        generated_key: Some(key),
+                        ..state.login_or_create_account_dialog_state.clone()
+                    },
                     ..state.clone()
                 }
             }
@@ -54,13 +59,16 @@ impl narumincho_vdom_client::App<AppState, Message> for DefinyApp {
             Message::RegenerateKey => {
                 let key = generate_key();
                 AppState {
-                    generated_key: Some(key),
+                    login_or_create_account_dialog_state: LoginOrCreateAccountDialogState {
+                        generated_key: Some(key),
+                        ..state.login_or_create_account_dialog_state.clone()
+                    },
                     ..state.clone()
                 }
             }
             Message::CopyPrivateKey => {
                 let window = web_sys::window().expect("no global `window` exists");
-                if let Some(key) = &state.generated_key {
+                if let Some(key) = &state.login_or_create_account_dialog_state.generated_key {
                     let _ = window
                         .navigator()
                         .clipboard()
@@ -73,9 +81,9 @@ impl narumincho_vdom_client::App<AppState, Message> for DefinyApp {
             }
             Message::SubmitCreateAccountForm => {
                 let fire = Rc::clone(&fire);
-                let username = state.username.clone();
+                let username = state.login_or_create_account_dialog_state.username.clone();
 
-                if let Some(key) = &state.generated_key {
+                if let Some(key) = &state.login_or_create_account_dialog_state.generated_key {
                     let key = key.clone();
 
                     wasm_bindgen_futures::spawn_local(async move {
@@ -85,7 +93,10 @@ impl narumincho_vdom_client::App<AppState, Message> for DefinyApp {
                 }
 
                 AppState {
-                    creating_account: true,
+                    login_or_create_account_dialog_state: LoginOrCreateAccountDialogState {
+                        creating_account: CreatingAccountState::Requesting,
+                        ..state.login_or_create_account_dialog_state.clone()
+                    },
                     ..state.clone()
                 }
             }
@@ -99,7 +110,11 @@ impl narumincho_vdom_client::App<AppState, Message> for DefinyApp {
                                 &format!("Username updated: {}", username).into(),
                             );
                             return AppState {
-                                username,
+                                login_or_create_account_dialog_state:
+                                    LoginOrCreateAccountDialogState {
+                                        username,
+                                        ..state.login_or_create_account_dialog_state.clone()
+                                    },
                                 ..state.clone()
                             };
                         }
@@ -108,9 +123,13 @@ impl narumincho_vdom_client::App<AppState, Message> for DefinyApp {
                 state.clone()
             }
             Message::ResponseCreateAccount => AppState {
-                creating_account: false,
+                login_or_create_account_dialog_state: LoginOrCreateAccountDialogState {
+                    creating_account: CreatingAccountState::Success,
+                    ..state.login_or_create_account_dialog_state.clone()
+                },
                 ..state.clone()
             },
+            Message::SubmitLoginForm => state.clone(),
         }
     }
 }

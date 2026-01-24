@@ -67,10 +67,12 @@ async fn handler(
             .body(Full::new(Bytes::from(narumincho_vdom::to_html(
                 &definy_ui::app(
                     &definy_ui::AppState {
-                        count: 0,
-                        generated_key: None,
-                        username: String::new(),
-                        creating_account: false,
+                        login_or_create_account_dialog_state:
+                            definy_ui::LoginOrCreateAccountDialogState {
+                                generated_key: None,
+                                creating_account: definy_ui::CreatingAccountState::NotStarted,
+                                username: String::new(),
+                            },
                         created_account_events: Vec::new(),
                     },
                     &Some(definy_ui::ResourceHash {

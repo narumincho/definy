@@ -7,4 +7,5 @@ pub enum Message {
     UpdateUsername(String),
     SubmitCreateAccountForm,
     ResponseCreateAccount,
+    SubmitLoginForm,
 }

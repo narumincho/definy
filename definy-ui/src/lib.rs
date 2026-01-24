@@ -1,8 +1,8 @@
 mod app_state;
-mod create_account_dialog;
+mod login_or_create_account_dialog;
 mod message;
 
-pub use app_state::AppState;
+pub use app_state::*;
 pub use message::Message;
 
 use narumincho_vdom::*;
@@ -154,13 +154,13 @@ init({{ module_or_path: \"{}\" }});",
     Html::new()
         .children([
             Head::new().children(head_children).into_node(),
-            Body::new().children([
+            Body::new().style("display: grid; gap: 1rem;").children([
                 H1::new().children([text("definy")]).into_node(),
                  Button::new()
-                    .command_for("create-account-dialog")
+                    .command_for("login-or-create-account-dialog")
                     .command("show-modal")
                     .on_click(Message::ShowCreateAccountDialog)
-                    .children([text("アカウント作成")])
+                    .children([text("ログインまたはアカウント作成")])
                     .into_node(),
                 Div::new()
                     .style("display: grid; gap: 0.5rem;")
@@ -181,10 +181,7 @@ init({{ module_or_path: \"{}\" }});",
                             ])
                             .into_node()
                     }).collect::<Vec<Node<Message>>>()).into_node(),
-                create_account_dialog::create_account_dialog(
-                    state,
-                    &state.generated_key,
-                )
+                login_or_create_account_dialog::login_or_create_account_dialog(state),
             ]).into_node(),
         ])
         .into_node()

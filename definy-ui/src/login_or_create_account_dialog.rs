@@ -2,12 +2,11 @@
 use narumincho_vdom::*;
 
 use crate::message::Message;
-use crate::app_state::AppState;
+use crate::app_state::{AppState, CreatingAccountState};
 
-/// アカウント作成ダイアログ
-pub fn create_account_dialog(
+/// ログインまたはアカウント作成ダイアログ
+pub fn login_or_create_account_dialog(
     state: &AppState,
-    key: &Option<ed25519_dalek::SigningKey>,
 ) -> Node<Message> {
     let mut password_input = Input::new()
         .type_("password")
@@ -16,29 +15,35 @@ pub fn create_account_dialog(
         .required()
         .readonly();
 
-    if let Some(key) = key {
-        password_input = password_input.value( 
-        &"*".repeat(
-            base64::Engine::encode(&base64::engine::general_purpose::URL_SAFE_NO_PAD, key.to_bytes()).len()
-        ));
-    }
-
-    let mut user_id_input = Input::new()
-        .type_("text")
-        .name("userId")
-        .readonly()
-        .disabled(state.creating_account)
-        .style("font-family: monospace; font-size: 0.9rem;");
-
-    if let Some(key) = key {
-        user_id_input = user_id_input.value(
-            &base64::Engine::encode(&base64::engine::general_purpose::URL_SAFE_NO_PAD, key.verifying_key().to_bytes())
+    if let Some(key) = &state.login_or_create_account_dialog_state.generated_key {
+        password_input = password_input.value(
+            &base64::Engine::encode(&base64::engine::general_purpose::URL_SAFE_NO_PAD, key.to_bytes())
         );
     }
 
+    let requesting = state.login_or_create_account_dialog_state.creating_account == CreatingAccountState::Requesting
+                                     || state.login_or_create_account_dialog_state.creating_account == CreatingAccountState::Success;
+
     Dialog::new()
-        .id("create-account-dialog")
+        .id("login-or-create-account-dialog")
         .children([
+            H1::new()
+                .children([text("ログイン")])
+                .style("margin-top: 0; font-size: 1.5rem;")
+                .into_node(),
+            Form::new().on_submit(Message::SubmitLoginForm).children([
+            Input::new()
+                .type_("password")
+                .name("password")
+                .autocomplete("current-password")
+                .required()
+                .into_node(),
+            Button::new()
+                .type_("submit") 
+                .disabled(requesting)
+                .children([text("ログイン")])
+                .into_node(),
+            ]).into_node(),
             H1::new()
                 .children([text("アカウント作成")])
                 .style("margin-top: 0; font-size: 1.5rem;")
@@ -55,16 +60,23 @@ pub fn create_account_dialog(
                                 .name("username")
                                 .autocomplete("username")
                                 .required()
-                                .value(&state.username)
+                                .value(&state.login_or_create_account_dialog_state.username)
                                 .on_change(Message::UpdateUsername(String::new()))
                                 .into_node(),
                         ])
                         .into_node(),
-                    Label::new()
+                    Div::new()
                         .class("form-group")
                         .children([
                             text("ユーザーID (公開鍵)"),
-                            user_id_input.into_node(),
+                           Div::new()
+                                .style("font-family: monospace; font-size: 0.9rem;")
+                                .children(
+                                    match &state.login_or_create_account_dialog_state.generated_key {
+                                        Some(key) => vec![text(&base64::Engine::encode(&base64::engine::general_purpose::URL_SAFE_NO_PAD, key.verifying_key().to_bytes()))],
+                                        None => vec![],
+                                    })
+                                .into_node(),
                         ])
                         .into_node(),
                     Label::new()
@@ -91,7 +103,7 @@ pub fn create_account_dialog(
                                     Button::new()
                                         .on_click(Message::RegenerateKey)
                                         .type_("button")
-                                        .disabled(state.creating_account)
+                                        .disabled(requesting)
                                         .children([text("再生成")])
                                         .into_node(),
                                 ])
@@ -102,7 +114,7 @@ pub fn create_account_dialog(
                         .class("dialog-buttons")
                         .children([
                             Button::new()
-                                .command_for("create-account-dialog")
+                                .command_for("login-or-create-account-dialog")
                                 .command("close") 
                                 .type_("button")
                                 .on_click(Message::CloseCreateAccountDialog)
@@ -110,8 +122,13 @@ pub fn create_account_dialog(
                                 .into_node(),
                             Button::new()
                                 .type_("submit") 
-                                .disabled(state.creating_account)
-                                .children([text(if state.creating_account { "登録中..." } else { "登録" })])
+                                .disabled(requesting)
+                                .children([text(match state.login_or_create_account_dialog_state.creating_account {
+                                    CreatingAccountState::NotStarted => "登録",
+                                    CreatingAccountState::Requesting => "登録中...",
+                                    CreatingAccountState::Success => "登録成功",
+                                    CreatingAccountState::Error => "登録失敗",
+                                })])
                                 .into_node(),
                         ])
                         .into_node(),
