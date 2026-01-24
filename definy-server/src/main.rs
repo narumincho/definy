@@ -60,7 +60,7 @@ async fn handler(
     pool: sqlx::postgres::PgPool,
 ) -> Result<Response<Full<Bytes>>, hyper::http::Error> {
     let path = request.uri().path();
-    println!("Received request for path: {}", path);
+    println!("Received request: {} {}", request.method(), path);
     match path.trim_start_matches('/') {
         "" => Response::builder()
             .header("Content-Type", "text/html; charset=utf-8")
@@ -71,6 +71,7 @@ async fn handler(
                         generated_key: None,
                         username: String::new(),
                         creating_account: false,
+                        created_account_events: Vec::new(),
                     },
                     &Some(definy_ui::ResourceHash {
                         js: JAVASCRIPT_HASH.to_string(),

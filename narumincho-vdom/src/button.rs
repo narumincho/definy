@@ -58,7 +58,6 @@ impl<Message> Button<Message> {
     }
 
     pub fn into_node(self) -> node::Node<Message> {
-        println!("Creating button with attributes: {:?}", self.attributes);
         node::Node::Element(node::Element {
             element_name: "button".to_string(),
             attributes: self.attributes,

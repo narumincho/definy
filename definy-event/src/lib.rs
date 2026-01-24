@@ -2,14 +2,14 @@ use std::collections::BTreeMap;
 
 use ed25519_dalek::{Signer, Verifier};
 
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct CreateAccountEvent {
     pub account_id: AccountId,
     pub account_name: Box<str>,
     pub time: chrono::DateTime<chrono::Utc>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct AccountId(pub Box<[u8; 32]>);
 
 pub fn sign_and_serialize(

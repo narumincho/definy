@@ -144,16 +144,23 @@ init({{ module_or_path: \"{}\" }});", r.js, r.wasm))])
                 .children(head_children)
                 .into_node(),
             Body::new()
-                .children([
-                    H1::new().children([text("definy")]).into_node(),
-                    Button::new()
+                .children({ 
+                    let mut vec = vec![
+                    H1::new().children([text("definy")]).into_node()];
+                    vec.extend(state.created_account_events.iter().map(|(signature, event)| {
+                        Div::new()
+                            .children([text(format!("{:?}: {:?}", signature, event))])
+                            .into_node()
+                    }));
+                    vec.push(Button::new()
                         .command_for("create-account-dialog")
                         .command("show-modal")
                         .on_click(Message::ShowCreateAccountDialog)
                         .children([text("アカウント作成")])
-                        .into_node(),
-                    create_account_dialog(state, &state.generated_key),
-                ])
+                        .into_node());
+                    vec.push(create_account_dialog(state, &state.generated_key));
+                    vec
+                })
                 .into_node(),
         ])
         .into_node()
@@ -165,6 +172,7 @@ pub struct AppState {
     pub generated_key: Option<ed25519_dalek::SigningKey>,
     pub username: String,
     pub creating_account: bool,
+    pub created_account_events: Vec<(ed25519_dalek::Signature, definy_event::CreateAccountEvent)>,
 }
 
 #[derive(Debug, PartialEq, Clone)]

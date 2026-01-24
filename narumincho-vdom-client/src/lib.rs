@@ -14,7 +14,7 @@ const DOCUMENT: std::sync::LazyLock<web_sys::Document> = std::sync::LazyLock::ne
 });
 
 pub trait App<State: Clone + 'static, Message: PartialEq + Clone + 'static> {
-    fn initial_state(fire: &Rc<dyn Fn(Message)>) -> State;
+    fn initial_state(fire: &Rc<dyn Fn(Box<dyn FnOnce(State) -> State>)>) -> State;
     fn render(state: &State) -> Node<Message>;
     fn update(state: &State, msg: &Message, fire: &Rc<dyn Fn(Message)>) -> State;
 }
@@ -30,6 +30,36 @@ pub fn start<
 
     let message_queue = Rc::new(std::cell::RefCell::new(Vec::<Message>::new()));
     let queue_clone = Rc::clone(&message_queue);
+
+    let state_holder = Rc::new(std::cell::RefCell::new(None::<State>));
+    let state_holder_weak = Rc::downgrade(&state_holder);
+
+    // Placeholder for update_view function
+    let update_view_holder = Rc::new(std::cell::RefCell::new(None::<Box<dyn Fn()>>));
+    let update_view_holder_weak = Rc::downgrade(&update_view_holder);
+
+    let fire_state_update: Rc<dyn Fn(Box<dyn FnOnce(State) -> State>)> = Rc::new(move |updater| {
+        if let Some(state_cell) = state_holder_weak.upgrade() {
+            let mut borrow = state_cell.borrow_mut();
+            if let Some(old_state) = borrow.take() {
+                let new_state = updater(old_state);
+                *borrow = Some(new_state);
+                drop(borrow);
+
+                if let Some(view_updater_cell) = update_view_holder_weak.upgrade() {
+                    if let Some(view_updater) = view_updater_cell.borrow().as_ref() {
+                        view_updater();
+                    }
+                }
+            }
+        }
+    });
+
+    let initial_s = A::initial_state(&fire_state_update);
+    *state_holder.borrow_mut() = Some(initial_s);
+
+    let vdom = A::render(state_holder.borrow().as_ref().unwrap());
+    let first_patches = diff::add_event_listener_patches(&vdom);
 
     let dispatch = Rc::new(std::cell::RefCell::new(None::<Box<dyn Fn(&Message)>>));
     let dispatch_weak = Rc::downgrade(&dispatch);
@@ -56,51 +86,64 @@ pub fn start<
         })
     };
 
-    let state = Rc::new(std::cell::RefCell::new(A::initial_state(&fire)));
-    let vdom = A::render(&state.borrow());
-
-    let first_patches = diff::add_event_listener_patches(&vdom);
-
-    let dispatch_clone = Rc::clone(&dispatch);
-    let html_element_clone = html_element.clone();
-    let state_clone = Rc::clone(&state);
+    let state_holder_clone = Rc::clone(&state_holder);
     let vdom_rc = Rc::new(std::cell::RefCell::new(vdom));
     let vdom_clone = Rc::clone(&vdom_rc);
     let fire_clone = Rc::clone(&fire);
 
+    // Define update_view logic shared by both fires
+    let update_view = {
+        let state_holder_clone = Rc::clone(&state_holder);
+        let vdom_clone = Rc::clone(&vdom_clone);
+        let html_element_clone = html_element.clone();
+        let dispatch_clone = Rc::clone(&dispatch);
+        let queue_clone = Rc::clone(&message_queue);
+
+        Rc::new(move || {
+            let state_borrow = state_holder_clone.borrow();
+            let state = state_borrow.as_ref().unwrap();
+
+            let new_vdom = A::render(state);
+            let old_vdom = vdom_clone.borrow();
+            let patches = diff::diff(&old_vdom, &new_vdom);
+            drop(old_vdom);
+            *vdom_clone.borrow_mut() = new_vdom;
+
+            if let Some(ref d) = *dispatch_clone.borrow() {
+                apply(&html_element_clone.clone().into(), patches, d);
+            }
+
+            // Drain queue
+            let mut queued = queue_clone.borrow_mut();
+            let messages: Vec<Message> = queued.drain(..).collect();
+            drop(queued);
+
+            if let Some(ref d) = *dispatch_clone.borrow() {
+                for m in messages {
+                    d(&m);
+                }
+            }
+        })
+    };
+
+    *update_view_holder.borrow_mut() = Some(Box::new({
+        let update_view = Rc::clone(&update_view);
+        move || update_view()
+    }));
+
     *dispatch.borrow_mut() = Some(Box::new(move |msg: &Message| {
         // ---- 1. update ----
-        let new_state = {
-            let current_state = state_clone.borrow();
+        let mut state_borrow = state_holder_clone.borrow_mut();
+        if let Some(current_state) = state_borrow.take() {
             is_updating.set(true);
-            let state = A::update(&current_state, msg, &fire_clone);
+            let new_state = A::update(&current_state, msg, &fire_clone);
             is_updating.set(false);
-            state
-        };
-
-        *state_clone.borrow_mut() = new_state;
-
-        // ---- 2. VDOM diff & patch ----
-        let new_vdom = A::render(&state_clone.borrow());
-        let old_vdom = vdom_clone.borrow();
-        let patches = diff::diff(&old_vdom, &new_vdom);
-        drop(old_vdom);
-        *vdom_clone.borrow_mut() = new_vdom;
-
-        if let Some(ref d) = *dispatch_clone.borrow() {
-            apply(&html_element_clone.clone().into(), patches, d);
+            *state_borrow = Some(new_state);
         }
+        drop(state_borrow);
 
-        // ---- 3. キューを drain して dispatch ----
-        let mut queued = queue_clone.borrow_mut();
-        let messages: Vec<Message> = queued.drain(..).collect();
-        drop(queued);
-
-        if let Some(ref d) = *dispatch_clone.borrow() {
-            for m in messages {
-                d(&m);
-            }
-        }
+        // ---- 2. VDOM diff & patch & drain ----
+        update_view();
     }));
 
     apply(

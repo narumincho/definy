@@ -17,16 +17,24 @@ fn run() -> Result<(), JsValue> {
 struct DefinyApp {}
 
 impl narumincho_vdom_client::App<AppState, Message> for DefinyApp {
-    fn initial_state(_fire: &std::rc::Rc<dyn Fn(Message)>) -> AppState {
+    fn initial_state(
+        fire: &std::rc::Rc<dyn Fn(Box<dyn FnOnce(AppState) -> AppState>)>,
+    ) -> AppState {
+        let fire = std::rc::Rc::clone(fire);
         wasm_bindgen_futures::spawn_local(async move {
             let events = fetch::get_events().await.unwrap();
             web_sys::console::log_1(&JsValue::from_str(&format!("Events: {:?}", events)));
+            fire(Box::new(move |state| AppState {
+                created_account_events: events,
+                ..state.clone()
+            }));
         });
         AppState {
             count: 0,
             generated_key: None,
             username: String::new(),
             creating_account: false,
+            created_account_events: Vec::new(),
         }
     }
 

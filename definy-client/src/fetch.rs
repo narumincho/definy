@@ -16,7 +16,7 @@ pub async fn get_events_raw() -> Result<Vec<u8>, anyhow::Error> {
 }
 
 pub async fn get_events()
--> Result<Vec<(definy_event::CreateAccountEvent, ed25519_dalek::Signature)>, anyhow::Error> {
+-> Result<Vec<(ed25519_dalek::Signature, definy_event::CreateAccountEvent)>, anyhow::Error> {
     let response_body_bytes = get_events_raw().await?;
 
     let value = serde_cbor::from_slice::<serde_cbor::Value>(&response_body_bytes)?;
@@ -26,8 +26,8 @@ pub async fn get_events()
             .into_iter()
             .map(|event| match event {
                 serde_cbor::Value::Bytes(bytes) => {
-                    let event = definy_event::verify_and_deserialize(&bytes)?;
-                    Ok(event)
+                    let (event, signature) = definy_event::verify_and_deserialize(&bytes)?;
+                    Ok((signature, event))
                 }
                 _ => Err(anyhow::anyhow!("Invalid response")),
             })
