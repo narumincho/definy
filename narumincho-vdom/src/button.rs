@@ -49,7 +49,7 @@ impl Button {
     }
 
     /// https://developer.mozilla.org/docs/Web/API/Element/click_event
-    pub fn on_click(mut self, msg: &'static dyn Fn()) -> Self {
+    pub fn on_click(mut self, msg: &'static dyn Fn(Box<dyn Fn()>)) -> Self {
         self.events
             .push(("click".to_string(), EventHandler(Rc::new(msg))));
         self

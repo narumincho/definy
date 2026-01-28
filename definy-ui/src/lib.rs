@@ -158,7 +158,7 @@ init({{ module_or_path: \"{}\" }});",
                  Button::new()
                     .command_for("login-or-create-account-dialog")
                     .command("show-modal")
-                    .on_click(&|| {
+                    .on_click(&|set_state| {
                         web_sys::console::log_1(&JsValue::from_str("sample"));
                     })
                     .children([text("ログインまたはアカウント作成")])

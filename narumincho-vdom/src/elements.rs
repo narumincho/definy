@@ -174,7 +174,7 @@ impl Input {
         }
     }
 
-    pub fn on_change(mut self, msg: &'static dyn Fn()) -> Self {
+    pub fn on_change(mut self, msg: &'static dyn Fn(Box<dyn Fn()>)) -> Self {
         self.events
             .push(("change".to_string(), EventHandler(Rc::new(msg))));
         self
@@ -183,7 +183,7 @@ impl Input {
 
 impl Form {
     /// https://developer.mozilla.org/docs/Web/API/HTMLFormElement/submit_event
-    pub fn on_submit(mut self, msg: &'static dyn Fn()) -> Self {
+    pub fn on_submit(mut self, msg: &'static dyn Fn(Box<dyn Fn()>)) -> Self {
         self.events
             .push(("submit".to_string(), EventHandler(Rc::new(msg))));
         self

@@ -239,8 +239,10 @@ fn apply_patch(
                         if event_name_clone == "submit" {
                             event.prevent_default();
                         }
-                        handler();
-                        dispatch();
+                        let dispatch = Rc::clone(&dispatch);
+                        handler(Box::new(move || {
+                            dispatch();
+                        }));
                     })
                         as Box<dyn FnMut(web_sys::Event)>);
                     element
@@ -306,8 +308,10 @@ fn create_web_sys_node(
                     if event_name_clone == "submit" {
                         event.prevent_default();
                     }
-                    handler();
-                    dispatch();
+                    let dispatch = Rc::clone(&dispatch);
+                    handler(Box::new(move || {
+                        dispatch();
+                    }));
                     // dispatch(&msg);
                 }) as Box<dyn FnMut(web_sys::Event)>);
                 element

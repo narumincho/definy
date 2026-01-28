@@ -15,7 +15,7 @@ pub enum Node {
 }
 
 #[derive(Clone)]
-pub struct EventHandler(pub Rc<dyn Fn() + 'static>);
+pub struct EventHandler(pub Rc<dyn Fn(Box<dyn Fn()>)>);
 
 impl PartialEq for EventHandler {
     fn eq(&self, _other: &Self) -> bool {
