@@ -34,6 +34,7 @@ impl narumincho_vdom_client::App<AppState, Message> for DefinyApp {
                 creating_account: CreatingAccountState::NotStarted,
                 username: String::new(),
                 generated_key: None,
+                current_password: String::new(),
             },
             created_account_events: Vec::new(),
         }
@@ -129,7 +130,27 @@ impl narumincho_vdom_client::App<AppState, Message> for DefinyApp {
                 },
                 ..state.clone()
             },
-            Message::SubmitLoginForm => state.clone(),
+            Message::SubmitLoginForm => {
+                let window = web_sys::window().expect("no global `window` exists");
+                let document = window.document().expect("should have a document on window");
+                if let Ok(Some(input_element)) =
+                    document.query_selector("input[autocomplete='current-password']")
+                {
+                    if let Ok(value) = Reflect::get(&input_element, &JsValue::from_str("value")) {
+                        if let Some(password) = value.as_string() {
+                            return AppState {
+                                login_or_create_account_dialog_state:
+                                    LoginOrCreateAccountDialogState {
+                                        current_password: password,
+                                        ..state.login_or_create_account_dialog_state.clone()
+                                    },
+                                ..state.clone()
+                            };
+                        }
+                    }
+                }
+                state.clone()
+            }
         }
     }
 }

@@ -72,6 +72,7 @@ async fn handler(
                                 generated_key: None,
                                 creating_account: definy_ui::CreatingAccountState::NotStarted,
                                 username: String::new(),
+                                current_password: String::new(),
                             },
                         created_account_events: Vec::new(),
                     },

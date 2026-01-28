@@ -9,6 +9,7 @@ pub struct LoginOrCreateAccountDialogState {
     pub generated_key: Option<ed25519_dalek::SigningKey>,
     pub creating_account: CreatingAccountState,
     pub username: String,
+    pub current_password: String,
 }
 
 #[derive(Clone, PartialEq)]
