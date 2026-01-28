@@ -1,13 +1,30 @@
-#[derive(Debug, PartialEq, Clone)]
-pub struct Element<T> {
+use std::rc::Rc;
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct Element {
     pub element_name: String,
     pub attributes: Vec<(String, String)>,
-    pub events: Vec<(String, T)>,
-    pub children: Vec<Node<T>>,
+    pub events: Vec<(String, EventHandler)>,
+    pub children: Vec<Node>,
 }
 
-#[derive(Debug, PartialEq, Clone)]
-pub enum Node<T> {
-    Element(Element<T>),
+#[derive(Clone, Debug, PartialEq)]
+pub enum Node {
+    Element(Element),
     Text(Box<str>),
+}
+
+#[derive(Clone)]
+pub struct EventHandler(pub Rc<dyn Fn() + 'static>);
+
+impl PartialEq for EventHandler {
+    fn eq(&self, _other: &Self) -> bool {
+        true
+    }
+}
+
+impl std::fmt::Debug for EventHandler {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("EventHandler").finish()
+    }
 }

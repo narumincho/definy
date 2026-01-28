@@ -1,15 +1,17 @@
-use crate::node::{Element, Node};
+use std::rc::Rc;
+
+use crate::node::{Element, EventHandler, Node};
 
 macro_rules! define_element {
     ($name:ident, $tag:expr, $doc:expr) => {
         #[doc = $doc]
-        pub struct $name<Message> {
+        pub struct $name {
             pub attributes: Vec<(String, String)>,
-            pub events: Vec<(String, Message)>,
-            pub children: Vec<Node<Message>>,
+            pub events: Vec<(String, EventHandler)>,
+            pub children: Vec<Node>,
         }
 
-        impl<Message> $name<Message> {
+        impl $name {
             pub fn new() -> Self {
                 Self {
                     attributes: Vec::new(),
@@ -42,12 +44,12 @@ macro_rules! define_element {
                 self
             }
 
-            pub fn children(mut self, children: impl Into<Vec<Node<Message>>>) -> Self {
+            pub fn children(mut self, children: impl Into<Vec<Node>>) -> Self {
                 self.children = children.into();
                 self
             }
 
-            pub fn into_node(self) -> Node<Message> {
+            pub fn into_node(self) -> Node {
                 Node::Element(Element {
                     element_name: $tag.to_string(),
                     attributes: self.attributes,
@@ -57,8 +59,8 @@ macro_rules! define_element {
             }
         }
 
-        impl<T> Into<Node<T>> for $name<T> {
-            fn into(self) -> Node<T> {
+        impl Into<Node> for $name {
+            fn into(self) -> Node {
                 self.into_node()
             }
         }
@@ -132,7 +134,7 @@ define_element!(
 );
 
 // Link specific
-impl<Message> Link<Message> {
+impl Link {
     pub fn rel(self, rel: &str) -> Self {
         self.attribute("rel", rel)
     }
@@ -143,7 +145,7 @@ impl<Message> Link<Message> {
 }
 
 // Input specific
-impl<Message> Input<Message> {
+impl Input {
     pub fn name(self, name: &str) -> Self {
         self.attribute("name", name)
     }
@@ -172,16 +174,18 @@ impl<Message> Input<Message> {
         }
     }
 
-    pub fn on_change(mut self, msg: Message) -> Self {
-        self.events.push(("change".to_string(), msg));
+    pub fn on_change(mut self, msg: &'static dyn Fn()) -> Self {
+        self.events
+            .push(("change".to_string(), EventHandler(Rc::new(msg))));
         self
     }
 }
 
-impl<Message> Form<Message> {
+impl Form {
     /// https://developer.mozilla.org/docs/Web/API/HTMLFormElement/submit_event
-    pub fn on_submit(mut self, msg: Message) -> Self {
-        self.events.push(("submit".to_string(), msg));
+    pub fn on_submit(mut self, msg: &'static dyn Fn()) -> Self {
+        self.events
+            .push(("submit".to_string(), EventHandler(Rc::new(msg))));
         self
     }
 }

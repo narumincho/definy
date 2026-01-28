@@ -7,7 +7,7 @@ use crate::app_state::{AppState, CreatingAccountState};
 /// ログインまたはアカウント作成ダイアログ
 pub fn login_or_create_account_dialog(
     state: &AppState,
-) -> Node<Message> {
+) -> Node {
     let mut password_input = Input::new()
         .type_("password")
         .name("password")
@@ -31,7 +31,7 @@ pub fn login_or_create_account_dialog(
                 .children([text("ログイン")])
                 .style("margin-top: 0; font-size: 1.5rem;")
                 .into_node(),
-            Form::new().on_submit(Message::SubmitLoginForm).children([
+            Form::new().on_submit(&|| {}).children([
             Input::new()
                 .type_("password")
                 .name("password")
@@ -49,7 +49,7 @@ pub fn login_or_create_account_dialog(
                 .style("margin-top: 0; font-size: 1.5rem;")
                 .into_node(),
             Form::new()
-                .on_submit(Message::SubmitCreateAccountForm) 
+                .on_submit(&|| {}) 
                 .children([
                     Label::new()
                         .class("form-group")
@@ -61,7 +61,7 @@ pub fn login_or_create_account_dialog(
                                 .autocomplete("username")
                                 .required()
                                 .value(&state.login_or_create_account_dialog_state.username)
-                                .on_change(Message::UpdateUsername(String::new()))
+                                .on_change(&|| {})
                                 .into_node(),
                         ])
                         .into_node(),
@@ -96,12 +96,12 @@ pub fn login_or_create_account_dialog(
                                         .style("flex: 1;")
                                         .into_node(),
                                     Button::new()
-                                        .on_click(Message::CopyPrivateKey)
+                                        .on_click(&|| {})
                                         .type_("button")
                                         .children([text("コピー")])
                                         .into_node(),
                                     Button::new()
-                                        .on_click(Message::RegenerateKey)
+                                        .on_click(&|| {})
                                         .type_("button")
                                         .disabled(requesting)
                                         .children([text("再生成")])
@@ -117,7 +117,7 @@ pub fn login_or_create_account_dialog(
                                 .command_for("login-or-create-account-dialog")
                                 .command("close") 
                                 .type_("button")
-                                .on_click(Message::CloseCreateAccountDialog)
+                                .on_click(&|| {})
                                 .children([text("キャンセル")])
                                 .into_node(),
                             Button::new()

@@ -15,7 +15,7 @@ const DOCUMENT: std::sync::LazyLock<web_sys::Document> = std::sync::LazyLock::ne
 
 pub trait App<State: Clone + 'static, Message: PartialEq + Clone + 'static> {
     fn initial_state(fire: &Rc<dyn Fn(Box<dyn FnOnce(State) -> State>)>) -> State;
-    fn render(state: &State) -> Node<Message>;
+    fn render(state: &State) -> Node;
     fn update(state: &State, msg: &Message, fire: &Rc<dyn Fn(Message)>) -> State;
 }
 
@@ -59,8 +59,19 @@ pub fn start<
     let vdom = A::render(state_holder.borrow().as_ref().unwrap());
     let first_patches = diff::add_event_listener_patches(&vdom);
 
-    let dispatch = Rc::new(std::cell::RefCell::new(None::<Box<dyn Fn(&Message)>>));
+    let dispatch = Rc::new(std::cell::RefCell::new(None::<Box<dyn Fn()>>));
     let dispatch_weak = Rc::downgrade(&dispatch);
+
+    let dispatch_impl: Rc<dyn Fn()> = {
+        let dispatch_weak = dispatch_weak.clone();
+        Rc::new(move || {
+            if let Some(dispatch) = dispatch_weak.upgrade() {
+                if let Some(d) = dispatch.borrow().as_ref() {
+                    d();
+                }
+            }
+        })
+    };
 
     let is_updating = Rc::new(std::cell::Cell::new(false));
     let is_updating_clone = Rc::clone(&is_updating);
@@ -73,7 +84,7 @@ pub fn start<
             } else {
                 if let Some(dispatch) = dispatch_weak.upgrade() {
                     if let Some(d) = dispatch.borrow().as_ref() {
-                        d(&m);
+                        d();
                     } else {
                         queue_clone.borrow_mut().push(m);
                     }
@@ -94,7 +105,7 @@ pub fn start<
         let state_holder_clone = Rc::clone(&state_holder);
         let vdom_clone = Rc::clone(&vdom_clone);
         let html_element_clone = html_element.clone();
-        let dispatch_clone = Rc::clone(&dispatch);
+        let dispatch_impl = Rc::clone(&dispatch_impl);
         let queue_clone = Rc::clone(&message_queue);
 
         Rc::new(move || {
@@ -107,19 +118,15 @@ pub fn start<
             drop(old_vdom);
             *vdom_clone.borrow_mut() = new_vdom;
 
-            if let Some(ref d) = *dispatch_clone.borrow() {
-                apply(&html_element_clone.clone().into(), patches, d);
-            }
+            apply(&html_element_clone.clone().into(), &patches, &dispatch_impl);
 
             // Drain queue
             let mut queued = queue_clone.borrow_mut();
             let messages: Vec<Message> = queued.drain(..).collect();
             drop(queued);
 
-            if let Some(ref d) = *dispatch_clone.borrow() {
-                for m in messages {
-                    d(&m);
-                }
+            for _ in messages {
+                dispatch_impl();
             }
         })
     };
@@ -129,14 +136,14 @@ pub fn start<
         move || update_view()
     }));
 
-    *dispatch.borrow_mut() = Some(Box::new(move |msg: &Message| {
+    *dispatch.borrow_mut() = Some(Box::new(move || {
         // ---- 1. update ----
         let mut state_borrow = state_holder_clone.borrow_mut();
         if let Some(current_state) = state_borrow.take() {
             is_updating.set(true);
-            let new_state = A::update(&current_state, msg, &fire_clone);
+            // let new_state = A::update(&current_state, msg, &fire_clone);
             is_updating.set(false);
-            *state_borrow = Some(new_state);
+            // *state_borrow = Some(new_state);
         }
         drop(state_borrow);
 
@@ -144,11 +151,7 @@ pub fn start<
         update_view();
     }));
 
-    apply(
-        &html_element.into(),
-        first_patches,
-        dispatch.borrow().as_ref().unwrap(),
-    );
+    apply(&html_element.into(), &first_patches, &dispatch_impl);
 
     {
         let mut queued = message_queue.borrow_mut();
@@ -157,23 +160,23 @@ pub fn start<
 
         if let Some(ref d) = *dispatch.borrow() {
             for m in messages {
-                d(&m);
+                d();
             }
         }
     }
 }
 
-pub fn apply<Message: Clone + 'static>(
+pub fn apply(
     root: &web_sys::Node,
-    patches: Vec<(Vec<usize>, diff::Patch<Message>)>,
-    dispatch: impl Fn(&Message) + Clone,
+    patches: &Vec<(Vec<usize>, diff::Patch)>,
+    dispatch: &Rc<dyn Fn()>,
 ) {
     for (path, patch) in patches {
         if let Some(node) = find_node(root, &path) {
             apply_patch(
                 node,
                 patch,
-                dispatch.clone(),
+                dispatch,
                 &js_sys::Symbol::for_("__narumincho_callback_key"),
             );
         } else {
@@ -195,10 +198,10 @@ fn find_node(root: &web_sys::Node, path: &[usize]) -> Option<web_sys::Node> {
     Some(current)
 }
 
-fn apply_patch<Message: Clone + 'static>(
+fn apply_patch(
     node: web_sys::Node,
-    patch: diff::Patch<Message>,
-    dispatch: impl Fn(&Message) + Clone,
+    patch: &diff::Patch,
+    dispatch: &Rc<dyn Fn()>,
     callback_key_symbol: &js_sys::Symbol,
 ) {
     match patch {
@@ -228,15 +231,16 @@ fn apply_patch<Message: Clone + 'static>(
         diff::Patch::AddEventListeners(events) => {
             if let Some(element) = node.dyn_ref::<web_sys::Element>() {
                 for (event_name, msg) in events {
-                    let msg = msg.clone();
-                    let dispatch = dispatch.clone();
+                    let handler = Rc::clone(&msg.0);
+                    let dispatch = Rc::clone(dispatch);
                     let event_name_clone = event_name.clone();
                     let closure = Closure::wrap(Box::new(move |event: web_sys::Event| {
                         // For form submit events, call preventDefault
                         if event_name_clone == "submit" {
                             event.prevent_default();
                         }
-                        dispatch(&msg);
+                        handler();
+                        dispatch();
                     })
                         as Box<dyn FnMut(web_sys::Event)>);
                     element
@@ -266,14 +270,14 @@ fn apply_patch<Message: Clone + 'static>(
         }
         diff::Patch::AppendChildren(children) => {
             for child in children {
-                let child_node = create_web_sys_node(&child, dispatch.clone(), callback_key_symbol);
+                let child_node = create_web_sys_node(&child, dispatch, callback_key_symbol);
                 node.append_child(&child_node).unwrap();
             }
         }
         diff::Patch::RemoveChildren(count) => {
             let child_nodes = node.child_nodes();
             let len = child_nodes.length();
-            for i in 0..count {
+            for i in 0..*count {
                 if let Some(child) = child_nodes.item(len - 1 - i as u32) {
                     node.remove_child(&child).unwrap();
                 }
@@ -282,9 +286,9 @@ fn apply_patch<Message: Clone + 'static>(
     }
 }
 
-fn create_web_sys_node<Message: Clone + 'static>(
-    vdom: &Node<Message>,
-    dispatch: impl Fn(&Message) + Clone,
+fn create_web_sys_node(
+    vdom: &Node,
+    dispatch: &Rc<dyn Fn()>,
     callback_key_symbol: &js_sys::Symbol,
 ) -> web_sys::Node {
     match vdom {
@@ -294,15 +298,17 @@ fn create_web_sys_node<Message: Clone + 'static>(
                 element.set_attribute(key, value).unwrap();
             }
             for (event_name, msg) in &el.events {
-                let msg = msg.clone();
-                let dispatch = dispatch.clone();
+                let handler = Rc::clone(&msg.0);
+                let dispatch = Rc::clone(dispatch);
                 let event_name_clone = event_name.clone();
                 let closure = Closure::wrap(Box::new(move |event: web_sys::Event| {
                     // For form submit events, call preventDefault
                     if event_name_clone == "submit" {
                         event.prevent_default();
                     }
-                    dispatch(&msg);
+                    handler();
+                    dispatch();
+                    // dispatch(&msg);
                 }) as Box<dyn FnMut(web_sys::Event)>);
                 element
                     .add_event_listener_with_callback(&event_name, closure.as_ref().unchecked_ref())
@@ -312,11 +318,7 @@ fn create_web_sys_node<Message: Clone + 'static>(
             }
             for child in &el.children {
                 element
-                    .append_child(&create_web_sys_node(
-                        child,
-                        dispatch.clone(),
-                        callback_key_symbol,
-                    ))
+                    .append_child(&create_web_sys_node(child, dispatch, callback_key_symbol))
                     .unwrap();
             }
             element.into()

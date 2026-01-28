@@ -6,7 +6,7 @@ pub struct Meta {
 
 impl Meta {
     /// https://developer.mozilla.org/ja/docs/Web/HTML/Reference/Elements/meta
-    pub fn new<Message>(name: &str, content: &str) -> node::Node<Message> {
+    pub fn new(name: &str, content: &str) -> node::Node {
         node::Node::Element(node::Element {
             element_name: "meta".to_string(),
             attributes: vec![

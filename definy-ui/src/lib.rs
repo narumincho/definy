@@ -6,17 +6,16 @@ pub use app_state::*;
 pub use message::Message;
 
 use narumincho_vdom::*;
+use wasm_bindgen::JsValue;
 
 pub struct ResourceHash {
     pub js: String,
     pub wasm: String,
 }
 
-pub fn app(state: &AppState, resource_hash: &Option<ResourceHash>) -> Node<Message> {
+pub fn app(state: &AppState, resource_hash: &Option<ResourceHash>) -> Node {
     let mut head_children = vec![
-        Title::<Message>::new()
-            .children([text("definy")])
-            .into_node(),
+        Title::new().children([text("definy")]).into_node(),
         Meta::new("viewport", "width=device-width,initial-scale=1.0"),
         Link::new()
             .rel("icon")
@@ -159,7 +158,9 @@ init({{ module_or_path: \"{}\" }});",
                  Button::new()
                     .command_for("login-or-create-account-dialog")
                     .command("show-modal")
-                    .on_click(Message::ShowCreateAccountDialog)
+                    .on_click(&|| {
+                        web_sys::console::log_1(&JsValue::from_str("sample"));
+                    })
                     .children([text("ログインまたはアカウント作成")])
                     .into_node(),
                 Div::new()
@@ -180,7 +181,7 @@ init({{ module_or_path: \"{}\" }});",
                                     .into_node(),
                             ])
                             .into_node()
-                    }).collect::<Vec<Node<Message>>>()).into_node(),
+                    }).collect::<Vec<Node>>()).into_node(),
                 login_or_create_account_dialog::login_or_create_account_dialog(state),
             ]).into_node(),
         ])

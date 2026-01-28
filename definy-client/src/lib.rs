@@ -40,7 +40,7 @@ impl narumincho_vdom_client::App<AppState, Message> for DefinyApp {
         }
     }
 
-    fn render(state: &AppState) -> narumincho_vdom::Node<Message> {
+    fn render(state: &AppState) -> narumincho_vdom::Node {
         definy_ui::app(state, &None)
     }
 
