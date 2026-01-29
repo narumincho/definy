@@ -68,7 +68,6 @@ pub fn start<State: Clone + 'static, A: App<State>>() {
     };
 
     let is_updating = Rc::new(std::cell::Cell::new(false));
-    let is_updating_clone = Rc::clone(&is_updating);
 
     let state_holder_clone = Rc::clone(&state_holder);
     let vdom_rc = Rc::new(std::cell::RefCell::new(vdom));
@@ -92,11 +91,6 @@ pub fn start<State: Clone + 'static, A: App<State>>() {
             *vdom_clone.borrow_mut() = new_vdom;
 
             apply(&html_element_clone.clone().into(), &patches, &dispatch_impl);
-
-            // Drain queue
-            let mut queued = queue_clone.borrow_mut();
-            let messages: Vec<Message> = queued.drain(..).collect();
-            drop(queued);
         })
     };
 
@@ -110,9 +104,9 @@ pub fn start<State: Clone + 'static, A: App<State>>() {
         let mut state_borrow = state_holder_clone.borrow_mut();
         if let Some(current_state) = state_borrow.take() {
             is_updating.set(true);
-            // let new_state = A::update(&current_state, msg, &fire_clone);
+            let new_state = update_fn(current_state);
             is_updating.set(false);
-            // *state_borrow = Some(new_state);
+            *state_borrow = Some(new_state);
         }
         drop(state_borrow);
 
@@ -123,10 +117,10 @@ pub fn start<State: Clone + 'static, A: App<State>>() {
     apply(&html_element.into(), &first_patches, &dispatch_impl);
 }
 
-pub fn apply(
+pub fn apply<State: 'static>(
     root: &web_sys::Node,
-    patches: &Vec<(Vec<usize>, diff::Patch)>,
-    dispatch: &Rc<dyn Fn()>,
+    patches: &Vec<(Vec<usize>, diff::Patch<State>)>,
+    dispatch: &Rc<dyn Fn(Box<dyn FnOnce(State) -> State>)>,
 ) {
     for (path, patch) in patches {
         if let Some(node) = find_node(root, &path) {
@@ -155,10 +149,10 @@ fn find_node(root: &web_sys::Node, path: &[usize]) -> Option<web_sys::Node> {
     Some(current)
 }
 
-fn apply_patch(
+fn apply_patch<State: 'static>(
     node: web_sys::Node,
-    patch: &diff::Patch,
-    dispatch: &Rc<dyn Fn()>,
+    patch: &diff::Patch<State>,
+    dispatch: &Rc<dyn Fn(Box<dyn FnOnce(State) -> State>)>,
     callback_key_symbol: &js_sys::Symbol,
 ) {
     match patch {
@@ -197,8 +191,8 @@ fn apply_patch(
                             event.prevent_default();
                         }
                         let dispatch = Rc::clone(&dispatch);
-                        handler(Box::new(move || {
-                            dispatch();
+                        handler(Box::new(move |update_fn| {
+                            dispatch(update_fn);
                         }));
                     })
                         as Box<dyn FnMut(web_sys::Event)>);
@@ -245,7 +239,7 @@ fn apply_patch(
     }
 }
 
-fn create_web_sys_node<State>(
+fn create_web_sys_node<State: 'static>(
     vdom: &Node<State>,
     dispatch: &Rc<dyn Fn(Box<dyn FnOnce(State) -> State>)>,
     callback_key_symbol: &js_sys::Symbol,

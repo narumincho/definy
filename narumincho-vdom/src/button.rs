@@ -49,9 +49,12 @@ impl<State> Button<State> {
     }
 
     /// https://developer.mozilla.org/docs/Web/API/Element/click_event
-    pub fn on_click(mut self, msg: &'static dyn Fn(Box<dyn FnOnce(State) -> State>)) -> Self {
+    pub fn on_click(
+        mut self,
+        handler: impl Fn(Box<dyn Fn(Box<dyn FnOnce(State) -> State>)>) + 'static,
+    ) -> Self {
         self.events
-            .push(("click".to_string(), EventHandler(Rc::new(msg))));
+            .push(("click".to_string(), EventHandler(Rc::new(handler))));
         self
     }
 

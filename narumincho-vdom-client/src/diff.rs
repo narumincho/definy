@@ -30,7 +30,7 @@ fn diff_recursive<State>(
     match (old_node, new_node) {
         (Node::Element(old_element), Node::Element(new_element)) => {
             if old_element.element_name != new_element.element_name {
-                patches.push((path.clone(), Patch::Replace(*new_node)));
+                patches.push((path.clone(), Patch::Replace(new_node.clone())));
                 return;
             }
 
@@ -76,19 +76,19 @@ fn diff_recursive<State>(
             let mut add_events = Vec::<(String, EventHandler<State>)>::new();
             let mut remove_events = Vec::<String>::new();
 
-            for (key, value) in new_element.events {
+            for (key, value) in &new_element.events {
                 match old_element
                     .events
                     .iter()
-                    .find(|(old_key, _)| old_key == &key)
+                    .find(|(old_key, _)| old_key == key)
                 {
-                    Some((_, old_value)) => {
+                    Some((_, _old_value)) => {
                         // if old_value != value {
-                        add_events.push((key, value));
+                        add_events.push((key.clone(), value.clone()));
                         // }
                     }
                     None => {
-                        add_events.push((key, value));
+                        add_events.push((key.clone(), value.clone()));
                     }
                 }
             }
@@ -139,7 +139,7 @@ fn diff_recursive<State>(
             }
         }
         _ => {
-            patches.push((path.clone(), Patch::Replace(*new_node.clone())));
+            patches.push((path.clone(), Patch::Replace(new_node.clone())));
         }
     }
 }
@@ -160,7 +160,7 @@ fn add_event_listener_patches_recursive<State>(
             for (event_name, message) in &element.events {
                 patches.push((
                     path.clone(),
-                    Patch::AddEventListeners(vec![(event_name.clone(), *message)]),
+                    Patch::AddEventListeners(vec![(event_name.clone(), message.clone())]),
                 ));
             }
             for child in &element.children {
