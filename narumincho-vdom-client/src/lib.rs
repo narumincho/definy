@@ -3,6 +3,7 @@ use std::rc::Rc;
 use js_sys::Reflect;
 use narumincho_vdom::Node;
 use wasm_bindgen::JsCast;
+use wasm_bindgen::JsValue;
 use wasm_bindgen::closure::Closure;
 
 mod diff;
@@ -54,15 +55,11 @@ pub fn start<State: Clone + 'static, A: App<State>>() {
     let dispatch = Rc::new(std::cell::RefCell::new(
         None::<Box<dyn Fn(Box<dyn FnOnce(State) -> State>)>>,
     ));
-    let dispatch_weak = Rc::downgrade(&dispatch);
-
     let dispatch_impl: Rc<dyn Fn(Box<dyn FnOnce(State) -> State>)> = {
-        let dispatch_weak = dispatch_weak.clone();
+        let dispatch = Rc::clone(&dispatch);
         Rc::new(move |update_fn| {
-            if let Some(dispatch) = dispatch_weak.upgrade() {
-                if let Some(d) = dispatch.borrow().as_ref() {
-                    d(update_fn);
-                }
+            if let Some(d) = dispatch.borrow().as_ref() {
+                d(update_fn);
             }
         })
     };
@@ -202,7 +199,9 @@ fn apply_patch<State: 'static>(
                             closure.as_ref().unchecked_ref(),
                         )
                         .unwrap();
-                    Reflect::set(element, callback_key_symbol, closure.as_ref()).unwrap();
+
+                    let key = format!("__narumincho_event_{}", event_name);
+                    Reflect::set(element, &JsValue::from_str(&key), closure.as_ref()).unwrap();
                     closure.forget();
                 }
             }
@@ -210,13 +209,14 @@ fn apply_patch<State: 'static>(
         diff::Patch::RemoveEventListeners(event_names) => {
             if let Some(element) = node.dyn_ref::<web_sys::Element>() {
                 for event_name in event_names {
-                    if let Ok(value) = Reflect::get(element, &callback_key_symbol) {
+                    let key = format!("__narumincho_event_{}", event_name);
+                    if let Ok(value) = Reflect::get(element, &JsValue::from_str(&key)) {
                         if let Some(func) = value.dyn_ref::<js_sys::Function>() {
                             element
                                 .remove_event_listener_with_callback(&event_name, func)
                                 .unwrap();
                         }
-                        Reflect::delete_property(element, callback_key_symbol).unwrap();
+                        Reflect::delete_property(element, &JsValue::from_str(&key)).unwrap();
                     }
                 }
             }
@@ -267,7 +267,8 @@ fn create_web_sys_node<State: 'static>(
                 element
                     .add_event_listener_with_callback(&event_name, closure.as_ref().unchecked_ref())
                     .unwrap();
-                Reflect::set(&element, &callback_key_symbol, closure.as_ref()).unwrap();
+                let key = format!("__narumincho_event_{}", event_name);
+                Reflect::set(&element, &JsValue::from_str(&key), closure.as_ref()).unwrap();
                 closure.forget();
             }
             for child in &el.children {

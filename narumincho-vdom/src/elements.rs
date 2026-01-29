@@ -1,5 +1,3 @@
-use std::rc::Rc;
-
 use crate::node::{Element, EventHandler, Node};
 
 macro_rules! define_element {

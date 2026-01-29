@@ -1,10 +1,7 @@
 mod fetch;
 
-use std::rc::Rc;
-
-use definy_ui::{AppState, Message};
+use definy_ui::AppState;
 use definy_ui::{CreatingAccountState, LoginOrCreateAccountDialogState};
-use js_sys::Reflect;
 use wasm_bindgen::JsValue;
 use wasm_bindgen::prelude::*;
 

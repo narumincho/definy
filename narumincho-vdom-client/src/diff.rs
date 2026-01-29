@@ -76,34 +76,19 @@ fn diff_recursive<State>(
             let mut add_events = Vec::<(String, EventHandler<State>)>::new();
             let mut remove_events = Vec::<String>::new();
 
-            for (key, value) in &new_element.events {
-                match old_element
-                    .events
-                    .iter()
-                    .find(|(old_key, _)| old_key == key)
-                {
-                    Some((_, _old_value)) => {
-                        // if old_value != value {
-                        add_events.push((key.clone(), value.clone()));
-                        // }
-                    }
-                    None => {
-                        add_events.push((key.clone(), value.clone()));
-                    }
-                }
-            }
-
             for (key, _) in &old_element.events {
-                if !new_element.events.iter().any(|(new_key, _)| new_key == key) {
-                    remove_events.push(key.clone());
-                }
+                remove_events.push(key.clone());
             }
 
-            if !add_events.is_empty() {
-                patches.push((path.clone(), Patch::AddEventListeners(add_events)));
+            for (key, value) in &new_element.events {
+                add_events.push((key.clone(), value.clone()));
             }
+
             if !remove_events.is_empty() {
                 patches.push((path.clone(), Patch::RemoveEventListeners(remove_events)));
+            }
+            if !add_events.is_empty() {
+                patches.push((path.clone(), Patch::AddEventListeners(add_events)));
             }
 
             // Diff children

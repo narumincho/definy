@@ -158,8 +158,19 @@ init({{ module_or_path: \"{}\" }});",
                  Button::new()
                     .command_for("login-or-create-account-dialog")
                     .command("show-modal")
-                    .on_click(&|set_state| {
+                    .on_click(&|set_state: Box<dyn Fn(Box<dyn FnOnce(AppState) -> AppState>)>| {
                         web_sys::console::log_1(&JsValue::from_str("sample"));
+                        set_state(Box::new(|state: AppState| -> AppState {
+                            web_sys::console::log_1(&JsValue::from_str("sample2"));
+                            AppState { 
+                                login_or_create_account_dialog_state:
+                                    LoginOrCreateAccountDialogState 
+                                    { generated_key: Some(generate_key()),
+                                    ..state.login_or_create_account_dialog_state.clone()
+                                },
+                                ..state.clone()
+                            }
+                        }));
                     })
                     .children([text("ログインまたはアカウント作成")])
                     .into_node(),
@@ -186,4 +197,9 @@ init({{ module_or_path: \"{}\" }});",
             ]).into_node(),
         ])
         .into_node()
+}
+
+fn generate_key() -> ed25519_dalek::SigningKey {
+    let mut csprng = rand::rngs::OsRng;
+    ed25519_dalek::SigningKey::generate(&mut csprng)
 }

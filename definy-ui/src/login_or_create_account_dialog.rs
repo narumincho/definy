@@ -1,12 +1,9 @@
-
 use narumincho_vdom::*;
 
 use crate::app_state::{AppState, CreatingAccountState};
 
 /// ログインまたはアカウント作成ダイアログ
-pub fn login_or_create_account_dialog(
-    state: &AppState,
-) -> Node<AppState> {
+pub fn login_or_create_account_dialog(state: &AppState) -> Node<AppState> {
     let mut password_input = Input::new()
         .type_("password")
         .name("password")
@@ -15,13 +12,16 @@ pub fn login_or_create_account_dialog(
         .readonly();
 
     if let Some(key) = &state.login_or_create_account_dialog_state.generated_key {
-        password_input = password_input.value(
-            &base64::Engine::encode(&base64::engine::general_purpose::URL_SAFE_NO_PAD, key.to_bytes())
-        );
+        password_input = password_input.value(&base64::Engine::encode(
+            &base64::engine::general_purpose::URL_SAFE_NO_PAD,
+            key.to_bytes(),
+        ));
     }
 
-    let requesting = state.login_or_create_account_dialog_state.creating_account == CreatingAccountState::Requesting
-                                     || state.login_or_create_account_dialog_state.creating_account == CreatingAccountState::Success;
+    let requesting = state.login_or_create_account_dialog_state.creating_account
+        == CreatingAccountState::Requesting
+        || state.login_or_create_account_dialog_state.creating_account
+            == CreatingAccountState::Success;
 
     Dialog::new()
         .id("login-or-create-account-dialog")

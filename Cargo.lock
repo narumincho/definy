@@ -297,6 +297,7 @@ dependencies = [
  "definy-event",
  "ed25519-dalek",
  "narumincho-vdom",
+ "rand",
  "wasm-bindgen",
  "web-sys",
 ]
