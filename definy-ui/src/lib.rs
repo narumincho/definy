@@ -6,7 +6,6 @@ pub use app_state::*;
 pub use message::Message;
 
 use narumincho_vdom::*;
-use wasm_bindgen::JsValue;
 
 pub struct ResourceHash {
     pub js: String,

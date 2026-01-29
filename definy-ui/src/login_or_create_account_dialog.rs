@@ -23,6 +23,8 @@ pub fn login_or_create_account_dialog(state: &AppState) -> Node<AppState> {
         || state.login_or_create_account_dialog_state.creating_account
             == CreatingAccountState::Success;
 
+    let generated_key = state.login_or_create_account_dialog_state.generated_key.clone();
+
     Dialog::new()
         .id("login-or-create-account-dialog")
         .children([
@@ -31,12 +33,20 @@ pub fn login_or_create_account_dialog(state: &AppState) -> Node<AppState> {
                 .style("margin-top: 0; font-size: 1.5rem;")
                 .into_node(),
             Form::new().on_submit(EventHandler::new(|set_state| {})).children([
-            Input::new()
-                .type_("password")
-                .name("password")
-                .autocomplete("current-password")
-                .required()
-                .into_node(),
+                Input::new()
+                    .type_("text")
+                    .name("username")
+                    .autocomplete("username")
+                    .required()
+                    .value(&state.login_or_create_account_dialog_state.username)
+                    .on_change(EventHandler::new(|set_state| {}))
+                    .into_node(),
+                Input::new()
+                    .type_("password")
+                    .name("password")
+                    .autocomplete("current-password")
+                    .required()
+                    .into_node(),
             Button::new()
                 .type_("submit") 
                 .disabled(requesting)
@@ -95,12 +105,23 @@ pub fn login_or_create_account_dialog(state: &AppState) -> Node<AppState> {
                                         .style("flex: 1;")
                                         .into_node(),
                                     Button::new()
-                                        .on_click(&|set_state| {})
+                                        .on_click(EventHandler::new(move |set_state| {
+                                            let window = web_sys::window().expect("no global `window` exists");
+                                            if let Some(key) = &generated_key {
+                                                let _ = window
+                                                    .navigator()
+                                                    .clipboard()
+                                                    .write_text(&base64::Engine::encode(
+                                                        &base64::engine::general_purpose::URL_SAFE_NO_PAD,
+                                                        key.to_scalar_bytes(),
+                                                    ));
+                                            };
+                                        }))
                                         .type_("button")
                                         .children([text("コピー")])
                                         .into_node(),
                                     Button::new()
-                                        .on_click(|set_state| {
+                                        .on_click(EventHandler::new(|set_state| {
                                             set_state(Box::new(|state: AppState| -> AppState {
                                                 AppState { 
                                                     login_or_create_account_dialog_state:
@@ -111,7 +132,7 @@ pub fn login_or_create_account_dialog(state: &AppState) -> Node<AppState> {
                                                     ..state.clone()
                                                 }
                                             }));
-                                        })
+                                        }))
                                         .type_("button")
                                         .disabled(requesting)
                                         .children([text("再生成")])
@@ -127,7 +148,7 @@ pub fn login_or_create_account_dialog(state: &AppState) -> Node<AppState> {
                                 .command_for("login-or-create-account-dialog")
                                 .command("close") 
                                 .type_("button")
-                                .on_click(&|set_state| {})
+                                .on_click(EventHandler::new(|set_state| {}))
                                 .children([text("キャンセル")])
                                 .into_node(),
                             Button::new()

@@ -1,5 +1,3 @@
-use std::rc::Rc;
-
 use crate::node::{self, EventHandler};
 
 pub struct Button<State> {
@@ -49,12 +47,8 @@ impl<State> Button<State> {
     }
 
     /// https://developer.mozilla.org/docs/Web/API/Element/click_event
-    pub fn on_click(
-        mut self,
-        handler: impl Fn(Box<dyn Fn(Box<dyn FnOnce(State) -> State>)>) + 'static,
-    ) -> Self {
-        self.events
-            .push(("click".to_string(), EventHandler(Rc::new(handler))));
+    pub fn on_click(mut self, handler: EventHandler<State>) -> Self {
+        self.events.push(("click".to_string(), handler));
         self
     }
 

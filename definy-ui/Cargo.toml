@@ -8,6 +8,22 @@ narumincho-vdom = { path = "../narumincho-vdom" }
 base64 = "0.22"
 ed25519-dalek = { version = "2.2" }
 definy-event = { path = "../definy-event" }
-web-sys = { version = "0.3.85", features = ["console"] }
+web-sys = { version = "0.3.85", features = [
+  "console",
+  "Window",
+  "Document",
+  "Element",
+  "Node",
+  "NodeList",
+  "HtmlElement",
+  "Event",
+  "HtmlDialogElement",
+  "Navigator",
+  "Clipboard",
+  "Request",
+  "RequestInit",
+  "Response",
+  "Headers",
+] }
 wasm-bindgen = "0.2.108"
 rand = "0.8.5"
