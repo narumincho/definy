@@ -1,6 +1,6 @@
 use narumincho_vdom::*;
 
-use crate::app_state::{AppState, CreatingAccountState};
+use crate::{LoginOrCreateAccountDialogState, app_state::{AppState, CreatingAccountState}};
 
 /// ログインまたはアカウント作成ダイアログ
 pub fn login_or_create_account_dialog(state: &AppState) -> Node<AppState> {
@@ -100,7 +100,18 @@ pub fn login_or_create_account_dialog(state: &AppState) -> Node<AppState> {
                                         .children([text("コピー")])
                                         .into_node(),
                                     Button::new()
-                                        .on_click(&|set_state| {})
+                                        .on_click(|set_state| {
+                                            set_state(Box::new(|state: AppState| -> AppState {
+                                                AppState { 
+                                                    login_or_create_account_dialog_state:
+                                                        LoginOrCreateAccountDialogState 
+                                                        { generated_key: Some(generate_key()),
+                                                        ..state.login_or_create_account_dialog_state.clone()
+                                                    },
+                                                    ..state.clone()
+                                                }
+                                            }));
+                                        })
                                         .type_("button")
                                         .disabled(requesting)
                                         .children([text("再生成")])
@@ -135,4 +146,9 @@ pub fn login_or_create_account_dialog(state: &AppState) -> Node<AppState> {
                 .into_node(),
         ])
         .into_node()
+}
+
+fn generate_key() -> ed25519_dalek::SigningKey {
+    let mut csprng = rand::rngs::OsRng;
+    ed25519_dalek::SigningKey::generate(&mut csprng)
 }
