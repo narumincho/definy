@@ -2,13 +2,13 @@ use std::rc::Rc;
 
 use crate::node::{self, EventHandler};
 
-pub struct Button {
+pub struct Button<State> {
     pub attributes: Vec<(String, String)>,
-    pub events: Vec<(String, EventHandler)>,
-    pub children: Vec<node::Node>,
+    pub events: Vec<(String, EventHandler<State>)>,
+    pub children: Vec<node::Node<State>>,
 }
 
-impl Button {
+impl<State> Button<State> {
     /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/button
     pub fn new() -> Self {
         Self {
@@ -49,18 +49,18 @@ impl Button {
     }
 
     /// https://developer.mozilla.org/docs/Web/API/Element/click_event
-    pub fn on_click(mut self, msg: &'static dyn Fn(Box<dyn Fn()>)) -> Self {
+    pub fn on_click(mut self, msg: &'static dyn Fn(Box<dyn FnOnce(State) -> State>)) -> Self {
         self.events
             .push(("click".to_string(), EventHandler(Rc::new(msg))));
         self
     }
 
-    pub fn children(mut self, children: impl Into<Vec<node::Node>>) -> Self {
+    pub fn children(mut self, children: impl Into<Vec<node::Node<State>>>) -> Self {
         self.children = children.into();
         self
     }
 
-    pub fn into_node(self) -> node::Node {
+    pub fn into_node(self) -> node::Node<State> {
         node::Node::Element(node::Element {
             element_name: "button".to_string(),
             attributes: self.attributes,

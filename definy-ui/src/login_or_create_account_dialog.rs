@@ -1,13 +1,12 @@
 
 use narumincho_vdom::*;
 
-use crate::message::Message;
 use crate::app_state::{AppState, CreatingAccountState};
 
 /// ログインまたはアカウント作成ダイアログ
 pub fn login_or_create_account_dialog(
     state: &AppState,
-) -> Node {
+) -> Node<AppState> {
     let mut password_input = Input::new()
         .type_("password")
         .name("password")
@@ -31,7 +30,7 @@ pub fn login_or_create_account_dialog(
                 .children([text("ログイン")])
                 .style("margin-top: 0; font-size: 1.5rem;")
                 .into_node(),
-            Form::new().on_submit(&|set_state| {}).children([
+            Form::new().on_submit(EventHandler::new(|set_state| {})).children([
             Input::new()
                 .type_("password")
                 .name("password")
@@ -49,7 +48,7 @@ pub fn login_or_create_account_dialog(
                 .style("margin-top: 0; font-size: 1.5rem;")
                 .into_node(),
             Form::new()
-                .on_submit(&|set_state| {}) 
+                .on_submit(EventHandler::new(|set_state| {})) 
                 .children([
                     Label::new()
                         .class("form-group")
@@ -61,7 +60,7 @@ pub fn login_or_create_account_dialog(
                                 .autocomplete("username")
                                 .required()
                                 .value(&state.login_or_create_account_dialog_state.username)
-                                .on_change(&|set_state| {})
+                                .on_change(EventHandler::new(|set_state| {}))
                                 .into_node(),
                         ])
                         .into_node(),

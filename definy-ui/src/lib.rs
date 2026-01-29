@@ -13,7 +13,7 @@ pub struct ResourceHash {
     pub wasm: String,
 }
 
-pub fn app(state: &AppState, resource_hash: &Option<ResourceHash>) -> Node {
+pub fn app(state: &AppState, resource_hash: &Option<ResourceHash>) -> Node<AppState> {
     let mut head_children = vec![
         Title::new().children([text("definy")]).into_node(),
         Meta::new("viewport", "width=device-width,initial-scale=1.0"),
@@ -181,7 +181,7 @@ init({{ module_or_path: \"{}\" }});",
                                     .into_node(),
                             ])
                             .into_node()
-                    }).collect::<Vec<Node>>()).into_node(),
+                    }).collect::<Vec<Node<AppState>>>()).into_node(),
                 login_or_create_account_dialog::login_or_create_account_dialog(state),
             ]).into_node(),
         ])

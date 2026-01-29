@@ -8,15 +8,15 @@ pub use elements::*;
 pub use meta::Meta;
 pub use node::{Element, EventHandler, Node};
 
-pub fn text(text: impl Into<String>) -> Node {
+pub fn text<State>(text: impl Into<String>) -> Node<State> {
     Node::Text(text.into().into())
 }
 
-pub fn to_html(node: &Node) -> String {
+pub fn to_html<State>(node: &Node<State>) -> String {
     "<!doctype html>".to_string() + &to_string(node)
 }
 
-pub fn to_string(node: &Node) -> String {
+pub fn to_string<State>(node: &Node<State>) -> String {
     match node {
         Node::Element(vdom) => {
             let mut html = String::new();

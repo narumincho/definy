@@ -13,23 +13,15 @@ const DOCUMENT: std::sync::LazyLock<web_sys::Document> = std::sync::LazyLock::ne
     document
 });
 
-pub trait App<State: Clone + 'static, Message: PartialEq + Clone + 'static> {
+pub trait App<State: Clone + 'static> {
     fn initial_state(fire: &Rc<dyn Fn(Box<dyn FnOnce(State) -> State>)>) -> State;
-    fn render(state: &State) -> Node;
-    fn update(state: &State, msg: &Message, fire: &Rc<dyn Fn(Message)>) -> State;
+    fn render(state: &State) -> Node<State>;
 }
 
-pub fn start<
-    State: Clone + 'static,
-    Message: PartialEq + Clone + 'static,
-    A: App<State, Message>,
->() {
+pub fn start<State: Clone + 'static, A: App<State>>() {
     let html_element = DOCUMENT
         .document_element()
         .expect("should have a document element");
-
-    let message_queue = Rc::new(std::cell::RefCell::new(Vec::<Message>::new()));
-    let queue_clone = Rc::clone(&message_queue);
 
     let state_holder = Rc::new(std::cell::RefCell::new(None::<State>));
 
@@ -59,15 +51,17 @@ pub fn start<
     let vdom = A::render(state_holder.borrow().as_ref().unwrap());
     let first_patches = diff::add_event_listener_patches(&vdom);
 
-    let dispatch = Rc::new(std::cell::RefCell::new(None::<Box<dyn Fn()>>));
+    let dispatch = Rc::new(std::cell::RefCell::new(
+        None::<Box<dyn Fn(Box<dyn FnOnce(State) -> State>)>>,
+    ));
     let dispatch_weak = Rc::downgrade(&dispatch);
 
-    let dispatch_impl: Rc<dyn Fn()> = {
+    let dispatch_impl: Rc<dyn Fn(Box<dyn FnOnce(State) -> State>)> = {
         let dispatch_weak = dispatch_weak.clone();
-        Rc::new(move || {
+        Rc::new(move |update_fn| {
             if let Some(dispatch) = dispatch_weak.upgrade() {
                 if let Some(d) = dispatch.borrow().as_ref() {
-                    d();
+                    d(update_fn);
                 }
             }
         })
@@ -76,29 +70,9 @@ pub fn start<
     let is_updating = Rc::new(std::cell::Cell::new(false));
     let is_updating_clone = Rc::clone(&is_updating);
 
-    let fire: Rc<dyn Fn(Message)> = {
-        let queue_clone = Rc::clone(&queue_clone);
-        Rc::new(move |m: Message| {
-            if is_updating_clone.get() {
-                queue_clone.borrow_mut().push(m);
-            } else {
-                if let Some(dispatch) = dispatch_weak.upgrade() {
-                    if let Some(d) = dispatch.borrow().as_ref() {
-                        d();
-                    } else {
-                        queue_clone.borrow_mut().push(m);
-                    }
-                } else {
-                    queue_clone.borrow_mut().push(m);
-                }
-            }
-        })
-    };
-
     let state_holder_clone = Rc::clone(&state_holder);
     let vdom_rc = Rc::new(std::cell::RefCell::new(vdom));
     let vdom_clone = Rc::clone(&vdom_rc);
-    let fire_clone = Rc::clone(&fire);
 
     // Define update_view logic shared by both fires
     let update_view = {
@@ -106,7 +80,6 @@ pub fn start<
         let vdom_clone = Rc::clone(&vdom_clone);
         let html_element_clone = html_element.clone();
         let dispatch_impl = Rc::clone(&dispatch_impl);
-        let queue_clone = Rc::clone(&message_queue);
 
         Rc::new(move || {
             let state_borrow = state_holder_clone.borrow();
@@ -124,10 +97,6 @@ pub fn start<
             let mut queued = queue_clone.borrow_mut();
             let messages: Vec<Message> = queued.drain(..).collect();
             drop(queued);
-
-            for _ in messages {
-                dispatch_impl();
-            }
         })
     };
 
@@ -136,7 +105,7 @@ pub fn start<
         move || update_view()
     }));
 
-    *dispatch.borrow_mut() = Some(Box::new(move || {
+    *dispatch.borrow_mut() = Some(Box::new(move |update_fn| {
         // ---- 1. update ----
         let mut state_borrow = state_holder_clone.borrow_mut();
         if let Some(current_state) = state_borrow.take() {
@@ -152,18 +121,6 @@ pub fn start<
     }));
 
     apply(&html_element.into(), &first_patches, &dispatch_impl);
-
-    {
-        let mut queued = message_queue.borrow_mut();
-        let messages: Vec<_> = queued.drain(..).collect();
-        drop(queued);
-
-        if let Some(ref d) = *dispatch.borrow() {
-            for m in messages {
-                d();
-            }
-        }
-    }
 }
 
 pub fn apply(
@@ -288,9 +245,9 @@ fn apply_patch(
     }
 }
 
-fn create_web_sys_node(
-    vdom: &Node,
-    dispatch: &Rc<dyn Fn()>,
+fn create_web_sys_node<State>(
+    vdom: &Node<State>,
+    dispatch: &Rc<dyn Fn(Box<dyn FnOnce(State) -> State>)>,
     callback_key_symbol: &js_sys::Symbol,
 ) -> web_sys::Node {
     match vdom {
@@ -309,10 +266,9 @@ fn create_web_sys_node(
                         event.prevent_default();
                     }
                     let dispatch = Rc::clone(&dispatch);
-                    handler(Box::new(move || {
-                        dispatch();
+                    handler(Box::new(move |update_fn| {
+                        dispatch(update_fn);
                     }));
-                    // dispatch(&msg);
                 }) as Box<dyn FnMut(web_sys::Event)>);
                 element
                     .add_event_listener_with_callback(&event_name, closure.as_ref().unchecked_ref())
