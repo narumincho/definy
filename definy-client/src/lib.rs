@@ -28,7 +28,7 @@ impl narumincho_vdom_client::App<AppState> for DefinyApp {
         });
         AppState {
             login_or_create_account_dialog_state: LoginOrCreateAccountDialogState {
-                creating_account: CreatingAccountState::NotStarted,
+                state: CreatingAccountState::Init,
                 username: String::new(),
                 generated_key: None,
                 current_password: String::new(),

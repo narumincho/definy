@@ -7,15 +7,17 @@ pub struct AppState {
 #[derive(Clone)]
 pub struct LoginOrCreateAccountDialogState {
     pub generated_key: Option<ed25519_dalek::SigningKey>,
-    pub creating_account: CreatingAccountState,
+    pub state: CreatingAccountState,
     pub username: String,
     pub current_password: String,
 }
 
 #[derive(Clone, PartialEq)]
 pub enum CreatingAccountState {
-    NotStarted,
-    Requesting,
+    Init,
+    LogIn,
+    CreateAccount,
+    CreateAccountRequesting,
     Success,
     Error,
 }

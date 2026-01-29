@@ -70,7 +70,7 @@ async fn handler(
                         login_or_create_account_dialog_state:
                             definy_ui::LoginOrCreateAccountDialogState {
                                 generated_key: None,
-                                creating_account: definy_ui::CreatingAccountState::NotStarted,
+                                state: definy_ui::CreatingAccountState::Init,
                                 username: String::new(),
                                 current_password: String::new(),
                             },

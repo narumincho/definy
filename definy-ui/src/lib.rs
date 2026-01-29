@@ -25,7 +25,7 @@ pub fn app(state: &AppState, resource_hash: &Option<ResourceHash>) -> Node<AppSt
                 ":root {
     --background: #121212;
     --surface: #1E1E1E;
-    --primary: #BB86FC;
+    --primary: #B9D09B;
     --primary-variant: #3700B3;
     --secondary: #03DAC6;
     --text: #E1E1E1;
@@ -152,13 +152,16 @@ init({{ module_or_path: \"{}\" }});",
     Html::new()
         .children([
             Head::new().children(head_children).into_node(),
-            Body::new().style("display: grid; gap: 1rem;").children([
-                H1::new().children([text("definy")]).into_node(),
-                Button::new()
-                    .command_for("login-or-create-account-dialog")
-                    .command("show-modal")
-                    .children([text("ログインまたはアカウント作成")])
-                    .into_node(),
+            Body::new().style("display: grid; gap: 1rem; grid-template-rows: auto 1fr;").children([
+                Div::new().style("display: flex;").children([
+                    H1::new().children([text("definy")]).into_node(),
+                    Div::new().style("flex-grow: 1;").into_node(),
+                    Button::new()
+                        .command_for("login-or-create-account-dialog")
+                        .command("show-modal")
+                        .children([text("ログインまたはアカウント作成")])
+                        .into_node(),
+                ]).into_node(),
                 Div::new()
                     .style("display: grid; gap: 0.5rem;")
                     .children(state.created_account_events.iter().map(|(_, event)| {

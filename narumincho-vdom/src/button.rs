@@ -46,6 +46,12 @@ impl<State> Button<State> {
         self
     }
 
+    pub fn style(mut self, style: &str) -> Self {
+        self.attributes
+            .push(("style".to_string(), style.to_string()));
+        self
+    }
+
     /// https://developer.mozilla.org/docs/Web/API/Element/click_event
     pub fn on_click(mut self, handler: EventHandler<State>) -> Self {
         self.events.push(("click".to_string(), handler));
