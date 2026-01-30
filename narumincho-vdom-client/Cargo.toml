@@ -19,3 +19,4 @@ web-sys = { version = "0.3.85", features = [
   "EventTarget",
   "Event",
 ] }
+wasm-bindgen-futures = "0.4.58"

@@ -188,9 +188,10 @@ fn apply_patch<State: 'static>(
                             event.prevent_default();
                         }
                         let dispatch = Rc::clone(&dispatch);
-                        handler(Box::new(move |update_fn| {
+                        let fut = handler(Box::new(move |update_fn| {
                             dispatch(update_fn);
                         }));
+                        wasm_bindgen_futures::spawn_local(fut);
                     })
                         as Box<dyn FnMut(web_sys::Event)>);
                     element
@@ -260,9 +261,10 @@ fn create_web_sys_node<State: 'static>(
                         event.prevent_default();
                     }
                     let dispatch = Rc::clone(&dispatch);
-                    handler(Box::new(move |update_fn| {
+                    let fut = handler(Box::new(move |update_fn| {
                         dispatch(update_fn);
                     }));
+                    wasm_bindgen_futures::spawn_local(fut);
                 }) as Box<dyn FnMut(web_sys::Event)>);
                 element
                     .add_event_listener_with_callback(&event_name, closure.as_ref().unchecked_ref())

@@ -1,4 +1,4 @@
-use std::rc::Rc;
+use std::{pin::Pin, rc::Rc};
 
 pub struct Element<State> {
     pub element_name: String,
@@ -71,7 +71,21 @@ impl<State> PartialEq for Node<State> {
     }
 }
 
-pub struct EventHandler<State>(pub Rc<dyn Fn(Box<dyn Fn(Box<dyn FnOnce(State) -> State>)>)>);
+pub struct EventHandler<State>(
+    pub  Rc<
+        dyn Fn(Box<dyn Fn(Box<dyn FnOnce(State) -> State>)>) -> Pin<Box<dyn Future<Output = ()>>>,
+    >,
+);
+
+impl<State> EventHandler<State> {
+    pub fn new<F, Fut>(f: F) -> Self
+    where
+        F: Fn(Box<dyn Fn(Box<dyn FnOnce(State) -> State>)>) -> Fut + 'static,
+        Fut: Future<Output = ()> + 'static,
+    {
+        Self(Rc::new(move |g| Box::pin(f(g))))
+    }
+}
 
 impl<State> Clone for EventHandler<State> {
     fn clone(&self) -> Self {
@@ -88,11 +102,5 @@ impl<State> PartialEq for EventHandler<State> {
 impl<State> std::fmt::Debug for EventHandler<State> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("EventHandler").finish()
-    }
-}
-
-impl<State> EventHandler<State> {
-    pub fn new(f: impl Fn(Box<dyn Fn(Box<dyn FnOnce(State) -> State>)>) + 'static) -> Self {
-        Self(Rc::new(f))
     }
 }

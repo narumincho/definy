@@ -1,3 +1,4 @@
+use js_sys::Promise;
 use narumincho_vdom::*;
 use wasm_bindgen::{JsValue, prelude::wasm_bindgen};
 
@@ -15,26 +16,45 @@ pub fn login_or_create_account_dialog(state: &AppState) -> Node<AppState> {
                 Button::new()
                     .type_("button")
                     .style("font-size: 1.5rem;")
-                    .on_click(EventHandler::new(|set_state| {
-                        set_state(Box::new(|state: AppState| -> AppState {
-                            AppState {
-                                login_or_create_account_dialog_state:
-                                    LoginOrCreateAccountDialogState {
-                                        generated_key: None,
-                                        state: CreatingAccountState::LogIn,
-                                        username: String::new(),
-                                        current_password: String::new(),
-                                    },
-                                ..state.clone()
+                    .on_click(EventHandler::new(async |set_state| {
+                        let credential = wasm_bindgen_futures::JsFuture::from(get({
+                            let options = js_sys::Object::new();
+                            js_sys::Reflect::set(
+                                &options,
+                                &JsValue::from_str("password"),
+                                &JsValue::TRUE,
+                            )
+                            .unwrap();
+                            options
+                        }))
+                        .await;
+                        match credential {
+                            Ok(ok) => {
+                                set_state(Box::new(|state: AppState| -> AppState {
+                                    AppState {
+                                        login_or_create_account_dialog_state:
+                                            LoginOrCreateAccountDialogState {
+                                                generated_key: None,
+                                                state: CreatingAccountState::LogIn,
+                                                username: String::new(),
+                                                current_password: String::new(),
+                                            },
+                                        ..state.clone()
+                                    }
+                                }));
+                                web_sys::console::log_1(&ok);
                             }
-                        }));
+                            Err(err) => {
+                                web_sys::console::log_1(&err);
+                            }
+                        };
                     }))
                     .children([text("ログイン")])
                     .into_node(),
                 Button::new()
                     .type_("button")
                     .style("font-size: 1.5rem;")
-                    .on_click(EventHandler::new(|set_state| {
+                    .on_click(EventHandler::new(async |set_state| {
                         set_state(Box::new(|state: AppState| -> AppState {
                             AppState {
                                 login_or_create_account_dialog_state:
@@ -69,14 +89,14 @@ pub fn login_or_create_account_dialog(state: &AppState) -> Node<AppState> {
 
 fn login_view() -> Node<AppState> {
     Form::new()
-        .on_submit(EventHandler::new(|set_state| {}))
+        .on_submit(EventHandler::new(async |set_state| {}))
         .children([
             Input::new()
                 .type_("text")
                 .name("username")
                 .autocomplete("username")
                 .required()
-                .on_change(EventHandler::new(|set_state| {}))
+                .on_change(EventHandler::new(async |set_state| {}))
                 .into_node(),
             Input::new()
                 .type_("password")
@@ -100,7 +120,7 @@ fn generate_key() -> ed25519_dalek::SigningKey {
 #[wasm_bindgen]
 extern "C" {
     #[wasm_bindgen(js_namespace = "navigator.credentials")]
-    fn get(s: &JsValue);
+    fn get(s: js_sys::Object) -> js_sys::Promise;
 }
 
 fn create_account_view(state: &LoginOrCreateAccountDialogState) -> Node<AppState> {
@@ -124,7 +144,7 @@ fn create_account_view(state: &LoginOrCreateAccountDialogState) -> Node<AppState
     let generated_key = state.generated_key.clone();
 
     Form::new()
-    .on_submit(EventHandler::new(|set_state| {}))
+    .on_submit(EventHandler::new(async|set_state| {}))
     .children([
         Label::new()
             .class("form-group")
@@ -135,7 +155,7 @@ fn create_account_view(state: &LoginOrCreateAccountDialogState) -> Node<AppState
                     .name("username")
                     .autocomplete("username")
                     .required()
-                    .on_change(EventHandler::new(|set_state| {}))
+                    .on_change(EventHandler::new(async|set_state| {}))
                     .into_node(),
             ])
             .into_node(),
@@ -172,7 +192,9 @@ fn create_account_view(state: &LoginOrCreateAccountDialogState) -> Node<AppState
                         Button::new()
                             .on_click(EventHandler::new(move |set_state| {
                                 let window = web_sys::window().expect("no global `window` exists");
-                                if let Some(key) = &generated_key {
+                                let generated_key = generated_key.clone();
+                                async move {
+                                if let Some(key) = generated_key.clone() {
                                     let _ = window
                                         .navigator()
                                         .clipboard()
@@ -180,13 +202,14 @@ fn create_account_view(state: &LoginOrCreateAccountDialogState) -> Node<AppState
                                             &base64::engine::general_purpose::URL_SAFE_NO_PAD,
                                             key.to_scalar_bytes(),
                                         ));
-                                };
+                                    };
+                                }
                             }))
                             .type_("button")
                             .children([text("コピー")])
                             .into_node(),
                         Button::new()
-                            .on_click(EventHandler::new(|set_state| {
+                            .on_click(EventHandler::new(async |set_state| {
                                 set_state(Box::new(|state: AppState| -> AppState {
                                     AppState {
                                         login_or_create_account_dialog_state: LoginOrCreateAccountDialogState {
@@ -212,7 +235,7 @@ fn create_account_view(state: &LoginOrCreateAccountDialogState) -> Node<AppState
                     .command_for("login-or-create-account-dialog")
                     .command("close") 
                     .type_("button")
-                    .on_click(EventHandler::new(|set_state| {}))
+                    .on_click(EventHandler::new(async |set_state| {}))
                     .children([text("キャンセル")])
                     .into_node(),
                 Button::new()

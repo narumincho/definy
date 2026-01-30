@@ -296,9 +296,11 @@ dependencies = [
  "base64",
  "definy-event",
  "ed25519-dalek",
+ "js-sys",
  "narumincho-vdom",
  "rand",
  "wasm-bindgen",
+ "wasm-bindgen-futures",
  "web-sys",
 ]
 
@@ -997,6 +999,7 @@ dependencies = [
  "js-sys",
  "narumincho-vdom",
  "wasm-bindgen",
+ "wasm-bindgen-futures",
  "web-sys",
 ]
 
