@@ -3,7 +3,7 @@ mod elements;
 mod meta;
 mod node;
 
-pub use button::Button;
+pub use button::{Button, CommandValue};
 pub use elements::*;
 pub use meta::Meta;
 pub use node::{Element, EventHandler, Node};

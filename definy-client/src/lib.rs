@@ -25,7 +25,15 @@ impl narumincho_vdom_client::App<AppState> for DefinyApp {
                 created_account_events: events,
                 ..state.clone()
             }));
+            let password = definy_ui::navigator_credential::credential_get().await;
+            if let Some(password) = password {
+                fire(Box::new(move |state| AppState {
+                    current_key: Some(password),
+                    ..state.clone()
+                }));
+            }
         });
+
         AppState {
             login_or_create_account_dialog_state: LoginOrCreateAccountDialogState {
                 state: CreatingAccountState::Init,

@@ -24,7 +24,7 @@ impl<State> Button<State> {
     }
 
     /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/button#command
-    pub fn command(mut self, command: &str) -> Self {
+    pub fn command(mut self, command: CommandValue) -> Self {
         self.attributes
             .push(("command".to_string(), command.to_string()));
         self
@@ -70,5 +70,29 @@ impl<State> Button<State> {
             events: self.events,
             children: self.children,
         })
+    }
+}
+
+pub enum CommandValue {
+    ShowModal,
+    Close,
+    RequestClose,
+    ShowPopover,
+    HidePopover,
+    TogglePopover,
+    Custom(String),
+}
+
+impl ToString for CommandValue {
+    fn to_string(&self) -> String {
+        match self {
+            CommandValue::ShowModal => "show-modal".to_string(),
+            CommandValue::Close => "close".to_string(),
+            CommandValue::RequestClose => "request-close".to_string(),
+            CommandValue::ShowPopover => "show-popover".to_string(),
+            CommandValue::HidePopover => "hide-popover".to_string(),
+            CommandValue::TogglePopover => "toggle-popover".to_string(),
+            CommandValue::Custom(s) => s.to_string(),
+        }
     }
 }

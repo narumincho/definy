@@ -42,6 +42,11 @@ macro_rules! define_element {
                 self
             }
 
+            /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/popover
+            pub fn popover(self) -> Self {
+                self.attribute("popover", "auto")
+            }
+
             pub fn children(mut self, children: impl Into<Vec<Node<State>>>) -> Self {
                 self.children = children.into();
                 self

@@ -13,7 +13,7 @@ pub fn login_or_create_account_dialog(state: &AppState) -> Node<AppState> {
             Div::new()
                 .style("display: flex; justify-content: end;")
                 .children([Button::new()
-                    .command("close")
+                    .command(CommandValue::Close)
                     .command_for("login-or-create-account-dialog")
                     .children([text("X")])
                     .into_node()])
@@ -198,7 +198,7 @@ fn create_account_view(state: &LoginOrCreateAccountDialogState) -> Node<AppState
             .children([
                 Button::new()
                     .command_for("login-or-create-account-dialog")
-                    .command("close") 
+                    .command(CommandValue::Close) 
                     .type_("button")
                     .on_click(EventHandler::new(async |set_state| {}))
                     .children([text("キャンセル")])
@@ -225,27 +225,16 @@ fn create_login_event_handler() -> EventHandler<AppState> {
     EventHandler::new(async |set_state| {
         let password = crate::navigator_credential::credential_get().await;
         match password {
-            Some(password) => match parse_password(password) {
-                Some(secret_key) => {
-                    set_state(Box::new(|state: AppState| -> AppState {
-                        AppState {
-                            current_key: Some(secret_key),
-                            ..state.clone()
-                        }
-                    }));
-                }
-                None => {}
+            Some(secret_key) => {
+                set_state(Box::new(|state: AppState| -> AppState {
+                    AppState {
+                        current_key: Some(secret_key),
+                        ..state.clone()
+                    }
+                }));
             },
             None => {}
         };
     })
 }
 
-fn parse_password(password: String) -> Option<ed25519_dalek::SigningKey> {
-    let password_as_bytes =
-        &base64::Engine::decode(&base64::engine::general_purpose::URL_SAFE_NO_PAD, password)
-            .ok()?;
-    let secret_key =
-        ed25519_dalek::SigningKey::from_bytes(password_as_bytes.as_slice().try_into().ok()?);
-    Some(secret_key)
-}
