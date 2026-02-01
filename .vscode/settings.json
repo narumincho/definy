@@ -5,4 +5,7 @@
   "[rust]": {
     "editor.defaultFormatter": "rust-lang.rust-analyzer"
   },
+  "[css]": {
+    "editor.defaultFormatter": "vscode.css-language-features"
+  },
 }

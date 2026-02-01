@@ -130,6 +130,11 @@ define_element!(
     "div",
     "https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/div"
 );
+define_element!(
+    Header,
+    "header",
+    "https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/header"
+);
 
 // Link specific
 impl<State> Link<State> {
