@@ -1,5 +1,3 @@
-use std::hash::Hash;
-
 use narumincho_vdom::*;
 
 use crate::{
@@ -63,20 +61,53 @@ pub fn login_or_create_account_dialog(state: &AppState) -> Node<AppState> {
 
 fn login_view() -> Node<AppState> {
     Form::new()
-        .on_submit(EventHandler::new(async |set_state| {}))
+        .on_submit(EventHandler::new(async |set_state| {
+            let password = wasm_bindgen::JsCast::dyn_into::<web_sys::HtmlInputElement>(web_sys::window()
+                .unwrap()
+                .document()
+                .unwrap()
+                .query_selector("input[name='password']")
+                .unwrap()
+                .unwrap()).unwrap()
+                .value();
+
+            match crate::navigator_credential::parse_password(password) {
+                Some(signing_key) => {
+                    dialog_close();
+
+                    set_state(Box::new(|state: AppState| -> AppState {
+                        AppState {
+                            current_key: Some(signing_key),
+                            ..state.clone()
+                        }
+                    }));
+                },
+                None => {}
+            }
+        }))
+        .style("display: grid; gap: 1rem;")
         .children([
-            Input::new()
-                .type_("text")
-                .name("username")
-                .autocomplete("username")
-                .required()
-                .on_change(EventHandler::new(async |set_state| {}))
-                .into_node(),
-            Input::new()
-                .type_("password")
-                .name("password")
-                .autocomplete("current-password")
-                .required()
+            // Label::new()
+            //     .children([
+            //         text("ユーザー名"),
+            //         text("パスワードマネージャーを機能させるためのダミーのユーザー名入力欄です"),
+            //         Input::new()
+            //             .type_("text")
+            //             .name("username")
+            //             .autocomplete("username")
+            //             .into_node(),
+            //     ])
+            //     .into_node(),
+            Label::new()
+                .children([
+                    text("秘密鍵"),
+                    Input::new()
+                        .type_("password")
+                        .name("password")
+                        .autocomplete("current-password")
+                        .required()
+                    .into_node(),
+                ])
                 .into_node(),
             Button::new()
                 .type_("submit")
@@ -146,17 +177,7 @@ fn create_account_view(state: &LoginOrCreateAccountDialogState) -> Node<AppState
                 ).await;
 
                 if status.is_ok() {
-                    let dialog = wasm_bindgen::JsCast::dyn_into::<web_sys::HtmlDialogElement>(
-                        web_sys::window()
-                            .unwrap()
-                            .document()
-                            .unwrap()
-                            .get_element_by_id("login-or-create-account-dialog")
-                            .unwrap(),
-                    )
-                    .unwrap();
-
-                    dialog.close();
+                    dialog_close();
                 }
             });
         }
@@ -288,17 +309,7 @@ fn create_login_event_handler() -> EventHandler<AppState> {
         let password = crate::navigator_credential::credential_get().await;
         match password {
             Some(secret_key) => {
-                let popover = wasm_bindgen::JsCast::dyn_into::<web_sys::HtmlDialogElement>(
-                    web_sys::window()
-                        .unwrap()
-                        .document()
-                        .unwrap()
-                        .get_element_by_id("login-or-create-account-dialog")
-                        .unwrap(),
-                )
-                .unwrap();
-
-                popover.close();
+                dialog_close();
 
                 set_state(Box::new(|state: AppState| -> AppState  {
                     AppState {
@@ -307,7 +318,34 @@ fn create_login_event_handler() -> EventHandler<AppState> {
                     }
                 }));
             },
-            None => {}
+            None => {
+                set_state(Box::new(|state: AppState| -> AppState {
+                    AppState {
+                        login_or_create_account_dialog_state:
+                            LoginOrCreateAccountDialogState {
+                                generated_key: None,
+                                state: CreatingAccountState::LogIn,
+                                username: String::new(),
+                                current_password: String::new(),
+                            },
+                        ..state.clone()
+                    }
+                }));
+            }
         };
     })
+}
+
+fn dialog_close() {
+    let popover = wasm_bindgen::JsCast::dyn_into::<web_sys::HtmlDialogElement>(
+        web_sys::window()
+            .unwrap()
+            .document()
+            .unwrap()
+            .get_element_by_id("login-or-create-account-dialog")
+            .unwrap(),
+    )
+    .unwrap();
+
+    popover.close();
 }

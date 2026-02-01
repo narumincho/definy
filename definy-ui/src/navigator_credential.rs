@@ -22,7 +22,7 @@ pub async fn credential_get() -> Option<ed25519_dalek::SigningKey> {
     parse_password(password.as_string()?)
 }
 
-fn parse_password(password: String) -> Option<ed25519_dalek::SigningKey> {
+pub fn parse_password(password: String) -> Option<ed25519_dalek::SigningKey> {
     let password_as_bytes =
         &base64::Engine::decode(&base64::engine::general_purpose::URL_SAFE_NO_PAD, password)
             .ok()?;

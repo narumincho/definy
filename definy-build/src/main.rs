@@ -2,17 +2,19 @@ use base64::Engine;
 use sha2::Digest;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // 最初からない場合は失敗するが、無視する
     let _ = std::fs::remove_dir_all("./web-distribution");
 
     std::fs::create_dir("web-distribution")?;
 
-    std::fs::read("./assets/icon.png").and_then(|icon_bytes| {
+    {
+        let icon_bytes = std::fs::read("./assets/icon.png")?;
         let hash = sha2::Sha256::digest(&icon_bytes);
         let hash_hex = base64::engine::general_purpose::URL_SAFE.encode(hash);
-        std::fs::write("./web-distribution/icon.png.sha256", hash_hex)
-    })?;
+        std::fs::write("./web-distribution/icon.png.sha256", hash_hex)?;
 
-    println!("icon hash write ok");
+        println!("icon hash write ok");
+    }
 
     {
         let wasm_build_result = std::process::Command::new("cargo")
