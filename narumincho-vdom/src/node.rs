@@ -1,3 +1,5 @@
+use std::collections::hash_map::DefaultHasher;
+use std::hash::{Hash, Hasher};
 use std::{pin::Pin, rc::Rc};
 
 pub struct Element<State> {
@@ -71,11 +73,12 @@ impl<State> PartialEq for Node<State> {
     }
 }
 
-pub struct EventHandler<State>(
-    pub  Rc<
+pub struct EventHandler<State> {
+    pub handler: Rc<
         dyn Fn(Box<dyn Fn(Box<dyn FnOnce(State) -> State>)>) -> Pin<Box<dyn Future<Output = ()>>>,
     >,
-);
+    pub parameter_hash: u64,
+}
 
 impl<State> EventHandler<State> {
     pub fn new<F, Fut>(f: F) -> Self
@@ -83,13 +86,34 @@ impl<State> EventHandler<State> {
         F: Fn(Box<dyn Fn(Box<dyn FnOnce(State) -> State>)>) -> Fut + 'static,
         Fut: Future<Output = ()> + 'static,
     {
-        Self(Rc::new(move |g| Box::pin(f(g))))
+        EventHandler {
+            handler: Rc::new(move |g| Box::pin(f(g))),
+            parameter_hash: 0,
+        }
+    }
+
+    pub fn with_parameter<F, Fut, P>(f: F, p: P) -> Self
+    where
+        F: Fn(Box<dyn Fn(Box<dyn FnOnce(State) -> State>)>, &P) -> Fut + 'static,
+        Fut: Future<Output = ()> + 'static,
+        P: Hash + 'static,
+    {
+        let mut hasher = DefaultHasher::new();
+        p.hash(&mut hasher);
+        let h = hasher.finish();
+        EventHandler {
+            handler: Rc::new(move |g| Box::pin(f(g, &p))),
+            parameter_hash: h,
+        }
     }
 }
 
 impl<State> Clone for EventHandler<State> {
     fn clone(&self) -> Self {
-        Self(Rc::clone(&self.0))
+        Self {
+            handler: Rc::clone(&self.handler),
+            parameter_hash: self.parameter_hash.clone(),
+        }
     }
 }
 

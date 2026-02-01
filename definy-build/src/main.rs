@@ -1,67 +1,75 @@
 use base64::Engine;
 use sha2::Digest;
 
-fn main() {
+fn main() -> Result<(), Box<dyn std::error::Error>> {
     let _ = std::fs::remove_dir_all("./web-distribution");
 
-    std::fs::create_dir("web-distribution").unwrap();
+    std::fs::create_dir("web-distribution")?;
 
-    std::fs::read("./assets/icon.png")
-        .and_then(|icon_bytes| {
-            let hash = sha2::Sha256::digest(&icon_bytes);
-            let hash_hex = base64::engine::general_purpose::URL_SAFE.encode(hash);
-            std::fs::write("./web-distribution/icon.png.sha256", hash_hex)
-        })
-        .expect("Failed to compute and write icon hash");
+    std::fs::read("./assets/icon.png").and_then(|icon_bytes| {
+        let hash = sha2::Sha256::digest(&icon_bytes);
+        let hash_hex = base64::engine::general_purpose::URL_SAFE.encode(hash);
+        std::fs::write("./web-distribution/icon.png.sha256", hash_hex)
+    })?;
 
     println!("icon hash write ok");
 
-    std::process::Command::new("cargo")
-        .args(&[
-            "build",
-            "--release",
-            "-p",
-            "definy-client",
-            "--target",
-            "wasm32-unknown-unknown",
-        ])
-        .status()
-        .expect("Failed to build project");
+    {
+        let wasm_build_result = std::process::Command::new("cargo")
+            .args(&[
+                "build",
+                "--release",
+                "-p",
+                "definy-client",
+                "--target",
+                "wasm32-unknown-unknown",
+            ])
+            .status()?;
 
-    println!("wasm build ok");
+        if !wasm_build_result.success() {
+            return Err("wasm build failed".into());
+        }
 
-    std::process::Command::new("wasm-bindgen")
-        .args(&[
-            "--out-dir",
-            "./web-distribution",
-            "--target",
-            "web",
-            "./target/wasm32-unknown-unknown/release/definy_client.wasm",
-        ])
-        .status()
-        .expect("Failed to run wasm-bindgen");
+        println!("wasm build ok");
+    }
 
-    println!("wasm-bindgen ok");
+    {
+        let wasm_bindgen_result = std::process::Command::new("wasm-bindgen")
+            .args(&[
+                "--out-dir",
+                "./web-distribution",
+                "--target",
+                "web",
+                "./target/wasm32-unknown-unknown/release/definy_client.wasm",
+            ])
+            .status()?;
 
-    std::fs::read("./web-distribution/definy_client_bg.wasm")
-        .and_then(|wasm_bytes| {
-            let hash = sha2::Sha256::digest(&wasm_bytes);
-            let hash_hex = base64::engine::general_purpose::URL_SAFE.encode(hash);
-            std::fs::write("./web-distribution/definy_client_bg.wasm.sha256", hash_hex)
-        })
-        .expect("Failed to compute and write wasm hash");
+        if !wasm_bindgen_result.success() {
+            return Err("wasm-bindgen failed".into());
+        }
 
-    println!("wasm hash write ok");
+        println!("wasm-bindgen ok");
+    }
 
-    std::fs::read("./web-distribution/definy_client.js")
-        .and_then(|js_bytes| {
-            let hash = sha2::Sha256::digest(&js_bytes);
-            let hash_hex = base64::engine::general_purpose::URL_SAFE.encode(hash);
-            std::fs::write("./web-distribution/definy_client.js.sha256", hash_hex)
-        })
-        .expect("Failed to compute and write JS hash");
+    {
+        let wasm_bytes = std::fs::read("./web-distribution/definy_client_bg.wasm")?;
+        let hash = sha2::Sha256::digest(&wasm_bytes);
+        let hash_hex = base64::engine::general_purpose::URL_SAFE.encode(hash);
+        std::fs::write("./web-distribution/definy_client_bg.wasm.sha256", hash_hex)?;
 
-    println!("js hash write ok");
+        println!("wasm hash write ok");
+    }
+
+    {
+        let js_bytes = std::fs::read("./web-distribution/definy_client.js")?;
+        let hash = sha2::Sha256::digest(&js_bytes);
+        let hash_hex = base64::engine::general_purpose::URL_SAFE.encode(hash);
+        std::fs::write("./web-distribution/definy_client.js.sha256", hash_hex)?;
+
+        println!("js hash write ok");
+    }
 
     println!("Build completed successfully.");
+
+    Ok(())
 }

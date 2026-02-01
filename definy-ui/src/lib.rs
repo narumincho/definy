@@ -1,4 +1,5 @@
 mod app_state;
+pub mod fetch;
 mod header;
 mod login_or_create_account_dialog;
 mod message;

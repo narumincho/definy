@@ -8,7 +8,7 @@ use wasm_bindgen::closure::Closure;
 
 mod diff;
 
-const DOCUMENT: std::sync::LazyLock<web_sys::Document> = std::sync::LazyLock::new(|| {
+pub const DOCUMENT: std::sync::LazyLock<web_sys::Document> = std::sync::LazyLock::new(|| {
     let window = web_sys::window().expect("no global `window` exists");
     let document = window.document().expect("should have a document on window");
     document
@@ -178,8 +178,8 @@ fn apply_patch<State: 'static>(
         }
         diff::Patch::AddEventListeners(events) => {
             if let Some(element) = node.dyn_ref::<web_sys::Element>() {
-                for (event_name, msg) in events {
-                    let handler = Rc::clone(&msg.0);
+                for (event_name, event_handler) in events {
+                    let handler = Rc::clone(&event_handler.handler);
                     let dispatch = Rc::clone(dispatch);
                     let event_name_clone = event_name.clone();
                     let closure = Closure::wrap(Box::new(move |event: web_sys::Event| {
@@ -252,7 +252,7 @@ fn create_web_sys_node<State: 'static>(
                 element.set_attribute(key, value).unwrap();
             }
             for (event_name, msg) in &el.events {
-                let handler = Rc::clone(&msg.0);
+                let handler = Rc::clone(&msg.handler);
                 let dispatch = Rc::clone(dispatch);
                 let event_name_clone = event_name.clone();
                 let closure = Closure::wrap(Box::new(move |event: web_sys::Event| {

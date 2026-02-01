@@ -1,5 +1,3 @@
-mod fetch;
-
 use definy_ui::AppState;
 use definy_ui::{CreatingAccountState, LoginOrCreateAccountDialogState};
 use wasm_bindgen::JsValue;
@@ -20,7 +18,7 @@ impl narumincho_vdom_client::App<AppState> for DefinyApp {
     ) -> AppState {
         let fire = std::rc::Rc::clone(fire);
         wasm_bindgen_futures::spawn_local(async move {
-            let events = fetch::get_events().await.unwrap();
+            let events = definy_ui::fetch::get_events().await.unwrap();
             fire(Box::new(move |state| AppState {
                 created_account_events: events,
                 ..state.clone()

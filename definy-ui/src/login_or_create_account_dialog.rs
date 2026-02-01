@@ -1,8 +1,10 @@
+use std::hash::Hash;
+
 use narumincho_vdom::*;
 
 use crate::{
     LoginOrCreateAccountDialogState,
-    app_state::{AppState, CreatingAccountState},
+    app_state::{AppState, CreatingAccountState}, fetch,
 };
 
 /// ログインまたはアカウント作成ダイアログ
@@ -107,10 +109,69 @@ fn create_account_view(state: &LoginOrCreateAccountDialogState) -> Node<AppState
     let requesting = state.state == CreatingAccountState::CreateAccountRequesting
         || state.state == CreatingAccountState::Success;
 
-    let generated_key = state.generated_key.clone();
+        let generated_key_for_submit = state.generated_key.clone();
+        let generated_key_for_copy = state.generated_key.clone();
 
     Form::new()
-    .on_submit(EventHandler::new(async|set_state| {}))
+    .on_submit(EventHandler::new(move |set_state| {
+        let generated_key = generated_key_for_submit.clone();
+        async move {
+            let username = wasm_bindgen::JsCast::dyn_into::<web_sys::HtmlInputElement>(
+                web_sys::window()
+                    .unwrap()
+                    .document()
+                    .unwrap()
+                    .query_selector("input[name='username']")
+                    .unwrap().unwrap(),
+            )
+            .unwrap().value();
+
+            if let Some(key) = &generated_key {
+                let key = key.clone();
+
+                wasm_bindgen_futures::spawn_local(async move {
+                    let event_binary = definy_event::sign_and_serialize(
+                        definy_event::CreateAccountEvent {
+                        account_id: definy_event::AccountId(Box::new(
+                            key.verifying_key().to_bytes(),
+                            )),
+                            account_name: username.into(),
+                            time: chrono::Utc::now(),
+                        },
+                        &key,
+                    )
+                    .unwrap();
+                let status = fetch::post_event(
+                    event_binary.as_slice(),
+                ).await;
+
+                if status.is_ok() {
+                    let dialog = wasm_bindgen::JsCast::dyn_into::<web_sys::HtmlDialogElement>(
+                        web_sys::window()
+                            .unwrap()
+                            .document()
+                            .unwrap()
+                            .get_element_by_id("login-or-create-account-dialog")
+                            .unwrap(),
+                    )
+                    .unwrap();
+
+                    dialog.close();
+                }
+            });
+        }
+
+        set_state(Box::new(|state: AppState| -> AppState {
+            AppState {
+                login_or_create_account_dialog_state: LoginOrCreateAccountDialogState {
+                    state: CreatingAccountState::CreateAccountRequesting,
+                    ..state.login_or_create_account_dialog_state.clone()
+                },
+                ..state.clone()
+            }
+        }));
+    }
+    }))
     .children([
         Label::new()
             .class("form-group")
@@ -121,7 +182,7 @@ fn create_account_view(state: &LoginOrCreateAccountDialogState) -> Node<AppState
                     .name("username")
                     .autocomplete("username")
                     .required()
-                    .on_change(EventHandler::new(async|set_state| {}))
+                    .on_change(EventHandler::new(async |set_state| {}))
                     .into_node(),
             ])
             .into_node(),
@@ -158,7 +219,7 @@ fn create_account_view(state: &LoginOrCreateAccountDialogState) -> Node<AppState
                         Button::new()
                             .on_click(EventHandler::new(move |set_state| {
                                 let window = web_sys::window().expect("no global `window` exists");
-                                let generated_key = generated_key.clone();
+                                let generated_key = generated_key_for_copy.clone();
                                 async move {
                                 if let Some(key) = generated_key.clone() {
                                     let _ = window
@@ -239,7 +300,7 @@ fn create_login_event_handler() -> EventHandler<AppState> {
 
                 popover.close();
 
-                set_state(Box::new(|state: AppState| -> AppState {
+                set_state(Box::new(|state: AppState| -> AppState  {
                     AppState {
                         current_key: Some(secret_key),
                         ..state.clone()
@@ -250,4 +311,3 @@ fn create_login_event_handler() -> EventHandler<AppState> {
         };
     })
 }
-
