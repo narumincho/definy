@@ -227,6 +227,18 @@ fn create_login_event_handler() -> EventHandler<AppState> {
         let password = crate::navigator_credential::credential_get().await;
         match password {
             Some(secret_key) => {
+                let popover = wasm_bindgen::JsCast::dyn_into::<web_sys::HtmlDialogElement>(
+                    web_sys::window()
+                        .unwrap()
+                        .document()
+                        .unwrap()
+                        .get_element_by_id("login-or-create-account-dialog")
+                        .unwrap(),
+                )
+                .unwrap();
+
+                popover.close();
+
                 set_state(Box::new(|state: AppState| -> AppState {
                     AppState {
                         current_key: Some(secret_key),

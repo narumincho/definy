@@ -41,6 +41,18 @@ fn popover() -> Node<AppState> {
         .style("position-area: block-end; padding: 1rem;")
         .children([Button::new()
             .on_click(EventHandler::new(async |set_state| {
+                let popover = wasm_bindgen::JsCast::dyn_into::<web_sys::HtmlElement>(
+                    web_sys::window()
+                        .unwrap()
+                        .document()
+                        .unwrap()
+                        .get_element_by_id("header-popover")
+                        .unwrap(),
+                )
+                .unwrap();
+
+                let _ = popover.hide_popover();
+
                 set_state(Box::new(|state: AppState| -> AppState {
                     AppState {
                         current_key: None,
