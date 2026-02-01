@@ -3,6 +3,20 @@ use std::collections::BTreeMap;
 use ed25519_dalek::{Signer, Verifier};
 
 #[derive(Debug, Clone, PartialEq)]
+pub enum Event {
+    CreateAccount(CreateAccountEvent),
+    Message(MessageEvent),
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct MessageEvent {
+    pub account_id: AccountId,
+    pub account_name: Box<str>,
+    pub message: Box<str>,
+    pub time: chrono::DateTime<chrono::Utc>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
 pub struct CreateAccountEvent {
     pub account_id: AccountId,
     pub account_name: Box<str>,
