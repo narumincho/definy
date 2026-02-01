@@ -19,6 +19,7 @@ pub fn login_or_create_account_dialog(state: &AppState) -> Node<AppState> {
                     .into_node()])
                 .into_node(),
             Div::new()
+                .style("display: flex; justify-content: space-between;")
                 .children([
                     Button::new()
                         .type_("button")

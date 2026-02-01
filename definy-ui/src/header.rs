@@ -38,7 +38,7 @@ fn popover() -> Node<AppState> {
     Div::new()
         .id("header-popover")
         .popover()
-        .style("position-anchor: --header-popover-button")
+        .style("position-area: block-end; padding: 1rem;")
         .children([Button::new()
             .on_click(EventHandler::new(async |set_state| {
                 set_state(Box::new(|state: AppState| -> AppState {
