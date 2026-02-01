@@ -1,0 +1,115 @@
+:root {
+  --background: #121212;
+  --surface: #1E1E1E;
+  --primary: #B9D09B;
+  --primary-variant: #3700B3;
+  --secondary: #03DAC6;
+  --text: #E1E1E1;
+  --text-secondary: #B0B0B0;
+  --error: #CF6679;
+  --border: #333333;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--text);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+}
+
+h1 {
+  color: var(--primary);
+  margin: 0;
+  font-weight: normal;
+}
+
+button {
+  background-color: var(--primary);
+  color: #000;
+  border: none;
+  border-radius: 4px;
+  padding: 0.5rem 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+button:hover {
+  background-color: var(--secondary);
+}
+
+button[type='button'] {
+  background-color: var(--surface);
+  color: var(--primary);
+  border: 1px solid var(--primary);
+}
+
+button[type='button']:hover {
+  background-color: rgba(187, 134, 252, 0.1);
+}
+
+dialog {
+  background-color: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+  padding: 2rem;
+  max-width: 400px;
+  width: 90%;
+}
+
+dialog::backdrop {
+  background-color: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+}
+
+.form-group {
+  margin-bottom: 1rem;
+  display: flex;
+  flex-direction: column;
+}
+
+label {
+  margin-bottom: 0.5rem;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+input {
+  background-color: #2C2C2C;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0.5rem;
+  color: var(--text);
+  font-size: 1rem;
+}
+
+input:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
+.dialog-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.hint {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin-bottom: 0.5rem;
+  display: block;
+}
+
+.tab {
+  border: 1px solid var(--border);
+  border-bottom: none;
+  padding: 0.5rem;
+}

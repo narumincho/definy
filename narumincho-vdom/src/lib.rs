@@ -3,33 +3,20 @@ mod elements;
 mod meta;
 mod node;
 
-pub use button::Button;
+pub use button::{Button, CommandValue};
 pub use elements::*;
 pub use meta::Meta;
-pub use node::Node;
+pub use node::{Element, EventHandler, Node};
 
-pub fn h<Message>(
-    element_name: &str,
-    attributes: impl Into<Vec<(String, String)>>,
-    children: impl Into<Vec<Node<Message>>>,
-) -> Node<Message> {
-    Node::Element(node::Element {
-        element_name: element_name.to_string(),
-        attributes: attributes.into(),
-        events: Vec::new(),
-        children: children.into(),
-    })
-}
-
-pub fn text<Message>(text: impl Into<String>) -> Node<Message> {
+pub fn text<State>(text: impl Into<String>) -> Node<State> {
     Node::Text(text.into().into())
 }
 
-pub fn to_html<Message>(node: &Node<Message>) -> String {
+pub fn to_html<State>(node: &Node<State>) -> String {
     "<!doctype html>".to_string() + &to_string(node)
 }
 
-pub fn to_string<Message>(node: &Node<Message>) -> String {
+pub fn to_string<State>(node: &Node<State>) -> String {
     match node {
         Node::Element(vdom) => {
             let mut html = String::new();

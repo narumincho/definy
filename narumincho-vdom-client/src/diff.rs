@@ -1,31 +1,31 @@
-use narumincho_vdom::Node;
+use narumincho_vdom::{EventHandler, Node};
 
-#[derive(Debug, PartialEq, Clone)]
-pub enum Patch<T> {
-    Replace(Node<T>),
+#[derive(Debug, PartialEq)]
+pub enum Patch<State> {
+    Replace(Node<State>),
     UpdateText(Box<str>),
     AddAttributes(Vec<(String, String)>),
     RemoveAttributes(Vec<String>),
-    AddEventListeners(Vec<(String, T)>),
+    AddEventListeners(Vec<(String, EventHandler<State>)>),
     RemoveEventListeners(Vec<String>),
-    AppendChildren(Vec<Node<T>>),
+    AppendChildren(Vec<Node<State>>),
     RemoveChildren(usize),
 }
 
-pub fn diff<T: PartialEq + Clone>(
-    old_node: &Node<T>,
-    new_node: &Node<T>,
-) -> Vec<(Vec<usize>, Patch<T>)> {
+pub fn diff<State>(
+    old_node: &Node<State>,
+    new_node: &Node<State>,
+) -> Vec<(Vec<usize>, Patch<State>)> {
     let mut patches = Vec::new();
     diff_recursive(old_node, new_node, &mut Vec::new(), &mut patches);
     patches
 }
 
-fn diff_recursive<T: PartialEq + Clone>(
-    old_node: &Node<T>,
-    new_node: &Node<T>,
+fn diff_recursive<State>(
+    old_node: &Node<State>,
+    new_node: &Node<State>,
     path: &mut Vec<usize>,
-    patches: &mut Vec<(Vec<usize>, Patch<T>)>,
+    patches: &mut Vec<(Vec<usize>, Patch<State>)>,
 ) {
     match (old_node, new_node) {
         (Node::Element(old_element), Node::Element(new_element)) => {
@@ -73,37 +73,22 @@ fn diff_recursive<T: PartialEq + Clone>(
             }
 
             // Diff events
-            let mut add_events = Vec::new();
-            let mut remove_events = Vec::new();
-
-            for (key, value) in &new_element.events {
-                match old_element
-                    .events
-                    .iter()
-                    .find(|(old_key, _)| old_key == key)
-                {
-                    Some((_, old_value)) => {
-                        if old_value != value {
-                            add_events.push((key.clone(), value.clone()));
-                        }
-                    }
-                    None => {
-                        add_events.push((key.clone(), value.clone()));
-                    }
-                }
-            }
+            let mut add_events = Vec::<(String, EventHandler<State>)>::new();
+            let mut remove_events = Vec::<String>::new();
 
             for (key, _) in &old_element.events {
-                if !new_element.events.iter().any(|(new_key, _)| new_key == key) {
-                    remove_events.push(key.clone());
-                }
+                remove_events.push(key.clone());
             }
 
-            if !add_events.is_empty() {
-                patches.push((path.clone(), Patch::AddEventListeners(add_events)));
+            for (key, value) in &new_element.events {
+                add_events.push((key.clone(), value.clone()));
             }
+
             if !remove_events.is_empty() {
                 patches.push((path.clone(), Patch::RemoveEventListeners(remove_events)));
+            }
+            if !add_events.is_empty() {
+                patches.push((path.clone(), Patch::AddEventListeners(add_events)));
             }
 
             // Diff children
@@ -144,18 +129,16 @@ fn diff_recursive<T: PartialEq + Clone>(
     }
 }
 
-pub fn add_event_listener_patches<T: PartialEq + Clone>(
-    node: &Node<T>,
-) -> Vec<(Vec<usize>, Patch<T>)> {
+pub fn add_event_listener_patches<State>(node: &Node<State>) -> Vec<(Vec<usize>, Patch<State>)> {
     let mut patches = Vec::new();
     add_event_listener_patches_recursive(node, &mut Vec::new(), &mut patches);
     patches
 }
 
-fn add_event_listener_patches_recursive<T: PartialEq + Clone>(
-    node: &Node<T>,
+fn add_event_listener_patches_recursive<State>(
+    node: &Node<State>,
     path: &mut Vec<usize>,
-    patches: &mut Vec<(Vec<usize>, Patch<T>)>,
+    patches: &mut Vec<(Vec<usize>, Patch<State>)>,
 ) {
     match node {
         Node::Element(element) => {
@@ -177,56 +160,39 @@ fn add_event_listener_patches_recursive<T: PartialEq + Clone>(
 
 #[cfg(test)]
 mod tests {
-    use narumincho_vdom::{h, text, to_string};
+    use std::convert::Infallible;
+
+    use narumincho_vdom::*;
 
     use super::*;
 
     #[test]
     fn test_render_with_attributes() {
-        let node: Node<std::convert::Infallible> = h(
-            "div",
-            vec![("class".to_string(), "container".to_string())],
-            vec![text("hello")],
-        );
+        let node: Node<Infallible> = Div::new()
+            .class("container")
+            .children(vec![text("hello")])
+            .into_node();
         assert_eq!(to_string(&node), "<div class=\"container\">hello</div>");
     }
 
     #[test]
     fn test_render_with_escaped_attributes() {
-        let node: Node<std::convert::Infallible> = h(
-            "input",
-            vec![("value".to_string(), "a \" b".to_string())],
-            vec![],
-        );
+        let node: Node<Infallible> = Input::new().value("a \" b").into_node();
         assert_eq!(to_string(&node), "<input value=\"a &quot; b\"></input>");
     }
 
     #[test]
     fn test_diff_text() {
-        let old: Node<std::convert::Infallible> = text("hello");
-        let new: Node<std::convert::Infallible> = text("world");
+        let old: Node<Infallible> = text("hello");
+        let new: Node<Infallible> = text("world");
         let patches = diff(&old, &new);
         assert_eq!(patches, vec![(vec![], Patch::UpdateText("world".into()))]);
     }
 
     #[test]
     fn test_diff_attributes() {
-        let old: Node<std::convert::Infallible> = h(
-            "div",
-            vec![
-                ("class".to_string(), "container".to_string()),
-                ("id".to_string(), "test".to_string()),
-            ],
-            vec![],
-        );
-        let new = h(
-            "div",
-            vec![
-                ("class".to_string(), "wrapper".to_string()),
-                ("style".to_string(), "color: red".to_string()),
-            ],
-            vec![],
-        );
+        let old: Node<Infallible> = Div::new().class("container").id("test").into_node();
+        let new: Node<Infallible> = Div::new().class("wrapper").style("color: red").into_node();
         let patches = diff(&old, &new);
 
         // Order of patches might depend on implementation detail, so we just check containment or specific structure
@@ -276,17 +242,18 @@ mod tests {
 
     #[test]
     fn test_diff_children_replace() {
-        let old: Node<std::convert::Infallible> = h("div", vec![], vec![text("hello")]);
-        let new: Node<std::convert::Infallible> = h("div", vec![], vec![text("world")]);
+        let old: Node<Infallible> = Div::new().children(vec![text("hello")]).into_node();
+        let new: Node<Infallible> = Div::new().children(vec![text("world")]).into_node();
         let patches = diff(&old, &new);
         assert_eq!(patches, vec![(vec![0], Patch::UpdateText("world".into()))]);
     }
 
     #[test]
     fn test_diff_children_append() {
-        let old: Node<std::convert::Infallible> = h("div", vec![], vec![text("hello")]);
-        let new: Node<std::convert::Infallible> =
-            h("div", vec![], vec![text("hello"), text("world")]);
+        let old: Node<Infallible> = Div::new().children(vec![text("hello")]).into_node();
+        let new: Node<Infallible> = Div::new()
+            .children(vec![text("hello"), text("world")])
+            .into_node();
         let patches = diff(&old, &new);
         assert_eq!(
             patches,
@@ -296,19 +263,22 @@ mod tests {
 
     #[test]
     fn test_diff_children_remove() {
-        let old: Node<std::convert::Infallible> =
-            h("div", vec![], vec![text("hello"), text("world")]);
-        let new = h("div", vec![], vec![text("hello")]);
+        let old: Node<Infallible> = Div::new()
+            .children(vec![text("hello"), text("world")])
+            .into_node();
+        let new: Node<Infallible> = Div::new().children(vec![text("hello")]).into_node();
         let patches = diff(&old, &new);
         assert_eq!(patches, vec![(vec![], Patch::RemoveChildren(1))]);
     }
 
     #[test]
     fn test_diff_recursive() {
-        let old: Node<std::convert::Infallible> =
-            h("div", vec![], vec![h("span", vec![], vec![text("hello")])]);
-        let new: Node<std::convert::Infallible> =
-            h("div", vec![], vec![h("span", vec![], vec![text("world")])]);
+        let old: Node<Infallible> = Div::new()
+            .children(vec![Div::new().children(vec![text("hello")]).into_node()])
+            .into_node();
+        let new: Node<Infallible> = Div::new()
+            .children(vec![Div::new().children(vec![text("world")]).into_node()])
+            .into_node();
         let patches = diff(&old, &new);
         assert_eq!(
             patches,

@@ -1,15 +1,15 @@
-use crate::node::{Element, Node};
+use crate::node::{Element, EventHandler, Node};
 
 macro_rules! define_element {
     ($name:ident, $tag:expr, $doc:expr) => {
         #[doc = $doc]
-        pub struct $name<Message> {
+        pub struct $name<State> {
             pub attributes: Vec<(String, String)>,
-            pub events: Vec<(String, Message)>,
-            pub children: Vec<Node<Message>>,
+            pub events: Vec<(String, EventHandler<State>)>,
+            pub children: Vec<Node<State>>,
         }
 
-        impl<Message> $name<Message> {
+        impl<State> $name<State> {
             pub fn new() -> Self {
                 Self {
                     attributes: Vec::new(),
@@ -42,12 +42,17 @@ macro_rules! define_element {
                 self
             }
 
-            pub fn children(mut self, children: impl Into<Vec<Node<Message>>>) -> Self {
+            /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/popover
+            pub fn popover(self) -> Self {
+                self.attribute("popover", "auto")
+            }
+
+            pub fn children(mut self, children: impl Into<Vec<Node<State>>>) -> Self {
                 self.children = children.into();
                 self
             }
 
-            pub fn into_node(self) -> Node<Message> {
+            pub fn into_node(self) -> Node<State> {
                 Node::Element(Element {
                     element_name: $tag.to_string(),
                     attributes: self.attributes,
@@ -57,8 +62,8 @@ macro_rules! define_element {
             }
         }
 
-        impl<T> Into<Node<T>> for $name<T> {
-            fn into(self) -> Node<T> {
+        impl<State> Into<Node<State>> for $name<State> {
+            fn into(self) -> Node<State> {
                 self.into_node()
             }
         }
@@ -130,9 +135,14 @@ define_element!(
     "div",
     "https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/div"
 );
+define_element!(
+    Header,
+    "header",
+    "https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/header"
+);
 
 // Link specific
-impl<Message> Link<Message> {
+impl<State> Link<State> {
     pub fn rel(self, rel: &str) -> Self {
         self.attribute("rel", rel)
     }
@@ -143,7 +153,7 @@ impl<Message> Link<Message> {
 }
 
 // Input specific
-impl<Message> Input<Message> {
+impl<State> Input<State> {
     pub fn name(self, name: &str) -> Self {
         self.attribute("name", name)
     }
@@ -172,15 +182,15 @@ impl<Message> Input<Message> {
         }
     }
 
-    pub fn on_change(mut self, msg: Message) -> Self {
+    pub fn on_change(mut self, msg: EventHandler<State>) -> Self {
         self.events.push(("change".to_string(), msg));
         self
     }
 }
 
-impl<Message> Form<Message> {
+impl<State> Form<State> {
     /// https://developer.mozilla.org/docs/Web/API/HTMLFormElement/submit_event
-    pub fn on_submit(mut self, msg: Message) -> Self {
+    pub fn on_submit(mut self, msg: EventHandler<State>) -> Self {
         self.events.push(("submit".to_string(), msg));
         self
     }
