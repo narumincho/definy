@@ -9,47 +9,52 @@ use crate::{
 pub fn login_or_create_account_dialog(state: &AppState) -> Node<AppState> {
     Dialog::new()
         .id("login-or-create-account-dialog")
-        .children({
-            let mut children = vec![
-                Button::new()
-                    .type_("button")
-                    .style("font-size: 1.5rem;")
-                    .on_click(create_login_event_handler())
-                    .children([text("ログイン")])
-                    .into_node(),
-                Button::new()
-                    .type_("button")
-                    .style("font-size: 1.5rem;")
-                    .on_click(EventHandler::new(async |set_state| {
-                        set_state(Box::new(|state: AppState| -> AppState {
-                            AppState {
-                                login_or_create_account_dialog_state:
-                                    LoginOrCreateAccountDialogState {
-                                        generated_key: None,
-                                        state: CreatingAccountState::CreateAccount,
-                                        username: String::new(),
-                                        current_password: String::new(),
-                                    },
-                                ..state.clone()
-                            }
-                        }));
-                    }))
-                    .children([text("アカウント作成")])
-                    .into_node(),
-            ];
+        .children([
+            Div::new()
+                .style("display: flex; justify-content: end;")
+                .children([Button::new()
+                    .command("close")
+                    .command_for("login-or-create-account-dialog")
+                    .children([text("X")])
+                    .into_node()])
+                .into_node(),
+            Div::new()
+                .children([
+                    Button::new()
+                        .type_("button")
+                        .style("font-size: 1.5rem;")
+                        .on_click(create_login_event_handler())
+                        .children([text("ログイン")])
+                        .into_node(),
+                    Button::new()
+                        .type_("button")
+                        .style("font-size: 1.5rem;")
+                        .on_click(EventHandler::new(async |set_state| {
+                            set_state(Box::new(|state: AppState| -> AppState {
+                                AppState {
+                                    login_or_create_account_dialog_state:
+                                        LoginOrCreateAccountDialogState {
+                                            generated_key: None,
+                                            state: CreatingAccountState::CreateAccount,
+                                            username: String::new(),
+                                            current_password: String::new(),
+                                        },
+                                    ..state.clone()
+                                }
+                            }));
+                        }))
+                        .children([text("アカウント作成")])
+                        .into_node(),
+                ])
+                .into_node(),
             match state.login_or_create_account_dialog_state.state {
-                CreatingAccountState::LogIn => {
-                    children.push(login_view());
-                }
+                CreatingAccountState::LogIn => login_view(),
                 CreatingAccountState::CreateAccount => {
-                    children.push(create_account_view(
-                        &state.login_or_create_account_dialog_state,
-                    ));
+                    create_account_view(&state.login_or_create_account_dialog_state)
                 }
-                _ => {}
-            }
-            children
-        })
+                _ => Div::new().children([]).into_node(),
+            },
+        ])
         .into_node()
 }
 
