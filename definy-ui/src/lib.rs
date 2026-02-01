@@ -1,6 +1,7 @@
 mod app_state;
 mod login_or_create_account_dialog;
 mod message;
+pub mod navigator_credential;
 
 pub use app_state::*;
 pub use message::Message;
@@ -156,11 +157,16 @@ init({{ module_or_path: \"{}\" }});",
                 Div::new().style("display: flex;").children([
                     H1::new().children([text("definy")]).into_node(),
                     Div::new().style("flex-grow: 1;").into_node(),
-                    Button::new()
-                        .command_for("login-or-create-account-dialog")
-                        .command("show-modal")
-                        .children([text("ログインまたはアカウント作成")])
-                        .into_node(),
+                    match &state.current_key {
+                        Some(secret_key) => Div::new()
+                            .children([text(&base64::Engine::encode(&base64::engine::general_purpose::URL_SAFE_NO_PAD, secret_key.verifying_key().to_bytes()))])
+                            .into_node(),
+                        None => Button::new()
+                            .command_for("login-or-create-account-dialog")
+                            .command("show-modal")
+                            .children([text("ログインまたはアカウント作成")])
+                            .into_node(),
+                    },
                 ]).into_node(),
                 Div::new()
                     .style("display: grid; gap: 0.5rem;")

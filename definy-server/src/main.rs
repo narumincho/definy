@@ -75,6 +75,7 @@ async fn handler(
                                 current_password: String::new(),
                             },
                         created_account_events: Vec::new(),
+                        current_key: None,
                     },
                     &Some(definy_ui::ResourceHash {
                         js: JAVASCRIPT_HASH.to_string(),

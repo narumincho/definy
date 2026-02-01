@@ -34,6 +34,7 @@ impl narumincho_vdom_client::App<AppState> for DefinyApp {
                 current_password: String::new(),
             },
             created_account_events: Vec::new(),
+            current_key: None,
         }
     }
 

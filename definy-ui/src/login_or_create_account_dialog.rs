@@ -1,6 +1,4 @@
-use js_sys::Promise;
 use narumincho_vdom::*;
-use wasm_bindgen::{JsValue, prelude::wasm_bindgen};
 
 use crate::{
     LoginOrCreateAccountDialogState,
@@ -16,39 +14,7 @@ pub fn login_or_create_account_dialog(state: &AppState) -> Node<AppState> {
                 Button::new()
                     .type_("button")
                     .style("font-size: 1.5rem;")
-                    .on_click(EventHandler::new(async |set_state| {
-                        let credential = wasm_bindgen_futures::JsFuture::from(get({
-                            let options = js_sys::Object::new();
-                            js_sys::Reflect::set(
-                                &options,
-                                &JsValue::from_str("password"),
-                                &JsValue::TRUE,
-                            )
-                            .unwrap();
-                            options
-                        }))
-                        .await;
-                        match credential {
-                            Ok(ok) => {
-                                set_state(Box::new(|state: AppState| -> AppState {
-                                    AppState {
-                                        login_or_create_account_dialog_state:
-                                            LoginOrCreateAccountDialogState {
-                                                generated_key: None,
-                                                state: CreatingAccountState::LogIn,
-                                                username: String::new(),
-                                                current_password: String::new(),
-                                            },
-                                        ..state.clone()
-                                    }
-                                }));
-                                web_sys::console::log_1(&ok);
-                            }
-                            Err(err) => {
-                                web_sys::console::log_1(&err);
-                            }
-                        };
-                    }))
+                    .on_click(create_login_event_handler())
                     .children([text("ログイン")])
                     .into_node(),
                 Button::new()
@@ -115,12 +81,6 @@ fn login_view() -> Node<AppState> {
 fn generate_key() -> ed25519_dalek::SigningKey {
     let mut csprng = rand::rngs::OsRng;
     ed25519_dalek::SigningKey::generate(&mut csprng)
-}
-
-#[wasm_bindgen]
-extern "C" {
-    #[wasm_bindgen(js_namespace = "navigator.credentials")]
-    fn get(s: js_sys::Object) -> js_sys::Promise;
 }
 
 fn create_account_view(state: &LoginOrCreateAccountDialogState) -> Node<AppState> {
@@ -254,4 +214,33 @@ fn create_account_view(state: &LoginOrCreateAccountDialogState) -> Node<AppState
             .into_node(),
     ])
     .into_node()
+}
+
+fn create_login_event_handler() -> EventHandler<AppState> {
+    EventHandler::new(async |set_state| {
+        let password = crate::navigator_credential::credential_get().await;
+        match password {
+            Some(password) => match parse_password(password) {
+                Some(secret_key) => {
+                    set_state(Box::new(|state: AppState| -> AppState {
+                        AppState {
+                            current_key: Some(secret_key),
+                            ..state.clone()
+                        }
+                    }));
+                }
+                None => {}
+            },
+            None => {}
+        };
+    })
+}
+
+fn parse_password(password: String) -> Option<ed25519_dalek::SigningKey> {
+    let password_as_bytes =
+        &base64::Engine::decode(&base64::engine::general_purpose::URL_SAFE_NO_PAD, password)
+            .ok()?;
+    let secret_key =
+        ed25519_dalek::SigningKey::from_bytes(password_as_bytes.as_slice().try_into().ok()?);
+    Some(secret_key)
 }
