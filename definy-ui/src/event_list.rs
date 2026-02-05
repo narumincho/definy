@@ -6,7 +6,6 @@ use crate::app_state::AppState;
 pub fn event_list_view(state: &AppState) -> Node<AppState> {
     Div::new()
         .children([
-            Div::new().children([text("イベントリスト")]).into_node(),
             Div::new()
                 .children([
                     {
@@ -114,6 +113,12 @@ fn event_view(event: &Event) -> Node<AppState> {
         .into_node()
       },
     },
+    Div::new()
+        .children([
+            text("アカウントID: "),
+            text(&base64::Engine::encode(&base64::engine::general_purpose::URL_SAFE_NO_PAD, event.account_id.0.as_slice()))
+        ])
+        .into_node(),
     Div::new()
         .children([text(&event.time.to_string())])
         .into_node(),
