@@ -34,6 +34,8 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
                     },
                     Button::new()
                         .on_click(EventHandler::new(async |set_state| {
+                            let set_state = std::rc::Rc::new(set_state);
+                            let set_state_for_async = set_state.clone();
                             set_state(Box::new(|state: AppState| {
                                 let key: &ed25519_dalek::SigningKey =
                                     if let Some(key) = &state.current_key {
@@ -63,7 +65,24 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
                                     )
                                     .unwrap();
 
-                                    let _ = crate::fetch::post_event(event_binary.as_slice()).await;
+                                    let status =
+                                        crate::fetch::post_event(event_binary.as_slice()).await;
+                                    match status {
+                                        Ok(_) => {
+                                            let events = crate::fetch::get_events().await;
+                                            if let Ok(events) = events {
+                                                set_state_for_async(Box::new(|state| AppState {
+                                                    created_account_events: events,
+                                                    ..state.clone()
+                                                }));
+                                            }
+                                        }
+                                        Err(e) => {
+                                            web_sys::console::log_1(
+                                                &format!("Failed to post event: {:?}", e).into(),
+                                            );
+                                        }
+                                    }
                                 });
                                 AppState {
                                     message_input: String::new(),
