@@ -32,7 +32,7 @@ pub async fn init_db() -> Result<sqlx::postgres::PgPool, anyhow::Error> {
 }
 
 pub async fn save_create_account_event(
-    event: &definy_event::CreateAccountEvent,
+    event: &definy_event::event::Event,
     signature: &ed25519_dalek::Signature,
     event_binary: &[u8],
     pool: &sqlx::postgres::PgPool,

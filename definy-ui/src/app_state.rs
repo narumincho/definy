@@ -1,7 +1,7 @@
 #[derive(Clone)]
 pub struct AppState {
     pub login_or_create_account_dialog_state: LoginOrCreateAccountDialogState,
-    pub created_account_events: Vec<(ed25519_dalek::Signature, definy_event::CreateAccountEvent)>,
+    pub created_account_events: Vec<(ed25519_dalek::Signature, definy_event::event::Event)>,
     pub current_key: Option<ed25519_dalek::SigningKey>,
 }
 
