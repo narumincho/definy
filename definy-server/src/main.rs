@@ -76,6 +76,7 @@ async fn handler(
                             },
                         created_account_events: Vec::new(),
                         current_key: None,
+                        message_input: String::new(),
                     },
                     &Some(definy_ui::ResourceHash {
                         js: JAVASCRIPT_HASH.to_string(),
@@ -160,7 +161,7 @@ async fn handle_events_post(
             let bytes = collected.to_bytes();
             match definy_event::verify_and_deserialize(&bytes) {
                 Ok((data, signature)) => {
-                    match db::save_create_account_event(&data, &signature, &bytes, pool).await {
+                    match db::save_event(&data, &signature, &bytes, pool).await {
                         Ok(()) => Response::builder()
                             .header("content-type", "text/plain; charset=utf-8")
                             .body(Full::new(Bytes::from("OK"))),

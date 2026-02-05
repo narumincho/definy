@@ -9,22 +9,68 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
             Div::new().children([text("イベントリスト")]).into_node(),
             Div::new()
                 .children([
-                    Input::new().id("message-input").name("message").into_node(),
+                    {
+                        let mut input = Input::new().value(&state.message_input);
+                        input.events.push((
+                            "input".to_string(),
+                            EventHandler::new(move |set_state| async move {
+                                let value =
+                                    wasm_bindgen::JsCast::dyn_into::<web_sys::HtmlInputElement>(
+                                        web_sys::window()
+                                            .unwrap()
+                                            .document()
+                                            .unwrap()
+                                            .active_element()
+                                            .unwrap(),
+                                    )
+                                    .unwrap()
+                                    .value();
+                                set_state(Box::new(move |state: AppState| AppState {
+                                    message_input: value,
+                                    ..state.clone()
+                                }));
+                            }),
+                        ));
+                        input.into_node()
+                    },
                     Button::new()
                         .on_click(EventHandler::new(async |set_state| {
-                            let message =
-                                wasm_bindgen::JsCast::dyn_into::<web_sys::HtmlInputElement>(
-                                    web_sys::window()
-                                        .unwrap()
-                                        .document()
-                                        .unwrap()
-                                        .get_element_by_id("message-input")
-                                        .unwrap(),
-                                )
-                                .unwrap()
-                                .value();
+                            set_state(Box::new(|state: AppState| {
+                                let key: &ed25519_dalek::SigningKey =
+                                    if let Some(key) = &state.current_key {
+                                        key
+                                    } else {
+                                        web_sys::console::log_1(&"login required".into());
+                                        return state;
+                                    };
 
-                            web_sys::console::log_1(&message.into());
+                                let message = state.message_input.clone();
+                                let key_for_async = key.clone();
+
+                                wasm_bindgen_futures::spawn_local(async move {
+                                    let event_binary = definy_event::sign_and_serialize(
+                                        definy_event::event::Event {
+                                            account_id: definy_event::event::AccountId(Box::new(
+                                                key_for_async.verifying_key().to_bytes(),
+                                            )),
+                                            time: chrono::Utc::now(),
+                                            content: definy_event::event::EventContent::Message(
+                                                definy_event::event::MessageEvent {
+                                                    message: message.into(),
+                                                },
+                                            ),
+                                        },
+                                        &key_for_async,
+                                    )
+                                    .unwrap();
+
+                                    let _ = crate::fetch::post_event(event_binary.as_slice()).await;
+                                });
+                                AppState {
+                                    message_input: String::new(),
+                                    ..state.clone()
+                                }
+                            }));
                         }))
                         .children([text("送信")])
                         .into_node(),

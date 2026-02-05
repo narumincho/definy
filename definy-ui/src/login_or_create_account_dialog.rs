@@ -207,7 +207,7 @@ fn create_account_view(state: &LoginOrCreateAccountDialogState) -> Node<AppState
                     .name("username")
                     .autocomplete("username")
                     .required()
-                    .on_change(EventHandler::new(async |set_state| {}))
+                    .on_change(EventHandler::new(async |_set_state| {}))
                     .into_node(),
             ])
             .into_node(),
@@ -242,7 +242,7 @@ fn create_account_view(state: &LoginOrCreateAccountDialogState) -> Node<AppState
                             .style("flex: 1;")
                             .into_node(),
                         Button::new()
-                            .on_click(EventHandler::new(move |set_state| {
+                            .on_click(EventHandler::new(move |_set_state| {
                                 let window = web_sys::window().expect("no global `window` exists");
                                 let generated_key = generated_key_for_copy.clone();
                                 async move {
@@ -287,7 +287,7 @@ fn create_account_view(state: &LoginOrCreateAccountDialogState) -> Node<AppState
                     .command_for("login-or-create-account-dialog")
                     .command(CommandValue::Close) 
                     .type_("button")
-                    .on_click(EventHandler::new(async |set_state| {}))
+                    .on_click(EventHandler::new(async |_set_state| {}))
                     .children([text("キャンセル")])
                     .into_node(),
                 Button::new()
