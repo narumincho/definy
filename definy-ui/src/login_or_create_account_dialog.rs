@@ -294,7 +294,6 @@ fn create_account_view(state: &LoginOrCreateAccountDialogState) -> Node<AppState
                     .type_("submit") 
                     .disabled(requesting)
                     .children([text(match state.state {
-                        CreatingAccountState::Init => "_",
                         CreatingAccountState::LogIn => "ログイン",
                         CreatingAccountState::CreateAccount => "登録",
                         CreatingAccountState::CreateAccountRequesting => "登録中...",
@@ -310,33 +309,18 @@ fn create_account_view(state: &LoginOrCreateAccountDialogState) -> Node<AppState
 
 fn create_login_event_handler() -> EventHandler<AppState> {
     EventHandler::new(async |set_state| {
-        let password = crate::navigator_credential::credential_get().await;
-        match password {
-            Some(secret_key) => {
-                dialog_close();
-
-                set_state(Box::new(|state: AppState| -> AppState  {
-                    AppState {
-                        current_key: Some(secret_key),
-                        ..state.clone()
-                    }
-                }));
-            },
-            None => {
-                set_state(Box::new(|state: AppState| -> AppState {
-                    AppState {
-                        login_or_create_account_dialog_state:
-                            LoginOrCreateAccountDialogState {
-                                generated_key: None,
-                                state: CreatingAccountState::LogIn,
-                                username: String::new(),
-                                current_password: String::new(),
-                            },
-                        ..state.clone()
-                    }
-                }));
+        set_state(Box::new(|state: AppState| -> AppState {
+            AppState {
+                login_or_create_account_dialog_state:
+                    LoginOrCreateAccountDialogState {
+                        generated_key: None,
+                        state: CreatingAccountState::LogIn,
+                        username: String::new(),
+                        current_password: String::new(),
+                    },
+                ..state.clone()
             }
-        };
+        }));
     })
 }
 

@@ -22,7 +22,6 @@ pub struct LoginOrCreateAccountDialogState {
 
 #[derive(Clone, PartialEq)]
 pub enum CreatingAccountState {
-    Init,
     LogIn,
     CreateAccount,
     CreateAccountRequesting,
