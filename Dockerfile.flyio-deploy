@@ -1,0 +1,7 @@
+FROM debian:bookworm-slim
+WORKDIR /app
+RUN apt-get update && apt-get install -y ca-certificates libssl-dev && rm -rf /var/lib/apt/lists/*
+
+COPY target/release/definy-server/definy-server /app/definy-server
+
+CMD ["/app/definy-server"]
