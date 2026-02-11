@@ -1,0 +1,23 @@
+[package]
+name = "definy-server"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+hyper = { version = "1", features = ["full"] }
+tokio = { version = "1", features = ["full"] }
+http-body-util = "0.1"
+hyper-util = { version = "0.1", features = ["full"] }
+definy-ui = { path = "../definy-ui" }
+definy-event = { path = "../definy-event" }
+narumincho-vdom = { path = "../narumincho-vdom" }
+sha2 = "0.10.9"
+serde = { version = "1", features = ["derive"] }
+serde_cbor = "0.10"
+sqlx = { version = "0.8.6", features = [
+  "postgres",
+  "runtime-tokio-rustls",
+  "macros",
+] }
+anyhow = "1.0.100"
+ed25519-dalek = { version = "2.2" }

@@ -3,17 +3,14 @@ name: type check and test
 on: pull_request
 
 jobs:
-  type-check-and-build-test:
-    name: type check and test
-    runs-on: ubuntu-slim
+  test:
+    runs-on: ubuntu-24.04
     steps:
       - name: checkout repository
         uses: actions/checkout@v6
-      - name: setup Deno
-        uses: denoland/setup-deno@v2
-        with:
-          deno-version: v2.x
-      - run: deno task build
-      - run: deno check
-      - run: deno lint
-      - run: deno test
+      - run: cargo --version
+      - run: cargo install wasm-bindgen-cli
+      - run: rustup target add wasm32-unknown-unknown
+      - run: cargo run -p definy-build
+      - run: cargo test
+      - uses: Swatinem/rust-cache@v2

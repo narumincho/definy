@@ -1,0 +1,12 @@
+[workspace]
+
+members = [
+  "definy-build",
+  "definy-client",
+  "definy-event",
+  "definy-server",
+  "definy-ui",
+  "narumincho-vdom",
+  "narumincho-vdom-client",
+]
+resolver = "3"

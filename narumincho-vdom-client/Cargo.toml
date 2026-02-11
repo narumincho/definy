@@ -1,0 +1,22 @@
+[package]
+name = "narumincho-vdom-client"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+narumincho-vdom = { path = "../narumincho-vdom" }
+js-sys = "0.3"
+wasm-bindgen = "0.2"
+web-sys = { version = "0.3.85", features = [
+  "console",
+  "Window",
+  "Document",
+  "Element",
+  "Node",
+  "NodeList",
+  "HtmlElement",
+  "Text",
+  "EventTarget",
+  "Event",
+] }
+wasm-bindgen-futures = "0.4.58"

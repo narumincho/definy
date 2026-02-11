@@ -18,8 +18,31 @@ https://github.com/narumincho/definy/tree/prev2023
   したときに実行されるテストの処理が書かれている
 - `.vscode`: VSCode 向けの設定
 - `assets`: スタティックなファイルが置かれている
-- `client`: ブラウザで動かすコード
-- `server`: サーバーで動かすコード
-- `generated`: `script/build.ts`
-  でビルドした結果のファイルがこのフォルダに生成される
-- `script`: スクリプトファイルが置かれている
+- `definy-build`: ビルドスクリプト
+- `definy-client`: ブラウザで動かすコード
+- `definy-server`: サーバーで動かすコード
+- `definy-ui`: ブラウザとサーバーでレンダリングする共通のUIコンポーネント
+- `docs`: ドキュメントが置かれている
+- `narumincho-vdom`: 仮想DOMのライブラリ
+- `narumincho-vdom-client`: ブラウザで動かす仮想DOMのライブラリ
+
+- `web-distribution`: definy-build で生成したファイル (gitignore している)
+
+## 事前にインストールが必要
+
+- [Rust言語(rustup)](https://rust-lang.org/ja/tools/install/)
+
+- [wasm-bindgen-cli](https://wasm-bindgen.github.io/wasm-bindgen/)
+
+```sh
+cargo install wasm-bindgen-cli
+```
+
+- [PostgreSQL 17](https://www.postgresql.org/download/)
+
+psql にパスが通るように
+
+```sh
+cargo run -p definy-build
+DATABASE_URL=postgres://postgres:password@localhost:5432/postgres cargo run -p definy-server
+```
