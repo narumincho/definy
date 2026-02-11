@@ -6,11 +6,10 @@ jobs:
   test:
     runs-on: ubuntu-24.04
     steps:
-      - name: checkout repository
-        uses: actions/checkout@v6
-      - run: cargo --version
+      - uses: actions/checkout@v6
+      - uses: Swatinem/rust-cache@v2
       - run: cargo install wasm-bindgen-cli
       - run: rustup target add wasm32-unknown-unknown
       - run: cargo run -p definy-build
       - run: cargo test
-      - uses: Swatinem/rust-cache@v2
+      - run: cargo build -p definy-server --release

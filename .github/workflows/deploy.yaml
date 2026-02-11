@@ -1,0 +1,20 @@
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo install wasm-bindgen-cli
+      - run: rustup target add wasm32-unknown-unknown
+      - run: cargo run -p definy-build
+      - run: cargo build -p definy-server --release
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+      - name: Deploy to Fly
+        run: flyctl deploy --local-only --dockerfile Dockerfile.flyio-deploy
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
