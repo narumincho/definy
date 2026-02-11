@@ -108,7 +108,12 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
         .into_node()
 }
 
-fn event_view(event: &Event) -> Node<AppState> {
+fn event_view(
+    event: Result<
+        (ed25519_dalek::Signature, definy_event::event::Event),
+        definy_event::VerifyAndDeserializeError,
+    >,
+) -> Node<AppState> {
     Div::new()
     .style("border: 1px solid var(--border); border-radius: 4px; padding: 0.5rem; color: var(--text); font-size: 1rem;")
     .children([

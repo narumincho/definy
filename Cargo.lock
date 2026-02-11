@@ -302,6 +302,7 @@ dependencies = [
  "narumincho-vdom",
  "rand",
  "serde_cbor 0.11.2",
+ "sha2",
  "wasm-bindgen",
  "wasm-bindgen-futures",
  "web-sys",

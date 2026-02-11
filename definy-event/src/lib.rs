@@ -26,16 +26,28 @@ pub fn sign_and_serialize(
     serde_cbor::to_vec(&signed_event)
 }
 
-pub fn verify_and_deserialize(data: &[u8]) -> anyhow::Result<(Event, ed25519_dalek::Signature)> {
-    let signed_event: SignedEvent = serde_cbor::from_slice(data)?;
-    let event: Event = serde_cbor::from_slice(&signed_event.event_binary.value)?;
+#[derive(Clone, Debug)]
+pub enum VerifyAndDeserializeError {
+    DecodeError,
+    VerifyError,
+}
 
-    let public_key = ed25519_dalek::VerifyingKey::from_bytes(event.account_id.0.as_ref())?;
+pub fn verify_and_deserialize(
+    data: &[u8],
+) -> Result<(Event, ed25519_dalek::Signature), VerifyAndDeserializeError> {
+    let signed_event: SignedEvent =
+        serde_cbor::from_slice(data).map_err(|_| VerifyAndDeserializeError::DecodeError)?;
+    let event: Event = serde_cbor::from_slice(&signed_event.event_binary.value)
+        .map_err(|_| VerifyAndDeserializeError::DecodeError)?;
+
+    let public_key = ed25519_dalek::VerifyingKey::from_bytes(event.account_id.0.as_ref())
+        .map_err(|_| VerifyAndDeserializeError::DecodeError)?;
     ed25519_dalek::Verifier::verify(
         &public_key,
         &signed_event.event_binary.value,
         &signed_event.signature,
-    )?;
+    )
+    .map_err(|_| VerifyAndDeserializeError::VerifyError)?;
 
     Ok((event, signed_event.signature))
 }
