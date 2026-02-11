@@ -14,3 +14,4 @@ jobs:
       - run: cargo run -p definy-build
       - run: cargo test
       - uses: Swatinem/rust-cache@v2
+      - run: docker build -t definy .
