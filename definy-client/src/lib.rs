@@ -49,10 +49,3 @@ impl narumincho_vdom_client::App<AppState> for DefinyApp {
         definy_ui::app(state, &None)
     }
 }
-
-fn generate_key() -> ed25519_dalek::SigningKey {
-    let mut csprng = rand::rngs::OsRng;
-    ed25519_dalek::SigningKey::generate(&mut csprng)
-}
-
-// function removed

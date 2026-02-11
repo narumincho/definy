@@ -35,7 +35,7 @@ pub fn login_or_create_account_dialog(state: &AppState) -> Node<AppState> {
                                 AppState {
                                     login_or_create_account_dialog_state:
                                         LoginOrCreateAccountDialogState {
-                                            generated_key: None,
+                                            generated_key: Some(generate_key()),
                                             state: CreatingAccountState::CreateAccount,
                                             username: String::new(),
                                             current_password: String::new(),
