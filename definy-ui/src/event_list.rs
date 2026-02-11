@@ -1,4 +1,4 @@
-use definy_event::event::{Event, EventContent};
+use definy_event::event::EventContent;
 use narumincho_vdom::*;
 
 use crate::app_state::AppState;
@@ -109,43 +109,48 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
 }
 
 fn event_view(
-    event: Result<
+    event_result: &Result<
         (ed25519_dalek::Signature, definy_event::event::Event),
         definy_event::VerifyAndDeserializeError,
     >,
 ) -> Node<AppState> {
-    Div::new()
-    .style("border: 1px solid var(--border); border-radius: 4px; padding: 0.5rem; color: var(--text); font-size: 1rem;")
-    .children([
-    match &event.content {
-      EventContent::CreateAccount(create_account_event) => {
-        Div::new()
-        .children([
-            text("アカウント「"),
-            text(create_account_event.account_name.as_ref()),
-            text("」が作成されました"),
-        ])
-        .into_node()
-      },
-      EventContent::Message(message_event) => {
-        Div::new()
-        .children([
-            text("メッセージ「"),
-            text(message_event.message.as_ref()),
-            text("」が作成されました"),
-        ])
-        .into_node()
-      },
-    },
-    Div::new()
-        .children([
-            text("アカウントID: "),
-            text(&base64::Engine::encode(&base64::engine::general_purpose::URL_SAFE_NO_PAD, event.account_id.0.as_slice()))
-        ])
-        .into_node(),
-    Div::new()
-        .children([text(&event.time.to_string())])
-        .into_node(),
-  ])
-  .into_node()
+    match event_result {
+        Ok((_, event)) => Div::new()
+            .style("border: 1px solid var(--border); border-radius: 4px; padding: 0.5rem; color: var(--text); font-size: 1rem;")
+            .children([
+                match &event.content {
+                    EventContent::CreateAccount(create_account_event) => Div::new()
+                        .children([
+                            text("アカウント「"),
+                            text(create_account_event.account_name.as_ref()),
+                            text("」が作成されました"),
+                        ])
+                        .into_node(),
+                    EventContent::Message(message_event) => Div::new()
+                        .children([
+                            text("メッセージ「"),
+                            text(message_event.message.as_ref()),
+                            text("」が作成されました"),
+                        ])
+                        .into_node(),
+                },
+                Div::new()
+                    .children([
+                        text("アカウントID: "),
+                        text(&base64::Engine::encode(
+                            &base64::engine::general_purpose::URL_SAFE_NO_PAD,
+                            event.account_id.0.as_slice(),
+                        )),
+                    ])
+                    .into_node(),
+                Div::new()
+                    .children([text(&event.time.to_string())])
+                    .into_node(),
+            ])
+            .into_node(),
+        Err(e) => Div::new()
+            .style("border: 1px solid red; border-radius: 4px; padding: 0.5rem; color: red; font-size: 1rem;")
+            .children([text(&format!("イベントの読み込みに失敗しました: {:?}", e))])
+            .into_node(),
+    }
 }
