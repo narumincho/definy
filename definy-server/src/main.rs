@@ -16,7 +16,13 @@ async fn main() -> Result<(), anyhow::Error> {
 
     let pool = db::init_db().await?;
 
-    let addr = SocketAddr::from(([127, 0, 0, 1], 8000));
+    let addr = SocketAddr::from((
+        match std::env::var("FLY_APP_NAME") {
+            Ok(_) => [0, 0, 0, 0],
+            Err(_) => [127, 0, 0, 1],
+        },
+        8000,
+    ));
 
     let listener = TcpListener::bind(addr).await?;
 
