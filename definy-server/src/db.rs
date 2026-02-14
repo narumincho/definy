@@ -22,7 +22,7 @@ pub async fn init_db() -> Result<sqlx::postgres::PgPool, anyhow::Error> {
     println!("Migrating database...");
 
     sqlx::query(
-        "create table events (event_binary_hash bytea primary key, signature bytea, account_id bytea, time timestamp with time zone, event_binary bytea)",
+        "create table if not exists events (event_binary_hash bytea primary key, signature bytea, account_id bytea, time timestamp with time zone, event_binary bytea)",
     )
     .execute(&pool)
     .await?;
