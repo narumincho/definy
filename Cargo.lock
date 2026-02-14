@@ -275,6 +275,7 @@ name = "definy-server"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "base64",
  "definy-event",
  "definy-ui",
  "ed25519-dalek",

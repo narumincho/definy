@@ -122,7 +122,7 @@ async fn handler(
 async fn handle_event_get(
     request: Request<impl hyper::body::Body>,
     pool: sqlx::postgres::PgPool,
-    event_binary_hash_hex: &str,
+    event_binary_hash_base64: &str,
 ) -> Result<Response<Full<Bytes>>, hyper::http::Error> {
     if request.method() != hyper::Method::GET {
         return Response::builder()
@@ -131,7 +131,10 @@ async fn handle_event_get(
             .body(Full::new(Bytes::from("405 Method Not Allowed")));
     }
 
-    let event_binary_hash = match hex::decode(event_binary_hash_hex) {
+    let event_binary_hash = match base64::Engine::decode(
+        &base64::engine::general_purpose::URL_SAFE_NO_PAD,
+        event_binary_hash_base64,
+    ) {
         Ok(event_binary_hash) => event_binary_hash,
         Err(_) => {
             return Response::builder()
