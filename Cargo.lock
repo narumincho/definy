@@ -278,6 +278,7 @@ dependencies = [
  "definy-event",
  "definy-ui",
  "ed25519-dalek",
+ "hex",
  "http-body-util",
  "hyper",
  "hyper-util",

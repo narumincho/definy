@@ -21,3 +21,4 @@ sqlx = { version = "0.8.6", features = [
 ] }
 anyhow = "1.0.100"
 ed25519-dalek = { version = "2.2" }
+hex = "0.4.3"

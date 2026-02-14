@@ -59,3 +59,20 @@ pub async fn get_events(pool: &sqlx::postgres::PgPool) -> Result<Box<[Vec<u8>]>,
 
     Ok(events)
 }
+
+pub async fn get_event(
+    pool: &sqlx::postgres::PgPool,
+    id: &[u8],
+) -> Result<Option<Vec<u8>>, anyhow::Error> {
+    let row = sqlx::query("select event_binary from events where id = $1")
+        .bind(id)
+        .fetch_optional(pool)
+        .await?;
+
+    let event = row
+        .map(|row| row.try_get("event_binary"))
+        .transpose()
+        .map_err(|e| anyhow::anyhow!("Failed to get event binary: {:?}", e))?;
+
+    Ok(event)
+}
