@@ -5,6 +5,7 @@ macro_rules! define_element {
         #[doc = $doc]
         pub struct $name<State> {
             pub attributes: Vec<(String, String)>,
+            pub styles: crate::Style,
             pub events: Vec<(String, EventHandler<State>)>,
             pub children: Vec<Node<State>>,
         }
@@ -13,6 +14,7 @@ macro_rules! define_element {
             pub fn new() -> Self {
                 Self {
                     attributes: Vec::new(),
+                    styles: crate::Style::new(),
                     events: Vec::new(),
                     children: Vec::new(),
                 }
@@ -36,9 +38,8 @@ macro_rules! define_element {
             }
 
             /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/style
-            pub fn style(mut self, style: &str) -> Self {
-                self.attributes
-                    .push(("style".to_string(), style.to_string()));
+            pub fn style(mut self, style: impl Into<crate::Style>) -> Self {
+                self.styles = style.into();
                 self
             }
 
@@ -56,6 +57,7 @@ macro_rules! define_element {
                 Node::Element(Element {
                     element_name: $tag.to_string(),
                     attributes: self.attributes,
+                    styles: self.styles,
                     events: self.events,
                     children: self.children,
                 })
@@ -106,6 +108,11 @@ define_element!(
     "https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/h1"
 );
 define_element!(
+    H2,
+    "h2",
+    "https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/h2"
+);
+define_element!(
     Dialog,
     "dialog",
     "https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/dialog"
@@ -126,7 +133,7 @@ define_element!(
     "https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/form"
 );
 define_element!(
-    Style,
+    StyleElement,
     "style",
     "https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/style"
 );

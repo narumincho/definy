@@ -6,6 +6,8 @@ pub enum Patch<State> {
     UpdateText(Box<str>),
     AddAttributes(Vec<(String, String)>),
     RemoveAttributes(Vec<String>),
+    AddStyles(Vec<(String, String)>),
+    RemoveStyles(Vec<String>),
     AddEventListeners(Vec<(String, EventHandler<State>)>),
     RemoveEventListeners(Vec<String>),
     AppendChildren(Vec<Node<State>>),
@@ -70,6 +72,36 @@ fn diff_recursive<State>(
             }
             if !remove_attributes.is_empty() {
                 patches.push((path.clone(), Patch::RemoveAttributes(remove_attributes)));
+            }
+
+            // Diff styles
+            let mut add_styles = Vec::new();
+            let mut remove_styles = Vec::new();
+
+            for (key, value) in new_element.styles.iter() {
+                match old_element.styles.get(key) {
+                    Some(old_value) => {
+                        if old_value != value {
+                            add_styles.push((key.clone(), value.clone()));
+                        }
+                    }
+                    None => {
+                        add_styles.push((key.clone(), value.clone()));
+                    }
+                }
+            }
+
+            for (key, _) in old_element.styles.iter() {
+                if new_element.styles.get(key).is_none() {
+                    remove_styles.push(key.clone());
+                }
+            }
+
+            if !add_styles.is_empty() {
+                patches.push((path.clone(), Patch::AddStyles(add_styles)));
+            }
+            if !remove_styles.is_empty() {
+                patches.push((path.clone(), Patch::RemoveStyles(remove_styles)));
             }
 
             // Diff events
@@ -192,7 +224,10 @@ mod tests {
     #[test]
     fn test_diff_attributes() {
         let old: Node<Infallible> = Div::new().class("container").id("test").into_node();
-        let new: Node<Infallible> = Div::new().class("wrapper").style("color: red").into_node();
+        let new: Node<Infallible> = Div::new()
+            .class("wrapper")
+            .style(Style::new().color("red"))
+            .into_node();
         let patches = diff(&old, &new);
 
         // Order of patches might depend on implementation detail, so we just check containment or specific structure
@@ -210,18 +245,11 @@ mod tests {
         // Patches order: AddAttributes (multiple?), RemoveAttributes.
         // AddAttributes collects all additions.
 
-        let expected_add = vec![
-            ("class".to_string(), "wrapper".to_string()),
-            ("style".to_string(), "color: red".to_string()),
-        ];
+        let expected_add = vec![("class".to_string(), "wrapper".to_string())];
         let expected_remove = vec!["id".to_string()];
+        let expected_style = vec![("color".to_string(), "red".to_string())];
 
-        // Since my implementation pushes separate patches for AddAttributes and RemoveAttributes
-        // And AddAttributes aggregates all additions in one patch.
-
-        assert_eq!(patches.len(), 2);
-        // We can't strictly guarantee order of keys in "AddAttributes" unless we sort or the input was sorted.
-        // But here inputs are Vecs, so order is preserved.
+        assert_eq!(patches.len(), 3);
 
         match &patches[0] {
             (path, Patch::AddAttributes(attrs)) => {
@@ -237,6 +265,14 @@ mod tests {
                 assert_eq!(attrs, &expected_remove);
             }
             _ => panic!("Expected RemoveAttributes second"),
+        }
+
+        match &patches[2] {
+            (path, Patch::AddStyles(styles)) => {
+                assert_eq!(*path, vec![]);
+                assert_eq!(styles, &expected_style);
+            }
+            _ => panic!("Expected AddStyles third"),
         }
     }
 

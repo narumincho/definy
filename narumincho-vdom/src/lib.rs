@@ -2,11 +2,13 @@ mod button;
 mod elements;
 mod meta;
 mod node;
+mod style;
 
 pub use button::{Button, CommandValue};
 pub use elements::*;
 pub use meta::Meta;
 pub use node::{Element, EventHandler, Node};
+pub use style::Style;
 
 pub fn text<State>(text: impl Into<String>) -> Node<State> {
     Node::Text(text.into().into())
@@ -27,6 +29,16 @@ pub fn to_string<State>(node: &Node<State>) -> String {
                 html.push_str(key);
                 html.push_str("=\"");
                 html.push_str(&attribute_escape(value));
+                html.push('"');
+            }
+            if vdom.styles.iter().len() > 0 {
+                html.push_str(" style=\"");
+                for (key, value) in vdom.styles.iter() {
+                    html.push_str(key);
+                    html.push_str(":");
+                    html.push_str(&attribute_escape(value));
+                    html.push(';');
+                }
                 html.push('"');
             }
             html.push('>');
@@ -52,4 +64,25 @@ fn text_escape(text: &str) -> String {
     text.replace("&", "&amp;")
         .replace("<", "&lt;")
         .replace(">", "&gt;")
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_to_string_with_style() {
+        let node: Node<()> = Div::new()
+            .style(
+                Style::new()
+                    .set("color", "red")
+                    .set("background-color", "blue"),
+            )
+            .into_node();
+        let html = to_string(&node);
+        assert!(html.starts_with("<div style=\""));
+        assert!(html.contains("color:red;"));
+        assert!(html.contains("background-color:blue;"));
+        assert!(html.ends_with("\"></div>"));
+    }
 }

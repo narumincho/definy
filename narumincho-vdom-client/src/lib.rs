@@ -176,6 +176,22 @@ fn apply_patch<State: 'static>(
                 }
             }
         }
+        diff::Patch::AddStyles(styles) => {
+            if let Some(element) = node.dyn_ref::<web_sys::HtmlElement>() {
+                let style = element.style();
+                for (key, value) in styles.iter() {
+                    style.set_property(key, value).unwrap();
+                }
+            }
+        }
+        diff::Patch::RemoveStyles(keys) => {
+            if let Some(element) = node.dyn_ref::<web_sys::HtmlElement>() {
+                let style = element.style();
+                for key in keys {
+                    style.remove_property(key).unwrap();
+                }
+            }
+        }
         diff::Patch::AddEventListeners(events) => {
             if let Some(element) = node.dyn_ref::<web_sys::Element>() {
                 for (event_name, event_handler) in events {
@@ -250,6 +266,12 @@ fn create_web_sys_node<State: 'static>(
             let element = DOCUMENT.create_element(&el.element_name).unwrap();
             for (key, value) in &el.attributes {
                 element.set_attribute(key, value).unwrap();
+            }
+            if let Some(html_element) = element.dyn_ref::<web_sys::HtmlElement>() {
+                let style = html_element.style();
+                for (key, value) in el.styles.iter() {
+                    style.set_property(key, value).unwrap();
+                }
             }
             for (event_name, msg) in &el.events {
                 let handler = Rc::clone(&msg.handler);
