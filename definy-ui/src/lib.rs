@@ -24,7 +24,7 @@ pub fn app(state: &AppState, resource_hash: &Option<ResourceHash>) -> Node<AppSt
             .rel("icon")
             .href(include_str!("../../web-distribution/icon.png.sha256"))
             .into_node(),
-        Style::new()
+        StyleElement::new()
             .children([text(include_str!("../main.css"))])
             .into_node(),
     ];

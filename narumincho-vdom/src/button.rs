@@ -1,7 +1,9 @@
 use crate::node::{self, EventHandler};
+use crate::style::Style;
 
 pub struct Button<State> {
     pub attributes: Vec<(String, String)>,
+    pub styles: Style,
     pub events: Vec<(String, EventHandler<State>)>,
     pub children: Vec<node::Node<State>>,
 }
@@ -12,6 +14,7 @@ impl<State> Button<State> {
         Self {
             attributes: Vec::new(),
             events: Vec::new(),
+            styles: Style::new(),
             children: Vec::new(),
         }
     }
@@ -47,8 +50,15 @@ impl<State> Button<State> {
     }
 
     pub fn style(mut self, style: &str) -> Self {
-        self.attributes
-            .push(("style".to_string(), style.to_string()));
+        for entry in style.split(';') {
+            if let Some((key, value)) = entry.split_once(':') {
+                let key = key.trim().to_string();
+                let value = value.trim().to_string();
+                if !key.is_empty() && !value.is_empty() {
+                    self.styles.insert(key, value);
+                }
+            }
+        }
         self
     }
 
@@ -67,6 +77,7 @@ impl<State> Button<State> {
         node::Node::Element(node::Element {
             element_name: "button".to_string(),
             attributes: self.attributes,
+            styles: self.styles,
             events: self.events,
             children: self.children,
         })

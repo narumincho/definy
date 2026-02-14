@@ -2,11 +2,13 @@ mod button;
 mod elements;
 mod meta;
 mod node;
+mod style;
 
 pub use button::{Button, CommandValue};
 pub use elements::*;
 pub use meta::Meta;
 pub use node::{Element, EventHandler, Node};
+pub use style::Style;
 
 pub fn text<State>(text: impl Into<String>) -> Node<State> {
     Node::Text(text.into().into())

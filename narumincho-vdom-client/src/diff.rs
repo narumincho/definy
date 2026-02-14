@@ -6,6 +6,8 @@ pub enum Patch<State> {
     UpdateText(Box<str>),
     AddAttributes(Vec<(String, String)>),
     RemoveAttributes(Vec<String>),
+    AddStyles(Vec<(String, String)>),
+    RemoveStyles(Vec<String>),
     AddEventListeners(Vec<(String, EventHandler<State>)>),
     RemoveEventListeners(Vec<String>),
     AppendChildren(Vec<Node<State>>),
@@ -70,6 +72,36 @@ fn diff_recursive<State>(
             }
             if !remove_attributes.is_empty() {
                 patches.push((path.clone(), Patch::RemoveAttributes(remove_attributes)));
+            }
+
+            // Diff styles
+            let mut add_styles = Vec::new();
+            let mut remove_styles = Vec::new();
+
+            for (key, value) in new_element.styles.iter() {
+                match old_element.styles.get(key) {
+                    Some(old_value) => {
+                        if old_value != value {
+                            add_styles.push((key.clone(), value.clone()));
+                        }
+                    }
+                    None => {
+                        add_styles.push((key.clone(), value.clone()));
+                    }
+                }
+            }
+
+            for (key, _) in old_element.styles.iter() {
+                if new_element.styles.get(key).is_none() {
+                    remove_styles.push(key.clone());
+                }
+            }
+
+            if !add_styles.is_empty() {
+                patches.push((path.clone(), Patch::AddStyles(add_styles)));
+            }
+            if !remove_styles.is_empty() {
+                patches.push((path.clone(), Patch::RemoveStyles(remove_styles)));
             }
 
             // Diff events

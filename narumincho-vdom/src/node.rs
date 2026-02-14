@@ -5,6 +5,7 @@ use std::{pin::Pin, rc::Rc};
 pub struct Element<State> {
     pub element_name: String,
     pub attributes: Vec<(String, String)>,
+    pub styles: crate::style::Style,
     pub events: Vec<(String, EventHandler<State>)>,
     pub children: Vec<Node<State>>,
 }
@@ -14,6 +15,7 @@ impl<State> Clone for Element<State> {
         Self {
             element_name: self.element_name.clone(),
             attributes: self.attributes.clone(),
+            styles: self.styles.clone(),
             events: self.events.clone(),
             children: self.children.clone(),
         }
@@ -25,6 +27,7 @@ impl<State> std::fmt::Debug for Element<State> {
         f.debug_struct("Element")
             .field("element_name", &self.element_name)
             .field("attributes", &self.attributes)
+            .field("styles", &self.styles)
             .field("events", &self.events)
             .field("children", &self.children)
             .finish()
@@ -35,6 +38,7 @@ impl<State> PartialEq for Element<State> {
     fn eq(&self, other: &Self) -> bool {
         self.element_name == other.element_name
             && self.attributes == other.attributes
+            && self.styles == other.styles
             && self.events == other.events
             && self.children == other.children
     }

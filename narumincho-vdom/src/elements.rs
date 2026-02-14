@@ -5,6 +5,7 @@ macro_rules! define_element {
         #[doc = $doc]
         pub struct $name<State> {
             pub attributes: Vec<(String, String)>,
+            pub styles: crate::style::Style,
             pub events: Vec<(String, EventHandler<State>)>,
             pub children: Vec<Node<State>>,
         }
@@ -13,6 +14,7 @@ macro_rules! define_element {
             pub fn new() -> Self {
                 Self {
                     attributes: Vec::new(),
+                    styles: crate::style::Style::new(),
                     events: Vec::new(),
                     children: Vec::new(),
                 }
@@ -37,8 +39,15 @@ macro_rules! define_element {
 
             /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/style
             pub fn style(mut self, style: &str) -> Self {
-                self.attributes
-                    .push(("style".to_string(), style.to_string()));
+                for entry in style.split(';') {
+                    if let Some((key, value)) = entry.split_once(':') {
+                        let key = key.trim().to_string();
+                        let value = value.trim().to_string();
+                        if !key.is_empty() && !value.is_empty() {
+                            self.styles.insert(key, value);
+                        }
+                    }
+                }
                 self
             }
 
@@ -56,6 +65,7 @@ macro_rules! define_element {
                 Node::Element(Element {
                     element_name: $tag.to_string(),
                     attributes: self.attributes,
+                    styles: self.styles,
                     events: self.events,
                     children: self.children,
                 })
@@ -126,7 +136,7 @@ define_element!(
     "https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/form"
 );
 define_element!(
-    Style,
+    StyleElement,
     "style",
     "https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/style"
 );
