@@ -115,13 +115,25 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
                 .into_node(),
             Div::new()
                 .style(Style::new().set("display", "grid").set("gap", "1rem"))
-                .children(
+                .children({
+                    let mut account_name_map = std::collections::HashMap::new();
+                    for (_, event_result) in &state.created_account_events {
+                        if let Ok((_, event)) = event_result {
+                            if let definy_event::event::EventContent::CreateAccount(e) =
+                                &event.content
+                            {
+                                account_name_map
+                                    .insert(event.account_id.clone(), e.account_name.clone());
+                            }
+                        }
+                    }
+
                     state
                         .created_account_events
                         .iter()
-                        .map(|(_, event)| event_view(event))
-                        .collect::<Vec<Node<AppState>>>(),
-                )
+                        .map(|(_, event)| event_view(event, &account_name_map))
+                        .collect::<Vec<Node<AppState>>>()
+                })
                 .into_node(),
         ])
         .into_node()
@@ -132,6 +144,7 @@ fn event_view(
         (ed25519_dalek::Signature, definy_event::event::Event),
         definy_event::VerifyAndDeserializeError,
     >,
+    account_name_map: &std::collections::HashMap<definy_event::event::AccountId, Box<str>>,
 ) -> Node<AppState> {
     match event_result {
         Ok((_, event)) => Div::new()
@@ -179,7 +192,22 @@ fn event_view(
                         .into_node(),
                     EventContent::Message(message_event) => Div::new()
                         .style(Style::new().set("font-size", "1.125rem"))
-                        .children([text(message_event.message.as_ref())])
+                        .children([
+                            Div::new()
+                                .style(
+                                    Style::new()
+                                        .set("font-size", "0.8rem")
+                                        .set("color", "var(--text-secondary)"),
+                                )
+                                .children([text(
+                                    account_name_map
+                                        .get(&event.account_id)
+                                        .map(|name: &Box<str>| name.as_ref())
+                                        .unwrap_or("Unknown"),
+                                )])
+                                .into_node(),
+                            text(message_event.message.as_ref()),
+                        ])
                         .into_node(),
                 },
             ])

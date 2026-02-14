@@ -30,24 +30,47 @@ fn header_main(state: &AppState) -> Node<AppState> {
                 .into_node(),
             Div::new().style(Style::new().set("flex-grow", "1")).into_node(),
             match &state.current_key {
-                Some(secret_key) => Button::new()
-                    .command(CommandValue::TogglePopover)
-                    .command_for("header-popover")
-                    .style(
-                        Style::new()
-                            .set("font-family", "monospace")
-                            .set("font-size", "0.80rem")
-                            .set("background-color", "var(--surface)")
-                            .set("color", "var(--text)")
-                            .set("border", "1px solid var(--border)")
-                            .set("padding", "0.4rem 0.8rem")
-                            .set("anchor-name", "--header-popover-button"),
-                    )
-                    .children([text(&base64::Engine::encode(
-                        &base64::engine::general_purpose::URL_SAFE_NO_PAD,
+                Some(secret_key) => {
+                    let account_id = definy_event::event::AccountId(Box::new(
                         secret_key.verifying_key().to_bytes(),
-                    ))])
-                    .into_node(),
+                    ));
+                    let account_name = state
+                        .created_account_events
+                        .iter()
+                        .filter_map(|(_, result)| result.as_ref().ok())
+                        .find(|(_, event)| event.account_id == account_id)
+                        .and_then(|(_, event)| {
+                            if let definy_event::event::EventContent::CreateAccount(content) =
+                                &event.content
+                            {
+                                Some(content.account_name.clone())
+                            } else {
+                                None
+                            }
+                        });
+
+                    Button::new()
+                        .command(CommandValue::TogglePopover)
+                        .command_for("header-popover")
+                        .style(
+                            Style::new()
+                                .set("font-family", "monospace")
+                                .set("font-size", "0.80rem")
+                                .set("background-color", "var(--surface)")
+                                .set("color", "var(--text)")
+                                .set("border", "1px solid var(--border)")
+                                .set("padding", "0.4rem 0.8rem")
+                                .set("anchor-name", "--header-popover-button"),
+                        )
+                        .children([text(&match account_name {
+                            Some(name) => name.to_string(),
+                            None => base64::Engine::encode(
+                                &base64::engine::general_purpose::URL_SAFE_NO_PAD,
+                                secret_key.verifying_key().to_bytes(),
+                            ),
+                        })])
+                        .into_node()
+                }
                 None => Button::new()
                     .command_for("login-or-create-account-dialog")
                     .command(CommandValue::ShowModal)
