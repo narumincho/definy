@@ -104,9 +104,9 @@ async fn handler(
             .body(Full::new(Bytes::from_static(ICON_CONTENT))),
         "events" => handle_events(request, &pool).await,
         path => {
-            if let Some(id_hex) = path.strip_prefix("events/") {
-                let id_hex = id_hex.to_string();
-                handle_event_get(request, pool, &id_hex).await
+            if let Some(event_binary_hash_hex) = path.strip_prefix("events/") {
+                let event_binary_hash_hex = event_binary_hash_hex.to_string();
+                handle_event_get(request, pool, &event_binary_hash_hex).await
             } else {
                 match path {
                     _ => Response::builder()
@@ -122,7 +122,7 @@ async fn handler(
 async fn handle_event_get(
     request: Request<impl hyper::body::Body>,
     pool: sqlx::postgres::PgPool,
-    id_hex: &str,
+    event_binary_hash_hex: &str,
 ) -> Result<Response<Full<Bytes>>, hyper::http::Error> {
     if request.method() != hyper::Method::GET {
         return Response::builder()
@@ -131,8 +131,8 @@ async fn handle_event_get(
             .body(Full::new(Bytes::from("405 Method Not Allowed")));
     }
 
-    let id = match hex::decode(id_hex) {
-        Ok(id) => id,
+    let event_binary_hash = match hex::decode(event_binary_hash_hex) {
+        Ok(event_binary_hash) => event_binary_hash,
         Err(_) => {
             return Response::builder()
                 .status(400)
@@ -141,7 +141,7 @@ async fn handle_event_get(
         }
     };
 
-    match db::get_event(&pool, &id).await {
+    match db::get_event(&pool, &event_binary_hash).await {
         Ok(Some(event_binary)) => Response::builder()
             .status(200)
             .header("Content-Type", "application/cbor")
