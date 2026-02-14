@@ -108,6 +108,11 @@ define_element!(
     "https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/h1"
 );
 define_element!(
+    H2,
+    "h2",
+    "https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/h2"
+);
+define_element!(
     Dialog,
     "dialog",
     "https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/dialog"

@@ -5,8 +5,27 @@ use crate::app_state::AppState;
 
 pub fn event_list_view(state: &AppState) -> Node<AppState> {
     Div::new()
+        .style(
+            Style::new()
+                .set("display", "grid")
+                .set("gap", "2rem")
+                .set("width", "100%")
+                .set("max-width", "800px")
+                .set("margin", "0 auto")
+                .set("padding", "2rem 1rem"),
+        )
         .children([
             Div::new()
+                .style(
+                    Style::new()
+                        .set("display", "flex")
+                        .set("gap", "1rem")
+                        .set("background-color", "var(--surface)")
+                        .set("padding", "1.5rem")
+                        .set("border-radius", "var(--radius-md)")
+                        .set("box-shadow", "var(--shadow-md)")
+                        .set("border", "1px solid var(--border)"),
+                )
                 .children([
                     {
                         let mut input = Input::new().value(&state.message_input);
@@ -30,7 +49,7 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
                                 }));
                             }),
                         ));
-                        input.into_node()
+                        input.style(Style::new().set("flex-grow", "1")).into_node()
                     },
                     Button::new()
                         .on_click(EventHandler::new(async |set_state| {
@@ -90,12 +109,12 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
                                 }
                             }));
                         }))
-                        .children([text("送信")])
+                        .children([text("Send")])
                         .into_node(),
                 ])
                 .into_node(),
             Div::new()
-                .style(Style::new().set("display", "grid").set("gap", "0.5rem"))
+                .style(Style::new().set("display", "grid").set("gap", "1rem"))
                 .children(
                     state
                         .created_account_events
@@ -118,51 +137,61 @@ fn event_view(
         Ok((_, event)) => Div::new()
             .style(
                 Style::new()
+                    .set("background-color", "var(--surface)")
                     .set("border", "1px solid var(--border)")
-                    .set("border-radius", "4px")
-                    .set("padding", "0.5rem")
-                    .color("var(--text)")
-                    .set("font-size", "1rem"),
+                    .set("border-radius", "var(--radius-md)")
+                    .set("padding", "1.5rem")
+                    .set("box-shadow", "var(--shadow-md)")
+                    .set("transition", "transform 0.2s ease")
+                    .set("display", "grid")
+                    .set("gap", "0.5rem"),
             )
             .children([
+                Div::new()
+                    .style(
+                        Style::new()
+                            .set("font-size", "0.875rem")
+                            .set("color", "var(--text-secondary)")
+                            .set("display", "flex")
+                            .set("justify-content", "space-between")
+                            .set("align-items", "center"),
+                    )
+                    .children([
+                        Div::new()
+                            .children([text(&event.time.format("%Y-%m-%d %H:%M:%S").to_string())])
+                            .into_node(),
+                        Div::new()
+                            .style(Style::new().set("font-family", "monospace"))
+                            .children([text(&base64::Engine::encode(
+                                &base64::engine::general_purpose::URL_SAFE_NO_PAD,
+                                event.account_id.0.as_slice(),
+                            ))])
+                            .into_node(),
+                    ])
+                    .into_node(),
                 match &event.content {
                     EventContent::CreateAccount(create_account_event) => Div::new()
+                        .style(Style::new().set("color", "var(--primary)"))
                         .children([
-                            text("アカウント「"),
+                            text("Account created: "),
                             text(create_account_event.account_name.as_ref()),
-                            text("」が作成されました"),
                         ])
                         .into_node(),
                     EventContent::Message(message_event) => Div::new()
-                        .children([
-                            text("メッセージ「"),
-                            text(message_event.message.as_ref()),
-                            text("」が作成されました"),
-                        ])
+                        .style(Style::new().set("font-size", "1.125rem"))
+                        .children([text(message_event.message.as_ref())])
                         .into_node(),
                 },
-                Div::new()
-                    .children([
-                        text("アカウントID: "),
-                        text(&base64::Engine::encode(
-                            &base64::engine::general_purpose::URL_SAFE_NO_PAD,
-                            event.account_id.0.as_slice(),
-                        )),
-                    ])
-                    .into_node(),
-                Div::new()
-                    .children([text(&event.time.to_string())])
-                    .into_node(),
             ])
             .into_node(),
         Err(e) => Div::new()
             .style(
                 Style::new()
-                    .set("border", "1px solid red")
-                    .set("border-radius", "4px")
-                    .set("padding", "0.5rem")
-                    .color("red")
-                    .set("font-size", "1rem"),
+                    .set("background-color", "rgba(244, 63, 94, 0.1)")
+                    .set("border", "1px solid var(--error)")
+                    .set("border-radius", "var(--radius-md)")
+                    .set("padding", "1rem")
+                    .set("color", "var(--error)"),
             )
             .children([text(&format!("イベントの読み込みに失敗しました: {:?}", e))])
             .into_node(),
