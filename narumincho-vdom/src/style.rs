@@ -32,19 +32,3 @@ impl Style {
         self.0.get(key)
     }
 }
-
-impl From<&str> for Style {
-    fn from(s: &str) -> Self {
-        let mut style = Self::new();
-        for declaration in s.split(';') {
-            let declaration = declaration.trim();
-            if declaration.is_empty() {
-                continue;
-            }
-            if let Some((key, value)) = declaration.split_once(':') {
-                style = style.set(key.trim(), value.trim());
-            }
-        }
-        style
-    }
-}
