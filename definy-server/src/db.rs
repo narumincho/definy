@@ -1,3 +1,4 @@
+use sha2::Digest;
 use sqlx::Row;
 
 pub async fn init_db() -> Result<sqlx::postgres::PgPool, anyhow::Error> {
@@ -21,7 +22,7 @@ pub async fn init_db() -> Result<sqlx::postgres::PgPool, anyhow::Error> {
     println!("Migrating database...");
 
     sqlx::query(
-        "create table if not exists events (id bytea primary key, account_id bytea, event_binary bytea)",
+        "create table if not exists events (event_binary_hash bytea primary key, signature bytea, account_id bytea, time timestamp with time zone, event_binary bytea)",
     )
     .execute(&pool)
     .await?;
@@ -37,9 +38,15 @@ pub async fn save_event(
     event_binary: &[u8],
     pool: &sqlx::postgres::PgPool,
 ) -> Result<(), anyhow::Error> {
-    sqlx::query("insert into events (id, account_id, event_binary) values ($1, $2, $3)")
+    let mut hasher = sha2::Sha256::new();
+    hasher.update(event_binary);
+    let event_binary_hash = hasher.finalize();
+
+    sqlx::query("insert into events (event_binary_hash, signature, account_id, time, event_binary) values ($1, $2, $3, $4, $5)")
+        .bind(event_binary_hash.as_slice())
         .bind(signature.to_bytes())
         .bind(event.account_id.0.as_ref())
+        .bind(event.time)
         .bind(event_binary)
         .execute(pool)
         .await?;
@@ -58,4 +65,21 @@ pub async fn get_events(pool: &sqlx::postgres::PgPool) -> Result<Box<[Vec<u8>]>,
         .collect::<Result<Box<[Vec<u8>]>, sqlx::Error>>()?;
 
     Ok(events)
+}
+
+pub async fn get_event(
+    pool: &sqlx::postgres::PgPool,
+    event_binary_hash: &[u8],
+) -> Result<Option<Vec<u8>>, anyhow::Error> {
+    let row = sqlx::query("select event_binary from events where event_binary_hash = $1")
+        .bind(event_binary_hash)
+        .fetch_optional(pool)
+        .await?;
+
+    let event = row
+        .map(|row| row.try_get("event_binary"))
+        .transpose()
+        .map_err(|e| anyhow::anyhow!("Failed to get event binary: {:?}", e))?;
+
+    Ok(event)
 }

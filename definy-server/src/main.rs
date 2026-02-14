@@ -90,7 +90,6 @@ async fn handler(
                     }),
                 ),
             )))),
-        "events" => handle_events(request, &pool).await,
         JAVASCRIPT_HASH => Response::builder()
             .header("Content-Type", "application/javascript; charset=utf-8")
             .header("Cache-Control", "public, max-age=31536000, immutable")
@@ -103,10 +102,64 @@ async fn handler(
             .header("Content-Type", "image/png")
             .header("Cache-Control", "public, max-age=31536000, immutable")
             .body(Full::new(Bytes::from_static(ICON_CONTENT))),
-        _ => Response::builder()
+        "events" => handle_events(request, &pool).await,
+        path => {
+            if let Some(event_binary_hash_hex) = path.strip_prefix("events/") {
+                let event_binary_hash_hex = event_binary_hash_hex.to_string();
+                handle_event_get(request, pool, &event_binary_hash_hex).await
+            } else {
+                match path {
+                    _ => Response::builder()
+                        .status(404)
+                        .header("Content-Type", "text/html; charset=utf-8")
+                        .body(Full::new(Bytes::from("404 Not Found"))),
+                }
+            }
+        }
+    }
+}
+
+async fn handle_event_get(
+    request: Request<impl hyper::body::Body>,
+    pool: sqlx::postgres::PgPool,
+    event_binary_hash_base64: &str,
+) -> Result<Response<Full<Bytes>>, hyper::http::Error> {
+    if request.method() != hyper::Method::GET {
+        return Response::builder()
+            .status(405)
+            .header("Content-Type", "text/html; charset=utf-8")
+            .body(Full::new(Bytes::from("405 Method Not Allowed")));
+    }
+
+    let event_binary_hash = match base64::Engine::decode(
+        &base64::engine::general_purpose::URL_SAFE_NO_PAD,
+        event_binary_hash_base64,
+    ) {
+        Ok(event_binary_hash) => event_binary_hash,
+        Err(_) => {
+            return Response::builder()
+                .status(400)
+                .header("Content-Type", "text/html; charset=utf-8")
+                .body(Full::new(Bytes::from("400 Bad Request: Invalid ID format")));
+        }
+    };
+
+    match db::get_event(&pool, &event_binary_hash).await {
+        Ok(Some(event_binary)) => Response::builder()
+            .status(200)
+            .header("Content-Type", "application/cbor")
+            .body(Full::new(Bytes::from(event_binary))),
+        Ok(None) => Response::builder()
             .status(404)
             .header("Content-Type", "text/html; charset=utf-8")
             .body(Full::new(Bytes::from("404 Not Found"))),
+        Err(e) => {
+            eprintln!("Failed to get event: {:?}", e);
+            Response::builder()
+                .status(500)
+                .header("Content-Type", "text/html; charset=utf-8")
+                .body(Full::new(Bytes::from("Internal Server Error")))
+        }
     }
 }
 

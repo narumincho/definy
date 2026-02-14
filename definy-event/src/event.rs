@@ -24,5 +24,5 @@ pub struct CreateAccountEvent {
     pub account_name: Box<str>,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct AccountId(pub Box<[u8; 32]>);
