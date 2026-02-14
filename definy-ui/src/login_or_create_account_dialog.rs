@@ -11,7 +11,11 @@ pub fn login_or_create_account_dialog(state: &AppState) -> Node<AppState> {
         .id("login-or-create-account-dialog")
         .children([
             Div::new()
-                .style("display: flex; justify-content: end;")
+                .style(
+                    Style::new()
+                        .set("display", "flex")
+                        .set("justify-content", "end"),
+                )
                 .children([Button::new()
                     .command(CommandValue::Close)
                     .command_for("login-or-create-account-dialog")
@@ -19,17 +23,21 @@ pub fn login_or_create_account_dialog(state: &AppState) -> Node<AppState> {
                     .into_node()])
                 .into_node(),
             Div::new()
-                .style("display: flex; justify-content: space-between;")
+                .style(
+                    Style::new()
+                        .set("display", "flex")
+                        .set("justify-content", "space-between"),
+                )
                 .children([
                     Button::new()
                         .type_("button")
-                        .style("font-size: 1.5rem;")
+                        .style(Style::new().set("font-size", "1.5rem"))
                         .on_click(create_login_event_handler())
                         .children([text("ログイン")])
                         .into_node(),
                     Button::new()
                         .type_("button")
-                        .style("font-size: 1.5rem;")
+                        .style(Style::new().set("font-size", "1.5rem"))
                         .on_click(EventHandler::new(async |set_state| {
                             set_state(Box::new(|state: AppState| -> AppState {
                                 AppState {
@@ -85,7 +93,7 @@ fn login_view() -> Node<AppState> {
                 None => {}
             }
         }))
-        .style("display: grid; gap: 1rem;")
+        .style(Style::new().set("display", "grid").set("gap", "1rem"))
         .children([
             // Label::new()
             //     .children([
@@ -216,7 +224,11 @@ fn create_account_view(state: &LoginOrCreateAccountDialogState) -> Node<AppState
             .children([
                 text("ユーザーID (公開鍵)"),
                 Div::new()
-                    .style("font-family: monospace; font-size: 0.9rem;")
+                    .style(
+                        Style::new()
+                            .set("font-family", "monospace")
+                            .set("font-size", "0.9rem"),
+                    )
                     .children(
                         match &state.generated_key {
                             Some(key) => vec![text(&base64::Engine::encode(&base64::engine::general_purpose::URL_SAFE_NO_PAD, key.verifying_key().to_bytes()))],
@@ -236,10 +248,10 @@ fn create_account_view(state: &LoginOrCreateAccountDialogState) -> Node<AppState
                     ])
                     .into_node(),
                 Div::new()
-                    .style("display: flex; gap: 0.5rem;")
+                    .style(Style::new().set("display", "flex").set("gap", "0.5rem"))
                     .children([
                         password_input
-                            .style("flex: 1;")
+                            .style(Style::new().set("flex", "1"))
                             .into_node(),
                         Button::new()
                             .on_click(EventHandler::new(move |_set_state| {

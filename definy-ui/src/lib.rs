@@ -47,7 +47,12 @@ init({{ module_or_path: \"{}\" }});",
         .children([
             Head::new().children(head_children).into_node(),
             Body::new()
-                .style("display: grid; gap: 1rem; grid-template-rows: auto 1fr;")
+                .style(
+                    Style::new()
+                        .set("display", "grid")
+                        .set("gap", "1rem")
+                        .set("grid-template-rows", "auto 1fr"),
+                )
                 .children([
                     header::header(state),
                     event_list::event_list_view(state),

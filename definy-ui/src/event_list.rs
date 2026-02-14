@@ -95,7 +95,7 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
                 ])
                 .into_node(),
             Div::new()
-                .style("display: grid; gap: 0.5rem;")
+                .style(Style::new().set("display", "grid").set("gap", "0.5rem"))
                 .children(
                     state
                         .created_account_events
@@ -116,7 +116,14 @@ fn event_view(
 ) -> Node<AppState> {
     match event_result {
         Ok((_, event)) => Div::new()
-            .style("border: 1px solid var(--border); border-radius: 4px; padding: 0.5rem; color: var(--text); font-size: 1rem;")
+            .style(
+                Style::new()
+                    .set("border", "1px solid var(--border)")
+                    .set("border-radius", "4px")
+                    .set("padding", "0.5rem")
+                    .color("var(--text)")
+                    .set("font-size", "1rem"),
+            )
             .children([
                 match &event.content {
                     EventContent::CreateAccount(create_account_event) => Div::new()
@@ -149,7 +156,14 @@ fn event_view(
             ])
             .into_node(),
         Err(e) => Div::new()
-            .style("border: 1px solid red; border-radius: 4px; padding: 0.5rem; color: red; font-size: 1rem;")
+            .style(
+                Style::new()
+                    .set("border", "1px solid red")
+                    .set("border-radius", "4px")
+                    .set("padding", "0.5rem")
+                    .color("red")
+                    .set("font-size", "1rem"),
+            )
             .children([text(&format!("イベントの読み込みに失敗しました: {:?}", e))])
             .into_node(),
     }

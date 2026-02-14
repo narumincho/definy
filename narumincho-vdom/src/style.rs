@@ -8,26 +8,43 @@ impl Style {
         Self(HashMap::new())
     }
 
-    pub fn color(&mut self, color: &str) -> &mut Self {
+    pub fn color(mut self, color: &str) -> Self {
         self.0.insert("color".to_string(), color.to_string());
         self
     }
 
-    pub fn background_color(&mut self, color: &str) -> &mut Self {
+    pub fn background_color(mut self, color: &str) -> Self {
         self.0
             .insert("background-color".to_string(), color.to_string());
         self
     }
 
-    pub fn iter(&self) -> std::collections::hash_map::Iter<String, String> {
+    pub fn set(mut self, key: &str, value: &str) -> Self {
+        self.0.insert(key.to_string(), value.to_string());
+        self
+    }
+
+    pub fn iter(&self) -> std::collections::hash_map::Iter<'_, String, String> {
         self.0.iter()
     }
 
     pub fn get(&self, key: &str) -> Option<&String> {
         self.0.get(key)
     }
+}
 
-    pub fn insert(&mut self, key: String, value: String) {
-        self.0.insert(key, value);
+impl From<&str> for Style {
+    fn from(s: &str) -> Self {
+        let mut style = Self::new();
+        for declaration in s.split(';') {
+            let declaration = declaration.trim();
+            if declaration.is_empty() {
+                continue;
+            }
+            if let Some((key, value)) = declaration.split_once(':') {
+                style = style.set(key.trim(), value.trim());
+            }
+        }
+        style
     }
 }

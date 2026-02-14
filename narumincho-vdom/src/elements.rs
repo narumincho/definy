@@ -5,7 +5,7 @@ macro_rules! define_element {
         #[doc = $doc]
         pub struct $name<State> {
             pub attributes: Vec<(String, String)>,
-            pub styles: crate::style::Style,
+            pub styles: crate::Style,
             pub events: Vec<(String, EventHandler<State>)>,
             pub children: Vec<Node<State>>,
         }
@@ -14,7 +14,7 @@ macro_rules! define_element {
             pub fn new() -> Self {
                 Self {
                     attributes: Vec::new(),
-                    styles: crate::style::Style::new(),
+                    styles: crate::Style::new(),
                     events: Vec::new(),
                     children: Vec::new(),
                 }
@@ -38,16 +38,8 @@ macro_rules! define_element {
             }
 
             /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/style
-            pub fn style(mut self, style: &str) -> Self {
-                for entry in style.split(';') {
-                    if let Some((key, value)) = entry.split_once(':') {
-                        let key = key.trim().to_string();
-                        let value = value.trim().to_string();
-                        if !key.is_empty() && !value.is_empty() {
-                            self.styles.insert(key, value);
-                        }
-                    }
-                }
+            pub fn style(mut self, style: impl Into<crate::Style>) -> Self {
+                self.styles = style.into();
                 self
             }
 

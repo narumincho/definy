@@ -10,15 +10,27 @@ pub fn header(state: &AppState) -> Node<AppState> {
 
 fn header_main(state: &AppState) -> Node<AppState> {
     Header::new()
-        .style("display: flex; background-color: #222222; padding: 0.5rem;")
+        .style(
+            Style::new()
+                .set("display", "flex")
+                .background_color("#222222")
+                .set("padding", "0.5rem"),
+        )
         .children([
             H1::new().children([text("definy")]).into_node(),
-            Div::new().style("flex-grow: 1;").into_node(),
+            Div::new()
+                .style(Style::new().set("flex-grow", "1"))
+                .into_node(),
             match &state.current_key {
                 Some(secret_key) => Button::new()
                     .command(CommandValue::TogglePopover)
                     .command_for("header-popover")
-                    .style("font-family: monospace; font-size: 0.9rem; anchor-name: --header-popover-button")
+                    .style(
+                        Style::new()
+                            .set("font-family", "monospace")
+                            .set("font-size", "0.9rem")
+                            .set("anchor-name", "--header-popover-button"),
+                    )
                     .children([text(&base64::Engine::encode(
                         &base64::engine::general_purpose::URL_SAFE_NO_PAD,
                         secret_key.verifying_key().to_bytes(),
@@ -38,7 +50,11 @@ fn popover() -> Node<AppState> {
     Div::new()
         .id("header-popover")
         .popover()
-        .style("position-area: block-end; padding: 1rem;")
+        .style(
+            Style::new()
+                .set("position-area", "block-end")
+                .set("padding", "1rem"),
+        )
         .children([Button::new()
             .on_click(EventHandler::new(async |set_state| {
                 let popover = wasm_bindgen::JsCast::dyn_into::<web_sys::HtmlElement>(

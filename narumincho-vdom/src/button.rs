@@ -49,16 +49,8 @@ impl<State> Button<State> {
         self
     }
 
-    pub fn style(mut self, style: &str) -> Self {
-        for entry in style.split(';') {
-            if let Some((key, value)) = entry.split_once(':') {
-                let key = key.trim().to_string();
-                let value = value.trim().to_string();
-                if !key.is_empty() && !value.is_empty() {
-                    self.styles.insert(key, value);
-                }
-            }
-        }
+    pub fn style(mut self, style: impl Into<Style>) -> Self {
+        self.styles = style.into();
         self
     }
 
