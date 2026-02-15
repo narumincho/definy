@@ -22,6 +22,19 @@ pub async fn init_db() -> Result<sqlx::postgres::PgPool, anyhow::Error> {
     println!("Migrating database...");
 
     sqlx::query(
+        "
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'event_type') THEN
+        CREATE TYPE event_type AS ENUM ('account_created', 'message_posted');
+    END IF;
+END
+$$",
+    )
+    .execute(&pool)
+    .await?;
+
+    sqlx::query(
         "create table if not exists events (
     event_binary_hash bytea primary key,
     signature bytea not null,
@@ -29,7 +42,8 @@ pub async fn init_db() -> Result<sqlx::postgres::PgPool, anyhow::Error> {
     time timestamp with time zone not null,
     event_binary bytea not null,
     server_receive_timestamp timestamp with time zone not null,
-    address text not null
+    address text not null,
+    event_type event_type not null
 )",
     )
     .execute(&pool)
@@ -59,8 +73,9 @@ pub async fn save_event(
     time,
     event_binary,
     server_receive_timestamp,
-    address
-    ) values ($1, $2, $3, $4, $5, current_timestamp, $6)",
+    address,
+    event_type
+    ) values ($1, $2, $3, $4, $5, current_timestamp, $6, $7)",
     )
     .bind(event_binary_hash.as_slice())
     .bind(signature.to_bytes())
@@ -68,6 +83,7 @@ pub async fn save_event(
     .bind(event.time)
     .bind(event_binary)
     .bind(address.to_string())
+    .bind(event.event_type().to_str())
     .execute(pool)
     .await?;
 

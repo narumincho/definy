@@ -8,6 +8,29 @@ pub struct Event {
     pub content: EventContent,
 }
 
+impl Event {
+    pub fn event_type(&self) -> EventType {
+        match self.content {
+            EventContent::CreateAccount(_) => EventType::AccountCreated,
+            EventContent::Message(_) => EventType::MessagePosted,
+        }
+    }
+}
+
+pub enum EventType {
+    AccountCreated,
+    MessagePosted,
+}
+
+impl EventType {
+    pub fn to_str(&self) -> &'static str {
+        match self {
+            EventType::AccountCreated => "account_created",
+            EventType::MessagePosted => "message_posted",
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum EventContent {
     CreateAccount(CreateAccountEvent),
