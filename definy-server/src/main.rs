@@ -29,7 +29,7 @@ async fn main() -> Result<(), anyhow::Error> {
     println!("Listening on http://{}", addr);
 
     loop {
-        let (stream, _) = listener.accept().await?;
+        let (stream, address) = listener.accept().await?;
 
         let io = TokioIo::new(stream);
         let pool = pool.clone();
@@ -38,7 +38,7 @@ async fn main() -> Result<(), anyhow::Error> {
             if let Err(err) = http1::Builder::new()
                 .serve_connection(
                     io,
-                    service_fn(move |request| handler(request, pool.clone())),
+                    service_fn(move |request| handler(request, address, pool.clone())),
                 )
                 .await
             {
@@ -63,10 +63,16 @@ const ICON_HASH: &'static str = include_str!("../../web-distribution/icon.png.sh
 
 async fn handler(
     request: Request<impl hyper::body::Body>,
+    address: SocketAddr,
     pool: sqlx::postgres::PgPool,
 ) -> Result<Response<Full<Bytes>>, hyper::http::Error> {
     let path = request.uri().path();
-    println!("Received request: {} {}", request.method(), path);
+    println!(
+        "Received request: {} {} from {}",
+        request.method(),
+        path,
+        address
+    );
     match path.trim_start_matches('/') {
         "" => Response::builder()
             .header("Content-Type", "text/html; charset=utf-8")
@@ -102,7 +108,7 @@ async fn handler(
             .header("Content-Type", "image/png")
             .header("Cache-Control", "public, max-age=31536000, immutable")
             .body(Full::new(Bytes::from_static(ICON_CONTENT))),
-        "events" => handle_events(request, &pool).await,
+        "events" => handle_events(request, address, &pool).await,
         path => {
             if let Some(event_binary_hash_hex) = path.strip_prefix("events/") {
                 let event_binary_hash_hex = event_binary_hash_hex.to_string();
@@ -165,11 +171,12 @@ async fn handle_event_get(
 
 async fn handle_events(
     request: Request<impl hyper::body::Body>,
+    address: SocketAddr,
     pool: &sqlx::postgres::PgPool,
 ) -> Result<Response<Full<Bytes>>, hyper::http::Error> {
     match request.method() {
         &hyper::Method::GET => handle_events_get(pool).await,
-        &hyper::Method::POST => handle_events_post(request, pool).await,
+        &hyper::Method::POST => handle_events_post(request, address, pool).await,
         _ => Response::builder()
             .status(405)
             .header("Content-Type", "text/html; charset=utf-8")
@@ -212,6 +219,7 @@ async fn handle_events_get(
 
 async fn handle_events_post(
     request: Request<impl hyper::body::Body>,
+    address: SocketAddr,
     pool: &sqlx::postgres::PgPool,
 ) -> Result<Response<Full<Bytes>>, hyper::http::Error> {
     let body = request.into_body();
@@ -220,7 +228,7 @@ async fn handle_events_post(
             let bytes = collected.to_bytes();
             match definy_event::verify_and_deserialize(&bytes) {
                 Ok((data, signature)) => {
-                    match db::save_event(&data, &signature, &bytes, pool).await {
+                    match db::save_event(&data, &signature, &bytes, address, pool).await {
                         Ok(()) => Response::builder()
                             .header("content-type", "text/plain; charset=utf-8")
                             .body(Full::new(Bytes::from("OK"))),
