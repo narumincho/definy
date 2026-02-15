@@ -22,7 +22,15 @@ pub async fn init_db() -> Result<sqlx::postgres::PgPool, anyhow::Error> {
     println!("Migrating database...");
 
     sqlx::query(
-        "create table if not exists events (event_binary_hash bytea primary key, signature bytea, account_id bytea, time timestamp with time zone, event_binary bytea)",
+        "create table if not exists events (
+    event_binary_hash bytea primary key,
+    signature bytea not null,
+    account_id bytea not null,
+    time timestamp with time zone not null,
+    event_binary bytea not null,
+    server_receive_timestamp timestamp with time zone not null,
+    address text not null
+)",
     )
     .execute(&pool)
     .await?;
@@ -36,20 +44,32 @@ pub async fn save_event(
     event: &definy_event::event::Event,
     signature: &ed25519_dalek::Signature,
     event_binary: &[u8],
+    address: std::net::SocketAddr,
     pool: &sqlx::postgres::PgPool,
 ) -> Result<(), anyhow::Error> {
     let mut hasher = sha2::Sha256::new();
     hasher.update(event_binary);
     let event_binary_hash = hasher.finalize();
 
-    sqlx::query("insert into events (event_binary_hash, signature, account_id, time, event_binary) values ($1, $2, $3, $4, $5)")
-        .bind(event_binary_hash.as_slice())
-        .bind(signature.to_bytes())
-        .bind(event.account_id.0.as_ref())
-        .bind(event.time)
-        .bind(event_binary)
-        .execute(pool)
-        .await?;
+    sqlx::query(
+        "insert into events (
+    event_binary_hash,
+    signature,
+    account_id,
+    time,
+    event_binary,
+    server_receive_timestamp,
+    address
+    ) values ($1, $2, $3, $4, $5, current_timestamp, $6)",
+    )
+    .bind(event_binary_hash.as_slice())
+    .bind(signature.to_bytes())
+    .bind(event.account_id.0.as_ref())
+    .bind(event.time)
+    .bind(event_binary)
+    .bind(address.to_string())
+    .execute(pool)
+    .await?;
 
     Ok(())
 }
