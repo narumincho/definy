@@ -2,11 +2,7 @@ use std::net::SocketAddr;
 
 use http_body_util::{BodyExt, Full};
 use hyper::body::Bytes;
-use hyper::server::conn::http1;
-use hyper::service::service_fn;
 use hyper::{Request, Response};
-use hyper_util::rt::TokioIo;
-use tokio::net::TcpListener;
 
 pub async fn handle_event_get(
     request: Request<impl hyper::body::Body>,
@@ -52,13 +48,18 @@ pub async fn handle_event_get(
     }
 }
 
+#[derive(serde::Deserialize)]
+struct EventsQuery {
+    event_type: Option<definy_event::event::EventType>,
+}
+
 pub async fn handle_events(
     request: Request<impl hyper::body::Body>,
     address: SocketAddr,
     pool: &sqlx::postgres::PgPool,
 ) -> Result<Response<Full<Bytes>>, hyper::http::Error> {
     match request.method() {
-        &hyper::Method::GET => handle_events_get(pool).await,
+        &hyper::Method::GET => handle_events_get(request.uri().query(), pool).await,
         &hyper::Method::POST => handle_events_post(request, address, pool).await,
         _ => Response::builder()
             .status(405)
@@ -68,35 +69,44 @@ pub async fn handle_events(
 }
 
 async fn handle_events_get(
+    query: Option<&str>,
     pool: &sqlx::postgres::PgPool,
 ) -> Result<Response<Full<Bytes>>, hyper::http::Error> {
-    match crate::db::get_events(pool).await {
-        Ok(events) => {
-            let events_for_cbor = events
-                .iter()
-                .map(|event_raw| serde_cbor::Value::Bytes(event_raw.to_vec()))
-                .collect::<Vec<serde_cbor::Value>>();
-            match serde_cbor::to_vec(&events_for_cbor) {
-                Ok(cbor) => Response::builder()
-                    .status(200)
-                    .header("Content-Type", "application/cbor")
-                    .body(Full::new(Bytes::from(cbor))),
-                Err(e) => {
-                    eprintln!("Failed to serialize events: {:?}", e);
-                    Response::builder()
-                        .status(500)
-                        .header("Content-Type", "text/html; charset=utf-8")
-                        .body(Full::new(Bytes::from("Internal Server Error")))
+    match serde_urlencoded::from_str::<EventsQuery>(query.unwrap_or("")) {
+        Err(_) => Response::builder()
+            .status(400)
+            .header("Content-Type", "text/html; charset=utf-8")
+            .body(Full::new(Bytes::from(
+                "400 Bad Request: Invalid query format",
+            ))),
+        Ok(query) => match crate::db::get_events(pool, query.event_type).await {
+            Err(e) => {
+                eprintln!("Failed to get events: {:?}", e);
+                Response::builder()
+                    .status(500)
+                    .header("Content-Type", "text/html; charset=utf-8")
+                    .body(Full::new(Bytes::from("Internal Server Error")))
+            }
+            Ok(events) => {
+                let events_for_cbor = events
+                    .iter()
+                    .map(|event_raw| serde_cbor::Value::Bytes(event_raw.to_vec()))
+                    .collect::<Vec<serde_cbor::Value>>();
+                match serde_cbor::to_vec(&events_for_cbor) {
+                    Ok(cbor) => Response::builder()
+                        .status(200)
+                        .header("Content-Type", "application/cbor")
+                        .body(Full::new(Bytes::from(cbor))),
+                    Err(e) => {
+                        eprintln!("Failed to serialize events: {:?}", e);
+                        Response::builder()
+                            .status(500)
+                            .header("Content-Type", "text/html; charset=utf-8")
+                            .body(Full::new(Bytes::from("Internal Server Error")))
+                    }
                 }
             }
-        }
-        Err(e) => {
-            eprintln!("Failed to get events: {:?}", e);
-            Response::builder()
-                .status(500)
-                .header("Content-Type", "text/html; charset=utf-8")
-                .body(Full::new(Bytes::from("Internal Server Error")))
-        }
+        },
     }
 }
 

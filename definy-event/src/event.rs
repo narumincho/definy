@@ -8,30 +8,18 @@ pub struct Event {
     pub content: EventContent,
 }
 
-impl Event {
-    pub fn event_type(&self) -> EventType {
-        match self.content {
-            EventContent::CreateAccount(_) => EventType::AccountCreated,
-            EventContent::Message(_) => EventType::MessagePosted,
-        }
-    }
-}
-
-pub enum EventType {
-    AccountCreated,
-    MessagePosted,
-}
-
-impl EventType {
-    pub fn to_str(&self) -> &'static str {
-        match self {
-            EventType::AccountCreated => "account_created",
-            EventType::MessagePosted => "message_posted",
-        }
-    }
-}
-
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, strum::EnumDiscriminants)]
+#[strum_discriminants(name(EventType))]
+#[strum_discriminants(serde(rename_all = "snake_case"))]
+#[strum_discriminants(strum(serialize_all = "snake_case"))]
+#[strum_discriminants(derive(
+    Serialize,
+    Deserialize,
+    strum_macros::Display,
+    strum::VariantNames,
+    sqlx::Type
+))]
+#[strum_discriminants(sqlx(type_name = "event_type", rename_all = "lowercase"))]
 pub enum EventContent {
     CreateAccount(CreateAccountEvent),
     Message(MessageEvent),
