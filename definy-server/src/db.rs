@@ -103,8 +103,9 @@ pub async fn get_events(
     event_type: Option<definy_event::event::EventType>,
 ) -> Result<Box<[Vec<u8>]>, anyhow::Error> {
     let rows = match event_type {
-        Some(event_type) => sqlx::query("select (event_binary) from events where event_type = $1")
-            .bind(event_type.to_string()),
+        Some(event_type) => {
+            sqlx::query("select (event_binary) from events where event_type = $1").bind(event_type)
+        }
         None => sqlx::query("select (event_binary) from events"),
     }
     .fetch_all(pool)

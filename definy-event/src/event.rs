@@ -19,7 +19,7 @@ pub struct Event {
     strum::VariantNames,
     sqlx::Type
 ))]
-#[strum_discriminants(sqlx(type_name = "event_type", rename_all = "lowercase"))]
+#[strum_discriminants(sqlx(type_name = "event_type", rename_all = "snake_case"))]
 pub enum EventContent {
     CreateAccount(CreateAccountEvent),
     Message(MessageEvent),
