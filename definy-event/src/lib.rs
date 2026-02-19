@@ -2,6 +2,7 @@ use crate::event::Event;
 
 pub mod cbor_datetime_tag1;
 pub mod event;
+pub mod response;
 
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct SignedEvent {

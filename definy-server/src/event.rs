@@ -88,11 +88,10 @@ async fn handle_events_get(
                     .body(Full::new(Bytes::from("Internal Server Error")))
             }
             Ok(events) => {
-                let events_for_cbor = events
-                    .iter()
-                    .map(|event_raw| serde_cbor::Value::Bytes(event_raw.to_vec()))
-                    .collect::<Vec<serde_cbor::Value>>();
-                match serde_cbor::to_vec(&events_for_cbor) {
+                match serde_cbor::to_vec(&definy_event::response::EventsResponse {
+                    events: events,
+                    next_cursor: None,
+                }) {
                     Ok(cbor) => Response::builder()
                         .status(200)
                         .header("Content-Type", "application/cbor")
