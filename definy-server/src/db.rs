@@ -22,6 +22,27 @@ pub async fn init_db() -> Result<sqlx::postgres::PgPool, anyhow::Error> {
     println!("Migrating database...");
 
     sqlx::query(
+        format!(
+            "
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'event_type') THEN
+        CREATE TYPE event_type AS ENUM ({});
+    END IF;
+END
+$$",
+            <definy_event::event::EventType as strum::VariantNames>::VARIANTS
+                .iter()
+                .map(|e| format!("'{}'", e))
+                .collect::<Vec<_>>()
+                .join(", ")
+        )
+        .as_str(),
+    )
+    .execute(&pool)
+    .await?;
+
+    sqlx::query(
         "create table if not exists events (
     event_binary_hash bytea primary key,
     signature bytea not null,
@@ -29,7 +50,8 @@ pub async fn init_db() -> Result<sqlx::postgres::PgPool, anyhow::Error> {
     time timestamp with time zone not null,
     event_binary bytea not null,
     server_receive_timestamp timestamp with time zone not null,
-    address text not null
+    address text not null,
+    event_type event_type not null
 )",
     )
     .execute(&pool)
@@ -59,8 +81,9 @@ pub async fn save_event(
     time,
     event_binary,
     server_receive_timestamp,
-    address
-    ) values ($1, $2, $3, $4, $5, current_timestamp, $6)",
+    address,
+    event_type
+) values ($1, $2, $3, $4, $5, current_timestamp, $6, $7)",
     )
     .bind(event_binary_hash.as_slice())
     .bind(signature.to_bytes())
@@ -68,16 +91,26 @@ pub async fn save_event(
     .bind(event.time)
     .bind(event_binary)
     .bind(address.to_string())
+    .bind(strum::IntoDiscriminant::discriminant(&event.content))
     .execute(pool)
     .await?;
 
     Ok(())
 }
 
-pub async fn get_events(pool: &sqlx::postgres::PgPool) -> Result<Box<[Vec<u8>]>, anyhow::Error> {
-    let rows = sqlx::query("select (event_binary) from events")
-        .fetch_all(pool)
-        .await?;
+pub async fn get_events(
+    pool: &sqlx::postgres::PgPool,
+    event_type: Option<definy_event::event::EventType>,
+) -> Result<Box<[Vec<u8>]>, anyhow::Error> {
+    let rows = match event_type {
+        Some(event_type) => sqlx::query(
+            "select (event_binary) from events where event_type = $1 ORDER BY time DESC",
+        )
+        .bind(event_type),
+        None => sqlx::query("select (event_binary) from events ORDER BY time DESC"),
+    }
+    .fetch_all(pool)
+    .await?;
 
     let events = rows
         .into_iter()

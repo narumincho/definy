@@ -8,7 +8,18 @@ pub struct Event {
     pub content: EventContent,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, strum::EnumDiscriminants)]
+#[strum_discriminants(name(EventType))]
+#[strum_discriminants(serde(rename_all = "snake_case"))]
+#[strum_discriminants(strum(serialize_all = "snake_case"))]
+#[strum_discriminants(derive(
+    Serialize,
+    Deserialize,
+    strum_macros::Display,
+    strum::VariantNames,
+    sqlx::Type
+))]
+#[strum_discriminants(sqlx(type_name = "event_type", rename_all = "snake_case"))]
 pub enum EventContent {
     CreateAccount(CreateAccountEvent),
     Message(MessageEvent),

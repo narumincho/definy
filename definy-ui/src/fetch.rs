@@ -26,31 +26,27 @@ pub async fn get_events() -> anyhow::Result<
 > {
     let response_body_bytes = get_events_raw().await?;
 
-    let value = serde_cbor::from_slice::<serde_cbor::Value>(&response_body_bytes)?;
+    let value =
+        serde_cbor::from_slice::<definy_event::response::EventsResponse>(&response_body_bytes)?;
 
-    match value {
-        serde_cbor::Value::Array(events) => Ok(events
-            .into_iter()
-            .filter_map(|event| match event {
-                serde_cbor::Value::Bytes(bytes) => {
-                    let hash: [u8; 32] = <sha2::Sha256 as sha2::Digest>::digest(&bytes).into();
-                    Some((
-                        hash,
-                        definy_event::verify_and_deserialize(&bytes)
-                            .map(|(event, signature)| (signature, event)),
-                    ))
-                }
-                _ => None,
-            })
-            .collect::<Vec<(
-                [u8; 32],
-                Result<
-                    (ed25519_dalek::Signature, definy_event::event::Event),
-                    definy_event::VerifyAndDeserializeError,
-                >,
-            )>>()),
-        _ => Err(anyhow::anyhow!("Invalid response")),
-    }
+    Ok(value
+        .events
+        .into_iter()
+        .filter_map(|bytes| {
+            let hash: [u8; 32] = <sha2::Sha256 as sha2::Digest>::digest(&bytes).into();
+            Some((
+                hash,
+                definy_event::verify_and_deserialize(&bytes)
+                    .map(|(event, signature)| (signature, event)),
+            ))
+        })
+        .collect::<Vec<(
+            [u8; 32],
+            Result<
+                (ed25519_dalek::Signature, definy_event::event::Event),
+                definy_event::VerifyAndDeserializeError,
+            >,
+        )>>())
 }
 
 pub async fn post_event(signated_event: &[u8]) -> Result<u16, anyhow::Error> {
