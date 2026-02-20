@@ -10,6 +10,7 @@ pub struct AppState {
     )>,
     pub current_key: Option<ed25519_dalek::SigningKey>,
     pub message_input: String,
+    pub location: Location,
 }
 
 #[derive(Clone)]
@@ -33,4 +34,10 @@ pub enum CreatingAccountState {
     CreateAccountRequesting,
     Success,
     Error,
+}
+
+#[derive(Clone, PartialEq)]
+pub enum Location {
+    Home,
+    Event([u8; 32]),
 }

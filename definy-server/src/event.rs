@@ -30,20 +30,29 @@ pub async fn handle_event_get(
     };
 
     match crate::db::get_event(&pool, &event_binary_hash).await {
-        Ok(Some(event_binary)) => Response::builder()
-            .status(200)
-            .header("Content-Type", "application/cbor")
-            .body(Full::new(Bytes::from(event_binary))),
+        Err(_) => Response::builder()
+            .status(500)
+            .header("Content-Type", "text/html; charset=utf-8")
+            .body(Full::new(Bytes::from("Internal Server Error"))),
         Ok(None) => Response::builder()
             .status(404)
             .header("Content-Type", "text/html; charset=utf-8")
             .body(Full::new(Bytes::from("404 Not Found"))),
-        Err(e) => {
-            eprintln!("Failed to get event: {:?}", e);
+        Ok(Some(event_binary)) => {
+            if let Some(accept) = request.headers().get("accept") {
+                if let Ok(accept_as_str) = accept.to_str() {
+                    if accept_as_str.contains("text/html") {
+                        return Response::builder()
+                            .status(200)
+                            .header("Content-Type", "text/html; charset=utf-8")
+                            .body(Full::new(Bytes::from("todo")));
+                    }
+                }
+            }
             Response::builder()
-                .status(500)
-                .header("Content-Type", "text/html; charset=utf-8")
-                .body(Full::new(Bytes::from("Internal Server Error")))
+                .status(200)
+                .header("Content-Type", "application/cbor")
+                .body(Full::new(Bytes::from(event_binary)))
         }
     }
 }

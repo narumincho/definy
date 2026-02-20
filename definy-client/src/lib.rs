@@ -42,10 +42,11 @@ impl narumincho_vdom_client::App<AppState> for DefinyApp {
             created_account_events: Vec::new(),
             current_key: None,
             message_input: String::new(),
+            location: definy_ui::Location::Home,
         }
     }
 
     fn render(state: &AppState) -> narumincho_vdom::Node<AppState> {
-        definy_ui::app(state, &None)
+        definy_ui::render(state, &None)
     }
 }

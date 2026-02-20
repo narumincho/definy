@@ -78,7 +78,7 @@ async fn handler(
         "" => Response::builder()
             .header("Content-Type", "text/html; charset=utf-8")
             .body(Full::new(Bytes::from(narumincho_vdom::to_html(
-                &definy_ui::app(
+                &definy_ui::render(
                     &definy_ui::AppState {
                         login_or_create_account_dialog_state:
                             definy_ui::LoginOrCreateAccountDialogState {
@@ -90,6 +90,7 @@ async fn handler(
                         created_account_events: Vec::new(),
                         current_key: None,
                         message_input: String::new(),
+                        location: definy_ui::Location::Home,
                     },
                     &Some(definy_ui::ResourceHash {
                         js: JAVASCRIPT_HASH.to_string(),

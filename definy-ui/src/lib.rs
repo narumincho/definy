@@ -16,7 +16,7 @@ pub struct ResourceHash {
     pub wasm: String,
 }
 
-pub fn app(state: &AppState, resource_hash: &Option<ResourceHash>) -> Node<AppState> {
+pub fn render(state: &AppState, resource_hash: &Option<ResourceHash>) -> Node<AppState> {
     let mut head_children = vec![
         Title::new().children([text("definy")]).into_node(),
         Meta::new("viewport", "width=device-width,initial-scale=1.0"),
