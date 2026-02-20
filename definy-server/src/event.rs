@@ -119,7 +119,7 @@ async fn handle_events_post(
         Ok(collected) => {
             let bytes = collected.to_bytes();
             match definy_event::verify_and_deserialize(&bytes) {
-                Ok((data, signature)) => {
+                Ok((signature, data)) => {
                     match crate::db::save_event(&data, &signature, &bytes, address, pool).await {
                         Ok(()) => Response::builder()
                             .header("content-type", "text/plain; charset=utf-8")

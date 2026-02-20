@@ -10,7 +10,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     {
         let icon_bytes = std::fs::read("./assets/icon.png")?;
         let hash = sha2::Sha256::digest(&icon_bytes);
-        let hash_hex = base64::engine::general_purpose::URL_SAFE.encode(hash);
+        let hash_hex = base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(hash);
         std::fs::write("./web-distribution/icon.png.sha256", hash_hex)?;
 
         println!("icon hash write ok");
@@ -56,7 +56,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     {
         let wasm_bytes = std::fs::read("./web-distribution/definy_client_bg.wasm")?;
         let hash = sha2::Sha256::digest(&wasm_bytes);
-        let hash_hex = base64::engine::general_purpose::URL_SAFE.encode(hash);
+        let hash_hex = base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(hash);
         std::fs::write("./web-distribution/definy_client_bg.wasm.sha256", hash_hex)?;
 
         println!("wasm hash write ok");
@@ -65,7 +65,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     {
         let js_bytes = std::fs::read("./web-distribution/definy_client.js")?;
         let hash = sha2::Sha256::digest(&js_bytes);
-        let hash_hex = base64::engine::general_purpose::URL_SAFE.encode(hash);
+        let hash_hex = base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(hash);
         std::fs::write("./web-distribution/definy_client.js.sha256", hash_hex)?;
 
         println!("js hash write ok");

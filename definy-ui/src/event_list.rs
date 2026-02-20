@@ -131,7 +131,7 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
                     state
                         .created_account_events
                         .iter()
-                        .map(|(_, event)| event_view(event, &account_name_map))
+                        .map(|(hash, event)| event_view(hash, event, &account_name_map))
                         .collect::<Vec<Node<AppState>>>()
                 })
                 .into_node(),
@@ -140,6 +140,7 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
 }
 
 fn event_view(
+    hash: &[u8; 32],
     event_result: &Result<
         (ed25519_dalek::Signature, definy_event::event::Event),
         definy_event::VerifyAndDeserializeError,
@@ -147,7 +148,7 @@ fn event_view(
     account_name_map: &std::collections::HashMap<definy_event::event::AccountId, Box<str>>,
 ) -> Node<AppState> {
     match event_result {
-        Ok((_, event)) => Div::new()
+        Ok((_, event)) => A::new()
             .style(
                 Style::new()
                     .set("background-color", "var(--surface)")
@@ -158,6 +159,13 @@ fn event_view(
                     .set("transition", "transform 0.2s ease")
                     .set("display", "grid")
                     .set("gap", "0.5rem"),
+            )
+            .href(
+                format!(
+                    "/events/{}",
+                    base64::Engine::encode(&base64::engine::general_purpose::URL_SAFE_NO_PAD, hash)
+                )
+                .as_str(),
             )
             .children([
                 Div::new()

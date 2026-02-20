@@ -202,3 +202,15 @@ impl<State> Form<State> {
         self
     }
 }
+
+define_element!(
+    A,
+    "a",
+    "https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/a"
+);
+
+impl<State> A<State> {
+    pub fn href(self, href: &str) -> Self {
+        self.attribute("href", href)
+    }
+}

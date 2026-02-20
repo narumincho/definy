@@ -34,11 +34,7 @@ pub async fn get_events() -> anyhow::Result<
         .into_iter()
         .filter_map(|bytes| {
             let hash: [u8; 32] = <sha2::Sha256 as sha2::Digest>::digest(&bytes).into();
-            Some((
-                hash,
-                definy_event::verify_and_deserialize(&bytes)
-                    .map(|(event, signature)| (signature, event)),
-            ))
+            Some((hash, definy_event::verify_and_deserialize(&bytes)))
         })
         .collect::<Vec<(
             [u8; 32],
