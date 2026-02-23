@@ -148,7 +148,7 @@ fn event_view(
     account_name_map: &std::collections::HashMap<definy_event::event::AccountId, Box<str>>,
 ) -> Node<AppState> {
     match event_result {
-        Ok((_, event)) => A::new()
+        Ok((_, event)) => A::<AppState, crate::Location>::new()
             .style(
                 Style::new()
                     .set("background-color", "var(--surface)")
@@ -160,13 +160,9 @@ fn event_view(
                     .set("display", "grid")
                     .set("gap", "0.5rem"),
             )
-            .href(
-                format!(
-                    "/events/{}",
-                    base64::Engine::encode(&base64::engine::general_purpose::URL_SAFE_NO_PAD, hash)
-                )
-                .as_str(),
-            )
+            .href(narumincho_vdom::Href::Internal(crate::Location::Event(
+                *hash,
+            )))
             .children([
                 Div::new()
                     .style(

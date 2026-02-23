@@ -203,14 +203,75 @@ impl<State> Form<State> {
     }
 }
 
-define_element!(
-    A,
-    "a",
-    "https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/a"
-);
+#[doc = "https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/a"]
+pub struct A<State, L: crate::Route> {
+    pub attributes: Vec<(String, String)>,
+    pub styles: crate::Style,
+    pub events: Vec<(String, EventHandler<State>)>,
+    pub children: Vec<Node<State>>,
+    _phantom: std::marker::PhantomData<L>,
+}
 
-impl<State> A<State> {
-    pub fn href(self, href: &str) -> Self {
-        self.attribute("href", href)
+impl<State, L: crate::Route> A<State, L> {
+    pub fn new() -> Self {
+        Self {
+            attributes: Vec::new(),
+            styles: crate::Style::new(),
+            events: Vec::new(),
+            children: Vec::new(),
+            _phantom: std::marker::PhantomData,
+        }
+    }
+
+    fn attribute(mut self, key: &str, value: &str) -> Self {
+        self.attributes.push((key.to_string(), value.to_string()));
+        self
+    }
+
+    pub fn id(self, id: &str) -> Self {
+        self.attribute("id", id)
+    }
+
+    pub fn class(self, class: &str) -> Self {
+        self.attribute("class", class)
+    }
+
+    pub fn type_(self, type_: &str) -> Self {
+        self.attribute("type", type_)
+    }
+
+    pub fn style(mut self, style: impl Into<crate::Style>) -> Self {
+        self.styles = style.into();
+        self
+    }
+
+    pub fn popover(self) -> Self {
+        self.attribute("popover", "auto")
+    }
+
+    pub fn children(mut self, children: impl Into<Vec<Node<State>>>) -> Self {
+        self.children = children.into();
+        self
+    }
+
+    pub fn into_node(self) -> Node<State> {
+        Node::Element(Element {
+            element_name: "a".to_string(),
+            attributes: self.attributes,
+            styles: self.styles,
+            events: self.events,
+            children: self.children,
+        })
+    }
+
+    pub fn href(self, href: impl Into<crate::route::Href<L>>) -> Self {
+        let href_val: String = href.into().into();
+        self.attribute("href", &href_val)
+    }
+}
+
+impl<State, L: crate::Route> Into<Node<State>> for A<State, L> {
+    fn into(self) -> Node<State> {
+        self.into_node()
     }
 }

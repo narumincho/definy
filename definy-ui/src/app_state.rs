@@ -41,3 +41,37 @@ pub enum Location {
     Home,
     Event([u8; 32]),
 }
+
+impl narumincho_vdom::Route for Location {
+    fn to_url(&self) -> String {
+        match self {
+            Location::Home => "/".to_string(),
+            Location::Event(hash) => format!(
+                "/events/{}",
+                base64::Engine::encode(&base64::engine::general_purpose::URL_SAFE_NO_PAD, hash)
+            ),
+        }
+    }
+
+    fn from_url(url: &str) -> Option<Self> {
+        let parts: Vec<&str> = url.trim_matches('/').split('/').collect();
+        match parts.as_slice() {
+            [""] => Some(Location::Home),
+            ["events", hash_str] => {
+                let bytes = base64::Engine::decode(
+                    &base64::engine::general_purpose::URL_SAFE_NO_PAD,
+                    hash_str,
+                )
+                .ok()?;
+                if bytes.len() == 32 {
+                    let mut hash = [0u8; 32];
+                    hash.copy_from_slice(&bytes);
+                    Some(Location::Event(hash))
+                } else {
+                    None
+                }
+            }
+            _ => None,
+        }
+    }
+}
