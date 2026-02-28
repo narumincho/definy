@@ -2,6 +2,8 @@ mod db;
 mod event;
 
 use std::net::SocketAddr;
+use std::sync::Arc;
+use std::time::Duration;
 
 use http_body_util::Full;
 use hyper::body::Bytes;
@@ -11,12 +13,42 @@ use hyper::{Request, Response};
 use hyper_util::rt::TokioIo;
 use narumincho_vdom::Route;
 use tokio::net::TcpListener;
+use tokio::sync::RwLock;
+
+#[derive(Clone)]
+struct AppState {
+    pool: Arc<RwLock<Option<sqlx::postgres::PgPool>>>,
+}
 
 #[tokio::main]
 async fn main() -> Result<(), anyhow::Error> {
     println!("Starting definy server...");
+    let state = AppState {
+        pool: Arc::new(RwLock::new(None)),
+    };
 
-    let pool = db::init_db().await?;
+    let state_for_retry = state.clone();
+    tokio::spawn(async move {
+        loop {
+            match db::init_db().await {
+                Ok(pool) => {
+                    {
+                        let mut guard = state_for_retry.pool.write().await;
+                        *guard = Some(pool);
+                    }
+                    println!("Database is available. API requests will use the database.");
+                    break;
+                }
+                Err(error) => {
+                    eprintln!(
+                        "Failed to connect to database. Retrying in 5 seconds... {:?}",
+                        error
+                    );
+                    tokio::time::sleep(Duration::from_secs(5)).await;
+                }
+            }
+        }
+    });
 
     let addr = SocketAddr::from((
         std::net::IpAddr::V6(match std::env::var("FLY_APP_NAME") {
@@ -34,13 +66,13 @@ async fn main() -> Result<(), anyhow::Error> {
         let (stream, address) = listener.accept().await?;
 
         let io = TokioIo::new(stream);
-        let pool = pool.clone();
+        let state = state.clone();
 
         tokio::task::spawn(async move {
             if let Err(err) = http1::Builder::new()
                 .serve_connection(
                     io,
-                    service_fn(move |request| handler(request, address, pool.clone())),
+                    service_fn(move |request| handler(request, address, state.clone())),
                 )
                 .await
             {
@@ -66,7 +98,7 @@ const ICON_HASH: &'static str = include_str!("../../web-distribution/icon.png.sh
 async fn handler(
     request: Request<impl hyper::body::Body>,
     address: SocketAddr,
-    pool: sqlx::postgres::PgPool,
+    state: AppState,
 ) -> Result<Response<Full<Bytes>>, hyper::http::Error> {
     let path = request.uri().path();
     println!(
@@ -76,13 +108,18 @@ async fn handler(
         address
     );
 
-    let accept = request.headers().get("accept");
-    if let Some(accept_val) = accept {
-        if let Ok(accept_str) = accept_val.to_str() {
-            if accept_str.contains("text/html") {
-                return handle_html(path);
-            }
+    let accepts_html = request
+        .headers()
+        .get("accept")
+        .and_then(|value| value.to_str().ok())
+        .is_some_and(|value| value.contains("text/html"));
+
+    if accepts_html {
+        let db_ready = state.pool.read().await.is_some();
+        if !db_ready {
+            return db_unavailable_response(true);
         }
+        return handle_html(path);
     }
 
     match path.trim_start_matches('/') {
@@ -98,11 +135,23 @@ async fn handler(
             .header("Content-Type", "image/png")
             .header("Cache-Control", "public, max-age=31536000, immutable")
             .body(Full::new(Bytes::from_static(ICON_CONTENT))),
-        "events" => event::handle_events(request, address, &pool).await,
+        "events" => {
+            let pool = state.pool.read().await.clone();
+            match pool {
+                Some(pool) => event::handle_events(request, address, &pool).await,
+                None => db_unavailable_response(false),
+            }
+        }
         path => {
             if let Some(event_binary_hash_hex) = path.strip_prefix("events/") {
                 let event_binary_hash_hex = event_binary_hash_hex.to_string();
-                event::handle_event_get(request, pool, &event_binary_hash_hex).await
+                let pool = state.pool.read().await.clone();
+                match pool {
+                    Some(pool) => {
+                        event::handle_event_get(request, pool, &event_binary_hash_hex).await
+                    }
+                    None => db_unavailable_response(false),
+                }
             } else {
                 match path {
                     _ => Response::builder()
@@ -113,6 +162,22 @@ async fn handler(
             }
         }
     }
+}
+
+fn db_unavailable_response(wants_html: bool) -> Result<Response<Full<Bytes>>, hyper::http::Error> {
+    if wants_html {
+        return Response::builder()
+            .status(503)
+            .header("Content-Type", "text/html; charset=utf-8")
+            .body(Full::new(Bytes::from(
+                "<!doctype html><html><head><meta charset=\"utf-8\"><title>503 Service Unavailable</title></head><body><h1>データベースに接続できません</h1></body></html>",
+            )));
+    }
+
+    Response::builder()
+        .status(503)
+        .header("Content-Type", "text/plain; charset=utf-8")
+        .body(Full::new(Bytes::from("Database is unavailable")))
 }
 
 fn handle_html(path: &str) -> Result<Response<Full<Bytes>>, hyper::http::Error> {

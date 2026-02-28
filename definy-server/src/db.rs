@@ -1,15 +1,14 @@
+use anyhow::Context;
 use sha2::Digest;
 use sqlx::Row;
 
 pub async fn init_db() -> Result<sqlx::postgres::PgPool, anyhow::Error> {
     println!("Connecting to postgresql...");
 
-    let pool = sqlx::postgres::PgPool::connect(
-        std::env::var("DATABASE_URL")
-            .expect("environment variable DATABASE_URL must be set")
-            .as_str(),
-    )
-    .await?;
+    let database_url =
+        std::env::var("DATABASE_URL").context("environment variable DATABASE_URL must be set")?;
+
+    let pool = sqlx::postgres::PgPool::connect(database_url.as_str()).await?;
 
     let result = sqlx::query("select * from version()")
         .fetch_one(&pool)
