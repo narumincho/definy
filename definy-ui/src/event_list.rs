@@ -4,17 +4,8 @@ use narumincho_vdom::*;
 use crate::app_state::AppState;
 
 pub fn event_list_view(state: &AppState) -> Node<AppState> {
-    Div::new()
-        .style(
-            Style::new()
-                .set("display", "grid")
-                .set("gap", "2rem")
-                .set("width", "100%")
-                .set("max-width", "800px")
-                .set("margin", "0 auto")
-                .set("padding", "2rem 1rem"),
-        )
-        .children([
+    let message_form = if state.current_key.is_some() {
+        Some(
             Div::new()
                 .style(
                     Style::new()
@@ -115,29 +106,52 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
                         .into_node(),
                 ])
                 .into_node(),
-            Div::new()
-                .style(Style::new().set("display", "grid").set("gap", "1rem"))
-                .children({
-                    let mut account_name_map = std::collections::HashMap::new();
-                    for (_, event_result) in &state.created_account_events {
-                        if let Ok((_, event)) = event_result {
-                            if let definy_event::event::EventContent::CreateAccount(e) =
-                                &event.content
-                            {
-                                account_name_map
-                                    .insert(event.account_id.clone(), e.account_name.clone());
+        )
+    } else {
+        None
+    };
+
+    Div::new()
+        .style(
+            Style::new()
+                .set("display", "grid")
+                .set("gap", "2rem")
+                .set("width", "100%")
+                .set("max-width", "800px")
+                .set("margin", "0 auto")
+                .set("padding", "2rem 1rem"),
+        )
+        .children({
+            let mut children = Vec::new();
+            if let Some(message_form) = message_form {
+                children.push(message_form);
+            }
+            children.push(
+                Div::new()
+                    .style(Style::new().set("display", "grid").set("gap", "1rem"))
+                    .children({
+                        let mut account_name_map = std::collections::HashMap::new();
+                        for (_, event_result) in &state.created_account_events {
+                            if let Ok((_, event)) = event_result {
+                                if let definy_event::event::EventContent::CreateAccount(e) =
+                                    &event.content
+                                {
+                                    account_name_map
+                                        .insert(event.account_id.clone(), e.account_name.clone());
+                                }
                             }
                         }
-                    }
 
-                    state
-                        .created_account_events
-                        .iter()
-                        .map(|(hash, event)| event_view(hash, event, &account_name_map))
-                        .collect::<Vec<Node<AppState>>>()
-                })
-                .into_node(),
-        ])
+                        state
+                            .created_account_events
+                            .iter()
+                            .map(|(hash, event)| event_view(hash, event, &account_name_map))
+                            .collect::<Vec<Node<AppState>>>()
+                    })
+                    .into_node(),
+            );
+            children
+        })
         .into_node()
 }
 
