@@ -30,10 +30,13 @@ pub async fn handle_event_get(
     };
 
     match crate::db::get_event(&pool, &event_binary_hash).await {
-        Err(_) => Response::builder()
-            .status(500)
-            .header("Content-Type", "text/html; charset=utf-8")
-            .body(Full::new(Bytes::from("Internal Server Error"))),
+        Err(e) => {
+            eprintln!("Failed to get event: {:?}", e);
+            Response::builder()
+                .status(503)
+                .header("Content-Type", "text/html; charset=utf-8")
+                .body(Full::new(Bytes::from("Database is unavailable")))
+        }
         Ok(None) => Response::builder()
             .status(404)
             .header("Content-Type", "text/html; charset=utf-8")
@@ -92,9 +95,9 @@ async fn handle_events_get(
             Err(e) => {
                 eprintln!("Failed to get events: {:?}", e);
                 Response::builder()
-                    .status(500)
+                    .status(503)
                     .header("Content-Type", "text/html; charset=utf-8")
-                    .body(Full::new(Bytes::from("Internal Server Error")))
+                    .body(Full::new(Bytes::from("Database is unavailable")))
             }
             Ok(events) => {
                 match serde_cbor::to_vec(&definy_event::response::EventsResponse {
@@ -136,9 +139,9 @@ async fn handle_events_post(
                         Err(e) => {
                             eprintln!("Failed to save event: {:?}", e);
                             Response::builder()
-                                .status(500)
+                                .status(503)
                                 .header("content-type", "text/plain; charset=utf-8")
-                                .body(Full::new(Bytes::from("Internal Server Error")))
+                                .body(Full::new(Bytes::from("Database is unavailable")))
                         }
                     }
                 }

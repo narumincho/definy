@@ -30,23 +30,36 @@ async fn main() -> Result<(), anyhow::Error> {
     let state_for_retry = state.clone();
     tokio::spawn(async move {
         loop {
-            match db::init_db().await {
-                Ok(pool) => {
-                    {
+            let current_pool = state_for_retry.pool.read().await.clone();
+
+            match current_pool {
+                Some(pool) => {
+                    if let Err(error) = sqlx::query("select 1").execute(&pool).await {
+                        eprintln!(
+                            "Database health check failed. Switching to reconnect mode... {:?}",
+                            error
+                        );
                         let mut guard = state_for_retry.pool.write().await;
-                        *guard = Some(pool);
+                        *guard = None;
                     }
-                    println!("Database is available. API requests will use the database.");
-                    break;
                 }
-                Err(error) => {
-                    eprintln!(
-                        "Failed to connect to database. Retrying in 5 seconds... {:?}",
-                        error
-                    );
-                    tokio::time::sleep(Duration::from_secs(5)).await;
-                }
+                None => match db::init_db().await {
+                    Ok(pool) => {
+                        {
+                            let mut guard = state_for_retry.pool.write().await;
+                            *guard = Some(pool);
+                        }
+                        println!("Database is available. API requests will use the database.");
+                    }
+                    Err(error) => {
+                        eprintln!(
+                            "Failed to connect to database. Retrying in 5 seconds... {:?}",
+                            error
+                        );
+                    }
+                },
             }
+            tokio::time::sleep(Duration::from_secs(5)).await;
         }
     });
 
