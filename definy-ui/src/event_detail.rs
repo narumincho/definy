@@ -74,10 +74,12 @@ fn render_event_detail(
     Div::new()
         .style(
             Style::new()
-                .set("background-color", "var(--surface)")
+                .set("background", "rgba(255, 255, 255, 0.02)")
+                .set("backdrop-filter", "var(--glass-blur)")
+                .set("-webkit-backdrop-filter", "var(--glass-blur)")
                 .set("border", "1px solid var(--border)")
                 .set("border-radius", "var(--radius-lg)")
-                .set("padding", "2rem")
+                .set("padding", "2.5rem")
                 .set("box-shadow", "var(--shadow-lg)")
                 .set("display", "grid")
                 .set("gap", "1.5rem"),
@@ -99,7 +101,8 @@ fn render_event_detail(
                         .children([text(&event.time.format("%Y-%m-%d %H:%M:%S").to_string())])
                         .into_node(),
                     Div::new()
-                        .style(Style::new().set("font-family", "monospace"))
+                        .class("mono")
+                        .style(Style::new().set("opacity", "0.6"))
                         .children([text(&base64::Engine::encode(
                             &base64::engine::general_purpose::URL_SAFE_NO_PAD,
                             event.account_id.0.as_slice(),
@@ -142,14 +145,14 @@ fn render_event_detail(
                     .into_node(),
             },
             Div::new()
+                .class("mono")
                 .style(
                     Style::new()
                         .set("font-size", "0.75rem")
                         .set("color", "var(--text-secondary)")
-                        .set("margin-top", "2rem")
+                        .set("margin-top", "2.5rem")
                         .set("word-break", "break-all")
-                        .set("opacity", "0.7")
-                        .set("font-family", "monospace"),
+                        .set("opacity", "0.6"),
                 )
                 .children([
                     text("Event Hash: "),

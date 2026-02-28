@@ -20,9 +20,11 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
                     Style::new()
                         .set("display", "flex")
                         .set("gap", "1rem")
-                        .set("background-color", "var(--surface)")
+                        .set("background", "var(--surface)")
+                        .set("backdrop-filter", "var(--glass-blur)")
+                        .set("-webkit-backdrop-filter", "var(--glass-blur)")
                         .set("padding", "1.5rem")
-                        .set("border-radius", "var(--radius-md)")
+                        .set("border-radius", "var(--radius-lg)")
                         .set("box-shadow", "var(--shadow-md)")
                         .set("border", "1px solid var(--border)"),
                 )
@@ -151,14 +153,16 @@ fn event_view(
         Ok((_, event)) => A::<AppState, crate::Location>::new()
             .style(
                 Style::new()
-                    .set("background-color", "var(--surface)")
+                    .set("background", "rgba(255, 255, 255, 0.02)")
+                    .set("backdrop-filter", "var(--glass-blur)")
+                    .set("-webkit-backdrop-filter", "var(--glass-blur)")
                     .set("border", "1px solid var(--border)")
-                    .set("border-radius", "var(--radius-md)")
+                    .set("border-radius", "var(--radius-lg)")
                     .set("padding", "1.5rem")
-                    .set("box-shadow", "var(--shadow-md)")
-                    .set("transition", "transform 0.2s ease")
+                    .set("box-shadow", "0 4px 6px -1px rgba(0, 0, 0, 0.1)")
+                    .set("transition", "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)")
                     .set("display", "grid")
-                    .set("gap", "0.5rem"),
+                    .set("gap", "0.75rem"),
             )
             .href(narumincho_vdom::Href::Internal(crate::Location::Event(
                 *hash,
@@ -178,7 +182,8 @@ fn event_view(
                             .children([text(&event.time.format("%Y-%m-%d %H:%M:%S").to_string())])
                             .into_node(),
                         Div::new()
-                            .style(Style::new().set("font-family", "monospace"))
+                            .class("mono")
+                            .style(Style::new().set("opacity", "0.6"))
                             .children([text(&base64::Engine::encode(
                                 &base64::engine::general_purpose::URL_SAFE_NO_PAD,
                                 event.account_id.0.as_slice(),
@@ -200,8 +205,10 @@ fn event_view(
                             Div::new()
                                 .style(
                                     Style::new()
-                                        .set("font-size", "0.8rem")
-                                        .set("color", "var(--text-secondary)"),
+                                        .set("font-size", "0.85rem")
+                                        .set("color", "var(--primary)")
+                                        .set("font-weight", "600")
+                                        .set("margin-bottom", "0.25rem"),
                                 )
                                 .children([text(
                                     account_name_map
