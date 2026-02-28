@@ -41,6 +41,12 @@ $$",
     .execute(&pool)
     .await?;
 
+    for event_type in <definy_event::event::EventType as strum::VariantNames>::VARIANTS {
+        sqlx::query(format!("ALTER TYPE event_type ADD VALUE IF NOT EXISTS '{event_type}'").as_str())
+            .execute(&pool)
+            .await?;
+    }
+
     sqlx::query(
         "create table if not exists events (
     event_binary_hash bytea primary key,

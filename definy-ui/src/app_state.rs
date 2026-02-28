@@ -10,7 +10,34 @@ pub struct AppState {
     )>,
     pub current_key: Option<ed25519_dalek::SigningKey>,
     pub message_input: String,
+    pub profile_name_input: String,
     pub location: Option<Location>,
+}
+
+impl AppState {
+    pub fn account_name_map(
+        &self,
+    ) -> std::collections::HashMap<definy_event::event::AccountId, Box<str>> {
+        let mut account_name_map = std::collections::HashMap::new();
+        for (_, event_result) in &self.created_account_events {
+            if let Ok((_, event)) = event_result {
+                match &event.content {
+                    definy_event::event::EventContent::CreateAccount(create_account_event) => {
+                        account_name_map
+                            .entry(event.account_id.clone())
+                            .or_insert_with(|| create_account_event.account_name.clone());
+                    }
+                    definy_event::event::EventContent::ChangeProfile(change_profile_event) => {
+                        account_name_map
+                            .entry(event.account_id.clone())
+                            .or_insert_with(|| change_profile_event.account_name.clone());
+                    }
+                    definy_event::event::EventContent::Message(_) => {}
+                }
+            }
+        }
+        account_name_map
+    }
 }
 
 #[derive(Clone)]

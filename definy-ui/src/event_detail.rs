@@ -5,14 +5,11 @@ use crate::Location;
 use crate::app_state::AppState;
 
 pub fn event_detail_view(state: &AppState, target_hash: &[u8; 32]) -> Node<AppState> {
-    let mut account_name_map = std::collections::HashMap::new();
+    let account_name_map = state.account_name_map();
     let mut target_event_opt = None;
 
     for (hash, event_result) in &state.created_account_events {
         if let Ok((_, event)) = event_result {
-            if let EventContent::CreateAccount(e) = &event.content {
-                account_name_map.insert(event.account_id.clone(), e.account_name.clone());
-            }
             if hash == target_hash {
                 target_event_opt = Some(event);
             }
@@ -121,6 +118,18 @@ fn render_event_detail(
                     .children([
                         text("Account created: "),
                         text(create_account_event.account_name.as_ref()),
+                    ])
+                    .into_node(),
+                EventContent::ChangeProfile(change_profile_event) => Div::new()
+                    .style(
+                        Style::new()
+                            .set("color", "var(--primary)")
+                            .set("font-size", "1.25rem")
+                            .set("font-weight", "600"),
+                    )
+                    .children([
+                        text("Profile changed: "),
+                        text(change_profile_event.account_name.as_ref()),
                     ])
                     .into_node(),
                 EventContent::Message(message_event) => Div::new()

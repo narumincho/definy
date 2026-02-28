@@ -71,6 +71,7 @@ impl narumincho_vdom_client::App<AppState> for DefinyApp {
             created_account_events: ssr_events.unwrap_or_default(),
             current_key: None,
             message_input: String::new(),
+            profile_name_input: String::new(),
             location: {
                 let initial_url = web_sys::window()
                     .unwrap()

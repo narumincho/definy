@@ -130,17 +130,7 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
                 Div::new()
                     .style(Style::new().set("display", "grid").set("gap", "1rem"))
                     .children({
-                        let mut account_name_map = std::collections::HashMap::new();
-                        for (_, event_result) in &state.created_account_events {
-                            if let Ok((_, event)) = event_result {
-                                if let definy_event::event::EventContent::CreateAccount(e) =
-                                    &event.content
-                                {
-                                    account_name_map
-                                        .insert(event.account_id.clone(), e.account_name.clone());
-                                }
-                            }
-                        }
+                        let account_name_map = state.account_name_map();
 
                         state
                             .created_account_events
@@ -211,6 +201,13 @@ fn event_view(
                         .children([
                             text("Account created: "),
                             text(create_account_event.account_name.as_ref()),
+                        ])
+                        .into_node(),
+                    EventContent::ChangeProfile(change_profile_event) => Div::new()
+                        .style(Style::new().set("color", "var(--primary)"))
+                        .children([
+                            text("Profile changed: "),
+                            text(change_profile_event.account_name.as_ref()),
                         ])
                         .into_node(),
                     EventContent::Message(message_event) => Div::new()
