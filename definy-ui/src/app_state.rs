@@ -10,7 +10,7 @@ pub struct AppState {
     )>,
     pub current_key: Option<ed25519_dalek::SigningKey>,
     pub message_input: String,
-    pub location: Location,
+    pub location: Option<Location>,
 }
 
 #[derive(Clone)]

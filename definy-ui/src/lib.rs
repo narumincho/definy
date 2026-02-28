@@ -6,6 +6,7 @@ mod header;
 mod login_or_create_account_dialog;
 mod message;
 pub mod navigator_credential;
+mod not_found;
 
 pub use app_state::*;
 pub use message::Message;
@@ -57,8 +58,9 @@ init({{ module_or_path: \"{}\" }});",
                 .children([
                     header::header(state),
                     match &state.location {
-                        Location::Home => event_list::event_list_view(state),
-                        Location::Event(hash) => event_detail::event_detail_view(state, hash),
+                        Some(Location::Home) => event_list::event_list_view(state),
+                        Some(Location::Event(hash)) => event_detail::event_detail_view(state, hash),
+                        None => not_found::not_found_view(state),
                     },
                     login_or_create_account_dialog::login_or_create_account_dialog(state),
                 ])

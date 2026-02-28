@@ -52,7 +52,7 @@ impl narumincho_vdom_client::App<AppState> for DefinyApp {
                 let url = web_sys::Url::new(&initial_url).unwrap();
                 let pathname = url.pathname();
                 use narumincho_vdom::Route;
-                definy_ui::Location::from_url(&pathname).unwrap_or(definy_ui::Location::Home)
+                definy_ui::Location::from_url(&pathname)
             },
         }
     }
@@ -61,9 +61,8 @@ impl narumincho_vdom_client::App<AppState> for DefinyApp {
         use narumincho_vdom::Route;
         if let Ok(web_url) = web_sys::Url::new(&url) {
             let pathname = web_url.pathname();
-            if let Some(location) = definy_ui::Location::from_url(&pathname) {
-                return AppState { location, ..state };
-            }
+            let location = definy_ui::Location::from_url(&pathname);
+            return AppState { location, ..state };
         }
         state
     }

@@ -9,6 +9,7 @@ use hyper::server::conn::http1;
 use hyper::service::service_fn;
 use hyper::{Request, Response};
 use hyper_util::rt::TokioIo;
+use narumincho_vdom::Route;
 use tokio::net::TcpListener;
 
 #[tokio::main]
@@ -74,30 +75,17 @@ async fn handler(
         path,
         address
     );
+
+    let accept = request.headers().get("accept");
+    if let Some(accept_val) = accept {
+        if let Ok(accept_str) = accept_val.to_str() {
+            if accept_str.contains("text/html") {
+                return handle_html(path);
+            }
+        }
+    }
+
     match path.trim_start_matches('/') {
-        "" => Response::builder()
-            .header("Content-Type", "text/html; charset=utf-8")
-            .body(Full::new(Bytes::from(narumincho_vdom::to_html(
-                &definy_ui::render(
-                    &definy_ui::AppState {
-                        login_or_create_account_dialog_state:
-                            definy_ui::LoginOrCreateAccountDialogState {
-                                generated_key: None,
-                                state: definy_ui::CreatingAccountState::LogIn,
-                                username: String::new(),
-                                current_password: String::new(),
-                            },
-                        created_account_events: Vec::new(),
-                        current_key: None,
-                        message_input: String::new(),
-                        location: definy_ui::Location::Home,
-                    },
-                    &Some(definy_ui::ResourceHash {
-                        js: JAVASCRIPT_HASH.to_string(),
-                        wasm: WASM_HASH.to_string(),
-                    }),
-                ),
-            )))),
         JAVASCRIPT_HASH => Response::builder()
             .header("Content-Type", "application/javascript; charset=utf-8")
             .header("Cache-Control", "public, max-age=31536000, immutable")
@@ -125,4 +113,31 @@ async fn handler(
             }
         }
     }
+}
+
+fn handle_html(url: &str) -> Result<Response<Full<Bytes>>, hyper::http::Error> {
+    let location = definy_ui::Location::from_url(url);
+    Response::builder()
+        .header("Content-Type", "text/html; charset=utf-8")
+        .body(Full::new(Bytes::from(narumincho_vdom::to_html(
+            &definy_ui::render(
+                &definy_ui::AppState {
+                    login_or_create_account_dialog_state:
+                        definy_ui::LoginOrCreateAccountDialogState {
+                            generated_key: None,
+                            state: definy_ui::CreatingAccountState::LogIn,
+                            username: String::new(),
+                            current_password: String::new(),
+                        },
+                    current_key: None,
+                    message_input: String::new(),
+                    created_account_events: Vec::new(),
+                    location,
+                },
+                &Some(definy_ui::ResourceHash {
+                    js: JAVASCRIPT_HASH.to_string(),
+                    wasm: WASM_HASH.to_string(),
+                }),
+            ),
+        ))))
 }
