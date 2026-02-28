@@ -115,8 +115,16 @@ async fn handler(
     }
 }
 
-fn handle_html(url: &str) -> Result<Response<Full<Bytes>>, hyper::http::Error> {
-    let location = definy_ui::Location::from_url(url);
+fn handle_html(path: &str) -> Result<Response<Full<Bytes>>, hyper::http::Error> {
+    let location = definy_ui::Location::from_url(path);
+    if let Some(ref location) = location {
+        if location.to_url() != path {
+            return Response::builder()
+                .status(301)
+                .header("Location", location.to_url())
+                .body(Full::new(Bytes::from("Redirecting...")));
+        }
+    }
     Response::builder()
         .header("Content-Type", "text/html; charset=utf-8")
         .body(Full::new(Bytes::from(narumincho_vdom::to_html(
