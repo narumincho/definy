@@ -22,3 +22,4 @@ wasm-bindgen-futures = "0.4.58"
 chrono = "0.4.43"
 anyhow = "1.0.100"
 serde_cbor = { version = "0.11.2", features = ["std", "tags"] }
+sha2 = "0.10.9"
