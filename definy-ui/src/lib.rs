@@ -1,4 +1,5 @@
 mod app_state;
+mod event_detail;
 mod event_list;
 pub mod fetch;
 mod header;
@@ -55,7 +56,10 @@ init({{ module_or_path: \"{}\" }});",
                 )
                 .children([
                     header::header(state),
-                    event_list::event_list_view(state),
+                    match &state.location {
+                        Location::Home => event_list::event_list_view(state),
+                        Location::Event(hash) => event_detail::event_detail_view(state, hash),
+                    },
                     login_or_create_account_dialog::login_or_create_account_dialog(state),
                 ])
                 .into_node(),

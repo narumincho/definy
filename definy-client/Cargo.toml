@@ -9,23 +9,7 @@ crate-type = ["cdylib"]
 [dependencies]
 js-sys = "0.3"
 wasm-bindgen = "0.2"
-web-sys = { version = "0.3.85", features = [
-  "console",
-  "Window",
-  "Document",
-  "Element",
-  "Node",
-  "NodeList",
-  "HtmlElement",
-  "Event",
-  "HtmlDialogElement",
-  "Navigator",
-  "Clipboard",
-  "Request",
-  "RequestInit",
-  "Response",
-  "Headers",
-] }
+web-sys = { version = "0.3.85", features = ["console", "Window", "Document", "Element", "Node", "NodeList", "HtmlElement", "Event", "HtmlDialogElement", "Navigator", "Clipboard", "Request", "RequestInit", "Response", "Headers", "Url"] }
 definy-ui = { path = "../definy-ui" }
 definy-event = { path = "../definy-event" }
 narumincho-vdom-client = { path = "../narumincho-vdom-client" }
