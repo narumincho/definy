@@ -1,10 +1,12 @@
 mod app_state;
+mod event_detail;
 mod event_list;
 pub mod fetch;
 mod header;
 mod login_or_create_account_dialog;
 mod message;
 pub mod navigator_credential;
+mod not_found;
 
 pub use app_state::*;
 pub use message::Message;
@@ -16,7 +18,7 @@ pub struct ResourceHash {
     pub wasm: String,
 }
 
-pub fn app(state: &AppState, resource_hash: &Option<ResourceHash>) -> Node<AppState> {
+pub fn render(state: &AppState, resource_hash: &Option<ResourceHash>) -> Node<AppState> {
     let mut head_children = vec![
         Title::new().children([text("definy")]).into_node(),
         Meta::new("viewport", "width=device-width,initial-scale=1.0"),
@@ -34,8 +36,8 @@ pub fn app(state: &AppState, resource_hash: &Option<ResourceHash>) -> Node<AppSt
                 Script::new()
                     .type_("module")
                     .children([text(format!(
-                        "import init from './{}';
-init({{ module_or_path: \"{}\" }});",
+                        "import init from '/{}';
+init({{ module_or_path: \"/{}\" }});",
                         r.js, r.wasm
                     ))])
                     .into_node(),
@@ -55,7 +57,11 @@ init({{ module_or_path: \"{}\" }});",
                 )
                 .children([
                     header::header(state),
-                    event_list::event_list_view(state),
+                    match &state.location {
+                        Some(Location::Home) => event_list::event_list_view(state),
+                        Some(Location::Event(hash)) => event_detail::event_detail_view(state, hash),
+                        None => not_found::not_found_view(state),
+                    },
                     login_or_create_account_dialog::login_or_create_account_dialog(state),
                 ])
                 .into_node(),

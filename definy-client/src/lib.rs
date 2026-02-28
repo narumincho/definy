@@ -42,10 +42,32 @@ impl narumincho_vdom_client::App<AppState> for DefinyApp {
             created_account_events: Vec::new(),
             current_key: None,
             message_input: String::new(),
+            location: {
+                let initial_url = web_sys::window()
+                    .unwrap()
+                    .document()
+                    .unwrap()
+                    .url()
+                    .unwrap_or_default();
+                let url = web_sys::Url::new(&initial_url).unwrap();
+                let pathname = url.pathname();
+                use narumincho_vdom::Route;
+                definy_ui::Location::from_url(&pathname)
+            },
         }
     }
 
+    fn on_navigate(state: AppState, url: String) -> AppState {
+        use narumincho_vdom::Route;
+        if let Ok(web_url) = web_sys::Url::new(&url) {
+            let pathname = web_url.pathname();
+            let location = definy_ui::Location::from_url(&pathname);
+            return AppState { location, ..state };
+        }
+        state
+    }
+
     fn render(state: &AppState) -> narumincho_vdom::Node<AppState> {
-        definy_ui::app(state, &None)
+        definy_ui::render(state, &None)
     }
 }

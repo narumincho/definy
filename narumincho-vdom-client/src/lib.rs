@@ -17,6 +17,10 @@ pub const DOCUMENT: std::sync::LazyLock<web_sys::Document> = std::sync::LazyLock
 pub trait App<State: Clone + 'static> {
     fn initial_state(fire: &Rc<dyn Fn(Box<dyn FnOnce(State) -> State>)>) -> State;
     fn render(state: &State) -> Node<State>;
+    fn on_navigate(state: State, url: String) -> State {
+        let _ = url;
+        state
+    }
 }
 
 pub fn start<State: Clone + 'static, A: App<State>>() {
@@ -110,6 +114,169 @@ pub fn start<State: Clone + 'static, A: App<State>>() {
         // ---- 2. VDOM diff & patch & drain ----
         update_view();
     }));
+
+    if let Some(window) = web_sys::window() {
+        // --- 1. Web Navigation API listener (if supported) ---
+        if let Ok(navigation) = Reflect::get(&window, &JsValue::from_str("navigation")) {
+            if !navigation.is_undefined() {
+                let dispatch_for_nav = Rc::clone(&dispatch_impl);
+                let on_navigate = Closure::wrap(Box::new(move |event: web_sys::Event| {
+                    if let Ok(can_intercept) =
+                        Reflect::get(&event, &JsValue::from_str("canIntercept"))
+                    {
+                        if can_intercept.is_truthy() {
+                            if let Ok(user_initiated) =
+                                Reflect::get(&event, &JsValue::from_str("userInitiated"))
+                            {
+                                // Only intercept if it was a user click (not script navigation, etc) if we want
+                                // Or always intercept. Let's intercept and call .intercept() if available
+                                if let Ok(destination) =
+                                    Reflect::get(&event, &JsValue::from_str("destination"))
+                                {
+                                    if let Ok(url_val) =
+                                        Reflect::get(&destination, &JsValue::from_str("url"))
+                                    {
+                                        if let Some(url_str) = url_val.as_string() {
+                                            // The modern way to handle this in Navigation API is to call event.intercept()
+                                            // preventDefault() cancels the navigation entirely (e.g., URL bar doesn't update).
+                                            // Usually, VDOM routers want the URL bar to update.
+                                            let intercept_func = Reflect::get(
+                                                &event,
+                                                &JsValue::from_str("intercept"),
+                                            )
+                                            .unwrap_or(JsValue::UNDEFINED);
+
+                                            let dispatch = Rc::clone(&dispatch_for_nav);
+
+                                            if intercept_func.is_function() {
+                                                let url_for_intercept = url_str.clone();
+                                                let intercept_handler =
+                                                    Closure::wrap(Box::new(move || {
+                                                        let dispatch_inner = Rc::clone(&dispatch);
+                                                        let url_for_closure =
+                                                            url_for_intercept.clone();
+                                                        dispatch_inner(Box::new(
+                                                            move |state: State| {
+                                                                A::on_navigate(
+                                                                    state,
+                                                                    url_for_closure,
+                                                                )
+                                                            },
+                                                        ));
+                                                    })
+                                                        as Box<dyn FnMut()>);
+
+                                                let intercept_options = js_sys::Object::new();
+                                                Reflect::set(
+                                                    &intercept_options,
+                                                    &JsValue::from_str("handler"),
+                                                    intercept_handler.as_ref(),
+                                                )
+                                                .unwrap();
+
+                                                intercept_func
+                                                    .unchecked_into::<js_sys::Function>()
+                                                    .call1(&event, &intercept_options)
+                                                    .unwrap();
+                                                intercept_handler.forget();
+                                            } else {
+                                                event.prevent_default();
+                                                dispatch(Box::new(move |state: State| {
+                                                    A::on_navigate(state, url_str.clone())
+                                                }));
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                })
+                    as Box<dyn FnMut(web_sys::Event)>);
+
+                let _ = Reflect::get(&navigation, &JsValue::from_str("addEventListener"))
+                    .unwrap()
+                    .unchecked_into::<js_sys::Function>()
+                    .call2(
+                        &navigation,
+                        &JsValue::from_str("navigate"),
+                        on_navigate.as_ref(),
+                    );
+                on_navigate.forget();
+            }
+        }
+
+        // --- 2. Fallback or standard Click Event Interception (for browsers without modern Navigation API) ---
+        // Also helps with normal clicks where `navigate` doesn't fire as expected or `preventDefault` blocks URL updates.
+        let dispatch_for_click = Rc::clone(&dispatch_impl);
+        let on_click = Closure::wrap(Box::new(move |event: web_sys::MouseEvent| {
+            // Ignore clicks with modifiers (Ctrl, Cmd, Shift, Alt)
+            if event.ctrl_key() || event.meta_key() || event.shift_key() || event.alt_key() {
+                return;
+            }
+            // Ignore right clicks
+            if event.button() != 0 {
+                return;
+            }
+
+            // Find closest 'a' tag
+            let mut target = event
+                .target()
+                .map(|t| t.unchecked_into::<web_sys::Element>());
+            while let Some(el) = target {
+                if el.tag_name().eq_ignore_ascii_case("a") {
+                    if let Some(href) = el.get_attribute("href") {
+                        // Check if it's an internal link (e.g. starts with /)
+                        if href.starts_with("/") && !href.starts_with("//") {
+                            event.prevent_default();
+                            let dispatch = Rc::clone(&dispatch_for_click);
+                            let href_clone = href.clone();
+                            // Update history API manually since we intercepted the click
+                            if let Some(window) = web_sys::window() {
+                                if let Ok(history) = window.history() {
+                                    let _ = history.push_state_with_url(
+                                        &JsValue::NULL,
+                                        "",
+                                        Some(&href_clone),
+                                    );
+                                }
+                            }
+                            dispatch(Box::new(move |state: State| {
+                                // Provide the full URL to on_navigate, or just the path if on_navigate handles it.
+                                // definy-client uses web_sys::Url::new, so we need a full URL
+                                let full_url =
+                                    web_sys::window().unwrap().location().origin().unwrap()
+                                        + &href_clone;
+                                A::on_navigate(state, full_url)
+                            }));
+                        }
+                    }
+                    break;
+                }
+                target = el.parent_element();
+            }
+        }) as Box<dyn FnMut(web_sys::MouseEvent)>);
+
+        if let Some(document) = window.document() {
+            let _ = document
+                .add_event_listener_with_callback("click", on_click.as_ref().unchecked_ref());
+        }
+        on_click.forget();
+
+        // --- 3. Handle popstate (Back/Forward buttons) ---
+        let dispatch_for_pop = Rc::clone(&dispatch_impl);
+        let on_popstate = Closure::wrap(Box::new(move |_event: web_sys::PopStateEvent| {
+            let dispatch = Rc::clone(&dispatch_for_pop);
+            let url = web_sys::window().unwrap().location().href().unwrap();
+            dispatch(Box::new(move |state: State| {
+                A::on_navigate(state, url.clone())
+            }));
+        }) as Box<dyn FnMut(web_sys::PopStateEvent)>);
+
+        let _ = window
+            .add_event_listener_with_callback("popstate", on_popstate.as_ref().unchecked_ref());
+        on_popstate.forget();
+    }
 
     apply(&html_element.into(), &first_patches, &dispatch_impl);
 }

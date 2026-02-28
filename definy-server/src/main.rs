@@ -2,6 +2,8 @@ mod db;
 mod event;
 
 use std::net::SocketAddr;
+use std::sync::Arc;
+use std::time::Duration;
 
 use http_body_util::Full;
 use hyper::body::Bytes;
@@ -9,13 +11,44 @@ use hyper::server::conn::http1;
 use hyper::service::service_fn;
 use hyper::{Request, Response};
 use hyper_util::rt::TokioIo;
+use narumincho_vdom::Route;
 use tokio::net::TcpListener;
+use tokio::sync::RwLock;
+
+#[derive(Clone)]
+struct AppState {
+    pool: Arc<RwLock<Option<sqlx::postgres::PgPool>>>,
+}
 
 #[tokio::main]
 async fn main() -> Result<(), anyhow::Error> {
     println!("Starting definy server...");
+    let state = AppState {
+        pool: Arc::new(RwLock::new(None)),
+    };
 
-    let pool = db::init_db().await?;
+    let state_for_retry = state.clone();
+    tokio::spawn(async move {
+        loop {
+            match db::init_db().await {
+                Ok(pool) => {
+                    {
+                        let mut guard = state_for_retry.pool.write().await;
+                        *guard = Some(pool);
+                    }
+                    println!("Database is available. API requests will use the database.");
+                    break;
+                }
+                Err(error) => {
+                    eprintln!(
+                        "Failed to connect to database. Retrying in 5 seconds... {:?}",
+                        error
+                    );
+                    tokio::time::sleep(Duration::from_secs(5)).await;
+                }
+            }
+        }
+    });
 
     let addr = SocketAddr::from((
         std::net::IpAddr::V6(match std::env::var("FLY_APP_NAME") {
@@ -33,13 +66,13 @@ async fn main() -> Result<(), anyhow::Error> {
         let (stream, address) = listener.accept().await?;
 
         let io = TokioIo::new(stream);
-        let pool = pool.clone();
+        let state = state.clone();
 
         tokio::task::spawn(async move {
             if let Err(err) = http1::Builder::new()
                 .serve_connection(
                     io,
-                    service_fn(move |request| handler(request, address, pool.clone())),
+                    service_fn(move |request| handler(request, address, state.clone())),
                 )
                 .await
             {
@@ -65,7 +98,7 @@ const ICON_HASH: &'static str = include_str!("../../web-distribution/icon.png.sh
 async fn handler(
     request: Request<impl hyper::body::Body>,
     address: SocketAddr,
-    pool: sqlx::postgres::PgPool,
+    state: AppState,
 ) -> Result<Response<Full<Bytes>>, hyper::http::Error> {
     let path = request.uri().path();
     println!(
@@ -74,29 +107,22 @@ async fn handler(
         path,
         address
     );
+
+    let accepts_html = request
+        .headers()
+        .get("accept")
+        .and_then(|value| value.to_str().ok())
+        .is_some_and(|value| value.contains("text/html"));
+
+    if accepts_html {
+        let db_ready = state.pool.read().await.is_some();
+        if !db_ready {
+            return db_unavailable_response(true);
+        }
+        return handle_html(path);
+    }
+
     match path.trim_start_matches('/') {
-        "" => Response::builder()
-            .header("Content-Type", "text/html; charset=utf-8")
-            .body(Full::new(Bytes::from(narumincho_vdom::to_html(
-                &definy_ui::app(
-                    &definy_ui::AppState {
-                        login_or_create_account_dialog_state:
-                            definy_ui::LoginOrCreateAccountDialogState {
-                                generated_key: None,
-                                state: definy_ui::CreatingAccountState::LogIn,
-                                username: String::new(),
-                                current_password: String::new(),
-                            },
-                        created_account_events: Vec::new(),
-                        current_key: None,
-                        message_input: String::new(),
-                    },
-                    &Some(definy_ui::ResourceHash {
-                        js: JAVASCRIPT_HASH.to_string(),
-                        wasm: WASM_HASH.to_string(),
-                    }),
-                ),
-            )))),
         JAVASCRIPT_HASH => Response::builder()
             .header("Content-Type", "application/javascript; charset=utf-8")
             .header("Cache-Control", "public, max-age=31536000, immutable")
@@ -109,11 +135,23 @@ async fn handler(
             .header("Content-Type", "image/png")
             .header("Cache-Control", "public, max-age=31536000, immutable")
             .body(Full::new(Bytes::from_static(ICON_CONTENT))),
-        "events" => event::handle_events(request, address, &pool).await,
+        "events" => {
+            let pool = state.pool.read().await.clone();
+            match pool {
+                Some(pool) => event::handle_events(request, address, &pool).await,
+                None => db_unavailable_response(false),
+            }
+        }
         path => {
             if let Some(event_binary_hash_hex) = path.strip_prefix("events/") {
                 let event_binary_hash_hex = event_binary_hash_hex.to_string();
-                event::handle_event_get(request, pool, &event_binary_hash_hex).await
+                let pool = state.pool.read().await.clone();
+                match pool {
+                    Some(pool) => {
+                        event::handle_event_get(request, pool, &event_binary_hash_hex).await
+                    }
+                    None => db_unavailable_response(false),
+                }
             } else {
                 match path {
                     _ => Response::builder()
@@ -124,4 +162,55 @@ async fn handler(
             }
         }
     }
+}
+
+fn db_unavailable_response(wants_html: bool) -> Result<Response<Full<Bytes>>, hyper::http::Error> {
+    if wants_html {
+        return Response::builder()
+            .status(503)
+            .header("Content-Type", "text/html; charset=utf-8")
+            .body(Full::new(Bytes::from(
+                "<!doctype html><html><head><meta charset=\"utf-8\"><title>503 Service Unavailable</title></head><body><h1>データベースに接続できません</h1></body></html>",
+            )));
+    }
+
+    Response::builder()
+        .status(503)
+        .header("Content-Type", "text/plain; charset=utf-8")
+        .body(Full::new(Bytes::from("Database is unavailable")))
+}
+
+fn handle_html(path: &str) -> Result<Response<Full<Bytes>>, hyper::http::Error> {
+    let location = definy_ui::Location::from_url(path);
+    if let Some(ref location) = location {
+        if location.to_url() != path {
+            return Response::builder()
+                .status(301)
+                .header("Location", location.to_url())
+                .body(Full::new(Bytes::from("Redirecting...")));
+        }
+    }
+    Response::builder()
+        .header("Content-Type", "text/html; charset=utf-8")
+        .body(Full::new(Bytes::from(narumincho_vdom::to_html(
+            &definy_ui::render(
+                &definy_ui::AppState {
+                    login_or_create_account_dialog_state:
+                        definy_ui::LoginOrCreateAccountDialogState {
+                            generated_key: None,
+                            state: definy_ui::CreatingAccountState::LogIn,
+                            username: String::new(),
+                            current_password: String::new(),
+                        },
+                    current_key: None,
+                    message_input: String::new(),
+                    created_account_events: Vec::new(),
+                    location,
+                },
+                &Some(definy_ui::ResourceHash {
+                    js: JAVASCRIPT_HASH.to_string(),
+                    wasm: WASM_HASH.to_string(),
+                }),
+            ),
+        ))))
 }

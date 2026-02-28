@@ -35,7 +35,7 @@ pub enum VerifyAndDeserializeError {
 
 pub fn verify_and_deserialize(
     data: &[u8],
-) -> Result<(Event, ed25519_dalek::Signature), VerifyAndDeserializeError> {
+) -> Result<(ed25519_dalek::Signature, Event), VerifyAndDeserializeError> {
     let signed_event: SignedEvent =
         serde_cbor::from_slice(data).map_err(|_| VerifyAndDeserializeError::DecodeError)?;
     let event: Event = serde_cbor::from_slice(&signed_event.event_binary.value)
@@ -50,7 +50,7 @@ pub fn verify_and_deserialize(
     )
     .map_err(|_| VerifyAndDeserializeError::VerifyError)?;
 
-    Ok((event, signed_event.signature))
+    Ok((signed_event.signature, event))
 }
 
 #[cfg(test)]
@@ -90,7 +90,7 @@ mod tests {
         )
         .unwrap();
 
-        let (deserialized, _) = verify_and_deserialize(&serialized).unwrap();
+        let (_, deserialized) = verify_and_deserialize(&serialized).unwrap();
 
         assert_eq!(deserialized.account_id.0, event.account_id.0);
         assert_eq!(deserialized.content, event.content);

@@ -15,9 +15,10 @@ fn header_main(state: &AppState) -> Node<AppState> {
                 .set("display", "flex")
                 .set("justify-content", "space-between")
                 .set("align-items", "center")
-                .set("padding", "0.75rem 1.5rem")
-                .set("background-color", "rgba(24, 24, 27, 0.8)") /* var(--background) with opacity */
-                .set("backdrop-filter", "blur(8px)")
+                .set("padding", "1rem 2rem")
+                .set("background", "rgba(11, 15, 25, 0.6)")
+                .set("backdrop-filter", "var(--glass-blur)")
+                .set("-webkit-backdrop-filter", "var(--glass-blur)")
                 .set("position", "sticky")
                 .set("top", "0")
                 .set("z-index", "10")
@@ -25,10 +26,20 @@ fn header_main(state: &AppState) -> Node<AppState> {
         )
         .children([
             H1::new()
-                .style(Style::new().set("font-size", "1.25rem"))
+                .style(
+                    Style::new()
+                        .set("font-size", "1.75rem")
+                        .set("font-weight", "700")
+                        .set("background", "var(--primary-gradient)")
+                        .set("-webkit-background-clip", "text")
+                        .set("-webkit-text-fill-color", "transparent")
+                        .set("letter-spacing", "-0.03em"),
+                )
                 .children([text("definy")])
                 .into_node(),
-            Div::new().style(Style::new().set("flex-grow", "1")).into_node(),
+            Div::new()
+                .style(Style::new().set("flex-grow", "1"))
+                .into_node(),
             match &state.current_key {
                 Some(secret_key) => {
                     let account_id = definy_event::event::AccountId(Box::new(
@@ -54,12 +65,12 @@ fn header_main(state: &AppState) -> Node<AppState> {
                         .command_for("header-popover")
                         .style(
                             Style::new()
-                                .set("font-family", "monospace")
+                                .set("font-family", "'JetBrains Mono', monospace")
                                 .set("font-size", "0.80rem")
-                                .set("background-color", "var(--surface)")
+                                .set("background", "rgba(255, 255, 255, 0.05)")
                                 .set("color", "var(--text)")
                                 .set("border", "1px solid var(--border)")
-                                .set("padding", "0.4rem 0.8rem")
+                                .set("padding", "0.5rem 1rem")
                                 .set("anchor-name", "--header-popover-button"),
                         )
                         .children([text(&match account_name {
@@ -88,12 +99,14 @@ fn popover() -> Node<AppState> {
         .style(
             Style::new()
                 .set("position-area", "block-end")
-                .set("margin-top", "0.5rem")
+                .set("margin-top", "0.8rem")
                 .set("padding", "0.5rem")
                 .set("border", "1px solid var(--border)")
-                .set("background-color", "var(--surface)")
-                .set("border-radius", "var(--radius-sm)")
-                .set("box-shadow", "var(--shadow-md)"),
+                .set("background", "var(--surface)")
+                .set("backdrop-filter", "var(--glass-blur)")
+                .set("-webkit-backdrop-filter", "var(--glass-blur)")
+                .set("border-radius", "var(--radius-md)")
+                .set("box-shadow", "var(--shadow-lg)"),
         )
         .children([Button::new()
             .on_click(EventHandler::new(async |set_state| {

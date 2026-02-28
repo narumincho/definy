@@ -51,9 +51,9 @@ pub fn login_or_create_account_dialog(state: &AppState) -> Node<AppState> {
                         .set("display", "grid")
                         .set("grid-template-columns", "1fr 1fr")
                         .set("gap", "0.5rem")
-                        .set("background-color", "var(--surface-hover)")
-                        .set("padding", "0.25rem")
-                        .set("border-radius", "var(--radius-sm)")
+                        .set("background", "rgba(0, 0, 0, 0.2)")
+                        .set("padding", "0.3rem")
+                        .set("border-radius", "var(--radius-md)")
                         .set("margin-bottom", "1.5rem"),
                 )
                 .children([
@@ -62,11 +62,11 @@ pub fn login_or_create_account_dialog(state: &AppState) -> Node<AppState> {
                         .style(
                             Style::new()
                                 .set(
-                                    "background-color",
+                                    "background",
                                     if let CreatingAccountState::LogIn =
                                         state.login_or_create_account_dialog_state.state
                                     {
-                                        "var(--surface)"
+                                        "rgba(255, 255, 255, 0.05)"
                                     } else {
                                         "transparent"
                                     },
@@ -87,7 +87,7 @@ pub fn login_or_create_account_dialog(state: &AppState) -> Node<AppState> {
                                     if let CreatingAccountState::LogIn =
                                         state.login_or_create_account_dialog_state.state
                                     {
-                                        "0 1px 2px 0 rgb(0 0 0 / 0.05)"
+                                        "0 2px 5px rgba(0, 0, 0, 0.2)"
                                     } else {
                                         "none"
                                     },
@@ -101,11 +101,11 @@ pub fn login_or_create_account_dialog(state: &AppState) -> Node<AppState> {
                         .style(
                             Style::new()
                                 .set(
-                                    "background-color",
+                                    "background",
                                     if let CreatingAccountState::CreateAccount =
                                         state.login_or_create_account_dialog_state.state
                                     {
-                                        "var(--surface)"
+                                        "rgba(255, 255, 255, 0.05)"
                                     } else {
                                         "transparent"
                                     },
@@ -126,7 +126,7 @@ pub fn login_or_create_account_dialog(state: &AppState) -> Node<AppState> {
                                     if let CreatingAccountState::CreateAccount =
                                         state.login_or_create_account_dialog_state.state
                                     {
-                                        "0 1px 2px 0 rgb(0 0 0 / 0.05)"
+                                        "0 2px 5px rgba(0, 0, 0, 0.2)"
                                     } else {
                                         "none"
                                     },
