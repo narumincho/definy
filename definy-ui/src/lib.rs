@@ -36,8 +36,8 @@ pub fn render(state: &AppState, resource_hash: &Option<ResourceHash>) -> Node<Ap
                 Script::new()
                     .type_("module")
                     .children([text(format!(
-                        "import init from './{}';
-init({{ module_or_path: \"{}\" }});",
+                        "import init from '/{}';
+init({{ module_or_path: \"/{}\" }});",
                         r.js, r.wasm
                     ))])
                     .into_node(),
