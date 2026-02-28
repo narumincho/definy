@@ -174,12 +174,10 @@ pub fn start<State: Clone + 'static, A: App<State>>() {
                                                 )
                                                 .unwrap();
 
-                                                Reflect::apply(
-                                                    intercept_func.unchecked_ref(),
-                                                    &event,
-                                                    &js_sys::Array::of1(&intercept_options),
-                                                )
-                                                .unwrap();
+                                                intercept_func
+                                                    .unchecked_into::<js_sys::Function>()
+                                                    .call1(&event, &intercept_options)
+                                                    .unwrap();
                                                 intercept_handler.forget();
                                             } else {
                                                 event.prevent_default();
@@ -196,13 +194,14 @@ pub fn start<State: Clone + 'static, A: App<State>>() {
                 })
                     as Box<dyn FnMut(web_sys::Event)>);
 
-                let _ = Reflect::apply(
-                    &Reflect::get(&navigation, &JsValue::from_str("addEventListener"))
-                        .unwrap()
-                        .unchecked_into::<js_sys::Function>(),
-                    &navigation,
-                    &js_sys::Array::of2(&JsValue::from_str("navigate"), on_navigate.as_ref()),
-                );
+                let _ = Reflect::get(&navigation, &JsValue::from_str("addEventListener"))
+                    .unwrap()
+                    .unchecked_into::<js_sys::Function>()
+                    .call2(
+                        &navigation,
+                        &JsValue::from_str("navigate"),
+                        on_navigate.as_ref(),
+                    );
                 on_navigate.forget();
             }
         }
