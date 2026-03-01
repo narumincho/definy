@@ -3,6 +3,7 @@ use narumincho_vdom::*;
 
 use crate::Location;
 use crate::app_state::AppState;
+use crate::expression_eval::{evaluate_expression, expression_to_source};
 
 pub fn event_detail_view(state: &AppState, target_hash: &[u8; 32]) -> Node<AppState> {
     let account_name_map = state.account_name_map();
@@ -17,7 +18,7 @@ pub fn event_detail_view(state: &AppState, target_hash: &[u8; 32]) -> Node<AppSt
     }
 
     let inner_content = match target_event_opt {
-        Some(event) => render_event_detail(target_hash, event, &account_name_map),
+        Some(event) => render_event_detail(state, target_hash, event, &account_name_map),
         None => Div::new()
             .style(
                 Style::new()
@@ -61,10 +62,12 @@ pub fn event_detail_view(state: &AppState, target_hash: &[u8; 32]) -> Node<AppSt
 }
 
 fn render_event_detail(
+    state: &AppState,
     hash: &[u8; 32],
     event: &Event,
     account_name_map: &std::collections::HashMap<definy_event::event::AccountId, Box<str>>,
 ) -> Node<AppState> {
+    let account_id_bytes = *event.account_id.0.as_ref();
     let account_name = account_name_map
         .get(&event.account_id)
         .map(|name: &Box<str>| name.as_ref())
@@ -110,6 +113,17 @@ fn render_event_detail(
                         .into_node(),
                 ])
                 .into_node(),
+            A::<AppState, Location>::new()
+                .href(Href::Internal(Location::Account(account_id_bytes)))
+                .style(
+                    Style::new()
+                        .set("width", "fit-content")
+                        .set("font-size", "0.9rem")
+                        .set("color", "var(--primary)")
+                        .set("font-weight", "600"),
+                )
+                .children([text(format!("View account: {}", account_name))])
+                .into_node(),
             match &event.content {
                 EventContent::CreateAccount(create_account_event) => Div::new()
                     .style(
@@ -135,7 +149,7 @@ fn render_event_detail(
                         text(change_profile_event.account_name.as_ref()),
                     ])
                     .into_node(),
-                EventContent::Message(message_event) => Div::new()
+                EventContent::PartDefinition(part_definition_event) => Div::new()
                     .style(
                         Style::new()
                             .set("font-size", "1.5rem")
@@ -152,7 +166,43 @@ fn render_event_detail(
                             )
                             .children([text(account_name)])
                             .into_node(),
-                        text(message_event.message.as_ref()),
+                        text(format!(
+                            "{} = {}",
+                            part_definition_event.part_name,
+                            expression_to_source(&part_definition_event.expression)
+                        )),
+                        {
+                            let expression = part_definition_event.expression.clone();
+                            Button::new()
+                                .type_("button")
+                                .on_click(EventHandler::new(move |set_state| {
+                                    let expression = expression.clone();
+                                    async move {
+                                        set_state(Box::new(move |state: AppState| AppState {
+                                            event_detail_eval_result: Some(
+                                                evaluate_message_result(&expression),
+                                            ),
+                                            ..state.clone()
+                                        }));
+                                    }
+                                }))
+                                .style(Style::new().set("margin-top", "1rem"))
+                                .children([text("Evaluate")])
+                                .into_node()
+                        },
+                        match &state.event_detail_eval_result {
+                            Some(result) => Div::new()
+                                .class("mono")
+                                .style(
+                                    Style::new()
+                                        .set("margin-top", "0.5rem")
+                                        .set("font-size", "0.85rem")
+                                        .set("word-break", "break-word"),
+                                )
+                                .children([text(result)])
+                                .into_node(),
+                            None => Div::new().children([]).into_node(),
+                        },
                     ])
                     .into_node(),
             },
@@ -176,4 +226,29 @@ fn render_event_detail(
                 .into_node(),
         ])
         .into_node()
+}
+
+fn evaluate_message_result(expression: &definy_event::event::Expression) -> String {
+    match evaluate_expression(expression) {
+        Ok(value) => format!("Result: {}", value),
+        Err(error) => format!("Error: {}", error),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::evaluate_message_result;
+
+    #[test]
+    fn evaluate_message_in_detail() {
+        let expression = definy_event::event::Expression::Add(definy_event::event::AddExpression {
+            left: Box::new(definy_event::event::Expression::Number(
+                definy_event::event::NumberExpression { value: 10 },
+            )),
+            right: Box::new(definy_event::event::Expression::Number(
+                definy_event::event::NumberExpression { value: 32 },
+            )),
+        });
+        assert_eq!(evaluate_message_result(&expression), "Result: 42");
+    }
 }

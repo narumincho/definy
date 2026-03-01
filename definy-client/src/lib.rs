@@ -70,7 +70,10 @@ impl narumincho_vdom_client::App<AppState> for DefinyApp {
             },
             created_account_events: ssr_events.unwrap_or_default(),
             current_key: None,
-            message_input: String::new(),
+            part_name_input: String::new(),
+            composing_expression: definy_event::event::Expression::Number(definy_event::event::NumberExpression { value: 0 }),
+            part_definition_eval_result: None,
+            event_detail_eval_result: None,
             profile_name_input: String::new(),
             is_header_popover_open: false,
             location: {
@@ -93,7 +96,11 @@ impl narumincho_vdom_client::App<AppState> for DefinyApp {
         if let Ok(web_url) = web_sys::Url::new(&url) {
             let pathname = web_url.pathname();
             let location = definy_ui::Location::from_url(&pathname);
-            return AppState { location, ..state };
+            return AppState {
+                location,
+                event_detail_eval_result: None,
+                ..state
+            };
         }
         state
     }

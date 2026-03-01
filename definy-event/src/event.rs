@@ -23,12 +23,31 @@ pub struct Event {
 pub enum EventContent {
     CreateAccount(CreateAccountEvent),
     ChangeProfile(ChangeProfileEvent),
-    Message(MessageEvent),
+    #[serde(alias = "Message")]
+    PartDefinition(PartDefinitionEvent),
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub struct MessageEvent {
-    pub message: Box<str>,
+pub struct PartDefinitionEvent {
+    pub part_name: Box<str>,
+    pub expression: Expression,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub enum Expression {
+    Number(NumberExpression),
+    Add(AddExpression),
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct AddExpression {
+    pub left: Box<Expression>,
+    pub right: Box<Expression>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct NumberExpression {
+    pub value: i64,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
