@@ -30,6 +30,7 @@ pub fn event_detail_view(state: &AppState, target_hash: &[u8; 32]) -> Node<AppSt
     };
 
     Div::new()
+        .class("page-shell")
         .style(
             Style::new()
                 .set("display", "grid")
@@ -41,6 +42,7 @@ pub fn event_detail_view(state: &AppState, target_hash: &[u8; 32]) -> Node<AppSt
         )
         .children([
             A::<AppState, Location>::new()
+                .class("back-link")
                 .href(Href::Internal(Location::Home))
                 .style(
                     Style::new()
@@ -69,6 +71,7 @@ fn render_event_detail(
         .unwrap_or("Unknown");
 
     Div::new()
+        .class("event-detail-card")
         .style(
             Style::new()
                 .set("background", "rgba(255, 255, 255, 0.02)")

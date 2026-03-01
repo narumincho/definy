@@ -9,6 +9,7 @@ use crate::{
 /// ログインまたはアカウント作成ダイアログ
 pub fn login_or_create_account_dialog(state: &AppState) -> Node<AppState> {
     Dialog::new()
+        .class("auth-dialog")
         .id("login-or-create-account-dialog")
         .children([
             Div::new()
@@ -37,6 +38,10 @@ pub fn login_or_create_account_dialog(state: &AppState) -> Node<AppState> {
                         .style(
                             Style::new()
                                 .set("padding", "0.25rem")
+                                .set("min-width", "2rem")
+                                .set("width", "2rem")
+                                .set("height", "2rem")
+                                .set("border-radius", "50%")
                                 .set("background-color", "transparent")
                                 .set("border", "none")
                                 .set("color", "var(--text-secondary)"),
@@ -46,6 +51,7 @@ pub fn login_or_create_account_dialog(state: &AppState) -> Node<AppState> {
                 ])
                 .into_node(),
             Div::new()
+                .class("auth-tabs")
                 .style(
                     Style::new()
                         .set("display", "grid")

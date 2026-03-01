@@ -12,6 +12,7 @@ pub fn header(state: &AppState) -> Node<AppState> {
 
 fn header_main(state: &AppState) -> Node<AppState> {
     Header::new()
+        .class("app-header")
         .style(
             Style::new()
                 .set("display", "flex")
@@ -64,6 +65,10 @@ fn header_main(state: &AppState) -> Node<AppState> {
                                 .set("color", "var(--text)")
                                 .set("border", "1px solid var(--border)")
                                 .set("padding", "0.5rem 1rem")
+                                .set("max-width", "min(46vw, 420px)")
+                                .set("overflow", "hidden")
+                                .set("text-overflow", "ellipsis")
+                                .set("white-space", "nowrap")
                                 .set("anchor-name", "--header-popover-button"),
                         )
                         .children([text(&match account_name {
@@ -188,6 +193,7 @@ fn popover(state: &AppState) -> Node<AppState> {
 
     Div::new()
         .id("header-popover")
+        .class("header-popover")
         .style(
             Style::new()
                 .set("position", "fixed")
@@ -226,7 +232,7 @@ fn popover(state: &AppState) -> Node<AppState> {
                         Style::new()
                             .set("width", "100%")
                             .set("background-color", "transparent")
-                            .set("color", "var(--error)")
+                            .set("color", "#fca5a5")
                             .set("justify-content", "flex-start"),
                     )
                     .into_node(),

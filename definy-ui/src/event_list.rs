@@ -7,6 +7,7 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
     let message_form = if state.current_key.is_some() {
         Some(
             Div::new()
+                .class("composer")
                 .style(
                     Style::new()
                         .set("display", "flex")
@@ -112,6 +113,7 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
     };
 
     Div::new()
+        .class("page-shell")
         .style(
             Style::new()
                 .set("display", "grid")
@@ -128,6 +130,7 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
             }
             children.push(
                 Div::new()
+                    .class("event-list")
                     .style(Style::new().set("display", "grid").set("gap", "1rem"))
                     .children({
                         let account_name_map = state.account_name_map();
@@ -155,6 +158,7 @@ fn event_view(
 ) -> Node<AppState> {
     match event_result {
         Ok((_, event)) => A::<AppState, crate::Location>::new()
+            .class("event-card")
             .style(
                 Style::new()
                     .set("background", "rgba(255, 255, 255, 0.02)")
@@ -235,6 +239,7 @@ fn event_view(
             ])
             .into_node(),
         Err(e) => Div::new()
+            .class("error-card")
             .style(
                 Style::new()
                     .set("background-color", "rgba(244, 63, 94, 0.1)")
