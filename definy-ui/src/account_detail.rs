@@ -1,7 +1,5 @@
-use definy_event::event::EventContent;
 use narumincho_vdom::*;
 
-use crate::expression_eval::expression_to_source;
 use crate::{AppState, Location};
 
 pub fn account_detail_view(state: &AppState, account_id_bytes: &[u8; 32]) -> Node<AppState> {
@@ -121,7 +119,11 @@ pub fn account_detail_view(state: &AppState, account_id_bytes: &[u8; 32]) -> Nod
                                                 event.time.format("%Y-%m-%d %H:%M:%S").to_string(),
                                             )])
                                             .into_node(),
-                                        Div::new().children([text(event_summary(event))]).into_node(),
+                                        Div::new()
+                                            .children([text(crate::event_presenter::event_summary_text(
+                                                event,
+                                            ))])
+                                            .into_node(),
                                     ])
                                     .into_node()
                             })
@@ -131,35 +133,4 @@ pub fn account_detail_view(state: &AppState, account_id_bytes: &[u8; 32]) -> Nod
             },
         ])
         .into_node()
-}
-
-fn event_summary(event: &definy_event::event::Event) -> String {
-    match &event.content {
-        EventContent::CreateAccount(create_account_event) => {
-            format!("Account created: {}", create_account_event.account_name)
-        }
-        EventContent::ChangeProfile(change_profile_event) => {
-            format!("Profile changed: {}", change_profile_event.account_name)
-        }
-        EventContent::PartDefinition(part_definition_event) => format!(
-            "{} = {}{}",
-            part_definition_event.part_name,
-            expression_to_source(&part_definition_event.expression),
-            if part_definition_event.description.is_empty() {
-                String::new()
-            } else {
-                format!(" - {}", part_definition_event.description)
-            }
-        ),
-        EventContent::PartUpdate(part_update_event) => format!(
-            "Part updated: {}{} | {}",
-            part_update_event.part_name,
-            if part_update_event.part_description.is_empty() {
-                String::new()
-            } else {
-                format!(" - {}", part_update_event.part_description)
-            },
-            expression_to_source(&part_update_event.expression)
-        ),
-    }
 }

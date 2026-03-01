@@ -1,4 +1,3 @@
-use definy_event::event::EventContent;
 use narumincho_vdom::*;
 
 use crate::Location;
@@ -94,15 +93,7 @@ pub fn part_detail_view(state: &AppState, definition_event_hash: &[u8; 32]) -> N
                                 related_events
                                     .into_iter()
                                     .map(|(event_hash, event)| {
-                                        let label = match &event.content {
-                                            EventContent::PartDefinition(def) => {
-                                                format!("PartDefinition: {}", def.part_name)
-                                            }
-                                            EventContent::PartUpdate(update) => {
-                                                format!("PartUpdate: {}", update.part_name)
-                                            }
-                                            _ => "Other".to_string(),
-                                        };
+                                        let label = crate::event_presenter::event_kind_label(&event);
                                         A::<AppState, Location>::new()
                                             .href(Href::Internal(Location::Event(event_hash)))
                                             .style(

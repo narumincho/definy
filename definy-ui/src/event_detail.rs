@@ -571,16 +571,7 @@ fn related_part_events_section(state: &AppState, root_part_definition_hash: [u8;
                     related_events
                         .into_iter()
                         .map(|(event_hash, event)| {
-                            let label = match &event.content {
-                                EventContent::PartDefinition(part_definition) => format!(
-                                    "PartDefinition: {}",
-                                    part_definition.part_name
-                                ),
-                                EventContent::PartUpdate(part_update) => {
-                                    format!("PartUpdate: {}", part_update.part_name)
-                                }
-                                _ => "Other".to_string(),
-                            };
+                            let label = crate::event_presenter::event_kind_label(&event);
                             A::<AppState, Location>::new()
                                 .href(Href::Internal(Location::Event(event_hash)))
                                 .style(
