@@ -9,9 +9,7 @@ pub struct AppState {
         >,
     )>,
     pub current_key: Option<ed25519_dalek::SigningKey>,
-    pub expression_left_input: String,
-    pub expression_right_input: String,
-    pub selected_operator: ExpressionOperator,
+    pub composing_expression: definy_event::event::Expression,
     pub message_eval_result: Option<String>,
     pub event_detail_eval_result: Option<String>,
     pub profile_name_input: String,
@@ -19,10 +17,6 @@ pub struct AppState {
     pub location: Option<Location>,
 }
 
-#[derive(Clone, PartialEq, Debug)]
-pub enum ExpressionOperator {
-    Add,
-}
 
 impl AppState {
     pub fn account_name_map(

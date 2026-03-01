@@ -33,13 +33,19 @@ pub struct MessageEvent {
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum Expression {
+    Number(NumberExpression),
     Add(AddExpression),
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct AddExpression {
-    pub left: i64,
-    pub right: i64,
+    pub left: Box<Expression>,
+    pub right: Box<Expression>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct NumberExpression {
+    pub value: i64,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]

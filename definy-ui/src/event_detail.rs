@@ -238,8 +238,12 @@ mod tests {
     #[test]
     fn evaluate_message_in_detail() {
         let expression = definy_event::event::Expression::Add(definy_event::event::AddExpression {
-            left: 10,
-            right: 32,
+            left: Box::new(definy_event::event::Expression::Number(
+                definy_event::event::NumberExpression { value: 10 },
+            )),
+            right: Box::new(definy_event::event::Expression::Number(
+                definy_event::event::NumberExpression { value: 32 },
+            )),
         });
         assert_eq!(evaluate_message_result(&expression), "Result: 42");
     }
