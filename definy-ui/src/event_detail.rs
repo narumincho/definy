@@ -3,7 +3,7 @@ use narumincho_vdom::*;
 
 use crate::Location;
 use crate::app_state::AppState;
-use crate::expression_eval::evaluate_add_expression;
+use crate::expression_eval::{evaluate_expression, expression_to_source};
 
 pub fn event_detail_view(state: &AppState, target_hash: &[u8; 32]) -> Node<AppState> {
     let account_name_map = state.account_name_map();
@@ -166,17 +166,17 @@ fn render_event_detail(
                             )
                             .children([text(account_name)])
                             .into_node(),
-                        text(message_event.message.as_ref()),
+                        text(expression_to_source(&message_event.expression)),
                         {
-                            let message = message_event.message.to_string();
+                            let expression = message_event.expression.clone();
                             Button::new()
                                 .type_("button")
                                 .on_click(EventHandler::new(move |set_state| {
-                                    let message = message.clone();
+                                    let expression = expression.clone();
                                     async move {
                                         set_state(Box::new(move |state: AppState| AppState {
                                             event_detail_eval_result: Some(
-                                                evaluate_message_result(message.as_str()),
+                                                evaluate_message_result(&expression),
                                             ),
                                             ..state.clone()
                                         }));
@@ -224,8 +224,8 @@ fn render_event_detail(
         .into_node()
 }
 
-fn evaluate_message_result(message: &str) -> String {
-    match evaluate_add_expression(message) {
+fn evaluate_message_result(expression: &definy_event::event::Expression) -> String {
+    match evaluate_expression(expression) {
         Ok(value) => format!("Result: {}", value),
         Err(error) => format!("Error: {}", error),
     }
@@ -237,7 +237,10 @@ mod tests {
 
     #[test]
     fn evaluate_message_in_detail() {
-        assert_eq!(evaluate_message_result("+ 10 32"), "Result: 42");
-        assert!(evaluate_message_result("hello").starts_with("Error:"));
+        let expression = definy_event::event::Expression::Add(definy_event::event::AddExpression {
+            left: 10,
+            right: 32,
+        });
+        assert_eq!(evaluate_message_result(&expression), "Result: 42");
     }
 }

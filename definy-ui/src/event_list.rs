@@ -1,8 +1,8 @@
 use definy_event::event::EventContent;
 use narumincho_vdom::*;
 
-use crate::app_state::AppState;
-use crate::expression_eval::evaluate_add_expression;
+use crate::app_state::{AppState, ExpressionOperator};
+use crate::expression_eval::{evaluate_expression, expression_to_source};
 
 pub fn event_list_view(state: &AppState) -> Node<AppState> {
     let message_form = if state.current_key.is_some() {
@@ -22,37 +22,104 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
                         .set("border", "1px solid var(--border)"),
                 )
                 .children([
-                    {
-                        let mut input = Input::new().value(&state.message_input);
-                        input.events.push((
-                            "input".to_string(),
-                            EventHandler::new(move |set_state| async move {
-                                let value =
-                                    wasm_bindgen::JsCast::dyn_into::<web_sys::HtmlInputElement>(
-                                        web_sys::window()
-                                            .unwrap()
-                                            .document()
-                                            .unwrap()
-                                            .active_element()
-                                            .unwrap(),
-                                    )
-                                    .unwrap()
-                                    .value();
-                                set_state(Box::new(move |state: AppState| AppState {
-                                    message_input: value,
-                                    ..state.clone()
-                                }));
-                            }),
-                        ));
-                        input.style(Style::new().set("flex-grow", "1")).into_node()
-                    },
+                    Div::new()
+                        .style(
+                            Style::new()
+                                .set("display", "grid")
+                                .set("grid-template-columns", "auto 1fr 1fr")
+                                .set("gap", "0.5rem")
+                                .set("flex-grow", "1"),
+                        )
+                        .children([
+                            Button::new()
+                                .type_("button")
+                                .on_click(EventHandler::new(async |set_state| {
+                                    set_state(Box::new(|state: AppState| AppState {
+                                        selected_operator: ExpressionOperator::Add,
+                                        ..state.clone()
+                                    }));
+                                }))
+                                .style(
+                                    Style::new()
+                                        .set("min-width", "2.8rem")
+                                        .set(
+                                            "background",
+                                            if state.selected_operator == ExpressionOperator::Add {
+                                                "var(--primary-gradient)"
+                                            } else {
+                                                "rgba(255, 255, 255, 0.05)"
+                                            },
+                                        ),
+                                )
+                                .children([text("+")])
+                                .into_node(),
+                            {
+                                let mut left_input =
+                                    Input::new().type_("number").value(&state.expression_left_input);
+                                left_input.events.push((
+                                    "input".to_string(),
+                                    EventHandler::new(move |set_state| async move {
+                                        let value = web_sys::window()
+                                            .and_then(|window| window.document())
+                                            .and_then(|document| {
+                                                document.query_selector("input[name='expr-left']").ok()
+                                            })
+                                            .flatten()
+                                            .and_then(|element| {
+                                                wasm_bindgen::JsCast::dyn_into::<
+                                                    web_sys::HtmlInputElement,
+                                                >(element)
+                                                .ok()
+                                            })
+                                            .map(|input| input.value())
+                                            .unwrap_or_default();
+                                        set_state(Box::new(move |state: AppState| AppState {
+                                            expression_left_input: value,
+                                            ..state.clone()
+                                        }));
+                                    }),
+                                ));
+                                left_input.name("expr-left").into_node()
+                            },
+                            {
+                                let mut right_input =
+                                    Input::new().type_("number").value(&state.expression_right_input);
+                                right_input.events.push((
+                                    "input".to_string(),
+                                    EventHandler::new(move |set_state| async move {
+                                        let value = web_sys::window()
+                                            .and_then(|window| window.document())
+                                            .and_then(|document| {
+                                                document.query_selector("input[name='expr-right']").ok()
+                                            })
+                                            .flatten()
+                                            .and_then(|element| {
+                                                wasm_bindgen::JsCast::dyn_into::<
+                                                    web_sys::HtmlInputElement,
+                                                >(element)
+                                                .ok()
+                                            })
+                                            .map(|input| input.value())
+                                            .unwrap_or_default();
+                                        set_state(Box::new(move |state: AppState| AppState {
+                                            expression_right_input: value,
+                                            ..state.clone()
+                                        }));
+                                    }),
+                                ));
+                                right_input.name("expr-right").into_node()
+                            },
+                        ])
+                        .into_node(),
                     Button::new()
                         .type_("button")
                         .on_click(EventHandler::new(async |set_state| {
                             set_state(Box::new(|state: AppState| {
-                                let message = state.message_input.clone();
-                                let result = match evaluate_add_expression(message.as_str()) {
-                                    Ok(value) => format!("Result: {}", value),
+                                let result = match expression_from_inputs(&state) {
+                                    Ok(expression) => match evaluate_expression(&expression) {
+                                        Ok(value) => format!("Result: {}", value),
+                                        Err(error) => format!("Error: {}", error),
+                                    },
                                     Err(error) => format!("Error: {}", error),
                                 };
                                 AppState {
@@ -76,7 +143,15 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
                                         return state;
                                     };
 
-                                let message = state.message_input.clone();
+                                let expression = match expression_from_inputs(&state) {
+                                    Ok(expression) => expression,
+                                    Err(error) => {
+                                        return AppState {
+                                            message_eval_result: Some(format!("Error: {}", error)),
+                                            ..state.clone()
+                                        };
+                                    }
+                                };
                                 let key_for_async = key.clone();
 
                                 wasm_bindgen_futures::spawn_local(async move {
@@ -87,17 +162,14 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
                                             )),
                                             time: chrono::Utc::now(),
                                             content: definy_event::event::EventContent::Message(
-                                                definy_event::event::MessageEvent {
-                                                    message: message.into(),
-                                                },
+                                                definy_event::event::MessageEvent { expression },
                                             ),
                                         },
                                         &key_for_async,
                                     )
                                     .unwrap();
 
-                                    let status =
-                                        crate::fetch::post_event(event_binary.as_slice()).await;
+                                    let status = crate::fetch::post_event(event_binary.as_slice()).await;
                                     match status {
                                         Ok(_) => {
                                             let events = crate::fetch::get_events().await;
@@ -116,8 +188,9 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
                                     }
                                 });
                                 AppState {
-                                    message_input: String::new(),
                                     message_eval_result: None,
+                                    expression_left_input: String::new(),
+                                    expression_right_input: String::new(),
                                     ..state.clone()
                                 }
                             }));
@@ -266,7 +339,7 @@ fn event_view(
                                         .unwrap_or("Unknown"),
                                 )])
                                 .into_node(),
-                            text(message_event.message.as_ref()),
+                            text(expression_to_source(&message_event.expression)),
                         ])
                         .into_node(),
                 },
@@ -284,5 +357,54 @@ fn event_view(
             )
             .children([text(&format!("イベントの読み込みに失敗しました: {:?}", e))])
             .into_node(),
+    }
+}
+
+fn expression_from_inputs(state: &AppState) -> Result<definy_event::event::Expression, &'static str> {
+    expression_from_input_values(
+        &state.selected_operator,
+        state.expression_left_input.as_str(),
+        state.expression_right_input.as_str(),
+    )
+}
+
+fn expression_from_input_values(
+    operator: &ExpressionOperator,
+    left_input: &str,
+    right_input: &str,
+) -> Result<definy_event::event::Expression, &'static str> {
+    let left = left_input
+        .trim()
+        .parse::<i64>()
+        .map_err(|_| "left operand must be a number")?;
+    let right = right_input
+        .trim()
+        .parse::<i64>()
+        .map_err(|_| "right operand must be a number")?;
+
+    match operator {
+        ExpressionOperator::Add => Ok(definy_event::event::Expression::Add(
+            definy_event::event::AddExpression { left, right },
+        )),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::app_state::ExpressionOperator;
+
+    use super::expression_from_input_values;
+
+    #[test]
+    fn parse_expression_input_values() {
+        let expression = expression_from_input_values(&ExpressionOperator::Add, "10", "32").unwrap();
+        assert_eq!(
+            expression,
+            definy_event::event::Expression::Add(definy_event::event::AddExpression {
+                left: 10,
+                right: 32
+            })
+        );
+        assert!(expression_from_input_values(&ExpressionOperator::Add, "x", "1").is_err());
     }
 }

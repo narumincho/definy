@@ -9,12 +9,19 @@ pub struct AppState {
         >,
     )>,
     pub current_key: Option<ed25519_dalek::SigningKey>,
-    pub message_input: String,
+    pub expression_left_input: String,
+    pub expression_right_input: String,
+    pub selected_operator: ExpressionOperator,
     pub message_eval_result: Option<String>,
     pub event_detail_eval_result: Option<String>,
     pub profile_name_input: String,
     pub is_header_popover_open: bool,
     pub location: Option<Location>,
+}
+
+#[derive(Clone, PartialEq, Debug)]
+pub enum ExpressionOperator {
+    Add,
 }
 
 impl AppState {

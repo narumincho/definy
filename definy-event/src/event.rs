@@ -28,7 +28,18 @@ pub enum EventContent {
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct MessageEvent {
-    pub message: Box<str>,
+    pub expression: Expression,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub enum Expression {
+    Add(AddExpression),
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct AddExpression {
+    pub left: i64,
+    pub right: i64,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]

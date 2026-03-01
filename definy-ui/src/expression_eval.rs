@@ -1,38 +1,31 @@
-pub fn evaluate_add_expression(input: &str) -> Result<i64, &'static str> {
-    let mut tokens = input.split_whitespace();
-    let op = tokens.next().ok_or("empty expression")?;
-    if op != "+" {
-        return Err("only '+' is supported");
+pub fn evaluate_expression(expression: &definy_event::event::Expression) -> Result<i64, &'static str> {
+    match expression {
+        definy_event::event::Expression::Add(add_expression) => add_expression
+            .left
+            .checked_add(add_expression.right)
+            .ok_or("overflow while adding two numbers"),
     }
+}
 
-    let left = tokens
-        .next()
-        .ok_or("left operand is missing")?
-        .parse::<i64>()
-        .map_err(|_| "left operand must be a number")?;
-    let right = tokens
-        .next()
-        .ok_or("right operand is missing")?
-        .parse::<i64>()
-        .map_err(|_| "right operand must be a number")?;
-
-    if tokens.next().is_some() {
-        return Err("too many tokens; expected: + <number> <number>");
+pub fn expression_to_source(expression: &definy_event::event::Expression) -> String {
+    match expression {
+        definy_event::event::Expression::Add(add_expression) => {
+            format!("+ {} {}", add_expression.left, add_expression.right)
+        }
     }
-
-    left.checked_add(right)
-        .ok_or("overflow while adding two numbers")
 }
 
 #[cfg(test)]
 mod tests {
-    use super::evaluate_add_expression;
+    use super::{evaluate_expression, expression_to_source};
 
     #[test]
-    fn evaluate_plus_expression() {
-        assert_eq!(evaluate_add_expression("+ 1 2"), Ok(3));
-        assert!(evaluate_add_expression("- 1 2").is_err());
-        assert!(evaluate_add_expression("+ 1").is_err());
-        assert!(evaluate_add_expression("+ 1 2 3").is_err());
+    fn evaluate_expression_works() {
+        let expression = definy_event::event::Expression::Add(definy_event::event::AddExpression {
+            left: 1,
+            right: 2,
+        });
+        assert_eq!(evaluate_expression(&expression), Ok(3));
+        assert_eq!(expression_to_source(&expression), "+ 1 2");
     }
 }

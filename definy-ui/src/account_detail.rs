@@ -1,6 +1,7 @@
 use definy_event::event::EventContent;
 use narumincho_vdom::*;
 
+use crate::expression_eval::expression_to_source;
 use crate::{AppState, Location};
 
 pub fn account_detail_view(state: &AppState, account_id_bytes: &[u8; 32]) -> Node<AppState> {
@@ -140,6 +141,6 @@ fn event_summary(event: &definy_event::event::Event) -> String {
         EventContent::ChangeProfile(change_profile_event) => {
             format!("Profile changed: {}", change_profile_event.account_name)
         }
-        EventContent::Message(message_event) => message_event.message.to_string(),
+        EventContent::Message(message_event) => expression_to_source(&message_event.expression),
     }
 }
