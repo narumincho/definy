@@ -8,8 +8,22 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - uses: Swatinem/rust-cache@v2
+      - uses: browser-actions/setup-chrome@v2
+      - uses: nanasess/setup-chromedriver@v2
       - run: cargo install wasm-bindgen-cli
       - run: rustup target add wasm32-unknown-unknown
       - run: cargo run -p definy-build
       - run: cargo test
+      - name: Run E2E test
+        run: |
+          chromedriver --port=4444 > /tmp/chromedriver.log 2>&1 &
+          for i in {1..20}; do
+            if curl -fsS http://localhost:4444/status > /dev/null; then
+              break
+            fi
+            sleep 1
+          done
+          WEBDRIVER_URL=http://localhost:4444 \
+          E2E_BROWSER=chrome \
+          cargo test -p definy-ui --test browser_e2e -- --ignored
       - run: cargo build -p definy-server --release

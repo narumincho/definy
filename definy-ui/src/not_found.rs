@@ -4,6 +4,7 @@ use narumincho_vdom::*;
 
 pub fn not_found_view(_state: &AppState) -> Node<AppState> {
     Div::new()
+        .class("page-shell not-found")
         .style(
             Style::new()
                 .set("display", "grid")
@@ -17,6 +18,7 @@ pub fn not_found_view(_state: &AppState) -> Node<AppState> {
         )
         .children([
             Div::new()
+                .class("not-found-code")
                 .style(
                     Style::new()
                         .set("font-size", "6rem")
@@ -31,6 +33,7 @@ pub fn not_found_view(_state: &AppState) -> Node<AppState> {
                 .children([text("404")])
                 .into_node(),
             Div::new()
+                .class("not-found-title")
                 .style(
                     Style::new()
                         .set("font-size", "1.5rem")
@@ -40,6 +43,7 @@ pub fn not_found_view(_state: &AppState) -> Node<AppState> {
                 .children([text("Page Not Found")])
                 .into_node(),
             A::<AppState, Location>::new()
+                .class("cta-link")
                 .href(Href::Internal(Location::Home))
                 .style(
                     Style::new()

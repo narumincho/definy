@@ -1,15 +1,18 @@
 use narumincho_vdom::*;
 
-use crate::AppState;
+use crate::{AppState, fetch};
 
 pub fn header(state: &AppState) -> Node<AppState> {
-    Div::new()
-        .children([header_main(state), popover()])
-        .into_node()
+    let mut children = vec![header_main(state)];
+    if state.current_key.is_some() && state.is_header_popover_open {
+        children.push(popover(state));
+    }
+    Div::new().children(children).into_node()
 }
 
 fn header_main(state: &AppState) -> Node<AppState> {
     Header::new()
+        .class("app-header")
         .style(
             Style::new()
                 .set("display", "flex")
@@ -45,24 +48,15 @@ fn header_main(state: &AppState) -> Node<AppState> {
                     let account_id = definy_event::event::AccountId(Box::new(
                         secret_key.verifying_key().to_bytes(),
                     ));
-                    let account_name = state
-                        .created_account_events
-                        .iter()
-                        .filter_map(|(_, result)| result.as_ref().ok())
-                        .find(|(_, event)| event.account_id == account_id)
-                        .and_then(|(_, event)| {
-                            if let definy_event::event::EventContent::CreateAccount(content) =
-                                &event.content
-                            {
-                                Some(content.account_name.clone())
-                            } else {
-                                None
-                            }
-                        });
+                    let account_name = state.account_name_map().get(&account_id).cloned();
 
                     Button::new()
-                        .command(CommandValue::TogglePopover)
-                        .command_for("header-popover")
+                        .on_click(EventHandler::new(async |set_state| {
+                            set_state(Box::new(|state: AppState| AppState {
+                                is_header_popover_open: !state.is_header_popover_open,
+                                ..state.clone()
+                            }));
+                        }))
                         .style(
                             Style::new()
                                 .set("font-family", "'JetBrains Mono', monospace")
@@ -71,6 +65,10 @@ fn header_main(state: &AppState) -> Node<AppState> {
                                 .set("color", "var(--text)")
                                 .set("border", "1px solid var(--border)")
                                 .set("padding", "0.5rem 1rem")
+                                .set("max-width", "min(46vw, 420px)")
+                                .set("overflow", "hidden")
+                                .set("text-overflow", "ellipsis")
+                                .set("white-space", "nowrap")
                                 .set("anchor-name", "--header-popover-button"),
                         )
                         .children([text(&match account_name {
@@ -92,51 +90,154 @@ fn header_main(state: &AppState) -> Node<AppState> {
         .into_node()
 }
 
-fn popover() -> Node<AppState> {
+fn popover(state: &AppState) -> Node<AppState> {
+    let profile_form = if state.current_key.is_some() {
+        Some(
+            Div::new()
+                .style(Style::new().set("display", "grid").set("gap", "0.5rem"))
+                .children([
+                    Input::new()
+                        .type_("text")
+                        .name("profile-name")
+                        .value(&state.profile_name_input)
+                        .on_change(EventHandler::new(async |set_state| {
+                            let value = web_sys::window()
+                                .and_then(|window| window.document())
+                                .and_then(|document| {
+                                    document.query_selector("input[name='profile-name']").ok()
+                                })
+                                .flatten()
+                                .and_then(|element| {
+                                    wasm_bindgen::JsCast::dyn_into::<web_sys::HtmlInputElement>(
+                                        element,
+                                    )
+                                    .ok()
+                                })
+                                .map(|input| input.value())
+                                .unwrap_or_default();
+                            set_state(Box::new(move |state: AppState| AppState {
+                                profile_name_input: value,
+                                ..state.clone()
+                            }));
+                        }))
+                        .into_node(),
+                    Button::new()
+                        .on_click(EventHandler::new(async |set_state| {
+                            let set_state = std::rc::Rc::new(set_state);
+                            let set_state_for_async = set_state.clone();
+                            set_state(Box::new(move |state: AppState| {
+                                let key = if let Some(key) = &state.current_key {
+                                    key.clone()
+                                } else {
+                                    return state;
+                                };
+                                let new_name = state.profile_name_input.trim().to_string();
+                                if new_name.is_empty() {
+                                    return state;
+                                }
+                                wasm_bindgen_futures::spawn_local(async move {
+                                    let event_binary = match definy_event::sign_and_serialize(
+                                        definy_event::event::Event {
+                                            account_id: definy_event::event::AccountId(Box::new(
+                                                key.verifying_key().to_bytes(),
+                                            )),
+                                            time: chrono::Utc::now(),
+                                            content:
+                                                definy_event::event::EventContent::ChangeProfile(
+                                                    definy_event::event::ChangeProfileEvent {
+                                                        account_name: new_name.into(),
+                                                    },
+                                                ),
+                                        },
+                                        &key,
+                                    ) {
+                                        Ok(event_binary) => event_binary,
+                                        Err(error) => {
+                                            web_sys::console::log_1(
+                                                &format!(
+                                                    "Failed to serialize change profile event: {:?}",
+                                                    error
+                                                )
+                                                .into(),
+                                            );
+                                            return;
+                                        }
+                                    };
+
+                                    if fetch::post_event(event_binary.as_slice()).await.is_ok() {
+                                        if let Ok(events) = fetch::get_events().await {
+                                            set_state_for_async(Box::new(|state| AppState {
+                                                created_account_events: events,
+                                                profile_name_input: String::new(),
+                                                is_header_popover_open: false,
+                                                ..state.clone()
+                                            }));
+                                        }
+                                    } else {
+                                        web_sys::console::log_1(
+                                            &"Failed to post change profile event".into(),
+                                        );
+                                    }
+                                });
+                                state
+                            }));
+                        }))
+                        .children([text("Change Name")])
+                        .into_node(),
+                ])
+                .into_node(),
+        )
+    } else {
+        None
+    };
+
     Div::new()
         .id("header-popover")
-        .popover()
+        .class("header-popover")
         .style(
             Style::new()
-                .set("position-area", "block-end")
-                .set("margin-top", "0.8rem")
+                .set("position", "fixed")
+                .set("top", "4.25rem")
+                .set("right", "1rem")
                 .set("padding", "0.5rem")
                 .set("border", "1px solid var(--border)")
                 .set("background", "var(--surface)")
                 .set("backdrop-filter", "var(--glass-blur)")
                 .set("-webkit-backdrop-filter", "var(--glass-blur)")
+                .set("display", "grid")
+                .set("gap", "0.75rem")
                 .set("border-radius", "var(--radius-md)")
+                .set("z-index", "20")
+                .set("min-width", "220px")
                 .set("box-shadow", "var(--shadow-lg)"),
         )
-        .children([Button::new()
-            .on_click(EventHandler::new(async |set_state| {
-                let popover = wasm_bindgen::JsCast::dyn_into::<web_sys::HtmlElement>(
-                    web_sys::window()
-                        .unwrap()
-                        .document()
-                        .unwrap()
-                        .get_element_by_id("header-popover")
-                        .unwrap(),
-                )
-                .unwrap();
-
-                let _ = popover.hide_popover();
-
-                set_state(Box::new(|state: AppState| -> AppState {
-                    AppState {
-                        current_key: None,
-                        ..state.clone()
-                    }
-                }));
-            }))
-            .children([text("Log Out")])
-            .style(
-                Style::new()
-                    .set("width", "100%")
-                    .set("background-color", "transparent")
-                    .set("color", "var(--error)")
-                    .set("justify-content", "flex-start"),
-            )
-            .into_node()])
+        .children({
+            let mut children = Vec::new();
+            if let Some(profile_form) = profile_form {
+                children.push(profile_form);
+            }
+            children.push(
+                Button::new()
+                    .on_click(EventHandler::new(async |set_state| {
+                        set_state(Box::new(|state: AppState| -> AppState {
+                            AppState {
+                                current_key: None,
+                                is_header_popover_open: false,
+                                ..state.clone()
+                            }
+                        }));
+                    }))
+                    .children([text("Log Out")])
+                    .style(
+                        Style::new()
+                            .set("width", "100%")
+                            .set("background-color", "transparent")
+                            .set("color", "#fca5a5")
+                            .set("justify-content", "flex-start"),
+                    )
+                    .into_node(),
+            );
+            children
+        })
         .into_node()
 }

@@ -4,18 +4,10 @@ use narumincho_vdom::*;
 use crate::app_state::AppState;
 
 pub fn event_list_view(state: &AppState) -> Node<AppState> {
-    Div::new()
-        .style(
-            Style::new()
-                .set("display", "grid")
-                .set("gap", "2rem")
-                .set("width", "100%")
-                .set("max-width", "800px")
-                .set("margin", "0 auto")
-                .set("padding", "2rem 1rem"),
-        )
-        .children([
+    let message_form = if state.current_key.is_some() {
+        Some(
             Div::new()
+                .class("composer")
                 .style(
                     Style::new()
                         .set("display", "flex")
@@ -115,29 +107,44 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
                         .into_node(),
                 ])
                 .into_node(),
-            Div::new()
-                .style(Style::new().set("display", "grid").set("gap", "1rem"))
-                .children({
-                    let mut account_name_map = std::collections::HashMap::new();
-                    for (_, event_result) in &state.created_account_events {
-                        if let Ok((_, event)) = event_result {
-                            if let definy_event::event::EventContent::CreateAccount(e) =
-                                &event.content
-                            {
-                                account_name_map
-                                    .insert(event.account_id.clone(), e.account_name.clone());
-                            }
-                        }
-                    }
+        )
+    } else {
+        None
+    };
 
-                    state
-                        .created_account_events
-                        .iter()
-                        .map(|(hash, event)| event_view(hash, event, &account_name_map))
-                        .collect::<Vec<Node<AppState>>>()
-                })
-                .into_node(),
-        ])
+    Div::new()
+        .class("page-shell")
+        .style(
+            Style::new()
+                .set("display", "grid")
+                .set("gap", "2rem")
+                .set("width", "100%")
+                .set("max-width", "800px")
+                .set("margin", "0 auto")
+                .set("padding", "2rem 1rem"),
+        )
+        .children({
+            let mut children = Vec::new();
+            if let Some(message_form) = message_form {
+                children.push(message_form);
+            }
+            children.push(
+                Div::new()
+                    .class("event-list")
+                    .style(Style::new().set("display", "grid").set("gap", "1rem"))
+                    .children({
+                        let account_name_map = state.account_name_map();
+
+                        state
+                            .created_account_events
+                            .iter()
+                            .map(|(hash, event)| event_view(hash, event, &account_name_map))
+                            .collect::<Vec<Node<AppState>>>()
+                    })
+                    .into_node(),
+            );
+            children
+        })
         .into_node()
 }
 
@@ -151,6 +158,7 @@ fn event_view(
 ) -> Node<AppState> {
     match event_result {
         Ok((_, event)) => A::<AppState, crate::Location>::new()
+            .class("event-card")
             .style(
                 Style::new()
                     .set("background", "rgba(255, 255, 255, 0.02)")
@@ -199,6 +207,13 @@ fn event_view(
                             text(create_account_event.account_name.as_ref()),
                         ])
                         .into_node(),
+                    EventContent::ChangeProfile(change_profile_event) => Div::new()
+                        .style(Style::new().set("color", "var(--primary)"))
+                        .children([
+                            text("Profile changed: "),
+                            text(change_profile_event.account_name.as_ref()),
+                        ])
+                        .into_node(),
                     EventContent::Message(message_event) => Div::new()
                         .style(Style::new().set("font-size", "1.125rem"))
                         .children([
@@ -224,6 +239,7 @@ fn event_view(
             ])
             .into_node(),
         Err(e) => Div::new()
+            .class("error-card")
             .style(
                 Style::new()
                     .set("background-color", "rgba(244, 63, 94, 0.1)")

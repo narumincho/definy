@@ -22,6 +22,7 @@ pub struct Event {
 #[strum_discriminants(sqlx(type_name = "event_type", rename_all = "snake_case"))]
 pub enum EventContent {
     CreateAccount(CreateAccountEvent),
+    ChangeProfile(ChangeProfileEvent),
     Message(MessageEvent),
 }
 
@@ -32,6 +33,11 @@ pub struct MessageEvent {
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct CreateAccountEvent {
+    pub account_name: Box<str>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ChangeProfileEvent {
     pub account_name: Box<str>,
 }
 

@@ -12,17 +12,46 @@ fn run() -> Result<(), JsValue> {
 
 struct DefinyApp {}
 
+fn read_ssr_events() -> Option<
+    Vec<(
+        [u8; 32],
+        Result<
+            (ed25519_dalek::Signature, definy_event::event::Event),
+            definy_event::VerifyAndDeserializeError,
+        >,
+    )>,
+> {
+    let text = web_sys::window()?
+        .document()?
+        .get_element_by_id(definy_ui::SSR_INITIAL_STATE_ELEMENT_ID)?
+        .text_content()?;
+    let event_binaries = definy_ui::decode_ssr_initial_state(text.as_str())?;
+    Some(
+        event_binaries
+            .into_iter()
+            .map(|bytes| {
+                let hash: [u8; 32] = <sha2::Sha256 as sha2::Digest>::digest(&bytes).into();
+                (hash, definy_event::verify_and_deserialize(&bytes))
+            })
+            .collect(),
+    )
+}
+
 impl narumincho_vdom_client::App<AppState> for DefinyApp {
     fn initial_state(
         fire: &std::rc::Rc<dyn Fn(Box<dyn FnOnce(AppState) -> AppState>)>,
     ) -> AppState {
         let fire = std::rc::Rc::clone(fire);
+        let ssr_events = read_ssr_events();
+        let has_ssr_events = ssr_events.is_some();
         wasm_bindgen_futures::spawn_local(async move {
-            let events = definy_ui::fetch::get_events().await.unwrap();
-            fire(Box::new(move |state| AppState {
-                created_account_events: events,
-                ..state.clone()
-            }));
+            if !has_ssr_events {
+                let events = definy_ui::fetch::get_events().await.unwrap();
+                fire(Box::new(move |state| AppState {
+                    created_account_events: events,
+                    ..state.clone()
+                }));
+            }
             let password = definy_ui::navigator_credential::credential_get().await;
             if let Some(password) = password {
                 fire(Box::new(move |state| AppState {
@@ -39,9 +68,11 @@ impl narumincho_vdom_client::App<AppState> for DefinyApp {
                 generated_key: None,
                 current_password: String::new(),
             },
-            created_account_events: Vec::new(),
+            created_account_events: ssr_events.unwrap_or_default(),
             current_key: None,
             message_input: String::new(),
+            profile_name_input: String::new(),
+            is_header_popover_open: false,
             location: {
                 let initial_url = web_sys::window()
                     .unwrap()
@@ -68,6 +99,6 @@ impl narumincho_vdom_client::App<AppState> for DefinyApp {
     }
 
     fn render(state: &AppState) -> narumincho_vdom::Node<AppState> {
-        definy_ui::render(state, &None)
+        definy_ui::render(state, &None, None)
     }
 }

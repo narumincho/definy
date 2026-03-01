@@ -12,6 +12,7 @@ use hyper::service::service_fn;
 use hyper::{Request, Response};
 use hyper_util::rt::TokioIo;
 use narumincho_vdom::Route;
+use sha2::Digest;
 use tokio::net::TcpListener;
 use tokio::sync::RwLock;
 
@@ -30,23 +31,36 @@ async fn main() -> Result<(), anyhow::Error> {
     let state_for_retry = state.clone();
     tokio::spawn(async move {
         loop {
-            match db::init_db().await {
-                Ok(pool) => {
-                    {
+            let current_pool = state_for_retry.pool.read().await.clone();
+
+            match current_pool {
+                Some(pool) => {
+                    if let Err(error) = sqlx::query("select 1").execute(&pool).await {
+                        eprintln!(
+                            "Database health check failed. Switching to reconnect mode... {:?}",
+                            error
+                        );
                         let mut guard = state_for_retry.pool.write().await;
-                        *guard = Some(pool);
+                        *guard = None;
                     }
-                    println!("Database is available. API requests will use the database.");
-                    break;
                 }
-                Err(error) => {
-                    eprintln!(
-                        "Failed to connect to database. Retrying in 5 seconds... {:?}",
-                        error
-                    );
-                    tokio::time::sleep(Duration::from_secs(5)).await;
-                }
+                None => match db::init_db().await {
+                    Ok(pool) => {
+                        {
+                            let mut guard = state_for_retry.pool.write().await;
+                            *guard = Some(pool);
+                        }
+                        println!("Database is available. API requests will use the database.");
+                    }
+                    Err(error) => {
+                        eprintln!(
+                            "Failed to connect to database. Retrying in 5 seconds... {:?}",
+                            error
+                        );
+                    }
+                },
             }
+            tokio::time::sleep(Duration::from_secs(5)).await;
         }
     });
 
@@ -115,11 +129,11 @@ async fn handler(
         .is_some_and(|value| value.contains("text/html"));
 
     if accepts_html {
-        let db_ready = state.pool.read().await.is_some();
-        if !db_ready {
-            return db_unavailable_response(true);
+        let pool = state.pool.read().await.clone();
+        return match pool {
+            Some(pool) => handle_html(path, &pool).await,
+            None => db_unavailable_response(true),
         }
-        return handle_html(path);
     }
 
     match path.trim_start_matches('/') {
@@ -180,7 +194,10 @@ fn db_unavailable_response(wants_html: bool) -> Result<Response<Full<Bytes>>, hy
         .body(Full::new(Bytes::from("Database is unavailable")))
 }
 
-fn handle_html(path: &str) -> Result<Response<Full<Bytes>>, hyper::http::Error> {
+async fn handle_html(
+    path: &str,
+    pool: &sqlx::postgres::PgPool,
+) -> Result<Response<Full<Bytes>>, hyper::http::Error> {
     let location = definy_ui::Location::from_url(path);
     if let Some(ref location) = location {
         if location.to_url() != path {
@@ -190,6 +207,25 @@ fn handle_html(path: &str) -> Result<Response<Full<Bytes>>, hyper::http::Error> 
                 .body(Full::new(Bytes::from("Redirecting...")));
         }
     }
+
+    let events = match db::get_events(pool, None).await {
+        Ok(events) => events,
+        Err(error) => {
+            eprintln!("Failed to get events for SSR: {:?}", error);
+            return db_unavailable_response(true);
+        }
+    };
+
+    let created_account_events = events
+        .iter()
+        .into_iter()
+        .map(|event_binary| {
+            let hash: [u8; 32] = sha2::Sha256::digest(event_binary.as_slice()).into();
+            (hash, definy_event::verify_and_deserialize(event_binary.as_slice()))
+        })
+        .collect::<Vec<_>>();
+    let ssr_initial_state_json = definy_ui::encode_ssr_initial_state(&events.into_vec());
+
     Response::builder()
         .header("Content-Type", "text/html; charset=utf-8")
         .body(Full::new(Bytes::from(narumincho_vdom::to_html(
@@ -204,13 +240,16 @@ fn handle_html(path: &str) -> Result<Response<Full<Bytes>>, hyper::http::Error> 
                         },
                     current_key: None,
                     message_input: String::new(),
-                    created_account_events: Vec::new(),
+                    profile_name_input: String::new(),
+                    is_header_popover_open: false,
+                    created_account_events,
                     location,
                 },
                 &Some(definy_ui::ResourceHash {
                     js: JAVASCRIPT_HASH.to_string(),
                     wasm: WASM_HASH.to_string(),
                 }),
+                ssr_initial_state_json.as_deref(),
             ),
         ))))
 }

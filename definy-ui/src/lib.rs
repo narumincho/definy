@@ -13,12 +13,51 @@ pub use message::Message;
 
 use narumincho_vdom::*;
 
+pub const SSR_INITIAL_STATE_ELEMENT_ID: &str = "__DEFINY_INITIAL_STATE__";
+
 pub struct ResourceHash {
     pub js: String,
     pub wasm: String,
 }
 
-pub fn render(state: &AppState, resource_hash: &Option<ResourceHash>) -> Node<AppState> {
+#[derive(serde::Serialize, serde::Deserialize)]
+struct SsrInitialState {
+    event_binaries_base64: Vec<String>,
+}
+
+pub fn encode_ssr_initial_state(event_binaries: &[Vec<u8>]) -> Option<String> {
+    serde_json::to_string(&SsrInitialState {
+        event_binaries_base64: event_binaries
+            .iter()
+            .map(|event_binary| {
+                base64::Engine::encode(
+                    &base64::engine::general_purpose::URL_SAFE_NO_PAD,
+                    event_binary,
+                )
+            })
+            .collect(),
+    })
+    .ok()
+}
+
+pub fn decode_ssr_initial_state(json: &str) -> Option<Vec<Vec<u8>>> {
+    serde_json::from_str::<SsrInitialState>(json).ok().map(|state| {
+        state
+            .event_binaries_base64
+            .into_iter()
+            .filter_map(|encoded| {
+                base64::Engine::decode(&base64::engine::general_purpose::URL_SAFE_NO_PAD, encoded)
+                    .ok()
+            })
+            .collect()
+    })
+}
+
+pub fn render(
+    state: &AppState,
+    resource_hash: &Option<ResourceHash>,
+    ssr_initial_state_json: Option<&str>,
+) -> Node<AppState> {
     let mut head_children = vec![
         Title::new().children([text("definy")]).into_node(),
         Meta::new("viewport", "width=device-width,initial-scale=1.0"),
@@ -32,6 +71,15 @@ pub fn render(state: &AppState, resource_hash: &Option<ResourceHash>) -> Node<Ap
     ];
     match resource_hash {
         Some(r) => {
+            if let Some(ssr_initial_state_json) = ssr_initial_state_json {
+                head_children.push(
+                    Script::new()
+                        .id(SSR_INITIAL_STATE_ELEMENT_ID)
+                        .type_("application/json")
+                        .children([text(ssr_initial_state_json)])
+                        .into_node(),
+                );
+            }
             head_children.push(
                 Script::new()
                     .type_("module")
