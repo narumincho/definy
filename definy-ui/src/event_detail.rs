@@ -65,6 +65,7 @@ fn render_event_detail(
     event: &Event,
     account_name_map: &std::collections::HashMap<definy_event::event::AccountId, Box<str>>,
 ) -> Node<AppState> {
+    let account_id_bytes = *event.account_id.0.as_ref();
     let account_name = account_name_map
         .get(&event.account_id)
         .map(|name: &Box<str>| name.as_ref())
@@ -109,6 +110,17 @@ fn render_event_detail(
                         ))])
                         .into_node(),
                 ])
+                .into_node(),
+            A::<AppState, Location>::new()
+                .href(Href::Internal(Location::Account(account_id_bytes)))
+                .style(
+                    Style::new()
+                        .set("width", "fit-content")
+                        .set("font-size", "0.9rem")
+                        .set("color", "var(--primary)")
+                        .set("font-weight", "600"),
+                )
+                .children([text(format!("View account: {}", account_name))])
                 .into_node(),
             match &event.content {
                 EventContent::CreateAccount(create_account_event) => Div::new()

@@ -1,3 +1,4 @@
+mod account_detail;
 mod app_state;
 mod event_detail;
 mod event_list;
@@ -108,6 +109,9 @@ init({{ module_or_path: \"/{}\" }});",
                     match &state.location {
                         Some(Location::Home) => event_list::event_list_view(state),
                         Some(Location::Event(hash)) => event_detail::event_detail_view(state, hash),
+                        Some(Location::Account(account_id)) => {
+                            account_detail::account_detail_view(state, account_id)
+                        }
                         None => not_found::not_found_view(state),
                     },
                     login_or_create_account_dialog::login_or_create_account_dialog(state),

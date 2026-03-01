@@ -64,10 +64,11 @@ pub enum CreatingAccountState {
     Error,
 }
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone, PartialEq, Debug)]
 pub enum Location {
     Home,
     Event([u8; 32]),
+    Account([u8; 32]),
 }
 
 impl narumincho_vdom::Route for Location {
@@ -78,6 +79,13 @@ impl narumincho_vdom::Route for Location {
                 "/events/{}",
                 base64::Engine::encode(&base64::engine::general_purpose::URL_SAFE_NO_PAD, hash)
             ),
+            Location::Account(account_id) => format!(
+                "/accounts/{}",
+                base64::Engine::encode(
+                    &base64::engine::general_purpose::URL_SAFE_NO_PAD,
+                    account_id
+                )
+            ),
         }
     }
 
@@ -85,21 +93,38 @@ impl narumincho_vdom::Route for Location {
         let parts: Vec<&str> = url.trim_matches('/').split('/').collect();
         match parts.as_slice() {
             [""] => Some(Location::Home),
-            ["events", hash_str] => {
-                let bytes = base64::Engine::decode(
-                    &base64::engine::general_purpose::URL_SAFE_NO_PAD,
-                    hash_str,
-                )
-                .ok()?;
-                if bytes.len() == 32 {
-                    let mut hash = [0u8; 32];
-                    hash.copy_from_slice(&bytes);
-                    Some(Location::Event(hash))
-                } else {
-                    None
-                }
+            ["events", hash_str] => decode_32bytes_base64(hash_str).map(Location::Event),
+            ["accounts", account_id_str] => {
+                decode_32bytes_base64(account_id_str).map(Location::Account)
             }
             _ => None,
         }
+    }
+}
+
+fn decode_32bytes_base64(value: &str) -> Option<[u8; 32]> {
+    let bytes =
+        base64::Engine::decode(&base64::engine::general_purpose::URL_SAFE_NO_PAD, value).ok()?;
+    if bytes.len() == 32 {
+        let mut result = [0u8; 32];
+        result.copy_from_slice(&bytes);
+        Some(result)
+    } else {
+        None
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use narumincho_vdom::Route;
+
+    use super::Location;
+
+    #[test]
+    fn account_route_round_trip() {
+        let account_id = [7u8; 32];
+        let location = Location::Account(account_id);
+        let url = location.to_url();
+        assert_eq!(Location::from_url(url.as_str()), Some(Location::Account(account_id)));
     }
 }
