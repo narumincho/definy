@@ -313,6 +313,7 @@ fn render_html_response(path: &str) -> Response<Full<Bytes>> {
             created_account_events: vec![],
             current_key: None,
             part_name_input: String::new(),
+            part_description_input: String::new(),
             composing_expression: definy_event::event::Expression::Number(definy_event::event::NumberExpression { value: 0 }),
             part_definition_eval_result: None,
             event_detail_eval_result: None,

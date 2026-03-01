@@ -142,9 +142,14 @@ fn event_summary(event: &definy_event::event::Event) -> String {
             format!("Profile changed: {}", change_profile_event.account_name)
         }
         EventContent::PartDefinition(part_definition_event) => format!(
-            "{} = {}",
+            "{} = {}{}",
             part_definition_event.part_name,
-            expression_to_source(&part_definition_event.expression)
+            expression_to_source(&part_definition_event.expression),
+            if part_definition_event.description.is_empty() {
+                String::new()
+            } else {
+                format!(" - {}", part_definition_event.description)
+            }
         ),
     }
 }

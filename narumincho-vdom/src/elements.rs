@@ -123,6 +123,11 @@ define_element!(
     "https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/input"
 );
 define_element!(
+    Textarea,
+    "textarea",
+    "https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/textarea"
+);
+define_element!(
     Label,
     "label",
     "https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/label"
@@ -192,6 +197,17 @@ impl<State> Input<State> {
     pub fn on_change(mut self, msg: EventHandler<State>) -> Self {
         self.events.push(("change".to_string(), msg));
         self
+    }
+}
+
+// Textarea specific
+impl<State> Textarea<State> {
+    pub fn name(self, name: &str) -> Self {
+        self.attribute("name", name)
+    }
+
+    pub fn value(self, value: &str) -> Self {
+        self.attribute("value", value)
     }
 }
 

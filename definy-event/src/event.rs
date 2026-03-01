@@ -30,6 +30,8 @@ pub enum EventContent {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct PartDefinitionEvent {
     pub part_name: Box<str>,
+    #[serde(default)]
+    pub description: Box<str>,
     pub expression: Expression,
 }
 
