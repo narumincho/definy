@@ -185,8 +185,8 @@ fn target_expression_mut<'a>(
     target: EditorTarget,
 ) -> &'a mut definy_event::event::Expression {
     match target {
-        EditorTarget::PartDefinition => &mut state.composing_expression,
-        EditorTarget::PartUpdate => &mut state.part_update_expression_input,
+        EditorTarget::PartDefinition => &mut state.part_definition_form.composing_expression,
+        EditorTarget::PartUpdate => &mut state.part_update_form.expression_input,
     }
 }
 

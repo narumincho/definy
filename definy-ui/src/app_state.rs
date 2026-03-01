@@ -9,17 +9,27 @@ pub struct AppState {
         >,
     )>,
     pub current_key: Option<ed25519_dalek::SigningKey>,
-    pub part_name_input: String,
-    pub part_description_input: String,
-    pub composing_expression: definy_event::event::Expression,
-    pub part_definition_eval_result: Option<String>,
-    pub part_update_name_input: String,
-    pub part_update_description_input: String,
-    pub part_update_expression_input: definy_event::event::Expression,
+    pub part_definition_form: PartDefinitionFormState,
+    pub part_update_form: PartUpdateFormState,
     pub event_detail_eval_result: Option<String>,
     pub profile_name_input: String,
     pub is_header_popover_open: bool,
     pub location: Option<Location>,
+}
+
+#[derive(Clone)]
+pub struct PartDefinitionFormState {
+    pub part_name_input: String,
+    pub part_description_input: String,
+    pub composing_expression: definy_event::event::Expression,
+    pub eval_result: Option<String>,
+}
+
+#[derive(Clone)]
+pub struct PartUpdateFormState {
+    pub part_name_input: String,
+    pub part_description_input: String,
+    pub expression_input: definy_event::event::Expression,
 }
 
 

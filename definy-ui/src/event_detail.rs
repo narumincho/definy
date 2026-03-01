@@ -354,7 +354,7 @@ fn part_update_form(state: &AppState, root_part_definition_hash: [u8; 32]) -> No
             Input::new()
                 .type_("text")
                 .name("part-update-name")
-                .value(&state.part_update_name_input)
+                .value(&state.part_update_form.part_name_input)
                 .on_change(EventHandler::new(async |set_state| {
                     let value = web_sys::window()
                         .and_then(|window| window.document())
@@ -367,16 +367,17 @@ fn part_update_form(state: &AppState, root_part_definition_hash: [u8; 32]) -> No
                         })
                         .map(|input| input.value())
                         .unwrap_or_default();
-                    set_state(Box::new(move |state: AppState| AppState {
-                        part_update_name_input: value,
-                        ..state.clone()
+                    set_state(Box::new(move |state: AppState| {
+                        let mut next = state.clone();
+                        next.part_update_form.part_name_input = value;
+                        next
                     }));
                 }))
                 .into_node(),
             {
                 let mut description = Textarea::new()
                     .name("part-update-description")
-                    .value(&state.part_update_description_input)
+                    .value(&state.part_update_form.part_description_input)
                     .style(Style::new().set("min-height", "5rem"));
                 description.attributes.push((
                     "placeholder".to_string(),
@@ -401,9 +402,10 @@ fn part_update_form(state: &AppState, root_part_definition_hash: [u8; 32]) -> No
                             })
                             .map(|textarea| textarea.value())
                             .unwrap_or_default();
-                        set_state(Box::new(move |state: AppState| AppState {
-                            part_update_description_input: value,
-                            ..state.clone()
+                        set_state(Box::new(move |state: AppState| {
+                            let mut next = state.clone();
+                            next.part_update_form.part_description_input = value;
+                            next
                         }));
                     }),
                 ));
@@ -414,7 +416,7 @@ fn part_update_form(state: &AppState, root_part_definition_hash: [u8; 32]) -> No
                 .children([text("Expression Builder")])
                 .into_node(),
             render_root_expression_editor(
-                &state.part_update_expression_input,
+                &state.part_update_form.expression_input,
                 EditorTarget::PartUpdate,
             ),
             Div::new()
@@ -427,7 +429,7 @@ fn part_update_form(state: &AppState, root_part_definition_hash: [u8; 32]) -> No
                 )
                 .children([text(format!(
                     "Current: {}",
-                    expression_to_source(&state.part_update_expression_input)
+                    expression_to_source(&state.part_update_form.expression_input)
                 ))])
                 .into_node(),
             {
@@ -450,7 +452,8 @@ fn part_update_form(state: &AppState, root_part_definition_hash: [u8; 32]) -> No
                                         ..state.clone()
                                     };
                                 };
-                                let part_name = state.part_update_name_input.trim().to_string();
+                                let part_name =
+                                    state.part_update_form.part_name_input.trim().to_string();
                                 if part_name.is_empty() {
                                     return AppState {
                                         event_detail_eval_result: Some(
@@ -459,8 +462,9 @@ fn part_update_form(state: &AppState, root_part_definition_hash: [u8; 32]) -> No
                                         ..state.clone()
                                     };
                                 }
-                                let part_description = state.part_update_description_input.clone();
-                                let expression = state.part_update_expression_input.clone();
+                                let part_description =
+                                    state.part_update_form.part_description_input.clone();
+                                let expression = state.part_update_form.expression_input.clone();
                                 wasm_bindgen_futures::spawn_local(async move {
                                     let event_binary = match definy_event::sign_and_serialize(
                                         definy_event::event::Event {
@@ -495,20 +499,22 @@ fn part_update_form(state: &AppState, root_part_definition_hash: [u8; 32]) -> No
                                     match crate::fetch::post_event(event_binary.as_slice()).await {
                                         Ok(_) => {
                                             if let Ok(events) = crate::fetch::get_events().await {
-                                                set_state_for_async(Box::new(move |state| AppState {
-                                                    created_account_events: events,
-                                                    part_update_name_input: String::new(),
-                                                    part_update_description_input: String::new(),
-                                                    part_update_expression_input:
+                                                set_state_for_async(Box::new(move |state| {
+                                                    let mut next = state.clone();
+                                                    next.created_account_events = events;
+                                                    next.part_update_form.part_name_input =
+                                                        String::new();
+                                                    next.part_update_form.part_description_input =
+                                                        String::new();
+                                                    next.part_update_form.expression_input =
                                                         definy_event::event::Expression::Number(
                                                             definy_event::event::NumberExpression {
                                                                 value: 0,
                                                             },
-                                                        ),
-                                                    event_detail_eval_result: Some(
-                                                        "PartUpdate event posted".to_string(),
-                                                    ),
-                                                    ..state.clone()
+                                                        );
+                                                    next.event_detail_eval_result =
+                                                        Some("PartUpdate event posted".to_string());
+                                                    next
                                                 }));
                                             }
                                         }

@@ -30,7 +30,7 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
                         .children([text("Expression Builder")])
                         .into_node(),
                     render_root_expression_editor(
-                        &state.composing_expression,
+                        &state.part_definition_form.composing_expression,
                         EditorTarget::PartDefinition,
                     ),
                     Div::new()
@@ -43,7 +43,7 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
                         )
                         .children([text(format!(
                             "Current: {}",
-                            expression_to_source(&state.composing_expression)
+                            expression_to_source(&state.part_definition_form.composing_expression)
                         ))])
                         .into_node(),
                     Div::new()
@@ -53,15 +53,16 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
                                 .type_("button")
                                 .on_click(EventHandler::new(async |set_state| {
                                     set_state(Box::new(|state: AppState| {
-                                        let result = match evaluate_expression(&state.composing_expression)
+                                        let result = match evaluate_expression(
+                                            &state.part_definition_form.composing_expression,
+                                        )
                                         {
                                             Ok(value) => format!("Result: {}", value),
                                             Err(error) => format!("Error: {}", error),
                                         };
-                                        AppState {
-                                            part_definition_eval_result: Some(result),
-                                            ..state.clone()
-                                        }
+                                        let mut next = state.clone();
+                                        next.part_definition_form.eval_result = Some(result);
+                                        next
                                     }));
                                 }))
                                 .children([text("Evaluate")])
@@ -79,17 +80,18 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
                                                 return state;
                                             };
 
-                                        let part_name = state.part_name_input.trim().to_string();
-                                        let description = state.part_description_input.clone();
+                                        let part_name =
+                                            state.part_definition_form.part_name_input.trim().to_string();
+                                        let description =
+                                            state.part_definition_form.part_description_input.clone();
                                         if part_name.is_empty() {
-                                            return AppState {
-                                                part_definition_eval_result: Some(
-                                                    "Error: part name is required".to_string(),
-                                                ),
-                                                ..state.clone()
-                                            };
+                                            let mut next = state.clone();
+                                            next.part_definition_form.eval_result =
+                                                Some("Error: part name is required".to_string());
+                                            return next;
                                         }
-                                        let expression = state.composing_expression.clone();
+                                        let expression =
+                                            state.part_definition_form.composing_expression.clone();
                                         let key_for_async = key.clone();
 
                                         wasm_bindgen_futures::spawn_local(async move {
@@ -130,16 +132,15 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
                                                 }
                                             }
                                         });
-                                        AppState {
-                                            part_name_input: String::new(),
-                                            part_description_input: String::new(),
-                                            part_definition_eval_result: None,
-                                            composing_expression:
-                                                definy_event::event::Expression::Number(
-                                                    definy_event::event::NumberExpression { value: 0 },
-                                                ),
-                                            ..state.clone()
-                                        }
+                                        let mut next = state.clone();
+                                        next.part_definition_form.part_name_input = String::new();
+                                        next.part_definition_form.part_description_input = String::new();
+                                        next.part_definition_form.eval_result = None;
+                                        next.part_definition_form.composing_expression =
+                                            definy_event::event::Expression::Number(
+                                                definy_event::event::NumberExpression { value: 0 },
+                                            );
+                                        next
                                     }));
                                 }))
                                 .children([text("Send")])
@@ -169,7 +170,7 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
             if let Some(part_definition_form) = part_definition_form {
                 children.push(part_definition_form);
             }
-            if let Some(result) = &state.part_definition_eval_result {
+            if let Some(result) = &state.part_definition_form.eval_result {
                 children.push(
                     Div::new()
                         .class("event-detail-card")
@@ -375,7 +376,7 @@ fn part_name_input(state: &AppState) -> Node<AppState> {
     let mut input = Input::new()
         .name("part-name")
         .type_("text")
-        .value(&state.part_name_input);
+        .value(&state.part_definition_form.part_name_input);
     input
         .attributes
         .push(("placeholder".to_string(), "part name (e.g. a)".to_string()));
@@ -389,9 +390,10 @@ fn part_name_input(state: &AppState) -> Node<AppState> {
                 .and_then(|element| wasm_bindgen::JsCast::dyn_into::<web_sys::HtmlInputElement>(element).ok())
                 .map(|input| input.value())
                 .unwrap_or_default();
-            set_state(Box::new(move |state: AppState| AppState {
-                part_name_input: value,
-                ..state.clone()
+            set_state(Box::new(move |state: AppState| {
+                let mut next = state.clone();
+                next.part_definition_form.part_name_input = value;
+                next
             }));
         }),
     ));
@@ -401,7 +403,7 @@ fn part_name_input(state: &AppState) -> Node<AppState> {
 fn part_description_input(state: &AppState) -> Node<AppState> {
     let mut textarea = Textarea::new()
         .name("part-description")
-        .value(&state.part_description_input)
+        .value(&state.part_definition_form.part_description_input)
         .style(Style::new().set("min-height", "6rem"));
     textarea.attributes.push((
         "placeholder".to_string(),
@@ -419,9 +421,10 @@ fn part_description_input(state: &AppState) -> Node<AppState> {
                 })
                 .map(|textarea| textarea.value())
                 .unwrap_or_default();
-            set_state(Box::new(move |state: AppState| AppState {
-                part_description_input: value,
-                ..state.clone()
+            set_state(Box::new(move |state: AppState| {
+                let mut next = state.clone();
+                next.part_definition_form.part_description_input = value;
+                next
             }));
         }),
     ));
