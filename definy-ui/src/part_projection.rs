@@ -16,7 +16,7 @@ pub struct PartSnapshot {
 
 pub fn collect_part_snapshots(state: &AppState) -> Vec<PartSnapshot> {
     let mut events = state
-        .created_account_events
+        .events
         .iter()
         .filter_map(|(hash, event_result)| {
             let (_, event) = event_result.as_ref().ok()?;
@@ -83,7 +83,7 @@ pub fn collect_related_part_events(
     definition_event_hash: &[u8; 32],
 ) -> Vec<([u8; 32], Event)> {
     let mut events = state
-        .created_account_events
+        .events
         .iter()
         .filter_map(|(hash, event_result)| {
             let (_, event) = event_result.as_ref().ok()?;

@@ -308,7 +308,7 @@ fn part_update_form(state: &AppState, definition_event_hash: &[u8; 32]) -> Node<
                                             if let Ok(events) = crate::fetch::get_events().await {
                                                 set_state_for_async(Box::new(move |state| {
                                                     let mut next = state.clone();
-                                                    next.created_account_events = events;
+                                                    next.events = events;
                                                     next.part_update_form.part_name_input =
                                                         String::new();
                                                     next.part_update_form.part_description_input =

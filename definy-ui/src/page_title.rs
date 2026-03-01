@@ -59,7 +59,7 @@ pub fn page_title_text(state: &AppState) -> String {
         }
         Some(Location::Event(event_hash)) => {
             let event_label = state
-                .created_account_events
+                .events
                 .iter()
                 .find_map(|(hash, event_result)| {
                     if hash != event_hash {
@@ -94,7 +94,7 @@ pub fn document_title_text(state: &AppState) -> String {
 
 fn resolve_part_name(state: &AppState, definition_event_hash: &[u8; 32]) -> Option<String> {
     let mut events = state
-        .created_account_events
+        .events
         .iter()
         .filter_map(|(hash, event_result)| {
             let (_, event) = event_result.as_ref().ok()?;

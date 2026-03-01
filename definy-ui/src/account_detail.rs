@@ -12,7 +12,7 @@ pub fn account_detail_view(state: &AppState, account_id_bytes: &[u8; 32]) -> Nod
     let encoded_account_id = crate::hash_format::encode_hash32(account_id_bytes);
 
     let account_events = state
-        .created_account_events
+        .events
         .iter()
         .filter_map(|(hash, event_result)| {
             let (_, event) = event_result.as_ref().ok()?;

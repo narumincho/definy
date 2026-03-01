@@ -1,7 +1,7 @@
 #[derive(Clone)]
 pub struct AppState {
     pub login_or_create_account_dialog_state: LoginOrCreateAccountDialogState,
-    pub created_account_events: Vec<(
+    pub events: Vec<(
         [u8; 32],
         Result<
             (ed25519_dalek::Signature, definy_event::event::Event),
@@ -32,13 +32,12 @@ pub struct PartUpdateFormState {
     pub expression_input: definy_event::event::Expression,
 }
 
-
 impl AppState {
     pub fn account_name_map(
         &self,
     ) -> std::collections::HashMap<definy_event::event::AccountId, Box<str>> {
         let mut account_name_map = std::collections::HashMap::new();
-        for (_, event_result) in &self.created_account_events {
+        for (_, event_result) in &self.events {
             if let Ok((_, event)) = event_result {
                 match &event.content {
                     definy_event::event::EventContent::CreateAccount(create_account_event) => {

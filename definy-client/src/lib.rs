@@ -48,7 +48,7 @@ impl narumincho_vdom_client::App<AppState> for DefinyApp {
             if !has_ssr_events {
                 let events = definy_ui::fetch::get_events().await.unwrap();
                 fire(Box::new(move |state| AppState {
-                    created_account_events: events,
+                    events,
                     ..state.clone()
                 }));
             }
@@ -68,7 +68,7 @@ impl narumincho_vdom_client::App<AppState> for DefinyApp {
                 generated_key: None,
                 current_password: String::new(),
             },
-            created_account_events: ssr_events.unwrap_or_default(),
+            events: ssr_events.unwrap_or_default(),
             current_key: None,
             part_definition_form: definy_ui::PartDefinitionFormState {
                 part_name_input: String::new(),

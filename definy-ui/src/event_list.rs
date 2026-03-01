@@ -120,7 +120,7 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
                                                     let events = crate::fetch::get_events().await;
                                                     if let Ok(events) = events {
                                                         set_state_for_async(Box::new(|state| AppState {
-                                                            created_account_events: events,
+                                                            events,
                                                             ..state.clone()
                                                         }));
                                                     }
@@ -185,7 +185,7 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
                         let account_name_map = state.account_name_map();
 
                         state
-                            .created_account_events
+                            .events
                             .iter()
                             .map(|(hash, event)| event_view(hash, event, &account_name_map))
                             .collect::<Vec<Node<AppState>>>()

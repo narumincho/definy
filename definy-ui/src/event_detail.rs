@@ -9,7 +9,7 @@ pub fn event_detail_view(state: &AppState, target_hash: &[u8; 32]) -> Node<AppSt
     let account_name_map = state.account_name_map();
     let mut target_event_opt = None;
 
-    for (hash, event_result) in &state.created_account_events {
+    for (hash, event_result) in &state.events {
         if let Ok((_, event)) = event_result {
             if hash == target_hash {
                 target_event_opt = Some(event);
@@ -367,7 +367,7 @@ fn collect_related_part_events(
     root_part_definition_hash: [u8; 32],
 ) -> Vec<([u8; 32], &Event)> {
     let mut events = state
-        .created_account_events
+        .events
         .iter()
         .filter_map(|(hash, event_result)| {
             let (_, event) = event_result.as_ref().ok()?;

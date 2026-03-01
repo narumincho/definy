@@ -227,7 +227,7 @@ fn popover(state: &AppState) -> Node<AppState> {
                                     if fetch::post_event(event_binary.as_slice()).await.is_ok() {
                                         if let Ok(events) = fetch::get_events().await {
                                             set_state_for_async(Box::new(|state| AppState {
-                                                created_account_events: events,
+                                                events,
                                                 profile_name_input: String::new(),
                                                 is_header_popover_open: false,
                                                 ..state.clone()

@@ -133,7 +133,7 @@ async fn handler(
         return match pool {
             Some(pool) => handle_html(path, &pool).await,
             None => db_unavailable_response(true),
-        }
+        };
     }
 
     match path.trim_start_matches('/') {
@@ -216,12 +216,15 @@ async fn handle_html(
         }
     };
 
-    let created_account_events = events
+    let events = events
         .iter()
         .into_iter()
         .map(|event_binary| {
             let hash: [u8; 32] = sha2::Sha256::digest(event_binary.as_slice()).into();
-            (hash, definy_event::verify_and_deserialize(event_binary.as_slice()))
+            (
+                hash,
+                definy_event::verify_and_deserialize(event_binary.as_slice()),
+            )
         })
         .collect::<Vec<_>>();
     let ssr_initial_state_json = definy_ui::encode_ssr_initial_state(&events.into_vec());
@@ -242,18 +245,22 @@ async fn handle_html(
                     part_definition_form: definy_ui::PartDefinitionFormState {
                         part_name_input: String::new(),
                         part_description_input: String::new(),
-                        composing_expression: definy_event::event::Expression::Number(definy_event::event::NumberExpression { value: 0 }),
+                        composing_expression: definy_event::event::Expression::Number(
+                            definy_event::event::NumberExpression { value: 0 },
+                        ),
                         eval_result: None,
                     },
                     part_update_form: definy_ui::PartUpdateFormState {
                         part_name_input: String::new(),
                         part_description_input: String::new(),
-                        expression_input: definy_event::event::Expression::Number(definy_event::event::NumberExpression { value: 0 }),
+                        expression_input: definy_event::event::Expression::Number(
+                            definy_event::event::NumberExpression { value: 0 },
+                        ),
                     },
                     event_detail_eval_result: None,
                     profile_name_input: String::new(),
                     is_header_popover_open: false,
-                    created_account_events,
+                    events,
                     location,
                 },
                 &Some(definy_ui::ResourceHash {

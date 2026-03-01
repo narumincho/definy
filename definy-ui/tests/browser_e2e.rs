@@ -310,7 +310,7 @@ fn render_html_response(path: &str) -> Response<Full<Bytes>> {
                 username: String::new(),
                 current_password: String::new(),
             },
-            created_account_events: vec![],
+            events: vec![],
             current_key: None,
             part_definition_form: definy_ui::PartDefinitionFormState {
                 part_name_input: String::new(),
