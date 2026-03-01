@@ -10,6 +10,7 @@ pub struct AppState {
     )>,
     pub current_key: Option<ed25519_dalek::SigningKey>,
     pub part_name_input: String,
+    pub part_description_input: String,
     pub composing_expression: definy_event::event::Expression,
     pub part_definition_eval_result: Option<String>,
     pub event_detail_eval_result: Option<String>,

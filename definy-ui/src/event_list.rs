@@ -35,6 +35,7 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
                 )
                 .children([
                     part_name_input(state),
+                    part_description_input(state),
                     Div::new()
                         .style(Style::new().set("color", "var(--text-secondary)").set("font-size", "0.9rem"))
                         .children([text("Expression Builder")])
@@ -87,6 +88,7 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
                                             };
 
                                         let part_name = state.part_name_input.trim().to_string();
+                                        let description = state.part_description_input.clone();
                                         if part_name.is_empty() {
                                             return AppState {
                                                 part_definition_eval_result: Some(
@@ -109,6 +111,7 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
                                                         definy_event::event::EventContent::PartDefinition(
                                                             definy_event::event::PartDefinitionEvent {
                                                                 part_name: part_name.into(),
+                                                                description: description.into(),
                                                                 expression,
                                                             },
                                                         ),
@@ -137,6 +140,7 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
                                         });
                                         AppState {
                                             part_name_input: String::new(),
+                                            part_description_input: String::new(),
                                             part_definition_eval_result: None,
                                             composing_expression:
                                                 definy_event::event::Expression::Number(
@@ -495,6 +499,19 @@ fn event_view(
                                 part_definition_event.part_name,
                                 expression_to_source(&part_definition_event.expression)
                             )),
+                            if part_definition_event.description.is_empty() {
+                                Div::new().children([]).into_node()
+                            } else {
+                                Div::new()
+                                    .style(
+                                        Style::new()
+                                            .set("font-size", "0.9rem")
+                                            .set("color", "var(--text-secondary)")
+                                            .set("white-space", "pre-wrap"),
+                                    )
+                                    .children([text(part_definition_event.description.as_ref())])
+                                    .into_node()
+                            },
                         ])
                         .into_node(),
                 },
@@ -540,6 +557,36 @@ fn part_name_input(state: &AppState) -> Node<AppState> {
         }),
     ));
     input.into_node()
+}
+
+fn part_description_input(state: &AppState) -> Node<AppState> {
+    let mut textarea = Textarea::new()
+        .name("part-description")
+        .value(&state.part_description_input)
+        .style(Style::new().set("min-height", "6rem"));
+    textarea.attributes.push((
+        "placeholder".to_string(),
+        "description (supports multiple lines)".to_string(),
+    ));
+    textarea.events.push((
+        "input".to_string(),
+        EventHandler::new(move |set_state| async move {
+            let value = web_sys::window()
+                .and_then(|window| window.document())
+                .and_then(|document| document.query_selector("textarea[name='part-description']").ok())
+                .flatten()
+                .and_then(|element| {
+                    wasm_bindgen::JsCast::dyn_into::<web_sys::HtmlTextAreaElement>(element).ok()
+                })
+                .map(|textarea| textarea.value())
+                .unwrap_or_default();
+            set_state(Box::new(move |state: AppState| AppState {
+                part_description_input: value,
+                ..state.clone()
+            }));
+        }),
+    ));
+    textarea.into_node()
 }
 
 #[cfg(test)]

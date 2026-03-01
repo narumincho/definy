@@ -171,6 +171,19 @@ fn render_event_detail(
                             part_definition_event.part_name,
                             expression_to_source(&part_definition_event.expression)
                         )),
+                        if part_definition_event.description.is_empty() {
+                            Div::new().children([]).into_node()
+                        } else {
+                            Div::new()
+                                .style(
+                                    Style::new()
+                                        .set("font-size", "1rem")
+                                        .set("color", "var(--text-secondary)")
+                                        .set("white-space", "pre-wrap"),
+                                )
+                                .children([text(part_definition_event.description.as_ref())])
+                                .into_node()
+                        },
                         {
                             let expression = part_definition_event.expression.clone();
                             Button::new()
