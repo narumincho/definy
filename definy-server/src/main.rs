@@ -208,7 +208,7 @@ async fn handle_html(
         }
     }
 
-    let events = match db::get_events(pool, None).await {
+    let event_binary_array = match db::get_events(pool, None).await {
         Ok(events) => events,
         Err(error) => {
             eprintln!("Failed to get events for SSR: {:?}", error);
@@ -216,7 +216,7 @@ async fn handle_html(
         }
     };
 
-    let events = events
+    let events = event_binary_array
         .iter()
         .into_iter()
         .map(|event_binary| {
@@ -227,7 +227,8 @@ async fn handle_html(
             )
         })
         .collect::<Vec<_>>();
-    let ssr_initial_state_json = definy_ui::encode_ssr_initial_state(&events.into_vec());
+    let ssr_initial_state_json =
+        definy_ui::encode_ssr_initial_state(&event_binary_array.into_vec());
 
     Response::builder()
         .header("Content-Type", "text/html; charset=utf-8")
