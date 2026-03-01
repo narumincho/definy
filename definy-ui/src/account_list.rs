@@ -43,10 +43,7 @@ pub fn account_list_view(state: &AppState) -> Node<AppState> {
                         rows.into_iter()
                             .map(|row| {
                                 let account_id_bytes = *row.account_id.0.as_ref();
-                                let encoded = base64::Engine::encode(
-                                    &base64::engine::general_purpose::URL_SAFE_NO_PAD,
-                                    row.account_id.0.as_ref(),
-                                );
+                                let encoded = crate::hash_format::encode_bytes(row.account_id.0.as_ref());
                                 let name = account_name_map
                                     .get(&row.account_id)
                                     .map(|n| n.as_ref())

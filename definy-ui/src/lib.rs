@@ -7,6 +7,7 @@ mod event_presenter;
 mod expression_editor;
 mod expression_eval;
 pub mod fetch;
+mod hash_format;
 mod header;
 mod login_or_create_account_dialog;
 mod message;

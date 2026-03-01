@@ -125,6 +125,5 @@ fn resolve_part_name(state: &AppState, definition_event_hash: &[u8; 32]) -> Opti
 }
 
 fn short_hash(hash: &[u8; 32]) -> String {
-    let encoded = base64::Engine::encode(&base64::engine::general_purpose::URL_SAFE_NO_PAD, hash);
-    encoded.chars().take(10).collect()
+    crate::hash_format::short_hash32(hash)
 }

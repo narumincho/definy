@@ -247,10 +247,7 @@ fn event_view(
                         Div::new()
                             .class("mono")
                             .style(Style::new().set("opacity", "0.6"))
-                            .children([text(&base64::Engine::encode(
-                                &base64::engine::general_purpose::URL_SAFE_NO_PAD,
-                                event.account_id.0.as_slice(),
-                            ))])
+                            .children([text(&crate::hash_format::encode_bytes(event.account_id.0.as_slice()))])
                             .into_node(),
                     ])
                     .into_node(),
@@ -346,9 +343,8 @@ fn event_view(
                                 )
                                 .children([text(format!(
                                     "base: {}",
-                                    base64::Engine::encode(
-                                        &base64::engine::general_purpose::URL_SAFE_NO_PAD,
-                                        part_update_event.part_definition_event_hash,
+                                    crate::hash_format::encode_hash32(
+                                        &part_update_event.part_definition_event_hash,
                                     )
                                 ))])
                                 .into_node(),

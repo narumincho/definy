@@ -9,10 +9,7 @@ pub fn account_detail_view(state: &AppState, account_id_bytes: &[u8; 32]) -> Nod
         .get(&account_id)
         .map(|name| name.as_ref())
         .unwrap_or("Unknown");
-    let encoded_account_id = base64::Engine::encode(
-        &base64::engine::general_purpose::URL_SAFE_NO_PAD,
-        account_id_bytes,
-    );
+    let encoded_account_id = crate::hash_format::encode_hash32(account_id_bytes);
 
     let account_events = state
         .created_account_events

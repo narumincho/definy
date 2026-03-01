@@ -108,10 +108,7 @@ fn render_event_detail(
                     Div::new()
                         .class("mono")
                         .style(Style::new().set("opacity", "0.6"))
-                        .children([text(&base64::Engine::encode(
-                            &base64::engine::general_purpose::URL_SAFE_NO_PAD,
-                            event.account_id.0.as_slice(),
-                        ))])
+                        .children([text(&crate::hash_format::encode_bytes(event.account_id.0.as_slice()))])
                         .into_node(),
                 ])
                 .into_node(),
@@ -275,9 +272,8 @@ fn render_event_detail(
                             )
                             .children([text(format!(
                                 "partDefinitionEventHash: {}",
-                                base64::Engine::encode(
-                                    &base64::engine::general_purpose::URL_SAFE_NO_PAD,
-                                    part_update_event.part_definition_event_hash,
+                                crate::hash_format::encode_hash32(
+                                    &part_update_event.part_definition_event_hash,
                                 )
                             ))])
                             .into_node(),
@@ -312,10 +308,7 @@ fn render_event_detail(
                 )
                 .children([
                     text("Event Hash: "),
-                    text(&base64::Engine::encode(
-                        &base64::engine::general_purpose::URL_SAFE_NO_PAD,
-                        hash,
-                    )),
+                    text(&crate::hash_format::encode_hash32(hash)),
                 ])
                 .into_node(),
         ])
@@ -323,10 +316,7 @@ fn render_event_detail(
 }
 
 fn part_update_form(state: &AppState, root_part_definition_hash: [u8; 32]) -> Node<AppState> {
-    let hash_as_base64 = base64::Engine::encode(
-        &base64::engine::general_purpose::URL_SAFE_NO_PAD,
-        root_part_definition_hash,
-    );
+    let hash_as_base64 = crate::hash_format::encode_hash32(&root_part_definition_hash);
 
     Div::new()
         .class("event-detail-card")
@@ -542,10 +532,7 @@ fn part_update_form(state: &AppState, root_part_definition_hash: [u8; 32]) -> No
 
 fn related_part_events_section(state: &AppState, root_part_definition_hash: [u8; 32]) -> Node<AppState> {
     let related_events = collect_related_part_events(state, root_part_definition_hash);
-    let hash_as_base64 = base64::Engine::encode(
-        &base64::engine::general_purpose::URL_SAFE_NO_PAD,
-        root_part_definition_hash,
-    );
+    let hash_as_base64 = crate::hash_format::encode_hash32(&root_part_definition_hash);
 
     Div::new()
         .class("event-detail-card")
