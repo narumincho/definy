@@ -10,6 +10,7 @@ pub mod fetch;
 mod hash_format;
 mod header;
 mod login_or_create_account_dialog;
+mod layout;
 mod message;
 pub mod navigator_credential;
 mod not_found;

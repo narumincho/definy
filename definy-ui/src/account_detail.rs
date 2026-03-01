@@ -26,15 +26,7 @@ pub fn account_detail_view(state: &AppState, account_id_bytes: &[u8; 32]) -> Nod
 
     Div::new()
         .class("page-shell")
-        .style(
-            Style::new()
-                .set("display", "grid")
-                .set("gap", "1.25rem")
-                .set("width", "100%")
-                .set("max-width", "800px")
-                .set("margin", "0 auto")
-                .set("padding", "2rem 1rem"),
-        )
+        .style(crate::layout::page_shell_style("1.25rem"))
         .children([
             A::<AppState, Location>::new()
                 .class("back-link")

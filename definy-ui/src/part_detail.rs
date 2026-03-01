@@ -11,15 +11,7 @@ pub fn part_detail_view(state: &AppState, definition_event_hash: &[u8; 32]) -> N
 
     Div::new()
         .class("page-shell")
-        .style(
-            Style::new()
-                .set("display", "grid")
-                .set("gap", "1rem")
-                .set("width", "100%")
-                .set("max-width", "800px")
-                .set("margin", "0 auto")
-                .set("padding", "2rem 1rem"),
-        )
+        .style(crate::layout::page_shell_style("1rem"))
         .children(match snapshot {
             Some(snapshot) => vec![
                 A::<AppState, Location>::new()

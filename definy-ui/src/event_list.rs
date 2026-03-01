@@ -156,15 +156,7 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
 
     Div::new()
         .class("page-shell")
-        .style(
-            Style::new()
-                .set("display", "grid")
-                .set("gap", "2rem")
-                .set("width", "100%")
-                .set("max-width", "800px")
-                .set("margin", "0 auto")
-                .set("padding", "2rem 1rem"),
-        )
+        .style(crate::layout::page_shell_style("2rem"))
         .children({
             let mut children = Vec::new();
             if let Some(part_definition_form) = part_definition_form {

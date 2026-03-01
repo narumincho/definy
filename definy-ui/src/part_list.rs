@@ -11,15 +11,7 @@ pub fn part_list_view(state: &AppState) -> Node<AppState> {
 
     Div::new()
         .class("page-shell")
-        .style(
-            Style::new()
-                .set("display", "grid")
-                .set("gap", "1rem")
-                .set("width", "100%")
-                .set("max-width", "800px")
-                .set("margin", "0 auto")
-                .set("padding", "2rem 1rem"),
-        )
+        .style(crate::layout::page_shell_style("1rem"))
         .children([
             H2::new()
                 .style(Style::new().set("font-size", "1.5rem"))
