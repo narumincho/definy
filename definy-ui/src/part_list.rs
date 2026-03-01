@@ -1,19 +1,9 @@
-use definy_event::event::{AccountId, Event, EventContent};
 use narumincho_vdom::*;
 
 use crate::app_state::AppState;
 use crate::expression_eval::expression_to_source;
+use crate::part_projection::collect_part_snapshots;
 use crate::Location;
-
-struct PartSnapshot {
-    definition_event_hash: [u8; 32],
-    latest_event_hash: [u8; 32],
-    account_id: AccountId,
-    part_name: String,
-    part_description: String,
-    expression_source: String,
-    updated_at: chrono::DateTime<chrono::Utc>,
-}
 
 pub fn part_list_view(state: &AppState) -> Node<AppState> {
     let snapshots = collect_part_snapshots(state);
@@ -80,6 +70,18 @@ pub fn part_list_view(state: &AppState) -> Node<AppState> {
                                             .style(Style::new().set("font-size", "1.1rem"))
                                             .children([text(part.part_name)])
                                             .into_node(),
+                                        if part.has_definition {
+                                            Div::new().children([]).into_node()
+                                        } else {
+                                            Div::new()
+                                                .style(
+                                                    Style::new()
+                                                        .set("font-size", "0.82rem")
+                                                        .set("color", "var(--text-secondary)"),
+                                                )
+                                                .children([text("definition event missing")])
+                                                .into_node()
+                                        },
                                         A::<AppState, Location>::new()
                                             .href(Href::Internal(Location::Part(
                                                 part.definition_event_hash,
@@ -107,7 +109,7 @@ pub fn part_list_view(state: &AppState) -> Node<AppState> {
                                             )
                                             .children([text(format!(
                                                 "expression: {}",
-                                                part.expression_source
+                                                expression_to_source(&part.expression)
                                             ))])
                                             .into_node(),
                                         Div::new()
@@ -140,60 +142,4 @@ pub fn part_list_view(state: &AppState) -> Node<AppState> {
             },
         ])
         .into_node()
-}
-
-fn collect_part_snapshots(state: &AppState) -> Vec<PartSnapshot> {
-    let mut events = state
-        .created_account_events
-        .iter()
-        .filter_map(|(hash, event_result)| {
-            let (_, event) = event_result.as_ref().ok()?;
-            Some((*hash, event))
-        })
-        .collect::<Vec<([u8; 32], &Event)>>();
-    events.sort_by_key(|(_, event)| event.time);
-
-    let mut map = std::collections::HashMap::<[u8; 32], PartSnapshot>::new();
-    for (event_hash, event) in events {
-        match &event.content {
-            EventContent::PartDefinition(part_definition) => {
-                map.insert(
-                    event_hash,
-                    PartSnapshot {
-                        definition_event_hash: event_hash,
-                        latest_event_hash: event_hash,
-                        account_id: event.account_id.clone(),
-                        part_name: part_definition.part_name.to_string(),
-                        part_description: part_definition.description.to_string(),
-                        expression_source: expression_to_source(&part_definition.expression),
-                        updated_at: event.time,
-                    },
-                );
-            }
-            EventContent::PartUpdate(part_update) => {
-                let entry = map
-                    .entry(part_update.part_definition_event_hash)
-                    .or_insert_with(|| PartSnapshot {
-                        definition_event_hash: part_update.part_definition_event_hash,
-                        latest_event_hash: event_hash,
-                        account_id: event.account_id.clone(),
-                        part_name: String::new(),
-                        part_description: String::new(),
-                        expression_source: "(definition not found)".to_string(),
-                        updated_at: event.time,
-                    });
-                entry.latest_event_hash = event_hash;
-                entry.account_id = event.account_id.clone();
-                entry.part_name = part_update.part_name.to_string();
-                entry.part_description = part_update.part_description.to_string();
-                entry.expression_source = expression_to_source(&part_update.expression);
-                entry.updated_at = event.time;
-            }
-            _ => {}
-        }
-    }
-
-    let mut snapshots = map.into_values().collect::<Vec<PartSnapshot>>();
-    snapshots.sort_by(|a, b| b.updated_at.cmp(&a.updated_at));
-    snapshots
 }

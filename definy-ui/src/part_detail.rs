@@ -1,21 +1,14 @@
-use definy_event::event::{Event, EventContent, Expression};
+use definy_event::event::EventContent;
 use narumincho_vdom::*;
 
 use crate::Location;
 use crate::app_state::AppState;
 use crate::expression_eval::expression_to_source;
-
-struct PartSnapshot {
-    part_name: String,
-    part_description: String,
-    expression: Expression,
-    latest_event_hash: [u8; 32],
-    updated_at: chrono::DateTime<chrono::Utc>,
-}
+use crate::part_projection::{collect_related_part_events, find_part_snapshot};
 
 pub fn part_detail_view(state: &AppState, definition_event_hash: &[u8; 32]) -> Node<AppState> {
-    let snapshot = build_part_snapshot(state, definition_event_hash);
-    let related_events = collect_related_events(state, definition_event_hash);
+    let snapshot = find_part_snapshot(state, definition_event_hash);
+    let related_events = collect_related_part_events(state, definition_event_hash);
 
     Div::new()
         .class("page-shell")
@@ -153,71 +146,4 @@ pub fn part_detail_view(state: &AppState, definition_event_hash: &[u8; 32]) -> N
             ],
         })
         .into_node()
-}
-
-fn build_part_snapshot(state: &AppState, definition_event_hash: &[u8; 32]) -> Option<PartSnapshot> {
-    let mut events = state
-        .created_account_events
-        .iter()
-        .filter_map(|(hash, event_result)| {
-            let (_, event) = event_result.as_ref().ok()?;
-            Some((*hash, event))
-        })
-        .collect::<Vec<([u8; 32], &Event)>>();
-    events.sort_by_key(|(_, event)| event.time);
-
-    let mut snapshot = None::<PartSnapshot>;
-    for (hash, event) in events {
-        match &event.content {
-            EventContent::PartDefinition(part_definition) if &hash == definition_event_hash => {
-                snapshot = Some(PartSnapshot {
-                    part_name: part_definition.part_name.to_string(),
-                    part_description: part_definition.description.to_string(),
-                    expression: part_definition.expression.clone(),
-                    latest_event_hash: hash,
-                    updated_at: event.time,
-                });
-            }
-            EventContent::PartUpdate(part_update)
-                if &part_update.part_definition_event_hash == definition_event_hash =>
-            {
-                if let Some(current) = &mut snapshot {
-                    current.part_name = part_update.part_name.to_string();
-                    current.part_description = part_update.part_description.to_string();
-                    current.expression = part_update.expression.clone();
-                    current.latest_event_hash = hash;
-                    current.updated_at = event.time;
-                }
-            }
-            _ => {}
-        }
-    }
-    snapshot
-}
-
-fn collect_related_events<'a>(
-    state: &'a AppState,
-    definition_event_hash: &[u8; 32],
-) -> Vec<([u8; 32], &'a Event)> {
-    let mut events = state
-        .created_account_events
-        .iter()
-        .filter_map(|(hash, event_result)| {
-            let (_, event) = event_result.as_ref().ok()?;
-            let is_related = match &event.content {
-                EventContent::PartDefinition(_) => hash == definition_event_hash,
-                EventContent::PartUpdate(part_update) => {
-                    &part_update.part_definition_event_hash == definition_event_hash
-                }
-                _ => false,
-            };
-            if is_related {
-                Some((*hash, event))
-            } else {
-                None
-            }
-        })
-        .collect::<Vec<([u8; 32], &Event)>>();
-    events.sort_by(|(_, a), (_, b)| b.time.cmp(&a.time));
-    events
 }

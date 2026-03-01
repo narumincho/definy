@@ -14,6 +14,7 @@ mod not_found;
 mod part_list;
 mod part_detail;
 mod page_title;
+mod part_projection;
 
 pub use app_state::*;
 pub use message::Message;
