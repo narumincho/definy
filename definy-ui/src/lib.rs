@@ -2,6 +2,7 @@ mod account_detail;
 mod app_state;
 mod event_detail;
 mod event_list;
+mod expression_eval;
 pub mod fetch;
 mod header;
 mod login_or_create_account_dialog;

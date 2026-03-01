@@ -313,6 +313,8 @@ fn render_html_response(path: &str) -> Response<Full<Bytes>> {
             created_account_events: vec![],
             current_key: None,
             message_input: String::new(),
+            message_eval_result: None,
+            event_detail_eval_result: None,
             profile_name_input: String::new(),
             is_header_popover_open: false,
             location,

@@ -2,6 +2,7 @@ use definy_event::event::EventContent;
 use narumincho_vdom::*;
 
 use crate::app_state::AppState;
+use crate::expression_eval::evaluate_add_expression;
 
 pub fn event_list_view(state: &AppState) -> Node<AppState> {
     let message_form = if state.current_key.is_some() {
@@ -45,6 +46,23 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
                         ));
                         input.style(Style::new().set("flex-grow", "1")).into_node()
                     },
+                    Button::new()
+                        .type_("button")
+                        .on_click(EventHandler::new(async |set_state| {
+                            set_state(Box::new(|state: AppState| {
+                                let message = state.message_input.clone();
+                                let result = match evaluate_add_expression(message.as_str()) {
+                                    Ok(value) => format!("Result: {}", value),
+                                    Err(error) => format!("Error: {}", error),
+                                };
+                                AppState {
+                                    message_eval_result: Some(result),
+                                    ..state.clone()
+                                }
+                            }));
+                        }))
+                        .children([text("Evaluate")])
+                        .into_node(),
                     Button::new()
                         .on_click(EventHandler::new(async |set_state| {
                             let set_state = std::rc::Rc::new(set_state);
@@ -99,6 +117,7 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
                                 });
                                 AppState {
                                     message_input: String::new(),
+                                    message_eval_result: None,
                                     ..state.clone()
                                 }
                             }));
@@ -127,6 +146,21 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
             let mut children = Vec::new();
             if let Some(message_form) = message_form {
                 children.push(message_form);
+            }
+            if let Some(result) = &state.message_eval_result {
+                children.push(
+                    Div::new()
+                        .class("event-detail-card")
+                        .style(
+                            Style::new()
+                                .set("padding", "0.9rem 1rem")
+                                .set("font-family", "'JetBrains Mono', monospace")
+                                .set("font-size", "0.9rem")
+                                .set("word-break", "break-word"),
+                        )
+                        .children([text(result)])
+                        .into_node(),
+                );
             }
             children.push(
                 Div::new()
