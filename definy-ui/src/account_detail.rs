@@ -1,7 +1,5 @@
-use definy_event::event::EventContent;
 use narumincho_vdom::*;
 
-use crate::expression_eval::expression_to_source;
 use crate::{AppState, Location};
 
 pub fn account_detail_view(state: &AppState, account_id_bytes: &[u8; 32]) -> Node<AppState> {
@@ -11,13 +9,10 @@ pub fn account_detail_view(state: &AppState, account_id_bytes: &[u8; 32]) -> Nod
         .get(&account_id)
         .map(|name| name.as_ref())
         .unwrap_or("Unknown");
-    let encoded_account_id = base64::Engine::encode(
-        &base64::engine::general_purpose::URL_SAFE_NO_PAD,
-        account_id_bytes,
-    );
+    let encoded_account_id = crate::hash_format::encode_hash32(account_id_bytes);
 
     let account_events = state
-        .created_account_events
+        .events
         .iter()
         .filter_map(|(hash, event_result)| {
             let (_, event) = event_result.as_ref().ok()?;
@@ -31,19 +26,11 @@ pub fn account_detail_view(state: &AppState, account_id_bytes: &[u8; 32]) -> Nod
 
     Div::new()
         .class("page-shell")
-        .style(
-            Style::new()
-                .set("display", "grid")
-                .set("gap", "1.25rem")
-                .set("width", "100%")
-                .set("max-width", "800px")
-                .set("margin", "0 auto")
-                .set("padding", "2rem 1rem"),
-        )
+        .style(crate::layout::page_shell_style("1.25rem"))
         .children([
             A::<AppState, Location>::new()
                 .class("back-link")
-                .href(Href::Internal(Location::Home))
+                .href(Href::Internal(Location::AccountList))
                 .style(
                     Style::new()
                         .set("display", "inline-flex")
@@ -52,7 +39,7 @@ pub fn account_detail_view(state: &AppState, account_id_bytes: &[u8; 32]) -> Nod
                         .set("color", "var(--primary)")
                         .set("font-weight", "500"),
                 )
-                .children([text("← Back to Home")])
+                .children([text("← Back to Accounts")])
                 .into_node(),
             Div::new()
                 .class("event-detail-card")
@@ -121,7 +108,11 @@ pub fn account_detail_view(state: &AppState, account_id_bytes: &[u8; 32]) -> Nod
                                                 event.time.format("%Y-%m-%d %H:%M:%S").to_string(),
                                             )])
                                             .into_node(),
-                                        Div::new().children([text(event_summary(event))]).into_node(),
+                                        Div::new()
+                                            .children([text(crate::event_presenter::event_summary_text(
+                                                event,
+                                            ))])
+                                            .into_node(),
                                     ])
                                     .into_node()
                             })
@@ -131,25 +122,4 @@ pub fn account_detail_view(state: &AppState, account_id_bytes: &[u8; 32]) -> Nod
             },
         ])
         .into_node()
-}
-
-fn event_summary(event: &definy_event::event::Event) -> String {
-    match &event.content {
-        EventContent::CreateAccount(create_account_event) => {
-            format!("Account created: {}", create_account_event.account_name)
-        }
-        EventContent::ChangeProfile(change_profile_event) => {
-            format!("Profile changed: {}", change_profile_event.account_name)
-        }
-        EventContent::PartDefinition(part_definition_event) => format!(
-            "{} = {}{}",
-            part_definition_event.part_name,
-            expression_to_source(&part_definition_event.expression),
-            if part_definition_event.description.is_empty() {
-                String::new()
-            } else {
-                format!(" - {}", part_definition_event.description)
-            }
-        ),
-    }
 }

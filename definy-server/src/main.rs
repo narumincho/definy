@@ -133,7 +133,7 @@ async fn handler(
         return match pool {
             Some(pool) => handle_html(path, &pool).await,
             None => db_unavailable_response(true),
-        }
+        };
     }
 
     match path.trim_start_matches('/') {
@@ -208,7 +208,7 @@ async fn handle_html(
         }
     }
 
-    let events = match db::get_events(pool, None).await {
+    let event_binary_array = match db::get_events(pool, None).await {
         Ok(events) => events,
         Err(error) => {
             eprintln!("Failed to get events for SSR: {:?}", error);
@@ -216,15 +216,19 @@ async fn handle_html(
         }
     };
 
-    let created_account_events = events
+    let events = event_binary_array
         .iter()
         .into_iter()
         .map(|event_binary| {
             let hash: [u8; 32] = sha2::Sha256::digest(event_binary.as_slice()).into();
-            (hash, definy_event::verify_and_deserialize(event_binary.as_slice()))
+            (
+                hash,
+                definy_event::verify_and_deserialize(event_binary.as_slice()),
+            )
         })
         .collect::<Vec<_>>();
-    let ssr_initial_state_json = definy_ui::encode_ssr_initial_state(&events.into_vec());
+    let ssr_initial_state_json =
+        definy_ui::encode_ssr_initial_state(&event_binary_array.into_vec());
 
     Response::builder()
         .header("Content-Type", "text/html; charset=utf-8")
@@ -239,14 +243,25 @@ async fn handle_html(
                             current_password: String::new(),
                         },
                     current_key: None,
-                    part_name_input: String::new(),
-                    part_description_input: String::new(),
-                    composing_expression: definy_event::event::Expression::Number(definy_event::event::NumberExpression { value: 0 }),
-                    part_definition_eval_result: None,
+                    part_definition_form: definy_ui::PartDefinitionFormState {
+                        part_name_input: String::new(),
+                        part_description_input: String::new(),
+                        composing_expression: definy_event::event::Expression::Number(
+                            definy_event::event::NumberExpression { value: 0 },
+                        ),
+                        eval_result: None,
+                    },
+                    part_update_form: definy_ui::PartUpdateFormState {
+                        part_name_input: String::new(),
+                        part_description_input: String::new(),
+                        expression_input: definy_event::event::Expression::Number(
+                            definy_event::event::NumberExpression { value: 0 },
+                        ),
+                    },
                     event_detail_eval_result: None,
                     profile_name_input: String::new(),
                     is_header_popover_open: false,
-                    created_account_events,
+                    events,
                     location,
                 },
                 &Some(definy_ui::ResourceHash {

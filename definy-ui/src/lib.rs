@@ -1,14 +1,23 @@
 mod account_detail;
+mod account_list;
 mod app_state;
 mod event_detail;
 mod event_list;
+mod event_presenter;
+mod expression_editor;
 mod expression_eval;
 pub mod fetch;
+mod hash_format;
 mod header;
 mod login_or_create_account_dialog;
+mod layout;
 mod message;
 pub mod navigator_credential;
 mod not_found;
+mod part_list;
+mod part_detail;
+mod page_title;
+mod part_projection;
 
 pub use app_state::*;
 pub use message::Message;
@@ -61,7 +70,9 @@ pub fn render(
     ssr_initial_state_json: Option<&str>,
 ) -> Node<AppState> {
     let mut head_children = vec![
-        Title::new().children([text("definy")]).into_node(),
+        Title::new()
+            .children([text(page_title::document_title_text(state))])
+            .into_node(),
         Meta::new("viewport", "width=device-width,initial-scale=1.0"),
         Link::new()
             .rel("icon")
@@ -103,12 +114,15 @@ init({{ module_or_path: \"/{}\" }});",
                     Style::new()
                         .set("display", "grid")
                         .set("gap", "1rem")
-                        .set("grid-template-rows", "auto 1fr"),
+                        .set("padding-top", "4.8rem"),
                 )
                 .children([
                     header::header(state),
                     match &state.location {
                         Some(Location::Home) => event_list::event_list_view(state),
+                        Some(Location::AccountList) => account_list::account_list_view(state),
+                        Some(Location::PartList) => part_list::part_list_view(state),
+                        Some(Location::Part(hash)) => part_detail::part_detail_view(state, hash),
                         Some(Location::Event(hash)) => event_detail::event_detail_view(state, hash),
                         Some(Location::Account(account_id)) => {
                             account_detail::account_detail_view(state, account_id)

@@ -48,7 +48,7 @@ impl narumincho_vdom_client::App<AppState> for DefinyApp {
             if !has_ssr_events {
                 let events = definy_ui::fetch::get_events().await.unwrap();
                 fire(Box::new(move |state| AppState {
-                    created_account_events: events,
+                    events,
                     ..state.clone()
                 }));
             }
@@ -68,12 +68,19 @@ impl narumincho_vdom_client::App<AppState> for DefinyApp {
                 generated_key: None,
                 current_password: String::new(),
             },
-            created_account_events: ssr_events.unwrap_or_default(),
+            events: ssr_events.unwrap_or_default(),
             current_key: None,
-            part_name_input: String::new(),
-            part_description_input: String::new(),
-            composing_expression: definy_event::event::Expression::Number(definy_event::event::NumberExpression { value: 0 }),
-            part_definition_eval_result: None,
+            part_definition_form: definy_ui::PartDefinitionFormState {
+                part_name_input: String::new(),
+                part_description_input: String::new(),
+                composing_expression: definy_event::event::Expression::Number(definy_event::event::NumberExpression { value: 0 }),
+                eval_result: None,
+            },
+            part_update_form: definy_ui::PartUpdateFormState {
+                part_name_input: String::new(),
+                part_description_input: String::new(),
+                expression_input: definy_event::event::Expression::Number(definy_event::event::NumberExpression { value: 0 }),
+            },
             event_detail_eval_result: None,
             profile_name_input: String::new(),
             is_header_popover_open: false,

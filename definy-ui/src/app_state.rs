@@ -1,7 +1,7 @@
 #[derive(Clone)]
 pub struct AppState {
     pub login_or_create_account_dialog_state: LoginOrCreateAccountDialogState,
-    pub created_account_events: Vec<(
+    pub events: Vec<(
         [u8; 32],
         Result<
             (ed25519_dalek::Signature, definy_event::event::Event),
@@ -9,23 +9,35 @@ pub struct AppState {
         >,
     )>,
     pub current_key: Option<ed25519_dalek::SigningKey>,
-    pub part_name_input: String,
-    pub part_description_input: String,
-    pub composing_expression: definy_event::event::Expression,
-    pub part_definition_eval_result: Option<String>,
+    pub part_definition_form: PartDefinitionFormState,
+    pub part_update_form: PartUpdateFormState,
     pub event_detail_eval_result: Option<String>,
     pub profile_name_input: String,
     pub is_header_popover_open: bool,
     pub location: Option<Location>,
 }
 
+#[derive(Clone)]
+pub struct PartDefinitionFormState {
+    pub part_name_input: String,
+    pub part_description_input: String,
+    pub composing_expression: definy_event::event::Expression,
+    pub eval_result: Option<String>,
+}
+
+#[derive(Clone)]
+pub struct PartUpdateFormState {
+    pub part_name_input: String,
+    pub part_description_input: String,
+    pub expression_input: definy_event::event::Expression,
+}
 
 impl AppState {
     pub fn account_name_map(
         &self,
     ) -> std::collections::HashMap<definy_event::event::AccountId, Box<str>> {
         let mut account_name_map = std::collections::HashMap::new();
-        for (_, event_result) in &self.created_account_events {
+        for (_, event_result) in &self.events {
             if let Ok((_, event)) = event_result {
                 match &event.content {
                     definy_event::event::EventContent::CreateAccount(create_account_event) => {
@@ -39,6 +51,7 @@ impl AppState {
                             .or_insert_with(|| change_profile_event.account_name.clone());
                     }
                     definy_event::event::EventContent::PartDefinition(_) => {}
+                    definy_event::event::EventContent::PartUpdate(_) => {}
                 }
             }
         }
@@ -72,6 +85,9 @@ pub enum CreatingAccountState {
 #[derive(Clone, PartialEq, Debug)]
 pub enum Location {
     Home,
+    AccountList,
+    PartList,
+    Part([u8; 32]),
     Event([u8; 32]),
     Account([u8; 32]),
 }
@@ -80,6 +96,12 @@ impl narumincho_vdom::Route for Location {
     fn to_url(&self) -> String {
         match self {
             Location::Home => "/".to_string(),
+            Location::AccountList => "/accounts".to_string(),
+            Location::PartList => "/parts".to_string(),
+            Location::Part(hash) => format!(
+                "/parts/{}",
+                base64::Engine::encode(&base64::engine::general_purpose::URL_SAFE_NO_PAD, hash)
+            ),
             Location::Event(hash) => format!(
                 "/events/{}",
                 base64::Engine::encode(&base64::engine::general_purpose::URL_SAFE_NO_PAD, hash)
@@ -98,6 +120,9 @@ impl narumincho_vdom::Route for Location {
         let parts: Vec<&str> = url.trim_matches('/').split('/').collect();
         match parts.as_slice() {
             [""] => Some(Location::Home),
+            ["accounts"] => Some(Location::AccountList),
+            ["parts"] => Some(Location::PartList),
+            ["parts", hash_str] => decode_32bytes_base64(hash_str).map(Location::Part),
             ["events", hash_str] => decode_32bytes_base64(hash_str).map(Location::Event),
             ["accounts", account_id_str] => {
                 decode_32bytes_base64(account_id_str).map(Location::Account)
@@ -126,10 +151,24 @@ mod tests {
     use super::Location;
 
     #[test]
-    fn account_route_round_trip() {
-        let account_id = [7u8; 32];
-        let location = Location::Account(account_id);
-        let url = location.to_url();
-        assert_eq!(Location::from_url(url.as_str()), Some(Location::Account(account_id)));
+    fn route_round_trip_cases() {
+        let cases = vec![
+            Location::Home,
+            Location::AccountList,
+            Location::PartList,
+            Location::Account([7u8; 32]),
+            Location::Part([9u8; 32]),
+            Location::Event([3u8; 32]),
+        ];
+        for case in cases {
+            let url = case.to_url();
+            assert_eq!(Location::from_url(url.as_str()), Some(case));
+        }
+    }
+
+    #[test]
+    fn invalid_route_returns_none() {
+        assert_eq!(Location::from_url("/unknown"), None);
+        assert_eq!(Location::from_url("/accounts/invalid"), None);
     }
 }

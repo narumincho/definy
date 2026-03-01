@@ -1,6 +1,6 @@
 use narumincho_vdom::*;
 
-use crate::{AppState, fetch};
+use crate::{AppState, Location, fetch};
 
 pub fn header(state: &AppState) -> Node<AppState> {
     let mut children = vec![header_main(state)];
@@ -22,26 +22,86 @@ fn header_main(state: &AppState) -> Node<AppState> {
                 .set("background", "rgba(11, 15, 25, 0.6)")
                 .set("backdrop-filter", "var(--glass-blur)")
                 .set("-webkit-backdrop-filter", "var(--glass-blur)")
-                .set("position", "sticky")
+                .set("left", "0")
+                .set("right", "0")
+                .set("width", "100%")
+                .set("position", "fixed")
                 .set("top", "0")
                 .set("z-index", "10")
                 .set("border-bottom", "1px solid var(--border)"),
         )
         .children([
-            H1::new()
+            Div::new()
                 .style(
                     Style::new()
-                        .set("font-size", "1.75rem")
-                        .set("font-weight", "700")
-                        .set("background", "var(--primary-gradient)")
-                        .set("-webkit-background-clip", "text")
-                        .set("-webkit-text-fill-color", "transparent")
-                        .set("letter-spacing", "-0.03em"),
+                        .set("display", "flex")
+                        .set("align-items", "center")
+                        .set("gap", "0.75rem"),
                 )
-                .children([text("definy")])
+                .children([
+                    A::<AppState, Location>::new()
+                        .href(Href::Internal(Location::Home))
+                        .style(
+                            Style::new()
+                                .set("text-decoration", "none")
+                                .set("display", "inline-block"),
+                        )
+                        .children([
+                            H1::new()
+                                .style(
+                                    Style::new()
+                                        .set("font-size", "1.75rem")
+                                        .set("font-weight", "700")
+                                        .set("background", "var(--primary-gradient)")
+                                        .set("-webkit-background-clip", "text")
+                                        .set("-webkit-text-fill-color", "transparent")
+                                        .set("letter-spacing", "-0.03em"),
+                                )
+                                .children([text("definy")])
+                                .into_node(),
+                        ])
+                        .into_node(),
+                    A::<AppState, Location>::new()
+                        .href(Href::Internal(Location::PartList))
+                        .style(
+                            Style::new()
+                                .set("font-size", "0.9rem")
+                                .set("color", "var(--text-secondary)"),
+                        )
+                        .children([text("Parts")])
+                        .into_node(),
+                    A::<AppState, Location>::new()
+                        .href(Href::Internal(Location::AccountList))
+                        .style(
+                            Style::new()
+                                .set("font-size", "0.9rem")
+                                .set("color", "var(--text-secondary)"),
+                        )
+                        .children([text("Accounts")])
+                        .into_node(),
+                ])
                 .into_node(),
             Div::new()
-                .style(Style::new().set("flex-grow", "1"))
+                .style(
+                    Style::new()
+                        .set("flex-grow", "1")
+                        .set("display", "flex")
+                        .set("justify-content", "center"),
+                )
+                .children([
+                    Div::new()
+                        .style(
+                            Style::new()
+                                .set("font-size", "0.95rem")
+                                .set("color", "var(--text-secondary)")
+                                .set("max-width", "42vw")
+                                .set("overflow", "hidden")
+                                .set("text-overflow", "ellipsis")
+                                .set("white-space", "nowrap"),
+                        )
+                        .children([text(crate::page_title::page_title_text(state))])
+                        .into_node(),
+                ])
                 .into_node(),
             match &state.current_key {
                 Some(secret_key) => {
@@ -167,7 +227,7 @@ fn popover(state: &AppState) -> Node<AppState> {
                                     if fetch::post_event(event_binary.as_slice()).await.is_ok() {
                                         if let Ok(events) = fetch::get_events().await {
                                             set_state_for_async(Box::new(|state| AppState {
-                                                created_account_events: events,
+                                                events,
                                                 profile_name_input: String::new(),
                                                 is_header_popover_open: false,
                                                 ..state.clone()

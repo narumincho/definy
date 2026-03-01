@@ -9,7 +9,7 @@ pub fn event_detail_view(state: &AppState, target_hash: &[u8; 32]) -> Node<AppSt
     let account_name_map = state.account_name_map();
     let mut target_event_opt = None;
 
-    for (hash, event_result) in &state.created_account_events {
+    for (hash, event_result) in &state.events {
         if let Ok((_, event)) = event_result {
             if hash == target_hash {
                 target_event_opt = Some(event);
@@ -32,15 +32,7 @@ pub fn event_detail_view(state: &AppState, target_hash: &[u8; 32]) -> Node<AppSt
 
     Div::new()
         .class("page-shell")
-        .style(
-            Style::new()
-                .set("display", "grid")
-                .set("gap", "2rem")
-                .set("width", "100%")
-                .set("max-width", "800px")
-                .set("margin", "0 auto")
-                .set("padding", "2rem 1rem"),
-        )
+        .style(crate::layout::page_shell_style("2rem"))
         .children([
             A::<AppState, Location>::new()
                 .class("back-link")
@@ -72,6 +64,7 @@ fn render_event_detail(
         .get(&event.account_id)
         .map(|name: &Box<str>| name.as_ref())
         .unwrap_or("Unknown");
+    let root_part_definition_hash = root_part_definition_hash(hash, &event.content);
 
     Div::new()
         .class("event-detail-card")
@@ -106,10 +99,7 @@ fn render_event_detail(
                     Div::new()
                         .class("mono")
                         .style(Style::new().set("opacity", "0.6"))
-                        .children([text(&base64::Engine::encode(
-                            &base64::engine::general_purpose::URL_SAFE_NO_PAD,
-                            event.account_id.0.as_slice(),
-                        ))])
+                        .children([text(&crate::hash_format::encode_bytes(event.account_id.0.as_slice()))])
                         .into_node(),
                 ])
                 .into_node(),
@@ -218,6 +208,79 @@ fn render_event_detail(
                         },
                     ])
                     .into_node(),
+                EventContent::PartUpdate(part_update_event) => Div::new()
+                    .style(
+                        Style::new()
+                            .set("display", "grid")
+                            .set("gap", "0.8rem")
+                            .set("line-height", "1.6"),
+                    )
+                    .children([
+                        Div::new()
+                            .style(
+                                Style::new()
+                                    .set("font-size", "1rem")
+                                    .set("color", "var(--primary)")
+                                    .set("font-weight", "600"),
+                            )
+                            .children([text(account_name)])
+                            .into_node(),
+                        Div::new()
+                            .style(Style::new().set("font-size", "1.35rem"))
+                            .children([text(format!("Part updated: {}", part_update_event.part_name))])
+                            .into_node(),
+                        if part_update_event.part_description.is_empty() {
+                            Div::new().children([]).into_node()
+                        } else {
+                            Div::new()
+                                .style(
+                                    Style::new()
+                                        .set("font-size", "1rem")
+                                        .set("color", "var(--text-secondary)")
+                                        .set("white-space", "pre-wrap"),
+                                )
+                                .children([text(part_update_event.part_description.as_ref())])
+                                .into_node()
+                        },
+                        Div::new()
+                            .class("mono")
+                            .style(
+                                Style::new()
+                                    .set("font-size", "0.8rem")
+                                    .set("opacity", "0.85"),
+                            )
+                            .children([text(format!(
+                                "expression: {}",
+                                expression_to_source(&part_update_event.expression)
+                            ))])
+                            .into_node(),
+                        Div::new()
+                            .class("mono")
+                            .style(
+                                Style::new()
+                                    .set("font-size", "0.8rem")
+                                    .set("opacity", "0.85"),
+                            )
+                            .children([text(format!(
+                                "partDefinitionEventHash: {}",
+                                crate::hash_format::encode_hash32(
+                                    &part_update_event.part_definition_event_hash,
+                                )
+                            ))])
+                            .into_node(),
+                        A::<AppState, Location>::new()
+                            .href(Href::Internal(Location::Event(
+                                part_update_event.part_definition_event_hash,
+                            )))
+                            .children([text("Open definition event")])
+                            .into_node(),
+                    ])
+                    .into_node(),
+            },
+            if let Some(root_hash) = root_part_definition_hash {
+                related_part_events_section(state, root_hash)
+            } else {
+                Div::new().children([]).into_node()
             },
             Div::new()
                 .class("mono")
@@ -231,14 +294,107 @@ fn render_event_detail(
                 )
                 .children([
                     text("Event Hash: "),
-                    text(&base64::Engine::encode(
-                        &base64::engine::general_purpose::URL_SAFE_NO_PAD,
-                        hash,
-                    )),
+                    text(&crate::hash_format::encode_hash32(hash)),
                 ])
                 .into_node(),
         ])
         .into_node()
+}
+
+fn related_part_events_section(state: &AppState, root_part_definition_hash: [u8; 32]) -> Node<AppState> {
+    let related_events = collect_related_part_events(state, root_part_definition_hash);
+    let hash_as_base64 = crate::hash_format::encode_hash32(&root_part_definition_hash);
+
+    Div::new()
+        .class("event-detail-card")
+        .style(Style::new().set("display", "grid").set("gap", "0.7rem").set("padding", "1rem"))
+        .children([
+            Div::new()
+                .style(Style::new().set("font-weight", "600"))
+                .children([text("Events linked by partDefinitionEventHash")])
+                .into_node(),
+            Div::new()
+                .class("mono")
+                .style(
+                    Style::new()
+                        .set("font-size", "0.78rem")
+                        .set("opacity", "0.8")
+                        .set("word-break", "break-all"),
+                )
+                .children([text(hash_as_base64)])
+                .into_node(),
+            Div::new()
+                .style(Style::new().set("display", "grid").set("gap", "0.4rem"))
+                .children(
+                    related_events
+                        .into_iter()
+                        .map(|(event_hash, event)| {
+                            let label = crate::event_presenter::event_kind_label(&event);
+                            A::<AppState, Location>::new()
+                                .href(Href::Internal(Location::Event(event_hash)))
+                                .style(
+                                    Style::new()
+                                        .set("display", "grid")
+                                        .set("gap", "0.2rem")
+                                        .set("padding", "0.55rem 0.7rem")
+                                        .set("border", "1px solid var(--border)")
+                                        .set("border-radius", "var(--radius-md)"),
+                                )
+                                .children([
+                                    Div::new().children([text(label)]).into_node(),
+                                    Div::new()
+                                        .style(
+                                            Style::new()
+                                                .set("font-size", "0.82rem")
+                                                .set("color", "var(--text-secondary)"),
+                                        )
+                                        .children([text(
+                                            event.time.format("%Y-%m-%d %H:%M:%S").to_string(),
+                                        )])
+                                        .into_node(),
+                                ])
+                                .into_node()
+                        })
+                        .collect::<Vec<Node<AppState>>>(),
+                )
+                .into_node(),
+        ])
+        .into_node()
+}
+
+fn collect_related_part_events(
+    state: &AppState,
+    root_part_definition_hash: [u8; 32],
+) -> Vec<([u8; 32], &Event)> {
+    let mut events = state
+        .events
+        .iter()
+        .filter_map(|(hash, event_result)| {
+            let (_, event) = event_result.as_ref().ok()?;
+            let is_related = match &event.content {
+                EventContent::PartDefinition(_) => *hash == root_part_definition_hash,
+                EventContent::PartUpdate(part_update) => {
+                    part_update.part_definition_event_hash == root_part_definition_hash
+                }
+                _ => false,
+            };
+            if is_related {
+                Some((*hash, event))
+            } else {
+                None
+            }
+        })
+        .collect::<Vec<([u8; 32], &Event)>>();
+    events.sort_by(|(_, a), (_, b)| b.time.cmp(&a.time));
+    events
+}
+
+fn root_part_definition_hash(current_hash: &[u8; 32], content: &EventContent) -> Option<[u8; 32]> {
+    match content {
+        EventContent::PartDefinition(_) => Some(*current_hash),
+        EventContent::PartUpdate(part_update) => Some(part_update.part_definition_event_hash),
+        _ => None,
+    }
 }
 
 fn evaluate_message_result(expression: &definy_event::event::Expression) -> String {

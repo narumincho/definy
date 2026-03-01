@@ -2,19 +2,8 @@ use definy_event::event::EventContent;
 use narumincho_vdom::*;
 
 use crate::app_state::AppState;
+use crate::expression_editor::{EditorTarget, render_root_expression_editor};
 use crate::expression_eval::{evaluate_expression, expression_to_source};
-
-#[derive(Clone, Copy)]
-enum NodeKind {
-    Number,
-    Add,
-}
-
-#[derive(Clone, Copy)]
-enum PathStep {
-    Left,
-    Right,
-}
 
 pub fn event_list_view(state: &AppState) -> Node<AppState> {
     let part_definition_form = if state.current_key.is_some() {
@@ -40,7 +29,10 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
                         .style(Style::new().set("color", "var(--text-secondary)").set("font-size", "0.9rem"))
                         .children([text("Expression Builder")])
                         .into_node(),
-                    render_expression_editor(&state.composing_expression, Vec::new()),
+                    render_root_expression_editor(
+                        &state.part_definition_form.composing_expression,
+                        EditorTarget::PartDefinition,
+                    ),
                     Div::new()
                         .class("mono")
                         .style(
@@ -51,7 +43,7 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
                         )
                         .children([text(format!(
                             "Current: {}",
-                            expression_to_source(&state.composing_expression)
+                            expression_to_source(&state.part_definition_form.composing_expression)
                         ))])
                         .into_node(),
                     Div::new()
@@ -61,15 +53,16 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
                                 .type_("button")
                                 .on_click(EventHandler::new(async |set_state| {
                                     set_state(Box::new(|state: AppState| {
-                                        let result = match evaluate_expression(&state.composing_expression)
+                                        let result = match evaluate_expression(
+                                            &state.part_definition_form.composing_expression,
+                                        )
                                         {
                                             Ok(value) => format!("Result: {}", value),
                                             Err(error) => format!("Error: {}", error),
                                         };
-                                        AppState {
-                                            part_definition_eval_result: Some(result),
-                                            ..state.clone()
-                                        }
+                                        let mut next = state.clone();
+                                        next.part_definition_form.eval_result = Some(result);
+                                        next
                                     }));
                                 }))
                                 .children([text("Evaluate")])
@@ -87,17 +80,18 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
                                                 return state;
                                             };
 
-                                        let part_name = state.part_name_input.trim().to_string();
-                                        let description = state.part_description_input.clone();
+                                        let part_name =
+                                            state.part_definition_form.part_name_input.trim().to_string();
+                                        let description =
+                                            state.part_definition_form.part_description_input.clone();
                                         if part_name.is_empty() {
-                                            return AppState {
-                                                part_definition_eval_result: Some(
-                                                    "Error: part name is required".to_string(),
-                                                ),
-                                                ..state.clone()
-                                            };
+                                            let mut next = state.clone();
+                                            next.part_definition_form.eval_result =
+                                                Some("Error: part name is required".to_string());
+                                            return next;
                                         }
-                                        let expression = state.composing_expression.clone();
+                                        let expression =
+                                            state.part_definition_form.composing_expression.clone();
                                         let key_for_async = key.clone();
 
                                         wasm_bindgen_futures::spawn_local(async move {
@@ -126,7 +120,7 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
                                                     let events = crate::fetch::get_events().await;
                                                     if let Ok(events) = events {
                                                         set_state_for_async(Box::new(|state| AppState {
-                                                            created_account_events: events,
+                                                            events,
                                                             ..state.clone()
                                                         }));
                                                     }
@@ -138,16 +132,15 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
                                                 }
                                             }
                                         });
-                                        AppState {
-                                            part_name_input: String::new(),
-                                            part_description_input: String::new(),
-                                            part_definition_eval_result: None,
-                                            composing_expression:
-                                                definy_event::event::Expression::Number(
-                                                    definy_event::event::NumberExpression { value: 0 },
-                                                ),
-                                            ..state.clone()
-                                        }
+                                        let mut next = state.clone();
+                                        next.part_definition_form.part_name_input = String::new();
+                                        next.part_definition_form.part_description_input = String::new();
+                                        next.part_definition_form.eval_result = None;
+                                        next.part_definition_form.composing_expression =
+                                            definy_event::event::Expression::Number(
+                                                definy_event::event::NumberExpression { value: 0 },
+                                            );
+                                        next
                                     }));
                                 }))
                                 .children([text("Send")])
@@ -163,21 +156,13 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
 
     Div::new()
         .class("page-shell")
-        .style(
-            Style::new()
-                .set("display", "grid")
-                .set("gap", "2rem")
-                .set("width", "100%")
-                .set("max-width", "800px")
-                .set("margin", "0 auto")
-                .set("padding", "2rem 1rem"),
-        )
+        .style(crate::layout::page_shell_style("2rem"))
         .children({
             let mut children = Vec::new();
             if let Some(part_definition_form) = part_definition_form {
                 children.push(part_definition_form);
             }
-            if let Some(result) = &state.part_definition_eval_result {
+            if let Some(result) = &state.part_definition_form.eval_result {
                 children.push(
                     Div::new()
                         .class("event-detail-card")
@@ -200,7 +185,7 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
                         let account_name_map = state.account_name_map();
 
                         state
-                            .created_account_events
+                            .events
                             .iter()
                             .map(|(hash, event)| event_view(hash, event, &account_name_map))
                             .collect::<Vec<Node<AppState>>>()
@@ -210,206 +195,6 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
             children
         })
         .into_node()
-}
-
-fn render_expression_editor(
-    expression: &definy_event::event::Expression,
-    path: Vec<PathStep>,
-) -> Node<AppState> {
-    Div::new()
-        .class("event-detail-card")
-        .style(
-            Style::new()
-                .set("padding", "0.8rem")
-                .set("display", "grid")
-                .set("gap", "0.6rem"),
-        )
-        .children({
-            let mut children = vec![
-                Div::new()
-                    .style(Style::new().set("display", "flex").set("gap", "0.5rem"))
-                    .children([
-                        kind_button(path.clone(), NodeKind::Number, "Number"),
-                        kind_button(path.clone(), NodeKind::Add, "+"),
-                    ])
-                    .into_node(),
-            ];
-
-            match expression {
-                definy_event::event::Expression::Number(number_expression) => {
-                    children.push(number_input(path, number_expression.value));
-                }
-                definy_event::event::Expression::Add(add_expression) => {
-                    let mut left_path = path.clone();
-                    left_path.push(PathStep::Left);
-                    let mut right_path = path;
-                    right_path.push(PathStep::Right);
-
-                    children.push(
-                        Div::new()
-                            .style(
-                                Style::new()
-                                    .set("display", "grid")
-                                    .set("grid-template-columns", "1fr 1fr")
-                                    .set("gap", "0.6rem"),
-                            )
-                            .children([
-                                Div::new()
-                                    .style(Style::new().set("display", "grid").set("gap", "0.3rem"))
-                                    .children([
-                                        Div::new()
-                                            .style(
-                                                Style::new()
-                                                    .set("color", "var(--text-secondary)")
-                                                    .set("font-size", "0.82rem"),
-                                            )
-                                            .children([text("Left")])
-                                            .into_node(),
-                                        render_expression_editor(add_expression.left.as_ref(), left_path),
-                                    ])
-                                    .into_node(),
-                                Div::new()
-                                    .style(Style::new().set("display", "grid").set("gap", "0.3rem"))
-                                    .children([
-                                        Div::new()
-                                            .style(
-                                                Style::new()
-                                                    .set("color", "var(--text-secondary)")
-                                                    .set("font-size", "0.82rem"),
-                                            )
-                                            .children([text("Right")])
-                                            .into_node(),
-                                        render_expression_editor(add_expression.right.as_ref(), right_path),
-                                    ])
-                                    .into_node(),
-                            ])
-                            .into_node(),
-                    );
-                }
-            }
-            children
-        })
-        .into_node()
-}
-
-fn kind_button(path: Vec<PathStep>, kind: NodeKind, label: &str) -> Node<AppState> {
-    Button::new()
-        .type_("button")
-        .on_click(EventHandler::new(move |set_state| {
-            let path = path.clone();
-            async move {
-                set_state(Box::new(move |state: AppState| {
-                    let mut next = state.clone();
-                    set_node_kind(&mut next.composing_expression, path.as_slice(), kind);
-                    next
-                }));
-            }
-        }))
-        .children([text(label)])
-        .into_node()
-}
-
-fn number_input(path: Vec<PathStep>, value: i64) -> Node<AppState> {
-    let name = format!("expr-number-{}", path_to_key(path.as_slice()));
-    let selector = format!("input[name='{}']", name);
-
-    let mut input = Input::new()
-        .name(name.as_str())
-        .type_("number")
-        .value(value.to_string().as_str());
-
-    input.events.push((
-        "input".to_string(),
-        EventHandler::new(move |set_state| {
-            let selector = selector.clone();
-            let path = path.clone();
-            async move {
-                let value = web_sys::window()
-                    .and_then(|window| window.document())
-                    .and_then(|document| document.query_selector(selector.as_str()).ok())
-                    .flatten()
-                    .and_then(|element| {
-                        wasm_bindgen::JsCast::dyn_into::<web_sys::HtmlInputElement>(element).ok()
-                    })
-                    .and_then(|input| input.value().parse::<i64>().ok());
-
-                if let Some(value) = value {
-                    set_state(Box::new(move |state: AppState| {
-                        let mut next = state.clone();
-                        set_number_value(&mut next.composing_expression, path.as_slice(), value);
-                        next
-                    }));
-                }
-            }
-        }),
-    ));
-
-    input.into_node()
-}
-
-fn path_to_key(path: &[PathStep]) -> String {
-    if path.is_empty() {
-        return "root".to_string();
-    }
-    path.iter()
-        .map(|step| match step {
-            PathStep::Left => 'L',
-            PathStep::Right => 'R',
-        })
-        .collect()
-}
-
-fn get_mut_expression_at_path<'a>(
-    expression: &'a mut definy_event::event::Expression,
-    path: &[PathStep],
-) -> Option<&'a mut definy_event::event::Expression> {
-    if path.is_empty() {
-        return Some(expression);
-    }
-
-    match expression {
-        definy_event::event::Expression::Add(add_expression) => match path[0] {
-            PathStep::Left => get_mut_expression_at_path(add_expression.left.as_mut(), &path[1..]),
-            PathStep::Right => {
-                get_mut_expression_at_path(add_expression.right.as_mut(), &path[1..])
-            }
-        },
-        definy_event::event::Expression::Number(_) => None,
-    }
-}
-
-fn set_node_kind(
-    root_expression: &mut definy_event::event::Expression,
-    path: &[PathStep],
-    kind: NodeKind,
-) {
-    if let Some(expression) = get_mut_expression_at_path(root_expression, path) {
-        *expression = match kind {
-            NodeKind::Number => definy_event::event::Expression::Number(
-                definy_event::event::NumberExpression { value: 0 },
-            ),
-            NodeKind::Add => definy_event::event::Expression::Add(definy_event::event::AddExpression {
-                left: Box::new(definy_event::event::Expression::Number(
-                    definy_event::event::NumberExpression { value: 0 },
-                )),
-                right: Box::new(definy_event::event::Expression::Number(
-                    definy_event::event::NumberExpression { value: 0 },
-                )),
-            }),
-        }
-    }
-}
-
-fn set_number_value(
-    root_expression: &mut definy_event::event::Expression,
-    path: &[PathStep],
-    value: i64,
-) {
-    if let Some(definy_event::event::Expression::Number(number_expression)) =
-        get_mut_expression_at_path(root_expression, path)
-    {
-        number_expression.value = value;
-    }
 }
 
 fn event_view(
@@ -454,10 +239,7 @@ fn event_view(
                         Div::new()
                             .class("mono")
                             .style(Style::new().set("opacity", "0.6"))
-                            .children([text(&base64::Engine::encode(
-                                &base64::engine::general_purpose::URL_SAFE_NO_PAD,
-                                event.account_id.0.as_slice(),
-                            ))])
+                            .children([text(&crate::hash_format::encode_bytes(event.account_id.0.as_slice()))])
                             .into_node(),
                     ])
                     .into_node(),
@@ -514,6 +296,52 @@ fn event_view(
                             },
                         ])
                         .into_node(),
+                    EventContent::PartUpdate(part_update_event) => Div::new()
+                        .style(Style::new().set("font-size", "1.05rem"))
+                        .children([
+                            Div::new()
+                                .style(
+                                    Style::new()
+                                        .set("font-size", "0.85rem")
+                                        .set("color", "var(--primary)")
+                                        .set("font-weight", "600")
+                                        .set("margin-bottom", "0.25rem"),
+                                )
+                                .children([text(
+                                    account_name_map
+                                        .get(&event.account_id)
+                                        .map(|name: &Box<str>| name.as_ref())
+                                        .unwrap_or("Unknown"),
+                                )])
+                                .into_node(),
+                            text(format!("Part updated: {}", part_update_event.part_name)),
+                            Div::new()
+                                .class("mono")
+                                .style(
+                                    Style::new()
+                                        .set("font-size", "0.82rem")
+                                        .set("opacity", "0.85"),
+                                )
+                                .children([text(format!(
+                                    "expression: {}",
+                                    expression_to_source(&part_update_event.expression)
+                                ))])
+                                .into_node(),
+                            Div::new()
+                                .style(
+                                    Style::new()
+                                        .set("font-size", "0.85rem")
+                                        .set("color", "var(--text-secondary)"),
+                                )
+                                .children([text(format!(
+                                    "base: {}",
+                                    crate::hash_format::encode_hash32(
+                                        &part_update_event.part_definition_event_hash,
+                                    )
+                                ))])
+                                .into_node(),
+                        ])
+                        .into_node(),
                 },
             ])
             .into_node(),
@@ -536,7 +364,7 @@ fn part_name_input(state: &AppState) -> Node<AppState> {
     let mut input = Input::new()
         .name("part-name")
         .type_("text")
-        .value(&state.part_name_input);
+        .value(&state.part_definition_form.part_name_input);
     input
         .attributes
         .push(("placeholder".to_string(), "part name (e.g. a)".to_string()));
@@ -550,9 +378,10 @@ fn part_name_input(state: &AppState) -> Node<AppState> {
                 .and_then(|element| wasm_bindgen::JsCast::dyn_into::<web_sys::HtmlInputElement>(element).ok())
                 .map(|input| input.value())
                 .unwrap_or_default();
-            set_state(Box::new(move |state: AppState| AppState {
-                part_name_input: value,
-                ..state.clone()
+            set_state(Box::new(move |state: AppState| {
+                let mut next = state.clone();
+                next.part_definition_form.part_name_input = value;
+                next
             }));
         }),
     ));
@@ -562,7 +391,7 @@ fn part_name_input(state: &AppState) -> Node<AppState> {
 fn part_description_input(state: &AppState) -> Node<AppState> {
     let mut textarea = Textarea::new()
         .name("part-description")
-        .value(&state.part_description_input)
+        .value(&state.part_definition_form.part_description_input)
         .style(Style::new().set("min-height", "6rem"));
     textarea.attributes.push((
         "placeholder".to_string(),
@@ -580,32 +409,12 @@ fn part_description_input(state: &AppState) -> Node<AppState> {
                 })
                 .map(|textarea| textarea.value())
                 .unwrap_or_default();
-            set_state(Box::new(move |state: AppState| AppState {
-                part_description_input: value,
-                ..state.clone()
+            set_state(Box::new(move |state: AppState| {
+                let mut next = state.clone();
+                next.part_definition_form.part_description_input = value;
+                next
             }));
         }),
     ));
     textarea.into_node()
-}
-
-#[cfg(test)]
-mod tests {
-    use super::{set_node_kind, set_number_value, NodeKind, PathStep};
-
-    #[test]
-    fn edit_nested_expression_by_ui_path() {
-        let mut expression = definy_event::event::Expression::Number(
-            definy_event::event::NumberExpression { value: 0 },
-        );
-
-        set_node_kind(&mut expression, &[], NodeKind::Add);
-        set_number_value(&mut expression, &[PathStep::Left], 321);
-        set_node_kind(&mut expression, &[PathStep::Right], NodeKind::Add);
-        set_number_value(&mut expression, &[PathStep::Right, PathStep::Left], 1);
-        set_number_value(&mut expression, &[PathStep::Right, PathStep::Right], 3);
-
-        assert_eq!(crate::expression_eval::expression_to_source(&expression), "+ 321 (+ 1 3)");
-        assert_eq!(crate::expression_eval::evaluate_expression(&expression), Ok(325));
-    }
 }

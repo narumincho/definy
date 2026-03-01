@@ -25,6 +25,7 @@ pub enum EventContent {
     ChangeProfile(ChangeProfileEvent),
     #[serde(alias = "Message")]
     PartDefinition(PartDefinitionEvent),
+    PartUpdate(PartUpdateEvent),
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -33,6 +34,19 @@ pub struct PartDefinitionEvent {
     #[serde(default)]
     pub description: Box<str>,
     pub expression: Expression,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct PartUpdateEvent {
+    pub part_name: Box<str>,
+    pub part_description: Box<str>,
+    pub part_definition_event_hash: [u8; 32],
+    #[serde(default = "default_expression")]
+    pub expression: Expression,
+}
+
+fn default_expression() -> Expression {
+    Expression::Number(NumberExpression { value: 0 })
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
