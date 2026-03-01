@@ -12,6 +12,7 @@ pub mod navigator_credential;
 mod not_found;
 mod part_list;
 mod part_detail;
+mod page_title;
 
 pub use app_state::*;
 pub use message::Message;
@@ -64,7 +65,9 @@ pub fn render(
     ssr_initial_state_json: Option<&str>,
 ) -> Node<AppState> {
     let mut head_children = vec![
-        Title::new().children([text("definy")]).into_node(),
+        Title::new()
+            .children([text(page_title::document_title_text(state))])
+            .into_node(),
         Meta::new("viewport", "width=device-width,initial-scale=1.0"),
         Link::new()
             .rel("icon")
@@ -106,7 +109,7 @@ init({{ module_or_path: \"/{}\" }});",
                     Style::new()
                         .set("display", "grid")
                         .set("gap", "1rem")
-                        .set("grid-template-rows", "auto 1fr"),
+                        .set("padding-top", "4.8rem"),
                 )
                 .children([
                     header::header(state),

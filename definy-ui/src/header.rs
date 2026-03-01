@@ -22,7 +22,10 @@ fn header_main(state: &AppState) -> Node<AppState> {
                 .set("background", "rgba(11, 15, 25, 0.6)")
                 .set("backdrop-filter", "var(--glass-blur)")
                 .set("-webkit-backdrop-filter", "var(--glass-blur)")
-                .set("position", "sticky")
+                .set("left", "0")
+                .set("right", "0")
+                .set("width", "100%")
+                .set("position", "fixed")
                 .set("top", "0")
                 .set("z-index", "10")
                 .set("border-bottom", "1px solid var(--border)"),
@@ -79,7 +82,26 @@ fn header_main(state: &AppState) -> Node<AppState> {
                 ])
                 .into_node(),
             Div::new()
-                .style(Style::new().set("flex-grow", "1"))
+                .style(
+                    Style::new()
+                        .set("flex-grow", "1")
+                        .set("display", "flex")
+                        .set("justify-content", "center"),
+                )
+                .children([
+                    Div::new()
+                        .style(
+                            Style::new()
+                                .set("font-size", "0.95rem")
+                                .set("color", "var(--text-secondary)")
+                                .set("max-width", "42vw")
+                                .set("overflow", "hidden")
+                                .set("text-overflow", "ellipsis")
+                                .set("white-space", "nowrap"),
+                        )
+                        .children([text(crate::page_title::page_title_text(state))])
+                        .into_node(),
+                ])
                 .into_node(),
             match &state.current_key {
                 Some(secret_key) => {
