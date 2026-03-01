@@ -125,7 +125,7 @@ pub fn start<State: Clone + 'static, A: App<State>>() {
                         Reflect::get(&event, &JsValue::from_str("canIntercept"))
                     {
                         if can_intercept.is_truthy() {
-                            if let Ok(user_initiated) =
+                            if let Ok(_user_initiated) =
                                 Reflect::get(&event, &JsValue::from_str("userInitiated"))
                             {
                                 // Only intercept if it was a user click (not script navigation, etc) if we want
