@@ -1,9 +1,48 @@
 use crate::{AppState, Location};
 
+#[derive(Clone, Copy)]
+enum RouteId {
+    Home,
+    AccountList,
+    PartList,
+    AccountDetail,
+    PartDetail,
+    EventDetail,
+    NotFound,
+}
+
+impl RouteId {
+    fn from_location(location: &Option<Location>) -> Self {
+        match location {
+            Some(Location::Home) => Self::Home,
+            Some(Location::AccountList) => Self::AccountList,
+            Some(Location::PartList) => Self::PartList,
+            Some(Location::Account(_)) => Self::AccountDetail,
+            Some(Location::Part(_)) => Self::PartDetail,
+            Some(Location::Event(_)) => Self::EventDetail,
+            None => Self::NotFound,
+        }
+    }
+
+    fn title_prefix(self) -> &'static str {
+        match self {
+            Self::Home => "home",
+            Self::AccountList => "accounts",
+            Self::PartList => "parts",
+            Self::AccountDetail => "accounts",
+            Self::PartDetail => "parts",
+            Self::EventDetail => "events",
+            Self::NotFound => "not-found",
+        }
+    }
+}
+
 pub fn page_title_text(state: &AppState) -> String {
+    let route_id = RouteId::from_location(&state.location);
     match &state.location {
-        Some(Location::Home) => "home".to_string(),
-        Some(Location::AccountList) => "accounts".to_string(),
+        Some(Location::Home) | Some(Location::AccountList) | Some(Location::PartList) | None => {
+            route_id.title_prefix().to_string()
+        }
         Some(Location::Account(account_id)) => {
             let account_id = definy_event::event::AccountId(Box::new(*account_id));
             let account_name = state
@@ -11,13 +50,12 @@ pub fn page_title_text(state: &AppState) -> String {
                 .get(&account_id)
                 .map(|name| name.to_string())
                 .unwrap_or_else(|| "unknown".to_string());
-            format!("accounts/{}", account_name)
+            format!("{}/{}", route_id.title_prefix(), account_name)
         }
-        Some(Location::PartList) => "parts".to_string(),
         Some(Location::Part(definition_event_hash)) => {
             let part_name = resolve_part_name(state, definition_event_hash)
                 .unwrap_or_else(|| short_hash(definition_event_hash));
-            format!("parts/{}", part_name)
+            format!("{}/{}", route_id.title_prefix(), part_name)
         }
         Some(Location::Event(event_hash)) => {
             let event_label = state
@@ -45,9 +83,8 @@ pub fn page_title_text(state: &AppState) -> String {
                     Some(label)
                 })
                 .unwrap_or_else(|| short_hash(event_hash));
-            format!("events/{}", event_label)
+            format!("{}/{}", route_id.title_prefix(), event_label)
         }
-        None => "not-found".to_string(),
     }
 }
 
