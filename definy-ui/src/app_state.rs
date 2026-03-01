@@ -13,6 +13,9 @@ pub struct AppState {
     pub part_description_input: String,
     pub composing_expression: definy_event::event::Expression,
     pub part_definition_eval_result: Option<String>,
+    pub part_update_name_input: String,
+    pub part_update_description_input: String,
+    pub part_update_expression_input: definy_event::event::Expression,
     pub event_detail_eval_result: Option<String>,
     pub profile_name_input: String,
     pub is_header_popover_open: bool,
@@ -39,6 +42,7 @@ impl AppState {
                             .or_insert_with(|| change_profile_event.account_name.clone());
                     }
                     definy_event::event::EventContent::PartDefinition(_) => {}
+                    definy_event::event::EventContent::PartUpdate(_) => {}
                 }
             }
         }
@@ -72,6 +76,9 @@ pub enum CreatingAccountState {
 #[derive(Clone, PartialEq, Debug)]
 pub enum Location {
     Home,
+    AccountList,
+    PartList,
+    Part([u8; 32]),
     Event([u8; 32]),
     Account([u8; 32]),
 }
@@ -80,6 +87,12 @@ impl narumincho_vdom::Route for Location {
     fn to_url(&self) -> String {
         match self {
             Location::Home => "/".to_string(),
+            Location::AccountList => "/accounts".to_string(),
+            Location::PartList => "/parts".to_string(),
+            Location::Part(hash) => format!(
+                "/parts/{}",
+                base64::Engine::encode(&base64::engine::general_purpose::URL_SAFE_NO_PAD, hash)
+            ),
             Location::Event(hash) => format!(
                 "/events/{}",
                 base64::Engine::encode(&base64::engine::general_purpose::URL_SAFE_NO_PAD, hash)
@@ -98,6 +111,9 @@ impl narumincho_vdom::Route for Location {
         let parts: Vec<&str> = url.trim_matches('/').split('/').collect();
         match parts.as_slice() {
             [""] => Some(Location::Home),
+            ["accounts"] => Some(Location::AccountList),
+            ["parts"] => Some(Location::PartList),
+            ["parts", hash_str] => decode_32bytes_base64(hash_str).map(Location::Part),
             ["events", hash_str] => decode_32bytes_base64(hash_str).map(Location::Event),
             ["accounts", account_id_str] => {
                 decode_32bytes_base64(account_id_str).map(Location::Account)
@@ -131,5 +147,27 @@ mod tests {
         let location = Location::Account(account_id);
         let url = location.to_url();
         assert_eq!(Location::from_url(url.as_str()), Some(Location::Account(account_id)));
+    }
+
+    #[test]
+    fn part_list_route_round_trip() {
+        let location = Location::PartList;
+        let url = location.to_url();
+        assert_eq!(Location::from_url(url.as_str()), Some(Location::PartList));
+    }
+
+    #[test]
+    fn part_route_round_trip() {
+        let hash = [9u8; 32];
+        let location = Location::Part(hash);
+        let url = location.to_url();
+        assert_eq!(Location::from_url(url.as_str()), Some(Location::Part(hash)));
+    }
+
+    #[test]
+    fn account_list_route_round_trip() {
+        let location = Location::AccountList;
+        let url = location.to_url();
+        assert_eq!(Location::from_url(url.as_str()), Some(Location::AccountList));
     }
 }

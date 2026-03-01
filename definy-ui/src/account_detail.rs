@@ -43,7 +43,7 @@ pub fn account_detail_view(state: &AppState, account_id_bytes: &[u8; 32]) -> Nod
         .children([
             A::<AppState, Location>::new()
                 .class("back-link")
-                .href(Href::Internal(Location::Home))
+                .href(Href::Internal(Location::AccountList))
                 .style(
                     Style::new()
                         .set("display", "inline-flex")
@@ -52,7 +52,7 @@ pub fn account_detail_view(state: &AppState, account_id_bytes: &[u8; 32]) -> Nod
                         .set("color", "var(--primary)")
                         .set("font-weight", "500"),
                 )
-                .children([text("← Back to Home")])
+                .children([text("← Back to Accounts")])
                 .into_node(),
             Div::new()
                 .class("event-detail-card")
@@ -150,6 +150,16 @@ fn event_summary(event: &definy_event::event::Event) -> String {
             } else {
                 format!(" - {}", part_definition_event.description)
             }
+        ),
+        EventContent::PartUpdate(part_update_event) => format!(
+            "Part updated: {}{} | {}",
+            part_update_event.part_name,
+            if part_update_event.part_description.is_empty() {
+                String::new()
+            } else {
+                format!(" - {}", part_update_event.part_description)
+            },
+            expression_to_source(&part_update_event.expression)
         ),
     }
 }

@@ -5,6 +5,18 @@ use crate::Location;
 use crate::app_state::AppState;
 use crate::expression_eval::{evaluate_expression, expression_to_source};
 
+#[derive(Clone, Copy)]
+enum NodeKind {
+    Number,
+    Add,
+}
+
+#[derive(Clone, Copy)]
+enum PathStep {
+    Left,
+    Right,
+}
+
 pub fn event_detail_view(state: &AppState, target_hash: &[u8; 32]) -> Node<AppState> {
     let account_name_map = state.account_name_map();
     let mut target_event_opt = None;
@@ -72,6 +84,7 @@ fn render_event_detail(
         .get(&event.account_id)
         .map(|name: &Box<str>| name.as_ref())
         .unwrap_or("Unknown");
+    let root_part_definition_hash = root_part_definition_hash(hash, &event.content);
 
     Div::new()
         .class("event-detail-card")
@@ -218,6 +231,85 @@ fn render_event_detail(
                         },
                     ])
                     .into_node(),
+                EventContent::PartUpdate(part_update_event) => Div::new()
+                    .style(
+                        Style::new()
+                            .set("display", "grid")
+                            .set("gap", "0.8rem")
+                            .set("line-height", "1.6"),
+                    )
+                    .children([
+                        Div::new()
+                            .style(
+                                Style::new()
+                                    .set("font-size", "1rem")
+                                    .set("color", "var(--primary)")
+                                    .set("font-weight", "600"),
+                            )
+                            .children([text(account_name)])
+                            .into_node(),
+                        Div::new()
+                            .style(Style::new().set("font-size", "1.35rem"))
+                            .children([text(format!("Part updated: {}", part_update_event.part_name))])
+                            .into_node(),
+                        if part_update_event.part_description.is_empty() {
+                            Div::new().children([]).into_node()
+                        } else {
+                            Div::new()
+                                .style(
+                                    Style::new()
+                                        .set("font-size", "1rem")
+                                        .set("color", "var(--text-secondary)")
+                                        .set("white-space", "pre-wrap"),
+                                )
+                                .children([text(part_update_event.part_description.as_ref())])
+                                .into_node()
+                        },
+                        Div::new()
+                            .class("mono")
+                            .style(
+                                Style::new()
+                                    .set("font-size", "0.8rem")
+                                    .set("opacity", "0.85"),
+                            )
+                            .children([text(format!(
+                                "expression: {}",
+                                expression_to_source(&part_update_event.expression)
+                            ))])
+                            .into_node(),
+                        Div::new()
+                            .class("mono")
+                            .style(
+                                Style::new()
+                                    .set("font-size", "0.8rem")
+                                    .set("opacity", "0.85"),
+                            )
+                            .children([text(format!(
+                                "partDefinitionEventHash: {}",
+                                base64::Engine::encode(
+                                    &base64::engine::general_purpose::URL_SAFE_NO_PAD,
+                                    part_update_event.part_definition_event_hash,
+                                )
+                            ))])
+                            .into_node(),
+                        A::<AppState, Location>::new()
+                            .href(Href::Internal(Location::Event(
+                                part_update_event.part_definition_event_hash,
+                            )))
+                            .children([text("Open definition event")])
+                            .into_node(),
+                    ])
+                    .into_node(),
+            },
+            if let Some(root_hash) = root_part_definition_hash {
+                part_update_form(state, root_hash)
+            } else {
+                Div::new().children([]).into_node()
+            },
+            if let Some(root_hash) = root_part_definition_hash {
+                related_part_events_section(state, root_hash)
+            } else {
+                Div::new().children([]).into_node()
             },
             Div::new()
                 .class("mono")
@@ -239,6 +331,533 @@ fn render_event_detail(
                 .into_node(),
         ])
         .into_node()
+}
+
+fn part_update_form(state: &AppState, root_part_definition_hash: [u8; 32]) -> Node<AppState> {
+    let hash_as_base64 = base64::Engine::encode(
+        &base64::engine::general_purpose::URL_SAFE_NO_PAD,
+        root_part_definition_hash,
+    );
+
+    Div::new()
+        .class("event-detail-card")
+        .style(
+            Style::new()
+                .set("display", "grid")
+                .set("gap", "0.6rem")
+                .set("padding", "1rem"),
+        )
+        .children([
+            Div::new()
+                .style(Style::new().set("font-weight", "600"))
+                .children([text("Create PartUpdate event")])
+                .into_node(),
+            Div::new()
+                .class("mono")
+                .style(
+                    Style::new()
+                        .set("font-size", "0.78rem")
+                        .set("opacity", "0.8")
+                        .set("word-break", "break-all"),
+                )
+                .children([text(format!("partDefinitionEventHash: {}", hash_as_base64))])
+                .into_node(),
+            Input::new()
+                .type_("text")
+                .name("part-update-name")
+                .value(&state.part_update_name_input)
+                .on_change(EventHandler::new(async |set_state| {
+                    let value = web_sys::window()
+                        .and_then(|window| window.document())
+                        .and_then(|document| {
+                            document.query_selector("input[name='part-update-name']").ok()
+                        })
+                        .flatten()
+                        .and_then(|element| {
+                            wasm_bindgen::JsCast::dyn_into::<web_sys::HtmlInputElement>(element).ok()
+                        })
+                        .map(|input| input.value())
+                        .unwrap_or_default();
+                    set_state(Box::new(move |state: AppState| AppState {
+                        part_update_name_input: value,
+                        ..state.clone()
+                    }));
+                }))
+                .into_node(),
+            {
+                let mut description = Textarea::new()
+                    .name("part-update-description")
+                    .value(&state.part_update_description_input)
+                    .style(Style::new().set("min-height", "5rem"));
+                description.attributes.push((
+                    "placeholder".to_string(),
+                    "part description (supports multiple lines)".to_string(),
+                ));
+                description.events.push((
+                    "input".to_string(),
+                    EventHandler::new(async |set_state| {
+                        let value = web_sys::window()
+                            .and_then(|window| window.document())
+                            .and_then(|document| {
+                                document
+                                    .query_selector("textarea[name='part-update-description']")
+                                    .ok()
+                            })
+                            .flatten()
+                            .and_then(|element| {
+                                wasm_bindgen::JsCast::dyn_into::<web_sys::HtmlTextAreaElement>(
+                                    element,
+                                )
+                                .ok()
+                            })
+                            .map(|textarea| textarea.value())
+                            .unwrap_or_default();
+                        set_state(Box::new(move |state: AppState| AppState {
+                            part_update_description_input: value,
+                            ..state.clone()
+                        }));
+                    }),
+                ));
+                description.into_node()
+            },
+            Div::new()
+                .style(Style::new().set("color", "var(--text-secondary)").set("font-size", "0.9rem"))
+                .children([text("Expression Builder")])
+                .into_node(),
+            render_part_update_expression_editor(&state.part_update_expression_input, Vec::new()),
+            Div::new()
+                .class("mono")
+                .style(
+                    Style::new()
+                        .set("font-size", "0.8rem")
+                        .set("padding", "0.4rem 0.6rem")
+                        .set("opacity", "0.85"),
+                )
+                .children([text(format!(
+                    "Current: {}",
+                    expression_to_source(&state.part_update_expression_input)
+                ))])
+                .into_node(),
+            {
+                let root_part_definition_hash = root_part_definition_hash;
+                Button::new()
+                    .type_("button")
+                    .on_click(EventHandler::new(move |set_state| {
+                        let root_part_definition_hash = root_part_definition_hash;
+                        async move {
+                            let set_state = std::rc::Rc::new(set_state);
+                            let set_state_for_async = set_state.clone();
+                            set_state(Box::new(move |state: AppState| {
+                                let key = if let Some(key) = &state.current_key {
+                                    key.clone()
+                                } else {
+                                    return AppState {
+                                        event_detail_eval_result: Some(
+                                            "Error: login required".to_string(),
+                                        ),
+                                        ..state.clone()
+                                    };
+                                };
+                                let part_name = state.part_update_name_input.trim().to_string();
+                                if part_name.is_empty() {
+                                    return AppState {
+                                        event_detail_eval_result: Some(
+                                            "Error: part name is required".to_string(),
+                                        ),
+                                        ..state.clone()
+                                    };
+                                }
+                                let part_description = state.part_update_description_input.clone();
+                                let expression = state.part_update_expression_input.clone();
+                                wasm_bindgen_futures::spawn_local(async move {
+                                    let event_binary = match definy_event::sign_and_serialize(
+                                        definy_event::event::Event {
+                                            account_id: definy_event::event::AccountId(Box::new(
+                                                key.verifying_key().to_bytes(),
+                                            )),
+                                            time: chrono::Utc::now(),
+                                            content: definy_event::event::EventContent::PartUpdate(
+                                                definy_event::event::PartUpdateEvent {
+                                                    part_name: part_name.into(),
+                                                    part_description: part_description.into(),
+                                                    part_definition_event_hash: root_part_definition_hash,
+                                                    expression,
+                                                },
+                                            ),
+                                        },
+                                        &key,
+                                    ) {
+                                        Ok(value) => value,
+                                        Err(error) => {
+                                            set_state_for_async(Box::new(move |state| AppState {
+                                                event_detail_eval_result: Some(format!(
+                                                    "Error: failed to serialize PartUpdate: {:?}",
+                                                    error
+                                                )),
+                                                ..state.clone()
+                                            }));
+                                            return;
+                                        }
+                                    };
+
+                                    match crate::fetch::post_event(event_binary.as_slice()).await {
+                                        Ok(_) => {
+                                            if let Ok(events) = crate::fetch::get_events().await {
+                                                set_state_for_async(Box::new(move |state| AppState {
+                                                    created_account_events: events,
+                                                    part_update_name_input: String::new(),
+                                                    part_update_description_input: String::new(),
+                                                    part_update_expression_input:
+                                                        definy_event::event::Expression::Number(
+                                                            definy_event::event::NumberExpression {
+                                                                value: 0,
+                                                            },
+                                                        ),
+                                                    event_detail_eval_result: Some(
+                                                        "PartUpdate event posted".to_string(),
+                                                    ),
+                                                    ..state.clone()
+                                                }));
+                                            }
+                                        }
+                                        Err(error) => {
+                                            set_state_for_async(Box::new(move |state| AppState {
+                                                event_detail_eval_result: Some(format!(
+                                                    "Error: failed to post PartUpdate: {:?}",
+                                                    error
+                                                )),
+                                                ..state.clone()
+                                            }));
+                                        }
+                                    }
+                                });
+                                state
+                            }));
+                        }
+                    }))
+                    .children([text("Send PartUpdate")])
+                    .into_node()
+            },
+        ])
+        .into_node()
+}
+
+fn related_part_events_section(state: &AppState, root_part_definition_hash: [u8; 32]) -> Node<AppState> {
+    let related_events = collect_related_part_events(state, root_part_definition_hash);
+    let hash_as_base64 = base64::Engine::encode(
+        &base64::engine::general_purpose::URL_SAFE_NO_PAD,
+        root_part_definition_hash,
+    );
+
+    Div::new()
+        .class("event-detail-card")
+        .style(Style::new().set("display", "grid").set("gap", "0.7rem").set("padding", "1rem"))
+        .children([
+            Div::new()
+                .style(Style::new().set("font-weight", "600"))
+                .children([text("Events linked by partDefinitionEventHash")])
+                .into_node(),
+            Div::new()
+                .class("mono")
+                .style(
+                    Style::new()
+                        .set("font-size", "0.78rem")
+                        .set("opacity", "0.8")
+                        .set("word-break", "break-all"),
+                )
+                .children([text(hash_as_base64)])
+                .into_node(),
+            Div::new()
+                .style(Style::new().set("display", "grid").set("gap", "0.4rem"))
+                .children(
+                    related_events
+                        .into_iter()
+                        .map(|(event_hash, event)| {
+                            let label = match &event.content {
+                                EventContent::PartDefinition(part_definition) => format!(
+                                    "PartDefinition: {}",
+                                    part_definition.part_name
+                                ),
+                                EventContent::PartUpdate(part_update) => {
+                                    format!("PartUpdate: {}", part_update.part_name)
+                                }
+                                _ => "Other".to_string(),
+                            };
+                            A::<AppState, Location>::new()
+                                .href(Href::Internal(Location::Event(event_hash)))
+                                .style(
+                                    Style::new()
+                                        .set("display", "grid")
+                                        .set("gap", "0.2rem")
+                                        .set("padding", "0.55rem 0.7rem")
+                                        .set("border", "1px solid var(--border)")
+                                        .set("border-radius", "var(--radius-md)"),
+                                )
+                                .children([
+                                    Div::new().children([text(label)]).into_node(),
+                                    Div::new()
+                                        .style(
+                                            Style::new()
+                                                .set("font-size", "0.82rem")
+                                                .set("color", "var(--text-secondary)"),
+                                        )
+                                        .children([text(
+                                            event.time.format("%Y-%m-%d %H:%M:%S").to_string(),
+                                        )])
+                                        .into_node(),
+                                ])
+                                .into_node()
+                        })
+                        .collect::<Vec<Node<AppState>>>(),
+                )
+                .into_node(),
+        ])
+        .into_node()
+}
+
+fn collect_related_part_events(
+    state: &AppState,
+    root_part_definition_hash: [u8; 32],
+) -> Vec<([u8; 32], &Event)> {
+    let mut events = state
+        .created_account_events
+        .iter()
+        .filter_map(|(hash, event_result)| {
+            let (_, event) = event_result.as_ref().ok()?;
+            let is_related = match &event.content {
+                EventContent::PartDefinition(_) => *hash == root_part_definition_hash,
+                EventContent::PartUpdate(part_update) => {
+                    part_update.part_definition_event_hash == root_part_definition_hash
+                }
+                _ => false,
+            };
+            if is_related {
+                Some((*hash, event))
+            } else {
+                None
+            }
+        })
+        .collect::<Vec<([u8; 32], &Event)>>();
+    events.sort_by(|(_, a), (_, b)| b.time.cmp(&a.time));
+    events
+}
+
+fn root_part_definition_hash(current_hash: &[u8; 32], content: &EventContent) -> Option<[u8; 32]> {
+    match content {
+        EventContent::PartDefinition(_) => Some(*current_hash),
+        EventContent::PartUpdate(part_update) => Some(part_update.part_definition_event_hash),
+        _ => None,
+    }
+}
+
+fn render_part_update_expression_editor(
+    expression: &definy_event::event::Expression,
+    path: Vec<PathStep>,
+) -> Node<AppState> {
+    Div::new()
+        .class("event-detail-card")
+        .style(
+            Style::new()
+                .set("padding", "0.8rem")
+                .set("display", "grid")
+                .set("gap", "0.6rem"),
+        )
+        .children({
+            let mut children = vec![
+                Div::new()
+                    .style(Style::new().set("display", "flex").set("gap", "0.5rem"))
+                    .children([
+                        kind_button(path.clone(), NodeKind::Number, "Number"),
+                        kind_button(path.clone(), NodeKind::Add, "+"),
+                    ])
+                    .into_node(),
+            ];
+
+            match expression {
+                definy_event::event::Expression::Number(number_expression) => {
+                    children.push(number_input(path, number_expression.value));
+                }
+                definy_event::event::Expression::Add(add_expression) => {
+                    let mut left_path = path.clone();
+                    left_path.push(PathStep::Left);
+                    let mut right_path = path;
+                    right_path.push(PathStep::Right);
+
+                    children.push(
+                        Div::new()
+                            .style(
+                                Style::new()
+                                    .set("display", "grid")
+                                    .set("grid-template-columns", "1fr 1fr")
+                                    .set("gap", "0.6rem"),
+                            )
+                            .children([
+                                Div::new()
+                                    .style(Style::new().set("display", "grid").set("gap", "0.3rem"))
+                                    .children([
+                                        Div::new()
+                                            .style(
+                                                Style::new()
+                                                    .set("color", "var(--text-secondary)")
+                                                    .set("font-size", "0.82rem"),
+                                            )
+                                            .children([text("Left")])
+                                            .into_node(),
+                                        render_part_update_expression_editor(
+                                            add_expression.left.as_ref(),
+                                            left_path,
+                                        ),
+                                    ])
+                                    .into_node(),
+                                Div::new()
+                                    .style(Style::new().set("display", "grid").set("gap", "0.3rem"))
+                                    .children([
+                                        Div::new()
+                                            .style(
+                                                Style::new()
+                                                    .set("color", "var(--text-secondary)")
+                                                    .set("font-size", "0.82rem"),
+                                            )
+                                            .children([text("Right")])
+                                            .into_node(),
+                                        render_part_update_expression_editor(
+                                            add_expression.right.as_ref(),
+                                            right_path,
+                                        ),
+                                    ])
+                                    .into_node(),
+                            ])
+                            .into_node(),
+                    );
+                }
+            }
+            children
+        })
+        .into_node()
+}
+
+fn kind_button(path: Vec<PathStep>, kind: NodeKind, label: &str) -> Node<AppState> {
+    Button::new()
+        .type_("button")
+        .on_click(EventHandler::new(move |set_state| {
+            let path = path.clone();
+            async move {
+                set_state(Box::new(move |state: AppState| {
+                    let mut next = state.clone();
+                    set_node_kind(&mut next.part_update_expression_input, path.as_slice(), kind);
+                    next
+                }));
+            }
+        }))
+        .children([text(label)])
+        .into_node()
+}
+
+fn number_input(path: Vec<PathStep>, value: i64) -> Node<AppState> {
+    let name = format!("part-update-expr-number-{}", path_to_key(path.as_slice()));
+    let selector = format!("input[name='{}']", name);
+
+    let mut input = Input::new()
+        .name(name.as_str())
+        .type_("number")
+        .value(value.to_string().as_str());
+
+    input.events.push((
+        "input".to_string(),
+        EventHandler::new(move |set_state| {
+            let selector = selector.clone();
+            let path = path.clone();
+            async move {
+                let value = web_sys::window()
+                    .and_then(|window| window.document())
+                    .and_then(|document| document.query_selector(selector.as_str()).ok())
+                    .flatten()
+                    .and_then(|element| {
+                        wasm_bindgen::JsCast::dyn_into::<web_sys::HtmlInputElement>(element).ok()
+                    })
+                    .and_then(|input| input.value().parse::<i64>().ok());
+
+                if let Some(value) = value {
+                    set_state(Box::new(move |state: AppState| {
+                        let mut next = state.clone();
+                        set_number_value(
+                            &mut next.part_update_expression_input,
+                            path.as_slice(),
+                            value,
+                        );
+                        next
+                    }));
+                }
+            }
+        }),
+    ));
+
+    input.into_node()
+}
+
+fn path_to_key(path: &[PathStep]) -> String {
+    if path.is_empty() {
+        return "root".to_string();
+    }
+    path.iter()
+        .map(|step| match step {
+            PathStep::Left => 'L',
+            PathStep::Right => 'R',
+        })
+        .collect()
+}
+
+fn get_mut_expression_at_path<'a>(
+    expression: &'a mut definy_event::event::Expression,
+    path: &[PathStep],
+) -> Option<&'a mut definy_event::event::Expression> {
+    if path.is_empty() {
+        return Some(expression);
+    }
+
+    match expression {
+        definy_event::event::Expression::Add(add_expression) => match path[0] {
+            PathStep::Left => get_mut_expression_at_path(add_expression.left.as_mut(), &path[1..]),
+            PathStep::Right => {
+                get_mut_expression_at_path(add_expression.right.as_mut(), &path[1..])
+            }
+        },
+        definy_event::event::Expression::Number(_) => None,
+    }
+}
+
+fn set_node_kind(
+    root_expression: &mut definy_event::event::Expression,
+    path: &[PathStep],
+    kind: NodeKind,
+) {
+    if let Some(expression) = get_mut_expression_at_path(root_expression, path) {
+        *expression = match kind {
+            NodeKind::Number => definy_event::event::Expression::Number(
+                definy_event::event::NumberExpression { value: 0 },
+            ),
+            NodeKind::Add => definy_event::event::Expression::Add(definy_event::event::AddExpression {
+                left: Box::new(definy_event::event::Expression::Number(
+                    definy_event::event::NumberExpression { value: 0 },
+                )),
+                right: Box::new(definy_event::event::Expression::Number(
+                    definy_event::event::NumberExpression { value: 0 },
+                )),
+            }),
+        }
+    }
+}
+
+fn set_number_value(
+    root_expression: &mut definy_event::event::Expression,
+    path: &[PathStep],
+    value: i64,
+) {
+    if let Some(definy_event::event::Expression::Number(number_expression)) =
+        get_mut_expression_at_path(root_expression, path)
+    {
+        number_expression.value = value;
+    }
 }
 
 fn evaluate_message_result(expression: &definy_event::event::Expression) -> String {

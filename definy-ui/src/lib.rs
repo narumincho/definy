@@ -1,4 +1,5 @@
 mod account_detail;
+mod account_list;
 mod app_state;
 mod event_detail;
 mod event_list;
@@ -9,6 +10,8 @@ mod login_or_create_account_dialog;
 mod message;
 pub mod navigator_credential;
 mod not_found;
+mod part_list;
+mod part_detail;
 
 pub use app_state::*;
 pub use message::Message;
@@ -109,6 +112,9 @@ init({{ module_or_path: \"/{}\" }});",
                     header::header(state),
                     match &state.location {
                         Some(Location::Home) => event_list::event_list_view(state),
+                        Some(Location::AccountList) => account_list::account_list_view(state),
+                        Some(Location::PartList) => part_list::part_list_view(state),
+                        Some(Location::Part(hash)) => part_detail::part_detail_view(state, hash),
                         Some(Location::Event(hash)) => event_detail::event_detail_view(state, hash),
                         Some(Location::Account(account_id)) => {
                             account_detail::account_detail_view(state, account_id)

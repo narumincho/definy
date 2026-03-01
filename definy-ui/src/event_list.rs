@@ -514,6 +514,53 @@ fn event_view(
                             },
                         ])
                         .into_node(),
+                    EventContent::PartUpdate(part_update_event) => Div::new()
+                        .style(Style::new().set("font-size", "1.05rem"))
+                        .children([
+                            Div::new()
+                                .style(
+                                    Style::new()
+                                        .set("font-size", "0.85rem")
+                                        .set("color", "var(--primary)")
+                                        .set("font-weight", "600")
+                                        .set("margin-bottom", "0.25rem"),
+                                )
+                                .children([text(
+                                    account_name_map
+                                        .get(&event.account_id)
+                                        .map(|name: &Box<str>| name.as_ref())
+                                        .unwrap_or("Unknown"),
+                                )])
+                                .into_node(),
+                            text(format!("Part updated: {}", part_update_event.part_name)),
+                            Div::new()
+                                .class("mono")
+                                .style(
+                                    Style::new()
+                                        .set("font-size", "0.82rem")
+                                        .set("opacity", "0.85"),
+                                )
+                                .children([text(format!(
+                                    "expression: {}",
+                                    expression_to_source(&part_update_event.expression)
+                                ))])
+                                .into_node(),
+                            Div::new()
+                                .style(
+                                    Style::new()
+                                        .set("font-size", "0.85rem")
+                                        .set("color", "var(--text-secondary)"),
+                                )
+                                .children([text(format!(
+                                    "base: {}",
+                                    base64::Engine::encode(
+                                        &base64::engine::general_purpose::URL_SAFE_NO_PAD,
+                                        part_update_event.part_definition_event_hash,
+                                    )
+                                ))])
+                                .into_node(),
+                        ])
+                        .into_node(),
                 },
             ])
             .into_node(),

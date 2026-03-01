@@ -1,6 +1,6 @@
 use narumincho_vdom::*;
 
-use crate::{AppState, fetch};
+use crate::{AppState, Location, fetch};
 
 pub fn header(state: &AppState) -> Node<AppState> {
     let mut children = vec![header_main(state)];
@@ -28,17 +28,55 @@ fn header_main(state: &AppState) -> Node<AppState> {
                 .set("border-bottom", "1px solid var(--border)"),
         )
         .children([
-            H1::new()
+            Div::new()
                 .style(
                     Style::new()
-                        .set("font-size", "1.75rem")
-                        .set("font-weight", "700")
-                        .set("background", "var(--primary-gradient)")
-                        .set("-webkit-background-clip", "text")
-                        .set("-webkit-text-fill-color", "transparent")
-                        .set("letter-spacing", "-0.03em"),
+                        .set("display", "flex")
+                        .set("align-items", "center")
+                        .set("gap", "0.75rem"),
                 )
-                .children([text("definy")])
+                .children([
+                    A::<AppState, Location>::new()
+                        .href(Href::Internal(Location::Home))
+                        .style(
+                            Style::new()
+                                .set("text-decoration", "none")
+                                .set("display", "inline-block"),
+                        )
+                        .children([
+                            H1::new()
+                                .style(
+                                    Style::new()
+                                        .set("font-size", "1.75rem")
+                                        .set("font-weight", "700")
+                                        .set("background", "var(--primary-gradient)")
+                                        .set("-webkit-background-clip", "text")
+                                        .set("-webkit-text-fill-color", "transparent")
+                                        .set("letter-spacing", "-0.03em"),
+                                )
+                                .children([text("definy")])
+                                .into_node(),
+                        ])
+                        .into_node(),
+                    A::<AppState, Location>::new()
+                        .href(Href::Internal(Location::PartList))
+                        .style(
+                            Style::new()
+                                .set("font-size", "0.9rem")
+                                .set("color", "var(--text-secondary)"),
+                        )
+                        .children([text("Parts")])
+                        .into_node(),
+                    A::<AppState, Location>::new()
+                        .href(Href::Internal(Location::AccountList))
+                        .style(
+                            Style::new()
+                                .set("font-size", "0.9rem")
+                                .set("color", "var(--text-secondary)"),
+                        )
+                        .children([text("Accounts")])
+                        .into_node(),
+                ])
                 .into_node(),
             Div::new()
                 .style(Style::new().set("flex-grow", "1"))
