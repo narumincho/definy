@@ -152,32 +152,24 @@ mod tests {
     use super::Location;
 
     #[test]
-    fn account_route_round_trip() {
-        let account_id = [7u8; 32];
-        let location = Location::Account(account_id);
-        let url = location.to_url();
-        assert_eq!(Location::from_url(url.as_str()), Some(Location::Account(account_id)));
+    fn route_round_trip_cases() {
+        let cases = vec![
+            Location::Home,
+            Location::AccountList,
+            Location::PartList,
+            Location::Account([7u8; 32]),
+            Location::Part([9u8; 32]),
+            Location::Event([3u8; 32]),
+        ];
+        for case in cases {
+            let url = case.to_url();
+            assert_eq!(Location::from_url(url.as_str()), Some(case));
+        }
     }
 
     #[test]
-    fn part_list_route_round_trip() {
-        let location = Location::PartList;
-        let url = location.to_url();
-        assert_eq!(Location::from_url(url.as_str()), Some(Location::PartList));
-    }
-
-    #[test]
-    fn part_route_round_trip() {
-        let hash = [9u8; 32];
-        let location = Location::Part(hash);
-        let url = location.to_url();
-        assert_eq!(Location::from_url(url.as_str()), Some(Location::Part(hash)));
-    }
-
-    #[test]
-    fn account_list_route_round_trip() {
-        let location = Location::AccountList;
-        let url = location.to_url();
-        assert_eq!(Location::from_url(url.as_str()), Some(Location::AccountList));
+    fn invalid_route_returns_none() {
+        assert_eq!(Location::from_url("/unknown"), None);
+        assert_eq!(Location::from_url("/accounts/invalid"), None);
     }
 }
