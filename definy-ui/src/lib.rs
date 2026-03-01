@@ -3,6 +3,7 @@ mod account_list;
 mod app_state;
 mod event_detail;
 mod event_list;
+mod expression_editor;
 mod expression_eval;
 pub mod fetch;
 mod header;
