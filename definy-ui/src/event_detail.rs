@@ -149,7 +149,7 @@ fn render_event_detail(
                         text(change_profile_event.account_name.as_ref()),
                     ])
                     .into_node(),
-                EventContent::Message(message_event) => Div::new()
+                EventContent::PartDefinition(part_definition_event) => Div::new()
                     .style(
                         Style::new()
                             .set("font-size", "1.5rem")
@@ -166,9 +166,13 @@ fn render_event_detail(
                             )
                             .children([text(account_name)])
                             .into_node(),
-                        text(expression_to_source(&message_event.expression)),
+                        text(format!(
+                            "{} = {}",
+                            part_definition_event.part_name,
+                            expression_to_source(&part_definition_event.expression)
+                        )),
                         {
-                            let expression = message_event.expression.clone();
+                            let expression = part_definition_event.expression.clone();
                             Button::new()
                                 .type_("button")
                                 .on_click(EventHandler::new(move |set_state| {

@@ -141,6 +141,10 @@ fn event_summary(event: &definy_event::event::Event) -> String {
         EventContent::ChangeProfile(change_profile_event) => {
             format!("Profile changed: {}", change_profile_event.account_name)
         }
-        EventContent::Message(message_event) => expression_to_source(&message_event.expression),
+        EventContent::PartDefinition(part_definition_event) => format!(
+            "{} = {}",
+            part_definition_event.part_name,
+            expression_to_source(&part_definition_event.expression)
+        ),
     }
 }

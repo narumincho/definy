@@ -17,7 +17,7 @@ enum PathStep {
 }
 
 pub fn event_list_view(state: &AppState) -> Node<AppState> {
-    let message_form = if state.current_key.is_some() {
+    let part_definition_form = if state.current_key.is_some() {
         Some(
             Div::new()
                 .class("composer")
@@ -34,6 +34,7 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
                         .set("border", "1px solid var(--border)"),
                 )
                 .children([
+                    part_name_input(state),
                     Div::new()
                         .style(Style::new().set("color", "var(--text-secondary)").set("font-size", "0.9rem"))
                         .children([text("Expression Builder")])
@@ -65,7 +66,7 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
                                             Err(error) => format!("Error: {}", error),
                                         };
                                         AppState {
-                                            message_eval_result: Some(result),
+                                            part_definition_eval_result: Some(result),
                                             ..state.clone()
                                         }
                                     }));
@@ -85,6 +86,15 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
                                                 return state;
                                             };
 
+                                        let part_name = state.part_name_input.trim().to_string();
+                                        if part_name.is_empty() {
+                                            return AppState {
+                                                part_definition_eval_result: Some(
+                                                    "Error: part name is required".to_string(),
+                                                ),
+                                                ..state.clone()
+                                            };
+                                        }
                                         let expression = state.composing_expression.clone();
                                         let key_for_async = key.clone();
 
@@ -95,9 +105,13 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
                                                         key_for_async.verifying_key().to_bytes(),
                                                     )),
                                                     time: chrono::Utc::now(),
-                                                    content: definy_event::event::EventContent::Message(
-                                                        definy_event::event::MessageEvent { expression },
-                                                    ),
+                                                    content:
+                                                        definy_event::event::EventContent::PartDefinition(
+                                                            definy_event::event::PartDefinitionEvent {
+                                                                part_name: part_name.into(),
+                                                                expression,
+                                                            },
+                                                        ),
                                                 },
                                                 &key_for_async,
                                             )
@@ -122,7 +136,8 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
                                             }
                                         });
                                         AppState {
-                                            message_eval_result: None,
+                                            part_name_input: String::new(),
+                                            part_definition_eval_result: None,
                                             composing_expression:
                                                 definy_event::event::Expression::Number(
                                                     definy_event::event::NumberExpression { value: 0 },
@@ -155,10 +170,10 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
         )
         .children({
             let mut children = Vec::new();
-            if let Some(message_form) = message_form {
-                children.push(message_form);
+            if let Some(part_definition_form) = part_definition_form {
+                children.push(part_definition_form);
             }
-            if let Some(result) = &state.message_eval_result {
+            if let Some(result) = &state.part_definition_eval_result {
                 children.push(
                     Div::new()
                         .class("event-detail-card")
@@ -457,7 +472,7 @@ fn event_view(
                             text(change_profile_event.account_name.as_ref()),
                         ])
                         .into_node(),
-                    EventContent::Message(message_event) => Div::new()
+                    EventContent::PartDefinition(part_definition_event) => Div::new()
                         .style(Style::new().set("font-size", "1.125rem"))
                         .children([
                             Div::new()
@@ -475,7 +490,11 @@ fn event_view(
                                         .unwrap_or("Unknown"),
                                 )])
                                 .into_node(),
-                            text(expression_to_source(&message_event.expression)),
+                            text(format!(
+                                "{} = {}",
+                                part_definition_event.part_name,
+                                expression_to_source(&part_definition_event.expression)
+                            )),
                         ])
                         .into_node(),
                 },
@@ -494,6 +513,33 @@ fn event_view(
             .children([text(&format!("イベントの読み込みに失敗しました: {:?}", e))])
             .into_node(),
     }
+}
+
+fn part_name_input(state: &AppState) -> Node<AppState> {
+    let mut input = Input::new()
+        .name("part-name")
+        .type_("text")
+        .value(&state.part_name_input);
+    input
+        .attributes
+        .push(("placeholder".to_string(), "part name (e.g. a)".to_string()));
+    input.events.push((
+        "input".to_string(),
+        EventHandler::new(move |set_state| async move {
+            let value = web_sys::window()
+                .and_then(|window| window.document())
+                .and_then(|document| document.query_selector("input[name='part-name']").ok())
+                .flatten()
+                .and_then(|element| wasm_bindgen::JsCast::dyn_into::<web_sys::HtmlInputElement>(element).ok())
+                .map(|input| input.value())
+                .unwrap_or_default();
+            set_state(Box::new(move |state: AppState| AppState {
+                part_name_input: value,
+                ..state.clone()
+            }));
+        }),
+    ));
+    input.into_node()
 }
 
 #[cfg(test)]

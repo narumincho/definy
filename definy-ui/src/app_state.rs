@@ -9,8 +9,9 @@ pub struct AppState {
         >,
     )>,
     pub current_key: Option<ed25519_dalek::SigningKey>,
+    pub part_name_input: String,
     pub composing_expression: definy_event::event::Expression,
-    pub message_eval_result: Option<String>,
+    pub part_definition_eval_result: Option<String>,
     pub event_detail_eval_result: Option<String>,
     pub profile_name_input: String,
     pub is_header_popover_open: bool,
@@ -36,7 +37,7 @@ impl AppState {
                             .entry(event.account_id.clone())
                             .or_insert_with(|| change_profile_event.account_name.clone());
                     }
-                    definy_event::event::EventContent::Message(_) => {}
+                    definy_event::event::EventContent::PartDefinition(_) => {}
                 }
             }
         }

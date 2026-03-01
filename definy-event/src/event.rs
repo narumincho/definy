@@ -23,11 +23,13 @@ pub struct Event {
 pub enum EventContent {
     CreateAccount(CreateAccountEvent),
     ChangeProfile(ChangeProfileEvent),
-    Message(MessageEvent),
+    #[serde(alias = "Message")]
+    PartDefinition(PartDefinitionEvent),
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub struct MessageEvent {
+pub struct PartDefinitionEvent {
+    pub part_name: Box<str>,
     pub expression: Expression,
 }
 
