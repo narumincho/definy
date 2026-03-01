@@ -11,6 +11,7 @@ pub struct AppState {
     pub current_key: Option<ed25519_dalek::SigningKey>,
     pub message_input: String,
     pub profile_name_input: String,
+    pub is_header_popover_open: bool,
     pub location: Option<Location>,
 }
 

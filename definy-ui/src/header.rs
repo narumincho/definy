@@ -3,9 +3,11 @@ use narumincho_vdom::*;
 use crate::{AppState, fetch};
 
 pub fn header(state: &AppState) -> Node<AppState> {
-    Div::new()
-        .children([header_main(state), popover(state)])
-        .into_node()
+    let mut children = vec![header_main(state)];
+    if state.current_key.is_some() && state.is_header_popover_open {
+        children.push(popover(state));
+    }
+    Div::new().children(children).into_node()
 }
 
 fn header_main(state: &AppState) -> Node<AppState> {
@@ -48,8 +50,12 @@ fn header_main(state: &AppState) -> Node<AppState> {
                     let account_name = state.account_name_map().get(&account_id).cloned();
 
                     Button::new()
-                        .command(CommandValue::TogglePopover)
-                        .command_for("header-popover")
+                        .on_click(EventHandler::new(async |set_state| {
+                            set_state(Box::new(|state: AppState| AppState {
+                                is_header_popover_open: !state.is_header_popover_open,
+                                ..state.clone()
+                            }));
+                        }))
                         .style(
                             Style::new()
                                 .set("font-family", "'JetBrains Mono', monospace")
@@ -158,6 +164,7 @@ fn popover(state: &AppState) -> Node<AppState> {
                                             set_state_for_async(Box::new(|state| AppState {
                                                 created_account_events: events,
                                                 profile_name_input: String::new(),
+                                                is_header_popover_open: false,
                                                 ..state.clone()
                                             }));
                                         }
@@ -181,11 +188,11 @@ fn popover(state: &AppState) -> Node<AppState> {
 
     Div::new()
         .id("header-popover")
-        .popover()
         .style(
             Style::new()
-                .set("position-area", "block-end")
-                .set("margin-top", "0.8rem")
+                .set("position", "fixed")
+                .set("top", "4.25rem")
+                .set("right", "1rem")
                 .set("padding", "0.5rem")
                 .set("border", "1px solid var(--border)")
                 .set("background", "var(--surface)")
@@ -194,6 +201,8 @@ fn popover(state: &AppState) -> Node<AppState> {
                 .set("display", "grid")
                 .set("gap", "0.75rem")
                 .set("border-radius", "var(--radius-md)")
+                .set("z-index", "20")
+                .set("min-width", "220px")
                 .set("box-shadow", "var(--shadow-lg)"),
         )
         .children({
@@ -204,21 +213,10 @@ fn popover(state: &AppState) -> Node<AppState> {
             children.push(
                 Button::new()
                     .on_click(EventHandler::new(async |set_state| {
-                        let popover = wasm_bindgen::JsCast::dyn_into::<web_sys::HtmlElement>(
-                            web_sys::window()
-                                .unwrap()
-                                .document()
-                                .unwrap()
-                                .get_element_by_id("header-popover")
-                                .unwrap(),
-                        )
-                        .unwrap();
-
-                        let _ = popover.hide_popover();
-
                         set_state(Box::new(|state: AppState| -> AppState {
                             AppState {
                                 current_key: None,
+                                is_header_popover_open: false,
                                 ..state.clone()
                             }
                         }));

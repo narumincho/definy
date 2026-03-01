@@ -72,6 +72,7 @@ impl narumincho_vdom_client::App<AppState> for DefinyApp {
             current_key: None,
             message_input: String::new(),
             profile_name_input: String::new(),
+            is_header_popover_open: false,
             location: {
                 let initial_url = web_sys::window()
                     .unwrap()

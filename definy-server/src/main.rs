@@ -241,6 +241,7 @@ async fn handle_html(
                     current_key: None,
                     message_input: String::new(),
                     profile_name_input: String::new(),
+                    is_header_popover_open: false,
                     created_account_events,
                     location,
                 },
