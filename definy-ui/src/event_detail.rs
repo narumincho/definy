@@ -59,7 +59,6 @@ fn render_event_detail(
     event: &Event,
     account_name_map: &std::collections::HashMap<definy_event::event::AccountId, Box<str>>,
 ) -> Node<AppState> {
-    let account_id_bytes = *event.account_id.0.as_ref();
     let account_name = account_name_map
         .get(&event.account_id)
         .map(|name: &Box<str>| name.as_ref())
@@ -99,12 +98,14 @@ fn render_event_detail(
                     Div::new()
                         .class("mono")
                         .style(Style::new().set("opacity", "0.6"))
-                        .children([text(&crate::hash_format::encode_bytes(event.account_id.0.as_slice()))])
+                        .children([text(&crate::hash_format::encode_bytes(
+                            event.account_id.0.as_slice(),
+                        ))])
                         .into_node(),
                 ])
                 .into_node(),
             A::<AppState, Location>::new()
-                .href(Href::Internal(Location::Account(account_id_bytes)))
+                .href(Href::Internal(Location::Account(event.account_id.clone())))
                 .style(
                     Style::new()
                         .set("width", "fit-content")
@@ -227,7 +228,10 @@ fn render_event_detail(
                             .into_node(),
                         Div::new()
                             .style(Style::new().set("font-size", "1.35rem"))
-                            .children([text(format!("Part updated: {}", part_update_event.part_name))])
+                            .children([text(format!(
+                                "Part updated: {}",
+                                part_update_event.part_name
+                            ))])
                             .into_node(),
                         if part_update_event.part_description.is_empty() {
                             Div::new().children([]).into_node()
@@ -301,13 +305,21 @@ fn render_event_detail(
         .into_node()
 }
 
-fn related_part_events_section(state: &AppState, root_part_definition_hash: [u8; 32]) -> Node<AppState> {
+fn related_part_events_section(
+    state: &AppState,
+    root_part_definition_hash: [u8; 32],
+) -> Node<AppState> {
     let related_events = collect_related_part_events(state, root_part_definition_hash);
     let hash_as_base64 = crate::hash_format::encode_hash32(&root_part_definition_hash);
 
     Div::new()
         .class("event-detail-card")
-        .style(Style::new().set("display", "grid").set("gap", "0.7rem").set("padding", "1rem"))
+        .style(
+            Style::new()
+                .set("display", "grid")
+                .set("gap", "0.7rem")
+                .set("padding", "1rem"),
+        )
         .children([
             Div::new()
                 .style(Style::new().set("font-weight", "600"))

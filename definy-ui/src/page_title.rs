@@ -44,10 +44,9 @@ pub fn page_title_text(state: &AppState) -> String {
             route_id.title_prefix().to_string()
         }
         Some(Location::Account(account_id)) => {
-            let account_id = definy_event::event::AccountId(Box::new(*account_id));
             let account_name = state
                 .account_name_map()
-                .get(&account_id)
+                .get(account_id)
                 .map(|name| name.to_string())
                 .unwrap_or_else(|| "unknown".to_string());
             format!("{}/{}", route_id.title_prefix(), account_name)

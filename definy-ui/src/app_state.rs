@@ -1,3 +1,5 @@
+use definy_event::event::AccountId;
+
 #[derive(Clone)]
 pub struct AppState {
     pub login_or_create_account_dialog_state: LoginOrCreateAccountDialogState,
@@ -89,7 +91,7 @@ pub enum Location {
     PartList,
     Part([u8; 32]),
     Event([u8; 32]),
-    Account([u8; 32]),
+    Account(AccountId),
 }
 
 impl narumincho_vdom::Route for Location {
@@ -110,7 +112,7 @@ impl narumincho_vdom::Route for Location {
                 "/accounts/{}",
                 base64::Engine::encode(
                     &base64::engine::general_purpose::URL_SAFE_NO_PAD,
-                    account_id
+                    account_id.0.as_ref()
                 )
             ),
         }
@@ -124,9 +126,8 @@ impl narumincho_vdom::Route for Location {
             ["parts"] => Some(Location::PartList),
             ["parts", hash_str] => decode_32bytes_base64(hash_str).map(Location::Part),
             ["events", hash_str] => decode_32bytes_base64(hash_str).map(Location::Event),
-            ["accounts", account_id_str] => {
-                decode_32bytes_base64(account_id_str).map(Location::Account)
-            }
+            ["accounts", account_id_str] => decode_32bytes_base64(account_id_str)
+                .map(|account_id_bytes| Location::Account(AccountId(Box::new(account_id_bytes)))),
             _ => None,
         }
     }
@@ -156,7 +157,7 @@ mod tests {
             Location::Home,
             Location::AccountList,
             Location::PartList,
-            Location::Account([7u8; 32]),
+            Location::Account(definy_event::event::AccountId(Box::new([7u8; 32]))),
             Location::Part([9u8; 32]),
             Location::Event([3u8; 32]),
         ];
