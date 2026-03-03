@@ -12,6 +12,7 @@ pub enum EditorTarget {
 enum NodeKind {
     Number,
     Add,
+    PartReference,
 }
 
 #[derive(Clone, Copy)]
@@ -47,6 +48,7 @@ fn render_expression_editor(
                     .children([
                         kind_button(path.clone(), target, NodeKind::Number, "Number"),
                         kind_button(path.clone(), target, NodeKind::Add, "+"),
+                        kind_button(path.clone(), target, NodeKind::PartReference, "Ref"),
                     ])
                     .into_node(),
             ];
@@ -110,13 +112,21 @@ fn render_expression_editor(
                             .into_node(),
                     );
                 }
+                definy_event::event::Expression::PartReference(part_ref) => {
+                    children.push(reference_input(path, target, &part_ref.part_name));
+                }
             }
             children
         })
         .into_node()
 }
 
-fn kind_button(path: Vec<PathStep>, target: EditorTarget, kind: NodeKind, label: &str) -> Node<AppState> {
+fn kind_button(
+    path: Vec<PathStep>,
+    target: EditorTarget,
+    kind: NodeKind,
+    label: &str,
+) -> Node<AppState> {
     Button::new()
         .type_("button")
         .on_click(EventHandler::new(move |set_state| {
@@ -135,7 +145,11 @@ fn kind_button(path: Vec<PathStep>, target: EditorTarget, kind: NodeKind, label:
 }
 
 fn number_input(path: Vec<PathStep>, target: EditorTarget, value: i64) -> Node<AppState> {
-    let name = format!("{}-expr-number-{}", selector_prefix(target), path_to_key(path.as_slice()));
+    let name = format!(
+        "{}-expr-number-{}",
+        selector_prefix(target),
+        path_to_key(path.as_slice())
+    );
     let selector = format!("input[name='{}']", name);
 
     let mut input = Input::new()
@@ -163,6 +177,46 @@ fn number_input(path: Vec<PathStep>, target: EditorTarget, value: i64) -> Node<A
                         let mut next = state.clone();
                         let root_expression = target_expression_mut(&mut next, target);
                         set_number_value(root_expression, path.as_slice(), value);
+                        next
+                    }));
+                }
+            }
+        }),
+    ));
+
+    input.into_node()
+}
+
+fn reference_input(path: Vec<PathStep>, target: EditorTarget, value: &str) -> Node<AppState> {
+    let name = format!(
+        "{}-expr-ref-{}",
+        selector_prefix(target),
+        path_to_key(path.as_slice())
+    );
+    let selector = format!("input[name='{}']", name);
+
+    let mut input = Input::new().name(name.as_str()).type_("text").value(value);
+
+    input.events.push((
+        "input".to_string(),
+        EventHandler::new(move |set_state| {
+            let selector = selector.clone();
+            let path = path.clone();
+            async move {
+                let value = web_sys::window()
+                    .and_then(|window| window.document())
+                    .and_then(|document| document.query_selector(selector.as_str()).ok())
+                    .flatten()
+                    .and_then(|element| {
+                        wasm_bindgen::JsCast::dyn_into::<web_sys::HtmlInputElement>(element).ok()
+                    })
+                    .map(|input| input.value());
+
+                if let Some(value) = value {
+                    set_state(Box::new(move |state: AppState| {
+                        let mut next = state.clone();
+                        let root_expression = target_expression_mut(&mut next, target);
+                        set_reference_value(root_expression, path.as_slice(), &value);
                         next
                     }));
                 }
@@ -218,6 +272,7 @@ fn get_mut_expression_at_path<'a>(
             }
         },
         definy_event::event::Expression::Number(_) => None,
+        definy_event::event::Expression::PartReference(_) => None,
     }
 }
 
@@ -228,17 +283,26 @@ fn set_node_kind(
 ) {
     if let Some(expression) = get_mut_expression_at_path(root_expression, path) {
         *expression = match kind {
-            NodeKind::Number => definy_event::event::Expression::Number(
-                definy_event::event::NumberExpression { value: 0 },
+            NodeKind::Number => {
+                definy_event::event::Expression::Number(definy_event::event::NumberExpression {
+                    value: 0,
+                })
+            }
+            NodeKind::Add => {
+                definy_event::event::Expression::Add(definy_event::event::AddExpression {
+                    left: Box::new(definy_event::event::Expression::Number(
+                        definy_event::event::NumberExpression { value: 0 },
+                    )),
+                    right: Box::new(definy_event::event::Expression::Number(
+                        definy_event::event::NumberExpression { value: 0 },
+                    )),
+                })
+            }
+            NodeKind::PartReference => definy_event::event::Expression::PartReference(
+                definy_event::event::PartReferenceExpression {
+                    part_name: "".into(),
+                },
             ),
-            NodeKind::Add => definy_event::event::Expression::Add(definy_event::event::AddExpression {
-                left: Box::new(definy_event::event::Expression::Number(
-                    definy_event::event::NumberExpression { value: 0 },
-                )),
-                right: Box::new(definy_event::event::Expression::Number(
-                    definy_event::event::NumberExpression { value: 0 },
-                )),
-            }),
         }
     }
 }
@@ -255,15 +319,31 @@ fn set_number_value(
     }
 }
 
+fn set_reference_value(
+    root_expression: &mut definy_event::event::Expression,
+    path: &[PathStep],
+    value: &str,
+) {
+    if let Some(definy_event::event::Expression::PartReference(part_ref)) =
+        get_mut_expression_at_path(root_expression, path)
+    {
+        part_ref.part_name = value.into();
+    }
+}
+
 #[cfg(test)]
 mod tests {
-    use super::{get_mut_expression_at_path, path_to_key, set_node_kind, set_number_value, NodeKind, PathStep};
+    use super::{
+        NodeKind, PathStep, get_mut_expression_at_path, path_to_key, set_node_kind,
+        set_number_value,
+    };
 
     #[test]
     fn edit_nested_expression_by_ui_path() {
-        let mut expression = definy_event::event::Expression::Number(
-            definy_event::event::NumberExpression { value: 0 },
-        );
+        let mut expression =
+            definy_event::event::Expression::Number(definy_event::event::NumberExpression {
+                value: 0,
+            });
 
         set_node_kind(&mut expression, &[], NodeKind::Add);
         set_number_value(&mut expression, &[PathStep::Left], 321);
@@ -271,8 +351,14 @@ mod tests {
         set_number_value(&mut expression, &[PathStep::Right, PathStep::Left], 1);
         set_number_value(&mut expression, &[PathStep::Right, PathStep::Right], 3);
 
-        assert_eq!(crate::expression_eval::expression_to_source(&expression), "+ 321 (+ 1 3)");
-        assert_eq!(crate::expression_eval::evaluate_expression(&expression), Ok(325));
+        assert_eq!(
+            crate::expression_eval::expression_to_source(&expression),
+            "+ 321 (+ 1 3)"
+        );
+        assert_eq!(
+            crate::expression_eval::evaluate_expression(&expression, &[]),
+            Ok(325)
+        );
         assert_eq!(path_to_key(&[]), "root");
         assert!(get_mut_expression_at_path(&mut expression, &[PathStep::Left]).is_some());
     }

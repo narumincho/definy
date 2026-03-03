@@ -55,6 +55,7 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
                                     set_state(Box::new(|state: AppState| {
                                         let result = match evaluate_expression(
                                             &state.part_definition_form.composing_expression,
+                                            &state.events,
                                         )
                                         {
                                             Ok(value) => format!("Result: {}", value),
@@ -221,7 +222,9 @@ fn event_view(
                     .set("display", "grid")
                     .set("gap", "0.75rem"),
             )
-            .href(narumincho_vdom::Href::Internal(crate::Location::Event(*hash)))
+            .href(narumincho_vdom::Href::Internal(crate::Location::Event(
+                *hash,
+            )))
             .children([
                 Div::new()
                     .style(
@@ -239,7 +242,9 @@ fn event_view(
                         Div::new()
                             .class("mono")
                             .style(Style::new().set("opacity", "0.6"))
-                            .children([text(&crate::hash_format::encode_bytes(event.account_id.0.as_slice()))])
+                            .children([text(&crate::hash_format::encode_bytes(
+                                event.account_id.0.as_slice(),
+                            ))])
                             .into_node(),
                     ])
                     .into_node(),
@@ -375,7 +380,9 @@ fn part_name_input(state: &AppState) -> Node<AppState> {
                 .and_then(|window| window.document())
                 .and_then(|document| document.query_selector("input[name='part-name']").ok())
                 .flatten()
-                .and_then(|element| wasm_bindgen::JsCast::dyn_into::<web_sys::HtmlInputElement>(element).ok())
+                .and_then(|element| {
+                    wasm_bindgen::JsCast::dyn_into::<web_sys::HtmlInputElement>(element).ok()
+                })
                 .map(|input| input.value())
                 .unwrap_or_default();
             set_state(Box::new(move |state: AppState| {
@@ -402,7 +409,11 @@ fn part_description_input(state: &AppState) -> Node<AppState> {
         EventHandler::new(move |set_state| async move {
             let value = web_sys::window()
                 .and_then(|window| window.document())
-                .and_then(|document| document.query_selector("textarea[name='part-description']").ok())
+                .and_then(|document| {
+                    document
+                        .query_selector("textarea[name='part-description']")
+                        .ok()
+                })
                 .flatten()
                 .and_then(|element| {
                     wasm_bindgen::JsCast::dyn_into::<web_sys::HtmlTextAreaElement>(element).ok()

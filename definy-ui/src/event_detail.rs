@@ -182,11 +182,13 @@ fn render_event_detail(
                                 .on_click(EventHandler::new(move |set_state| {
                                     let expression = expression.clone();
                                     async move {
-                                        set_state(Box::new(move |state: AppState| AppState {
-                                            event_detail_eval_result: Some(
-                                                evaluate_message_result(&expression),
-                                            ),
-                                            ..state.clone()
+                                        set_state(Box::new(move |state: AppState| {
+                                            let eval_result =
+                                                evaluate_message_result(&expression, &state.events);
+                                            AppState {
+                                                event_detail_eval_result: Some(eval_result),
+                                                ..state.clone()
+                                            }
                                         }));
                                     }
                                 }))
@@ -409,8 +411,17 @@ fn root_part_definition_hash(current_hash: &[u8; 32], content: &EventContent) ->
     }
 }
 
-fn evaluate_message_result(expression: &definy_event::event::Expression) -> String {
-    match evaluate_expression(expression) {
+fn evaluate_message_result(
+    expression: &definy_event::event::Expression,
+    events: &[(
+        [u8; 32],
+        Result<
+            (ed25519_dalek::Signature, definy_event::event::Event),
+            definy_event::VerifyAndDeserializeError,
+        >,
+    )],
+) -> String {
+    match evaluate_expression(expression, events) {
         Ok(value) => format!("Result: {}", value),
         Err(error) => format!("Error: {}", error),
     }
@@ -430,6 +441,6 @@ mod tests {
                 definy_event::event::NumberExpression { value: 32 },
             )),
         });
-        assert_eq!(evaluate_message_result(&expression), "Result: 42");
+        assert_eq!(evaluate_message_result(&expression, &[]), "Result: 42");
     }
 }
