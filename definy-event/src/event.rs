@@ -54,6 +54,9 @@ pub enum Expression {
     Number(NumberExpression),
     Add(AddExpression),
     PartReference(PartReferenceExpression),
+    Boolean(BooleanExpression),
+    If(IfExpression),
+    Equal(EqualExpression),
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -70,6 +73,24 @@ pub struct NumberExpression {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct PartReferenceExpression {
     pub part_name: Box<str>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct BooleanExpression {
+    pub value: bool,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct IfExpression {
+    pub condition: Box<Expression>,
+    pub then_expr: Box<Expression>,
+    pub else_expr: Box<Expression>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct EqualExpression {
+    pub left: Box<Expression>,
+    pub right: Box<Expression>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]

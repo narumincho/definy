@@ -13,12 +13,18 @@ enum NodeKind {
     Number,
     Add,
     PartReference,
+    Boolean,
+    If,
+    Equal,
 }
 
 #[derive(Clone, Copy)]
 enum PathStep {
     Left,
     Right,
+    Condition,
+    Then,
+    Else,
 }
 
 pub fn render_root_expression_editor(
@@ -44,11 +50,19 @@ fn render_expression_editor(
         .children({
             let mut children = vec![
                 Div::new()
-                    .style(Style::new().set("display", "flex").set("gap", "0.5rem"))
+                    .style(
+                        Style::new()
+                            .set("display", "flex")
+                            .set("gap", "0.5rem")
+                            .set("flex-wrap", "wrap"),
+                    )
                     .children([
                         kind_button(path.clone(), target, NodeKind::Number, "Number"),
                         kind_button(path.clone(), target, NodeKind::Add, "+"),
                         kind_button(path.clone(), target, NodeKind::PartReference, "Ref"),
+                        kind_button(path.clone(), target, NodeKind::Boolean, "Bool"),
+                        kind_button(path.clone(), target, NodeKind::If, "If"),
+                        kind_button(path.clone(), target, NodeKind::Equal, "=="),
                     ])
                     .into_node(),
             ];
@@ -60,7 +74,7 @@ fn render_expression_editor(
                 definy_event::event::Expression::Add(add_expression) => {
                     let mut left_path = path.clone();
                     left_path.push(PathStep::Left);
-                    let mut right_path = path;
+                    let mut right_path = path.clone();
                     right_path.push(PathStep::Right);
 
                     children.push(
@@ -114,6 +128,104 @@ fn render_expression_editor(
                 }
                 definy_event::event::Expression::PartReference(part_ref) => {
                     children.push(reference_input(path, target, &part_ref.part_name));
+                }
+                definy_event::event::Expression::Boolean(boolean_expression) => {
+                    children.push(boolean_input(path, target, boolean_expression.value));
+                }
+                definy_event::event::Expression::If(if_expression) => {
+                    let mut cond_path = path.clone();
+                    cond_path.push(PathStep::Condition);
+                    let mut then_path = path.clone();
+                    then_path.push(PathStep::Then);
+                    let mut else_path = path.clone();
+                    else_path.push(PathStep::Else);
+
+                    children.push(
+                        Div::new()
+                            .style(
+                                Style::new()
+                                    .set("display", "grid")
+                                    .set("grid-template-columns", "1fr")
+                                    .set("gap", "0.6rem"),
+                            )
+                            .children([
+                                Div::new()
+                                    .style(Style::new().set("display", "grid").set("gap", "0.3rem"))
+                                    .children([
+                                        text("Condition"),
+                                        render_expression_editor(
+                                            if_expression.condition.as_ref(),
+                                            cond_path,
+                                            target,
+                                        ),
+                                    ])
+                                    .into_node(),
+                                Div::new()
+                                    .style(Style::new().set("display", "grid").set("gap", "0.3rem"))
+                                    .children([
+                                        text("Then"),
+                                        render_expression_editor(
+                                            if_expression.then_expr.as_ref(),
+                                            then_path,
+                                            target,
+                                        ),
+                                    ])
+                                    .into_node(),
+                                Div::new()
+                                    .style(Style::new().set("display", "grid").set("gap", "0.3rem"))
+                                    .children([
+                                        text("Else"),
+                                        render_expression_editor(
+                                            if_expression.else_expr.as_ref(),
+                                            else_path,
+                                            target,
+                                        ),
+                                    ])
+                                    .into_node(),
+                            ])
+                            .into_node(),
+                    );
+                }
+                definy_event::event::Expression::Equal(equal_expression) => {
+                    let mut left_path = path.clone();
+                    left_path.push(PathStep::Left);
+                    let mut right_path = path.clone();
+                    right_path.push(PathStep::Right);
+
+                    children.push(
+                        Div::new()
+                            .style(
+                                Style::new()
+                                    .set("display", "grid")
+                                    .set("grid-template-columns", "1fr 1fr")
+                                    .set("gap", "0.6rem"),
+                            )
+                            .children([
+                                Div::new()
+                                    .style(Style::new().set("display", "grid").set("gap", "0.3rem"))
+                                    .children([
+                                        text("Left"),
+                                        render_expression_editor(
+                                            equal_expression.left.as_ref(),
+                                            left_path,
+                                            target,
+                                        ),
+                                    ])
+                                    .into_node(),
+                                Div::new()
+                                    .style(Style::new().set("display", "grid").set("gap", "0.3rem"))
+                                    .children([
+                                        text("Right"),
+                                        render_expression_editor(
+                                            equal_expression.right.as_ref(),
+                                            right_path,
+                                            target,
+                                        ),
+                                    ])
+                                    .into_node(),
+                            ])
+                            .into_node(),
+                    );
                 }
             }
             children
@@ -187,6 +299,64 @@ fn number_input(path: Vec<PathStep>, target: EditorTarget, value: i64) -> Node<A
     input.into_node()
 }
 
+fn boolean_input(path: Vec<PathStep>, target: EditorTarget, value: bool) -> Node<AppState> {
+    Div::new()
+        .style(Style::new().set("display", "flex").set("gap", "0.5rem"))
+        .children([
+            Button::new()
+                .type_("button")
+                .style(if value {
+                    Style::new()
+                        .set("background-color", "var(--primary-color)")
+                        .set("color", "var(--surface-color)")
+                } else {
+                    Style::new()
+                })
+                .on_click(EventHandler::new({
+                    let path = path.clone();
+                    move |set_state| {
+                        let path = path.clone();
+                        async move {
+                            set_state(Box::new(move |state: AppState| {
+                                let mut next = state.clone();
+                                let root_expression = target_expression_mut(&mut next, target);
+                                set_boolean_value(root_expression, path.as_slice(), true);
+                                next
+                            }));
+                        }
+                    }
+                }))
+                .children([text("True")])
+                .into_node(),
+            Button::new()
+                .type_("button")
+                .style(if !value {
+                    Style::new()
+                        .set("background-color", "var(--primary-color)")
+                        .set("color", "var(--surface-color)")
+                } else {
+                    Style::new()
+                })
+                .on_click(EventHandler::new({
+                    let path = path.clone();
+                    move |set_state| {
+                        let path = path.clone();
+                        async move {
+                            set_state(Box::new(move |state: AppState| {
+                                let mut next = state.clone();
+                                let root_expression = target_expression_mut(&mut next, target);
+                                set_boolean_value(root_expression, path.as_slice(), false);
+                                next
+                            }));
+                        }
+                    }
+                }))
+                .children([text("False")])
+                .into_node(),
+        ])
+        .into_node()
+}
+
 fn reference_input(path: Vec<PathStep>, target: EditorTarget, value: &str) -> Node<AppState> {
     let name = format!(
         "{}-expr-ref-{}",
@@ -250,10 +420,14 @@ fn path_to_key(path: &[PathStep]) -> String {
     }
     path.iter()
         .map(|step| match step {
-            PathStep::Left => 'L',
-            PathStep::Right => 'R',
+            PathStep::Left => "L",
+            PathStep::Right => "R",
+            PathStep::Condition => "C",
+            PathStep::Then => "T",
+            PathStep::Else => "E",
         })
-        .collect()
+        .collect::<Vec<&str>>()
+        .join("-")
 }
 
 fn get_mut_expression_at_path<'a>(
@@ -270,9 +444,32 @@ fn get_mut_expression_at_path<'a>(
             PathStep::Right => {
                 get_mut_expression_at_path(add_expression.right.as_mut(), &path[1..])
             }
+            _ => None,
         },
-        definy_event::event::Expression::Number(_) => None,
-        definy_event::event::Expression::PartReference(_) => None,
+        definy_event::event::Expression::Equal(equal_expression) => match path[0] {
+            PathStep::Left => {
+                get_mut_expression_at_path(equal_expression.left.as_mut(), &path[1..])
+            }
+            PathStep::Right => {
+                get_mut_expression_at_path(equal_expression.right.as_mut(), &path[1..])
+            }
+            _ => None,
+        },
+        definy_event::event::Expression::If(if_expression) => match path[0] {
+            PathStep::Condition => {
+                get_mut_expression_at_path(if_expression.condition.as_mut(), &path[1..])
+            }
+            PathStep::Then => {
+                get_mut_expression_at_path(if_expression.then_expr.as_mut(), &path[1..])
+            }
+            PathStep::Else => {
+                get_mut_expression_at_path(if_expression.else_expr.as_mut(), &path[1..])
+            }
+            _ => None,
+        },
+        definy_event::event::Expression::Number(_)
+        | definy_event::event::Expression::PartReference(_)
+        | definy_event::event::Expression::Boolean(_) => None,
     }
 }
 
@@ -282,28 +479,55 @@ fn set_node_kind(
     kind: NodeKind,
 ) {
     if let Some(expression) = get_mut_expression_at_path(root_expression, path) {
-        *expression = match kind {
-            NodeKind::Number => {
-                definy_event::event::Expression::Number(definy_event::event::NumberExpression {
-                    value: 0,
-                })
+        *expression =
+            match kind {
+                NodeKind::Number => {
+                    definy_event::event::Expression::Number(definy_event::event::NumberExpression {
+                        value: 0,
+                    })
+                }
+                NodeKind::Add => {
+                    definy_event::event::Expression::Add(definy_event::event::AddExpression {
+                        left: Box::new(definy_event::event::Expression::Number(
+                            definy_event::event::NumberExpression { value: 0 },
+                        )),
+                        right: Box::new(definy_event::event::Expression::Number(
+                            definy_event::event::NumberExpression { value: 0 },
+                        )),
+                    })
+                }
+                NodeKind::PartReference => definy_event::event::Expression::PartReference(
+                    definy_event::event::PartReferenceExpression {
+                        part_name: "".into(),
+                    },
+                ),
+                NodeKind::Boolean => definy_event::event::Expression::Boolean(
+                    definy_event::event::BooleanExpression { value: false },
+                ),
+                NodeKind::If => {
+                    definy_event::event::Expression::If(definy_event::event::IfExpression {
+                        condition: Box::new(definy_event::event::Expression::Boolean(
+                            definy_event::event::BooleanExpression { value: false },
+                        )),
+                        then_expr: Box::new(definy_event::event::Expression::Number(
+                            definy_event::event::NumberExpression { value: 0 },
+                        )),
+                        else_expr: Box::new(definy_event::event::Expression::Number(
+                            definy_event::event::NumberExpression { value: 0 },
+                        )),
+                    })
+                }
+                NodeKind::Equal => {
+                    definy_event::event::Expression::Equal(definy_event::event::EqualExpression {
+                        left: Box::new(definy_event::event::Expression::Number(
+                            definy_event::event::NumberExpression { value: 0 },
+                        )),
+                        right: Box::new(definy_event::event::Expression::Number(
+                            definy_event::event::NumberExpression { value: 0 },
+                        )),
+                    })
+                }
             }
-            NodeKind::Add => {
-                definy_event::event::Expression::Add(definy_event::event::AddExpression {
-                    left: Box::new(definy_event::event::Expression::Number(
-                        definy_event::event::NumberExpression { value: 0 },
-                    )),
-                    right: Box::new(definy_event::event::Expression::Number(
-                        definy_event::event::NumberExpression { value: 0 },
-                    )),
-                })
-            }
-            NodeKind::PartReference => definy_event::event::Expression::PartReference(
-                definy_event::event::PartReferenceExpression {
-                    part_name: "".into(),
-                },
-            ),
-        }
     }
 }
 
@@ -328,6 +552,18 @@ fn set_reference_value(
         get_mut_expression_at_path(root_expression, path)
     {
         part_ref.part_name = value.into();
+    }
+}
+
+fn set_boolean_value(
+    root_expression: &mut definy_event::event::Expression,
+    path: &[PathStep],
+    value: bool,
+) {
+    if let Some(definy_event::event::Expression::Boolean(bool_expr)) =
+        get_mut_expression_at_path(root_expression, path)
+    {
+        bool_expr.value = value;
     }
 }
 
@@ -357,7 +593,7 @@ mod tests {
         );
         assert_eq!(
             crate::expression_eval::evaluate_expression(&expression, &[]),
-            Ok(325)
+            Ok(crate::expression_eval::Value::Number(325))
         );
         assert_eq!(path_to_key(&[]), "root");
         assert!(get_mut_expression_at_path(&mut expression, &[PathStep::Left]).is_some());
