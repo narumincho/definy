@@ -23,7 +23,6 @@ pub struct Event {
 pub enum EventContent {
     CreateAccount(CreateAccountEvent),
     ChangeProfile(ChangeProfileEvent),
-    #[serde(alias = "Message")]
     PartDefinition(PartDefinitionEvent),
     PartUpdate(PartUpdateEvent),
 }
