@@ -598,6 +598,7 @@ mod tests {
                     content: definy_event::event::EventContent::PartDefinition(
                         definy_event::event::PartDefinitionEvent {
                             part_name: "legacy-name".into(),
+                            part_type: definy_event::event::PartType::Number,
                             description: "".into(),
                             expression: part_expression,
                         },

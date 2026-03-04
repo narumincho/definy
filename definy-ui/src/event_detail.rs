@@ -5,6 +5,14 @@ use crate::Location;
 use crate::app_state::AppState;
 use crate::expression_eval::{evaluate_expression, expression_to_source};
 
+fn part_type_text(part_type: definy_event::event::PartType) -> &'static str {
+    match part_type {
+        definy_event::event::PartType::Number => "Number",
+        definy_event::event::PartType::String => "String",
+        definy_event::event::PartType::Boolean => "Boolean",
+    }
+}
+
 pub fn event_detail_view(state: &AppState, target_hash: &[u8; 32]) -> Node<AppState> {
     let account_name_map = state.account_name_map();
     let mut target_event_opt = None;
@@ -158,8 +166,9 @@ fn render_event_detail(
                             .children([text(account_name)])
                             .into_node(),
                         text(format!(
-                            "{} = {}",
+                            "{}: {} = {}",
                             part_definition_event.part_name,
+                            part_type_text(part_definition_event.part_type),
                             expression_to_source(&part_definition_event.expression)
                         )),
                         if part_definition_event.description.is_empty() {

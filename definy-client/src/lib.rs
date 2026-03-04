@@ -72,6 +72,7 @@ impl narumincho_vdom_client::App<AppState> for DefinyApp {
             current_key: None,
             part_definition_form: definy_ui::PartDefinitionFormState {
                 part_name_input: String::new(),
+                part_type_input: definy_event::event::PartType::Number,
                 part_description_input: String::new(),
                 composing_expression: definy_event::event::Expression::Number(definy_event::event::NumberExpression { value: 0 }),
                 eval_result: None,

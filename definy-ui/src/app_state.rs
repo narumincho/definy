@@ -22,6 +22,7 @@ pub struct AppState {
 #[derive(Clone)]
 pub struct PartDefinitionFormState {
     pub part_name_input: String,
+    pub part_type_input: definy_event::event::PartType,
     pub part_description_input: String,
     pub composing_expression: definy_event::event::Expression,
     pub eval_result: Option<String>,

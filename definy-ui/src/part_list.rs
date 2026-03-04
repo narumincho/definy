@@ -5,6 +5,14 @@ use crate::expression_eval::expression_to_source;
 use crate::part_projection::collect_part_snapshots;
 use crate::Location;
 
+fn part_type_text(part_type: definy_event::event::PartType) -> &'static str {
+    match part_type {
+        definy_event::event::PartType::Number => "Number",
+        definy_event::event::PartType::String => "String",
+        definy_event::event::PartType::Boolean => "Boolean",
+    }
+}
+
 pub fn part_list_view(state: &AppState) -> Node<AppState> {
     let snapshots = collect_part_snapshots(state);
     let account_name_map = state.account_name_map();
@@ -61,6 +69,19 @@ pub fn part_list_view(state: &AppState) -> Node<AppState> {
                                         Div::new()
                                             .style(Style::new().set("font-size", "1.1rem"))
                                             .children([text(part.part_name)])
+                                            .into_node(),
+                                        Div::new()
+                                            .style(
+                                                Style::new()
+                                                    .set("font-size", "0.85rem")
+                                                    .set("color", "var(--text-secondary)"),
+                                            )
+                                            .children([text(format!(
+                                                "type: {}",
+                                                part.part_type
+                                                    .map(part_type_text)
+                                                    .unwrap_or("Unknown")
+                                            ))])
                                             .into_node(),
                                         if part.has_definition {
                                             Div::new().children([]).into_node()

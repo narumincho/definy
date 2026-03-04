@@ -5,6 +5,14 @@ use crate::app_state::AppState;
 use crate::expression_editor::{EditorTarget, render_root_expression_editor};
 use crate::expression_eval::{evaluate_expression, expression_to_source};
 
+fn part_type_text(part_type: definy_event::event::PartType) -> &'static str {
+    match part_type {
+        definy_event::event::PartType::Number => "Number",
+        definy_event::event::PartType::String => "String",
+        definy_event::event::PartType::Boolean => "Boolean",
+    }
+}
+
 pub fn event_list_view(state: &AppState) -> Node<AppState> {
     let part_definition_form = if state.current_key.is_some() {
         Some(
@@ -24,6 +32,7 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
                 )
                 .children([
                     part_name_input(state),
+                    part_type_input(state),
                     part_description_input(state),
                     Div::new()
                         .style(Style::new().set("color", "var(--text-secondary)").set("font-size", "0.9rem"))
@@ -86,6 +95,7 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
                                             state.part_definition_form.part_name_input.trim().to_string();
                                         let description =
                                             state.part_definition_form.part_description_input.clone();
+                                        let part_type = state.part_definition_form.part_type_input;
                                         if part_name.is_empty() {
                                             let mut next = state.clone();
                                             next.part_definition_form.eval_result =
@@ -107,6 +117,7 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
                                                         definy_event::event::EventContent::PartDefinition(
                                                             definy_event::event::PartDefinitionEvent {
                                                                 part_name: part_name.into(),
+                                                                part_type,
                                                                 description: description.into(),
                                                                 expression,
                                                             },
@@ -136,6 +147,8 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
                                         });
                                         let mut next = state.clone();
                                         next.part_definition_form.part_name_input = String::new();
+                                        next.part_definition_form.part_type_input =
+                                            definy_event::event::PartType::Number;
                                         next.part_definition_form.part_description_input = String::new();
                                         next.part_definition_form.eval_result = None;
                                         next.part_definition_form.composing_expression =
@@ -283,8 +296,9 @@ fn event_view(
                                 )])
                                 .into_node(),
                             text(format!(
-                                "{} = {}",
+                                "{}: {} = {}",
                                 part_definition_event.part_name,
+                                part_type_text(part_definition_event.part_type),
                                 expression_to_source(&part_definition_event.expression)
                             )),
                             if part_definition_event.description.is_empty() {
@@ -429,4 +443,78 @@ fn part_description_input(state: &AppState) -> Node<AppState> {
         }),
     ));
     textarea.into_node()
+}
+
+fn part_type_input(state: &AppState) -> Node<AppState> {
+    let selected = match state.part_definition_form.part_type_input {
+        definy_event::event::PartType::Number => "number",
+        definy_event::event::PartType::String => "string",
+        definy_event::event::PartType::Boolean => "boolean",
+    };
+
+    let mut select = Select::new()
+        .name("part-definition-type")
+        .value(selected)
+        .style(Style::new().set("max-width", "18rem"));
+
+    select.events.push((
+        "change".to_string(),
+        EventHandler::new(async |set_state| {
+            let value = web_sys::window()
+                .and_then(|window| window.document())
+                .and_then(|document| {
+                    document
+                        .query_selector("select[name='part-definition-type']")
+                        .ok()
+                })
+                .flatten()
+                .and_then(|element| {
+                    js_sys::Reflect::get(&element, &wasm_bindgen::JsValue::from_str("value")).ok()
+                })
+                .and_then(|value| value.as_string())
+                .unwrap_or_else(|| "number".to_string());
+
+            let part_type = match value.as_str() {
+                "string" => definy_event::event::PartType::String,
+                "boolean" => definy_event::event::PartType::Boolean,
+                _ => definy_event::event::PartType::Number,
+            };
+
+            set_state(Box::new(move |state: AppState| {
+                let mut next = state.clone();
+                next.part_definition_form.part_type_input = part_type;
+                next
+            }));
+        }),
+    ));
+
+    Div::new()
+        .style(Style::new().set("display", "grid").set("gap", "0.35rem"))
+        .children([
+            Div::new()
+                .style(
+                    Style::new()
+                        .set("font-size", "0.85rem")
+                        .set("color", "var(--text-secondary)"),
+                )
+                .children([text("Part Type")])
+                .into_node(),
+            select
+                .children([
+                    OptionElement::new()
+                        .value("number")
+                        .children([text("Number")])
+                        .into_node(),
+                    OptionElement::new()
+                        .value("string")
+                        .children([text("String")])
+                        .into_node(),
+                    OptionElement::new()
+                        .value("boolean")
+                        .children([text("Boolean")])
+                        .into_node(),
+                ])
+                .into_node(),
+        ])
+        .into_node()
 }
