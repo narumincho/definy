@@ -111,6 +111,9 @@ fn emit_expression(
             out.push(I64_CONST);
             encode_i64_sleb128(out, *value);
         }
+        Expression::String(_) => {
+            return Err("Wasm compilation of String literals is not supported yet.".into());
+        }
         Expression::Boolean(BooleanExpression { value }) => {
             out.push(I64_CONST);
             encode_i64_sleb128(out, if *value { 1 } else { 0 });
@@ -195,6 +198,7 @@ fn count_locals(expr: &Expression) -> u32 {
         Expression::If(i) => {
             count_locals(&i.condition) + count_locals(&i.then_expr) + count_locals(&i.else_expr)
         }
+        Expression::String(_) => 0,
         _ => 0,
     }
 }

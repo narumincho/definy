@@ -57,6 +57,9 @@ fn render_expression_editor(
         definy_event::event::Expression::Number(number_expression) => {
             children.push(number_input(path, target, number_expression.value));
         }
+        definy_event::event::Expression::String(string_expression) => {
+            children.push(string_input(path, target, string_expression.value.as_ref()));
+        }
         definy_event::event::Expression::Add(add_expression) => {
             let mut left_path = path.clone();
             left_path.push(PathStep::Left);
@@ -362,6 +365,7 @@ fn expression_selector(
 fn selector_options(state: &AppState, scope_variables: &[ScopeVariable]) -> Vec<(String, String)> {
     let mut options = vec![
         ("expr:number".to_string(), "Constant: Number".to_string()),
+        ("expr:string".to_string(), "Constant: String".to_string()),
         ("expr:boolean".to_string(), "Constant: Boolean".to_string()),
         ("expr:add".to_string(), "Function: Add".to_string()),
         ("expr:equal".to_string(), "Function: Equal".to_string()),
@@ -396,6 +400,7 @@ fn selector_options(state: &AppState, scope_variables: &[ScopeVariable]) -> Vec<
 fn current_selection_value(expression: &definy_event::event::Expression) -> String {
     match expression {
         definy_event::event::Expression::Number(_) => "expr:number".to_string(),
+        definy_event::event::Expression::String(_) => "expr:string".to_string(),
         definy_event::event::Expression::Boolean(_) => "expr:boolean".to_string(),
         definy_event::event::Expression::Add(_) => "expr:add".to_string(),
         definy_event::event::Expression::Equal(_) => "expr:equal".to_string(),
@@ -424,6 +429,10 @@ fn apply_selection(
     if let Some(expression) = get_mut_expression_at_path(root_expression, path) {
         *expression = if selected_value == "expr:number" {
             definy_event::event::Expression::Number(definy_event::event::NumberExpression { value: 0 })
+        } else if selected_value == "expr:string" {
+            definy_event::event::Expression::String(definy_event::event::StringExpression {
+                value: "".into(),
+            })
         } else if selected_value == "expr:boolean" {
             definy_event::event::Expression::Boolean(definy_event::event::BooleanExpression {
                 value: false,
@@ -547,6 +556,43 @@ fn number_input(path: Vec<PathStep>, target: EditorTarget, value: i64) -> Node<A
         }),
     ));
 
+    input.into_node()
+}
+
+fn string_input(path: Vec<PathStep>, target: EditorTarget, value: &str) -> Node<AppState> {
+    let name = format!(
+        "{}-expr-string-{}",
+        selector_prefix(target),
+        path_to_key(path.as_slice())
+    );
+    let selector = format!("input[name='{}']", name);
+
+    let mut input = Input::new().name(name.as_str()).type_("text").value(value);
+    input.events.push((
+        "input".to_string(),
+        EventHandler::new(move |set_state| {
+            let selector = selector.clone();
+            let path = path.clone();
+            async move {
+                let value = web_sys::window()
+                    .and_then(|window| window.document())
+                    .and_then(|document| document.query_selector(selector.as_str()).ok())
+                    .flatten()
+                    .and_then(|element| {
+                        wasm_bindgen::JsCast::dyn_into::<web_sys::HtmlInputElement>(element).ok()
+                    })
+                    .map(|input| input.value())
+                    .unwrap_or_default();
+
+                set_state(Box::new(move |state: AppState| {
+                    let mut next = state.clone();
+                    let root_expression = target_expression_mut(&mut next, target);
+                    set_string_value(root_expression, path.as_slice(), &value);
+                    next
+                }));
+            }
+        }),
+    ));
     input.into_node()
 }
 
@@ -766,10 +812,23 @@ fn set_let_variable_name(
     }
 }
 
+fn set_string_value(
+    root_expression: &mut definy_event::event::Expression,
+    path: &[PathStep],
+    value: &str,
+) {
+    if let Some(definy_event::event::Expression::String(string_expr)) =
+        get_mut_expression_at_path(root_expression, path)
+    {
+        string_expr.value = value.into();
+    }
+}
+
 fn next_local_variable_id(expression: &definy_event::event::Expression) -> i64 {
     fn max_local_variable_id(expression: &definy_event::event::Expression) -> i64 {
         match expression {
             definy_event::event::Expression::Number(_) => 0,
+            definy_event::event::Expression::String(_) => 0,
             definy_event::event::Expression::Boolean(_) => 0,
             definy_event::event::Expression::PartReference(_) => 0,
             definy_event::event::Expression::Add(add_expression) => {

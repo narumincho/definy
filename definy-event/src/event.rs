@@ -52,6 +52,7 @@ fn default_expression() -> Expression {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum Expression {
     Number(NumberExpression),
+    String(StringExpression),
     Add(AddExpression),
     PartReference(PartReferenceExpression),
     Boolean(BooleanExpression),
@@ -70,6 +71,11 @@ pub struct AddExpression {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct NumberExpression {
     pub value: i64,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct StringExpression {
+    pub value: Box<str>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]

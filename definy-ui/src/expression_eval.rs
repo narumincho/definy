@@ -1,6 +1,7 @@
 #[derive(Debug, Clone, PartialEq)]
 pub enum Value {
     Number(i64),
+    String(String),
     Bool(bool),
 }
 
@@ -8,6 +9,7 @@ impl std::fmt::Display for Value {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Value::Number(n) => write!(f, "{}", n),
+            Value::String(s) => write!(f, "\"{}\"", s),
             Value::Bool(b) => write!(f, "{}", if *b { "True" } else { "False" }),
         }
     }
@@ -114,6 +116,7 @@ fn has_part_references(expr: &definy_event::event::Expression) -> bool {
             has_part_references(&l.value) || has_part_references(&l.body)
         }
         definy_event::event::Expression::Variable(_) => false,
+        definy_event::event::Expression::String(_) => false,
         _ => false,
     }
 }
@@ -129,6 +132,7 @@ fn is_boolean_expression(expr: &definy_event::event::Expression) -> bool {
         }
         definy_event::event::Expression::Let(l) => is_boolean_expression(&l.body),
         definy_event::event::Expression::Variable(_) => false,
+        definy_event::event::Expression::String(_) => false,
         _ => false,
     }
 }
@@ -151,6 +155,9 @@ fn evaluate_expression_with_depth(
     match expression {
         definy_event::event::Expression::Number(number_expression) => {
             Ok(Value::Number(number_expression.value))
+        }
+        definy_event::event::Expression::String(string_expression) => {
+            Ok(Value::String(string_expression.value.to_string()))
         }
         definy_event::event::Expression::Add(add_expression) => {
             let left = evaluate_expression_with_depth(
@@ -272,6 +279,9 @@ pub fn expression_to_source(expression: &definy_event::event::Expression) -> Str
         match expression {
             definy_event::event::Expression::Number(number_expression) => {
                 number_expression.value.to_string()
+            }
+            definy_event::event::Expression::String(string_expression) => {
+                format!("\"{}\"", string_expression.value)
             }
             definy_event::event::Expression::Add(add_expression) => {
                 let source = format!(
@@ -498,6 +508,19 @@ mod tests {
             Ok(crate::expression_eval::Value::Number(20))
         );
         assert_eq!(expression_to_source(&if_expr), "if False 10 20");
+    }
+
+    #[test]
+    fn evaluate_string_literal() {
+        let string_expr =
+            definy_event::event::Expression::String(definy_event::event::StringExpression {
+                value: "hello".into(),
+            });
+        assert_eq!(
+            evaluate_expression(&string_expr, &[]),
+            Ok(crate::expression_eval::Value::String("hello".to_string()))
+        );
+        assert_eq!(expression_to_source(&string_expr), "\"hello\"");
     }
 
     #[test]
