@@ -236,29 +236,15 @@ fn evaluate_expression_with_depth(
                 if let Ok((_, event)) = event_result {
                     match &event.content {
                         definy_event::event::EventContent::PartDefinition(part_definition) => {
-                            let matches_hash = part_reference_expression
-                                .part_definition_event_hash
-                                .is_some_and(|target_hash| target_hash == *event_hash);
-                            let matches_legacy_name = part_reference_expression
-                                .part_name
-                                .as_ref()
-                                .is_some_and(|part_name| part_definition.part_name == *part_name);
-                            if matches_hash || matches_legacy_name {
+                            if part_reference_expression.part_definition_event_hash == *event_hash {
                                 latest_expression = Some(&part_definition.expression);
                                 break;
                             }
                         }
                         definy_event::event::EventContent::PartUpdate(part_update) => {
-                            let matches_hash = part_reference_expression
-                                .part_definition_event_hash
-                                .is_some_and(|target_hash| {
-                                    part_update.part_definition_event_hash == target_hash
-                                });
-                            let matches_legacy_name = part_reference_expression
-                                .part_name
-                                .as_ref()
-                                .is_some_and(|part_name| part_update.part_name == *part_name);
-                            if matches_hash || matches_legacy_name {
+                            if part_update.part_definition_event_hash
+                                == part_reference_expression.part_definition_event_hash
+                            {
                                 latest_expression = Some(&part_update.expression);
                                 break;
                             }
@@ -328,17 +314,7 @@ pub fn expression_to_source(expression: &definy_event::event::Expression) -> Str
                 }
             }
             definy_event::event::Expression::PartReference(part_reference_expression) => {
-                part_reference_expression
-                    .part_definition_event_hash
-                    .as_ref()
-                    .map(crate::hash_format::encode_hash32)
-                    .or_else(|| {
-                        part_reference_expression
-                            .part_name
-                            .as_ref()
-                            .map(|part_name| part_name.to_string())
-                    })
-                    .unwrap_or_default()
+                crate::hash_format::encode_hash32(&part_reference_expression.part_definition_event_hash)
             }
             definy_event::event::Expression::Let(let_expression) => {
                 let source = format!(
@@ -588,8 +564,7 @@ mod tests {
 
         let reference = definy_event::event::Expression::PartReference(
             definy_event::event::PartReferenceExpression {
-                part_definition_event_hash: Some(definition_hash),
-                part_name: None,
+                part_definition_event_hash: definition_hash,
             },
         );
 

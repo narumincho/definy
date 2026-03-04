@@ -1,6 +1,7 @@
 use narumincho_vdom::*;
 
 use crate::app_state::AppState;
+use crate::part_projection::collect_part_snapshots;
 
 #[derive(Clone, Copy)]
 pub enum EditorTarget {
@@ -32,13 +33,15 @@ enum PathStep {
 }
 
 pub fn render_root_expression_editor(
+    state: &AppState,
     expression: &definy_event::event::Expression,
     target: EditorTarget,
 ) -> Node<AppState> {
-    render_expression_editor(expression, Vec::new(), target)
+    render_expression_editor(state, expression, Vec::new(), target)
 }
 
 fn render_expression_editor(
+    state: &AppState,
     expression: &definy_event::event::Expression,
     path: Vec<PathStep>,
     target: EditorTarget,
@@ -104,6 +107,7 @@ fn render_expression_editor(
                                             .children([text("Left")])
                                             .into_node(),
                                         render_expression_editor(
+                                            state,
                                             add_expression.left.as_ref(),
                                             left_path,
                                             target,
@@ -122,6 +126,7 @@ fn render_expression_editor(
                                             .children([text("Right")])
                                             .into_node(),
                                         render_expression_editor(
+                                            state,
                                             add_expression.right.as_ref(),
                                             right_path,
                                             target,
@@ -133,13 +138,12 @@ fn render_expression_editor(
                     );
                 }
                 definy_event::event::Expression::PartReference(part_ref) => {
-                    let display_value = part_ref
-                        .part_definition_event_hash
-                        .as_ref()
-                        .map(crate::hash_format::encode_hash32)
-                        .or_else(|| part_ref.part_name.as_ref().map(|part_name| part_name.to_string()))
-                        .unwrap_or_default();
-                    children.push(reference_input(path, target, display_value.as_str()));
+                    children.push(reference_selector(
+                        state,
+                        path,
+                        target,
+                        part_ref.part_definition_event_hash,
+                    ));
                 }
                 definy_event::event::Expression::Boolean(boolean_expression) => {
                     children.push(boolean_input(path, target, boolean_expression.value));
@@ -166,6 +170,7 @@ fn render_expression_editor(
                                     .children([
                                         text("Condition"),
                                         render_expression_editor(
+                                            state,
                                             if_expression.condition.as_ref(),
                                             cond_path,
                                             target,
@@ -177,6 +182,7 @@ fn render_expression_editor(
                                     .children([
                                         text("Then"),
                                         render_expression_editor(
+                                            state,
                                             if_expression.then_expr.as_ref(),
                                             then_path,
                                             target,
@@ -188,6 +194,7 @@ fn render_expression_editor(
                                     .children([
                                         text("Else"),
                                         render_expression_editor(
+                                            state,
                                             if_expression.else_expr.as_ref(),
                                             else_path,
                                             target,
@@ -218,6 +225,7 @@ fn render_expression_editor(
                                     .children([
                                         text("Left"),
                                         render_expression_editor(
+                                            state,
                                             equal_expression.left.as_ref(),
                                             left_path,
                                             target,
@@ -229,6 +237,7 @@ fn render_expression_editor(
                                     .children([
                                         text("Right"),
                                         render_expression_editor(
+                                            state,
                                             equal_expression.right.as_ref(),
                                             right_path,
                                             target,
@@ -270,6 +279,7 @@ fn render_expression_editor(
                                     .children([
                                         text("Value"),
                                         render_expression_editor(
+                                            state,
                                             let_expression.value.as_ref(),
                                             value_path,
                                             target,
@@ -281,6 +291,7 @@ fn render_expression_editor(
                                     .children([
                                         text("Body"),
                                         render_expression_editor(
+                                            state,
                                             let_expression.body.as_ref(),
                                             body_path,
                                             target,
@@ -428,44 +439,67 @@ fn boolean_input(path: Vec<PathStep>, target: EditorTarget, value: bool) -> Node
         .into_node()
 }
 
-fn reference_input(path: Vec<PathStep>, target: EditorTarget, value: &str) -> Node<AppState> {
-    let name = format!(
-        "{}-expr-ref-{}",
-        selector_prefix(target),
-        path_to_key(path.as_slice())
-    );
-    let selector = format!("input[name='{}']", name);
+fn reference_selector(
+    state: &AppState,
+    path: Vec<PathStep>,
+    target: EditorTarget,
+    selected_hash: [u8; 32],
+) -> Node<AppState> {
+    let snapshots = collect_part_snapshots(state);
+    if snapshots.is_empty() {
+        return Div::new()
+            .style(
+                Style::new()
+                    .set("font-size", "0.85rem")
+                    .set("color", "var(--text-secondary)"),
+            )
+            .children([text("参照先パーツがありません。先にパーツを作成してください。")])
+            .into_node();
+    }
 
-    let mut input = Input::new().name(name.as_str()).type_("text").value(value);
-
-    input.events.push((
-        "input".to_string(),
-        EventHandler::new(move |set_state| {
-            let selector = selector.clone();
-            let path = path.clone();
-            async move {
-                let value = web_sys::window()
-                    .and_then(|window| window.document())
-                    .and_then(|document| document.query_selector(selector.as_str()).ok())
-                    .flatten()
-                    .and_then(|element| {
-                        wasm_bindgen::JsCast::dyn_into::<web_sys::HtmlInputElement>(element).ok()
-                    })
-                    .map(|input| input.value());
-
-                if let Some(value) = value {
-                    set_state(Box::new(move |state: AppState| {
-                        let mut next = state.clone();
-                        let root_expression = target_expression_mut(&mut next, target);
-                        set_reference_value(root_expression, path.as_slice(), &value);
-                        next
-                    }));
-                }
-            }
-        }),
-    ));
-
-    input.into_node()
+    Div::new()
+        .style(Style::new().set("display", "grid").set("gap", "0.4rem"))
+        .children(
+            snapshots
+                .into_iter()
+                .map(|snapshot| {
+                    let hash = snapshot.definition_event_hash;
+                    let is_selected = hash == selected_hash;
+                    let path = path.clone();
+                    Button::new()
+                        .type_("button")
+                        .style(if is_selected {
+                            Style::new()
+                                .set("text-align", "left")
+                                .set("padding", "0.4rem 0.6rem")
+                                .set("background-color", "var(--primary-color)")
+                                .set("color", "var(--surface-color)")
+                        } else {
+                            Style::new()
+                                .set("text-align", "left")
+                                .set("padding", "0.4rem 0.6rem")
+                        })
+                        .on_click(EventHandler::new(move |set_state| {
+                            let path = path.clone();
+                            async move {
+                                set_state(Box::new(move |state: AppState| {
+                                    let mut next = state.clone();
+                                    let root_expression = target_expression_mut(&mut next, target);
+                                    set_reference_value(root_expression, path.as_slice(), hash);
+                                    next
+                                }));
+                            }
+                        }))
+                        .children([text(format!(
+                            "{} ({})",
+                            snapshot.part_name,
+                            crate::hash_format::short_hash32(&hash)
+                        ))])
+                        .into_node()
+                })
+                .collect::<Vec<Node<AppState>>>(),
+        )
+        .into_node()
 }
 
 fn variable_input(path: Vec<PathStep>, target: EditorTarget, value: &str) -> Node<AppState> {
@@ -618,8 +652,7 @@ fn set_node_kind(
                 }
                 NodeKind::PartReference => definy_event::event::Expression::PartReference(
                     definy_event::event::PartReferenceExpression {
-                        part_definition_event_hash: None,
-                        part_name: None,
+                        part_definition_event_hash: [0u8; 32],
                     },
                 ),
                 NodeKind::Boolean => definy_event::event::Expression::Boolean(
@@ -685,14 +718,12 @@ fn set_number_value(
 fn set_reference_value(
     root_expression: &mut definy_event::event::Expression,
     path: &[PathStep],
-    value: &str,
+    value: [u8; 32],
 ) {
     if let Some(definy_event::event::Expression::PartReference(part_ref)) =
         get_mut_expression_at_path(root_expression, path)
     {
-        part_ref.part_definition_event_hash = crate::hash_format::decode_hash32(value);
-        // Keep legacy name storage only for backward-compat reads.
-        part_ref.part_name = None;
+        part_ref.part_definition_event_hash = value;
     }
 }
 

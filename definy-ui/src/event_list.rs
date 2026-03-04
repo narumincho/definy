@@ -30,6 +30,7 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
                         .children([text("Expression Builder")])
                         .into_node(),
                     render_root_expression_editor(
+                        state,
                         &state.part_definition_form.composing_expression,
                         EditorTarget::PartDefinition,
                     ),

@@ -225,6 +225,7 @@ fn part_update_form(state: &AppState, definition_event_hash: &[u8; 32]) -> Node<
                 .children([text("Expression Builder")])
                 .into_node(),
             render_root_expression_editor(
+                state,
                 &state.part_update_form.expression_input,
                 EditorTarget::PartUpdate,
             ),
