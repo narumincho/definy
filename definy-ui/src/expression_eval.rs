@@ -23,7 +23,107 @@ pub fn evaluate_expression(
         >,
     )],
 ) -> Result<Value, &'static str> {
+    // Try to evaluate purely via WebAssembly first!
+    if let Some(result) = evaluate_via_wasm(expression) {
+        return result;
+    }
+
     evaluate_expression_with_depth(expression, events, 0)
+}
+
+fn evaluate_via_wasm(
+    #[allow(unused_variables)] expression: &definy_event::event::Expression,
+) -> Option<Result<Value, &'static str>> {
+    #[cfg(target_arch = "wasm32")]
+    {
+        // For expressions containing PartReferences, fallback to Rust for now since
+        // the Wasm emitter doesn't yet resolve them from the `events` store.
+        if has_part_references(expression) {
+            return None;
+        }
+
+        let wasm_bytes = crate::wasm_emitter::compile_expression_to_wasm(expression).ok()?;
+
+        let uint8_array = js_sys::Uint8Array::from(wasm_bytes.as_slice());
+        let module_result = js_sys::WebAssembly::Module::new(&uint8_array);
+        let module = match module_result {
+            Ok(m) => m,
+            Err(_) => {
+                web_sys::console::warn_1(&wasm_bindgen::JsValue::from_str(
+                    "Wasm compilation failed",
+                ));
+                return None;
+            }
+        };
+
+        let imports = js_sys::Object::new();
+        let instance_result = js_sys::WebAssembly::Instance::new(&module, &imports);
+        let instance = match instance_result {
+            Ok(i) => i,
+            Err(_) => return None,
+        };
+
+        let exports = instance.exports();
+        let evaluate_func =
+            js_sys::Reflect::get(&exports, &wasm_bindgen::JsValue::from_str("evaluate")).ok()?;
+
+        if evaluate_func.is_function() {
+            let func_obj: &js_sys::Function = wasm_bindgen::JsCast::unchecked_ref(&evaluate_func);
+            let call_result = func_obj.call0(&wasm_bindgen::JsValue::NULL);
+
+            match call_result {
+                Ok(val) => {
+                    if let Some(num) = val.as_f64() {
+                        let i64_val = num as i64;
+                        // Determine if we should treat it as bool or number based on expression type
+                        if is_boolean_expression(expression) {
+                            return Some(Ok(Value::Bool(i64_val != 0)));
+                        } else {
+                            return Some(Ok(Value::Number(i64_val)));
+                        }
+                    }
+                }
+                Err(e) => {
+                    web_sys::console::error_1(&e);
+                    return Some(Err("Exception executing Wasm"));
+                }
+            }
+        }
+    }
+
+    None
+}
+
+#[allow(dead_code)]
+fn has_part_references(expr: &definy_event::event::Expression) -> bool {
+    match expr {
+        definy_event::event::Expression::PartReference(_) => true,
+        definy_event::event::Expression::Add(a) => {
+            has_part_references(&a.left) || has_part_references(&a.right)
+        }
+        definy_event::event::Expression::If(i) => {
+            has_part_references(&i.condition)
+                || has_part_references(&i.then_expr)
+                || has_part_references(&i.else_expr)
+        }
+        definy_event::event::Expression::Equal(e) => {
+            has_part_references(&e.left) || has_part_references(&e.right)
+        }
+        _ => false,
+    }
+}
+
+#[allow(dead_code)]
+fn is_boolean_expression(expr: &definy_event::event::Expression) -> bool {
+    match expr {
+        definy_event::event::Expression::Boolean(_) | definy_event::event::Expression::Equal(_) => {
+            true
+        }
+        definy_event::event::Expression::If(i) => {
+            is_boolean_expression(&i.then_expr) && is_boolean_expression(&i.else_expr)
+        }
+        _ => false,
+    }
 }
 
 fn evaluate_expression_with_depth(

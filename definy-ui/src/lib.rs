@@ -9,15 +9,16 @@ mod expression_eval;
 pub mod fetch;
 mod hash_format;
 mod header;
-mod login_or_create_account_dialog;
 mod layout;
+mod login_or_create_account_dialog;
 mod message;
 pub mod navigator_credential;
 mod not_found;
-mod part_list;
-mod part_detail;
 mod page_title;
+mod part_detail;
+mod part_list;
 mod part_projection;
+pub mod wasm_emitter;
 
 pub use app_state::*;
 pub use message::Message;
@@ -52,16 +53,21 @@ pub fn encode_ssr_initial_state(event_binaries: &[Vec<u8>]) -> Option<String> {
 }
 
 pub fn decode_ssr_initial_state(json: &str) -> Option<Vec<Vec<u8>>> {
-    serde_json::from_str::<SsrInitialState>(json).ok().map(|state| {
-        state
-            .event_binaries_base64
-            .into_iter()
-            .filter_map(|encoded| {
-                base64::Engine::decode(&base64::engine::general_purpose::URL_SAFE_NO_PAD, encoded)
+    serde_json::from_str::<SsrInitialState>(json)
+        .ok()
+        .map(|state| {
+            state
+                .event_binaries_base64
+                .into_iter()
+                .filter_map(|encoded| {
+                    base64::Engine::decode(
+                        &base64::engine::general_purpose::URL_SAFE_NO_PAD,
+                        encoded,
+                    )
                     .ok()
-            })
-            .collect()
-    })
+                })
+                .collect()
+        })
 }
 
 pub fn render(
