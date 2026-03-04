@@ -10,18 +10,6 @@ pub enum EditorTarget {
 }
 
 #[derive(Clone, Copy)]
-enum NodeKind {
-    Number,
-    Add,
-    PartReference,
-    Boolean,
-    If,
-    Equal,
-    Let,
-    Variable,
-}
-
-#[derive(Clone, Copy)]
 enum PathStep {
     Left,
     Right,
@@ -30,12 +18,6 @@ enum PathStep {
     Else,
     LetValue,
     LetBody,
-}
-
-#[derive(Clone, Copy)]
-enum VariableInputMode {
-    BindingName,
-    Reference,
 }
 
 #[derive(Clone)]
@@ -59,6 +41,249 @@ fn render_expression_editor(
     target: EditorTarget,
     scope_variables: Vec<ScopeVariable>,
 ) -> Node<AppState> {
+    let current_selection = current_selection_value(expression);
+    let selector_options = selector_options(state, &scope_variables);
+
+    let mut children = vec![
+        expression_selector(
+            path.clone(),
+            target,
+            &current_selection,
+            &selector_options,
+        ),
+    ];
+
+    match expression {
+        definy_event::event::Expression::Number(number_expression) => {
+            children.push(number_input(path, target, number_expression.value));
+        }
+        definy_event::event::Expression::Add(add_expression) => {
+            let mut left_path = path.clone();
+            left_path.push(PathStep::Left);
+            let mut right_path = path.clone();
+            right_path.push(PathStep::Right);
+
+            children.push(
+                Div::new()
+                    .style(
+                        Style::new()
+                            .set("display", "grid")
+                            .set("grid-template-columns", "1fr 1fr")
+                            .set("gap", "0.6rem"),
+                    )
+                    .children([
+                        Div::new()
+                            .style(Style::new().set("display", "grid").set("gap", "0.3rem"))
+                            .children([
+                                text("Left"),
+                                render_expression_editor(
+                                    state,
+                                    add_expression.left.as_ref(),
+                                    left_path,
+                                    target,
+                                    scope_variables.clone(),
+                                ),
+                            ])
+                            .into_node(),
+                        Div::new()
+                            .style(Style::new().set("display", "grid").set("gap", "0.3rem"))
+                            .children([
+                                text("Right"),
+                                render_expression_editor(
+                                    state,
+                                    add_expression.right.as_ref(),
+                                    right_path,
+                                    target,
+                                    scope_variables.clone(),
+                                ),
+                            ])
+                            .into_node(),
+                    ])
+                    .into_node(),
+            );
+        }
+        definy_event::event::Expression::Boolean(boolean_expression) => {
+            children.push(boolean_input(path, target, boolean_expression.value));
+        }
+        definy_event::event::Expression::If(if_expression) => {
+            let mut cond_path = path.clone();
+            cond_path.push(PathStep::Condition);
+            let mut then_path = path.clone();
+            then_path.push(PathStep::Then);
+            let mut else_path = path.clone();
+            else_path.push(PathStep::Else);
+
+            children.push(
+                Div::new()
+                    .style(
+                        Style::new()
+                            .set("display", "grid")
+                            .set("grid-template-columns", "1fr")
+                            .set("gap", "0.6rem"),
+                    )
+                    .children([
+                        Div::new()
+                            .style(Style::new().set("display", "grid").set("gap", "0.3rem"))
+                            .children([
+                                text("Condition"),
+                                render_expression_editor(
+                                    state,
+                                    if_expression.condition.as_ref(),
+                                    cond_path,
+                                    target,
+                                    scope_variables.clone(),
+                                ),
+                            ])
+                            .into_node(),
+                        Div::new()
+                            .style(Style::new().set("display", "grid").set("gap", "0.3rem"))
+                            .children([
+                                text("Then"),
+                                render_expression_editor(
+                                    state,
+                                    if_expression.then_expr.as_ref(),
+                                    then_path,
+                                    target,
+                                    scope_variables.clone(),
+                                ),
+                            ])
+                            .into_node(),
+                        Div::new()
+                            .style(Style::new().set("display", "grid").set("gap", "0.3rem"))
+                            .children([
+                                text("Else"),
+                                render_expression_editor(
+                                    state,
+                                    if_expression.else_expr.as_ref(),
+                                    else_path,
+                                    target,
+                                    scope_variables.clone(),
+                                ),
+                            ])
+                            .into_node(),
+                    ])
+                    .into_node(),
+            );
+        }
+        definy_event::event::Expression::Equal(equal_expression) => {
+            let mut left_path = path.clone();
+            left_path.push(PathStep::Left);
+            let mut right_path = path.clone();
+            right_path.push(PathStep::Right);
+
+            children.push(
+                Div::new()
+                    .style(
+                        Style::new()
+                            .set("display", "grid")
+                            .set("grid-template-columns", "1fr 1fr")
+                            .set("gap", "0.6rem"),
+                    )
+                    .children([
+                        Div::new()
+                            .style(Style::new().set("display", "grid").set("gap", "0.3rem"))
+                            .children([
+                                text("Left"),
+                                render_expression_editor(
+                                    state,
+                                    equal_expression.left.as_ref(),
+                                    left_path,
+                                    target,
+                                    scope_variables.clone(),
+                                ),
+                            ])
+                            .into_node(),
+                        Div::new()
+                            .style(Style::new().set("display", "grid").set("gap", "0.3rem"))
+                            .children([
+                                text("Right"),
+                                render_expression_editor(
+                                    state,
+                                    equal_expression.right.as_ref(),
+                                    right_path,
+                                    target,
+                                    scope_variables.clone(),
+                                ),
+                            ])
+                            .into_node(),
+                    ])
+                    .into_node(),
+            );
+        }
+        definy_event::event::Expression::Let(let_expression) => {
+            let mut value_path = path.clone();
+            value_path.push(PathStep::LetValue);
+            let mut body_path = path.clone();
+            body_path.push(PathStep::LetBody);
+
+            children.push(
+                Div::new()
+                    .style(
+                        Style::new()
+                            .set("display", "grid")
+                            .set("grid-template-columns", "1fr")
+                            .set("gap", "0.6rem"),
+                    )
+                    .children([
+                        Div::new()
+                            .style(Style::new().set("display", "grid").set("gap", "0.3rem"))
+                            .children([
+                                text("Let Name"),
+                                let_name_input(path.clone(), target, &let_expression.variable_name),
+                            ])
+                            .into_node(),
+                        Div::new()
+                            .style(Style::new().set("display", "grid").set("gap", "0.3rem"))
+                            .children([
+                                text("Value"),
+                                render_expression_editor(
+                                    state,
+                                    let_expression.value.as_ref(),
+                                    value_path,
+                                    target,
+                                    scope_variables.clone(),
+                                ),
+                            ])
+                            .into_node(),
+                        Div::new()
+                            .style(Style::new().set("display", "grid").set("gap", "0.3rem"))
+                            .children([
+                                text("Body"),
+                                {
+                                    let mut body_scope = scope_variables.clone();
+                                    body_scope.push(ScopeVariable {
+                                        id: let_expression.variable_id,
+                                        name: let_expression.variable_name.to_string(),
+                                    });
+                                    render_expression_editor(
+                                        state,
+                                        let_expression.body.as_ref(),
+                                        body_path,
+                                        target,
+                                        body_scope,
+                                    )
+                                },
+                            ])
+                            .into_node(),
+                    ])
+                    .into_node(),
+            );
+        }
+        definy_event::event::Expression::PartReference(_)
+        | definy_event::event::Expression::Variable(_) => {
+            children.push(
+                Div::new()
+                    .style(
+                        Style::new()
+                            .set("font-size", "0.8rem")
+                            .set("color", "var(--text-secondary)"),
+                    )
+                    .children([text("Select から Global/Local 参照を選んでください")])
+                    .into_node(),
+            );
+        }
+    }
+
     Div::new()
         .class("event-detail-card")
         .style(
@@ -67,313 +292,219 @@ fn render_expression_editor(
                 .set("display", "grid")
                 .set("gap", "0.6rem"),
         )
-        .children({
-            let mut children = vec![
-                Div::new()
-                    .style(
-                        Style::new()
-                            .set("display", "flex")
-                            .set("gap", "0.5rem")
-                            .set("flex-wrap", "wrap"),
-                    )
-                    .children([
-                        kind_button(path.clone(), target, NodeKind::Number, "Number"),
-                        kind_button(path.clone(), target, NodeKind::Add, "+"),
-                        kind_button(path.clone(), target, NodeKind::PartReference, "Ref"),
-                        kind_button(path.clone(), target, NodeKind::Boolean, "Bool"),
-                        kind_button(path.clone(), target, NodeKind::If, "If"),
-                        kind_button(path.clone(), target, NodeKind::Equal, "=="),
-                        kind_button(path.clone(), target, NodeKind::Let, "Let"),
-                        kind_button(path.clone(), target, NodeKind::Variable, "Var"),
-                    ])
-                    .into_node(),
-            ];
-
-            match expression {
-                definy_event::event::Expression::Number(number_expression) => {
-                    children.push(number_input(path, target, number_expression.value));
-                }
-                definy_event::event::Expression::Add(add_expression) => {
-                    let mut left_path = path.clone();
-                    left_path.push(PathStep::Left);
-                    let mut right_path = path.clone();
-                    right_path.push(PathStep::Right);
-
-                    children.push(
-                        Div::new()
-                            .style(
-                                Style::new()
-                                    .set("display", "grid")
-                                    .set("grid-template-columns", "1fr 1fr")
-                                    .set("gap", "0.6rem"),
-                            )
-                            .children([
-                                Div::new()
-                                    .style(Style::new().set("display", "grid").set("gap", "0.3rem"))
-                                    .children([
-                                        Div::new()
-                                            .style(
-                                                Style::new()
-                                                    .set("color", "var(--text-secondary)")
-                                                    .set("font-size", "0.82rem"),
-                                            )
-                                            .children([text("Left")])
-                                            .into_node(),
-                                        render_expression_editor(
-                                            state,
-                                            add_expression.left.as_ref(),
-                                            left_path,
-                                            target,
-                                            scope_variables.clone(),
-                                        ),
-                                    ])
-                                    .into_node(),
-                                Div::new()
-                                    .style(Style::new().set("display", "grid").set("gap", "0.3rem"))
-                                    .children([
-                                        Div::new()
-                                            .style(
-                                                Style::new()
-                                                    .set("color", "var(--text-secondary)")
-                                                    .set("font-size", "0.82rem"),
-                                            )
-                                            .children([text("Right")])
-                                            .into_node(),
-                                        render_expression_editor(
-                                            state,
-                                            add_expression.right.as_ref(),
-                                            right_path,
-                                            target,
-                                            scope_variables.clone(),
-                                        ),
-                                    ])
-                                    .into_node(),
-                            ])
-                            .into_node(),
-                    );
-                }
-                definy_event::event::Expression::PartReference(part_ref) => {
-                    children.push(reference_selector(
-                        state,
-                        path,
-                        target,
-                        part_ref.part_definition_event_hash,
-                    ));
-                }
-                definy_event::event::Expression::Boolean(boolean_expression) => {
-                    children.push(boolean_input(path, target, boolean_expression.value));
-                }
-                definy_event::event::Expression::If(if_expression) => {
-                    let mut cond_path = path.clone();
-                    cond_path.push(PathStep::Condition);
-                    let mut then_path = path.clone();
-                    then_path.push(PathStep::Then);
-                    let mut else_path = path.clone();
-                    else_path.push(PathStep::Else);
-
-                    children.push(
-                        Div::new()
-                            .style(
-                                Style::new()
-                                    .set("display", "grid")
-                                    .set("grid-template-columns", "1fr")
-                                    .set("gap", "0.6rem"),
-                            )
-                            .children([
-                                Div::new()
-                                    .style(Style::new().set("display", "grid").set("gap", "0.3rem"))
-                                    .children([
-                                        text("Condition"),
-                                        render_expression_editor(
-                                            state,
-                                            if_expression.condition.as_ref(),
-                                            cond_path,
-                                            target,
-                                            scope_variables.clone(),
-                                        ),
-                                    ])
-                                    .into_node(),
-                                Div::new()
-                                    .style(Style::new().set("display", "grid").set("gap", "0.3rem"))
-                                    .children([
-                                        text("Then"),
-                                        render_expression_editor(
-                                            state,
-                                            if_expression.then_expr.as_ref(),
-                                            then_path,
-                                            target,
-                                            scope_variables.clone(),
-                                        ),
-                                    ])
-                                    .into_node(),
-                                Div::new()
-                                    .style(Style::new().set("display", "grid").set("gap", "0.3rem"))
-                                    .children([
-                                        text("Else"),
-                                        render_expression_editor(
-                                            state,
-                                            if_expression.else_expr.as_ref(),
-                                            else_path,
-                                            target,
-                                            scope_variables.clone(),
-                                        ),
-                                    ])
-                                    .into_node(),
-                            ])
-                            .into_node(),
-                    );
-                }
-                definy_event::event::Expression::Equal(equal_expression) => {
-                    let mut left_path = path.clone();
-                    left_path.push(PathStep::Left);
-                    let mut right_path = path.clone();
-                    right_path.push(PathStep::Right);
-
-                    children.push(
-                        Div::new()
-                            .style(
-                                Style::new()
-                                    .set("display", "grid")
-                                    .set("grid-template-columns", "1fr 1fr")
-                                    .set("gap", "0.6rem"),
-                            )
-                            .children([
-                                Div::new()
-                                    .style(Style::new().set("display", "grid").set("gap", "0.3rem"))
-                                    .children([
-                                        text("Left"),
-                                        render_expression_editor(
-                                            state,
-                                            equal_expression.left.as_ref(),
-                                            left_path,
-                                            target,
-                                            scope_variables.clone(),
-                                        ),
-                                    ])
-                                    .into_node(),
-                                Div::new()
-                                    .style(Style::new().set("display", "grid").set("gap", "0.3rem"))
-                                    .children([
-                                        text("Right"),
-                                        render_expression_editor(
-                                            state,
-                                            equal_expression.right.as_ref(),
-                                            right_path,
-                                            target,
-                                            scope_variables.clone(),
-                                        ),
-                                    ])
-                                    .into_node(),
-                            ])
-                            .into_node(),
-                    );
-                }
-                definy_event::event::Expression::Let(let_expression) => {
-                    let mut value_path = path.clone();
-                    value_path.push(PathStep::LetValue);
-                    let mut body_path = path.clone();
-                    body_path.push(PathStep::LetBody);
-
-                    children.push(
-                        Div::new()
-                            .style(
-                                Style::new()
-                                    .set("display", "grid")
-                                    .set("grid-template-columns", "1fr")
-                                    .set("gap", "0.6rem"),
-                            )
-                            .children([
-                                Div::new()
-                                    .style(Style::new().set("display", "grid").set("gap", "0.3rem"))
-                                    .children([
-                                        text("Let Name"),
-                                        variable_input(
-                                            path.clone(),
-                                            target,
-                                            &let_expression.variable_name,
-                                            &scope_variables,
-                                            VariableInputMode::BindingName,
-                                        ),
-                                    ])
-                                    .into_node(),
-                                Div::new()
-                                    .style(Style::new().set("display", "grid").set("gap", "0.3rem"))
-                                    .children([
-                                        text("Value"),
-                                        render_expression_editor(
-                                            state,
-                                            let_expression.value.as_ref(),
-                                            value_path,
-                                            target,
-                                            scope_variables.clone(),
-                                        ),
-                                    ])
-                                    .into_node(),
-                                Div::new()
-                                    .style(Style::new().set("display", "grid").set("gap", "0.3rem"))
-                                    .children([
-                                        text("Body"),
-                                        {
-                                            let mut body_scope = scope_variables.clone();
-                                            body_scope.push(ScopeVariable {
-                                                id: let_expression.variable_id,
-                                                name: let_expression.variable_name.to_string(),
-                                            });
-                                            render_expression_editor(
-                                                state,
-                                                let_expression.body.as_ref(),
-                                                body_path,
-                                                target,
-                                                body_scope,
-                                            )
-                                        },
-                                    ])
-                                    .into_node(),
-                            ])
-                            .into_node(),
-                    );
-                }
-                definy_event::event::Expression::Variable(var_expression) => {
-                    let current_name = resolve_scope_variable_name(
-                        &scope_variables,
-                        var_expression.variable_id,
-                    )
-                    .unwrap_or_default();
-                    children.push(variable_input(
-                        path.clone(),
-                        target,
-                        current_name.as_str(),
-                        &scope_variables,
-                        VariableInputMode::Reference,
-                    ));
-                }
-            }
-            children
-        })
+        .children(children)
         .into_node()
 }
 
-fn kind_button(
+fn expression_selector(
     path: Vec<PathStep>,
     target: EditorTarget,
-    kind: NodeKind,
-    label: &str,
+    current_value: &str,
+    options: &[(String, String)],
 ) -> Node<AppState> {
-    Button::new()
-        .type_("button")
-        .on_click(EventHandler::new(move |set_state| {
+    let name = format!(
+        "{}-expr-kind-{}",
+        selector_prefix(target),
+        path_to_key(path.as_slice())
+    );
+    let selector = format!("select[name='{}']", name);
+
+    let mut select = Select::new()
+        .name(name.as_str())
+        .value(current_value)
+        .style(Style::new().set("padding", "0.35rem 0.5rem"));
+
+    select.events.push((
+        "change".to_string(),
+        EventHandler::new(move |set_state| {
+            let selector = selector.clone();
             let path = path.clone();
             async move {
+                let selected_value = web_sys::window()
+                    .and_then(|window| window.document())
+                    .and_then(|document| document.query_selector(selector.as_str()).ok())
+                    .flatten()
+                    .and_then(|element| {
+                        js_sys::Reflect::get(
+                            &element,
+                            &wasm_bindgen::JsValue::from_str("value"),
+                        )
+                        .ok()
+                    })
+                    .and_then(|value| value.as_string())
+                    .unwrap_or_default();
+
                 set_state(Box::new(move |state: AppState| {
                     let mut next = state.clone();
                     let root_expression = target_expression_mut(&mut next, target);
-                    set_node_kind(root_expression, path.as_slice(), kind);
+                    apply_selection(root_expression, path.as_slice(), selected_value.as_str());
                     next
                 }));
             }
-        }))
-        .children([text(label)])
+        }),
+    ));
+
+    select
+        .children(
+            options
+                .iter()
+                .map(|(value, label)| {
+                    OptionElement::new()
+                        .value(value)
+                        .children([text(label.clone())])
+                        .into_node()
+                })
+                .collect::<Vec<Node<AppState>>>(),
+        )
         .into_node()
+}
+
+fn selector_options(state: &AppState, scope_variables: &[ScopeVariable]) -> Vec<(String, String)> {
+    let mut options = vec![
+        ("expr:number".to_string(), "Constant: Number".to_string()),
+        ("expr:boolean".to_string(), "Constant: Boolean".to_string()),
+        ("expr:add".to_string(), "Function: Add".to_string()),
+        ("expr:equal".to_string(), "Function: Equal".to_string()),
+        ("expr:if".to_string(), "Syntax: If".to_string()),
+        ("expr:let".to_string(), "Syntax: Let".to_string()),
+    ];
+
+    options.extend(collect_part_snapshots(state).into_iter().map(|snapshot| {
+        (
+            format!(
+                "ref:global:{}",
+                crate::hash_format::encode_hash32(&snapshot.definition_event_hash)
+            ),
+            format!(
+                "Global: {} ({})",
+                snapshot.part_name,
+                crate::hash_format::short_hash32(&snapshot.definition_event_hash)
+            ),
+        )
+    }));
+
+    options.extend(scope_variables.iter().map(|scope_var| {
+        (
+            format!("ref:local:{}", scope_var.id),
+            format!("Local: {} (#{})", scope_var.name, scope_var.id),
+        )
+    }));
+
+    options
+}
+
+fn current_selection_value(expression: &definy_event::event::Expression) -> String {
+    match expression {
+        definy_event::event::Expression::Number(_) => "expr:number".to_string(),
+        definy_event::event::Expression::Boolean(_) => "expr:boolean".to_string(),
+        definy_event::event::Expression::Add(_) => "expr:add".to_string(),
+        definy_event::event::Expression::Equal(_) => "expr:equal".to_string(),
+        definy_event::event::Expression::If(_) => "expr:if".to_string(),
+        definy_event::event::Expression::Let(_) => "expr:let".to_string(),
+        definy_event::event::Expression::PartReference(part_ref) => format!(
+            "ref:global:{}",
+            crate::hash_format::encode_hash32(&part_ref.part_definition_event_hash)
+        ),
+        definy_event::event::Expression::Variable(var_expr) => {
+            format!("ref:local:{}", var_expr.variable_id)
+        }
+    }
+}
+
+fn apply_selection(
+    root_expression: &mut definy_event::event::Expression,
+    path: &[PathStep],
+    selected_value: &str,
+) {
+    let next_variable_id = if selected_value == "expr:let" {
+        next_local_variable_id(root_expression)
+    } else {
+        0
+    };
+    if let Some(expression) = get_mut_expression_at_path(root_expression, path) {
+        *expression = if selected_value == "expr:number" {
+            definy_event::event::Expression::Number(definy_event::event::NumberExpression { value: 0 })
+        } else if selected_value == "expr:boolean" {
+            definy_event::event::Expression::Boolean(definy_event::event::BooleanExpression {
+                value: false,
+            })
+        } else if selected_value == "expr:add" {
+            definy_event::event::Expression::Add(definy_event::event::AddExpression {
+                left: Box::new(definy_event::event::Expression::Number(
+                    definy_event::event::NumberExpression { value: 0 },
+                )),
+                right: Box::new(definy_event::event::Expression::Number(
+                    definy_event::event::NumberExpression { value: 0 },
+                )),
+            })
+        } else if selected_value == "expr:equal" {
+            definy_event::event::Expression::Equal(definy_event::event::EqualExpression {
+                left: Box::new(definy_event::event::Expression::Number(
+                    definy_event::event::NumberExpression { value: 0 },
+                )),
+                right: Box::new(definy_event::event::Expression::Number(
+                    definy_event::event::NumberExpression { value: 0 },
+                )),
+            })
+        } else if selected_value == "expr:if" {
+            definy_event::event::Expression::If(definy_event::event::IfExpression {
+                condition: Box::new(definy_event::event::Expression::Boolean(
+                    definy_event::event::BooleanExpression { value: false },
+                )),
+                then_expr: Box::new(definy_event::event::Expression::Number(
+                    definy_event::event::NumberExpression { value: 0 },
+                )),
+                else_expr: Box::new(definy_event::event::Expression::Number(
+                    definy_event::event::NumberExpression { value: 0 },
+                )),
+            })
+        } else if selected_value == "expr:let" {
+            definy_event::event::Expression::Let(definy_event::event::LetExpression {
+                variable_id: next_variable_id,
+                variable_name: "x".into(),
+                value: Box::new(definy_event::event::Expression::Number(
+                    definy_event::event::NumberExpression { value: 0 },
+                )),
+                body: Box::new(definy_event::event::Expression::Variable(
+                    definy_event::event::VariableExpression {
+                        variable_id: next_variable_id,
+                    },
+                )),
+            })
+        } else if let Some(encoded) = selected_value.strip_prefix("ref:global:") {
+            if let Some(hash) = decode_hash32(encoded) {
+                definy_event::event::Expression::PartReference(
+                    definy_event::event::PartReferenceExpression {
+                        part_definition_event_hash: hash,
+                    },
+                )
+            } else {
+                expression.clone()
+            }
+        } else if let Some(local_id_str) = selected_value.strip_prefix("ref:local:") {
+            if let Ok(variable_id) = local_id_str.parse::<i64>() {
+                definy_event::event::Expression::Variable(definy_event::event::VariableExpression {
+                    variable_id,
+                })
+            } else {
+                expression.clone()
+            }
+        } else {
+            expression.clone()
+        };
+    }
+}
+
+fn decode_hash32(value: &str) -> Option<[u8; 32]> {
+    let bytes =
+        base64::Engine::decode(&base64::engine::general_purpose::URL_SAFE_NO_PAD, value).ok()?;
+    if bytes.len() == 32 {
+        let mut result = [0u8; 32];
+        result.copy_from_slice(&bytes);
+        Some(result)
+    } else {
+        None
+    }
 }
 
 fn number_input(path: Vec<PathStep>, target: EditorTarget, value: i64) -> Node<AppState> {
@@ -477,92 +608,20 @@ fn boolean_input(path: Vec<PathStep>, target: EditorTarget, value: bool) -> Node
         .into_node()
 }
 
-fn reference_selector(
-    state: &AppState,
-    path: Vec<PathStep>,
-    target: EditorTarget,
-    selected_hash: [u8; 32],
-) -> Node<AppState> {
-    let snapshots = collect_part_snapshots(state);
-    if snapshots.is_empty() {
-        return Div::new()
-            .style(
-                Style::new()
-                    .set("font-size", "0.85rem")
-                    .set("color", "var(--text-secondary)"),
-            )
-            .children([text("参照先パーツがありません。先にパーツを作成してください。")])
-            .into_node();
-    }
-
-    Div::new()
-        .style(Style::new().set("display", "grid").set("gap", "0.4rem"))
-        .children(
-            snapshots
-                .into_iter()
-                .map(|snapshot| {
-                    let hash = snapshot.definition_event_hash;
-                    let is_selected = hash == selected_hash;
-                    let path = path.clone();
-                    Button::new()
-                        .type_("button")
-                        .style(if is_selected {
-                            Style::new()
-                                .set("text-align", "left")
-                                .set("padding", "0.4rem 0.6rem")
-                                .set("background-color", "var(--primary-color)")
-                                .set("color", "var(--surface-color)")
-                        } else {
-                            Style::new()
-                                .set("text-align", "left")
-                                .set("padding", "0.4rem 0.6rem")
-                        })
-                        .on_click(EventHandler::new(move |set_state| {
-                            let path = path.clone();
-                            async move {
-                                set_state(Box::new(move |state: AppState| {
-                                    let mut next = state.clone();
-                                    let root_expression = target_expression_mut(&mut next, target);
-                                    set_reference_value(root_expression, path.as_slice(), hash);
-                                    next
-                                }));
-                            }
-                        }))
-                        .children([text(format!(
-                            "{} ({})",
-                            snapshot.part_name,
-                            crate::hash_format::short_hash32(&hash)
-                        ))])
-                        .into_node()
-                })
-                .collect::<Vec<Node<AppState>>>(),
-        )
-        .into_node()
-}
-
-fn variable_input(
-    path: Vec<PathStep>,
-    target: EditorTarget,
-    value: &str,
-    scope_variables: &[ScopeVariable],
-    mode: VariableInputMode,
-) -> Node<AppState> {
+fn let_name_input(path: Vec<PathStep>, target: EditorTarget, value: &str) -> Node<AppState> {
     let name = format!(
-        "{}-expr-var-{}",
+        "{}-expr-let-name-{}",
         selector_prefix(target),
         path_to_key(path.as_slice())
     );
     let selector = format!("input[name='{}']", name);
 
     let mut input = Input::new().name(name.as_str()).type_("text").value(value);
-    let scope_variables = scope_variables.to_vec();
-    let scope_variables_for_hint = scope_variables.clone();
     input.events.push((
         "input".to_string(),
         EventHandler::new(move |set_state| {
             let selector = selector.clone();
             let path = path.clone();
-            let scope_variables = scope_variables.clone();
             async move {
                 let value = web_sys::window()
                     .and_then(|window| window.document())
@@ -577,58 +636,13 @@ fn variable_input(
                 set_state(Box::new(move |state: AppState| {
                     let mut next = state.clone();
                     let root_expression = target_expression_mut(&mut next, target);
-                    match mode {
-                        VariableInputMode::BindingName => {
-                            set_let_variable_name(root_expression, path.as_slice(), &value);
-                        }
-                        VariableInputMode::Reference => {
-                            if let Some(variable_id) =
-                                resolve_scope_variable_id(&scope_variables, value.as_str())
-                            {
-                                set_variable_reference_id(
-                                    root_expression,
-                                    path.as_slice(),
-                                    variable_id,
-                                );
-                            }
-                        }
-                    }
+                    set_let_variable_name(root_expression, path.as_slice(), &value);
                     next
                 }));
             }
         }),
     ));
-
-    let hint = if matches!(mode, VariableInputMode::Reference) {
-        let names = unique_strings(
-            scope_variables_for_hint
-                .iter()
-                .map(|v| v.name.clone())
-                .collect(),
-        );
-        if names.is_empty() {
-            "有効な変数名: (none)".to_string()
-        } else {
-            format!("有効な変数名: {}", names.join(", "))
-        }
-    } else {
-        "自由な変数名を入力できます".to_string()
-    };
-
-    Div::new()
-        .style(Style::new().set("display", "grid").set("gap", "0.25rem"))
-        .children([
-            input.into_node(),
-            Div::new()
-                .style(
-                    Style::new()
-                        .set("font-size", "0.8rem")
-                        .set("color", "var(--text-secondary)"),
-                )
-                .children([text(hint)])
-                .into_node(),
-        ])
-        .into_node()
+    input.into_node()
 }
 
 fn selector_prefix(target: EditorTarget) -> &'static str {
@@ -636,34 +650,6 @@ fn selector_prefix(target: EditorTarget) -> &'static str {
         EditorTarget::PartDefinition => "part-definition",
         EditorTarget::PartUpdate => "part-update",
     }
-}
-
-fn resolve_scope_variable_name(scope_variables: &[ScopeVariable], variable_id: i64) -> Option<String> {
-    scope_variables.iter().rev().find_map(|scope_var| {
-        if scope_var.id == variable_id {
-            Some(scope_var.name.clone())
-        } else {
-            None
-        }
-    })
-}
-
-fn resolve_scope_variable_id(scope_variables: &[ScopeVariable], variable_name: &str) -> Option<i64> {
-    scope_variables.iter().rev().find_map(|scope_var| {
-        if scope_var.name == variable_name {
-            Some(scope_var.id)
-        } else {
-            None
-        }
-    })
-}
-
-fn unique_strings(values: Vec<String>) -> Vec<String> {
-    let mut seen = std::collections::HashSet::new();
-    values
-        .into_iter()
-        .filter(|value| seen.insert(value.clone()))
-        .collect()
 }
 
 fn target_expression_mut<'a>(
@@ -744,88 +730,6 @@ fn get_mut_expression_at_path<'a>(
     }
 }
 
-fn set_node_kind(
-    root_expression: &mut definy_event::event::Expression,
-    path: &[PathStep],
-    kind: NodeKind,
-) {
-    let next_variable_id = if matches!(kind, NodeKind::Let) {
-        next_local_variable_id(root_expression)
-    } else {
-        0
-    };
-    if let Some(expression) = get_mut_expression_at_path(root_expression, path) {
-        *expression =
-            match kind {
-                NodeKind::Number => {
-                    definy_event::event::Expression::Number(definy_event::event::NumberExpression {
-                        value: 0,
-                    })
-                }
-                NodeKind::Add => {
-                    definy_event::event::Expression::Add(definy_event::event::AddExpression {
-                        left: Box::new(definy_event::event::Expression::Number(
-                            definy_event::event::NumberExpression { value: 0 },
-                        )),
-                        right: Box::new(definy_event::event::Expression::Number(
-                            definy_event::event::NumberExpression { value: 0 },
-                        )),
-                    })
-                }
-                NodeKind::PartReference => definy_event::event::Expression::PartReference(
-                    definy_event::event::PartReferenceExpression {
-                        part_definition_event_hash: [0u8; 32],
-                    },
-                ),
-                NodeKind::Boolean => definy_event::event::Expression::Boolean(
-                    definy_event::event::BooleanExpression { value: false },
-                ),
-                NodeKind::If => {
-                    definy_event::event::Expression::If(definy_event::event::IfExpression {
-                        condition: Box::new(definy_event::event::Expression::Boolean(
-                            definy_event::event::BooleanExpression { value: false },
-                        )),
-                        then_expr: Box::new(definy_event::event::Expression::Number(
-                            definy_event::event::NumberExpression { value: 0 },
-                        )),
-                        else_expr: Box::new(definy_event::event::Expression::Number(
-                            definy_event::event::NumberExpression { value: 0 },
-                        )),
-                    })
-                }
-                NodeKind::Equal => {
-                    definy_event::event::Expression::Equal(definy_event::event::EqualExpression {
-                        left: Box::new(definy_event::event::Expression::Number(
-                            definy_event::event::NumberExpression { value: 0 },
-                        )),
-                        right: Box::new(definy_event::event::Expression::Number(
-                            definy_event::event::NumberExpression { value: 0 },
-                        )),
-                    })
-                }
-                NodeKind::Let => {
-                    definy_event::event::Expression::Let(definy_event::event::LetExpression {
-                        variable_id: next_variable_id,
-                        variable_name: "x".into(),
-                        value: Box::new(definy_event::event::Expression::Number(
-                            definy_event::event::NumberExpression { value: 0 },
-                        )),
-                        body: Box::new(definy_event::event::Expression::Variable(
-                            definy_event::event::VariableExpression {
-                                variable_id: next_variable_id,
-                            },
-                        )),
-                    })
-                }
-                NodeKind::Variable => definy_event::event::Expression::Variable(
-                    definy_event::event::VariableExpression {
-                        variable_id: 0,
-                    },
-                ),
-            }
-    }
-}
-
 fn set_number_value(
     root_expression: &mut definy_event::event::Expression,
     path: &[PathStep],
@@ -835,18 +739,6 @@ fn set_number_value(
         get_mut_expression_at_path(root_expression, path)
     {
         number_expression.value = value;
-    }
-}
-
-fn set_reference_value(
-    root_expression: &mut definy_event::event::Expression,
-    path: &[PathStep],
-    value: [u8; 32],
-) {
-    if let Some(definy_event::event::Expression::PartReference(part_ref)) =
-        get_mut_expression_at_path(root_expression, path)
-    {
-        part_ref.part_definition_event_hash = value;
     }
 }
 
@@ -874,18 +766,6 @@ fn set_let_variable_name(
     }
 }
 
-fn set_variable_reference_id(
-    root_expression: &mut definy_event::event::Expression,
-    path: &[PathStep],
-    variable_id: i64,
-) {
-    if let Some(definy_event::event::Expression::Variable(var_expr)) =
-        get_mut_expression_at_path(root_expression, path)
-    {
-        var_expr.variable_id = variable_id;
-    }
-}
-
 fn next_local_variable_id(expression: &definy_event::event::Expression) -> i64 {
     fn max_local_variable_id(expression: &definy_event::event::Expression) -> i64 {
         match expression {
@@ -896,15 +776,15 @@ fn next_local_variable_id(expression: &definy_event::event::Expression) -> i64 {
                 max_local_variable_id(add_expression.left.as_ref())
                     .max(max_local_variable_id(add_expression.right.as_ref()))
             }
-            definy_event::event::Expression::If(if_expression) => max_local_variable_id(
-                if_expression.condition.as_ref(),
-            )
-            .max(max_local_variable_id(if_expression.then_expr.as_ref()))
-            .max(max_local_variable_id(if_expression.else_expr.as_ref())),
-            definy_event::event::Expression::Equal(equal_expression) => max_local_variable_id(
-                equal_expression.left.as_ref(),
-            )
-            .max(max_local_variable_id(equal_expression.right.as_ref())),
+            definy_event::event::Expression::If(if_expression) => {
+                max_local_variable_id(if_expression.condition.as_ref())
+                    .max(max_local_variable_id(if_expression.then_expr.as_ref()))
+                    .max(max_local_variable_id(if_expression.else_expr.as_ref()))
+            }
+            definy_event::event::Expression::Equal(equal_expression) => {
+                max_local_variable_id(equal_expression.left.as_ref())
+                    .max(max_local_variable_id(equal_expression.right.as_ref()))
+            }
             definy_event::event::Expression::Let(let_expression) => let_expression
                 .variable_id
                 .max(max_local_variable_id(let_expression.value.as_ref()))
@@ -917,21 +797,27 @@ fn next_local_variable_id(expression: &definy_event::event::Expression) -> i64 {
 
 #[cfg(test)]
 mod tests {
-    use super::{
-        NodeKind, PathStep, get_mut_expression_at_path, path_to_key, set_node_kind,
-        set_number_value,
-    };
+    use super::{get_mut_expression_at_path, path_to_key, set_number_value, PathStep};
 
     #[test]
     fn edit_nested_expression_by_ui_path() {
-        let mut expression =
-            definy_event::event::Expression::Number(definy_event::event::NumberExpression {
-                value: 0,
-            });
+        let mut expression = definy_event::event::Expression::Add(definy_event::event::AddExpression {
+            left: Box::new(definy_event::event::Expression::Number(
+                definy_event::event::NumberExpression { value: 0 },
+            )),
+            right: Box::new(definy_event::event::Expression::Add(
+                definy_event::event::AddExpression {
+                    left: Box::new(definy_event::event::Expression::Number(
+                        definy_event::event::NumberExpression { value: 0 },
+                    )),
+                    right: Box::new(definy_event::event::Expression::Number(
+                        definy_event::event::NumberExpression { value: 0 },
+                    )),
+                },
+            )),
+        });
 
-        set_node_kind(&mut expression, &[], NodeKind::Add);
         set_number_value(&mut expression, &[PathStep::Left], 321);
-        set_node_kind(&mut expression, &[PathStep::Right], NodeKind::Add);
         set_number_value(&mut expression, &[PathStep::Right, PathStep::Left], 1);
         set_number_value(&mut expression, &[PathStep::Right, PathStep::Right], 3);
 
