@@ -34,15 +34,15 @@ pub fn account_list_view(state: &AppState) -> Node<AppState> {
                     .children(
                         rows.into_iter()
                             .map(|row| {
-                                let account_id_bytes = *row.account_id.0.as_ref();
-                                let encoded = crate::hash_format::encode_bytes(row.account_id.0.as_ref());
+                                let encoded =
+                                    crate::hash_format::encode_bytes(row.account_id.0.as_ref());
                                 let name = account_name_map
                                     .get(&row.account_id)
                                     .map(|n| n.as_ref())
                                     .unwrap_or("Unknown");
                                 A::<AppState, Location>::new()
                                     .class("event-card")
-                                    .href(Href::Internal(Location::Account(account_id_bytes)))
+                                    .href(Href::Internal(Location::Account(row.account_id)))
                                     .style(
                                         Style::new()
                                             .set("display", "grid")
@@ -95,8 +95,10 @@ pub fn account_list_view(state: &AppState) -> Node<AppState> {
 }
 
 fn collect_account_rows(state: &AppState) -> Vec<AccountRow> {
-    let mut map =
-        std::collections::HashMap::<definy_event::event::AccountId, (usize, chrono::DateTime<chrono::Utc>)>::new();
+    let mut map = std::collections::HashMap::<
+        definy_event::event::AccountId,
+        (usize, chrono::DateTime<chrono::Utc>),
+    >::new();
     for (_, event_result) in &state.events {
         let (_, event) = if let Ok(v) = event_result {
             v

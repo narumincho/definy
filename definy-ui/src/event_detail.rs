@@ -59,7 +59,6 @@ fn render_event_detail(
     event: &Event,
     account_name_map: &std::collections::HashMap<definy_event::event::AccountId, Box<str>>,
 ) -> Node<AppState> {
-    let account_id_bytes = *event.account_id.0.as_ref();
     let account_name = account_name_map
         .get(&event.account_id)
         .map(|name: &Box<str>| name.as_ref())
@@ -99,12 +98,14 @@ fn render_event_detail(
                     Div::new()
                         .class("mono")
                         .style(Style::new().set("opacity", "0.6"))
-                        .children([text(&crate::hash_format::encode_bytes(event.account_id.0.as_slice()))])
+                        .children([text(&crate::hash_format::encode_bytes(
+                            event.account_id.0.as_slice(),
+                        ))])
                         .into_node(),
                 ])
                 .into_node(),
             A::<AppState, Location>::new()
-                .href(Href::Internal(Location::Account(account_id_bytes)))
+                .href(Href::Internal(Location::Account(event.account_id.clone())))
                 .style(
                     Style::new()
                         .set("width", "fit-content")
@@ -181,11 +182,13 @@ fn render_event_detail(
                                 .on_click(EventHandler::new(move |set_state| {
                                     let expression = expression.clone();
                                     async move {
-                                        set_state(Box::new(move |state: AppState| AppState {
-                                            event_detail_eval_result: Some(
-                                                evaluate_message_result(&expression),
-                                            ),
-                                            ..state.clone()
+                                        set_state(Box::new(move |state: AppState| {
+                                            let eval_result =
+                                                evaluate_message_result(&expression, &state.events);
+                                            AppState {
+                                                event_detail_eval_result: Some(eval_result),
+                                                ..state.clone()
+                                            }
                                         }));
                                     }
                                 }))
@@ -227,7 +230,10 @@ fn render_event_detail(
                             .into_node(),
                         Div::new()
                             .style(Style::new().set("font-size", "1.35rem"))
-                            .children([text(format!("Part updated: {}", part_update_event.part_name))])
+                            .children([text(format!(
+                                "Part updated: {}",
+                                part_update_event.part_name
+                            ))])
                             .into_node(),
                         if part_update_event.part_description.is_empty() {
                             Div::new().children([]).into_node()
@@ -301,13 +307,21 @@ fn render_event_detail(
         .into_node()
 }
 
-fn related_part_events_section(state: &AppState, root_part_definition_hash: [u8; 32]) -> Node<AppState> {
+fn related_part_events_section(
+    state: &AppState,
+    root_part_definition_hash: [u8; 32],
+) -> Node<AppState> {
     let related_events = collect_related_part_events(state, root_part_definition_hash);
     let hash_as_base64 = crate::hash_format::encode_hash32(&root_part_definition_hash);
 
     Div::new()
         .class("event-detail-card")
-        .style(Style::new().set("display", "grid").set("gap", "0.7rem").set("padding", "1rem"))
+        .style(
+            Style::new()
+                .set("display", "grid")
+                .set("gap", "0.7rem")
+                .set("padding", "1rem"),
+        )
         .children([
             Div::new()
                 .style(Style::new().set("font-weight", "600"))
@@ -397,8 +411,17 @@ fn root_part_definition_hash(current_hash: &[u8; 32], content: &EventContent) ->
     }
 }
 
-fn evaluate_message_result(expression: &definy_event::event::Expression) -> String {
-    match evaluate_expression(expression) {
+fn evaluate_message_result(
+    expression: &definy_event::event::Expression,
+    events: &[(
+        [u8; 32],
+        Result<
+            (ed25519_dalek::Signature, definy_event::event::Event),
+            definy_event::VerifyAndDeserializeError,
+        >,
+    )],
+) -> String {
+    match evaluate_expression(expression, events) {
         Ok(value) => format!("Result: {}", value),
         Err(error) => format!("Error: {}", error),
     }
@@ -418,6 +441,6 @@ mod tests {
                 definy_event::event::NumberExpression { value: 32 },
             )),
         });
-        assert_eq!(evaluate_message_result(&expression), "Result: 42");
+        assert_eq!(evaluate_message_result(&expression, &[]), "Result: 42");
     }
 }

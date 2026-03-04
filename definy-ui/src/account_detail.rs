@@ -2,21 +2,23 @@ use narumincho_vdom::*;
 
 use crate::{AppState, Location};
 
-pub fn account_detail_view(state: &AppState, account_id_bytes: &[u8; 32]) -> Node<AppState> {
-    let account_id = definy_event::event::AccountId(Box::new(*account_id_bytes));
+pub fn account_detail_view(
+    state: &AppState,
+    account_id: &definy_event::event::AccountId,
+) -> Node<AppState> {
     let account_name_map = state.account_name_map();
     let account_name = account_name_map
-        .get(&account_id)
+        .get(account_id)
         .map(|name| name.as_ref())
         .unwrap_or("Unknown");
-    let encoded_account_id = crate::hash_format::encode_hash32(account_id_bytes);
+    let encoded_account_id = crate::hash_format::encode_hash32(account_id.0.as_ref());
 
     let account_events = state
         .events
         .iter()
         .filter_map(|(hash, event_result)| {
             let (_, event) = event_result.as_ref().ok()?;
-            if event.account_id.0.as_ref() == account_id_bytes {
+            if event.account_id == *account_id {
                 Some((*hash, event))
             } else {
                 None
@@ -109,9 +111,9 @@ pub fn account_detail_view(state: &AppState, account_id_bytes: &[u8; 32]) -> Nod
                                             )])
                                             .into_node(),
                                         Div::new()
-                                            .children([text(crate::event_presenter::event_summary_text(
-                                                event,
-                                            ))])
+                                            .children([text(
+                                                crate::event_presenter::event_summary_text(event),
+                                            )])
                                             .into_node(),
                                     ])
                                     .into_node()

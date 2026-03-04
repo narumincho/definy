@@ -52,7 +52,14 @@ fn default_expression() -> Expression {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum Expression {
     Number(NumberExpression),
+    String(StringExpression),
     Add(AddExpression),
+    PartReference(PartReferenceExpression),
+    Boolean(BooleanExpression),
+    If(IfExpression),
+    Equal(EqualExpression),
+    Let(LetExpression),
+    Variable(VariableExpression),
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -64,6 +71,47 @@ pub struct AddExpression {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct NumberExpression {
     pub value: i64,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct StringExpression {
+    pub value: Box<str>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct PartReferenceExpression {
+    pub part_definition_event_hash: [u8; 32],
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct BooleanExpression {
+    pub value: bool,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct IfExpression {
+    pub condition: Box<Expression>,
+    pub then_expr: Box<Expression>,
+    pub else_expr: Box<Expression>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct EqualExpression {
+    pub left: Box<Expression>,
+    pub right: Box<Expression>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct LetExpression {
+    pub variable_id: i64,
+    pub variable_name: Box<str>,
+    pub value: Box<Expression>,
+    pub body: Box<Expression>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct VariableExpression {
+    pub variable_id: i64,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]

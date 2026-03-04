@@ -138,6 +138,21 @@ define_element!(
     "https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/form"
 );
 define_element!(
+    Select,
+    "select",
+    "https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/select"
+);
+define_element!(
+    Datalist,
+    "datalist",
+    "https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/datalist"
+);
+define_element!(
+    OptionElement,
+    "option",
+    "https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/option"
+);
+define_element!(
     StyleElement,
     "style",
     "https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/style"
@@ -197,6 +212,22 @@ impl<State> Input<State> {
     pub fn on_change(mut self, msg: EventHandler<State>) -> Self {
         self.events.push(("change".to_string(), msg));
         self
+    }
+}
+
+impl<State> Select<State> {
+    pub fn name(self, name: &str) -> Self {
+        self.attribute("name", name)
+    }
+
+    pub fn value(self, value: &str) -> Self {
+        self.attribute("value", value)
+    }
+}
+
+impl<State> OptionElement<State> {
+    pub fn value(self, value: &str) -> Self {
+        self.attribute("value", value)
     }
 }
 
