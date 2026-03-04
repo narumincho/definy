@@ -97,6 +97,7 @@ pub struct EqualExpression {
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct LetExpression {
+    pub variable_id: i64,
     pub variable_name: Box<str>,
     pub value: Box<Expression>,
     pub body: Box<Expression>,
@@ -104,7 +105,7 @@ pub struct LetExpression {
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct VariableExpression {
-    pub variable_name: Box<str>,
+    pub variable_id: i64,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]

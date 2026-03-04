@@ -103,7 +103,7 @@ fn emit_section(module: &mut Vec<u8>, section_id: u8, data: &[u8]) {
 fn emit_expression(
     expression: &Expression,
     out: &mut Vec<u8>,
-    env: &HashMap<String, u32>,
+    env: &HashMap<i64, u32>,
     next_local_idx: &mut u32,
 ) -> Result<(), String> {
     match expression {
@@ -151,9 +151,10 @@ fn emit_expression(
             out.push(END);
         }
         Expression::Let(LetExpression {
-            variable_name,
+            variable_id,
             value,
             body,
+            ..
         }) => {
             emit_expression(value, out, env, next_local_idx)?;
             let current_idx = *next_local_idx;
@@ -163,14 +164,14 @@ fn emit_expression(
             encode_u32_leb128(out, current_idx);
 
             let mut new_env = env.clone();
-            new_env.insert(variable_name.to_string(), current_idx);
+            new_env.insert(*variable_id, current_idx);
 
             emit_expression(body, out, &new_env, next_local_idx)?;
         }
-        Expression::Variable(VariableExpression { variable_name }) => {
+        Expression::Variable(VariableExpression { variable_id }) => {
             let idx = env
-                .get(variable_name.as_ref())
-                .ok_or_else(|| format!("Variable not found: {}", variable_name))?;
+                .get(variable_id)
+                .ok_or_else(|| format!("Variable not found: {}", variable_id))?;
             out.push(0x20); // local.get
             encode_u32_leb128(out, *idx);
         }

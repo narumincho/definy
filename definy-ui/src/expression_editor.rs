@@ -32,12 +32,24 @@ enum PathStep {
     LetBody,
 }
 
+#[derive(Clone, Copy)]
+enum VariableInputMode {
+    BindingName,
+    Reference,
+}
+
+#[derive(Clone)]
+struct ScopeVariable {
+    id: i64,
+    name: String,
+}
+
 pub fn render_root_expression_editor(
     state: &AppState,
     expression: &definy_event::event::Expression,
     target: EditorTarget,
 ) -> Node<AppState> {
-    render_expression_editor(state, expression, Vec::new(), target)
+    render_expression_editor(state, expression, Vec::new(), target, Vec::new())
 }
 
 fn render_expression_editor(
@@ -45,6 +57,7 @@ fn render_expression_editor(
     expression: &definy_event::event::Expression,
     path: Vec<PathStep>,
     target: EditorTarget,
+    scope_variables: Vec<ScopeVariable>,
 ) -> Node<AppState> {
     Div::new()
         .class("event-detail-card")
@@ -111,6 +124,7 @@ fn render_expression_editor(
                                             add_expression.left.as_ref(),
                                             left_path,
                                             target,
+                                            scope_variables.clone(),
                                         ),
                                     ])
                                     .into_node(),
@@ -130,6 +144,7 @@ fn render_expression_editor(
                                             add_expression.right.as_ref(),
                                             right_path,
                                             target,
+                                            scope_variables.clone(),
                                         ),
                                     ])
                                     .into_node(),
@@ -174,6 +189,7 @@ fn render_expression_editor(
                                             if_expression.condition.as_ref(),
                                             cond_path,
                                             target,
+                                            scope_variables.clone(),
                                         ),
                                     ])
                                     .into_node(),
@@ -186,6 +202,7 @@ fn render_expression_editor(
                                             if_expression.then_expr.as_ref(),
                                             then_path,
                                             target,
+                                            scope_variables.clone(),
                                         ),
                                     ])
                                     .into_node(),
@@ -198,6 +215,7 @@ fn render_expression_editor(
                                             if_expression.else_expr.as_ref(),
                                             else_path,
                                             target,
+                                            scope_variables.clone(),
                                         ),
                                     ])
                                     .into_node(),
@@ -229,6 +247,7 @@ fn render_expression_editor(
                                             equal_expression.left.as_ref(),
                                             left_path,
                                             target,
+                                            scope_variables.clone(),
                                         ),
                                     ])
                                     .into_node(),
@@ -241,6 +260,7 @@ fn render_expression_editor(
                                             equal_expression.right.as_ref(),
                                             right_path,
                                             target,
+                                            scope_variables.clone(),
                                         ),
                                     ])
                                     .into_node(),
@@ -266,11 +286,13 @@ fn render_expression_editor(
                                 Div::new()
                                     .style(Style::new().set("display", "grid").set("gap", "0.3rem"))
                                     .children([
-                                        text("Let ID"),
+                                        text("Let Name"),
                                         variable_input(
                                             path.clone(),
                                             target,
                                             &let_expression.variable_name,
+                                            &scope_variables,
+                                            VariableInputMode::BindingName,
                                         ),
                                     ])
                                     .into_node(),
@@ -283,6 +305,7 @@ fn render_expression_editor(
                                             let_expression.value.as_ref(),
                                             value_path,
                                             target,
+                                            scope_variables.clone(),
                                         ),
                                     ])
                                     .into_node(),
@@ -290,12 +313,20 @@ fn render_expression_editor(
                                     .style(Style::new().set("display", "grid").set("gap", "0.3rem"))
                                     .children([
                                         text("Body"),
-                                        render_expression_editor(
-                                            state,
-                                            let_expression.body.as_ref(),
-                                            body_path,
-                                            target,
-                                        ),
+                                        {
+                                            let mut body_scope = scope_variables.clone();
+                                            body_scope.push(ScopeVariable {
+                                                id: let_expression.variable_id,
+                                                name: let_expression.variable_name.to_string(),
+                                            });
+                                            render_expression_editor(
+                                                state,
+                                                let_expression.body.as_ref(),
+                                                body_path,
+                                                target,
+                                                body_scope,
+                                            )
+                                        },
                                     ])
                                     .into_node(),
                             ])
@@ -303,10 +334,17 @@ fn render_expression_editor(
                     );
                 }
                 definy_event::event::Expression::Variable(var_expression) => {
+                    let current_name = resolve_scope_variable_name(
+                        &scope_variables,
+                        var_expression.variable_id,
+                    )
+                    .unwrap_or_default();
                     children.push(variable_input(
                         path.clone(),
                         target,
-                        &var_expression.variable_name,
+                        current_name.as_str(),
+                        &scope_variables,
+                        VariableInputMode::Reference,
                     ));
                 }
             }
@@ -502,7 +540,13 @@ fn reference_selector(
         .into_node()
 }
 
-fn variable_input(path: Vec<PathStep>, target: EditorTarget, value: &str) -> Node<AppState> {
+fn variable_input(
+    path: Vec<PathStep>,
+    target: EditorTarget,
+    value: &str,
+    scope_variables: &[ScopeVariable],
+    mode: VariableInputMode,
+) -> Node<AppState> {
     let name = format!(
         "{}-expr-var-{}",
         selector_prefix(target),
@@ -511,12 +555,14 @@ fn variable_input(path: Vec<PathStep>, target: EditorTarget, value: &str) -> Nod
     let selector = format!("input[name='{}']", name);
 
     let mut input = Input::new().name(name.as_str()).type_("text").value(value);
-
+    let scope_variables = scope_variables.to_vec();
+    let scope_variables_for_hint = scope_variables.clone();
     input.events.push((
         "input".to_string(),
         EventHandler::new(move |set_state| {
             let selector = selector.clone();
             let path = path.clone();
+            let scope_variables = scope_variables.clone();
             async move {
                 let value = web_sys::window()
                     .and_then(|window| window.document())
@@ -525,21 +571,64 @@ fn variable_input(path: Vec<PathStep>, target: EditorTarget, value: &str) -> Nod
                     .and_then(|element| {
                         wasm_bindgen::JsCast::dyn_into::<web_sys::HtmlInputElement>(element).ok()
                     })
-                    .map(|input| input.value());
+                    .map(|input| input.value())
+                    .unwrap_or_default();
 
-                if let Some(value) = value {
-                    set_state(Box::new(move |state: AppState| {
-                        let mut next = state.clone();
-                        let root_expression = target_expression_mut(&mut next, target);
-                        set_variable_value(root_expression, path.as_slice(), &value);
-                        next
-                    }));
-                }
+                set_state(Box::new(move |state: AppState| {
+                    let mut next = state.clone();
+                    let root_expression = target_expression_mut(&mut next, target);
+                    match mode {
+                        VariableInputMode::BindingName => {
+                            set_let_variable_name(root_expression, path.as_slice(), &value);
+                        }
+                        VariableInputMode::Reference => {
+                            if let Some(variable_id) =
+                                resolve_scope_variable_id(&scope_variables, value.as_str())
+                            {
+                                set_variable_reference_id(
+                                    root_expression,
+                                    path.as_slice(),
+                                    variable_id,
+                                );
+                            }
+                        }
+                    }
+                    next
+                }));
             }
         }),
     ));
 
-    input.into_node()
+    let hint = if matches!(mode, VariableInputMode::Reference) {
+        let names = unique_strings(
+            scope_variables_for_hint
+                .iter()
+                .map(|v| v.name.clone())
+                .collect(),
+        );
+        if names.is_empty() {
+            "有効な変数名: (none)".to_string()
+        } else {
+            format!("有効な変数名: {}", names.join(", "))
+        }
+    } else {
+        "自由な変数名を入力できます".to_string()
+    };
+
+    Div::new()
+        .style(Style::new().set("display", "grid").set("gap", "0.25rem"))
+        .children([
+            input.into_node(),
+            Div::new()
+                .style(
+                    Style::new()
+                        .set("font-size", "0.8rem")
+                        .set("color", "var(--text-secondary)"),
+                )
+                .children([text(hint)])
+                .into_node(),
+        ])
+        .into_node()
 }
 
 fn selector_prefix(target: EditorTarget) -> &'static str {
@@ -547,6 +636,34 @@ fn selector_prefix(target: EditorTarget) -> &'static str {
         EditorTarget::PartDefinition => "part-definition",
         EditorTarget::PartUpdate => "part-update",
     }
+}
+
+fn resolve_scope_variable_name(scope_variables: &[ScopeVariable], variable_id: i64) -> Option<String> {
+    scope_variables.iter().rev().find_map(|scope_var| {
+        if scope_var.id == variable_id {
+            Some(scope_var.name.clone())
+        } else {
+            None
+        }
+    })
+}
+
+fn resolve_scope_variable_id(scope_variables: &[ScopeVariable], variable_name: &str) -> Option<i64> {
+    scope_variables.iter().rev().find_map(|scope_var| {
+        if scope_var.name == variable_name {
+            Some(scope_var.id)
+        } else {
+            None
+        }
+    })
+}
+
+fn unique_strings(values: Vec<String>) -> Vec<String> {
+    let mut seen = std::collections::HashSet::new();
+    values
+        .into_iter()
+        .filter(|value| seen.insert(value.clone()))
+        .collect()
 }
 
 fn target_expression_mut<'a>(
@@ -632,6 +749,11 @@ fn set_node_kind(
     path: &[PathStep],
     kind: NodeKind,
 ) {
+    let next_variable_id = if matches!(kind, NodeKind::Let) {
+        next_local_variable_id(root_expression)
+    } else {
+        0
+    };
     if let Some(expression) = get_mut_expression_at_path(root_expression, path) {
         *expression =
             match kind {
@@ -683,20 +805,21 @@ fn set_node_kind(
                 }
                 NodeKind::Let => {
                     definy_event::event::Expression::Let(definy_event::event::LetExpression {
+                        variable_id: next_variable_id,
                         variable_name: "x".into(),
                         value: Box::new(definy_event::event::Expression::Number(
                             definy_event::event::NumberExpression { value: 0 },
                         )),
                         body: Box::new(definy_event::event::Expression::Variable(
                             definy_event::event::VariableExpression {
-                                variable_name: "x".into(),
+                                variable_id: next_variable_id,
                             },
                         )),
                     })
                 }
                 NodeKind::Variable => definy_event::event::Expression::Variable(
                     definy_event::event::VariableExpression {
-                        variable_name: "x".into(),
+                        variable_id: 0,
                     },
                 ),
             }
@@ -739,22 +862,57 @@ fn set_boolean_value(
     }
 }
 
-fn set_variable_value(
+fn set_let_variable_name(
     root_expression: &mut definy_event::event::Expression,
     path: &[PathStep],
     value: &str,
 ) {
-    if let Some(expr) = get_mut_expression_at_path(root_expression, path) {
-        match expr {
-            definy_event::event::Expression::Let(let_expr) => {
-                let_expr.variable_name = value.into();
+    if let Some(definy_event::event::Expression::Let(let_expr)) =
+        get_mut_expression_at_path(root_expression, path)
+    {
+        let_expr.variable_name = value.into();
+    }
+}
+
+fn set_variable_reference_id(
+    root_expression: &mut definy_event::event::Expression,
+    path: &[PathStep],
+    variable_id: i64,
+) {
+    if let Some(definy_event::event::Expression::Variable(var_expr)) =
+        get_mut_expression_at_path(root_expression, path)
+    {
+        var_expr.variable_id = variable_id;
+    }
+}
+
+fn next_local_variable_id(expression: &definy_event::event::Expression) -> i64 {
+    fn max_local_variable_id(expression: &definy_event::event::Expression) -> i64 {
+        match expression {
+            definy_event::event::Expression::Number(_) => 0,
+            definy_event::event::Expression::Boolean(_) => 0,
+            definy_event::event::Expression::PartReference(_) => 0,
+            definy_event::event::Expression::Add(add_expression) => {
+                max_local_variable_id(add_expression.left.as_ref())
+                    .max(max_local_variable_id(add_expression.right.as_ref()))
             }
-            definy_event::event::Expression::Variable(var_expr) => {
-                var_expr.variable_name = value.into();
-            }
-            _ => {}
+            definy_event::event::Expression::If(if_expression) => max_local_variable_id(
+                if_expression.condition.as_ref(),
+            )
+            .max(max_local_variable_id(if_expression.then_expr.as_ref()))
+            .max(max_local_variable_id(if_expression.else_expr.as_ref())),
+            definy_event::event::Expression::Equal(equal_expression) => max_local_variable_id(
+                equal_expression.left.as_ref(),
+            )
+            .max(max_local_variable_id(equal_expression.right.as_ref())),
+            definy_event::event::Expression::Let(let_expression) => let_expression
+                .variable_id
+                .max(max_local_variable_id(let_expression.value.as_ref()))
+                .max(max_local_variable_id(let_expression.body.as_ref())),
+            definy_event::event::Expression::Variable(var_expression) => var_expression.variable_id,
         }
     }
+    max_local_variable_id(expression).saturating_add(1).max(1)
 }
 
 #[cfg(test)]

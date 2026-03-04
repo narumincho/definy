@@ -142,7 +142,7 @@ fn evaluate_expression_with_depth(
             definy_event::VerifyAndDeserializeError,
         >,
     )],
-    env: &std::collections::HashMap<String, Value>,
+    env: &std::collections::HashMap<i64, Value>,
     depth: usize,
 ) -> Result<Value, &'static str> {
     if depth > 100 {
@@ -223,11 +223,11 @@ fn evaluate_expression_with_depth(
             let value =
                 evaluate_expression_with_depth(let_expr.value.as_ref(), events, env, depth + 1)?;
             let mut new_env = env.clone();
-            new_env.insert(let_expr.variable_name.to_string(), value);
+            new_env.insert(let_expr.variable_id, value);
             evaluate_expression_with_depth(let_expr.body.as_ref(), events, &new_env, depth + 1)
         }
         definy_event::event::Expression::Variable(var_expr) => env
-            .get(var_expr.variable_name.as_ref())
+            .get(&var_expr.variable_id)
             .cloned()
             .ok_or("undefined variable"),
         definy_event::event::Expression::PartReference(part_reference_expression) => {
@@ -264,7 +264,11 @@ fn evaluate_expression_with_depth(
 }
 
 pub fn expression_to_source(expression: &definy_event::event::Expression) -> String {
-    fn render(expression: &definy_event::event::Expression, is_child: bool) -> String {
+    fn render(
+        expression: &definy_event::event::Expression,
+        is_child: bool,
+        scope: &[(i64, String)],
+    ) -> String {
         match expression {
             definy_event::event::Expression::Number(number_expression) => {
                 number_expression.value.to_string()
@@ -272,8 +276,8 @@ pub fn expression_to_source(expression: &definy_event::event::Expression) -> Str
             definy_event::event::Expression::Add(add_expression) => {
                 let source = format!(
                     "+ {} {}",
-                    render(add_expression.left.as_ref(), true),
-                    render(add_expression.right.as_ref(), true)
+                    render(add_expression.left.as_ref(), true, scope),
+                    render(add_expression.right.as_ref(), true, scope)
                 );
                 if is_child {
                     format!("({})", source)
@@ -291,9 +295,9 @@ pub fn expression_to_source(expression: &definy_event::event::Expression) -> Str
             definy_event::event::Expression::If(if_expression) => {
                 let source = format!(
                     "if {} {} {}",
-                    render(if_expression.condition.as_ref(), true),
-                    render(if_expression.then_expr.as_ref(), true),
-                    render(if_expression.else_expr.as_ref(), true)
+                    render(if_expression.condition.as_ref(), true, scope),
+                    render(if_expression.then_expr.as_ref(), true, scope),
+                    render(if_expression.else_expr.as_ref(), true, scope)
                 );
                 if is_child {
                     format!("({})", source)
@@ -304,8 +308,8 @@ pub fn expression_to_source(expression: &definy_event::event::Expression) -> Str
             definy_event::event::Expression::Equal(equal_expression) => {
                 let source = format!(
                     "== {} {}",
-                    render(equal_expression.left.as_ref(), true),
-                    render(equal_expression.right.as_ref(), true)
+                    render(equal_expression.left.as_ref(), true, scope),
+                    render(equal_expression.right.as_ref(), true, scope)
                 );
                 if is_child {
                     format!("({})", source)
@@ -317,11 +321,16 @@ pub fn expression_to_source(expression: &definy_event::event::Expression) -> Str
                 crate::hash_format::encode_hash32(&part_reference_expression.part_definition_event_hash)
             }
             definy_event::event::Expression::Let(let_expression) => {
+                let mut body_scope = scope.to_vec();
+                body_scope.push((
+                    let_expression.variable_id,
+                    let_expression.variable_name.to_string(),
+                ));
                 let source = format!(
                     "let {} = {} in {}",
                     let_expression.variable_name,
-                    render(let_expression.value.as_ref(), false),
-                    render(let_expression.body.as_ref(), false)
+                    render(let_expression.value.as_ref(), false, scope),
+                    render(let_expression.body.as_ref(), false, &body_scope)
                 );
                 if is_child {
                     format!("({})", source)
@@ -330,12 +339,22 @@ pub fn expression_to_source(expression: &definy_event::event::Expression) -> Str
                 }
             }
             definy_event::event::Expression::Variable(variable_expression) => {
-                variable_expression.variable_name.to_string()
+                scope
+                    .iter()
+                    .rev()
+                    .find_map(|(id, name)| {
+                        if *id == variable_expression.variable_id {
+                            Some(name.clone())
+                        } else {
+                            None
+                        }
+                    })
+                    .unwrap_or_else(|| format!("#{}", variable_expression.variable_id))
             }
         }
     }
 
-    render(expression, false)
+    render(expression, false, &[])
 }
 
 #[cfg(test)]
@@ -503,12 +522,14 @@ mod tests {
     fn evaluate_let_bindings() {
         // let x = 10 in (let y = 20 in x + y)
         let let_expr = definy_event::event::Expression::Let(definy_event::event::LetExpression {
+            variable_id: 1,
             variable_name: "x".into(),
             value: Box::new(definy_event::event::Expression::Number(
                 definy_event::event::NumberExpression { value: 10 },
             )),
             body: Box::new(definy_event::event::Expression::Let(
                 definy_event::event::LetExpression {
+                    variable_id: 2,
                     variable_name: "y".into(),
                     value: Box::new(definy_event::event::Expression::Number(
                         definy_event::event::NumberExpression { value: 20 },
@@ -517,12 +538,12 @@ mod tests {
                         definy_event::event::AddExpression {
                             left: Box::new(definy_event::event::Expression::Variable(
                                 definy_event::event::VariableExpression {
-                                    variable_name: "x".into(),
+                                    variable_id: 1,
                                 },
                             )),
                             right: Box::new(definy_event::event::Expression::Variable(
                                 definy_event::event::VariableExpression {
-                                    variable_name: "y".into(),
+                                    variable_id: 2,
                                 },
                             )),
                         },
