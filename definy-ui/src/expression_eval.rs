@@ -232,17 +232,33 @@ fn evaluate_expression_with_depth(
             .ok_or("undefined variable"),
         definy_event::event::Expression::PartReference(part_reference_expression) => {
             let mut latest_expression = None;
-            for (_, event_result) in events.iter().rev() {
+            for (event_hash, event_result) in events.iter().rev() {
                 if let Ok((_, event)) = event_result {
                     match &event.content {
                         definy_event::event::EventContent::PartDefinition(part_definition) => {
-                            if part_definition.part_name == part_reference_expression.part_name {
+                            let matches_hash = part_reference_expression
+                                .part_definition_event_hash
+                                .is_some_and(|target_hash| target_hash == *event_hash);
+                            let matches_legacy_name = part_reference_expression
+                                .part_name
+                                .as_ref()
+                                .is_some_and(|part_name| part_definition.part_name == *part_name);
+                            if matches_hash || matches_legacy_name {
                                 latest_expression = Some(&part_definition.expression);
                                 break;
                             }
                         }
                         definy_event::event::EventContent::PartUpdate(part_update) => {
-                            if part_update.part_name == part_reference_expression.part_name {
+                            let matches_hash = part_reference_expression
+                                .part_definition_event_hash
+                                .is_some_and(|target_hash| {
+                                    part_update.part_definition_event_hash == target_hash
+                                });
+                            let matches_legacy_name = part_reference_expression
+                                .part_name
+                                .as_ref()
+                                .is_some_and(|part_name| part_update.part_name == *part_name);
+                            if matches_hash || matches_legacy_name {
                                 latest_expression = Some(&part_update.expression);
                                 break;
                             }
@@ -312,7 +328,17 @@ pub fn expression_to_source(expression: &definy_event::event::Expression) -> Str
                 }
             }
             definy_event::event::Expression::PartReference(part_reference_expression) => {
-                part_reference_expression.part_name.to_string()
+                part_reference_expression
+                    .part_definition_event_hash
+                    .as_ref()
+                    .map(crate::hash_format::encode_hash32)
+                    .or_else(|| {
+                        part_reference_expression
+                            .part_name
+                            .as_ref()
+                            .map(|part_name| part_name.to_string())
+                    })
+                    .unwrap_or_default()
             }
             definy_event::event::Expression::Let(let_expression) => {
                 let source = format!(
@@ -532,6 +558,48 @@ mod tests {
         assert_eq!(
             evaluate_expression(&let_expr, &[]),
             Ok(crate::expression_eval::Value::Number(30))
+        );
+    }
+
+    #[test]
+    fn evaluate_part_reference_by_definition_hash() {
+        let definition_hash = [42u8; 32];
+        let part_expression =
+            definy_event::event::Expression::Number(definy_event::event::NumberExpression {
+                value: 99,
+            });
+        let events = vec![(
+            definition_hash,
+            Ok((
+                ed25519_dalek::Signature::from_bytes(&[0u8; 64]),
+                definy_event::event::Event {
+                    account_id: definy_event::event::AccountId(Box::new([1u8; 32])),
+                    time: chrono::DateTime::UNIX_EPOCH,
+                    content: definy_event::event::EventContent::PartDefinition(
+                        definy_event::event::PartDefinitionEvent {
+                            part_name: "legacy-name".into(),
+                            description: "".into(),
+                            expression: part_expression,
+                        },
+                    ),
+                },
+            )),
+        )];
+
+        let reference = definy_event::event::Expression::PartReference(
+            definy_event::event::PartReferenceExpression {
+                part_definition_event_hash: Some(definition_hash),
+                part_name: None,
+            },
+        );
+
+        assert_eq!(
+            evaluate_expression(&reference, &events),
+            Ok(crate::expression_eval::Value::Number(99))
+        );
+        assert_eq!(
+            expression_to_source(&reference),
+            crate::hash_format::encode_hash32(&definition_hash)
         );
     }
 }

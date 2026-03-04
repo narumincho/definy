@@ -74,7 +74,10 @@ pub struct NumberExpression {
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct PartReferenceExpression {
-    pub part_name: Box<str>,
+    #[serde(default)]
+    pub part_definition_event_hash: Option<[u8; 32]>,
+    #[serde(default)]
+    pub part_name: Option<Box<str>>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]

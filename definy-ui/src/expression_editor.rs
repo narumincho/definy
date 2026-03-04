@@ -133,7 +133,13 @@ fn render_expression_editor(
                     );
                 }
                 definy_event::event::Expression::PartReference(part_ref) => {
-                    children.push(reference_input(path, target, &part_ref.part_name));
+                    let display_value = part_ref
+                        .part_definition_event_hash
+                        .as_ref()
+                        .map(crate::hash_format::encode_hash32)
+                        .or_else(|| part_ref.part_name.as_ref().map(|part_name| part_name.to_string()))
+                        .unwrap_or_default();
+                    children.push(reference_input(path, target, display_value.as_str()));
                 }
                 definy_event::event::Expression::Boolean(boolean_expression) => {
                     children.push(boolean_input(path, target, boolean_expression.value));
@@ -612,7 +618,8 @@ fn set_node_kind(
                 }
                 NodeKind::PartReference => definy_event::event::Expression::PartReference(
                     definy_event::event::PartReferenceExpression {
-                        part_name: "".into(),
+                        part_definition_event_hash: None,
+                        part_name: None,
                     },
                 ),
                 NodeKind::Boolean => definy_event::event::Expression::Boolean(
@@ -683,7 +690,9 @@ fn set_reference_value(
     if let Some(definy_event::event::Expression::PartReference(part_ref)) =
         get_mut_expression_at_path(root_expression, path)
     {
-        part_ref.part_name = value.into();
+        part_ref.part_definition_event_hash = crate::hash_format::decode_hash32(value);
+        // Keep legacy name storage only for backward-compat reads.
+        part_ref.part_name = None;
     }
 }
 
