@@ -28,7 +28,8 @@ pub fn evaluate_expression(
         return result;
     }
 
-    evaluate_expression_with_depth(expression, events, 0)
+    let env = std::collections::HashMap::new();
+    evaluate_expression_with_depth(expression, events, &env, 0)
 }
 
 fn evaluate_via_wasm(
@@ -109,6 +110,10 @@ fn has_part_references(expr: &definy_event::event::Expression) -> bool {
         definy_event::event::Expression::Equal(e) => {
             has_part_references(&e.left) || has_part_references(&e.right)
         }
+        definy_event::event::Expression::Let(l) => {
+            has_part_references(&l.value) || has_part_references(&l.body)
+        }
+        definy_event::event::Expression::Variable(_) => false,
         _ => false,
     }
 }
@@ -122,6 +127,8 @@ fn is_boolean_expression(expr: &definy_event::event::Expression) -> bool {
         definy_event::event::Expression::If(i) => {
             is_boolean_expression(&i.then_expr) && is_boolean_expression(&i.else_expr)
         }
+        definy_event::event::Expression::Let(l) => is_boolean_expression(&l.body),
+        definy_event::event::Expression::Variable(_) => false,
         _ => false,
     }
 }
@@ -135,6 +142,7 @@ fn evaluate_expression_with_depth(
             definy_event::VerifyAndDeserializeError,
         >,
     )],
+    env: &std::collections::HashMap<String, Value>,
     depth: usize,
 ) -> Result<Value, &'static str> {
     if depth > 100 {
@@ -145,10 +153,18 @@ fn evaluate_expression_with_depth(
             Ok(Value::Number(number_expression.value))
         }
         definy_event::event::Expression::Add(add_expression) => {
-            let left =
-                evaluate_expression_with_depth(add_expression.left.as_ref(), events, depth + 1)?;
-            let right =
-                evaluate_expression_with_depth(add_expression.right.as_ref(), events, depth + 1)?;
+            let left = evaluate_expression_with_depth(
+                add_expression.left.as_ref(),
+                events,
+                env,
+                depth + 1,
+            )?;
+            let right = evaluate_expression_with_depth(
+                add_expression.right.as_ref(),
+                events,
+                env,
+                depth + 1,
+            )?;
             match (left, right) {
                 (Value::Number(l), Value::Number(r)) => l
                     .checked_add(r)
@@ -164,6 +180,7 @@ fn evaluate_expression_with_depth(
             let condition = evaluate_expression_with_depth(
                 if_expression.condition.as_ref(),
                 events,
+                env,
                 depth + 1,
             )?;
             match condition {
@@ -172,12 +189,14 @@ fn evaluate_expression_with_depth(
                         evaluate_expression_with_depth(
                             if_expression.then_expr.as_ref(),
                             events,
+                            env,
                             depth + 1,
                         )
                     } else {
                         evaluate_expression_with_depth(
                             if_expression.else_expr.as_ref(),
                             events,
+                            env,
                             depth + 1,
                         )
                     }
@@ -186,12 +205,31 @@ fn evaluate_expression_with_depth(
             }
         }
         definy_event::event::Expression::Equal(equal_expression) => {
-            let left =
-                evaluate_expression_with_depth(equal_expression.left.as_ref(), events, depth + 1)?;
-            let right =
-                evaluate_expression_with_depth(equal_expression.right.as_ref(), events, depth + 1)?;
+            let left = evaluate_expression_with_depth(
+                equal_expression.left.as_ref(),
+                events,
+                env,
+                depth + 1,
+            )?;
+            let right = evaluate_expression_with_depth(
+                equal_expression.right.as_ref(),
+                events,
+                env,
+                depth + 1,
+            )?;
             Ok(Value::Bool(left == right))
         }
+        definy_event::event::Expression::Let(let_expr) => {
+            let value =
+                evaluate_expression_with_depth(let_expr.value.as_ref(), events, env, depth + 1)?;
+            let mut new_env = env.clone();
+            new_env.insert(let_expr.variable_name.to_string(), value);
+            evaluate_expression_with_depth(let_expr.body.as_ref(), events, &new_env, depth + 1)
+        }
+        definy_event::event::Expression::Variable(var_expr) => env
+            .get(var_expr.variable_name.as_ref())
+            .cloned()
+            .ok_or("undefined variable"),
         definy_event::event::Expression::PartReference(part_reference_expression) => {
             let mut latest_expression = None;
             for (_, event_result) in events.iter().rev() {
@@ -214,7 +252,8 @@ fn evaluate_expression_with_depth(
                 }
             }
             if let Some(expr) = latest_expression {
-                evaluate_expression_with_depth(expr, events, depth + 1)
+                let empty_env = std::collections::HashMap::new();
+                evaluate_expression_with_depth(expr, events, &empty_env, depth + 1)
             } else {
                 Err("Part not found")
             }
@@ -274,6 +313,22 @@ pub fn expression_to_source(expression: &definy_event::event::Expression) -> Str
             }
             definy_event::event::Expression::PartReference(part_reference_expression) => {
                 part_reference_expression.part_name.to_string()
+            }
+            definy_event::event::Expression::Let(let_expression) => {
+                let source = format!(
+                    "let {} = {} in {}",
+                    let_expression.variable_name,
+                    render(let_expression.value.as_ref(), false),
+                    render(let_expression.body.as_ref(), false)
+                );
+                if is_child {
+                    format!("({})", source)
+                } else {
+                    source
+                }
+            }
+            definy_event::event::Expression::Variable(variable_expression) => {
+                variable_expression.variable_name.to_string()
             }
         }
     }
@@ -440,5 +495,43 @@ mod tests {
             Ok(crate::expression_eval::Value::Bool(true))
         );
         assert_eq!(expression_to_source(&equal_expr), "== 5 5");
+    }
+
+    #[test]
+    fn evaluate_let_bindings() {
+        // let x = 10 in (let y = 20 in x + y)
+        let let_expr = definy_event::event::Expression::Let(definy_event::event::LetExpression {
+            variable_name: "x".into(),
+            value: Box::new(definy_event::event::Expression::Number(
+                definy_event::event::NumberExpression { value: 10 },
+            )),
+            body: Box::new(definy_event::event::Expression::Let(
+                definy_event::event::LetExpression {
+                    variable_name: "y".into(),
+                    value: Box::new(definy_event::event::Expression::Number(
+                        definy_event::event::NumberExpression { value: 20 },
+                    )),
+                    body: Box::new(definy_event::event::Expression::Add(
+                        definy_event::event::AddExpression {
+                            left: Box::new(definy_event::event::Expression::Variable(
+                                definy_event::event::VariableExpression {
+                                    variable_name: "x".into(),
+                                },
+                            )),
+                            right: Box::new(definy_event::event::Expression::Variable(
+                                definy_event::event::VariableExpression {
+                                    variable_name: "y".into(),
+                                },
+                            )),
+                        },
+                    )),
+                },
+            )),
+        });
+
+        assert_eq!(
+            evaluate_expression(&let_expr, &[]),
+            Ok(crate::expression_eval::Value::Number(30))
+        );
     }
 }

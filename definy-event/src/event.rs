@@ -57,6 +57,8 @@ pub enum Expression {
     Boolean(BooleanExpression),
     If(IfExpression),
     Equal(EqualExpression),
+    Let(LetExpression),
+    Variable(VariableExpression),
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -91,6 +93,18 @@ pub struct IfExpression {
 pub struct EqualExpression {
     pub left: Box<Expression>,
     pub right: Box<Expression>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct LetExpression {
+    pub variable_name: Box<str>,
+    pub value: Box<Expression>,
+    pub body: Box<Expression>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct VariableExpression {
+    pub variable_name: Box<str>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]

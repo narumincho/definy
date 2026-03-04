@@ -1,6 +1,8 @@
 use definy_event::event::{
-    AddExpression, BooleanExpression, EqualExpression, Expression, IfExpression, NumberExpression,
+    AddExpression, BooleanExpression, EqualExpression, Expression, IfExpression, LetExpression,
+    NumberExpression, VariableExpression,
 };
+use std::collections::HashMap;
 
 // Minimal Wasm Module builder
 // A Wasm module is constructed of parts called sections.
@@ -31,7 +33,9 @@ const BLOCK_TYPE_I64: u8 = 0x7E;
 
 pub fn compile_expression_to_wasm(expression: &Expression) -> Result<Vec<u8>, String> {
     let mut code_bytes = Vec::new();
-    emit_expression(expression, &mut code_bytes)?;
+    let env = HashMap::new();
+    let mut next_local_idx = 0;
+    emit_expression(expression, &mut code_bytes, &env, &mut next_local_idx)?;
     code_bytes.push(END);
 
     let mut module = Vec::new();
@@ -69,7 +73,14 @@ pub fn compile_expression_to_wasm(expression: &Expression) -> Result<Vec<u8>, St
 
     // Function body size and locals
     let mut func_body = Vec::new();
-    func_body.push(0); // 0 local declarations
+    let locals_count = count_locals(expression);
+    if locals_count > 0 {
+        func_body.push(1); // 1 local declaration group
+        encode_u32_leb128(&mut func_body, locals_count); // N locals
+        func_body.push(I64); // of type i64
+    } else {
+        func_body.push(0); // 0 local declarations
+    }
 
     // Append instructions
     func_body.extend_from_slice(&code_bytes);
@@ -89,7 +100,12 @@ fn emit_section(module: &mut Vec<u8>, section_id: u8, data: &[u8]) {
     module.extend_from_slice(data);
 }
 
-fn emit_expression(expression: &Expression, out: &mut Vec<u8>) -> Result<(), String> {
+fn emit_expression(
+    expression: &Expression,
+    out: &mut Vec<u8>,
+    env: &HashMap<String, u32>,
+    next_local_idx: &mut u32,
+) -> Result<(), String> {
     match expression {
         Expression::Number(NumberExpression { value }) => {
             out.push(I64_CONST);
@@ -100,13 +116,13 @@ fn emit_expression(expression: &Expression, out: &mut Vec<u8>) -> Result<(), Str
             encode_i64_sleb128(out, if *value { 1 } else { 0 });
         }
         Expression::Add(AddExpression { left, right }) => {
-            emit_expression(left, out)?;
-            emit_expression(right, out)?;
+            emit_expression(left, out, env, next_local_idx)?;
+            emit_expression(right, out, env, next_local_idx)?;
             out.push(I64_ADD);
         }
         Expression::Equal(EqualExpression { left, right }) => {
-            emit_expression(left, out)?;
-            emit_expression(right, out)?;
+            emit_expression(left, out, env, next_local_idx)?;
+            emit_expression(right, out, env, next_local_idx)?;
             out.push(I64_EQ);
             // I64_EQ returns i32, but our types use i64 everywhere, so we need to extend the i32 back to i64
             // Wasm 1.0 doesn't have i64.extend_i32_s/u natively unless we do it directly: we can do i64.extend_i32_u
@@ -119,20 +135,44 @@ fn emit_expression(expression: &Expression, out: &mut Vec<u8>) -> Result<(), Str
             else_expr,
         }) => {
             // Evaluate condition
-            emit_expression(condition, out)?;
+            emit_expression(condition, out, env, next_local_idx)?;
             // condition must be i32 for `if`, so we wrap i64 to i32
             out.push(I32_WRAP_I64);
 
             out.push(IF);
             out.push(BLOCK_TYPE_I64); // result type of the if block
 
-            emit_expression(then_expr, out)?;
+            emit_expression(then_expr, out, env, next_local_idx)?;
 
             out.push(ELSE);
 
-            emit_expression(else_expr, out)?;
+            emit_expression(else_expr, out, env, next_local_idx)?;
 
             out.push(END);
+        }
+        Expression::Let(LetExpression {
+            variable_name,
+            value,
+            body,
+        }) => {
+            emit_expression(value, out, env, next_local_idx)?;
+            let current_idx = *next_local_idx;
+            *next_local_idx += 1;
+
+            out.push(0x21); // local.set
+            encode_u32_leb128(out, current_idx);
+
+            let mut new_env = env.clone();
+            new_env.insert(variable_name.to_string(), current_idx);
+
+            emit_expression(body, out, &new_env, next_local_idx)?;
+        }
+        Expression::Variable(VariableExpression { variable_name }) => {
+            let idx = env
+                .get(variable_name.as_ref())
+                .ok_or_else(|| format!("Variable not found: {}", variable_name))?;
+            out.push(0x20); // local.get
+            encode_u32_leb128(out, *idx);
         }
         Expression::PartReference(_) => {
             return Err(
@@ -142,6 +182,20 @@ fn emit_expression(expression: &Expression, out: &mut Vec<u8>) -> Result<(), Str
         }
     }
     Ok(())
+}
+
+fn count_locals(expr: &Expression) -> u32 {
+    match expr {
+        Expression::Let(LetExpression { value, body, .. }) => {
+            1 + count_locals(value) + count_locals(body)
+        }
+        Expression::Add(a) => count_locals(&a.left) + count_locals(&a.right),
+        Expression::Equal(e) => count_locals(&e.left) + count_locals(&e.right),
+        Expression::If(i) => {
+            count_locals(&i.condition) + count_locals(&i.then_expr) + count_locals(&i.else_expr)
+        }
+        _ => 0,
+    }
 }
 
 fn encode_u32_leb128(out: &mut Vec<u8>, mut value: u32) {

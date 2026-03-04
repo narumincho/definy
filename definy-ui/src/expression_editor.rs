@@ -16,6 +16,8 @@ enum NodeKind {
     Boolean,
     If,
     Equal,
+    Let,
+    Variable,
 }
 
 #[derive(Clone, Copy)]
@@ -25,6 +27,8 @@ enum PathStep {
     Condition,
     Then,
     Else,
+    LetValue,
+    LetBody,
 }
 
 pub fn render_root_expression_editor(
@@ -63,6 +67,8 @@ fn render_expression_editor(
                         kind_button(path.clone(), target, NodeKind::Boolean, "Bool"),
                         kind_button(path.clone(), target, NodeKind::If, "If"),
                         kind_button(path.clone(), target, NodeKind::Equal, "=="),
+                        kind_button(path.clone(), target, NodeKind::Let, "Let"),
+                        kind_button(path.clone(), target, NodeKind::Variable, "Var"),
                     ])
                     .into_node(),
             ];
@@ -226,6 +232,65 @@ fn render_expression_editor(
                             ])
                             .into_node(),
                     );
+                }
+                definy_event::event::Expression::Let(let_expression) => {
+                    let mut value_path = path.clone();
+                    value_path.push(PathStep::LetValue);
+                    let mut body_path = path.clone();
+                    body_path.push(PathStep::LetBody);
+
+                    children.push(
+                        Div::new()
+                            .style(
+                                Style::new()
+                                    .set("display", "grid")
+                                    .set("grid-template-columns", "1fr")
+                                    .set("gap", "0.6rem"),
+                            )
+                            .children([
+                                Div::new()
+                                    .style(Style::new().set("display", "grid").set("gap", "0.3rem"))
+                                    .children([
+                                        text("Let ID"),
+                                        variable_input(
+                                            path.clone(),
+                                            target,
+                                            &let_expression.variable_name,
+                                        ),
+                                    ])
+                                    .into_node(),
+                                Div::new()
+                                    .style(Style::new().set("display", "grid").set("gap", "0.3rem"))
+                                    .children([
+                                        text("Value"),
+                                        render_expression_editor(
+                                            let_expression.value.as_ref(),
+                                            value_path,
+                                            target,
+                                        ),
+                                    ])
+                                    .into_node(),
+                                Div::new()
+                                    .style(Style::new().set("display", "grid").set("gap", "0.3rem"))
+                                    .children([
+                                        text("Body"),
+                                        render_expression_editor(
+                                            let_expression.body.as_ref(),
+                                            body_path,
+                                            target,
+                                        ),
+                                    ])
+                                    .into_node(),
+                            ])
+                            .into_node(),
+                    );
+                }
+                definy_event::event::Expression::Variable(var_expression) => {
+                    children.push(variable_input(
+                        path.clone(),
+                        target,
+                        &var_expression.variable_name,
+                    ));
                 }
             }
             children
@@ -397,6 +462,46 @@ fn reference_input(path: Vec<PathStep>, target: EditorTarget, value: &str) -> No
     input.into_node()
 }
 
+fn variable_input(path: Vec<PathStep>, target: EditorTarget, value: &str) -> Node<AppState> {
+    let name = format!(
+        "{}-expr-var-{}",
+        selector_prefix(target),
+        path_to_key(path.as_slice())
+    );
+    let selector = format!("input[name='{}']", name);
+
+    let mut input = Input::new().name(name.as_str()).type_("text").value(value);
+
+    input.events.push((
+        "input".to_string(),
+        EventHandler::new(move |set_state| {
+            let selector = selector.clone();
+            let path = path.clone();
+            async move {
+                let value = web_sys::window()
+                    .and_then(|window| window.document())
+                    .and_then(|document| document.query_selector(selector.as_str()).ok())
+                    .flatten()
+                    .and_then(|element| {
+                        wasm_bindgen::JsCast::dyn_into::<web_sys::HtmlInputElement>(element).ok()
+                    })
+                    .map(|input| input.value());
+
+                if let Some(value) = value {
+                    set_state(Box::new(move |state: AppState| {
+                        let mut next = state.clone();
+                        let root_expression = target_expression_mut(&mut next, target);
+                        set_variable_value(root_expression, path.as_slice(), &value);
+                        next
+                    }));
+                }
+            }
+        }),
+    ));
+
+    input.into_node()
+}
+
 fn selector_prefix(target: EditorTarget) -> &'static str {
     match target {
         EditorTarget::PartDefinition => "part-definition",
@@ -425,6 +530,8 @@ fn path_to_key(path: &[PathStep]) -> String {
             PathStep::Condition => "C",
             PathStep::Then => "T",
             PathStep::Else => "E",
+            PathStep::LetValue => "LV",
+            PathStep::LetBody => "LB",
         })
         .collect::<Vec<&str>>()
         .join("-")
@@ -467,9 +574,16 @@ fn get_mut_expression_at_path<'a>(
             }
             _ => None,
         },
-        definy_event::event::Expression::Number(_)
-        | definy_event::event::Expression::PartReference(_)
-        | definy_event::event::Expression::Boolean(_) => None,
+        definy_event::event::Expression::Let(let_expression) => match path[0] {
+            PathStep::LetValue => {
+                get_mut_expression_at_path(let_expression.value.as_mut(), &path[1..])
+            }
+            PathStep::LetBody => {
+                get_mut_expression_at_path(let_expression.body.as_mut(), &path[1..])
+            }
+            _ => None,
+        },
+        _ => None,
     }
 }
 
@@ -527,6 +641,24 @@ fn set_node_kind(
                         )),
                     })
                 }
+                NodeKind::Let => {
+                    definy_event::event::Expression::Let(definy_event::event::LetExpression {
+                        variable_name: "x".into(),
+                        value: Box::new(definy_event::event::Expression::Number(
+                            definy_event::event::NumberExpression { value: 0 },
+                        )),
+                        body: Box::new(definy_event::event::Expression::Variable(
+                            definy_event::event::VariableExpression {
+                                variable_name: "x".into(),
+                            },
+                        )),
+                    })
+                }
+                NodeKind::Variable => definy_event::event::Expression::Variable(
+                    definy_event::event::VariableExpression {
+                        variable_name: "x".into(),
+                    },
+                ),
             }
     }
 }
@@ -564,6 +696,24 @@ fn set_boolean_value(
         get_mut_expression_at_path(root_expression, path)
     {
         bool_expr.value = value;
+    }
+}
+
+fn set_variable_value(
+    root_expression: &mut definy_event::event::Expression,
+    path: &[PathStep],
+    value: &str,
+) {
+    if let Some(expr) = get_mut_expression_at_path(root_expression, path) {
+        match expr {
+            definy_event::event::Expression::Let(let_expr) => {
+                let_expr.variable_name = value.into();
+            }
+            definy_event::event::Expression::Variable(var_expr) => {
+                var_expr.variable_name = value.into();
+            }
+            _ => {}
+        }
     }
 }
 
