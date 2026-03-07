@@ -450,63 +450,6 @@ fn part_description_input(state: &AppState) -> Node<AppState> {
 }
 
 fn part_type_input(state: &AppState) -> Node<AppState> {
-    let selected = match &state.part_definition_form.part_type_input {
-        definy_event::event::PartType::Number => "number",
-        definy_event::event::PartType::String => "string",
-        definy_event::event::PartType::Boolean => "boolean",
-        definy_event::event::PartType::List(item_type) => match item_type.as_ref() {
-            definy_event::event::PartType::Number => "list-number",
-            definy_event::event::PartType::String => "list-string",
-            definy_event::event::PartType::Boolean => "list-boolean",
-            definy_event::event::PartType::List(_) => "list-number",
-        },
-    };
-
-    let mut select = Select::new()
-        .name("part-definition-type")
-        .value(selected)
-        .style(Style::new().set("max-width", "18rem"));
-
-    select.events.push((
-        "change".to_string(),
-        EventHandler::new(async |set_state| {
-            let value = web_sys::window()
-                .and_then(|window| window.document())
-                .and_then(|document| {
-                    document
-                        .query_selector("select[name='part-definition-type']")
-                        .ok()
-                })
-                .flatten()
-                .and_then(|element| {
-                    js_sys::Reflect::get(&element, &wasm_bindgen::JsValue::from_str("value")).ok()
-                })
-                .and_then(|value| value.as_string())
-                .unwrap_or_else(|| "number".to_string());
-
-            let part_type = match value.as_str() {
-                "string" => definy_event::event::PartType::String,
-                "boolean" => definy_event::event::PartType::Boolean,
-                "list-number" => {
-                    definy_event::event::PartType::List(Box::new(definy_event::event::PartType::Number))
-                }
-                "list-string" => {
-                    definy_event::event::PartType::List(Box::new(definy_event::event::PartType::String))
-                }
-                "list-boolean" => {
-                    definy_event::event::PartType::List(Box::new(definy_event::event::PartType::Boolean))
-                }
-                _ => definy_event::event::PartType::Number,
-            };
-
-            set_state(Box::new(move |state: AppState| {
-                let mut next = state.clone();
-                next.part_definition_form.part_type_input = part_type;
-                next
-            }));
-        }),
-    ));
-
     Div::new()
         .style(Style::new().set("display", "grid").set("gap", "0.35rem"))
         .children([
@@ -518,34 +461,144 @@ fn part_type_input(state: &AppState) -> Node<AppState> {
                 )
                 .children([text("Part Type")])
                 .into_node(),
-            select
-                .children([
-                    OptionElement::new()
-                        .value("number")
-                        .children([text("Number")])
-                        .into_node(),
-                    OptionElement::new()
-                        .value("string")
-                        .children([text("String")])
-                        .into_node(),
-                    OptionElement::new()
-                        .value("boolean")
-                        .children([text("Boolean")])
-                        .into_node(),
-                    OptionElement::new()
-                        .value("list-number")
-                        .children([text("list<Number>")])
-                        .into_node(),
-                    OptionElement::new()
-                        .value("list-string")
-                        .children([text("list<String>")])
-                        .into_node(),
-                    OptionElement::new()
-                        .value("list-boolean")
-                        .children([text("list<Boolean>")])
-                        .into_node(),
-                ])
-                .into_node(),
+            render_part_type_editor(&state.part_definition_form.part_type_input, 0),
         ])
         .into_node()
+}
+
+fn render_part_type_editor(part_type: &definy_event::event::PartType, depth: usize) -> Node<AppState> {
+    let name = format!("part-definition-type-{}", depth);
+    let selector = format!("select[name='{}']", name);
+    let selected = match part_type {
+        definy_event::event::PartType::Number => "number",
+        definy_event::event::PartType::String => "string",
+        definy_event::event::PartType::Boolean => "boolean",
+        definy_event::event::PartType::List(_) => "list",
+    };
+
+    let mut select = Select::new()
+        .name(name.as_str())
+        .value(selected)
+        .style(Style::new().set("max-width", "18rem"));
+
+    select.events.push((
+        "change".to_string(),
+        EventHandler::new(move |set_state| {
+            let selector = selector.clone();
+            async move {
+                let value = web_sys::window()
+                    .and_then(|window| window.document())
+                    .and_then(|document| document.query_selector(selector.as_str()).ok())
+                    .flatten()
+                    .and_then(|element| {
+                        js_sys::Reflect::get(&element, &wasm_bindgen::JsValue::from_str("value")).ok()
+                    })
+                    .and_then(|value| value.as_string())
+                    .unwrap_or_else(|| "number".to_string());
+
+                set_state(Box::new(move |state: AppState| {
+                    let mut next = state.clone();
+                    update_part_type_at_depth(
+                        &mut next.part_definition_form.part_type_input,
+                        depth,
+                        value.as_str(),
+                    );
+                    next
+                }));
+            }
+        }),
+    ));
+
+    let mut children = vec![
+        select
+            .children([
+                OptionElement::new()
+                    .value("number")
+                    .children([text("Number")])
+                    .into_node(),
+                OptionElement::new()
+                    .value("string")
+                    .children([text("String")])
+                    .into_node(),
+                OptionElement::new()
+                    .value("boolean")
+                    .children([text("Boolean")])
+                    .into_node(),
+                OptionElement::new()
+                    .value("list")
+                    .children([text("List<...>")])
+                    .into_node(),
+            ])
+            .into_node(),
+    ];
+
+    if let definy_event::event::PartType::List(item_type) = part_type {
+        children.push(
+            Div::new()
+                .style(
+                    Style::new()
+                        .set("padding-left", "1rem")
+                        .set("border-left", "2px solid var(--border)"),
+                )
+                .children([
+                    Div::new()
+                        .style(
+                            Style::new()
+                                .set("font-size", "0.78rem")
+                                .set("color", "var(--text-secondary)")
+                                .set("margin-bottom", "0.25rem"),
+                        )
+                        .children([text("Item Type")])
+                        .into_node(),
+                    render_part_type_editor(item_type.as_ref(), depth + 1),
+                ])
+                .into_node(),
+        );
+    }
+
+    Div::new()
+        .style(Style::new().set("display", "grid").set("gap", "0.45rem"))
+        .children(children)
+        .into_node()
+}
+
+fn update_part_type_at_depth(
+    part_type: &mut definy_event::event::PartType,
+    depth: usize,
+    selected: &str,
+) {
+    if depth == 0 {
+        *part_type = next_part_type_from_selected(selected, part_type);
+        return;
+    }
+
+    match part_type {
+        definy_event::event::PartType::List(item_type) => {
+            update_part_type_at_depth(item_type.as_mut(), depth - 1, selected);
+        }
+        _ => {
+            *part_type =
+                definy_event::event::PartType::List(Box::new(definy_event::event::PartType::Number));
+            if let definy_event::event::PartType::List(item_type) = part_type {
+                update_part_type_at_depth(item_type.as_mut(), depth - 1, selected);
+            }
+        }
+    }
+}
+
+fn next_part_type_from_selected(
+    selected: &str,
+    current: &definy_event::event::PartType,
+) -> definy_event::event::PartType {
+    match selected {
+        "string" => definy_event::event::PartType::String,
+        "boolean" => definy_event::event::PartType::Boolean,
+        "list" => match current {
+            definy_event::event::PartType::List(item_type) => {
+                definy_event::event::PartType::List(Box::new(item_type.as_ref().clone()))
+            }
+            _ => definy_event::event::PartType::List(Box::new(definy_event::event::PartType::Number)),
+        },
+        _ => definy_event::event::PartType::Number,
+    }
 }
