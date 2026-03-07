@@ -48,5 +48,4 @@
 
 # 結論
 
-少し冒険をして SurrealDB Cloud にしようと思ったが,
-無料枠のDBの接続キーをなぜか失ってしまったので Deno Deploy の Deno KV を利用する
+PostgreSQL (Supabase)

@@ -21,4 +21,4 @@ Cloudflare r2 が最強でしょう
 
 # 結論
 
-Cloudflare r2
+まだ準備していないが Cloudflare r2 を使う予定
