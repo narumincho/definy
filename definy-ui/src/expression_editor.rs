@@ -1304,7 +1304,7 @@ fn remove_list_item_button(path: Vec<PathStep>, item_index: usize, target: Edito
                 }));
             }
         }))
-        .children([text("Remove")])
+        .children([text("x")])
         .into_node()
 }
 
@@ -1529,9 +1529,6 @@ fn remove_list_item(
     if let Some(definy_event::event::Expression::ListLiteral(list_expr)) =
         get_mut_expression_at_path(root_expression, path)
     {
-        if list_expr.items.len() <= 1 {
-            return;
-        }
         if item_index < list_expr.items.len() {
             list_expr.items.remove(item_index);
         }
@@ -1582,7 +1579,7 @@ fn next_local_variable_id(expression: &definy_event::event::Expression) -> i64 {
 
 #[cfg(test)]
 mod tests {
-    use super::{get_mut_expression_at_path, path_to_key, set_number_value, PathStep};
+    use super::{get_mut_expression_at_path, path_to_key, remove_list_item, set_number_value, PathStep};
 
     #[test]
     fn edit_nested_expression_by_ui_path() {
@@ -1616,5 +1613,26 @@ mod tests {
         );
         assert_eq!(path_to_key(&[]), "root");
         assert!(get_mut_expression_at_path(&mut expression, &[PathStep::Left]).is_some());
+    }
+
+    #[test]
+    fn remove_list_item_can_make_empty_and_removes_target_index() {
+        let mut expression =
+            definy_event::event::Expression::ListLiteral(definy_event::event::ListLiteralExpression {
+                items: vec![
+                    definy_event::event::Expression::String(definy_event::event::StringExpression {
+                        value: "a".into(),
+                    }),
+                    definy_event::event::Expression::String(definy_event::event::StringExpression {
+                        value: "b".into(),
+                    }),
+                ],
+            });
+
+        remove_list_item(&mut expression, &[], 0);
+        assert_eq!(crate::expression_eval::expression_to_source(&expression), "[\"b\"]");
+
+        remove_list_item(&mut expression, &[], 0);
+        assert_eq!(crate::expression_eval::expression_to_source(&expression), "[]");
     }
 }
