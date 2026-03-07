@@ -23,7 +23,6 @@ pub struct Event {
 pub enum EventContent {
     CreateAccount(CreateAccountEvent),
     ChangeProfile(ChangeProfileEvent),
-    #[serde(alias = "Message")]
     PartDefinition(PartDefinitionEvent),
     PartUpdate(PartUpdateEvent),
 }
@@ -31,6 +30,8 @@ pub enum EventContent {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct PartDefinitionEvent {
     pub part_name: Box<str>,
+    #[serde(default = "default_part_type")]
+    pub part_type: PartType,
     #[serde(default)]
     pub description: Box<str>,
     pub expression: Expression,
@@ -49,10 +50,24 @@ fn default_expression() -> Expression {
     Expression::Number(NumberExpression { value: 0 })
 }
 
+fn default_part_type() -> PartType {
+    PartType::Number
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum PartType {
+    Number,
+    String,
+    Boolean,
+    List(Box<PartType>),
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum Expression {
     Number(NumberExpression),
     String(StringExpression),
+    ListLiteral(ListLiteralExpression),
     Add(AddExpression),
     PartReference(PartReferenceExpression),
     Boolean(BooleanExpression),
@@ -60,6 +75,7 @@ pub enum Expression {
     Equal(EqualExpression),
     Let(LetExpression),
     Variable(VariableExpression),
+    RecordLiteral(RecordLiteralExpression),
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -76,6 +92,11 @@ pub struct NumberExpression {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct StringExpression {
     pub value: Box<str>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ListLiteralExpression {
+    pub items: Vec<Expression>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -112,6 +133,17 @@ pub struct LetExpression {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct VariableExpression {
     pub variable_id: i64,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct RecordLiteralExpression {
+    pub items: Vec<RecordItemExpression>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct RecordItemExpression {
+    pub key: Box<str>,
+    pub value: Box<Expression>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]

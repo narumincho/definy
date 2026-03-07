@@ -114,6 +114,9 @@ fn emit_expression(
         Expression::String(_) => {
             return Err("Wasm compilation of String literals is not supported yet.".into());
         }
+        Expression::ListLiteral(_) => {
+            return Err("Wasm compilation of List literals is not supported yet.".into());
+        }
         Expression::Boolean(BooleanExpression { value }) => {
             out.push(I64_CONST);
             encode_i64_sleb128(out, if *value { 1 } else { 0 });
@@ -184,6 +187,9 @@ fn emit_expression(
                     .into(),
             );
         }
+        Expression::RecordLiteral(_) => {
+            return Err("Wasm compilation of Record literals is not supported yet.".into());
+        }
     }
     Ok(())
 }
@@ -199,6 +205,12 @@ fn count_locals(expr: &Expression) -> u32 {
             count_locals(&i.condition) + count_locals(&i.then_expr) + count_locals(&i.else_expr)
         }
         Expression::String(_) => 0,
+        Expression::ListLiteral(list) => list.items.iter().map(count_locals).sum(),
+        Expression::RecordLiteral(record) => record
+            .items
+            .iter()
+            .map(|item| count_locals(item.value.as_ref()))
+            .sum(),
         _ => 0,
     }
 }

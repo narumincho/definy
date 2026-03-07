@@ -1,7 +1,9 @@
 use narumincho_vdom::*;
+use std::collections::HashMap;
 
 use crate::app_state::AppState;
-use crate::part_projection::collect_part_snapshots;
+use crate::part_projection::{collect_part_snapshots, find_part_snapshot};
+use crate::Location;
 
 #[derive(Clone, Copy)]
 pub enum EditorTarget {
@@ -9,7 +11,7 @@ pub enum EditorTarget {
     PartUpdate,
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 enum PathStep {
     Left,
     Right,
@@ -18,6 +20,8 @@ enum PathStep {
     Else,
     LetValue,
     LetBody,
+    ListItemValue(usize),
+    RecordItemValue(usize),
 }
 
 #[derive(Clone)]
@@ -26,12 +30,50 @@ struct ScopeVariable {
     name: String,
 }
 
+#[derive(Clone, PartialEq, Eq)]
+enum ExpressionType {
+    Number,
+    String,
+    Boolean,
+    List(Box<ExpressionType>),
+    Record,
+    Unknown,
+}
+
+impl ExpressionType {
+    fn text(&self) -> String {
+        match self {
+            ExpressionType::Number => "Number".to_string(),
+            ExpressionType::String => "String".to_string(),
+            ExpressionType::Boolean => "Boolean".to_string(),
+            ExpressionType::List(item) => format!("list<{}>", item.text()),
+            ExpressionType::Record => "Record".to_string(),
+            ExpressionType::Unknown => "Unknown".to_string(),
+        }
+    }
+}
+
+#[derive(Clone)]
+struct TypeDiagnostic {
+    path: Vec<PathStep>,
+    message: String,
+}
+
 pub fn render_root_expression_editor(
     state: &AppState,
     expression: &definy_event::event::Expression,
     target: EditorTarget,
 ) -> Node<AppState> {
-    render_expression_editor(state, expression, Vec::new(), target, Vec::new())
+    let expected_type = expected_type_for_target(state, target);
+    let diagnostics = collect_type_diagnostics(state, expression, expected_type);
+    render_expression_editor(
+        state,
+        expression,
+        Vec::new(),
+        target,
+        Vec::new(),
+        diagnostics.as_slice(),
+    )
 }
 
 fn render_expression_editor(
@@ -40,9 +82,14 @@ fn render_expression_editor(
     path: Vec<PathStep>,
     target: EditorTarget,
     scope_variables: Vec<ScopeVariable>,
+    diagnostics: &[TypeDiagnostic],
 ) -> Node<AppState> {
     let current_selection = current_selection_value(expression);
     let selector_options = selector_options(state, &scope_variables);
+    let warning_message = diagnostics
+        .iter()
+        .find(|diagnostic| diagnostic.path == path)
+        .map(|diagnostic| diagnostic.message.as_str());
 
     let mut children = vec![
         expression_selector(
@@ -52,6 +99,18 @@ fn render_expression_editor(
             &selector_options,
         ),
     ];
+    if let Some(warning_message) = warning_message {
+        children.push(
+            Div::new()
+                .style(
+                    Style::new()
+                        .set("font-size", "0.8rem")
+                        .set("color", "var(--error)"),
+                )
+                .children([text(warning_message)])
+                .into_node(),
+        );
+    }
 
     match expression {
         definy_event::event::Expression::Number(number_expression) => {
@@ -59,6 +118,59 @@ fn render_expression_editor(
         }
         definy_event::event::Expression::String(string_expression) => {
             children.push(string_input(path, target, string_expression.value.as_ref()));
+        }
+        definy_event::event::Expression::ListLiteral(list_expression) => {
+            let mut list_children = list_expression
+                .items
+                .iter()
+                .enumerate()
+                .map(|(index, item)| {
+                    let mut item_path = path.clone();
+                    item_path.push(PathStep::ListItemValue(index));
+                    Div::new()
+                        .style(
+                            Style::new()
+                                .set("display", "grid")
+                                .set("gap", "0.4rem")
+                                .set("padding", "0.5rem")
+                                .set("border", "1px solid var(--border)")
+                                .set("border-radius", "var(--radius-md)"),
+                        )
+                        .children([
+                            Div::new()
+                                .style(Style::new().set("display", "flex").set("gap", "0.5rem"))
+                                .children([
+                                    Div::new()
+                                        .style(
+                                            Style::new()
+                                                .set("font-size", "0.8rem")
+                                                .set("color", "var(--text-secondary)")
+                                                .set("flex", "1"),
+                                        )
+                                        .children([text(format!("Item {}", index + 1))])
+                                        .into_node(),
+                                    remove_list_item_button(path.clone(), index, target),
+                                ])
+                                .into_node(),
+                            render_expression_editor(
+                                state,
+                                item,
+                                item_path,
+                                target,
+                                scope_variables.clone(),
+                                diagnostics,
+                            ),
+                        ])
+                        .into_node()
+                })
+                .collect::<Vec<Node<AppState>>>();
+            list_children.push(add_list_item_button(path, target));
+            children.push(
+                Div::new()
+                    .style(Style::new().set("display", "grid").set("gap", "0.6rem"))
+                    .children(list_children)
+                    .into_node(),
+            );
         }
         definy_event::event::Expression::Add(add_expression) => {
             let mut left_path = path.clone();
@@ -85,6 +197,7 @@ fn render_expression_editor(
                                     left_path,
                                     target,
                                     scope_variables.clone(),
+                                    diagnostics,
                                 ),
                             ])
                             .into_node(),
@@ -98,6 +211,7 @@ fn render_expression_editor(
                                     right_path,
                                     target,
                                     scope_variables.clone(),
+                                    diagnostics,
                                 ),
                             ])
                             .into_node(),
@@ -135,6 +249,7 @@ fn render_expression_editor(
                                     cond_path,
                                     target,
                                     scope_variables.clone(),
+                                    diagnostics,
                                 ),
                             ])
                             .into_node(),
@@ -148,6 +263,7 @@ fn render_expression_editor(
                                     then_path,
                                     target,
                                     scope_variables.clone(),
+                                    diagnostics,
                                 ),
                             ])
                             .into_node(),
@@ -161,6 +277,7 @@ fn render_expression_editor(
                                     else_path,
                                     target,
                                     scope_variables.clone(),
+                                    diagnostics,
                                 ),
                             ])
                             .into_node(),
@@ -193,6 +310,7 @@ fn render_expression_editor(
                                     left_path,
                                     target,
                                     scope_variables.clone(),
+                                    diagnostics,
                                 ),
                             ])
                             .into_node(),
@@ -206,6 +324,7 @@ fn render_expression_editor(
                                     right_path,
                                     target,
                                     scope_variables.clone(),
+                                    diagnostics,
                                 ),
                             ])
                             .into_node(),
@@ -245,6 +364,7 @@ fn render_expression_editor(
                                     value_path,
                                     target,
                                     scope_variables.clone(),
+                                    diagnostics,
                                 ),
                             ])
                             .into_node(),
@@ -264,11 +384,77 @@ fn render_expression_editor(
                                         body_path,
                                         target,
                                         body_scope,
+                                        diagnostics,
                                     )
                                 },
                             ])
                             .into_node(),
                     ])
+                    .into_node(),
+            );
+        }
+        definy_event::event::Expression::RecordLiteral(record_expression) => {
+            let mut record_children = record_expression
+                .items
+                .iter()
+                .enumerate()
+                .map(|(index, item)| {
+                    let mut value_path = path.clone();
+                    value_path.push(PathStep::RecordItemValue(index));
+                    Div::new()
+                        .style(
+                            Style::new()
+                                .set("display", "grid")
+                                .set("gap", "0.4rem")
+                                .set("padding", "0.5rem")
+                                .set("border", "1px solid var(--border)")
+                                .set("border-radius", "var(--radius-md)"),
+                        )
+                        .children([
+                            Div::new()
+                                .style(
+                                    Style::new()
+                                        .set("display", "flex")
+                                        .set("gap", "0.5rem")
+                                        .set("align-items", "center"),
+                                )
+                                .children([
+                                    Div::new()
+                                        .style(
+                                            Style::new()
+                                                .set("min-width", "2.4rem")
+                                                .set("font-size", "0.8rem")
+                                                .set("color", "var(--text-secondary)"),
+                                        )
+                                        .children([text("Key")])
+                                        .into_node(),
+                                    record_item_key_input(path.clone(), index, target, item.key.as_ref()),
+                                    remove_record_item_button(path.clone(), index, target),
+                                ])
+                                .into_node(),
+                            Div::new()
+                                .style(Style::new().set("display", "grid").set("gap", "0.3rem"))
+                                .children([
+                                    text("Value"),
+                                    render_expression_editor(
+                                        state,
+                                        item.value.as_ref(),
+                                        value_path,
+                                        target,
+                                        scope_variables.clone(),
+                                        diagnostics,
+                                    ),
+                                ])
+                                .into_node(),
+                        ])
+                        .into_node()
+                })
+                .collect::<Vec<Node<AppState>>>();
+            record_children.push(add_record_item_button(path, target));
+            children.push(
+                Div::new()
+                    .style(Style::new().set("display", "grid").set("gap", "0.6rem"))
+                    .children(record_children)
                     .into_node(),
             );
         }
@@ -293,10 +479,299 @@ fn render_expression_editor(
             Style::new()
                 .set("padding", "0.8rem")
                 .set("display", "grid")
-                .set("gap", "0.6rem"),
+                .set("gap", "0.6rem")
+                .set(
+                    "border",
+                    if warning_message.is_some() {
+                        "1px solid var(--error)"
+                    } else {
+                        "1px solid transparent"
+                    },
+                ),
         )
         .children(children)
         .into_node()
+}
+
+fn part_type_to_expression_type(part_type: &definy_event::event::PartType) -> ExpressionType {
+    match part_type {
+        definy_event::event::PartType::Number => ExpressionType::Number,
+        definy_event::event::PartType::String => ExpressionType::String,
+        definy_event::event::PartType::Boolean => ExpressionType::Boolean,
+        definy_event::event::PartType::List(item_type) => {
+            ExpressionType::List(Box::new(part_type_to_expression_type(item_type.as_ref())))
+        }
+    }
+}
+
+fn expected_type_for_target(state: &AppState, target: EditorTarget) -> Option<ExpressionType> {
+    match target {
+        EditorTarget::PartDefinition => Some(part_type_to_expression_type(
+            &state.part_definition_form.part_type_input,
+        )),
+        EditorTarget::PartUpdate => {
+            let hash = match state.location {
+                Some(Location::Part(hash)) => hash,
+                _ => return None,
+            };
+            find_part_snapshot(state, &hash)
+                .and_then(|snapshot| snapshot.part_type)
+                .as_ref()
+                .map(part_type_to_expression_type)
+        }
+    }
+}
+
+fn collect_type_diagnostics(
+    state: &AppState,
+    expression: &definy_event::event::Expression,
+    expected_type: Option<ExpressionType>,
+) -> Vec<TypeDiagnostic> {
+    let part_type_map = collect_part_snapshots(state)
+        .into_iter()
+        .filter_map(|snapshot| {
+            snapshot
+                .part_type
+                .as_ref()
+                .map(|part_type| (snapshot.definition_event_hash, part_type_to_expression_type(part_type)))
+        })
+        .collect::<HashMap<[u8; 32], ExpressionType>>();
+
+    let mut diagnostics = Vec::new();
+    let env = HashMap::new();
+    check_expression_type(
+        expression,
+        &Vec::new(),
+        expected_type,
+        &env,
+        &part_type_map,
+        &mut diagnostics,
+    );
+    diagnostics
+}
+
+fn push_type_mismatch_diagnostic(
+    diagnostics: &mut Vec<TypeDiagnostic>,
+    path: &[PathStep],
+    expected_type: &ExpressionType,
+    actual_type: &ExpressionType,
+) {
+    if actual_type == &ExpressionType::Unknown || expected_type == actual_type {
+        return;
+    }
+    diagnostics.push(TypeDiagnostic {
+        path: path.to_vec(),
+        message: format!(
+            "Type mismatch: expected {}, but found {}.",
+            expected_type.text(),
+            actual_type.text()
+        ),
+    });
+}
+
+fn check_expression_type(
+    expression: &definy_event::event::Expression,
+    path: &[PathStep],
+    expected_type: Option<ExpressionType>,
+    env: &HashMap<i64, ExpressionType>,
+    part_type_map: &HashMap<[u8; 32], ExpressionType>,
+    diagnostics: &mut Vec<TypeDiagnostic>,
+) -> ExpressionType {
+    let actual_type = match expression {
+        definy_event::event::Expression::Number(_) => ExpressionType::Number,
+        definy_event::event::Expression::String(_) => ExpressionType::String,
+        definy_event::event::Expression::Boolean(_) => ExpressionType::Boolean,
+        definy_event::event::Expression::ListLiteral(list_expression) => {
+            let expected_item_type = if let Some(ExpressionType::List(item_type)) = expected_type.as_ref() {
+                Some(item_type.as_ref().clone())
+            } else {
+                None
+            };
+            let mut inferred_item_type = expected_item_type.clone();
+            for (index, item) in list_expression.items.iter().enumerate() {
+                let mut item_path = path.to_vec();
+                item_path.push(PathStep::ListItemValue(index));
+                let item_type = check_expression_type(
+                    item,
+                    item_path.as_slice(),
+                    expected_item_type.clone(),
+                    env,
+                    part_type_map,
+                    diagnostics,
+                );
+                if inferred_item_type.is_none() && item_type != ExpressionType::Unknown {
+                    inferred_item_type = Some(item_type);
+                }
+            }
+            ExpressionType::List(Box::new(
+                inferred_item_type.unwrap_or(ExpressionType::Unknown),
+            ))
+        }
+        definy_event::event::Expression::Variable(variable_expression) => env
+            .get(&variable_expression.variable_id)
+            .cloned()
+            .unwrap_or(ExpressionType::Unknown),
+        definy_event::event::Expression::PartReference(part_reference_expression) => part_type_map
+            .get(&part_reference_expression.part_definition_event_hash)
+            .cloned()
+            .unwrap_or(ExpressionType::Unknown),
+        definy_event::event::Expression::RecordLiteral(record_expression) => {
+            for (index, item) in record_expression.items.iter().enumerate() {
+                let mut item_path = path.to_vec();
+                item_path.push(PathStep::RecordItemValue(index));
+                check_expression_type(
+                    item.value.as_ref(),
+                    item_path.as_slice(),
+                    None,
+                    env,
+                    part_type_map,
+                    diagnostics,
+                );
+            }
+            ExpressionType::Record
+        }
+        definy_event::event::Expression::Add(add_expression) => {
+            let mut left_path = path.to_vec();
+            left_path.push(PathStep::Left);
+            let left_type = check_expression_type(
+                add_expression.left.as_ref(),
+                left_path.as_slice(),
+                Some(ExpressionType::Number),
+                env,
+                part_type_map,
+                diagnostics,
+            );
+            let mut right_path = path.to_vec();
+            right_path.push(PathStep::Right);
+            let right_type = check_expression_type(
+                add_expression.right.as_ref(),
+                right_path.as_slice(),
+                Some(ExpressionType::Number),
+                env,
+                part_type_map,
+                diagnostics,
+            );
+
+            if left_type == ExpressionType::Number && right_type == ExpressionType::Number {
+                ExpressionType::Number
+            } else {
+                ExpressionType::Unknown
+            }
+        }
+        definy_event::event::Expression::Equal(equal_expression) => {
+            let mut left_path = path.to_vec();
+            left_path.push(PathStep::Left);
+            let left_type = check_expression_type(
+                equal_expression.left.as_ref(),
+                left_path.as_slice(),
+                None,
+                env,
+                part_type_map,
+                diagnostics,
+            );
+            let mut right_path = path.to_vec();
+            right_path.push(PathStep::Right);
+            let right_type = check_expression_type(
+                equal_expression.right.as_ref(),
+                right_path.as_slice(),
+                None,
+                env,
+                part_type_map,
+                diagnostics,
+            );
+            if left_type != ExpressionType::Unknown
+                && right_type != ExpressionType::Unknown
+                && left_type != right_type
+            {
+                push_type_mismatch_diagnostic(
+                    diagnostics,
+                    right_path.as_slice(),
+                    &left_type,
+                    &right_type,
+                );
+            }
+            ExpressionType::Boolean
+        }
+        definy_event::event::Expression::If(if_expression) => {
+            let mut condition_path = path.to_vec();
+            condition_path.push(PathStep::Condition);
+            check_expression_type(
+                if_expression.condition.as_ref(),
+                condition_path.as_slice(),
+                Some(ExpressionType::Boolean),
+                env,
+                part_type_map,
+                diagnostics,
+            );
+            let mut then_path = path.to_vec();
+            then_path.push(PathStep::Then);
+            let then_type = check_expression_type(
+                if_expression.then_expr.as_ref(),
+                then_path.as_slice(),
+                expected_type.clone(),
+                env,
+                part_type_map,
+                diagnostics,
+            );
+            let mut else_path = path.to_vec();
+            else_path.push(PathStep::Else);
+            let else_type = check_expression_type(
+                if_expression.else_expr.as_ref(),
+                else_path.as_slice(),
+                expected_type.clone(),
+                env,
+                part_type_map,
+                diagnostics,
+            );
+
+            if then_type != ExpressionType::Unknown
+                && else_type != ExpressionType::Unknown
+                && then_type != else_type
+            {
+                push_type_mismatch_diagnostic(
+                    diagnostics,
+                    else_path.as_slice(),
+                    &then_type,
+                    &else_type,
+                );
+                ExpressionType::Unknown
+            } else if then_type != ExpressionType::Unknown {
+                then_type
+            } else {
+                else_type
+            }
+        }
+        definy_event::event::Expression::Let(let_expression) => {
+            let mut value_path = path.to_vec();
+            value_path.push(PathStep::LetValue);
+            let value_type = check_expression_type(
+                let_expression.value.as_ref(),
+                value_path.as_slice(),
+                None,
+                env,
+                part_type_map,
+                diagnostics,
+            );
+            let mut body_env = env.clone();
+            body_env.insert(let_expression.variable_id, value_type);
+            let mut body_path = path.to_vec();
+            body_path.push(PathStep::LetBody);
+            check_expression_type(
+                let_expression.body.as_ref(),
+                body_path.as_slice(),
+                expected_type.clone(),
+                &body_env,
+                part_type_map,
+                diagnostics,
+            )
+        }
+    };
+
+    if let Some(expected_type) = expected_type {
+        push_type_mismatch_diagnostic(diagnostics, path, &expected_type, &actual_type);
+    }
+
+    actual_type
 }
 
 fn expression_selector(
@@ -366,11 +841,13 @@ fn selector_options(state: &AppState, scope_variables: &[ScopeVariable]) -> Vec<
     let mut options = vec![
         ("expr:number".to_string(), "Constant: Number".to_string()),
         ("expr:string".to_string(), "Constant: String".to_string()),
+        ("expr:list".to_string(), "Literal: List".to_string()),
         ("expr:boolean".to_string(), "Constant: Boolean".to_string()),
         ("expr:add".to_string(), "Function: Add".to_string()),
         ("expr:equal".to_string(), "Function: Equal".to_string()),
         ("expr:if".to_string(), "Syntax: If".to_string()),
         ("expr:let".to_string(), "Syntax: Let".to_string()),
+        ("expr:record".to_string(), "Literal: Record".to_string()),
     ];
 
     options.extend(collect_part_snapshots(state).into_iter().map(|snapshot| {
@@ -401,11 +878,13 @@ fn current_selection_value(expression: &definy_event::event::Expression) -> Stri
     match expression {
         definy_event::event::Expression::Number(_) => "expr:number".to_string(),
         definy_event::event::Expression::String(_) => "expr:string".to_string(),
+        definy_event::event::Expression::ListLiteral(_) => "expr:list".to_string(),
         definy_event::event::Expression::Boolean(_) => "expr:boolean".to_string(),
         definy_event::event::Expression::Add(_) => "expr:add".to_string(),
         definy_event::event::Expression::Equal(_) => "expr:equal".to_string(),
         definy_event::event::Expression::If(_) => "expr:if".to_string(),
         definy_event::event::Expression::Let(_) => "expr:let".to_string(),
+        definy_event::event::Expression::RecordLiteral(_) => "expr:record".to_string(),
         definy_event::event::Expression::PartReference(part_ref) => format!(
             "ref:global:{}",
             crate::hash_format::encode_hash32(&part_ref.part_definition_event_hash)
@@ -433,6 +912,14 @@ fn apply_selection(
             definy_event::event::Expression::String(definy_event::event::StringExpression {
                 value: "".into(),
             })
+        } else if selected_value == "expr:list" {
+            definy_event::event::Expression::ListLiteral(
+                definy_event::event::ListLiteralExpression {
+                    items: vec![definy_event::event::Expression::Number(
+                        definy_event::event::NumberExpression { value: 0 },
+                    )],
+                },
+            )
         } else if selected_value == "expr:boolean" {
             definy_event::event::Expression::Boolean(definy_event::event::BooleanExpression {
                 value: false,
@@ -480,6 +967,17 @@ fn apply_selection(
                     },
                 )),
             })
+        } else if selected_value == "expr:record" {
+            definy_event::event::Expression::RecordLiteral(
+                definy_event::event::RecordLiteralExpression {
+                    items: vec![definy_event::event::RecordItemExpression {
+                        key: "key".into(),
+                        value: Box::new(definy_event::event::Expression::Number(
+                            definy_event::event::NumberExpression { value: 0 },
+                        )),
+                    }],
+                },
+            )
         } else if let Some(encoded) = selected_value.strip_prefix("ref:global:") {
             if let Some(hash) = decode_hash32(encoded) {
                 definy_event::event::Expression::PartReference(
@@ -691,6 +1189,125 @@ fn let_name_input(path: Vec<PathStep>, target: EditorTarget, value: &str) -> Nod
     input.into_node()
 }
 
+fn record_item_key_input(
+    path: Vec<PathStep>,
+    item_index: usize,
+    target: EditorTarget,
+    value: &str,
+) -> Node<AppState> {
+    let name = format!(
+        "{}-expr-record-key-{}-{}",
+        selector_prefix(target),
+        path_to_key(path.as_slice()),
+        item_index
+    );
+    let selector = format!("input[name='{}']", name);
+
+    let mut input = Input::new()
+        .name(name.as_str())
+        .type_("text")
+        .value(value)
+        .style(Style::new().set("max-width", "16rem"));
+    input.events.push((
+        "input".to_string(),
+        EventHandler::new(move |set_state| {
+            let selector = selector.clone();
+            let path = path.clone();
+            async move {
+                let value = web_sys::window()
+                    .and_then(|window| window.document())
+                    .and_then(|document| document.query_selector(selector.as_str()).ok())
+                    .flatten()
+                    .and_then(|element| {
+                        wasm_bindgen::JsCast::dyn_into::<web_sys::HtmlInputElement>(element).ok()
+                    })
+                    .map(|input| input.value())
+                    .unwrap_or_default();
+
+                set_state(Box::new(move |state: AppState| {
+                    let mut next = state.clone();
+                    let root_expression = target_expression_mut(&mut next, target);
+                    set_record_item_key(root_expression, path.as_slice(), item_index, &value);
+                    next
+                }));
+            }
+        }),
+    ));
+    input.into_node()
+}
+
+fn add_record_item_button(path: Vec<PathStep>, target: EditorTarget) -> Node<AppState> {
+    Button::new()
+        .type_("button")
+        .on_click(EventHandler::new(move |set_state| {
+            let path = path.clone();
+            async move {
+                set_state(Box::new(move |state: AppState| {
+                    let mut next = state.clone();
+                    let root_expression = target_expression_mut(&mut next, target);
+                    add_record_item(root_expression, path.as_slice());
+                    next
+                }));
+            }
+        }))
+        .children([text("+ Add Item")])
+        .into_node()
+}
+
+fn remove_record_item_button(path: Vec<PathStep>, item_index: usize, target: EditorTarget) -> Node<AppState> {
+    Button::new()
+        .type_("button")
+        .on_click(EventHandler::new(move |set_state| {
+            let path = path.clone();
+            async move {
+                set_state(Box::new(move |state: AppState| {
+                    let mut next = state.clone();
+                    let root_expression = target_expression_mut(&mut next, target);
+                    remove_record_item(root_expression, path.as_slice(), item_index);
+                    next
+                }));
+            }
+        }))
+        .children([text("Remove")])
+        .into_node()
+}
+
+fn add_list_item_button(path: Vec<PathStep>, target: EditorTarget) -> Node<AppState> {
+    Button::new()
+        .type_("button")
+        .on_click(EventHandler::new(move |set_state| {
+            let path = path.clone();
+            async move {
+                set_state(Box::new(move |state: AppState| {
+                    let mut next = state.clone();
+                    let root_expression = target_expression_mut(&mut next, target);
+                    add_list_item(root_expression, path.as_slice());
+                    next
+                }));
+            }
+        }))
+        .children([text("+ Add Item")])
+        .into_node()
+}
+
+fn remove_list_item_button(path: Vec<PathStep>, item_index: usize, target: EditorTarget) -> Node<AppState> {
+    Button::new()
+        .type_("button")
+        .on_click(EventHandler::new(move |set_state| {
+            let path = path.clone();
+            async move {
+                set_state(Box::new(move |state: AppState| {
+                    let mut next = state.clone();
+                    let root_expression = target_expression_mut(&mut next, target);
+                    remove_list_item(root_expression, path.as_slice(), item_index);
+                    next
+                }));
+            }
+        }))
+        .children([text("Remove")])
+        .into_node()
+}
+
 fn selector_prefix(target: EditorTarget) -> &'static str {
     match target {
         EditorTarget::PartDefinition => "part-definition",
@@ -714,15 +1331,17 @@ fn path_to_key(path: &[PathStep]) -> String {
     }
     path.iter()
         .map(|step| match step {
-            PathStep::Left => "L",
-            PathStep::Right => "R",
-            PathStep::Condition => "C",
-            PathStep::Then => "T",
-            PathStep::Else => "E",
-            PathStep::LetValue => "LV",
-            PathStep::LetBody => "LB",
+            PathStep::Left => "L".to_string(),
+            PathStep::Right => "R".to_string(),
+            PathStep::Condition => "C".to_string(),
+            PathStep::Then => "T".to_string(),
+            PathStep::Else => "E".to_string(),
+            PathStep::LetValue => "LV".to_string(),
+            PathStep::LetBody => "LB".to_string(),
+            PathStep::ListItemValue(index) => format!("LI{}", index),
+            PathStep::RecordItemValue(index) => format!("RV{}", index),
         })
-        .collect::<Vec<&str>>()
+        .collect::<Vec<String>>()
         .join("-")
 }
 
@@ -769,6 +1388,29 @@ fn get_mut_expression_at_path<'a>(
             }
             PathStep::LetBody => {
                 get_mut_expression_at_path(let_expression.body.as_mut(), &path[1..])
+            }
+            _ => None,
+        },
+        definy_event::event::Expression::ListLiteral(list_expression) => match path[0] {
+            PathStep::ListItemValue(index) => {
+                if index < list_expression.items.len() {
+                    get_mut_expression_at_path(&mut list_expression.items[index], &path[1..])
+                } else {
+                    None
+                }
+            }
+            _ => None,
+        },
+        definy_event::event::Expression::RecordLiteral(record_expression) => match path[0] {
+            PathStep::RecordItemValue(index) => {
+                if index < record_expression.items.len() {
+                    get_mut_expression_at_path(
+                        record_expression.items[index].value.as_mut(),
+                        &path[1..],
+                    )
+                } else {
+                    None
+                }
             }
             _ => None,
         },
@@ -824,6 +1466,78 @@ fn set_string_value(
     }
 }
 
+fn set_record_item_key(
+    root_expression: &mut definy_event::event::Expression,
+    path: &[PathStep],
+    item_index: usize,
+    value: &str,
+) {
+    if let Some(definy_event::event::Expression::RecordLiteral(record_expr)) =
+        get_mut_expression_at_path(root_expression, path)
+    {
+        if let Some(item) = record_expr.items.get_mut(item_index) {
+            item.key = value.into();
+        }
+    }
+}
+
+fn add_record_item(root_expression: &mut definy_event::event::Expression, path: &[PathStep]) {
+    if let Some(definy_event::event::Expression::RecordLiteral(record_expr)) =
+        get_mut_expression_at_path(root_expression, path)
+    {
+        record_expr.items.push(definy_event::event::RecordItemExpression {
+            key: format!("key{}", record_expr.items.len() + 1).into(),
+            value: Box::new(definy_event::event::Expression::Number(
+                definy_event::event::NumberExpression { value: 0 },
+            )),
+        });
+    }
+}
+
+fn remove_record_item(
+    root_expression: &mut definy_event::event::Expression,
+    path: &[PathStep],
+    item_index: usize,
+) {
+    if let Some(definy_event::event::Expression::RecordLiteral(record_expr)) =
+        get_mut_expression_at_path(root_expression, path)
+    {
+        if record_expr.items.len() <= 1 {
+            return;
+        }
+        if item_index < record_expr.items.len() {
+            record_expr.items.remove(item_index);
+        }
+    }
+}
+
+fn add_list_item(root_expression: &mut definy_event::event::Expression, path: &[PathStep]) {
+    if let Some(definy_event::event::Expression::ListLiteral(list_expr)) =
+        get_mut_expression_at_path(root_expression, path)
+    {
+        list_expr.items.push(definy_event::event::Expression::Number(
+            definy_event::event::NumberExpression { value: 0 },
+        ));
+    }
+}
+
+fn remove_list_item(
+    root_expression: &mut definy_event::event::Expression,
+    path: &[PathStep],
+    item_index: usize,
+) {
+    if let Some(definy_event::event::Expression::ListLiteral(list_expr)) =
+        get_mut_expression_at_path(root_expression, path)
+    {
+        if list_expr.items.len() <= 1 {
+            return;
+        }
+        if item_index < list_expr.items.len() {
+            list_expr.items.remove(item_index);
+        }
+    }
+}
+
 fn next_local_variable_id(expression: &definy_event::event::Expression) -> i64 {
     fn max_local_variable_id(expression: &definy_event::event::Expression) -> i64 {
         match expression {
@@ -831,6 +1545,18 @@ fn next_local_variable_id(expression: &definy_event::event::Expression) -> i64 {
             definy_event::event::Expression::String(_) => 0,
             definy_event::event::Expression::Boolean(_) => 0,
             definy_event::event::Expression::PartReference(_) => 0,
+            definy_event::event::Expression::ListLiteral(list_expression) => list_expression
+                .items
+                .iter()
+                .map(max_local_variable_id)
+                .max()
+                .unwrap_or(0),
+            definy_event::event::Expression::RecordLiteral(record_expression) => record_expression
+                .items
+                .iter()
+                .map(|item| max_local_variable_id(item.value.as_ref()))
+                .max()
+                .unwrap_or(0),
             definy_event::event::Expression::Add(add_expression) => {
                 max_local_variable_id(add_expression.left.as_ref())
                     .max(max_local_variable_id(add_expression.right.as_ref()))

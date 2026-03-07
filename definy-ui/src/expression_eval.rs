@@ -3,6 +3,8 @@ pub enum Value {
     Number(i64),
     String(String),
     Bool(bool),
+    List(Vec<Value>),
+    Record(Vec<(String, Value)>),
 }
 
 impl std::fmt::Display for Value {
@@ -11,6 +13,22 @@ impl std::fmt::Display for Value {
             Value::Number(n) => write!(f, "{}", n),
             Value::String(s) => write!(f, "\"{}\"", s),
             Value::Bool(b) => write!(f, "{}", if *b { "True" } else { "False" }),
+            Value::List(items) => {
+                let source = items
+                    .iter()
+                    .map(|item| item.to_string())
+                    .collect::<Vec<String>>()
+                    .join(", ");
+                write!(f, "[{}]", source)
+            }
+            Value::Record(items) => {
+                let source = items
+                    .iter()
+                    .map(|(key, value)| format!("{}: {}", key, value))
+                    .collect::<Vec<String>>()
+                    .join(", ");
+                write!(f, "{{{}}}", source)
+            }
         }
     }
 }
@@ -101,6 +119,10 @@ fn evaluate_via_wasm(
 fn has_part_references(expr: &definy_event::event::Expression) -> bool {
     match expr {
         definy_event::event::Expression::PartReference(_) => true,
+        definy_event::event::Expression::ListLiteral(list_expression) => list_expression
+            .items
+            .iter()
+            .any(has_part_references),
         definy_event::event::Expression::Add(a) => {
             has_part_references(&a.left) || has_part_references(&a.right)
         }
@@ -115,6 +137,10 @@ fn has_part_references(expr: &definy_event::event::Expression) -> bool {
         definy_event::event::Expression::Let(l) => {
             has_part_references(&l.value) || has_part_references(&l.body)
         }
+        definy_event::event::Expression::RecordLiteral(record_expression) => record_expression
+            .items
+            .iter()
+            .any(|item| has_part_references(item.value.as_ref())),
         definy_event::event::Expression::Variable(_) => false,
         definy_event::event::Expression::String(_) => false,
         _ => false,
@@ -131,6 +157,8 @@ fn is_boolean_expression(expr: &definy_event::event::Expression) -> bool {
             is_boolean_expression(&i.then_expr) && is_boolean_expression(&i.else_expr)
         }
         definy_event::event::Expression::Let(l) => is_boolean_expression(&l.body),
+        definy_event::event::Expression::ListLiteral(_) => false,
+        definy_event::event::Expression::RecordLiteral(_) => false,
         definy_event::event::Expression::Variable(_) => false,
         definy_event::event::Expression::String(_) => false,
         _ => false,
@@ -158,6 +186,14 @@ fn evaluate_expression_with_depth(
         }
         definy_event::event::Expression::String(string_expression) => {
             Ok(Value::String(string_expression.value.to_string()))
+        }
+        definy_event::event::Expression::ListLiteral(list_expression) => {
+            let mut items = Vec::with_capacity(list_expression.items.len());
+            for item in &list_expression.items {
+                let value = evaluate_expression_with_depth(item, events, env, depth + 1)?;
+                items.push(value);
+            }
+            Ok(Value::List(items))
         }
         definy_event::event::Expression::Add(add_expression) => {
             let left = evaluate_expression_with_depth(
@@ -267,6 +303,15 @@ fn evaluate_expression_with_depth(
                 Err("Part not found")
             }
         }
+        definy_event::event::Expression::RecordLiteral(record_expression) => {
+            let mut items = Vec::with_capacity(record_expression.items.len());
+            for item in &record_expression.items {
+                let value =
+                    evaluate_expression_with_depth(item.value.as_ref(), events, env, depth + 1)?;
+                items.push((item.key.to_string(), value));
+            }
+            Ok(Value::Record(items))
+        }
     }
 }
 
@@ -282,6 +327,15 @@ pub fn expression_to_source(expression: &definy_event::event::Expression) -> Str
             }
             definy_event::event::Expression::String(string_expression) => {
                 format!("\"{}\"", string_expression.value)
+            }
+            definy_event::event::Expression::ListLiteral(list_expression) => {
+                let items = list_expression
+                    .items
+                    .iter()
+                    .map(|item| render(item, false, scope))
+                    .collect::<Vec<String>>()
+                    .join(", ");
+                format!("[{}]", items)
             }
             definy_event::event::Expression::Add(add_expression) => {
                 let source = format!(
@@ -360,6 +414,15 @@ pub fn expression_to_source(expression: &definy_event::event::Expression) -> Str
                         }
                     })
                     .unwrap_or_else(|| format!("#{}", variable_expression.variable_id))
+            }
+            definy_event::event::Expression::RecordLiteral(record_expression) => {
+                let items = record_expression
+                    .items
+                    .iter()
+                    .map(|item| format!("{}: {}", item.key, render(item.value.as_ref(), false, scope)))
+                    .collect::<Vec<String>>()
+                    .join(", ");
+                format!("{{{}}}", items)
             }
         }
     }
@@ -524,6 +587,29 @@ mod tests {
     }
 
     #[test]
+    fn evaluate_list_literal() {
+        let list_expr =
+            definy_event::event::Expression::ListLiteral(definy_event::event::ListLiteralExpression {
+                items: vec![
+                    definy_event::event::Expression::Number(
+                        definy_event::event::NumberExpression { value: 1 },
+                    ),
+                    definy_event::event::Expression::Number(
+                        definy_event::event::NumberExpression { value: 2 },
+                    ),
+                ],
+            });
+        assert_eq!(
+            evaluate_expression(&list_expr, &[]),
+            Ok(crate::expression_eval::Value::List(vec![
+                crate::expression_eval::Value::Number(1),
+                crate::expression_eval::Value::Number(2),
+            ]))
+        );
+        assert_eq!(expression_to_source(&list_expr), "[1, 2]");
+    }
+
+    #[test]
     fn evaluate_equal() {
         let equal_expr =
             definy_event::event::Expression::Equal(definy_event::event::EqualExpression {
@@ -539,6 +625,38 @@ mod tests {
             Ok(crate::expression_eval::Value::Bool(true))
         );
         assert_eq!(expression_to_source(&equal_expr), "== 5 5");
+    }
+
+    #[test]
+    fn evaluate_record_literal() {
+        let record_expr = definy_event::event::Expression::RecordLiteral(
+            definy_event::event::RecordLiteralExpression {
+                items: vec![
+                    definy_event::event::RecordItemExpression {
+                        key: "name".into(),
+                        value: Box::new(definy_event::event::Expression::String(
+                            definy_event::event::StringExpression {
+                                value: "narumi".into(),
+                            },
+                        )),
+                    },
+                    definy_event::event::RecordItemExpression {
+                        key: "age".into(),
+                        value: Box::new(definy_event::event::Expression::Number(
+                            definy_event::event::NumberExpression { value: 3 },
+                        )),
+                    },
+                ],
+            },
+        );
+        assert_eq!(
+            evaluate_expression(&record_expr, &[]),
+            Ok(crate::expression_eval::Value::Record(vec![
+                ("name".to_string(), crate::expression_eval::Value::String("narumi".to_string())),
+                ("age".to_string(), crate::expression_eval::Value::Number(3)),
+            ]))
+        );
+        assert_eq!(expression_to_source(&record_expr), "{name: \"narumi\", age: 3}");
     }
 
     #[test]
@@ -598,6 +716,7 @@ mod tests {
                     content: definy_event::event::EventContent::PartDefinition(
                         definy_event::event::PartDefinitionEvent {
                             part_name: "legacy-name".into(),
+                            part_type: definy_event::event::PartType::Number,
                             description: "".into(),
                             expression: part_expression,
                         },
