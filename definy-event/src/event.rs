@@ -54,18 +54,20 @@ fn default_part_type() -> PartType {
     PartType::Number
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum PartType {
     Number,
     String,
     Boolean,
+    List(Box<PartType>),
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum Expression {
     Number(NumberExpression),
     String(StringExpression),
+    ListLiteral(ListLiteralExpression),
     Add(AddExpression),
     PartReference(PartReferenceExpression),
     Boolean(BooleanExpression),
@@ -90,6 +92,11 @@ pub struct NumberExpression {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct StringExpression {
     pub value: Box<str>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ListLiteralExpression {
+    pub items: Vec<Expression>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]

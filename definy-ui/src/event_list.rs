@@ -5,11 +5,14 @@ use crate::app_state::AppState;
 use crate::expression_editor::{EditorTarget, render_root_expression_editor};
 use crate::expression_eval::{evaluate_expression, expression_to_source};
 
-fn part_type_text(part_type: definy_event::event::PartType) -> &'static str {
+fn part_type_text(part_type: &definy_event::event::PartType) -> String {
     match part_type {
-        definy_event::event::PartType::Number => "Number",
-        definy_event::event::PartType::String => "String",
-        definy_event::event::PartType::Boolean => "Boolean",
+        definy_event::event::PartType::Number => "Number".to_string(),
+        definy_event::event::PartType::String => "String".to_string(),
+        definy_event::event::PartType::Boolean => "Boolean".to_string(),
+        definy_event::event::PartType::List(item_type) => {
+            format!("list<{}>", part_type_text(item_type.as_ref()))
+        }
     }
 }
 
@@ -95,7 +98,8 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
                                             state.part_definition_form.part_name_input.trim().to_string();
                                         let description =
                                             state.part_definition_form.part_description_input.clone();
-                                        let part_type = state.part_definition_form.part_type_input;
+                                        let part_type =
+                                            state.part_definition_form.part_type_input.clone();
                                         if part_name.is_empty() {
                                             let mut next = state.clone();
                                             next.part_definition_form.eval_result =
@@ -298,7 +302,7 @@ fn event_view(
                             text(format!(
                                 "{}: {} = {}",
                                 part_definition_event.part_name,
-                                part_type_text(part_definition_event.part_type),
+                                part_type_text(&part_definition_event.part_type),
                                 expression_to_source(&part_definition_event.expression)
                             )),
                             if part_definition_event.description.is_empty() {
@@ -446,10 +450,16 @@ fn part_description_input(state: &AppState) -> Node<AppState> {
 }
 
 fn part_type_input(state: &AppState) -> Node<AppState> {
-    let selected = match state.part_definition_form.part_type_input {
+    let selected = match &state.part_definition_form.part_type_input {
         definy_event::event::PartType::Number => "number",
         definy_event::event::PartType::String => "string",
         definy_event::event::PartType::Boolean => "boolean",
+        definy_event::event::PartType::List(item_type) => match item_type.as_ref() {
+            definy_event::event::PartType::Number => "list-number",
+            definy_event::event::PartType::String => "list-string",
+            definy_event::event::PartType::Boolean => "list-boolean",
+            definy_event::event::PartType::List(_) => "list-number",
+        },
     };
 
     let mut select = Select::new()
@@ -477,6 +487,15 @@ fn part_type_input(state: &AppState) -> Node<AppState> {
             let part_type = match value.as_str() {
                 "string" => definy_event::event::PartType::String,
                 "boolean" => definy_event::event::PartType::Boolean,
+                "list-number" => {
+                    definy_event::event::PartType::List(Box::new(definy_event::event::PartType::Number))
+                }
+                "list-string" => {
+                    definy_event::event::PartType::List(Box::new(definy_event::event::PartType::String))
+                }
+                "list-boolean" => {
+                    definy_event::event::PartType::List(Box::new(definy_event::event::PartType::Boolean))
+                }
                 _ => definy_event::event::PartType::Number,
             };
 
@@ -512,6 +531,18 @@ fn part_type_input(state: &AppState) -> Node<AppState> {
                     OptionElement::new()
                         .value("boolean")
                         .children([text("Boolean")])
+                        .into_node(),
+                    OptionElement::new()
+                        .value("list-number")
+                        .children([text("list<Number>")])
+                        .into_node(),
+                    OptionElement::new()
+                        .value("list-string")
+                        .children([text("list<String>")])
+                        .into_node(),
+                    OptionElement::new()
+                        .value("list-boolean")
+                        .children([text("list<Boolean>")])
                         .into_node(),
                 ])
                 .into_node(),

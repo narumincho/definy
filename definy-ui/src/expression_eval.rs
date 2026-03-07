@@ -3,6 +3,7 @@ pub enum Value {
     Number(i64),
     String(String),
     Bool(bool),
+    List(Vec<Value>),
     Record(Vec<(String, Value)>),
 }
 
@@ -12,6 +13,14 @@ impl std::fmt::Display for Value {
             Value::Number(n) => write!(f, "{}", n),
             Value::String(s) => write!(f, "\"{}\"", s),
             Value::Bool(b) => write!(f, "{}", if *b { "True" } else { "False" }),
+            Value::List(items) => {
+                let source = items
+                    .iter()
+                    .map(|item| item.to_string())
+                    .collect::<Vec<String>>()
+                    .join(", ");
+                write!(f, "[{}]", source)
+            }
             Value::Record(items) => {
                 let source = items
                     .iter()
@@ -110,6 +119,10 @@ fn evaluate_via_wasm(
 fn has_part_references(expr: &definy_event::event::Expression) -> bool {
     match expr {
         definy_event::event::Expression::PartReference(_) => true,
+        definy_event::event::Expression::ListLiteral(list_expression) => list_expression
+            .items
+            .iter()
+            .any(has_part_references),
         definy_event::event::Expression::Add(a) => {
             has_part_references(&a.left) || has_part_references(&a.right)
         }
@@ -144,6 +157,7 @@ fn is_boolean_expression(expr: &definy_event::event::Expression) -> bool {
             is_boolean_expression(&i.then_expr) && is_boolean_expression(&i.else_expr)
         }
         definy_event::event::Expression::Let(l) => is_boolean_expression(&l.body),
+        definy_event::event::Expression::ListLiteral(_) => false,
         definy_event::event::Expression::RecordLiteral(_) => false,
         definy_event::event::Expression::Variable(_) => false,
         definy_event::event::Expression::String(_) => false,
@@ -172,6 +186,14 @@ fn evaluate_expression_with_depth(
         }
         definy_event::event::Expression::String(string_expression) => {
             Ok(Value::String(string_expression.value.to_string()))
+        }
+        definy_event::event::Expression::ListLiteral(list_expression) => {
+            let mut items = Vec::with_capacity(list_expression.items.len());
+            for item in &list_expression.items {
+                let value = evaluate_expression_with_depth(item, events, env, depth + 1)?;
+                items.push(value);
+            }
+            Ok(Value::List(items))
         }
         definy_event::event::Expression::Add(add_expression) => {
             let left = evaluate_expression_with_depth(
@@ -305,6 +327,15 @@ pub fn expression_to_source(expression: &definy_event::event::Expression) -> Str
             }
             definy_event::event::Expression::String(string_expression) => {
                 format!("\"{}\"", string_expression.value)
+            }
+            definy_event::event::Expression::ListLiteral(list_expression) => {
+                let items = list_expression
+                    .items
+                    .iter()
+                    .map(|item| render(item, false, scope))
+                    .collect::<Vec<String>>()
+                    .join(", ");
+                format!("[{}]", items)
             }
             definy_event::event::Expression::Add(add_expression) => {
                 let source = format!(
@@ -553,6 +584,29 @@ mod tests {
             Ok(crate::expression_eval::Value::String("hello".to_string()))
         );
         assert_eq!(expression_to_source(&string_expr), "\"hello\"");
+    }
+
+    #[test]
+    fn evaluate_list_literal() {
+        let list_expr =
+            definy_event::event::Expression::ListLiteral(definy_event::event::ListLiteralExpression {
+                items: vec![
+                    definy_event::event::Expression::Number(
+                        definy_event::event::NumberExpression { value: 1 },
+                    ),
+                    definy_event::event::Expression::Number(
+                        definy_event::event::NumberExpression { value: 2 },
+                    ),
+                ],
+            });
+        assert_eq!(
+            evaluate_expression(&list_expr, &[]),
+            Ok(crate::expression_eval::Value::List(vec![
+                crate::expression_eval::Value::Number(1),
+                crate::expression_eval::Value::Number(2),
+            ]))
+        );
+        assert_eq!(expression_to_source(&list_expr), "[1, 2]");
     }
 
     #[test]

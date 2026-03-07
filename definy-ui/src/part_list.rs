@@ -5,11 +5,14 @@ use crate::expression_eval::expression_to_source;
 use crate::part_projection::collect_part_snapshots;
 use crate::Location;
 
-fn part_type_text(part_type: definy_event::event::PartType) -> &'static str {
+fn part_type_text(part_type: &definy_event::event::PartType) -> String {
     match part_type {
-        definy_event::event::PartType::Number => "Number",
-        definy_event::event::PartType::String => "String",
-        definy_event::event::PartType::Boolean => "Boolean",
+        definy_event::event::PartType::Number => "Number".to_string(),
+        definy_event::event::PartType::String => "String".to_string(),
+        definy_event::event::PartType::Boolean => "Boolean".to_string(),
+        definy_event::event::PartType::List(item_type) => {
+            format!("list<{}>", part_type_text(item_type.as_ref()))
+        }
     }
 }
 
@@ -79,8 +82,9 @@ pub fn part_list_view(state: &AppState) -> Node<AppState> {
                                             .children([text(format!(
                                                 "type: {}",
                                                 part.part_type
+                                                    .as_ref()
                                                     .map(part_type_text)
-                                                    .unwrap_or("Unknown")
+                                                    .unwrap_or_else(|| "Unknown".to_string())
                                             ))])
                                             .into_node(),
                                         if part.has_definition {

@@ -37,7 +37,7 @@ pub fn collect_part_snapshots(state: &AppState) -> Vec<PartSnapshot> {
                         latest_event_hash: event_hash,
                         account_id: event.account_id.clone(),
                         part_name: part_definition.part_name.to_string(),
-                        part_type: Some(part_definition.part_type),
+                        part_type: Some(part_definition.part_type.clone()),
                         part_description: part_definition.description.to_string(),
                         expression: part_definition.expression.clone(),
                         updated_at: event.time,

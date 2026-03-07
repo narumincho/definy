@@ -5,11 +5,14 @@ use crate::Location;
 use crate::app_state::AppState;
 use crate::expression_eval::{evaluate_expression, expression_to_source};
 
-fn part_type_text(part_type: definy_event::event::PartType) -> &'static str {
+fn part_type_text(part_type: &definy_event::event::PartType) -> String {
     match part_type {
-        definy_event::event::PartType::Number => "Number",
-        definy_event::event::PartType::String => "String",
-        definy_event::event::PartType::Boolean => "Boolean",
+        definy_event::event::PartType::Number => "Number".to_string(),
+        definy_event::event::PartType::String => "String".to_string(),
+        definy_event::event::PartType::Boolean => "Boolean".to_string(),
+        definy_event::event::PartType::List(item_type) => {
+            format!("list<{}>", part_type_text(item_type.as_ref()))
+        }
     }
 }
 
@@ -168,7 +171,7 @@ fn render_event_detail(
                         text(format!(
                             "{}: {} = {}",
                             part_definition_event.part_name,
-                            part_type_text(part_definition_event.part_type),
+                            part_type_text(&part_definition_event.part_type),
                             expression_to_source(&part_definition_event.expression)
                         )),
                         if part_definition_event.description.is_empty() {
