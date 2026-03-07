@@ -184,6 +184,9 @@ fn emit_expression(
                     .into(),
             );
         }
+        Expression::RecordLiteral(_) => {
+            return Err("Wasm compilation of Record literals is not supported yet.".into());
+        }
     }
     Ok(())
 }
@@ -199,6 +202,11 @@ fn count_locals(expr: &Expression) -> u32 {
             count_locals(&i.condition) + count_locals(&i.then_expr) + count_locals(&i.else_expr)
         }
         Expression::String(_) => 0,
+        Expression::RecordLiteral(record) => record
+            .items
+            .iter()
+            .map(|item| count_locals(item.value.as_ref()))
+            .sum(),
         _ => 0,
     }
 }

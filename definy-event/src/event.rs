@@ -73,6 +73,7 @@ pub enum Expression {
     Equal(EqualExpression),
     Let(LetExpression),
     Variable(VariableExpression),
+    RecordLiteral(RecordLiteralExpression),
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -125,6 +126,17 @@ pub struct LetExpression {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct VariableExpression {
     pub variable_id: i64,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct RecordLiteralExpression {
+    pub items: Vec<RecordItemExpression>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct RecordItemExpression {
+    pub key: Box<str>,
+    pub value: Box<Expression>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
