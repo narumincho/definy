@@ -333,6 +333,11 @@ fn apply_patch<State: 'static>(
             if let Some(element) = node.dyn_ref::<web_sys::Element>() {
                 for (key, value) in attrs {
                     element.set_attribute(&key, &value).unwrap();
+                    if key == "value" {
+                        if let Some(input) = element.dyn_ref::<web_sys::HtmlInputElement>() {
+                            input.set_value(value);
+                        }
+                    }
                 }
             }
         }
