@@ -24,11 +24,11 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
                 .style(
                     Style::new()
                         .set("display", "grid")
-                        .set("gap", "0.9rem")
+                        .set("gap", "0.65rem")
                         .set("background", "var(--surface)")
                         .set("backdrop-filter", "var(--glass-blur)")
                         .set("-webkit-backdrop-filter", "var(--glass-blur)")
-                        .set("padding", "1.5rem")
+                        .set("padding", "1rem")
                         .set("border-radius", "var(--radius-lg)")
                         .set("box-shadow", "var(--shadow-md)")
                         .set("border", "1px solid var(--border)"),
@@ -38,7 +38,7 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
                     part_type_input(state),
                     part_description_input(state),
                     Div::new()
-                        .style(Style::new().set("color", "var(--text-secondary)").set("font-size", "0.9rem"))
+                    .style(Style::new().set("color", "var(--text-secondary)").set("font-size", "0.84rem"))
                         .children([text("Expression Builder")])
                         .into_node(),
                     render_root_expression_editor(
@@ -50,7 +50,7 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
                         .class("mono")
                         .style(
                             Style::new()
-                                .set("font-size", "0.8rem")
+                                .set("font-size", "0.76rem")
                                 .set("padding", "0.4rem 0.6rem")
                                 .set("opacity", "0.85"),
                         )
@@ -60,7 +60,7 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
                         ))])
                         .into_node(),
                     Div::new()
-                        .style(Style::new().set("display", "flex").set("gap", "0.6rem"))
+                        .style(Style::new().set("display", "flex").set("gap", "0.45rem"))
                         .children([
                             Button::new()
                                 .type_("button")
@@ -175,7 +175,7 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
 
     Div::new()
         .class("page-shell")
-        .style(crate::layout::page_shell_style("2rem"))
+        .style(crate::layout::page_shell_style("1.25rem"))
         .children({
             let mut children = Vec::new();
             if let Some(part_definition_form) = part_definition_form {
@@ -187,9 +187,9 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
                         .class("event-detail-card")
                         .style(
                             Style::new()
-                                .set("padding", "0.9rem 1rem")
+                                .set("padding", "0.7rem 0.8rem")
                                 .set("font-family", "'JetBrains Mono', monospace")
-                                .set("font-size", "0.9rem")
+                                .set("font-size", "0.82rem")
                                 .set("word-break", "break-word"),
                         )
                         .children([text(result)])
@@ -199,7 +199,7 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
             children.push(
                 Div::new()
                     .class("event-list")
-                    .style(Style::new().set("display", "grid").set("gap", "1rem"))
+                    .style(Style::new().set("display", "grid").set("gap", "0.7rem"))
                     .children({
                         let account_name_map = state.account_name_map();
 
@@ -234,7 +234,7 @@ fn event_view(
                     .set("-webkit-backdrop-filter", "var(--glass-blur)")
                     .set("border", "1px solid var(--border)")
                     .set("border-radius", "var(--radius-lg)")
-                    .set("padding", "1.5rem")
+                    .set("padding", "0.95rem")
                     .set("box-shadow", "0 4px 6px -1px rgba(0, 0, 0, 0.1)")
                     .set("transition", "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)")
                     .set("display", "grid")
@@ -247,7 +247,7 @@ fn event_view(
                 Div::new()
                     .style(
                         Style::new()
-                            .set("font-size", "0.875rem")
+                            .set("font-size", "0.8rem")
                             .set("color", "var(--text-secondary)")
                             .set("display", "flex")
                             .set("justify-content", "space-between")
@@ -282,12 +282,12 @@ fn event_view(
                         ])
                         .into_node(),
                     EventContent::PartDefinition(part_definition_event) => Div::new()
-                        .style(Style::new().set("font-size", "1.125rem"))
+                        .style(Style::new().set("font-size", "0.98rem"))
                         .children([
                             Div::new()
                                 .style(
                                     Style::new()
-                                        .set("font-size", "0.85rem")
+                                        .set("font-size", "0.78rem")
                                         .set("color", "var(--primary)")
                                         .set("font-weight", "600")
                                         .set("margin-bottom", "0.25rem"),
@@ -311,7 +311,7 @@ fn event_view(
                                 Div::new()
                                     .style(
                                         Style::new()
-                                            .set("font-size", "0.9rem")
+                                            .set("font-size", "0.82rem")
                                             .set("color", "var(--text-secondary)")
                                             .set("white-space", "pre-wrap"),
                                     )

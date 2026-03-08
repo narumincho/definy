@@ -20,12 +20,12 @@ pub fn part_detail_view(state: &AppState, definition_event_hash: &[u8; 32]) -> N
                     .children([text("← Back to Parts")])
                     .into_node(),
                 H2::new()
-                    .style(Style::new().set("font-size", "1.5rem"))
+                    .style(Style::new().set("font-size", "1.3rem"))
                     .children([text(snapshot.part_name.clone())])
                     .into_node(),
                 Div::new()
                     .class("event-detail-card")
-                    .style(Style::new().set("display", "grid").set("gap", "0.6rem").set("padding", "1rem"))
+                    .style(Style::new().set("display", "grid").set("gap", "0.45rem").set("padding", "0.85rem"))
                     .children([
                         Div::new()
                             .style(
@@ -75,7 +75,7 @@ pub fn part_detail_view(state: &AppState, definition_event_hash: &[u8; 32]) -> N
                 part_update_form(state, definition_event_hash),
                 Div::new()
                     .class("event-detail-card")
-                    .style(Style::new().set("display", "grid").set("gap", "0.6rem").set("padding", "1rem"))
+                    .style(Style::new().set("display", "grid").set("gap", "0.45rem").set("padding", "0.85rem"))
                     .children([
                         Div::new()
                             .style(Style::new().set("font-weight", "600"))
@@ -94,7 +94,7 @@ pub fn part_detail_view(state: &AppState, definition_event_hash: &[u8; 32]) -> N
                                                 Style::new()
                                                     .set("display", "grid")
                                                     .set("gap", "0.2rem")
-                                                    .set("padding", "0.55rem 0.7rem")
+                                                    .set("padding", "0.44rem 0.6rem")
                                                     .set("border", "1px solid var(--border)")
                                                     .set("border-radius", "var(--radius-md)"),
                                             )
@@ -142,8 +142,8 @@ fn part_update_form(state: &AppState, definition_event_hash: &[u8; 32]) -> Node<
         .style(
             Style::new()
                 .set("display", "grid")
-                .set("gap", "0.6rem")
-                .set("padding", "1rem"),
+                .set("gap", "0.45rem")
+                .set("padding", "0.85rem"),
         )
         .children([
             Div::new()
@@ -154,7 +154,7 @@ fn part_update_form(state: &AppState, definition_event_hash: &[u8; 32]) -> Node<
                 .class("mono")
                 .style(
                     Style::new()
-                        .set("font-size", "0.78rem")
+                        .set("font-size", "0.74rem")
                         .set("opacity", "0.8")
                         .set("word-break", "break-all"),
                 )

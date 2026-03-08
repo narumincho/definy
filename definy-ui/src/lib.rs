@@ -119,8 +119,8 @@ init({{ module_or_path: \"/{}\" }});",
                 .style(
                     Style::new()
                         .set("display", "grid")
-                        .set("gap", "1rem")
-                        .set("padding-top", "4.8rem"),
+                        .set("gap", "0.8rem")
+                        .set("padding-top", "4.2rem"),
                 )
                 .children([
                     header::header(state),

@@ -18,19 +18,19 @@ pub fn account_list_view(state: &AppState) -> Node<AppState> {
         .style(crate::layout::page_shell_style("1rem"))
         .children([
             H2::new()
-                .style(Style::new().set("font-size", "1.5rem"))
+                .style(Style::new().set("font-size", "1.3rem"))
                 .children([text("Accounts")])
                 .into_node(),
             if rows.is_empty() {
                 Div::new()
                     .class("event-detail-card")
-                    .style(Style::new().set("padding", "1.2rem"))
+                    .style(Style::new().set("padding", "0.9rem"))
                     .children([text("No accounts yet.")])
                     .into_node()
             } else {
                 Div::new()
                     .class("event-list")
-                    .style(Style::new().set("display", "grid").set("gap", "0.75rem"))
+                    .style(Style::new().set("display", "grid").set("gap", "0.6rem"))
                     .children(
                         rows.into_iter()
                             .map(|row| {
@@ -47,11 +47,11 @@ pub fn account_list_view(state: &AppState) -> Node<AppState> {
                                         Style::new()
                                             .set("display", "grid")
                                             .set("gap", "0.4rem")
-                                            .set("padding", "1rem"),
+                                            .set("padding", "0.82rem"),
                                     )
                                     .children([
                                         Div::new()
-                                            .style(Style::new().set("font-size", "1.1rem"))
+                                            .style(Style::new().set("font-size", "0.96rem"))
                                             .children([text(name)])
                                             .into_node(),
                                         Div::new()

@@ -28,7 +28,7 @@ pub fn account_detail_view(
 
     Div::new()
         .class("page-shell")
-        .style(crate::layout::page_shell_style("1.25rem"))
+        .style(crate::layout::page_shell_style("0.9rem"))
         .children([
             A::<AppState, Location>::new()
                 .class("back-link")
@@ -48,19 +48,19 @@ pub fn account_detail_view(
                 .style(
                     Style::new()
                         .set("display", "grid")
-                        .set("gap", "0.75rem")
-                        .set("padding", "1.4rem"),
+                        .set("gap", "0.55rem")
+                        .set("padding", "0.95rem"),
                 )
                 .children([
                     H2::new()
-                        .style(Style::new().set("font-size", "1.4rem"))
+                        .style(Style::new().set("font-size", "1.15rem"))
                         .children([text(account_name)])
                         .into_node(),
                     Div::new()
                         .class("mono")
                         .style(
                             Style::new()
-                                .set("font-size", "0.78rem")
+                                .set("font-size", "0.72rem")
                                 .set("word-break", "break-all")
                                 .set("opacity", "0.8"),
                         )
@@ -77,7 +77,7 @@ pub fn account_detail_view(
                     .class("event-detail-card")
                     .style(
                         Style::new()
-                            .set("padding", "1.25rem")
+                            .set("padding", "0.9rem")
                             .set("color", "var(--text-secondary)"),
                     )
                     .children([text("This account has not posted any events yet.")])
@@ -85,7 +85,7 @@ pub fn account_detail_view(
             } else {
                 Div::new()
                     .class("event-list")
-                    .style(Style::new().set("display", "grid").set("gap", "0.75rem"))
+                    .style(Style::new().set("display", "grid").set("gap", "0.6rem"))
                     .children(
                         account_events
                             .into_iter()
@@ -97,7 +97,7 @@ pub fn account_detail_view(
                                         Style::new()
                                             .set("display", "grid")
                                             .set("gap", "0.5rem")
-                                            .set("padding", "1rem"),
+                                            .set("padding", "0.8rem"),
                                     )
                                     .children([
                                         Div::new()
