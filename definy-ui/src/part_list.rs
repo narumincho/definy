@@ -25,7 +25,7 @@ pub fn part_list_view(state: &AppState) -> Node<AppState> {
         .style(crate::layout::page_shell_style("1rem"))
         .children([
             H2::new()
-                .style(Style::new().set("font-size", "1.5rem"))
+                .style(Style::new().set("font-size", "1.3rem"))
                 .children([text("Parts")])
                 .into_node(),
             if snapshots.is_empty() {
@@ -33,7 +33,7 @@ pub fn part_list_view(state: &AppState) -> Node<AppState> {
                     .class("event-detail-card")
                     .style(
                         Style::new()
-                            .set("padding", "1.25rem")
+                            .set("padding", "0.95rem")
                             .set("color", "var(--text-secondary)"),
                     )
                     .children([text("No parts yet.")])
@@ -41,7 +41,7 @@ pub fn part_list_view(state: &AppState) -> Node<AppState> {
             } else {
                 Div::new()
                     .class("event-list")
-                    .style(Style::new().set("display", "grid").set("gap", "0.8rem"))
+                    .style(Style::new().set("display", "grid").set("gap", "0.65rem"))
                     .children(
                         snapshots
                             .into_iter()
@@ -56,7 +56,7 @@ pub fn part_list_view(state: &AppState) -> Node<AppState> {
                                         Style::new()
                                             .set("display", "grid")
                                             .set("gap", "0.5rem")
-                                            .set("padding", "1rem"),
+                                            .set("padding", "0.85rem"),
                                     )
                                     .children([
                                         Div::new()
@@ -70,7 +70,7 @@ pub fn part_list_view(state: &AppState) -> Node<AppState> {
                                             )])
                                             .into_node(),
                                         Div::new()
-                                            .style(Style::new().set("font-size", "1.1rem"))
+                                            .style(Style::new().set("font-size", "0.98rem"))
                                             .children([text(part.part_name)])
                                             .into_node(),
                                         Div::new()
@@ -138,7 +138,7 @@ pub fn part_list_view(state: &AppState) -> Node<AppState> {
                                             .children([text(format!("latest author: {}", account_name))])
                                             .into_node(),
                                         Div::new()
-                                            .style(Style::new().set("display", "flex").set("gap", "0.6rem"))
+                                            .style(Style::new().set("display", "flex").set("gap", "0.45rem"))
                                             .children([
                                                 A::<AppState, Location>::new()
                                                     .href(Href::Internal(Location::Event(part.latest_event_hash)))

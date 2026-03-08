@@ -35,7 +35,7 @@ pub fn event_detail_view(state: &AppState, target_hash: &[u8; 32]) -> Node<AppSt
                 Style::new()
                     .set("color", "var(--text-secondary)")
                     .set("text-align", "center")
-                    .set("padding", "3rem"),
+                    .set("padding", "1.8rem"),
             )
             .children([text("イベントが見つかりません (Event not found)")])
             .into_node(),
@@ -43,7 +43,7 @@ pub fn event_detail_view(state: &AppState, target_hash: &[u8; 32]) -> Node<AppSt
 
     Div::new()
         .class("page-shell")
-        .style(crate::layout::page_shell_style("2rem"))
+        .style(crate::layout::page_shell_style("1.2rem"))
         .children([
             A::<AppState, Location>::new()
                 .class("back-link")
@@ -85,10 +85,10 @@ fn render_event_detail(
                 .set("-webkit-backdrop-filter", "var(--glass-blur)")
                 .set("border", "1px solid var(--border)")
                 .set("border-radius", "var(--radius-lg)")
-                .set("padding", "2.5rem")
+                .set("padding", "1.25rem")
                 .set("box-shadow", "var(--shadow-lg)")
                 .set("display", "grid")
-                .set("gap", "1.5rem"),
+                .set("gap", "0.85rem"),
         )
         .children([
             Div::new()
@@ -99,7 +99,7 @@ fn render_event_detail(
                         .set("display", "flex")
                         .set("justify-content", "space-between")
                         .set("border-bottom", "1px solid var(--border)")
-                        .set("padding-bottom", "1rem")
+                        .set("padding-bottom", "0.65rem")
                         .set("align-items", "center"),
                 )
                 .children([
@@ -131,7 +131,7 @@ fn render_event_detail(
                     .style(
                         Style::new()
                             .set("color", "var(--primary)")
-                            .set("font-size", "1.25rem")
+                            .set("font-size", "1.06rem")
                             .set("font-weight", "600"),
                     )
                     .children([
@@ -143,7 +143,7 @@ fn render_event_detail(
                     .style(
                         Style::new()
                             .set("color", "var(--primary)")
-                            .set("font-size", "1.25rem")
+                            .set("font-size", "1.06rem")
                             .set("font-weight", "600"),
                     )
                     .children([
@@ -154,17 +154,17 @@ fn render_event_detail(
                 EventContent::PartDefinition(part_definition_event) => Div::new()
                     .style(
                         Style::new()
-                            .set("font-size", "1.5rem")
+                            .set("font-size", "1.15rem")
                             .set("line-height", "1.6"),
                     )
                     .children([
                         Div::new()
                             .style(
                                 Style::new()
-                                    .set("font-size", "1rem")
+                                    .set("font-size", "0.86rem")
                                     .set("color", "var(--primary)")
                                     .set("font-weight", "600")
-                                    .set("margin-bottom", "0.5rem"),
+                                    .set("margin-bottom", "0.35rem"),
                             )
                             .children([text(account_name)])
                             .into_node(),
@@ -180,7 +180,7 @@ fn render_event_detail(
                             Div::new()
                                 .style(
                                     Style::new()
-                                        .set("font-size", "1rem")
+                                        .set("font-size", "0.86rem")
                                         .set("color", "var(--text-secondary)")
                                         .set("white-space", "pre-wrap"),
                                 )
@@ -204,7 +204,7 @@ fn render_event_detail(
                                         }));
                                     }
                                 }))
-                                .style(Style::new().set("margin-top", "1rem"))
+                                .style(Style::new().set("margin-top", "0.65rem"))
                                 .children([text("Evaluate")])
                                 .into_node()
                         },
@@ -213,7 +213,7 @@ fn render_event_detail(
                                 .class("mono")
                                 .style(
                                     Style::new()
-                                        .set("margin-top", "0.5rem")
+                                        .set("margin-top", "0.35rem")
                                         .set("font-size", "0.85rem")
                                         .set("word-break", "break-word"),
                                 )
@@ -227,21 +227,21 @@ fn render_event_detail(
                     .style(
                         Style::new()
                             .set("display", "grid")
-                            .set("gap", "0.8rem")
+                            .set("gap", "0.55rem")
                             .set("line-height", "1.6"),
                     )
                     .children([
                         Div::new()
                             .style(
                                 Style::new()
-                                    .set("font-size", "1rem")
+                                    .set("font-size", "0.86rem")
                                     .set("color", "var(--primary)")
                                     .set("font-weight", "600"),
                             )
                             .children([text(account_name)])
                             .into_node(),
                         Div::new()
-                            .style(Style::new().set("font-size", "1.35rem"))
+                            .style(Style::new().set("font-size", "1.08rem"))
                             .children([text(format!(
                                 "Part updated: {}",
                                 part_update_event.part_name
@@ -253,7 +253,7 @@ fn render_event_detail(
                             Div::new()
                                 .style(
                                     Style::new()
-                                        .set("font-size", "1rem")
+                                        .set("font-size", "0.86rem")
                                         .set("color", "var(--text-secondary)")
                                         .set("white-space", "pre-wrap"),
                                 )
@@ -306,7 +306,7 @@ fn render_event_detail(
                     Style::new()
                         .set("font-size", "0.75rem")
                         .set("color", "var(--text-secondary)")
-                        .set("margin-top", "2.5rem")
+                        .set("margin-top", "1.4rem")
                         .set("word-break", "break-all")
                         .set("opacity", "0.6"),
                 )
