@@ -10,6 +10,7 @@ fn part_type_text(part_type: &definy_event::event::PartType) -> String {
         definy_event::event::PartType::Number => "Number".to_string(),
         definy_event::event::PartType::String => "String".to_string(),
         definy_event::event::PartType::Boolean => "Boolean".to_string(),
+        definy_event::event::PartType::Type => "Type".to_string(),
         definy_event::event::PartType::List(item_type) => {
             format!("list<{}>", part_type_text(item_type.as_ref()))
         }
@@ -473,6 +474,7 @@ fn render_part_type_editor(part_type: &definy_event::event::PartType, depth: usi
         definy_event::event::PartType::Number => "number",
         definy_event::event::PartType::String => "string",
         definy_event::event::PartType::Boolean => "boolean",
+        definy_event::event::PartType::Type => "type",
         definy_event::event::PartType::List(_) => "list",
     };
 
@@ -523,6 +525,10 @@ fn render_part_type_editor(part_type: &definy_event::event::PartType, depth: usi
                 OptionElement::new()
                     .value("boolean")
                     .children([text("Boolean")])
+                    .into_node(),
+                OptionElement::new()
+                    .value("type")
+                    .children([text("Type")])
                     .into_node(),
                 OptionElement::new()
                     .value("list")
@@ -593,6 +599,7 @@ fn next_part_type_from_selected(
     match selected {
         "string" => definy_event::event::PartType::String,
         "boolean" => definy_event::event::PartType::Boolean,
+        "type" => definy_event::event::PartType::Type,
         "list" => match current {
             definy_event::event::PartType::List(item_type) => {
                 definy_event::event::PartType::List(Box::new(item_type.as_ref().clone()))

@@ -60,6 +60,7 @@ pub enum PartType {
     Number,
     String,
     Boolean,
+    Type,
     List(Box<PartType>),
 }
 
