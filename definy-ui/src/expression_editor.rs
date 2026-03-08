@@ -1,9 +1,9 @@
 use narumincho_vdom::*;
 use std::collections::HashMap;
 
+use crate::Location;
 use crate::app_state::AppState;
 use crate::part_projection::{collect_part_snapshots, find_part_snapshot};
-use crate::Location;
 
 #[derive(Clone, Copy)]
 pub enum EditorTarget {
@@ -93,14 +93,12 @@ fn render_expression_editor(
         .find(|diagnostic| diagnostic.path == path)
         .map(|diagnostic| diagnostic.message.as_str());
 
-    let mut children = vec![
-        expression_selector(
-            path.clone(),
-            target,
-            &current_selection,
-            &selector_options,
-        ),
-    ];
+    let mut children = vec![expression_selector(
+        path.clone(),
+        target,
+        &current_selection,
+        &selector_options,
+    )];
     if let Some(warning_message) = warning_message {
         children.push(
             Div::new()
@@ -372,24 +370,21 @@ fn render_expression_editor(
                             .into_node(),
                         Div::new()
                             .style(Style::new().set("display", "grid").set("gap", "0.3rem"))
-                            .children([
-                                text("Body"),
-                                {
-                                    let mut body_scope = scope_variables.clone();
-                                    body_scope.push(ScopeVariable {
-                                        id: let_expression.variable_id,
-                                        name: let_expression.variable_name.to_string(),
-                                    });
-                                    render_expression_editor(
-                                        state,
-                                        let_expression.body.as_ref(),
-                                        body_path,
-                                        target,
-                                        body_scope,
-                                        diagnostics,
-                                    )
-                                },
-                            ])
+                            .children([text("Body"), {
+                                let mut body_scope = scope_variables.clone();
+                                body_scope.push(ScopeVariable {
+                                    id: let_expression.variable_id,
+                                    name: let_expression.variable_name.to_string(),
+                                });
+                                render_expression_editor(
+                                    state,
+                                    let_expression.body.as_ref(),
+                                    body_path,
+                                    target,
+                                    body_scope,
+                                    diagnostics,
+                                )
+                            }])
                             .into_node(),
                     ])
                     .into_node(),
@@ -430,7 +425,12 @@ fn render_expression_editor(
                                         )
                                         .children([text("Key")])
                                         .into_node(),
-                                    record_item_key_input(path.clone(), index, target, item.key.as_ref()),
+                                    record_item_key_input(
+                                        path.clone(),
+                                        index,
+                                        target,
+                                        item.key.as_ref(),
+                                    ),
                                     remove_record_item_button(path.clone(), index, target),
                                 ])
                                 .into_node(),
@@ -509,9 +509,11 @@ fn part_type_to_expression_type(part_type: &definy_event::event::PartType) -> Ex
 
 fn expected_type_for_target(state: &AppState, target: EditorTarget) -> Option<ExpressionType> {
     match target {
-        EditorTarget::PartDefinition => Some(part_type_to_expression_type(
-            &state.part_definition_form.part_type_input,
-        )),
+        EditorTarget::PartDefinition => state
+            .part_definition_form
+            .part_type_input
+            .as_ref()
+            .map(part_type_to_expression_type),
         EditorTarget::PartUpdate => {
             let hash = match state.location {
                 Some(Location::Part(hash)) => hash,
@@ -533,10 +535,12 @@ fn collect_type_diagnostics(
     let part_type_map = collect_part_snapshots(state)
         .into_iter()
         .filter_map(|snapshot| {
-            snapshot
-                .part_type
-                .as_ref()
-                .map(|part_type| (snapshot.definition_event_hash, part_type_to_expression_type(part_type)))
+            snapshot.part_type.as_ref().map(|part_type| {
+                (
+                    snapshot.definition_event_hash,
+                    part_type_to_expression_type(part_type),
+                )
+            })
         })
         .collect::<HashMap<[u8; 32], ExpressionType>>();
 
@@ -585,11 +589,12 @@ fn check_expression_type(
         definy_event::event::Expression::String(_) => ExpressionType::String,
         definy_event::event::Expression::Boolean(_) => ExpressionType::Boolean,
         definy_event::event::Expression::ListLiteral(list_expression) => {
-            let expected_item_type = if let Some(ExpressionType::List(item_type)) = expected_type.as_ref() {
-                Some(item_type.as_ref().clone())
-            } else {
-                None
-            };
+            let expected_item_type =
+                if let Some(ExpressionType::List(item_type)) = expected_type.as_ref() {
+                    Some(item_type.as_ref().clone())
+                } else {
+                    None
+                };
             let mut inferred_item_type = expected_item_type.clone();
             for (index, item) in list_expression.items.iter().enumerate() {
                 let mut item_path = path.to_vec();
@@ -806,11 +811,8 @@ fn expression_selector(
                     .and_then(|document| document.query_selector(selector.as_str()).ok())
                     .flatten()
                     .and_then(|element| {
-                        js_sys::Reflect::get(
-                            &element,
-                            &wasm_bindgen::JsValue::from_str("value"),
-                        )
-                        .ok()
+                        js_sys::Reflect::get(&element, &wasm_bindgen::JsValue::from_str("value"))
+                            .ok()
                     })
                     .and_then(|value| value.as_string())
                     .unwrap_or_default();
@@ -910,7 +912,9 @@ fn apply_selection(
     };
     if let Some(expression) = get_mut_expression_at_path(root_expression, path) {
         *expression = if selected_value == "expr:number" {
-            definy_event::event::Expression::Number(definy_event::event::NumberExpression { value: 0 })
+            definy_event::event::Expression::Number(definy_event::event::NumberExpression {
+                value: 0,
+            })
         } else if selected_value == "expr:string" {
             definy_event::event::Expression::String(definy_event::event::StringExpression {
                 value: "".into(),
@@ -1257,7 +1261,11 @@ fn add_record_item_button(path: Vec<PathStep>, target: EditorTarget) -> Node<App
         .into_node()
 }
 
-fn remove_record_item_button(path: Vec<PathStep>, item_index: usize, target: EditorTarget) -> Node<AppState> {
+fn remove_record_item_button(
+    path: Vec<PathStep>,
+    item_index: usize,
+    target: EditorTarget,
+) -> Node<AppState> {
     Button::new()
         .type_("button")
         .on_click(EventHandler::new(move |set_state| {
@@ -1293,7 +1301,11 @@ fn add_list_item_button(path: Vec<PathStep>, target: EditorTarget) -> Node<AppSt
         .into_node()
 }
 
-fn remove_list_item_button(path: Vec<PathStep>, item_index: usize, target: EditorTarget) -> Node<AppState> {
+fn remove_list_item_button(
+    path: Vec<PathStep>,
+    item_index: usize,
+    target: EditorTarget,
+) -> Node<AppState> {
     Button::new()
         .type_("button")
         .on_click(EventHandler::new(move |set_state| {
@@ -1488,12 +1500,14 @@ fn add_record_item(root_expression: &mut definy_event::event::Expression, path: 
     if let Some(definy_event::event::Expression::RecordLiteral(record_expr)) =
         get_mut_expression_at_path(root_expression, path)
     {
-        record_expr.items.push(definy_event::event::RecordItemExpression {
-            key: format!("key{}", record_expr.items.len() + 1).into(),
-            value: Box::new(definy_event::event::Expression::Number(
-                definy_event::event::NumberExpression { value: 0 },
-            )),
-        });
+        record_expr
+            .items
+            .push(definy_event::event::RecordItemExpression {
+                key: format!("key{}", record_expr.items.len() + 1).into(),
+                value: Box::new(definy_event::event::Expression::Number(
+                    definy_event::event::NumberExpression { value: 0 },
+                )),
+            });
     }
 }
 
@@ -1518,9 +1532,11 @@ fn add_list_item(root_expression: &mut definy_event::event::Expression, path: &[
     if let Some(definy_event::event::Expression::ListLiteral(list_expr)) =
         get_mut_expression_at_path(root_expression, path)
     {
-        list_expr.items.push(definy_event::event::Expression::Number(
-            definy_event::event::NumberExpression { value: 0 },
-        ));
+        list_expr
+            .items
+            .push(definy_event::event::Expression::Number(
+                definy_event::event::NumberExpression { value: 0 },
+            ));
     }
 }
 
@@ -1582,25 +1598,28 @@ fn next_local_variable_id(expression: &definy_event::event::Expression) -> i64 {
 
 #[cfg(test)]
 mod tests {
-    use super::{get_mut_expression_at_path, path_to_key, remove_list_item, set_number_value, PathStep};
+    use super::{
+        PathStep, get_mut_expression_at_path, path_to_key, remove_list_item, set_number_value,
+    };
 
     #[test]
     fn edit_nested_expression_by_ui_path() {
-        let mut expression = definy_event::event::Expression::Add(definy_event::event::AddExpression {
-            left: Box::new(definy_event::event::Expression::Number(
-                definy_event::event::NumberExpression { value: 0 },
-            )),
-            right: Box::new(definy_event::event::Expression::Add(
-                definy_event::event::AddExpression {
-                    left: Box::new(definy_event::event::Expression::Number(
-                        definy_event::event::NumberExpression { value: 0 },
-                    )),
-                    right: Box::new(definy_event::event::Expression::Number(
-                        definy_event::event::NumberExpression { value: 0 },
-                    )),
-                },
-            )),
-        });
+        let mut expression =
+            definy_event::event::Expression::Add(definy_event::event::AddExpression {
+                left: Box::new(definy_event::event::Expression::Number(
+                    definy_event::event::NumberExpression { value: 0 },
+                )),
+                right: Box::new(definy_event::event::Expression::Add(
+                    definy_event::event::AddExpression {
+                        left: Box::new(definy_event::event::Expression::Number(
+                            definy_event::event::NumberExpression { value: 0 },
+                        )),
+                        right: Box::new(definy_event::event::Expression::Number(
+                            definy_event::event::NumberExpression { value: 0 },
+                        )),
+                    },
+                )),
+            });
 
         set_number_value(&mut expression, &[PathStep::Left], 321);
         set_number_value(&mut expression, &[PathStep::Right, PathStep::Left], 1);
@@ -1620,22 +1639,29 @@ mod tests {
 
     #[test]
     fn remove_list_item_can_make_empty_and_removes_target_index() {
-        let mut expression =
-            definy_event::event::Expression::ListLiteral(definy_event::event::ListLiteralExpression {
+        let mut expression = definy_event::event::Expression::ListLiteral(
+            definy_event::event::ListLiteralExpression {
                 items: vec![
-                    definy_event::event::Expression::String(definy_event::event::StringExpression {
-                        value: "a".into(),
-                    }),
-                    definy_event::event::Expression::String(definy_event::event::StringExpression {
-                        value: "b".into(),
-                    }),
+                    definy_event::event::Expression::String(
+                        definy_event::event::StringExpression { value: "a".into() },
+                    ),
+                    definy_event::event::Expression::String(
+                        definy_event::event::StringExpression { value: "b".into() },
+                    ),
                 ],
-            });
+            },
+        );
 
         remove_list_item(&mut expression, &[], 0);
-        assert_eq!(crate::expression_eval::expression_to_source(&expression), "[\"b\"]");
+        assert_eq!(
+            crate::expression_eval::expression_to_source(&expression),
+            "[\"b\"]"
+        );
 
         remove_list_item(&mut expression, &[], 0);
-        assert_eq!(crate::expression_eval::expression_to_source(&expression), "[]");
+        assert_eq!(
+            crate::expression_eval::expression_to_source(&expression),
+            "[]"
+        );
     }
 }

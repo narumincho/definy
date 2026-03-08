@@ -17,6 +17,13 @@ fn part_type_text(part_type: &definy_event::event::PartType) -> String {
     }
 }
 
+fn optional_part_type_text(part_type: &Option<definy_event::event::PartType>) -> String {
+    part_type
+        .as_ref()
+        .map(part_type_text)
+        .unwrap_or_else(|| "None".to_string())
+}
+
 pub fn event_detail_view(state: &AppState, target_hash: &[u8; 32]) -> Node<AppState> {
     let account_name_map = state.account_name_map();
     let mut target_event_opt = None;
@@ -172,7 +179,7 @@ fn render_event_detail(
                         text(format!(
                             "{}: {} = {}",
                             part_definition_event.part_name,
-                            part_type_text(&part_definition_event.part_type),
+                            optional_part_type_text(&part_definition_event.part_type),
                             expression_to_source(&part_definition_event.expression)
                         )),
                         if part_definition_event.description.is_empty() {
