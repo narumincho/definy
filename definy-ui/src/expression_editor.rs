@@ -35,6 +35,7 @@ enum ExpressionType {
     Number,
     String,
     Boolean,
+    Type,
     List(Box<ExpressionType>),
     Record,
     Unknown,
@@ -46,6 +47,7 @@ impl ExpressionType {
             ExpressionType::Number => "Number".to_string(),
             ExpressionType::String => "String".to_string(),
             ExpressionType::Boolean => "Boolean".to_string(),
+            ExpressionType::Type => "Type".to_string(),
             ExpressionType::List(item) => format!("list<{}>", item.text()),
             ExpressionType::Record => "Record".to_string(),
             ExpressionType::Unknown => "Unknown".to_string(),
@@ -498,6 +500,7 @@ fn part_type_to_expression_type(part_type: &definy_event::event::PartType) -> Ex
         definy_event::event::PartType::Number => ExpressionType::Number,
         definy_event::event::PartType::String => ExpressionType::String,
         definy_event::event::PartType::Boolean => ExpressionType::Boolean,
+        definy_event::event::PartType::Type => ExpressionType::Type,
         definy_event::event::PartType::List(item_type) => {
             ExpressionType::List(Box::new(part_type_to_expression_type(item_type.as_ref())))
         }
