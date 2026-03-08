@@ -119,10 +119,9 @@ fn evaluate_via_wasm(
 fn has_part_references(expr: &definy_event::event::Expression) -> bool {
     match expr {
         definy_event::event::Expression::PartReference(_) => true,
-        definy_event::event::Expression::ListLiteral(list_expression) => list_expression
-            .items
-            .iter()
-            .any(has_part_references),
+        definy_event::event::Expression::ListLiteral(list_expression) => {
+            list_expression.items.iter().any(has_part_references)
+        }
         definy_event::event::Expression::Add(a) => {
             has_part_references(&a.left) || has_part_references(&a.right)
         }
@@ -382,7 +381,9 @@ pub fn expression_to_source(expression: &definy_event::event::Expression) -> Str
                 }
             }
             definy_event::event::Expression::PartReference(part_reference_expression) => {
-                crate::hash_format::encode_hash32(&part_reference_expression.part_definition_event_hash)
+                crate::hash_format::encode_hash32(
+                    &part_reference_expression.part_definition_event_hash,
+                )
             }
             definy_event::event::Expression::Let(let_expression) => {
                 let mut body_scope = scope.to_vec();
@@ -402,24 +403,28 @@ pub fn expression_to_source(expression: &definy_event::event::Expression) -> Str
                     source
                 }
             }
-            definy_event::event::Expression::Variable(variable_expression) => {
-                scope
-                    .iter()
-                    .rev()
-                    .find_map(|(id, name)| {
-                        if *id == variable_expression.variable_id {
-                            Some(name.clone())
-                        } else {
-                            None
-                        }
-                    })
-                    .unwrap_or_else(|| format!("#{}", variable_expression.variable_id))
-            }
+            definy_event::event::Expression::Variable(variable_expression) => scope
+                .iter()
+                .rev()
+                .find_map(|(id, name)| {
+                    if *id == variable_expression.variable_id {
+                        Some(name.clone())
+                    } else {
+                        None
+                    }
+                })
+                .unwrap_or_else(|| format!("#{}", variable_expression.variable_id)),
             definy_event::event::Expression::RecordLiteral(record_expression) => {
                 let items = record_expression
                     .items
                     .iter()
-                    .map(|item| format!("{}: {}", item.key, render(item.value.as_ref(), false, scope)))
+                    .map(|item| {
+                        format!(
+                            "{}: {}",
+                            item.key,
+                            render(item.value.as_ref(), false, scope)
+                        )
+                    })
                     .collect::<Vec<String>>()
                     .join(", ");
                 format!("{{{}}}", items)
@@ -588,8 +593,8 @@ mod tests {
 
     #[test]
     fn evaluate_list_literal() {
-        let list_expr =
-            definy_event::event::Expression::ListLiteral(definy_event::event::ListLiteralExpression {
+        let list_expr = definy_event::event::Expression::ListLiteral(
+            definy_event::event::ListLiteralExpression {
                 items: vec![
                     definy_event::event::Expression::Number(
                         definy_event::event::NumberExpression { value: 1 },
@@ -598,7 +603,8 @@ mod tests {
                         definy_event::event::NumberExpression { value: 2 },
                     ),
                 ],
-            });
+            },
+        );
         assert_eq!(
             evaluate_expression(&list_expr, &[]),
             Ok(crate::expression_eval::Value::List(vec![
@@ -652,11 +658,17 @@ mod tests {
         assert_eq!(
             evaluate_expression(&record_expr, &[]),
             Ok(crate::expression_eval::Value::Record(vec![
-                ("name".to_string(), crate::expression_eval::Value::String("narumi".to_string())),
+                (
+                    "name".to_string(),
+                    crate::expression_eval::Value::String("narumi".to_string())
+                ),
                 ("age".to_string(), crate::expression_eval::Value::Number(3)),
             ]))
         );
-        assert_eq!(expression_to_source(&record_expr), "{name: \"narumi\", age: 3}");
+        assert_eq!(
+            expression_to_source(&record_expr),
+            "{name: \"narumi\", age: 3}"
+        );
     }
 
     #[test]
@@ -678,14 +690,10 @@ mod tests {
                     body: Box::new(definy_event::event::Expression::Add(
                         definy_event::event::AddExpression {
                             left: Box::new(definy_event::event::Expression::Variable(
-                                definy_event::event::VariableExpression {
-                                    variable_id: 1,
-                                },
+                                definy_event::event::VariableExpression { variable_id: 1 },
                             )),
                             right: Box::new(definy_event::event::Expression::Variable(
-                                definy_event::event::VariableExpression {
-                                    variable_id: 2,
-                                },
+                                definy_event::event::VariableExpression { variable_id: 2 },
                             )),
                         },
                     )),
@@ -716,7 +724,7 @@ mod tests {
                     content: definy_event::event::EventContent::PartDefinition(
                         definy_event::event::PartDefinitionEvent {
                             part_name: "legacy-name".into(),
-                            part_type: definy_event::event::PartType::Number,
+                            part_type: Some(definy_event::event::PartType::Number),
                             description: "".into(),
                             expression: part_expression,
                         },

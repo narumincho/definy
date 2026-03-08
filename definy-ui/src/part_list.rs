@@ -1,9 +1,9 @@
 use narumincho_vdom::*;
 
+use crate::Location;
 use crate::app_state::AppState;
 use crate::expression_eval::expression_to_source;
 use crate::part_projection::collect_part_snapshots;
-use crate::Location;
 
 fn part_type_text(part_type: &definy_event::event::PartType) -> String {
     match part_type {
@@ -15,6 +15,13 @@ fn part_type_text(part_type: &definy_event::event::PartType) -> String {
             format!("list<{}>", part_type_text(item_type.as_ref()))
         }
     }
+}
+
+fn optional_part_type_text(part_type: &Option<definy_event::event::PartType>) -> String {
+    part_type
+        .as_ref()
+        .map(part_type_text)
+        .unwrap_or_else(|| "None".to_string())
 }
 
 pub fn part_list_view(state: &AppState) -> Node<AppState> {
@@ -67,7 +74,9 @@ pub fn part_list_view(state: &AppState) -> Node<AppState> {
                                                     .set("color", "var(--text-secondary)"),
                                             )
                                             .children([text(
-                                                part.updated_at.format("%Y-%m-%d %H:%M:%S").to_string(),
+                                                part.updated_at
+                                                    .format("%Y-%m-%d %H:%M:%S")
+                                                    .to_string(),
                                             )])
                                             .into_node(),
                                         Div::new()
@@ -82,10 +91,7 @@ pub fn part_list_view(state: &AppState) -> Node<AppState> {
                                             )
                                             .children([text(format!(
                                                 "type: {}",
-                                                part.part_type
-                                                    .as_ref()
-                                                    .map(part_type_text)
-                                                    .unwrap_or_else(|| "Unknown".to_string())
+                                                optional_part_type_text(&part.part_type)
                                             ))])
                                             .into_node(),
                                         if part.has_definition {
@@ -136,17 +142,28 @@ pub fn part_list_view(state: &AppState) -> Node<AppState> {
                                                     .set("font-size", "0.85rem")
                                                     .set("color", "var(--primary)"),
                                             )
-                                            .children([text(format!("latest author: {}", account_name))])
+                                            .children([text(format!(
+                                                "latest author: {}",
+                                                account_name
+                                            ))])
                                             .into_node(),
                                         Div::new()
-                                            .style(Style::new().set("display", "flex").set("gap", "0.45rem"))
+                                            .style(
+                                                Style::new()
+                                                    .set("display", "flex")
+                                                    .set("gap", "0.45rem"),
+                                            )
                                             .children([
                                                 A::<AppState, Location>::new()
-                                                    .href(Href::Internal(Location::Event(part.latest_event_hash)))
+                                                    .href(Href::Internal(Location::Event(
+                                                        part.latest_event_hash,
+                                                    )))
                                                     .children([text("Latest event")])
                                                     .into_node(),
                                                 A::<AppState, Location>::new()
-                                                    .href(Href::Internal(Location::Event(part.definition_event_hash)))
+                                                    .href(Href::Internal(Location::Event(
+                                                        part.definition_event_hash,
+                                                    )))
                                                     .children([text("Definition event")])
                                                     .into_node(),
                                             ])

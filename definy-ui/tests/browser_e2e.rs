@@ -82,7 +82,11 @@ impl WebDriverClient {
                 let mut chrome_options = serde_json::Map::new();
                 chrome_options.insert(
                     "args".to_string(),
-                    serde_json::json!(["--headless=new", "--no-sandbox", "--disable-dev-shm-usage"]),
+                    serde_json::json!([
+                        "--headless=new",
+                        "--no-sandbox",
+                        "--disable-dev-shm-usage"
+                    ]),
                 );
                 if let Some(binary) = chrome_binary {
                     chrome_options.insert("binary".to_string(), serde_json::json!(binary));
@@ -98,12 +102,17 @@ impl WebDriverClient {
             }
         };
 
-        let response = webdriver_request(&client, &base_url, Method::POST, "/session", Some(caps)).await?;
+        let response =
+            webdriver_request(&client, &base_url, Method::POST, "/session", Some(caps)).await?;
 
         let session_id = response
             .get("value")
             .and_then(|v| v.get("sessionId").and_then(serde_json::Value::as_str))
-            .or_else(|| response.get("sessionId").and_then(serde_json::Value::as_str))
+            .or_else(|| {
+                response
+                    .get("sessionId")
+                    .and_then(serde_json::Value::as_str)
+            })
             .ok_or("failed to create WebDriver session")?
             .to_string();
 
@@ -117,7 +126,14 @@ impl WebDriverClient {
     async fn goto(&self, url: &str) -> Result<(), Box<dyn Error>> {
         let path = format!("/session/{}/url", self.session_id);
         let payload = serde_json::json!({ "url": url });
-        let _ = webdriver_request(&self.client, &self.base_url, Method::POST, &path, Some(payload)).await?;
+        let _ = webdriver_request(
+            &self.client,
+            &self.base_url,
+            Method::POST,
+            &path,
+            Some(payload),
+        )
+        .await?;
         Ok(())
     }
 
@@ -138,7 +154,8 @@ impl WebDriverClient {
     async fn text_of(&self, css_selector: &str) -> Result<String, Box<dyn Error>> {
         let element_id = self.find_element(css_selector).await?;
         let path = format!("/session/{}/element/{}/text", self.session_id, element_id);
-        let response = webdriver_request(&self.client, &self.base_url, Method::GET, &path, None).await?;
+        let response =
+            webdriver_request(&self.client, &self.base_url, Method::GET, &path, None).await?;
         let text = response
             .get("value")
             .and_then(serde_json::Value::as_str)
@@ -165,7 +182,8 @@ impl WebDriverClient {
 
     async fn current_url(&self) -> Result<String, Box<dyn Error>> {
         let path = format!("/session/{}/url", self.session_id);
-        let response = webdriver_request(&self.client, &self.base_url, Method::GET, &path, None).await?;
+        let response =
+            webdriver_request(&self.client, &self.base_url, Method::GET, &path, None).await?;
         let current = response
             .get("value")
             .and_then(serde_json::Value::as_str)
@@ -314,15 +332,19 @@ fn render_html_response(path: &str) -> Response<Full<Bytes>> {
             current_key: None,
             part_definition_form: definy_ui::PartDefinitionFormState {
                 part_name_input: String::new(),
-                part_type_input: definy_event::event::PartType::Number,
+                part_type_input: Some(definy_event::event::PartType::Number),
                 part_description_input: String::new(),
-                composing_expression: definy_event::event::Expression::Number(definy_event::event::NumberExpression { value: 0 }),
+                composing_expression: definy_event::event::Expression::Number(
+                    definy_event::event::NumberExpression { value: 0 },
+                ),
                 eval_result: None,
             },
             part_update_form: definy_ui::PartUpdateFormState {
                 part_name_input: String::new(),
                 part_description_input: String::new(),
-                expression_input: definy_event::event::Expression::Number(definy_event::event::NumberExpression { value: 0 }),
+                expression_input: definy_event::event::Expression::Number(
+                    definy_event::event::NumberExpression { value: 0 },
+                ),
             },
             event_detail_eval_result: None,
             profile_name_input: String::new(),

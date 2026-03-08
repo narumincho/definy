@@ -30,8 +30,8 @@ pub enum EventContent {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct PartDefinitionEvent {
     pub part_name: Box<str>,
-    #[serde(default = "default_part_type")]
-    pub part_type: PartType,
+    #[serde(default)]
+    pub part_type: Option<PartType>,
     #[serde(default)]
     pub description: Box<str>,
     pub expression: Expression,
@@ -48,10 +48,6 @@ pub struct PartUpdateEvent {
 
 fn default_expression() -> Expression {
     Expression::Number(NumberExpression { value: 0 })
-}
-
-fn default_part_type() -> PartType {
-    PartType::Number
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

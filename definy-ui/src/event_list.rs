@@ -17,6 +17,13 @@ fn part_type_text(part_type: &definy_event::event::PartType) -> String {
     }
 }
 
+fn optional_part_type_text(part_type: &Option<definy_event::event::PartType>) -> String {
+    part_type
+        .as_ref()
+        .map(part_type_text)
+        .unwrap_or_else(|| "None".to_string())
+}
+
 pub fn event_list_view(state: &AppState) -> Node<AppState> {
     let part_definition_form = if state.current_key.is_some() {
         Some(
@@ -153,7 +160,7 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
                                         let mut next = state.clone();
                                         next.part_definition_form.part_name_input = String::new();
                                         next.part_definition_form.part_type_input =
-                                            definy_event::event::PartType::Number;
+                                            Some(definy_event::event::PartType::Number);
                                         next.part_definition_form.part_description_input = String::new();
                                         next.part_definition_form.eval_result = None;
                                         next.part_definition_form.composing_expression =
@@ -303,7 +310,7 @@ fn event_view(
                             text(format!(
                                 "{}: {} = {}",
                                 part_definition_event.part_name,
-                                part_type_text(&part_definition_event.part_type),
+                                optional_part_type_text(&part_definition_event.part_type),
                                 expression_to_source(&part_definition_event.expression)
                             )),
                             if part_definition_event.description.is_empty() {
@@ -467,15 +474,19 @@ fn part_type_input(state: &AppState) -> Node<AppState> {
         .into_node()
 }
 
-fn render_part_type_editor(part_type: &definy_event::event::PartType, depth: usize) -> Node<AppState> {
+fn render_part_type_editor(
+    part_type: &Option<definy_event::event::PartType>,
+    depth: usize,
+) -> Node<AppState> {
     let name = format!("part-definition-type-{}", depth);
     let selector = format!("select[name='{}']", name);
     let selected = match part_type {
-        definy_event::event::PartType::Number => "number",
-        definy_event::event::PartType::String => "string",
-        definy_event::event::PartType::Boolean => "boolean",
-        definy_event::event::PartType::Type => "type",
-        definy_event::event::PartType::List(_) => "list",
+        None => "none",
+        Some(definy_event::event::PartType::Number) => "number",
+        Some(definy_event::event::PartType::String) => "string",
+        Some(definy_event::event::PartType::Boolean) => "boolean",
+        Some(definy_event::event::PartType::Type) => "type",
+        Some(definy_event::event::PartType::List(_)) => "list",
     };
 
     let mut select = Select::new()
@@ -493,7 +504,8 @@ fn render_part_type_editor(part_type: &definy_event::event::PartType, depth: usi
                     .and_then(|document| document.query_selector(selector.as_str()).ok())
                     .flatten()
                     .and_then(|element| {
-                        js_sys::Reflect::get(&element, &wasm_bindgen::JsValue::from_str("value")).ok()
+                        js_sys::Reflect::get(&element, &wasm_bindgen::JsValue::from_str("value"))
+                            .ok()
                     })
                     .and_then(|value| value.as_string())
                     .unwrap_or_else(|| "number".to_string());
@@ -511,34 +523,42 @@ fn render_part_type_editor(part_type: &definy_event::event::PartType, depth: usi
         }),
     ));
 
-    let mut children = vec![
-        select
-            .children([
-                OptionElement::new()
-                    .value("number")
-                    .children([text("Number")])
-                    .into_node(),
-                OptionElement::new()
-                    .value("string")
-                    .children([text("String")])
-                    .into_node(),
-                OptionElement::new()
-                    .value("boolean")
-                    .children([text("Boolean")])
-                    .into_node(),
-                OptionElement::new()
-                    .value("type")
-                    .children([text("Type")])
-                    .into_node(),
-                OptionElement::new()
-                    .value("list")
-                    .children([text("List<...>")])
-                    .into_node(),
-            ])
-            .into_node(),
-    ];
+    let mut options = Vec::new();
+    if depth == 0 {
+        options.push(
+            OptionElement::new()
+                .value("none")
+                .children([text("None")])
+                .into_node(),
+        );
+    }
 
-    if let definy_event::event::PartType::List(item_type) = part_type {
+    options.extend([
+        OptionElement::new()
+            .value("number")
+            .children([text("Number")])
+            .into_node(),
+        OptionElement::new()
+            .value("string")
+            .children([text("String")])
+            .into_node(),
+        OptionElement::new()
+            .value("boolean")
+            .children([text("Boolean")])
+            .into_node(),
+        OptionElement::new()
+            .value("type")
+            .children([text("Type")])
+            .into_node(),
+        OptionElement::new()
+            .value("list")
+            .children([text("List<...>")])
+            .into_node(),
+    ]);
+
+    let mut children = vec![select.children(options).into_node()];
+
+    if let Some(definy_event::event::PartType::List(item_type)) = part_type {
         children.push(
             Div::new()
                 .style(
@@ -556,7 +576,7 @@ fn render_part_type_editor(part_type: &definy_event::event::PartType, depth: usi
                         )
                         .children([text("Item Type")])
                         .into_node(),
-                    render_part_type_editor(item_type.as_ref(), depth + 1),
+                    render_part_type_editor(&Some(item_type.as_ref().clone()), depth + 1),
                 ])
                 .into_node(),
         );
@@ -569,7 +589,7 @@ fn render_part_type_editor(part_type: &definy_event::event::PartType, depth: usi
 }
 
 fn update_part_type_at_depth(
-    part_type: &mut definy_event::event::PartType,
+    part_type: &mut Option<definy_event::event::PartType>,
     depth: usize,
     selected: &str,
 ) {
@@ -579,20 +599,67 @@ fn update_part_type_at_depth(
     }
 
     match part_type {
-        definy_event::event::PartType::List(item_type) => {
-            update_part_type_at_depth(item_type.as_mut(), depth - 1, selected);
+        Some(definy_event::event::PartType::List(item_type)) => {
+            update_part_type_nested(item_type.as_mut(), depth - 1, selected);
         }
         _ => {
-            *part_type =
-                definy_event::event::PartType::List(Box::new(definy_event::event::PartType::Number));
+            *part_type = Some(definy_event::event::PartType::List(Box::new(
+                definy_event::event::PartType::Number,
+            )));
+            if let Some(definy_event::event::PartType::List(item_type)) = part_type {
+                update_part_type_nested(item_type.as_mut(), depth - 1, selected);
+            }
+        }
+    }
+}
+
+fn update_part_type_nested(
+    part_type: &mut definy_event::event::PartType,
+    depth: usize,
+    selected: &str,
+) {
+    if depth == 0 {
+        *part_type = next_nested_part_type_from_selected(selected, part_type);
+        return;
+    }
+
+    match part_type {
+        definy_event::event::PartType::List(item_type) => {
+            update_part_type_nested(item_type.as_mut(), depth - 1, selected);
+        }
+        _ => {
+            *part_type = definy_event::event::PartType::List(Box::new(
+                definy_event::event::PartType::Number,
+            ));
             if let definy_event::event::PartType::List(item_type) = part_type {
-                update_part_type_at_depth(item_type.as_mut(), depth - 1, selected);
+                update_part_type_nested(item_type.as_mut(), depth - 1, selected);
             }
         }
     }
 }
 
 fn next_part_type_from_selected(
+    selected: &str,
+    current: &Option<definy_event::event::PartType>,
+) -> Option<definy_event::event::PartType> {
+    match selected {
+        "none" => None,
+        "string" => Some(definy_event::event::PartType::String),
+        "boolean" => Some(definy_event::event::PartType::Boolean),
+        "type" => Some(definy_event::event::PartType::Type),
+        "list" => match current {
+            Some(definy_event::event::PartType::List(item_type)) => Some(
+                definy_event::event::PartType::List(Box::new(item_type.as_ref().clone())),
+            ),
+            _ => Some(definy_event::event::PartType::List(Box::new(
+                definy_event::event::PartType::Number,
+            ))),
+        },
+        _ => Some(definy_event::event::PartType::Number),
+    }
+}
+
+fn next_nested_part_type_from_selected(
     selected: &str,
     current: &definy_event::event::PartType,
 ) -> definy_event::event::PartType {
@@ -604,7 +671,9 @@ fn next_part_type_from_selected(
             definy_event::event::PartType::List(item_type) => {
                 definy_event::event::PartType::List(Box::new(item_type.as_ref().clone()))
             }
-            _ => definy_event::event::PartType::List(Box::new(definy_event::event::PartType::Number)),
+            _ => {
+                definy_event::event::PartType::List(Box::new(definy_event::event::PartType::Number))
+            }
         },
         _ => definy_event::event::PartType::Number,
     }
