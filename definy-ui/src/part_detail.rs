@@ -25,7 +25,12 @@ pub fn part_detail_view(state: &AppState, definition_event_hash: &[u8; 32]) -> N
                     .into_node(),
                 Div::new()
                     .class("event-detail-card")
-                    .style(Style::new().set("display", "grid").set("gap", "0.45rem").set("padding", "0.85rem"))
+                    .style(
+                        Style::new()
+                            .set("display", "grid")
+                            .set("gap", "0.45rem")
+                            .set("padding", "0.85rem"),
+                    )
                     .children([
                         Div::new()
                             .style(
@@ -51,7 +56,11 @@ pub fn part_detail_view(state: &AppState, definition_event_hash: &[u8; 32]) -> N
                         },
                         Div::new()
                             .class("mono")
-                            .style(Style::new().set("font-size", "0.85rem").set("opacity", "0.9"))
+                            .style(
+                                Style::new()
+                                    .set("font-size", "0.85rem")
+                                    .set("opacity", "0.9"),
+                            )
                             .children([text(format!(
                                 "expression: {}",
                                 expression_to_source(&snapshot.expression)
@@ -65,7 +74,9 @@ pub fn part_detail_view(state: &AppState, definition_event_hash: &[u8; 32]) -> N
                                     .children([text("Definition event")])
                                     .into_node(),
                                 A::<AppState, Location>::new()
-                                    .href(Href::Internal(Location::Event(snapshot.latest_event_hash)))
+                                    .href(Href::Internal(Location::Event(
+                                        snapshot.latest_event_hash,
+                                    )))
                                     .children([text("Latest event")])
                                     .into_node(),
                             ])
@@ -75,7 +86,12 @@ pub fn part_detail_view(state: &AppState, definition_event_hash: &[u8; 32]) -> N
                 part_update_form(state, definition_event_hash),
                 Div::new()
                     .class("event-detail-card")
-                    .style(Style::new().set("display", "grid").set("gap", "0.45rem").set("padding", "0.85rem"))
+                    .style(
+                        Style::new()
+                            .set("display", "grid")
+                            .set("gap", "0.45rem")
+                            .set("padding", "0.85rem"),
+                    )
                     .children([
                         Div::new()
                             .style(Style::new().set("font-weight", "600"))
@@ -87,7 +103,8 @@ pub fn part_detail_view(state: &AppState, definition_event_hash: &[u8; 32]) -> N
                                 related_events
                                     .into_iter()
                                     .map(|(event_hash, event)| {
-                                        let label = crate::event_presenter::event_kind_label(&event);
+                                        let label =
+                                            crate::event_presenter::event_kind_label(&event);
                                         A::<AppState, Location>::new()
                                             .href(Href::Internal(Location::Event(event_hash)))
                                             .style(
@@ -107,7 +124,10 @@ pub fn part_detail_view(state: &AppState, definition_event_hash: &[u8; 32]) -> N
                                                             .set("color", "var(--text-secondary)"),
                                                     )
                                                     .children([text(
-                                                        event.time.format("%Y-%m-%d %H:%M:%S").to_string(),
+                                                        event
+                                                            .time
+                                                            .format("%Y-%m-%d %H:%M:%S")
+                                                            .to_string(),
                                                     )])
                                                     .into_node(),
                                             ])
@@ -136,6 +156,8 @@ pub fn part_detail_view(state: &AppState, definition_event_hash: &[u8; 32]) -> N
 fn part_update_form(state: &AppState, definition_event_hash: &[u8; 32]) -> Node<AppState> {
     let root_part_definition_hash = *definition_event_hash;
     let hash_as_base64 = crate::hash_format::encode_hash32(definition_event_hash);
+    let (initial_name, initial_description, initial_expression) =
+        effective_part_update_form(state, definition_event_hash);
 
     Div::new()
         .class("event-detail-card")
@@ -163,30 +185,38 @@ fn part_update_form(state: &AppState, definition_event_hash: &[u8; 32]) -> Node<
             Input::new()
                 .type_("text")
                 .name("part-update-name")
-                .value(&state.part_update_form.part_name_input)
-                .on_change(EventHandler::new(async |set_state| {
-                    let value = web_sys::window()
-                        .and_then(|window| window.document())
-                        .and_then(|document| {
-                            document.query_selector("input[name='part-update-name']").ok()
-                        })
-                        .flatten()
-                        .and_then(|element| {
-                            wasm_bindgen::JsCast::dyn_into::<web_sys::HtmlInputElement>(element).ok()
-                        })
-                        .map(|input| input.value())
-                        .unwrap_or_default();
-                    set_state(Box::new(move |state: AppState| {
-                        let mut next = state.clone();
-                        next.part_update_form.part_name_input = value;
-                        next
-                    }));
+                .value(initial_name.as_str())
+                .on_change(EventHandler::new(move |set_state| {
+                    let root_part_definition_hash = root_part_definition_hash;
+                    async move {
+                        let value = web_sys::window()
+                            .and_then(|window| window.document())
+                            .and_then(|document| {
+                                document
+                                    .query_selector("input[name='part-update-name']")
+                                    .ok()
+                            })
+                            .flatten()
+                            .and_then(|element| {
+                                wasm_bindgen::JsCast::dyn_into::<web_sys::HtmlInputElement>(element)
+                                    .ok()
+                            })
+                            .map(|input| input.value())
+                            .unwrap_or_default();
+                        set_state(Box::new(move |state: AppState| {
+                            let mut next = state.clone();
+                            next.part_update_form.part_definition_event_hash =
+                                Some(root_part_definition_hash);
+                            next.part_update_form.part_name_input = value;
+                            next
+                        }));
+                    }
                 }))
                 .into_node(),
             {
                 let mut description = Textarea::new()
                     .name("part-update-description")
-                    .value(&state.part_update_form.part_description_input)
+                    .value(initial_description.as_str())
                     .style(Style::new().set("min-height", "5rem"));
                 description.attributes.push((
                     "placeholder".to_string(),
@@ -194,41 +224,46 @@ fn part_update_form(state: &AppState, definition_event_hash: &[u8; 32]) -> Node<
                 ));
                 description.events.push((
                     "input".to_string(),
-                    EventHandler::new(async |set_state| {
-                        let value = web_sys::window()
-                            .and_then(|window| window.document())
-                            .and_then(|document| {
-                                document
-                                    .query_selector("textarea[name='part-update-description']")
+                    EventHandler::new(move |set_state| {
+                        let root_part_definition_hash = root_part_definition_hash;
+                        async move {
+                            let value = web_sys::window()
+                                .and_then(|window| window.document())
+                                .and_then(|document| {
+                                    document
+                                        .query_selector("textarea[name='part-update-description']")
+                                        .ok()
+                                })
+                                .flatten()
+                                .and_then(|element| {
+                                    wasm_bindgen::JsCast::dyn_into::<web_sys::HtmlTextAreaElement>(
+                                        element,
+                                    )
                                     .ok()
-                            })
-                            .flatten()
-                            .and_then(|element| {
-                                wasm_bindgen::JsCast::dyn_into::<web_sys::HtmlTextAreaElement>(
-                                    element,
-                                )
-                                .ok()
-                            })
-                            .map(|textarea| textarea.value())
-                            .unwrap_or_default();
-                        set_state(Box::new(move |state: AppState| {
-                            let mut next = state.clone();
-                            next.part_update_form.part_description_input = value;
-                            next
-                        }));
+                                })
+                                .map(|textarea| textarea.value())
+                                .unwrap_or_default();
+                            set_state(Box::new(move |state: AppState| {
+                                let mut next = state.clone();
+                                next.part_update_form.part_definition_event_hash =
+                                    Some(root_part_definition_hash);
+                                next.part_update_form.part_description_input = value;
+                                next
+                            }));
+                        }
                     }),
                 ));
                 description.into_node()
             },
             Div::new()
-                .style(Style::new().set("color", "var(--text-secondary)").set("font-size", "0.9rem"))
+                .style(
+                    Style::new()
+                        .set("color", "var(--text-secondary)")
+                        .set("font-size", "0.9rem"),
+                )
                 .children([text("Expression Builder")])
                 .into_node(),
-            render_root_expression_editor(
-                state,
-                &state.part_update_form.expression_input,
-                EditorTarget::PartUpdate,
-            ),
+            render_root_expression_editor(state, &initial_expression, EditorTarget::PartUpdate),
             Div::new()
                 .class("mono")
                 .style(
@@ -239,77 +274,93 @@ fn part_update_form(state: &AppState, definition_event_hash: &[u8; 32]) -> Node<
                 )
                 .children([text(format!(
                     "Current: {}",
-                    expression_to_source(&state.part_update_form.expression_input)
+                    expression_to_source(&initial_expression)
                 ))])
                 .into_node(),
             {
                 Button::new()
                     .type_("button")
-                    .on_click(EventHandler::new(move |set_state| {
-                        async move {
-                            let set_state = std::rc::Rc::new(set_state);
-                            let set_state_for_async = set_state.clone();
-                            set_state(Box::new(move |state: AppState| {
-                                let key = if let Some(key) = &state.current_key {
-                                    key.clone()
-                                } else {
-                                    return AppState {
-                                        event_detail_eval_result: Some(
-                                            "Error: login required".to_string(),
-                                        ),
-                                        ..state.clone()
-                                    };
+                    .on_click(EventHandler::new(move |set_state| async move {
+                        let set_state = std::rc::Rc::new(set_state);
+                        let set_state_for_async = set_state.clone();
+                        set_state(Box::new(move |state: AppState| {
+                            let key = if let Some(key) = &state.current_key {
+                                key.clone()
+                            } else {
+                                return AppState {
+                                    event_detail_eval_result: Some(
+                                        "Error: login required".to_string(),
+                                    ),
+                                    ..state.clone()
                                 };
-                                let part_name =
-                                    state.part_update_form.part_name_input.trim().to_string();
-                                if part_name.is_empty() {
-                                    return AppState {
-                                        event_detail_eval_result: Some(
-                                            "Error: part name is required".to_string(),
+                            };
+                            let (current_part_name, current_part_description, current_expression) =
+                                effective_part_update_form(&state, &root_part_definition_hash);
+                            let part_name = current_part_name.trim().to_string();
+                            if part_name.is_empty() {
+                                return AppState {
+                                    event_detail_eval_result: Some(
+                                        "Error: part name is required".to_string(),
+                                    ),
+                                    ..state.clone()
+                                };
+                            }
+                            let part_description = current_part_description;
+                            let expression = current_expression;
+                            wasm_bindgen_futures::spawn_local(async move {
+                                let event_binary = match definy_event::sign_and_serialize(
+                                    definy_event::event::Event {
+                                        account_id: definy_event::event::AccountId(Box::new(
+                                            key.verifying_key().to_bytes(),
+                                        )),
+                                        time: chrono::Utc::now(),
+                                        content: definy_event::event::EventContent::PartUpdate(
+                                            definy_event::event::PartUpdateEvent {
+                                                part_name: part_name.into(),
+                                                part_description: part_description.into(),
+                                                part_definition_event_hash:
+                                                    root_part_definition_hash,
+                                                expression,
+                                            },
                                         ),
-                                        ..state.clone()
-                                    };
-                                }
-                                let part_description =
-                                    state.part_update_form.part_description_input.clone();
-                                let expression = state.part_update_form.expression_input.clone();
-                                wasm_bindgen_futures::spawn_local(async move {
-                                    let event_binary = match definy_event::sign_and_serialize(
-                                        definy_event::event::Event {
-                                            account_id: definy_event::event::AccountId(Box::new(
-                                                key.verifying_key().to_bytes(),
+                                    },
+                                    &key,
+                                ) {
+                                    Ok(value) => value,
+                                    Err(error) => {
+                                        set_state_for_async(Box::new(move |state| AppState {
+                                            event_detail_eval_result: Some(format!(
+                                                "Error: failed to serialize PartUpdate: {:?}",
+                                                error
                                             )),
-                                            time: chrono::Utc::now(),
-                                            content: definy_event::event::EventContent::PartUpdate(
-                                                definy_event::event::PartUpdateEvent {
-                                                    part_name: part_name.into(),
-                                                    part_description: part_description.into(),
-                                                    part_definition_event_hash: root_part_definition_hash,
-                                                    expression,
-                                                },
-                                            ),
-                                        },
-                                        &key,
-                                    ) {
-                                        Ok(value) => value,
-                                        Err(error) => {
-                                            set_state_for_async(Box::new(move |state| AppState {
-                                                event_detail_eval_result: Some(format!(
-                                                    "Error: failed to serialize PartUpdate: {:?}",
-                                                    error
-                                                )),
-                                                ..state.clone()
-                                            }));
-                                            return;
-                                        }
-                                    };
+                                            ..state.clone()
+                                        }));
+                                        return;
+                                    }
+                                };
 
-                                    match crate::fetch::post_event(event_binary.as_slice()).await {
-                                        Ok(_) => {
-                                            if let Ok(events) = crate::fetch::get_events().await {
-                                                set_state_for_async(Box::new(move |state| {
-                                                    let mut next = state.clone();
-                                                    next.events = events;
+                                match crate::fetch::post_event(event_binary.as_slice()).await {
+                                    Ok(_) => {
+                                        if let Ok(events) = crate::fetch::get_events().await {
+                                            set_state_for_async(Box::new(move |state| {
+                                                let mut next = state.clone();
+                                                next.events = events;
+                                                if let Some(snapshot) = find_part_snapshot(
+                                                    &next,
+                                                    &root_part_definition_hash,
+                                                ) {
+                                                    next.part_update_form
+                                                        .part_definition_event_hash =
+                                                        Some(root_part_definition_hash);
+                                                    next.part_update_form.part_name_input =
+                                                        snapshot.part_name;
+                                                    next.part_update_form.part_description_input =
+                                                        snapshot.part_description;
+                                                    next.part_update_form.expression_input =
+                                                        snapshot.expression;
+                                                } else {
+                                                    next.part_update_form
+                                                        .part_definition_event_hash = None;
                                                     next.part_update_form.part_name_input =
                                                         String::new();
                                                     next.part_update_form.part_description_input =
@@ -320,26 +371,26 @@ fn part_update_form(state: &AppState, definition_event_hash: &[u8; 32]) -> Node<
                                                                 value: 0,
                                                             },
                                                         );
-                                                    next.event_detail_eval_result =
-                                                        Some("PartUpdate event posted".to_string());
-                                                    next
-                                                }));
-                                            }
-                                        }
-                                        Err(error) => {
-                                            set_state_for_async(Box::new(move |state| AppState {
-                                                event_detail_eval_result: Some(format!(
-                                                    "Error: failed to post PartUpdate: {:?}",
-                                                    error
-                                                )),
-                                                ..state.clone()
+                                                }
+                                                next.event_detail_eval_result =
+                                                    Some("PartUpdate event posted".to_string());
+                                                next
                                             }));
                                         }
                                     }
-                                });
-                                state
-                            }));
-                        }
+                                    Err(error) => {
+                                        set_state_for_async(Box::new(move |state| AppState {
+                                            event_detail_eval_result: Some(format!(
+                                                "Error: failed to post PartUpdate: {:?}",
+                                                error
+                                            )),
+                                            ..state.clone()
+                                        }));
+                                    }
+                                }
+                            });
+                            state
+                        }));
                     }))
                     .children([text("Send PartUpdate")])
                     .into_node()
@@ -358,4 +409,29 @@ fn part_update_form(state: &AppState, definition_event_hash: &[u8; 32]) -> Node<
             },
         ])
         .into_node()
+}
+
+fn effective_part_update_form(
+    state: &AppState,
+    definition_event_hash: &[u8; 32],
+) -> (String, String, definy_event::event::Expression) {
+    if state.part_update_form.part_definition_event_hash == Some(*definition_event_hash) {
+        return (
+            state.part_update_form.part_name_input.clone(),
+            state.part_update_form.part_description_input.clone(),
+            state.part_update_form.expression_input.clone(),
+        );
+    }
+    if let Some(snapshot) = find_part_snapshot(state, definition_event_hash) {
+        return (
+            snapshot.part_name,
+            snapshot.part_description,
+            snapshot.expression,
+        );
+    }
+    (
+        state.part_update_form.part_name_input.clone(),
+        state.part_update_form.part_description_input.clone(),
+        state.part_update_form.expression_input.clone(),
+    )
 }

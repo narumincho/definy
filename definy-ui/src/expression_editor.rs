@@ -1726,7 +1726,12 @@ fn target_expression_mut<'a>(
 ) -> &'a mut definy_event::event::Expression {
     match target {
         EditorTarget::PartDefinition => &mut state.part_definition_form.composing_expression,
-        EditorTarget::PartUpdate => &mut state.part_update_form.expression_input,
+        EditorTarget::PartUpdate => {
+            if let Some(Location::Part(hash)) = state.location {
+                state.part_update_form.part_definition_event_hash = Some(hash);
+            }
+            &mut state.part_update_form.expression_input
+        }
     }
 }
 
