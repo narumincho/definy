@@ -73,6 +73,7 @@ pub enum Expression {
     Let(LetExpression),
     Variable(VariableExpression),
     RecordLiteral(RecordLiteralExpression),
+    Constructor(ConstructorExpression),
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -140,6 +141,12 @@ pub struct RecordLiteralExpression {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct RecordItemExpression {
     pub key: Box<str>,
+    pub value: Box<Expression>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ConstructorExpression {
+    pub type_part_definition_event_hash: [u8; 32],
     pub value: Box<Expression>,
 }
 

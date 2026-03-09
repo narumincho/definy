@@ -190,6 +190,9 @@ fn emit_expression(
         Expression::RecordLiteral(_) => {
             return Err("Wasm compilation of Record literals is not supported yet.".into());
         }
+        Expression::Constructor(_) => {
+            return Err("Wasm compilation of Constructor expressions is not supported yet.".into());
+        }
     }
     Ok(())
 }
@@ -211,6 +214,7 @@ fn count_locals(expr: &Expression) -> u32 {
             .iter()
             .map(|item| count_locals(item.value.as_ref()))
             .sum(),
+        Expression::Constructor(constructor) => count_locals(constructor.value.as_ref()),
         _ => 0,
     }
 }

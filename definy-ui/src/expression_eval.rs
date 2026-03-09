@@ -136,6 +136,7 @@ fn has_part_references(expr: &definy_event::event::Expression) -> bool {
         definy_event::event::Expression::Let(l) => {
             has_part_references(&l.value) || has_part_references(&l.body)
         }
+        definy_event::event::Expression::Constructor(_) => true,
         definy_event::event::Expression::RecordLiteral(record_expression) => record_expression
             .items
             .iter()
@@ -156,6 +157,7 @@ fn is_boolean_expression(expr: &definy_event::event::Expression) -> bool {
             is_boolean_expression(&i.then_expr) && is_boolean_expression(&i.else_expr)
         }
         definy_event::event::Expression::Let(l) => is_boolean_expression(&l.body),
+        definy_event::event::Expression::Constructor(c) => is_boolean_expression(&c.value),
         definy_event::event::Expression::ListLiteral(_) => false,
         definy_event::event::Expression::RecordLiteral(_) => false,
         definy_event::event::Expression::Variable(_) => false,
@@ -311,6 +313,14 @@ fn evaluate_expression_with_depth(
             }
             Ok(Value::Record(items))
         }
+        definy_event::event::Expression::Constructor(constructor_expression) => {
+            evaluate_expression_with_depth(
+                constructor_expression.value.as_ref(),
+                events,
+                env,
+                depth + 1,
+            )
+        }
     }
 }
 
@@ -428,6 +438,20 @@ pub fn expression_to_source(expression: &definy_event::event::Expression) -> Str
                     .collect::<Vec<String>>()
                     .join(", ");
                 format!("{{{}}}", items)
+            }
+            definy_event::event::Expression::Constructor(constructor_expression) => {
+                let source = format!(
+                    "constructor {} {}",
+                    crate::hash_format::encode_hash32(
+                        &constructor_expression.type_part_definition_event_hash
+                    ),
+                    render(constructor_expression.value.as_ref(), true, scope)
+                );
+                if is_child {
+                    format!("({})", source)
+                } else {
+                    source
+                }
             }
         }
     }
