@@ -132,7 +132,7 @@ fn render_event_detail(
                         .set("color", "var(--primary)")
                         .set("font-weight", "600"),
                 )
-                .children([text(format!("View account: {}", account_name))])
+                .children([text(account_name)])
                 .into_node(),
             match &event.content {
                 EventContent::CreateAccount(create_account_event) => Div::new()
@@ -166,16 +166,6 @@ fn render_event_detail(
                             .set("line-height", "1.6"),
                     )
                     .children([
-                        Div::new()
-                            .style(
-                                Style::new()
-                                    .set("font-size", "0.86rem")
-                                    .set("color", "var(--primary)")
-                                    .set("font-weight", "600")
-                                    .set("margin-bottom", "0.35rem"),
-                            )
-                            .children([text(account_name)])
-                            .into_node(),
                         text(format!(
                             "{}: {} = {}",
                             part_definition_event.part_name,
@@ -239,15 +229,6 @@ fn render_event_detail(
                             .set("line-height", "1.6"),
                     )
                     .children([
-                        Div::new()
-                            .style(
-                                Style::new()
-                                    .set("font-size", "0.86rem")
-                                    .set("color", "var(--primary)")
-                                    .set("font-weight", "600"),
-                            )
-                            .children([text(account_name)])
-                            .into_node(),
                         Div::new()
                             .style(Style::new().set("font-size", "1.08rem"))
                             .children([text(format!(
