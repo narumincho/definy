@@ -64,6 +64,10 @@ pub enum PartType {
 pub enum Expression {
     Number(NumberExpression),
     String(StringExpression),
+    TypeNumber,
+    TypeString,
+    TypeBoolean,
+    TypeList(TypeListExpression),
     ListLiteral(ListLiteralExpression),
     Add(AddExpression),
     PartReference(PartReferenceExpression),
@@ -72,7 +76,8 @@ pub enum Expression {
     Equal(EqualExpression),
     Let(LetExpression),
     Variable(VariableExpression),
-    RecordLiteral(RecordLiteralExpression),
+    #[serde(alias = "RecordLiteral")]
+    TypeLiteral(TypeLiteralExpression),
     Constructor(ConstructorExpression),
 }
 
@@ -95,6 +100,11 @@ pub struct StringExpression {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct ListLiteralExpression {
     pub items: Vec<Expression>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct TypeListExpression {
+    pub item_type: Box<Expression>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -134,12 +144,12 @@ pub struct VariableExpression {
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub struct RecordLiteralExpression {
-    pub items: Vec<RecordItemExpression>,
+pub struct TypeLiteralExpression {
+    pub items: Vec<TypeLiteralItemExpression>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub struct RecordItemExpression {
+pub struct TypeLiteralItemExpression {
     pub key: Box<str>,
     pub value: Box<Expression>,
 }
