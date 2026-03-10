@@ -38,6 +38,7 @@ enum ExpressionType {
     String,
     Boolean,
     Type,
+    TypePart([u8; 32]),
     List(Box<ExpressionType>),
     Record,
     Unknown,
@@ -60,6 +61,9 @@ impl ExpressionType {
             ExpressionType::String => "String".to_string(),
             ExpressionType::Boolean => "Boolean".to_string(),
             ExpressionType::Type => "Type".to_string(),
+            ExpressionType::TypePart(hash) => {
+                format!("TypePart({})", crate::hash_format::short_hash32(hash))
+            }
             ExpressionType::List(item) => format!("list<{}>", item.text()),
             ExpressionType::Record => "Record".to_string(),
             ExpressionType::Unknown => "Unknown".to_string(),
@@ -87,6 +91,7 @@ pub fn render_root_expression_editor(
         target,
         Vec::new(),
         diagnostics.as_slice(),
+        false,
     )
 }
 
@@ -97,6 +102,7 @@ fn render_expression_editor(
     target: EditorTarget,
     scope_variables: Vec<ScopeVariable>,
     diagnostics: &[TypeDiagnostic],
+    structure_locked: bool,
 ) -> Node<AppState> {
     let current_selection = current_selection_value(expression);
     let selector_options = selector_options(state, &scope_variables);
@@ -105,12 +111,15 @@ fn render_expression_editor(
         .find(|diagnostic| diagnostic.path == path)
         .map(|diagnostic| diagnostic.message.as_str());
 
-    let mut children = vec![expression_selector(
-        path.clone(),
-        target,
-        &current_selection,
-        &selector_options,
-    )];
+    let mut children = Vec::new();
+    if !structure_locked {
+        children.push(expression_selector(
+            path.clone(),
+            target,
+            &current_selection,
+            &selector_options,
+        ));
+    }
     if let Some(warning_message) = warning_message {
         children.push(
             Div::new()
@@ -160,6 +169,7 @@ fn render_expression_editor(
                             target,
                             scope_variables.clone(),
                             diagnostics,
+                            structure_locked,
                         ),
                     ])
                     .into_node(),
@@ -205,6 +215,7 @@ fn render_expression_editor(
                                 target,
                                 scope_variables.clone(),
                                 diagnostics,
+                                structure_locked,
                             ),
                         ])
                         .into_node()
@@ -244,6 +255,7 @@ fn render_expression_editor(
                                     target,
                                     scope_variables.clone(),
                                     diagnostics,
+                                    structure_locked,
                                 ),
                             ])
                             .into_node(),
@@ -258,6 +270,7 @@ fn render_expression_editor(
                                     target,
                                     scope_variables.clone(),
                                     diagnostics,
+                                    structure_locked,
                                 ),
                             ])
                             .into_node(),
@@ -296,6 +309,7 @@ fn render_expression_editor(
                                     target,
                                     scope_variables.clone(),
                                     diagnostics,
+                                    structure_locked,
                                 ),
                             ])
                             .into_node(),
@@ -310,6 +324,7 @@ fn render_expression_editor(
                                     target,
                                     scope_variables.clone(),
                                     diagnostics,
+                                    structure_locked,
                                 ),
                             ])
                             .into_node(),
@@ -324,6 +339,7 @@ fn render_expression_editor(
                                     target,
                                     scope_variables.clone(),
                                     diagnostics,
+                                    structure_locked,
                                 ),
                             ])
                             .into_node(),
@@ -357,6 +373,7 @@ fn render_expression_editor(
                                     target,
                                     scope_variables.clone(),
                                     diagnostics,
+                                    structure_locked,
                                 ),
                             ])
                             .into_node(),
@@ -371,6 +388,7 @@ fn render_expression_editor(
                                     target,
                                     scope_variables.clone(),
                                     diagnostics,
+                                    structure_locked,
                                 ),
                             ])
                             .into_node(),
@@ -411,6 +429,7 @@ fn render_expression_editor(
                                     target,
                                     scope_variables.clone(),
                                     diagnostics,
+                                    structure_locked,
                                 ),
                             ])
                             .into_node(),
@@ -429,6 +448,7 @@ fn render_expression_editor(
                                     target,
                                     body_scope,
                                     diagnostics,
+                                    structure_locked,
                                 )
                             }])
                             .into_node(),
@@ -471,13 +491,24 @@ fn render_expression_editor(
                                         )
                                         .children([text("Key")])
                                         .into_node(),
-                                    record_item_key_input(
-                                        path.clone(),
-                                        index,
-                                        target,
-                                        item.key.as_ref(),
-                                    ),
-                                    remove_record_item_button(path.clone(), index, target),
+                                    if structure_locked {
+                                        Div::new()
+                                            .style(Style::new().set("font-size", "0.9rem"))
+                                            .children([text(item.key.as_ref())])
+                                            .into_node()
+                                    } else {
+                                        record_item_key_input(
+                                            path.clone(),
+                                            index,
+                                            target,
+                                            item.key.as_ref(),
+                                        )
+                                    },
+                                    if structure_locked {
+                                        Div::new().children([]).into_node()
+                                    } else {
+                                        remove_record_item_button(path.clone(), index, target)
+                                    },
                                 ])
                                 .into_node(),
                             Div::new()
@@ -491,6 +522,7 @@ fn render_expression_editor(
                                         target,
                                         scope_variables.clone(),
                                         diagnostics,
+                                        structure_locked,
                                     ),
                                 ])
                                 .into_node(),
@@ -498,7 +530,9 @@ fn render_expression_editor(
                         .into_node()
                 })
                 .collect::<Vec<Node<AppState>>>();
-            record_children.push(add_record_item_button(path, target));
+            if !structure_locked {
+                record_children.push(add_record_item_button(path, target));
+            }
             children.push(
                 Div::new()
                     .style(Style::new().set("display", "grid").set("gap", "0.6rem"))
@@ -541,6 +575,7 @@ fn render_expression_editor(
                             target,
                             scope_variables.clone(),
                             diagnostics,
+                            true,
                         ),
                     ])
                     .into_node(),
@@ -587,6 +622,7 @@ fn part_type_to_expression_type(part_type: &definy_event::event::PartType) -> Ex
         definy_event::event::PartType::String => ExpressionType::String,
         definy_event::event::PartType::Boolean => ExpressionType::Boolean,
         definy_event::event::PartType::Type => ExpressionType::Type,
+        definy_event::event::PartType::TypePart(hash) => ExpressionType::TypePart(*hash),
         definy_event::event::PartType::List(item_type) => {
             ExpressionType::List(Box::new(part_type_to_expression_type(item_type.as_ref())))
         }
@@ -919,10 +955,7 @@ fn check_expression_type(
                 part_snapshot_map,
                 diagnostics,
             );
-            part_type_map
-                .get(&constructor_expression.type_part_definition_event_hash)
-                .cloned()
-                .unwrap_or(ExpressionType::Unknown)
+            ExpressionType::TypePart(constructor_expression.type_part_definition_event_hash)
         }
     };
 
@@ -1057,8 +1090,12 @@ fn default_expression_from_constructor_shape(
                 value: false,
             })
         }
-        ConstructorValueShape::List(_) => definy_event::event::Expression::ListLiteral(
-            definy_event::event::ListLiteralExpression { items: vec![] },
+        ConstructorValueShape::List(item_shape) => definy_event::event::Expression::ListLiteral(
+            definy_event::event::ListLiteralExpression {
+                items: vec![default_expression_from_constructor_shape(
+                    item_shape.as_ref(),
+                )],
+            },
         ),
         ConstructorValueShape::Record(items) => definy_event::event::Expression::TypeLiteral(
             definy_event::event::TypeLiteralExpression {
@@ -1939,11 +1976,15 @@ fn add_list_item(root_expression: &mut definy_event::event::Expression, path: &[
     if let Some(definy_event::event::Expression::ListLiteral(list_expr)) =
         get_mut_expression_at_path(root_expression, path)
     {
-        list_expr
-            .items
-            .push(definy_event::event::Expression::Number(
-                definy_event::event::NumberExpression { value: 0 },
-            ));
+        let next_item =
+            list_expr
+                .items
+                .last()
+                .cloned()
+                .unwrap_or(definy_event::event::Expression::Number(
+                    definy_event::event::NumberExpression { value: 0 },
+                ));
+        list_expr.items.push(next_item);
     }
 }
 

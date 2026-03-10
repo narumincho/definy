@@ -57,6 +57,7 @@ pub enum PartType {
     String,
     Boolean,
     Type,
+    TypePart([u8; 32]),
     List(Box<PartType>),
 }
 

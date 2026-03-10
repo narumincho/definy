@@ -46,20 +46,18 @@ fn header_main(state: &AppState) -> Node<AppState> {
                                 .set("text-decoration", "none")
                                 .set("display", "inline-block"),
                         )
-                        .children([
-                            H1::new()
-                                .style(
-                                    Style::new()
-                                        .set("font-size", "1.48rem")
-                                        .set("font-weight", "700")
-                                        .set("background", "var(--primary-gradient)")
-                                        .set("-webkit-background-clip", "text")
-                                        .set("-webkit-text-fill-color", "transparent")
-                                        .set("letter-spacing", "-0.03em"),
-                                )
-                                .children([text("definy")])
-                                .into_node(),
-                        ])
+                        .children([H1::new()
+                            .style(
+                                Style::new()
+                                    .set("font-size", "1.48rem")
+                                    .set("font-weight", "700")
+                                    .set("background", "var(--primary-gradient)")
+                                    .set("-webkit-background-clip", "text")
+                                    .set("-webkit-text-fill-color", "transparent")
+                                    .set("letter-spacing", "-0.03em"),
+                            )
+                            .children([text("definy")])
+                            .into_node()])
                         .into_node(),
                     A::<AppState, Location>::new()
                         .href(Href::Internal(Location::PartList))
@@ -88,20 +86,18 @@ fn header_main(state: &AppState) -> Node<AppState> {
                         .set("display", "flex")
                         .set("justify-content", "center"),
                 )
-                .children([
-                    Div::new()
-                        .style(
-                            Style::new()
-                                .set("font-size", "0.88rem")
-                                .set("color", "var(--text-secondary)")
-                                .set("max-width", "42vw")
-                                .set("overflow", "hidden")
-                                .set("text-overflow", "ellipsis")
-                                .set("white-space", "nowrap"),
-                        )
-                        .children([text(crate::page_title::page_title_text(state))])
-                        .into_node(),
-                ])
+                .children([Div::new()
+                    .style(
+                        Style::new()
+                            .set("font-size", "0.88rem")
+                            .set("color", "var(--text-secondary)")
+                            .set("max-width", "42vw")
+                            .set("overflow", "hidden")
+                            .set("text-overflow", "ellipsis")
+                            .set("white-space", "nowrap"),
+                    )
+                    .children([text(crate::page_title::page_title_text(state))])
+                    .into_node()])
                 .into_node(),
             match &state.current_key {
                 Some(secret_key) => {
