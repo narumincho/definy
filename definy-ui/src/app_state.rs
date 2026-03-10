@@ -30,6 +30,7 @@ pub struct PartDefinitionFormState {
 
 #[derive(Clone)]
 pub struct PartUpdateFormState {
+    pub part_definition_event_hash: Option<[u8; 32]>,
     pub part_name_input: String,
     pub part_description_input: String,
     pub expression_input: definy_event::event::Expression,

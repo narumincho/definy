@@ -4,6 +4,7 @@ use narumincho_vdom::*;
 use crate::app_state::AppState;
 use crate::expression_editor::{EditorTarget, render_root_expression_editor};
 use crate::expression_eval::{evaluate_expression, expression_to_source};
+use crate::part_projection::collect_part_snapshots;
 
 fn part_type_text(part_type: &definy_event::event::PartType) -> String {
     match part_type {
@@ -11,6 +12,12 @@ fn part_type_text(part_type: &definy_event::event::PartType) -> String {
         definy_event::event::PartType::String => "String".to_string(),
         definy_event::event::PartType::Boolean => "Boolean".to_string(),
         definy_event::event::PartType::Type => "Type".to_string(),
+        definy_event::event::PartType::TypePart(hash) => {
+            format!(
+                "TypePart({})",
+                crate::hash_format::short_hash32(hash)
+            )
+        }
         definy_event::event::PartType::List(item_type) => {
             format!("list<{}>", part_type_text(item_type.as_ref()))
         }
@@ -469,29 +476,23 @@ fn part_type_input(state: &AppState) -> Node<AppState> {
                 )
                 .children([text("Part Type")])
                 .into_node(),
-            render_part_type_editor(&state.part_definition_form.part_type_input, 0),
+            render_part_type_editor(state, &state.part_definition_form.part_type_input, 0),
         ])
         .into_node()
 }
 
 fn render_part_type_editor(
+    state: &AppState,
     part_type: &Option<definy_event::event::PartType>,
     depth: usize,
 ) -> Node<AppState> {
     let name = format!("part-definition-type-{}", depth);
     let selector = format!("select[name='{}']", name);
-    let selected = match part_type {
-        None => "none",
-        Some(definy_event::event::PartType::Number) => "number",
-        Some(definy_event::event::PartType::String) => "string",
-        Some(definy_event::event::PartType::Boolean) => "boolean",
-        Some(definy_event::event::PartType::Type) => "type",
-        Some(definy_event::event::PartType::List(_)) => "list",
-    };
+    let selected = current_part_type_selection(part_type);
 
     let mut select = Select::new()
         .name(name.as_str())
-        .value(selected)
+        .value(selected.as_str())
         .style(Style::new().set("max-width", "18rem"));
 
     select.events.push((
@@ -555,6 +556,21 @@ fn render_part_type_editor(
             .children([text("List<...>")])
             .into_node(),
     ]);
+    options.extend(
+        collect_part_snapshots(state)
+            .into_iter()
+            .filter(|snapshot| snapshot.part_type == Some(definy_event::event::PartType::Type))
+            .map(|snapshot| {
+                let value = format!(
+                    "type_part:{}",
+                    crate::hash_format::encode_hash32(&snapshot.definition_event_hash)
+                );
+                OptionElement::new()
+                    .value(value.as_str())
+                    .children([text(format!("Type Part: {}", snapshot.part_name))])
+                    .into_node()
+            }),
+    );
 
     let mut children = vec![select.children(options).into_node()];
 
@@ -576,7 +592,7 @@ fn render_part_type_editor(
                         )
                         .children([text("Item Type")])
                         .into_node(),
-                    render_part_type_editor(&Some(item_type.as_ref().clone()), depth + 1),
+                    render_part_type_editor(state, &Some(item_type.as_ref().clone()), depth + 1),
                 ])
                 .into_node(),
         );
@@ -642,6 +658,11 @@ fn next_part_type_from_selected(
     selected: &str,
     current: &Option<definy_event::event::PartType>,
 ) -> Option<definy_event::event::PartType> {
+    if let Some(encoded) = selected.strip_prefix("type_part:") {
+        if let Some(hash) = decode_hash32(encoded) {
+            return Some(definy_event::event::PartType::TypePart(hash));
+        }
+    }
     match selected {
         "none" => None,
         "string" => Some(definy_event::event::PartType::String),
@@ -663,6 +684,11 @@ fn next_nested_part_type_from_selected(
     selected: &str,
     current: &definy_event::event::PartType,
 ) -> definy_event::event::PartType {
+    if let Some(encoded) = selected.strip_prefix("type_part:") {
+        if let Some(hash) = decode_hash32(encoded) {
+            return definy_event::event::PartType::TypePart(hash);
+        }
+    }
     match selected {
         "string" => definy_event::event::PartType::String,
         "boolean" => definy_event::event::PartType::Boolean,
@@ -676,5 +702,31 @@ fn next_nested_part_type_from_selected(
             }
         },
         _ => definy_event::event::PartType::Number,
+    }
+}
+
+fn current_part_type_selection(part_type: &Option<definy_event::event::PartType>) -> String {
+    match part_type {
+        None => "none".to_string(),
+        Some(definy_event::event::PartType::Number) => "number".to_string(),
+        Some(definy_event::event::PartType::String) => "string".to_string(),
+        Some(definy_event::event::PartType::Boolean) => "boolean".to_string(),
+        Some(definy_event::event::PartType::Type) => "type".to_string(),
+        Some(definy_event::event::PartType::TypePart(hash)) => {
+            format!("type_part:{}", crate::hash_format::encode_hash32(hash))
+        }
+        Some(definy_event::event::PartType::List(_)) => "list".to_string(),
+    }
+}
+
+fn decode_hash32(value: &str) -> Option<[u8; 32]> {
+    let bytes =
+        base64::Engine::decode(&base64::engine::general_purpose::URL_SAFE_NO_PAD, value).ok()?;
+    if bytes.len() == 32 {
+        let mut result = [0u8; 32];
+        result.copy_from_slice(&bytes);
+        Some(result)
+    } else {
+        None
     }
 }

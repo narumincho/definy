@@ -119,6 +119,12 @@ fn evaluate_via_wasm(
 fn has_part_references(expr: &definy_event::event::Expression) -> bool {
     match expr {
         definy_event::event::Expression::PartReference(_) => true,
+        definy_event::event::Expression::TypeNumber
+        | definy_event::event::Expression::TypeString
+        | definy_event::event::Expression::TypeBoolean => false,
+        definy_event::event::Expression::TypeList(type_list_expression) => {
+            has_part_references(type_list_expression.item_type.as_ref())
+        }
         definy_event::event::Expression::ListLiteral(list_expression) => {
             list_expression.items.iter().any(has_part_references)
         }
@@ -136,7 +142,8 @@ fn has_part_references(expr: &definy_event::event::Expression) -> bool {
         definy_event::event::Expression::Let(l) => {
             has_part_references(&l.value) || has_part_references(&l.body)
         }
-        definy_event::event::Expression::RecordLiteral(record_expression) => record_expression
+        definy_event::event::Expression::Constructor(_) => true,
+        definy_event::event::Expression::TypeLiteral(record_expression) => record_expression
             .items
             .iter()
             .any(|item| has_part_references(item.value.as_ref())),
@@ -152,12 +159,17 @@ fn is_boolean_expression(expr: &definy_event::event::Expression) -> bool {
         definy_event::event::Expression::Boolean(_) | definy_event::event::Expression::Equal(_) => {
             true
         }
+        definy_event::event::Expression::TypeNumber
+        | definy_event::event::Expression::TypeString
+        | definy_event::event::Expression::TypeBoolean
+        | definy_event::event::Expression::TypeList(_) => false,
         definy_event::event::Expression::If(i) => {
             is_boolean_expression(&i.then_expr) && is_boolean_expression(&i.else_expr)
         }
         definy_event::event::Expression::Let(l) => is_boolean_expression(&l.body),
+        definy_event::event::Expression::Constructor(c) => is_boolean_expression(&c.value),
         definy_event::event::Expression::ListLiteral(_) => false,
-        definy_event::event::Expression::RecordLiteral(_) => false,
+        definy_event::event::Expression::TypeLiteral(_) => false,
         definy_event::event::Expression::Variable(_) => false,
         definy_event::event::Expression::String(_) => false,
         _ => false,
@@ -185,6 +197,18 @@ fn evaluate_expression_with_depth(
         }
         definy_event::event::Expression::String(string_expression) => {
             Ok(Value::String(string_expression.value.to_string()))
+        }
+        definy_event::event::Expression::TypeNumber => {
+            Err("TypeNumber expression cannot be evaluated as runtime value")
+        }
+        definy_event::event::Expression::TypeString => {
+            Err("TypeString expression cannot be evaluated as runtime value")
+        }
+        definy_event::event::Expression::TypeBoolean => {
+            Err("TypeBoolean expression cannot be evaluated as runtime value")
+        }
+        definy_event::event::Expression::TypeList(_) => {
+            Err("TypeList expression cannot be evaluated as runtime value")
         }
         definy_event::event::Expression::ListLiteral(list_expression) => {
             let mut items = Vec::with_capacity(list_expression.items.len());
@@ -302,7 +326,7 @@ fn evaluate_expression_with_depth(
                 Err("Part not found")
             }
         }
-        definy_event::event::Expression::RecordLiteral(record_expression) => {
+        definy_event::event::Expression::TypeLiteral(record_expression) => {
             let mut items = Vec::with_capacity(record_expression.items.len());
             for item in &record_expression.items {
                 let value =
@@ -310,6 +334,14 @@ fn evaluate_expression_with_depth(
                 items.push((item.key.to_string(), value));
             }
             Ok(Value::Record(items))
+        }
+        definy_event::event::Expression::Constructor(constructor_expression) => {
+            evaluate_expression_with_depth(
+                constructor_expression.value.as_ref(),
+                events,
+                env,
+                depth + 1,
+            )
         }
     }
 }
@@ -326,6 +358,15 @@ pub fn expression_to_source(expression: &definy_event::event::Expression) -> Str
             }
             definy_event::event::Expression::String(string_expression) => {
                 format!("\"{}\"", string_expression.value)
+            }
+            definy_event::event::Expression::TypeNumber => "Number".to_string(),
+            definy_event::event::Expression::TypeString => "String".to_string(),
+            definy_event::event::Expression::TypeBoolean => "Boolean".to_string(),
+            definy_event::event::Expression::TypeList(type_list_expression) => {
+                format!(
+                    "List({})",
+                    render(type_list_expression.item_type.as_ref(), false, scope)
+                )
             }
             definy_event::event::Expression::ListLiteral(list_expression) => {
                 let items = list_expression
@@ -414,7 +455,7 @@ pub fn expression_to_source(expression: &definy_event::event::Expression) -> Str
                     }
                 })
                 .unwrap_or_else(|| format!("#{}", variable_expression.variable_id)),
-            definy_event::event::Expression::RecordLiteral(record_expression) => {
+            definy_event::event::Expression::TypeLiteral(record_expression) => {
                 let items = record_expression
                     .items
                     .iter()
@@ -428,6 +469,20 @@ pub fn expression_to_source(expression: &definy_event::event::Expression) -> Str
                     .collect::<Vec<String>>()
                     .join(", ");
                 format!("{{{}}}", items)
+            }
+            definy_event::event::Expression::Constructor(constructor_expression) => {
+                let source = format!(
+                    "constructor {} {}",
+                    crate::hash_format::encode_hash32(
+                        &constructor_expression.type_part_definition_event_hash
+                    ),
+                    render(constructor_expression.value.as_ref(), true, scope)
+                );
+                if is_child {
+                    format!("({})", source)
+                } else {
+                    source
+                }
             }
         }
     }
@@ -635,10 +690,10 @@ mod tests {
 
     #[test]
     fn evaluate_record_literal() {
-        let record_expr = definy_event::event::Expression::RecordLiteral(
-            definy_event::event::RecordLiteralExpression {
+        let record_expr = definy_event::event::Expression::TypeLiteral(
+            definy_event::event::TypeLiteralExpression {
                 items: vec![
-                    definy_event::event::RecordItemExpression {
+                    definy_event::event::TypeLiteralItemExpression {
                         key: "name".into(),
                         value: Box::new(definy_event::event::Expression::String(
                             definy_event::event::StringExpression {
@@ -646,7 +701,7 @@ mod tests {
                             },
                         )),
                     },
-                    definy_event::event::RecordItemExpression {
+                    definy_event::event::TypeLiteralItemExpression {
                         key: "age".into(),
                         value: Box::new(definy_event::event::Expression::Number(
                             definy_event::event::NumberExpression { value: 3 },

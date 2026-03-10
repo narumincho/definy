@@ -253,6 +253,7 @@ async fn handle_html(
                         eval_result: None,
                     },
                     part_update_form: definy_ui::PartUpdateFormState {
+                        part_definition_event_hash: None,
                         part_name_input: String::new(),
                         part_description_input: String::new(),
                         expression_input: definy_event::event::Expression::Number(

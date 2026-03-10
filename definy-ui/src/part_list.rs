@@ -11,6 +11,9 @@ fn part_type_text(part_type: &definy_event::event::PartType) -> String {
         definy_event::event::PartType::String => "String".to_string(),
         definy_event::event::PartType::Boolean => "Boolean".to_string(),
         definy_event::event::PartType::Type => "Type".to_string(),
+        definy_event::event::PartType::TypePart(hash) => {
+            format!("TypePart({})", crate::hash_format::short_hash32(hash))
+        }
         definy_event::event::PartType::List(item_type) => {
             format!("list<{}>", part_type_text(item_type.as_ref()))
         }

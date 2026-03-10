@@ -11,6 +11,9 @@ fn part_type_text(part_type: &definy_event::event::PartType) -> String {
         definy_event::event::PartType::String => "String".to_string(),
         definy_event::event::PartType::Boolean => "Boolean".to_string(),
         definy_event::event::PartType::Type => "Type".to_string(),
+        definy_event::event::PartType::TypePart(hash) => {
+            format!("TypePart({})", crate::hash_format::short_hash32(hash))
+        }
         definy_event::event::PartType::List(item_type) => {
             format!("list<{}>", part_type_text(item_type.as_ref()))
         }
@@ -132,7 +135,7 @@ fn render_event_detail(
                         .set("color", "var(--primary)")
                         .set("font-weight", "600"),
                 )
-                .children([text(format!("View account: {}", account_name))])
+                .children([text(account_name)])
                 .into_node(),
             match &event.content {
                 EventContent::CreateAccount(create_account_event) => Div::new()
@@ -166,16 +169,6 @@ fn render_event_detail(
                             .set("line-height", "1.6"),
                     )
                     .children([
-                        Div::new()
-                            .style(
-                                Style::new()
-                                    .set("font-size", "0.86rem")
-                                    .set("color", "var(--primary)")
-                                    .set("font-weight", "600")
-                                    .set("margin-bottom", "0.35rem"),
-                            )
-                            .children([text(account_name)])
-                            .into_node(),
                         text(format!(
                             "{}: {} = {}",
                             part_definition_event.part_name,
@@ -239,15 +232,6 @@ fn render_event_detail(
                             .set("line-height", "1.6"),
                     )
                     .children([
-                        Div::new()
-                            .style(
-                                Style::new()
-                                    .set("font-size", "0.86rem")
-                                    .set("color", "var(--primary)")
-                                    .set("font-weight", "600"),
-                            )
-                            .children([text(account_name)])
-                            .into_node(),
                         Div::new()
                             .style(Style::new().set("font-size", "1.08rem"))
                             .children([text(format!(

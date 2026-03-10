@@ -3,7 +3,7 @@ use std::collections::HashMap;
 
 use crate::Location;
 use crate::app_state::AppState;
-use crate::part_projection::{collect_part_snapshots, find_part_snapshot};
+use crate::part_projection::{PartSnapshot, collect_part_snapshots, find_part_snapshot};
 
 #[derive(Clone, Copy)]
 pub enum EditorTarget {
@@ -22,6 +22,8 @@ enum PathStep {
     LetBody,
     ListItemValue(usize),
     RecordItemValue(usize),
+    ConstructorValue,
+    TypeListItem,
 }
 
 #[derive(Clone)]
@@ -36,8 +38,19 @@ enum ExpressionType {
     String,
     Boolean,
     Type,
+    TypePart([u8; 32]),
     List(Box<ExpressionType>),
     Record,
+    Unknown,
+}
+
+#[derive(Clone)]
+enum ConstructorValueShape {
+    Number,
+    String,
+    Boolean,
+    List(Box<ConstructorValueShape>),
+    Record(Vec<(String, ConstructorValueShape)>),
     Unknown,
 }
 
@@ -48,6 +61,9 @@ impl ExpressionType {
             ExpressionType::String => "String".to_string(),
             ExpressionType::Boolean => "Boolean".to_string(),
             ExpressionType::Type => "Type".to_string(),
+            ExpressionType::TypePart(hash) => {
+                format!("TypePart({})", crate::hash_format::short_hash32(hash))
+            }
             ExpressionType::List(item) => format!("list<{}>", item.text()),
             ExpressionType::Record => "Record".to_string(),
             ExpressionType::Unknown => "Unknown".to_string(),
@@ -75,6 +91,7 @@ pub fn render_root_expression_editor(
         target,
         Vec::new(),
         diagnostics.as_slice(),
+        false,
     )
 }
 
@@ -85,6 +102,7 @@ fn render_expression_editor(
     target: EditorTarget,
     scope_variables: Vec<ScopeVariable>,
     diagnostics: &[TypeDiagnostic],
+    structure_locked: bool,
 ) -> Node<AppState> {
     let current_selection = current_selection_value(expression);
     let selector_options = selector_options(state, &scope_variables);
@@ -93,12 +111,15 @@ fn render_expression_editor(
         .find(|diagnostic| diagnostic.path == path)
         .map(|diagnostic| diagnostic.message.as_str());
 
-    let mut children = vec![expression_selector(
-        path.clone(),
-        target,
-        &current_selection,
-        &selector_options,
-    )];
+    let mut children = Vec::new();
+    if !structure_locked {
+        children.push(expression_selector(
+            path.clone(),
+            target,
+            &current_selection,
+            &selector_options,
+        ));
+    }
     if let Some(warning_message) = warning_message {
         children.push(
             Div::new()
@@ -118,6 +139,41 @@ fn render_expression_editor(
         }
         definy_event::event::Expression::String(string_expression) => {
             children.push(string_input(path, target, string_expression.value.as_ref()));
+        }
+        definy_event::event::Expression::TypeNumber
+        | definy_event::event::Expression::TypeString
+        | definy_event::event::Expression::TypeBoolean => {
+            children.push(
+                Div::new()
+                    .style(
+                        Style::new()
+                            .set("font-size", "0.8rem")
+                            .set("color", "var(--text-secondary)"),
+                    )
+                    .children([text("組み込み型")])
+                    .into_node(),
+            );
+        }
+        definy_event::event::Expression::TypeList(type_list_expression) => {
+            let mut item_type_path = path.clone();
+            item_type_path.push(PathStep::TypeListItem);
+            children.push(
+                Div::new()
+                    .style(Style::new().set("display", "grid").set("gap", "0.3rem"))
+                    .children([
+                        text("Item Type"),
+                        render_expression_editor(
+                            state,
+                            type_list_expression.item_type.as_ref(),
+                            item_type_path,
+                            target,
+                            scope_variables.clone(),
+                            diagnostics,
+                            structure_locked,
+                        ),
+                    ])
+                    .into_node(),
+            );
         }
         definy_event::event::Expression::ListLiteral(list_expression) => {
             let mut list_children = list_expression
@@ -159,6 +215,7 @@ fn render_expression_editor(
                                 target,
                                 scope_variables.clone(),
                                 diagnostics,
+                                structure_locked,
                             ),
                         ])
                         .into_node()
@@ -198,6 +255,7 @@ fn render_expression_editor(
                                     target,
                                     scope_variables.clone(),
                                     diagnostics,
+                                    structure_locked,
                                 ),
                             ])
                             .into_node(),
@@ -212,6 +270,7 @@ fn render_expression_editor(
                                     target,
                                     scope_variables.clone(),
                                     diagnostics,
+                                    structure_locked,
                                 ),
                             ])
                             .into_node(),
@@ -250,6 +309,7 @@ fn render_expression_editor(
                                     target,
                                     scope_variables.clone(),
                                     diagnostics,
+                                    structure_locked,
                                 ),
                             ])
                             .into_node(),
@@ -264,6 +324,7 @@ fn render_expression_editor(
                                     target,
                                     scope_variables.clone(),
                                     diagnostics,
+                                    structure_locked,
                                 ),
                             ])
                             .into_node(),
@@ -278,6 +339,7 @@ fn render_expression_editor(
                                     target,
                                     scope_variables.clone(),
                                     diagnostics,
+                                    structure_locked,
                                 ),
                             ])
                             .into_node(),
@@ -311,6 +373,7 @@ fn render_expression_editor(
                                     target,
                                     scope_variables.clone(),
                                     diagnostics,
+                                    structure_locked,
                                 ),
                             ])
                             .into_node(),
@@ -325,6 +388,7 @@ fn render_expression_editor(
                                     target,
                                     scope_variables.clone(),
                                     diagnostics,
+                                    structure_locked,
                                 ),
                             ])
                             .into_node(),
@@ -365,6 +429,7 @@ fn render_expression_editor(
                                     target,
                                     scope_variables.clone(),
                                     diagnostics,
+                                    structure_locked,
                                 ),
                             ])
                             .into_node(),
@@ -383,6 +448,7 @@ fn render_expression_editor(
                                     target,
                                     body_scope,
                                     diagnostics,
+                                    structure_locked,
                                 )
                             }])
                             .into_node(),
@@ -390,7 +456,7 @@ fn render_expression_editor(
                     .into_node(),
             );
         }
-        definy_event::event::Expression::RecordLiteral(record_expression) => {
+        definy_event::event::Expression::TypeLiteral(record_expression) => {
             let mut record_children = record_expression
                 .items
                 .iter()
@@ -425,13 +491,24 @@ fn render_expression_editor(
                                         )
                                         .children([text("Key")])
                                         .into_node(),
-                                    record_item_key_input(
-                                        path.clone(),
-                                        index,
-                                        target,
-                                        item.key.as_ref(),
-                                    ),
-                                    remove_record_item_button(path.clone(), index, target),
+                                    if structure_locked {
+                                        Div::new()
+                                            .style(Style::new().set("font-size", "0.9rem"))
+                                            .children([text(item.key.as_ref())])
+                                            .into_node()
+                                    } else {
+                                        record_item_key_input(
+                                            path.clone(),
+                                            index,
+                                            target,
+                                            item.key.as_ref(),
+                                        )
+                                    },
+                                    if structure_locked {
+                                        Div::new().children([]).into_node()
+                                    } else {
+                                        remove_record_item_button(path.clone(), index, target)
+                                    },
                                 ])
                                 .into_node(),
                             Div::new()
@@ -445,6 +522,7 @@ fn render_expression_editor(
                                         target,
                                         scope_variables.clone(),
                                         diagnostics,
+                                        structure_locked,
                                     ),
                                 ])
                                 .into_node(),
@@ -452,11 +530,54 @@ fn render_expression_editor(
                         .into_node()
                 })
                 .collect::<Vec<Node<AppState>>>();
-            record_children.push(add_record_item_button(path, target));
+            if !structure_locked {
+                record_children.push(add_record_item_button(path, target));
+            }
             children.push(
                 Div::new()
                     .style(Style::new().set("display", "grid").set("gap", "0.6rem"))
                     .children(record_children)
+                    .into_node(),
+            );
+        }
+        definy_event::event::Expression::Constructor(constructor_expression) => {
+            let mut value_path = path.clone();
+            value_path.push(PathStep::ConstructorValue);
+            let type_part_name = find_part_snapshot(
+                state,
+                &constructor_expression.type_part_definition_event_hash,
+            )
+            .map(|snapshot| snapshot.part_name)
+            .unwrap_or_else(|| {
+                format!(
+                    "(unknown: {})",
+                    crate::hash_format::short_hash32(
+                        &constructor_expression.type_part_definition_event_hash
+                    )
+                )
+            });
+            children.push(
+                Div::new()
+                    .style(Style::new().set("display", "grid").set("gap", "0.4rem"))
+                    .children([
+                        Div::new()
+                            .style(
+                                Style::new()
+                                    .set("font-size", "0.82rem")
+                                    .set("color", "var(--text-secondary)"),
+                            )
+                            .children([text(format!("Type: {}", type_part_name))])
+                            .into_node(),
+                        render_expression_editor(
+                            state,
+                            constructor_expression.value.as_ref(),
+                            value_path,
+                            target,
+                            scope_variables.clone(),
+                            diagnostics,
+                            true,
+                        ),
+                    ])
                     .into_node(),
             );
         }
@@ -501,6 +622,7 @@ fn part_type_to_expression_type(part_type: &definy_event::event::PartType) -> Ex
         definy_event::event::PartType::String => ExpressionType::String,
         definy_event::event::PartType::Boolean => ExpressionType::Boolean,
         definy_event::event::PartType::Type => ExpressionType::Type,
+        definy_event::event::PartType::TypePart(hash) => ExpressionType::TypePart(*hash),
         definy_event::event::PartType::List(item_type) => {
             ExpressionType::List(Box::new(part_type_to_expression_type(item_type.as_ref())))
         }
@@ -532,8 +654,9 @@ fn collect_type_diagnostics(
     expression: &definy_event::event::Expression,
     expected_type: Option<ExpressionType>,
 ) -> Vec<TypeDiagnostic> {
-    let part_type_map = collect_part_snapshots(state)
-        .into_iter()
+    let snapshots = collect_part_snapshots(state);
+    let part_type_map = snapshots
+        .iter()
         .filter_map(|snapshot| {
             snapshot.part_type.as_ref().map(|part_type| {
                 (
@@ -543,6 +666,10 @@ fn collect_type_diagnostics(
             })
         })
         .collect::<HashMap<[u8; 32], ExpressionType>>();
+    let part_snapshot_map = snapshots
+        .into_iter()
+        .map(|snapshot| (snapshot.definition_event_hash, snapshot))
+        .collect::<HashMap<[u8; 32], PartSnapshot>>();
 
     let mut diagnostics = Vec::new();
     let env = HashMap::new();
@@ -552,6 +679,7 @@ fn collect_type_diagnostics(
         expected_type,
         &env,
         &part_type_map,
+        &part_snapshot_map,
         &mut diagnostics,
     );
     diagnostics
@@ -582,11 +710,29 @@ fn check_expression_type(
     expected_type: Option<ExpressionType>,
     env: &HashMap<i64, ExpressionType>,
     part_type_map: &HashMap<[u8; 32], ExpressionType>,
+    part_snapshot_map: &HashMap<[u8; 32], PartSnapshot>,
     diagnostics: &mut Vec<TypeDiagnostic>,
 ) -> ExpressionType {
     let actual_type = match expression {
         definy_event::event::Expression::Number(_) => ExpressionType::Number,
         definy_event::event::Expression::String(_) => ExpressionType::String,
+        definy_event::event::Expression::TypeNumber
+        | definy_event::event::Expression::TypeString
+        | definy_event::event::Expression::TypeBoolean => ExpressionType::Type,
+        definy_event::event::Expression::TypeList(type_list_expression) => {
+            let mut item_type_path = path.to_vec();
+            item_type_path.push(PathStep::TypeListItem);
+            check_expression_type(
+                type_list_expression.item_type.as_ref(),
+                item_type_path.as_slice(),
+                Some(ExpressionType::Type),
+                env,
+                part_type_map,
+                part_snapshot_map,
+                diagnostics,
+            );
+            ExpressionType::Type
+        }
         definy_event::event::Expression::Boolean(_) => ExpressionType::Boolean,
         definy_event::event::Expression::ListLiteral(list_expression) => {
             let expected_item_type =
@@ -605,6 +751,7 @@ fn check_expression_type(
                     expected_item_type.clone(),
                     env,
                     part_type_map,
+                    part_snapshot_map,
                     diagnostics,
                 );
                 if inferred_item_type.is_none() && item_type != ExpressionType::Unknown {
@@ -623,20 +770,30 @@ fn check_expression_type(
             .get(&part_reference_expression.part_definition_event_hash)
             .cloned()
             .unwrap_or(ExpressionType::Unknown),
-        definy_event::event::Expression::RecordLiteral(record_expression) => {
+        definy_event::event::Expression::TypeLiteral(record_expression) => {
+            let item_expected_type = if expected_type == Some(ExpressionType::Type) {
+                Some(ExpressionType::Type)
+            } else {
+                None
+            };
             for (index, item) in record_expression.items.iter().enumerate() {
                 let mut item_path = path.to_vec();
                 item_path.push(PathStep::RecordItemValue(index));
                 check_expression_type(
                     item.value.as_ref(),
                     item_path.as_slice(),
-                    None,
+                    item_expected_type.clone(),
                     env,
                     part_type_map,
+                    part_snapshot_map,
                     diagnostics,
                 );
             }
-            ExpressionType::Record
+            if expected_type == Some(ExpressionType::Type) {
+                ExpressionType::Type
+            } else {
+                ExpressionType::Record
+            }
         }
         definy_event::event::Expression::Add(add_expression) => {
             let mut left_path = path.to_vec();
@@ -647,6 +804,7 @@ fn check_expression_type(
                 Some(ExpressionType::Number),
                 env,
                 part_type_map,
+                part_snapshot_map,
                 diagnostics,
             );
             let mut right_path = path.to_vec();
@@ -657,6 +815,7 @@ fn check_expression_type(
                 Some(ExpressionType::Number),
                 env,
                 part_type_map,
+                part_snapshot_map,
                 diagnostics,
             );
 
@@ -675,6 +834,7 @@ fn check_expression_type(
                 None,
                 env,
                 part_type_map,
+                part_snapshot_map,
                 diagnostics,
             );
             let mut right_path = path.to_vec();
@@ -685,6 +845,7 @@ fn check_expression_type(
                 None,
                 env,
                 part_type_map,
+                part_snapshot_map,
                 diagnostics,
             );
             if left_type != ExpressionType::Unknown
@@ -709,6 +870,7 @@ fn check_expression_type(
                 Some(ExpressionType::Boolean),
                 env,
                 part_type_map,
+                part_snapshot_map,
                 diagnostics,
             );
             let mut then_path = path.to_vec();
@@ -719,6 +881,7 @@ fn check_expression_type(
                 expected_type.clone(),
                 env,
                 part_type_map,
+                part_snapshot_map,
                 diagnostics,
             );
             let mut else_path = path.to_vec();
@@ -729,6 +892,7 @@ fn check_expression_type(
                 expected_type.clone(),
                 env,
                 part_type_map,
+                part_snapshot_map,
                 diagnostics,
             );
 
@@ -758,6 +922,7 @@ fn check_expression_type(
                 None,
                 env,
                 part_type_map,
+                part_snapshot_map,
                 diagnostics,
             );
             let mut body_env = env.clone();
@@ -770,8 +935,27 @@ fn check_expression_type(
                 expected_type.clone(),
                 &body_env,
                 part_type_map,
+                part_snapshot_map,
                 diagnostics,
             )
+        }
+        definy_event::event::Expression::Constructor(constructor_expression) => {
+            let inferred_shape = infer_constructor_shape_from_type_part(
+                part_snapshot_map,
+                &constructor_expression.type_part_definition_event_hash,
+            );
+            let mut value_path = path.to_vec();
+            value_path.push(PathStep::ConstructorValue);
+            check_expression_type(
+                constructor_expression.value.as_ref(),
+                value_path.as_slice(),
+                Some(expression_type_from_constructor_shape(&inferred_shape)),
+                env,
+                part_type_map,
+                part_snapshot_map,
+                diagnostics,
+            );
+            ExpressionType::TypePart(constructor_expression.type_part_definition_event_hash)
         }
     };
 
@@ -780,6 +964,171 @@ fn check_expression_type(
     }
 
     actual_type
+}
+
+fn expression_type_from_constructor_shape(shape: &ConstructorValueShape) -> ExpressionType {
+    match shape {
+        ConstructorValueShape::Number => ExpressionType::Number,
+        ConstructorValueShape::String => ExpressionType::String,
+        ConstructorValueShape::Boolean => ExpressionType::Boolean,
+        ConstructorValueShape::List(item_shape) => ExpressionType::List(Box::new(
+            expression_type_from_constructor_shape(item_shape.as_ref()),
+        )),
+        ConstructorValueShape::Record(_) => ExpressionType::Record,
+        ConstructorValueShape::Unknown => ExpressionType::Unknown,
+    }
+}
+
+fn infer_constructor_shape_from_type_part(
+    part_snapshot_map: &HashMap<[u8; 32], PartSnapshot>,
+    type_part_definition_event_hash: &[u8; 32],
+) -> ConstructorValueShape {
+    let mut visited = Vec::new();
+    infer_constructor_shape_from_type_part_with_visited(
+        part_snapshot_map,
+        type_part_definition_event_hash,
+        &mut visited,
+    )
+}
+
+fn infer_constructor_shape_from_type_part_with_visited(
+    part_snapshot_map: &HashMap<[u8; 32], PartSnapshot>,
+    type_part_definition_event_hash: &[u8; 32],
+    visited: &mut Vec<[u8; 32]>,
+) -> ConstructorValueShape {
+    if visited.contains(type_part_definition_event_hash) {
+        return ConstructorValueShape::Unknown;
+    }
+    let Some(snapshot) = part_snapshot_map.get(type_part_definition_event_hash) else {
+        return ConstructorValueShape::Unknown;
+    };
+    visited.push(*type_part_definition_event_hash);
+    let shape = infer_constructor_shape_from_type_expression(
+        snapshot.expression.clone(),
+        part_snapshot_map,
+        visited,
+    );
+    visited.pop();
+    shape
+}
+
+fn infer_constructor_shape_from_type_expression(
+    expression: definy_event::event::Expression,
+    part_snapshot_map: &HashMap<[u8; 32], PartSnapshot>,
+    visited: &mut Vec<[u8; 32]>,
+) -> ConstructorValueShape {
+    match expression {
+        definy_event::event::Expression::Number(_) => ConstructorValueShape::Number,
+        definy_event::event::Expression::String(_) => ConstructorValueShape::String,
+        definy_event::event::Expression::TypeNumber => ConstructorValueShape::Number,
+        definy_event::event::Expression::TypeString => ConstructorValueShape::String,
+        definy_event::event::Expression::TypeBoolean => ConstructorValueShape::Boolean,
+        definy_event::event::Expression::TypeList(type_list_expression) => {
+            ConstructorValueShape::List(Box::new(infer_constructor_shape_from_type_expression(
+                type_list_expression.item_type.as_ref().clone(),
+                part_snapshot_map,
+                visited,
+            )))
+        }
+        definy_event::event::Expression::Boolean(_) => ConstructorValueShape::Boolean,
+        definy_event::event::Expression::ListLiteral(list_expression) => {
+            if let Some(first) = list_expression.items.first() {
+                ConstructorValueShape::List(Box::new(infer_constructor_shape_from_type_expression(
+                    first.clone(),
+                    part_snapshot_map,
+                    visited,
+                )))
+            } else {
+                ConstructorValueShape::List(Box::new(ConstructorValueShape::Unknown))
+            }
+        }
+        definy_event::event::Expression::TypeLiteral(record_expression) => {
+            ConstructorValueShape::Record(
+                record_expression
+                    .items
+                    .iter()
+                    .map(|item| {
+                        (
+                            item.key.to_string(),
+                            infer_constructor_shape_from_type_expression(
+                                item.value.as_ref().clone(),
+                                part_snapshot_map,
+                                visited,
+                            ),
+                        )
+                    })
+                    .collect(),
+            )
+        }
+        definy_event::event::Expression::PartReference(part_reference_expression) => {
+            infer_constructor_shape_from_type_part_with_visited(
+                part_snapshot_map,
+                &part_reference_expression.part_definition_event_hash,
+                visited,
+            )
+        }
+        _ => ConstructorValueShape::Unknown,
+    }
+}
+
+fn default_expression_from_constructor_shape(
+    shape: &ConstructorValueShape,
+) -> definy_event::event::Expression {
+    match shape {
+        ConstructorValueShape::Number => {
+            definy_event::event::Expression::Number(definy_event::event::NumberExpression {
+                value: 0,
+            })
+        }
+        ConstructorValueShape::String => {
+            definy_event::event::Expression::String(definy_event::event::StringExpression {
+                value: "".into(),
+            })
+        }
+        ConstructorValueShape::Boolean => {
+            definy_event::event::Expression::Boolean(definy_event::event::BooleanExpression {
+                value: false,
+            })
+        }
+        ConstructorValueShape::List(item_shape) => definy_event::event::Expression::ListLiteral(
+            definy_event::event::ListLiteralExpression {
+                items: vec![default_expression_from_constructor_shape(
+                    item_shape.as_ref(),
+                )],
+            },
+        ),
+        ConstructorValueShape::Record(items) => definy_event::event::Expression::TypeLiteral(
+            definy_event::event::TypeLiteralExpression {
+                items: items
+                    .iter()
+                    .map(
+                        |(key, item_shape)| definy_event::event::TypeLiteralItemExpression {
+                            key: key.clone().into(),
+                            value: Box::new(default_expression_from_constructor_shape(item_shape)),
+                        },
+                    )
+                    .collect(),
+            },
+        ),
+        ConstructorValueShape::Unknown => {
+            definy_event::event::Expression::Number(definy_event::event::NumberExpression {
+                value: 0,
+            })
+        }
+    }
+}
+
+fn constructor_default_value_from_type_part(
+    state: &AppState,
+    type_part_definition_event_hash: &[u8; 32],
+) -> definy_event::event::Expression {
+    let part_snapshot_map = collect_part_snapshots(state)
+        .into_iter()
+        .map(|snapshot| (snapshot.definition_event_hash, snapshot))
+        .collect::<HashMap<[u8; 32], PartSnapshot>>();
+    let shape =
+        infer_constructor_shape_from_type_part(&part_snapshot_map, type_part_definition_event_hash);
+    default_expression_from_constructor_shape(&shape)
 }
 
 fn expression_selector(
@@ -819,8 +1168,25 @@ fn expression_selector(
 
                 set_state(Box::new(move |state: AppState| {
                     let mut next = state.clone();
+                    let constructor_default = selected_value
+                        .strip_prefix("expr:constructor:")
+                        .and_then(decode_hash32)
+                        .map(|type_part_definition_event_hash| {
+                            (
+                                type_part_definition_event_hash,
+                                constructor_default_value_from_type_part(
+                                    &next,
+                                    &type_part_definition_event_hash,
+                                ),
+                            )
+                        });
                     let root_expression = target_expression_mut(&mut next, target);
-                    apply_selection(root_expression, path.as_slice(), selected_value.as_str());
+                    apply_selection(
+                        root_expression,
+                        path.as_slice(),
+                        selected_value.as_str(),
+                        constructor_default,
+                    );
                     next
                 }));
             }
@@ -843,19 +1209,54 @@ fn expression_selector(
 }
 
 fn selector_options(state: &AppState, scope_variables: &[ScopeVariable]) -> Vec<(String, String)> {
+    let snapshots = collect_part_snapshots(state);
     let mut options = vec![
         ("expr:number".to_string(), "Constant: Number".to_string()),
         ("expr:string".to_string(), "Constant: String".to_string()),
+        (
+            "expr:type:number".to_string(),
+            "Builtin Type: Number".to_string(),
+        ),
+        (
+            "expr:type:string".to_string(),
+            "Builtin Type: String".to_string(),
+        ),
+        (
+            "expr:type:boolean".to_string(),
+            "Builtin Type: Boolean".to_string(),
+        ),
+        (
+            "expr:type:list".to_string(),
+            "Builtin Type: List".to_string(),
+        ),
         ("expr:list".to_string(), "Literal: List".to_string()),
         ("expr:boolean".to_string(), "Constant: Boolean".to_string()),
         ("expr:add".to_string(), "Function: Add".to_string()),
         ("expr:equal".to_string(), "Function: Equal".to_string()),
         ("expr:if".to_string(), "Syntax: If".to_string()),
         ("expr:let".to_string(), "Syntax: Let".to_string()),
-        ("expr:record".to_string(), "Literal: Record".to_string()),
+        ("expr:type_literal".to_string(), "Literal: Type".to_string()),
     ];
 
-    options.extend(collect_part_snapshots(state).into_iter().map(|snapshot| {
+    options.extend(snapshots.iter().filter_map(|snapshot| {
+        if snapshot.part_type == Some(definy_event::event::PartType::Type) {
+            Some((
+                format!(
+                    "expr:constructor:{}",
+                    crate::hash_format::encode_hash32(&snapshot.definition_event_hash)
+                ),
+                format!(
+                    "Constructor: {} ({})",
+                    snapshot.part_name,
+                    crate::hash_format::short_hash32(&snapshot.definition_event_hash)
+                ),
+            ))
+        } else {
+            None
+        }
+    }));
+
+    options.extend(snapshots.into_iter().map(|snapshot| {
         (
             format!(
                 "ref:global:{}",
@@ -883,13 +1284,23 @@ fn current_selection_value(expression: &definy_event::event::Expression) -> Stri
     match expression {
         definy_event::event::Expression::Number(_) => "expr:number".to_string(),
         definy_event::event::Expression::String(_) => "expr:string".to_string(),
+        definy_event::event::Expression::TypeNumber => "expr:type:number".to_string(),
+        definy_event::event::Expression::TypeString => "expr:type:string".to_string(),
+        definy_event::event::Expression::TypeBoolean => "expr:type:boolean".to_string(),
+        definy_event::event::Expression::TypeList(_) => "expr:type:list".to_string(),
         definy_event::event::Expression::ListLiteral(_) => "expr:list".to_string(),
         definy_event::event::Expression::Boolean(_) => "expr:boolean".to_string(),
         definy_event::event::Expression::Add(_) => "expr:add".to_string(),
         definy_event::event::Expression::Equal(_) => "expr:equal".to_string(),
         definy_event::event::Expression::If(_) => "expr:if".to_string(),
         definy_event::event::Expression::Let(_) => "expr:let".to_string(),
-        definy_event::event::Expression::RecordLiteral(_) => "expr:record".to_string(),
+        definy_event::event::Expression::TypeLiteral(_) => "expr:type_literal".to_string(),
+        definy_event::event::Expression::Constructor(constructor_expression) => format!(
+            "expr:constructor:{}",
+            crate::hash_format::encode_hash32(
+                &constructor_expression.type_part_definition_event_hash
+            )
+        ),
         definy_event::event::Expression::PartReference(part_ref) => format!(
             "ref:global:{}",
             crate::hash_format::encode_hash32(&part_ref.part_definition_event_hash)
@@ -904,6 +1315,7 @@ fn apply_selection(
     root_expression: &mut definy_event::event::Expression,
     path: &[PathStep],
     selected_value: &str,
+    constructor_default: Option<([u8; 32], definy_event::event::Expression)>,
 ) {
     let next_variable_id = if selected_value == "expr:let" {
         next_local_variable_id(root_expression)
@@ -918,6 +1330,16 @@ fn apply_selection(
         } else if selected_value == "expr:string" {
             definy_event::event::Expression::String(definy_event::event::StringExpression {
                 value: "".into(),
+            })
+        } else if selected_value == "expr:type:number" {
+            definy_event::event::Expression::TypeNumber
+        } else if selected_value == "expr:type:string" {
+            definy_event::event::Expression::TypeString
+        } else if selected_value == "expr:type:boolean" {
+            definy_event::event::Expression::TypeBoolean
+        } else if selected_value == "expr:type:list" {
+            definy_event::event::Expression::TypeList(definy_event::event::TypeListExpression {
+                item_type: Box::new(definy_event::event::Expression::TypeString),
             })
         } else if selected_value == "expr:list" {
             definy_event::event::Expression::ListLiteral(
@@ -974,15 +1396,20 @@ fn apply_selection(
                     },
                 )),
             })
-        } else if selected_value == "expr:record" {
-            definy_event::event::Expression::RecordLiteral(
-                definy_event::event::RecordLiteralExpression {
-                    items: vec![definy_event::event::RecordItemExpression {
+        } else if selected_value == "expr:type_literal" {
+            definy_event::event::Expression::TypeLiteral(
+                definy_event::event::TypeLiteralExpression {
+                    items: vec![definy_event::event::TypeLiteralItemExpression {
                         key: "key".into(),
-                        value: Box::new(definy_event::event::Expression::Number(
-                            definy_event::event::NumberExpression { value: 0 },
-                        )),
+                        value: Box::new(definy_event::event::Expression::TypeString),
                     }],
+                },
+            )
+        } else if let Some((type_part_definition_event_hash, default_value)) = constructor_default {
+            definy_event::event::Expression::Constructor(
+                definy_event::event::ConstructorExpression {
+                    type_part_definition_event_hash,
+                    value: Box::new(default_value),
                 },
             )
         } else if let Some(encoded) = selected_value.strip_prefix("ref:global:") {
@@ -1336,7 +1763,12 @@ fn target_expression_mut<'a>(
 ) -> &'a mut definy_event::event::Expression {
     match target {
         EditorTarget::PartDefinition => &mut state.part_definition_form.composing_expression,
-        EditorTarget::PartUpdate => &mut state.part_update_form.expression_input,
+        EditorTarget::PartUpdate => {
+            if let Some(Location::Part(hash)) = state.location {
+                state.part_update_form.part_definition_event_hash = Some(hash);
+            }
+            &mut state.part_update_form.expression_input
+        }
     }
 }
 
@@ -1355,6 +1787,8 @@ fn path_to_key(path: &[PathStep]) -> String {
             PathStep::LetBody => "LB".to_string(),
             PathStep::ListItemValue(index) => format!("LI{}", index),
             PathStep::RecordItemValue(index) => format!("RV{}", index),
+            PathStep::ConstructorValue => "CV".to_string(),
+            PathStep::TypeListItem => "TL".to_string(),
         })
         .collect::<Vec<String>>()
         .join("-")
@@ -1416,7 +1850,13 @@ fn get_mut_expression_at_path<'a>(
             }
             _ => None,
         },
-        definy_event::event::Expression::RecordLiteral(record_expression) => match path[0] {
+        definy_event::event::Expression::TypeList(type_list_expression) => match path[0] {
+            PathStep::TypeListItem => {
+                get_mut_expression_at_path(type_list_expression.item_type.as_mut(), &path[1..])
+            }
+            _ => None,
+        },
+        definy_event::event::Expression::TypeLiteral(record_expression) => match path[0] {
             PathStep::RecordItemValue(index) => {
                 if index < record_expression.items.len() {
                     get_mut_expression_at_path(
@@ -1426,6 +1866,12 @@ fn get_mut_expression_at_path<'a>(
                 } else {
                     None
                 }
+            }
+            _ => None,
+        },
+        definy_event::event::Expression::Constructor(constructor_expression) => match path[0] {
+            PathStep::ConstructorValue => {
+                get_mut_expression_at_path(constructor_expression.value.as_mut(), &path[1..])
             }
             _ => None,
         },
@@ -1487,7 +1933,7 @@ fn set_record_item_key(
     item_index: usize,
     value: &str,
 ) {
-    if let Some(definy_event::event::Expression::RecordLiteral(record_expr)) =
+    if let Some(definy_event::event::Expression::TypeLiteral(record_expr)) =
         get_mut_expression_at_path(root_expression, path)
     {
         if let Some(item) = record_expr.items.get_mut(item_index) {
@@ -1497,16 +1943,14 @@ fn set_record_item_key(
 }
 
 fn add_record_item(root_expression: &mut definy_event::event::Expression, path: &[PathStep]) {
-    if let Some(definy_event::event::Expression::RecordLiteral(record_expr)) =
+    if let Some(definy_event::event::Expression::TypeLiteral(record_expr)) =
         get_mut_expression_at_path(root_expression, path)
     {
         record_expr
             .items
-            .push(definy_event::event::RecordItemExpression {
+            .push(definy_event::event::TypeLiteralItemExpression {
                 key: format!("key{}", record_expr.items.len() + 1).into(),
-                value: Box::new(definy_event::event::Expression::Number(
-                    definy_event::event::NumberExpression { value: 0 },
-                )),
+                value: Box::new(definy_event::event::Expression::TypeString),
             });
     }
 }
@@ -1516,7 +1960,7 @@ fn remove_record_item(
     path: &[PathStep],
     item_index: usize,
 ) {
-    if let Some(definy_event::event::Expression::RecordLiteral(record_expr)) =
+    if let Some(definy_event::event::Expression::TypeLiteral(record_expr)) =
         get_mut_expression_at_path(root_expression, path)
     {
         if record_expr.items.len() <= 1 {
@@ -1532,11 +1976,15 @@ fn add_list_item(root_expression: &mut definy_event::event::Expression, path: &[
     if let Some(definy_event::event::Expression::ListLiteral(list_expr)) =
         get_mut_expression_at_path(root_expression, path)
     {
-        list_expr
-            .items
-            .push(definy_event::event::Expression::Number(
-                definy_event::event::NumberExpression { value: 0 },
-            ));
+        let next_item =
+            list_expr
+                .items
+                .last()
+                .cloned()
+                .unwrap_or(definy_event::event::Expression::Number(
+                    definy_event::event::NumberExpression { value: 0 },
+                ));
+        list_expr.items.push(next_item);
     }
 }
 
@@ -1559,15 +2007,21 @@ fn next_local_variable_id(expression: &definy_event::event::Expression) -> i64 {
         match expression {
             definy_event::event::Expression::Number(_) => 0,
             definy_event::event::Expression::String(_) => 0,
+            definy_event::event::Expression::TypeNumber => 0,
+            definy_event::event::Expression::TypeString => 0,
+            definy_event::event::Expression::TypeBoolean => 0,
             definy_event::event::Expression::Boolean(_) => 0,
             definy_event::event::Expression::PartReference(_) => 0,
+            definy_event::event::Expression::TypeList(type_list_expression) => {
+                max_local_variable_id(type_list_expression.item_type.as_ref())
+            }
             definy_event::event::Expression::ListLiteral(list_expression) => list_expression
                 .items
                 .iter()
                 .map(max_local_variable_id)
                 .max()
                 .unwrap_or(0),
-            definy_event::event::Expression::RecordLiteral(record_expression) => record_expression
+            definy_event::event::Expression::TypeLiteral(record_expression) => record_expression
                 .items
                 .iter()
                 .map(|item| max_local_variable_id(item.value.as_ref()))
@@ -1591,6 +2045,9 @@ fn next_local_variable_id(expression: &definy_event::event::Expression) -> i64 {
                 .max(max_local_variable_id(let_expression.value.as_ref()))
                 .max(max_local_variable_id(let_expression.body.as_ref())),
             definy_event::event::Expression::Variable(var_expression) => var_expression.variable_id,
+            definy_event::event::Expression::Constructor(constructor_expression) => {
+                max_local_variable_id(constructor_expression.value.as_ref())
+            }
         }
     }
     max_local_variable_id(expression).saturating_add(1).max(1)

@@ -114,6 +114,12 @@ fn emit_expression(
         Expression::String(_) => {
             return Err("Wasm compilation of String literals is not supported yet.".into());
         }
+        Expression::TypeNumber
+        | Expression::TypeString
+        | Expression::TypeBoolean
+        | Expression::TypeList(_) => {
+            return Err("Wasm compilation of Type expressions is not supported yet.".into());
+        }
         Expression::ListLiteral(_) => {
             return Err("Wasm compilation of List literals is not supported yet.".into());
         }
@@ -187,8 +193,11 @@ fn emit_expression(
                     .into(),
             );
         }
-        Expression::RecordLiteral(_) => {
+        Expression::TypeLiteral(_) => {
             return Err("Wasm compilation of Record literals is not supported yet.".into());
+        }
+        Expression::Constructor(_) => {
+            return Err("Wasm compilation of Constructor expressions is not supported yet.".into());
         }
     }
     Ok(())
@@ -205,12 +214,17 @@ fn count_locals(expr: &Expression) -> u32 {
             count_locals(&i.condition) + count_locals(&i.then_expr) + count_locals(&i.else_expr)
         }
         Expression::String(_) => 0,
+        Expression::TypeNumber | Expression::TypeString | Expression::TypeBoolean => 0,
+        Expression::TypeList(type_list_expression) => {
+            count_locals(type_list_expression.item_type.as_ref())
+        }
         Expression::ListLiteral(list) => list.items.iter().map(count_locals).sum(),
-        Expression::RecordLiteral(record) => record
+        Expression::TypeLiteral(record) => record
             .items
             .iter()
             .map(|item| count_locals(item.value.as_ref()))
             .sum(),
+        Expression::Constructor(constructor) => count_locals(constructor.value.as_ref()),
         _ => 0,
     }
 }
