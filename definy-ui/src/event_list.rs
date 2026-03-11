@@ -465,13 +465,17 @@ fn event_view(
                     EventContent::PartDefinition(part_definition_event) => Div::new()
                         .style(Style::new().set("font-size", "0.98rem"))
                         .children([
-                            Div::new()
+                            A::<AppState, crate::Location>::new()
+                                .href(narumincho_vdom::Href::Internal(crate::Location::Account(
+                                    event.account_id.clone(),
+                                )))
                                 .style(
                                     Style::new()
                                         .set("font-size", "0.78rem")
                                         .set("color", "var(--primary)")
                                         .set("font-weight", "600")
-                                        .set("margin-bottom", "0.25rem"),
+                                        .set("margin-bottom", "0.25rem")
+                                        .set("text-decoration", "none"),
                                 )
                                 .children([text(
                                     account_name_map
@@ -504,13 +508,17 @@ fn event_view(
                     EventContent::PartUpdate(part_update_event) => Div::new()
                         .style(Style::new().set("font-size", "1.05rem"))
                         .children([
-                            Div::new()
+                            A::<AppState, crate::Location>::new()
+                                .href(narumincho_vdom::Href::Internal(crate::Location::Account(
+                                    event.account_id.clone(),
+                                )))
                                 .style(
                                     Style::new()
                                         .set("font-size", "0.85rem")
                                         .set("color", "var(--primary)")
                                         .set("font-weight", "600")
-                                        .set("margin-bottom", "0.25rem"),
+                                        .set("margin-bottom", "0.25rem")
+                                        .set("text-decoration", "none"),
                                 )
                                 .children([text(
                                     account_name_map
