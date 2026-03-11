@@ -121,6 +121,8 @@ impl narumincho_vdom_client::App<AppState> for DefinyApp {
                 definy_ui::Location::from_url(&pathname)
             },
             focused_path: None,
+            active_dropdown_name: None,
+            dropdown_search_query: String::new(),
         }
     }
 

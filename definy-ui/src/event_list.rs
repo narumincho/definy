@@ -484,75 +484,21 @@ fn render_part_type_editor(
     depth: usize,
 ) -> Node<AppState> {
     let name = format!("part-definition-type-{}", depth);
-    let selector = format!("select[name='{}']", name);
     let selected = current_part_type_selection(part_type);
-
-    let mut select = Select::new()
-        .name(name.as_str())
-        .value(selected.as_str())
-        .style(Style::new().set("max-width", "18rem"));
-
-    select.events.push((
-        "change".to_string(),
-        EventHandler::new(move |set_state| {
-            let selector = selector.clone();
-            async move {
-                let value = web_sys::window()
-                    .and_then(|window| window.document())
-                    .and_then(|document| document.query_selector(selector.as_str()).ok())
-                    .flatten()
-                    .and_then(|element| {
-                        js_sys::Reflect::get(&element, &wasm_bindgen::JsValue::from_str("value"))
-                            .ok()
-                    })
-                    .and_then(|value| value.as_string())
-                    .unwrap_or_else(|| "number".to_string());
-
-                set_state(Box::new(move |state: AppState| {
-                    let mut next = state.clone();
-                    update_part_type_at_depth(
-                        &mut next.part_definition_form.part_type_input,
-                        depth,
-                        value.as_str(),
-                    );
-                    next
-                }));
-            }
-        }),
-    ));
 
     let mut options = Vec::new();
     if depth == 0 {
-        options.push(
-            OptionElement::new()
-                .value("none")
-                .children([text("None")])
-                .into_node(),
-        );
+        options.push(("none".to_string(), "None".to_string()));
     }
 
     options.extend([
-        OptionElement::new()
-            .value("number")
-            .children([text("Number")])
-            .into_node(),
-        OptionElement::new()
-            .value("string")
-            .children([text("String")])
-            .into_node(),
-        OptionElement::new()
-            .value("boolean")
-            .children([text("Boolean")])
-            .into_node(),
-        OptionElement::new()
-            .value("type")
-            .children([text("Type")])
-            .into_node(),
-        OptionElement::new()
-            .value("list")
-            .children([text("List<...>")])
-            .into_node(),
+        ("number".to_string(), "Number".to_string()),
+        ("string".to_string(), "String".to_string()),
+        ("boolean".to_string(), "Boolean".to_string()),
+        ("type".to_string(), "Type".to_string()),
+        ("list".to_string(), "List<...>".to_string()),
     ]);
+
     options.extend(
         collect_part_snapshots(state)
             .into_iter()
@@ -562,14 +508,31 @@ fn render_part_type_editor(
                     "type_part:{}",
                     crate::hash_format::encode_hash32(&snapshot.definition_event_hash)
                 );
-                OptionElement::new()
-                    .value(value.as_str())
-                    .children([text(format!("Type Part: {}", snapshot.part_name))])
-                    .into_node()
+                (value, format!("Type Part: {}", snapshot.part_name))
             }),
     );
 
-    let mut children = vec![select.children(options).into_node()];
+    let on_change = std::rc::Rc::new(move |value: String| {
+        let depth_clone = depth;
+        let update_fn: Box<dyn FnOnce(AppState) -> AppState> = Box::new(move |state: AppState| {
+            let mut next = state.clone();
+            update_part_type_at_depth(
+                &mut next.part_definition_form.part_type_input,
+                depth_clone,
+                value.as_str(),
+            );
+            next
+        });
+        update_fn
+    });
+
+    let mut children = vec![crate::dropdown::searchable_dropdown(
+        state,
+        name.as_str(),
+        selected.as_str(),
+        &options,
+        on_change,
+    )];
 
     if let Some(definy_event::event::PartType::List(item_type)) = part_type {
         children.push(

@@ -101,6 +101,7 @@ fn render_expression_editor(
     let mut children = Vec::new();
     if !structure_locked {
         children.push(expression_selector(
+            state,
             path.clone(),
             target,
             &current_selection,
@@ -685,7 +686,7 @@ fn render_expression_editor(
                             .set("font-size", "0.8rem")
                             .set("color", "var(--text-secondary)"),
                     )
-                    .children([text("Select から Global/Local 参照を選んでください")])
+                    .children([text("ドロップダウンから Global/Local 参照を選んでください")])
                     .into_node(),
             );
         }
@@ -1221,6 +1222,7 @@ fn constructor_default_value_from_type_part(
 }
 
 fn expression_selector(
+    state: &AppState,
     path: Vec<PathStep>,
     target: EditorTarget,
     current_value: &str,
@@ -1231,70 +1233,36 @@ fn expression_selector(
         selector_prefix(target),
         path_to_key(path.as_slice())
     );
-    let selector = format!("select[name='{}']", name);
+    let on_change = std::rc::Rc::new(move |selected_value: String| {
+        let path = path.clone();
+        let target_clone = target;
+        let update_fn: Box<dyn FnOnce(AppState) -> AppState> = Box::new(move |state: AppState| {
+            let mut next = state.clone();
+            let constructor_default = selected_value
+                .strip_prefix("expr:constructor:")
+                .and_then(decode_hash32)
+                .map(|type_part_definition_event_hash| {
+                    (
+                        type_part_definition_event_hash,
+                        constructor_default_value_from_type_part(
+                            &next,
+                            &type_part_definition_event_hash,
+                        ),
+                    )
+                });
+            let root_expression = target_expression_mut(&mut next, target_clone);
+            apply_selection(
+                root_expression,
+                path.as_slice(),
+                selected_value.as_str(),
+                constructor_default,
+            );
+            next
+        });
+        update_fn
+    });
 
-    let mut select = Select::new()
-        .name(name.as_str())
-        .value(current_value)
-        .style(Style::new().set("padding", "0.35rem 0.5rem"));
-
-    select.events.push((
-        "change".to_string(),
-        EventHandler::new(move |set_state| {
-            let selector = selector.clone();
-            let path = path.clone();
-            async move {
-                let selected_value = web_sys::window()
-                    .and_then(|window| window.document())
-                    .and_then(|document| document.query_selector(selector.as_str()).ok())
-                    .flatten()
-                    .and_then(|element| {
-                        js_sys::Reflect::get(&element, &wasm_bindgen::JsValue::from_str("value"))
-                            .ok()
-                    })
-                    .and_then(|value| value.as_string())
-                    .unwrap_or_default();
-
-                set_state(Box::new(move |state: AppState| {
-                    let mut next = state.clone();
-                    let constructor_default = selected_value
-                        .strip_prefix("expr:constructor:")
-                        .and_then(decode_hash32)
-                        .map(|type_part_definition_event_hash| {
-                            (
-                                type_part_definition_event_hash,
-                                constructor_default_value_from_type_part(
-                                    &next,
-                                    &type_part_definition_event_hash,
-                                ),
-                            )
-                        });
-                    let root_expression = target_expression_mut(&mut next, target);
-                    apply_selection(
-                        root_expression,
-                        path.as_slice(),
-                        selected_value.as_str(),
-                        constructor_default,
-                    );
-                    next
-                }));
-            }
-        }),
-    ));
-
-    select
-        .children(
-            options
-                .iter()
-                .map(|(value, label)| {
-                    OptionElement::new()
-                        .value(value)
-                        .children([text(label.clone())])
-                        .into_node()
-                })
-                .collect::<Vec<Node<AppState>>>(),
-        )
-        .into_node()
+    crate::dropdown::searchable_dropdown(state, name.as_str(), current_value, options, on_change)
 }
 
 fn selector_options(state: &AppState, scope_variables: &[ScopeVariable]) -> Vec<(String, String)> {

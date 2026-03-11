@@ -322,6 +322,9 @@ fn render_html_response(path: &str) -> Response<Full<Bytes>> {
     let location = definy_ui::Location::from_url(path);
     let html = narumincho_vdom::to_html(&definy_ui::render(
         &definy_ui::AppState {
+            focused_path: None,
+            active_dropdown_name: None,
+            dropdown_search_query: String::new(),
             login_or_create_account_dialog_state: definy_ui::LoginOrCreateAccountDialogState {
                 generated_key: None,
                 state: definy_ui::CreatingAccountState::LogIn,

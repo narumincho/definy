@@ -96,6 +96,8 @@ pub struct AppState {
     pub is_header_popover_open: bool,
     pub location: Option<Location>,
     pub focused_path: Option<Vec<PathStep>>,
+    pub active_dropdown_name: Option<String>,
+    pub dropdown_search_query: String,
 }
 
 #[derive(Clone)]
