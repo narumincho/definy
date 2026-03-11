@@ -169,6 +169,7 @@ pub fn build_initial_state(
     event_list_loading: bool,
     event_list_has_more: bool,
     current_key: Option<ed25519_dalek::SigningKey>,
+    filter_event_type: Option<definy_event::event::EventType>,
 ) -> AppState {
     let mut event_cache = HashMap::new();
     let mut event_hashes = Vec::new();
@@ -191,7 +192,7 @@ pub fn build_initial_state(
             page_size: 20,
             is_loading: event_list_loading,
             has_more: event_list_has_more,
-            filter_event_type: None,
+            filter_event_type,
         },
         current_key,
         part_definition_form: PartDefinitionFormState {

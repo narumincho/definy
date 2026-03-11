@@ -6,6 +6,19 @@ use crate::expression_editor::{EditorTarget, render_root_expression_editor};
 use crate::expression_eval::{evaluate_expression, expression_to_source};
 use crate::part_projection::collect_part_snapshots;
 
+fn update_event_filter_url(event_type: Option<EventType>) {
+    let query = crate::event_filter_query_string(event_type);
+    let new_url = match query {
+        Some(query) => format!("/?{}", query),
+        None => "/".to_string(),
+    };
+    if let Some(window) = web_sys::window() {
+        if let Ok(history) = window.history() {
+            let _ = history.push_state_with_url(&wasm_bindgen::JsValue::NULL, "", Some(&new_url));
+        }
+    }
+}
+
 fn part_type_text(part_type: &definy_event::event::PartType) -> String {
     match part_type {
         definy_event::event::PartType::Number => "Number".to_string(),
@@ -61,6 +74,7 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
                     "part_update" => Some(EventType::PartUpdate),
                     _ => None,
                 };
+                update_event_filter_url(event_type);
                 // Reset list and load first page with new filter
                 let mut next = state.clone();
                 next.event_list_state = crate::EventListState {
