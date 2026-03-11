@@ -1,5 +1,5 @@
 use definy_ui::AppState;
-use definy_ui::{CreatingAccountState, LoginOrCreateAccountDialogState};
+use definy_ui::{CreatingAccountState, LoginOrCreateAccountDialogState, ResourceHash};
 use wasm_bindgen::JsValue;
 use wasm_bindgen::prelude::*;
 
@@ -13,6 +13,41 @@ fn run() -> Result<(), JsValue> {
 mod keyboard_nav;
 struct DefinyApp {}
 
+static SSR_RESOURCE_HASH: std::sync::LazyLock<Option<ResourceHash>> =
+    std::sync::LazyLock::new(read_resource_hash_from_dom);
+static SSR_INITIAL_STATE_TEXT: std::sync::LazyLock<Option<String>> =
+    std::sync::LazyLock::new(read_ssr_initial_state_text);
+
+fn read_resource_hash_from_dom() -> Option<ResourceHash> {
+    let document = web_sys::window()?.document()?;
+    let script = document.query_selector("script[type=\"module\"]").ok()??;
+    let text = script.text_content()?;
+
+    let js = text
+        .split("import init from '/")
+        .nth(1)?
+        .split("';")
+        .next()?;
+
+    let wasm = text
+        .split("module_or_path: \"")
+        .nth(1)?
+        .split('"')
+        .next()?;
+
+    Some(ResourceHash {
+        js: js.to_string(),
+        wasm: wasm.to_string(),
+    })
+}
+
+fn read_ssr_initial_state_text() -> Option<String> {
+    web_sys::window()?
+        .document()?
+        .get_element_by_id(definy_ui::SSR_INITIAL_STATE_ELEMENT_ID)?
+        .text_content()
+}
+
 fn read_ssr_events() -> Option<
     Vec<(
         [u8; 32],
@@ -22,10 +57,7 @@ fn read_ssr_events() -> Option<
         >,
     )>,
 > {
-    let text = web_sys::window()?
-        .document()?
-        .get_element_by_id(definy_ui::SSR_INITIAL_STATE_ELEMENT_ID)?
-        .text_content()?;
+    let text = SSR_INITIAL_STATE_TEXT.as_ref()?.to_string();
     let event_binaries = definy_ui::decode_ssr_initial_state(text.as_str())?;
     Some(
         event_binaries
@@ -184,6 +216,6 @@ impl narumincho_vdom_client::App<AppState> for DefinyApp {
     }
 
     fn render(state: &AppState) -> narumincho_vdom::Node<AppState> {
-        definy_ui::render(state, &None, None)
+        definy_ui::render(state, &*SSR_RESOURCE_HASH, SSR_INITIAL_STATE_TEXT.as_deref())
     }
 }

@@ -11,9 +11,18 @@ use hyper_util::client::legacy::Client;
 use hyper_util::client::legacy::connect::HttpConnector;
 use hyper_util::rt::{TokioExecutor, TokioIo};
 use narumincho_vdom::Route;
+use serde::Deserialize;
 use tokio::net::TcpListener;
 use tokio::sync::oneshot;
 use tokio::time::{Duration, sleep};
+
+const TEST_JAVASCRIPT_CONTENT: &[u8] = include_bytes!("../../web-distribution/definy_client.js");
+const TEST_JAVASCRIPT_HASH: &str = include_str!("../../web-distribution/definy_client.js.sha256");
+const TEST_WASM_CONTENT: &[u8] = include_bytes!("../../web-distribution/definy_client_bg.wasm");
+const TEST_WASM_HASH: &str =
+    include_str!("../../web-distribution/definy_client_bg.wasm.sha256");
+const TEST_ICON_CONTENT: &[u8] = include_bytes!("../../assets/icon.png");
+const TEST_ICON_HASH: &str = include_str!("../../web-distribution/icon.png.sha256");
 
 #[tokio::test(flavor = "multi_thread")]
 #[ignore = "requires running WebDriver (chromedriver/geckodriver/selenium) at WEBDRIVER_URL"]
@@ -30,16 +39,45 @@ async fn browser_can_render_and_navigate() -> Result<(), Box<dyn Error>> {
         .goto(&format!("{}/unknown-page", test_server.base_url()))
         .await?;
 
-    let heading_text = webdriver.text_of(".not-found-title").await?;
-    assert!(heading_text.contains("Page Not Found"));
+    let heading_text = webdriver.text_content_of(".not-found-title").await?;
+    if !heading_text.contains("Page Not Found") {
+        let logs = webdriver.browser_logs().await.unwrap_or_default();
+        let source = webdriver.page_source().await.unwrap_or_default();
+        panic!(
+            "unexpected not-found heading. heading_text={:?} logs={:?} source_snippet={}",
+            heading_text,
+            logs,
+            snippet(&source)
+        );
+    }
 
     webdriver.click("a.cta-link").await?;
     webdriver
         .wait_for_url(&format!("{}/", test_server.base_url()))
         .await?;
 
-    let title = webdriver.text_of("header h1").await?;
+    let title = webdriver.text_content_of("header h1").await?;
     assert_eq!(title, "definy");
+
+    sleep(Duration::from_millis(600)).await;
+    let logs = webdriver.browser_logs().await?;
+    let console_errors: Vec<_> = logs
+        .iter()
+        .filter(|l| l.level.eq_ignore_ascii_case("SEVERE") || l.level.eq_ignore_ascii_case("ERROR"))
+        .collect();
+    let has_node_not_found = logs
+        .iter()
+        .any(|l| l.message.contains("Node not found at path"));
+    assert!(
+        !has_node_not_found,
+        "Console error: Node not found at path. Logs: {:?}",
+        logs
+    );
+    assert!(
+        console_errors.is_empty(),
+        "Browser console errors detected: {:?}",
+        console_errors
+    );
 
     webdriver.close().await?;
     test_server.shutdown().await;
@@ -51,6 +89,14 @@ struct WebDriverClient {
     base_url: String,
     session_id: String,
     client: Client<HttpConnector, Full<Bytes>>,
+}
+
+#[derive(Debug, Deserialize)]
+struct WebDriverLogEntry {
+    level: String,
+    message: String,
+    #[allow(dead_code)]
+    timestamp: f64,
 }
 
 impl WebDriverClient {
@@ -123,6 +169,53 @@ impl WebDriverClient {
         })
     }
 
+    async fn browser_logs(&self) -> Result<Vec<WebDriverLogEntry>, Box<dyn Error>> {
+        let url = format!("{}/session/{}/se/log", self.base_url, self.session_id);
+        let body = serde_json::json!({"type": "browser"});
+        let req = Request::builder()
+            .method(Method::POST)
+            .uri(&url)
+            .header("Content-Type", "application/json")
+            .body(Full::new(Bytes::from(body.to_string())))?;
+        let res = self.client.request(req).await?;
+
+        if res.status().is_success() {
+            let bytes = res.collect().await?.to_bytes();
+            let value: serde_json::Value = serde_json::from_slice(&bytes)?;
+            if let Some(entries) = value.get("value") {
+                let logs: Vec<WebDriverLogEntry> = serde_json::from_value(entries.clone())?;
+                return Ok(logs);
+            }
+        }
+
+        let fallback_url = format!("{}/session/{}/log", self.base_url, self.session_id);
+        let fallback_req = Request::builder()
+            .method(Method::POST)
+            .uri(&fallback_url)
+            .header("Content-Type", "application/json")
+            .body(Full::new(Bytes::from(body.to_string())))?;
+        let fallback_res = self.client.request(fallback_req).await?;
+        let bytes = fallback_res.collect().await?.to_bytes();
+        let value: serde_json::Value = serde_json::from_slice(&bytes)?;
+        if let Some(entries) = value.get("value") {
+            let logs: Vec<WebDriverLogEntry> = serde_json::from_value(entries.clone())?;
+            return Ok(logs);
+        }
+
+        Ok(Vec::new())
+    }
+
+    async fn page_source(&self) -> Result<String, Box<dyn Error>> {
+        let path = format!("/session/{}/source", self.session_id);
+        let response =
+            webdriver_request(&self.client, &self.base_url, Method::GET, &path, None).await?;
+        let source = response
+            .get("value")
+            .and_then(serde_json::Value::as_str)
+            .ok_or("missing page source in WebDriver response")?;
+        Ok(source.to_string())
+    }
+
     async fn goto(&self, url: &str) -> Result<(), Box<dyn Error>> {
         let path = format!("/session/{}/url", self.session_id);
         let payload = serde_json::json!({ "url": url });
@@ -151,6 +244,7 @@ impl WebDriverClient {
         Ok(())
     }
 
+    #[allow(dead_code)]
     async fn text_of(&self, css_selector: &str) -> Result<String, Box<dyn Error>> {
         let element_id = self.find_element(css_selector).await?;
         let path = format!("/session/{}/element/{}/text", self.session_id, element_id);
@@ -161,6 +255,16 @@ impl WebDriverClient {
             .and_then(serde_json::Value::as_str)
             .ok_or("missing element text in WebDriver response")?;
         Ok(text.to_string())
+    }
+
+    async fn text_content_of(&self, css_selector: &str) -> Result<String, Box<dyn Error>> {
+        let value = self
+            .execute_script(
+                "const el = document.querySelector(arguments[0]); return el ? (el.textContent || '') : '';",
+                vec![serde_json::Value::String(css_selector.to_string())],
+            )
+            .await?;
+        Ok(value.as_str().unwrap_or("").to_string())
     }
 
     async fn wait_for_url(&self, expected: &str) -> Result<(), Box<dyn Error>> {
@@ -217,6 +321,50 @@ impl WebDriverClient {
 
         Ok(element.to_string())
     }
+
+    async fn execute_script(
+        &self,
+        script: &str,
+        args: Vec<serde_json::Value>,
+    ) -> Result<serde_json::Value, Box<dyn Error>> {
+        let payload = serde_json::json!({ "script": script, "args": args });
+        let sync_path = format!("/session/{}/execute/sync", self.session_id);
+        match webdriver_request(
+            &self.client,
+            &self.base_url,
+            Method::POST,
+            &sync_path,
+            Some(payload.clone()),
+        )
+        .await
+        {
+            Ok(response) => {
+                return Ok(response.get("value").cloned().unwrap_or(serde_json::Value::Null));
+            }
+            Err(_) => {}
+        }
+
+        let fallback_path = format!("/session/{}/execute", self.session_id);
+        let response = webdriver_request(
+            &self.client,
+            &self.base_url,
+            Method::POST,
+            &fallback_path,
+            Some(payload),
+        )
+        .await?;
+        Ok(response.get("value").cloned().unwrap_or(serde_json::Value::Null))
+    }
+}
+
+fn snippet(text: &str) -> String {
+    const MAX_LEN: usize = 1200;
+    if text.len() <= MAX_LEN {
+        return text.to_string();
+    }
+    let mut out = text[..MAX_LEN].to_string();
+    out.push_str("...<truncated>");
+    out
 }
 
 async fn webdriver_request(
@@ -289,7 +437,7 @@ impl TestServer {
                         tokio::spawn(async move {
                             let io = TokioIo::new(stream);
                             let service = service_fn(|request: Request<Incoming>| async move {
-                                Ok::<_, hyper::http::Error>(render_html_response(request.uri().path()))
+                                Ok::<_, hyper::http::Error>(handle_request(request))
                             });
 
                             let _ = http1::Builder::new().serve_connection(io, service).await;
@@ -331,7 +479,15 @@ fn render_html_response(path: &str) -> Response<Full<Bytes>> {
                 username: String::new(),
                 current_password: String::new(),
             },
-            events: vec![],
+            event_cache: std::collections::HashMap::new(),
+            event_list_state: definy_ui::EventListState {
+                event_hashes: vec![],
+                current_offset: 0,
+                page_size: 20,
+                is_loading: false,
+                has_more: true,
+                filter_event_type: None,
+            },
             current_key: None,
             part_definition_form: definy_ui::PartDefinitionFormState {
                 part_name_input: String::new(),
@@ -355,7 +511,10 @@ fn render_html_response(path: &str) -> Response<Full<Bytes>> {
             is_header_popover_open: false,
             location,
         },
-        &None,
+        &Some(definy_ui::ResourceHash {
+            js: TEST_JAVASCRIPT_HASH.to_string(),
+            wasm: TEST_WASM_HASH.to_string(),
+        }),
         None,
     ));
 
@@ -364,4 +523,38 @@ fn render_html_response(path: &str) -> Response<Full<Bytes>> {
         .header("Content-Type", "text/html; charset=utf-8")
         .body(Full::new(Bytes::from(html)))
         .expect("failed to build html response")
+}
+
+fn handle_request(request: Request<Incoming>) -> Response<Full<Bytes>> {
+    let path = request.uri().path();
+    match path.trim_start_matches('/') {
+        TEST_JAVASCRIPT_HASH => Response::builder()
+            .status(200)
+            .header("Content-Type", "application/javascript; charset=utf-8")
+            .body(Full::new(Bytes::from_static(TEST_JAVASCRIPT_CONTENT)))
+            .expect("failed to build js response"),
+        TEST_WASM_HASH => Response::builder()
+            .status(200)
+            .header("Content-Type", "application/wasm")
+            .body(Full::new(Bytes::from_static(TEST_WASM_CONTENT)))
+            .expect("failed to build wasm response"),
+        TEST_ICON_HASH => Response::builder()
+            .status(200)
+            .header("Content-Type", "image/png")
+            .body(Full::new(Bytes::from_static(TEST_ICON_CONTENT)))
+            .expect("failed to build icon response"),
+        "events" => {
+            let body = serde_cbor::to_vec(&definy_event::response::EventsResponse {
+                events: Box::new([]),
+                next_cursor: None,
+            })
+            .expect("failed to serialize events response");
+            Response::builder()
+                .status(200)
+                .header("Content-Type", "application/cbor")
+                .body(Full::new(Bytes::from(body)))
+                .expect("failed to build events response")
+        }
+        _ => render_html_response(path),
+    }
 }

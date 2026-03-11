@@ -227,6 +227,12 @@ async fn handle_html(
             )
         })
         .collect::<Vec<_>>();
+    let mut event_cache = std::collections::HashMap::new();
+    let mut event_hashes = Vec::new();
+    for (hash, event) in &events {
+        event_cache.insert(*hash, event.clone());
+        event_hashes.push(*hash);
+    }
     let ssr_initial_state_json =
         definy_ui::encode_ssr_initial_state(&event_binary_array.into_vec());
 
@@ -266,13 +272,13 @@ async fn handle_html(
                     event_detail_eval_result: None,
                     profile_name_input: String::new(),
                     is_header_popover_open: false,
-                    event_cache: std::collections::HashMap::new(),
+                    event_cache,
                     event_list_state: definy_ui::EventListState {
-                        event_hashes: vec![],
+                        event_hashes,
                         current_offset: 0,
                         page_size: 20,
                         is_loading: false,
-                        has_more: true,
+                        has_more: false,
                         filter_event_type: None,
                     },
                     location,

@@ -296,6 +296,7 @@ pub fn apply<State: 'static>(
             );
         } else {
             web_sys::console::error_1(&format!("Node not found at path {:?}", path).into());
+            log_missing_path(root, &path);
         }
     }
 }
@@ -311,6 +312,44 @@ fn find_node(root: &web_sys::Node, path: &[usize]) -> Option<web_sys::Node> {
         }
     }
     Some(current)
+}
+
+fn log_missing_path(root: &web_sys::Node, path: &[usize]) {
+    let mut current = root.clone();
+    for (depth, &index) in path.iter().enumerate() {
+        let children = current.child_nodes();
+        let len = children.length();
+        let node_name = current.node_name();
+        if index >= len as usize {
+            let mut child_names = Vec::new();
+            for i in 0..len {
+                if let Some(child) = children.item(i) {
+                    child_names.push(child.node_name());
+                }
+            }
+            web_sys::console::error_1(
+                &format!(
+                    "VDOM path not found at depth {} (index {} >= child_count {}). current='{}' children={:?} full_path={:?}",
+                    depth, index, len, node_name, child_names, path
+                )
+                .into(),
+            );
+            return;
+        }
+
+        if let Some(child) = children.item(index as u32) {
+            current = child;
+        } else {
+            web_sys::console::error_1(
+                &format!(
+                    "VDOM path traversal failed at depth {} (index {}). current='{}' full_path={:?}",
+                    depth, index, node_name, path
+                )
+                .into(),
+            );
+            return;
+        }
+    }
 }
 
 fn apply_patch<State: 'static>(
