@@ -113,12 +113,18 @@ pub async fn get_events(
 ) -> Result<Box<[Vec<u8>]>, anyhow::Error> {
     let mut query = "select event_binary from events".to_string();
     let mut conditions = Vec::new();
+    enum BindValue {
+        EventType(definy_event::event::EventType),
+        Limit(i64),
+        Offset(i64),
+    }
+
     let mut binds = Vec::new();
     let mut bind_index = 1;
 
     if let Some(event_type) = event_type {
         conditions.push(format!("event_type = ${}", bind_index));
-        binds.push(event_type);
+        binds.push(BindValue::EventType(event_type));
         bind_index += 1;
     }
 
@@ -130,17 +136,27 @@ pub async fn get_events(
     query.push_str(" ORDER BY time DESC");
 
     if let Some(limit) = limit {
-        query.push_str(&format!(" LIMIT {}", limit));
+        query.push_str(&format!(" LIMIT ${}", bind_index));
+        let limit_value = std::cmp::min(limit, i64::MAX as usize) as i64;
+        binds.push(BindValue::Limit(limit_value));
+        bind_index += 1;
     }
 
     if let Some(offset) = offset {
-        query.push_str(&format!(" OFFSET {}", offset));
+        query.push_str(&format!(" OFFSET ${}", bind_index));
+        let offset_value = std::cmp::min(offset, i64::MAX as usize) as i64;
+        binds.push(BindValue::Offset(offset_value));
+        bind_index += 1;
     }
 
     let mut sql_query = sqlx::query(&query);
 
     for bind in binds {
-        sql_query = sql_query.bind(bind);
+        sql_query = match bind {
+            BindValue::EventType(value) => sql_query.bind(value),
+            BindValue::Limit(value) => sql_query.bind(value),
+            BindValue::Offset(value) => sql_query.bind(value),
+        };
     }
 
     let rows = sql_query.fetch_all(pool).await?;
