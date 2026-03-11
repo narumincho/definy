@@ -1,6 +1,7 @@
 mod account_detail;
 mod account_list;
 mod app_state;
+pub mod dropdown;
 mod event_detail;
 mod event_list;
 mod event_presenter;

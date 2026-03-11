@@ -11,20 +11,7 @@ pub enum EditorTarget {
     PartUpdate,
 }
 
-#[derive(Clone, Copy, PartialEq, Eq)]
-enum PathStep {
-    Left,
-    Right,
-    Condition,
-    Then,
-    Else,
-    LetValue,
-    LetBody,
-    ListItemValue(usize),
-    RecordItemValue(usize),
-    ConstructorValue,
-    TypeListItem,
-}
+use crate::app_state::PathStep;
 
 #[derive(Clone)]
 struct ScopeVariable {
@@ -92,7 +79,16 @@ pub fn render_root_expression_editor(
         Vec::new(),
         diagnostics.as_slice(),
         false,
+        true,
     )
+}
+
+fn allow_kind_change_for_nested_values(allow_kind_change: bool, path: &[PathStep]) -> bool {
+    if allow_kind_change {
+        return true;
+    }
+    path.iter()
+        .any(|step| matches!(step, PathStep::ConstructorValue))
 }
 
 fn render_expression_editor(
@@ -103,6 +99,7 @@ fn render_expression_editor(
     scope_variables: Vec<ScopeVariable>,
     diagnostics: &[TypeDiagnostic],
     structure_locked: bool,
+    allow_kind_change: bool,
 ) -> Node<AppState> {
     let current_selection = current_selection_value(expression);
     let selector_options = selector_options(state, &scope_variables);
@@ -112,8 +109,9 @@ fn render_expression_editor(
         .map(|diagnostic| diagnostic.message.as_str());
 
     let mut children = Vec::new();
-    if !structure_locked {
+    if allow_kind_change {
         children.push(expression_selector(
+            state,
             path.clone(),
             target,
             &current_selection,
@@ -132,6 +130,16 @@ fn render_expression_editor(
                 .into_node(),
         );
     }
+
+    let is_focused = state.focused_path.as_ref() == Some(&path);
+    let border_style = if is_focused {
+        "2px solid var(--accent)"
+    } else if warning_message.is_some() {
+        "1px solid var(--error)"
+    } else {
+        "1px solid transparent"
+    };
+    let path_str = crate::app_state::path_to_string(&path);
 
     match expression {
         definy_event::event::Expression::Number(number_expression) => {
@@ -170,64 +178,169 @@ fn render_expression_editor(
                             scope_variables.clone(),
                             diagnostics,
                             structure_locked,
+                            allow_kind_change,
                         ),
                     ])
                     .into_node(),
             );
         }
         definy_event::event::Expression::ListLiteral(list_expression) => {
-            let mut list_children = list_expression
-                .items
-                .iter()
-                .enumerate()
-                .map(|(index, item)| {
+            let tabular_keys = get_tabular_keys(list_expression);
+            if let Some(keys) = tabular_keys {
+                let mut grid_children = Vec::new();
+                grid_children.push(
+                    Div::new()
+                        .children([text("Item")])
+                        .style(
+                            Style::new()
+                                .set("font-weight", "bold")
+                                .set("font-size", "0.8rem")
+                                .set("color", "var(--text-secondary)")
+                                .set("padding", "0.2rem 0.5rem"),
+                        )
+                        .into_node(),
+                );
+                for key in &keys {
+                    grid_children.push(
+                        Div::new()
+                            .children([text(key)])
+                            .style(
+                                Style::new()
+                                    .set("font-weight", "bold")
+                                    .set("font-size", "0.8rem")
+                                    .set("color", "var(--text-secondary)")
+                                    .set("padding", "0.2rem 0.5rem"),
+                            )
+                            .into_node(),
+                    );
+                }
+                for (index, item) in list_expression.items.iter().enumerate() {
                     let mut item_path = path.clone();
                     item_path.push(PathStep::ListItemValue(index));
+                    let allow_kind_for_item =
+                        allow_kind_change_for_nested_values(allow_kind_change, path.as_slice());
+                    let remove_btn = remove_list_item_button(path.clone(), index, target);
+                    grid_children.push(
+                        Div::new()
+                            .style(
+                                Style::new()
+                                    .set("display", "flex")
+                                    .set("align-items", "center")
+                                    .set("gap", "0.4rem")
+                                    .set("padding", "0.2rem 0.5rem"),
+                            )
+                            .children([text(format!("{}", index + 1)), remove_btn])
+                            .into_node(),
+                    );
+                    if let definy_event::event::Expression::TypeLiteral(record) = item {
+                        for (i, record_item) in record.items.iter().enumerate() {
+                            let mut value_path = item_path.clone();
+                            value_path.push(PathStep::RecordItemValue(i));
+                            grid_children.push(
+                                Div::new()
+                                    .style(
+                                        Style::new()
+                                            .set("display", "flex")
+                                            .set("align-items", "stretch")
+                                            .set("padding", "0.2rem"),
+                                    )
+                                    .children([render_expression_editor(
+                                        state,
+                                        record_item.value.as_ref(),
+                                        value_path,
+                                        target,
+                                        scope_variables.clone(),
+                                        diagnostics,
+                                        structure_locked,
+                                        allow_kind_for_item,
+                                    )])
+                                    .into_node(),
+                            );
+                        }
+                    }
+                }
+                children.push(
                     Div::new()
                         .style(
                             Style::new()
                                 .set("display", "grid")
-                                .set("gap", "0.4rem")
-                                .set("padding", "0.5rem")
+                                .set(
+                                    "grid-template-columns",
+                                    &format!("max-content repeat({}, 1fr)", keys.len()),
+                                )
+                                .set("gap", "0.2rem")
                                 .set("border", "1px solid var(--border)")
-                                .set("border-radius", "var(--radius-md)"),
+                                .set("border-radius", "var(--radius-md)")
+                                .set("padding", "0.5rem")
+                                .set("overflow-x", "auto"),
                         )
-                        .children([
-                            Div::new()
-                                .style(Style::new().set("display", "flex").set("gap", "0.5rem"))
-                                .children([
-                                    Div::new()
-                                        .style(
-                                            Style::new()
-                                                .set("font-size", "0.8rem")
-                                                .set("color", "var(--text-secondary)")
-                                                .set("flex", "1"),
-                                        )
-                                        .children([text(format!("Item {}", index + 1))])
-                                        .into_node(),
-                                    remove_list_item_button(path.clone(), index, target),
-                                ])
-                                .into_node(),
-                            render_expression_editor(
-                                state,
-                                item,
-                                item_path,
-                                target,
-                                scope_variables.clone(),
-                                diagnostics,
-                                structure_locked,
-                            ),
-                        ])
-                        .into_node()
-                })
-                .collect::<Vec<Node<AppState>>>();
-            list_children.push(add_list_item_button(path, target));
-            children.push(
-                Div::new()
-                    .style(Style::new().set("display", "grid").set("gap", "0.6rem"))
-                    .children(list_children)
-                    .into_node(),
-            );
+                        .children(grid_children)
+                        .into_node(),
+                );
+                children.push(add_list_item_button(path.clone(), target));
+            } else {
+                let mut list_children = list_expression
+                    .items
+                    .iter()
+                    .enumerate()
+                    .map(|(index, item)| {
+                        let mut item_path = path.clone();
+                        item_path.push(PathStep::ListItemValue(index));
+                        let allow_kind_for_item =
+                            allow_kind_change_for_nested_values(allow_kind_change, path.as_slice());
+                        Div::new()
+                            .style(
+                                Style::new()
+                                    .set("display", "flex")
+                                    .set("flex-direction", "column")
+                                    .set("gap", "0.4rem")
+                                    .set("padding", "0.5rem")
+                                    .set("border", "1px solid var(--border)")
+                                    .set("border-radius", "var(--radius-md)"),
+                            )
+                            .children([
+                                Div::new()
+                                    .style(Style::new().set("display", "flex").set("gap", "0.5rem"))
+                                    .children([
+                                        Div::new()
+                                            .style(
+                                                Style::new()
+                                                    .set("font-size", "0.8rem")
+                                                    .set("color", "var(--text-secondary)")
+                                                    .set("flex", "1"),
+                                            )
+                                            .children([text(format!("Item {}", index + 1))])
+                                            .into_node(),
+                                        remove_list_item_button(path.clone(), index, target),
+                                    ])
+                                    .into_node(),
+                                render_expression_editor(
+                                    state,
+                                    item,
+                                    item_path,
+                                    target,
+                                    scope_variables.clone(),
+                                    diagnostics,
+                                    structure_locked,
+                                    allow_kind_for_item,
+                                ),
+                            ])
+                            .into_node()
+                    })
+                    .collect::<Vec<Node<AppState>>>();
+                list_children.push(add_list_item_button(path.clone(), target));
+                children.push(
+                    Div::new()
+                        .style(
+                            Style::new()
+                                .set("display", "flex")
+                                .set("flex-direction", "column")
+                                .set("gap", "0.6rem"),
+                        )
+                        .children(list_children)
+                        .into_node(),
+                );
+            }
         }
         definy_event::event::Expression::Add(add_expression) => {
             let mut left_path = path.clone();
@@ -239,8 +352,8 @@ fn render_expression_editor(
                 Div::new()
                     .style(
                         Style::new()
-                            .set("display", "grid")
-                            .set("grid-template-columns", "1fr 1fr")
+                            .set("display", "flex")
+                            .set("flex-wrap", "wrap")
                             .set("gap", "0.6rem"),
                     )
                     .children([
@@ -256,6 +369,7 @@ fn render_expression_editor(
                                     scope_variables.clone(),
                                     diagnostics,
                                     structure_locked,
+                                    allow_kind_change,
                                 ),
                             ])
                             .into_node(),
@@ -271,6 +385,7 @@ fn render_expression_editor(
                                     scope_variables.clone(),
                                     diagnostics,
                                     structure_locked,
+                                    allow_kind_change,
                                 ),
                             ])
                             .into_node(),
@@ -293,8 +408,8 @@ fn render_expression_editor(
                 Div::new()
                     .style(
                         Style::new()
-                            .set("display", "grid")
-                            .set("grid-template-columns", "1fr")
+                            .set("display", "flex")
+                            .set("flex-wrap", "wrap")
                             .set("gap", "0.6rem"),
                     )
                     .children([
@@ -310,6 +425,7 @@ fn render_expression_editor(
                                     scope_variables.clone(),
                                     diagnostics,
                                     structure_locked,
+                                    allow_kind_change,
                                 ),
                             ])
                             .into_node(),
@@ -325,6 +441,7 @@ fn render_expression_editor(
                                     scope_variables.clone(),
                                     diagnostics,
                                     structure_locked,
+                                    allow_kind_change,
                                 ),
                             ])
                             .into_node(),
@@ -340,6 +457,7 @@ fn render_expression_editor(
                                     scope_variables.clone(),
                                     diagnostics,
                                     structure_locked,
+                                    allow_kind_change,
                                 ),
                             ])
                             .into_node(),
@@ -357,8 +475,8 @@ fn render_expression_editor(
                 Div::new()
                     .style(
                         Style::new()
-                            .set("display", "grid")
-                            .set("grid-template-columns", "1fr 1fr")
+                            .set("display", "flex")
+                            .set("flex-wrap", "wrap")
                             .set("gap", "0.6rem"),
                     )
                     .children([
@@ -374,6 +492,7 @@ fn render_expression_editor(
                                     scope_variables.clone(),
                                     diagnostics,
                                     structure_locked,
+                                    allow_kind_change,
                                 ),
                             ])
                             .into_node(),
@@ -389,6 +508,7 @@ fn render_expression_editor(
                                     scope_variables.clone(),
                                     diagnostics,
                                     structure_locked,
+                                    allow_kind_change,
                                 ),
                             ])
                             .into_node(),
@@ -406,8 +526,8 @@ fn render_expression_editor(
                 Div::new()
                     .style(
                         Style::new()
-                            .set("display", "grid")
-                            .set("grid-template-columns", "1fr")
+                            .set("display", "flex")
+                            .set("flex-wrap", "wrap")
                             .set("gap", "0.6rem"),
                     )
                     .children([
@@ -430,6 +550,7 @@ fn render_expression_editor(
                                     scope_variables.clone(),
                                     diagnostics,
                                     structure_locked,
+                                    allow_kind_change,
                                 ),
                             ])
                             .into_node(),
@@ -449,6 +570,7 @@ fn render_expression_editor(
                                     body_scope,
                                     diagnostics,
                                     structure_locked,
+                                    allow_kind_change,
                                 )
                             }])
                             .into_node(),
@@ -464,6 +586,8 @@ fn render_expression_editor(
                 .map(|(index, item)| {
                     let mut value_path = path.clone();
                     value_path.push(PathStep::RecordItemValue(index));
+                    let allow_kind_for_value =
+                        allow_kind_change_for_nested_values(allow_kind_change, path.as_slice());
                     Div::new()
                         .style(
                             Style::new()
@@ -523,6 +647,7 @@ fn render_expression_editor(
                                         scope_variables.clone(),
                                         diagnostics,
                                         structure_locked,
+                                        allow_kind_for_value,
                                     ),
                                 ])
                                 .into_node(),
@@ -576,6 +701,7 @@ fn render_expression_editor(
                             scope_variables.clone(),
                             diagnostics,
                             true,
+                            true,
                         ),
                     ])
                     .into_node(),
@@ -590,7 +716,7 @@ fn render_expression_editor(
                             .set("font-size", "0.8rem")
                             .set("color", "var(--text-secondary)"),
                     )
-                    .children([text("Select から Global/Local 参照を選んでください")])
+                    .children([text("ドロップダウンから Global/Local 参照を選んでください")])
                     .into_node(),
             );
         }
@@ -598,19 +724,13 @@ fn render_expression_editor(
 
     Div::new()
         .class("event-detail-card")
+        .attribute("data-path", &path_str)
         .style(
             Style::new()
                 .set("padding", "0.8rem")
                 .set("display", "grid")
                 .set("gap", "0.6rem")
-                .set(
-                    "border",
-                    if warning_message.is_some() {
-                        "1px solid var(--error)"
-                    } else {
-                        "1px solid transparent"
-                    },
-                ),
+                .set("border", border_style),
         )
         .children(children)
         .into_node()
@@ -946,15 +1066,75 @@ fn check_expression_type(
             );
             let mut value_path = path.to_vec();
             value_path.push(PathStep::ConstructorValue);
-            check_expression_type(
-                constructor_expression.value.as_ref(),
-                value_path.as_slice(),
-                Some(expression_type_from_constructor_shape(&inferred_shape)),
-                env,
-                part_type_map,
-                part_snapshot_map,
-                diagnostics,
-            );
+            let expected_value_type = expression_type_from_constructor_shape(&inferred_shape);
+            if let ConstructorValueShape::Record(fields) = &inferred_shape {
+                if let definy_event::event::Expression::TypeLiteral(record_expression) =
+                    constructor_expression.value.as_ref()
+                {
+                    for (index, (field_name, field_shape)) in fields.iter().enumerate() {
+                        if let Some(item) = record_expression.items.get(index) {
+                            if item.key.as_ref() != field_name.as_str() {
+                                diagnostics.push(TypeDiagnostic {
+                                    path: value_path.clone(),
+                                    message: format!(
+                                        "Field name mismatch: expected {}, but found {}",
+                                        field_name, item.key
+                                    ),
+                                });
+                            }
+                            let field_expected_type =
+                                expression_type_from_constructor_shape(field_shape);
+                            let mut field_path = value_path.clone();
+                            field_path.push(PathStep::RecordItemValue(index));
+                            check_expression_type(
+                                item.value.as_ref(),
+                                field_path.as_slice(),
+                                Some(field_expected_type),
+                                env,
+                                part_type_map,
+                                part_snapshot_map,
+                                diagnostics,
+                            );
+                        } else {
+                            diagnostics.push(TypeDiagnostic {
+                                path: value_path.clone(),
+                                message: format!("Missing field: {}", field_name),
+                            });
+                        }
+                    }
+                    if record_expression.items.len() > fields.len() {
+                        diagnostics.push(TypeDiagnostic {
+                            path: value_path.clone(),
+                            message: "Extra fields in record".to_string(),
+                        });
+                    }
+                } else {
+                    push_type_mismatch_diagnostic(
+                        diagnostics,
+                        value_path.as_slice(),
+                        &expected_value_type,
+                        &check_expression_type(
+                            constructor_expression.value.as_ref(),
+                            value_path.as_slice(),
+                            None,
+                            env,
+                            part_type_map,
+                            part_snapshot_map,
+                            &mut Vec::new(),
+                        ),
+                    );
+                }
+            } else {
+                check_expression_type(
+                    constructor_expression.value.as_ref(),
+                    value_path.as_slice(),
+                    Some(expected_value_type),
+                    env,
+                    part_type_map,
+                    part_snapshot_map,
+                    diagnostics,
+                );
+            }
             ExpressionType::TypePart(constructor_expression.type_part_definition_event_hash)
         }
     };
@@ -1132,6 +1312,7 @@ fn constructor_default_value_from_type_part(
 }
 
 fn expression_selector(
+    state: &AppState,
     path: Vec<PathStep>,
     target: EditorTarget,
     current_value: &str,
@@ -1142,70 +1323,36 @@ fn expression_selector(
         selector_prefix(target),
         path_to_key(path.as_slice())
     );
-    let selector = format!("select[name='{}']", name);
+    let on_change = std::rc::Rc::new(move |selected_value: String| {
+        let path = path.clone();
+        let target_clone = target;
+        let update_fn: Box<dyn FnOnce(AppState) -> AppState> = Box::new(move |state: AppState| {
+            let mut next = state.clone();
+            let constructor_default = selected_value
+                .strip_prefix("expr:constructor:")
+                .and_then(decode_hash32)
+                .map(|type_part_definition_event_hash| {
+                    (
+                        type_part_definition_event_hash,
+                        constructor_default_value_from_type_part(
+                            &next,
+                            &type_part_definition_event_hash,
+                        ),
+                    )
+                });
+            let root_expression = target_expression_mut(&mut next, target_clone);
+            apply_selection(
+                root_expression,
+                path.as_slice(),
+                selected_value.as_str(),
+                constructor_default,
+            );
+            next
+        });
+        update_fn
+    });
 
-    let mut select = Select::new()
-        .name(name.as_str())
-        .value(current_value)
-        .style(Style::new().set("padding", "0.35rem 0.5rem"));
-
-    select.events.push((
-        "change".to_string(),
-        EventHandler::new(move |set_state| {
-            let selector = selector.clone();
-            let path = path.clone();
-            async move {
-                let selected_value = web_sys::window()
-                    .and_then(|window| window.document())
-                    .and_then(|document| document.query_selector(selector.as_str()).ok())
-                    .flatten()
-                    .and_then(|element| {
-                        js_sys::Reflect::get(&element, &wasm_bindgen::JsValue::from_str("value"))
-                            .ok()
-                    })
-                    .and_then(|value| value.as_string())
-                    .unwrap_or_default();
-
-                set_state(Box::new(move |state: AppState| {
-                    let mut next = state.clone();
-                    let constructor_default = selected_value
-                        .strip_prefix("expr:constructor:")
-                        .and_then(decode_hash32)
-                        .map(|type_part_definition_event_hash| {
-                            (
-                                type_part_definition_event_hash,
-                                constructor_default_value_from_type_part(
-                                    &next,
-                                    &type_part_definition_event_hash,
-                                ),
-                            )
-                        });
-                    let root_expression = target_expression_mut(&mut next, target);
-                    apply_selection(
-                        root_expression,
-                        path.as_slice(),
-                        selected_value.as_str(),
-                        constructor_default,
-                    );
-                    next
-                }));
-            }
-        }),
-    ));
-
-    select
-        .children(
-            options
-                .iter()
-                .map(|(value, label)| {
-                    OptionElement::new()
-                        .value(value)
-                        .children([text(label.clone())])
-                        .into_node()
-                })
-                .collect::<Vec<Node<AppState>>>(),
-        )
-        .into_node()
+    crate::dropdown::searchable_dropdown(state, name.as_str(), current_value, options, on_change)
 }
 
 fn selector_options(state: &AppState, scope_variables: &[ScopeVariable]) -> Vec<(String, String)> {
@@ -2051,6 +2198,33 @@ fn next_local_variable_id(expression: &definy_event::event::Expression) -> i64 {
         }
     }
     max_local_variable_id(expression).saturating_add(1).max(1)
+}
+
+fn get_tabular_keys(
+    list_expression: &definy_event::event::ListLiteralExpression,
+) -> Option<Vec<String>> {
+    if list_expression.items.is_empty() {
+        return None;
+    }
+    let mut common_keys: Option<Vec<String>> = None;
+    for item in &list_expression.items {
+        if let definy_event::event::Expression::TypeLiteral(record) = item {
+            if record.items.is_empty() {
+                return None;
+            }
+            let keys: Vec<String> = record.items.iter().map(|i| i.key.to_string()).collect();
+            if let Some(ref c) = common_keys {
+                if c != &keys {
+                    return None;
+                }
+            } else {
+                common_keys = Some(keys);
+            }
+        } else {
+            return None;
+        }
+    }
+    common_keys
 }
 
 #[cfg(test)]

@@ -1,5 +1,83 @@
 use definy_event::event::AccountId;
 
+#[derive(Clone, PartialEq, Eq, Debug)]
+pub enum PathStep {
+    Left,
+    Right,
+    Condition,
+    Then,
+    Else,
+    LetValue,
+    LetBody,
+    ListItemValue(usize),
+    RecordItemValue(usize),
+    ConstructorValue,
+    TypeListItem,
+}
+
+impl PathStep {
+    pub fn to_string(&self) -> String {
+        match self {
+            PathStep::Left => "Left".to_string(),
+            PathStep::Right => "Right".to_string(),
+            PathStep::Condition => "Condition".to_string(),
+            PathStep::Then => "Then".to_string(),
+            PathStep::Else => "Else".to_string(),
+            PathStep::LetValue => "LetValue".to_string(),
+            PathStep::LetBody => "LetBody".to_string(),
+            PathStep::ListItemValue(index) => format!("ListItemValue({})", index),
+            PathStep::RecordItemValue(index) => format!("RecordItemValue({})", index),
+            PathStep::ConstructorValue => "ConstructorValue".to_string(),
+            PathStep::TypeListItem => "TypeListItem".to_string(),
+        }
+    }
+
+    pub fn from_string(s: &str) -> Option<Self> {
+        if s == "Left" {
+            Some(PathStep::Left)
+        } else if s == "Right" {
+            Some(PathStep::Right)
+        } else if s == "Condition" {
+            Some(PathStep::Condition)
+        } else if s == "Then" {
+            Some(PathStep::Then)
+        } else if s == "Else" {
+            Some(PathStep::Else)
+        } else if s == "LetValue" {
+            Some(PathStep::LetValue)
+        } else if s == "LetBody" {
+            Some(PathStep::LetBody)
+        } else if s.starts_with("ListItemValue(") && s.ends_with(")") {
+            s[14..s.len() - 1].parse().ok().map(PathStep::ListItemValue)
+        } else if s.starts_with("RecordItemValue(") && s.ends_with(")") {
+            s[16..s.len() - 1]
+                .parse()
+                .ok()
+                .map(PathStep::RecordItemValue)
+        } else if s == "ConstructorValue" {
+            Some(PathStep::ConstructorValue)
+        } else if s == "TypeListItem" {
+            Some(PathStep::TypeListItem)
+        } else {
+            None
+        }
+    }
+}
+
+pub fn path_to_string(path: &[PathStep]) -> String {
+    path.iter()
+        .map(|step| step.to_string())
+        .collect::<Vec<String>>()
+        .join(".")
+}
+
+pub fn string_to_path(s: &str) -> Option<Vec<PathStep>> {
+    if s.is_empty() {
+        return Some(Vec::new());
+    }
+    s.split('.').map(PathStep::from_string).collect()
+}
+
 #[derive(Clone)]
 pub struct AppState {
     pub login_or_create_account_dialog_state: LoginOrCreateAccountDialogState,
@@ -17,6 +95,9 @@ pub struct AppState {
     pub profile_name_input: String,
     pub is_header_popover_open: bool,
     pub location: Option<Location>,
+    pub focused_path: Option<Vec<PathStep>>,
+    pub active_dropdown_name: Option<String>,
+    pub dropdown_search_query: String,
 }
 
 #[derive(Clone)]
