@@ -111,7 +111,7 @@ pub fn account_detail_view(
                                         if let Ok(events) =
                                             fetch::get_events(filter, Some(20), Some(0)).await
                                         {
-                                            set_state_for_async(Box::new(|state| {
+                                            set_state_for_async(Box::new(move |state| {
                                                 let events_len = events.len();
                                                 let mut event_cache = state.event_cache.clone();
                                                 let mut event_hashes = Vec::new();
