@@ -63,6 +63,8 @@ pub async fn handle_event_get(
 #[derive(serde::Deserialize)]
 struct EventsQuery {
     event_type: Option<definy_event::event::EventType>,
+    limit: Option<usize>,
+    offset: Option<usize>,
 }
 
 pub async fn handle_events(
@@ -91,33 +93,35 @@ async fn handle_events_get(
             .body(Full::new(Bytes::from(
                 "400 Bad Request: Invalid query format",
             ))),
-        Ok(query) => match crate::db::get_events(pool, query.event_type).await {
-            Err(e) => {
-                eprintln!("Failed to get events: {:?}", e);
-                Response::builder()
-                    .status(503)
-                    .header("Content-Type", "text/html; charset=utf-8")
-                    .body(Full::new(Bytes::from("Database is unavailable")))
-            }
-            Ok(events) => {
-                match serde_cbor::to_vec(&definy_event::response::EventsResponse {
-                    events: events,
-                    next_cursor: None,
-                }) {
-                    Ok(cbor) => Response::builder()
-                        .status(200)
-                        .header("Content-Type", "application/cbor")
-                        .body(Full::new(Bytes::from(cbor))),
-                    Err(e) => {
-                        eprintln!("Failed to serialize events: {:?}", e);
-                        Response::builder()
-                            .status(500)
-                            .header("Content-Type", "text/html; charset=utf-8")
-                            .body(Full::new(Bytes::from("Internal Server Error")))
+        Ok(query) => {
+            match crate::db::get_events(pool, query.event_type, query.limit, query.offset).await {
+                Err(e) => {
+                    eprintln!("Failed to get events: {:?}", e);
+                    Response::builder()
+                        .status(503)
+                        .header("Content-Type", "text/html; charset=utf-8")
+                        .body(Full::new(Bytes::from("Database is unavailable")))
+                }
+                Ok(events) => {
+                    match serde_cbor::to_vec(&definy_event::response::EventsResponse {
+                        events: events,
+                        next_cursor: None,
+                    }) {
+                        Ok(cbor) => Response::builder()
+                            .status(200)
+                            .header("Content-Type", "application/cbor")
+                            .body(Full::new(Bytes::from(cbor))),
+                        Err(e) => {
+                            eprintln!("Failed to serialize events: {:?}", e);
+                            Response::builder()
+                                .status(500)
+                                .header("Content-Type", "text/html; charset=utf-8")
+                                .body(Full::new(Bytes::from("Internal Server Error")))
+                        }
                     }
                 }
             }
-        },
+        }
     }
 }
 

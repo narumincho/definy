@@ -341,10 +341,25 @@ fn part_update_form(state: &AppState, definition_event_hash: &[u8; 32]) -> Node<
 
                                 match crate::fetch::post_event(event_binary.as_slice()).await {
                                     Ok(_) => {
-                                        if let Ok(events) = crate::fetch::get_events().await {
+                                        if let Ok(events) = crate::fetch::get_events(None, Some(20), Some(0)).await {
                                             set_state_for_async(Box::new(move |state| {
+                                                let events_len = events.len();
+                                                let mut event_cache = state.event_cache.clone();
+                                                let mut event_hashes = Vec::new();
+                                                for (hash, event) in events {
+                                                    event_cache.insert(hash, event);
+                                                    event_hashes.push(hash);
+                                                }
                                                 let mut next = state.clone();
-                                                next.events = events;
+                                                next.event_cache = event_cache;
+                                                next.event_list_state = crate::EventListState {
+                                                    event_hashes,
+                                                    current_offset: 0,
+                                                    page_size: 20,
+                                                    is_loading: false,
+                                                    has_more: events_len == 20,
+                                                    filter_event_type: None,
+                                                };
                                                 if let Some(snapshot) = find_part_snapshot(
                                                     &next,
                                                     &root_part_definition_hash,

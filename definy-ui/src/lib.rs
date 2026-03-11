@@ -34,12 +34,18 @@ pub struct ResourceHash {
 }
 
 #[derive(serde::Serialize, serde::Deserialize)]
-struct SsrInitialState {
+struct SsrState {
     event_binaries_base64: Vec<String>,
+    has_more: bool,
 }
 
-pub fn encode_ssr_initial_state(event_binaries: &[Vec<u8>]) -> Option<String> {
-    serde_json::to_string(&SsrInitialState {
+pub struct DecodedSsrState {
+    pub event_binaries: Vec<Vec<u8>>,
+    pub has_more: bool,
+}
+
+pub fn encode_ssr_state(event_binaries: &[Vec<u8>], has_more: bool) -> Option<String> {
+    serde_cbor::to_vec(&SsrState {
         event_binaries_base64: event_binaries
             .iter()
             .map(|event_binary| {
@@ -49,15 +55,18 @@ pub fn encode_ssr_initial_state(event_binaries: &[Vec<u8>]) -> Option<String> {
                 )
             })
             .collect(),
+        has_more,
     })
     .ok()
+    .map(|vec| base64::Engine::encode(&base64::engine::general_purpose::URL_SAFE_NO_PAD, &vec))
 }
 
-pub fn decode_ssr_initial_state(json: &str) -> Option<Vec<Vec<u8>>> {
-    serde_json::from_str::<SsrInitialState>(json)
+pub fn decode_ssr_state(json: &str) -> Option<DecodedSsrState> {
+    base64::Engine::decode(&base64::engine::general_purpose::URL_SAFE_NO_PAD, json)
         .ok()
-        .map(|state| {
-            state
+        .and_then(|vec| serde_cbor::from_slice::<SsrState>(&vec).ok())
+        .map(|state| DecodedSsrState {
+            event_binaries: state
                 .event_binaries_base64
                 .into_iter()
                 .filter_map(|encoded| {
@@ -67,7 +76,8 @@ pub fn decode_ssr_initial_state(json: &str) -> Option<Vec<Vec<u8>>> {
                     )
                     .ok()
                 })
-                .collect()
+                .collect(),
+            has_more: state.has_more,
         })
 }
 

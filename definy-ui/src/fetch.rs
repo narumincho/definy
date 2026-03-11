@@ -1,6 +1,30 @@
-pub async fn get_events_raw() -> Result<Vec<u8>, anyhow::Error> {
+use sha2;
+
+pub async fn get_events_raw(
+    event_type: Option<definy_event::event::EventType>,
+    limit: Option<usize>,
+    offset: Option<usize>,
+) -> Result<Vec<u8>, anyhow::Error> {
+    let mut url = "/events".to_string();
+    let mut params = Vec::new();
+    if let Some(event_type) = event_type {
+        params.push(format!(
+            "event_type={}",
+            serde_urlencoded::to_string(event_type)?
+        ));
+    }
+    if let Some(limit) = limit {
+        params.push(format!("limit={}", limit));
+    }
+    if let Some(offset) = offset {
+        params.push(format!("offset={}", offset));
+    }
+    if !params.is_empty() {
+        url.push('?');
+        url.push_str(&params.join("&"));
+    }
     let response_raw =
-        wasm_bindgen_futures::JsFuture::from(web_sys::window().unwrap().fetch_with_str("/events"))
+        wasm_bindgen_futures::JsFuture::from(web_sys::window().unwrap().fetch_with_str(&url))
             .await
             .unwrap();
 
@@ -15,7 +39,11 @@ pub async fn get_events_raw() -> Result<Vec<u8>, anyhow::Error> {
     Ok(response_body_bytes)
 }
 
-pub async fn get_events() -> anyhow::Result<
+pub async fn get_events(
+    event_type: Option<definy_event::event::EventType>,
+    limit: Option<usize>,
+    offset: Option<usize>,
+) -> anyhow::Result<
     Vec<(
         [u8; 32],
         Result<
@@ -24,7 +52,7 @@ pub async fn get_events() -> anyhow::Result<
         >,
     )>,
 > {
-    let response_body_bytes = get_events_raw().await?;
+    let response_body_bytes = get_events_raw(event_type, limit, offset).await?;
 
     let value =
         serde_cbor::from_slice::<definy_event::response::EventsResponse>(&response_body_bytes)?;

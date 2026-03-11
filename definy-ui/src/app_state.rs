@@ -78,16 +78,19 @@ pub fn string_to_path(s: &str) -> Option<Vec<PathStep>> {
     s.split('.').map(PathStep::from_string).collect()
 }
 
+use std::collections::HashMap;
+
 #[derive(Clone)]
 pub struct AppState {
     pub login_or_create_account_dialog_state: LoginOrCreateAccountDialogState,
-    pub events: Vec<(
+    pub event_cache: HashMap<
         [u8; 32],
         Result<
             (ed25519_dalek::Signature, definy_event::event::Event),
             definy_event::VerifyAndDeserializeError,
         >,
-    )>,
+    >,
+    pub event_list_state: EventListState,
     pub current_key: Option<ed25519_dalek::SigningKey>,
     pub part_definition_form: PartDefinitionFormState,
     pub part_update_form: PartUpdateFormState,
@@ -98,6 +101,16 @@ pub struct AppState {
     pub focused_path: Option<Vec<PathStep>>,
     pub active_dropdown_name: Option<String>,
     pub dropdown_search_query: String,
+}
+
+#[derive(Clone)]
+pub struct EventListState {
+    pub event_hashes: Vec<[u8; 32]>,
+    pub current_offset: usize,
+    pub page_size: usize,
+    pub is_loading: bool,
+    pub has_more: bool,
+    pub filter_event_type: Option<definy_event::event::EventType>,
 }
 
 #[derive(Clone)]
@@ -122,7 +135,7 @@ impl AppState {
         &self,
     ) -> std::collections::HashMap<definy_event::event::AccountId, Box<str>> {
         let mut account_name_map = std::collections::HashMap::new();
-        for (_, event_result) in &self.events {
+        for event_result in self.event_cache.values() {
             if let Ok((_, event)) = event_result {
                 match &event.content {
                     definy_event::event::EventContent::CreateAccount(create_account_event) => {
@@ -141,6 +154,70 @@ impl AppState {
             }
         }
         account_name_map
+    }
+}
+
+pub fn build_initial_state(
+    location: Option<Location>,
+    events: Vec<(
+        [u8; 32],
+        Result<
+            (ed25519_dalek::Signature, definy_event::event::Event),
+            definy_event::VerifyAndDeserializeError,
+        >,
+    )>,
+    event_list_loading: bool,
+    event_list_has_more: bool,
+    current_key: Option<ed25519_dalek::SigningKey>,
+) -> AppState {
+    let mut event_cache = HashMap::new();
+    let mut event_hashes = Vec::new();
+    for (hash, event) in events {
+        event_cache.insert(hash, event);
+        event_hashes.push(hash);
+    }
+
+    AppState {
+        login_or_create_account_dialog_state: LoginOrCreateAccountDialogState {
+            state: CreatingAccountState::LogIn,
+            username: String::new(),
+            generated_key: None,
+            current_password: String::new(),
+        },
+        event_cache,
+        event_list_state: EventListState {
+            event_hashes,
+            current_offset: 0,
+            page_size: 20,
+            is_loading: event_list_loading,
+            has_more: event_list_has_more,
+            filter_event_type: None,
+        },
+        current_key,
+        part_definition_form: PartDefinitionFormState {
+            part_name_input: String::new(),
+            part_type_input: Some(definy_event::event::PartType::Number),
+            part_description_input: String::new(),
+            composing_expression: definy_event::event::Expression::Number(
+                definy_event::event::NumberExpression { value: 0 },
+            ),
+            eval_result: None,
+        },
+        part_update_form: PartUpdateFormState {
+            part_definition_event_hash: None,
+            part_name_input: String::new(),
+            part_description_input: String::new(),
+            expression_input: definy_event::event::Expression::Number(
+                definy_event::event::NumberExpression { value: 0 },
+            ),
+        },
+        event_detail_eval_result: None,
+        profile_name_input: String::new(),
+        is_header_popover_open: false,
+        location,
+        focused_path: None,
+        active_dropdown_name: None,
+        dropdown_search_query: String::new(),
     }
 }
 

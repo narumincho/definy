@@ -180,8 +180,8 @@ fn add_event_listener_patches_recursive<State>(
                     Patch::AddEventListeners(vec![(event_name.clone(), message.clone())]),
                 ));
             }
-            for child in &element.children {
-                path.push(element.children.iter().position(|c| c == child).unwrap());
+            for (index, child) in element.children.iter().enumerate() {
+                path.push(index);
                 add_event_listener_patches_recursive(child, path, patches);
                 path.pop();
             }

@@ -99,7 +99,7 @@ fn collect_account_rows(state: &AppState) -> Vec<AccountRow> {
         definy_event::event::AccountId,
         (usize, chrono::DateTime<chrono::Utc>),
     >::new();
-    for (_, event_result) in &state.events {
+    for event_result in state.event_cache.values() {
         let (_, event) = if let Ok(v) = event_result {
             v
         } else {

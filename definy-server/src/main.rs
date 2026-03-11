@@ -208,7 +208,7 @@ async fn handle_html(
         }
     }
 
-    let event_binary_array = match db::get_events(pool, None).await {
+    let event_binary_array = match db::get_events(pool, None, Some(20), Some(0)).await {
         Ok(events) => events,
         Err(error) => {
             eprintln!("Failed to get events for SSR: {:?}", error);
@@ -227,48 +227,15 @@ async fn handle_html(
             )
         })
         .collect::<Vec<_>>();
+    let has_more = events.len() == 20;
     let ssr_initial_state_json =
-        definy_ui::encode_ssr_initial_state(&event_binary_array.into_vec());
+        definy_ui::encode_ssr_state(&event_binary_array.into_vec(), has_more);
 
     Response::builder()
         .header("Content-Type", "text/html; charset=utf-8")
         .body(Full::new(Bytes::from(narumincho_vdom::to_html(
             &definy_ui::render(
-                &definy_ui::AppState {
-                    focused_path: None,
-                    active_dropdown_name: None,
-                    dropdown_search_query: String::new(),
-                    login_or_create_account_dialog_state:
-                        definy_ui::LoginOrCreateAccountDialogState {
-                            generated_key: None,
-                            state: definy_ui::CreatingAccountState::LogIn,
-                            username: String::new(),
-                            current_password: String::new(),
-                        },
-                    current_key: None,
-                    part_definition_form: definy_ui::PartDefinitionFormState {
-                        part_name_input: String::new(),
-                        part_type_input: Some(definy_event::event::PartType::Number),
-                        part_description_input: String::new(),
-                        composing_expression: definy_event::event::Expression::Number(
-                            definy_event::event::NumberExpression { value: 0 },
-                        ),
-                        eval_result: None,
-                    },
-                    part_update_form: definy_ui::PartUpdateFormState {
-                        part_definition_event_hash: None,
-                        part_name_input: String::new(),
-                        part_description_input: String::new(),
-                        expression_input: definy_event::event::Expression::Number(
-                            definy_event::event::NumberExpression { value: 0 },
-                        ),
-                    },
-                    event_detail_eval_result: None,
-                    profile_name_input: String::new(),
-                    is_header_popover_open: false,
-                    events,
-                    location,
-                },
+                &definy_ui::build_initial_state(location, events, false, has_more, None),
                 &Some(definy_ui::ResourceHash {
                     js: JAVASCRIPT_HASH.to_string(),
                     wasm: WASM_HASH.to_string(),
