@@ -79,7 +79,15 @@ pub fn render_root_expression_editor(
         Vec::new(),
         diagnostics.as_slice(),
         false,
+        true,
     )
+}
+
+fn allow_kind_change_for_nested_values(allow_kind_change: bool, path: &[PathStep]) -> bool {
+    if allow_kind_change {
+        return true;
+    }
+    path.iter().any(|step| matches!(step, PathStep::ConstructorValue))
 }
 
 fn render_expression_editor(
@@ -90,6 +98,7 @@ fn render_expression_editor(
     scope_variables: Vec<ScopeVariable>,
     diagnostics: &[TypeDiagnostic],
     structure_locked: bool,
+    allow_kind_change: bool,
 ) -> Node<AppState> {
     let current_selection = current_selection_value(expression);
     let selector_options = selector_options(state, &scope_variables);
@@ -99,7 +108,7 @@ fn render_expression_editor(
         .map(|diagnostic| diagnostic.message.as_str());
 
     let mut children = Vec::new();
-    if !structure_locked {
+    if allow_kind_change {
         children.push(expression_selector(
             state,
             path.clone(),
@@ -168,6 +177,7 @@ fn render_expression_editor(
                             scope_variables.clone(),
                             diagnostics,
                             structure_locked,
+                            allow_kind_change,
                         ),
                     ])
                     .into_node(),
@@ -206,6 +216,8 @@ fn render_expression_editor(
                 for (index, item) in list_expression.items.iter().enumerate() {
                     let mut item_path = path.clone();
                     item_path.push(PathStep::ListItemValue(index));
+                    let allow_kind_for_item =
+                        allow_kind_change_for_nested_values(allow_kind_change, path.as_slice());
                     let remove_btn = remove_list_item_button(path.clone(), index, target);
                     grid_children.push(
                         Div::new()
@@ -239,6 +251,7 @@ fn render_expression_editor(
                                         scope_variables.clone(),
                                         diagnostics,
                                         structure_locked,
+                                        allow_kind_for_item,
                                     )])
                                     .into_node(),
                             );
@@ -298,19 +311,20 @@ fn render_expression_editor(
                                         remove_list_item_button(path.clone(), index, target),
                                     ])
                                     .into_node(),
-                                render_expression_editor(
-                                    state,
-                                    item,
-                                    item_path,
-                                    target,
-                                    scope_variables.clone(),
-                                    diagnostics,
-                                    structure_locked,
-                                ),
-                            ])
-                            .into_node()
-                    })
-                    .collect::<Vec<Node<AppState>>>();
+                                    render_expression_editor(
+                                        state,
+                                        item,
+                                        item_path,
+                                        target,
+                                        scope_variables.clone(),
+                                        diagnostics,
+                                        structure_locked,
+                                        allow_kind_for_item,
+                                    ),
+                                ])
+                                .into_node()
+                        })
+                        .collect::<Vec<Node<AppState>>>();
                 list_children.push(add_list_item_button(path.clone(), target));
                 children.push(
                     Div::new()
@@ -352,6 +366,7 @@ fn render_expression_editor(
                                     scope_variables.clone(),
                                     diagnostics,
                                     structure_locked,
+                                    allow_kind_change,
                                 ),
                             ])
                             .into_node(),
@@ -367,6 +382,7 @@ fn render_expression_editor(
                                     scope_variables.clone(),
                                     diagnostics,
                                     structure_locked,
+                                    allow_kind_change,
                                 ),
                             ])
                             .into_node(),
@@ -406,6 +422,7 @@ fn render_expression_editor(
                                     scope_variables.clone(),
                                     diagnostics,
                                     structure_locked,
+                                    allow_kind_change,
                                 ),
                             ])
                             .into_node(),
@@ -421,6 +438,7 @@ fn render_expression_editor(
                                     scope_variables.clone(),
                                     diagnostics,
                                     structure_locked,
+                                    allow_kind_change,
                                 ),
                             ])
                             .into_node(),
@@ -436,6 +454,7 @@ fn render_expression_editor(
                                     scope_variables.clone(),
                                     diagnostics,
                                     structure_locked,
+                                    allow_kind_change,
                                 ),
                             ])
                             .into_node(),
@@ -470,6 +489,7 @@ fn render_expression_editor(
                                     scope_variables.clone(),
                                     diagnostics,
                                     structure_locked,
+                                    allow_kind_change,
                                 ),
                             ])
                             .into_node(),
@@ -485,6 +505,7 @@ fn render_expression_editor(
                                     scope_variables.clone(),
                                     diagnostics,
                                     structure_locked,
+                                    allow_kind_change,
                                 ),
                             ])
                             .into_node(),
@@ -526,6 +547,7 @@ fn render_expression_editor(
                                     scope_variables.clone(),
                                     diagnostics,
                                     structure_locked,
+                                    allow_kind_change,
                                 ),
                             ])
                             .into_node(),
@@ -545,6 +567,7 @@ fn render_expression_editor(
                                     body_scope,
                                     diagnostics,
                                     structure_locked,
+                                    allow_kind_change,
                                 )
                             }])
                             .into_node(),
@@ -560,6 +583,8 @@ fn render_expression_editor(
                 .map(|(index, item)| {
                     let mut value_path = path.clone();
                     value_path.push(PathStep::RecordItemValue(index));
+                    let allow_kind_for_value =
+                        allow_kind_change_for_nested_values(allow_kind_change, path.as_slice());
                     Div::new()
                         .style(
                             Style::new()
@@ -619,6 +644,7 @@ fn render_expression_editor(
                                         scope_variables.clone(),
                                         diagnostics,
                                         structure_locked,
+                                        allow_kind_for_value,
                                     ),
                                 ])
                                 .into_node(),
@@ -672,6 +698,7 @@ fn render_expression_editor(
                             scope_variables.clone(),
                             diagnostics,
                             true,
+                            false,
                         ),
                     ])
                     .into_node(),
