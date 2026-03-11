@@ -87,7 +87,8 @@ fn allow_kind_change_for_nested_values(allow_kind_change: bool, path: &[PathStep
     if allow_kind_change {
         return true;
     }
-    path.iter().any(|step| matches!(step, PathStep::ConstructorValue))
+    path.iter()
+        .any(|step| matches!(step, PathStep::ConstructorValue))
 }
 
 fn render_expression_editor(
@@ -285,6 +286,8 @@ fn render_expression_editor(
                     .map(|(index, item)| {
                         let mut item_path = path.clone();
                         item_path.push(PathStep::ListItemValue(index));
+                        let allow_kind_for_item =
+                            allow_kind_change_for_nested_values(allow_kind_change, path.as_slice());
                         Div::new()
                             .style(
                                 Style::new()
@@ -311,20 +314,20 @@ fn render_expression_editor(
                                         remove_list_item_button(path.clone(), index, target),
                                     ])
                                     .into_node(),
-                                    render_expression_editor(
-                                        state,
-                                        item,
-                                        item_path,
-                                        target,
-                                        scope_variables.clone(),
-                                        diagnostics,
-                                        structure_locked,
-                                        allow_kind_for_item,
-                                    ),
-                                ])
-                                .into_node()
-                        })
-                        .collect::<Vec<Node<AppState>>>();
+                                render_expression_editor(
+                                    state,
+                                    item,
+                                    item_path,
+                                    target,
+                                    scope_variables.clone(),
+                                    diagnostics,
+                                    structure_locked,
+                                    allow_kind_for_item,
+                                ),
+                            ])
+                            .into_node()
+                    })
+                    .collect::<Vec<Node<AppState>>>();
                 list_children.push(add_list_item_button(path.clone(), target));
                 children.push(
                     Div::new()
@@ -698,7 +701,7 @@ fn render_expression_editor(
                             scope_variables.clone(),
                             diagnostics,
                             true,
-                            false,
+                            true,
                         ),
                     ])
                     .into_node(),
@@ -1063,15 +1066,75 @@ fn check_expression_type(
             );
             let mut value_path = path.to_vec();
             value_path.push(PathStep::ConstructorValue);
-            check_expression_type(
-                constructor_expression.value.as_ref(),
-                value_path.as_slice(),
-                Some(expression_type_from_constructor_shape(&inferred_shape)),
-                env,
-                part_type_map,
-                part_snapshot_map,
-                diagnostics,
-            );
+            let expected_value_type = expression_type_from_constructor_shape(&inferred_shape);
+            if let ConstructorValueShape::Record(fields) = &inferred_shape {
+                if let definy_event::event::Expression::TypeLiteral(record_expression) =
+                    constructor_expression.value.as_ref()
+                {
+                    for (index, (field_name, field_shape)) in fields.iter().enumerate() {
+                        if let Some(item) = record_expression.items.get(index) {
+                            if item.key.as_ref() != field_name.as_str() {
+                                diagnostics.push(TypeDiagnostic {
+                                    path: value_path.clone(),
+                                    message: format!(
+                                        "Field name mismatch: expected {}, but found {}",
+                                        field_name, item.key
+                                    ),
+                                });
+                            }
+                            let field_expected_type =
+                                expression_type_from_constructor_shape(field_shape);
+                            let mut field_path = value_path.clone();
+                            field_path.push(PathStep::RecordItemValue(index));
+                            check_expression_type(
+                                item.value.as_ref(),
+                                field_path.as_slice(),
+                                Some(field_expected_type),
+                                env,
+                                part_type_map,
+                                part_snapshot_map,
+                                diagnostics,
+                            );
+                        } else {
+                            diagnostics.push(TypeDiagnostic {
+                                path: value_path.clone(),
+                                message: format!("Missing field: {}", field_name),
+                            });
+                        }
+                    }
+                    if record_expression.items.len() > fields.len() {
+                        diagnostics.push(TypeDiagnostic {
+                            path: value_path.clone(),
+                            message: "Extra fields in record".to_string(),
+                        });
+                    }
+                } else {
+                    push_type_mismatch_diagnostic(
+                        diagnostics,
+                        value_path.as_slice(),
+                        &expected_value_type,
+                        &check_expression_type(
+                            constructor_expression.value.as_ref(),
+                            value_path.as_slice(),
+                            None,
+                            env,
+                            part_type_map,
+                            part_snapshot_map,
+                            &mut Vec::new(),
+                        ),
+                    );
+                }
+            } else {
+                check_expression_type(
+                    constructor_expression.value.as_ref(),
+                    value_path.as_slice(),
+                    Some(expected_value_type),
+                    env,
+                    part_type_map,
+                    part_snapshot_map,
+                    diagnostics,
+                );
+            }
             ExpressionType::TypePart(constructor_expression.type_part_definition_event_hash)
         }
     };
