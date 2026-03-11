@@ -227,14 +227,15 @@ async fn handle_html(
             )
         })
         .collect::<Vec<_>>();
+    let has_more = events.len() == 20;
     let ssr_initial_state_json =
-        definy_ui::encode_ssr_initial_state(&event_binary_array.into_vec());
+        definy_ui::encode_ssr_state(&event_binary_array.into_vec(), has_more);
 
     Response::builder()
         .header("Content-Type", "text/html; charset=utf-8")
         .body(Full::new(Bytes::from(narumincho_vdom::to_html(
             &definy_ui::render(
-                &definy_ui::build_initial_state(location, events, false, false, None),
+                &definy_ui::build_initial_state(location, events, false, has_more, None),
                 &Some(definy_ui::ResourceHash {
                     js: JAVASCRIPT_HASH.to_string(),
                     wasm: WASM_HASH.to_string(),

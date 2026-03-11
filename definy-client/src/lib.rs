@@ -48,7 +48,7 @@ fn read_ssr_initial_state_text() -> Option<String> {
         .text_content()
 }
 
-fn read_ssr_events() -> Option<
+fn read_ssr_state() -> Option<(
     Vec<(
         [u8; 32],
         Result<
@@ -56,17 +56,22 @@ fn read_ssr_events() -> Option<
             definy_event::VerifyAndDeserializeError,
         >,
     )>,
-> {
+    bool,
+)> {
     let text = SSR_INITIAL_STATE_TEXT.as_ref()?.to_string();
-    let event_binaries = definy_ui::decode_ssr_initial_state(text.as_str())?;
+    let decoded = definy_ui::decode_ssr_state(text.as_str())?;
     Some(
-        event_binaries
-            .into_iter()
-            .map(|bytes| {
-                let hash: [u8; 32] = <sha2::Sha256 as sha2::Digest>::digest(&bytes).into();
-                (hash, definy_event::verify_and_deserialize(&bytes))
-            })
-            .collect(),
+        (
+            decoded
+                .event_binaries
+                .into_iter()
+                .map(|bytes| {
+                    let hash: [u8; 32] = <sha2::Sha256 as sha2::Digest>::digest(&bytes).into();
+                    (hash, definy_event::verify_and_deserialize(&bytes))
+                })
+                .collect(),
+            decoded.has_more,
+        ),
     )
 }
 
@@ -75,8 +80,8 @@ impl narumincho_vdom_client::App<AppState> for DefinyApp {
         fire: &std::rc::Rc<dyn Fn(Box<dyn FnOnce(AppState) -> AppState>)>,
     ) -> AppState {
         let fire = std::rc::Rc::clone(fire);
-        let ssr_events = read_ssr_events();
-        let has_ssr_events = ssr_events.is_some();
+        let ssr_state = read_ssr_state();
+        let has_ssr_events = ssr_state.is_some();
 
         let fire_for_keydown = std::rc::Rc::clone(&fire);
         let on_keydown =
@@ -140,8 +145,9 @@ impl narumincho_vdom_client::App<AppState> for DefinyApp {
             definy_ui::Location::from_url(&pathname)
         };
 
-        let (events, is_loading, has_more) = if let Some(ssr_events) = ssr_events {
-            (ssr_events, false, false) // SSRでは全件取得と仮定
+        let (events, is_loading, has_more) = if let Some((ssr_events, has_more)) = ssr_state {
+            // SSRが送ってきた状態をそのまま採用
+            (ssr_events, false, has_more)
         } else {
             (Vec::new(), true, true)
         };
