@@ -10,6 +10,7 @@ fn run() -> Result<(), JsValue> {
     Ok(())
 }
 
+mod keyboard_nav;
 struct DefinyApp {}
 
 fn read_ssr_events() -> Option<
@@ -44,6 +45,23 @@ impl narumincho_vdom_client::App<AppState> for DefinyApp {
         let fire = std::rc::Rc::clone(fire);
         let ssr_events = read_ssr_events();
         let has_ssr_events = ssr_events.is_some();
+
+        let fire_for_keydown = std::rc::Rc::clone(&fire);
+        let on_keydown =
+            wasm_bindgen::closure::Closure::wrap(Box::new(move |event: web_sys::KeyboardEvent| {
+                let key = event.key();
+                let fire = std::rc::Rc::clone(&fire_for_keydown);
+                fire(Box::new(move |state| {
+                    keyboard_nav::handle_keydown(state, key)
+                }));
+            })
+                as Box<dyn FnMut(web_sys::KeyboardEvent)>);
+        web_sys::window()
+            .unwrap()
+            .add_event_listener_with_callback("keydown", on_keydown.as_ref().unchecked_ref())
+            .unwrap();
+        on_keydown.forget();
+
         wasm_bindgen_futures::spawn_local(async move {
             if !has_ssr_events {
                 let events = definy_ui::fetch::get_events().await.unwrap();
@@ -102,6 +120,7 @@ impl narumincho_vdom_client::App<AppState> for DefinyApp {
                 use narumincho_vdom::Route;
                 definy_ui::Location::from_url(&pathname)
             },
+            focused_path: None,
         }
     }
 

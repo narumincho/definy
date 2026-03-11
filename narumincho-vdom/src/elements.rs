@@ -20,7 +20,7 @@ macro_rules! define_element {
                 }
             }
 
-            fn attribute(mut self, key: &str, value: &str) -> Self {
+            pub fn attribute(mut self, key: &str, value: &str) -> Self {
                 self.attributes.push((key.to_string(), value.to_string()));
                 self
             }
@@ -102,6 +102,13 @@ define_element!(
     "body",
     "https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/body"
 );
+
+impl<State> Body<State> {
+    pub fn on_keydown(mut self, msg: EventHandler<State>) -> Self {
+        self.events.push(("keydown".to_string(), msg));
+        self
+    }
+}
 define_element!(
     H1,
     "h1",
@@ -270,7 +277,7 @@ impl<State, L: crate::Route> A<State, L> {
         }
     }
 
-    fn attribute(mut self, key: &str, value: &str) -> Self {
+    pub fn attribute(mut self, key: &str, value: &str) -> Self {
         self.attributes.push((key.to_string(), value.to_string()));
         self
     }

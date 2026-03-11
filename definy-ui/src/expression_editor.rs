@@ -11,20 +11,7 @@ pub enum EditorTarget {
     PartUpdate,
 }
 
-#[derive(Clone, Copy, PartialEq, Eq)]
-enum PathStep {
-    Left,
-    Right,
-    Condition,
-    Then,
-    Else,
-    LetValue,
-    LetBody,
-    ListItemValue(usize),
-    RecordItemValue(usize),
-    ConstructorValue,
-    TypeListItem,
-}
+use crate::app_state::PathStep;
 
 #[derive(Clone)]
 struct ScopeVariable {
@@ -133,6 +120,16 @@ fn render_expression_editor(
         );
     }
 
+    let is_focused = state.focused_path.as_ref() == Some(&path);
+    let border_style = if is_focused {
+        "2px solid var(--accent)"
+    } else if warning_message.is_some() {
+        "1px solid var(--error)"
+    } else {
+        "1px solid transparent"
+    };
+    let path_str = crate::app_state::path_to_string(&path);
+
     match expression {
         definy_event::event::Expression::Number(number_expression) => {
             children.push(number_input(path, target, number_expression.value));
@@ -176,58 +173,156 @@ fn render_expression_editor(
             );
         }
         definy_event::event::Expression::ListLiteral(list_expression) => {
-            let mut list_children = list_expression
-                .items
-                .iter()
-                .enumerate()
-                .map(|(index, item)| {
+            let tabular_keys = get_tabular_keys(list_expression);
+            if let Some(keys) = tabular_keys {
+                let mut grid_children = Vec::new();
+                grid_children.push(
+                    Div::new()
+                        .children([text("Item")])
+                        .style(
+                            Style::new()
+                                .set("font-weight", "bold")
+                                .set("font-size", "0.8rem")
+                                .set("color", "var(--text-secondary)")
+                                .set("padding", "0.2rem 0.5rem"),
+                        )
+                        .into_node(),
+                );
+                for key in &keys {
+                    grid_children.push(
+                        Div::new()
+                            .children([text(key)])
+                            .style(
+                                Style::new()
+                                    .set("font-weight", "bold")
+                                    .set("font-size", "0.8rem")
+                                    .set("color", "var(--text-secondary)")
+                                    .set("padding", "0.2rem 0.5rem"),
+                            )
+                            .into_node(),
+                    );
+                }
+                for (index, item) in list_expression.items.iter().enumerate() {
                     let mut item_path = path.clone();
                     item_path.push(PathStep::ListItemValue(index));
+                    let remove_btn = remove_list_item_button(path.clone(), index, target);
+                    grid_children.push(
+                        Div::new()
+                            .style(
+                                Style::new()
+                                    .set("display", "flex")
+                                    .set("align-items", "center")
+                                    .set("gap", "0.4rem")
+                                    .set("padding", "0.2rem 0.5rem"),
+                            )
+                            .children([text(format!("{}", index + 1)), remove_btn])
+                            .into_node(),
+                    );
+                    if let definy_event::event::Expression::TypeLiteral(record) = item {
+                        for (i, record_item) in record.items.iter().enumerate() {
+                            let mut value_path = item_path.clone();
+                            value_path.push(PathStep::RecordItemValue(i));
+                            grid_children.push(
+                                Div::new()
+                                    .style(
+                                        Style::new()
+                                            .set("display", "flex")
+                                            .set("align-items", "stretch")
+                                            .set("padding", "0.2rem"),
+                                    )
+                                    .children([render_expression_editor(
+                                        state,
+                                        record_item.value.as_ref(),
+                                        value_path,
+                                        target,
+                                        scope_variables.clone(),
+                                        diagnostics,
+                                        structure_locked,
+                                    )])
+                                    .into_node(),
+                            );
+                        }
+                    }
+                }
+                children.push(
                     Div::new()
                         .style(
                             Style::new()
                                 .set("display", "grid")
-                                .set("gap", "0.4rem")
-                                .set("padding", "0.5rem")
+                                .set(
+                                    "grid-template-columns",
+                                    &format!("max-content repeat({}, 1fr)", keys.len()),
+                                )
+                                .set("gap", "0.2rem")
                                 .set("border", "1px solid var(--border)")
-                                .set("border-radius", "var(--radius-md)"),
+                                .set("border-radius", "var(--radius-md)")
+                                .set("padding", "0.5rem")
+                                .set("overflow-x", "auto"),
                         )
-                        .children([
-                            Div::new()
-                                .style(Style::new().set("display", "flex").set("gap", "0.5rem"))
-                                .children([
-                                    Div::new()
-                                        .style(
-                                            Style::new()
-                                                .set("font-size", "0.8rem")
-                                                .set("color", "var(--text-secondary)")
-                                                .set("flex", "1"),
-                                        )
-                                        .children([text(format!("Item {}", index + 1))])
-                                        .into_node(),
-                                    remove_list_item_button(path.clone(), index, target),
-                                ])
-                                .into_node(),
-                            render_expression_editor(
-                                state,
-                                item,
-                                item_path,
-                                target,
-                                scope_variables.clone(),
-                                diagnostics,
-                                structure_locked,
-                            ),
-                        ])
-                        .into_node()
-                })
-                .collect::<Vec<Node<AppState>>>();
-            list_children.push(add_list_item_button(path, target));
-            children.push(
-                Div::new()
-                    .style(Style::new().set("display", "grid").set("gap", "0.6rem"))
-                    .children(list_children)
-                    .into_node(),
-            );
+                        .children(grid_children)
+                        .into_node(),
+                );
+                children.push(add_list_item_button(path.clone(), target));
+            } else {
+                let mut list_children = list_expression
+                    .items
+                    .iter()
+                    .enumerate()
+                    .map(|(index, item)| {
+                        let mut item_path = path.clone();
+                        item_path.push(PathStep::ListItemValue(index));
+                        Div::new()
+                            .style(
+                                Style::new()
+                                    .set("display", "flex")
+                                    .set("flex-direction", "column")
+                                    .set("gap", "0.4rem")
+                                    .set("padding", "0.5rem")
+                                    .set("border", "1px solid var(--border)")
+                                    .set("border-radius", "var(--radius-md)"),
+                            )
+                            .children([
+                                Div::new()
+                                    .style(Style::new().set("display", "flex").set("gap", "0.5rem"))
+                                    .children([
+                                        Div::new()
+                                            .style(
+                                                Style::new()
+                                                    .set("font-size", "0.8rem")
+                                                    .set("color", "var(--text-secondary)")
+                                                    .set("flex", "1"),
+                                            )
+                                            .children([text(format!("Item {}", index + 1))])
+                                            .into_node(),
+                                        remove_list_item_button(path.clone(), index, target),
+                                    ])
+                                    .into_node(),
+                                render_expression_editor(
+                                    state,
+                                    item,
+                                    item_path,
+                                    target,
+                                    scope_variables.clone(),
+                                    diagnostics,
+                                    structure_locked,
+                                ),
+                            ])
+                            .into_node()
+                    })
+                    .collect::<Vec<Node<AppState>>>();
+                list_children.push(add_list_item_button(path.clone(), target));
+                children.push(
+                    Div::new()
+                        .style(
+                            Style::new()
+                                .set("display", "flex")
+                                .set("flex-direction", "column")
+                                .set("gap", "0.6rem"),
+                        )
+                        .children(list_children)
+                        .into_node(),
+                );
+            }
         }
         definy_event::event::Expression::Add(add_expression) => {
             let mut left_path = path.clone();
@@ -239,8 +334,8 @@ fn render_expression_editor(
                 Div::new()
                     .style(
                         Style::new()
-                            .set("display", "grid")
-                            .set("grid-template-columns", "1fr 1fr")
+                            .set("display", "flex")
+                            .set("flex-wrap", "wrap")
                             .set("gap", "0.6rem"),
                     )
                     .children([
@@ -293,8 +388,8 @@ fn render_expression_editor(
                 Div::new()
                     .style(
                         Style::new()
-                            .set("display", "grid")
-                            .set("grid-template-columns", "1fr")
+                            .set("display", "flex")
+                            .set("flex-wrap", "wrap")
                             .set("gap", "0.6rem"),
                     )
                     .children([
@@ -357,8 +452,8 @@ fn render_expression_editor(
                 Div::new()
                     .style(
                         Style::new()
-                            .set("display", "grid")
-                            .set("grid-template-columns", "1fr 1fr")
+                            .set("display", "flex")
+                            .set("flex-wrap", "wrap")
                             .set("gap", "0.6rem"),
                     )
                     .children([
@@ -406,8 +501,8 @@ fn render_expression_editor(
                 Div::new()
                     .style(
                         Style::new()
-                            .set("display", "grid")
-                            .set("grid-template-columns", "1fr")
+                            .set("display", "flex")
+                            .set("flex-wrap", "wrap")
                             .set("gap", "0.6rem"),
                     )
                     .children([
@@ -598,19 +693,13 @@ fn render_expression_editor(
 
     Div::new()
         .class("event-detail-card")
+        .attribute("data-path", &path_str)
         .style(
             Style::new()
                 .set("padding", "0.8rem")
                 .set("display", "grid")
                 .set("gap", "0.6rem")
-                .set(
-                    "border",
-                    if warning_message.is_some() {
-                        "1px solid var(--error)"
-                    } else {
-                        "1px solid transparent"
-                    },
-                ),
+                .set("border", border_style),
         )
         .children(children)
         .into_node()
@@ -2051,6 +2140,33 @@ fn next_local_variable_id(expression: &definy_event::event::Expression) -> i64 {
         }
     }
     max_local_variable_id(expression).saturating_add(1).max(1)
+}
+
+fn get_tabular_keys(
+    list_expression: &definy_event::event::ListLiteralExpression,
+) -> Option<Vec<String>> {
+    if list_expression.items.is_empty() {
+        return None;
+    }
+    let mut common_keys: Option<Vec<String>> = None;
+    for item in &list_expression.items {
+        if let definy_event::event::Expression::TypeLiteral(record) = item {
+            if record.items.is_empty() {
+                return None;
+            }
+            let keys: Vec<String> = record.items.iter().map(|i| i.key.to_string()).collect();
+            if let Some(ref c) = common_keys {
+                if c != &keys {
+                    return None;
+                }
+            } else {
+                common_keys = Some(keys);
+            }
+        } else {
+            return None;
+        }
+    }
+    common_keys
 }
 
 #[cfg(test)]

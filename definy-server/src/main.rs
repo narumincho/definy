@@ -235,6 +235,7 @@ async fn handle_html(
         .body(Full::new(Bytes::from(narumincho_vdom::to_html(
             &definy_ui::render(
                 &definy_ui::AppState {
+                    focused_path: None,
                     login_or_create_account_dialog_state:
                         definy_ui::LoginOrCreateAccountDialogState {
                             generated_key: None,
