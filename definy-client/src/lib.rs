@@ -1,5 +1,5 @@
 use definy_ui::AppState;
-use definy_ui::{CreatingAccountState, LoginOrCreateAccountDialogState, ResourceHash};
+use definy_ui::ResourceHash;
 use wasm_bindgen::JsValue;
 use wasm_bindgen::prelude::*;
 
@@ -127,78 +127,26 @@ impl narumincho_vdom_client::App<AppState> for DefinyApp {
             }
         });
 
-        let (event_cache, event_list_state) = if let Some(ssr_events) = ssr_events {
-            let mut event_cache = std::collections::HashMap::new();
-            let mut event_hashes = Vec::new();
-            for (hash, event) in ssr_events {
-                event_cache.insert(hash, event);
-                event_hashes.push(hash);
-            }
-            (event_cache, definy_ui::EventListState {
-                event_hashes,
-                current_offset: 0,
-                page_size: 20,
-                is_loading: false,
-                has_more: false, // SSRでは全件取得と仮定
-                filter_event_type: None,
-            })
-        } else {
-            (std::collections::HashMap::new(), definy_ui::EventListState {
-                event_hashes: Vec::new(),
-                current_offset: 0,
-                page_size: 20,
-                is_loading: true,
-                has_more: true,
-                filter_event_type: None,
-            })
+        let location = {
+            let initial_url = web_sys::window()
+                .unwrap()
+                .document()
+                .unwrap()
+                .url()
+                .unwrap_or_default();
+            let url = web_sys::Url::new(&initial_url).unwrap();
+            let pathname = url.pathname();
+            use narumincho_vdom::Route;
+            definy_ui::Location::from_url(&pathname)
         };
 
-        AppState {
-            login_or_create_account_dialog_state: LoginOrCreateAccountDialogState {
-                state: CreatingAccountState::LogIn,
-                username: String::new(),
-                generated_key: None,
-                current_password: String::new(),
-            },
-            event_cache,
-            event_list_state,
-            current_key: None,
-            part_definition_form: definy_ui::PartDefinitionFormState {
-                part_name_input: String::new(),
-                part_type_input: Some(definy_event::event::PartType::Number),
-                part_description_input: String::new(),
-                composing_expression: definy_event::event::Expression::Number(
-                    definy_event::event::NumberExpression { value: 0 },
-                ),
-                eval_result: None,
-            },
-            part_update_form: definy_ui::PartUpdateFormState {
-                part_definition_event_hash: None,
-                part_name_input: String::new(),
-                part_description_input: String::new(),
-                expression_input: definy_event::event::Expression::Number(
-                    definy_event::event::NumberExpression { value: 0 },
-                ),
-            },
-            event_detail_eval_result: None,
-            profile_name_input: String::new(),
-            is_header_popover_open: false,
-            location: {
-                let initial_url = web_sys::window()
-                    .unwrap()
-                    .document()
-                    .unwrap()
-                    .url()
-                    .unwrap_or_default();
-                let url = web_sys::Url::new(&initial_url).unwrap();
-                let pathname = url.pathname();
-                use narumincho_vdom::Route;
-                definy_ui::Location::from_url(&pathname)
-            },
-            focused_path: None,
-            active_dropdown_name: None,
-            dropdown_search_query: String::new(),
-        }
+        let (events, is_loading, has_more) = if let Some(ssr_events) = ssr_events {
+            (ssr_events, false, false) // SSRでは全件取得と仮定
+        } else {
+            (Vec::new(), true, true)
+        };
+
+        definy_ui::build_initial_state(location, events, is_loading, has_more, None)
     }
 
     fn on_navigate(state: AppState, url: String) -> AppState {

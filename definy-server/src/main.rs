@@ -227,12 +227,6 @@ async fn handle_html(
             )
         })
         .collect::<Vec<_>>();
-    let mut event_cache = std::collections::HashMap::new();
-    let mut event_hashes = Vec::new();
-    for (hash, event) in &events {
-        event_cache.insert(*hash, event.clone());
-        event_hashes.push(*hash);
-    }
     let ssr_initial_state_json =
         definy_ui::encode_ssr_initial_state(&event_binary_array.into_vec());
 
@@ -240,49 +234,7 @@ async fn handle_html(
         .header("Content-Type", "text/html; charset=utf-8")
         .body(Full::new(Bytes::from(narumincho_vdom::to_html(
             &definy_ui::render(
-                &definy_ui::AppState {
-                    focused_path: None,
-                    active_dropdown_name: None,
-                    dropdown_search_query: String::new(),
-                    login_or_create_account_dialog_state:
-                        definy_ui::LoginOrCreateAccountDialogState {
-                            generated_key: None,
-                            state: definy_ui::CreatingAccountState::LogIn,
-                            username: String::new(),
-                            current_password: String::new(),
-                        },
-                    current_key: None,
-                    part_definition_form: definy_ui::PartDefinitionFormState {
-                        part_name_input: String::new(),
-                        part_type_input: Some(definy_event::event::PartType::Number),
-                        part_description_input: String::new(),
-                        composing_expression: definy_event::event::Expression::Number(
-                            definy_event::event::NumberExpression { value: 0 },
-                        ),
-                        eval_result: None,
-                    },
-                    part_update_form: definy_ui::PartUpdateFormState {
-                        part_definition_event_hash: None,
-                        part_name_input: String::new(),
-                        part_description_input: String::new(),
-                        expression_input: definy_event::event::Expression::Number(
-                            definy_event::event::NumberExpression { value: 0 },
-                        ),
-                    },
-                    event_detail_eval_result: None,
-                    profile_name_input: String::new(),
-                    is_header_popover_open: false,
-                    event_cache,
-                    event_list_state: definy_ui::EventListState {
-                        event_hashes,
-                        current_offset: 0,
-                        page_size: 20,
-                        is_loading: false,
-                        has_more: false,
-                        filter_event_type: None,
-                    },
-                    location,
-                },
+                &definy_ui::build_initial_state(location, events, false, false, None),
                 &Some(definy_ui::ResourceHash {
                     js: JAVASCRIPT_HASH.to_string(),
                     wasm: WASM_HASH.to_string(),
