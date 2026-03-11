@@ -1,4 +1,4 @@
-use definy_event::event::EventContent;
+use definy_event::event::{EventContent, EventType};
 use narumincho_vdom::*;
 
 use crate::app_state::AppState;
@@ -29,6 +29,53 @@ fn optional_part_type_text(part_type: &Option<definy_event::event::PartType>) ->
 }
 
 pub fn event_list_view(state: &AppState) -> Node<AppState> {
+    let state = state.clone();
+    // Load events if needed
+    let _filter = state.event_list_state.filter_event_type;
+    let _page_size = state.event_list_state.page_size;
+
+    let filter_options = vec![
+        ("".to_string(), "All Events".to_string()),
+        ("create_account".to_string(), "Create Account".to_string()),
+        ("change_profile".to_string(), "Change Profile".to_string()),
+        ("part_definition".to_string(), "Part Definition".to_string()),
+        ("part_update".to_string(), "Part Update".to_string()),
+    ];
+
+    let current_filter = state.event_list_state.filter_event_type
+        .as_ref()
+        .map(|et| et.to_string())
+        .unwrap_or_else(|| "".to_string());
+
+    let filter_dropdown = crate::dropdown::searchable_dropdown(
+        &state,
+        "event_filter",
+        &current_filter,
+        &filter_options,
+        std::rc::Rc::new(|value| {
+            Box::new(move |state: AppState| {
+                let event_type = match value.as_str() {
+                    "create_account" => Some(EventType::CreateAccount),
+                    "change_profile" => Some(EventType::ChangeProfile),
+                    "part_definition" => Some(EventType::PartDefinition),
+                    "part_update" => Some(EventType::PartUpdate),
+                    _ => None,
+                };
+                // Reset list and load first page with new filter
+                let mut next = state.clone();
+                next.event_list_state = crate::EventListState {
+                    event_hashes: Vec::new(),
+                    current_offset: 0,
+                    page_size: 20,
+                    is_loading: true,
+                    has_more: true,
+                    filter_event_type: event_type,
+                };
+                next
+            })
+        }),
+    );
+
     let part_definition_form = if state.current_key.is_some() {
         Some(
             Div::new()
@@ -46,15 +93,15 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
                         .set("border", "1px solid var(--border)"),
                 )
                 .children([
-                    part_name_input(state),
-                    part_type_input(state),
-                    part_description_input(state),
+                    part_name_input(&state),
+                    part_type_input(&state),
+                    part_description_input(&state),
                     Div::new()
                     .style(Style::new().set("color", "var(--text-secondary)").set("font-size", "0.84rem"))
                         .children([text("Expression Builder")])
                         .into_node(),
                     render_root_expression_editor(
-                        state,
+                        &state,
                         &state.part_definition_form.composing_expression,
                         EditorTarget::PartDefinition,
                     ),
@@ -78,9 +125,10 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
                                 .type_("button")
                                 .on_click(EventHandler::new(async |set_state| {
                                     set_state(Box::new(|state: AppState| {
+                                        let events_vec: Vec<_> = state.event_list_state.event_hashes.iter().filter_map(|hash| state.event_cache.get(hash).map(|event| (*hash, event.clone()))).collect();
                                         let result = match evaluate_expression(
                                             &state.part_definition_form.composing_expression,
-                                            &state.events,
+                                            &events_vec,
                                         )
                                         {
                                             Ok(value) => format!("Result: {}", value),
@@ -146,11 +194,28 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
                                             let status = crate::fetch::post_event(event_binary.as_slice()).await;
                                             match status {
                                                 Ok(_) => {
-                                                    let events = crate::fetch::get_events().await;
+                                                    let events = crate::fetch::get_events(None, Some(20), Some(0)).await;
                                                     if let Ok(events) = events {
-                                                        set_state_for_async(Box::new(|state| AppState {
-                                                            events,
-                                                            ..state.clone()
+                                                        set_state_for_async(Box::new(|state| {
+                                                            let events_len = events.len();
+                                                            let mut event_cache = state.event_cache.clone();
+                                                            let mut event_hashes = Vec::new();
+                                                            for (hash, event) in events {
+                                                                event_cache.insert(hash, event);
+                                                                event_hashes.push(hash);
+                                                            }
+                                                            AppState {
+                                                                event_cache,
+                                                                event_list_state: crate::EventListState {
+                                                                    event_hashes,
+                                                                    current_offset: 0,
+                                                                    page_size: 20,
+                                                                    is_loading: false,
+                                                                    has_more: events_len == 20,
+                                                                    filter_event_type: None,
+                                                                },
+                                                                ..state.clone()
+                                                            }
                                                         }));
                                                     }
                                                 }
@@ -190,6 +255,7 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
         .style(crate::layout::page_shell_style("1.25rem"))
         .children({
             let mut children = Vec::new();
+            children.push(filter_dropdown);
             if let Some(part_definition_form) = part_definition_form {
                 children.push(part_definition_form);
             }
@@ -216,13 +282,102 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
                         let account_name_map = state.account_name_map();
 
                         state
-                            .events
+                            .event_list_state
+                            .event_hashes
                             .iter()
+                            .filter_map(|hash| state.event_cache.get(hash).map(|event| (hash, event)))
                             .map(|(hash, event)| event_view(hash, event, &account_name_map))
                             .collect::<Vec<Node<AppState>>>()
                     })
                     .into_node(),
             );
+            if state.event_list_state.is_loading {
+                children.push(
+                    Div::new()
+                        .style(Style::new().set("text-align", "center").set("padding", "1rem"))
+                        .children([text("Loading events...")])
+                        .into_node(),
+                );
+            } else if state.event_list_state.has_more {
+                let button_text = if state.event_list_state.event_hashes.is_empty() {
+                    "Load Events"
+                } else {
+                    "Load More Events"
+                };
+                children.push(
+                    Button::new()
+                        .type_("button")
+                        .on_click(EventHandler::new(move |set_state| {
+                            let state = state.clone();
+                            async move {
+                                let filter = state.event_list_state.filter_event_type;
+                                let page_size = state.event_list_state.page_size;
+                                let is_empty = state.event_list_state.event_hashes.is_empty();
+                                let current_offset_base = state.event_list_state.current_offset;
+                                let set_state = std::rc::Rc::new(set_state);
+                                set_state(Box::new(|state: AppState| {
+                                    let mut next = state.clone();
+                                    next.event_list_state.is_loading = true;
+                                    next
+                                }));
+                                let current_offset = if is_empty {
+                                    0
+                                } else {
+                                    current_offset_base + page_size
+                                };
+                                let events = crate::fetch::get_events(
+                                    filter,
+                                    Some(page_size),
+                                    Some(current_offset),
+                                ).await;
+                                if let Ok(events) = events {
+                                    let events_len = events.len();
+                                    set_state(Box::new(move |state: AppState| {
+                                        let mut event_cache = state.event_cache.clone();
+                                        let mut event_hashes = if current_offset == 0 {
+                                            Vec::new()
+                                        } else {
+                                            state.event_list_state.event_hashes.clone()
+                                        };
+                                        for (hash, event) in events {
+                                            if !event_cache.contains_key(&hash) {
+                                                event_cache.insert(hash, event);
+                                                event_hashes.push(hash);
+                                            }
+                                        }
+                                        AppState {
+                                            event_cache,
+                                            event_list_state: crate::EventListState {
+                                                event_hashes,
+                                                current_offset,
+                                                page_size: state.event_list_state.page_size,
+                                                is_loading: false,
+                                                has_more: events_len == state.event_list_state.page_size as usize,
+                                                filter_event_type: state.event_list_state.filter_event_type,
+                                            },
+                                            ..state.clone()
+                                        }
+                                    }));
+                                } else {
+                                    set_state(Box::new(|state: AppState| {
+                                        let mut next = state.clone();
+                                        next.event_list_state.is_loading = false;
+                                        next
+                                    }));
+                                }
+                            }
+                        }))
+                        .children([text(button_text)])
+                        .into_node(),
+                );
+            } else if state.event_list_state.event_hashes.is_empty() && !state.event_list_state.is_loading {
+                children.push(
+                    Div::new()
+                        .style(Style::new().set("text-align", "center").set("padding", "1rem").set("color", "var(--text-secondary)"))
+                        .children([text("No events found. Click 'Load Events' to fetch.")])
+                        .into_node(),
+                );
+            }
             children
         })
         .into_node()

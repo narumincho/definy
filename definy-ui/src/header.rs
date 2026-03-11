@@ -221,12 +221,29 @@ fn popover(state: &AppState) -> Node<AppState> {
                                     };
 
                                     if fetch::post_event(event_binary.as_slice()).await.is_ok() {
-                                        if let Ok(events) = fetch::get_events().await {
-                                            set_state_for_async(Box::new(|state| AppState {
-                                                events,
-                                                profile_name_input: String::new(),
-                                                is_header_popover_open: false,
-                                                ..state.clone()
+                                        if let Ok(events) = fetch::get_events(None, Some(20), Some(0)).await {
+                                            set_state_for_async(Box::new(|state| {
+                                                let events_len = events.len();
+                                                let mut event_cache = state.event_cache.clone();
+                                                let mut event_hashes = Vec::new();
+                                                for (hash, event) in events {
+                                                    event_cache.insert(hash, event);
+                                                    event_hashes.push(hash);
+                                                }
+                                                AppState {
+                                                    event_cache,
+                                                    event_list_state: crate::EventListState {
+                                                        event_hashes,
+                                                        current_offset: 0,
+                                                        page_size: 20,
+                                                        is_loading: false,
+                                                        has_more: events_len == 20,
+                                                        filter_event_type: None,
+                                                    },
+                                                    profile_name_input: String::new(),
+                                                    is_header_popover_open: false,
+                                                    ..state.clone()
+                                                }
                                             }));
                                         }
                                     } else {

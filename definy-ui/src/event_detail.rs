@@ -31,7 +31,7 @@ pub fn event_detail_view(state: &AppState, target_hash: &[u8; 32]) -> Node<AppSt
     let account_name_map = state.account_name_map();
     let mut target_event_opt = None;
 
-    for (hash, event_result) in &state.events {
+    for (hash, event_result) in &state.event_cache {
         if let Ok((_, event)) = event_result {
             if hash == target_hash {
                 target_event_opt = Some(event);
@@ -196,8 +196,9 @@ fn render_event_detail(
                                     let expression = expression.clone();
                                     async move {
                                         set_state(Box::new(move |state: AppState| {
+                                            let events_vec: Vec<_> = state.event_cache.iter().map(|(h, e)| (*h, e.clone())).collect();
                                             let eval_result =
-                                                evaluate_message_result(&expression, &state.events);
+                                                evaluate_message_result(&expression, &events_vec);
                                             AppState {
                                                 event_detail_eval_result: Some(eval_result),
                                                 ..state.clone()
@@ -385,7 +386,7 @@ fn collect_related_part_events(
     root_part_definition_hash: [u8; 32],
 ) -> Vec<([u8; 32], &Event)> {
     let mut events = state
-        .events
+        .event_cache
         .iter()
         .filter_map(|(hash, event_result)| {
             let (_, event) = event_result.as_ref().ok()?;

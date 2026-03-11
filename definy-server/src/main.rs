@@ -208,7 +208,7 @@ async fn handle_html(
         }
     }
 
-    let event_binary_array = match db::get_events(pool, None).await {
+    let event_binary_array = match db::get_events(pool, None, Some(20), Some(0)).await {
         Ok(events) => events,
         Err(error) => {
             eprintln!("Failed to get events for SSR: {:?}", error);
@@ -266,7 +266,15 @@ async fn handle_html(
                     event_detail_eval_result: None,
                     profile_name_input: String::new(),
                     is_header_popover_open: false,
-                    events,
+                    event_cache: std::collections::HashMap::new(),
+                    event_list_state: definy_ui::EventListState {
+                        event_hashes: vec![],
+                        current_offset: 0,
+                        page_size: 20,
+                        is_loading: false,
+                        has_more: true,
+                        filter_event_type: None,
+                    },
                     location,
                 },
                 &Some(definy_ui::ResourceHash {

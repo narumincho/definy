@@ -39,7 +39,7 @@ struct SsrInitialState {
 }
 
 pub fn encode_ssr_initial_state(event_binaries: &[Vec<u8>]) -> Option<String> {
-    serde_json::to_string(&SsrInitialState {
+    serde_cbor::to_vec(&SsrInitialState {
         event_binaries_base64: event_binaries
             .iter()
             .map(|event_binary| {
@@ -51,11 +51,13 @@ pub fn encode_ssr_initial_state(event_binaries: &[Vec<u8>]) -> Option<String> {
             .collect(),
     })
     .ok()
+    .map(|vec| base64::Engine::encode(&base64::engine::general_purpose::URL_SAFE_NO_PAD, &vec))
 }
 
 pub fn decode_ssr_initial_state(json: &str) -> Option<Vec<Vec<u8>>> {
-    serde_json::from_str::<SsrInitialState>(json)
+    base64::Engine::decode(&base64::engine::general_purpose::URL_SAFE_NO_PAD, json)
         .ok()
+        .and_then(|vec| serde_cbor::from_slice::<SsrInitialState>(&vec).ok())
         .map(|state| {
             state
                 .event_binaries_base64

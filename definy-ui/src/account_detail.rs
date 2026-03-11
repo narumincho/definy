@@ -14,7 +14,7 @@ pub fn account_detail_view(
     let encoded_account_id = crate::hash_format::encode_hash32(account_id.0.as_ref());
 
     let account_events = state
-        .events
+        .event_cache
         .iter()
         .filter_map(|(hash, event_result)| {
             let (_, event) = event_result.as_ref().ok()?;

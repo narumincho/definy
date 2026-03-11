@@ -78,16 +78,19 @@ pub fn string_to_path(s: &str) -> Option<Vec<PathStep>> {
     s.split('.').map(PathStep::from_string).collect()
 }
 
+use std::collections::HashMap;
+
 #[derive(Clone)]
 pub struct AppState {
     pub login_or_create_account_dialog_state: LoginOrCreateAccountDialogState,
-    pub events: Vec<(
+    pub event_cache: HashMap<
         [u8; 32],
         Result<
             (ed25519_dalek::Signature, definy_event::event::Event),
             definy_event::VerifyAndDeserializeError,
         >,
-    )>,
+    >,
+    pub event_list_state: EventListState,
     pub current_key: Option<ed25519_dalek::SigningKey>,
     pub part_definition_form: PartDefinitionFormState,
     pub part_update_form: PartUpdateFormState,
@@ -98,6 +101,16 @@ pub struct AppState {
     pub focused_path: Option<Vec<PathStep>>,
     pub active_dropdown_name: Option<String>,
     pub dropdown_search_query: String,
+}
+
+#[derive(Clone)]
+pub struct EventListState {
+    pub event_hashes: Vec<[u8; 32]>,
+    pub current_offset: usize,
+    pub page_size: usize,
+    pub is_loading: bool,
+    pub has_more: bool,
+    pub filter_event_type: Option<definy_event::event::EventType>,
 }
 
 #[derive(Clone)]
@@ -122,7 +135,7 @@ impl AppState {
         &self,
     ) -> std::collections::HashMap<definy_event::event::AccountId, Box<str>> {
         let mut account_name_map = std::collections::HashMap::new();
-        for (_, event_result) in &self.events {
+        for event_result in self.event_cache.values() {
             if let Ok((_, event)) = event_result {
                 match &event.content {
                     definy_event::event::EventContent::CreateAccount(create_account_event) => {

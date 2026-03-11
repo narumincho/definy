@@ -108,16 +108,42 @@ pub async fn save_event(
 pub async fn get_events(
     pool: &sqlx::postgres::PgPool,
     event_type: Option<definy_event::event::EventType>,
+    limit: Option<usize>,
+    offset: Option<usize>,
 ) -> Result<Box<[Vec<u8>]>, anyhow::Error> {
-    let rows = match event_type {
-        Some(event_type) => sqlx::query(
-            "select (event_binary) from events where event_type = $1 ORDER BY time DESC",
-        )
-        .bind(event_type),
-        None => sqlx::query("select (event_binary) from events ORDER BY time DESC"),
+    let mut query = "select event_binary from events".to_string();
+    let mut conditions = Vec::new();
+    let mut binds = Vec::new();
+    let mut bind_index = 1;
+
+    if let Some(event_type) = event_type {
+        conditions.push(format!("event_type = ${}", bind_index));
+        binds.push(event_type);
+        bind_index += 1;
     }
-    .fetch_all(pool)
-    .await?;
+
+    if !conditions.is_empty() {
+        query.push_str(" where ");
+        query.push_str(&conditions.join(" and "));
+    }
+
+    query.push_str(" ORDER BY time DESC");
+
+    if let Some(limit) = limit {
+        query.push_str(&format!(" LIMIT {}", limit));
+    }
+
+    if let Some(offset) = offset {
+        query.push_str(&format!(" OFFSET {}", offset));
+    }
+
+    let mut sql_query = sqlx::query(&query);
+
+    for bind in binds {
+        sql_query = sql_query.bind(bind);
+    }
+
+    let rows = sql_query.fetch_all(pool).await?;
 
     let events = rows
         .into_iter()

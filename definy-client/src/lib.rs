@@ -64,10 +64,26 @@ impl narumincho_vdom_client::App<AppState> for DefinyApp {
 
         wasm_bindgen_futures::spawn_local(async move {
             if !has_ssr_events {
-                let events = definy_ui::fetch::get_events().await.unwrap();
-                fire(Box::new(move |state| AppState {
-                    events,
-                    ..state.clone()
+                let events = definy_ui::fetch::get_events(None, Some(20), Some(0)).await.unwrap();
+                fire(Box::new(move |state| {
+                    let mut event_cache = state.event_cache.clone();
+                    let mut event_hashes = Vec::new();
+                    for (hash, event) in &events {
+                        event_cache.insert(*hash, event.clone());
+                        event_hashes.push(*hash);
+                    }
+                    AppState {
+                        event_cache,
+                        event_list_state: definy_ui::EventListState {
+                            event_hashes,
+                            current_offset: 0,
+                            page_size: 20,
+                            is_loading: false,
+                            has_more: events.len() == 20,
+                            filter_event_type: None,
+                        },
+                        ..state.clone()
+                    }
                 }));
             }
             let password = definy_ui::navigator_credential::credential_get().await;
@@ -79,6 +95,32 @@ impl narumincho_vdom_client::App<AppState> for DefinyApp {
             }
         });
 
+        let (event_cache, event_list_state) = if let Some(ssr_events) = ssr_events {
+            let mut event_cache = std::collections::HashMap::new();
+            let mut event_hashes = Vec::new();
+            for (hash, event) in ssr_events {
+                event_cache.insert(hash, event);
+                event_hashes.push(hash);
+            }
+            (event_cache, definy_ui::EventListState {
+                event_hashes,
+                current_offset: 0,
+                page_size: 20,
+                is_loading: false,
+                has_more: false, // SSRでは全件取得と仮定
+                filter_event_type: None,
+            })
+        } else {
+            (std::collections::HashMap::new(), definy_ui::EventListState {
+                event_hashes: Vec::new(),
+                current_offset: 0,
+                page_size: 20,
+                is_loading: true,
+                has_more: true,
+                filter_event_type: None,
+            })
+        };
+
         AppState {
             login_or_create_account_dialog_state: LoginOrCreateAccountDialogState {
                 state: CreatingAccountState::LogIn,
@@ -86,7 +128,8 @@ impl narumincho_vdom_client::App<AppState> for DefinyApp {
                 generated_key: None,
                 current_password: String::new(),
             },
-            events: ssr_events.unwrap_or_default(),
+            event_cache,
+            event_list_state,
             current_key: None,
             part_definition_form: definy_ui::PartDefinitionFormState {
                 part_name_input: String::new(),
