@@ -503,6 +503,16 @@ fn event_view(
                                     .children([text(part_definition_event.description.as_ref())])
                                     .into_node()
                             },
+                            A::<AppState, crate::Location>::new()
+                                .href(narumincho_vdom::Href::Internal(crate::Location::Part(*hash)))
+                                .style(
+                                    Style::new()
+                                        .set("font-size", "0.82rem")
+                                        .set("color", "var(--primary)")
+                                        .set("text-decoration", "none"),
+                                )
+                                .children([text("Open part detail")])
+                                .into_node(),
                         ])
                         .into_node(),
                     EventContent::PartUpdate(part_update_event) => Div::new()
@@ -552,6 +562,18 @@ fn event_view(
                                         &part_update_event.part_definition_event_hash,
                                     )
                                 ))])
+                                .into_node(),
+                            A::<AppState, crate::Location>::new()
+                                .href(narumincho_vdom::Href::Internal(crate::Location::Part(
+                                    part_update_event.part_definition_event_hash,
+                                )))
+                                .style(
+                                    Style::new()
+                                        .set("font-size", "0.82rem")
+                                        .set("color", "var(--primary)")
+                                        .set("text-decoration", "none"),
+                                )
+                                .children([text("Open part detail")])
                                 .into_node(),
                         ])
                         .into_node(),

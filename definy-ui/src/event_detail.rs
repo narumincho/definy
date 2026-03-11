@@ -210,6 +210,17 @@ fn render_event_detail(
                                 .children([text("Evaluate")])
                                 .into_node()
                         },
+                        A::<AppState, Location>::new()
+                            .href(Href::Internal(Location::Part(*hash)))
+                            .style(
+                                Style::new()
+                                    .set("margin-top", "0.45rem")
+                                    .set("display", "inline-flex")
+                                    .set("color", "var(--primary)")
+                                    .set("text-decoration", "none"),
+                            )
+                            .children([text("Open part detail")])
+                            .into_node(),
                         match &state.event_detail_eval_result {
                             Some(result) => Div::new()
                                 .class("mono")
@@ -284,6 +295,12 @@ fn render_event_detail(
                                 part_update_event.part_definition_event_hash,
                             )))
                             .children([text("Open definition event")])
+                            .into_node(),
+                        A::<AppState, Location>::new()
+                            .href(Href::Internal(Location::Part(
+                                part_update_event.part_definition_event_hash,
+                            )))
+                            .children([text("Open part detail")])
                             .into_node(),
                     ])
                     .into_node(),
