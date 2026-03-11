@@ -36,10 +36,10 @@ pub fn account_list_view(state: &AppState) -> Node<AppState> {
                             .map(|row| {
                                 let encoded =
                                     crate::hash_format::encode_bytes(row.account_id.0.as_ref());
-                                let name = account_name_map
-                                    .get(&row.account_id)
-                                    .map(|n| n.as_ref())
-                                    .unwrap_or("Unknown");
+                                let name = crate::app_state::account_display_name(
+                                    &account_name_map,
+                                    &row.account_id,
+                                );
                                 A::<AppState, Location>::new()
                                     .class("event-card")
                                     .href(Href::Internal(Location::Account(row.account_id)))

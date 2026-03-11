@@ -57,10 +57,10 @@ pub fn part_list_view(state: &AppState) -> Node<AppState> {
                         snapshots
                             .into_iter()
                             .map(|part| {
-                                let account_name = account_name_map
-                                    .get(&part.account_id)
-                                    .map(|name| name.as_ref())
-                                    .unwrap_or("Unknown");
+                                let account_name = crate::app_state::account_display_name(
+                                    &account_name_map,
+                                    &part.account_id,
+                                );
                                 Div::new()
                                     .class("event-card")
                                     .style(

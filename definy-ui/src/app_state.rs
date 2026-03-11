@@ -157,6 +157,16 @@ impl AppState {
     }
 }
 
+pub fn account_display_name(
+    account_name_map: &std::collections::HashMap<definy_event::event::AccountId, Box<str>>,
+    account_id: &definy_event::event::AccountId,
+) -> String {
+    account_name_map
+        .get(account_id)
+        .map(|name| name.to_string())
+        .unwrap_or_else(|| crate::hash_format::encode_bytes(account_id.0.as_ref()))
+}
+
 pub fn build_initial_state(
     location: Option<Location>,
     events: Vec<(

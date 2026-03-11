@@ -81,10 +81,8 @@ fn render_event_detail(
     event: &Event,
     account_name_map: &std::collections::HashMap<definy_event::event::AccountId, Box<str>>,
 ) -> Node<AppState> {
-    let account_name = account_name_map
-        .get(&event.account_id)
-        .map(|name: &Box<str>| name.as_ref())
-        .unwrap_or("Unknown");
+    let account_name =
+        crate::app_state::account_display_name(account_name_map, &event.account_id);
     let root_part_definition_hash = root_part_definition_hash(hash, &event.content);
 
     Div::new()

@@ -478,10 +478,10 @@ fn event_view(
                                         .set("text-decoration", "none"),
                                 )
                                 .children([text(
-                                    account_name_map
-                                        .get(&event.account_id)
-                                        .map(|name: &Box<str>| name.as_ref())
-                                        .unwrap_or("Unknown"),
+                                    crate::app_state::account_display_name(
+                                        account_name_map,
+                                        &event.account_id,
+                                    ),
                                 )])
                                 .into_node(),
                             text(format!(
@@ -531,10 +531,10 @@ fn event_view(
                                         .set("text-decoration", "none"),
                                 )
                                 .children([text(
-                                    account_name_map
-                                        .get(&event.account_id)
-                                        .map(|name: &Box<str>| name.as_ref())
-                                        .unwrap_or("Unknown"),
+                                    crate::app_state::account_display_name(
+                                        account_name_map,
+                                        &event.account_id,
+                                    ),
                                 )])
                                 .into_node(),
                             text(format!("Part updated: {}", part_update_event.part_name)),

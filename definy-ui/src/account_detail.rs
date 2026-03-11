@@ -7,10 +7,8 @@ pub fn account_detail_view(
     account_id: &definy_event::event::AccountId,
 ) -> Node<AppState> {
     let account_name_map = state.account_name_map();
-    let account_name = account_name_map
-        .get(account_id)
-        .map(|name| name.as_ref())
-        .unwrap_or("Unknown");
+    let account_name =
+        crate::app_state::account_display_name(&account_name_map, account_id);
     let encoded_account_id = crate::hash_format::encode_hash32(account_id.0.as_ref());
 
     let account_events = state
