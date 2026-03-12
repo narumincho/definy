@@ -25,6 +25,8 @@ pub enum EventContent {
     ChangeProfile(ChangeProfileEvent),
     PartDefinition(PartDefinitionEvent),
     PartUpdate(PartUpdateEvent),
+    ModuleDefinition(ModuleDefinitionEvent),
+    ModuleUpdate(ModuleUpdateEvent),
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -35,6 +37,8 @@ pub struct PartDefinitionEvent {
     #[serde(default)]
     pub description: Box<str>,
     pub expression: Expression,
+    #[serde(default)]
+    pub module_definition_event_hash: Option<[u8; 32]>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -44,6 +48,22 @@ pub struct PartUpdateEvent {
     pub part_definition_event_hash: [u8; 32],
     #[serde(default = "default_expression")]
     pub expression: Expression,
+    #[serde(default)]
+    pub module_definition_event_hash: Option<[u8; 32]>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ModuleDefinitionEvent {
+    pub module_name: Box<str>,
+    #[serde(default)]
+    pub description: Box<str>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ModuleUpdateEvent {
+    pub module_name: Box<str>,
+    pub module_description: Box<str>,
+    pub module_definition_event_hash: [u8; 32],
 }
 
 fn default_expression() -> Expression {

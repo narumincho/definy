@@ -94,6 +94,8 @@ pub struct AppState {
     pub current_key: Option<ed25519_dalek::SigningKey>,
     pub part_definition_form: PartDefinitionFormState,
     pub part_update_form: PartUpdateFormState,
+    pub module_definition_form: ModuleDefinitionFormState,
+    pub module_update_form: ModuleUpdateFormState,
     pub event_detail_eval_result: Option<String>,
     pub profile_name_input: String,
     pub is_header_popover_open: bool,
@@ -119,6 +121,7 @@ pub struct PartDefinitionFormState {
     pub part_type_input: Option<definy_event::event::PartType>,
     pub part_description_input: String,
     pub composing_expression: definy_event::event::Expression,
+    pub module_definition_event_hash: Option<[u8; 32]>,
     pub eval_result: Option<String>,
 }
 
@@ -128,6 +131,22 @@ pub struct PartUpdateFormState {
     pub part_name_input: String,
     pub part_description_input: String,
     pub expression_input: definy_event::event::Expression,
+    pub module_definition_event_hash: Option<[u8; 32]>,
+}
+
+#[derive(Clone)]
+pub struct ModuleDefinitionFormState {
+    pub module_name_input: String,
+    pub module_description_input: String,
+    pub result_message: Option<String>,
+}
+
+#[derive(Clone)]
+pub struct ModuleUpdateFormState {
+    pub module_definition_event_hash: Option<[u8; 32]>,
+    pub module_name_input: String,
+    pub module_description_input: String,
+    pub result_message: Option<String>,
 }
 
 impl AppState {
@@ -150,6 +169,8 @@ impl AppState {
                     }
                     definy_event::event::EventContent::PartDefinition(_) => {}
                     definy_event::event::EventContent::PartUpdate(_) => {}
+                    definy_event::event::EventContent::ModuleDefinition(_) => {}
+                    definy_event::event::EventContent::ModuleUpdate(_) => {}
                 }
             }
         }
@@ -212,6 +233,7 @@ pub fn build_initial_state(
             composing_expression: definy_event::event::Expression::Number(
                 definy_event::event::NumberExpression { value: 0 },
             ),
+            module_definition_event_hash: None,
             eval_result: None,
         },
         part_update_form: PartUpdateFormState {
@@ -221,6 +243,18 @@ pub fn build_initial_state(
             expression_input: definy_event::event::Expression::Number(
                 definy_event::event::NumberExpression { value: 0 },
             ),
+            module_definition_event_hash: None,
+        },
+        module_definition_form: ModuleDefinitionFormState {
+            module_name_input: String::new(),
+            module_description_input: String::new(),
+            result_message: None,
+        },
+        module_update_form: ModuleUpdateFormState {
+            module_definition_event_hash: None,
+            module_name_input: String::new(),
+            module_description_input: String::new(),
+            result_message: None,
         },
         event_detail_eval_result: None,
         profile_name_input: String::new(),
@@ -260,6 +294,8 @@ pub enum Location {
     Home,
     AccountList,
     PartList,
+    ModuleList,
+    Module([u8; 32]),
     Part([u8; 32]),
     Event([u8; 32]),
     Account(AccountId),
@@ -271,6 +307,11 @@ impl narumincho_vdom::Route for Location {
             Location::Home => "/".to_string(),
             Location::AccountList => "/accounts".to_string(),
             Location::PartList => "/parts".to_string(),
+            Location::ModuleList => "/modules".to_string(),
+            Location::Module(hash) => format!(
+                "/modules/{}",
+                base64::Engine::encode(&base64::engine::general_purpose::URL_SAFE_NO_PAD, hash)
+            ),
             Location::Part(hash) => format!(
                 "/parts/{}",
                 base64::Engine::encode(&base64::engine::general_purpose::URL_SAFE_NO_PAD, hash)
@@ -295,6 +336,8 @@ impl narumincho_vdom::Route for Location {
             [""] => Some(Location::Home),
             ["accounts"] => Some(Location::AccountList),
             ["parts"] => Some(Location::PartList),
+            ["modules"] => Some(Location::ModuleList),
+            ["modules", hash_str] => decode_32bytes_base64(hash_str).map(Location::Module),
             ["parts", hash_str] => decode_32bytes_base64(hash_str).map(Location::Part),
             ["events", hash_str] => decode_32bytes_base64(hash_str).map(Location::Event),
             ["accounts", account_id_str] => decode_32bytes_base64(account_id_str)
@@ -328,6 +371,8 @@ mod tests {
             Location::Home,
             Location::AccountList,
             Location::PartList,
+            Location::ModuleList,
+            Location::Module([2u8; 32]),
             Location::Account(definy_event::event::AccountId(Box::new([7u8; 32]))),
             Location::Part([9u8; 32]),
             Location::Event([3u8; 32]),

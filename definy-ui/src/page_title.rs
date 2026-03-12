@@ -5,8 +5,10 @@ enum RouteId {
     Home,
     AccountList,
     PartList,
+    ModuleList,
     AccountDetail,
     PartDetail,
+    ModuleDetail,
     EventDetail,
     NotFound,
 }
@@ -17,8 +19,10 @@ impl RouteId {
             Some(Location::Home) => Self::Home,
             Some(Location::AccountList) => Self::AccountList,
             Some(Location::PartList) => Self::PartList,
+            Some(Location::ModuleList) => Self::ModuleList,
             Some(Location::Account(_)) => Self::AccountDetail,
             Some(Location::Part(_)) => Self::PartDetail,
+            Some(Location::Module(_)) => Self::ModuleDetail,
             Some(Location::Event(_)) => Self::EventDetail,
             None => Self::NotFound,
         }
@@ -29,8 +33,10 @@ impl RouteId {
             Self::Home => "home",
             Self::AccountList => "accounts",
             Self::PartList => "parts",
+            Self::ModuleList => "modules",
             Self::AccountDetail => "accounts",
             Self::PartDetail => "parts",
+            Self::ModuleDetail => "modules",
             Self::EventDetail => "events",
             Self::NotFound => "not-found",
         }
@@ -40,7 +46,11 @@ impl RouteId {
 pub fn page_title_text(state: &AppState) -> String {
     let route_id = RouteId::from_location(&state.location);
     match &state.location {
-        Some(Location::Home) | Some(Location::AccountList) | Some(Location::PartList) | None => {
+        Some(Location::Home)
+        | Some(Location::AccountList)
+        | Some(Location::PartList)
+        | Some(Location::ModuleList)
+        | None => {
             route_id.title_prefix().to_string()
         }
         Some(Location::Account(account_id)) => {
@@ -52,6 +62,14 @@ pub fn page_title_text(state: &AppState) -> String {
             let part_name = resolve_part_name(state, definition_event_hash)
                 .unwrap_or_else(|| short_hash(definition_event_hash));
             format!("{}/{}", route_id.title_prefix(), part_name)
+        }
+        Some(Location::Module(definition_event_hash)) => {
+            let module_name = crate::module_projection::resolve_module_name(
+                state,
+                definition_event_hash,
+            )
+            .unwrap_or_else(|| short_hash(definition_event_hash));
+            format!("{}/{}", route_id.title_prefix(), module_name)
         }
         Some(Location::Event(event_hash)) => {
             let event_label = state
@@ -74,6 +92,12 @@ pub fn page_title_text(state: &AppState) -> String {
                         }
                         definy_event::event::EventContent::PartUpdate(part_update) => {
                             format!("part-update/{}", part_update.part_name)
+                        }
+                        definy_event::event::EventContent::ModuleDefinition(module_definition) => {
+                            format!("module-definition/{}", module_definition.module_name)
+                        }
+                        definy_event::event::EventContent::ModuleUpdate(module_update) => {
+                            format!("module-update/{}", module_update.module_name)
                         }
                     };
                     Some(label)

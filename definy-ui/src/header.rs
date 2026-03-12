@@ -69,6 +69,15 @@ fn header_main(state: &AppState) -> Node<AppState> {
                         .children([text("Parts")])
                         .into_node(),
                     A::<AppState, Location>::new()
+                        .href(Href::Internal(Location::ModuleList))
+                        .style(
+                            Style::new()
+                                .set("font-size", "0.9rem")
+                                .set("color", "var(--text-secondary)"),
+                        )
+                        .children([text("Modules")])
+                        .into_node(),
+                    A::<AppState, Location>::new()
                         .href(Href::Internal(Location::AccountList))
                         .style(
                             Style::new()

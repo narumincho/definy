@@ -11,6 +11,7 @@ pub struct PartSnapshot {
     pub part_type: Option<definy_event::event::PartType>,
     pub part_description: String,
     pub expression: Expression,
+    pub module_definition_event_hash: Option<[u8; 32]>,
     pub updated_at: chrono::DateTime<chrono::Utc>,
     pub has_definition: bool,
 }
@@ -40,6 +41,7 @@ pub fn collect_part_snapshots(state: &AppState) -> Vec<PartSnapshot> {
                         part_type: part_definition.part_type.clone(),
                         part_description: part_definition.description.to_string(),
                         expression: part_definition.expression.clone(),
+                        module_definition_event_hash: part_definition.module_definition_event_hash,
                         updated_at: event.time,
                         has_definition: true,
                     },
@@ -56,6 +58,7 @@ pub fn collect_part_snapshots(state: &AppState) -> Vec<PartSnapshot> {
                         part_type: None,
                         part_description: String::new(),
                         expression: part_update.expression.clone(),
+                        module_definition_event_hash: part_update.module_definition_event_hash,
                         updated_at: event.time,
                         has_definition: false,
                     });
@@ -64,6 +67,9 @@ pub fn collect_part_snapshots(state: &AppState) -> Vec<PartSnapshot> {
                 entry.part_name = part_update.part_name.to_string();
                 entry.part_description = part_update.part_description.to_string();
                 entry.expression = part_update.expression.clone();
+                if part_update.module_definition_event_hash.is_some() {
+                    entry.module_definition_event_hash = part_update.module_definition_event_hash;
+                }
                 entry.updated_at = event.time;
             }
             _ => {}

@@ -496,6 +496,7 @@ fn render_html_response(path: &str) -> Response<Full<Bytes>> {
                 composing_expression: definy_event::event::Expression::Number(
                     definy_event::event::NumberExpression { value: 0 },
                 ),
+                module_definition_event_hash: None,
                 eval_result: None,
             },
             part_update_form: definy_ui::PartUpdateFormState {
@@ -505,6 +506,18 @@ fn render_html_response(path: &str) -> Response<Full<Bytes>> {
                 expression_input: definy_event::event::Expression::Number(
                     definy_event::event::NumberExpression { value: 0 },
                 ),
+                module_definition_event_hash: None,
+            },
+            module_definition_form: definy_ui::ModuleDefinitionFormState {
+                module_name_input: String::new(),
+                module_description_input: String::new(),
+                result_message: None,
+            },
+            module_update_form: definy_ui::ModuleUpdateFormState {
+                module_definition_event_hash: None,
+                module_name_input: String::new(),
+                module_description_input: String::new(),
+                result_message: None,
             },
             event_detail_eval_result: None,
             profile_name_input: String::new(),

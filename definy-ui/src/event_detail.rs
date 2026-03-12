@@ -302,6 +302,92 @@ fn render_event_detail(
                             .into_node(),
                     ])
                     .into_node(),
+                EventContent::ModuleDefinition(module_definition_event) => Div::new()
+                    .style(
+                        Style::new()
+                            .set("font-size", "1.1rem")
+                            .set("line-height", "1.6"),
+                    )
+                    .children([
+                        text(format!(
+                            "Module created: {}",
+                            module_definition_event.module_name
+                        )),
+                        if module_definition_event.description.is_empty() {
+                            Div::new().children([]).into_node()
+                        } else {
+                            Div::new()
+                                .style(
+                                    Style::new()
+                                        .set("font-size", "0.86rem")
+                                        .set("color", "var(--text-secondary)")
+                                        .set("white-space", "pre-wrap"),
+                                )
+                                .children([text(module_definition_event.description.as_ref())])
+                                .into_node()
+                        },
+                        A::<AppState, Location>::new()
+                            .href(Href::Internal(Location::Module(*hash)))
+                            .children([text("Open module detail")])
+                            .into_node(),
+                    ])
+                    .into_node(),
+                EventContent::ModuleUpdate(module_update_event) => Div::new()
+                    .style(
+                        Style::new()
+                            .set("display", "grid")
+                            .set("gap", "0.55rem")
+                            .set("line-height", "1.6"),
+                    )
+                    .children([
+                        Div::new()
+                            .style(Style::new().set("font-size", "1.08rem"))
+                            .children([text(format!(
+                                "Module updated: {}",
+                                module_update_event.module_name
+                            ))])
+                            .into_node(),
+                        if module_update_event.module_description.is_empty() {
+                            Div::new().children([]).into_node()
+                        } else {
+                            Div::new()
+                                .style(
+                                    Style::new()
+                                        .set("font-size", "0.86rem")
+                                        .set("color", "var(--text-secondary)")
+                                        .set("white-space", "pre-wrap"),
+                                )
+                                .children([text(module_update_event.module_description.as_ref())])
+                                .into_node()
+                        },
+                        Div::new()
+                            .class("mono")
+                            .style(
+                                Style::new()
+                                    .set("font-size", "0.8rem")
+                                    .set("opacity", "0.85"),
+                            )
+                            .children([text(format!(
+                                "moduleDefinitionEventHash: {}",
+                                crate::hash_format::encode_hash32(
+                                    &module_update_event.module_definition_event_hash,
+                                )
+                            ))])
+                            .into_node(),
+                        A::<AppState, Location>::new()
+                            .href(Href::Internal(Location::Event(
+                                module_update_event.module_definition_event_hash,
+                            )))
+                            .children([text("Open definition event")])
+                            .into_node(),
+                        A::<AppState, Location>::new()
+                            .href(Href::Internal(Location::Module(
+                                module_update_event.module_definition_event_hash,
+                            )))
+                            .children([text("Open module detail")])
+                            .into_node(),
+                    ])
+                    .into_node(),
             },
             if let Some(root_hash) = root_part_definition_hash {
                 related_part_events_section(state, root_hash)
