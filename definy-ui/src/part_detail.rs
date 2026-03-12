@@ -4,6 +4,7 @@ use crate::Location;
 use crate::app_state::AppState;
 use crate::expression_editor::{EditorTarget, render_root_expression_editor};
 use crate::expression_eval::expression_to_source;
+use crate::module_projection::collect_module_snapshots;
 use crate::part_projection::{collect_related_part_events, find_part_snapshot};
 
 pub fn part_detail_view(state: &AppState, definition_event_hash: &[u8; 32]) -> Node<AppState> {
@@ -156,8 +157,19 @@ pub fn part_detail_view(state: &AppState, definition_event_hash: &[u8; 32]) -> N
 fn part_update_form(state: &AppState, definition_event_hash: &[u8; 32]) -> Node<AppState> {
     let root_part_definition_hash = *definition_event_hash;
     let hash_as_base64 = crate::hash_format::encode_hash32(definition_event_hash);
-    let (initial_name, initial_description, initial_expression) =
+    let (initial_name, initial_description, initial_expression, initial_module_hash) =
         effective_part_update_form(state, definition_event_hash);
+    let dropdown_name = format!("part-update-module-{}", hash_as_base64);
+    let mut module_options = vec![("".to_string(), "No module".to_string())];
+    module_options.extend(collect_module_snapshots(state).into_iter().map(|module| {
+        (
+            crate::hash_format::encode_hash32(&module.definition_event_hash),
+            module.module_name,
+        )
+    }));
+    let current_module_value = initial_module_hash
+        .map(|hash| crate::hash_format::encode_hash32(&hash))
+        .unwrap_or_else(|| "".to_string());
 
     Div::new()
         .class("event-detail-card")
@@ -212,6 +224,36 @@ fn part_update_form(state: &AppState, definition_event_hash: &[u8; 32]) -> Node<
                         }));
                     }
                 }))
+                .into_node(),
+            Div::new()
+                .style(Style::new().set("display", "grid").set("gap", "0.35rem"))
+                .children([
+                    Div::new()
+                        .style(
+                            Style::new()
+                                .set("font-size", "0.85rem")
+                                .set("color", "var(--text-secondary)"),
+                        )
+                        .children([text("Module")])
+                        .into_node(),
+                    crate::dropdown::searchable_dropdown(
+                        state,
+                        dropdown_name.as_str(),
+                        &current_module_value,
+                        &module_options,
+                        std::rc::Rc::new(move |value| {
+                            let root_part_definition_hash = root_part_definition_hash;
+                            Box::new(move |state: AppState| {
+                                let mut next = state.clone();
+                                next.part_update_form.part_definition_event_hash =
+                                    Some(root_part_definition_hash);
+                                next.part_update_form.module_definition_event_hash =
+                                    crate::hash_format::decode_hash32(&value);
+                                next
+                            })
+                        }),
+                    ),
+                ])
                 .into_node(),
             {
                 let mut description = Textarea::new()
@@ -294,7 +336,12 @@ fn part_update_form(state: &AppState, definition_event_hash: &[u8; 32]) -> Node<
                                     ..state.clone()
                                 };
                             };
-                            let (current_part_name, current_part_description, current_expression) =
+                            let (
+                                current_part_name,
+                                current_part_description,
+                                current_expression,
+                                current_module_hash,
+                            ) =
                                 effective_part_update_form(&state, &root_part_definition_hash);
                             let part_name = current_part_name.trim().to_string();
                             if part_name.is_empty() {
@@ -307,6 +354,7 @@ fn part_update_form(state: &AppState, definition_event_hash: &[u8; 32]) -> Node<
                             }
                             let part_description = current_part_description;
                             let expression = current_expression;
+                            let module_definition_event_hash = current_module_hash;
                             wasm_bindgen_futures::spawn_local(async move {
                                 let event_binary = match definy_event::sign_and_serialize(
                                     definy_event::event::Event {
@@ -321,7 +369,7 @@ fn part_update_form(state: &AppState, definition_event_hash: &[u8; 32]) -> Node<
                                                 part_definition_event_hash:
                                                     root_part_definition_hash,
                                                 expression,
-                                                module_definition_event_hash: None,
+                                                module_definition_event_hash,
                                             },
                                         ),
                                     },
@@ -374,6 +422,8 @@ fn part_update_form(state: &AppState, definition_event_hash: &[u8; 32]) -> Node<
                                                         snapshot.part_description;
                                                     next.part_update_form.expression_input =
                                                         snapshot.expression;
+                                                    next.part_update_form.module_definition_event_hash =
+                                                        snapshot.module_definition_event_hash;
                                                 } else {
                                                     next.part_update_form
                                                         .part_definition_event_hash = None;
@@ -387,6 +437,8 @@ fn part_update_form(state: &AppState, definition_event_hash: &[u8; 32]) -> Node<
                                                                 value: 0,
                                                             },
                                                         );
+                                                    next.part_update_form.module_definition_event_hash =
+                                                        None;
                                                 }
                                                 next.event_detail_eval_result =
                                                     Some("PartUpdate event posted".to_string());
@@ -430,12 +482,13 @@ fn part_update_form(state: &AppState, definition_event_hash: &[u8; 32]) -> Node<
 fn effective_part_update_form(
     state: &AppState,
     definition_event_hash: &[u8; 32],
-) -> (String, String, definy_event::event::Expression) {
+) -> (String, String, definy_event::event::Expression, Option<[u8; 32]>) {
     if state.part_update_form.part_definition_event_hash == Some(*definition_event_hash) {
         return (
             state.part_update_form.part_name_input.clone(),
             state.part_update_form.part_description_input.clone(),
             state.part_update_form.expression_input.clone(),
+            state.part_update_form.module_definition_event_hash,
         );
     }
     if let Some(snapshot) = find_part_snapshot(state, definition_event_hash) {
@@ -443,11 +496,13 @@ fn effective_part_update_form(
             snapshot.part_name,
             snapshot.part_description,
             snapshot.expression,
+            snapshot.module_definition_event_hash,
         );
     }
     (
         state.part_update_form.part_name_input.clone(),
         state.part_update_form.part_description_input.clone(),
         state.part_update_form.expression_input.clone(),
+        state.part_update_form.module_definition_event_hash,
     )
 }

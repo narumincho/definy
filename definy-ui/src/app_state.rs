@@ -120,6 +120,7 @@ pub struct PartDefinitionFormState {
     pub part_type_input: Option<definy_event::event::PartType>,
     pub part_description_input: String,
     pub composing_expression: definy_event::event::Expression,
+    pub module_definition_event_hash: Option<[u8; 32]>,
     pub eval_result: Option<String>,
 }
 
@@ -129,6 +130,7 @@ pub struct PartUpdateFormState {
     pub part_name_input: String,
     pub part_description_input: String,
     pub expression_input: definy_event::event::Expression,
+    pub module_definition_event_hash: Option<[u8; 32]>,
 }
 
 #[derive(Clone)]
@@ -222,6 +224,7 @@ pub fn build_initial_state(
             composing_expression: definy_event::event::Expression::Number(
                 definy_event::event::NumberExpression { value: 0 },
             ),
+            module_definition_event_hash: None,
             eval_result: None,
         },
         part_update_form: PartUpdateFormState {
@@ -231,6 +234,7 @@ pub fn build_initial_state(
             expression_input: definy_event::event::Expression::Number(
                 definy_event::event::NumberExpression { value: 0 },
             ),
+            module_definition_event_hash: None,
         },
         module_definition_form: ModuleDefinitionFormState {
             module_name_input: String::new(),

@@ -4,6 +4,7 @@ use narumincho_vdom::*;
 use crate::app_state::AppState;
 use crate::expression_editor::{EditorTarget, render_root_expression_editor};
 use crate::expression_eval::{evaluate_expression, expression_to_source};
+use crate::module_projection::collect_module_snapshots;
 use crate::part_projection::collect_part_snapshots;
 
 fn update_event_filter_url(event_type: Option<EventType>) {
@@ -112,6 +113,7 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
                 )
                 .children([
                     part_name_input(&state),
+                    module_selection_input(&state),
                     part_type_input(&state),
                     part_description_input(&state),
                     Div::new()
@@ -178,6 +180,8 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
                                             state.part_definition_form.part_description_input.clone();
                                         let part_type =
                                             state.part_definition_form.part_type_input.clone();
+                                        let module_definition_event_hash =
+                                            state.part_definition_form.module_definition_event_hash;
                                         if part_name.is_empty() {
                                             let mut next = state.clone();
                                             next.part_definition_form.eval_result =
@@ -202,7 +206,7 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
                                                                 part_type,
                                                                 description: description.into(),
                                                                 expression,
-                                                                module_definition_event_hash: None,
+                                                                module_definition_event_hash,
                                                             },
                                                         ),
                                                 },
@@ -250,6 +254,7 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
                                         next.part_definition_form.part_type_input =
                                             Some(definy_event::event::PartType::Number);
                                         next.part_definition_form.part_description_input = String::new();
+                                        next.part_definition_form.module_definition_event_hash = None;
                                         next.part_definition_form.eval_result = None;
                                         next.part_definition_form.composing_expression =
                                             definy_event::event::Expression::Number(
@@ -784,6 +789,52 @@ fn part_type_input(state: &AppState) -> Node<AppState> {
                 .children([text("Part Type")])
                 .into_node(),
             render_part_type_editor(state, &state.part_definition_form.part_type_input, 0),
+        ])
+        .into_node()
+}
+
+fn module_selection_input(state: &AppState) -> Node<AppState> {
+    let mut options = vec![("".to_string(), "No module".to_string())];
+    options.extend(collect_module_snapshots(state).into_iter().map(|module| {
+        (
+            crate::hash_format::encode_hash32(&module.definition_event_hash),
+            module.module_name,
+        )
+    }));
+
+    let current_value = state
+        .part_definition_form
+        .module_definition_event_hash
+        .map(|hash| crate::hash_format::encode_hash32(&hash))
+        .unwrap_or_else(|| "".to_string());
+
+    let dropdown = crate::dropdown::searchable_dropdown(
+        state,
+        "part-definition-module",
+        &current_value,
+        &options,
+        std::rc::Rc::new(|value| {
+            Box::new(move |state: AppState| {
+                let mut next = state.clone();
+                next.part_definition_form.module_definition_event_hash =
+                    crate::hash_format::decode_hash32(&value);
+                next
+            })
+        }),
+    );
+
+    Div::new()
+        .style(Style::new().set("display", "grid").set("gap", "0.35rem"))
+        .children([
+            Div::new()
+                .style(
+                    Style::new()
+                        .set("font-size", "0.85rem")
+                        .set("color", "var(--text-secondary)"),
+                )
+                .children([text("Module")])
+                .into_node(),
+            dropdown,
         ])
         .into_node()
 }
