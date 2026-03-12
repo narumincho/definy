@@ -14,6 +14,8 @@ mod header;
 mod layout;
 mod login_or_create_account_dialog;
 mod message;
+mod module_list;
+mod module_projection;
 pub mod navigator_credential;
 mod not_found;
 mod page_title;
@@ -141,6 +143,7 @@ init({{ module_or_path: \"/{}\" }});",
                         Some(Location::Home) => event_list::event_list_view(state),
                         Some(Location::AccountList) => account_list::account_list_view(state),
                         Some(Location::PartList) => part_list::part_list_view(state),
+                        Some(Location::ModuleList) => module_list::module_list_view(state),
                         Some(Location::Part(hash)) => part_detail::part_detail_view(state, hash),
                         Some(Location::Event(hash)) => event_detail::event_detail_view(state, hash),
                         Some(Location::Account(account_id)) => {

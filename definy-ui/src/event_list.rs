@@ -53,6 +53,8 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
         ("change_profile".to_string(), "Change Profile".to_string()),
         ("part_definition".to_string(), "Part Definition".to_string()),
         ("part_update".to_string(), "Part Update".to_string()),
+        ("module_definition".to_string(), "Module Definition".to_string()),
+        ("module_update".to_string(), "Module Update".to_string()),
     ];
 
     let current_filter = state.event_list_state.filter_event_type
@@ -72,6 +74,8 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
                     "change_profile" => Some(EventType::ChangeProfile),
                     "part_definition" => Some(EventType::PartDefinition),
                     "part_update" => Some(EventType::PartUpdate),
+                    "module_definition" => Some(EventType::ModuleDefinition),
+                    "module_update" => Some(EventType::ModuleUpdate),
                     _ => None,
                 };
                 update_event_filter_url(event_type);

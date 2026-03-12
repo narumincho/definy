@@ -5,6 +5,7 @@ enum RouteId {
     Home,
     AccountList,
     PartList,
+    ModuleList,
     AccountDetail,
     PartDetail,
     EventDetail,
@@ -17,6 +18,7 @@ impl RouteId {
             Some(Location::Home) => Self::Home,
             Some(Location::AccountList) => Self::AccountList,
             Some(Location::PartList) => Self::PartList,
+            Some(Location::ModuleList) => Self::ModuleList,
             Some(Location::Account(_)) => Self::AccountDetail,
             Some(Location::Part(_)) => Self::PartDetail,
             Some(Location::Event(_)) => Self::EventDetail,
@@ -29,6 +31,7 @@ impl RouteId {
             Self::Home => "home",
             Self::AccountList => "accounts",
             Self::PartList => "parts",
+            Self::ModuleList => "modules",
             Self::AccountDetail => "accounts",
             Self::PartDetail => "parts",
             Self::EventDetail => "events",
@@ -40,7 +43,11 @@ impl RouteId {
 pub fn page_title_text(state: &AppState) -> String {
     let route_id = RouteId::from_location(&state.location);
     match &state.location {
-        Some(Location::Home) | Some(Location::AccountList) | Some(Location::PartList) | None => {
+        Some(Location::Home)
+        | Some(Location::AccountList)
+        | Some(Location::PartList)
+        | Some(Location::ModuleList)
+        | None => {
             route_id.title_prefix().to_string()
         }
         Some(Location::Account(account_id)) => {
