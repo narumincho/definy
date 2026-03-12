@@ -8,6 +8,7 @@ enum RouteId {
     ModuleList,
     AccountDetail,
     PartDetail,
+    ModuleDetail,
     EventDetail,
     NotFound,
 }
@@ -21,6 +22,7 @@ impl RouteId {
             Some(Location::ModuleList) => Self::ModuleList,
             Some(Location::Account(_)) => Self::AccountDetail,
             Some(Location::Part(_)) => Self::PartDetail,
+            Some(Location::Module(_)) => Self::ModuleDetail,
             Some(Location::Event(_)) => Self::EventDetail,
             None => Self::NotFound,
         }
@@ -34,6 +36,7 @@ impl RouteId {
             Self::ModuleList => "modules",
             Self::AccountDetail => "accounts",
             Self::PartDetail => "parts",
+            Self::ModuleDetail => "modules",
             Self::EventDetail => "events",
             Self::NotFound => "not-found",
         }
@@ -59,6 +62,14 @@ pub fn page_title_text(state: &AppState) -> String {
             let part_name = resolve_part_name(state, definition_event_hash)
                 .unwrap_or_else(|| short_hash(definition_event_hash));
             format!("{}/{}", route_id.title_prefix(), part_name)
+        }
+        Some(Location::Module(definition_event_hash)) => {
+            let module_name = crate::module_projection::resolve_module_name(
+                state,
+                definition_event_hash,
+            )
+            .unwrap_or_else(|| short_hash(definition_event_hash));
+            format!("{}/{}", route_id.title_prefix(), module_name)
         }
         Some(Location::Event(event_hash)) => {
             let event_label = state

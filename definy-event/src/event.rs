@@ -37,6 +37,8 @@ pub struct PartDefinitionEvent {
     #[serde(default)]
     pub description: Box<str>,
     pub expression: Expression,
+    #[serde(default)]
+    pub module_definition_event_hash: Option<[u8; 32]>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -46,6 +48,8 @@ pub struct PartUpdateEvent {
     pub part_definition_event_hash: [u8; 32],
     #[serde(default = "default_expression")]
     pub expression: Expression,
+    #[serde(default)]
+    pub module_definition_event_hash: Option<[u8; 32]>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]

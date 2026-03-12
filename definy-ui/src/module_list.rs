@@ -148,6 +148,14 @@ pub fn module_list_view(state: &AppState) -> Node<AppState> {
                                                 .children([
                                                     A::<AppState, crate::Location>::new()
                                                         .href(Href::Internal(
+                                                            crate::Location::Module(
+                                                                module.definition_event_hash,
+                                                            ),
+                                                        ))
+                                                        .children([text("Open module detail")])
+                                                        .into_node(),
+                                                    A::<AppState, crate::Location>::new()
+                                                        .href(Href::Internal(
                                                             crate::Location::Event(
                                                                 module.latest_event_hash,
                                                             ),

@@ -67,3 +67,47 @@ pub fn collect_module_snapshots(state: &AppState) -> Vec<ModuleSnapshot> {
     snapshots.sort_by(|a, b| b.updated_at.cmp(&a.updated_at));
     snapshots
 }
+
+pub fn find_module_snapshot(
+    state: &AppState,
+    definition_event_hash: &[u8; 32],
+) -> Option<ModuleSnapshot> {
+    collect_module_snapshots(state)
+        .into_iter()
+        .find(|snapshot| &snapshot.definition_event_hash == definition_event_hash)
+}
+
+pub fn resolve_module_name(
+    state: &AppState,
+    definition_event_hash: &[u8; 32],
+) -> Option<String> {
+    let mut events = state
+        .event_cache
+        .iter()
+        .filter_map(|(hash, event_result)| {
+            let (_, event) = event_result.as_ref().ok()?;
+            Some((*hash, event))
+        })
+        .collect::<Vec<([u8; 32], &definy_event::event::Event)>>();
+    events.sort_by_key(|(_, event)| event.time);
+
+    let mut name = None::<String>;
+    for (hash, event) in events {
+        match &event.content {
+            definy_event::event::EventContent::ModuleDefinition(module_definition)
+                if &hash == definition_event_hash =>
+            {
+                name = Some(module_definition.module_name.to_string());
+            }
+            definy_event::event::EventContent::ModuleUpdate(module_update)
+                if &module_update.module_definition_event_hash == definition_event_hash =>
+            {
+                if name.is_some() {
+                    name = Some(module_update.module_name.to_string());
+                }
+            }
+            _ => {}
+        }
+    }
+    name
+}

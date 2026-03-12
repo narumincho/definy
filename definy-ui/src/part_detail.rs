@@ -321,6 +321,7 @@ fn part_update_form(state: &AppState, definition_event_hash: &[u8; 32]) -> Node<
                                                 part_definition_event_hash:
                                                     root_part_definition_hash,
                                                 expression,
+                                                module_definition_event_hash: None,
                                             },
                                         ),
                                     },

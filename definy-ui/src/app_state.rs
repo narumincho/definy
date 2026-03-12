@@ -276,6 +276,7 @@ pub enum Location {
     AccountList,
     PartList,
     ModuleList,
+    Module([u8; 32]),
     Part([u8; 32]),
     Event([u8; 32]),
     Account(AccountId),
@@ -288,6 +289,10 @@ impl narumincho_vdom::Route for Location {
             Location::AccountList => "/accounts".to_string(),
             Location::PartList => "/parts".to_string(),
             Location::ModuleList => "/modules".to_string(),
+            Location::Module(hash) => format!(
+                "/modules/{}",
+                base64::Engine::encode(&base64::engine::general_purpose::URL_SAFE_NO_PAD, hash)
+            ),
             Location::Part(hash) => format!(
                 "/parts/{}",
                 base64::Engine::encode(&base64::engine::general_purpose::URL_SAFE_NO_PAD, hash)
@@ -313,6 +318,7 @@ impl narumincho_vdom::Route for Location {
             ["accounts"] => Some(Location::AccountList),
             ["parts"] => Some(Location::PartList),
             ["modules"] => Some(Location::ModuleList),
+            ["modules", hash_str] => decode_32bytes_base64(hash_str).map(Location::Module),
             ["parts", hash_str] => decode_32bytes_base64(hash_str).map(Location::Part),
             ["events", hash_str] => decode_32bytes_base64(hash_str).map(Location::Event),
             ["accounts", account_id_str] => decode_32bytes_base64(account_id_str)
@@ -347,6 +353,7 @@ mod tests {
             Location::AccountList,
             Location::PartList,
             Location::ModuleList,
+            Location::Module([2u8; 32]),
             Location::Account(definy_event::event::AccountId(Box::new([7u8; 32]))),
             Location::Part([9u8; 32]),
             Location::Event([3u8; 32]),

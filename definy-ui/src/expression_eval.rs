@@ -782,6 +782,7 @@ mod tests {
                             part_type: Some(definy_event::event::PartType::Number),
                             description: "".into(),
                             expression: part_expression,
+                            module_definition_event_hash: None,
                         },
                     ),
                 },

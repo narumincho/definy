@@ -202,6 +202,7 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
                                                                 part_type,
                                                                 description: description.into(),
                                                                 expression,
+                                                                module_definition_event_hash: None,
                                                             },
                                                         ),
                                                 },
