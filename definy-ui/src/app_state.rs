@@ -95,6 +95,7 @@ pub struct AppState {
     pub part_definition_form: PartDefinitionFormState,
     pub part_update_form: PartUpdateFormState,
     pub module_definition_form: ModuleDefinitionFormState,
+    pub module_update_form: ModuleUpdateFormState,
     pub event_detail_eval_result: Option<String>,
     pub profile_name_input: String,
     pub is_header_popover_open: bool,
@@ -135,6 +136,14 @@ pub struct PartUpdateFormState {
 
 #[derive(Clone)]
 pub struct ModuleDefinitionFormState {
+    pub module_name_input: String,
+    pub module_description_input: String,
+    pub result_message: Option<String>,
+}
+
+#[derive(Clone)]
+pub struct ModuleUpdateFormState {
+    pub module_definition_event_hash: Option<[u8; 32]>,
     pub module_name_input: String,
     pub module_description_input: String,
     pub result_message: Option<String>,
@@ -237,6 +246,12 @@ pub fn build_initial_state(
             module_definition_event_hash: None,
         },
         module_definition_form: ModuleDefinitionFormState {
+            module_name_input: String::new(),
+            module_description_input: String::new(),
+            result_message: None,
+        },
+        module_update_form: ModuleUpdateFormState {
+            module_definition_event_hash: None,
             module_name_input: String::new(),
             module_description_input: String::new(),
             result_message: None,

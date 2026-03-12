@@ -513,6 +513,12 @@ fn render_html_response(path: &str) -> Response<Full<Bytes>> {
                 module_description_input: String::new(),
                 result_message: None,
             },
+            module_update_form: definy_ui::ModuleUpdateFormState {
+                module_definition_event_hash: None,
+                module_name_input: String::new(),
+                module_description_input: String::new(),
+                result_message: None,
+            },
             event_detail_eval_result: None,
             profile_name_input: String::new(),
             is_header_popover_open: false,
