@@ -57,13 +57,22 @@ pub async fn get_events(
     let value =
         serde_cbor::from_slice::<definy_event::response::EventsResponse>(&response_body_bytes)?;
 
-    Ok(value
+    let event_pairs = value
         .events
         .into_iter()
         .filter_map(|bytes| {
             let hash: [u8; 32] = <sha2::Sha256 as sha2::Digest>::digest(&bytes).into();
-            Some((hash, definy_event::verify_and_deserialize(&bytes)))
+            Some((hash, bytes))
         })
+        .collect::<Vec<([u8; 32], Vec<u8>)>>();
+
+    if let Err(error) = crate::indexed_db::store_events(&event_pairs).await {
+        web_sys::console::warn_1(&error);
+    }
+
+    Ok(event_pairs
+        .into_iter()
+        .map(|(hash, bytes)| (hash, definy_event::verify_and_deserialize(&bytes)))
         .collect::<Vec<(
             [u8; 32],
             Result<

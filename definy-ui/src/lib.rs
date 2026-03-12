@@ -11,6 +11,7 @@ mod expression_eval;
 pub mod fetch;
 mod hash_format;
 mod header;
+mod indexed_db;
 mod layout;
 mod login_or_create_account_dialog;
 mod message;
