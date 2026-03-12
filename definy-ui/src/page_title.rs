@@ -75,6 +75,12 @@ pub fn page_title_text(state: &AppState) -> String {
                         definy_event::event::EventContent::PartUpdate(part_update) => {
                             format!("part-update/{}", part_update.part_name)
                         }
+                        definy_event::event::EventContent::ModuleDefinition(module_definition) => {
+                            format!("module-definition/{}", module_definition.module_name)
+                        }
+                        definy_event::event::EventContent::ModuleUpdate(module_update) => {
+                            format!("module-update/{}", module_update.module_name)
+                        }
                     };
                     Some(label)
                 })

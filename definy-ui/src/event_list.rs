@@ -577,6 +577,112 @@ fn event_view(
                                 .into_node(),
                         ])
                         .into_node(),
+                    EventContent::ModuleDefinition(module_definition_event) => Div::new()
+                        .style(Style::new().set("font-size", "1rem"))
+                        .children([
+                            A::<AppState, crate::Location>::new()
+                                .href(narumincho_vdom::Href::Internal(crate::Location::Account(
+                                    event.account_id.clone(),
+                                )))
+                                .style(
+                                    Style::new()
+                                        .set("font-size", "0.78rem")
+                                        .set("color", "var(--primary)")
+                                        .set("font-weight", "600")
+                                        .set("margin-bottom", "0.25rem")
+                                        .set("text-decoration", "none"),
+                                )
+                                .children([text(
+                                    crate::app_state::account_display_name(
+                                        account_name_map,
+                                        &event.account_id,
+                                    ),
+                                )])
+                                .into_node(),
+                            text(format!(
+                                "Module created: {}",
+                                module_definition_event.module_name
+                            )),
+                            if module_definition_event.description.is_empty() {
+                                Div::new().children([]).into_node()
+                            } else {
+                                Div::new()
+                                    .style(
+                                        Style::new()
+                                            .set("font-size", "0.82rem")
+                                            .set("color", "var(--text-secondary)")
+                                            .set("white-space", "pre-wrap"),
+                                    )
+                                    .children([text(module_definition_event.description.as_ref())])
+                                    .into_node()
+                            },
+                        ])
+                        .into_node(),
+                    EventContent::ModuleUpdate(module_update_event) => Div::new()
+                        .style(Style::new().set("font-size", "1rem"))
+                        .children([
+                            A::<AppState, crate::Location>::new()
+                                .href(narumincho_vdom::Href::Internal(crate::Location::Account(
+                                    event.account_id.clone(),
+                                )))
+                                .style(
+                                    Style::new()
+                                        .set("font-size", "0.78rem")
+                                        .set("color", "var(--primary)")
+                                        .set("font-weight", "600")
+                                        .set("margin-bottom", "0.25rem")
+                                        .set("text-decoration", "none"),
+                                )
+                                .children([text(
+                                    crate::app_state::account_display_name(
+                                        account_name_map,
+                                        &event.account_id,
+                                    ),
+                                )])
+                                .into_node(),
+                            text(format!("Module updated: {}", module_update_event.module_name)),
+                            if module_update_event.module_description.is_empty() {
+                                Div::new().children([]).into_node()
+                            } else {
+                                Div::new()
+                                    .style(
+                                        Style::new()
+                                            .set("font-size", "0.82rem")
+                                            .set("color", "var(--text-secondary)")
+                                            .set("white-space", "pre-wrap"),
+                                    )
+                                    .children([text(
+                                        module_update_event.module_description.as_ref(),
+                                    )])
+                                    .into_node()
+                            },
+                            Div::new()
+                                .style(
+                                    Style::new()
+                                        .set("font-size", "0.85rem")
+                                        .set("color", "var(--text-secondary)"),
+                                )
+                                .children([text(format!(
+                                    "base: {}",
+                                    crate::hash_format::encode_hash32(
+                                        &module_update_event.module_definition_event_hash,
+                                    )
+                                ))])
+                                .into_node(),
+                            A::<AppState, crate::Location>::new()
+                                .href(narumincho_vdom::Href::Internal(crate::Location::Event(
+                                    module_update_event.module_definition_event_hash,
+                                )))
+                                .style(
+                                    Style::new()
+                                        .set("font-size", "0.82rem")
+                                        .set("color", "var(--primary)")
+                                        .set("text-decoration", "none"),
+                                )
+                                .children([text("Open module definition")])
+                                .into_node(),
+                        ])
+                        .into_node(),
                 },
             ])
             .into_node(),

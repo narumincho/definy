@@ -150,6 +150,8 @@ impl AppState {
                     }
                     definy_event::event::EventContent::PartDefinition(_) => {}
                     definy_event::event::EventContent::PartUpdate(_) => {}
+                    definy_event::event::EventContent::ModuleDefinition(_) => {}
+                    definy_event::event::EventContent::ModuleUpdate(_) => {}
                 }
             }
         }

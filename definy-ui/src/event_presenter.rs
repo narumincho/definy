@@ -30,6 +30,26 @@ pub fn event_summary_text(event: &Event) -> String {
             },
             expression_to_source(&part_update_event.expression)
         ),
+        EventContent::ModuleDefinition(module_definition_event) => {
+            if module_definition_event.description.is_empty() {
+                format!("Module created: {}", module_definition_event.module_name)
+            } else {
+                format!(
+                    "Module created: {} - {}",
+                    module_definition_event.module_name, module_definition_event.description
+                )
+            }
+        }
+        EventContent::ModuleUpdate(module_update_event) => {
+            if module_update_event.module_description.is_empty() {
+                format!("Module updated: {}", module_update_event.module_name)
+            } else {
+                format!(
+                    "Module updated: {} - {}",
+                    module_update_event.module_name, module_update_event.module_description
+                )
+            }
+        }
     }
 }
 
@@ -41,5 +61,11 @@ pub fn event_kind_label(event: &Event) -> String {
             format!("PartDefinition: {}", part_definition.part_name)
         }
         EventContent::PartUpdate(part_update) => format!("PartUpdate: {}", part_update.part_name),
+        EventContent::ModuleDefinition(module_definition) => {
+            format!("ModuleDefinition: {}", module_definition.module_name)
+        }
+        EventContent::ModuleUpdate(module_update) => {
+            format!("ModuleUpdate: {}", module_update.module_name)
+        }
     }
 }
