@@ -326,6 +326,10 @@ fn render_event_detail(
                                 .children([text(module_definition_event.description.as_ref())])
                                 .into_node()
                         },
+                        A::<AppState, Location>::new()
+                            .href(Href::Internal(Location::Module(*hash)))
+                            .children([text("Open module detail")])
+                            .into_node(),
                     ])
                     .into_node(),
                 EventContent::ModuleUpdate(module_update_event) => Div::new()
@@ -375,6 +379,12 @@ fn render_event_detail(
                                 module_update_event.module_definition_event_hash,
                             )))
                             .children([text("Open definition event")])
+                            .into_node(),
+                        A::<AppState, Location>::new()
+                            .href(Href::Internal(Location::Module(
+                                module_update_event.module_definition_event_hash,
+                            )))
+                            .children([text("Open module detail")])
                             .into_node(),
                     ])
                     .into_node(),
