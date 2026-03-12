@@ -99,6 +99,8 @@ pub struct AppState {
     pub event_detail_eval_result: Option<String>,
     pub profile_name_input: String,
     pub is_header_popover_open: bool,
+    pub force_offline: bool,
+    pub local_event_queue: LocalEventQueueState,
     pub location: Option<Location>,
     pub focused_path: Option<Vec<PathStep>>,
     pub active_dropdown_name: Option<String>,
@@ -149,6 +151,13 @@ pub struct ModuleUpdateFormState {
     pub result_message: Option<String>,
 }
 
+#[derive(Clone)]
+pub struct LocalEventQueueState {
+    pub items: Vec<crate::local_event::LocalEventRecord>,
+    pub is_loading: bool,
+    pub last_error: Option<String>,
+}
+
 impl AppState {
     pub fn account_name_map(
         &self,
@@ -176,6 +185,26 @@ impl AppState {
         }
         account_name_map
     }
+}
+
+pub fn upsert_local_event_record(state: &mut AppState, record: crate::local_event::LocalEventRecord) {
+    state
+        .local_event_queue
+        .items
+        .retain(|item| item.hash != record.hash);
+    state.local_event_queue.items.push(record);
+    state
+        .local_event_queue
+        .items
+        .sort_by(|a, b| b.updated_at_ms.cmp(&a.updated_at_ms));
+}
+
+pub fn replace_local_event_records(state: &mut AppState, records: Vec<crate::local_event::LocalEventRecord>) {
+    state.local_event_queue.items = records;
+    state
+        .local_event_queue
+        .items
+        .sort_by(|a, b| b.updated_at_ms.cmp(&a.updated_at_ms));
 }
 
 pub fn account_display_name(
@@ -259,6 +288,12 @@ pub fn build_initial_state(
         event_detail_eval_result: None,
         profile_name_input: String::new(),
         is_header_popover_open: false,
+        force_offline: false,
+        local_event_queue: LocalEventQueueState {
+            items: Vec::new(),
+            is_loading: true,
+            last_error: None,
+        },
         location,
         focused_path: None,
         active_dropdown_name: None,
@@ -295,6 +330,7 @@ pub enum Location {
     AccountList,
     PartList,
     ModuleList,
+    LocalEventQueue,
     Module([u8; 32]),
     Part([u8; 32]),
     Event([u8; 32]),
@@ -308,6 +344,7 @@ impl narumincho_vdom::Route for Location {
             Location::AccountList => "/accounts".to_string(),
             Location::PartList => "/parts".to_string(),
             Location::ModuleList => "/modules".to_string(),
+            Location::LocalEventQueue => "/local-events".to_string(),
             Location::Module(hash) => format!(
                 "/modules/{}",
                 base64::Engine::encode(&base64::engine::general_purpose::URL_SAFE_NO_PAD, hash)
@@ -337,6 +374,7 @@ impl narumincho_vdom::Route for Location {
             ["accounts"] => Some(Location::AccountList),
             ["parts"] => Some(Location::PartList),
             ["modules"] => Some(Location::ModuleList),
+            ["local-events"] => Some(Location::LocalEventQueue),
             ["modules", hash_str] => decode_32bytes_base64(hash_str).map(Location::Module),
             ["parts", hash_str] => decode_32bytes_base64(hash_str).map(Location::Part),
             ["events", hash_str] => decode_32bytes_base64(hash_str).map(Location::Event),

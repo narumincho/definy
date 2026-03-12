@@ -319,6 +319,7 @@ fn module_update_form(
                             return next;
                         }
                         let module_description = module_description;
+                        let force_offline = state.force_offline;
                         wasm_bindgen_futures::spawn_local(async move {
                             let event_binary = match definy_event::sign_and_serialize(
                                 definy_event::event::Event {
@@ -351,49 +352,86 @@ fn module_update_form(
                                 }
                             };
 
-                            match crate::fetch::post_event(event_binary.as_slice()).await {
-                                Ok(_) => {
-                                    if let Ok(events) =
-                                        crate::fetch::get_events(None, Some(20), Some(0)).await
-                                    {
+                            match crate::fetch::post_event_with_queue(
+                                event_binary.as_slice(),
+                                force_offline,
+                            )
+                            .await
+                            {
+                                Ok(record) => {
+                                    let status = record.status.clone();
+                                    if status == crate::local_event::LocalEventStatus::Sent {
+                                        if let Ok(events) =
+                                            crate::fetch::get_events(None, Some(20), Some(0)).await
+                                        {
+                                            set_state_for_async(Box::new(move |state| {
+                                                let events_len = events.len();
+                                                let mut event_cache = state.event_cache.clone();
+                                                let mut event_hashes = Vec::new();
+                                                for (hash, event) in events {
+                                                    event_cache.insert(hash, event);
+                                                    event_hashes.push(hash);
+                                                }
+                                                let mut next = state.clone();
+                                                next.event_cache = event_cache;
+                                                next.event_list_state = crate::EventListState {
+                                                    event_hashes,
+                                                    current_offset: 0,
+                                                    page_size: 20,
+                                                    is_loading: false,
+                                                    has_more: events_len == 20,
+                                                    filter_event_type: None,
+                                                };
+                                                crate::app_state::upsert_local_event_record(
+                                                    &mut next,
+                                                    record,
+                                                );
+                                                if let Some(snapshot) = find_module_snapshot(
+                                                    &next,
+                                                    &root_module_definition_hash,
+                                                ) {
+                                                    next.module_update_form
+                                                        .module_definition_event_hash =
+                                                        Some(root_module_definition_hash);
+                                                    next.module_update_form.module_name_input =
+                                                        snapshot.module_name;
+                                                    next.module_update_form
+                                                        .module_description_input =
+                                                        snapshot.module_description;
+                                                } else {
+                                                    next.module_update_form
+                                                        .module_definition_event_hash = None;
+                                                    next.module_update_form.module_name_input =
+                                                        String::new();
+                                                    next.module_update_form
+                                                        .module_description_input =
+                                                        String::new();
+                                                }
+                                                next.module_update_form.result_message =
+                                                    Some("ModuleUpdate event posted".to_string());
+                                                next
+                                            }));
+                                        }
+                                    } else {
                                         set_state_for_async(Box::new(move |state| {
-                                            let events_len = events.len();
-                                            let mut event_cache = state.event_cache.clone();
-                                            let mut event_hashes = Vec::new();
-                                            for (hash, event) in events {
-                                                event_cache.insert(hash, event);
-                                                event_hashes.push(hash);
-                                            }
                                             let mut next = state.clone();
-                                            next.event_cache = event_cache;
-                                            next.event_list_state = crate::EventListState {
-                                                event_hashes,
-                                                current_offset: 0,
-                                                page_size: 20,
-                                                is_loading: false,
-                                                has_more: events_len == 20,
-                                                filter_event_type: None,
-                                            };
-                                            if let Some(snapshot) =
-                                                find_module_snapshot(&next, &root_module_definition_hash)
-                                            {
-                                                next.module_update_form
-                                                    .module_definition_event_hash =
-                                                    Some(root_module_definition_hash);
-                                                next.module_update_form.module_name_input =
-                                                    snapshot.module_name;
-                                                next.module_update_form.module_description_input =
-                                                    snapshot.module_description;
-                                            } else {
-                                                next.module_update_form
-                                                    .module_definition_event_hash = None;
-                                                next.module_update_form.module_name_input =
-                                                    String::new();
-                                                next.module_update_form.module_description_input =
-                                                    String::new();
-                                            }
-                                            next.module_update_form.result_message =
-                                                Some("ModuleUpdate event posted".to_string());
+                                            crate::app_state::upsert_local_event_record(
+                                                &mut next,
+                                                record,
+                                            );
+                                            next.module_update_form.result_message = Some(
+                                                match status {
+                                                    crate::local_event::LocalEventStatus::Queued => {
+                                                        "ModuleUpdate queued (offline)".to_string()
+                                                    }
+                                                    crate::local_event::LocalEventStatus::Failed => {
+                                                        "ModuleUpdate failed to send".to_string()
+                                                    }
+                                                    crate::local_event::LocalEventStatus::Sent => {
+                                                        "ModuleUpdate event posted".to_string()
+                                                    }
+                                                },
+                                            );
                                             next
                                         }));
                                     }

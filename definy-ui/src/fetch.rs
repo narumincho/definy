@@ -1,4 +1,5 @@
 use sha2;
+use wasm_bindgen::JsValue;
 
 pub async fn get_events_raw(
     event_type: Option<definy_event::event::EventType>,
@@ -95,8 +96,57 @@ pub async fn post_event(signated_event: &[u8]) -> Result<u16, anyhow::Error> {
             .fetch_with_str_and_init("/events", &request_init),
     )
     .await
-    .unwrap();
+    .map_err(js_error_to_anyhow)?;
 
-    let response: web_sys::Response = wasm_bindgen::JsCast::dyn_into(response_raw).unwrap();
+    let response: web_sys::Response =
+        wasm_bindgen::JsCast::dyn_into(response_raw).map_err(js_error_to_anyhow)?;
     Ok(response.status())
+}
+
+pub async fn post_event_with_queue(
+    signated_event: &[u8],
+    force_offline: bool,
+) -> Result<crate::local_event::LocalEventRecord, anyhow::Error> {
+    let hash: [u8; 32] = <sha2::Sha256 as sha2::Digest>::digest(signated_event).into();
+    let now_ms = chrono::Utc::now().timestamp_millis();
+
+    let (status, last_error) = if force_offline {
+        (crate::local_event::LocalEventStatus::Queued, None)
+    } else {
+        match post_event(signated_event).await {
+            Ok(status_code) if (200..300).contains(&(status_code as i32)) => {
+                (crate::local_event::LocalEventStatus::Sent, None)
+            }
+            Ok(status_code) => (
+                crate::local_event::LocalEventStatus::Failed,
+                Some(format!("HTTP status {status_code}")),
+            ),
+            Err(error) => (
+                crate::local_event::LocalEventStatus::Failed,
+                Some(format!("{error:?}")),
+            ),
+        }
+    };
+
+    let record = crate::local_event::LocalEventRecord {
+        hash,
+        event_binary: signated_event.to_vec(),
+        status,
+        updated_at_ms: now_ms,
+        last_error,
+    };
+
+    crate::indexed_db::store_event_send_record(&record)
+        .await
+        .map_err(js_error_to_anyhow)?;
+
+    Ok(record)
+}
+
+fn js_error_to_anyhow(value: JsValue) -> anyhow::Error {
+    if let Some(text) = value.as_string() {
+        anyhow::anyhow!(text)
+    } else {
+        anyhow::anyhow!("{value:?}")
+    }
 }

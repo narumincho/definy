@@ -159,7 +159,10 @@ pub fn login_or_create_account_dialog(state: &AppState) -> Node<AppState> {
             match state.login_or_create_account_dialog_state.state {
                 CreatingAccountState::LogIn => login_view(),
                 CreatingAccountState::CreateAccount => {
-                    create_account_view(&state.login_or_create_account_dialog_state)
+                    create_account_view(
+                        &state.login_or_create_account_dialog_state,
+                        state.force_offline,
+                    )
                 }
                 _ => Div::new().children([]).into_node(),
             },
@@ -224,7 +227,10 @@ fn generate_key() -> ed25519_dalek::SigningKey {
     ed25519_dalek::SigningKey::generate(&mut csprng)
 }
 
-fn create_account_view(state: &LoginOrCreateAccountDialogState) -> Node<AppState> {
+fn create_account_view(
+    state: &LoginOrCreateAccountDialogState,
+    force_offline: bool,
+) -> Node<AppState> {
     let mut password_input = Input::new()
         .type_("password")
         .name("password")
@@ -247,6 +253,7 @@ fn create_account_view(state: &LoginOrCreateAccountDialogState) -> Node<AppState
 
     Form::new()
         .on_submit(EventHandler::new(move |set_state| {
+            let set_state_for_async = set_state.clone();
             let generated_key = generated_key_for_submit.clone();
             async move {
                 let username = wasm_bindgen::JsCast::dyn_into::<web_sys::HtmlInputElement>(
@@ -280,9 +287,15 @@ fn create_account_view(state: &LoginOrCreateAccountDialogState) -> Node<AppState
                             &key,
                         )
                         .unwrap();
-                        let status = fetch::post_event(event_binary.as_slice()).await;
-
-                        if status.is_ok() {
+                        let result =
+                            fetch::post_event_with_queue(event_binary.as_slice(), force_offline)
+                                .await;
+                        if let Ok(record) = result {
+                            set_state_for_async(Box::new(move |state: AppState| {
+                                let mut next = state.clone();
+                                crate::app_state::upsert_local_event_record(&mut next, record);
+                                next
+                            }));
                             dialog_close();
                         }
                     });

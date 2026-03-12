@@ -149,6 +149,23 @@ impl narumincho_vdom_client::App<AppState> for DefinyApp {
                     ..state.clone()
                 }));
             }
+            let local_events = definy_ui::indexed_db::load_event_send_records().await;
+            fire(Box::new(move |state| {
+                let mut next = state.clone();
+                match local_events {
+                    Ok(records) => {
+                        definy_ui::replace_local_event_records(&mut next, records);
+                        next.local_event_queue.is_loading = false;
+                        next.local_event_queue.last_error = None;
+                    }
+                    Err(error) => {
+                        next.local_event_queue.is_loading = false;
+                        next.local_event_queue.last_error =
+                            Some(format!("Failed to load local events: {error:?}"));
+                    }
+                }
+                next
+            }));
         });
 
         let location = {

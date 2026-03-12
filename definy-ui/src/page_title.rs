@@ -6,6 +6,7 @@ enum RouteId {
     AccountList,
     PartList,
     ModuleList,
+    LocalEventQueue,
     AccountDetail,
     PartDetail,
     ModuleDetail,
@@ -20,6 +21,7 @@ impl RouteId {
             Some(Location::AccountList) => Self::AccountList,
             Some(Location::PartList) => Self::PartList,
             Some(Location::ModuleList) => Self::ModuleList,
+            Some(Location::LocalEventQueue) => Self::LocalEventQueue,
             Some(Location::Account(_)) => Self::AccountDetail,
             Some(Location::Part(_)) => Self::PartDetail,
             Some(Location::Module(_)) => Self::ModuleDetail,
@@ -34,6 +36,7 @@ impl RouteId {
             Self::AccountList => "accounts",
             Self::PartList => "parts",
             Self::ModuleList => "modules",
+            Self::LocalEventQueue => "local-events",
             Self::AccountDetail => "accounts",
             Self::PartDetail => "parts",
             Self::ModuleDetail => "modules",
@@ -50,6 +53,7 @@ pub fn page_title_text(state: &AppState) -> String {
         | Some(Location::AccountList)
         | Some(Location::PartList)
         | Some(Location::ModuleList)
+        | Some(Location::LocalEventQueue)
         | None => {
             route_id.title_prefix().to_string()
         }
