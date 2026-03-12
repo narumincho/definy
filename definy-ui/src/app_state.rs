@@ -157,6 +157,16 @@ impl AppState {
     }
 }
 
+pub fn account_display_name(
+    account_name_map: &std::collections::HashMap<definy_event::event::AccountId, Box<str>>,
+    account_id: &definy_event::event::AccountId,
+) -> String {
+    account_name_map
+        .get(account_id)
+        .map(|name| name.to_string())
+        .unwrap_or_else(|| crate::hash_format::encode_bytes(account_id.0.as_ref()))
+}
+
 pub fn build_initial_state(
     location: Option<Location>,
     events: Vec<(
@@ -169,6 +179,7 @@ pub fn build_initial_state(
     event_list_loading: bool,
     event_list_has_more: bool,
     current_key: Option<ed25519_dalek::SigningKey>,
+    filter_event_type: Option<definy_event::event::EventType>,
 ) -> AppState {
     let mut event_cache = HashMap::new();
     let mut event_hashes = Vec::new();
@@ -191,7 +202,7 @@ pub fn build_initial_state(
             page_size: 20,
             is_loading: event_list_loading,
             has_more: event_list_has_more,
-            filter_event_type: None,
+            filter_event_type,
         },
         current_key,
         part_definition_form: PartDefinitionFormState {

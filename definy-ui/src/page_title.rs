@@ -44,11 +44,8 @@ pub fn page_title_text(state: &AppState) -> String {
             route_id.title_prefix().to_string()
         }
         Some(Location::Account(account_id)) => {
-            let account_name = state
-                .account_name_map()
-                .get(account_id)
-                .map(|name| name.to_string())
-                .unwrap_or_else(|| "unknown".to_string());
+            let account_name =
+                crate::app_state::account_display_name(&state.account_name_map(), account_id);
             format!("{}/{}", route_id.title_prefix(), account_name)
         }
         Some(Location::Part(definition_event_hash)) => {

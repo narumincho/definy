@@ -81,10 +81,8 @@ fn render_event_detail(
     event: &Event,
     account_name_map: &std::collections::HashMap<definy_event::event::AccountId, Box<str>>,
 ) -> Node<AppState> {
-    let account_name = account_name_map
-        .get(&event.account_id)
-        .map(|name: &Box<str>| name.as_ref())
-        .unwrap_or("Unknown");
+    let account_name =
+        crate::app_state::account_display_name(account_name_map, &event.account_id);
     let root_part_definition_hash = root_part_definition_hash(hash, &event.content);
 
     Div::new()
@@ -210,6 +208,17 @@ fn render_event_detail(
                                 .children([text("Evaluate")])
                                 .into_node()
                         },
+                        A::<AppState, Location>::new()
+                            .href(Href::Internal(Location::Part(*hash)))
+                            .style(
+                                Style::new()
+                                    .set("margin-top", "0.45rem")
+                                    .set("display", "inline-flex")
+                                    .set("color", "var(--primary)")
+                                    .set("text-decoration", "none"),
+                            )
+                            .children([text("Open part detail")])
+                            .into_node(),
                         match &state.event_detail_eval_result {
                             Some(result) => Div::new()
                                 .class("mono")
@@ -284,6 +293,12 @@ fn render_event_detail(
                                 part_update_event.part_definition_event_hash,
                             )))
                             .children([text("Open definition event")])
+                            .into_node(),
+                        A::<AppState, Location>::new()
+                            .href(Href::Internal(Location::Part(
+                                part_update_event.part_definition_event_hash,
+                            )))
+                            .children([text("Open part detail")])
                             .into_node(),
                     ])
                     .into_node(),

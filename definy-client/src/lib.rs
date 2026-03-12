@@ -99,9 +99,28 @@ impl narumincho_vdom_client::App<AppState> for DefinyApp {
             .unwrap();
         on_keydown.forget();
 
+        let filter_query = {
+            let initial_url = web_sys::window()
+                .unwrap()
+                .document()
+                .unwrap()
+                .url()
+                .unwrap_or_default();
+            let url = web_sys::Url::new(&initial_url).unwrap();
+            let search = url.search();
+            search.strip_prefix('?').unwrap_or(search.as_str()).to_string()
+        };
+
+        let filter_for_fetch = definy_ui::event_filter_from_query_str(&filter_query);
         wasm_bindgen_futures::spawn_local(async move {
             if !has_ssr_events {
-                let events = definy_ui::fetch::get_events(None, Some(20), Some(0)).await.unwrap();
+                let events = definy_ui::fetch::get_events(
+                    filter_for_fetch,
+                    Some(20),
+                    Some(0),
+                )
+                .await
+                .unwrap();
                 fire(Box::new(move |state| {
                     let mut event_cache = state.event_cache.clone();
                     let mut event_hashes = Vec::new();
@@ -117,7 +136,7 @@ impl narumincho_vdom_client::App<AppState> for DefinyApp {
                             page_size: 20,
                             is_loading: false,
                             has_more: events.len() == 20,
-                            filter_event_type: None,
+                            filter_event_type: filter_for_fetch,
                         },
                         ..state.clone()
                     }
@@ -152,7 +171,14 @@ impl narumincho_vdom_client::App<AppState> for DefinyApp {
             (Vec::new(), true, true)
         };
 
-        definy_ui::build_initial_state(location, events, is_loading, has_more, None)
+        definy_ui::build_initial_state(
+            location,
+            events,
+            is_loading,
+            has_more,
+            None,
+            definy_ui::event_filter_from_query_str(&filter_query),
+        )
     }
 
     fn on_navigate(state: AppState, url: String) -> AppState {
@@ -160,11 +186,27 @@ impl narumincho_vdom_client::App<AppState> for DefinyApp {
         if let Ok(web_url) = web_sys::Url::new(&url) {
             let pathname = web_url.pathname();
             let location = definy_ui::Location::from_url(&pathname);
-            return AppState {
+            let search = web_url.search();
+            let query = search.strip_prefix('?').unwrap_or(search.as_str());
+            let filter_event_type = definy_ui::event_filter_from_query_str(query);
+            let mut next = AppState {
                 location,
                 event_detail_eval_result: None,
                 ..state
             };
+            if matches!(next.location, Some(definy_ui::Location::Home)) {
+                if next.event_list_state.filter_event_type != filter_event_type {
+                    next.event_list_state = definy_ui::EventListState {
+                        event_hashes: Vec::new(),
+                        current_offset: 0,
+                        page_size: next.event_list_state.page_size,
+                        is_loading: false,
+                        has_more: true,
+                        filter_event_type,
+                    };
+                }
+            }
+            return next;
         }
         state
     }

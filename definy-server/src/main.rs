@@ -114,7 +114,8 @@ async fn handler(
     address: SocketAddr,
     state: AppState,
 ) -> Result<Response<Full<Bytes>>, hyper::http::Error> {
-    let path = request.uri().path();
+    let uri = request.uri().clone();
+    let path = uri.path();
     println!(
         "Received request: {} {} from {}",
         request.method(),
@@ -131,7 +132,7 @@ async fn handler(
     if accepts_html {
         let pool = state.pool.read().await.clone();
         return match pool {
-            Some(pool) => handle_html(path, &pool).await,
+            Some(pool) => handle_html(&uri, &pool).await,
             None => db_unavailable_response(true),
         };
     }
@@ -195,20 +196,31 @@ fn db_unavailable_response(wants_html: bool) -> Result<Response<Full<Bytes>>, hy
 }
 
 async fn handle_html(
-    path: &str,
+    uri: &hyper::Uri,
     pool: &sqlx::postgres::PgPool,
 ) -> Result<Response<Full<Bytes>>, hyper::http::Error> {
+    let path = uri.path();
+    let query = uri.query();
     let location = definy_ui::Location::from_url(path);
     if let Some(ref location) = location {
         if location.to_url() != path {
+            let mut redirect_url = location.to_url();
+            if let Some(query) = query {
+                if !query.is_empty() {
+                    redirect_url.push('?');
+                    redirect_url.push_str(query);
+                }
+            }
             return Response::builder()
                 .status(301)
-                .header("Location", location.to_url())
+                .header("Location", redirect_url)
                 .body(Full::new(Bytes::from("Redirecting...")));
         }
     }
 
-    let event_binary_array = match db::get_events(pool, None, Some(20), Some(0)).await {
+    let filter_event_type = definy_ui::event_filter_from_query(query);
+    let event_binary_array =
+        match db::get_events(pool, filter_event_type, Some(20), Some(0)).await {
         Ok(events) => events,
         Err(error) => {
             eprintln!("Failed to get events for SSR: {:?}", error);
@@ -235,7 +247,14 @@ async fn handle_html(
         .header("Content-Type", "text/html; charset=utf-8")
         .body(Full::new(Bytes::from(narumincho_vdom::to_html(
             &definy_ui::render(
-                &definy_ui::build_initial_state(location, events, false, has_more, None),
+                &definy_ui::build_initial_state(
+                    location,
+                    events,
+                    false,
+                    has_more,
+                    None,
+                    filter_event_type,
+                ),
                 &Some(definy_ui::ResourceHash {
                     js: JAVASCRIPT_HASH.to_string(),
                     wasm: WASM_HASH.to_string(),

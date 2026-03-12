@@ -11,6 +11,7 @@ definy-event = { path = "../definy-event" }
 web-sys = { version = "0.3.85", features = [
   "console",
   "Window",
+  "History",
   "Document",
   "Element",
   "Node",

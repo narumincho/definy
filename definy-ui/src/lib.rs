@@ -3,6 +3,7 @@ mod account_list;
 mod app_state;
 pub mod dropdown;
 mod event_detail;
+mod event_filter;
 mod event_list;
 mod event_presenter;
 mod expression_editor;
@@ -22,6 +23,7 @@ mod part_projection;
 pub mod wasm_emitter;
 
 pub use app_state::*;
+pub use event_filter::*;
 pub use message::Message;
 
 use narumincho_vdom::*;
