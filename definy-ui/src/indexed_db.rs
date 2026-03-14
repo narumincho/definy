@@ -6,7 +6,6 @@ use wasm_bindgen_futures::JsFuture;
 const DB_NAME: &str = "definy";
 const DB_VERSION: u32 = 2;
 const EVENTS_STORE: &str = "events";
-const EVENT_SEND_QUEUE_STORE: &str = "event_send_queue";
 
 pub async fn store_events(events: &[([u8; 32], Vec<u8>)]) -> Result<(), JsValue> {
     if events.is_empty() {
@@ -20,37 +19,35 @@ pub async fn store_events(events: &[([u8; 32], Vec<u8>)]) -> Result<(), JsValue>
 
     for (hash, bytes) in events {
         let key = JsValue::from_str(&crate::hash_format::encode_hash32(hash));
-        let value = js_sys::Uint8Array::from(bytes.as_slice());
-        store.put_with_key(&value, &key)?;
+        let record = crate::local_event::LocalEventRecord {
+            hash: *hash,
+            event_binary: bytes.clone(),
+            status: crate::local_event::LocalEventStatus::Sent,
+            updated_at_ms: chrono::Utc::now().timestamp_millis(),
+            last_error: None,
+        };
+        let value = serde_cbor::to_vec(&record)
+            .map_err(|error| JsValue::from_str(&format!("{error:?}")))?;
+        let value = js_sys::Uint8Array::from(value.as_slice());
+        let request = store.put_with_key(&value, &key)?;
+        let _ = request_to_jsvalue(request).await?;
     }
 
     Ok(())
 }
 
 pub async fn load_event_binaries() -> Result<Vec<Vec<u8>>, JsValue> {
-    let db = open_db().await?;
-    let transaction = db.transaction_with_str(EVENTS_STORE)?;
-    let store = transaction.object_store(EVENTS_STORE)?;
-    let request = store.get_all()?;
-    let value = request_to_jsvalue(request).await?;
-    let array = js_sys::Array::from(&value);
-    let mut events = Vec::new();
-    for value in array.iter() {
-        let bytes = js_sys::Uint8Array::new(&value).to_vec();
-        events.push(bytes);
-    }
-    Ok(events)
+    let records = load_event_records().await?;
+    Ok(records.into_iter().map(|record| record.event_binary).collect())
 }
 
-pub async fn store_event_send_record(
+pub async fn store_event_record(
     record: &crate::local_event::LocalEventRecord,
 ) -> Result<(), JsValue> {
     let db = open_db().await?;
-    let transaction = db.transaction_with_str_and_mode(
-        EVENT_SEND_QUEUE_STORE,
-        web_sys::IdbTransactionMode::Readwrite,
-    )?;
-    let store = transaction.object_store(EVENT_SEND_QUEUE_STORE)?;
+    let transaction =
+        db.transaction_with_str_and_mode(EVENTS_STORE, web_sys::IdbTransactionMode::Readwrite)?;
+    let store = transaction.object_store(EVENTS_STORE)?;
 
     let key = JsValue::from_str(&crate::hash_format::encode_hash32(&record.hash));
     let value = serde_cbor::to_vec(record).map_err(|error| JsValue::from_str(&format!("{error:?}")))?;
@@ -60,31 +57,40 @@ pub async fn store_event_send_record(
     Ok(())
 }
 
-pub async fn remove_event_send_record(hash: &[u8; 32]) -> Result<(), JsValue> {
+pub async fn remove_event_record(hash: &[u8; 32]) -> Result<(), JsValue> {
     let db = open_db().await?;
-    let transaction = db.transaction_with_str_and_mode(
-        EVENT_SEND_QUEUE_STORE,
-        web_sys::IdbTransactionMode::Readwrite,
-    )?;
-    let store = transaction.object_store(EVENT_SEND_QUEUE_STORE)?;
+    let transaction =
+        db.transaction_with_str_and_mode(EVENTS_STORE, web_sys::IdbTransactionMode::Readwrite)?;
+    let store = transaction.object_store(EVENTS_STORE)?;
     let key = JsValue::from_str(&crate::hash_format::encode_hash32(hash));
     let request = store.delete(&key)?;
     let _ = request_to_jsvalue(request).await?;
     Ok(())
 }
 
-pub async fn load_event_send_records() -> Result<Vec<crate::local_event::LocalEventRecord>, JsValue> {
+pub async fn load_event_records() -> Result<Vec<crate::local_event::LocalEventRecord>, JsValue> {
     let db = open_db().await?;
-    let transaction = db.transaction_with_str(EVENT_SEND_QUEUE_STORE)?;
-    let store = transaction.object_store(EVENT_SEND_QUEUE_STORE)?;
+    let transaction = db.transaction_with_str(EVENTS_STORE)?;
+    let store = transaction.object_store(EVENTS_STORE)?;
     let request = store.get_all()?;
     let value = request_to_jsvalue(request).await?;
     let array = js_sys::Array::from(&value);
     let mut records = Vec::new();
     for value in array.iter() {
         let bytes = js_sys::Uint8Array::new(&value).to_vec();
-        if let Ok(record) = serde_cbor::from_slice::<crate::local_event::LocalEventRecord>(&bytes) {
+        if let Ok(record) =
+            serde_cbor::from_slice::<crate::local_event::LocalEventRecord>(&bytes)
+        {
             records.push(record);
+        } else {
+            let hash: [u8; 32] = <sha2::Sha256 as sha2::Digest>::digest(&bytes).into();
+            records.push(crate::local_event::LocalEventRecord {
+                hash,
+                event_binary: bytes,
+                status: crate::local_event::LocalEventStatus::Sent,
+                updated_at_ms: chrono::Utc::now().timestamp_millis(),
+                last_error: None,
+            });
         }
     }
     Ok(records)
@@ -104,22 +110,15 @@ async fn open_db() -> Result<web_sys::IdbDatabase, JsValue> {
             if let Ok(db) = result.dyn_into::<web_sys::IdbDatabase>() {
                 let store_names = db.object_store_names();
                 let mut has_events = false;
-                let mut has_queue = false;
                 for index in 0..store_names.length() {
                     if let Some(name) = store_names.get(index) {
                         if name == EVENTS_STORE {
                             has_events = true;
                         }
-                        if name == EVENT_SEND_QUEUE_STORE {
-                            has_queue = true;
-                        }
                     }
                 }
                 if !has_events {
                     let _ = db.create_object_store(EVENTS_STORE);
-                }
-                if !has_queue {
-                    let _ = db.create_object_store(EVENT_SEND_QUEUE_STORE);
                 }
             }
         }

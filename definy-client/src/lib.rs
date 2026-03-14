@@ -57,22 +57,19 @@ fn read_ssr_state() -> Option<(
         >,
     )>,
     bool,
+    Vec<Vec<u8>>,
 )> {
     let text = SSR_INITIAL_STATE_TEXT.as_ref()?.to_string();
     let decoded = definy_ui::decode_ssr_state(text.as_str())?;
-    Some(
-        (
-            decoded
-                .event_binaries
-                .into_iter()
-                .map(|bytes| {
-                    let hash: [u8; 32] = <sha2::Sha256 as sha2::Digest>::digest(&bytes).into();
-                    (hash, definy_event::verify_and_deserialize(&bytes))
-                })
-                .collect(),
-            decoded.has_more,
-        ),
-    )
+    let event_binaries = decoded.event_binaries;
+    let events = event_binaries
+        .iter()
+        .map(|bytes| {
+            let hash: [u8; 32] = <sha2::Sha256 as sha2::Digest>::digest(bytes).into();
+            (hash, definy_event::verify_and_deserialize(bytes))
+        })
+        .collect();
+    Some((events, decoded.has_more, event_binaries))
 }
 
 impl narumincho_vdom_client::App<AppState> for DefinyApp {
@@ -81,6 +78,7 @@ impl narumincho_vdom_client::App<AppState> for DefinyApp {
     ) -> AppState {
         let fire = std::rc::Rc::clone(fire);
         let ssr_state = read_ssr_state();
+        let ssr_event_binaries = ssr_state.as_ref().map(|(_, _, binaries)| binaries.clone());
         let has_ssr_events = ssr_state.is_some();
 
         let fire_for_keydown = std::rc::Rc::clone(&fire);
@@ -113,6 +111,17 @@ impl narumincho_vdom_client::App<AppState> for DefinyApp {
 
         let filter_for_fetch = definy_ui::event_filter_from_query_str(&filter_query);
         wasm_bindgen_futures::spawn_local(async move {
+            if let Some(ssr_event_binaries) = ssr_event_binaries {
+                let event_pairs = ssr_event_binaries
+                    .into_iter()
+                    .map(|bytes| {
+                        let hash: [u8; 32] =
+                            <sha2::Sha256 as sha2::Digest>::digest(&bytes).into();
+                        (hash, bytes)
+                    })
+                    .collect::<Vec<_>>();
+                let _ = definy_ui::indexed_db::store_events(&event_pairs).await;
+            }
             if !has_ssr_events {
                 if let Ok(cached_event_binaries) =
                     definy_ui::indexed_db::load_event_binaries().await
@@ -193,7 +202,7 @@ impl narumincho_vdom_client::App<AppState> for DefinyApp {
                     ..state.clone()
                 }));
             }
-            let local_events = definy_ui::indexed_db::load_event_send_records().await;
+            let local_events = definy_ui::indexed_db::load_event_records().await;
             fire(Box::new(move |state| {
                 let mut next = state.clone();
                 match local_events {
@@ -225,7 +234,8 @@ impl narumincho_vdom_client::App<AppState> for DefinyApp {
             definy_ui::Location::from_url(&pathname)
         };
 
-        let (events, is_loading, has_more) = if let Some((ssr_events, has_more)) = ssr_state {
+        let (events, is_loading, has_more) =
+            if let Some((ssr_events, has_more, _)) = ssr_state {
             // SSRが送ってきた状態をそのまま採用
             (ssr_events, false, has_more)
         } else {

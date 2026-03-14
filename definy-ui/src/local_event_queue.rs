@@ -35,7 +35,7 @@ pub fn local_event_queue_view(state: &AppState) -> Node<AppState> {
                 next.local_event_queue.is_loading = true;
                 next
             }));
-            let result = crate::indexed_db::load_event_send_records().await;
+            let result = crate::indexed_db::load_event_records().await;
             set_state_for_async(Box::new(move |state: AppState| {
                 let mut next = state.clone();
                 match result {
@@ -126,8 +126,7 @@ pub fn local_event_queue_view(state: &AppState) -> Node<AppState> {
                         .on_click(EventHandler::new(move |set_state| {
                             let hash = hash;
                             async move {
-                                let result =
-                                    crate::indexed_db::remove_event_send_record(&hash).await;
+                                let result = crate::indexed_db::remove_event_record(&hash).await;
                                 set_state(Box::new(move |state: AppState| {
                                     let mut next = state.clone();
                                     match result {

@@ -136,7 +136,7 @@ pub async fn post_event_with_queue(
         last_error,
     };
 
-    crate::indexed_db::store_event_send_record(&record)
+    crate::indexed_db::store_event_record(&record)
         .await
         .map_err(js_error_to_anyhow)?;
 
