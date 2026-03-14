@@ -3,6 +3,9 @@ name = "narumincho-vdom-client"
 version = "0.1.0"
 edition = "2024"
 
+[lib]
+doctest = false
+
 [dependencies]
 narumincho-vdom = { path = "../narumincho-vdom" }
 js-sys = "0.3"
