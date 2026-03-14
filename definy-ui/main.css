@@ -1,35 +1,35 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 
 :root {
-  --background: #0a1118;
-  --surface: rgba(16, 26, 38, 0.74);
-  --surface-hover: rgba(26, 39, 54, 0.9);
-  --surface-opaque: #121f2d;
+  --background: #10161b;
+  --surface: rgba(20, 28, 35, 0.88);
+  --surface-hover: rgba(28, 38, 46, 0.92);
+  --surface-opaque: #162129;
 
-  --primary-gradient: linear-gradient(135deg, #0ea5e9 0%, #22c55e 100%);
-  --primary-hover-gradient: linear-gradient(135deg, #38bdf8 0%, #4ade80 100%);
-  --primary: #38bdf8;
-  --primary-content: #f8fafc;
+  --primary-gradient: none;
+  --primary-hover-gradient: none;
+  --primary: #7cc0d8;
+  --primary-content: #f1f6fb;
 
-  --error: #f87171;
-  --error-bg: rgba(248, 113, 113, 0.14);
+  --error: #f28b82;
+  --error-bg: rgba(242, 139, 130, 0.12);
 
-  --border: rgba(167, 186, 210, 0.2);
-  --border-strong: rgba(167, 186, 210, 0.38);
-  --border-focus: rgba(56, 189, 248, 0.45);
+  --border: rgba(160, 176, 192, 0.18);
+  --border-strong: rgba(160, 176, 192, 0.32);
+  --border-focus: rgba(124, 192, 216, 0.4);
 
-  --text: #e6eef8;
-  --text-secondary: #a7bad2;
+  --text: #e1e8ef;
+  --text-secondary: #a3b2c2;
 
   --radius-sm: 8px;
   --radius-md: 12px;
   --radius-lg: 18px;
   --radius-full: 9999px;
 
-  --shadow-sm: 0 4px 12px rgba(7, 12, 20, 0.2);
-  --shadow-md: 0 12px 20px rgba(7, 12, 20, 0.3);
-  --shadow-lg: 0 20px 32px rgba(3, 8, 16, 0.4);
-  --shadow-glow: 0 0 0 3px rgba(56, 189, 248, 0.16);
+  --shadow-sm: 0 4px 10px rgba(7, 12, 18, 0.18);
+  --shadow-md: 0 10px 18px rgba(7, 12, 18, 0.26);
+  --shadow-lg: 0 18px 28px rgba(5, 10, 16, 0.34);
+  --shadow-glow: 0 0 0 3px rgba(124, 192, 216, 0.14);
 
   --glass-blur: blur(16px);
   --content-max-width: 920px;
@@ -41,11 +41,7 @@
 
 body {
   background-color: var(--background);
-  background-image:
-    radial-gradient(circle at 14% 8%, rgba(14, 165, 233, 0.14) 0%, transparent 42%),
-    radial-gradient(circle at 88% 78%, rgba(34, 197, 94, 0.14) 0%, transparent 40%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.01), rgba(255, 255, 255, 0));
-  background-attachment: fixed;
+  background-image: none;
   color: var(--text);
   font-family: 'Outfit', system-ui, -apple-system, sans-serif;
   margin: 0;
@@ -81,7 +77,7 @@ textarea {
 }
 
 button {
-  background: var(--primary-gradient);
+  background: var(--primary);
   color: var(--primary-content);
   border: 1px solid transparent;
   border-radius: var(--radius-full);
@@ -98,7 +94,7 @@ button {
 }
 
 button:hover {
-  background: var(--primary-hover-gradient);
+  background: #8ad0e6;
   transform: translateY(-1px);
   box-shadow: 0 12px 22px rgba(14, 165, 233, 0.26);
 }

@@ -51,9 +51,7 @@ fn header_main(state: &AppState) -> Node<AppState> {
                                 Style::new()
                                     .set("font-size", "1.48rem")
                                     .set("font-weight", "700")
-                                    .set("background", "var(--primary-gradient)")
-                                    .set("-webkit-background-clip", "text")
-                                    .set("-webkit-text-fill-color", "transparent")
+                                    .set("color", "var(--primary)")
                                     .set("letter-spacing", "-0.03em"),
                             )
                             .children([text("definy")])
