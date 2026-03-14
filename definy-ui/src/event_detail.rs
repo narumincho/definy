@@ -58,7 +58,7 @@ pub fn event_detail_view(state: &AppState, target_hash: &[u8; 32]) -> Node<AppSt
         .children([
             A::<AppState, Location>::new()
                 .class("back-link")
-                .href(Href::Internal(Location::Home))
+                .href(state.href_with_lang(Location::Home))
                 .style(
                     Style::new()
                         .set("display", "inline-flex")
@@ -125,7 +125,7 @@ fn render_event_detail(
                 ])
                 .into_node(),
             A::<AppState, Location>::new()
-                .href(Href::Internal(Location::Account(event.account_id.clone())))
+                .href(state.href_with_lang(Location::Account(event.account_id.clone())))
                 .style(
                     Style::new()
                         .set("width", "fit-content")
@@ -209,7 +209,7 @@ fn render_event_detail(
                                 .into_node()
                         },
                         A::<AppState, Location>::new()
-                            .href(Href::Internal(Location::Part(*hash)))
+                            .href(state.href_with_lang(Location::Part(*hash)))
                             .style(
                                 Style::new()
                                     .set("margin-top", "0.45rem")
@@ -289,13 +289,13 @@ fn render_event_detail(
                             ))])
                             .into_node(),
                         A::<AppState, Location>::new()
-                            .href(Href::Internal(Location::Event(
+                            .href(state.href_with_lang(Location::Event(
                                 part_update_event.part_definition_event_hash,
                             )))
                             .children([text("Open definition event")])
                             .into_node(),
                         A::<AppState, Location>::new()
-                            .href(Href::Internal(Location::Part(
+                            .href(state.href_with_lang(Location::Part(
                                 part_update_event.part_definition_event_hash,
                             )))
                             .children([text("Open part detail")])
@@ -327,7 +327,7 @@ fn render_event_detail(
                                 .into_node()
                         },
                         A::<AppState, Location>::new()
-                            .href(Href::Internal(Location::Module(*hash)))
+                            .href(state.href_with_lang(Location::Module(*hash)))
                             .children([text("Open module detail")])
                             .into_node(),
                     ])
@@ -375,13 +375,13 @@ fn render_event_detail(
                             ))])
                             .into_node(),
                         A::<AppState, Location>::new()
-                            .href(Href::Internal(Location::Event(
+                            .href(state.href_with_lang(Location::Event(
                                 module_update_event.module_definition_event_hash,
                             )))
                             .children([text("Open definition event")])
                             .into_node(),
                         A::<AppState, Location>::new()
-                            .href(Href::Internal(Location::Module(
+                            .href(state.href_with_lang(Location::Module(
                                 module_update_event.module_definition_event_hash,
                             )))
                             .children([text("Open module detail")])
@@ -451,7 +451,7 @@ fn related_part_events_section(
                         .map(|(event_hash, event)| {
                             let label = crate::event_presenter::event_kind_label(&event);
                             A::<AppState, Location>::new()
-                                .href(Href::Internal(Location::Event(event_hash)))
+                                .href(state.href_with_lang(Location::Event(event_hash)))
                                 .style(
                                     Style::new()
                                         .set("display", "grid")

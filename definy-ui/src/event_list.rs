@@ -7,12 +7,16 @@ use crate::expression_eval::{evaluate_expression, expression_to_source};
 use crate::module_projection::collect_module_snapshots;
 use crate::part_projection::collect_part_snapshots;
 
-fn update_event_filter_url(event_type: Option<EventType>) {
-    let query = crate::event_filter_query_string(event_type);
-    let new_url = match query {
-        Some(query) => format!("/?{}", query),
-        None => "/".to_string(),
-    };
+fn update_event_filter_url(event_type: Option<EventType>, lang_code: &str) {
+    let query = crate::query::build_query(crate::query::QueryParams {
+        lang: Some(lang_code.to_string()),
+        event_type,
+    });
+    let mut new_url = "/".to_string();
+    if let Some(query) = query {
+        new_url.push('?');
+        new_url.push_str(query.as_str());
+    }
     if let Some(window) = web_sys::window() {
         if let Ok(history) = window.history() {
             let _ = history.push_state_with_url(&wasm_bindgen::JsValue::NULL, "", Some(&new_url));
@@ -79,7 +83,7 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
                     "module_update" => Some(EventType::ModuleUpdate),
                     _ => None,
                 };
-                update_event_filter_url(event_type);
+                update_event_filter_url(event_type, state.language.code);
                 // Reset list and load first page with new filter
                 let mut next = state.clone();
                 next.event_list_state = crate::EventListState {
@@ -354,7 +358,7 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
                             .event_hashes
                             .iter()
                             .filter_map(|hash| state.event_cache.get(hash).map(|event| (hash, event)))
-                            .map(|(hash, event)| event_view(hash, event, &account_name_map))
+                            .map(|(hash, event)| event_view(&state, hash, event, &account_name_map))
                             .collect::<Vec<Node<AppState>>>()
                     })
                     .into_node(),
@@ -452,6 +456,7 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
 }
 
 fn event_view(
+    state: &AppState,
     hash: &[u8; 32],
     event_result: &Result<
         (ed25519_dalek::Signature, definy_event::event::Event),
@@ -475,9 +480,7 @@ fn event_view(
                     .set("display", "grid")
                     .set("gap", "0.75rem"),
             )
-            .href(narumincho_vdom::Href::Internal(crate::Location::Event(
-                *hash,
-            )))
+            .href(state.href_with_lang(crate::Location::Event(*hash)))
             .children([
                 Div::new()
                     .style(
@@ -520,7 +523,7 @@ fn event_view(
                         .style(Style::new().set("font-size", "0.98rem"))
                         .children([
                             A::<AppState, crate::Location>::new()
-                                .href(narumincho_vdom::Href::Internal(crate::Location::Account(
+                                .href(state.href_with_lang(crate::Location::Account(
                                     event.account_id.clone(),
                                 )))
                                 .style(
@@ -558,7 +561,7 @@ fn event_view(
                                     .into_node()
                             },
                             A::<AppState, crate::Location>::new()
-                                .href(narumincho_vdom::Href::Internal(crate::Location::Part(*hash)))
+                                .href(state.href_with_lang(crate::Location::Part(*hash)))
                                 .style(
                                     Style::new()
                                         .set("font-size", "0.82rem")
@@ -573,7 +576,7 @@ fn event_view(
                         .style(Style::new().set("font-size", "1.05rem"))
                         .children([
                             A::<AppState, crate::Location>::new()
-                                .href(narumincho_vdom::Href::Internal(crate::Location::Account(
+                                .href(state.href_with_lang(crate::Location::Account(
                                     event.account_id.clone(),
                                 )))
                                 .style(
@@ -618,7 +621,7 @@ fn event_view(
                                 ))])
                                 .into_node(),
                             A::<AppState, crate::Location>::new()
-                                .href(narumincho_vdom::Href::Internal(crate::Location::Part(
+                                .href(state.href_with_lang(crate::Location::Part(
                                     part_update_event.part_definition_event_hash,
                                 )))
                                 .style(
@@ -635,7 +638,7 @@ fn event_view(
                         .style(Style::new().set("font-size", "1rem"))
                         .children([
                             A::<AppState, crate::Location>::new()
-                                .href(narumincho_vdom::Href::Internal(crate::Location::Account(
+                                .href(state.href_with_lang(crate::Location::Account(
                                     event.account_id.clone(),
                                 )))
                                 .style(
@@ -676,7 +679,7 @@ fn event_view(
                         .style(Style::new().set("font-size", "1rem"))
                         .children([
                             A::<AppState, crate::Location>::new()
-                                .href(narumincho_vdom::Href::Internal(crate::Location::Account(
+                                .href(state.href_with_lang(crate::Location::Account(
                                     event.account_id.clone(),
                                 )))
                                 .style(
@@ -724,7 +727,7 @@ fn event_view(
                                 ))])
                                 .into_node(),
                             A::<AppState, crate::Location>::new()
-                                .href(narumincho_vdom::Href::Internal(crate::Location::Event(
+                                .href(state.href_with_lang(crate::Location::Event(
                                     module_update_event.module_definition_event_hash,
                                 )))
                                 .style(

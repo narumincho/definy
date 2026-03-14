@@ -67,13 +67,13 @@ pub fn module_detail_view(state: &AppState, definition_event_hash: &[u8; 32]) ->
                         .style(Style::new().set("display", "flex").set("gap", "0.45rem"))
                         .children([
                             A::<AppState, Location>::new()
-                                .href(Href::Internal(Location::Event(
+                                .href(state.href_with_lang(Location::Event(
                                     module_snapshot.latest_event_hash,
                                 )))
                                 .children([text("Latest event")])
                                 .into_node(),
                             A::<AppState, Location>::new()
-                                .href(Href::Internal(Location::Event(
+                                .href(state.href_with_lang(Location::Event(
                                     module_snapshot.definition_event_hash,
                                 )))
                                 .children([text("Definition event")])
@@ -177,13 +177,13 @@ pub fn module_detail_view(state: &AppState, definition_event_hash: &[u8; 32]) ->
                                             )
                                             .children([
                                                 A::<AppState, Location>::new()
-                                                    .href(Href::Internal(Location::Part(
+                                                    .href(state.href_with_lang(Location::Part(
                                                         part.definition_event_hash,
                                                     )))
                                                     .children([text("Open part detail")])
                                                     .into_node(),
                                                 A::<AppState, Location>::new()
-                                                    .href(Href::Internal(Location::Event(
+                                                    .href(state.href_with_lang(Location::Event(
                                                         part.latest_event_hash,
                                                     )))
                                                     .children([text("Latest event")])

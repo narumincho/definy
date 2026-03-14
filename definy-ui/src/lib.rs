@@ -12,6 +12,7 @@ pub mod fetch;
 mod hash_format;
 mod header;
 pub mod indexed_db;
+pub mod language;
 mod layout;
 mod local_event;
 mod local_event_queue;
@@ -20,6 +21,7 @@ mod message;
 mod module_detail;
 mod module_list;
 mod module_projection;
+pub mod query;
 pub mod navigator_credential;
 mod not_found;
 mod page_title;
@@ -133,6 +135,7 @@ init({{ module_or_path: \"/{}\" }});",
         _ => {}
     }
     Html::new()
+        .attribute("lang", state.language.code)
         .children([
             Head::new().children(head_children).into_node(),
             Body::new()

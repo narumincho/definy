@@ -183,7 +183,7 @@ pub fn account_detail_view(
         .children([
             A::<AppState, Location>::new()
                 .class("back-link")
-                .href(Href::Internal(Location::AccountList))
+                .href(state.href_with_lang(Location::AccountList))
                 .style(
                     Style::new()
                         .set("display", "inline-flex")
@@ -248,7 +248,7 @@ pub fn account_detail_view(
                             .map(|(hash, event)| {
                                 A::<AppState, Location>::new()
                                     .class("event-card")
-                                    .href(Href::Internal(Location::Event(hash)))
+                                    .href(state.href_with_lang(Location::Event(hash)))
                                     .style(
                                         Style::new()
                                             .set("display", "grid")

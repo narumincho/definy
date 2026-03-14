@@ -42,7 +42,7 @@ pub fn account_list_view(state: &AppState) -> Node<AppState> {
                                 );
                                 A::<AppState, Location>::new()
                                     .class("event-card")
-                                    .href(Href::Internal(Location::Account(row.account_id)))
+                                    .href(state.href_with_lang(Location::Account(row.account_id)))
                                     .style(
                                         Style::new()
                                             .set("display", "grid")

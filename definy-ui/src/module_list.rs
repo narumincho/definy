@@ -147,7 +147,7 @@ pub fn module_list_view(state: &AppState) -> Node<AppState> {
                                                 )
                                                 .children([
                                                     A::<AppState, crate::Location>::new()
-                                                        .href(Href::Internal(
+                                                        .href(state.href_with_lang(
                                                             crate::Location::Module(
                                                                 module.definition_event_hash,
                                                             ),
@@ -155,7 +155,7 @@ pub fn module_list_view(state: &AppState) -> Node<AppState> {
                                                         .children([text("Open module detail")])
                                                         .into_node(),
                                                     A::<AppState, crate::Location>::new()
-                                                        .href(Href::Internal(
+                                                        .href(state.href_with_lang(
                                                             crate::Location::Event(
                                                                 module.latest_event_hash,
                                                             ),
@@ -163,7 +163,7 @@ pub fn module_list_view(state: &AppState) -> Node<AppState> {
                                                         .children([text("Latest event")])
                                                         .into_node(),
                                                     A::<AppState, crate::Location>::new()
-                                                        .href(Href::Internal(
+                                                        .href(state.href_with_lang(
                                                             crate::Location::Event(
                                                                 module.definition_event_hash,
                                                             ),

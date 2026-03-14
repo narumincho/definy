@@ -17,7 +17,7 @@ pub fn part_detail_view(state: &AppState, definition_event_hash: &[u8; 32]) -> N
         .children(match snapshot {
             Some(snapshot) => vec![
                 A::<AppState, Location>::new()
-                    .href(Href::Internal(Location::PartList))
+                    .href(state.href_with_lang(Location::PartList))
                     .children([text("← Back to Parts")])
                     .into_node(),
                 H2::new()
@@ -71,11 +71,11 @@ pub fn part_detail_view(state: &AppState, definition_event_hash: &[u8; 32]) -> N
                             .style(Style::new().set("display", "flex").set("gap", "0.6rem"))
                             .children([
                                 A::<AppState, Location>::new()
-                                    .href(Href::Internal(Location::Event(*definition_event_hash)))
+                                    .href(state.href_with_lang(Location::Event(*definition_event_hash)))
                                     .children([text("Definition event")])
                                     .into_node(),
                                 A::<AppState, Location>::new()
-                                    .href(Href::Internal(Location::Event(
+                                    .href(state.href_with_lang(Location::Event(
                                         snapshot.latest_event_hash,
                                     )))
                                     .children([text("Latest event")])
@@ -107,7 +107,7 @@ pub fn part_detail_view(state: &AppState, definition_event_hash: &[u8; 32]) -> N
                                         let label =
                                             crate::event_presenter::event_kind_label(&event);
                                         A::<AppState, Location>::new()
-                                            .href(Href::Internal(Location::Event(event_hash)))
+                                            .href(state.href_with_lang(Location::Event(event_hash)))
                                             .style(
                                                 Style::new()
                                                     .set("display", "grid")
@@ -142,7 +142,7 @@ pub fn part_detail_view(state: &AppState, definition_event_hash: &[u8; 32]) -> N
             ],
             None => vec![
                 A::<AppState, Location>::new()
-                    .href(Href::Internal(Location::PartList))
+                    .href(state.href_with_lang(Location::PartList))
                     .children([text("← Back to Parts")])
                     .into_node(),
                 Div::new()

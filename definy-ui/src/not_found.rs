@@ -2,7 +2,7 @@ use crate::Location;
 use crate::app_state::AppState;
 use narumincho_vdom::*;
 
-pub fn not_found_view(_state: &AppState) -> Node<AppState> {
+pub fn not_found_view(state: &AppState) -> Node<AppState> {
     Div::new()
         .class("page-shell not-found")
         .style(
@@ -44,7 +44,7 @@ pub fn not_found_view(_state: &AppState) -> Node<AppState> {
                 .into_node(),
             A::<AppState, Location>::new()
                 .class("cta-link")
-                .href(Href::Internal(Location::Home))
+                .href(state.href_with_lang(Location::Home))
                 .style(
                     Style::new()
                         .set("display", "inline-flex")

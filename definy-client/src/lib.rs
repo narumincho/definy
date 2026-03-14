@@ -97,7 +97,7 @@ impl narumincho_vdom_client::App<AppState> for DefinyApp {
             .unwrap();
         on_keydown.forget();
 
-        let filter_query = {
+        let query_string = {
             let initial_url = web_sys::window()
                 .unwrap()
                 .document()
@@ -109,7 +109,13 @@ impl narumincho_vdom_client::App<AppState> for DefinyApp {
             search.strip_prefix('?').unwrap_or(search.as_str()).to_string()
         };
 
-        let filter_for_fetch = definy_ui::event_filter_from_query_str(&filter_query);
+        let query_params = definy_ui::query::parse_query(Some(query_string.as_str()));
+        let filter_for_fetch = query_params.event_type;
+        let language = query_params
+            .lang
+            .as_deref()
+            .and_then(definy_ui::language::language_from_tag)
+            .unwrap_or_else(definy_ui::language::default_language);
         wasm_bindgen_futures::spawn_local(async move {
             if let Some(ssr_event_binaries) = ssr_event_binaries {
                 let event_pairs = ssr_event_binaries
@@ -248,7 +254,8 @@ impl narumincho_vdom_client::App<AppState> for DefinyApp {
             is_loading,
             has_more,
             None,
-            definy_ui::event_filter_from_query_str(&filter_query),
+            filter_for_fetch,
+            language,
         )
     }
 
@@ -259,10 +266,17 @@ impl narumincho_vdom_client::App<AppState> for DefinyApp {
             let location = definy_ui::Location::from_url(&pathname);
             let search = web_url.search();
             let query = search.strip_prefix('?').unwrap_or(search.as_str());
-            let filter_event_type = definy_ui::event_filter_from_query_str(query);
+            let query_params = definy_ui::query::parse_query(Some(query));
+            let filter_event_type = query_params.event_type;
+            let parsed_language = query_params
+                .lang
+                .as_deref()
+                .and_then(definy_ui::language::language_from_tag);
+            let language = parsed_language.unwrap_or(state.language);
             let mut next = AppState {
                 location,
                 event_detail_eval_result: None,
+                language,
                 ..state
             };
             if matches!(next.location, Some(definy_ui::Location::Home)) {
@@ -275,6 +289,24 @@ impl narumincho_vdom_client::App<AppState> for DefinyApp {
                         has_more: true,
                         filter_event_type,
                     };
+                }
+            }
+            if query_params.lang.is_none() || parsed_language.is_none() {
+                if let Some(location) = &next.location {
+                    let url = AppState::build_url(
+                        location,
+                        next.language.code,
+                        filter_event_type,
+                    );
+                    if let Some(window) = web_sys::window() {
+                        if let Ok(history) = window.history() {
+                            let _ = history.replace_state_with_url(
+                                &wasm_bindgen::JsValue::NULL,
+                                "",
+                                Some(url.as_str()),
+                            );
+                        }
+                    }
                 }
             }
             return next;

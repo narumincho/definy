@@ -110,7 +110,7 @@ pub fn part_list_view(state: &AppState) -> Node<AppState> {
                                                 .into_node()
                                         },
                                         A::<AppState, Location>::new()
-                                            .href(Href::Internal(Location::Part(
+                                            .href(state.href_with_lang(Location::Part(
                                                 part.definition_event_hash,
                                             )))
                                             .children([text("Open part detail")])
@@ -158,13 +158,13 @@ pub fn part_list_view(state: &AppState) -> Node<AppState> {
                                             )
                                             .children([
                                                 A::<AppState, Location>::new()
-                                                    .href(Href::Internal(Location::Event(
+                                                    .href(state.href_with_lang(Location::Event(
                                                         part.latest_event_hash,
                                                     )))
                                                     .children([text("Latest event")])
                                                     .into_node(),
                                                 A::<AppState, Location>::new()
-                                                    .href(Href::Internal(Location::Event(
+                                                    .href(state.href_with_lang(Location::Event(
                                                         part.definition_event_hash,
                                                     )))
                                                     .children([text("Definition event")])
