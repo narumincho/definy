@@ -57,22 +57,19 @@ fn read_ssr_state() -> Option<(
         >,
     )>,
     bool,
+    Vec<Vec<u8>>,
 )> {
     let text = SSR_INITIAL_STATE_TEXT.as_ref()?.to_string();
     let decoded = definy_ui::decode_ssr_state(text.as_str())?;
-    Some(
-        (
-            decoded
-                .event_binaries
-                .into_iter()
-                .map(|bytes| {
-                    let hash: [u8; 32] = <sha2::Sha256 as sha2::Digest>::digest(&bytes).into();
-                    (hash, definy_event::verify_and_deserialize(&bytes))
-                })
-                .collect(),
-            decoded.has_more,
-        ),
-    )
+    let event_binaries = decoded.event_binaries;
+    let events = event_binaries
+        .iter()
+        .map(|bytes| {
+            let hash: [u8; 32] = <sha2::Sha256 as sha2::Digest>::digest(bytes).into();
+            (hash, definy_event::verify_and_deserialize(bytes))
+        })
+        .collect();
+    Some((events, decoded.has_more, event_binaries))
 }
 
 impl narumincho_vdom_client::App<AppState> for DefinyApp {
@@ -81,6 +78,7 @@ impl narumincho_vdom_client::App<AppState> for DefinyApp {
     ) -> AppState {
         let fire = std::rc::Rc::clone(fire);
         let ssr_state = read_ssr_state();
+        let ssr_event_binaries = ssr_state.as_ref().map(|(_, _, binaries)| binaries.clone());
         let has_ssr_events = ssr_state.is_some();
 
         let fire_for_keydown = std::rc::Rc::clone(&fire);
@@ -113,7 +111,62 @@ impl narumincho_vdom_client::App<AppState> for DefinyApp {
 
         let filter_for_fetch = definy_ui::event_filter_from_query_str(&filter_query);
         wasm_bindgen_futures::spawn_local(async move {
+            if let Some(ssr_event_binaries) = ssr_event_binaries {
+                let event_pairs = ssr_event_binaries
+                    .into_iter()
+                    .map(|bytes| {
+                        let hash: [u8; 32] =
+                            <sha2::Sha256 as sha2::Digest>::digest(&bytes).into();
+                        (hash, bytes)
+                    })
+                    .collect::<Vec<_>>();
+                let _ = definy_ui::indexed_db::store_events(&event_pairs).await;
+            }
             if !has_ssr_events {
+                if let Ok(cached_event_binaries) =
+                    definy_ui::indexed_db::load_event_binaries().await
+                {
+                    let mut cached_events = cached_event_binaries
+                        .into_iter()
+                        .map(|bytes| {
+                            let hash: [u8; 32] =
+                                <sha2::Sha256 as sha2::Digest>::digest(&bytes).into();
+                            let event = definy_event::verify_and_deserialize(&bytes);
+                            (hash, event)
+                        })
+                        .collect::<Vec<_>>();
+                    cached_events.sort_by(|a, b| {
+                        let a_time = match &a.1 {
+                            Ok((_, event)) => event.time,
+                            Err(_) => chrono::DateTime::<chrono::Utc>::MIN_UTC,
+                        };
+                        let b_time = match &b.1 {
+                            Ok((_, event)) => event.time,
+                            Err(_) => chrono::DateTime::<chrono::Utc>::MIN_UTC,
+                        };
+                        b_time.cmp(&a_time)
+                    });
+                    fire(Box::new(move |state| {
+                        let mut event_cache = state.event_cache.clone();
+                        let mut event_hashes = Vec::new();
+                        for (hash, event) in &cached_events {
+                            event_cache.insert(*hash, event.clone());
+                            event_hashes.push(*hash);
+                        }
+                        AppState {
+                            event_cache,
+                            event_list_state: definy_ui::EventListState {
+                                event_hashes,
+                                current_offset: 0,
+                                page_size: 20,
+                                is_loading: true,
+                                has_more: state.event_list_state.has_more,
+                                filter_event_type: state.event_list_state.filter_event_type,
+                            },
+                            ..state.clone()
+                        }
+                    }));
+                }
                 let events = definy_ui::fetch::get_events(
                     filter_for_fetch,
                     Some(20),
@@ -149,6 +202,23 @@ impl narumincho_vdom_client::App<AppState> for DefinyApp {
                     ..state.clone()
                 }));
             }
+            let local_events = definy_ui::indexed_db::load_event_records().await;
+            fire(Box::new(move |state| {
+                let mut next = state.clone();
+                match local_events {
+                    Ok(records) => {
+                        definy_ui::replace_local_event_records(&mut next, records);
+                        next.local_event_queue.is_loading = false;
+                        next.local_event_queue.last_error = None;
+                    }
+                    Err(error) => {
+                        next.local_event_queue.is_loading = false;
+                        next.local_event_queue.last_error =
+                            Some(format!("Failed to load local events: {error:?}"));
+                    }
+                }
+                next
+            }));
         });
 
         let location = {
@@ -164,7 +234,8 @@ impl narumincho_vdom_client::App<AppState> for DefinyApp {
             definy_ui::Location::from_url(&pathname)
         };
 
-        let (events, is_loading, has_more) = if let Some((ssr_events, has_more)) = ssr_state {
+        let (events, is_loading, has_more) =
+            if let Some((ssr_events, has_more, _)) = ssr_state {
             // SSRが送ってきた状態をそのまま採用
             (ssr_events, false, has_more)
         } else {

@@ -355,6 +355,7 @@ fn part_update_form(state: &AppState, definition_event_hash: &[u8; 32]) -> Node<
                             let part_description = current_part_description;
                             let expression = current_expression;
                             let module_definition_event_hash = current_module_hash;
+                            let force_offline = state.force_offline;
                             wasm_bindgen_futures::spawn_local(async move {
                                 let event_binary = match definy_event::sign_and_serialize(
                                     definy_event::event::Event {
@@ -388,60 +389,97 @@ fn part_update_form(state: &AppState, definition_event_hash: &[u8; 32]) -> Node<
                                     }
                                 };
 
-                                match crate::fetch::post_event(event_binary.as_slice()).await {
-                                    Ok(_) => {
-                                        if let Ok(events) = crate::fetch::get_events(None, Some(20), Some(0)).await {
+                                match crate::fetch::post_event_with_queue(
+                                    event_binary.as_slice(),
+                                    force_offline,
+                                )
+                                .await
+                                {
+                                    Ok(record) => {
+                                        let status = record.status.clone();
+                                        if status == crate::local_event::LocalEventStatus::Sent {
+                                            if let Ok(events) =
+                                                crate::fetch::get_events(None, Some(20), Some(0)).await
+                                            {
+                                                set_state_for_async(Box::new(move |state| {
+                                                    let events_len = events.len();
+                                                    let mut event_cache = state.event_cache.clone();
+                                                    let mut event_hashes = Vec::new();
+                                                    for (hash, event) in events {
+                                                        event_cache.insert(hash, event);
+                                                        event_hashes.push(hash);
+                                                    }
+                                                    let mut next = state.clone();
+                                                    next.event_cache = event_cache;
+                                                    next.event_list_state = crate::EventListState {
+                                                        event_hashes,
+                                                        current_offset: 0,
+                                                        page_size: 20,
+                                                        is_loading: false,
+                                                        has_more: events_len == 20,
+                                                        filter_event_type: None,
+                                                    };
+                                                    crate::app_state::upsert_local_event_record(
+                                                        &mut next,
+                                                        record,
+                                                    );
+                                                    if let Some(snapshot) = find_part_snapshot(
+                                                        &next,
+                                                        &root_part_definition_hash,
+                                                    ) {
+                                                        next.part_update_form
+                                                            .part_definition_event_hash =
+                                                            Some(root_part_definition_hash);
+                                                        next.part_update_form.part_name_input =
+                                                            snapshot.part_name;
+                                                        next.part_update_form
+                                                            .part_description_input =
+                                                            snapshot.part_description;
+                                                        next.part_update_form.expression_input =
+                                                            snapshot.expression;
+                                                        next.part_update_form
+                                                            .module_definition_event_hash =
+                                                            snapshot.module_definition_event_hash;
+                                                    } else {
+                                                        next.part_update_form
+                                                            .part_definition_event_hash = None;
+                                                        next.part_update_form.part_name_input =
+                                                            String::new();
+                                                        next.part_update_form
+                                                            .part_description_input =
+                                                            String::new();
+                                                        next.part_update_form.expression_input =
+                                                            definy_event::event::Expression::Number(
+                                                                definy_event::event::NumberExpression {
+                                                                    value: 0,
+                                                                },
+                                                            );
+                                                        next.part_update_form
+                                                            .module_definition_event_hash = None;
+                                                    }
+                                                    next.event_detail_eval_result =
+                                                        Some("PartUpdate event posted".to_string());
+                                                    next
+                                                }));
+                                            }
+                                        } else {
                                             set_state_for_async(Box::new(move |state| {
-                                                let events_len = events.len();
-                                                let mut event_cache = state.event_cache.clone();
-                                                let mut event_hashes = Vec::new();
-                                                for (hash, event) in events {
-                                                    event_cache.insert(hash, event);
-                                                    event_hashes.push(hash);
-                                                }
                                                 let mut next = state.clone();
-                                                next.event_cache = event_cache;
-                                                next.event_list_state = crate::EventListState {
-                                                    event_hashes,
-                                                    current_offset: 0,
-                                                    page_size: 20,
-                                                    is_loading: false,
-                                                    has_more: events_len == 20,
-                                                    filter_event_type: None,
-                                                };
-                                                if let Some(snapshot) = find_part_snapshot(
-                                                    &next,
-                                                    &root_part_definition_hash,
-                                                ) {
-                                                    next.part_update_form
-                                                        .part_definition_event_hash =
-                                                        Some(root_part_definition_hash);
-                                                    next.part_update_form.part_name_input =
-                                                        snapshot.part_name;
-                                                    next.part_update_form.part_description_input =
-                                                        snapshot.part_description;
-                                                    next.part_update_form.expression_input =
-                                                        snapshot.expression;
-                                                    next.part_update_form.module_definition_event_hash =
-                                                        snapshot.module_definition_event_hash;
-                                                } else {
-                                                    next.part_update_form
-                                                        .part_definition_event_hash = None;
-                                                    next.part_update_form.part_name_input =
-                                                        String::new();
-                                                    next.part_update_form.part_description_input =
-                                                        String::new();
-                                                    next.part_update_form.expression_input =
-                                                        definy_event::event::Expression::Number(
-                                                            definy_event::event::NumberExpression {
-                                                                value: 0,
-                                                            },
-                                                        );
-                                                    next.part_update_form.module_definition_event_hash =
-                                                        None;
-                                                }
-                                                next.event_detail_eval_result =
-                                                    Some("PartUpdate event posted".to_string());
+                                                crate::app_state::upsert_local_event_record(
+                                                    &mut next,
+                                                    record,
+                                                );
+                                                next.event_detail_eval_result = Some(match status {
+                                                    crate::local_event::LocalEventStatus::Queued => {
+                                                        "PartUpdate queued (offline)".to_string()
+                                                    }
+                                                    crate::local_event::LocalEventStatus::Failed => {
+                                                        "PartUpdate failed to send".to_string()
+                                                    }
+                                                    crate::local_event::LocalEventStatus::Sent => {
+                                                        "PartUpdate event posted".to_string()
+                                                    }
+                                                });
                                                 next
                                             }));
                                         }

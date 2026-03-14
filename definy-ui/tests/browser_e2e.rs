@@ -478,6 +478,7 @@ fn render_html_response(path: &str) -> Response<Full<Bytes>> {
                 state: definy_ui::CreatingAccountState::LogIn,
                 username: String::new(),
                 current_password: String::new(),
+                create_account_result_message: None,
             },
             event_cache: std::collections::HashMap::new(),
             event_list_state: definy_ui::EventListState {
@@ -522,6 +523,12 @@ fn render_html_response(path: &str) -> Response<Full<Bytes>> {
             event_detail_eval_result: None,
             profile_name_input: String::new(),
             is_header_popover_open: false,
+            force_offline: false,
+            local_event_queue: definy_ui::LocalEventQueueState {
+                items: Vec::new(),
+                is_loading: false,
+                last_error: None,
+            },
             location,
         },
         &Some(definy_ui::ResourceHash {

@@ -3,5 +3,8 @@ name = "narumincho-vdom"
 version = "0.1.0"
 edition = "2024"
 
+[lib]
+doctest = false
+
 [dependencies]
 sha2 = "0.10.9"

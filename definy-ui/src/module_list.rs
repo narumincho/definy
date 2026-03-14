@@ -221,6 +221,7 @@ fn module_create_form(state: &AppState) -> Node<AppState> {
                             return next;
                         }
                         let key_for_async = key.clone();
+                        let force_offline = state.force_offline;
 
                         wasm_bindgen_futures::spawn_local(async move {
                             let event_binary = definy_event::sign_and_serialize(
@@ -240,18 +241,46 @@ fn module_create_form(state: &AppState) -> Node<AppState> {
                             )
                             .unwrap();
 
-                            let status = crate::fetch::post_event(event_binary.as_slice()).await;
-                            match status {
-                                Ok(_) => {
-                                    let hash: [u8; 32] =
-                                        <sha2::Sha256 as Digest>::digest(&event_binary).into();
-                                    let event = definy_event::verify_and_deserialize(
-                                        event_binary.as_slice(),
-                                    );
+                            match crate::fetch::post_event_with_queue(
+                                event_binary.as_slice(),
+                                force_offline,
+                            )
+                            .await
+                            {
+                                Ok(record) => {
+                                    let status = record.status.clone();
                                     set_state_for_async(Box::new(move |state| {
                                         let mut next = state.clone();
-                                        next.event_cache.insert(hash, event);
-                                        next.module_definition_form.result_message = None;
+                                        crate::app_state::upsert_local_event_record(
+                                            &mut next,
+                                            record,
+                                        );
+                                        if status == crate::local_event::LocalEventStatus::Sent {
+                                            let hash: [u8; 32] =
+                                                <sha2::Sha256 as Digest>::digest(&event_binary)
+                                                    .into();
+                                            let event = definy_event::verify_and_deserialize(
+                                                event_binary.as_slice(),
+                                            );
+                                            next.event_cache.insert(hash, event);
+                                            next.module_definition_form.result_message = None;
+                                        } else {
+                                            next.module_definition_form.result_message = Some(
+                                                match status {
+                                                    crate::local_event::LocalEventStatus::Queued => {
+                                                        "ModuleDefinition queued (offline)"
+                                                            .to_string()
+                                                    }
+                                                    crate::local_event::LocalEventStatus::Failed => {
+                                                        "ModuleDefinition failed to send"
+                                                            .to_string()
+                                                    }
+                                                    crate::local_event::LocalEventStatus::Sent => {
+                                                        "ModuleDefinition posted".to_string()
+                                                    }
+                                                },
+                                            );
+                                        }
                                         next
                                     }));
                                 }

@@ -51,9 +51,7 @@ fn header_main(state: &AppState) -> Node<AppState> {
                                 Style::new()
                                     .set("font-size", "1.48rem")
                                     .set("font-weight", "700")
-                                    .set("background", "var(--primary-gradient)")
-                                    .set("-webkit-background-clip", "text")
-                                    .set("-webkit-text-fill-color", "transparent")
+                                    .set("color", "var(--primary)")
                                     .set("letter-spacing", "-0.03em"),
                             )
                             .children([text("definy")])
@@ -76,6 +74,15 @@ fn header_main(state: &AppState) -> Node<AppState> {
                                 .set("color", "var(--text-secondary)"),
                         )
                         .children([text("Modules")])
+                        .into_node(),
+                    A::<AppState, Location>::new()
+                        .href(Href::Internal(Location::LocalEventQueue))
+                        .style(
+                            Style::new()
+                                .set("font-size", "0.9rem")
+                                .set("color", "var(--text-secondary)"),
+                        )
+                        .children([text("Local Events")])
                         .into_node(),
                     A::<AppState, Location>::new()
                         .href(Href::Internal(Location::AccountList))
@@ -200,6 +207,30 @@ fn popover(state: &AppState) -> Node<AppState> {
             if let Some(account_link) = account_link {
                 children.push(account_link);
             }
+            children.push(
+                Button::new()
+                    .on_click(EventHandler::new(async |set_state| {
+                        set_state(Box::new(|state: AppState| -> AppState {
+                            AppState {
+                                force_offline: !state.force_offline,
+                                ..state.clone()
+                            }
+                        }));
+                    }))
+                    .children([text(if state.force_offline {
+                        "Offline: On"
+                    } else {
+                        "Offline: Off"
+                    })])
+                    .style(
+                        Style::new()
+                            .set("width", "100%")
+                            .set("background-color", "transparent")
+                            .set("color", "var(--text)")
+                            .set("justify-content", "flex-start"),
+                    )
+                    .into_node(),
+            );
             children.push(
                 Button::new()
                     .on_click(EventHandler::new(async |set_state| {

@@ -11,7 +11,10 @@ mod expression_eval;
 pub mod fetch;
 mod hash_format;
 mod header;
+pub mod indexed_db;
 mod layout;
+mod local_event;
+mod local_event_queue;
 mod login_or_create_account_dialog;
 mod message;
 mod module_detail;
@@ -28,6 +31,7 @@ pub mod wasm_emitter;
 pub use app_state::*;
 pub use event_filter::*;
 pub use message::Message;
+pub use local_event::*;
 
 use narumincho_vdom::*;
 
@@ -145,6 +149,9 @@ init({{ module_or_path: \"/{}\" }});",
                         Some(Location::AccountList) => account_list::account_list_view(state),
                         Some(Location::PartList) => part_list::part_list_view(state),
                         Some(Location::ModuleList) => module_list::module_list_view(state),
+                        Some(Location::LocalEventQueue) => {
+                            local_event_queue::local_event_queue_view(state)
+                        }
                         Some(Location::Module(hash)) => {
                             module_detail::module_detail_view(state, hash)
                         }

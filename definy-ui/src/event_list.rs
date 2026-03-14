@@ -191,6 +191,7 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
                                         let expression =
                                             state.part_definition_form.composing_expression.clone();
                                         let key_for_async = key.clone();
+                                        let force_offline = state.force_offline;
 
                                         wasm_bindgen_futures::spawn_local(async move {
                                             let event_binary = definy_event::sign_and_serialize(
@@ -214,31 +215,74 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
                                             )
                                             .unwrap();
 
-                                            let status = crate::fetch::post_event(event_binary.as_slice()).await;
-                                            match status {
-                                                Ok(_) => {
-                                                    let events = crate::fetch::get_events(None, Some(20), Some(0)).await;
-                                                    if let Ok(events) = events {
-                                                        set_state_for_async(Box::new(|state| {
-                                                            let events_len = events.len();
-                                                            let mut event_cache = state.event_cache.clone();
-                                                            let mut event_hashes = Vec::new();
-                                                            for (hash, event) in events {
-                                                                event_cache.insert(hash, event);
-                                                                event_hashes.push(hash);
-                                                            }
-                                                            AppState {
-                                                                event_cache,
-                                                                event_list_state: crate::EventListState {
-                                                                    event_hashes,
-                                                                    current_offset: 0,
-                                                                    page_size: 20,
-                                                                    is_loading: false,
-                                                                    has_more: events_len == 20,
-                                                                    filter_event_type: None,
+                                            match crate::fetch::post_event_with_queue(
+                                                event_binary.as_slice(),
+                                                force_offline,
+                                            )
+                                            .await
+                                            {
+                                                Ok(record) => {
+                                                    let status = record.status.clone();
+                                                    if status
+                                                        == crate::local_event::LocalEventStatus::Sent
+                                                    {
+                                                        let events = crate::fetch::get_events(
+                                                            None,
+                                                            Some(20),
+                                                            Some(0),
+                                                        )
+                                                        .await;
+                                                        if let Ok(events) = events {
+                                                            set_state_for_async(Box::new(
+                                                                move |state| {
+                                                                    let events_len = events.len();
+                                                                    let mut event_cache =
+                                                                        state.event_cache.clone();
+                                                                    let mut event_hashes =
+                                                                        Vec::new();
+                                                                    for (hash, event) in events {
+                                                                        event_cache.insert(hash, event);
+                                                                        event_hashes.push(hash);
+                                                                    }
+                                                                    let mut next = state.clone();
+                                                                    next.event_cache = event_cache;
+                                                                    next.event_list_state =
+                                                                        crate::EventListState {
+                                                                            event_hashes,
+                                                                            current_offset: 0,
+                                                                            page_size: 20,
+                                                                            is_loading: false,
+                                                                            has_more: events_len == 20,
+                                                                            filter_event_type: None,
+                                                                        };
+                                                                    crate::app_state::upsert_local_event_record(
+                                                                        &mut next,
+                                                                        record,
+                                                                    );
+                                                                    next
                                                                 },
-                                                                ..state.clone()
-                                                            }
+                                                            ));
+                                                        }
+                                                    } else {
+                                                        set_state_for_async(Box::new(move |state| {
+                                                            let mut next = state.clone();
+                                                            crate::app_state::upsert_local_event_record(
+                                                                &mut next,
+                                                                record,
+                                                            );
+                                                            next.part_definition_form.eval_result =
+                                                                Some(match status {
+                                                                    crate::local_event::LocalEventStatus::Queued => {
+                                                                        "PartDefinition queued (offline)".to_string()
+                                                                    }
+                                                                    crate::local_event::LocalEventStatus::Failed => {
+                                                                        "PartDefinition failed to send".to_string()
+                                                                    }
+                                                                    crate::local_event::LocalEventStatus::Sent => {
+                                                                        "PartDefinition posted".to_string()
+                                                                    }
+                                                                });
+                                                            next
                                                         }));
                                                     }
                                                 }
