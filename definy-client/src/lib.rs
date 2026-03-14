@@ -114,6 +114,50 @@ impl narumincho_vdom_client::App<AppState> for DefinyApp {
         let filter_for_fetch = definy_ui::event_filter_from_query_str(&filter_query);
         wasm_bindgen_futures::spawn_local(async move {
             if !has_ssr_events {
+                if let Ok(cached_event_binaries) =
+                    definy_ui::indexed_db::load_event_binaries().await
+                {
+                    let mut cached_events = cached_event_binaries
+                        .into_iter()
+                        .map(|bytes| {
+                            let hash: [u8; 32] =
+                                <sha2::Sha256 as sha2::Digest>::digest(&bytes).into();
+                            let event = definy_event::verify_and_deserialize(&bytes);
+                            (hash, event)
+                        })
+                        .collect::<Vec<_>>();
+                    cached_events.sort_by(|a, b| {
+                        let a_time = match &a.1 {
+                            Ok((_, event)) => event.time,
+                            Err(_) => chrono::DateTime::<chrono::Utc>::MIN_UTC,
+                        };
+                        let b_time = match &b.1 {
+                            Ok((_, event)) => event.time,
+                            Err(_) => chrono::DateTime::<chrono::Utc>::MIN_UTC,
+                        };
+                        b_time.cmp(&a_time)
+                    });
+                    fire(Box::new(move |state| {
+                        let mut event_cache = state.event_cache.clone();
+                        let mut event_hashes = Vec::new();
+                        for (hash, event) in &cached_events {
+                            event_cache.insert(*hash, event.clone());
+                            event_hashes.push(*hash);
+                        }
+                        AppState {
+                            event_cache,
+                            event_list_state: definy_ui::EventListState {
+                                event_hashes,
+                                current_offset: 0,
+                                page_size: 20,
+                                is_loading: true,
+                                has_more: state.event_list_state.has_more,
+                                filter_event_type: state.event_list_state.filter_event_type,
+                            },
+                            ..state.clone()
+                        }
+                    }));
+                }
                 let events = definy_ui::fetch::get_events(
                     filter_for_fetch,
                     Some(20),

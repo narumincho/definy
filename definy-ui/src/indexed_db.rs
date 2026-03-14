@@ -27,6 +27,21 @@ pub async fn store_events(events: &[([u8; 32], Vec<u8>)]) -> Result<(), JsValue>
     Ok(())
 }
 
+pub async fn load_event_binaries() -> Result<Vec<Vec<u8>>, JsValue> {
+    let db = open_db().await?;
+    let transaction = db.transaction_with_str(EVENTS_STORE)?;
+    let store = transaction.object_store(EVENTS_STORE)?;
+    let request = store.get_all()?;
+    let value = request_to_jsvalue(request).await?;
+    let array = js_sys::Array::from(&value);
+    let mut events = Vec::new();
+    for value in array.iter() {
+        let bytes = js_sys::Uint8Array::new(&value).to_vec();
+        events.push(bytes);
+    }
+    Ok(events)
+}
+
 pub async fn store_event_send_record(
     record: &crate::local_event::LocalEventRecord,
 ) -> Result<(), JsValue> {
