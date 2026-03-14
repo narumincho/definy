@@ -253,6 +253,7 @@ fn create_account_view(
 
     Form::new()
         .on_submit(EventHandler::new(move |set_state| {
+            let set_state = std::rc::Rc::new(set_state);
             let set_state_for_async = set_state.clone();
             let generated_key = generated_key_for_submit.clone();
             async move {

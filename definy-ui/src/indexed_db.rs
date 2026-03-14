@@ -130,6 +130,9 @@ async fn open_db() -> Result<web_sys::IdbDatabase, JsValue> {
     let success_request = request.clone();
     let error_request = request.clone();
     let promise = js_sys::Promise::new(&mut |resolve, reject| {
+        let request_for_handler = success_request.clone();
+        let success_request = success_request.clone();
+        let reject_for_success = reject.clone();
         let on_success = Closure::once(Box::new(move |_event: web_sys::Event| {
             match success_request.result() {
                 Ok(result) => match result.dyn_into::<web_sys::IdbDatabase>() {
@@ -137,19 +140,23 @@ async fn open_db() -> Result<web_sys::IdbDatabase, JsValue> {
                         let _ = resolve.call1(&JsValue::NULL, &db);
                     }
                     Err(error) => {
-                        let _ = reject.call1(&JsValue::NULL, &error);
+                        let _ = reject_for_success.call1(&JsValue::NULL, &error);
                     }
                 },
                 Err(error) => {
-                    let _ = reject.call1(&JsValue::NULL, &error);
+                    let _ = reject_for_success.call1(&JsValue::NULL, &error);
                 }
             }
         }) as Box<dyn FnOnce(_)>);
-        success_request.set_onsuccess(Some(on_success.as_ref().unchecked_ref()));
+        request_for_handler.set_onsuccess(Some(on_success.as_ref().unchecked_ref()));
         on_success.forget();
 
+        let reject_for_error = reject.clone();
         let on_error = Closure::once(Box::new(move |_event: web_sys::Event| {
-            let _ = reject.call1(&JsValue::NULL, &JsValue::from_str("indexedDB open failed"));
+            let _ = reject_for_error.call1(
+                &JsValue::NULL,
+                &JsValue::from_str("indexedDB open failed"),
+            );
         }) as Box<dyn FnOnce(_)>);
         error_request.set_onerror(Some(on_error.as_ref().unchecked_ref()));
         on_error.forget();
@@ -163,21 +170,28 @@ async fn request_to_jsvalue(request: web_sys::IdbRequest) -> Result<JsValue, JsV
     let success_request = request.clone();
     let error_request = request.clone();
     let promise = js_sys::Promise::new(&mut |resolve, reject| {
+        let request_for_handler = success_request.clone();
+        let success_request = success_request.clone();
+        let reject_for_success = reject.clone();
         let on_success = Closure::once(Box::new(move |_event: web_sys::Event| {
             match success_request.result() {
                 Ok(result) => {
                     let _ = resolve.call1(&JsValue::NULL, &result);
                 }
                 Err(error) => {
-                    let _ = reject.call1(&JsValue::NULL, &error);
+                    let _ = reject_for_success.call1(&JsValue::NULL, &error);
                 }
             }
         }) as Box<dyn FnOnce(_)>);
-        success_request.set_onsuccess(Some(on_success.as_ref().unchecked_ref()));
+        request_for_handler.set_onsuccess(Some(on_success.as_ref().unchecked_ref()));
         on_success.forget();
 
+        let reject_for_error = reject.clone();
         let on_error = Closure::once(Box::new(move |_event: web_sys::Event| {
-            let _ = reject.call1(&JsValue::NULL, &JsValue::from_str("indexedDB request failed"));
+            let _ = reject_for_error.call1(
+                &JsValue::NULL,
+                &JsValue::from_str("indexedDB request failed"),
+            );
         }) as Box<dyn FnOnce(_)>);
         error_request.set_onerror(Some(on_error.as_ref().unchecked_ref()));
         on_error.forget();

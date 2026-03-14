@@ -28,13 +28,15 @@ fn format_time_ms(time_ms: i64) -> String {
 pub fn local_event_queue_view(state: &AppState) -> Node<AppState> {
     let refresh_button = Button::new()
         .on_click(EventHandler::new(async |set_state| {
-            set_state(Box::new(|state| {
+            let set_state = std::rc::Rc::new(set_state);
+            let set_state_for_async = set_state.clone();
+            set_state(Box::new(|state: AppState| {
                 let mut next = state.clone();
                 next.local_event_queue.is_loading = true;
                 next
             }));
             let result = crate::indexed_db::load_event_send_records().await;
-            set_state(Box::new(move |state| {
+            set_state_for_async(Box::new(move |state: AppState| {
                 let mut next = state.clone();
                 match result {
                     Ok(records) => {
@@ -64,7 +66,7 @@ pub fn local_event_queue_view(state: &AppState) -> Node<AppState> {
 
     let offline_toggle = Button::new()
         .on_click(EventHandler::new(async |set_state| {
-            set_state(Box::new(|state| {
+            set_state(Box::new(|state: AppState| {
                 let mut next = state.clone();
                 next.force_offline = !next.force_offline;
                 next
@@ -97,7 +99,7 @@ pub fn local_event_queue_view(state: &AppState) -> Node<AppState> {
         for record in &state.local_event_queue.items {
             let status = record.status.clone();
             let hash = record.hash;
-            let status_badge = Span::new()
+            let status_badge = Div::new()
                 .style(
                     Style::new()
                         .set("background", status_color(&status))
@@ -105,7 +107,8 @@ pub fn local_event_queue_view(state: &AppState) -> Node<AppState> {
                         .set("padding", "0.12rem 0.5rem")
                         .set("border-radius", "999px")
                         .set("font-size", "0.75rem")
-                        .set("font-weight", "600"),
+                        .set("font-weight", "600")
+                        .set("display", "inline-flex"),
                 )
                 .children([text(status_label(&status))])
                 .into_node();
@@ -117,24 +120,31 @@ pub fn local_event_queue_view(state: &AppState) -> Node<AppState> {
 
             let mut actions = Vec::new();
             if status != LocalEventStatus::Sent {
+                let hash = hash;
                 actions.push(
                     Button::new()
-                        .on_click(EventHandler::new(async |set_state| {
-                            let result = crate::indexed_db::remove_event_send_record(&hash).await;
-                            set_state(Box::new(move |state| {
-                                let mut next = state.clone();
-                                match result {
-                                    Ok(()) => {
-                                        next.local_event_queue.items.retain(|item| item.hash != hash);
+                        .on_click(EventHandler::new(move |set_state| {
+                            let hash = hash;
+                            async move {
+                                let result =
+                                    crate::indexed_db::remove_event_send_record(&hash).await;
+                                set_state(Box::new(move |state: AppState| {
+                                    let mut next = state.clone();
+                                    match result {
+                                        Ok(()) => {
+                                            next.local_event_queue
+                                                .items
+                                                .retain(|item| item.hash != hash);
+                                        }
+                                        Err(error) => {
+                                            next.local_event_queue.last_error = Some(format!(
+                                                "Failed to cancel queued event: {error:?}"
+                                            ));
+                                        }
                                     }
-                                    Err(error) => {
-                                        next.local_event_queue.last_error = Some(format!(
-                                            "Failed to cancel queued event: {error:?}"
-                                        ));
-                                    }
-                                }
-                                next
-                            }));
+                                    next
+                                }));
+                            }
                         }))
                         .style(
                             Style::new()
@@ -184,12 +194,13 @@ pub fn local_event_queue_view(state: &AppState) -> Node<AppState> {
                             )
                             .children([
                                 status_badge,
-                                Span::new()
+                                Div::new()
                                     .style(
                                         Style::new()
                                             .set("color", "var(--text-secondary)")
                                             .set("font-size", "0.78rem")
-                                            .set("font-family", "'JetBrains Mono', monospace"),
+                                            .set("font-family", "'JetBrains Mono', monospace")
+                                            .set("display", "inline-flex"),
                                     )
                                     .children([text(crate::hash_format::short_hash32(&hash))])
                                     .into_node(),
@@ -248,11 +259,12 @@ pub fn local_event_queue_view(state: &AppState) -> Node<AppState> {
                         .style(Style::new().set("display", "grid").set("gap", "0.2rem"))
                         .children([
                             H2::new().children([text("Local Events")]).into_node(),
-                            Span::new()
+                            Div::new()
                                 .style(
                                     Style::new()
                                         .set("color", "var(--text-secondary)")
-                                        .set("font-size", "0.82rem"),
+                                        .set("font-size", "0.82rem")
+                                        .set("display", "inline-flex"),
                                 )
                                 .children([text(
                                     "indexedDB に保存された送信履歴・送信待ちイベント",
