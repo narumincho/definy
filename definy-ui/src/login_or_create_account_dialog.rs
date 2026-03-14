@@ -147,6 +147,7 @@ pub fn login_or_create_account_dialog(state: &AppState) -> Node<AppState> {
                                             state: CreatingAccountState::CreateAccount,
                                             username: String::new(),
                                             current_password: String::new(),
+                                            create_account_result_message: None,
                                         },
                                     ..state.clone()
                                 }
@@ -292,12 +293,44 @@ fn create_account_view(
                             fetch::post_event_with_queue(event_binary.as_slice(), force_offline)
                                 .await;
                         if let Ok(record) = result {
+                            let status = record.status.clone();
+                            let status_for_state = status.clone();
+                            let message = match status {
+                                crate::local_event::LocalEventStatus::Sent => {
+                                    "Account created".to_string()
+                                }
+                                crate::local_event::LocalEventStatus::Queued => {
+                                    "Queued: network unavailable".to_string()
+                                }
+                                crate::local_event::LocalEventStatus::Failed => {
+                                    record
+                                        .last_error
+                                        .clone()
+                                        .unwrap_or_else(|| "Failed to send".to_string())
+                                }
+                            };
                             set_state_for_async(Box::new(move |state: AppState| {
                                 let mut next = state.clone();
                                 crate::app_state::upsert_local_event_record(&mut next, record);
+                                next.login_or_create_account_dialog_state.state =
+                                    match status_for_state {
+                                        crate::local_event::LocalEventStatus::Sent => {
+                                            CreatingAccountState::Success
+                                        }
+                                        crate::local_event::LocalEventStatus::Queued => {
+                                            CreatingAccountState::Error
+                                        }
+                                        crate::local_event::LocalEventStatus::Failed => {
+                                            CreatingAccountState::Error
+                                        }
+                                    };
+                                next.login_or_create_account_dialog_state
+                                    .create_account_result_message = Some(message);
                                 next
                             }));
-                            dialog_close();
+                            if status == crate::local_event::LocalEventStatus::Sent {
+                                dialog_close();
+                            }
                         }
                     });
                 }
@@ -306,6 +339,7 @@ fn create_account_view(
                     AppState {
                         login_or_create_account_dialog_state: LoginOrCreateAccountDialogState {
                             state: CreatingAccountState::CreateAccountRequesting,
+                            create_account_result_message: None,
                             ..state.login_or_create_account_dialog_state.clone()
                         },
                         ..state.clone()
@@ -438,6 +472,17 @@ fn create_account_view(
                         .into_node(),
                 ])
                 .into_node(),
+            match &state.create_account_result_message {
+                Some(message) => Div::new()
+                    .style(
+                        Style::new()
+                            .set("font-size", "0.82rem")
+                            .set("color", "var(--text-secondary)"),
+                    )
+                    .children([text(message)])
+                    .into_node(),
+                None => Div::new().children([]).into_node(),
+            },
         ])
         .into_node()
 }
@@ -451,6 +496,7 @@ fn create_login_event_handler() -> EventHandler<AppState> {
                     state: CreatingAccountState::LogIn,
                     username: String::new(),
                     current_password: String::new(),
+                    create_account_result_message: None,
                 },
                 ..state.clone()
             }

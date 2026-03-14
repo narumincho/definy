@@ -478,6 +478,7 @@ fn render_html_response(path: &str) -> Response<Full<Bytes>> {
                 state: definy_ui::CreatingAccountState::LogIn,
                 username: String::new(),
                 current_password: String::new(),
+                create_account_result_message: None,
             },
             event_cache: std::collections::HashMap::new(),
             event_list_state: definy_ui::EventListState {

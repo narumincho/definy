@@ -244,6 +244,7 @@ pub fn build_initial_state(
             username: String::new(),
             generated_key: None,
             current_password: String::new(),
+            create_account_result_message: None,
         },
         event_cache,
         event_list_state: EventListState {
@@ -307,6 +308,8 @@ pub struct LoginOrCreateAccountDialogState {
     pub generated_key: Option<ed25519_dalek::SigningKey>,
     /// アカウント作成のユーザー名
     pub username: String,
+    /// アカウント作成の送信結果メッセージ
+    pub create_account_result_message: Option<String>,
 
     /// ログインまたはアカウント作成の状態
     pub state: CreatingAccountState,
