@@ -123,16 +123,76 @@ fn diff_recursive<State>(
                 patches.push((path.clone(), Patch::AddEventListeners(add_events)));
             }
 
-            // Diff children
+            // Diff children (key-aware)
             let common_len = std::cmp::min(old_element.children.len(), new_element.children.len());
+            let old_keys = old_element
+                .children
+                .iter()
+                .map(child_key)
+                .collect::<Vec<Option<String>>>();
+            let new_keys = new_element
+                .children
+                .iter()
+                .map(child_key)
+                .collect::<Vec<Option<String>>>();
+            let has_keys = old_keys.iter().any(|k| k.is_some()) || new_keys.iter().any(|k| k.is_some());
+
+            if has_keys {
+                let all_old_keyed = old_keys.iter().all(|k| k.is_some());
+                let all_new_keyed = new_keys.iter().all(|k| k.is_some());
+                if all_old_keyed && all_new_keyed {
+                    let old_key_list = old_keys
+                        .iter()
+                        .map(|k| k.as_ref().unwrap().clone())
+                        .collect::<Vec<String>>();
+                    let new_key_list = new_keys
+                        .iter()
+                        .map(|k| k.as_ref().unwrap().clone())
+                        .collect::<Vec<String>>();
+                    if old_key_list != new_key_list {
+                        if old_element.children.len() > 0 {
+                            patches.push((
+                                path.clone(),
+                                Patch::RemoveChildren(old_element.children.len()),
+                            ));
+                        }
+                        if !new_element.children.is_empty() {
+                            patches.push((
+                                path.clone(),
+                                Patch::AppendChildren(new_element.children.clone()),
+                            ));
+                        }
+                        return;
+                    }
+                }
+            }
+
             for i in 0..common_len {
                 path.push(i);
-                diff_recursive(
-                    &old_element.children[i],
-                    &new_element.children[i],
-                    path,
-                    patches,
-                );
+                let old_key = old_keys.get(i).and_then(|k| k.clone());
+                let new_key = new_keys.get(i).and_then(|k| k.clone());
+                if has_keys && (old_key.is_some() || new_key.is_some()) {
+                    if old_key.is_some() && new_key.is_some() && old_key == new_key {
+                        diff_recursive(
+                            &old_element.children[i],
+                            &new_element.children[i],
+                            path,
+                            patches,
+                        );
+                    } else {
+                        patches.push((
+                            path.clone(),
+                            Patch::Replace(new_element.children[i].clone()),
+                        ));
+                    }
+                } else {
+                    diff_recursive(
+                        &old_element.children[i],
+                        &new_element.children[i],
+                        path,
+                        patches,
+                    );
+                }
                 path.pop();
             }
 
@@ -158,6 +218,17 @@ fn diff_recursive<State>(
         _ => {
             patches.push((path.clone(), Patch::Replace(new_node.clone())));
         }
+    }
+}
+
+fn child_key<State>(node: &Node<State>) -> Option<String> {
+    match node {
+        Node::Element(element) => element
+            .attributes
+            .iter()
+            .find(|(key, _)| key == "key")
+            .map(|(_, value)| value.clone()),
+        Node::Text(_) => None,
     }
 }
 

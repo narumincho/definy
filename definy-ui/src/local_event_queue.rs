@@ -238,13 +238,8 @@ pub fn local_event_queue_view(state: &AppState) -> Node<AppState> {
     }
 
     Div::new()
-        .class("event-list")
-        .style(
-            Style::new()
-                .set("display", "grid")
-                .set("gap", "1rem")
-                .set("padding", "1rem"),
-        )
+        .class("page-shell")
+        .style(crate::layout::page_shell_style("1rem"))
         .children([
             Div::new()
                 .style(
