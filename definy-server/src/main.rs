@@ -260,7 +260,6 @@ async fn handle_html(
 
     let events = event_binary_array
         .iter()
-        .into_iter()
         .map(|event_binary| {
             let hash: [u8; 32] = sha2::Sha256::digest(event_binary.as_slice()).into();
             (
