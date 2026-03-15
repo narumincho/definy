@@ -1,15 +1,14 @@
 use narumincho_vdom::*;
 
-use crate::{AppState, Location, fetch};
 use crate::i18n;
+use crate::{AppState, Location, fetch};
 
 pub fn account_detail_view(
     state: &AppState,
     account_id: &definy_event::event::AccountId,
 ) -> Node<AppState> {
     let account_name_map = state.account_name_map();
-    let account_name =
-        crate::app_state::account_display_name(&account_name_map, account_id);
+    let account_name = crate::app_state::account_display_name(&account_name_map, account_id);
     let encoded_account_id = crate::hash_format::encode_hash32(account_id.0.as_ref());
 
     let account_events = state
@@ -25,9 +24,10 @@ pub fn account_detail_view(
         })
         .collect::<Vec<([u8; 32], &definy_event::event::Event)>>();
 
-    let is_current_account = state.current_key.as_ref().is_some_and(|key| {
-        key.verifying_key().to_bytes().as_slice() == account_id.0.as_ref()
-    });
+    let is_current_account = state
+        .current_key
+        .as_ref()
+        .is_some_and(|key| key.verifying_key().to_bytes().as_slice() == account_id.0.as_ref());
 
     let profile_form = if is_current_account {
         Some(
@@ -288,7 +288,9 @@ pub fn account_detail_view(
                                             .into_node(),
                                         Div::new()
                                             .children([text(
-                                                crate::event_presenter::event_summary_text(state, event),
+                                                crate::event_presenter::event_summary_text(
+                                                    state, event,
+                                                ),
                                             )])
                                             .into_node(),
                                     ])

@@ -1,6 +1,6 @@
 use narumincho_vdom::*;
 
-use crate::app_state::{replace_local_event_records, AppState};
+use crate::app_state::{AppState, replace_local_event_records};
 use crate::i18n;
 use crate::local_event::LocalEventStatus;
 
@@ -47,11 +47,15 @@ pub fn local_event_queue_view(state: &AppState) -> Node<AppState> {
                     }
                     Err(error) => {
                         next.local_event_queue.is_loading = false;
-                        next.local_event_queue.last_error =
-                            Some(format!(
-                                "{}: {error:?}",
-                                i18n::tr(&state, "Failed to load local events", "ローカルイベントの読み込みに失敗しました", "Malsukcesis ŝargi lokajn eventojn")
-                            ));
+                        next.local_event_queue.last_error = Some(format!(
+                            "{}: {error:?}",
+                            i18n::tr(
+                                &state,
+                                "Failed to load local events",
+                                "ローカルイベントの読み込みに失敗しました",
+                                "Malsukcesis ŝargi lokajn eventojn"
+                            )
+                        ));
                     }
                 }
                 next
@@ -87,7 +91,12 @@ pub fn local_event_queue_view(state: &AppState) -> Node<AppState> {
         .children([text(if state.force_offline {
             i18n::tr(&state, "Offline: On", "オフライン: オン", "Senkonekte: En")
         } else {
-            i18n::tr(&state, "Offline: Off", "オフライン: オフ", "Senkonekte: Malŝaltita")
+            i18n::tr(
+                &state,
+                "Offline: Off",
+                "オフライン: オフ",
+                "Senkonekte: Malŝaltita",
+            )
         })])
         .into_node();
 
@@ -97,7 +106,7 @@ pub fn local_event_queue_view(state: &AppState) -> Node<AppState> {
             Div::new()
                 .style(Style::new().set("color", "var(--text-secondary)"))
                 .children([text(i18n::tr(
-                            &state,
+                    &state,
                     "No local events",
                     "ローカルイベントはありません",
                     "Neniuj lokaj eventoj",
@@ -149,7 +158,7 @@ pub fn local_event_queue_view(state: &AppState) -> Node<AppState> {
                                             next.local_event_queue.last_error = Some(format!(
                                                 "{}: {error:?}",
                                                 i18n::tr(
-                            &state,
+                                                    &state,
                                                     "Failed to cancel queued event",
                                                     "キュー済みイベントのキャンセルに失敗しました",
                                                     "Malsukcesis nuligi envicigitan eventon",
@@ -193,11 +202,7 @@ pub fn local_event_queue_view(state: &AppState) -> Node<AppState> {
             list_items.push(
                 Div::new()
                     .class("event-card")
-                    .style(
-                        Style::new()
-                            .set("display", "grid")
-                            .set("gap", "0.4rem"),
-                    )
+                    .style(Style::new().set("display", "grid").set("gap", "0.4rem"))
                     .children([
                         Div::new()
                             .style(
@@ -270,7 +275,7 @@ pub fn local_event_queue_view(state: &AppState) -> Node<AppState> {
                         .children([
                             H2::new()
                                 .children([text(i18n::tr(
-                            &state,
+                                    &state,
                                     "Local Events",
                                     "ローカルイベント",
                                     "Lokaj eventoj",
@@ -302,7 +307,12 @@ pub fn local_event_queue_view(state: &AppState) -> Node<AppState> {
                             .set("color", "var(--text-secondary)")
                             .set("font-size", "0.82rem"),
                     )
-                    .children([text(i18n::tr(&state, "Loading...", "読み込み中...", "Ŝargado..."))])
+                    .children([text(i18n::tr(
+                        &state,
+                        "Loading...",
+                        "読み込み中...",
+                        "Ŝargado...",
+                    ))])
                     .into_node()
             } else if let Some(error) = &state.local_event_queue.last_error {
                 Div::new()

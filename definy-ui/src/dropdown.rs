@@ -147,12 +147,10 @@ pub fn searchable_dropdown(
                     .set("color", "var(--text-primary)")
                     .set("outline", "none"),
             );
-        search_input
-            .attributes
-            .push((
-                "placeholder".to_string(),
-                i18n::tr(state, "Search...", "検索...", "Serĉi...").to_string(),
-            ));
+        search_input.attributes.push((
+            "placeholder".to_string(),
+            i18n::tr(state, "Search...", "検索...", "Serĉi...").to_string(),
+        ));
         search_input.events.push((
             "input".to_string(),
             EventHandler::new(move |set_state| {

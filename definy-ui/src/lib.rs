@@ -22,19 +22,19 @@ mod message;
 mod module_detail;
 mod module_list;
 mod module_projection;
-pub mod query;
 pub mod navigator_credential;
 mod not_found;
 mod page_title;
 mod part_detail;
 mod part_list;
 mod part_projection;
+pub mod query;
 pub mod wasm_emitter;
 
 pub use app_state::*;
 pub use event_filter::*;
-pub use message::Message;
 pub use local_event::*;
+pub use message::Message;
 
 use narumincho_vdom::*;
 

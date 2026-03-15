@@ -641,7 +641,12 @@ fn render_expression_editor(
                                     if structure_locked {
                                         Div::new().children([]).into_node()
                                     } else {
-                                        remove_record_item_button(state, path.clone(), index, target)
+                                        remove_record_item_button(
+                                            state,
+                                            path.clone(),
+                                            index,
+                                            target,
+                                        )
                                     },
                                 ])
                                 .into_node(),
@@ -1859,7 +1864,12 @@ fn add_record_item_button(
                 }));
             }
         }))
-        .children([text(i18n::tr(state, "+ Add Item", "+ 追加", "+ Aldoni eron"))])
+        .children([text(i18n::tr(
+            state,
+            "+ Add Item",
+            "+ 追加",
+            "+ Aldoni eron",
+        ))])
         .into_node()
 }
 
@@ -1904,7 +1914,12 @@ fn add_list_item_button(
                 }));
             }
         }))
-        .children([text(i18n::tr(state, "+ Add Item", "+ 追加", "+ Aldoni eron"))])
+        .children([text(i18n::tr(
+            state,
+            "+ Add Item",
+            "+ 追加",
+            "+ Aldoni eron",
+        ))])
         .into_node()
 }
 

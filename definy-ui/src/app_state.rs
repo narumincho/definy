@@ -196,7 +196,10 @@ impl AppState {
     }
 }
 
-pub fn upsert_local_event_record(state: &mut AppState, record: crate::local_event::LocalEventRecord) {
+pub fn upsert_local_event_record(
+    state: &mut AppState,
+    record: crate::local_event::LocalEventRecord,
+) {
     state
         .local_event_queue
         .items
@@ -208,7 +211,10 @@ pub fn upsert_local_event_record(state: &mut AppState, record: crate::local_even
         .sort_by(|a, b| b.updated_at_ms.cmp(&a.updated_at_ms));
 }
 
-pub fn replace_local_event_records(state: &mut AppState, records: Vec<crate::local_event::LocalEventRecord>) {
+pub fn replace_local_event_records(
+    state: &mut AppState,
+    records: Vec<crate::local_event::LocalEventRecord>,
+) {
     state.local_event_queue.items = records;
     state
         .local_event_queue
@@ -316,7 +322,11 @@ pub fn build_initial_state(
 }
 
 impl AppState {
-    pub fn build_url(location: &Location, lang_code: &str, event_type: Option<EventType>) -> String {
+    pub fn build_url(
+        location: &Location,
+        lang_code: &str,
+        event_type: Option<EventType>,
+    ) -> String {
         let mut url = location.to_url();
         let query = crate::query::build_query(crate::query::QueryParams {
             lang: Some(lang_code.to_string()),

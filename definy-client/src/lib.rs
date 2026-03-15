@@ -29,11 +29,7 @@ fn read_resource_hash_from_dom() -> Option<ResourceHash> {
         .split("';")
         .next()?;
 
-    let wasm = text
-        .split("module_or_path: \"")
-        .nth(1)?
-        .split('"')
-        .next()?;
+    let wasm = text.split("module_or_path: \"").nth(1)?.split('"').next()?;
 
     Some(ResourceHash {
         js: js.to_string(),
@@ -106,7 +102,10 @@ impl narumincho_vdom_client::App<AppState> for DefinyApp {
                 .unwrap_or_default();
             let url = web_sys::Url::new(&initial_url).unwrap();
             let search = url.search();
-            search.strip_prefix('?').unwrap_or(search.as_str()).to_string()
+            search
+                .strip_prefix('?')
+                .unwrap_or(search.as_str())
+                .to_string()
         };
 
         let query_params = definy_ui::query::parse_query(Some(query_string.as_str()));
@@ -121,7 +120,8 @@ impl narumincho_vdom_client::App<AppState> for DefinyApp {
             .or_else(definy_ui::language::best_language_from_browser)
             .unwrap_or_else(definy_ui::language::default_language);
         let language_resolution = if let Some(requested_lang) = query_params.lang {
-            if let Some(language) = definy_ui::language::language_from_tag(requested_lang.as_str()) {
+            if let Some(language) = definy_ui::language::language_from_tag(requested_lang.as_str())
+            {
                 definy_ui::language::LanguageResolution {
                     language,
                     unsupported_query_lang: None,
@@ -151,8 +151,7 @@ impl narumincho_vdom_client::App<AppState> for DefinyApp {
                 let event_pairs = ssr_event_binaries
                     .into_iter()
                     .map(|bytes| {
-                        let hash: [u8; 32] =
-                            <sha2::Sha256 as sha2::Digest>::digest(&bytes).into();
+                        let hash: [u8; 32] = <sha2::Sha256 as sha2::Digest>::digest(&bytes).into();
                         (hash, bytes)
                     })
                     .collect::<Vec<_>>();
@@ -203,13 +202,9 @@ impl narumincho_vdom_client::App<AppState> for DefinyApp {
                         }
                     }));
                 }
-                let events = definy_ui::fetch::get_events(
-                    filter_for_fetch,
-                    Some(20),
-                    Some(0),
-                )
-                .await
-                .unwrap();
+                let events = definy_ui::fetch::get_events(filter_for_fetch, Some(20), Some(0))
+                    .await
+                    .unwrap();
                 fire(Box::new(move |state| {
                     let mut event_cache = state.event_cache.clone();
                     let mut event_hashes = Vec::new();
@@ -270,8 +265,7 @@ impl narumincho_vdom_client::App<AppState> for DefinyApp {
             definy_ui::Location::from_url(&pathname)
         };
 
-        let (events, is_loading, has_more) =
-            if let Some((ssr_events, has_more, _)) = ssr_state {
+        let (events, is_loading, has_more) = if let Some((ssr_events, has_more, _)) = ssr_state {
             // SSRが送ってきた状態をそのまま採用
             (ssr_events, false, has_more)
         } else {
@@ -342,11 +336,7 @@ impl narumincho_vdom_client::App<AppState> for DefinyApp {
             }
             if query_params.lang.is_none() {
                 if let Some(location) = &next.location {
-                    let url = AppState::build_url(
-                        location,
-                        next.language.code,
-                        filter_event_type,
-                    );
+                    let url = AppState::build_url(location, next.language.code, filter_event_type);
                     if let Some(window) = web_sys::window() {
                         if let Ok(history) = window.history() {
                             let _ = history.replace_state_with_url(
@@ -364,6 +354,10 @@ impl narumincho_vdom_client::App<AppState> for DefinyApp {
     }
 
     fn render(state: &AppState) -> narumincho_vdom::Node<AppState> {
-        definy_ui::render(state, &*SSR_RESOURCE_HASH, SSR_INITIAL_STATE_TEXT.as_deref())
+        definy_ui::render(
+            state,
+            &*SSR_RESOURCE_HASH,
+            SSR_INITIAL_STATE_TEXT.as_deref(),
+        )
     }
 }

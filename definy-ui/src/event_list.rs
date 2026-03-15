@@ -4,9 +4,9 @@ use narumincho_vdom::*;
 use crate::app_state::AppState;
 use crate::expression_editor::{EditorTarget, render_root_expression_editor};
 use crate::expression_eval::{evaluate_expression, expression_to_source};
+use crate::i18n;
 use crate::module_projection::collect_module_snapshots;
 use crate::part_projection::collect_part_snapshots;
-use crate::i18n;
 
 fn update_event_filter_url(event_type: Option<EventType>, lang_code: &str) {
     let query = crate::query::build_query(crate::query::QueryParams {
@@ -54,14 +54,23 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
     let _page_size = state.event_list_state.page_size;
 
     let filter_options = vec![
-        ("".to_string(), i18n::tr(&state, "All Events", "すべてのイベント", "Ĉiuj eventoj").to_string()),
+        (
+            "".to_string(),
+            i18n::tr(&state, "All Events", "すべてのイベント", "Ĉiuj eventoj").to_string(),
+        ),
         (
             "create_account".to_string(),
             i18n::tr(&state, "Create Account", "アカウント作成", "Krei konton").to_string(),
         ),
         (
             "change_profile".to_string(),
-            i18n::tr(&state, "Change Profile", "プロフィール変更", "Ŝanĝi profilon").to_string(),
+            i18n::tr(
+                &state,
+                "Change Profile",
+                "プロフィール変更",
+                "Ŝanĝi profilon",
+            )
+            .to_string(),
         ),
         (
             "part_definition".to_string(),
@@ -73,15 +82,29 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
         ),
         (
             "module_definition".to_string(),
-            i18n::tr(&state, "Module Definition", "モジュール定義", "Modulo-difino").to_string(),
+            i18n::tr(
+                &state,
+                "Module Definition",
+                "モジュール定義",
+                "Modulo-difino",
+            )
+            .to_string(),
         ),
         (
             "module_update".to_string(),
-            i18n::tr(&state, "Module Update", "モジュール更新", "Modulo-ĝisdatigo").to_string(),
+            i18n::tr(
+                &state,
+                "Module Update",
+                "モジュール更新",
+                "Modulo-ĝisdatigo",
+            )
+            .to_string(),
         ),
     ];
 
-    let current_filter = state.event_list_state.filter_event_type
+    let current_filter = state
+        .event_list_state
+        .filter_event_type
         .as_ref()
         .map(|et| et.to_string())
         .unwrap_or_else(|| "".to_string());
@@ -413,7 +436,9 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
                             .event_list_state
                             .event_hashes
                             .iter()
-                            .filter_map(|hash| state.event_cache.get(hash).map(|event| (hash, event)))
+                            .filter_map(|hash| {
+                                state.event_cache.get(hash).map(|event| (hash, event))
+                            })
                             .map(|(hash, event)| event_view(&state, hash, event, &account_name_map))
                             .collect::<Vec<Node<AppState>>>()
                     })
@@ -422,7 +447,11 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
             if state.event_list_state.is_loading {
                 children.push(
                     Div::new()
-                        .style(Style::new().set("text-align", "center").set("padding", "1rem"))
+                        .style(
+                            Style::new()
+                                .set("text-align", "center")
+                                .set("padding", "1rem"),
+                        )
                         .children([text(i18n::tr(
                             &state,
                             "Loading events...",
@@ -433,9 +462,19 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
                 );
             } else if state.event_list_state.has_more {
                 let button_text = if state.event_list_state.event_hashes.is_empty() {
-                    i18n::tr(&state, "Load Events", "イベントを読み込む", "Ŝargi eventojn")
+                    i18n::tr(
+                        &state,
+                        "Load Events",
+                        "イベントを読み込む",
+                        "Ŝargi eventojn",
+                    )
                 } else {
-                    i18n::tr(&state, "Load More Events", "さらに読み込む", "Ŝargi pliajn eventojn")
+                    i18n::tr(
+                        &state,
+                        "Load More Events",
+                        "さらに読み込む",
+                        "Ŝargi pliajn eventojn",
+                    )
                 };
                 children.push(
                     Button::new()
@@ -462,7 +501,8 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
                                     filter,
                                     Some(page_size),
                                     Some(current_offset),
-                                ).await;
+                                )
+                                .await;
                                 if let Ok(events) = events {
                                     let events_len = events.len();
                                     set_state(Box::new(move |state: AppState| {
@@ -485,8 +525,11 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
                                                 current_offset,
                                                 page_size: state.event_list_state.page_size,
                                                 is_loading: false,
-                                                has_more: events_len == state.event_list_state.page_size as usize,
-                                                filter_event_type: state.event_list_state.filter_event_type,
+                                                has_more: events_len
+                                                    == state.event_list_state.page_size as usize,
+                                                filter_event_type: state
+                                                    .event_list_state
+                                                    .filter_event_type,
                                             },
                                             ..state.clone()
                                         }
@@ -503,10 +546,17 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
                         .children([text(button_text)])
                         .into_node(),
                 );
-            } else if state.event_list_state.event_hashes.is_empty() && !state.event_list_state.is_loading {
+            } else if state.event_list_state.event_hashes.is_empty()
+                && !state.event_list_state.is_loading
+            {
                 children.push(
                     Div::new()
-                        .style(Style::new().set("text-align", "center").set("padding", "1rem").set("color", "var(--text-secondary)"))
+                        .style(
+                            Style::new()
+                                .set("text-align", "center")
+                                .set("padding", "1rem")
+                                .set("color", "var(--text-secondary)"),
+                        )
                         .children([text(i18n::tr(
                             &state,
                             "No events found. Click 'Load Events' to fetch.",
@@ -575,7 +625,7 @@ fn event_view(
                         .style(Style::new().set("color", "var(--primary)"))
                         .children([
                             text(i18n::tr(
-                            &state,
+                                &state,
                                 "Account created:",
                                 "アカウント作成:",
                                 "Konto kreita:",
@@ -587,7 +637,7 @@ fn event_view(
                         .style(Style::new().set("color", "var(--primary)"))
                         .children([
                             text(i18n::tr(
-                            &state,
+                                &state,
                                 "Profile changed:",
                                 "プロフィール変更:",
                                 "Profilo ŝanĝita:",
@@ -610,12 +660,10 @@ fn event_view(
                                         .set("margin-bottom", "0.25rem")
                                         .set("text-decoration", "none"),
                                 )
-                                .children([text(
-                                    crate::app_state::account_display_name(
-                                        account_name_map,
-                                        &event.account_id,
-                                    ),
-                                )])
+                                .children([text(crate::app_state::account_display_name(
+                                    account_name_map,
+                                    &event.account_id,
+                                ))])
                                 .into_node(),
                             text(format!(
                                 "{}: {} = {}",
@@ -645,7 +693,7 @@ fn event_view(
                                         .set("text-decoration", "none"),
                                 )
                                 .children([text(i18n::tr(
-                            &state,
+                                    &state,
                                     "Open part detail",
                                     "パーツ詳細を開く",
                                     "Malfermi partajn detalojn",
@@ -668,16 +716,19 @@ fn event_view(
                                         .set("margin-bottom", "0.25rem")
                                         .set("text-decoration", "none"),
                                 )
-                                .children([text(
-                                    crate::app_state::account_display_name(
-                                        account_name_map,
-                                        &event.account_id,
-                                    ),
-                                )])
+                                .children([text(crate::app_state::account_display_name(
+                                    account_name_map,
+                                    &event.account_id,
+                                ))])
                                 .into_node(),
                             text(format!(
                                 "{} {}",
-                                i18n::tr(&state, "Part updated:", "パーツ更新:", "Parto ĝisdatigita:"),
+                                i18n::tr(
+                                    &state,
+                                    "Part updated:",
+                                    "パーツ更新:",
+                                    "Parto ĝisdatigita:"
+                                ),
                                 part_update_event.part_name
                             )),
                             Div::new()
@@ -717,7 +768,7 @@ fn event_view(
                                         .set("text-decoration", "none"),
                                 )
                                 .children([text(i18n::tr(
-                            &state,
+                                    &state,
                                     "Open part detail",
                                     "パーツ詳細を開く",
                                     "Malfermi partajn detalojn",
@@ -740,16 +791,19 @@ fn event_view(
                                         .set("margin-bottom", "0.25rem")
                                         .set("text-decoration", "none"),
                                 )
-                                .children([text(
-                                    crate::app_state::account_display_name(
-                                        account_name_map,
-                                        &event.account_id,
-                                    ),
-                                )])
+                                .children([text(crate::app_state::account_display_name(
+                                    account_name_map,
+                                    &event.account_id,
+                                ))])
                                 .into_node(),
                             text(format!(
                                 "{} {}",
-                                i18n::tr(&state, "Module created:", "モジュール作成:", "Modulo kreita:"),
+                                i18n::tr(
+                                    &state,
+                                    "Module created:",
+                                    "モジュール作成:",
+                                    "Modulo kreita:"
+                                ),
                                 module_definition_event.module_name
                             )),
                             if module_definition_event.description.is_empty() {
@@ -782,16 +836,19 @@ fn event_view(
                                         .set("margin-bottom", "0.25rem")
                                         .set("text-decoration", "none"),
                                 )
-                                .children([text(
-                                    crate::app_state::account_display_name(
-                                        account_name_map,
-                                        &event.account_id,
-                                    ),
-                                )])
+                                .children([text(crate::app_state::account_display_name(
+                                    account_name_map,
+                                    &event.account_id,
+                                ))])
                                 .into_node(),
                             text(format!(
                                 "{} {}",
-                                i18n::tr(&state, "Module updated:", "モジュール更新:", "Modulo ĝisdatigita:"),
+                                i18n::tr(
+                                    &state,
+                                    "Module updated:",
+                                    "モジュール更新:",
+                                    "Modulo ĝisdatigita:"
+                                ),
                                 module_update_event.module_name
                             )),
                             if module_update_event.module_description.is_empty() {
@@ -833,7 +890,7 @@ fn event_view(
                                         .set("text-decoration", "none"),
                                 )
                                 .children([text(i18n::tr(
-                            &state,
+                                    &state,
                                     "Open module definition",
                                     "モジュール定義を開く",
                                     "Malfermi modulo-difinon",
@@ -857,7 +914,7 @@ fn event_view(
             .children([text(&format!(
                 "{}: {:?}",
                 i18n::tr(
-                            &state,
+                    &state,
                     "Failed to load events",
                     "イベントの読み込みに失敗しました",
                     "Malsukcesis ŝargi eventojn",
@@ -943,7 +1000,12 @@ fn part_type_input(state: &AppState) -> Node<AppState> {
                         .set("font-size", "0.85rem")
                         .set("color", "var(--text-secondary)"),
                 )
-                .children([text(i18n::tr(&state, "Part Type", "パーツ型", "Parto-tipo"))])
+                .children([text(i18n::tr(
+                    &state,
+                    "Part Type",
+                    "パーツ型",
+                    "Parto-tipo",
+                ))])
                 .into_node(),
             render_part_type_editor(state, &state.part_definition_form.part_type_input, 0),
         ])

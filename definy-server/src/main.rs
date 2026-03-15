@@ -140,7 +140,8 @@ async fn handler(
             .headers()
             .get("accept-language")
             .and_then(|value| value.to_str().ok());
-        let language_resolution = definy_ui::language::resolve_language(uri.query(), accept_language);
+        let language_resolution =
+            definy_ui::language::resolve_language(uri.query(), accept_language);
         let language_fallback_notice =
             language_resolution
                 .unsupported_query_lang
@@ -248,8 +249,8 @@ async fn handle_html(
     }
 
     let filter_event_type = definy_ui::event_filter_from_query(query);
-    let event_binary_array =
-        match db::get_events(pool, filter_event_type, Some(20), Some(0)).await {
+    let event_binary_array = match db::get_events(pool, filter_event_type, Some(20), Some(0)).await
+    {
         Ok(events) => events,
         Err(error) => {
             eprintln!("Failed to get events for SSR: {:?}", error);

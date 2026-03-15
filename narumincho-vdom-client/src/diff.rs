@@ -135,7 +135,8 @@ fn diff_recursive<State>(
                 .iter()
                 .map(child_key)
                 .collect::<Vec<Option<String>>>();
-            let has_keys = old_keys.iter().any(|k| k.is_some()) || new_keys.iter().any(|k| k.is_some());
+            let has_keys =
+                old_keys.iter().any(|k| k.is_some()) || new_keys.iter().any(|k| k.is_some());
 
             if has_keys {
                 let all_old_keyed = old_keys.iter().all(|k| k.is_some());

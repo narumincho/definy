@@ -19,8 +19,7 @@ use tokio::time::{Duration, sleep};
 const TEST_JAVASCRIPT_CONTENT: &[u8] = include_bytes!("../../web-distribution/definy_client.js");
 const TEST_JAVASCRIPT_HASH: &str = include_str!("../../web-distribution/definy_client.js.sha256");
 const TEST_WASM_CONTENT: &[u8] = include_bytes!("../../web-distribution/definy_client_bg.wasm");
-const TEST_WASM_HASH: &str =
-    include_str!("../../web-distribution/definy_client_bg.wasm.sha256");
+const TEST_WASM_HASH: &str = include_str!("../../web-distribution/definy_client_bg.wasm.sha256");
 const TEST_ICON_CONTENT: &[u8] = include_bytes!("../../assets/icon.png");
 const TEST_ICON_HASH: &str = include_str!("../../web-distribution/icon.png.sha256");
 
@@ -340,7 +339,10 @@ impl WebDriverClient {
         .await
         {
             Ok(response) => {
-                return Ok(response.get("value").cloned().unwrap_or(serde_json::Value::Null));
+                return Ok(response
+                    .get("value")
+                    .cloned()
+                    .unwrap_or(serde_json::Value::Null));
             }
             Err(_) => {}
         }
@@ -354,7 +356,10 @@ impl WebDriverClient {
             Some(payload),
         )
         .await?;
-        Ok(response.get("value").cloned().unwrap_or(serde_json::Value::Null))
+        Ok(response
+            .get("value")
+            .cloned()
+            .unwrap_or(serde_json::Value::Null))
     }
 }
 

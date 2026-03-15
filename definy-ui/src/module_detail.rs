@@ -1,27 +1,25 @@
 use narumincho_vdom::*;
 
+use crate::Location;
 use crate::app_state::AppState;
+use crate::i18n;
 use crate::module_projection::find_module_snapshot;
 use crate::part_projection::collect_part_snapshots;
-use crate::Location;
-use crate::i18n;
 
 pub fn module_detail_view(state: &AppState, definition_event_hash: &[u8; 32]) -> Node<AppState> {
     let Some(module_snapshot) = find_module_snapshot(state, definition_event_hash) else {
         return Div::new()
             .class("page-shell")
             .style(crate::layout::page_shell_style("1rem"))
-            .children([
-                H2::new()
-                    .style(Style::new().set("font-size", "1.3rem"))
-                    .children([text(i18n::tr(
-                            &state,
-                        "Module not found",
-                        "モジュールが見つかりません",
-                        "Modulo ne trovita",
-                    ))])
-                    .into_node(),
-            ])
+            .children([H2::new()
+                .style(Style::new().set("font-size", "1.3rem"))
+                .children([text(i18n::tr(
+                    &state,
+                    "Module not found",
+                    "モジュールが見つかりません",
+                    "Modulo ne trovita",
+                ))])
+                .into_node()])
             .into_node();
     };
 
@@ -31,10 +29,8 @@ pub fn module_detail_view(state: &AppState, definition_event_hash: &[u8; 32]) ->
         .collect::<Vec<_>>();
 
     let account_name_map = state.account_name_map();
-    let author_name = crate::app_state::account_display_name(
-        &account_name_map,
-        &module_snapshot.account_id,
-    );
+    let author_name =
+        crate::app_state::account_display_name(&account_name_map, &module_snapshot.account_id);
     let (initial_name, initial_description) =
         effective_module_update_form(state, definition_event_hash, Some(&module_snapshot));
 
@@ -81,7 +77,7 @@ pub fn module_detail_view(state: &AppState, definition_event_hash: &[u8; 32]) ->
                                     module_snapshot.latest_event_hash,
                                 )))
                                 .children([text(i18n::tr(
-                            &state,
+                                    &state,
                                     "Latest event",
                                     "最新イベント",
                                     "Lasta evento",
@@ -92,7 +88,7 @@ pub fn module_detail_view(state: &AppState, definition_event_hash: &[u8; 32]) ->
                                     module_snapshot.definition_event_hash,
                                 )))
                                 .children([text(i18n::tr(
-                            &state,
+                                    &state,
                                     "Definition event",
                                     "定義イベント",
                                     "Difina evento",
@@ -103,7 +99,12 @@ pub fn module_detail_view(state: &AppState, definition_event_hash: &[u8; 32]) ->
                 ])
                 .into_node(),
             if state.current_key.is_some() {
-                module_update_form(state, definition_event_hash, &initial_name, &initial_description)
+                module_update_form(
+                    state,
+                    definition_event_hash,
+                    &initial_name,
+                    &initial_description,
+                )
             } else {
                 Div::new()
                     .class("event-detail-card")
@@ -113,7 +114,7 @@ pub fn module_detail_view(state: &AppState, definition_event_hash: &[u8; 32]) ->
                             .set("color", "var(--text-secondary)"),
                     )
                     .children([text(i18n::tr(
-                            &state,
+                        &state,
                         "Login required to update modules.",
                         "モジュール更新にはログインが必要です。",
                         "Ensaluto necesas por ĝisdatigi modulojn.",
@@ -123,7 +124,7 @@ pub fn module_detail_view(state: &AppState, definition_event_hash: &[u8; 32]) ->
             Div::new()
                 .style(Style::new().set("margin-top", "1rem"))
                 .children([text(i18n::tr(
-                            &state,
+                    &state,
                     "Parts in this module",
                     "このモジュールのパーツ",
                     "Partoj en ĉi tiu modulo",
@@ -138,7 +139,7 @@ pub fn module_detail_view(state: &AppState, definition_event_hash: &[u8; 32]) ->
                             .set("color", "var(--text-secondary)"),
                     )
                     .children([text(i18n::tr(
-                            &state,
+                        &state,
                         "No parts in this module yet.",
                         "このモジュールにはまだパーツがありません。",
                         "Ankoraŭ neniuj partoj en ĉi tiu modulo.",
@@ -201,7 +202,12 @@ pub fn module_detail_view(state: &AppState, definition_event_hash: &[u8; 32]) ->
                                             )
                                             .children([text(format!(
                                                 "{} {}",
-                                                i18n::tr(&state, "latest author:", "最新の投稿者:", "lasta aŭtoro:"),
+                                                i18n::tr(
+                                                    &state,
+                                                    "latest author:",
+                                                    "最新の投稿者:",
+                                                    "lasta aŭtoro:"
+                                                ),
                                                 part_author
                                             ))])
                                             .into_node(),
@@ -217,7 +223,7 @@ pub fn module_detail_view(state: &AppState, definition_event_hash: &[u8; 32]) ->
                                                         part.definition_event_hash,
                                                     )))
                                                     .children([text(i18n::tr(
-                            &state,
+                                                        &state,
                                                         "Open part detail",
                                                         "パーツ詳細を開く",
                                                         "Malfermi partajn detalojn",
@@ -228,7 +234,7 @@ pub fn module_detail_view(state: &AppState, definition_event_hash: &[u8; 32]) ->
                                                         part.latest_event_hash,
                                                     )))
                                                     .children([text(i18n::tr(
-                            &state,
+                                                        &state,
                                                         "Latest event",
                                                         "最新イベント",
                                                         "Lasta evento",

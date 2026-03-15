@@ -1,5 +1,5 @@
-use crate::{AppState, Location};
 use crate::i18n;
+use crate::{AppState, Location};
 
 #[derive(Clone, Copy)]
 enum RouteId {
@@ -58,9 +58,7 @@ pub fn page_title_text(state: &AppState) -> String {
         | Some(Location::PartList)
         | Some(Location::ModuleList)
         | Some(Location::LocalEventQueue)
-        | None => {
-            route_id.title_prefix(state).to_string()
-        }
+        | None => route_id.title_prefix(state).to_string(),
         Some(Location::Account(account_id)) => {
             let account_name =
                 crate::app_state::account_display_name(&state.account_name_map(), account_id);
@@ -72,11 +70,9 @@ pub fn page_title_text(state: &AppState) -> String {
             format!("{}/{}", route_id.title_prefix(state), part_name)
         }
         Some(Location::Module(definition_event_hash)) => {
-            let module_name = crate::module_projection::resolve_module_name(
-                state,
-                definition_event_hash,
-            )
-            .unwrap_or_else(|| short_hash(definition_event_hash));
+            let module_name =
+                crate::module_projection::resolve_module_name(state, definition_event_hash)
+                    .unwrap_or_else(|| short_hash(definition_event_hash));
             format!("{}/{}", route_id.title_prefix(state), module_name)
         }
         Some(Location::Event(event_hash)) => {

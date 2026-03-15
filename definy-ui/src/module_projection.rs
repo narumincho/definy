@@ -77,10 +77,7 @@ pub fn find_module_snapshot(
         .find(|snapshot| &snapshot.definition_event_hash == definition_event_hash)
 }
 
-pub fn resolve_module_name(
-    state: &AppState,
-    definition_event_hash: &[u8; 32],
-) -> Option<String> {
+pub fn resolve_module_name(state: &AppState, definition_event_hash: &[u8; 32]) -> Option<String> {
     let mut events = state
         .event_cache
         .iter()

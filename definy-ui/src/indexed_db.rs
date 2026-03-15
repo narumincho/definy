@@ -1,6 +1,6 @@
-use wasm_bindgen::closure::Closure;
 use wasm_bindgen::JsCast;
 use wasm_bindgen::JsValue;
+use wasm_bindgen::closure::Closure;
 use wasm_bindgen_futures::JsFuture;
 
 const DB_NAME: &str = "definy";
@@ -38,7 +38,10 @@ pub async fn store_events(events: &[([u8; 32], Vec<u8>)]) -> Result<(), JsValue>
 
 pub async fn load_event_binaries() -> Result<Vec<Vec<u8>>, JsValue> {
     let records = load_event_records().await?;
-    Ok(records.into_iter().map(|record| record.event_binary).collect())
+    Ok(records
+        .into_iter()
+        .map(|record| record.event_binary)
+        .collect())
 }
 
 pub async fn store_event_record(
@@ -50,7 +53,8 @@ pub async fn store_event_record(
     let store = transaction.object_store(EVENTS_STORE)?;
 
     let key = JsValue::from_str(&crate::hash_format::encode_hash32(&record.hash));
-    let value = serde_cbor::to_vec(record).map_err(|error| JsValue::from_str(&format!("{error:?}")))?;
+    let value =
+        serde_cbor::to_vec(record).map_err(|error| JsValue::from_str(&format!("{error:?}")))?;
     let value = js_sys::Uint8Array::from(value.as_slice());
     let request = store.put_with_key(&value, &key)?;
     let _ = request_to_jsvalue(request).await?;
@@ -78,9 +82,7 @@ pub async fn load_event_records() -> Result<Vec<crate::local_event::LocalEventRe
     let mut records = Vec::new();
     for value in array.iter() {
         let bytes = js_sys::Uint8Array::new(&value).to_vec();
-        if let Ok(record) =
-            serde_cbor::from_slice::<crate::local_event::LocalEventRecord>(&bytes)
-        {
+        if let Ok(record) = serde_cbor::from_slice::<crate::local_event::LocalEventRecord>(&bytes) {
             records.push(record);
         } else {
             let hash: [u8; 32] = <sha2::Sha256 as sha2::Digest>::digest(&bytes).into();
@@ -132,30 +134,29 @@ async fn open_db() -> Result<web_sys::IdbDatabase, JsValue> {
         let request_for_handler = success_request.clone();
         let success_request = success_request.clone();
         let reject_for_success = reject.clone();
-        let on_success = Closure::once(Box::new(move |_event: web_sys::Event| {
-            match success_request.result() {
-                Ok(result) => match result.dyn_into::<web_sys::IdbDatabase>() {
-                    Ok(db) => {
-                        let _ = resolve.call1(&JsValue::NULL, &db);
-                    }
+        let on_success =
+            Closure::once(Box::new(
+                move |_event: web_sys::Event| match success_request.result() {
+                    Ok(result) => match result.dyn_into::<web_sys::IdbDatabase>() {
+                        Ok(db) => {
+                            let _ = resolve.call1(&JsValue::NULL, &db);
+                        }
+                        Err(error) => {
+                            let _ = reject_for_success.call1(&JsValue::NULL, &error);
+                        }
+                    },
                     Err(error) => {
                         let _ = reject_for_success.call1(&JsValue::NULL, &error);
                     }
                 },
-                Err(error) => {
-                    let _ = reject_for_success.call1(&JsValue::NULL, &error);
-                }
-            }
-        }) as Box<dyn FnOnce(_)>);
+            ) as Box<dyn FnOnce(_)>);
         request_for_handler.set_onsuccess(Some(on_success.as_ref().unchecked_ref()));
         on_success.forget();
 
         let reject_for_error = reject.clone();
         let on_error = Closure::once(Box::new(move |_event: web_sys::Event| {
-            let _ = reject_for_error.call1(
-                &JsValue::NULL,
-                &JsValue::from_str("indexedDB open failed"),
-            );
+            let _ =
+                reject_for_error.call1(&JsValue::NULL, &JsValue::from_str("indexedDB open failed"));
         }) as Box<dyn FnOnce(_)>);
         error_request.set_onerror(Some(on_error.as_ref().unchecked_ref()));
         on_error.forget();
@@ -172,16 +173,17 @@ async fn request_to_jsvalue(request: web_sys::IdbRequest) -> Result<JsValue, JsV
         let request_for_handler = success_request.clone();
         let success_request = success_request.clone();
         let reject_for_success = reject.clone();
-        let on_success = Closure::once(Box::new(move |_event: web_sys::Event| {
-            match success_request.result() {
-                Ok(result) => {
-                    let _ = resolve.call1(&JsValue::NULL, &result);
-                }
-                Err(error) => {
-                    let _ = reject_for_success.call1(&JsValue::NULL, &error);
-                }
-            }
-        }) as Box<dyn FnOnce(_)>);
+        let on_success =
+            Closure::once(Box::new(
+                move |_event: web_sys::Event| match success_request.result() {
+                    Ok(result) => {
+                        let _ = resolve.call1(&JsValue::NULL, &result);
+                    }
+                    Err(error) => {
+                        let _ = reject_for_success.call1(&JsValue::NULL, &error);
+                    }
+                },
+            ) as Box<dyn FnOnce(_)>);
         request_for_handler.set_onsuccess(Some(on_success.as_ref().unchecked_ref()));
         on_success.forget();
 

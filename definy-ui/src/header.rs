@@ -2,8 +2,8 @@ use std::rc::Rc;
 
 use narumincho_vdom::*;
 
-use crate::{AppState, Location};
 use crate::i18n;
+use crate::{AppState, Location};
 
 pub fn header(state: &AppState) -> Node<AppState> {
     let mut children = vec![header_main(state)];
@@ -85,7 +85,12 @@ fn header_main(state: &AppState) -> Node<AppState> {
                                 .set("font-size", "0.9rem")
                                 .set("color", "var(--text-secondary)"),
                         )
-                        .children([text(i18n::tr(state, "Local Events", "ローカルイベント", "Lokaj eventoj"))])
+                        .children([text(i18n::tr(
+                            state,
+                            "Local Events",
+                            "ローカルイベント",
+                            "Lokaj eventoj",
+                        ))])
                         .into_node(),
                     A::<AppState, Location>::new()
                         .href(state.href_with_lang(Location::AccountList))
@@ -199,8 +204,8 @@ fn language_dropdown(state: &AppState) -> Node<AppState> {
         options.as_slice(),
         Rc::new(|value| {
             Box::new(move |state: AppState| {
-                let selected = crate::language::language_from_tag(value.as_str())
-                    .unwrap_or(state.language);
+                let selected =
+                    crate::language::language_from_tag(value.as_str()).unwrap_or(state.language);
                 if selected.code == state.language.code {
                     return state;
                 }
@@ -259,7 +264,8 @@ fn language_dropdown(state: &AppState) -> Node<AppState> {
 fn popover(state: &AppState) -> Node<AppState> {
     let account_link = state.current_key.as_ref().map(|key| {
         let account_id = definy_event::event::AccountId(Box::new(key.verifying_key().to_bytes()));
-        let account_name = crate::app_state::account_display_name(&state.account_name_map(), &account_id);
+        let account_name =
+            crate::app_state::account_display_name(&state.account_name_map(), &account_id);
         A::<AppState, Location>::new()
             .href(state.href_with_lang(Location::Account(account_id)))
             .style(
@@ -314,7 +320,12 @@ fn popover(state: &AppState) -> Node<AppState> {
                     .children([text(if state.force_offline {
                         i18n::tr(state, "Offline: On", "オフライン: オン", "Senkonekte: En")
                     } else {
-                        i18n::tr(state, "Offline: Off", "オフライン: オフ", "Senkonekte: Malŝaltita")
+                        i18n::tr(
+                            state,
+                            "Offline: Off",
+                            "オフライン: オフ",
+                            "Senkonekte: Malŝaltita",
+                        )
                     })])
                     .style(
                         Style::new()

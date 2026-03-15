@@ -3,8 +3,8 @@ use narumincho_vdom::*;
 
 use crate::Location;
 use crate::app_state::AppState;
-use crate::i18n;
 use crate::expression_eval::{evaluate_expression, expression_to_source};
+use crate::i18n;
 
 fn part_type_text(part_type: &definy_event::event::PartType) -> String {
     match part_type {
@@ -92,8 +92,7 @@ fn render_event_detail(
     event: &Event,
     account_name_map: &std::collections::HashMap<definy_event::event::AccountId, Box<str>>,
 ) -> Node<AppState> {
-    let account_name =
-        crate::app_state::account_display_name(account_name_map, &event.account_id);
+    let account_name = crate::app_state::account_display_name(account_name_map, &event.account_id);
     let root_part_definition_hash = root_part_definition_hash(hash, &event.content);
 
     Div::new()
@@ -215,13 +214,16 @@ fn render_event_detail(
                                     let expression = expression.clone();
                                     async move {
                                         set_state(Box::new(move |state: AppState| {
-                                            let events_vec: Vec<_> = state.event_cache.iter().map(|(h, e)| (*h, e.clone())).collect();
-                                            let eval_result =
-                                                evaluate_message_result(
-                                                    state.language.code,
-                                                    &expression,
-                                                    &events_vec,
-                                                );
+                                            let events_vec: Vec<_> = state
+                                                .event_cache
+                                                .iter()
+                                                .map(|(h, e)| (*h, e.clone()))
+                                                .collect();
+                                            let eval_result = evaluate_message_result(
+                                                state.language.code,
+                                                &expression,
+                                                &events_vec,
+                                            );
                                             AppState {
                                                 event_detail_eval_result: Some(eval_result),
                                                 ..state.clone()
@@ -276,7 +278,12 @@ fn render_event_detail(
                             .style(Style::new().set("font-size", "1.08rem"))
                             .children([text(format!(
                                 "{} {}",
-                                i18n::tr(state, "Part updated:", "パーツ更新:", "Parto ĝisdatigita:"),
+                                i18n::tr(
+                                    state,
+                                    "Part updated:",
+                                    "パーツ更新:",
+                                    "Parto ĝisdatigita:"
+                                ),
                                 part_update_event.part_name
                             ))])
                             .into_node(),
@@ -359,7 +366,12 @@ fn render_event_detail(
                     .children([
                         text(format!(
                             "{} {}",
-                            i18n::tr(state, "Module created:", "モジュール作成:", "Modulo kreita:"),
+                            i18n::tr(
+                                state,
+                                "Module created:",
+                                "モジュール作成:",
+                                "Modulo kreita:"
+                            ),
                             module_definition_event.module_name
                         )),
                         if module_definition_event.description.is_empty() {
@@ -398,7 +410,12 @@ fn render_event_detail(
                             .style(Style::new().set("font-size", "1.08rem"))
                             .children([text(format!(
                                 "{} {}",
-                                i18n::tr(state, "Module updated:", "モジュール更新:", "Modulo ĝisdatigita:"),
+                                i18n::tr(
+                                    state,
+                                    "Module updated:",
+                                    "モジュール更新:",
+                                    "Modulo ĝisdatigita:"
+                                ),
                                 module_update_event.module_name
                             ))])
                             .into_node(),

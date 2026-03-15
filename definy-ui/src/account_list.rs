@@ -1,7 +1,7 @@
 use narumincho_vdom::*;
 
-use crate::{AppState, Location};
 use crate::i18n;
+use crate::{AppState, Location};
 
 struct AccountRow {
     account_id: definy_event::event::AccountId,

@@ -21,7 +21,7 @@ pub fn module_list_view(state: &AppState) -> Node<AppState> {
                         .set("color", "var(--text-secondary)"),
                 )
                 .children([text(i18n::tr(
-                            &state,
+                    &state,
                     "Login required to create modules.",
                     "モジュール作成にはログインが必要です。",
                     "Ensaluto necesas por krei modulojn.",
@@ -125,7 +125,7 @@ pub fn module_list_view(state: &AppState) -> Node<AppState> {
                                                             .set("color", "var(--text-secondary)"),
                                                     )
                                                     .children([text(i18n::tr(
-                            &state,
+                                                        &state,
                                                         "definition event missing",
                                                         "定義イベントが見つかりません",
                                                         "difina evento mankas",
@@ -169,7 +169,7 @@ pub fn module_list_view(state: &AppState) -> Node<AppState> {
                                                             ),
                                                         ))
                                                         .children([text(i18n::tr(
-                            &state,
+                                                            &state,
                                                             "Open module detail",
                                                             "モジュール詳細を開く",
                                                             "Malfermi modulajn detalojn",
@@ -182,7 +182,7 @@ pub fn module_list_view(state: &AppState) -> Node<AppState> {
                                                             ),
                                                         ))
                                                         .children([text(i18n::tr(
-                            &state,
+                                                            &state,
                                                             "Latest event",
                                                             "最新イベント",
                                                             "Lasta evento",
@@ -195,7 +195,7 @@ pub fn module_list_view(state: &AppState) -> Node<AppState> {
                                                             ),
                                                         ))
                                                         .children([text(i18n::tr(
-                            &state,
+                                                            &state,
                                                             "Definition event",
                                                             "定義イベント",
                                                             "Difina evento",
@@ -376,12 +376,10 @@ fn module_name_input(state: &AppState) -> Node<AppState> {
         .name("module-name")
         .type_("text")
         .value(&state.module_definition_form.module_name_input);
-    input
-        .attributes
-        .push((
-            "placeholder".to_string(),
-            i18n::tr(&state, "module name", "モジュール名", "modula nomo").to_string(),
-        ));
+    input.attributes.push((
+        "placeholder".to_string(),
+        i18n::tr(&state, "module name", "モジュール名", "modula nomo").to_string(),
+    ));
     input.events.push((
         "input".to_string(),
         EventHandler::new(move |set_state| async move {
@@ -412,7 +410,7 @@ fn module_description_input(state: &AppState) -> Node<AppState> {
     textarea.attributes.push((
         "placeholder".to_string(),
         i18n::tr(
-                            &state,
+            &state,
             "description (optional)",
             "説明 (任意)",
             "priskribo (nedeviga)",
