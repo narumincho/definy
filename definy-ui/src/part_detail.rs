@@ -2,9 +2,9 @@ use narumincho_vdom::*;
 
 use crate::Location;
 use crate::app_state::AppState;
-use crate::i18n;
 use crate::expression_editor::{EditorTarget, render_root_expression_editor};
 use crate::expression_eval::expression_to_source;
+use crate::i18n;
 use crate::module_projection::collect_module_snapshots;
 use crate::part_projection::{collect_related_part_events, find_part_snapshot};
 
@@ -20,7 +20,7 @@ pub fn part_detail_view(state: &AppState, definition_event_hash: &[u8; 32]) -> N
                 A::<AppState, Location>::new()
                     .href(state.href_with_lang(Location::PartList))
                     .children([text(i18n::tr(
-                            &state,
+                        &state,
                         "← Back to Parts",
                         "← パーツ一覧へ戻る",
                         "← Reen al partoj",
@@ -55,7 +55,7 @@ pub fn part_detail_view(state: &AppState, definition_event_hash: &[u8; 32]) -> N
                             Div::new()
                                 .style(Style::new().set("color", "var(--text-secondary)"))
                                 .children([text(i18n::tr(
-                            &state,
+                                    &state,
                                     "(no description)",
                                     "(説明なし)",
                                     "(sen priskribo)",
@@ -84,9 +84,13 @@ pub fn part_detail_view(state: &AppState, definition_event_hash: &[u8; 32]) -> N
                             .style(Style::new().set("display", "flex").set("gap", "0.6rem"))
                             .children([
                                 A::<AppState, Location>::new()
-                                    .href(state.href_with_lang(Location::Event(*definition_event_hash)))
+                                    .href(
+                                        state.href_with_lang(Location::Event(
+                                            *definition_event_hash,
+                                        )),
+                                    )
                                     .children([text(i18n::tr(
-                            &state,
+                                        &state,
                                         "Definition event",
                                         "定義イベント",
                                         "Difina evento",
@@ -97,7 +101,7 @@ pub fn part_detail_view(state: &AppState, definition_event_hash: &[u8; 32]) -> N
                                         snapshot.latest_event_hash,
                                     )))
                                     .children([text(i18n::tr(
-                            &state,
+                                        &state,
                                         "Latest event",
                                         "最新イベント",
                                         "Lasta evento",
@@ -167,7 +171,7 @@ pub fn part_detail_view(state: &AppState, definition_event_hash: &[u8; 32]) -> N
                 A::<AppState, Location>::new()
                     .href(state.href_with_lang(Location::PartList))
                     .children([text(i18n::tr(
-                            &state,
+                        &state,
                         "← Back to Parts",
                         "← パーツ一覧へ戻る",
                         "← Reen al partoj",
@@ -176,7 +180,7 @@ pub fn part_detail_view(state: &AppState, definition_event_hash: &[u8; 32]) -> N
                 Div::new()
                     .style(Style::new().set("color", "var(--text-secondary)"))
                     .children([text(i18n::tr(
-                            &state,
+                        &state,
                         "Part not found",
                         "パーツが見つかりません",
                         "Parto ne trovita",
@@ -409,8 +413,8 @@ fn part_update_form(state: &AppState, definition_event_hash: &[u8; 32]) -> Node<
                             if part_name.is_empty() {
                                 return AppState {
                                     event_detail_eval_result: Some(
-                                        i18n::tr(
-                            &state,
+                                        i18n::tr_lang(
+                                            &state.language.code,
                                             "Error: part name is required",
                                             "エラー: パーツ名は必須です",
                                             "Eraro: parto-nomo estas bezonata",
@@ -628,7 +632,12 @@ fn part_update_form(state: &AppState, definition_event_hash: &[u8; 32]) -> Node<
 fn effective_part_update_form(
     state: &AppState,
     definition_event_hash: &[u8; 32],
-) -> (String, String, definy_event::event::Expression, Option<[u8; 32]>) {
+) -> (
+    String,
+    String,
+    definy_event::event::Expression,
+    Option<[u8; 32]>,
+) {
     if state.part_update_form.part_definition_event_hash == Some(*definition_event_hash) {
         return (
             state.part_update_form.part_name_input.clone(),
