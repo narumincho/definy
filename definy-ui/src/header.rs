@@ -192,7 +192,7 @@ fn language_dropdown(state: &AppState) -> Node<AppState> {
         ));
     }
     let current_code = state.language.code;
-    crate::dropdown::searchable_dropdown(
+    let dropdown = crate::dropdown::searchable_dropdown(
         state,
         "language",
         current_code,
@@ -221,11 +221,39 @@ fn language_dropdown(state: &AppState) -> Node<AppState> {
                 }
                 AppState {
                     language: selected,
+                    language_fallback_notice: None,
                     ..state
                 }
             })
         }),
-    )
+    );
+    if let Some(notice) = &state.language_fallback_notice {
+        Div::new()
+            .style(
+                Style::new()
+                    .set("display", "grid")
+                    .set("gap", "0.25rem")
+                    .set("justify-items", "start"),
+            )
+            .children([
+                dropdown,
+                Div::new()
+                    .style(
+                        Style::new()
+                            .set("font-size", "0.75rem")
+                            .set("color", "var(--text-secondary)")
+                            .set("max-width", "22rem"),
+                    )
+                    .children([text(format!(
+                        "言語「{}」はサポートされていないため「{}」にフォールバックしました",
+                        notice.requested, notice.fallback_to_code
+                    ))])
+                    .into_node(),
+            ])
+            .into_node()
+    } else {
+        dropdown
+    }
 }
 
 fn popover(state: &AppState) -> Node<AppState> {

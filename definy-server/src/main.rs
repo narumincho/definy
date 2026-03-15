@@ -136,11 +136,30 @@ async fn handler(
                 .header("Location", redirect_url)
                 .body(Full::new(Bytes::from("Redirecting...")));
         }
-        let language = definy_ui::language::language_from_query(uri.query())
-            .unwrap_or_else(definy_ui::language::default_language);
+        let accept_language = request
+            .headers()
+            .get("accept-language")
+            .and_then(|value| value.to_str().ok());
+        let language_resolution = definy_ui::language::resolve_language(uri.query(), accept_language);
+        let language_fallback_notice =
+            language_resolution
+                .unsupported_query_lang
+                .as_ref()
+                .map(|requested| definy_ui::LanguageFallbackNotice {
+                    requested: requested.to_string(),
+                    fallback_to_code: language_resolution.language.code,
+                });
         let pool = state.pool.read().await.clone();
         return match pool {
-            Some(pool) => handle_html(&uri, &pool, language).await,
+            Some(pool) => {
+                handle_html(
+                    &uri,
+                    &pool,
+                    language_resolution.language,
+                    language_fallback_notice,
+                )
+                .await
+            }
             None => db_unavailable_response(true),
         };
     }
@@ -207,6 +226,7 @@ async fn handle_html(
     uri: &hyper::Uri,
     pool: &sqlx::postgres::PgPool,
     language: definy_ui::language::Language,
+    language_fallback_notice: Option<definy_ui::LanguageFallbackNotice>,
 ) -> Result<Response<Full<Bytes>>, hyper::http::Error> {
     let path = uri.path();
     let query = uri.query();
@@ -264,6 +284,7 @@ async fn handle_html(
                     None,
                     filter_event_type,
                     language,
+                    language_fallback_notice,
                 ),
                 &Some(definy_ui::ResourceHash {
                     js: JAVASCRIPT_HASH.to_string(),
@@ -275,7 +296,10 @@ async fn handle_html(
 }
 
 fn lang_redirect_url(request: &Request<impl hyper::body::Body>) -> Option<String> {
-    if definy_ui::language::language_from_query(request.uri().query()).is_some() {
+    if definy_ui::query::parse_query(request.uri().query())
+        .lang
+        .is_some()
+    {
         return None;
     }
     let accept_language = request

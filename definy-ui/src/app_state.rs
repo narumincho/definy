@@ -107,6 +107,13 @@ pub struct AppState {
     pub active_dropdown_name: Option<String>,
     pub dropdown_search_query: String,
     pub language: crate::language::Language,
+    pub language_fallback_notice: Option<LanguageFallbackNotice>,
+}
+
+#[derive(Clone)]
+pub struct LanguageFallbackNotice {
+    pub requested: String,
+    pub fallback_to_code: &'static str,
 }
 
 #[derive(Clone)]
@@ -233,6 +240,7 @@ pub fn build_initial_state(
     current_key: Option<ed25519_dalek::SigningKey>,
     filter_event_type: Option<definy_event::event::EventType>,
     language: crate::language::Language,
+    language_fallback_notice: Option<LanguageFallbackNotice>,
 ) -> AppState {
     let mut event_cache = HashMap::new();
     let mut event_hashes = Vec::new();
@@ -303,6 +311,7 @@ pub fn build_initial_state(
         active_dropdown_name: None,
         dropdown_search_query: String::new(),
         language,
+        language_fallback_notice,
     }
 }
 

@@ -9,6 +9,12 @@ pub struct Language {
     pub native_name: &'static str,
 }
 
+#[derive(Clone)]
+pub struct LanguageResolution {
+    pub language: Language,
+    pub unsupported_query_lang: Option<String>,
+}
+
 pub const SUPPORTED_LANGUAGES: &[Language] = &[
     Language {
         code: "en",
@@ -193,10 +199,44 @@ pub fn preferred_languages() -> Vec<Language> {
     ordered
 }
 
+pub fn best_language_from_browser() -> Option<Language> {
+    for tag in browser_language_tags() {
+        if let Some(lang) = language_from_tag(tag.as_str()) {
+            return Some(lang);
+        }
+    }
+    None
+}
+
+pub fn resolve_language(query: Option<&str>, accept_language: Option<&str>) -> LanguageResolution {
+    let params = parse_query(query);
+    if let Some(requested_lang) = params.lang {
+        if let Some(language) = language_from_tag(requested_lang.as_str()) {
+            return LanguageResolution {
+                language,
+                unsupported_query_lang: None,
+            };
+        }
+        let fallback = language_from_accept_language(accept_language).unwrap_or_else(default_language);
+        return LanguageResolution {
+            language: fallback,
+            unsupported_query_lang: Some(requested_lang),
+        };
+    }
+    LanguageResolution {
+        language: language_from_accept_language(accept_language).unwrap_or_else(default_language),
+        unsupported_query_lang: None,
+    }
+}
+
 pub fn best_language_from_accept_language(header: Option<&str>) -> Language {
+    language_from_accept_language(header).unwrap_or_else(default_language)
+}
+
+pub fn language_from_accept_language(header: Option<&str>) -> Option<Language> {
     let header = match header {
         Some(header) => header,
-        None => return default_language(),
+        None => return None,
     };
     let mut candidates = Vec::new();
     for part in header.split(',') {
@@ -225,13 +265,13 @@ pub fn best_language_from_accept_language(header: Option<&str>) -> Language {
     candidates.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
     for (tag, _) in candidates {
         if tag == "*" {
-            return default_language();
+            return Some(default_language());
         }
         if let Some(lang) = language_from_tag(tag.as_str()) {
-            return lang;
+            return Some(lang);
         }
     }
-    default_language()
+    None
 }
 
 #[cfg(target_arch = "wasm32")]
