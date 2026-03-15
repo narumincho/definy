@@ -530,6 +530,8 @@ fn render_html_response(path: &str) -> Response<Full<Bytes>> {
                 last_error: None,
             },
             location,
+            language: definy_ui::language::default_language(),
+            language_fallback_notice: None,
         },
         &Some(definy_ui::ResourceHash {
             js: TEST_JAVASCRIPT_HASH.to_string(),
