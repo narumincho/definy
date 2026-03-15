@@ -196,9 +196,9 @@ async fn handler(
                 }
             } else {
                 Response::builder()
-                .status(404)
-                .header("Content-Type", "text/html; charset=utf-8")
-                .body(Full::new(Bytes::from("404 Not Found")))
+                    .status(404)
+                    .header("Content-Type", "text/html; charset=utf-8")
+                    .body(Full::new(Bytes::from("404 Not Found")))
             }
         }
     }
@@ -230,19 +230,20 @@ async fn handle_html(
     let query = uri.query();
     let location = definy_ui::Location::from_url(path);
     if let Some(ref location) = location
-        && location.to_url() != path {
-            let mut redirect_url = location.to_url();
-            if let Some(query) = query
-                && !query.is_empty()
-            {
-                redirect_url.push('?');
-                redirect_url.push_str(query);
-            }
-            return Response::builder()
-                .status(301)
-                .header("Location", redirect_url)
-                .body(Full::new(Bytes::from("Redirecting...")));
+        && location.to_url() != path
+    {
+        let mut redirect_url = location.to_url();
+        if let Some(query) = query
+            && !query.is_empty()
+        {
+            redirect_url.push('?');
+            redirect_url.push_str(query);
         }
+        return Response::builder()
+            .status(301)
+            .header("Location", redirect_url)
+            .body(Full::new(Bytes::from("Redirecting...")));
+    }
 
     let filter_event_type = definy_ui::event_filter_from_query(query);
     let event_binary_array = match db::get_events(pool, filter_event_type, Some(20), Some(0)).await

@@ -2130,9 +2130,10 @@ fn set_record_item_key(
 ) {
     if let Some(definy_event::event::Expression::TypeLiteral(record_expr)) =
         get_mut_expression_at_path(root_expression, path)
-        && let Some(item) = record_expr.items.get_mut(item_index) {
-            item.key = value.into();
-        }
+        && let Some(item) = record_expr.items.get_mut(item_index)
+    {
+        item.key = value.into();
+    }
 }
 
 fn add_record_item(root_expression: &mut definy_event::event::Expression, path: &[PathStep]) {
@@ -2188,9 +2189,10 @@ fn remove_list_item(
 ) {
     if let Some(definy_event::event::Expression::ListLiteral(list_expr)) =
         get_mut_expression_at_path(root_expression, path)
-        && item_index < list_expr.items.len() {
-            list_expr.items.remove(item_index);
-        }
+        && item_index < list_expr.items.len()
+    {
+        list_expr.items.remove(item_index);
+    }
 }
 
 fn next_local_variable_id(expression: &definy_event::event::Expression) -> i64 {

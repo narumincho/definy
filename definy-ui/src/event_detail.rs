@@ -34,9 +34,10 @@ pub fn event_detail_view(state: &AppState, target_hash: &[u8; 32]) -> Node<AppSt
 
     for (hash, event_result) in &state.event_cache {
         if let Ok((_, event)) = event_result
-            && hash == target_hash {
-                target_event_opt = Some(event);
-            }
+            && hash == target_hash
+        {
+            target_event_opt = Some(event);
+        }
     }
 
     let inner_content = match target_event_opt {

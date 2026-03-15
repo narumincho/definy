@@ -44,12 +44,13 @@ pub async fn handle_event_get(
         Ok(Some(event_binary)) => {
             if let Some(accept) = request.headers().get("accept")
                 && let Ok(accept_as_str) = accept.to_str()
-                    && accept_as_str.contains("text/html") {
-                        return Response::builder()
-                            .status(200)
-                            .header("Content-Type", "text/html; charset=utf-8")
-                            .body(Full::new(Bytes::from("todo")));
-                    }
+                && accept_as_str.contains("text/html")
+            {
+                return Response::builder()
+                    .status(200)
+                    .header("Content-Type", "text/html; charset=utf-8")
+                    .body(Full::new(Bytes::from("todo")));
+            }
             Response::builder()
                 .status(200)
                 .header("Content-Type", "application/cbor")

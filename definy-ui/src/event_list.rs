@@ -19,9 +19,10 @@ fn update_event_filter_url(event_type: Option<EventType>, lang_code: &str) {
         new_url.push_str(query.as_str());
     }
     if let Some(window) = web_sys::window()
-        && let Ok(history) = window.history() {
-            let _ = history.push_state_with_url(&wasm_bindgen::JsValue::NULL, "", Some(&new_url));
-        }
+        && let Ok(history) = window.history()
+    {
+        let _ = history.push_state_with_url(&wasm_bindgen::JsValue::NULL, "", Some(&new_url));
+    }
 }
 
 fn part_type_text(part_type: &definy_event::event::PartType) -> String {
@@ -512,7 +513,9 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
                                             state.event_list_state.event_hashes.clone()
                                         };
                                         for (hash, event) in events {
-                                            if let std::collections::hash_map::Entry::Vacant(e) = event_cache.entry(hash) {
+                                            if let std::collections::hash_map::Entry::Vacant(e) =
+                                                event_cache.entry(hash)
+                                            {
                                                 e.insert(event);
                                                 event_hashes.push(hash);
                                             }
@@ -999,12 +1002,7 @@ fn part_type_input(state: &AppState) -> Node<AppState> {
                         .set("font-size", "0.85rem")
                         .set("color", "var(--text-secondary)"),
                 )
-                .children([text(i18n::tr(
-                    state,
-                    "Part Type",
-                    "パーツ型",
-                    "Parto-tipo",
-                ))])
+                .children([text(i18n::tr(state, "Part Type", "パーツ型", "Parto-tipo"))])
                 .into_node(),
             render_part_type_editor(state, &state.part_definition_form.part_type_input, 0),
         ])
@@ -1226,9 +1224,10 @@ fn next_part_type_from_selected(
     current: &Option<definy_event::event::PartType>,
 ) -> Option<definy_event::event::PartType> {
     if let Some(encoded) = selected.strip_prefix("type_part:")
-        && let Some(hash) = decode_hash32(encoded) {
-            return Some(definy_event::event::PartType::TypePart(hash));
-        }
+        && let Some(hash) = decode_hash32(encoded)
+    {
+        return Some(definy_event::event::PartType::TypePart(hash));
+    }
     match selected {
         "none" => None,
         "string" => Some(definy_event::event::PartType::String),
@@ -1251,9 +1250,10 @@ fn next_nested_part_type_from_selected(
     current: &definy_event::event::PartType,
 ) -> definy_event::event::PartType {
     if let Some(encoded) = selected.strip_prefix("type_part:")
-        && let Some(hash) = decode_hash32(encoded) {
-            return definy_event::event::PartType::TypePart(hash);
-        }
+        && let Some(hash) = decode_hash32(encoded)
+    {
+        return definy_event::event::PartType::TypePart(hash);
+    }
     match selected {
         "string" => definy_event::event::PartType::String,
         "boolean" => definy_event::event::PartType::Boolean,

@@ -67,9 +67,10 @@ pub fn preferred_languages() -> Vec<Language> {
     let mut seen = HashSet::new();
     for tag in browser_language_tags() {
         if let Some(lang) = language_from_tag(tag.as_str())
-            && seen.insert(lang.code) {
-                ordered.push(lang);
-            }
+            && seen.insert(lang.code)
+        {
+            ordered.push(lang);
+        }
     }
     for lang in SUPPORTED_LANGUAGES.iter().copied() {
         if seen.insert(lang.code) {
@@ -133,9 +134,10 @@ pub fn language_from_accept_language(header: Option<&str>) -> Option<Language> {
             let mut kv = param.splitn(2, '=');
             let key = kv.next().unwrap_or("").trim().to_ascii_lowercase();
             if key == "q"
-                && let Some(val) = kv.next() {
-                    q = val.trim().parse::<f32>().unwrap_or(1.0);
-                }
+                && let Some(val) = kv.next()
+            {
+                q = val.trim().parse::<f32>().unwrap_or(1.0);
+            }
         }
         candidates.push((tag.to_string(), q));
     }

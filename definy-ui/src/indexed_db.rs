@@ -109,19 +109,21 @@ async fn open_db() -> Result<web_sys::IdbDatabase, JsValue> {
     let upgrade_request = request.clone();
     let on_upgrade = Closure::wrap(Box::new(move |_event: web_sys::IdbVersionChangeEvent| {
         if let Ok(result) = upgrade_request.result()
-            && let Ok(db) = result.dyn_into::<web_sys::IdbDatabase>() {
-                let store_names = db.object_store_names();
-                let mut has_events = false;
-                for index in 0..store_names.length() {
-                    if let Some(name) = store_names.get(index)
-                        && name == EVENTS_STORE {
-                            has_events = true;
-                        }
-                }
-                if !has_events {
-                    let _ = db.create_object_store(EVENTS_STORE);
+            && let Ok(db) = result.dyn_into::<web_sys::IdbDatabase>()
+        {
+            let store_names = db.object_store_names();
+            let mut has_events = false;
+            for index in 0..store_names.length() {
+                if let Some(name) = store_names.get(index)
+                    && name == EVENTS_STORE
+                {
+                    has_events = true;
                 }
             }
+            if !has_events {
+                let _ = db.create_object_store(EVENTS_STORE);
+            }
+        }
     }) as Box<dyn FnMut(_)>);
     request.set_onupgradeneeded(Some(on_upgrade.as_ref().unchecked_ref()));
     on_upgrade.forget();

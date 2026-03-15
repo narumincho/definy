@@ -53,9 +53,9 @@ pub fn searchable_dropdown(
                                 if let Ok(Some(element)) = document.query_selector(&selector)
                                     && let Ok(input) =
                                         element.dyn_into::<web_sys::HtmlInputElement>()
-                                    {
-                                        let _ = input.focus();
-                                    }
+                                {
+                                    let _ = input.focus();
+                                }
                             }
                         })
                         .as_ref()

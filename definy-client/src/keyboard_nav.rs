@@ -69,12 +69,13 @@ pub fn handle_keydown(state: AppState, key: String) -> AppState {
             format!("[data-path='{}']", path_str)
         };
         if let Ok(Some(el)) = document.query_selector(&selector)
-            && let Ok(html_el) = el.dyn_into::<HtmlElement>() {
-                let opts = web_sys::ScrollIntoViewOptions::new();
-                opts.set_behavior(web_sys::ScrollBehavior::Smooth);
-                opts.set_block(web_sys::ScrollLogicalPosition::Nearest);
-                html_el.scroll_into_view_with_scroll_into_view_options(&opts);
-            }
+            && let Ok(html_el) = el.dyn_into::<HtmlElement>()
+        {
+            let opts = web_sys::ScrollIntoViewOptions::new();
+            opts.set_behavior(web_sys::ScrollBehavior::Smooth);
+            opts.set_block(web_sys::ScrollLogicalPosition::Nearest);
+            html_el.scroll_into_view_with_scroll_into_view_options(&opts);
+        }
     }
 
     new_state
@@ -102,12 +103,13 @@ fn get_all_paths(document: &Document) -> Vec<(Vec<PathStep>, web_sys::DomRect)> 
     if let Ok(nodelist) = document.query_selector_all("[data-path]") {
         for i in 0..nodelist.length() {
             if let Some(node) = nodelist.item(i)
-                && let Ok(el) = node.dyn_into::<HtmlElement>() {
-                    let path_str = el.get_attribute("data-path").unwrap_or_default();
-                    if let Some(path) = definy_ui::string_to_path(&path_str) {
-                        elements.push((path, el.get_bounding_client_rect()));
-                    }
+                && let Ok(el) = node.dyn_into::<HtmlElement>()
+            {
+                let path_str = el.get_attribute("data-path").unwrap_or_default();
+                if let Some(path) = definy_ui::string_to_path(&path_str) {
+                    elements.push((path, el.get_bounding_client_rect()));
                 }
+            }
         }
     }
     elements
@@ -145,10 +147,11 @@ fn focus_input_in_path(document: &Document, current_path: &[PathStep]) {
     };
     if let Ok(Some(el)) = document.query_selector(&selector)
         && let Ok(input) = el.query_selector("input, textarea")
-            && let Some(input_el) = input
-                && let Ok(html_el) = input_el.dyn_into::<HtmlElement>() {
-                    let _ = html_el.focus();
-                }
+        && let Some(input_el) = input
+        && let Ok(html_el) = input_el.dyn_into::<HtmlElement>()
+    {
+        let _ = html_el.focus();
+    }
 }
 
 fn find_spatial_sibling(

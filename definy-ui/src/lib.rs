@@ -112,26 +112,26 @@ pub fn render(
             .into_node(),
     ];
     if let Some(r) = resource_hash {
-                if let Some(ssr_initial_state_json) = ssr_initial_state_json {
-                    head_children.push(
-                        Script::new()
-                            .id(SSR_INITIAL_STATE_ELEMENT_ID)
-                            .type_("application/json")
-                            .children([text(ssr_initial_state_json)])
-                            .into_node(),
-                    );
-                }
-                head_children.push(
-                    Script::new()
-                        .type_("module")
-                        .children([text(format!(
-                            "import init from '/{}';
+        if let Some(ssr_initial_state_json) = ssr_initial_state_json {
+            head_children.push(
+                Script::new()
+                    .id(SSR_INITIAL_STATE_ELEMENT_ID)
+                    .type_("application/json")
+                    .children([text(ssr_initial_state_json)])
+                    .into_node(),
+            );
+        }
+        head_children.push(
+            Script::new()
+                .type_("module")
+                .children([text(format!(
+                    "import init from '/{}';
     init({{ module_or_path: \"/{}\" }});",
-                            r.js, r.wasm
-                        ))])
-                        .into_node(),
-                );
-            }
+                    r.js, r.wasm
+                ))])
+                .into_node(),
+        );
+    }
     Html::new()
         .attribute("lang", state.language.code)
         .children([
