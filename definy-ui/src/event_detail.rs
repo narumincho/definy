@@ -33,11 +33,10 @@ pub fn event_detail_view(state: &AppState, target_hash: &[u8; 32]) -> Node<AppSt
     let mut target_event_opt = None;
 
     for (hash, event_result) in &state.event_cache {
-        if let Ok((_, event)) = event_result {
-            if hash == target_hash {
+        if let Ok((_, event)) = event_result
+            && hash == target_hash {
                 target_event_opt = Some(event);
             }
-        }
     }
 
     let inner_content = match target_event_opt {
@@ -123,12 +122,12 @@ fn render_event_detail(
                 )
                 .children([
                     Div::new()
-                        .children([text(&event.time.format("%Y-%m-%d %H:%M:%S").to_string())])
+                        .children([text(event.time.format("%Y-%m-%d %H:%M:%S").to_string())])
                         .into_node(),
                     Div::new()
                         .class("mono")
                         .style(Style::new().set("opacity", "0.6"))
-                        .children([text(&crate::hash_format::encode_bytes(
+                        .children([text(crate::hash_format::encode_bytes(
                             event.account_id.0.as_slice(),
                         ))])
                         .into_node(),
@@ -499,7 +498,7 @@ fn render_event_detail(
                         "イベントハッシュ: ",
                         "Evento-hako: ",
                     )),
-                    text(&crate::hash_format::encode_hash32(hash)),
+                    text(crate::hash_format::encode_hash32(hash)),
                 ])
                 .into_node(),
         ])
@@ -547,7 +546,7 @@ fn related_part_events_section(
                     related_events
                         .into_iter()
                         .map(|(event_hash, event)| {
-                            let label = crate::event_presenter::event_kind_label(state, &event);
+                            let label = crate::event_presenter::event_kind_label(state, event);
                             A::<AppState, Location>::new()
                                 .href(state.href_with_lang(Location::Event(event_hash)))
                                 .style(

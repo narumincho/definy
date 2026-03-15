@@ -106,7 +106,7 @@ const WASM_HASH: &str = include_str!("../../web-distribution/definy_client_bg.wa
 
 const ICON_CONTENT: &[u8] = include_bytes!("../../assets/icon.png");
 
-const ICON_HASH: &'static str = include_str!("../../web-distribution/icon.png.sha256");
+const ICON_HASH: &str = include_str!("../../web-distribution/icon.png.sha256");
 
 async fn handler(
     request: Request<impl hyper::body::Body>,
@@ -195,12 +195,10 @@ async fn handler(
                     None => db_unavailable_response(false),
                 }
             } else {
-                match path {
-                    _ => Response::builder()
-                        .status(404)
-                        .header("Content-Type", "text/html; charset=utf-8")
-                        .body(Full::new(Bytes::from("404 Not Found"))),
-                }
+                Response::builder()
+                .status(404)
+                .header("Content-Type", "text/html; charset=utf-8")
+                .body(Full::new(Bytes::from("404 Not Found")))
             }
         }
     }
@@ -231,8 +229,8 @@ async fn handle_html(
     let path = uri.path();
     let query = uri.query();
     let location = definy_ui::Location::from_url(path);
-    if let Some(ref location) = location {
-        if location.to_url() != path {
+    if let Some(ref location) = location
+        && location.to_url() != path {
             let mut redirect_url = location.to_url();
             if let Some(query) = query
                 && !query.is_empty()
@@ -245,7 +243,6 @@ async fn handle_html(
                 .header("Location", redirect_url)
                 .body(Full::new(Bytes::from("Redirecting...")));
         }
-    }
 
     let filter_event_type = definy_ui::event_filter_from_query(query);
     let event_binary_array = match db::get_events(pool, filter_event_type, Some(20), Some(0)).await

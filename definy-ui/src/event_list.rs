@@ -18,11 +18,10 @@ fn update_event_filter_url(event_type: Option<EventType>, lang_code: &str) {
         new_url.push('?');
         new_url.push_str(query.as_str());
     }
-    if let Some(window) = web_sys::window() {
-        if let Ok(history) = window.history() {
+    if let Some(window) = web_sys::window()
+        && let Ok(history) = window.history() {
             let _ = history.push_state_with_url(&wasm_bindgen::JsValue::NULL, "", Some(&new_url));
         }
-    }
 }
 
 fn part_type_text(part_type: &definy_event::event::PartType) -> String {
@@ -107,7 +106,7 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
         .filter_event_type
         .as_ref()
         .map(|et| et.to_string())
-        .unwrap_or_else(|| "".to_string());
+        .unwrap_or_default();
 
     let filter_dropdown = crate::dropdown::searchable_dropdown(
         &state,
@@ -513,8 +512,8 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
                                             state.event_list_state.event_hashes.clone()
                                         };
                                         for (hash, event) in events {
-                                            if !event_cache.contains_key(&hash) {
-                                                event_cache.insert(hash, event);
+                                            if let std::collections::hash_map::Entry::Vacant(e) = event_cache.entry(hash) {
+                                                e.insert(event);
                                                 event_hashes.push(hash);
                                             }
                                         }
@@ -526,7 +525,7 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
                                                 page_size: state.event_list_state.page_size,
                                                 is_loading: false,
                                                 has_more: events_len
-                                                    == state.event_list_state.page_size as usize,
+                                                    == state.event_list_state.page_size,
                                                 filter_event_type: state
                                                     .event_list_state
                                                     .filter_event_type,
@@ -609,12 +608,12 @@ fn event_view(
                     )
                     .children([
                         Div::new()
-                            .children([text(&event.time.format("%Y-%m-%d %H:%M:%S").to_string())])
+                            .children([text(event.time.format("%Y-%m-%d %H:%M:%S").to_string())])
                             .into_node(),
                         Div::new()
                             .class("mono")
                             .style(Style::new().set("opacity", "0.6"))
-                            .children([text(&crate::hash_format::encode_bytes(
+                            .children([text(crate::hash_format::encode_bytes(
                                 event.account_id.0.as_slice(),
                             ))])
                             .into_node(),
@@ -625,7 +624,7 @@ fn event_view(
                         .style(Style::new().set("color", "var(--primary)"))
                         .children([
                             text(i18n::tr(
-                                &state,
+                                state,
                                 "Account created:",
                                 "アカウント作成:",
                                 "Konto kreita:",
@@ -637,7 +636,7 @@ fn event_view(
                         .style(Style::new().set("color", "var(--primary)"))
                         .children([
                             text(i18n::tr(
-                                &state,
+                                state,
                                 "Profile changed:",
                                 "プロフィール変更:",
                                 "Profilo ŝanĝita:",
@@ -693,7 +692,7 @@ fn event_view(
                                         .set("text-decoration", "none"),
                                 )
                                 .children([text(i18n::tr(
-                                    &state,
+                                    state,
                                     "Open part detail",
                                     "パーツ詳細を開く",
                                     "Malfermi partajn detalojn",
@@ -724,7 +723,7 @@ fn event_view(
                             text(format!(
                                 "{} {}",
                                 i18n::tr(
-                                    &state,
+                                    state,
                                     "Part updated:",
                                     "パーツ更新:",
                                     "Parto ĝisdatigita:"
@@ -740,7 +739,7 @@ fn event_view(
                                 )
                                 .children([text(format!(
                                     "{} {}",
-                                    i18n::tr(&state, "expression:", "式:", "esprimo:"),
+                                    i18n::tr(state, "expression:", "式:", "esprimo:"),
                                     expression_to_source(&part_update_event.expression)
                                 ))])
                                 .into_node(),
@@ -768,7 +767,7 @@ fn event_view(
                                         .set("text-decoration", "none"),
                                 )
                                 .children([text(i18n::tr(
-                                    &state,
+                                    state,
                                     "Open part detail",
                                     "パーツ詳細を開く",
                                     "Malfermi partajn detalojn",
@@ -799,7 +798,7 @@ fn event_view(
                             text(format!(
                                 "{} {}",
                                 i18n::tr(
-                                    &state,
+                                    state,
                                     "Module created:",
                                     "モジュール作成:",
                                     "Modulo kreita:"
@@ -844,7 +843,7 @@ fn event_view(
                             text(format!(
                                 "{} {}",
                                 i18n::tr(
-                                    &state,
+                                    state,
                                     "Module updated:",
                                     "モジュール更新:",
                                     "Modulo ĝisdatigita:"
@@ -890,7 +889,7 @@ fn event_view(
                                         .set("text-decoration", "none"),
                                 )
                                 .children([text(i18n::tr(
-                                    &state,
+                                    state,
                                     "Open module definition",
                                     "モジュール定義を開く",
                                     "Malfermi modulo-difinon",
@@ -911,10 +910,10 @@ fn event_view(
                     .set("padding", "1rem")
                     .set("color", "var(--error)"),
             )
-            .children([text(&format!(
+            .children([text(format!(
                 "{}: {:?}",
                 i18n::tr(
-                    &state,
+                    state,
                     "Failed to load events",
                     "イベントの読み込みに失敗しました",
                     "Malsukcesis ŝargi eventojn",
@@ -1001,7 +1000,7 @@ fn part_type_input(state: &AppState) -> Node<AppState> {
                         .set("color", "var(--text-secondary)"),
                 )
                 .children([text(i18n::tr(
-                    &state,
+                    state,
                     "Part Type",
                     "パーツ型",
                     "Parto-tipo",
@@ -1015,7 +1014,7 @@ fn part_type_input(state: &AppState) -> Node<AppState> {
 fn module_selection_input(state: &AppState) -> Node<AppState> {
     let mut options = vec![(
         "".to_string(),
-        i18n::tr(&state, "No module", "モジュールなし", "Neniu modulo").to_string(),
+        i18n::tr(state, "No module", "モジュールなし", "Neniu modulo").to_string(),
     )];
     options.extend(collect_module_snapshots(state).into_iter().map(|module| {
         (
@@ -1028,7 +1027,7 @@ fn module_selection_input(state: &AppState) -> Node<AppState> {
         .part_definition_form
         .module_definition_event_hash
         .map(|hash| crate::hash_format::encode_hash32(&hash))
-        .unwrap_or_else(|| "".to_string());
+        .unwrap_or_default();
 
     let dropdown = crate::dropdown::searchable_dropdown(
         state,
@@ -1054,7 +1053,7 @@ fn module_selection_input(state: &AppState) -> Node<AppState> {
                         .set("font-size", "0.85rem")
                         .set("color", "var(--text-secondary)"),
                 )
-                .children([text(i18n::tr(&state, "Module", "モジュール", "Modulo"))])
+                .children([text(i18n::tr(state, "Module", "モジュール", "Modulo"))])
                 .into_node(),
             dropdown,
         ])
@@ -1073,30 +1072,30 @@ fn render_part_type_editor(
     if depth == 0 {
         options.push((
             "none".to_string(),
-            i18n::tr(&state, "None", "なし", "Neniu").to_string(),
+            i18n::tr(state, "None", "なし", "Neniu").to_string(),
         ));
     }
 
     options.extend([
         (
             "number".to_string(),
-            i18n::tr(&state, "Number", "数値", "Nombro").to_string(),
+            i18n::tr(state, "Number", "数値", "Nombro").to_string(),
         ),
         (
             "string".to_string(),
-            i18n::tr(&state, "String", "文字列", "Teksto").to_string(),
+            i18n::tr(state, "String", "文字列", "Teksto").to_string(),
         ),
         (
             "boolean".to_string(),
-            i18n::tr(&state, "Boolean", "真偽値", "Bulea").to_string(),
+            i18n::tr(state, "Boolean", "真偽値", "Bulea").to_string(),
         ),
         (
             "type".to_string(),
-            i18n::tr(&state, "Type", "型", "Tipo").to_string(),
+            i18n::tr(state, "Type", "型", "Tipo").to_string(),
         ),
         (
             "list".to_string(),
-            i18n::tr(&state, "List<...>", "リスト<...>", "Listo<...>").to_string(),
+            i18n::tr(state, "List<...>", "リスト<...>", "Listo<...>").to_string(),
         ),
     ]);
 
@@ -1113,7 +1112,7 @@ fn render_part_type_editor(
                     value,
                     format!(
                         "{} {}",
-                        i18n::tr(&state, "Type Part:", "型パーツ:", "Tipo-parto:"),
+                        i18n::tr(state, "Type Part:", "型パーツ:", "Tipo-parto:"),
                         snapshot.part_name
                     ),
                 )
@@ -1158,7 +1157,7 @@ fn render_part_type_editor(
                                 .set("color", "var(--text-secondary)")
                                 .set("margin-bottom", "0.25rem"),
                         )
-                        .children([text(i18n::tr(&state, "Item Type", "要素型", "Ero-tipo"))])
+                        .children([text(i18n::tr(state, "Item Type", "要素型", "Ero-tipo"))])
                         .into_node(),
                     render_part_type_editor(state, &Some(item_type.as_ref().clone()), depth + 1),
                 ])
@@ -1226,11 +1225,10 @@ fn next_part_type_from_selected(
     selected: &str,
     current: &Option<definy_event::event::PartType>,
 ) -> Option<definy_event::event::PartType> {
-    if let Some(encoded) = selected.strip_prefix("type_part:") {
-        if let Some(hash) = decode_hash32(encoded) {
+    if let Some(encoded) = selected.strip_prefix("type_part:")
+        && let Some(hash) = decode_hash32(encoded) {
             return Some(definy_event::event::PartType::TypePart(hash));
         }
-    }
     match selected {
         "none" => None,
         "string" => Some(definy_event::event::PartType::String),
@@ -1252,11 +1250,10 @@ fn next_nested_part_type_from_selected(
     selected: &str,
     current: &definy_event::event::PartType,
 ) -> definy_event::event::PartType {
-    if let Some(encoded) = selected.strip_prefix("type_part:") {
-        if let Some(hash) = decode_hash32(encoded) {
+    if let Some(encoded) = selected.strip_prefix("type_part:")
+        && let Some(hash) = decode_hash32(encoded) {
             return definy_event::event::PartType::TypePart(hash);
         }
-    }
     match selected {
         "string" => definy_event::event::PartType::String,
         "boolean" => definy_event::event::PartType::Boolean,

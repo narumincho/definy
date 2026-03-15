@@ -21,7 +21,7 @@ pub fn module_list_view(state: &AppState) -> Node<AppState> {
                         .set("color", "var(--text-secondary)"),
                 )
                 .children([text(i18n::tr(
-                    &state,
+                    state,
                     "Login required to create modules.",
                     "モジュール作成にはログインが必要です。",
                     "Ensaluto necesas por krei modulojn.",
@@ -38,7 +38,7 @@ pub fn module_list_view(state: &AppState) -> Node<AppState> {
             children.push(
                 H2::new()
                     .style(Style::new().set("font-size", "1.3rem"))
-                    .children([text(i18n::tr(&state, "Modules", "モジュール", "Moduloj"))])
+                    .children([text(i18n::tr(state, "Modules", "モジュール", "Moduloj"))])
                     .into_node(),
             );
             if let Some(form) = create_form {
@@ -69,7 +69,7 @@ pub fn module_list_view(state: &AppState) -> Node<AppState> {
                                 .set("color", "var(--text-secondary)"),
                         )
                         .children([text(i18n::tr(
-                            &state,
+                            state,
                             "No modules yet.",
                             "まだモジュールがありません。",
                             "Ankoraŭ neniuj moduloj.",
@@ -125,7 +125,7 @@ pub fn module_list_view(state: &AppState) -> Node<AppState> {
                                                             .set("color", "var(--text-secondary)"),
                                                     )
                                                     .children([text(i18n::tr(
-                                                        &state,
+                                                        state,
                                                         "definition event missing",
                                                         "定義イベントが見つかりません",
                                                         "difina evento mankas",
@@ -169,7 +169,7 @@ pub fn module_list_view(state: &AppState) -> Node<AppState> {
                                                             ),
                                                         ))
                                                         .children([text(i18n::tr(
-                                                            &state,
+                                                            state,
                                                             "Open module detail",
                                                             "モジュール詳細を開く",
                                                             "Malfermi modulajn detalojn",
@@ -182,7 +182,7 @@ pub fn module_list_view(state: &AppState) -> Node<AppState> {
                                                             ),
                                                         ))
                                                         .children([text(i18n::tr(
-                                                            &state,
+                                                            state,
                                                             "Latest event",
                                                             "最新イベント",
                                                             "Lasta evento",
@@ -195,7 +195,7 @@ pub fn module_list_view(state: &AppState) -> Node<AppState> {
                                                             ),
                                                         ))
                                                         .children([text(i18n::tr(
-                                                            &state,
+                                                            state,
                                                             "Definition event",
                                                             "定義イベント",
                                                             "Difina evento",
@@ -224,7 +224,7 @@ fn module_create_form(state: &AppState) -> Node<AppState> {
             Div::new()
                 .style(Style::new().set("font-size", "0.9rem"))
                 .children([text(i18n::tr(
-                            &state,
+                            state,
                     "Create module",
                     "モジュールを作成",
                     "Krei modulon",
@@ -365,7 +365,7 @@ fn module_create_form(state: &AppState) -> Node<AppState> {
                         next
                     }));
                 }))
-                .children([text(i18n::tr(&state, "Create", "作成", "Krei"))])
+                .children([text(i18n::tr(state, "Create", "作成", "Krei"))])
                 .into_node(),
         ])
         .into_node()
@@ -378,7 +378,7 @@ fn module_name_input(state: &AppState) -> Node<AppState> {
         .value(&state.module_definition_form.module_name_input);
     input.attributes.push((
         "placeholder".to_string(),
-        i18n::tr(&state, "module name", "モジュール名", "modula nomo").to_string(),
+        i18n::tr(state, "module name", "モジュール名", "modula nomo").to_string(),
     ));
     input.events.push((
         "input".to_string(),
@@ -410,7 +410,7 @@ fn module_description_input(state: &AppState) -> Node<AppState> {
     textarea.attributes.push((
         "placeholder".to_string(),
         i18n::tr(
-            &state,
+            state,
             "description (optional)",
             "説明 (任意)",
             "priskribo (nedeviga)",

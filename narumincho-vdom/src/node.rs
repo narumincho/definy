@@ -116,7 +116,7 @@ impl<State> Clone for EventHandler<State> {
     fn clone(&self) -> Self {
         Self {
             handler: Rc::clone(&self.handler),
-            parameter_hash: self.parameter_hash.clone(),
+            parameter_hash: self.parameter_hash,
         }
     }
 }

@@ -266,6 +266,12 @@ pub struct A<State, L: crate::Route> {
     _phantom: std::marker::PhantomData<L>,
 }
 
+impl<State, L: crate::Route> Default for A<State, L> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<State, L: crate::Route> A<State, L> {
     pub fn new() -> Self {
         Self {
@@ -324,8 +330,8 @@ impl<State, L: crate::Route> A<State, L> {
     }
 }
 
-impl<State, L: crate::Route> Into<Node<State>> for A<State, L> {
-    fn into(self) -> Node<State> {
-        self.into_node()
+impl<State, L: crate::Route> From<A<State, L>> for Node<State> {
+    fn from(val: A<State, L>) -> Self {
+        val.into_node()
     }
 }

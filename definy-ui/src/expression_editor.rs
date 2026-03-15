@@ -1952,10 +1952,10 @@ fn selector_prefix(target: EditorTarget) -> &'static str {
     }
 }
 
-fn target_expression_mut<'a>(
-    state: &'a mut AppState,
+fn target_expression_mut(
+    state: &mut AppState,
     target: EditorTarget,
-) -> &'a mut definy_event::event::Expression {
+) -> &mut definy_event::event::Expression {
     match target {
         EditorTarget::PartDefinition => &mut state.part_definition_form.composing_expression,
         EditorTarget::PartUpdate => {
@@ -2130,11 +2130,9 @@ fn set_record_item_key(
 ) {
     if let Some(definy_event::event::Expression::TypeLiteral(record_expr)) =
         get_mut_expression_at_path(root_expression, path)
-    {
-        if let Some(item) = record_expr.items.get_mut(item_index) {
+        && let Some(item) = record_expr.items.get_mut(item_index) {
             item.key = value.into();
         }
-    }
 }
 
 fn add_record_item(root_expression: &mut definy_event::event::Expression, path: &[PathStep]) {
@@ -2190,11 +2188,9 @@ fn remove_list_item(
 ) {
     if let Some(definy_event::event::Expression::ListLiteral(list_expr)) =
         get_mut_expression_at_path(root_expression, path)
-    {
-        if item_index < list_expr.items.len() {
+        && item_index < list_expr.items.len() {
             list_expr.items.remove(item_index);
         }
-    }
 }
 
 fn next_local_variable_id(expression: &definy_event::event::Expression) -> i64 {

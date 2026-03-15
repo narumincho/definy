@@ -43,7 +43,7 @@ pub fn language_from_tag(tag: &str) -> Option<Language> {
         return None;
     }
     let primary = tag
-        .split(|c| c == '-' || c == '_')
+        .split(['-', '_'])
         .next()
         .unwrap_or(tag)
         .to_ascii_lowercase();
@@ -66,11 +66,10 @@ pub fn preferred_languages() -> Vec<Language> {
     let mut ordered = Vec::new();
     let mut seen = HashSet::new();
     for tag in browser_language_tags() {
-        if let Some(lang) = language_from_tag(tag.as_str()) {
-            if seen.insert(lang.code) {
+        if let Some(lang) = language_from_tag(tag.as_str())
+            && seen.insert(lang.code) {
                 ordered.push(lang);
             }
-        }
     }
     for lang in SUPPORTED_LANGUAGES.iter().copied() {
         if seen.insert(lang.code) {
@@ -116,10 +115,7 @@ pub fn best_language_from_accept_language(header: Option<&str>) -> Language {
 }
 
 pub fn language_from_accept_language(header: Option<&str>) -> Option<Language> {
-    let header = match header {
-        Some(header) => header,
-        None => return None,
-    };
+    let header = header?;
     let mut candidates = Vec::new();
     for part in header.split(',') {
         let part = part.trim();
@@ -136,11 +132,10 @@ pub fn language_from_accept_language(header: Option<&str>) -> Option<Language> {
             let param = param.trim();
             let mut kv = param.splitn(2, '=');
             let key = kv.next().unwrap_or("").trim().to_ascii_lowercase();
-            if key == "q" {
-                if let Some(val) = kv.next() {
+            if key == "q"
+                && let Some(val) = kv.next() {
                     q = val.trim().parse::<f32>().unwrap_or(1.0);
                 }
-            }
         }
         candidates.push((tag.to_string(), q));
     }

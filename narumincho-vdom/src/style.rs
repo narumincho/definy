@@ -3,6 +3,12 @@ use std::collections::HashMap;
 #[derive(Debug, Clone, PartialEq)]
 pub struct Style(HashMap<String, String>);
 
+impl Default for Style {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Style {
     pub fn new() -> Self {
         Self(HashMap::new())

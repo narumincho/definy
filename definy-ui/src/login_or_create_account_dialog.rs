@@ -192,18 +192,15 @@ fn login_view(state: &AppState) -> Node<AppState> {
             .unwrap()
             .value();
 
-            match crate::navigator_credential::parse_password(password) {
-                Some(signing_key) => {
-                    dialog_close();
+            if let Some(signing_key) = crate::navigator_credential::parse_password(password) {
+                dialog_close();
 
-                    set_state(Box::new(|state: AppState| -> AppState {
-                        AppState {
-                            current_key: Some(signing_key),
-                            ..state.clone()
-                        }
-                    }));
-                }
-                None => {}
+                set_state(Box::new(|state: AppState| -> AppState {
+                    AppState {
+                        current_key: Some(signing_key),
+                        ..state.clone()
+                    }
+                }));
             }
         }))
         .style(Style::new().set("display", "grid").set("gap", "1.5rem"))
@@ -412,7 +409,7 @@ fn create_account_view(state: &AppState, force_offline: bool) -> Node<AppState> 
                                 .set("word-break", "break-all"),
                         )
                         .children(match &dialog_state.generated_key {
-                            Some(key) => vec![text(&base64::Engine::encode(
+                            Some(key) => vec![text(base64::Engine::encode(
                                 &base64::engine::general_purpose::URL_SAFE_NO_PAD,
                                 key.verifying_key().to_bytes(),
                             ))],

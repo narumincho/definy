@@ -42,16 +42,14 @@ pub async fn handle_event_get(
             .header("Content-Type", "text/html; charset=utf-8")
             .body(Full::new(Bytes::from("404 Not Found"))),
         Ok(Some(event_binary)) => {
-            if let Some(accept) = request.headers().get("accept") {
-                if let Ok(accept_as_str) = accept.to_str() {
-                    if accept_as_str.contains("text/html") {
+            if let Some(accept) = request.headers().get("accept")
+                && let Ok(accept_as_str) = accept.to_str()
+                    && accept_as_str.contains("text/html") {
                         return Response::builder()
                             .status(200)
                             .header("Content-Type", "text/html; charset=utf-8")
                             .body(Full::new(Bytes::from("todo")));
                     }
-                }
-            }
             Response::builder()
                 .status(200)
                 .header("Content-Type", "application/cbor")
@@ -104,7 +102,7 @@ async fn handle_events_get(
                 }
                 Ok(events) => {
                     match serde_cbor::to_vec(&definy_event::response::EventsResponse {
-                        events: events,
+                        events,
                         next_cursor: None,
                     }) {
                         Ok(cbor) => Response::builder()

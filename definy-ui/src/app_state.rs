@@ -172,24 +172,22 @@ impl AppState {
         &self,
     ) -> std::collections::HashMap<definy_event::event::AccountId, Box<str>> {
         let mut account_name_map = std::collections::HashMap::new();
-        for event_result in self.event_cache.values() {
-            if let Ok((_, event)) = event_result {
-                match &event.content {
-                    definy_event::event::EventContent::CreateAccount(create_account_event) => {
-                        account_name_map
-                            .entry(event.account_id.clone())
-                            .or_insert_with(|| create_account_event.account_name.clone());
-                    }
-                    definy_event::event::EventContent::ChangeProfile(change_profile_event) => {
-                        account_name_map
-                            .entry(event.account_id.clone())
-                            .or_insert_with(|| change_profile_event.account_name.clone());
-                    }
-                    definy_event::event::EventContent::PartDefinition(_) => {}
-                    definy_event::event::EventContent::PartUpdate(_) => {}
-                    definy_event::event::EventContent::ModuleDefinition(_) => {}
-                    definy_event::event::EventContent::ModuleUpdate(_) => {}
+        for (_, event) in self.event_cache.values().flatten() {
+            match &event.content {
+                definy_event::event::EventContent::CreateAccount(create_account_event) => {
+                    account_name_map
+                        .entry(event.account_id.clone())
+                        .or_insert_with(|| create_account_event.account_name.clone());
                 }
+                definy_event::event::EventContent::ChangeProfile(change_profile_event) => {
+                    account_name_map
+                        .entry(event.account_id.clone())
+                        .or_insert_with(|| change_profile_event.account_name.clone());
+                }
+                definy_event::event::EventContent::PartDefinition(_) => {}
+                definy_event::event::EventContent::PartUpdate(_) => {}
+                definy_event::event::EventContent::ModuleDefinition(_) => {}
+                definy_event::event::EventContent::ModuleUpdate(_) => {}
             }
         }
         account_name_map

@@ -50,13 +50,12 @@ pub fn searchable_dropdown(
                         wasm_bindgen::closure::Closure::once_into_js(move || {
                             if let Some(document) = web_sys::window().unwrap().document() {
                                 let selector = format!("input[name='search-{}']", n);
-                                if let Ok(Some(element)) = document.query_selector(&selector) {
-                                    if let Ok(input) =
+                                if let Ok(Some(element)) = document.query_selector(&selector)
+                                    && let Ok(input) =
                                         element.dyn_into::<web_sys::HtmlInputElement>()
                                     {
                                         let _ = input.focus();
                                     }
-                                }
                             }
                         })
                         .as_ref()

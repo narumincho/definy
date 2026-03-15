@@ -8,9 +8,9 @@ pub enum Href<L: Route> {
     Internal(L),
 }
 
-impl<L: Route> Into<String> for Href<L> {
-    fn into(self) -> String {
-        match self {
+impl<L: Route> From<Href<L>> for String {
+    fn from(val: Href<L>) -> Self {
+        match val {
             Href::External(url) => url,
             Href::Internal(location) => location.to_url(),
         }

@@ -14,7 +14,7 @@ pub fn module_detail_view(state: &AppState, definition_event_hash: &[u8; 32]) ->
             .children([H2::new()
                 .style(Style::new().set("font-size", "1.3rem"))
                 .children([text(i18n::tr(
-                    &state,
+                    state,
                     "Module not found",
                     "モジュールが見つかりません",
                     "Modulo ne trovita",
@@ -65,7 +65,7 @@ pub fn module_detail_view(state: &AppState, definition_event_hash: &[u8; 32]) ->
                         )
                         .children([text(format!(
                             "{} {}",
-                            i18n::tr(&state, "latest author:", "最新の投稿者:", "lasta aŭtoro:"),
+                            i18n::tr(state, "latest author:", "最新の投稿者:", "lasta aŭtoro:"),
                             author_name
                         ))])
                         .into_node(),
@@ -77,7 +77,7 @@ pub fn module_detail_view(state: &AppState, definition_event_hash: &[u8; 32]) ->
                                     module_snapshot.latest_event_hash,
                                 )))
                                 .children([text(i18n::tr(
-                                    &state,
+                                    state,
                                     "Latest event",
                                     "最新イベント",
                                     "Lasta evento",
@@ -88,7 +88,7 @@ pub fn module_detail_view(state: &AppState, definition_event_hash: &[u8; 32]) ->
                                     module_snapshot.definition_event_hash,
                                 )))
                                 .children([text(i18n::tr(
-                                    &state,
+                                    state,
                                     "Definition event",
                                     "定義イベント",
                                     "Difina evento",
@@ -114,7 +114,7 @@ pub fn module_detail_view(state: &AppState, definition_event_hash: &[u8; 32]) ->
                             .set("color", "var(--text-secondary)"),
                     )
                     .children([text(i18n::tr(
-                        &state,
+                        state,
                         "Login required to update modules.",
                         "モジュール更新にはログインが必要です。",
                         "Ensaluto necesas por ĝisdatigi modulojn.",
@@ -124,7 +124,7 @@ pub fn module_detail_view(state: &AppState, definition_event_hash: &[u8; 32]) ->
             Div::new()
                 .style(Style::new().set("margin-top", "1rem"))
                 .children([text(i18n::tr(
-                    &state,
+                    state,
                     "Parts in this module",
                     "このモジュールのパーツ",
                     "Partoj en ĉi tiu modulo",
@@ -139,7 +139,7 @@ pub fn module_detail_view(state: &AppState, definition_event_hash: &[u8; 32]) ->
                             .set("color", "var(--text-secondary)"),
                     )
                     .children([text(i18n::tr(
-                        &state,
+                        state,
                         "No parts in this module yet.",
                         "このモジュールにはまだパーツがありません。",
                         "Ankoraŭ neniuj partoj en ĉi tiu modulo.",
@@ -203,7 +203,7 @@ pub fn module_detail_view(state: &AppState, definition_event_hash: &[u8; 32]) ->
                                             .children([text(format!(
                                                 "{} {}",
                                                 i18n::tr(
-                                                    &state,
+                                                    state,
                                                     "latest author:",
                                                     "最新の投稿者:",
                                                     "lasta aŭtoro:"
@@ -223,7 +223,7 @@ pub fn module_detail_view(state: &AppState, definition_event_hash: &[u8; 32]) ->
                                                         part.definition_event_hash,
                                                     )))
                                                     .children([text(i18n::tr(
-                                                        &state,
+                                                        state,
                                                         "Open part detail",
                                                         "パーツ詳細を開く",
                                                         "Malfermi partajn detalojn",
@@ -234,7 +234,7 @@ pub fn module_detail_view(state: &AppState, definition_event_hash: &[u8; 32]) ->
                                                         part.latest_event_hash,
                                                     )))
                                                     .children([text(i18n::tr(
-                                                        &state,
+                                                        state,
                                                         "Latest event",
                                                         "最新イベント",
                                                         "Lasta evento",
@@ -273,7 +273,7 @@ fn module_update_form(
             Div::new()
                 .style(Style::new().set("font-weight", "600"))
                 .children([text(i18n::tr(
-                            &state,
+                            state,
                     "Update module",
                     "モジュールを更新",
                     "Ĝisdatigi modulon",
@@ -318,7 +318,7 @@ fn module_update_form(
                 description.attributes.push((
                     "placeholder".to_string(),
                     i18n::tr(
-                            &state,
+                            state,
                         "module description (supports multiple lines)",
                         "モジュール説明 (複数行対応)",
                         "modula priskribo (subtenas plurajn liniojn)",
@@ -560,7 +560,7 @@ fn module_update_form(
                     }));
                 }))
                 .children([text(i18n::tr(
-                            &state,
+                            state,
                     "Send ModuleUpdate",
                     "ModuleUpdate を送信",
                     "Sendi ModuleUpdate",

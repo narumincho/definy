@@ -215,15 +215,14 @@ fn language_dropdown(state: &AppState) -> Node<AppState> {
                     selected.code,
                     state.event_list_state.filter_event_type,
                 );
-                if let Some(window) = web_sys::window() {
-                    if let Ok(history) = window.history() {
+                if let Some(window) = web_sys::window()
+                    && let Ok(history) = window.history() {
                         let _ = history.push_state_with_url(
                             &wasm_bindgen::JsValue::NULL,
                             "",
                             Some(url.as_str()),
                         );
                     }
-                }
                 AppState {
                     language: selected,
                     language_fallback_notice: None,

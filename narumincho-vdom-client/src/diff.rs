@@ -151,7 +151,7 @@ fn diff_recursive<State>(
                         .map(|k| k.as_ref().unwrap().clone())
                         .collect::<Vec<String>>();
                     if old_key_list != new_key_list {
-                        if old_element.children.len() > 0 {
+                        if !old_element.children.is_empty() {
                             patches.push((
                                 path.clone(),
                                 Patch::RemoveChildren(old_element.children.len()),
