@@ -1,6 +1,7 @@
 use narumincho_vdom::*;
 
 use crate::Location;
+use crate::i18n;
 use crate::app_state::AppState;
 use crate::expression_eval::expression_to_source;
 use crate::part_projection::collect_part_snapshots;
@@ -37,7 +38,7 @@ pub fn part_list_view(state: &AppState) -> Node<AppState> {
         .children([
             H2::new()
                 .style(Style::new().set("font-size", "1.3rem"))
-                .children([text("Parts")])
+                .children([text(i18n::tr(state, "Parts", "パーツ", "Partoj"))])
                 .into_node(),
             if snapshots.is_empty() {
                 Div::new()
@@ -47,7 +48,12 @@ pub fn part_list_view(state: &AppState) -> Node<AppState> {
                             .set("padding", "0.95rem")
                             .set("color", "var(--text-secondary)"),
                     )
-                    .children([text("No parts yet.")])
+                    .children([text(i18n::tr(
+                        state,
+                        "No parts yet.",
+                        "まだパーツがありません。",
+                        "Ankoraŭ neniuj partoj.",
+                    ))])
                     .into_node()
             } else {
                 Div::new()
@@ -93,7 +99,8 @@ pub fn part_list_view(state: &AppState) -> Node<AppState> {
                                                     .set("color", "var(--text-secondary)"),
                                             )
                                             .children([text(format!(
-                                                "type: {}",
+                                                "{} {}",
+                                                i18n::tr(state, "type:", "型:", "tipo:"),
                                                 optional_part_type_text(&part.part_type)
                                             ))])
                                             .into_node(),
@@ -106,14 +113,24 @@ pub fn part_list_view(state: &AppState) -> Node<AppState> {
                                                         .set("font-size", "0.82rem")
                                                         .set("color", "var(--text-secondary)"),
                                                 )
-                                                .children([text("definition event missing")])
+                                                .children([text(i18n::tr(
+                                                    state,
+                                                    "definition event missing",
+                                                    "定義イベントが見つかりません",
+                                                    "difina evento mankas",
+                                                ))])
                                                 .into_node()
                                         },
                                         A::<AppState, Location>::new()
-                                            .href(Href::Internal(Location::Part(
+                                            .href(state.href_with_lang(Location::Part(
                                                 part.definition_event_hash,
                                             )))
-                                            .children([text("Open part detail")])
+                                            .children([text(i18n::tr(
+                                                state,
+                                                "Open part detail",
+                                                "パーツ詳細を開く",
+                                                "Malfermi partajn detalojn",
+                                            ))])
                                             .into_node(),
                                         if part.part_description.is_empty() {
                                             Div::new().children([]).into_node()
@@ -135,7 +152,8 @@ pub fn part_list_view(state: &AppState) -> Node<AppState> {
                                                     .set("opacity", "0.8"),
                                             )
                                             .children([text(format!(
-                                                "expression: {}",
+                                                "{} {}",
+                                                i18n::tr(state, "expression:", "式:", "esprimo:"),
                                                 expression_to_source(&part.expression)
                                             ))])
                                             .into_node(),
@@ -146,7 +164,8 @@ pub fn part_list_view(state: &AppState) -> Node<AppState> {
                                                     .set("color", "var(--primary)"),
                                             )
                                             .children([text(format!(
-                                                "latest author: {}",
+                                                "{} {}",
+                                                i18n::tr(state, "latest author:", "最新の投稿者:", "lasta aŭtoro:"),
                                                 account_name
                                             ))])
                                             .into_node(),
@@ -158,16 +177,26 @@ pub fn part_list_view(state: &AppState) -> Node<AppState> {
                                             )
                                             .children([
                                                 A::<AppState, Location>::new()
-                                                    .href(Href::Internal(Location::Event(
+                                                    .href(state.href_with_lang(Location::Event(
                                                         part.latest_event_hash,
                                                     )))
-                                                    .children([text("Latest event")])
+                                                    .children([text(i18n::tr(
+                                                        state,
+                                                        "Latest event",
+                                                        "最新イベント",
+                                                        "Lasta evento",
+                                                    ))])
                                                     .into_node(),
                                                 A::<AppState, Location>::new()
-                                                    .href(Href::Internal(Location::Event(
+                                                    .href(state.href_with_lang(Location::Event(
                                                         part.definition_event_hash,
                                                     )))
-                                                    .children([text("Definition event")])
+                                                    .children([text(i18n::tr(
+                                                        state,
+                                                        "Definition event",
+                                                        "定義イベント",
+                                                        "Difina evento",
+                                                    ))])
                                                     .into_node(),
                                             ])
                                             .into_node(),

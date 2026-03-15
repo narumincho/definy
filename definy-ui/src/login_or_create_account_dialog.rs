@@ -4,6 +4,7 @@ use crate::{
     LoginOrCreateAccountDialogState,
     app_state::{AppState, CreatingAccountState},
     fetch,
+    i18n,
 };
 
 /// ログインまたはアカウント作成ダイアログ
@@ -25,9 +26,13 @@ pub fn login_or_create_account_dialog(state: &AppState) -> Node<AppState> {
                         .style(Style::new().set("font-size", "1.25rem"))
                         .children([text(
                             match state.login_or_create_account_dialog_state.state {
-                                CreatingAccountState::LogIn => "Log In",
-                                CreatingAccountState::CreateAccount => "Sign Up",
-                                _ => "Account",
+                                CreatingAccountState::LogIn => {
+                                    i18n::tr(state, "Log In", "ログイン", "Ensaluti")
+                                }
+                                CreatingAccountState::CreateAccount => {
+                                    i18n::tr(state, "Sign Up", "サインアップ", "Registriĝi")
+                                }
+                                _ => i18n::tr(state, "Account", "アカウント", "Konto"),
                             },
                         )])
                         .into_node(),
@@ -100,7 +105,7 @@ pub fn login_or_create_account_dialog(state: &AppState) -> Node<AppState> {
                                 ),
                         )
                         .on_click(create_login_event_handler())
-                        .children([text("Log In")])
+                        .children([text(i18n::tr(state, "Log In", "ログイン", "Ensaluti"))])
                         .into_node(),
                     Button::new()
                         .type_("button")
@@ -153,17 +158,14 @@ pub fn login_or_create_account_dialog(state: &AppState) -> Node<AppState> {
                                 }
                             }));
                         }))
-                        .children([text("Sign Up")])
+                        .children([text(i18n::tr(state, "Sign Up", "サインアップ", "Registriĝi"))])
                         .into_node(),
                 ])
                 .into_node(),
             match state.login_or_create_account_dialog_state.state {
-                CreatingAccountState::LogIn => login_view(),
+                CreatingAccountState::LogIn => login_view(state),
                 CreatingAccountState::CreateAccount => {
-                    create_account_view(
-                        &state.login_or_create_account_dialog_state,
-                        state.force_offline,
-                    )
+                    create_account_view(state, state.force_offline)
                 }
                 _ => Div::new().children([]).into_node(),
             },
@@ -171,7 +173,7 @@ pub fn login_or_create_account_dialog(state: &AppState) -> Node<AppState> {
         .into_node()
 }
 
-fn login_view() -> Node<AppState> {
+fn login_view(state: &AppState) -> Node<AppState> {
     Form::new()
         .on_submit(EventHandler::new(async |set_state| {
             let password = wasm_bindgen::JsCast::dyn_into::<web_sys::HtmlInputElement>(
@@ -205,7 +207,14 @@ fn login_view() -> Node<AppState> {
             Div::new()
                 .class("form-group")
                 .children([
-                    Label::new().children([text("Secret Key")]).into_node(),
+                    Label::new()
+                        .children([text(i18n::tr(
+                            state,
+                            "Secret Key",
+                            "秘密鍵",
+                            "Sekreta ŝlosilo",
+                        ))])
+                        .into_node(),
                     Input::new()
                         .type_("password")
                         .name("password")
@@ -217,7 +226,7 @@ fn login_view() -> Node<AppState> {
             Button::new()
                 .type_("submit")
                 .style(Style::new().set("width", "100%"))
-                .children([text("Log In")])
+                .children([text(i18n::tr(state, "Log In", "ログイン", "Ensaluti"))])
                 .into_node(),
         ])
         .into_node()
@@ -228,10 +237,9 @@ fn generate_key() -> ed25519_dalek::SigningKey {
     ed25519_dalek::SigningKey::generate(&mut csprng)
 }
 
-fn create_account_view(
-    state: &LoginOrCreateAccountDialogState,
-    force_offline: bool,
-) -> Node<AppState> {
+fn create_account_view(state: &AppState, force_offline: bool) -> Node<AppState> {
+    let dialog_state = &state.login_or_create_account_dialog_state;
+    let lang_code = state.language.code;
     let mut password_input = Input::new()
         .type_("password")
         .name("password")
@@ -239,18 +247,18 @@ fn create_account_view(
         .required()
         .readonly();
 
-    if let Some(key) = &state.generated_key {
+    if let Some(key) = &dialog_state.generated_key {
         password_input = password_input.value(&base64::Engine::encode(
             &base64::engine::general_purpose::URL_SAFE_NO_PAD,
             key.to_bytes(),
         ));
     }
 
-    let requesting = state.state == CreatingAccountState::CreateAccountRequesting
-        || state.state == CreatingAccountState::Success;
+    let requesting = dialog_state.state == CreatingAccountState::CreateAccountRequesting
+        || dialog_state.state == CreatingAccountState::Success;
 
-    let generated_key_for_submit = state.generated_key.clone();
-    let generated_key_for_copy = state.generated_key.clone();
+    let generated_key_for_submit = dialog_state.generated_key.clone();
+    let generated_key_for_copy = dialog_state.generated_key.clone();
 
     Form::new()
         .on_submit(EventHandler::new(move |set_state| {
@@ -297,16 +305,36 @@ fn create_account_view(
                             let status_for_state = status.clone();
                             let message = match status {
                                 crate::local_event::LocalEventStatus::Sent => {
-                                    "Account created".to_string()
+                                    i18n::tr_lang(
+                                        lang_code,
+                                        "Account created",
+                                        "アカウントを作成しました",
+                                        "Konto kreita",
+                                    )
+                                    .to_string()
                                 }
                                 crate::local_event::LocalEventStatus::Queued => {
-                                    "Queued: network unavailable".to_string()
+                                    i18n::tr_lang(
+                                        lang_code,
+                                        "Queued: network unavailable",
+                                        "キュー済み: ネットワーク未接続",
+                                        "En vico: reto nedisponebla",
+                                    )
+                                    .to_string()
                                 }
                                 crate::local_event::LocalEventStatus::Failed => {
                                     record
                                         .last_error
                                         .clone()
-                                        .unwrap_or_else(|| "Failed to send".to_string())
+                                        .unwrap_or_else(|| {
+                                            i18n::tr_lang(
+                                                lang_code,
+                                                "Failed to send",
+                                                "送信に失敗しました",
+                                                "Sendado malsukcesis",
+                                            )
+                                            .to_string()
+                                        })
                                 }
                             };
                             set_state_for_async(Box::new(move |state: AppState| {
@@ -352,7 +380,14 @@ fn create_account_view(
             Div::new()
                 .class("form-group")
                 .children([
-                    Label::new().children([text("Username")]).into_node(),
+                    Label::new()
+                        .children([text(i18n::tr(
+                            state,
+                            "Username",
+                            "ユーザー名",
+                            "Uzantnomo",
+                        ))])
+                        .into_node(),
                     Input::new()
                         .type_("text")
                         .name("username")
@@ -366,7 +401,12 @@ fn create_account_view(
                 .class("form-group")
                 .children([
                     Label::new()
-                        .children([text("User ID (Public Key)")])
+                        .children([text(i18n::tr(
+                            state,
+                            "User ID (Public Key)",
+                            "ユーザーID (公開鍵)",
+                            "Uzanto-ID (publika ŝlosilo)",
+                        ))])
                         .into_node(),
                     Div::new()
                         .style(
@@ -379,7 +419,7 @@ fn create_account_view(
                                 .set("border", "1px solid var(--border)")
                                 .set("word-break", "break-all"),
                         )
-                        .children(match &state.generated_key {
+                        .children(match &dialog_state.generated_key {
                             Some(key) => vec![text(&base64::Engine::encode(
                                 &base64::engine::general_purpose::URL_SAFE_NO_PAD,
                                 key.verifying_key().to_bytes(),
@@ -392,12 +432,24 @@ fn create_account_view(
             Div::new()
                 .class("form-group")
                 .children([
-                    Label::new().children([text("Secret Key")]).into_node(),
+                    Label::new()
+                        .children([text(i18n::tr(
+                            state,
+                            "Secret Key",
+                            "秘密鍵",
+                            "Sekreta ŝlosilo",
+                        ))])
+                        .into_node(),
                     Div::new()
                         .class("hint")
                         .style(Style::new().set("margin-bottom", "0.5rem"))
                         .children([text(
-                            "If you lose your secret key, you will not be able to log in again.",
+                            i18n::tr(
+                                state,
+                                "If you lose your secret key, you will not be able to log in again.",
+                                "秘密鍵を失うと再ログインできません。",
+                                "Se vi perdas la sekretan ŝlosilon, vi ne povos denove ensaluti.",
+                            ),
                         )])
                         .into_node(),
                     Div::new()
@@ -424,7 +476,7 @@ fn create_account_view(
                                     }
                                 }))
                                 .type_("button")
-                                .children([text("Copy")])
+                                .children([text(i18n::tr(state, "Copy", "コピー", "Kopii"))])
                                 .into_node(),
                             Button::new()
                                 .on_click(EventHandler::new(async |set_state| {
@@ -443,7 +495,7 @@ fn create_account_view(
                                 }))
                                 .type_("button")
                                 .disabled(requesting)
-                                .children([text("Regen")])
+                                .children([text(i18n::tr(state, "Regen", "再生成", "Regeneri"))])
                                 .into_node(),
                         ])
                         .into_node(),
@@ -457,22 +509,32 @@ fn create_account_view(
                         .command(CommandValue::Close)
                         .type_("button")
                         .on_click(EventHandler::new(async |_set_state| {}))
-                        .children([text("Cancel")])
+                        .children([text(i18n::tr(state, "Cancel", "キャンセル", "Nuligi"))])
                         .into_node(),
                     Button::new()
                         .type_("submit")
                         .disabled(requesting)
-                        .children([text(match state.state {
-                            CreatingAccountState::LogIn => "Log In",
-                            CreatingAccountState::CreateAccount => "Sign Up",
-                            CreatingAccountState::CreateAccountRequesting => "Signing Up...",
-                            CreatingAccountState::Success => "Success",
-                            CreatingAccountState::Error => "Error",
+                        .children([text(match dialog_state.state {
+                            CreatingAccountState::LogIn => {
+                                i18n::tr(state, "Log In", "ログイン", "Ensaluti")
+                            }
+                            CreatingAccountState::CreateAccount => {
+                                i18n::tr(state, "Sign Up", "サインアップ", "Registriĝi")
+                            }
+                            CreatingAccountState::CreateAccountRequesting => {
+                                i18n::tr(state, "Signing Up...", "サインアップ中...", "Registriĝante...")
+                            }
+                            CreatingAccountState::Success => {
+                                i18n::tr(state, "Success", "成功", "Sukceso")
+                            }
+                            CreatingAccountState::Error => {
+                                i18n::tr(state, "Error", "エラー", "Eraro")
+                            }
                         })])
                         .into_node(),
                 ])
                 .into_node(),
-            match &state.create_account_result_message {
+            match &dialog_state.create_account_result_message {
                 Some(message) => Div::new()
                     .style(
                         Style::new()

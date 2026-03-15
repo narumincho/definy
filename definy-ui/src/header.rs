@@ -1,6 +1,9 @@
+use std::rc::Rc;
+
 use narumincho_vdom::*;
 
 use crate::{AppState, Location};
+use crate::i18n;
 
 pub fn header(state: &AppState) -> Node<AppState> {
     let mut children = vec![header_main(state)];
@@ -40,7 +43,7 @@ fn header_main(state: &AppState) -> Node<AppState> {
                 )
                 .children([
                     A::<AppState, Location>::new()
-                        .href(Href::Internal(Location::Home))
+                        .href(state.href_with_lang(Location::Home))
                         .style(
                             Style::new()
                                 .set("text-decoration", "none")
@@ -58,40 +61,40 @@ fn header_main(state: &AppState) -> Node<AppState> {
                             .into_node()])
                         .into_node(),
                     A::<AppState, Location>::new()
-                        .href(Href::Internal(Location::PartList))
+                        .href(state.href_with_lang(Location::PartList))
                         .style(
                             Style::new()
                                 .set("font-size", "0.9rem")
                                 .set("color", "var(--text-secondary)"),
                         )
-                        .children([text("Parts")])
+                        .children([text(i18n::tr(state, "Parts", "パーツ", "Partoj"))])
                         .into_node(),
                     A::<AppState, Location>::new()
-                        .href(Href::Internal(Location::ModuleList))
+                        .href(state.href_with_lang(Location::ModuleList))
                         .style(
                             Style::new()
                                 .set("font-size", "0.9rem")
                                 .set("color", "var(--text-secondary)"),
                         )
-                        .children([text("Modules")])
+                        .children([text(i18n::tr(state, "Modules", "モジュール", "Moduloj"))])
                         .into_node(),
                     A::<AppState, Location>::new()
-                        .href(Href::Internal(Location::LocalEventQueue))
+                        .href(state.href_with_lang(Location::LocalEventQueue))
                         .style(
                             Style::new()
                                 .set("font-size", "0.9rem")
                                 .set("color", "var(--text-secondary)"),
                         )
-                        .children([text("Local Events")])
+                        .children([text(i18n::tr(state, "Local Events", "ローカルイベント", "Lokaj eventoj"))])
                         .into_node(),
                     A::<AppState, Location>::new()
-                        .href(Href::Internal(Location::AccountList))
+                        .href(state.href_with_lang(Location::AccountList))
                         .style(
                             Style::new()
                                 .set("font-size", "0.9rem")
                                 .set("color", "var(--text-secondary)"),
                         )
-                        .children([text("Accounts")])
+                        .children([text(i18n::tr(state, "Accounts", "アカウント", "Kontoj"))])
                         .into_node(),
                 ])
                 .into_node(),
@@ -115,51 +118,142 @@ fn header_main(state: &AppState) -> Node<AppState> {
                     .children([text(crate::page_title::page_title_text(state))])
                     .into_node()])
                 .into_node(),
-            match &state.current_key {
-                Some(secret_key) => {
-                    let account_id = definy_event::event::AccountId(Box::new(
-                        secret_key.verifying_key().to_bytes(),
-                    ));
-                    let account_name = state.account_name_map().get(&account_id).cloned();
+            {
+                let account_button = match &state.current_key {
+                    Some(secret_key) => {
+                        let account_id = definy_event::event::AccountId(Box::new(
+                            secret_key.verifying_key().to_bytes(),
+                        ));
+                        let account_name = state.account_name_map().get(&account_id).cloned();
 
-                    Button::new()
-                        .on_click(EventHandler::new(async |set_state| {
-                            set_state(Box::new(|state: AppState| AppState {
-                                is_header_popover_open: !state.is_header_popover_open,
-                                ..state.clone()
-                            }));
-                        }))
-                        .style(
-                            Style::new()
-                                .set("font-family", "'JetBrains Mono', monospace")
-                                .set("font-size", "0.74rem")
-                                .set("background", "rgba(255, 255, 255, 0.05)")
-                                .set("color", "var(--text)")
-                                .set("border", "1px solid var(--border)")
-                                .set("padding", "0.38rem 0.8rem")
-                                .set("max-width", "min(46vw, 420px)")
-                                .set("overflow", "hidden")
-                                .set("text-overflow", "ellipsis")
-                                .set("white-space", "nowrap")
-                                .set("anchor-name", "--header-popover-button"),
-                        )
-                        .children([text(&match account_name {
-                            Some(name) => name.to_string(),
-                            None => base64::Engine::encode(
-                                &base64::engine::general_purpose::URL_SAFE_NO_PAD,
-                                secret_key.verifying_key().to_bytes(),
-                            ),
-                        })])
-                        .into_node()
-                }
-                None => Button::new()
-                    .command_for("login-or-create-account-dialog")
-                    .command(CommandValue::ShowModal)
-                    .children([text("Log In / Sign Up")])
-                    .into_node(),
+                        Button::new()
+                            .on_click(EventHandler::new(async |set_state| {
+                                set_state(Box::new(|state: AppState| AppState {
+                                    is_header_popover_open: !state.is_header_popover_open,
+                                    ..state.clone()
+                                }));
+                            }))
+                            .style(
+                                Style::new()
+                                    .set("font-family", "'JetBrains Mono', monospace")
+                                    .set("font-size", "0.74rem")
+                                    .set("background", "rgba(255, 255, 255, 0.05)")
+                                    .set("color", "var(--text)")
+                                    .set("border", "1px solid var(--border)")
+                                    .set("padding", "0.38rem 0.8rem")
+                                    .set("max-width", "min(46vw, 420px)")
+                                    .set("overflow", "hidden")
+                                    .set("text-overflow", "ellipsis")
+                                    .set("white-space", "nowrap")
+                                    .set("anchor-name", "--header-popover-button"),
+                            )
+                            .children([text(&match account_name {
+                                Some(name) => name.to_string(),
+                                None => base64::Engine::encode(
+                                    &base64::engine::general_purpose::URL_SAFE_NO_PAD,
+                                    secret_key.verifying_key().to_bytes(),
+                                ),
+                            })])
+                            .into_node()
+                    }
+                    None => Button::new()
+                        .command_for("login-or-create-account-dialog")
+                        .command(CommandValue::ShowModal)
+                        .children([text(i18n::tr(
+                            state,
+                            "Log In / Sign Up",
+                            "ログイン / サインアップ",
+                            "Ensaluti / Registriĝi",
+                        ))])
+                        .into_node(),
+                };
+
+                Div::new()
+                    .style(
+                        Style::new()
+                            .set("display", "flex")
+                            .set("align-items", "center")
+                            .set("gap", "0.6rem"),
+                    )
+                    .children([language_dropdown(state), account_button])
+                    .into_node()
             },
         ])
         .into_node()
+}
+
+fn language_dropdown(state: &AppState) -> Node<AppState> {
+    let languages = crate::language::preferred_languages();
+    let mut options = Vec::with_capacity(languages.len());
+    for language in languages {
+        options.push((
+            language.code.to_string(),
+            crate::language::language_label(&language),
+        ));
+    }
+    let current_code = state.language.code;
+    let dropdown = crate::dropdown::searchable_dropdown(
+        state,
+        "language",
+        current_code,
+        options.as_slice(),
+        Rc::new(|value| {
+            Box::new(move |state: AppState| {
+                let selected = crate::language::language_from_tag(value.as_str())
+                    .unwrap_or(state.language);
+                if selected.code == state.language.code {
+                    return state;
+                }
+                let location = state.location.clone().unwrap_or(Location::Home);
+                let url = AppState::build_url(
+                    &location,
+                    selected.code,
+                    state.event_list_state.filter_event_type,
+                );
+                if let Some(window) = web_sys::window() {
+                    if let Ok(history) = window.history() {
+                        let _ = history.push_state_with_url(
+                            &wasm_bindgen::JsValue::NULL,
+                            "",
+                            Some(url.as_str()),
+                        );
+                    }
+                }
+                AppState {
+                    language: selected,
+                    language_fallback_notice: None,
+                    ..state
+                }
+            })
+        }),
+    );
+    if let Some(notice) = &state.language_fallback_notice {
+        Div::new()
+            .style(
+                Style::new()
+                    .set("display", "grid")
+                    .set("gap", "0.25rem")
+                    .set("justify-items", "start"),
+            )
+            .children([
+                dropdown,
+                Div::new()
+                    .style(
+                        Style::new()
+                            .set("font-size", "0.75rem")
+                            .set("color", "var(--text-secondary)")
+                            .set("max-width", "22rem"),
+                    )
+                    .children([text(format!(
+                        "言語「{}」はサポートされていないため「{}」にフォールバックしました",
+                        notice.requested, notice.fallback_to_code
+                    ))])
+                    .into_node(),
+            ])
+            .into_node()
+    } else {
+        dropdown
+    }
 }
 
 fn popover(state: &AppState) -> Node<AppState> {
@@ -167,7 +261,7 @@ fn popover(state: &AppState) -> Node<AppState> {
         let account_id = definy_event::event::AccountId(Box::new(key.verifying_key().to_bytes()));
         let account_name = crate::app_state::account_display_name(&state.account_name_map(), &account_id);
         A::<AppState, Location>::new()
-            .href(Href::Internal(Location::Account(account_id)))
+            .href(state.href_with_lang(Location::Account(account_id)))
             .style(
                 Style::new()
                     .set("padding", "0.4rem 0.5rem")
@@ -218,9 +312,9 @@ fn popover(state: &AppState) -> Node<AppState> {
                         }));
                     }))
                     .children([text(if state.force_offline {
-                        "Offline: On"
+                        i18n::tr(state, "Offline: On", "オフライン: オン", "Senkonekte: En")
                     } else {
-                        "Offline: Off"
+                        i18n::tr(state, "Offline: Off", "オフライン: オフ", "Senkonekte: Malŝaltita")
                     })])
                     .style(
                         Style::new()
@@ -242,7 +336,7 @@ fn popover(state: &AppState) -> Node<AppState> {
                             }
                         }));
                     }))
-                    .children([text("Log Out")])
+                    .children([text(i18n::tr(state, "Log Out", "ログアウト", "Elsaluti"))])
                     .style(
                         Style::new()
                             .set("width", "100%")

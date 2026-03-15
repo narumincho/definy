@@ -1,4 +1,5 @@
-use definy_event::event::AccountId;
+use definy_event::event::{AccountId, EventType};
+use narumincho_vdom::Route;
 
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub enum PathStep {
@@ -105,6 +106,14 @@ pub struct AppState {
     pub focused_path: Option<Vec<PathStep>>,
     pub active_dropdown_name: Option<String>,
     pub dropdown_search_query: String,
+    pub language: crate::language::Language,
+    pub language_fallback_notice: Option<LanguageFallbackNotice>,
+}
+
+#[derive(Clone)]
+pub struct LanguageFallbackNotice {
+    pub requested: String,
+    pub fallback_to_code: &'static str,
 }
 
 #[derive(Clone)]
@@ -230,6 +239,8 @@ pub fn build_initial_state(
     event_list_has_more: bool,
     current_key: Option<ed25519_dalek::SigningKey>,
     filter_event_type: Option<definy_event::event::EventType>,
+    language: crate::language::Language,
+    language_fallback_notice: Option<LanguageFallbackNotice>,
 ) -> AppState {
     let mut event_cache = HashMap::new();
     let mut event_hashes = Vec::new();
@@ -299,6 +310,43 @@ pub fn build_initial_state(
         focused_path: None,
         active_dropdown_name: None,
         dropdown_search_query: String::new(),
+        language,
+        language_fallback_notice,
+    }
+}
+
+impl AppState {
+    pub fn build_url(location: &Location, lang_code: &str, event_type: Option<EventType>) -> String {
+        let mut url = location.to_url();
+        let query = crate::query::build_query(crate::query::QueryParams {
+            lang: Some(lang_code.to_string()),
+            event_type: if matches!(location, Location::Home) {
+                event_type
+            } else {
+                None
+            },
+        });
+        if let Some(query) = query {
+            url.push('?');
+            url.push_str(query.as_str());
+        }
+        url
+    }
+
+    pub fn url_with_lang(&self, location: &Location) -> String {
+        AppState::build_url(
+            location,
+            self.language.code,
+            self.event_list_state.filter_event_type,
+        )
+    }
+
+    pub fn home_url_with_lang(&self, event_type: Option<EventType>) -> String {
+        AppState::build_url(&Location::Home, self.language.code, event_type)
+    }
+
+    pub fn href_with_lang(&self, location: Location) -> narumincho_vdom::Href<Location> {
+        narumincho_vdom::Href::External(self.url_with_lang(&location))
     }
 }
 

@@ -1,4 +1,5 @@
 use crate::{AppState, Location};
+use crate::i18n;
 
 #[derive(Clone, Copy)]
 enum RouteId {
@@ -30,18 +31,21 @@ impl RouteId {
         }
     }
 
-    fn title_prefix(self) -> &'static str {
+    fn title_prefix(self, state: &AppState) -> &'static str {
         match self {
-            Self::Home => "home",
-            Self::AccountList => "accounts",
-            Self::PartList => "parts",
-            Self::ModuleList => "modules",
-            Self::LocalEventQueue => "local-events",
-            Self::AccountDetail => "accounts",
-            Self::PartDetail => "parts",
-            Self::ModuleDetail => "modules",
-            Self::EventDetail => "events",
-            Self::NotFound => "not-found",
+            Self::Home => i18n::tr(state, "home", "ホーム", "hejmo"),
+            Self::AccountList | Self::AccountDetail => {
+                i18n::tr(state, "accounts", "アカウント", "kontoj")
+            }
+            Self::PartList | Self::PartDetail => i18n::tr(state, "parts", "パーツ", "partoj"),
+            Self::ModuleList | Self::ModuleDetail => {
+                i18n::tr(state, "modules", "モジュール", "moduloj")
+            }
+            Self::LocalEventQueue => {
+                i18n::tr(state, "local-events", "ローカルイベント", "lokaj-eventoj")
+            }
+            Self::EventDetail => i18n::tr(state, "events", "イベント", "eventoj"),
+            Self::NotFound => i18n::tr(state, "not-found", "未検出", "ne-trovita"),
         }
     }
 }
@@ -55,17 +59,17 @@ pub fn page_title_text(state: &AppState) -> String {
         | Some(Location::ModuleList)
         | Some(Location::LocalEventQueue)
         | None => {
-            route_id.title_prefix().to_string()
+            route_id.title_prefix(state).to_string()
         }
         Some(Location::Account(account_id)) => {
             let account_name =
                 crate::app_state::account_display_name(&state.account_name_map(), account_id);
-            format!("{}/{}", route_id.title_prefix(), account_name)
+            format!("{}/{}", route_id.title_prefix(state), account_name)
         }
         Some(Location::Part(definition_event_hash)) => {
             let part_name = resolve_part_name(state, definition_event_hash)
                 .unwrap_or_else(|| short_hash(definition_event_hash));
-            format!("{}/{}", route_id.title_prefix(), part_name)
+            format!("{}/{}", route_id.title_prefix(state), part_name)
         }
         Some(Location::Module(definition_event_hash)) => {
             let module_name = crate::module_projection::resolve_module_name(
@@ -73,7 +77,7 @@ pub fn page_title_text(state: &AppState) -> String {
                 definition_event_hash,
             )
             .unwrap_or_else(|| short_hash(definition_event_hash));
-            format!("{}/{}", route_id.title_prefix(), module_name)
+            format!("{}/{}", route_id.title_prefix(state), module_name)
         }
         Some(Location::Event(event_hash)) => {
             let event_label = state
@@ -86,28 +90,56 @@ pub fn page_title_text(state: &AppState) -> String {
                     let (_, event) = event_result.as_ref().ok()?;
                     let label = match &event.content {
                         definy_event::event::EventContent::CreateAccount(_) => {
-                            "create-account".to_string()
+                            i18n::tr(state, "create-account", "アカウント作成", "konto-kreo")
+                                .to_string()
                         }
                         definy_event::event::EventContent::ChangeProfile(_) => {
-                            "change-profile".to_string()
+                            i18n::tr(state, "change-profile", "プロフィール変更", "profil-ŝanĝo")
+                                .to_string()
                         }
                         definy_event::event::EventContent::PartDefinition(part_definition) => {
-                            format!("part-definition/{}", part_definition.part_name)
+                            format!(
+                                "{}/{}",
+                                i18n::tr(state, "part-definition", "パーツ定義", "parto-difino"),
+                                part_definition.part_name
+                            )
                         }
                         definy_event::event::EventContent::PartUpdate(part_update) => {
-                            format!("part-update/{}", part_update.part_name)
+                            format!(
+                                "{}/{}",
+                                i18n::tr(state, "part-update", "パーツ更新", "parto-ĝisdatigo"),
+                                part_update.part_name
+                            )
                         }
                         definy_event::event::EventContent::ModuleDefinition(module_definition) => {
-                            format!("module-definition/{}", module_definition.module_name)
+                            format!(
+                                "{}/{}",
+                                i18n::tr(
+                                    state,
+                                    "module-definition",
+                                    "モジュール定義",
+                                    "modulo-difino"
+                                ),
+                                module_definition.module_name
+                            )
                         }
                         definy_event::event::EventContent::ModuleUpdate(module_update) => {
-                            format!("module-update/{}", module_update.module_name)
+                            format!(
+                                "{}/{}",
+                                i18n::tr(
+                                    state,
+                                    "module-update",
+                                    "モジュール更新",
+                                    "modulo-ĝisdatigo"
+                                ),
+                                module_update.module_name
+                            )
                         }
                     };
                     Some(label)
                 })
                 .unwrap_or_else(|| short_hash(event_hash));
-            format!("{}/{}", route_id.title_prefix(), event_label)
+            format!("{}/{}", route_id.title_prefix(state), event_label)
         }
     }
 }

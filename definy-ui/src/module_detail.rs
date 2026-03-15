@@ -4,6 +4,7 @@ use crate::app_state::AppState;
 use crate::module_projection::find_module_snapshot;
 use crate::part_projection::collect_part_snapshots;
 use crate::Location;
+use crate::i18n;
 
 pub fn module_detail_view(state: &AppState, definition_event_hash: &[u8; 32]) -> Node<AppState> {
     let Some(module_snapshot) = find_module_snapshot(state, definition_event_hash) else {
@@ -13,7 +14,12 @@ pub fn module_detail_view(state: &AppState, definition_event_hash: &[u8; 32]) ->
             .children([
                 H2::new()
                     .style(Style::new().set("font-size", "1.3rem"))
-                    .children([text("Module not found")])
+                    .children([text(i18n::tr(
+                            &state,
+                        "Module not found",
+                        "モジュールが見つかりません",
+                        "Modulo ne trovita",
+                    ))])
                     .into_node(),
             ])
             .into_node();
@@ -61,22 +67,36 @@ pub fn module_detail_view(state: &AppState, definition_event_hash: &[u8; 32]) ->
                                 .set("font-size", "0.85rem")
                                 .set("color", "var(--primary)"),
                         )
-                        .children([text(format!("latest author: {}", author_name))])
+                        .children([text(format!(
+                            "{} {}",
+                            i18n::tr(&state, "latest author:", "最新の投稿者:", "lasta aŭtoro:"),
+                            author_name
+                        ))])
                         .into_node(),
                     Div::new()
                         .style(Style::new().set("display", "flex").set("gap", "0.45rem"))
                         .children([
                             A::<AppState, Location>::new()
-                                .href(Href::Internal(Location::Event(
+                                .href(state.href_with_lang(Location::Event(
                                     module_snapshot.latest_event_hash,
                                 )))
-                                .children([text("Latest event")])
+                                .children([text(i18n::tr(
+                            &state,
+                                    "Latest event",
+                                    "最新イベント",
+                                    "Lasta evento",
+                                ))])
                                 .into_node(),
                             A::<AppState, Location>::new()
-                                .href(Href::Internal(Location::Event(
+                                .href(state.href_with_lang(Location::Event(
                                     module_snapshot.definition_event_hash,
                                 )))
-                                .children([text("Definition event")])
+                                .children([text(i18n::tr(
+                            &state,
+                                    "Definition event",
+                                    "定義イベント",
+                                    "Difina evento",
+                                ))])
                                 .into_node(),
                         ])
                         .into_node(),
@@ -92,12 +112,22 @@ pub fn module_detail_view(state: &AppState, definition_event_hash: &[u8; 32]) ->
                             .set("padding", "0.9rem")
                             .set("color", "var(--text-secondary)"),
                     )
-                    .children([text("Login required to update modules.")])
+                    .children([text(i18n::tr(
+                            &state,
+                        "Login required to update modules.",
+                        "モジュール更新にはログインが必要です。",
+                        "Ensaluto necesas por ĝisdatigi modulojn.",
+                    ))])
                     .into_node()
             },
             Div::new()
                 .style(Style::new().set("margin-top", "1rem"))
-                .children([text("Parts in this module")])
+                .children([text(i18n::tr(
+                            &state,
+                    "Parts in this module",
+                    "このモジュールのパーツ",
+                    "Partoj en ĉi tiu modulo",
+                ))])
                 .into_node(),
             if parts_in_module.is_empty() {
                 Div::new()
@@ -107,7 +137,12 @@ pub fn module_detail_view(state: &AppState, definition_event_hash: &[u8; 32]) ->
                             .set("padding", "0.9rem")
                             .set("color", "var(--text-secondary)"),
                     )
-                    .children([text("No parts in this module yet.")])
+                    .children([text(i18n::tr(
+                            &state,
+                        "No parts in this module yet.",
+                        "このモジュールにはまだパーツがありません。",
+                        "Ankoraŭ neniuj partoj en ĉi tiu modulo.",
+                    ))])
                     .into_node()
             } else {
                 Div::new()
@@ -165,7 +200,8 @@ pub fn module_detail_view(state: &AppState, definition_event_hash: &[u8; 32]) ->
                                                     .set("color", "var(--primary)"),
                                             )
                                             .children([text(format!(
-                                                "latest author: {}",
+                                                "{} {}",
+                                                i18n::tr(&state, "latest author:", "最新の投稿者:", "lasta aŭtoro:"),
                                                 part_author
                                             ))])
                                             .into_node(),
@@ -177,16 +213,26 @@ pub fn module_detail_view(state: &AppState, definition_event_hash: &[u8; 32]) ->
                                             )
                                             .children([
                                                 A::<AppState, Location>::new()
-                                                    .href(Href::Internal(Location::Part(
+                                                    .href(state.href_with_lang(Location::Part(
                                                         part.definition_event_hash,
                                                     )))
-                                                    .children([text("Open part detail")])
+                                                    .children([text(i18n::tr(
+                            &state,
+                                                        "Open part detail",
+                                                        "パーツ詳細を開く",
+                                                        "Malfermi partajn detalojn",
+                                                    ))])
                                                     .into_node(),
                                                 A::<AppState, Location>::new()
-                                                    .href(Href::Internal(Location::Event(
+                                                    .href(state.href_with_lang(Location::Event(
                                                         part.latest_event_hash,
                                                     )))
-                                                    .children([text("Latest event")])
+                                                    .children([text(i18n::tr(
+                            &state,
+                                                        "Latest event",
+                                                        "最新イベント",
+                                                        "Lasta evento",
+                                                    ))])
                                                     .into_node(),
                                             ])
                                             .into_node(),
@@ -220,7 +266,12 @@ fn module_update_form(
         .children([
             Div::new()
                 .style(Style::new().set("font-weight", "600"))
-                .children([text("Update module")])
+                .children([text(i18n::tr(
+                            &state,
+                    "Update module",
+                    "モジュールを更新",
+                    "Ĝisdatigi modulon",
+                ))])
                 .into_node(),
             Input::new()
                 .type_("text")
@@ -260,7 +311,13 @@ fn module_update_form(
                     .style(Style::new().set("min-height", "5rem"));
                 description.attributes.push((
                     "placeholder".to_string(),
-                    "module description (supports multiple lines)".to_string(),
+                    i18n::tr(
+                            &state,
+                        "module description (supports multiple lines)",
+                        "モジュール説明 (複数行対応)",
+                        "modula priskribo (subtenas plurajn liniojn)",
+                    )
+                    .to_string(),
                 ));
                 description.events.push((
                     "input".to_string(),
@@ -306,7 +363,12 @@ fn module_update_form(
                         } else {
                             let mut next = state.clone();
                             next.module_update_form.result_message =
-                                Some("Error: login required".to_string());
+                                Some(i18n::tr(
+                            &state,
+                                    "Error: login required",
+                                    "エラー: ログインが必要です",
+                                    "Eraro: ensaluto necesas",
+                                ).to_string());
                             return next;
                         };
                         let (module_name, module_description) =
@@ -315,7 +377,12 @@ fn module_update_form(
                         if module_name.is_empty() {
                             let mut next = state.clone();
                             next.module_update_form.result_message =
-                                Some("Error: module name is required".to_string());
+                                Some(i18n::tr(
+                            &state,
+                                    "Error: module name is required",
+                                    "エラー: モジュール名は必須です",
+                                    "Eraro: modulo-nomo estas bezonata",
+                                ).to_string());
                             return next;
                         }
                         let module_description = module_description;
@@ -343,7 +410,13 @@ fn module_update_form(
                                     set_state_for_async(Box::new(move |state| {
                                         let mut next = state.clone();
                                         next.module_update_form.result_message = Some(format!(
-                                            "Error: failed to serialize ModuleUpdate: {:?}",
+                                            "{}: {:?}",
+                                            i18n::tr(
+                            &state,
+                                                "Error: failed to serialize ModuleUpdate",
+                                                "エラー: ModuleUpdate のシリアライズに失敗しました",
+                                                "Eraro: malsukcesis seriigi ModuleUpdate",
+                                            ),
                                             error
                                         ));
                                         next
@@ -408,7 +481,12 @@ fn module_update_form(
                                                         String::new();
                                                 }
                                                 next.module_update_form.result_message =
-                                                    Some("ModuleUpdate event posted".to_string());
+                                                    Some(i18n::tr(
+                            &state,
+                                                        "ModuleUpdate event posted",
+                                                        "ModuleUpdate を投稿しました",
+                                                        "ModuleUpdate sendita",
+                                                    ).to_string());
                                                 next
                                             }));
                                         }
@@ -422,13 +500,31 @@ fn module_update_form(
                                             next.module_update_form.result_message = Some(
                                                 match status {
                                                     crate::local_event::LocalEventStatus::Queued => {
-                                                        "ModuleUpdate queued (offline)".to_string()
+                                                        i18n::tr(
+                            &state,
+                                                            "ModuleUpdate queued (offline)",
+                                                            "ModuleUpdate をキューに追加しました (オフライン)",
+                                                            "ModuleUpdate envicigita (senkonekte)",
+                                                        )
+                                                        .to_string()
                                                     }
                                                     crate::local_event::LocalEventStatus::Failed => {
-                                                        "ModuleUpdate failed to send".to_string()
+                                                        i18n::tr(
+                            &state,
+                                                            "ModuleUpdate failed to send",
+                                                            "ModuleUpdate の送信に失敗しました",
+                                                            "ModuleUpdate sendado malsukcesis",
+                                                        )
+                                                        .to_string()
                                                     }
                                                     crate::local_event::LocalEventStatus::Sent => {
-                                                        "ModuleUpdate event posted".to_string()
+                                                        i18n::tr(
+                            &state,
+                                                            "ModuleUpdate event posted",
+                                                            "ModuleUpdate を投稿しました",
+                                                            "ModuleUpdate sendita",
+                                                        )
+                                                        .to_string()
                                                     }
                                                 },
                                             );
@@ -440,7 +536,13 @@ fn module_update_form(
                                     set_state_for_async(Box::new(move |state| {
                                         let mut next = state.clone();
                                         next.module_update_form.result_message = Some(format!(
-                                            "Error: failed to post ModuleUpdate: {:?}",
+                                            "{}: {:?}",
+                                            i18n::tr(
+                            &state,
+                                                "Error: failed to post ModuleUpdate",
+                                                "エラー: ModuleUpdate の送信に失敗しました",
+                                                "Eraro: malsukcesis sendi ModuleUpdate",
+                                            ),
                                             error
                                         ));
                                         next
@@ -451,7 +553,12 @@ fn module_update_form(
                         state
                     }));
                 }))
-                .children([text("Send ModuleUpdate")])
+                .children([text(i18n::tr(
+                            &state,
+                    "Send ModuleUpdate",
+                    "ModuleUpdate を送信",
+                    "Sendi ModuleUpdate",
+                ))])
                 .into_node(),
             match &state.module_update_form.result_message {
                 Some(result) => Div::new()

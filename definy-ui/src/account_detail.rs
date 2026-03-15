@@ -1,6 +1,7 @@
 use narumincho_vdom::*;
 
 use crate::{AppState, Location, fetch};
+use crate::i18n;
 
 pub fn account_detail_view(
     state: &AppState,
@@ -36,7 +37,12 @@ pub fn account_detail_view(
                 .children([
                     Div::new()
                         .style(Style::new().set("font-weight", "600"))
-                        .children([text("Change account name")])
+                        .children([text(i18n::tr(
+                            state,
+                            "Change account name",
+                            "アカウント名を変更",
+                            "Ŝanĝi kontonomon",
+                        ))])
                         .into_node(),
                     Input::new()
                         .type_("text")
@@ -168,7 +174,7 @@ pub fn account_detail_view(
                                 state
                             }));
                         }))
-                        .children([text("Change Name")])
+                        .children([text(i18n::tr(state, "Change Name", "名前を変更", "Ŝanĝi nomon"))])
                         .into_node(),
                 ])
                 .into_node(),
@@ -183,7 +189,7 @@ pub fn account_detail_view(
         .children([
             A::<AppState, Location>::new()
                 .class("back-link")
-                .href(Href::Internal(Location::AccountList))
+                .href(state.href_with_lang(Location::AccountList))
                 .style(
                     Style::new()
                         .set("display", "inline-flex")
@@ -192,7 +198,12 @@ pub fn account_detail_view(
                         .set("color", "var(--primary)")
                         .set("font-weight", "500"),
                 )
-                .children([text("← Back to Accounts")])
+                .children([text(i18n::tr(
+                    state,
+                    "← Back to Accounts",
+                    "← アカウント一覧へ戻る",
+                    "← Reen al kontoj",
+                ))])
                 .into_node(),
             Div::new()
                 .class("event-detail-card")
@@ -219,7 +230,11 @@ pub fn account_detail_view(
                         .into_node(),
                     Div::new()
                         .style(Style::new().set("color", "var(--text-secondary)"))
-                        .children([text(format!("{} events", account_events.len()))])
+                        .children([text(format!(
+                            "{} {}",
+                            account_events.len(),
+                            i18n::tr(state, "events", "イベント", "eventoj")
+                        ))])
                         .into_node(),
                 ])
                 .into_node(),
@@ -236,7 +251,12 @@ pub fn account_detail_view(
                             .set("padding", "0.9rem")
                             .set("color", "var(--text-secondary)"),
                     )
-                    .children([text("This account has not posted any events yet.")])
+                    .children([text(i18n::tr(
+                        state,
+                        "This account has not posted any events yet.",
+                        "このアカウントはまだイベントを投稿していません。",
+                        "Ĉi tiu konto ankoraŭ ne afiŝis eventojn.",
+                    ))])
                     .into_node()
             } else {
                 Div::new()
@@ -248,7 +268,7 @@ pub fn account_detail_view(
                             .map(|(hash, event)| {
                                 A::<AppState, Location>::new()
                                     .class("event-card")
-                                    .href(Href::Internal(Location::Event(hash)))
+                                    .href(state.href_with_lang(Location::Event(hash)))
                                     .style(
                                         Style::new()
                                             .set("display", "grid")
@@ -268,7 +288,7 @@ pub fn account_detail_view(
                                             .into_node(),
                                         Div::new()
                                             .children([text(
-                                                crate::event_presenter::event_summary_text(event),
+                                                crate::event_presenter::event_summary_text(state, event),
                                             )])
                                             .into_node(),
                                     ])

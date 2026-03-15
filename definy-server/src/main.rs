@@ -130,9 +130,36 @@ async fn handler(
         .is_some_and(|value| value.contains("text/html"));
 
     if accepts_html {
+        if let Some(redirect_url) = lang_redirect_url(&request) {
+            return Response::builder()
+                .status(302)
+                .header("Location", redirect_url)
+                .body(Full::new(Bytes::from("Redirecting...")));
+        }
+        let accept_language = request
+            .headers()
+            .get("accept-language")
+            .and_then(|value| value.to_str().ok());
+        let language_resolution = definy_ui::language::resolve_language(uri.query(), accept_language);
+        let language_fallback_notice =
+            language_resolution
+                .unsupported_query_lang
+                .as_ref()
+                .map(|requested| definy_ui::LanguageFallbackNotice {
+                    requested: requested.to_string(),
+                    fallback_to_code: language_resolution.language.code,
+                });
         let pool = state.pool.read().await.clone();
         return match pool {
-            Some(pool) => handle_html(&uri, &pool).await,
+            Some(pool) => {
+                handle_html(
+                    &uri,
+                    &pool,
+                    language_resolution.language,
+                    language_fallback_notice,
+                )
+                .await
+            }
             None => db_unavailable_response(true),
         };
     }
@@ -198,6 +225,8 @@ fn db_unavailable_response(wants_html: bool) -> Result<Response<Full<Bytes>>, hy
 async fn handle_html(
     uri: &hyper::Uri,
     pool: &sqlx::postgres::PgPool,
+    language: definy_ui::language::Language,
+    language_fallback_notice: Option<definy_ui::LanguageFallbackNotice>,
 ) -> Result<Response<Full<Bytes>>, hyper::http::Error> {
     let path = uri.path();
     let query = uri.query();
@@ -254,6 +283,8 @@ async fn handle_html(
                     has_more,
                     None,
                     filter_event_type,
+                    language,
+                    language_fallback_notice,
                 ),
                 &Some(definy_ui::ResourceHash {
                     js: JAVASCRIPT_HASH.to_string(),
@@ -262,4 +293,30 @@ async fn handle_html(
                 ssr_initial_state_json.as_deref(),
             ),
         ))))
+}
+
+fn lang_redirect_url(request: &Request<impl hyper::body::Body>) -> Option<String> {
+    if definy_ui::query::parse_query(request.uri().query())
+        .lang
+        .is_some()
+    {
+        return None;
+    }
+    let accept_language = request
+        .headers()
+        .get("accept-language")
+        .and_then(|value| value.to_str().ok());
+    let best = definy_ui::language::best_language_from_accept_language(accept_language);
+    Some(build_url_with_lang(request.uri(), best.code))
+}
+
+fn build_url_with_lang(uri: &hyper::Uri, lang_code: &str) -> String {
+    let mut params = definy_ui::query::parse_query(uri.query());
+    params.lang = Some(lang_code.to_string());
+    let mut url = uri.path().to_string();
+    if let Some(query) = definy_ui::query::build_query(params) {
+        url.push('?');
+        url.push_str(query.as_str());
+    }
+    url
 }

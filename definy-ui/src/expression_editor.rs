@@ -3,6 +3,7 @@ use std::collections::HashMap;
 
 use crate::Location;
 use crate::app_state::AppState;
+use crate::i18n;
 use crate::part_projection::{PartSnapshot, collect_part_snapshots, find_part_snapshot};
 
 #[derive(Clone, Copy)]
@@ -158,7 +159,12 @@ fn render_expression_editor(
                             .set("font-size", "0.8rem")
                             .set("color", "var(--text-secondary)"),
                     )
-                    .children([text("組み込み型")])
+                    .children([text(i18n::tr(
+                        state,
+                        "Built-in types",
+                        "組み込み型",
+                        "Enkonstruitaj tipoj",
+                    ))])
                     .into_node(),
             );
         }
@@ -169,7 +175,7 @@ fn render_expression_editor(
                 Div::new()
                     .style(Style::new().set("display", "grid").set("gap", "0.3rem"))
                     .children([
-                        text("Item Type"),
+                        text(i18n::tr(state, "Item Type", "要素型", "Ero-tipo")),
                         render_expression_editor(
                             state,
                             type_list_expression.item_type.as_ref(),
@@ -190,7 +196,7 @@ fn render_expression_editor(
                 let mut grid_children = Vec::new();
                 grid_children.push(
                     Div::new()
-                        .children([text("Item")])
+                        .children([text(i18n::tr(state, "Item", "項目", "Ero"))])
                         .style(
                             Style::new()
                                 .set("font-weight", "bold")
@@ -277,7 +283,7 @@ fn render_expression_editor(
                         .children(grid_children)
                         .into_node(),
                 );
-                children.push(add_list_item_button(path.clone(), target));
+                children.push(add_list_item_button(state, path.clone(), target));
             } else {
                 let mut list_children = list_expression
                     .items
@@ -309,7 +315,11 @@ fn render_expression_editor(
                                                     .set("color", "var(--text-secondary)")
                                                     .set("flex", "1"),
                                             )
-                                            .children([text(format!("Item {}", index + 1))])
+                                            .children([text(format!(
+                                                "{} {}",
+                                                i18n::tr(state, "Item", "項目", "Ero"),
+                                                index + 1
+                                            ))])
                                             .into_node(),
                                         remove_list_item_button(path.clone(), index, target),
                                     ])
@@ -328,7 +338,7 @@ fn render_expression_editor(
                             .into_node()
                     })
                     .collect::<Vec<Node<AppState>>>();
-                list_children.push(add_list_item_button(path.clone(), target));
+                list_children.push(add_list_item_button(state, path.clone(), target));
                 children.push(
                     Div::new()
                         .style(
@@ -360,7 +370,7 @@ fn render_expression_editor(
                         Div::new()
                             .style(Style::new().set("display", "grid").set("gap", "0.3rem"))
                             .children([
-                                text("Left"),
+                                text(i18n::tr(state, "Left", "左", "Maldekstre")),
                                 render_expression_editor(
                                     state,
                                     add_expression.left.as_ref(),
@@ -376,7 +386,7 @@ fn render_expression_editor(
                         Div::new()
                             .style(Style::new().set("display", "grid").set("gap", "0.3rem"))
                             .children([
-                                text("Right"),
+                                text(i18n::tr(state, "Right", "右", "Dekstre")),
                                 render_expression_editor(
                                     state,
                                     add_expression.right.as_ref(),
@@ -394,7 +404,7 @@ fn render_expression_editor(
             );
         }
         definy_event::event::Expression::Boolean(boolean_expression) => {
-            children.push(boolean_input(path, target, boolean_expression.value));
+            children.push(boolean_input(state, path, target, boolean_expression.value));
         }
         definy_event::event::Expression::If(if_expression) => {
             let mut cond_path = path.clone();
@@ -416,7 +426,7 @@ fn render_expression_editor(
                         Div::new()
                             .style(Style::new().set("display", "grid").set("gap", "0.3rem"))
                             .children([
-                                text("Condition"),
+                                text(i18n::tr(state, "Condition", "条件", "Kondiĉo")),
                                 render_expression_editor(
                                     state,
                                     if_expression.condition.as_ref(),
@@ -432,7 +442,7 @@ fn render_expression_editor(
                         Div::new()
                             .style(Style::new().set("display", "grid").set("gap", "0.3rem"))
                             .children([
-                                text("Then"),
+                                text(i18n::tr(state, "Then", "なら", "Tiam")),
                                 render_expression_editor(
                                     state,
                                     if_expression.then_expr.as_ref(),
@@ -448,7 +458,7 @@ fn render_expression_editor(
                         Div::new()
                             .style(Style::new().set("display", "grid").set("gap", "0.3rem"))
                             .children([
-                                text("Else"),
+                                text(i18n::tr(state, "Else", "それ以外", "Alie")),
                                 render_expression_editor(
                                     state,
                                     if_expression.else_expr.as_ref(),
@@ -483,7 +493,7 @@ fn render_expression_editor(
                         Div::new()
                             .style(Style::new().set("display", "grid").set("gap", "0.3rem"))
                             .children([
-                                text("Left"),
+                                text(i18n::tr(state, "Left", "左", "Maldekstre")),
                                 render_expression_editor(
                                     state,
                                     equal_expression.left.as_ref(),
@@ -499,7 +509,7 @@ fn render_expression_editor(
                         Div::new()
                             .style(Style::new().set("display", "grid").set("gap", "0.3rem"))
                             .children([
-                                text("Right"),
+                                text(i18n::tr(state, "Right", "右", "Dekstre")),
                                 render_expression_editor(
                                     state,
                                     equal_expression.right.as_ref(),
@@ -534,14 +544,14 @@ fn render_expression_editor(
                         Div::new()
                             .style(Style::new().set("display", "grid").set("gap", "0.3rem"))
                             .children([
-                                text("Let Name"),
+                                text(i18n::tr(state, "Let Name", "変数名", "Nomo")),
                                 let_name_input(path.clone(), target, &let_expression.variable_name),
                             ])
                             .into_node(),
                         Div::new()
                             .style(Style::new().set("display", "grid").set("gap", "0.3rem"))
                             .children([
-                                text("Value"),
+                                text(i18n::tr(state, "Value", "値", "Valoro")),
                                 render_expression_editor(
                                     state,
                                     let_expression.value.as_ref(),
@@ -556,7 +566,7 @@ fn render_expression_editor(
                             .into_node(),
                         Div::new()
                             .style(Style::new().set("display", "grid").set("gap", "0.3rem"))
-                            .children([text("Body"), {
+                            .children([text(i18n::tr(state, "Body", "本体", "Kerno")), {
                                 let mut body_scope = scope_variables.clone();
                                 body_scope.push(ScopeVariable {
                                     id: let_expression.variable_id,
@@ -613,7 +623,7 @@ fn render_expression_editor(
                                                 .set("font-size", "0.8rem")
                                                 .set("color", "var(--text-secondary)"),
                                         )
-                                        .children([text("Key")])
+                                        .children([text(i18n::tr(state, "Key", "キー", "Ŝlosilo"))])
                                         .into_node(),
                                     if structure_locked {
                                         Div::new()
@@ -631,14 +641,14 @@ fn render_expression_editor(
                                     if structure_locked {
                                         Div::new().children([]).into_node()
                                     } else {
-                                        remove_record_item_button(path.clone(), index, target)
+                                        remove_record_item_button(state, path.clone(), index, target)
                                     },
                                 ])
                                 .into_node(),
                             Div::new()
                                 .style(Style::new().set("display", "grid").set("gap", "0.3rem"))
                                 .children([
-                                    text("Value"),
+                                    text(i18n::tr(state, "Value", "値", "Valoro")),
                                     render_expression_editor(
                                         state,
                                         item.value.as_ref(),
@@ -656,7 +666,7 @@ fn render_expression_editor(
                 })
                 .collect::<Vec<Node<AppState>>>();
             if !structure_locked {
-                record_children.push(add_record_item_button(path, target));
+                record_children.push(add_record_item_button(state, path, target));
             }
             children.push(
                 Div::new()
@@ -691,7 +701,11 @@ fn render_expression_editor(
                                     .set("font-size", "0.82rem")
                                     .set("color", "var(--text-secondary)"),
                             )
-                            .children([text(format!("Type: {}", type_part_name))])
+                            .children([text(format!(
+                                "{} {}",
+                                i18n::tr(state, "Type:", "型:", "Tipo:"),
+                                type_part_name
+                            ))])
                             .into_node(),
                         render_expression_editor(
                             state,
@@ -716,7 +730,12 @@ fn render_expression_editor(
                             .set("font-size", "0.8rem")
                             .set("color", "var(--text-secondary)"),
                     )
-                    .children([text("ドロップダウンから Global/Local 参照を選んでください")])
+                    .children([text(i18n::tr(
+                        state,
+                        "Select a Global/Local reference from the dropdown.",
+                        "ドロップダウンから Global/Local 参照を選んでください",
+                        "Elektu Globalan/Lokan referencon el la falmenuo.",
+                    ))])
                     .into_node(),
             );
         }
@@ -1675,7 +1694,12 @@ fn string_input(path: Vec<PathStep>, target: EditorTarget, value: &str) -> Node<
     input.into_node()
 }
 
-fn boolean_input(path: Vec<PathStep>, target: EditorTarget, value: bool) -> Node<AppState> {
+fn boolean_input(
+    state: &AppState,
+    path: Vec<PathStep>,
+    target: EditorTarget,
+    value: bool,
+) -> Node<AppState> {
     Div::new()
         .style(Style::new().set("display", "flex").set("gap", "0.5rem"))
         .children([
@@ -1702,7 +1726,7 @@ fn boolean_input(path: Vec<PathStep>, target: EditorTarget, value: bool) -> Node
                         }
                     }
                 }))
-                .children([text("True")])
+                .children([text(i18n::tr(state, "True", "真", "Vera"))])
                 .into_node(),
             Button::new()
                 .type_("button")
@@ -1727,7 +1751,7 @@ fn boolean_input(path: Vec<PathStep>, target: EditorTarget, value: bool) -> Node
                         }
                     }
                 }))
-                .children([text("False")])
+                .children([text(i18n::tr(state, "False", "偽", "Falsa"))])
                 .into_node(),
         ])
         .into_node()
@@ -1817,7 +1841,11 @@ fn record_item_key_input(
     input.into_node()
 }
 
-fn add_record_item_button(path: Vec<PathStep>, target: EditorTarget) -> Node<AppState> {
+fn add_record_item_button(
+    state: &AppState,
+    path: Vec<PathStep>,
+    target: EditorTarget,
+) -> Node<AppState> {
     Button::new()
         .type_("button")
         .on_click(EventHandler::new(move |set_state| {
@@ -1831,11 +1859,12 @@ fn add_record_item_button(path: Vec<PathStep>, target: EditorTarget) -> Node<App
                 }));
             }
         }))
-        .children([text("+ Add Item")])
+        .children([text(i18n::tr(state, "+ Add Item", "+ 追加", "+ Aldoni eron"))])
         .into_node()
 }
 
 fn remove_record_item_button(
+    state: &AppState,
     path: Vec<PathStep>,
     item_index: usize,
     target: EditorTarget,
@@ -1853,11 +1882,15 @@ fn remove_record_item_button(
                 }));
             }
         }))
-        .children([text("Remove")])
+        .children([text(i18n::tr(state, "Remove", "削除", "Forigi"))])
         .into_node()
 }
 
-fn add_list_item_button(path: Vec<PathStep>, target: EditorTarget) -> Node<AppState> {
+fn add_list_item_button(
+    state: &AppState,
+    path: Vec<PathStep>,
+    target: EditorTarget,
+) -> Node<AppState> {
     Button::new()
         .type_("button")
         .on_click(EventHandler::new(move |set_state| {
@@ -1871,7 +1904,7 @@ fn add_list_item_button(path: Vec<PathStep>, target: EditorTarget) -> Node<AppSt
                 }));
             }
         }))
-        .children([text("+ Add Item")])
+        .children([text(i18n::tr(state, "+ Add Item", "+ 追加", "+ Aldoni eron"))])
         .into_node()
 }
 

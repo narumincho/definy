@@ -1,6 +1,7 @@
 use narumincho_vdom::*;
 
 use crate::{AppState, Location};
+use crate::i18n;
 
 struct AccountRow {
     account_id: definy_event::event::AccountId,
@@ -19,13 +20,18 @@ pub fn account_list_view(state: &AppState) -> Node<AppState> {
         .children([
             H2::new()
                 .style(Style::new().set("font-size", "1.3rem"))
-                .children([text("Accounts")])
+                .children([text(i18n::tr(state, "Accounts", "アカウント", "Kontoj"))])
                 .into_node(),
             if rows.is_empty() {
                 Div::new()
                     .class("event-detail-card")
                     .style(Style::new().set("padding", "0.9rem"))
-                    .children([text("No accounts yet.")])
+                    .children([text(i18n::tr(
+                        state,
+                        "No accounts yet.",
+                        "まだアカウントがありません。",
+                        "Ankoraŭ neniuj kontoj.",
+                    ))])
                     .into_node()
             } else {
                 Div::new()
@@ -42,7 +48,7 @@ pub fn account_list_view(state: &AppState) -> Node<AppState> {
                                 );
                                 A::<AppState, Location>::new()
                                     .class("event-card")
-                                    .href(Href::Internal(Location::Account(row.account_id)))
+                                    .href(state.href_with_lang(Location::Account(row.account_id)))
                                     .style(
                                         Style::new()
                                             .set("display", "grid")
@@ -60,7 +66,11 @@ pub fn account_list_view(state: &AppState) -> Node<AppState> {
                                                     .set("font-size", "0.85rem")
                                                     .set("color", "var(--text-secondary)"),
                                             )
-                                            .children([text(format!("{} events", row.event_count))])
+                                            .children([text(format!(
+                                                "{} {}",
+                                                row.event_count,
+                                                i18n::tr(state, "events", "イベント", "eventoj")
+                                            ))])
                                             .into_node(),
                                         Div::new()
                                             .style(
@@ -69,7 +79,8 @@ pub fn account_list_view(state: &AppState) -> Node<AppState> {
                                                     .set("color", "var(--text-secondary)"),
                                             )
                                             .children([text(format!(
-                                                "latest: {}",
+                                                "{} {}",
+                                                i18n::tr(state, "latest:", "最新:", "lasta:"),
                                                 row.latest_time.format("%Y-%m-%d %H:%M:%S")
                                             ))])
                                             .into_node(),
