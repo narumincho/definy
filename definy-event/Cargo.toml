@@ -7,11 +7,11 @@ edition = "2024"
 doctest = false
 
 [dependencies]
-chrono = { version = "0.4.43", features = ["serde"] }
+chrono = { version = "0.4.44", features = ["serde"] }
 serde = { version = "1", features = ["derive"] }
 serde_cbor = { version = "0.11.2", features = ["std", "tags"] }
 ed25519-dalek = { version = "2.2", features = ["rand_core", "serde"] }
-anyhow = "1.0.100"
+anyhow = "1.0.102"
 rand = "0.8.5"
 strum_macros = "0.27.2"
 strum = { version = "0.27.2", features = ["derive"] }
