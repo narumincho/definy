@@ -33,10 +33,6 @@ pub const SUPPORTED_LANGUAGES: &[Language] = &[
     },
 ];
 
-pub fn supported_languages() -> &'static [Language] {
-    SUPPORTED_LANGUAGES
-}
-
 pub fn default_language() -> Language {
     SUPPORTED_LANGUAGES[0]
 }
