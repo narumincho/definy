@@ -3,6 +3,7 @@ use std::rc::Rc;
 use narumincho_vdom::*;
 
 use crate::{AppState, Location};
+use crate::i18n;
 
 pub fn header(state: &AppState) -> Node<AppState> {
     let mut children = vec![header_main(state)];
@@ -66,7 +67,7 @@ fn header_main(state: &AppState) -> Node<AppState> {
                                 .set("font-size", "0.9rem")
                                 .set("color", "var(--text-secondary)"),
                         )
-                        .children([text("Parts")])
+                        .children([text(i18n::tr(state, "Parts", "パーツ", "Partoj"))])
                         .into_node(),
                     A::<AppState, Location>::new()
                         .href(state.href_with_lang(Location::ModuleList))
@@ -75,7 +76,7 @@ fn header_main(state: &AppState) -> Node<AppState> {
                                 .set("font-size", "0.9rem")
                                 .set("color", "var(--text-secondary)"),
                         )
-                        .children([text("Modules")])
+                        .children([text(i18n::tr(state, "Modules", "モジュール", "Moduloj"))])
                         .into_node(),
                     A::<AppState, Location>::new()
                         .href(state.href_with_lang(Location::LocalEventQueue))
@@ -84,7 +85,7 @@ fn header_main(state: &AppState) -> Node<AppState> {
                                 .set("font-size", "0.9rem")
                                 .set("color", "var(--text-secondary)"),
                         )
-                        .children([text("Local Events")])
+                        .children([text(i18n::tr(state, "Local Events", "ローカルイベント", "Lokaj eventoj"))])
                         .into_node(),
                     A::<AppState, Location>::new()
                         .href(state.href_with_lang(Location::AccountList))
@@ -93,7 +94,7 @@ fn header_main(state: &AppState) -> Node<AppState> {
                                 .set("font-size", "0.9rem")
                                 .set("color", "var(--text-secondary)"),
                         )
-                        .children([text("Accounts")])
+                        .children([text(i18n::tr(state, "Accounts", "アカウント", "Kontoj"))])
                         .into_node(),
                 ])
                 .into_node(),
@@ -158,7 +159,12 @@ fn header_main(state: &AppState) -> Node<AppState> {
                     None => Button::new()
                         .command_for("login-or-create-account-dialog")
                         .command(CommandValue::ShowModal)
-                        .children([text("Log In / Sign Up")])
+                        .children([text(i18n::tr(
+                            state,
+                            "Log In / Sign Up",
+                            "ログイン / サインアップ",
+                            "Ensaluti / Registriĝi",
+                        ))])
                         .into_node(),
                 };
 
@@ -278,9 +284,9 @@ fn popover(state: &AppState) -> Node<AppState> {
                         }));
                     }))
                     .children([text(if state.force_offline {
-                        "Offline: On"
+                        i18n::tr(state, "Offline: On", "オフライン: オン", "Senkonekte: En")
                     } else {
-                        "Offline: Off"
+                        i18n::tr(state, "Offline: Off", "オフライン: オフ", "Senkonekte: Malŝaltita")
                     })])
                     .style(
                         Style::new()
@@ -302,7 +308,7 @@ fn popover(state: &AppState) -> Node<AppState> {
                             }
                         }));
                     }))
-                    .children([text("Log Out")])
+                    .children([text(i18n::tr(state, "Log Out", "ログアウト", "Elsaluti"))])
                     .style(
                         Style::new()
                             .set("width", "100%")

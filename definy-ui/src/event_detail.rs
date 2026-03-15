@@ -3,6 +3,7 @@ use narumincho_vdom::*;
 
 use crate::Location;
 use crate::app_state::AppState;
+use crate::i18n;
 use crate::expression_eval::{evaluate_expression, expression_to_source};
 
 fn part_type_text(part_type: &definy_event::event::PartType) -> String {
@@ -48,7 +49,12 @@ pub fn event_detail_view(state: &AppState, target_hash: &[u8; 32]) -> Node<AppSt
                     .set("text-align", "center")
                     .set("padding", "1.8rem"),
             )
-            .children([text("イベントが見つかりません (Event not found)")])
+            .children([text(i18n::tr(
+                state,
+                "Event not found",
+                "イベントが見つかりません",
+                "Evento ne trovita",
+            ))])
             .into_node(),
     };
 
@@ -68,7 +74,12 @@ pub fn event_detail_view(state: &AppState, target_hash: &[u8; 32]) -> Node<AppSt
                         .set("text-decoration", "none")
                         .set("font-weight", "500"),
                 )
-                .children([text("← Back to Home")])
+                .children([text(i18n::tr(
+                    state,
+                    "← Back to Home",
+                    "← ホームへ戻る",
+                    "← Reen al hejmo",
+                ))])
                 .into_node(),
             inner_content,
         ])
@@ -144,7 +155,12 @@ fn render_event_detail(
                             .set("font-weight", "600"),
                     )
                     .children([
-                        text("Account created: "),
+                        text(i18n::tr(
+                            state,
+                            "Account created:",
+                            "アカウント作成:",
+                            "Konto kreita:",
+                        )),
                         text(create_account_event.account_name.as_ref()),
                     ])
                     .into_node(),
@@ -156,7 +172,12 @@ fn render_event_detail(
                             .set("font-weight", "600"),
                     )
                     .children([
-                        text("Profile changed: "),
+                        text(i18n::tr(
+                            state,
+                            "Profile changed:",
+                            "プロフィール変更:",
+                            "Profilo ŝanĝita:",
+                        )),
                         text(change_profile_event.account_name.as_ref()),
                     ])
                     .into_node(),
@@ -196,7 +217,11 @@ fn render_event_detail(
                                         set_state(Box::new(move |state: AppState| {
                                             let events_vec: Vec<_> = state.event_cache.iter().map(|(h, e)| (*h, e.clone())).collect();
                                             let eval_result =
-                                                evaluate_message_result(&expression, &events_vec);
+                                                evaluate_message_result(
+                                                    state.language.code,
+                                                    &expression,
+                                                    &events_vec,
+                                                );
                                             AppState {
                                                 event_detail_eval_result: Some(eval_result),
                                                 ..state.clone()
@@ -205,7 +230,7 @@ fn render_event_detail(
                                     }
                                 }))
                                 .style(Style::new().set("margin-top", "0.65rem"))
-                                .children([text("Evaluate")])
+                                .children([text(i18n::tr(state, "Evaluate", "評価", "Taksi"))])
                                 .into_node()
                         },
                         A::<AppState, Location>::new()
@@ -217,7 +242,12 @@ fn render_event_detail(
                                     .set("color", "var(--primary)")
                                     .set("text-decoration", "none"),
                             )
-                            .children([text("Open part detail")])
+                            .children([text(i18n::tr(
+                                state,
+                                "Open part detail",
+                                "パーツ詳細を開く",
+                                "Malfermi partajn detalojn",
+                            ))])
                             .into_node(),
                         match &state.event_detail_eval_result {
                             Some(result) => Div::new()
@@ -245,7 +275,8 @@ fn render_event_detail(
                         Div::new()
                             .style(Style::new().set("font-size", "1.08rem"))
                             .children([text(format!(
-                                "Part updated: {}",
+                                "{} {}",
+                                i18n::tr(state, "Part updated:", "パーツ更新:", "Parto ĝisdatigita:"),
                                 part_update_event.part_name
                             ))])
                             .into_node(),
@@ -270,7 +301,8 @@ fn render_event_detail(
                                     .set("opacity", "0.85"),
                             )
                             .children([text(format!(
-                                "expression: {}",
+                                "{} {}",
+                                i18n::tr(state, "expression:", "式:", "esprimo:"),
                                 expression_to_source(&part_update_event.expression)
                             ))])
                             .into_node(),
@@ -282,7 +314,13 @@ fn render_event_detail(
                                     .set("opacity", "0.85"),
                             )
                             .children([text(format!(
-                                "partDefinitionEventHash: {}",
+                                "{} {}",
+                                i18n::tr(
+                                    state,
+                                    "partDefinitionEventHash:",
+                                    "partDefinitionEventHash:",
+                                    "partDefinitionEventHash:"
+                                ),
                                 crate::hash_format::encode_hash32(
                                     &part_update_event.part_definition_event_hash,
                                 )
@@ -292,13 +330,23 @@ fn render_event_detail(
                             .href(state.href_with_lang(Location::Event(
                                 part_update_event.part_definition_event_hash,
                             )))
-                            .children([text("Open definition event")])
+                            .children([text(i18n::tr(
+                                state,
+                                "Open definition event",
+                                "定義イベントを開く",
+                                "Malfermi difinan eventon",
+                            ))])
                             .into_node(),
                         A::<AppState, Location>::new()
                             .href(state.href_with_lang(Location::Part(
                                 part_update_event.part_definition_event_hash,
                             )))
-                            .children([text("Open part detail")])
+                            .children([text(i18n::tr(
+                                state,
+                                "Open part detail",
+                                "パーツ詳細を開く",
+                                "Malfermi partajn detalojn",
+                            ))])
                             .into_node(),
                     ])
                     .into_node(),
@@ -310,7 +358,8 @@ fn render_event_detail(
                     )
                     .children([
                         text(format!(
-                            "Module created: {}",
+                            "{} {}",
+                            i18n::tr(state, "Module created:", "モジュール作成:", "Modulo kreita:"),
                             module_definition_event.module_name
                         )),
                         if module_definition_event.description.is_empty() {
@@ -328,7 +377,12 @@ fn render_event_detail(
                         },
                         A::<AppState, Location>::new()
                             .href(state.href_with_lang(Location::Module(*hash)))
-                            .children([text("Open module detail")])
+                            .children([text(i18n::tr(
+                                state,
+                                "Open module detail",
+                                "モジュール詳細を開く",
+                                "Malfermi modulajn detalojn",
+                            ))])
                             .into_node(),
                     ])
                     .into_node(),
@@ -343,7 +397,8 @@ fn render_event_detail(
                         Div::new()
                             .style(Style::new().set("font-size", "1.08rem"))
                             .children([text(format!(
-                                "Module updated: {}",
+                                "{} {}",
+                                i18n::tr(state, "Module updated:", "モジュール更新:", "Modulo ĝisdatigita:"),
                                 module_update_event.module_name
                             ))])
                             .into_node(),
@@ -368,7 +423,13 @@ fn render_event_detail(
                                     .set("opacity", "0.85"),
                             )
                             .children([text(format!(
-                                "moduleDefinitionEventHash: {}",
+                                "{} {}",
+                                i18n::tr(
+                                    state,
+                                    "moduleDefinitionEventHash:",
+                                    "moduleDefinitionEventHash:",
+                                    "moduleDefinitionEventHash:"
+                                ),
                                 crate::hash_format::encode_hash32(
                                     &module_update_event.module_definition_event_hash,
                                 )
@@ -378,13 +439,23 @@ fn render_event_detail(
                             .href(state.href_with_lang(Location::Event(
                                 module_update_event.module_definition_event_hash,
                             )))
-                            .children([text("Open definition event")])
+                            .children([text(i18n::tr(
+                                state,
+                                "Open definition event",
+                                "定義イベントを開く",
+                                "Malfermi difinan eventon",
+                            ))])
                             .into_node(),
                         A::<AppState, Location>::new()
                             .href(state.href_with_lang(Location::Module(
                                 module_update_event.module_definition_event_hash,
                             )))
-                            .children([text("Open module detail")])
+                            .children([text(i18n::tr(
+                                state,
+                                "Open module detail",
+                                "モジュール詳細を開く",
+                                "Malfermi modulajn detalojn",
+                            ))])
                             .into_node(),
                     ])
                     .into_node(),
@@ -405,7 +476,12 @@ fn render_event_detail(
                         .set("opacity", "0.6"),
                 )
                 .children([
-                    text("Event Hash: "),
+                    text(i18n::tr(
+                        state,
+                        "Event Hash: ",
+                        "イベントハッシュ: ",
+                        "Evento-hako: ",
+                    )),
                     text(&crate::hash_format::encode_hash32(hash)),
                 ])
                 .into_node(),
@@ -431,7 +507,12 @@ fn related_part_events_section(
         .children([
             Div::new()
                 .style(Style::new().set("font-weight", "600"))
-                .children([text("Events linked by partDefinitionEventHash")])
+                .children([text(i18n::tr(
+                    state,
+                    "Events linked by partDefinitionEventHash",
+                    "partDefinitionEventHash に紐づくイベント",
+                    "Eventoj ligitaj per partDefinitionEventHash",
+                ))])
                 .into_node(),
             Div::new()
                 .class("mono")
@@ -449,7 +530,7 @@ fn related_part_events_section(
                     related_events
                         .into_iter()
                         .map(|(event_hash, event)| {
-                            let label = crate::event_presenter::event_kind_label(&event);
+                            let label = crate::event_presenter::event_kind_label(state, &event);
                             A::<AppState, Location>::new()
                                 .href(state.href_with_lang(Location::Event(event_hash)))
                                 .style(
@@ -518,6 +599,7 @@ fn root_part_definition_hash(current_hash: &[u8; 32], content: &EventContent) ->
 }
 
 fn evaluate_message_result(
+    lang_code: &str,
     expression: &definy_event::event::Expression,
     events: &[(
         [u8; 32],
@@ -528,8 +610,16 @@ fn evaluate_message_result(
     )],
 ) -> String {
     match evaluate_expression(expression, events) {
-        Ok(value) => format!("Result: {}", value),
-        Err(error) => format!("Error: {}", error),
+        Ok(value) => format!(
+            "{} {}",
+            i18n::tr_lang(lang_code, "Result:", "結果:", "Rezulto:"),
+            value
+        ),
+        Err(error) => format!(
+            "{} {}",
+            i18n::tr_lang(lang_code, "Error:", "エラー:", "Eraro:"),
+            error
+        ),
     }
 }
 
@@ -547,6 +637,9 @@ mod tests {
                 definy_event::event::NumberExpression { value: 32 },
             )),
         });
-        assert_eq!(evaluate_message_result(&expression, &[]), "Result: 42");
+        assert_eq!(
+            evaluate_message_result("en", &expression, &[]),
+            "Result: 42"
+        );
     }
 }

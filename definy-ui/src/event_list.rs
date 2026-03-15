@@ -6,6 +6,7 @@ use crate::expression_editor::{EditorTarget, render_root_expression_editor};
 use crate::expression_eval::{evaluate_expression, expression_to_source};
 use crate::module_projection::collect_module_snapshots;
 use crate::part_projection::collect_part_snapshots;
+use crate::i18n;
 
 fn update_event_filter_url(event_type: Option<EventType>, lang_code: &str) {
     let query = crate::query::build_query(crate::query::QueryParams {
@@ -53,13 +54,31 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
     let _page_size = state.event_list_state.page_size;
 
     let filter_options = vec![
-        ("".to_string(), "All Events".to_string()),
-        ("create_account".to_string(), "Create Account".to_string()),
-        ("change_profile".to_string(), "Change Profile".to_string()),
-        ("part_definition".to_string(), "Part Definition".to_string()),
-        ("part_update".to_string(), "Part Update".to_string()),
-        ("module_definition".to_string(), "Module Definition".to_string()),
-        ("module_update".to_string(), "Module Update".to_string()),
+        ("".to_string(), i18n::tr(&state, "All Events", "すべてのイベント", "Ĉiuj eventoj").to_string()),
+        (
+            "create_account".to_string(),
+            i18n::tr(&state, "Create Account", "アカウント作成", "Krei konton").to_string(),
+        ),
+        (
+            "change_profile".to_string(),
+            i18n::tr(&state, "Change Profile", "プロフィール変更", "Ŝanĝi profilon").to_string(),
+        ),
+        (
+            "part_definition".to_string(),
+            i18n::tr(&state, "Part Definition", "パーツ定義", "Parto-difino").to_string(),
+        ),
+        (
+            "part_update".to_string(),
+            i18n::tr(&state, "Part Update", "パーツ更新", "Parto-ĝisdatigo").to_string(),
+        ),
+        (
+            "module_definition".to_string(),
+            i18n::tr(&state, "Module Definition", "モジュール定義", "Modulo-difino").to_string(),
+        ),
+        (
+            "module_update".to_string(),
+            i18n::tr(&state, "Module Update", "モジュール更新", "Modulo-ĝisdatigo").to_string(),
+        ),
     ];
 
     let current_filter = state.event_list_state.filter_event_type
@@ -122,7 +141,12 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
                     part_description_input(&state),
                     Div::new()
                     .style(Style::new().set("color", "var(--text-secondary)").set("font-size", "0.84rem"))
-                        .children([text("Expression Builder")])
+                        .children([text(i18n::tr(
+                            &state,
+                            "Expression Builder",
+                            "式ビルダー",
+                            "Esprimo-konstruilo",
+                        ))])
                         .into_node(),
                     render_root_expression_editor(
                         &state,
@@ -138,7 +162,8 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
                                 .set("opacity", "0.85"),
                         )
                         .children([text(format!(
-                            "Current: {}",
+                            "{} {}",
+                            i18n::tr(&state, "Current:", "現在:", "Nuna:"),
                             expression_to_source(&state.part_definition_form.composing_expression)
                         ))])
                         .into_node(),
@@ -155,15 +180,23 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
                                             &events_vec,
                                         )
                                         {
-                                            Ok(value) => format!("Result: {}", value),
-                                            Err(error) => format!("Error: {}", error),
+                                            Ok(value) => format!(
+                                                "{} {}",
+                                                i18n::tr(&state, "Result:", "結果:", "Rezulto:"),
+                                                value
+                                            ),
+                                            Err(error) => format!(
+                                                "{} {}",
+                                                i18n::tr(&state, "Error:", "エラー:", "Eraro:"),
+                                                error
+                                            ),
                                         };
                                         let mut next = state.clone();
                                         next.part_definition_form.eval_result = Some(result);
                                         next
                                     }));
                                 }))
-                                .children([text("Evaluate")])
+                                .children([text(i18n::tr(&state, "Evaluate", "評価", "Taksi"))])
                                 .into_node(),
                             Button::new()
                                 .on_click(EventHandler::new(async |set_state| {
@@ -189,7 +222,12 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
                                         if part_name.is_empty() {
                                             let mut next = state.clone();
                                             next.part_definition_form.eval_result =
-                                                Some("Error: part name is required".to_string());
+                                                Some(i18n::tr(
+                            &state,
+                                                    "Error: part name is required",
+                                                    "エラー: パーツ名は必須です",
+                                                    "Eraro: parto-nomo estas bezonata",
+                                                ).to_string());
                                             return next;
                                         }
                                         let expression =
@@ -277,13 +315,31 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
                                                             next.part_definition_form.eval_result =
                                                                 Some(match status {
                                                                     crate::local_event::LocalEventStatus::Queued => {
-                                                                        "PartDefinition queued (offline)".to_string()
+                                                                        i18n::tr(
+                            &state,
+                                                                            "PartDefinition queued (offline)",
+                                                                            "PartDefinition をキューに追加しました (オフライン)",
+                                                                            "PartDefinition envicigita (senkonekte)",
+                                                                        )
+                                                                        .to_string()
                                                                     }
                                                                     crate::local_event::LocalEventStatus::Failed => {
-                                                                        "PartDefinition failed to send".to_string()
+                                                                        i18n::tr(
+                            &state,
+                                                                            "PartDefinition failed to send",
+                                                                            "PartDefinition の送信に失敗しました",
+                                                                            "PartDefinition sendado malsukcesis",
+                                                                        )
+                                                                        .to_string()
                                                                     }
                                                                     crate::local_event::LocalEventStatus::Sent => {
-                                                                        "PartDefinition posted".to_string()
+                                                                        i18n::tr(
+                            &state,
+                                                                            "PartDefinition posted",
+                                                                            "PartDefinition を投稿しました",
+                                                                            "PartDefinition sendita",
+                                                                        )
+                                                                        .to_string()
                                                                     }
                                                                 });
                                                             next
@@ -311,7 +367,7 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
                                         next
                                     }));
                                 }))
-                                .children([text("Send")])
+                                .children([text(i18n::tr(&state, "Send", "送信", "Sendi"))])
                                 .into_node(),
                         ])
                         .into_node(),
@@ -367,14 +423,19 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
                 children.push(
                     Div::new()
                         .style(Style::new().set("text-align", "center").set("padding", "1rem"))
-                        .children([text("Loading events...")])
+                        .children([text(i18n::tr(
+                            &state,
+                            "Loading events...",
+                            "イベントを読み込み中...",
+                            "Ŝargado de eventoj...",
+                        ))])
                         .into_node(),
                 );
             } else if state.event_list_state.has_more {
                 let button_text = if state.event_list_state.event_hashes.is_empty() {
-                    "Load Events"
+                    i18n::tr(&state, "Load Events", "イベントを読み込む", "Ŝargi eventojn")
                 } else {
-                    "Load More Events"
+                    i18n::tr(&state, "Load More Events", "さらに読み込む", "Ŝargi pliajn eventojn")
                 };
                 children.push(
                     Button::new()
@@ -446,7 +507,12 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
                 children.push(
                     Div::new()
                         .style(Style::new().set("text-align", "center").set("padding", "1rem").set("color", "var(--text-secondary)"))
-                        .children([text("No events found. Click 'Load Events' to fetch.")])
+                        .children([text(i18n::tr(
+                            &state,
+                            "No events found. Click 'Load Events' to fetch.",
+                            "イベントが見つかりません。'Load Events' をクリックして取得します。",
+                            "Neniuj eventoj trovitaj. Klaku 'Load Events' por ŝargi.",
+                        ))])
                         .into_node(),
                 );
             }
@@ -508,14 +574,24 @@ fn event_view(
                     EventContent::CreateAccount(create_account_event) => Div::new()
                         .style(Style::new().set("color", "var(--primary)"))
                         .children([
-                            text("Account created: "),
+                            text(i18n::tr(
+                            &state,
+                                "Account created:",
+                                "アカウント作成:",
+                                "Konto kreita:",
+                            )),
                             text(create_account_event.account_name.as_ref()),
                         ])
                         .into_node(),
                     EventContent::ChangeProfile(change_profile_event) => Div::new()
                         .style(Style::new().set("color", "var(--primary)"))
                         .children([
-                            text("Profile changed: "),
+                            text(i18n::tr(
+                            &state,
+                                "Profile changed:",
+                                "プロフィール変更:",
+                                "Profilo ŝanĝita:",
+                            )),
                             text(change_profile_event.account_name.as_ref()),
                         ])
                         .into_node(),
@@ -568,7 +644,12 @@ fn event_view(
                                         .set("color", "var(--primary)")
                                         .set("text-decoration", "none"),
                                 )
-                                .children([text("Open part detail")])
+                                .children([text(i18n::tr(
+                            &state,
+                                    "Open part detail",
+                                    "パーツ詳細を開く",
+                                    "Malfermi partajn detalojn",
+                                ))])
                                 .into_node(),
                         ])
                         .into_node(),
@@ -594,7 +675,11 @@ fn event_view(
                                     ),
                                 )])
                                 .into_node(),
-                            text(format!("Part updated: {}", part_update_event.part_name)),
+                            text(format!(
+                                "{} {}",
+                                i18n::tr(&state, "Part updated:", "パーツ更新:", "Parto ĝisdatigita:"),
+                                part_update_event.part_name
+                            )),
                             Div::new()
                                 .class("mono")
                                 .style(
@@ -603,7 +688,8 @@ fn event_view(
                                         .set("opacity", "0.85"),
                                 )
                                 .children([text(format!(
-                                    "expression: {}",
+                                    "{} {}",
+                                    i18n::tr(&state, "expression:", "式:", "esprimo:"),
                                     expression_to_source(&part_update_event.expression)
                                 ))])
                                 .into_node(),
@@ -630,7 +716,12 @@ fn event_view(
                                         .set("color", "var(--primary)")
                                         .set("text-decoration", "none"),
                                 )
-                                .children([text("Open part detail")])
+                                .children([text(i18n::tr(
+                            &state,
+                                    "Open part detail",
+                                    "パーツ詳細を開く",
+                                    "Malfermi partajn detalojn",
+                                ))])
                                 .into_node(),
                         ])
                         .into_node(),
@@ -657,7 +748,8 @@ fn event_view(
                                 )])
                                 .into_node(),
                             text(format!(
-                                "Module created: {}",
+                                "{} {}",
+                                i18n::tr(&state, "Module created:", "モジュール作成:", "Modulo kreita:"),
                                 module_definition_event.module_name
                             )),
                             if module_definition_event.description.is_empty() {
@@ -697,7 +789,11 @@ fn event_view(
                                     ),
                                 )])
                                 .into_node(),
-                            text(format!("Module updated: {}", module_update_event.module_name)),
+                            text(format!(
+                                "{} {}",
+                                i18n::tr(&state, "Module updated:", "モジュール更新:", "Modulo ĝisdatigita:"),
+                                module_update_event.module_name
+                            )),
                             if module_update_event.module_description.is_empty() {
                                 Div::new().children([]).into_node()
                             } else {
@@ -736,7 +832,12 @@ fn event_view(
                                         .set("color", "var(--primary)")
                                         .set("text-decoration", "none"),
                                 )
-                                .children([text("Open module definition")])
+                                .children([text(i18n::tr(
+                            &state,
+                                    "Open module definition",
+                                    "モジュール定義を開く",
+                                    "Malfermi modulo-difinon",
+                                ))])
                                 .into_node(),
                         ])
                         .into_node(),
@@ -753,7 +854,16 @@ fn event_view(
                     .set("padding", "1rem")
                     .set("color", "var(--error)"),
             )
-            .children([text(&format!("イベントの読み込みに失敗しました: {:?}", e))])
+            .children([text(&format!(
+                "{}: {:?}",
+                i18n::tr(
+                            &state,
+                    "Failed to load events",
+                    "イベントの読み込みに失敗しました",
+                    "Malsukcesis ŝargi eventojn",
+                ),
+                e
+            ))])
             .into_node(),
     }
 }
@@ -833,7 +943,7 @@ fn part_type_input(state: &AppState) -> Node<AppState> {
                         .set("font-size", "0.85rem")
                         .set("color", "var(--text-secondary)"),
                 )
-                .children([text("Part Type")])
+                .children([text(i18n::tr(&state, "Part Type", "パーツ型", "Parto-tipo"))])
                 .into_node(),
             render_part_type_editor(state, &state.part_definition_form.part_type_input, 0),
         ])
@@ -841,7 +951,10 @@ fn part_type_input(state: &AppState) -> Node<AppState> {
 }
 
 fn module_selection_input(state: &AppState) -> Node<AppState> {
-    let mut options = vec![("".to_string(), "No module".to_string())];
+    let mut options = vec![(
+        "".to_string(),
+        i18n::tr(&state, "No module", "モジュールなし", "Neniu modulo").to_string(),
+    )];
     options.extend(collect_module_snapshots(state).into_iter().map(|module| {
         (
             crate::hash_format::encode_hash32(&module.definition_event_hash),
@@ -879,7 +992,7 @@ fn module_selection_input(state: &AppState) -> Node<AppState> {
                         .set("font-size", "0.85rem")
                         .set("color", "var(--text-secondary)"),
                 )
-                .children([text("Module")])
+                .children([text(i18n::tr(&state, "Module", "モジュール", "Modulo"))])
                 .into_node(),
             dropdown,
         ])
@@ -896,15 +1009,33 @@ fn render_part_type_editor(
 
     let mut options = Vec::new();
     if depth == 0 {
-        options.push(("none".to_string(), "None".to_string()));
+        options.push((
+            "none".to_string(),
+            i18n::tr(&state, "None", "なし", "Neniu").to_string(),
+        ));
     }
 
     options.extend([
-        ("number".to_string(), "Number".to_string()),
-        ("string".to_string(), "String".to_string()),
-        ("boolean".to_string(), "Boolean".to_string()),
-        ("type".to_string(), "Type".to_string()),
-        ("list".to_string(), "List<...>".to_string()),
+        (
+            "number".to_string(),
+            i18n::tr(&state, "Number", "数値", "Nombro").to_string(),
+        ),
+        (
+            "string".to_string(),
+            i18n::tr(&state, "String", "文字列", "Teksto").to_string(),
+        ),
+        (
+            "boolean".to_string(),
+            i18n::tr(&state, "Boolean", "真偽値", "Bulea").to_string(),
+        ),
+        (
+            "type".to_string(),
+            i18n::tr(&state, "Type", "型", "Tipo").to_string(),
+        ),
+        (
+            "list".to_string(),
+            i18n::tr(&state, "List<...>", "リスト<...>", "Listo<...>").to_string(),
+        ),
     ]);
 
     options.extend(
@@ -916,7 +1047,14 @@ fn render_part_type_editor(
                     "type_part:{}",
                     crate::hash_format::encode_hash32(&snapshot.definition_event_hash)
                 );
-                (value, format!("Type Part: {}", snapshot.part_name))
+                (
+                    value,
+                    format!(
+                        "{} {}",
+                        i18n::tr(&state, "Type Part:", "型パーツ:", "Tipo-parto:"),
+                        snapshot.part_name
+                    ),
+                )
             }),
     );
 
@@ -958,7 +1096,7 @@ fn render_part_type_editor(
                                 .set("color", "var(--text-secondary)")
                                 .set("margin-bottom", "0.25rem"),
                         )
-                        .children([text("Item Type")])
+                        .children([text(i18n::tr(&state, "Item Type", "要素型", "Ero-tipo"))])
                         .into_node(),
                     render_part_type_editor(state, &Some(item_type.as_ref().clone()), depth + 1),
                 ])
