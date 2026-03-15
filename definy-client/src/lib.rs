@@ -322,30 +322,30 @@ impl narumincho_vdom_client::App<AppState> for DefinyApp {
                 language_fallback_notice,
                 ..state
             };
-            if matches!(next.location, Some(definy_ui::Location::Home)) {
-                if next.event_list_state.filter_event_type != filter_event_type {
-                    next.event_list_state = definy_ui::EventListState {
-                        event_hashes: Vec::new(),
-                        current_offset: 0,
-                        page_size: next.event_list_state.page_size,
-                        is_loading: false,
-                        has_more: true,
-                        filter_event_type,
-                    };
-                }
+            if matches!(next.location, Some(definy_ui::Location::Home))
+                && next.event_list_state.filter_event_type != filter_event_type
+            {
+                next.event_list_state = definy_ui::EventListState {
+                    event_hashes: Vec::new(),
+                    current_offset: 0,
+                    page_size: next.event_list_state.page_size,
+                    is_loading: false,
+                    has_more: true,
+                    filter_event_type,
+                };
             }
-            if query_params.lang.is_none() {
-                if let Some(location) = &next.location {
-                    let url = AppState::build_url(location, next.language.code, filter_event_type);
-                    if let Some(window) = web_sys::window() {
-                        if let Ok(history) = window.history() {
-                            let _ = history.replace_state_with_url(
-                                &wasm_bindgen::JsValue::NULL,
-                                "",
-                                Some(url.as_str()),
-                            );
-                        }
-                    }
+            if query_params.lang.is_none()
+                && let Some(location) = &next.location
+            {
+                let url = AppState::build_url(location, next.language.code, filter_event_type);
+                if let Some(window) = web_sys::window()
+                    && let Ok(history) = window.history()
+                {
+                    let _ = history.replace_state_with_url(
+                        &wasm_bindgen::JsValue::NULL,
+                        "",
+                        Some(url.as_str()),
+                    );
                 }
             }
             return next;
@@ -354,10 +354,6 @@ impl narumincho_vdom_client::App<AppState> for DefinyApp {
     }
 
     fn render(state: &AppState) -> narumincho_vdom::Node<AppState> {
-        definy_ui::render(
-            state,
-            &*SSR_RESOURCE_HASH,
-            SSR_INITIAL_STATE_TEXT.as_deref(),
-        )
+        definy_ui::render(state, &SSR_RESOURCE_HASH, SSR_INITIAL_STATE_TEXT.as_deref())
     }
 }

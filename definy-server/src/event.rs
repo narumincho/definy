@@ -72,9 +72,9 @@ pub async fn handle_events(
     address: SocketAddr,
     pool: &sqlx::postgres::PgPool,
 ) -> Result<Response<Full<Bytes>>, hyper::http::Error> {
-    match request.method() {
-        &hyper::Method::GET => handle_events_get(request.uri().query(), pool).await,
-        &hyper::Method::POST => handle_events_post(request, address, pool).await,
+    match *request.method() {
+        hyper::Method::GET => handle_events_get(request.uri().query(), pool).await,
+        hyper::Method::POST => handle_events_post(request, address, pool).await,
         _ => Response::builder()
             .status(405)
             .header("Content-Type", "text/html; charset=utf-8")

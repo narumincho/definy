@@ -98,12 +98,11 @@ async fn main() -> Result<(), anyhow::Error> {
 
 const JAVASCRIPT_CONTENT: &[u8] = include_bytes!("../../web-distribution/definy_client.js");
 
-const JAVASCRIPT_HASH: &'static str =
-    include_str!("../../web-distribution/definy_client.js.sha256");
+const JAVASCRIPT_HASH: &str = include_str!("../../web-distribution/definy_client.js.sha256");
 
 const WASM_CONTENT: &[u8] = include_bytes!("../../web-distribution/definy_client_bg.wasm");
 
-const WASM_HASH: &'static str = include_str!("../../web-distribution/definy_client_bg.wasm.sha256");
+const WASM_HASH: &str = include_str!("../../web-distribution/definy_client_bg.wasm.sha256");
 
 const ICON_CONTENT: &[u8] = include_bytes!("../../assets/icon.png");
 
@@ -235,11 +234,11 @@ async fn handle_html(
     if let Some(ref location) = location {
         if location.to_url() != path {
             let mut redirect_url = location.to_url();
-            if let Some(query) = query {
-                if !query.is_empty() {
-                    redirect_url.push('?');
-                    redirect_url.push_str(query);
-                }
+            if let Some(query) = query
+                && !query.is_empty()
+            {
+                redirect_url.push('?');
+                redirect_url.push_str(query);
             }
             return Response::builder()
                 .status(301)

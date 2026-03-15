@@ -18,7 +18,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     {
         let wasm_build_result = std::process::Command::new("cargo")
-            .args(&[
+            .args([
                 "build",
                 "--release",
                 "-p",
@@ -37,7 +37,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     {
         let wasm_bindgen_result = std::process::Command::new("wasm-bindgen")
-            .args(&[
+            .args([
                 "--out-dir",
                 "./web-distribution",
                 "--target",
