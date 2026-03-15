@@ -269,7 +269,8 @@ impl WebDriverClient {
 
     async fn wait_for_url(&self, expected: &str) -> Result<(), Box<dyn Error>> {
         for _ in 0..40 {
-            if self.current_url().await? == expected {
+            let current = self.current_url().await?;
+            if url_matches_expected(expected, current.as_str()) {
                 return Ok(());
             }
             sleep(Duration::from_millis(100)).await;
@@ -365,6 +366,13 @@ fn snippet(text: &str) -> String {
     let mut out = text[..MAX_LEN].to_string();
     out.push_str("...<truncated>");
     out
+}
+
+fn url_matches_expected(expected: &str, current: &str) -> bool {
+    current == expected
+        || current
+            .strip_prefix(expected)
+            .is_some_and(|suffix| suffix.starts_with('?') || suffix.starts_with('#'))
 }
 
 async fn webdriver_request(
@@ -579,4 +587,24 @@ fn handle_request(request: Request<Incoming>) -> Response<Full<Bytes>> {
         }
         _ => render_html_response(path),
     }
+}
+
+#[test]
+fn wait_url_match_allows_query_or_fragment() {
+    assert!(url_matches_expected(
+        "http://127.0.0.1:1234/",
+        "http://127.0.0.1:1234/"
+    ));
+    assert!(url_matches_expected(
+        "http://127.0.0.1:1234/",
+        "http://127.0.0.1:1234/?lang=en"
+    ));
+    assert!(url_matches_expected(
+        "http://127.0.0.1:1234/",
+        "http://127.0.0.1:1234/#top"
+    ));
+    assert!(!url_matches_expected(
+        "http://127.0.0.1:1234/",
+        "http://127.0.0.1:1234/unknown-page"
+    ));
 }
