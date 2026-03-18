@@ -323,6 +323,33 @@ pub fn build_initial_state(
 }
 
 impl AppState {
+    pub fn apply_latest_events(
+        &mut self,
+        events: Vec<(
+            EventHashId,
+            Result<
+                (ed25519_dalek::Signature, definy_event::event::Event),
+                definy_event::VerifyAndDeserializeError,
+            >,
+        )>,
+        filter_event_type: Option<definy_event::event::EventType>,
+    ) {
+        let events_len = events.len();
+        let mut event_hashes = Vec::with_capacity(events_len);
+        for (hash, event) in events {
+            self.event_cache.insert(hash.clone(), event);
+            event_hashes.push(hash);
+        }
+        self.event_list_state = EventListState {
+            event_hashes,
+            current_offset: 0,
+            page_size: self.event_list_state.page_size,
+            is_loading: false,
+            has_more: events_len == self.event_list_state.page_size,
+            filter_event_type,
+        };
+    }
+
     pub fn build_url(
         location: &Location,
         lang_code: &str,
