@@ -384,15 +384,7 @@ fn module_name_input(state: &AppState) -> Node<AppState> {
     input.events.push((
         "input".to_string(),
         EventHandler::new(move |set_state| async move {
-            let value = web_sys::window()
-                .and_then(|window| window.document())
-                .and_then(|document| document.query_selector("input[name='module-name']").ok())
-                .flatten()
-                .and_then(|element| {
-                    wasm_bindgen::JsCast::dyn_into::<web_sys::HtmlInputElement>(element).ok()
-                })
-                .map(|input| input.value())
-                .unwrap_or_default();
+            let value = crate::dom::get_input_value("input[name='module-name']");
             set_state(Box::new(move |state: AppState| {
                 let mut next = state.clone();
                 next.module_definition_form.module_name_input = value;
@@ -421,19 +413,7 @@ fn module_description_input(state: &AppState) -> Node<AppState> {
     textarea.events.push((
         "input".to_string(),
         EventHandler::new(move |set_state| async move {
-            let value = web_sys::window()
-                .and_then(|window| window.document())
-                .and_then(|document| {
-                    document
-                        .query_selector("textarea[name='module-description']")
-                        .ok()
-                })
-                .flatten()
-                .and_then(|element| {
-                    wasm_bindgen::JsCast::dyn_into::<web_sys::HtmlTextAreaElement>(element).ok()
-                })
-                .map(|textarea| textarea.value())
-                .unwrap_or_default();
+            let value = crate::dom::get_textarea_value("textarea[name='module-description']");
             set_state(Box::new(move |state: AppState| {
                 let mut next = state.clone();
                 next.module_definition_form.module_description_input = value;

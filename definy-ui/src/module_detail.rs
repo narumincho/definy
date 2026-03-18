@@ -291,20 +291,7 @@ fn module_update_form(
                 .on_change(EventHandler::new(move |set_state| {
                     let root_module_definition_hash = definition_event_hash_name.clone();
                     async move {
-                        let value = web_sys::window()
-                            .and_then(|window| window.document())
-                            .and_then(|document| {
-                                document
-                                    .query_selector("input[name='module-update-name']")
-                                    .ok()
-                            })
-                            .flatten()
-                            .and_then(|element| {
-                                wasm_bindgen::JsCast::dyn_into::<web_sys::HtmlInputElement>(element)
-                                    .ok()
-                            })
-                            .map(|input| input.value())
-                            .unwrap_or_default();
+                        let value = crate::dom::get_input_value("input[name='module-update-name']");
                         set_state(Box::new(move |state: AppState| {
                             let mut next = state.clone();
                             next.module_update_form.module_definition_event_hash =
@@ -328,22 +315,7 @@ fn module_update_form(
                     .on_input(EventHandler::new(move |set_state| {
                         let root_module_definition_hash = definition_event_hash_description.clone();
                         async move {
-                            let value = web_sys::window()
-                                .and_then(|window| window.document())
-                                .and_then(|document| {
-                                    document
-                                        .query_selector("textarea[name='module-update-description']")
-                                        .ok()
-                                })
-                                .flatten()
-                                .and_then(|element| {
-                                    wasm_bindgen::JsCast::dyn_into::<web_sys::HtmlTextAreaElement>(
-                                        element,
-                                    )
-                                    .ok()
-                                })
-                                .map(|textarea| textarea.value())
-                                .unwrap_or_default();
+                            let value = crate::dom::get_textarea_value("textarea[name='module-update-description']");
                             set_state(Box::new(move |state: AppState| {
                                 let mut next = state.clone();
                                 next.module_update_form.module_definition_event_hash =

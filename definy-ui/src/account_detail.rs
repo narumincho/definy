@@ -49,20 +49,7 @@ pub fn account_detail_view(
                         .name("profile-name")
                         .value(&state.profile_name_input)
                         .on_change(EventHandler::new(async |set_state| {
-                            let value = web_sys::window()
-                                .and_then(|window| window.document())
-                                .and_then(|document| {
-                                    document.query_selector("input[name='profile-name']").ok()
-                                })
-                                .flatten()
-                                .and_then(|element| {
-                                    wasm_bindgen::JsCast::dyn_into::<web_sys::HtmlInputElement>(
-                                        element,
-                                    )
-                                    .ok()
-                                })
-                                .map(|input| input.value())
-                                .unwrap_or_default();
+                            let value = crate::dom::get_input_value("input[name='profile-name']");
                             set_state(Box::new(move |state: AppState| AppState {
                                 profile_name_input: value,
                                 ..state.clone()

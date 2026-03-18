@@ -534,10 +534,26 @@ mod tests {
             Location::AccountList,
             Location::PartList,
             Location::ModuleList,
-            Location::Module(EventHashId::from_str("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA").ok().unwrap()),
-            Location::Account(AccountId::from_str("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA").ok().unwrap()),
-            Location::Part(EventHashId::from_str("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA").ok().unwrap()),
-            Location::Event(EventHashId::from_str("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA").ok().unwrap()),
+            Location::Module(
+                EventHashId::from_str("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
+                    .ok()
+                    .unwrap(),
+            ),
+            Location::Account(
+                AccountId::from_str("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
+                    .ok()
+                    .unwrap(),
+            ),
+            Location::Part(
+                EventHashId::from_str("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
+                    .ok()
+                    .unwrap(),
+            ),
+            Location::Event(
+                EventHashId::from_str("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
+                    .ok()
+                    .unwrap(),
+            ),
         ];
         for case in cases {
             let url = case.to_url();

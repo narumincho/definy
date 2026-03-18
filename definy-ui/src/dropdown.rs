@@ -155,18 +155,7 @@ pub fn searchable_dropdown(
             EventHandler::new(move |set_state| {
                 let s_name = search_name.clone();
                 async move {
-                    let value = web_sys::window()
-                        .and_then(|w| w.document())
-                        .and_then(|d| {
-                            d.query_selector(&format!("input[name='{}']", s_name))
-                                .ok()
-                                .flatten()
-                        })
-                        .and_then(|e| {
-                            wasm_bindgen::JsCast::dyn_into::<web_sys::HtmlInputElement>(e).ok()
-                        })
-                        .map(|input| input.value())
-                        .unwrap_or_default();
+                    let value = crate::dom::get_input_value(&format!("input[name='{}']", s_name));
                     set_state(Box::new(move |state: AppState| AppState {
                         dropdown_search_query: value,
                         ..state

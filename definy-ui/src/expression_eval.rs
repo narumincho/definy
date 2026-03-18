@@ -764,10 +764,9 @@ mod tests {
 
     #[test]
     fn evaluate_part_reference_by_definition_hash() {
-        let definition_hash = definy_event::EventHashId::from_str(
-            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
-        )
-        .unwrap();
+        let definition_hash =
+            definy_event::EventHashId::from_str("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
+                .unwrap();
         let part_expression =
             definy_event::event::Expression::Number(definy_event::event::NumberExpression {
                 value: 99,

@@ -257,20 +257,7 @@ fn part_update_form(state: &AppState, definition_event_hash: &EventHashId) -> No
                     EventHandler::new(move |set_state| {
                         let definition_event_hash = definition_event_hash.clone();
                         async move {
-                            let value = web_sys::window()
-                                .and_then(|window| window.document())
-                                .and_then(|document| {
-                                    document
-                                        .query_selector("input[name='part-update-name']")
-                                        .ok()
-                                })
-                                .flatten()
-                                .and_then(|element| {
-                                    wasm_bindgen::JsCast::dyn_into::<web_sys::HtmlInputElement>(element)
-                                        .ok()
-                                })
-                                .map(|input| input.value())
-                                .unwrap_or_default();
+                            let value = crate::dom::get_input_value("input[name='part-update-name']");
                             set_state(Box::new(move |state: AppState| {
                                 let mut next = state.clone();
                                 next.part_update_form.part_definition_event_hash =
@@ -325,22 +312,7 @@ fn part_update_form(state: &AppState, definition_event_hash: &EventHashId) -> No
                     EventHandler::new(move |set_state| {
                         let definition_event_hash = definition_event_hash.clone();
                         async move {
-                            let value = web_sys::window()
-                                .and_then(|window| window.document())
-                                .and_then(|document| {
-                                        document
-                                            .query_selector("textarea[name='part-update-description']")
-                                            .ok()
-                                    })
-                                    .flatten()
-                                    .and_then(|element| {
-                                        wasm_bindgen::JsCast::dyn_into::<web_sys::HtmlTextAreaElement>(
-                                            element,
-                                        )
-                                        .ok()
-                                    })
-                                    .map(|textarea| textarea.value())
-                                    .unwrap_or_default();
+                            let value = crate::dom::get_textarea_value("textarea[name='part-update-description']");
                                 set_state(Box::new(move |state: AppState| {
                                     let mut next = state.clone();
                                     next.part_update_form.part_definition_event_hash =

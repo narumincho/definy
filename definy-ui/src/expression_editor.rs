@@ -1617,14 +1617,9 @@ fn number_input(path: Vec<PathStep>, target: EditorTarget, value: i64) -> Node<A
             let selector = selector.clone();
             let path = path.clone();
             async move {
-                let value = web_sys::window()
-                    .and_then(|window| window.document())
-                    .and_then(|document| document.query_selector(selector.as_str()).ok())
-                    .flatten()
-                    .and_then(|element| {
-                        wasm_bindgen::JsCast::dyn_into::<web_sys::HtmlInputElement>(element).ok()
-                    })
-                    .and_then(|input| input.value().parse::<i64>().ok());
+                let value = crate::dom::get_input_value(selector.as_str())
+                    .parse::<i64>()
+                    .ok();
 
                 if let Some(value) = value {
                     set_state(Box::new(move |state: AppState| {
@@ -1656,15 +1651,7 @@ fn string_input(path: Vec<PathStep>, target: EditorTarget, value: &str) -> Node<
             let selector = selector.clone();
             let path = path.clone();
             async move {
-                let value = web_sys::window()
-                    .and_then(|window| window.document())
-                    .and_then(|document| document.query_selector(selector.as_str()).ok())
-                    .flatten()
-                    .and_then(|element| {
-                        wasm_bindgen::JsCast::dyn_into::<web_sys::HtmlInputElement>(element).ok()
-                    })
-                    .map(|input| input.value())
-                    .unwrap_or_default();
+                let value = crate::dom::get_input_value(selector.as_str());
 
                 set_state(Box::new(move |state: AppState| {
                     let mut next = state.clone();
@@ -1756,15 +1743,7 @@ fn let_name_input(path: Vec<PathStep>, target: EditorTarget, value: &str) -> Nod
             let selector = selector.clone();
             let path = path.clone();
             async move {
-                let value = web_sys::window()
-                    .and_then(|window| window.document())
-                    .and_then(|document| document.query_selector(selector.as_str()).ok())
-                    .flatten()
-                    .and_then(|element| {
-                        wasm_bindgen::JsCast::dyn_into::<web_sys::HtmlInputElement>(element).ok()
-                    })
-                    .map(|input| input.value())
-                    .unwrap_or_default();
+                let value = crate::dom::get_input_value(selector.as_str());
 
                 set_state(Box::new(move |state: AppState| {
                     let mut next = state.clone();
@@ -1803,15 +1782,7 @@ fn record_item_key_input(
             let selector = selector.clone();
             let path = path.clone();
             async move {
-                let value = web_sys::window()
-                    .and_then(|window| window.document())
-                    .and_then(|document| document.query_selector(selector.as_str()).ok())
-                    .flatten()
-                    .and_then(|element| {
-                        wasm_bindgen::JsCast::dyn_into::<web_sys::HtmlInputElement>(element).ok()
-                    })
-                    .map(|input| input.value())
-                    .unwrap_or_default();
+                let value = crate::dom::get_input_value(selector.as_str());
 
                 set_state(Box::new(move |state: AppState| {
                     let mut next = state.clone();

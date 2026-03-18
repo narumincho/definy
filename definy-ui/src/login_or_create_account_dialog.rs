@@ -180,17 +180,7 @@ pub fn login_or_create_account_dialog(state: &AppState) -> Node<AppState> {
 fn login_view(state: &AppState) -> Node<AppState> {
     Form::new()
         .on_submit(EventHandler::new(async |set_state| {
-            let password = wasm_bindgen::JsCast::dyn_into::<web_sys::HtmlInputElement>(
-                web_sys::window()
-                    .unwrap()
-                    .document()
-                    .unwrap()
-                    .query_selector("input[name='password']")
-                    .unwrap()
-                    .unwrap(),
-            )
-            .unwrap()
-            .value();
+            let password = crate::dom::get_input_value("input[name='password']");
 
             if let Some(signing_key) = crate::navigator_credential::parse_password(password) {
                 dialog_close();
@@ -267,17 +257,7 @@ fn create_account_view(state: &AppState, force_offline: bool) -> Node<AppState> 
             let set_state_for_async = set_state.clone();
             let generated_key = generated_key_for_submit.clone();
             async move {
-                let username = wasm_bindgen::JsCast::dyn_into::<web_sys::HtmlInputElement>(
-                    web_sys::window()
-                        .unwrap()
-                        .document()
-                        .unwrap()
-                        .query_selector("input[name='username']")
-                        .unwrap()
-                        .unwrap(),
-                )
-                .unwrap()
-                .value();
+                let username = crate::dom::get_input_value("input[name='username']");
 
                 if let Some(key) = &generated_key {
                     let key = key.clone();
