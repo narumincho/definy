@@ -4,7 +4,10 @@ use definy_event::{
 };
 use narumincho_vdom::Route;
 
-pub type DecodedEvent = Result<(ed25519_dalek::Signature, definy_event::event::Event), definy_event::VerifyAndDeserializeError>;
+pub type DecodedEvent = Result<
+    (ed25519_dalek::Signature, definy_event::event::Event),
+    definy_event::VerifyAndDeserializeError,
+>;
 pub type EventWithHash = (EventHashId, DecodedEvent);
 
 #[derive(Clone, PartialEq, Eq, Debug)]

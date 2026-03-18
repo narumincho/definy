@@ -45,11 +45,7 @@ fn read_ssr_initial_state_text() -> Option<String> {
         .text_content()
 }
 
-fn read_ssr_state() -> Option<(
-    Vec<definy_ui::EventWithHash>,
-    bool,
-    Vec<Vec<u8>>,
-)> {
+fn read_ssr_state() -> Option<(Vec<definy_ui::EventWithHash>, bool, Vec<Vec<u8>>)> {
     let text = SSR_INITIAL_STATE_TEXT.as_ref()?.to_string();
     let decoded = definy_ui::decode_ssr_state(text.as_str())?;
     let event_binaries = decoded.event_binaries;

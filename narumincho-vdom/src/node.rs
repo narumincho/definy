@@ -79,7 +79,8 @@ impl<State> PartialEq for Node<State> {
 
 pub type StateUpdater<State> = Box<dyn FnOnce(State) -> State>;
 pub type StateDispatcher<State> = Box<dyn Fn(StateUpdater<State>)>;
-pub type EventHandlerClosure<State> = dyn Fn(StateDispatcher<State>) -> Pin<Box<dyn Future<Output = ()>>>;
+pub type EventHandlerClosure<State> =
+    dyn Fn(StateDispatcher<State>) -> Pin<Box<dyn Future<Output = ()>>>;
 
 pub struct EventHandler<State> {
     pub handler: Rc<EventHandlerClosure<State>>,
