@@ -1,3 +1,4 @@
+use definy_event::EventHashId;
 use narumincho_vdom::*;
 
 use crate::Location;
@@ -6,7 +7,7 @@ use crate::i18n;
 use crate::module_projection::find_module_snapshot;
 use crate::part_projection::collect_part_snapshots;
 
-pub fn module_detail_view(state: &AppState, definition_event_hash: &[u8; 32]) -> Node<AppState> {
+pub fn module_detail_view(state: &AppState, definition_event_hash: &EventHashId) -> Node<AppState> {
     let Some(module_snapshot) = find_module_snapshot(state, definition_event_hash) else {
         return Div::new()
             .class("page-shell")
@@ -25,7 +26,9 @@ pub fn module_detail_view(state: &AppState, definition_event_hash: &[u8; 32]) ->
 
     let parts_in_module = collect_part_snapshots(state)
         .into_iter()
-        .filter(|snapshot| snapshot.module_definition_event_hash == Some(*definition_event_hash))
+        .filter(|snapshot| {
+            snapshot.module_definition_event_hash == Some(definition_event_hash.clone())
+        })
         .collect::<Vec<_>>();
 
     let account_name_map = state.account_name_map();
@@ -255,11 +258,13 @@ pub fn module_detail_view(state: &AppState, definition_event_hash: &[u8; 32]) ->
 
 fn module_update_form(
     state: &AppState,
-    definition_event_hash: &[u8; 32],
+    definition_event_hash: &EventHashId,
     initial_name: &str,
     initial_description: &str,
 ) -> Node<AppState> {
-    let root_module_definition_hash = *definition_event_hash;
+    let definition_event_hash_name = definition_event_hash.clone();
+    let definition_event_hash_description = definition_event_hash.clone();
+    let definition_event_hash_send_button = definition_event_hash.clone();
 
     Div::new()
         .class("event-detail-card")
@@ -284,7 +289,7 @@ fn module_update_form(
                 .name("module-update-name")
                 .value(initial_name)
                 .on_change(EventHandler::new(move |set_state| {
-                    let root_module_definition_hash = root_module_definition_hash;
+                    let root_module_definition_hash = definition_event_hash_name.clone();
                     async move {
                         let value = web_sys::window()
                             .and_then(|window| window.document())
@@ -310,25 +315,18 @@ fn module_update_form(
                     }
                 }))
                 .into_node(),
-            {
-                let mut description = Textarea::new()
+            Textarea::new()
                     .name("module-update-description")
                     .value(initial_description)
-                    .style(Style::new().set("min-height", "5rem"));
-                description.attributes.push((
-                    "placeholder".to_string(),
-                    i18n::tr(
+                    .style(Style::new().set("min-height", "5rem"))
+                    .attribute("placeholder", i18n::tr(
                             state,
                         "module description (supports multiple lines)",
                         "モジュール説明 (複数行対応)",
                         "modula priskribo (subtenas plurajn liniojn)",
-                    )
-                    .to_string(),
-                ));
-                description.events.push((
-                    "input".to_string(),
-                    EventHandler::new(move |set_state| {
-                        let root_module_definition_hash = root_module_definition_hash;
+                    ))
+                    .on_input(EventHandler::new(move |set_state| {
+                        let root_module_definition_hash = definition_event_hash_description.clone();
                         async move {
                             let value = web_sys::window()
                                 .and_then(|window| window.document())
@@ -354,13 +352,12 @@ fn module_update_form(
                                 next
                             }));
                         }
-                    }),
-                ));
-                description.into_node()
-            },
+                    })).into_node(),
             Button::new()
                 .type_("button")
-                .on_click(EventHandler::new(move |set_state| async move {
+                .on_click(EventHandler::new(move |set_state| {
+                    let root_module_definition_hash = definition_event_hash_send_button.clone();
+                    async move {
                     let set_state = std::rc::Rc::new(set_state);
                     let set_state_for_async = set_state.clone();
                     set_state(Box::new(move |state: AppState| {
@@ -378,7 +375,7 @@ fn module_update_form(
                             return next;
                         };
                         let (module_name, module_description) =
-                            effective_module_update_form(&state, &root_module_definition_hash, None);
+                            effective_module_update_form(&state, &root_module_definition_hash.clone(), None);
                         let module_name = module_name.trim().to_string();
                         if module_name.is_empty() {
                             let mut next = state.clone();
@@ -396,16 +393,13 @@ fn module_update_form(
                         wasm_bindgen_futures::spawn_local(async move {
                             let event_binary = match definy_event::sign_and_serialize(
                                 definy_event::event::Event {
-                                    account_id: definy_event::event::AccountId(Box::new(
-                                        key.verifying_key().to_bytes(),
-                                    )),
+                                    account_id: definy_event::event::AccountId(key.verifying_key()),
                                     time: chrono::Utc::now(),
                                     content: definy_event::event::EventContent::ModuleUpdate(
                                         definy_event::event::ModuleUpdateEvent {
                                             module_name: module_name.into(),
                                             module_description: module_description.into(),
-                                            module_definition_event_hash:
-                                                root_module_definition_hash,
+                                            module_definition_event_hash: root_module_definition_hash.clone(),
                                         },
                                     ),
                                 },
@@ -448,7 +442,7 @@ fn module_update_form(
                                                 let mut event_cache = state.event_cache.clone();
                                                 let mut event_hashes = Vec::new();
                                                 for (hash, event) in events {
-                                                    event_cache.insert(hash, event);
+                                                    event_cache.insert(hash.clone(), event);
                                                     event_hashes.push(hash);
                                                 }
                                                 let mut next = state.clone();
@@ -558,7 +552,7 @@ fn module_update_form(
                         });
                         state
                     }));
-                }))
+                }}))
                 .children([text(i18n::tr(
                             state,
                     "Send ModuleUpdate",
@@ -584,10 +578,12 @@ fn module_update_form(
 
 fn effective_module_update_form(
     state: &AppState,
-    definition_event_hash: &[u8; 32],
+    definition_event_hash: &EventHashId,
     snapshot: Option<&crate::module_projection::ModuleSnapshot>,
 ) -> (String, String) {
-    if state.module_update_form.module_definition_event_hash == Some(*definition_event_hash) {
+    if let Some(hash) = &state.module_update_form.module_definition_event_hash
+        && hash == definition_event_hash
+    {
         return (
             state.module_update_form.module_name_input.clone(),
             state.module_update_form.module_description_input.clone(),

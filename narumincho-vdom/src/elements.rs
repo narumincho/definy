@@ -109,6 +109,7 @@ impl<State> Body<State> {
         self
     }
 }
+
 define_element!(
     H1,
     "h1",
@@ -246,6 +247,11 @@ impl<State> Textarea<State> {
 
     pub fn value(self, value: &str) -> Self {
         self.attribute("value", value)
+    }
+
+    pub fn on_input(mut self, msg: EventHandler<State>) -> Self {
+        self.events.push(("input".to_string(), msg));
+        self
     }
 }
 

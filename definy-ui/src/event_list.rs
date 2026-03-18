@@ -1,3 +1,6 @@
+use std::str::FromStr;
+
+use definy_event::EventHashId;
 use definy_event::event::{EventContent, EventType};
 use narumincho_vdom::*;
 
@@ -32,7 +35,7 @@ fn part_type_text(part_type: &definy_event::event::PartType) -> String {
         definy_event::event::PartType::Boolean => "Boolean".to_string(),
         definy_event::event::PartType::Type => "Type".to_string(),
         definy_event::event::PartType::TypePart(hash) => {
-            format!("TypePart({})", crate::hash_format::short_hash32(hash))
+            format!("TypePart({})", hash)
         }
         definy_event::event::PartType::List(item_type) => {
             format!("list<{}>", part_type_text(item_type.as_ref()))
@@ -197,7 +200,7 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
                                 .type_("button")
                                 .on_click(EventHandler::new(async |set_state| {
                                     set_state(Box::new(|state: AppState| {
-                                        let events_vec: Vec<_> = state.event_list_state.event_hashes.iter().filter_map(|hash| state.event_cache.get(hash).map(|event| (*hash, event.clone()))).collect();
+                                        let events_vec: Vec<_> = state.event_list_state.event_hashes.iter().filter_map(|hash| state.event_cache.get(hash).map(|event| (hash.clone(), event.clone()))).collect();
                                         let result = match evaluate_expression(
                                             &state.part_definition_form.composing_expression,
                                             &events_vec,
@@ -241,7 +244,7 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
                                         let part_type =
                                             state.part_definition_form.part_type_input.clone();
                                         let module_definition_event_hash =
-                                            state.part_definition_form.module_definition_event_hash;
+                                            state.part_definition_form.module_definition_event_hash.clone();
                                         if part_name.is_empty() {
                                             let mut next = state.clone();
                                             next.part_definition_form.eval_result =
@@ -261,9 +264,9 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
                                         wasm_bindgen_futures::spawn_local(async move {
                                             let event_binary = definy_event::sign_and_serialize(
                                                 definy_event::event::Event {
-                                                    account_id: definy_event::event::AccountId(Box::new(
-                                                        key_for_async.verifying_key().to_bytes(),
-                                                    )),
+                                                    account_id: definy_event::event::AccountId(
+                                                        key_for_async.verifying_key()
+                                                    ),
                                                     time: chrono::Utc::now(),
                                                     content:
                                                         definy_event::event::EventContent::PartDefinition(
@@ -306,7 +309,7 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
                                                                     let mut event_hashes =
                                                                         Vec::new();
                                                                     for (hash, event) in events {
-                                                                        event_cache.insert(hash, event);
+                                                                        event_cache.insert(hash.clone(), event);
                                                                         event_hashes.push(hash);
                                                                     }
                                                                     let mut next = state.clone();
@@ -339,7 +342,7 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
                                                                 Some(match status {
                                                                     crate::local_event::LocalEventStatus::Queued => {
                                                                         i18n::tr(
-                            &state,
+                             &state,
                                                                             "PartDefinition queued (offline)",
                                                                             "PartDefinition をキューに追加しました (オフライン)",
                                                                             "PartDefinition envicigita (senkonekte)",
@@ -348,7 +351,7 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
                                                                     }
                                                                     crate::local_event::LocalEventStatus::Failed => {
                                                                         i18n::tr(
-                            &state,
+                             &state,
                                                                             "PartDefinition failed to send",
                                                                             "PartDefinition の送信に失敗しました",
                                                                             "PartDefinition sendado malsukcesis",
@@ -514,7 +517,7 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
                                         };
                                         for (hash, event) in events {
                                             if let std::collections::hash_map::Entry::Vacant(e) =
-                                                event_cache.entry(hash)
+                                                event_cache.entry(hash.clone())
                                             {
                                                 e.insert(event);
                                                 event_hashes.push(hash);
@@ -575,7 +578,7 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
 
 fn event_view(
     state: &AppState,
-    hash: &[u8; 32],
+    hash: &EventHashId,
     event_result: &Result<
         (ed25519_dalek::Signature, definy_event::event::Event),
         definy_event::VerifyAndDeserializeError,
@@ -598,7 +601,7 @@ fn event_view(
                     .set("display", "grid")
                     .set("gap", "0.75rem"),
             )
-            .href(state.href_with_lang(crate::Location::Event(*hash)))
+            .href(state.href_with_lang(crate::Location::Event(hash.clone())))
             .children([
                 Div::new()
                     .style(
@@ -616,9 +619,7 @@ fn event_view(
                         Div::new()
                             .class("mono")
                             .style(Style::new().set("opacity", "0.6"))
-                            .children([text(crate::hash_format::encode_bytes(
-                                event.account_id.0.as_slice(),
-                            ))])
+                            .children([text(event.account_id.to_string())])
                             .into_node(),
                     ])
                     .into_node(),
@@ -687,7 +688,7 @@ fn event_view(
                                     .into_node()
                             },
                             A::<AppState, crate::Location>::new()
-                                .href(state.href_with_lang(crate::Location::Part(*hash)))
+                                .href(state.href_with_lang(crate::Location::Part(hash.clone())))
                                 .style(
                                     Style::new()
                                         .set("font-size", "0.82rem")
@@ -754,14 +755,12 @@ fn event_view(
                                 )
                                 .children([text(format!(
                                     "base: {}",
-                                    crate::hash_format::encode_hash32(
-                                        &part_update_event.part_definition_event_hash,
-                                    )
+                                    part_update_event.part_definition_event_hash
                                 ))])
                                 .into_node(),
                             A::<AppState, crate::Location>::new()
                                 .href(state.href_with_lang(crate::Location::Part(
-                                    part_update_event.part_definition_event_hash,
+                                    part_update_event.part_definition_event_hash.clone(),
                                 )))
                                 .style(
                                     Style::new()
@@ -876,14 +875,12 @@ fn event_view(
                                 )
                                 .children([text(format!(
                                     "base: {}",
-                                    crate::hash_format::encode_hash32(
-                                        &module_update_event.module_definition_event_hash,
-                                    )
+                                    &module_update_event.module_definition_event_hash,
                                 ))])
                                 .into_node(),
                             A::<AppState, crate::Location>::new()
                                 .href(state.href_with_lang(crate::Location::Event(
-                                    module_update_event.module_definition_event_hash,
+                                    module_update_event.module_definition_event_hash.clone(),
                                 )))
                                 .style(
                                     Style::new()
@@ -1012,19 +1009,25 @@ fn part_type_input(state: &AppState) -> Node<AppState> {
 fn module_selection_input(state: &AppState) -> Node<AppState> {
     let mut options = vec![(
         "".to_string(),
-        i18n::tr(state, "No module", "モジュールなし", "Neniu modulo").to_string(),
-    )];
-    options.extend(collect_module_snapshots(state).into_iter().map(|module| {
-        (
-            crate::hash_format::encode_hash32(&module.definition_event_hash),
-            module.module_name,
+        i18n::tr(
+            &state.clone(),
+            "No module",
+            "モジュールなし",
+            "Neniu modulo",
         )
-    }));
+        .to_string(),
+    )];
+    options.extend(
+        collect_module_snapshots(state)
+            .into_iter()
+            .map(|module| (module.definition_event_hash.to_string(), module.module_name)),
+    );
 
-    let current_value = state
+    let current_value: String = state
         .part_definition_form
         .module_definition_event_hash
-        .map(|hash| crate::hash_format::encode_hash32(&hash))
+        .clone()
+        .map(|hash| hash.to_string())
         .unwrap_or_default();
 
     let dropdown = crate::dropdown::searchable_dropdown(
@@ -1036,7 +1039,7 @@ fn module_selection_input(state: &AppState) -> Node<AppState> {
             Box::new(move |state: AppState| {
                 let mut next = state.clone();
                 next.part_definition_form.module_definition_event_hash =
-                    crate::hash_format::decode_hash32(&value);
+                    EventHashId::from_str(&value).ok();
                 next
             })
         }),
@@ -1102,10 +1105,7 @@ fn render_part_type_editor(
             .into_iter()
             .filter(|snapshot| snapshot.part_type == Some(definy_event::event::PartType::Type))
             .map(|snapshot| {
-                let value = format!(
-                    "type_part:{}",
-                    crate::hash_format::encode_hash32(&snapshot.definition_event_hash)
-                );
+                let value = format!("type_part:{}", snapshot.definition_event_hash);
                 (
                     value,
                     format!(
@@ -1224,7 +1224,7 @@ fn next_part_type_from_selected(
     current: &Option<definy_event::event::PartType>,
 ) -> Option<definy_event::event::PartType> {
     if let Some(encoded) = selected.strip_prefix("type_part:")
-        && let Some(hash) = decode_hash32(encoded)
+        && let Ok(hash) = EventHashId::from_str(encoded)
     {
         return Some(definy_event::event::PartType::TypePart(hash));
     }
@@ -1250,7 +1250,7 @@ fn next_nested_part_type_from_selected(
     current: &definy_event::event::PartType,
 ) -> definy_event::event::PartType {
     if let Some(encoded) = selected.strip_prefix("type_part:")
-        && let Some(hash) = decode_hash32(encoded)
+        && let Ok(hash) = EventHashId::from_str(encoded)
     {
         return definy_event::event::PartType::TypePart(hash);
     }
@@ -1278,20 +1278,8 @@ fn current_part_type_selection(part_type: &Option<definy_event::event::PartType>
         Some(definy_event::event::PartType::Boolean) => "boolean".to_string(),
         Some(definy_event::event::PartType::Type) => "type".to_string(),
         Some(definy_event::event::PartType::TypePart(hash)) => {
-            format!("type_part:{}", crate::hash_format::encode_hash32(hash))
+            format!("type_part:{}", hash)
         }
         Some(definy_event::event::PartType::List(_)) => "list".to_string(),
-    }
-}
-
-fn decode_hash32(value: &str) -> Option<[u8; 32]> {
-    let bytes =
-        base64::Engine::decode(&base64::engine::general_purpose::URL_SAFE_NO_PAD, value).ok()?;
-    if bytes.len() == 32 {
-        let mut result = [0u8; 32];
-        result.copy_from_slice(&bytes);
-        Some(result)
-    } else {
-        None
     }
 }

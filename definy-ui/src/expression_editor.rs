@@ -1,5 +1,7 @@
+use definy_event::EventHashId;
 use narumincho_vdom::*;
 use std::collections::HashMap;
+use std::str::FromStr;
 
 use crate::Location;
 use crate::app_state::AppState;
@@ -26,7 +28,7 @@ enum ExpressionType {
     String,
     Boolean,
     Type,
-    TypePart([u8; 32]),
+    TypePart(EventHashId),
     List(Box<ExpressionType>),
     Record,
     Unknown,
@@ -49,9 +51,7 @@ impl ExpressionType {
             ExpressionType::String => "String".to_string(),
             ExpressionType::Boolean => "Boolean".to_string(),
             ExpressionType::Type => "Type".to_string(),
-            ExpressionType::TypePart(hash) => {
-                format!("TypePart({})", crate::hash_format::short_hash32(hash))
-            }
+            ExpressionType::TypePart(hash) => format!("TypePart({})", hash),
             ExpressionType::List(item) => format!("list<{}>", item.text()),
             ExpressionType::Record => "Record".to_string(),
             ExpressionType::Unknown => "Unknown".to_string(),
@@ -691,9 +691,7 @@ fn render_expression_editor(
             .unwrap_or_else(|| {
                 format!(
                     "(unknown: {})",
-                    crate::hash_format::short_hash32(
-                        &constructor_expression.type_part_definition_event_hash
-                    )
+                    constructor_expression.type_part_definition_event_hash
                 )
             });
             children.push(
@@ -766,7 +764,7 @@ fn part_type_to_expression_type(part_type: &definy_event::event::PartType) -> Ex
         definy_event::event::PartType::String => ExpressionType::String,
         definy_event::event::PartType::Boolean => ExpressionType::Boolean,
         definy_event::event::PartType::Type => ExpressionType::Type,
-        definy_event::event::PartType::TypePart(hash) => ExpressionType::TypePart(*hash),
+        definy_event::event::PartType::TypePart(hash) => ExpressionType::TypePart(hash.clone()),
         definy_event::event::PartType::List(item_type) => {
             ExpressionType::List(Box::new(part_type_to_expression_type(item_type.as_ref())))
         }
@@ -781,7 +779,7 @@ fn expected_type_for_target(state: &AppState, target: EditorTarget) -> Option<Ex
             .as_ref()
             .map(part_type_to_expression_type),
         EditorTarget::PartUpdate => {
-            let hash = match state.location {
+            let hash = match &state.location {
                 Some(Location::Part(hash)) => hash,
                 _ => return None,
             };
@@ -804,16 +802,16 @@ fn collect_type_diagnostics(
         .filter_map(|snapshot| {
             snapshot.part_type.as_ref().map(|part_type| {
                 (
-                    snapshot.definition_event_hash,
+                    snapshot.definition_event_hash.clone(),
                     part_type_to_expression_type(part_type),
                 )
             })
         })
-        .collect::<HashMap<[u8; 32], ExpressionType>>();
+        .collect::<HashMap<EventHashId, ExpressionType>>();
     let part_snapshot_map = snapshots
         .into_iter()
-        .map(|snapshot| (snapshot.definition_event_hash, snapshot))
-        .collect::<HashMap<[u8; 32], PartSnapshot>>();
+        .map(|snapshot| (snapshot.definition_event_hash.clone(), snapshot))
+        .collect::<HashMap<EventHashId, PartSnapshot>>();
 
     let mut diagnostics = Vec::new();
     let env = HashMap::new();
@@ -853,8 +851,8 @@ fn check_expression_type(
     path: &[PathStep],
     expected_type: Option<ExpressionType>,
     env: &HashMap<i64, ExpressionType>,
-    part_type_map: &HashMap<[u8; 32], ExpressionType>,
-    part_snapshot_map: &HashMap<[u8; 32], PartSnapshot>,
+    part_type_map: &HashMap<EventHashId, ExpressionType>,
+    part_snapshot_map: &HashMap<EventHashId, PartSnapshot>,
     diagnostics: &mut Vec<TypeDiagnostic>,
 ) -> ExpressionType {
     let actual_type = match expression {
@@ -1159,7 +1157,11 @@ fn check_expression_type(
                     diagnostics,
                 );
             }
-            ExpressionType::TypePart(constructor_expression.type_part_definition_event_hash)
+            ExpressionType::TypePart(
+                constructor_expression
+                    .type_part_definition_event_hash
+                    .clone(),
+            )
         }
     };
 
@@ -1184,8 +1186,8 @@ fn expression_type_from_constructor_shape(shape: &ConstructorValueShape) -> Expr
 }
 
 fn infer_constructor_shape_from_type_part(
-    part_snapshot_map: &HashMap<[u8; 32], PartSnapshot>,
-    type_part_definition_event_hash: &[u8; 32],
+    part_snapshot_map: &HashMap<EventHashId, PartSnapshot>,
+    type_part_definition_event_hash: &EventHashId,
 ) -> ConstructorValueShape {
     let mut visited = Vec::new();
     infer_constructor_shape_from_type_part_with_visited(
@@ -1196,9 +1198,9 @@ fn infer_constructor_shape_from_type_part(
 }
 
 fn infer_constructor_shape_from_type_part_with_visited(
-    part_snapshot_map: &HashMap<[u8; 32], PartSnapshot>,
-    type_part_definition_event_hash: &[u8; 32],
-    visited: &mut Vec<[u8; 32]>,
+    part_snapshot_map: &HashMap<EventHashId, PartSnapshot>,
+    type_part_definition_event_hash: &EventHashId,
+    visited: &mut Vec<EventHashId>,
 ) -> ConstructorValueShape {
     if visited.contains(type_part_definition_event_hash) {
         return ConstructorValueShape::Unknown;
@@ -1206,7 +1208,7 @@ fn infer_constructor_shape_from_type_part_with_visited(
     let Some(snapshot) = part_snapshot_map.get(type_part_definition_event_hash) else {
         return ConstructorValueShape::Unknown;
     };
-    visited.push(*type_part_definition_event_hash);
+    visited.push(type_part_definition_event_hash.clone());
     let shape = infer_constructor_shape_from_type_expression(
         snapshot.expression.clone(),
         part_snapshot_map,
@@ -1218,8 +1220,8 @@ fn infer_constructor_shape_from_type_part_with_visited(
 
 fn infer_constructor_shape_from_type_expression(
     expression: definy_event::event::Expression,
-    part_snapshot_map: &HashMap<[u8; 32], PartSnapshot>,
-    visited: &mut Vec<[u8; 32]>,
+    part_snapshot_map: &HashMap<EventHashId, PartSnapshot>,
+    visited: &mut Vec<EventHashId>,
 ) -> ConstructorValueShape {
     match expression {
         definy_event::event::Expression::Number(_) => ConstructorValueShape::Number,
@@ -1324,12 +1326,12 @@ fn default_expression_from_constructor_shape(
 
 fn constructor_default_value_from_type_part(
     state: &AppState,
-    type_part_definition_event_hash: &[u8; 32],
+    type_part_definition_event_hash: &EventHashId,
 ) -> definy_event::event::Expression {
     let part_snapshot_map = collect_part_snapshots(state)
         .into_iter()
-        .map(|snapshot| (snapshot.definition_event_hash, snapshot))
-        .collect::<HashMap<[u8; 32], PartSnapshot>>();
+        .map(|snapshot| (snapshot.definition_event_hash.clone(), snapshot))
+        .collect::<HashMap<EventHashId, PartSnapshot>>();
     let shape =
         infer_constructor_shape_from_type_part(&part_snapshot_map, type_part_definition_event_hash);
     default_expression_from_constructor_shape(&shape)
@@ -1354,10 +1356,10 @@ fn expression_selector(
             let mut next = state.clone();
             let constructor_default = selected_value
                 .strip_prefix("expr:constructor:")
-                .and_then(decode_hash32)
+                .and_then(|value| EventHashId::from_str(value).ok())
                 .map(|type_part_definition_event_hash| {
                     (
-                        type_part_definition_event_hash,
+                        type_part_definition_event_hash.clone(),
                         constructor_default_value_from_type_part(
                             &next,
                             &type_part_definition_event_hash,
@@ -1412,14 +1414,10 @@ fn selector_options(state: &AppState, scope_variables: &[ScopeVariable]) -> Vec<
     options.extend(snapshots.iter().filter_map(|snapshot| {
         if snapshot.part_type == Some(definy_event::event::PartType::Type) {
             Some((
-                format!(
-                    "expr:constructor:{}",
-                    crate::hash_format::encode_hash32(&snapshot.definition_event_hash)
-                ),
+                format!("expr:constructor:{}", snapshot.definition_event_hash),
                 format!(
                     "Constructor: {} ({})",
-                    snapshot.part_name,
-                    crate::hash_format::short_hash32(&snapshot.definition_event_hash)
+                    snapshot.part_name, snapshot.definition_event_hash
                 ),
             ))
         } else {
@@ -1429,14 +1427,10 @@ fn selector_options(state: &AppState, scope_variables: &[ScopeVariable]) -> Vec<
 
     options.extend(snapshots.into_iter().map(|snapshot| {
         (
-            format!(
-                "ref:global:{}",
-                crate::hash_format::encode_hash32(&snapshot.definition_event_hash)
-            ),
+            format!("ref:global:{}", snapshot.definition_event_hash),
             format!(
                 "Global: {} ({})",
-                snapshot.part_name,
-                crate::hash_format::short_hash32(&snapshot.definition_event_hash)
+                snapshot.part_name, snapshot.definition_event_hash
             ),
         )
     }));
@@ -1468,14 +1462,11 @@ fn current_selection_value(expression: &definy_event::event::Expression) -> Stri
         definy_event::event::Expression::TypeLiteral(_) => "expr:type_literal".to_string(),
         definy_event::event::Expression::Constructor(constructor_expression) => format!(
             "expr:constructor:{}",
-            crate::hash_format::encode_hash32(
-                &constructor_expression.type_part_definition_event_hash
-            )
+            constructor_expression.type_part_definition_event_hash
         ),
-        definy_event::event::Expression::PartReference(part_ref) => format!(
-            "ref:global:{}",
-            crate::hash_format::encode_hash32(&part_ref.part_definition_event_hash)
-        ),
+        definy_event::event::Expression::PartReference(part_ref) => {
+            format!("ref:global:{}", part_ref.part_definition_event_hash)
+        }
         definy_event::event::Expression::Variable(var_expr) => {
             format!("ref:local:{}", var_expr.variable_id)
         }
@@ -1486,7 +1477,7 @@ fn apply_selection(
     root_expression: &mut definy_event::event::Expression,
     path: &[PathStep],
     selected_value: &str,
-    constructor_default: Option<([u8; 32], definy_event::event::Expression)>,
+    constructor_default: Option<(EventHashId, definy_event::event::Expression)>,
 ) {
     let next_variable_id = if selected_value == "expr:let" {
         next_local_variable_id(root_expression)
@@ -1584,7 +1575,7 @@ fn apply_selection(
                 },
             )
         } else if let Some(encoded) = selected_value.strip_prefix("ref:global:") {
-            if let Some(hash) = decode_hash32(encoded) {
+            if let Ok(hash) = EventHashId::from_str(encoded) {
                 definy_event::event::Expression::PartReference(
                     definy_event::event::PartReferenceExpression {
                         part_definition_event_hash: hash,
@@ -1604,18 +1595,6 @@ fn apply_selection(
         } else {
             expression.clone()
         };
-    }
-}
-
-fn decode_hash32(value: &str) -> Option<[u8; 32]> {
-    let bytes =
-        base64::Engine::decode(&base64::engine::general_purpose::URL_SAFE_NO_PAD, value).ok()?;
-    if bytes.len() == 32 {
-        let mut result = [0u8; 32];
-        result.copy_from_slice(&bytes);
-        Some(result)
-    } else {
-        None
     }
 }
 
@@ -1959,8 +1938,8 @@ fn target_expression_mut(
     match target {
         EditorTarget::PartDefinition => &mut state.part_definition_form.composing_expression,
         EditorTarget::PartUpdate => {
-            if let Some(Location::Part(hash)) = state.location {
-                state.part_update_form.part_definition_event_hash = Some(hash);
+            if let Some(Location::Part(hash)) = &state.location {
+                state.part_update_form.part_definition_event_hash = Some(hash.clone());
             }
             &mut state.part_update_form.expression_input
         }

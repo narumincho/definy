@@ -116,7 +116,6 @@ pub fn local_event_queue_view(state: &AppState) -> Node<AppState> {
     } else {
         for record in &state.local_event_queue.items {
             let status = record.status.clone();
-            let hash = record.hash;
             let status_badge = Div::new()
                 .style(
                     Style::new()
@@ -139,11 +138,11 @@ pub fn local_event_queue_view(state: &AppState) -> Node<AppState> {
 
             let mut actions = Vec::new();
             if status != LocalEventStatus::Sent {
-                let hash = hash;
+                let hash = record.hash.clone();
                 actions.push(
                     Button::new()
                         .on_click(EventHandler::new(move |set_state| {
-                            let hash = hash;
+                            let hash = hash.clone();
                             async move {
                                 let result = crate::indexed_db::remove_event_record(&hash).await;
                                 set_state(Box::new(move |state: AppState| {
@@ -222,7 +221,7 @@ pub fn local_event_queue_view(state: &AppState) -> Node<AppState> {
                                             .set("font-family", "'JetBrains Mono', monospace")
                                             .set("display", "inline-flex"),
                                     )
-                                    .children([text(crate::hash_format::short_hash32(&hash))])
+                                    .children([text(record.hash.to_string())])
                                     .into_node(),
                             ])
                             .into_node(),

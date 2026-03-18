@@ -9,7 +9,6 @@ mod event_presenter;
 mod expression_editor;
 mod expression_eval;
 pub mod fetch;
-mod hash_format;
 mod header;
 pub mod i18n;
 pub mod indexed_db;

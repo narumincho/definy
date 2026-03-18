@@ -40,8 +40,7 @@ pub fn account_list_view(state: &AppState) -> Node<AppState> {
                     .children(
                         rows.into_iter()
                             .map(|row| {
-                                let encoded =
-                                    crate::hash_format::encode_bytes(row.account_id.0.as_ref());
+                                let encoded = row.account_id.to_string();
                                 let name = crate::app_state::account_display_name(
                                     &account_name_map,
                                     &row.account_id,

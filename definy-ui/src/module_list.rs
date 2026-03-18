@@ -1,5 +1,5 @@
+use definy_event::EventHashId;
 use narumincho_vdom::*;
-use sha2::Digest;
 
 use crate::app_state::AppState;
 use crate::i18n;
@@ -163,11 +163,15 @@ pub fn module_list_view(state: &AppState) -> Node<AppState> {
                                                 )
                                                 .children([
                                                     A::<AppState, crate::Location>::new()
-                                                        .href(state.href_with_lang(
-                                                            crate::Location::Module(
-                                                                module.definition_event_hash,
+                                                        .href(
+                                                            state.href_with_lang(
+                                                                crate::Location::Module(
+                                                                    module
+                                                                        .definition_event_hash
+                                                                        .clone(),
+                                                                ),
                                                             ),
-                                                        ))
+                                                        )
                                                         .children([text(i18n::tr(
                                                             state,
                                                             "Open module detail",
@@ -266,9 +270,9 @@ fn module_create_form(state: &AppState) -> Node<AppState> {
                         wasm_bindgen_futures::spawn_local(async move {
                             let event_binary = definy_event::sign_and_serialize(
                                 definy_event::event::Event {
-                                    account_id: definy_event::event::AccountId(Box::new(
-                                        key_for_async.verifying_key().to_bytes(),
-                                    )),
+                                    account_id: definy_event::event::AccountId(
+                                        key_for_async.verifying_key(),
+                                    ),
                                     time: chrono::Utc::now(),
                                     content: definy_event::event::EventContent::ModuleDefinition(
                                         definy_event::event::ModuleDefinitionEvent {
@@ -296,13 +300,10 @@ fn module_create_form(state: &AppState) -> Node<AppState> {
                                             record,
                                         );
                                         if status == crate::local_event::LocalEventStatus::Sent {
-                                            let hash: [u8; 32] =
-                                                <sha2::Sha256 as Digest>::digest(&event_binary)
-                                                    .into();
                                             let event = definy_event::verify_and_deserialize(
                                                 event_binary.as_slice(),
                                             );
-                                            next.event_cache.insert(hash, event);
+                                            next.event_cache.insert(EventHashId::from_bytes(&event_binary), event);
                                             next.module_definition_form.result_message = None;
                                         } else {
                                             next.module_definition_form.result_message = Some(

@@ -1,3 +1,4 @@
+use definy_event::EventHashId;
 use definy_event::event::{Event, EventContent};
 use narumincho_vdom::*;
 
@@ -12,9 +13,7 @@ fn part_type_text(part_type: &definy_event::event::PartType) -> String {
         definy_event::event::PartType::String => "String".to_string(),
         definy_event::event::PartType::Boolean => "Boolean".to_string(),
         definy_event::event::PartType::Type => "Type".to_string(),
-        definy_event::event::PartType::TypePart(hash) => {
-            format!("TypePart({})", crate::hash_format::short_hash32(hash))
-        }
+        definy_event::event::PartType::TypePart(hash) => format!("TypePart({})", hash),
         definy_event::event::PartType::List(item_type) => {
             format!("list<{}>", part_type_text(item_type.as_ref()))
         }
@@ -28,7 +27,10 @@ fn optional_part_type_text(part_type: &Option<definy_event::event::PartType>) ->
         .unwrap_or_else(|| "None".to_string())
 }
 
-pub fn event_detail_view(state: &AppState, target_hash: &[u8; 32]) -> Node<AppState> {
+pub fn event_detail_view(
+    state: &AppState,
+    target_hash: &definy_event::EventHashId,
+) -> Node<AppState> {
     let account_name_map = state.account_name_map();
     let mut target_event_opt = None;
 
@@ -88,7 +90,7 @@ pub fn event_detail_view(state: &AppState, target_hash: &[u8; 32]) -> Node<AppSt
 
 fn render_event_detail(
     state: &AppState,
-    hash: &[u8; 32],
+    hash: &definy_event::EventHashId,
     event: &Event,
     account_name_map: &std::collections::HashMap<definy_event::event::AccountId, Box<str>>,
 ) -> Node<AppState> {
@@ -128,9 +130,7 @@ fn render_event_detail(
                     Div::new()
                         .class("mono")
                         .style(Style::new().set("opacity", "0.6"))
-                        .children([text(crate::hash_format::encode_bytes(
-                            event.account_id.0.as_slice(),
-                        ))])
+                        .children([text(event.account_id.to_string())])
                         .into_node(),
                 ])
                 .into_node(),
@@ -217,7 +217,7 @@ fn render_event_detail(
                                             let events_vec: Vec<_> = state
                                                 .event_cache
                                                 .iter()
-                                                .map(|(h, e)| (*h, e.clone()))
+                                                .map(|(h, e)| (h.clone(), e.clone()))
                                                 .collect();
                                             let eval_result = evaluate_message_result(
                                                 state.language.code,
@@ -236,7 +236,7 @@ fn render_event_detail(
                                 .into_node()
                         },
                         A::<AppState, Location>::new()
-                            .href(state.href_with_lang(Location::Part(*hash)))
+                            .href(state.href_with_lang(Location::Part(hash.clone())))
                             .style(
                                 Style::new()
                                     .set("margin-top", "0.45rem")
@@ -328,14 +328,12 @@ fn render_event_detail(
                                     "partDefinitionEventHash:",
                                     "partDefinitionEventHash:"
                                 ),
-                                crate::hash_format::encode_hash32(
-                                    &part_update_event.part_definition_event_hash,
-                                )
+                                part_update_event.part_definition_event_hash.to_string(),
                             ))])
                             .into_node(),
                         A::<AppState, Location>::new()
                             .href(state.href_with_lang(Location::Event(
-                                part_update_event.part_definition_event_hash,
+                                part_update_event.part_definition_event_hash.clone(),
                             )))
                             .children([text(i18n::tr(
                                 state,
@@ -346,7 +344,7 @@ fn render_event_detail(
                             .into_node(),
                         A::<AppState, Location>::new()
                             .href(state.href_with_lang(Location::Part(
-                                part_update_event.part_definition_event_hash,
+                                part_update_event.part_definition_event_hash.clone(),
                             )))
                             .children([text(i18n::tr(
                                 state,
@@ -388,7 +386,7 @@ fn render_event_detail(
                                 .into_node()
                         },
                         A::<AppState, Location>::new()
-                            .href(state.href_with_lang(Location::Module(*hash)))
+                            .href(state.href_with_lang(Location::Module(hash.clone())))
                             .children([text(i18n::tr(
                                 state,
                                 "Open module detail",
@@ -447,14 +445,12 @@ fn render_event_detail(
                                     "moduleDefinitionEventHash:",
                                     "moduleDefinitionEventHash:"
                                 ),
-                                crate::hash_format::encode_hash32(
-                                    &module_update_event.module_definition_event_hash,
-                                )
+                                module_update_event.module_definition_event_hash.to_string(),
                             ))])
                             .into_node(),
                         A::<AppState, Location>::new()
                             .href(state.href_with_lang(Location::Event(
-                                module_update_event.module_definition_event_hash,
+                                module_update_event.module_definition_event_hash.clone(),
                             )))
                             .children([text(i18n::tr(
                                 state,
@@ -465,7 +461,7 @@ fn render_event_detail(
                             .into_node(),
                         A::<AppState, Location>::new()
                             .href(state.href_with_lang(Location::Module(
-                                module_update_event.module_definition_event_hash,
+                                module_update_event.module_definition_event_hash.clone(),
                             )))
                             .children([text(i18n::tr(
                                 state,
@@ -478,7 +474,7 @@ fn render_event_detail(
                     .into_node(),
             },
             if let Some(root_hash) = root_part_definition_hash {
-                related_part_events_section(state, root_hash)
+                related_part_events_section(state, &root_hash)
             } else {
                 Div::new().children([]).into_node()
             },
@@ -499,7 +495,7 @@ fn render_event_detail(
                         "イベントハッシュ: ",
                         "Evento-hako: ",
                     )),
-                    text(crate::hash_format::encode_hash32(hash)),
+                    text(hash.to_string()),
                 ])
                 .into_node(),
         ])
@@ -508,10 +504,10 @@ fn render_event_detail(
 
 fn related_part_events_section(
     state: &AppState,
-    root_part_definition_hash: [u8; 32],
+    root_part_definition_hash: &EventHashId,
 ) -> Node<AppState> {
     let related_events = collect_related_part_events(state, root_part_definition_hash);
-    let hash_as_base64 = crate::hash_format::encode_hash32(&root_part_definition_hash);
+    let hash_as_base64 = root_part_definition_hash.to_string();
 
     Div::new()
         .class("event-detail-card")
@@ -547,7 +543,7 @@ fn related_part_events_section(
                     related_events
                         .into_iter()
                         .map(|(event_hash, event)| {
-                            let label = crate::event_presenter::event_kind_label(state, event);
+                            let label = crate::event_presenter::event_kind_label(state, &event);
                             A::<AppState, Location>::new()
                                 .href(state.href_with_lang(Location::Event(event_hash)))
                                 .style(
@@ -582,35 +578,40 @@ fn related_part_events_section(
 
 fn collect_related_part_events(
     state: &AppState,
-    root_part_definition_hash: [u8; 32],
-) -> Vec<([u8; 32], &Event)> {
+    root_part_definition_hash: &EventHashId,
+) -> Vec<(EventHashId, Event)> {
     let mut events = state
         .event_cache
         .iter()
         .filter_map(|(hash, event_result)| {
             let (_, event) = event_result.as_ref().ok()?;
             let is_related = match &event.content {
-                EventContent::PartDefinition(_) => *hash == root_part_definition_hash,
+                EventContent::PartDefinition(_) => hash == root_part_definition_hash,
                 EventContent::PartUpdate(part_update) => {
-                    part_update.part_definition_event_hash == root_part_definition_hash
+                    part_update.part_definition_event_hash == *root_part_definition_hash
                 }
                 _ => false,
             };
             if is_related {
-                Some((*hash, event))
+                Some((hash.clone(), event.clone()))
             } else {
                 None
             }
         })
-        .collect::<Vec<([u8; 32], &Event)>>();
+        .collect::<Vec<(definy_event::EventHashId, Event)>>();
     events.sort_by(|(_, a), (_, b)| b.time.cmp(&a.time));
     events
 }
 
-fn root_part_definition_hash(current_hash: &[u8; 32], content: &EventContent) -> Option<[u8; 32]> {
+fn root_part_definition_hash(
+    current_hash: &definy_event::EventHashId,
+    content: &EventContent,
+) -> Option<definy_event::EventHashId> {
     match content {
-        EventContent::PartDefinition(_) => Some(*current_hash),
-        EventContent::PartUpdate(part_update) => Some(part_update.part_definition_event_hash),
+        EventContent::PartDefinition(_) => Some(current_hash.clone()),
+        EventContent::PartUpdate(part_update) => {
+            Some(part_update.part_definition_event_hash.clone())
+        }
         _ => None,
     }
 }
@@ -619,7 +620,7 @@ fn evaluate_message_result(
     lang_code: &str,
     expression: &definy_event::event::Expression,
     events: &[(
-        [u8; 32],
+        definy_event::EventHashId,
         Result<
             (ed25519_dalek::Signature, definy_event::event::Event),
             definy_event::VerifyAndDeserializeError,

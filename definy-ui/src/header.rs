@@ -126,9 +126,7 @@ fn header_main(state: &AppState) -> Node<AppState> {
             {
                 let account_button = match &state.current_key {
                     Some(secret_key) => {
-                        let account_id = definy_event::event::AccountId(Box::new(
-                            secret_key.verifying_key().to_bytes(),
-                        ));
+                        let account_id = definy_event::event::AccountId(secret_key.verifying_key());
                         let account_name = state.account_name_map().get(&account_id).cloned();
 
                         Button::new()
@@ -263,7 +261,7 @@ fn language_dropdown(state: &AppState) -> Node<AppState> {
 
 fn popover(state: &AppState) -> Node<AppState> {
     let account_link = state.current_key.as_ref().map(|key| {
-        let account_id = definy_event::event::AccountId(Box::new(key.verifying_key().to_bytes()));
+        let account_id = definy_event::event::AccountId(key.verifying_key());
         let account_name =
             crate::app_state::account_display_name(&state.account_name_map(), &account_id);
         A::<AppState, Location>::new()

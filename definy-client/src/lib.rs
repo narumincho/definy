@@ -1,3 +1,4 @@
+use definy_event::EventHashId;
 use definy_ui::AppState;
 use definy_ui::ResourceHash;
 use wasm_bindgen::JsValue;
@@ -46,7 +47,7 @@ fn read_ssr_initial_state_text() -> Option<String> {
 
 fn read_ssr_state() -> Option<(
     Vec<(
-        [u8; 32],
+        definy_event::EventHashId,
         Result<
             (ed25519_dalek::Signature, definy_event::event::Event),
             definy_event::VerifyAndDeserializeError,
@@ -61,8 +62,10 @@ fn read_ssr_state() -> Option<(
     let events = event_binaries
         .iter()
         .map(|bytes| {
-            let hash: [u8; 32] = <sha2::Sha256 as sha2::Digest>::digest(bytes).into();
-            (hash, definy_event::verify_and_deserialize(bytes))
+            (
+                EventHashId::from_bytes(bytes),
+                definy_event::verify_and_deserialize(bytes),
+            )
         })
         .collect();
     Some((events, decoded.has_more, event_binaries))
@@ -148,14 +151,7 @@ impl narumincho_vdom_client::App<AppState> for DefinyApp {
                 });
         wasm_bindgen_futures::spawn_local(async move {
             if let Some(ssr_event_binaries) = ssr_event_binaries {
-                let event_pairs = ssr_event_binaries
-                    .into_iter()
-                    .map(|bytes| {
-                        let hash: [u8; 32] = <sha2::Sha256 as sha2::Digest>::digest(&bytes).into();
-                        (hash, bytes)
-                    })
-                    .collect::<Vec<_>>();
-                let _ = definy_ui::indexed_db::store_events(&event_pairs).await;
+                let _ = definy_ui::indexed_db::store_events(&ssr_event_binaries).await;
             }
             if !has_ssr_events {
                 if let Ok(cached_event_binaries) =
@@ -164,8 +160,7 @@ impl narumincho_vdom_client::App<AppState> for DefinyApp {
                     let mut cached_events = cached_event_binaries
                         .into_iter()
                         .map(|bytes| {
-                            let hash: [u8; 32] =
-                                <sha2::Sha256 as sha2::Digest>::digest(&bytes).into();
+                            let hash = EventHashId::from_bytes(&bytes);
                             let event = definy_event::verify_and_deserialize(&bytes);
                             (hash, event)
                         })
@@ -185,8 +180,8 @@ impl narumincho_vdom_client::App<AppState> for DefinyApp {
                         let mut event_cache = state.event_cache.clone();
                         let mut event_hashes = Vec::new();
                         for (hash, event) in &cached_events {
-                            event_cache.insert(*hash, event.clone());
-                            event_hashes.push(*hash);
+                            event_cache.insert(hash.clone(), event.clone());
+                            event_hashes.push(hash.clone());
                         }
                         AppState {
                             event_cache,
@@ -209,8 +204,8 @@ impl narumincho_vdom_client::App<AppState> for DefinyApp {
                     let mut event_cache = state.event_cache.clone();
                     let mut event_hashes = Vec::new();
                     for (hash, event) in &events {
-                        event_cache.insert(*hash, event.clone());
-                        event_hashes.push(*hash);
+                        event_cache.insert(hash.clone(), event.clone());
+                        event_hashes.push(hash.clone());
                     }
                     AppState {
                         event_cache,

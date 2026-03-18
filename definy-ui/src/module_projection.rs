@@ -1,11 +1,14 @@
-use definy_event::event::{AccountId, Event, EventContent};
+use definy_event::{
+    EventHashId,
+    event::{AccountId, Event, EventContent},
+};
 
 use crate::AppState;
 
 #[derive(Clone)]
 pub struct ModuleSnapshot {
-    pub definition_event_hash: [u8; 32],
-    pub latest_event_hash: [u8; 32],
+    pub definition_event_hash: EventHashId,
+    pub latest_event_hash: EventHashId,
     pub account_id: AccountId,
     pub module_name: String,
     pub module_description: String,
@@ -19,19 +22,19 @@ pub fn collect_module_snapshots(state: &AppState) -> Vec<ModuleSnapshot> {
         .iter()
         .filter_map(|(hash, event_result)| {
             let (_, event) = event_result.as_ref().ok()?;
-            Some((*hash, event.clone()))
+            Some((hash.clone(), event.clone()))
         })
-        .collect::<Vec<([u8; 32], Event)>>();
+        .collect::<Vec<(EventHashId, Event)>>();
     events.sort_by_key(|(_, event)| event.time);
 
-    let mut map = std::collections::HashMap::<[u8; 32], ModuleSnapshot>::new();
+    let mut map = std::collections::HashMap::<EventHashId, ModuleSnapshot>::new();
     for (event_hash, event) in events {
         match &event.content {
             EventContent::ModuleDefinition(module_definition) => {
                 map.insert(
-                    event_hash,
+                    event_hash.clone(),
                     ModuleSnapshot {
-                        definition_event_hash: event_hash,
+                        definition_event_hash: event_hash.clone(),
                         latest_event_hash: event_hash,
                         account_id: event.account_id.clone(),
                         module_name: module_definition.module_name.to_string(),
@@ -43,17 +46,17 @@ pub fn collect_module_snapshots(state: &AppState) -> Vec<ModuleSnapshot> {
             }
             EventContent::ModuleUpdate(module_update) => {
                 let entry = map
-                    .entry(module_update.module_definition_event_hash)
+                    .entry(module_update.module_definition_event_hash.clone())
                     .or_insert_with(|| ModuleSnapshot {
-                        definition_event_hash: module_update.module_definition_event_hash,
-                        latest_event_hash: event_hash,
+                        definition_event_hash: module_update.module_definition_event_hash.clone(),
+                        latest_event_hash: event_hash.clone(),
                         account_id: event.account_id.clone(),
                         module_name: String::new(),
                         module_description: String::new(),
                         updated_at: event.time,
                         has_definition: false,
                     });
-                entry.latest_event_hash = event_hash;
+                entry.latest_event_hash = event_hash.clone();
                 entry.account_id = event.account_id.clone();
                 entry.module_name = module_update.module_name.to_string();
                 entry.module_description = module_update.module_description.to_string();
@@ -70,29 +73,32 @@ pub fn collect_module_snapshots(state: &AppState) -> Vec<ModuleSnapshot> {
 
 pub fn find_module_snapshot(
     state: &AppState,
-    definition_event_hash: &[u8; 32],
+    definition_event_hash: &EventHashId,
 ) -> Option<ModuleSnapshot> {
     collect_module_snapshots(state)
         .into_iter()
         .find(|snapshot| &snapshot.definition_event_hash == definition_event_hash)
 }
 
-pub fn resolve_module_name(state: &AppState, definition_event_hash: &[u8; 32]) -> Option<String> {
+pub fn resolve_module_name(
+    state: &AppState,
+    definition_event_hash: &EventHashId,
+) -> Option<String> {
     let mut events = state
         .event_cache
         .iter()
         .filter_map(|(hash, event_result)| {
             let (_, event) = event_result.as_ref().ok()?;
-            Some((*hash, event))
+            Some((hash, event))
         })
-        .collect::<Vec<([u8; 32], &definy_event::event::Event)>>();
+        .collect::<Vec<(&EventHashId, &definy_event::event::Event)>>();
     events.sort_by_key(|(_, event)| event.time);
 
     let mut name = None::<String>;
     for (hash, event) in events {
         match &event.content {
             definy_event::event::EventContent::ModuleDefinition(module_definition)
-                if &hash == definition_event_hash =>
+                if hash == definition_event_hash =>
             {
                 name = Some(module_definition.module_name.to_string());
             }

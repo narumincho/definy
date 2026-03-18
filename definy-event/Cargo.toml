@@ -13,3 +13,5 @@ rand = "0.8.5"
 strum_macros = "0.27.2"
 strum = { version = "0.27.2", features = ["derive"] }
 sqlx = { version = "0.8.6", features = ["macros"] }
+sha2 = "0.10.9"
+base64 = "0.22.1"

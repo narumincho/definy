@@ -1,4 +1,7 @@
-use definy_event::event::{AccountId, EventType};
+use definy_event::{
+    EventHashId,
+    event::{AccountId, EventType},
+};
 use narumincho_vdom::Route;
 
 #[derive(Clone, PartialEq, Eq, Debug)]
@@ -79,13 +82,13 @@ pub fn string_to_path(s: &str) -> Option<Vec<PathStep>> {
     s.split('.').map(PathStep::from_string).collect()
 }
 
-use std::collections::HashMap;
+use std::{collections::HashMap, str::FromStr};
 
 #[derive(Clone)]
 pub struct AppState {
     pub login_or_create_account_dialog_state: LoginOrCreateAccountDialogState,
     pub event_cache: HashMap<
-        [u8; 32],
+        EventHashId,
         Result<
             (ed25519_dalek::Signature, definy_event::event::Event),
             definy_event::VerifyAndDeserializeError,
@@ -118,7 +121,7 @@ pub struct LanguageFallbackNotice {
 
 #[derive(Clone)]
 pub struct EventListState {
-    pub event_hashes: Vec<[u8; 32]>,
+    pub event_hashes: Vec<EventHashId>,
     pub current_offset: usize,
     pub page_size: usize,
     pub is_loading: bool,
@@ -132,17 +135,17 @@ pub struct PartDefinitionFormState {
     pub part_type_input: Option<definy_event::event::PartType>,
     pub part_description_input: String,
     pub composing_expression: definy_event::event::Expression,
-    pub module_definition_event_hash: Option<[u8; 32]>,
+    pub module_definition_event_hash: Option<EventHashId>,
     pub eval_result: Option<String>,
 }
 
 #[derive(Clone)]
 pub struct PartUpdateFormState {
-    pub part_definition_event_hash: Option<[u8; 32]>,
+    pub part_definition_event_hash: Option<EventHashId>,
     pub part_name_input: String,
     pub part_description_input: String,
     pub expression_input: definy_event::event::Expression,
-    pub module_definition_event_hash: Option<[u8; 32]>,
+    pub module_definition_event_hash: Option<EventHashId>,
 }
 
 #[derive(Clone)]
@@ -154,7 +157,7 @@ pub struct ModuleDefinitionFormState {
 
 #[derive(Clone)]
 pub struct ModuleUpdateFormState {
-    pub module_definition_event_hash: Option<[u8; 32]>,
+    pub module_definition_event_hash: Option<EventHashId>,
     pub module_name_input: String,
     pub module_description_input: String,
     pub result_message: Option<String>,
@@ -227,13 +230,13 @@ pub fn account_display_name(
     account_name_map
         .get(account_id)
         .map(|name| name.to_string())
-        .unwrap_or_else(|| crate::hash_format::encode_bytes(account_id.0.as_ref()))
+        .unwrap_or_else(|| account_id.to_string())
 }
 
 pub fn build_initial_state(
     location: Option<Location>,
     events: Vec<(
-        [u8; 32],
+        EventHashId,
         Result<
             (ed25519_dalek::Signature, definy_event::event::Event),
             definy_event::VerifyAndDeserializeError,
@@ -249,7 +252,7 @@ pub fn build_initial_state(
     let mut event_cache = HashMap::new();
     let mut event_hashes = Vec::new();
     for (hash, event) in events {
-        event_cache.insert(hash, event);
+        event_cache.insert(hash.clone(), event);
         event_hashes.push(hash);
     }
 
@@ -390,9 +393,9 @@ pub enum Location {
     PartList,
     ModuleList,
     LocalEventQueue,
-    Module([u8; 32]),
-    Part([u8; 32]),
-    Event([u8; 32]),
+    Module(definy_event::EventHashId),
+    Part(definy_event::EventHashId),
+    Event(definy_event::EventHashId),
     Account(AccountId),
 }
 
@@ -404,25 +407,10 @@ impl narumincho_vdom::Route for Location {
             Location::PartList => "/parts".to_string(),
             Location::ModuleList => "/modules".to_string(),
             Location::LocalEventQueue => "/local-events".to_string(),
-            Location::Module(hash) => format!(
-                "/modules/{}",
-                base64::Engine::encode(&base64::engine::general_purpose::URL_SAFE_NO_PAD, hash)
-            ),
-            Location::Part(hash) => format!(
-                "/parts/{}",
-                base64::Engine::encode(&base64::engine::general_purpose::URL_SAFE_NO_PAD, hash)
-            ),
-            Location::Event(hash) => format!(
-                "/events/{}",
-                base64::Engine::encode(&base64::engine::general_purpose::URL_SAFE_NO_PAD, hash)
-            ),
-            Location::Account(account_id) => format!(
-                "/accounts/{}",
-                base64::Engine::encode(
-                    &base64::engine::general_purpose::URL_SAFE_NO_PAD,
-                    account_id.0.as_ref()
-                )
-            ),
+            Location::Module(hash) => format!("/modules/{}", hash),
+            Location::Part(hash) => format!("/parts/{}", hash),
+            Location::Event(hash) => format!("/events/{}", hash),
+            Location::Account(account_id) => format!("/accounts/{}", account_id),
         }
     }
 
@@ -434,30 +422,22 @@ impl narumincho_vdom::Route for Location {
             ["parts"] => Some(Location::PartList),
             ["modules"] => Some(Location::ModuleList),
             ["local-events"] => Some(Location::LocalEventQueue),
-            ["modules", hash_str] => decode_32bytes_base64(hash_str).map(Location::Module),
-            ["parts", hash_str] => decode_32bytes_base64(hash_str).map(Location::Part),
-            ["events", hash_str] => decode_32bytes_base64(hash_str).map(Location::Event),
-            ["accounts", account_id_str] => decode_32bytes_base64(account_id_str)
-                .map(|account_id_bytes| Location::Account(AccountId(Box::new(account_id_bytes)))),
+            ["modules", hash_str] => Some(Location::Module(EventHashId::from_str(hash_str).ok()?)),
+            ["parts", hash_str] => Some(Location::Part(EventHashId::from_str(hash_str).ok()?)),
+            ["events", hash_str] => Some(Location::Event(EventHashId::from_str(hash_str).ok()?)),
+            ["accounts", account_id_str] => {
+                Some(Location::Account(AccountId::from_str(account_id_str).ok()?))
+            }
             _ => None,
         }
     }
 }
 
-fn decode_32bytes_base64(value: &str) -> Option<[u8; 32]> {
-    let bytes =
-        base64::Engine::decode(&base64::engine::general_purpose::URL_SAFE_NO_PAD, value).ok()?;
-    if bytes.len() == 32 {
-        let mut result = [0u8; 32];
-        result.copy_from_slice(&bytes);
-        Some(result)
-    } else {
-        None
-    }
-}
-
 #[cfg(test)]
 mod tests {
+    use std::str::FromStr;
+
+    use definy_event::{EventHashId, event::AccountId};
     use narumincho_vdom::Route;
 
     use super::Location;
@@ -469,10 +449,10 @@ mod tests {
             Location::AccountList,
             Location::PartList,
             Location::ModuleList,
-            Location::Module([2u8; 32]),
-            Location::Account(definy_event::event::AccountId(Box::new([7u8; 32]))),
-            Location::Part([9u8; 32]),
-            Location::Event([3u8; 32]),
+            Location::Module(EventHashId::from_str("AAAA").ok().unwrap()),
+            Location::Account(AccountId::from_str("AAAA").ok().unwrap()),
+            Location::Part(EventHashId::from_str("AAAA").ok().unwrap()),
+            Location::Event(EventHashId::from_str("AAAA").ok().unwrap()),
         ];
         for case in cases {
             let url = case.to_url();

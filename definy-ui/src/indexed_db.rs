@@ -1,3 +1,4 @@
+use definy_event::EventHashId;
 use wasm_bindgen::JsCast;
 use wasm_bindgen::JsValue;
 use wasm_bindgen::closure::Closure;
@@ -7,7 +8,7 @@ const DB_NAME: &str = "definy";
 const DB_VERSION: u32 = 2;
 const EVENTS_STORE: &str = "events";
 
-pub async fn store_events(events: &[([u8; 32], Vec<u8>)]) -> Result<(), JsValue> {
+pub async fn store_events(events: &[Vec<u8>]) -> Result<(), JsValue> {
     if events.is_empty() {
         return Ok(());
     }
@@ -17,11 +18,12 @@ pub async fn store_events(events: &[([u8; 32], Vec<u8>)]) -> Result<(), JsValue>
         db.transaction_with_str_and_mode(EVENTS_STORE, web_sys::IdbTransactionMode::Readwrite)?;
     let store = transaction.object_store(EVENTS_STORE)?;
 
-    for (hash, bytes) in events {
-        let key = JsValue::from_str(&crate::hash_format::encode_hash32(hash));
+    for event_bytes in events {
+        let hash = definy_event::EventHashId::from_bytes(event_bytes);
+        let key = JsValue::from_str(&hash.to_string());
         let record = crate::local_event::LocalEventRecord {
-            hash: *hash,
-            event_binary: bytes.clone(),
+            hash,
+            event_binary: event_bytes.clone(),
             status: crate::local_event::LocalEventStatus::Sent,
             updated_at_ms: chrono::Utc::now().timestamp_millis(),
             last_error: None,
@@ -52,7 +54,7 @@ pub async fn store_event_record(
         db.transaction_with_str_and_mode(EVENTS_STORE, web_sys::IdbTransactionMode::Readwrite)?;
     let store = transaction.object_store(EVENTS_STORE)?;
 
-    let key = JsValue::from_str(&crate::hash_format::encode_hash32(&record.hash));
+    let key = JsValue::from_str(&record.hash.to_string());
     let value =
         serde_cbor::to_vec(record).map_err(|error| JsValue::from_str(&format!("{error:?}")))?;
     let value = js_sys::Uint8Array::from(value.as_slice());
@@ -61,12 +63,12 @@ pub async fn store_event_record(
     Ok(())
 }
 
-pub async fn remove_event_record(hash: &[u8; 32]) -> Result<(), JsValue> {
+pub async fn remove_event_record(hash: &EventHashId) -> Result<(), JsValue> {
     let db = open_db().await?;
     let transaction =
         db.transaction_with_str_and_mode(EVENTS_STORE, web_sys::IdbTransactionMode::Readwrite)?;
     let store = transaction.object_store(EVENTS_STORE)?;
-    let key = JsValue::from_str(&crate::hash_format::encode_hash32(hash));
+    let key = JsValue::from_str(&hash.to_string());
     let request = store.delete(&key)?;
     let _ = request_to_jsvalue(request).await?;
     Ok(())
@@ -85,7 +87,7 @@ pub async fn load_event_records() -> Result<Vec<crate::local_event::LocalEventRe
         if let Ok(record) = serde_cbor::from_slice::<crate::local_event::LocalEventRecord>(&bytes) {
             records.push(record);
         } else {
-            let hash: [u8; 32] = <sha2::Sha256 as sha2::Digest>::digest(&bytes).into();
+            let hash = EventHashId::from_bytes(&bytes);
             records.push(crate::local_event::LocalEventRecord {
                 hash,
                 event_binary: bytes,

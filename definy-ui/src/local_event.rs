@@ -7,7 +7,7 @@ pub enum LocalEventStatus {
 
 #[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct LocalEventRecord {
-    pub hash: [u8; 32],
+    pub hash: definy_event::EventHashId,
     pub event_binary: Vec<u8>,
     pub status: LocalEventStatus,
     pub updated_at_ms: i64,

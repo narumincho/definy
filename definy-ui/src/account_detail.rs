@@ -1,3 +1,4 @@
+use definy_event::EventHashId;
 use narumincho_vdom::*;
 
 use crate::i18n;
@@ -9,7 +10,6 @@ pub fn account_detail_view(
 ) -> Node<AppState> {
     let account_name_map = state.account_name_map();
     let account_name = crate::app_state::account_display_name(&account_name_map, account_id);
-    let encoded_account_id = crate::hash_format::encode_hash32(account_id.0.as_ref());
 
     let account_events = state
         .event_cache
@@ -17,12 +17,12 @@ pub fn account_detail_view(
         .filter_map(|(hash, event_result)| {
             let (_, event) = event_result.as_ref().ok()?;
             if event.account_id == *account_id {
-                Some((*hash, event))
+                Some((hash, event))
             } else {
                 None
             }
         })
-        .collect::<Vec<([u8; 32], &definy_event::event::Event)>>();
+        .collect::<Vec<(&EventHashId, &definy_event::event::Event)>>();
 
     let is_current_account = state
         .current_key
@@ -88,9 +88,7 @@ pub fn account_detail_view(
                                 wasm_bindgen_futures::spawn_local(async move {
                                     let event_binary = match definy_event::sign_and_serialize(
                                         definy_event::event::Event {
-                                            account_id: definy_event::event::AccountId(Box::new(
-                                                key.verifying_key().to_bytes(),
-                                            )),
+                                            account_id: definy_event::event::AccountId(key.verifying_key()),
                                             time: chrono::Utc::now(),
                                             content:
                                                 definy_event::event::EventContent::ChangeProfile(
@@ -131,7 +129,7 @@ pub fn account_detail_view(
                                                         let mut event_cache = state.event_cache.clone();
                                                         let mut event_hashes = Vec::new();
                                                         for (hash, event) in events {
-                                                            event_cache.insert(hash, event);
+                                                            event_cache.insert(hash.clone(), event);
                                                             event_hashes.push(hash);
                                                         }
                                                         let mut next = state.clone();
@@ -226,7 +224,7 @@ pub fn account_detail_view(
                                 .set("word-break", "break-all")
                                 .set("opacity", "0.8"),
                         )
-                        .children([text(encoded_account_id)])
+                        .children([text(account_id.to_string())])
                         .into_node(),
                     Div::new()
                         .style(Style::new().set("color", "var(--text-secondary)"))
@@ -268,7 +266,7 @@ pub fn account_detail_view(
                             .map(|(hash, event)| {
                                 A::<AppState, Location>::new()
                                     .class("event-card")
-                                    .href(state.href_with_lang(Location::Event(hash)))
+                                    .href(state.href_with_lang(Location::Event(hash.clone())))
                                     .style(
                                         Style::new()
                                             .set("display", "grid")

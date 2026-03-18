@@ -285,9 +285,7 @@ fn create_account_view(state: &AppState, force_offline: bool) -> Node<AppState> 
                     wasm_bindgen_futures::spawn_local(async move {
                         let event_binary = definy_event::sign_and_serialize(
                             definy_event::event::Event {
-                                account_id: definy_event::event::AccountId(Box::new(
-                                    key.verifying_key().to_bytes(),
-                                )),
+                                account_id: definy_event::event::AccountId(key.verifying_key()),
                                 time: chrono::Utc::now(),
                                 content: definy_event::event::EventContent::CreateAccount(
                                     definy_event::event::CreateAccountEvent {

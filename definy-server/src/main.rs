@@ -12,7 +12,6 @@ use hyper::service::service_fn;
 use hyper::{Request, Response};
 use hyper_util::rt::TokioIo;
 use narumincho_vdom::Route;
-use sha2::Digest;
 use tokio::net::TcpListener;
 use tokio::sync::RwLock;
 
@@ -258,7 +257,7 @@ async fn handle_html(
     let events = event_binary_array
         .iter()
         .map(|event_binary| {
-            let hash: [u8; 32] = sha2::Sha256::digest(event_binary.as_slice()).into();
+            let hash = definy_event::EventHashId::from_bytes(event_binary.as_slice());
             (
                 hash,
                 definy_event::verify_and_deserialize(event_binary.as_slice()),
