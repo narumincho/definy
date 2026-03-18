@@ -765,7 +765,7 @@ mod tests {
     #[test]
     fn evaluate_part_reference_by_definition_hash() {
         let definition_hash = definy_event::EventHashId::from_str(
-            "0000000000000000000000000000000000000000000000000000000000000042",
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
         )
         .unwrap();
         let part_expression =
@@ -778,7 +778,7 @@ mod tests {
                 ed25519_dalek::Signature::from_bytes(&[0u8; 64]),
                 definy_event::event::Event {
                     account_id: definy_event::event::AccountId::from_str(
-                        "0000000000000000000000000000000000000000000000000000000000000001",
+                        "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
                     )
                     .unwrap(),
                     time: chrono::DateTime::UNIX_EPOCH,
