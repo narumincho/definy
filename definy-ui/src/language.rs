@@ -15,6 +15,17 @@ pub struct LanguageResolution {
     pub unsupported_query_lang: Option<String>,
 }
 
+impl LanguageResolution {
+    pub fn fallback_notice(&self) -> Option<crate::LanguageFallbackNotice> {
+        self.unsupported_query_lang
+            .as_ref()
+            .map(|req| crate::LanguageFallbackNotice {
+                requested: req.clone(),
+                fallback_to_code: self.language.code,
+            })
+    }
+}
+
 pub const SUPPORTED_LANGUAGES: &[Language] = &[
     Language {
         code: "en",
@@ -89,7 +100,10 @@ pub fn best_language_from_browser() -> Option<Language> {
     None
 }
 
-pub fn resolve_language(query: Option<&str>, accept_language: Option<&str>) -> LanguageResolution {
+pub fn resolve_language_with_fallback(
+    query: Option<&str>,
+    fallback: impl FnOnce() -> Language,
+) -> LanguageResolution {
     let params = parse_query(query);
     if let Some(requested_lang) = params.lang {
         if let Some(language) = language_from_tag(requested_lang.as_str()) {
@@ -98,17 +112,21 @@ pub fn resolve_language(query: Option<&str>, accept_language: Option<&str>) -> L
                 unsupported_query_lang: None,
             };
         }
-        let fallback =
-            language_from_accept_language(accept_language).unwrap_or_else(default_language);
         return LanguageResolution {
-            language: fallback,
+            language: fallback(),
             unsupported_query_lang: Some(requested_lang),
         };
     }
     LanguageResolution {
-        language: language_from_accept_language(accept_language).unwrap_or_else(default_language),
+        language: fallback(),
         unsupported_query_lang: None,
     }
+}
+
+pub fn resolve_language(query: Option<&str>, accept_language: Option<&str>) -> LanguageResolution {
+    resolve_language_with_fallback(query, || {
+        language_from_accept_language(accept_language).unwrap_or_else(default_language)
+    })
 }
 
 pub fn best_language_from_accept_language(header: Option<&str>) -> Language {

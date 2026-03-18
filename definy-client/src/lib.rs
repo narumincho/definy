@@ -117,38 +117,17 @@ impl narumincho_vdom_client::App<AppState> for DefinyApp {
             .and_then(|window| window.document())
             .and_then(|document| document.document_element())
             .and_then(|element| element.get_attribute("lang"));
-        let fallback_language = html_lang
-            .as_deref()
-            .and_then(definy_ui::language::language_from_tag)
-            .or_else(definy_ui::language::best_language_from_browser)
-            .unwrap_or_else(definy_ui::language::default_language);
-        let language_resolution = if let Some(requested_lang) = query_params.lang {
-            if let Some(language) = definy_ui::language::language_from_tag(requested_lang.as_str())
-            {
-                definy_ui::language::LanguageResolution {
-                    language,
-                    unsupported_query_lang: None,
-                }
-            } else {
-                definy_ui::language::LanguageResolution {
-                    language: fallback_language,
-                    unsupported_query_lang: Some(requested_lang),
-                }
-            }
-        } else {
-            definy_ui::language::LanguageResolution {
-                language: fallback_language,
-                unsupported_query_lang: None,
-            }
-        };
-        let language_fallback_notice =
-            language_resolution
-                .unsupported_query_lang
-                .as_ref()
-                .map(|requested| definy_ui::LanguageFallbackNotice {
-                    requested: requested.to_string(),
-                    fallback_to_code: language_resolution.language.code,
-                });
+        let language_resolution = definy_ui::language::resolve_language_with_fallback(
+            Some(query_string.as_str()),
+            || {
+                html_lang
+                    .as_deref()
+                    .and_then(definy_ui::language::language_from_tag)
+                    .or_else(definy_ui::language::best_language_from_browser)
+                    .unwrap_or_else(definy_ui::language::default_language)
+            },
+        );
+        let language_fallback_notice = language_resolution.fallback_notice();
         wasm_bindgen_futures::spawn_local(async move {
             if let Some(ssr_event_binaries) = ssr_event_binaries {
                 let _ = definy_ui::indexed_db::store_events(&ssr_event_binaries).await;

@@ -388,6 +388,64 @@ impl AppState {
     }
 }
 
+pub async fn load_more_events<F>(state: AppState, set_state: std::rc::Rc<F>)
+where
+    F: Fn(Box<dyn FnOnce(AppState) -> AppState>) + 'static,
+{
+    let filter = state.event_list_state.filter_event_type;
+    let page_size = state.event_list_state.page_size;
+    let is_empty = state.event_list_state.event_hashes.is_empty();
+    let current_offset_base = state.event_list_state.current_offset;
+    set_state(Box::new(|state: AppState| {
+        let mut next = state.clone();
+        next.event_list_state.is_loading = true;
+        next
+    }));
+    let current_offset = if is_empty {
+        0
+    } else {
+        current_offset_base + page_size
+    };
+    let events = crate::fetch::get_events(filter, Some(page_size), Some(current_offset)).await;
+    if let Ok(events) = events {
+        let events_len = events.len();
+        set_state(Box::new(move |state: AppState| {
+            let mut event_cache = state.event_cache.clone();
+            let mut event_hashes = if current_offset == 0 {
+                Vec::new()
+            } else {
+                state.event_list_state.event_hashes.clone()
+            };
+            for (hash, event) in events {
+                if let std::collections::hash_map::Entry::Vacant(e) =
+                    event_cache.entry(hash.clone())
+                {
+                    e.insert(event);
+                    event_hashes.push(hash);
+                }
+            }
+            AppState {
+                event_cache,
+                event_list_state: crate::EventListState {
+                    event_hashes,
+                    current_offset,
+                    page_size: state.event_list_state.page_size,
+                    is_loading: false,
+                    has_more: events_len == state.event_list_state.page_size,
+                    filter_event_type: state.event_list_state.filter_event_type,
+                },
+                ..state.clone()
+            }
+        }));
+    } else {
+        set_state(Box::new(|state: AppState| {
+            let mut next = state.clone();
+            next.event_list_state.is_loading = false;
+            next
+        }));
+    }
+}
+
 #[derive(Clone)]
 pub struct LoginOrCreateAccountDialogState {
     /// アカウント作成で生成した秘密鍵

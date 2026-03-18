@@ -481,23 +481,8 @@ fn part_update_form(state: &AppState, definition_event_hash: &EventHashId) -> No
                                                 crate::fetch::get_events(None, Some(20), Some(0)).await
                                             {
                                                 set_state_for_async(Box::new(move |state| {
-                                                    let events_len = events.len();
-                                                    let mut event_cache = state.event_cache.clone();
-                                                    let mut event_hashes = Vec::new();
-                                                    for (hash, event) in events {
-                                                        event_cache.insert(hash.clone(), event);
-                                                        event_hashes.push(hash);
-                                                    }
                                                     let mut next = state.clone();
-                                                    next.event_cache = event_cache;
-                                                    next.event_list_state = crate::EventListState {
-                                                        event_hashes,
-                                                        current_offset: 0,
-                                                        page_size: 20,
-                                                        is_loading: false,
-                                                        has_more: events_len == 20,
-                                                        filter_event_type: None,
-                                                    };
+                                                    next.apply_latest_events(events, None);
                                                     crate::app_state::upsert_local_event_record(
                                                         &mut next,
                                                         record,

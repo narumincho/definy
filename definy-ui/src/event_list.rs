@@ -249,7 +249,7 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
                                             let mut next = state.clone();
                                             next.part_definition_form.eval_result =
                                                 Some(i18n::tr(
-                            &state,
+                                                    &state,
                                                     "Error: part name is required",
                                                     "エラー: パーツ名は必須です",
                                                     "Eraro: parto-nomo estas bezonata",
@@ -324,7 +324,7 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
                                                                 Some(match status {
                                                                     crate::local_event::LocalEventStatus::Queued => {
                                                                         i18n::tr(
-                             &state,
+                                                                            &state,
                                                                             "PartDefinition queued (offline)",
                                                                             "PartDefinition をキューに追加しました (オフライン)",
                                                                             "PartDefinition envicigita (senkonekte)",
@@ -333,7 +333,7 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
                                                                     }
                                                                     crate::local_event::LocalEventStatus::Failed => {
                                                                         i18n::tr(
-                             &state,
+                                                                            &state,
                                                                             "PartDefinition failed to send",
                                                                             "PartDefinition の送信に失敗しました",
                                                                             "PartDefinition sendado malsukcesis",
@@ -342,7 +342,7 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
                                                                     }
                                                                     crate::local_event::LocalEventStatus::Sent => {
                                                                         i18n::tr(
-                            &state,
+                                                                            &state,
                                                                             "PartDefinition posted",
                                                                             "PartDefinition を投稿しました",
                                                                             "PartDefinition sendita",
@@ -467,67 +467,8 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
                         .on_click(EventHandler::new(move |set_state| {
                             let state = state.clone();
                             async move {
-                                let filter = state.event_list_state.filter_event_type;
-                                let page_size = state.event_list_state.page_size;
-                                let is_empty = state.event_list_state.event_hashes.is_empty();
-                                let current_offset_base = state.event_list_state.current_offset;
                                 let set_state = std::rc::Rc::new(set_state);
-                                set_state(Box::new(|state: AppState| {
-                                    let mut next = state.clone();
-                                    next.event_list_state.is_loading = true;
-                                    next
-                                }));
-                                let current_offset = if is_empty {
-                                    0
-                                } else {
-                                    current_offset_base + page_size
-                                };
-                                let events = crate::fetch::get_events(
-                                    filter,
-                                    Some(page_size),
-                                    Some(current_offset),
-                                )
-                                .await;
-                                if let Ok(events) = events {
-                                    let events_len = events.len();
-                                    set_state(Box::new(move |state: AppState| {
-                                        let mut event_cache = state.event_cache.clone();
-                                        let mut event_hashes = if current_offset == 0 {
-                                            Vec::new()
-                                        } else {
-                                            state.event_list_state.event_hashes.clone()
-                                        };
-                                        for (hash, event) in events {
-                                            if let std::collections::hash_map::Entry::Vacant(e) =
-                                                event_cache.entry(hash.clone())
-                                            {
-                                                e.insert(event);
-                                                event_hashes.push(hash);
-                                            }
-                                        }
-                                        AppState {
-                                            event_cache,
-                                            event_list_state: crate::EventListState {
-                                                event_hashes,
-                                                current_offset,
-                                                page_size: state.event_list_state.page_size,
-                                                is_loading: false,
-                                                has_more: events_len
-                                                    == state.event_list_state.page_size,
-                                                filter_event_type: state
-                                                    .event_list_state
-                                                    .filter_event_type,
-                                            },
-                                            ..state.clone()
-                                        }
-                                    }));
-                                } else {
-                                    set_state(Box::new(|state: AppState| {
-                                        let mut next = state.clone();
-                                        next.event_list_state.is_loading = false;
-                                        next
-                                    }));
-                                }
+                                crate::app_state::load_more_events(state, set_state).await;
                             }
                         }))
                         .children([text(button_text)])

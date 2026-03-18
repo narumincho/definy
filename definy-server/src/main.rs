@@ -140,14 +140,7 @@ async fn handler(
             .and_then(|value| value.to_str().ok());
         let language_resolution =
             definy_ui::language::resolve_language(uri.query(), accept_language);
-        let language_fallback_notice =
-            language_resolution
-                .unsupported_query_lang
-                .as_ref()
-                .map(|requested| definy_ui::LanguageFallbackNotice {
-                    requested: requested.to_string(),
-                    fallback_to_code: language_resolution.language.code,
-                });
+        let language_fallback_notice = language_resolution.fallback_notice();
         let pool = state.pool.read().await.clone();
         return match pool {
             Some(pool) => {
