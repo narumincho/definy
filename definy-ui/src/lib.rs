@@ -1,6 +1,6 @@
 mod account_detail;
 mod account_list;
-mod app_state;
+pub mod app_state;
 pub mod dom;
 pub mod dropdown;
 mod event_detail;

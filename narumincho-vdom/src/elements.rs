@@ -10,6 +10,12 @@ macro_rules! define_element {
             pub children: Vec<Node<State>>,
         }
 
+        impl<State> Default for $name<State> {
+            fn default() -> Self {
+                Self::new()
+            }
+        }
+
         impl<State> $name<State> {
             pub fn new() -> Self {
                 Self {
@@ -64,9 +70,9 @@ macro_rules! define_element {
             }
         }
 
-        impl<State> Into<Node<State>> for $name<State> {
-            fn into(self) -> Node<State> {
-                self.into_node()
+        impl<State> From<$name<State>> for Node<State> {
+            fn from(val: $name<State>) -> Self {
+                val.into_node()
             }
         }
     };

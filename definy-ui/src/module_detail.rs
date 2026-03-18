@@ -360,7 +360,6 @@ fn module_update_form(
                                 ).to_string());
                             return next;
                         }
-                        let module_description = module_description;
                         let force_offline = state.force_offline;
                         wasm_bindgen_futures::spawn_local(async move {
                             let event_binary = match definy_event::sign_and_serialize(

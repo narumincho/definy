@@ -1,3 +1,4 @@
+#![allow(clippy::type_complexity)]
 use std::rc::Rc;
 
 use js_sys::Reflect;
@@ -8,7 +9,7 @@ use wasm_bindgen::closure::Closure;
 
 mod diff;
 
-pub const DOCUMENT: std::sync::LazyLock<web_sys::Document> = std::sync::LazyLock::new(|| {
+pub static DOCUMENT: std::sync::LazyLock<web_sys::Document> = std::sync::LazyLock::new(|| {
     let window = web_sys::window().expect("no global `window` exists");
 
     window.document().expect("should have a document on window")
@@ -336,12 +337,12 @@ fn apply_patch<State: 'static>(
     node: web_sys::Node,
     patch: &diff::Patch<State>,
     dispatch: &Rc<dyn Fn(Box<dyn FnOnce(State) -> State>)>,
-    callback_key_symbol: &js_sys::Symbol,
+    _callback_key_symbol: &js_sys::Symbol,
 ) {
     match patch {
         diff::Patch::Replace(new_node) => {
             if let Some(parent) = node.parent_node() {
-                let new_web_node = create_web_sys_node(new_node, dispatch, callback_key_symbol);
+                let new_web_node = create_web_sys_node(new_node, dispatch, _callback_key_symbol);
                 parent.replace_child(&new_web_node, &node).unwrap();
             }
         }
@@ -431,7 +432,7 @@ fn apply_patch<State: 'static>(
         }
         diff::Patch::AppendChildren(children) => {
             for child in children {
-                let child_node = create_web_sys_node(child, dispatch, callback_key_symbol);
+                let child_node = create_web_sys_node(child, dispatch, _callback_key_symbol);
                 node.append_child(&child_node).unwrap();
             }
         }
@@ -450,7 +451,7 @@ fn apply_patch<State: 'static>(
 fn create_web_sys_node<State: 'static>(
     vdom: &Node<State>,
     dispatch: &Rc<dyn Fn(Box<dyn FnOnce(State) -> State>)>,
-    callback_key_symbol: &js_sys::Symbol,
+    _callback_key_symbol: &js_sys::Symbol,
 ) -> web_sys::Node {
     match vdom {
         Node::Element(el) => {
@@ -488,7 +489,7 @@ fn create_web_sys_node<State: 'static>(
             }
             for child in &el.children {
                 element
-                    .append_child(&create_web_sys_node(child, dispatch, callback_key_symbol))
+                    .append_child(&create_web_sys_node(child, dispatch, _callback_key_symbol))
                     .unwrap();
             }
             element.into()

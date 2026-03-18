@@ -4,6 +4,9 @@ use definy_event::{
 };
 use narumincho_vdom::Route;
 
+pub type DecodedEvent = Result<(ed25519_dalek::Signature, definy_event::event::Event), definy_event::VerifyAndDeserializeError>;
+pub type EventWithHash = (EventHashId, DecodedEvent);
+
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub enum PathStep {
     Left,
@@ -19,23 +22,26 @@ pub enum PathStep {
     TypeListItem,
 }
 
-impl PathStep {
-    pub fn to_string(&self) -> String {
-        match self {
-            PathStep::Left => "Left".to_string(),
-            PathStep::Right => "Right".to_string(),
-            PathStep::Condition => "Condition".to_string(),
-            PathStep::Then => "Then".to_string(),
-            PathStep::Else => "Else".to_string(),
-            PathStep::LetValue => "LetValue".to_string(),
-            PathStep::LetBody => "LetBody".to_string(),
-            PathStep::ListItemValue(index) => format!("ListItemValue({})", index),
-            PathStep::RecordItemValue(index) => format!("RecordItemValue({})", index),
-            PathStep::ConstructorValue => "ConstructorValue".to_string(),
-            PathStep::TypeListItem => "TypeListItem".to_string(),
-        }
+impl std::fmt::Display for PathStep {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let s = match self {
+            PathStep::Left => "Left",
+            PathStep::Right => "Right",
+            PathStep::Condition => "Condition",
+            PathStep::Then => "Then",
+            PathStep::Else => "Else",
+            PathStep::LetValue => "LetValue",
+            PathStep::LetBody => "LetBody",
+            PathStep::ListItemValue(index) => return write!(f, "ListItemValue({})", index),
+            PathStep::RecordItemValue(index) => return write!(f, "RecordItemValue({})", index),
+            PathStep::ConstructorValue => "ConstructorValue",
+            PathStep::TypeListItem => "TypeListItem",
+        };
+        write!(f, "{}", s)
     }
+}
 
+impl PathStep {
     pub fn from_string(s: &str) -> Option<Self> {
         if s == "Left" {
             Some(PathStep::Left)
@@ -235,13 +241,7 @@ pub fn account_display_name(
 
 pub fn build_initial_state(
     location: Option<Location>,
-    events: Vec<(
-        EventHashId,
-        Result<
-            (ed25519_dalek::Signature, definy_event::event::Event),
-            definy_event::VerifyAndDeserializeError,
-        >,
-    )>,
+    events: Vec<EventWithHash>,
     event_list_loading: bool,
     event_list_has_more: bool,
     current_key: Option<ed25519_dalek::SigningKey>,
@@ -325,13 +325,7 @@ pub fn build_initial_state(
 impl AppState {
     pub fn apply_latest_events(
         &mut self,
-        events: Vec<(
-            EventHashId,
-            Result<
-                (ed25519_dalek::Signature, definy_event::event::Event),
-                definy_event::VerifyAndDeserializeError,
-            >,
-        )>,
+        events: Vec<EventWithHash>,
         filter_event_type: Option<definy_event::event::EventType>,
     ) {
         let events_len = events.len();

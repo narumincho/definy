@@ -8,6 +8,12 @@ pub struct Button<State> {
     pub children: Vec<node::Node<State>>,
 }
 
+impl<State> Default for Button<State> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<State> Button<State> {
     /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/button
     pub fn new() -> Self {
@@ -86,16 +92,17 @@ pub enum CommandValue {
     Custom(String),
 }
 
-impl ToString for CommandValue {
-    fn to_string(&self) -> String {
-        match self {
-            CommandValue::ShowModal => "show-modal".to_string(),
-            CommandValue::Close => "close".to_string(),
-            CommandValue::RequestClose => "request-close".to_string(),
-            CommandValue::ShowPopover => "show-popover".to_string(),
-            CommandValue::HidePopover => "hide-popover".to_string(),
-            CommandValue::TogglePopover => "toggle-popover".to_string(),
-            CommandValue::Custom(s) => s.to_string(),
-        }
+impl std::fmt::Display for CommandValue {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let s = match self {
+            CommandValue::ShowModal => "show-modal",
+            CommandValue::Close => "close",
+            CommandValue::RequestClose => "request-close",
+            CommandValue::ShowPopover => "show-popover",
+            CommandValue::HidePopover => "hide-popover",
+            CommandValue::TogglePopover => "toggle-popover",
+            CommandValue::Custom(s) => return write!(f, "{}", s),
+        };
+        write!(f, "{}", s)
     }
 }

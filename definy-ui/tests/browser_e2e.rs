@@ -329,7 +329,7 @@ impl WebDriverClient {
     ) -> Result<serde_json::Value, Box<dyn Error>> {
         let payload = serde_json::json!({ "script": script, "args": args });
         let sync_path = format!("/session/{}/execute/sync", self.session_id);
-        match webdriver_request(
+        if let Ok(response) = webdriver_request(
             &self.client,
             &self.base_url,
             Method::POST,
@@ -338,13 +338,10 @@ impl WebDriverClient {
         )
         .await
         {
-            Ok(response) => {
-                return Ok(response
-                    .get("value")
-                    .cloned()
-                    .unwrap_or(serde_json::Value::Null));
-            }
-            Err(_) => {}
+            return Ok(response
+                .get("value")
+                .cloned()
+                .unwrap_or(serde_json::Value::Null));
         }
 
         let fallback_path = format!("/session/{}/execute", self.session_id);

@@ -328,7 +328,7 @@ fn render_event_detail(
                                     "partDefinitionEventHash:",
                                     "partDefinitionEventHash:"
                                 ),
-                                part_update_event.part_definition_event_hash.to_string(),
+                                part_update_event.part_definition_event_hash,
                             ))])
                             .into_node(),
                         A::<AppState, Location>::new()
@@ -445,7 +445,7 @@ fn render_event_detail(
                                     "moduleDefinitionEventHash:",
                                     "moduleDefinitionEventHash:"
                                 ),
-                                module_update_event.module_definition_event_hash.to_string(),
+                                module_update_event.module_definition_event_hash,
                             ))])
                             .into_node(),
                         A::<AppState, Location>::new()
@@ -619,13 +619,7 @@ fn root_part_definition_hash(
 fn evaluate_message_result(
     lang_code: &str,
     expression: &definy_event::event::Expression,
-    events: &[(
-        definy_event::EventHashId,
-        Result<
-            (ed25519_dalek::Signature, definy_event::event::Event),
-            definy_event::VerifyAndDeserializeError,
-        >,
-    )],
+    events: &[crate::app_state::EventWithHash],
 ) -> String {
     match evaluate_expression(expression, events) {
         Ok(value) => format!(

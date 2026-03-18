@@ -77,17 +77,19 @@ impl<State> PartialEq for Node<State> {
     }
 }
 
+pub type StateUpdater<State> = Box<dyn FnOnce(State) -> State>;
+pub type StateDispatcher<State> = Box<dyn Fn(StateUpdater<State>)>;
+pub type EventHandlerClosure<State> = dyn Fn(StateDispatcher<State>) -> Pin<Box<dyn Future<Output = ()>>>;
+
 pub struct EventHandler<State> {
-    pub handler: Rc<
-        dyn Fn(Box<dyn Fn(Box<dyn FnOnce(State) -> State>)>) -> Pin<Box<dyn Future<Output = ()>>>,
-    >,
+    pub handler: Rc<EventHandlerClosure<State>>,
     pub parameter_hash: u64,
 }
 
 impl<State> EventHandler<State> {
     pub fn new<F, Fut>(f: F) -> Self
     where
-        F: Fn(Box<dyn Fn(Box<dyn FnOnce(State) -> State>)>) -> Fut + 'static,
+        F: Fn(StateDispatcher<State>) -> Fut + 'static,
         Fut: Future<Output = ()> + 'static,
     {
         EventHandler {
@@ -98,7 +100,7 @@ impl<State> EventHandler<State> {
 
     pub fn with_parameter<F, Fut, P>(f: F, p: P) -> Self
     where
-        F: Fn(Box<dyn Fn(Box<dyn FnOnce(State) -> State>)>, &P) -> Fut + 'static,
+        F: Fn(StateDispatcher<State>, &P) -> Fut + 'static,
         Fut: Future<Output = ()> + 'static,
         P: Hash + 'static,
     {

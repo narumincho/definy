@@ -4,12 +4,14 @@ use narumincho_vdom::*;
 use std::rc::Rc;
 use wasm_bindgen::JsCast;
 
+pub type DropdownOnChange = Rc<dyn Fn(String) -> Box<dyn FnOnce(AppState) -> AppState>>;
+
 pub fn searchable_dropdown(
     state: &AppState,
     name: &str,
     current_value: &str,
     options: &[(String, String)],
-    on_change: Rc<dyn Fn(String) -> Box<dyn FnOnce(AppState) -> AppState>>,
+    on_change: DropdownOnChange,
 ) -> Node<AppState> {
     let is_open = state.active_dropdown_name.as_deref() == Some(name);
 

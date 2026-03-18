@@ -43,18 +43,11 @@ pub fn compile_expression_to_wasm(expression: &Expression) -> Result<Vec<u8>, St
     module.extend_from_slice(&WASM_VERSION);
 
     // Type Section (1 type: () -> i64)
-    let mut type_section = Vec::new();
-    type_section.push(1); // 1 type
-    type_section.push(0x60); // func type
-    type_section.push(0); // 0 params
-    type_section.push(1); // 1 result
-    type_section.push(I64); // result: i64
+    let type_section = vec![1, 0x60, 0, 1, I64];
     emit_section(&mut module, TYPE_SECTION, &type_section);
 
     // Function Section (1 function of type index 0)
-    let mut function_section = Vec::new();
-    function_section.push(1); // 1 function
-    function_section.push(0); // type index 0
+    let function_section = vec![1, 0];
     emit_section(&mut module, FUNCTION_SECTION, &function_section);
 
     // Export Section (Export function 0 as "evaluate")

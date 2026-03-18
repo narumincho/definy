@@ -35,13 +35,7 @@ impl std::fmt::Display for Value {
 
 pub fn evaluate_expression(
     expression: &definy_event::event::Expression,
-    events: &[(
-        definy_event::EventHashId,
-        Result<
-            (ed25519_dalek::Signature, definy_event::event::Event),
-            definy_event::VerifyAndDeserializeError,
-        >,
-    )],
+    events: &[crate::app_state::EventWithHash],
 ) -> Result<Value, &'static str> {
     // Try to evaluate purely via WebAssembly first!
     if let Some(result) = evaluate_via_wasm(expression) {
@@ -178,13 +172,7 @@ fn is_boolean_expression(expr: &definy_event::event::Expression) -> bool {
 
 fn evaluate_expression_with_depth(
     expression: &definy_event::event::Expression,
-    events: &[(
-        definy_event::EventHashId,
-        Result<
-            (ed25519_dalek::Signature, definy_event::event::Event),
-            definy_event::VerifyAndDeserializeError,
-        >,
-    )],
+    events: &[crate::app_state::EventWithHash],
     env: &std::collections::HashMap<i64, Value>,
     depth: usize,
 ) -> Result<Value, &'static str> {
