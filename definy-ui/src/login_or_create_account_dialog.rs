@@ -29,7 +29,9 @@ pub fn login_or_create_account_dialog(state: &AppState) -> Node<AppState> {
                                     state.language.label("Log In", "ログイン", "Ensaluti")
                                 }
                                 CreatingAccountState::CreateAccount => {
-                                    state.language.label("Sign Up", "サインアップ", "Registriĝi")
+                                    state
+                                        .language
+                                        .label("Sign Up", "サインアップ", "Registriĝi")
                                 }
                                 _ => state.language.label("Account", "アカウント", "Konto"),
                             },
@@ -157,7 +159,8 @@ pub fn login_or_create_account_dialog(state: &AppState) -> Node<AppState> {
                                 }
                             }));
                         }))
-                        .children([text(state.language.label("Sign Up",
+                        .children([text(state.language.label(
+                            "Sign Up",
                             "サインアップ",
                             "Registriĝi",
                         ))])
@@ -197,7 +200,8 @@ fn login_view(state: &AppState) -> Node<AppState> {
                 .class("form-group")
                 .children([
                     Label::new()
-                        .children([text(state.language.label("Secret Key",
+                        .children([text(state.language.label(
+                            "Secret Key",
                             "秘密鍵",
                             "Sekreta ŝlosilo",
                         ))])
@@ -350,7 +354,11 @@ fn create_account_view(state: &AppState, force_offline: bool) -> Node<AppState> 
                 .class("form-group")
                 .children([
                     Label::new()
-                        .children([text(state.language.label("Username", "ユーザー名", "Uzantnomo"))])
+                        .children([text(state.language.label(
+                            "Username",
+                            "ユーザー名",
+                            "Uzantnomo",
+                        ))])
                         .into_node(),
                     Input::new()
                         .type_("text")
@@ -365,7 +373,8 @@ fn create_account_view(state: &AppState, force_offline: bool) -> Node<AppState> 
                 .class("form-group")
                 .children([
                     Label::new()
-                        .children([text(state.language.label("User ID (Public Key)",
+                        .children([text(state.language.label(
+                            "User ID (Public Key)",
                             "ユーザーID (公開鍵)",
                             "Uzanto-ID (publika ŝlosilo)",
                         ))])
@@ -395,7 +404,8 @@ fn create_account_view(state: &AppState, force_offline: bool) -> Node<AppState> 
                 .class("form-group")
                 .children([
                     Label::new()
-                        .children([text(state.language.label("Secret Key",
+                        .children([text(state.language.label(
+                            "Secret Key",
                             "秘密鍵",
                             "Sekreta ŝlosilo",
                         ))])
@@ -403,7 +413,8 @@ fn create_account_view(state: &AppState, force_offline: bool) -> Node<AppState> 
                     Div::new()
                         .class("hint")
                         .style(Style::new().set("margin-bottom", "0.5rem"))
-                        .children([text(state.language.label("If you lose your secret key, you will not be able to log in again.",
+                        .children([text(state.language.label(
+                            "If you lose your secret key, you will not be able to log in again.",
                             "秘密鍵を失うと再ログインできません。",
                             "Se vi perdas la sekretan ŝlosilon, vi ne povos denove ensaluti.",
                         ))])
@@ -451,7 +462,11 @@ fn create_account_view(state: &AppState, force_offline: bool) -> Node<AppState> 
                                 }))
                                 .type_("button")
                                 .disabled(requesting)
-                                .children([text(state.language.label("Regen", "再生成", "Regeneri"))])
+                                .children([text(state.language.label(
+                                    "Regen",
+                                    "再生成",
+                                    "Regeneri",
+                                ))])
                                 .into_node(),
                         ])
                         .into_node(),
@@ -475,9 +490,12 @@ fn create_account_view(state: &AppState, force_offline: bool) -> Node<AppState> 
                                 state.language.label("Log In", "ログイン", "Ensaluti")
                             }
                             CreatingAccountState::CreateAccount => {
-                                state.language.label("Sign Up", "サインアップ", "Registriĝi")
+                                state
+                                    .language
+                                    .label("Sign Up", "サインアップ", "Registriĝi")
                             }
-                            CreatingAccountState::CreateAccountRequesting => state.language.label("Signing Up...",
+                            CreatingAccountState::CreateAccountRequesting => state.language.label(
+                                "Signing Up...",
                                 "サインアップ中...",
                                 "Registriĝante...",
                             ),

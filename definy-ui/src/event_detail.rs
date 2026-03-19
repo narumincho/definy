@@ -50,7 +50,8 @@ pub fn event_detail_view(
                     .set("text-align", "center")
                     .set("padding", "1.8rem"),
             )
-            .children([text(state.language.label("Event not found",
+            .children([text(state.language.label(
+                "Event not found",
                 "イベントが見つかりません",
                 "Evento ne trovita",
             ))])
@@ -73,7 +74,8 @@ pub fn event_detail_view(
                         .set("text-decoration", "none")
                         .set("font-weight", "500"),
                 )
-                .children([text(state.language.label("← Back to Home",
+                .children([text(state.language.label(
+                    "← Back to Home",
                     "← ホームへ戻る",
                     "← Reen al hejmo",
                 ))])
@@ -149,7 +151,8 @@ fn render_event_detail(
                             .set("font-weight", "600"),
                     )
                     .children([
-                        text(state.language.label("Account created:",
+                        text(state.language.label(
+                            "Account created:",
                             "アカウント作成:",
                             "Konto kreita:",
                         )),
@@ -164,7 +167,8 @@ fn render_event_detail(
                             .set("font-weight", "600"),
                     )
                     .children([
-                        text(state.language.label("Profile changed:",
+                        text(state.language.label(
+                            "Profile changed:",
                             "プロフィール変更:",
                             "Profilo ŝanĝita:",
                         )),
@@ -235,7 +239,8 @@ fn render_event_detail(
                                     .set("color", "var(--primary)")
                                     .set("text-decoration", "none"),
                             )
-                            .children([text(state.language.label("Open part detail",
+                            .children([text(state.language.label(
+                                "Open part detail",
                                 "パーツ詳細を開く",
                                 "Malfermi partajn detalojn",
                             ))])
@@ -267,7 +272,8 @@ fn render_event_detail(
                             .style(Style::new().set("font-size", "1.08rem"))
                             .children([text(format!(
                                 "{} {}",
-                                state.language.label("Part updated:",
+                                state.language.label(
+                                    "Part updated:",
                                     "パーツ更新:",
                                     "Parto ĝisdatigita:"
                                 ),
@@ -309,7 +315,8 @@ fn render_event_detail(
                             )
                             .children([text(format!(
                                 "{} {}",
-                                state.language.label("partDefinitionEventHash:",
+                                state.language.label(
+                                    "partDefinitionEventHash:",
                                     "partDefinitionEventHash:",
                                     "partDefinitionEventHash:"
                                 ),
@@ -320,7 +327,8 @@ fn render_event_detail(
                             .href(state.href_with_lang(Location::Event(
                                 part_update_event.part_definition_event_hash.clone(),
                             )))
-                            .children([text(state.language.label("Open definition event",
+                            .children([text(state.language.label(
+                                "Open definition event",
                                 "定義イベントを開く",
                                 "Malfermi difinan eventon",
                             ))])
@@ -329,7 +337,8 @@ fn render_event_detail(
                             .href(state.href_with_lang(Location::Part(
                                 part_update_event.part_definition_event_hash.clone(),
                             )))
-                            .children([text(state.language.label("Open part detail",
+                            .children([text(state.language.label(
+                                "Open part detail",
                                 "パーツ詳細を開く",
                                 "Malfermi partajn detalojn",
                             ))])
@@ -345,7 +354,8 @@ fn render_event_detail(
                     .children([
                         text(format!(
                             "{} {}",
-                            state.language.label("Module created:",
+                            state.language.label(
+                                "Module created:",
                                 "モジュール作成:",
                                 "Modulo kreita:"
                             ),
@@ -366,7 +376,8 @@ fn render_event_detail(
                         },
                         A::<AppState, Location>::new()
                             .href(state.href_with_lang(Location::Module(hash.clone())))
-                            .children([text(state.language.label("Open module detail",
+                            .children([text(state.language.label(
+                                "Open module detail",
                                 "モジュール詳細を開く",
                                 "Malfermi modulajn detalojn",
                             ))])
@@ -385,7 +396,8 @@ fn render_event_detail(
                             .style(Style::new().set("font-size", "1.08rem"))
                             .children([text(format!(
                                 "{} {}",
-                                state.language.label("Module updated:",
+                                state.language.label(
+                                    "Module updated:",
                                     "モジュール更新:",
                                     "Modulo ĝisdatigita:"
                                 ),
@@ -414,7 +426,8 @@ fn render_event_detail(
                             )
                             .children([text(format!(
                                 "{} {}",
-                                state.language.label("moduleDefinitionEventHash:",
+                                state.language.label(
+                                    "moduleDefinitionEventHash:",
                                     "moduleDefinitionEventHash:",
                                     "moduleDefinitionEventHash:"
                                 ),
@@ -425,7 +438,8 @@ fn render_event_detail(
                             .href(state.href_with_lang(Location::Event(
                                 module_update_event.module_definition_event_hash.clone(),
                             )))
-                            .children([text(state.language.label("Open definition event",
+                            .children([text(state.language.label(
+                                "Open definition event",
                                 "定義イベントを開く",
                                 "Malfermi difinan eventon",
                             ))])
@@ -434,7 +448,8 @@ fn render_event_detail(
                             .href(state.href_with_lang(Location::Module(
                                 module_update_event.module_definition_event_hash.clone(),
                             )))
-                            .children([text(state.language.label("Open module detail",
+                            .children([text(state.language.label(
+                                "Open module detail",
                                 "モジュール詳細を開く",
                                 "Malfermi modulajn detalojn",
                             ))])
@@ -458,7 +473,8 @@ fn render_event_detail(
                         .set("opacity", "0.6"),
                 )
                 .children([
-                    text(state.language.label("Event Hash: ",
+                    text(state.language.label(
+                        "Event Hash: ",
                         "イベントハッシュ: ",
                         "Evento-hako: ",
                     )),
@@ -487,7 +503,8 @@ fn related_part_events_section(
         .children([
             Div::new()
                 .style(Style::new().set("font-weight", "600"))
-                .children([text(state.language.label("Events linked by partDefinitionEventHash",
+                .children([text(state.language.label(
+                    "Events linked by partDefinitionEventHash",
                     "partDefinitionEventHash に紐づくイベント",
                     "Eventoj ligitaj per partDefinitionEventHash",
                 ))])

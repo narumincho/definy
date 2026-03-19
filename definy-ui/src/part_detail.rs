@@ -21,7 +21,8 @@ pub fn part_detail_view(state: &AppState, definition_event_hash: &EventHashId) -
             Some(snapshot) => vec![
                 A::<AppState, Location>::new()
                     .href(state.href_with_lang(Location::PartList))
-                    .children([text(state.language.label("← Back to Parts",
+                    .children([text(state.language.label(
+                        "← Back to Parts",
                         "← パーツ一覧へ戻る",
                         "← Reen al partoj",
                     ))])
@@ -47,14 +48,17 @@ pub fn part_detail_view(state: &AppState, definition_event_hash: &EventHashId) -
                             )
                             .children([text(format!(
                                 "{} {}",
-                                state.language.label("Updated at:", "更新日時:", "Ĝisdatigita je:"),
+                                state
+                                    .language
+                                    .label("Updated at:", "更新日時:", "Ĝisdatigita je:"),
                                 snapshot.updated_at.format("%Y-%m-%d %H:%M:%S")
                             ))])
                             .into_node(),
                         if snapshot.part_description.is_empty() {
                             Div::new()
                                 .style(Style::new().set("color", "var(--text-secondary)"))
-                                .children([text(state.language.label("(no description)",
+                                .children([text(state.language.label(
+                                    "(no description)",
                                     "(説明なし)",
                                     "(sen priskribo)",
                                 ))])
@@ -85,7 +89,8 @@ pub fn part_detail_view(state: &AppState, definition_event_hash: &EventHashId) -
                                     .href(state.href_with_lang(Location::Event(
                                         definition_event_hash.clone(),
                                     )))
-                                    .children([text(state.language.label("Definition event",
+                                    .children([text(state.language.label(
+                                        "Definition event",
                                         "定義イベント",
                                         "Difina evento",
                                     ))])
@@ -94,7 +99,8 @@ pub fn part_detail_view(state: &AppState, definition_event_hash: &EventHashId) -
                                     .href(state.href_with_lang(Location::Event(
                                         snapshot.latest_event_hash,
                                     )))
-                                    .children([text(state.language.label("Latest event",
+                                    .children([text(state.language.label(
+                                        "Latest event",
                                         "最新イベント",
                                         "Lasta evento",
                                     ))])
@@ -162,14 +168,16 @@ pub fn part_detail_view(state: &AppState, definition_event_hash: &EventHashId) -
             None => vec![
                 A::<AppState, Location>::new()
                     .href(state.href_with_lang(Location::PartList))
-                    .children([text(state.language.label("← Back to Parts",
+                    .children([text(state.language.label(
+                        "← Back to Parts",
                         "← パーツ一覧へ戻る",
                         "← Reen al partoj",
                     ))])
                     .into_node(),
                 Div::new()
                     .style(Style::new().set("color", "var(--text-secondary)"))
-                    .children([text(state.language.label("Part not found",
+                    .children([text(state.language.label(
+                        "Part not found",
                         "パーツが見つかりません",
                         "Parto ne trovita",
                     ))])
@@ -186,7 +194,10 @@ fn part_update_form(state: &AppState, definition_event_hash: &EventHashId) -> No
     let dropdown_name = format!("part-update-module-{}", hash_as_base64);
     let mut module_options = vec![(
         "".to_string(),
-        state.language.label("No module", "モジュールなし", "Neniu modulo").to_string(),
+        state
+            .language
+            .label("No module", "モジュールなし", "Neniu modulo")
+            .to_string(),
     )];
 
     module_options.extend(

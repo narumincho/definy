@@ -40,7 +40,8 @@ pub fn not_found_view(state: &AppState) -> Node<AppState> {
                         .set("color", "var(--text-primary)")
                         .set("margin-bottom", "2rem"),
                 )
-                .children([text(state.language.label("Page Not Found",
+                .children([text(state.language.label(
+                    "Page Not Found",
                     "ページが見つかりません",
                     "Paĝo ne trovita",
                 ))])
@@ -63,7 +64,8 @@ pub fn not_found_view(state: &AppState) -> Node<AppState> {
                         .set("transition", "all 0.3s ease")
                         .set("box-shadow", "0 4px 10px rgba(139, 92, 246, 0.25)"),
                 )
-                .children([text(state.language.label("Return to Home",
+                .children([text(state.language.label(
+                    "Return to Home",
                     "ホームに戻る",
                     "Reen al hejmo",
                 ))])

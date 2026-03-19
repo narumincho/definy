@@ -170,7 +170,8 @@ fn render_expression_editor(
                             .set("font-size", "0.8rem")
                             .set("color", "var(--text-secondary)"),
                     )
-                    .children([text(state.language.label("Built-in types",
+                    .children([text(state.language.label(
+                        "Built-in types",
                         "組み込み型",
                         "Enkonstruitaj tipoj",
                     ))])
@@ -656,7 +657,9 @@ fn render_expression_editor(
                                                 .set("font-size", "0.8rem")
                                                 .set("color", "var(--text-secondary)"),
                                         )
-                                        .children([text(state.language.label("Key", "キー", "Ŝlosilo"))])
+                                        .children([text(
+                                            state.language.label("Key", "キー", "Ŝlosilo"),
+                                        )])
                                         .into_node(),
                                     if structure_locked {
                                         Div::new()
@@ -770,7 +773,8 @@ fn render_expression_editor(
                             .set("font-size", "0.8rem")
                             .set("color", "var(--text-secondary)"),
                     )
-                    .children([text(state.language.label("Select a Global/Local reference from the dropdown.",
+                    .children([text(state.language.label(
+                        "Select a Global/Local reference from the dropdown.",
                         "ドロップダウンから Global/Local 参照を選んでください",
                         "Elektu Globalan/Lokan referencon el la falmenuo.",
                     ))])
@@ -1849,7 +1853,8 @@ fn add_record_item_button(
                 }));
             }
         }))
-        .children([text(state.language.label("+ Add Item",
+        .children([text(state.language.label(
+            "+ Add Item",
             "+ 追加",
             "+ Aldoni eron",
         ))])
@@ -1897,7 +1902,8 @@ fn add_list_item_button(
                 }));
             }
         }))
-        .children([text(state.language.label("+ Add Item",
+        .children([text(state.language.label(
+            "+ Add Item",
             "+ 追加",
             "+ Aldoni eron",
         ))])

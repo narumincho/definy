@@ -19,13 +19,18 @@ pub fn account_list_view(state: &AppState) -> Node<AppState> {
         .children([
             H2::new()
                 .style(Style::new().set("font-size", "1.3rem"))
-                .children([text(state.language.label("Accounts", "アカウント", "Kontoj"))])
+                .children([text(state.language.label(
+                    "Accounts",
+                    "アカウント",
+                    "Kontoj",
+                ))])
                 .into_node(),
             if rows.is_empty() {
                 Div::new()
                     .class("event-detail-card")
                     .style(Style::new().set("padding", "0.9rem"))
-                    .children([text(state.language.label("No accounts yet.",
+                    .children([text(state.language.label(
+                        "No accounts yet.",
                         "まだアカウントがありません。",
                         "Ankoraŭ neniuj kontoj.",
                     ))])
@@ -65,7 +70,11 @@ pub fn account_list_view(state: &AppState) -> Node<AppState> {
                                             .children([text(format!(
                                                 "{} {}",
                                                 row.event_count,
-                                                state.language.label("events", "イベント", "eventoj")
+                                                state.language.label(
+                                                    "events",
+                                                    "イベント",
+                                                    "eventoj"
+                                                )
                                             ))])
                                             .into_node(),
                                         Div::new()

@@ -18,7 +18,12 @@ pub fn searchable_dropdown(
         .iter()
         .find(|(val, _)| val == current_value)
         .map(|(_, label)| label.clone())
-        .unwrap_or_else(|| state.language.label("Select...", "選択...", "Elektu...").to_string());
+        .unwrap_or_else(|| {
+            state
+                .language
+                .label("Select...", "選択...", "Elektu...")
+                .to_string()
+        });
 
     let container = Div::new().style(
         Style::new()
@@ -149,7 +154,10 @@ pub fn searchable_dropdown(
             );
         search_input.attributes.push((
             "placeholder".to_string(),
-            state.language.label("Search...", "検索...", "Serĉi...").to_string(),
+            state
+                .language
+                .label("Search...", "検索...", "Serĉi...")
+                .to_string(),
         ));
         search_input.events.push((
             "input".to_string(),

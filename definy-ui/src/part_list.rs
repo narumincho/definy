@@ -45,7 +45,8 @@ pub fn part_list_view(state: &AppState) -> Node<AppState> {
                             .set("padding", "0.95rem")
                             .set("color", "var(--text-secondary)"),
                     )
-                    .children([text(state.language.label("No parts yet.",
+                    .children([text(state.language.label(
+                        "No parts yet.",
                         "まだパーツがありません。",
                         "Ankoraŭ neniuj partoj.",
                     ))])
@@ -108,7 +109,8 @@ pub fn part_list_view(state: &AppState) -> Node<AppState> {
                                                         .set("font-size", "0.82rem")
                                                         .set("color", "var(--text-secondary)"),
                                                 )
-                                                .children([text(state.language.label("definition event missing",
+                                                .children([text(state.language.label(
+                                                    "definition event missing",
                                                     "定義イベントが見つかりません",
                                                     "difina evento mankas",
                                                 ))])
@@ -118,7 +120,8 @@ pub fn part_list_view(state: &AppState) -> Node<AppState> {
                                             .href(state.href_with_lang(Location::Part(
                                                 part.definition_event_hash.clone(),
                                             )))
-                                            .children([text(state.language.label("Open part detail",
+                                            .children([text(state.language.label(
+                                                "Open part detail",
                                                 "パーツ詳細を開く",
                                                 "Malfermi partajn detalojn",
                                             ))])
@@ -144,7 +147,11 @@ pub fn part_list_view(state: &AppState) -> Node<AppState> {
                                             )
                                             .children([text(format!(
                                                 "{} {}",
-                                                state.language.label("expression:", "式:", "esprimo:"),
+                                                state.language.label(
+                                                    "expression:",
+                                                    "式:",
+                                                    "esprimo:"
+                                                ),
                                                 expression_to_source(&part.expression)
                                             ))])
                                             .into_node(),
@@ -156,7 +163,8 @@ pub fn part_list_view(state: &AppState) -> Node<AppState> {
                                             )
                                             .children([text(format!(
                                                 "{} {}",
-                                                state.language.label("latest author:",
+                                                state.language.label(
+                                                    "latest author:",
                                                     "最新の投稿者:",
                                                     "lasta aŭtoro:"
                                                 ),
@@ -174,7 +182,8 @@ pub fn part_list_view(state: &AppState) -> Node<AppState> {
                                                     .href(state.href_with_lang(Location::Event(
                                                         part.latest_event_hash,
                                                     )))
-                                                    .children([text(state.language.label("Latest event",
+                                                    .children([text(state.language.label(
+                                                        "Latest event",
                                                         "最新イベント",
                                                         "Lasta evento",
                                                     ))])
@@ -183,7 +192,8 @@ pub fn part_list_view(state: &AppState) -> Node<AppState> {
                                                     .href(state.href_with_lang(Location::Event(
                                                         part.definition_event_hash,
                                                     )))
-                                                    .children([text(state.language.label("Definition event",
+                                                    .children([text(state.language.label(
+                                                        "Definition event",
                                                         "定義イベント",
                                                         "Difina evento",
                                                     ))])

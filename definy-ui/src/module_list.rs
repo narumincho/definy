@@ -19,7 +19,8 @@ pub fn module_list_view(state: &AppState) -> Node<AppState> {
                         .set("padding", "0.9rem")
                         .set("color", "var(--text-secondary)"),
                 )
-                .children([text(state.language.label("Login required to create modules.",
+                .children([text(state.language.label(
+                    "Login required to create modules.",
                     "モジュール作成にはログインが必要です。",
                     "Ensaluto necesas por krei modulojn.",
                 ))])
@@ -35,7 +36,11 @@ pub fn module_list_view(state: &AppState) -> Node<AppState> {
             children.push(
                 H2::new()
                     .style(Style::new().set("font-size", "1.3rem"))
-                    .children([text(state.language.label("Modules", "モジュール", "Moduloj"))])
+                    .children([text(state.language.label(
+                        "Modules",
+                        "モジュール",
+                        "Moduloj",
+                    ))])
                     .into_node(),
             );
             if let Some(form) = create_form {
@@ -65,7 +70,8 @@ pub fn module_list_view(state: &AppState) -> Node<AppState> {
                                 .set("padding", "0.95rem")
                                 .set("color", "var(--text-secondary)"),
                         )
-                        .children([text(state.language.label("No modules yet.",
+                        .children([text(state.language.label(
+                            "No modules yet.",
                             "まだモジュールがありません。",
                             "Ankoraŭ neniuj moduloj.",
                         ))])
@@ -119,7 +125,8 @@ pub fn module_list_view(state: &AppState) -> Node<AppState> {
                                                             .set("font-size", "0.82rem")
                                                             .set("color", "var(--text-secondary)"),
                                                     )
-                                                    .children([text(state.language.label("definition event missing",
+                                                    .children([text(state.language.label(
+                                                        "definition event missing",
                                                         "定義イベントが見つかりません",
                                                         "difina evento mankas",
                                                     ))])
@@ -165,7 +172,8 @@ pub fn module_list_view(state: &AppState) -> Node<AppState> {
                                                                 ),
                                                             ),
                                                         )
-                                                        .children([text(state.language.label("Open module detail",
+                                                        .children([text(state.language.label(
+                                                            "Open module detail",
                                                             "モジュール詳細を開く",
                                                             "Malfermi modulajn detalojn",
                                                         ))])
@@ -176,7 +184,8 @@ pub fn module_list_view(state: &AppState) -> Node<AppState> {
                                                                 module.latest_event_hash,
                                                             ),
                                                         ))
-                                                        .children([text(state.language.label("Latest event",
+                                                        .children([text(state.language.label(
+                                                            "Latest event",
                                                             "最新イベント",
                                                             "Lasta evento",
                                                         ))])
@@ -187,7 +196,8 @@ pub fn module_list_view(state: &AppState) -> Node<AppState> {
                                                                 module.definition_event_hash,
                                                             ),
                                                         ))
-                                                        .children([text(state.language.label("Definition event",
+                                                        .children([text(state.language.label(
+                                                            "Definition event",
                                                             "定義イベント",
                                                             "Difina evento",
                                                         ))])
@@ -354,7 +364,10 @@ fn module_name_input(state: &AppState) -> Node<AppState> {
         .value(&state.module_definition_form.module_name_input);
     input.attributes.push((
         "placeholder".to_string(),
-        state.language.label("module name", "モジュール名", "modula nomo").to_string(),
+        state
+            .language
+            .label("module name", "モジュール名", "modula nomo")
+            .to_string(),
     ));
     input.events.push((
         "input".to_string(),
@@ -377,11 +390,14 @@ fn module_description_input(state: &AppState) -> Node<AppState> {
         .style(Style::new().set("min-height", "5rem"));
     textarea.attributes.push((
         "placeholder".to_string(),
-        state.language.label("description (optional)",
-            "説明 (任意)",
-            "priskribo (nedeviga)",
-        )
-        .to_string(),
+        state
+            .language
+            .label(
+                "description (optional)",
+                "説明 (任意)",
+                "priskribo (nedeviga)",
+            )
+            .to_string(),
     ));
     textarea.events.push((
         "input".to_string(),

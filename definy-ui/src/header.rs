@@ -75,7 +75,11 @@ fn header_main(state: &AppState) -> Node<AppState> {
                                 .set("font-size", "0.9rem")
                                 .set("color", "var(--text-secondary)"),
                         )
-                        .children([text(state.language.label("Modules", "モジュール", "Moduloj"))])
+                        .children([text(state.language.label(
+                            "Modules",
+                            "モジュール",
+                            "Moduloj",
+                        ))])
                         .into_node(),
                     A::<AppState, Location>::new()
                         .href(state.href_with_lang(Location::LocalEventQueue))
@@ -84,7 +88,8 @@ fn header_main(state: &AppState) -> Node<AppState> {
                                 .set("font-size", "0.9rem")
                                 .set("color", "var(--text-secondary)"),
                         )
-                        .children([text(state.language.label("Local Events",
+                        .children([text(state.language.label(
+                            "Local Events",
                             "ローカルイベント",
                             "Lokaj eventoj",
                         ))])
@@ -96,7 +101,11 @@ fn header_main(state: &AppState) -> Node<AppState> {
                                 .set("font-size", "0.9rem")
                                 .set("color", "var(--text-secondary)"),
                         )
-                        .children([text(state.language.label("Accounts", "アカウント", "Kontoj"))])
+                        .children([text(state.language.label(
+                            "Accounts",
+                            "アカウント",
+                            "Kontoj",
+                        ))])
                         .into_node(),
                 ])
                 .into_node(),
@@ -159,7 +168,8 @@ fn header_main(state: &AppState) -> Node<AppState> {
                     None => Button::new()
                         .command_for("login-or-create-account-dialog")
                         .command(CommandValue::ShowModal)
-                        .children([text(state.language.label("Log In / Sign Up",
+                        .children([text(state.language.label(
+                            "Log In / Sign Up",
                             "ログイン / サインアップ",
                             "Ensaluti / Registriĝi",
                         ))])
@@ -310,9 +320,12 @@ fn popover(state: &AppState) -> Node<AppState> {
                         }));
                     }))
                     .children([text(if state.force_offline {
-                        state.language.label("Offline: On", "オフライン: オン", "Senkonekte: En")
+                        state
+                            .language
+                            .label("Offline: On", "オフライン: オン", "Senkonekte: En")
                     } else {
-                        state.language.label("Offline: Off",
+                        state.language.label(
+                            "Offline: Off",
                             "オフライン: オフ",
                             "Senkonekte: Malŝaltita",
                         )
@@ -337,7 +350,11 @@ fn popover(state: &AppState) -> Node<AppState> {
                             }
                         }));
                     }))
-                    .children([text(state.language.label("Log Out", "ログアウト", "Elsaluti"))])
+                    .children([text(state.language.label(
+                        "Log Out",
+                        "ログアウト",
+                        "Elsaluti",
+                    ))])
                     .style(
                         Style::new()
                             .set("width", "100%")

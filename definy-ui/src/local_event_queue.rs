@@ -22,7 +22,12 @@ fn status_color(status: &LocalEventStatus) -> &'static str {
 fn format_time_ms(state: &AppState, time_ms: i64) -> String {
     chrono::DateTime::<chrono::Utc>::from_timestamp_millis(time_ms)
         .map(|t| t.format("%Y-%m-%d %H:%M:%S").to_string())
-        .unwrap_or_else(|| state.language.label("unknown", "不明", "nekonata").to_string())
+        .unwrap_or_else(|| {
+            state
+                .language
+                .label("unknown", "不明", "nekonata")
+                .to_string()
+        })
 }
 
 pub fn local_event_queue_view(state: &AppState) -> Node<AppState> {
@@ -48,7 +53,8 @@ pub fn local_event_queue_view(state: &AppState) -> Node<AppState> {
                         next.local_event_queue.is_loading = false;
                         next.local_event_queue.last_error = Some(format!(
                             "{}: {error:?}",
-                            state.language.label("Failed to load local events",
+                            state.language.label(
+                                "Failed to load local events",
                                 "ローカルイベントの読み込みに失敗しました",
                                 "Malsukcesis ŝargi lokajn eventojn"
                             )
@@ -86,12 +92,13 @@ pub fn local_event_queue_view(state: &AppState) -> Node<AppState> {
                 .set("border-radius", "0.5rem"),
         )
         .children([text(if state.force_offline {
-            state.language.label("Offline: On", "オフライン: オン", "Senkonekte: En")
+            state
+                .language
+                .label("Offline: On", "オフライン: オン", "Senkonekte: En")
         } else {
-            state.language.label("Offline: Off",
-                "オフライン: オフ",
-                "Senkonekte: Malŝaltita",
-            )
+            state
+                .language
+                .label("Offline: Off", "オフライン: オフ", "Senkonekte: Malŝaltita")
         })])
         .into_node();
 
@@ -100,7 +107,8 @@ pub fn local_event_queue_view(state: &AppState) -> Node<AppState> {
         list_items.push(
             Div::new()
                 .style(Style::new().set("color", "var(--text-secondary)"))
-                .children([text(state.language.label("No local events",
+                .children([text(state.language.label(
+                    "No local events",
                     "ローカルイベントはありません",
                     "Neniuj lokaj eventoj",
                 ))])
@@ -125,7 +133,9 @@ pub fn local_event_queue_view(state: &AppState) -> Node<AppState> {
 
             let summary = match definy_event::verify_and_deserialize(&record.event_binary) {
                 Ok((_, event)) => crate::event_presenter::event_summary_text(state, &event),
-                Err(_) => state.language.label("Invalid event", "無効なイベント", "Nevalida evento")
+                Err(_) => state
+                    .language
+                    .label("Invalid event", "無効なイベント", "Nevalida evento")
                     .to_string(),
             };
 
@@ -149,7 +159,8 @@ pub fn local_event_queue_view(state: &AppState) -> Node<AppState> {
                                         Err(error) => {
                                             next.local_event_queue.last_error = Some(format!(
                                                 "{}: {error:?}",
-                                                state.language.label("Failed to cancel queued event",
+                                                state.language.label(
+                                                    "Failed to cancel queued event",
                                                     "キュー済みイベントのキャンセルに失敗しました",
                                                     "Malsukcesis nuligi envicigitan eventon",
                                                 )
@@ -264,7 +275,8 @@ pub fn local_event_queue_view(state: &AppState) -> Node<AppState> {
                         .style(Style::new().set("display", "grid").set("gap", "0.2rem"))
                         .children([
                             H2::new()
-                                .children([text(state.language.label("Local Events",
+                                .children([text(state.language.label(
+                                    "Local Events",
                                     "ローカルイベント",
                                     "Lokaj eventoj",
                                 ))])
@@ -295,7 +307,8 @@ pub fn local_event_queue_view(state: &AppState) -> Node<AppState> {
                             .set("color", "var(--text-secondary)")
                             .set("font-size", "0.82rem"),
                     )
-                    .children([text(state.language.label("Loading...",
+                    .children([text(state.language.label(
+                        "Loading...",
                         "読み込み中...",
                         "Ŝargado...",
                     ))])

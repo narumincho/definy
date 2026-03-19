@@ -43,7 +43,9 @@ impl RouteId {
                 state.language.label("modules", "モジュール", "moduloj")
             }
             Self::LocalEventQueue => {
-                state.language.label("local-events", "ローカルイベント", "lokaj-eventoj")
+                state
+                    .language
+                    .label("local-events", "ローカルイベント", "lokaj-eventoj")
             }
             Self::EventDetail => state.language.label("events", "イベント", "eventoj"),
             Self::NotFound => state.language.label("not-found", "未検出", "ne-trovita"),
@@ -86,32 +88,41 @@ pub fn page_title_text(state: &AppState) -> String {
                     }
                     let (_, event) = event_result.as_ref().ok()?;
                     let label = match &event.content {
-                        definy_event::event::EventContent::CreateAccount(_) => {
-                            state.language.label("create-account", "アカウント作成", "konto-kreo")
-                                .to_string()
-                        }
-                        definy_event::event::EventContent::ChangeProfile(_) => {
-                            state.language.label("change-profile", "プロフィール変更", "profil-ŝanĝo")
-                                .to_string()
-                        }
+                        definy_event::event::EventContent::CreateAccount(_) => state
+                            .language
+                            .label("create-account", "アカウント作成", "konto-kreo")
+                            .to_string(),
+                        definy_event::event::EventContent::ChangeProfile(_) => state
+                            .language
+                            .label("change-profile", "プロフィール変更", "profil-ŝanĝo")
+                            .to_string(),
                         definy_event::event::EventContent::PartDefinition(part_definition) => {
                             format!(
                                 "{}/{}",
-                                state.language.label("part-definition", "パーツ定義", "parto-difino"),
+                                state.language.label(
+                                    "part-definition",
+                                    "パーツ定義",
+                                    "parto-difino"
+                                ),
                                 part_definition.part_name
                             )
                         }
                         definy_event::event::EventContent::PartUpdate(part_update) => {
                             format!(
                                 "{}/{}",
-                                state.language.label("part-update", "パーツ更新", "parto-ĝisdatigo"),
+                                state.language.label(
+                                    "part-update",
+                                    "パーツ更新",
+                                    "parto-ĝisdatigo"
+                                ),
                                 part_update.part_name
                             )
                         }
                         definy_event::event::EventContent::ModuleDefinition(module_definition) => {
                             format!(
                                 "{}/{}",
-                                state.language.label("module-definition",
+                                state.language.label(
+                                    "module-definition",
                                     "モジュール定義",
                                     "modulo-difino"
                                 ),
@@ -121,7 +132,8 @@ pub fn page_title_text(state: &AppState) -> String {
                         definy_event::event::EventContent::ModuleUpdate(module_update) => {
                             format!(
                                 "{}/{}",
-                                state.language.label("module-update",
+                                state.language.label(
+                                    "module-update",
                                     "モジュール更新",
                                     "modulo-ĝisdatigo"
                                 ),

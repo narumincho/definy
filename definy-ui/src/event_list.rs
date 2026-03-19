@@ -58,43 +58,52 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
     let filter_options = vec![
         (
             "".to_string(),
-            state.language.label("All Events", "すべてのイベント", "Ĉiuj eventoj").to_string(),
+            state
+                .language
+                .label("All Events", "すべてのイベント", "Ĉiuj eventoj")
+                .to_string(),
         ),
         (
             "create_account".to_string(),
-            state.language.label("Create Account", "アカウント作成", "Krei konton").to_string(),
+            state
+                .language
+                .label("Create Account", "アカウント作成", "Krei konton")
+                .to_string(),
         ),
         (
             "change_profile".to_string(),
-            state.language.label("Change Profile",
-                "プロフィール変更",
-                "Ŝanĝi profilon",
-            )
-            .to_string(),
+            state
+                .language
+                .label("Change Profile", "プロフィール変更", "Ŝanĝi profilon")
+                .to_string(),
         ),
         (
             "part_definition".to_string(),
-            state.language.label("Part Definition", "パーツ定義", "Parto-difino").to_string(),
+            state
+                .language
+                .label("Part Definition", "パーツ定義", "Parto-difino")
+                .to_string(),
         ),
         (
             "part_update".to_string(),
-            state.language.label("Part Update", "パーツ更新", "Parto-ĝisdatigo").to_string(),
+            state
+                .language
+                .label("Part Update", "パーツ更新", "Parto-ĝisdatigo")
+                .to_string(),
         ),
         (
             "module_definition".to_string(),
-            state.language.label("Module Definition",
-                "モジュール定義",
-                "Modulo-difino",
-            )
-            .to_string(),
+            state
+                .language
+                .label("Module Definition", "モジュール定義", "Modulo-difino")
+                .to_string(),
         ),
         (
             "module_update".to_string(),
-            state.language.label("Module Update",
-                "モジュール更新",
-                "Modulo-ĝisdatigo",
-            )
-            .to_string(),
+            state
+                .language
+                .label("Module Update", "モジュール更新", "Modulo-ĝisdatigo")
+                .to_string(),
         ),
     ];
 
@@ -420,7 +429,8 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
                                 .set("text-align", "center")
                                 .set("padding", "1rem"),
                         )
-                        .children([text(state.language.label("Loading events...",
+                        .children([text(state.language.label(
+                            "Loading events...",
                             "イベントを読み込み中...",
                             "Ŝargado de eventoj...",
                         ))])
@@ -428,12 +438,12 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
                 );
             } else if state.event_list_state.has_more {
                 let button_text = if state.event_list_state.event_hashes.is_empty() {
-                    state.language.label("Load Events",
-                        "イベントを読み込む",
-                        "Ŝargi eventojn",
-                    )
+                    state
+                        .language
+                        .label("Load Events", "イベントを読み込む", "Ŝargi eventojn")
                 } else {
-                    state.language.label("Load More Events",
+                    state.language.label(
+                        "Load More Events",
                         "さらに読み込む",
                         "Ŝargi pliajn eventojn",
                     )
@@ -462,7 +472,8 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
                                 .set("padding", "1rem")
                                 .set("color", "var(--text-secondary)"),
                         )
-                        .children([text(state.language.label("No events found. Click 'Load Events' to fetch.",
+                        .children([text(state.language.label(
+                            "No events found. Click 'Load Events' to fetch.",
                             "イベントが見つかりません。'Load Events' をクリックして取得します。",
                             "Neniuj eventoj trovitaj. Klaku 'Load Events' por ŝargi.",
                         ))])
@@ -525,7 +536,8 @@ fn event_view(
                     EventContent::CreateAccount(create_account_event) => Div::new()
                         .style(Style::new().set("color", "var(--primary)"))
                         .children([
-                            text(state.language.label("Account created:",
+                            text(state.language.label(
+                                "Account created:",
                                 "アカウント作成:",
                                 "Konto kreita:",
                             )),
@@ -535,7 +547,8 @@ fn event_view(
                     EventContent::ChangeProfile(change_profile_event) => Div::new()
                         .style(Style::new().set("color", "var(--primary)"))
                         .children([
-                            text(state.language.label("Profile changed:",
+                            text(state.language.label(
+                                "Profile changed:",
                                 "プロフィール変更:",
                                 "Profilo ŝanĝita:",
                             )),
@@ -589,7 +602,8 @@ fn event_view(
                                         .set("color", "var(--primary)")
                                         .set("text-decoration", "none"),
                                 )
-                                .children([text(state.language.label("Open part detail",
+                                .children([text(state.language.label(
+                                    "Open part detail",
                                     "パーツ詳細を開く",
                                     "Malfermi partajn detalojn",
                                 ))])
@@ -618,7 +632,8 @@ fn event_view(
                                 .into_node(),
                             text(format!(
                                 "{} {}",
-                                state.language.label("Part updated:",
+                                state.language.label(
+                                    "Part updated:",
                                     "パーツ更新:",
                                     "Parto ĝisdatigita:"
                                 ),
@@ -658,7 +673,8 @@ fn event_view(
                                         .set("color", "var(--primary)")
                                         .set("text-decoration", "none"),
                                 )
-                                .children([text(state.language.label("Open part detail",
+                                .children([text(state.language.label(
+                                    "Open part detail",
                                     "パーツ詳細を開く",
                                     "Malfermi partajn detalojn",
                                 ))])
@@ -687,7 +703,8 @@ fn event_view(
                                 .into_node(),
                             text(format!(
                                 "{} {}",
-                                state.language.label("Module created:",
+                                state.language.label(
+                                    "Module created:",
                                     "モジュール作成:",
                                     "Modulo kreita:"
                                 ),
@@ -730,7 +747,8 @@ fn event_view(
                                 .into_node(),
                             text(format!(
                                 "{} {}",
-                                state.language.label("Module updated:",
+                                state.language.label(
+                                    "Module updated:",
                                     "モジュール更新:",
                                     "Modulo ĝisdatigita:"
                                 ),
@@ -772,7 +790,8 @@ fn event_view(
                                         .set("color", "var(--primary)")
                                         .set("text-decoration", "none"),
                                 )
-                                .children([text(state.language.label("Open module definition",
+                                .children([text(state.language.label(
+                                    "Open module definition",
                                     "モジュール定義を開く",
                                     "Malfermi modulo-difinon",
                                 ))])
@@ -794,7 +813,8 @@ fn event_view(
             )
             .children([text(format!(
                 "{}: {:?}",
-                state.language.label("Failed to load events",
+                state.language.label(
+                    "Failed to load events",
                     "イベントの読み込みに失敗しました",
                     "Malsukcesis ŝargi eventojn",
                 ),
@@ -859,7 +879,11 @@ fn part_type_input(state: &AppState) -> Node<AppState> {
                         .set("font-size", "0.85rem")
                         .set("color", "var(--text-secondary)"),
                 )
-                .children([text(state.language.label("Part Type", "パーツ型", "Parto-tipo"))])
+                .children([text(state.language.label(
+                    "Part Type",
+                    "パーツ型",
+                    "Parto-tipo",
+                ))])
                 .into_node(),
             render_part_type_editor(state, &state.part_definition_form.part_type_input, 0),
         ])
@@ -941,11 +965,17 @@ fn render_part_type_editor(
         ),
         (
             "string".to_string(),
-            state.language.label("String", "文字列", "Teksto").to_string(),
+            state
+                .language
+                .label("String", "文字列", "Teksto")
+                .to_string(),
         ),
         (
             "boolean".to_string(),
-            state.language.label("Boolean", "真偽値", "Bulea").to_string(),
+            state
+                .language
+                .label("Boolean", "真偽値", "Bulea")
+                .to_string(),
         ),
         (
             "type".to_string(),
@@ -953,7 +983,10 @@ fn render_part_type_editor(
         ),
         (
             "list".to_string(),
-            state.language.label("List<...>", "リスト<...>", "Listo<...>").to_string(),
+            state
+                .language
+                .label("List<...>", "リスト<...>", "Listo<...>")
+                .to_string(),
         ),
     ]);
 
@@ -967,7 +1000,9 @@ fn render_part_type_editor(
                     value,
                     format!(
                         "{} {}",
-                        state.language.label("Type Part:", "型パーツ:", "Tipo-parto:"),
+                        state
+                            .language
+                            .label("Type Part:", "型パーツ:", "Tipo-parto:"),
                         snapshot.part_name
                     ),
                 )
@@ -1012,7 +1047,11 @@ fn render_part_type_editor(
                                 .set("color", "var(--text-secondary)")
                                 .set("margin-bottom", "0.25rem"),
                         )
-                        .children([text(state.language.label("Item Type", "要素型", "Ero-tipo"))])
+                        .children([text(state.language.label(
+                            "Item Type",
+                            "要素型",
+                            "Ero-tipo",
+                        ))])
                         .into_node(),
                     render_part_type_editor(state, &Some(item_type.as_ref().clone()), depth + 1),
                 ])

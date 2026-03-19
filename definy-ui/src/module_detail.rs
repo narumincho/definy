@@ -13,7 +13,8 @@ pub fn module_detail_view(state: &AppState, definition_event_hash: &EventHashId)
             .style(crate::layout::page_shell_style("1rem"))
             .children([H2::new()
                 .style(Style::new().set("font-size", "1.3rem"))
-                .children([text(state.language.label("Module not found",
+                .children([text(state.language.label(
+                    "Module not found",
                     "モジュールが見つかりません",
                     "Modulo ne trovita",
                 ))])
@@ -65,7 +66,11 @@ pub fn module_detail_view(state: &AppState, definition_event_hash: &EventHashId)
                         )
                         .children([text(format!(
                             "{} {}",
-                            state.language.label("latest author:", "最新の投稿者:", "lasta aŭtoro:"),
+                            state.language.label(
+                                "latest author:",
+                                "最新の投稿者:",
+                                "lasta aŭtoro:"
+                            ),
                             author_name
                         ))])
                         .into_node(),
@@ -76,7 +81,8 @@ pub fn module_detail_view(state: &AppState, definition_event_hash: &EventHashId)
                                 .href(state.href_with_lang(Location::Event(
                                     module_snapshot.latest_event_hash,
                                 )))
-                                .children([text(state.language.label("Latest event",
+                                .children([text(state.language.label(
+                                    "Latest event",
                                     "最新イベント",
                                     "Lasta evento",
                                 ))])
@@ -85,7 +91,8 @@ pub fn module_detail_view(state: &AppState, definition_event_hash: &EventHashId)
                                 .href(state.href_with_lang(Location::Event(
                                     module_snapshot.definition_event_hash,
                                 )))
-                                .children([text(state.language.label("Definition event",
+                                .children([text(state.language.label(
+                                    "Definition event",
                                     "定義イベント",
                                     "Difina evento",
                                 ))])
@@ -109,7 +116,8 @@ pub fn module_detail_view(state: &AppState, definition_event_hash: &EventHashId)
                             .set("padding", "0.9rem")
                             .set("color", "var(--text-secondary)"),
                     )
-                    .children([text(state.language.label("Login required to update modules.",
+                    .children([text(state.language.label(
+                        "Login required to update modules.",
                         "モジュール更新にはログインが必要です。",
                         "Ensaluto necesas por ĝisdatigi modulojn.",
                     ))])
@@ -117,7 +125,8 @@ pub fn module_detail_view(state: &AppState, definition_event_hash: &EventHashId)
             },
             Div::new()
                 .style(Style::new().set("margin-top", "1rem"))
-                .children([text(state.language.label("Parts in this module",
+                .children([text(state.language.label(
+                    "Parts in this module",
                     "このモジュールのパーツ",
                     "Partoj en ĉi tiu modulo",
                 ))])
@@ -130,7 +139,8 @@ pub fn module_detail_view(state: &AppState, definition_event_hash: &EventHashId)
                             .set("padding", "0.9rem")
                             .set("color", "var(--text-secondary)"),
                     )
-                    .children([text(state.language.label("No parts in this module yet.",
+                    .children([text(state.language.label(
+                        "No parts in this module yet.",
                         "このモジュールにはまだパーツがありません。",
                         "Ankoraŭ neniuj partoj en ĉi tiu modulo.",
                     ))])
@@ -192,7 +202,8 @@ pub fn module_detail_view(state: &AppState, definition_event_hash: &EventHashId)
                                             )
                                             .children([text(format!(
                                                 "{} {}",
-                                                state.language.label("latest author:",
+                                                state.language.label(
+                                                    "latest author:",
                                                     "最新の投稿者:",
                                                     "lasta aŭtoro:"
                                                 ),
@@ -210,7 +221,8 @@ pub fn module_detail_view(state: &AppState, definition_event_hash: &EventHashId)
                                                     .href(state.href_with_lang(Location::Part(
                                                         part.definition_event_hash,
                                                     )))
-                                                    .children([text(state.language.label("Open part detail",
+                                                    .children([text(state.language.label(
+                                                        "Open part detail",
                                                         "パーツ詳細を開く",
                                                         "Malfermi partajn detalojn",
                                                     ))])
@@ -219,7 +231,8 @@ pub fn module_detail_view(state: &AppState, definition_event_hash: &EventHashId)
                                                     .href(state.href_with_lang(Location::Event(
                                                         part.latest_event_hash,
                                                     )))
-                                                    .children([text(state.language.label("Latest event",
+                                                    .children([text(state.language.label(
+                                                        "Latest event",
                                                         "最新イベント",
                                                         "Lasta evento",
                                                     ))])
