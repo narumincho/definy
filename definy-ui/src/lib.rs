@@ -11,7 +11,6 @@ mod expression_editor;
 mod expression_eval;
 pub mod fetch;
 mod header;
-pub mod i18n;
 pub mod indexed_db;
 pub mod language;
 mod layout;
@@ -133,7 +132,7 @@ pub fn render(
         );
     }
     Html::new()
-        .attribute("lang", state.language.code)
+        .attribute("lang", state.language.to_code())
         .children([
             Head::new().children(head_children).into_node(),
             Body::new()

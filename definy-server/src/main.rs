@@ -215,7 +215,7 @@ fn db_unavailable_response(wants_html: bool) -> Result<Response<Full<Bytes>>, hy
 async fn handle_html(
     uri: &hyper::Uri,
     pool: &sqlx::postgres::PgPool,
-    language: definy_ui::language::Language,
+    language: definy_ui::language::LanguageOld,
     language_fallback_notice: Option<definy_ui::LanguageFallbackNotice>,
 ) -> Result<Response<Full<Bytes>>, hyper::http::Error> {
     let path = uri.path();

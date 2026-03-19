@@ -1,7 +1,6 @@
 use definy_event::EventHashId;
 use narumincho_vdom::*;
 
-use crate::i18n;
 use crate::{AppState, Location, fetch};
 
 pub fn account_detail_view(
@@ -37,8 +36,7 @@ pub fn account_detail_view(
                 .children([
                     Div::new()
                         .style(Style::new().set("font-weight", "600"))
-                        .children([text(i18n::tr(
-                            state,
+                        .children([text(state.language.label(
                             "Change account name",
                             "アカウント名を変更",
                             "Ŝanĝi kontonomon",
@@ -144,7 +142,7 @@ pub fn account_detail_view(
                                 state
                             }));
                         }))
-                        .children([text(i18n::tr(state, "Change Name", "名前を変更", "Ŝanĝi nomon"))])
+                        .children([text(state.language.label("Change Name", "名前を変更", "Ŝanĝi nomon"))])
                         .into_node(),
                 ])
                 .into_node(),
@@ -168,8 +166,7 @@ pub fn account_detail_view(
                         .set("color", "var(--primary)")
                         .set("font-weight", "500"),
                 )
-                .children([text(i18n::tr(
-                    state,
+                .children([text(state.language.label(
                     "← Back to Accounts",
                     "← アカウント一覧へ戻る",
                     "← Reen al kontoj",
@@ -203,7 +200,7 @@ pub fn account_detail_view(
                         .children([text(format!(
                             "{} {}",
                             account_events.len(),
-                            i18n::tr(state, "events", "イベント", "eventoj")
+                            state.language.label("events", "イベント", "eventoj")
                         ))])
                         .into_node(),
                 ])
@@ -221,8 +218,7 @@ pub fn account_detail_view(
                             .set("padding", "0.9rem")
                             .set("color", "var(--text-secondary)"),
                     )
-                    .children([text(i18n::tr(
-                        state,
+                    .children([text(state.language.label(
                         "This account has not posted any events yet.",
                         "このアカウントはまだイベントを投稿していません。",
                         "Ĉi tiu konto ankoraŭ ne afiŝis eventojn.",

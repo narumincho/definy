@@ -371,7 +371,7 @@ impl AppState {
     pub fn url_with_lang(&self, location: &Location) -> String {
         AppState::build_url(
             location,
-            self.language.code,
+            self.language.to_code(),
             self.event_list_state.filter_event_type,
         )
     }

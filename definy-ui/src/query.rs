@@ -13,24 +13,7 @@ pub fn parse_query(query: Option<&str>) -> QueryParams {
     if query.is_empty() {
         return QueryParams::default();
     }
-    let mut params = QueryParams::default();
-    let pairs = serde_urlencoded::from_str::<Vec<(String, String)>>(query).unwrap_or_default();
-    for (key, value) in pairs {
-        match key.as_str() {
-            "lang" => {
-                if value.trim().is_empty() {
-                    params.lang = None;
-                } else {
-                    params.lang = Some(value);
-                }
-            }
-            "event_type" => {
-                params.event_type = parse_event_type_value(value.as_str());
-            }
-            _ => {}
-        }
-    }
-    params
+    serde_urlencoded::from_str::<QueryParams>(query).unwrap_or_default()
 }
 
 fn parse_event_type_value(value: &str) -> Option<EventType> {

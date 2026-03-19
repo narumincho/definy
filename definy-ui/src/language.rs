@@ -2,8 +2,16 @@ use std::collections::HashSet;
 
 use crate::query::parse_query;
 
+#[derive(Clone, PartialEq, Eq)]
+pub enum Language {
+    English,
+    Japanese,
+    Esperanto,
+    Unsupported(String),
+}
+
 #[derive(Clone, Copy, PartialEq, Eq)]
-pub struct Language {
+pub struct LanguageOld {
     pub code: &'static str,
     pub english_name: &'static str,
     pub native_name: &'static str,
@@ -11,7 +19,7 @@ pub struct Language {
 
 #[derive(Clone)]
 pub struct LanguageResolution {
-    pub language: Language,
+    pub language: LanguageOld,
     pub unsupported_query_lang: Option<String>,
 }
 
@@ -26,29 +34,29 @@ impl LanguageResolution {
     }
 }
 
-pub const SUPPORTED_LANGUAGES: &[Language] = &[
-    Language {
+pub const SUPPORTED_LANGUAGES: &[LanguageOld] = &[
+    LanguageOld {
         code: "en",
         english_name: "English",
         native_name: "English",
     },
-    Language {
+    LanguageOld {
         code: "ja",
         english_name: "Japanese",
         native_name: "日本語",
     },
-    Language {
+    LanguageOld {
         code: "eo",
         english_name: "Esperanto",
         native_name: "Esperanto",
     },
 ];
 
-pub fn default_language() -> Language {
+pub fn default_language() -> LanguageOld {
     SUPPORTED_LANGUAGES[0]
 }
 
-pub fn language_from_tag(tag: &str) -> Option<Language> {
+pub fn language_from_tag(tag: &str) -> Option<LanguageOld> {
     let tag = tag.trim();
     if tag.is_empty() {
         return None;
@@ -64,16 +72,16 @@ pub fn language_from_tag(tag: &str) -> Option<Language> {
         .copied()
 }
 
-pub fn language_from_query(query: Option<&str>) -> Option<Language> {
+pub fn language_from_query(query: Option<&str>) -> Option<LanguageOld> {
     let params = parse_query(query);
     params.lang.as_deref().and_then(language_from_tag)
 }
 
-pub fn language_label(language: &Language) -> String {
+pub fn language_label(language: &LanguageOld) -> String {
     format!("{} ({})", language.native_name, language.english_name)
 }
 
-pub fn preferred_languages() -> Vec<Language> {
+pub fn preferred_languages() -> Vec<LanguageOld> {
     let mut ordered = Vec::new();
     let mut seen = HashSet::new();
     for tag in browser_language_tags() {
@@ -91,7 +99,7 @@ pub fn preferred_languages() -> Vec<Language> {
     ordered
 }
 
-pub fn best_language_from_browser() -> Option<Language> {
+pub fn best_language_from_browser() -> Option<LanguageOld> {
     for tag in browser_language_tags() {
         if let Some(lang) = language_from_tag(tag.as_str()) {
             return Some(lang);
@@ -102,7 +110,7 @@ pub fn best_language_from_browser() -> Option<Language> {
 
 pub fn resolve_language_with_fallback(
     query: Option<&str>,
-    fallback: impl FnOnce() -> Language,
+    fallback: impl FnOnce() -> LanguageOld,
 ) -> LanguageResolution {
     let params = parse_query(query);
     if let Some(requested_lang) = params.lang {
@@ -129,11 +137,11 @@ pub fn resolve_language(query: Option<&str>, accept_language: Option<&str>) -> L
     })
 }
 
-pub fn best_language_from_accept_language(header: Option<&str>) -> Language {
+pub fn best_language_from_accept_language(header: Option<&str>) -> LanguageOld {
     language_from_accept_language(header).unwrap_or_else(default_language)
 }
 
-pub fn language_from_accept_language(header: Option<&str>) -> Option<Language> {
+pub fn language_from_accept_language(header: Option<&str>) -> Option<LanguageOld> {
     let header = header?;
     let mut candidates = Vec::new();
     for part in header.split(',') {
@@ -198,4 +206,33 @@ fn browser_language_tags() -> Vec<String> {
 #[cfg(not(target_arch = "wasm32"))]
 fn browser_language_tags() -> Vec<String> {
     Vec::new()
+}
+
+impl Language {
+    pub fn from_code(code: &str) -> Self {
+        match code {
+            "en" => Language::English,
+            "ja" => Language::Japanese,
+            "eo" => Language::Esperanto,
+            _ => Language::Unsupported(code.to_string()),
+        }
+    }
+
+    pub fn to_code(&self) -> &str {
+        match self {
+            Language::English => "en",
+            Language::Japanese => "ja",
+            Language::Esperanto => "eo",
+            Language::Unsupported(code) => code,
+        }
+    }
+
+    pub fn label<'a>(&self, en: &'a str, ja: &'a str, eo: &'a str) -> &'a str {
+        match self {
+            Language::English => en,
+            Language::Japanese => ja,
+            Language::Esperanto => eo,
+            Language::Unsupported(_) => en,
+        }
+    }
 }
