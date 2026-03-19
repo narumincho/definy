@@ -5,7 +5,6 @@ use std::str::FromStr;
 
 use crate::Location;
 use crate::app_state::AppState;
-use crate::i18n;
 use crate::part_projection::{PartSnapshot, collect_part_snapshots, find_part_snapshot};
 
 #[derive(Clone, Copy)]
@@ -171,9 +170,7 @@ fn render_expression_editor(
                             .set("font-size", "0.8rem")
                             .set("color", "var(--text-secondary)"),
                     )
-                    .children([text(i18n::tr(
-                        state,
-                        "Built-in types",
+                    .children([text(state.language.label("Built-in types",
                         "組み込み型",
                         "Enkonstruitaj tipoj",
                     ))])
@@ -187,7 +184,7 @@ fn render_expression_editor(
                 Div::new()
                     .style(Style::new().set("display", "grid").set("gap", "0.3rem"))
                     .children([
-                        text(i18n::tr(state, "Item Type", "要素型", "Ero-tipo")),
+                        text(state.language.label("Item Type", "要素型", "Ero-tipo")),
                         render_expression_editor(
                             state,
                             type_list_expression.item_type.as_ref(),
@@ -210,7 +207,7 @@ fn render_expression_editor(
                 let mut grid_children = Vec::new();
                 grid_children.push(
                     Div::new()
-                        .children([text(i18n::tr(state, "Item", "項目", "Ero"))])
+                        .children([text(state.language.label("Item", "項目", "Ero"))])
                         .style(
                             Style::new()
                                 .set("font-weight", "bold")
@@ -333,7 +330,7 @@ fn render_expression_editor(
                                             )
                                             .children([text(format!(
                                                 "{} {}",
-                                                i18n::tr(state, "Item", "項目", "Ero"),
+                                                state.language.label("Item", "項目", "Ero"),
                                                 index + 1
                                             ))])
                                             .into_node(),
@@ -388,7 +385,7 @@ fn render_expression_editor(
                         Div::new()
                             .style(Style::new().set("display", "grid").set("gap", "0.3rem"))
                             .children([
-                                text(i18n::tr(state, "Left", "左", "Maldekstre")),
+                                text(state.language.label("Left", "左", "Maldekstre")),
                                 render_expression_editor(
                                     state,
                                     add_expression.left.as_ref(),
@@ -406,7 +403,7 @@ fn render_expression_editor(
                         Div::new()
                             .style(Style::new().set("display", "grid").set("gap", "0.3rem"))
                             .children([
-                                text(i18n::tr(state, "Right", "右", "Dekstre")),
+                                text(state.language.label("Right", "右", "Dekstre")),
                                 render_expression_editor(
                                     state,
                                     add_expression.right.as_ref(),
@@ -448,7 +445,7 @@ fn render_expression_editor(
                         Div::new()
                             .style(Style::new().set("display", "grid").set("gap", "0.3rem"))
                             .children([
-                                text(i18n::tr(state, "Condition", "条件", "Kondiĉo")),
+                                text(state.language.label("Condition", "条件", "Kondiĉo")),
                                 render_expression_editor(
                                     state,
                                     if_expression.condition.as_ref(),
@@ -466,7 +463,7 @@ fn render_expression_editor(
                         Div::new()
                             .style(Style::new().set("display", "grid").set("gap", "0.3rem"))
                             .children([
-                                text(i18n::tr(state, "Then", "なら", "Tiam")),
+                                text(state.language.label("Then", "なら", "Tiam")),
                                 render_expression_editor(
                                     state,
                                     if_expression.then_expr.as_ref(),
@@ -484,7 +481,7 @@ fn render_expression_editor(
                         Div::new()
                             .style(Style::new().set("display", "grid").set("gap", "0.3rem"))
                             .children([
-                                text(i18n::tr(state, "Else", "それ以外", "Alie")),
+                                text(state.language.label("Else", "それ以外", "Alie")),
                                 render_expression_editor(
                                     state,
                                     if_expression.else_expr.as_ref(),
@@ -521,7 +518,7 @@ fn render_expression_editor(
                         Div::new()
                             .style(Style::new().set("display", "grid").set("gap", "0.3rem"))
                             .children([
-                                text(i18n::tr(state, "Left", "左", "Maldekstre")),
+                                text(state.language.label("Left", "左", "Maldekstre")),
                                 render_expression_editor(
                                     state,
                                     equal_expression.left.as_ref(),
@@ -539,7 +536,7 @@ fn render_expression_editor(
                         Div::new()
                             .style(Style::new().set("display", "grid").set("gap", "0.3rem"))
                             .children([
-                                text(i18n::tr(state, "Right", "右", "Dekstre")),
+                                text(state.language.label("Right", "右", "Dekstre")),
                                 render_expression_editor(
                                     state,
                                     equal_expression.right.as_ref(),
@@ -576,14 +573,14 @@ fn render_expression_editor(
                         Div::new()
                             .style(Style::new().set("display", "grid").set("gap", "0.3rem"))
                             .children([
-                                text(i18n::tr(state, "Let Name", "変数名", "Nomo")),
+                                text(state.language.label("Let Name", "変数名", "Nomo")),
                                 let_name_input(path.clone(), target, &let_expression.variable_name),
                             ])
                             .into_node(),
                         Div::new()
                             .style(Style::new().set("display", "grid").set("gap", "0.3rem"))
                             .children([
-                                text(i18n::tr(state, "Value", "値", "Valoro")),
+                                text(state.language.label("Value", "値", "Valoro")),
                                 render_expression_editor(
                                     state,
                                     let_expression.value.as_ref(),
@@ -600,7 +597,7 @@ fn render_expression_editor(
                             .into_node(),
                         Div::new()
                             .style(Style::new().set("display", "grid").set("gap", "0.3rem"))
-                            .children([text(i18n::tr(state, "Body", "本体", "Kerno")), {
+                            .children([text(state.language.label("Body", "本体", "Kerno")), {
                                 let mut body_scope = scope_variables.clone();
                                 body_scope.push(ScopeVariable {
                                     id: let_expression.variable_id,
@@ -659,7 +656,7 @@ fn render_expression_editor(
                                                 .set("font-size", "0.8rem")
                                                 .set("color", "var(--text-secondary)"),
                                         )
-                                        .children([text(i18n::tr(state, "Key", "キー", "Ŝlosilo"))])
+                                        .children([text(state.language.label("Key", "キー", "Ŝlosilo"))])
                                         .into_node(),
                                     if structure_locked {
                                         Div::new()
@@ -689,7 +686,7 @@ fn render_expression_editor(
                             Div::new()
                                 .style(Style::new().set("display", "grid").set("gap", "0.3rem"))
                                 .children([
-                                    text(i18n::tr(state, "Value", "値", "Valoro")),
+                                    text(state.language.label("Value", "値", "Valoro")),
                                     render_expression_editor(
                                         state,
                                         item.value.as_ref(),
@@ -744,7 +741,7 @@ fn render_expression_editor(
                             )
                             .children([text(format!(
                                 "{} {}",
-                                i18n::tr(state, "Type:", "型:", "Tipo:"),
+                                state.language.label("Type:", "型:", "Tipo:"),
                                 type_part_name
                             ))])
                             .into_node(),
@@ -773,9 +770,7 @@ fn render_expression_editor(
                             .set("font-size", "0.8rem")
                             .set("color", "var(--text-secondary)"),
                     )
-                    .children([text(i18n::tr(
-                        state,
-                        "Select a Global/Local reference from the dropdown.",
+                    .children([text(state.language.label("Select a Global/Local reference from the dropdown.",
                         "ドロップダウンから Global/Local 参照を選んでください",
                         "Elektu Globalan/Lokan referencon el la falmenuo.",
                     ))])
@@ -1737,7 +1732,7 @@ fn boolean_input(
                         }
                     }
                 }))
-                .children([text(i18n::tr(state, "True", "真", "Vera"))])
+                .children([text(state.language.label("True", "真", "Vera"))])
                 .into_node(),
             Button::new()
                 .type_("button")
@@ -1762,7 +1757,7 @@ fn boolean_input(
                         }
                     }
                 }))
-                .children([text(i18n::tr(state, "False", "偽", "Falsa"))])
+                .children([text(state.language.label("False", "偽", "Falsa"))])
                 .into_node(),
         ])
         .into_node()
@@ -1854,9 +1849,7 @@ fn add_record_item_button(
                 }));
             }
         }))
-        .children([text(i18n::tr(
-            state,
-            "+ Add Item",
+        .children([text(state.language.label("+ Add Item",
             "+ 追加",
             "+ Aldoni eron",
         ))])
@@ -1882,7 +1875,7 @@ fn remove_record_item_button(
                 }));
             }
         }))
-        .children([text(i18n::tr(state, "Remove", "削除", "Forigi"))])
+        .children([text(state.language.label("Remove", "削除", "Forigi"))])
         .into_node()
 }
 
@@ -1904,9 +1897,7 @@ fn add_list_item_button(
                 }));
             }
         }))
-        .children([text(i18n::tr(
-            state,
-            "+ Add Item",
+        .children([text(state.language.label("+ Add Item",
             "+ 追加",
             "+ Aldoni eron",
         ))])

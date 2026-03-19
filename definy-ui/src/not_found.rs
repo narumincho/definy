@@ -1,6 +1,5 @@
 use crate::Location;
 use crate::app_state::AppState;
-use crate::i18n;
 use narumincho_vdom::*;
 
 pub fn not_found_view(state: &AppState) -> Node<AppState> {
@@ -41,9 +40,7 @@ pub fn not_found_view(state: &AppState) -> Node<AppState> {
                         .set("color", "var(--text-primary)")
                         .set("margin-bottom", "2rem"),
                 )
-                .children([text(i18n::tr(
-                    state,
-                    "Page Not Found",
+                .children([text(state.language.label("Page Not Found",
                     "ページが見つかりません",
                     "Paĝo ne trovita",
                 ))])
@@ -66,9 +63,7 @@ pub fn not_found_view(state: &AppState) -> Node<AppState> {
                         .set("transition", "all 0.3s ease")
                         .set("box-shadow", "0 4px 10px rgba(139, 92, 246, 0.25)"),
                 )
-                .children([text(i18n::tr(
-                    state,
-                    "Return to Home",
+                .children([text(state.language.label("Return to Home",
                     "ホームに戻る",
                     "Reen al hejmo",
                 ))])

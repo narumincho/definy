@@ -2,7 +2,6 @@ use std::rc::Rc;
 
 use narumincho_vdom::*;
 
-use crate::i18n;
 use crate::{AppState, Location};
 
 pub fn header(state: &AppState) -> Node<AppState> {
@@ -67,7 +66,7 @@ fn header_main(state: &AppState) -> Node<AppState> {
                                 .set("font-size", "0.9rem")
                                 .set("color", "var(--text-secondary)"),
                         )
-                        .children([text(i18n::tr(state, "Parts", "パーツ", "Partoj"))])
+                        .children([text(state.language.label("Parts", "パーツ", "Partoj"))])
                         .into_node(),
                     A::<AppState, Location>::new()
                         .href(state.href_with_lang(Location::ModuleList))
@@ -76,7 +75,7 @@ fn header_main(state: &AppState) -> Node<AppState> {
                                 .set("font-size", "0.9rem")
                                 .set("color", "var(--text-secondary)"),
                         )
-                        .children([text(i18n::tr(state, "Modules", "モジュール", "Moduloj"))])
+                        .children([text(state.language.label("Modules", "モジュール", "Moduloj"))])
                         .into_node(),
                     A::<AppState, Location>::new()
                         .href(state.href_with_lang(Location::LocalEventQueue))
@@ -85,9 +84,7 @@ fn header_main(state: &AppState) -> Node<AppState> {
                                 .set("font-size", "0.9rem")
                                 .set("color", "var(--text-secondary)"),
                         )
-                        .children([text(i18n::tr(
-                            state,
-                            "Local Events",
+                        .children([text(state.language.label("Local Events",
                             "ローカルイベント",
                             "Lokaj eventoj",
                         ))])
@@ -99,7 +96,7 @@ fn header_main(state: &AppState) -> Node<AppState> {
                                 .set("font-size", "0.9rem")
                                 .set("color", "var(--text-secondary)"),
                         )
-                        .children([text(i18n::tr(state, "Accounts", "アカウント", "Kontoj"))])
+                        .children([text(state.language.label("Accounts", "アカウント", "Kontoj"))])
                         .into_node(),
                 ])
                 .into_node(),
@@ -162,9 +159,7 @@ fn header_main(state: &AppState) -> Node<AppState> {
                     None => Button::new()
                         .command_for("login-or-create-account-dialog")
                         .command(CommandValue::ShowModal)
-                        .children([text(i18n::tr(
-                            state,
-                            "Log In / Sign Up",
+                        .children([text(state.language.label("Log In / Sign Up",
                             "ログイン / サインアップ",
                             "Ensaluti / Registriĝi",
                         ))])
@@ -194,7 +189,7 @@ fn language_dropdown(state: &AppState) -> Node<AppState> {
             crate::language::language_label(&language),
         ));
     }
-    let current_code = state.language.code;
+    let current_code = state.language.to_code();
     let dropdown = crate::dropdown::searchable_dropdown(
         state,
         "language",
@@ -202,15 +197,14 @@ fn language_dropdown(state: &AppState) -> Node<AppState> {
         options.as_slice(),
         Rc::new(|value| {
             Box::new(move |state: AppState| {
-                let selected =
-                    crate::language::language_from_tag(value.as_str()).unwrap_or(state.language);
-                if selected.code == state.language.code {
+                let selected = crate::language::Language::from_code(value.as_str());
+                if selected == state.language {
                     return state;
                 }
                 let location = state.location.clone().unwrap_or(Location::Home);
                 let url = AppState::build_url(
                     &location,
-                    selected.code,
+                    selected.to_code(),
                     state.event_list_state.filter_event_type,
                 );
                 if let Some(window) = web_sys::window()
@@ -316,11 +310,9 @@ fn popover(state: &AppState) -> Node<AppState> {
                         }));
                     }))
                     .children([text(if state.force_offline {
-                        i18n::tr(state, "Offline: On", "オフライン: オン", "Senkonekte: En")
+                        state.language.label("Offline: On", "オフライン: オン", "Senkonekte: En")
                     } else {
-                        i18n::tr(
-                            state,
-                            "Offline: Off",
+                        state.language.label("Offline: Off",
                             "オフライン: オフ",
                             "Senkonekte: Malŝaltita",
                         )
@@ -345,7 +337,7 @@ fn popover(state: &AppState) -> Node<AppState> {
                             }
                         }));
                     }))
-                    .children([text(i18n::tr(state, "Log Out", "ログアウト", "Elsaluti"))])
+                    .children([text(state.language.label("Log Out", "ログアウト", "Elsaluti"))])
                     .style(
                         Style::new()
                             .set("width", "100%")

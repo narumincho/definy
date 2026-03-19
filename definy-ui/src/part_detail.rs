@@ -7,7 +7,6 @@ use crate::Location;
 use crate::app_state::AppState;
 use crate::expression_editor::{EditorTarget, render_root_expression_editor};
 use crate::expression_eval::expression_to_source;
-use crate::i18n;
 use crate::module_projection::collect_module_snapshots;
 use crate::part_projection::{collect_related_part_events, find_part_snapshot};
 
@@ -22,9 +21,7 @@ pub fn part_detail_view(state: &AppState, definition_event_hash: &EventHashId) -
             Some(snapshot) => vec![
                 A::<AppState, Location>::new()
                     .href(state.href_with_lang(Location::PartList))
-                    .children([text(i18n::tr(
-                        state,
-                        "← Back to Parts",
+                    .children([text(state.language.label("← Back to Parts",
                         "← パーツ一覧へ戻る",
                         "← Reen al partoj",
                     ))])
@@ -50,16 +47,14 @@ pub fn part_detail_view(state: &AppState, definition_event_hash: &EventHashId) -
                             )
                             .children([text(format!(
                                 "{} {}",
-                                i18n::tr(state, "Updated at:", "更新日時:", "Ĝisdatigita je:"),
+                                state.language.label("Updated at:", "更新日時:", "Ĝisdatigita je:"),
                                 snapshot.updated_at.format("%Y-%m-%d %H:%M:%S")
                             ))])
                             .into_node(),
                         if snapshot.part_description.is_empty() {
                             Div::new()
                                 .style(Style::new().set("color", "var(--text-secondary)"))
-                                .children([text(i18n::tr(
-                                    state,
-                                    "(no description)",
+                                .children([text(state.language.label("(no description)",
                                     "(説明なし)",
                                     "(sen priskribo)",
                                 ))])
@@ -79,7 +74,7 @@ pub fn part_detail_view(state: &AppState, definition_event_hash: &EventHashId) -
                             )
                             .children([text(format!(
                                 "{} {}",
-                                i18n::tr(state, "expression:", "式:", "esprimo:"),
+                                state.language.label("expression:", "式:", "esprimo:"),
                                 expression_to_source(&snapshot.expression)
                             ))])
                             .into_node(),
@@ -90,9 +85,7 @@ pub fn part_detail_view(state: &AppState, definition_event_hash: &EventHashId) -
                                     .href(state.href_with_lang(Location::Event(
                                         definition_event_hash.clone(),
                                     )))
-                                    .children([text(i18n::tr(
-                                        state,
-                                        "Definition event",
+                                    .children([text(state.language.label("Definition event",
                                         "定義イベント",
                                         "Difina evento",
                                     ))])
@@ -101,9 +94,7 @@ pub fn part_detail_view(state: &AppState, definition_event_hash: &EventHashId) -
                                     .href(state.href_with_lang(Location::Event(
                                         snapshot.latest_event_hash,
                                     )))
-                                    .children([text(i18n::tr(
-                                        state,
-                                        "Latest event",
+                                    .children([text(state.language.label("Latest event",
                                         "最新イベント",
                                         "Lasta evento",
                                     ))])
@@ -124,7 +115,7 @@ pub fn part_detail_view(state: &AppState, definition_event_hash: &EventHashId) -
                     .children([
                         Div::new()
                             .style(Style::new().set("font-weight", "600"))
-                            .children([text(i18n::tr(state, "History", "履歴", "Historio"))])
+                            .children([text(state.language.label("History", "履歴", "Historio"))])
                             .into_node(),
                         Div::new()
                             .style(Style::new().set("display", "grid").set("gap", "0.4rem"))
@@ -171,18 +162,14 @@ pub fn part_detail_view(state: &AppState, definition_event_hash: &EventHashId) -
             None => vec![
                 A::<AppState, Location>::new()
                     .href(state.href_with_lang(Location::PartList))
-                    .children([text(i18n::tr(
-                        state,
-                        "← Back to Parts",
+                    .children([text(state.language.label("← Back to Parts",
                         "← パーツ一覧へ戻る",
                         "← Reen al partoj",
                     ))])
                     .into_node(),
                 Div::new()
                     .style(Style::new().set("color", "var(--text-secondary)"))
-                    .children([text(i18n::tr(
-                        state,
-                        "Part not found",
+                    .children([text(state.language.label("Part not found",
                         "パーツが見つかりません",
                         "Parto ne trovita",
                     ))])
@@ -199,7 +186,7 @@ fn part_update_form(state: &AppState, definition_event_hash: &EventHashId) -> No
     let dropdown_name = format!("part-update-module-{}", hash_as_base64);
     let mut module_options = vec![(
         "".to_string(),
-        i18n::tr(state, "No module", "モジュールなし", "Neniu modulo").to_string(),
+        state.language.label("No module", "モジュールなし", "Neniu modulo").to_string(),
     )];
 
     module_options.extend(
@@ -222,9 +209,7 @@ fn part_update_form(state: &AppState, definition_event_hash: &EventHashId) -> No
         .children([
             Div::new()
                 .style(Style::new().set("font-weight", "600"))
-                .children([text(i18n::tr(
-                            state,
-                    "Create PartUpdate event",
+                .children([text(state.language.label("Create PartUpdate event",
                     "PartUpdate イベントを作成",
                     "Krei PartUpdate eventon",
                 ))])
@@ -239,9 +224,7 @@ fn part_update_form(state: &AppState, definition_event_hash: &EventHashId) -> No
                 )
                 .children([text(format!(
                     "{} {}",
-                    i18n::tr(
-                            state,
-                        "partDefinitionEventHash:",
+                    state.language.label("partDefinitionEventHash:",
                         "partDefinitionEventHash:",
                         "partDefinitionEventHash:"
                     ),
@@ -278,7 +261,7 @@ fn part_update_form(state: &AppState, definition_event_hash: &EventHashId) -> No
                                 .set("font-size", "0.85rem")
                                 .set("color", "var(--text-secondary)"),
                         )
-                        .children([text(i18n::tr(state, "Module", "モジュール", "Modulo"))])
+                        .children([text(state.language.label("Module", "モジュール", "Modulo"))])
                         .into_node(),
                     crate::dropdown::searchable_dropdown(
                         state,
@@ -329,9 +312,7 @@ fn part_update_form(state: &AppState, definition_event_hash: &EventHashId) -> No
                         .set("color", "var(--text-secondary)")
                         .set("font-size", "0.9rem"),
                 )
-                .children([text(i18n::tr(
-                            state,
-                    "Expression Builder",
+                .children([text(state.language.label("Expression Builder",
                     "式ビルダー",
                     "Esprimo-konstruilo",
                 ))])
@@ -347,7 +328,7 @@ fn part_update_form(state: &AppState, definition_event_hash: &EventHashId) -> No
                 )
                 .children([text(format!(
                     "{} {}",
-                    i18n::tr(state, "Current:", "現在:", "Nuna:"),
+                    state.language.label("Current:", "現在:", "Nuna:"),
                     expression_to_source(&initial_expression)
                 ))])
                 .into_node(),
@@ -366,9 +347,7 @@ fn part_update_form(state: &AppState, definition_event_hash: &EventHashId) -> No
                             } else {
                                 return AppState {
                                     event_detail_eval_result: Some(
-                                        i18n::tr(
-                            &state,
-                                            "Error: login required",
+                                        state.language.label("Error: login required",
                                             "エラー: ログインが必要です",
                                             "Eraro: ensaluto necesas",
                                         )
@@ -388,13 +367,14 @@ fn part_update_form(state: &AppState, definition_event_hash: &EventHashId) -> No
                             if part_name.is_empty() {
                                 return AppState {
                                     event_detail_eval_result: Some(
-                                        i18n::tr_lang(
-                                            state.language.code,
-                                            "Error: part name is required",
-                                            "エラー: パーツ名は必須です",
-                                            "Eraro: parto-nomo estas bezonata",
-                                        )
-                                        .to_string(),
+                                        state
+                                            .language
+                                            .label(
+                                                "Error: part name is required",
+                                                "エラー: パーツ名は必須です",
+                                                "Eraro: parto-nomo estas bezonata",
+                                            )
+                                            .to_string(),
                                     ),
                                     ..state.clone()
                                 };
@@ -426,9 +406,7 @@ fn part_update_form(state: &AppState, definition_event_hash: &EventHashId) -> No
                                         set_state_for_async(Box::new(move |state| AppState {
                                             event_detail_eval_result: Some(format!(
                                                 "{}: {:?}",
-                                                i18n::tr(
-                            &state,
-                                                    "Error: failed to serialize PartUpdate",
+                                                state.language.label("Error: failed to serialize PartUpdate",
                                                     "エラー: PartUpdate のシリアライズに失敗しました",
                                                     "Eraro: malsukcesis seriigi PartUpdate",
                                                 ),
@@ -494,9 +472,7 @@ fn part_update_form(state: &AppState, definition_event_hash: &EventHashId) -> No
                                                             .module_definition_event_hash = None;
                                                     }
                                                     next.event_detail_eval_result =
-                                                        Some(i18n::tr(
-                            &state,
-                                                            "PartUpdate event posted",
+                                                        Some(state.language.label("PartUpdate event posted",
                                                             "PartUpdate を投稿しました",
                                                             "PartUpdate sendita",
                                                         ).to_string());
@@ -512,27 +488,21 @@ fn part_update_form(state: &AppState, definition_event_hash: &EventHashId) -> No
                                                 );
                                                 next.event_detail_eval_result = Some(match status {
                                                     crate::local_event::LocalEventStatus::Queued => {
-                                                        i18n::tr(
-                            &state,
-                                                            "PartUpdate queued (offline)",
+                                                        state.language.label("PartUpdate queued (offline)",
                                                             "PartUpdate をキューに追加しました (オフライン)",
                                                             "PartUpdate envicigita (senkonekte)",
                                                         )
                                                         .to_string()
                                                     }
                                                     crate::local_event::LocalEventStatus::Failed => {
-                                                        i18n::tr(
-                            &state,
-                                                            "PartUpdate failed to send",
+                                                        state.language.label("PartUpdate failed to send",
                                                             "PartUpdate の送信に失敗しました",
                                                             "PartUpdate sendado malsukcesis",
                                                         )
                                                         .to_string()
                                                     }
                                                     crate::local_event::LocalEventStatus::Sent => {
-                                                        i18n::tr(
-                            &state,
-                                                            "PartUpdate event posted",
+                                                        state.language.label("PartUpdate event posted",
                                                             "PartUpdate を投稿しました",
                                                             "PartUpdate sendita",
                                                         )
@@ -547,9 +517,7 @@ fn part_update_form(state: &AppState, definition_event_hash: &EventHashId) -> No
                                         set_state_for_async(Box::new(move |state| AppState {
                                             event_detail_eval_result: Some(format!(
                                                 "{}: {:?}",
-                                                i18n::tr(
-                            &state,
-                                                    "Error: failed to post PartUpdate",
+                                                state.language.label("Error: failed to post PartUpdate",
                                                     "エラー: PartUpdate の送信に失敗しました",
                                                     "Eraro: malsukcesis sendi PartUpdate",
                                                 ),
@@ -565,9 +533,7 @@ fn part_update_form(state: &AppState, definition_event_hash: &EventHashId) -> No
                         }
                     })
                 })
-                .children([text(i18n::tr(
-                            state,
-                        "Send PartUpdate",
+                .children([text(state.language.label("Send PartUpdate",
                         "PartUpdate を送信",
                         "Sendi PartUpdate",
                     ))])

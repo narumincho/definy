@@ -1,6 +1,5 @@
 use definy_event::EventHashId;
 
-use crate::i18n;
 use crate::{AppState, Location};
 
 #[derive(Clone, Copy)]
@@ -35,19 +34,19 @@ impl RouteId {
 
     fn title_prefix(self, state: &AppState) -> &'static str {
         match self {
-            Self::Home => i18n::tr(state, "home", "ホーム", "hejmo"),
+            Self::Home => state.language.label("home", "ホーム", "hejmo"),
             Self::AccountList | Self::AccountDetail => {
-                i18n::tr(state, "accounts", "アカウント", "kontoj")
+                state.language.label("accounts", "アカウント", "kontoj")
             }
-            Self::PartList | Self::PartDetail => i18n::tr(state, "parts", "パーツ", "partoj"),
+            Self::PartList | Self::PartDetail => state.language.label("parts", "パーツ", "partoj"),
             Self::ModuleList | Self::ModuleDetail => {
-                i18n::tr(state, "modules", "モジュール", "moduloj")
+                state.language.label("modules", "モジュール", "moduloj")
             }
             Self::LocalEventQueue => {
-                i18n::tr(state, "local-events", "ローカルイベント", "lokaj-eventoj")
+                state.language.label("local-events", "ローカルイベント", "lokaj-eventoj")
             }
-            Self::EventDetail => i18n::tr(state, "events", "イベント", "eventoj"),
-            Self::NotFound => i18n::tr(state, "not-found", "未検出", "ne-trovita"),
+            Self::EventDetail => state.language.label("events", "イベント", "eventoj"),
+            Self::NotFound => state.language.label("not-found", "未検出", "ne-trovita"),
         }
     }
 }
@@ -88,33 +87,31 @@ pub fn page_title_text(state: &AppState) -> String {
                     let (_, event) = event_result.as_ref().ok()?;
                     let label = match &event.content {
                         definy_event::event::EventContent::CreateAccount(_) => {
-                            i18n::tr(state, "create-account", "アカウント作成", "konto-kreo")
+                            state.language.label("create-account", "アカウント作成", "konto-kreo")
                                 .to_string()
                         }
                         definy_event::event::EventContent::ChangeProfile(_) => {
-                            i18n::tr(state, "change-profile", "プロフィール変更", "profil-ŝanĝo")
+                            state.language.label("change-profile", "プロフィール変更", "profil-ŝanĝo")
                                 .to_string()
                         }
                         definy_event::event::EventContent::PartDefinition(part_definition) => {
                             format!(
                                 "{}/{}",
-                                i18n::tr(state, "part-definition", "パーツ定義", "parto-difino"),
+                                state.language.label("part-definition", "パーツ定義", "parto-difino"),
                                 part_definition.part_name
                             )
                         }
                         definy_event::event::EventContent::PartUpdate(part_update) => {
                             format!(
                                 "{}/{}",
-                                i18n::tr(state, "part-update", "パーツ更新", "parto-ĝisdatigo"),
+                                state.language.label("part-update", "パーツ更新", "parto-ĝisdatigo"),
                                 part_update.part_name
                             )
                         }
                         definy_event::event::EventContent::ModuleDefinition(module_definition) => {
                             format!(
                                 "{}/{}",
-                                i18n::tr(
-                                    state,
-                                    "module-definition",
+                                state.language.label("module-definition",
                                     "モジュール定義",
                                     "modulo-difino"
                                 ),
@@ -124,9 +121,7 @@ pub fn page_title_text(state: &AppState) -> String {
                         definy_event::event::EventContent::ModuleUpdate(module_update) => {
                             format!(
                                 "{}/{}",
-                                i18n::tr(
-                                    state,
-                                    "module-update",
+                                state.language.label("module-update",
                                     "モジュール更新",
                                     "modulo-ĝisdatigo"
                                 ),
