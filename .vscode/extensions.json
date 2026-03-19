@@ -1,6 +1,7 @@
 {
   "recommendations": [
     "mhutchie.git-graph",
-    "github.vscode-github-actions"
+    "github.vscode-github-actions",
+    "rust-lang.rust-analyzer"
   ]
 }

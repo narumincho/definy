@@ -1,6 +1,7 @@
 mod account_detail;
 mod account_list;
-mod app_state;
+pub mod app_state;
+pub mod dom;
 pub mod dropdown;
 mod event_detail;
 mod event_filter;
@@ -9,7 +10,6 @@ mod event_presenter;
 mod expression_editor;
 mod expression_eval;
 pub mod fetch;
-mod hash_format;
 mod header;
 pub mod i18n;
 pub mod indexed_db;
@@ -22,19 +22,19 @@ mod message;
 mod module_detail;
 mod module_list;
 mod module_projection;
-pub mod query;
 pub mod navigator_credential;
 mod not_found;
 mod page_title;
 mod part_detail;
 mod part_list;
 mod part_projection;
+pub mod query;
 pub mod wasm_emitter;
 
 pub use app_state::*;
 pub use event_filter::*;
-pub use message::Message;
 pub use local_event::*;
+pub use message::Message;
 
 use narumincho_vdom::*;
 
@@ -111,29 +111,26 @@ pub fn render(
             .children([text(include_str!("../main.css"))])
             .into_node(),
     ];
-    match resource_hash {
-        Some(r) => {
-            if let Some(ssr_initial_state_json) = ssr_initial_state_json {
-                head_children.push(
-                    Script::new()
-                        .id(SSR_INITIAL_STATE_ELEMENT_ID)
-                        .type_("application/json")
-                        .children([text(ssr_initial_state_json)])
-                        .into_node(),
-                );
-            }
+    if let Some(r) = resource_hash {
+        if let Some(ssr_initial_state_json) = ssr_initial_state_json {
             head_children.push(
                 Script::new()
-                    .type_("module")
-                    .children([text(format!(
-                        "import init from '/{}';
-init({{ module_or_path: \"/{}\" }});",
-                        r.js, r.wasm
-                    ))])
+                    .id(SSR_INITIAL_STATE_ELEMENT_ID)
+                    .type_("application/json")
+                    .children([text(ssr_initial_state_json)])
                     .into_node(),
             );
         }
-        _ => {}
+        head_children.push(
+            Script::new()
+                .type_("module")
+                .children([text(format!(
+                    "import init from '/{}';
+    init({{ module_or_path: \"/{}\" }});",
+                    r.js, r.wasm
+                ))])
+                .into_node(),
+        );
     }
     Html::new()
         .attribute("lang", state.language.code)

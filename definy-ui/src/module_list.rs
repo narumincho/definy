@@ -1,5 +1,5 @@
+use definy_event::EventHashId;
 use narumincho_vdom::*;
-use sha2::Digest;
 
 use crate::app_state::AppState;
 use crate::i18n;
@@ -21,7 +21,7 @@ pub fn module_list_view(state: &AppState) -> Node<AppState> {
                         .set("color", "var(--text-secondary)"),
                 )
                 .children([text(i18n::tr(
-                            &state,
+                    state,
                     "Login required to create modules.",
                     "モジュール作成にはログインが必要です。",
                     "Ensaluto necesas por krei modulojn.",
@@ -38,7 +38,7 @@ pub fn module_list_view(state: &AppState) -> Node<AppState> {
             children.push(
                 H2::new()
                     .style(Style::new().set("font-size", "1.3rem"))
-                    .children([text(i18n::tr(&state, "Modules", "モジュール", "Moduloj"))])
+                    .children([text(i18n::tr(state, "Modules", "モジュール", "Moduloj"))])
                     .into_node(),
             );
             if let Some(form) = create_form {
@@ -69,7 +69,7 @@ pub fn module_list_view(state: &AppState) -> Node<AppState> {
                                 .set("color", "var(--text-secondary)"),
                         )
                         .children([text(i18n::tr(
-                            &state,
+                            state,
                             "No modules yet.",
                             "まだモジュールがありません。",
                             "Ankoraŭ neniuj moduloj.",
@@ -125,7 +125,7 @@ pub fn module_list_view(state: &AppState) -> Node<AppState> {
                                                             .set("color", "var(--text-secondary)"),
                                                     )
                                                     .children([text(i18n::tr(
-                            &state,
+                                                        state,
                                                         "definition event missing",
                                                         "定義イベントが見つかりません",
                                                         "difina evento mankas",
@@ -163,13 +163,17 @@ pub fn module_list_view(state: &AppState) -> Node<AppState> {
                                                 )
                                                 .children([
                                                     A::<AppState, crate::Location>::new()
-                                                        .href(state.href_with_lang(
-                                                            crate::Location::Module(
-                                                                module.definition_event_hash,
+                                                        .href(
+                                                            state.href_with_lang(
+                                                                crate::Location::Module(
+                                                                    module
+                                                                        .definition_event_hash
+                                                                        .clone(),
+                                                                ),
                                                             ),
-                                                        ))
+                                                        )
                                                         .children([text(i18n::tr(
-                            &state,
+                                                            state,
                                                             "Open module detail",
                                                             "モジュール詳細を開く",
                                                             "Malfermi modulajn detalojn",
@@ -182,7 +186,7 @@ pub fn module_list_view(state: &AppState) -> Node<AppState> {
                                                             ),
                                                         ))
                                                         .children([text(i18n::tr(
-                            &state,
+                                                            state,
                                                             "Latest event",
                                                             "最新イベント",
                                                             "Lasta evento",
@@ -195,7 +199,7 @@ pub fn module_list_view(state: &AppState) -> Node<AppState> {
                                                             ),
                                                         ))
                                                         .children([text(i18n::tr(
-                            &state,
+                                                            state,
                                                             "Definition event",
                                                             "定義イベント",
                                                             "Difina evento",
@@ -224,7 +228,7 @@ fn module_create_form(state: &AppState) -> Node<AppState> {
             Div::new()
                 .style(Style::new().set("font-size", "0.9rem"))
                 .children([text(i18n::tr(
-                            &state,
+                            state,
                     "Create module",
                     "モジュールを作成",
                     "Krei modulon",
@@ -266,9 +270,9 @@ fn module_create_form(state: &AppState) -> Node<AppState> {
                         wasm_bindgen_futures::spawn_local(async move {
                             let event_binary = definy_event::sign_and_serialize(
                                 definy_event::event::Event {
-                                    account_id: definy_event::event::AccountId(Box::new(
-                                        key_for_async.verifying_key().to_bytes(),
-                                    )),
+                                    account_id: definy_event::event::AccountId(
+                                        key_for_async.verifying_key(),
+                                    ),
                                     time: chrono::Utc::now(),
                                     content: definy_event::event::EventContent::ModuleDefinition(
                                         definy_event::event::ModuleDefinitionEvent {
@@ -296,13 +300,10 @@ fn module_create_form(state: &AppState) -> Node<AppState> {
                                             record,
                                         );
                                         if status == crate::local_event::LocalEventStatus::Sent {
-                                            let hash: [u8; 32] =
-                                                <sha2::Sha256 as Digest>::digest(&event_binary)
-                                                    .into();
                                             let event = definy_event::verify_and_deserialize(
                                                 event_binary.as_slice(),
                                             );
-                                            next.event_cache.insert(hash, event);
+                                            next.event_cache.insert(EventHashId::from_bytes(&event_binary), event);
                                             next.module_definition_form.result_message = None;
                                         } else {
                                             next.module_definition_form.result_message = Some(
@@ -365,7 +366,7 @@ fn module_create_form(state: &AppState) -> Node<AppState> {
                         next
                     }));
                 }))
-                .children([text(i18n::tr(&state, "Create", "作成", "Krei"))])
+                .children([text(i18n::tr(state, "Create", "作成", "Krei"))])
                 .into_node(),
         ])
         .into_node()
@@ -376,24 +377,14 @@ fn module_name_input(state: &AppState) -> Node<AppState> {
         .name("module-name")
         .type_("text")
         .value(&state.module_definition_form.module_name_input);
-    input
-        .attributes
-        .push((
-            "placeholder".to_string(),
-            i18n::tr(&state, "module name", "モジュール名", "modula nomo").to_string(),
-        ));
+    input.attributes.push((
+        "placeholder".to_string(),
+        i18n::tr(state, "module name", "モジュール名", "modula nomo").to_string(),
+    ));
     input.events.push((
         "input".to_string(),
         EventHandler::new(move |set_state| async move {
-            let value = web_sys::window()
-                .and_then(|window| window.document())
-                .and_then(|document| document.query_selector("input[name='module-name']").ok())
-                .flatten()
-                .and_then(|element| {
-                    wasm_bindgen::JsCast::dyn_into::<web_sys::HtmlInputElement>(element).ok()
-                })
-                .map(|input| input.value())
-                .unwrap_or_default();
+            let value = crate::dom::get_input_value("input[name='module-name']");
             set_state(Box::new(move |state: AppState| {
                 let mut next = state.clone();
                 next.module_definition_form.module_name_input = value;
@@ -412,7 +403,7 @@ fn module_description_input(state: &AppState) -> Node<AppState> {
     textarea.attributes.push((
         "placeholder".to_string(),
         i18n::tr(
-                            &state,
+            state,
             "description (optional)",
             "説明 (任意)",
             "priskribo (nedeviga)",
@@ -422,19 +413,7 @@ fn module_description_input(state: &AppState) -> Node<AppState> {
     textarea.events.push((
         "input".to_string(),
         EventHandler::new(move |set_state| async move {
-            let value = web_sys::window()
-                .and_then(|window| window.document())
-                .and_then(|document| {
-                    document
-                        .query_selector("textarea[name='module-description']")
-                        .ok()
-                })
-                .flatten()
-                .and_then(|element| {
-                    wasm_bindgen::JsCast::dyn_into::<web_sys::HtmlTextAreaElement>(element).ok()
-                })
-                .map(|textarea| textarea.value())
-                .unwrap_or_default();
+            let value = crate::dom::get_textarea_value("textarea[name='module-description']");
             set_state(Box::new(move |state: AppState| {
                 let mut next = state.clone();
                 next.module_definition_form.module_description_input = value;

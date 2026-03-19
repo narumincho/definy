@@ -1,5 +1,7 @@
 use serde::{Deserialize, Serialize};
 
+use crate::EventHashId;
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Event {
     pub account_id: AccountId,
@@ -38,18 +40,18 @@ pub struct PartDefinitionEvent {
     pub description: Box<str>,
     pub expression: Expression,
     #[serde(default)]
-    pub module_definition_event_hash: Option<[u8; 32]>,
+    pub module_definition_event_hash: Option<EventHashId>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct PartUpdateEvent {
     pub part_name: Box<str>,
     pub part_description: Box<str>,
-    pub part_definition_event_hash: [u8; 32],
+    pub part_definition_event_hash: EventHashId,
     #[serde(default = "default_expression")]
     pub expression: Expression,
     #[serde(default)]
-    pub module_definition_event_hash: Option<[u8; 32]>,
+    pub module_definition_event_hash: Option<EventHashId>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -63,7 +65,7 @@ pub struct ModuleDefinitionEvent {
 pub struct ModuleUpdateEvent {
     pub module_name: Box<str>,
     pub module_description: Box<str>,
-    pub module_definition_event_hash: [u8; 32],
+    pub module_definition_event_hash: EventHashId,
 }
 
 fn default_expression() -> Expression {
@@ -77,7 +79,7 @@ pub enum PartType {
     String,
     Boolean,
     Type,
-    TypePart([u8; 32]),
+    TypePart(EventHashId),
     List(Box<PartType>),
 }
 
@@ -130,7 +132,7 @@ pub struct TypeListExpression {
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct PartReferenceExpression {
-    pub part_definition_event_hash: [u8; 32],
+    pub part_definition_event_hash: EventHashId,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -177,7 +179,7 @@ pub struct TypeLiteralItemExpression {
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct ConstructorExpression {
-    pub type_part_definition_event_hash: [u8; 32],
+    pub type_part_definition_event_hash: EventHashId,
     pub value: Box<Expression>,
 }
 
@@ -192,4 +194,37 @@ pub struct ChangeProfileEvent {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
-pub struct AccountId(pub Box<[u8; 32]>);
+pub struct AccountId(pub ed25519_dalek::VerifyingKey);
+
+impl std::fmt::Display for AccountId {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&base64::Engine::encode(
+            &base64::engine::general_purpose::URL_SAFE_NO_PAD,
+            self.0.as_bytes(),
+        ))
+    }
+}
+
+impl std::str::FromStr for AccountId {
+    type Err = AccountIdFromStrError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let bytes = base64::Engine::decode(&base64::engine::general_purpose::URL_SAFE_NO_PAD, s)
+            .map_err(AccountIdFromStrError::DecodeError)?;
+
+        let bytes: [u8; 32] = bytes
+            .try_into()
+            .map_err(AccountIdFromStrError::InvalidByteSize)?;
+        Ok(AccountId(
+            ed25519_dalek::VerifyingKey::from_bytes(&bytes)
+                .map_err(AccountIdFromStrError::InvalidBytes)?,
+        ))
+    }
+}
+
+#[derive(Debug)]
+pub enum AccountIdFromStrError {
+    DecodeError(base64::DecodeError),
+    InvalidBytes(ed25519_dalek::SignatureError),
+    InvalidByteSize(<[u8; 32] as TryFrom<Vec<u8>>>::Error),
+}

@@ -1,3 +1,6 @@
+use std::str::FromStr;
+
+use definy_event::EventHashId;
 use narumincho_vdom::*;
 
 use crate::Location;
@@ -8,7 +11,7 @@ use crate::i18n;
 use crate::module_projection::collect_module_snapshots;
 use crate::part_projection::{collect_related_part_events, find_part_snapshot};
 
-pub fn part_detail_view(state: &AppState, definition_event_hash: &[u8; 32]) -> Node<AppState> {
+pub fn part_detail_view(state: &AppState, definition_event_hash: &EventHashId) -> Node<AppState> {
     let snapshot = find_part_snapshot(state, definition_event_hash);
     let related_events = collect_related_part_events(state, definition_event_hash);
 
@@ -20,7 +23,7 @@ pub fn part_detail_view(state: &AppState, definition_event_hash: &[u8; 32]) -> N
                 A::<AppState, Location>::new()
                     .href(state.href_with_lang(Location::PartList))
                     .children([text(i18n::tr(
-                        &state,
+                        state,
                         "← Back to Parts",
                         "← パーツ一覧へ戻る",
                         "← Reen al partoj",
@@ -47,7 +50,7 @@ pub fn part_detail_view(state: &AppState, definition_event_hash: &[u8; 32]) -> N
                             )
                             .children([text(format!(
                                 "{} {}",
-                                i18n::tr(&state, "Updated at:", "更新日時:", "Ĝisdatigita je:"),
+                                i18n::tr(state, "Updated at:", "更新日時:", "Ĝisdatigita je:"),
                                 snapshot.updated_at.format("%Y-%m-%d %H:%M:%S")
                             ))])
                             .into_node(),
@@ -55,7 +58,7 @@ pub fn part_detail_view(state: &AppState, definition_event_hash: &[u8; 32]) -> N
                             Div::new()
                                 .style(Style::new().set("color", "var(--text-secondary)"))
                                 .children([text(i18n::tr(
-                                    &state,
+                                    state,
                                     "(no description)",
                                     "(説明なし)",
                                     "(sen priskribo)",
@@ -76,7 +79,7 @@ pub fn part_detail_view(state: &AppState, definition_event_hash: &[u8; 32]) -> N
                             )
                             .children([text(format!(
                                 "{} {}",
-                                i18n::tr(&state, "expression:", "式:", "esprimo:"),
+                                i18n::tr(state, "expression:", "式:", "esprimo:"),
                                 expression_to_source(&snapshot.expression)
                             ))])
                             .into_node(),
@@ -84,13 +87,11 @@ pub fn part_detail_view(state: &AppState, definition_event_hash: &[u8; 32]) -> N
                             .style(Style::new().set("display", "flex").set("gap", "0.6rem"))
                             .children([
                                 A::<AppState, Location>::new()
-                                    .href(
-                                        state.href_with_lang(Location::Event(
-                                            *definition_event_hash,
-                                        )),
-                                    )
+                                    .href(state.href_with_lang(Location::Event(
+                                        definition_event_hash.clone(),
+                                    )))
                                     .children([text(i18n::tr(
-                                        &state,
+                                        state,
                                         "Definition event",
                                         "定義イベント",
                                         "Difina evento",
@@ -101,7 +102,7 @@ pub fn part_detail_view(state: &AppState, definition_event_hash: &[u8; 32]) -> N
                                         snapshot.latest_event_hash,
                                     )))
                                     .children([text(i18n::tr(
-                                        &state,
+                                        state,
                                         "Latest event",
                                         "最新イベント",
                                         "Lasta evento",
@@ -123,7 +124,7 @@ pub fn part_detail_view(state: &AppState, definition_event_hash: &[u8; 32]) -> N
                     .children([
                         Div::new()
                             .style(Style::new().set("font-weight", "600"))
-                            .children([text(i18n::tr(&state, "History", "履歴", "Historio"))])
+                            .children([text(i18n::tr(state, "History", "履歴", "Historio"))])
                             .into_node(),
                         Div::new()
                             .style(Style::new().set("display", "grid").set("gap", "0.4rem"))
@@ -171,7 +172,7 @@ pub fn part_detail_view(state: &AppState, definition_event_hash: &[u8; 32]) -> N
                 A::<AppState, Location>::new()
                     .href(state.href_with_lang(Location::PartList))
                     .children([text(i18n::tr(
-                        &state,
+                        state,
                         "← Back to Parts",
                         "← パーツ一覧へ戻る",
                         "← Reen al partoj",
@@ -180,7 +181,7 @@ pub fn part_detail_view(state: &AppState, definition_event_hash: &[u8; 32]) -> N
                 Div::new()
                     .style(Style::new().set("color", "var(--text-secondary)"))
                     .children([text(i18n::tr(
-                        &state,
+                        state,
                         "Part not found",
                         "パーツが見つかりません",
                         "Parto ne trovita",
@@ -191,24 +192,23 @@ pub fn part_detail_view(state: &AppState, definition_event_hash: &[u8; 32]) -> N
         .into_node()
 }
 
-fn part_update_form(state: &AppState, definition_event_hash: &[u8; 32]) -> Node<AppState> {
-    let root_part_definition_hash = *definition_event_hash;
-    let hash_as_base64 = crate::hash_format::encode_hash32(definition_event_hash);
+fn part_update_form(state: &AppState, definition_event_hash: &EventHashId) -> Node<AppState> {
+    let hash_as_base64 = definition_event_hash.to_string();
     let (initial_name, initial_description, initial_expression, initial_module_hash) =
         effective_part_update_form(state, definition_event_hash);
     let dropdown_name = format!("part-update-module-{}", hash_as_base64);
     let mut module_options = vec![(
         "".to_string(),
-        i18n::tr(&state, "No module", "モジュールなし", "Neniu modulo").to_string(),
+        i18n::tr(state, "No module", "モジュールなし", "Neniu modulo").to_string(),
     )];
-    module_options.extend(collect_module_snapshots(state).into_iter().map(|module| {
-        (
-            crate::hash_format::encode_hash32(&module.definition_event_hash),
-            module.module_name,
-        )
-    }));
+
+    module_options.extend(
+        collect_module_snapshots(state)
+            .into_iter()
+            .map(|module| (module.definition_event_hash.to_string(), module.module_name)),
+    );
     let current_module_value = initial_module_hash
-        .map(|hash| crate::hash_format::encode_hash32(&hash))
+        .map(|hash| hash.to_string())
         .unwrap_or_else(|| "".to_string());
 
     Div::new()
@@ -223,7 +223,7 @@ fn part_update_form(state: &AppState, definition_event_hash: &[u8; 32]) -> Node<
             Div::new()
                 .style(Style::new().set("font-weight", "600"))
                 .children([text(i18n::tr(
-                            &state,
+                            state,
                     "Create PartUpdate event",
                     "PartUpdate イベントを作成",
                     "Krei PartUpdate eventon",
@@ -240,7 +240,7 @@ fn part_update_form(state: &AppState, definition_event_hash: &[u8; 32]) -> Node<
                 .children([text(format!(
                     "{} {}",
                     i18n::tr(
-                            &state,
+                            state,
                         "partDefinitionEventHash:",
                         "partDefinitionEventHash:",
                         "partDefinitionEventHash:"
@@ -252,32 +252,22 @@ fn part_update_form(state: &AppState, definition_event_hash: &[u8; 32]) -> Node<
                 .type_("text")
                 .name("part-update-name")
                 .value(initial_name.as_str())
-                .on_change(EventHandler::new(move |set_state| {
-                    let root_part_definition_hash = root_part_definition_hash;
-                    async move {
-                        let value = web_sys::window()
-                            .and_then(|window| window.document())
-                            .and_then(|document| {
-                                document
-                                    .query_selector("input[name='part-update-name']")
-                                    .ok()
-                            })
-                            .flatten()
-                            .and_then(|element| {
-                                wasm_bindgen::JsCast::dyn_into::<web_sys::HtmlInputElement>(element)
-                                    .ok()
-                            })
-                            .map(|input| input.value())
-                            .unwrap_or_default();
-                        set_state(Box::new(move |state: AppState| {
-                            let mut next = state.clone();
-                            next.part_update_form.part_definition_event_hash =
-                                Some(root_part_definition_hash);
-                            next.part_update_form.part_name_input = value;
-                            next
-                        }));
-                    }
-                }))
+                .on_change({
+                    let definition_event_hash = definition_event_hash.clone();
+                    EventHandler::new(move |set_state| {
+                        let definition_event_hash = definition_event_hash.clone();
+                        async move {
+                            let value = crate::dom::get_input_value("input[name='part-update-name']");
+                            set_state(Box::new(move |state: AppState| {
+                                let mut next = state.clone();
+                                next.part_update_form.part_definition_event_hash =
+                                    Some(definition_event_hash.clone());
+                                next.part_update_form.part_name_input = value;
+                                next
+                            }));
+                        }
+                    })
+                })
                 .into_node(),
             Div::new()
                 .style(Style::new().set("display", "grid").set("gap", "0.35rem"))
@@ -288,69 +278,51 @@ fn part_update_form(state: &AppState, definition_event_hash: &[u8; 32]) -> Node<
                                 .set("font-size", "0.85rem")
                                 .set("color", "var(--text-secondary)"),
                         )
-                        .children([text(i18n::tr(&state, "Module", "モジュール", "Modulo"))])
+                        .children([text(i18n::tr(state, "Module", "モジュール", "Modulo"))])
                         .into_node(),
                     crate::dropdown::searchable_dropdown(
                         state,
                         dropdown_name.as_str(),
                         &current_module_value,
                         &module_options,
-                        std::rc::Rc::new(move |value| {
-                            let root_part_definition_hash = root_part_definition_hash;
-                            Box::new(move |state: AppState| {
-                                let mut next = state.clone();
-                                next.part_update_form.part_definition_event_hash =
-                                    Some(root_part_definition_hash);
-                                next.part_update_form.module_definition_event_hash =
-                                    crate::hash_format::decode_hash32(&value);
-                                next
-                            })
+                        std::rc::Rc::new({
+                            let definition_event_hash = definition_event_hash.clone();
+                            move |value| {
+                                let definition_event_hash = definition_event_hash.clone();
+                                Box::new(move |state: AppState| {
+                                    let mut next = state.clone();
+                                    next.part_update_form.part_definition_event_hash =
+                                        Some(definition_event_hash.clone());
+                                    next.part_update_form.module_definition_event_hash =
+                                        definy_event::EventHashId::from_str(&value).ok();
+                                    next
+                                })
+                            }
                         }),
                     ),
                 ])
                 .into_node(),
-            {
-                let mut description = Textarea::new()
-                    .name("part-update-description")
-                    .value(initial_description.as_str())
-                    .style(Style::new().set("min-height", "5rem"));
-                description.attributes.push((
-                    "placeholder".to_string(),
-                    "part description (supports multiple lines)".to_string(),
-                ));
-                description.events.push((
-                    "input".to_string(),
+            Textarea::new()
+                .name("part-update-description")
+                .value(initial_description.as_str())
+                .style(Style::new().set("min-height", "5rem"))
+                .attribute("placeholder", "part description (supports multiple lines)")
+                .on_input({
+                    let definition_event_hash = definition_event_hash.clone();
                     EventHandler::new(move |set_state| {
-                        let root_part_definition_hash = root_part_definition_hash;
+                        let definition_event_hash = definition_event_hash.clone();
                         async move {
-                            let value = web_sys::window()
-                                .and_then(|window| window.document())
-                                .and_then(|document| {
-                                    document
-                                        .query_selector("textarea[name='part-update-description']")
-                                        .ok()
-                                })
-                                .flatten()
-                                .and_then(|element| {
-                                    wasm_bindgen::JsCast::dyn_into::<web_sys::HtmlTextAreaElement>(
-                                        element,
-                                    )
-                                    .ok()
-                                })
-                                .map(|textarea| textarea.value())
-                                .unwrap_or_default();
-                            set_state(Box::new(move |state: AppState| {
-                                let mut next = state.clone();
-                                next.part_update_form.part_definition_event_hash =
-                                    Some(root_part_definition_hash);
-                                next.part_update_form.part_description_input = value;
-                                next
-                            }));
-                        }
-                    }),
-                ));
-                description.into_node()
-            },
+                            let value = crate::dom::get_textarea_value("textarea[name='part-update-description']");
+                                set_state(Box::new(move |state: AppState| {
+                                    let mut next = state.clone();
+                                    next.part_update_form.part_definition_event_hash =
+                                        Some(definition_event_hash.clone());
+                                    next.part_update_form.part_description_input = value;
+                                    next
+                                }));
+                            }
+                        })
+                }).into_node(),
             Div::new()
                 .style(
                     Style::new()
@@ -358,7 +330,7 @@ fn part_update_form(state: &AppState, definition_event_hash: &[u8; 32]) -> Node<
                         .set("font-size", "0.9rem"),
                 )
                 .children([text(i18n::tr(
-                            &state,
+                            state,
                     "Expression Builder",
                     "式ビルダー",
                     "Esprimo-konstruilo",
@@ -375,17 +347,20 @@ fn part_update_form(state: &AppState, definition_event_hash: &[u8; 32]) -> Node<
                 )
                 .children([text(format!(
                     "{} {}",
-                    i18n::tr(&state, "Current:", "現在:", "Nuna:"),
+                    i18n::tr(state, "Current:", "現在:", "Nuna:"),
                     expression_to_source(&initial_expression)
                 ))])
                 .into_node(),
-            {
-                Button::new()
-                    .type_("button")
-                    .on_click(EventHandler::new(move |set_state| async move {
-                        let set_state = std::rc::Rc::new(set_state);
-                        let set_state_for_async = set_state.clone();
-                        set_state(Box::new(move |state: AppState| {
+            Button::new()
+                .type_("button")
+                .on_click({
+                    let definition_event_hash = definition_event_hash.clone();
+                    EventHandler::new(move |set_state| {
+                        let definition_event_hash = definition_event_hash.clone();
+                        async move {
+                            let set_state = std::rc::Rc::new(set_state);
+                            let set_state_for_async = set_state.clone();
+                            set_state(Box::new(move |state: AppState| {
                             let key = if let Some(key) = &state.current_key {
                                 key.clone()
                             } else {
@@ -408,13 +383,13 @@ fn part_update_form(state: &AppState, definition_event_hash: &[u8; 32]) -> Node<
                                 current_expression,
                                 current_module_hash,
                             ) =
-                                effective_part_update_form(&state, &root_part_definition_hash);
+                                effective_part_update_form(&state, &definition_event_hash);
                             let part_name = current_part_name.trim().to_string();
                             if part_name.is_empty() {
                                 return AppState {
                                     event_detail_eval_result: Some(
                                         i18n::tr_lang(
-                                            &state.language.code,
+                                            state.language.code,
                                             "Error: part name is required",
                                             "エラー: パーツ名は必須です",
                                             "Eraro: parto-nomo estas bezonata",
@@ -431,16 +406,14 @@ fn part_update_form(state: &AppState, definition_event_hash: &[u8; 32]) -> Node<
                             wasm_bindgen_futures::spawn_local(async move {
                                 let event_binary = match definy_event::sign_and_serialize(
                                     definy_event::event::Event {
-                                        account_id: definy_event::event::AccountId(Box::new(
-                                            key.verifying_key().to_bytes(),
-                                        )),
+                                        account_id: definy_event::event::AccountId(key
+                                            .verifying_key()),
                                         time: chrono::Utc::now(),
                                         content: definy_event::event::EventContent::PartUpdate(
                                             definy_event::event::PartUpdateEvent {
                                                 part_name: part_name.into(),
                                                 part_description: part_description.into(),
-                                                part_definition_event_hash:
-                                                    root_part_definition_hash,
+                                                part_definition_event_hash: definition_event_hash.clone(),
                                                 expression,
                                                 module_definition_event_hash,
                                             },
@@ -480,34 +453,19 @@ fn part_update_form(state: &AppState, definition_event_hash: &[u8; 32]) -> Node<
                                                 crate::fetch::get_events(None, Some(20), Some(0)).await
                                             {
                                                 set_state_for_async(Box::new(move |state| {
-                                                    let events_len = events.len();
-                                                    let mut event_cache = state.event_cache.clone();
-                                                    let mut event_hashes = Vec::new();
-                                                    for (hash, event) in events {
-                                                        event_cache.insert(hash, event);
-                                                        event_hashes.push(hash);
-                                                    }
                                                     let mut next = state.clone();
-                                                    next.event_cache = event_cache;
-                                                    next.event_list_state = crate::EventListState {
-                                                        event_hashes,
-                                                        current_offset: 0,
-                                                        page_size: 20,
-                                                        is_loading: false,
-                                                        has_more: events_len == 20,
-                                                        filter_event_type: None,
-                                                    };
+                                                    next.apply_latest_events(events, None);
                                                     crate::app_state::upsert_local_event_record(
                                                         &mut next,
                                                         record,
                                                     );
                                                     if let Some(snapshot) = find_part_snapshot(
                                                         &next,
-                                                        &root_part_definition_hash,
+                                                        &definition_event_hash,
                                                     ) {
                                                         next.part_update_form
                                                             .part_definition_event_hash =
-                                                            Some(root_part_definition_hash);
+                                                            Some(definition_event_hash.clone());
                                                         next.part_update_form.part_name_input =
                                                             snapshot.part_name;
                                                         next.part_update_form
@@ -604,15 +562,17 @@ fn part_update_form(state: &AppState, definition_event_hash: &[u8; 32]) -> Node<
                             });
                             state
                         }));
-                    }))
-                    .children([text(i18n::tr(
-                            &state,
+                        }
+                    })
+                })
+                .children([text(i18n::tr(
+                            state,
                         "Send PartUpdate",
                         "PartUpdate を送信",
                         "Sendi PartUpdate",
                     ))])
                     .into_node()
-            },
+            ,
             match &state.event_detail_eval_result {
                 Some(result) => Div::new()
                     .class("mono")
@@ -631,19 +591,19 @@ fn part_update_form(state: &AppState, definition_event_hash: &[u8; 32]) -> Node<
 
 fn effective_part_update_form(
     state: &AppState,
-    definition_event_hash: &[u8; 32],
+    definition_event_hash: &EventHashId,
 ) -> (
     String,
     String,
     definy_event::event::Expression,
-    Option<[u8; 32]>,
+    Option<EventHashId>,
 ) {
-    if state.part_update_form.part_definition_event_hash == Some(*definition_event_hash) {
+    if state.part_update_form.part_definition_event_hash == Some(definition_event_hash.clone()) {
         return (
             state.part_update_form.part_name_input.clone(),
             state.part_update_form.part_description_input.clone(),
             state.part_update_form.expression_input.clone(),
-            state.part_update_form.module_definition_event_hash,
+            state.part_update_form.module_definition_event_hash.clone(),
         );
     }
     if let Some(snapshot) = find_part_snapshot(state, definition_event_hash) {
@@ -658,6 +618,6 @@ fn effective_part_update_form(
         state.part_update_form.part_name_input.clone(),
         state.part_update_form.part_description_input.clone(),
         state.part_update_form.expression_input.clone(),
-        state.part_update_form.module_definition_event_hash,
+        state.part_update_form.module_definition_event_hash.clone(),
     )
 }

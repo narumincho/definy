@@ -1,13 +1,14 @@
-use wasm_bindgen::closure::Closure;
+use definy_event::EventHashId;
 use wasm_bindgen::JsCast;
 use wasm_bindgen::JsValue;
+use wasm_bindgen::closure::Closure;
 use wasm_bindgen_futures::JsFuture;
 
 const DB_NAME: &str = "definy";
 const DB_VERSION: u32 = 2;
 const EVENTS_STORE: &str = "events";
 
-pub async fn store_events(events: &[([u8; 32], Vec<u8>)]) -> Result<(), JsValue> {
+pub async fn store_events(events: &[Vec<u8>]) -> Result<(), JsValue> {
     if events.is_empty() {
         return Ok(());
     }
@@ -17,11 +18,12 @@ pub async fn store_events(events: &[([u8; 32], Vec<u8>)]) -> Result<(), JsValue>
         db.transaction_with_str_and_mode(EVENTS_STORE, web_sys::IdbTransactionMode::Readwrite)?;
     let store = transaction.object_store(EVENTS_STORE)?;
 
-    for (hash, bytes) in events {
-        let key = JsValue::from_str(&crate::hash_format::encode_hash32(hash));
+    for event_bytes in events {
+        let hash = definy_event::EventHashId::from_bytes(event_bytes);
+        let key = JsValue::from_str(&hash.to_string());
         let record = crate::local_event::LocalEventRecord {
-            hash: *hash,
-            event_binary: bytes.clone(),
+            hash,
+            event_binary: event_bytes.clone(),
             status: crate::local_event::LocalEventStatus::Sent,
             updated_at_ms: chrono::Utc::now().timestamp_millis(),
             last_error: None,
@@ -38,7 +40,10 @@ pub async fn store_events(events: &[([u8; 32], Vec<u8>)]) -> Result<(), JsValue>
 
 pub async fn load_event_binaries() -> Result<Vec<Vec<u8>>, JsValue> {
     let records = load_event_records().await?;
-    Ok(records.into_iter().map(|record| record.event_binary).collect())
+    Ok(records
+        .into_iter()
+        .map(|record| record.event_binary)
+        .collect())
 }
 
 pub async fn store_event_record(
@@ -49,20 +54,21 @@ pub async fn store_event_record(
         db.transaction_with_str_and_mode(EVENTS_STORE, web_sys::IdbTransactionMode::Readwrite)?;
     let store = transaction.object_store(EVENTS_STORE)?;
 
-    let key = JsValue::from_str(&crate::hash_format::encode_hash32(&record.hash));
-    let value = serde_cbor::to_vec(record).map_err(|error| JsValue::from_str(&format!("{error:?}")))?;
+    let key = JsValue::from_str(&record.hash.to_string());
+    let value =
+        serde_cbor::to_vec(record).map_err(|error| JsValue::from_str(&format!("{error:?}")))?;
     let value = js_sys::Uint8Array::from(value.as_slice());
     let request = store.put_with_key(&value, &key)?;
     let _ = request_to_jsvalue(request).await?;
     Ok(())
 }
 
-pub async fn remove_event_record(hash: &[u8; 32]) -> Result<(), JsValue> {
+pub async fn remove_event_record(hash: &EventHashId) -> Result<(), JsValue> {
     let db = open_db().await?;
     let transaction =
         db.transaction_with_str_and_mode(EVENTS_STORE, web_sys::IdbTransactionMode::Readwrite)?;
     let store = transaction.object_store(EVENTS_STORE)?;
-    let key = JsValue::from_str(&crate::hash_format::encode_hash32(hash));
+    let key = JsValue::from_str(&hash.to_string());
     let request = store.delete(&key)?;
     let _ = request_to_jsvalue(request).await?;
     Ok(())
@@ -78,12 +84,10 @@ pub async fn load_event_records() -> Result<Vec<crate::local_event::LocalEventRe
     let mut records = Vec::new();
     for value in array.iter() {
         let bytes = js_sys::Uint8Array::new(&value).to_vec();
-        if let Ok(record) =
-            serde_cbor::from_slice::<crate::local_event::LocalEventRecord>(&bytes)
-        {
+        if let Ok(record) = serde_cbor::from_slice::<crate::local_event::LocalEventRecord>(&bytes) {
             records.push(record);
         } else {
-            let hash: [u8; 32] = <sha2::Sha256 as sha2::Digest>::digest(&bytes).into();
+            let hash = EventHashId::from_bytes(&bytes);
             records.push(crate::local_event::LocalEventRecord {
                 hash,
                 event_binary: bytes,
@@ -106,20 +110,20 @@ async fn open_db() -> Result<web_sys::IdbDatabase, JsValue> {
 
     let upgrade_request = request.clone();
     let on_upgrade = Closure::wrap(Box::new(move |_event: web_sys::IdbVersionChangeEvent| {
-        if let Ok(result) = upgrade_request.result() {
-            if let Ok(db) = result.dyn_into::<web_sys::IdbDatabase>() {
-                let store_names = db.object_store_names();
-                let mut has_events = false;
-                for index in 0..store_names.length() {
-                    if let Some(name) = store_names.get(index) {
-                        if name == EVENTS_STORE {
-                            has_events = true;
-                        }
-                    }
+        if let Ok(result) = upgrade_request.result()
+            && let Ok(db) = result.dyn_into::<web_sys::IdbDatabase>()
+        {
+            let store_names = db.object_store_names();
+            let mut has_events = false;
+            for index in 0..store_names.length() {
+                if let Some(name) = store_names.get(index)
+                    && name == EVENTS_STORE
+                {
+                    has_events = true;
                 }
-                if !has_events {
-                    let _ = db.create_object_store(EVENTS_STORE);
-                }
+            }
+            if !has_events {
+                let _ = db.create_object_store(EVENTS_STORE);
             }
         }
     }) as Box<dyn FnMut(_)>);
@@ -132,30 +136,29 @@ async fn open_db() -> Result<web_sys::IdbDatabase, JsValue> {
         let request_for_handler = success_request.clone();
         let success_request = success_request.clone();
         let reject_for_success = reject.clone();
-        let on_success = Closure::once(Box::new(move |_event: web_sys::Event| {
-            match success_request.result() {
-                Ok(result) => match result.dyn_into::<web_sys::IdbDatabase>() {
-                    Ok(db) => {
-                        let _ = resolve.call1(&JsValue::NULL, &db);
-                    }
+        let on_success =
+            Closure::once(Box::new(
+                move |_event: web_sys::Event| match success_request.result() {
+                    Ok(result) => match result.dyn_into::<web_sys::IdbDatabase>() {
+                        Ok(db) => {
+                            let _ = resolve.call1(&JsValue::NULL, &db);
+                        }
+                        Err(error) => {
+                            let _ = reject_for_success.call1(&JsValue::NULL, &error);
+                        }
+                    },
                     Err(error) => {
                         let _ = reject_for_success.call1(&JsValue::NULL, &error);
                     }
                 },
-                Err(error) => {
-                    let _ = reject_for_success.call1(&JsValue::NULL, &error);
-                }
-            }
-        }) as Box<dyn FnOnce(_)>);
+            ) as Box<dyn FnOnce(_)>);
         request_for_handler.set_onsuccess(Some(on_success.as_ref().unchecked_ref()));
         on_success.forget();
 
         let reject_for_error = reject.clone();
         let on_error = Closure::once(Box::new(move |_event: web_sys::Event| {
-            let _ = reject_for_error.call1(
-                &JsValue::NULL,
-                &JsValue::from_str("indexedDB open failed"),
-            );
+            let _ =
+                reject_for_error.call1(&JsValue::NULL, &JsValue::from_str("indexedDB open failed"));
         }) as Box<dyn FnOnce(_)>);
         error_request.set_onerror(Some(on_error.as_ref().unchecked_ref()));
         on_error.forget();
@@ -172,16 +175,17 @@ async fn request_to_jsvalue(request: web_sys::IdbRequest) -> Result<JsValue, JsV
         let request_for_handler = success_request.clone();
         let success_request = success_request.clone();
         let reject_for_success = reject.clone();
-        let on_success = Closure::once(Box::new(move |_event: web_sys::Event| {
-            match success_request.result() {
-                Ok(result) => {
-                    let _ = resolve.call1(&JsValue::NULL, &result);
-                }
-                Err(error) => {
-                    let _ = reject_for_success.call1(&JsValue::NULL, &error);
-                }
-            }
-        }) as Box<dyn FnOnce(_)>);
+        let on_success =
+            Closure::once(Box::new(
+                move |_event: web_sys::Event| match success_request.result() {
+                    Ok(result) => {
+                        let _ = resolve.call1(&JsValue::NULL, &result);
+                    }
+                    Err(error) => {
+                        let _ = reject_for_success.call1(&JsValue::NULL, &error);
+                    }
+                },
+            ) as Box<dyn FnOnce(_)>);
         request_for_handler.set_onsuccess(Some(on_success.as_ref().unchecked_ref()));
         on_success.forget();
 

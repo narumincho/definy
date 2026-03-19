@@ -1,5 +1,7 @@
-use crate::{AppState, Location};
+use definy_event::EventHashId;
+
 use crate::i18n;
+use crate::{AppState, Location};
 
 #[derive(Clone, Copy)]
 enum RouteId {
@@ -58,9 +60,7 @@ pub fn page_title_text(state: &AppState) -> String {
         | Some(Location::PartList)
         | Some(Location::ModuleList)
         | Some(Location::LocalEventQueue)
-        | None => {
-            route_id.title_prefix(state).to_string()
-        }
+        | None => route_id.title_prefix(state).to_string(),
         Some(Location::Account(account_id)) => {
             let account_name =
                 crate::app_state::account_display_name(&state.account_name_map(), account_id);
@@ -68,15 +68,13 @@ pub fn page_title_text(state: &AppState) -> String {
         }
         Some(Location::Part(definition_event_hash)) => {
             let part_name = resolve_part_name(state, definition_event_hash)
-                .unwrap_or_else(|| short_hash(definition_event_hash));
+                .unwrap_or_else(|| definition_event_hash.to_string());
             format!("{}/{}", route_id.title_prefix(state), part_name)
         }
         Some(Location::Module(definition_event_hash)) => {
-            let module_name = crate::module_projection::resolve_module_name(
-                state,
-                definition_event_hash,
-            )
-            .unwrap_or_else(|| short_hash(definition_event_hash));
+            let module_name =
+                crate::module_projection::resolve_module_name(state, definition_event_hash)
+                    .unwrap_or_else(|| definition_event_hash.to_string());
             format!("{}/{}", route_id.title_prefix(state), module_name)
         }
         Some(Location::Event(event_hash)) => {
@@ -138,7 +136,7 @@ pub fn page_title_text(state: &AppState) -> String {
                     };
                     Some(label)
                 })
-                .unwrap_or_else(|| short_hash(event_hash));
+                .unwrap_or_else(|| event_hash.to_string());
             format!("{}/{}", route_id.title_prefix(state), event_label)
         }
     }
@@ -148,15 +146,15 @@ pub fn document_title_text(state: &AppState) -> String {
     format!("{} | definy", page_title_text(state))
 }
 
-fn resolve_part_name(state: &AppState, definition_event_hash: &[u8; 32]) -> Option<String> {
+fn resolve_part_name(state: &AppState, definition_event_hash: &EventHashId) -> Option<String> {
     let mut events = state
         .event_cache
         .iter()
         .filter_map(|(hash, event_result)| {
             let (_, event) = event_result.as_ref().ok()?;
-            Some((*hash, event))
+            Some((hash.clone(), event))
         })
-        .collect::<Vec<([u8; 32], &definy_event::event::Event)>>();
+        .collect::<Vec<(EventHashId, &definy_event::event::Event)>>();
     events.sort_by_key(|(_, event)| event.time);
 
     let mut name = None::<String>;
@@ -178,8 +176,4 @@ fn resolve_part_name(state: &AppState, definition_event_hash: &[u8; 32]) -> Opti
         }
     }
     name
-}
-
-fn short_hash(hash: &[u8; 32]) -> String {
-    crate::hash_format::short_hash32(hash)
 }

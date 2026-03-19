@@ -1,3 +1,4 @@
+#![allow(clippy::type_complexity)]
 use std::rc::Rc;
 
 use js_sys::Reflect;
@@ -8,10 +9,10 @@ use wasm_bindgen::closure::Closure;
 
 mod diff;
 
-pub const DOCUMENT: std::sync::LazyLock<web_sys::Document> = std::sync::LazyLock::new(|| {
+pub static DOCUMENT: std::sync::LazyLock<web_sys::Document> = std::sync::LazyLock::new(|| {
     let window = web_sys::window().expect("no global `window` exists");
-    let document = window.document().expect("should have a document on window");
-    document
+
+    window.document().expect("should have a document on window")
 });
 
 pub trait App<State: Clone + 'static> {
@@ -117,93 +118,73 @@ pub fn start<State: Clone + 'static, A: App<State>>() {
 
     if let Some(window) = web_sys::window() {
         // --- 1. Web Navigation API listener (if supported) ---
-        if let Ok(navigation) = Reflect::get(&window, &JsValue::from_str("navigation")) {
-            if !navigation.is_undefined() {
-                let dispatch_for_nav = Rc::clone(&dispatch_impl);
-                let on_navigate = Closure::wrap(Box::new(move |event: web_sys::Event| {
-                    if let Ok(can_intercept) =
-                        Reflect::get(&event, &JsValue::from_str("canIntercept"))
+        if let Ok(navigation) = Reflect::get(&window, &JsValue::from_str("navigation"))
+            && !navigation.is_undefined()
+        {
+            let dispatch_for_nav = Rc::clone(&dispatch_impl);
+            let on_navigate = Closure::wrap(Box::new(move |event: web_sys::Event| {
+                if let Ok(can_intercept) = Reflect::get(&event, &JsValue::from_str("canIntercept"))
+                    && can_intercept.is_truthy()
+                    && let Ok(_user_initiated) =
+                        Reflect::get(&event, &JsValue::from_str("userInitiated"))
+                {
+                    // Only intercept if it was a user click (not script navigation, etc) if we want
+                    // Or always intercept. Let's intercept and call .intercept() if available
+                    if let Ok(destination) = Reflect::get(&event, &JsValue::from_str("destination"))
+                        && let Ok(url_val) = Reflect::get(&destination, &JsValue::from_str("url"))
+                        && let Some(url_str) = url_val.as_string()
                     {
-                        if can_intercept.is_truthy() {
-                            if let Ok(_user_initiated) =
-                                Reflect::get(&event, &JsValue::from_str("userInitiated"))
-                            {
-                                // Only intercept if it was a user click (not script navigation, etc) if we want
-                                // Or always intercept. Let's intercept and call .intercept() if available
-                                if let Ok(destination) =
-                                    Reflect::get(&event, &JsValue::from_str("destination"))
-                                {
-                                    if let Ok(url_val) =
-                                        Reflect::get(&destination, &JsValue::from_str("url"))
-                                    {
-                                        if let Some(url_str) = url_val.as_string() {
-                                            // The modern way to handle this in Navigation API is to call event.intercept()
-                                            // preventDefault() cancels the navigation entirely (e.g., URL bar doesn't update).
-                                            // Usually, VDOM routers want the URL bar to update.
-                                            let intercept_func = Reflect::get(
-                                                &event,
-                                                &JsValue::from_str("intercept"),
-                                            )
-                                            .unwrap_or(JsValue::UNDEFINED);
+                        // The modern way to handle this in Navigation API is to call event.intercept()
+                        // preventDefault() cancels the navigation entirely (e.g., URL bar doesn't update).
+                        // Usually, VDOM routers want the URL bar to update.
+                        let intercept_func = Reflect::get(&event, &JsValue::from_str("intercept"))
+                            .unwrap_or(JsValue::UNDEFINED);
 
-                                            let dispatch = Rc::clone(&dispatch_for_nav);
+                        let dispatch = Rc::clone(&dispatch_for_nav);
 
-                                            if intercept_func.is_function() {
-                                                let url_for_intercept = url_str.clone();
-                                                let intercept_handler =
-                                                    Closure::wrap(Box::new(move || {
-                                                        let dispatch_inner = Rc::clone(&dispatch);
-                                                        let url_for_closure =
-                                                            url_for_intercept.clone();
-                                                        dispatch_inner(Box::new(
-                                                            move |state: State| {
-                                                                A::on_navigate(
-                                                                    state,
-                                                                    url_for_closure,
-                                                                )
-                                                            },
-                                                        ));
-                                                    })
-                                                        as Box<dyn FnMut()>);
+                        if intercept_func.is_function() {
+                            let url_for_intercept = url_str.clone();
+                            let intercept_handler = Closure::wrap(Box::new(move || {
+                                let dispatch_inner = Rc::clone(&dispatch);
+                                let url_for_closure = url_for_intercept.clone();
+                                dispatch_inner(Box::new(move |state: State| {
+                                    A::on_navigate(state, url_for_closure)
+                                }));
+                            })
+                                as Box<dyn FnMut()>);
 
-                                                let intercept_options = js_sys::Object::new();
-                                                Reflect::set(
-                                                    &intercept_options,
-                                                    &JsValue::from_str("handler"),
-                                                    intercept_handler.as_ref(),
-                                                )
-                                                .unwrap();
+                            let intercept_options = js_sys::Object::new();
+                            Reflect::set(
+                                &intercept_options,
+                                &JsValue::from_str("handler"),
+                                intercept_handler.as_ref(),
+                            )
+                            .unwrap();
 
-                                                intercept_func
-                                                    .unchecked_into::<js_sys::Function>()
-                                                    .call1(&event, &intercept_options)
-                                                    .unwrap();
-                                                intercept_handler.forget();
-                                            } else {
-                                                event.prevent_default();
-                                                dispatch(Box::new(move |state: State| {
-                                                    A::on_navigate(state, url_str.clone())
-                                                }));
-                                            }
-                                        }
-                                    }
-                                }
-                            }
+                            intercept_func
+                                .unchecked_into::<js_sys::Function>()
+                                .call1(&event, &intercept_options)
+                                .unwrap();
+                            intercept_handler.forget();
+                        } else {
+                            event.prevent_default();
+                            dispatch(Box::new(move |state: State| {
+                                A::on_navigate(state, url_str.clone())
+                            }));
                         }
                     }
-                })
-                    as Box<dyn FnMut(web_sys::Event)>);
+                }
+            }) as Box<dyn FnMut(web_sys::Event)>);
 
-                let _ = Reflect::get(&navigation, &JsValue::from_str("addEventListener"))
-                    .unwrap()
-                    .unchecked_into::<js_sys::Function>()
-                    .call2(
-                        &navigation,
-                        &JsValue::from_str("navigate"),
-                        on_navigate.as_ref(),
-                    );
-                on_navigate.forget();
-            }
+            let _ = Reflect::get(&navigation, &JsValue::from_str("addEventListener"))
+                .unwrap()
+                .unchecked_into::<js_sys::Function>()
+                .call2(
+                    &navigation,
+                    &JsValue::from_str("navigate"),
+                    on_navigate.as_ref(),
+                );
+            on_navigate.forget();
         }
 
         // --- 2. Fallback or standard Click Event Interception (for browsers without modern Navigation API) ---
@@ -232,14 +213,14 @@ pub fn start<State: Clone + 'static, A: App<State>>() {
                             let dispatch = Rc::clone(&dispatch_for_click);
                             let href_clone = href.clone();
                             // Update history API manually since we intercepted the click
-                            if let Some(window) = web_sys::window() {
-                                if let Ok(history) = window.history() {
-                                    let _ = history.push_state_with_url(
-                                        &JsValue::NULL,
-                                        "",
-                                        Some(&href_clone),
-                                    );
-                                }
+                            if let Some(window) = web_sys::window()
+                                && let Ok(history) = window.history()
+                            {
+                                let _ = history.push_state_with_url(
+                                    &JsValue::NULL,
+                                    "",
+                                    Some(&href_clone),
+                                );
                             }
                             dispatch(Box::new(move |state: State| {
                                 // Provide the full URL to on_navigate, or just the path if on_navigate handles it.
@@ -287,7 +268,7 @@ pub fn apply<State: 'static>(
     dispatch: &Rc<dyn Fn(Box<dyn FnOnce(State) -> State>)>,
 ) {
     for (path, patch) in patches {
-        if let Some(node) = find_node(root, &path) {
+        if let Some(node) = find_node(root, path) {
             apply_patch(
                 node,
                 patch,
@@ -296,7 +277,7 @@ pub fn apply<State: 'static>(
             );
         } else {
             web_sys::console::error_1(&format!("Node not found at path {:?}", path).into());
-            log_missing_path(root, &path);
+            log_missing_path(root, path);
         }
     }
 }
@@ -356,26 +337,26 @@ fn apply_patch<State: 'static>(
     node: web_sys::Node,
     patch: &diff::Patch<State>,
     dispatch: &Rc<dyn Fn(Box<dyn FnOnce(State) -> State>)>,
-    callback_key_symbol: &js_sys::Symbol,
+    _callback_key_symbol: &js_sys::Symbol,
 ) {
     match patch {
         diff::Patch::Replace(new_node) => {
             if let Some(parent) = node.parent_node() {
-                let new_web_node = create_web_sys_node(&new_node, dispatch, callback_key_symbol);
+                let new_web_node = create_web_sys_node(new_node, dispatch, _callback_key_symbol);
                 parent.replace_child(&new_web_node, &node).unwrap();
             }
         }
         diff::Patch::UpdateText(text) => {
-            node.set_text_content(Some(&text));
+            node.set_text_content(Some(text));
         }
         diff::Patch::AddAttributes(attrs) => {
             if let Some(element) = node.dyn_ref::<web_sys::Element>() {
                 for (key, value) in attrs {
-                    element.set_attribute(&key, &value).unwrap();
-                    if key == "value" {
-                        if let Some(input) = element.dyn_ref::<web_sys::HtmlInputElement>() {
-                            input.set_value(value);
-                        }
+                    element.set_attribute(key, value).unwrap();
+                    if key == "value"
+                        && let Some(input) = element.dyn_ref::<web_sys::HtmlInputElement>()
+                    {
+                        input.set_value(value);
                     }
                 }
             }
@@ -383,7 +364,7 @@ fn apply_patch<State: 'static>(
         diff::Patch::RemoveAttributes(keys) => {
             if let Some(element) = node.dyn_ref::<web_sys::Element>() {
                 for key in keys {
-                    element.remove_attribute(&key).unwrap();
+                    element.remove_attribute(key).unwrap();
                 }
             }
         }
@@ -423,7 +404,7 @@ fn apply_patch<State: 'static>(
                         as Box<dyn FnMut(web_sys::Event)>);
                     element
                         .add_event_listener_with_callback(
-                            &event_name,
+                            event_name,
                             closure.as_ref().unchecked_ref(),
                         )
                         .unwrap();
@@ -441,7 +422,7 @@ fn apply_patch<State: 'static>(
                     if let Ok(value) = Reflect::get(element, &JsValue::from_str(&key)) {
                         if let Some(func) = value.dyn_ref::<js_sys::Function>() {
                             element
-                                .remove_event_listener_with_callback(&event_name, func)
+                                .remove_event_listener_with_callback(event_name, func)
                                 .unwrap();
                         }
                         Reflect::delete_property(element, &JsValue::from_str(&key)).unwrap();
@@ -451,7 +432,7 @@ fn apply_patch<State: 'static>(
         }
         diff::Patch::AppendChildren(children) => {
             for child in children {
-                let child_node = create_web_sys_node(&child, dispatch, callback_key_symbol);
+                let child_node = create_web_sys_node(child, dispatch, _callback_key_symbol);
                 node.append_child(&child_node).unwrap();
             }
         }
@@ -470,7 +451,7 @@ fn apply_patch<State: 'static>(
 fn create_web_sys_node<State: 'static>(
     vdom: &Node<State>,
     dispatch: &Rc<dyn Fn(Box<dyn FnOnce(State) -> State>)>,
-    callback_key_symbol: &js_sys::Symbol,
+    _callback_key_symbol: &js_sys::Symbol,
 ) -> web_sys::Node {
     match vdom {
         Node::Element(el) => {
@@ -500,7 +481,7 @@ fn create_web_sys_node<State: 'static>(
                     wasm_bindgen_futures::spawn_local(fut);
                 }) as Box<dyn FnMut(web_sys::Event)>);
                 element
-                    .add_event_listener_with_callback(&event_name, closure.as_ref().unchecked_ref())
+                    .add_event_listener_with_callback(event_name, closure.as_ref().unchecked_ref())
                     .unwrap();
                 let key = format!("__narumincho_event_{}", event_name);
                 Reflect::set(&element, &JsValue::from_str(&key), closure.as_ref()).unwrap();
@@ -508,7 +489,7 @@ fn create_web_sys_node<State: 'static>(
             }
             for child in &el.children {
                 element
-                    .append_child(&create_web_sys_node(child, dispatch, callback_key_symbol))
+                    .append_child(&create_web_sys_node(child, dispatch, _callback_key_symbol))
                     .unwrap();
             }
             element.into()

@@ -1,9 +1,9 @@
 use narumincho_vdom::*;
 
 use crate::Location;
-use crate::i18n;
 use crate::app_state::AppState;
 use crate::expression_eval::expression_to_source;
+use crate::i18n;
 use crate::part_projection::collect_part_snapshots;
 
 fn part_type_text(part_type: &definy_event::event::PartType) -> String {
@@ -12,9 +12,7 @@ fn part_type_text(part_type: &definy_event::event::PartType) -> String {
         definy_event::event::PartType::String => "String".to_string(),
         definy_event::event::PartType::Boolean => "Boolean".to_string(),
         definy_event::event::PartType::Type => "Type".to_string(),
-        definy_event::event::PartType::TypePart(hash) => {
-            format!("TypePart({})", crate::hash_format::short_hash32(hash))
-        }
+        definy_event::event::PartType::TypePart(hash) => format!("TypePart({})", hash),
         definy_event::event::PartType::List(item_type) => {
             format!("list<{}>", part_type_text(item_type.as_ref()))
         }
@@ -123,7 +121,7 @@ pub fn part_list_view(state: &AppState) -> Node<AppState> {
                                         },
                                         A::<AppState, Location>::new()
                                             .href(state.href_with_lang(Location::Part(
-                                                part.definition_event_hash,
+                                                part.definition_event_hash.clone(),
                                             )))
                                             .children([text(i18n::tr(
                                                 state,
@@ -165,7 +163,12 @@ pub fn part_list_view(state: &AppState) -> Node<AppState> {
                                             )
                                             .children([text(format!(
                                                 "{} {}",
-                                                i18n::tr(state, "latest author:", "最新の投稿者:", "lasta aŭtoro:"),
+                                                i18n::tr(
+                                                    state,
+                                                    "latest author:",
+                                                    "最新の投稿者:",
+                                                    "lasta aŭtoro:"
+                                                ),
                                                 account_name
                                             ))])
                                             .into_node(),

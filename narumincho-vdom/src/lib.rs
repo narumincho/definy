@@ -37,7 +37,7 @@ pub fn to_string<State>(node: &Node<State>) -> String {
                 html.push_str(" style=\"");
                 for (key, value) in vdom.styles.iter() {
                     html.push_str(key);
-                    html.push_str(":");
+                    html.push(':');
                     html.push_str(&attribute_escape(value));
                     html.push(';');
                 }

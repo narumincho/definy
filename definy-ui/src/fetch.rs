@@ -1,4 +1,4 @@
-use sha2;
+use definy_event::EventHashId;
 use wasm_bindgen::JsValue;
 
 pub async fn get_events_raw(
@@ -46,7 +46,7 @@ pub async fn get_events(
     offset: Option<usize>,
 ) -> anyhow::Result<
     Vec<(
-        [u8; 32],
+        definy_event::EventHashId,
         Result<
             (ed25519_dalek::Signature, definy_event::event::Event),
             definy_event::VerifyAndDeserializeError,
@@ -58,14 +58,7 @@ pub async fn get_events(
     let value =
         serde_cbor::from_slice::<definy_event::response::EventsResponse>(&response_body_bytes)?;
 
-    let event_pairs = value
-        .events
-        .into_iter()
-        .filter_map(|bytes| {
-            let hash: [u8; 32] = <sha2::Sha256 as sha2::Digest>::digest(&bytes).into();
-            Some((hash, bytes))
-        })
-        .collect::<Vec<([u8; 32], Vec<u8>)>>();
+    let event_pairs = value.events.into_iter().collect::<Vec<Vec<u8>>>();
 
     if let Err(error) = crate::indexed_db::store_events(&event_pairs).await {
         web_sys::console::warn_1(&error);
@@ -73,9 +66,14 @@ pub async fn get_events(
 
     Ok(event_pairs
         .into_iter()
-        .map(|(hash, bytes)| (hash, definy_event::verify_and_deserialize(&bytes)))
+        .map(|bytes| {
+            (
+                EventHashId::from_bytes(&bytes),
+                definy_event::verify_and_deserialize(&bytes),
+            )
+        })
         .collect::<Vec<(
-            [u8; 32],
+            EventHashId,
             Result<
                 (ed25519_dalek::Signature, definy_event::event::Event),
                 definy_event::VerifyAndDeserializeError,
@@ -107,7 +105,7 @@ pub async fn post_event_with_queue(
     signated_event: &[u8],
     force_offline: bool,
 ) -> Result<crate::local_event::LocalEventRecord, anyhow::Error> {
-    let hash: [u8; 32] = <sha2::Sha256 as sha2::Digest>::digest(signated_event).into();
+    let hash = EventHashId::from_bytes(signated_event);
     let now_ms = chrono::Utc::now().timestamp_millis();
 
     let (status, last_error) = if force_offline {

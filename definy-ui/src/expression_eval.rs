@@ -35,13 +35,7 @@ impl std::fmt::Display for Value {
 
 pub fn evaluate_expression(
     expression: &definy_event::event::Expression,
-    events: &[(
-        [u8; 32],
-        Result<
-            (ed25519_dalek::Signature, definy_event::event::Event),
-            definy_event::VerifyAndDeserializeError,
-        >,
-    )],
+    events: &[crate::app_state::EventWithHash],
 ) -> Result<Value, &'static str> {
     // Try to evaluate purely via WebAssembly first!
     if let Some(result) = evaluate_via_wasm(expression) {
@@ -178,13 +172,7 @@ fn is_boolean_expression(expr: &definy_event::event::Expression) -> bool {
 
 fn evaluate_expression_with_depth(
     expression: &definy_event::event::Expression,
-    events: &[(
-        [u8; 32],
-        Result<
-            (ed25519_dalek::Signature, definy_event::event::Event),
-            definy_event::VerifyAndDeserializeError,
-        >,
-    )],
+    events: &[crate::app_state::EventWithHash],
     env: &std::collections::HashMap<i64, Value>,
     depth: usize,
 ) -> Result<Value, &'static str> {
@@ -422,9 +410,9 @@ pub fn expression_to_source(expression: &definy_event::event::Expression) -> Str
                 }
             }
             definy_event::event::Expression::PartReference(part_reference_expression) => {
-                crate::hash_format::encode_hash32(
-                    &part_reference_expression.part_definition_event_hash,
-                )
+                part_reference_expression
+                    .part_definition_event_hash
+                    .to_string()
             }
             definy_event::event::Expression::Let(let_expression) => {
                 let mut body_scope = scope.to_vec();
@@ -473,9 +461,7 @@ pub fn expression_to_source(expression: &definy_event::event::Expression) -> Str
             definy_event::event::Expression::Constructor(constructor_expression) => {
                 let source = format!(
                     "constructor {} {}",
-                    crate::hash_format::encode_hash32(
-                        &constructor_expression.type_part_definition_event_hash
-                    ),
+                    constructor_expression.type_part_definition_event_hash,
                     render(constructor_expression.value.as_ref(), true, scope)
                 );
                 if is_child {
@@ -492,6 +478,8 @@ pub fn expression_to_source(expression: &definy_event::event::Expression) -> Str
 
 #[cfg(test)]
 mod tests {
+    use std::str::FromStr;
+
     use super::{evaluate_expression, expression_to_source};
 
     #[test]
@@ -764,17 +752,22 @@ mod tests {
 
     #[test]
     fn evaluate_part_reference_by_definition_hash() {
-        let definition_hash = [42u8; 32];
+        let definition_hash =
+            definy_event::EventHashId::from_str("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
+                .unwrap();
         let part_expression =
             definy_event::event::Expression::Number(definy_event::event::NumberExpression {
                 value: 99,
             });
         let events = vec![(
-            definition_hash,
+            definition_hash.clone(),
             Ok((
                 ed25519_dalek::Signature::from_bytes(&[0u8; 64]),
                 definy_event::event::Event {
-                    account_id: definy_event::event::AccountId(Box::new([1u8; 32])),
+                    account_id: definy_event::event::AccountId::from_str(
+                        "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+                    )
+                    .unwrap(),
                     time: chrono::DateTime::UNIX_EPOCH,
                     content: definy_event::event::EventContent::PartDefinition(
                         definy_event::event::PartDefinitionEvent {
@@ -791,7 +784,7 @@ mod tests {
 
         let reference = definy_event::event::Expression::PartReference(
             definy_event::event::PartReferenceExpression {
-                part_definition_event_hash: definition_hash,
+                part_definition_event_hash: definition_hash.clone(),
             },
         );
 
@@ -801,7 +794,7 @@ mod tests {
         );
         assert_eq!(
             expression_to_source(&reference),
-            crate::hash_format::encode_hash32(&definition_hash)
+            definition_hash.to_string()
         );
     }
 }

@@ -1,40 +1,39 @@
+use definy_event::EventHashId;
 use narumincho_vdom::*;
 
+use crate::Location;
 use crate::app_state::AppState;
+use crate::i18n;
 use crate::module_projection::find_module_snapshot;
 use crate::part_projection::collect_part_snapshots;
-use crate::Location;
-use crate::i18n;
 
-pub fn module_detail_view(state: &AppState, definition_event_hash: &[u8; 32]) -> Node<AppState> {
+pub fn module_detail_view(state: &AppState, definition_event_hash: &EventHashId) -> Node<AppState> {
     let Some(module_snapshot) = find_module_snapshot(state, definition_event_hash) else {
         return Div::new()
             .class("page-shell")
             .style(crate::layout::page_shell_style("1rem"))
-            .children([
-                H2::new()
-                    .style(Style::new().set("font-size", "1.3rem"))
-                    .children([text(i18n::tr(
-                            &state,
-                        "Module not found",
-                        "モジュールが見つかりません",
-                        "Modulo ne trovita",
-                    ))])
-                    .into_node(),
-            ])
+            .children([H2::new()
+                .style(Style::new().set("font-size", "1.3rem"))
+                .children([text(i18n::tr(
+                    state,
+                    "Module not found",
+                    "モジュールが見つかりません",
+                    "Modulo ne trovita",
+                ))])
+                .into_node()])
             .into_node();
     };
 
     let parts_in_module = collect_part_snapshots(state)
         .into_iter()
-        .filter(|snapshot| snapshot.module_definition_event_hash == Some(*definition_event_hash))
+        .filter(|snapshot| {
+            snapshot.module_definition_event_hash == Some(definition_event_hash.clone())
+        })
         .collect::<Vec<_>>();
 
     let account_name_map = state.account_name_map();
-    let author_name = crate::app_state::account_display_name(
-        &account_name_map,
-        &module_snapshot.account_id,
-    );
+    let author_name =
+        crate::app_state::account_display_name(&account_name_map, &module_snapshot.account_id);
     let (initial_name, initial_description) =
         effective_module_update_form(state, definition_event_hash, Some(&module_snapshot));
 
@@ -69,7 +68,7 @@ pub fn module_detail_view(state: &AppState, definition_event_hash: &[u8; 32]) ->
                         )
                         .children([text(format!(
                             "{} {}",
-                            i18n::tr(&state, "latest author:", "最新の投稿者:", "lasta aŭtoro:"),
+                            i18n::tr(state, "latest author:", "最新の投稿者:", "lasta aŭtoro:"),
                             author_name
                         ))])
                         .into_node(),
@@ -81,7 +80,7 @@ pub fn module_detail_view(state: &AppState, definition_event_hash: &[u8; 32]) ->
                                     module_snapshot.latest_event_hash,
                                 )))
                                 .children([text(i18n::tr(
-                            &state,
+                                    state,
                                     "Latest event",
                                     "最新イベント",
                                     "Lasta evento",
@@ -92,7 +91,7 @@ pub fn module_detail_view(state: &AppState, definition_event_hash: &[u8; 32]) ->
                                     module_snapshot.definition_event_hash,
                                 )))
                                 .children([text(i18n::tr(
-                            &state,
+                                    state,
                                     "Definition event",
                                     "定義イベント",
                                     "Difina evento",
@@ -103,7 +102,12 @@ pub fn module_detail_view(state: &AppState, definition_event_hash: &[u8; 32]) ->
                 ])
                 .into_node(),
             if state.current_key.is_some() {
-                module_update_form(state, definition_event_hash, &initial_name, &initial_description)
+                module_update_form(
+                    state,
+                    definition_event_hash,
+                    &initial_name,
+                    &initial_description,
+                )
             } else {
                 Div::new()
                     .class("event-detail-card")
@@ -113,7 +117,7 @@ pub fn module_detail_view(state: &AppState, definition_event_hash: &[u8; 32]) ->
                             .set("color", "var(--text-secondary)"),
                     )
                     .children([text(i18n::tr(
-                            &state,
+                        state,
                         "Login required to update modules.",
                         "モジュール更新にはログインが必要です。",
                         "Ensaluto necesas por ĝisdatigi modulojn.",
@@ -123,7 +127,7 @@ pub fn module_detail_view(state: &AppState, definition_event_hash: &[u8; 32]) ->
             Div::new()
                 .style(Style::new().set("margin-top", "1rem"))
                 .children([text(i18n::tr(
-                            &state,
+                    state,
                     "Parts in this module",
                     "このモジュールのパーツ",
                     "Partoj en ĉi tiu modulo",
@@ -138,7 +142,7 @@ pub fn module_detail_view(state: &AppState, definition_event_hash: &[u8; 32]) ->
                             .set("color", "var(--text-secondary)"),
                     )
                     .children([text(i18n::tr(
-                            &state,
+                        state,
                         "No parts in this module yet.",
                         "このモジュールにはまだパーツがありません。",
                         "Ankoraŭ neniuj partoj en ĉi tiu modulo.",
@@ -201,7 +205,12 @@ pub fn module_detail_view(state: &AppState, definition_event_hash: &[u8; 32]) ->
                                             )
                                             .children([text(format!(
                                                 "{} {}",
-                                                i18n::tr(&state, "latest author:", "最新の投稿者:", "lasta aŭtoro:"),
+                                                i18n::tr(
+                                                    state,
+                                                    "latest author:",
+                                                    "最新の投稿者:",
+                                                    "lasta aŭtoro:"
+                                                ),
                                                 part_author
                                             ))])
                                             .into_node(),
@@ -217,7 +226,7 @@ pub fn module_detail_view(state: &AppState, definition_event_hash: &[u8; 32]) ->
                                                         part.definition_event_hash,
                                                     )))
                                                     .children([text(i18n::tr(
-                            &state,
+                                                        state,
                                                         "Open part detail",
                                                         "パーツ詳細を開く",
                                                         "Malfermi partajn detalojn",
@@ -228,7 +237,7 @@ pub fn module_detail_view(state: &AppState, definition_event_hash: &[u8; 32]) ->
                                                         part.latest_event_hash,
                                                     )))
                                                     .children([text(i18n::tr(
-                            &state,
+                                                        state,
                                                         "Latest event",
                                                         "最新イベント",
                                                         "Lasta evento",
@@ -249,11 +258,13 @@ pub fn module_detail_view(state: &AppState, definition_event_hash: &[u8; 32]) ->
 
 fn module_update_form(
     state: &AppState,
-    definition_event_hash: &[u8; 32],
+    definition_event_hash: &EventHashId,
     initial_name: &str,
     initial_description: &str,
 ) -> Node<AppState> {
-    let root_module_definition_hash = *definition_event_hash;
+    let definition_event_hash_name = definition_event_hash.clone();
+    let definition_event_hash_description = definition_event_hash.clone();
+    let definition_event_hash_send_button = definition_event_hash.clone();
 
     Div::new()
         .class("event-detail-card")
@@ -267,7 +278,7 @@ fn module_update_form(
             Div::new()
                 .style(Style::new().set("font-weight", "600"))
                 .children([text(i18n::tr(
-                            &state,
+                            state,
                     "Update module",
                     "モジュールを更新",
                     "Ĝisdatigi modulon",
@@ -278,22 +289,9 @@ fn module_update_form(
                 .name("module-update-name")
                 .value(initial_name)
                 .on_change(EventHandler::new(move |set_state| {
-                    let root_module_definition_hash = root_module_definition_hash;
+                    let root_module_definition_hash = definition_event_hash_name.clone();
                     async move {
-                        let value = web_sys::window()
-                            .and_then(|window| window.document())
-                            .and_then(|document| {
-                                document
-                                    .query_selector("input[name='module-update-name']")
-                                    .ok()
-                            })
-                            .flatten()
-                            .and_then(|element| {
-                                wasm_bindgen::JsCast::dyn_into::<web_sys::HtmlInputElement>(element)
-                                    .ok()
-                            })
-                            .map(|input| input.value())
-                            .unwrap_or_default();
+                        let value = crate::dom::get_input_value("input[name='module-update-name']");
                         set_state(Box::new(move |state: AppState| {
                             let mut next = state.clone();
                             next.module_update_form.module_definition_event_hash =
@@ -304,42 +302,20 @@ fn module_update_form(
                     }
                 }))
                 .into_node(),
-            {
-                let mut description = Textarea::new()
+            Textarea::new()
                     .name("module-update-description")
                     .value(initial_description)
-                    .style(Style::new().set("min-height", "5rem"));
-                description.attributes.push((
-                    "placeholder".to_string(),
-                    i18n::tr(
-                            &state,
+                    .style(Style::new().set("min-height", "5rem"))
+                    .attribute("placeholder", i18n::tr(
+                            state,
                         "module description (supports multiple lines)",
                         "モジュール説明 (複数行対応)",
                         "modula priskribo (subtenas plurajn liniojn)",
-                    )
-                    .to_string(),
-                ));
-                description.events.push((
-                    "input".to_string(),
-                    EventHandler::new(move |set_state| {
-                        let root_module_definition_hash = root_module_definition_hash;
+                    ))
+                    .on_input(EventHandler::new(move |set_state| {
+                        let root_module_definition_hash = definition_event_hash_description.clone();
                         async move {
-                            let value = web_sys::window()
-                                .and_then(|window| window.document())
-                                .and_then(|document| {
-                                    document
-                                        .query_selector("textarea[name='module-update-description']")
-                                        .ok()
-                                })
-                                .flatten()
-                                .and_then(|element| {
-                                    wasm_bindgen::JsCast::dyn_into::<web_sys::HtmlTextAreaElement>(
-                                        element,
-                                    )
-                                    .ok()
-                                })
-                                .map(|textarea| textarea.value())
-                                .unwrap_or_default();
+                            let value = crate::dom::get_textarea_value("textarea[name='module-update-description']");
                             set_state(Box::new(move |state: AppState| {
                                 let mut next = state.clone();
                                 next.module_update_form.module_definition_event_hash =
@@ -348,13 +324,12 @@ fn module_update_form(
                                 next
                             }));
                         }
-                    }),
-                ));
-                description.into_node()
-            },
+                    })).into_node(),
             Button::new()
                 .type_("button")
-                .on_click(EventHandler::new(move |set_state| async move {
+                .on_click(EventHandler::new(move |set_state| {
+                    let root_module_definition_hash = definition_event_hash_send_button.clone();
+                    async move {
                     let set_state = std::rc::Rc::new(set_state);
                     let set_state_for_async = set_state.clone();
                     set_state(Box::new(move |state: AppState| {
@@ -372,7 +347,7 @@ fn module_update_form(
                             return next;
                         };
                         let (module_name, module_description) =
-                            effective_module_update_form(&state, &root_module_definition_hash, None);
+                            effective_module_update_form(&state, &root_module_definition_hash.clone(), None);
                         let module_name = module_name.trim().to_string();
                         if module_name.is_empty() {
                             let mut next = state.clone();
@@ -385,21 +360,17 @@ fn module_update_form(
                                 ).to_string());
                             return next;
                         }
-                        let module_description = module_description;
                         let force_offline = state.force_offline;
                         wasm_bindgen_futures::spawn_local(async move {
                             let event_binary = match definy_event::sign_and_serialize(
                                 definy_event::event::Event {
-                                    account_id: definy_event::event::AccountId(Box::new(
-                                        key.verifying_key().to_bytes(),
-                                    )),
+                                    account_id: definy_event::event::AccountId(key.verifying_key()),
                                     time: chrono::Utc::now(),
                                     content: definy_event::event::EventContent::ModuleUpdate(
                                         definy_event::event::ModuleUpdateEvent {
                                             module_name: module_name.into(),
                                             module_description: module_description.into(),
-                                            module_definition_event_hash:
-                                                root_module_definition_hash,
+                                            module_definition_event_hash: root_module_definition_hash.clone(),
                                         },
                                     ),
                                 },
@@ -438,23 +409,8 @@ fn module_update_form(
                                             crate::fetch::get_events(None, Some(20), Some(0)).await
                                         {
                                             set_state_for_async(Box::new(move |state| {
-                                                let events_len = events.len();
-                                                let mut event_cache = state.event_cache.clone();
-                                                let mut event_hashes = Vec::new();
-                                                for (hash, event) in events {
-                                                    event_cache.insert(hash, event);
-                                                    event_hashes.push(hash);
-                                                }
                                                 let mut next = state.clone();
-                                                next.event_cache = event_cache;
-                                                next.event_list_state = crate::EventListState {
-                                                    event_hashes,
-                                                    current_offset: 0,
-                                                    page_size: 20,
-                                                    is_loading: false,
-                                                    has_more: events_len == 20,
-                                                    filter_event_type: None,
-                                                };
+                                                next.apply_latest_events(events, None);
                                                 crate::app_state::upsert_local_event_record(
                                                     &mut next,
                                                     record,
@@ -552,9 +508,9 @@ fn module_update_form(
                         });
                         state
                     }));
-                }))
+                }}))
                 .children([text(i18n::tr(
-                            &state,
+                            state,
                     "Send ModuleUpdate",
                     "ModuleUpdate を送信",
                     "Sendi ModuleUpdate",
@@ -578,10 +534,12 @@ fn module_update_form(
 
 fn effective_module_update_form(
     state: &AppState,
-    definition_event_hash: &[u8; 32],
+    definition_event_hash: &EventHashId,
     snapshot: Option<&crate::module_projection::ModuleSnapshot>,
 ) -> (String, String) {
-    if state.module_update_form.module_definition_event_hash == Some(*definition_event_hash) {
+    if let Some(hash) = &state.module_update_form.module_definition_event_hash
+        && hash == definition_event_hash
+    {
         return (
             state.module_update_form.module_name_input.clone(),
             state.module_update_form.module_description_input.clone(),

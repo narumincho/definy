@@ -135,7 +135,8 @@ fn diff_recursive<State>(
                 .iter()
                 .map(child_key)
                 .collect::<Vec<Option<String>>>();
-            let has_keys = old_keys.iter().any(|k| k.is_some()) || new_keys.iter().any(|k| k.is_some());
+            let has_keys =
+                old_keys.iter().any(|k| k.is_some()) || new_keys.iter().any(|k| k.is_some());
 
             if has_keys {
                 let all_old_keyed = old_keys.iter().all(|k| k.is_some());
@@ -150,7 +151,7 @@ fn diff_recursive<State>(
                         .map(|k| k.as_ref().unwrap().clone())
                         .collect::<Vec<String>>();
                     if old_key_list != new_key_list {
-                        if old_element.children.len() > 0 {
+                        if !old_element.children.is_empty() {
                             patches.push((
                                 path.clone(),
                                 Patch::RemoveChildren(old_element.children.len()),

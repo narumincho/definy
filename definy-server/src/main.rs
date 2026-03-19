@@ -12,7 +12,6 @@ use hyper::service::service_fn;
 use hyper::{Request, Response};
 use hyper_util::rt::TokioIo;
 use narumincho_vdom::Route;
-use sha2::Digest;
 use tokio::net::TcpListener;
 use tokio::sync::RwLock;
 
@@ -98,16 +97,15 @@ async fn main() -> Result<(), anyhow::Error> {
 
 const JAVASCRIPT_CONTENT: &[u8] = include_bytes!("../../web-distribution/definy_client.js");
 
-const JAVASCRIPT_HASH: &'static str =
-    include_str!("../../web-distribution/definy_client.js.sha256");
+const JAVASCRIPT_HASH: &str = include_str!("../../web-distribution/definy_client.js.sha256");
 
 const WASM_CONTENT: &[u8] = include_bytes!("../../web-distribution/definy_client_bg.wasm");
 
-const WASM_HASH: &'static str = include_str!("../../web-distribution/definy_client_bg.wasm.sha256");
+const WASM_HASH: &str = include_str!("../../web-distribution/definy_client_bg.wasm.sha256");
 
 const ICON_CONTENT: &[u8] = include_bytes!("../../assets/icon.png");
 
-const ICON_HASH: &'static str = include_str!("../../web-distribution/icon.png.sha256");
+const ICON_HASH: &str = include_str!("../../web-distribution/icon.png.sha256");
 
 async fn handler(
     request: Request<impl hyper::body::Body>,
@@ -140,15 +138,9 @@ async fn handler(
             .headers()
             .get("accept-language")
             .and_then(|value| value.to_str().ok());
-        let language_resolution = definy_ui::language::resolve_language(uri.query(), accept_language);
-        let language_fallback_notice =
-            language_resolution
-                .unsupported_query_lang
-                .as_ref()
-                .map(|requested| definy_ui::LanguageFallbackNotice {
-                    requested: requested.to_string(),
-                    fallback_to_code: language_resolution.language.code,
-                });
+        let language_resolution =
+            definy_ui::language::resolve_language(uri.query(), accept_language);
+        let language_fallback_notice = language_resolution.fallback_notice();
         let pool = state.pool.read().await.clone();
         return match pool {
             Some(pool) => {
@@ -195,12 +187,10 @@ async fn handler(
                     None => db_unavailable_response(false),
                 }
             } else {
-                match path {
-                    _ => Response::builder()
-                        .status(404)
-                        .header("Content-Type", "text/html; charset=utf-8")
-                        .body(Full::new(Bytes::from("404 Not Found"))),
-                }
+                Response::builder()
+                    .status(404)
+                    .header("Content-Type", "text/html; charset=utf-8")
+                    .body(Full::new(Bytes::from("404 Not Found")))
             }
         }
     }
@@ -231,25 +221,25 @@ async fn handle_html(
     let path = uri.path();
     let query = uri.query();
     let location = definy_ui::Location::from_url(path);
-    if let Some(ref location) = location {
-        if location.to_url() != path {
-            let mut redirect_url = location.to_url();
-            if let Some(query) = query {
-                if !query.is_empty() {
-                    redirect_url.push('?');
-                    redirect_url.push_str(query);
-                }
-            }
-            return Response::builder()
-                .status(301)
-                .header("Location", redirect_url)
-                .body(Full::new(Bytes::from("Redirecting...")));
+    if let Some(ref location) = location
+        && location.to_url() != path
+    {
+        let mut redirect_url = location.to_url();
+        if let Some(query) = query
+            && !query.is_empty()
+        {
+            redirect_url.push('?');
+            redirect_url.push_str(query);
         }
+        return Response::builder()
+            .status(301)
+            .header("Location", redirect_url)
+            .body(Full::new(Bytes::from("Redirecting...")));
     }
 
     let filter_event_type = definy_ui::event_filter_from_query(query);
-    let event_binary_array =
-        match db::get_events(pool, filter_event_type, Some(20), Some(0)).await {
+    let event_binary_array = match db::get_events(pool, filter_event_type, Some(20), Some(0)).await
+    {
         Ok(events) => events,
         Err(error) => {
             eprintln!("Failed to get events for SSR: {:?}", error);
@@ -259,9 +249,8 @@ async fn handle_html(
 
     let events = event_binary_array
         .iter()
-        .into_iter()
         .map(|event_binary| {
-            let hash: [u8; 32] = sha2::Sha256::digest(event_binary.as_slice()).into();
+            let hash = definy_event::EventHashId::from_bytes(event_binary.as_slice());
             (
                 hash,
                 definy_event::verify_and_deserialize(event_binary.as_slice()),

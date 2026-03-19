@@ -1,16 +1,15 @@
+use definy_event::EventHashId;
 use narumincho_vdom::*;
 
-use crate::{AppState, Location, fetch};
 use crate::i18n;
+use crate::{AppState, Location, fetch};
 
 pub fn account_detail_view(
     state: &AppState,
     account_id: &definy_event::event::AccountId,
 ) -> Node<AppState> {
     let account_name_map = state.account_name_map();
-    let account_name =
-        crate::app_state::account_display_name(&account_name_map, account_id);
-    let encoded_account_id = crate::hash_format::encode_hash32(account_id.0.as_ref());
+    let account_name = crate::app_state::account_display_name(&account_name_map, account_id);
 
     let account_events = state
         .event_cache
@@ -18,16 +17,17 @@ pub fn account_detail_view(
         .filter_map(|(hash, event_result)| {
             let (_, event) = event_result.as_ref().ok()?;
             if event.account_id == *account_id {
-                Some((*hash, event))
+                Some((hash, event))
             } else {
                 None
             }
         })
-        .collect::<Vec<([u8; 32], &definy_event::event::Event)>>();
+        .collect::<Vec<(&EventHashId, &definy_event::event::Event)>>();
 
-    let is_current_account = state.current_key.as_ref().is_some_and(|key| {
-        key.verifying_key().to_bytes().as_slice() == account_id.0.as_ref()
-    });
+    let is_current_account = state
+        .current_key
+        .as_ref()
+        .is_some_and(|key| key.verifying_key().to_bytes().as_slice() == account_id.0.as_ref());
 
     let profile_form = if is_current_account {
         Some(
@@ -49,20 +49,7 @@ pub fn account_detail_view(
                         .name("profile-name")
                         .value(&state.profile_name_input)
                         .on_change(EventHandler::new(async |set_state| {
-                            let value = web_sys::window()
-                                .and_then(|window| window.document())
-                                .and_then(|document| {
-                                    document.query_selector("input[name='profile-name']").ok()
-                                })
-                                .flatten()
-                                .and_then(|element| {
-                                    wasm_bindgen::JsCast::dyn_into::<web_sys::HtmlInputElement>(
-                                        element,
-                                    )
-                                    .ok()
-                                })
-                                .map(|input| input.value())
-                                .unwrap_or_default();
+                            let value = crate::dom::get_input_value("input[name='profile-name']");
                             set_state(Box::new(move |state: AppState| AppState {
                                 profile_name_input: value,
                                 ..state.clone()
@@ -88,9 +75,7 @@ pub fn account_detail_view(
                                 wasm_bindgen_futures::spawn_local(async move {
                                     let event_binary = match definy_event::sign_and_serialize(
                                         definy_event::event::Event {
-                                            account_id: definy_event::event::AccountId(Box::new(
-                                                key.verifying_key().to_bytes(),
-                                            )),
+                                            account_id: definy_event::event::AccountId(key.verifying_key()),
                                             time: chrono::Utc::now(),
                                             content:
                                                 definy_event::event::EventContent::ChangeProfile(
@@ -127,23 +112,8 @@ pub fn account_detail_view(
                                                     fetch::get_events(filter, Some(20), Some(0)).await
                                                 {
                                                     set_state_for_async(Box::new(move |state| {
-                                                        let events_len = events.len();
-                                                        let mut event_cache = state.event_cache.clone();
-                                                        let mut event_hashes = Vec::new();
-                                                        for (hash, event) in events {
-                                                            event_cache.insert(hash, event);
-                                                            event_hashes.push(hash);
-                                                        }
                                                         let mut next = state.clone();
-                                                        next.event_cache = event_cache;
-                                                        next.event_list_state = crate::EventListState {
-                                                            event_hashes,
-                                                            current_offset: 0,
-                                                            page_size: 20,
-                                                            is_loading: false,
-                                                            has_more: events_len == 20,
-                                                            filter_event_type: filter,
-                                                        };
+                                                        next.apply_latest_events(events, filter);
                                                         next.profile_name_input = String::new();
                                                         crate::app_state::upsert_local_event_record(
                                                             &mut next,
@@ -226,7 +196,7 @@ pub fn account_detail_view(
                                 .set("word-break", "break-all")
                                 .set("opacity", "0.8"),
                         )
-                        .children([text(encoded_account_id)])
+                        .children([text(account_id.to_string())])
                         .into_node(),
                     Div::new()
                         .style(Style::new().set("color", "var(--text-secondary)"))
@@ -268,7 +238,7 @@ pub fn account_detail_view(
                             .map(|(hash, event)| {
                                 A::<AppState, Location>::new()
                                     .class("event-card")
-                                    .href(state.href_with_lang(Location::Event(hash)))
+                                    .href(state.href_with_lang(Location::Event(hash.clone())))
                                     .style(
                                         Style::new()
                                             .set("display", "grid")
@@ -288,7 +258,9 @@ pub fn account_detail_view(
                                             .into_node(),
                                         Div::new()
                                             .children([text(
-                                                crate::event_presenter::event_summary_text(state, event),
+                                                crate::event_presenter::event_summary_text(
+                                                    state, event,
+                                                ),
                                             )])
                                             .into_node(),
                                     ])

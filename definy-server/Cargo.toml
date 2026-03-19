@@ -20,7 +20,7 @@ sqlx = { version = "0.8.6", features = [
   "macros",
   "chrono",
 ] }
-anyhow = "1.0.100"
+anyhow = "1.0.102"
 ed25519-dalek = { version = "2.2" }
 hex = "0.4.3"
 base64 = "0.22.1"

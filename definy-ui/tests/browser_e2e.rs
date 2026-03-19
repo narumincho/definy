@@ -19,8 +19,7 @@ use tokio::time::{Duration, sleep};
 const TEST_JAVASCRIPT_CONTENT: &[u8] = include_bytes!("../../web-distribution/definy_client.js");
 const TEST_JAVASCRIPT_HASH: &str = include_str!("../../web-distribution/definy_client.js.sha256");
 const TEST_WASM_CONTENT: &[u8] = include_bytes!("../../web-distribution/definy_client_bg.wasm");
-const TEST_WASM_HASH: &str =
-    include_str!("../../web-distribution/definy_client_bg.wasm.sha256");
+const TEST_WASM_HASH: &str = include_str!("../../web-distribution/definy_client_bg.wasm.sha256");
 const TEST_ICON_CONTENT: &[u8] = include_bytes!("../../assets/icon.png");
 const TEST_ICON_HASH: &str = include_str!("../../web-distribution/icon.png.sha256");
 
@@ -330,7 +329,7 @@ impl WebDriverClient {
     ) -> Result<serde_json::Value, Box<dyn Error>> {
         let payload = serde_json::json!({ "script": script, "args": args });
         let sync_path = format!("/session/{}/execute/sync", self.session_id);
-        match webdriver_request(
+        if let Ok(response) = webdriver_request(
             &self.client,
             &self.base_url,
             Method::POST,
@@ -339,10 +338,10 @@ impl WebDriverClient {
         )
         .await
         {
-            Ok(response) => {
-                return Ok(response.get("value").cloned().unwrap_or(serde_json::Value::Null));
-            }
-            Err(_) => {}
+            return Ok(response
+                .get("value")
+                .cloned()
+                .unwrap_or(serde_json::Value::Null));
         }
 
         let fallback_path = format!("/session/{}/execute", self.session_id);
@@ -354,7 +353,10 @@ impl WebDriverClient {
             Some(payload),
         )
         .await?;
-        Ok(response.get("value").cloned().unwrap_or(serde_json::Value::Null))
+        Ok(response
+            .get("value")
+            .cloned()
+            .unwrap_or(serde_json::Value::Null))
     }
 }
 

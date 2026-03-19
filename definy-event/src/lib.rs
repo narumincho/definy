@@ -2,7 +2,10 @@ use crate::event::Event;
 
 pub mod cbor_datetime_tag1;
 pub mod event;
+mod event_hash_id;
 pub mod response;
+
+pub use event_hash_id::EventHashId;
 
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct SignedEvent {
@@ -41,10 +44,8 @@ pub fn verify_and_deserialize(
     let event: Event = serde_cbor::from_slice(&signed_event.event_binary.value)
         .map_err(|_| VerifyAndDeserializeError::DecodeError)?;
 
-    let public_key = ed25519_dalek::VerifyingKey::from_bytes(event.account_id.0.as_ref())
-        .map_err(|_| VerifyAndDeserializeError::DecodeError)?;
     ed25519_dalek::Verifier::verify(
-        &public_key,
+        &event.account_id.0,
         &signed_event.event_binary.value,
         &signed_event.signature,
     )
@@ -63,7 +64,7 @@ mod tests {
         let signing_key = ed25519_dalek::SigningKey::generate(&mut csprng);
         let verifying_key = signing_key.verifying_key();
 
-        let account_id = event::AccountId(Box::new(verifying_key.to_bytes()));
+        let account_id = event::AccountId(verifying_key);
 
         let event = event::Event {
             account_id: account_id.clone(),
@@ -106,7 +107,7 @@ mod tests {
         let signing_key = ed25519_dalek::SigningKey::generate(&mut csprng);
         let verifying_key = signing_key.verifying_key();
 
-        let account_id = event::AccountId(Box::new(verifying_key.to_bytes()));
+        let account_id = event::AccountId(verifying_key);
 
         let event = event::Event {
             account_id,

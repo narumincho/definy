@@ -4,12 +4,14 @@ use narumincho_vdom::*;
 use std::rc::Rc;
 use wasm_bindgen::JsCast;
 
+pub type DropdownOnChange = Rc<dyn Fn(String) -> Box<dyn FnOnce(AppState) -> AppState>>;
+
 pub fn searchable_dropdown(
     state: &AppState,
     name: &str,
     current_value: &str,
     options: &[(String, String)],
-    on_change: Rc<dyn Fn(String) -> Box<dyn FnOnce(AppState) -> AppState>>,
+    on_change: DropdownOnChange,
 ) -> Node<AppState> {
     let is_open = state.active_dropdown_name.as_deref() == Some(name);
 
@@ -50,12 +52,11 @@ pub fn searchable_dropdown(
                         wasm_bindgen::closure::Closure::once_into_js(move || {
                             if let Some(document) = web_sys::window().unwrap().document() {
                                 let selector = format!("input[name='search-{}']", n);
-                                if let Ok(Some(element)) = document.query_selector(&selector) {
-                                    if let Ok(input) =
+                                if let Ok(Some(element)) = document.query_selector(&selector)
+                                    && let Ok(input) =
                                         element.dyn_into::<web_sys::HtmlInputElement>()
-                                    {
-                                        let _ = input.focus();
-                                    }
+                                {
+                                    let _ = input.focus();
                                 }
                             }
                         })
@@ -147,29 +148,16 @@ pub fn searchable_dropdown(
                     .set("color", "var(--text-primary)")
                     .set("outline", "none"),
             );
-        search_input
-            .attributes
-            .push((
-                "placeholder".to_string(),
-                i18n::tr(state, "Search...", "検索...", "Serĉi...").to_string(),
-            ));
+        search_input.attributes.push((
+            "placeholder".to_string(),
+            i18n::tr(state, "Search...", "検索...", "Serĉi...").to_string(),
+        ));
         search_input.events.push((
             "input".to_string(),
             EventHandler::new(move |set_state| {
                 let s_name = search_name.clone();
                 async move {
-                    let value = web_sys::window()
-                        .and_then(|w| w.document())
-                        .and_then(|d| {
-                            d.query_selector(&format!("input[name='{}']", s_name))
-                                .ok()
-                                .flatten()
-                        })
-                        .and_then(|e| {
-                            wasm_bindgen::JsCast::dyn_into::<web_sys::HtmlInputElement>(e).ok()
-                        })
-                        .map(|input| input.value())
-                        .unwrap_or_default();
+                    let value = crate::dom::get_input_value(&format!("input[name='{}']", s_name));
                     set_state(Box::new(move |state: AppState| AppState {
                         dropdown_search_query: value,
                         ..state

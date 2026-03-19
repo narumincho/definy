@@ -15,6 +15,17 @@ pub struct LanguageResolution {
     pub unsupported_query_lang: Option<String>,
 }
 
+impl LanguageResolution {
+    pub fn fallback_notice(&self) -> Option<crate::LanguageFallbackNotice> {
+        self.unsupported_query_lang
+            .as_ref()
+            .map(|req| crate::LanguageFallbackNotice {
+                requested: req.clone(),
+                fallback_to_code: self.language.code,
+            })
+    }
+}
+
 pub const SUPPORTED_LANGUAGES: &[Language] = &[
     Language {
         code: "en",
@@ -22,124 +33,9 @@ pub const SUPPORTED_LANGUAGES: &[Language] = &[
         native_name: "English",
     },
     Language {
-        code: "zh",
-        english_name: "Chinese",
-        native_name: "中文",
-    },
-    Language {
-        code: "hi",
-        english_name: "Hindi",
-        native_name: "हिन्दी",
-    },
-    Language {
-        code: "es",
-        english_name: "Spanish",
-        native_name: "Español",
-    },
-    Language {
-        code: "fr",
-        english_name: "French",
-        native_name: "Français",
-    },
-    Language {
-        code: "ar",
-        english_name: "Arabic",
-        native_name: "العربية",
-    },
-    Language {
-        code: "bn",
-        english_name: "Bengali",
-        native_name: "বাংলা",
-    },
-    Language {
-        code: "pt",
-        english_name: "Portuguese",
-        native_name: "Português",
-    },
-    Language {
-        code: "ru",
-        english_name: "Russian",
-        native_name: "Русский",
-    },
-    Language {
-        code: "ur",
-        english_name: "Urdu",
-        native_name: "اردو",
-    },
-    Language {
-        code: "id",
-        english_name: "Indonesian",
-        native_name: "Bahasa Indonesia",
-    },
-    Language {
-        code: "de",
-        english_name: "German",
-        native_name: "Deutsch",
-    },
-    Language {
         code: "ja",
         english_name: "Japanese",
         native_name: "日本語",
-    },
-    Language {
-        code: "sw",
-        english_name: "Swahili",
-        native_name: "Kiswahili",
-    },
-    Language {
-        code: "mr",
-        english_name: "Marathi",
-        native_name: "मराठी",
-    },
-    Language {
-        code: "te",
-        english_name: "Telugu",
-        native_name: "తెలుగు",
-    },
-    Language {
-        code: "tr",
-        english_name: "Turkish",
-        native_name: "Türkçe",
-    },
-    Language {
-        code: "ta",
-        english_name: "Tamil",
-        native_name: "தமிழ்",
-    },
-    Language {
-        code: "vi",
-        english_name: "Vietnamese",
-        native_name: "Tiếng Việt",
-    },
-    Language {
-        code: "ko",
-        english_name: "Korean",
-        native_name: "한국어",
-    },
-    Language {
-        code: "it",
-        english_name: "Italian",
-        native_name: "Italiano",
-    },
-    Language {
-        code: "th",
-        english_name: "Thai",
-        native_name: "ไทย",
-    },
-    Language {
-        code: "nl",
-        english_name: "Dutch",
-        native_name: "Nederlands",
-    },
-    Language {
-        code: "pl",
-        english_name: "Polish",
-        native_name: "Polski",
-    },
-    Language {
-        code: "fa",
-        english_name: "Persian",
-        native_name: "فارسی",
     },
     Language {
         code: "eo",
@@ -147,10 +43,6 @@ pub const SUPPORTED_LANGUAGES: &[Language] = &[
         native_name: "Esperanto",
     },
 ];
-
-pub fn supported_languages() -> &'static [Language] {
-    SUPPORTED_LANGUAGES
-}
 
 pub fn default_language() -> Language {
     SUPPORTED_LANGUAGES[0]
@@ -162,7 +54,7 @@ pub fn language_from_tag(tag: &str) -> Option<Language> {
         return None;
     }
     let primary = tag
-        .split(|c| c == '-' || c == '_')
+        .split(['-', '_'])
         .next()
         .unwrap_or(tag)
         .to_ascii_lowercase();
@@ -185,10 +77,10 @@ pub fn preferred_languages() -> Vec<Language> {
     let mut ordered = Vec::new();
     let mut seen = HashSet::new();
     for tag in browser_language_tags() {
-        if let Some(lang) = language_from_tag(tag.as_str()) {
-            if seen.insert(lang.code) {
-                ordered.push(lang);
-            }
+        if let Some(lang) = language_from_tag(tag.as_str())
+            && seen.insert(lang.code)
+        {
+            ordered.push(lang);
         }
     }
     for lang in SUPPORTED_LANGUAGES.iter().copied() {
@@ -208,7 +100,10 @@ pub fn best_language_from_browser() -> Option<Language> {
     None
 }
 
-pub fn resolve_language(query: Option<&str>, accept_language: Option<&str>) -> LanguageResolution {
+pub fn resolve_language_with_fallback(
+    query: Option<&str>,
+    fallback: impl FnOnce() -> Language,
+) -> LanguageResolution {
     let params = parse_query(query);
     if let Some(requested_lang) = params.lang {
         if let Some(language) = language_from_tag(requested_lang.as_str()) {
@@ -217,16 +112,21 @@ pub fn resolve_language(query: Option<&str>, accept_language: Option<&str>) -> L
                 unsupported_query_lang: None,
             };
         }
-        let fallback = language_from_accept_language(accept_language).unwrap_or_else(default_language);
         return LanguageResolution {
-            language: fallback,
+            language: fallback(),
             unsupported_query_lang: Some(requested_lang),
         };
     }
     LanguageResolution {
-        language: language_from_accept_language(accept_language).unwrap_or_else(default_language),
+        language: fallback(),
         unsupported_query_lang: None,
     }
+}
+
+pub fn resolve_language(query: Option<&str>, accept_language: Option<&str>) -> LanguageResolution {
+    resolve_language_with_fallback(query, || {
+        language_from_accept_language(accept_language).unwrap_or_else(default_language)
+    })
 }
 
 pub fn best_language_from_accept_language(header: Option<&str>) -> Language {
@@ -234,10 +134,7 @@ pub fn best_language_from_accept_language(header: Option<&str>) -> Language {
 }
 
 pub fn language_from_accept_language(header: Option<&str>) -> Option<Language> {
-    let header = match header {
-        Some(header) => header,
-        None => return None,
-    };
+    let header = header?;
     let mut candidates = Vec::new();
     for part in header.split(',') {
         let part = part.trim();
@@ -254,10 +151,10 @@ pub fn language_from_accept_language(header: Option<&str>) -> Option<Language> {
             let param = param.trim();
             let mut kv = param.splitn(2, '=');
             let key = kv.next().unwrap_or("").trim().to_ascii_lowercase();
-            if key == "q" {
-                if let Some(val) = kv.next() {
-                    q = val.trim().parse::<f32>().unwrap_or(1.0);
-                }
+            if key == "q"
+                && let Some(val) = kv.next()
+            {
+                q = val.trim().parse::<f32>().unwrap_or(1.0);
             }
         }
         candidates.push((tag.to_string(), q));

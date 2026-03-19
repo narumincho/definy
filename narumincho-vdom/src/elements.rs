@@ -10,6 +10,12 @@ macro_rules! define_element {
             pub children: Vec<Node<State>>,
         }
 
+        impl<State> Default for $name<State> {
+            fn default() -> Self {
+                Self::new()
+            }
+        }
+
         impl<State> $name<State> {
             pub fn new() -> Self {
                 Self {
@@ -64,9 +70,9 @@ macro_rules! define_element {
             }
         }
 
-        impl<State> Into<Node<State>> for $name<State> {
-            fn into(self) -> Node<State> {
-                self.into_node()
+        impl<State> From<$name<State>> for Node<State> {
+            fn from(val: $name<State>) -> Self {
+                val.into_node()
             }
         }
     };
@@ -109,6 +115,7 @@ impl<State> Body<State> {
         self
     }
 }
+
 define_element!(
     H1,
     "h1",
@@ -247,6 +254,11 @@ impl<State> Textarea<State> {
     pub fn value(self, value: &str) -> Self {
         self.attribute("value", value)
     }
+
+    pub fn on_input(mut self, msg: EventHandler<State>) -> Self {
+        self.events.push(("input".to_string(), msg));
+        self
+    }
 }
 
 impl<State> Form<State> {
@@ -264,6 +276,12 @@ pub struct A<State, L: crate::Route> {
     pub events: Vec<(String, EventHandler<State>)>,
     pub children: Vec<Node<State>>,
     _phantom: std::marker::PhantomData<L>,
+}
+
+impl<State, L: crate::Route> Default for A<State, L> {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl<State, L: crate::Route> A<State, L> {
@@ -324,8 +342,8 @@ impl<State, L: crate::Route> A<State, L> {
     }
 }
 
-impl<State, L: crate::Route> Into<Node<State>> for A<State, L> {
-    fn into(self) -> Node<State> {
-        self.into_node()
+impl<State, L: crate::Route> From<A<State, L>> for Node<State> {
+    fn from(val: A<State, L>) -> Self {
+        val.into_node()
     }
 }

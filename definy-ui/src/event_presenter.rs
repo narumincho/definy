@@ -1,22 +1,32 @@
 use definy_event::event::{Event, EventContent};
 
 use crate::app_state::AppState;
-use crate::i18n;
 use crate::expression_eval::expression_to_source;
+use crate::i18n;
 
 pub fn event_summary_text(state: &AppState, event: &Event) -> String {
     match &event.content {
         EventContent::CreateAccount(create_account_event) => {
             format!(
                 "{} {}",
-                i18n::tr(state, "Account created:", "アカウント作成:", "Konto kreita:"),
+                i18n::tr(
+                    state,
+                    "Account created:",
+                    "アカウント作成:",
+                    "Konto kreita:"
+                ),
                 create_account_event.account_name
             )
         }
         EventContent::ChangeProfile(change_profile_event) => {
             format!(
                 "{} {}",
-                i18n::tr(state, "Profile changed:", "プロフィール変更:", "Profilo ŝanĝita:"),
+                i18n::tr(
+                    state,
+                    "Profile changed:",
+                    "プロフィール変更:",
+                    "Profilo ŝanĝita:"
+                ),
                 change_profile_event.account_name
             )
         }
@@ -45,13 +55,23 @@ pub fn event_summary_text(state: &AppState, event: &Event) -> String {
             if module_definition_event.description.is_empty() {
                 format!(
                     "{} {}",
-                    i18n::tr(state, "Module created:", "モジュール作成:", "Modulo kreita:"),
+                    i18n::tr(
+                        state,
+                        "Module created:",
+                        "モジュール作成:",
+                        "Modulo kreita:"
+                    ),
                     module_definition_event.module_name
                 )
             } else {
                 format!(
                     "{} {} - {}",
-                    i18n::tr(state, "Module created:", "モジュール作成:", "Modulo kreita:"),
+                    i18n::tr(
+                        state,
+                        "Module created:",
+                        "モジュール作成:",
+                        "Modulo kreita:"
+                    ),
                     module_definition_event.module_name,
                     module_definition_event.description
                 )
@@ -61,13 +81,23 @@ pub fn event_summary_text(state: &AppState, event: &Event) -> String {
             if module_update_event.module_description.is_empty() {
                 format!(
                     "{} {}",
-                    i18n::tr(state, "Module updated:", "モジュール更新:", "Modulo ĝisdatigita:"),
+                    i18n::tr(
+                        state,
+                        "Module updated:",
+                        "モジュール更新:",
+                        "Modulo ĝisdatigita:"
+                    ),
                     module_update_event.module_name
                 )
             } else {
                 format!(
                     "{} {} - {}",
-                    i18n::tr(state, "Module updated:", "モジュール更新:", "Modulo ĝisdatigita:"),
+                    i18n::tr(
+                        state,
+                        "Module updated:",
+                        "モジュール更新:",
+                        "Modulo ĝisdatigita:"
+                    ),
                     module_update_event.module_name,
                     module_update_event.module_description
                 )
@@ -78,20 +108,12 @@ pub fn event_summary_text(state: &AppState, event: &Event) -> String {
 
 pub fn event_kind_label(state: &AppState, event: &Event) -> String {
     match &event.content {
-        EventContent::CreateAccount(_) => i18n::tr(
-            state,
-            "CreateAccount",
-            "アカウント作成",
-            "Konto-kreo",
-        )
-        .to_string(),
-        EventContent::ChangeProfile(_) => i18n::tr(
-            state,
-            "ChangeProfile",
-            "プロフィール変更",
-            "Profil-ŝanĝo",
-        )
-        .to_string(),
+        EventContent::CreateAccount(_) => {
+            i18n::tr(state, "CreateAccount", "アカウント作成", "Konto-kreo").to_string()
+        }
+        EventContent::ChangeProfile(_) => {
+            i18n::tr(state, "ChangeProfile", "プロフィール変更", "Profil-ŝanĝo").to_string()
+        }
         EventContent::PartDefinition(part_definition) => {
             format!(
                 "{} {}",
@@ -107,14 +129,24 @@ pub fn event_kind_label(state: &AppState, event: &Event) -> String {
         EventContent::ModuleDefinition(module_definition) => {
             format!(
                 "{} {}",
-                i18n::tr(state, "ModuleDefinition:", "モジュール定義:", "Modulo-difino:"),
+                i18n::tr(
+                    state,
+                    "ModuleDefinition:",
+                    "モジュール定義:",
+                    "Modulo-difino:"
+                ),
                 module_definition.module_name
             )
         }
         EventContent::ModuleUpdate(module_update) => {
             format!(
                 "{} {}",
-                i18n::tr(state, "ModuleUpdate:", "モジュール更新:", "Modulo-ĝisdatigo:"),
+                i18n::tr(
+                    state,
+                    "ModuleUpdate:",
+                    "モジュール更新:",
+                    "Modulo-ĝisdatigo:"
+                ),
                 module_update.module_name
             )
         }

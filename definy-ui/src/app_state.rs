@@ -1,5 +1,14 @@
-use definy_event::event::{AccountId, EventType};
+use definy_event::{
+    EventHashId,
+    event::{AccountId, EventType},
+};
 use narumincho_vdom::Route;
+
+pub type DecodedEvent = Result<
+    (ed25519_dalek::Signature, definy_event::event::Event),
+    definy_event::VerifyAndDeserializeError,
+>;
+pub type EventWithHash = (EventHashId, DecodedEvent);
 
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub enum PathStep {
@@ -16,23 +25,26 @@ pub enum PathStep {
     TypeListItem,
 }
 
-impl PathStep {
-    pub fn to_string(&self) -> String {
-        match self {
-            PathStep::Left => "Left".to_string(),
-            PathStep::Right => "Right".to_string(),
-            PathStep::Condition => "Condition".to_string(),
-            PathStep::Then => "Then".to_string(),
-            PathStep::Else => "Else".to_string(),
-            PathStep::LetValue => "LetValue".to_string(),
-            PathStep::LetBody => "LetBody".to_string(),
-            PathStep::ListItemValue(index) => format!("ListItemValue({})", index),
-            PathStep::RecordItemValue(index) => format!("RecordItemValue({})", index),
-            PathStep::ConstructorValue => "ConstructorValue".to_string(),
-            PathStep::TypeListItem => "TypeListItem".to_string(),
-        }
+impl std::fmt::Display for PathStep {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let s = match self {
+            PathStep::Left => "Left",
+            PathStep::Right => "Right",
+            PathStep::Condition => "Condition",
+            PathStep::Then => "Then",
+            PathStep::Else => "Else",
+            PathStep::LetValue => "LetValue",
+            PathStep::LetBody => "LetBody",
+            PathStep::ListItemValue(index) => return write!(f, "ListItemValue({})", index),
+            PathStep::RecordItemValue(index) => return write!(f, "RecordItemValue({})", index),
+            PathStep::ConstructorValue => "ConstructorValue",
+            PathStep::TypeListItem => "TypeListItem",
+        };
+        write!(f, "{}", s)
     }
+}
 
+impl PathStep {
     pub fn from_string(s: &str) -> Option<Self> {
         if s == "Left" {
             Some(PathStep::Left)
@@ -79,13 +91,13 @@ pub fn string_to_path(s: &str) -> Option<Vec<PathStep>> {
     s.split('.').map(PathStep::from_string).collect()
 }
 
-use std::collections::HashMap;
+use std::{collections::HashMap, str::FromStr};
 
 #[derive(Clone)]
 pub struct AppState {
     pub login_or_create_account_dialog_state: LoginOrCreateAccountDialogState,
     pub event_cache: HashMap<
-        [u8; 32],
+        EventHashId,
         Result<
             (ed25519_dalek::Signature, definy_event::event::Event),
             definy_event::VerifyAndDeserializeError,
@@ -118,7 +130,7 @@ pub struct LanguageFallbackNotice {
 
 #[derive(Clone)]
 pub struct EventListState {
-    pub event_hashes: Vec<[u8; 32]>,
+    pub event_hashes: Vec<EventHashId>,
     pub current_offset: usize,
     pub page_size: usize,
     pub is_loading: bool,
@@ -132,17 +144,17 @@ pub struct PartDefinitionFormState {
     pub part_type_input: Option<definy_event::event::PartType>,
     pub part_description_input: String,
     pub composing_expression: definy_event::event::Expression,
-    pub module_definition_event_hash: Option<[u8; 32]>,
+    pub module_definition_event_hash: Option<EventHashId>,
     pub eval_result: Option<String>,
 }
 
 #[derive(Clone)]
 pub struct PartUpdateFormState {
-    pub part_definition_event_hash: Option<[u8; 32]>,
+    pub part_definition_event_hash: Option<EventHashId>,
     pub part_name_input: String,
     pub part_description_input: String,
     pub expression_input: definy_event::event::Expression,
-    pub module_definition_event_hash: Option<[u8; 32]>,
+    pub module_definition_event_hash: Option<EventHashId>,
 }
 
 #[derive(Clone)]
@@ -154,7 +166,7 @@ pub struct ModuleDefinitionFormState {
 
 #[derive(Clone)]
 pub struct ModuleUpdateFormState {
-    pub module_definition_event_hash: Option<[u8; 32]>,
+    pub module_definition_event_hash: Option<EventHashId>,
     pub module_name_input: String,
     pub module_description_input: String,
     pub result_message: Option<String>,
@@ -172,31 +184,32 @@ impl AppState {
         &self,
     ) -> std::collections::HashMap<definy_event::event::AccountId, Box<str>> {
         let mut account_name_map = std::collections::HashMap::new();
-        for event_result in self.event_cache.values() {
-            if let Ok((_, event)) = event_result {
-                match &event.content {
-                    definy_event::event::EventContent::CreateAccount(create_account_event) => {
-                        account_name_map
-                            .entry(event.account_id.clone())
-                            .or_insert_with(|| create_account_event.account_name.clone());
-                    }
-                    definy_event::event::EventContent::ChangeProfile(change_profile_event) => {
-                        account_name_map
-                            .entry(event.account_id.clone())
-                            .or_insert_with(|| change_profile_event.account_name.clone());
-                    }
-                    definy_event::event::EventContent::PartDefinition(_) => {}
-                    definy_event::event::EventContent::PartUpdate(_) => {}
-                    definy_event::event::EventContent::ModuleDefinition(_) => {}
-                    definy_event::event::EventContent::ModuleUpdate(_) => {}
+        for (_, event) in self.event_cache.values().flatten() {
+            match &event.content {
+                definy_event::event::EventContent::CreateAccount(create_account_event) => {
+                    account_name_map
+                        .entry(event.account_id.clone())
+                        .or_insert_with(|| create_account_event.account_name.clone());
                 }
+                definy_event::event::EventContent::ChangeProfile(change_profile_event) => {
+                    account_name_map
+                        .entry(event.account_id.clone())
+                        .or_insert_with(|| change_profile_event.account_name.clone());
+                }
+                definy_event::event::EventContent::PartDefinition(_) => {}
+                definy_event::event::EventContent::PartUpdate(_) => {}
+                definy_event::event::EventContent::ModuleDefinition(_) => {}
+                definy_event::event::EventContent::ModuleUpdate(_) => {}
             }
         }
         account_name_map
     }
 }
 
-pub fn upsert_local_event_record(state: &mut AppState, record: crate::local_event::LocalEventRecord) {
+pub fn upsert_local_event_record(
+    state: &mut AppState,
+    record: crate::local_event::LocalEventRecord,
+) {
     state
         .local_event_queue
         .items
@@ -208,7 +221,10 @@ pub fn upsert_local_event_record(state: &mut AppState, record: crate::local_even
         .sort_by(|a, b| b.updated_at_ms.cmp(&a.updated_at_ms));
 }
 
-pub fn replace_local_event_records(state: &mut AppState, records: Vec<crate::local_event::LocalEventRecord>) {
+pub fn replace_local_event_records(
+    state: &mut AppState,
+    records: Vec<crate::local_event::LocalEventRecord>,
+) {
     state.local_event_queue.items = records;
     state
         .local_event_queue
@@ -223,18 +239,12 @@ pub fn account_display_name(
     account_name_map
         .get(account_id)
         .map(|name| name.to_string())
-        .unwrap_or_else(|| crate::hash_format::encode_bytes(account_id.0.as_ref()))
+        .unwrap_or_else(|| account_id.to_string())
 }
 
 pub fn build_initial_state(
     location: Option<Location>,
-    events: Vec<(
-        [u8; 32],
-        Result<
-            (ed25519_dalek::Signature, definy_event::event::Event),
-            definy_event::VerifyAndDeserializeError,
-        >,
-    )>,
+    events: Vec<EventWithHash>,
     event_list_loading: bool,
     event_list_has_more: bool,
     current_key: Option<ed25519_dalek::SigningKey>,
@@ -245,7 +255,7 @@ pub fn build_initial_state(
     let mut event_cache = HashMap::new();
     let mut event_hashes = Vec::new();
     for (hash, event) in events {
-        event_cache.insert(hash, event);
+        event_cache.insert(hash.clone(), event);
         event_hashes.push(hash);
     }
 
@@ -316,7 +326,32 @@ pub fn build_initial_state(
 }
 
 impl AppState {
-    pub fn build_url(location: &Location, lang_code: &str, event_type: Option<EventType>) -> String {
+    pub fn apply_latest_events(
+        &mut self,
+        events: Vec<EventWithHash>,
+        filter_event_type: Option<definy_event::event::EventType>,
+    ) {
+        let events_len = events.len();
+        let mut event_hashes = Vec::with_capacity(events_len);
+        for (hash, event) in events {
+            self.event_cache.insert(hash.clone(), event);
+            event_hashes.push(hash);
+        }
+        self.event_list_state = EventListState {
+            event_hashes,
+            current_offset: 0,
+            page_size: self.event_list_state.page_size,
+            is_loading: false,
+            has_more: events_len == self.event_list_state.page_size,
+            filter_event_type,
+        };
+    }
+
+    pub fn build_url(
+        location: &Location,
+        lang_code: &str,
+        event_type: Option<EventType>,
+    ) -> String {
         let mut url = location.to_url();
         let query = crate::query::build_query(crate::query::QueryParams {
             lang: Some(lang_code.to_string()),
@@ -347,6 +382,64 @@ impl AppState {
 
     pub fn href_with_lang(&self, location: Location) -> narumincho_vdom::Href<Location> {
         narumincho_vdom::Href::External(self.url_with_lang(&location))
+    }
+}
+
+pub async fn load_more_events<F>(state: AppState, set_state: std::rc::Rc<F>)
+where
+    F: Fn(Box<dyn FnOnce(AppState) -> AppState>) + 'static,
+{
+    let filter = state.event_list_state.filter_event_type;
+    let page_size = state.event_list_state.page_size;
+    let is_empty = state.event_list_state.event_hashes.is_empty();
+    let current_offset_base = state.event_list_state.current_offset;
+    set_state(Box::new(|state: AppState| {
+        let mut next = state.clone();
+        next.event_list_state.is_loading = true;
+        next
+    }));
+    let current_offset = if is_empty {
+        0
+    } else {
+        current_offset_base + page_size
+    };
+    let events = crate::fetch::get_events(filter, Some(page_size), Some(current_offset)).await;
+    if let Ok(events) = events {
+        let events_len = events.len();
+        set_state(Box::new(move |state: AppState| {
+            let mut event_cache = state.event_cache.clone();
+            let mut event_hashes = if current_offset == 0 {
+                Vec::new()
+            } else {
+                state.event_list_state.event_hashes.clone()
+            };
+            for (hash, event) in events {
+                if let std::collections::hash_map::Entry::Vacant(e) =
+                    event_cache.entry(hash.clone())
+                {
+                    e.insert(event);
+                    event_hashes.push(hash);
+                }
+            }
+            AppState {
+                event_cache,
+                event_list_state: crate::EventListState {
+                    event_hashes,
+                    current_offset,
+                    page_size: state.event_list_state.page_size,
+                    is_loading: false,
+                    has_more: events_len == state.event_list_state.page_size,
+                    filter_event_type: state.event_list_state.filter_event_type,
+                },
+                ..state.clone()
+            }
+        }));
+    } else {
+        set_state(Box::new(|state: AppState| {
+            let mut next = state.clone();
+            next.event_list_state.is_loading = false;
+            next
+        }));
     }
 }
 
@@ -382,9 +475,9 @@ pub enum Location {
     PartList,
     ModuleList,
     LocalEventQueue,
-    Module([u8; 32]),
-    Part([u8; 32]),
-    Event([u8; 32]),
+    Module(definy_event::EventHashId),
+    Part(definy_event::EventHashId),
+    Event(definy_event::EventHashId),
     Account(AccountId),
 }
 
@@ -396,25 +489,10 @@ impl narumincho_vdom::Route for Location {
             Location::PartList => "/parts".to_string(),
             Location::ModuleList => "/modules".to_string(),
             Location::LocalEventQueue => "/local-events".to_string(),
-            Location::Module(hash) => format!(
-                "/modules/{}",
-                base64::Engine::encode(&base64::engine::general_purpose::URL_SAFE_NO_PAD, hash)
-            ),
-            Location::Part(hash) => format!(
-                "/parts/{}",
-                base64::Engine::encode(&base64::engine::general_purpose::URL_SAFE_NO_PAD, hash)
-            ),
-            Location::Event(hash) => format!(
-                "/events/{}",
-                base64::Engine::encode(&base64::engine::general_purpose::URL_SAFE_NO_PAD, hash)
-            ),
-            Location::Account(account_id) => format!(
-                "/accounts/{}",
-                base64::Engine::encode(
-                    &base64::engine::general_purpose::URL_SAFE_NO_PAD,
-                    account_id.0.as_ref()
-                )
-            ),
+            Location::Module(hash) => format!("/modules/{}", hash),
+            Location::Part(hash) => format!("/parts/{}", hash),
+            Location::Event(hash) => format!("/events/{}", hash),
+            Location::Account(account_id) => format!("/accounts/{}", account_id),
         }
     }
 
@@ -426,30 +504,22 @@ impl narumincho_vdom::Route for Location {
             ["parts"] => Some(Location::PartList),
             ["modules"] => Some(Location::ModuleList),
             ["local-events"] => Some(Location::LocalEventQueue),
-            ["modules", hash_str] => decode_32bytes_base64(hash_str).map(Location::Module),
-            ["parts", hash_str] => decode_32bytes_base64(hash_str).map(Location::Part),
-            ["events", hash_str] => decode_32bytes_base64(hash_str).map(Location::Event),
-            ["accounts", account_id_str] => decode_32bytes_base64(account_id_str)
-                .map(|account_id_bytes| Location::Account(AccountId(Box::new(account_id_bytes)))),
+            ["modules", hash_str] => Some(Location::Module(EventHashId::from_str(hash_str).ok()?)),
+            ["parts", hash_str] => Some(Location::Part(EventHashId::from_str(hash_str).ok()?)),
+            ["events", hash_str] => Some(Location::Event(EventHashId::from_str(hash_str).ok()?)),
+            ["accounts", account_id_str] => {
+                Some(Location::Account(AccountId::from_str(account_id_str).ok()?))
+            }
             _ => None,
         }
     }
 }
 
-fn decode_32bytes_base64(value: &str) -> Option<[u8; 32]> {
-    let bytes =
-        base64::Engine::decode(&base64::engine::general_purpose::URL_SAFE_NO_PAD, value).ok()?;
-    if bytes.len() == 32 {
-        let mut result = [0u8; 32];
-        result.copy_from_slice(&bytes);
-        Some(result)
-    } else {
-        None
-    }
-}
-
 #[cfg(test)]
 mod tests {
+    use std::str::FromStr;
+
+    use definy_event::{EventHashId, event::AccountId};
     use narumincho_vdom::Route;
 
     use super::Location;
@@ -461,10 +531,26 @@ mod tests {
             Location::AccountList,
             Location::PartList,
             Location::ModuleList,
-            Location::Module([2u8; 32]),
-            Location::Account(definy_event::event::AccountId(Box::new([7u8; 32]))),
-            Location::Part([9u8; 32]),
-            Location::Event([3u8; 32]),
+            Location::Module(
+                EventHashId::from_str("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
+                    .ok()
+                    .unwrap(),
+            ),
+            Location::Account(
+                AccountId::from_str("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
+                    .ok()
+                    .unwrap(),
+            ),
+            Location::Part(
+                EventHashId::from_str("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
+                    .ok()
+                    .unwrap(),
+            ),
+            Location::Event(
+                EventHashId::from_str("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
+                    .ok()
+                    .unwrap(),
+            ),
         ];
         for case in cases {
             let url = case.to_url();

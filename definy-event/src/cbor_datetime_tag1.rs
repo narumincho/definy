@@ -24,10 +24,9 @@ where
     let secs = tagged.value.trunc() as i64;
     let nanos = (tagged.value.fract() * 1_000_000_000.0).round() as u32;
 
-    Ok(Utc
-        .timestamp_opt(secs, nanos)
+    Utc.timestamp_opt(secs, nanos)
         .single()
-        .ok_or_else(|| serde::de::Error::custom("invalid timestamp"))?)
+        .ok_or_else(|| serde::de::Error::custom("invalid timestamp"))
 }
 
 #[cfg(test)]

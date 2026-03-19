@@ -3,8 +3,7 @@ use narumincho_vdom::*;
 use crate::{
     LoginOrCreateAccountDialogState,
     app_state::{AppState, CreatingAccountState},
-    fetch,
-    i18n,
+    fetch, i18n,
 };
 
 /// ログインまたはアカウント作成ダイアログ
@@ -158,7 +157,12 @@ pub fn login_or_create_account_dialog(state: &AppState) -> Node<AppState> {
                                 }
                             }));
                         }))
-                        .children([text(i18n::tr(state, "Sign Up", "サインアップ", "Registriĝi"))])
+                        .children([text(i18n::tr(
+                            state,
+                            "Sign Up",
+                            "サインアップ",
+                            "Registriĝi",
+                        ))])
                         .into_node(),
                 ])
                 .into_node(),
@@ -176,30 +180,17 @@ pub fn login_or_create_account_dialog(state: &AppState) -> Node<AppState> {
 fn login_view(state: &AppState) -> Node<AppState> {
     Form::new()
         .on_submit(EventHandler::new(async |set_state| {
-            let password = wasm_bindgen::JsCast::dyn_into::<web_sys::HtmlInputElement>(
-                web_sys::window()
-                    .unwrap()
-                    .document()
-                    .unwrap()
-                    .query_selector("input[name='password']")
-                    .unwrap()
-                    .unwrap(),
-            )
-            .unwrap()
-            .value();
+            let password = crate::dom::get_input_value("input[name='password']");
 
-            match crate::navigator_credential::parse_password(password) {
-                Some(signing_key) => {
-                    dialog_close();
+            if let Some(signing_key) = crate::navigator_credential::parse_password(password) {
+                dialog_close();
 
-                    set_state(Box::new(|state: AppState| -> AppState {
-                        AppState {
-                            current_key: Some(signing_key),
-                            ..state.clone()
-                        }
-                    }));
-                }
-                None => {}
+                set_state(Box::new(|state: AppState| -> AppState {
+                    AppState {
+                        current_key: Some(signing_key),
+                        ..state.clone()
+                    }
+                }));
             }
         }))
         .style(Style::new().set("display", "grid").set("gap", "1.5rem"))
@@ -266,17 +257,7 @@ fn create_account_view(state: &AppState, force_offline: bool) -> Node<AppState> 
             let set_state_for_async = set_state.clone();
             let generated_key = generated_key_for_submit.clone();
             async move {
-                let username = wasm_bindgen::JsCast::dyn_into::<web_sys::HtmlInputElement>(
-                    web_sys::window()
-                        .unwrap()
-                        .document()
-                        .unwrap()
-                        .query_selector("input[name='username']")
-                        .unwrap()
-                        .unwrap(),
-                )
-                .unwrap()
-                .value();
+                let username = crate::dom::get_input_value("input[name='username']");
 
                 if let Some(key) = &generated_key {
                     let key = key.clone();
@@ -284,9 +265,7 @@ fn create_account_view(state: &AppState, force_offline: bool) -> Node<AppState> 
                     wasm_bindgen_futures::spawn_local(async move {
                         let event_binary = definy_event::sign_and_serialize(
                             definy_event::event::Event {
-                                account_id: definy_event::event::AccountId(Box::new(
-                                    key.verifying_key().to_bytes(),
-                                )),
+                                account_id: definy_event::event::AccountId(key.verifying_key()),
                                 time: chrono::Utc::now(),
                                 content: definy_event::event::EventContent::CreateAccount(
                                     definy_event::event::CreateAccountEvent {
@@ -304,37 +283,30 @@ fn create_account_view(state: &AppState, force_offline: bool) -> Node<AppState> 
                             let status = record.status.clone();
                             let status_for_state = status.clone();
                             let message = match status {
-                                crate::local_event::LocalEventStatus::Sent => {
-                                    i18n::tr_lang(
-                                        lang_code,
-                                        "Account created",
-                                        "アカウントを作成しました",
-                                        "Konto kreita",
-                                    )
-                                    .to_string()
-                                }
-                                crate::local_event::LocalEventStatus::Queued => {
-                                    i18n::tr_lang(
-                                        lang_code,
-                                        "Queued: network unavailable",
-                                        "キュー済み: ネットワーク未接続",
-                                        "En vico: reto nedisponebla",
-                                    )
-                                    .to_string()
-                                }
+                                crate::local_event::LocalEventStatus::Sent => i18n::tr_lang(
+                                    lang_code,
+                                    "Account created",
+                                    "アカウントを作成しました",
+                                    "Konto kreita",
+                                )
+                                .to_string(),
+                                crate::local_event::LocalEventStatus::Queued => i18n::tr_lang(
+                                    lang_code,
+                                    "Queued: network unavailable",
+                                    "キュー済み: ネットワーク未接続",
+                                    "En vico: reto nedisponebla",
+                                )
+                                .to_string(),
                                 crate::local_event::LocalEventStatus::Failed => {
-                                    record
-                                        .last_error
-                                        .clone()
-                                        .unwrap_or_else(|| {
-                                            i18n::tr_lang(
-                                                lang_code,
-                                                "Failed to send",
-                                                "送信に失敗しました",
-                                                "Sendado malsukcesis",
-                                            )
-                                            .to_string()
-                                        })
+                                    record.last_error.clone().unwrap_or_else(|| {
+                                        i18n::tr_lang(
+                                            lang_code,
+                                            "Failed to send",
+                                            "送信に失敗しました",
+                                            "Sendado malsukcesis",
+                                        )
+                                        .to_string()
+                                    })
                                 }
                             };
                             set_state_for_async(Box::new(move |state: AppState| {
@@ -381,12 +353,7 @@ fn create_account_view(state: &AppState, force_offline: bool) -> Node<AppState> 
                 .class("form-group")
                 .children([
                     Label::new()
-                        .children([text(i18n::tr(
-                            state,
-                            "Username",
-                            "ユーザー名",
-                            "Uzantnomo",
-                        ))])
+                        .children([text(i18n::tr(state, "Username", "ユーザー名", "Uzantnomo"))])
                         .into_node(),
                     Input::new()
                         .type_("text")
@@ -420,7 +387,7 @@ fn create_account_view(state: &AppState, force_offline: bool) -> Node<AppState> 
                                 .set("word-break", "break-all"),
                         )
                         .children(match &dialog_state.generated_key {
-                            Some(key) => vec![text(&base64::Engine::encode(
+                            Some(key) => vec![text(base64::Engine::encode(
                                 &base64::engine::general_purpose::URL_SAFE_NO_PAD,
                                 key.verifying_key().to_bytes(),
                             ))],
@@ -443,14 +410,12 @@ fn create_account_view(state: &AppState, force_offline: bool) -> Node<AppState> 
                     Div::new()
                         .class("hint")
                         .style(Style::new().set("margin-bottom", "0.5rem"))
-                        .children([text(
-                            i18n::tr(
-                                state,
-                                "If you lose your secret key, you will not be able to log in again.",
-                                "秘密鍵を失うと再ログインできません。",
-                                "Se vi perdas la sekretan ŝlosilon, vi ne povos denove ensaluti.",
-                            ),
-                        )])
+                        .children([text(i18n::tr(
+                            state,
+                            "If you lose your secret key, you will not be able to log in again.",
+                            "秘密鍵を失うと再ログインできません。",
+                            "Se vi perdas la sekretan ŝlosilon, vi ne povos denove ensaluti.",
+                        ))])
                         .into_node(),
                     Div::new()
                         .style(Style::new().set("display", "flex").set("gap", "0.5rem"))
@@ -521,9 +486,12 @@ fn create_account_view(state: &AppState, force_offline: bool) -> Node<AppState> 
                             CreatingAccountState::CreateAccount => {
                                 i18n::tr(state, "Sign Up", "サインアップ", "Registriĝi")
                             }
-                            CreatingAccountState::CreateAccountRequesting => {
-                                i18n::tr(state, "Signing Up...", "サインアップ中...", "Registriĝante...")
-                            }
+                            CreatingAccountState::CreateAccountRequesting => i18n::tr(
+                                state,
+                                "Signing Up...",
+                                "サインアップ中...",
+                                "Registriĝante...",
+                            ),
                             CreatingAccountState::Success => {
                                 i18n::tr(state, "Success", "成功", "Sukceso")
                             }

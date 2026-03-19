@@ -146,7 +146,7 @@ pub async fn get_events(
         query.push_str(&format!(" OFFSET ${}", bind_index));
         let offset_value = std::cmp::min(offset, i64::MAX as usize) as i64;
         binds.push(BindValue::Offset(offset_value));
-        bind_index += 1;
+        // bind_index += 1;
     }
 
     let mut sql_query = sqlx::query(&query);
