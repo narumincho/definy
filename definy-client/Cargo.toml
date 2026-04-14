@@ -15,7 +15,7 @@ definy-event = { path = "../definy-event" }
 narumincho-vdom-client = { path = "../narumincho-vdom-client" }
 narumincho-vdom = { path = "../narumincho-vdom" }
 ed25519-dalek = { version = "2.2", features = ["rand_core"] }
-rand = { version = "0.8", features = ["std_rng"] }
+rand = { version = "0.9", features = ["std_rng"] }
 getrandom = { version = "0.2", features = ["js"] }
 base64 = "0.22"
 wasm-bindgen-futures = "0.4.64"
