@@ -3,7 +3,6 @@ mod event;
 
 use std::net::SocketAddr;
 use std::sync::Arc;
-use std::time::Duration;
 
 use http_body_util::Full;
 use hyper::body::Bytes;
@@ -26,42 +25,6 @@ async fn main() -> Result<(), anyhow::Error> {
     let state = AppState {
         pool: Arc::new(RwLock::new(None)),
     };
-
-    let state_for_retry = state.clone();
-    tokio::spawn(async move {
-        loop {
-            let current_pool = state_for_retry.pool.read().await.clone();
-
-            match current_pool {
-                Some(pool) => {
-                    if let Err(error) = sqlx::query("select 1").execute(&pool).await {
-                        eprintln!(
-                            "Database health check failed. Switching to reconnect mode... {:?}",
-                            error
-                        );
-                        let mut guard = state_for_retry.pool.write().await;
-                        *guard = None;
-                    }
-                }
-                None => match db::init_db().await {
-                    Ok(pool) => {
-                        {
-                            let mut guard = state_for_retry.pool.write().await;
-                            *guard = Some(pool);
-                        }
-                        println!("Database is available. API requests will use the database.");
-                    }
-                    Err(error) => {
-                        eprintln!(
-                            "Failed to connect to database. Retrying in 5 seconds... {:?}",
-                            error
-                        );
-                    }
-                },
-            }
-            tokio::time::sleep(Duration::from_secs(5)).await;
-        }
-    });
 
     let addr = SocketAddr::from((
         std::net::IpAddr::V6(match std::env::var("FLY_APP_NAME") {
@@ -141,7 +104,7 @@ async fn handler(
         let language_resolution =
             definy_ui::language::resolve_language(uri.query(), accept_language);
         let language_fallback_notice = language_resolution.fallback_notice();
-        let pool = state.pool.read().await.clone();
+        let pool = ensure_pool(&state).await;
         return match pool {
             Some(pool) => {
                 handle_html(
@@ -170,7 +133,7 @@ async fn handler(
             .header("Cache-Control", "public, max-age=31536000, immutable")
             .body(Full::new(Bytes::from_static(ICON_CONTENT))),
         "events" => {
-            let pool = state.pool.read().await.clone();
+            let pool = ensure_pool(&state).await;
             match pool {
                 Some(pool) => event::handle_events(request, address, &pool).await,
                 None => db_unavailable_response(false),
@@ -179,7 +142,7 @@ async fn handler(
         path => {
             if let Some(event_binary_hash_hex) = path.strip_prefix("events/") {
                 let event_binary_hash_hex = event_binary_hash_hex.to_string();
-                let pool = state.pool.read().await.clone();
+                let pool = ensure_pool(&state).await;
                 match pool {
                     Some(pool) => {
                         event::handle_event_get(request, pool, &event_binary_hash_hex).await
@@ -192,6 +155,32 @@ async fn handler(
                     .header("Content-Type", "text/html; charset=utf-8")
                     .body(Full::new(Bytes::from("404 Not Found")))
             }
+        }
+    }
+}
+
+async fn ensure_pool(state: &AppState) -> Option<sqlx::postgres::PgPool> {
+    if let Some(pool) = state.pool.read().await.clone() {
+        return Some(pool);
+    }
+
+    let mut guard = state.pool.write().await;
+    if let Some(pool) = guard.clone() {
+        return Some(pool);
+    }
+
+    match db::init_db().await {
+        Ok(pool) => {
+            *guard = Some(pool.clone());
+            println!("Database is available. API requests will use the database.");
+            Some(pool)
+        }
+        Err(error) => {
+            eprintln!(
+                "Failed to connect to database while handling request: {:?}",
+                error
+            );
+            None
         }
     }
 }
