@@ -164,14 +164,14 @@ async fn ensure_pool(state: &AppState) -> Option<sqlx::postgres::PgPool> {
         return Some(pool);
     }
 
-    let mut guard = state.pool.write().await;
-    if let Some(pool) = guard.clone() {
-        return Some(pool);
-    }
-
     match db::init_db().await {
         Ok(pool) => {
+            let mut guard = state.pool.write().await;
+            if let Some(existing_pool) = guard.clone() {
+                return Some(existing_pool);
+            }
             *guard = Some(pool.clone());
+            drop(guard);
             println!("Database is available. API requests will use the database.");
             Some(pool)
         }
