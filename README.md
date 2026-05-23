@@ -46,3 +46,7 @@ psql にパスが通るように
 cargo run -p definy-build
 DATABASE_URL=postgres://postgres:password@localhost:5432/postgres cargo run -p definy-server
 ```
+
+```ps1
+& { $env:DATABASE_URL="postgres://postgres:password@localhost:5432/postgres"; cargo run -p definy-server }
+```
