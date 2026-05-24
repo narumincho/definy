@@ -166,12 +166,10 @@ fn resolve_part_name(state: &AppState, definition_event_hash: &EventHashId) -> O
                 name = Some(part_definition.part_name.to_string());
             }
             definy_event::event::EventContent::PartUpdate(part_update)
-                if &part_update.part_definition_event_hash == definition_event_hash =>
-            {
-                if name.is_some() {
+                if &part_update.part_definition_event_hash == definition_event_hash
+                && name.is_some() => {
                     name = Some(part_update.part_name.to_string());
                 }
-            }
             _ => {}
         }
     }
