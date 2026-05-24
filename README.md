@@ -38,15 +38,20 @@ https://github.com/narumincho/definy/tree/prev2023
 cargo install wasm-bindgen-cli --version 0.2.120
 ```
 
-- [PostgreSQL 17](https://www.postgresql.org/download/)
+- [PostgreSQL](https://www.postgresql.org/download/)
 
-psql にパスが通るように
+## 起動コマンド
+
+Linux, Mac の場合
 
 ```sh
 cargo run -p definy-build
 DATABASE_URL=postgres://postgres:password@localhost:5432/postgres cargo run -p definy-server
 ```
 
+Windows PowerShell の場合
+
 ```ps1
+cargo run -p definy-build
 & { $env:DATABASE_URL="postgres://postgres:password@localhost:5432/postgres"; cargo run -p definy-server }
 ```
