@@ -3,3 +3,4 @@
 /target/
 /web-distribution/
 .codex/
+/narumincho-vdom/data.json
