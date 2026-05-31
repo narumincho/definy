@@ -1,8 +1,53 @@
 // このファイルは narumincho-vdom-build によって自動生成されました。
 use crate::Element;
 
+pub struct video {
 
-pub fn video() -> Element {
-    Element::new("video")
+    pub id: Option<String>,
+    pub anchor: Option<String>,
+    pub class: Option<String>,
+    pub is: Option<String>,
+    pub autofocus: Option<String>,
+    pub popover: Option<String>,
+    pub inert: Option<String>,
+    pub slot: Option<String>,
+    pub hidden: Option<String>,
+    pub autocorrect: Option<String>,
+    pub lang: Option<String>,
+    pub title: Option<String>,
+    pub enterkeyhint: Option<String>,
+    pub contenteditable: Option<String>,
+    pub writingsuggestions: Option<String>,
+    pub data_attributes: Option<String>,
+    pub style: Option<String>,
+    pub nonce: Option<String>,
+    pub accesskey: Option<String>,
+    pub draggable: Option<String>,
+    pub exportparts: Option<String>,
+    pub inputmode: Option<String>,
+    pub part: Option<String>,
+    pub dir: Option<String>,
+    pub autocapitalize: Option<String>,
+    pub tabindex: Option<String>,
+    pub spellcheck: Option<String>,
+    pub virtualkeyboardpolicy: Option<String>,
+    pub translate: Option<String>,
+    pub disablepictureinpicture: Option<String>,
+    pub preload: Option<String>,
+    pub r#type: Option<String>,
+    pub autoplay: Option<String>,
+    pub muted: Option<String>,
+    pub disableremoteplayback: Option<String>,
+    pub width: Option<String>,
+    pub height: Option<String>,
+    pub loading: Option<String>,
+    pub aspect_ratio_computed_from_attributes: Option<String>,
+    pub controlslist: Option<String>,
+    pub poster: Option<String>,
+    pub playsinline: Option<String>,
+    pub controls: Option<String>,
+    pub crossorigin: Option<String>,
+    pub src: Option<String>,
 }
+
 

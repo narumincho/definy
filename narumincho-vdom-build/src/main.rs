@@ -9,52 +9,77 @@ struct Data {
 
 #[derive(serde::Deserialize)]
 struct Html {
-    elements: serde_json::Map<String, serde_json::Value>,
-    global_attributes: serde_json::Map<String, serde_json::Value>,
+    elements: std::collections::HashMap<String, Element>,
+    global_attributes: std::collections::HashMap<String, serde_json::Value>,
 }
 
-fn main() -> std::io::Result<()> {
+#[derive(serde::Deserialize)]
+struct Element(std::collections::HashMap<String, serde_json::Value>);
+
+fn main() -> anyhow::Result<()> {
     let data = if Path::new("./data.json").exists() {
         serde_json::from_slice::<Data>(&std::fs::read("./data.json")?)?
     } else {
+        // https://github.com/mdn/browser-compat-data
         let response =
-            reqwest::blocking::get("https://unpkg.com/@mdn/browser-compat-data/data.json")
-                .unwrap()
-                .bytes()
-                .unwrap();
+            reqwest::blocking::get("https://unpkg.com/@mdn/browser-compat-data/data.json")?
+                .bytes()?;
 
-        File::create("./data.json")
-            .unwrap()
-            .write_all(&response)
-            .unwrap();
+        File::create("./data.json")?.write_all(&response)?;
 
         serde_json::from_slice::<Data>(&response)?
     };
 
-    for (tag, _) in data.html.elements {
+    let mut file = File::create("./narumincho-vdom/src/elements.rs")?;
+    writeln!(
+        file,
+        "// このファイルは narumincho-vdom-build によって自動生成されました。"
+    )?;
+    for tag in data.html.elements.keys() {
+        writeln!(file, "pub mod {};", tag)?;
+    }
+
+    for (tag, element) in data.html.elements {
         let path = format!("./narumincho-vdom/src/elements/{}.rs", tag);
         let dest_path = Path::new(&path);
-        let mut file = File::create(dest_path).unwrap();
+        let mut file = File::create(dest_path)?;
 
         writeln!(
             file,
             "// このファイルは narumincho-vdom-build によって自動生成されました。"
         )
         .unwrap();
-        writeln!(file, "use crate::Element;").unwrap();
-        writeln!(file).unwrap();
-        // Rustの識別子（関数名）として安全かチェック（予約語などへの配慮が本来は必要）
+        writeln!(file, "use crate::Element;")?;
+        writeln!(file)?;
         writeln!(
             file,
-            r#"
-pub fn {}() -> Element {{
-    Element::new("{}")
-}}"#,
-            tag, tag
-        )
-        .unwrap();
-        writeln!(file).unwrap();
+            "pub struct {} {{
+",
+            tag
+        )?;
+        for (attr, _) in data
+            .html
+            .global_attributes
+            .iter()
+            .chain(element.0.iter().filter(|(k, _)| *k != "deprecated"))
+            .filter(|(k, _)| !k.starts_with("__"))
+        {
+            writeln!(file, "    pub {}: Option<String>,", escape_identifier(attr))?;
+        }
+        writeln!(
+            file,
+            "}}
+"
+        )?;
+        writeln!(file)?;
     }
 
     Ok(())
+}
+
+fn escape_identifier(s: &str) -> String {
+    match s {
+        "type" | "loop" | "for" | "as" => "r#type".to_string(),
+        _ => s.replace('-', "_"),
+    }
 }

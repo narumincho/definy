@@ -1,349 +1,134 @@
-use crate::node::{Element, EventHandler, Node};
-
-macro_rules! define_element {
-    ($name:ident, $tag:expr, $doc:expr) => {
-        #[doc = $doc]
-        pub struct $name<State> {
-            pub attributes: Vec<(String, String)>,
-            pub styles: crate::Style,
-            pub events: Vec<(String, EventHandler<State>)>,
-            pub children: Vec<Node<State>>,
-        }
-
-        impl<State> Default for $name<State> {
-            fn default() -> Self {
-                Self::new()
-            }
-        }
-
-        impl<State> $name<State> {
-            pub fn new() -> Self {
-                Self {
-                    attributes: Vec::new(),
-                    styles: crate::Style::new(),
-                    events: Vec::new(),
-                    children: Vec::new(),
-                }
-            }
-
-            pub fn attribute(mut self, key: &str, value: &str) -> Self {
-                self.attributes.push((key.to_string(), value.to_string()));
-                self
-            }
-
-            pub fn id(self, id: &str) -> Self {
-                self.attribute("id", id)
-            }
-
-            pub fn class(self, class: &str) -> Self {
-                self.attribute("class", class)
-            }
-
-            pub fn type_(self, type_: &str) -> Self {
-                self.attribute("type", type_)
-            }
-
-            /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/style
-            pub fn style(mut self, style: impl Into<crate::Style>) -> Self {
-                self.styles = style.into();
-                self
-            }
-
-            /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/popover
-            pub fn popover(self) -> Self {
-                self.attribute("popover", "auto")
-            }
-
-            pub fn children(mut self, children: impl Into<Vec<Node<State>>>) -> Self {
-                self.children = children.into();
-                self
-            }
-
-            pub fn into_node(self) -> Node<State> {
-                Node::Element(Element {
-                    element_name: $tag.to_string(),
-                    attributes: self.attributes,
-                    styles: self.styles,
-                    events: self.events,
-                    children: self.children,
-                })
-            }
-        }
-
-        impl<State> From<$name<State>> for Node<State> {
-            fn from(val: $name<State>) -> Self {
-                val.into_node()
-            }
-        }
-    };
-}
-
-define_element!(
-    Html,
-    "html",
-    "https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/html"
-);
-define_element!(
-    Head,
-    "head",
-    "https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/head"
-);
-define_element!(
-    Title,
-    "title",
-    "https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/title"
-);
-define_element!(
-    Link,
-    "link",
-    "https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/link"
-);
-define_element!(
-    Script,
-    "script",
-    "https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/script"
-);
-define_element!(
-    Body,
-    "body",
-    "https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/body"
-);
-
-impl<State> Body<State> {
-    pub fn on_keydown(mut self, msg: EventHandler<State>) -> Self {
-        self.events.push(("keydown".to_string(), msg));
-        self
-    }
-}
-
-define_element!(
-    H1,
-    "h1",
-    "https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/h1"
-);
-define_element!(
-    H2,
-    "h2",
-    "https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/h2"
-);
-define_element!(
-    Dialog,
-    "dialog",
-    "https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/dialog"
-);
-define_element!(
-    Input,
-    "input",
-    "https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/input"
-);
-define_element!(
-    Textarea,
-    "textarea",
-    "https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/textarea"
-);
-define_element!(
-    Label,
-    "label",
-    "https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/label"
-);
-define_element!(
-    Form,
-    "form",
-    "https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/form"
-);
-define_element!(
-    Select,
-    "select",
-    "https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/select"
-);
-define_element!(
-    Datalist,
-    "datalist",
-    "https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/datalist"
-);
-define_element!(
-    OptionElement,
-    "option",
-    "https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/option"
-);
-define_element!(
-    StyleElement,
-    "style",
-    "https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/style"
-);
-define_element!(
-    Div,
-    "div",
-    "https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/div"
-);
-define_element!(
-    Header,
-    "header",
-    "https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/header"
-);
-
-// Link specific
-impl<State> Link<State> {
-    pub fn rel(self, rel: &str) -> Self {
-        self.attribute("rel", rel)
-    }
-
-    pub fn href(self, href: &str) -> Self {
-        self.attribute("href", href)
-    }
-}
-
-// Input specific
-impl<State> Input<State> {
-    pub fn name(self, name: &str) -> Self {
-        self.attribute("name", name)
-    }
-
-    pub fn value(self, value: &str) -> Self {
-        self.attribute("value", value)
-    }
-
-    pub fn autocomplete(self, autocomplete: &str) -> Self {
-        self.attribute("autocomplete", autocomplete)
-    }
-
-    pub fn required(self) -> Self {
-        self.attribute("required", "required")
-    }
-
-    pub fn readonly(self) -> Self {
-        self.attribute("readonly", "readonly")
-    }
-
-    pub fn disabled(self, disabled: bool) -> Self {
-        if disabled {
-            self.attribute("disabled", "disabled")
-        } else {
-            self
-        }
-    }
-
-    pub fn on_change(mut self, msg: EventHandler<State>) -> Self {
-        self.events.push(("change".to_string(), msg));
-        self
-    }
-}
-
-impl<State> Select<State> {
-    pub fn name(self, name: &str) -> Self {
-        self.attribute("name", name)
-    }
-
-    pub fn value(self, value: &str) -> Self {
-        self.attribute("value", value)
-    }
-}
-
-impl<State> OptionElement<State> {
-    pub fn value(self, value: &str) -> Self {
-        self.attribute("value", value)
-    }
-}
-
-// Textarea specific
-impl<State> Textarea<State> {
-    pub fn name(self, name: &str) -> Self {
-        self.attribute("name", name)
-    }
-
-    pub fn value(self, value: &str) -> Self {
-        self.attribute("value", value)
-    }
-
-    pub fn on_input(mut self, msg: EventHandler<State>) -> Self {
-        self.events.push(("input".to_string(), msg));
-        self
-    }
-}
-
-impl<State> Form<State> {
-    /// https://developer.mozilla.org/docs/Web/API/HTMLFormElement/submit_event
-    pub fn on_submit(mut self, msg: EventHandler<State>) -> Self {
-        self.events.push(("submit".to_string(), msg));
-        self
-    }
-}
-
-#[doc = "https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/a"]
-pub struct A<State, L: crate::Route> {
-    pub attributes: Vec<(String, String)>,
-    pub styles: crate::Style,
-    pub events: Vec<(String, EventHandler<State>)>,
-    pub children: Vec<Node<State>>,
-    _phantom: std::marker::PhantomData<L>,
-}
-
-impl<State, L: crate::Route> Default for A<State, L> {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl<State, L: crate::Route> A<State, L> {
-    pub fn new() -> Self {
-        Self {
-            attributes: Vec::new(),
-            styles: crate::Style::new(),
-            events: Vec::new(),
-            children: Vec::new(),
-            _phantom: std::marker::PhantomData,
-        }
-    }
-
-    pub fn attribute(mut self, key: &str, value: &str) -> Self {
-        self.attributes.push((key.to_string(), value.to_string()));
-        self
-    }
-
-    pub fn id(self, id: &str) -> Self {
-        self.attribute("id", id)
-    }
-
-    pub fn class(self, class: &str) -> Self {
-        self.attribute("class", class)
-    }
-
-    pub fn type_(self, type_: &str) -> Self {
-        self.attribute("type", type_)
-    }
-
-    pub fn style(mut self, style: impl Into<crate::Style>) -> Self {
-        self.styles = style.into();
-        self
-    }
-
-    pub fn popover(self) -> Self {
-        self.attribute("popover", "auto")
-    }
-
-    pub fn children(mut self, children: impl Into<Vec<Node<State>>>) -> Self {
-        self.children = children.into();
-        self
-    }
-
-    pub fn into_node(self) -> Node<State> {
-        Node::Element(Element {
-            element_name: "a".to_string(),
-            attributes: self.attributes,
-            styles: self.styles,
-            events: self.events,
-            children: self.children,
-        })
-    }
-
-    pub fn href(self, href: impl Into<crate::route::Href<L>>) -> Self {
-        let href_val: String = href.into().into();
-        self.attribute("href", &href_val)
-    }
-}
-
-impl<State, L: crate::Route> From<A<State, L>> for Node<State> {
-    fn from(val: A<State, L>) -> Self {
-        val.into_node()
-    }
-}
+// このファイルは narumincho-vdom-build によって自動生成されました。
+pub mod legend;
+pub mod datalist;
+pub mod b;
+pub mod plaintext;
+pub mod h1;
+pub mod h6;
+pub mod hgroup;
+pub mod samp;
+pub mod nav;
+pub mod html;
+pub mod noframes;
+pub mod figure;
+pub mod colgroup;
+pub mod object;
+pub mod hr;
+pub mod u;
+pub mod dl;
+pub mod h4;
+pub mod param;
+pub mod acronym;
+pub mod track;
+pub mod noscript;
+pub mod var;
+pub mod label;
+pub mod meter;
+pub mod sup;
+pub mod tr;
+pub mod rtc;
+pub mod optgroup;
+pub mod table;
+pub mod style;
+pub mod img;
+pub mod li;
+pub mod dt;
+pub mod blockquote;
+pub mod rt;
+pub mod dialog;
+pub mod span;
+pub mod article;
+pub mod ins;
+pub mod embed;
+pub mod nobr;
+pub mod strong;
+pub mod base;
+pub mod search;
+pub mod h2;
+pub mod tt;
+pub mod thead;
+pub mod video;
+pub mod head;
+pub mod strike;
+pub mod pre;
+pub mod br;
+pub mod kbd;
+pub mod main;
+pub mod summary;
+pub mod button;
+pub mod tfoot;
+pub mod a;
+pub mod figcaption;
+pub mod s;
+pub mod iframe;
+pub mod selectedcontent;
+pub mod q;
+pub mod title;
+pub mod bdo;
+pub mod dfn;
+pub mod link;
+pub mod address;
+pub mod audio;
+pub mod center;
+pub mod font;
+pub mod ruby;
+pub mod h5;
+pub mod source;
+pub mod script;
+pub mod section;
+pub mod time;
+pub mod frameset;
+pub mod header;
+pub mod option;
+pub mod ul;
+pub mod body;
+pub mod fieldset;
+pub mod del;
+pub mod mark;
+pub mod i;
+pub mod col;
+pub mod select;
+pub mod wbr;
+pub mod rp;
+pub mod bdi;
+pub mod data;
+pub mod geolocation;
+pub mod big;
+pub mod h3;
+pub mod meta;
+pub mod rb;
+pub mod textarea;
+pub mod canvas;
+pub mod xmp;
+pub mod p;
+pub mod td;
+pub mod ol;
+pub mod menu;
+pub mod output;
+pub mod em;
+pub mod details;
+pub mod sub;
+pub mod div;
+pub mod footer;
+pub mod template;
+pub mod small;
+pub mod picture;
+pub mod map;
+pub mod area;
+pub mod input;
+pub mod marquee;
+pub mod caption;
+pub mod abbr;
+pub mod tbody;
+pub mod slot;
+pub mod th;
+pub mod dir;
+pub mod aside;
+pub mod code;
+pub mod noembed;
+pub mod fencedframe;
+pub mod frame;
+pub mod form;
+pub mod cite;
+pub mod progress;
+pub mod dd;
