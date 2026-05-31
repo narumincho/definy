@@ -1197,10 +1197,16 @@ dependencies = [
 name = "narumincho-vdom"
 version = "0.1.0"
 dependencies = [
+ "sha2",
+]
+
+[[package]]
+name = "narumincho-vdom-build"
+version = "0.1.0"
+dependencies = [
  "reqwest",
  "serde",
  "serde_json",
- "sha2",
 ]
 
 [[package]]
