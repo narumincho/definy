@@ -1,59 +1,111 @@
 // このファイルは narumincho-vdom-build によって自動生成されました。
 use crate::Element;
 
-pub struct iframe {
+/// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/iframe
+pub struct Iframe {
 
-    pub id: Option<String>,
-    pub anchor: Option<String>,
-    pub class: Option<String>,
-    pub is: Option<String>,
-    pub autofocus: Option<String>,
-    pub popover: Option<String>,
-    pub inert: Option<String>,
-    pub slot: Option<String>,
-    pub hidden: Option<String>,
-    pub autocorrect: Option<String>,
-    pub lang: Option<String>,
-    pub title: Option<String>,
-    pub enterkeyhint: Option<String>,
-    pub contenteditable: Option<String>,
-    pub writingsuggestions: Option<String>,
-    pub data_attributes: Option<String>,
-    pub style: Option<String>,
-    pub nonce: Option<String>,
-    pub accesskey: Option<String>,
-    pub draggable: Option<String>,
-    pub exportparts: Option<String>,
-    pub inputmode: Option<String>,
-    pub part: Option<String>,
-    pub dir: Option<String>,
-    pub autocapitalize: Option<String>,
-    pub tabindex: Option<String>,
-    pub spellcheck: Option<String>,
-    pub virtualkeyboardpolicy: Option<String>,
-    pub translate: Option<String>,
-    pub align: Option<String>,
-    pub privateToken: Option<String>,
-    pub referrerpolicy: Option<String>,
-    pub width: Option<String>,
-    pub loading: Option<String>,
-    pub name: Option<String>,
-    pub src: Option<String>,
-    pub srcdoc: Option<String>,
-    pub sandbox: Option<String>,
-    pub marginheight: Option<String>,
-    pub allowfullscreen: Option<String>,
-    pub longdesc: Option<String>,
-    pub allowpaymentrequest: Option<String>,
-    pub browsingtopics: Option<String>,
-    pub csp: Option<String>,
-    pub scrolling: Option<String>,
-    pub frameborder: Option<String>,
-    pub allow: Option<String>,
-    pub cross_origin_top_navigation_by_user_activation: Option<String>,
-    pub credentialless: Option<String>,
-    pub marginwidth: Option<String>,
-    pub height: Option<String>,
+    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/data-*
+    pub data_attributes: std::option::Option<String>,
+    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/draggable
+    pub draggable: std::option::Option<String>,
+    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/style
+    pub style: std::option::Option<String>,
+    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/title
+    pub title: std::option::Option<String>,
+    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/nonce
+    pub nonce: std::option::Option<String>,
+    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/virtualkeyboardpolicy
+    pub virtualkeyboardpolicy: std::option::Option<String>,
+    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/hidden
+    pub hidden: std::option::Option<String>,
+    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/autocorrect
+    pub autocorrect: std::option::Option<String>,
+    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/is
+    pub is: std::option::Option<String>,
+    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/writingsuggestions
+    pub writingsuggestions: std::option::Option<String>,
+    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/inputmode
+    pub inputmode: std::option::Option<String>,
+    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/anchor
+    pub anchor: std::option::Option<String>,
+    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/class
+    pub class: std::option::Option<String>,
+    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/lang
+    pub lang: std::option::Option<String>,
+    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/translate
+    pub translate: std::option::Option<String>,
+    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/exportparts
+    pub exportparts: std::option::Option<String>,
+    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/dir
+    pub dir: std::option::Option<String>,
+    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/part
+    pub part: std::option::Option<String>,
+    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/accesskey
+    pub accesskey: std::option::Option<String>,
+    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/slot
+    pub slot: std::option::Option<String>,
+    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/popover
+    pub popover: std::option::Option<String>,
+    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/spellcheck
+    pub spellcheck: std::option::Option<String>,
+    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/id
+    pub id: std::option::Option<String>,
+    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/contenteditable
+    pub contenteditable: std::option::Option<String>,
+    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/autocapitalize
+    pub autocapitalize: std::option::Option<String>,
+    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/autofocus
+    pub autofocus: std::option::Option<String>,
+    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/inert
+    pub inert: std::option::Option<String>,
+    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/enterkeyhint
+    pub enterkeyhint: std::option::Option<String>,
+    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/tabindex
+    pub tabindex: std::option::Option<String>,
+    /// 
+    pub srcdoc: std::option::Option<String>,
+    /// https://developer.mozilla.org/docs/Web/HTTP/Guides/IFrame_credentialless
+    pub credentialless: std::option::Option<String>,
+    /// 
+    pub scrolling: std::option::Option<String>,
+    /// 
+    pub align: std::option::Option<String>,
+    /// 
+    pub allow: std::option::Option<String>,
+    /// 
+    pub src: std::option::Option<String>,
+    /// 
+    pub longdesc: std::option::Option<String>,
+    /// 
+    pub allowpaymentrequest: std::option::Option<String>,
+    /// 
+    pub height: std::option::Option<String>,
+    /// 
+    pub cross_origin_top_navigation_by_user_activation: std::option::Option<String>,
+    /// 
+    pub marginwidth: std::option::Option<String>,
+    /// 
+    pub name: std::option::Option<String>,
+    /// 
+    pub marginheight: std::option::Option<String>,
+    /// 
+    pub referrerpolicy: std::option::Option<String>,
+    /// 
+    pub frameborder: std::option::Option<String>,
+    /// 
+    pub width: std::option::Option<String>,
+    /// 
+    pub loading: std::option::Option<String>,
+    /// 
+    pub privateToken: std::option::Option<String>,
+    /// 
+    pub allowfullscreen: std::option::Option<String>,
+    /// 
+    pub browsingtopics: std::option::Option<String>,
+    /// 
+    pub csp: std::option::Option<String>,
+    /// 
+    pub sandbox: std::option::Option<String>,
 }
 
 

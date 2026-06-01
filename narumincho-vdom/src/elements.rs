@@ -1,134 +1,194 @@
 // このファイルは narumincho-vdom-build によって自動生成されました。
-pub mod legend;
-pub mod datalist;
-pub mod b;
-pub mod plaintext;
-pub mod h1;
-pub mod h6;
-pub mod hgroup;
-pub mod samp;
-pub mod nav;
-pub mod html;
-pub mod noframes;
-pub mod figure;
-pub mod colgroup;
-pub mod object;
-pub mod hr;
-pub mod u;
-pub mod dl;
-pub mod h4;
-pub mod param;
-pub mod acronym;
-pub mod track;
-pub mod noscript;
-pub mod var;
-pub mod label;
-pub mod meter;
-pub mod sup;
-pub mod tr;
-pub mod rtc;
-pub mod optgroup;
-pub mod table;
-pub mod style;
-pub mod img;
-pub mod li;
-pub mod dt;
-pub mod blockquote;
-pub mod rt;
-pub mod dialog;
-pub mod span;
-pub mod article;
-pub mod ins;
-pub mod embed;
-pub mod nobr;
-pub mod strong;
-pub mod base;
-pub mod search;
-pub mod h2;
-pub mod tt;
-pub mod thead;
-pub mod video;
-pub mod head;
-pub mod strike;
-pub mod pre;
-pub mod br;
-pub mod kbd;
-pub mod main;
-pub mod summary;
-pub mod button;
-pub mod tfoot;
 pub mod a;
-pub mod figcaption;
-pub mod s;
-pub mod iframe;
-pub mod selectedcontent;
-pub mod q;
-pub mod title;
-pub mod bdo;
-pub mod dfn;
-pub mod link;
-pub mod address;
-pub mod audio;
-pub mod center;
-pub mod font;
-pub mod ruby;
-pub mod h5;
-pub mod source;
-pub mod script;
-pub mod section;
-pub mod time;
-pub mod frameset;
-pub mod header;
-pub mod option;
-pub mod ul;
-pub mod body;
-pub mod fieldset;
-pub mod del;
-pub mod mark;
-pub mod i;
-pub mod col;
-pub mod select;
-pub mod wbr;
-pub mod rp;
-pub mod bdi;
-pub mod data;
-pub mod geolocation;
-pub mod big;
-pub mod h3;
-pub mod meta;
-pub mod rb;
-pub mod textarea;
-pub mod canvas;
-pub mod xmp;
-pub mod p;
-pub mod td;
-pub mod ol;
-pub mod menu;
-pub mod output;
-pub mod em;
-pub mod details;
-pub mod sub;
-pub mod div;
-pub mod footer;
-pub mod template;
-pub mod small;
-pub mod picture;
-pub mod map;
-pub mod area;
-pub mod input;
-pub mod marquee;
-pub mod caption;
 pub mod abbr;
-pub mod tbody;
-pub mod slot;
-pub mod th;
-pub mod dir;
+pub mod acronym;
+pub mod address;
+pub mod area;
+pub mod article;
 pub mod aside;
-pub mod code;
-pub mod noembed;
-pub mod fencedframe;
-pub mod frame;
-pub mod form;
+pub mod audio;
+pub mod b;
+pub mod base;
+pub mod bdi;
+pub mod bdo;
+pub mod big;
+pub mod blockquote;
+pub mod body;
+pub mod br;
+pub mod button;
+pub mod canvas;
+pub mod caption;
+pub mod center;
 pub mod cite;
-pub mod progress;
+pub mod code;
+pub mod col;
+pub mod colgroup;
+pub mod data;
+pub mod datalist;
 pub mod dd;
+pub mod del;
+pub mod details;
+pub mod dfn;
+pub mod dialog;
+pub mod dir;
+pub mod div;
+pub mod dl;
+pub mod dt;
+pub mod em;
+pub mod embed;
+pub mod fencedframe;
+pub mod fieldset;
+pub mod figcaption;
+pub mod figure;
+pub mod font;
+pub mod footer;
+pub mod form;
+pub mod frame;
+pub mod frameset;
+pub mod geolocation;
+pub mod h1;
+pub mod h2;
+pub mod h3;
+pub mod h4;
+pub mod h5;
+pub mod h6;
+pub mod head;
+pub mod header;
+pub mod hgroup;
+pub mod hr;
+pub mod html;
+pub mod i;
+pub mod iframe;
+pub mod img;
+pub mod input;
+pub mod ins;
+pub mod kbd;
+pub mod label;
+pub mod legend;
+pub mod li;
+pub mod link;
+pub mod main;
+pub mod map;
+pub mod mark;
+pub mod marquee;
+pub mod menu;
+pub mod meta;
+pub mod meter;
+pub mod nav;
+pub mod nobr;
+pub mod noembed;
+pub mod noframes;
+pub mod noscript;
+pub mod object;
+pub mod ol;
+pub mod optgroup;
+pub mod option;
+pub mod output;
+pub mod p;
+pub mod param;
+pub mod picture;
+pub mod plaintext;
+pub mod pre;
+pub mod progress;
+pub mod q;
+pub mod rb;
+pub mod rp;
+pub mod rt;
+pub mod rtc;
+pub mod ruby;
+pub mod s;
+pub mod samp;
+pub mod script;
+pub mod search;
+pub mod section;
+pub mod select;
+pub mod selectedcontent;
+pub mod slot;
+pub mod small;
+pub mod source;
+pub mod span;
+pub mod strike;
+pub mod strong;
+pub mod style;
+pub mod sub;
+pub mod summary;
+pub mod sup;
+pub mod table;
+pub mod tbody;
+pub mod td;
+pub mod template;
+pub mod textarea;
+pub mod tfoot;
+pub mod th;
+pub mod thead;
+pub mod time;
+pub mod title;
+pub mod tr;
+pub mod track;
+pub mod tt;
+pub mod u;
+pub mod ul;
+pub mod var;
+pub mod video;
+pub mod wbr;
+pub mod xmp;
+pub struct Element {
+    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/data-*
+    pub data_attributes: std::option::Option<String>,
+    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/draggable
+    pub draggable: std::option::Option<String>,
+    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/style
+    pub style: std::option::Option<String>,
+    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/title
+    pub title: std::option::Option<String>,
+    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/nonce
+    pub nonce: std::option::Option<String>,
+    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/virtualkeyboardpolicy
+    pub virtualkeyboardpolicy: std::option::Option<String>,
+    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/hidden
+    pub hidden: std::option::Option<String>,
+    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/autocorrect
+    pub autocorrect: std::option::Option<String>,
+    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/is
+    pub is: std::option::Option<String>,
+    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/writingsuggestions
+    pub writingsuggestions: std::option::Option<String>,
+    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/inputmode
+    pub inputmode: std::option::Option<String>,
+    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/anchor
+    pub anchor: std::option::Option<String>,
+    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/class
+    pub class: std::option::Option<String>,
+    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/lang
+    pub lang: std::option::Option<String>,
+    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/translate
+    pub translate: std::option::Option<String>,
+    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/exportparts
+    pub exportparts: std::option::Option<String>,
+    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/dir
+    pub dir: std::option::Option<String>,
+    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/part
+    pub part: std::option::Option<String>,
+    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/accesskey
+    pub accesskey: std::option::Option<String>,
+    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/slot
+    pub slot: std::option::Option<String>,
+    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/popover
+    pub popover: std::option::Option<String>,
+    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/spellcheck
+    pub spellcheck: std::option::Option<String>,
+    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/id
+    pub id: std::option::Option<String>,
+    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/contenteditable
+    pub contenteditable: std::option::Option<String>,
+    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/autocapitalize
+    pub autocapitalize: std::option::Option<String>,
+    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/autofocus
+    pub autofocus: std::option::Option<String>,
+    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/inert
+    pub inert: std::option::Option<String>,
+    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/enterkeyhint
+    pub enterkeyhint: std::option::Option<String>,
+    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/tabindex
+    pub tabindex: std::option::Option<String>,
+}

@@ -1,51 +1,95 @@
 // このファイルは narumincho-vdom-build によって自動生成されました。
 use crate::Element;
 
-pub struct object {
+/// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/object
+pub struct Object {
 
-    pub id: Option<String>,
-    pub anchor: Option<String>,
-    pub class: Option<String>,
-    pub is: Option<String>,
-    pub autofocus: Option<String>,
-    pub popover: Option<String>,
-    pub inert: Option<String>,
-    pub slot: Option<String>,
-    pub hidden: Option<String>,
-    pub autocorrect: Option<String>,
-    pub lang: Option<String>,
-    pub title: Option<String>,
-    pub enterkeyhint: Option<String>,
-    pub contenteditable: Option<String>,
-    pub writingsuggestions: Option<String>,
-    pub data_attributes: Option<String>,
-    pub style: Option<String>,
-    pub nonce: Option<String>,
-    pub accesskey: Option<String>,
-    pub draggable: Option<String>,
-    pub exportparts: Option<String>,
-    pub inputmode: Option<String>,
-    pub part: Option<String>,
-    pub dir: Option<String>,
-    pub autocapitalize: Option<String>,
-    pub tabindex: Option<String>,
-    pub spellcheck: Option<String>,
-    pub virtualkeyboardpolicy: Option<String>,
-    pub translate: Option<String>,
-    pub data: Option<String>,
-    pub border: Option<String>,
-    pub height: Option<String>,
-    pub codetype: Option<String>,
-    pub name: Option<String>,
-    pub r#type: Option<String>,
-    pub form: Option<String>,
-    pub usemap: Option<String>,
-    pub archive: Option<String>,
-    pub classid: Option<String>,
-    pub declare: Option<String>,
-    pub codebase: Option<String>,
-    pub width: Option<String>,
-    pub standby: Option<String>,
+    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/data-*
+    pub data_attributes: std::option::Option<String>,
+    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/draggable
+    pub draggable: std::option::Option<String>,
+    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/style
+    pub style: std::option::Option<String>,
+    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/title
+    pub title: std::option::Option<String>,
+    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/nonce
+    pub nonce: std::option::Option<String>,
+    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/virtualkeyboardpolicy
+    pub virtualkeyboardpolicy: std::option::Option<String>,
+    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/hidden
+    pub hidden: std::option::Option<String>,
+    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/autocorrect
+    pub autocorrect: std::option::Option<String>,
+    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/is
+    pub is: std::option::Option<String>,
+    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/writingsuggestions
+    pub writingsuggestions: std::option::Option<String>,
+    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/inputmode
+    pub inputmode: std::option::Option<String>,
+    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/anchor
+    pub anchor: std::option::Option<String>,
+    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/class
+    pub class: std::option::Option<String>,
+    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/lang
+    pub lang: std::option::Option<String>,
+    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/translate
+    pub translate: std::option::Option<String>,
+    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/exportparts
+    pub exportparts: std::option::Option<String>,
+    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/dir
+    pub dir: std::option::Option<String>,
+    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/part
+    pub part: std::option::Option<String>,
+    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/accesskey
+    pub accesskey: std::option::Option<String>,
+    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/slot
+    pub slot: std::option::Option<String>,
+    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/popover
+    pub popover: std::option::Option<String>,
+    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/spellcheck
+    pub spellcheck: std::option::Option<String>,
+    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/id
+    pub id: std::option::Option<String>,
+    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/contenteditable
+    pub contenteditable: std::option::Option<String>,
+    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/autocapitalize
+    pub autocapitalize: std::option::Option<String>,
+    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/autofocus
+    pub autofocus: std::option::Option<String>,
+    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/inert
+    pub inert: std::option::Option<String>,
+    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/enterkeyhint
+    pub enterkeyhint: std::option::Option<String>,
+    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/tabindex
+    pub tabindex: std::option::Option<String>,
+    /// 
+    pub codebase: std::option::Option<String>,
+    /// 
+    pub archive: std::option::Option<String>,
+    /// 
+    pub codetype: std::option::Option<String>,
+    /// 
+    pub data: std::option::Option<String>,
+    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Attributes/form
+    pub form: std::option::Option<String>,
+    /// 
+    pub height: std::option::Option<String>,
+    /// 
+    pub declare: std::option::Option<String>,
+    /// 
+    pub standby: std::option::Option<String>,
+    /// 
+    pub usemap: std::option::Option<String>,
+    /// 
+    pub border: std::option::Option<String>,
+    /// 
+    pub classid: std::option::Option<String>,
+    /// 
+    pub width: std::option::Option<String>,
+    /// 
+    pub r#type: std::option::Option<String>,
+    /// 
+    pub name: std::option::Option<String>,
 }
 
 
