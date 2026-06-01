@@ -112,6 +112,8 @@ fn output_elements_mod(html_data: &HtmlData) -> anyhow::Result<()> {
         writeln!(file, "pub mod {};", tag)?;
     }
 
+    writeln!(file)?;
+
     writeln!(file, "pub struct Element {{")?;
     for (attr, attribute_data) in &html_data.global_attributes {
         writeln!(
@@ -129,6 +131,51 @@ fn output_elements_mod(html_data: &HtmlData) -> anyhow::Result<()> {
             escape_identifier(attr.as_str())
         )?;
     }
+    writeln!(file, "}}")?;
+
+    writeln!(file)?;
+
+    writeln!(file, "impl Element {{")?;
+    writeln!(file, "    pub fn new() -> Self {{")?;
+    writeln!(file, "        Self {{")?;
+    for attr in html_data.global_attributes.keys() {
+        writeln!(
+            file,
+            "            {}: None,",
+            escape_identifier(attr.as_str())
+        )?;
+    }
+    writeln!(file, "        }}")?;
+    writeln!(file, "    }}")?;
+
+    writeln!(file)?;
+
+    for attr in html_data.global_attributes.keys() {
+        writeln!(
+            file,
+            "    /// {}",
+            html_data
+                .global_attributes
+                .get(attr)
+                .and_then(|a| a.__compat.as_ref())
+                .and_then(|e| e.mdn_url.as_ref())
+                .unwrap_or(&"".to_string())
+        )?;
+        writeln!(
+            file,
+            "    pub fn {}(mut self, value: impl Into<String>) -> Self {{",
+            escape_identifier(attr.as_str())
+        )?;
+        writeln!(
+            file,
+            "        self.{} = Some(value.into());",
+            escape_identifier(attr.as_str())
+        )?;
+        writeln!(file, "        self")?;
+        writeln!(file, "    }}")?;
+        writeln!(file)?;
+    }
+
     writeln!(file, "}}")?;
 
     Ok(())
