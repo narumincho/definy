@@ -6,7 +6,7 @@ pub struct Font {
     ///
     pub color: std::option::Option<String>,
     ///
-    pub size: std::option::Option<String>,
-    ///
     pub face: std::option::Option<String>,
+    ///
+    pub size: std::option::Option<String>,
 }

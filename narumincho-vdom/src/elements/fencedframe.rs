@@ -4,9 +4,9 @@ use crate::Element;
 /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/fencedframe
 pub struct Fencedframe {
     ///
-    pub width: std::option::Option<String>,
-    ///
     pub allow: std::option::Option<String>,
     ///
     pub height: std::option::Option<String>,
+    ///
+    pub width: std::option::Option<String>,
 }

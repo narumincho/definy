@@ -4,7 +4,7 @@ use crate::Element;
 /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/meter
 pub struct Meter {
     ///
-    pub value: std::option::Option<String>,
+    pub high: std::option::Option<String>,
     ///
     pub low: std::option::Option<String>,
     /// https://developer.mozilla.org/docs/Web/HTML/Reference/Attributes/max
@@ -14,5 +14,5 @@ pub struct Meter {
     ///
     pub optimum: std::option::Option<String>,
     ///
-    pub high: std::option::Option<String>,
+    pub value: std::option::Option<String>,
 }

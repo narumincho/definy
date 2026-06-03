@@ -6,9 +6,9 @@ pub struct Ol {
     ///
     pub compact: std::option::Option<String>,
     ///
-    pub r#type: std::option::Option<String>,
-    ///
     pub reversed: std::option::Option<String>,
     ///
     pub start: std::option::Option<String>,
+    ///
+    pub r#type: std::option::Option<String>,
 }

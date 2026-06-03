@@ -6,11 +6,11 @@ pub struct Tbody {
     ///
     pub align: std::option::Option<String>,
     ///
+    pub bgcolor: std::option::Option<String>,
+    ///
     pub char: std::option::Option<String>,
     ///
     pub charoff: std::option::Option<String>,
-    ///
-    pub bgcolor: std::option::Option<String>,
     ///
     pub valign: std::option::Option<String>,
 }

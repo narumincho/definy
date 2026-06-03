@@ -4,5 +4,5 @@ use crate::Element;
 /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/label
 pub struct Label {
     /// https://developer.mozilla.org/docs/Web/HTML/Reference/Attributes/for
-    pub r#type: std::option::Option<String>,
+    pub r#for: std::option::Option<String>,
 }

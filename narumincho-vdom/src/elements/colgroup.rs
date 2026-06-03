@@ -6,13 +6,13 @@ pub struct Colgroup {
     ///
     pub align: std::option::Option<String>,
     ///
-    pub width: std::option::Option<String>,
+    pub char: std::option::Option<String>,
+    ///
+    pub charoff: std::option::Option<String>,
     ///
     pub span: std::option::Option<String>,
     ///
-    pub char: std::option::Option<String>,
-    ///
     pub valign: std::option::Option<String>,
     ///
-    pub charoff: std::option::Option<String>,
+    pub width: std::option::Option<String>,
 }

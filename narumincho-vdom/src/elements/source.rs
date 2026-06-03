@@ -4,9 +4,9 @@ use crate::Element;
 /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/source
 pub struct Source {
     ///
-    pub media: std::option::Option<String>,
-    ///
     pub height: std::option::Option<String>,
+    ///
+    pub media: std::option::Option<String>,
     ///
     pub sizes: std::option::Option<String>,
     ///

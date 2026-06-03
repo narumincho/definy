@@ -9,15 +9,15 @@ struct Data {
 
 #[derive(serde::Deserialize)]
 struct HtmlData {
-    elements: std::collections::HashMap<String, ElementData>,
-    global_attributes: std::collections::HashMap<String, AttributeData>,
+    elements: std::collections::BTreeMap<String, ElementData>,
+    global_attributes: std::collections::BTreeMap<String, AttributeData>,
 }
 
 #[derive(serde::Deserialize)]
 struct ElementData {
     __compat: Option<Compat>,
     #[serde(flatten)]
-    attributes: std::collections::HashMap<String, AttributeData>,
+    attributes: std::collections::BTreeMap<String, AttributeData>,
 }
 
 #[derive(Debug, serde::Deserialize)]
@@ -197,7 +197,7 @@ fn output_elements_mod(html_data: &HtmlData) -> anyhow::Result<()> {
 
 fn escape_identifier(s: &str) -> String {
     match s {
-        "type" | "loop" | "for" | "as" | "async" => "r#type".to_string(),
+        "type" | "loop" | "for" | "as" | "async" => format!("r#{s}"),
         _ => s.replace('-', "_"),
     }
 }
