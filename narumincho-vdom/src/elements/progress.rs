@@ -2,16 +2,14 @@
 
 /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/progress
 pub struct Progress {
-
     /// https://developer.mozilla.org/docs/Web/HTML/Reference/Attributes/max
     pub max: std::option::Option<String>,
-    /// 
+    ///
     pub value: std::option::Option<String>,
 }
 
-
 pub fn progress() -> Progress {
-    Progress{
+    Progress {
         max: None,
         value: None,
     }
@@ -23,7 +21,7 @@ impl Progress {
         self
     }
 
-    /// 
+    ///
     pub fn value(mut self, value: impl Into<String>) -> Self {
         self.value = Some(value.into());
         self
@@ -31,7 +29,7 @@ impl Progress {
 
     pub fn to_element(self) -> super::Element {
         super::Element {
-            global_attributes: super::GlobalAttributes {},
+            global_attributes: super::GlobalAttributes::default(),
             element_content: super::ElementContent::Progress(self),
         }
     }

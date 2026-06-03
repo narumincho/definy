@@ -2,16 +2,12 @@
 
 /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/label
 pub struct Label {
-
     /// https://developer.mozilla.org/docs/Web/HTML/Reference/Attributes/for
     pub r#for: std::option::Option<String>,
 }
 
-
 pub fn label() -> Label {
-    Label{
-        r#for: None,
-    }
+    Label { r#for: None }
 }
 impl Label {
     /// https://developer.mozilla.org/docs/Web/HTML/Reference/Attributes/for
@@ -22,7 +18,7 @@ impl Label {
 
     pub fn to_element(self) -> super::Element {
         super::Element {
-            global_attributes: super::GlobalAttributes {},
+            global_attributes: super::GlobalAttributes::default(),
             element_content: super::ElementContent::Label(self),
         }
     }

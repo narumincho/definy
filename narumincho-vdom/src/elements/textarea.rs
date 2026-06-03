@@ -2,10 +2,9 @@
 
 /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/textarea
 pub struct Textarea {
-
     /// https://developer.mozilla.org/docs/Web/HTML/Reference/Attributes/autocomplete
     pub autocomplete: std::option::Option<String>,
-    /// 
+    ///
     pub cols: std::option::Option<String>,
     /// https://developer.mozilla.org/docs/Web/HTML/Reference/Attributes/dirname
     pub dirname: std::option::Option<String>,
@@ -17,7 +16,7 @@ pub struct Textarea {
     pub maxlength: std::option::Option<String>,
     /// https://developer.mozilla.org/docs/Web/HTML/Reference/Attributes/minlength
     pub minlength: std::option::Option<String>,
-    /// 
+    ///
     pub name: std::option::Option<String>,
     /// https://developer.mozilla.org/docs/Web/HTML/Reference/Attributes/placeholder
     pub placeholder: std::option::Option<String>,
@@ -25,15 +24,14 @@ pub struct Textarea {
     pub readonly: std::option::Option<String>,
     /// https://developer.mozilla.org/docs/Web/HTML/Reference/Attributes/required
     pub required: std::option::Option<String>,
-    /// 
+    ///
     pub rows: std::option::Option<String>,
-    /// 
+    ///
     pub wrap: std::option::Option<String>,
 }
 
-
 pub fn textarea() -> Textarea {
-    Textarea{
+    Textarea {
         autocomplete: None,
         cols: None,
         dirname: None,
@@ -56,7 +54,7 @@ impl Textarea {
         self
     }
 
-    /// 
+    ///
     pub fn cols(mut self, value: impl Into<String>) -> Self {
         self.cols = Some(value.into());
         self
@@ -92,7 +90,7 @@ impl Textarea {
         self
     }
 
-    /// 
+    ///
     pub fn name(mut self, value: impl Into<String>) -> Self {
         self.name = Some(value.into());
         self
@@ -116,13 +114,13 @@ impl Textarea {
         self
     }
 
-    /// 
+    ///
     pub fn rows(mut self, value: impl Into<String>) -> Self {
         self.rows = Some(value.into());
         self
     }
 
-    /// 
+    ///
     pub fn wrap(mut self, value: impl Into<String>) -> Self {
         self.wrap = Some(value.into());
         self
@@ -130,7 +128,7 @@ impl Textarea {
 
     pub fn to_element(self) -> super::Element {
         super::Element {
-            global_attributes: super::GlobalAttributes {},
+            global_attributes: super::GlobalAttributes::default(),
             element_content: super::ElementContent::Textarea(self),
         }
     }

@@ -2,28 +2,26 @@
 
 /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/ul
 pub struct Ul {
-
-    /// 
+    ///
     pub compact: std::option::Option<String>,
-    /// 
+    ///
     pub r#type: std::option::Option<String>,
 }
 
-
 pub fn ul() -> Ul {
-    Ul{
+    Ul {
         compact: None,
         r#type: None,
     }
 }
 impl Ul {
-    /// 
+    ///
     pub fn compact(mut self, value: impl Into<String>) -> Self {
         self.compact = Some(value.into());
         self
     }
 
-    /// 
+    ///
     pub fn r#type(mut self, value: impl Into<String>) -> Self {
         self.r#type = Some(value.into());
         self
@@ -31,7 +29,7 @@ impl Ul {
 
     pub fn to_element(self) -> super::Element {
         super::Element {
-            global_attributes: super::GlobalAttributes {},
+            global_attributes: super::GlobalAttributes::default(),
             element_content: super::ElementContent::Ul(self),
         }
     }

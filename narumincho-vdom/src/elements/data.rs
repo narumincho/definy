@@ -2,19 +2,15 @@
 
 /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/data
 pub struct Data {
-
-    /// 
+    ///
     pub value: std::option::Option<String>,
 }
 
-
 pub fn data() -> Data {
-    Data{
-        value: None,
-    }
+    Data { value: None }
 }
 impl Data {
-    /// 
+    ///
     pub fn value(mut self, value: impl Into<String>) -> Self {
         self.value = Some(value.into());
         self
@@ -22,7 +18,7 @@ impl Data {
 
     pub fn to_element(self) -> super::Element {
         super::Element {
-            global_attributes: super::GlobalAttributes {},
+            global_attributes: super::GlobalAttributes::default(),
             element_content: super::ElementContent::Data(self),
         }
     }

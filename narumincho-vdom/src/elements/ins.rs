@@ -2,28 +2,26 @@
 
 /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/ins
 pub struct Ins {
-
-    /// 
+    ///
     pub cite: std::option::Option<String>,
-    /// 
+    ///
     pub datetime: std::option::Option<String>,
 }
 
-
 pub fn ins() -> Ins {
-    Ins{
+    Ins {
         cite: None,
         datetime: None,
     }
 }
 impl Ins {
-    /// 
+    ///
     pub fn cite(mut self, value: impl Into<String>) -> Self {
         self.cite = Some(value.into());
         self
     }
 
-    /// 
+    ///
     pub fn datetime(mut self, value: impl Into<String>) -> Self {
         self.datetime = Some(value.into());
         self
@@ -31,7 +29,7 @@ impl Ins {
 
     pub fn to_element(self) -> super::Element {
         super::Element {
-            global_attributes: super::GlobalAttributes {},
+            global_attributes: super::GlobalAttributes::default(),
             element_content: super::ElementContent::Ins(self),
         }
     }

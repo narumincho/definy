@@ -2,7 +2,6 @@
 
 /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/template
 pub struct Template {
-
     /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/template#shadowrootclonable
     pub shadowrootclonable: std::option::Option<String>,
     /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/template#shadowrootcustomelementregistry
@@ -15,13 +14,12 @@ pub struct Template {
     pub shadowrootreferencetarget: std::option::Option<String>,
     /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/template#shadowrootserializable
     pub shadowrootserializable: std::option::Option<String>,
-    /// 
+    ///
     pub shadowrootslotassignment: std::option::Option<String>,
 }
 
-
 pub fn template() -> Template {
-    Template{
+    Template {
         shadowrootclonable: None,
         shadowrootcustomelementregistry: None,
         shadowrootdelegatesfocus: None,
@@ -68,7 +66,7 @@ impl Template {
         self
     }
 
-    /// 
+    ///
     pub fn shadowrootslotassignment(mut self, value: impl Into<String>) -> Self {
         self.shadowrootslotassignment = Some(value.into());
         self
@@ -76,7 +74,7 @@ impl Template {
 
     pub fn to_element(self) -> super::Element {
         super::Element {
-            global_attributes: super::GlobalAttributes {},
+            global_attributes: super::GlobalAttributes::default(),
             element_content: super::ElementContent::Template(self),
         }
     }

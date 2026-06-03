@@ -2,18 +2,17 @@
 
 /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/select
 pub struct Select {
-
     /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/select#autocomplete
     pub autocomplete: std::option::Option<String>,
     /// https://developer.mozilla.org/docs/Web/HTML/Reference/Attributes/disabled
     pub disabled: std::option::Option<String>,
     /// https://developer.mozilla.org/docs/Web/HTML/Reference/Attributes/form
     pub form: std::option::Option<String>,
-    /// 
+    ///
     pub hr_in_select: std::option::Option<String>,
     /// https://developer.mozilla.org/docs/Web/HTML/Reference/Attributes/multiple
     pub multiple: std::option::Option<String>,
-    /// 
+    ///
     pub name: std::option::Option<String>,
     /// https://developer.mozilla.org/docs/Web/HTML/Reference/Attributes/required
     pub required: std::option::Option<String>,
@@ -21,9 +20,8 @@ pub struct Select {
     pub size: std::option::Option<String>,
 }
 
-
 pub fn select() -> Select {
-    Select{
+    Select {
         autocomplete: None,
         disabled: None,
         form: None,
@@ -53,7 +51,7 @@ impl Select {
         self
     }
 
-    /// 
+    ///
     pub fn hr_in_select(mut self, value: impl Into<String>) -> Self {
         self.hr_in_select = Some(value.into());
         self
@@ -65,7 +63,7 @@ impl Select {
         self
     }
 
-    /// 
+    ///
     pub fn name(mut self, value: impl Into<String>) -> Self {
         self.name = Some(value.into());
         self
@@ -85,7 +83,7 @@ impl Select {
 
     pub fn to_element(self) -> super::Element {
         super::Element {
-            global_attributes: super::GlobalAttributes {},
+            global_attributes: super::GlobalAttributes::default(),
             element_content: super::ElementContent::Select(self),
         }
     }

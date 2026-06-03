@@ -138,6 +138,7 @@ pub struct Element {
     pub element_content: ElementContent,
 }
 
+#[derive(Default)]
 pub struct GlobalAttributes {
     /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/accesskey
     pub accesskey: std::option::Option<String>,
@@ -641,5 +642,4 @@ impl Element {
         self.global_attributes.writingsuggestions = Some(value.into());
         self
     }
-
 }

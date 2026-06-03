@@ -2,34 +2,32 @@
 
 /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/script
 pub struct Script {
-
-    /// 
+    ///
     pub r#async: std::option::Option<String>,
-    /// 
+    ///
     pub attributionsrc: std::option::Option<String>,
-    /// 
+    ///
     pub blocking: std::option::Option<String>,
     /// https://developer.mozilla.org/docs/Web/HTML/Reference/Attributes/crossorigin
     pub crossorigin: std::option::Option<String>,
-    /// 
+    ///
     pub defer: std::option::Option<String>,
     /// https://developer.mozilla.org/docs/Web/HTML/Reference/Attributes/fetchpriority
     pub fetchpriority: std::option::Option<String>,
     /// https://developer.mozilla.org/docs/Web/HTML/Reference/Attributes/integrity
     pub integrity: std::option::Option<String>,
-    /// 
+    ///
     pub nomodule: std::option::Option<String>,
-    /// 
+    ///
     pub referrerpolicy: std::option::Option<String>,
-    /// 
+    ///
     pub src: std::option::Option<String>,
     /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/script/type
     pub r#type: std::option::Option<String>,
 }
 
-
 pub fn script() -> Script {
-    Script{
+    Script {
         r#async: None,
         attributionsrc: None,
         blocking: None,
@@ -44,19 +42,19 @@ pub fn script() -> Script {
     }
 }
 impl Script {
-    /// 
+    ///
     pub fn r#async(mut self, value: impl Into<String>) -> Self {
         self.r#async = Some(value.into());
         self
     }
 
-    /// 
+    ///
     pub fn attributionsrc(mut self, value: impl Into<String>) -> Self {
         self.attributionsrc = Some(value.into());
         self
     }
 
-    /// 
+    ///
     pub fn blocking(mut self, value: impl Into<String>) -> Self {
         self.blocking = Some(value.into());
         self
@@ -68,7 +66,7 @@ impl Script {
         self
     }
 
-    /// 
+    ///
     pub fn defer(mut self, value: impl Into<String>) -> Self {
         self.defer = Some(value.into());
         self
@@ -86,19 +84,19 @@ impl Script {
         self
     }
 
-    /// 
+    ///
     pub fn nomodule(mut self, value: impl Into<String>) -> Self {
         self.nomodule = Some(value.into());
         self
     }
 
-    /// 
+    ///
     pub fn referrerpolicy(mut self, value: impl Into<String>) -> Self {
         self.referrerpolicy = Some(value.into());
         self
     }
 
-    /// 
+    ///
     pub fn src(mut self, value: impl Into<String>) -> Self {
         self.src = Some(value.into());
         self
@@ -112,7 +110,7 @@ impl Script {
 
     pub fn to_element(self) -> super::Element {
         super::Element {
-            global_attributes: super::GlobalAttributes {},
+            global_attributes: super::GlobalAttributes::default(),
             element_content: super::ElementContent::Script(self),
         }
     }

@@ -2,19 +2,15 @@
 
 /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/caption
 pub struct Caption {
-
-    /// 
+    ///
     pub align: std::option::Option<String>,
 }
 
-
 pub fn caption() -> Caption {
-    Caption{
-        align: None,
-    }
+    Caption { align: None }
 }
 impl Caption {
-    /// 
+    ///
     pub fn align(mut self, value: impl Into<String>) -> Self {
         self.align = Some(value.into());
         self
@@ -22,7 +18,7 @@ impl Caption {
 
     pub fn to_element(self) -> super::Element {
         super::Element {
-            global_attributes: super::GlobalAttributes {},
+            global_attributes: super::GlobalAttributes::default(),
             element_content: super::ElementContent::Caption(self),
         }
     }

@@ -2,18 +2,16 @@
 
 /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/fieldset
 pub struct Fieldset {
-
     /// https://developer.mozilla.org/docs/Web/HTML/Reference/Attributes/disabled
     pub disabled: std::option::Option<String>,
     /// https://developer.mozilla.org/docs/Web/HTML/Reference/Attributes/form
     pub form: std::option::Option<String>,
-    /// 
+    ///
     pub name: std::option::Option<String>,
 }
 
-
 pub fn fieldset() -> Fieldset {
-    Fieldset{
+    Fieldset {
         disabled: None,
         form: None,
         name: None,
@@ -32,7 +30,7 @@ impl Fieldset {
         self
     }
 
-    /// 
+    ///
     pub fn name(mut self, value: impl Into<String>) -> Self {
         self.name = Some(value.into());
         self
@@ -40,7 +38,7 @@ impl Fieldset {
 
     pub fn to_element(self) -> super::Element {
         super::Element {
-            global_attributes: super::GlobalAttributes {},
+            global_attributes: super::GlobalAttributes::default(),
             element_content: super::ElementContent::Fieldset(self),
         }
     }

@@ -1,19 +1,15 @@
 // このファイルは narumincho-vdom-build によって自動生成されました。
 
 /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/address
-pub struct Address {
-
-}
-
+pub struct Address {}
 
 pub fn address() -> Address {
-    Address{
-    }
+    Address {}
 }
 impl Address {
     pub fn to_element(self) -> super::Element {
         super::Element {
-            global_attributes: super::GlobalAttributes {},
+            global_attributes: super::GlobalAttributes::default(),
             element_content: super::ElementContent::Address(self),
         }
     }

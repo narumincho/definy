@@ -2,12 +2,11 @@
 
 /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/input
 pub struct Input {
-
     /// https://developer.mozilla.org/docs/Web/HTML/Reference/Attributes/accept
     pub accept: std::option::Option<String>,
-    /// 
+    ///
     pub align: std::option::Option<String>,
-    /// 
+    ///
     pub alpha: std::option::Option<String>,
     /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/input#alt
     pub alt: std::option::Option<String>,
@@ -111,15 +110,14 @@ pub struct Input {
     pub type_url: std::option::Option<String>,
     /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/input/week
     pub type_week: std::option::Option<String>,
-    /// 
+    ///
     pub usemap: std::option::Option<String>,
-    /// 
+    ///
     pub webkitdirectory: std::option::Option<String>,
 }
 
-
 pub fn input() -> Input {
-    Input{
+    Input {
         accept: None,
         align: None,
         alpha: None,
@@ -185,13 +183,13 @@ impl Input {
         self
     }
 
-    /// 
+    ///
     pub fn align(mut self, value: impl Into<String>) -> Self {
         self.align = Some(value.into());
         self
     }
 
-    /// 
+    ///
     pub fn alpha(mut self, value: impl Into<String>) -> Self {
         self.alpha = Some(value.into());
         self
@@ -503,13 +501,13 @@ impl Input {
         self
     }
 
-    /// 
+    ///
     pub fn usemap(mut self, value: impl Into<String>) -> Self {
         self.usemap = Some(value.into());
         self
     }
 
-    /// 
+    ///
     pub fn webkitdirectory(mut self, value: impl Into<String>) -> Self {
         self.webkitdirectory = Some(value.into());
         self
@@ -517,7 +515,7 @@ impl Input {
 
     pub fn to_element(self) -> super::Element {
         super::Element {
-            global_attributes: super::GlobalAttributes {},
+            global_attributes: super::GlobalAttributes::default(),
             element_content: super::ElementContent::Input(self),
         }
     }

@@ -2,19 +2,15 @@
 
 /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/br
 pub struct Br {
-
-    /// 
+    ///
     pub clear: std::option::Option<String>,
 }
 
-
 pub fn br() -> Br {
-    Br{
-        clear: None,
-    }
+    Br { clear: None }
 }
 impl Br {
-    /// 
+    ///
     pub fn clear(mut self, value: impl Into<String>) -> Self {
         self.clear = Some(value.into());
         self
@@ -22,7 +18,7 @@ impl Br {
 
     pub fn to_element(self) -> super::Element {
         super::Element {
-            global_attributes: super::GlobalAttributes {},
+            global_attributes: super::GlobalAttributes::default(),
             element_content: super::ElementContent::Br(self),
         }
     }

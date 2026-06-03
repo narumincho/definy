@@ -2,19 +2,15 @@
 
 /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/map
 pub struct Map {
-
-    /// 
+    ///
     pub name: std::option::Option<String>,
 }
 
-
 pub fn map() -> Map {
-    Map{
-        name: None,
-    }
+    Map { name: None }
 }
 impl Map {
-    /// 
+    ///
     pub fn name(mut self, value: impl Into<String>) -> Self {
         self.name = Some(value.into());
         self
@@ -22,7 +18,7 @@ impl Map {
 
     pub fn to_element(self) -> super::Element {
         super::Element {
-            global_attributes: super::GlobalAttributes {},
+            global_attributes: super::GlobalAttributes::default(),
             element_content: super::ElementContent::Map(self),
         }
     }

@@ -76,7 +76,11 @@ fn output_elements_mod(html_data: &HtmlData) -> anyhow::Result<()> {
 "
     )?;
 
-    writeln!(file, "pub struct GlobalAttributes {{")?;
+    writeln!(
+        file,
+        "#[derive(Default)]
+pub struct GlobalAttributes {{"
+    )?;
     for (attr, attribute_data) in &html_data.global_attributes {
         writeln!(
             file,
@@ -241,7 +245,7 @@ pub struct {} {{
     writeln!(file, "        super::Element {{")?;
     writeln!(
         file,
-        "            global_attributes: super::GlobalAttributes {{}},"
+        "            global_attributes: super::GlobalAttributes::default(),"
     )?;
     writeln!(
         file,

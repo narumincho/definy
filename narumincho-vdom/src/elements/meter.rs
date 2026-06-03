@@ -2,24 +2,22 @@
 
 /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/meter
 pub struct Meter {
-
-    /// 
+    ///
     pub high: std::option::Option<String>,
-    /// 
+    ///
     pub low: std::option::Option<String>,
     /// https://developer.mozilla.org/docs/Web/HTML/Reference/Attributes/max
     pub max: std::option::Option<String>,
     /// https://developer.mozilla.org/docs/Web/HTML/Reference/Attributes/min
     pub min: std::option::Option<String>,
-    /// 
+    ///
     pub optimum: std::option::Option<String>,
-    /// 
+    ///
     pub value: std::option::Option<String>,
 }
 
-
 pub fn meter() -> Meter {
-    Meter{
+    Meter {
         high: None,
         low: None,
         max: None,
@@ -29,13 +27,13 @@ pub fn meter() -> Meter {
     }
 }
 impl Meter {
-    /// 
+    ///
     pub fn high(mut self, value: impl Into<String>) -> Self {
         self.high = Some(value.into());
         self
     }
 
-    /// 
+    ///
     pub fn low(mut self, value: impl Into<String>) -> Self {
         self.low = Some(value.into());
         self
@@ -53,13 +51,13 @@ impl Meter {
         self
     }
 
-    /// 
+    ///
     pub fn optimum(mut self, value: impl Into<String>) -> Self {
         self.optimum = Some(value.into());
         self
     }
 
-    /// 
+    ///
     pub fn value(mut self, value: impl Into<String>) -> Self {
         self.value = Some(value.into());
         self
@@ -67,7 +65,7 @@ impl Meter {
 
     pub fn to_element(self) -> super::Element {
         super::Element {
-            global_attributes: super::GlobalAttributes {},
+            global_attributes: super::GlobalAttributes::default(),
             element_content: super::ElementContent::Meter(self),
         }
     }

@@ -2,19 +2,15 @@
 
 /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/blockquote
 pub struct Blockquote {
-
-    /// 
+    ///
     pub cite: std::option::Option<String>,
 }
 
-
 pub fn blockquote() -> Blockquote {
-    Blockquote{
-        cite: None,
-    }
+    Blockquote { cite: None }
 }
 impl Blockquote {
-    /// 
+    ///
     pub fn cite(mut self, value: impl Into<String>) -> Self {
         self.cite = Some(value.into());
         self
@@ -22,7 +18,7 @@ impl Blockquote {
 
     pub fn to_element(self) -> super::Element {
         super::Element {
-            global_attributes: super::GlobalAttributes {},
+            global_attributes: super::GlobalAttributes::default(),
             element_content: super::ElementContent::Blockquote(self),
         }
     }

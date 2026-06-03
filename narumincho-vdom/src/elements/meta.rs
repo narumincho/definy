@@ -2,8 +2,7 @@
 
 /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/meta
 pub struct Meta {
-
-    /// 
+    ///
     pub charset: std::option::Option<String>,
     /// https://developer.mozilla.org/docs/Web/HTML/Reference/Attributes/content
     pub content: std::option::Option<String>,
@@ -11,13 +10,12 @@ pub struct Meta {
     pub http_equiv: std::option::Option<String>,
     /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/meta/name
     pub name: std::option::Option<String>,
-    /// 
+    ///
     pub scheme: std::option::Option<String>,
 }
 
-
 pub fn meta() -> Meta {
-    Meta{
+    Meta {
         charset: None,
         content: None,
         http_equiv: None,
@@ -26,7 +24,7 @@ pub fn meta() -> Meta {
     }
 }
 impl Meta {
-    /// 
+    ///
     pub fn charset(mut self, value: impl Into<String>) -> Self {
         self.charset = Some(value.into());
         self
@@ -50,7 +48,7 @@ impl Meta {
         self
     }
 
-    /// 
+    ///
     pub fn scheme(mut self, value: impl Into<String>) -> Self {
         self.scheme = Some(value.into());
         self
@@ -58,7 +56,7 @@ impl Meta {
 
     pub fn to_element(self) -> super::Element {
         super::Element {
-            global_attributes: super::GlobalAttributes {},
+            global_attributes: super::GlobalAttributes::default(),
             element_content: super::ElementContent::Meta(self),
         }
     }

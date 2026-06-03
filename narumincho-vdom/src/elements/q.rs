@@ -2,19 +2,15 @@
 
 /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/q
 pub struct Q {
-
-    /// 
+    ///
     pub cite: std::option::Option<String>,
 }
 
-
 pub fn q() -> Q {
-    Q{
-        cite: None,
-    }
+    Q { cite: None }
 }
 impl Q {
-    /// 
+    ///
     pub fn cite(mut self, value: impl Into<String>) -> Self {
         self.cite = Some(value.into());
         self
@@ -22,7 +18,7 @@ impl Q {
 
     pub fn to_element(self) -> super::Element {
         super::Element {
-            global_attributes: super::GlobalAttributes {},
+            global_attributes: super::GlobalAttributes::default(),
             element_content: super::ElementContent::Q(self),
         }
     }
