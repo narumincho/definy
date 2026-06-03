@@ -49,49 +49,7 @@ fn main() -> anyhow::Result<()> {
     output_elements_mod(&data.html)?;
 
     for (tag, element) in data.html.elements {
-        let path = format!("./narumincho-vdom/src/elements/{}.rs", tag);
-        let dest_path = Path::new(&path);
-        let mut file = File::create(dest_path)?;
-
-        writeln!(
-            file,
-            "// このファイルは narumincho-vdom-build によって自動生成されました。"
-        )?;
-        writeln!(file, "use crate::Element;")?;
-        writeln!(file)?;
-        writeln!(
-            file,
-            "/// {}
-pub struct {} {{
-",
-            element
-                .__compat
-                .map(|e| e.mdn_url.unwrap_or_default())
-                .unwrap_or_default(),
-            capitalize(&tag)
-        )?;
-        for (attr, attribute_data) in element.attributes {
-            writeln!(
-                file,
-                "    /// {}",
-                attribute_data
-                    .__compat
-                    .as_ref()
-                    .and_then(|e| e.mdn_url.as_ref())
-                    .unwrap_or(&"".to_string())
-            )?;
-            writeln!(
-                file,
-                "    pub {}: std::option::Option<String>,",
-                escape_identifier(&attr)
-            )?;
-        }
-        writeln!(
-            file,
-            "}}
-"
-        )?;
-        writeln!(file)?;
+        output_element_mod(&tag, &element)?;
     }
 
     Ok(())
@@ -189,6 +147,110 @@ fn output_elements_mod(html_data: &HtmlData) -> anyhow::Result<()> {
         writeln!(file, "    }}")?;
         writeln!(file)?;
     }
+
+    writeln!(file, "}}")?;
+
+    Ok(())
+}
+
+fn output_element_mod(name: &str, element_data: &ElementData) -> anyhow::Result<()> {
+    let path = format!("./narumincho-vdom/src/elements/{}.rs", name);
+    let dest_path = Path::new(&path);
+    let mut file = File::create(dest_path)?;
+
+    writeln!(
+        file,
+        "// このファイルは narumincho-vdom-build によって自動生成されました。"
+    )?;
+    writeln!(file)?;
+    writeln!(
+        file,
+        "/// {}
+pub struct {} {{
+",
+        element_data
+            .__compat
+            .as_ref()
+            .and_then(|e| e.mdn_url.as_ref())
+            .unwrap_or(&"".to_string()),
+        capitalize(name)
+    )?;
+    for (attr, attribute_data) in &element_data.attributes {
+        writeln!(
+            file,
+            "    /// {}",
+            attribute_data
+                .__compat
+                .as_ref()
+                .and_then(|e| e.mdn_url.as_ref())
+                .unwrap_or(&"".to_string())
+        )?;
+        writeln!(
+            file,
+            "    pub {}: std::option::Option<String>,",
+            escape_identifier(attr)
+        )?;
+    }
+    writeln!(
+        file,
+        "}}
+"
+    )?;
+    writeln!(file)?;
+
+    writeln!(
+        file,
+        "pub fn {}() -> {} {{
+    {}{{",
+        name,
+        capitalize(name),
+        capitalize(name)
+    )?;
+    for attr in element_data.attributes.keys() {
+        writeln!(file, "        {}: None,", escape_identifier(attr))?;
+    }
+    writeln!(file, "    }}")?;
+    writeln!(file, "}}")?;
+
+    writeln!(file, "impl {} {{", capitalize(name))?;
+    for (attr, attribute_data) in &element_data.attributes {
+        writeln!(
+            file,
+            "    /// {}",
+            attribute_data
+                .__compat
+                .as_ref()
+                .and_then(|e| e.mdn_url.as_ref())
+                .unwrap_or(&"".to_string())
+        )?;
+        writeln!(
+            file,
+            "    pub fn {}(mut self, value: impl Into<String>) -> Self {{",
+            escape_identifier(attr)
+        )?;
+        writeln!(
+            file,
+            "        self.{} = Some(value.into());",
+            escape_identifier(attr)
+        )?;
+        writeln!(file, "        self")?;
+        writeln!(file, "    }}")?;
+        writeln!(file)?;
+    }
+    writeln!(file, "    pub fn to_element(self) -> super::Element {{")?;
+    writeln!(file, "        super::Element {{")?;
+    writeln!(
+        file,
+        "            global_attributes: super::GlobalAttributes {{}},"
+    )?;
+    writeln!(
+        file,
+        "            element_content: super::ElementContent::{}(self),",
+        capitalize(name)
+    )?;
+    writeln!(file, "        }}")?;
+
+    writeln!(file, "    }}")?;
 
     writeln!(file, "}}")?;
 

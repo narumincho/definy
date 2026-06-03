@@ -1,5 +1,20 @@
 // このファイルは narumincho-vdom-build によって自動生成されました。
-use crate::Element;
 
 /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/xmp
-pub struct Xmp {}
+pub struct Xmp {
+
+}
+
+
+pub fn xmp() -> Xmp {
+    Xmp{
+    }
+}
+impl Xmp {
+    pub fn to_element(self) -> super::Element {
+        super::Element {
+            global_attributes: super::GlobalAttributes {},
+            element_content: super::ElementContent::Xmp(self),
+        }
+    }
+}

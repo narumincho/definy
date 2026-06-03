@@ -1,5 +1,20 @@
 // このファイルは narumincho-vdom-build によって自動生成されました。
-use crate::Element;
 
 /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/s
-pub struct S {}
+pub struct S {
+
+}
+
+
+pub fn s() -> S {
+    S{
+    }
+}
+impl S {
+    pub fn to_element(self) -> super::Element {
+        super::Element {
+            global_attributes: super::GlobalAttributes {},
+            element_content: super::ElementContent::S(self),
+        }
+    }
+}
