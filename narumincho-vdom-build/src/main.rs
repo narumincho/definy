@@ -108,13 +108,22 @@ fn output_elements_mod(html_data: &HtmlData) -> anyhow::Result<()> {
         file,
         "// このファイルは narumincho-vdom-build によって自動生成されました。"
     )?;
-    for tag in html_data.elements.keys() {
-        writeln!(file, "pub mod {};", tag)?;
+    for name in html_data.elements.keys() {
+        writeln!(file, "pub mod {};", name)?;
     }
 
     writeln!(file)?;
 
-    writeln!(file, "pub struct Element {{")?;
+    writeln!(
+        file,
+        "pub struct Element {{
+    pub global_attributes: GlobalAttributes,
+    pub element_content: ElementContent,
+}}
+"
+    )?;
+
+    writeln!(file, "pub struct GlobalAttributes {{")?;
     for (attr, attribute_data) in &html_data.global_attributes {
         writeln!(
             file,
@@ -131,9 +140,31 @@ fn output_elements_mod(html_data: &HtmlData) -> anyhow::Result<()> {
             escape_identifier(attr.as_str())
         )?;
     }
-    writeln!(file, "}}")?;
+    writeln!(
+        file,
+        "}}
+"
+    )?;
 
-    writeln!(file)?;
+    writeln!(file, "pub enum ElementContent {{")?;
+    for (name, element_data) in &html_data.elements {
+        writeln!(
+            file,
+            "    /// {}",
+            element_data
+                .__compat
+                .as_ref()
+                .and_then(|e| e.mdn_url.as_ref())
+                .unwrap_or(&"".to_string())
+        )?;
+        writeln!(
+            file,
+            "{}({}),",
+            capitalize(escape_identifier(name.as_str())),
+            escape_identifier(name.as_str())
+        )?;
+    }
+    writeln!(file, "}}")?;
 
     writeln!(file, "impl Element {{")?;
     writeln!(file, "    pub fn new() -> Self {{")?;
