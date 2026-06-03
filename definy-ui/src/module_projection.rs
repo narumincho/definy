@@ -104,9 +104,10 @@ pub fn resolve_module_name(
             }
             definy_event::event::EventContent::ModuleUpdate(module_update)
                 if &module_update.module_definition_event_hash == definition_event_hash
-                && name.is_some() => {
-                    name = Some(module_update.module_name.to_string());
-                }
+                    && name.is_some() =>
+            {
+                name = Some(module_update.module_name.to_string());
+            }
             _ => {}
         }
     }

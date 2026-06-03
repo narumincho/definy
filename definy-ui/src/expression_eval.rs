@@ -290,17 +290,19 @@ fn evaluate_expression_with_depth(
                 if let Ok((_, event)) = event_result {
                     match &event.content {
                         definy_event::event::EventContent::PartDefinition(part_definition)
-                            if part_reference_expression.part_definition_event_hash == *event_hash => {
-                                latest_expression = Some(&part_definition.expression);
-                                break;
-                            }
+                            if part_reference_expression.part_definition_event_hash
+                                == *event_hash =>
+                        {
+                            latest_expression = Some(&part_definition.expression);
+                            break;
+                        }
                         definy_event::event::EventContent::PartUpdate(part_update)
                             if part_update.part_definition_event_hash
-                                == part_reference_expression.part_definition_event_hash
-                            => {
-                                latest_expression = Some(&part_update.expression);
-                                break;
-                            }
+                                == part_reference_expression.part_definition_event_hash =>
+                        {
+                            latest_expression = Some(&part_update.expression);
+                            break;
+                        }
                         _ => {}
                     }
                 }

@@ -70,12 +70,7 @@ pub struct {} {{
                 .unwrap_or_default(),
             capitalize(&tag)
         )?;
-        for (attr, attribute_data) in data
-            .html
-            .global_attributes
-            .iter()
-            .chain(element.attributes.iter())
-        {
+        for (attr, attribute_data) in element.attributes {
             writeln!(
                 file,
                 "    /// {}",
@@ -88,7 +83,7 @@ pub struct {} {{
             writeln!(
                 file,
                 "    pub {}: std::option::Option<String>,",
-                escape_identifier(attr)
+                escape_identifier(&attr)
             )?;
         }
         writeln!(
@@ -157,29 +152,17 @@ fn output_elements_mod(html_data: &HtmlData) -> anyhow::Result<()> {
                 .and_then(|e| e.mdn_url.as_ref())
                 .unwrap_or(&"".to_string())
         )?;
+        let element_name = escape_identifier(name.as_str());
+        let capitalized_element_name = capitalize(&escape_identifier(name.as_str()));
         writeln!(
             file,
-            "{}({}),",
-            capitalize(escape_identifier(name.as_str())),
-            escape_identifier(name.as_str())
+            "    {}({}::{}),",
+            capitalized_element_name, element_name, capitalized_element_name
         )?;
     }
     writeln!(file, "}}")?;
 
     writeln!(file, "impl Element {{")?;
-    writeln!(file, "    pub fn new() -> Self {{")?;
-    writeln!(file, "        Self {{")?;
-    for attr in html_data.global_attributes.keys() {
-        writeln!(
-            file,
-            "            {}: None,",
-            escape_identifier(attr.as_str())
-        )?;
-    }
-    writeln!(file, "        }}")?;
-    writeln!(file, "    }}")?;
-
-    writeln!(file)?;
 
     for attr in html_data.global_attributes.keys() {
         writeln!(
@@ -199,7 +182,7 @@ fn output_elements_mod(html_data: &HtmlData) -> anyhow::Result<()> {
         )?;
         writeln!(
             file,
-            "        self.{} = Some(value.into());",
+            "        self.global_attributes.{} = Some(value.into());",
             escape_identifier(attr.as_str())
         )?;
         writeln!(file, "        self")?;
@@ -214,7 +197,7 @@ fn output_elements_mod(html_data: &HtmlData) -> anyhow::Result<()> {
 
 fn escape_identifier(s: &str) -> String {
     match s {
-        "type" | "loop" | "for" | "as" => "r#type".to_string(),
+        "type" | "loop" | "for" | "as" | "async" => "r#type".to_string(),
         _ => s.replace('-', "_"),
     }
 }
