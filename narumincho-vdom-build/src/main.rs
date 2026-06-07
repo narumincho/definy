@@ -69,9 +69,15 @@ fn output_elements_mod(html_data: &HtmlData) -> anyhow::Result<()> {
 
     writeln!(
         file,
-        "pub struct Element {{
+        "pub enum Node {{
+    Element(Element),
+    Text(String),
+}}
+    
+pub struct Element {{
     pub global_attributes: GlobalAttributes,
     pub element_content: ElementContent,
+    pub children: Vec<Node>,
 }}
 "
     )?;
@@ -241,7 +247,10 @@ pub struct {} {{
         writeln!(file, "    }}")?;
         writeln!(file)?;
     }
-    writeln!(file, "    pub fn to_element(self) -> super::Element {{")?;
+    writeln!(
+        file,
+        "    pub fn to_element(self, children: Vec<super::Node>) -> super::Element {{"
+    )?;
     writeln!(file, "        super::Element {{")?;
     writeln!(
         file,
@@ -252,6 +261,7 @@ pub struct {} {{
         "            element_content: super::ElementContent::{}(self),",
         capitalize(name)
     )?;
+    writeln!(file, "            children,")?;
     writeln!(file, "        }}")?;
 
     writeln!(file, "    }}")?;

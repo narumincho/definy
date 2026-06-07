@@ -7,10 +7,11 @@ pub fn h6() -> H6 {
     H6 {}
 }
 impl H6 {
-    pub fn to_element(self) -> super::Element {
+    pub fn to_element(self, children: Vec<super::Node>) -> super::Element {
         super::Element {
             global_attributes: super::GlobalAttributes::default(),
             element_content: super::ElementContent::H6(self),
+            children,
         }
     }
 }

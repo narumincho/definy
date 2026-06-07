@@ -133,9 +133,15 @@ pub mod video;
 pub mod wbr;
 pub mod xmp;
 
+pub enum Node {
+    Element(Element),
+    Text(String),
+}
+
 pub struct Element {
     pub global_attributes: GlobalAttributes,
     pub element_content: ElementContent,
+    pub children: Vec<Node>,
 }
 
 #[derive(Default)]
