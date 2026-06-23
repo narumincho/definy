@@ -181,6 +181,145 @@ define_element!(
     "header",
     "https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/header"
 );
+define_element!(
+    Svg,
+    "svg",
+    "https://developer.mozilla.org/docs/Web/SVG/Element/svg"
+);
+define_element!(
+    Path,
+    "path",
+    "https://developer.mozilla.org/docs/Web/SVG/Element/path"
+);
+define_element!(
+    G,
+    "g",
+    "https://developer.mozilla.org/docs/Web/SVG/Element/g"
+);
+define_element!(
+    Circle,
+    "circle",
+    "https://developer.mozilla.org/docs/Web/SVG/Element/circle"
+);
+define_element!(
+    Rect,
+    "rect",
+    "https://developer.mozilla.org/docs/Web/SVG/Element/rect"
+);
+define_element!(
+    Ellipse,
+    "ellipse",
+    "https://developer.mozilla.org/docs/Web/SVG/Element/ellipse"
+);
+define_element!(
+    Line,
+    "line",
+    "https://developer.mozilla.org/docs/Web/SVG/Element/line"
+);
+define_element!(
+    Polyline,
+    "polyline",
+    "https://developer.mozilla.org/docs/Web/SVG/Element/polyline"
+);
+define_element!(
+    Polygon,
+    "polygon",
+    "https://developer.mozilla.org/docs/Web/SVG/Element/polygon"
+);
+define_element!(
+    TextElement,
+    "text",
+    "https://developer.mozilla.org/docs/Web/SVG/Element/text"
+);
+
+// SVG specific
+impl<State> Svg<State> {
+    pub fn view_box(self, view_box: &str) -> Self {
+        self.attribute("viewBox", view_box)
+    }
+
+    pub fn width(self, width: &str) -> Self {
+        self.attribute("width", width)
+    }
+
+    pub fn height(self, height: &str) -> Self {
+        self.attribute("height", height)
+    }
+}
+
+impl<State> Path<State> {
+    pub fn d(self, d: &str) -> Self {
+        self.attribute("d", d)
+    }
+}
+
+impl<State> Circle<State> {
+    pub fn cx(self, cx: &str) -> Self {
+        self.attribute("cx", cx)
+    }
+
+    pub fn cy(self, cy: &str) -> Self {
+        self.attribute("cy", cy)
+    }
+
+    pub fn r(self, r: &str) -> Self {
+        self.attribute("r", r)
+    }
+}
+
+impl<State> Rect<State> {
+    pub fn x(self, x: &str) -> Self {
+        self.attribute("x", x)
+    }
+
+    pub fn y(self, y: &str) -> Self {
+        self.attribute("y", y)
+    }
+
+    pub fn width(self, width: &str) -> Self {
+        self.attribute("width", width)
+    }
+
+    pub fn height(self, height: &str) -> Self {
+        self.attribute("height", height)
+    }
+
+    pub fn rx(self, rx: &str) -> Self {
+        self.attribute("rx", rx)
+    }
+
+    pub fn ry(self, ry: &str) -> Self {
+        self.attribute("ry", ry)
+    }
+}
+
+impl<State> Line<State> {
+    pub fn x1(self, x1: &str) -> Self {
+        self.attribute("x1", x1)
+    }
+
+    pub fn y1(self, y1: &str) -> Self {
+        self.attribute("y1", y1)
+    }
+
+    pub fn x2(self, x2: &str) -> Self {
+        self.attribute("x2", x2)
+    }
+
+    pub fn y2(self, y2: &str) -> Self {
+        self.attribute("y2", y2)
+    }
+}
+
+impl<State> TextElement<State> {
+    pub fn x(self, x: &str) -> Self {
+        self.attribute("x", x)
+    }
+
+    pub fn y(self, y: &str) -> Self {
+        self.attribute("y", y)
+    }
+}
 
 // Link specific
 impl<State> Link<State> {

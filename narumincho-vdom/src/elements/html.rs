@@ -1,32 +1,14 @@
 // このファイルは narumincho-vdom-build によって自動生成されました。
+#![allow(non_snake_case, dead_code)]
 
-/// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/html
-pub struct Html {
-    ///
-    pub version: std::option::Option<String>,
-    ///
-    pub xmlns: std::option::Option<String>,
-}
+/// https://html.spec.whatwg.org/multipage/semantics.html#the-html-element
+pub struct Html {}
 
 pub fn html() -> Html {
-    Html {
-        version: None,
-        xmlns: None,
-    }
+    Html {}
 }
+
 impl Html {
-    ///
-    pub fn version(mut self, value: impl Into<String>) -> Self {
-        self.version = Some(value.into());
-        self
-    }
-
-    ///
-    pub fn xmlns(mut self, value: impl Into<String>) -> Self {
-        self.xmlns = Some(value.into());
-        self
-    }
-
     pub fn to_element(self, children: Vec<super::Node>) -> super::Element {
         super::Element {
             global_attributes: super::GlobalAttributes::default(),

@@ -1,11 +1,13 @@
 // このファイルは narumincho-vdom-build によって自動生成されました。
+#![allow(non_snake_case, dead_code)]
 
-/// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/search
+/// https://html.spec.whatwg.org/multipage/grouping-content.html#the-search-element
 pub struct Search {}
 
 pub fn search() -> Search {
     Search {}
 }
+
 impl Search {
     pub fn to_element(self, children: Vec<super::Node>) -> super::Element {
         super::Element {

@@ -1,11 +1,13 @@
 // このファイルは narumincho-vdom-build によって自動生成されました。
+#![allow(non_snake_case, dead_code)]
 
-/// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/rb
+/// https://w3c.github.io/html-ruby/#elementdef-rb
 pub struct Rb {}
 
 pub fn rb() -> Rb {
     Rb {}
 }
+
 impl Rb {
     pub fn to_element(self, children: Vec<super::Node>) -> super::Element {
         super::Element {

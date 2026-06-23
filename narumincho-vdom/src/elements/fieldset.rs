@@ -1,41 +1,14 @@
 // このファイルは narumincho-vdom-build によって自動生成されました。
+#![allow(non_snake_case, dead_code)]
 
-/// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/fieldset
-pub struct Fieldset {
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Attributes/disabled
-    pub disabled: std::option::Option<String>,
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Attributes/form
-    pub form: std::option::Option<String>,
-    ///
-    pub name: std::option::Option<String>,
-}
+/// https://html.spec.whatwg.org/multipage/form-elements.html#the-fieldset-element
+pub struct Fieldset {}
 
 pub fn fieldset() -> Fieldset {
-    Fieldset {
-        disabled: None,
-        form: None,
-        name: None,
-    }
+    Fieldset {}
 }
+
 impl Fieldset {
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Attributes/disabled
-    pub fn disabled(mut self, value: impl Into<String>) -> Self {
-        self.disabled = Some(value.into());
-        self
-    }
-
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Attributes/form
-    pub fn form(mut self, value: impl Into<String>) -> Self {
-        self.form = Some(value.into());
-        self
-    }
-
-    ///
-    pub fn name(mut self, value: impl Into<String>) -> Self {
-        self.name = Some(value.into());
-        self
-    }
-
     pub fn to_element(self, children: Vec<super::Node>) -> super::Element {
         super::Element {
             global_attributes: super::GlobalAttributes::default(),

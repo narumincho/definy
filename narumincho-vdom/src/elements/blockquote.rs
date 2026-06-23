@@ -1,21 +1,14 @@
 // このファイルは narumincho-vdom-build によって自動生成されました。
+#![allow(non_snake_case, dead_code)]
 
-/// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/blockquote
-pub struct Blockquote {
-    ///
-    pub cite: std::option::Option<String>,
-}
+/// https://html.spec.whatwg.org/multipage/grouping-content.html#the-blockquote-element
+pub struct Blockquote {}
 
 pub fn blockquote() -> Blockquote {
-    Blockquote { cite: None }
+    Blockquote {}
 }
-impl Blockquote {
-    ///
-    pub fn cite(mut self, value: impl Into<String>) -> Self {
-        self.cite = Some(value.into());
-        self
-    }
 
+impl Blockquote {
     pub fn to_element(self, children: Vec<super::Node>) -> super::Element {
         super::Element {
             global_attributes: super::GlobalAttributes::default(),

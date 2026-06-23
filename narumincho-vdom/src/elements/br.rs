@@ -1,21 +1,14 @@
 // このファイルは narumincho-vdom-build によって自動生成されました。
+#![allow(non_snake_case, dead_code)]
 
-/// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/br
-pub struct Br {
-    ///
-    pub clear: std::option::Option<String>,
-}
+/// https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-br-element
+pub struct Br {}
 
 pub fn br() -> Br {
-    Br { clear: None }
+    Br {}
 }
-impl Br {
-    ///
-    pub fn clear(mut self, value: impl Into<String>) -> Self {
-        self.clear = Some(value.into());
-        self
-    }
 
+impl Br {
     pub fn to_element(self, children: Vec<super::Node>) -> super::Element {
         super::Element {
             global_attributes: super::GlobalAttributes::default(),

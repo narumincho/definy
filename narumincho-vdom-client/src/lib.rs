@@ -8,6 +8,7 @@ use wasm_bindgen::JsValue;
 use wasm_bindgen::closure::Closure;
 
 mod diff;
+mod element_creation;
 
 pub static DOCUMENT: std::sync::LazyLock<web_sys::Document> = std::sync::LazyLock::new(|| {
     let window = web_sys::window().expect("no global `window` exists");
@@ -342,7 +343,13 @@ fn apply_patch<State: 'static>(
     match patch {
         diff::Patch::Replace(new_node) => {
             if let Some(parent) = node.parent_node() {
-                let new_web_node = create_web_sys_node(new_node, dispatch, _callback_key_symbol);
+                let is_svg = parent
+                    .dyn_ref::<web_sys::Element>()
+                    .and_then(|el| el.namespace_uri())
+                    .map(|ns| ns == "http://www.w3.org/2000/svg")
+                    .unwrap_or(false);
+                let new_web_node =
+                    create_web_sys_node(new_node, dispatch, _callback_key_symbol, is_svg);
                 parent.replace_child(&new_web_node, &node).unwrap();
             }
         }
@@ -431,8 +438,13 @@ fn apply_patch<State: 'static>(
             }
         }
         diff::Patch::AppendChildren(children) => {
+            let is_svg = node
+                .dyn_ref::<web_sys::Element>()
+                .and_then(|el| el.namespace_uri())
+                .map(|ns| ns == "http://www.w3.org/2000/svg")
+                .unwrap_or(false);
             for child in children {
-                let child_node = create_web_sys_node(child, dispatch, _callback_key_symbol);
+                let child_node = create_web_sys_node(child, dispatch, _callback_key_symbol, is_svg);
                 node.append_child(&child_node).unwrap();
             }
         }
@@ -452,10 +464,12 @@ fn create_web_sys_node<State: 'static>(
     vdom: &Node<State>,
     dispatch: &Rc<dyn Fn(Box<dyn FnOnce(State) -> State>)>,
     _callback_key_symbol: &js_sys::Symbol,
+    is_svg: bool,
 ) -> web_sys::Node {
     match vdom {
         Node::Element(el) => {
-            let element = DOCUMENT.create_element(&el.element_name).unwrap();
+            let is_element_svg = is_svg || el.element_name == "svg";
+            let element = crate::element_creation::create_element(&el.element_name, is_element_svg);
             for (key, value) in &el.attributes {
                 element.set_attribute(key, value).unwrap();
             }
@@ -487,9 +501,15 @@ fn create_web_sys_node<State: 'static>(
                 Reflect::set(&element, &JsValue::from_str(&key), closure.as_ref()).unwrap();
                 closure.forget();
             }
+            let is_child_svg = is_element_svg && el.element_name != "foreignObject";
             for child in &el.children {
                 element
-                    .append_child(&create_web_sys_node(child, dispatch, _callback_key_symbol))
+                    .append_child(&create_web_sys_node(
+                        child,
+                        dispatch,
+                        _callback_key_symbol,
+                        is_child_svg,
+                    ))
                     .unwrap();
             }
             element.into()

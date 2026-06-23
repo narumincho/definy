@@ -1,21 +1,14 @@
 // このファイルは narumincho-vdom-build によって自動生成されました。
+#![allow(non_snake_case, dead_code)]
 
-/// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/caption
-pub struct Caption {
-    ///
-    pub align: std::option::Option<String>,
-}
+/// https://html.spec.whatwg.org/multipage/tables.html#the-caption-element
+pub struct Caption {}
 
 pub fn caption() -> Caption {
-    Caption { align: None }
+    Caption {}
 }
-impl Caption {
-    ///
-    pub fn align(mut self, value: impl Into<String>) -> Self {
-        self.align = Some(value.into());
-        self
-    }
 
+impl Caption {
     pub fn to_element(self, children: Vec<super::Node>) -> super::Element {
         super::Element {
             global_attributes: super::GlobalAttributes::default(),

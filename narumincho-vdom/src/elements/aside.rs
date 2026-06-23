@@ -1,11 +1,13 @@
 // このファイルは narumincho-vdom-build によって自動生成されました。
+#![allow(non_snake_case, dead_code)]
 
-/// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/aside
+/// https://html.spec.whatwg.org/multipage/sections.html#the-aside-element
 pub struct Aside {}
 
 pub fn aside() -> Aside {
     Aside {}
 }
+
 impl Aside {
     pub fn to_element(self, children: Vec<super::Node>) -> super::Element {
         super::Element {

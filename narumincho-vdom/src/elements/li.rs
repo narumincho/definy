@@ -1,32 +1,14 @@
 // このファイルは narumincho-vdom-build によって自動生成されました。
+#![allow(non_snake_case, dead_code)]
 
-/// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/li
-pub struct Li {
-    ///
-    pub r#type: std::option::Option<String>,
-    ///
-    pub value: std::option::Option<String>,
-}
+/// https://html.spec.whatwg.org/multipage/grouping-content.html#the-li-element
+pub struct Li {}
 
 pub fn li() -> Li {
-    Li {
-        r#type: None,
-        value: None,
-    }
+    Li {}
 }
+
 impl Li {
-    ///
-    pub fn r#type(mut self, value: impl Into<String>) -> Self {
-        self.r#type = Some(value.into());
-        self
-    }
-
-    ///
-    pub fn value(mut self, value: impl Into<String>) -> Self {
-        self.value = Some(value.into());
-        self
-    }
-
     pub fn to_element(self, children: Vec<super::Node>) -> super::Element {
         super::Element {
             global_attributes: super::GlobalAttributes::default(),

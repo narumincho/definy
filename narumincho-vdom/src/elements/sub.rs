@@ -1,11 +1,13 @@
 // このファイルは narumincho-vdom-build によって自動生成されました。
+#![allow(non_snake_case, dead_code)]
 
-/// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/sub
+/// https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-sub-element
 pub struct Sub {}
 
 pub fn sub() -> Sub {
     Sub {}
 }
+
 impl Sub {
     pub fn to_element(self, children: Vec<super::Node>) -> super::Element {
         super::Element {

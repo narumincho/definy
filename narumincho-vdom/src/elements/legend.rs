@@ -1,21 +1,14 @@
 // このファイルは narumincho-vdom-build によって自動生成されました。
+#![allow(non_snake_case, dead_code)]
 
-/// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/legend
-pub struct Legend {
-    ///
-    pub align: std::option::Option<String>,
-}
+/// https://html.spec.whatwg.org/multipage/form-elements.html#the-legend-element
+pub struct Legend {}
 
 pub fn legend() -> Legend {
-    Legend { align: None }
+    Legend {}
 }
-impl Legend {
-    ///
-    pub fn align(mut self, value: impl Into<String>) -> Self {
-        self.align = Some(value.into());
-        self
-    }
 
+impl Legend {
     pub fn to_element(self, children: Vec<super::Node>) -> super::Element {
         super::Element {
             global_attributes: super::GlobalAttributes::default(),

@@ -1,21 +1,14 @@
 // このファイルは narumincho-vdom-build によって自動生成されました。
+#![allow(non_snake_case, dead_code)]
 
-/// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/slot
-pub struct Slot {
-    ///
-    pub name: std::option::Option<String>,
-}
+/// https://html.spec.whatwg.org/multipage/scripting.html#the-slot-element
+pub struct Slot {}
 
 pub fn slot() -> Slot {
-    Slot { name: None }
+    Slot {}
 }
-impl Slot {
-    ///
-    pub fn name(mut self, value: impl Into<String>) -> Self {
-        self.name = Some(value.into());
-        self
-    }
 
+impl Slot {
     pub fn to_element(self, children: Vec<super::Node>) -> super::Element {
         super::Element {
             global_attributes: super::GlobalAttributes::default(),

@@ -1,32 +1,14 @@
 // このファイルは narumincho-vdom-build によって自動生成されました。
+#![allow(non_snake_case, dead_code)]
 
-/// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/del
-pub struct Del {
-    ///
-    pub cite: std::option::Option<String>,
-    ///
-    pub datetime: std::option::Option<String>,
-}
+/// https://html.spec.whatwg.org/multipage/edits.html#the-del-element
+pub struct Del {}
 
 pub fn del() -> Del {
-    Del {
-        cite: None,
-        datetime: None,
-    }
+    Del {}
 }
+
 impl Del {
-    ///
-    pub fn cite(mut self, value: impl Into<String>) -> Self {
-        self.cite = Some(value.into());
-        self
-    }
-
-    ///
-    pub fn datetime(mut self, value: impl Into<String>) -> Self {
-        self.datetime = Some(value.into());
-        self
-    }
-
     pub fn to_element(self, children: Vec<super::Node>) -> super::Element {
         super::Element {
             global_attributes: super::GlobalAttributes::default(),

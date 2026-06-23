@@ -1,32 +1,14 @@
 // このファイルは narumincho-vdom-build によって自動生成されました。
+#![allow(non_snake_case, dead_code)]
 
-/// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/geolocation
-pub struct Geolocation {
-    ///
-    pub autolocate: std::option::Option<String>,
-    ///
-    pub watch: std::option::Option<String>,
-}
+/// https://wicg.github.io/PEPC/geolocation-element.html#elementdef-geolocation
+pub struct Geolocation {}
 
 pub fn geolocation() -> Geolocation {
-    Geolocation {
-        autolocate: None,
-        watch: None,
-    }
+    Geolocation {}
 }
+
 impl Geolocation {
-    ///
-    pub fn autolocate(mut self, value: impl Into<String>) -> Self {
-        self.autolocate = Some(value.into());
-        self
-    }
-
-    ///
-    pub fn watch(mut self, value: impl Into<String>) -> Self {
-        self.watch = Some(value.into());
-        self
-    }
-
     pub fn to_element(self, children: Vec<super::Node>) -> super::Element {
         super::Element {
             global_attributes: super::GlobalAttributes::default(),

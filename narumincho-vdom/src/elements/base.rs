@@ -1,32 +1,14 @@
 // このファイルは narumincho-vdom-build によって自動生成されました。
+#![allow(non_snake_case, dead_code)]
 
-/// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/base
-pub struct Base {
-    ///
-    pub href: std::option::Option<String>,
-    ///
-    pub target: std::option::Option<String>,
-}
+/// https://html.spec.whatwg.org/multipage/semantics.html#the-base-element
+pub struct Base {}
 
 pub fn base() -> Base {
-    Base {
-        href: None,
-        target: None,
-    }
+    Base {}
 }
+
 impl Base {
-    ///
-    pub fn href(mut self, value: impl Into<String>) -> Self {
-        self.href = Some(value.into());
-        self
-    }
-
-    ///
-    pub fn target(mut self, value: impl Into<String>) -> Self {
-        self.target = Some(value.into());
-        self
-    }
-
     pub fn to_element(self, children: Vec<super::Node>) -> super::Element {
         super::Element {
             global_attributes: super::GlobalAttributes::default(),

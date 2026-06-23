@@ -1,59 +1,14 @@
 // このファイルは narumincho-vdom-build によって自動生成されました。
+#![allow(non_snake_case, dead_code)]
 
-/// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/tr
-pub struct Tr {
-    ///
-    pub align: std::option::Option<String>,
-    ///
-    pub bgcolor: std::option::Option<String>,
-    ///
-    pub char: std::option::Option<String>,
-    ///
-    pub charoff: std::option::Option<String>,
-    ///
-    pub valign: std::option::Option<String>,
-}
+/// https://html.spec.whatwg.org/multipage/tables.html#the-tr-element
+pub struct Tr {}
 
 pub fn tr() -> Tr {
-    Tr {
-        align: None,
-        bgcolor: None,
-        char: None,
-        charoff: None,
-        valign: None,
-    }
+    Tr {}
 }
+
 impl Tr {
-    ///
-    pub fn align(mut self, value: impl Into<String>) -> Self {
-        self.align = Some(value.into());
-        self
-    }
-
-    ///
-    pub fn bgcolor(mut self, value: impl Into<String>) -> Self {
-        self.bgcolor = Some(value.into());
-        self
-    }
-
-    ///
-    pub fn char(mut self, value: impl Into<String>) -> Self {
-        self.char = Some(value.into());
-        self
-    }
-
-    ///
-    pub fn charoff(mut self, value: impl Into<String>) -> Self {
-        self.charoff = Some(value.into());
-        self
-    }
-
-    ///
-    pub fn valign(mut self, value: impl Into<String>) -> Self {
-        self.valign = Some(value.into());
-        self
-    }
-
     pub fn to_element(self, children: Vec<super::Node>) -> super::Element {
         super::Element {
             global_attributes: super::GlobalAttributes::default(),

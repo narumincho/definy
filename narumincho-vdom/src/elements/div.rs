@@ -1,21 +1,14 @@
 // このファイルは narumincho-vdom-build によって自動生成されました。
+#![allow(non_snake_case, dead_code)]
 
-/// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/div
-pub struct Div {
-    ///
-    pub align: std::option::Option<String>,
-}
+/// https://html.spec.whatwg.org/multipage/grouping-content.html#the-div-element
+pub struct Div {}
 
 pub fn div() -> Div {
-    Div { align: None }
+    Div {}
 }
-impl Div {
-    ///
-    pub fn align(mut self, value: impl Into<String>) -> Self {
-        self.align = Some(value.into());
-        self
-    }
 
+impl Div {
     pub fn to_element(self, children: Vec<super::Node>) -> super::Element {
         super::Element {
             global_attributes: super::GlobalAttributes::default(),

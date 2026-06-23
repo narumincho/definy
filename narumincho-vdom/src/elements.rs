@@ -1,8 +1,13 @@
 // このファイルは narumincho-vdom-build によって自動生成されました。
+#![allow(non_snake_case, dead_code)]
 pub mod a;
 pub mod abbr;
-pub mod acronym;
 pub mod address;
+pub mod animate;
+pub mod animateMotion;
+pub mod animateTransform;
+pub mod annotation;
+pub mod annotation_xml;
 pub mod area;
 pub mod article;
 pub mod aside;
@@ -11,40 +16,67 @@ pub mod b;
 pub mod base;
 pub mod bdi;
 pub mod bdo;
-pub mod big;
 pub mod blockquote;
 pub mod body;
 pub mod br;
 pub mod button;
 pub mod canvas;
 pub mod caption;
-pub mod center;
+pub mod circle;
 pub mod cite;
+pub mod clipPath;
 pub mod code;
 pub mod col;
 pub mod colgroup;
 pub mod data;
 pub mod datalist;
 pub mod dd;
+pub mod defs;
 pub mod del;
+pub mod desc;
 pub mod details;
 pub mod dfn;
 pub mod dialog;
-pub mod dir;
 pub mod div;
 pub mod dl;
 pub mod dt;
+pub mod ellipse;
 pub mod em;
 pub mod embed;
+pub mod feBlend;
+pub mod feColorMatrix;
+pub mod feComponentTransfer;
+pub mod feComposite;
+pub mod feConvolveMatrix;
+pub mod feDiffuseLighting;
+pub mod feDisplacementMap;
+pub mod feDistantLight;
+pub mod feDropShadow;
+pub mod feFlood;
+pub mod feFuncA;
+pub mod feFuncB;
+pub mod feFuncG;
+pub mod feFuncR;
+pub mod feGaussianBlur;
+pub mod feImage;
+pub mod feMerge;
+pub mod feMergeNode;
+pub mod feMorphology;
+pub mod feOffset;
+pub mod fePointLight;
+pub mod feSpecularLighting;
+pub mod feSpotLight;
+pub mod feTile;
+pub mod feTurbulence;
 pub mod fencedframe;
 pub mod fieldset;
 pub mod figcaption;
 pub mod figure;
-pub mod font;
+pub mod filter;
 pub mod footer;
+pub mod foreignObject;
 pub mod form;
-pub mod frame;
-pub mod frameset;
+pub mod g;
 pub mod geolocation;
 pub mod h1;
 pub mod h2;
@@ -59,6 +91,7 @@ pub mod hr;
 pub mod html;
 pub mod i;
 pub mod iframe;
+pub mod image;
 pub mod img;
 pub mod input;
 pub mod ins;
@@ -66,18 +99,48 @@ pub mod kbd;
 pub mod label;
 pub mod legend;
 pub mod li;
+pub mod line;
+pub mod linearGradient;
 pub mod link;
+pub mod maction;
 pub mod main;
 pub mod map;
 pub mod mark;
-pub mod marquee;
+pub mod marker;
+pub mod mask;
+pub mod math;
 pub mod menu;
+pub mod merror;
 pub mod meta;
+pub mod metadata;
 pub mod meter;
+pub mod mfrac;
+pub mod mi;
+pub mod mmultiscripts;
+pub mod mn;
+pub mod mo;
+pub mod model;
+pub mod mover;
+pub mod mpadded;
+pub mod mpath;
+pub mod mphantom;
+pub mod mprescripts;
+pub mod mroot;
+pub mod mrow;
+pub mod ms;
+pub mod mspace;
+pub mod msqrt;
+pub mod mstyle;
+pub mod msub;
+pub mod msubsup;
+pub mod msup;
+pub mod mtable;
+pub mod mtd;
+pub mod mtext;
+pub mod mtr;
+pub mod munder;
+pub mod munderover;
 pub mod nav;
-pub mod nobr;
-pub mod noembed;
-pub mod noframes;
 pub mod noscript;
 pub mod object;
 pub mod ol;
@@ -85,13 +148,18 @@ pub mod optgroup;
 pub mod option;
 pub mod output;
 pub mod p;
-pub mod param;
+pub mod path;
+pub mod pattern;
 pub mod picture;
-pub mod plaintext;
+pub mod polygon;
+pub mod polyline;
+pub mod portal;
 pub mod pre;
 pub mod progress;
 pub mod q;
+pub mod radialGradient;
 pub mod rb;
+pub mod rect;
 pub mod rp;
 pub mod rt;
 pub mod rtc;
@@ -103,20 +171,27 @@ pub mod search;
 pub mod section;
 pub mod select;
 pub mod selectedcontent;
+pub mod semantics;
+pub mod set;
 pub mod slot;
 pub mod small;
 pub mod source;
 pub mod span;
-pub mod strike;
+pub mod stop;
 pub mod strong;
 pub mod style;
 pub mod sub;
 pub mod summary;
 pub mod sup;
+pub mod svg;
+pub mod r#switch;
+pub mod symbol;
 pub mod table;
 pub mod tbody;
 pub mod td;
 pub mod template;
+pub mod text;
+pub mod textPath;
 pub mod textarea;
 pub mod tfoot;
 pub mod th;
@@ -125,13 +200,14 @@ pub mod time;
 pub mod title;
 pub mod tr;
 pub mod track;
-pub mod tt;
+pub mod tspan;
 pub mod u;
 pub mod ul;
+pub mod r#use;
 pub mod var;
 pub mod video;
+pub mod view;
 pub mod wbr;
-pub mod xmp;
 
 pub enum Node {
     Element(Element),
@@ -146,506 +222,562 @@ pub struct Element {
 
 #[derive(Default)]
 pub struct GlobalAttributes {
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/accesskey
     pub accesskey: std::option::Option<String>,
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/anchor
-    pub anchor: std::option::Option<String>,
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/autocapitalize
     pub autocapitalize: std::option::Option<String>,
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/autocorrect
-    pub autocorrect: std::option::Option<String>,
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/autofocus
     pub autofocus: std::option::Option<String>,
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/class
     pub class: std::option::Option<String>,
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/contenteditable
     pub contenteditable: std::option::Option<String>,
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/data-*
-    pub data_attributes: std::option::Option<String>,
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/dir
     pub dir: std::option::Option<String>,
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/draggable
     pub draggable: std::option::Option<String>,
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/enterkeyhint
     pub enterkeyhint: std::option::Option<String>,
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/exportparts
-    pub exportparts: std::option::Option<String>,
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/hidden
     pub hidden: std::option::Option<String>,
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/id
     pub id: std::option::Option<String>,
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/inert
     pub inert: std::option::Option<String>,
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/inputmode
     pub inputmode: std::option::Option<String>,
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/is
     pub is: std::option::Option<String>,
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/lang
     pub lang: std::option::Option<String>,
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/nonce
     pub nonce: std::option::Option<String>,
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/part
     pub part: std::option::Option<String>,
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/popover
     pub popover: std::option::Option<String>,
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/slot
     pub slot: std::option::Option<String>,
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/spellcheck
     pub spellcheck: std::option::Option<String>,
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/style
     pub style: std::option::Option<String>,
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/tabindex
     pub tabindex: std::option::Option<String>,
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/title
     pub title: std::option::Option<String>,
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/translate
     pub translate: std::option::Option<String>,
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/virtualkeyboardpolicy
-    pub virtualkeyboardpolicy: std::option::Option<String>,
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/writingsuggestions
-    pub writingsuggestions: std::option::Option<String>,
 }
 
 pub enum ElementContent {
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/a
+    /// https://w3c.github.io/svgwg/svg2-draft/linking.html#elementdef-a
     A(a::A),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/abbr
+    /// https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-abbr-element
     Abbr(abbr::Abbr),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/acronym
-    Acronym(acronym::Acronym),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/address
+    /// https://html.spec.whatwg.org/multipage/sections.html#the-address-element
     Address(address::Address),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/area
+    /// https://svgwg.org/specs/animations/#elementdef-animate
+    Animate(animate::Animate),
+    /// https://svgwg.org/specs/animations/#elementdef-animateMotion
+    AnimateMotion(animateMotion::AnimateMotion),
+    /// https://svgwg.org/specs/animations/#elementdef-animateTransform
+    AnimateTransform(animateTransform::AnimateTransform),
+    /// https://w3c.github.io/mathml-core/#dfn-annotation
+    Annotation(annotation::Annotation),
+    /// https://w3c.github.io/mathml-core/#dfn-annotation-xml
+    Annotation_xml(annotation_xml::Annotation_xml),
+    /// https://html.spec.whatwg.org/multipage/image-maps.html#the-area-element
     Area(area::Area),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/article
+    /// https://html.spec.whatwg.org/multipage/sections.html#the-article-element
     Article(article::Article),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/aside
+    /// https://html.spec.whatwg.org/multipage/sections.html#the-aside-element
     Aside(aside::Aside),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/audio
+    /// https://html.spec.whatwg.org/multipage/media.html#audio
     Audio(audio::Audio),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/b
+    /// https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-b-element
     B(b::B),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/base
+    /// https://html.spec.whatwg.org/multipage/semantics.html#the-base-element
     Base(base::Base),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/bdi
+    /// https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-bdi-element
     Bdi(bdi::Bdi),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/bdo
+    /// https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-bdo-element
     Bdo(bdo::Bdo),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/big
-    Big(big::Big),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/blockquote
+    /// https://html.spec.whatwg.org/multipage/grouping-content.html#the-blockquote-element
     Blockquote(blockquote::Blockquote),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/body
+    /// https://html.spec.whatwg.org/multipage/sections.html#the-body-element
     Body(body::Body),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/br
+    /// https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-br-element
     Br(br::Br),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/button
+    /// https://html.spec.whatwg.org/multipage/form-elements.html#the-button-element
     Button(button::Button),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/canvas
+    /// https://html.spec.whatwg.org/multipage/canvas.html#canvas
     Canvas(canvas::Canvas),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/caption
+    /// https://html.spec.whatwg.org/multipage/tables.html#the-caption-element
     Caption(caption::Caption),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/center
-    Center(center::Center),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/cite
+    /// https://w3c.github.io/svgwg/svg2-draft/shapes.html#elementdef-circle
+    Circle(circle::Circle),
+    /// https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-cite-element
     Cite(cite::Cite),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/code
+    /// https://drafts.csswg.org/css-masking-1/#elementdef-clippath
+    ClipPath(clipPath::ClipPath),
+    /// https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-code-element
     Code(code::Code),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/col
+    /// https://html.spec.whatwg.org/multipage/tables.html#the-col-element
     Col(col::Col),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/colgroup
+    /// https://html.spec.whatwg.org/multipage/tables.html#the-colgroup-element
     Colgroup(colgroup::Colgroup),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/data
+    /// https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-data-element
     Data(data::Data),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/datalist
+    /// https://html.spec.whatwg.org/multipage/form-elements.html#the-datalist-element
     Datalist(datalist::Datalist),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/dd
+    /// https://html.spec.whatwg.org/multipage/grouping-content.html#the-dd-element
     Dd(dd::Dd),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/del
+    /// https://w3c.github.io/svgwg/svg2-draft/struct.html#elementdef-defs
+    Defs(defs::Defs),
+    /// https://html.spec.whatwg.org/multipage/edits.html#the-del-element
     Del(del::Del),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/details
+    /// https://w3c.github.io/svgwg/svg2-draft/struct.html#elementdef-desc
+    Desc(desc::Desc),
+    /// https://html.spec.whatwg.org/multipage/interactive-elements.html#the-details-element
     Details(details::Details),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/dfn
+    /// https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-dfn-element
     Dfn(dfn::Dfn),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/dialog
+    /// https://html.spec.whatwg.org/multipage/interactive-elements.html#the-dialog-element
     Dialog(dialog::Dialog),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/dir
-    Dir(dir::Dir),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/div
+    /// https://html.spec.whatwg.org/multipage/grouping-content.html#the-div-element
     Div(div::Div),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/dl
+    /// https://html.spec.whatwg.org/multipage/grouping-content.html#the-dl-element
     Dl(dl::Dl),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/dt
+    /// https://html.spec.whatwg.org/multipage/grouping-content.html#the-dt-element
     Dt(dt::Dt),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/em
+    /// https://w3c.github.io/svgwg/svg2-draft/shapes.html#elementdef-ellipse
+    Ellipse(ellipse::Ellipse),
+    /// https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-em-element
     Em(em::Em),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/embed
+    /// https://html.spec.whatwg.org/multipage/iframe-embed-object.html#the-embed-element
     Embed(embed::Embed),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/fencedframe
+    /// https://drafts.csswg.org/filter-effects-1/#elementdef-feblend
+    FeBlend(feBlend::FeBlend),
+    /// https://drafts.csswg.org/filter-effects-1/#elementdef-fecolormatrix
+    FeColorMatrix(feColorMatrix::FeColorMatrix),
+    /// https://drafts.csswg.org/filter-effects-1/#elementdef-fecomponenttransfer
+    FeComponentTransfer(feComponentTransfer::FeComponentTransfer),
+    /// https://drafts.csswg.org/filter-effects-1/#elementdef-fecomposite
+    FeComposite(feComposite::FeComposite),
+    /// https://drafts.csswg.org/filter-effects-1/#elementdef-feconvolvematrix
+    FeConvolveMatrix(feConvolveMatrix::FeConvolveMatrix),
+    /// https://drafts.csswg.org/filter-effects-1/#elementdef-fediffuselighting
+    FeDiffuseLighting(feDiffuseLighting::FeDiffuseLighting),
+    /// https://drafts.csswg.org/filter-effects-1/#elementdef-fedisplacementmap
+    FeDisplacementMap(feDisplacementMap::FeDisplacementMap),
+    /// https://drafts.csswg.org/filter-effects-1/#elementdef-fedistantlight
+    FeDistantLight(feDistantLight::FeDistantLight),
+    /// https://drafts.csswg.org/filter-effects-1/#elementdef-fedropshadow
+    FeDropShadow(feDropShadow::FeDropShadow),
+    /// https://drafts.csswg.org/filter-effects-1/#elementdef-feflood
+    FeFlood(feFlood::FeFlood),
+    /// https://drafts.csswg.org/filter-effects-1/#elementdef-fefunca
+    FeFuncA(feFuncA::FeFuncA),
+    /// https://drafts.csswg.org/filter-effects-1/#elementdef-fefuncb
+    FeFuncB(feFuncB::FeFuncB),
+    /// https://drafts.csswg.org/filter-effects-1/#elementdef-fefuncg
+    FeFuncG(feFuncG::FeFuncG),
+    /// https://drafts.csswg.org/filter-effects-1/#elementdef-fefuncr
+    FeFuncR(feFuncR::FeFuncR),
+    /// https://drafts.csswg.org/filter-effects-1/#elementdef-fegaussianblur
+    FeGaussianBlur(feGaussianBlur::FeGaussianBlur),
+    /// https://drafts.csswg.org/filter-effects-1/#elementdef-feimage
+    FeImage(feImage::FeImage),
+    /// https://drafts.csswg.org/filter-effects-1/#elementdef-femerge
+    FeMerge(feMerge::FeMerge),
+    /// https://drafts.csswg.org/filter-effects-1/#elementdef-femergenode
+    FeMergeNode(feMergeNode::FeMergeNode),
+    /// https://drafts.csswg.org/filter-effects-1/#elementdef-femorphology
+    FeMorphology(feMorphology::FeMorphology),
+    /// https://drafts.csswg.org/filter-effects-1/#elementdef-feoffset
+    FeOffset(feOffset::FeOffset),
+    /// https://drafts.csswg.org/filter-effects-1/#elementdef-fepointlight
+    FePointLight(fePointLight::FePointLight),
+    /// https://drafts.csswg.org/filter-effects-1/#elementdef-fespecularlighting
+    FeSpecularLighting(feSpecularLighting::FeSpecularLighting),
+    /// https://drafts.csswg.org/filter-effects-1/#elementdef-fespotlight
+    FeSpotLight(feSpotLight::FeSpotLight),
+    /// https://drafts.csswg.org/filter-effects-1/#elementdef-fetile
+    FeTile(feTile::FeTile),
+    /// https://drafts.csswg.org/filter-effects-1/#elementdef-feturbulence
+    FeTurbulence(feTurbulence::FeTurbulence),
+    /// https://wicg.github.io/fenced-frame/#elementdef-fencedframe
     Fencedframe(fencedframe::Fencedframe),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/fieldset
+    /// https://html.spec.whatwg.org/multipage/form-elements.html#the-fieldset-element
     Fieldset(fieldset::Fieldset),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/figcaption
+    /// https://html.spec.whatwg.org/multipage/grouping-content.html#the-figcaption-element
     Figcaption(figcaption::Figcaption),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/figure
+    /// https://html.spec.whatwg.org/multipage/grouping-content.html#the-figure-element
     Figure(figure::Figure),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/font
-    Font(font::Font),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/footer
+    /// https://drafts.csswg.org/filter-effects-1/#elementdef-filter
+    Filter(filter::Filter),
+    /// https://html.spec.whatwg.org/multipage/sections.html#the-footer-element
     Footer(footer::Footer),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/form
+    /// https://w3c.github.io/svgwg/svg2-draft/embedded.html#elementdef-foreignObject
+    ForeignObject(foreignObject::ForeignObject),
+    /// https://html.spec.whatwg.org/multipage/forms.html#the-form-element
     Form(form::Form),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/frame
-    Frame(frame::Frame),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/frameset
-    Frameset(frameset::Frameset),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/geolocation
+    /// https://w3c.github.io/svgwg/svg2-draft/struct.html#elementdef-g
+    G(g::G),
+    /// https://wicg.github.io/PEPC/geolocation-element.html#elementdef-geolocation
     Geolocation(geolocation::Geolocation),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/Heading_Elements
+    /// https://html.spec.whatwg.org/multipage/sections.html#the-h1-element
     H1(h1::H1),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/Heading_Elements
+    /// https://html.spec.whatwg.org/multipage/sections.html#the-h2-element
     H2(h2::H2),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/Heading_Elements
+    /// https://html.spec.whatwg.org/multipage/sections.html#the-h3-element
     H3(h3::H3),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/Heading_Elements
+    /// https://html.spec.whatwg.org/multipage/sections.html#the-h4-element
     H4(h4::H4),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/Heading_Elements
+    /// https://html.spec.whatwg.org/multipage/sections.html#the-h5-element
     H5(h5::H5),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/Heading_Elements
+    /// https://html.spec.whatwg.org/multipage/sections.html#the-h6-element
     H6(h6::H6),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/head
+    /// https://html.spec.whatwg.org/multipage/semantics.html#the-head-element
     Head(head::Head),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/header
+    /// https://html.spec.whatwg.org/multipage/sections.html#the-header-element
     Header(header::Header),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/hgroup
+    /// https://html.spec.whatwg.org/multipage/sections.html#the-hgroup-element
     Hgroup(hgroup::Hgroup),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/hr
+    /// https://html.spec.whatwg.org/multipage/grouping-content.html#the-hr-element
     Hr(hr::Hr),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/html
+    /// https://html.spec.whatwg.org/multipage/semantics.html#the-html-element
     Html(html::Html),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/i
+    /// https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-i-element
     I(i::I),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/iframe
+    /// https://html.spec.whatwg.org/multipage/iframe-embed-object.html#the-iframe-element
     Iframe(iframe::Iframe),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/img
+    /// https://w3c.github.io/svgwg/svg2-draft/embedded.html#elementdef-image
+    Image(image::Image),
+    /// https://html.spec.whatwg.org/multipage/embedded-content.html#the-img-element
     Img(img::Img),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/input
+    /// https://html.spec.whatwg.org/multipage/input.html#the-input-element
     Input(input::Input),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/ins
+    /// https://html.spec.whatwg.org/multipage/edits.html#the-ins-element
     Ins(ins::Ins),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/kbd
+    /// https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-kbd-element
     Kbd(kbd::Kbd),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/label
+    /// https://html.spec.whatwg.org/multipage/forms.html#the-label-element
     Label(label::Label),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/legend
+    /// https://html.spec.whatwg.org/multipage/form-elements.html#the-legend-element
     Legend(legend::Legend),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/li
+    /// https://html.spec.whatwg.org/multipage/grouping-content.html#the-li-element
     Li(li::Li),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/link
+    /// https://w3c.github.io/svgwg/svg2-draft/shapes.html#elementdef-line
+    Line(line::Line),
+    /// https://w3c.github.io/svgwg/svg2-draft/pservers.html#elementdef-linearGradient
+    LinearGradient(linearGradient::LinearGradient),
+    /// https://html.spec.whatwg.org/multipage/semantics.html#the-link-element
     Link(link::Link),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/main
+    /// https://w3c.github.io/mathml-core/#dfn-maction
+    Maction(maction::Maction),
+    /// https://html.spec.whatwg.org/multipage/grouping-content.html#the-main-element
     Main(main::Main),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/map
+    /// https://html.spec.whatwg.org/multipage/image-maps.html#the-map-element
     Map(map::Map),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/mark
+    /// https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-mark-element
     Mark(mark::Mark),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/marquee
-    Marquee(marquee::Marquee),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/menu
+    /// https://w3c.github.io/svgwg/svg2-draft/painting.html#elementdef-marker
+    Marker(marker::Marker),
+    /// https://drafts.csswg.org/css-masking-1/#elementdef-mask
+    Mask(mask::Mask),
+    /// https://w3c.github.io/mathml-core/#dfn-math
+    Math(math::Math),
+    /// https://html.spec.whatwg.org/multipage/grouping-content.html#menus
     Menu(menu::Menu),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/meta
+    /// https://w3c.github.io/mathml-core/#dfn-merror
+    Merror(merror::Merror),
+    /// https://html.spec.whatwg.org/multipage/semantics.html#meta
     Meta(meta::Meta),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/meter
+    /// https://w3c.github.io/svgwg/svg2-draft/struct.html#elementdef-metadata
+    Metadata(metadata::Metadata),
+    /// https://html.spec.whatwg.org/multipage/form-elements.html#the-meter-element
     Meter(meter::Meter),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/nav
+    /// https://w3c.github.io/mathml-core/#dfn-mfrac
+    Mfrac(mfrac::Mfrac),
+    /// https://w3c.github.io/mathml-core/#dfn-mi
+    Mi(mi::Mi),
+    /// https://w3c.github.io/mathml-core/#dfn-mmultiscripts
+    Mmultiscripts(mmultiscripts::Mmultiscripts),
+    /// https://w3c.github.io/mathml-core/#dfn-mn
+    Mn(mn::Mn),
+    /// https://w3c.github.io/mathml-core/#dfn-mo
+    Mo(mo::Mo),
+    /// https://immersive-web.github.io/model-element/#dfn-model
+    Model(model::Model),
+    /// https://w3c.github.io/mathml-core/#dfn-mover
+    Mover(mover::Mover),
+    /// https://w3c.github.io/mathml-core/#dfn-mpadded
+    Mpadded(mpadded::Mpadded),
+    /// https://svgwg.org/specs/animations/#elementdef-mpath
+    Mpath(mpath::Mpath),
+    /// https://w3c.github.io/mathml-core/#dfn-mphantom
+    Mphantom(mphantom::Mphantom),
+    /// https://w3c.github.io/mathml-core/#dfn-mprescripts
+    Mprescripts(mprescripts::Mprescripts),
+    /// https://w3c.github.io/mathml-core/#dfn-mroot
+    Mroot(mroot::Mroot),
+    /// https://w3c.github.io/mathml-core/#dfn-mrow
+    Mrow(mrow::Mrow),
+    /// https://w3c.github.io/mathml-core/#dfn-ms
+    Ms(ms::Ms),
+    /// https://w3c.github.io/mathml-core/#dfn-mspace
+    Mspace(mspace::Mspace),
+    /// https://w3c.github.io/mathml-core/#dfn-msqrt
+    Msqrt(msqrt::Msqrt),
+    /// https://w3c.github.io/mathml-core/#dfn-mstyle
+    Mstyle(mstyle::Mstyle),
+    /// https://w3c.github.io/mathml-core/#dfn-msub
+    Msub(msub::Msub),
+    /// https://w3c.github.io/mathml-core/#dfn-msubsup
+    Msubsup(msubsup::Msubsup),
+    /// https://w3c.github.io/mathml-core/#dfn-msup
+    Msup(msup::Msup),
+    /// https://w3c.github.io/mathml-core/#dfn-mtable
+    Mtable(mtable::Mtable),
+    /// https://w3c.github.io/mathml-core/#dfn-mtd
+    Mtd(mtd::Mtd),
+    /// https://w3c.github.io/mathml-core/#dfn-mtext
+    Mtext(mtext::Mtext),
+    /// https://w3c.github.io/mathml-core/#dfn-mtr
+    Mtr(mtr::Mtr),
+    /// https://w3c.github.io/mathml-core/#dfn-munder
+    Munder(munder::Munder),
+    /// https://w3c.github.io/mathml-core/#dfn-munderover
+    Munderover(munderover::Munderover),
+    /// https://html.spec.whatwg.org/multipage/sections.html#the-nav-element
     Nav(nav::Nav),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/nobr
-    Nobr(nobr::Nobr),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/noembed
-    Noembed(noembed::Noembed),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/noframes
-    Noframes(noframes::Noframes),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/noscript
+    /// https://html.spec.whatwg.org/multipage/scripting.html#the-noscript-element
     Noscript(noscript::Noscript),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/object
+    /// https://html.spec.whatwg.org/multipage/iframe-embed-object.html#the-object-element
     Object(object::Object),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/ol
+    /// https://html.spec.whatwg.org/multipage/grouping-content.html#the-ol-element
     Ol(ol::Ol),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/optgroup
+    /// https://html.spec.whatwg.org/multipage/form-elements.html#the-optgroup-element
     Optgroup(optgroup::Optgroup),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/option
+    /// https://html.spec.whatwg.org/multipage/form-elements.html#the-option-element
     Option(option::Option),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/output
+    /// https://html.spec.whatwg.org/multipage/form-elements.html#the-output-element
     Output(output::Output),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/p
+    /// https://html.spec.whatwg.org/multipage/grouping-content.html#the-p-element
     P(p::P),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/param
-    Param(param::Param),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/picture
+    /// https://w3c.github.io/svgwg/svg2-draft/paths.html#elementdef-path
+    Path(path::Path),
+    /// https://w3c.github.io/svgwg/svg2-draft/pservers.html#elementdef-pattern
+    Pattern(pattern::Pattern),
+    /// https://html.spec.whatwg.org/multipage/embedded-content.html#the-picture-element
     Picture(picture::Picture),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/plaintext
-    Plaintext(plaintext::Plaintext),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/pre
+    /// https://w3c.github.io/svgwg/svg2-draft/shapes.html#elementdef-polygon
+    Polygon(polygon::Polygon),
+    /// https://w3c.github.io/svgwg/svg2-draft/shapes.html#elementdef-polyline
+    Polyline(polyline::Polyline),
+    /// https://wicg.github.io/portals/#elementdef-portal
+    Portal(portal::Portal),
+    /// https://html.spec.whatwg.org/multipage/grouping-content.html#the-pre-element
     Pre(pre::Pre),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/progress
+    /// https://html.spec.whatwg.org/multipage/form-elements.html#the-progress-element
     Progress(progress::Progress),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/q
+    /// https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-q-element
     Q(q::Q),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/rb
+    /// https://w3c.github.io/svgwg/svg2-draft/pservers.html#elementdef-radialGradient
+    RadialGradient(radialGradient::RadialGradient),
+    /// https://w3c.github.io/html-ruby/#elementdef-rb
     Rb(rb::Rb),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/rp
+    /// https://w3c.github.io/svgwg/svg2-draft/shapes.html#elementdef-rect
+    Rect(rect::Rect),
+    /// https://w3c.github.io/html-ruby/#elementdef-rp
     Rp(rp::Rp),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/rt
+    /// https://w3c.github.io/html-ruby/#elementdef-rt
     Rt(rt::Rt),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/rtc
+    /// https://w3c.github.io/html-ruby/#elementdef-rtc
     Rtc(rtc::Rtc),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/ruby
+    /// https://w3c.github.io/html-ruby/#elementdef-ruby
     Ruby(ruby::Ruby),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/s
+    /// https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-s-element
     S(s::S),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/samp
+    /// https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-samp-element
     Samp(samp::Samp),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/script
+    /// https://w3c.github.io/svgwg/svg2-draft/interact.html#elementdef-script
     Script(script::Script),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/search
+    /// https://html.spec.whatwg.org/multipage/grouping-content.html#the-search-element
     Search(search::Search),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/section
+    /// https://html.spec.whatwg.org/multipage/sections.html#the-section-element
     Section(section::Section),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/select
+    /// https://html.spec.whatwg.org/multipage/form-elements.html#the-select-element
     Select(select::Select),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/selectedcontent
+    /// https://html.spec.whatwg.org/multipage/form-elements.html#the-selectedcontent-element
     Selectedcontent(selectedcontent::Selectedcontent),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/slot
+    /// https://w3c.github.io/mathml-core/#dfn-semantics
+    Semantics(semantics::Semantics),
+    /// https://svgwg.org/specs/animations/#elementdef-set
+    Set(set::Set),
+    /// https://html.spec.whatwg.org/multipage/scripting.html#the-slot-element
     Slot(slot::Slot),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/small
+    /// https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-small-element
     Small(small::Small),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/source
+    /// https://html.spec.whatwg.org/multipage/embedded-content.html#the-source-element
     Source(source::Source),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/span
+    /// https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-span-element
     Span(span::Span),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/strike
-    Strike(strike::Strike),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/strong
+    /// https://w3c.github.io/svgwg/svg2-draft/pservers.html#elementdef-stop
+    Stop(stop::Stop),
+    /// https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-strong-element
     Strong(strong::Strong),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/style
+    /// https://w3c.github.io/svgwg/svg2-draft/styling.html#elementdef-style
     Style(style::Style),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/sub
+    /// https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-sub-element
     Sub(sub::Sub),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/summary
+    /// https://html.spec.whatwg.org/multipage/interactive-elements.html#the-summary-element
     Summary(summary::Summary),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/sup
+    /// https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-sup-element
     Sup(sup::Sup),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/table
+    /// https://w3c.github.io/svgwg/svg2-draft/struct.html#elementdef-svg
+    Svg(svg::Svg),
+    /// https://w3c.github.io/svgwg/svg2-draft/struct.html#elementdef-switch
+    Switch(r#switch::Switch),
+    /// https://w3c.github.io/svgwg/svg2-draft/struct.html#elementdef-symbol
+    Symbol(symbol::Symbol),
+    /// https://html.spec.whatwg.org/multipage/tables.html#the-table-element
     Table(table::Table),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/tbody
+    /// https://html.spec.whatwg.org/multipage/tables.html#the-tbody-element
     Tbody(tbody::Tbody),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/td
+    /// https://html.spec.whatwg.org/multipage/tables.html#the-td-element
     Td(td::Td),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/template
+    /// https://html.spec.whatwg.org/multipage/scripting.html#the-template-element
     Template(template::Template),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/textarea
+    /// https://w3c.github.io/svgwg/svg2-draft/text.html#elementdef-text
+    Text(text::Text),
+    /// https://w3c.github.io/svgwg/svg2-draft/text.html#elementdef-textPath
+    TextPath(textPath::TextPath),
+    /// https://html.spec.whatwg.org/multipage/form-elements.html#the-textarea-element
     Textarea(textarea::Textarea),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/tfoot
+    /// https://html.spec.whatwg.org/multipage/tables.html#the-tfoot-element
     Tfoot(tfoot::Tfoot),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/th
+    /// https://html.spec.whatwg.org/multipage/tables.html#the-th-element
     Th(th::Th),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/thead
+    /// https://html.spec.whatwg.org/multipage/tables.html#the-thead-element
     Thead(thead::Thead),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/time
+    /// https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-time-element
     Time(time::Time),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/title
+    /// https://w3c.github.io/svgwg/svg2-draft/struct.html#elementdef-title
     Title(title::Title),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/tr
+    /// https://html.spec.whatwg.org/multipage/tables.html#the-tr-element
     Tr(tr::Tr),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/track
+    /// https://html.spec.whatwg.org/multipage/media.html#the-track-element
     Track(track::Track),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/tt
-    Tt(tt::Tt),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/u
+    /// https://w3c.github.io/svgwg/svg2-draft/text.html#elementdef-tspan
+    Tspan(tspan::Tspan),
+    /// https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-u-element
     U(u::U),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/ul
+    /// https://html.spec.whatwg.org/multipage/grouping-content.html#the-ul-element
     Ul(ul::Ul),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/var
+    /// https://w3c.github.io/svgwg/svg2-draft/struct.html#elementdef-use
+    Use(r#use::Use),
+    /// https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-var-element
     Var(var::Var),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/video
+    /// https://html.spec.whatwg.org/multipage/media.html#video
     Video(video::Video),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/wbr
+    /// https://w3c.github.io/svgwg/svg2-draft/linking.html#elementdef-view
+    View(view::View),
+    /// https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-wbr-element
     Wbr(wbr::Wbr),
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/xmp
-    Xmp(xmp::Xmp),
 }
 impl Element {
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/accesskey
     pub fn accesskey(mut self, value: impl Into<String>) -> Self {
         self.global_attributes.accesskey = Some(value.into());
         self
     }
 
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/anchor
-    pub fn anchor(mut self, value: impl Into<String>) -> Self {
-        self.global_attributes.anchor = Some(value.into());
-        self
-    }
-
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/autocapitalize
     pub fn autocapitalize(mut self, value: impl Into<String>) -> Self {
         self.global_attributes.autocapitalize = Some(value.into());
         self
     }
 
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/autocorrect
-    pub fn autocorrect(mut self, value: impl Into<String>) -> Self {
-        self.global_attributes.autocorrect = Some(value.into());
-        self
-    }
-
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/autofocus
     pub fn autofocus(mut self, value: impl Into<String>) -> Self {
         self.global_attributes.autofocus = Some(value.into());
         self
     }
 
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/class
     pub fn class(mut self, value: impl Into<String>) -> Self {
         self.global_attributes.class = Some(value.into());
         self
     }
 
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/contenteditable
     pub fn contenteditable(mut self, value: impl Into<String>) -> Self {
         self.global_attributes.contenteditable = Some(value.into());
         self
     }
 
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/data-*
-    pub fn data_attributes(mut self, value: impl Into<String>) -> Self {
-        self.global_attributes.data_attributes = Some(value.into());
-        self
-    }
-
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/dir
     pub fn dir(mut self, value: impl Into<String>) -> Self {
         self.global_attributes.dir = Some(value.into());
         self
     }
 
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/draggable
     pub fn draggable(mut self, value: impl Into<String>) -> Self {
         self.global_attributes.draggable = Some(value.into());
         self
     }
 
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/enterkeyhint
     pub fn enterkeyhint(mut self, value: impl Into<String>) -> Self {
         self.global_attributes.enterkeyhint = Some(value.into());
         self
     }
 
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/exportparts
-    pub fn exportparts(mut self, value: impl Into<String>) -> Self {
-        self.global_attributes.exportparts = Some(value.into());
-        self
-    }
-
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/hidden
     pub fn hidden(mut self, value: impl Into<String>) -> Self {
         self.global_attributes.hidden = Some(value.into());
         self
     }
 
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/id
     pub fn id(mut self, value: impl Into<String>) -> Self {
         self.global_attributes.id = Some(value.into());
         self
     }
 
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/inert
     pub fn inert(mut self, value: impl Into<String>) -> Self {
         self.global_attributes.inert = Some(value.into());
         self
     }
 
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/inputmode
     pub fn inputmode(mut self, value: impl Into<String>) -> Self {
         self.global_attributes.inputmode = Some(value.into());
         self
     }
 
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/is
     pub fn is(mut self, value: impl Into<String>) -> Self {
         self.global_attributes.is = Some(value.into());
         self
     }
 
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/lang
     pub fn lang(mut self, value: impl Into<String>) -> Self {
         self.global_attributes.lang = Some(value.into());
         self
     }
 
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/nonce
     pub fn nonce(mut self, value: impl Into<String>) -> Self {
         self.global_attributes.nonce = Some(value.into());
         self
     }
 
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/part
     pub fn part(mut self, value: impl Into<String>) -> Self {
         self.global_attributes.part = Some(value.into());
         self
     }
 
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/popover
     pub fn popover(mut self, value: impl Into<String>) -> Self {
         self.global_attributes.popover = Some(value.into());
         self
     }
 
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/slot
     pub fn slot(mut self, value: impl Into<String>) -> Self {
         self.global_attributes.slot = Some(value.into());
         self
     }
 
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/spellcheck
     pub fn spellcheck(mut self, value: impl Into<String>) -> Self {
         self.global_attributes.spellcheck = Some(value.into());
         self
     }
 
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/style
     pub fn style(mut self, value: impl Into<String>) -> Self {
         self.global_attributes.style = Some(value.into());
         self
     }
 
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/tabindex
     pub fn tabindex(mut self, value: impl Into<String>) -> Self {
         self.global_attributes.tabindex = Some(value.into());
         self
     }
 
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/title
     pub fn title(mut self, value: impl Into<String>) -> Self {
         self.global_attributes.title = Some(value.into());
         self
     }
 
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/translate
     pub fn translate(mut self, value: impl Into<String>) -> Self {
         self.global_attributes.translate = Some(value.into());
-        self
-    }
-
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/virtualkeyboardpolicy
-    pub fn virtualkeyboardpolicy(mut self, value: impl Into<String>) -> Self {
-        self.global_attributes.virtualkeyboardpolicy = Some(value.into());
-        self
-    }
-
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/writingsuggestions
-    pub fn writingsuggestions(mut self, value: impl Into<String>) -> Self {
-        self.global_attributes.writingsuggestions = Some(value.into());
         self
     }
 }

@@ -1,32 +1,14 @@
 // このファイルは narumincho-vdom-build によって自動生成されました。
+#![allow(non_snake_case, dead_code)]
 
-/// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/ul
-pub struct Ul {
-    ///
-    pub compact: std::option::Option<String>,
-    ///
-    pub r#type: std::option::Option<String>,
-}
+/// https://html.spec.whatwg.org/multipage/grouping-content.html#the-ul-element
+pub struct Ul {}
 
 pub fn ul() -> Ul {
-    Ul {
-        compact: None,
-        r#type: None,
-    }
+    Ul {}
 }
+
 impl Ul {
-    ///
-    pub fn compact(mut self, value: impl Into<String>) -> Self {
-        self.compact = Some(value.into());
-        self
-    }
-
-    ///
-    pub fn r#type(mut self, value: impl Into<String>) -> Self {
-        self.r#type = Some(value.into());
-        self
-    }
-
     pub fn to_element(self, children: Vec<super::Node>) -> super::Element {
         super::Element {
             global_attributes: super::GlobalAttributes::default(),

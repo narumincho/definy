@@ -1,21 +1,14 @@
 // このファイルは narumincho-vdom-build によって自動生成されました。
+#![allow(non_snake_case, dead_code)]
 
-/// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/data
-pub struct Data {
-    ///
-    pub value: std::option::Option<String>,
-}
+/// https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-data-element
+pub struct Data {}
 
 pub fn data() -> Data {
-    Data { value: None }
+    Data {}
 }
-impl Data {
-    ///
-    pub fn value(mut self, value: impl Into<String>) -> Self {
-        self.value = Some(value.into());
-        self
-    }
 
+impl Data {
     pub fn to_element(self, children: Vec<super::Node>) -> super::Element {
         super::Element {
             global_attributes: super::GlobalAttributes::default(),

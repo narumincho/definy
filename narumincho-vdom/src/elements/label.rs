@@ -1,21 +1,14 @@
 // このファイルは narumincho-vdom-build によって自動生成されました。
+#![allow(non_snake_case, dead_code)]
 
-/// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/label
-pub struct Label {
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Attributes/for
-    pub r#for: std::option::Option<String>,
-}
+/// https://html.spec.whatwg.org/multipage/forms.html#the-label-element
+pub struct Label {}
 
 pub fn label() -> Label {
-    Label { r#for: None }
+    Label {}
 }
-impl Label {
-    /// https://developer.mozilla.org/docs/Web/HTML/Reference/Attributes/for
-    pub fn r#for(mut self, value: impl Into<String>) -> Self {
-        self.r#for = Some(value.into());
-        self
-    }
 
+impl Label {
     pub fn to_element(self, children: Vec<super::Node>) -> super::Element {
         super::Element {
             global_attributes: super::GlobalAttributes::default(),
