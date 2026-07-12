@@ -97,7 +97,7 @@ fn main() -> anyhow::Result<()> {
     for entry in fs::read_dir(cache_dir)? {
         let entry = entry?;
         let path = entry.path();
-        if path.is_file() && path.extension().map_or(false, |ext| ext == "json") {
+        if path.is_file() && path.extension().is_some_and(|ext| ext == "json") {
             let file_name = path.file_name().unwrap().to_str().unwrap().to_string();
             let content = fs::read(&path)?;
             let spec_data: WebrefSpecData = serde_json::from_slice(&content)?;
