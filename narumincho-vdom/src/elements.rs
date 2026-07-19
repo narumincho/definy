@@ -248,7 +248,7 @@ pub struct GlobalAttributes {
 }
 
 pub enum ElementContent {
-    /// https://w3c.github.io/svgwg/svg2-draft/linking.html#elementdef-a
+    /// https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-a-element
     A(a::A),
     /// https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-abbr-element
     Abbr(abbr::Abbr),
@@ -292,7 +292,7 @@ pub enum ElementContent {
     Canvas(canvas::Canvas),
     /// https://html.spec.whatwg.org/multipage/tables.html#the-caption-element
     Caption(caption::Caption),
-    /// https://w3c.github.io/svgwg/svg2-draft/shapes.html#elementdef-circle
+    /// https://www.w3.org/TR/SVG11/shapes.html#CircleElement
     Circle(circle::Circle),
     /// https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-cite-element
     Cite(cite::Cite),
@@ -310,11 +310,11 @@ pub enum ElementContent {
     Datalist(datalist::Datalist),
     /// https://html.spec.whatwg.org/multipage/grouping-content.html#the-dd-element
     Dd(dd::Dd),
-    /// https://w3c.github.io/svgwg/svg2-draft/struct.html#elementdef-defs
+    /// https://www.w3.org/TR/SVG11/struct.html#DefsElement
     Defs(defs::Defs),
     /// https://html.spec.whatwg.org/multipage/edits.html#the-del-element
     Del(del::Del),
-    /// https://w3c.github.io/svgwg/svg2-draft/struct.html#elementdef-desc
+    /// https://www.w3.org/TR/SVG11/struct.html#DescElement
     Desc(desc::Desc),
     /// https://html.spec.whatwg.org/multipage/interactive-elements.html#the-details-element
     Details(details::Details),
@@ -328,7 +328,7 @@ pub enum ElementContent {
     Dl(dl::Dl),
     /// https://html.spec.whatwg.org/multipage/grouping-content.html#the-dt-element
     Dt(dt::Dt),
-    /// https://w3c.github.io/svgwg/svg2-draft/shapes.html#elementdef-ellipse
+    /// https://www.w3.org/TR/SVG11/shapes.html#EllipseElement
     Ellipse(ellipse::Ellipse),
     /// https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-em-element
     Em(em::Em),
@@ -396,11 +396,11 @@ pub enum ElementContent {
     Filter(filter::Filter),
     /// https://html.spec.whatwg.org/multipage/sections.html#the-footer-element
     Footer(footer::Footer),
-    /// https://w3c.github.io/svgwg/svg2-draft/embedded.html#elementdef-foreignObject
+    /// https://www.w3.org/TR/SVG11/extend.html#ForeignObjectElement
     ForeignObject(foreignObject::ForeignObject),
     /// https://html.spec.whatwg.org/multipage/forms.html#the-form-element
     Form(form::Form),
-    /// https://w3c.github.io/svgwg/svg2-draft/struct.html#elementdef-g
+    /// https://www.w3.org/TR/SVG11/struct.html#GElement
     G(g::G),
     /// https://wicg.github.io/PEPC/geolocation-element.html#elementdef-geolocation
     Geolocation(geolocation::Geolocation),
@@ -430,7 +430,7 @@ pub enum ElementContent {
     I(i::I),
     /// https://html.spec.whatwg.org/multipage/iframe-embed-object.html#the-iframe-element
     Iframe(iframe::Iframe),
-    /// https://w3c.github.io/svgwg/svg2-draft/embedded.html#elementdef-image
+    /// https://www.w3.org/TR/SVG11/struct.html#ImageElement
     Image(image::Image),
     /// https://html.spec.whatwg.org/multipage/embedded-content.html#the-img-element
     Img(img::Img),
@@ -446,9 +446,9 @@ pub enum ElementContent {
     Legend(legend::Legend),
     /// https://html.spec.whatwg.org/multipage/grouping-content.html#the-li-element
     Li(li::Li),
-    /// https://w3c.github.io/svgwg/svg2-draft/shapes.html#elementdef-line
+    /// https://www.w3.org/TR/SVG11/shapes.html#LineElement
     Line(line::Line),
-    /// https://w3c.github.io/svgwg/svg2-draft/pservers.html#elementdef-linearGradient
+    /// https://www.w3.org/TR/SVG11/pservers.html#LinearGradients
     LinearGradient(linearGradient::LinearGradient),
     /// https://html.spec.whatwg.org/multipage/semantics.html#the-link-element
     Link(link::Link),
@@ -460,7 +460,7 @@ pub enum ElementContent {
     Map(map::Map),
     /// https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-mark-element
     Mark(mark::Mark),
-    /// https://w3c.github.io/svgwg/svg2-draft/painting.html#elementdef-marker
+    /// https://www.w3.org/TR/SVG11/painting.html#MarkerElement
     Marker(marker::Marker),
     /// https://drafts.csswg.org/css-masking-1/#elementdef-mask
     Mask(mask::Mask),
@@ -472,7 +472,7 @@ pub enum ElementContent {
     Merror(merror::Merror),
     /// https://html.spec.whatwg.org/multipage/semantics.html#meta
     Meta(meta::Meta),
-    /// https://w3c.github.io/svgwg/svg2-draft/struct.html#elementdef-metadata
+    /// https://www.w3.org/TR/SVG11/metadata.html#MetadataElement
     Metadata(metadata::Metadata),
     /// https://html.spec.whatwg.org/multipage/form-elements.html#the-meter-element
     Meter(meter::Meter),
@@ -544,15 +544,15 @@ pub enum ElementContent {
     Output(output::Output),
     /// https://html.spec.whatwg.org/multipage/grouping-content.html#the-p-element
     P(p::P),
-    /// https://w3c.github.io/svgwg/svg2-draft/paths.html#elementdef-path
+    /// https://svgwg.org/specs/paths/#elementdef-path
     Path(path::Path),
-    /// https://w3c.github.io/svgwg/svg2-draft/pservers.html#elementdef-pattern
+    /// https://www.w3.org/TR/SVG11/pservers.html#Patterns
     Pattern(pattern::Pattern),
     /// https://html.spec.whatwg.org/multipage/embedded-content.html#the-picture-element
     Picture(picture::Picture),
-    /// https://w3c.github.io/svgwg/svg2-draft/shapes.html#elementdef-polygon
+    /// https://www.w3.org/TR/SVG11/shapes.html#PolygonElement
     Polygon(polygon::Polygon),
-    /// https://w3c.github.io/svgwg/svg2-draft/shapes.html#elementdef-polyline
+    /// https://www.w3.org/TR/SVG11/shapes.html#PolylineElement
     Polyline(polyline::Polyline),
     /// https://wicg.github.io/portals/#elementdef-portal
     Portal(portal::Portal),
@@ -562,11 +562,11 @@ pub enum ElementContent {
     Progress(progress::Progress),
     /// https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-q-element
     Q(q::Q),
-    /// https://w3c.github.io/svgwg/svg2-draft/pservers.html#elementdef-radialGradient
+    /// https://www.w3.org/TR/SVG11/pservers.html#RadialGradients
     RadialGradient(radialGradient::RadialGradient),
     /// https://w3c.github.io/html-ruby/#elementdef-rb
     Rb(rb::Rb),
-    /// https://w3c.github.io/svgwg/svg2-draft/shapes.html#elementdef-rect
+    /// https://www.w3.org/TR/SVG11/shapes.html#RectElement
     Rect(rect::Rect),
     /// https://w3c.github.io/html-ruby/#elementdef-rp
     Rp(rp::Rp),
@@ -580,7 +580,7 @@ pub enum ElementContent {
     S(s::S),
     /// https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-samp-element
     Samp(samp::Samp),
-    /// https://w3c.github.io/svgwg/svg2-draft/interact.html#elementdef-script
+    /// https://html.spec.whatwg.org/multipage/scripting.html#script
     Script(script::Script),
     /// https://html.spec.whatwg.org/multipage/grouping-content.html#the-search-element
     Search(search::Search),
@@ -602,11 +602,11 @@ pub enum ElementContent {
     Source(source::Source),
     /// https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-span-element
     Span(span::Span),
-    /// https://w3c.github.io/svgwg/svg2-draft/pservers.html#elementdef-stop
+    /// https://www.w3.org/TR/SVG11/pservers.html#GradientStops
     Stop(stop::Stop),
     /// https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-strong-element
     Strong(strong::Strong),
-    /// https://w3c.github.io/svgwg/svg2-draft/styling.html#elementdef-style
+    /// https://html.spec.whatwg.org/multipage/semantics.html#the-style-element
     Style(style::Style),
     /// https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-sub-element
     Sub(sub::Sub),
@@ -614,11 +614,11 @@ pub enum ElementContent {
     Summary(summary::Summary),
     /// https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-sup-element
     Sup(sup::Sup),
-    /// https://w3c.github.io/svgwg/svg2-draft/struct.html#elementdef-svg
+    /// https://www.w3.org/TR/SVG11/struct.html#SVGElement
     Svg(svg::Svg),
-    /// https://w3c.github.io/svgwg/svg2-draft/struct.html#elementdef-switch
+    /// https://www.w3.org/TR/SVG11/struct.html#SwitchElement
     Switch(r#switch::Switch),
-    /// https://w3c.github.io/svgwg/svg2-draft/struct.html#elementdef-symbol
+    /// https://www.w3.org/TR/SVG11/struct.html#SymbolElement
     Symbol(symbol::Symbol),
     /// https://html.spec.whatwg.org/multipage/tables.html#the-table-element
     Table(table::Table),
@@ -628,9 +628,9 @@ pub enum ElementContent {
     Td(td::Td),
     /// https://html.spec.whatwg.org/multipage/scripting.html#the-template-element
     Template(template::Template),
-    /// https://w3c.github.io/svgwg/svg2-draft/text.html#elementdef-text
+    /// https://www.w3.org/TR/SVG11/text.html#TextElement
     Text(text::Text),
-    /// https://w3c.github.io/svgwg/svg2-draft/text.html#elementdef-textPath
+    /// https://www.w3.org/TR/SVG11/text.html#TextPathElement
     TextPath(textPath::TextPath),
     /// https://html.spec.whatwg.org/multipage/form-elements.html#the-textarea-element
     Textarea(textarea::Textarea),
@@ -642,25 +642,25 @@ pub enum ElementContent {
     Thead(thead::Thead),
     /// https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-time-element
     Time(time::Time),
-    /// https://w3c.github.io/svgwg/svg2-draft/struct.html#elementdef-title
+    /// https://html.spec.whatwg.org/multipage/semantics.html#the-title-element
     Title(title::Title),
     /// https://html.spec.whatwg.org/multipage/tables.html#the-tr-element
     Tr(tr::Tr),
     /// https://html.spec.whatwg.org/multipage/media.html#the-track-element
     Track(track::Track),
-    /// https://w3c.github.io/svgwg/svg2-draft/text.html#elementdef-tspan
+    /// https://www.w3.org/TR/SVG11/text.html#TSpanElement
     Tspan(tspan::Tspan),
     /// https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-u-element
     U(u::U),
     /// https://html.spec.whatwg.org/multipage/grouping-content.html#the-ul-element
     Ul(ul::Ul),
-    /// https://w3c.github.io/svgwg/svg2-draft/struct.html#elementdef-use
+    /// https://www.w3.org/TR/SVG11/struct.html#UseElement
     Use(r#use::Use),
     /// https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-var-element
     Var(var::Var),
     /// https://html.spec.whatwg.org/multipage/media.html#video
     Video(video::Video),
-    /// https://w3c.github.io/svgwg/svg2-draft/linking.html#elementdef-view
+    /// https://www.w3.org/TR/SVG11/linking.html#ViewElement
     View(view::View),
     /// https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-wbr-element
     Wbr(wbr::Wbr),
@@ -780,4 +780,5 @@ impl Element {
         self.global_attributes.translate = Some(value.into());
         self
     }
+
 }

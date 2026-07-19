@@ -3,15 +3,7 @@ use std::fs::{self, File};
 use std::io::Write;
 use std::path::Path;
 
-#[derive(serde::Deserialize)]
-struct UnpkgMeta {
-    files: Vec<UnpkgFile>,
-}
-
-#[derive(serde::Deserialize)]
-struct UnpkgFile {
-    path: String,
-}
+mod download;
 
 #[derive(serde::Deserialize)]
 struct WebrefSpecData {
@@ -71,30 +63,16 @@ const GLOBAL_ATTRIBUTES: &[&str] = &[
 
 const OVERLAPPING_TAGS: &[&str] = &["a", "script", "style", "title"];
 
-fn main() -> anyhow::Result<()> {
-    let cache_dir = Path::new("./narumincho-vdom-build/webref-elements");
-    if !cache_dir.exists() {
-        fs::create_dir_all(cache_dir)?;
-
-        let meta_url = "https://unpkg.com/@webref/elements/?meta";
-        let meta_response = reqwest::blocking::get(meta_url)?.json::<UnpkgMeta>()?;
-
-        for file in meta_response.files {
-            if file.path.ends_with(".json") && file.path != "/package.json" {
-                let file_name = file.path.trim_start_matches('/');
-                let file_url = format!("https://unpkg.com/@webref/elements{}", file.path);
-                let content = reqwest::blocking::get(&file_url)?.bytes()?;
-                fs::write(cache_dir.join(file_name), &content)?;
-            }
-        }
-    }
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
+    download::download().await?;
 
     // Read cached files
     let mut elements_map: BTreeMap<String, ElementInfo> = BTreeMap::new();
     let mut svg_elements = BTreeSet::new();
     let mut mathml_elements = BTreeSet::new();
 
-    for entry in fs::read_dir(cache_dir)? {
+    for entry in fs::read_dir(download::CACHE_DIR)? {
         let entry = entry?;
         let path = entry.path();
         if path.is_file() && path.extension().is_some_and(|ext| ext == "json") {
@@ -180,7 +158,7 @@ fn output_elements_rs(elements_map: &BTreeMap<String, ElementInfo>) -> anyhow::R
     Element(Element),
     Text(String),
 }}
-    
+
 pub struct Element {{
     pub global_attributes: GlobalAttributes,
     pub element_content: ElementContent,

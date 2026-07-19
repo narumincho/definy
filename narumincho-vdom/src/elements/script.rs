@@ -1,7 +1,7 @@
 // このファイルは narumincho-vdom-build によって自動生成されました。
 #![allow(non_snake_case, dead_code)]
 
-/// https://w3c.github.io/svgwg/svg2-draft/interact.html#elementdef-script
+/// https://html.spec.whatwg.org/multipage/scripting.html#script
 pub struct Script {}
 
 pub fn script() -> Script {

@@ -1,7 +1,7 @@
 // このファイルは narumincho-vdom-build によって自動生成されました。
 #![allow(non_snake_case, dead_code)]
 
-/// https://w3c.github.io/svgwg/svg2-draft/linking.html#elementdef-view
+/// https://www.w3.org/TR/SVG11/linking.html#ViewElement
 pub struct View {}
 
 pub fn view() -> View {

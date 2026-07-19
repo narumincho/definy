@@ -1,7 +1,7 @@
 // このファイルは narumincho-vdom-build によって自動生成されました。
 #![allow(non_snake_case, dead_code)]
 
-/// https://w3c.github.io/svgwg/svg2-draft/styling.html#elementdef-style
+/// https://html.spec.whatwg.org/multipage/semantics.html#the-style-element
 pub struct Style {}
 
 pub fn style() -> Style {

@@ -1,7 +1,7 @@
 // このファイルは narumincho-vdom-build によって自動生成されました。
 #![allow(non_snake_case, dead_code)]
 
-/// https://w3c.github.io/svgwg/svg2-draft/embedded.html#elementdef-foreignObject
+/// https://www.w3.org/TR/SVG11/extend.html#ForeignObjectElement
 pub struct ForeignObject {}
 
 pub fn foreignObject() -> ForeignObject {

@@ -1,7 +1,7 @@
 // このファイルは narumincho-vdom-build によって自動生成されました。
 #![allow(non_snake_case, dead_code)]
 
-/// https://w3c.github.io/svgwg/svg2-draft/painting.html#elementdef-marker
+/// https://www.w3.org/TR/SVG11/painting.html#MarkerElement
 pub struct Marker {}
 
 pub fn marker() -> Marker {

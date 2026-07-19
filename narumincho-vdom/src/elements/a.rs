@@ -1,7 +1,7 @@
 // このファイルは narumincho-vdom-build によって自動生成されました。
 #![allow(non_snake_case, dead_code)]
 
-/// https://w3c.github.io/svgwg/svg2-draft/linking.html#elementdef-a
+/// https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-a-element
 pub struct A {}
 
 pub fn a() -> A {

@@ -1,7 +1,7 @@
 // このファイルは narumincho-vdom-build によって自動生成されました。
 #![allow(non_snake_case, dead_code)]
 
-/// https://w3c.github.io/svgwg/svg2-draft/text.html#elementdef-tspan
+/// https://www.w3.org/TR/SVG11/text.html#TSpanElement
 pub struct Tspan {}
 
 pub fn tspan() -> Tspan {

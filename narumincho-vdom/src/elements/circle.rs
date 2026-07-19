@@ -1,7 +1,7 @@
 // このファイルは narumincho-vdom-build によって自動生成されました。
 #![allow(non_snake_case, dead_code)]
 
-/// https://w3c.github.io/svgwg/svg2-draft/shapes.html#elementdef-circle
+/// https://www.w3.org/TR/SVG11/shapes.html#CircleElement
 pub struct Circle {}
 
 pub fn circle() -> Circle {

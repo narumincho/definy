@@ -1,7 +1,7 @@
 // このファイルは narumincho-vdom-build によって自動生成されました。
 #![allow(non_snake_case, dead_code)]
 
-/// https://w3c.github.io/svgwg/svg2-draft/paths.html#elementdef-path
+/// https://svgwg.org/specs/paths/#elementdef-path
 pub struct Path {}
 
 pub fn path() -> Path {

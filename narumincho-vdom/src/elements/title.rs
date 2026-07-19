@@ -1,7 +1,7 @@
 // このファイルは narumincho-vdom-build によって自動生成されました。
 #![allow(non_snake_case, dead_code)]
 
-/// https://w3c.github.io/svgwg/svg2-draft/struct.html#elementdef-title
+/// https://html.spec.whatwg.org/multipage/semantics.html#the-title-element
 pub struct Title {}
 
 pub fn title() -> Title {
