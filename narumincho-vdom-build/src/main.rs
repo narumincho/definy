@@ -3,7 +3,7 @@ use std::fs::{self, File};
 use std::io::Write;
 use std::path::Path;
 
-mod download;
+mod fetch;
 
 #[derive(serde::Deserialize)]
 struct WebrefSpecData {
@@ -65,14 +65,14 @@ const OVERLAPPING_TAGS: &[&str] = &["a", "script", "style", "title"];
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    download::download().await?;
+    fetch::download().await?;
 
     // Read cached files
     let mut elements_map: BTreeMap<String, ElementInfo> = BTreeMap::new();
     let mut svg_elements = BTreeSet::new();
     let mut mathml_elements = BTreeSet::new();
 
-    for entry in fs::read_dir(download::CACHE_DIR)? {
+    for entry in fs::read_dir(fetch::CACHE_DIR)? {
         let entry = entry?;
         let path = entry.path();
         if path.is_file() && path.extension().is_some_and(|ext| ext == "json") {

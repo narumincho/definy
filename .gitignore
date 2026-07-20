@@ -4,4 +4,4 @@
 /web-distribution/
 .codex/
 /narumincho-vdom-build/data.json
-/narumincho-vdom-build/webref-elements/
+/narumincho-vdom-build/cache/
