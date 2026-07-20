@@ -22,7 +22,7 @@ pub async fn download() -> anyhow::Result<()> {
         download_package_files(
             "@webref/idl",
             "3.82.0",
-            ".widl",
+            ".idl",
             std::path::Path::new("./narumincho-vdom-build/cache/webref-idl")
         ),
     )?;
@@ -66,10 +66,6 @@ async fn download_package_files(
     .try_for_each(|_| async { Ok(()) })
     .await?;
 
-    Ok(())
-}
-
-async fn download_web_idl() -> anyhow::Result<()> {
     Ok(())
 }
 
