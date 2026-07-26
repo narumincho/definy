@@ -74,18 +74,12 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_to_string_with_style() {
-        let node: Node<()> = Div::new()
-            .style(
-                Style::new()
-                    .set("color", "red")
-                    .set("background-color", "blue"),
-            )
-            .into_node();
-        let html = to_string(&node);
-        assert!(html.starts_with("<div style=\""));
-        assert!(html.contains("color:red;"));
-        assert!(html.contains("background-color:blue;"));
-        assert!(html.ends_with("\"></div>"));
+    fn test_generated_element_attributes_and_enums() {
+        use elements::button::{ButtonType, button};
+
+        let btn = button().type_(ButtonType::Submit).disabled(true);
+        assert_eq!(btn.r#type, Some(ButtonType::Submit));
+        assert_eq!(btn.r#type.unwrap().as_str(), "submit");
+        assert_eq!(btn.disabled, Some(true));
     }
 }

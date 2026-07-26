@@ -32,7 +32,6 @@ fn is_svg_element_only(name: &str) -> bool {
         "feDiffuseLighting" => true,
         "feDisplacementMap" => true,
         "feDistantLight" => true,
-        "feDropShadow" => true,
         "feFlood" => true,
         "feFuncA" => true,
         "feFuncB" => true,

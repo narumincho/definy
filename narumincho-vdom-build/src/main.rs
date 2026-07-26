@@ -8,17 +8,20 @@ mod idl;
 
 #[derive(serde::Deserialize)]
 struct WebrefSpecData {
+    #[serde(default)]
     spec: SpecInfo,
     elements: Vec<WebrefElement>,
 }
 
-#[derive(serde::Deserialize)]
+#[derive(serde::Deserialize, Default)]
 struct SpecInfo {
+    #[serde(default)]
     title: String,
+    #[serde(default)]
     url: String,
 }
 
-#[derive(serde::Deserialize)]
+#[derive(serde::Deserialize, Clone)]
 struct WebrefElement {
     name: String,
     #[serde(default)]
@@ -78,57 +81,68 @@ async fn main() -> anyhow::Result<()> {
         db.enums.len()
     );
 
-    // HTML elements の読み込みと属性・enum の解決
-    let html_elements_path = Path::new("./narumincho-vdom-build/cache/webref-elements/html.json");
-    if html_elements_path.exists() {
-        let content = std::fs::read_to_string(html_elements_path)?;
-        let spec_data: WebrefSpecData = serde_json::from_str(&content)?;
+    let mut elements_map: BTreeMap<String, ElementInfo> = BTreeMap::new();
+    let mut svg_elements: BTreeSet<String> = BTreeSet::new();
+    let mut mathml_elements: BTreeSet<String> = BTreeSet::new();
 
-        println!("\n=== Sample HTML Element Attributes & Enums ===");
-        let sample_elements = ["button", "a", "input", "select", "canvas", "textarea"];
-        for elem_name in sample_elements {
-            if let Some(elem) = spec_data.elements.iter().find(|e| e.name == elem_name) {
-                let attrs = db.resolve_interface_attributes(&elem.interface);
-                println!(
-                    "\nElement <{}> (Interface: {}) attributes (total: {}):",
-                    elem_name,
-                    elem.interface,
-                    attrs.len()
-                );
-                for attr in attrs {
-                    if let Some(enum_vals) = &attr.enum_values {
-                        println!(
-                            "  [ENUM MATCHED!] attribute {} : {} => {:?}",
-                            attr.name, attr.type_name, enum_vals
-                        );
-                    } else {
-                        println!("  - attribute {} : {}", attr.name, attr.type_name);
+    let elements_dir = Path::new("./narumincho-vdom-build/cache/webref-elements");
+    if elements_dir.exists() {
+        for entry in fs::read_dir(elements_dir)? {
+            let entry = entry?;
+            let path = entry.path();
+            if path.is_file() && path.extension().and_then(|s| s.to_str()) == Some("json") {
+                let file_name = path.file_name().unwrap().to_str().unwrap();
+                if file_name == "package.json" {
+                    continue;
+                }
+                let content = fs::read_to_string(&path)?;
+                if let Ok(spec_data) = serde_json::from_str::<WebrefSpecData>(&content) {
+                    let is_svg = file_name.contains("svg") || file_name.contains("SVG");
+                    let is_mathml = file_name.contains("mathml");
+
+                    for elem in spec_data.elements {
+                        if elem.obsolete.unwrap_or(false) || elem.interface.is_empty() {
+                            continue;
+                        }
+
+                        if is_svg {
+                            svg_elements.insert(elem.name.clone());
+                        }
+                        if is_mathml {
+                            mathml_elements.insert(elem.name.clone());
+                        }
+
+                        let entry =
+                            elements_map
+                                .entry(elem.name.clone())
+                                .or_insert_with(|| ElementInfo {
+                                    name: elem.name.clone(),
+                                    interface: elem.interface.clone(),
+                                    href: elem.href.clone(),
+                                    specs: BTreeSet::new(),
+                                });
+                        entry.specs.insert(file_name.to_string());
                     }
                 }
             }
         }
-
-        // 全要素の Enum 属性サマリを表示
-        println!("\n=== Elements with Enum Attributes Summary ===");
-        for elem in &spec_data.elements {
-            let attrs = db.resolve_interface_attributes(&elem.interface);
-            let enum_attrs: Vec<_> = attrs
-                .into_iter()
-                .filter(|a| a.enum_values.is_some())
-                .collect();
-            if !enum_attrs.is_empty() {
-                println!("<{}> ({}):", elem.name, elem.interface);
-                for a in enum_attrs {
-                    println!(
-                        "  * {} ({}): {:?}",
-                        a.name,
-                        a.type_name,
-                        a.enum_values.unwrap()
-                    );
-                }
-            }
-        }
     }
+
+    println!("Generating code for {} elements...", elements_map.len());
+
+    let output_dir = Path::new("./narumincho-vdom/src/elements");
+    if !output_dir.exists() {
+        fs::create_dir_all(output_dir)?;
+    }
+
+    for (name, info) in &elements_map {
+        output_element_file(name, info, &db)?;
+    }
+
+    output_elements_rs(&elements_map)?;
+    output_element_creation_rs(&svg_elements, &mathml_elements)?;
+
+    println!("Code generation successfully completed!");
 
     Ok(())
 }
@@ -213,13 +227,17 @@ pub struct GlobalAttributes {{"
     Ok(())
 }
 
-fn output_element_file(name: &str, info: &ElementInfo) -> anyhow::Result<()> {
-    let escaped_name = escape_identifier(name);
-    let file_name = escaped_name.trim_start_matches("r#");
+fn output_element_file(
+    name: &str,
+    info: &ElementInfo,
+    db: &idl::IdlDatabase,
+) -> anyhow::Result<()> {
+    let escaped_module_name = escape_identifier(name);
+    let file_name = escaped_module_name.trim_start_matches("r#");
     let path = format!("./narumincho-vdom/src/elements/{}.rs", file_name);
     let mut file = File::create(path)?;
 
-    let capitalized_name = capitalize(name);
+    let capitalized_element_name = capitalize(name);
 
     writeln!(
         file,
@@ -227,24 +245,131 @@ fn output_element_file(name: &str, info: &ElementInfo) -> anyhow::Result<()> {
     )?;
     writeln!(file, "#![allow(non_snake_case, dead_code)]")?;
     writeln!(file)?;
+
+    let resolved_attributes = db.resolve_interface_attributes(&info.interface);
+
+    // グローバル属性やイベントハンドラ (on*) を除外した要素固有属性
+    let mut element_attributes = Vec::new();
+    for attr in resolved_attributes {
+        let is_global = GLOBAL_ATTRIBUTES.contains(&attr.name.to_lowercase().as_str());
+        let is_event = attr.name.starts_with("on");
+        if !is_global && !is_event {
+            element_attributes.push(attr);
+        }
+    }
+
+    // Enum 型の生成情報
+    struct GeneratedEnum {
+        enum_type_name: String,
+        variants: Vec<(String, String)>, // (variant_name, raw_value)
+    }
+
+    let mut generated_enums = Vec::new();
+
+    for attr in &element_attributes {
+        if let Some(enum_vals) = &attr.enum_values {
+            let enum_type_name = format!("{}{}", capitalized_element_name, capitalize(&attr.name));
+            let mut variants = Vec::new();
+
+            for val in enum_vals {
+                let variant_name = escape_variant_name(val);
+                if !variant_name.is_empty() {
+                    variants.push((variant_name, val.clone()));
+                }
+            }
+
+            if !variants.is_empty() {
+                generated_enums.push(GeneratedEnum {
+                    enum_type_name,
+                    variants,
+                });
+            }
+        }
+    }
+
+    // 生成した Enum 定義をファイルに書き出し
+    for gen_enum in &generated_enums {
+        writeln!(
+            file,
+            "#[derive(Debug, Clone, Copy, PartialEq, Eq)]\npub enum {} {{",
+            gen_enum.enum_type_name
+        )?;
+        for (variant_name, _) in &gen_enum.variants {
+            writeln!(file, "    {},", variant_name)?;
+        }
+        writeln!(file, "}}\n")?;
+
+        writeln!(file, "impl {} {{", gen_enum.enum_type_name)?;
+        writeln!(file, "    pub fn as_str(&self) -> &'static str {{")?;
+        writeln!(file, "        match self {{")?;
+        for (variant_name, raw_val) in &gen_enum.variants {
+            writeln!(
+                file,
+                "            Self::{} => \"{}\",",
+                variant_name, raw_val
+            )?;
+        }
+        writeln!(file, "        }}")?;
+        writeln!(file, "    }}")?;
+        writeln!(file, "}}\n")?;
+    }
+
+    // 構造体定義
+    writeln!(file, "/// {}", info.href)?;
+    writeln!(file, "#[derive(Default, Debug, Clone, PartialEq, Eq)]")?;
+    writeln!(file, "pub struct {} {{", capitalized_element_name)?;
+    for attr in &element_attributes {
+        let field_name = escape_attribute_field_name(&attr.name);
+        if attr.enum_values.is_some() {
+            let enum_type_name = format!("{}{}", capitalized_element_name, capitalize(&attr.name));
+            writeln!(
+                file,
+                "    pub {}: std::option::Option<{}>,",
+                field_name, enum_type_name
+            )?;
+        } else if attr.type_name == "boolean" {
+            writeln!(file, "    pub {}: std::option::Option<bool>,", field_name)?;
+        } else {
+            writeln!(file, "    pub {}: std::option::Option<String>,", field_name)?;
+        }
+    }
+    writeln!(file, "}}\n")?;
+
+    // 要素生成関数
     writeln!(
         file,
-        "/// {}
-pub struct {} {{}}
-",
-        info.href, capitalized_name
+        "pub fn {}() -> {} {{\n    {}::default()\n}}\n",
+        escaped_module_name, capitalized_element_name, capitalized_element_name
     )?;
 
-    writeln!(
-        file,
-        "pub fn {}() -> {} {{
-    {} {{}}
-}}
-",
-        escaped_name, capitalized_name, capitalized_name
-    )?;
+    // メソッド実装
+    writeln!(file, "impl {} {{", capitalized_element_name)?;
+    for attr in &element_attributes {
+        let method_name = escape_method_name(&attr.name);
+        let field_name = escape_attribute_field_name(&attr.name);
 
-    writeln!(file, "impl {} {{", capitalized_name)?;
+        if attr.enum_values.is_some() {
+            let enum_type_name = format!("{}{}", capitalized_element_name, capitalize(&attr.name));
+            writeln!(
+                file,
+                "    pub fn {}(mut self, value: {}) -> Self {{\n        self.{} = Some(value);\n        self\n    }}\n",
+                method_name, enum_type_name, field_name
+            )?;
+        } else if attr.type_name == "boolean" {
+            writeln!(
+                file,
+                "    pub fn {}(mut self, value: bool) -> Self {{\n        self.{} = Some(value);\n        self\n    }}\n",
+                method_name, field_name
+            )?;
+        } else {
+            writeln!(
+                file,
+                "    pub fn {}(mut self, value: impl Into<String>) -> Self {{\n        self.{} = Some(value.into());\n        self\n    }}\n",
+                method_name, field_name
+            )?;
+        }
+    }
+
     writeln!(
         file,
         "    pub fn to_element(self, children: Vec<super::Node>) -> super::Element {{
@@ -255,7 +380,7 @@ pub struct {} {{}}
         }}
     }}
 }}",
-        capitalized_name
+        capitalized_element_name
     )?;
 
     Ok(())
@@ -356,16 +481,89 @@ mod tests {{
 
 fn escape_identifier(s: &str) -> String {
     match s {
-        "type" | "loop" | "for" | "as" | "async" | "use" | "switch" => format!("r#{s}"),
+        "type" | "loop" | "for" | "as" | "async" | "use" | "switch" | "in" | "match" | "fn"
+        | "struct" | "enum" | "trait" | "where" | "impl" | "ref" | "static" | "const"
+        | "unsafe" | "mod" | "pub" | "crate" | "super" | "self" | "default" => format!("r#{s}"),
         _ => s.replace('-', "_"),
     }
 }
 
+fn escape_method_name(s: &str) -> String {
+    let snake = to_snake_case(s);
+    match snake.as_str() {
+        "type" | "loop" | "for" | "as" | "async" | "use" | "switch" | "in" | "match" | "fn"
+        | "struct" | "enum" | "trait" | "where" | "impl" | "ref" | "static" | "const"
+        | "unsafe" | "mod" | "pub" | "crate" | "super" | "self" | "default" => format!("{snake}_"),
+        _ => snake,
+    }
+}
+
+fn escape_attribute_field_name(s: &str) -> String {
+    let snake = to_snake_case(s);
+    match snake.as_str() {
+        "type" | "loop" | "for" | "as" | "async" | "use" | "switch" | "in" | "match" | "fn"
+        | "struct" | "enum" | "trait" | "where" | "impl" | "ref" | "static" | "const"
+        | "unsafe" | "mod" | "pub" | "crate" | "super" | "self" | "default" => format!("r#{snake}"),
+        _ => snake,
+    }
+}
+
+fn escape_variant_name(s: &str) -> String {
+    let cap = capitalize(s);
+    match cap.as_str() {
+        "Self" | "Super" | "Crate" | "Type" | "Loop" | "For" | "As" | "Async" | "Use"
+        | "Switch" | "In" | "Match" | "Fn" | "Struct" | "Enum" | "Trait" | "Where" | "Impl"
+        | "Ref" | "Static" | "Const" | "Unsafe" | "Mod" | "Pub" | "Default" => format!("{cap}_"),
+        _ => cap,
+    }
+}
+
+fn to_snake_case(s: &str) -> String {
+    let mut result = String::new();
+    for (i, c) in s.chars().enumerate() {
+        if c == '-' || c == '.' {
+            result.push('_');
+        } else if c.is_uppercase() {
+            if i > 0 {
+                result.push('_');
+            }
+            for lc in c.to_lowercase() {
+                result.push(lc);
+            }
+        } else {
+            result.push(c);
+        }
+    }
+    result
+}
+
 fn capitalize(s: &str) -> String {
-    let replaced = s.replace('-', "_");
-    let mut chars = replaced.chars();
-    match chars.next() {
-        None => String::new(),
-        Some(f) => f.to_uppercase().collect::<String>() + chars.as_str(),
+    let mut result = String::new();
+    let parts: Vec<&str> = s
+        .split(|c| c == '-' || c == '_' || c == '.' || c == '/')
+        .collect();
+    for part in parts {
+        let mut chars = part.chars();
+        if let Some(first) = chars.next() {
+            result.push_val(first.to_ascii_uppercase());
+            for rest in chars {
+                result.push(rest);
+            }
+        }
+    }
+    if result.is_empty() {
+        s.to_string()
+    } else {
+        result
+    }
+}
+
+trait PushValExt {
+    fn push_val(&mut self, c: char);
+}
+
+impl PushValExt for String {
+    fn push_val(&mut self, c: char) {
+        self.push(c);
     }
 }
