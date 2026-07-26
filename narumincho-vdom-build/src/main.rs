@@ -4,6 +4,7 @@ use std::io::Write;
 use std::path::Path;
 
 mod fetch;
+mod idl;
 
 #[derive(serde::Deserialize)]
 struct WebrefSpecData {
@@ -66,6 +67,68 @@ const OVERLAPPING_TAGS: &[&str] = &["a", "script", "style", "title"];
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     fetch::download().await?;
+
+    println!("Parsing WebIDL files...");
+    let mut db = idl::IdlDatabase::default();
+    db.load_dir(Path::new("./narumincho-vdom-build/cache/webref-idl"))?;
+
+    println!(
+        "Parsed {} interfaces and {} enums.",
+        db.interfaces.len(),
+        db.enums.len()
+    );
+
+    // HTML elements の読み込みと属性・enum の解決
+    let html_elements_path = Path::new("./narumincho-vdom-build/cache/webref-elements/html.json");
+    if html_elements_path.exists() {
+        let content = std::fs::read_to_string(html_elements_path)?;
+        let spec_data: WebrefSpecData = serde_json::from_str(&content)?;
+
+        println!("\n=== Sample HTML Element Attributes & Enums ===");
+        let sample_elements = ["button", "a", "input", "select", "canvas", "textarea"];
+        for elem_name in sample_elements {
+            if let Some(elem) = spec_data.elements.iter().find(|e| e.name == elem_name) {
+                let attrs = db.resolve_interface_attributes(&elem.interface);
+                println!(
+                    "\nElement <{}> (Interface: {}) attributes (total: {}):",
+                    elem_name,
+                    elem.interface,
+                    attrs.len()
+                );
+                for attr in attrs {
+                    if let Some(enum_vals) = &attr.enum_values {
+                        println!(
+                            "  [ENUM MATCHED!] attribute {} : {} => {:?}",
+                            attr.name, attr.type_name, enum_vals
+                        );
+                    } else {
+                        println!("  - attribute {} : {}", attr.name, attr.type_name);
+                    }
+                }
+            }
+        }
+
+        // 全要素の Enum 属性サマリを表示
+        println!("\n=== Elements with Enum Attributes Summary ===");
+        for elem in &spec_data.elements {
+            let attrs = db.resolve_interface_attributes(&elem.interface);
+            let enum_attrs: Vec<_> = attrs
+                .into_iter()
+                .filter(|a| a.enum_values.is_some())
+                .collect();
+            if !enum_attrs.is_empty() {
+                println!("<{}> ({}):", elem.name, elem.interface);
+                for a in enum_attrs {
+                    println!(
+                        "  * {} ({}): {:?}",
+                        a.name,
+                        a.type_name,
+                        a.enum_values.unwrap()
+                    );
+                }
+            }
+        }
+    }
 
     Ok(())
 }

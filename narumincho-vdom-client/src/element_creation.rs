@@ -145,4 +145,3 @@ mod tests {
         assert!(!is_mathml_element_only("span"));
     }
 }
-
