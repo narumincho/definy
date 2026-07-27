@@ -1,7 +1,7 @@
 // このファイルは narumincho-vdom-build によって自動生成されました。
 #![allow(non_snake_case, dead_code)]
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ButtonCommand {
     ShowModal,
     Close,
@@ -9,17 +9,19 @@ pub enum ButtonCommand {
     ShowPopover,
     HidePopover,
     TogglePopover,
+    Custom(String),
 }
 
 impl ButtonCommand {
-    pub fn as_str(&self) -> &'static str {
+    pub fn as_str(&self) -> String {
         match self {
-            Self::ShowModal => "show-modal",
-            Self::Close => "close",
-            Self::RequestClose => "request-close",
-            Self::ShowPopover => "show-popover",
-            Self::HidePopover => "hide-popover",
-            Self::TogglePopover => "toggle-popover",
+            Self::ShowModal => "show-modal".to_string(),
+            Self::Close => "close".to_string(),
+            Self::RequestClose => "request-close".to_string(),
+            Self::ShowPopover => "show-popover".to_string(),
+            Self::HidePopover => "hide-popover".to_string(),
+            Self::TogglePopover => "toggle-popover".to_string(),
+            Self::Custom(value) => value.clone(),
         }
     }
 }

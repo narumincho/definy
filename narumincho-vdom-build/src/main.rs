@@ -273,7 +273,8 @@ fn output_element_file(
     let mut generated_enums = Vec::new();
 
     for attr in &html_attributes {
-        let enum_vals = get_attribute_enum_values(&info.interface, attr).or_else(|| attr.enum_values.clone());
+        let enum_vals =
+            get_attribute_enum_values(&info.interface, attr).or_else(|| attr.enum_values.clone());
         if let Some(enum_vals) = enum_vals {
             let enum_type_name = format!("{}{}", capitalized_element_name, capitalize(&attr.name));
             let mut variants = Vec::new();
@@ -286,6 +287,9 @@ fn output_element_file(
             }
 
             if !variants.is_empty() {
+                if supports_custom_values(&info.interface, attr) {
+                    variants.push(("Custom".to_string(), "".to_string()));
+                }
                 generated_enums.push(GeneratedEnum {
                     enum_type_name,
                     variants,
@@ -296,29 +300,67 @@ fn output_element_file(
 
     // 生成した Enum 定義をファイルに書き出し
     for gen_enum in &generated_enums {
-        writeln!(
-            file,
-            "#[derive(Debug, Clone, Copy, PartialEq, Eq)]\npub enum {} {{",
-            gen_enum.enum_type_name
-        )?;
-        for (variant_name, _) in &gen_enum.variants {
-            writeln!(file, "    {},", variant_name)?;
-        }
-        writeln!(file, "}}\n")?;
-
-        writeln!(file, "impl {} {{", gen_enum.enum_type_name)?;
-        writeln!(file, "    pub fn as_str(&self) -> &'static str {{")?;
-        writeln!(file, "        match self {{")?;
-        for (variant_name, raw_val) in &gen_enum.variants {
+        let supports_custom = gen_enum
+            .variants
+            .iter()
+            .any(|(variant_name, _)| variant_name == "Custom");
+        if supports_custom {
             writeln!(
                 file,
-                "            Self::{} => \"{}\",",
-                variant_name, raw_val
+                "#[derive(Debug, Clone, PartialEq, Eq)]\npub enum {} {{",
+                gen_enum.enum_type_name
             )?;
+            for (variant_name, raw_val) in &gen_enum.variants {
+                if variant_name == "Custom" {
+                    writeln!(file, "    {}(String),", variant_name)?;
+                } else {
+                    writeln!(file, "    {},", variant_name)?;
+                }
+            }
+            writeln!(file, "}}\n")?;
+
+            writeln!(file, "impl {} {{", gen_enum.enum_type_name)?;
+            writeln!(file, "    pub fn as_str(&self) -> String {{")?;
+            writeln!(file, "        match self {{")?;
+            for (variant_name, raw_val) in &gen_enum.variants {
+                if variant_name == "Custom" {
+                    writeln!(file, "            Self::Custom(value) => value.clone(),")?;
+                } else {
+                    writeln!(
+                        file,
+                        "            Self::{} => \"{}\".to_string(),",
+                        variant_name, raw_val
+                    )?;
+                }
+            }
+            writeln!(file, "        }}")?;
+            writeln!(file, "    }}")?;
+            writeln!(file, "}}\n")?;
+        } else {
+            writeln!(
+                file,
+                "#[derive(Debug, Clone, Copy, PartialEq, Eq)]\npub enum {} {{",
+                gen_enum.enum_type_name
+            )?;
+            for (variant_name, _) in &gen_enum.variants {
+                writeln!(file, "    {},", variant_name)?;
+            }
+            writeln!(file, "}}\n")?;
+
+            writeln!(file, "impl {} {{", gen_enum.enum_type_name)?;
+            writeln!(file, "    pub fn as_str(&self) -> &'static str {{")?;
+            writeln!(file, "        match self {{")?;
+            for (variant_name, raw_val) in &gen_enum.variants {
+                writeln!(
+                    file,
+                    "            Self::{} => \"{}\",",
+                    variant_name, raw_val
+                )?;
+            }
+            writeln!(file, "        }}")?;
+            writeln!(file, "    }}")?;
+            writeln!(file, "}}\n")?;
         }
-        writeln!(file, "        }}")?;
-        writeln!(file, "    }}")?;
-        writeln!(file, "}}\n")?;
     }
 
     // --- HTML コンテンツ属性用 構造体定義 ---
@@ -327,7 +369,8 @@ fn output_element_file(
     writeln!(file, "pub struct {} {{", capitalized_element_name)?;
     for attr in &html_attributes {
         let field_name = escape_attribute_field_name(&attr.name);
-        let enum_values = get_attribute_enum_values(&info.interface, attr).or_else(|| attr.enum_values.clone());
+        let enum_values =
+            get_attribute_enum_values(&info.interface, attr).or_else(|| attr.enum_values.clone());
         if enum_values.is_some() {
             let enum_type_name = format!("{}{}", capitalized_element_name, capitalize(&attr.name));
             writeln!(
@@ -375,7 +418,8 @@ fn output_element_file(
     for attr in &html_attributes {
         let method_name = escape_method_name(&attr.name);
         let field_name = escape_attribute_field_name(&attr.name);
-        let enum_values = get_attribute_enum_values(&info.interface, attr).or_else(|| attr.enum_values.clone());
+        let enum_values =
+            get_attribute_enum_values(&info.interface, attr).or_else(|| attr.enum_values.clone());
 
         if enum_values.is_some() {
             let enum_type_name = format!("{}{}", capitalized_element_name, capitalize(&attr.name));
@@ -434,6 +478,10 @@ fn get_attribute_enum_values(
         ]),
         _ => None,
     }
+}
+
+fn supports_custom_values(interface_name: &str, attr: &idl::ResolvedAttribute) -> bool {
+    interface_name == "HTMLButtonElement" && attr.name == "command"
 }
 
 /// 属性が HTML コンテンツ属性 (HTML Attribute) かどうかを判定します
@@ -769,6 +817,7 @@ mod tests {
                 "toggle-popover".to_string(),
             ])
         );
+        assert!(supports_custom_values("HTMLButtonElement", &attr));
     }
 }
 
