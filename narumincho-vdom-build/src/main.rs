@@ -429,7 +429,10 @@ fn output_element_file(
     for attr in &html_attributes {
         let method_name = escape_method_name(&attr.name);
         let field_name = escape_attribute_field_name(&attr.name);
-        if matches!(method_name.as_str(), "attribute" | "id" | "class" | "style" | "popover" | "children" | "into_node") {
+        if matches!(
+            method_name.as_str(),
+            "attribute" | "id" | "class" | "style" | "popover" | "children" | "into_node"
+        ) {
             continue;
         }
         let enum_values =
