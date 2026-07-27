@@ -2,6 +2,29 @@
 #![allow(non_snake_case, dead_code)]
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ButtonCommand {
+    ShowModal,
+    Close,
+    RequestClose,
+    ShowPopover,
+    HidePopover,
+    TogglePopover,
+}
+
+impl ButtonCommand {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::ShowModal => "show-modal",
+            Self::Close => "close",
+            Self::RequestClose => "request-close",
+            Self::ShowPopover => "show-popover",
+            Self::HidePopover => "hide-popover",
+            Self::TogglePopover => "toggle-popover",
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ButtonType {
     Submit,
     Reset,
@@ -67,7 +90,7 @@ pub struct Button {
     pub aria_value_text: std::option::Option<String>,
     pub autocorrect: std::option::Option<bool>,
     pub class_name: std::option::Option<String>,
-    pub command: std::option::Option<String>,
+    pub command: std::option::Option<ButtonCommand>,
     pub disabled: std::option::Option<bool>,
     pub form_action: std::option::Option<String>,
     pub form_enctype: std::option::Option<String>,
@@ -388,8 +411,8 @@ impl Button {
         self
     }
 
-    pub fn command(mut self, value: impl Into<String>) -> Self {
-        self.command = Some(value.into());
+    pub fn command(mut self, value: ButtonCommand) -> Self {
+        self.command = Some(value);
         self
     }
 

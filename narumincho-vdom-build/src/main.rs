@@ -273,14 +273,15 @@ fn output_element_file(
     let mut generated_enums = Vec::new();
 
     for attr in &html_attributes {
-        if let Some(enum_vals) = &attr.enum_values {
+        let enum_vals = get_attribute_enum_values(&info.interface, attr).or_else(|| attr.enum_values.clone());
+        if let Some(enum_vals) = enum_vals {
             let enum_type_name = format!("{}{}", capitalized_element_name, capitalize(&attr.name));
             let mut variants = Vec::new();
 
             for val in enum_vals {
-                let variant_name = escape_variant_name(val);
+                let variant_name = escape_variant_name(val.as_str());
                 if !variant_name.is_empty() {
-                    variants.push((variant_name, val.clone()));
+                    variants.push((variant_name, val));
                 }
             }
 
@@ -326,7 +327,8 @@ fn output_element_file(
     writeln!(file, "pub struct {} {{", capitalized_element_name)?;
     for attr in &html_attributes {
         let field_name = escape_attribute_field_name(&attr.name);
-        if attr.enum_values.is_some() {
+        let enum_values = get_attribute_enum_values(&info.interface, attr).or_else(|| attr.enum_values.clone());
+        if enum_values.is_some() {
             let enum_type_name = format!("{}{}", capitalized_element_name, capitalize(&attr.name));
             writeln!(
                 file,
@@ -373,8 +375,9 @@ fn output_element_file(
     for attr in &html_attributes {
         let method_name = escape_method_name(&attr.name);
         let field_name = escape_attribute_field_name(&attr.name);
+        let enum_values = get_attribute_enum_values(&info.interface, attr).or_else(|| attr.enum_values.clone());
 
-        if attr.enum_values.is_some() {
+        if enum_values.is_some() {
             let enum_type_name = format!("{}{}", capitalized_element_name, capitalize(&attr.name));
             writeln!(
                 file,
@@ -410,6 +413,27 @@ fn output_element_file(
     )?;
 
     Ok(())
+}
+
+fn get_attribute_enum_values(
+    interface_name: &str,
+    attr: &idl::ResolvedAttribute,
+) -> Option<Vec<String>> {
+    if attr.enum_values.is_some() {
+        return attr.enum_values.clone();
+    }
+
+    match (interface_name, attr.name.as_str()) {
+        ("HTMLButtonElement", "command") => Some(vec![
+            "show-modal".to_string(),
+            "close".to_string(),
+            "request-close".to_string(),
+            "show-popover".to_string(),
+            "hide-popover".to_string(),
+            "toggle-popover".to_string(),
+        ]),
+        _ => None,
+    }
 }
 
 /// 属性が HTML コンテンツ属性 (HTML Attribute) かどうかを判定します
@@ -719,6 +743,33 @@ mod tests {{
     )?;
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn custom_enum_values_are_used_for_non_idl_attributes() {
+        let attr = idl::ResolvedAttribute {
+            name: "command".to_string(),
+            type_name: "DOMString".to_string(),
+            is_readonly: false,
+            enum_values: None,
+        };
+
+        assert_eq!(
+            get_attribute_enum_values("HTMLButtonElement", &attr),
+            Some(vec![
+                "show-modal".to_string(),
+                "close".to_string(),
+                "request-close".to_string(),
+                "show-popover".to_string(),
+                "hide-popover".to_string(),
+                "toggle-popover".to_string(),
+            ])
+        );
+    }
 }
 
 fn escape_identifier(s: &str) -> String {
