@@ -388,11 +388,6 @@ impl Portal {
         self
     }
 
-    pub fn class(mut self, value: impl Into<String>) -> Self {
-        self.class = Some(value.into());
-        self
-    }
-
     pub fn referrer_policy(mut self, value: impl Into<String>) -> Self {
         self.referrer_policy = Some(value.into());
         self

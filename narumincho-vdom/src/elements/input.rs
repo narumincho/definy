@@ -523,11 +523,6 @@ impl Input {
         self
     }
 
-    pub fn class(mut self, value: impl Into<String>) -> Self {
-        self.class = Some(value.into());
-        self
-    }
-
     pub fn color_space(mut self, value: impl Into<String>) -> Self {
         self.color_space = Some(value.into());
         self

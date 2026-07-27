@@ -391,11 +391,6 @@ impl Meta {
         self
     }
 
-    pub fn class(mut self, value: impl Into<String>) -> Self {
-        self.class = Some(value.into());
-        self
-    }
-
     pub fn content(mut self, value: impl Into<String>) -> Self {
         self.content = Some(value.into());
         self

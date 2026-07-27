@@ -389,11 +389,6 @@ impl Label {
         self
     }
 
-    pub fn class(mut self, value: impl Into<String>) -> Self {
-        self.class = Some(value.into());
-        self
-    }
-
     pub fn html_for(mut self, value: impl Into<String>) -> Self {
         self.html_for = Some(value.into());
         self

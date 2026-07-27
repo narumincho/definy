@@ -207,18 +207,20 @@ pub mod video;
 pub mod view;
 pub mod wbr;
 
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Node {
     Element(Element),
     Text(String),
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Element {
     pub global_attributes: GlobalAttributes,
     pub element_content: ElementContent,
     pub children: Vec<Node>,
 }
 
-#[derive(Default)]
+#[derive(Default, Debug, Clone, PartialEq, Eq)]
 pub struct GlobalAttributes {
     pub accesskey: std::option::Option<String>,
     pub autocapitalize: std::option::Option<String>,
@@ -245,6 +247,7 @@ pub struct GlobalAttributes {
     pub translate: std::option::Option<String>,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ElementContent {
     /// https://w3c.github.io/svgwg/svg2-draft/linking.html#elementdef-a
     A(a::A),

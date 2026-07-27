@@ -460,11 +460,6 @@ impl Geolocation {
         self
     }
 
-    pub fn class(mut self, value: impl Into<String>) -> Self {
-        self.class = Some(value.into());
-        self
-    }
-
     pub fn initial_permission_status(mut self, value: GeolocationInitialPermissionStatus) -> Self {
         self.initial_permission_status = Some(value);
         self

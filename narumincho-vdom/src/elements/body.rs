@@ -407,11 +407,6 @@ impl Body {
         self
     }
 
-    pub fn class(mut self, value: impl Into<String>) -> Self {
-        self.class = Some(value.into());
-        self
-    }
-
     pub fn link(mut self, value: impl Into<String>) -> Self {
         self.link = Some(value.into());
         self

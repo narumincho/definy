@@ -391,11 +391,6 @@ impl Source {
         self
     }
 
-    pub fn class(mut self, value: impl Into<String>) -> Self {
-        self.class = Some(value.into());
-        self
-    }
-
     pub fn media(mut self, value: impl Into<String>) -> Self {
         self.media = Some(value.into());
         self

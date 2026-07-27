@@ -446,11 +446,6 @@ impl Button {
         self
     }
 
-    pub fn class(mut self, value: impl Into<String>) -> Self {
-        self.class = Some(value.into());
-        self
-    }
-
     pub fn command(mut self, value: ButtonCommand) -> Self {
         self.command = Some(value);
         self

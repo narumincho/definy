@@ -391,11 +391,6 @@ impl Model {
         self
     }
 
-    pub fn class(mut self, value: impl Into<String>) -> Self {
-        self.class = Some(value.into());
-        self
-    }
-
     pub fn entity_transform(mut self, value: impl Into<String>) -> Self {
         self.entity_transform = Some(value.into());
         self

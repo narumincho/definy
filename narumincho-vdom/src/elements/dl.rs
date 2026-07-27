@@ -387,11 +387,6 @@ impl Dl {
         self
     }
 
-    pub fn class(mut self, value: impl Into<String>) -> Self {
-        self.class = Some(value.into());
-        self
-    }
-
     pub fn compact(mut self, value: bool) -> Self {
         self.compact = Some(value);
         self

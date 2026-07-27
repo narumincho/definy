@@ -397,11 +397,6 @@ impl Embed {
         self
     }
 
-    pub fn class(mut self, value: impl Into<String>) -> Self {
-        self.class = Some(value.into());
-        self
-    }
-
     pub fn height(mut self, value: impl Into<String>) -> Self {
         self.height = Some(value.into());
         self

@@ -396,11 +396,6 @@ impl Fencedframe {
         self
     }
 
-    pub fn class(mut self, value: impl Into<String>) -> Self {
-        self.class = Some(value.into());
-        self
-    }
-
     pub fn config(mut self, value: impl Into<String>) -> Self {
         self.config = Some(value.into());
         self

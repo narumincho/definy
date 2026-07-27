@@ -450,11 +450,6 @@ impl Link {
         self
     }
 
-    pub fn class(mut self, value: impl Into<String>) -> Self {
-        self.class = Some(value.into());
-        self
-    }
-
     pub fn cross_origin(mut self, value: LinkCrossOrigin) -> Self {
         self.cross_origin = Some(value);
         self

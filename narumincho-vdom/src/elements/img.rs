@@ -437,11 +437,6 @@ impl Img {
         self
     }
 
-    pub fn class(mut self, value: impl Into<String>) -> Self {
-        self.class = Some(value.into());
-        self
-    }
-
     pub fn controls(mut self, value: bool) -> Self {
         self.controls = Some(value);
         self

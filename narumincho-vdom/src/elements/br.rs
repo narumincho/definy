@@ -387,11 +387,6 @@ impl Br {
         self
     }
 
-    pub fn class(mut self, value: impl Into<String>) -> Self {
-        self.class = Some(value.into());
-        self
-    }
-
     pub fn clear(mut self, value: impl Into<String>) -> Self {
         self.clear = Some(value.into());
         self

@@ -423,11 +423,6 @@ impl Iframe {
         self
     }
 
-    pub fn class(mut self, value: impl Into<String>) -> Self {
-        self.class = Some(value.into());
-        self
-    }
-
     pub fn credentialless(mut self, value: bool) -> Self {
         self.credentialless = Some(value);
         self

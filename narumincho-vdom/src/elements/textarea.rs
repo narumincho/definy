@@ -425,11 +425,6 @@ impl Textarea {
         self
     }
 
-    pub fn class(mut self, value: impl Into<String>) -> Self {
-        self.class = Some(value.into());
-        self
-    }
-
     pub fn default_value(mut self, value: impl Into<String>) -> Self {
         self.default_value = Some(value.into());
         self

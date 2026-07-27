@@ -388,11 +388,6 @@ impl Optgroup {
         self
     }
 
-    pub fn class(mut self, value: impl Into<String>) -> Self {
-        self.class = Some(value.into());
-        self
-    }
-
     pub fn disabled(mut self, value: bool) -> Self {
         self.disabled = Some(value);
         self

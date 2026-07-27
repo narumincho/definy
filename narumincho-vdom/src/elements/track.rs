@@ -392,11 +392,6 @@ impl Track {
         self
     }
 
-    pub fn class(mut self, value: impl Into<String>) -> Self {
-        self.class = Some(value.into());
-        self
-    }
-
     pub fn default_(mut self, value: bool) -> Self {
         self.r#default = Some(value);
         self

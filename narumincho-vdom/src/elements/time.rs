@@ -387,11 +387,6 @@ impl Time {
         self
     }
 
-    pub fn class(mut self, value: impl Into<String>) -> Self {
-        self.class = Some(value.into());
-        self
-    }
-
     pub fn date_time(mut self, value: impl Into<String>) -> Self {
         self.date_time = Some(value.into());
         self

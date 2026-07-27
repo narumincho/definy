@@ -407,11 +407,6 @@ impl Base {
         self
     }
 
-    pub fn class(mut self, value: impl Into<String>) -> Self {
-        self.class = Some(value.into());
-        self
-    }
-
     pub fn href(mut self, value: impl Into<String>) -> Self {
         self.href = Some(value.into());
         self

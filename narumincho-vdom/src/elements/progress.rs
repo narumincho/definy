@@ -390,11 +390,6 @@ impl Progress {
         self
     }
 
-    pub fn class(mut self, value: impl Into<String>) -> Self {
-        self.class = Some(value.into());
-        self
-    }
-
     pub fn max(mut self, value: impl Into<String>) -> Self {
         self.max = Some(value.into());
         self

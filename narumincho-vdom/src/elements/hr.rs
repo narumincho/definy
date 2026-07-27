@@ -396,11 +396,6 @@ impl Hr {
         self
     }
 
-    pub fn class(mut self, value: impl Into<String>) -> Self {
-        self.class = Some(value.into());
-        self
-    }
-
     pub fn color(mut self, value: impl Into<String>) -> Self {
         self.color = Some(value.into());
         self

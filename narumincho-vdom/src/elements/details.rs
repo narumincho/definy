@@ -388,11 +388,6 @@ impl Details {
         self
     }
 
-    pub fn class(mut self, value: impl Into<String>) -> Self {
-        self.class = Some(value.into());
-        self
-    }
-
     pub fn name(mut self, value: impl Into<String>) -> Self {
         self.name = Some(value.into());
         self

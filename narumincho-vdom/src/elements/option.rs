@@ -394,11 +394,6 @@ impl Option {
         self
     }
 
-    pub fn class(mut self, value: impl Into<String>) -> Self {
-        self.class = Some(value.into());
-        self
-    }
-
     pub fn default_selected(mut self, value: bool) -> Self {
         self.default_selected = Some(value);
         self

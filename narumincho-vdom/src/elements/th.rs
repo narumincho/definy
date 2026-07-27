@@ -429,11 +429,6 @@ impl Th {
         self
     }
 
-    pub fn class(mut self, value: impl Into<String>) -> Self {
-        self.class = Some(value.into());
-        self
-    }
-
     pub fn headers(mut self, value: impl Into<String>) -> Self {
         self.headers = Some(value.into());
         self

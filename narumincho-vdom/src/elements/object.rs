@@ -421,11 +421,6 @@ impl Object {
         self
     }
 
-    pub fn class(mut self, value: impl Into<String>) -> Self {
-        self.class = Some(value.into());
-        self
-    }
-
     pub fn code(mut self, value: impl Into<String>) -> Self {
         self.code = Some(value.into());
         self

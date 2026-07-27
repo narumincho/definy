@@ -432,11 +432,6 @@ impl Area {
         self
     }
 
-    pub fn class(mut self, value: impl Into<String>) -> Self {
-        self.class = Some(value.into());
-        self
-    }
-
     pub fn coords(mut self, value: impl Into<String>) -> Self {
         self.coords = Some(value.into());
         self

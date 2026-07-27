@@ -162,11 +162,13 @@ fn output_elements_rs(elements_map: &BTreeMap<String, ElementInfo>) -> anyhow::R
 
     writeln!(
         file,
-        "pub enum Node {{
+        "#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Node {{
     Element(Element),
     Text(String),
 }}
 
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Element {{
     pub global_attributes: GlobalAttributes,
     pub element_content: ElementContent,
@@ -177,7 +179,7 @@ pub struct Element {{
 
     writeln!(
         file,
-        "#[derive(Default)]
+        "#[derive(Default, Debug, Clone, PartialEq, Eq)]
 pub struct GlobalAttributes {{"
     )?;
     for attr in GLOBAL_ATTRIBUTES {
@@ -193,6 +195,7 @@ pub struct GlobalAttributes {{"
 "
     )?;
 
+    writeln!(file, "#[derive(Debug, Clone, PartialEq, Eq)]")?;
     writeln!(file, "pub enum ElementContent {{")?;
     for (name, info) in elements_map {
         writeln!(file, "    /// {}", info.href)?;
@@ -426,6 +429,9 @@ fn output_element_file(
     for attr in &html_attributes {
         let method_name = escape_method_name(&attr.name);
         let field_name = escape_attribute_field_name(&attr.name);
+        if matches!(method_name.as_str(), "attribute" | "id" | "class" | "style" | "popover" | "children" | "into_node") {
+            continue;
+        }
         let enum_values =
             get_attribute_enum_values(&info.interface, attr).or_else(|| attr.enum_values.clone());
 

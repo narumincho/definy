@@ -393,11 +393,6 @@ impl Meter {
         self
     }
 
-    pub fn class(mut self, value: impl Into<String>) -> Self {
-        self.class = Some(value.into());
-        self
-    }
-
     pub fn high(mut self, value: impl Into<String>) -> Self {
         self.high = Some(value.into());
         self
