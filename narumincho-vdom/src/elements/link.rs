@@ -85,7 +85,7 @@ pub struct Link {
     pub r#as: std::option::Option<String>,
     pub autocorrect: std::option::Option<bool>,
     pub charset: std::option::Option<String>,
-    pub class_name: std::option::Option<String>,
+    pub class: std::option::Option<String>,
     pub cross_origin: std::option::Option<LinkCrossOrigin>,
     pub disabled: std::option::Option<bool>,
     pub fetch_priority: std::option::Option<String>,
@@ -412,8 +412,8 @@ impl Link {
         self
     }
 
-    pub fn class_name(mut self, value: impl Into<String>) -> Self {
-        self.class_name = Some(value.into());
+    pub fn class(mut self, value: impl Into<String>) -> Self {
+        self.class = Some(value.into());
         self
     }
 

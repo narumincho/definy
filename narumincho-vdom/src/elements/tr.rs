@@ -53,7 +53,7 @@ pub struct Tr {
     pub bg_color: std::option::Option<String>,
     pub ch: std::option::Option<String>,
     pub ch_off: std::option::Option<String>,
-    pub class_name: std::option::Option<String>,
+    pub class: std::option::Option<String>,
     pub role: std::option::Option<String>,
     pub text_content: std::option::Option<String>,
     pub v_align: std::option::Option<String>,
@@ -376,8 +376,8 @@ impl Tr {
         self
     }
 
-    pub fn class_name(mut self, value: impl Into<String>) -> Self {
-        self.class_name = Some(value.into());
+    pub fn class(mut self, value: impl Into<String>) -> Self {
+        self.class = Some(value.into());
         self
     }
 

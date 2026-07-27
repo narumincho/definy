@@ -71,7 +71,7 @@ pub struct Form {
     pub aria_value_text: std::option::Option<String>,
     pub autocomplete: std::option::Option<String>,
     pub autocorrect: std::option::Option<bool>,
-    pub class_name: std::option::Option<String>,
+    pub class: std::option::Option<String>,
     pub encoding: std::option::Option<String>,
     pub enctype: std::option::Option<String>,
     pub method: std::option::Option<String>,
@@ -394,8 +394,8 @@ impl Form {
         self
     }
 
-    pub fn class_name(mut self, value: impl Into<String>) -> Self {
-        self.class_name = Some(value.into());
+    pub fn class(mut self, value: impl Into<String>) -> Self {
+        self.class = Some(value.into());
         self
     }
 

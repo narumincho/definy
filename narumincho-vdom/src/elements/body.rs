@@ -52,7 +52,7 @@ pub struct Body {
     pub autocorrect: std::option::Option<bool>,
     pub background: std::option::Option<String>,
     pub bg_color: std::option::Option<String>,
-    pub class_name: std::option::Option<String>,
+    pub class: std::option::Option<String>,
     pub link: std::option::Option<String>,
     pub role: std::option::Option<String>,
     pub text: std::option::Option<String>,
@@ -369,8 +369,8 @@ impl Body {
         self
     }
 
-    pub fn class_name(mut self, value: impl Into<String>) -> Self {
-        self.class_name = Some(value.into());
+    pub fn class(mut self, value: impl Into<String>) -> Self {
+        self.class = Some(value.into());
         self
     }
 

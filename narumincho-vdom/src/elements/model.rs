@@ -49,7 +49,7 @@ pub struct Model {
     pub aria_value_now: std::option::Option<String>,
     pub aria_value_text: std::option::Option<String>,
     pub autocorrect: std::option::Option<bool>,
-    pub class_name: std::option::Option<String>,
+    pub class: std::option::Option<String>,
     pub entity_transform: std::option::Option<String>,
     pub environment_map: std::option::Option<String>,
     pub role: std::option::Option<String>,
@@ -353,8 +353,8 @@ impl Model {
         self
     }
 
-    pub fn class_name(mut self, value: impl Into<String>) -> Self {
-        self.class_name = Some(value.into());
+    pub fn class(mut self, value: impl Into<String>) -> Self {
+        self.class = Some(value.into());
         self
     }
 

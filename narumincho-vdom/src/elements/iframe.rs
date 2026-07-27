@@ -52,7 +52,7 @@ pub struct Iframe {
     pub aria_value_now: std::option::Option<String>,
     pub aria_value_text: std::option::Option<String>,
     pub autocorrect: std::option::Option<bool>,
-    pub class_name: std::option::Option<String>,
+    pub class: std::option::Option<String>,
     pub credentialless: std::option::Option<bool>,
     pub csp: std::option::Option<String>,
     pub frame_border: std::option::Option<String>,
@@ -385,8 +385,8 @@ impl Iframe {
         self
     }
 
-    pub fn class_name(mut self, value: impl Into<String>) -> Self {
-        self.class_name = Some(value.into());
+    pub fn class(mut self, value: impl Into<String>) -> Self {
+        self.class = Some(value.into());
         self
     }
 

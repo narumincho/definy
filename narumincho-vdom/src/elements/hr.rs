@@ -50,7 +50,7 @@ pub struct Hr {
     pub aria_value_now: std::option::Option<String>,
     pub aria_value_text: std::option::Option<String>,
     pub autocorrect: std::option::Option<bool>,
-    pub class_name: std::option::Option<String>,
+    pub class: std::option::Option<String>,
     pub color: std::option::Option<String>,
     pub no_shade: std::option::Option<bool>,
     pub role: std::option::Option<String>,
@@ -358,8 +358,8 @@ impl Hr {
         self
     }
 
-    pub fn class_name(mut self, value: impl Into<String>) -> Self {
-        self.class_name = Some(value.into());
+    pub fn class(mut self, value: impl Into<String>) -> Self {
+        self.class = Some(value.into());
         self
     }
 

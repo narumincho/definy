@@ -82,7 +82,7 @@ pub struct Video {
     pub aria_value_text: std::option::Option<String>,
     pub autocorrect: std::option::Option<bool>,
     pub autoplay: std::option::Option<bool>,
-    pub class_name: std::option::Option<String>,
+    pub class: std::option::Option<String>,
     pub controls: std::option::Option<bool>,
     pub cross_origin: std::option::Option<VideoCrossOrigin>,
     pub current_time: std::option::Option<String>,
@@ -418,8 +418,8 @@ impl Video {
         self
     }
 
-    pub fn class_name(mut self, value: impl Into<String>) -> Self {
-        self.class_name = Some(value.into());
+    pub fn class(mut self, value: impl Into<String>) -> Self {
+        self.class = Some(value.into());
         self
     }
 

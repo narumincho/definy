@@ -67,7 +67,7 @@ pub struct Img {
     pub aria_value_text: std::option::Option<String>,
     pub autocorrect: std::option::Option<bool>,
     pub border: std::option::Option<String>,
-    pub class_name: std::option::Option<String>,
+    pub class: std::option::Option<String>,
     pub controls: std::option::Option<bool>,
     pub cross_origin: std::option::Option<ImgCrossOrigin>,
     pub decoding: std::option::Option<String>,
@@ -399,8 +399,8 @@ impl Img {
         self
     }
 
-    pub fn class_name(mut self, value: impl Into<String>) -> Self {
-        self.class_name = Some(value.into());
+    pub fn class(mut self, value: impl Into<String>) -> Self {
+        self.class = Some(value.into());
         self
     }
 

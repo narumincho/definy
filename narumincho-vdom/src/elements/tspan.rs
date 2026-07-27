@@ -63,7 +63,7 @@ pub struct TspanJsProperties {
     pub child_nodes: std::option::Option<String>,
     pub children: std::option::Option<String>,
     pub class_list: std::option::Option<String>,
-    pub class_name: std::option::Option<String>,
+    pub class: std::option::Option<String>,
     pub client_height: std::option::Option<String>,
     pub client_left: std::option::Option<String>,
     pub client_top: std::option::Option<String>,

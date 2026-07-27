@@ -55,7 +55,7 @@ pub struct Th {
     pub bg_color: std::option::Option<String>,
     pub ch: std::option::Option<String>,
     pub ch_off: std::option::Option<String>,
-    pub class_name: std::option::Option<String>,
+    pub class: std::option::Option<String>,
     pub headers: std::option::Option<String>,
     pub height: std::option::Option<String>,
     pub no_wrap: std::option::Option<bool>,
@@ -391,8 +391,8 @@ impl Th {
         self
     }
 
-    pub fn class_name(mut self, value: impl Into<String>) -> Self {
-        self.class_name = Some(value.into());
+    pub fn class(mut self, value: impl Into<String>) -> Self {
+        self.class = Some(value.into());
         self
     }
 

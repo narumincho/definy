@@ -111,7 +111,7 @@ pub struct Input {
     pub autocorrect: std::option::Option<bool>,
     pub capture: std::option::Option<String>,
     pub checked: std::option::Option<bool>,
-    pub class_name: std::option::Option<String>,
+    pub class: std::option::Option<String>,
     pub color_space: std::option::Option<String>,
     pub default_checked: std::option::Option<bool>,
     pub default_value: std::option::Option<String>,
@@ -485,8 +485,8 @@ impl Input {
         self
     }
 
-    pub fn class_name(mut self, value: impl Into<String>) -> Self {
-        self.class_name = Some(value.into());
+    pub fn class(mut self, value: impl Into<String>) -> Self {
+        self.class = Some(value.into());
         self
     }
 

@@ -49,7 +49,7 @@ pub struct Dialog {
     pub aria_value_now: std::option::Option<String>,
     pub aria_value_text: std::option::Option<String>,
     pub autocorrect: std::option::Option<bool>,
-    pub class_name: std::option::Option<String>,
+    pub class: std::option::Option<String>,
     pub closed_by: std::option::Option<String>,
     pub open: std::option::Option<bool>,
     pub return_value: std::option::Option<String>,
@@ -351,8 +351,8 @@ impl Dialog {
         self
     }
 
-    pub fn class_name(mut self, value: impl Into<String>) -> Self {
-        self.class_name = Some(value.into());
+    pub fn class(mut self, value: impl Into<String>) -> Self {
+        self.class = Some(value.into());
         self
     }
 

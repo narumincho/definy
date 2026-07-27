@@ -111,7 +111,7 @@ pub struct Geolocation {
     pub aria_value_text: std::option::Option<String>,
     pub autocorrect: std::option::Option<bool>,
     pub autolocate: std::option::Option<bool>,
-    pub class_name: std::option::Option<String>,
+    pub class: std::option::Option<String>,
     pub initial_permission_status: std::option::Option<GeolocationInitialPermissionStatus>,
     pub invalid_reason: std::option::Option<GeolocationInvalidReason>,
     pub permission_status: std::option::Option<GeolocationPermissionStatus>,
@@ -422,8 +422,8 @@ impl Geolocation {
         self
     }
 
-    pub fn class_name(mut self, value: impl Into<String>) -> Self {
-        self.class_name = Some(value.into());
+    pub fn class(mut self, value: impl Into<String>) -> Self {
+        self.class = Some(value.into());
         self
     }
 

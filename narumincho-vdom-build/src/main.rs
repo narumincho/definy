@@ -819,6 +819,14 @@ mod tests {
         );
         assert!(supports_custom_values("HTMLButtonElement", &attr));
     }
+
+    #[test]
+    fn class_attributes_are_generated_as_class() {
+        assert_eq!(escape_method_name("className"), "class");
+        assert_eq!(escape_attribute_field_name("className"), "class");
+        assert_eq!(escape_method_name("class"), "class");
+        assert_eq!(escape_attribute_field_name("class"), "class");
+    }
 }
 
 fn escape_identifier(s: &str) -> String {
@@ -832,6 +840,9 @@ fn escape_identifier(s: &str) -> String {
 
 fn escape_method_name(s: &str) -> String {
     let snake = to_snake_case(s);
+    if snake == "class" || snake == "class_name" {
+        return "class".to_string();
+    }
     match snake.as_str() {
         "type" | "loop" | "for" | "as" | "async" | "use" | "switch" | "in" | "match" | "fn"
         | "struct" | "enum" | "trait" | "where" | "impl" | "ref" | "static" | "const"
@@ -842,6 +853,9 @@ fn escape_method_name(s: &str) -> String {
 
 fn escape_attribute_field_name(s: &str) -> String {
     let snake = to_snake_case(s);
+    if snake == "class" || snake == "class_name" {
+        return "class".to_string();
+    }
     match snake.as_str() {
         "type" | "loop" | "for" | "as" | "async" | "use" | "switch" | "in" | "match" | "fn"
         | "struct" | "enum" | "trait" | "where" | "impl" | "ref" | "static" | "const"

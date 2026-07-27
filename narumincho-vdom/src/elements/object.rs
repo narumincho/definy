@@ -52,7 +52,7 @@ pub struct Object {
     pub aria_value_text: std::option::Option<String>,
     pub autocorrect: std::option::Option<bool>,
     pub border: std::option::Option<String>,
-    pub class_name: std::option::Option<String>,
+    pub class: std::option::Option<String>,
     pub code: std::option::Option<String>,
     pub code_base: std::option::Option<String>,
     pub code_type: std::option::Option<String>,
@@ -383,8 +383,8 @@ impl Object {
         self
     }
 
-    pub fn class_name(mut self, value: impl Into<String>) -> Self {
-        self.class_name = Some(value.into());
+    pub fn class(mut self, value: impl Into<String>) -> Self {
+        self.class = Some(value.into());
         self
     }
 
