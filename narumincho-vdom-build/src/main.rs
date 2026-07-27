@@ -248,25 +248,31 @@ fn output_element_file(
 
     let resolved_attributes = db.resolve_interface_attributes(&info.interface);
 
-    // グローバル属性やイベントハンドラ (on*) を除外した要素固有属性
-    let mut element_attributes = Vec::new();
+    // HTML コンテンツ属性と JS / DOM プロパティを分離
+    let mut html_attributes = Vec::new();
+    let mut js_properties = Vec::new();
+
     for attr in resolved_attributes {
         let is_global = GLOBAL_ATTRIBUTES.contains(&attr.name.to_lowercase().as_str());
         let is_event = attr.name.starts_with("on");
         if !is_global && !is_event {
-            element_attributes.push(attr);
+            if is_html_attribute(&attr) {
+                html_attributes.push(attr);
+            } else {
+                js_properties.push(attr);
+            }
         }
     }
 
-    // Enum 型の生成情報
+    // Enum 型の生成情報 (HTML 属性用)
     struct GeneratedEnum {
         enum_type_name: String,
-        variants: Vec<(String, String)>, // (variant_name, raw_value)
+        variants: Vec<(String, String)>,
     }
 
     let mut generated_enums = Vec::new();
 
-    for attr in &element_attributes {
+    for attr in &html_attributes {
         if let Some(enum_vals) = &attr.enum_values {
             let enum_type_name = format!("{}{}", capitalized_element_name, capitalize(&attr.name));
             let mut variants = Vec::new();
@@ -314,11 +320,11 @@ fn output_element_file(
         writeln!(file, "}}\n")?;
     }
 
-    // 構造体定義
-    writeln!(file, "/// {}", info.href)?;
+    // --- HTML コンテンツ属性用 構造体定義 ---
+    writeln!(file, "/// HTML Content Attributes for {}", info.href)?;
     writeln!(file, "#[derive(Default, Debug, Clone, PartialEq, Eq)]")?;
     writeln!(file, "pub struct {} {{", capitalized_element_name)?;
-    for attr in &element_attributes {
+    for attr in &html_attributes {
         let field_name = escape_attribute_field_name(&attr.name);
         if attr.enum_values.is_some() {
             let enum_type_name = format!("{}{}", capitalized_element_name, capitalize(&attr.name));
@@ -335,6 +341,26 @@ fn output_element_file(
     }
     writeln!(file, "}}\n")?;
 
+    // --- JS / DOM プロパティ用 構造体定義 ---
+    if !js_properties.is_empty() {
+        writeln!(file, "/// JavaScript / DOM Properties for {}", info.href)?;
+        writeln!(file, "#[derive(Default, Debug, Clone, PartialEq, Eq)]")?;
+        writeln!(
+            file,
+            "pub struct {}JsProperties {{",
+            capitalized_element_name
+        )?;
+        for attr in &js_properties {
+            let field_name = escape_attribute_field_name(&attr.name);
+            if attr.type_name == "boolean" {
+                writeln!(file, "    pub {}: std::option::Option<bool>,", field_name)?;
+            } else {
+                writeln!(file, "    pub {}: std::option::Option<String>,", field_name)?;
+            }
+        }
+        writeln!(file, "}}\n")?;
+    }
+
     // 要素生成関数
     writeln!(
         file,
@@ -342,9 +368,9 @@ fn output_element_file(
         escaped_module_name, capitalized_element_name, capitalized_element_name
     )?;
 
-    // メソッド実装
+    // HTML 属性セッターのメソッド実装
     writeln!(file, "impl {} {{", capitalized_element_name)?;
-    for attr in &element_attributes {
+    for attr in &html_attributes {
         let method_name = escape_method_name(&attr.name);
         let field_name = escape_attribute_field_name(&attr.name);
 
@@ -384,6 +410,222 @@ fn output_element_file(
     )?;
 
     Ok(())
+}
+
+/// 属性が HTML コンテンツ属性 (HTML Attribute) かどうかを判定します
+fn is_html_attribute(attr: &idl::ResolvedAttribute) -> bool {
+    let name = attr.name.as_str();
+
+    // 確定的に JS/DOM プロパティ（非 HTML 属性）であるもの
+    let js_property_names = [
+        "outerHTML",
+        "innerHTML",
+        "outerText",
+        "innerText",
+        "attributes",
+        "attributeStyleMap",
+        "classList",
+        "dataset",
+        "childNodes",
+        "children",
+        "firstChild",
+        "lastChild",
+        "previousSibling",
+        "nextSibling",
+        "firstElementChild",
+        "lastElementChild",
+        "previousElementSibling",
+        "nextElementSibling",
+        "parentElement",
+        "parentNode",
+        "ownerDocument",
+        "shadowRoot",
+        "assignedSlot",
+        "offsetParent",
+        "offsetWidth",
+        "offsetHeight",
+        "offsetLeft",
+        "offsetTop",
+        "clientWidth",
+        "clientHeight",
+        "clientLeft",
+        "clientTop",
+        "scrollWidth",
+        "scrollHeight",
+        "scrollLeft",
+        "scrollTop",
+        "scrollParent",
+        "currentCSSZoom",
+        "regionOverset",
+        "nodeName",
+        "nodeValue",
+        "localName",
+        "tagName",
+        "namespaceURI",
+        "prefix",
+        "baseURI",
+        "accessKeyLabel",
+        "isContentEditable",
+        "isConnected",
+        "validity",
+        "validationMessage",
+        "willValidate",
+        "customElementRegistry",
+        "editContext",
+        "activeViewTransition",
+        "containertimingIgnore",
+        "headingReset",
+        "labels",
+        "double",
+        "short",
+        "long",
+        "elementTiming",
+        "containertiming",
+        "commandForElement",
+        "popoverTargetElement",
+    ];
+
+    if js_property_names.contains(&name) {
+        return false;
+    }
+
+    // 確定的に HTML コンテンツ属性であるもの
+    let html_attribute_names = [
+        "type",
+        "value",
+        "name",
+        "disabled",
+        "checked",
+        "selected",
+        "readOnly",
+        "required",
+        "placeholder",
+        "src",
+        "href",
+        "target",
+        "alt",
+        "title",
+        "rel",
+        "media",
+        "action",
+        "method",
+        "enctype",
+        "noValidate",
+        "formAction",
+        "formEnctype",
+        "formMethod",
+        "formNoValidate",
+        "formTarget",
+        "min",
+        "max",
+        "step",
+        "pattern",
+        "autocomplete",
+        "autocorrect",
+        "multiple",
+        "accept",
+        "cols",
+        "rows",
+        "wrap",
+        "for",
+        "maxLength",
+        "minLength",
+        "size",
+        "height",
+        "width",
+        "span",
+        "colSpan",
+        "rowSpan",
+        "headers",
+        "scope",
+        "async",
+        "defer",
+        "crossOrigin",
+        "integrity",
+        "download",
+        "ping",
+        "shape",
+        "coords",
+        "useMap",
+        "isMap",
+        "kind",
+        "srcLang",
+        "label",
+        "default",
+        "loop",
+        "controls",
+        "muted",
+        "playsInline",
+        "poster",
+        "preload",
+        "sandbox",
+        "srcDoc",
+        "allow",
+        "allowFullscreen",
+        "loading",
+        "decoding",
+        "referrerPolicy",
+        "fetchPriority",
+        "command",
+        "commandFor",
+        "popoverTargetAction",
+        "ariaActiveDescendantElement",
+        "ariaAtomic",
+        "ariaAutoComplete",
+        "ariaBrailleLabel",
+        "ariaBrailleRoleDescription",
+        "ariaBusy",
+        "ariaChecked",
+        "ariaColCount",
+        "ariaColIndex",
+        "ariaColIndexText",
+        "ariaColSpan",
+        "ariaCurrent",
+        "ariaDescription",
+        "ariaDisabled",
+        "ariaExpanded",
+        "ariaHasPopup",
+        "ariaHidden",
+        "ariaInvalid",
+        "ariaKeyShortcuts",
+        "ariaLabel",
+        "ariaLevel",
+        "ariaLive",
+        "ariaModal",
+        "ariaMultiLine",
+        "ariaMultiSelectable",
+        "ariaOrientation",
+        "ariaPlaceholder",
+        "ariaPosInSet",
+        "ariaPressed",
+        "ariaReadOnly",
+        "ariaRelevant",
+        "ariaRequired",
+        "ariaRoleDescription",
+        "ariaRowCount",
+        "ariaRowIndex",
+        "ariaRowIndexText",
+        "ariaRowSpan",
+        "ariaSelected",
+        "ariaSetSize",
+        "ariaSort",
+        "ariaValueMax",
+        "ariaValueMin",
+        "ariaValueNow",
+        "ariaValueText",
+    ];
+
+    if html_attribute_names.contains(&name) || name.starts_with("aria") || name.starts_with("data")
+    {
+        return true;
+    }
+
+    // enum 値を持つものや bool / string 属性で読み取り専用でないものを標準として扱う
+    if attr.enum_values.is_some() || !attr.is_readonly {
+        return true;
+    }
+
+    false
 }
 
 fn output_element_creation_rs(

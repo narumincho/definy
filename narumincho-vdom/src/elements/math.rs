@@ -1,10 +1,9 @@
 // このファイルは narumincho-vdom-build によって自動生成されました。
 #![allow(non_snake_case, dead_code)]
 
-/// https://w3c.github.io/mathml-core/#dfn-math
+/// HTML Content Attributes for https://w3c.github.io/mathml-core/#dfn-math
 #[derive(Default, Debug, Clone, PartialEq, Eq)]
 pub struct Math {
-    pub active_view_transition: std::option::Option<String>,
     pub aria_active_descendant_element: std::option::Option<String>,
     pub aria_atomic: std::option::Option<String>,
     pub aria_auto_complete: std::option::Option<String>,
@@ -49,6 +48,15 @@ pub struct Math {
     pub aria_value_min: std::option::Option<String>,
     pub aria_value_now: std::option::Option<String>,
     pub aria_value_text: std::option::Option<String>,
+    pub class_name: std::option::Option<String>,
+    pub role: std::option::Option<String>,
+    pub text_content: std::option::Option<String>,
+}
+
+/// JavaScript / DOM Properties for https://w3c.github.io/mathml-core/#dfn-math
+#[derive(Default, Debug, Clone, PartialEq, Eq)]
+pub struct MathJsProperties {
+    pub active_view_transition: std::option::Option<String>,
     pub assigned_slot: std::option::Option<String>,
     pub attribute_style_map: std::option::Option<String>,
     pub attributes: std::option::Option<String>,
@@ -56,7 +64,6 @@ pub struct Math {
     pub child_nodes: std::option::Option<String>,
     pub children: std::option::Option<String>,
     pub class_list: std::option::Option<String>,
-    pub class_name: std::option::Option<String>,
     pub client_height: std::option::Option<String>,
     pub client_left: std::option::Option<String>,
     pub client_top: std::option::Option<String>,
@@ -89,13 +96,11 @@ pub struct Math {
     pub previous_element_sibling: std::option::Option<String>,
     pub previous_sibling: std::option::Option<String>,
     pub region_overset: std::option::Option<String>,
-    pub role: std::option::Option<String>,
     pub scroll_height: std::option::Option<String>,
     pub scroll_width: std::option::Option<String>,
     pub shadow_root: std::option::Option<String>,
     pub short: std::option::Option<String>,
     pub tag_name: std::option::Option<String>,
-    pub text_content: std::option::Option<String>,
 }
 
 pub fn math() -> Math {
@@ -103,11 +108,6 @@ pub fn math() -> Math {
 }
 
 impl Math {
-    pub fn active_view_transition(mut self, value: impl Into<String>) -> Self {
-        self.active_view_transition = Some(value.into());
-        self
-    }
-
     pub fn aria_active_descendant_element(mut self, value: impl Into<String>) -> Self {
         self.aria_active_descendant_element = Some(value.into());
         self
@@ -328,233 +328,13 @@ impl Math {
         self
     }
 
-    pub fn assigned_slot(mut self, value: impl Into<String>) -> Self {
-        self.assigned_slot = Some(value.into());
-        self
-    }
-
-    pub fn attribute_style_map(mut self, value: impl Into<String>) -> Self {
-        self.attribute_style_map = Some(value.into());
-        self
-    }
-
-    pub fn attributes(mut self, value: impl Into<String>) -> Self {
-        self.attributes = Some(value.into());
-        self
-    }
-
-    pub fn base_u_r_i(mut self, value: impl Into<String>) -> Self {
-        self.base_u_r_i = Some(value.into());
-        self
-    }
-
-    pub fn child_nodes(mut self, value: impl Into<String>) -> Self {
-        self.child_nodes = Some(value.into());
-        self
-    }
-
-    pub fn children(mut self, value: impl Into<String>) -> Self {
-        self.children = Some(value.into());
-        self
-    }
-
-    pub fn class_list(mut self, value: impl Into<String>) -> Self {
-        self.class_list = Some(value.into());
-        self
-    }
-
     pub fn class_name(mut self, value: impl Into<String>) -> Self {
         self.class_name = Some(value.into());
         self
     }
 
-    pub fn client_height(mut self, value: impl Into<String>) -> Self {
-        self.client_height = Some(value.into());
-        self
-    }
-
-    pub fn client_left(mut self, value: impl Into<String>) -> Self {
-        self.client_left = Some(value.into());
-        self
-    }
-
-    pub fn client_top(mut self, value: impl Into<String>) -> Self {
-        self.client_top = Some(value.into());
-        self
-    }
-
-    pub fn client_width(mut self, value: impl Into<String>) -> Self {
-        self.client_width = Some(value.into());
-        self
-    }
-
-    pub fn containertiming(mut self, value: impl Into<String>) -> Self {
-        self.containertiming = Some(value.into());
-        self
-    }
-
-    pub fn containertiming_ignore(mut self, value: impl Into<String>) -> Self {
-        self.containertiming_ignore = Some(value.into());
-        self
-    }
-
-    pub fn current_c_s_s_zoom(mut self, value: impl Into<String>) -> Self {
-        self.current_c_s_s_zoom = Some(value.into());
-        self
-    }
-
-    pub fn custom_element_registry(mut self, value: impl Into<String>) -> Self {
-        self.custom_element_registry = Some(value.into());
-        self
-    }
-
-    pub fn dataset(mut self, value: impl Into<String>) -> Self {
-        self.dataset = Some(value.into());
-        self
-    }
-
-    pub fn double(mut self, value: impl Into<String>) -> Self {
-        self.double = Some(value.into());
-        self
-    }
-
-    pub fn element_timing(mut self, value: impl Into<String>) -> Self {
-        self.element_timing = Some(value.into());
-        self
-    }
-
-    pub fn first_child(mut self, value: impl Into<String>) -> Self {
-        self.first_child = Some(value.into());
-        self
-    }
-
-    pub fn first_element_child(mut self, value: impl Into<String>) -> Self {
-        self.first_element_child = Some(value.into());
-        self
-    }
-
-    pub fn inner_h_t_m_l(mut self, value: impl Into<String>) -> Self {
-        self.inner_h_t_m_l = Some(value.into());
-        self
-    }
-
-    pub fn is_connected(mut self, value: bool) -> Self {
-        self.is_connected = Some(value);
-        self
-    }
-
-    pub fn last_child(mut self, value: impl Into<String>) -> Self {
-        self.last_child = Some(value.into());
-        self
-    }
-
-    pub fn last_element_child(mut self, value: impl Into<String>) -> Self {
-        self.last_element_child = Some(value.into());
-        self
-    }
-
-    pub fn local_name(mut self, value: impl Into<String>) -> Self {
-        self.local_name = Some(value.into());
-        self
-    }
-
-    pub fn long(mut self, value: impl Into<String>) -> Self {
-        self.long = Some(value.into());
-        self
-    }
-
-    pub fn namespace_u_r_i(mut self, value: impl Into<String>) -> Self {
-        self.namespace_u_r_i = Some(value.into());
-        self
-    }
-
-    pub fn next_element_sibling(mut self, value: impl Into<String>) -> Self {
-        self.next_element_sibling = Some(value.into());
-        self
-    }
-
-    pub fn next_sibling(mut self, value: impl Into<String>) -> Self {
-        self.next_sibling = Some(value.into());
-        self
-    }
-
-    pub fn node_name(mut self, value: impl Into<String>) -> Self {
-        self.node_name = Some(value.into());
-        self
-    }
-
-    pub fn node_value(mut self, value: impl Into<String>) -> Self {
-        self.node_value = Some(value.into());
-        self
-    }
-
-    pub fn outer_h_t_m_l(mut self, value: impl Into<String>) -> Self {
-        self.outer_h_t_m_l = Some(value.into());
-        self
-    }
-
-    pub fn owner_document(mut self, value: impl Into<String>) -> Self {
-        self.owner_document = Some(value.into());
-        self
-    }
-
-    pub fn parent_element(mut self, value: impl Into<String>) -> Self {
-        self.parent_element = Some(value.into());
-        self
-    }
-
-    pub fn parent_node(mut self, value: impl Into<String>) -> Self {
-        self.parent_node = Some(value.into());
-        self
-    }
-
-    pub fn prefix(mut self, value: impl Into<String>) -> Self {
-        self.prefix = Some(value.into());
-        self
-    }
-
-    pub fn previous_element_sibling(mut self, value: impl Into<String>) -> Self {
-        self.previous_element_sibling = Some(value.into());
-        self
-    }
-
-    pub fn previous_sibling(mut self, value: impl Into<String>) -> Self {
-        self.previous_sibling = Some(value.into());
-        self
-    }
-
-    pub fn region_overset(mut self, value: impl Into<String>) -> Self {
-        self.region_overset = Some(value.into());
-        self
-    }
-
     pub fn role(mut self, value: impl Into<String>) -> Self {
         self.role = Some(value.into());
-        self
-    }
-
-    pub fn scroll_height(mut self, value: impl Into<String>) -> Self {
-        self.scroll_height = Some(value.into());
-        self
-    }
-
-    pub fn scroll_width(mut self, value: impl Into<String>) -> Self {
-        self.scroll_width = Some(value.into());
-        self
-    }
-
-    pub fn shadow_root(mut self, value: impl Into<String>) -> Self {
-        self.shadow_root = Some(value.into());
-        self
-    }
-
-    pub fn short(mut self, value: impl Into<String>) -> Self {
-        self.short = Some(value.into());
-        self
-    }
-
-    pub fn tag_name(mut self, value: impl Into<String>) -> Self {
-        self.tag_name = Some(value.into());
         self
     }
 

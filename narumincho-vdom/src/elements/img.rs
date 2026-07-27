@@ -16,11 +16,9 @@ impl ImgCrossOrigin {
     }
 }
 
-/// https://html.spec.whatwg.org/multipage/embedded-content.html#the-img-element
+/// HTML Content Attributes for https://html.spec.whatwg.org/multipage/embedded-content.html#the-img-element
 #[derive(Default, Debug, Clone, PartialEq, Eq)]
 pub struct Img {
-    pub access_key_label: std::option::Option<String>,
-    pub active_view_transition: std::option::Option<String>,
     pub align: std::option::Option<String>,
     pub alt: std::option::Option<String>,
     pub aria_active_descendant_element: std::option::Option<String>,
@@ -67,16 +65,41 @@ pub struct Img {
     pub aria_value_min: std::option::Option<String>,
     pub aria_value_now: std::option::Option<String>,
     pub aria_value_text: std::option::Option<String>,
+    pub autocorrect: std::option::Option<bool>,
+    pub border: std::option::Option<String>,
+    pub class_name: std::option::Option<String>,
+    pub controls: std::option::Option<bool>,
+    pub cross_origin: std::option::Option<ImgCrossOrigin>,
+    pub decoding: std::option::Option<String>,
+    pub fetch_priority: std::option::Option<String>,
+    pub is_map: std::option::Option<bool>,
+    pub loading: std::option::Option<String>,
+    pub long_desc: std::option::Option<String>,
+    pub lowsrc: std::option::Option<String>,
+    pub name: std::option::Option<String>,
+    pub referrer_policy: std::option::Option<String>,
+    pub role: std::option::Option<String>,
+    pub sizes: std::option::Option<String>,
+    pub src: std::option::Option<String>,
+    pub srcset: std::option::Option<String>,
+    pub text_content: std::option::Option<String>,
+    pub use_map: std::option::Option<String>,
+    pub virtual_keyboard_policy: std::option::Option<String>,
+    pub writing_suggestions: std::option::Option<String>,
+}
+
+/// JavaScript / DOM Properties for https://html.spec.whatwg.org/multipage/embedded-content.html#the-img-element
+#[derive(Default, Debug, Clone, PartialEq, Eq)]
+pub struct ImgJsProperties {
+    pub access_key_label: std::option::Option<String>,
+    pub active_view_transition: std::option::Option<String>,
     pub assigned_slot: std::option::Option<String>,
     pub attribute_style_map: std::option::Option<String>,
     pub attributes: std::option::Option<String>,
-    pub autocorrect: std::option::Option<bool>,
     pub base_u_r_i: std::option::Option<String>,
-    pub border: std::option::Option<String>,
     pub child_nodes: std::option::Option<String>,
     pub children: std::option::Option<String>,
     pub class_list: std::option::Option<String>,
-    pub class_name: std::option::Option<String>,
     pub client_height: std::option::Option<String>,
     pub client_left: std::option::Option<String>,
     pub client_top: std::option::Option<String>,
@@ -84,17 +107,13 @@ pub struct Img {
     pub complete: std::option::Option<bool>,
     pub containertiming: std::option::Option<String>,
     pub containertiming_ignore: std::option::Option<String>,
-    pub controls: std::option::Option<bool>,
-    pub cross_origin: std::option::Option<ImgCrossOrigin>,
     pub current_c_s_s_zoom: std::option::Option<String>,
     pub current_src: std::option::Option<String>,
     pub custom_element_registry: std::option::Option<String>,
     pub dataset: std::option::Option<String>,
-    pub decoding: std::option::Option<String>,
     pub double: std::option::Option<String>,
     pub edit_context: std::option::Option<String>,
     pub element_timing: std::option::Option<String>,
-    pub fetch_priority: std::option::Option<String>,
     pub first_child: std::option::Option<String>,
     pub first_element_child: std::option::Option<String>,
     pub heading_reset: std::option::Option<bool>,
@@ -102,15 +121,10 @@ pub struct Img {
     pub inner_text: std::option::Option<String>,
     pub is_connected: std::option::Option<bool>,
     pub is_content_editable: std::option::Option<bool>,
-    pub is_map: std::option::Option<bool>,
     pub last_child: std::option::Option<String>,
     pub last_element_child: std::option::Option<String>,
-    pub loading: std::option::Option<String>,
     pub local_name: std::option::Option<String>,
     pub long: std::option::Option<String>,
-    pub long_desc: std::option::Option<String>,
-    pub lowsrc: std::option::Option<String>,
-    pub name: std::option::Option<String>,
     pub namespace_u_r_i: std::option::Option<String>,
     pub next_element_sibling: std::option::Option<String>,
     pub next_sibling: std::option::Option<String>,
@@ -129,22 +143,13 @@ pub struct Img {
     pub prefix: std::option::Option<String>,
     pub previous_element_sibling: std::option::Option<String>,
     pub previous_sibling: std::option::Option<String>,
-    pub referrer_policy: std::option::Option<String>,
     pub region_overset: std::option::Option<String>,
-    pub role: std::option::Option<String>,
     pub scroll_height: std::option::Option<String>,
     pub scroll_parent: std::option::Option<String>,
     pub scroll_width: std::option::Option<String>,
     pub shadow_root: std::option::Option<String>,
     pub short: std::option::Option<String>,
-    pub sizes: std::option::Option<String>,
-    pub src: std::option::Option<String>,
-    pub srcset: std::option::Option<String>,
     pub tag_name: std::option::Option<String>,
-    pub text_content: std::option::Option<String>,
-    pub use_map: std::option::Option<String>,
-    pub virtual_keyboard_policy: std::option::Option<String>,
-    pub writing_suggestions: std::option::Option<String>,
     pub x: std::option::Option<String>,
     pub y: std::option::Option<String>,
 }
@@ -154,16 +159,6 @@ pub fn img() -> Img {
 }
 
 impl Img {
-    pub fn access_key_label(mut self, value: impl Into<String>) -> Self {
-        self.access_key_label = Some(value.into());
-        self
-    }
-
-    pub fn active_view_transition(mut self, value: impl Into<String>) -> Self {
-        self.active_view_transition = Some(value.into());
-        self
-    }
-
     pub fn align(mut self, value: impl Into<String>) -> Self {
         self.align = Some(value.into());
         self
@@ -394,28 +389,8 @@ impl Img {
         self
     }
 
-    pub fn assigned_slot(mut self, value: impl Into<String>) -> Self {
-        self.assigned_slot = Some(value.into());
-        self
-    }
-
-    pub fn attribute_style_map(mut self, value: impl Into<String>) -> Self {
-        self.attribute_style_map = Some(value.into());
-        self
-    }
-
-    pub fn attributes(mut self, value: impl Into<String>) -> Self {
-        self.attributes = Some(value.into());
-        self
-    }
-
     pub fn autocorrect(mut self, value: bool) -> Self {
         self.autocorrect = Some(value);
-        self
-    }
-
-    pub fn base_u_r_i(mut self, value: impl Into<String>) -> Self {
-        self.base_u_r_i = Some(value.into());
         self
     }
 
@@ -424,58 +399,8 @@ impl Img {
         self
     }
 
-    pub fn child_nodes(mut self, value: impl Into<String>) -> Self {
-        self.child_nodes = Some(value.into());
-        self
-    }
-
-    pub fn children(mut self, value: impl Into<String>) -> Self {
-        self.children = Some(value.into());
-        self
-    }
-
-    pub fn class_list(mut self, value: impl Into<String>) -> Self {
-        self.class_list = Some(value.into());
-        self
-    }
-
     pub fn class_name(mut self, value: impl Into<String>) -> Self {
         self.class_name = Some(value.into());
-        self
-    }
-
-    pub fn client_height(mut self, value: impl Into<String>) -> Self {
-        self.client_height = Some(value.into());
-        self
-    }
-
-    pub fn client_left(mut self, value: impl Into<String>) -> Self {
-        self.client_left = Some(value.into());
-        self
-    }
-
-    pub fn client_top(mut self, value: impl Into<String>) -> Self {
-        self.client_top = Some(value.into());
-        self
-    }
-
-    pub fn client_width(mut self, value: impl Into<String>) -> Self {
-        self.client_width = Some(value.into());
-        self
-    }
-
-    pub fn complete(mut self, value: bool) -> Self {
-        self.complete = Some(value);
-        self
-    }
-
-    pub fn containertiming(mut self, value: impl Into<String>) -> Self {
-        self.containertiming = Some(value.into());
-        self
-    }
-
-    pub fn containertiming_ignore(mut self, value: impl Into<String>) -> Self {
-        self.containertiming_ignore = Some(value.into());
         self
     }
 
@@ -489,43 +414,8 @@ impl Img {
         self
     }
 
-    pub fn current_c_s_s_zoom(mut self, value: impl Into<String>) -> Self {
-        self.current_c_s_s_zoom = Some(value.into());
-        self
-    }
-
-    pub fn current_src(mut self, value: impl Into<String>) -> Self {
-        self.current_src = Some(value.into());
-        self
-    }
-
-    pub fn custom_element_registry(mut self, value: impl Into<String>) -> Self {
-        self.custom_element_registry = Some(value.into());
-        self
-    }
-
-    pub fn dataset(mut self, value: impl Into<String>) -> Self {
-        self.dataset = Some(value.into());
-        self
-    }
-
     pub fn decoding(mut self, value: impl Into<String>) -> Self {
         self.decoding = Some(value.into());
-        self
-    }
-
-    pub fn double(mut self, value: impl Into<String>) -> Self {
-        self.double = Some(value.into());
-        self
-    }
-
-    pub fn edit_context(mut self, value: impl Into<String>) -> Self {
-        self.edit_context = Some(value.into());
-        self
-    }
-
-    pub fn element_timing(mut self, value: impl Into<String>) -> Self {
-        self.element_timing = Some(value.into());
         self
     }
 
@@ -534,68 +424,13 @@ impl Img {
         self
     }
 
-    pub fn first_child(mut self, value: impl Into<String>) -> Self {
-        self.first_child = Some(value.into());
-        self
-    }
-
-    pub fn first_element_child(mut self, value: impl Into<String>) -> Self {
-        self.first_element_child = Some(value.into());
-        self
-    }
-
-    pub fn heading_reset(mut self, value: bool) -> Self {
-        self.heading_reset = Some(value);
-        self
-    }
-
-    pub fn inner_h_t_m_l(mut self, value: impl Into<String>) -> Self {
-        self.inner_h_t_m_l = Some(value.into());
-        self
-    }
-
-    pub fn inner_text(mut self, value: impl Into<String>) -> Self {
-        self.inner_text = Some(value.into());
-        self
-    }
-
-    pub fn is_connected(mut self, value: bool) -> Self {
-        self.is_connected = Some(value);
-        self
-    }
-
-    pub fn is_content_editable(mut self, value: bool) -> Self {
-        self.is_content_editable = Some(value);
-        self
-    }
-
     pub fn is_map(mut self, value: bool) -> Self {
         self.is_map = Some(value);
         self
     }
 
-    pub fn last_child(mut self, value: impl Into<String>) -> Self {
-        self.last_child = Some(value.into());
-        self
-    }
-
-    pub fn last_element_child(mut self, value: impl Into<String>) -> Self {
-        self.last_element_child = Some(value.into());
-        self
-    }
-
     pub fn loading(mut self, value: impl Into<String>) -> Self {
         self.loading = Some(value.into());
-        self
-    }
-
-    pub fn local_name(mut self, value: impl Into<String>) -> Self {
-        self.local_name = Some(value.into());
-        self
-    }
-
-    pub fn long(mut self, value: impl Into<String>) -> Self {
-        self.long = Some(value.into());
         self
     }
 
@@ -614,133 +449,13 @@ impl Img {
         self
     }
 
-    pub fn namespace_u_r_i(mut self, value: impl Into<String>) -> Self {
-        self.namespace_u_r_i = Some(value.into());
-        self
-    }
-
-    pub fn next_element_sibling(mut self, value: impl Into<String>) -> Self {
-        self.next_element_sibling = Some(value.into());
-        self
-    }
-
-    pub fn next_sibling(mut self, value: impl Into<String>) -> Self {
-        self.next_sibling = Some(value.into());
-        self
-    }
-
-    pub fn node_name(mut self, value: impl Into<String>) -> Self {
-        self.node_name = Some(value.into());
-        self
-    }
-
-    pub fn node_value(mut self, value: impl Into<String>) -> Self {
-        self.node_value = Some(value.into());
-        self
-    }
-
-    pub fn offset_height(mut self, value: impl Into<String>) -> Self {
-        self.offset_height = Some(value.into());
-        self
-    }
-
-    pub fn offset_left(mut self, value: impl Into<String>) -> Self {
-        self.offset_left = Some(value.into());
-        self
-    }
-
-    pub fn offset_parent(mut self, value: impl Into<String>) -> Self {
-        self.offset_parent = Some(value.into());
-        self
-    }
-
-    pub fn offset_top(mut self, value: impl Into<String>) -> Self {
-        self.offset_top = Some(value.into());
-        self
-    }
-
-    pub fn offset_width(mut self, value: impl Into<String>) -> Self {
-        self.offset_width = Some(value.into());
-        self
-    }
-
-    pub fn outer_h_t_m_l(mut self, value: impl Into<String>) -> Self {
-        self.outer_h_t_m_l = Some(value.into());
-        self
-    }
-
-    pub fn outer_text(mut self, value: impl Into<String>) -> Self {
-        self.outer_text = Some(value.into());
-        self
-    }
-
-    pub fn owner_document(mut self, value: impl Into<String>) -> Self {
-        self.owner_document = Some(value.into());
-        self
-    }
-
-    pub fn parent_element(mut self, value: impl Into<String>) -> Self {
-        self.parent_element = Some(value.into());
-        self
-    }
-
-    pub fn parent_node(mut self, value: impl Into<String>) -> Self {
-        self.parent_node = Some(value.into());
-        self
-    }
-
-    pub fn prefix(mut self, value: impl Into<String>) -> Self {
-        self.prefix = Some(value.into());
-        self
-    }
-
-    pub fn previous_element_sibling(mut self, value: impl Into<String>) -> Self {
-        self.previous_element_sibling = Some(value.into());
-        self
-    }
-
-    pub fn previous_sibling(mut self, value: impl Into<String>) -> Self {
-        self.previous_sibling = Some(value.into());
-        self
-    }
-
     pub fn referrer_policy(mut self, value: impl Into<String>) -> Self {
         self.referrer_policy = Some(value.into());
         self
     }
 
-    pub fn region_overset(mut self, value: impl Into<String>) -> Self {
-        self.region_overset = Some(value.into());
-        self
-    }
-
     pub fn role(mut self, value: impl Into<String>) -> Self {
         self.role = Some(value.into());
-        self
-    }
-
-    pub fn scroll_height(mut self, value: impl Into<String>) -> Self {
-        self.scroll_height = Some(value.into());
-        self
-    }
-
-    pub fn scroll_parent(mut self, value: impl Into<String>) -> Self {
-        self.scroll_parent = Some(value.into());
-        self
-    }
-
-    pub fn scroll_width(mut self, value: impl Into<String>) -> Self {
-        self.scroll_width = Some(value.into());
-        self
-    }
-
-    pub fn shadow_root(mut self, value: impl Into<String>) -> Self {
-        self.shadow_root = Some(value.into());
-        self
-    }
-
-    pub fn short(mut self, value: impl Into<String>) -> Self {
-        self.short = Some(value.into());
         self
     }
 
@@ -756,11 +471,6 @@ impl Img {
 
     pub fn srcset(mut self, value: impl Into<String>) -> Self {
         self.srcset = Some(value.into());
-        self
-    }
-
-    pub fn tag_name(mut self, value: impl Into<String>) -> Self {
-        self.tag_name = Some(value.into());
         self
     }
 
@@ -781,16 +491,6 @@ impl Img {
 
     pub fn writing_suggestions(mut self, value: impl Into<String>) -> Self {
         self.writing_suggestions = Some(value.into());
-        self
-    }
-
-    pub fn x(mut self, value: impl Into<String>) -> Self {
-        self.x = Some(value.into());
-        self
-    }
-
-    pub fn y(mut self, value: impl Into<String>) -> Self {
-        self.y = Some(value.into());
         self
     }
 

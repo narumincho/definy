@@ -33,11 +33,9 @@ impl VideoPreload {
     }
 }
 
-/// https://html.spec.whatwg.org/multipage/media.html#video
+/// HTML Content Attributes for https://html.spec.whatwg.org/multipage/media.html#video
 #[derive(Default, Debug, Clone, PartialEq, Eq)]
 pub struct Video {
-    pub access_key_label: std::option::Option<String>,
-    pub active_view_transition: std::option::Option<String>,
     pub aria_active_descendant_element: std::option::Option<String>,
     pub aria_atomic: std::option::Option<String>,
     pub aria_auto_complete: std::option::Option<String>,
@@ -82,35 +80,57 @@ pub struct Video {
     pub aria_value_min: std::option::Option<String>,
     pub aria_value_now: std::option::Option<String>,
     pub aria_value_text: std::option::Option<String>,
+    pub autocorrect: std::option::Option<bool>,
+    pub autoplay: std::option::Option<bool>,
+    pub class_name: std::option::Option<String>,
+    pub controls: std::option::Option<bool>,
+    pub cross_origin: std::option::Option<VideoCrossOrigin>,
+    pub current_time: std::option::Option<String>,
+    pub default_muted: std::option::Option<bool>,
+    pub default_playback_rate: std::option::Option<String>,
+    pub disable_picture_in_picture: std::option::Option<bool>,
+    pub disable_remote_playback: std::option::Option<bool>,
+    pub loading: std::option::Option<String>,
+    pub r#loop: std::option::Option<bool>,
+    pub muted: std::option::Option<bool>,
+    pub playback_rate: std::option::Option<String>,
+    pub plays_inline: std::option::Option<bool>,
+    pub poster: std::option::Option<String>,
+    pub preload: std::option::Option<VideoPreload>,
+    pub preserves_pitch: std::option::Option<bool>,
+    pub role: std::option::Option<String>,
+    pub src: std::option::Option<String>,
+    pub src_object: std::option::Option<String>,
+    pub text_content: std::option::Option<String>,
+    pub virtual_keyboard_policy: std::option::Option<String>,
+    pub volume: std::option::Option<String>,
+    pub writing_suggestions: std::option::Option<String>,
+}
+
+/// JavaScript / DOM Properties for https://html.spec.whatwg.org/multipage/media.html#video
+#[derive(Default, Debug, Clone, PartialEq, Eq)]
+pub struct VideoJsProperties {
+    pub access_key_label: std::option::Option<String>,
+    pub active_view_transition: std::option::Option<String>,
     pub assigned_slot: std::option::Option<String>,
     pub attribute_style_map: std::option::Option<String>,
     pub attributes: std::option::Option<String>,
     pub audio_tracks: std::option::Option<String>,
-    pub autocorrect: std::option::Option<bool>,
-    pub autoplay: std::option::Option<bool>,
     pub base_u_r_i: std::option::Option<String>,
     pub buffered: std::option::Option<String>,
     pub child_nodes: std::option::Option<String>,
     pub children: std::option::Option<String>,
     pub class_list: std::option::Option<String>,
-    pub class_name: std::option::Option<String>,
     pub client_height: std::option::Option<String>,
     pub client_left: std::option::Option<String>,
     pub client_top: std::option::Option<String>,
     pub client_width: std::option::Option<String>,
     pub containertiming: std::option::Option<String>,
     pub containertiming_ignore: std::option::Option<String>,
-    pub controls: std::option::Option<bool>,
-    pub cross_origin: std::option::Option<VideoCrossOrigin>,
     pub current_c_s_s_zoom: std::option::Option<String>,
     pub current_src: std::option::Option<String>,
-    pub current_time: std::option::Option<String>,
     pub custom_element_registry: std::option::Option<String>,
     pub dataset: std::option::Option<String>,
-    pub default_muted: std::option::Option<bool>,
-    pub default_playback_rate: std::option::Option<String>,
-    pub disable_picture_in_picture: std::option::Option<bool>,
-    pub disable_remote_playback: std::option::Option<bool>,
     pub double: std::option::Option<String>,
     pub edit_context: std::option::Option<String>,
     pub element_timing: std::option::Option<String>,
@@ -125,12 +145,9 @@ pub struct Video {
     pub is_content_editable: std::option::Option<bool>,
     pub last_child: std::option::Option<String>,
     pub last_element_child: std::option::Option<String>,
-    pub loading: std::option::Option<String>,
     pub local_name: std::option::Option<String>,
     pub long: std::option::Option<String>,
-    pub r#loop: std::option::Option<bool>,
     pub media_keys: std::option::Option<String>,
-    pub muted: std::option::Option<bool>,
     pub namespace_u_r_i: std::option::Option<String>,
     pub next_element_sibling: std::option::Option<String>,
     pub next_sibling: std::option::Option<String>,
@@ -147,18 +164,12 @@ pub struct Video {
     pub parent_element: std::option::Option<String>,
     pub parent_node: std::option::Option<String>,
     pub paused: std::option::Option<bool>,
-    pub playback_rate: std::option::Option<String>,
     pub played: std::option::Option<String>,
-    pub plays_inline: std::option::Option<bool>,
-    pub poster: std::option::Option<String>,
     pub prefix: std::option::Option<String>,
-    pub preload: std::option::Option<VideoPreload>,
-    pub preserves_pitch: std::option::Option<bool>,
     pub previous_element_sibling: std::option::Option<String>,
     pub previous_sibling: std::option::Option<String>,
     pub region_overset: std::option::Option<String>,
     pub remote: std::option::Option<String>,
-    pub role: std::option::Option<String>,
     pub scroll_height: std::option::Option<String>,
     pub scroll_parent: std::option::Option<String>,
     pub scroll_width: std::option::Option<String>,
@@ -167,15 +178,9 @@ pub struct Video {
     pub shadow_root: std::option::Option<String>,
     pub short: std::option::Option<String>,
     pub sink_id: std::option::Option<String>,
-    pub src: std::option::Option<String>,
-    pub src_object: std::option::Option<String>,
     pub tag_name: std::option::Option<String>,
-    pub text_content: std::option::Option<String>,
     pub text_tracks: std::option::Option<String>,
     pub video_tracks: std::option::Option<String>,
-    pub virtual_keyboard_policy: std::option::Option<String>,
-    pub volume: std::option::Option<String>,
-    pub writing_suggestions: std::option::Option<String>,
 }
 
 pub fn video() -> Video {
@@ -183,16 +188,6 @@ pub fn video() -> Video {
 }
 
 impl Video {
-    pub fn access_key_label(mut self, value: impl Into<String>) -> Self {
-        self.access_key_label = Some(value.into());
-        self
-    }
-
-    pub fn active_view_transition(mut self, value: impl Into<String>) -> Self {
-        self.active_view_transition = Some(value.into());
-        self
-    }
-
     pub fn aria_active_descendant_element(mut self, value: impl Into<String>) -> Self {
         self.aria_active_descendant_element = Some(value.into());
         self
@@ -413,26 +408,6 @@ impl Video {
         self
     }
 
-    pub fn assigned_slot(mut self, value: impl Into<String>) -> Self {
-        self.assigned_slot = Some(value.into());
-        self
-    }
-
-    pub fn attribute_style_map(mut self, value: impl Into<String>) -> Self {
-        self.attribute_style_map = Some(value.into());
-        self
-    }
-
-    pub fn attributes(mut self, value: impl Into<String>) -> Self {
-        self.attributes = Some(value.into());
-        self
-    }
-
-    pub fn audio_tracks(mut self, value: impl Into<String>) -> Self {
-        self.audio_tracks = Some(value.into());
-        self
-    }
-
     pub fn autocorrect(mut self, value: bool) -> Self {
         self.autocorrect = Some(value);
         self
@@ -443,63 +418,8 @@ impl Video {
         self
     }
 
-    pub fn base_u_r_i(mut self, value: impl Into<String>) -> Self {
-        self.base_u_r_i = Some(value.into());
-        self
-    }
-
-    pub fn buffered(mut self, value: impl Into<String>) -> Self {
-        self.buffered = Some(value.into());
-        self
-    }
-
-    pub fn child_nodes(mut self, value: impl Into<String>) -> Self {
-        self.child_nodes = Some(value.into());
-        self
-    }
-
-    pub fn children(mut self, value: impl Into<String>) -> Self {
-        self.children = Some(value.into());
-        self
-    }
-
-    pub fn class_list(mut self, value: impl Into<String>) -> Self {
-        self.class_list = Some(value.into());
-        self
-    }
-
     pub fn class_name(mut self, value: impl Into<String>) -> Self {
         self.class_name = Some(value.into());
-        self
-    }
-
-    pub fn client_height(mut self, value: impl Into<String>) -> Self {
-        self.client_height = Some(value.into());
-        self
-    }
-
-    pub fn client_left(mut self, value: impl Into<String>) -> Self {
-        self.client_left = Some(value.into());
-        self
-    }
-
-    pub fn client_top(mut self, value: impl Into<String>) -> Self {
-        self.client_top = Some(value.into());
-        self
-    }
-
-    pub fn client_width(mut self, value: impl Into<String>) -> Self {
-        self.client_width = Some(value.into());
-        self
-    }
-
-    pub fn containertiming(mut self, value: impl Into<String>) -> Self {
-        self.containertiming = Some(value.into());
-        self
-    }
-
-    pub fn containertiming_ignore(mut self, value: impl Into<String>) -> Self {
-        self.containertiming_ignore = Some(value.into());
         self
     }
 
@@ -513,28 +433,8 @@ impl Video {
         self
     }
 
-    pub fn current_c_s_s_zoom(mut self, value: impl Into<String>) -> Self {
-        self.current_c_s_s_zoom = Some(value.into());
-        self
-    }
-
-    pub fn current_src(mut self, value: impl Into<String>) -> Self {
-        self.current_src = Some(value.into());
-        self
-    }
-
     pub fn current_time(mut self, value: impl Into<String>) -> Self {
         self.current_time = Some(value.into());
-        self
-    }
-
-    pub fn custom_element_registry(mut self, value: impl Into<String>) -> Self {
-        self.custom_element_registry = Some(value.into());
-        self
-    }
-
-    pub fn dataset(mut self, value: impl Into<String>) -> Self {
-        self.dataset = Some(value.into());
         self
     }
 
@@ -558,88 +458,8 @@ impl Video {
         self
     }
 
-    pub fn double(mut self, value: impl Into<String>) -> Self {
-        self.double = Some(value.into());
-        self
-    }
-
-    pub fn edit_context(mut self, value: impl Into<String>) -> Self {
-        self.edit_context = Some(value.into());
-        self
-    }
-
-    pub fn element_timing(mut self, value: impl Into<String>) -> Self {
-        self.element_timing = Some(value.into());
-        self
-    }
-
-    pub fn ended(mut self, value: bool) -> Self {
-        self.ended = Some(value);
-        self
-    }
-
-    pub fn error(mut self, value: impl Into<String>) -> Self {
-        self.error = Some(value.into());
-        self
-    }
-
-    pub fn first_child(mut self, value: impl Into<String>) -> Self {
-        self.first_child = Some(value.into());
-        self
-    }
-
-    pub fn first_element_child(mut self, value: impl Into<String>) -> Self {
-        self.first_element_child = Some(value.into());
-        self
-    }
-
-    pub fn heading_reset(mut self, value: bool) -> Self {
-        self.heading_reset = Some(value);
-        self
-    }
-
-    pub fn inner_h_t_m_l(mut self, value: impl Into<String>) -> Self {
-        self.inner_h_t_m_l = Some(value.into());
-        self
-    }
-
-    pub fn inner_text(mut self, value: impl Into<String>) -> Self {
-        self.inner_text = Some(value.into());
-        self
-    }
-
-    pub fn is_connected(mut self, value: bool) -> Self {
-        self.is_connected = Some(value);
-        self
-    }
-
-    pub fn is_content_editable(mut self, value: bool) -> Self {
-        self.is_content_editable = Some(value);
-        self
-    }
-
-    pub fn last_child(mut self, value: impl Into<String>) -> Self {
-        self.last_child = Some(value.into());
-        self
-    }
-
-    pub fn last_element_child(mut self, value: impl Into<String>) -> Self {
-        self.last_element_child = Some(value.into());
-        self
-    }
-
     pub fn loading(mut self, value: impl Into<String>) -> Self {
         self.loading = Some(value.into());
-        self
-    }
-
-    pub fn local_name(mut self, value: impl Into<String>) -> Self {
-        self.local_name = Some(value.into());
-        self
-    }
-
-    pub fn long(mut self, value: impl Into<String>) -> Self {
-        self.long = Some(value.into());
         self
     }
 
@@ -648,103 +468,13 @@ impl Video {
         self
     }
 
-    pub fn media_keys(mut self, value: impl Into<String>) -> Self {
-        self.media_keys = Some(value.into());
-        self
-    }
-
     pub fn muted(mut self, value: bool) -> Self {
         self.muted = Some(value);
         self
     }
 
-    pub fn namespace_u_r_i(mut self, value: impl Into<String>) -> Self {
-        self.namespace_u_r_i = Some(value.into());
-        self
-    }
-
-    pub fn next_element_sibling(mut self, value: impl Into<String>) -> Self {
-        self.next_element_sibling = Some(value.into());
-        self
-    }
-
-    pub fn next_sibling(mut self, value: impl Into<String>) -> Self {
-        self.next_sibling = Some(value.into());
-        self
-    }
-
-    pub fn node_name(mut self, value: impl Into<String>) -> Self {
-        self.node_name = Some(value.into());
-        self
-    }
-
-    pub fn node_value(mut self, value: impl Into<String>) -> Self {
-        self.node_value = Some(value.into());
-        self
-    }
-
-    pub fn offset_height(mut self, value: impl Into<String>) -> Self {
-        self.offset_height = Some(value.into());
-        self
-    }
-
-    pub fn offset_left(mut self, value: impl Into<String>) -> Self {
-        self.offset_left = Some(value.into());
-        self
-    }
-
-    pub fn offset_parent(mut self, value: impl Into<String>) -> Self {
-        self.offset_parent = Some(value.into());
-        self
-    }
-
-    pub fn offset_top(mut self, value: impl Into<String>) -> Self {
-        self.offset_top = Some(value.into());
-        self
-    }
-
-    pub fn offset_width(mut self, value: impl Into<String>) -> Self {
-        self.offset_width = Some(value.into());
-        self
-    }
-
-    pub fn outer_h_t_m_l(mut self, value: impl Into<String>) -> Self {
-        self.outer_h_t_m_l = Some(value.into());
-        self
-    }
-
-    pub fn outer_text(mut self, value: impl Into<String>) -> Self {
-        self.outer_text = Some(value.into());
-        self
-    }
-
-    pub fn owner_document(mut self, value: impl Into<String>) -> Self {
-        self.owner_document = Some(value.into());
-        self
-    }
-
-    pub fn parent_element(mut self, value: impl Into<String>) -> Self {
-        self.parent_element = Some(value.into());
-        self
-    }
-
-    pub fn parent_node(mut self, value: impl Into<String>) -> Self {
-        self.parent_node = Some(value.into());
-        self
-    }
-
-    pub fn paused(mut self, value: bool) -> Self {
-        self.paused = Some(value);
-        self
-    }
-
     pub fn playback_rate(mut self, value: impl Into<String>) -> Self {
         self.playback_rate = Some(value.into());
-        self
-    }
-
-    pub fn played(mut self, value: impl Into<String>) -> Self {
-        self.played = Some(value.into());
         self
     }
 
@@ -758,11 +488,6 @@ impl Video {
         self
     }
 
-    pub fn prefix(mut self, value: impl Into<String>) -> Self {
-        self.prefix = Some(value.into());
-        self
-    }
-
     pub fn preload(mut self, value: VideoPreload) -> Self {
         self.preload = Some(value);
         self
@@ -773,68 +498,8 @@ impl Video {
         self
     }
 
-    pub fn previous_element_sibling(mut self, value: impl Into<String>) -> Self {
-        self.previous_element_sibling = Some(value.into());
-        self
-    }
-
-    pub fn previous_sibling(mut self, value: impl Into<String>) -> Self {
-        self.previous_sibling = Some(value.into());
-        self
-    }
-
-    pub fn region_overset(mut self, value: impl Into<String>) -> Self {
-        self.region_overset = Some(value.into());
-        self
-    }
-
-    pub fn remote(mut self, value: impl Into<String>) -> Self {
-        self.remote = Some(value.into());
-        self
-    }
-
     pub fn role(mut self, value: impl Into<String>) -> Self {
         self.role = Some(value.into());
-        self
-    }
-
-    pub fn scroll_height(mut self, value: impl Into<String>) -> Self {
-        self.scroll_height = Some(value.into());
-        self
-    }
-
-    pub fn scroll_parent(mut self, value: impl Into<String>) -> Self {
-        self.scroll_parent = Some(value.into());
-        self
-    }
-
-    pub fn scroll_width(mut self, value: impl Into<String>) -> Self {
-        self.scroll_width = Some(value.into());
-        self
-    }
-
-    pub fn seekable(mut self, value: impl Into<String>) -> Self {
-        self.seekable = Some(value.into());
-        self
-    }
-
-    pub fn seeking(mut self, value: bool) -> Self {
-        self.seeking = Some(value);
-        self
-    }
-
-    pub fn shadow_root(mut self, value: impl Into<String>) -> Self {
-        self.shadow_root = Some(value.into());
-        self
-    }
-
-    pub fn short(mut self, value: impl Into<String>) -> Self {
-        self.short = Some(value.into());
-        self
-    }
-
-    pub fn sink_id(mut self, value: impl Into<String>) -> Self {
-        self.sink_id = Some(value.into());
         self
     }
 
@@ -848,23 +513,8 @@ impl Video {
         self
     }
 
-    pub fn tag_name(mut self, value: impl Into<String>) -> Self {
-        self.tag_name = Some(value.into());
-        self
-    }
-
     pub fn text_content(mut self, value: impl Into<String>) -> Self {
         self.text_content = Some(value.into());
-        self
-    }
-
-    pub fn text_tracks(mut self, value: impl Into<String>) -> Self {
-        self.text_tracks = Some(value.into());
-        self
-    }
-
-    pub fn video_tracks(mut self, value: impl Into<String>) -> Self {
-        self.video_tracks = Some(value.into());
         self
     }
 
