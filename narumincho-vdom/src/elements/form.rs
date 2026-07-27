@@ -23,6 +23,9 @@ impl FormTarget {
 /// HTML Content Attributes for https://html.spec.whatwg.org/multipage/forms.html#the-form-element
 #[derive(Default, Debug, Clone, PartialEq, Eq)]
 pub struct Form {
+    pub attributes: Vec<(String, String)>,
+    pub styles: crate::Style,
+    pub children: Vec<super::Node>,
     pub accept_charset: std::option::Option<String>,
     pub action: std::option::Option<String>,
     pub aria_active_descendant_element: std::option::Option<String>,
@@ -154,6 +157,41 @@ pub fn form() -> Form {
 }
 
 impl Form {
+    pub fn attribute(mut self, key: impl Into<String>, value: impl Into<String>) -> Self {
+        self.attributes.push((key.into(), value.into()));
+        self
+    }
+
+    pub fn id(mut self, value: impl Into<String>) -> Self {
+        self.attribute("id", value)
+    }
+
+    pub fn class(mut self, value: impl Into<String>) -> Self {
+        self.attribute("class", value)
+    }
+
+    pub fn style(mut self, style: impl Into<crate::Style>) -> Self {
+        self.styles = style.into();
+        self
+    }
+
+    pub fn popover(self) -> Self {
+        self.attribute("popover", "auto")
+    }
+
+    pub fn children(mut self, children: impl Into<Vec<super::Node>>) -> Self {
+        self.children = children.into();
+        self
+    }
+
+    pub fn into_node(self) -> super::Node {
+        super::Node::Element(super::Element {
+            global_attributes: super::GlobalAttributes::default(),
+            element_content: super::ElementContent::Form(self),
+            children: Vec::new(),
+        })
+    }
+
     pub fn accept_charset(mut self, value: impl Into<String>) -> Self {
         self.accept_charset = Some(value.into());
         self

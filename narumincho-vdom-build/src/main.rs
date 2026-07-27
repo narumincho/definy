@@ -367,6 +367,9 @@ fn output_element_file(
     writeln!(file, "/// HTML Content Attributes for {}", info.href)?;
     writeln!(file, "#[derive(Default, Debug, Clone, PartialEq, Eq)]")?;
     writeln!(file, "pub struct {} {{", capitalized_element_name)?;
+    writeln!(file, "    pub attributes: Vec<(String, String)>,")?;
+    writeln!(file, "    pub styles: crate::Style,")?;
+    writeln!(file, "    pub children: Vec<super::Node>,")?;
     for attr in &html_attributes {
         let field_name = escape_attribute_field_name(&attr.name);
         let enum_values =
@@ -415,6 +418,11 @@ fn output_element_file(
 
     // HTML 属性セッターのメソッド実装
     writeln!(file, "impl {} {{", capitalized_element_name)?;
+    write!(
+        file,
+        "{}",
+        common_builder_methods(&capitalized_element_name, name)
+    )?;
     for attr in &html_attributes {
         let method_name = escape_method_name(&attr.name);
         let field_name = escape_attribute_field_name(&attr.name);
@@ -798,6 +806,18 @@ mod tests {
     use super::*;
 
     #[test]
+    fn common_builder_methods_are_generated_for_old_elements_compatibility() {
+        let methods = common_builder_methods("Button", "button");
+        assert!(methods.contains("pub fn attribute"));
+        assert!(methods.contains("pub fn id"));
+        assert!(methods.contains("pub fn class"));
+        assert!(methods.contains("pub fn style"));
+        assert!(methods.contains("pub fn popover"));
+        assert!(methods.contains("pub fn children"));
+        assert!(methods.contains("pub fn into_node"));
+    }
+
+    #[test]
     fn custom_enum_values_are_used_for_non_idl_attributes() {
         let attr = idl::ResolvedAttribute {
             name: "command".to_string(),
@@ -827,6 +847,33 @@ mod tests {
         assert_eq!(escape_method_name("class"), "class");
         assert_eq!(escape_attribute_field_name("class"), "class");
     }
+}
+
+fn common_builder_methods(element_name: &str, tag_name: &str) -> String {
+    let mut out = String::new();
+    out.push_str(&format!(
+        "    pub fn attribute(mut self, key: impl Into<String>, value: impl Into<String>) -> Self {{\n        self.attributes.push((key.into(), value.into()));\n        self\n    }}\n\n"
+    ));
+    out.push_str(&format!(
+        "    pub fn id(mut self, value: impl Into<String>) -> Self {{\n        self.attribute(\"id\", value)\n    }}\n\n"
+    ));
+    out.push_str(&format!(
+        "    pub fn class(mut self, value: impl Into<String>) -> Self {{\n        self.attribute(\"class\", value)\n    }}\n\n"
+    ));
+    out.push_str(&format!(
+        "    pub fn style(mut self, style: impl Into<crate::Style>) -> Self {{\n        self.styles = style.into();\n        self\n    }}\n\n"
+    ));
+    out.push_str(&format!(
+        "    pub fn popover(self) -> Self {{\n        self.attribute(\"popover\", \"auto\")\n    }}\n\n"
+    ));
+    out.push_str(&format!(
+        "    pub fn children(mut self, children: impl Into<Vec<super::Node>>) -> Self {{\n        self.children = children.into();\n        self\n    }}\n\n"
+    ));
+    out.push_str(&format!(
+        "    pub fn into_node(self) -> super::Node {{\n        super::Node::Element(super::Element {{\n            global_attributes: super::GlobalAttributes::default(),\n            element_content: super::ElementContent::{}(self),\n            children: Vec::new(),\n        }})\n    }}\n\n",
+        capitalize(element_name)
+    ));
+    out
 }
 
 fn escape_identifier(s: &str) -> String {

@@ -4,6 +4,9 @@
 /// HTML Content Attributes for https://w3c.github.io/svgwg/svg2-draft/painting.html#elementdef-marker
 #[derive(Default, Debug, Clone, PartialEq, Eq)]
 pub struct Marker {
+    pub attributes: Vec<(String, String)>,
+    pub styles: crate::Style,
+    pub children: Vec<super::Node>,
     pub aria_active_descendant_element: std::option::Option<String>,
     pub aria_atomic: std::option::Option<String>,
     pub aria_auto_complete: std::option::Option<String>,
@@ -120,6 +123,41 @@ pub fn marker() -> Marker {
 }
 
 impl Marker {
+    pub fn attribute(mut self, key: impl Into<String>, value: impl Into<String>) -> Self {
+        self.attributes.push((key.into(), value.into()));
+        self
+    }
+
+    pub fn id(mut self, value: impl Into<String>) -> Self {
+        self.attribute("id", value)
+    }
+
+    pub fn class(mut self, value: impl Into<String>) -> Self {
+        self.attribute("class", value)
+    }
+
+    pub fn style(mut self, style: impl Into<crate::Style>) -> Self {
+        self.styles = style.into();
+        self
+    }
+
+    pub fn popover(self) -> Self {
+        self.attribute("popover", "auto")
+    }
+
+    pub fn children(mut self, children: impl Into<Vec<super::Node>>) -> Self {
+        self.children = children.into();
+        self
+    }
+
+    pub fn into_node(self) -> super::Node {
+        super::Node::Element(super::Element {
+            global_attributes: super::GlobalAttributes::default(),
+            element_content: super::ElementContent::Marker(self),
+            children: Vec::new(),
+        })
+    }
+
     pub fn aria_active_descendant_element(mut self, value: impl Into<String>) -> Self {
         self.aria_active_descendant_element = Some(value.into());
         self
