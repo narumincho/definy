@@ -5,6 +5,7 @@
 #[derive(Default, Debug, Clone, PartialEq, Eq)]
 pub struct Msqrt {
     pub attributes: std::collections::BTreeMap<String, String>,
+    pub events: Vec<(String, String)>,
     pub styles: crate::Style,
     pub children: Vec<super::Node>,
     pub aria_active_descendant_element: std::option::Option<String>,
@@ -54,56 +55,6 @@ pub struct Msqrt {
     pub class: std::option::Option<String>,
     pub role: std::option::Option<String>,
     pub text_content: std::option::Option<String>,
-}
-
-/// JavaScript / DOM Properties for https://w3c.github.io/mathml-core/#dfn-msqrt
-#[derive(Default, Debug, Clone, PartialEq, Eq)]
-pub struct MsqrtJsProperties {
-    pub active_view_transition: std::option::Option<String>,
-    pub assigned_slot: std::option::Option<String>,
-    pub attribute_style_map: std::option::Option<String>,
-    pub attributes: std::option::Option<String>,
-    pub base_u_r_i: std::option::Option<String>,
-    pub child_nodes: std::option::Option<String>,
-    pub children: std::option::Option<String>,
-    pub class_list: std::option::Option<String>,
-    pub client_height: std::option::Option<String>,
-    pub client_left: std::option::Option<String>,
-    pub client_top: std::option::Option<String>,
-    pub client_width: std::option::Option<String>,
-    pub containertiming: std::option::Option<String>,
-    pub containertiming_ignore: std::option::Option<String>,
-    pub current_c_s_s_zoom: std::option::Option<String>,
-    pub custom_element_registry: std::option::Option<String>,
-    pub dataset: std::option::Option<String>,
-    pub double: std::option::Option<String>,
-    pub element_timing: std::option::Option<String>,
-    pub first_child: std::option::Option<String>,
-    pub first_element_child: std::option::Option<String>,
-    pub inner_h_t_m_l: std::option::Option<String>,
-    pub is_connected: std::option::Option<bool>,
-    pub last_child: std::option::Option<String>,
-    pub last_element_child: std::option::Option<String>,
-    pub local_name: std::option::Option<String>,
-    pub long: std::option::Option<String>,
-    pub namespace_u_r_i: std::option::Option<String>,
-    pub next_element_sibling: std::option::Option<String>,
-    pub next_sibling: std::option::Option<String>,
-    pub node_name: std::option::Option<String>,
-    pub node_value: std::option::Option<String>,
-    pub outer_h_t_m_l: std::option::Option<String>,
-    pub owner_document: std::option::Option<String>,
-    pub parent_element: std::option::Option<String>,
-    pub parent_node: std::option::Option<String>,
-    pub prefix: std::option::Option<String>,
-    pub previous_element_sibling: std::option::Option<String>,
-    pub previous_sibling: std::option::Option<String>,
-    pub region_overset: std::option::Option<String>,
-    pub scroll_height: std::option::Option<String>,
-    pub scroll_width: std::option::Option<String>,
-    pub shadow_root: std::option::Option<String>,
-    pub short: std::option::Option<String>,
-    pub tag_name: std::option::Option<String>,
 }
 
 pub fn msqrt() -> Msqrt {
@@ -510,6 +461,582 @@ impl Msqrt {
         self.attributes
             .insert("textContent".to_string(), value.clone());
         self.text_content = Some(value);
+        self
+    }
+
+    pub fn on_abort(mut self, handler: impl Into<String>) -> Self {
+        self.events.push(("abort".to_string(), handler.into()));
+        self
+    }
+
+    pub fn on_animationcancel(mut self, handler: impl Into<String>) -> Self {
+        self.events
+            .push(("animationcancel".to_string(), handler.into()));
+        self
+    }
+
+    pub fn on_animationend(mut self, handler: impl Into<String>) -> Self {
+        self.events
+            .push(("animationend".to_string(), handler.into()));
+        self
+    }
+
+    pub fn on_animationiteration(mut self, handler: impl Into<String>) -> Self {
+        self.events
+            .push(("animationiteration".to_string(), handler.into()));
+        self
+    }
+
+    pub fn on_animationstart(mut self, handler: impl Into<String>) -> Self {
+        self.events
+            .push(("animationstart".to_string(), handler.into()));
+        self
+    }
+
+    pub fn on_auxclick(mut self, handler: impl Into<String>) -> Self {
+        self.events.push(("auxclick".to_string(), handler.into()));
+        self
+    }
+
+    pub fn on_beforeinput(mut self, handler: impl Into<String>) -> Self {
+        self.events
+            .push(("beforeinput".to_string(), handler.into()));
+        self
+    }
+
+    pub fn on_beforematch(mut self, handler: impl Into<String>) -> Self {
+        self.events
+            .push(("beforematch".to_string(), handler.into()));
+        self
+    }
+
+    pub fn on_beforetoggle(mut self, handler: impl Into<String>) -> Self {
+        self.events
+            .push(("beforetoggle".to_string(), handler.into()));
+        self
+    }
+
+    pub fn on_beforexrselect(mut self, handler: impl Into<String>) -> Self {
+        self.events
+            .push(("beforexrselect".to_string(), handler.into()));
+        self
+    }
+
+    pub fn on_blur(mut self, handler: impl Into<String>) -> Self {
+        self.events.push(("blur".to_string(), handler.into()));
+        self
+    }
+
+    pub fn on_cancel(mut self, handler: impl Into<String>) -> Self {
+        self.events.push(("cancel".to_string(), handler.into()));
+        self
+    }
+
+    pub fn on_canplay(mut self, handler: impl Into<String>) -> Self {
+        self.events.push(("canplay".to_string(), handler.into()));
+        self
+    }
+
+    pub fn on_canplaythrough(mut self, handler: impl Into<String>) -> Self {
+        self.events
+            .push(("canplaythrough".to_string(), handler.into()));
+        self
+    }
+
+    pub fn on_change(mut self, handler: impl Into<String>) -> Self {
+        self.events.push(("change".to_string(), handler.into()));
+        self
+    }
+
+    pub fn on_click(mut self, handler: impl Into<String>) -> Self {
+        self.events.push(("click".to_string(), handler.into()));
+        self
+    }
+
+    pub fn on_close(mut self, handler: impl Into<String>) -> Self {
+        self.events.push(("close".to_string(), handler.into()));
+        self
+    }
+
+    pub fn on_command(mut self, handler: impl Into<String>) -> Self {
+        self.events.push(("command".to_string(), handler.into()));
+        self
+    }
+
+    pub fn on_contextlost(mut self, handler: impl Into<String>) -> Self {
+        self.events
+            .push(("contextlost".to_string(), handler.into()));
+        self
+    }
+
+    pub fn on_contextmenu(mut self, handler: impl Into<String>) -> Self {
+        self.events
+            .push(("contextmenu".to_string(), handler.into()));
+        self
+    }
+
+    pub fn on_contextrestored(mut self, handler: impl Into<String>) -> Self {
+        self.events
+            .push(("contextrestored".to_string(), handler.into()));
+        self
+    }
+
+    pub fn on_copy(mut self, handler: impl Into<String>) -> Self {
+        self.events.push(("copy".to_string(), handler.into()));
+        self
+    }
+
+    pub fn on_cuechange(mut self, handler: impl Into<String>) -> Self {
+        self.events.push(("cuechange".to_string(), handler.into()));
+        self
+    }
+
+    pub fn on_cut(mut self, handler: impl Into<String>) -> Self {
+        self.events.push(("cut".to_string(), handler.into()));
+        self
+    }
+
+    pub fn on_dblclick(mut self, handler: impl Into<String>) -> Self {
+        self.events.push(("dblclick".to_string(), handler.into()));
+        self
+    }
+
+    pub fn on_drag(mut self, handler: impl Into<String>) -> Self {
+        self.events.push(("drag".to_string(), handler.into()));
+        self
+    }
+
+    pub fn on_dragend(mut self, handler: impl Into<String>) -> Self {
+        self.events.push(("dragend".to_string(), handler.into()));
+        self
+    }
+
+    pub fn on_dragenter(mut self, handler: impl Into<String>) -> Self {
+        self.events.push(("dragenter".to_string(), handler.into()));
+        self
+    }
+
+    pub fn on_dragleave(mut self, handler: impl Into<String>) -> Self {
+        self.events.push(("dragleave".to_string(), handler.into()));
+        self
+    }
+
+    pub fn on_dragover(mut self, handler: impl Into<String>) -> Self {
+        self.events.push(("dragover".to_string(), handler.into()));
+        self
+    }
+
+    pub fn on_dragstart(mut self, handler: impl Into<String>) -> Self {
+        self.events.push(("dragstart".to_string(), handler.into()));
+        self
+    }
+
+    pub fn on_drop(mut self, handler: impl Into<String>) -> Self {
+        self.events.push(("drop".to_string(), handler.into()));
+        self
+    }
+
+    pub fn on_durationchange(mut self, handler: impl Into<String>) -> Self {
+        self.events
+            .push(("durationchange".to_string(), handler.into()));
+        self
+    }
+
+    pub fn on_emptied(mut self, handler: impl Into<String>) -> Self {
+        self.events.push(("emptied".to_string(), handler.into()));
+        self
+    }
+
+    pub fn on_ended(mut self, handler: impl Into<String>) -> Self {
+        self.events.push(("ended".to_string(), handler.into()));
+        self
+    }
+
+    pub fn on_error(mut self, handler: impl Into<String>) -> Self {
+        self.events.push(("error".to_string(), handler.into()));
+        self
+    }
+
+    pub fn on_fencedtreeclick(mut self, handler: impl Into<String>) -> Self {
+        self.events
+            .push(("fencedtreeclick".to_string(), handler.into()));
+        self
+    }
+
+    pub fn on_focus(mut self, handler: impl Into<String>) -> Self {
+        self.events.push(("focus".to_string(), handler.into()));
+        self
+    }
+
+    pub fn on_formdata(mut self, handler: impl Into<String>) -> Self {
+        self.events.push(("formdata".to_string(), handler.into()));
+        self
+    }
+
+    pub fn on_fullscreenchange(mut self, handler: impl Into<String>) -> Self {
+        self.events
+            .push(("fullscreenchange".to_string(), handler.into()));
+        self
+    }
+
+    pub fn on_fullscreenerror(mut self, handler: impl Into<String>) -> Self {
+        self.events
+            .push(("fullscreenerror".to_string(), handler.into()));
+        self
+    }
+
+    pub fn on_gotpointercapture(mut self, handler: impl Into<String>) -> Self {
+        self.events
+            .push(("gotpointercapture".to_string(), handler.into()));
+        self
+    }
+
+    pub fn on_input(mut self, handler: impl Into<String>) -> Self {
+        self.events.push(("input".to_string(), handler.into()));
+        self
+    }
+
+    pub fn on_invalid(mut self, handler: impl Into<String>) -> Self {
+        self.events.push(("invalid".to_string(), handler.into()));
+        self
+    }
+
+    pub fn on_keydown(mut self, handler: impl Into<String>) -> Self {
+        self.events.push(("keydown".to_string(), handler.into()));
+        self
+    }
+
+    pub fn on_keypress(mut self, handler: impl Into<String>) -> Self {
+        self.events.push(("keypress".to_string(), handler.into()));
+        self
+    }
+
+    pub fn on_keyup(mut self, handler: impl Into<String>) -> Self {
+        self.events.push(("keyup".to_string(), handler.into()));
+        self
+    }
+
+    pub fn on_load(mut self, handler: impl Into<String>) -> Self {
+        self.events.push(("load".to_string(), handler.into()));
+        self
+    }
+
+    pub fn on_loadeddata(mut self, handler: impl Into<String>) -> Self {
+        self.events.push(("loadeddata".to_string(), handler.into()));
+        self
+    }
+
+    pub fn on_loadedmetadata(mut self, handler: impl Into<String>) -> Self {
+        self.events
+            .push(("loadedmetadata".to_string(), handler.into()));
+        self
+    }
+
+    pub fn on_loadstart(mut self, handler: impl Into<String>) -> Self {
+        self.events.push(("loadstart".to_string(), handler.into()));
+        self
+    }
+
+    pub fn on_lostpointercapture(mut self, handler: impl Into<String>) -> Self {
+        self.events
+            .push(("lostpointercapture".to_string(), handler.into()));
+        self
+    }
+
+    pub fn on_mousedown(mut self, handler: impl Into<String>) -> Self {
+        self.events.push(("mousedown".to_string(), handler.into()));
+        self
+    }
+
+    pub fn on_mouseenter(mut self, handler: impl Into<String>) -> Self {
+        self.events.push(("mouseenter".to_string(), handler.into()));
+        self
+    }
+
+    pub fn on_mouseleave(mut self, handler: impl Into<String>) -> Self {
+        self.events.push(("mouseleave".to_string(), handler.into()));
+        self
+    }
+
+    pub fn on_mousemove(mut self, handler: impl Into<String>) -> Self {
+        self.events.push(("mousemove".to_string(), handler.into()));
+        self
+    }
+
+    pub fn on_mouseout(mut self, handler: impl Into<String>) -> Self {
+        self.events.push(("mouseout".to_string(), handler.into()));
+        self
+    }
+
+    pub fn on_mouseover(mut self, handler: impl Into<String>) -> Self {
+        self.events.push(("mouseover".to_string(), handler.into()));
+        self
+    }
+
+    pub fn on_mouseup(mut self, handler: impl Into<String>) -> Self {
+        self.events.push(("mouseup".to_string(), handler.into()));
+        self
+    }
+
+    pub fn on_paste(mut self, handler: impl Into<String>) -> Self {
+        self.events.push(("paste".to_string(), handler.into()));
+        self
+    }
+
+    pub fn on_pause(mut self, handler: impl Into<String>) -> Self {
+        self.events.push(("pause".to_string(), handler.into()));
+        self
+    }
+
+    pub fn on_play(mut self, handler: impl Into<String>) -> Self {
+        self.events.push(("play".to_string(), handler.into()));
+        self
+    }
+
+    pub fn on_playing(mut self, handler: impl Into<String>) -> Self {
+        self.events.push(("playing".to_string(), handler.into()));
+        self
+    }
+
+    pub fn on_pointercancel(mut self, handler: impl Into<String>) -> Self {
+        self.events
+            .push(("pointercancel".to_string(), handler.into()));
+        self
+    }
+
+    pub fn on_pointerdown(mut self, handler: impl Into<String>) -> Self {
+        self.events
+            .push(("pointerdown".to_string(), handler.into()));
+        self
+    }
+
+    pub fn on_pointerenter(mut self, handler: impl Into<String>) -> Self {
+        self.events
+            .push(("pointerenter".to_string(), handler.into()));
+        self
+    }
+
+    pub fn on_pointerleave(mut self, handler: impl Into<String>) -> Self {
+        self.events
+            .push(("pointerleave".to_string(), handler.into()));
+        self
+    }
+
+    pub fn on_pointermove(mut self, handler: impl Into<String>) -> Self {
+        self.events
+            .push(("pointermove".to_string(), handler.into()));
+        self
+    }
+
+    pub fn on_pointerout(mut self, handler: impl Into<String>) -> Self {
+        self.events.push(("pointerout".to_string(), handler.into()));
+        self
+    }
+
+    pub fn on_pointerover(mut self, handler: impl Into<String>) -> Self {
+        self.events
+            .push(("pointerover".to_string(), handler.into()));
+        self
+    }
+
+    pub fn on_pointerrawupdate(mut self, handler: impl Into<String>) -> Self {
+        self.events
+            .push(("pointerrawupdate".to_string(), handler.into()));
+        self
+    }
+
+    pub fn on_pointerup(mut self, handler: impl Into<String>) -> Self {
+        self.events.push(("pointerup".to_string(), handler.into()));
+        self
+    }
+
+    pub fn on_progress(mut self, handler: impl Into<String>) -> Self {
+        self.events.push(("progress".to_string(), handler.into()));
+        self
+    }
+
+    pub fn on_ratechange(mut self, handler: impl Into<String>) -> Self {
+        self.events.push(("ratechange".to_string(), handler.into()));
+        self
+    }
+
+    pub fn on_reset(mut self, handler: impl Into<String>) -> Self {
+        self.events.push(("reset".to_string(), handler.into()));
+        self
+    }
+
+    pub fn on_resize(mut self, handler: impl Into<String>) -> Self {
+        self.events.push(("resize".to_string(), handler.into()));
+        self
+    }
+
+    pub fn on_scroll(mut self, handler: impl Into<String>) -> Self {
+        self.events.push(("scroll".to_string(), handler.into()));
+        self
+    }
+
+    pub fn on_scrollend(mut self, handler: impl Into<String>) -> Self {
+        self.events.push(("scrollend".to_string(), handler.into()));
+        self
+    }
+
+    pub fn on_securitypolicyviolation(mut self, handler: impl Into<String>) -> Self {
+        self.events
+            .push(("securitypolicyviolation".to_string(), handler.into()));
+        self
+    }
+
+    pub fn on_seeked(mut self, handler: impl Into<String>) -> Self {
+        self.events.push(("seeked".to_string(), handler.into()));
+        self
+    }
+
+    pub fn on_seeking(mut self, handler: impl Into<String>) -> Self {
+        self.events.push(("seeking".to_string(), handler.into()));
+        self
+    }
+
+    pub fn on_select(mut self, handler: impl Into<String>) -> Self {
+        self.events.push(("select".to_string(), handler.into()));
+        self
+    }
+
+    pub fn on_selectionchange(mut self, handler: impl Into<String>) -> Self {
+        self.events
+            .push(("selectionchange".to_string(), handler.into()));
+        self
+    }
+
+    pub fn on_selectstart(mut self, handler: impl Into<String>) -> Self {
+        self.events
+            .push(("selectstart".to_string(), handler.into()));
+        self
+    }
+
+    pub fn on_slotchange(mut self, handler: impl Into<String>) -> Self {
+        self.events.push(("slotchange".to_string(), handler.into()));
+        self
+    }
+
+    pub fn on_snapchanged(mut self, handler: impl Into<String>) -> Self {
+        self.events
+            .push(("snapchanged".to_string(), handler.into()));
+        self
+    }
+
+    pub fn on_snapchanging(mut self, handler: impl Into<String>) -> Self {
+        self.events
+            .push(("snapchanging".to_string(), handler.into()));
+        self
+    }
+
+    pub fn on_stalled(mut self, handler: impl Into<String>) -> Self {
+        self.events.push(("stalled".to_string(), handler.into()));
+        self
+    }
+
+    pub fn on_submit(mut self, handler: impl Into<String>) -> Self {
+        self.events.push(("submit".to_string(), handler.into()));
+        self
+    }
+
+    pub fn on_suspend(mut self, handler: impl Into<String>) -> Self {
+        self.events.push(("suspend".to_string(), handler.into()));
+        self
+    }
+
+    pub fn on_timeupdate(mut self, handler: impl Into<String>) -> Self {
+        self.events.push(("timeupdate".to_string(), handler.into()));
+        self
+    }
+
+    pub fn on_toggle(mut self, handler: impl Into<String>) -> Self {
+        self.events.push(("toggle".to_string(), handler.into()));
+        self
+    }
+
+    pub fn on_touchcancel(mut self, handler: impl Into<String>) -> Self {
+        self.events
+            .push(("touchcancel".to_string(), handler.into()));
+        self
+    }
+
+    pub fn on_touchend(mut self, handler: impl Into<String>) -> Self {
+        self.events.push(("touchend".to_string(), handler.into()));
+        self
+    }
+
+    pub fn on_touchmove(mut self, handler: impl Into<String>) -> Self {
+        self.events.push(("touchmove".to_string(), handler.into()));
+        self
+    }
+
+    pub fn on_touchstart(mut self, handler: impl Into<String>) -> Self {
+        self.events.push(("touchstart".to_string(), handler.into()));
+        self
+    }
+
+    pub fn on_transitioncancel(mut self, handler: impl Into<String>) -> Self {
+        self.events
+            .push(("transitioncancel".to_string(), handler.into()));
+        self
+    }
+
+    pub fn on_transitionend(mut self, handler: impl Into<String>) -> Self {
+        self.events
+            .push(("transitionend".to_string(), handler.into()));
+        self
+    }
+
+    pub fn on_transitionrun(mut self, handler: impl Into<String>) -> Self {
+        self.events
+            .push(("transitionrun".to_string(), handler.into()));
+        self
+    }
+
+    pub fn on_transitionstart(mut self, handler: impl Into<String>) -> Self {
+        self.events
+            .push(("transitionstart".to_string(), handler.into()));
+        self
+    }
+
+    pub fn on_volumechange(mut self, handler: impl Into<String>) -> Self {
+        self.events
+            .push(("volumechange".to_string(), handler.into()));
+        self
+    }
+
+    pub fn on_waiting(mut self, handler: impl Into<String>) -> Self {
+        self.events.push(("waiting".to_string(), handler.into()));
+        self
+    }
+
+    pub fn on_webkitanimationend(mut self, handler: impl Into<String>) -> Self {
+        self.events
+            .push(("webkitanimationend".to_string(), handler.into()));
+        self
+    }
+
+    pub fn on_webkitanimationiteration(mut self, handler: impl Into<String>) -> Self {
+        self.events
+            .push(("webkitanimationiteration".to_string(), handler.into()));
+        self
+    }
+
+    pub fn on_webkitanimationstart(mut self, handler: impl Into<String>) -> Self {
+        self.events
+            .push(("webkitanimationstart".to_string(), handler.into()));
+        self
+    }
+
+    pub fn on_webkittransitionend(mut self, handler: impl Into<String>) -> Self {
+        self.events
+            .push(("webkittransitionend".to_string(), handler.into()));
+        self
+    }
+
+    pub fn on_wheel(mut self, handler: impl Into<String>) -> Self {
+        self.events.push(("wheel".to_string(), handler.into()));
         self
     }
 

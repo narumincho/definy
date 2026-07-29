@@ -14,7 +14,6 @@ pub fn create_element(name: &str, is_svg: bool) -> web_sys::Element {
     }
 }
 
-
 fn is_svg_element_only(name: &str) -> bool {
     match name {
         "animate" => true,
@@ -121,24 +120,20 @@ mod tests {
 
     #[test]
     fn test_element_namespaces() {
-        // SVG only elements
         assert!(is_svg_element_only("path"));
         assert!(is_svg_element_only("rect"));
         assert!(is_svg_element_only("circle"));
         assert!(is_svg_element_only("svg"));
 
-        // Overlapping tags (should NOT be SVG-only or MathML-only)
         assert!(!is_svg_element_only("a"));
         assert!(!is_svg_element_only("script"));
         assert!(!is_svg_element_only("style"));
         assert!(!is_svg_element_only("title"));
 
-        // MathML elements
         assert!(is_mathml_element_only("math"));
         assert!(is_mathml_element_only("mfrac"));
         assert!(is_mathml_element_only("mi"));
 
-        // HTML elements (should not be SVG-only or MathML-only)
         assert!(!is_svg_element_only("div"));
         assert!(!is_svg_element_only("span"));
         assert!(!is_mathml_element_only("div"));

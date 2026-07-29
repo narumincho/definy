@@ -190,16 +190,16 @@ fn output_element_file(
     let resolved_attributes = db.resolve_interface_attributes(&info.interface);
 
     let mut html_attributes = Vec::new();
-    let mut js_properties = Vec::new();
+    let mut events = Vec::new();
 
     for attr in resolved_attributes {
         let is_global = GLOBAL_ATTRIBUTES.contains(&attr.name.to_lowercase().as_str());
         let is_event = attr.name.starts_with("on");
-        if !is_global && !is_event {
+        if is_event {
+            events.push(attr);
+        } else if !is_global {
             if is_html_attribute(&attr) {
                 html_attributes.push(attr);
-            } else {
-                js_properties.push(attr);
             }
         }
     }
@@ -308,6 +308,7 @@ fn output_element_file(
         file,
         "    pub attributes: std::collections::BTreeMap<String, String>,"
     )?;
+    writeln!(file, "    pub events: Vec<(String, String)>,")?;
     writeln!(file, "    pub styles: crate::Style,")?;
     writeln!(file, "    pub children: Vec<super::Node>,")?;
     for attr in &html_attributes {
@@ -328,25 +329,6 @@ fn output_element_file(
         }
     }
     writeln!(file, "}}\n")?;
-
-    if !js_properties.is_empty() {
-        writeln!(file, "/// JavaScript / DOM Properties for {}", info.href)?;
-        writeln!(file, "#[derive(Default, Debug, Clone, PartialEq, Eq)]")?;
-        writeln!(
-            file,
-            "pub struct {}JsProperties {{",
-            capitalized_element_name
-        )?;
-        for attr in &js_properties {
-            let field_name = escape_attribute_field_name(&attr.name);
-            if attr.type_name == "boolean" {
-                writeln!(file, "    pub {}: std::option::Option<bool>,", field_name)?;
-            } else {
-                writeln!(file, "    pub {}: std::option::Option<String>,", field_name)?;
-            }
-        }
-        writeln!(file, "}}\n")?;
-    }
 
     writeln!(
         file,
@@ -392,6 +374,16 @@ fn output_element_file(
                 method_name, attr.name, field_name
             )?;
         }
+    }
+
+    for attr in &events {
+        let event_name = attr.name.trim_start_matches("on");
+        let method_name = format!("on_{}", escape_method_name(event_name));
+        writeln!(
+            file,
+            "    pub fn {}(mut self, handler: impl Into<String>) -> Self {{\n        self.events.push((\"{}\".to_string(), handler.into()));\n        self\n    }}\n",
+            method_name, event_name
+        )?;
     }
 
     writeln!(
