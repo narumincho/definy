@@ -77,9 +77,16 @@ mod tests {
     fn test_generated_element_attributes_and_enums() {
         use elements::button::{ButtonType, button};
 
-        let btn = button().type_(ButtonType::Submit).disabled(true);
+        let btn = button()
+            .type_(ButtonType::Submit)
+            .disabled(true)
+            .disabled(false)
+            .attribute("data-test", "value");
         assert_eq!(btn.r#type, Some(ButtonType::Submit));
         assert_eq!(btn.r#type.unwrap().as_str(), "submit");
-        assert_eq!(btn.disabled, Some(true));
+        assert_eq!(btn.disabled, Some(false));
+        assert_eq!(btn.attributes.get("type"), Some(&"submit".to_string()));
+        assert_eq!(btn.attributes.get("disabled"), None);
+        assert_eq!(btn.attributes.get("data-test"), Some(&"value".to_string()));
     }
 }

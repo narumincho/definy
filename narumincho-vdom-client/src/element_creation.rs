@@ -14,6 +14,7 @@ pub fn create_element(name: &str, is_svg: bool) -> web_sys::Element {
     }
 }
 
+
 fn is_svg_element_only(name: &str) -> bool {
     match name {
         "animate" => true,
@@ -144,4 +145,3 @@ mod tests {
         assert!(!is_mathml_element_only("span"));
     }
 }
-

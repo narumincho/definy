@@ -304,7 +304,10 @@ fn output_element_file(
     writeln!(file, "/// HTML Content Attributes for {}", info.href)?;
     writeln!(file, "#[derive(Default, Debug, Clone, PartialEq, Eq)]")?;
     writeln!(file, "pub struct {} {{", capitalized_element_name)?;
-    writeln!(file, "    pub attributes: Vec<(String, String)>,")?;
+    writeln!(
+        file,
+        "    pub attributes: std::collections::BTreeMap<String, String>,"
+    )?;
     writeln!(file, "    pub styles: crate::Style,")?;
     writeln!(file, "    pub children: Vec<super::Node>,")?;
     for attr in &html_attributes {
@@ -373,20 +376,20 @@ fn output_element_file(
             let enum_type_name = format!("{}{}", capitalized_element_name, capitalize(&attr.name));
             writeln!(
                 file,
-                "    pub fn {}(mut self, value: {}) -> Self {{\n        self.{} = Some(value);\n        self\n    }}\n",
-                method_name, enum_type_name, field_name
+                "    pub fn {}(mut self, value: {}) -> Self {{\n        self.attributes.insert(\"{}\".to_string(), value.as_str().to_string());\n        self.{} = Some(value);\n        self\n    }}\n",
+                method_name, enum_type_name, attr.name, field_name
             )?;
         } else if attr.type_name == "boolean" {
             writeln!(
                 file,
-                "    pub fn {}(mut self, value: bool) -> Self {{\n        self.{} = Some(value);\n        self\n    }}\n",
-                method_name, field_name
+                "    pub fn {}(mut self, value: bool) -> Self {{\n        if value {{\n            self.attributes.insert(\"{}\".to_string(), String::new());\n        }} else {{\n            self.attributes.remove(\"{}\");\n        }}\n        self.{} = Some(value);\n        self\n    }}\n",
+                method_name, attr.name, attr.name, field_name
             )?;
         } else {
             writeln!(
                 file,
-                "    pub fn {}(mut self, value: impl Into<String>) -> Self {{\n        self.{} = Some(value.into());\n        self\n    }}\n",
-                method_name, field_name
+                "    pub fn {}(mut self, value: impl Into<String>) -> Self {{\n        let value = value.into();\n        self.attributes.insert(\"{}\".to_string(), value.clone());\n        self.{} = Some(value);\n        self\n    }}\n",
+                method_name, attr.name, field_name
             )?;
         }
     }
@@ -736,7 +739,7 @@ mod tests {{
 fn common_builder_methods(element_name: &str, _tag_name: &str) -> String {
     let mut out = String::new();
     out.push_str(&format!(
-        "    pub fn attribute(mut self, key: impl Into<String>, value: impl Into<String>) -> Self {{\n        self.attributes.push((key.into(), value.into()));\n        self\n    }}\n\n"
+        "    pub fn attribute(mut self, key: impl Into<String>, value: impl Into<String>) -> Self {{\n        self.attributes.insert(key.into(), value.into());\n        self\n    }}\n\n"
     ));
     out.push_str(&format!(
         "    pub fn id(mut self, value: impl Into<String>) -> Self {{\n        self.attribute(\"id\", value)\n    }}\n\n"
