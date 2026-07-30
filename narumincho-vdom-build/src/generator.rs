@@ -84,8 +84,87 @@ pub async fn generate_code() -> anyhow::Result<()> {
 
     output_elements_rs(&elements_map)?;
     output_element_creation_rs(&svg_elements, &mathml_elements)?;
+    output_old_elements_rs(&elements_map, &db)?;
 
     println!("Code generation successfully completed!");
+    Ok(())
+}
+
+fn old_element_type_name(name: &str) -> String {
+    match name {
+        "option" => "OptionElement".to_string(),
+        "style" => "StyleElement".to_string(),
+        "text" => "TextElement".to_string(),
+        _ => capitalize(name),
+    }
+}
+
+fn output_old_elements_rs(
+    elements_map: &BTreeMap<String, ElementInfo>,
+    db: &idl::IdlDatabase,
+) -> anyhow::Result<()> {
+    let mut file = File::create("./narumincho-vdom/src/old_elements.rs")?;
+    writeln!(
+        file,
+        "// このファイルは narumincho-vdom-build によって自動生成されました。"
+    )?;
+    writeln!(file, "use crate::node::{{Element, EventHandler, Node}};")?;
+    writeln!(file)?;
+    writeln!(file, "macro_rules! define_element {{")?;
+    writeln!(file, "    ($name:ident, $tag:literal, $doc:literal) => {{")?;
+    writeln!(file, "        #[doc = $doc]")?;
+    writeln!(file, "        pub struct $name<State> {{")?;
+    writeln!(file, "            pub attributes: Vec<(String, String)>,")?;
+    writeln!(file, "            pub styles: crate::Style,")?;
+    writeln!(file, "            pub events: Vec<(String, EventHandler<State>)>,")?;
+    writeln!(file, "            pub children: Vec<Node<State>>,")?;
+    writeln!(file, "        }}")?;
+    writeln!(file, "        impl<State> Default for $name<State> {{")?;
+    writeln!(file, "            fn default() -> Self {{ Self::new() }}")?;
+    writeln!(file, "        }}")?;
+    writeln!(file, "        impl<State> $name<State> {{")?;
+    writeln!(file, "            pub fn new() -> Self {{ Self {{ attributes: Vec::new(), styles: crate::Style::new(), events: Vec::new(), children: Vec::new() }} }}")?;
+    writeln!(file, "            pub fn attribute(mut self, key: impl Into<String>, value: impl Into<String>) -> Self {{ self.attributes.push((key.into(), value.into())); self }}")?;
+    writeln!(file, "            pub fn id(self, value: impl Into<String>) -> Self {{ self.attribute(\"id\", value) }}")?;
+    writeln!(file, "            pub fn class(self, value: impl Into<String>) -> Self {{ self.attribute(\"class\", value) }}")?;
+    writeln!(file, "            pub fn type_(self, value: impl Into<String>) -> Self {{ self.attribute(\"type\", value) }}")?;
+    writeln!(file, "            pub fn style(mut self, style: impl Into<crate::Style>) -> Self {{ self.styles = style.into(); self }}")?;
+    writeln!(file, "            pub fn popover(self) -> Self {{ self.attribute(\"popover\", \"auto\") }}")?;
+    writeln!(file, "            pub fn children(mut self, children: impl Into<Vec<Node<State>>>) -> Self {{ self.children = children.into(); self }}")?;
+    writeln!(file, "            pub fn into_node(self) -> Node<State> {{ Node::Element(Element {{ element_name: $tag.to_string(), attributes: self.attributes, styles: self.styles, events: self.events, children: self.children }}) }}")?;
+    writeln!(file, "        }}")?;
+    writeln!(file, "        impl<State> From<$name<State>> for Node<State> {{ fn from(value: $name<State>) -> Self {{ value.into_node() }} }}")?;
+    writeln!(file, "    }};")?;
+    writeln!(file, "}}\n")?;
+
+    for (name, info) in elements_map {
+        if name == "a" {
+            writeln!(file, "pub type A<State, L> = Anchor<State, L>;")?;
+            writeln!(file, "pub struct Anchor<State, L: crate::Route> {{ pub attributes: Vec<(String, String)>, pub styles: crate::Style, pub events: Vec<(String, EventHandler<State>)>, pub children: Vec<Node<State>>, _phantom: std::marker::PhantomData<L> }}")?;
+            writeln!(file, "impl<State, L: crate::Route> Anchor<State, L> {{ pub fn new() -> Self {{ Self {{ attributes: Vec::new(), styles: crate::Style::new(), events: Vec::new(), children: Vec::new(), _phantom: std::marker::PhantomData }} }} pub fn attribute(mut self, key: impl Into<String>, value: impl Into<String>) -> Self {{ self.attributes.push((key.into(), value.into())); self }} pub fn id(self, value: impl Into<String>) -> Self {{ self.attribute(\"id\", value) }} pub fn class(self, value: impl Into<String>) -> Self {{ self.attribute(\"class\", value) }} pub fn type_(self, value: impl Into<String>) -> Self {{ self.attribute(\"type\", value) }} pub fn style(mut self, style: impl Into<crate::Style>) -> Self {{ self.styles = style.into(); self }} pub fn popover(self) -> Self {{ self.attribute(\"popover\", \"auto\") }} pub fn children(mut self, children: impl Into<Vec<Node<State>>>) -> Self {{ self.children = children.into(); self }} pub fn into_node(self) -> Node<State> {{ Node::Element(Element {{ element_name: \"a\".to_string(), attributes: self.attributes, styles: self.styles, events: self.events, children: self.children }}) }} pub fn href(self, href: impl Into<crate::route::Href<L>>) -> Self {{ self.attribute(\"href\", href.into()) }} }}")?;
+            writeln!(file, "impl<State, L: crate::Route> Default for Anchor<State, L> {{ fn default() -> Self {{ Self::new() }} }}")?;
+            writeln!(file, "impl<State, L: crate::Route> From<Anchor<State, L>> for Node<State> {{ fn from(value: Anchor<State, L>) -> Self {{ value.into_node() }} }}")?;
+        } else {
+            writeln!(file, "define_element!({}, \"{}\", \"{}\");", old_element_type_name(name), name, info.href)?;
+        }
+    }
+
+    for (name, info) in elements_map {
+        let type_name = if name == "a" { "Anchor".to_string() } else { old_element_type_name(name) };
+        let resolved_attributes = db.resolve_interface_attributes(&info.interface);
+        let mut methods = BTreeSet::new();
+        for attr in resolved_attributes {
+            let method_name = if attr.name.starts_with("on") { format!("on_{}", escape_method_name(attr.name.trim_start_matches("on"))) } else { escape_method_name(&attr.name) };
+            if !methods.insert(method_name.clone()) || method_name == "id" || method_name == "class" || method_name == "type_" || method_name == "style" || method_name == "popover" || method_name == "children" || method_name == "into_node" || (name == "a" && method_name == "href") { continue; }
+            if attr.name.starts_with("on") {
+                writeln!(file, "impl<State{}> {}<State{}> {{ pub fn {}(mut self, handler: EventHandler<State>) -> Self {{ self.events.push((\"{}\".to_string(), handler)); self }} }}", if name == "a" { ", L: crate::Route" } else { "" }, type_name, if name == "a" { ", L" } else { "" }, method_name, attr.name.trim_start_matches("on"))?;
+            } else if attr.type_name == "boolean" {
+                writeln!(file, "impl<State{}> {}<State{}> {{ pub fn {}(mut self, value: bool) -> Self {{ if value {{ self.attributes.push((\"{}\".to_string(), String::new())); }} self }} }}", if name == "a" { ", L: crate::Route" } else { "" }, type_name, if name == "a" { ", L" } else { "" }, method_name, attr.name)?;
+            } else {
+                writeln!(file, "impl<State{}> {}<State{}> {{ pub fn {}(self, value: impl Into<String>) -> Self {{ self.attribute(\"{}\", value) }} }}", if name == "a" { ", L: crate::Route" } else { "" }, type_name, if name == "a" { ", L" } else { "" }, method_name, attr.name)?;
+            }
+        }
+    }
     Ok(())
 }
 
@@ -693,10 +772,11 @@ fn output_element_creation_rs(
     writeln!(file, "    }}")?;
     writeln!(file, "}}")?;
 
+    writeln!(file)?;
+
     writeln!(
         file,
-        "
-#[cfg(test)]
+        "#[cfg(test)]
 mod tests {{
     use super::*;
 
@@ -721,8 +801,7 @@ mod tests {{
         assert!(!is_mathml_element_only(\"div\"));
         assert!(!is_mathml_element_only(\"span\"));
     }}
-}}
-"
+}}"
     )?;
 
     Ok(())

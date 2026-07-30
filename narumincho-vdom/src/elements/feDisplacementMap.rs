@@ -100,352 +100,308 @@ impl FeDisplacementMap {
 
     pub fn aria_active_descendant_element(mut self, value: impl Into<String>) -> Self {
         let value = value.into();
-        self.attributes
-            .insert("ariaActiveDescendantElement".to_string(), value.clone());
+        self.attributes.insert("ariaActiveDescendantElement".to_string(), value.clone());
         self.aria_active_descendant_element = Some(value);
         self
     }
 
     pub fn aria_atomic(mut self, value: impl Into<String>) -> Self {
         let value = value.into();
-        self.attributes
-            .insert("ariaAtomic".to_string(), value.clone());
+        self.attributes.insert("ariaAtomic".to_string(), value.clone());
         self.aria_atomic = Some(value);
         self
     }
 
     pub fn aria_auto_complete(mut self, value: impl Into<String>) -> Self {
         let value = value.into();
-        self.attributes
-            .insert("ariaAutoComplete".to_string(), value.clone());
+        self.attributes.insert("ariaAutoComplete".to_string(), value.clone());
         self.aria_auto_complete = Some(value);
         self
     }
 
     pub fn aria_braille_label(mut self, value: impl Into<String>) -> Self {
         let value = value.into();
-        self.attributes
-            .insert("ariaBrailleLabel".to_string(), value.clone());
+        self.attributes.insert("ariaBrailleLabel".to_string(), value.clone());
         self.aria_braille_label = Some(value);
         self
     }
 
     pub fn aria_braille_role_description(mut self, value: impl Into<String>) -> Self {
         let value = value.into();
-        self.attributes
-            .insert("ariaBrailleRoleDescription".to_string(), value.clone());
+        self.attributes.insert("ariaBrailleRoleDescription".to_string(), value.clone());
         self.aria_braille_role_description = Some(value);
         self
     }
 
     pub fn aria_busy(mut self, value: impl Into<String>) -> Self {
         let value = value.into();
-        self.attributes
-            .insert("ariaBusy".to_string(), value.clone());
+        self.attributes.insert("ariaBusy".to_string(), value.clone());
         self.aria_busy = Some(value);
         self
     }
 
     pub fn aria_checked(mut self, value: impl Into<String>) -> Self {
         let value = value.into();
-        self.attributes
-            .insert("ariaChecked".to_string(), value.clone());
+        self.attributes.insert("ariaChecked".to_string(), value.clone());
         self.aria_checked = Some(value);
         self
     }
 
     pub fn aria_col_count(mut self, value: impl Into<String>) -> Self {
         let value = value.into();
-        self.attributes
-            .insert("ariaColCount".to_string(), value.clone());
+        self.attributes.insert("ariaColCount".to_string(), value.clone());
         self.aria_col_count = Some(value);
         self
     }
 
     pub fn aria_col_index(mut self, value: impl Into<String>) -> Self {
         let value = value.into();
-        self.attributes
-            .insert("ariaColIndex".to_string(), value.clone());
+        self.attributes.insert("ariaColIndex".to_string(), value.clone());
         self.aria_col_index = Some(value);
         self
     }
 
     pub fn aria_col_index_text(mut self, value: impl Into<String>) -> Self {
         let value = value.into();
-        self.attributes
-            .insert("ariaColIndexText".to_string(), value.clone());
+        self.attributes.insert("ariaColIndexText".to_string(), value.clone());
         self.aria_col_index_text = Some(value);
         self
     }
 
     pub fn aria_col_span(mut self, value: impl Into<String>) -> Self {
         let value = value.into();
-        self.attributes
-            .insert("ariaColSpan".to_string(), value.clone());
+        self.attributes.insert("ariaColSpan".to_string(), value.clone());
         self.aria_col_span = Some(value);
         self
     }
 
     pub fn aria_current(mut self, value: impl Into<String>) -> Self {
         let value = value.into();
-        self.attributes
-            .insert("ariaCurrent".to_string(), value.clone());
+        self.attributes.insert("ariaCurrent".to_string(), value.clone());
         self.aria_current = Some(value);
         self
     }
 
     pub fn aria_description(mut self, value: impl Into<String>) -> Self {
         let value = value.into();
-        self.attributes
-            .insert("ariaDescription".to_string(), value.clone());
+        self.attributes.insert("ariaDescription".to_string(), value.clone());
         self.aria_description = Some(value);
         self
     }
 
     pub fn aria_disabled(mut self, value: impl Into<String>) -> Self {
         let value = value.into();
-        self.attributes
-            .insert("ariaDisabled".to_string(), value.clone());
+        self.attributes.insert("ariaDisabled".to_string(), value.clone());
         self.aria_disabled = Some(value);
         self
     }
 
     pub fn aria_expanded(mut self, value: impl Into<String>) -> Self {
         let value = value.into();
-        self.attributes
-            .insert("ariaExpanded".to_string(), value.clone());
+        self.attributes.insert("ariaExpanded".to_string(), value.clone());
         self.aria_expanded = Some(value);
         self
     }
 
     pub fn aria_has_popup(mut self, value: impl Into<String>) -> Self {
         let value = value.into();
-        self.attributes
-            .insert("ariaHasPopup".to_string(), value.clone());
+        self.attributes.insert("ariaHasPopup".to_string(), value.clone());
         self.aria_has_popup = Some(value);
         self
     }
 
     pub fn aria_hidden(mut self, value: impl Into<String>) -> Self {
         let value = value.into();
-        self.attributes
-            .insert("ariaHidden".to_string(), value.clone());
+        self.attributes.insert("ariaHidden".to_string(), value.clone());
         self.aria_hidden = Some(value);
         self
     }
 
     pub fn aria_invalid(mut self, value: impl Into<String>) -> Self {
         let value = value.into();
-        self.attributes
-            .insert("ariaInvalid".to_string(), value.clone());
+        self.attributes.insert("ariaInvalid".to_string(), value.clone());
         self.aria_invalid = Some(value);
         self
     }
 
     pub fn aria_key_shortcuts(mut self, value: impl Into<String>) -> Self {
         let value = value.into();
-        self.attributes
-            .insert("ariaKeyShortcuts".to_string(), value.clone());
+        self.attributes.insert("ariaKeyShortcuts".to_string(), value.clone());
         self.aria_key_shortcuts = Some(value);
         self
     }
 
     pub fn aria_label(mut self, value: impl Into<String>) -> Self {
         let value = value.into();
-        self.attributes
-            .insert("ariaLabel".to_string(), value.clone());
+        self.attributes.insert("ariaLabel".to_string(), value.clone());
         self.aria_label = Some(value);
         self
     }
 
     pub fn aria_level(mut self, value: impl Into<String>) -> Self {
         let value = value.into();
-        self.attributes
-            .insert("ariaLevel".to_string(), value.clone());
+        self.attributes.insert("ariaLevel".to_string(), value.clone());
         self.aria_level = Some(value);
         self
     }
 
     pub fn aria_live(mut self, value: impl Into<String>) -> Self {
         let value = value.into();
-        self.attributes
-            .insert("ariaLive".to_string(), value.clone());
+        self.attributes.insert("ariaLive".to_string(), value.clone());
         self.aria_live = Some(value);
         self
     }
 
     pub fn aria_modal(mut self, value: impl Into<String>) -> Self {
         let value = value.into();
-        self.attributes
-            .insert("ariaModal".to_string(), value.clone());
+        self.attributes.insert("ariaModal".to_string(), value.clone());
         self.aria_modal = Some(value);
         self
     }
 
     pub fn aria_multi_line(mut self, value: impl Into<String>) -> Self {
         let value = value.into();
-        self.attributes
-            .insert("ariaMultiLine".to_string(), value.clone());
+        self.attributes.insert("ariaMultiLine".to_string(), value.clone());
         self.aria_multi_line = Some(value);
         self
     }
 
     pub fn aria_multi_selectable(mut self, value: impl Into<String>) -> Self {
         let value = value.into();
-        self.attributes
-            .insert("ariaMultiSelectable".to_string(), value.clone());
+        self.attributes.insert("ariaMultiSelectable".to_string(), value.clone());
         self.aria_multi_selectable = Some(value);
         self
     }
 
     pub fn aria_orientation(mut self, value: impl Into<String>) -> Self {
         let value = value.into();
-        self.attributes
-            .insert("ariaOrientation".to_string(), value.clone());
+        self.attributes.insert("ariaOrientation".to_string(), value.clone());
         self.aria_orientation = Some(value);
         self
     }
 
     pub fn aria_placeholder(mut self, value: impl Into<String>) -> Self {
         let value = value.into();
-        self.attributes
-            .insert("ariaPlaceholder".to_string(), value.clone());
+        self.attributes.insert("ariaPlaceholder".to_string(), value.clone());
         self.aria_placeholder = Some(value);
         self
     }
 
     pub fn aria_pos_in_set(mut self, value: impl Into<String>) -> Self {
         let value = value.into();
-        self.attributes
-            .insert("ariaPosInSet".to_string(), value.clone());
+        self.attributes.insert("ariaPosInSet".to_string(), value.clone());
         self.aria_pos_in_set = Some(value);
         self
     }
 
     pub fn aria_pressed(mut self, value: impl Into<String>) -> Self {
         let value = value.into();
-        self.attributes
-            .insert("ariaPressed".to_string(), value.clone());
+        self.attributes.insert("ariaPressed".to_string(), value.clone());
         self.aria_pressed = Some(value);
         self
     }
 
     pub fn aria_read_only(mut self, value: impl Into<String>) -> Self {
         let value = value.into();
-        self.attributes
-            .insert("ariaReadOnly".to_string(), value.clone());
+        self.attributes.insert("ariaReadOnly".to_string(), value.clone());
         self.aria_read_only = Some(value);
         self
     }
 
     pub fn aria_relevant(mut self, value: impl Into<String>) -> Self {
         let value = value.into();
-        self.attributes
-            .insert("ariaRelevant".to_string(), value.clone());
+        self.attributes.insert("ariaRelevant".to_string(), value.clone());
         self.aria_relevant = Some(value);
         self
     }
 
     pub fn aria_required(mut self, value: impl Into<String>) -> Self {
         let value = value.into();
-        self.attributes
-            .insert("ariaRequired".to_string(), value.clone());
+        self.attributes.insert("ariaRequired".to_string(), value.clone());
         self.aria_required = Some(value);
         self
     }
 
     pub fn aria_role_description(mut self, value: impl Into<String>) -> Self {
         let value = value.into();
-        self.attributes
-            .insert("ariaRoleDescription".to_string(), value.clone());
+        self.attributes.insert("ariaRoleDescription".to_string(), value.clone());
         self.aria_role_description = Some(value);
         self
     }
 
     pub fn aria_row_count(mut self, value: impl Into<String>) -> Self {
         let value = value.into();
-        self.attributes
-            .insert("ariaRowCount".to_string(), value.clone());
+        self.attributes.insert("ariaRowCount".to_string(), value.clone());
         self.aria_row_count = Some(value);
         self
     }
 
     pub fn aria_row_index(mut self, value: impl Into<String>) -> Self {
         let value = value.into();
-        self.attributes
-            .insert("ariaRowIndex".to_string(), value.clone());
+        self.attributes.insert("ariaRowIndex".to_string(), value.clone());
         self.aria_row_index = Some(value);
         self
     }
 
     pub fn aria_row_index_text(mut self, value: impl Into<String>) -> Self {
         let value = value.into();
-        self.attributes
-            .insert("ariaRowIndexText".to_string(), value.clone());
+        self.attributes.insert("ariaRowIndexText".to_string(), value.clone());
         self.aria_row_index_text = Some(value);
         self
     }
 
     pub fn aria_row_span(mut self, value: impl Into<String>) -> Self {
         let value = value.into();
-        self.attributes
-            .insert("ariaRowSpan".to_string(), value.clone());
+        self.attributes.insert("ariaRowSpan".to_string(), value.clone());
         self.aria_row_span = Some(value);
         self
     }
 
     pub fn aria_selected(mut self, value: impl Into<String>) -> Self {
         let value = value.into();
-        self.attributes
-            .insert("ariaSelected".to_string(), value.clone());
+        self.attributes.insert("ariaSelected".to_string(), value.clone());
         self.aria_selected = Some(value);
         self
     }
 
     pub fn aria_set_size(mut self, value: impl Into<String>) -> Self {
         let value = value.into();
-        self.attributes
-            .insert("ariaSetSize".to_string(), value.clone());
+        self.attributes.insert("ariaSetSize".to_string(), value.clone());
         self.aria_set_size = Some(value);
         self
     }
 
     pub fn aria_sort(mut self, value: impl Into<String>) -> Self {
         let value = value.into();
-        self.attributes
-            .insert("ariaSort".to_string(), value.clone());
+        self.attributes.insert("ariaSort".to_string(), value.clone());
         self.aria_sort = Some(value);
         self
     }
 
     pub fn aria_value_max(mut self, value: impl Into<String>) -> Self {
         let value = value.into();
-        self.attributes
-            .insert("ariaValueMax".to_string(), value.clone());
+        self.attributes.insert("ariaValueMax".to_string(), value.clone());
         self.aria_value_max = Some(value);
         self
     }
 
     pub fn aria_value_min(mut self, value: impl Into<String>) -> Self {
         let value = value.into();
-        self.attributes
-            .insert("ariaValueMin".to_string(), value.clone());
+        self.attributes.insert("ariaValueMin".to_string(), value.clone());
         self.aria_value_min = Some(value);
         self
     }
 
     pub fn aria_value_now(mut self, value: impl Into<String>) -> Self {
         let value = value.into();
-        self.attributes
-            .insert("ariaValueNow".to_string(), value.clone());
+        self.attributes.insert("ariaValueNow".to_string(), value.clone());
         self.aria_value_now = Some(value);
         self
     }
 
     pub fn aria_value_text(mut self, value: impl Into<String>) -> Self {
         let value = value.into();
-        self.attributes
-            .insert("ariaValueText".to_string(), value.clone());
+        self.attributes.insert("ariaValueText".to_string(), value.clone());
         self.aria_value_text = Some(value);
         self
     }
@@ -466,8 +422,7 @@ impl FeDisplacementMap {
 
     pub fn text_content(mut self, value: impl Into<String>) -> Self {
         let value = value.into();
-        self.attributes
-            .insert("textContent".to_string(), value.clone());
+        self.attributes.insert("textContent".to_string(), value.clone());
         self.text_content = Some(value);
         self
     }
@@ -485,26 +440,22 @@ impl FeDisplacementMap {
     }
 
     pub fn on_animationcancel(mut self, handler: impl Into<String>) -> Self {
-        self.events
-            .push(("animationcancel".to_string(), handler.into()));
+        self.events.push(("animationcancel".to_string(), handler.into()));
         self
     }
 
     pub fn on_animationend(mut self, handler: impl Into<String>) -> Self {
-        self.events
-            .push(("animationend".to_string(), handler.into()));
+        self.events.push(("animationend".to_string(), handler.into()));
         self
     }
 
     pub fn on_animationiteration(mut self, handler: impl Into<String>) -> Self {
-        self.events
-            .push(("animationiteration".to_string(), handler.into()));
+        self.events.push(("animationiteration".to_string(), handler.into()));
         self
     }
 
     pub fn on_animationstart(mut self, handler: impl Into<String>) -> Self {
-        self.events
-            .push(("animationstart".to_string(), handler.into()));
+        self.events.push(("animationstart".to_string(), handler.into()));
         self
     }
 
@@ -514,26 +465,22 @@ impl FeDisplacementMap {
     }
 
     pub fn on_beforeinput(mut self, handler: impl Into<String>) -> Self {
-        self.events
-            .push(("beforeinput".to_string(), handler.into()));
+        self.events.push(("beforeinput".to_string(), handler.into()));
         self
     }
 
     pub fn on_beforematch(mut self, handler: impl Into<String>) -> Self {
-        self.events
-            .push(("beforematch".to_string(), handler.into()));
+        self.events.push(("beforematch".to_string(), handler.into()));
         self
     }
 
     pub fn on_beforetoggle(mut self, handler: impl Into<String>) -> Self {
-        self.events
-            .push(("beforetoggle".to_string(), handler.into()));
+        self.events.push(("beforetoggle".to_string(), handler.into()));
         self
     }
 
     pub fn on_beforexrselect(mut self, handler: impl Into<String>) -> Self {
-        self.events
-            .push(("beforexrselect".to_string(), handler.into()));
+        self.events.push(("beforexrselect".to_string(), handler.into()));
         self
     }
 
@@ -553,8 +500,7 @@ impl FeDisplacementMap {
     }
 
     pub fn on_canplaythrough(mut self, handler: impl Into<String>) -> Self {
-        self.events
-            .push(("canplaythrough".to_string(), handler.into()));
+        self.events.push(("canplaythrough".to_string(), handler.into()));
         self
     }
 
@@ -579,20 +525,17 @@ impl FeDisplacementMap {
     }
 
     pub fn on_contextlost(mut self, handler: impl Into<String>) -> Self {
-        self.events
-            .push(("contextlost".to_string(), handler.into()));
+        self.events.push(("contextlost".to_string(), handler.into()));
         self
     }
 
     pub fn on_contextmenu(mut self, handler: impl Into<String>) -> Self {
-        self.events
-            .push(("contextmenu".to_string(), handler.into()));
+        self.events.push(("contextmenu".to_string(), handler.into()));
         self
     }
 
     pub fn on_contextrestored(mut self, handler: impl Into<String>) -> Self {
-        self.events
-            .push(("contextrestored".to_string(), handler.into()));
+        self.events.push(("contextrestored".to_string(), handler.into()));
         self
     }
 
@@ -652,8 +595,7 @@ impl FeDisplacementMap {
     }
 
     pub fn on_durationchange(mut self, handler: impl Into<String>) -> Self {
-        self.events
-            .push(("durationchange".to_string(), handler.into()));
+        self.events.push(("durationchange".to_string(), handler.into()));
         self
     }
 
@@ -673,8 +615,7 @@ impl FeDisplacementMap {
     }
 
     pub fn on_fencedtreeclick(mut self, handler: impl Into<String>) -> Self {
-        self.events
-            .push(("fencedtreeclick".to_string(), handler.into()));
+        self.events.push(("fencedtreeclick".to_string(), handler.into()));
         self
     }
 
@@ -689,20 +630,17 @@ impl FeDisplacementMap {
     }
 
     pub fn on_fullscreenchange(mut self, handler: impl Into<String>) -> Self {
-        self.events
-            .push(("fullscreenchange".to_string(), handler.into()));
+        self.events.push(("fullscreenchange".to_string(), handler.into()));
         self
     }
 
     pub fn on_fullscreenerror(mut self, handler: impl Into<String>) -> Self {
-        self.events
-            .push(("fullscreenerror".to_string(), handler.into()));
+        self.events.push(("fullscreenerror".to_string(), handler.into()));
         self
     }
 
     pub fn on_gotpointercapture(mut self, handler: impl Into<String>) -> Self {
-        self.events
-            .push(("gotpointercapture".to_string(), handler.into()));
+        self.events.push(("gotpointercapture".to_string(), handler.into()));
         self
     }
 
@@ -742,8 +680,7 @@ impl FeDisplacementMap {
     }
 
     pub fn on_loadedmetadata(mut self, handler: impl Into<String>) -> Self {
-        self.events
-            .push(("loadedmetadata".to_string(), handler.into()));
+        self.events.push(("loadedmetadata".to_string(), handler.into()));
         self
     }
 
@@ -753,8 +690,7 @@ impl FeDisplacementMap {
     }
 
     pub fn on_lostpointercapture(mut self, handler: impl Into<String>) -> Self {
-        self.events
-            .push(("lostpointercapture".to_string(), handler.into()));
+        self.events.push(("lostpointercapture".to_string(), handler.into()));
         self
     }
 
@@ -814,32 +750,27 @@ impl FeDisplacementMap {
     }
 
     pub fn on_pointercancel(mut self, handler: impl Into<String>) -> Self {
-        self.events
-            .push(("pointercancel".to_string(), handler.into()));
+        self.events.push(("pointercancel".to_string(), handler.into()));
         self
     }
 
     pub fn on_pointerdown(mut self, handler: impl Into<String>) -> Self {
-        self.events
-            .push(("pointerdown".to_string(), handler.into()));
+        self.events.push(("pointerdown".to_string(), handler.into()));
         self
     }
 
     pub fn on_pointerenter(mut self, handler: impl Into<String>) -> Self {
-        self.events
-            .push(("pointerenter".to_string(), handler.into()));
+        self.events.push(("pointerenter".to_string(), handler.into()));
         self
     }
 
     pub fn on_pointerleave(mut self, handler: impl Into<String>) -> Self {
-        self.events
-            .push(("pointerleave".to_string(), handler.into()));
+        self.events.push(("pointerleave".to_string(), handler.into()));
         self
     }
 
     pub fn on_pointermove(mut self, handler: impl Into<String>) -> Self {
-        self.events
-            .push(("pointermove".to_string(), handler.into()));
+        self.events.push(("pointermove".to_string(), handler.into()));
         self
     }
 
@@ -849,14 +780,12 @@ impl FeDisplacementMap {
     }
 
     pub fn on_pointerover(mut self, handler: impl Into<String>) -> Self {
-        self.events
-            .push(("pointerover".to_string(), handler.into()));
+        self.events.push(("pointerover".to_string(), handler.into()));
         self
     }
 
     pub fn on_pointerrawupdate(mut self, handler: impl Into<String>) -> Self {
-        self.events
-            .push(("pointerrawupdate".to_string(), handler.into()));
+        self.events.push(("pointerrawupdate".to_string(), handler.into()));
         self
     }
 
@@ -896,8 +825,7 @@ impl FeDisplacementMap {
     }
 
     pub fn on_securitypolicyviolation(mut self, handler: impl Into<String>) -> Self {
-        self.events
-            .push(("securitypolicyviolation".to_string(), handler.into()));
+        self.events.push(("securitypolicyviolation".to_string(), handler.into()));
         self
     }
 
@@ -917,14 +845,12 @@ impl FeDisplacementMap {
     }
 
     pub fn on_selectionchange(mut self, handler: impl Into<String>) -> Self {
-        self.events
-            .push(("selectionchange".to_string(), handler.into()));
+        self.events.push(("selectionchange".to_string(), handler.into()));
         self
     }
 
     pub fn on_selectstart(mut self, handler: impl Into<String>) -> Self {
-        self.events
-            .push(("selectstart".to_string(), handler.into()));
+        self.events.push(("selectstart".to_string(), handler.into()));
         self
     }
 
@@ -934,14 +860,12 @@ impl FeDisplacementMap {
     }
 
     pub fn on_snapchanged(mut self, handler: impl Into<String>) -> Self {
-        self.events
-            .push(("snapchanged".to_string(), handler.into()));
+        self.events.push(("snapchanged".to_string(), handler.into()));
         self
     }
 
     pub fn on_snapchanging(mut self, handler: impl Into<String>) -> Self {
-        self.events
-            .push(("snapchanging".to_string(), handler.into()));
+        self.events.push(("snapchanging".to_string(), handler.into()));
         self
     }
 
@@ -971,8 +895,7 @@ impl FeDisplacementMap {
     }
 
     pub fn on_touchcancel(mut self, handler: impl Into<String>) -> Self {
-        self.events
-            .push(("touchcancel".to_string(), handler.into()));
+        self.events.push(("touchcancel".to_string(), handler.into()));
         self
     }
 
@@ -992,32 +915,27 @@ impl FeDisplacementMap {
     }
 
     pub fn on_transitioncancel(mut self, handler: impl Into<String>) -> Self {
-        self.events
-            .push(("transitioncancel".to_string(), handler.into()));
+        self.events.push(("transitioncancel".to_string(), handler.into()));
         self
     }
 
     pub fn on_transitionend(mut self, handler: impl Into<String>) -> Self {
-        self.events
-            .push(("transitionend".to_string(), handler.into()));
+        self.events.push(("transitionend".to_string(), handler.into()));
         self
     }
 
     pub fn on_transitionrun(mut self, handler: impl Into<String>) -> Self {
-        self.events
-            .push(("transitionrun".to_string(), handler.into()));
+        self.events.push(("transitionrun".to_string(), handler.into()));
         self
     }
 
     pub fn on_transitionstart(mut self, handler: impl Into<String>) -> Self {
-        self.events
-            .push(("transitionstart".to_string(), handler.into()));
+        self.events.push(("transitionstart".to_string(), handler.into()));
         self
     }
 
     pub fn on_volumechange(mut self, handler: impl Into<String>) -> Self {
-        self.events
-            .push(("volumechange".to_string(), handler.into()));
+        self.events.push(("volumechange".to_string(), handler.into()));
         self
     }
 
@@ -1027,26 +945,22 @@ impl FeDisplacementMap {
     }
 
     pub fn on_webkitanimationend(mut self, handler: impl Into<String>) -> Self {
-        self.events
-            .push(("webkitanimationend".to_string(), handler.into()));
+        self.events.push(("webkitanimationend".to_string(), handler.into()));
         self
     }
 
     pub fn on_webkitanimationiteration(mut self, handler: impl Into<String>) -> Self {
-        self.events
-            .push(("webkitanimationiteration".to_string(), handler.into()));
+        self.events.push(("webkitanimationiteration".to_string(), handler.into()));
         self
     }
 
     pub fn on_webkitanimationstart(mut self, handler: impl Into<String>) -> Self {
-        self.events
-            .push(("webkitanimationstart".to_string(), handler.into()));
+        self.events.push(("webkitanimationstart".to_string(), handler.into()));
         self
     }
 
     pub fn on_webkittransitionend(mut self, handler: impl Into<String>) -> Self {
-        self.events
-            .push(("webkittransitionend".to_string(), handler.into()));
+        self.events.push(("webkittransitionend".to_string(), handler.into()));
         self
     }
 

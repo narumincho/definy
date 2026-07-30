@@ -210,7 +210,7 @@ fn login_view(state: &AppState) -> Node<AppState> {
                         .type_("password")
                         .name("password")
                         .autocomplete("current-password")
-                        .required()
+                        .required(true)
                         .into_node(),
                 ])
                 .into_node(),
@@ -235,8 +235,8 @@ fn create_account_view(state: &AppState, force_offline: bool) -> Node<AppState> 
         .type_("password")
         .name("password")
         .autocomplete("new-password")
-        .required()
-        .readonly();
+        .required(true)
+        .read_only(true);
 
     if let Some(key) = &dialog_state.generated_key {
         password_input = password_input.value(&base64::Engine::encode(
@@ -359,7 +359,7 @@ fn create_account_view(state: &AppState, force_offline: bool) -> Node<AppState> 
                         .type_("text")
                         .name("username")
                         .autocomplete("username")
-                        .required()
+                        .required(true)
                         .on_change(EventHandler::new(async |_set_state| {}))
                         .into_node(),
                 ])
