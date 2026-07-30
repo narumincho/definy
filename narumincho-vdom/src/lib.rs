@@ -2,14 +2,13 @@ mod button;
 mod elements;
 mod meta;
 mod node;
-mod old_elements;
 mod route;
 mod style;
 
 pub use button::{Button, CommandValue};
+pub use elements::*;
 pub use meta::Meta;
 pub use node::{Element, EventHandler, Node};
-pub use old_elements::*;
 pub use route::*;
 pub use style::Style;
 
