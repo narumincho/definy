@@ -2,7 +2,7 @@
 use std::rc::Rc;
 
 use js_sys::Reflect;
-use narumincho_vdom::Node;
+use narumincho_vdom::{Node, normalize_attribute_name};
 use wasm_bindgen::JsCast;
 use wasm_bindgen::JsValue;
 use wasm_bindgen::closure::Closure;
@@ -359,7 +359,8 @@ fn apply_patch<State: 'static>(
         diff::Patch::AddAttributes(attrs) => {
             if let Some(element) = node.dyn_ref::<web_sys::Element>() {
                 for (key, value) in attrs {
-                    element.set_attribute(key, value).unwrap();
+                    let normalized_key = normalize_attribute_name(key);
+                    element.set_attribute(&normalized_key, value).unwrap();
                     if key == "value"
                         && let Some(input) = element.dyn_ref::<web_sys::HtmlInputElement>()
                     {

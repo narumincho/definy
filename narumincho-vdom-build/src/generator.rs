@@ -9,7 +9,7 @@ use crate::idl;
 use crate::model::{ElementInfo, GLOBAL_ATTRIBUTES, OVERLAPPING_TAGS, WebrefSpecData};
 use crate::naming::{
     capitalize, escape_attribute_field_name, escape_identifier, escape_method_name,
-    escape_variant_name,
+    escape_variant_name, to_html_attribute_name,
 };
 
 pub async fn generate_code() -> anyhow::Result<()> {
@@ -232,7 +232,7 @@ fn output_stateful_element_builders(
             )?;
             writeln!(
                 file,
-                "impl<State> {}<State> {{ pub fn new() -> Self {{ Self {{ attributes: Vec::new(), styles: crate::Style::new(), events: Vec::new(), children: Vec::new() }} }} pub fn attribute(mut self, key: impl Into<String>, value: impl Into<String>) -> Self {{ self.attributes.push((key.into(), value.into())); self }} pub fn id(self, value: impl Into<String>) -> Self {{ self.attribute(\"id\", value) }} pub fn class(self, value: impl Into<String>) -> Self {{ self.attribute(\"class\", value) }} pub fn type_(self, value: impl Into<String>) -> Self {{ self.attribute(\"type\", value) }} pub fn style(mut self, style: impl Into<crate::Style>) -> Self {{ self.styles = style.into(); self }} pub fn popover(self) -> Self {{ self.attribute(\"popover\", \"auto\") }} pub fn children(mut self, children: impl Into<Vec<VdomNode<State>>>) -> Self {{ self.children = children.into(); self }} pub fn into_node(self) -> VdomNode<State> {{ VdomNode::Element(VdomElement {{ element_name: \"{}\".to_string(), attributes: self.attributes, styles: self.styles, events: self.events, children: self.children }}) }} }}",
+                "impl<State> {}<State> {{ pub fn new() -> Self {{ Self {{ attributes: Vec::new(), styles: crate::Style::new(), events: Vec::new(), children: Vec::new() }} }} pub fn attribute(mut self, key: impl Into<String>, value: impl Into<String>) -> Self {{ let key = key.into(); self.attributes.push((crate::normalize_attribute_name(&key), value.into())); self }} pub fn id(self, value: impl Into<String>) -> Self {{ self.attribute(\"id\", value) }} pub fn class(self, value: impl Into<String>) -> Self {{ self.attribute(\"class\", value) }} pub fn type_(self, value: impl Into<String>) -> Self {{ self.attribute(\"type\", value) }} pub fn style(mut self, style: impl Into<crate::Style>) -> Self {{ self.styles = style.into(); self }} pub fn popover(self) -> Self {{ self.attribute(\"popover\", \"auto\") }} pub fn children(mut self, children: impl Into<Vec<VdomNode<State>>>) -> Self {{ self.children = children.into(); self }} pub fn into_node(self) -> VdomNode<State> {{ VdomNode::Element(VdomElement {{ element_name: \"{}\".to_string(), attributes: self.attributes, styles: self.styles, events: self.events, children: self.children }}) }} }}",
                 type_name, name
             )?;
             writeln!(
@@ -281,6 +281,7 @@ fn output_stateful_element_builders(
                     attr.name.trim_start_matches("on")
                 )?;
             } else if attr.type_name == "boolean" {
+                let attribute_name = to_html_attribute_name(&attr.name);
                 writeln!(
                     file,
                     "impl<State{}> {}<State{}> {{ pub fn {}(mut self, value: bool) -> Self {{ if value {{ self.attributes.push((\"{}\".to_string(), String::new())); }} self }} }}",
@@ -288,9 +289,10 @@ fn output_stateful_element_builders(
                     type_name,
                     if name == "a" { ", L" } else { "" },
                     method_name,
-                    attr.name
+                    attribute_name
                 )?;
             } else {
+                let attribute_name = to_html_attribute_name(&attr.name);
                 writeln!(
                     file,
                     "impl<State{}> {}<State{}> {{ pub fn {}(self, value: impl Into<String>) -> Self {{ self.attribute(\"{}\", value) }} }}",
@@ -298,7 +300,7 @@ fn output_stateful_element_builders(
                     type_name,
                     if name == "a" { ", L" } else { "" },
                     method_name,
-                    attr.name
+                    attribute_name
                 )?;
             }
         }
@@ -490,24 +492,25 @@ fn output_element_file(
         let enum_values =
             get_attribute_enum_values(&info.interface, attr).or_else(|| attr.enum_values.clone());
 
+        let attribute_name = to_html_attribute_name(&attr.name);
         if enum_values.is_some() {
             let enum_type_name = format!("{}{}", capitalized_element_name, capitalize(&attr.name));
             writeln!(
                 file,
                 "    pub fn {}(mut self, value: {}) -> Self {{\n        self.attributes.insert(\"{}\".to_string(), value.as_str().to_string());\n        self.{} = Some(value);\n        self\n    }}\n",
-                method_name, enum_type_name, attr.name, field_name
+                method_name, enum_type_name, attribute_name, field_name
             )?;
         } else if attr.type_name == "boolean" {
             writeln!(
                 file,
                 "    pub fn {}(mut self, value: bool) -> Self {{\n        if value {{\n            self.attributes.insert(\"{}\".to_string(), String::new());\n        }} else {{\n            self.attributes.remove(\"{}\");\n        }}\n        self.{} = Some(value);\n        self\n    }}\n",
-                method_name, attr.name, attr.name, field_name
+                method_name, attribute_name, attribute_name, field_name
             )?;
         } else {
             writeln!(
                 file,
                 "    pub fn {}(mut self, value: impl Into<String>) -> Self {{\n        let value = value.into();\n        self.attributes.insert(\"{}\".to_string(), value.clone());\n        self.{} = Some(value);\n        self\n    }}\n",
-                method_name, attr.name, field_name
+                method_name, attribute_name, field_name
             )?;
         }
     }
@@ -887,7 +890,7 @@ mod tests {{
 
 fn common_builder_methods(element_name: &str, _tag_name: &str) -> String {
     let mut out = String::new();
-    out.push_str(&"    pub fn attribute(mut self, key: impl Into<String>, value: impl Into<String>) -> Self {\n        self.attributes.insert(key.into(), value.into());\n        self\n    }\n\n".to_string());
+    out.push_str(&"    pub fn attribute(mut self, key: impl Into<String>, value: impl Into<String>) -> Self {\n        let key = key.into();\n        self.attributes.insert(crate::normalize_attribute_name(&key), value.into());\n        self\n    }\n\n".to_string());
     out.push_str(&"    pub fn id(self, value: impl Into<String>) -> Self {\n        self.attribute(\"id\", value)\n    }\n\n".to_string());
     out.push_str(&"    pub fn class(self, value: impl Into<String>) -> Self {\n        self.attribute(\"class\", value)\n    }\n\n".to_string());
     out.push_str(&"    pub fn style(mut self, style: impl Into<crate::Style>) -> Self {\n        self.styles = style.into();\n        self\n    }\n\n".to_string());

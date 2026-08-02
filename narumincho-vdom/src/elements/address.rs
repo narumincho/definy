@@ -66,7 +66,9 @@ pub fn address() -> Address {
 
 impl Address {
     pub fn attribute(mut self, key: impl Into<String>, value: impl Into<String>) -> Self {
-        self.attributes.insert(key.into(), value.into());
+        let key = key.into();
+        self.attributes
+            .insert(crate::normalize_attribute_name(&key), value.into());
         self
     }
 
@@ -103,7 +105,7 @@ impl Address {
     pub fn aria_active_descendant_element(mut self, value: impl Into<String>) -> Self {
         let value = value.into();
         self.attributes
-            .insert("ariaActiveDescendantElement".to_string(), value.clone());
+            .insert("aria-active-descendant-element".to_string(), value.clone());
         self.aria_active_descendant_element = Some(value);
         self
     }
@@ -111,7 +113,7 @@ impl Address {
     pub fn aria_atomic(mut self, value: impl Into<String>) -> Self {
         let value = value.into();
         self.attributes
-            .insert("ariaAtomic".to_string(), value.clone());
+            .insert("aria-atomic".to_string(), value.clone());
         self.aria_atomic = Some(value);
         self
     }
@@ -119,7 +121,7 @@ impl Address {
     pub fn aria_auto_complete(mut self, value: impl Into<String>) -> Self {
         let value = value.into();
         self.attributes
-            .insert("ariaAutoComplete".to_string(), value.clone());
+            .insert("aria-auto-complete".to_string(), value.clone());
         self.aria_auto_complete = Some(value);
         self
     }
@@ -127,7 +129,7 @@ impl Address {
     pub fn aria_braille_label(mut self, value: impl Into<String>) -> Self {
         let value = value.into();
         self.attributes
-            .insert("ariaBrailleLabel".to_string(), value.clone());
+            .insert("aria-braille-label".to_string(), value.clone());
         self.aria_braille_label = Some(value);
         self
     }
@@ -135,7 +137,7 @@ impl Address {
     pub fn aria_braille_role_description(mut self, value: impl Into<String>) -> Self {
         let value = value.into();
         self.attributes
-            .insert("ariaBrailleRoleDescription".to_string(), value.clone());
+            .insert("aria-braille-role-description".to_string(), value.clone());
         self.aria_braille_role_description = Some(value);
         self
     }
@@ -143,7 +145,7 @@ impl Address {
     pub fn aria_busy(mut self, value: impl Into<String>) -> Self {
         let value = value.into();
         self.attributes
-            .insert("ariaBusy".to_string(), value.clone());
+            .insert("aria-busy".to_string(), value.clone());
         self.aria_busy = Some(value);
         self
     }
@@ -151,7 +153,7 @@ impl Address {
     pub fn aria_checked(mut self, value: impl Into<String>) -> Self {
         let value = value.into();
         self.attributes
-            .insert("ariaChecked".to_string(), value.clone());
+            .insert("aria-checked".to_string(), value.clone());
         self.aria_checked = Some(value);
         self
     }
@@ -159,7 +161,7 @@ impl Address {
     pub fn aria_col_count(mut self, value: impl Into<String>) -> Self {
         let value = value.into();
         self.attributes
-            .insert("ariaColCount".to_string(), value.clone());
+            .insert("aria-col-count".to_string(), value.clone());
         self.aria_col_count = Some(value);
         self
     }
@@ -167,7 +169,7 @@ impl Address {
     pub fn aria_col_index(mut self, value: impl Into<String>) -> Self {
         let value = value.into();
         self.attributes
-            .insert("ariaColIndex".to_string(), value.clone());
+            .insert("aria-col-index".to_string(), value.clone());
         self.aria_col_index = Some(value);
         self
     }
@@ -175,7 +177,7 @@ impl Address {
     pub fn aria_col_index_text(mut self, value: impl Into<String>) -> Self {
         let value = value.into();
         self.attributes
-            .insert("ariaColIndexText".to_string(), value.clone());
+            .insert("aria-col-index-text".to_string(), value.clone());
         self.aria_col_index_text = Some(value);
         self
     }
@@ -183,7 +185,7 @@ impl Address {
     pub fn aria_col_span(mut self, value: impl Into<String>) -> Self {
         let value = value.into();
         self.attributes
-            .insert("ariaColSpan".to_string(), value.clone());
+            .insert("aria-col-span".to_string(), value.clone());
         self.aria_col_span = Some(value);
         self
     }
@@ -191,7 +193,7 @@ impl Address {
     pub fn aria_current(mut self, value: impl Into<String>) -> Self {
         let value = value.into();
         self.attributes
-            .insert("ariaCurrent".to_string(), value.clone());
+            .insert("aria-current".to_string(), value.clone());
         self.aria_current = Some(value);
         self
     }
@@ -199,7 +201,7 @@ impl Address {
     pub fn aria_description(mut self, value: impl Into<String>) -> Self {
         let value = value.into();
         self.attributes
-            .insert("ariaDescription".to_string(), value.clone());
+            .insert("aria-description".to_string(), value.clone());
         self.aria_description = Some(value);
         self
     }
@@ -207,7 +209,7 @@ impl Address {
     pub fn aria_disabled(mut self, value: impl Into<String>) -> Self {
         let value = value.into();
         self.attributes
-            .insert("ariaDisabled".to_string(), value.clone());
+            .insert("aria-disabled".to_string(), value.clone());
         self.aria_disabled = Some(value);
         self
     }
@@ -215,7 +217,7 @@ impl Address {
     pub fn aria_expanded(mut self, value: impl Into<String>) -> Self {
         let value = value.into();
         self.attributes
-            .insert("ariaExpanded".to_string(), value.clone());
+            .insert("aria-expanded".to_string(), value.clone());
         self.aria_expanded = Some(value);
         self
     }
@@ -223,7 +225,7 @@ impl Address {
     pub fn aria_has_popup(mut self, value: impl Into<String>) -> Self {
         let value = value.into();
         self.attributes
-            .insert("ariaHasPopup".to_string(), value.clone());
+            .insert("aria-has-popup".to_string(), value.clone());
         self.aria_has_popup = Some(value);
         self
     }
@@ -231,7 +233,7 @@ impl Address {
     pub fn aria_hidden(mut self, value: impl Into<String>) -> Self {
         let value = value.into();
         self.attributes
-            .insert("ariaHidden".to_string(), value.clone());
+            .insert("aria-hidden".to_string(), value.clone());
         self.aria_hidden = Some(value);
         self
     }
@@ -239,7 +241,7 @@ impl Address {
     pub fn aria_invalid(mut self, value: impl Into<String>) -> Self {
         let value = value.into();
         self.attributes
-            .insert("ariaInvalid".to_string(), value.clone());
+            .insert("aria-invalid".to_string(), value.clone());
         self.aria_invalid = Some(value);
         self
     }
@@ -247,7 +249,7 @@ impl Address {
     pub fn aria_key_shortcuts(mut self, value: impl Into<String>) -> Self {
         let value = value.into();
         self.attributes
-            .insert("ariaKeyShortcuts".to_string(), value.clone());
+            .insert("aria-key-shortcuts".to_string(), value.clone());
         self.aria_key_shortcuts = Some(value);
         self
     }
@@ -255,7 +257,7 @@ impl Address {
     pub fn aria_label(mut self, value: impl Into<String>) -> Self {
         let value = value.into();
         self.attributes
-            .insert("ariaLabel".to_string(), value.clone());
+            .insert("aria-label".to_string(), value.clone());
         self.aria_label = Some(value);
         self
     }
@@ -263,7 +265,7 @@ impl Address {
     pub fn aria_level(mut self, value: impl Into<String>) -> Self {
         let value = value.into();
         self.attributes
-            .insert("ariaLevel".to_string(), value.clone());
+            .insert("aria-level".to_string(), value.clone());
         self.aria_level = Some(value);
         self
     }
@@ -271,7 +273,7 @@ impl Address {
     pub fn aria_live(mut self, value: impl Into<String>) -> Self {
         let value = value.into();
         self.attributes
-            .insert("ariaLive".to_string(), value.clone());
+            .insert("aria-live".to_string(), value.clone());
         self.aria_live = Some(value);
         self
     }
@@ -279,7 +281,7 @@ impl Address {
     pub fn aria_modal(mut self, value: impl Into<String>) -> Self {
         let value = value.into();
         self.attributes
-            .insert("ariaModal".to_string(), value.clone());
+            .insert("aria-modal".to_string(), value.clone());
         self.aria_modal = Some(value);
         self
     }
@@ -287,7 +289,7 @@ impl Address {
     pub fn aria_multi_line(mut self, value: impl Into<String>) -> Self {
         let value = value.into();
         self.attributes
-            .insert("ariaMultiLine".to_string(), value.clone());
+            .insert("aria-multi-line".to_string(), value.clone());
         self.aria_multi_line = Some(value);
         self
     }
@@ -295,7 +297,7 @@ impl Address {
     pub fn aria_multi_selectable(mut self, value: impl Into<String>) -> Self {
         let value = value.into();
         self.attributes
-            .insert("ariaMultiSelectable".to_string(), value.clone());
+            .insert("aria-multi-selectable".to_string(), value.clone());
         self.aria_multi_selectable = Some(value);
         self
     }
@@ -303,7 +305,7 @@ impl Address {
     pub fn aria_orientation(mut self, value: impl Into<String>) -> Self {
         let value = value.into();
         self.attributes
-            .insert("ariaOrientation".to_string(), value.clone());
+            .insert("aria-orientation".to_string(), value.clone());
         self.aria_orientation = Some(value);
         self
     }
@@ -311,7 +313,7 @@ impl Address {
     pub fn aria_placeholder(mut self, value: impl Into<String>) -> Self {
         let value = value.into();
         self.attributes
-            .insert("ariaPlaceholder".to_string(), value.clone());
+            .insert("aria-placeholder".to_string(), value.clone());
         self.aria_placeholder = Some(value);
         self
     }
@@ -319,7 +321,7 @@ impl Address {
     pub fn aria_pos_in_set(mut self, value: impl Into<String>) -> Self {
         let value = value.into();
         self.attributes
-            .insert("ariaPosInSet".to_string(), value.clone());
+            .insert("aria-pos-in-set".to_string(), value.clone());
         self.aria_pos_in_set = Some(value);
         self
     }
@@ -327,7 +329,7 @@ impl Address {
     pub fn aria_pressed(mut self, value: impl Into<String>) -> Self {
         let value = value.into();
         self.attributes
-            .insert("ariaPressed".to_string(), value.clone());
+            .insert("aria-pressed".to_string(), value.clone());
         self.aria_pressed = Some(value);
         self
     }
@@ -335,7 +337,7 @@ impl Address {
     pub fn aria_read_only(mut self, value: impl Into<String>) -> Self {
         let value = value.into();
         self.attributes
-            .insert("ariaReadOnly".to_string(), value.clone());
+            .insert("aria-read-only".to_string(), value.clone());
         self.aria_read_only = Some(value);
         self
     }
@@ -343,7 +345,7 @@ impl Address {
     pub fn aria_relevant(mut self, value: impl Into<String>) -> Self {
         let value = value.into();
         self.attributes
-            .insert("ariaRelevant".to_string(), value.clone());
+            .insert("aria-relevant".to_string(), value.clone());
         self.aria_relevant = Some(value);
         self
     }
@@ -351,7 +353,7 @@ impl Address {
     pub fn aria_required(mut self, value: impl Into<String>) -> Self {
         let value = value.into();
         self.attributes
-            .insert("ariaRequired".to_string(), value.clone());
+            .insert("aria-required".to_string(), value.clone());
         self.aria_required = Some(value);
         self
     }
@@ -359,7 +361,7 @@ impl Address {
     pub fn aria_role_description(mut self, value: impl Into<String>) -> Self {
         let value = value.into();
         self.attributes
-            .insert("ariaRoleDescription".to_string(), value.clone());
+            .insert("aria-role-description".to_string(), value.clone());
         self.aria_role_description = Some(value);
         self
     }
@@ -367,7 +369,7 @@ impl Address {
     pub fn aria_row_count(mut self, value: impl Into<String>) -> Self {
         let value = value.into();
         self.attributes
-            .insert("ariaRowCount".to_string(), value.clone());
+            .insert("aria-row-count".to_string(), value.clone());
         self.aria_row_count = Some(value);
         self
     }
@@ -375,7 +377,7 @@ impl Address {
     pub fn aria_row_index(mut self, value: impl Into<String>) -> Self {
         let value = value.into();
         self.attributes
-            .insert("ariaRowIndex".to_string(), value.clone());
+            .insert("aria-row-index".to_string(), value.clone());
         self.aria_row_index = Some(value);
         self
     }
@@ -383,7 +385,7 @@ impl Address {
     pub fn aria_row_index_text(mut self, value: impl Into<String>) -> Self {
         let value = value.into();
         self.attributes
-            .insert("ariaRowIndexText".to_string(), value.clone());
+            .insert("aria-row-index-text".to_string(), value.clone());
         self.aria_row_index_text = Some(value);
         self
     }
@@ -391,7 +393,7 @@ impl Address {
     pub fn aria_row_span(mut self, value: impl Into<String>) -> Self {
         let value = value.into();
         self.attributes
-            .insert("ariaRowSpan".to_string(), value.clone());
+            .insert("aria-row-span".to_string(), value.clone());
         self.aria_row_span = Some(value);
         self
     }
@@ -399,7 +401,7 @@ impl Address {
     pub fn aria_selected(mut self, value: impl Into<String>) -> Self {
         let value = value.into();
         self.attributes
-            .insert("ariaSelected".to_string(), value.clone());
+            .insert("aria-selected".to_string(), value.clone());
         self.aria_selected = Some(value);
         self
     }
@@ -407,7 +409,7 @@ impl Address {
     pub fn aria_set_size(mut self, value: impl Into<String>) -> Self {
         let value = value.into();
         self.attributes
-            .insert("ariaSetSize".to_string(), value.clone());
+            .insert("aria-set-size".to_string(), value.clone());
         self.aria_set_size = Some(value);
         self
     }
@@ -415,7 +417,7 @@ impl Address {
     pub fn aria_sort(mut self, value: impl Into<String>) -> Self {
         let value = value.into();
         self.attributes
-            .insert("ariaSort".to_string(), value.clone());
+            .insert("aria-sort".to_string(), value.clone());
         self.aria_sort = Some(value);
         self
     }
@@ -423,7 +425,7 @@ impl Address {
     pub fn aria_value_max(mut self, value: impl Into<String>) -> Self {
         let value = value.into();
         self.attributes
-            .insert("ariaValueMax".to_string(), value.clone());
+            .insert("aria-value-max".to_string(), value.clone());
         self.aria_value_max = Some(value);
         self
     }
@@ -431,7 +433,7 @@ impl Address {
     pub fn aria_value_min(mut self, value: impl Into<String>) -> Self {
         let value = value.into();
         self.attributes
-            .insert("ariaValueMin".to_string(), value.clone());
+            .insert("aria-value-min".to_string(), value.clone());
         self.aria_value_min = Some(value);
         self
     }
@@ -439,7 +441,7 @@ impl Address {
     pub fn aria_value_now(mut self, value: impl Into<String>) -> Self {
         let value = value.into();
         self.attributes
-            .insert("ariaValueNow".to_string(), value.clone());
+            .insert("aria-value-now".to_string(), value.clone());
         self.aria_value_now = Some(value);
         self
     }
@@ -447,7 +449,7 @@ impl Address {
     pub fn aria_value_text(mut self, value: impl Into<String>) -> Self {
         let value = value.into();
         self.attributes
-            .insert("ariaValueText".to_string(), value.clone());
+            .insert("aria-value-text".to_string(), value.clone());
         self.aria_value_text = Some(value);
         self
     }

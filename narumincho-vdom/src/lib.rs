@@ -16,6 +16,36 @@ pub fn text<State>(text: impl Into<String>) -> Node<State> {
     Node::Text(text.into().into())
 }
 
+pub fn normalize_attribute_name(name: &str) -> String {
+    if name.starts_with("aria") {
+        let mut result = String::from("aria");
+        for c in name.chars().skip(4) {
+            if c.is_uppercase() {
+                result.push('-');
+                result.extend(c.to_lowercase());
+            } else {
+                result.push(c);
+            }
+        }
+        return result;
+    }
+
+    if name.starts_with("data") {
+        let mut result = String::from("data");
+        for c in name.chars().skip(4) {
+            if c.is_uppercase() {
+                result.push('-');
+                result.extend(c.to_lowercase());
+            } else {
+                result.push(c);
+            }
+        }
+        return result;
+    }
+
+    name.to_string()
+}
+
 pub fn to_html<State>(node: &Node<State>) -> String {
     "<!doctype html>".to_string() + &to_string(node)
 }
@@ -28,7 +58,7 @@ pub fn to_string<State>(node: &Node<State>) -> String {
             html.push_str(&vdom.element_name);
             for (key, value) in &vdom.attributes {
                 html.push(' ');
-                html.push_str(key);
+                html.push_str(&normalize_attribute_name(key));
                 html.push_str("=\"");
                 html.push_str(&attribute_escape(value));
                 html.push('"');
@@ -87,5 +117,16 @@ mod tests {
         assert_eq!(btn.attributes.get("type"), Some(&"submit".to_string()));
         assert_eq!(btn.attributes.get("disabled"), None);
         assert_eq!(btn.attributes.get("data-test"), Some(&"value".to_string()));
+    }
+
+    #[test]
+    fn aria_attributes_are_rendered_with_html_hyphenated_names() {
+        let node = elements::Button::<()>::new()
+            .aria_label("Close")
+            .into_node();
+        let html = to_string(&node);
+
+        assert!(html.contains("aria-label=\"Close\""));
+        assert!(!html.contains("ariaLabel="));
     }
 }

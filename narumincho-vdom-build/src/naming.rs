@@ -43,6 +43,36 @@ pub fn escape_variant_name(s: &str) -> String {
     }
 }
 
+pub fn to_html_attribute_name(s: &str) -> String {
+    if s.starts_with("aria") {
+        let mut result = String::from("aria");
+        for c in s.chars().skip(4) {
+            if c.is_uppercase() {
+                result.push('-');
+                result.extend(c.to_lowercase());
+            } else {
+                result.push(c);
+            }
+        }
+        return result;
+    }
+
+    if s.starts_with("data") {
+        let mut result = String::from("data");
+        for c in s.chars().skip(4) {
+            if c.is_uppercase() {
+                result.push('-');
+                result.extend(c.to_lowercase());
+            } else {
+                result.push(c);
+            }
+        }
+        return result;
+    }
+
+    s.to_string()
+}
+
 pub fn to_snake_case(s: &str) -> String {
     let mut result = String::new();
     for (i, c) in s.chars().enumerate() {
