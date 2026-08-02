@@ -501,13 +501,14 @@ fn parse_interface(tokens: &[String], cursor: &mut usize, is_mixin: bool) -> Opt
             let type_name = parse_type(tokens, cursor);
             skip_extended_attributes(tokens, cursor);
             if let Some(attr_name) = parse_identifier(tokens, cursor)
-                && is_valid_attribute_name(&attr_name) {
-                    attributes.push(AttributeDef {
-                        name: attr_name,
-                        type_name,
-                        is_readonly,
-                    });
-                }
+                && is_valid_attribute_name(&attr_name)
+            {
+                attributes.push(AttributeDef {
+                    name: attr_name,
+                    type_name,
+                    is_readonly,
+                });
+            }
             skip_until_semicolon(tokens, cursor);
         } else {
             // attribute 以外（operation, const, constructor 等）はスキップ
@@ -567,9 +568,8 @@ fn parse_type(tokens: &[String], cursor: &mut usize) -> String {
         } else if paren_depth == 0 {
             if !parts.is_empty()
                 && is_identifier_token(tok)
-                && peek(tokens, *cursor + 1).is_none_or(|next| {
-                    next == ";" || next == "=" || is_valid_attribute_name(next)
-                })
+                && peek(tokens, *cursor + 1)
+                    .is_none_or(|next| next == ";" || next == "=" || is_valid_attribute_name(next))
             {
                 break;
             }
