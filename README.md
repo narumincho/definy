@@ -35,7 +35,7 @@ https://github.com/narumincho/definy/tree/prev2023
 - [wasm-bindgen-cli](https://wasm-bindgen.github.io/wasm-bindgen/)
 
 ```sh
-cargo install wasm-bindgen-cli --version 0.2.120
+cargo install wasm-bindgen-cli --version 0.2.126
 ```
 
 - [PostgreSQL](https://www.postgresql.org/download/)
