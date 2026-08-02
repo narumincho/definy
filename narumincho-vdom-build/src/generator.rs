@@ -254,11 +254,10 @@ fn output_element_file(
         let is_event = attr.name.starts_with("on");
         if is_event {
             events.push(attr);
-        } else if !is_global {
-            if is_html_attribute(&attr) {
+        } else if !is_global
+            && is_html_attribute(&attr) {
                 html_attributes.push(attr);
             }
-        }
     }
 
     struct GeneratedEnum {
@@ -787,24 +786,12 @@ mod tests {{
 
 fn common_builder_methods(element_name: &str, _tag_name: &str) -> String {
     let mut out = String::new();
-    out.push_str(&format!(
-        "    pub fn attribute(mut self, key: impl Into<String>, value: impl Into<String>) -> Self {{\n        self.attributes.insert(key.into(), value.into());\n        self\n    }}\n\n"
-    ));
-    out.push_str(&format!(
-        "    pub fn id(mut self, value: impl Into<String>) -> Self {{\n        self.attribute(\"id\", value)\n    }}\n\n"
-    ));
-    out.push_str(&format!(
-        "    pub fn class(mut self, value: impl Into<String>) -> Self {{\n        self.attribute(\"class\", value)\n    }}\n\n"
-    ));
-    out.push_str(&format!(
-        "    pub fn style(mut self, style: impl Into<crate::Style>) -> Self {{\n        self.styles = style.into();\n        self\n    }}\n\n"
-    ));
-    out.push_str(&format!(
-        "    pub fn popover(self) -> Self {{\n        self.attribute(\"popover\", \"auto\")\n    }}\n\n"
-    ));
-    out.push_str(&format!(
-        "    pub fn children(mut self, children: impl Into<Vec<super::Node>>) -> Self {{\n        self.children = children.into();\n        self\n    }}\n\n"
-    ));
+    out.push_str(&"    pub fn attribute(mut self, key: impl Into<String>, value: impl Into<String>) -> Self {\n        self.attributes.insert(key.into(), value.into());\n        self\n    }\n\n".to_string());
+    out.push_str(&"    pub fn id(mut self, value: impl Into<String>) -> Self {\n        self.attribute(\"id\", value)\n    }\n\n".to_string());
+    out.push_str(&"    pub fn class(mut self, value: impl Into<String>) -> Self {\n        self.attribute(\"class\", value)\n    }\n\n".to_string());
+    out.push_str(&"    pub fn style(mut self, style: impl Into<crate::Style>) -> Self {\n        self.styles = style.into();\n        self\n    }\n\n".to_string());
+    out.push_str(&"    pub fn popover(self) -> Self {\n        self.attribute(\"popover\", \"auto\")\n    }\n\n".to_string());
+    out.push_str(&"    pub fn children(mut self, children: impl Into<Vec<super::Node>>) -> Self {\n        self.children = children.into();\n        self\n    }\n\n".to_string());
     out.push_str(&format!(
         "    pub fn into_node(self) -> super::Node {{\n        super::Node::Element(super::Element {{\n            global_attributes: super::GlobalAttributes::default(),\n            element_content: super::ElementContent::{}(self),\n            children: Vec::new(),\n        }})\n    }}\n\n",
         capitalize(element_name)

@@ -46,7 +46,7 @@ pub struct HtmlElementInfo {
 
 impl IdlDatabase {
     pub fn parse_file(&mut self, content: &str) -> anyhow::Result<()> {
-        let mut tokens = tokenize(content);
+        let tokens = tokenize(content);
         let mut cursor = 0;
 
         while cursor < tokens.len() {
@@ -368,7 +368,7 @@ fn tokenize(input: &str) -> Vec<String> {
     tokens
 }
 
-fn peek<'a>(tokens: &'a [String], cursor: usize) -> Option<&'a str> {
+fn peek(tokens: &[String], cursor: usize) -> Option<&str> {
     tokens.get(cursor).map(|s| s.as_str())
 }
 
@@ -500,15 +500,14 @@ fn parse_interface(tokens: &[String], cursor: &mut usize, is_mixin: bool) -> Opt
             skip_extended_attributes(tokens, cursor);
             let type_name = parse_type(tokens, cursor);
             skip_extended_attributes(tokens, cursor);
-            if let Some(attr_name) = parse_identifier(tokens, cursor) {
-                if is_valid_attribute_name(&attr_name) {
+            if let Some(attr_name) = parse_identifier(tokens, cursor)
+                && is_valid_attribute_name(&attr_name) {
                     attributes.push(AttributeDef {
                         name: attr_name,
                         type_name,
                         is_readonly,
                     });
                 }
-            }
             skip_until_semicolon(tokens, cursor);
         } else {
             // attribute 以外（operation, const, constructor 等）はスキップ
@@ -536,7 +535,7 @@ fn is_valid_attribute_name(name: &str) -> bool {
         && name
             .chars()
             .next()
-            .map_or(false, |c| c.is_alphabetic() || c == '_')
+            .is_some_and(|c| c.is_alphabetic() || c == '_')
 }
 
 fn parse_type(tokens: &[String], cursor: &mut usize) -> String {
@@ -568,7 +567,7 @@ fn parse_type(tokens: &[String], cursor: &mut usize) -> String {
         } else if paren_depth == 0 {
             if !parts.is_empty()
                 && is_identifier_token(tok)
-                && peek(tokens, *cursor + 1).map_or(true, |next| {
+                && peek(tokens, *cursor + 1).is_none_or(|next| {
                     next == ";" || next == "=" || is_valid_attribute_name(next)
                 })
             {

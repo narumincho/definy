@@ -239,7 +239,7 @@ fn create_account_view(state: &AppState, force_offline: bool) -> Node<AppState> 
         .read_only(true);
 
     if let Some(key) = &dialog_state.generated_key {
-        password_input = password_input.value(&base64::Engine::encode(
+        password_input = password_input.value(base64::Engine::encode(
             &base64::engine::general_purpose::URL_SAFE_NO_PAD,
             key.to_bytes(),
         ));

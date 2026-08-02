@@ -65,7 +65,7 @@ pub fn to_snake_case(s: &str) -> String {
 pub fn capitalize(s: &str) -> String {
     let mut result = String::new();
     let parts: Vec<&str> = s
-        .split(|c| c == '-' || c == '_' || c == '.' || c == '/')
+        .split(['-', '_', '.', '/'])
         .collect();
     for part in parts {
         let mut chars = part.chars();

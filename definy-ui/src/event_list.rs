@@ -798,7 +798,7 @@ fn event_view(
                                 )
                                 .children([text(format!(
                                     "base: {}",
-                                    &module_update_event.module_definition_event_hash,
+                                    module_update_event.module_definition_event_hash,
                                 ))])
                                 .into_node(),
                             A::<AppState, crate::Location>::new()
