@@ -334,6 +334,14 @@ fn log_missing_path(root: &web_sys::Node, path: &[usize]) {
     }
 }
 
+fn should_create_element_in_svg_namespace(is_svg: bool, element_name: &str) -> bool {
+    is_svg || element_name == "svg"
+}
+
+fn should_create_children_in_svg_context(is_svg: bool, element_name: &str) -> bool {
+    is_svg && element_name != "foreignObject"
+}
+
 fn apply_patch<State: 'static>(
     node: web_sys::Node,
     patch: &diff::Patch<State>,
@@ -348,6 +356,11 @@ fn apply_patch<State: 'static>(
                     .and_then(|el| el.namespace_uri())
                     .map(|ns| ns == "http://www.w3.org/2000/svg")
                     .unwrap_or(false);
+                let element_name = parent
+                    .dyn_ref::<web_sys::Element>()
+                    .map(|el| el.tag_name().to_ascii_lowercase())
+                    .unwrap_or_default();
+                let is_svg = should_create_children_in_svg_context(is_svg, &element_name);
                 let new_web_node =
                     create_web_sys_node(new_node, dispatch, _callback_key_symbol, is_svg);
                 parent.replace_child(&new_web_node, &node).unwrap();
@@ -444,6 +457,11 @@ fn apply_patch<State: 'static>(
                 .and_then(|el| el.namespace_uri())
                 .map(|ns| ns == "http://www.w3.org/2000/svg")
                 .unwrap_or(false);
+            let element_name = node
+                .dyn_ref::<web_sys::Element>()
+                .map(|el| el.tag_name().to_ascii_lowercase())
+                .unwrap_or_default();
+            let is_svg = should_create_children_in_svg_context(is_svg, &element_name);
             for child in children {
                 let child_node = create_web_sys_node(child, dispatch, _callback_key_symbol, is_svg);
                 node.append_child(&child_node).unwrap();
@@ -461,6 +479,23 @@ fn apply_patch<State: 'static>(
     }
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_svg_child_context_logic() {
+        assert!(should_create_element_in_svg_namespace(false, "svg"));
+        assert!(should_create_element_in_svg_namespace(true, "div"));
+        assert!(should_create_children_in_svg_context(true, "g"));
+        assert!(!should_create_children_in_svg_context(
+            true,
+            "foreignObject"
+        ));
+        assert!(!should_create_children_in_svg_context(false, "div"));
+    }
+}
+
 fn create_web_sys_node<State: 'static>(
     vdom: &Node<State>,
     dispatch: &Rc<dyn Fn(Box<dyn FnOnce(State) -> State>)>,
@@ -469,7 +504,7 @@ fn create_web_sys_node<State: 'static>(
 ) -> web_sys::Node {
     match vdom {
         Node::Element(el) => {
-            let is_element_svg = is_svg || el.element_name == "svg";
+            let is_element_svg = should_create_element_in_svg_namespace(is_svg, &el.element_name);
             let element = crate::element_creation::create_element(&el.element_name, is_element_svg);
             for (key, value) in &el.attributes {
                 element.set_attribute(key, value).unwrap();
@@ -502,7 +537,8 @@ fn create_web_sys_node<State: 'static>(
                 Reflect::set(&element, &JsValue::from_str(&key), closure.as_ref()).unwrap();
                 closure.forget();
             }
-            let is_child_svg = is_element_svg && el.element_name != "foreignObject";
+            let is_child_svg =
+                should_create_children_in_svg_context(is_element_svg, &el.element_name);
             for child in &el.children {
                 element
                     .append_child(&create_web_sys_node(
