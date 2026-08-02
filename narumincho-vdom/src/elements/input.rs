@@ -63,96 +63,6 @@ pub struct Input {
     pub events: Vec<(String, String)>,
     pub styles: crate::Style,
     pub children: Vec<super::Node>,
-    pub accept: std::option::Option<String>,
-    pub align: std::option::Option<String>,
-    pub alpha: std::option::Option<bool>,
-    pub alt: std::option::Option<String>,
-    pub aria_active_descendant_element: std::option::Option<String>,
-    pub aria_atomic: std::option::Option<String>,
-    pub aria_auto_complete: std::option::Option<String>,
-    pub aria_braille_label: std::option::Option<String>,
-    pub aria_braille_role_description: std::option::Option<String>,
-    pub aria_busy: std::option::Option<String>,
-    pub aria_checked: std::option::Option<String>,
-    pub aria_col_count: std::option::Option<String>,
-    pub aria_col_index: std::option::Option<String>,
-    pub aria_col_index_text: std::option::Option<String>,
-    pub aria_col_span: std::option::Option<String>,
-    pub aria_current: std::option::Option<String>,
-    pub aria_description: std::option::Option<String>,
-    pub aria_disabled: std::option::Option<String>,
-    pub aria_expanded: std::option::Option<String>,
-    pub aria_has_popup: std::option::Option<String>,
-    pub aria_hidden: std::option::Option<String>,
-    pub aria_invalid: std::option::Option<String>,
-    pub aria_key_shortcuts: std::option::Option<String>,
-    pub aria_label: std::option::Option<String>,
-    pub aria_level: std::option::Option<String>,
-    pub aria_live: std::option::Option<String>,
-    pub aria_modal: std::option::Option<String>,
-    pub aria_multi_line: std::option::Option<String>,
-    pub aria_multi_selectable: std::option::Option<String>,
-    pub aria_orientation: std::option::Option<String>,
-    pub aria_placeholder: std::option::Option<String>,
-    pub aria_pos_in_set: std::option::Option<String>,
-    pub aria_pressed: std::option::Option<String>,
-    pub aria_read_only: std::option::Option<String>,
-    pub aria_relevant: std::option::Option<String>,
-    pub aria_required: std::option::Option<String>,
-    pub aria_role_description: std::option::Option<String>,
-    pub aria_row_count: std::option::Option<String>,
-    pub aria_row_index: std::option::Option<String>,
-    pub aria_row_index_text: std::option::Option<String>,
-    pub aria_row_span: std::option::Option<String>,
-    pub aria_selected: std::option::Option<String>,
-    pub aria_set_size: std::option::Option<String>,
-    pub aria_sort: std::option::Option<String>,
-    pub aria_value_max: std::option::Option<String>,
-    pub aria_value_min: std::option::Option<String>,
-    pub aria_value_now: std::option::Option<String>,
-    pub aria_value_text: std::option::Option<String>,
-    pub autocomplete: std::option::Option<String>,
-    pub autocorrect: std::option::Option<bool>,
-    pub capture: std::option::Option<String>,
-    pub checked: std::option::Option<bool>,
-    pub class: std::option::Option<String>,
-    pub color_space: std::option::Option<String>,
-    pub default_checked: std::option::Option<bool>,
-    pub default_value: std::option::Option<String>,
-    pub dir_name: std::option::Option<String>,
-    pub disabled: std::option::Option<bool>,
-    pub files: std::option::Option<String>,
-    pub form_action: std::option::Option<String>,
-    pub form_enctype: std::option::Option<String>,
-    pub form_method: std::option::Option<String>,
-    pub form_no_validate: std::option::Option<bool>,
-    pub form_target: std::option::Option<String>,
-    pub indeterminate: std::option::Option<bool>,
-    pub max: std::option::Option<String>,
-    pub max_length: std::option::Option<String>,
-    pub min: std::option::Option<String>,
-    pub min_length: std::option::Option<String>,
-    pub multiple: std::option::Option<bool>,
-    pub name: std::option::Option<String>,
-    pub pattern: std::option::Option<String>,
-    pub placeholder: std::option::Option<String>,
-    pub popover_target_action: std::option::Option<String>,
-    pub read_only: std::option::Option<bool>,
-    pub required: std::option::Option<bool>,
-    pub role: std::option::Option<String>,
-    pub selection_direction: std::option::Option<String>,
-    pub selection_end: std::option::Option<String>,
-    pub selection_start: std::option::Option<String>,
-    pub src: std::option::Option<String>,
-    pub step: std::option::Option<String>,
-    pub text_content: std::option::Option<String>,
-    pub r#type: std::option::Option<InputType>,
-    pub use_map: std::option::Option<String>,
-    pub value: std::option::Option<String>,
-    pub value_as_date: std::option::Option<String>,
-    pub virtual_keyboard_policy: std::option::Option<String>,
-    pub webkitdirectory: std::option::Option<bool>,
-    pub writing_suggestions: std::option::Option<String>,
 }
 
 pub fn input() -> Input {
@@ -162,8 +72,8 @@ pub fn input() -> Input {
 impl Input {
     pub fn attribute(mut self, key: impl Into<String>, value: impl Into<String>) -> Self {
         let key = key.into();
-        self.attributes
-            .insert(crate::normalize_attribute_name(&key), value.into());
+        let normalized_key = crate::normalize_attribute_name(&key);
+        self.attributes.insert(normalized_key, value.into());
         self
     }
 
@@ -198,16 +108,12 @@ impl Input {
     }
 
     pub fn accept(mut self, value: impl Into<String>) -> Self {
-        let value = value.into();
-        self.attributes.insert("accept".to_string(), value.clone());
-        self.accept = Some(value);
+        self.attributes.insert("accept".to_string(), value.into());
         self
     }
 
     pub fn align(mut self, value: impl Into<String>) -> Self {
-        let value = value.into();
-        self.attributes.insert("align".to_string(), value.clone());
-        self.align = Some(value);
+        self.attributes.insert("align".to_string(), value.into());
         self
     }
 
@@ -217,374 +123,281 @@ impl Input {
         } else {
             self.attributes.remove("alpha");
         }
-        self.alpha = Some(value);
         self
     }
 
     pub fn alt(mut self, value: impl Into<String>) -> Self {
-        let value = value.into();
-        self.attributes.insert("alt".to_string(), value.clone());
-        self.alt = Some(value);
+        self.attributes.insert("alt".to_string(), value.into());
         self
     }
 
     pub fn aria_active_descendant_element(mut self, value: impl Into<String>) -> Self {
-        let value = value.into();
         self.attributes
-            .insert("aria-active-descendant-element".to_string(), value.clone());
-        self.aria_active_descendant_element = Some(value);
+            .insert("aria-active-descendant-element".to_string(), value.into());
         self
     }
 
     pub fn aria_atomic(mut self, value: impl Into<String>) -> Self {
-        let value = value.into();
         self.attributes
-            .insert("aria-atomic".to_string(), value.clone());
-        self.aria_atomic = Some(value);
+            .insert("aria-atomic".to_string(), value.into());
         self
     }
 
     pub fn aria_auto_complete(mut self, value: impl Into<String>) -> Self {
-        let value = value.into();
         self.attributes
-            .insert("aria-auto-complete".to_string(), value.clone());
-        self.aria_auto_complete = Some(value);
+            .insert("aria-auto-complete".to_string(), value.into());
         self
     }
 
     pub fn aria_braille_label(mut self, value: impl Into<String>) -> Self {
-        let value = value.into();
         self.attributes
-            .insert("aria-braille-label".to_string(), value.clone());
-        self.aria_braille_label = Some(value);
+            .insert("aria-braille-label".to_string(), value.into());
         self
     }
 
     pub fn aria_braille_role_description(mut self, value: impl Into<String>) -> Self {
-        let value = value.into();
         self.attributes
-            .insert("aria-braille-role-description".to_string(), value.clone());
-        self.aria_braille_role_description = Some(value);
+            .insert("aria-braille-role-description".to_string(), value.into());
         self
     }
 
     pub fn aria_busy(mut self, value: impl Into<String>) -> Self {
-        let value = value.into();
         self.attributes
-            .insert("aria-busy".to_string(), value.clone());
-        self.aria_busy = Some(value);
+            .insert("aria-busy".to_string(), value.into());
         self
     }
 
     pub fn aria_checked(mut self, value: impl Into<String>) -> Self {
-        let value = value.into();
         self.attributes
-            .insert("aria-checked".to_string(), value.clone());
-        self.aria_checked = Some(value);
+            .insert("aria-checked".to_string(), value.into());
         self
     }
 
     pub fn aria_col_count(mut self, value: impl Into<String>) -> Self {
-        let value = value.into();
         self.attributes
-            .insert("aria-col-count".to_string(), value.clone());
-        self.aria_col_count = Some(value);
+            .insert("aria-col-count".to_string(), value.into());
         self
     }
 
     pub fn aria_col_index(mut self, value: impl Into<String>) -> Self {
-        let value = value.into();
         self.attributes
-            .insert("aria-col-index".to_string(), value.clone());
-        self.aria_col_index = Some(value);
+            .insert("aria-col-index".to_string(), value.into());
         self
     }
 
     pub fn aria_col_index_text(mut self, value: impl Into<String>) -> Self {
-        let value = value.into();
         self.attributes
-            .insert("aria-col-index-text".to_string(), value.clone());
-        self.aria_col_index_text = Some(value);
+            .insert("aria-col-index-text".to_string(), value.into());
         self
     }
 
     pub fn aria_col_span(mut self, value: impl Into<String>) -> Self {
-        let value = value.into();
         self.attributes
-            .insert("aria-col-span".to_string(), value.clone());
-        self.aria_col_span = Some(value);
+            .insert("aria-col-span".to_string(), value.into());
         self
     }
 
     pub fn aria_current(mut self, value: impl Into<String>) -> Self {
-        let value = value.into();
         self.attributes
-            .insert("aria-current".to_string(), value.clone());
-        self.aria_current = Some(value);
+            .insert("aria-current".to_string(), value.into());
         self
     }
 
     pub fn aria_description(mut self, value: impl Into<String>) -> Self {
-        let value = value.into();
         self.attributes
-            .insert("aria-description".to_string(), value.clone());
-        self.aria_description = Some(value);
+            .insert("aria-description".to_string(), value.into());
         self
     }
 
     pub fn aria_disabled(mut self, value: impl Into<String>) -> Self {
-        let value = value.into();
         self.attributes
-            .insert("aria-disabled".to_string(), value.clone());
-        self.aria_disabled = Some(value);
+            .insert("aria-disabled".to_string(), value.into());
         self
     }
 
     pub fn aria_expanded(mut self, value: impl Into<String>) -> Self {
-        let value = value.into();
         self.attributes
-            .insert("aria-expanded".to_string(), value.clone());
-        self.aria_expanded = Some(value);
+            .insert("aria-expanded".to_string(), value.into());
         self
     }
 
     pub fn aria_has_popup(mut self, value: impl Into<String>) -> Self {
-        let value = value.into();
         self.attributes
-            .insert("aria-has-popup".to_string(), value.clone());
-        self.aria_has_popup = Some(value);
+            .insert("aria-has-popup".to_string(), value.into());
         self
     }
 
     pub fn aria_hidden(mut self, value: impl Into<String>) -> Self {
-        let value = value.into();
         self.attributes
-            .insert("aria-hidden".to_string(), value.clone());
-        self.aria_hidden = Some(value);
+            .insert("aria-hidden".to_string(), value.into());
         self
     }
 
     pub fn aria_invalid(mut self, value: impl Into<String>) -> Self {
-        let value = value.into();
         self.attributes
-            .insert("aria-invalid".to_string(), value.clone());
-        self.aria_invalid = Some(value);
+            .insert("aria-invalid".to_string(), value.into());
         self
     }
 
     pub fn aria_key_shortcuts(mut self, value: impl Into<String>) -> Self {
-        let value = value.into();
         self.attributes
-            .insert("aria-key-shortcuts".to_string(), value.clone());
-        self.aria_key_shortcuts = Some(value);
+            .insert("aria-key-shortcuts".to_string(), value.into());
         self
     }
 
     pub fn aria_label(mut self, value: impl Into<String>) -> Self {
-        let value = value.into();
         self.attributes
-            .insert("aria-label".to_string(), value.clone());
-        self.aria_label = Some(value);
+            .insert("aria-label".to_string(), value.into());
         self
     }
 
     pub fn aria_level(mut self, value: impl Into<String>) -> Self {
-        let value = value.into();
         self.attributes
-            .insert("aria-level".to_string(), value.clone());
-        self.aria_level = Some(value);
+            .insert("aria-level".to_string(), value.into());
         self
     }
 
     pub fn aria_live(mut self, value: impl Into<String>) -> Self {
-        let value = value.into();
         self.attributes
-            .insert("aria-live".to_string(), value.clone());
-        self.aria_live = Some(value);
+            .insert("aria-live".to_string(), value.into());
         self
     }
 
     pub fn aria_modal(mut self, value: impl Into<String>) -> Self {
-        let value = value.into();
         self.attributes
-            .insert("aria-modal".to_string(), value.clone());
-        self.aria_modal = Some(value);
+            .insert("aria-modal".to_string(), value.into());
         self
     }
 
     pub fn aria_multi_line(mut self, value: impl Into<String>) -> Self {
-        let value = value.into();
         self.attributes
-            .insert("aria-multi-line".to_string(), value.clone());
-        self.aria_multi_line = Some(value);
+            .insert("aria-multi-line".to_string(), value.into());
         self
     }
 
     pub fn aria_multi_selectable(mut self, value: impl Into<String>) -> Self {
-        let value = value.into();
         self.attributes
-            .insert("aria-multi-selectable".to_string(), value.clone());
-        self.aria_multi_selectable = Some(value);
+            .insert("aria-multi-selectable".to_string(), value.into());
         self
     }
 
     pub fn aria_orientation(mut self, value: impl Into<String>) -> Self {
-        let value = value.into();
         self.attributes
-            .insert("aria-orientation".to_string(), value.clone());
-        self.aria_orientation = Some(value);
+            .insert("aria-orientation".to_string(), value.into());
         self
     }
 
     pub fn aria_placeholder(mut self, value: impl Into<String>) -> Self {
-        let value = value.into();
         self.attributes
-            .insert("aria-placeholder".to_string(), value.clone());
-        self.aria_placeholder = Some(value);
+            .insert("aria-placeholder".to_string(), value.into());
         self
     }
 
     pub fn aria_pos_in_set(mut self, value: impl Into<String>) -> Self {
-        let value = value.into();
         self.attributes
-            .insert("aria-pos-in-set".to_string(), value.clone());
-        self.aria_pos_in_set = Some(value);
+            .insert("aria-pos-in-set".to_string(), value.into());
         self
     }
 
     pub fn aria_pressed(mut self, value: impl Into<String>) -> Self {
-        let value = value.into();
         self.attributes
-            .insert("aria-pressed".to_string(), value.clone());
-        self.aria_pressed = Some(value);
+            .insert("aria-pressed".to_string(), value.into());
         self
     }
 
     pub fn aria_read_only(mut self, value: impl Into<String>) -> Self {
-        let value = value.into();
         self.attributes
-            .insert("aria-read-only".to_string(), value.clone());
-        self.aria_read_only = Some(value);
+            .insert("aria-read-only".to_string(), value.into());
         self
     }
 
     pub fn aria_relevant(mut self, value: impl Into<String>) -> Self {
-        let value = value.into();
         self.attributes
-            .insert("aria-relevant".to_string(), value.clone());
-        self.aria_relevant = Some(value);
+            .insert("aria-relevant".to_string(), value.into());
         self
     }
 
     pub fn aria_required(mut self, value: impl Into<String>) -> Self {
-        let value = value.into();
         self.attributes
-            .insert("aria-required".to_string(), value.clone());
-        self.aria_required = Some(value);
+            .insert("aria-required".to_string(), value.into());
         self
     }
 
     pub fn aria_role_description(mut self, value: impl Into<String>) -> Self {
-        let value = value.into();
         self.attributes
-            .insert("aria-role-description".to_string(), value.clone());
-        self.aria_role_description = Some(value);
+            .insert("aria-role-description".to_string(), value.into());
         self
     }
 
     pub fn aria_row_count(mut self, value: impl Into<String>) -> Self {
-        let value = value.into();
         self.attributes
-            .insert("aria-row-count".to_string(), value.clone());
-        self.aria_row_count = Some(value);
+            .insert("aria-row-count".to_string(), value.into());
         self
     }
 
     pub fn aria_row_index(mut self, value: impl Into<String>) -> Self {
-        let value = value.into();
         self.attributes
-            .insert("aria-row-index".to_string(), value.clone());
-        self.aria_row_index = Some(value);
+            .insert("aria-row-index".to_string(), value.into());
         self
     }
 
     pub fn aria_row_index_text(mut self, value: impl Into<String>) -> Self {
-        let value = value.into();
         self.attributes
-            .insert("aria-row-index-text".to_string(), value.clone());
-        self.aria_row_index_text = Some(value);
+            .insert("aria-row-index-text".to_string(), value.into());
         self
     }
 
     pub fn aria_row_span(mut self, value: impl Into<String>) -> Self {
-        let value = value.into();
         self.attributes
-            .insert("aria-row-span".to_string(), value.clone());
-        self.aria_row_span = Some(value);
+            .insert("aria-row-span".to_string(), value.into());
         self
     }
 
     pub fn aria_selected(mut self, value: impl Into<String>) -> Self {
-        let value = value.into();
         self.attributes
-            .insert("aria-selected".to_string(), value.clone());
-        self.aria_selected = Some(value);
+            .insert("aria-selected".to_string(), value.into());
         self
     }
 
     pub fn aria_set_size(mut self, value: impl Into<String>) -> Self {
-        let value = value.into();
         self.attributes
-            .insert("aria-set-size".to_string(), value.clone());
-        self.aria_set_size = Some(value);
+            .insert("aria-set-size".to_string(), value.into());
         self
     }
 
     pub fn aria_sort(mut self, value: impl Into<String>) -> Self {
-        let value = value.into();
         self.attributes
-            .insert("aria-sort".to_string(), value.clone());
-        self.aria_sort = Some(value);
+            .insert("aria-sort".to_string(), value.into());
         self
     }
 
     pub fn aria_value_max(mut self, value: impl Into<String>) -> Self {
-        let value = value.into();
         self.attributes
-            .insert("aria-value-max".to_string(), value.clone());
-        self.aria_value_max = Some(value);
+            .insert("aria-value-max".to_string(), value.into());
         self
     }
 
     pub fn aria_value_min(mut self, value: impl Into<String>) -> Self {
-        let value = value.into();
         self.attributes
-            .insert("aria-value-min".to_string(), value.clone());
-        self.aria_value_min = Some(value);
+            .insert("aria-value-min".to_string(), value.into());
         self
     }
 
     pub fn aria_value_now(mut self, value: impl Into<String>) -> Self {
-        let value = value.into();
         self.attributes
-            .insert("aria-value-now".to_string(), value.clone());
-        self.aria_value_now = Some(value);
+            .insert("aria-value-now".to_string(), value.into());
         self
     }
 
     pub fn aria_value_text(mut self, value: impl Into<String>) -> Self {
-        let value = value.into();
         self.attributes
-            .insert("aria-value-text".to_string(), value.clone());
-        self.aria_value_text = Some(value);
+            .insert("aria-value-text".to_string(), value.into());
         self
     }
 
     pub fn autocomplete(mut self, value: impl Into<String>) -> Self {
-        let value = value.into();
         self.attributes
-            .insert("autocomplete".to_string(), value.clone());
-        self.autocomplete = Some(value);
+            .insert("autocomplete".to_string(), value.into());
         self
     }
 
@@ -595,14 +408,11 @@ impl Input {
         } else {
             self.attributes.remove("autocorrect");
         }
-        self.autocorrect = Some(value);
         self
     }
 
     pub fn capture(mut self, value: impl Into<String>) -> Self {
-        let value = value.into();
-        self.attributes.insert("capture".to_string(), value.clone());
-        self.capture = Some(value);
+        self.attributes.insert("capture".to_string(), value.into());
         self
     }
 
@@ -612,15 +422,12 @@ impl Input {
         } else {
             self.attributes.remove("checked");
         }
-        self.checked = Some(value);
         self
     }
 
     pub fn color_space(mut self, value: impl Into<String>) -> Self {
-        let value = value.into();
         self.attributes
-            .insert("colorSpace".to_string(), value.clone());
-        self.color_space = Some(value);
+            .insert("colorSpace".to_string(), value.into());
         self
     }
 
@@ -631,22 +438,17 @@ impl Input {
         } else {
             self.attributes.remove("defaultChecked");
         }
-        self.default_checked = Some(value);
         self
     }
 
     pub fn default_value(mut self, value: impl Into<String>) -> Self {
-        let value = value.into();
         self.attributes
-            .insert("defaultValue".to_string(), value.clone());
-        self.default_value = Some(value);
+            .insert("defaultValue".to_string(), value.into());
         self
     }
 
     pub fn dir_name(mut self, value: impl Into<String>) -> Self {
-        let value = value.into();
-        self.attributes.insert("dirName".to_string(), value.clone());
-        self.dir_name = Some(value);
+        self.attributes.insert("dirName".to_string(), value.into());
         self
     }
 
@@ -657,38 +459,29 @@ impl Input {
         } else {
             self.attributes.remove("disabled");
         }
-        self.disabled = Some(value);
         self
     }
 
     pub fn files(mut self, value: impl Into<String>) -> Self {
-        let value = value.into();
-        self.attributes.insert("files".to_string(), value.clone());
-        self.files = Some(value);
+        self.attributes.insert("files".to_string(), value.into());
         self
     }
 
     pub fn form_action(mut self, value: impl Into<String>) -> Self {
-        let value = value.into();
         self.attributes
-            .insert("formAction".to_string(), value.clone());
-        self.form_action = Some(value);
+            .insert("formAction".to_string(), value.into());
         self
     }
 
     pub fn form_enctype(mut self, value: impl Into<String>) -> Self {
-        let value = value.into();
         self.attributes
-            .insert("formEnctype".to_string(), value.clone());
-        self.form_enctype = Some(value);
+            .insert("formEnctype".to_string(), value.into());
         self
     }
 
     pub fn form_method(mut self, value: impl Into<String>) -> Self {
-        let value = value.into();
         self.attributes
-            .insert("formMethod".to_string(), value.clone());
-        self.form_method = Some(value);
+            .insert("formMethod".to_string(), value.into());
         self
     }
 
@@ -699,15 +492,12 @@ impl Input {
         } else {
             self.attributes.remove("formNoValidate");
         }
-        self.form_no_validate = Some(value);
         self
     }
 
     pub fn form_target(mut self, value: impl Into<String>) -> Self {
-        let value = value.into();
         self.attributes
-            .insert("formTarget".to_string(), value.clone());
-        self.form_target = Some(value);
+            .insert("formTarget".to_string(), value.into());
         self
     }
 
@@ -718,37 +508,28 @@ impl Input {
         } else {
             self.attributes.remove("indeterminate");
         }
-        self.indeterminate = Some(value);
         self
     }
 
     pub fn max(mut self, value: impl Into<String>) -> Self {
-        let value = value.into();
-        self.attributes.insert("max".to_string(), value.clone());
-        self.max = Some(value);
+        self.attributes.insert("max".to_string(), value.into());
         self
     }
 
     pub fn max_length(mut self, value: impl Into<String>) -> Self {
-        let value = value.into();
         self.attributes
-            .insert("maxLength".to_string(), value.clone());
-        self.max_length = Some(value);
+            .insert("maxLength".to_string(), value.into());
         self
     }
 
     pub fn min(mut self, value: impl Into<String>) -> Self {
-        let value = value.into();
-        self.attributes.insert("min".to_string(), value.clone());
-        self.min = Some(value);
+        self.attributes.insert("min".to_string(), value.into());
         self
     }
 
     pub fn min_length(mut self, value: impl Into<String>) -> Self {
-        let value = value.into();
         self.attributes
-            .insert("minLength".to_string(), value.clone());
-        self.min_length = Some(value);
+            .insert("minLength".to_string(), value.into());
         self
     }
 
@@ -759,37 +540,28 @@ impl Input {
         } else {
             self.attributes.remove("multiple");
         }
-        self.multiple = Some(value);
         self
     }
 
     pub fn name(mut self, value: impl Into<String>) -> Self {
-        let value = value.into();
-        self.attributes.insert("name".to_string(), value.clone());
-        self.name = Some(value);
+        self.attributes.insert("name".to_string(), value.into());
         self
     }
 
     pub fn pattern(mut self, value: impl Into<String>) -> Self {
-        let value = value.into();
-        self.attributes.insert("pattern".to_string(), value.clone());
-        self.pattern = Some(value);
+        self.attributes.insert("pattern".to_string(), value.into());
         self
     }
 
     pub fn placeholder(mut self, value: impl Into<String>) -> Self {
-        let value = value.into();
         self.attributes
-            .insert("placeholder".to_string(), value.clone());
-        self.placeholder = Some(value);
+            .insert("placeholder".to_string(), value.into());
         self
     }
 
     pub fn popover_target_action(mut self, value: impl Into<String>) -> Self {
-        let value = value.into();
         self.attributes
-            .insert("popoverTargetAction".to_string(), value.clone());
-        self.popover_target_action = Some(value);
+            .insert("popoverTargetAction".to_string(), value.into());
         self
     }
 
@@ -800,7 +572,6 @@ impl Input {
         } else {
             self.attributes.remove("readOnly");
         }
-        self.read_only = Some(value);
         self
     }
 
@@ -811,97 +582,73 @@ impl Input {
         } else {
             self.attributes.remove("required");
         }
-        self.required = Some(value);
         self
     }
 
     pub fn role(mut self, value: impl Into<String>) -> Self {
-        let value = value.into();
-        self.attributes.insert("role".to_string(), value.clone());
-        self.role = Some(value);
+        self.attributes.insert("role".to_string(), value.into());
         self
     }
 
     pub fn selection_direction(mut self, value: impl Into<String>) -> Self {
-        let value = value.into();
         self.attributes
-            .insert("selectionDirection".to_string(), value.clone());
-        self.selection_direction = Some(value);
+            .insert("selectionDirection".to_string(), value.into());
         self
     }
 
     pub fn selection_end(mut self, value: impl Into<String>) -> Self {
-        let value = value.into();
         self.attributes
-            .insert("selectionEnd".to_string(), value.clone());
-        self.selection_end = Some(value);
+            .insert("selectionEnd".to_string(), value.into());
         self
     }
 
     pub fn selection_start(mut self, value: impl Into<String>) -> Self {
-        let value = value.into();
         self.attributes
-            .insert("selectionStart".to_string(), value.clone());
-        self.selection_start = Some(value);
+            .insert("selectionStart".to_string(), value.into());
         self
     }
 
     pub fn src(mut self, value: impl Into<String>) -> Self {
-        let value = value.into();
-        self.attributes.insert("src".to_string(), value.clone());
-        self.src = Some(value);
+        self.attributes.insert("src".to_string(), value.into());
         self
     }
 
     pub fn step(mut self, value: impl Into<String>) -> Self {
-        let value = value.into();
-        self.attributes.insert("step".to_string(), value.clone());
-        self.step = Some(value);
+        self.attributes.insert("step".to_string(), value.into());
         self
     }
 
     pub fn text_content(mut self, value: impl Into<String>) -> Self {
-        let value = value.into();
         self.attributes
-            .insert("textContent".to_string(), value.clone());
-        self.text_content = Some(value);
+            .insert("textContent".to_string(), value.into());
         self
     }
 
     pub fn type_(mut self, value: InputType) -> Self {
         self.attributes
             .insert("type".to_string(), value.as_str().to_string());
-        self.r#type = Some(value);
         self
     }
 
     pub fn use_map(mut self, value: impl Into<String>) -> Self {
-        let value = value.into();
-        self.attributes.insert("useMap".to_string(), value.clone());
-        self.use_map = Some(value);
+        self.attributes.insert("useMap".to_string(), value.into());
         self
     }
 
     pub fn value(mut self, value: impl Into<String>) -> Self {
-        let value = value.into();
-        self.attributes.insert("value".to_string(), value.clone());
-        self.value = Some(value);
+        self.attributes.insert("value".to_string(), value.into());
         self
     }
 
     pub fn value_as_date(mut self, value: impl Into<String>) -> Self {
-        let value = value.into();
         self.attributes
-            .insert("valueAsDate".to_string(), value.clone());
-        self.value_as_date = Some(value);
+            .insert("valueAsDate".to_string(), value.into());
         self
     }
 
     pub fn virtual_keyboard_policy(mut self, value: impl Into<String>) -> Self {
-        let value = value.into();
         self.attributes
-            .insert("virtualKeyboardPolicy".to_string(), value.clone());
-        self.virtual_keyboard_policy = Some(value);
+            .insert("virtualKeyboardPolicy".to_string(), value.into());
         self
     }
 
@@ -912,15 +659,12 @@ impl Input {
         } else {
             self.attributes.remove("webkitdirectory");
         }
-        self.webkitdirectory = Some(value);
         self
     }
 
     pub fn writing_suggestions(mut self, value: impl Into<String>) -> Self {
-        let value = value.into();
         self.attributes
-            .insert("writingSuggestions".to_string(), value.clone());
-        self.writing_suggestions = Some(value);
+            .insert("writingSuggestions".to_string(), value.into());
         self
     }
 

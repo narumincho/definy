@@ -449,23 +449,6 @@ fn output_element_file(
     writeln!(file, "    pub events: Vec<(String, String)>,")?;
     writeln!(file, "    pub styles: crate::Style,")?;
     writeln!(file, "    pub children: Vec<super::Node>,")?;
-    for attr in &html_attributes {
-        let field_name = escape_attribute_field_name(&attr.name);
-        let enum_values =
-            get_attribute_enum_values(&info.interface, attr).or_else(|| attr.enum_values.clone());
-        if enum_values.is_some() {
-            let enum_type_name = format!("{}{}", capitalized_element_name, capitalize(&attr.name));
-            writeln!(
-                file,
-                "    pub {}: std::option::Option<{}>,",
-                field_name, enum_type_name
-            )?;
-        } else if attr.type_name == "boolean" {
-            writeln!(file, "    pub {}: std::option::Option<bool>,", field_name)?;
-        } else {
-            writeln!(file, "    pub {}: std::option::Option<String>,", field_name)?;
-        }
-    }
     writeln!(file, "}}\n")?;
 
     writeln!(
@@ -482,35 +465,33 @@ fn output_element_file(
     )?;
     for attr in &html_attributes {
         let method_name = escape_method_name(&attr.name);
-        let field_name = escape_attribute_field_name(&attr.name);
         if matches!(
             method_name.as_str(),
             "attribute" | "id" | "class" | "style" | "popover" | "children" | "into_node"
         ) {
             continue;
         }
+        let attribute_name = to_html_attribute_name(&attr.name);
         let enum_values =
             get_attribute_enum_values(&info.interface, attr).or_else(|| attr.enum_values.clone());
-
-        let attribute_name = to_html_attribute_name(&attr.name);
         if enum_values.is_some() {
             let enum_type_name = format!("{}{}", capitalized_element_name, capitalize(&attr.name));
             writeln!(
                 file,
-                "    pub fn {}(mut self, value: {}) -> Self {{\n        self.attributes.insert(\"{}\".to_string(), value.as_str().to_string());\n        self.{} = Some(value);\n        self\n    }}\n",
-                method_name, enum_type_name, attribute_name, field_name
+                "    pub fn {}(mut self, value: {}) -> Self {{\n        self.attributes.insert(\"{}\".to_string(), value.as_str().to_string());\n        self\n    }}\n",
+                method_name, enum_type_name, attribute_name
             )?;
         } else if attr.type_name == "boolean" {
             writeln!(
                 file,
-                "    pub fn {}(mut self, value: bool) -> Self {{\n        if value {{\n            self.attributes.insert(\"{}\".to_string(), String::new());\n        }} else {{\n            self.attributes.remove(\"{}\");\n        }}\n        self.{} = Some(value);\n        self\n    }}\n",
-                method_name, attribute_name, attribute_name, field_name
+                "    pub fn {}(mut self, value: bool) -> Self {{\n        if value {{\n            self.attributes.insert(\"{}\".to_string(), String::new());\n        }} else {{\n            self.attributes.remove(\"{}\");\n        }}\n        self\n    }}\n",
+                method_name, attribute_name, attribute_name
             )?;
         } else {
             writeln!(
                 file,
-                "    pub fn {}(mut self, value: impl Into<String>) -> Self {{\n        let value = value.into();\n        self.attributes.insert(\"{}\".to_string(), value.clone());\n        self.{} = Some(value);\n        self\n    }}\n",
-                method_name, attribute_name, field_name
+                "    pub fn {}(mut self, value: impl Into<String>) -> Self {{\n        self.attributes.insert(\"{}\".to_string(), value.into());\n        self\n    }}\n",
+                method_name, attribute_name
             )?;
         }
     }
@@ -890,7 +871,7 @@ mod tests {{
 
 fn common_builder_methods(element_name: &str, _tag_name: &str) -> String {
     let mut out = String::new();
-    out.push_str(&"    pub fn attribute(mut self, key: impl Into<String>, value: impl Into<String>) -> Self {\n        let key = key.into();\n        self.attributes.insert(crate::normalize_attribute_name(&key), value.into());\n        self\n    }\n\n".to_string());
+    out.push_str(&"    pub fn attribute(mut self, key: impl Into<String>, value: impl Into<String>) -> Self {\n        let key = key.into();\n        let normalized_key = crate::normalize_attribute_name(&key);\n        self.attributes.insert(normalized_key, value.into());\n        self\n    }\n\n".to_string());
     out.push_str(&"    pub fn id(self, value: impl Into<String>) -> Self {\n        self.attribute(\"id\", value)\n    }\n\n".to_string());
     out.push_str(&"    pub fn class(self, value: impl Into<String>) -> Self {\n        self.attribute(\"class\", value)\n    }\n\n".to_string());
     out.push_str(&"    pub fn style(mut self, style: impl Into<crate::Style>) -> Self {\n        self.styles = style.into();\n        self\n    }\n\n".to_string());
