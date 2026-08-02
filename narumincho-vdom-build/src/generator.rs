@@ -90,6 +90,7 @@ pub async fn generate_code() -> anyhow::Result<()> {
         fs::remove_file(old_elements_path)?;
     }
 
+    format_generated_code()?;
     println!("Code generation successfully completed!");
     Ok(())
 }
@@ -534,14 +535,26 @@ fn output_element_file(
         capitalized_element_name
     )?;
 
-    format_generated_code()?;
     Ok(())
 }
 
 fn format_generated_code() -> anyhow::Result<()> {
-    let status = Command::new("cargo").arg("fmt").arg("--all").status()?;
-    if !status.success() {
-        anyhow::bail!("cargo fmt failed with status {}", status);
+    let output = Command::new("cargo").arg("fmt").arg("--all").output()?;
+    if !output.status.success() {
+        eprintln!("cargo fmt failed with status: {}", output.status);
+        if !output.stdout.is_empty() {
+            eprintln!(
+                "cargo fmt stdout:\n{}",
+                String::from_utf8_lossy(&output.stdout)
+            );
+        }
+        if !output.stderr.is_empty() {
+            eprintln!(
+                "cargo fmt stderr:\n{}",
+                String::from_utf8_lossy(&output.stderr)
+            );
+        }
+        anyhow::bail!("cargo fmt failed")
     }
     Ok(())
 }

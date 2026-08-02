@@ -71,11 +71,11 @@ impl Data {
         self
     }
 
-    pub fn id(mut self, value: impl Into<String>) -> Self {
+    pub fn id(self, value: impl Into<String>) -> Self {
         self.attribute("id", value)
     }
 
-    pub fn class(mut self, value: impl Into<String>) -> Self {
+    pub fn class(self, value: impl Into<String>) -> Self {
         self.attribute("class", value)
     }
 

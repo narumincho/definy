@@ -1,7 +1,7 @@
 // このファイルは narumincho-vdom-build によって自動生成されました。
 #![allow(non_snake_case, dead_code)]
 
-/// HTML Content Attributes for https://w3c.github.io/svgwg/svg2-draft/struct.html#elementdef-defs
+/// HTML Content Attributes for https://www.w3.org/TR/SVG11/struct.html#DefsElement
 #[derive(Default, Debug, Clone, PartialEq, Eq)]
 pub struct Defs {
     pub attributes: std::collections::BTreeMap<String, String>,
@@ -66,11 +66,11 @@ impl Defs {
         self
     }
 
-    pub fn id(mut self, value: impl Into<String>) -> Self {
+    pub fn id(self, value: impl Into<String>) -> Self {
         self.attribute("id", value)
     }
 
-    pub fn class(mut self, value: impl Into<String>) -> Self {
+    pub fn class(self, value: impl Into<String>) -> Self {
         self.attribute("class", value)
     }
 
