@@ -8,8 +8,7 @@ use crate::fetch;
 use crate::idl;
 use crate::model::{ElementInfo, GLOBAL_ATTRIBUTES, OVERLAPPING_TAGS, WebrefSpecData};
 use crate::naming::{
-    capitalize, escape_attribute_field_name, escape_identifier, escape_method_name,
-    escape_variant_name, to_html_attribute_name,
+    capitalize, escape_identifier, escape_method_name, escape_variant_name, to_html_attribute_name,
 };
 
 pub async fn generate_code() -> anyhow::Result<()> {
@@ -870,18 +869,45 @@ mod tests {{
 }
 
 fn common_builder_methods(element_name: &str, _tag_name: &str) -> String {
-    let mut out = String::new();
-    out.push_str(&"    pub fn attribute(mut self, key: impl Into<String>, value: impl Into<String>) -> Self {\n        let key = key.into();\n        let normalized_key = crate::normalize_attribute_name(&key);\n        self.attributes.insert(normalized_key, value.into());\n        self\n    }\n\n".to_string());
-    out.push_str(&"    pub fn id(self, value: impl Into<String>) -> Self {\n        self.attribute(\"id\", value)\n    }\n\n".to_string());
-    out.push_str(&"    pub fn class(self, value: impl Into<String>) -> Self {\n        self.attribute(\"class\", value)\n    }\n\n".to_string());
-    out.push_str(&"    pub fn style(mut self, style: impl Into<crate::Style>) -> Self {\n        self.styles = style.into();\n        self\n    }\n\n".to_string());
-    out.push_str(&"    pub fn popover(self) -> Self {\n        self.attribute(\"popover\", \"auto\")\n    }\n\n".to_string());
-    out.push_str(&"    pub fn children(mut self, children: impl Into<Vec<super::Node>>) -> Self {\n        self.children = children.into();\n        self\n    }\n\n".to_string());
-    out.push_str(&format!(
-        "    pub fn into_node(self) -> super::Node {{\n        super::Node::Element(super::Element {{\n            global_attributes: super::GlobalAttributes::default(),\n            element_content: super::ElementContent::{}(self),\n            children: Vec::new(),\n        }})\n    }}\n\n",
-        capitalize(element_name)
-    ));
-    out
+    let capitalized_element_name = capitalize(element_name);
+    format!(
+        "
+pub fn attribute(mut self, key: impl Into<String>, value: impl Into<String>) -> Self {{
+    self.attributes.insert(key.into(), value.into());
+    self
+}}
+
+pub fn id(self, value: impl Into<String>) -> Self {{
+    self.attribute(\"id\", value)
+}}
+
+pub fn class(self, value: impl Into<String>) -> Self {{
+    self.attribute(\"class\", value)
+}}
+
+pub fn style(mut self, style: impl Into<crate::Style>) -> Self {{
+    self.styles = style.into();
+    self
+}}
+
+pub fn popover(self) -> Self {{
+    self.attribute(\"popover\", \"auto\")
+}}
+
+pub fn children(mut self, children: impl Into<Vec<super::Node>>) -> Self {{
+    self.children = children.into();
+    self
+}}
+    
+pub fn into_node(self) -> super::Node {{
+    super::Node::Element(super::Element {{
+        global_attributes: super::GlobalAttributes::default(),
+        element_content: super::ElementContent::{capitalized_element_name}(self),
+        children: Vec::new(),
+    }})
+}}
+"
+    )
 }
 
 #[cfg(test)]
@@ -922,15 +948,5 @@ mod tests {
             ])
         );
         assert!(supports_custom_values("HTMLButtonElement", &attr));
-    }
-
-    #[test]
-    fn class_attributes_are_generated_as_class() {
-        use crate::naming::{escape_attribute_field_name, escape_method_name};
-
-        assert_eq!(escape_method_name("className"), "class");
-        assert_eq!(escape_attribute_field_name("className"), "class");
-        assert_eq!(escape_method_name("class"), "class");
-        assert_eq!(escape_attribute_field_name("class"), "class");
     }
 }

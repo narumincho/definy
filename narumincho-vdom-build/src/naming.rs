@@ -20,19 +20,6 @@ pub fn escape_method_name(s: &str) -> String {
     }
 }
 
-pub fn escape_attribute_field_name(s: &str) -> String {
-    let snake = to_snake_case(s);
-    if snake == "class" || snake == "class_name" {
-        return "class".to_string();
-    }
-    match snake.as_str() {
-        "type" | "loop" | "for" | "as" | "async" | "use" | "switch" | "in" | "match" | "fn"
-        | "struct" | "enum" | "trait" | "where" | "impl" | "ref" | "static" | "const"
-        | "unsafe" | "mod" | "pub" | "crate" | "super" | "self" | "default" => format!("r#{snake}"),
-        _ => snake,
-    }
-}
-
 pub fn escape_variant_name(s: &str) -> String {
     let cap = capitalize(s);
     match cap.as_str() {

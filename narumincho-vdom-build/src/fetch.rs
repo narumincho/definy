@@ -46,7 +46,7 @@ async fn download_package_files(
             .filter(|path| path.ends_with(extension) && path != "/package.json"),
     )
     .map(async |path| {
-        println!("{}@{}/{} fetch start", package_name, package_version, &path);
+        println!("{}@{}/{} fetch start", package_name, package_version, path);
 
         let mut dest_file = tokio::fs::File::create(dir.join(&path)).await?;
 
@@ -58,7 +58,7 @@ async fn download_package_files(
         tokio::io::copy(&mut reader, &mut dest_file).await?;
         println!(
             "{}@{}/{} write compoleted",
-            package_name, package_version, &path
+            package_name, package_version, path
         );
         Ok::<(), anyhow::Error>(())
     })
@@ -69,22 +69,20 @@ async fn download_package_files(
     Ok(())
 }
 
-fn get_package_file_names(
+async fn get_package_file_names(
     name: &str,
     version: &str,
-) -> impl Future<Output = anyhow::Result<impl Iterator<Item = String>>> {
-    async move {
-        let url = format!("https://unpkg.com/{}@{}/?meta", name, version);
-        let response = reqwest::get(&url).await?;
-        let meta: UnpkgMeta = response.json().await?;
+) -> anyhow::Result<impl Iterator<Item = String>> {
+    let url = format!("https://unpkg.com/{}@{}/?meta", name, version);
+    let response = reqwest::get(&url).await?;
+    let meta: UnpkgMeta = response.json().await?;
 
-        let iterator = meta
-            .files
-            .into_iter()
-            .map(|file| file.path.trim_start_matches('/').to_string());
+    let iterator = meta
+        .files
+        .into_iter()
+        .map(|file| file.path.trim_start_matches('/').to_string());
 
-        Ok(iterator)
-    }
+    Ok(iterator)
 }
 
 async fn get_package_file_content(
@@ -98,5 +96,5 @@ async fn get_package_file_content(
     ))
     .await?
     .bytes_stream()
-    .map(|item| item.map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))))
+    .map(|item| item.map_err(std::io::Error::other)))
 }
