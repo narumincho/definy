@@ -1,5 +1,10 @@
 // このファイルは narumincho-vdom-build によって自動生成されました。
-#![allow(non_snake_case, dead_code)]
+#![allow(
+    non_snake_case,
+    dead_code,
+    clippy::large_enum_variant,
+    clippy::wrong_self_convention
+)]
 pub mod a;
 pub mod abbr;
 pub mod address;
@@ -249,7 +254,7 @@ pub struct GlobalAttributes {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ElementContent {
-    /// https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-a-element
+    /// https://w3c.github.io/svgwg/svg2-draft/linking.html#elementdef-a
     A(a::A),
     /// https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-abbr-element
     Abbr(abbr::Abbr),
@@ -293,7 +298,7 @@ pub enum ElementContent {
     Canvas(canvas::Canvas),
     /// https://html.spec.whatwg.org/multipage/tables.html#the-caption-element
     Caption(caption::Caption),
-    /// https://www.w3.org/TR/SVG11/shapes.html#CircleElement
+    /// https://w3c.github.io/svgwg/svg2-draft/shapes.html#elementdef-circle
     Circle(circle::Circle),
     /// https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-cite-element
     Cite(cite::Cite),
@@ -311,11 +316,11 @@ pub enum ElementContent {
     Datalist(datalist::Datalist),
     /// https://html.spec.whatwg.org/multipage/grouping-content.html#the-dd-element
     Dd(dd::Dd),
-    /// https://www.w3.org/TR/SVG11/struct.html#DefsElement
+    /// https://w3c.github.io/svgwg/svg2-draft/struct.html#elementdef-defs
     Defs(defs::Defs),
     /// https://html.spec.whatwg.org/multipage/edits.html#the-del-element
     Del(del::Del),
-    /// https://www.w3.org/TR/SVG11/struct.html#DescElement
+    /// https://w3c.github.io/svgwg/svg2-draft/struct.html#elementdef-desc
     Desc(desc::Desc),
     /// https://html.spec.whatwg.org/multipage/interactive-elements.html#the-details-element
     Details(details::Details),
@@ -329,7 +334,7 @@ pub enum ElementContent {
     Dl(dl::Dl),
     /// https://html.spec.whatwg.org/multipage/grouping-content.html#the-dt-element
     Dt(dt::Dt),
-    /// https://www.w3.org/TR/SVG11/shapes.html#EllipseElement
+    /// https://w3c.github.io/svgwg/svg2-draft/shapes.html#elementdef-ellipse
     Ellipse(ellipse::Ellipse),
     /// https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-em-element
     Em(em::Em),
@@ -397,11 +402,11 @@ pub enum ElementContent {
     Filter(filter::Filter),
     /// https://html.spec.whatwg.org/multipage/sections.html#the-footer-element
     Footer(footer::Footer),
-    /// https://www.w3.org/TR/SVG11/extend.html#ForeignObjectElement
+    /// https://w3c.github.io/svgwg/svg2-draft/embedded.html#elementdef-foreignObject
     ForeignObject(foreignObject::ForeignObject),
     /// https://html.spec.whatwg.org/multipage/forms.html#the-form-element
     Form(form::Form),
-    /// https://www.w3.org/TR/SVG11/struct.html#GElement
+    /// https://w3c.github.io/svgwg/svg2-draft/struct.html#elementdef-g
     G(g::G),
     /// https://wicg.github.io/PEPC/geolocation-element.html#elementdef-geolocation
     Geolocation(geolocation::Geolocation),
@@ -431,7 +436,7 @@ pub enum ElementContent {
     I(i::I),
     /// https://html.spec.whatwg.org/multipage/iframe-embed-object.html#the-iframe-element
     Iframe(iframe::Iframe),
-    /// https://www.w3.org/TR/SVG11/struct.html#ImageElement
+    /// https://w3c.github.io/svgwg/svg2-draft/embedded.html#elementdef-image
     Image(image::Image),
     /// https://html.spec.whatwg.org/multipage/embedded-content.html#the-img-element
     Img(img::Img),
@@ -447,9 +452,9 @@ pub enum ElementContent {
     Legend(legend::Legend),
     /// https://html.spec.whatwg.org/multipage/grouping-content.html#the-li-element
     Li(li::Li),
-    /// https://www.w3.org/TR/SVG11/shapes.html#LineElement
+    /// https://w3c.github.io/svgwg/svg2-draft/shapes.html#elementdef-line
     Line(line::Line),
-    /// https://www.w3.org/TR/SVG11/pservers.html#LinearGradients
+    /// https://w3c.github.io/svgwg/svg2-draft/pservers.html#elementdef-linearGradient
     LinearGradient(linearGradient::LinearGradient),
     /// https://html.spec.whatwg.org/multipage/semantics.html#the-link-element
     Link(link::Link),
@@ -461,7 +466,7 @@ pub enum ElementContent {
     Map(map::Map),
     /// https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-mark-element
     Mark(mark::Mark),
-    /// https://www.w3.org/TR/SVG11/painting.html#MarkerElement
+    /// https://w3c.github.io/svgwg/svg2-draft/painting.html#elementdef-marker
     Marker(marker::Marker),
     /// https://drafts.csswg.org/css-masking-1/#elementdef-mask
     Mask(mask::Mask),
@@ -473,7 +478,7 @@ pub enum ElementContent {
     Merror(merror::Merror),
     /// https://html.spec.whatwg.org/multipage/semantics.html#meta
     Meta(meta::Meta),
-    /// https://www.w3.org/TR/SVG11/metadata.html#MetadataElement
+    /// https://w3c.github.io/svgwg/svg2-draft/struct.html#elementdef-metadata
     Metadata(metadata::Metadata),
     /// https://html.spec.whatwg.org/multipage/form-elements.html#the-meter-element
     Meter(meter::Meter),
@@ -545,15 +550,15 @@ pub enum ElementContent {
     Output(output::Output),
     /// https://html.spec.whatwg.org/multipage/grouping-content.html#the-p-element
     P(p::P),
-    /// https://svgwg.org/specs/paths/#elementdef-path
+    /// https://w3c.github.io/svgwg/svg2-draft/paths.html#elementdef-path
     Path(path::Path),
-    /// https://www.w3.org/TR/SVG11/pservers.html#Patterns
+    /// https://w3c.github.io/svgwg/svg2-draft/pservers.html#elementdef-pattern
     Pattern(pattern::Pattern),
     /// https://html.spec.whatwg.org/multipage/embedded-content.html#the-picture-element
     Picture(picture::Picture),
-    /// https://www.w3.org/TR/SVG11/shapes.html#PolygonElement
+    /// https://w3c.github.io/svgwg/svg2-draft/shapes.html#elementdef-polygon
     Polygon(polygon::Polygon),
-    /// https://www.w3.org/TR/SVG11/shapes.html#PolylineElement
+    /// https://w3c.github.io/svgwg/svg2-draft/shapes.html#elementdef-polyline
     Polyline(polyline::Polyline),
     /// https://wicg.github.io/portals/#elementdef-portal
     Portal(portal::Portal),
@@ -563,9 +568,9 @@ pub enum ElementContent {
     Progress(progress::Progress),
     /// https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-q-element
     Q(q::Q),
-    /// https://www.w3.org/TR/SVG11/pservers.html#RadialGradients
+    /// https://w3c.github.io/svgwg/svg2-draft/pservers.html#elementdef-radialGradient
     RadialGradient(radialGradient::RadialGradient),
-    /// https://www.w3.org/TR/SVG11/shapes.html#RectElement
+    /// https://w3c.github.io/svgwg/svg2-draft/shapes.html#elementdef-rect
     Rect(rect::Rect),
     /// https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-rp-element
     Rp(rp::Rp),
@@ -577,7 +582,7 @@ pub enum ElementContent {
     S(s::S),
     /// https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-samp-element
     Samp(samp::Samp),
-    /// https://html.spec.whatwg.org/multipage/scripting.html#script
+    /// https://w3c.github.io/svgwg/svg2-draft/interact.html#elementdef-script
     Script(script::Script),
     /// https://html.spec.whatwg.org/multipage/grouping-content.html#the-search-element
     Search(search::Search),
@@ -599,11 +604,11 @@ pub enum ElementContent {
     Source(source::Source),
     /// https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-span-element
     Span(span::Span),
-    /// https://www.w3.org/TR/SVG11/pservers.html#GradientStops
+    /// https://w3c.github.io/svgwg/svg2-draft/pservers.html#elementdef-stop
     Stop(stop::Stop),
     /// https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-strong-element
     Strong(strong::Strong),
-    /// https://html.spec.whatwg.org/multipage/semantics.html#the-style-element
+    /// https://w3c.github.io/svgwg/svg2-draft/styling.html#elementdef-style
     Style(style::Style),
     /// https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-sub-element
     Sub(sub::Sub),
@@ -611,11 +616,11 @@ pub enum ElementContent {
     Summary(summary::Summary),
     /// https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-sup-element
     Sup(sup::Sup),
-    /// https://www.w3.org/TR/SVG11/struct.html#SVGElement
+    /// https://w3c.github.io/svgwg/svg2-draft/struct.html#elementdef-svg
     Svg(svg::Svg),
-    /// https://www.w3.org/TR/SVG11/struct.html#SwitchElement
+    /// https://w3c.github.io/svgwg/svg2-draft/struct.html#elementdef-switch
     Switch(r#switch::Switch),
-    /// https://www.w3.org/TR/SVG11/struct.html#SymbolElement
+    /// https://w3c.github.io/svgwg/svg2-draft/struct.html#elementdef-symbol
     Symbol(symbol::Symbol),
     /// https://html.spec.whatwg.org/multipage/tables.html#the-table-element
     Table(table::Table),
@@ -625,9 +630,9 @@ pub enum ElementContent {
     Td(td::Td),
     /// https://html.spec.whatwg.org/multipage/scripting.html#the-template-element
     Template(template::Template),
-    /// https://www.w3.org/TR/SVG11/text.html#TextElement
+    /// https://w3c.github.io/svgwg/svg2-draft/text.html#elementdef-text
     Text(text::Text),
-    /// https://www.w3.org/TR/SVG11/text.html#TextPathElement
+    /// https://w3c.github.io/svgwg/svg2-draft/text.html#elementdef-textPath
     TextPath(textPath::TextPath),
     /// https://html.spec.whatwg.org/multipage/form-elements.html#the-textarea-element
     Textarea(textarea::Textarea),
@@ -639,25 +644,25 @@ pub enum ElementContent {
     Thead(thead::Thead),
     /// https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-time-element
     Time(time::Time),
-    /// https://html.spec.whatwg.org/multipage/semantics.html#the-title-element
+    /// https://w3c.github.io/svgwg/svg2-draft/struct.html#elementdef-title
     Title(title::Title),
     /// https://html.spec.whatwg.org/multipage/tables.html#the-tr-element
     Tr(tr::Tr),
     /// https://html.spec.whatwg.org/multipage/media.html#the-track-element
     Track(track::Track),
-    /// https://www.w3.org/TR/SVG11/text.html#TSpanElement
+    /// https://w3c.github.io/svgwg/svg2-draft/text.html#elementdef-tspan
     Tspan(tspan::Tspan),
     /// https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-u-element
     U(u::U),
     /// https://html.spec.whatwg.org/multipage/grouping-content.html#the-ul-element
     Ul(ul::Ul),
-    /// https://www.w3.org/TR/SVG11/struct.html#UseElement
+    /// https://w3c.github.io/svgwg/svg2-draft/struct.html#elementdef-use
     Use(r#use::Use),
     /// https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-var-element
     Var(var::Var),
     /// https://html.spec.whatwg.org/multipage/media.html#video
     Video(video::Video),
-    /// https://www.w3.org/TR/SVG11/linking.html#ViewElement
+    /// https://w3c.github.io/svgwg/svg2-draft/linking.html#elementdef-view
     View(view::View),
     /// https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-wbr-element
     Wbr(wbr::Wbr),
@@ -843,16 +848,6 @@ impl<State, L: crate::Route> Default for Anchor<State, L> {
 impl<State, L: crate::Route> From<Anchor<State, L>> for VdomNode<State> {
     fn from(value: Anchor<State, L>) -> Self {
         value.into_node()
-    }
-}
-impl<State, L: crate::Route> Anchor<State, L> {
-    pub fn access_key(self, value: impl Into<String>) -> Self {
-        self.attribute("accessKey", value)
-    }
-}
-impl<State, L: crate::Route> Anchor<State, L> {
-    pub fn access_key_label(self, value: impl Into<String>) -> Self {
-        self.attribute("accessKeyLabel", value)
     }
 }
 impl<State, L: crate::Route> Anchor<State, L> {
@@ -1096,20 +1091,6 @@ impl<State, L: crate::Route> Anchor<State, L> {
     }
 }
 impl<State, L: crate::Route> Anchor<State, L> {
-    pub fn autocapitalize(self, value: impl Into<String>) -> Self {
-        self.attribute("autocapitalize", value)
-    }
-}
-impl<State, L: crate::Route> Anchor<State, L> {
-    pub fn autocorrect(mut self, value: bool) -> Self {
-        if value {
-            self.attributes
-                .push(("autocorrect".to_string(), String::new()));
-        }
-        self
-    }
-}
-impl<State, L: crate::Route> Anchor<State, L> {
     pub fn autofocus(mut self, value: bool) -> Self {
         if value {
             self.attributes
@@ -1121,11 +1102,6 @@ impl<State, L: crate::Route> Anchor<State, L> {
 impl<State, L: crate::Route> Anchor<State, L> {
     pub fn base_u_r_i(self, value: impl Into<String>) -> Self {
         self.attribute("baseURI", value)
-    }
-}
-impl<State, L: crate::Route> Anchor<State, L> {
-    pub fn charset(self, value: impl Into<String>) -> Self {
-        self.attribute("charset", value)
     }
 }
 impl<State, L: crate::Route> Anchor<State, L> {
@@ -1169,16 +1145,6 @@ impl<State, L: crate::Route> Anchor<State, L> {
     }
 }
 impl<State, L: crate::Route> Anchor<State, L> {
-    pub fn content_editable(self, value: impl Into<String>) -> Self {
-        self.attribute("contentEditable", value)
-    }
-}
-impl<State, L: crate::Route> Anchor<State, L> {
-    pub fn coords(self, value: impl Into<String>) -> Self {
-        self.attribute("coords", value)
-    }
-}
-impl<State, L: crate::Route> Anchor<State, L> {
     pub fn current_c_s_s_zoom(self, value: impl Into<String>) -> Self {
         self.attribute("currentCSSZoom", value)
     }
@@ -1194,11 +1160,6 @@ impl<State, L: crate::Route> Anchor<State, L> {
     }
 }
 impl<State, L: crate::Route> Anchor<State, L> {
-    pub fn dir(self, value: impl Into<String>) -> Self {
-        self.attribute("dir", value)
-    }
-}
-impl<State, L: crate::Route> Anchor<State, L> {
     pub fn double(self, value: impl Into<String>) -> Self {
         self.attribute("double", value)
     }
@@ -1209,27 +1170,8 @@ impl<State, L: crate::Route> Anchor<State, L> {
     }
 }
 impl<State, L: crate::Route> Anchor<State, L> {
-    pub fn draggable(mut self, value: bool) -> Self {
-        if value {
-            self.attributes
-                .push(("draggable".to_string(), String::new()));
-        }
-        self
-    }
-}
-impl<State, L: crate::Route> Anchor<State, L> {
-    pub fn edit_context(self, value: impl Into<String>) -> Self {
-        self.attribute("editContext", value)
-    }
-}
-impl<State, L: crate::Route> Anchor<State, L> {
     pub fn element_timing(self, value: impl Into<String>) -> Self {
         self.attribute("elementTiming", value)
-    }
-}
-impl<State, L: crate::Route> Anchor<State, L> {
-    pub fn enter_key_hint(self, value: impl Into<String>) -> Self {
-        self.attribute("enterKeyHint", value)
     }
 }
 impl<State, L: crate::Route> Anchor<State, L> {
@@ -1248,20 +1190,6 @@ impl<State, L: crate::Route> Anchor<State, L> {
     }
 }
 impl<State, L: crate::Route> Anchor<State, L> {
-    pub fn heading_reset(mut self, value: bool) -> Self {
-        if value {
-            self.attributes
-                .push(("headingReset".to_string(), String::new()));
-        }
-        self
-    }
-}
-impl<State, L: crate::Route> Anchor<State, L> {
-    pub fn hidden(self, value: impl Into<String>) -> Self {
-        self.attribute("hidden", value)
-    }
-}
-impl<State, L: crate::Route> Anchor<State, L> {
     pub fn host(self, value: impl Into<String>) -> Self {
         self.attribute("host", value)
     }
@@ -1277,26 +1205,8 @@ impl<State, L: crate::Route> Anchor<State, L> {
     }
 }
 impl<State, L: crate::Route> Anchor<State, L> {
-    pub fn inert(mut self, value: bool) -> Self {
-        if value {
-            self.attributes.push(("inert".to_string(), String::new()));
-        }
-        self
-    }
-}
-impl<State, L: crate::Route> Anchor<State, L> {
     pub fn inner_h_t_m_l(self, value: impl Into<String>) -> Self {
         self.attribute("innerHTML", value)
-    }
-}
-impl<State, L: crate::Route> Anchor<State, L> {
-    pub fn inner_text(self, value: impl Into<String>) -> Self {
-        self.attribute("innerText", value)
-    }
-}
-impl<State, L: crate::Route> Anchor<State, L> {
-    pub fn input_mode(self, value: impl Into<String>) -> Self {
-        self.attribute("inputMode", value)
     }
 }
 impl<State, L: crate::Route> Anchor<State, L> {
@@ -1306,20 +1216,6 @@ impl<State, L: crate::Route> Anchor<State, L> {
                 .push(("isConnected".to_string(), String::new()));
         }
         self
-    }
-}
-impl<State, L: crate::Route> Anchor<State, L> {
-    pub fn is_content_editable(mut self, value: bool) -> Self {
-        if value {
-            self.attributes
-                .push(("isContentEditable".to_string(), String::new()));
-        }
-        self
-    }
-}
-impl<State, L: crate::Route> Anchor<State, L> {
-    pub fn lang(self, value: impl Into<String>) -> Self {
-        self.attribute("lang", value)
     }
 }
 impl<State, L: crate::Route> Anchor<State, L> {
@@ -1340,11 +1236,6 @@ impl<State, L: crate::Route> Anchor<State, L> {
 impl<State, L: crate::Route> Anchor<State, L> {
     pub fn long(self, value: impl Into<String>) -> Self {
         self.attribute("long", value)
-    }
-}
-impl<State, L: crate::Route> Anchor<State, L> {
-    pub fn name(self, value: impl Into<String>) -> Self {
-        self.attribute("name", value)
     }
 }
 impl<State, L: crate::Route> Anchor<State, L> {
@@ -1375,31 +1266,6 @@ impl<State, L: crate::Route> Anchor<State, L> {
 impl<State, L: crate::Route> Anchor<State, L> {
     pub fn nonce(self, value: impl Into<String>) -> Self {
         self.attribute("nonce", value)
-    }
-}
-impl<State, L: crate::Route> Anchor<State, L> {
-    pub fn offset_height(self, value: impl Into<String>) -> Self {
-        self.attribute("offsetHeight", value)
-    }
-}
-impl<State, L: crate::Route> Anchor<State, L> {
-    pub fn offset_left(self, value: impl Into<String>) -> Self {
-        self.attribute("offsetLeft", value)
-    }
-}
-impl<State, L: crate::Route> Anchor<State, L> {
-    pub fn offset_parent(self, value: impl Into<String>) -> Self {
-        self.attribute("offsetParent", value)
-    }
-}
-impl<State, L: crate::Route> Anchor<State, L> {
-    pub fn offset_top(self, value: impl Into<String>) -> Self {
-        self.attribute("offsetTop", value)
-    }
-}
-impl<State, L: crate::Route> Anchor<State, L> {
-    pub fn offset_width(self, value: impl Into<String>) -> Self {
-        self.attribute("offsetWidth", value)
     }
 }
 impl<State, L: crate::Route> Anchor<State, L> {
@@ -2062,13 +1928,13 @@ impl<State, L: crate::Route> Anchor<State, L> {
     }
 }
 impl<State, L: crate::Route> Anchor<State, L> {
-    pub fn outer_text(self, value: impl Into<String>) -> Self {
-        self.attribute("outerText", value)
+    pub fn owner_document(self, value: impl Into<String>) -> Self {
+        self.attribute("ownerDocument", value)
     }
 }
 impl<State, L: crate::Route> Anchor<State, L> {
-    pub fn owner_document(self, value: impl Into<String>) -> Self {
-        self.attribute("ownerDocument", value)
+    pub fn owner_s_v_g_element(self, value: impl Into<String>) -> Self {
+        self.attribute("ownerSVGElement", value)
     }
 }
 impl<State, L: crate::Route> Anchor<State, L> {
@@ -2147,8 +2013,8 @@ impl<State, L: crate::Route> Anchor<State, L> {
     }
 }
 impl<State, L: crate::Route> Anchor<State, L> {
-    pub fn rev(self, value: impl Into<String>) -> Self {
-        self.attribute("rev", value)
+    pub fn required_extensions(self, value: impl Into<String>) -> Self {
+        self.attribute("requiredExtensions", value)
     }
 }
 impl<State, L: crate::Route> Anchor<State, L> {
@@ -2159,11 +2025,6 @@ impl<State, L: crate::Route> Anchor<State, L> {
 impl<State, L: crate::Route> Anchor<State, L> {
     pub fn scroll_height(self, value: impl Into<String>) -> Self {
         self.attribute("scrollHeight", value)
-    }
-}
-impl<State, L: crate::Route> Anchor<State, L> {
-    pub fn scroll_parent(self, value: impl Into<String>) -> Self {
-        self.attribute("scrollParent", value)
     }
 }
 impl<State, L: crate::Route> Anchor<State, L> {
@@ -2182,11 +2043,6 @@ impl<State, L: crate::Route> Anchor<State, L> {
     }
 }
 impl<State, L: crate::Route> Anchor<State, L> {
-    pub fn shape(self, value: impl Into<String>) -> Self {
-        self.attribute("shape", value)
-    }
-}
-impl<State, L: crate::Route> Anchor<State, L> {
     pub fn short(self, value: impl Into<String>) -> Self {
         self.attribute("short", value)
     }
@@ -2197,12 +2053,8 @@ impl<State, L: crate::Route> Anchor<State, L> {
     }
 }
 impl<State, L: crate::Route> Anchor<State, L> {
-    pub fn spellcheck(mut self, value: bool) -> Self {
-        if value {
-            self.attributes
-                .push(("spellcheck".to_string(), String::new()));
-        }
-        self
+    pub fn system_language(self, value: impl Into<String>) -> Self {
+        self.attribute("systemLanguage", value)
     }
 }
 impl<State, L: crate::Route> Anchor<State, L> {
@@ -2221,27 +2073,13 @@ impl<State, L: crate::Route> Anchor<State, L> {
     }
 }
 impl<State, L: crate::Route> Anchor<State, L> {
-    pub fn text(self, value: impl Into<String>) -> Self {
-        self.attribute("text", value)
-    }
-}
-impl<State, L: crate::Route> Anchor<State, L> {
     pub fn text_content(self, value: impl Into<String>) -> Self {
         self.attribute("textContent", value)
     }
 }
 impl<State, L: crate::Route> Anchor<State, L> {
-    pub fn title(self, value: impl Into<String>) -> Self {
-        self.attribute("title", value)
-    }
-}
-impl<State, L: crate::Route> Anchor<State, L> {
-    pub fn translate(mut self, value: bool) -> Self {
-        if value {
-            self.attributes
-                .push(("translate".to_string(), String::new()));
-        }
-        self
+    pub fn transform(self, value: impl Into<String>) -> Self {
+        self.attribute("transform", value)
     }
 }
 impl<State, L: crate::Route> Anchor<State, L> {
@@ -2250,13 +2088,8 @@ impl<State, L: crate::Route> Anchor<State, L> {
     }
 }
 impl<State, L: crate::Route> Anchor<State, L> {
-    pub fn virtual_keyboard_policy(self, value: impl Into<String>) -> Self {
-        self.attribute("virtualKeyboardPolicy", value)
-    }
-}
-impl<State, L: crate::Route> Anchor<State, L> {
-    pub fn writing_suggestions(self, value: impl Into<String>) -> Self {
-        self.attribute("writingSuggestions", value)
+    pub fn viewport_element(self, value: impl Into<String>) -> Self {
+        self.attribute("viewportElement", value)
     }
 }
 pub struct Abbr<State> {
@@ -215183,16 +215016,6 @@ impl<State> From<Script<State>> for VdomNode<State> {
     }
 }
 impl<State> Script<State> {
-    pub fn access_key(self, value: impl Into<String>) -> Self {
-        self.attribute("accessKey", value)
-    }
-}
-impl<State> Script<State> {
-    pub fn access_key_label(self, value: impl Into<String>) -> Self {
-        self.attribute("accessKeyLabel", value)
-    }
-}
-impl<State> Script<State> {
     pub fn active_view_transition(self, value: impl Into<String>) -> Self {
         self.attribute("activeViewTransition", value)
     }
@@ -215423,14 +215246,6 @@ impl<State> Script<State> {
     }
 }
 impl<State> Script<State> {
-    pub fn async_(mut self, value: bool) -> Self {
-        if value {
-            self.attributes.push(("async".to_string(), String::new()));
-        }
-        self
-    }
-}
-impl<State> Script<State> {
     pub fn attribute_style_map(self, value: impl Into<String>) -> Self {
         self.attribute("attributeStyleMap", value)
     }
@@ -215438,20 +215253,6 @@ impl<State> Script<State> {
 impl<State> Script<State> {
     pub fn attributes(self, value: impl Into<String>) -> Self {
         self.attribute("attributes", value)
-    }
-}
-impl<State> Script<State> {
-    pub fn autocapitalize(self, value: impl Into<String>) -> Self {
-        self.attribute("autocapitalize", value)
-    }
-}
-impl<State> Script<State> {
-    pub fn autocorrect(mut self, value: bool) -> Self {
-        if value {
-            self.attributes
-                .push(("autocorrect".to_string(), String::new()));
-        }
-        self
     }
 }
 impl<State> Script<State> {
@@ -215466,16 +215267,6 @@ impl<State> Script<State> {
 impl<State> Script<State> {
     pub fn base_u_r_i(self, value: impl Into<String>) -> Self {
         self.attribute("baseURI", value)
-    }
-}
-impl<State> Script<State> {
-    pub fn blocking(self, value: impl Into<String>) -> Self {
-        self.attribute("blocking", value)
-    }
-}
-impl<State> Script<State> {
-    pub fn charset(self, value: impl Into<String>) -> Self {
-        self.attribute("charset", value)
     }
 }
 impl<State> Script<State> {
@@ -215519,11 +215310,6 @@ impl<State> Script<State> {
     }
 }
 impl<State> Script<State> {
-    pub fn content_editable(self, value: impl Into<String>) -> Self {
-        self.attribute("contentEditable", value)
-    }
-}
-impl<State> Script<State> {
     pub fn cross_origin(self, value: impl Into<String>) -> Self {
         self.attribute("crossOrigin", value)
     }
@@ -215544,55 +215330,13 @@ impl<State> Script<State> {
     }
 }
 impl<State> Script<State> {
-    pub fn defer(mut self, value: bool) -> Self {
-        if value {
-            self.attributes.push(("defer".to_string(), String::new()));
-        }
-        self
-    }
-}
-impl<State> Script<State> {
-    pub fn dir(self, value: impl Into<String>) -> Self {
-        self.attribute("dir", value)
-    }
-}
-impl<State> Script<State> {
     pub fn double(self, value: impl Into<String>) -> Self {
         self.attribute("double", value)
     }
 }
 impl<State> Script<State> {
-    pub fn draggable(mut self, value: bool) -> Self {
-        if value {
-            self.attributes
-                .push(("draggable".to_string(), String::new()));
-        }
-        self
-    }
-}
-impl<State> Script<State> {
-    pub fn edit_context(self, value: impl Into<String>) -> Self {
-        self.attribute("editContext", value)
-    }
-}
-impl<State> Script<State> {
     pub fn element_timing(self, value: impl Into<String>) -> Self {
         self.attribute("elementTiming", value)
-    }
-}
-impl<State> Script<State> {
-    pub fn enter_key_hint(self, value: impl Into<String>) -> Self {
-        self.attribute("enterKeyHint", value)
-    }
-}
-impl<State> Script<State> {
-    pub fn event(self, value: impl Into<String>) -> Self {
-        self.attribute("event", value)
-    }
-}
-impl<State> Script<State> {
-    pub fn fetch_priority(self, value: impl Into<String>) -> Self {
-        self.attribute("fetchPriority", value)
     }
 }
 impl<State> Script<State> {
@@ -215606,50 +215350,13 @@ impl<State> Script<State> {
     }
 }
 impl<State> Script<State> {
-    pub fn heading_reset(mut self, value: bool) -> Self {
-        if value {
-            self.attributes
-                .push(("headingReset".to_string(), String::new()));
-        }
-        self
-    }
-}
-impl<State> Script<State> {
-    pub fn hidden(self, value: impl Into<String>) -> Self {
-        self.attribute("hidden", value)
-    }
-}
-impl<State> Script<State> {
-    pub fn html_for(self, value: impl Into<String>) -> Self {
-        self.attribute("htmlFor", value)
-    }
-}
-impl<State> Script<State> {
-    pub fn inert(mut self, value: bool) -> Self {
-        if value {
-            self.attributes.push(("inert".to_string(), String::new()));
-        }
-        self
+    pub fn href(self, value: impl Into<String>) -> Self {
+        self.attribute("href", value)
     }
 }
 impl<State> Script<State> {
     pub fn inner_h_t_m_l(self, value: impl Into<String>) -> Self {
         self.attribute("innerHTML", value)
-    }
-}
-impl<State> Script<State> {
-    pub fn inner_text(self, value: impl Into<String>) -> Self {
-        self.attribute("innerText", value)
-    }
-}
-impl<State> Script<State> {
-    pub fn input_mode(self, value: impl Into<String>) -> Self {
-        self.attribute("inputMode", value)
-    }
-}
-impl<State> Script<State> {
-    pub fn integrity(self, value: impl Into<String>) -> Self {
-        self.attribute("integrity", value)
     }
 }
 impl<State> Script<State> {
@@ -215659,20 +215366,6 @@ impl<State> Script<State> {
                 .push(("isConnected".to_string(), String::new()));
         }
         self
-    }
-}
-impl<State> Script<State> {
-    pub fn is_content_editable(mut self, value: bool) -> Self {
-        if value {
-            self.attributes
-                .push(("isContentEditable".to_string(), String::new()));
-        }
-        self
-    }
-}
-impl<State> Script<State> {
-    pub fn lang(self, value: impl Into<String>) -> Self {
-        self.attribute("lang", value)
     }
 }
 impl<State> Script<State> {
@@ -215711,15 +215404,6 @@ impl<State> Script<State> {
     }
 }
 impl<State> Script<State> {
-    pub fn no_module(mut self, value: bool) -> Self {
-        if value {
-            self.attributes
-                .push(("noModule".to_string(), String::new()));
-        }
-        self
-    }
-}
-impl<State> Script<State> {
     pub fn node_name(self, value: impl Into<String>) -> Self {
         self.attribute("nodeName", value)
     }
@@ -215732,31 +215416,6 @@ impl<State> Script<State> {
 impl<State> Script<State> {
     pub fn nonce(self, value: impl Into<String>) -> Self {
         self.attribute("nonce", value)
-    }
-}
-impl<State> Script<State> {
-    pub fn offset_height(self, value: impl Into<String>) -> Self {
-        self.attribute("offsetHeight", value)
-    }
-}
-impl<State> Script<State> {
-    pub fn offset_left(self, value: impl Into<String>) -> Self {
-        self.attribute("offsetLeft", value)
-    }
-}
-impl<State> Script<State> {
-    pub fn offset_parent(self, value: impl Into<String>) -> Self {
-        self.attribute("offsetParent", value)
-    }
-}
-impl<State> Script<State> {
-    pub fn offset_top(self, value: impl Into<String>) -> Self {
-        self.attribute("offsetTop", value)
-    }
-}
-impl<State> Script<State> {
-    pub fn offset_width(self, value: impl Into<String>) -> Self {
-        self.attribute("offsetWidth", value)
     }
 }
 impl<State> Script<State> {
@@ -216414,13 +216073,13 @@ impl<State> Script<State> {
     }
 }
 impl<State> Script<State> {
-    pub fn outer_text(self, value: impl Into<String>) -> Self {
-        self.attribute("outerText", value)
+    pub fn owner_document(self, value: impl Into<String>) -> Self {
+        self.attribute("ownerDocument", value)
     }
 }
 impl<State> Script<State> {
-    pub fn owner_document(self, value: impl Into<String>) -> Self {
-        self.attribute("ownerDocument", value)
+    pub fn owner_s_v_g_element(self, value: impl Into<String>) -> Self {
+        self.attribute("ownerSVGElement", value)
     }
 }
 impl<State> Script<State> {
@@ -216454,11 +216113,6 @@ impl<State> Script<State> {
     }
 }
 impl<State> Script<State> {
-    pub fn referrer_policy(self, value: impl Into<String>) -> Self {
-        self.attribute("referrerPolicy", value)
-    }
-}
-impl<State> Script<State> {
     pub fn region_overset(self, value: impl Into<String>) -> Self {
         self.attribute("regionOverset", value)
     }
@@ -216471,11 +216125,6 @@ impl<State> Script<State> {
 impl<State> Script<State> {
     pub fn scroll_height(self, value: impl Into<String>) -> Self {
         self.attribute("scrollHeight", value)
-    }
-}
-impl<State> Script<State> {
-    pub fn scroll_parent(self, value: impl Into<String>) -> Self {
-        self.attribute("scrollParent", value)
     }
 }
 impl<State> Script<State> {
@@ -216499,20 +216148,6 @@ impl<State> Script<State> {
     }
 }
 impl<State> Script<State> {
-    pub fn spellcheck(mut self, value: bool) -> Self {
-        if value {
-            self.attributes
-                .push(("spellcheck".to_string(), String::new()));
-        }
-        self
-    }
-}
-impl<State> Script<State> {
-    pub fn src(self, value: impl Into<String>) -> Self {
-        self.attribute("src", value)
-    }
-}
-impl<State> Script<State> {
     pub fn tab_index(self, value: impl Into<String>) -> Self {
         self.attribute("tabIndex", value)
     }
@@ -216523,37 +216158,13 @@ impl<State> Script<State> {
     }
 }
 impl<State> Script<State> {
-    pub fn text(self, value: impl Into<String>) -> Self {
-        self.attribute("text", value)
-    }
-}
-impl<State> Script<State> {
     pub fn text_content(self, value: impl Into<String>) -> Self {
         self.attribute("textContent", value)
     }
 }
 impl<State> Script<State> {
-    pub fn title(self, value: impl Into<String>) -> Self {
-        self.attribute("title", value)
-    }
-}
-impl<State> Script<State> {
-    pub fn translate(mut self, value: bool) -> Self {
-        if value {
-            self.attributes
-                .push(("translate".to_string(), String::new()));
-        }
-        self
-    }
-}
-impl<State> Script<State> {
-    pub fn virtual_keyboard_policy(self, value: impl Into<String>) -> Self {
-        self.attribute("virtualKeyboardPolicy", value)
-    }
-}
-impl<State> Script<State> {
-    pub fn writing_suggestions(self, value: impl Into<String>) -> Self {
-        self.attribute("writingSuggestions", value)
+    pub fn viewport_element(self, value: impl Into<String>) -> Self {
+        self.attribute("viewportElement", value)
     }
 }
 pub struct Search<State> {
@@ -232606,16 +232217,6 @@ impl<State> From<StyleElement<State>> for VdomNode<State> {
     }
 }
 impl<State> StyleElement<State> {
-    pub fn access_key(self, value: impl Into<String>) -> Self {
-        self.attribute("accessKey", value)
-    }
-}
-impl<State> StyleElement<State> {
-    pub fn access_key_label(self, value: impl Into<String>) -> Self {
-        self.attribute("accessKeyLabel", value)
-    }
-}
-impl<State> StyleElement<State> {
     pub fn active_view_transition(self, value: impl Into<String>) -> Self {
         self.attribute("activeViewTransition", value)
     }
@@ -232856,20 +232457,6 @@ impl<State> StyleElement<State> {
     }
 }
 impl<State> StyleElement<State> {
-    pub fn autocapitalize(self, value: impl Into<String>) -> Self {
-        self.attribute("autocapitalize", value)
-    }
-}
-impl<State> StyleElement<State> {
-    pub fn autocorrect(mut self, value: bool) -> Self {
-        if value {
-            self.attributes
-                .push(("autocorrect".to_string(), String::new()));
-        }
-        self
-    }
-}
-impl<State> StyleElement<State> {
     pub fn autofocus(mut self, value: bool) -> Self {
         if value {
             self.attributes
@@ -232881,11 +232468,6 @@ impl<State> StyleElement<State> {
 impl<State> StyleElement<State> {
     pub fn base_u_r_i(self, value: impl Into<String>) -> Self {
         self.attribute("baseURI", value)
-    }
-}
-impl<State> StyleElement<State> {
-    pub fn blocking(self, value: impl Into<String>) -> Self {
-        self.attribute("blocking", value)
     }
 }
 impl<State> StyleElement<State> {
@@ -232929,11 +232511,6 @@ impl<State> StyleElement<State> {
     }
 }
 impl<State> StyleElement<State> {
-    pub fn content_editable(self, value: impl Into<String>) -> Self {
-        self.attribute("contentEditable", value)
-    }
-}
-impl<State> StyleElement<State> {
     pub fn current_c_s_s_zoom(self, value: impl Into<String>) -> Self {
         self.attribute("currentCSSZoom", value)
     }
@@ -232946,11 +232523,6 @@ impl<State> StyleElement<State> {
 impl<State> StyleElement<State> {
     pub fn dataset(self, value: impl Into<String>) -> Self {
         self.attribute("dataset", value)
-    }
-}
-impl<State> StyleElement<State> {
-    pub fn dir(self, value: impl Into<String>) -> Self {
-        self.attribute("dir", value)
     }
 }
 impl<State> StyleElement<State> {
@@ -232968,27 +232540,8 @@ impl<State> StyleElement<State> {
     }
 }
 impl<State> StyleElement<State> {
-    pub fn draggable(mut self, value: bool) -> Self {
-        if value {
-            self.attributes
-                .push(("draggable".to_string(), String::new()));
-        }
-        self
-    }
-}
-impl<State> StyleElement<State> {
-    pub fn edit_context(self, value: impl Into<String>) -> Self {
-        self.attribute("editContext", value)
-    }
-}
-impl<State> StyleElement<State> {
     pub fn element_timing(self, value: impl Into<String>) -> Self {
         self.attribute("elementTiming", value)
-    }
-}
-impl<State> StyleElement<State> {
-    pub fn enter_key_hint(self, value: impl Into<String>) -> Self {
-        self.attribute("enterKeyHint", value)
     }
 }
 impl<State> StyleElement<State> {
@@ -233002,40 +232555,8 @@ impl<State> StyleElement<State> {
     }
 }
 impl<State> StyleElement<State> {
-    pub fn heading_reset(mut self, value: bool) -> Self {
-        if value {
-            self.attributes
-                .push(("headingReset".to_string(), String::new()));
-        }
-        self
-    }
-}
-impl<State> StyleElement<State> {
-    pub fn hidden(self, value: impl Into<String>) -> Self {
-        self.attribute("hidden", value)
-    }
-}
-impl<State> StyleElement<State> {
-    pub fn inert(mut self, value: bool) -> Self {
-        if value {
-            self.attributes.push(("inert".to_string(), String::new()));
-        }
-        self
-    }
-}
-impl<State> StyleElement<State> {
     pub fn inner_h_t_m_l(self, value: impl Into<String>) -> Self {
         self.attribute("innerHTML", value)
-    }
-}
-impl<State> StyleElement<State> {
-    pub fn inner_text(self, value: impl Into<String>) -> Self {
-        self.attribute("innerText", value)
-    }
-}
-impl<State> StyleElement<State> {
-    pub fn input_mode(self, value: impl Into<String>) -> Self {
-        self.attribute("inputMode", value)
     }
 }
 impl<State> StyleElement<State> {
@@ -233045,20 +232566,6 @@ impl<State> StyleElement<State> {
                 .push(("isConnected".to_string(), String::new()));
         }
         self
-    }
-}
-impl<State> StyleElement<State> {
-    pub fn is_content_editable(mut self, value: bool) -> Self {
-        if value {
-            self.attributes
-                .push(("isContentEditable".to_string(), String::new()));
-        }
-        self
-    }
-}
-impl<State> StyleElement<State> {
-    pub fn lang(self, value: impl Into<String>) -> Self {
-        self.attribute("lang", value)
     }
 }
 impl<State> StyleElement<State> {
@@ -233114,31 +232621,6 @@ impl<State> StyleElement<State> {
 impl<State> StyleElement<State> {
     pub fn nonce(self, value: impl Into<String>) -> Self {
         self.attribute("nonce", value)
-    }
-}
-impl<State> StyleElement<State> {
-    pub fn offset_height(self, value: impl Into<String>) -> Self {
-        self.attribute("offsetHeight", value)
-    }
-}
-impl<State> StyleElement<State> {
-    pub fn offset_left(self, value: impl Into<String>) -> Self {
-        self.attribute("offsetLeft", value)
-    }
-}
-impl<State> StyleElement<State> {
-    pub fn offset_parent(self, value: impl Into<String>) -> Self {
-        self.attribute("offsetParent", value)
-    }
-}
-impl<State> StyleElement<State> {
-    pub fn offset_top(self, value: impl Into<String>) -> Self {
-        self.attribute("offsetTop", value)
-    }
-}
-impl<State> StyleElement<State> {
-    pub fn offset_width(self, value: impl Into<String>) -> Self {
-        self.attribute("offsetWidth", value)
     }
 }
 impl<State> StyleElement<State> {
@@ -233796,13 +233278,13 @@ impl<State> StyleElement<State> {
     }
 }
 impl<State> StyleElement<State> {
-    pub fn outer_text(self, value: impl Into<String>) -> Self {
-        self.attribute("outerText", value)
+    pub fn owner_document(self, value: impl Into<String>) -> Self {
+        self.attribute("ownerDocument", value)
     }
 }
 impl<State> StyleElement<State> {
-    pub fn owner_document(self, value: impl Into<String>) -> Self {
-        self.attribute("ownerDocument", value)
+    pub fn owner_s_v_g_element(self, value: impl Into<String>) -> Self {
+        self.attribute("ownerSVGElement", value)
     }
 }
 impl<State> StyleElement<State> {
@@ -233851,11 +233333,6 @@ impl<State> StyleElement<State> {
     }
 }
 impl<State> StyleElement<State> {
-    pub fn scroll_parent(self, value: impl Into<String>) -> Self {
-        self.attribute("scrollParent", value)
-    }
-}
-impl<State> StyleElement<State> {
     pub fn scroll_width(self, value: impl Into<String>) -> Self {
         self.attribute("scrollWidth", value)
     }
@@ -233881,15 +233358,6 @@ impl<State> StyleElement<State> {
     }
 }
 impl<State> StyleElement<State> {
-    pub fn spellcheck(mut self, value: bool) -> Self {
-        if value {
-            self.attributes
-                .push(("spellcheck".to_string(), String::new()));
-        }
-        self
-    }
-}
-impl<State> StyleElement<State> {
     pub fn tab_index(self, value: impl Into<String>) -> Self {
         self.attribute("tabIndex", value)
     }
@@ -233910,22 +233378,8 @@ impl<State> StyleElement<State> {
     }
 }
 impl<State> StyleElement<State> {
-    pub fn translate(mut self, value: bool) -> Self {
-        if value {
-            self.attributes
-                .push(("translate".to_string(), String::new()));
-        }
-        self
-    }
-}
-impl<State> StyleElement<State> {
-    pub fn virtual_keyboard_policy(self, value: impl Into<String>) -> Self {
-        self.attribute("virtualKeyboardPolicy", value)
-    }
-}
-impl<State> StyleElement<State> {
-    pub fn writing_suggestions(self, value: impl Into<String>) -> Self {
-        self.attribute("writingSuggestions", value)
+    pub fn viewport_element(self, value: impl Into<String>) -> Self {
+        self.attribute("viewportElement", value)
     }
 }
 pub struct Sub<State> {
@@ -257082,16 +256536,6 @@ impl<State> From<Title<State>> for VdomNode<State> {
     }
 }
 impl<State> Title<State> {
-    pub fn access_key(self, value: impl Into<String>) -> Self {
-        self.attribute("accessKey", value)
-    }
-}
-impl<State> Title<State> {
-    pub fn access_key_label(self, value: impl Into<String>) -> Self {
-        self.attribute("accessKeyLabel", value)
-    }
-}
-impl<State> Title<State> {
     pub fn active_view_transition(self, value: impl Into<String>) -> Self {
         self.attribute("activeViewTransition", value)
     }
@@ -257332,20 +256776,6 @@ impl<State> Title<State> {
     }
 }
 impl<State> Title<State> {
-    pub fn autocapitalize(self, value: impl Into<String>) -> Self {
-        self.attribute("autocapitalize", value)
-    }
-}
-impl<State> Title<State> {
-    pub fn autocorrect(mut self, value: bool) -> Self {
-        if value {
-            self.attributes
-                .push(("autocorrect".to_string(), String::new()));
-        }
-        self
-    }
-}
-impl<State> Title<State> {
     pub fn autofocus(mut self, value: bool) -> Self {
         if value {
             self.attributes
@@ -257400,11 +256830,6 @@ impl<State> Title<State> {
     }
 }
 impl<State> Title<State> {
-    pub fn content_editable(self, value: impl Into<String>) -> Self {
-        self.attribute("contentEditable", value)
-    }
-}
-impl<State> Title<State> {
     pub fn current_c_s_s_zoom(self, value: impl Into<String>) -> Self {
         self.attribute("currentCSSZoom", value)
     }
@@ -257420,37 +256845,13 @@ impl<State> Title<State> {
     }
 }
 impl<State> Title<State> {
-    pub fn dir(self, value: impl Into<String>) -> Self {
-        self.attribute("dir", value)
-    }
-}
-impl<State> Title<State> {
     pub fn double(self, value: impl Into<String>) -> Self {
         self.attribute("double", value)
     }
 }
 impl<State> Title<State> {
-    pub fn draggable(mut self, value: bool) -> Self {
-        if value {
-            self.attributes
-                .push(("draggable".to_string(), String::new()));
-        }
-        self
-    }
-}
-impl<State> Title<State> {
-    pub fn edit_context(self, value: impl Into<String>) -> Self {
-        self.attribute("editContext", value)
-    }
-}
-impl<State> Title<State> {
     pub fn element_timing(self, value: impl Into<String>) -> Self {
         self.attribute("elementTiming", value)
-    }
-}
-impl<State> Title<State> {
-    pub fn enter_key_hint(self, value: impl Into<String>) -> Self {
-        self.attribute("enterKeyHint", value)
     }
 }
 impl<State> Title<State> {
@@ -257464,40 +256865,8 @@ impl<State> Title<State> {
     }
 }
 impl<State> Title<State> {
-    pub fn heading_reset(mut self, value: bool) -> Self {
-        if value {
-            self.attributes
-                .push(("headingReset".to_string(), String::new()));
-        }
-        self
-    }
-}
-impl<State> Title<State> {
-    pub fn hidden(self, value: impl Into<String>) -> Self {
-        self.attribute("hidden", value)
-    }
-}
-impl<State> Title<State> {
-    pub fn inert(mut self, value: bool) -> Self {
-        if value {
-            self.attributes.push(("inert".to_string(), String::new()));
-        }
-        self
-    }
-}
-impl<State> Title<State> {
     pub fn inner_h_t_m_l(self, value: impl Into<String>) -> Self {
         self.attribute("innerHTML", value)
-    }
-}
-impl<State> Title<State> {
-    pub fn inner_text(self, value: impl Into<String>) -> Self {
-        self.attribute("innerText", value)
-    }
-}
-impl<State> Title<State> {
-    pub fn input_mode(self, value: impl Into<String>) -> Self {
-        self.attribute("inputMode", value)
     }
 }
 impl<State> Title<State> {
@@ -257507,20 +256876,6 @@ impl<State> Title<State> {
                 .push(("isConnected".to_string(), String::new()));
         }
         self
-    }
-}
-impl<State> Title<State> {
-    pub fn is_content_editable(mut self, value: bool) -> Self {
-        if value {
-            self.attributes
-                .push(("isContentEditable".to_string(), String::new()));
-        }
-        self
-    }
-}
-impl<State> Title<State> {
-    pub fn lang(self, value: impl Into<String>) -> Self {
-        self.attribute("lang", value)
     }
 }
 impl<State> Title<State> {
@@ -257571,31 +256926,6 @@ impl<State> Title<State> {
 impl<State> Title<State> {
     pub fn nonce(self, value: impl Into<String>) -> Self {
         self.attribute("nonce", value)
-    }
-}
-impl<State> Title<State> {
-    pub fn offset_height(self, value: impl Into<String>) -> Self {
-        self.attribute("offsetHeight", value)
-    }
-}
-impl<State> Title<State> {
-    pub fn offset_left(self, value: impl Into<String>) -> Self {
-        self.attribute("offsetLeft", value)
-    }
-}
-impl<State> Title<State> {
-    pub fn offset_parent(self, value: impl Into<String>) -> Self {
-        self.attribute("offsetParent", value)
-    }
-}
-impl<State> Title<State> {
-    pub fn offset_top(self, value: impl Into<String>) -> Self {
-        self.attribute("offsetTop", value)
-    }
-}
-impl<State> Title<State> {
-    pub fn offset_width(self, value: impl Into<String>) -> Self {
-        self.attribute("offsetWidth", value)
     }
 }
 impl<State> Title<State> {
@@ -258253,13 +257583,13 @@ impl<State> Title<State> {
     }
 }
 impl<State> Title<State> {
-    pub fn outer_text(self, value: impl Into<String>) -> Self {
-        self.attribute("outerText", value)
+    pub fn owner_document(self, value: impl Into<String>) -> Self {
+        self.attribute("ownerDocument", value)
     }
 }
 impl<State> Title<State> {
-    pub fn owner_document(self, value: impl Into<String>) -> Self {
-        self.attribute("ownerDocument", value)
+    pub fn owner_s_v_g_element(self, value: impl Into<String>) -> Self {
+        self.attribute("ownerSVGElement", value)
     }
 }
 impl<State> Title<State> {
@@ -258308,11 +257638,6 @@ impl<State> Title<State> {
     }
 }
 impl<State> Title<State> {
-    pub fn scroll_parent(self, value: impl Into<String>) -> Self {
-        self.attribute("scrollParent", value)
-    }
-}
-impl<State> Title<State> {
     pub fn scroll_width(self, value: impl Into<String>) -> Self {
         self.attribute("scrollWidth", value)
     }
@@ -258333,15 +257658,6 @@ impl<State> Title<State> {
     }
 }
 impl<State> Title<State> {
-    pub fn spellcheck(mut self, value: bool) -> Self {
-        if value {
-            self.attributes
-                .push(("spellcheck".to_string(), String::new()));
-        }
-        self
-    }
-}
-impl<State> Title<State> {
     pub fn tab_index(self, value: impl Into<String>) -> Self {
         self.attribute("tabIndex", value)
     }
@@ -258352,37 +257668,13 @@ impl<State> Title<State> {
     }
 }
 impl<State> Title<State> {
-    pub fn text(self, value: impl Into<String>) -> Self {
-        self.attribute("text", value)
-    }
-}
-impl<State> Title<State> {
     pub fn text_content(self, value: impl Into<String>) -> Self {
         self.attribute("textContent", value)
     }
 }
 impl<State> Title<State> {
-    pub fn title(self, value: impl Into<String>) -> Self {
-        self.attribute("title", value)
-    }
-}
-impl<State> Title<State> {
-    pub fn translate(mut self, value: bool) -> Self {
-        if value {
-            self.attributes
-                .push(("translate".to_string(), String::new()));
-        }
-        self
-    }
-}
-impl<State> Title<State> {
-    pub fn virtual_keyboard_policy(self, value: impl Into<String>) -> Self {
-        self.attribute("virtualKeyboardPolicy", value)
-    }
-}
-impl<State> Title<State> {
-    pub fn writing_suggestions(self, value: impl Into<String>) -> Self {
-        self.attribute("writingSuggestions", value)
+    pub fn viewport_element(self, value: impl Into<String>) -> Self {
+        self.attribute("viewportElement", value)
     }
 }
 pub struct Tr<State> {

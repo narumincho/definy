@@ -1,5 +1,5 @@
 // このファイルは narumincho-vdom-build によって自動生成されました。
-#![allow(non_snake_case, dead_code)]
+#![allow(non_snake_case, dead_code, clippy::wrong_self_convention)]
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum FormTarget {
@@ -35,9 +35,7 @@ pub fn form() -> Form {
 
 impl Form {
     pub fn attribute(mut self, key: impl Into<String>, value: impl Into<String>) -> Self {
-        let key = key.into();
-        let normalized_key = crate::normalize_attribute_name(&key);
-        self.attributes.insert(normalized_key, value.into());
+        self.attributes.insert(key.into(), value.into());
         self
     }
 
@@ -70,7 +68,6 @@ impl Form {
             children: Vec::new(),
         })
     }
-
     pub fn accept_charset(mut self, value: impl Into<String>) -> Self {
         self.attributes
             .insert("acceptCharset".to_string(), value.into());
@@ -1002,7 +999,7 @@ impl Form {
         self
     }
 
-    pub fn to_element(self, children: Vec<super::Node>) -> super::Element {
+    pub fn into_element(self, children: Vec<super::Node>) -> super::Element {
         super::Element {
             global_attributes: super::GlobalAttributes::default(),
             element_content: super::ElementContent::Form(self),

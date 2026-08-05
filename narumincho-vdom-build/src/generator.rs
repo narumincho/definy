@@ -112,7 +112,10 @@ fn output_elements_rs(
         file,
         "// このファイルは narumincho-vdom-build によって自動生成されました。"
     )?;
-    writeln!(file, "#![allow(non_snake_case, dead_code)]")?;
+    writeln!(
+        file,
+        "#![allow(non_snake_case, dead_code, clippy::large_enum_variant, clippy::wrong_self_convention)]"
+    )?;
     for name in elements_map.keys() {
         writeln!(file, "pub mod {};", escape_identifier(name))?;
     }
@@ -323,7 +326,10 @@ fn output_element_file(
         file,
         "// このファイルは narumincho-vdom-build によって自動生成されました。"
     )?;
-    writeln!(file, "#![allow(non_snake_case, dead_code)]")?;
+    writeln!(
+        file,
+        "#![allow(non_snake_case, dead_code, clippy::wrong_self_convention)]"
+    )?;
     writeln!(file)?;
 
     let resolved_attributes = db.resolve_interface_attributes(&info.interface);
@@ -507,7 +513,7 @@ fn output_element_file(
 
     writeln!(
         file,
-        "    pub fn to_element(self, children: Vec<super::Node>) -> super::Element {{
+        "    pub fn into_element(self, children: Vec<super::Node>) -> super::Element {{
         super::Element {{
             global_attributes: super::GlobalAttributes::default(),
             element_content: super::ElementContent::{}(self),

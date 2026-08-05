@@ -1,5 +1,5 @@
 // このファイルは narumincho-vdom-build によって自動生成されました。
-#![allow(non_snake_case, dead_code)]
+#![allow(non_snake_case, dead_code, clippy::wrong_self_convention)]
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ScriptCrossOrigin {
@@ -16,7 +16,7 @@ impl ScriptCrossOrigin {
     }
 }
 
-/// HTML Content Attributes for https://html.spec.whatwg.org/multipage/scripting.html#script
+/// HTML Content Attributes for https://w3c.github.io/svgwg/svg2-draft/interact.html#elementdef-script
 #[derive(Default, Debug, Clone, PartialEq, Eq)]
 pub struct Script {
     pub attributes: std::collections::BTreeMap<String, String>,
@@ -31,9 +31,7 @@ pub fn script() -> Script {
 
 impl Script {
     pub fn attribute(mut self, key: impl Into<String>, value: impl Into<String>) -> Self {
-        let key = key.into();
-        let normalized_key = crate::normalize_attribute_name(&key);
-        self.attributes.insert(normalized_key, value.into());
+        self.attributes.insert(key.into(), value.into());
         self
     }
 
@@ -66,7 +64,6 @@ impl Script {
             children: Vec::new(),
         })
     }
-
     pub fn aria_active_descendant_element(mut self, value: impl Into<String>) -> Self {
         self.attributes
             .insert("aria-active-descendant-element".to_string(), value.into());
@@ -331,95 +328,19 @@ impl Script {
         self
     }
 
-    pub fn async_(mut self, value: bool) -> Self {
-        if value {
-            self.attributes.insert("async".to_string(), String::new());
-        } else {
-            self.attributes.remove("async");
-        }
-        self
-    }
-
-    pub fn autocorrect(mut self, value: bool) -> Self {
-        if value {
-            self.attributes
-                .insert("autocorrect".to_string(), String::new());
-        } else {
-            self.attributes.remove("autocorrect");
-        }
-        self
-    }
-
-    pub fn charset(mut self, value: impl Into<String>) -> Self {
-        self.attributes.insert("charset".to_string(), value.into());
-        self
-    }
-
     pub fn cross_origin(mut self, value: ScriptCrossOrigin) -> Self {
         self.attributes
             .insert("crossOrigin".to_string(), value.as_str().to_string());
         self
     }
 
-    pub fn defer(mut self, value: bool) -> Self {
-        if value {
-            self.attributes.insert("defer".to_string(), String::new());
-        } else {
-            self.attributes.remove("defer");
-        }
-        self
-    }
-
-    pub fn event(mut self, value: impl Into<String>) -> Self {
-        self.attributes.insert("event".to_string(), value.into());
-        self
-    }
-
-    pub fn fetch_priority(mut self, value: impl Into<String>) -> Self {
-        self.attributes
-            .insert("fetchPriority".to_string(), value.into());
-        self
-    }
-
-    pub fn html_for(mut self, value: impl Into<String>) -> Self {
-        self.attributes.insert("htmlFor".to_string(), value.into());
-        self
-    }
-
-    pub fn integrity(mut self, value: impl Into<String>) -> Self {
-        self.attributes
-            .insert("integrity".to_string(), value.into());
-        self
-    }
-
-    pub fn no_module(mut self, value: bool) -> Self {
-        if value {
-            self.attributes
-                .insert("noModule".to_string(), String::new());
-        } else {
-            self.attributes.remove("noModule");
-        }
-        self
-    }
-
-    pub fn referrer_policy(mut self, value: impl Into<String>) -> Self {
-        self.attributes
-            .insert("referrerPolicy".to_string(), value.into());
+    pub fn href(mut self, value: impl Into<String>) -> Self {
+        self.attributes.insert("href".to_string(), value.into());
         self
     }
 
     pub fn role(mut self, value: impl Into<String>) -> Self {
         self.attributes.insert("role".to_string(), value.into());
-        self
-    }
-
-    pub fn src(mut self, value: impl Into<String>) -> Self {
-        self.attributes.insert("src".to_string(), value.into());
-        self
-    }
-
-    pub fn text(mut self, value: impl Into<String>) -> Self {
-        self.attributes.insert("text".to_string(), value.into());
         self
     }
 
@@ -431,18 +352,6 @@ impl Script {
 
     pub fn type_(mut self, value: impl Into<String>) -> Self {
         self.attributes.insert("type".to_string(), value.into());
-        self
-    }
-
-    pub fn virtual_keyboard_policy(mut self, value: impl Into<String>) -> Self {
-        self.attributes
-            .insert("virtualKeyboardPolicy".to_string(), value.into());
-        self
-    }
-
-    pub fn writing_suggestions(mut self, value: impl Into<String>) -> Self {
-        self.attributes
-            .insert("writingSuggestions".to_string(), value.into());
         self
     }
 
@@ -1022,7 +931,7 @@ impl Script {
         self
     }
 
-    pub fn to_element(self, children: Vec<super::Node>) -> super::Element {
+    pub fn into_element(self, children: Vec<super::Node>) -> super::Element {
         super::Element {
             global_attributes: super::GlobalAttributes::default(),
             element_content: super::ElementContent::Script(self),

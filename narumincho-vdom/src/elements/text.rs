@@ -1,7 +1,7 @@
 // このファイルは narumincho-vdom-build によって自動生成されました。
-#![allow(non_snake_case, dead_code)]
+#![allow(non_snake_case, dead_code, clippy::wrong_self_convention)]
 
-/// HTML Content Attributes for https://www.w3.org/TR/SVG11/text.html#TextElement
+/// HTML Content Attributes for https://w3c.github.io/svgwg/svg2-draft/text.html#elementdef-text
 #[derive(Default, Debug, Clone, PartialEq, Eq)]
 pub struct Text {
     pub attributes: std::collections::BTreeMap<String, String>,
@@ -16,9 +16,7 @@ pub fn text() -> Text {
 
 impl Text {
     pub fn attribute(mut self, key: impl Into<String>, value: impl Into<String>) -> Self {
-        let key = key.into();
-        let normalized_key = crate::normalize_attribute_name(&key);
-        self.attributes.insert(normalized_key, value.into());
+        self.attributes.insert(key.into(), value.into());
         self
     }
 
@@ -51,7 +49,6 @@ impl Text {
             children: Vec::new(),
         })
     }
-
     pub fn aria_active_descendant_element(mut self, value: impl Into<String>) -> Self {
         self.attributes
             .insert("aria-active-descendant-element".to_string(), value.into());
@@ -903,7 +900,7 @@ impl Text {
         self
     }
 
-    pub fn to_element(self, children: Vec<super::Node>) -> super::Element {
+    pub fn into_element(self, children: Vec<super::Node>) -> super::Element {
         super::Element {
             global_attributes: super::GlobalAttributes::default(),
             element_content: super::ElementContent::Text(self),

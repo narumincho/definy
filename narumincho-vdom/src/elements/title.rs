@@ -1,7 +1,7 @@
 // このファイルは narumincho-vdom-build によって自動生成されました。
-#![allow(non_snake_case, dead_code)]
+#![allow(non_snake_case, dead_code, clippy::wrong_self_convention)]
 
-/// HTML Content Attributes for https://html.spec.whatwg.org/multipage/semantics.html#the-title-element
+/// HTML Content Attributes for https://w3c.github.io/svgwg/svg2-draft/struct.html#elementdef-title
 #[derive(Default, Debug, Clone, PartialEq, Eq)]
 pub struct Title {
     pub attributes: std::collections::BTreeMap<String, String>,
@@ -16,9 +16,7 @@ pub fn title() -> Title {
 
 impl Title {
     pub fn attribute(mut self, key: impl Into<String>, value: impl Into<String>) -> Self {
-        let key = key.into();
-        let normalized_key = crate::normalize_attribute_name(&key);
-        self.attributes.insert(normalized_key, value.into());
+        self.attributes.insert(key.into(), value.into());
         self
     }
 
@@ -51,7 +49,6 @@ impl Title {
             children: Vec::new(),
         })
     }
-
     pub fn aria_active_descendant_element(mut self, value: impl Into<String>) -> Self {
         self.attributes
             .insert("aria-active-descendant-element".to_string(), value.into());
@@ -316,41 +313,14 @@ impl Title {
         self
     }
 
-    pub fn autocorrect(mut self, value: bool) -> Self {
-        if value {
-            self.attributes
-                .insert("autocorrect".to_string(), String::new());
-        } else {
-            self.attributes.remove("autocorrect");
-        }
-        self
-    }
-
     pub fn role(mut self, value: impl Into<String>) -> Self {
         self.attributes.insert("role".to_string(), value.into());
-        self
-    }
-
-    pub fn text(mut self, value: impl Into<String>) -> Self {
-        self.attributes.insert("text".to_string(), value.into());
         self
     }
 
     pub fn text_content(mut self, value: impl Into<String>) -> Self {
         self.attributes
             .insert("textContent".to_string(), value.into());
-        self
-    }
-
-    pub fn virtual_keyboard_policy(mut self, value: impl Into<String>) -> Self {
-        self.attributes
-            .insert("virtualKeyboardPolicy".to_string(), value.into());
-        self
-    }
-
-    pub fn writing_suggestions(mut self, value: impl Into<String>) -> Self {
-        self.attributes
-            .insert("writingSuggestions".to_string(), value.into());
         self
     }
 
@@ -930,7 +900,7 @@ impl Title {
         self
     }
 
-    pub fn to_element(self, children: Vec<super::Node>) -> super::Element {
+    pub fn into_element(self, children: Vec<super::Node>) -> super::Element {
         super::Element {
             global_attributes: super::GlobalAttributes::default(),
             element_content: super::ElementContent::Title(self),

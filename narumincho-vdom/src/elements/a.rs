@@ -1,5 +1,5 @@
 // このファイルは narumincho-vdom-build によって自動生成されました。
-#![allow(non_snake_case, dead_code)]
+#![allow(non_snake_case, dead_code, clippy::wrong_self_convention)]
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ATarget {
@@ -20,7 +20,7 @@ impl ATarget {
     }
 }
 
-/// HTML Content Attributes for https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-a-element
+/// HTML Content Attributes for https://w3c.github.io/svgwg/svg2-draft/linking.html#elementdef-a
 #[derive(Default, Debug, Clone, PartialEq, Eq)]
 pub struct A {
     pub attributes: std::collections::BTreeMap<String, String>,
@@ -35,9 +35,7 @@ pub fn a() -> A {
 
 impl A {
     pub fn attribute(mut self, key: impl Into<String>, value: impl Into<String>) -> Self {
-        let key = key.into();
-        let normalized_key = crate::normalize_attribute_name(&key);
-        self.attributes.insert(normalized_key, value.into());
+        self.attributes.insert(key.into(), value.into());
         self
     }
 
@@ -70,7 +68,6 @@ impl A {
             children: Vec::new(),
         })
     }
-
     pub fn aria_active_descendant_element(mut self, value: impl Into<String>) -> Self {
         self.attributes
             .insert("aria-active-descendant-element".to_string(), value.into());
@@ -335,26 +332,6 @@ impl A {
         self
     }
 
-    pub fn autocorrect(mut self, value: bool) -> Self {
-        if value {
-            self.attributes
-                .insert("autocorrect".to_string(), String::new());
-        } else {
-            self.attributes.remove("autocorrect");
-        }
-        self
-    }
-
-    pub fn charset(mut self, value: impl Into<String>) -> Self {
-        self.attributes.insert("charset".to_string(), value.into());
-        self
-    }
-
-    pub fn coords(mut self, value: impl Into<String>) -> Self {
-        self.attributes.insert("coords".to_string(), value.into());
-        self
-    }
-
     pub fn download(mut self, value: impl Into<String>) -> Self {
         self.attributes.insert("download".to_string(), value.into());
         self
@@ -375,13 +352,13 @@ impl A {
         self
     }
 
-    pub fn hreflang(mut self, value: impl Into<String>) -> Self {
-        self.attributes.insert("hreflang".to_string(), value.into());
+    pub fn href(mut self, value: impl Into<String>) -> Self {
+        self.attributes.insert("href".to_string(), value.into());
         self
     }
 
-    pub fn name(mut self, value: impl Into<String>) -> Self {
-        self.attributes.insert("name".to_string(), value.into());
+    pub fn hreflang(mut self, value: impl Into<String>) -> Self {
+        self.attributes.insert("hreflang".to_string(), value.into());
         self
     }
 
@@ -421,11 +398,6 @@ impl A {
         self
     }
 
-    pub fn rev(mut self, value: impl Into<String>) -> Self {
-        self.attributes.insert("rev".to_string(), value.into());
-        self
-    }
-
     pub fn role(mut self, value: impl Into<String>) -> Self {
         self.attributes.insert("role".to_string(), value.into());
         self
@@ -436,19 +408,9 @@ impl A {
         self
     }
 
-    pub fn shape(mut self, value: impl Into<String>) -> Self {
-        self.attributes.insert("shape".to_string(), value.into());
-        self
-    }
-
     pub fn target(mut self, value: ATarget) -> Self {
         self.attributes
             .insert("target".to_string(), value.as_str().to_string());
-        self
-    }
-
-    pub fn text(mut self, value: impl Into<String>) -> Self {
-        self.attributes.insert("text".to_string(), value.into());
         self
     }
 
@@ -465,18 +427,6 @@ impl A {
 
     pub fn username(mut self, value: impl Into<String>) -> Self {
         self.attributes.insert("username".to_string(), value.into());
-        self
-    }
-
-    pub fn virtual_keyboard_policy(mut self, value: impl Into<String>) -> Self {
-        self.attributes
-            .insert("virtualKeyboardPolicy".to_string(), value.into());
-        self
-    }
-
-    pub fn writing_suggestions(mut self, value: impl Into<String>) -> Self {
-        self.attributes
-            .insert("writingSuggestions".to_string(), value.into());
         self
     }
 
@@ -1056,7 +1006,7 @@ impl A {
         self
     }
 
-    pub fn to_element(self, children: Vec<super::Node>) -> super::Element {
+    pub fn into_element(self, children: Vec<super::Node>) -> super::Element {
         super::Element {
             global_attributes: super::GlobalAttributes::default(),
             element_content: super::ElementContent::A(self),

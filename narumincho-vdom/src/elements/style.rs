@@ -1,7 +1,7 @@
 // このファイルは narumincho-vdom-build によって自動生成されました。
-#![allow(non_snake_case, dead_code)]
+#![allow(non_snake_case, dead_code, clippy::wrong_self_convention)]
 
-/// HTML Content Attributes for https://html.spec.whatwg.org/multipage/semantics.html#the-style-element
+/// HTML Content Attributes for https://w3c.github.io/svgwg/svg2-draft/styling.html#elementdef-style
 #[derive(Default, Debug, Clone, PartialEq, Eq)]
 pub struct Style {
     pub attributes: std::collections::BTreeMap<String, String>,
@@ -16,9 +16,7 @@ pub fn style() -> Style {
 
 impl Style {
     pub fn attribute(mut self, key: impl Into<String>, value: impl Into<String>) -> Self {
-        let key = key.into();
-        let normalized_key = crate::normalize_attribute_name(&key);
-        self.attributes.insert(normalized_key, value.into());
+        self.attributes.insert(key.into(), value.into());
         self
     }
 
@@ -51,7 +49,6 @@ impl Style {
             children: Vec::new(),
         })
     }
-
     pub fn aria_active_descendant_element(mut self, value: impl Into<String>) -> Self {
         self.attributes
             .insert("aria-active-descendant-element".to_string(), value.into());
@@ -316,16 +313,6 @@ impl Style {
         self
     }
 
-    pub fn autocorrect(mut self, value: bool) -> Self {
-        if value {
-            self.attributes
-                .insert("autocorrect".to_string(), String::new());
-        } else {
-            self.attributes.remove("autocorrect");
-        }
-        self
-    }
-
     pub fn disabled(mut self, value: bool) -> Self {
         if value {
             self.attributes
@@ -354,18 +341,6 @@ impl Style {
 
     pub fn type_(mut self, value: impl Into<String>) -> Self {
         self.attributes.insert("type".to_string(), value.into());
-        self
-    }
-
-    pub fn virtual_keyboard_policy(mut self, value: impl Into<String>) -> Self {
-        self.attributes
-            .insert("virtualKeyboardPolicy".to_string(), value.into());
-        self
-    }
-
-    pub fn writing_suggestions(mut self, value: impl Into<String>) -> Self {
-        self.attributes
-            .insert("writingSuggestions".to_string(), value.into());
         self
     }
 
@@ -945,7 +920,7 @@ impl Style {
         self
     }
 
-    pub fn to_element(self, children: Vec<super::Node>) -> super::Element {
+    pub fn into_element(self, children: Vec<super::Node>) -> super::Element {
         super::Element {
             global_attributes: super::GlobalAttributes::default(),
             element_content: super::ElementContent::Style(self),
