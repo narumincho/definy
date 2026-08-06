@@ -1,10 +1,9 @@
-mod button;
 mod elements;
 mod node;
 mod route;
 mod style;
 
-pub use button::{Button, CommandValue};
+pub use elements::button::{Button, ButtonCommand as CommandValue};
 pub use elements::*;
 pub use node::{AnyStateDispatcher, Element, EventHandler, Node};
 pub use route::*;
@@ -109,14 +108,19 @@ mod tests {
             .disabled(true)
             .disabled(false)
             .attribute("data-test", "value");
-        assert_eq!(btn.attributes.get("type"), Some(&"submit".to_string()));
-        assert_eq!(btn.attributes.get("disabled"), None);
-        assert_eq!(btn.attributes.get("data-test"), Some(&"value".to_string()));
+        assert!(btn.attributes.contains(&("type".into(), "submit".into())));
+        assert!(!btn.attributes.iter().any(|(key, _)| key == "disabled"));
+        assert!(
+            btn.attributes
+                .contains(&("data-test".into(), "value".into()))
+        );
     }
 
     #[test]
     fn aria_attributes_are_rendered_with_html_hyphenated_names() {
-        let node = elements::Button::new().aria_label("Close").into_node();
+        let node = elements::button::Button::new()
+            .aria_label("Close")
+            .into_node();
         let html = to_string(&node);
 
         assert!(html.contains("aria-label=\"Close\""));

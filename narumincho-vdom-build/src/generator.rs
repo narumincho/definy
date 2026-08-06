@@ -105,7 +105,7 @@ fn old_element_type_name(name: &str) -> String {
 
 fn output_elements_rs(
     elements_map: &BTreeMap<String, ElementInfo>,
-    db: &idl::IdlDatabase,
+    _db: &idl::IdlDatabase,
 ) -> anyhow::Result<()> {
     let mut file = File::create("./narumincho-vdom/src/elements.rs")?;
     writeln!(
@@ -121,192 +121,20 @@ fn output_elements_rs(
     }
 
     writeln!(file)?;
-
-    writeln!(
-        file,
-        "#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum Node {{
-    Element(Element),
-    Text(String),
-}}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Element {{
-    pub global_attributes: GlobalAttributes,
-    pub element_content: ElementContent,
-    pub children: Vec<Node>,
-}}
-"
-    )?;
-
-    writeln!(
-        file,
-        "#[derive(Default, Debug, Clone, PartialEq, Eq)]
-pub struct GlobalAttributes {{"
-    )?;
-    for attr in GLOBAL_ATTRIBUTES {
-        writeln!(
-            file,
-            "    pub {}: std::option::Option<String>,",
-            escape_identifier(attr)
-        )?;
-    }
-    writeln!(file, "}}\n")?;
-
-    writeln!(file, "#[derive(Debug, Clone, PartialEq, Eq)]")?;
-    writeln!(file, "pub enum ElementContent {{")?;
-    for (name, info) in elements_map {
-        writeln!(file, "    /// {}", info.href)?;
-        let element_name = escape_identifier(name);
-        let capitalized_element_name = capitalize(name);
-        writeln!(
-            file,
-            "    {}({}::{}),",
-            capitalized_element_name, element_name, capitalized_element_name
-        )?;
-    }
-    writeln!(file, "}}")?;
-
-    writeln!(file, "impl Element {{")?;
-    for attr in GLOBAL_ATTRIBUTES {
-        writeln!(
-            file,
-            "    pub fn {}(mut self, value: impl Into<String>) -> Self {{",
-            escape_identifier(attr)
-        )?;
-        writeln!(
-            file,
-            "        self.global_attributes.{} = Some(value.into());",
-            escape_identifier(attr)
-        )?;
-        writeln!(file, "        self")?;
-        writeln!(file, "    }}")?;
-        writeln!(file)?;
-    }
-    writeln!(file, "}}")?;
-
-    output_stateful_element_builders(&mut file, elements_map, db)?;
-
-    Ok(())
-}
-
-fn output_stateful_element_builders(
-    file: &mut File,
-    elements_map: &BTreeMap<String, ElementInfo>,
-    db: &idl::IdlDatabase,
-) -> anyhow::Result<()> {
-    writeln!(file)?;
-    writeln!(
-        file,
-        "use crate::node::{{Element as VdomElement, EventHandler as VdomEventHandler, Node as VdomNode}};"
-    )?;
-
-    for (name, info) in elements_map {
+    for name in elements_map.keys() {
         if name == "a" {
+            writeln!(file, "pub use a::Anchor;")?;
             writeln!(file, "pub type A<L> = Anchor<L>;")?;
+        } else if name != "button" {
             writeln!(
                 file,
-                "pub struct Anchor<L: crate::Route> {{ pub attributes: Vec<(String, String)>, pub styles: crate::Style, pub events: Vec<(String, VdomEventHandler)>, pub children: Vec<VdomNode>, _phantom: std::marker::PhantomData<L> }}"
+                "pub use {}::{};",
+                escape_identifier(name),
+                old_element_type_name(name)
             )?;
-            writeln!(
-                file,
-                "impl<L: crate::Route> Anchor<L> {{ pub fn new() -> Self {{ Self {{ attributes: Vec::new(), styles: crate::Style::new(), events: Vec::new(), children: Vec::new(), _phantom: std::marker::PhantomData }} }} pub fn attribute(mut self, key: impl Into<String>, value: impl Into<String>) -> Self {{ self.attributes.push((key.into(), value.into())); self }} pub fn id(self, value: impl Into<String>) -> Self {{ self.attribute(\"id\", value) }} pub fn class(self, value: impl Into<String>) -> Self {{ self.attribute(\"class\", value) }} pub fn type_(self, value: impl Into<String>) -> Self {{ self.attribute(\"type\", value) }} pub fn style(mut self, style: impl Into<crate::Style>) -> Self {{ self.styles = style.into(); self }} pub fn popover(self) -> Self {{ self.attribute(\"popover\", \"auto\") }} pub fn children(mut self, children: impl Into<Vec<VdomNode>>) -> Self {{ self.children = children.into(); self }} pub fn into_node(self) -> VdomNode {{ VdomNode::Element(VdomElement {{ element_name: \"a\".to_string(), attributes: self.attributes, styles: self.styles, events: self.events, children: self.children }}) }} pub fn href(self, href: impl Into<crate::route::Href<L>>) -> Self {{ self.attribute(\"href\", href.into()) }} }}"
-            )?;
-            writeln!(
-                file,
-                "impl<L: crate::Route> Default for Anchor<L> {{ fn default() -> Self {{ Self::new() }} }}"
-            )?;
-            writeln!(
-                file,
-                "impl<L: crate::Route> From<Anchor<L>> for VdomNode {{ fn from(value: Anchor<L>) -> Self {{ value.into_node() }} }}"
-            )?;
-        } else {
-            let type_name = old_element_type_name(name);
-            writeln!(
-                file,
-                "pub struct {} {{ pub attributes: Vec<(String, String)>, pub styles: crate::Style, pub events: Vec<(String, VdomEventHandler)>, pub children: Vec<VdomNode> }}",
-                type_name
-            )?;
-            writeln!(
-                file,
-                "impl Default for {} {{ fn default() -> Self {{ Self::new() }} }}",
-                type_name
-            )?;
-            writeln!(
-                file,
-                "impl {} {{ pub fn new() -> Self {{ Self {{ attributes: Vec::new(), styles: crate::Style::new(), events: Vec::new(), children: Vec::new() }} }} pub fn attribute(mut self, key: impl Into<String>, value: impl Into<String>) -> Self {{ let key = key.into(); self.attributes.push((crate::normalize_attribute_name(&key), value.into())); self }} pub fn id(self, value: impl Into<String>) -> Self {{ self.attribute(\"id\", value) }} pub fn class(self, value: impl Into<String>) -> Self {{ self.attribute(\"class\", value) }} pub fn type_(self, value: impl Into<String>) -> Self {{ self.attribute(\"type\", value) }} pub fn style(mut self, style: impl Into<crate::Style>) -> Self {{ self.styles = style.into(); self }} pub fn popover(self) -> Self {{ self.attribute(\"popover\", \"auto\") }} pub fn children(mut self, children: impl Into<Vec<VdomNode>>) -> Self {{ self.children = children.into(); self }} pub fn into_node(self) -> VdomNode {{ VdomNode::Element(VdomElement {{ element_name: \"{}\".to_string(), attributes: self.attributes, styles: self.styles, events: self.events, children: self.children }}) }} }}",
-                type_name, name
-            )?;
-            writeln!(
-                file,
-                "impl From<{}> for VdomNode {{ fn from(value: {}) -> Self {{ value.into_node() }} }}",
-                type_name, type_name
-            )?;
-        }
-
-        let type_name = if name == "a" {
-            "Anchor".to_string()
-        } else {
-            old_element_type_name(name)
-        };
-        for attr in db.resolve_interface_attributes(&info.interface) {
-            let method_name = if attr.name.starts_with("on") {
-                format!(
-                    "on_{}",
-                    escape_method_name(attr.name.trim_start_matches("on"))
-                )
-            } else {
-                escape_method_name(&attr.name)
-            };
-            if [
-                "id",
-                "class",
-                "type_",
-                "style",
-                "popover",
-                "children",
-                "into_node",
-            ]
-            .contains(&method_name.as_str())
-                || (name == "a" && method_name == "href")
-            {
-                continue;
-            }
-            if attr.name.starts_with("on") {
-                writeln!(
-                    file,
-                    "impl{} {}{} {{ pub fn {}(mut self, handler: VdomEventHandler) -> Self {{ self.events.push((\"{}\".to_string(), handler)); self }} }}",
-                    if name == "a" { "<L: crate::Route>" } else { "" },
-                    type_name,
-                    if name == "a" { "<L>" } else { "" },
-                    method_name,
-                    attr.name.trim_start_matches("on")
-                )?;
-            } else if attr.type_name == "boolean" {
-                let attribute_name = to_html_attribute_name(&attr.name);
-                writeln!(
-                    file,
-                    "impl{} {}{} {{ pub fn {}(mut self, value: bool) -> Self {{ if value {{ self.attributes.push((\"{}\".to_string(), String::new())); }} self }} }}",
-                    if name == "a" { "<L: crate::Route>" } else { "" },
-                    type_name,
-                    if name == "a" { "<L>" } else { "" },
-                    method_name,
-                    attribute_name
-                )?;
-            } else {
-                let attribute_name = to_html_attribute_name(&attr.name);
-                writeln!(
-                    file,
-                    "impl{} {}{} {{ pub fn {}(self, value: impl Into<String>) -> Self {{ self.attribute(\"{}\", value) }} }}",
-                    if name == "a" { "<L: crate::Route>" } else { "" },
-                    type_name,
-                    if name == "a" { "<L>" } else { "" },
-                    method_name,
-                    attribute_name
-                )?;
-            }
         }
     }
+
     Ok(())
 }
 
@@ -320,7 +148,11 @@ fn output_element_file(
     let path = format!("./narumincho-vdom/src/elements/{}.rs", file_name);
     let mut file = File::create(path)?;
 
-    let capitalized_element_name = capitalize(name);
+    let capitalized_element_name = if name == "a" {
+        "Anchor".to_string()
+    } else {
+        old_element_type_name(name)
+    };
 
     writeln!(
         file,
@@ -417,6 +249,13 @@ fn output_element_file(
             writeln!(file, "        }}")?;
             writeln!(file, "    }}")?;
             writeln!(file, "}}\n")?;
+            writeln!(file, "impl From<{}> for String {{", gen_enum.enum_type_name)?;
+            writeln!(
+                file,
+                "    fn from(value: {}) -> Self {{ value.as_str() }}",
+                gen_enum.enum_type_name
+            )?;
+            writeln!(file, "}}\n")?;
         } else {
             writeln!(
                 file,
@@ -441,64 +280,95 @@ fn output_element_file(
             writeln!(file, "        }}")?;
             writeln!(file, "    }}")?;
             writeln!(file, "}}\n")?;
+            writeln!(file, "impl From<{}> for String {{", gen_enum.enum_type_name)?;
+            writeln!(
+                file,
+                "    fn from(value: {}) -> Self {{ value.as_str().to_string() }}",
+                gen_enum.enum_type_name
+            )?;
+            writeln!(file, "}}\n")?;
         }
     }
 
     writeln!(file, "/// HTML Content Attributes for {}", info.href)?;
-    writeln!(file, "#[derive(Default, Debug, Clone, PartialEq, Eq)]")?;
-    writeln!(file, "pub struct {} {{", capitalized_element_name)?;
-    writeln!(
-        file,
-        "    pub attributes: std::collections::BTreeMap<String, String>,"
-    )?;
-    writeln!(file, "    pub events: Vec<(String, String)>,")?;
+    writeln!(file, "#[derive(Debug, Clone, PartialEq)]")?;
+    if name == "a" {
+        writeln!(file, "pub struct Anchor<L: crate::Route> {{")?;
+    } else {
+        writeln!(file, "pub struct {} {{", capitalized_element_name)?;
+    }
+    writeln!(file, "    pub attributes: Vec<(String, String)>,")?;
+    writeln!(file, "    pub events: Vec<(String, crate::EventHandler)>,")?;
     writeln!(file, "    pub styles: crate::Style,")?;
-    writeln!(file, "    pub children: Vec<super::Node>,")?;
+    writeln!(file, "    pub children: Vec<crate::Node>,")?;
+    if name == "a" {
+        writeln!(file, "    route: std::marker::PhantomData<L>,")?;
+    }
     writeln!(file, "}}\n")?;
 
-    writeln!(
-        file,
-        "pub fn {}() -> {} {{\n    {}::default()\n}}\n",
-        escaped_module_name, capitalized_element_name, capitalized_element_name
-    )?;
+    if name == "a" {
+        writeln!(
+            file,
+            "pub fn a<L: crate::Route>() -> Anchor<L> {{ Anchor::new() }}\n"
+        )?;
+        writeln!(
+            file,
+            "impl<L: crate::Route> Default for Anchor<L> {{ fn default() -> Self {{ Self::new() }} }}\n"
+        )?;
+        writeln!(file, "impl<L: crate::Route> Anchor<L> {{")?;
+    } else {
+        writeln!(
+            file,
+            "pub fn {}() -> {} {{ {}::new() }}\n",
+            escaped_module_name, capitalized_element_name, capitalized_element_name
+        )?;
+        writeln!(
+            file,
+            "impl Default for {} {{ fn default() -> Self {{ Self::new() }} }}\n",
+            capitalized_element_name
+        )?;
+        writeln!(file, "impl {} {{", capitalized_element_name)?;
+    }
 
-    writeln!(file, "impl {} {{", capitalized_element_name)?;
-    write!(
-        file,
-        "{}",
-        common_builder_methods(&capitalized_element_name, name)
-    )?;
+    write!(file, "{}", common_builder_methods(name, name == "a"))?;
     for attr in &html_attributes {
         let method_name = escape_method_name(&attr.name);
         if matches!(
             method_name.as_str(),
             "attribute" | "id" | "class" | "style" | "popover" | "children" | "into_node"
-        ) {
+        ) || (name == "a" && method_name == "href")
+        {
             continue;
         }
         let attribute_name = to_html_attribute_name(&attr.name);
         let enum_values =
             get_attribute_enum_values(&info.interface, attr).or_else(|| attr.enum_values.clone());
         if enum_values.is_some() {
-            let enum_type_name = format!("{}{}", capitalized_element_name, capitalize(&attr.name));
             writeln!(
                 file,
-                "    pub fn {}(mut self, value: {}) -> Self {{\n        self.attributes.insert(\"{}\".to_string(), value.as_str().to_string());\n        self\n    }}\n",
-                method_name, enum_type_name, attribute_name
+                "    pub fn {}(self, value: impl Into<String>) -> Self {{\n        self.attribute(\"{}\", value)\n    }}\n",
+                method_name, attribute_name
             )?;
         } else if attr.type_name == "boolean" {
             writeln!(
                 file,
-                "    pub fn {}(mut self, value: bool) -> Self {{\n        if value {{\n            self.attributes.insert(\"{}\".to_string(), String::new());\n        }} else {{\n            self.attributes.remove(\"{}\");\n        }}\n        self\n    }}\n",
+                "    pub fn {}(mut self, value: bool) -> Self {{\n        self.attributes.retain(|(key, _)| key != \"{}\");\n        if value {{ self.attributes.push((\"{}\".to_string(), String::new())); }}\n        self\n    }}\n",
                 method_name, attribute_name, attribute_name
             )?;
         } else {
             writeln!(
                 file,
-                "    pub fn {}(mut self, value: impl Into<String>) -> Self {{\n        self.attributes.insert(\"{}\".to_string(), value.into());\n        self\n    }}\n",
+                "    pub fn {}(self, value: impl Into<String>) -> Self {{\n        self.attribute(\"{}\", value)\n    }}\n",
                 method_name, attribute_name
             )?;
         }
+    }
+
+    if name == "button" {
+        writeln!(
+            file,
+            "    pub fn command_for(self, value: impl Into<String>) -> Self {{\n        self.attribute(\"commandFor\", value)\n    }}\n"
+        )?;
     }
 
     for attr in &events {
@@ -506,23 +376,31 @@ fn output_element_file(
         let method_name = format!("on_{}", escape_method_name(event_name));
         writeln!(
             file,
-            "    pub fn {}(mut self, handler: impl Into<String>) -> Self {{\n        self.events.push((\"{}\".to_string(), handler.into()));\n        self\n    }}\n",
+            "    pub fn {}(mut self, handler: crate::EventHandler) -> Self {{\n        self.events.push((\"{}\".to_string(), handler));\n        self\n    }}\n",
             method_name, event_name
         )?;
     }
 
-    writeln!(
-        file,
-        "    pub fn into_element(self, children: Vec<super::Node>) -> super::Element {{
-        super::Element {{
-            global_attributes: super::GlobalAttributes::default(),
-            element_content: super::ElementContent::{}(self),
-            children,
-        }}
-    }}
-}}",
-        capitalized_element_name
-    )?;
+    if name == "a" {
+        writeln!(
+            file,
+            "    pub fn href(self, href: impl Into<crate::Href<L>>) -> Self {{ self.attribute(\"href\", href.into()) }}"
+        )?;
+    }
+    writeln!(file, "}}")?;
+
+    if name == "a" {
+        writeln!(
+            file,
+            "impl<L: crate::Route> From<Anchor<L>> for crate::Node {{ fn from(value: Anchor<L>) -> Self {{ value.into_node() }} }}"
+        )?;
+    } else {
+        writeln!(
+            file,
+            "impl From<{}> for crate::Node {{ fn from(value: {}) -> Self {{ value.into_node() }} }}",
+            capitalized_element_name, capitalized_element_name
+        )?;
+    }
 
     Ok(())
 }
@@ -874,12 +752,27 @@ mod tests {{
     Ok(())
 }
 
-fn common_builder_methods(element_name: &str, _tag_name: &str) -> String {
-    let capitalized_element_name = capitalize(element_name);
+fn common_builder_methods(tag_name: &str, is_anchor: bool) -> String {
+    let route_field = if is_anchor {
+        "route: std::marker::PhantomData,"
+    } else {
+        ""
+    };
     format!(
         "
+pub fn new() -> Self {{
+    Self {{
+        attributes: Vec::new(),
+        events: Vec::new(),
+        styles: crate::Style::new(),
+        children: Vec::new(),
+        {route_field}
+    }}
+}}
+
 pub fn attribute(mut self, key: impl Into<String>, value: impl Into<String>) -> Self {{
-    self.attributes.insert(key.into(), value.into());
+    let key = key.into();
+    self.attributes.push((crate::normalize_attribute_name(&key), value.into()));
     self
 }}
 
@@ -900,16 +793,18 @@ pub fn popover(self) -> Self {{
     self.attribute(\"popover\", \"auto\")
 }}
 
-pub fn children(mut self, children: impl Into<Vec<super::Node>>) -> Self {{
+pub fn children(mut self, children: impl Into<Vec<crate::Node>>) -> Self {{
     self.children = children.into();
     self
 }}
     
-pub fn into_node(self) -> super::Node {{
-    super::Node::Element(super::Element {{
-        global_attributes: super::GlobalAttributes::default(),
-        element_content: super::ElementContent::{capitalized_element_name}(self),
-        children: Vec::new(),
+pub fn into_node(self) -> crate::Node {{
+    crate::Node::Element(crate::Element {{
+        element_name: \"{tag_name}\".to_string(),
+        attributes: self.attributes,
+        styles: self.styles,
+        events: self.events,
+        children: self.children,
     }})
 }}
 "
@@ -923,7 +818,7 @@ mod tests {
 
     #[test]
     fn common_builder_methods_are_generated_for_old_elements_compatibility() {
-        let methods = common_builder_methods("Button", "button");
+        let methods = common_builder_methods("button", false);
         assert!(methods.contains("pub fn attribute"));
         assert!(methods.contains("pub fn id"));
         assert!(methods.contains("pub fn class"));
