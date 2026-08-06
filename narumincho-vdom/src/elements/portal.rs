@@ -1,5 +1,4 @@
 // このファイルは narumincho-vdom-build によって自動生成されました。
-#![allow(non_snake_case, dead_code, clippy::wrong_self_convention)]
 
 /// HTML Content Attributes for https://wicg.github.io/portals/#elementdef-portal
 #[derive(Debug, Clone, PartialEq)]

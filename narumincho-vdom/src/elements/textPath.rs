@@ -1,5 +1,4 @@
 // このファイルは narumincho-vdom-build によって自動生成されました。
-#![allow(non_snake_case, dead_code, clippy::wrong_self_convention)]
 
 /// HTML Content Attributes for https://w3c.github.io/svgwg/svg2-draft/text.html#elementdef-textPath
 #[derive(Debug, Clone, PartialEq)]

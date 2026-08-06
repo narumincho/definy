@@ -1,5 +1,4 @@
 // このファイルは narumincho-vdom-build によって自動生成されました。
-#![allow(non_snake_case, dead_code, clippy::wrong_self_convention)]
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ButtonCommand {

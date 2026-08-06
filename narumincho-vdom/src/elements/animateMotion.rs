@@ -1,5 +1,4 @@
 // このファイルは narumincho-vdom-build によって自動生成されました。
-#![allow(non_snake_case, dead_code, clippy::wrong_self_convention)]
 
 /// HTML Content Attributes for https://svgwg.org/specs/animations/#elementdef-animateMotion
 #[derive(Debug, Clone, PartialEq)]

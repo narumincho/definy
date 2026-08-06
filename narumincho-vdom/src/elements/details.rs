@@ -1,5 +1,4 @@
 // このファイルは narumincho-vdom-build によって自動生成されました。
-#![allow(non_snake_case, dead_code, clippy::wrong_self_convention)]
 
 /// HTML Content Attributes for https://html.spec.whatwg.org/multipage/interactive-elements.html#the-details-element
 #[derive(Debug, Clone, PartialEq)]

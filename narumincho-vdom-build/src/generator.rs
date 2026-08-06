@@ -158,10 +158,6 @@ fn output_element_file(
         file,
         "// このファイルは narumincho-vdom-build によって自動生成されました。"
     )?;
-    writeln!(
-        file,
-        "#![allow(non_snake_case, dead_code, clippy::wrong_self_convention)]"
-    )?;
     writeln!(file)?;
 
     let resolved_attributes = db.resolve_interface_attributes(&info.interface);
