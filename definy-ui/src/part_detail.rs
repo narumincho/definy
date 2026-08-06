@@ -11,7 +11,7 @@ use crate::i18n;
 use crate::module_projection::collect_module_snapshots;
 use crate::part_projection::{collect_related_part_events, find_part_snapshot};
 
-pub fn part_detail_view(state: &AppState, definition_event_hash: &EventHashId) -> Node<AppState> {
+pub fn part_detail_view(state: &AppState, definition_event_hash: &EventHashId) -> Node {
     let snapshot = find_part_snapshot(state, definition_event_hash);
     let related_events = collect_related_part_events(state, definition_event_hash);
 
@@ -20,7 +20,7 @@ pub fn part_detail_view(state: &AppState, definition_event_hash: &EventHashId) -
         .style(crate::layout::page_shell_style("1rem"))
         .children(match snapshot {
             Some(snapshot) => vec![
-                A::<AppState, Location>::new()
+                A::<Location>::new()
                     .href(state.href_with_lang(Location::PartList))
                     .children([text(i18n::tr(
                         state,
@@ -86,7 +86,7 @@ pub fn part_detail_view(state: &AppState, definition_event_hash: &EventHashId) -
                         Div::new()
                             .style(Style::new().set("display", "flex").set("gap", "0.6rem"))
                             .children([
-                                A::<AppState, Location>::new()
+                                A::<Location>::new()
                                     .href(state.href_with_lang(Location::Event(
                                         definition_event_hash.clone(),
                                     )))
@@ -97,7 +97,7 @@ pub fn part_detail_view(state: &AppState, definition_event_hash: &EventHashId) -
                                         "Difina evento",
                                     ))])
                                     .into_node(),
-                                A::<AppState, Location>::new()
+                                A::<Location>::new()
                                     .href(state.href_with_lang(Location::Event(
                                         snapshot.latest_event_hash,
                                     )))
@@ -134,7 +134,7 @@ pub fn part_detail_view(state: &AppState, definition_event_hash: &EventHashId) -
                                     .map(|(event_hash, event)| {
                                         let label =
                                             crate::event_presenter::event_kind_label(state, &event);
-                                        A::<AppState, Location>::new()
+                                        A::<Location>::new()
                                             .href(state.href_with_lang(Location::Event(event_hash)))
                                             .style(
                                                 Style::new()
@@ -162,14 +162,14 @@ pub fn part_detail_view(state: &AppState, definition_event_hash: &EventHashId) -
                                             ])
                                             .into_node()
                                     })
-                                    .collect::<Vec<Node<AppState>>>(),
+                                    .collect::<Vec<Node>>(),
                             )
                             .into_node(),
                     ])
                     .into_node(),
             ],
             None => vec![
-                A::<AppState, Location>::new()
+                A::<Location>::new()
                     .href(state.href_with_lang(Location::PartList))
                     .children([text(i18n::tr(
                         state,
@@ -192,7 +192,7 @@ pub fn part_detail_view(state: &AppState, definition_event_hash: &EventHashId) -
         .into_node()
 }
 
-fn part_update_form(state: &AppState, definition_event_hash: &EventHashId) -> Node<AppState> {
+fn part_update_form(state: &AppState, definition_event_hash: &EventHashId) -> Node {
     let hash_as_base64 = definition_event_hash.to_string();
     let (initial_name, initial_description, initial_expression, initial_module_hash) =
         effective_part_update_form(state, definition_event_hash);

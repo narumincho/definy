@@ -1,121 +1,93 @@
+use std::any::Any;
 use std::collections::hash_map::DefaultHasher;
+use std::future::Future;
 use std::hash::{Hash, Hasher};
 use std::{pin::Pin, rc::Rc};
 
-pub struct Element<State> {
+#[derive(Clone, Debug, PartialEq)]
+pub struct Element {
     pub element_name: String,
     pub attributes: Vec<(String, String)>,
-    pub styles: crate::style::Style,
-    pub events: Vec<(String, EventHandler<State>)>,
-    pub children: Vec<Node<State>>,
+    pub styles: crate::Style,
+    pub events: Vec<(String, EventHandler)>,
+    pub children: Vec<Node>,
 }
 
-impl<State> Clone for Element<State> {
-    fn clone(&self) -> Self {
-        Self {
-            element_name: self.element_name.clone(),
-            attributes: self.attributes.clone(),
-            styles: self.styles.clone(),
-            events: self.events.clone(),
-            children: self.children.clone(),
-        }
-    }
-}
-
-impl<State> std::fmt::Debug for Element<State> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("Element")
-            .field("element_name", &self.element_name)
-            .field("attributes", &self.attributes)
-            .field("styles", &self.styles)
-            .field("events", &self.events)
-            .field("children", &self.children)
-            .finish()
-    }
-}
-
-impl<State> PartialEq for Element<State> {
-    fn eq(&self, other: &Self) -> bool {
-        self.element_name == other.element_name
-            && self.attributes == other.attributes
-            && self.styles == other.styles
-            && self.events == other.events
-            && self.children == other.children
-    }
-}
-
-pub enum Node<State> {
-    Element(Element<State>),
+#[derive(Clone, Debug, PartialEq)]
+pub enum Node {
+    Element(Element),
     Text(Box<str>),
 }
 
-impl<State> Clone for Node<State> {
-    fn clone(&self) -> Self {
-        match self {
-            Self::Element(e) => Self::Element(e.clone()),
-            Self::Text(t) => Self::Text(t.clone()),
-        }
-    }
-}
+pub type AnyStateUpdater = Box<dyn FnOnce(Box<dyn Any>) -> Box<dyn Any>>;
+pub type AnyStateDispatcher = Rc<dyn Fn(AnyStateUpdater)>;
 
-impl<State> std::fmt::Debug for Node<State> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::Element(e) => e.fmt(f),
-            Self::Text(t) => f.debug_tuple("Text").field(t).finish(),
-        }
-    }
-}
+pub type EventHandlerClosure = dyn Fn(AnyStateDispatcher) -> Pin<Box<dyn Future<Output = ()>>>;
 
-impl<State> PartialEq for Node<State> {
-    fn eq(&self, other: &Self) -> bool {
-        match (self, other) {
-            (Self::Element(l0), Self::Element(r0)) => l0 == r0,
-            (Self::Text(l0), Self::Text(r0)) => l0 == r0,
-            _ => false,
-        }
-    }
-}
-
-pub type StateUpdater<State> = Box<dyn FnOnce(State) -> State>;
-pub type StateDispatcher<State> = Box<dyn Fn(StateUpdater<State>)>;
-pub type EventHandlerClosure<State> =
-    dyn Fn(StateDispatcher<State>) -> Pin<Box<dyn Future<Output = ()>>>;
-
-pub struct EventHandler<State> {
-    pub handler: Rc<EventHandlerClosure<State>>,
+pub struct EventHandler {
+    pub handler: Rc<EventHandlerClosure>,
     pub parameter_hash: u64,
 }
 
-impl<State> EventHandler<State> {
-    pub fn new<F, Fut>(f: F) -> Self
+impl EventHandler {
+    pub fn new<State: 'static, F, Fut>(f: F) -> Self
     where
-        F: Fn(StateDispatcher<State>) -> Fut + 'static,
+        F: Fn(Box<dyn Fn(Box<dyn FnOnce(State) -> State>)>) -> Fut + 'static,
         Fut: Future<Output = ()> + 'static,
     {
+        let handler = Rc::new(move |any_dispatcher: AnyStateDispatcher| {
+            let dispatcher: Box<dyn Fn(Box<dyn FnOnce(State) -> State>)> =
+                Box::new(move |state_updater| {
+                    let any_dispatcher_clone = Rc::clone(&any_dispatcher);
+                    any_dispatcher_clone(Box::new(move |any_state| {
+                        let state = *any_state
+                            .downcast::<State>()
+                            .expect("EventHandler: state downcast failed");
+                        let new_state = state_updater(state);
+                        Box::new(new_state)
+                    }));
+                });
+            Box::pin(f(dispatcher)) as Pin<Box<dyn Future<Output = ()>>>
+        });
+
         EventHandler {
-            handler: Rc::new(move |g| Box::pin(f(g))),
+            handler,
             parameter_hash: 0,
         }
     }
 
-    pub fn with_parameter<F, Fut, P>(f: F, p: P) -> Self
+    pub fn with_parameter<State: 'static, F, Fut, P>(f: F, p: P) -> Self
     where
-        F: Fn(StateDispatcher<State>, &P) -> Fut + 'static,
+        F: Fn(Box<dyn Fn(Box<dyn FnOnce(State) -> State>)>, &P) -> Fut + 'static,
         Fut: Future<Output = ()> + 'static,
         P: Hash + 'static,
     {
         let mut hasher = DefaultHasher::new();
         p.hash(&mut hasher);
         let h = hasher.finish();
+        let handler = Rc::new(move |any_dispatcher: AnyStateDispatcher| {
+            let dispatcher: Box<dyn Fn(Box<dyn FnOnce(State) -> State>)> =
+                Box::new(move |state_updater| {
+                    let any_dispatcher_clone = Rc::clone(&any_dispatcher);
+                    any_dispatcher_clone(Box::new(move |any_state| {
+                        let state = *any_state
+                            .downcast::<State>()
+                            .expect("EventHandler: state downcast failed");
+                        let new_state = state_updater(state);
+                        Box::new(new_state)
+                    }));
+                });
+            Box::pin(f(dispatcher, &p)) as Pin<Box<dyn Future<Output = ()>>>
+        });
+
         EventHandler {
-            handler: Rc::new(move |g| Box::pin(f(g, &p))),
+            handler,
             parameter_hash: h,
         }
     }
 }
 
-impl<State> Clone for EventHandler<State> {
+impl Clone for EventHandler {
     fn clone(&self) -> Self {
         Self {
             handler: Rc::clone(&self.handler),
@@ -124,13 +96,13 @@ impl<State> Clone for EventHandler<State> {
     }
 }
 
-impl<State> PartialEq for EventHandler<State> {
+impl PartialEq for EventHandler {
     fn eq(&self, _other: &Self) -> bool {
         true
     }
 }
 
-impl<State> std::fmt::Debug for EventHandler<State> {
+impl std::fmt::Debug for EventHandler {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("EventHandler").finish()
     }

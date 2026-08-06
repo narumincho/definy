@@ -97,12 +97,24 @@ pub fn render(
     state: &AppState,
     resource_hash: &Option<ResourceHash>,
     ssr_initial_state_json: Option<&str>,
-) -> Node<AppState> {
+) -> Node {
     let mut head_children = vec![
         Title::new()
             .children([text(page_title::document_title_text(state))])
             .into_node(),
-        Meta::node("viewport", "width=device-width,initial-scale=1.0"),
+        Node::Element(Element {
+            element_name: "meta".to_string(),
+            styles: Style::new(),
+            attributes: vec![
+                ("name".to_string(), "viewport".to_string()),
+                (
+                    "content".to_string(),
+                    "width=device-width,initial-scale=1.0".to_string(),
+                ),
+            ],
+            events: Vec::new(),
+            children: Vec::new(),
+        }),
         Link::new()
             .rel("icon")
             .href(include_str!("../../web-distribution/icon.png.sha256"))

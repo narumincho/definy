@@ -26,7 +26,7 @@ fn format_time_ms(state: &AppState, time_ms: i64) -> String {
         .unwrap_or_else(|| i18n::tr(state, "unknown", "不明", "nekonata").to_string())
 }
 
-pub fn local_event_queue_view(state: &AppState) -> Node<AppState> {
+pub fn local_event_queue_view(state: &AppState) -> Node {
     let refresh_button = Button::new()
         .on_click(EventHandler::new(async |set_state| {
             let set_state = std::rc::Rc::new(set_state);

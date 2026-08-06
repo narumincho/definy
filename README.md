@@ -30,19 +30,40 @@ https://github.com/narumincho/definy/tree/prev2023
 
 ## 事前にインストールが必要
 
-- [Rust言語(rustup)](https://rust-lang.org/ja/tools/install/)
+- [Rust(rustup)](https://rust-lang.org/ja/tools/install/)
 
 - [wasm-bindgen-cli](https://wasm-bindgen.github.io/wasm-bindgen/)
 
 ```sh
-cargo install wasm-bindgen-cli --version 0.2.120
+cargo install wasm-bindgen-cli --version 0.2.126
 ```
 
-- [PostgreSQL 17](https://www.postgresql.org/download/)
+- [Docker](https://www.docker.com/get-started/)
 
-psql にパスが通るように
+## DB 起動コマンド
+
+```sh
+docker run -d --name definy-dev-db -e POSTGRES_DB=postgres -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=password -p 5432:5432 postgres:17-alpine
+```
+
+データ保持をする場合
+
+```sh
+docker run -d --name definy-dev-db -e POSTGRES_DB=postgres -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=password -p 5432:5432 -v pgdata:/var/lib/postgresql/data postgres:17-alpine
+```
+
+## 本体サーバー起動コマンド
+
+Linux, Mac の場合
 
 ```sh
 cargo run -p definy-build
 DATABASE_URL=postgres://postgres:password@localhost:5432/postgres cargo run -p definy-server
+```
+
+Windows PowerShell の場合
+
+```ps1
+cargo run -p definy-build
+& { $env:DATABASE_URL="postgres://postgres:password@localhost:5432/postgres"; cargo run -p definy-server }
 ```

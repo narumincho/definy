@@ -69,7 +69,7 @@ pub fn render_root_expression_editor(
     state: &AppState,
     expression: &definy_event::event::Expression,
     target: EditorTarget,
-) -> Node<AppState> {
+) -> Node {
     let expected_type = expected_type_for_target(state, target);
     let diagnostics = collect_type_diagnostics(state, expression, expected_type);
     render_expression_editor(
@@ -77,7 +77,7 @@ pub fn render_root_expression_editor(
         expression,
         ExpressionEditorContext {
             path: Vec::new(),
-            target: target,
+            target,
             scope_variables: Vec::new(),
             diagnostics: diagnostics.as_slice(),
             structure_locked: false,
@@ -97,8 +97,8 @@ fn allow_kind_change_for_nested_values(allow_kind_change: bool, path: &[PathStep
 pub struct ExpressionEditorContext<'a> {
     pub path: Vec<PathStep>,
     pub target: EditorTarget,
-    pub scope_variables: Vec<ScopeVariable>,
-    pub diagnostics: &'a [TypeDiagnostic],
+    scope_variables: Vec<ScopeVariable>,
+    diagnostics: &'a [TypeDiagnostic],
     pub structure_locked: bool,
     pub allow_kind_change: bool,
 }
@@ -107,7 +107,7 @@ fn render_expression_editor(
     state: &AppState,
     expression: &definy_event::event::Expression,
     context: ExpressionEditorContext,
-) -> Node<AppState> {
+) -> Node {
     let path = context.path;
     let target = context.target;
     let scope_variables = context.scope_variables;
@@ -193,11 +193,11 @@ fn render_expression_editor(
                             type_list_expression.item_type.as_ref(),
                             ExpressionEditorContext {
                                 path: item_type_path,
-                                target: target,
+                                target,
                                 scope_variables: scope_variables.clone(),
-                                diagnostics: diagnostics,
-                                structure_locked: structure_locked,
-                                allow_kind_change: allow_kind_change,
+                                diagnostics,
+                                structure_locked,
+                                allow_kind_change,
                             },
                         ),
                     ])
@@ -269,10 +269,10 @@ fn render_expression_editor(
                                         record_item.value.as_ref(),
                                         ExpressionEditorContext {
                                             path: value_path,
-                                            target: target,
+                                            target,
                                             scope_variables: scope_variables.clone(),
-                                            diagnostics: diagnostics,
-                                            structure_locked: structure_locked,
+                                            diagnostics,
+                                            structure_locked,
                                             allow_kind_change: allow_kind_for_item,
                                         },
                                     )])
@@ -345,17 +345,17 @@ fn render_expression_editor(
                                     item,
                                     ExpressionEditorContext {
                                         path: item_path,
-                                        target: target,
+                                        target,
                                         scope_variables: scope_variables.clone(),
-                                        diagnostics: diagnostics,
-                                        structure_locked: structure_locked,
+                                        diagnostics,
+                                        structure_locked,
                                         allow_kind_change: allow_kind_for_item,
                                     },
                                 ),
                             ])
                             .into_node()
                     })
-                    .collect::<Vec<Node<AppState>>>();
+                    .collect::<Vec<Node>>();
                 list_children.push(add_list_item_button(state, path.clone(), target));
                 children.push(
                     Div::new()
@@ -394,11 +394,11 @@ fn render_expression_editor(
                                     add_expression.left.as_ref(),
                                     ExpressionEditorContext {
                                         path: left_path,
-                                        target: target,
+                                        target,
                                         scope_variables: scope_variables.clone(),
-                                        diagnostics: diagnostics,
-                                        structure_locked: structure_locked,
-                                        allow_kind_change: allow_kind_change,
+                                        diagnostics,
+                                        structure_locked,
+                                        allow_kind_change,
                                     },
                                 ),
                             ])
@@ -412,11 +412,11 @@ fn render_expression_editor(
                                     add_expression.right.as_ref(),
                                     ExpressionEditorContext {
                                         path: right_path,
-                                        target: target,
+                                        target,
                                         scope_variables: scope_variables.clone(),
-                                        diagnostics: diagnostics,
-                                        structure_locked: structure_locked,
-                                        allow_kind_change: allow_kind_change,
+                                        diagnostics,
+                                        structure_locked,
+                                        allow_kind_change,
                                     },
                                 ),
                             ])
@@ -454,11 +454,11 @@ fn render_expression_editor(
                                     if_expression.condition.as_ref(),
                                     ExpressionEditorContext {
                                         path: cond_path,
-                                        target: target,
+                                        target,
                                         scope_variables: scope_variables.clone(),
-                                        diagnostics: diagnostics,
-                                        structure_locked: structure_locked,
-                                        allow_kind_change: allow_kind_change,
+                                        diagnostics,
+                                        structure_locked,
+                                        allow_kind_change,
                                     },
                                 ),
                             ])
@@ -472,11 +472,11 @@ fn render_expression_editor(
                                     if_expression.then_expr.as_ref(),
                                     ExpressionEditorContext {
                                         path: then_path,
-                                        target: target,
+                                        target,
                                         scope_variables: scope_variables.clone(),
-                                        diagnostics: diagnostics,
-                                        structure_locked: structure_locked,
-                                        allow_kind_change: allow_kind_change,
+                                        diagnostics,
+                                        structure_locked,
+                                        allow_kind_change,
                                     },
                                 ),
                             ])
@@ -490,11 +490,11 @@ fn render_expression_editor(
                                     if_expression.else_expr.as_ref(),
                                     ExpressionEditorContext {
                                         path: else_path,
-                                        target: target,
+                                        target,
                                         scope_variables: scope_variables.clone(),
-                                        diagnostics: diagnostics,
-                                        structure_locked: structure_locked,
-                                        allow_kind_change: allow_kind_change,
+                                        diagnostics,
+                                        structure_locked,
+                                        allow_kind_change,
                                     },
                                 ),
                             ])
@@ -527,11 +527,11 @@ fn render_expression_editor(
                                     equal_expression.left.as_ref(),
                                     ExpressionEditorContext {
                                         path: left_path,
-                                        target: target,
+                                        target,
                                         scope_variables: scope_variables.clone(),
-                                        diagnostics: diagnostics,
-                                        structure_locked: structure_locked,
-                                        allow_kind_change: allow_kind_change,
+                                        diagnostics,
+                                        structure_locked,
+                                        allow_kind_change,
                                     },
                                 ),
                             ])
@@ -545,11 +545,11 @@ fn render_expression_editor(
                                     equal_expression.right.as_ref(),
                                     ExpressionEditorContext {
                                         path: right_path,
-                                        target: target,
+                                        target,
                                         scope_variables: scope_variables.clone(),
-                                        diagnostics: diagnostics,
-                                        structure_locked: structure_locked,
-                                        allow_kind_change: allow_kind_change,
+                                        diagnostics,
+                                        structure_locked,
+                                        allow_kind_change,
                                     },
                                 ),
                             ])
@@ -589,11 +589,11 @@ fn render_expression_editor(
                                     let_expression.value.as_ref(),
                                     ExpressionEditorContext {
                                         path: value_path,
-                                        target: target,
+                                        target,
                                         scope_variables: scope_variables.clone(),
-                                        diagnostics: diagnostics,
-                                        structure_locked: structure_locked,
-                                        allow_kind_change: allow_kind_change,
+                                        diagnostics,
+                                        structure_locked,
+                                        allow_kind_change,
                                     },
                                 ),
                             ])
@@ -611,11 +611,11 @@ fn render_expression_editor(
                                     let_expression.body.as_ref(),
                                     ExpressionEditorContext {
                                         path: body_path,
-                                        target: target,
+                                        target,
                                         scope_variables: body_scope,
-                                        diagnostics: diagnostics,
-                                        structure_locked: structure_locked,
-                                        allow_kind_change: allow_kind_change,
+                                        diagnostics,
+                                        structure_locked,
+                                        allow_kind_change,
                                     },
                                 )
                             }])
@@ -695,10 +695,10 @@ fn render_expression_editor(
                                         item.value.as_ref(),
                                         ExpressionEditorContext {
                                             path: value_path,
-                                            target: target,
+                                            target,
                                             scope_variables: scope_variables.clone(),
-                                            diagnostics: diagnostics,
-                                            structure_locked: structure_locked,
+                                            diagnostics,
+                                            structure_locked,
                                             allow_kind_change: allow_kind_for_value,
                                         },
                                     ),
@@ -707,7 +707,7 @@ fn render_expression_editor(
                         ])
                         .into_node()
                 })
-                .collect::<Vec<Node<AppState>>>();
+                .collect::<Vec<Node>>();
             if !structure_locked {
                 record_children.push(add_record_item_button(state, path, target));
             }
@@ -753,9 +753,9 @@ fn render_expression_editor(
                             constructor_expression.value.as_ref(),
                             ExpressionEditorContext {
                                 path: value_path,
-                                target: target,
+                                target,
                                 scope_variables: scope_variables.clone(),
-                                diagnostics: diagnostics,
+                                diagnostics,
                                 structure_locked: true,
                                 allow_kind_change: true,
                             },
@@ -1383,7 +1383,7 @@ fn expression_selector(
     target: EditorTarget,
     current_value: &str,
     options: &[(String, String)],
-) -> Node<AppState> {
+) -> Node {
     let name = format!(
         "{}-expr-kind-{}",
         selector_prefix(target),
@@ -1638,7 +1638,7 @@ fn apply_selection(
     }
 }
 
-fn number_input(path: Vec<PathStep>, target: EditorTarget, value: i64) -> Node<AppState> {
+fn number_input(path: Vec<PathStep>, target: EditorTarget, value: i64) -> Node {
     let name = format!(
         "{}-expr-number-{}",
         selector_prefix(target),
@@ -1676,7 +1676,7 @@ fn number_input(path: Vec<PathStep>, target: EditorTarget, value: i64) -> Node<A
     input.into_node()
 }
 
-fn string_input(path: Vec<PathStep>, target: EditorTarget, value: &str) -> Node<AppState> {
+fn string_input(path: Vec<PathStep>, target: EditorTarget, value: &str) -> Node {
     let name = format!(
         "{}-expr-string-{}",
         selector_prefix(target),
@@ -1705,12 +1705,7 @@ fn string_input(path: Vec<PathStep>, target: EditorTarget, value: &str) -> Node<
     input.into_node()
 }
 
-fn boolean_input(
-    state: &AppState,
-    path: Vec<PathStep>,
-    target: EditorTarget,
-    value: bool,
-) -> Node<AppState> {
+fn boolean_input(state: &AppState, path: Vec<PathStep>, target: EditorTarget, value: bool) -> Node {
     Div::new()
         .style(Style::new().set("display", "flex").set("gap", "0.5rem"))
         .children([
@@ -1768,7 +1763,7 @@ fn boolean_input(
         .into_node()
 }
 
-fn let_name_input(path: Vec<PathStep>, target: EditorTarget, value: &str) -> Node<AppState> {
+fn let_name_input(path: Vec<PathStep>, target: EditorTarget, value: &str) -> Node {
     let name = format!(
         "{}-expr-let-name-{}",
         selector_prefix(target),
@@ -1802,7 +1797,7 @@ fn record_item_key_input(
     item_index: usize,
     target: EditorTarget,
     value: &str,
-) -> Node<AppState> {
+) -> Node {
     let name = format!(
         "{}-expr-record-key-{}-{}",
         selector_prefix(target),
@@ -1836,11 +1831,7 @@ fn record_item_key_input(
     input.into_node()
 }
 
-fn add_record_item_button(
-    state: &AppState,
-    path: Vec<PathStep>,
-    target: EditorTarget,
-) -> Node<AppState> {
+fn add_record_item_button(state: &AppState, path: Vec<PathStep>, target: EditorTarget) -> Node {
     Button::new()
         .type_("button")
         .on_click(EventHandler::new(move |set_state| {
@@ -1868,7 +1859,7 @@ fn remove_record_item_button(
     path: Vec<PathStep>,
     item_index: usize,
     target: EditorTarget,
-) -> Node<AppState> {
+) -> Node {
     Button::new()
         .type_("button")
         .on_click(EventHandler::new(move |set_state| {
@@ -1886,11 +1877,7 @@ fn remove_record_item_button(
         .into_node()
 }
 
-fn add_list_item_button(
-    state: &AppState,
-    path: Vec<PathStep>,
-    target: EditorTarget,
-) -> Node<AppState> {
+fn add_list_item_button(state: &AppState, path: Vec<PathStep>, target: EditorTarget) -> Node {
     Button::new()
         .type_("button")
         .on_click(EventHandler::new(move |set_state| {
@@ -1913,11 +1900,7 @@ fn add_list_item_button(
         .into_node()
 }
 
-fn remove_list_item_button(
-    path: Vec<PathStep>,
-    item_index: usize,
-    target: EditorTarget,
-) -> Node<AppState> {
+fn remove_list_item_button(path: Vec<PathStep>, item_index: usize, target: EditorTarget) -> Node {
     Button::new()
         .type_("button")
         .on_click(EventHandler::new(move |set_state| {

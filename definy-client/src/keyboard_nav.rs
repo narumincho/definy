@@ -33,12 +33,10 @@ pub fn handle_keydown(state: AppState, key: String) -> AppState {
     let current_path = new_state.focused_path.as_ref().unwrap();
 
     match key.as_str() {
-        "q" => {
-            if !current_path.is_empty() {
-                let mut p = current_path.clone();
-                p.pop();
-                new_state.focused_path = Some(p);
-            }
+        "q" if !current_path.is_empty() => {
+            let mut p = current_path.clone();
+            p.pop();
+            new_state.focused_path = Some(p);
         }
         "Q" => {
             new_state.focused_path = Some(Vec::new());

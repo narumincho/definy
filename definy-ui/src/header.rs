@@ -5,7 +5,7 @@ use narumincho_vdom::*;
 use crate::i18n;
 use crate::{AppState, Location};
 
-pub fn header(state: &AppState) -> Node<AppState> {
+pub fn header(state: &AppState) -> Node {
     let mut children = vec![header_main(state)];
     if state.current_key.is_some() && state.is_header_popover_open {
         children.push(popover(state));
@@ -13,7 +13,7 @@ pub fn header(state: &AppState) -> Node<AppState> {
     Div::new().children(children).into_node()
 }
 
-fn header_main(state: &AppState) -> Node<AppState> {
+fn header_main(state: &AppState) -> Node {
     Header::new()
         .class("app-header")
         .style(
@@ -42,7 +42,7 @@ fn header_main(state: &AppState) -> Node<AppState> {
                         .set("gap", "0.75rem"),
                 )
                 .children([
-                    A::<AppState, Location>::new()
+                    A::<Location>::new()
                         .href(state.href_with_lang(Location::Home))
                         .style(
                             Style::new()
@@ -60,7 +60,7 @@ fn header_main(state: &AppState) -> Node<AppState> {
                             .children([text("definy")])
                             .into_node()])
                         .into_node(),
-                    A::<AppState, Location>::new()
+                    A::<Location>::new()
                         .href(state.href_with_lang(Location::PartList))
                         .style(
                             Style::new()
@@ -69,7 +69,7 @@ fn header_main(state: &AppState) -> Node<AppState> {
                         )
                         .children([text(i18n::tr(state, "Parts", "パーツ", "Partoj"))])
                         .into_node(),
-                    A::<AppState, Location>::new()
+                    A::<Location>::new()
                         .href(state.href_with_lang(Location::ModuleList))
                         .style(
                             Style::new()
@@ -78,7 +78,7 @@ fn header_main(state: &AppState) -> Node<AppState> {
                         )
                         .children([text(i18n::tr(state, "Modules", "モジュール", "Moduloj"))])
                         .into_node(),
-                    A::<AppState, Location>::new()
+                    A::<Location>::new()
                         .href(state.href_with_lang(Location::LocalEventQueue))
                         .style(
                             Style::new()
@@ -92,7 +92,7 @@ fn header_main(state: &AppState) -> Node<AppState> {
                             "Lokaj eventoj",
                         ))])
                         .into_node(),
-                    A::<AppState, Location>::new()
+                    A::<Location>::new()
                         .href(state.href_with_lang(Location::AccountList))
                         .style(
                             Style::new()
@@ -185,7 +185,7 @@ fn header_main(state: &AppState) -> Node<AppState> {
         .into_node()
 }
 
-fn language_dropdown(state: &AppState) -> Node<AppState> {
+fn language_dropdown(state: &AppState) -> Node {
     let languages = crate::language::preferred_languages();
     let mut options = Vec::with_capacity(languages.len());
     for language in languages {
@@ -259,12 +259,12 @@ fn language_dropdown(state: &AppState) -> Node<AppState> {
     }
 }
 
-fn popover(state: &AppState) -> Node<AppState> {
+fn popover(state: &AppState) -> Node {
     let account_link = state.current_key.as_ref().map(|key| {
         let account_id = definy_event::event::AccountId(key.verifying_key());
         let account_name =
             crate::app_state::account_display_name(&state.account_name_map(), &account_id);
-        A::<AppState, Location>::new()
+        A::<Location>::new()
             .href(state.href_with_lang(Location::Account(account_id)))
             .style(
                 Style::new()

@@ -1,349 +1,420 @@
-use crate::node::{Element, EventHandler, Node};
+// このファイルは narumincho-vdom-build によって自動生成されました。
+#![allow(
+    non_snake_case,
+    dead_code,
+    clippy::large_enum_variant,
+    clippy::wrong_self_convention
+)]
+pub mod a;
+pub mod abbr;
+pub mod address;
+pub mod animate;
+pub mod animateMotion;
+pub mod animateTransform;
+pub mod annotation;
+pub mod annotation_xml;
+pub mod area;
+pub mod article;
+pub mod aside;
+pub mod audio;
+pub mod b;
+pub mod base;
+pub mod bdi;
+pub mod bdo;
+pub mod blockquote;
+pub mod body;
+pub mod br;
+pub mod button;
+pub mod canvas;
+pub mod caption;
+pub mod circle;
+pub mod cite;
+pub mod clipPath;
+pub mod code;
+pub mod col;
+pub mod colgroup;
+pub mod data;
+pub mod datalist;
+pub mod dd;
+pub mod defs;
+pub mod del;
+pub mod desc;
+pub mod details;
+pub mod dfn;
+pub mod dialog;
+pub mod div;
+pub mod dl;
+pub mod dt;
+pub mod ellipse;
+pub mod em;
+pub mod embed;
+pub mod feBlend;
+pub mod feColorMatrix;
+pub mod feComponentTransfer;
+pub mod feComposite;
+pub mod feConvolveMatrix;
+pub mod feDiffuseLighting;
+pub mod feDisplacementMap;
+pub mod feDistantLight;
+pub mod feDropShadow;
+pub mod feFlood;
+pub mod feFuncA;
+pub mod feFuncB;
+pub mod feFuncG;
+pub mod feFuncR;
+pub mod feGaussianBlur;
+pub mod feImage;
+pub mod feMerge;
+pub mod feMergeNode;
+pub mod feMorphology;
+pub mod feOffset;
+pub mod fePointLight;
+pub mod feSpecularLighting;
+pub mod feSpotLight;
+pub mod feTile;
+pub mod feTurbulence;
+pub mod fencedframe;
+pub mod fieldset;
+pub mod figcaption;
+pub mod figure;
+pub mod filter;
+pub mod footer;
+pub mod foreignObject;
+pub mod form;
+pub mod g;
+pub mod geolocation;
+pub mod h1;
+pub mod h2;
+pub mod h3;
+pub mod h4;
+pub mod h5;
+pub mod h6;
+pub mod head;
+pub mod header;
+pub mod hgroup;
+pub mod hr;
+pub mod html;
+pub mod i;
+pub mod iframe;
+pub mod image;
+pub mod img;
+pub mod input;
+pub mod ins;
+pub mod kbd;
+pub mod label;
+pub mod legend;
+pub mod li;
+pub mod line;
+pub mod linearGradient;
+pub mod link;
+pub mod maction;
+pub mod main;
+pub mod map;
+pub mod mark;
+pub mod marker;
+pub mod mask;
+pub mod math;
+pub mod menu;
+pub mod merror;
+pub mod meta;
+pub mod metadata;
+pub mod meter;
+pub mod mfrac;
+pub mod mi;
+pub mod mmultiscripts;
+pub mod mn;
+pub mod mo;
+pub mod model;
+pub mod mover;
+pub mod mpadded;
+pub mod mpath;
+pub mod mphantom;
+pub mod mprescripts;
+pub mod mroot;
+pub mod mrow;
+pub mod ms;
+pub mod mspace;
+pub mod msqrt;
+pub mod mstyle;
+pub mod msub;
+pub mod msubsup;
+pub mod msup;
+pub mod mtable;
+pub mod mtd;
+pub mod mtext;
+pub mod mtr;
+pub mod munder;
+pub mod munderover;
+pub mod nav;
+pub mod noscript;
+pub mod object;
+pub mod ol;
+pub mod optgroup;
+pub mod option;
+pub mod output;
+pub mod p;
+pub mod path;
+pub mod pattern;
+pub mod picture;
+pub mod polygon;
+pub mod polyline;
+pub mod portal;
+pub mod pre;
+pub mod progress;
+pub mod q;
+pub mod radialGradient;
+pub mod rect;
+pub mod rp;
+pub mod rt;
+pub mod ruby;
+pub mod s;
+pub mod samp;
+pub mod script;
+pub mod search;
+pub mod section;
+pub mod select;
+pub mod selectedcontent;
+pub mod semantics;
+pub mod set;
+pub mod slot;
+pub mod small;
+pub mod source;
+pub mod span;
+pub mod stop;
+pub mod strong;
+pub mod style;
+pub mod sub;
+pub mod summary;
+pub mod sup;
+pub mod svg;
+pub mod r#switch;
+pub mod symbol;
+pub mod table;
+pub mod tbody;
+pub mod td;
+pub mod template;
+pub mod text;
+pub mod textPath;
+pub mod textarea;
+pub mod tfoot;
+pub mod th;
+pub mod thead;
+pub mod time;
+pub mod title;
+pub mod tr;
+pub mod track;
+pub mod tspan;
+pub mod u;
+pub mod ul;
+pub mod r#use;
+pub mod var;
+pub mod video;
+pub mod view;
+pub mod wbr;
 
-macro_rules! define_element {
-    ($name:ident, $tag:expr, $doc:expr) => {
-        #[doc = $doc]
-        pub struct $name<State> {
-            pub attributes: Vec<(String, String)>,
-            pub styles: crate::Style,
-            pub events: Vec<(String, EventHandler<State>)>,
-            pub children: Vec<Node<State>>,
-        }
-
-        impl<State> Default for $name<State> {
-            fn default() -> Self {
-                Self::new()
-            }
-        }
-
-        impl<State> $name<State> {
-            pub fn new() -> Self {
-                Self {
-                    attributes: Vec::new(),
-                    styles: crate::Style::new(),
-                    events: Vec::new(),
-                    children: Vec::new(),
-                }
-            }
-
-            pub fn attribute(mut self, key: &str, value: &str) -> Self {
-                self.attributes.push((key.to_string(), value.to_string()));
-                self
-            }
-
-            pub fn id(self, id: &str) -> Self {
-                self.attribute("id", id)
-            }
-
-            pub fn class(self, class: &str) -> Self {
-                self.attribute("class", class)
-            }
-
-            pub fn type_(self, type_: &str) -> Self {
-                self.attribute("type", type_)
-            }
-
-            /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/style
-            pub fn style(mut self, style: impl Into<crate::Style>) -> Self {
-                self.styles = style.into();
-                self
-            }
-
-            /// https://developer.mozilla.org/docs/Web/HTML/Reference/Global_attributes/popover
-            pub fn popover(self) -> Self {
-                self.attribute("popover", "auto")
-            }
-
-            pub fn children(mut self, children: impl Into<Vec<Node<State>>>) -> Self {
-                self.children = children.into();
-                self
-            }
-
-            pub fn into_node(self) -> Node<State> {
-                Node::Element(Element {
-                    element_name: $tag.to_string(),
-                    attributes: self.attributes,
-                    styles: self.styles,
-                    events: self.events,
-                    children: self.children,
-                })
-            }
-        }
-
-        impl<State> From<$name<State>> for Node<State> {
-            fn from(val: $name<State>) -> Self {
-                val.into_node()
-            }
-        }
-    };
-}
-
-define_element!(
-    Html,
-    "html",
-    "https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/html"
-);
-define_element!(
-    Head,
-    "head",
-    "https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/head"
-);
-define_element!(
-    Title,
-    "title",
-    "https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/title"
-);
-define_element!(
-    Link,
-    "link",
-    "https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/link"
-);
-define_element!(
-    Script,
-    "script",
-    "https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/script"
-);
-define_element!(
-    Body,
-    "body",
-    "https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/body"
-);
-
-impl<State> Body<State> {
-    pub fn on_keydown(mut self, msg: EventHandler<State>) -> Self {
-        self.events.push(("keydown".to_string(), msg));
-        self
-    }
-}
-
-define_element!(
-    H1,
-    "h1",
-    "https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/h1"
-);
-define_element!(
-    H2,
-    "h2",
-    "https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/h2"
-);
-define_element!(
-    Dialog,
-    "dialog",
-    "https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/dialog"
-);
-define_element!(
-    Input,
-    "input",
-    "https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/input"
-);
-define_element!(
-    Textarea,
-    "textarea",
-    "https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/textarea"
-);
-define_element!(
-    Label,
-    "label",
-    "https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/label"
-);
-define_element!(
-    Form,
-    "form",
-    "https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/form"
-);
-define_element!(
-    Select,
-    "select",
-    "https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/select"
-);
-define_element!(
-    Datalist,
-    "datalist",
-    "https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/datalist"
-);
-define_element!(
-    OptionElement,
-    "option",
-    "https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/option"
-);
-define_element!(
-    StyleElement,
-    "style",
-    "https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/style"
-);
-define_element!(
-    Div,
-    "div",
-    "https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/div"
-);
-define_element!(
-    Header,
-    "header",
-    "https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/header"
-);
-
-// Link specific
-impl<State> Link<State> {
-    pub fn rel(self, rel: &str) -> Self {
-        self.attribute("rel", rel)
-    }
-
-    pub fn href(self, href: &str) -> Self {
-        self.attribute("href", href)
-    }
-}
-
-// Input specific
-impl<State> Input<State> {
-    pub fn name(self, name: &str) -> Self {
-        self.attribute("name", name)
-    }
-
-    pub fn value(self, value: &str) -> Self {
-        self.attribute("value", value)
-    }
-
-    pub fn autocomplete(self, autocomplete: &str) -> Self {
-        self.attribute("autocomplete", autocomplete)
-    }
-
-    pub fn required(self) -> Self {
-        self.attribute("required", "required")
-    }
-
-    pub fn readonly(self) -> Self {
-        self.attribute("readonly", "readonly")
-    }
-
-    pub fn disabled(self, disabled: bool) -> Self {
-        if disabled {
-            self.attribute("disabled", "disabled")
-        } else {
-            self
-        }
-    }
-
-    pub fn on_change(mut self, msg: EventHandler<State>) -> Self {
-        self.events.push(("change".to_string(), msg));
-        self
-    }
-}
-
-impl<State> Select<State> {
-    pub fn name(self, name: &str) -> Self {
-        self.attribute("name", name)
-    }
-
-    pub fn value(self, value: &str) -> Self {
-        self.attribute("value", value)
-    }
-}
-
-impl<State> OptionElement<State> {
-    pub fn value(self, value: &str) -> Self {
-        self.attribute("value", value)
-    }
-}
-
-// Textarea specific
-impl<State> Textarea<State> {
-    pub fn name(self, name: &str) -> Self {
-        self.attribute("name", name)
-    }
-
-    pub fn value(self, value: &str) -> Self {
-        self.attribute("value", value)
-    }
-
-    pub fn on_input(mut self, msg: EventHandler<State>) -> Self {
-        self.events.push(("input".to_string(), msg));
-        self
-    }
-}
-
-impl<State> Form<State> {
-    /// https://developer.mozilla.org/docs/Web/API/HTMLFormElement/submit_event
-    pub fn on_submit(mut self, msg: EventHandler<State>) -> Self {
-        self.events.push(("submit".to_string(), msg));
-        self
-    }
-}
-
-#[doc = "https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/a"]
-pub struct A<State, L: crate::Route> {
-    pub attributes: Vec<(String, String)>,
-    pub styles: crate::Style,
-    pub events: Vec<(String, EventHandler<State>)>,
-    pub children: Vec<Node<State>>,
-    _phantom: std::marker::PhantomData<L>,
-}
-
-impl<State, L: crate::Route> Default for A<State, L> {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl<State, L: crate::Route> A<State, L> {
-    pub fn new() -> Self {
-        Self {
-            attributes: Vec::new(),
-            styles: crate::Style::new(),
-            events: Vec::new(),
-            children: Vec::new(),
-            _phantom: std::marker::PhantomData,
-        }
-    }
-
-    pub fn attribute(mut self, key: &str, value: &str) -> Self {
-        self.attributes.push((key.to_string(), value.to_string()));
-        self
-    }
-
-    pub fn id(self, id: &str) -> Self {
-        self.attribute("id", id)
-    }
-
-    pub fn class(self, class: &str) -> Self {
-        self.attribute("class", class)
-    }
-
-    pub fn type_(self, type_: &str) -> Self {
-        self.attribute("type", type_)
-    }
-
-    pub fn style(mut self, style: impl Into<crate::Style>) -> Self {
-        self.styles = style.into();
-        self
-    }
-
-    pub fn popover(self) -> Self {
-        self.attribute("popover", "auto")
-    }
-
-    pub fn children(mut self, children: impl Into<Vec<Node<State>>>) -> Self {
-        self.children = children.into();
-        self
-    }
-
-    pub fn into_node(self) -> Node<State> {
-        Node::Element(Element {
-            element_name: "a".to_string(),
-            attributes: self.attributes,
-            styles: self.styles,
-            events: self.events,
-            children: self.children,
-        })
-    }
-
-    pub fn href(self, href: impl Into<crate::route::Href<L>>) -> Self {
-        let href_val: String = href.into().into();
-        self.attribute("href", &href_val)
-    }
-}
-
-impl<State, L: crate::Route> From<A<State, L>> for Node<State> {
-    fn from(val: A<State, L>) -> Self {
-        val.into_node()
-    }
-}
+pub use a::Anchor;
+pub type A<L> = Anchor<L>;
+pub use abbr::Abbr;
+pub use address::Address;
+pub use animate::Animate;
+pub use animateMotion::AnimateMotion;
+pub use animateTransform::AnimateTransform;
+pub use annotation::Annotation;
+pub use annotation_xml::AnnotationXml;
+pub use area::Area;
+pub use article::Article;
+pub use aside::Aside;
+pub use audio::Audio;
+pub use b::B;
+pub use base::Base;
+pub use bdi::Bdi;
+pub use bdo::Bdo;
+pub use blockquote::Blockquote;
+pub use body::Body;
+pub use br::Br;
+pub use canvas::Canvas;
+pub use caption::Caption;
+pub use circle::Circle;
+pub use cite::Cite;
+pub use clipPath::ClipPath;
+pub use code::Code;
+pub use col::Col;
+pub use colgroup::Colgroup;
+pub use data::Data;
+pub use datalist::Datalist;
+pub use dd::Dd;
+pub use defs::Defs;
+pub use del::Del;
+pub use desc::Desc;
+pub use details::Details;
+pub use dfn::Dfn;
+pub use dialog::Dialog;
+pub use div::Div;
+pub use dl::Dl;
+pub use dt::Dt;
+pub use ellipse::Ellipse;
+pub use em::Em;
+pub use embed::Embed;
+pub use feBlend::FeBlend;
+pub use feColorMatrix::FeColorMatrix;
+pub use feComponentTransfer::FeComponentTransfer;
+pub use feComposite::FeComposite;
+pub use feConvolveMatrix::FeConvolveMatrix;
+pub use feDiffuseLighting::FeDiffuseLighting;
+pub use feDisplacementMap::FeDisplacementMap;
+pub use feDistantLight::FeDistantLight;
+pub use feDropShadow::FeDropShadow;
+pub use feFlood::FeFlood;
+pub use feFuncA::FeFuncA;
+pub use feFuncB::FeFuncB;
+pub use feFuncG::FeFuncG;
+pub use feFuncR::FeFuncR;
+pub use feGaussianBlur::FeGaussianBlur;
+pub use feImage::FeImage;
+pub use feMerge::FeMerge;
+pub use feMergeNode::FeMergeNode;
+pub use feMorphology::FeMorphology;
+pub use feOffset::FeOffset;
+pub use fePointLight::FePointLight;
+pub use feSpecularLighting::FeSpecularLighting;
+pub use feSpotLight::FeSpotLight;
+pub use feTile::FeTile;
+pub use feTurbulence::FeTurbulence;
+pub use fencedframe::Fencedframe;
+pub use fieldset::Fieldset;
+pub use figcaption::Figcaption;
+pub use figure::Figure;
+pub use filter::Filter;
+pub use footer::Footer;
+pub use foreignObject::ForeignObject;
+pub use form::Form;
+pub use g::G;
+pub use geolocation::Geolocation;
+pub use h1::H1;
+pub use h2::H2;
+pub use h3::H3;
+pub use h4::H4;
+pub use h5::H5;
+pub use h6::H6;
+pub use head::Head;
+pub use header::Header;
+pub use hgroup::Hgroup;
+pub use hr::Hr;
+pub use html::Html;
+pub use i::I;
+pub use iframe::Iframe;
+pub use image::Image;
+pub use img::Img;
+pub use input::Input;
+pub use ins::Ins;
+pub use kbd::Kbd;
+pub use label::Label;
+pub use legend::Legend;
+pub use li::Li;
+pub use line::Line;
+pub use linearGradient::LinearGradient;
+pub use link::Link;
+pub use maction::Maction;
+pub use main::Main;
+pub use map::Map;
+pub use mark::Mark;
+pub use marker::Marker;
+pub use mask::Mask;
+pub use math::Math;
+pub use menu::Menu;
+pub use merror::Merror;
+pub use meta::Meta;
+pub use metadata::Metadata;
+pub use meter::Meter;
+pub use mfrac::Mfrac;
+pub use mi::Mi;
+pub use mmultiscripts::Mmultiscripts;
+pub use mn::Mn;
+pub use mo::Mo;
+pub use model::Model;
+pub use mover::Mover;
+pub use mpadded::Mpadded;
+pub use mpath::Mpath;
+pub use mphantom::Mphantom;
+pub use mprescripts::Mprescripts;
+pub use mroot::Mroot;
+pub use mrow::Mrow;
+pub use ms::Ms;
+pub use mspace::Mspace;
+pub use msqrt::Msqrt;
+pub use mstyle::Mstyle;
+pub use msub::Msub;
+pub use msubsup::Msubsup;
+pub use msup::Msup;
+pub use mtable::Mtable;
+pub use mtd::Mtd;
+pub use mtext::Mtext;
+pub use mtr::Mtr;
+pub use munder::Munder;
+pub use munderover::Munderover;
+pub use nav::Nav;
+pub use noscript::Noscript;
+pub use object::Object;
+pub use ol::Ol;
+pub use optgroup::Optgroup;
+pub use option::OptionElement;
+pub use output::Output;
+pub use p::P;
+pub use path::Path;
+pub use pattern::Pattern;
+pub use picture::Picture;
+pub use polygon::Polygon;
+pub use polyline::Polyline;
+pub use portal::Portal;
+pub use pre::Pre;
+pub use progress::Progress;
+pub use q::Q;
+pub use radialGradient::RadialGradient;
+pub use rect::Rect;
+pub use rp::Rp;
+pub use rt::Rt;
+pub use ruby::Ruby;
+pub use s::S;
+pub use samp::Samp;
+pub use script::Script;
+pub use search::Search;
+pub use section::Section;
+pub use select::Select;
+pub use selectedcontent::Selectedcontent;
+pub use semantics::Semantics;
+pub use set::Set;
+pub use slot::Slot;
+pub use small::Small;
+pub use source::Source;
+pub use span::Span;
+pub use stop::Stop;
+pub use strong::Strong;
+pub use style::StyleElement;
+pub use sub::Sub;
+pub use summary::Summary;
+pub use sup::Sup;
+pub use svg::Svg;
+pub use r#switch::Switch;
+pub use symbol::Symbol;
+pub use table::Table;
+pub use tbody::Tbody;
+pub use td::Td;
+pub use template::Template;
+pub use text::TextElement;
+pub use textPath::TextPath;
+pub use textarea::Textarea;
+pub use tfoot::Tfoot;
+pub use th::Th;
+pub use thead::Thead;
+pub use time::Time;
+pub use title::Title;
+pub use tr::Tr;
+pub use track::Track;
+pub use tspan::Tspan;
+pub use u::U;
+pub use ul::Ul;
+pub use r#use::Use;
+pub use var::Var;
+pub use video::Video;
+pub use view::View;
+pub use wbr::Wbr;

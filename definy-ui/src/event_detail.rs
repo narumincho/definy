@@ -27,10 +27,7 @@ fn optional_part_type_text(part_type: &Option<definy_event::event::PartType>) ->
         .unwrap_or_else(|| "None".to_string())
 }
 
-pub fn event_detail_view(
-    state: &AppState,
-    target_hash: &definy_event::EventHashId,
-) -> Node<AppState> {
+pub fn event_detail_view(state: &AppState, target_hash: &definy_event::EventHashId) -> Node {
     let account_name_map = state.account_name_map();
     let mut target_event_opt = None;
 
@@ -64,7 +61,7 @@ pub fn event_detail_view(
         .class("page-shell")
         .style(crate::layout::page_shell_style("1.2rem"))
         .children([
-            A::<AppState, Location>::new()
+            A::<Location>::new()
                 .class("back-link")
                 .href(state.href_with_lang(Location::Home))
                 .style(
@@ -93,7 +90,7 @@ fn render_event_detail(
     hash: &definy_event::EventHashId,
     event: &Event,
     account_name_map: &std::collections::HashMap<definy_event::event::AccountId, Box<str>>,
-) -> Node<AppState> {
+) -> Node {
     let account_name = crate::app_state::account_display_name(account_name_map, &event.account_id);
     let root_part_definition_hash = root_part_definition_hash(hash, &event.content);
 
@@ -134,7 +131,7 @@ fn render_event_detail(
                         .into_node(),
                 ])
                 .into_node(),
-            A::<AppState, Location>::new()
+            A::<Location>::new()
                 .href(state.href_with_lang(Location::Account(event.account_id.clone())))
                 .style(
                     Style::new()
@@ -235,7 +232,7 @@ fn render_event_detail(
                                 .children([text(i18n::tr(state, "Evaluate", "評価", "Taksi"))])
                                 .into_node()
                         },
-                        A::<AppState, Location>::new()
+                        A::<Location>::new()
                             .href(state.href_with_lang(Location::Part(hash.clone())))
                             .style(
                                 Style::new()
@@ -331,7 +328,7 @@ fn render_event_detail(
                                 part_update_event.part_definition_event_hash,
                             ))])
                             .into_node(),
-                        A::<AppState, Location>::new()
+                        A::<Location>::new()
                             .href(state.href_with_lang(Location::Event(
                                 part_update_event.part_definition_event_hash.clone(),
                             )))
@@ -342,7 +339,7 @@ fn render_event_detail(
                                 "Malfermi difinan eventon",
                             ))])
                             .into_node(),
-                        A::<AppState, Location>::new()
+                        A::<Location>::new()
                             .href(state.href_with_lang(Location::Part(
                                 part_update_event.part_definition_event_hash.clone(),
                             )))
@@ -385,7 +382,7 @@ fn render_event_detail(
                                 .children([text(module_definition_event.description.as_ref())])
                                 .into_node()
                         },
-                        A::<AppState, Location>::new()
+                        A::<Location>::new()
                             .href(state.href_with_lang(Location::Module(hash.clone())))
                             .children([text(i18n::tr(
                                 state,
@@ -448,7 +445,7 @@ fn render_event_detail(
                                 module_update_event.module_definition_event_hash,
                             ))])
                             .into_node(),
-                        A::<AppState, Location>::new()
+                        A::<Location>::new()
                             .href(state.href_with_lang(Location::Event(
                                 module_update_event.module_definition_event_hash.clone(),
                             )))
@@ -459,7 +456,7 @@ fn render_event_detail(
                                 "Malfermi difinan eventon",
                             ))])
                             .into_node(),
-                        A::<AppState, Location>::new()
+                        A::<Location>::new()
                             .href(state.href_with_lang(Location::Module(
                                 module_update_event.module_definition_event_hash.clone(),
                             )))
@@ -502,10 +499,7 @@ fn render_event_detail(
         .into_node()
 }
 
-fn related_part_events_section(
-    state: &AppState,
-    root_part_definition_hash: &EventHashId,
-) -> Node<AppState> {
+fn related_part_events_section(state: &AppState, root_part_definition_hash: &EventHashId) -> Node {
     let related_events = collect_related_part_events(state, root_part_definition_hash);
     let hash_as_base64 = root_part_definition_hash.to_string();
 
@@ -544,7 +538,7 @@ fn related_part_events_section(
                         .into_iter()
                         .map(|(event_hash, event)| {
                             let label = crate::event_presenter::event_kind_label(state, &event);
-                            A::<AppState, Location>::new()
+                            A::<Location>::new()
                                 .href(state.href_with_lang(Location::Event(event_hash)))
                                 .style(
                                     Style::new()
@@ -569,7 +563,7 @@ fn related_part_events_section(
                                 ])
                                 .into_node()
                         })
-                        .collect::<Vec<Node<AppState>>>(),
+                        .collect::<Vec<Node>>(),
                 )
                 .into_node(),
         ])

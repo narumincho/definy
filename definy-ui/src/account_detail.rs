@@ -4,10 +4,7 @@ use narumincho_vdom::*;
 use crate::i18n;
 use crate::{AppState, Location, fetch};
 
-pub fn account_detail_view(
-    state: &AppState,
-    account_id: &definy_event::event::AccountId,
-) -> Node<AppState> {
+pub fn account_detail_view(state: &AppState, account_id: &definy_event::event::AccountId) -> Node {
     let account_name_map = state.account_name_map();
     let account_name = crate::app_state::account_display_name(&account_name_map, account_id);
 
@@ -157,7 +154,7 @@ pub fn account_detail_view(
         .class("page-shell")
         .style(crate::layout::page_shell_style("0.9rem"))
         .children([
-            A::<AppState, Location>::new()
+            A::<Location>::new()
                 .class("back-link")
                 .href(state.href_with_lang(Location::AccountList))
                 .style(
@@ -236,7 +233,7 @@ pub fn account_detail_view(
                         account_events
                             .into_iter()
                             .map(|(hash, event)| {
-                                A::<AppState, Location>::new()
+                                A::<Location>::new()
                                     .class("event-card")
                                     .href(state.href_with_lang(Location::Event(hash.clone())))
                                     .style(
@@ -266,7 +263,7 @@ pub fn account_detail_view(
                                     ])
                                     .into_node()
                             })
-                            .collect::<Vec<Node<AppState>>>(),
+                            .collect::<Vec<Node>>(),
                     )
                     .into_node()
             },

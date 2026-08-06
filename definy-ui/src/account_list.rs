@@ -9,7 +9,7 @@ struct AccountRow {
     latest_time: chrono::DateTime<chrono::Utc>,
 }
 
-pub fn account_list_view(state: &AppState) -> Node<AppState> {
+pub fn account_list_view(state: &AppState) -> Node {
     let account_name_map = state.account_name_map();
     let mut rows = collect_account_rows(state);
     rows.sort_by(|a, b| b.latest_time.cmp(&a.latest_time));
@@ -45,7 +45,7 @@ pub fn account_list_view(state: &AppState) -> Node<AppState> {
                                     &account_name_map,
                                     &row.account_id,
                                 );
-                                A::<AppState, Location>::new()
+                                A::<Location>::new()
                                     .class("event-card")
                                     .href(state.href_with_lang(Location::Account(row.account_id)))
                                     .style(
@@ -96,7 +96,7 @@ pub fn account_list_view(state: &AppState) -> Node<AppState> {
                                     ])
                                     .into_node()
                             })
-                            .collect::<Vec<Node<AppState>>>(),
+                            .collect::<Vec<Node>>(),
                     )
                     .into_node()
             },

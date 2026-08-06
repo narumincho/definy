@@ -1,26 +1,54 @@
-mod button;
 mod elements;
-mod meta;
 mod node;
 mod route;
-mod style;
+#[path = "style.rs"]
+mod vdom_style;
 
-pub use button::{Button, CommandValue};
+pub use elements::button::{Button, ButtonCommand as CommandValue};
 pub use elements::*;
-pub use meta::Meta;
-pub use node::{Element, EventHandler, Node};
+pub use node::{AnyStateDispatcher, Element, EventHandler, Node};
 pub use route::*;
-pub use style::Style;
+pub use vdom_style::Style;
 
-pub fn text<State>(text: impl Into<String>) -> Node<State> {
+pub fn text(text: impl Into<String>) -> Node {
     Node::Text(text.into().into())
 }
 
-pub fn to_html<State>(node: &Node<State>) -> String {
+pub fn normalize_attribute_name(name: &str) -> String {
+    if name.starts_with("aria") {
+        let mut result = String::from("aria");
+        for c in name.chars().skip(4) {
+            if c.is_uppercase() {
+                result.push('-');
+                result.extend(c.to_lowercase());
+            } else {
+                result.push(c);
+            }
+        }
+        return result;
+    }
+
+    if name.starts_with("data") {
+        let mut result = String::from("data");
+        for c in name.chars().skip(4) {
+            if c.is_uppercase() {
+                result.push('-');
+                result.extend(c.to_lowercase());
+            } else {
+                result.push(c);
+            }
+        }
+        return result;
+    }
+
+    name.to_string()
+}
+
+pub fn to_html(node: &Node) -> String {
     "<!doctype html>".to_string() + &to_string(node)
 }
 
-pub fn to_string<State>(node: &Node<State>) -> String {
+pub fn to_string(node: &Node) -> String {
     match node {
         Node::Element(vdom) => {
             let mut html = String::new();
@@ -28,7 +56,7 @@ pub fn to_string<State>(node: &Node<State>) -> String {
             html.push_str(&vdom.element_name);
             for (key, value) in &vdom.attributes {
                 html.push(' ');
-                html.push_str(key);
+                html.push_str(&normalize_attribute_name(key));
                 html.push_str("=\"");
                 html.push_str(&attribute_escape(value));
                 html.push('"');
@@ -73,18 +101,30 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_to_string_with_style() {
-        let node: Node<()> = Div::new()
-            .style(
-                Style::new()
-                    .set("color", "red")
-                    .set("background-color", "blue"),
-            )
+    fn test_generated_element_attributes_and_enums() {
+        use elements::button::{ButtonType, button};
+
+        let btn = button()
+            .type_(ButtonType::Submit)
+            .disabled(true)
+            .disabled(false)
+            .attribute("data-test", "value");
+        assert!(btn.attributes.contains(&("type".into(), "submit".into())));
+        assert!(!btn.attributes.iter().any(|(key, _)| key == "disabled"));
+        assert!(
+            btn.attributes
+                .contains(&("data-test".into(), "value".into()))
+        );
+    }
+
+    #[test]
+    fn aria_attributes_are_rendered_with_html_hyphenated_names() {
+        let node = elements::button::Button::new()
+            .aria_label("Close")
             .into_node();
         let html = to_string(&node);
-        assert!(html.starts_with("<div style=\""));
-        assert!(html.contains("color:red;"));
-        assert!(html.contains("background-color:blue;"));
-        assert!(html.ends_with("\"></div>"));
+
+        assert!(html.contains("aria-label=\"Close\""));
+        assert!(!html.contains("ariaLabel="));
     }
 }
