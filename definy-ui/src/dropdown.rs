@@ -12,7 +12,7 @@ pub fn searchable_dropdown(
     current_value: &str,
     options: &[(String, String)],
     on_change: DropdownOnChange,
-) -> Node<AppState> {
+) -> Node {
     let is_open = state.active_dropdown_name.as_deref() == Some(name);
 
     let current_label = options

@@ -7,7 +7,7 @@ use crate::i18n;
 use crate::module_projection::find_module_snapshot;
 use crate::part_projection::collect_part_snapshots;
 
-pub fn module_detail_view(state: &AppState, definition_event_hash: &EventHashId) -> Node<AppState> {
+pub fn module_detail_view(state: &AppState, definition_event_hash: &EventHashId) -> Node {
     let Some(module_snapshot) = find_module_snapshot(state, definition_event_hash) else {
         return Div::new()
             .class("page-shell")
@@ -75,7 +75,7 @@ pub fn module_detail_view(state: &AppState, definition_event_hash: &EventHashId)
                     Div::new()
                         .style(Style::new().set("display", "flex").set("gap", "0.45rem"))
                         .children([
-                            A::<AppState, Location>::new()
+                            A::<Location>::new()
                                 .href(state.href_with_lang(Location::Event(
                                     module_snapshot.latest_event_hash,
                                 )))
@@ -86,7 +86,7 @@ pub fn module_detail_view(state: &AppState, definition_event_hash: &EventHashId)
                                     "Lasta evento",
                                 ))])
                                 .into_node(),
-                            A::<AppState, Location>::new()
+                            A::<Location>::new()
                                 .href(state.href_with_lang(Location::Event(
                                     module_snapshot.definition_event_hash,
                                 )))
@@ -221,7 +221,7 @@ pub fn module_detail_view(state: &AppState, definition_event_hash: &EventHashId)
                                                     .set("gap", "0.45rem"),
                                             )
                                             .children([
-                                                A::<AppState, Location>::new()
+                                                A::<Location>::new()
                                                     .href(state.href_with_lang(Location::Part(
                                                         part.definition_event_hash,
                                                     )))
@@ -232,7 +232,7 @@ pub fn module_detail_view(state: &AppState, definition_event_hash: &EventHashId)
                                                         "Malfermi partajn detalojn",
                                                     ))])
                                                     .into_node(),
-                                                A::<AppState, Location>::new()
+                                                A::<Location>::new()
                                                     .href(state.href_with_lang(Location::Event(
                                                         part.latest_event_hash,
                                                     )))
@@ -248,7 +248,7 @@ pub fn module_detail_view(state: &AppState, definition_event_hash: &EventHashId)
                                     ])
                                     .into_node()
                             })
-                            .collect::<Vec<Node<AppState>>>(),
+                            .collect::<Vec<Node>>(),
                     )
                     .into_node()
             },
@@ -261,7 +261,7 @@ fn module_update_form(
     definition_event_hash: &EventHashId,
     initial_name: &str,
     initial_description: &str,
-) -> Node<AppState> {
+) -> Node {
     let definition_event_hash_name = definition_event_hash.clone();
     let definition_event_hash_description = definition_event_hash.clone();
     let definition_event_hash_send_button = definition_event_hash.clone();

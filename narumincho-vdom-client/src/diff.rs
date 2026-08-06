@@ -1,33 +1,30 @@
 use narumincho_vdom::{EventHandler, Node};
 
 #[derive(Debug, PartialEq)]
-pub enum Patch<State> {
-    Replace(Node<State>),
+pub enum Patch {
+    Replace(Node),
     UpdateText(Box<str>),
     AddAttributes(Vec<(String, String)>),
     RemoveAttributes(Vec<String>),
     AddStyles(Vec<(String, String)>),
     RemoveStyles(Vec<String>),
-    AddEventListeners(Vec<(String, EventHandler<State>)>),
+    AddEventListeners(Vec<(String, EventHandler)>),
     RemoveEventListeners(Vec<String>),
-    AppendChildren(Vec<Node<State>>),
+    AppendChildren(Vec<Node>),
     RemoveChildren(usize),
 }
 
-pub fn diff<State>(
-    old_node: &Node<State>,
-    new_node: &Node<State>,
-) -> Vec<(Vec<usize>, Patch<State>)> {
+pub fn diff(old_node: &Node, new_node: &Node) -> Vec<(Vec<usize>, Patch)> {
     let mut patches = Vec::new();
     diff_recursive(old_node, new_node, &mut Vec::new(), &mut patches);
     patches
 }
 
-fn diff_recursive<State>(
-    old_node: &Node<State>,
-    new_node: &Node<State>,
+fn diff_recursive(
+    old_node: &Node,
+    new_node: &Node,
     path: &mut Vec<usize>,
-    patches: &mut Vec<(Vec<usize>, Patch<State>)>,
+    patches: &mut Vec<(Vec<usize>, Patch)>,
 ) {
     match (old_node, new_node) {
         (Node::Element(old_element), Node::Element(new_element)) => {
@@ -104,111 +101,98 @@ fn diff_recursive<State>(
                 patches.push((path.clone(), Patch::RemoveStyles(remove_styles)));
             }
 
-            // Diff events
-            let mut add_events = Vec::<(String, EventHandler<State>)>::new();
-            let mut remove_events = Vec::<String>::new();
-
-            for (key, _) in &old_element.events {
-                remove_events.push(key.clone());
-            }
+            // Diff event listeners
+            let mut add_events = Vec::new();
+            let mut remove_events = Vec::new();
 
             for (key, value) in &new_element.events {
-                add_events.push((key.clone(), value.clone()));
+                match old_element
+                    .events
+                    .iter()
+                    .find(|(old_key, _)| old_key == key)
+                {
+                    Some((_, old_value)) => {
+                        if old_value != value {
+                            add_events.push((key.clone(), value.clone()));
+                        }
+                    }
+                    None => {
+                        add_events.push((key.clone(), value.clone()));
+                    }
+                }
             }
 
-            if !remove_events.is_empty() {
-                patches.push((path.clone(), Patch::RemoveEventListeners(remove_events)));
+            for (key, _) in &old_element.events {
+                if !new_element.events.iter().any(|(new_key, _)| new_key == key) {
+                    remove_events.push(key.clone());
+                }
             }
+
             if !add_events.is_empty() {
                 patches.push((path.clone(), Patch::AddEventListeners(add_events)));
             }
+            if !remove_events.is_empty() {
+                patches.push((path.clone(), Patch::RemoveEventListeners(remove_events)));
+            }
 
-            // Diff children (key-aware)
-            let common_len = std::cmp::min(old_element.children.len(), new_element.children.len());
-            let old_keys = old_element
-                .children
-                .iter()
-                .map(child_key)
-                .collect::<Vec<Option<String>>>();
-            let new_keys = new_element
-                .children
-                .iter()
-                .map(child_key)
-                .collect::<Vec<Option<String>>>();
+            // Diff children
+            let old_children = &old_element.children;
+            let new_children = &new_element.children;
+
+            let old_keys: Vec<Option<String>> = old_children.iter().map(child_key).collect();
+            let new_keys: Vec<Option<String>> = new_children.iter().map(child_key).collect();
+
             let has_keys =
                 old_keys.iter().any(|k| k.is_some()) || new_keys.iter().any(|k| k.is_some());
 
             if has_keys {
-                let all_old_keyed = old_keys.iter().all(|k| k.is_some());
-                let all_new_keyed = new_keys.iter().all(|k| k.is_some());
-                if all_old_keyed && all_new_keyed {
-                    let old_key_list = old_keys
-                        .iter()
-                        .map(|k| k.as_ref().unwrap().clone())
-                        .collect::<Vec<String>>();
-                    let new_key_list = new_keys
-                        .iter()
-                        .map(|k| k.as_ref().unwrap().clone())
-                        .collect::<Vec<String>>();
-                    if old_key_list != new_key_list {
-                        if !old_element.children.is_empty() {
-                            patches.push((
-                                path.clone(),
-                                Patch::RemoveChildren(old_element.children.len()),
-                            ));
-                        }
-                        if !new_element.children.is_empty() {
-                            patches.push((
-                                path.clone(),
-                                Patch::AppendChildren(new_element.children.clone()),
-                            ));
-                        }
-                        return;
+                // Keyed diffing algorithm
+                let mut old_key_map = std::collections::HashMap::new();
+                for (i, key) in old_keys.iter().enumerate() {
+                    if let Some(k) = key {
+                        old_key_map.insert(k.clone(), i);
                     }
                 }
-            }
 
-            for i in 0..common_len {
-                path.push(i);
-                let old_key = old_keys.get(i).and_then(|k| k.clone());
-                let new_key = new_keys.get(i).and_then(|k| k.clone());
-                if has_keys && (old_key.is_some() || new_key.is_some()) {
-                    if old_key.is_some() && new_key.is_some() && old_key == new_key {
-                        diff_recursive(
-                            &old_element.children[i],
-                            &new_element.children[i],
-                            path,
-                            patches,
-                        );
+                let mut matched_old_indices = std::collections::HashSet::new();
+
+                for (new_idx, new_child) in new_children.iter().enumerate() {
+                    path.push(new_idx);
+                    if let Some(new_key) = &new_keys[new_idx] {
+                        if let Some(&old_idx) = old_key_map.get(new_key) {
+                            matched_old_indices.insert(old_idx);
+                            diff_recursive(&old_children[old_idx], new_child, path, patches);
+                        } else {
+                            patches.push((path.clone(), Patch::Replace(new_child.clone())));
+                        }
+                    } else if new_idx < old_children.len()
+                        && old_keys[new_idx].is_none()
+                        && !matched_old_indices.contains(&new_idx)
+                    {
+                        matched_old_indices.insert(new_idx);
+                        diff_recursive(&old_children[new_idx], new_child, path, patches);
                     } else {
-                        patches.push((
-                            path.clone(),
-                            Patch::Replace(new_element.children[i].clone()),
-                        ));
+                        patches.push((path.clone(), Patch::Replace(new_child.clone())));
                     }
-                } else {
-                    diff_recursive(
-                        &old_element.children[i],
-                        &new_element.children[i],
-                        path,
-                        patches,
-                    );
+                    path.pop();
                 }
-                path.pop();
-            }
+            } else {
+                // Unkeyed diffing algorithm
+                let min_len = old_children.len().min(new_children.len());
 
-            if new_element.children.len() > old_element.children.len() {
-                patches.push((
-                    path.clone(),
-                    Patch::AppendChildren(
-                        new_element.children[old_element.children.len()..].to_vec(),
-                    ),
-                ));
-            } else if new_element.children.len() < old_element.children.len() {
-                patches.push((
-                    path.clone(),
-                    Patch::RemoveChildren(old_element.children.len() - new_element.children.len()),
-                ));
+                for i in 0..min_len {
+                    path.push(i);
+                    diff_recursive(&old_children[i], &new_children[i], path, patches);
+                    path.pop();
+                }
+
+                if old_children.len() < new_children.len() {
+                    let added = new_children[min_len..].to_vec();
+                    patches.push((path.clone(), Patch::AppendChildren(added)));
+                } else if old_children.len() > new_children.len() {
+                    let remove_count = old_children.len() - new_children.len();
+                    patches.push((path.clone(), Patch::RemoveChildren(remove_count)));
+                }
             }
         }
         (Node::Text(old_text), Node::Text(new_text)) => {
@@ -222,7 +206,7 @@ fn diff_recursive<State>(
     }
 }
 
-fn child_key<State>(node: &Node<State>) -> Option<String> {
+fn child_key(node: &Node) -> Option<String> {
     match node {
         Node::Element(element) => element
             .attributes
@@ -233,16 +217,16 @@ fn child_key<State>(node: &Node<State>) -> Option<String> {
     }
 }
 
-pub fn add_event_listener_patches<State>(node: &Node<State>) -> Vec<(Vec<usize>, Patch<State>)> {
+pub fn add_event_listener_patches(node: &Node) -> Vec<(Vec<usize>, Patch)> {
     let mut patches = Vec::new();
     add_event_listener_patches_recursive(node, &mut Vec::new(), &mut patches);
     patches
 }
 
-fn add_event_listener_patches_recursive<State>(
-    node: &Node<State>,
+fn add_event_listener_patches_recursive(
+    node: &Node,
     path: &mut Vec<usize>,
-    patches: &mut Vec<(Vec<usize>, Patch<State>)>,
+    patches: &mut Vec<(Vec<usize>, Patch)>,
 ) {
     match node {
         Node::Element(element) => {
@@ -264,61 +248,50 @@ fn add_event_listener_patches_recursive<State>(
 
 #[cfg(test)]
 mod tests {
-    use std::convert::Infallible;
-
     use narumincho_vdom::*;
 
     use super::*;
 
     #[test]
     fn test_render_with_attributes() {
-        let node: Node<Infallible> = Div::new()
-            .class("container")
+        let node: Node = Button::new()
+            .type_("submit")
             .children(vec![text("hello")])
             .into_node();
-        assert_eq!(to_string(&node), "<div class=\"container\">hello</div>");
+        assert_eq!(to_string(&node), "<button type=\"submit\">hello</button>");
     }
 
     #[test]
     fn test_render_with_escaped_attributes() {
-        let node: Node<Infallible> = Input::new().value("a \" b").into_node();
-        assert_eq!(to_string(&node), "<input value=\"a &quot; b\"></input>");
+        let node: Node = Button::new().command_for("a \" b").into_node();
+        assert_eq!(
+            to_string(&node),
+            "<button commandFor=\"a &quot; b\"></button>"
+        );
     }
 
     #[test]
     fn test_diff_text() {
-        let old: Node<Infallible> = text("hello");
-        let new: Node<Infallible> = text("world");
+        let old: Node = text("hello");
+        let new: Node = text("world");
         let patches = diff(&old, &new);
         assert_eq!(patches, vec![(vec![], Patch::UpdateText("world".into()))]);
     }
 
     #[test]
     fn test_diff_attributes() {
-        let old: Node<Infallible> = Div::new().class("container").id("test").into_node();
-        let new: Node<Infallible> = Div::new()
-            .class("wrapper")
+        let old: Node = Button::new()
+            .type_("submit")
+            .command_for("test")
+            .into_node();
+        let new: Node = Button::new()
+            .type_("button")
             .style(Style::new().color("red"))
             .into_node();
         let patches = diff(&old, &new);
 
-        // Order of patches might depend on implementation detail, so we just check containment or specific structure
-        // But since we can rely on our implementation:
-        // class changed, id removed, style added.
-
-        // Given the implementation loops over new attributes then old attributes.
-        // New loop:
-        // class: old has it ("container"), new is "wrapper" -> AddAttributes("class", "wrapper") (Wait, logic says Update is AddAttributes)
-        // style: old doesn't have it -> AddAttributes("style", "color: red")
-        // Old loop:
-        // class: new has it.
-        // id: new doesn't have it -> RemoveAttributes("id")
-
-        // Patches order: AddAttributes (multiple?), RemoveAttributes.
-        // AddAttributes collects all additions.
-
-        let expected_add = vec![("class".to_string(), "wrapper".to_string())];
-        let expected_remove = vec!["id".to_string()];
+        let expected_add = vec![("type".to_string(), "button".to_string())];
+        let expected_remove = vec!["commandFor".to_string()];
         let expected_style = vec![("color".to_string(), "red".to_string())];
 
         assert_eq!(patches.len(), 3);
@@ -350,16 +323,16 @@ mod tests {
 
     #[test]
     fn test_diff_children_replace() {
-        let old: Node<Infallible> = Div::new().children(vec![text("hello")]).into_node();
-        let new: Node<Infallible> = Div::new().children(vec![text("world")]).into_node();
+        let old: Node = Button::new().children(vec![text("hello")]).into_node();
+        let new: Node = Button::new().children(vec![text("world")]).into_node();
         let patches = diff(&old, &new);
         assert_eq!(patches, vec![(vec![0], Patch::UpdateText("world".into()))]);
     }
 
     #[test]
     fn test_diff_children_append() {
-        let old: Node<Infallible> = Div::new().children(vec![text("hello")]).into_node();
-        let new: Node<Infallible> = Div::new()
+        let old: Node = Button::new().children(vec![text("hello")]).into_node();
+        let new: Node = Button::new()
             .children(vec![text("hello"), text("world")])
             .into_node();
         let patches = diff(&old, &new);
@@ -371,21 +344,25 @@ mod tests {
 
     #[test]
     fn test_diff_children_remove() {
-        let old: Node<Infallible> = Div::new()
+        let old: Node = Button::new()
             .children(vec![text("hello"), text("world")])
             .into_node();
-        let new: Node<Infallible> = Div::new().children(vec![text("hello")]).into_node();
+        let new: Node = Button::new().children(vec![text("hello")]).into_node();
         let patches = diff(&old, &new);
         assert_eq!(patches, vec![(vec![], Patch::RemoveChildren(1))]);
     }
 
     #[test]
     fn test_diff_recursive() {
-        let old: Node<Infallible> = Div::new()
-            .children(vec![Div::new().children(vec![text("hello")]).into_node()])
+        let old: Node = Button::new()
+            .children(vec![
+                Button::new().children(vec![text("hello")]).into_node(),
+            ])
             .into_node();
-        let new: Node<Infallible> = Div::new()
-            .children(vec![Div::new().children(vec![text("world")]).into_node()])
+        let new: Node = Button::new()
+            .children(vec![
+                Button::new().children(vec![text("world")]).into_node(),
+            ])
             .into_node();
         let patches = diff(&old, &new);
         assert_eq!(

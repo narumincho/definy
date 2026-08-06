@@ -7,7 +7,7 @@ use crate::{
 };
 
 /// ログインまたはアカウント作成ダイアログ
-pub fn login_or_create_account_dialog(state: &AppState) -> Node<AppState> {
+pub fn login_or_create_account_dialog(state: &AppState) -> Node {
     Dialog::new()
         .class("auth-dialog")
         .id("login-or-create-account-dialog")
@@ -177,7 +177,7 @@ pub fn login_or_create_account_dialog(state: &AppState) -> Node<AppState> {
         .into_node()
 }
 
-fn login_view(state: &AppState) -> Node<AppState> {
+fn login_view(state: &AppState) -> Node {
     Form::new()
         .on_submit(EventHandler::new(async |set_state| {
             let password = crate::dom::get_input_value("input[name='password']");
@@ -228,7 +228,7 @@ fn generate_key() -> ed25519_dalek::SigningKey {
     ed25519_dalek::SigningKey::generate(&mut csprng)
 }
 
-fn create_account_view(state: &AppState, force_offline: bool) -> Node<AppState> {
+fn create_account_view(state: &AppState, force_offline: bool) -> Node {
     let dialog_state = &state.login_or_create_account_dialog_state;
     let lang_code = state.language.code;
     let mut password_input = Input::new()
@@ -360,7 +360,7 @@ fn create_account_view(state: &AppState, force_offline: bool) -> Node<AppState> 
                         .name("username")
                         .autocomplete("username")
                         .required(true)
-                        .on_change(EventHandler::new(async |_set_state| {}))
+                        .on_change(EventHandler::new::<AppState, _, _>(async |_set_state| {}))
                         .into_node(),
                 ])
                 .into_node(),
@@ -424,7 +424,7 @@ fn create_account_view(state: &AppState, force_offline: bool) -> Node<AppState> 
                                 .style(Style::new().set("flex", "1"))
                                 .into_node(),
                             Button::new()
-                                .on_click(EventHandler::new(move |_set_state| {
+                                .on_click(EventHandler::new::<AppState, _, _>(move |_set_state| {
                                     let window =
                                         web_sys::window().expect("no global `window` exists");
                                     let generated_key = generated_key_for_copy.clone();
@@ -473,7 +473,7 @@ fn create_account_view(state: &AppState, force_offline: bool) -> Node<AppState> 
                         .command_for("login-or-create-account-dialog")
                         .command(CommandValue::Close)
                         .type_("button")
-                        .on_click(EventHandler::new(async |_set_state| {}))
+                        .on_click(EventHandler::new::<AppState, _, _>(async |_set_state| {}))
                         .children([text(i18n::tr(state, "Cancel", "キャンセル", "Nuligi"))])
                         .into_node(),
                     Button::new()
@@ -517,7 +517,7 @@ fn create_account_view(state: &AppState, force_offline: bool) -> Node<AppState> 
         .into_node()
 }
 
-fn create_login_event_handler() -> EventHandler<AppState> {
+fn create_login_event_handler() -> EventHandler {
     EventHandler::new(async |set_state| {
         set_state(Box::new(|state: AppState| -> AppState {
             AppState {

@@ -317,7 +317,7 @@ impl narumincho_vdom_client::App<AppState> for DefinyApp {
         state
     }
 
-    fn render(state: &AppState) -> narumincho_vdom::Node<AppState> {
+    fn render(state: &AppState) -> narumincho_vdom::Node {
         definy_ui::render(state, &SSR_RESOURCE_HASH, SSR_INITIAL_STATE_TEXT.as_deref())
     }
 }

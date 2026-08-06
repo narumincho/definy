@@ -203,43 +203,43 @@ fn output_stateful_element_builders(
 
     for (name, info) in elements_map {
         if name == "a" {
-            writeln!(file, "pub type A<State, L> = Anchor<State, L>;")?;
+            writeln!(file, "pub type A<L> = Anchor<L>;")?;
             writeln!(
                 file,
-                "pub struct Anchor<State, L: crate::Route> {{ pub attributes: Vec<(String, String)>, pub styles: crate::Style, pub events: Vec<(String, VdomEventHandler<State>)>, pub children: Vec<VdomNode<State>>, _phantom: std::marker::PhantomData<L> }}"
+                "pub struct Anchor<L: crate::Route> {{ pub attributes: Vec<(String, String)>, pub styles: crate::Style, pub events: Vec<(String, VdomEventHandler)>, pub children: Vec<VdomNode>, _phantom: std::marker::PhantomData<L> }}"
             )?;
             writeln!(
                 file,
-                "impl<State, L: crate::Route> Anchor<State, L> {{ pub fn new() -> Self {{ Self {{ attributes: Vec::new(), styles: crate::Style::new(), events: Vec::new(), children: Vec::new(), _phantom: std::marker::PhantomData }} }} pub fn attribute(mut self, key: impl Into<String>, value: impl Into<String>) -> Self {{ self.attributes.push((key.into(), value.into())); self }} pub fn id(self, value: impl Into<String>) -> Self {{ self.attribute(\"id\", value) }} pub fn class(self, value: impl Into<String>) -> Self {{ self.attribute(\"class\", value) }} pub fn type_(self, value: impl Into<String>) -> Self {{ self.attribute(\"type\", value) }} pub fn style(mut self, style: impl Into<crate::Style>) -> Self {{ self.styles = style.into(); self }} pub fn popover(self) -> Self {{ self.attribute(\"popover\", \"auto\") }} pub fn children(mut self, children: impl Into<Vec<VdomNode<State>>>) -> Self {{ self.children = children.into(); self }} pub fn into_node(self) -> VdomNode<State> {{ VdomNode::Element(VdomElement {{ element_name: \"a\".to_string(), attributes: self.attributes, styles: self.styles, events: self.events, children: self.children }}) }} pub fn href(self, href: impl Into<crate::route::Href<L>>) -> Self {{ self.attribute(\"href\", href.into()) }} }}"
+                "impl<L: crate::Route> Anchor<L> {{ pub fn new() -> Self {{ Self {{ attributes: Vec::new(), styles: crate::Style::new(), events: Vec::new(), children: Vec::new(), _phantom: std::marker::PhantomData }} }} pub fn attribute(mut self, key: impl Into<String>, value: impl Into<String>) -> Self {{ self.attributes.push((key.into(), value.into())); self }} pub fn id(self, value: impl Into<String>) -> Self {{ self.attribute(\"id\", value) }} pub fn class(self, value: impl Into<String>) -> Self {{ self.attribute(\"class\", value) }} pub fn type_(self, value: impl Into<String>) -> Self {{ self.attribute(\"type\", value) }} pub fn style(mut self, style: impl Into<crate::Style>) -> Self {{ self.styles = style.into(); self }} pub fn popover(self) -> Self {{ self.attribute(\"popover\", \"auto\") }} pub fn children(mut self, children: impl Into<Vec<VdomNode>>) -> Self {{ self.children = children.into(); self }} pub fn into_node(self) -> VdomNode {{ VdomNode::Element(VdomElement {{ element_name: \"a\".to_string(), attributes: self.attributes, styles: self.styles, events: self.events, children: self.children }}) }} pub fn href(self, href: impl Into<crate::route::Href<L>>) -> Self {{ self.attribute(\"href\", href.into()) }} }}"
             )?;
             writeln!(
                 file,
-                "impl<State, L: crate::Route> Default for Anchor<State, L> {{ fn default() -> Self {{ Self::new() }} }}"
+                "impl<L: crate::Route> Default for Anchor<L> {{ fn default() -> Self {{ Self::new() }} }}"
             )?;
             writeln!(
                 file,
-                "impl<State, L: crate::Route> From<Anchor<State, L>> for VdomNode<State> {{ fn from(value: Anchor<State, L>) -> Self {{ value.into_node() }} }}"
+                "impl<L: crate::Route> From<Anchor<L>> for VdomNode {{ fn from(value: Anchor<L>) -> Self {{ value.into_node() }} }}"
             )?;
         } else {
             let type_name = old_element_type_name(name);
             writeln!(
                 file,
-                "pub struct {}<State> {{ pub attributes: Vec<(String, String)>, pub styles: crate::Style, pub events: Vec<(String, VdomEventHandler<State>)>, pub children: Vec<VdomNode<State>> }}",
+                "pub struct {} {{ pub attributes: Vec<(String, String)>, pub styles: crate::Style, pub events: Vec<(String, VdomEventHandler)>, pub children: Vec<VdomNode> }}",
                 type_name
             )?;
             writeln!(
                 file,
-                "impl<State> Default for {}<State> {{ fn default() -> Self {{ Self::new() }} }}",
+                "impl Default for {} {{ fn default() -> Self {{ Self::new() }} }}",
                 type_name
             )?;
             writeln!(
                 file,
-                "impl<State> {}<State> {{ pub fn new() -> Self {{ Self {{ attributes: Vec::new(), styles: crate::Style::new(), events: Vec::new(), children: Vec::new() }} }} pub fn attribute(mut self, key: impl Into<String>, value: impl Into<String>) -> Self {{ let key = key.into(); self.attributes.push((crate::normalize_attribute_name(&key), value.into())); self }} pub fn id(self, value: impl Into<String>) -> Self {{ self.attribute(\"id\", value) }} pub fn class(self, value: impl Into<String>) -> Self {{ self.attribute(\"class\", value) }} pub fn type_(self, value: impl Into<String>) -> Self {{ self.attribute(\"type\", value) }} pub fn style(mut self, style: impl Into<crate::Style>) -> Self {{ self.styles = style.into(); self }} pub fn popover(self) -> Self {{ self.attribute(\"popover\", \"auto\") }} pub fn children(mut self, children: impl Into<Vec<VdomNode<State>>>) -> Self {{ self.children = children.into(); self }} pub fn into_node(self) -> VdomNode<State> {{ VdomNode::Element(VdomElement {{ element_name: \"{}\".to_string(), attributes: self.attributes, styles: self.styles, events: self.events, children: self.children }}) }} }}",
+                "impl {} {{ pub fn new() -> Self {{ Self {{ attributes: Vec::new(), styles: crate::Style::new(), events: Vec::new(), children: Vec::new() }} }} pub fn attribute(mut self, key: impl Into<String>, value: impl Into<String>) -> Self {{ let key = key.into(); self.attributes.push((crate::normalize_attribute_name(&key), value.into())); self }} pub fn id(self, value: impl Into<String>) -> Self {{ self.attribute(\"id\", value) }} pub fn class(self, value: impl Into<String>) -> Self {{ self.attribute(\"class\", value) }} pub fn type_(self, value: impl Into<String>) -> Self {{ self.attribute(\"type\", value) }} pub fn style(mut self, style: impl Into<crate::Style>) -> Self {{ self.styles = style.into(); self }} pub fn popover(self) -> Self {{ self.attribute(\"popover\", \"auto\") }} pub fn children(mut self, children: impl Into<Vec<VdomNode>>) -> Self {{ self.children = children.into(); self }} pub fn into_node(self) -> VdomNode {{ VdomNode::Element(VdomElement {{ element_name: \"{}\".to_string(), attributes: self.attributes, styles: self.styles, events: self.events, children: self.children }}) }} }}",
                 type_name, name
             )?;
             writeln!(
                 file,
-                "impl<State> From<{}<State>> for VdomNode<State> {{ fn from(value: {}<State>) -> Self {{ value.into_node() }} }}",
+                "impl From<{}> for VdomNode {{ fn from(value: {}) -> Self {{ value.into_node() }} }}",
                 type_name, type_name
             )?;
         }
@@ -275,10 +275,10 @@ fn output_stateful_element_builders(
             if attr.name.starts_with("on") {
                 writeln!(
                     file,
-                    "impl<State{}> {}<State{}> {{ pub fn {}(mut self, handler: VdomEventHandler<State>) -> Self {{ self.events.push((\"{}\".to_string(), handler)); self }} }}",
-                    if name == "a" { ", L: crate::Route" } else { "" },
+                    "impl{} {}{} {{ pub fn {}(mut self, handler: VdomEventHandler) -> Self {{ self.events.push((\"{}\".to_string(), handler)); self }} }}",
+                    if name == "a" { "<L: crate::Route>" } else { "" },
                     type_name,
-                    if name == "a" { ", L" } else { "" },
+                    if name == "a" { "<L>" } else { "" },
                     method_name,
                     attr.name.trim_start_matches("on")
                 )?;
@@ -286,10 +286,10 @@ fn output_stateful_element_builders(
                 let attribute_name = to_html_attribute_name(&attr.name);
                 writeln!(
                     file,
-                    "impl<State{}> {}<State{}> {{ pub fn {}(mut self, value: bool) -> Self {{ if value {{ self.attributes.push((\"{}\".to_string(), String::new())); }} self }} }}",
-                    if name == "a" { ", L: crate::Route" } else { "" },
+                    "impl{} {}{} {{ pub fn {}(mut self, value: bool) -> Self {{ if value {{ self.attributes.push((\"{}\".to_string(), String::new())); }} self }} }}",
+                    if name == "a" { "<L: crate::Route>" } else { "" },
                     type_name,
-                    if name == "a" { ", L" } else { "" },
+                    if name == "a" { "<L>" } else { "" },
                     method_name,
                     attribute_name
                 )?;
@@ -297,10 +297,10 @@ fn output_stateful_element_builders(
                 let attribute_name = to_html_attribute_name(&attr.name);
                 writeln!(
                     file,
-                    "impl<State{}> {}<State{}> {{ pub fn {}(self, value: impl Into<String>) -> Self {{ self.attribute(\"{}\", value) }} }}",
-                    if name == "a" { ", L: crate::Route" } else { "" },
+                    "impl{} {}{} {{ pub fn {}(self, value: impl Into<String>) -> Self {{ self.attribute(\"{}\", value) }} }}",
+                    if name == "a" { "<L: crate::Route>" } else { "" },
                     type_name,
-                    if name == "a" { ", L" } else { "" },
+                    if name == "a" { "<L>" } else { "" },
                     method_name,
                     attribute_name
                 )?;

@@ -97,7 +97,7 @@ pub fn render(
     state: &AppState,
     resource_hash: &Option<ResourceHash>,
     ssr_initial_state_json: Option<&str>,
-) -> Node<AppState> {
+) -> Node {
     let mut head_children = vec![
         Title::new()
             .children([text(page_title::document_title_text(state))])

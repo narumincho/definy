@@ -50,7 +50,7 @@ fn optional_part_type_text(part_type: &Option<definy_event::event::PartType>) ->
         .unwrap_or_else(|| "None".to_string())
 }
 
-pub fn event_list_view(state: &AppState) -> Node<AppState> {
+pub fn event_list_view(state: &AppState) -> Node {
     let state = state.clone();
     // Load events if needed
     let _filter = state.event_list_state.filter_event_type;
@@ -425,7 +425,7 @@ pub fn event_list_view(state: &AppState) -> Node<AppState> {
                                 state.event_cache.get(hash).map(|event| (hash, event))
                             })
                             .map(|(hash, event)| event_view(&state, hash, event, &account_name_map))
-                            .collect::<Vec<Node<AppState>>>()
+                            .collect::<Vec<Node>>()
                     })
                     .into_node(),
             );
@@ -507,9 +507,9 @@ fn event_view(
         definy_event::VerifyAndDeserializeError,
     >,
     account_name_map: &std::collections::HashMap<definy_event::event::AccountId, Box<str>>,
-) -> Node<AppState> {
+) -> Node {
     match event_result {
-        Ok((_, event)) => A::<AppState, crate::Location>::new()
+        Ok((_, event)) => A::<crate::Location>::new()
             .class("event-card")
             .style(
                 Style::new()
@@ -574,7 +574,7 @@ fn event_view(
                     EventContent::PartDefinition(part_definition_event) => Div::new()
                         .style(Style::new().set("font-size", "0.98rem"))
                         .children([
-                            A::<AppState, crate::Location>::new()
+                            A::<crate::Location>::new()
                                 .href(state.href_with_lang(crate::Location::Account(
                                     event.account_id.clone(),
                                 )))
@@ -610,7 +610,7 @@ fn event_view(
                                     .children([text(part_definition_event.description.as_ref())])
                                     .into_node()
                             },
-                            A::<AppState, crate::Location>::new()
+                            A::<crate::Location>::new()
                                 .href(state.href_with_lang(crate::Location::Part(hash.clone())))
                                 .style(
                                     Style::new()
@@ -630,7 +630,7 @@ fn event_view(
                     EventContent::PartUpdate(part_update_event) => Div::new()
                         .style(Style::new().set("font-size", "1.05rem"))
                         .children([
-                            A::<AppState, crate::Location>::new()
+                            A::<crate::Location>::new()
                                 .href(state.href_with_lang(crate::Location::Account(
                                     event.account_id.clone(),
                                 )))
@@ -681,7 +681,7 @@ fn event_view(
                                     part_update_event.part_definition_event_hash
                                 ))])
                                 .into_node(),
-                            A::<AppState, crate::Location>::new()
+                            A::<crate::Location>::new()
                                 .href(state.href_with_lang(crate::Location::Part(
                                     part_update_event.part_definition_event_hash.clone(),
                                 )))
@@ -703,7 +703,7 @@ fn event_view(
                     EventContent::ModuleDefinition(module_definition_event) => Div::new()
                         .style(Style::new().set("font-size", "1rem"))
                         .children([
-                            A::<AppState, crate::Location>::new()
+                            A::<crate::Location>::new()
                                 .href(state.href_with_lang(crate::Location::Account(
                                     event.account_id.clone(),
                                 )))
@@ -748,7 +748,7 @@ fn event_view(
                     EventContent::ModuleUpdate(module_update_event) => Div::new()
                         .style(Style::new().set("font-size", "1rem"))
                         .children([
-                            A::<AppState, crate::Location>::new()
+                            A::<crate::Location>::new()
                                 .href(state.href_with_lang(crate::Location::Account(
                                     event.account_id.clone(),
                                 )))
@@ -801,7 +801,7 @@ fn event_view(
                                     module_update_event.module_definition_event_hash,
                                 ))])
                                 .into_node(),
-                            A::<AppState, crate::Location>::new()
+                            A::<crate::Location>::new()
                                 .href(state.href_with_lang(crate::Location::Event(
                                     module_update_event.module_definition_event_hash.clone(),
                                 )))
@@ -847,7 +847,7 @@ fn event_view(
     }
 }
 
-fn part_name_input(state: &AppState) -> Node<AppState> {
+fn part_name_input(state: &AppState) -> Node {
     let mut input = Input::new()
         .name("part-name")
         .type_("text")
@@ -869,7 +869,7 @@ fn part_name_input(state: &AppState) -> Node<AppState> {
     input.into_node()
 }
 
-fn part_description_input(state: &AppState) -> Node<AppState> {
+fn part_description_input(state: &AppState) -> Node {
     let mut textarea = Textarea::new()
         .name("part-description")
         .value(&state.part_definition_form.part_description_input)
@@ -892,7 +892,7 @@ fn part_description_input(state: &AppState) -> Node<AppState> {
     textarea.into_node()
 }
 
-fn part_type_input(state: &AppState) -> Node<AppState> {
+fn part_type_input(state: &AppState) -> Node {
     Div::new()
         .style(Style::new().set("display", "grid").set("gap", "0.35rem"))
         .children([
@@ -909,7 +909,7 @@ fn part_type_input(state: &AppState) -> Node<AppState> {
         .into_node()
 }
 
-fn module_selection_input(state: &AppState) -> Node<AppState> {
+fn module_selection_input(state: &AppState) -> Node {
     let mut options = vec![(
         "".to_string(),
         i18n::tr(
@@ -968,7 +968,7 @@ fn render_part_type_editor(
     state: &AppState,
     part_type: &Option<definy_event::event::PartType>,
     depth: usize,
-) -> Node<AppState> {
+) -> Node {
     let name = format!("part-definition-type-{}", depth);
     let selected = current_part_type_selection(part_type);
 

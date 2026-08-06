@@ -1,20 +1,20 @@
 use crate::node::{self, EventHandler};
 use crate::style::Style;
 
-pub struct Button<State> {
+pub struct Button {
     pub attributes: Vec<(String, String)>,
     pub styles: Style,
-    pub events: Vec<(String, EventHandler<State>)>,
-    pub children: Vec<node::Node<State>>,
+    pub events: Vec<(String, EventHandler)>,
+    pub children: Vec<node::Node>,
 }
 
-impl<State> Default for Button<State> {
+impl Default for Button {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl<State> Button<State> {
+impl Button {
     /// https://developer.mozilla.org/docs/Web/HTML/Reference/Elements/button
     pub fn new() -> Self {
         Self {
@@ -61,17 +61,17 @@ impl<State> Button<State> {
     }
 
     /// https://developer.mozilla.org/docs/Web/API/Element/click_event
-    pub fn on_click(mut self, handler: EventHandler<State>) -> Self {
+    pub fn on_click(mut self, handler: EventHandler) -> Self {
         self.events.push(("click".to_string(), handler));
         self
     }
 
-    pub fn children(mut self, children: impl Into<Vec<node::Node<State>>>) -> Self {
+    pub fn children(mut self, children: impl Into<Vec<node::Node>>) -> Self {
         self.children = children.into();
         self
     }
 
-    pub fn into_node(self) -> node::Node<State> {
+    pub fn into_node(self) -> node::Node {
         node::Node::Element(node::Element {
             element_name: "button".to_string(),
             attributes: self.attributes,

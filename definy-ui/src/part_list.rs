@@ -26,7 +26,7 @@ fn optional_part_type_text(part_type: &Option<definy_event::event::PartType>) ->
         .unwrap_or_else(|| "None".to_string())
 }
 
-pub fn part_list_view(state: &AppState) -> Node<AppState> {
+pub fn part_list_view(state: &AppState) -> Node {
     let snapshots = collect_part_snapshots(state);
     let account_name_map = state.account_name_map();
 
@@ -119,7 +119,7 @@ pub fn part_list_view(state: &AppState) -> Node<AppState> {
                                                 ))])
                                                 .into_node()
                                         },
-                                        A::<AppState, Location>::new()
+                                        A::<Location>::new()
                                             .href(state.href_with_lang(Location::Part(
                                                 part.definition_event_hash.clone(),
                                             )))
@@ -179,7 +179,7 @@ pub fn part_list_view(state: &AppState) -> Node<AppState> {
                                                     .set("gap", "0.45rem"),
                                             )
                                             .children([
-                                                A::<AppState, Location>::new()
+                                                A::<Location>::new()
                                                     .href(state.href_with_lang(Location::Event(
                                                         part.latest_event_hash,
                                                     )))
@@ -190,7 +190,7 @@ pub fn part_list_view(state: &AppState) -> Node<AppState> {
                                                         "Lasta evento",
                                                     ))])
                                                     .into_node(),
-                                                A::<AppState, Location>::new()
+                                                A::<Location>::new()
                                                     .href(state.href_with_lang(Location::Event(
                                                         part.definition_event_hash,
                                                     )))
@@ -206,7 +206,7 @@ pub fn part_list_view(state: &AppState) -> Node<AppState> {
                                     ])
                                     .into_node()
                             })
-                            .collect::<Vec<Node<AppState>>>(),
+                            .collect::<Vec<Node>>(),
                     )
                     .into_node()
             },

@@ -6,11 +6,11 @@ mod style;
 
 pub use button::{Button, CommandValue};
 pub use elements::*;
-pub use node::{Element, EventHandler, Node};
+pub use node::{AnyStateDispatcher, Element, EventHandler, Node};
 pub use route::*;
 pub use style::Style;
 
-pub fn text<State>(text: impl Into<String>) -> Node<State> {
+pub fn text(text: impl Into<String>) -> Node {
     Node::Text(text.into().into())
 }
 
@@ -44,11 +44,11 @@ pub fn normalize_attribute_name(name: &str) -> String {
     name.to_string()
 }
 
-pub fn to_html<State>(node: &Node<State>) -> String {
+pub fn to_html(node: &Node) -> String {
     "<!doctype html>".to_string() + &to_string(node)
 }
 
-pub fn to_string<State>(node: &Node<State>) -> String {
+pub fn to_string(node: &Node) -> String {
     match node {
         Node::Element(vdom) => {
             let mut html = String::new();
@@ -116,9 +116,7 @@ mod tests {
 
     #[test]
     fn aria_attributes_are_rendered_with_html_hyphenated_names() {
-        let node = elements::Button::<()>::new()
-            .aria_label("Close")
-            .into_node();
+        let node = elements::Button::new().aria_label("Close").into_node();
         let html = to_string(&node);
 
         assert!(html.contains("aria-label=\"Close\""));

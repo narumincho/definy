@@ -5,7 +5,7 @@ use crate::app_state::AppState;
 use crate::i18n;
 use crate::module_projection::collect_module_snapshots;
 
-pub fn module_list_view(state: &AppState) -> Node<AppState> {
+pub fn module_list_view(state: &AppState) -> Node {
     let snapshots = collect_module_snapshots(state);
     let account_name_map = state.account_name_map();
 
@@ -162,7 +162,7 @@ pub fn module_list_view(state: &AppState) -> Node<AppState> {
                                                         .set("gap", "0.45rem"),
                                                 )
                                                 .children([
-                                                    A::<AppState, crate::Location>::new()
+                                                    A::<crate::Location>::new()
                                                         .href(
                                                             state.href_with_lang(
                                                                 crate::Location::Module(
@@ -179,7 +179,7 @@ pub fn module_list_view(state: &AppState) -> Node<AppState> {
                                                             "Malfermi modulajn detalojn",
                                                         ))])
                                                         .into_node(),
-                                                    A::<AppState, crate::Location>::new()
+                                                    A::<crate::Location>::new()
                                                         .href(state.href_with_lang(
                                                             crate::Location::Event(
                                                                 module.latest_event_hash,
@@ -192,7 +192,7 @@ pub fn module_list_view(state: &AppState) -> Node<AppState> {
                                                             "Lasta evento",
                                                         ))])
                                                         .into_node(),
-                                                    A::<AppState, crate::Location>::new()
+                                                    A::<crate::Location>::new()
                                                         .href(state.href_with_lang(
                                                             crate::Location::Event(
                                                                 module.definition_event_hash,
@@ -210,7 +210,7 @@ pub fn module_list_view(state: &AppState) -> Node<AppState> {
                                         ])
                                         .into_node()
                                 })
-                                .collect::<Vec<Node<AppState>>>(),
+                                .collect::<Vec<Node>>(),
                         )
                         .into_node(),
                 );
@@ -220,7 +220,7 @@ pub fn module_list_view(state: &AppState) -> Node<AppState> {
         .into_node()
 }
 
-fn module_create_form(state: &AppState) -> Node<AppState> {
+fn module_create_form(state: &AppState) -> Node {
     Div::new()
         .class("event-detail-card")
         .style(Style::new().set("display", "grid").set("gap", "0.6rem"))
@@ -372,7 +372,7 @@ fn module_create_form(state: &AppState) -> Node<AppState> {
         .into_node()
 }
 
-fn module_name_input(state: &AppState) -> Node<AppState> {
+fn module_name_input(state: &AppState) -> Node {
     let mut input = Input::new()
         .name("module-name")
         .type_("text")
@@ -395,7 +395,7 @@ fn module_name_input(state: &AppState) -> Node<AppState> {
     input.into_node()
 }
 
-fn module_description_input(state: &AppState) -> Node<AppState> {
+fn module_description_input(state: &AppState) -> Node {
     let mut textarea = Textarea::new()
         .name("module-description")
         .value(&state.module_definition_form.module_description_input)

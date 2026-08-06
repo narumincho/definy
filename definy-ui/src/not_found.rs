@@ -3,7 +3,7 @@ use crate::app_state::AppState;
 use crate::i18n;
 use narumincho_vdom::*;
 
-pub fn not_found_view(state: &AppState) -> Node<AppState> {
+pub fn not_found_view(state: &AppState) -> Node {
     Div::new()
         .class("page-shell not-found")
         .style(
@@ -48,7 +48,7 @@ pub fn not_found_view(state: &AppState) -> Node<AppState> {
                     "Paĝo ne trovita",
                 ))])
                 .into_node(),
-            A::<AppState, Location>::new()
+            A::<Location>::new()
                 .class("cta-link")
                 .href(state.href_with_lang(Location::Home))
                 .style(
