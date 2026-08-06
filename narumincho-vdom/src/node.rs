@@ -8,7 +8,7 @@ use std::{pin::Pin, rc::Rc};
 pub struct Element {
     pub element_name: String,
     pub attributes: Vec<(String, String)>,
-    pub styles: crate::style::Style,
+    pub styles: crate::Style,
     pub events: Vec<(String, EventHandler)>,
     pub children: Vec<Node>,
 }

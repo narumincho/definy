@@ -37,13 +37,6 @@ pub struct ResolvedAttribute {
     pub enum_values: Option<Vec<String>>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct HtmlElementInfo {
-    pub element_name: String,
-    pub interface_name: String,
-    pub attributes: Vec<ResolvedAttribute>,
-}
-
 impl IdlDatabase {
     pub fn parse_file(&mut self, content: &str) -> anyhow::Result<()> {
         let tokens = tokenize(content);

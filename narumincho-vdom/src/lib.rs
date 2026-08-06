@@ -1,13 +1,14 @@
 mod elements;
 mod node;
 mod route;
-mod style;
+#[path = "style.rs"]
+mod vdom_style;
 
 pub use elements::button::{Button, ButtonCommand as CommandValue};
 pub use elements::*;
 pub use node::{AnyStateDispatcher, Element, EventHandler, Node};
 pub use route::*;
-pub use style::Style;
+pub use vdom_style::Style;
 
 pub fn text(text: impl Into<String>) -> Node {
     Node::Text(text.into().into())

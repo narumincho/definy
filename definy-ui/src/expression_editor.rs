@@ -97,8 +97,8 @@ fn allow_kind_change_for_nested_values(allow_kind_change: bool, path: &[PathStep
 pub struct ExpressionEditorContext<'a> {
     pub path: Vec<PathStep>,
     pub target: EditorTarget,
-    pub scope_variables: Vec<ScopeVariable>,
-    pub diagnostics: &'a [TypeDiagnostic],
+    scope_variables: Vec<ScopeVariable>,
+    diagnostics: &'a [TypeDiagnostic],
     pub structure_locked: bool,
     pub allow_kind_change: bool,
 }
