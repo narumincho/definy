@@ -3,7 +3,7 @@ use narumincho_vdom::*;
 use crate::{
     LoginOrCreateAccountDialogState,
     app_state::{AppState, CreatingAccountState},
-    fetch, i18n,
+    fetch,
 };
 
 /// ログインまたはアカウント作成ダイアログ
@@ -26,12 +26,14 @@ pub fn login_or_create_account_dialog(state: &AppState) -> Node {
                         .children([text(
                             match state.login_or_create_account_dialog_state.state {
                                 CreatingAccountState::LogIn => {
-                                    i18n::tr(state, "Log In", "ログイン", "Ensaluti")
+                                    state.language.label("Log In", "ログイン", "Ensaluti")
                                 }
                                 CreatingAccountState::CreateAccount => {
-                                    i18n::tr(state, "Sign Up", "サインアップ", "Registriĝi")
+                                    state
+                                        .language
+                                        .label("Sign Up", "サインアップ", "Registriĝi")
                                 }
-                                _ => i18n::tr(state, "Account", "アカウント", "Konto"),
+                                _ => state.language.label("Account", "アカウント", "Konto"),
                             },
                         )])
                         .into_node(),
@@ -104,7 +106,7 @@ pub fn login_or_create_account_dialog(state: &AppState) -> Node {
                                 ),
                         )
                         .on_click(create_login_event_handler())
-                        .children([text(i18n::tr(state, "Log In", "ログイン", "Ensaluti"))])
+                        .children([text(state.language.label("Log In", "ログイン", "Ensaluti"))])
                         .into_node(),
                     Button::new()
                         .type_("button")
@@ -157,8 +159,7 @@ pub fn login_or_create_account_dialog(state: &AppState) -> Node {
                                 }
                             }));
                         }))
-                        .children([text(i18n::tr(
-                            state,
+                        .children([text(state.language.label(
                             "Sign Up",
                             "サインアップ",
                             "Registriĝi",
@@ -199,8 +200,7 @@ fn login_view(state: &AppState) -> Node {
                 .class("form-group")
                 .children([
                     Label::new()
-                        .children([text(i18n::tr(
-                            state,
+                        .children([text(state.language.label(
                             "Secret Key",
                             "秘密鍵",
                             "Sekreta ŝlosilo",
@@ -217,7 +217,7 @@ fn login_view(state: &AppState) -> Node {
             Button::new()
                 .type_("submit")
                 .style(Style::new().set("width", "100%"))
-                .children([text(i18n::tr(state, "Log In", "ログイン", "Ensaluti"))])
+                .children([text(state.language.label("Log In", "ログイン", "Ensaluti"))])
                 .into_node(),
         ])
         .into_node()
@@ -230,7 +230,7 @@ fn generate_key() -> ed25519_dalek::SigningKey {
 
 fn create_account_view(state: &AppState, force_offline: bool) -> Node {
     let dialog_state = &state.login_or_create_account_dialog_state;
-    let lang_code = state.language.code;
+    let language = state.language.clone();
     let mut password_input = Input::new()
         .type_("password")
         .name("password")
@@ -256,6 +256,7 @@ fn create_account_view(state: &AppState, force_offline: bool) -> Node {
             let set_state = std::rc::Rc::new(set_state);
             let set_state_for_async = set_state.clone();
             let generated_key = generated_key_for_submit.clone();
+            let language = language.clone();
             async move {
                 let username = crate::dom::get_input_value("input[name='username']");
 
@@ -283,29 +284,29 @@ fn create_account_view(state: &AppState, force_offline: bool) -> Node {
                             let status = record.status.clone();
                             let status_for_state = status.clone();
                             let message = match status {
-                                crate::local_event::LocalEventStatus::Sent => i18n::tr_lang(
-                                    lang_code,
-                                    "Account created",
-                                    "アカウントを作成しました",
-                                    "Konto kreita",
-                                )
-                                .to_string(),
-                                crate::local_event::LocalEventStatus::Queued => i18n::tr_lang(
-                                    lang_code,
-                                    "Queued: network unavailable",
-                                    "キュー済み: ネットワーク未接続",
-                                    "En vico: reto nedisponebla",
-                                )
-                                .to_string(),
+                                crate::local_event::LocalEventStatus::Sent => language
+                                    .label(
+                                        "Account created",
+                                        "アカウントを作成しました",
+                                        "Konto kreita",
+                                    )
+                                    .to_string(),
+                                crate::local_event::LocalEventStatus::Queued => language
+                                    .label(
+                                        "Queued: network unavailable",
+                                        "キュー済み: ネットワーク未接続",
+                                        "En vico: reto nedisponebla",
+                                    )
+                                    .to_string(),
                                 crate::local_event::LocalEventStatus::Failed => {
                                     record.last_error.clone().unwrap_or_else(|| {
-                                        i18n::tr_lang(
-                                            lang_code,
-                                            "Failed to send",
-                                            "送信に失敗しました",
-                                            "Sendado malsukcesis",
-                                        )
-                                        .to_string()
+                                        language
+                                            .label(
+                                                "Failed to send",
+                                                "送信に失敗しました",
+                                                "Sendado malsukcesis",
+                                            )
+                                            .to_string()
                                     })
                                 }
                             };
@@ -353,7 +354,11 @@ fn create_account_view(state: &AppState, force_offline: bool) -> Node {
                 .class("form-group")
                 .children([
                     Label::new()
-                        .children([text(i18n::tr(state, "Username", "ユーザー名", "Uzantnomo"))])
+                        .children([text(state.language.label(
+                            "Username",
+                            "ユーザー名",
+                            "Uzantnomo",
+                        ))])
                         .into_node(),
                     Input::new()
                         .type_("text")
@@ -368,8 +373,7 @@ fn create_account_view(state: &AppState, force_offline: bool) -> Node {
                 .class("form-group")
                 .children([
                     Label::new()
-                        .children([text(i18n::tr(
-                            state,
+                        .children([text(state.language.label(
                             "User ID (Public Key)",
                             "ユーザーID (公開鍵)",
                             "Uzanto-ID (publika ŝlosilo)",
@@ -400,8 +404,7 @@ fn create_account_view(state: &AppState, force_offline: bool) -> Node {
                 .class("form-group")
                 .children([
                     Label::new()
-                        .children([text(i18n::tr(
-                            state,
+                        .children([text(state.language.label(
                             "Secret Key",
                             "秘密鍵",
                             "Sekreta ŝlosilo",
@@ -410,8 +413,7 @@ fn create_account_view(state: &AppState, force_offline: bool) -> Node {
                     Div::new()
                         .class("hint")
                         .style(Style::new().set("margin-bottom", "0.5rem"))
-                        .children([text(i18n::tr(
-                            state,
+                        .children([text(state.language.label(
                             "If you lose your secret key, you will not be able to log in again.",
                             "秘密鍵を失うと再ログインできません。",
                             "Se vi perdas la sekretan ŝlosilon, vi ne povos denove ensaluti.",
@@ -441,7 +443,7 @@ fn create_account_view(state: &AppState, force_offline: bool) -> Node {
                                     }
                                 }))
                                 .type_("button")
-                                .children([text(i18n::tr(state, "Copy", "コピー", "Kopii"))])
+                                .children([text(state.language.label("Copy", "コピー", "Kopii"))])
                                 .into_node(),
                             Button::new()
                                 .on_click(EventHandler::new(async |set_state| {
@@ -460,7 +462,11 @@ fn create_account_view(state: &AppState, force_offline: bool) -> Node {
                                 }))
                                 .type_("button")
                                 .disabled(requesting)
-                                .children([text(i18n::tr(state, "Regen", "再生成", "Regeneri"))])
+                                .children([text(state.language.label(
+                                    "Regen",
+                                    "再生成",
+                                    "Regeneri",
+                                ))])
                                 .into_node(),
                         ])
                         .into_node(),
@@ -474,29 +480,30 @@ fn create_account_view(state: &AppState, force_offline: bool) -> Node {
                         .command(CommandValue::Close)
                         .type_("button")
                         .on_click(EventHandler::new::<AppState, _, _>(async |_set_state| {}))
-                        .children([text(i18n::tr(state, "Cancel", "キャンセル", "Nuligi"))])
+                        .children([text(state.language.label("Cancel", "キャンセル", "Nuligi"))])
                         .into_node(),
                     Button::new()
                         .type_("submit")
                         .disabled(requesting)
                         .children([text(match dialog_state.state {
                             CreatingAccountState::LogIn => {
-                                i18n::tr(state, "Log In", "ログイン", "Ensaluti")
+                                state.language.label("Log In", "ログイン", "Ensaluti")
                             }
                             CreatingAccountState::CreateAccount => {
-                                i18n::tr(state, "Sign Up", "サインアップ", "Registriĝi")
+                                state
+                                    .language
+                                    .label("Sign Up", "サインアップ", "Registriĝi")
                             }
-                            CreatingAccountState::CreateAccountRequesting => i18n::tr(
-                                state,
+                            CreatingAccountState::CreateAccountRequesting => state.language.label(
                                 "Signing Up...",
                                 "サインアップ中...",
                                 "Registriĝante...",
                             ),
                             CreatingAccountState::Success => {
-                                i18n::tr(state, "Success", "成功", "Sukceso")
+                                state.language.label("Success", "成功", "Sukceso")
                             }
                             CreatingAccountState::Error => {
-                                i18n::tr(state, "Error", "エラー", "Eraro")
+                                state.language.label("Error", "エラー", "Eraro")
                             }
                         })])
                         .into_node(),

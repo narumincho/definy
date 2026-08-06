@@ -1,6 +1,5 @@
 use crate::Location;
 use crate::app_state::AppState;
-use crate::i18n;
 use narumincho_vdom::*;
 
 pub fn not_found_view(state: &AppState) -> Node {
@@ -24,10 +23,7 @@ pub fn not_found_view(state: &AppState) -> Node {
                     Style::new()
                         .set("font-size", "6rem")
                         .set("font-weight", "700")
-                        .set("background", "var(--primary-gradient)")
-                        .set("-webkit-background-clip", "text")
-                        .set("-webkit-text-fill-color", "transparent")
-                        .set("color", "transparent")
+                        .set("color", "var(--primary)")
                         .set("letter-spacing", "-0.05em")
                         .set("width", "fit-content"),
                 )
@@ -41,8 +37,7 @@ pub fn not_found_view(state: &AppState) -> Node {
                         .set("color", "var(--text-primary)")
                         .set("margin-bottom", "2rem"),
                 )
-                .children([text(i18n::tr(
-                    state,
+                .children([text(state.language.label(
                     "Page Not Found",
                     "ページが見つかりません",
                     "Paĝo ne trovita",
@@ -58,7 +53,7 @@ pub fn not_found_view(state: &AppState) -> Node {
                         .set("justify-content", "center")
                         .set("gap", "0.5rem")
                         .set("color", "var(--primary-content)")
-                        .set("background", "var(--primary-gradient)")
+                        .set("background", "var(--primary)")
                         .set("padding", "0.75rem 2rem")
                         .set("border-radius", "var(--radius-full)")
                         .set("text-decoration", "none")
@@ -66,8 +61,7 @@ pub fn not_found_view(state: &AppState) -> Node {
                         .set("transition", "all 0.3s ease")
                         .set("box-shadow", "0 4px 10px rgba(139, 92, 246, 0.25)"),
                 )
-                .children([text(i18n::tr(
-                    state,
+                .children([text(state.language.label(
                     "Return to Home",
                     "ホームに戻る",
                     "Reen al hejmo",

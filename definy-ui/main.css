@@ -6,8 +6,6 @@
   --surface-hover: rgba(28, 38, 46, 0.92);
   --surface-opaque: #162129;
 
-  --primary-gradient: none;
-  --primary-hover-gradient: none;
   --primary: #7cc0d8;
   --primary-content: #f1f6fb;
 
@@ -346,7 +344,7 @@ textarea {
   justify-content: center;
   gap: 0.5rem;
   color: var(--primary-content);
-  background: var(--primary-gradient);
+  background: var(--primary);
   padding: 0.6rem 1.3rem;
   border-radius: var(--radius-full);
   font-weight: 600;

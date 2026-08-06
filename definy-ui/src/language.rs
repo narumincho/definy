@@ -3,10 +3,10 @@ use std::collections::HashSet;
 use crate::query::parse_query;
 
 #[derive(Clone, Copy, PartialEq, Eq)]
-pub struct Language {
-    pub code: &'static str,
-    pub english_name: &'static str,
-    pub native_name: &'static str,
+pub enum Language {
+    English,
+    Japanese,
+    Esperanto,
 }
 
 #[derive(Clone)]
@@ -21,28 +21,13 @@ impl LanguageResolution {
             .as_ref()
             .map(|req| crate::LanguageFallbackNotice {
                 requested: req.clone(),
-                fallback_to_code: self.language.code,
+                fallback_to_code: self.language.to_code(),
             })
     }
 }
 
-pub const SUPPORTED_LANGUAGES: &[Language] = &[
-    Language {
-        code: "en",
-        english_name: "English",
-        native_name: "English",
-    },
-    Language {
-        code: "ja",
-        english_name: "Japanese",
-        native_name: "日本語",
-    },
-    Language {
-        code: "eo",
-        english_name: "Esperanto",
-        native_name: "Esperanto",
-    },
-];
+pub const SUPPORTED_LANGUAGES: &[Language] =
+    &[Language::English, Language::Japanese, Language::Esperanto];
 
 pub fn default_language() -> Language {
     SUPPORTED_LANGUAGES[0]
@@ -58,10 +43,7 @@ pub fn language_from_tag(tag: &str) -> Option<Language> {
         .next()
         .unwrap_or(tag)
         .to_ascii_lowercase();
-    SUPPORTED_LANGUAGES
-        .iter()
-        .find(|lang| lang.code == primary)
-        .copied()
+    Language::from_code(primary.as_str())
 }
 
 pub fn language_from_query(query: Option<&str>) -> Option<Language> {
@@ -69,8 +51,8 @@ pub fn language_from_query(query: Option<&str>) -> Option<Language> {
     params.lang.as_deref().and_then(language_from_tag)
 }
 
-pub fn language_label(language: &Language) -> String {
-    format!("{} ({})", language.native_name, language.english_name)
+pub fn language_label(language: &Language) -> &'static str {
+    language.native_name()
 }
 
 pub fn preferred_languages() -> Vec<Language> {
@@ -78,13 +60,13 @@ pub fn preferred_languages() -> Vec<Language> {
     let mut seen = HashSet::new();
     for tag in browser_language_tags() {
         if let Some(lang) = language_from_tag(tag.as_str())
-            && seen.insert(lang.code)
+            && seen.insert(lang.to_code())
         {
             ordered.push(lang);
         }
     }
     for lang in SUPPORTED_LANGUAGES.iter().copied() {
-        if seen.insert(lang.code) {
+        if seen.insert(lang.to_code()) {
             ordered.push(lang);
         }
     }
@@ -198,4 +180,39 @@ fn browser_language_tags() -> Vec<String> {
 #[cfg(not(target_arch = "wasm32"))]
 fn browser_language_tags() -> Vec<String> {
     Vec::new()
+}
+
+impl Language {
+    pub fn from_code(code: &str) -> Option<Self> {
+        match code {
+            "en" => Some(Language::English),
+            "ja" => Some(Language::Japanese),
+            "eo" => Some(Language::Esperanto),
+            _ => None,
+        }
+    }
+
+    pub fn to_code(&self) -> &'static str {
+        match self {
+            Language::English => "en",
+            Language::Japanese => "ja",
+            Language::Esperanto => "eo",
+        }
+    }
+
+    pub fn native_name(&self) -> &'static str {
+        match self {
+            Language::English => "English",
+            Language::Japanese => "日本語",
+            Language::Esperanto => "Esperanto",
+        }
+    }
+
+    pub fn label<'a>(&self, en: &'a str, ja: &'a str, eo: &'a str) -> &'a str {
+        match self {
+            Language::English => en,
+            Language::Japanese => ja,
+            Language::Esperanto => eo,
+        }
+    }
 }

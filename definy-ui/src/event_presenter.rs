@@ -2,31 +2,24 @@ use definy_event::event::{Event, EventContent};
 
 use crate::app_state::AppState;
 use crate::expression_eval::expression_to_source;
-use crate::i18n;
 
 pub fn event_summary_text(state: &AppState, event: &Event) -> String {
     match &event.content {
         EventContent::CreateAccount(create_account_event) => {
             format!(
                 "{} {}",
-                i18n::tr(
-                    state,
-                    "Account created:",
-                    "アカウント作成:",
-                    "Konto kreita:"
-                ),
+                state
+                    .language
+                    .label("Account created:", "アカウント作成:", "Konto kreita:"),
                 create_account_event.account_name
             )
         }
         EventContent::ChangeProfile(change_profile_event) => {
             format!(
                 "{} {}",
-                i18n::tr(
-                    state,
-                    "Profile changed:",
-                    "プロフィール変更:",
-                    "Profilo ŝanĝita:"
-                ),
+                state
+                    .language
+                    .label("Profile changed:", "プロフィール変更:", "Profilo ŝanĝita:"),
                 change_profile_event.account_name
             )
         }
@@ -42,7 +35,9 @@ pub fn event_summary_text(state: &AppState, event: &Event) -> String {
         ),
         EventContent::PartUpdate(part_update_event) => format!(
             "{} {}{} | {}",
-            i18n::tr(state, "Part updated:", "パーツ更新:", "Parto ĝisdatigita:"),
+            state
+                .language
+                .label("Part updated:", "パーツ更新:", "Parto ĝisdatigita:"),
             part_update_event.part_name,
             if part_update_event.part_description.is_empty() {
                 String::new()
@@ -55,23 +50,17 @@ pub fn event_summary_text(state: &AppState, event: &Event) -> String {
             if module_definition_event.description.is_empty() {
                 format!(
                     "{} {}",
-                    i18n::tr(
-                        state,
-                        "Module created:",
-                        "モジュール作成:",
-                        "Modulo kreita:"
-                    ),
+                    state
+                        .language
+                        .label("Module created:", "モジュール作成:", "Modulo kreita:"),
                     module_definition_event.module_name
                 )
             } else {
                 format!(
                     "{} {} - {}",
-                    i18n::tr(
-                        state,
-                        "Module created:",
-                        "モジュール作成:",
-                        "Modulo kreita:"
-                    ),
+                    state
+                        .language
+                        .label("Module created:", "モジュール作成:", "Modulo kreita:"),
                     module_definition_event.module_name,
                     module_definition_event.description
                 )
@@ -81,8 +70,7 @@ pub fn event_summary_text(state: &AppState, event: &Event) -> String {
             if module_update_event.module_description.is_empty() {
                 format!(
                     "{} {}",
-                    i18n::tr(
-                        state,
+                    state.language.label(
                         "Module updated:",
                         "モジュール更新:",
                         "Modulo ĝisdatigita:"
@@ -92,8 +80,7 @@ pub fn event_summary_text(state: &AppState, event: &Event) -> String {
             } else {
                 format!(
                     "{} {} - {}",
-                    i18n::tr(
-                        state,
+                    state.language.label(
                         "Module updated:",
                         "モジュール更新:",
                         "Modulo ĝisdatigita:"
@@ -108,45 +95,45 @@ pub fn event_summary_text(state: &AppState, event: &Event) -> String {
 
 pub fn event_kind_label(state: &AppState, event: &Event) -> String {
     match &event.content {
-        EventContent::CreateAccount(_) => {
-            i18n::tr(state, "CreateAccount", "アカウント作成", "Konto-kreo").to_string()
-        }
-        EventContent::ChangeProfile(_) => {
-            i18n::tr(state, "ChangeProfile", "プロフィール変更", "Profil-ŝanĝo").to_string()
-        }
+        EventContent::CreateAccount(_) => state
+            .language
+            .label("CreateAccount", "アカウント作成", "Konto-kreo")
+            .to_string(),
+        EventContent::ChangeProfile(_) => state
+            .language
+            .label("ChangeProfile", "プロフィール変更", "Profil-ŝanĝo")
+            .to_string(),
         EventContent::PartDefinition(part_definition) => {
             format!(
                 "{} {}",
-                i18n::tr(state, "PartDefinition:", "パーツ定義:", "Parto-difino:"),
+                state
+                    .language
+                    .label("PartDefinition:", "パーツ定義:", "Parto-difino:"),
                 part_definition.part_name
             )
         }
         EventContent::PartUpdate(part_update) => format!(
             "{} {}",
-            i18n::tr(state, "PartUpdate:", "パーツ更新:", "Parto-ĝisdatigo:"),
+            state
+                .language
+                .label("PartUpdate:", "パーツ更新:", "Parto-ĝisdatigo:"),
             part_update.part_name
         ),
         EventContent::ModuleDefinition(module_definition) => {
             format!(
                 "{} {}",
-                i18n::tr(
-                    state,
-                    "ModuleDefinition:",
-                    "モジュール定義:",
-                    "Modulo-difino:"
-                ),
+                state
+                    .language
+                    .label("ModuleDefinition:", "モジュール定義:", "Modulo-difino:"),
                 module_definition.module_name
             )
         }
         EventContent::ModuleUpdate(module_update) => {
             format!(
                 "{} {}",
-                i18n::tr(
-                    state,
-                    "ModuleUpdate:",
-                    "モジュール更新:",
-                    "Modulo-ĝisdatigo:"
-                ),
+                state
+                    .language
+                    .label("ModuleUpdate:", "モジュール更新:", "Modulo-ĝisdatigo:"),
                 module_update.module_name
             )
         }

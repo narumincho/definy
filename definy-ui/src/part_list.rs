@@ -3,7 +3,6 @@ use narumincho_vdom::*;
 use crate::Location;
 use crate::app_state::AppState;
 use crate::expression_eval::expression_to_source;
-use crate::i18n;
 use crate::part_projection::collect_part_snapshots;
 
 fn part_type_text(part_type: &definy_event::event::PartType) -> String {
@@ -36,7 +35,7 @@ pub fn part_list_view(state: &AppState) -> Node {
         .children([
             H2::new()
                 .style(Style::new().set("font-size", "1.3rem"))
-                .children([text(i18n::tr(state, "Parts", "パーツ", "Partoj"))])
+                .children([text(state.language.label("Parts", "パーツ", "Partoj"))])
                 .into_node(),
             if snapshots.is_empty() {
                 Div::new()
@@ -46,8 +45,7 @@ pub fn part_list_view(state: &AppState) -> Node {
                             .set("padding", "0.95rem")
                             .set("color", "var(--text-secondary)"),
                     )
-                    .children([text(i18n::tr(
-                        state,
+                    .children([text(state.language.label(
                         "No parts yet.",
                         "まだパーツがありません。",
                         "Ankoraŭ neniuj partoj.",
@@ -98,7 +96,7 @@ pub fn part_list_view(state: &AppState) -> Node {
                                             )
                                             .children([text(format!(
                                                 "{} {}",
-                                                i18n::tr(state, "type:", "型:", "tipo:"),
+                                                state.language.label("type:", "型:", "tipo:"),
                                                 optional_part_type_text(&part.part_type)
                                             ))])
                                             .into_node(),
@@ -111,8 +109,7 @@ pub fn part_list_view(state: &AppState) -> Node {
                                                         .set("font-size", "0.82rem")
                                                         .set("color", "var(--text-secondary)"),
                                                 )
-                                                .children([text(i18n::tr(
-                                                    state,
+                                                .children([text(state.language.label(
                                                     "definition event missing",
                                                     "定義イベントが見つかりません",
                                                     "difina evento mankas",
@@ -123,8 +120,7 @@ pub fn part_list_view(state: &AppState) -> Node {
                                             .href(state.href_with_lang(Location::Part(
                                                 part.definition_event_hash.clone(),
                                             )))
-                                            .children([text(i18n::tr(
-                                                state,
+                                            .children([text(state.language.label(
                                                 "Open part detail",
                                                 "パーツ詳細を開く",
                                                 "Malfermi partajn detalojn",
@@ -151,7 +147,11 @@ pub fn part_list_view(state: &AppState) -> Node {
                                             )
                                             .children([text(format!(
                                                 "{} {}",
-                                                i18n::tr(state, "expression:", "式:", "esprimo:"),
+                                                state.language.label(
+                                                    "expression:",
+                                                    "式:",
+                                                    "esprimo:"
+                                                ),
                                                 expression_to_source(&part.expression)
                                             ))])
                                             .into_node(),
@@ -163,8 +163,7 @@ pub fn part_list_view(state: &AppState) -> Node {
                                             )
                                             .children([text(format!(
                                                 "{} {}",
-                                                i18n::tr(
-                                                    state,
+                                                state.language.label(
                                                     "latest author:",
                                                     "最新の投稿者:",
                                                     "lasta aŭtoro:"
@@ -183,8 +182,7 @@ pub fn part_list_view(state: &AppState) -> Node {
                                                     .href(state.href_with_lang(Location::Event(
                                                         part.latest_event_hash,
                                                     )))
-                                                    .children([text(i18n::tr(
-                                                        state,
+                                                    .children([text(state.language.label(
                                                         "Latest event",
                                                         "最新イベント",
                                                         "Lasta evento",
@@ -194,8 +192,7 @@ pub fn part_list_view(state: &AppState) -> Node {
                                                     .href(state.href_with_lang(Location::Event(
                                                         part.definition_event_hash,
                                                     )))
-                                                    .children([text(i18n::tr(
-                                                        state,
+                                                    .children([text(state.language.label(
                                                         "Definition event",
                                                         "定義イベント",
                                                         "Difina evento",

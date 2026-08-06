@@ -285,7 +285,7 @@ fn lang_redirect_url(request: &Request<impl hyper::body::Body>) -> Option<String
         .get("accept-language")
         .and_then(|value| value.to_str().ok());
     let best = definy_ui::language::best_language_from_accept_language(accept_language);
-    Some(build_url_with_lang(request.uri(), best.code))
+    Some(build_url_with_lang(request.uri(), best.to_code()))
 }
 
 fn build_url_with_lang(uri: &hyper::Uri, lang_code: &str) -> String {

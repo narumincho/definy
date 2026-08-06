@@ -2,7 +2,6 @@ use definy_event::EventHashId;
 use narumincho_vdom::*;
 
 use crate::app_state::AppState;
-use crate::i18n;
 use crate::module_projection::collect_module_snapshots;
 
 pub fn module_list_view(state: &AppState) -> Node {
@@ -20,8 +19,7 @@ pub fn module_list_view(state: &AppState) -> Node {
                         .set("padding", "0.9rem")
                         .set("color", "var(--text-secondary)"),
                 )
-                .children([text(i18n::tr(
-                    state,
+                .children([text(state.language.label(
                     "Login required to create modules.",
                     "モジュール作成にはログインが必要です。",
                     "Ensaluto necesas por krei modulojn.",
@@ -38,7 +36,11 @@ pub fn module_list_view(state: &AppState) -> Node {
             children.push(
                 H2::new()
                     .style(Style::new().set("font-size", "1.3rem"))
-                    .children([text(i18n::tr(state, "Modules", "モジュール", "Moduloj"))])
+                    .children([text(state.language.label(
+                        "Modules",
+                        "モジュール",
+                        "Moduloj",
+                    ))])
                     .into_node(),
             );
             if let Some(form) = create_form {
@@ -68,8 +70,7 @@ pub fn module_list_view(state: &AppState) -> Node {
                                 .set("padding", "0.95rem")
                                 .set("color", "var(--text-secondary)"),
                         )
-                        .children([text(i18n::tr(
-                            state,
+                        .children([text(state.language.label(
                             "No modules yet.",
                             "まだモジュールがありません。",
                             "Ankoraŭ neniuj moduloj.",
@@ -124,8 +125,7 @@ pub fn module_list_view(state: &AppState) -> Node {
                                                             .set("font-size", "0.82rem")
                                                             .set("color", "var(--text-secondary)"),
                                                     )
-                                                    .children([text(i18n::tr(
-                                                        state,
+                                                    .children([text(state.language.label(
                                                         "definition event missing",
                                                         "定義イベントが見つかりません",
                                                         "difina evento mankas",
@@ -172,8 +172,7 @@ pub fn module_list_view(state: &AppState) -> Node {
                                                                 ),
                                                             ),
                                                         )
-                                                        .children([text(i18n::tr(
-                                                            state,
+                                                        .children([text(state.language.label(
                                                             "Open module detail",
                                                             "モジュール詳細を開く",
                                                             "Malfermi modulajn detalojn",
@@ -185,8 +184,7 @@ pub fn module_list_view(state: &AppState) -> Node {
                                                                 module.latest_event_hash,
                                                             ),
                                                         ))
-                                                        .children([text(i18n::tr(
-                                                            state,
+                                                        .children([text(state.language.label(
                                                             "Latest event",
                                                             "最新イベント",
                                                             "Lasta evento",
@@ -198,8 +196,7 @@ pub fn module_list_view(state: &AppState) -> Node {
                                                                 module.definition_event_hash,
                                                             ),
                                                         ))
-                                                        .children([text(i18n::tr(
-                                                            state,
+                                                        .children([text(state.language.label(
                                                             "Definition event",
                                                             "定義イベント",
                                                             "Difina evento",
@@ -227,9 +224,7 @@ fn module_create_form(state: &AppState) -> Node {
         .children([
             Div::new()
                 .style(Style::new().set("font-size", "0.9rem"))
-                .children([text(i18n::tr(
-                            state,
-                    "Create module",
+                .children([text(state.language.label("Create module",
                     "モジュールを作成",
                     "Krei modulon",
                 ))])
@@ -256,9 +251,7 @@ fn module_create_form(state: &AppState) -> Node {
                             state.module_definition_form.module_description_input.clone();
                         if module_name.is_empty() {
                             let mut next = state.clone();
-                            next.module_definition_form.result_message = Some(i18n::tr(
-                            &state,
-                                "Error: module name is required",
+                            next.module_definition_form.result_message = Some(state.language.label("Error: module name is required",
                                 "エラー: モジュール名は必須です",
                                 "Eraro: modulo-nomo estas bezonata",
                             ).to_string());
@@ -309,27 +302,21 @@ fn module_create_form(state: &AppState) -> Node {
                                             next.module_definition_form.result_message = Some(
                                                 match status {
                                                     crate::local_event::LocalEventStatus::Queued => {
-                                                        i18n::tr(
-                            &state,
-                                                            "ModuleDefinition queued (offline)",
+                                                        state.language.label("ModuleDefinition queued (offline)",
                                                             "ModuleDefinition をキューに追加しました (オフライン)",
                                                             "ModuleDefinition envicigita (senkonekte)",
                                                         )
                                                         .to_string()
                                                     }
                                                     crate::local_event::LocalEventStatus::Failed => {
-                                                        i18n::tr(
-                            &state,
-                                                            "ModuleDefinition failed to send",
+                                                        state.language.label("ModuleDefinition failed to send",
                                                             "ModuleDefinition の送信に失敗しました",
                                                             "ModuleDefinition sendado malsukcesis",
                                                         )
                                                         .to_string()
                                                     }
                                                     crate::local_event::LocalEventStatus::Sent => {
-                                                        i18n::tr(
-                            &state,
-                                                            "ModuleDefinition posted",
+                                                        state.language.label("ModuleDefinition posted",
                                                             "ModuleDefinition を投稿しました",
                                                             "ModuleDefinition sendita",
                                                         )
@@ -346,9 +333,7 @@ fn module_create_form(state: &AppState) -> Node {
                                         let mut next = state.clone();
                                         next.module_definition_form.result_message = Some(format!(
                                             "{} ({:?})",
-                                            i18n::tr(
-                            &state,
-                                                "Error: failed to create module",
+                                            state.language.label("Error: failed to create module",
                                                 "エラー: モジュール作成に失敗しました",
                                                 "Eraro: malsukcesis krei modulon",
                                             ),
@@ -366,7 +351,7 @@ fn module_create_form(state: &AppState) -> Node {
                         next
                     }));
                 }))
-                .children([text(i18n::tr(state, "Create", "作成", "Krei"))])
+                .children([text(state.language.label("Create", "作成", "Krei"))])
                 .into_node(),
         ])
         .into_node()
@@ -379,7 +364,10 @@ fn module_name_input(state: &AppState) -> Node {
         .value(&state.module_definition_form.module_name_input);
     input.attributes.push((
         "placeholder".to_string(),
-        i18n::tr(state, "module name", "モジュール名", "modula nomo").to_string(),
+        state
+            .language
+            .label("module name", "モジュール名", "modula nomo")
+            .to_string(),
     ));
     input.events.push((
         "input".to_string(),
@@ -402,13 +390,14 @@ fn module_description_input(state: &AppState) -> Node {
         .style(Style::new().set("min-height", "5rem"));
     textarea.attributes.push((
         "placeholder".to_string(),
-        i18n::tr(
-            state,
-            "description (optional)",
-            "説明 (任意)",
-            "priskribo (nedeviga)",
-        )
-        .to_string(),
+        state
+            .language
+            .label(
+                "description (optional)",
+                "説明 (任意)",
+                "priskribo (nedeviga)",
+            )
+            .to_string(),
     ));
     textarea.events.push((
         "input".to_string(),

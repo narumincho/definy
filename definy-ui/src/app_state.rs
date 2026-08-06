@@ -371,13 +371,13 @@ impl AppState {
     pub fn url_with_lang(&self, location: &Location) -> String {
         AppState::build_url(
             location,
-            self.language.code,
+            self.language.to_code(),
             self.event_list_state.filter_event_type,
         )
     }
 
     pub fn home_url_with_lang(&self, event_type: Option<EventType>) -> String {
-        AppState::build_url(&Location::Home, self.language.code, event_type)
+        AppState::build_url(&Location::Home, self.language.to_code(), event_type)
     }
 
     pub fn href_with_lang(&self, location: Location) -> narumincho_vdom::Href<Location> {

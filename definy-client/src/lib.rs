@@ -272,7 +272,7 @@ impl narumincho_vdom_client::App<AppState> for DefinyApp {
                         fallback_language,
                         Some(definy_ui::LanguageFallbackNotice {
                             requested: requested_lang,
-                            fallback_to_code: fallback_language.code,
+                            fallback_to_code: fallback_language.to_code(),
                         }),
                     )
                 }
@@ -301,7 +301,7 @@ impl narumincho_vdom_client::App<AppState> for DefinyApp {
             if query_params.lang.is_none()
                 && let Some(location) = &next.location
             {
-                let url = AppState::build_url(location, next.language.code, filter_event_type);
+                let url = AppState::build_url(location, next.language.to_code(), filter_event_type);
                 if let Some(window) = web_sys::window()
                     && let Ok(history) = window.history()
                 {

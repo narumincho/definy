@@ -1,5 +1,4 @@
 use crate::AppState;
-use crate::i18n;
 use narumincho_vdom::*;
 use std::rc::Rc;
 use wasm_bindgen::JsCast;
@@ -19,7 +18,12 @@ pub fn searchable_dropdown(
         .iter()
         .find(|(val, _)| val == current_value)
         .map(|(_, label)| label.clone())
-        .unwrap_or_else(|| i18n::tr(state, "Select...", "選択...", "Elektu...").to_string());
+        .unwrap_or_else(|| {
+            state
+                .language
+                .label("Select...", "選択...", "Elektu...")
+                .to_string()
+        });
 
     let container = Div::new().style(
         Style::new()
@@ -150,7 +154,10 @@ pub fn searchable_dropdown(
             );
         search_input.attributes.push((
             "placeholder".to_string(),
-            i18n::tr(state, "Search...", "検索...", "Serĉi...").to_string(),
+            state
+                .language
+                .label("Search...", "検索...", "Serĉi...")
+                .to_string(),
         ));
         search_input.events.push((
             "input".to_string(),
