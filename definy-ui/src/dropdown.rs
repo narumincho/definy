@@ -146,6 +146,7 @@ fn dropdown_panel(
     let search_name = format!("search-{}", name);
     let search_input = Input::new()
         .type_("text")
+        .autofocus(true)
         .name(&search_name)
         .value(dropdown_search_query)
         .style(

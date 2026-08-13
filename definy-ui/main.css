@@ -75,38 +75,14 @@ textarea {
 }
 
 button {
-  background: var(--primary);
-  color: var(--primary-content);
-  border: 1px solid transparent;
-  border-radius: var(--radius-full);
-  padding: 0.46rem 1.1rem;
-  font-weight: 600;
-  font-size: 0.94rem;
   cursor: pointer;
-  transition: transform 0.22s ease, box-shadow 0.22s ease, background 0.22s ease, border-color 0.22s ease;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  box-shadow: 0 8px 18px rgb(14 165 233 / 0.24);
-}
-
-button:hover {
-  background: #8ad0e6;
-  transform: translateY(-1px);
-  box-shadow: 0 12px 22px rgb(14 165 233 / 0.26);
-}
-
-button:active {
-  transform: translateY(0);
+  border: none;
 }
 
 button:disabled {
   background: rgb(58 74 93 / 0.75);
   color: #9eb0c7;
-  box-shadow: none;
   cursor: not-allowed;
-  transform: none;
 }
 
 button[type='button'] {
