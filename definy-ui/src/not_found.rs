@@ -59,7 +59,7 @@ pub fn not_found_view(state: &AppState) -> Node {
                         .set("text-decoration", "none")
                         .set("font-weight", "600")
                         .set("transition", "all 0.3s ease")
-                        .set("box-shadow", "0 4px 10px rgb(139, 92, 246, 0.25)"),
+                        .set("box-shadow", "0 4px 10px rgb(139 92 246 / 0.25)"),
                 )
                 .children([text(state.language.label(
                     "Return to Home",

@@ -499,13 +499,13 @@ fn event_view(
             .class("event-card")
             .style(
                 Style::new()
-                    .set("background", "rgb(255, 255, 255, 0.02)")
+                    .set("background", "rgb(255 255 255 / 0.02)")
                     .set("backdrop-filter", "var(--glass-blur)")
                     .set("-webkit-backdrop-filter", "var(--glass-blur)")
                     .set("border", "1px solid var(--border)")
                     .set("border-radius", "var(--radius-lg)")
                     .set("padding", "0.95rem")
-                    .set("box-shadow", "0 4px 6px -1px rgb(0, 0, 0, 0.1)")
+                    .set("box-shadow", "0 4px 6px -1px rgb(0 0 0 / 0.1)")
                     .set("transition", "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)")
                     .set("display", "grid")
                     .set("gap", "0.75rem"),
@@ -805,7 +805,7 @@ fn event_view(
             .class("error-card")
             .style(
                 Style::new()
-                    .set("background-color", "rgb(244, 63, 94, 0.1)")
+                    .set("background-color", "rgb(244 63 94 / 0.1)")
                     .set("border", "1px solid var(--error)")
                     .set("border-radius", "var(--radius-md)")
                     .set("padding", "1rem")

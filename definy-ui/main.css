@@ -3,18 +3,18 @@
 :root {
   --background: #10161b;
   --surface: rgb(20 28 35);
-  --surface-hover: rgb(28, 38, 46, 0.92);
+  --surface-hover: rgb(28 38 46 / 0.92);
   --surface-opaque: #162129;
 
   --primary: #7cc0d8;
   --primary-content: #f1f6fb;
 
   --error: #f28b82;
-  --error-bg: rgb(242, 139, 130, 0.12);
+  --error-bg: rgb(242 139 130 / 0.12);
 
-  --border: rgb(160, 176, 192, 0.18);
-  --border-strong: rgb(160, 176, 192, 0.32);
-  --border-focus: rgb(124, 192, 216, 0.4);
+  --border: rgb(160 176 192 / 0.18);
+  --border-strong: rgb(160 176 192 / 0.32);
+  --border-focus: rgb(124 192 216 / 0.4);
 
   --text: #e1e8ef;
   --text-secondary: #a3b2c2;
@@ -24,10 +24,10 @@
   --radius-lg: 18px;
   --radius-full: 9999px;
 
-  --shadow-sm: 0 4px 10px rgb(7, 12, 18, 0.18);
-  --shadow-md: 0 10px 18px rgb(7, 12, 18, 0.26);
-  --shadow-lg: 0 18px 28px rgb(5, 10, 16, 0.34);
-  --shadow-glow: 0 0 0 3px rgb(124, 192, 216, 0.14);
+  --shadow-sm: 0 4px 10px rgb(7 12 18 / 0.18);
+  --shadow-md: 0 10px 18px rgb(7 12 18 / 0.26);
+  --shadow-lg: 0 18px 28px rgb(5 10 16 / 0.34);
+  --shadow-glow: 0 0 0 3px rgb(124 192 216 / 0.14);
 
   --glass-blur: blur(16px);
   --content-max-width: 920px;
@@ -88,13 +88,13 @@ button {
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  box-shadow: 0 8px 18px rgb(14, 165, 233, 0.24);
+  box-shadow: 0 8px 18px rgb(14 165 233 / 0.24);
 }
 
 button:hover {
   background: #8ad0e6;
   transform: translateY(-1px);
-  box-shadow: 0 12px 22px rgb(14, 165, 233, 0.26);
+  box-shadow: 0 12px 22px rgb(14 165 233 / 0.26);
 }
 
 button:active {
@@ -102,7 +102,7 @@ button:active {
 }
 
 button:disabled {
-  background: rgb(58, 74, 93, 0.75);
+  background: rgb(58 74 93 / 0.75);
   color: #9eb0c7;
   box-shadow: none;
   cursor: not-allowed;
@@ -110,14 +110,14 @@ button:disabled {
 }
 
 button[type='button'] {
-  background: rgb(255, 255, 255, 0.04);
+  background: rgb(255 255 255 / 0.04);
   color: var(--text);
   border: 1px solid var(--border);
   box-shadow: none;
 }
 
 button[type='button']:hover {
-  background: rgb(255, 255, 255, 0.08);
+  background: rgb(255 255 255 / 0.08);
   border-color: var(--border-strong);
   box-shadow: var(--shadow-sm);
 }
@@ -145,7 +145,7 @@ dialog {
 }
 
 dialog::backdrop {
-  background-color: rgb(2, 10, 18, 0.66);
+  background-color: rgb(2 10 18 / 0.66);
   backdrop-filter: blur(6px);
   animation: backdrop-show 0.28s ease-out forwards;
 }
@@ -200,7 +200,7 @@ dialog::backdrop {
 
 input,
 textarea {
-  background-color: rgb(7, 13, 22, 0.72);
+  background-color: rgb(7 13 22 / 0.72);
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
   padding: 0.62rem 0.85rem;
@@ -215,14 +215,14 @@ textarea:focus {
   outline: none;
   border-color: var(--primary);
   box-shadow: var(--shadow-glow);
-  background-color: rgb(6, 12, 20, 0.9);
+  background-color: rgb(6 12 20 / 0.9);
 }
 
 input:read-only,
 textarea:read-only {
   opacity: 0.72;
   cursor: default;
-  background-color: rgb(4, 9, 16, 0.72);
+  background-color: rgb(4 9 16 / 0.72);
 }
 
 textarea {
@@ -248,14 +248,14 @@ textarea {
 .mono {
   font-family: 'JetBrains Mono', monospace;
   font-size: 0.84em;
-  background: rgb(0, 0, 0, 0.26);
+  background: rgb(0 0 0 / 0.26);
   padding: 0.2em 0.42em;
   border-radius: 5px;
 }
 
 .app-header {
   border-bottom: 1px solid var(--border);
-  box-shadow: 0 8px 18px rgb(6, 11, 18, 0.28);
+  box-shadow: 0 8px 18px rgb(6 11 18 / 0.28);
 }
 
 .page-shell {
@@ -284,7 +284,7 @@ textarea {
 }
 
 .event-card {
-  background: rgb(255, 255, 255, 0.03);
+  background: rgb(255 255 255 / 0.03);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   padding: 0.9rem;
@@ -295,11 +295,11 @@ textarea {
 .event-card:hover {
   transform: translateY(-2px);
   border-color: var(--border-strong);
-  background: rgb(255, 255, 255, 0.055);
+  background: rgb(255 255 255 / 0.055);
 }
 
 .event-detail-card {
-  background: rgb(255, 255, 255, 0.03);
+  background: rgb(255 255 255 / 0.03);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-lg);
@@ -351,13 +351,13 @@ textarea {
   padding: 0.6rem 1.3rem;
   border-radius: var(--radius-full);
   font-weight: 600;
-  box-shadow: 0 8px 18px rgb(14, 165, 233, 0.24);
+  box-shadow: 0 8px 18px rgb(14 165 233 / 0.24);
   transition: transform 0.22s ease, box-shadow 0.22s ease;
 }
 
 .cta-link:hover {
   transform: translateY(-1px);
-  box-shadow: 0 12px 22px rgb(14, 165, 233, 0.27);
+  box-shadow: 0 12px 22px rgb(14 165 233 / 0.27);
 }
 
 .auth-tabs {

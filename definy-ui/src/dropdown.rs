@@ -197,7 +197,7 @@ pub fn searchable_dropdown(
                     .set(
                         "background",
                         if is_selected {
-                            "rgb(255, 255, 255, 0.1)"
+                            "rgb(255 255 255 / 0.1)"
                         } else {
                             "transparent"
                         },
