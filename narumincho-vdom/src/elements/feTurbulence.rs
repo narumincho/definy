@@ -243,12 +243,33 @@ impl FeTurbulence {
         self.attribute("aria-value-text", value)
     }
 
+    pub fn autofocus(mut self, value: bool) -> Self {
+        self.attributes.retain(|(key, _)| key != "autofocus");
+        if value {
+            self.attributes
+                .push(("autofocus".to_string(), String::new()));
+        }
+        self
+    }
+
     pub fn height(self, value: impl Into<String>) -> Self {
         self.attribute("height", value)
     }
 
+    pub fn nonce(self, value: impl Into<String>) -> Self {
+        self.attribute("nonce", value)
+    }
+
     pub fn role(self, value: impl Into<String>) -> Self {
         self.attribute("role", value)
+    }
+
+    pub fn slot(self, value: impl Into<String>) -> Self {
+        self.attribute("slot", value)
+    }
+
+    pub fn tab_index(self, value: impl Into<String>) -> Self {
+        self.attribute("tabIndex", value)
     }
 
     pub fn text_content(self, value: impl Into<String>) -> Self {

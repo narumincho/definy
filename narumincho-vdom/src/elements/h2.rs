@@ -1,5 +1,76 @@
 // このファイルは narumincho-vdom-build によって自動生成されました。
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum H2Autocapitalize {
+    Off,
+    None,
+    Characters,
+    Words,
+    Sentences,
+}
+
+impl H2Autocapitalize {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Off => "off",
+            Self::None => "none",
+            Self::Characters => "characters",
+            Self::Words => "words",
+            Self::Sentences => "sentences",
+        }
+    }
+}
+
+impl From<H2Autocapitalize> for String {
+    fn from(value: H2Autocapitalize) -> Self {
+        value.as_str().to_string()
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum H2Dir {
+    Ltr,
+    Rtl,
+    Auto,
+}
+
+impl H2Dir {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Ltr => "ltr",
+            Self::Rtl => "rtl",
+            Self::Auto => "auto",
+        }
+    }
+}
+
+impl From<H2Dir> for String {
+    fn from(value: H2Dir) -> Self {
+        value.as_str().to_string()
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum H2Popover {
+    Auto,
+    Manual,
+}
+
+impl H2Popover {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Auto => "auto",
+            Self::Manual => "manual",
+        }
+    }
+}
+
+impl From<H2Popover> for String {
+    fn from(value: H2Popover) -> Self {
+        value.as_str().to_string()
+    }
+}
+
 /// HTML Content Attributes for https://html.spec.whatwg.org/multipage/sections.html#the-h2-element
 #[derive(Debug, Clone, PartialEq)]
 pub struct H2 {
@@ -67,6 +138,10 @@ impl H2 {
             children: self.children,
         })
     }
+    pub fn access_key(self, value: impl Into<String>) -> Self {
+        self.attribute("accessKey", value)
+    }
+
     pub fn align(self, value: impl Into<String>) -> Self {
         self.attribute("align", value)
     }
@@ -247,6 +322,10 @@ impl H2 {
         self.attribute("aria-value-text", value)
     }
 
+    pub fn autocapitalize(self, value: impl Into<String>) -> Self {
+        self.attribute("autocapitalize", value)
+    }
+
     pub fn autocorrect(mut self, value: bool) -> Self {
         self.attributes.retain(|(key, _)| key != "autocorrect");
         if value {
@@ -256,12 +335,96 @@ impl H2 {
         self
     }
 
+    pub fn autofocus(mut self, value: bool) -> Self {
+        self.attributes.retain(|(key, _)| key != "autofocus");
+        if value {
+            self.attributes
+                .push(("autofocus".to_string(), String::new()));
+        }
+        self
+    }
+
+    pub fn content_editable(self, value: impl Into<String>) -> Self {
+        self.attribute("contentEditable", value)
+    }
+
+    pub fn dir(self, value: impl Into<String>) -> Self {
+        self.attribute("dir", value)
+    }
+
+    pub fn draggable(mut self, value: bool) -> Self {
+        self.attributes.retain(|(key, _)| key != "draggable");
+        if value {
+            self.attributes
+                .push(("draggable".to_string(), String::new()));
+        }
+        self
+    }
+
+    pub fn enter_key_hint(self, value: impl Into<String>) -> Self {
+        self.attribute("enterKeyHint", value)
+    }
+
+    pub fn hidden(self, value: impl Into<String>) -> Self {
+        self.attribute("hidden", value)
+    }
+
+    pub fn inert(mut self, value: bool) -> Self {
+        self.attributes.retain(|(key, _)| key != "inert");
+        if value {
+            self.attributes.push(("inert".to_string(), String::new()));
+        }
+        self
+    }
+
+    pub fn input_mode(self, value: impl Into<String>) -> Self {
+        self.attribute("inputMode", value)
+    }
+
+    pub fn lang(self, value: impl Into<String>) -> Self {
+        self.attribute("lang", value)
+    }
+
+    pub fn nonce(self, value: impl Into<String>) -> Self {
+        self.attribute("nonce", value)
+    }
+
     pub fn role(self, value: impl Into<String>) -> Self {
         self.attribute("role", value)
     }
 
+    pub fn slot(self, value: impl Into<String>) -> Self {
+        self.attribute("slot", value)
+    }
+
+    pub fn spellcheck(mut self, value: bool) -> Self {
+        self.attributes.retain(|(key, _)| key != "spellcheck");
+        if value {
+            self.attributes
+                .push(("spellcheck".to_string(), String::new()));
+        }
+        self
+    }
+
+    pub fn tab_index(self, value: impl Into<String>) -> Self {
+        self.attribute("tabIndex", value)
+    }
+
     pub fn text_content(self, value: impl Into<String>) -> Self {
         self.attribute("textContent", value)
+    }
+
+    pub fn title(self, value: impl Into<String>) -> Self {
+        self.attribute("title", value)
+    }
+
+    pub fn translate(mut self, value: bool) -> Self {
+        self.attributes.retain(|(key, _)| key != "translate");
+        if value {
+            self.attributes
+                .push(("translate".to_string(), String::new()));
+        }
+        self
     }
 
     pub fn virtual_keyboard_policy(self, value: impl Into<String>) -> Self {

@@ -127,4 +127,18 @@ mod tests {
         assert!(html.contains("aria-label=\"Close\""));
         assert!(!html.contains("ariaLabel="));
     }
+
+    #[test]
+    fn autofocus_attribute_is_rendered() {
+        let node = elements::input::input().autofocus(true).into_node();
+        let html = to_string(&node);
+        assert!(html.contains("autofocus=\"\""));
+
+        let node_off = elements::input::input()
+            .autofocus(true)
+            .autofocus(false)
+            .into_node();
+        let html_off = to_string(&node_off);
+        assert!(!html_off.contains("autofocus"));
+    }
 }

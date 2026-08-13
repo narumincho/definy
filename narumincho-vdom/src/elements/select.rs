@@ -1,5 +1,76 @@
 // このファイルは narumincho-vdom-build によって自動生成されました。
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SelectAutocapitalize {
+    Off,
+    None,
+    Characters,
+    Words,
+    Sentences,
+}
+
+impl SelectAutocapitalize {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Off => "off",
+            Self::None => "none",
+            Self::Characters => "characters",
+            Self::Words => "words",
+            Self::Sentences => "sentences",
+        }
+    }
+}
+
+impl From<SelectAutocapitalize> for String {
+    fn from(value: SelectAutocapitalize) -> Self {
+        value.as_str().to_string()
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SelectDir {
+    Ltr,
+    Rtl,
+    Auto,
+}
+
+impl SelectDir {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Ltr => "ltr",
+            Self::Rtl => "rtl",
+            Self::Auto => "auto",
+        }
+    }
+}
+
+impl From<SelectDir> for String {
+    fn from(value: SelectDir) -> Self {
+        value.as_str().to_string()
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SelectPopover {
+    Auto,
+    Manual,
+}
+
+impl SelectPopover {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Auto => "auto",
+            Self::Manual => "manual",
+        }
+    }
+}
+
+impl From<SelectPopover> for String {
+    fn from(value: SelectPopover) -> Self {
+        value.as_str().to_string()
+    }
+}
+
 /// HTML Content Attributes for https://html.spec.whatwg.org/multipage/form-elements.html#the-select-element
 #[derive(Debug, Clone, PartialEq)]
 pub struct Select {
@@ -67,6 +138,10 @@ impl Select {
             children: self.children,
         })
     }
+    pub fn access_key(self, value: impl Into<String>) -> Self {
+        self.attribute("accessKey", value)
+    }
+
     pub fn aria_active_descendant_element(self, value: impl Into<String>) -> Self {
         self.attribute("aria-active-descendant-element", value)
     }
@@ -243,6 +318,10 @@ impl Select {
         self.attribute("aria-value-text", value)
     }
 
+    pub fn autocapitalize(self, value: impl Into<String>) -> Self {
+        self.attribute("autocapitalize", value)
+    }
+
     pub fn autocomplete(self, value: impl Into<String>) -> Self {
         self.attribute("autocomplete", value)
     }
@@ -256,6 +335,23 @@ impl Select {
         self
     }
 
+    pub fn autofocus(mut self, value: bool) -> Self {
+        self.attributes.retain(|(key, _)| key != "autofocus");
+        if value {
+            self.attributes
+                .push(("autofocus".to_string(), String::new()));
+        }
+        self
+    }
+
+    pub fn content_editable(self, value: impl Into<String>) -> Self {
+        self.attribute("contentEditable", value)
+    }
+
+    pub fn dir(self, value: impl Into<String>) -> Self {
+        self.attribute("dir", value)
+    }
+
     pub fn disabled(mut self, value: bool) -> Self {
         self.attributes.retain(|(key, _)| key != "disabled");
         if value {
@@ -263,6 +359,39 @@ impl Select {
                 .push(("disabled".to_string(), String::new()));
         }
         self
+    }
+
+    pub fn draggable(mut self, value: bool) -> Self {
+        self.attributes.retain(|(key, _)| key != "draggable");
+        if value {
+            self.attributes
+                .push(("draggable".to_string(), String::new()));
+        }
+        self
+    }
+
+    pub fn enter_key_hint(self, value: impl Into<String>) -> Self {
+        self.attribute("enterKeyHint", value)
+    }
+
+    pub fn hidden(self, value: impl Into<String>) -> Self {
+        self.attribute("hidden", value)
+    }
+
+    pub fn inert(mut self, value: bool) -> Self {
+        self.attributes.retain(|(key, _)| key != "inert");
+        if value {
+            self.attributes.push(("inert".to_string(), String::new()));
+        }
+        self
+    }
+
+    pub fn input_mode(self, value: impl Into<String>) -> Self {
+        self.attribute("inputMode", value)
+    }
+
+    pub fn lang(self, value: impl Into<String>) -> Self {
+        self.attribute("lang", value)
     }
 
     pub fn multiple(mut self, value: bool) -> Self {
@@ -276,6 +405,10 @@ impl Select {
 
     pub fn name(self, value: impl Into<String>) -> Self {
         self.attribute("name", value)
+    }
+
+    pub fn nonce(self, value: impl Into<String>) -> Self {
+        self.attribute("nonce", value)
     }
 
     pub fn required(mut self, value: bool) -> Self {
@@ -295,8 +428,38 @@ impl Select {
         self.attribute("selectedIndex", value)
     }
 
+    pub fn slot(self, value: impl Into<String>) -> Self {
+        self.attribute("slot", value)
+    }
+
+    pub fn spellcheck(mut self, value: bool) -> Self {
+        self.attributes.retain(|(key, _)| key != "spellcheck");
+        if value {
+            self.attributes
+                .push(("spellcheck".to_string(), String::new()));
+        }
+        self
+    }
+
+    pub fn tab_index(self, value: impl Into<String>) -> Self {
+        self.attribute("tabIndex", value)
+    }
+
     pub fn text_content(self, value: impl Into<String>) -> Self {
         self.attribute("textContent", value)
+    }
+
+    pub fn title(self, value: impl Into<String>) -> Self {
+        self.attribute("title", value)
+    }
+
+    pub fn translate(mut self, value: bool) -> Self {
+        self.attributes.retain(|(key, _)| key != "translate");
+        if value {
+            self.attributes
+                .push(("translate".to_string(), String::new()));
+        }
+        self
     }
 
     pub fn type_(self, value: impl Into<String>) -> Self {

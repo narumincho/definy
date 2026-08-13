@@ -1,6 +1,6 @@
 // このファイルは narumincho-vdom-build によって自動生成されました。
 
-/// HTML Content Attributes for https://w3c.github.io/svgwg/svg2-draft/text.html#elementdef-textPath
+/// HTML Content Attributes for https://www.w3.org/TR/SVG11/text.html#TextPathElement
 #[derive(Debug, Clone, PartialEq)]
 pub struct TextPath {
     pub attributes: Vec<(String, String)>,
@@ -243,6 +243,15 @@ impl TextPath {
         self.attribute("aria-value-text", value)
     }
 
+    pub fn autofocus(mut self, value: bool) -> Self {
+        self.attributes.retain(|(key, _)| key != "autofocus");
+        if value {
+            self.attributes
+                .push(("autofocus".to_string(), String::new()));
+        }
+        self
+    }
+
     pub fn href(self, value: impl Into<String>) -> Self {
         self.attribute("href", value)
     }
@@ -251,8 +260,20 @@ impl TextPath {
         self.attribute("method", value)
     }
 
+    pub fn nonce(self, value: impl Into<String>) -> Self {
+        self.attribute("nonce", value)
+    }
+
     pub fn role(self, value: impl Into<String>) -> Self {
         self.attribute("role", value)
+    }
+
+    pub fn slot(self, value: impl Into<String>) -> Self {
+        self.attribute("slot", value)
+    }
+
+    pub fn tab_index(self, value: impl Into<String>) -> Self {
+        self.attribute("tabIndex", value)
     }
 
     pub fn text_content(self, value: impl Into<String>) -> Self {

@@ -6,7 +6,7 @@ use std::process::Command;
 
 use crate::fetch;
 use crate::idl;
-use crate::model::{ElementInfo, GLOBAL_ATTRIBUTES, OVERLAPPING_TAGS, WebrefSpecData};
+use crate::model::{ElementInfo, OVERLAPPING_TAGS, WebrefSpecData};
 use crate::naming::{
     capitalize, escape_identifier, escape_method_name, escape_variant_name, to_html_attribute_name,
 };
@@ -166,11 +166,10 @@ fn output_element_file(
     let mut events = Vec::new();
 
     for attr in resolved_attributes {
-        let is_global = GLOBAL_ATTRIBUTES.contains(&attr.name.to_lowercase().as_str());
         let is_event = attr.name.starts_with("on");
         if is_event {
             events.push(attr);
-        } else if !is_global && is_html_attribute(&attr) {
+        } else if is_html_attribute(&attr) {
             html_attributes.push(attr);
         }
     }

@@ -1,6 +1,6 @@
 // このファイルは narumincho-vdom-build によって自動生成されました。
 
-/// HTML Content Attributes for https://w3c.github.io/svgwg/svg2-draft/struct.html#elementdef-svg
+/// HTML Content Attributes for https://www.w3.org/TR/SVG11/struct.html#SVGElement
 #[derive(Debug, Clone, PartialEq)]
 pub struct Svg {
     pub attributes: Vec<(String, String)>,
@@ -243,6 +243,15 @@ impl Svg {
         self.attribute("aria-value-text", value)
     }
 
+    pub fn autofocus(mut self, value: bool) -> Self {
+        self.attributes.retain(|(key, _)| key != "autofocus");
+        if value {
+            self.attributes
+                .push(("autofocus".to_string(), String::new()));
+        }
+        self
+    }
+
     pub fn current_scale(self, value: impl Into<String>) -> Self {
         self.attribute("currentScale", value)
     }
@@ -251,8 +260,20 @@ impl Svg {
         self.attribute("height", value)
     }
 
+    pub fn nonce(self, value: impl Into<String>) -> Self {
+        self.attribute("nonce", value)
+    }
+
     pub fn role(self, value: impl Into<String>) -> Self {
         self.attribute("role", value)
+    }
+
+    pub fn slot(self, value: impl Into<String>) -> Self {
+        self.attribute("slot", value)
+    }
+
+    pub fn tab_index(self, value: impl Into<String>) -> Self {
+        self.attribute("tabIndex", value)
     }
 
     pub fn text_content(self, value: impl Into<String>) -> Self {
