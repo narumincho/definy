@@ -531,7 +531,6 @@ fn render_html_response(path: &str) -> Response<Full<Bytes>> {
             },
             event_detail_eval_result: None,
             profile_name_input: String::new(),
-            is_header_popover_open: false,
             force_offline: false,
             local_event_queue: definy_ui::LocalEventQueueState {
                 items: Vec::new(),

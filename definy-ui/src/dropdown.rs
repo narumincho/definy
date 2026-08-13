@@ -1,7 +1,6 @@
 use crate::AppState;
 use narumincho_vdom::*;
 use std::rc::Rc;
-use wasm_bindgen::JsCast;
 
 pub type DropdownOnChange = Rc<dyn Fn(String) -> Box<dyn FnOnce(AppState) -> AppState>>;
 
@@ -54,7 +53,7 @@ fn dropdown_button(name: &str, current_label: String) -> Node {
                 .set("background", "var(--surface)")
                 .set("border", "1px solid var(--border)")
                 .set("border-radius", "var(--radius-sm)")
-                .set("color", "var(--text-primary)")
+                .set("color", "var(--text)")
                 .set("cursor", "pointer")
                 .set("display", "flex")
                 .set("justify-content", "space-between")
@@ -99,10 +98,10 @@ fn dropdown_panel(
                 .set("left", "anchor(left)")
                 .set("margin", "2px")
                 .set("background", "var(--surface)")
+                .set("color", "var(--text)")
                 .set("border", "1px solid var(--border)")
                 .set("border-radius", "var(--radius-sm)")
-                .set("box-shadow", "var(--shadow-lg)")
-                .set("z-index", "41"),
+                .set("box-shadow", "var(--shadow-lg)"),
         )
         .children([
             search_input(name, dropdown_search_query),
@@ -131,7 +130,7 @@ fn search_input(name: &str, value: &str) -> Node {
                 .set("border", "none")
                 .set("border-bottom", "1px solid var(--border)")
                 .set("background", "transparent")
-                .set("color", "var(--text-primary)")
+                .set("color", "var(--text)")
                 .set("outline", "none"),
         )
         .on_input(EventHandler::new(move |set_state| {
@@ -190,7 +189,7 @@ fn option_list(
                             if is_selected {
                                 "var(--primary)"
                             } else {
-                                "var(--text-primary)"
+                                "var(--text)"
                             },
                         ),
                 )

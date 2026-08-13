@@ -6,7 +6,7 @@ use crate::{AppState, Location};
 
 pub fn header(state: &AppState) -> Node {
     let mut children = vec![header_main(state)];
-    if state.current_key.is_some() && state.is_header_popover_open {
+    if state.current_key.is_some() {
         children.push(popover(state));
     }
     Div::new().children(children).into_node()
@@ -23,7 +23,6 @@ fn header_main(state: &AppState) -> Node {
                 .set("padding", "0.72rem 1.2rem")
                 .set("background", "rgb(11 15 25 / 0.6)")
                 .set("backdrop-filter", "var(--glass-blur)")
-                .set("-webkit-backdrop-filter", "var(--glass-blur)")
                 .set("left", "0")
                 .set("right", "0")
                 .set("width", "100%")
@@ -136,12 +135,9 @@ fn header_main(state: &AppState) -> Node {
                         let account_name = state.account_name_map().get(&account_id).cloned();
 
                         Button::new()
-                            .on_click(EventHandler::new(async |set_state| {
-                                set_state(Box::new(|state: AppState| AppState {
-                                    is_header_popover_open: !state.is_header_popover_open,
-                                    ..state.clone()
-                                }));
-                            }))
+                            .type_("button")
+                            .command_for("header-popover")
+                            .command("show-popover")
                             .style(
                                 Style::new()
                                     .set("font-family", "'JetBrains Mono', monospace")
@@ -150,6 +146,8 @@ fn header_main(state: &AppState) -> Node {
                                     .set("color", "var(--text)")
                                     .set("border", "1px solid var(--border)")
                                     .set("padding", "0.38rem 0.8rem")
+                                    .set("border-radius", "var(--radius-sm)")
+                                    .set("cursor", "pointer")
                                     .set("max-width", "min(46vw, 420px)")
                                     .set("overflow", "hidden")
                                     .set("text-overflow", "ellipsis")
@@ -289,20 +287,20 @@ fn popover(state: &AppState) -> Node {
     Div::new()
         .id("header-popover")
         .class("header-popover")
+        .popover()
         .style(
             Style::new()
-                .set("position", "fixed")
-                .set("top", "3.5rem")
-                .set("right", "1rem")
+                .set("position-anchor", "--header-popover-button")
+                .set("top", "anchor(bottom)")
+                .set("right", "anchor(right)")
+                .set("margin", "4px 0 0 0")
                 .set("padding", "0.42rem")
                 .set("border", "1px solid var(--border)")
                 .set("background", "var(--surface)")
+                .set("color", "var(--text)")
                 .set("backdrop-filter", "var(--glass-blur)")
-                .set("-webkit-backdrop-filter", "var(--glass-blur)")
-                .set("display", "grid")
                 .set("gap", "0.55rem")
                 .set("border-radius", "var(--radius-md)")
-                .set("z-index", "20")
                 .set("min-width", "220px")
                 .set("box-shadow", "var(--shadow-lg)"),
         )
@@ -313,6 +311,7 @@ fn popover(state: &AppState) -> Node {
             }
             children.push(
                 Button::new()
+                    .type_("button")
                     .on_click(EventHandler::new(async |set_state| {
                         set_state(Box::new(|state: AppState| -> AppState {
                             AppState {
@@ -337,21 +336,20 @@ fn popover(state: &AppState) -> Node {
                             .set("width", "100%")
                             .set("background-color", "transparent")
                             .set("color", "var(--text)")
+                            .set("border", "none")
+                            .set("cursor", "pointer")
+                            .set("padding", "0.4rem 0.5rem")
+                            .set("text-align", "left")
+                            .set("display", "flex")
                             .set("justify-content", "flex-start"),
                     )
                     .into_node(),
             );
             children.push(
                 Button::new()
-                    .on_click(EventHandler::new(async |set_state| {
-                        set_state(Box::new(|state: AppState| -> AppState {
-                            AppState {
-                                current_key: None,
-                                is_header_popover_open: false,
-                                ..state.clone()
-                            }
-                        }));
-                    }))
+                    .type_("button")
+                    .command("hide-popover")
+                    .command_for("header-popover")
                     .children([text(state.language.label(
                         "Log Out",
                         "ログアウト",
@@ -362,6 +360,11 @@ fn popover(state: &AppState) -> Node {
                             .set("width", "100%")
                             .set("background-color", "transparent")
                             .set("color", "#fca5a5")
+                            .set("border", "none")
+                            .set("cursor", "pointer")
+                            .set("padding", "0.4rem 0.5rem")
+                            .set("text-align", "left")
+                            .set("display", "flex")
                             .set("justify-content", "flex-start"),
                     )
                     .into_node(),

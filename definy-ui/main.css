@@ -17,6 +17,7 @@
   --border-focus: rgb(124 192 216 / 0.4);
 
   --text: #e1e8ef;
+  --text-primary: #e1e8ef;
   --text-secondary: #a3b2c2;
 
   --radius-sm: 8px;
@@ -109,7 +110,6 @@ textarea:focus-visible {
 dialog {
   background: var(--surface);
   backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
   color: var(--text);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
@@ -250,7 +250,6 @@ textarea {
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-md);
   backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
   padding: 0.8rem;
 }
 

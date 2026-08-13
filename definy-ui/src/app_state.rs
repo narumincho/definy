@@ -111,7 +111,6 @@ pub struct AppState {
     pub module_update_form: ModuleUpdateFormState,
     pub event_detail_eval_result: Option<String>,
     pub profile_name_input: String,
-    pub is_header_popover_open: bool,
     pub force_offline: bool,
     pub local_event_queue: LocalEventQueueState,
     pub location: Option<Location>,
@@ -308,7 +307,6 @@ pub fn build_initial_state(
         },
         event_detail_eval_result: None,
         profile_name_input: String::new(),
-        is_header_popover_open: false,
         force_offline: false,
         local_event_queue: LocalEventQueueState {
             items: Vec::new(),

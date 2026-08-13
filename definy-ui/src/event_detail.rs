@@ -97,7 +97,6 @@ fn render_event_detail(
             Style::new()
                 .set("background", "rgb(255 255 255 / 0.02)")
                 .set("backdrop-filter", "var(--glass-blur)")
-                .set("-webkit-backdrop-filter", "var(--glass-blur)")
                 .set("border", "1px solid var(--border)")
                 .set("border-radius", "var(--radius-lg)")
                 .set("padding", "1.25rem")

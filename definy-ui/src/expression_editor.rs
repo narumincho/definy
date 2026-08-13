@@ -286,7 +286,7 @@ fn render_expression_editor(
                                 .set("display", "grid")
                                 .set(
                                     "grid-template-columns",
-                                    &format!("max-content repeat({}, 1fr)", keys.len()),
+                                    format!("max-content repeat({}, 1fr)", keys.len()),
                                 )
                                 .set("gap", "0.2rem")
                                 .set("border", "1px solid var(--border)")

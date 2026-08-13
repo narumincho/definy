@@ -34,7 +34,7 @@ pub fn not_found_view(state: &AppState) -> Node {
                 .style(
                     Style::new()
                         .set("font-size", "1.5rem")
-                        .set("color", "var(--text-primary)")
+                        .set("color", "var(--text)")
                         .set("margin-bottom", "2rem"),
                 )
                 .children([text(state.language.label(
