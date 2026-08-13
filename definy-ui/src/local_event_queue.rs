@@ -66,7 +66,7 @@ pub fn local_event_queue_view(state: &AppState) -> Node {
         }))
         .style(
             Style::new()
-                .set("background", "rgba(255, 255, 255, 0.08)")
+                .set("background", "rgb(255, 255, 255, 0.08)")
                 .set("border", "1px solid var(--border)")
                 .set("color", "var(--text)")
                 .set("padding", "0.4rem 0.8rem")
@@ -85,7 +85,7 @@ pub fn local_event_queue_view(state: &AppState) -> Node {
         }))
         .style(
             Style::new()
-                .set("background", "rgba(255, 255, 255, 0.08)")
+                .set("background", "rgb(255, 255, 255, 0.08)")
                 .set("border", "1px solid var(--border)")
                 .set("color", "var(--text)")
                 .set("padding", "0.4rem 0.8rem")

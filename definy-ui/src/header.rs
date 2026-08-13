@@ -21,7 +21,7 @@ fn header_main(state: &AppState) -> Node {
                 .set("justify-content", "space-between")
                 .set("align-items", "center")
                 .set("padding", "0.72rem 1.2rem")
-                .set("background", "rgba(11, 15, 25, 0.6)")
+                .set("background", "rgb(11, 15, 25, 0.6)")
                 .set("backdrop-filter", "var(--glass-blur)")
                 .set("-webkit-backdrop-filter", "var(--glass-blur)")
                 .set("left", "0")
@@ -146,7 +146,7 @@ fn header_main(state: &AppState) -> Node {
                                 Style::new()
                                     .set("font-family", "'JetBrains Mono', monospace")
                                     .set("font-size", "0.74rem")
-                                    .set("background", "rgba(255, 255, 255, 0.05)")
+                                    .set("background", "rgb(255, 255, 255, 0.05)")
                                     .set("color", "var(--text)")
                                     .set("border", "1px solid var(--border)")
                                     .set("padding", "0.38rem 0.8rem")
@@ -196,7 +196,7 @@ fn language_dropdown(state: &AppState) -> Node {
     for language in languages {
         options.push((
             language.to_code().to_string(),
-            crate::language::language_label(&language).to_string(),
+            language.native_name().to_string(),
         ));
     }
     let current_code = state.language.to_code();
@@ -276,7 +276,7 @@ fn popover(state: &AppState) -> Node {
                 Style::new()
                     .set("padding", "0.4rem 0.5rem")
                     .set("border-radius", "0.4rem")
-                    .set("background", "rgba(255, 255, 255, 0.04)")
+                    .set("background", "rgb(255, 255, 255, 0.04)")
                     .set("color", "var(--text)")
                     .set("text-decoration", "none")
                     .set("font-size", "0.85rem")

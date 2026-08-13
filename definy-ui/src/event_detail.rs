@@ -95,7 +95,7 @@ fn render_event_detail(
         .class("event-detail-card")
         .style(
             Style::new()
-                .set("background", "rgba(255, 255, 255, 0.02)")
+                .set("background", "rgb(255, 255, 255, 0.02)")
                 .set("backdrop-filter", "var(--glass-blur)")
                 .set("-webkit-backdrop-filter", "var(--glass-blur)")
                 .set("border", "1px solid var(--border)")

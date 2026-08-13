@@ -51,10 +51,6 @@ pub fn language_from_query(query: Option<&str>) -> Option<Language> {
     params.lang.as_deref().and_then(language_from_tag)
 }
 
-pub fn language_label(language: &Language) -> &'static str {
-    language.native_name()
-}
-
 pub fn preferred_languages() -> Vec<Language> {
     let mut ordered = Vec::new();
     let mut seen = HashSet::new();
