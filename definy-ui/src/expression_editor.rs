@@ -1645,14 +1645,11 @@ fn number_input(path: Vec<PathStep>, target: EditorTarget, value: i64) -> Node {
     );
     let selector = format!("input[name='{}']", name);
 
-    let mut input = Input::new()
+    Input::new()
         .name(name.as_str())
         .type_("number")
-        .value(value.to_string().as_str());
-
-    input.events.push((
-        "input".to_string(),
-        EventHandler::new(move |set_state| {
+        .value(value.to_string().as_str())
+        .on_input(EventHandler::new(move |set_state| {
             let selector = selector.clone();
             let path = path.clone();
             async move {
@@ -1669,10 +1666,8 @@ fn number_input(path: Vec<PathStep>, target: EditorTarget, value: i64) -> Node {
                     }));
                 }
             }
-        }),
-    ));
-
-    input.into_node()
+        }))
+        .into_node()
 }
 
 fn string_input(path: Vec<PathStep>, target: EditorTarget, value: &str) -> Node {
@@ -1683,10 +1678,11 @@ fn string_input(path: Vec<PathStep>, target: EditorTarget, value: &str) -> Node 
     );
     let selector = format!("input[name='{}']", name);
 
-    let mut input = Input::new().name(name.as_str()).type_("text").value(value);
-    input.events.push((
-        "input".to_string(),
-        EventHandler::new(move |set_state| {
+    Input::new()
+        .name(name.as_str())
+        .type_("text")
+        .value(value)
+        .on_input(EventHandler::new(move |set_state| {
             let selector = selector.clone();
             let path = path.clone();
             async move {
@@ -1699,9 +1695,8 @@ fn string_input(path: Vec<PathStep>, target: EditorTarget, value: &str) -> Node 
                     next
                 }));
             }
-        }),
-    ));
-    input.into_node()
+        }))
+        .into_node()
 }
 
 fn boolean_input(state: &AppState, path: Vec<PathStep>, target: EditorTarget, value: bool) -> Node {
@@ -1770,10 +1765,11 @@ fn let_name_input(path: Vec<PathStep>, target: EditorTarget, value: &str) -> Nod
     );
     let selector = format!("input[name='{}']", name);
 
-    let mut input = Input::new().name(name.as_str()).type_("text").value(value);
-    input.events.push((
-        "input".to_string(),
-        EventHandler::new(move |set_state| {
+    Input::new()
+        .name(name.as_str())
+        .type_("text")
+        .value(value)
+        .on_input(EventHandler::new(move |set_state| {
             let selector = selector.clone();
             let path = path.clone();
             async move {
@@ -1786,9 +1782,8 @@ fn let_name_input(path: Vec<PathStep>, target: EditorTarget, value: &str) -> Nod
                     next
                 }));
             }
-        }),
-    ));
-    input.into_node()
+        }))
+        .into_node()
 }
 
 fn record_item_key_input(
@@ -1805,14 +1800,12 @@ fn record_item_key_input(
     );
     let selector = format!("input[name='{}']", name);
 
-    let mut input = Input::new()
+    Input::new()
         .name(name.as_str())
         .type_("text")
         .value(value)
-        .style(Style::new().set("max-width", "16rem"));
-    input.events.push((
-        "input".to_string(),
-        EventHandler::new(move |set_state| {
+        .style(Style::new().set("max-width", "16rem"))
+        .on_input(EventHandler::new(move |set_state| {
             let selector = selector.clone();
             let path = path.clone();
             async move {
@@ -1825,9 +1818,8 @@ fn record_item_key_input(
                     next
                 }));
             }
-        }),
-    ));
-    input.into_node()
+        }))
+        .into_node()
 }
 
 fn add_record_item_button(state: &AppState, path: Vec<PathStep>, target: EditorTarget) -> Node {

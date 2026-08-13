@@ -162,7 +162,7 @@ impl IdlDatabase {
         );
 
         let mut result: Vec<_> = attributes_map.into_values().collect();
-        result.sort_by_key(|b| std::cmp::Reverse(b.name));
+        result.sort_by(|a, b| a.name.cmp(&b.name));
         result
     }
 

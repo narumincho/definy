@@ -825,48 +825,37 @@ fn event_view(
 }
 
 fn part_name_input(state: &AppState) -> Node {
-    let mut input = Input::new()
+    Input::new()
         .name("part-name")
         .type_("text")
-        .value(&state.part_definition_form.part_name_input);
-    input
-        .attributes
-        .push(("placeholder".to_string(), "part name (e.g. a)".to_string()));
-    input.events.push((
-        "input".to_string(),
-        EventHandler::new(move |set_state| async move {
+        .value(&state.part_definition_form.part_name_input)
+        .placeholder("part name (e.g. a)")
+        .on_input(EventHandler::new(move |set_state| async move {
             let value = crate::dom::get_input_value("input[name='part-name']");
             set_state(Box::new(move |state: AppState| {
                 let mut next = state.clone();
                 next.part_definition_form.part_name_input = value;
                 next
             }));
-        }),
-    ));
-    input.into_node()
+        }))
+        .into_node()
 }
 
 fn part_description_input(state: &AppState) -> Node {
-    let mut textarea = Textarea::new()
+    Textarea::new()
         .name("part-description")
         .value(&state.part_definition_form.part_description_input)
-        .style(Style::new().set("min-height", "6rem"));
-    textarea.attributes.push((
-        "placeholder".to_string(),
-        "description (supports multiple lines)".to_string(),
-    ));
-    textarea.events.push((
-        "input".to_string(),
-        EventHandler::new(move |set_state| async move {
+        .placeholder("description (supports multiple lines)")
+        .style(Style::new().set("min-height", "6rem"))
+        .on_input(EventHandler::new(move |set_state| async move {
             let value = crate::dom::get_textarea_value("textarea[name='part-description']");
             set_state(Box::new(move |state: AppState| {
                 let mut next = state.clone();
                 next.part_definition_form.part_description_input = value;
                 next
             }));
-        }),
-    ));
-    textarea.into_node()
+        }))
+        .into_node()
 }
 
 fn part_type_input(state: &AppState) -> Node {

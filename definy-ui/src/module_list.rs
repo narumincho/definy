@@ -358,29 +358,24 @@ fn module_create_form(state: &AppState) -> Node {
 }
 
 fn module_name_input(state: &AppState) -> Node {
-    let mut input = Input::new()
+    Input::new()
         .name("module-name")
         .type_("text")
-        .value(&state.module_definition_form.module_name_input);
-    input.attributes.push((
-        "placeholder".to_string(),
-        state
-            .language
-            .label("module name", "モジュール名", "modula nomo")
-            .to_string(),
-    ));
-    input.events.push((
-        "input".to_string(),
-        EventHandler::new(move |set_state| async move {
+        .value(&state.module_definition_form.module_name_input)
+        .placeholder(
+            state
+                .language
+                .label("module name", "モジュール名", "modula nomo"),
+        )
+        .on_input(EventHandler::new(move |set_state| async move {
             let value = crate::dom::get_input_value("input[name='module-name']");
             set_state(Box::new(move |state: AppState| {
                 let mut next = state.clone();
                 next.module_definition_form.module_name_input = value;
                 next
             }));
-        }),
-    ));
-    input.into_node()
+        }))
+        .into_node()
 }
 
 fn module_description_input(state: &AppState) -> Node {

@@ -121,6 +121,6 @@ pub fn collect_related_part_events(
             }
         })
         .collect::<Vec<(EventHashId, Event)>>();
-    events.sort_by(|(_, a), (_, b)| b.time.cmp(&a.time));
+    events.sort_by_key(|(_, b)| std::cmp::Reverse(b.time));
     events
 }
