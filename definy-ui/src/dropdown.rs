@@ -25,13 +25,6 @@ pub fn searchable_dropdown(
                 .to_string()
         });
 
-    let container = Div::new().style(
-        Style::new()
-            .set("position", "relative")
-            .set("display", "inline-block")
-            .set("min-width", "12rem"),
-    );
-
     let dropdown_button_name = name.to_string();
     let toggle_handler = EventHandler::new(move |set_state| {
         let name_str_1 = dropdown_button_name.clone();
@@ -115,30 +108,29 @@ pub fn searchable_dropdown(
     let mut inner_elements = vec![button.into_node()];
 
     if is_open {
-        let mut backdrop = Div::new().style(
-            Style::new()
-                .set("position", "fixed")
-                .set("top", "0")
-                .set("left", "0")
-                .set("right", "0")
-                .set("bottom", "0")
-                .set("z-index", "40")
-                .set("cursor", "default"),
-        );
-        backdrop.events.push((
-            "click".to_string(),
-            EventHandler::new(|set_state| async move {
+        let backdrop = Div::new()
+            .style(
+                Style::new()
+                    .set("position", "fixed")
+                    .set("top", "0")
+                    .set("left", "0")
+                    .set("right", "0")
+                    .set("bottom", "0")
+                    .set("z-index", "40")
+                    .set("cursor", "default"),
+            )
+            .on_click(EventHandler::new(|set_state| async move {
                 set_state(Box::new(|state: AppState| AppState {
                     active_dropdown_name: None,
                     dropdown_search_query: String::new(),
                     ..state
                 }));
-            }),
-        ));
+            }));
+
         inner_elements.push(backdrop.into_node());
 
         let search_name = format!("search-{}", name);
-        let mut search_input = Input::new()
+        let search_input = Input::new()
             .type_("text")
             .name(&search_name)
             .value(&state.dropdown_search_query)
@@ -151,17 +143,14 @@ pub fn searchable_dropdown(
                     .set("background", "transparent")
                     .set("color", "var(--text-primary)")
                     .set("outline", "none"),
-            );
-        search_input.attributes.push((
-            "placeholder".to_string(),
-            state
-                .language
-                .label("Search...", "検索...", "Serĉi...")
-                .to_string(),
-        ));
-        search_input.events.push((
-            "input".to_string(),
-            EventHandler::new(move |set_state| {
+            )
+            .placeholder(
+                state
+                    .language
+                    .label("Search...", "検索...", "Serĉi...")
+                    .to_string(),
+            )
+            .on_input(EventHandler::new(move |set_state| {
                 let s_name = search_name.clone();
                 async move {
                     let value = crate::dom::get_input_value(&format!("input[name='{}']", s_name));
@@ -170,8 +159,7 @@ pub fn searchable_dropdown(
                         ..state
                     }));
                 }
-            }),
-        ));
+            }));
 
         let query = state.dropdown_search_query.to_lowercase();
         let filtered_options = options.iter().filter(|(_, label)| {
@@ -182,58 +170,55 @@ pub fn searchable_dropdown(
             }
         });
 
-        let mut options_list_nodes = vec![];
-        for (opt_val, opt_label) in filtered_options {
-            let val = opt_val.clone();
-            let label_str = opt_label.clone();
-            let on_change_clone = on_change.clone();
+        let options_list_nodes = filtered_options
+            .into_iter()
+            .map(|(opt_val, opt_label)| {
+                let val = opt_val.clone();
+                let label_str = opt_label.clone();
+                let on_change_clone = on_change.clone();
 
-            let is_selected = val == current_value;
+                let is_selected = val == current_value;
 
-            let mut item = Div::new().style(
-                Style::new()
-                    .set("padding", "0.4rem 0.6rem")
-                    .set("cursor", "pointer")
-                    .set(
-                        "background",
-                        if is_selected {
-                            "rgb(255 255 255 / 0.1)"
-                        } else {
-                            "transparent"
-                        },
+                Div::new()
+                    .style(
+                        Style::new()
+                            .set("padding", "0.4rem 0.6rem")
+                            .set("cursor", "pointer")
+                            .set(
+                                "background",
+                                if is_selected {
+                                    "rgb(255 255 255 / 0.1)"
+                                } else {
+                                    "transparent"
+                                },
+                            )
+                            .set(
+                                "color",
+                                if is_selected {
+                                    "var(--primary)"
+                                } else {
+                                    "var(--text-primary)"
+                                },
+                            ),
                     )
-                    .set(
-                        "color",
-                        if is_selected {
-                            "var(--primary)"
-                        } else {
-                            "var(--text-primary)"
-                        },
-                    ),
-            );
-
-            item.events.push((
-                "click".to_string(),
-                EventHandler::new(move |set_state| {
-                    let on_change_clone = on_change_clone.clone();
-                    let val_clone = val.clone();
-                    async move {
-                        // First close the dropdown
-                        set_state(Box::new(|state: AppState| AppState {
-                            active_dropdown_name: None,
-                            dropdown_search_query: String::new(),
-                            ..state
-                        }));
-                        // Then trigger the on_change handler
-                        set_state(on_change_clone(val_clone));
-                    }
-                }),
-            ));
-
-            let item = item.children([text(&label_str)]);
-
-            options_list_nodes.push(item.into_node());
-        }
+                    .on_click(EventHandler::new(move |set_state| {
+                        let on_change_clone = on_change_clone.clone();
+                        let val_clone = val.clone();
+                        async move {
+                            // First close the dropdown
+                            set_state(Box::new(|state: AppState| AppState {
+                                active_dropdown_name: None,
+                                dropdown_search_query: String::new(),
+                                ..state
+                            }));
+                            // Then trigger the on_change handler
+                            set_state(on_change_clone(val_clone));
+                        }
+                    }))
+                    .children([text(&label_str)])
+                    .into_node()
+            })
+            .collect::<Vec<_>>();
 
         let options_container = Div::new()
             .style(
@@ -266,5 +251,13 @@ pub fn searchable_dropdown(
         inner_elements.push(dropdown_panel.into_node());
     }
 
-    container.children(inner_elements).into_node()
+    Div::new()
+        .style(
+            Style::new()
+                .set("position", "relative")
+                .set("display", "inline-block")
+                .set("min-width", "12rem"),
+        )
+        .children(inner_elements)
+        .into_node()
 }
