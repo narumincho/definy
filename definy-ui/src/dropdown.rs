@@ -89,12 +89,41 @@ fn dropdown_panel(
     current_value: &str,
     on_change: DropdownOnChange,
 ) -> Node {
+    Div::new()
+        .id(dropdown_panel_id(name))
+        .popover()
+        .style(
+            Style::new()
+                .set("position-anchor", anchor_name_id(name))
+                .set("top", "anchor(bottom)")
+                .set("left", "anchor(left)")
+                .set("margin", "2px")
+                .set("background", "var(--surface)")
+                .set("border", "1px solid var(--border)")
+                .set("border-radius", "var(--radius-sm)")
+                .set("box-shadow", "var(--shadow-lg)")
+                .set("z-index", "41"),
+        )
+        .children([
+            search_input(name, dropdown_search_query),
+            option_list(
+                name,
+                dropdown_search_query,
+                options,
+                current_value,
+                on_change,
+            ),
+        ])
+        .into_node()
+}
+
+fn search_input(name: &str, value: &str) -> Node {
     let search_name = format!("search-{}", name);
-    let search_input = Input::new()
+    Input::new()
         .type_("text")
         .autofocus(true)
         .name(&search_name)
-        .value(dropdown_search_query)
+        .value(value)
         .style(
             Style::new()
                 .set("width", "100%")
@@ -114,8 +143,17 @@ fn dropdown_panel(
                     ..state
                 }));
             }
-        }));
+        }))
+        .into_node()
+}
 
+fn option_list(
+    name: &str,
+    dropdown_search_query: &str,
+    options: &[(String, String)],
+    current_value: &str,
+    on_change: DropdownOnChange,
+) -> Node {
     let query = dropdown_search_query.to_lowercase();
     let filtered_options = options.iter().filter(|(_, label)| {
         if query.is_empty() {
@@ -177,7 +215,7 @@ fn dropdown_panel(
         })
         .collect::<Vec<_>>();
 
-    let options_container = Div::new()
+    Div::new()
         .style(
             Style::new()
                 .set("display", "flex")
@@ -185,24 +223,7 @@ fn dropdown_panel(
                 .set("max-height", "15rem")
                 .set("overflow-y", "auto"),
         )
-        .children(options_list_nodes);
-
-    Div::new()
-        .id(dropdown_panel_id(name))
-        .popover()
-        .style(
-            Style::new()
-                .set("position-anchor", anchor_name_id(name))
-                .set("top", "anchor(bottom)")
-                .set("left", "anchor(left)")
-                .set("margin", "2px")
-                .set("background", "var(--surface)")
-                .set("border", "1px solid var(--border)")
-                .set("border-radius", "var(--radius-sm)")
-                .set("box-shadow", "var(--shadow-lg)")
-                .set("z-index", "41"),
-        )
-        .children([search_input.into_node(), options_container.into_node()])
+        .children(options_list_nodes)
         .into_node()
 }
 

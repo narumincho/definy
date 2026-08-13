@@ -11,7 +11,7 @@ struct AccountRow {
 pub fn account_list_view(state: &AppState) -> Node {
     let account_name_map = state.account_name_map();
     let mut rows = collect_account_rows(state);
-    rows.sort_by(|a, b| b.latest_time.cmp(&a.latest_time));
+    rows.sort_by_key(|b| std::cmp::Reverse(b.latest_time));
 
     Div::new()
         .class("page-shell")

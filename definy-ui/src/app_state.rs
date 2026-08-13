@@ -217,7 +217,7 @@ pub fn upsert_local_event_record(
     state
         .local_event_queue
         .items
-        .sort_by(|a, b| b.updated_at_ms.cmp(&a.updated_at_ms));
+        .sort_by_key(|b| std::cmp::Reverse(b.updated_at_ms));
 }
 
 pub fn replace_local_event_records(
@@ -228,7 +228,7 @@ pub fn replace_local_event_records(
     state
         .local_event_queue
         .items
-        .sort_by(|a, b| b.updated_at_ms.cmp(&a.updated_at_ms));
+        .sort_by_key(|b| std::cmp::Reverse(b.updated_at_ms));
 }
 
 pub fn account_display_name(
