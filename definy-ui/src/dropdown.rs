@@ -12,51 +12,10 @@ pub fn searchable_dropdown(
     options: &[(String, String)],
     on_change: DropdownOnChange,
 ) -> Node {
-    let is_open = state.active_dropdown_name.as_deref() == Some(name);
-
-    let dropdown_button_name = name.to_string();
-    let toggle_handler = EventHandler::new(move |set_state| {
-        let name_str_1 = dropdown_button_name.clone();
-        let name_str_2 = dropdown_button_name.clone();
-        async move {
-            set_state(Box::new(move |state: AppState| {
-                let mut next = state.clone();
-                if next.active_dropdown_name.as_deref() == Some(name_str_1.as_str()) {
-                    next.active_dropdown_name = None;
-                } else {
-                    next.active_dropdown_name = Some(name_str_1.clone());
-                    next.dropdown_search_query = String::new();
-                }
-                next
-            }));
-
-            // Focus the input if we just opened it
-            let n = name_str_2;
-            wasm_bindgen_futures::spawn_local(async move {
-                if let Some(window) = web_sys::window() {
-                    let _ = window.request_animation_frame(
-                        wasm_bindgen::closure::Closure::once_into_js(move || {
-                            if let Some(document) = web_sys::window().unwrap().document()
-                                && let Ok(Some(element)) =
-                                    document.query_selector(&format!("input[name='search-{}']", n))
-                                && let Ok(input) = element.dyn_into::<web_sys::HtmlInputElement>()
-                            {
-                                let _ = input.focus();
-                            }
-                        })
-                        .as_ref()
-                        .unchecked_ref(),
-                    );
-                }
-            });
-        }
-    });
-
     Div::new()
         .children([
             dropdown_button(
                 name,
-                is_open,
                 options
                     .iter()
                     .find_map(|(val, label)| {
@@ -72,7 +31,6 @@ pub fn searchable_dropdown(
                             .label("Select...", "選択...", "Elektu...")
                             .to_string()
                     }),
-                toggle_handler,
             ),
             dropdown_panel(
                 name,
@@ -85,12 +43,7 @@ pub fn searchable_dropdown(
         .into_node()
 }
 
-fn dropdown_button(
-    name: &str,
-    is_open: bool,
-    current_label: String,
-    toggle_handler: EventHandler,
-) -> Node {
+fn dropdown_button(name: &str, current_label: String) -> Node {
     Button::new()
         .type_("button")
         .style(
@@ -99,14 +52,7 @@ fn dropdown_button(
                 .set("text-align", "left")
                 .set("padding", "0.4rem 0.6rem")
                 .set("background", "var(--surface)")
-                .set(
-                    "border",
-                    if is_open {
-                        "1px solid var(--accent)"
-                    } else {
-                        "1px solid var(--border)"
-                    },
-                )
+                .set("border", "1px solid var(--border)")
                 .set("border-radius", "var(--radius-sm)")
                 .set("color", "var(--text-primary)")
                 .set("cursor", "pointer")
@@ -219,7 +165,6 @@ fn dropdown_panel(
                     async move {
                         // First close the dropdown
                         set_state(Box::new(|state: AppState| AppState {
-                            active_dropdown_name: None,
                             dropdown_search_query: String::new(),
                             ..state
                         }));
