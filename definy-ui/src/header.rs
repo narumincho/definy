@@ -189,20 +189,20 @@ fn header_main(state: &AppState) -> Node {
 }
 
 fn language_dropdown(state: &AppState) -> Node {
-    let languages = crate::language::preferred_languages();
-    let mut options = Vec::with_capacity(languages.len());
-    for language in languages {
-        options.push((
-            language.to_code().to_string(),
-            language.native_name().to_string(),
-        ));
-    }
-    let current_code = state.language.to_code();
     let dropdown = crate::dropdown::searchable_dropdown(
         state,
         "language",
-        current_code,
-        options.as_slice(),
+        state.language.to_code(),
+        crate::language::preferred_languages()
+            .iter()
+            .map(|language| {
+                (
+                    language.to_code().to_string(),
+                    language.native_name().to_string(),
+                )
+            })
+            .collect::<Vec<_>>()
+            .as_slice(),
         Rc::new(|value| {
             Box::new(move |state: AppState| {
                 let Some(selected) = crate::language::Language::from_code(value.as_str()) else {
@@ -234,8 +234,8 @@ fn language_dropdown(state: &AppState) -> Node {
             })
         }),
     );
-    if let Some(notice) = &state.language_fallback_notice {
-        Div::new()
+    match &state.language_fallback_notice {
+        Some(notice) => Div::new()
             .style(
                 Style::new()
                     .set("display", "grid")
@@ -257,9 +257,8 @@ fn language_dropdown(state: &AppState) -> Node {
                     ))])
                     .into_node(),
             ])
-            .into_node()
-    } else {
-        dropdown
+            .into_node(),
+        None => dropdown,
     }
 }
 
