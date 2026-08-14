@@ -286,22 +286,20 @@ fn popover(state: &AppState) -> Node {
 
     Div::new()
         .id("header-popover")
-        .class("header-popover")
         .popover()
         .style(
             Style::new()
                 .set("position-anchor", "--header-popover-button")
                 .set("top", "anchor(bottom)")
+                .set("left", "auto")
                 .set("right", "anchor(right)")
-                .set("margin", "4px 0 0 0")
+                .set("margin", "4px")
                 .set("padding", "0.42rem")
                 .set("border", "1px solid var(--border)")
                 .set("background", "var(--surface)")
                 .set("color", "var(--text)")
                 .set("backdrop-filter", "var(--glass-blur)")
-                .set("gap", "0.55rem")
                 .set("border-radius", "var(--radius-md)")
-                .set("min-width", "220px")
                 .set("box-shadow", "var(--shadow-lg)"),
         )
         .children({

@@ -298,10 +298,6 @@ textarea {
   color: #fecaca;
 }
 
-.header-popover {
-  width: min(92vw, 280px);
-}
-
 .not-found {
   padding-top: 4rem;
   text-align: center;
