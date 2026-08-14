@@ -168,7 +168,9 @@ fn output_element_file(
     for attr in resolved_attributes {
         let is_event = attr.name.starts_with("on");
         if is_event {
-            events.push(attr);
+            if !is_excluded_event(&attr.name) {
+                events.push(attr);
+            }
         } else if is_html_attribute(&attr) {
             html_attributes.push(attr);
         }
@@ -658,6 +660,16 @@ fn is_html_attribute(attr: &idl::ResolvedAttribute) -> bool {
     false
 }
 
+fn is_excluded_event(name: &str) -> bool {
+    matches!(
+        name,
+        "onwebkitanimationend"
+            | "onwebkitanimationiteration"
+            | "onwebkitanimationstart"
+            | "onwebkittransitionend"
+    )
+}
+
 fn output_element_creation_rs(
     svg_elements: &BTreeSet<String>,
     mathml_elements: &BTreeSet<String>,
@@ -844,5 +856,17 @@ mod tests {
             ])
         );
         assert!(supports_custom_values("HTMLButtonElement", &attr));
+    }
+
+    #[test]
+    fn test_is_excluded_event() {
+        assert!(is_excluded_event("onwebkitanimationend"));
+        assert!(is_excluded_event("onwebkitanimationiteration"));
+        assert!(is_excluded_event("onwebkitanimationstart"));
+        assert!(is_excluded_event("onwebkittransitionend"));
+
+        assert!(!is_excluded_event("onclick"));
+        assert!(!is_excluded_event("onanimationend"));
+        assert!(!is_excluded_event("ontransitionend"));
     }
 }
