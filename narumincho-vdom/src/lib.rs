@@ -141,4 +141,11 @@ mod tests {
         let html_off = to_string(&node_off);
         assert!(!html_off.contains("autofocus"));
     }
+
+    #[test]
+    fn virtual_dom_key_is_not_rendered_as_an_html_attribute() {
+        let node = elements::div::Div::new().key("language-en").into_node();
+
+        assert_eq!(to_string(&node), "<div></div>");
+    }
 }

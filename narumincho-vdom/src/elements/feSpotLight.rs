@@ -7,6 +7,7 @@ pub struct FeSpotLight {
     pub events: Vec<(String, crate::EventHandler)>,
     pub styles: crate::Style,
     pub children: Vec<crate::Node>,
+    pub key: Option<String>,
 }
 
 pub fn feSpotLight() -> FeSpotLight {
@@ -26,6 +27,7 @@ impl FeSpotLight {
             events: Vec::new(),
             styles: crate::Style::new(),
             children: Vec::new(),
+            key: None,
         }
     }
 
@@ -58,6 +60,11 @@ impl FeSpotLight {
         self
     }
 
+    pub fn key(mut self, key: impl Into<String>) -> Self {
+        self.key = Some(key.into());
+        self
+    }
+
     pub fn into_node(self) -> crate::Node {
         crate::Node::Element(crate::Element {
             element_name: "feSpotLight".to_string(),
@@ -65,6 +72,7 @@ impl FeSpotLight {
             styles: self.styles,
             events: self.events,
             children: self.children,
+            key: self.key,
         })
     }
     pub fn aria_active_descendant_element(self, value: impl Into<String>) -> Self {

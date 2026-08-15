@@ -28,6 +28,7 @@ pub struct Image {
     pub events: Vec<(String, crate::EventHandler)>,
     pub styles: crate::Style,
     pub children: Vec<crate::Node>,
+    pub key: Option<String>,
 }
 
 pub fn image() -> Image {
@@ -47,6 +48,7 @@ impl Image {
             events: Vec::new(),
             styles: crate::Style::new(),
             children: Vec::new(),
+            key: None,
         }
     }
 
@@ -79,6 +81,11 @@ impl Image {
         self
     }
 
+    pub fn key(mut self, key: impl Into<String>) -> Self {
+        self.key = Some(key.into());
+        self
+    }
+
     pub fn into_node(self) -> crate::Node {
         crate::Node::Element(crate::Element {
             element_name: "image".to_string(),
@@ -86,6 +93,7 @@ impl Image {
             styles: self.styles,
             events: self.events,
             children: self.children,
+            key: self.key,
         })
     }
     pub fn aria_active_descendant_element(self, value: impl Into<String>) -> Self {

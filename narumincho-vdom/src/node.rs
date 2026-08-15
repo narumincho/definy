@@ -11,12 +11,23 @@ pub struct Element {
     pub styles: crate::Style,
     pub events: Vec<(String, EventHandler)>,
     pub children: Vec<Node>,
+    /// Virtual-DOM identity. This is never rendered as an HTML attribute.
+    pub key: Option<String>,
 }
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Node {
     Element(Element),
     Text(Box<str>),
+}
+
+impl Node {
+    pub fn with_key(mut self, key: impl Into<String>) -> Self {
+        if let Node::Element(element) = &mut self {
+            element.key = Some(key.into());
+        }
+        self
+    }
 }
 
 pub type AnyStateUpdater = Box<dyn FnOnce(Box<dyn Any>) -> Box<dyn Any>>;

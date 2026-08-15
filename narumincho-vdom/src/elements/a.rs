@@ -103,6 +103,7 @@ pub struct Anchor<L: crate::Route> {
     pub events: Vec<(String, crate::EventHandler)>,
     pub styles: crate::Style,
     pub children: Vec<crate::Node>,
+    pub key: Option<String>,
     route: std::marker::PhantomData<L>,
 }
 
@@ -123,6 +124,7 @@ impl<L: crate::Route> Anchor<L> {
             events: Vec::new(),
             styles: crate::Style::new(),
             children: Vec::new(),
+            key: None,
             route: std::marker::PhantomData,
         }
     }
@@ -156,6 +158,11 @@ impl<L: crate::Route> Anchor<L> {
         self
     }
 
+    pub fn key(mut self, key: impl Into<String>) -> Self {
+        self.key = Some(key.into());
+        self
+    }
+
     pub fn into_node(self) -> crate::Node {
         crate::Node::Element(crate::Element {
             element_name: "a".to_string(),
@@ -163,6 +170,7 @@ impl<L: crate::Route> Anchor<L> {
             styles: self.styles,
             events: self.events,
             children: self.children,
+            key: self.key,
         })
     }
     pub fn access_key(self, value: impl Into<String>) -> Self {

@@ -113,6 +113,7 @@ pub fn render(
             ],
             events: Vec::new(),
             children: Vec::new(),
+            key: None,
         }),
         Link::new()
             .rel("icon")

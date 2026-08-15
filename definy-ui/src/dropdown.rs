@@ -159,10 +159,7 @@ fn option_list(
     let options_list_nodes = filtered_options
         .into_iter()
         .map(|(opt_val, opt_label)| {
-            Div::new()
-                .attribute("key", opt_val)
-                .children([render_option(opt_val, opt_label, opt_val == current_value)])
-                .into_node()
+            render_option(opt_val, opt_label, opt_val == current_value).with_key(opt_val)
         })
         .collect::<Vec<_>>();
 

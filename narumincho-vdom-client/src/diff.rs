@@ -218,11 +218,7 @@ fn diff_recursive(
 
 fn child_key(node: &Node) -> Option<String> {
     match node {
-        Node::Element(element) => element
-            .attributes
-            .iter()
-            .find(|(key, _)| key == "key")
-            .map(|(_, value)| value.clone()),
+        Node::Element(element) => element.key.clone(),
         Node::Text(_) => None,
     }
 }
@@ -366,14 +362,14 @@ mod tests {
     fn test_diff_replaces_keyed_children_when_order_changes() {
         let old: Node = Div::new()
             .children([
-                Div::new().attribute("key", "english").into_node(),
-                Div::new().attribute("key", "japanese").into_node(),
+                Div::new().key("english").into_node(),
+                Div::new().key("japanese").into_node(),
             ])
             .into_node();
         let new: Node = Div::new()
             .children([
-                Div::new().attribute("key", "japanese").into_node(),
-                Div::new().attribute("key", "english").into_node(),
+                Div::new().key("japanese").into_node(),
+                Div::new().key("english").into_node(),
             ])
             .into_node();
 

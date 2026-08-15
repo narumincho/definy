@@ -204,6 +204,7 @@ fn language_dropdown(state: &AppState) -> Node {
             .collect::<Vec<_>>()
             .as_slice(),
         std::rc::Rc::new(move |value, label, is_selected| {
+            let language_code = value.to_string();
             let url = crate::language::Language::from_code(value)
                 .map(|language| AppState::build_url(&location, language.to_code(), event_type))
                 .unwrap_or_default();
@@ -214,6 +215,26 @@ fn language_dropdown(state: &AppState) -> Node {
                         .set("display", "block")
                         .set("text-decoration", "none"),
                 )
+                .on_click(EventHandler::with_parameter(
+                    move |set_state, language_code: &String| {
+                        let language_code = language_code.clone();
+                        async move {
+                            set_state(Box::new(move |state: AppState| {
+                                let Some(language) =
+                                    crate::language::Language::from_code(&language_code)
+                                else {
+                                    return state;
+                                };
+                                AppState {
+                                    language,
+                                    language_fallback_notice: None,
+                                    ..state
+                                }
+                            }));
+                        }
+                    },
+                    language_code,
+                ))
                 .children([text(label)])
                 .into_node()
         }),

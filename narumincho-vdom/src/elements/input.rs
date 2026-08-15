@@ -139,6 +139,7 @@ pub struct Input {
     pub events: Vec<(String, crate::EventHandler)>,
     pub styles: crate::Style,
     pub children: Vec<crate::Node>,
+    pub key: Option<String>,
 }
 
 pub fn input() -> Input {
@@ -158,6 +159,7 @@ impl Input {
             events: Vec::new(),
             styles: crate::Style::new(),
             children: Vec::new(),
+            key: None,
         }
     }
 
@@ -190,6 +192,11 @@ impl Input {
         self
     }
 
+    pub fn key(mut self, key: impl Into<String>) -> Self {
+        self.key = Some(key.into());
+        self
+    }
+
     pub fn into_node(self) -> crate::Node {
         crate::Node::Element(crate::Element {
             element_name: "input".to_string(),
@@ -197,6 +204,7 @@ impl Input {
             styles: self.styles,
             events: self.events,
             children: self.children,
+            key: self.key,
         })
     }
     pub fn accept(self, value: impl Into<String>) -> Self {

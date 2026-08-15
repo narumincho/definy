@@ -78,6 +78,7 @@ pub struct H4 {
     pub events: Vec<(String, crate::EventHandler)>,
     pub styles: crate::Style,
     pub children: Vec<crate::Node>,
+    pub key: Option<String>,
 }
 
 pub fn h4() -> H4 {
@@ -97,6 +98,7 @@ impl H4 {
             events: Vec::new(),
             styles: crate::Style::new(),
             children: Vec::new(),
+            key: None,
         }
     }
 
@@ -129,6 +131,11 @@ impl H4 {
         self
     }
 
+    pub fn key(mut self, key: impl Into<String>) -> Self {
+        self.key = Some(key.into());
+        self
+    }
+
     pub fn into_node(self) -> crate::Node {
         crate::Node::Element(crate::Element {
             element_name: "h4".to_string(),
@@ -136,6 +143,7 @@ impl H4 {
             styles: self.styles,
             events: self.events,
             children: self.children,
+            key: self.key,
         })
     }
     pub fn access_key(self, value: impl Into<String>) -> Self {

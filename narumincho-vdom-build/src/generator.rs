@@ -298,6 +298,7 @@ fn output_element_file(
     writeln!(file, "    pub events: Vec<(String, crate::EventHandler)>,")?;
     writeln!(file, "    pub styles: crate::Style,")?;
     writeln!(file, "    pub children: Vec<crate::Node>,")?;
+    writeln!(file, "    pub key: Option<String>,")?;
     if name == "a" {
         writeln!(file, "    route: std::marker::PhantomData<L>,")?;
     }
@@ -773,6 +774,7 @@ pub fn new() -> Self {{
         events: Vec::new(),
         styles: crate::Style::new(),
         children: Vec::new(),
+        key: None,
         {route_field}
     }}
 }}
@@ -804,6 +806,11 @@ pub fn children(mut self, children: impl Into<Vec<crate::Node>>) -> Self {{
     self.children = children.into();
     self
 }}
+
+pub fn key(mut self, key: impl Into<String>) -> Self {{
+    self.key = Some(key.into());
+    self
+}}
     
 pub fn into_node(self) -> crate::Node {{
     crate::Node::Element(crate::Element {{
@@ -812,6 +819,7 @@ pub fn into_node(self) -> crate::Node {{
         styles: self.styles,
         events: self.events,
         children: self.children,
+        key: self.key,
     }})
 }}
 "

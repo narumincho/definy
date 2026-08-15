@@ -78,6 +78,7 @@ pub struct Portal {
     pub events: Vec<(String, crate::EventHandler)>,
     pub styles: crate::Style,
     pub children: Vec<crate::Node>,
+    pub key: Option<String>,
 }
 
 pub fn portal() -> Portal {
@@ -97,6 +98,7 @@ impl Portal {
             events: Vec::new(),
             styles: crate::Style::new(),
             children: Vec::new(),
+            key: None,
         }
     }
 
@@ -129,6 +131,11 @@ impl Portal {
         self
     }
 
+    pub fn key(mut self, key: impl Into<String>) -> Self {
+        self.key = Some(key.into());
+        self
+    }
+
     pub fn into_node(self) -> crate::Node {
         crate::Node::Element(crate::Element {
             element_name: "portal".to_string(),
@@ -136,6 +143,7 @@ impl Portal {
             styles: self.styles,
             events: self.events,
             children: self.children,
+            key: self.key,
         })
     }
     pub fn access_key(self, value: impl Into<String>) -> Self {
