@@ -302,7 +302,9 @@ fn should_create_children_in_svg_context(is_svg: bool, element_name: &str) -> bo
 
 fn normalize_html_attribute_name(element: &web_sys::Element, name: &str) -> String {
     let namespace = element.namespace_uri().unwrap_or_default();
-    if namespace == "http://www.w3.org/2000/svg" || namespace == "http://www.w3.org/1998/Math/MathML" {
+    if namespace == "http://www.w3.org/2000/svg"
+        || namespace == "http://www.w3.org/1998/Math/MathML"
+    {
         return name.to_string();
     }
     if name.starts_with("xlink:") || name.starts_with("xml:") {
