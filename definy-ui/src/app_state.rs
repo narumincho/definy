@@ -111,12 +111,10 @@ pub struct AppState {
     pub module_update_form: ModuleUpdateFormState,
     pub event_detail_eval_result: Option<String>,
     pub profile_name_input: String,
-    pub is_header_popover_open: bool,
     pub force_offline: bool,
     pub local_event_queue: LocalEventQueueState,
     pub location: Option<Location>,
     pub focused_path: Option<Vec<PathStep>>,
-    pub active_dropdown_name: Option<String>,
     pub dropdown_search_query: String,
     pub language: crate::language::Language,
     pub language_fallback_notice: Option<LanguageFallbackNotice>,
@@ -218,7 +216,7 @@ pub fn upsert_local_event_record(
     state
         .local_event_queue
         .items
-        .sort_by(|a, b| b.updated_at_ms.cmp(&a.updated_at_ms));
+        .sort_by_key(|b| std::cmp::Reverse(b.updated_at_ms));
 }
 
 pub fn replace_local_event_records(
@@ -229,7 +227,7 @@ pub fn replace_local_event_records(
     state
         .local_event_queue
         .items
-        .sort_by(|a, b| b.updated_at_ms.cmp(&a.updated_at_ms));
+        .sort_by_key(|b| std::cmp::Reverse(b.updated_at_ms));
 }
 
 pub fn account_display_name(
@@ -309,7 +307,6 @@ pub fn build_initial_state(
         },
         event_detail_eval_result: None,
         profile_name_input: String::new(),
-        is_header_popover_open: false,
         force_offline: false,
         local_event_queue: LocalEventQueueState {
             items: Vec::new(),
@@ -318,7 +315,6 @@ pub fn build_initial_state(
         },
         location,
         focused_path: None,
-        active_dropdown_name: None,
         dropdown_search_query: String::new(),
         language,
         language_fallback_notice,
@@ -371,13 +367,13 @@ impl AppState {
     pub fn url_with_lang(&self, location: &Location) -> String {
         AppState::build_url(
             location,
-            self.language.code,
+            self.language.to_code(),
             self.event_list_state.filter_event_type,
         )
     }
 
     pub fn home_url_with_lang(&self, event_type: Option<EventType>) -> String {
-        AppState::build_url(&Location::Home, self.language.code, event_type)
+        AppState::build_url(&Location::Home, self.language.to_code(), event_type)
     }
 
     pub fn href_with_lang(&self, location: Location) -> narumincho_vdom::Href<Location> {

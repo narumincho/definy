@@ -4,19 +4,142 @@ use std::future::Future;
 use std::hash::{Hash, Hasher};
 use std::{pin::Pin, rc::Rc};
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Namespace {
+    Html,
+    Svg,
+    MathML,
+}
+
+impl Namespace {
+    pub fn from_element_name(name: &str) -> Self {
+        if matches!(
+            name,
+            "animate"
+                | "animateMotion"
+                | "animateTransform"
+                | "circle"
+                | "clipPath"
+                | "defs"
+                | "desc"
+                | "ellipse"
+                | "feBlend"
+                | "feColorMatrix"
+                | "feComponentTransfer"
+                | "feComposite"
+                | "feConvolveMatrix"
+                | "feDiffuseLighting"
+                | "feDisplacementMap"
+                | "feDistantLight"
+                | "feFlood"
+                | "feFuncA"
+                | "feFuncB"
+                | "feFuncG"
+                | "feFuncR"
+                | "feGaussianBlur"
+                | "feImage"
+                | "feMerge"
+                | "feMergeNode"
+                | "feMorphology"
+                | "feOffset"
+                | "fePointLight"
+                | "feSpecularLighting"
+                | "feSpotLight"
+                | "feTile"
+                | "feTurbulence"
+                | "filter"
+                | "foreignObject"
+                | "g"
+                | "image"
+                | "line"
+                | "linearGradient"
+                | "marker"
+                | "mask"
+                | "metadata"
+                | "mpath"
+                | "path"
+                | "pattern"
+                | "polygon"
+                | "polyline"
+                | "radialGradient"
+                | "rect"
+                | "set"
+                | "stop"
+                | "svg"
+                | "switch"
+                | "symbol"
+                | "text"
+                | "textPath"
+                | "tspan"
+                | "use"
+                | "view"
+        ) {
+            Self::Svg
+        } else if matches!(
+            name,
+            "annotation"
+                | "annotation-xml"
+                | "maction"
+                | "math"
+                | "merror"
+                | "mfrac"
+                | "mi"
+                | "mmultiscripts"
+                | "mn"
+                | "mo"
+                | "mover"
+                | "mpadded"
+                | "mphantom"
+                | "mprescripts"
+                | "mroot"
+                | "mrow"
+                | "ms"
+                | "mspace"
+                | "msqrt"
+                | "mstyle"
+                | "msub"
+                | "msubsup"
+                | "msup"
+                | "mtable"
+                | "mtd"
+                | "mtext"
+                | "mtr"
+                | "munder"
+                | "munderover"
+                | "semantics"
+        ) {
+            Self::MathML
+        } else {
+            Self::Html
+        }
+    }
+}
+
 #[derive(Clone, Debug, PartialEq)]
 pub struct Element {
     pub element_name: String,
+    pub namespace: Namespace,
     pub attributes: Vec<(String, String)>,
     pub styles: crate::Style,
     pub events: Vec<(String, EventHandler)>,
     pub children: Vec<Node>,
+    /// Virtual-DOM identity. This is never rendered as an HTML attribute.
+    pub key: Option<String>,
 }
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Node {
     Element(Element),
     Text(Box<str>),
+}
+
+impl Node {
+    pub fn with_key(mut self, key: impl Into<String>) -> Self {
+        if let Node::Element(element) = &mut self {
+            element.key = Some(key.into());
+        }
+        self
+    }
 }
 
 pub type AnyStateUpdater = Box<dyn FnOnce(Box<dyn Any>) -> Box<dyn Any>>;
@@ -97,8 +220,8 @@ impl Clone for EventHandler {
 }
 
 impl PartialEq for EventHandler {
-    fn eq(&self, _other: &Self) -> bool {
-        true
+    fn eq(&self, other: &Self) -> bool {
+        self.parameter_hash == other.parameter_hash
     }
 }
 

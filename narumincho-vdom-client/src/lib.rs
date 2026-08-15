@@ -142,42 +142,40 @@ pub fn start<State: Clone + 'static, A: App<State>>() {
                     && can_intercept.is_truthy()
                     && let Ok(_user_initiated) =
                         Reflect::get(&event, &JsValue::from_str("userInitiated"))
+                    && let Ok(destination) = Reflect::get(&event, &JsValue::from_str("destination"))
+                    && let Ok(url_val) = Reflect::get(&destination, &JsValue::from_str("url"))
+                    && let Some(url_str) = url_val.as_string()
                 {
-                    if let Ok(destination) = Reflect::get(&event, &JsValue::from_str("destination"))
-                        && let Ok(url_val) = Reflect::get(&destination, &JsValue::from_str("url"))
-                        && let Some(url_str) = url_val.as_string()
-                    {
-                        let intercept_func = Reflect::get(&event, &JsValue::from_str("intercept"))
-                            .unwrap_or(JsValue::UNDEFINED);
+                    let intercept_func = Reflect::get(&event, &JsValue::from_str("intercept"))
+                        .unwrap_or(JsValue::UNDEFINED);
 
-                        let dispatch = Rc::clone(&dispatch_for_nav);
+                    let dispatch = Rc::clone(&dispatch_for_nav);
 
-                        if intercept_func.is_function() {
-                            let url_for_intercept = url_str.clone();
-                            let intercept_handler = Closure::wrap(Box::new(move || {
-                                let dispatch_inner = Rc::clone(&dispatch);
-                                let url_for_closure = url_for_intercept.clone();
-                                dispatch_inner(Box::new(move |state: State| {
-                                    A::on_navigate(state, url_for_closure)
-                                }));
-                            })
-                                as Box<dyn FnMut()>);
+                    if intercept_func.is_function() {
+                        let url_for_intercept = url_str.clone();
+                        let intercept_handler = Closure::wrap(Box::new(move || {
+                            let dispatch_inner = Rc::clone(&dispatch);
+                            let url_for_closure = url_for_intercept.clone();
+                            dispatch_inner(Box::new(move |state: State| {
+                                A::on_navigate(state, url_for_closure)
+                            }));
+                        })
+                            as Box<dyn FnMut()>);
 
-                            let handler_val = intercept_handler.as_ref().unchecked_ref();
-                            let init_obj = js_sys::Object::new();
-                            Reflect::set(&init_obj, &JsValue::from_str("handler"), handler_val)
-                                .unwrap();
+                        let handler_val = intercept_handler.as_ref().unchecked_ref();
+                        let init_obj = js_sys::Object::new();
+                        Reflect::set(&init_obj, &JsValue::from_str("handler"), handler_val)
+                            .unwrap();
 
-                            let _ = Reflect::apply(
-                                &intercept_func.unchecked_into::<js_sys::Function>(),
-                                &event,
-                                &js_sys::Array::of1(&init_obj),
-                            );
+                        let _ = Reflect::apply(
+                            &intercept_func.unchecked_into::<js_sys::Function>(),
+                            &event,
+                            &js_sys::Array::of1(&init_obj),
+                        );
 
-                            intercept_handler.forget();
-                        } else {
-                            dispatch(Box::new(move |state: State| A::on_navigate(state, url_str)));
-                        }
+                        intercept_handler.forget();
+                    } else {
+                        dispatch(Box::new(move |state: State| A::on_navigate(state, url_str)));
                     }
                 }
             }) as Box<dyn FnMut(web_sys::Event)>);
@@ -244,12 +242,7 @@ pub fn apply(
 fn find_node(root: &web_sys::Node, path: &[usize]) -> Option<web_sys::Node> {
     let mut current = root.clone();
     for &index in path {
-        let children = current.child_nodes();
-        if let Some(child) = children.item(index as u32) {
-            current = child;
-        } else {
-            return None;
-        }
+        current = current.child_nodes().item(index as u32)?;
     }
     Some(current)
 }
@@ -300,6 +293,19 @@ fn should_create_children_in_svg_context(is_svg: bool, element_name: &str) -> bo
     is_svg && element_name != "foreignObject"
 }
 
+fn normalize_html_attribute_name(element: &web_sys::Element, name: &str) -> String {
+    let namespace = element.namespace_uri().unwrap_or_default();
+    if namespace == "http://www.w3.org/2000/svg"
+        || namespace == "http://www.w3.org/1998/Math/MathML"
+    {
+        return name.to_string();
+    }
+    if name.starts_with("xlink:") || name.starts_with("xml:") {
+        return name.to_string();
+    }
+    name.to_ascii_lowercase()
+}
+
 fn apply_patch(
     node: web_sys::Node,
     patch: &diff::Patch,
@@ -331,14 +337,16 @@ fn apply_patch(
         diff::Patch::AddAttributes(attributes) => {
             if let Some(element) = node.dyn_ref::<web_sys::Element>() {
                 for (key, value) in attributes {
-                    element.set_attribute(key, value).unwrap();
+                    let key = normalize_html_attribute_name(element, key);
+                    element.set_attribute(&key, value).unwrap();
                 }
             }
         }
         diff::Patch::RemoveAttributes(attribute_names) => {
             if let Some(element) = node.dyn_ref::<web_sys::Element>() {
                 for name in attribute_names {
-                    element.remove_attribute(name).unwrap();
+                    let name = normalize_html_attribute_name(element, name);
+                    element.remove_attribute(&name).unwrap();
                 }
             }
         }
@@ -454,8 +462,8 @@ fn create_web_sys_node(
 ) -> web_sys::Node {
     match vdom {
         Node::Element(el) => {
-            let is_element_svg = should_create_element_in_svg_namespace(is_svg, &el.element_name);
-            let element = crate::element_creation::create_element(&el.element_name, is_element_svg);
+            let is_element_svg = matches!(el.namespace, narumincho_vdom::Namespace::Svg);
+            let element = crate::element_creation::create_element(&el.element_name, el.namespace);
             for (key, value) in &el.attributes {
                 element.set_attribute(key, value).unwrap();
             }

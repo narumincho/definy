@@ -5,7 +5,6 @@ use narumincho_vdom::*;
 use crate::Location;
 use crate::app_state::AppState;
 use crate::expression_eval::{evaluate_expression, expression_to_source};
-use crate::i18n;
 
 fn part_type_text(part_type: &definy_event::event::PartType) -> String {
     match part_type {
@@ -48,8 +47,7 @@ pub fn event_detail_view(state: &AppState, target_hash: &definy_event::EventHash
                     .set("text-align", "center")
                     .set("padding", "1.8rem"),
             )
-            .children([text(i18n::tr(
-                state,
+            .children([text(state.language.label(
                 "Event not found",
                 "イベントが見つかりません",
                 "Evento ne trovita",
@@ -73,8 +71,7 @@ pub fn event_detail_view(state: &AppState, target_hash: &definy_event::EventHash
                         .set("text-decoration", "none")
                         .set("font-weight", "500"),
                 )
-                .children([text(i18n::tr(
-                    state,
+                .children([text(state.language.label(
                     "← Back to Home",
                     "← ホームへ戻る",
                     "← Reen al hejmo",
@@ -98,9 +95,8 @@ fn render_event_detail(
         .class("event-detail-card")
         .style(
             Style::new()
-                .set("background", "rgba(255, 255, 255, 0.02)")
+                .set("background", "rgb(255 255 255 / 0.02)")
                 .set("backdrop-filter", "var(--glass-blur)")
-                .set("-webkit-backdrop-filter", "var(--glass-blur)")
                 .set("border", "1px solid var(--border)")
                 .set("border-radius", "var(--radius-lg)")
                 .set("padding", "1.25rem")
@@ -151,8 +147,7 @@ fn render_event_detail(
                             .set("font-weight", "600"),
                     )
                     .children([
-                        text(i18n::tr(
-                            state,
+                        text(state.language.label(
                             "Account created:",
                             "アカウント作成:",
                             "Konto kreita:",
@@ -168,8 +163,7 @@ fn render_event_detail(
                             .set("font-weight", "600"),
                     )
                     .children([
-                        text(i18n::tr(
-                            state,
+                        text(state.language.label(
                             "Profile changed:",
                             "プロフィール変更:",
                             "Profilo ŝanĝita:",
@@ -217,7 +211,7 @@ fn render_event_detail(
                                                 .map(|(h, e)| (h.clone(), e.clone()))
                                                 .collect();
                                             let eval_result = evaluate_message_result(
-                                                state.language.code,
+                                                &state.language,
                                                 &expression,
                                                 &events_vec,
                                             );
@@ -229,7 +223,7 @@ fn render_event_detail(
                                     }
                                 }))
                                 .style(Style::new().set("margin-top", "0.65rem"))
-                                .children([text(i18n::tr(state, "Evaluate", "評価", "Taksi"))])
+                                .children([text(state.language.label("Evaluate", "評価", "Taksi"))])
                                 .into_node()
                         },
                         A::<Location>::new()
@@ -241,8 +235,7 @@ fn render_event_detail(
                                     .set("color", "var(--primary)")
                                     .set("text-decoration", "none"),
                             )
-                            .children([text(i18n::tr(
-                                state,
+                            .children([text(state.language.label(
                                 "Open part detail",
                                 "パーツ詳細を開く",
                                 "Malfermi partajn detalojn",
@@ -275,8 +268,7 @@ fn render_event_detail(
                             .style(Style::new().set("font-size", "1.08rem"))
                             .children([text(format!(
                                 "{} {}",
-                                i18n::tr(
-                                    state,
+                                state.language.label(
                                     "Part updated:",
                                     "パーツ更新:",
                                     "Parto ĝisdatigita:"
@@ -306,7 +298,7 @@ fn render_event_detail(
                             )
                             .children([text(format!(
                                 "{} {}",
-                                i18n::tr(state, "expression:", "式:", "esprimo:"),
+                                state.language.label("expression:", "式:", "esprimo:"),
                                 expression_to_source(&part_update_event.expression)
                             ))])
                             .into_node(),
@@ -319,8 +311,7 @@ fn render_event_detail(
                             )
                             .children([text(format!(
                                 "{} {}",
-                                i18n::tr(
-                                    state,
+                                state.language.label(
                                     "partDefinitionEventHash:",
                                     "partDefinitionEventHash:",
                                     "partDefinitionEventHash:"
@@ -332,8 +323,7 @@ fn render_event_detail(
                             .href(state.href_with_lang(Location::Event(
                                 part_update_event.part_definition_event_hash.clone(),
                             )))
-                            .children([text(i18n::tr(
-                                state,
+                            .children([text(state.language.label(
                                 "Open definition event",
                                 "定義イベントを開く",
                                 "Malfermi difinan eventon",
@@ -343,8 +333,7 @@ fn render_event_detail(
                             .href(state.href_with_lang(Location::Part(
                                 part_update_event.part_definition_event_hash.clone(),
                             )))
-                            .children([text(i18n::tr(
-                                state,
+                            .children([text(state.language.label(
                                 "Open part detail",
                                 "パーツ詳細を開く",
                                 "Malfermi partajn detalojn",
@@ -361,8 +350,7 @@ fn render_event_detail(
                     .children([
                         text(format!(
                             "{} {}",
-                            i18n::tr(
-                                state,
+                            state.language.label(
                                 "Module created:",
                                 "モジュール作成:",
                                 "Modulo kreita:"
@@ -384,8 +372,7 @@ fn render_event_detail(
                         },
                         A::<Location>::new()
                             .href(state.href_with_lang(Location::Module(hash.clone())))
-                            .children([text(i18n::tr(
-                                state,
+                            .children([text(state.language.label(
                                 "Open module detail",
                                 "モジュール詳細を開く",
                                 "Malfermi modulajn detalojn",
@@ -405,8 +392,7 @@ fn render_event_detail(
                             .style(Style::new().set("font-size", "1.08rem"))
                             .children([text(format!(
                                 "{} {}",
-                                i18n::tr(
-                                    state,
+                                state.language.label(
                                     "Module updated:",
                                     "モジュール更新:",
                                     "Modulo ĝisdatigita:"
@@ -436,8 +422,7 @@ fn render_event_detail(
                             )
                             .children([text(format!(
                                 "{} {}",
-                                i18n::tr(
-                                    state,
+                                state.language.label(
                                     "moduleDefinitionEventHash:",
                                     "moduleDefinitionEventHash:",
                                     "moduleDefinitionEventHash:"
@@ -449,8 +434,7 @@ fn render_event_detail(
                             .href(state.href_with_lang(Location::Event(
                                 module_update_event.module_definition_event_hash.clone(),
                             )))
-                            .children([text(i18n::tr(
-                                state,
+                            .children([text(state.language.label(
                                 "Open definition event",
                                 "定義イベントを開く",
                                 "Malfermi difinan eventon",
@@ -460,8 +444,7 @@ fn render_event_detail(
                             .href(state.href_with_lang(Location::Module(
                                 module_update_event.module_definition_event_hash.clone(),
                             )))
-                            .children([text(i18n::tr(
-                                state,
+                            .children([text(state.language.label(
                                 "Open module detail",
                                 "モジュール詳細を開く",
                                 "Malfermi modulajn detalojn",
@@ -486,8 +469,7 @@ fn render_event_detail(
                         .set("opacity", "0.6"),
                 )
                 .children([
-                    text(i18n::tr(
-                        state,
+                    text(state.language.label(
                         "Event Hash: ",
                         "イベントハッシュ: ",
                         "Evento-hako: ",
@@ -514,8 +496,7 @@ fn related_part_events_section(state: &AppState, root_part_definition_hash: &Eve
         .children([
             Div::new()
                 .style(Style::new().set("font-weight", "600"))
-                .children([text(i18n::tr(
-                    state,
+                .children([text(state.language.label(
                     "Events linked by partDefinitionEventHash",
                     "partDefinitionEventHash に紐づくイベント",
                     "Eventoj ligitaj per partDefinitionEventHash",
@@ -593,7 +574,7 @@ fn collect_related_part_events(
             }
         })
         .collect::<Vec<(definy_event::EventHashId, Event)>>();
-    events.sort_by(|(_, a), (_, b)| b.time.cmp(&a.time));
+    events.sort_by_key(|(_, b)| std::cmp::Reverse(b.time));
     events
 }
 
@@ -611,19 +592,19 @@ fn root_part_definition_hash(
 }
 
 fn evaluate_message_result(
-    lang_code: &str,
+    language: &crate::language::Language,
     expression: &definy_event::event::Expression,
     events: &[crate::app_state::EventWithHash],
 ) -> String {
     match evaluate_expression(expression, events) {
         Ok(value) => format!(
             "{} {}",
-            i18n::tr_lang(lang_code, "Result:", "結果:", "Rezulto:"),
+            language.label("Result:", "結果:", "Rezulto:"),
             value
         ),
         Err(error) => format!(
             "{} {}",
-            i18n::tr_lang(lang_code, "Error:", "エラー:", "Eraro:"),
+            language.label("Error:", "エラー:", "Eraro:"),
             error
         ),
     }
@@ -644,7 +625,7 @@ mod tests {
             )),
         });
         assert_eq!(
-            evaluate_message_result("en", &expression, &[]),
+            evaluate_message_result(&crate::language::Language::English, &expression, &[]),
             "Result: 42"
         );
     }

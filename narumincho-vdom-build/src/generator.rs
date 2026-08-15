@@ -6,7 +6,7 @@ use std::process::Command;
 
 use crate::fetch;
 use crate::idl;
-use crate::model::{ElementInfo, GLOBAL_ATTRIBUTES, OVERLAPPING_TAGS, WebrefSpecData};
+use crate::model::{ElementInfo, OVERLAPPING_TAGS, WebrefSpecData};
 use crate::naming::{
     capitalize, escape_identifier, escape_method_name, escape_variant_name, to_html_attribute_name,
 };
@@ -79,7 +79,7 @@ pub async fn generate_code() -> anyhow::Result<()> {
     }
 
     for (name, info) in &elements_map {
-        output_element_file(name, info, &db)?;
+        output_element_file(name, info, &db, &svg_elements, &mathml_elements)?;
     }
 
     output_elements_rs(&elements_map, &db)?;
@@ -142,6 +142,8 @@ fn output_element_file(
     name: &str,
     info: &ElementInfo,
     db: &idl::IdlDatabase,
+    svg_elements: &BTreeSet<String>,
+    mathml_elements: &BTreeSet<String>,
 ) -> anyhow::Result<()> {
     let escaped_module_name = escape_identifier(name);
     let file_name = escaped_module_name.trim_start_matches("r#");
@@ -166,11 +168,12 @@ fn output_element_file(
     let mut events = Vec::new();
 
     for attr in resolved_attributes {
-        let is_global = GLOBAL_ATTRIBUTES.contains(&attr.name.to_lowercase().as_str());
         let is_event = attr.name.starts_with("on");
         if is_event {
-            events.push(attr);
-        } else if !is_global && is_html_attribute(&attr) {
+            if !is_excluded_event(&attr.name) {
+                events.push(attr);
+            }
+        } else if is_html_attribute(&attr) {
             html_attributes.push(attr);
         }
     }
@@ -297,6 +300,7 @@ fn output_element_file(
     writeln!(file, "    pub events: Vec<(String, crate::EventHandler)>,")?;
     writeln!(file, "    pub styles: crate::Style,")?;
     writeln!(file, "    pub children: Vec<crate::Node>,")?;
+    writeln!(file, "    pub key: Option<String>,")?;
     if name == "a" {
         writeln!(file, "    route: std::marker::PhantomData<L>,")?;
     }
@@ -326,7 +330,11 @@ fn output_element_file(
         writeln!(file, "impl {} {{", capitalized_element_name)?;
     }
 
-    write!(file, "{}", common_builder_methods(name, name == "a"))?;
+    write!(
+        file,
+        "{}",
+        common_builder_methods(name, name == "a", svg_elements, mathml_elements)
+    )?;
     for attr in &html_attributes {
         let method_name = escape_method_name(&attr.name);
         if matches!(
@@ -659,6 +667,16 @@ fn is_html_attribute(attr: &idl::ResolvedAttribute) -> bool {
     false
 }
 
+fn is_excluded_event(name: &str) -> bool {
+    matches!(
+        name,
+        "onwebkitanimationend"
+            | "onwebkitanimationiteration"
+            | "onwebkitanimationstart"
+            | "onwebkittransitionend"
+    )
+}
+
 fn output_element_creation_rs(
     svg_elements: &BTreeSet<String>,
     mathml_elements: &BTreeSet<String>,
@@ -748,11 +766,23 @@ mod tests {{
     Ok(())
 }
 
-fn common_builder_methods(tag_name: &str, is_anchor: bool) -> String {
+fn common_builder_methods(
+    tag_name: &str,
+    is_anchor: bool,
+    svg_elements: &BTreeSet<String>,
+    mathml_elements: &BTreeSet<String>,
+) -> String {
     let route_field = if is_anchor {
         "route: std::marker::PhantomData,"
     } else {
         ""
+    };
+    let namespace = if svg_elements.contains(tag_name) {
+        "crate::Namespace::Svg"
+    } else if mathml_elements.contains(tag_name) {
+        "crate::Namespace::MathML"
+    } else {
+        "crate::Namespace::Html"
     };
     format!(
         "
@@ -762,6 +792,7 @@ pub fn new() -> Self {{
         events: Vec::new(),
         styles: crate::Style::new(),
         children: Vec::new(),
+        key: None,
         {route_field}
     }}
 }}
@@ -793,14 +824,21 @@ pub fn children(mut self, children: impl Into<Vec<crate::Node>>) -> Self {{
     self.children = children.into();
     self
 }}
+
+pub fn key(mut self, key: impl Into<String>) -> Self {{
+    self.key = Some(key.into());
+    self
+}}
     
 pub fn into_node(self) -> crate::Node {{
     crate::Node::Element(crate::Element {{
         element_name: \"{tag_name}\".to_string(),
+        namespace: {namespace},
         attributes: self.attributes,
         styles: self.styles,
         events: self.events,
         children: self.children,
+        key: self.key,
     }})
 }}
 "
@@ -814,7 +852,9 @@ mod tests {
 
     #[test]
     fn common_builder_methods_are_generated_for_old_elements_compatibility() {
-        let methods = common_builder_methods("button", false);
+        let svg = std::collections::BTreeSet::new();
+        let mathml = std::collections::BTreeSet::new();
+        let methods = common_builder_methods("button", false, &svg, &mathml);
         assert!(methods.contains("pub fn attribute"));
         assert!(methods.contains("pub fn id"));
         assert!(methods.contains("pub fn class"));
@@ -845,5 +885,17 @@ mod tests {
             ])
         );
         assert!(supports_custom_values("HTMLButtonElement", &attr));
+    }
+
+    #[test]
+    fn test_is_excluded_event() {
+        assert!(is_excluded_event("onwebkitanimationend"));
+        assert!(is_excluded_event("onwebkitanimationiteration"));
+        assert!(is_excluded_event("onwebkitanimationstart"));
+        assert!(is_excluded_event("onwebkittransitionend"));
+
+        assert!(!is_excluded_event("onclick"));
+        assert!(!is_excluded_event("onanimationend"));
+        assert!(!is_excluded_event("ontransitionend"));
     }
 }

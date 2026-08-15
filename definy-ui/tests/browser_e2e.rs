@@ -481,7 +481,6 @@ fn render_html_response(path: &str) -> Response<Full<Bytes>> {
     let html = narumincho_vdom::to_html(&definy_ui::render(
         &definy_ui::AppState {
             focused_path: None,
-            active_dropdown_name: None,
             dropdown_search_query: String::new(),
             login_or_create_account_dialog_state: definy_ui::LoginOrCreateAccountDialogState {
                 generated_key: None,
@@ -532,7 +531,6 @@ fn render_html_response(path: &str) -> Response<Full<Bytes>> {
             },
             event_detail_eval_result: None,
             profile_name_input: String::new(),
-            is_header_popover_open: false,
             force_offline: false,
             local_event_queue: definy_ui::LocalEventQueueState {
                 items: Vec::new(),

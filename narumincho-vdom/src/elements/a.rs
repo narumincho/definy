@@ -1,6 +1,77 @@
 // このファイルは narumincho-vdom-build によって自動生成されました。
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum AnchorAutocapitalize {
+    Off,
+    None,
+    Characters,
+    Words,
+    Sentences,
+}
+
+impl AnchorAutocapitalize {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Off => "off",
+            Self::None => "none",
+            Self::Characters => "characters",
+            Self::Words => "words",
+            Self::Sentences => "sentences",
+        }
+    }
+}
+
+impl From<AnchorAutocapitalize> for String {
+    fn from(value: AnchorAutocapitalize) -> Self {
+        value.as_str().to_string()
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum AnchorDir {
+    Ltr,
+    Rtl,
+    Auto,
+}
+
+impl AnchorDir {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Ltr => "ltr",
+            Self::Rtl => "rtl",
+            Self::Auto => "auto",
+        }
+    }
+}
+
+impl From<AnchorDir> for String {
+    fn from(value: AnchorDir) -> Self {
+        value.as_str().to_string()
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum AnchorPopover {
+    Auto,
+    Manual,
+}
+
+impl AnchorPopover {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Auto => "auto",
+            Self::Manual => "manual",
+        }
+    }
+}
+
+impl From<AnchorPopover> for String {
+    fn from(value: AnchorPopover) -> Self {
+        value.as_str().to_string()
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum AnchorTarget {
     Self_,
     Blank,
@@ -25,13 +96,14 @@ impl From<AnchorTarget> for String {
     }
 }
 
-/// HTML Content Attributes for https://w3c.github.io/svgwg/svg2-draft/linking.html#elementdef-a
+/// HTML Content Attributes for https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-a-element
 #[derive(Debug, Clone, PartialEq)]
 pub struct Anchor<L: crate::Route> {
     pub attributes: Vec<(String, String)>,
     pub events: Vec<(String, crate::EventHandler)>,
     pub styles: crate::Style,
     pub children: Vec<crate::Node>,
+    pub key: Option<String>,
     route: std::marker::PhantomData<L>,
 }
 
@@ -52,6 +124,7 @@ impl<L: crate::Route> Anchor<L> {
             events: Vec::new(),
             styles: crate::Style::new(),
             children: Vec::new(),
+            key: None,
             route: std::marker::PhantomData,
         }
     }
@@ -85,15 +158,26 @@ impl<L: crate::Route> Anchor<L> {
         self
     }
 
+    pub fn key(mut self, key: impl Into<String>) -> Self {
+        self.key = Some(key.into());
+        self
+    }
+
     pub fn into_node(self) -> crate::Node {
         crate::Node::Element(crate::Element {
             element_name: "a".to_string(),
+            namespace: crate::Namespace::Svg,
             attributes: self.attributes,
             styles: self.styles,
             events: self.events,
             children: self.children,
+            key: self.key,
         })
     }
+    pub fn access_key(self, value: impl Into<String>) -> Self {
+        self.attribute("accessKey", value)
+    }
+
     pub fn aria_active_descendant_element(self, value: impl Into<String>) -> Self {
         self.attribute("aria-active-descendant-element", value)
     }
@@ -270,12 +354,67 @@ impl<L: crate::Route> Anchor<L> {
         self.attribute("aria-value-text", value)
     }
 
+    pub fn autocapitalize(self, value: impl Into<String>) -> Self {
+        self.attribute("autocapitalize", value)
+    }
+
+    pub fn autocorrect(mut self, value: bool) -> Self {
+        self.attributes.retain(|(key, _)| key != "autocorrect");
+        if value {
+            self.attributes
+                .push(("autocorrect".to_string(), String::new()));
+        }
+        self
+    }
+
+    pub fn autofocus(mut self, value: bool) -> Self {
+        self.attributes.retain(|(key, _)| key != "autofocus");
+        if value {
+            self.attributes
+                .push(("autofocus".to_string(), String::new()));
+        }
+        self
+    }
+
+    pub fn charset(self, value: impl Into<String>) -> Self {
+        self.attribute("charset", value)
+    }
+
+    pub fn content_editable(self, value: impl Into<String>) -> Self {
+        self.attribute("contentEditable", value)
+    }
+
+    pub fn coords(self, value: impl Into<String>) -> Self {
+        self.attribute("coords", value)
+    }
+
+    pub fn dir(self, value: impl Into<String>) -> Self {
+        self.attribute("dir", value)
+    }
+
     pub fn download(self, value: impl Into<String>) -> Self {
         self.attribute("download", value)
     }
 
+    pub fn draggable(mut self, value: bool) -> Self {
+        self.attributes.retain(|(key, _)| key != "draggable");
+        if value {
+            self.attributes
+                .push(("draggable".to_string(), String::new()));
+        }
+        self
+    }
+
+    pub fn enter_key_hint(self, value: impl Into<String>) -> Self {
+        self.attribute("enterKeyHint", value)
+    }
+
     pub fn hash(self, value: impl Into<String>) -> Self {
         self.attribute("hash", value)
+    }
+
+    pub fn hidden(self, value: impl Into<String>) -> Self {
+        self.attribute("hidden", value)
     }
 
     pub fn host(self, value: impl Into<String>) -> Self {
@@ -288,6 +427,30 @@ impl<L: crate::Route> Anchor<L> {
 
     pub fn hreflang(self, value: impl Into<String>) -> Self {
         self.attribute("hreflang", value)
+    }
+
+    pub fn inert(mut self, value: bool) -> Self {
+        self.attributes.retain(|(key, _)| key != "inert");
+        if value {
+            self.attributes.push(("inert".to_string(), String::new()));
+        }
+        self
+    }
+
+    pub fn input_mode(self, value: impl Into<String>) -> Self {
+        self.attribute("inputMode", value)
+    }
+
+    pub fn lang(self, value: impl Into<String>) -> Self {
+        self.attribute("lang", value)
+    }
+
+    pub fn name(self, value: impl Into<String>) -> Self {
+        self.attribute("name", value)
+    }
+
+    pub fn nonce(self, value: impl Into<String>) -> Self {
+        self.attribute("nonce", value)
     }
 
     pub fn password(self, value: impl Into<String>) -> Self {
@@ -318,6 +481,10 @@ impl<L: crate::Route> Anchor<L> {
         self.attribute("rel", value)
     }
 
+    pub fn rev(self, value: impl Into<String>) -> Self {
+        self.attribute("rev", value)
+    }
+
     pub fn role(self, value: impl Into<String>) -> Self {
         self.attribute("role", value)
     }
@@ -326,12 +493,50 @@ impl<L: crate::Route> Anchor<L> {
         self.attribute("search", value)
     }
 
+    pub fn shape(self, value: impl Into<String>) -> Self {
+        self.attribute("shape", value)
+    }
+
+    pub fn slot(self, value: impl Into<String>) -> Self {
+        self.attribute("slot", value)
+    }
+
+    pub fn spellcheck(mut self, value: bool) -> Self {
+        self.attributes.retain(|(key, _)| key != "spellcheck");
+        if value {
+            self.attributes
+                .push(("spellcheck".to_string(), String::new()));
+        }
+        self
+    }
+
+    pub fn tab_index(self, value: impl Into<String>) -> Self {
+        self.attribute("tabIndex", value)
+    }
+
     pub fn target(self, value: impl Into<String>) -> Self {
         self.attribute("target", value)
     }
 
+    pub fn text(self, value: impl Into<String>) -> Self {
+        self.attribute("text", value)
+    }
+
     pub fn text_content(self, value: impl Into<String>) -> Self {
         self.attribute("textContent", value)
+    }
+
+    pub fn title(self, value: impl Into<String>) -> Self {
+        self.attribute("title", value)
+    }
+
+    pub fn translate(mut self, value: bool) -> Self {
+        self.attributes.retain(|(key, _)| key != "translate");
+        if value {
+            self.attributes
+                .push(("translate".to_string(), String::new()));
+        }
+        self
     }
 
     pub fn type_(self, value: impl Into<String>) -> Self {
@@ -340,6 +545,14 @@ impl<L: crate::Route> Anchor<L> {
 
     pub fn username(self, value: impl Into<String>) -> Self {
         self.attribute("username", value)
+    }
+
+    pub fn virtual_keyboard_policy(self, value: impl Into<String>) -> Self {
+        self.attribute("virtualKeyboardPolicy", value)
+    }
+
+    pub fn writing_suggestions(self, value: impl Into<String>) -> Self {
+        self.attribute("writingSuggestions", value)
     }
 
     pub fn on_abort(mut self, handler: crate::EventHandler) -> Self {
@@ -852,30 +1065,6 @@ impl<L: crate::Route> Anchor<L> {
 
     pub fn on_waiting(mut self, handler: crate::EventHandler) -> Self {
         self.events.push(("waiting".to_string(), handler));
-        self
-    }
-
-    pub fn on_webkitanimationend(mut self, handler: crate::EventHandler) -> Self {
-        self.events
-            .push(("webkitanimationend".to_string(), handler));
-        self
-    }
-
-    pub fn on_webkitanimationiteration(mut self, handler: crate::EventHandler) -> Self {
-        self.events
-            .push(("webkitanimationiteration".to_string(), handler));
-        self
-    }
-
-    pub fn on_webkitanimationstart(mut self, handler: crate::EventHandler) -> Self {
-        self.events
-            .push(("webkitanimationstart".to_string(), handler));
-        self
-    }
-
-    pub fn on_webkittransitionend(mut self, handler: crate::EventHandler) -> Self {
-        self.events
-            .push(("webkittransitionend".to_string(), handler));
         self
     }
 

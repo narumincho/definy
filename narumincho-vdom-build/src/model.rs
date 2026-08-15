@@ -33,30 +33,4 @@ pub struct ElementInfo {
     pub specs: BTreeSet<String>,
 }
 
-pub const GLOBAL_ATTRIBUTES: &[&str] = &[
-    "accesskey",
-    "autocapitalize",
-    "autofocus",
-    "class",
-    "contenteditable",
-    "dir",
-    "draggable",
-    "enterkeyhint",
-    "hidden",
-    "id",
-    "inert",
-    "inputmode",
-    "is",
-    "lang",
-    "nonce",
-    "part",
-    "popover",
-    "slot",
-    "spellcheck",
-    "style",
-    "tabindex",
-    "title",
-    "translate",
-];
-
 pub const OVERLAPPING_TAGS: &[&str] = &["a", "script", "style", "title"];

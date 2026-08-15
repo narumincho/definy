@@ -1,6 +1,77 @@
 // このファイルは narumincho-vdom-build によって自動生成されました。
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum InputAutocapitalize {
+    Off,
+    None,
+    Characters,
+    Words,
+    Sentences,
+}
+
+impl InputAutocapitalize {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Off => "off",
+            Self::None => "none",
+            Self::Characters => "characters",
+            Self::Words => "words",
+            Self::Sentences => "sentences",
+        }
+    }
+}
+
+impl From<InputAutocapitalize> for String {
+    fn from(value: InputAutocapitalize) -> Self {
+        value.as_str().to_string()
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum InputDir {
+    Ltr,
+    Rtl,
+    Auto,
+}
+
+impl InputDir {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Ltr => "ltr",
+            Self::Rtl => "rtl",
+            Self::Auto => "auto",
+        }
+    }
+}
+
+impl From<InputDir> for String {
+    fn from(value: InputDir) -> Self {
+        value.as_str().to_string()
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum InputPopover {
+    Auto,
+    Manual,
+}
+
+impl InputPopover {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Auto => "auto",
+            Self::Manual => "manual",
+        }
+    }
+}
+
+impl From<InputPopover> for String {
+    fn from(value: InputPopover) -> Self {
+        value.as_str().to_string()
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum InputType {
     Text,
     Password,
@@ -68,6 +139,7 @@ pub struct Input {
     pub events: Vec<(String, crate::EventHandler)>,
     pub styles: crate::Style,
     pub children: Vec<crate::Node>,
+    pub key: Option<String>,
 }
 
 pub fn input() -> Input {
@@ -87,6 +159,7 @@ impl Input {
             events: Vec::new(),
             styles: crate::Style::new(),
             children: Vec::new(),
+            key: None,
         }
     }
 
@@ -119,17 +192,28 @@ impl Input {
         self
     }
 
+    pub fn key(mut self, key: impl Into<String>) -> Self {
+        self.key = Some(key.into());
+        self
+    }
+
     pub fn into_node(self) -> crate::Node {
         crate::Node::Element(crate::Element {
             element_name: "input".to_string(),
+            namespace: crate::Namespace::Html,
             attributes: self.attributes,
             styles: self.styles,
             events: self.events,
             children: self.children,
+            key: self.key,
         })
     }
     pub fn accept(self, value: impl Into<String>) -> Self {
         self.attribute("accept", value)
+    }
+
+    pub fn access_key(self, value: impl Into<String>) -> Self {
+        self.attribute("accessKey", value)
     }
 
     pub fn align(self, value: impl Into<String>) -> Self {
@@ -324,6 +408,10 @@ impl Input {
         self.attribute("aria-value-text", value)
     }
 
+    pub fn autocapitalize(self, value: impl Into<String>) -> Self {
+        self.attribute("autocapitalize", value)
+    }
+
     pub fn autocomplete(self, value: impl Into<String>) -> Self {
         self.attribute("autocomplete", value)
     }
@@ -333,6 +421,15 @@ impl Input {
         if value {
             self.attributes
                 .push(("autocorrect".to_string(), String::new()));
+        }
+        self
+    }
+
+    pub fn autofocus(mut self, value: bool) -> Self {
+        self.attributes.retain(|(key, _)| key != "autofocus");
+        if value {
+            self.attributes
+                .push(("autofocus".to_string(), String::new()));
         }
         self
     }
@@ -353,6 +450,10 @@ impl Input {
         self.attribute("colorSpace", value)
     }
 
+    pub fn content_editable(self, value: impl Into<String>) -> Self {
+        self.attribute("contentEditable", value)
+    }
+
     pub fn default_checked(mut self, value: bool) -> Self {
         self.attributes.retain(|(key, _)| key != "defaultChecked");
         if value {
@@ -366,6 +467,10 @@ impl Input {
         self.attribute("defaultValue", value)
     }
 
+    pub fn dir(self, value: impl Into<String>) -> Self {
+        self.attribute("dir", value)
+    }
+
     pub fn dir_name(self, value: impl Into<String>) -> Self {
         self.attribute("dirName", value)
     }
@@ -377,6 +482,19 @@ impl Input {
                 .push(("disabled".to_string(), String::new()));
         }
         self
+    }
+
+    pub fn draggable(mut self, value: bool) -> Self {
+        self.attributes.retain(|(key, _)| key != "draggable");
+        if value {
+            self.attributes
+                .push(("draggable".to_string(), String::new()));
+        }
+        self
+    }
+
+    pub fn enter_key_hint(self, value: impl Into<String>) -> Self {
+        self.attribute("enterKeyHint", value)
     }
 
     pub fn files(self, value: impl Into<String>) -> Self {
@@ -408,6 +526,10 @@ impl Input {
         self.attribute("formTarget", value)
     }
 
+    pub fn hidden(self, value: impl Into<String>) -> Self {
+        self.attribute("hidden", value)
+    }
+
     pub fn indeterminate(mut self, value: bool) -> Self {
         self.attributes.retain(|(key, _)| key != "indeterminate");
         if value {
@@ -415,6 +537,22 @@ impl Input {
                 .push(("indeterminate".to_string(), String::new()));
         }
         self
+    }
+
+    pub fn inert(mut self, value: bool) -> Self {
+        self.attributes.retain(|(key, _)| key != "inert");
+        if value {
+            self.attributes.push(("inert".to_string(), String::new()));
+        }
+        self
+    }
+
+    pub fn input_mode(self, value: impl Into<String>) -> Self {
+        self.attribute("inputMode", value)
+    }
+
+    pub fn lang(self, value: impl Into<String>) -> Self {
+        self.attribute("lang", value)
     }
 
     pub fn max(self, value: impl Into<String>) -> Self {
@@ -444,6 +582,10 @@ impl Input {
 
     pub fn name(self, value: impl Into<String>) -> Self {
         self.attribute("name", value)
+    }
+
+    pub fn nonce(self, value: impl Into<String>) -> Self {
+        self.attribute("nonce", value)
     }
 
     pub fn pattern(self, value: impl Into<String>) -> Self {
@@ -492,6 +634,19 @@ impl Input {
         self.attribute("selectionStart", value)
     }
 
+    pub fn slot(self, value: impl Into<String>) -> Self {
+        self.attribute("slot", value)
+    }
+
+    pub fn spellcheck(mut self, value: bool) -> Self {
+        self.attributes.retain(|(key, _)| key != "spellcheck");
+        if value {
+            self.attributes
+                .push(("spellcheck".to_string(), String::new()));
+        }
+        self
+    }
+
     pub fn src(self, value: impl Into<String>) -> Self {
         self.attribute("src", value)
     }
@@ -500,8 +655,25 @@ impl Input {
         self.attribute("step", value)
     }
 
+    pub fn tab_index(self, value: impl Into<String>) -> Self {
+        self.attribute("tabIndex", value)
+    }
+
     pub fn text_content(self, value: impl Into<String>) -> Self {
         self.attribute("textContent", value)
+    }
+
+    pub fn title(self, value: impl Into<String>) -> Self {
+        self.attribute("title", value)
+    }
+
+    pub fn translate(mut self, value: bool) -> Self {
+        self.attributes.retain(|(key, _)| key != "translate");
+        if value {
+            self.attributes
+                .push(("translate".to_string(), String::new()));
+        }
+        self
     }
 
     pub fn type_(self, value: impl Into<String>) -> Self {
@@ -1047,30 +1219,6 @@ impl Input {
 
     pub fn on_waiting(mut self, handler: crate::EventHandler) -> Self {
         self.events.push(("waiting".to_string(), handler));
-        self
-    }
-
-    pub fn on_webkitanimationend(mut self, handler: crate::EventHandler) -> Self {
-        self.events
-            .push(("webkitanimationend".to_string(), handler));
-        self
-    }
-
-    pub fn on_webkitanimationiteration(mut self, handler: crate::EventHandler) -> Self {
-        self.events
-            .push(("webkitanimationiteration".to_string(), handler));
-        self
-    }
-
-    pub fn on_webkitanimationstart(mut self, handler: crate::EventHandler) -> Self {
-        self.events
-            .push(("webkitanimationstart".to_string(), handler));
-        self
-    }
-
-    pub fn on_webkittransitionend(mut self, handler: crate::EventHandler) -> Self {
-        self.events
-            .push(("webkittransitionend".to_string(), handler));
         self
     }
 

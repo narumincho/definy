@@ -11,7 +11,6 @@ mod expression_editor;
 mod expression_eval;
 pub mod fetch;
 mod header;
-pub mod i18n;
 pub mod indexed_db;
 pub mod language;
 mod layout;
@@ -102,19 +101,10 @@ pub fn render(
         Title::new()
             .children([text(page_title::document_title_text(state))])
             .into_node(),
-        Node::Element(Element {
-            element_name: "meta".to_string(),
-            styles: Style::new(),
-            attributes: vec![
-                ("name".to_string(), "viewport".to_string()),
-                (
-                    "content".to_string(),
-                    "width=device-width,initial-scale=1.0".to_string(),
-                ),
-            ],
-            events: Vec::new(),
-            children: Vec::new(),
-        }),
+        Meta::new()
+            .name("viewport")
+            .content("width=device-width,initial-scale=1.0")
+            .into_node(),
         Link::new()
             .rel("icon")
             .href(include_str!("../../web-distribution/icon.png.sha256"))
@@ -145,7 +135,7 @@ pub fn render(
         );
     }
     Html::new()
-        .attribute("lang", state.language.code)
+        .lang(state.language.to_code())
         .children([
             Head::new().children(head_children).into_node(),
             Body::new()

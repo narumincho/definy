@@ -14,19 +14,18 @@ impl Style {
         Self(HashMap::new())
     }
 
-    pub fn color(mut self, color: &str) -> Self {
-        self.0.insert("color".to_string(), color.to_string());
+    pub fn color(mut self, color: impl Into<String>) -> Self {
+        self.0.insert("color".to_owned(), color.into());
         self
     }
 
-    pub fn background_color(mut self, color: &str) -> Self {
-        self.0
-            .insert("background-color".to_string(), color.to_string());
+    pub fn background_color(mut self, color: impl Into<String>) -> Self {
+        self.0.insert("background-color".to_owned(), color.into());
         self
     }
 
-    pub fn set(mut self, key: &str, value: &str) -> Self {
-        self.0.insert(key.to_string(), value.to_string());
+    pub fn set(mut self, key: impl Into<String>, value: impl Into<String>) -> Self {
+        self.0.insert(key.into(), value.into());
         self
     }
 

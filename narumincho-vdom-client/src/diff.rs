@@ -33,7 +33,9 @@ fn diff_recursive(
                 return;
             }
 
-            // Diff attributes
+            // HTML and SVG attribute names are not always byte-for-byte equal across
+            // render updates. In HTML, attribute names are case-insensitive; treating
+            // HREF and href as different logical keys causes stale DOM patches.
             let mut add_attributes = Vec::new();
             let mut remove_attributes = Vec::new();
 
@@ -41,7 +43,7 @@ fn diff_recursive(
                 match old_element
                     .attributes
                     .iter()
-                    .find(|(old_key, _)| old_key == key)
+                    .find(|(old_key, _)| old_key.eq_ignore_ascii_case(key))
                 {
                     Some((_, old_value)) => {
                         if old_value != value {
@@ -58,7 +60,7 @@ fn diff_recursive(
                 if !new_element
                     .attributes
                     .iter()
-                    .any(|(new_key, _)| new_key == key)
+                    .any(|(new_key, _)| new_key.eq_ignore_ascii_case(key))
                 {
                     remove_attributes.push(key.clone());
                 }
@@ -113,6 +115,9 @@ fn diff_recursive(
                 {
                     Some((_, old_value)) => {
                         if old_value != value {
+                            // Replacing a listener requires removing the old JavaScript
+                            // callback before installing the new one.
+                            remove_events.push(key.clone());
                             add_events.push((key.clone(), value.clone()));
                         }
                     }
@@ -128,11 +133,11 @@ fn diff_recursive(
                 }
             }
 
-            if !add_events.is_empty() {
-                patches.push((path.clone(), Patch::AddEventListeners(add_events)));
-            }
             if !remove_events.is_empty() {
                 patches.push((path.clone(), Patch::RemoveEventListeners(remove_events)));
+            }
+            if !add_events.is_empty() {
+                patches.push((path.clone(), Patch::AddEventListeners(add_events)));
             }
 
             // Diff children
@@ -146,6 +151,13 @@ fn diff_recursive(
                 old_keys.iter().any(|k| k.is_some()) || new_keys.iter().any(|k| k.is_some());
 
             if has_keys {
+                // The patch format has no move operation. Replacing this subtree is the safe
+                // way to keep DOM nodes aligned with their keys when filtering or reordering.
+                if old_keys != new_keys {
+                    patches.push((path.clone(), Patch::Replace(new_node.clone())));
+                    return;
+                }
+
                 // Keyed diffing algorithm
                 let mut old_key_map = std::collections::HashMap::new();
                 for (i, key) in old_keys.iter().enumerate() {
@@ -208,11 +220,7 @@ fn diff_recursive(
 
 fn child_key(node: &Node) -> Option<String> {
     match node {
-        Node::Element(element) => element
-            .attributes
-            .iter()
-            .find(|(key, _)| key == "key")
-            .map(|(_, value)| value.clone()),
+        Node::Element(element) => element.key.clone(),
         Node::Text(_) => None,
     }
 }
@@ -322,6 +330,15 @@ mod tests {
     }
 
     #[test]
+    fn test_diff_html_attributes_are_case_insensitive() {
+        let old: Node = Button::new().attribute("HREF", "/old").into_node();
+        let new: Node = Button::new().attribute("href", "/old").into_node();
+
+        let patches = diff(&old, &new);
+        assert!(patches.is_empty());
+    }
+
+    #[test]
     fn test_diff_children_replace() {
         let old: Node = Button::new().children(vec![text("hello")]).into_node();
         let new: Node = Button::new().children(vec![text("world")]).into_node();
@@ -353,6 +370,26 @@ mod tests {
     }
 
     #[test]
+    fn test_diff_replaces_keyed_children_when_order_changes() {
+        let old: Node = Div::new()
+            .children([
+                Div::new().key("english").into_node(),
+                Div::new().key("japanese").into_node(),
+            ])
+            .into_node();
+        let new: Node = Div::new()
+            .children([
+                Div::new().key("japanese").into_node(),
+                Div::new().key("english").into_node(),
+            ])
+            .into_node();
+
+        assert!(
+            matches!(diff(&old, &new).as_slice(), [(path, Patch::Replace(_))] if path.is_empty())
+        );
+    }
+
+    #[test]
     fn test_diff_recursive() {
         let old: Node = Button::new()
             .children(vec![
@@ -369,5 +406,29 @@ mod tests {
             patches,
             vec![(vec![0, 0], Patch::UpdateText("world".into()))]
         );
+    }
+
+    #[test]
+    fn test_diff_replaces_event_listener_when_parameter_changes() {
+        let handler = |parameter: &str| {
+            EventHandler::with_parameter(
+                |_: Box<dyn Fn(Box<dyn FnOnce(()) -> ()>)>, _: &String| async {},
+                parameter.to_string(),
+            )
+        };
+        let old: Node = Button::new().on_click(handler("old")).into_node();
+        let new: Node = Button::new().on_click(handler("new")).into_node();
+
+        let patches = diff(&old, &new);
+
+        assert!(matches!(
+            &patches[..],
+            [
+                (path, Patch::RemoveEventListeners(events)),
+                (add_path, Patch::AddEventListeners(_)),
+            ] if path.is_empty()
+                && add_path.is_empty()
+                && events == &vec!["click".to_string()]
+        ));
     }
 }

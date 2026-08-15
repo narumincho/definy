@@ -1,5 +1,76 @@
 // このファイルは narumincho-vdom-build によって自動生成されました。
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum QAutocapitalize {
+    Off,
+    None,
+    Characters,
+    Words,
+    Sentences,
+}
+
+impl QAutocapitalize {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Off => "off",
+            Self::None => "none",
+            Self::Characters => "characters",
+            Self::Words => "words",
+            Self::Sentences => "sentences",
+        }
+    }
+}
+
+impl From<QAutocapitalize> for String {
+    fn from(value: QAutocapitalize) -> Self {
+        value.as_str().to_string()
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum QDir {
+    Ltr,
+    Rtl,
+    Auto,
+}
+
+impl QDir {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Ltr => "ltr",
+            Self::Rtl => "rtl",
+            Self::Auto => "auto",
+        }
+    }
+}
+
+impl From<QDir> for String {
+    fn from(value: QDir) -> Self {
+        value.as_str().to_string()
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum QPopover {
+    Auto,
+    Manual,
+}
+
+impl QPopover {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Auto => "auto",
+            Self::Manual => "manual",
+        }
+    }
+}
+
+impl From<QPopover> for String {
+    fn from(value: QPopover) -> Self {
+        value.as_str().to_string()
+    }
+}
+
 /// HTML Content Attributes for https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-q-element
 #[derive(Debug, Clone, PartialEq)]
 pub struct Q {
@@ -7,6 +78,7 @@ pub struct Q {
     pub events: Vec<(String, crate::EventHandler)>,
     pub styles: crate::Style,
     pub children: Vec<crate::Node>,
+    pub key: Option<String>,
 }
 
 pub fn q() -> Q {
@@ -26,6 +98,7 @@ impl Q {
             events: Vec::new(),
             styles: crate::Style::new(),
             children: Vec::new(),
+            key: None,
         }
     }
 
@@ -58,15 +131,26 @@ impl Q {
         self
     }
 
+    pub fn key(mut self, key: impl Into<String>) -> Self {
+        self.key = Some(key.into());
+        self
+    }
+
     pub fn into_node(self) -> crate::Node {
         crate::Node::Element(crate::Element {
             element_name: "q".to_string(),
+            namespace: crate::Namespace::Html,
             attributes: self.attributes,
             styles: self.styles,
             events: self.events,
             children: self.children,
+            key: self.key,
         })
     }
+    pub fn access_key(self, value: impl Into<String>) -> Self {
+        self.attribute("accessKey", value)
+    }
+
     pub fn aria_active_descendant_element(self, value: impl Into<String>) -> Self {
         self.attribute("aria-active-descendant-element", value)
     }
@@ -243,6 +327,10 @@ impl Q {
         self.attribute("aria-value-text", value)
     }
 
+    pub fn autocapitalize(self, value: impl Into<String>) -> Self {
+        self.attribute("autocapitalize", value)
+    }
+
     pub fn autocorrect(mut self, value: bool) -> Self {
         self.attributes.retain(|(key, _)| key != "autocorrect");
         if value {
@@ -252,16 +340,100 @@ impl Q {
         self
     }
 
+    pub fn autofocus(mut self, value: bool) -> Self {
+        self.attributes.retain(|(key, _)| key != "autofocus");
+        if value {
+            self.attributes
+                .push(("autofocus".to_string(), String::new()));
+        }
+        self
+    }
+
     pub fn cite(self, value: impl Into<String>) -> Self {
         self.attribute("cite", value)
+    }
+
+    pub fn content_editable(self, value: impl Into<String>) -> Self {
+        self.attribute("contentEditable", value)
+    }
+
+    pub fn dir(self, value: impl Into<String>) -> Self {
+        self.attribute("dir", value)
+    }
+
+    pub fn draggable(mut self, value: bool) -> Self {
+        self.attributes.retain(|(key, _)| key != "draggable");
+        if value {
+            self.attributes
+                .push(("draggable".to_string(), String::new()));
+        }
+        self
+    }
+
+    pub fn enter_key_hint(self, value: impl Into<String>) -> Self {
+        self.attribute("enterKeyHint", value)
+    }
+
+    pub fn hidden(self, value: impl Into<String>) -> Self {
+        self.attribute("hidden", value)
+    }
+
+    pub fn inert(mut self, value: bool) -> Self {
+        self.attributes.retain(|(key, _)| key != "inert");
+        if value {
+            self.attributes.push(("inert".to_string(), String::new()));
+        }
+        self
+    }
+
+    pub fn input_mode(self, value: impl Into<String>) -> Self {
+        self.attribute("inputMode", value)
+    }
+
+    pub fn lang(self, value: impl Into<String>) -> Self {
+        self.attribute("lang", value)
+    }
+
+    pub fn nonce(self, value: impl Into<String>) -> Self {
+        self.attribute("nonce", value)
     }
 
     pub fn role(self, value: impl Into<String>) -> Self {
         self.attribute("role", value)
     }
 
+    pub fn slot(self, value: impl Into<String>) -> Self {
+        self.attribute("slot", value)
+    }
+
+    pub fn spellcheck(mut self, value: bool) -> Self {
+        self.attributes.retain(|(key, _)| key != "spellcheck");
+        if value {
+            self.attributes
+                .push(("spellcheck".to_string(), String::new()));
+        }
+        self
+    }
+
+    pub fn tab_index(self, value: impl Into<String>) -> Self {
+        self.attribute("tabIndex", value)
+    }
+
     pub fn text_content(self, value: impl Into<String>) -> Self {
         self.attribute("textContent", value)
+    }
+
+    pub fn title(self, value: impl Into<String>) -> Self {
+        self.attribute("title", value)
+    }
+
+    pub fn translate(mut self, value: bool) -> Self {
+        self.attributes.retain(|(key, _)| key != "translate");
+        if value {
+            self.attributes
+                .push(("translate".to_string(), String::new()));
+        }
+        self
     }
 
     pub fn virtual_keyboard_policy(self, value: impl Into<String>) -> Self {
@@ -782,30 +954,6 @@ impl Q {
 
     pub fn on_waiting(mut self, handler: crate::EventHandler) -> Self {
         self.events.push(("waiting".to_string(), handler));
-        self
-    }
-
-    pub fn on_webkitanimationend(mut self, handler: crate::EventHandler) -> Self {
-        self.events
-            .push(("webkitanimationend".to_string(), handler));
-        self
-    }
-
-    pub fn on_webkitanimationiteration(mut self, handler: crate::EventHandler) -> Self {
-        self.events
-            .push(("webkitanimationiteration".to_string(), handler));
-        self
-    }
-
-    pub fn on_webkitanimationstart(mut self, handler: crate::EventHandler) -> Self {
-        self.events
-            .push(("webkitanimationstart".to_string(), handler));
-        self
-    }
-
-    pub fn on_webkittransitionend(mut self, handler: crate::EventHandler) -> Self {
-        self.events
-            .push(("webkittransitionend".to_string(), handler));
         self
     }
 

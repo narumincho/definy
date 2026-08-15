@@ -85,7 +85,7 @@ pub fn collect_part_snapshots(state: &AppState) -> Vec<PartSnapshot> {
     }
 
     let mut snapshots = map.into_values().collect::<Vec<PartSnapshot>>();
-    snapshots.sort_by(|a, b| b.updated_at.cmp(&a.updated_at));
+    snapshots.sort_by_key(|b| std::cmp::Reverse(b.updated_at));
     snapshots
 }
 
@@ -121,6 +121,6 @@ pub fn collect_related_part_events(
             }
         })
         .collect::<Vec<(EventHashId, Event)>>();
-    events.sort_by(|(_, a), (_, b)| b.time.cmp(&a.time));
+    events.sort_by_key(|(_, b)| std::cmp::Reverse(b.time));
     events
 }

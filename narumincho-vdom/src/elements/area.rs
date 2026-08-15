@@ -1,6 +1,77 @@
 // このファイルは narumincho-vdom-build によって自動生成されました。
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum AreaAutocapitalize {
+    Off,
+    None,
+    Characters,
+    Words,
+    Sentences,
+}
+
+impl AreaAutocapitalize {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Off => "off",
+            Self::None => "none",
+            Self::Characters => "characters",
+            Self::Words => "words",
+            Self::Sentences => "sentences",
+        }
+    }
+}
+
+impl From<AreaAutocapitalize> for String {
+    fn from(value: AreaAutocapitalize) -> Self {
+        value.as_str().to_string()
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum AreaDir {
+    Ltr,
+    Rtl,
+    Auto,
+}
+
+impl AreaDir {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Ltr => "ltr",
+            Self::Rtl => "rtl",
+            Self::Auto => "auto",
+        }
+    }
+}
+
+impl From<AreaDir> for String {
+    fn from(value: AreaDir) -> Self {
+        value.as_str().to_string()
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum AreaPopover {
+    Auto,
+    Manual,
+}
+
+impl AreaPopover {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Auto => "auto",
+            Self::Manual => "manual",
+        }
+    }
+}
+
+impl From<AreaPopover> for String {
+    fn from(value: AreaPopover) -> Self {
+        value.as_str().to_string()
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum AreaTarget {
     Self_,
     Blank,
@@ -32,6 +103,7 @@ pub struct Area {
     pub events: Vec<(String, crate::EventHandler)>,
     pub styles: crate::Style,
     pub children: Vec<crate::Node>,
+    pub key: Option<String>,
 }
 
 pub fn area() -> Area {
@@ -51,6 +123,7 @@ impl Area {
             events: Vec::new(),
             styles: crate::Style::new(),
             children: Vec::new(),
+            key: None,
         }
     }
 
@@ -83,15 +156,26 @@ impl Area {
         self
     }
 
+    pub fn key(mut self, key: impl Into<String>) -> Self {
+        self.key = Some(key.into());
+        self
+    }
+
     pub fn into_node(self) -> crate::Node {
         crate::Node::Element(crate::Element {
             element_name: "area".to_string(),
+            namespace: crate::Namespace::Html,
             attributes: self.attributes,
             styles: self.styles,
             events: self.events,
             children: self.children,
+            key: self.key,
         })
     }
+    pub fn access_key(self, value: impl Into<String>) -> Self {
+        self.attribute("accessKey", value)
+    }
+
     pub fn alt(self, value: impl Into<String>) -> Self {
         self.attribute("alt", value)
     }
@@ -272,6 +356,10 @@ impl Area {
         self.attribute("aria-value-text", value)
     }
 
+    pub fn autocapitalize(self, value: impl Into<String>) -> Self {
+        self.attribute("autocapitalize", value)
+    }
+
     pub fn autocorrect(mut self, value: bool) -> Self {
         self.attributes.retain(|(key, _)| key != "autocorrect");
         if value {
@@ -281,16 +369,50 @@ impl Area {
         self
     }
 
+    pub fn autofocus(mut self, value: bool) -> Self {
+        self.attributes.retain(|(key, _)| key != "autofocus");
+        if value {
+            self.attributes
+                .push(("autofocus".to_string(), String::new()));
+        }
+        self
+    }
+
+    pub fn content_editable(self, value: impl Into<String>) -> Self {
+        self.attribute("contentEditable", value)
+    }
+
     pub fn coords(self, value: impl Into<String>) -> Self {
         self.attribute("coords", value)
+    }
+
+    pub fn dir(self, value: impl Into<String>) -> Self {
+        self.attribute("dir", value)
     }
 
     pub fn download(self, value: impl Into<String>) -> Self {
         self.attribute("download", value)
     }
 
+    pub fn draggable(mut self, value: bool) -> Self {
+        self.attributes.retain(|(key, _)| key != "draggable");
+        if value {
+            self.attributes
+                .push(("draggable".to_string(), String::new()));
+        }
+        self
+    }
+
+    pub fn enter_key_hint(self, value: impl Into<String>) -> Self {
+        self.attribute("enterKeyHint", value)
+    }
+
     pub fn hash(self, value: impl Into<String>) -> Self {
         self.attribute("hash", value)
+    }
+
+    pub fn hidden(self, value: impl Into<String>) -> Self {
+        self.attribute("hidden", value)
     }
 
     pub fn host(self, value: impl Into<String>) -> Self {
@@ -305,12 +427,32 @@ impl Area {
         self.attribute("hreflang", value)
     }
 
+    pub fn inert(mut self, value: bool) -> Self {
+        self.attributes.retain(|(key, _)| key != "inert");
+        if value {
+            self.attributes.push(("inert".to_string(), String::new()));
+        }
+        self
+    }
+
+    pub fn input_mode(self, value: impl Into<String>) -> Self {
+        self.attribute("inputMode", value)
+    }
+
+    pub fn lang(self, value: impl Into<String>) -> Self {
+        self.attribute("lang", value)
+    }
+
     pub fn no_href(mut self, value: bool) -> Self {
         self.attributes.retain(|(key, _)| key != "noHref");
         if value {
             self.attributes.push(("noHref".to_string(), String::new()));
         }
         self
+    }
+
+    pub fn nonce(self, value: impl Into<String>) -> Self {
+        self.attribute("nonce", value)
     }
 
     pub fn password(self, value: impl Into<String>) -> Self {
@@ -353,12 +495,42 @@ impl Area {
         self.attribute("shape", value)
     }
 
+    pub fn slot(self, value: impl Into<String>) -> Self {
+        self.attribute("slot", value)
+    }
+
+    pub fn spellcheck(mut self, value: bool) -> Self {
+        self.attributes.retain(|(key, _)| key != "spellcheck");
+        if value {
+            self.attributes
+                .push(("spellcheck".to_string(), String::new()));
+        }
+        self
+    }
+
+    pub fn tab_index(self, value: impl Into<String>) -> Self {
+        self.attribute("tabIndex", value)
+    }
+
     pub fn target(self, value: impl Into<String>) -> Self {
         self.attribute("target", value)
     }
 
     pub fn text_content(self, value: impl Into<String>) -> Self {
         self.attribute("textContent", value)
+    }
+
+    pub fn title(self, value: impl Into<String>) -> Self {
+        self.attribute("title", value)
+    }
+
+    pub fn translate(mut self, value: bool) -> Self {
+        self.attributes.retain(|(key, _)| key != "translate");
+        if value {
+            self.attributes
+                .push(("translate".to_string(), String::new()));
+        }
+        self
     }
 
     pub fn type_(self, value: impl Into<String>) -> Self {
@@ -887,30 +1059,6 @@ impl Area {
 
     pub fn on_waiting(mut self, handler: crate::EventHandler) -> Self {
         self.events.push(("waiting".to_string(), handler));
-        self
-    }
-
-    pub fn on_webkitanimationend(mut self, handler: crate::EventHandler) -> Self {
-        self.events
-            .push(("webkitanimationend".to_string(), handler));
-        self
-    }
-
-    pub fn on_webkitanimationiteration(mut self, handler: crate::EventHandler) -> Self {
-        self.events
-            .push(("webkitanimationiteration".to_string(), handler));
-        self
-    }
-
-    pub fn on_webkitanimationstart(mut self, handler: crate::EventHandler) -> Self {
-        self.events
-            .push(("webkitanimationstart".to_string(), handler));
-        self
-    }
-
-    pub fn on_webkittransitionend(mut self, handler: crate::EventHandler) -> Self {
-        self.events
-            .push(("webkittransitionend".to_string(), handler));
         self
     }
 

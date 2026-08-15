@@ -1,13 +1,10 @@
-use std::rc::Rc;
-
 use narumincho_vdom::*;
 
-use crate::i18n;
 use crate::{AppState, Location};
 
 pub fn header(state: &AppState) -> Node {
     let mut children = vec![header_main(state)];
-    if state.current_key.is_some() && state.is_header_popover_open {
+    if state.current_key.is_some() {
         children.push(popover(state));
     }
     Div::new().children(children).into_node()
@@ -22,9 +19,8 @@ fn header_main(state: &AppState) -> Node {
                 .set("justify-content", "space-between")
                 .set("align-items", "center")
                 .set("padding", "0.72rem 1.2rem")
-                .set("background", "rgba(11, 15, 25, 0.6)")
+                .set("background", "rgb(11 15 25 / 0.6)")
                 .set("backdrop-filter", "var(--glass-blur)")
-                .set("-webkit-backdrop-filter", "var(--glass-blur)")
                 .set("left", "0")
                 .set("right", "0")
                 .set("width", "100%")
@@ -67,7 +63,7 @@ fn header_main(state: &AppState) -> Node {
                                 .set("font-size", "0.9rem")
                                 .set("color", "var(--text-secondary)"),
                         )
-                        .children([text(i18n::tr(state, "Parts", "パーツ", "Partoj"))])
+                        .children([text(state.language.label("Parts", "パーツ", "Partoj"))])
                         .into_node(),
                     A::<Location>::new()
                         .href(state.href_with_lang(Location::ModuleList))
@@ -76,7 +72,11 @@ fn header_main(state: &AppState) -> Node {
                                 .set("font-size", "0.9rem")
                                 .set("color", "var(--text-secondary)"),
                         )
-                        .children([text(i18n::tr(state, "Modules", "モジュール", "Moduloj"))])
+                        .children([text(state.language.label(
+                            "Modules",
+                            "モジュール",
+                            "Moduloj",
+                        ))])
                         .into_node(),
                     A::<Location>::new()
                         .href(state.href_with_lang(Location::LocalEventQueue))
@@ -85,8 +85,7 @@ fn header_main(state: &AppState) -> Node {
                                 .set("font-size", "0.9rem")
                                 .set("color", "var(--text-secondary)"),
                         )
-                        .children([text(i18n::tr(
-                            state,
+                        .children([text(state.language.label(
                             "Local Events",
                             "ローカルイベント",
                             "Lokaj eventoj",
@@ -99,7 +98,11 @@ fn header_main(state: &AppState) -> Node {
                                 .set("font-size", "0.9rem")
                                 .set("color", "var(--text-secondary)"),
                         )
-                        .children([text(i18n::tr(state, "Accounts", "アカウント", "Kontoj"))])
+                        .children([text(state.language.label(
+                            "Accounts",
+                            "アカウント",
+                            "Kontoj",
+                        ))])
                         .into_node(),
                 ])
                 .into_node(),
@@ -130,20 +133,19 @@ fn header_main(state: &AppState) -> Node {
                         let account_name = state.account_name_map().get(&account_id).cloned();
 
                         Button::new()
-                            .on_click(EventHandler::new(async |set_state| {
-                                set_state(Box::new(|state: AppState| AppState {
-                                    is_header_popover_open: !state.is_header_popover_open,
-                                    ..state.clone()
-                                }));
-                            }))
+                            .type_("button")
+                            .command_for("header-popover")
+                            .command("show-popover")
                             .style(
                                 Style::new()
                                     .set("font-family", "'JetBrains Mono', monospace")
                                     .set("font-size", "0.74rem")
-                                    .set("background", "rgba(255, 255, 255, 0.05)")
+                                    .set("background", "rgb(255 255 255 / 0.05)")
                                     .set("color", "var(--text)")
                                     .set("border", "1px solid var(--border)")
                                     .set("padding", "0.38rem 0.8rem")
+                                    .set("border-radius", "var(--radius-sm)")
+                                    .set("cursor", "pointer")
                                     .set("max-width", "min(46vw, 420px)")
                                     .set("overflow", "hidden")
                                     .set("text-overflow", "ellipsis")
@@ -162,8 +164,7 @@ fn header_main(state: &AppState) -> Node {
                     None => Button::new()
                         .command_for("login-or-create-account-dialog")
                         .command(CommandValue::ShowModal)
-                        .children([text(i18n::tr(
-                            state,
+                        .children([text(state.language.label(
                             "Log In / Sign Up",
                             "ログイン / サインアップ",
                             "Ensaluti / Registriĝi",
@@ -186,52 +187,60 @@ fn header_main(state: &AppState) -> Node {
 }
 
 fn language_dropdown(state: &AppState) -> Node {
-    let languages = crate::language::preferred_languages();
-    let mut options = Vec::with_capacity(languages.len());
-    for language in languages {
-        options.push((
-            language.code.to_string(),
-            crate::language::language_label(&language),
-        ));
-    }
-    let current_code = state.language.code;
+    let location = state.location.clone().unwrap_or(Location::Home);
+    let event_type = state.event_list_state.filter_event_type;
     let dropdown = crate::dropdown::searchable_dropdown(
         state,
         "language",
-        current_code,
-        options.as_slice(),
-        Rc::new(|value| {
-            Box::new(move |state: AppState| {
-                let selected =
-                    crate::language::language_from_tag(value.as_str()).unwrap_or(state.language);
-                if selected.code == state.language.code {
-                    return state;
-                }
-                let location = state.location.clone().unwrap_or(Location::Home);
-                let url = AppState::build_url(
-                    &location,
-                    selected.code,
-                    state.event_list_state.filter_event_type,
-                );
-                if let Some(window) = web_sys::window()
-                    && let Ok(history) = window.history()
-                {
-                    let _ = history.push_state_with_url(
-                        &wasm_bindgen::JsValue::NULL,
-                        "",
-                        Some(url.as_str()),
-                    );
-                }
-                AppState {
-                    language: selected,
-                    language_fallback_notice: None,
-                    ..state
-                }
+        state.language.to_code(),
+        crate::language::preferred_languages()
+            .iter()
+            .map(|language| {
+                (
+                    language.to_code().to_string(),
+                    language.native_name().to_string(),
+                )
             })
+            .collect::<Vec<_>>()
+            .as_slice(),
+        std::rc::Rc::new(move |value, label, is_selected| {
+            let language_code = value.to_string();
+            let url = crate::language::Language::from_code(value)
+                .map(|language| AppState::build_url(&location, language.to_code(), event_type))
+                .unwrap_or_default();
+            Anchor::<Location>::new()
+                .href(Href::External(url))
+                .style(
+                    crate::dropdown::option_style(is_selected)
+                        .set("display", "block")
+                        .set("text-decoration", "none"),
+                )
+                .on_click(EventHandler::with_parameter(
+                    move |set_state, language_code: &String| {
+                        let language_code = language_code.clone();
+                        async move {
+                            set_state(Box::new(move |state: AppState| {
+                                let Some(language) =
+                                    crate::language::Language::from_code(&language_code)
+                                else {
+                                    return state;
+                                };
+                                AppState {
+                                    language,
+                                    language_fallback_notice: None,
+                                    ..state
+                                }
+                            }));
+                        }
+                    },
+                    language_code,
+                ))
+                .children([text(label)])
+                .into_node()
         }),
     );
-    if let Some(notice) = &state.language_fallback_notice {
-        Div::new()
+    match &state.language_fallback_notice {
+        Some(notice) => Div::new()
             .style(
                 Style::new()
                     .set("display", "grid")
@@ -253,9 +262,8 @@ fn language_dropdown(state: &AppState) -> Node {
                     ))])
                     .into_node(),
             ])
-            .into_node()
-    } else {
-        dropdown
+            .into_node(),
+        None => dropdown,
     }
 }
 
@@ -270,7 +278,7 @@ fn popover(state: &AppState) -> Node {
                 Style::new()
                     .set("padding", "0.4rem 0.5rem")
                     .set("border-radius", "0.4rem")
-                    .set("background", "rgba(255, 255, 255, 0.04)")
+                    .set("background", "rgb(255 255 255 / 0.04)")
                     .set("color", "var(--text)")
                     .set("text-decoration", "none")
                     .set("font-size", "0.85rem")
@@ -282,22 +290,20 @@ fn popover(state: &AppState) -> Node {
 
     Div::new()
         .id("header-popover")
-        .class("header-popover")
+        .popover()
         .style(
             Style::new()
-                .set("position", "fixed")
-                .set("top", "3.5rem")
-                .set("right", "1rem")
+                .set("position-anchor", "--header-popover-button")
+                .set("top", "anchor(bottom)")
+                .set("left", "auto")
+                .set("right", "anchor(right)")
+                .set("margin", "4px")
                 .set("padding", "0.42rem")
                 .set("border", "1px solid var(--border)")
                 .set("background", "var(--surface)")
+                .set("color", "var(--text)")
                 .set("backdrop-filter", "var(--glass-blur)")
-                .set("-webkit-backdrop-filter", "var(--glass-blur)")
-                .set("display", "grid")
-                .set("gap", "0.55rem")
                 .set("border-radius", "var(--radius-md)")
-                .set("z-index", "20")
-                .set("min-width", "220px")
                 .set("box-shadow", "var(--shadow-lg)"),
         )
         .children({
@@ -307,6 +313,7 @@ fn popover(state: &AppState) -> Node {
             }
             children.push(
                 Button::new()
+                    .type_("button")
                     .on_click(EventHandler::new(async |set_state| {
                         set_state(Box::new(|state: AppState| -> AppState {
                             AppState {
@@ -316,10 +323,11 @@ fn popover(state: &AppState) -> Node {
                         }));
                     }))
                     .children([text(if state.force_offline {
-                        i18n::tr(state, "Offline: On", "オフライン: オン", "Senkonekte: En")
+                        state
+                            .language
+                            .label("Offline: On", "オフライン: オン", "Senkonekte: En")
                     } else {
-                        i18n::tr(
-                            state,
+                        state.language.label(
                             "Offline: Off",
                             "オフライン: オフ",
                             "Senkonekte: Malŝaltita",
@@ -330,27 +338,35 @@ fn popover(state: &AppState) -> Node {
                             .set("width", "100%")
                             .set("background-color", "transparent")
                             .set("color", "var(--text)")
+                            .set("border", "none")
+                            .set("cursor", "pointer")
+                            .set("padding", "0.4rem 0.5rem")
+                            .set("text-align", "left")
+                            .set("display", "flex")
                             .set("justify-content", "flex-start"),
                     )
                     .into_node(),
             );
             children.push(
                 Button::new()
-                    .on_click(EventHandler::new(async |set_state| {
-                        set_state(Box::new(|state: AppState| -> AppState {
-                            AppState {
-                                current_key: None,
-                                is_header_popover_open: false,
-                                ..state.clone()
-                            }
-                        }));
-                    }))
-                    .children([text(i18n::tr(state, "Log Out", "ログアウト", "Elsaluti"))])
+                    .type_("button")
+                    .command("hide-popover")
+                    .command_for("header-popover")
+                    .children([text(state.language.label(
+                        "Log Out",
+                        "ログアウト",
+                        "Elsaluti",
+                    ))])
                     .style(
                         Style::new()
                             .set("width", "100%")
                             .set("background-color", "transparent")
                             .set("color", "#fca5a5")
+                            .set("border", "none")
+                            .set("cursor", "pointer")
+                            .set("padding", "0.4rem 0.5rem")
+                            .set("text-align", "left")
+                            .set("display", "flex")
                             .set("justify-content", "flex-start"),
                     )
                     .into_node(),

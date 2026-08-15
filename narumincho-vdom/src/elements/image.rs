@@ -21,13 +21,14 @@ impl From<ImageCrossOrigin> for String {
     }
 }
 
-/// HTML Content Attributes for https://w3c.github.io/svgwg/svg2-draft/embedded.html#elementdef-image
+/// HTML Content Attributes for https://www.w3.org/TR/SVG11/struct.html#ImageElement
 #[derive(Debug, Clone, PartialEq)]
 pub struct Image {
     pub attributes: Vec<(String, String)>,
     pub events: Vec<(String, crate::EventHandler)>,
     pub styles: crate::Style,
     pub children: Vec<crate::Node>,
+    pub key: Option<String>,
 }
 
 pub fn image() -> Image {
@@ -47,6 +48,7 @@ impl Image {
             events: Vec::new(),
             styles: crate::Style::new(),
             children: Vec::new(),
+            key: None,
         }
     }
 
@@ -79,13 +81,20 @@ impl Image {
         self
     }
 
+    pub fn key(mut self, key: impl Into<String>) -> Self {
+        self.key = Some(key.into());
+        self
+    }
+
     pub fn into_node(self) -> crate::Node {
         crate::Node::Element(crate::Element {
             element_name: "image".to_string(),
+            namespace: crate::Namespace::Svg,
             attributes: self.attributes,
             styles: self.styles,
             events: self.events,
             children: self.children,
+            key: self.key,
         })
     }
     pub fn aria_active_descendant_element(self, value: impl Into<String>) -> Self {
@@ -264,6 +273,15 @@ impl Image {
         self.attribute("aria-value-text", value)
     }
 
+    pub fn autofocus(mut self, value: bool) -> Self {
+        self.attributes.retain(|(key, _)| key != "autofocus");
+        if value {
+            self.attributes
+                .push(("autofocus".to_string(), String::new()));
+        }
+        self
+    }
+
     pub fn cross_origin(self, value: impl Into<String>) -> Self {
         self.attribute("crossOrigin", value)
     }
@@ -276,8 +294,20 @@ impl Image {
         self.attribute("href", value)
     }
 
+    pub fn nonce(self, value: impl Into<String>) -> Self {
+        self.attribute("nonce", value)
+    }
+
     pub fn role(self, value: impl Into<String>) -> Self {
         self.attribute("role", value)
+    }
+
+    pub fn slot(self, value: impl Into<String>) -> Self {
+        self.attribute("slot", value)
+    }
+
+    pub fn tab_index(self, value: impl Into<String>) -> Self {
+        self.attribute("tabIndex", value)
     }
 
     pub fn text_content(self, value: impl Into<String>) -> Self {
@@ -798,30 +828,6 @@ impl Image {
 
     pub fn on_waiting(mut self, handler: crate::EventHandler) -> Self {
         self.events.push(("waiting".to_string(), handler));
-        self
-    }
-
-    pub fn on_webkitanimationend(mut self, handler: crate::EventHandler) -> Self {
-        self.events
-            .push(("webkitanimationend".to_string(), handler));
-        self
-    }
-
-    pub fn on_webkitanimationiteration(mut self, handler: crate::EventHandler) -> Self {
-        self.events
-            .push(("webkitanimationiteration".to_string(), handler));
-        self
-    }
-
-    pub fn on_webkitanimationstart(mut self, handler: crate::EventHandler) -> Self {
-        self.events
-            .push(("webkitanimationstart".to_string(), handler));
-        self
-    }
-
-    pub fn on_webkittransitionend(mut self, handler: crate::EventHandler) -> Self {
-        self.events
-            .push(("webkittransitionend".to_string(), handler));
         self
     }
 

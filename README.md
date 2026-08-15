@@ -61,7 +61,7 @@ cargo run -p definy-build
 DATABASE_URL=postgres://postgres:password@localhost:5432/postgres cargo run -p definy-server
 ```
 
-Windows PowerShell の場合
+PowerShell の場合
 
 ```ps1
 cargo run -p definy-build
