@@ -334,9 +334,9 @@ fn part_update_form(state: &AppState, definition_event_hash: &EventHashId) -> No
                         .set("color", "var(--text-secondary)")
                         .set("font-size", "0.9rem"),
                 )
-                .children([text(state.language.label("Expression Builder",
-                    "式ビルダー",
-                    "Esprimo-konstruilo",
+                .children([text(state.language.label("Expression",
+                    "式",
+                    "Esprimo",
                 ))])
                 .into_node(),
             render_root_expression_editor(state, &initial_expression, EditorTarget::PartUpdate),

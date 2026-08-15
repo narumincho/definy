@@ -151,9 +151,9 @@ pub fn event_list_view(state: &AppState) -> Node {
                     part_description_input(&state),
                     Div::new()
                     .style(Style::new().set("color", "var(--text-secondary)").set("font-size", "0.84rem"))
-                        .children([text(state.language.label("Expression Builder",
-                            "式ビルダー",
-                            "Esprimo-konstruilo",
+                        .children([text(state.language.label("Expression",
+                            "式",
+                            "Esprimo",
                         ))])
                         .into_node(),
                     render_root_expression_editor(
