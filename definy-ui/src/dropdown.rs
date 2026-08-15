@@ -3,13 +3,14 @@ use narumincho_vdom::*;
 use std::rc::Rc;
 
 pub type DropdownOnChange = Rc<dyn Fn(String) -> Box<dyn FnOnce(AppState) -> AppState>>;
+pub type DropdownOptionRenderer = Rc<dyn Fn(&str, &str, bool) -> Node>;
 
 pub fn searchable_dropdown(
     state: &AppState,
     name: &str,
     current_value: &str,
     options: &[(String, String)],
-    on_change: DropdownOnChange,
+    render_option: DropdownOptionRenderer,
 ) -> Node {
     Div::new()
         .children([
@@ -36,7 +37,7 @@ pub fn searchable_dropdown(
                 &state.dropdown_search_query,
                 options,
                 current_value,
-                on_change,
+                render_option,
             ),
         ])
         .into_node()
@@ -86,7 +87,7 @@ fn dropdown_panel(
     dropdown_search_query: &str,
     options: &[(String, String)],
     current_value: &str,
-    on_change: DropdownOnChange,
+    render_option: DropdownOptionRenderer,
 ) -> Node {
     Div::new()
         .id(dropdown_panel_id(name))
@@ -105,13 +106,7 @@ fn dropdown_panel(
         )
         .children([
             search_input(name, dropdown_search_query),
-            option_list(
-                name,
-                dropdown_search_query,
-                options,
-                current_value,
-                on_change,
-            ),
+            option_list(dropdown_search_query, options, current_value, render_option),
         ])
         .into_node()
 }
@@ -147,11 +142,10 @@ fn search_input(name: &str, value: &str) -> Node {
 }
 
 fn option_list(
-    name: &str,
     dropdown_search_query: &str,
     options: &[(String, String)],
     current_value: &str,
-    on_change: DropdownOnChange,
+    render_option: DropdownOptionRenderer,
 ) -> Node {
     let query = dropdown_search_query.to_lowercase();
     let filtered_options = options.iter().filter(|(_, label)| {
@@ -164,56 +158,7 @@ fn option_list(
 
     let options_list_nodes = filtered_options
         .into_iter()
-        .map(|(opt_val, opt_label)| {
-            let label_str = opt_label.clone();
-            let on_change_clone = on_change.clone();
-
-            let is_selected = opt_val == current_value;
-
-            Button::new()
-                .style(
-                    Style::new()
-                        .set("padding", "0.4rem 0.6rem")
-                        .set("cursor", "pointer")
-                        .set(
-                            "background",
-                            if is_selected {
-                                "rgb(255 255 255 / 0.1)"
-                            } else {
-                                "transparent"
-                            },
-                        )
-                        .set(
-                            "color",
-                            if is_selected {
-                                "var(--primary)"
-                            } else {
-                                "var(--text)"
-                            },
-                        ),
-                )
-                .command("hide-popover")
-                .command_for(dropdown_panel_id(name))
-                .on_click(EventHandler::with_parameter(
-                    move |set_state, value: &String| {
-                        let on_change_clone = on_change_clone.clone();
-                        let value = value.clone();
-
-                        async move {
-                            // First close the dropdown
-                            set_state(Box::new(|state: AppState| AppState {
-                                dropdown_search_query: String::new(),
-                                ..state
-                            }));
-                            // Then trigger the on_change handler
-                            set_state(on_change_clone(value));
-                        }
-                    },
-                    opt_val.clone(),
-                ))
-                .children([text(&label_str)])
-                .into_node()
-        })
+        .map(|(opt_val, opt_label)| render_option(opt_val, opt_label, opt_val == current_value))
         .collect::<Vec<_>>();
 
     Div::new()
@@ -226,6 +171,59 @@ fn option_list(
         )
         .children(options_list_nodes)
         .into_node()
+}
+
+pub fn button_option_renderer(
+    name: impl Into<String>,
+    on_change: DropdownOnChange,
+) -> DropdownOptionRenderer {
+    let panel_id = dropdown_panel_id(name.into().as_str());
+    Rc::new(move |value, label, is_selected| {
+        let on_change = on_change.clone();
+        let value = value.to_string();
+        Button::new()
+            .style(option_style(is_selected))
+            .command("hide-popover")
+            .command_for(&panel_id)
+            .on_click(EventHandler::with_parameter(
+                move |set_state, value: &String| {
+                    let on_change = on_change.clone();
+                    let value = value.clone();
+                    async move {
+                        set_state(Box::new(|state: AppState| AppState {
+                            dropdown_search_query: String::new(),
+                            ..state
+                        }));
+                        set_state(on_change(value));
+                    }
+                },
+                value,
+            ))
+            .children([text(label)])
+            .into_node()
+    })
+}
+
+pub fn option_style(is_selected: bool) -> Style {
+    Style::new()
+        .set("padding", "0.4rem 0.6rem")
+        .set("cursor", "pointer")
+        .set(
+            "background",
+            if is_selected {
+                "rgb(255 255 255 / 0.1)"
+            } else {
+                "transparent"
+            },
+        )
+        .set(
+            "color",
+            if is_selected {
+                "var(--primary)"
+            } else {
+                "var(--text)"
+            },
+        )
 }
 
 fn dropdown_panel_id(name: &str) -> String {

@@ -10,23 +10,6 @@ use crate::expression_eval::{evaluate_expression, expression_to_source};
 use crate::module_projection::collect_module_snapshots;
 use crate::part_projection::collect_part_snapshots;
 
-fn update_event_filter_url(event_type: Option<EventType>, lang_code: &str) {
-    let query = crate::query::build_query(crate::query::QueryParams {
-        lang: Some(lang_code.to_string()),
-        event_type,
-    });
-    let mut new_url = "/".to_string();
-    if let Some(query) = query {
-        new_url.push('?');
-        new_url.push_str(query.as_str());
-    }
-    if let Some(window) = web_sys::window()
-        && let Ok(history) = window.history()
-    {
-        let _ = history.push_state_with_url(&wasm_bindgen::JsValue::NULL, "", Some(&new_url));
-    }
-}
-
 fn part_type_text(part_type: &definy_event::event::PartType) -> String {
     match part_type {
         definy_event::event::PartType::Number => "Number".to_string(),
@@ -119,9 +102,10 @@ pub fn event_list_view(state: &AppState) -> Node {
         "event_filter",
         &current_filter,
         &filter_options,
-        std::rc::Rc::new(|value| {
-            Box::new(move |state: AppState| {
-                let event_type = match value.as_str() {
+        std::rc::Rc::new({
+            let state = state.clone();
+            move |value, label, is_selected| {
+                let event_type = match value {
                     "create_account" => Some(EventType::CreateAccount),
                     "change_profile" => Some(EventType::ChangeProfile),
                     "part_definition" => Some(EventType::PartDefinition),
@@ -130,19 +114,18 @@ pub fn event_list_view(state: &AppState) -> Node {
                     "module_update" => Some(EventType::ModuleUpdate),
                     _ => None,
                 };
-                update_event_filter_url(event_type, state.language.to_code());
-                // Reset list and load first page with new filter
-                let mut next = state.clone();
-                next.event_list_state = crate::EventListState {
-                    event_hashes: Vec::new(),
-                    current_offset: 0,
-                    page_size: 20,
-                    is_loading: true,
-                    has_more: true,
-                    filter_event_type: event_type,
-                };
-                next
-            })
+                Anchor::<crate::Location>::new()
+                    .href(narumincho_vdom::Href::External(
+                        state.home_url_with_lang(event_type),
+                    ))
+                    .style(
+                        crate::dropdown::option_style(is_selected)
+                            .set("display", "block")
+                            .set("text-decoration", "none"),
+                    )
+                    .children([text(label)])
+                    .into_node()
+            }
         }),
     );
 
@@ -903,14 +886,17 @@ fn module_selection_input(state: &AppState) -> Node {
         "part-definition-module",
         &current_value,
         &options,
-        std::rc::Rc::new(|value| {
-            Box::new(move |state: AppState| {
-                let mut next = state.clone();
-                next.part_definition_form.module_definition_event_hash =
-                    EventHashId::from_str(&value).ok();
-                next
-            })
-        }),
+        crate::dropdown::button_option_renderer(
+            "part-definition-module",
+            std::rc::Rc::new(|value| {
+                Box::new(move |state: AppState| {
+                    let mut next = state.clone();
+                    next.part_definition_form.module_definition_event_hash =
+                        EventHashId::from_str(&value).ok();
+                    next
+                })
+            }),
+        ),
     );
 
     Div::new()
@@ -1015,7 +1001,7 @@ fn render_part_type_editor(
         name.as_str(),
         selected.as_str(),
         &options,
-        on_change,
+        crate::dropdown::button_option_renderer(name.clone(), on_change),
     )];
 
     if let Some(definy_event::event::PartType::List(item_type)) = part_type {

@@ -1,5 +1,3 @@
-use std::rc::Rc;
-
 use narumincho_vdom::*;
 
 use crate::{AppState, Location};
@@ -189,6 +187,8 @@ fn header_main(state: &AppState) -> Node {
 }
 
 fn language_dropdown(state: &AppState) -> Node {
+    let location = state.location.clone().unwrap_or(Location::Home);
+    let event_type = state.event_list_state.filter_event_type;
     let dropdown = crate::dropdown::searchable_dropdown(
         state,
         "language",
@@ -203,35 +203,19 @@ fn language_dropdown(state: &AppState) -> Node {
             })
             .collect::<Vec<_>>()
             .as_slice(),
-        Rc::new(|value| {
-            Box::new(move |state: AppState| {
-                let Some(selected) = crate::language::Language::from_code(value.as_str()) else {
-                    return state;
-                };
-                if selected == state.language {
-                    return state;
-                }
-                let location = state.location.clone().unwrap_or(Location::Home);
-                let url = AppState::build_url(
-                    &location,
-                    selected.to_code(),
-                    state.event_list_state.filter_event_type,
-                );
-                if let Some(window) = web_sys::window()
-                    && let Ok(history) = window.history()
-                {
-                    let _ = history.push_state_with_url(
-                        &wasm_bindgen::JsValue::NULL,
-                        "",
-                        Some(url.as_str()),
-                    );
-                }
-                AppState {
-                    language: selected,
-                    language_fallback_notice: None,
-                    ..state
-                }
-            })
+        std::rc::Rc::new(move |value, label, is_selected| {
+            let url = crate::language::Language::from_code(value)
+                .map(|language| AppState::build_url(&location, language.to_code(), event_type))
+                .unwrap_or_default();
+            Anchor::<Location>::new()
+                .href(Href::External(url))
+                .style(
+                    crate::dropdown::option_style(is_selected)
+                        .set("display", "block")
+                        .set("text-decoration", "none"),
+                )
+                .children([text(label)])
+                .into_node()
         }),
     );
     match &state.language_fallback_notice {

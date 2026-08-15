@@ -1417,7 +1417,13 @@ fn expression_selector(
         update_fn
     });
 
-    crate::dropdown::searchable_dropdown(state, name.as_str(), current_value, options, on_change)
+    crate::dropdown::searchable_dropdown(
+        state,
+        name.as_str(),
+        current_value,
+        options,
+        crate::dropdown::button_option_renderer(name.clone(), on_change),
+    )
 }
 
 fn selector_options(state: &AppState, scope_variables: &[ScopeVariable]) -> Vec<(String, String)> {

@@ -279,7 +279,7 @@ fn part_update_form(state: &AppState, definition_event_hash: &EventHashId) -> No
                         dropdown_name.as_str(),
                         &current_module_value,
                         &module_options,
-                        std::rc::Rc::new({
+                        crate::dropdown::button_option_renderer(dropdown_name.clone(), std::rc::Rc::new({
                             let definition_event_hash = definition_event_hash.clone();
                             move |value| {
                                 let definition_event_hash = definition_event_hash.clone();
@@ -292,7 +292,7 @@ fn part_update_form(state: &AppState, definition_event_hash: &EventHashId) -> No
                                     next
                                 })
                             }
-                        }),
+                        })),
                     ),
                 ])
                 .into_node(),
