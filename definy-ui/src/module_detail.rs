@@ -298,7 +298,7 @@ fn module_update_form(
                     .name("module-update-description")
                     .value(initial_description)
                     .style(Style::new().set("min-height", "5rem"))
-                    .attribute("placeholder", state.language.label("module description (supports multiple lines)",
+                    .placeholder(state.language.label("module description (supports multiple lines)",
                         "モジュール説明 (複数行対応)",
                         "modula priskribo (subtenas plurajn liniojn)",
                     ))

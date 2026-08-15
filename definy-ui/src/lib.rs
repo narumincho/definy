@@ -144,7 +144,7 @@ pub fn render(
         );
     }
     Html::new()
-        .attribute("lang", state.language.to_code())
+        .lang(state.language.to_code())
         .children([
             Head::new().children(head_children).into_node(),
             Body::new()

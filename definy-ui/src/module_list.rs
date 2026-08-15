@@ -379,31 +379,22 @@ fn module_name_input(state: &AppState) -> Node {
 }
 
 fn module_description_input(state: &AppState) -> Node {
-    let mut textarea = Textarea::new()
+    Textarea::new()
         .name("module-description")
         .value(&state.module_definition_form.module_description_input)
-        .style(Style::new().set("min-height", "5rem"));
-    textarea.attributes.push((
-        "placeholder".to_string(),
-        state
-            .language
-            .label(
-                "description (optional)",
-                "説明 (任意)",
-                "priskribo (nedeviga)",
-            )
-            .to_string(),
-    ));
-    textarea.events.push((
-        "input".to_string(),
-        EventHandler::new(move |set_state| async move {
+        .style(Style::new().set("min-height", "5rem"))
+        .placeholder(state.language.label(
+            "description (optional)",
+            "説明 (任意)",
+            "priskribo (nedeviga)",
+        ))
+        .on_input(EventHandler::new(move |set_state| async move {
             let value = crate::dom::get_textarea_value("textarea[name='module-description']");
             set_state(Box::new(move |state: AppState| {
                 let mut next = state.clone();
                 next.module_definition_form.module_description_input = value;
                 next
             }));
-        }),
-    ));
-    textarea.into_node()
+        }))
+        .into_node()
 }

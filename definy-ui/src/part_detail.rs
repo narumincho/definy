@@ -296,27 +296,38 @@ fn part_update_form(state: &AppState, definition_event_hash: &EventHashId) -> No
                     ),
                 ])
                 .into_node(),
-            Textarea::new()
-                .name("part-update-description")
-                .value(initial_description.as_str())
-                .style(Style::new().set("min-height", "5rem"))
-                .attribute("placeholder", "part description (supports multiple lines)")
-                .on_input({
-                    let definition_event_hash = definition_event_hash.clone();
-                    EventHandler::new(move |set_state| {
-                        let definition_event_hash = definition_event_hash.clone();
-                        async move {
-                            let value = crate::dom::get_textarea_value("textarea[name='part-update-description']");
-                                set_state(Box::new(move |state: AppState| {
-                                    let mut next = state.clone();
-                                    next.part_update_form.part_definition_event_hash =
-                                        Some(definition_event_hash.clone());
-                                    next.part_update_form.part_description_input = value;
-                                    next
-                                }));
-                            }
-                        })
-                }).into_node(),
+            Div::new()
+                .style(Style::new().set("display", "grid").set("gap", "0.35rem"))
+                .children([
+                    Div::new()
+                        .style(
+                            Style::new()
+                                .set("font-size", "0.85rem")
+                                .set("color", "var(--text-secondary)"),
+                        )
+                        .children([text(state.language.label("description", "説明文", "deskribo"))])
+                        .into_node(),
+                    Textarea::new()
+                        .name("part-update-description")
+                        .value(initial_description.as_str())
+                        .style(Style::new().set("min-height", "5rem"))
+                        .on_input({
+                            let definition_event_hash = definition_event_hash.clone();
+                            EventHandler::new(move |set_state| {
+                                let definition_event_hash = definition_event_hash.clone();
+                                async move {
+                                    let value = crate::dom::get_textarea_value("textarea[name='part-update-description']");
+                                        set_state(Box::new(move |state: AppState| {
+                                            let mut next = state.clone();
+                                            next.part_update_form.part_definition_event_hash =
+                                                Some(definition_event_hash.clone());
+                                            next.part_update_form.part_description_input = value;
+                                            next
+                                        }));
+                                    }
+                                })
+                        }).into_node(),
+                ]).into_node(),
             Div::new()
                 .style(
                     Style::new()
