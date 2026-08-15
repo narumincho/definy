@@ -79,7 +79,7 @@ pub async fn generate_code() -> anyhow::Result<()> {
     }
 
     for (name, info) in &elements_map {
-        output_element_file(name, info, &db)?;
+        output_element_file(name, info, &db, &svg_elements, &mathml_elements)?;
     }
 
     output_elements_rs(&elements_map, &db)?;
@@ -142,6 +142,8 @@ fn output_element_file(
     name: &str,
     info: &ElementInfo,
     db: &idl::IdlDatabase,
+    svg_elements: &BTreeSet<String>,
+    mathml_elements: &BTreeSet<String>,
 ) -> anyhow::Result<()> {
     let escaped_module_name = escape_identifier(name);
     let file_name = escaped_module_name.trim_start_matches("r#");
@@ -328,7 +330,11 @@ fn output_element_file(
         writeln!(file, "impl {} {{", capitalized_element_name)?;
     }
 
-    write!(file, "{}", common_builder_methods(name, name == "a"))?;
+    write!(
+        file,
+        "{}",
+        common_builder_methods(name, name == "a", svg_elements, mathml_elements)
+    )?;
     for attr in &html_attributes {
         let method_name = escape_method_name(&attr.name);
         if matches!(
@@ -760,11 +766,23 @@ mod tests {{
     Ok(())
 }
 
-fn common_builder_methods(tag_name: &str, is_anchor: bool) -> String {
+fn common_builder_methods(
+    tag_name: &str,
+    is_anchor: bool,
+    svg_elements: &BTreeSet<String>,
+    mathml_elements: &BTreeSet<String>,
+) -> String {
     let route_field = if is_anchor {
         "route: std::marker::PhantomData,"
     } else {
         ""
+    };
+    let namespace = if svg_elements.contains(tag_name) {
+        "crate::Namespace::Svg"
+    } else if mathml_elements.contains(tag_name) {
+        "crate::Namespace::MathML"
+    } else {
+        "crate::Namespace::Html"
     };
     format!(
         "
@@ -815,6 +833,7 @@ pub fn key(mut self, key: impl Into<String>) -> Self {{
 pub fn into_node(self) -> crate::Node {{
     crate::Node::Element(crate::Element {{
         element_name: \"{tag_name}\".to_string(),
+        namespace: {namespace},
         attributes: self.attributes,
         styles: self.styles,
         events: self.events,
@@ -833,7 +852,9 @@ mod tests {
 
     #[test]
     fn common_builder_methods_are_generated_for_old_elements_compatibility() {
-        let methods = common_builder_methods("button", false);
+        let svg = std::collections::BTreeSet::new();
+        let mathml = std::collections::BTreeSet::new();
+        let methods = common_builder_methods("button", false, &svg, &mathml);
         assert!(methods.contains("pub fn attribute"));
         assert!(methods.contains("pub fn id"));
         assert!(methods.contains("pub fn class"));

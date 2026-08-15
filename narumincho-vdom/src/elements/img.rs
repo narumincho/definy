@@ -160,6 +160,7 @@ impl Img {
     pub fn into_node(self) -> crate::Node {
         crate::Node::Element(crate::Element {
             element_name: "img".to_string(),
+            namespace: crate::Namespace::Html,
             attributes: self.attributes,
             styles: self.styles,
             events: self.events,

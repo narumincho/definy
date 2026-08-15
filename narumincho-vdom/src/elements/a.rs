@@ -166,6 +166,7 @@ impl<L: crate::Route> Anchor<L> {
     pub fn into_node(self) -> crate::Node {
         crate::Node::Element(crate::Element {
             element_name: "a".to_string(),
+            namespace: crate::Namespace::Svg,
             attributes: self.attributes,
             styles: self.styles,
             events: self.events,

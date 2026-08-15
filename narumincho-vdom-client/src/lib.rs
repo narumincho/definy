@@ -462,8 +462,8 @@ fn create_web_sys_node(
 ) -> web_sys::Node {
     match vdom {
         Node::Element(el) => {
-            let is_element_svg = should_create_element_in_svg_namespace(is_svg, &el.element_name);
-            let element = crate::element_creation::create_element(&el.element_name, is_element_svg);
+            let is_element_svg = matches!(el.namespace, narumincho_vdom::Namespace::Svg);
+            let element = crate::element_creation::create_element(&el.element_name, el.namespace);
             for (key, value) in &el.attributes {
                 element.set_attribute(key, value).unwrap();
             }

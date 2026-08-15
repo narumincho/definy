@@ -139,6 +139,7 @@ impl H1 {
     pub fn into_node(self) -> crate::Node {
         crate::Node::Element(crate::Element {
             element_name: "h1".to_string(),
+            namespace: crate::Namespace::Html,
             attributes: self.attributes,
             styles: self.styles,
             events: self.events,

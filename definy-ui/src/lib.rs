@@ -101,20 +101,10 @@ pub fn render(
         Title::new()
             .children([text(page_title::document_title_text(state))])
             .into_node(),
-        Node::Element(Element {
-            element_name: "meta".to_string(),
-            styles: Style::new(),
-            attributes: vec![
-                ("name".to_string(), "viewport".to_string()),
-                (
-                    "content".to_string(),
-                    "width=device-width,initial-scale=1.0".to_string(),
-                ),
-            ],
-            events: Vec::new(),
-            children: Vec::new(),
-            key: None,
-        }),
+        Meta::new()
+            .name("viewport")
+            .content("width=device-width,initial-scale=1.0")
+            .into_node(),
         Link::new()
             .rel("icon")
             .href(include_str!("../../web-distribution/icon.png.sha256"))

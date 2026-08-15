@@ -6,7 +6,7 @@ mod vdom_style;
 
 pub use elements::button::{Button, ButtonCommand as CommandValue};
 pub use elements::*;
-pub use node::{AnyStateDispatcher, Element, EventHandler, Node};
+pub use node::{AnyStateDispatcher, Element, EventHandler, Namespace, Node};
 pub use route::*;
 pub use vdom_style::Style;
 

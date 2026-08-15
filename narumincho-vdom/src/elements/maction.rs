@@ -68,6 +68,7 @@ impl Maction {
     pub fn into_node(self) -> crate::Node {
         crate::Node::Element(crate::Element {
             element_name: "maction".to_string(),
+            namespace: crate::Namespace::MathML,
             attributes: self.attributes,
             styles: self.styles,
             events: self.events,
