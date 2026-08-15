@@ -15,103 +15,103 @@ pub fn create_element(name: &str, is_svg: bool) -> web_sys::Element {
 }
 
 fn is_svg_element_only(name: &str) -> bool {
-    match name {
-        "animate" => true,
-        "animateMotion" => true,
-        "animateTransform" => true,
-        "circle" => true,
-        "clipPath" => true,
-        "defs" => true,
-        "desc" => true,
-        "ellipse" => true,
-        "feBlend" => true,
-        "feColorMatrix" => true,
-        "feComponentTransfer" => true,
-        "feComposite" => true,
-        "feConvolveMatrix" => true,
-        "feDiffuseLighting" => true,
-        "feDisplacementMap" => true,
-        "feDistantLight" => true,
-        "feFlood" => true,
-        "feFuncA" => true,
-        "feFuncB" => true,
-        "feFuncG" => true,
-        "feFuncR" => true,
-        "feGaussianBlur" => true,
-        "feImage" => true,
-        "feMerge" => true,
-        "feMergeNode" => true,
-        "feMorphology" => true,
-        "feOffset" => true,
-        "fePointLight" => true,
-        "feSpecularLighting" => true,
-        "feSpotLight" => true,
-        "feTile" => true,
-        "feTurbulence" => true,
-        "filter" => true,
-        "foreignObject" => true,
-        "g" => true,
-        "image" => true,
-        "line" => true,
-        "linearGradient" => true,
-        "marker" => true,
-        "mask" => true,
-        "metadata" => true,
-        "mpath" => true,
-        "path" => true,
-        "pattern" => true,
-        "polygon" => true,
-        "polyline" => true,
-        "radialGradient" => true,
-        "rect" => true,
-        "set" => true,
-        "stop" => true,
-        "svg" => true,
-        "switch" => true,
-        "symbol" => true,
-        "text" => true,
-        "textPath" => true,
-        "tspan" => true,
-        "use" => true,
-        "view" => true,
-        _ => false,
-    }
+    matches!(
+        name,
+        "animate"
+            | "animateMotion"
+            | "animateTransform"
+            | "circle"
+            | "clipPath"
+            | "defs"
+            | "desc"
+            | "ellipse"
+            | "feBlend"
+            | "feColorMatrix"
+            | "feComponentTransfer"
+            | "feComposite"
+            | "feConvolveMatrix"
+            | "feDiffuseLighting"
+            | "feDisplacementMap"
+            | "feDistantLight"
+            | "feFlood"
+            | "feFuncA"
+            | "feFuncB"
+            | "feFuncG"
+            | "feFuncR"
+            | "feGaussianBlur"
+            | "feImage"
+            | "feMerge"
+            | "feMergeNode"
+            | "feMorphology"
+            | "feOffset"
+            | "fePointLight"
+            | "feSpecularLighting"
+            | "feSpotLight"
+            | "feTile"
+            | "feTurbulence"
+            | "filter"
+            | "foreignObject"
+            | "g"
+            | "image"
+            | "line"
+            | "linearGradient"
+            | "marker"
+            | "mask"
+            | "metadata"
+            | "mpath"
+            | "path"
+            | "pattern"
+            | "polygon"
+            | "polyline"
+            | "radialGradient"
+            | "rect"
+            | "set"
+            | "stop"
+            | "svg"
+            | "switch"
+            | "symbol"
+            | "text"
+            | "textPath"
+            | "tspan"
+            | "use"
+            | "view"
+    )
 }
 
 fn is_mathml_element_only(name: &str) -> bool {
-    match name {
-        "annotation" => true,
-        "annotation-xml" => true,
-        "maction" => true,
-        "math" => true,
-        "merror" => true,
-        "mfrac" => true,
-        "mi" => true,
-        "mmultiscripts" => true,
-        "mn" => true,
-        "mo" => true,
-        "mover" => true,
-        "mpadded" => true,
-        "mphantom" => true,
-        "mprescripts" => true,
-        "mroot" => true,
-        "mrow" => true,
-        "ms" => true,
-        "mspace" => true,
-        "msqrt" => true,
-        "mstyle" => true,
-        "msub" => true,
-        "msubsup" => true,
-        "msup" => true,
-        "mtable" => true,
-        "mtd" => true,
-        "mtext" => true,
-        "mtr" => true,
-        "munder" => true,
-        "munderover" => true,
-        "semantics" => true,
-        _ => false,
-    }
+    matches!(
+        name,
+        "annotation"
+            | "annotation-xml"
+            | "maction"
+            | "math"
+            | "merror"
+            | "mfrac"
+            | "mi"
+            | "mmultiscripts"
+            | "mn"
+            | "mo"
+            | "mover"
+            | "mpadded"
+            | "mphantom"
+            | "mprescripts"
+            | "mroot"
+            | "mrow"
+            | "ms"
+            | "mspace"
+            | "msqrt"
+            | "mstyle"
+            | "msub"
+            | "msubsup"
+            | "msup"
+            | "mtable"
+            | "mtd"
+            | "mtext"
+            | "mtr"
+            | "munder"
+            | "munderover"
+            | "semantics"
+    )
 }
 
 #[cfg(test)]
