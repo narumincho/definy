@@ -113,6 +113,9 @@ fn diff_recursive(
                 {
                     Some((_, old_value)) => {
                         if old_value != value {
+                            // Replacing a listener requires removing the old JavaScript
+                            // callback before installing the new one.
+                            remove_events.push(key.clone());
                             add_events.push((key.clone(), value.clone()));
                         }
                     }
@@ -128,11 +131,11 @@ fn diff_recursive(
                 }
             }
 
-            if !add_events.is_empty() {
-                patches.push((path.clone(), Patch::AddEventListeners(add_events)));
-            }
             if !remove_events.is_empty() {
                 patches.push((path.clone(), Patch::RemoveEventListeners(remove_events)));
+            }
+            if !add_events.is_empty() {
+                patches.push((path.clone(), Patch::AddEventListeners(add_events)));
             }
 
             // Diff children
@@ -369,5 +372,29 @@ mod tests {
             patches,
             vec![(vec![0, 0], Patch::UpdateText("world".into()))]
         );
+    }
+
+    #[test]
+    fn test_diff_replaces_event_listener_when_parameter_changes() {
+        let handler = |parameter: &str| {
+            EventHandler::with_parameter(
+                |_: Box<dyn Fn(Box<dyn FnOnce(()) -> ()>)>, _: &String| async {},
+                parameter.to_string(),
+            )
+        };
+        let old: Node = Button::new().on_click(handler("old")).into_node();
+        let new: Node = Button::new().on_click(handler("new")).into_node();
+
+        let patches = diff(&old, &new);
+
+        assert!(matches!(
+            &patches[..],
+            [
+                (path, Patch::RemoveEventListeners(events)),
+                (add_path, Patch::AddEventListeners(_)),
+            ] if path.is_empty()
+                && add_path.is_empty()
+                && events == &vec!["click".to_string()]
+        ));
     }
 }

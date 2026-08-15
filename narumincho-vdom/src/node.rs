@@ -97,8 +97,8 @@ impl Clone for EventHandler {
 }
 
 impl PartialEq for EventHandler {
-    fn eq(&self, _other: &Self) -> bool {
-        true
+    fn eq(&self, other: &Self) -> bool {
+        self.parameter_hash == other.parameter_hash
     }
 }
 

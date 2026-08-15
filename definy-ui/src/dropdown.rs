@@ -165,11 +165,10 @@ fn option_list(
     let options_list_nodes = filtered_options
         .into_iter()
         .map(|(opt_val, opt_label)| {
-            let val = opt_val.clone();
             let label_str = opt_label.clone();
             let on_change_clone = on_change.clone();
 
-            let is_selected = val == current_value;
+            let is_selected = opt_val == current_value;
 
             Button::new()
                 .style(
@@ -195,20 +194,23 @@ fn option_list(
                 )
                 .command("hide-popover")
                 .command_for(dropdown_panel_id(name))
-                .on_click(EventHandler::new(move |set_state| {
-                    let on_change_clone = on_change_clone.clone();
-                    let val_clone = val.clone();
+                .on_click(EventHandler::with_parameter(
+                    move |set_state, value: &String| {
+                        let on_change_clone = on_change_clone.clone();
+                        let value = value.clone();
 
-                    async move {
-                        // First close the dropdown
-                        set_state(Box::new(|state: AppState| AppState {
-                            dropdown_search_query: String::new(),
-                            ..state
-                        }));
-                        // Then trigger the on_change handler
-                        set_state(on_change_clone(val_clone));
-                    }
-                }))
+                        async move {
+                            // First close the dropdown
+                            set_state(Box::new(|state: AppState| AppState {
+                                dropdown_search_query: String::new(),
+                                ..state
+                            }));
+                            // Then trigger the on_change handler
+                            set_state(on_change_clone(value));
+                        }
+                    },
+                    opt_val.clone(),
+                ))
                 .children([text(&label_str)])
                 .into_node()
         })
