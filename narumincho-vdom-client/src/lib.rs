@@ -300,6 +300,17 @@ fn should_create_children_in_svg_context(is_svg: bool, element_name: &str) -> bo
     is_svg && element_name != "foreignObject"
 }
 
+fn normalize_html_attribute_name(element: &web_sys::Element, name: &str) -> String {
+    let namespace = element.namespace_uri().unwrap_or_default();
+    if namespace == "http://www.w3.org/2000/svg" || namespace == "http://www.w3.org/1998/Math/MathML" {
+        return name.to_string();
+    }
+    if name.starts_with("xlink:") || name.starts_with("xml:") {
+        return name.to_string();
+    }
+    name.to_ascii_lowercase()
+}
+
 fn apply_patch(
     node: web_sys::Node,
     patch: &diff::Patch,
@@ -331,14 +342,16 @@ fn apply_patch(
         diff::Patch::AddAttributes(attributes) => {
             if let Some(element) = node.dyn_ref::<web_sys::Element>() {
                 for (key, value) in attributes {
-                    element.set_attribute(key, value).unwrap();
+                    let key = normalize_html_attribute_name(element, key);
+                    element.set_attribute(&key, value).unwrap();
                 }
             }
         }
         diff::Patch::RemoveAttributes(attribute_names) => {
             if let Some(element) = node.dyn_ref::<web_sys::Element>() {
                 for name in attribute_names {
-                    element.remove_attribute(name).unwrap();
+                    let name = normalize_html_attribute_name(element, name);
+                    element.remove_attribute(&name).unwrap();
                 }
             }
         }

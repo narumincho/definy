@@ -33,7 +33,9 @@ fn diff_recursive(
                 return;
             }
 
-            // Diff attributes
+            // HTML and SVG attribute names are not always byte-for-byte equal across
+            // render updates. In HTML, attribute names are case-insensitive; treating
+            // HREF and href as different logical keys causes stale DOM patches.
             let mut add_attributes = Vec::new();
             let mut remove_attributes = Vec::new();
 
@@ -41,7 +43,7 @@ fn diff_recursive(
                 match old_element
                     .attributes
                     .iter()
-                    .find(|(old_key, _)| old_key == key)
+                    .find(|(old_key, _)| old_key.eq_ignore_ascii_case(key))
                 {
                     Some((_, old_value)) => {
                         if old_value != value {
@@ -58,7 +60,7 @@ fn diff_recursive(
                 if !new_element
                     .attributes
                     .iter()
-                    .any(|(new_key, _)| new_key == key)
+                    .any(|(new_key, _)| new_key.eq_ignore_ascii_case(key))
                 {
                     remove_attributes.push(key.clone());
                 }
@@ -325,6 +327,15 @@ mod tests {
             }
             _ => panic!("Expected AddStyles third"),
         }
+    }
+
+    #[test]
+    fn test_diff_html_attributes_are_case_insensitive() {
+        let old: Node = Button::new().attribute("HREF", "/old").into_node();
+        let new: Node = Button::new().attribute("href", "/old").into_node();
+
+        let patches = diff(&old, &new);
+        assert!(patches.is_empty());
     }
 
     #[test]
