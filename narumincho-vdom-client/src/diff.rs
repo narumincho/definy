@@ -149,6 +149,13 @@ fn diff_recursive(
                 old_keys.iter().any(|k| k.is_some()) || new_keys.iter().any(|k| k.is_some());
 
             if has_keys {
+                // The patch format has no move operation. Replacing this subtree is the safe
+                // way to keep DOM nodes aligned with their keys when filtering or reordering.
+                if old_keys != new_keys {
+                    patches.push((path.clone(), Patch::Replace(new_node.clone())));
+                    return;
+                }
+
                 // Keyed diffing algorithm
                 let mut old_key_map = std::collections::HashMap::new();
                 for (i, key) in old_keys.iter().enumerate() {
@@ -353,6 +360,26 @@ mod tests {
         let new: Node = Button::new().children(vec![text("hello")]).into_node();
         let patches = diff(&old, &new);
         assert_eq!(patches, vec![(vec![], Patch::RemoveChildren(1))]);
+    }
+
+    #[test]
+    fn test_diff_replaces_keyed_children_when_order_changes() {
+        let old: Node = Div::new()
+            .children([
+                Div::new().attribute("key", "english").into_node(),
+                Div::new().attribute("key", "japanese").into_node(),
+            ])
+            .into_node();
+        let new: Node = Div::new()
+            .children([
+                Div::new().attribute("key", "japanese").into_node(),
+                Div::new().attribute("key", "english").into_node(),
+            ])
+            .into_node();
+
+        assert!(
+            matches!(diff(&old, &new).as_slice(), [(path, Patch::Replace(_))] if path.is_empty())
+        );
     }
 
     #[test]
