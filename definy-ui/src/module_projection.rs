@@ -67,7 +67,7 @@ pub fn collect_module_snapshots(state: &AppState) -> Vec<ModuleSnapshot> {
     }
 
     let mut snapshots = map.into_values().collect::<Vec<ModuleSnapshot>>();
-    snapshots.sort_by(|a, b| b.updated_at.cmp(&a.updated_at));
+    snapshots.sort_by_key(|b| std::cmp::Reverse(b.updated_at));
     snapshots
 }
 

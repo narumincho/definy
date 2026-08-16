@@ -256,7 +256,6 @@ fn create_account_view(state: &AppState, force_offline: bool) -> Node {
             let set_state = std::rc::Rc::new(set_state);
             let set_state_for_async = set_state.clone();
             let generated_key = generated_key_for_submit.clone();
-            let language = language.clone();
             async move {
                 let username = crate::dom::get_input_value("input[name='username']");
 
