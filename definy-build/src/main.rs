@@ -26,6 +26,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 "--target",
                 "wasm32-unknown-unknown",
             ])
+            .env("CARGO_PROFILE_RELEASE_OPT_LEVEL", "z")
+            .env("CARGO_PROFILE_RELEASE_LTO", "true")
+            .env("CARGO_PROFILE_RELEASE_CODEGEN_UNITS", "1")
+            .env("CARGO_PROFILE_RELEASE_PANIC", "abort")
+            .env("CARGO_PROFILE_RELEASE_DEBUG", "false")
             .status()?;
 
         if !wasm_build_result.success() {
