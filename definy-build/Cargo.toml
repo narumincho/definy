@@ -6,3 +6,4 @@ edition = "2024"
 [dependencies]
 base64 = "0.22.1"
 sha2 = "0.10.9"
+wasm-bindgen-cli-support = "0.2.127"

@@ -11,7 +11,6 @@ jobs:
       - run: cargo fmt --check
       - uses: browser-actions/setup-chrome@v2
       - uses: nanasess/setup-chromedriver@v2
-      - run: cargo install wasm-bindgen-cli --version 0.2.126
       - run: rustup target add wasm32-unknown-unknown
       - run: cargo run -p definy-build
       - run: cargo test

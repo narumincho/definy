@@ -41,19 +41,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     {
-        let wasm_bindgen_result = std::process::Command::new("wasm-bindgen")
-            .args([
-                "--out-dir",
-                "./web-distribution",
-                "--target",
-                "web",
-                "./target/wasm32-unknown-unknown/release/definy_client.wasm",
-            ])
-            .status()?;
-
-        if !wasm_bindgen_result.success() {
-            return Err("wasm-bindgen failed".into());
-        }
+        wasm_bindgen_cli_support::Bindgen::new()
+            .input_path("./target/wasm32-unknown-unknown/release/definy_client.wasm")
+            .web(true)?
+            .generate("./web-distribution")?;
 
         println!("wasm-bindgen ok");
     }

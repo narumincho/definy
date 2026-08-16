@@ -32,12 +32,6 @@ https://github.com/narumincho/definy/tree/prev2023
 
 - [Rust(rustup)](https://rust-lang.org/ja/tools/install/)
 
-- [wasm-bindgen-cli](https://wasm-bindgen.github.io/wasm-bindgen/)
-
-```sh
-cargo install wasm-bindgen-cli --version 0.2.126
-```
-
 - [Docker](https://www.docker.com/get-started/)
 
 ## DB 起動コマンド
