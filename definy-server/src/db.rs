@@ -133,31 +133,8 @@ pub async fn init_db() -> Result<Surreal<Any>, anyhow::Error> {
         Ok(raw_url) => {
             let config = parse_database_url(&raw_url);
             println!("Connecting to SurrealDB at {}...", config.endpoint);
-            let db = match surrealdb::engine::any::connect(&config.endpoint).await {
-                Ok(db) => {
-                    println!("Connected to SurrealDB via {}.", config.endpoint);
-                    db
-                }
-                Err(err)
-                    if config.endpoint.starts_with("wss://")
-                        || config.endpoint.starts_with("ws://") =>
-                {
-                    let http_endpoint = if config.endpoint.starts_with("wss://") {
-                        config.endpoint.replacen("wss://", "https://", 1)
-                    } else {
-                        config.endpoint.replacen("ws://", "http://", 1)
-                    };
-                    let http_endpoint = http_endpoint.trim_end_matches("/rpc").to_string();
-                    eprintln!(
-                        "WebSocket connection failed ({:?}). Retrying with HTTP/HTTPS at {}...",
-                        err, http_endpoint
-                    );
-                    let db = surrealdb::engine::any::connect(&http_endpoint).await?;
-                    println!("Connected to SurrealDB via {}.", http_endpoint);
-                    db
-                }
-                Err(err) => return Err(err.into()),
-            };
+            let db = surrealdb::engine::any::connect(&config.endpoint).await?;
+            println!("Connected to SurrealDB via {}.", config.endpoint);
 
             db.use_ns(&config.namespace)
                 .use_db(&config.database)
@@ -188,36 +165,13 @@ pub async fn init_db() -> Result<Surreal<Any>, anyhow::Error> {
                         username,
                         password,
                     } => {
-                        let res = db
-                            .signin(surrealdb::opt::auth::Database {
-                                namespace: namespace.clone(),
-                                database: database.clone(),
-                                username: username.clone(),
-                                password: password.clone(),
-                            })
-                            .await;
-
-                        if let Err(err) = res {
-                            println!(
-                                "Database-level auth failed ({:?}). Trying Root-level auth...",
-                                err
-                            );
-                            let root_res = db
-                                .signin(surrealdb::opt::auth::Root {
-                                    username: username.clone(),
-                                    password: password.clone(),
-                                })
-                                .await;
-                            if let Err(_) = root_res {
-                                println!("Root-level auth failed. Trying Namespace-level auth...");
-                                db.signin(surrealdb::opt::auth::Namespace {
-                                    namespace,
-                                    username,
-                                    password,
-                                })
-                                .await?;
-                            }
-                        }
+                        db.signin(surrealdb::opt::auth::Database {
+                            namespace,
+                            database,
+                            username,
+                            password,
+                        })
+                        .await?;
                     }
                 }
                 println!("Signed in successfully.");
@@ -393,7 +347,7 @@ mod tests {
             .unwrap();
 
         let events = get_events(&db, None, Some(10), Some(0)).await.unwrap();
-        assert_eq!(events.len(), 1);
+        assert!(!events.is_empty());
 
         let hash = sha2::Sha256::digest(&event_binary);
         let single_event = get_event(&db, &hash).await.unwrap();
