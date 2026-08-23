@@ -78,9 +78,11 @@ PowerShell の場合
 
 ```ps1
 cargo run -p definy-build
-$env:DATABASE_URL="wss://definy-xxx.aws-aps1.surreal.cloud"
-$env:DATABASE_USER="flyio"
-$env:DATABASE_PASS="password"
-cargo run -p definy-server
+& {
+    $env:DATABASE_URL = "wss://definy-xxx.aws-aps1.surreal.cloud";
+    $env:DATABASE_USER = "flyio";
+    $env:DATABASE_PASS = "password";
+    cargo run -p definy-server
+}
 ```
 
