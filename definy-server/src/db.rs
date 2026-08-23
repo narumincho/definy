@@ -15,15 +15,15 @@ pub struct EventRecord {
     pub event_type: String,
 }
 
-#[derive(Debug, PartialEq, Eq)]
-pub struct ParsedDbConfig {
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DbConfig {
     pub endpoint: String,
     pub namespace: String,
     pub database: String,
     pub auth: Option<AuthCredentials>,
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum AuthCredentials {
     Root {
         username: String,
@@ -42,34 +42,9 @@ pub enum AuthCredentials {
     },
 }
 
-pub fn parse_database_url(raw: &str) -> ParsedDbConfig {
-    let mut parts = raw.split(';');
-    let mut endpoint = parts.next().unwrap_or("").trim().to_string();
-
-    let mut namespace = "definy".to_string();
-    let mut database = "definy".to_string();
-    let mut username: Option<String> = None;
-    let mut password: Option<String> = None;
-    let mut auth_level: Option<String> = None;
-
-    for param in parts {
-        let param = param.trim();
-        if param.is_empty() {
-            continue;
-        }
-        if let Some((k, v)) = param.split_once('=') {
-            let key = k.trim().to_lowercase();
-            let val = v.trim().to_string();
-            match key.as_str() {
-                "ns" | "namespace" => namespace = val,
-                "db" | "database" => database = val,
-                "user" | "username" => username = Some(val),
-                "pass" | "password" => password = Some(val),
-                "authlevel" | "auth_level" | "level" => auth_level = Some(val),
-                _ => {}
-            }
-        }
-    }
+pub fn load_db_config_from_env() -> Option<DbConfig> {
+    let raw_url = std::env::var("DATABASE_URL").ok()?;
+    let mut endpoint = raw_url.trim().to_string();
 
     if endpoint.starts_with("http://")
         || endpoint.starts_with("https://")
@@ -83,55 +58,44 @@ pub fn parse_database_url(raw: &str) -> ParsedDbConfig {
             .to_string();
     }
 
-    if username.is_none()
-        && (endpoint.starts_with("ws://")
-            || endpoint.starts_with("wss://")
-            || endpoint.starts_with("http://")
-            || endpoint.starts_with("https://"))
-    {
-        if let Ok(parsed_url) = url::Url::parse(&endpoint) {
-            if !parsed_url.username().is_empty() {
-                username = Some(parsed_url.username().to_string());
-            }
-            if let Some(pass) = parsed_url.password() {
-                password = Some(pass.to_string());
-            }
-        }
-    }
+    let namespace = std::env::var("DATABASE_NS").unwrap_or_else(|_| "definy".to_string());
+    let database = std::env::var("DATABASE_DB").unwrap_or_else(|_| "definy".to_string());
+
+    let username = std::env::var("DATABASE_USER").ok();
+    let password = std::env::var("DATABASE_PASS").ok();
+    let auth_level = std::env::var("DATABASE_AUTH_LEVEL").ok();
 
     let auth = match (username, password) {
-        (Some(u), Some(p)) => match auth_level.as_deref().map(|s| s.to_lowercase()).as_deref() {
-            Some("root") => Some(AuthCredentials::Root {
-                username: u,
-                password: p,
-            }),
-            Some("namespace") | Some("ns") => Some(AuthCredentials::Namespace {
-                namespace: namespace.clone(),
-                username: u,
-                password: p,
-            }),
-            _ => Some(AuthCredentials::Database {
-                namespace: namespace.clone(),
-                database: database.clone(),
-                username: u,
-                password: p,
-            }),
-        },
+        (Some(username), Some(password)) => {
+            match auth_level.as_deref().map(|s| s.to_lowercase()).as_deref() {
+                Some("root") => Some(AuthCredentials::Root { username, password }),
+                Some("namespace") | Some("ns") => Some(AuthCredentials::Namespace {
+                    namespace: namespace.clone(),
+                    username,
+                    password,
+                }),
+                _ => Some(AuthCredentials::Database {
+                    namespace: namespace.clone(),
+                    database: database.clone(),
+                    username,
+                    password,
+                }),
+            }
+        }
         _ => None,
     };
 
-    ParsedDbConfig {
+    Some(DbConfig {
         endpoint,
         namespace,
         database,
         auth,
-    }
+    })
 }
 
 pub async fn init_db() -> Result<Surreal<Any>, anyhow::Error> {
-    let db = match std::env::var("DATABASE_URL") {
-        Ok(raw_url) => {
-            let config = parse_database_url(&raw_url);
+    let db = match load_db_config_from_env() {
+        Some(config) => {
             println!("Connecting to SurrealDB at {}...", config.endpoint);
             let db = surrealdb::engine::any::connect(&config.endpoint).await?;
             println!("Connected to SurrealDB via {}.", config.endpoint);
@@ -178,7 +142,7 @@ pub async fn init_db() -> Result<Surreal<Any>, anyhow::Error> {
             }
             db
         }
-        Err(_) => {
+        None => {
             eprintln!(
                 "WARNING: DATABASE_URL environment variable is not set. Using in-memory SurrealDB (mem://). Data will NOT be persisted across server restarts."
             );
@@ -302,26 +266,6 @@ pub async fn get_event(
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn test_parse_database_url() {
-        let url = "wss://sample.surreal.cloud/rpc;AuthLevel=Database;NS=definy;DB=definy;User=flyio;Pass=secret123";
-        let parsed = parse_database_url(url);
-        assert_eq!(
-            parsed,
-            ParsedDbConfig {
-                endpoint: "wss://sample.surreal.cloud".to_string(),
-                namespace: "definy".to_string(),
-                database: "definy".to_string(),
-                auth: Some(AuthCredentials::Database {
-                    namespace: "definy".to_string(),
-                    database: "definy".to_string(),
-                    username: "flyio".to_string(),
-                    password: "secret123".to_string(),
-                }),
-            }
-        );
-    }
 
     #[tokio::test]
     async fn test_save_and_get_create_account_event() {
