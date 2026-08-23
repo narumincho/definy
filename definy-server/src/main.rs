@@ -1,5 +1,6 @@
 mod db;
 mod event;
+mod html;
 
 use std::net::SocketAddr;
 use std::sync::Arc;
@@ -103,18 +104,9 @@ async fn handler(
             .and_then(|value| value.to_str().ok());
         let language_resolution =
             definy_ui::language::resolve_language(uri.query(), accept_language);
-        let language_fallback_notice = language_resolution.fallback_notice();
         let pool = ensure_pool(&state).await;
         return match pool {
-            Some(pool) => {
-                handle_html(
-                    &uri,
-                    &pool,
-                    language_resolution.language,
-                    language_fallback_notice,
-                )
-                .await
-            }
+            Some(pool) => handle_html(&uri, &pool, language_resolution.language).await,
             None => db_unavailable_response(true),
         };
     }
@@ -205,7 +197,6 @@ async fn handle_html(
     uri: &hyper::Uri,
     pool: &sqlx::postgres::PgPool,
     language: definy_ui::language::Language,
-    language_fallback_notice: Option<definy_ui::LanguageFallbackNotice>,
 ) -> Result<Response<Full<Bytes>>, hyper::http::Error> {
     let path = uri.path();
     let query = uri.query();
@@ -247,30 +238,32 @@ async fn handle_html(
         })
         .collect::<Vec<_>>();
     let has_more = events.len() == 20;
-    let ssr_initial_state_json =
-        definy_ui::encode_ssr_state(&event_binary_array.into_vec(), has_more);
+    let ssr_initial_state_json = definy_ui::encode_ssr_state(definy_ui::SsrState {
+        event_binaries: event_binary_array.into_vec(),
+        has_more,
+    })
+    .unwrap();
+
+    let context = definy_ui::PageContext::from_path_and_query(
+        path,
+        query.unwrap_or_default(),
+        Some(language.to_code()),
+    );
+    let initial_state =
+        definy_ui::build_initial_state(events, false, has_more, None, filter_event_type);
+    let html = html::render_to_html(
+        &initial_state,
+        &context,
+        &html::ResourceHash {
+            js: JAVASCRIPT_HASH,
+            wasm: WASM_HASH,
+        },
+        &ssr_initial_state_json,
+    );
 
     Response::builder()
         .header("Content-Type", "text/html; charset=utf-8")
-        .body(Full::new(Bytes::from(narumincho_vdom::to_html(
-            &definy_ui::render(
-                &definy_ui::build_initial_state(
-                    location,
-                    events,
-                    false,
-                    has_more,
-                    None,
-                    filter_event_type,
-                    language,
-                    language_fallback_notice,
-                ),
-                &Some(definy_ui::ResourceHash {
-                    js: JAVASCRIPT_HASH.to_string(),
-                    wasm: WASM_HASH.to_string(),
-                }),
-                ssr_initial_state_json.as_deref(),
-            ),
-        ))))
+        .body(Full::new(Bytes::from(html)))
 }
 
 fn lang_redirect_url(request: &Request<impl hyper::body::Body>) -> Option<String> {

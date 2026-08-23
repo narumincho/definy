@@ -25,12 +25,7 @@ pub fn searchable_dropdown(
                             None
                         }
                     })
-                    .unwrap_or_else(|| {
-                        state
-                            .language
-                            .label("Select...", "選択...", "Elektu...")
-                            .to_string()
-                    }),
+                    .unwrap_or_else(|| "Select...".to_string()),
             ),
             dropdown_panel(
                 name,

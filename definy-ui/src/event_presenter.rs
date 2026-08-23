@@ -1,25 +1,21 @@
 use definy_event::event::{Event, EventContent};
 
-use crate::app_state::AppState;
 use crate::expression_eval::expression_to_source;
+use crate::language::Language;
 
-pub fn event_summary_text(state: &AppState, event: &Event) -> String {
+pub fn event_summary_text(language: Language, event: &Event) -> String {
     match &event.content {
         EventContent::CreateAccount(create_account_event) => {
             format!(
                 "{} {}",
-                state
-                    .language
-                    .label("Account created:", "アカウント作成:", "Konto kreita:"),
+                language.label("Account created:", "アカウント作成:", "Konto kreita:"),
                 create_account_event.account_name
             )
         }
         EventContent::ChangeProfile(change_profile_event) => {
             format!(
                 "{} {}",
-                state
-                    .language
-                    .label("Profile changed:", "プロフィール変更:", "Profilo ŝanĝita:"),
+                language.label("Profile changed:", "プロフィール変更:", "Profilo ŝanĝita:"),
                 change_profile_event.account_name
             )
         }
@@ -35,9 +31,7 @@ pub fn event_summary_text(state: &AppState, event: &Event) -> String {
         ),
         EventContent::PartUpdate(part_update_event) => format!(
             "{} {}{} | {}",
-            state
-                .language
-                .label("Part updated:", "パーツ更新:", "Parto ĝisdatigita:"),
+            language.label("Part updated:", "パーツ更新:", "Parto ĝisdatigita:"),
             part_update_event.part_name,
             if part_update_event.part_description.is_empty() {
                 String::new()
@@ -50,17 +44,13 @@ pub fn event_summary_text(state: &AppState, event: &Event) -> String {
             if module_definition_event.description.is_empty() {
                 format!(
                     "{} {}",
-                    state
-                        .language
-                        .label("Module created:", "モジュール作成:", "Modulo kreita:"),
+                    language.label("Module created:", "モジュール作成:", "Modulo kreita:"),
                     module_definition_event.module_name
                 )
             } else {
                 format!(
                     "{} {} - {}",
-                    state
-                        .language
-                        .label("Module created:", "モジュール作成:", "Modulo kreita:"),
+                    language.label("Module created:", "モジュール作成:", "Modulo kreita:"),
                     module_definition_event.module_name,
                     module_definition_event.description
                 )
@@ -70,21 +60,13 @@ pub fn event_summary_text(state: &AppState, event: &Event) -> String {
             if module_update_event.module_description.is_empty() {
                 format!(
                     "{} {}",
-                    state.language.label(
-                        "Module updated:",
-                        "モジュール更新:",
-                        "Modulo ĝisdatigita:"
-                    ),
+                    language.label("Module updated:", "モジュール更新:", "Modulo ĝisdatigita:"),
                     module_update_event.module_name
                 )
             } else {
                 format!(
                     "{} {} - {}",
-                    state.language.label(
-                        "Module updated:",
-                        "モジュール更新:",
-                        "Modulo ĝisdatigita:"
-                    ),
+                    language.label("Module updated:", "モジュール更新:", "Modulo ĝisdatigita:"),
                     module_update_event.module_name,
                     module_update_event.module_description
                 )
@@ -93,47 +75,37 @@ pub fn event_summary_text(state: &AppState, event: &Event) -> String {
     }
 }
 
-pub fn event_kind_label(state: &AppState, event: &Event) -> String {
+pub fn event_kind_label(language: Language, event: &Event) -> String {
     match &event.content {
-        EventContent::CreateAccount(_) => state
-            .language
+        EventContent::CreateAccount(_) => language
             .label("CreateAccount", "アカウント作成", "Konto-kreo")
             .to_string(),
-        EventContent::ChangeProfile(_) => state
-            .language
+        EventContent::ChangeProfile(_) => language
             .label("ChangeProfile", "プロフィール変更", "Profil-ŝanĝo")
             .to_string(),
         EventContent::PartDefinition(part_definition) => {
             format!(
                 "{} {}",
-                state
-                    .language
-                    .label("PartDefinition:", "パーツ定義:", "Parto-difino:"),
+                language.label("PartDefinition:", "パーツ定義:", "Parto-difino:"),
                 part_definition.part_name
             )
         }
         EventContent::PartUpdate(part_update) => format!(
             "{} {}",
-            state
-                .language
-                .label("PartUpdate:", "パーツ更新:", "Parto-ĝisdatigo:"),
+            language.label("PartUpdate:", "パーツ更新:", "Parto-ĝisdatigo:"),
             part_update.part_name
         ),
         EventContent::ModuleDefinition(module_definition) => {
             format!(
                 "{} {}",
-                state
-                    .language
-                    .label("ModuleDefinition:", "モジュール定義:", "Modulo-difino:"),
+                language.label("ModuleDefinition:", "モジュール定義:", "Modulo-difino:"),
                 module_definition.module_name
             )
         }
         EventContent::ModuleUpdate(module_update) => {
             format!(
                 "{} {}",
-                state
-                    .language
-                    .label("ModuleUpdate:", "モジュール更新:", "Modulo-ĝisdatigo:"),
+                language.label("ModuleUpdate:", "モジュール更新:", "Modulo-ĝisdatigo:"),
                 module_update.module_name
             )
         }

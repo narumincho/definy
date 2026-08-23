@@ -1,13 +1,15 @@
 use narumincho_vdom::*;
 
 use crate::app_state::{AppState, replace_local_event_records};
+use crate::language::Language;
 use crate::local_event::LocalEventStatus;
+use crate::page_context::PageContext;
 
-fn status_label(state: &AppState, status: &LocalEventStatus) -> &'static str {
+fn status_label(language: Language, status: &LocalEventStatus) -> &'static str {
     match status {
-        LocalEventStatus::Queued => state.language.label("Queued", "送信待ち", "Atendanta"),
-        LocalEventStatus::Sent => state.language.label("Sent", "送信済み", "Sendita"),
-        LocalEventStatus::Failed => state.language.label("Failed", "送信失敗", "Malsukcesis"),
+        LocalEventStatus::Queued => language.label("Queued", "送信待ち", "Atendanta"),
+        LocalEventStatus::Sent => language.label("Sent", "送信済み", "Sendita"),
+        LocalEventStatus::Failed => language.label("Failed", "送信失敗", "Malsukcesis"),
     }
 }
 
@@ -19,50 +21,48 @@ fn status_color(status: &LocalEventStatus) -> &'static str {
     }
 }
 
-fn format_time_ms(state: &AppState, time_ms: i64) -> String {
+fn format_time_ms(language: Language, time_ms: i64) -> String {
     chrono::DateTime::<chrono::Utc>::from_timestamp_millis(time_ms)
         .map(|t| t.format("%Y-%m-%d %H:%M:%S").to_string())
-        .unwrap_or_else(|| {
-            state
-                .language
-                .label("unknown", "不明", "nekonata")
-                .to_string()
-        })
+        .unwrap_or_else(|| language.label("unknown", "不明", "nekonata").to_string())
 }
 
-pub fn local_event_queue_view(state: &AppState) -> Node {
+pub fn local_event_queue_view(state: &AppState, context: &PageContext) -> Node {
+    let language = context.language;
     let refresh_button = Button::new()
-        .on_click(EventHandler::new(async |set_state| {
+        .on_click(EventHandler::new(move |set_state| {
             let set_state = std::rc::Rc::new(set_state);
             let set_state_for_async = set_state.clone();
-            set_state(Box::new(|state: AppState| {
-                let mut next = state.clone();
-                next.local_event_queue.is_loading = true;
-                next
-            }));
-            let result = crate::indexed_db::load_event_records().await;
-            set_state_for_async(Box::new(move |state: AppState| {
-                let mut next = state.clone();
-                match result {
-                    Ok(records) => {
-                        replace_local_event_records(&mut next, records);
-                        next.local_event_queue.is_loading = false;
-                        next.local_event_queue.last_error = None;
+            async move {
+                set_state(Box::new(|state: AppState| {
+                    let mut next = state.clone();
+                    next.local_event_queue.is_loading = true;
+                    next
+                }));
+                let result = crate::indexed_db::load_event_records().await;
+                set_state_for_async(Box::new(move |state: AppState| {
+                    let mut next = state.clone();
+                    match result {
+                        Ok(records) => {
+                            replace_local_event_records(&mut next, records);
+                            next.local_event_queue.is_loading = false;
+                            next.local_event_queue.last_error = None;
+                        }
+                        Err(error) => {
+                            next.local_event_queue.is_loading = false;
+                            next.local_event_queue.last_error = Some(format!(
+                                "{}: {error:?}",
+                                language.label(
+                                    "Failed to load local events",
+                                    "ローカルイベントの読み込みに失敗しました",
+                                    "Malsukcesis ŝargi lokajn eventojn"
+                                )
+                            ));
+                        }
                     }
-                    Err(error) => {
-                        next.local_event_queue.is_loading = false;
-                        next.local_event_queue.last_error = Some(format!(
-                            "{}: {error:?}",
-                            state.language.label(
-                                "Failed to load local events",
-                                "ローカルイベントの読み込みに失敗しました",
-                                "Malsukcesis ŝargi lokajn eventojn"
-                            )
-                        ));
-                    }
-                }
-                next
-            }));
+                    next
+                }));
+            }
         }))
         .style(
             Style::new()
@@ -72,7 +72,7 @@ pub fn local_event_queue_view(state: &AppState) -> Node {
                 .set("padding", "0.4rem 0.8rem")
                 .set("border-radius", "0.5rem"),
         )
-        .children([text(state.language.label("Refresh", "更新", "Refreŝigi"))])
+        .children([text(context.language.label("Refresh", "更新", "Refreŝigi"))])
         .into_node();
 
     let offline_toggle = Button::new()
@@ -92,11 +92,11 @@ pub fn local_event_queue_view(state: &AppState) -> Node {
                 .set("border-radius", "0.5rem"),
         )
         .children([text(if state.force_offline {
-            state
+            context
                 .language
                 .label("Offline: On", "オフライン: オン", "Senkonekte: En")
         } else {
-            state
+            context
                 .language
                 .label("Offline: Off", "オフライン: オフ", "Senkonekte: Malŝaltita")
         })])
@@ -107,7 +107,7 @@ pub fn local_event_queue_view(state: &AppState) -> Node {
         list_items.push(
             Div::new()
                 .style(Style::new().set("color", "var(--text-secondary)"))
-                .children([text(state.language.label(
+                .children([text(context.language.label(
                     "No local events",
                     "ローカルイベントはありません",
                     "Neniuj lokaj eventoj",
@@ -128,12 +128,14 @@ pub fn local_event_queue_view(state: &AppState) -> Node {
                         .set("font-weight", "600")
                         .set("display", "inline-flex"),
                 )
-                .children([text(status_label(state, &status))])
+                .children([text(status_label(context.language, &status))])
                 .into_node();
 
             let summary = match definy_event::verify_and_deserialize(&record.event_binary) {
-                Ok((_, event)) => crate::event_presenter::event_summary_text(state, &event),
-                Err(_) => state
+                Ok((_, event)) => {
+                    crate::event_presenter::event_summary_text(context.language, &event)
+                }
+                Err(_) => context
                     .language
                     .label("Invalid event", "無効なイベント", "Nevalida evento")
                     .to_string(),
@@ -159,7 +161,7 @@ pub fn local_event_queue_view(state: &AppState) -> Node {
                                         Err(error) => {
                                             next.local_event_queue.last_error = Some(format!(
                                                 "{}: {error:?}",
-                                                state.language.label(
+                                                language.label(
                                                     "Failed to cancel queued event",
                                                     "キュー済みイベントのキャンセルに失敗しました",
                                                     "Malsukcesis nuligi envicigitan eventon",
@@ -179,7 +181,11 @@ pub fn local_event_queue_view(state: &AppState) -> Node {
                                 .set("padding", "0.3rem 0.6rem")
                                 .set("border-radius", "0.45rem"),
                         )
-                        .children([text(state.language.label("Cancel", "キャンセル", "Nuligi"))])
+                        .children([text(context.language.label(
+                            "Cancel",
+                            "キャンセル",
+                            "Nuligi",
+                        ))])
                         .into_node(),
                 );
             }
@@ -241,7 +247,10 @@ pub fn local_event_queue_view(state: &AppState) -> Node {
                                     .set("color", "var(--text-secondary)")
                                     .set("font-size", "0.78rem"),
                             )
-                            .children([text(format_time_ms(state, record.updated_at_ms))])
+                            .children([text(format_time_ms(
+                                context.language,
+                                record.updated_at_ms,
+                            ))])
                             .into_node(),
                         error_note,
                         if actions.is_empty() {
@@ -275,7 +284,7 @@ pub fn local_event_queue_view(state: &AppState) -> Node {
                         .style(Style::new().set("display", "grid").set("gap", "0.2rem"))
                         .children([
                             H2::new()
-                                .children([text(state.language.label(
+                                .children([text(context.language.label(
                                     "Local Events",
                                     "ローカルイベント",
                                     "Lokaj eventoj",
@@ -307,7 +316,7 @@ pub fn local_event_queue_view(state: &AppState) -> Node {
                             .set("color", "var(--text-secondary)")
                             .set("font-size", "0.82rem"),
                     )
-                    .children([text(state.language.label(
+                    .children([text(context.language.label(
                         "Loading...",
                         "読み込み中...",
                         "Ŝargado...",

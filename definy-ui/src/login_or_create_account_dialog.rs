@@ -1,13 +1,13 @@
 use narumincho_vdom::*;
 
 use crate::{
-    LoginOrCreateAccountDialogState,
+    LoginOrCreateAccountDialogState, PageContext,
     app_state::{AppState, CreatingAccountState},
     fetch,
 };
 
 /// ログインまたはアカウント作成ダイアログ
-pub fn login_or_create_account_dialog(state: &AppState) -> Node {
+pub fn login_or_create_account_dialog(state: &AppState, context: &PageContext) -> Node {
     Dialog::new()
         .class("auth-dialog")
         .id("login-or-create-account-dialog")
@@ -26,14 +26,14 @@ pub fn login_or_create_account_dialog(state: &AppState) -> Node {
                         .children([text(
                             match state.login_or_create_account_dialog_state.state {
                                 CreatingAccountState::LogIn => {
-                                    state.language.label("Log In", "ログイン", "Ensaluti")
+                                    context.language.label("Log In", "ログイン", "Ensaluti")
                                 }
                                 CreatingAccountState::CreateAccount => {
-                                    state
+                                    context
                                         .language
                                         .label("Sign Up", "サインアップ", "Registriĝi")
                                 }
-                                _ => state.language.label("Account", "アカウント", "Konto"),
+                                _ => context.language.label("Account", "アカウント", "Konto"),
                             },
                         )])
                         .into_node(),
@@ -106,7 +106,11 @@ pub fn login_or_create_account_dialog(state: &AppState) -> Node {
                                 ),
                         )
                         .on_click(create_login_event_handler())
-                        .children([text(state.language.label("Log In", "ログイン", "Ensaluti"))])
+                        .children([text(context.language.label(
+                            "Log In",
+                            "ログイン",
+                            "Ensaluti",
+                        ))])
                         .into_node(),
                     Button::new()
                         .type_("button")
@@ -159,7 +163,7 @@ pub fn login_or_create_account_dialog(state: &AppState) -> Node {
                                 }
                             }));
                         }))
-                        .children([text(state.language.label(
+                        .children([text(context.language.label(
                             "Sign Up",
                             "サインアップ",
                             "Registriĝi",
@@ -168,9 +172,9 @@ pub fn login_or_create_account_dialog(state: &AppState) -> Node {
                 ])
                 .into_node(),
             match state.login_or_create_account_dialog_state.state {
-                CreatingAccountState::LogIn => login_view(state),
+                CreatingAccountState::LogIn => login_view(state, context),
                 CreatingAccountState::CreateAccount => {
-                    create_account_view(state, state.force_offline)
+                    create_account_view(state, context, state.force_offline)
                 }
                 _ => Div::new().children([]).into_node(),
             },
@@ -178,7 +182,7 @@ pub fn login_or_create_account_dialog(state: &AppState) -> Node {
         .into_node()
 }
 
-fn login_view(state: &AppState) -> Node {
+fn login_view(_state: &AppState, context: &PageContext) -> Node {
     Form::new()
         .on_submit(EventHandler::new(async |set_state| {
             let password = crate::dom::get_input_value("input[name='password']");
@@ -200,7 +204,7 @@ fn login_view(state: &AppState) -> Node {
                 .class("form-group")
                 .children([
                     Label::new()
-                        .children([text(state.language.label(
+                        .children([text(context.language.label(
                             "Secret Key",
                             "秘密鍵",
                             "Sekreta ŝlosilo",
@@ -217,7 +221,11 @@ fn login_view(state: &AppState) -> Node {
             Button::new()
                 .type_("submit")
                 .style(Style::new().set("width", "100%"))
-                .children([text(state.language.label("Log In", "ログイン", "Ensaluti"))])
+                .children([text(context.language.label(
+                    "Log In",
+                    "ログイン",
+                    "Ensaluti",
+                ))])
                 .into_node(),
         ])
         .into_node()
@@ -228,9 +236,9 @@ fn generate_key() -> ed25519_dalek::SigningKey {
     ed25519_dalek::SigningKey::generate(&mut csprng)
 }
 
-fn create_account_view(state: &AppState, force_offline: bool) -> Node {
+fn create_account_view(state: &AppState, context: &PageContext, force_offline: bool) -> Node {
     let dialog_state = &state.login_or_create_account_dialog_state;
-    let language = state.language.clone();
+    let language = context.language;
     let mut password_input = Input::new()
         .type_("password")
         .name("password")
@@ -256,7 +264,6 @@ fn create_account_view(state: &AppState, force_offline: bool) -> Node {
             let set_state = std::rc::Rc::new(set_state);
             let set_state_for_async = set_state.clone();
             let generated_key = generated_key_for_submit.clone();
-            let language = language.clone();
             async move {
                 let username = crate::dom::get_input_value("input[name='username']");
 
@@ -354,7 +361,7 @@ fn create_account_view(state: &AppState, force_offline: bool) -> Node {
                 .class("form-group")
                 .children([
                     Label::new()
-                        .children([text(state.language.label(
+                        .children([text(context.language.label(
                             "Username",
                             "ユーザー名",
                             "Uzantnomo",
@@ -373,7 +380,7 @@ fn create_account_view(state: &AppState, force_offline: bool) -> Node {
                 .class("form-group")
                 .children([
                     Label::new()
-                        .children([text(state.language.label(
+                        .children([text(context.language.label(
                             "User ID (Public Key)",
                             "ユーザーID (公開鍵)",
                             "Uzanto-ID (publika ŝlosilo)",
@@ -404,7 +411,7 @@ fn create_account_view(state: &AppState, force_offline: bool) -> Node {
                 .class("form-group")
                 .children([
                     Label::new()
-                        .children([text(state.language.label(
+                        .children([text(context.language.label(
                             "Secret Key",
                             "秘密鍵",
                             "Sekreta ŝlosilo",
@@ -413,7 +420,7 @@ fn create_account_view(state: &AppState, force_offline: bool) -> Node {
                     Div::new()
                         .class("hint")
                         .style(Style::new().set("margin-bottom", "0.5rem"))
-                        .children([text(state.language.label(
+                        .children([text(context.language.label(
                             "If you lose your secret key, you will not be able to log in again.",
                             "秘密鍵を失うと再ログインできません。",
                             "Se vi perdas la sekretan ŝlosilon, vi ne povos denove ensaluti.",
@@ -443,7 +450,7 @@ fn create_account_view(state: &AppState, force_offline: bool) -> Node {
                                     }
                                 }))
                                 .type_("button")
-                                .children([text(state.language.label("Copy", "コピー", "Kopii"))])
+                                .children([text(context.language.label("Copy", "コピー", "Kopii"))])
                                 .into_node(),
                             Button::new()
                                 .on_click(EventHandler::new(async |set_state| {
@@ -462,7 +469,7 @@ fn create_account_view(state: &AppState, force_offline: bool) -> Node {
                                 }))
                                 .type_("button")
                                 .disabled(requesting)
-                                .children([text(state.language.label(
+                                .children([text(context.language.label(
                                     "Regen",
                                     "再生成",
                                     "Regeneri",
@@ -480,30 +487,32 @@ fn create_account_view(state: &AppState, force_offline: bool) -> Node {
                         .command(CommandValue::Close)
                         .type_("button")
                         .on_click(EventHandler::new::<AppState, _, _>(async |_set_state| {}))
-                        .children([text(state.language.label("Cancel", "キャンセル", "Nuligi"))])
+                        .children([text(context.language.label(
+                            "Cancel",
+                            "キャンセル",
+                            "Nuligi",
+                        ))])
                         .into_node(),
                     Button::new()
                         .type_("submit")
                         .disabled(requesting)
                         .children([text(match dialog_state.state {
                             CreatingAccountState::LogIn => {
-                                state.language.label("Log In", "ログイン", "Ensaluti")
+                                context.language.label("Log In", "ログイン", "Ensaluti")
                             }
                             CreatingAccountState::CreateAccount => {
-                                state
+                                context
                                     .language
                                     .label("Sign Up", "サインアップ", "Registriĝi")
                             }
-                            CreatingAccountState::CreateAccountRequesting => state.language.label(
-                                "Signing Up...",
-                                "サインアップ中...",
-                                "Registriĝante...",
-                            ),
+                            CreatingAccountState::CreateAccountRequesting => context
+                                .language
+                                .label("Signing Up...", "サインアップ中...", "Registriĝante..."),
                             CreatingAccountState::Success => {
-                                state.language.label("Success", "成功", "Sukceso")
+                                context.language.label("Success", "成功", "Sukceso")
                             }
                             CreatingAccountState::Error => {
-                                state.language.label("Error", "エラー", "Eraro")
+                                context.language.label("Error", "エラー", "Eraro")
                             }
                         })])
                         .into_node(),

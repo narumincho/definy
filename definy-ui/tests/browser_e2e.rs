@@ -10,7 +10,6 @@ use hyper::{Request, Response};
 use hyper_util::client::legacy::Client;
 use hyper_util::client::legacy::connect::HttpConnector;
 use hyper_util::rt::{TokioExecutor, TokioIo};
-use narumincho_vdom::Route;
 use serde::Deserialize;
 use tokio::net::TcpListener;
 use tokio::sync::oneshot;
@@ -477,76 +476,101 @@ impl TestServer {
 }
 
 fn render_html_response(path: &str) -> Response<Full<Bytes>> {
-    let location = definy_ui::Location::from_url(path);
-    let html = narumincho_vdom::to_html(&definy_ui::render(
-        &definy_ui::AppState {
-            focused_path: None,
-            dropdown_search_query: String::new(),
-            login_or_create_account_dialog_state: definy_ui::LoginOrCreateAccountDialogState {
-                generated_key: None,
-                state: definy_ui::CreatingAccountState::LogIn,
-                username: String::new(),
-                current_password: String::new(),
-                create_account_result_message: None,
-            },
-            event_cache: std::collections::HashMap::new(),
-            event_list_state: definy_ui::EventListState {
-                event_hashes: vec![],
-                current_offset: 0,
-                page_size: 20,
-                is_loading: false,
-                has_more: true,
-                filter_event_type: None,
-            },
-            current_key: None,
-            part_definition_form: definy_ui::PartDefinitionFormState {
-                part_name_input: String::new(),
-                part_type_input: Some(definy_event::event::PartType::Number),
-                part_description_input: String::new(),
-                composing_expression: definy_event::event::Expression::Number(
-                    definy_event::event::NumberExpression { value: 0 },
-                ),
-                module_definition_event_hash: None,
-                eval_result: None,
-            },
-            part_update_form: definy_ui::PartUpdateFormState {
-                part_definition_event_hash: None,
-                part_name_input: String::new(),
-                part_description_input: String::new(),
-                expression_input: definy_event::event::Expression::Number(
-                    definy_event::event::NumberExpression { value: 0 },
-                ),
-                module_definition_event_hash: None,
-            },
-            module_definition_form: definy_ui::ModuleDefinitionFormState {
-                module_name_input: String::new(),
-                module_description_input: String::new(),
-                result_message: None,
-            },
-            module_update_form: definy_ui::ModuleUpdateFormState {
-                module_definition_event_hash: None,
-                module_name_input: String::new(),
-                module_description_input: String::new(),
-                result_message: None,
-            },
-            event_detail_eval_result: None,
-            profile_name_input: String::new(),
-            force_offline: false,
-            local_event_queue: definy_ui::LocalEventQueueState {
-                items: Vec::new(),
-                is_loading: false,
-                last_error: None,
-            },
-            location,
-            language: definy_ui::language::default_language(),
-            language_fallback_notice: None,
+    let context = definy_ui::PageContext::from_path_and_query(path, "", None);
+    let state = definy_ui::AppState {
+        focused_path: None,
+        dropdown_search_query: String::new(),
+        login_or_create_account_dialog_state: definy_ui::LoginOrCreateAccountDialogState {
+            generated_key: None,
+            state: definy_ui::CreatingAccountState::LogIn,
+            username: String::new(),
+            current_password: String::new(),
+            create_account_result_message: None,
         },
-        &Some(definy_ui::ResourceHash {
-            js: TEST_JAVASCRIPT_HASH.to_string(),
-            wasm: TEST_WASM_HASH.to_string(),
-        }),
-        None,
-    ));
+        event_cache: std::collections::HashMap::new(),
+        event_list_state: definy_ui::EventListState {
+            event_hashes: vec![],
+            current_offset: 0,
+            page_size: 20,
+            is_loading: false,
+            has_more: true,
+            filter_event_type: None,
+        },
+        current_key: None,
+        part_definition_form: definy_ui::PartDefinitionFormState {
+            part_name_input: String::new(),
+            part_type_input: Some(definy_event::event::PartType::Number),
+            part_description_input: String::new(),
+            composing_expression: definy_event::event::Expression::Number(
+                definy_event::event::NumberExpression { value: 0 },
+            ),
+            module_definition_event_hash: None,
+            eval_result: None,
+        },
+        part_update_form: definy_ui::PartUpdateFormState {
+            part_definition_event_hash: None,
+            part_name_input: String::new(),
+            part_description_input: String::new(),
+            expression_input: definy_event::event::Expression::Number(
+                definy_event::event::NumberExpression { value: 0 },
+            ),
+            module_definition_event_hash: None,
+        },
+        module_definition_form: definy_ui::ModuleDefinitionFormState {
+            module_name_input: String::new(),
+            module_description_input: String::new(),
+            result_message: None,
+        },
+        module_update_form: definy_ui::ModuleUpdateFormState {
+            module_definition_event_hash: None,
+            module_name_input: String::new(),
+            module_description_input: String::new(),
+            result_message: None,
+        },
+        event_detail_eval_result: None,
+        profile_name_input: String::new(),
+        force_offline: false,
+        local_event_queue: definy_ui::LocalEventQueueState {
+            items: Vec::new(),
+            is_loading: false,
+            last_error: None,
+        },
+    };
+    let head_children = vec![
+        narumincho_vdom::Title::new()
+            .children([narumincho_vdom::text(definy_ui::document_title_text(
+                &state, &context,
+            ))])
+            .into_node(),
+        narumincho_vdom::Meta::new()
+            .name("viewport")
+            .content("width=device-width,initial-scale=1.0")
+            .into_node(),
+        narumincho_vdom::Link::new()
+            .rel("icon")
+            .href(TEST_ICON_HASH)
+            .into_node(),
+        narumincho_vdom::StyleElement::new()
+            .children([narumincho_vdom::text(include_str!("../main.css"))])
+            .into_node(),
+        narumincho_vdom::Script::new()
+            .type_("module")
+            .children([narumincho_vdom::text(format!(
+                "import init from '/{}';\n    init({{ module_or_path: \"/{}\" }});",
+                TEST_JAVASCRIPT_HASH, TEST_WASM_HASH
+            ))])
+            .into_node(),
+    ];
+    let html_node = narumincho_vdom::Html::new()
+        .lang(context.language.to_code())
+        .children([
+            narumincho_vdom::Head::new()
+                .children(head_children)
+                .into_node(),
+            definy_ui::render(&state, &context),
+        ])
+        .into_node();
+    let html = narumincho_vdom::to_html(&html_node);
 
     Response::builder()
         .status(200)

@@ -1,16 +1,17 @@
 use narumincho_vdom::*;
 
+use crate::page_context::PageContext;
 use crate::{AppState, Location};
 
-pub fn header(state: &AppState) -> Node {
-    let mut children = vec![header_main(state)];
+pub fn header(state: &AppState, context: &PageContext) -> Node {
+    let mut children = vec![header_main(state, context)];
     if state.current_key.is_some() {
-        children.push(popover(state));
+        children.push(popover(state, context));
     }
     Div::new().children(children).into_node()
 }
 
-fn header_main(state: &AppState) -> Node {
+fn header_main(state: &AppState, context: &PageContext) -> Node {
     Header::new()
         .class("app-header")
         .style(
@@ -39,7 +40,7 @@ fn header_main(state: &AppState) -> Node {
                 )
                 .children([
                     A::<Location>::new()
-                        .href(state.href_with_lang(Location::Home))
+                        .href(context.href_with_lang(Location::Home))
                         .style(
                             Style::new()
                                 .set("text-decoration", "none")
@@ -57,48 +58,48 @@ fn header_main(state: &AppState) -> Node {
                             .into_node()])
                         .into_node(),
                     A::<Location>::new()
-                        .href(state.href_with_lang(Location::PartList))
+                        .href(context.href_with_lang(Location::PartList))
                         .style(
                             Style::new()
                                 .set("font-size", "0.9rem")
                                 .set("color", "var(--text-secondary)"),
                         )
-                        .children([text(state.language.label("Parts", "パーツ", "Partoj"))])
+                        .children([text(context.language.label("Parts", "パーツ", "Partoj"))])
                         .into_node(),
                     A::<Location>::new()
-                        .href(state.href_with_lang(Location::ModuleList))
+                        .href(context.href_with_lang(Location::ModuleList))
                         .style(
                             Style::new()
                                 .set("font-size", "0.9rem")
                                 .set("color", "var(--text-secondary)"),
                         )
-                        .children([text(state.language.label(
+                        .children([text(context.language.label(
                             "Modules",
                             "モジュール",
                             "Moduloj",
                         ))])
                         .into_node(),
                     A::<Location>::new()
-                        .href(state.href_with_lang(Location::LocalEventQueue))
+                        .href(context.href_with_lang(Location::LocalEventQueue))
                         .style(
                             Style::new()
                                 .set("font-size", "0.9rem")
                                 .set("color", "var(--text-secondary)"),
                         )
-                        .children([text(state.language.label(
+                        .children([text(context.language.label(
                             "Local Events",
                             "ローカルイベント",
                             "Lokaj eventoj",
                         ))])
                         .into_node(),
                     A::<Location>::new()
-                        .href(state.href_with_lang(Location::AccountList))
+                        .href(context.href_with_lang(Location::AccountList))
                         .style(
                             Style::new()
                                 .set("font-size", "0.9rem")
                                 .set("color", "var(--text-secondary)"),
                         )
-                        .children([text(state.language.label(
+                        .children([text(context.language.label(
                             "Accounts",
                             "アカウント",
                             "Kontoj",
@@ -123,7 +124,7 @@ fn header_main(state: &AppState) -> Node {
                             .set("text-overflow", "ellipsis")
                             .set("white-space", "nowrap"),
                     )
-                    .children([text(crate::page_title::page_title_text(state))])
+                    .children([text(crate::page_title::page_title_text(state, context))])
                     .into_node()])
                 .into_node(),
             {
@@ -164,7 +165,7 @@ fn header_main(state: &AppState) -> Node {
                     None => Button::new()
                         .command_for("login-or-create-account-dialog")
                         .command(CommandValue::ShowModal)
-                        .children([text(state.language.label(
+                        .children([text(context.language.label(
                             "Log In / Sign Up",
                             "ログイン / サインアップ",
                             "Ensaluti / Registriĝi",
@@ -179,21 +180,21 @@ fn header_main(state: &AppState) -> Node {
                             .set("align-items", "center")
                             .set("gap", "0.6rem"),
                     )
-                    .children([language_dropdown(state), account_button])
+                    .children([language_dropdown(state, context), account_button])
                     .into_node()
             },
         ])
         .into_node()
 }
 
-fn language_dropdown(state: &AppState) -> Node {
-    let location = state.location.clone().unwrap_or(Location::Home);
-    let event_type = state.event_list_state.filter_event_type;
+fn language_dropdown(state: &AppState, context: &PageContext) -> Node {
+    let location = context.location.clone().unwrap_or(Location::Home);
+    let event_type = context.filter_event_type;
     let dropdown = crate::dropdown::searchable_dropdown(
         state,
         "language",
-        state.language.to_code(),
-        crate::language::preferred_languages()
+        context.language.to_code(),
+        crate::language::SUPPORTED_LANGUAGES
             .iter()
             .map(|language| {
                 (
@@ -204,9 +205,8 @@ fn language_dropdown(state: &AppState) -> Node {
             .collect::<Vec<_>>()
             .as_slice(),
         std::rc::Rc::new(move |value, label, is_selected| {
-            let language_code = value.to_string();
             let url = crate::language::Language::from_code(value)
-                .map(|language| AppState::build_url(&location, language.to_code(), event_type))
+                .map(|language| PageContext::build_url(&location, language.to_code(), event_type))
                 .unwrap_or_default();
             Anchor::<Location>::new()
                 .href(Href::External(url))
@@ -215,31 +215,11 @@ fn language_dropdown(state: &AppState) -> Node {
                         .set("display", "block")
                         .set("text-decoration", "none"),
                 )
-                .on_click(EventHandler::with_parameter(
-                    move |set_state, language_code: &String| {
-                        let language_code = language_code.clone();
-                        async move {
-                            set_state(Box::new(move |state: AppState| {
-                                let Some(language) =
-                                    crate::language::Language::from_code(&language_code)
-                                else {
-                                    return state;
-                                };
-                                AppState {
-                                    language,
-                                    language_fallback_notice: None,
-                                    ..state
-                                }
-                            }));
-                        }
-                    },
-                    language_code,
-                ))
                 .children([text(label)])
                 .into_node()
         }),
     );
-    match &state.language_fallback_notice {
+    match &context.language_requested_code {
         Some(notice) => Div::new()
             .style(
                 Style::new()
@@ -258,7 +238,8 @@ fn language_dropdown(state: &AppState) -> Node {
                     )
                     .children([text(format!(
                         "言語「{}」はサポートされていないため「{}」にフォールバックしました",
-                        notice.requested, notice.fallback_to_code
+                        notice,
+                        context.language.native_name()
                     ))])
                     .into_node(),
             ])
@@ -267,13 +248,13 @@ fn language_dropdown(state: &AppState) -> Node {
     }
 }
 
-fn popover(state: &AppState) -> Node {
+fn popover(state: &AppState, context: &PageContext) -> Node {
     let account_link = state.current_key.as_ref().map(|key| {
         let account_id = definy_event::event::AccountId(key.verifying_key());
         let account_name =
             crate::app_state::account_display_name(&state.account_name_map(), &account_id);
         A::<Location>::new()
-            .href(state.href_with_lang(Location::Account(account_id)))
+            .href(context.href_with_lang(Location::Account(account_id)))
             .style(
                 Style::new()
                     .set("padding", "0.4rem 0.5rem")
@@ -323,11 +304,11 @@ fn popover(state: &AppState) -> Node {
                         }));
                     }))
                     .children([text(if state.force_offline {
-                        state
+                        context
                             .language
                             .label("Offline: On", "オフライン: オン", "Senkonekte: En")
                     } else {
-                        state.language.label(
+                        context.language.label(
                             "Offline: Off",
                             "オフライン: オフ",
                             "Senkonekte: Malŝaltita",
@@ -352,7 +333,7 @@ fn popover(state: &AppState) -> Node {
                     .type_("button")
                     .command("hide-popover")
                     .command_for("header-popover")
-                    .children([text(state.language.label(
+                    .children([text(context.language.label(
                         "Log Out",
                         "ログアウト",
                         "Elsaluti",
@@ -374,4 +355,70 @@ fn popover(state: &AppState) -> Node {
             children
         })
         .into_node()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::app_state::build_initial_state;
+    use crate::language::Language;
+
+    #[test]
+    fn test_language_dropdown_highlights_selected_language() {
+        let state = build_initial_state(vec![], false, false, None, None);
+
+        // 1. 日本語 (ja) の PageContext
+        let context_ja = PageContext::from_path_and_query("/", "?lang=ja", None);
+        let html_ja = narumincho_vdom::to_html(&header(&state, &context_ja));
+        assert_eq!(context_ja.language, Language::Japanese);
+
+        // 日本語リンクにハイライト (var(--primary) と background:rgb(255 255 255 / 0.1))
+        let ja_link = html_ja
+            .split("<a ")
+            .find(|s| s.contains("日本語</a>"))
+            .unwrap();
+        assert!(ja_link.contains("color:var(--primary)"));
+        assert!(ja_link.contains("background:rgb(255 255 255 / 0.1)"));
+        // 英語リンクは非選択 (var(--text) と background:transparent)
+        let en_link_in_ja = html_ja
+            .split("<a ")
+            .find(|s| s.contains("English</a>"))
+            .unwrap();
+        assert!(en_link_in_ja.contains("color:var(--text)"));
+        assert!(en_link_in_ja.contains("background:transparent"));
+
+        // 2. エスペラント (eo) の PageContext
+        let context_eo = PageContext::from_path_and_query("/", "?lang=eo", None);
+        let html_eo = narumincho_vdom::to_html(&header(&state, &context_eo));
+        assert_eq!(context_eo.language, Language::Esperanto);
+        let eo_link = html_eo
+            .split("<a ")
+            .find(|s| s.contains("Esperanto</a>"))
+            .unwrap();
+        assert!(eo_link.contains("color:var(--primary)"));
+        assert!(eo_link.contains("background:rgb(255 255 255 / 0.1)"));
+        let ja_link_in_eo = html_eo
+            .split("<a ")
+            .find(|s| s.contains("日本語</a>"))
+            .unwrap();
+        assert!(ja_link_in_eo.contains("color:var(--text)"));
+        assert!(ja_link_in_eo.contains("background:transparent"));
+
+        // 3. 英語 (en) の PageContext
+        let context_en = PageContext::from_path_and_query("/", "?lang=en", None);
+        let html_en = narumincho_vdom::to_html(&header(&state, &context_en));
+        assert_eq!(context_en.language, Language::English);
+        let en_link = html_en
+            .split("<a ")
+            .find(|s| s.contains("English</a>"))
+            .unwrap();
+        assert!(en_link.contains("color:var(--primary)"));
+        assert!(en_link.contains("background:rgb(255 255 255 / 0.1)"));
+        let ja_link_in_en = html_en
+            .split("<a ")
+            .find(|s| s.contains("日本語</a>"))
+            .unwrap();
+        assert!(ja_link_in_en.contains("color:var(--text)"));
+        assert!(ja_link_in_en.contains("background:transparent"));
+    }
 }

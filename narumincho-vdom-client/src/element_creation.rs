@@ -1,5 +1,3 @@
-// このファイルは narumincho-vdom-build によって自動生成されました。
-
 use narumincho_vdom::Namespace;
 
 pub fn create_element(name: &str, namespace: Namespace) -> web_sys::Element {

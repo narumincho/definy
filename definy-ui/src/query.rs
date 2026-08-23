@@ -10,6 +10,7 @@ pub struct QueryParams {
 
 pub fn parse_query(query: Option<&str>) -> QueryParams {
     let query = query.unwrap_or("");
+    let query = query.strip_prefix('?').unwrap_or(query);
     if query.is_empty() {
         return QueryParams::default();
     }

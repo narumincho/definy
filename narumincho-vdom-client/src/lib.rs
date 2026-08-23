@@ -16,19 +16,20 @@ pub static DOCUMENT: std::sync::LazyLock<web_sys::Document> = std::sync::LazyLoc
     window.document().expect("should have a document on window")
 });
 
+fn get_current_url() -> web_sys::Url {
+    let window = web_sys::window().expect("no global `window` exists");
+    let href = window.location().href().expect("location href exists");
+    web_sys::Url::new(&href).expect("valid url")
+}
+
 pub trait App<State: Clone + 'static> {
     fn initial_state(fire: &Rc<dyn Fn(Box<dyn FnOnce(State) -> State>)>) -> State;
-    fn render(state: &State) -> Node;
-    fn on_navigate(state: State, url: String) -> State {
-        let _ = url;
-        state
-    }
+    fn title(state: &State, url: &web_sys::Url) -> String;
+    fn render(state: &State, url: &web_sys::Url) -> Node;
 }
 
 pub fn start<State: Clone + 'static, A: App<State>>() {
-    let html_element = DOCUMENT
-        .document_element()
-        .expect("should have a document element");
+    let body_element = DOCUMENT.body().expect("should have a body element");
 
     let state_holder = Rc::new(std::cell::RefCell::new(None::<State>));
 
@@ -55,8 +56,14 @@ pub fn start<State: Clone + 'static, A: App<State>>() {
     let initial_s = A::initial_state(&fire_state_update);
     *state_holder.borrow_mut() = Some(initial_s);
 
-    let vdom = A::render(state_holder.borrow().as_ref().unwrap());
+    let initial_url = get_current_url();
+    let vdom = A::render(state_holder.borrow().as_ref().unwrap(), &initial_url);
     let first_patches = diff::add_event_listener_patches(&vdom);
+
+    let initial_title = A::title(state_holder.borrow().as_ref().unwrap(), &initial_url);
+    if !initial_title.is_empty() {
+        DOCUMENT.set_title(&initial_title);
+    }
 
     let dispatch = Rc::new(std::cell::RefCell::new(
         None::<Box<dyn Fn(Box<dyn FnOnce(State) -> State>)>>,
@@ -94,20 +101,26 @@ pub fn start<State: Clone + 'static, A: App<State>>() {
     let update_view = {
         let state_holder_clone = Rc::clone(&state_holder);
         let vdom_clone = Rc::clone(&vdom_clone);
-        let html_element_clone = html_element.clone();
+        let body_element_clone = body_element.clone();
         let any_dispatch = Rc::clone(&any_dispatch);
 
         Rc::new(move || {
             let state_borrow = state_holder_clone.borrow();
             let state = state_borrow.as_ref().unwrap();
 
-            let new_vdom = A::render(state);
+            let current_url = get_current_url();
+            let title = A::title(state, &current_url);
+            if !title.is_empty() {
+                DOCUMENT.set_title(&title);
+            }
+
+            let new_vdom = A::render(state, &current_url);
             let old_vdom = vdom_clone.borrow();
             let patches = diff::diff(&old_vdom, &new_vdom);
             drop(old_vdom);
             *vdom_clone.borrow_mut() = new_vdom;
 
-            apply(&html_element_clone.clone().into(), &patches, &any_dispatch);
+            apply(&body_element_clone.clone().into(), &patches, &any_dispatch);
         })
     };
 
@@ -136,29 +149,25 @@ pub fn start<State: Clone + 'static, A: App<State>>() {
         if let Ok(navigation) = Reflect::get(&window, &JsValue::from_str("navigation"))
             && !navigation.is_undefined()
         {
-            let dispatch_for_nav = Rc::clone(&dispatch_impl);
+            let update_view_for_nav = {
+                let update_view_holder = Rc::clone(&update_view_holder);
+                move || {
+                    if let Some(updater) = update_view_holder.borrow().as_ref() {
+                        updater();
+                    }
+                }
+            };
             let on_navigate = Closure::wrap(Box::new(move |event: web_sys::Event| {
                 if let Ok(can_intercept) = Reflect::get(&event, &JsValue::from_str("canIntercept"))
                     && can_intercept.is_truthy()
-                    && let Ok(_user_initiated) =
-                        Reflect::get(&event, &JsValue::from_str("userInitiated"))
-                    && let Ok(destination) = Reflect::get(&event, &JsValue::from_str("destination"))
-                    && let Ok(url_val) = Reflect::get(&destination, &JsValue::from_str("url"))
-                    && let Some(url_str) = url_val.as_string()
                 {
                     let intercept_func = Reflect::get(&event, &JsValue::from_str("intercept"))
                         .unwrap_or(JsValue::UNDEFINED);
 
-                    let dispatch = Rc::clone(&dispatch_for_nav);
-
                     if intercept_func.is_function() {
-                        let url_for_intercept = url_str.clone();
+                        let update_view_inner = update_view_for_nav.clone();
                         let intercept_handler = Closure::wrap(Box::new(move || {
-                            let dispatch_inner = Rc::clone(&dispatch);
-                            let url_for_closure = url_for_intercept.clone();
-                            dispatch_inner(Box::new(move |state: State| {
-                                A::on_navigate(state, url_for_closure)
-                            }));
+                            update_view_inner();
                         })
                             as Box<dyn FnMut()>);
 
@@ -175,7 +184,7 @@ pub fn start<State: Clone + 'static, A: App<State>>() {
 
                         intercept_handler.forget();
                     } else {
-                        dispatch(Box::new(move |state: State| A::on_navigate(state, url_str)));
+                        update_view_for_nav();
                     }
                 }
             }) as Box<dyn FnMut(web_sys::Event)>);
@@ -198,15 +207,16 @@ pub fn start<State: Clone + 'static, A: App<State>>() {
         }
 
         // --- 2. Fallback: PopState listener ---
-        let dispatch_for_popstate = Rc::clone(&dispatch_impl);
-        let on_popstate = Closure::wrap(Box::new(move |_event: web_sys::PopStateEvent| {
-            if let Some(w) = web_sys::window()
-                && let location = w.location()
-                && let Ok(href) = location.href()
-            {
-                let dispatch_inner = Rc::clone(&dispatch_for_popstate);
-                dispatch_inner(Box::new(move |state: State| A::on_navigate(state, href)));
+        let update_view_for_popstate = {
+            let update_view_holder = Rc::clone(&update_view_holder);
+            move || {
+                if let Some(updater) = update_view_holder.borrow().as_ref() {
+                    updater();
+                }
             }
+        };
+        let on_popstate = Closure::wrap(Box::new(move |_event: web_sys::PopStateEvent| {
+            update_view_for_popstate();
         }) as Box<dyn FnMut(web_sys::PopStateEvent)>);
 
         window
@@ -216,7 +226,7 @@ pub fn start<State: Clone + 'static, A: App<State>>() {
         on_popstate.forget();
     }
 
-    apply(&html_element.into(), &first_patches, &any_dispatch);
+    apply(&body_element.into(), &first_patches, &any_dispatch);
 }
 
 pub fn apply(
@@ -285,14 +295,6 @@ fn log_missing_path(root: &web_sys::Node, path: &[usize]) {
     }
 }
 
-fn should_create_element_in_svg_namespace(is_svg: bool, element_name: &str) -> bool {
-    is_svg || element_name == "svg"
-}
-
-fn should_create_children_in_svg_context(is_svg: bool, element_name: &str) -> bool {
-    is_svg && element_name != "foreignObject"
-}
-
 fn normalize_html_attribute_name(element: &web_sys::Element, name: &str) -> String {
     let namespace = element.namespace_uri().unwrap_or_default();
     if namespace == "http://www.w3.org/2000/svg"
@@ -310,24 +312,12 @@ fn apply_patch(
     node: web_sys::Node,
     patch: &diff::Patch,
     dispatch: &AnyStateDispatcher,
-    _callback_key_symbol: &js_sys::Symbol,
+    callback_key_symbol: &js_sys::Symbol,
 ) {
     match patch {
         diff::Patch::Replace(new_node) => {
             if let Some(parent) = node.parent_node() {
-                let is_svg = parent
-                    .dyn_ref::<web_sys::Element>()
-                    .and_then(|el| el.namespace_uri())
-                    .map(|ns| ns == "http://www.w3.org/2000/svg")
-                    .unwrap_or(false);
-                let element_name = parent
-                    .dyn_ref::<web_sys::Element>()
-                    .map(|el| el.tag_name().to_ascii_lowercase())
-                    .unwrap_or_default();
-                let is_svg = should_create_children_in_svg_context(is_svg, &element_name);
-
-                let new_sys_node =
-                    create_web_sys_node(new_node, dispatch, _callback_key_symbol, is_svg);
+                let new_sys_node = create_web_sys_node(new_node, dispatch, callback_key_symbol);
                 parent.replace_child(&new_sys_node, &node).unwrap();
             }
         }
@@ -410,18 +400,8 @@ fn apply_patch(
             }
         }
         diff::Patch::AppendChildren(children) => {
-            let is_svg = node
-                .dyn_ref::<web_sys::Element>()
-                .and_then(|el| el.namespace_uri())
-                .map(|ns| ns == "http://www.w3.org/2000/svg")
-                .unwrap_or(false);
-            let element_name = node
-                .dyn_ref::<web_sys::Element>()
-                .map(|el| el.tag_name().to_ascii_lowercase())
-                .unwrap_or_default();
-            let is_svg = should_create_children_in_svg_context(is_svg, &element_name);
             for child in children {
-                let child_node = create_web_sys_node(child, dispatch, _callback_key_symbol, is_svg);
+                let child_node = create_web_sys_node(child, dispatch, callback_key_symbol);
                 node.append_child(&child_node).unwrap();
             }
         }
@@ -437,32 +417,13 @@ fn apply_patch(
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_svg_child_context_logic() {
-        assert!(should_create_element_in_svg_namespace(false, "svg"));
-        assert!(should_create_element_in_svg_namespace(true, "div"));
-        assert!(should_create_children_in_svg_context(true, "g"));
-        assert!(!should_create_children_in_svg_context(
-            true,
-            "foreignObject"
-        ));
-        assert!(!should_create_children_in_svg_context(false, "div"));
-    }
-}
-
 fn create_web_sys_node(
     vdom: &Node,
     dispatch: &AnyStateDispatcher,
-    _callback_key_symbol: &js_sys::Symbol,
-    is_svg: bool,
+    callback_key_symbol: &js_sys::Symbol,
 ) -> web_sys::Node {
     match vdom {
         Node::Element(el) => {
-            let is_element_svg = matches!(el.namespace, narumincho_vdom::Namespace::Svg);
             let element = crate::element_creation::create_element(&el.element_name, el.namespace);
             for (key, value) in &el.attributes {
                 element.set_attribute(key, value).unwrap();
@@ -492,16 +453,9 @@ fn create_web_sys_node(
                 Reflect::set(&element, &JsValue::from_str(&key), closure.as_ref()).unwrap();
                 closure.forget();
             }
-            let is_child_svg =
-                should_create_children_in_svg_context(is_element_svg, &el.element_name);
             for child in &el.children {
                 element
-                    .append_child(&create_web_sys_node(
-                        child,
-                        dispatch,
-                        _callback_key_symbol,
-                        is_child_svg,
-                    ))
+                    .append_child(&create_web_sys_node(child, dispatch, callback_key_symbol))
                     .unwrap();
             }
             element.into()

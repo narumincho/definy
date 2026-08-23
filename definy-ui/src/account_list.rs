@@ -1,5 +1,6 @@
 use narumincho_vdom::*;
 
+use crate::page_context::PageContext;
 use crate::{AppState, Location};
 
 struct AccountRow {
@@ -8,7 +9,7 @@ struct AccountRow {
     latest_time: chrono::DateTime<chrono::Utc>,
 }
 
-pub fn account_list_view(state: &AppState) -> Node {
+pub fn account_list_view(state: &AppState, context: &PageContext) -> Node {
     let account_name_map = state.account_name_map();
     let mut rows = collect_account_rows(state);
     rows.sort_by_key(|b| std::cmp::Reverse(b.latest_time));
@@ -19,7 +20,7 @@ pub fn account_list_view(state: &AppState) -> Node {
         .children([
             H2::new()
                 .style(Style::new().set("font-size", "1.3rem"))
-                .children([text(state.language.label(
+                .children([text(context.language.label(
                     "Accounts",
                     "アカウント",
                     "Kontoj",
@@ -29,7 +30,7 @@ pub fn account_list_view(state: &AppState) -> Node {
                 Div::new()
                     .class("event-detail-card")
                     .style(Style::new().set("padding", "0.9rem"))
-                    .children([text(state.language.label(
+                    .children([text(context.language.label(
                         "No accounts yet.",
                         "まだアカウントがありません。",
                         "Ankoraŭ neniuj kontoj.",
@@ -49,7 +50,7 @@ pub fn account_list_view(state: &AppState) -> Node {
                                 );
                                 A::<Location>::new()
                                     .class("event-card")
-                                    .href(state.href_with_lang(Location::Account(row.account_id)))
+                                    .href(context.href_with_lang(Location::Account(row.account_id)))
                                     .style(
                                         Style::new()
                                             .set("display", "grid")
@@ -70,7 +71,7 @@ pub fn account_list_view(state: &AppState) -> Node {
                                             .children([text(format!(
                                                 "{} {}",
                                                 row.event_count,
-                                                state.language.label(
+                                                context.language.label(
                                                     "events",
                                                     "イベント",
                                                     "eventoj"
@@ -85,7 +86,9 @@ pub fn account_list_view(state: &AppState) -> Node {
                                             )
                                             .children([text(format!(
                                                 "{} {}",
-                                                state.language.label("latest:", "最新:", "lasta:"),
+                                                context
+                                                    .language
+                                                    .label("latest:", "最新:", "lasta:"),
                                                 row.latest_time.format("%Y-%m-%d %H:%M:%S")
                                             ))])
                                             .into_node(),
