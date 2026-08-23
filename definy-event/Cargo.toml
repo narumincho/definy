@@ -3,15 +3,23 @@ name = "definy-event"
 version = "0.1.0"
 edition = "2024"
 
+[features]
+default = []
+sqlx = ["dep:sqlx"]
+
 [dependencies]
-chrono = { version = "0.4.45", features = ["serde"] }
+chrono = { version = "0.4.45", default-features = false, features = ["alloc", "serde", "wasmbind", "now"] }
 serde = { version = "1", features = ["derive"] }
 serde_cbor = { version = "0.11.2", features = ["std", "tags"] }
 ed25519-dalek = { version = "2.2", features = ["rand_core", "serde"] }
 anyhow = "1.0.104"
-rand = "0.8.7"
 strum_macros = "0.27.2"
 strum = { version = "0.27.2", features = ["derive"] }
-sqlx = { version = "0.8.6", features = ["macros"] }
+sqlx = { version = "0.8.6", optional = true, default-features = false, features = ["macros"] }
 sha2 = "0.10.9"
 base64 = "0.22.1"
+
+[dev-dependencies]
+rand_core = { version = "0.6.4", features = ["getrandom"] }
+
+

@@ -232,7 +232,7 @@ fn login_view(_state: &AppState, context: &PageContext) -> Node {
 }
 
 fn generate_key() -> ed25519_dalek::SigningKey {
-    let mut csprng = rand::rngs::OsRng;
+    let mut csprng = rand_core::OsRng;
     ed25519_dalek::SigningKey::generate(&mut csprng)
 }
 

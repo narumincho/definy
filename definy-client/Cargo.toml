@@ -15,11 +15,10 @@ definy-event = { path = "../definy-event" }
 narumincho-vdom-client = { path = "../narumincho-vdom-client" }
 narumincho-vdom = { path = "../narumincho-vdom" }
 ed25519-dalek = { version = "2.2", features = ["rand_core"] }
-rand = { version = "0.8", features = ["std_rng"] }
 getrandom = { version = "0.2", features = ["js"] }
 base64 = "0.22"
 wasm-bindgen-futures = "0.4.76"
-chrono = "0.4.45"
+chrono = { version = "0.4.45", default-features = false, features = ["alloc", "serde", "wasmbind", "now"] }
 anyhow = "1.0.104"
 serde_cbor = { version = "0.11.2", features = ["std", "tags"] }
 sha2 = "0.10.9"
