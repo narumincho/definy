@@ -356,3 +356,69 @@ fn popover(state: &AppState, context: &PageContext) -> Node {
         })
         .into_node()
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::app_state::build_initial_state;
+    use crate::language::Language;
+
+    #[test]
+    fn test_language_dropdown_highlights_selected_language() {
+        let state = build_initial_state(vec![], false, false, None, None);
+
+        // 1. 日本語 (ja) の PageContext
+        let context_ja = PageContext::from_path_and_query("/", "?lang=ja", None);
+        let html_ja = narumincho_vdom::to_html(&header(&state, &context_ja));
+        assert_eq!(context_ja.language, Language::Japanese);
+
+        // 日本語リンクにハイライト (var(--primary) と background:rgb(255 255 255 / 0.1))
+        let ja_link = html_ja
+            .split("<a ")
+            .find(|s| s.contains("日本語</a>"))
+            .unwrap();
+        assert!(ja_link.contains("color:var(--primary)"));
+        assert!(ja_link.contains("background:rgb(255 255 255 / 0.1)"));
+        // 英語リンクは非選択 (var(--text) と background:transparent)
+        let en_link_in_ja = html_ja
+            .split("<a ")
+            .find(|s| s.contains("English</a>"))
+            .unwrap();
+        assert!(en_link_in_ja.contains("color:var(--text)"));
+        assert!(en_link_in_ja.contains("background:transparent"));
+
+        // 2. エスペラント (eo) の PageContext
+        let context_eo = PageContext::from_path_and_query("/", "?lang=eo", None);
+        let html_eo = narumincho_vdom::to_html(&header(&state, &context_eo));
+        assert_eq!(context_eo.language, Language::Esperanto);
+        let eo_link = html_eo
+            .split("<a ")
+            .find(|s| s.contains("Esperanto</a>"))
+            .unwrap();
+        assert!(eo_link.contains("color:var(--primary)"));
+        assert!(eo_link.contains("background:rgb(255 255 255 / 0.1)"));
+        let ja_link_in_eo = html_eo
+            .split("<a ")
+            .find(|s| s.contains("日本語</a>"))
+            .unwrap();
+        assert!(ja_link_in_eo.contains("color:var(--text)"));
+        assert!(ja_link_in_eo.contains("background:transparent"));
+
+        // 3. 英語 (en) の PageContext
+        let context_en = PageContext::from_path_and_query("/", "?lang=en", None);
+        let html_en = narumincho_vdom::to_html(&header(&state, &context_en));
+        assert_eq!(context_en.language, Language::English);
+        let en_link = html_en
+            .split("<a ")
+            .find(|s| s.contains("English</a>"))
+            .unwrap();
+        assert!(en_link.contains("color:var(--primary)"));
+        assert!(en_link.contains("background:rgb(255 255 255 / 0.1)"));
+        let ja_link_in_en = html_en
+            .split("<a ")
+            .find(|s| s.contains("日本語</a>"))
+            .unwrap();
+        assert!(ja_link_in_en.contains("color:var(--text)"));
+        assert!(ja_link_in_en.contains("background:transparent"));
+    }
+}
