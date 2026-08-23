@@ -363,6 +363,15 @@ fn popover(state: &AppState, context: &PageContext) -> Node {
                     .type_("button")
                     .command("hide-popover")
                     .command_for("header-popover")
+                    .on_click(EventHandler::new(async |set_state| {
+                        crate::navigator_credential::credential_clear();
+                        set_state(Box::new(|state: AppState| -> AppState {
+                            AppState {
+                                current_key: None,
+                                ..state.clone()
+                            }
+                        }));
+                    }))
                     .children([text(context.language.label(
                         "Log Out",
                         "ログアウト",
@@ -395,7 +404,7 @@ mod tests {
 
     #[test]
     fn test_language_dropdown_highlights_selected_language() {
-        let state = build_initial_state(vec![], false, false, None, None);
+        let state = build_initial_state(vec![], false, false, None, None, true);
 
         // 1. 日本語 (ja) の PageContext
         let context_ja = PageContext::from_path_and_query("/", "?lang=ja", None);

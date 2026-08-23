@@ -105,10 +105,7 @@ async fn handler(
         let language_resolution =
             definy_ui::language::resolve_language(uri.query(), accept_language);
         let pool = ensure_pool(&state).await;
-        return match pool {
-            Some(pool) => handle_html(&uri, &pool, language_resolution.language).await,
-            None => db_unavailable_response(true),
-        };
+        return handle_html(&uri, pool.as_ref(), language_resolution.language).await;
     }
 
     match path.trim_start_matches('/') {
@@ -195,7 +192,7 @@ fn db_unavailable_response(wants_html: bool) -> Result<Response<Full<Bytes>>, hy
 
 async fn handle_html(
     uri: &hyper::Uri,
-    pool: &sqlx::postgres::PgPool,
+    pool: Option<&sqlx::postgres::PgPool>,
     language: definy_ui::language::Language,
 ) -> Result<Response<Full<Bytes>>, hyper::http::Error> {
     let path = uri.path();
@@ -218,13 +215,15 @@ async fn handle_html(
     }
 
     let filter_event_type = definy_ui::event_filter_from_query(query);
-    let event_binary_array = match db::get_events(pool, filter_event_type, Some(20), Some(0)).await
-    {
-        Ok(events) => events,
-        Err(error) => {
-            eprintln!("Failed to get events for SSR: {:?}", error);
-            return db_unavailable_response(true);
-        }
+    let (event_binary_array, is_db_connected) = match pool {
+        Some(pool) => match db::get_events(pool, filter_event_type, Some(20), Some(0)).await {
+            Ok(events) => (events, true),
+            Err(error) => {
+                eprintln!("Failed to get events for SSR: {:?}", error);
+                (Box::new([]) as Box<[Vec<u8>]>, false)
+            }
+        },
+        None => (Box::new([]) as Box<[Vec<u8>]>, false),
     };
 
     let events = event_binary_array
@@ -241,6 +240,7 @@ async fn handle_html(
     let ssr_initial_state_json = definy_ui::encode_ssr_state(definy_ui::SsrState {
         event_binaries: event_binary_array.into_vec(),
         has_more,
+        is_db_connected,
     })
     .unwrap();
 
@@ -249,8 +249,14 @@ async fn handle_html(
         query.unwrap_or_default(),
         Some(language.to_code()),
     );
-    let initial_state =
-        definy_ui::build_initial_state(events, false, has_more, None, filter_event_type);
+    let initial_state = definy_ui::build_initial_state(
+        events,
+        false,
+        has_more,
+        None,
+        filter_event_type,
+        is_db_connected,
+    );
     let html = html::render_to_html(
         &initial_state,
         &context,

@@ -28,3 +28,5 @@ serde_urlencoded = "0.7.1"
 strum = { version = "0.27.2", features = ["derive"] }
 strum_macros = "0.27.2"
 url = "2.5.8"
+chrono = { version = "0.4.44", features = ["serde"] }
+rand = "0.8.5"

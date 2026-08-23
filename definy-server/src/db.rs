@@ -185,3 +185,43 @@ pub async fn get_event(
 
     Ok(event)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn test_save_and_get_create_account_event() {
+        let database_url = match std::env::var("DATABASE_URL") {
+            Ok(url) => url,
+            Err(_) => return,
+        };
+        let pool = match sqlx::postgres::PgPool::connect(&database_url).await {
+            Ok(p) => p,
+            Err(_) => return,
+        };
+        let _ = init_db().await.unwrap();
+
+        let secret = ed25519_dalek::SigningKey::generate(&mut rand::rngs::OsRng);
+        let event = definy_event::event::Event {
+            account_id: definy_event::event::AccountId(secret.verifying_key()),
+            time: chrono::Utc::now(),
+            content: definy_event::event::EventContent::CreateAccount(
+                definy_event::event::CreateAccountEvent {
+                    account_name: "test_user".into(),
+                },
+            ),
+        };
+        let event_binary = definy_event::sign_and_serialize(event.clone(), &secret).unwrap();
+        let (signature, verified_event) =
+            definy_event::verify_and_deserialize(&event_binary).unwrap();
+
+        let addr = "127.0.0.1:8000".parse().unwrap();
+        save_event(&verified_event, &signature, &event_binary, addr, &pool)
+            .await
+            .unwrap();
+
+        let events = get_events(&pool, None, Some(10), Some(0)).await.unwrap();
+        assert!(!events.is_empty());
+    }
+}

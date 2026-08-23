@@ -38,6 +38,7 @@ web-sys = { version = "0.3.103", features = [
   "Headers",
   "CredentialsContainer",
   "CredentialRequestOptions",
+  "Storage",
 ] }
 wasm-bindgen = "0.2.127"
 rand = "0.8.7"
