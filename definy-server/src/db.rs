@@ -71,8 +71,16 @@ pub fn parse_database_url(raw: &str) -> ParsedDbConfig {
         }
     }
 
-    if endpoint.starts_with("http://") || endpoint.starts_with("https://") {
-        endpoint = endpoint.trim_end_matches("/rpc").to_string();
+    if endpoint.starts_with("http://")
+        || endpoint.starts_with("https://")
+        || endpoint.starts_with("ws://")
+        || endpoint.starts_with("wss://")
+    {
+        endpoint = endpoint
+            .trim_end_matches('/')
+            .trim_end_matches("/rpc")
+            .trim_end_matches('/')
+            .to_string();
     }
 
     if username.is_none()
@@ -151,6 +159,10 @@ pub async fn init_db() -> Result<Surreal<Any>, anyhow::Error> {
                 Err(err) => return Err(err.into()),
             };
 
+            db.use_ns(&config.namespace)
+                .use_db(&config.database)
+                .await?;
+
             if let Some(auth) = config.auth {
                 println!("Signing in to SurrealDB...");
                 match auth {
@@ -176,21 +188,40 @@ pub async fn init_db() -> Result<Surreal<Any>, anyhow::Error> {
                         username,
                         password,
                     } => {
-                        db.signin(surrealdb::opt::auth::Database {
-                            namespace,
-                            database,
-                            username,
-                            password,
-                        })
-                        .await?;
+                        let res = db
+                            .signin(surrealdb::opt::auth::Database {
+                                namespace: namespace.clone(),
+                                database: database.clone(),
+                                username: username.clone(),
+                                password: password.clone(),
+                            })
+                            .await;
+
+                        if let Err(err) = res {
+                            println!(
+                                "Database-level auth failed ({:?}). Trying Root-level auth...",
+                                err
+                            );
+                            let root_res = db
+                                .signin(surrealdb::opt::auth::Root {
+                                    username: username.clone(),
+                                    password: password.clone(),
+                                })
+                                .await;
+                            if let Err(_) = root_res {
+                                println!("Root-level auth failed. Trying Namespace-level auth...");
+                                db.signin(surrealdb::opt::auth::Namespace {
+                                    namespace,
+                                    username,
+                                    password,
+                                })
+                                .await?;
+                            }
+                        }
                     }
                 }
                 println!("Signed in successfully.");
             }
-
-            db.use_ns(&config.namespace)
-                .use_db(&config.database)
-                .await?;
             db
         }
         Err(_) => {
@@ -252,13 +283,18 @@ pub async fn save_event(
     Ok(())
 }
 
+#[derive(serde::Deserialize, SurrealValue)]
+struct EventBinaryRow {
+    event_binary: Vec<u8>,
+}
+
 pub async fn get_events(
     db: &Surreal<Any>,
     event_type: Option<definy_event::event::EventType>,
     limit: Option<usize>,
     offset: Option<usize>,
 ) -> Result<Box<[Vec<u8>]>, anyhow::Error> {
-    let mut query_str = "SELECT VALUE event_binary FROM events".to_string();
+    let mut query_str = "SELECT event_binary, time FROM events".to_string();
 
     if event_type.is_some() {
         query_str.push_str(" WHERE event_type = $event_type");
@@ -291,7 +327,8 @@ pub async fn get_events(
     }
 
     let mut response = query.await?.check()?;
-    let events: Vec<Vec<u8>> = response.take(0)?;
+    let rows: Vec<EventBinaryRow> = response.take(0)?;
+    let events: Vec<Vec<u8>> = rows.into_iter().map(|r| r.event_binary).collect();
 
     Ok(events.into_boxed_slice())
 }
@@ -319,7 +356,7 @@ mod tests {
         assert_eq!(
             parsed,
             ParsedDbConfig {
-                endpoint: "wss://sample.surreal.cloud/rpc".to_string(),
+                endpoint: "wss://sample.surreal.cloud".to_string(),
                 namespace: "definy".to_string(),
                 database: "definy".to_string(),
                 auth: Some(AuthCredentials::Database {

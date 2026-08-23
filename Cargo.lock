@@ -1457,11 +1457,27 @@ dependencies = [
 
 [[package]]
 name = "geo"
+version = "0.28.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f811f663912a69249fa620dcd2a005db7254529da2d8a0b23942e81f47084501"
+dependencies = [
+ "earcutr",
+ "float_next_after",
+ "geo-types",
+ "geographiclib-rs",
+ "log",
+ "num-traits",
+ "robust",
+ "rstar 0.12.2",
+ "spade",
+]
+
+[[package]]
+name = "geo"
 version = "0.32.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3f3901269ec6d4f6068d3f09e5f02f995bd076398dcd1dfec407cd230b02d11b"
 dependencies = [
- "earcutr",
  "float_next_after",
  "geo-types",
  "geographiclib-rs",
@@ -1473,7 +1489,6 @@ dependencies = [
  "rstar 0.12.2",
  "serde",
  "sif-itree",
- "spade",
 ]
 
 [[package]]
@@ -1484,7 +1499,6 @@ checksum = "777d18aa0f12f8b285331cd867133ee14422b3f023f6d388034c47d43e28786a"
 dependencies = [
  "approx",
  "num-traits",
- "rayon",
  "rstar 0.10.0",
  "rstar 0.11.0",
  "rstar 0.12.2",
@@ -1937,7 +1951,6 @@ dependencies = [
  "i_key_sort",
  "i_shape",
  "i_tree",
- "rayon",
 ]
 
 [[package]]
@@ -3352,7 +3365,7 @@ checksum = "13b48b66c1cd4bf814516ea48f727d4b3697e3fa8841be99a7d9cbb8c9ac1666"
 dependencies = [
  "bytes",
  "chrono",
- "geo",
+ "geo 0.32.0",
  "regex",
  "revision-derive",
  "roaring",
@@ -4207,7 +4220,7 @@ dependencies = [
  "fst",
  "futures",
  "fuzzy-matcher",
- "geo",
+ "geo 0.32.0",
  "geo-types",
  "getrandom 0.3.4",
  "half 2.7.1",
@@ -4285,7 +4298,7 @@ dependencies = [
  "chrono",
  "flatbuffers",
  "futures",
- "geo",
+ "geo 0.28.0",
  "prost",
  "prost-types",
  "rust_decimal",
@@ -4320,7 +4333,7 @@ dependencies = [
  "castaway",
  "chrono",
  "flatbuffers",
- "geo",
+ "geo 0.32.0",
  "hex",
  "http",
  "papaya",
