@@ -16,17 +16,16 @@ pub static DOCUMENT: std::sync::LazyLock<web_sys::Document> = std::sync::LazyLoc
     window.document().expect("should have a document on window")
 });
 
+fn get_current_url() -> web_sys::Url {
+    let window = web_sys::window().expect("no global `window` exists");
+    let href = window.location().href().expect("location href exists");
+    web_sys::Url::new(&href).expect("valid url")
+}
+
 pub trait App<State: Clone + 'static> {
     fn initial_state(fire: &Rc<dyn Fn(Box<dyn FnOnce(State) -> State>)>) -> State;
-    fn title(state: &State) -> String {
-        let _ = state;
-        String::new()
-    }
-    fn render(state: &State) -> Node;
-    fn on_navigate(state: State, url: String) -> State {
-        let _ = url;
-        state
-    }
+    fn title(state: &State, url: &web_sys::Url) -> String;
+    fn render(state: &State, url: &web_sys::Url) -> Node;
 }
 
 pub fn start<State: Clone + 'static, A: App<State>>() {
@@ -57,10 +56,11 @@ pub fn start<State: Clone + 'static, A: App<State>>() {
     let initial_s = A::initial_state(&fire_state_update);
     *state_holder.borrow_mut() = Some(initial_s);
 
-    let vdom = A::render(state_holder.borrow().as_ref().unwrap());
+    let initial_url = get_current_url();
+    let vdom = A::render(state_holder.borrow().as_ref().unwrap(), &initial_url);
     let first_patches = diff::add_event_listener_patches(&vdom);
 
-    let initial_title = A::title(state_holder.borrow().as_ref().unwrap());
+    let initial_title = A::title(state_holder.borrow().as_ref().unwrap(), &initial_url);
     if !initial_title.is_empty() {
         DOCUMENT.set_title(&initial_title);
     }
@@ -108,12 +108,13 @@ pub fn start<State: Clone + 'static, A: App<State>>() {
             let state_borrow = state_holder_clone.borrow();
             let state = state_borrow.as_ref().unwrap();
 
-            let title = A::title(state);
+            let current_url = get_current_url();
+            let title = A::title(state, &current_url);
             if !title.is_empty() {
                 DOCUMENT.set_title(&title);
             }
 
-            let new_vdom = A::render(state);
+            let new_vdom = A::render(state, &current_url);
             let old_vdom = vdom_clone.borrow();
             let patches = diff::diff(&old_vdom, &new_vdom);
             drop(old_vdom);
@@ -148,29 +149,25 @@ pub fn start<State: Clone + 'static, A: App<State>>() {
         if let Ok(navigation) = Reflect::get(&window, &JsValue::from_str("navigation"))
             && !navigation.is_undefined()
         {
-            let dispatch_for_nav = Rc::clone(&dispatch_impl);
+            let update_view_for_nav = {
+                let update_view_holder = Rc::clone(&update_view_holder);
+                move || {
+                    if let Some(updater) = update_view_holder.borrow().as_ref() {
+                        updater();
+                    }
+                }
+            };
             let on_navigate = Closure::wrap(Box::new(move |event: web_sys::Event| {
                 if let Ok(can_intercept) = Reflect::get(&event, &JsValue::from_str("canIntercept"))
                     && can_intercept.is_truthy()
-                    && let Ok(_user_initiated) =
-                        Reflect::get(&event, &JsValue::from_str("userInitiated"))
-                    && let Ok(destination) = Reflect::get(&event, &JsValue::from_str("destination"))
-                    && let Ok(url_val) = Reflect::get(&destination, &JsValue::from_str("url"))
-                    && let Some(url_str) = url_val.as_string()
                 {
                     let intercept_func = Reflect::get(&event, &JsValue::from_str("intercept"))
                         .unwrap_or(JsValue::UNDEFINED);
 
-                    let dispatch = Rc::clone(&dispatch_for_nav);
-
                     if intercept_func.is_function() {
-                        let url_for_intercept = url_str.clone();
+                        let update_view_inner = update_view_for_nav.clone();
                         let intercept_handler = Closure::wrap(Box::new(move || {
-                            let dispatch_inner = Rc::clone(&dispatch);
-                            let url_for_closure = url_for_intercept.clone();
-                            dispatch_inner(Box::new(move |state: State| {
-                                A::on_navigate(state, url_for_closure)
-                            }));
+                            update_view_inner();
                         })
                             as Box<dyn FnMut()>);
 
@@ -187,7 +184,7 @@ pub fn start<State: Clone + 'static, A: App<State>>() {
 
                         intercept_handler.forget();
                     } else {
-                        dispatch(Box::new(move |state: State| A::on_navigate(state, url_str)));
+                        update_view_for_nav();
                     }
                 }
             }) as Box<dyn FnMut(web_sys::Event)>);
@@ -210,15 +207,16 @@ pub fn start<State: Clone + 'static, A: App<State>>() {
         }
 
         // --- 2. Fallback: PopState listener ---
-        let dispatch_for_popstate = Rc::clone(&dispatch_impl);
-        let on_popstate = Closure::wrap(Box::new(move |_event: web_sys::PopStateEvent| {
-            if let Some(w) = web_sys::window()
-                && let location = w.location()
-                && let Ok(href) = location.href()
-            {
-                let dispatch_inner = Rc::clone(&dispatch_for_popstate);
-                dispatch_inner(Box::new(move |state: State| A::on_navigate(state, href)));
+        let update_view_for_popstate = {
+            let update_view_holder = Rc::clone(&update_view_holder);
+            move || {
+                if let Some(updater) = update_view_holder.borrow().as_ref() {
+                    updater();
+                }
             }
+        };
+        let on_popstate = Closure::wrap(Box::new(move |_event: web_sys::PopStateEvent| {
+            update_view_for_popstate();
         }) as Box<dyn FnMut(web_sys::PopStateEvent)>);
 
         window

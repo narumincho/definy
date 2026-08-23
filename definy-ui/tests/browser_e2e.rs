@@ -10,7 +10,6 @@ use hyper::{Request, Response};
 use hyper_util::client::legacy::Client;
 use hyper_util::client::legacy::connect::HttpConnector;
 use hyper_util::rt::{TokioExecutor, TokioIo};
-use narumincho_vdom::Route;
 use serde::Deserialize;
 use tokio::net::TcpListener;
 use tokio::sync::oneshot;
@@ -477,7 +476,7 @@ impl TestServer {
 }
 
 fn render_html_response(path: &str) -> Response<Full<Bytes>> {
-    let location = definy_ui::Location::from_url(path);
+    let context = definy_ui::PageContext::from_path_and_query(path, "", None);
     let state = definy_ui::AppState {
         focused_path: None,
         dropdown_search_query: String::new(),
@@ -536,14 +535,11 @@ fn render_html_response(path: &str) -> Response<Full<Bytes>> {
             is_loading: false,
             last_error: None,
         },
-        location,
-        language: definy_ui::language::default_language(),
-        language_requested_code: None,
     };
     let head_children = vec![
         narumincho_vdom::Title::new()
             .children([narumincho_vdom::text(definy_ui::document_title_text(
-                &state,
+                &state, &context,
             ))])
             .into_node(),
         narumincho_vdom::Meta::new()
@@ -566,12 +562,12 @@ fn render_html_response(path: &str) -> Response<Full<Bytes>> {
             .into_node(),
     ];
     let html_node = narumincho_vdom::Html::new()
-        .lang(state.language.to_code())
+        .lang(context.language.to_code())
         .children([
             narumincho_vdom::Head::new()
                 .children(head_children)
                 .into_node(),
-            definy_ui::render(&state),
+            definy_ui::render(&state, &context),
         ])
         .into_node();
     let html = narumincho_vdom::to_html(&html_node);

@@ -2,14 +2,14 @@ use std::collections::HashSet;
 
 use crate::query::parse_query;
 
-#[derive(Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug, serde::Serialize, serde::Deserialize)]
 pub enum Language {
     English,
     Japanese,
     Esperanto,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct LanguageResolution {
     pub language: Language,
     pub unsupported_query_lang: Option<String>,

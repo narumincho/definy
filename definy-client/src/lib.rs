@@ -69,23 +69,10 @@ impl narumincho_vdom_client::App<AppState> for DefinyApp {
         let query_params = definy_ui::query::parse_query(Some(query_string.as_str()));
         let filter_for_fetch = query_params.event_type;
 
-        let (language, language_requested_code, has_more) = if let Some(ref ssr) = ssr_state {
-            (
-                ssr.language,
-                ssr.language_requested_code.clone(),
-                ssr.has_more,
-            )
+        let has_more = if let Some(ref ssr) = ssr_state {
+            ssr.has_more
         } else {
-            let browser_lang = definy_ui::language::best_language_from_browser();
-            let language_resolution = definy_ui::language::resolve_language(
-                Some(query_string.as_str()),
-                browser_lang.map(|l| l.to_code()),
-            );
-            (
-                language_resolution.language,
-                language_resolution.unsupported_query_lang,
-                true,
-            )
+            true
         };
 
         let ssr_state_for_async = read_ssr_state();
@@ -188,22 +175,8 @@ impl narumincho_vdom_client::App<AppState> for DefinyApp {
             }));
         });
 
-        let location = {
-            let initial_url = web_sys::window()
-                .unwrap()
-                .document()
-                .unwrap()
-                .url()
-                .unwrap_or_default();
-            let url = web_sys::Url::new(&initial_url).unwrap();
-            let pathname = url.pathname();
-            use narumincho_vdom::Route;
-            definy_ui::Location::from_url(&pathname)
-        };
-
         let has_ssr_state = ssr_state.is_some();
         definy_ui::build_initial_state(
-            location,
             ssr_state.map_or(vec![], |state| {
                 state
                     .event_binaries
@@ -220,78 +193,26 @@ impl narumincho_vdom_client::App<AppState> for DefinyApp {
             has_more,
             None,
             filter_for_fetch,
-            language,
-            language_requested_code,
         )
     }
 
-    fn title(state: &AppState) -> String {
-        definy_ui::document_title_text(state)
+    fn title(state: &AppState, url: &web_sys::Url) -> String {
+        let browser_lang = definy_ui::language::best_language_from_browser();
+        let context = definy_ui::PageContext::from_path_and_query(
+            &url.pathname(),
+            &url.search(),
+            browser_lang.map(|l| l.to_code()),
+        );
+        definy_ui::document_title_text(state, &context)
     }
 
-    fn on_navigate(state: AppState, url: String) -> AppState {
-        use narumincho_vdom::Route;
-        if let Ok(web_url) = web_sys::Url::new(&url) {
-            let pathname = web_url.pathname();
-            let location = definy_ui::Location::from_url(&pathname);
-            let search = web_url.search();
-            let query = search.strip_prefix('?').unwrap_or(search.as_str());
-            let query_params = definy_ui::query::parse_query(Some(query));
-            let filter_event_type = query_params.event_type;
-            let requested_lang = query_params.lang.clone();
-            let parsed_language = requested_lang
-                .as_deref()
-                .and_then(definy_ui::language::language_from_tag);
-            let (language, language_requested_code) = if let Some(requested_lang) = requested_lang {
-                if let Some(parsed_language) = parsed_language {
-                    (parsed_language, None)
-                } else {
-                    let fallback_language = definy_ui::language::best_language_from_browser()
-                        .unwrap_or_else(definy_ui::language::default_language);
-                    (fallback_language, Some(requested_lang))
-                }
-            } else {
-                (state.language, None)
-            };
-            let mut next = AppState {
-                location,
-                event_detail_eval_result: None,
-                language,
-                language_requested_code,
-                ..state
-            };
-            if matches!(next.location, Some(definy_ui::Location::Home))
-                && next.event_list_state.filter_event_type != filter_event_type
-            {
-                next.event_list_state = definy_ui::EventListState {
-                    event_hashes: Vec::new(),
-                    current_offset: 0,
-                    page_size: next.event_list_state.page_size,
-                    is_loading: false,
-                    has_more: true,
-                    filter_event_type,
-                };
-            }
-            if query_params.lang.is_none()
-                && let Some(location) = &next.location
-            {
-                let url = AppState::build_url(location, next.language.to_code(), filter_event_type);
-                if let Some(window) = web_sys::window()
-                    && let Ok(history) = window.history()
-                {
-                    let _ = history.replace_state_with_url(
-                        &wasm_bindgen::JsValue::NULL,
-                        "",
-                        Some(url.as_str()),
-                    );
-                }
-            }
-            return next;
-        }
-        state
-    }
-
-    fn render(state: &AppState) -> narumincho_vdom::Node {
-        definy_ui::render(state)
+    fn render(state: &AppState, url: &web_sys::Url) -> narumincho_vdom::Node {
+        let browser_lang = definy_ui::language::best_language_from_browser();
+        let context = definy_ui::PageContext::from_path_and_query(
+            &url.pathname(),
+            &url.search(),
+            browser_lang.map(|l| l.to_code()),
+        );
+        definy_ui::render(state, &context)
     }
 }

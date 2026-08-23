@@ -256,18 +256,16 @@ async fn handle_html(
     })
     .unwrap();
 
-    let initial_state = definy_ui::build_initial_state(
-        location,
-        events,
-        false,
-        has_more,
-        None,
-        filter_event_type,
-        language,
-        language_requested_code,
+    let context = definy_ui::PageContext::from_path_and_query(
+        path,
+        query.unwrap_or_default(),
+        Some(language.to_code()),
     );
+    let initial_state =
+        definy_ui::build_initial_state(events, false, has_more, None, filter_event_type);
     let html = html::render_to_html(
         &initial_state,
+        &context,
         &html::ResourceHash {
             js: JAVASCRIPT_HASH,
             wasm: WASM_HASH,

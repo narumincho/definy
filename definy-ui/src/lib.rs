@@ -23,6 +23,7 @@ mod module_list;
 mod module_projection;
 pub mod navigator_credential;
 mod not_found;
+pub mod page_context;
 mod page_title;
 mod part_detail;
 mod part_list;
@@ -34,6 +35,7 @@ pub use app_state::*;
 pub use event_filter::*;
 pub use local_event::*;
 pub use message::Message;
+pub use page_context::PageContext;
 pub use page_title::document_title_text;
 
 use narumincho_vdom::*;
@@ -99,7 +101,7 @@ pub fn decode_ssr_state(json: &str) -> Option<SsrState> {
         })
 }
 
-pub fn render(state: &AppState) -> Node {
+pub fn render(state: &AppState, context: &PageContext) -> Node {
     Body::new()
         .style(
             Style::new()
@@ -108,22 +110,28 @@ pub fn render(state: &AppState) -> Node {
                 .set("padding-top", "4.2rem"),
         )
         .children([
-            header::header(state),
-            match &state.location {
-                Some(Location::Home) => event_list::event_list_view(state),
-                Some(Location::AccountList) => account_list::account_list_view(state),
-                Some(Location::PartList) => part_list::part_list_view(state),
-                Some(Location::ModuleList) => module_list::module_list_view(state),
-                Some(Location::LocalEventQueue) => local_event_queue::local_event_queue_view(state),
-                Some(Location::Module(hash)) => module_detail::module_detail_view(state, hash),
-                Some(Location::Part(hash)) => part_detail::part_detail_view(state, hash),
-                Some(Location::Event(hash)) => event_detail::event_detail_view(state, hash),
-                Some(Location::Account(account_id)) => {
-                    account_detail::account_detail_view(state, account_id)
+            header::header(state, context),
+            match &context.location {
+                Some(Location::Home) => event_list::event_list_view(state, context),
+                Some(Location::AccountList) => account_list::account_list_view(state, context),
+                Some(Location::PartList) => part_list::part_list_view(state, context),
+                Some(Location::ModuleList) => module_list::module_list_view(state, context),
+                Some(Location::LocalEventQueue) => {
+                    local_event_queue::local_event_queue_view(state, context)
                 }
-                None => not_found::not_found_view(state),
+                Some(Location::Module(hash)) => {
+                    module_detail::module_detail_view(state, context, hash)
+                }
+                Some(Location::Part(hash)) => part_detail::part_detail_view(state, context, hash),
+                Some(Location::Event(hash)) => {
+                    event_detail::event_detail_view(state, context, hash)
+                }
+                Some(Location::Account(account_id)) => {
+                    account_detail::account_detail_view(state, context, account_id)
+                }
+                None => not_found::not_found_view(state, context),
             },
-            login_or_create_account_dialog::login_or_create_account_dialog(state),
+            login_or_create_account_dialog::login_or_create_account_dialog(state, context),
         ])
         .into_node()
 }

@@ -5,6 +5,7 @@ use narumincho_vdom::*;
 use crate::Location;
 use crate::app_state::AppState;
 use crate::expression_eval::{evaluate_expression, expression_to_source};
+use crate::page_context::PageContext;
 
 fn part_type_text(part_type: &definy_event::event::PartType) -> String {
     match part_type {
@@ -26,7 +27,11 @@ fn optional_part_type_text(part_type: &Option<definy_event::event::PartType>) ->
         .unwrap_or_else(|| "None".to_string())
 }
 
-pub fn event_detail_view(state: &AppState, target_hash: &definy_event::EventHashId) -> Node {
+pub fn event_detail_view(
+    state: &AppState,
+    context: &PageContext,
+    target_hash: &definy_event::EventHashId,
+) -> Node {
     let account_name_map = state.account_name_map();
     let mut target_event_opt = None;
 
@@ -39,7 +44,7 @@ pub fn event_detail_view(state: &AppState, target_hash: &definy_event::EventHash
     }
 
     let inner_content = match target_event_opt {
-        Some(event) => render_event_detail(state, target_hash, event, &account_name_map),
+        Some(event) => render_event_detail(state, context, target_hash, event, &account_name_map),
         None => Div::new()
             .style(
                 Style::new()
@@ -47,7 +52,7 @@ pub fn event_detail_view(state: &AppState, target_hash: &definy_event::EventHash
                     .set("text-align", "center")
                     .set("padding", "1.8rem"),
             )
-            .children([text(state.language.label(
+            .children([text(context.language.label(
                 "Event not found",
                 "イベントが見つかりません",
                 "Evento ne trovita",
@@ -61,7 +66,7 @@ pub fn event_detail_view(state: &AppState, target_hash: &definy_event::EventHash
         .children([
             A::<Location>::new()
                 .class("back-link")
-                .href(state.href_with_lang(Location::Home))
+                .href(context.href_with_lang(Location::Home))
                 .style(
                     Style::new()
                         .set("display", "inline-flex")
@@ -71,7 +76,7 @@ pub fn event_detail_view(state: &AppState, target_hash: &definy_event::EventHash
                         .set("text-decoration", "none")
                         .set("font-weight", "500"),
                 )
-                .children([text(state.language.label(
+                .children([text(context.language.label(
                     "← Back to Home",
                     "← ホームへ戻る",
                     "← Reen al hejmo",
@@ -84,6 +89,7 @@ pub fn event_detail_view(state: &AppState, target_hash: &definy_event::EventHash
 
 fn render_event_detail(
     state: &AppState,
+    context: &PageContext,
     hash: &definy_event::EventHashId,
     event: &Event,
     account_name_map: &std::collections::HashMap<definy_event::event::AccountId, Box<str>>,
@@ -128,7 +134,7 @@ fn render_event_detail(
                 ])
                 .into_node(),
             A::<Location>::new()
-                .href(state.href_with_lang(Location::Account(event.account_id.clone())))
+                .href(context.href_with_lang(Location::Account(event.account_id.clone())))
                 .style(
                     Style::new()
                         .set("width", "fit-content")
@@ -147,7 +153,7 @@ fn render_event_detail(
                             .set("font-weight", "600"),
                     )
                     .children([
-                        text(state.language.label(
+                        text(context.language.label(
                             "Account created:",
                             "アカウント作成:",
                             "Konto kreita:",
@@ -163,7 +169,7 @@ fn render_event_detail(
                             .set("font-weight", "600"),
                     )
                     .children([
-                        text(state.language.label(
+                        text(context.language.label(
                             "Profile changed:",
                             "プロフィール変更:",
                             "Profilo ŝanĝita:",
@@ -199,6 +205,7 @@ fn render_event_detail(
                         },
                         {
                             let expression = part_definition_event.expression.clone();
+                            let language = context.language;
                             Button::new()
                                 .type_("button")
                                 .on_click(EventHandler::new(move |set_state| {
@@ -211,7 +218,7 @@ fn render_event_detail(
                                                 .map(|(h, e)| (h.clone(), e.clone()))
                                                 .collect();
                                             let eval_result = evaluate_message_result(
-                                                &state.language,
+                                                &language,
                                                 &expression,
                                                 &events_vec,
                                             );
@@ -223,11 +230,13 @@ fn render_event_detail(
                                     }
                                 }))
                                 .style(Style::new().set("margin-top", "0.65rem"))
-                                .children([text(state.language.label("Evaluate", "評価", "Taksi"))])
+                                .children([text(
+                                    context.language.label("Evaluate", "評価", "Taksi"),
+                                )])
                                 .into_node()
                         },
                         A::<Location>::new()
-                            .href(state.href_with_lang(Location::Part(hash.clone())))
+                            .href(context.href_with_lang(Location::Part(hash.clone())))
                             .style(
                                 Style::new()
                                     .set("margin-top", "0.45rem")
@@ -235,7 +244,7 @@ fn render_event_detail(
                                     .set("color", "var(--primary)")
                                     .set("text-decoration", "none"),
                             )
-                            .children([text(state.language.label(
+                            .children([text(context.language.label(
                                 "Open part detail",
                                 "パーツ詳細を開く",
                                 "Malfermi partajn detalojn",
@@ -268,7 +277,7 @@ fn render_event_detail(
                             .style(Style::new().set("font-size", "1.08rem"))
                             .children([text(format!(
                                 "{} {}",
-                                state.language.label(
+                                context.language.label(
                                     "Part updated:",
                                     "パーツ更新:",
                                     "Parto ĝisdatigita:"
@@ -298,7 +307,7 @@ fn render_event_detail(
                             )
                             .children([text(format!(
                                 "{} {}",
-                                state.language.label("expression:", "式:", "esprimo:"),
+                                context.language.label("expression:", "式:", "esprimo:"),
                                 expression_to_source(&part_update_event.expression)
                             ))])
                             .into_node(),
@@ -311,7 +320,7 @@ fn render_event_detail(
                             )
                             .children([text(format!(
                                 "{} {}",
-                                state.language.label(
+                                context.language.label(
                                     "partDefinitionEventHash:",
                                     "partDefinitionEventHash:",
                                     "partDefinitionEventHash:"
@@ -320,20 +329,20 @@ fn render_event_detail(
                             ))])
                             .into_node(),
                         A::<Location>::new()
-                            .href(state.href_with_lang(Location::Event(
+                            .href(context.href_with_lang(Location::Event(
                                 part_update_event.part_definition_event_hash.clone(),
                             )))
-                            .children([text(state.language.label(
+                            .children([text(context.language.label(
                                 "Open definition event",
                                 "定義イベントを開く",
                                 "Malfermi difinan eventon",
                             ))])
                             .into_node(),
                         A::<Location>::new()
-                            .href(state.href_with_lang(Location::Part(
+                            .href(context.href_with_lang(Location::Part(
                                 part_update_event.part_definition_event_hash.clone(),
                             )))
-                            .children([text(state.language.label(
+                            .children([text(context.language.label(
                                 "Open part detail",
                                 "パーツ詳細を開く",
                                 "Malfermi partajn detalojn",
@@ -350,7 +359,7 @@ fn render_event_detail(
                     .children([
                         text(format!(
                             "{} {}",
-                            state.language.label(
+                            context.language.label(
                                 "Module created:",
                                 "モジュール作成:",
                                 "Modulo kreita:"
@@ -371,8 +380,8 @@ fn render_event_detail(
                                 .into_node()
                         },
                         A::<Location>::new()
-                            .href(state.href_with_lang(Location::Module(hash.clone())))
-                            .children([text(state.language.label(
+                            .href(context.href_with_lang(Location::Module(hash.clone())))
+                            .children([text(context.language.label(
                                 "Open module detail",
                                 "モジュール詳細を開く",
                                 "Malfermi modulajn detalojn",
@@ -392,7 +401,7 @@ fn render_event_detail(
                             .style(Style::new().set("font-size", "1.08rem"))
                             .children([text(format!(
                                 "{} {}",
-                                state.language.label(
+                                context.language.label(
                                     "Module updated:",
                                     "モジュール更新:",
                                     "Modulo ĝisdatigita:"
@@ -422,7 +431,7 @@ fn render_event_detail(
                             )
                             .children([text(format!(
                                 "{} {}",
-                                state.language.label(
+                                context.language.label(
                                     "moduleDefinitionEventHash:",
                                     "moduleDefinitionEventHash:",
                                     "moduleDefinitionEventHash:"
@@ -431,20 +440,20 @@ fn render_event_detail(
                             ))])
                             .into_node(),
                         A::<Location>::new()
-                            .href(state.href_with_lang(Location::Event(
+                            .href(context.href_with_lang(Location::Event(
                                 module_update_event.module_definition_event_hash.clone(),
                             )))
-                            .children([text(state.language.label(
+                            .children([text(context.language.label(
                                 "Open definition event",
                                 "定義イベントを開く",
                                 "Malfermi difinan eventon",
                             ))])
                             .into_node(),
                         A::<Location>::new()
-                            .href(state.href_with_lang(Location::Module(
+                            .href(context.href_with_lang(Location::Module(
                                 module_update_event.module_definition_event_hash.clone(),
                             )))
-                            .children([text(state.language.label(
+                            .children([text(context.language.label(
                                 "Open module detail",
                                 "モジュール詳細を開く",
                                 "Malfermi modulajn detalojn",
@@ -454,7 +463,7 @@ fn render_event_detail(
                     .into_node(),
             },
             if let Some(root_hash) = root_part_definition_hash {
-                related_part_events_section(state, &root_hash)
+                related_part_events_section(state, context, &root_hash)
             } else {
                 Div::new().children([]).into_node()
             },
@@ -469,7 +478,7 @@ fn render_event_detail(
                         .set("opacity", "0.6"),
                 )
                 .children([
-                    text(state.language.label(
+                    text(context.language.label(
                         "Event Hash: ",
                         "イベントハッシュ: ",
                         "Evento-hako: ",
@@ -481,7 +490,11 @@ fn render_event_detail(
         .into_node()
 }
 
-fn related_part_events_section(state: &AppState, root_part_definition_hash: &EventHashId) -> Node {
+fn related_part_events_section(
+    state: &AppState,
+    context: &PageContext,
+    root_part_definition_hash: &EventHashId,
+) -> Node {
     let related_events = collect_related_part_events(state, root_part_definition_hash);
     let hash_as_base64 = root_part_definition_hash.to_string();
 
@@ -496,7 +509,7 @@ fn related_part_events_section(state: &AppState, root_part_definition_hash: &Eve
         .children([
             Div::new()
                 .style(Style::new().set("font-weight", "600"))
-                .children([text(state.language.label(
+                .children([text(context.language.label(
                     "Events linked by partDefinitionEventHash",
                     "partDefinitionEventHash に紐づくイベント",
                     "Eventoj ligitaj per partDefinitionEventHash",
@@ -518,9 +531,10 @@ fn related_part_events_section(state: &AppState, root_part_definition_hash: &Eve
                     related_events
                         .into_iter()
                         .map(|(event_hash, event)| {
-                            let label = crate::event_presenter::event_kind_label(state, &event);
+                            let label =
+                                crate::event_presenter::event_kind_label(context.language, &event);
                             A::<Location>::new()
-                                .href(state.href_with_lang(Location::Event(event_hash)))
+                                .href(context.href_with_lang(Location::Event(event_hash)))
                                 .style(
                                     Style::new()
                                         .set("display", "grid")

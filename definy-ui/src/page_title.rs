@@ -1,5 +1,6 @@
 use definy_event::EventHashId;
 
+use crate::page_context::PageContext;
 use crate::{AppState, Location};
 
 #[derive(Clone, Copy)]
@@ -32,51 +33,53 @@ impl RouteId {
         }
     }
 
-    fn title_prefix(self, state: &AppState) -> &'static str {
+    fn title_prefix(self, context: &PageContext) -> &'static str {
         match self {
-            Self::Home => state.language.label("home", "ホーム", "hejmo"),
+            Self::Home => context.language.label("home", "ホーム", "hejmo"),
             Self::AccountList | Self::AccountDetail => {
-                state.language.label("accounts", "アカウント", "kontoj")
+                context.language.label("accounts", "アカウント", "kontoj")
             }
-            Self::PartList | Self::PartDetail => state.language.label("parts", "パーツ", "partoj"),
+            Self::PartList | Self::PartDetail => {
+                context.language.label("parts", "パーツ", "partoj")
+            }
             Self::ModuleList | Self::ModuleDetail => {
-                state.language.label("modules", "モジュール", "moduloj")
+                context.language.label("modules", "モジュール", "moduloj")
             }
             Self::LocalEventQueue => {
-                state
+                context
                     .language
                     .label("local-events", "ローカルイベント", "lokaj-eventoj")
             }
-            Self::EventDetail => state.language.label("events", "イベント", "eventoj"),
-            Self::NotFound => state.language.label("not-found", "未検出", "ne-trovita"),
+            Self::EventDetail => context.language.label("events", "イベント", "eventoj"),
+            Self::NotFound => context.language.label("not-found", "未検出", "ne-trovita"),
         }
     }
 }
 
-pub fn page_title_text(state: &AppState) -> String {
-    let route_id = RouteId::from_location(&state.location);
-    match &state.location {
+pub fn page_title_text(state: &AppState, context: &PageContext) -> String {
+    let route_id = RouteId::from_location(&context.location);
+    match &context.location {
         Some(Location::Home)
         | Some(Location::AccountList)
         | Some(Location::PartList)
         | Some(Location::ModuleList)
         | Some(Location::LocalEventQueue)
-        | None => route_id.title_prefix(state).to_string(),
+        | None => route_id.title_prefix(context).to_string(),
         Some(Location::Account(account_id)) => {
             let account_name =
                 crate::app_state::account_display_name(&state.account_name_map(), account_id);
-            format!("{}/{}", route_id.title_prefix(state), account_name)
+            format!("{}/{}", route_id.title_prefix(context), account_name)
         }
         Some(Location::Part(definition_event_hash)) => {
             let part_name = resolve_part_name(state, definition_event_hash)
                 .unwrap_or_else(|| definition_event_hash.to_string());
-            format!("{}/{}", route_id.title_prefix(state), part_name)
+            format!("{}/{}", route_id.title_prefix(context), part_name)
         }
         Some(Location::Module(definition_event_hash)) => {
             let module_name =
                 crate::module_projection::resolve_module_name(state, definition_event_hash)
                     .unwrap_or_else(|| definition_event_hash.to_string());
-            format!("{}/{}", route_id.title_prefix(state), module_name)
+            format!("{}/{}", route_id.title_prefix(context), module_name)
         }
         Some(Location::Event(event_hash)) => {
             let event_label = state
@@ -88,18 +91,18 @@ pub fn page_title_text(state: &AppState) -> String {
                     }
                     let (_, event) = event_result.as_ref().ok()?;
                     let label = match &event.content {
-                        definy_event::event::EventContent::CreateAccount(_) => state
+                        definy_event::event::EventContent::CreateAccount(_) => context
                             .language
                             .label("create-account", "アカウント作成", "konto-kreo")
                             .to_string(),
-                        definy_event::event::EventContent::ChangeProfile(_) => state
+                        definy_event::event::EventContent::ChangeProfile(_) => context
                             .language
                             .label("change-profile", "プロフィール変更", "profil-ŝanĝo")
                             .to_string(),
                         definy_event::event::EventContent::PartDefinition(part_definition) => {
                             format!(
                                 "{}/{}",
-                                state.language.label(
+                                context.language.label(
                                     "part-definition",
                                     "パーツ定義",
                                     "parto-difino"
@@ -110,7 +113,7 @@ pub fn page_title_text(state: &AppState) -> String {
                         definy_event::event::EventContent::PartUpdate(part_update) => {
                             format!(
                                 "{}/{}",
-                                state.language.label(
+                                context.language.label(
                                     "part-update",
                                     "パーツ更新",
                                     "parto-ĝisdatigo"
@@ -121,7 +124,7 @@ pub fn page_title_text(state: &AppState) -> String {
                         definy_event::event::EventContent::ModuleDefinition(module_definition) => {
                             format!(
                                 "{}/{}",
-                                state.language.label(
+                                context.language.label(
                                     "module-definition",
                                     "モジュール定義",
                                     "modulo-difino"
@@ -132,7 +135,7 @@ pub fn page_title_text(state: &AppState) -> String {
                         definy_event::event::EventContent::ModuleUpdate(module_update) => {
                             format!(
                                 "{}/{}",
-                                state.language.label(
+                                context.language.label(
                                     "module-update",
                                     "モジュール更新",
                                     "modulo-ĝisdatigo"
@@ -144,13 +147,13 @@ pub fn page_title_text(state: &AppState) -> String {
                     Some(label)
                 })
                 .unwrap_or_else(|| event_hash.to_string());
-            format!("{}/{}", route_id.title_prefix(state), event_label)
+            format!("{}/{}", route_id.title_prefix(context), event_label)
         }
     }
 }
 
-pub fn document_title_text(state: &AppState) -> String {
-    format!("{} | definy", page_title_text(state))
+pub fn document_title_text(state: &AppState, context: &PageContext) -> String {
+    format!("{} | definy", page_title_text(state, context))
 }
 
 fn resolve_part_name(state: &AppState, definition_event_hash: &EventHashId) -> Option<String> {

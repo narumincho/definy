@@ -3,8 +3,9 @@ use narumincho_vdom::*;
 use std::collections::HashMap;
 use std::str::FromStr;
 
-use crate::Location;
 use crate::app_state::AppState;
+use crate::language::Language;
+use crate::page_context::PageContext;
 use crate::part_projection::{PartSnapshot, collect_part_snapshots, find_part_snapshot};
 
 #[derive(Clone, Copy)]
@@ -16,7 +17,7 @@ pub enum EditorTarget {
 use crate::app_state::PathStep;
 
 #[derive(Clone)]
-struct ScopeVariable {
+pub(crate) struct ScopeVariable {
     id: i64,
     name: String,
 }
@@ -59,13 +60,14 @@ impl ExpressionType {
 }
 
 #[derive(Clone)]
-struct TypeDiagnostic {
+pub(crate) struct TypeDiagnostic {
     path: Vec<PathStep>,
     message: String,
 }
 
 pub fn render_root_expression_editor(
     state: &AppState,
+    page_context: &PageContext,
     expression: &definy_event::event::Expression,
     target: EditorTarget,
 ) -> Node {
@@ -81,6 +83,7 @@ pub fn render_root_expression_editor(
             diagnostics: diagnostics.as_slice(),
             structure_locked: false,
             allow_kind_change: true,
+            language: page_context.language,
         },
     )
 }
@@ -96,10 +99,31 @@ fn allow_kind_change_for_nested_values(allow_kind_change: bool, path: &[PathStep
 pub struct ExpressionEditorContext<'a> {
     pub path: Vec<PathStep>,
     pub target: EditorTarget,
-    scope_variables: Vec<ScopeVariable>,
-    diagnostics: &'a [TypeDiagnostic],
+    pub scope_variables: Vec<ScopeVariable>,
+    pub diagnostics: &'a [TypeDiagnostic],
     pub structure_locked: bool,
     pub allow_kind_change: bool,
+    pub language: Language,
+}
+
+impl<'a> ExpressionEditorContext<'a> {
+    fn child(
+        &self,
+        path: Vec<PathStep>,
+        scope_variables: Vec<ScopeVariable>,
+        structure_locked: bool,
+        allow_kind_change: bool,
+    ) -> ExpressionEditorContext<'a> {
+        ExpressionEditorContext {
+            path,
+            target: self.target,
+            scope_variables,
+            diagnostics: self.diagnostics,
+            structure_locked,
+            allow_kind_change,
+            language: self.language,
+        }
+    }
 }
 
 fn render_expression_editor(
@@ -107,12 +131,13 @@ fn render_expression_editor(
     expression: &definy_event::event::Expression,
     context: ExpressionEditorContext,
 ) -> Node {
-    let path = context.path;
+    let path = context.path.clone();
     let target = context.target;
-    let scope_variables = context.scope_variables;
+    let scope_variables = context.scope_variables.clone();
     let diagnostics = context.diagnostics;
     let structure_locked = context.structure_locked;
     let allow_kind_change = context.allow_kind_change;
+    let language = context.language;
     let current_selection = current_selection_value(expression);
     let selector_options = selector_options(state, &scope_variables);
     let warning_message = diagnostics
@@ -170,7 +195,7 @@ fn render_expression_editor(
                             .set("font-size", "0.8rem")
                             .set("color", "var(--text-secondary)"),
                     )
-                    .children([text(state.language.label(
+                    .children([text(language.label(
                         "Built-in types",
                         "組み込み型",
                         "Enkonstruitaj tipoj",
@@ -185,18 +210,16 @@ fn render_expression_editor(
                 Div::new()
                     .style(Style::new().set("display", "grid").set("gap", "0.3rem"))
                     .children([
-                        text(state.language.label("Item Type", "要素型", "Ero-tipo")),
+                        text(language.label("Item Type", "要素型", "Ero-tipo")),
                         render_expression_editor(
                             state,
                             type_list_expression.item_type.as_ref(),
-                            ExpressionEditorContext {
-                                path: item_type_path,
-                                target,
-                                scope_variables: scope_variables.clone(),
-                                diagnostics,
+                            context.child(
+                                item_type_path,
+                                scope_variables.clone(),
                                 structure_locked,
                                 allow_kind_change,
-                            },
+                            ),
                         ),
                     ])
                     .into_node(),
@@ -208,7 +231,7 @@ fn render_expression_editor(
                 let mut grid_children = Vec::new();
                 grid_children.push(
                     Div::new()
-                        .children([text(state.language.label("Item", "項目", "Ero"))])
+                        .children([text(language.label("Item", "項目", "Ero"))])
                         .style(
                             Style::new()
                                 .set("font-weight", "bold")
@@ -265,14 +288,12 @@ fn render_expression_editor(
                                     .children([render_expression_editor(
                                         state,
                                         record_item.value.as_ref(),
-                                        ExpressionEditorContext {
-                                            path: value_path,
-                                            target,
-                                            scope_variables: scope_variables.clone(),
-                                            diagnostics,
+                                        context.child(
+                                            value_path,
+                                            scope_variables.clone(),
                                             structure_locked,
-                                            allow_kind_change: allow_kind_for_item,
-                                        },
+                                            allow_kind_for_item,
+                                        ),
                                     )])
                                     .into_node(),
                             );
@@ -297,7 +318,7 @@ fn render_expression_editor(
                         .children(grid_children)
                         .into_node(),
                 );
-                children.push(add_list_item_button(state, path.clone(), target));
+                children.push(add_list_item_button(language, path.clone(), target));
             } else {
                 let mut list_children = list_expression
                     .items
@@ -331,7 +352,7 @@ fn render_expression_editor(
                                             )
                                             .children([text(format!(
                                                 "{} {}",
-                                                state.language.label("Item", "項目", "Ero"),
+                                                language.label("Item", "項目", "Ero"),
                                                 index + 1
                                             ))])
                                             .into_node(),
@@ -341,20 +362,18 @@ fn render_expression_editor(
                                 render_expression_editor(
                                     state,
                                     item,
-                                    ExpressionEditorContext {
-                                        path: item_path,
-                                        target,
-                                        scope_variables: scope_variables.clone(),
-                                        diagnostics,
+                                    context.child(
+                                        item_path,
+                                        scope_variables.clone(),
                                         structure_locked,
-                                        allow_kind_change: allow_kind_for_item,
-                                    },
+                                        allow_kind_for_item,
+                                    ),
                                 ),
                             ])
                             .into_node()
                     })
                     .collect::<Vec<Node>>();
-                list_children.push(add_list_item_button(state, path.clone(), target));
+                list_children.push(add_list_item_button(language, path.clone(), target));
                 children.push(
                     Div::new()
                         .style(
@@ -386,36 +405,32 @@ fn render_expression_editor(
                         Div::new()
                             .style(Style::new().set("display", "grid").set("gap", "0.3rem"))
                             .children([
-                                text(state.language.label("Left", "左", "Maldekstre")),
+                                text(language.label("Left", "左", "Maldekstre")),
                                 render_expression_editor(
                                     state,
                                     add_expression.left.as_ref(),
-                                    ExpressionEditorContext {
-                                        path: left_path,
-                                        target,
-                                        scope_variables: scope_variables.clone(),
-                                        diagnostics,
+                                    context.child(
+                                        left_path,
+                                        scope_variables.clone(),
                                         structure_locked,
                                         allow_kind_change,
-                                    },
+                                    ),
                                 ),
                             ])
                             .into_node(),
                         Div::new()
                             .style(Style::new().set("display", "grid").set("gap", "0.3rem"))
                             .children([
-                                text(state.language.label("Right", "右", "Dekstre")),
+                                text(language.label("Right", "右", "Dekstre")),
                                 render_expression_editor(
                                     state,
                                     add_expression.right.as_ref(),
-                                    ExpressionEditorContext {
-                                        path: right_path,
-                                        target,
-                                        scope_variables: scope_variables.clone(),
-                                        diagnostics,
+                                    context.child(
+                                        right_path,
+                                        scope_variables.clone(),
                                         structure_locked,
                                         allow_kind_change,
-                                    },
+                                    ),
                                 ),
                             ])
                             .into_node(),
@@ -424,7 +439,12 @@ fn render_expression_editor(
             );
         }
         definy_event::event::Expression::Boolean(boolean_expression) => {
-            children.push(boolean_input(state, path, target, boolean_expression.value));
+            children.push(boolean_input(
+                language,
+                path,
+                target,
+                boolean_expression.value,
+            ));
         }
         definy_event::event::Expression::If(if_expression) => {
             let mut cond_path = path.clone();
@@ -446,54 +466,48 @@ fn render_expression_editor(
                         Div::new()
                             .style(Style::new().set("display", "grid").set("gap", "0.3rem"))
                             .children([
-                                text(state.language.label("Condition", "条件", "Kondiĉo")),
+                                text(language.label("Condition", "条件", "Kondiĉo")),
                                 render_expression_editor(
                                     state,
                                     if_expression.condition.as_ref(),
-                                    ExpressionEditorContext {
-                                        path: cond_path,
-                                        target,
-                                        scope_variables: scope_variables.clone(),
-                                        diagnostics,
+                                    context.child(
+                                        cond_path,
+                                        scope_variables.clone(),
                                         structure_locked,
                                         allow_kind_change,
-                                    },
+                                    ),
                                 ),
                             ])
                             .into_node(),
                         Div::new()
                             .style(Style::new().set("display", "grid").set("gap", "0.3rem"))
                             .children([
-                                text(state.language.label("Then", "なら", "Tiam")),
+                                text(language.label("Then", "なら", "Tiam")),
                                 render_expression_editor(
                                     state,
                                     if_expression.then_expr.as_ref(),
-                                    ExpressionEditorContext {
-                                        path: then_path,
-                                        target,
-                                        scope_variables: scope_variables.clone(),
-                                        diagnostics,
+                                    context.child(
+                                        then_path,
+                                        scope_variables.clone(),
                                         structure_locked,
                                         allow_kind_change,
-                                    },
+                                    ),
                                 ),
                             ])
                             .into_node(),
                         Div::new()
                             .style(Style::new().set("display", "grid").set("gap", "0.3rem"))
                             .children([
-                                text(state.language.label("Else", "それ以外", "Alie")),
+                                text(language.label("Else", "それ以外", "Alie")),
                                 render_expression_editor(
                                     state,
                                     if_expression.else_expr.as_ref(),
-                                    ExpressionEditorContext {
-                                        path: else_path,
-                                        target,
-                                        scope_variables: scope_variables.clone(),
-                                        diagnostics,
+                                    context.child(
+                                        else_path,
+                                        scope_variables.clone(),
                                         structure_locked,
                                         allow_kind_change,
-                                    },
+                                    ),
                                 ),
                             ])
                             .into_node(),
@@ -519,36 +533,32 @@ fn render_expression_editor(
                         Div::new()
                             .style(Style::new().set("display", "grid").set("gap", "0.3rem"))
                             .children([
-                                text(state.language.label("Left", "左", "Maldekstre")),
+                                text(language.label("Left", "左", "Maldekstre")),
                                 render_expression_editor(
                                     state,
                                     equal_expression.left.as_ref(),
-                                    ExpressionEditorContext {
-                                        path: left_path,
-                                        target,
-                                        scope_variables: scope_variables.clone(),
-                                        diagnostics,
+                                    context.child(
+                                        left_path,
+                                        scope_variables.clone(),
                                         structure_locked,
                                         allow_kind_change,
-                                    },
+                                    ),
                                 ),
                             ])
                             .into_node(),
                         Div::new()
                             .style(Style::new().set("display", "grid").set("gap", "0.3rem"))
                             .children([
-                                text(state.language.label("Right", "右", "Dekstre")),
+                                text(language.label("Right", "右", "Dekstre")),
                                 render_expression_editor(
                                     state,
                                     equal_expression.right.as_ref(),
-                                    ExpressionEditorContext {
-                                        path: right_path,
-                                        target,
-                                        scope_variables: scope_variables.clone(),
-                                        diagnostics,
+                                    context.child(
+                                        right_path,
+                                        scope_variables.clone(),
                                         structure_locked,
                                         allow_kind_change,
-                                    },
+                                    ),
                                 ),
                             ])
                             .into_node(),
@@ -574,31 +584,29 @@ fn render_expression_editor(
                         Div::new()
                             .style(Style::new().set("display", "grid").set("gap", "0.3rem"))
                             .children([
-                                text(state.language.label("Let Name", "変数名", "Nomo")),
+                                text(language.label("Let Name", "変数名", "Nomo")),
                                 let_name_input(path.clone(), target, &let_expression.variable_name),
                             ])
                             .into_node(),
                         Div::new()
                             .style(Style::new().set("display", "grid").set("gap", "0.3rem"))
                             .children([
-                                text(state.language.label("Value", "値", "Valoro")),
+                                text(language.label("Value", "値", "Valoro")),
                                 render_expression_editor(
                                     state,
                                     let_expression.value.as_ref(),
-                                    ExpressionEditorContext {
-                                        path: value_path,
-                                        target,
-                                        scope_variables: scope_variables.clone(),
-                                        diagnostics,
+                                    context.child(
+                                        value_path,
+                                        scope_variables.clone(),
                                         structure_locked,
                                         allow_kind_change,
-                                    },
+                                    ),
                                 ),
                             ])
                             .into_node(),
                         Div::new()
                             .style(Style::new().set("display", "grid").set("gap", "0.3rem"))
-                            .children([text(state.language.label("Body", "本体", "Kerno")), {
+                            .children([text(language.label("Body", "本体", "Kerno")), {
                                 let mut body_scope = scope_variables.clone();
                                 body_scope.push(ScopeVariable {
                                     id: let_expression.variable_id,
@@ -607,14 +615,12 @@ fn render_expression_editor(
                                 render_expression_editor(
                                     state,
                                     let_expression.body.as_ref(),
-                                    ExpressionEditorContext {
-                                        path: body_path,
-                                        target,
-                                        scope_variables: body_scope,
-                                        diagnostics,
+                                    context.child(
+                                        body_path,
+                                        body_scope,
                                         structure_locked,
                                         allow_kind_change,
-                                    },
+                                    ),
                                 )
                             }])
                             .into_node(),
@@ -657,9 +663,7 @@ fn render_expression_editor(
                                                 .set("font-size", "0.8rem")
                                                 .set("color", "var(--text-secondary)"),
                                         )
-                                        .children([text(
-                                            state.language.label("Key", "キー", "Ŝlosilo"),
-                                        )])
+                                        .children([text(language.label("Key", "キー", "Ŝlosilo"))])
                                         .into_node(),
                                     if structure_locked {
                                         Div::new()
@@ -678,7 +682,7 @@ fn render_expression_editor(
                                         Div::new().children([]).into_node()
                                     } else {
                                         remove_record_item_button(
-                                            state,
+                                            language,
                                             path.clone(),
                                             index,
                                             target,
@@ -689,18 +693,16 @@ fn render_expression_editor(
                             Div::new()
                                 .style(Style::new().set("display", "grid").set("gap", "0.3rem"))
                                 .children([
-                                    text(state.language.label("Value", "値", "Valoro")),
+                                    text(language.label("Value", "値", "Valoro")),
                                     render_expression_editor(
                                         state,
                                         item.value.as_ref(),
-                                        ExpressionEditorContext {
-                                            path: value_path,
-                                            target,
-                                            scope_variables: scope_variables.clone(),
-                                            diagnostics,
+                                        context.child(
+                                            value_path,
+                                            scope_variables.clone(),
                                             structure_locked,
-                                            allow_kind_change: allow_kind_for_value,
-                                        },
+                                            allow_kind_for_value,
+                                        ),
                                     ),
                                 ])
                                 .into_node(),
@@ -709,7 +711,7 @@ fn render_expression_editor(
                 })
                 .collect::<Vec<Node>>();
             if !structure_locked {
-                record_children.push(add_record_item_button(state, path, target));
+                record_children.push(add_record_item_button(language, path, target));
             }
             children.push(
                 Div::new()
@@ -744,21 +746,14 @@ fn render_expression_editor(
                             )
                             .children([text(format!(
                                 "{} {}",
-                                state.language.label("Type:", "型:", "Tipo:"),
+                                language.label("Type:", "型:", "Tipo:"),
                                 type_part_name
                             ))])
                             .into_node(),
                         render_expression_editor(
                             state,
                             constructor_expression.value.as_ref(),
-                            ExpressionEditorContext {
-                                path: value_path,
-                                target,
-                                scope_variables: scope_variables.clone(),
-                                diagnostics,
-                                structure_locked: true,
-                                allow_kind_change: true,
-                            },
+                            context.child(value_path, scope_variables.clone(), true, true),
                         ),
                     ])
                     .into_node(),
@@ -773,7 +768,7 @@ fn render_expression_editor(
                             .set("font-size", "0.8rem")
                             .set("color", "var(--text-secondary)"),
                     )
-                    .children([text(state.language.label(
+                    .children([text(language.label(
                         "Select a Global/Local reference from the dropdown.",
                         "ドロップダウンから Global/Local 参照を選んでください",
                         "Elektu Globalan/Lokan referencon el la falmenuo.",
@@ -818,8 +813,8 @@ fn expected_type_for_target(state: &AppState, target: EditorTarget) -> Option<Ex
             .as_ref()
             .map(part_type_to_expression_type),
         EditorTarget::PartUpdate => {
-            let hash = match &state.location {
-                Some(Location::Part(hash)) => hash,
+            let hash = match &state.part_update_form.part_definition_event_hash {
+                Some(hash) => hash,
                 _ => return None,
             };
             find_part_snapshot(state, hash)
@@ -1705,7 +1700,12 @@ fn string_input(path: Vec<PathStep>, target: EditorTarget, value: &str) -> Node 
         .into_node()
 }
 
-fn boolean_input(state: &AppState, path: Vec<PathStep>, target: EditorTarget, value: bool) -> Node {
+fn boolean_input(
+    language: Language,
+    path: Vec<PathStep>,
+    target: EditorTarget,
+    value: bool,
+) -> Node {
     Div::new()
         .style(Style::new().set("display", "flex").set("gap", "0.5rem"))
         .children([
@@ -1732,7 +1732,7 @@ fn boolean_input(state: &AppState, path: Vec<PathStep>, target: EditorTarget, va
                         }
                     }
                 }))
-                .children([text(state.language.label("True", "真", "Vera"))])
+                .children([text(language.label("True", "真", "Vera"))])
                 .into_node(),
             Button::new()
                 .type_("button")
@@ -1757,7 +1757,7 @@ fn boolean_input(state: &AppState, path: Vec<PathStep>, target: EditorTarget, va
                         }
                     }
                 }))
-                .children([text(state.language.label("False", "偽", "Falsa"))])
+                .children([text(language.label("False", "偽", "Falsa"))])
                 .into_node(),
         ])
         .into_node()
@@ -1828,7 +1828,7 @@ fn record_item_key_input(
         .into_node()
 }
 
-fn add_record_item_button(state: &AppState, path: Vec<PathStep>, target: EditorTarget) -> Node {
+fn add_record_item_button(language: Language, path: Vec<PathStep>, target: EditorTarget) -> Node {
     Button::new()
         .type_("button")
         .on_click(EventHandler::new(move |set_state| {
@@ -1842,7 +1842,7 @@ fn add_record_item_button(state: &AppState, path: Vec<PathStep>, target: EditorT
                 }));
             }
         }))
-        .children([text(state.language.label(
+        .children([text(language.label(
             "+ Add Item",
             "+ 追加",
             "+ Aldoni eron",
@@ -1851,7 +1851,7 @@ fn add_record_item_button(state: &AppState, path: Vec<PathStep>, target: EditorT
 }
 
 fn remove_record_item_button(
-    state: &AppState,
+    language: Language,
     path: Vec<PathStep>,
     item_index: usize,
     target: EditorTarget,
@@ -1869,11 +1869,11 @@ fn remove_record_item_button(
                 }));
             }
         }))
-        .children([text(state.language.label("Remove", "削除", "Forigi"))])
+        .children([text(language.label("Remove", "削除", "Forigi"))])
         .into_node()
 }
 
-fn add_list_item_button(state: &AppState, path: Vec<PathStep>, target: EditorTarget) -> Node {
+fn add_list_item_button(language: Language, path: Vec<PathStep>, target: EditorTarget) -> Node {
     Button::new()
         .type_("button")
         .on_click(EventHandler::new(move |set_state| {
@@ -1887,7 +1887,7 @@ fn add_list_item_button(state: &AppState, path: Vec<PathStep>, target: EditorTar
                 }));
             }
         }))
-        .children([text(state.language.label(
+        .children([text(language.label(
             "+ Add Item",
             "+ 追加",
             "+ Aldoni eron",
@@ -1926,12 +1926,7 @@ fn target_expression_mut(
 ) -> &mut definy_event::event::Expression {
     match target {
         EditorTarget::PartDefinition => &mut state.part_definition_form.composing_expression,
-        EditorTarget::PartUpdate => {
-            if let Some(Location::Part(hash)) = &state.location {
-                state.part_update_form.part_definition_event_hash = Some(hash.clone());
-            }
-            &mut state.part_update_form.expression_input
-        }
+        EditorTarget::PartUpdate => &mut state.part_update_form.expression_input,
     }
 }
 

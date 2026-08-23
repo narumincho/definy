@@ -1,8 +1,9 @@
 use crate::Location;
 use crate::app_state::AppState;
+use crate::page_context::PageContext;
 use narumincho_vdom::*;
 
-pub fn not_found_view(state: &AppState) -> Node {
+pub fn not_found_view(_state: &AppState, context: &PageContext) -> Node {
     Div::new()
         .class("page-shell not-found")
         .style(
@@ -37,7 +38,7 @@ pub fn not_found_view(state: &AppState) -> Node {
                         .set("color", "var(--text)")
                         .set("margin-bottom", "2rem"),
                 )
-                .children([text(state.language.label(
+                .children([text(context.language.label(
                     "Page Not Found",
                     "ページが見つかりません",
                     "Paĝo ne trovita",
@@ -45,7 +46,7 @@ pub fn not_found_view(state: &AppState) -> Node {
                 .into_node(),
             A::<Location>::new()
                 .class("cta-link")
-                .href(state.href_with_lang(Location::Home))
+                .href(context.href_with_lang(Location::Home))
                 .style(
                     Style::new()
                         .set("display", "inline-flex")
@@ -61,7 +62,7 @@ pub fn not_found_view(state: &AppState) -> Node {
                         .set("transition", "all 0.3s ease")
                         .set("box-shadow", "0 4px 10px rgb(139 92 246 / 0.25)"),
                 )
-                .children([text(state.language.label(
+                .children([text(context.language.label(
                     "Return to Home",
                     "ホームに戻る",
                     "Reen al hejmo",

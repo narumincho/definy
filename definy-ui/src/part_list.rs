@@ -8,6 +8,7 @@ use crate::app_state::AppState;
 use crate::expression_editor::{EditorTarget, render_root_expression_editor};
 use crate::expression_eval::{evaluate_expression, expression_to_source};
 use crate::module_projection::collect_module_snapshots;
+use crate::page_context::PageContext;
 use crate::part_projection::collect_part_snapshots;
 
 fn part_type_text(part_type: &definy_event::event::PartType) -> String {
@@ -30,7 +31,8 @@ fn optional_part_type_text(part_type: &Option<definy_event::event::PartType>) ->
         .unwrap_or_else(|| "None".to_string())
 }
 
-fn part_definition_form_view(state: &AppState) -> Node {
+fn part_definition_form_view(state: &AppState, context: &PageContext) -> Node {
+    let language = context.language;
     Div::new()
         .class("composer")
         .style(
@@ -46,15 +48,16 @@ fn part_definition_form_view(state: &AppState) -> Node {
         )
         .children([
             part_name_input(state),
-            module_selection_input(state),
-            part_type_input(state),
+            module_selection_input(state, context),
+            part_type_input(state, context),
             part_description_input(state),
             Div::new()
                 .style(Style::new().set("color", "var(--text-secondary)").set("font-size", "0.84rem"))
-                .children([text(state.language.label("Expression", "式", "Esprimo"))])
+                .children([text(context.language.label("Expression", "式", "Esprimo"))])
                 .into_node(),
             render_root_expression_editor(
                 state,
+                context,
                 &state.part_definition_form.composing_expression,
                 EditorTarget::PartDefinition,
             ),
@@ -68,7 +71,7 @@ fn part_definition_form_view(state: &AppState) -> Node {
                 )
                 .children([text(format!(
                     "{} {}",
-                    state.language.label("Current:", "現在:", "Nuna:"),
+                    context.language.label("Current:", "現在:", "Nuna:"),
                     expression_to_source(&state.part_definition_form.composing_expression)
                 ))])
                 .into_node(),
@@ -77,8 +80,8 @@ fn part_definition_form_view(state: &AppState) -> Node {
                 .children([
                     Button::new()
                         .type_("button")
-                        .on_click(EventHandler::new(async |set_state| {
-                            set_state(Box::new(|state: AppState| {
+                        .on_click(EventHandler::new(move |set_state| async move {
+                            set_state(Box::new(move |state: AppState| {
                                 let events_vec: Vec<_> = state.event_list_state.event_hashes.iter().filter_map(|hash| state.event_cache.get(hash).map(|event| (hash.clone(), event.clone()))).collect();
                                 let result = match evaluate_expression(
                                     &state.part_definition_form.composing_expression,
@@ -87,12 +90,12 @@ fn part_definition_form_view(state: &AppState) -> Node {
                                 {
                                     Ok(value) => format!(
                                         "{} {}",
-                                        state.language.label("Result:", "結果:", "Rezulto:"),
+                                        language.label("Result:", "結果:", "Rezulto:"),
                                         value
                                     ),
                                     Err(error) => format!(
                                         "{} {}",
-                                        state.language.label("Error:", "エラー:", "Eraro:"),
+                                        language.label("Error:", "エラー:", "Eraro:"),
                                         error
                                     ),
                                 };
@@ -101,13 +104,13 @@ fn part_definition_form_view(state: &AppState) -> Node {
                                 next
                             }));
                         }))
-                        .children([text(state.language.label("Evaluate", "評価", "Taksi"))])
+                        .children([text(context.language.label("Evaluate", "評価", "Taksi"))])
                         .into_node(),
                     Button::new()
-                        .on_click(EventHandler::new(async |set_state| {
+                        .on_click(EventHandler::new(move |set_state| async move {
                             let set_state = std::rc::Rc::new(set_state);
                             let set_state_for_async = set_state.clone();
-                            set_state(Box::new(|state: AppState| {
+                            set_state(Box::new(move |state: AppState| {
                                 let key: &ed25519_dalek::SigningKey = if let Some(key) = &state.current_key {
                                     key
                                 } else {
@@ -122,7 +125,7 @@ fn part_definition_form_view(state: &AppState) -> Node {
                                 if part_name.is_empty() {
                                     let mut next = state.clone();
                                     next.part_definition_form.eval_result = Some(
-                                        state.language.label(
+                                        language.label(
                                             "Error: part name is required",
                                             "エラー: パーツ名は必須です",
                                             "Eraro: parto-nomo estas bezonata",
@@ -181,7 +184,7 @@ fn part_definition_form_view(state: &AppState) -> Node {
                                                     crate::app_state::upsert_local_event_record(&mut next, record);
                                                     next.part_definition_form.eval_result = Some(match status {
                                                         crate::local_event::LocalEventStatus::Queued => {
-                                                            state.language.label(
+                                                            language.label(
                                                                 "PartDefinition queued (offline)",
                                                                 "PartDefinition をキューに追加しました (オフライン)",
                                                                 "PartDefinition envicigita (senkonekte)",
@@ -189,7 +192,7 @@ fn part_definition_form_view(state: &AppState) -> Node {
                                                             .to_string()
                                                         }
                                                         crate::local_event::LocalEventStatus::Failed => {
-                                                            state.language.label(
+                                                            language.label(
                                                                 "PartDefinition failed to send",
                                                                 "PartDefinition の送信に失敗しました",
                                                                 "PartDefinition sendado malsukcesis",
@@ -197,7 +200,7 @@ fn part_definition_form_view(state: &AppState) -> Node {
                                                             .to_string()
                                                         }
                                                         crate::local_event::LocalEventStatus::Sent => {
-                                                            state.language.label(
+                                                            language.label(
                                                                 "PartDefinition posted",
                                                                 "PartDefinition を投稿しました",
                                                                 "PartDefinition sendita",
@@ -228,7 +231,7 @@ fn part_definition_form_view(state: &AppState) -> Node {
                                 next
                             }));
                         }))
-                        .children([text(state.language.label("Send", "送信", "Sendi"))])
+                        .children([text(context.language.label("Send", "送信", "Sendi"))])
                         .into_node(),
                 ])
                 .into_node(),
@@ -236,11 +239,11 @@ fn part_definition_form_view(state: &AppState) -> Node {
         .into_node()
 }
 
-pub fn part_list_view(state: &AppState) -> Node {
+pub fn part_list_view(state: &AppState, context: &PageContext) -> Node {
     let snapshots = collect_part_snapshots(state);
     let account_name_map = state.account_name_map();
     let part_definition_form = if state.current_key.is_some() {
-        Some(part_definition_form_view(state))
+        Some(part_definition_form_view(state, context))
     } else {
         None
     };
@@ -251,7 +254,7 @@ pub fn part_list_view(state: &AppState) -> Node {
         .children([
             H2::new()
                 .style(Style::new().set("font-size", "1.3rem"))
-                .children([text(state.language.label("Parts", "パーツ", "Partoj"))])
+                .children([text(context.language.label("Parts", "パーツ", "Partoj"))])
                 .into_node(),
             if let Some(form) = part_definition_form {
                 form
@@ -281,7 +284,7 @@ pub fn part_list_view(state: &AppState) -> Node {
                             .set("padding", "0.95rem")
                             .set("color", "var(--text-secondary)"),
                     )
-                    .children([text(state.language.label(
+                    .children([text(context.language.label(
                         "No parts yet.",
                         "まだパーツがありません。",
                         "Ankoraŭ neniuj partoj.",
@@ -332,7 +335,7 @@ pub fn part_list_view(state: &AppState) -> Node {
                                             )
                                             .children([text(format!(
                                                 "{} {}",
-                                                state.language.label("type:", "型:", "tipo:"),
+                                                context.language.label("type:", "型:", "tipo:"),
                                                 optional_part_type_text(&part.part_type)
                                             ))])
                                             .into_node(),
@@ -345,7 +348,7 @@ pub fn part_list_view(state: &AppState) -> Node {
                                                         .set("font-size", "0.82rem")
                                                         .set("color", "var(--text-secondary)"),
                                                 )
-                                                .children([text(state.language.label(
+                                                .children([text(context.language.label(
                                                     "definition event missing",
                                                     "定義イベントが見つかりません",
                                                     "difina evento mankas",
@@ -353,10 +356,10 @@ pub fn part_list_view(state: &AppState) -> Node {
                                                 .into_node()
                                         },
                                         A::<Location>::new()
-                                            .href(state.href_with_lang(Location::Part(
+                                            .href(context.href_with_lang(Location::Part(
                                                 part.definition_event_hash.clone(),
                                             )))
-                                            .children([text(state.language.label(
+                                            .children([text(context.language.label(
                                                 "Open part detail",
                                                 "パーツ詳細を開く",
                                                 "Malfermi partajn detalojn",
@@ -383,7 +386,7 @@ pub fn part_list_view(state: &AppState) -> Node {
                                             )
                                             .children([text(format!(
                                                 "{} {}",
-                                                state.language.label(
+                                                context.language.label(
                                                     "expression:",
                                                     "式:",
                                                     "esprimo:"
@@ -399,7 +402,7 @@ pub fn part_list_view(state: &AppState) -> Node {
                                             )
                                             .children([text(format!(
                                                 "{} {}",
-                                                state.language.label(
+                                                context.language.label(
                                                     "latest author:",
                                                     "最新の投稿者:",
                                                     "lasta aŭtoro:"
@@ -415,20 +418,20 @@ pub fn part_list_view(state: &AppState) -> Node {
                                             )
                                             .children([
                                                 A::<Location>::new()
-                                                    .href(state.href_with_lang(Location::Event(
+                                                    .href(context.href_with_lang(Location::Event(
                                                         part.latest_event_hash,
                                                     )))
-                                                    .children([text(state.language.label(
+                                                    .children([text(context.language.label(
                                                         "Latest event",
                                                         "最新イベント",
                                                         "Lasta evento",
                                                     ))])
                                                     .into_node(),
                                                 A::<Location>::new()
-                                                    .href(state.href_with_lang(Location::Event(
+                                                    .href(context.href_with_lang(Location::Event(
                                                         part.definition_event_hash,
                                                     )))
-                                                    .children([text(state.language.label(
+                                                    .children([text(context.language.label(
                                                         "Definition event",
                                                         "定義イベント",
                                                         "Difina evento",
@@ -481,7 +484,7 @@ fn part_description_input(state: &AppState) -> Node {
         .into_node()
 }
 
-fn part_type_input(state: &AppState) -> Node {
+fn part_type_input(state: &AppState, context: &PageContext) -> Node {
     Div::new()
         .style(Style::new().set("display", "grid").set("gap", "0.35rem"))
         .children([
@@ -491,21 +494,26 @@ fn part_type_input(state: &AppState) -> Node {
                         .set("font-size", "0.85rem")
                         .set("color", "var(--text-secondary)"),
                 )
-                .children([text(state.language.label(
+                .children([text(context.language.label(
                     "Part Type",
                     "パーツ型",
                     "Parto-tipo",
                 ))])
                 .into_node(),
-            render_part_type_editor(state, &state.part_definition_form.part_type_input, 0),
+            render_part_type_editor(
+                state,
+                context,
+                &state.part_definition_form.part_type_input,
+                0,
+            ),
         ])
         .into_node()
 }
 
-fn module_selection_input(state: &AppState) -> Node {
+fn module_selection_input(state: &AppState, context: &PageContext) -> Node {
     let mut options = vec![(
         "".to_string(),
-        state
+        context
             .language
             .label("No module", "モジュールなし", "Neniu modulo")
             .to_string(),
@@ -550,7 +558,11 @@ fn module_selection_input(state: &AppState) -> Node {
                         .set("font-size", "0.85rem")
                         .set("color", "var(--text-secondary)"),
                 )
-                .children([text(state.language.label("Module", "モジュール", "Modulo"))])
+                .children([text(context.language.label(
+                    "Module",
+                    "モジュール",
+                    "Modulo",
+                ))])
                 .into_node(),
             dropdown,
         ])
@@ -559,6 +571,7 @@ fn module_selection_input(state: &AppState) -> Node {
 
 fn render_part_type_editor(
     state: &AppState,
+    context: &PageContext,
     part_type: &Option<definy_event::event::PartType>,
     depth: usize,
 ) -> Node {
@@ -569,36 +582,39 @@ fn render_part_type_editor(
     if depth == 0 {
         options.push((
             "none".to_string(),
-            state.language.label("None", "なし", "Neniu").to_string(),
+            context.language.label("None", "なし", "Neniu").to_string(),
         ));
     }
 
     options.extend([
         (
             "number".to_string(),
-            state.language.label("Number", "数値", "Nombro").to_string(),
+            context
+                .language
+                .label("Number", "数値", "Nombro")
+                .to_string(),
         ),
         (
             "string".to_string(),
-            state
+            context
                 .language
                 .label("String", "文字列", "Teksto")
                 .to_string(),
         ),
         (
             "boolean".to_string(),
-            state
+            context
                 .language
                 .label("Boolean", "真偽値", "Bulea")
                 .to_string(),
         ),
         (
             "type".to_string(),
-            state.language.label("Type", "型", "Tipo").to_string(),
+            context.language.label("Type", "型", "Tipo").to_string(),
         ),
         (
             "list".to_string(),
-            state
+            context
                 .language
                 .label("List<...>", "リスト<...>", "Listo<...>")
                 .to_string(),
@@ -615,7 +631,7 @@ fn render_part_type_editor(
                     value,
                     format!(
                         "{} {}",
-                        state
+                        context
                             .language
                             .label("Type Part:", "型パーツ:", "Tipo-parto:"),
                         snapshot.part_name
@@ -662,13 +678,18 @@ fn render_part_type_editor(
                                 .set("color", "var(--text-secondary)")
                                 .set("margin-bottom", "0.25rem"),
                         )
-                        .children([text(state.language.label(
+                        .children([text(context.language.label(
                             "Item Type",
                             "要素型",
                             "Ero-tipo",
                         ))])
                         .into_node(),
-                    render_part_type_editor(state, &Some(item_type.as_ref().clone()), depth + 1),
+                    render_part_type_editor(
+                        state,
+                        context,
+                        &Some(item_type.as_ref().clone()),
+                        depth + 1,
+                    ),
                 ])
                 .into_node(),
         );

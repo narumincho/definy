@@ -1,4 +1,4 @@
-use definy_ui::AppState;
+use definy_ui::{AppState, PageContext};
 use narumincho_vdom::{Head, Html, Link, Meta, Script, StyleElement, Title, text};
 
 pub struct ResourceHash<'a> {
@@ -8,12 +8,13 @@ pub struct ResourceHash<'a> {
 
 pub fn render_to_html(
     state: &AppState,
+    context: &PageContext,
     resource_hash: &ResourceHash,
     ssr_initial_state_base64: &str,
 ) -> String {
     let head_children = vec![
         Title::new()
-            .children([text(definy_ui::document_title_text(state))])
+            .children([text(definy_ui::document_title_text(state, context))])
             .into_node(),
         Meta::new()
             .name("viewport")
@@ -40,10 +41,10 @@ pub fn render_to_html(
             .into_node(),
     ];
     let html_node = Html::new()
-        .lang(state.language.to_code())
+        .lang(context.language.to_code())
         .children([
             Head::new().children(head_children).into_node(),
-            definy_ui::render(state),
+            definy_ui::render(state, context),
         ])
         .into_node();
     narumincho_vdom::to_html(&html_node)

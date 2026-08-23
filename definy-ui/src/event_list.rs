@@ -4,6 +4,7 @@ use narumincho_vdom::*;
 
 use crate::app_state::AppState;
 use crate::expression_eval::expression_to_source;
+use crate::page_context::PageContext;
 
 fn part_type_text(part_type: &definy_event::event::PartType) -> String {
     match part_type {
@@ -27,66 +28,61 @@ fn optional_part_type_text(part_type: &Option<definy_event::event::PartType>) ->
         .unwrap_or_else(|| "None".to_string())
 }
 
-pub fn event_list_view(state: &AppState) -> Node {
+pub fn event_list_view(state: &AppState, context: &PageContext) -> Node {
     let state = state.clone();
-    // Load events if needed
-    let _filter = state.event_list_state.filter_event_type;
-    let _page_size = state.event_list_state.page_size;
-
     let filter_options = vec![
         (
             "".to_string(),
-            state
+            context
                 .language
                 .label("All Events", "すべてのイベント", "Ĉiuj eventoj")
                 .to_string(),
         ),
         (
             "create_account".to_string(),
-            state
+            context
                 .language
                 .label("Create Account", "アカウント作成", "Krei konton")
                 .to_string(),
         ),
         (
             "change_profile".to_string(),
-            state
+            context
                 .language
                 .label("Change Profile", "プロフィール変更", "Ŝanĝi profilon")
                 .to_string(),
         ),
         (
             "part_definition".to_string(),
-            state
+            context
                 .language
                 .label("Part Definition", "パーツ定義", "Parto-difino")
                 .to_string(),
         ),
         (
             "part_update".to_string(),
-            state
+            context
                 .language
                 .label("Part Update", "パーツ更新", "Parto-ĝisdatigo")
                 .to_string(),
         ),
         (
             "module_definition".to_string(),
-            state
+            context
                 .language
                 .label("Module Definition", "モジュール定義", "Modulo-difino")
                 .to_string(),
         ),
         (
             "module_update".to_string(),
-            state
+            context
                 .language
                 .label("Module Update", "モジュール更新", "Modulo-ĝisdatigo")
                 .to_string(),
         ),
     ];
 
-    let current_filter = state
-        .event_list_state
+    let current_filter = context
         .filter_event_type
         .as_ref()
         .map(|et| et.to_string())
@@ -98,7 +94,7 @@ pub fn event_list_view(state: &AppState) -> Node {
         &current_filter,
         &filter_options,
         std::rc::Rc::new({
-            let state = state.clone();
+            let context = context.clone();
             move |value, label, is_selected| {
                 let event_type = match value {
                     "create_account" => Some(EventType::CreateAccount),
@@ -111,7 +107,7 @@ pub fn event_list_view(state: &AppState) -> Node {
                 };
                 Anchor::<crate::Location>::new()
                     .href(narumincho_vdom::Href::External(
-                        state.home_url_with_lang(event_type),
+                        context.home_url_with_lang(event_type),
                     ))
                     .style(
                         crate::dropdown::option_style(is_selected)
@@ -144,7 +140,9 @@ pub fn event_list_view(state: &AppState) -> Node {
                             .filter_map(|hash| {
                                 state.event_cache.get(hash).map(|event| (hash, event))
                             })
-                            .map(|(hash, event)| event_view(&state, hash, event, &account_name_map))
+                            .map(|(hash, event)| {
+                                event_view(&state, context, hash, event, &account_name_map)
+                            })
                             .collect::<Vec<Node>>()
                     })
                     .into_node(),
@@ -157,7 +155,7 @@ pub fn event_list_view(state: &AppState) -> Node {
                                 .set("text-align", "center")
                                 .set("padding", "1rem"),
                         )
-                        .children([text(state.language.label(
+                        .children([text(context.language.label(
                             "Loading events...",
                             "イベントを読み込み中...",
                             "Ŝargado de eventoj...",
@@ -166,11 +164,11 @@ pub fn event_list_view(state: &AppState) -> Node {
                 );
             } else if state.event_list_state.has_more {
                 let button_text = if state.event_list_state.event_hashes.is_empty() {
-                    state
+                    context
                         .language
                         .label("Load Events", "イベントを読み込む", "Ŝargi eventojn")
                 } else {
-                    state.language.label(
+                    context.language.label(
                         "Load More Events",
                         "さらに読み込む",
                         "Ŝargi pliajn eventojn",
@@ -200,7 +198,7 @@ pub fn event_list_view(state: &AppState) -> Node {
                                 .set("padding", "1rem")
                                 .set("color", "var(--text-secondary)"),
                         )
-                        .children([text(state.language.label(
+                        .children([text(context.language.label(
                             "No events found. Click 'Load Events' to fetch.",
                             "イベントが見つかりません。'Load Events' をクリックして取得します。",
                             "Neniuj eventoj trovitaj. Klaku 'Load Events' por ŝargi.",
@@ -214,7 +212,8 @@ pub fn event_list_view(state: &AppState) -> Node {
 }
 
 fn event_view(
-    state: &AppState,
+    _state: &AppState,
+    context: &PageContext,
     hash: &EventHashId,
     event_result: &Result<
         (ed25519_dalek::Signature, definy_event::event::Event),
@@ -237,7 +236,7 @@ fn event_view(
                     .set("display", "grid")
                     .set("gap", "0.75rem"),
             )
-            .href(state.href_with_lang(crate::Location::Event(hash.clone())))
+            .href(context.href_with_lang(crate::Location::Event(hash.clone())))
             .children([
                 Div::new()
                     .style(
@@ -263,7 +262,7 @@ fn event_view(
                     EventContent::CreateAccount(create_account_event) => Div::new()
                         .style(Style::new().set("color", "var(--primary)"))
                         .children([
-                            text(state.language.label(
+                            text(context.language.label(
                                 "Account created:",
                                 "アカウント作成:",
                                 "Konto kreita:",
@@ -274,7 +273,7 @@ fn event_view(
                     EventContent::ChangeProfile(change_profile_event) => Div::new()
                         .style(Style::new().set("color", "var(--primary)"))
                         .children([
-                            text(state.language.label(
+                            text(context.language.label(
                                 "Profile changed:",
                                 "プロフィール変更:",
                                 "Profilo ŝanĝita:",
@@ -286,7 +285,7 @@ fn event_view(
                         .style(Style::new().set("font-size", "0.98rem"))
                         .children([
                             A::<crate::Location>::new()
-                                .href(state.href_with_lang(crate::Location::Account(
+                                .href(context.href_with_lang(crate::Location::Account(
                                     event.account_id.clone(),
                                 )))
                                 .style(
@@ -322,14 +321,14 @@ fn event_view(
                                     .into_node()
                             },
                             A::<crate::Location>::new()
-                                .href(state.href_with_lang(crate::Location::Part(hash.clone())))
+                                .href(context.href_with_lang(crate::Location::Part(hash.clone())))
                                 .style(
                                     Style::new()
                                         .set("font-size", "0.82rem")
                                         .set("color", "var(--primary)")
                                         .set("text-decoration", "none"),
                                 )
-                                .children([text(state.language.label(
+                                .children([text(context.language.label(
                                     "Open part detail",
                                     "パーツ詳細を開く",
                                     "Malfermi partajn detalojn",
@@ -341,7 +340,7 @@ fn event_view(
                         .style(Style::new().set("font-size", "1.05rem"))
                         .children([
                             A::<crate::Location>::new()
-                                .href(state.href_with_lang(crate::Location::Account(
+                                .href(context.href_with_lang(crate::Location::Account(
                                     event.account_id.clone(),
                                 )))
                                 .style(
@@ -359,7 +358,7 @@ fn event_view(
                                 .into_node(),
                             text(format!(
                                 "{} {}",
-                                state.language.label(
+                                context.language.label(
                                     "Part updated:",
                                     "パーツ更新:",
                                     "Parto ĝisdatigita:"
@@ -375,7 +374,7 @@ fn event_view(
                                 )
                                 .children([text(format!(
                                     "{} {}",
-                                    state.language.label("expression:", "式:", "esprimo:"),
+                                    context.language.label("expression:", "式:", "esprimo:"),
                                     expression_to_source(&part_update_event.expression)
                                 ))])
                                 .into_node(),
@@ -391,7 +390,7 @@ fn event_view(
                                 ))])
                                 .into_node(),
                             A::<crate::Location>::new()
-                                .href(state.href_with_lang(crate::Location::Part(
+                                .href(context.href_with_lang(crate::Location::Part(
                                     part_update_event.part_definition_event_hash.clone(),
                                 )))
                                 .style(
@@ -400,7 +399,7 @@ fn event_view(
                                         .set("color", "var(--primary)")
                                         .set("text-decoration", "none"),
                                 )
-                                .children([text(state.language.label(
+                                .children([text(context.language.label(
                                     "Open part detail",
                                     "パーツ詳細を開く",
                                     "Malfermi partajn detalojn",
@@ -412,7 +411,7 @@ fn event_view(
                         .style(Style::new().set("font-size", "1rem"))
                         .children([
                             A::<crate::Location>::new()
-                                .href(state.href_with_lang(crate::Location::Account(
+                                .href(context.href_with_lang(crate::Location::Account(
                                     event.account_id.clone(),
                                 )))
                                 .style(
@@ -430,7 +429,7 @@ fn event_view(
                                 .into_node(),
                             text(format!(
                                 "{} {}",
-                                state.language.label(
+                                context.language.label(
                                     "Module created:",
                                     "モジュール作成:",
                                     "Modulo kreita:"
@@ -456,7 +455,7 @@ fn event_view(
                         .style(Style::new().set("font-size", "1rem"))
                         .children([
                             A::<crate::Location>::new()
-                                .href(state.href_with_lang(crate::Location::Account(
+                                .href(context.href_with_lang(crate::Location::Account(
                                     event.account_id.clone(),
                                 )))
                                 .style(
@@ -474,7 +473,7 @@ fn event_view(
                                 .into_node(),
                             text(format!(
                                 "{} {}",
-                                state.language.label(
+                                context.language.label(
                                     "Module updated:",
                                     "モジュール更新:",
                                     "Modulo ĝisdatigita:"
@@ -508,7 +507,7 @@ fn event_view(
                                 ))])
                                 .into_node(),
                             A::<crate::Location>::new()
-                                .href(state.href_with_lang(crate::Location::Event(
+                                .href(context.href_with_lang(crate::Location::Event(
                                     module_update_event.module_definition_event_hash.clone(),
                                 )))
                                 .style(
@@ -517,7 +516,7 @@ fn event_view(
                                         .set("color", "var(--primary)")
                                         .set("text-decoration", "none"),
                                 )
-                                .children([text(state.language.label(
+                                .children([text(context.language.label(
                                     "Open module definition",
                                     "モジュール定義を開く",
                                     "Malfermi modulo-difinon",
@@ -540,7 +539,7 @@ fn event_view(
             )
             .children([text(format!(
                 "{}: {:?}",
-                state.language.label(
+                context.language.label(
                     "Failed to load events",
                     "イベントの読み込みに失敗しました",
                     "Malsukcesis ŝargi eventojn",
