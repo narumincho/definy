@@ -31,6 +31,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             .env("CARGO_PROFILE_RELEASE_CODEGEN_UNITS", "1")
             .env("CARGO_PROFILE_RELEASE_PANIC", "abort")
             .env("CARGO_PROFILE_RELEASE_DEBUG", "false")
+            .env("CARGO_PROFILE_RELEASE_STRIP", "true")
             .status()?;
 
         if !wasm_build_result.success() {
@@ -44,9 +45,24 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         wasm_bindgen_cli_support::Bindgen::new()
             .input_path("./target/wasm32-unknown-unknown/release/definy_client.wasm")
             .web(true)?
+            .keep_debug(false)
+            .remove_name_section(true)
+            .remove_producers_section(true)
             .generate("./web-distribution")?;
 
         println!("wasm-bindgen ok");
+    }
+
+    {
+        let wasm_path = "./web-distribution/definy_client_bg.wasm";
+        match std::process::Command::new("wasm-opt")
+            .args(["-Oz", "-o", wasm_path, wasm_path])
+            .status()
+        {
+            Ok(status) if status.success() => println!("wasm-opt ok"),
+            Ok(status) => println!("wasm-opt exited with status: {}", status),
+            Err(e) => println!("wasm-opt skipped (not found or error: {})", e),
+        }
     }
 
     {

@@ -60,7 +60,7 @@ mod tests {
 
     #[test]
     fn test_sign_and_verify() {
-        let mut csprng = rand::rngs::OsRng;
+        let mut csprng = rand_core::OsRng;
         let signing_key = ed25519_dalek::SigningKey::generate(&mut csprng);
         let verifying_key = signing_key.verifying_key();
 
@@ -103,7 +103,7 @@ mod tests {
 
     #[test]
     fn test_tampered_data() {
-        let mut csprng = rand::rngs::OsRng;
+        let mut csprng = rand_core::OsRng;
         let signing_key = ed25519_dalek::SigningKey::generate(&mut csprng);
         let verifying_key = signing_key.verifying_key();
 
