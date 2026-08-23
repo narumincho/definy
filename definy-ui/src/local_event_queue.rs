@@ -103,18 +103,7 @@ pub fn local_event_queue_view(state: &AppState, context: &PageContext) -> Node {
         .into_node();
 
     let mut list_items = Vec::new();
-    if state.local_event_queue.items.is_empty() {
-        list_items.push(
-            Div::new()
-                .style(Style::new().set("color", "var(--text-secondary)"))
-                .children([text(context.language.label(
-                    "No local events",
-                    "ローカルイベントはありません",
-                    "Neniuj lokaj eventoj",
-                ))])
-                .into_node(),
-        );
-    } else {
+    if !state.local_event_queue.items.is_empty() {
         for record in &state.local_event_queue.items {
             let status = record.status.clone();
             let status_badge = Div::new()
