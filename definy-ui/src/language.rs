@@ -1,5 +1,3 @@
-use std::collections::HashSet;
-
 use crate::query::parse_query;
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug, serde::Serialize, serde::Deserialize)]
@@ -38,24 +36,6 @@ pub fn language_from_tag(tag: &str) -> Option<Language> {
 pub fn language_from_query(query: Option<&str>) -> Option<Language> {
     let params = parse_query(query);
     params.lang.as_deref().and_then(language_from_tag)
-}
-
-pub fn preferred_languages() -> Vec<Language> {
-    let mut ordered = Vec::new();
-    let mut seen = HashSet::new();
-    for tag in browser_language_tags() {
-        if let Some(lang) = language_from_tag(tag.as_str())
-            && seen.insert(lang.to_code())
-        {
-            ordered.push(lang);
-        }
-    }
-    for lang in SUPPORTED_LANGUAGES.iter().copied() {
-        if seen.insert(lang.to_code()) {
-            ordered.push(lang);
-        }
-    }
-    ordered
 }
 
 pub fn best_language_from_browser() -> Option<Language> {

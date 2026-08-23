@@ -194,7 +194,7 @@ fn language_dropdown(state: &AppState, context: &PageContext) -> Node {
         state,
         "language",
         context.language.to_code(),
-        crate::language::preferred_languages()
+        crate::language::SUPPORTED_LANGUAGES
             .iter()
             .map(|language| {
                 (
