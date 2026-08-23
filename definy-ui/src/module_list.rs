@@ -1,4 +1,3 @@
-use definy_event::EventHashId;
 use narumincho_vdom::*;
 
 use crate::app_state::AppState;
@@ -268,100 +267,46 @@ fn module_create_form(state: &AppState, context: &PageContext) -> Node {
                             }
                             let key_for_async = key.clone();
                             let force_offline = state.force_offline;
-
-                            wasm_bindgen_futures::spawn_local(async move {
-                                let event_binary = definy_event::sign_and_serialize(
-                                    definy_event::event::Event {
-                                        account_id: definy_event::event::AccountId(
-                                            key_for_async.verifying_key(),
-                                        ),
-                                        time: chrono::Utc::now(),
-                                        content: definy_event::event::EventContent::ModuleDefinition(
-                                            definy_event::event::ModuleDefinitionEvent {
-                                                module_name: module_name.into(),
-                                                description: module_description.into(),
-                                            },
-                                        ),
-                                    },
-                                    &key_for_async,
-                                )
-                                .unwrap();
-
-                                match crate::fetch::post_event_with_queue(
-                                    event_binary.as_slice(),
+                            wasm_bindgen_futures::spawn_local(
+                                crate::event_submit::submit_event(
+                                    definy_event::event::EventContent::ModuleDefinition(
+                                        definy_event::event::ModuleDefinitionEvent {
+                                            module_name: module_name.into(),
+                                            description: module_description.into(),
+                                        },
+                                    ),
+                                    key_for_async,
                                     force_offline,
-                                )
-                                .await
-                                {
-                                    Ok(record) => {
-                                        let status = record.status.clone();
-                                        set_state_for_async(Box::new(move |state| {
-                                            let mut next = state.clone();
-                                            crate::app_state::upsert_local_event_record(
-                                                &mut next,
-                                                record,
-                                            );
-                                            if status == crate::local_event::LocalEventStatus::Sent {
-                                                let event = definy_event::verify_and_deserialize(
-                                                    event_binary.as_slice(),
-                                                );
-                                                next.event_cache.insert(
-                                                    EventHashId::from_bytes(&event_binary),
-                                                    event,
-                                                );
-                                                next.module_definition_form.result_message = None;
-                                            } else {
-                                                next.module_definition_form.result_message = Some(
-                                                    match status {
-                                                        crate::local_event::LocalEventStatus::Queued => {
-                                                            language.label(
-                                                                "ModuleDefinition queued (offline)",
-                                                                "ModuleDefinition をキューに追加しました (オフライン)",
-                                                                "ModuleDefinition envicigita (senkonekte)",
-                                                            )
-                                                            .to_string()
-                                                        }
-                                                        crate::local_event::LocalEventStatus::Failed => {
-                                                            language.label(
-                                                                "ModuleDefinition failed to send",
-                                                                "ModuleDefinition の送信に失敗しました",
-                                                                "ModuleDefinition sendado malsukcesis",
-                                                            )
-                                                            .to_string()
-                                                        }
-                                                        crate::local_event::LocalEventStatus::Sent => {
-                                                            language.label(
-                                                                "ModuleDefinition posted",
-                                                                "ModuleDefinition を投稿しました",
-                                                                "ModuleDefinition sendita",
-                                                            )
-                                                            .to_string()
-                                                        }
-                                                    },
-                                                );
-                                            }
-                                            next
-                                        }));
-                                    }
-                                    Err(e) => {
-                                        set_state_for_async(Box::new(move |state| {
-                                            let mut next = state.clone();
-                                            next.module_definition_form.result_message = Some(
-                                                format!(
-                                                    "{} ({:?})",
+                                    None,
+                                    set_state_for_async,
+                                move |next, record| {
+                                    if record.status == crate::local_event::LocalEventStatus::Sent {
+                                        next.module_definition_form.result_message = None;
+                                    } else {
+                                        next.module_definition_form.result_message = Some(
+                                            match record.status {
+                                                crate::local_event::LocalEventStatus::Queued => {
                                                     language.label(
-                                                        "Error: failed to create module",
-                                                        "エラー: モジュール作成に失敗しました",
-                                                        "Eraro: malsukcesis krei modulon",
-                                                    ),
-                                                    e
-                                                ),
-                                            );
-                                            next
-                                        }));
+                                                        "ModuleDefinition queued (offline)",
+                                                        "ModuleDefinition をキューに追加しました (オフライン)",
+                                                        "ModuleDefinition envicigita (senkonekte)",
+                                                    )
+                                                    .to_string()
+                                                }
+                                                crate::local_event::LocalEventStatus::Failed => {
+                                                    language.label(
+                                                        "ModuleDefinition failed to send",
+                                                        "ModuleDefinition の送信に失敗しました",
+                                                        "ModuleDefinition sendado malsukcesis",
+                                                    )
+                                                    .to_string()
+                                                }
+                                                crate::local_event::LocalEventStatus::Sent => unreachable!(),
+                                            },
+                                        );
                                     }
-                                }
-                            });
+                                },
+                            ));
                             let mut next = state.clone();
                             next.module_definition_form.module_name_input = String::new();
                             next.module_definition_form.module_description_input = String::new();

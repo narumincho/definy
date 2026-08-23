@@ -2,7 +2,7 @@ use definy_event::EventHashId;
 use narumincho_vdom::*;
 
 use crate::page_context::PageContext;
-use crate::{AppState, Location, fetch};
+use crate::{AppState, Location};
 
 pub fn account_detail_view(
     state: &AppState,
@@ -72,79 +72,30 @@ pub fn account_detail_view(
                                 }
                                 let filter = state.event_list_state.filter_event_type;
                                 let force_offline = state.force_offline;
-                                wasm_bindgen_futures::spawn_local(async move {
-                                    let event_binary = match definy_event::sign_and_serialize(
-                                        definy_event::event::Event {
-                                            account_id: definy_event::event::AccountId(key.verifying_key()),
-                                            time: chrono::Utc::now(),
-                                            content:
-                                                definy_event::event::EventContent::ChangeProfile(
-                                                    definy_event::event::ChangeProfileEvent {
-                                                        account_name: new_name.into(),
-                                                    },
-                                                ),
-                                        },
-                                        &key,
-                                    ) {
-                                        Ok(event_binary) => event_binary,
-                                        Err(error) => {
-                                            web_sys::console::log_1(
-                                                &format!(
-                                                    "Failed to serialize change profile event: {:?}",
-                                                    error
-                                                )
-                                                .into(),
-                                            );
-                                            return;
-                                        }
-                                    };
-
-                                    match fetch::post_event_with_queue(
-                                        event_binary.as_slice(),
+                                wasm_bindgen_futures::spawn_local(
+                                    crate::event_submit::submit_event(
+                                        definy_event::event::EventContent::ChangeProfile(
+                                            definy_event::event::ChangeProfileEvent {
+                                                account_name: new_name.into(),
+                                            },
+                                        ),
+                                        key,
                                         force_offline,
-                                    )
-                                    .await
-                                    {
-                                        Ok(record) => {
-                                            let status = record.status.clone();
-                                            if status == crate::local_event::LocalEventStatus::Sent {
-                                                if let Ok(events) =
-                                                    fetch::get_events(filter, Some(20), Some(0)).await
-                                                {
-                                                    set_state_for_async(Box::new(move |state| {
-                                                        let mut next = state.clone();
-                                                        next.apply_latest_events(events, filter);
-                                                        next.profile_name_input = String::new();
-                                                        crate::app_state::upsert_local_event_record(
-                                                            &mut next,
-                                                            record,
-                                                        );
-                                                        next
-                                                    }));
-                                                }
-                                            } else {
-                                                set_state_for_async(Box::new(move |state| {
-                                                    let mut next = state.clone();
-                                                    next.profile_name_input = String::new();
-                                                    crate::app_state::upsert_local_event_record(
-                                                        &mut next,
-                                                        record,
-                                                    );
-                                                    next
-                                                }));
-                                            }
-                                        }
-                                        Err(_) => {
-                                            web_sys::console::log_1(
-                                                &"Failed to post change profile event".into(),
-                                            );
-                                        }
-                                    }
-                                });
+                                        filter,
+                                        set_state_for_async,
+                                        |next, _| {
+                                            next.profile_name_input = String::new();
+                                        },
+                                    ),
+                                );
                                 state
                             }));
                         }))
-                        .children([text(context.language.label("Change Name", "名前を変更", "Ŝanĝi nomon"))])
+                        .children([text(context.language.label(
+                            "Change Name",
+                            "名前を変更",
+                            "Ŝanĝi nomon",
+                        ))])
                         .into_node(),
                 ])
                 .into_node(),

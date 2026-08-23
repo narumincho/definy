@@ -372,150 +372,71 @@ fn module_update_form(
                                 return next;
                             }
                             let force_offline = state.force_offline;
-                            wasm_bindgen_futures::spawn_local(async move {
-                                let event_binary = match definy_event::sign_and_serialize(
-                                    definy_event::event::Event {
-                                        account_id: definy_event::event::AccountId(
-                                            key.verifying_key(),
-                                        ),
-                                        time: chrono::Utc::now(),
-                                        content: definy_event::event::EventContent::ModuleUpdate(
-                                            definy_event::event::ModuleUpdateEvent {
-                                                module_name: module_name.into(),
-                                                module_description: module_description.into(),
-                                                module_definition_event_hash:
-                                                    root_module_definition_hash.clone(),
-                                            },
-                                        ),
-                                    },
-                                    &key,
-                                ) {
-                                    Ok(value) => value,
-                                    Err(error) => {
-                                        set_state_for_async(Box::new(move |state| {
-                                            let mut next = state.clone();
-                                            next.module_update_form.result_message = Some(format!(
-                                                "{}: {:?}",
-                                                language.label(
-                                                    "Error: failed to serialize ModuleUpdate",
-                                                    "エラー: ModuleUpdate のシリアライズに失敗しました",
-                                                    "Eraro: malsukcesis seriigi ModuleUpdate",
-                                                ),
-                                                error
-                                            ));
-                                            next
-                                        }));
-                                        return;
-                                    }
-                                };
-
-                                match crate::fetch::post_event_with_queue(
-                                    event_binary.as_slice(),
+                            let root_module_definition_hash_for_cb =
+                                root_module_definition_hash.clone();
+                            wasm_bindgen_futures::spawn_local(
+                                crate::event_submit::submit_event(
+                                    definy_event::event::EventContent::ModuleUpdate(
+                                        definy_event::event::ModuleUpdateEvent {
+                                            module_name: module_name.into(),
+                                            module_description: module_description.into(),
+                                            module_definition_event_hash:
+                                                root_module_definition_hash.clone(),
+                                        },
+                                    ),
+                                    key,
                                     force_offline,
-                                )
-                                .await
-                                {
-                                    Ok(record) => {
-                                        let status = record.status.clone();
-                                        if status == crate::local_event::LocalEventStatus::Sent {
-                                            if let Ok(events) =
-                                                crate::fetch::get_events(None, Some(20), Some(0))
-                                                    .await
-                                            {
-                                                set_state_for_async(Box::new(move |state| {
-                                                    let mut next = state.clone();
-                                                    next.apply_latest_events(events, None);
-                                                    crate::app_state::upsert_local_event_record(
-                                                        &mut next, record,
-                                                    );
-                                                    if let Some(snapshot) = find_module_snapshot(
-                                                        &next,
-                                                        &root_module_definition_hash,
-                                                    ) {
-                                                        next.module_update_form
-                                                            .module_definition_event_hash =
-                                                            Some(root_module_definition_hash);
-                                                        next.module_update_form.module_name_input =
-                                                            snapshot.module_name;
-                                                        next.module_update_form
-                                                            .module_description_input =
-                                                            snapshot.module_description;
-                                                    } else {
-                                                        next.module_update_form
-                                                            .module_definition_event_hash = None;
-                                                        next.module_update_form.module_name_input =
-                                                            String::new();
-                                                        next.module_update_form
-                                                            .module_description_input =
-                                                            String::new();
-                                                    }
-                                                    next.module_update_form.result_message = Some(
-                                                        language
-                                                            .label(
-                                                                "ModuleUpdate event posted",
-                                                                "ModuleUpdate を投稿しました",
-                                                                "ModuleUpdate sendita",
-                                                            )
-                                                            .to_string(),
-                                                    );
-                                                    next
-                                                }));
-                                            }
-                                        } else {
-                                            set_state_for_async(Box::new(move |state| {
-                                                let mut next = state.clone();
-                                                crate::app_state::upsert_local_event_record(
-                                                    &mut next, record,
-                                                );
-                                                next.module_update_form.result_message = Some(
-                                                    match status {
-                                                        crate::local_event::LocalEventStatus::Queued => {
-                                                            language.label(
-                                                                "ModuleUpdate queued (offline)",
-                                                                "ModuleUpdate をキューに追加しました (オフライン)",
-                                                                "ModuleUpdate envicigita (senkonekte)",
-                                                            )
-                                                            .to_string()
-                                                        }
-                                                        crate::local_event::LocalEventStatus::Failed => {
-                                                            language.label(
-                                                                "ModuleUpdate failed to send",
-                                                                "ModuleUpdate の送信に失敗しました",
-                                                                "ModuleUpdate sendado malsukcesis",
-                                                            )
-                                                            .to_string()
-                                                        }
-                                                        crate::local_event::LocalEventStatus::Sent => {
-                                                            language.label(
-                                                                "ModuleUpdate event posted",
-                                                                "ModuleUpdate を投稿しました",
-                                                                "ModuleUpdate sendita",
-                                                            )
-                                                            .to_string()
-                                                        }
-                                                    },
-                                                );
-                                                next
-                                            }));
+                                    None,
+                                    set_state_for_async,
+                                move |next, record| {
+                                    if record.status == crate::local_event::LocalEventStatus::Sent {
+                                        if let Some(snapshot) = find_module_snapshot(
+                                            next,
+                                            &root_module_definition_hash_for_cb,
+                                        ) {
+                                            next.module_update_form
+                                                .module_definition_event_hash =
+                                                Some(root_module_definition_hash_for_cb);
+                                            next.module_update_form.module_name_input =
+                                                snapshot.module_name;
+                                            next.module_update_form
+                                                .module_description_input =
+                                                snapshot.module_description;
                                         }
+                                        next.module_update_form.result_message = Some(
+                                            language
+                                                .label(
+                                                    "ModuleUpdate event posted",
+                                                    "ModuleUpdate を投稿しました",
+                                                    "ModuleUpdate sendita",
+                                                )
+                                                .to_string(),
+                                        );
+                                    } else {
+                                        next.module_update_form.result_message = Some(
+                                            match record.status {
+                                                crate::local_event::LocalEventStatus::Queued => {
+                                                    language.label(
+                                                        "ModuleUpdate queued (offline)",
+                                                        "ModuleUpdate をキューに追加しました (オフライン)",
+                                                        "ModuleUpdate envicigita (senkonekte)",
+                                                    )
+                                                    .to_string()
+                                                }
+                                                crate::local_event::LocalEventStatus::Failed => {
+                                                    language.label(
+                                                        "ModuleUpdate failed to send",
+                                                        "ModuleUpdate の送信に失敗しました",
+                                                        "ModuleUpdate sendado malsukcesis",
+                                                    )
+                                                    .to_string()
+                                                }
+                                                crate::local_event::LocalEventStatus::Sent => unreachable!(),
+                                            },
+                                        );
                                     }
-                                    Err(error) => {
-                                        set_state_for_async(Box::new(move |state| {
-                                            let mut next = state.clone();
-                                            next.module_update_form.result_message = Some(format!(
-                                                "{}: {:?}",
-                                                language.label(
-                                                    "Error: failed to post ModuleUpdate",
-                                                    "エラー: ModuleUpdate の送信に失敗しました",
-                                                    "Eraro: malsukcesis sendi ModuleUpdate",
-                                                ),
-                                                error
-                                            ));
-                                            next
-                                        }));
-                                    }
-                                }
-                            });
+                                },
+                            ));
                             state
                         }));
                     }

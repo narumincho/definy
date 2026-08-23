@@ -438,151 +438,68 @@ fn part_update_form(
                             let expression = current_expression;
                             let module_definition_event_hash = current_module_hash;
                             let force_offline = state.force_offline;
-                            wasm_bindgen_futures::spawn_local(async move {
-                                let event_binary = match definy_event::sign_and_serialize(
-                                    definy_event::event::Event {
-                                        account_id: definy_event::event::AccountId(key
-                                            .verifying_key()),
-                                        time: chrono::Utc::now(),
-                                        content: definy_event::event::EventContent::PartUpdate(
-                                            definy_event::event::PartUpdateEvent {
-                                                part_name: part_name.into(),
-                                                part_description: part_description.into(),
-                                                part_definition_event_hash: definition_event_hash.clone(),
-                                                expression,
-                                                module_definition_event_hash,
-                                            },
-                                        ),
-                                    },
-                                    &key,
-                                ) {
-                                    Ok(value) => value,
-                                    Err(error) => {
-                                        set_state_for_async(Box::new(move |state| AppState {
-                                            event_detail_eval_result: Some(format!(
-                                                "{}: {:?}",
-                                                language.label("Error: failed to serialize PartUpdate",
-                                                    "エラー: PartUpdate のシリアライズに失敗しました",
-                                                    "Eraro: malsukcesis seriigi PartUpdate",
-                                                ),
-                                                error
-                                            )),
-                                            ..state.clone()
-                                        }));
-                                        return;
-                                    }
-                                };
-
-                                match crate::fetch::post_event_with_queue(
-                                    event_binary.as_slice(),
+                            let definition_event_hash_for_cb = definition_event_hash.clone();
+                            wasm_bindgen_futures::spawn_local(
+                                crate::event_submit::submit_event(
+                                    definy_event::event::EventContent::PartUpdate(
+                                        definy_event::event::PartUpdateEvent {
+                                            part_name: part_name.into(),
+                                            part_description: part_description.into(),
+                                            part_definition_event_hash: definition_event_hash.clone(),
+                                            expression,
+                                            module_definition_event_hash,
+                                        },
+                                    ),
+                                    key,
                                     force_offline,
-                                )
-                                .await
-                                {
-                                    Ok(record) => {
-                                        let status = record.status.clone();
-                                        if status == crate::local_event::LocalEventStatus::Sent {
-                                            if let Ok(events) =
-                                                crate::fetch::get_events(None, Some(20), Some(0)).await
-                                            {
-                                                set_state_for_async(Box::new(move |state| {
-                                                    let mut next = state.clone();
-                                                    next.apply_latest_events(events, None);
-                                                    crate::app_state::upsert_local_event_record(
-                                                        &mut next,
-                                                        record,
-                                                    );
-                                                    if let Some(snapshot) = find_part_snapshot(
-                                                        &next,
-                                                        &definition_event_hash,
-                                                    ) {
-                                                        next.part_update_form
-                                                            .part_definition_event_hash =
-                                                            Some(definition_event_hash.clone());
-                                                        next.part_update_form.part_name_input =
-                                                            snapshot.part_name;
-                                                        next.part_update_form
-                                                            .part_description_input =
-                                                            snapshot.part_description;
-                                                        next.part_update_form.expression_input =
-                                                            snapshot.expression;
-                                                        next.part_update_form
-                                                            .module_definition_event_hash =
-                                                            snapshot.module_definition_event_hash;
-                                                    } else {
-                                                        next.part_update_form
-                                                            .part_definition_event_hash = None;
-                                                        next.part_update_form.part_name_input =
-                                                            String::new();
-                                                        next.part_update_form
-                                                            .part_description_input =
-                                                            String::new();
-                                                        next.part_update_form.expression_input =
-                                                            definy_event::event::Expression::Number(
-                                                                definy_event::event::NumberExpression {
-                                                                    value: 0,
-                                                                 },
-                                                            );
-                                                        next.part_update_form
-                                                            .module_definition_event_hash = None;
-                                                    }
-                                                    next.event_detail_eval_result =
-                                                        Some(language.label("PartUpdate event posted",
-                                                            "PartUpdate を投稿しました",
-                                                            "PartUpdate sendita",
-                                                        ).to_string());
-                                                    next
-                                                }));
-                                            }
-                                        } else {
-                                            set_state_for_async(Box::new(move |state| {
-                                                let mut next = state.clone();
-                                                crate::app_state::upsert_local_event_record(
-                                                    &mut next,
-                                                    record,
-                                                );
-                                                next.event_detail_eval_result = Some(match status {
-                                                    crate::local_event::LocalEventStatus::Queued => {
-                                                        language.label("PartUpdate queued (offline)",
-                                                            "PartUpdate をキューに追加しました (オフライン)",
-                                                            "PartUpdate envicigita (senkonekte)",
-                                                        )
-                                                        .to_string()
-                                                    }
-                                                    crate::local_event::LocalEventStatus::Failed => {
-                                                        language.label("PartUpdate failed to send",
-                                                            "PartUpdate の送信に失敗しました",
-                                                            "PartUpdate sendado malsukcesis",
-                                                        )
-                                                        .to_string()
-                                                    }
-                                                    crate::local_event::LocalEventStatus::Sent => {
-                                                        language.label("PartUpdate event posted",
-                                                            "PartUpdate を投稿しました",
-                                                            "PartUpdate sendita",
-                                                        )
-                                                        .to_string()
-                                                    }
-                                                });
-                                                next
-                                            }));
+                                    None,
+                                    set_state_for_async,
+                                move |next, record| {
+                                    if record.status == crate::local_event::LocalEventStatus::Sent {
+                                        if let Some(snapshot) = find_part_snapshot(
+                                            next,
+                                            &definition_event_hash_for_cb,
+                                        ) {
+                                            next.part_update_form
+                                                .part_definition_event_hash =
+                                                Some(definition_event_hash_for_cb.clone());
+                                            next.part_update_form.part_name_input =
+                                                snapshot.part_name;
+                                            next.part_update_form
+                                                .part_description_input =
+                                                snapshot.part_description;
+                                            next.part_update_form.expression_input =
+                                                snapshot.expression;
+                                            next.part_update_form
+                                                .module_definition_event_hash =
+                                                snapshot.module_definition_event_hash;
                                         }
+                                        next.event_detail_eval_result =
+                                            Some(language.label("PartUpdate event posted",
+                                                "PartUpdate を投稿しました",
+                                                "PartUpdate sendita",
+                                            ).to_string());
+                                    } else {
+                                        next.event_detail_eval_result = Some(match record.status {
+                                            crate::local_event::LocalEventStatus::Queued => {
+                                                language.label("PartUpdate queued (offline)",
+                                                    "PartUpdate をキューに追加しました (オフライン)",
+                                                    "PartUpdate envicigita (senkonekte)",
+                                                )
+                                                .to_string()
+                                            }
+                                            crate::local_event::LocalEventStatus::Failed => {
+                                                language.label("PartUpdate failed to send",
+                                                    "PartUpdate の送信に失敗しました",
+                                                    "PartUpdate sendado malsukcesis",
+                                                )
+                                                .to_string()
+                                            }
+                                            crate::local_event::LocalEventStatus::Sent => unreachable!(),
+                                        });
                                     }
-                                    Err(error) => {
-                                        set_state_for_async(Box::new(move |state| AppState {
-                                            event_detail_eval_result: Some(format!(
-                                                "{}: {:?}",
-                                                language.label("Error: failed to post PartUpdate",
-                                                    "エラー: PartUpdate の送信に失敗しました",
-                                                    "Eraro: malsukcesis sendi PartUpdate",
-                                                ),
-                                                error
-                                            )),
-                                            ..state.clone()
-                                        }));
-                                    }
-                                }
-                            });
+                                },
+                            ));
                             state
                         }));
                         }

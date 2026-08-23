@@ -137,88 +137,45 @@ fn part_definition_form_view(state: &AppState, context: &PageContext) -> Node {
                                 let key_for_async = key.clone();
                                 let force_offline = state.force_offline;
 
-                                wasm_bindgen_futures::spawn_local(async move {
-                                    let event_binary = definy_event::sign_and_serialize(
-                                        definy_event::event::Event {
-                                            account_id: definy_event::event::AccountId(
-                                                key_for_async.verifying_key(),
-                                            ),
-                                            time: chrono::Utc::now(),
-                                            content: definy_event::event::EventContent::PartDefinition(
-                                                definy_event::event::PartDefinitionEvent {
-                                                    part_name: part_name.into(),
-                                                    part_type,
-                                                    description: description.into(),
-                                                    expression,
-                                                    module_definition_event_hash,
-                                                },
-                                            ),
-                                        },
-                                        &key_for_async,
-                                    )
-                                    .unwrap();
-
-                                    match crate::fetch::post_event_with_queue(
-                                        event_binary.as_slice(),
+                                wasm_bindgen_futures::spawn_local(
+                                    crate::event_submit::submit_event(
+                                        definy_event::event::EventContent::PartDefinition(
+                                            definy_event::event::PartDefinitionEvent {
+                                                part_name: part_name.into(),
+                                                part_type,
+                                                description: description.into(),
+                                                expression,
+                                                module_definition_event_hash,
+                                            },
+                                        ),
+                                        key_for_async,
                                         force_offline,
-                                    )
-                                    .await
-                                    {
-                                        Ok(record) => {
-                                            let status = record.status.clone();
-                                            if status == crate::local_event::LocalEventStatus::Sent {
-                                                let events = crate::fetch::get_events(None, Some(20), Some(0)).await;
-                                                if let Ok(events) = events {
-                                                    set_state_for_async(Box::new(
-                                                        move |state| {
-                                                            let mut next = state.clone();
-                                                            next.apply_latest_events(events, None);
-                                                            crate::app_state::upsert_local_event_record(&mut next, record);
-                                                            next
-                                                        },
-                                                    ));
+                                        None,
+                                        set_state_for_async,
+                                    move |next, record| {
+                                        if record.status != crate::local_event::LocalEventStatus::Sent {
+                                            next.part_definition_form.eval_result = Some(match record.status {
+                                                crate::local_event::LocalEventStatus::Queued => {
+                                                    language.label(
+                                                        "PartDefinition queued (offline)",
+                                                        "PartDefinition をキューに追加しました (オフライン)",
+                                                        "PartDefinition envicigita (senkonekte)",
+                                                    )
+                                                    .to_string()
                                                 }
-                                            } else {
-                                                set_state_for_async(Box::new(move |state| {
-                                                    let mut next = state.clone();
-                                                    crate::app_state::upsert_local_event_record(&mut next, record);
-                                                    next.part_definition_form.eval_result = Some(match status {
-                                                        crate::local_event::LocalEventStatus::Queued => {
-                                                            language.label(
-                                                                "PartDefinition queued (offline)",
-                                                                "PartDefinition をキューに追加しました (オフライン)",
-                                                                "PartDefinition envicigita (senkonekte)",
-                                                            )
-                                                            .to_string()
-                                                        }
-                                                        crate::local_event::LocalEventStatus::Failed => {
-                                                            language.label(
-                                                                "PartDefinition failed to send",
-                                                                "PartDefinition の送信に失敗しました",
-                                                                "PartDefinition sendado malsukcesis",
-                                                            )
-                                                            .to_string()
-                                                        }
-                                                        crate::local_event::LocalEventStatus::Sent => {
-                                                            language.label(
-                                                                "PartDefinition posted",
-                                                                "PartDefinition を投稿しました",
-                                                                "PartDefinition sendita",
-                                                            )
-                                                            .to_string()
-                                                        }
-                                                    });
-                                                    next
-                                                }));
-                                            }
+                                                crate::local_event::LocalEventStatus::Failed => {
+                                                    language.label(
+                                                        "PartDefinition failed to send",
+                                                        "PartDefinition の送信に失敗しました",
+                                                        "PartDefinition sendado malsukcesis",
+                                                    )
+                                                    .to_string()
+                                                }
+                                                crate::local_event::LocalEventStatus::Sent => unreachable!(),
+                                            });
                                         }
-                                        Err(e) => {
-                                            web_sys::console::log_1(
-                                                &format!("Failed to post event: {:?}", e).into(),
-                                            );
-                                        }
-                                    }
-                                });
+                                    },
+                                ));
                                 let mut next = state.clone();
                                 next.part_definition_form.part_name_input = String::new();
                                 next.part_definition_form.part_type_input = Some(definy_event::event::PartType::Number);
