@@ -34,30 +34,38 @@ https://github.com/narumincho/definy/tree/prev2023
 
 - [Docker](https://www.docker.com/get-started/)
 
-## DB 起動コマンド
+## DB 起動コマンド (任意)
+
+デフォルトでは `DATABASE_URL` を指定しない場合、インメモリの SurrealDB (`mem://`) で動作します (サーバー再起動時にデータは保持されません)。
+
+永続化のために SurrealDB サーバーを Docker で起動する場合:
 
 ```sh
-docker run -d --name definy-dev-db -e POSTGRES_DB=postgres -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=password -p 5432:5432 postgres:17-alpine
-```
-
-データ保持をする場合
-
-```sh
-docker run -d --name definy-dev-db -e POSTGRES_DB=postgres -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=password -p 5432:5432 -v pgdata:/var/lib/postgresql/data postgres:17-alpine
+docker run -d --name definy-dev-db -p 8000:8000 surrealdb/surrealdb:latest start --user root --pass root
 ```
 
 ## 本体サーバー起動コマンド
+
+### 1. インメモリDBで手軽に起動する場合 (DATABASE_URL 不要)
+
+```sh
+cargo run -p definy-build
+cargo run -p definy-server
+```
+
+### 2. SurrealDB サーバーに接続して起動する場合
 
 Linux, Mac の場合
 
 ```sh
 cargo run -p definy-build
-DATABASE_URL=postgres://postgres:password@localhost:5432/postgres cargo run -p definy-server
+DATABASE_URL=ws://localhost:8000/rpc cargo run -p definy-server
 ```
 
 PowerShell の場合
 
 ```ps1
 cargo run -p definy-build
-& { $env:DATABASE_URL="postgres://postgres:password@localhost:5432/postgres"; cargo run -p definy-server }
+& { $env:DATABASE_URL="ws://localhost:8000/rpc"; cargo run -p definy-server }
 ```
+

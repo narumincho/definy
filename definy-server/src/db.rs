@@ -1,72 +1,53 @@
-use anyhow::Context;
 use sha2::Digest;
-use sqlx::Row;
+use surrealdb::Surreal;
+use surrealdb::engine::any::Any;
+use surrealdb::types::SurrealValue;
 
-pub async fn init_db() -> Result<sqlx::postgres::PgPool, anyhow::Error> {
-    println!("Connecting to postgresql...");
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, SurrealValue)]
+pub struct EventRecord {
+    pub event_binary_hash: Vec<u8>,
+    pub signature: Vec<u8>,
+    pub account_id: Vec<u8>,
+    pub time: chrono::DateTime<chrono::Utc>,
+    pub event_binary: Vec<u8>,
+    pub server_receive_timestamp: chrono::DateTime<chrono::Utc>,
+    pub address: String,
+    pub event_type: String,
+}
 
-    let database_url =
-        std::env::var("DATABASE_URL").context("environment variable DATABASE_URL must be set")?;
+pub async fn init_db() -> Result<Surreal<Any>, anyhow::Error> {
+    let db = match std::env::var("DATABASE_URL") {
+        Ok(url) => {
+            println!("Connecting to SurrealDB at {}...", url);
+            let db = surrealdb::engine::any::connect(&url).await?;
+            println!("Connecting to SurrealDB... done");
+            db
+        }
+        Err(_) => {
+            eprintln!(
+                "WARNING: DATABASE_URL environment variable is not set. Using in-memory SurrealDB (mem://). Data will NOT be persisted across server restarts."
+            );
+            let db = surrealdb::engine::any::connect("mem://").await?;
+            println!("Initialized in-memory SurrealDB.");
+            db
+        }
+    };
 
-    let pool = sqlx::postgres::PgPool::connect(database_url.as_str()).await?;
+    db.use_ns("definy").use_db("definy").await?;
 
-    let result = sqlx::query("select * from version()")
-        .fetch_one(&pool)
-        .await?;
-
-    println!("PostgreSQL version: {:?}", result);
-
-    println!("Connecting to postgresql... done");
-
-    println!("Migrating database...");
-
-    sqlx::query(
-        format!(
-            "
-DO $$
-BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'event_type') THEN
-        CREATE TYPE event_type AS ENUM ({});
-    END IF;
-END
-$$",
-            <definy_event::event::EventType as strum::VariantNames>::VARIANTS
-                .iter()
-                .map(|e| format!("'{}'", e))
-                .collect::<Vec<_>>()
-                .join(", ")
-        )
-        .as_str(),
+    println!("Migrating database schema...");
+    db.query(
+        "
+        DEFINE TABLE IF NOT EXISTS events SCHEMALESS;
+        DEFINE INDEX IF NOT EXISTS idx_events_time ON TABLE events COLUMNS time;
+        DEFINE INDEX IF NOT EXISTS idx_events_type ON TABLE events COLUMNS event_type;
+        ",
     )
-    .execute(&pool)
-    .await?;
+    .await?
+    .check()?;
+    println!("Migrating database schema... done");
 
-    for event_type in <definy_event::event::EventType as strum::VariantNames>::VARIANTS {
-        sqlx::query(
-            format!("ALTER TYPE event_type ADD VALUE IF NOT EXISTS '{event_type}'").as_str(),
-        )
-        .execute(&pool)
-        .await?;
-    }
-
-    sqlx::query(
-        "create table if not exists events (
-    event_binary_hash bytea primary key,
-    signature bytea not null,
-    account_id bytea not null,
-    time timestamp with time zone not null,
-    event_binary bytea not null,
-    server_receive_timestamp timestamp with time zone not null,
-    address text not null,
-    event_type event_type not null
-)",
-    )
-    .execute(&pool)
-    .await?;
-
-    println!("Migrating database... done");
-
-    Ok(pool)
+    Ok(db)
 }
 
 pub async fn save_event(
@@ -74,116 +55,88 @@ pub async fn save_event(
     signature: &ed25519_dalek::Signature,
     event_binary: &[u8],
     address: std::net::SocketAddr,
-    pool: &sqlx::postgres::PgPool,
+    db: &Surreal<Any>,
 ) -> Result<(), anyhow::Error> {
     let mut hasher = sha2::Sha256::new();
     hasher.update(event_binary);
     let event_binary_hash = hasher.finalize();
+    let event_binary_hash_hex = hex::encode(event_binary_hash);
 
-    sqlx::query(
-        "insert into events (
-    event_binary_hash,
-    signature,
-    account_id,
-    time,
-    event_binary,
-    server_receive_timestamp,
-    address,
-    event_type
-) values ($1, $2, $3, $4, $5, current_timestamp, $6, $7)",
-    )
-    .bind(event_binary_hash.as_slice())
-    .bind(signature.to_bytes())
-    .bind(event.account_id.0.as_ref())
-    .bind(event.time)
-    .bind(event_binary)
-    .bind(address.to_string())
-    .bind(strum::IntoDiscriminant::discriminant(&event.content))
-    .execute(pool)
-    .await?;
+    let event_type = strum::IntoDiscriminant::discriminant(&event.content);
+
+    let record = EventRecord {
+        event_binary_hash: event_binary_hash.to_vec(),
+        signature: signature.to_bytes().to_vec(),
+        account_id: event.account_id.0.as_bytes().to_vec(),
+        time: event.time,
+        event_binary: event_binary.to_vec(),
+        server_receive_timestamp: chrono::Utc::now(),
+        address: address.to_string(),
+        event_type: event_type.to_string(),
+    };
+
+    let _: Option<EventRecord> = db
+        .create(("events", event_binary_hash_hex.as_str()))
+        .content(record)
+        .await?;
 
     Ok(())
 }
 
 pub async fn get_events(
-    pool: &sqlx::postgres::PgPool,
+    db: &Surreal<Any>,
     event_type: Option<definy_event::event::EventType>,
     limit: Option<usize>,
     offset: Option<usize>,
 ) -> Result<Box<[Vec<u8>]>, anyhow::Error> {
-    let mut query = "select event_binary from events".to_string();
-    let mut conditions = Vec::new();
-    enum BindValue {
-        EventType(definy_event::event::EventType),
-        Limit(i64),
-        Offset(i64),
+    let mut query_str = "SELECT VALUE event_binary FROM events".to_string();
+
+    if event_type.is_some() {
+        query_str.push_str(" WHERE event_type = $event_type");
     }
 
-    let mut binds = Vec::new();
-    let mut bind_index = 1;
+    query_str.push_str(" ORDER BY time DESC");
+
+    if limit.is_some() {
+        query_str.push_str(" LIMIT $limit");
+    }
+
+    if offset.is_some() {
+        query_str.push_str(" START $offset");
+    }
+
+    let mut query = db.query(&query_str);
 
     if let Some(event_type) = event_type {
-        conditions.push(format!("event_type = ${}", bind_index));
-        binds.push(BindValue::EventType(event_type));
-        bind_index += 1;
+        query = query.bind(("event_type", event_type.to_string()));
     }
-
-    if !conditions.is_empty() {
-        query.push_str(" where ");
-        query.push_str(&conditions.join(" and "));
-    }
-
-    query.push_str(" ORDER BY time DESC");
 
     if let Some(limit) = limit {
-        query.push_str(&format!(" LIMIT ${}", bind_index));
         let limit_value = std::cmp::min(limit, i64::MAX as usize) as i64;
-        binds.push(BindValue::Limit(limit_value));
-        bind_index += 1;
+        query = query.bind(("limit", limit_value));
     }
 
     if let Some(offset) = offset {
-        query.push_str(&format!(" OFFSET ${}", bind_index));
         let offset_value = std::cmp::min(offset, i64::MAX as usize) as i64;
-        binds.push(BindValue::Offset(offset_value));
-        // bind_index += 1;
+        query = query.bind(("offset", offset_value));
     }
 
-    let mut sql_query = sqlx::query(&query);
+    let mut response = query.await?.check()?;
+    let events: Vec<Vec<u8>> = response.take(0)?;
 
-    for bind in binds {
-        sql_query = match bind {
-            BindValue::EventType(value) => sql_query.bind(value),
-            BindValue::Limit(value) => sql_query.bind(value),
-            BindValue::Offset(value) => sql_query.bind(value),
-        };
-    }
-
-    let rows = sql_query.fetch_all(pool).await?;
-
-    let events = rows
-        .into_iter()
-        .map(|row| row.try_get("event_binary"))
-        .collect::<Result<Box<[Vec<u8>]>, sqlx::Error>>()?;
-
-    Ok(events)
+    Ok(events.into_boxed_slice())
 }
 
 pub async fn get_event(
-    pool: &sqlx::postgres::PgPool,
+    db: &Surreal<Any>,
     event_binary_hash: &[u8],
 ) -> Result<Option<Vec<u8>>, anyhow::Error> {
-    let row = sqlx::query("select event_binary from events where event_binary_hash = $1")
-        .bind(event_binary_hash)
-        .fetch_optional(pool)
+    let event_binary_hash_hex = hex::encode(event_binary_hash);
+    let record: Option<EventRecord> = db
+        .select(("events", event_binary_hash_hex.as_str()))
         .await?;
 
-    let event = row
-        .map(|row| row.try_get("event_binary"))
-        .transpose()
-        .map_err(|e| anyhow::anyhow!("Failed to get event binary: {:?}", e))?;
-
-    Ok(event)
+    Ok(record.map(|r| r.event_binary))
 }
 
 #[cfg(test)]
@@ -192,15 +145,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_save_and_get_create_account_event() {
-        let database_url = match std::env::var("DATABASE_URL") {
-            Ok(url) => url,
-            Err(_) => return,
-        };
-        let pool = match sqlx::postgres::PgPool::connect(&database_url).await {
-            Ok(p) => p,
-            Err(_) => return,
-        };
-        let _ = init_db().await.unwrap();
+        let db = init_db().await.unwrap();
 
         let secret = ed25519_dalek::SigningKey::generate(&mut rand::rngs::OsRng);
         let event = definy_event::event::Event {
@@ -217,11 +162,15 @@ mod tests {
             definy_event::verify_and_deserialize(&event_binary).unwrap();
 
         let addr = "127.0.0.1:8000".parse().unwrap();
-        save_event(&verified_event, &signature, &event_binary, addr, &pool)
+        save_event(&verified_event, &signature, &event_binary, addr, &db)
             .await
             .unwrap();
 
-        let events = get_events(&pool, None, Some(10), Some(0)).await.unwrap();
-        assert!(!events.is_empty());
+        let events = get_events(&db, None, Some(10), Some(0)).await.unwrap();
+        assert_eq!(events.len(), 1);
+
+        let hash = sha2::Sha256::digest(&event_binary);
+        let single_event = get_event(&db, &hash).await.unwrap();
+        assert_eq!(single_event, Some(event_binary));
     }
 }

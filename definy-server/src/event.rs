@@ -3,10 +3,12 @@ use std::net::SocketAddr;
 use http_body_util::{BodyExt, Full};
 use hyper::body::Bytes;
 use hyper::{Request, Response};
+use surrealdb::Surreal;
+use surrealdb::engine::any::Any;
 
 pub async fn handle_event_get(
     request: Request<impl hyper::body::Body>,
-    pool: sqlx::postgres::PgPool,
+    db: &Surreal<Any>,
     event_binary_hash_base64: &str,
 ) -> Result<Response<Full<Bytes>>, hyper::http::Error> {
     if request.method() != hyper::Method::GET {
@@ -29,7 +31,7 @@ pub async fn handle_event_get(
         }
     };
 
-    match crate::db::get_event(&pool, &event_binary_hash).await {
+    match crate::db::get_event(db, &event_binary_hash).await {
         Err(e) => {
             eprintln!("Failed to get event: {:?}", e);
             Response::builder()
@@ -69,11 +71,11 @@ struct EventsQuery {
 pub async fn handle_events(
     request: Request<impl hyper::body::Body>,
     address: SocketAddr,
-    pool: &sqlx::postgres::PgPool,
+    db: &Surreal<Any>,
 ) -> Result<Response<Full<Bytes>>, hyper::http::Error> {
     match *request.method() {
-        hyper::Method::GET => handle_events_get(request.uri().query(), pool).await,
-        hyper::Method::POST => handle_events_post(request, address, pool).await,
+        hyper::Method::GET => handle_events_get(request.uri().query(), db).await,
+        hyper::Method::POST => handle_events_post(request, address, db).await,
         _ => Response::builder()
             .status(405)
             .header("Content-Type", "text/html; charset=utf-8")
@@ -83,7 +85,7 @@ pub async fn handle_events(
 
 async fn handle_events_get(
     query: Option<&str>,
-    pool: &sqlx::postgres::PgPool,
+    db: &Surreal<Any>,
 ) -> Result<Response<Full<Bytes>>, hyper::http::Error> {
     match serde_urlencoded::from_str::<EventsQuery>(query.unwrap_or("")) {
         Err(_) => Response::builder()
@@ -93,7 +95,7 @@ async fn handle_events_get(
                 "400 Bad Request: Invalid query format",
             ))),
         Ok(query) => {
-            match crate::db::get_events(pool, query.event_type, query.limit, query.offset).await {
+            match crate::db::get_events(db, query.event_type, query.limit, query.offset).await {
                 Err(e) => {
                     eprintln!("Failed to get events: {:?}", e);
                     Response::builder()
@@ -127,7 +129,7 @@ async fn handle_events_get(
 async fn handle_events_post(
     request: Request<impl hyper::body::Body>,
     address: SocketAddr,
-    pool: &sqlx::postgres::PgPool,
+    db: &Surreal<Any>,
 ) -> Result<Response<Full<Bytes>>, hyper::http::Error> {
     let body = request.into_body();
     match body.collect().await {
@@ -135,7 +137,7 @@ async fn handle_events_post(
             let bytes = collected.to_bytes();
             match definy_event::verify_and_deserialize(&bytes) {
                 Ok((signature, data)) => {
-                    match crate::db::save_event(&data, &signature, &bytes, address, pool).await {
+                    match crate::db::save_event(&data, &signature, &bytes, address, db).await {
                         Ok(()) => Response::builder()
                             .header("content-type", "text/plain; charset=utf-8")
                             .body(Full::new(Bytes::from("OK"))),

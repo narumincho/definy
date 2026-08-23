@@ -14,12 +14,7 @@ pub struct Event {
 #[strum_discriminants(name(EventType))]
 #[strum_discriminants(serde(rename_all = "snake_case"))]
 #[strum_discriminants(strum(serialize_all = "snake_case"))]
-#[strum_discriminants(derive(Serialize, Deserialize, strum_macros::Display, strum::VariantNames,))]
-#[cfg_attr(
-    feature = "sqlx",
-    strum_discriminants(derive(sqlx::Type)),
-    strum_discriminants(sqlx(type_name = "event_type", rename_all = "snake_case"))
-)]
+#[strum_discriminants(derive(Serialize, Deserialize, strum_macros::Display, strum::VariantNames))]
 pub enum EventContent {
     CreateAccount(CreateAccountEvent),
     ChangeProfile(ChangeProfileEvent),
