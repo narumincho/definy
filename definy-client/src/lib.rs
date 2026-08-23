@@ -1,6 +1,5 @@
 use definy_event::EventHashId;
 use definy_ui::AppState;
-use definy_ui::ResourceHash;
 use wasm_bindgen::JsValue;
 use wasm_bindgen::prelude::*;
 
@@ -14,29 +13,8 @@ fn run() -> Result<(), JsValue> {
 mod keyboard_nav;
 struct DefinyApp {}
 
-static SSR_RESOURCE_HASH: std::sync::LazyLock<Option<ResourceHash>> =
-    std::sync::LazyLock::new(read_resource_hash_from_dom);
 static SSR_INITIAL_STATE_TEXT: std::sync::LazyLock<Option<String>> =
     std::sync::LazyLock::new(read_ssr_initial_state_text);
-
-fn read_resource_hash_from_dom() -> Option<ResourceHash> {
-    let document = web_sys::window()?.document()?;
-    let script = document.query_selector("script[type=\"module\"]").ok()??;
-    let text = script.text_content()?;
-
-    let js = text
-        .split("import init from '/")
-        .nth(1)?
-        .split("';")
-        .next()?;
-
-    let wasm = text.split("module_or_path: \"").nth(1)?.split('"').next()?;
-
-    Some(ResourceHash {
-        js: js.to_string(),
-        wasm: wasm.to_string(),
-    })
-}
 
 fn read_ssr_initial_state_text() -> Option<String> {
     web_sys::window()?
@@ -45,20 +23,9 @@ fn read_ssr_initial_state_text() -> Option<String> {
         .text_content()
 }
 
-fn read_ssr_state() -> Option<(Vec<definy_ui::EventWithHash>, bool, Vec<Vec<u8>>)> {
+fn read_ssr_state() -> Option<definy_ui::SsrState> {
     let text = SSR_INITIAL_STATE_TEXT.as_ref()?.to_string();
-    let decoded = definy_ui::decode_ssr_state(text.as_str())?;
-    let event_binaries = decoded.event_binaries;
-    let events = event_binaries
-        .iter()
-        .map(|bytes| {
-            (
-                EventHashId::from_bytes(bytes),
-                definy_event::verify_and_deserialize(bytes),
-            )
-        })
-        .collect();
-    Some((events, decoded.has_more, event_binaries))
+    definy_ui::decode_ssr_state(text.as_str())
 }
 
 impl narumincho_vdom_client::App<AppState> for DefinyApp {
@@ -67,8 +34,6 @@ impl narumincho_vdom_client::App<AppState> for DefinyApp {
     ) -> AppState {
         let fire = std::rc::Rc::clone(fire);
         let ssr_state = read_ssr_state();
-        let ssr_event_binaries = ssr_state.as_ref().map(|(_, _, binaries)| binaries.clone());
-        let has_ssr_events = ssr_state.is_some();
 
         let fire_for_keydown = std::rc::Rc::clone(&fire);
         let on_keydown =
@@ -103,26 +68,33 @@ impl narumincho_vdom_client::App<AppState> for DefinyApp {
 
         let query_params = definy_ui::query::parse_query(Some(query_string.as_str()));
         let filter_for_fetch = query_params.event_type;
-        let html_lang = web_sys::window()
-            .and_then(|window| window.document())
-            .and_then(|document| document.document_element())
-            .and_then(|element| element.get_attribute("lang"));
-        let language_resolution = definy_ui::language::resolve_language_with_fallback(
-            Some(query_string.as_str()),
-            || {
-                html_lang
-                    .as_deref()
-                    .and_then(definy_ui::language::language_from_tag)
-                    .or_else(definy_ui::language::best_language_from_browser)
-                    .unwrap_or_else(definy_ui::language::default_language)
-            },
-        );
-        let language_fallback_notice = language_resolution.fallback_notice();
+
+        let (language, language_requested_code, has_more) = if let Some(ref ssr) = ssr_state {
+            (
+                ssr.language,
+                ssr.language_requested_code.clone(),
+                ssr.has_more,
+            )
+        } else {
+            let browser_lang = definy_ui::language::best_language_from_browser();
+            let language_resolution = definy_ui::language::resolve_language(
+                Some(query_string.as_str()),
+                browser_lang.map(|l| l.to_code()),
+            );
+            (
+                language_resolution.language,
+                language_resolution.unsupported_query_lang,
+                true,
+            )
+        };
+
+        let ssr_state_for_async = read_ssr_state();
         wasm_bindgen_futures::spawn_local(async move {
-            if let Some(ssr_event_binaries) = ssr_event_binaries {
-                let _ = definy_ui::indexed_db::store_events(&ssr_event_binaries).await;
+            if let Some(decoded_ssr_state) = ssr_state_for_async.as_ref() {
+                let _ =
+                    definy_ui::indexed_db::store_events(&decoded_ssr_state.event_binaries).await;
             }
-            if !has_ssr_events {
+            if ssr_state_for_async.is_none() {
                 if let Ok(cached_event_binaries) =
                     definy_ui::indexed_db::load_event_binaries().await
                 {
@@ -229,23 +201,32 @@ impl narumincho_vdom_client::App<AppState> for DefinyApp {
             definy_ui::Location::from_url(&pathname)
         };
 
-        let (events, is_loading, has_more) = if let Some((ssr_events, has_more, _)) = ssr_state {
-            // SSRが送ってきた状態をそのまま採用
-            (ssr_events, false, has_more)
-        } else {
-            (Vec::new(), true, true)
-        };
-
+        let has_ssr_state = ssr_state.is_some();
         definy_ui::build_initial_state(
             location,
-            events,
-            is_loading,
+            ssr_state.map_or(vec![], |state| {
+                state
+                    .event_binaries
+                    .iter()
+                    .map(|bytes| {
+                        (
+                            EventHashId::from_bytes(bytes),
+                            definy_event::verify_and_deserialize(bytes),
+                        )
+                    })
+                    .collect()
+            }),
+            !has_ssr_state,
             has_more,
             None,
             filter_for_fetch,
-            language_resolution.language,
-            language_fallback_notice,
+            language,
+            language_requested_code,
         )
+    }
+
+    fn title(state: &AppState) -> String {
+        definy_ui::document_title_text(state)
     }
 
     fn on_navigate(state: AppState, url: String) -> AppState {
@@ -261,20 +242,13 @@ impl narumincho_vdom_client::App<AppState> for DefinyApp {
             let parsed_language = requested_lang
                 .as_deref()
                 .and_then(definy_ui::language::language_from_tag);
-            let (language, language_fallback_notice) = if let Some(requested_lang) = requested_lang
-            {
+            let (language, language_requested_code) = if let Some(requested_lang) = requested_lang {
                 if let Some(parsed_language) = parsed_language {
                     (parsed_language, None)
                 } else {
                     let fallback_language = definy_ui::language::best_language_from_browser()
                         .unwrap_or_else(definy_ui::language::default_language);
-                    (
-                        fallback_language,
-                        Some(definy_ui::LanguageFallbackNotice {
-                            requested: requested_lang,
-                            fallback_to_code: fallback_language.to_code(),
-                        }),
-                    )
+                    (fallback_language, Some(requested_lang))
                 }
             } else {
                 (state.language, None)
@@ -283,7 +257,7 @@ impl narumincho_vdom_client::App<AppState> for DefinyApp {
                 location,
                 event_detail_eval_result: None,
                 language,
-                language_fallback_notice,
+                language_requested_code,
                 ..state
             };
             if matches!(next.location, Some(definy_ui::Location::Home))
@@ -318,6 +292,6 @@ impl narumincho_vdom_client::App<AppState> for DefinyApp {
     }
 
     fn render(state: &AppState) -> narumincho_vdom::Node {
-        definy_ui::render(state, &SSR_RESOURCE_HASH, SSR_INITIAL_STATE_TEXT.as_deref())
+        definy_ui::render(state)
     }
 }

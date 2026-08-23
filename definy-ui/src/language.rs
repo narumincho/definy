@@ -2,7 +2,7 @@ use std::collections::HashSet;
 
 use crate::query::parse_query;
 
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub enum Language {
     English,
     Japanese,
@@ -13,17 +13,6 @@ pub enum Language {
 pub struct LanguageResolution {
     pub language: Language,
     pub unsupported_query_lang: Option<String>,
-}
-
-impl LanguageResolution {
-    pub fn fallback_notice(&self) -> Option<crate::LanguageFallbackNotice> {
-        self.unsupported_query_lang
-            .as_ref()
-            .map(|req| crate::LanguageFallbackNotice {
-                requested: req.clone(),
-                fallback_to_code: self.language.to_code(),
-            })
-    }
 }
 
 pub const SUPPORTED_LANGUAGES: &[Language] =

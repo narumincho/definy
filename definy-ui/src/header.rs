@@ -227,7 +227,7 @@ fn language_dropdown(state: &AppState) -> Node {
                                 };
                                 AppState {
                                     language,
-                                    language_fallback_notice: None,
+                                    language_requested_code: None,
                                     ..state
                                 }
                             }));
@@ -239,7 +239,7 @@ fn language_dropdown(state: &AppState) -> Node {
                 .into_node()
         }),
     );
-    match &state.language_fallback_notice {
+    match &state.language_requested_code {
         Some(notice) => Div::new()
             .style(
                 Style::new()
@@ -258,7 +258,8 @@ fn language_dropdown(state: &AppState) -> Node {
                     )
                     .children([text(format!(
                         "言語「{}」はサポートされていないため「{}」にフォールバックしました",
-                        notice.requested, notice.fallback_to_code
+                        notice,
+                        state.language.native_name()
                     ))])
                     .into_node(),
             ])

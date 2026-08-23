@@ -18,6 +18,10 @@ pub static DOCUMENT: std::sync::LazyLock<web_sys::Document> = std::sync::LazyLoc
 
 pub trait App<State: Clone + 'static> {
     fn initial_state(fire: &Rc<dyn Fn(Box<dyn FnOnce(State) -> State>)>) -> State;
+    fn title(state: &State) -> String {
+        let _ = state;
+        String::new()
+    }
     fn render(state: &State) -> Node;
     fn on_navigate(state: State, url: String) -> State {
         let _ = url;
@@ -26,9 +30,7 @@ pub trait App<State: Clone + 'static> {
 }
 
 pub fn start<State: Clone + 'static, A: App<State>>() {
-    let html_element = DOCUMENT
-        .document_element()
-        .expect("should have a document element");
+    let body_element = DOCUMENT.body().expect("should have a body element");
 
     let state_holder = Rc::new(std::cell::RefCell::new(None::<State>));
 
@@ -57,6 +59,11 @@ pub fn start<State: Clone + 'static, A: App<State>>() {
 
     let vdom = A::render(state_holder.borrow().as_ref().unwrap());
     let first_patches = diff::add_event_listener_patches(&vdom);
+
+    let initial_title = A::title(state_holder.borrow().as_ref().unwrap());
+    if !initial_title.is_empty() {
+        DOCUMENT.set_title(&initial_title);
+    }
 
     let dispatch = Rc::new(std::cell::RefCell::new(
         None::<Box<dyn Fn(Box<dyn FnOnce(State) -> State>)>>,
@@ -94,12 +101,17 @@ pub fn start<State: Clone + 'static, A: App<State>>() {
     let update_view = {
         let state_holder_clone = Rc::clone(&state_holder);
         let vdom_clone = Rc::clone(&vdom_clone);
-        let html_element_clone = html_element.clone();
+        let body_element_clone = body_element.clone();
         let any_dispatch = Rc::clone(&any_dispatch);
 
         Rc::new(move || {
             let state_borrow = state_holder_clone.borrow();
             let state = state_borrow.as_ref().unwrap();
+
+            let title = A::title(state);
+            if !title.is_empty() {
+                DOCUMENT.set_title(&title);
+            }
 
             let new_vdom = A::render(state);
             let old_vdom = vdom_clone.borrow();
@@ -107,7 +119,7 @@ pub fn start<State: Clone + 'static, A: App<State>>() {
             drop(old_vdom);
             *vdom_clone.borrow_mut() = new_vdom;
 
-            apply(&html_element_clone.clone().into(), &patches, &any_dispatch);
+            apply(&body_element_clone.clone().into(), &patches, &any_dispatch);
         })
     };
 
@@ -216,7 +228,7 @@ pub fn start<State: Clone + 'static, A: App<State>>() {
         on_popstate.forget();
     }
 
-    apply(&html_element.into(), &first_patches, &any_dispatch);
+    apply(&body_element.into(), &first_patches, &any_dispatch);
 }
 
 pub fn apply(

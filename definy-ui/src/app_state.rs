@@ -117,13 +117,7 @@ pub struct AppState {
     pub focused_path: Option<Vec<PathStep>>,
     pub dropdown_search_query: String,
     pub language: crate::language::Language,
-    pub language_fallback_notice: Option<LanguageFallbackNotice>,
-}
-
-#[derive(Clone)]
-pub struct LanguageFallbackNotice {
-    pub requested: String,
-    pub fallback_to_code: &'static str,
+    pub language_requested_code: Option<String>,
 }
 
 #[derive(Clone)]
@@ -248,7 +242,7 @@ pub fn build_initial_state(
     current_key: Option<ed25519_dalek::SigningKey>,
     filter_event_type: Option<definy_event::event::EventType>,
     language: crate::language::Language,
-    language_fallback_notice: Option<LanguageFallbackNotice>,
+    language_requested_code: Option<String>,
 ) -> AppState {
     let mut event_cache = HashMap::new();
     let mut event_hashes = Vec::new();
@@ -317,7 +311,7 @@ pub fn build_initial_state(
         focused_path: None,
         dropdown_search_query: String::new(),
         language,
-        language_fallback_notice,
+        language_requested_code,
     }
 }
 
