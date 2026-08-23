@@ -11,31 +11,21 @@ pub fn module_list_view(state: &AppState, context: &PageContext) -> Node {
     let create_form = if state.current_key.is_some() {
         Some(module_create_form(state, context))
     } else {
-        Some(
-            Div::new()
-                .class("event-detail-card")
-                .style(
-                    Style::new()
-                        .set("padding", "0.9rem")
-                        .set("color", "var(--text-secondary)"),
-                )
-                .children([text(context.language.label(
-                    "Login required to create modules.",
-                    "モジュール作成にはログインが必要です。",
-                    "Ensaluto necesas por krei modulojn.",
-                ))])
-                .into_node(),
-        )
+        None
     };
 
     Div::new()
         .class("page-shell")
-        .style(crate::layout::page_shell_style("1rem"))
+        .style(crate::layout::page_shell_style("1.2rem"))
         .children({
             let mut children = Vec::new();
             children.push(
                 H2::new()
-                    .style(Style::new().set("font-size", "1.3rem"))
+                    .style(
+                        Style::new()
+                            .set("font-size", "1.4rem")
+                            .set("font-weight", "600"),
+                    )
                     .children([text(context.language.label(
                         "Modules",
                         "モジュール",
@@ -52,9 +42,11 @@ pub fn module_list_view(state: &AppState, context: &PageContext) -> Node {
                         .class("event-detail-card")
                         .style(
                             Style::new()
-                                .set("padding", "0.7rem 0.8rem")
-                                .set("font-size", "0.82rem")
-                                .set("color", "var(--text-secondary)")
+                                .set("padding", "0.75rem 1rem")
+                                .set("font-size", "0.85rem")
+                                .set("color", "var(--text)")
+                                .set("background", "rgb(124 192 216 / 0.1)")
+                                .set("border-color", "var(--primary)")
                                 .set("word-break", "break-word"),
                         )
                         .children([text(message)])
@@ -67,21 +59,42 @@ pub fn module_list_view(state: &AppState, context: &PageContext) -> Node {
                         .class("event-detail-card")
                         .style(
                             Style::new()
-                                .set("padding", "0.95rem")
+                                .set("padding", "3rem 1.5rem")
+                                .set("text-align", "center")
+                                .set("display", "grid")
+                                .set("gap", "0.5rem")
+                                .set("justify-items", "center")
                                 .set("color", "var(--text-secondary)"),
                         )
-                        .children([text(context.language.label(
-                            "No modules yet.",
-                            "まだモジュールがありません。",
-                            "Ankoraŭ neniuj moduloj.",
-                        ))])
+                        .children([
+                            Div::new()
+                                .style(
+                                    Style::new()
+                                        .set("font-size", "1.5rem")
+                                        .set("opacity", "0.5"),
+                                )
+                                .children([text("📦")])
+                                .into_node(),
+                            Div::new()
+                                .style(
+                                    Style::new()
+                                        .set("font-size", "0.95rem")
+                                        .set("color", "var(--text)"),
+                                )
+                                .children([text(context.language.label(
+                                    "No modules yet",
+                                    "まだモジュールがありません",
+                                    "Ankoraŭ neniuj moduloj",
+                                ))])
+                                .into_node(),
+                        ])
                         .into_node(),
                 );
             } else {
                 children.push(
                     Div::new()
                         .class("event-list")
-                        .style(Style::new().set("display", "grid").set("gap", "0.65rem"))
+                        .style(Style::new().set("display", "grid").set("gap", "0.75rem"))
                         .children(
                             snapshots
                                 .into_iter()
@@ -95,26 +108,44 @@ pub fn module_list_view(state: &AppState, context: &PageContext) -> Node {
                                         .style(
                                             Style::new()
                                                 .set("display", "grid")
-                                                .set("gap", "0.5rem")
-                                                .set("padding", "0.85rem"),
+                                                .set("gap", "0.6rem")
+                                                .set("padding", "1rem 1.1rem"),
                                         )
                                         .children([
                                             Div::new()
                                                 .style(
                                                     Style::new()
-                                                        .set("font-size", "0.85rem")
-                                                        .set("color", "var(--text-secondary)"),
+                                                        .set("display", "flex")
+                                                        .set("justify-content", "space-between")
+                                                        .set("align-items", "center"),
                                                 )
-                                                .children([text(
-                                                    module
-                                                        .updated_at
-                                                        .format("%Y-%m-%d %H:%M:%S")
-                                                        .to_string(),
-                                                )])
-                                                .into_node(),
-                                            Div::new()
-                                                .style(Style::new().set("font-size", "0.98rem"))
-                                                .children([text(module.module_name)])
+                                                .children([
+                                                    Div::new()
+                                                        .style(
+                                                            Style::new()
+                                                                .set("font-size", "1.1rem")
+                                                                .set("font-weight", "600")
+                                                                .set("color", "var(--text)"),
+                                                        )
+                                                        .children([text(module.module_name)])
+                                                        .into_node(),
+                                                    Div::new()
+                                                        .style(
+                                                            Style::new()
+                                                                .set("font-size", "0.8rem")
+                                                                .set(
+                                                                    "color",
+                                                                    "var(--text-secondary)",
+                                                                ),
+                                                        )
+                                                        .children([text(
+                                                            module
+                                                                .updated_at
+                                                                .format("%Y-%m-%d %H:%M:%S")
+                                                                .to_string(),
+                                                        )])
+                                                        .into_node(),
+                                                ])
                                                 .into_node(),
                                             if module.has_definition {
                                                 Div::new().children([]).into_node()
@@ -123,7 +154,7 @@ pub fn module_list_view(state: &AppState, context: &PageContext) -> Node {
                                                     .style(
                                                         Style::new()
                                                             .set("font-size", "0.82rem")
-                                                            .set("color", "var(--text-secondary)"),
+                                                            .set("color", "var(--error)"),
                                                     )
                                                     .children([text(context.language.label(
                                                         "definition event missing",
@@ -139,6 +170,7 @@ pub fn module_list_view(state: &AppState, context: &PageContext) -> Node {
                                                     .style(
                                                         Style::new()
                                                             .set("white-space", "pre-wrap")
+                                                            .set("font-size", "0.9rem")
                                                             .set("color", "var(--text-secondary)"),
                                                     )
                                                     .children([text(module.module_description)])
@@ -147,11 +179,16 @@ pub fn module_list_view(state: &AppState, context: &PageContext) -> Node {
                                             Div::new()
                                                 .style(
                                                     Style::new()
-                                                        .set("font-size", "0.85rem")
-                                                        .set("color", "var(--primary)"),
+                                                        .set("font-size", "0.84rem")
+                                                        .set("color", "var(--text-secondary)"),
                                                 )
                                                 .children([text(format!(
-                                                    "latest author: {}",
+                                                    "{}: {}",
+                                                    context.language.label(
+                                                        "Author",
+                                                        "作成者",
+                                                        "Aŭtoro",
+                                                    ),
                                                     account_name
                                                 ))])
                                                 .into_node(),
@@ -159,7 +196,9 @@ pub fn module_list_view(state: &AppState, context: &PageContext) -> Node {
                                                 .style(
                                                     Style::new()
                                                         .set("display", "flex")
-                                                        .set("gap", "0.45rem"),
+                                                        .set("gap", "0.5rem")
+                                                        .set("flex-wrap", "wrap")
+                                                        .set("margin-top", "0.2rem"),
                                                 )
                                                 .children([
                                                     A::<crate::Location>::new()
@@ -171,6 +210,22 @@ pub fn module_list_view(state: &AppState, context: &PageContext) -> Node {
                                                                         .clone(),
                                                                 ),
                                                             ),
+                                                        )
+                                                        .style(
+                                                            Style::new()
+                                                                .set("font-size", "0.82rem")
+                                                                .set("font-weight", "500")
+                                                                .set("color", "var(--primary)")
+                                                                .set(
+                                                                    "background",
+                                                                    "rgb(124 192 216 / 0.1)",
+                                                                )
+                                                                .set("padding", "0.3rem 0.65rem")
+                                                                .set(
+                                                                    "border-radius",
+                                                                    "var(--radius-sm)",
+                                                                )
+                                                                .set("text-decoration", "none"),
                                                         )
                                                         .children([text(context.language.label(
                                                             "Open module detail",
@@ -184,22 +239,28 @@ pub fn module_list_view(state: &AppState, context: &PageContext) -> Node {
                                                                 module.latest_event_hash,
                                                             ),
                                                         ))
+                                                        .style(
+                                                            Style::new()
+                                                                .set("font-size", "0.82rem")
+                                                                .set(
+                                                                    "color",
+                                                                    "var(--text-secondary)",
+                                                                )
+                                                                .set(
+                                                                    "background",
+                                                                    "rgb(255 255 255 / 0.04)",
+                                                                )
+                                                                .set("padding", "0.3rem 0.65rem")
+                                                                .set(
+                                                                    "border-radius",
+                                                                    "var(--radius-sm)",
+                                                                )
+                                                                .set("text-decoration", "none"),
+                                                        )
                                                         .children([text(context.language.label(
                                                             "Latest event",
                                                             "最新イベント",
                                                             "Lasta evento",
-                                                        ))])
-                                                        .into_node(),
-                                                    A::<crate::Location>::new()
-                                                        .href(context.href_with_lang(
-                                                            crate::Location::Event(
-                                                                module.definition_event_hash,
-                                                            ),
-                                                        ))
-                                                        .children([text(context.language.label(
-                                                            "Definition event",
-                                                            "定義イベント",
-                                                            "Difina evento",
                                                         ))])
                                                         .into_node(),
                                                 ])
@@ -221,10 +282,19 @@ fn module_create_form(state: &AppState, context: &PageContext) -> Node {
     let language = context.language;
     Div::new()
         .class("event-detail-card")
-        .style(Style::new().set("display", "grid").set("gap", "0.6rem"))
+        .style(
+            Style::new()
+                .set("display", "grid")
+                .set("gap", "0.8rem")
+                .set("padding", "1.2rem 1.3rem"),
+        )
         .children([
             Div::new()
-                .style(Style::new().set("font-size", "0.9rem"))
+                .style(
+                    Style::new()
+                        .set("font-size", "1.05rem")
+                        .set("font-weight", "600"),
+                )
                 .children([text(context.language.label(
                     "Create module",
                     "モジュールを作成",
@@ -235,6 +305,19 @@ fn module_create_form(state: &AppState, context: &PageContext) -> Node {
             module_description_input(state, context),
             Button::new()
                 .type_("button")
+                .style(
+                    Style::new()
+                        .set("font-size", "0.86rem")
+                        .set("font-weight", "600")
+                        .set("background", "var(--primary)")
+                        .set("color", "#0e1720")
+                        .set("border", "none")
+                        .set("padding", "0.5rem 1.1rem")
+                        .set("border-radius", "var(--radius-sm)")
+                        .set("cursor", "pointer")
+                        .set("justify-self", "start")
+                        .set("box-shadow", "0 2px 8px rgb(124 192 216 / 0.2)"),
+                )
                 .on_click(EventHandler::new(move |set_state| {
                     let set_state = std::rc::Rc::new(set_state);
                     let set_state_for_async = set_state.clone();

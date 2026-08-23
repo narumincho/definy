@@ -106,7 +106,7 @@ pub fn account_detail_view(
 
     Div::new()
         .class("page-shell")
-        .style(crate::layout::page_shell_style("0.9rem"))
+        .style(crate::layout::page_shell_style("1.2rem"))
         .children([
             A::<Location>::new()
                 .class("back-link")
@@ -115,9 +115,11 @@ pub fn account_detail_view(
                     Style::new()
                         .set("display", "inline-flex")
                         .set("align-items", "center")
-                        .set("gap", "0.5rem")
+                        .set("gap", "0.4rem")
                         .set("color", "var(--primary)")
-                        .set("font-weight", "500"),
+                        .set("font-size", "0.88rem")
+                        .set("font-weight", "500")
+                        .set("text-decoration", "none"),
                 )
                 .children([text(context.language.label(
                     "← Back to Accounts",
@@ -130,26 +132,37 @@ pub fn account_detail_view(
                 .style(
                     Style::new()
                         .set("display", "grid")
-                        .set("gap", "0.55rem")
-                        .set("padding", "0.95rem"),
+                        .set("gap", "0.75rem")
+                        .set("padding", "1.2rem 1.3rem"),
                 )
                 .children([
                     H2::new()
-                        .style(Style::new().set("font-size", "1.15rem"))
+                        .style(
+                            Style::new()
+                                .set("font-size", "1.3rem")
+                                .set("font-weight", "600"),
+                        )
                         .children([text(account_name)])
                         .into_node(),
                     Div::new()
                         .class("mono")
                         .style(
                             Style::new()
-                                .set("font-size", "0.72rem")
+                                .set("font-size", "0.76rem")
                                 .set("word-break", "break-all")
-                                .set("opacity", "0.8"),
+                                .set("border", "1px solid var(--border)")
+                                .set("padding", "0.3rem 0.6rem")
+                                .set("border-radius", "4px")
+                                .set("color", "var(--text-secondary)"),
                         )
                         .children([text(account_id.to_string())])
                         .into_node(),
                     Div::new()
-                        .style(Style::new().set("color", "var(--text-secondary)"))
+                        .style(
+                            Style::new()
+                                .set("color", "var(--text-secondary)")
+                                .set("font-size", "0.85rem"),
+                        )
                         .children([text(format!(
                             "{} {}",
                             account_events.len(),
@@ -168,14 +181,35 @@ pub fn account_detail_view(
                     .class("event-detail-card")
                     .style(
                         Style::new()
-                            .set("padding", "0.9rem")
+                            .set("padding", "2.5rem 1.5rem")
+                            .set("text-align", "center")
+                            .set("display", "grid")
+                            .set("gap", "0.5rem")
+                            .set("justify-items", "center")
                             .set("color", "var(--text-secondary)"),
                     )
-                    .children([text(context.language.label(
-                        "This account has not posted any events yet.",
-                        "このアカウントはまだイベントを投稿していません。",
-                        "Ĉi tiu konto ankoraŭ ne afiŝis eventojn.",
-                    ))])
+                    .children([
+                        Div::new()
+                            .style(
+                                Style::new()
+                                    .set("font-size", "1.5rem")
+                                    .set("opacity", "0.5"),
+                            )
+                            .children([text("📄")])
+                            .into_node(),
+                        Div::new()
+                            .style(
+                                Style::new()
+                                    .set("font-size", "0.95rem")
+                                    .set("color", "var(--text)"),
+                            )
+                            .children([text(context.language.label(
+                                "This account has not posted any events yet.",
+                                "このアカウントはまだイベントを投稿していません。",
+                                "Ĉi tiu konto ankoraŭ ne afiŝis eventojn.",
+                            ))])
+                            .into_node(),
+                    ])
                     .into_node()
             } else {
                 Div::new()

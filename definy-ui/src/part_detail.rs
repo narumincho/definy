@@ -21,11 +21,22 @@ pub fn part_detail_view(
 
     Div::new()
         .class("page-shell")
-        .style(crate::layout::page_shell_style("1rem"))
+        .style(crate::layout::page_shell_style("1.2rem"))
         .children(match snapshot {
             Some(snapshot) => vec![
                 A::<Location>::new()
+                    .class("back-link")
                     .href(context.href_with_lang(Location::PartList))
+                    .style(
+                        Style::new()
+                            .set("display", "inline-flex")
+                            .set("align-items", "center")
+                            .set("gap", "0.4rem")
+                            .set("color", "var(--primary)")
+                            .set("font-size", "0.88rem")
+                            .set("font-weight", "500")
+                            .set("text-decoration", "none"),
+                    )
                     .children([text(context.language.label(
                         "← Back to Parts",
                         "← パーツ一覧へ戻る",
@@ -33,7 +44,11 @@ pub fn part_detail_view(
                     ))])
                     .into_node(),
                 H2::new()
-                    .style(Style::new().set("font-size", "1.3rem"))
+                    .style(
+                        Style::new()
+                            .set("font-size", "1.4rem")
+                            .set("font-weight", "600"),
+                    )
                     .children([text(snapshot.part_name.clone())])
                     .into_node(),
                 Div::new()
@@ -41,8 +56,8 @@ pub fn part_detail_view(
                     .style(
                         Style::new()
                             .set("display", "grid")
-                            .set("gap", "0.45rem")
-                            .set("padding", "0.85rem"),
+                            .set("gap", "0.6rem")
+                            .set("padding", "1.2rem 1.3rem"),
                     )
                     .children([
                         Div::new()

@@ -207,10 +207,14 @@ pub fn part_list_view(state: &AppState, context: &PageContext) -> Node {
 
     Div::new()
         .class("page-shell")
-        .style(crate::layout::page_shell_style("1rem"))
+        .style(crate::layout::page_shell_style("1.2rem"))
         .children([
             H2::new()
-                .style(Style::new().set("font-size", "1.3rem"))
+                .style(
+                    Style::new()
+                        .set("font-size", "1.4rem")
+                        .set("font-weight", "600"),
+                )
                 .children([text(context.language.label("Parts", "パーツ", "Partoj"))])
                 .into_node(),
             if let Some(form) = part_definition_form {
@@ -223,9 +227,11 @@ pub fn part_list_view(state: &AppState, context: &PageContext) -> Node {
                     .class("event-detail-card")
                     .style(
                         Style::new()
-                            .set("padding", "0.7rem 0.8rem")
+                            .set("padding", "0.75rem 1rem")
                             .set("font-family", "'JetBrains Mono', monospace")
-                            .set("font-size", "0.82rem")
+                            .set("font-size", "0.85rem")
+                            .set("background", "rgb(124 192 216 / 0.1)")
+                            .set("border-color", "var(--primary)")
                             .set("word-break", "break-word"),
                     )
                     .children([text(result)])
@@ -238,19 +244,40 @@ pub fn part_list_view(state: &AppState, context: &PageContext) -> Node {
                     .class("event-detail-card")
                     .style(
                         Style::new()
-                            .set("padding", "0.95rem")
+                            .set("padding", "3rem 1.5rem")
+                            .set("text-align", "center")
+                            .set("display", "grid")
+                            .set("gap", "0.5rem")
+                            .set("justify-items", "center")
                             .set("color", "var(--text-secondary)"),
                     )
-                    .children([text(context.language.label(
-                        "No parts yet.",
-                        "まだパーツがありません。",
-                        "Ankoraŭ neniuj partoj.",
-                    ))])
+                    .children([
+                        Div::new()
+                            .style(
+                                Style::new()
+                                    .set("font-size", "1.5rem")
+                                    .set("opacity", "0.5"),
+                            )
+                            .children([text("🧩")])
+                            .into_node(),
+                        Div::new()
+                            .style(
+                                Style::new()
+                                    .set("font-size", "0.95rem")
+                                    .set("color", "var(--text)"),
+                            )
+                            .children([text(context.language.label(
+                                "No parts yet",
+                                "まだパーツがありません",
+                                "Ankoraŭ neniuj partoj",
+                            ))])
+                            .into_node(),
+                    ])
                     .into_node()
             } else {
                 Div::new()
                     .class("event-list")
-                    .style(Style::new().set("display", "grid").set("gap", "0.65rem"))
+                    .style(Style::new().set("display", "grid").set("gap", "0.75rem"))
                     .children(
                         snapshots
                             .into_iter()
@@ -264,14 +291,54 @@ pub fn part_list_view(state: &AppState, context: &PageContext) -> Node {
                                     .style(
                                         Style::new()
                                             .set("display", "grid")
-                                            .set("gap", "0.5rem")
-                                            .set("padding", "0.85rem"),
+                                            .set("gap", "0.6rem")
+                                            .set("padding", "1rem 1.1rem"),
                                     )
                                     .children([
                                         Div::new()
                                             .style(
                                                 Style::new()
-                                                    .set("font-size", "0.85rem")
+                                                    .set("display", "flex")
+                                                    .set("justify-content", "space-between")
+                                                    .set("align-items", "center"),
+                                            )
+                                            .children([
+                                                Div::new()
+                                                    .style(
+                                                        Style::new()
+                                                            .set("font-size", "1.1rem")
+                                                            .set("font-weight", "600")
+                                                            .set("color", "var(--text)"),
+                                                    )
+                                                    .children([text(part.part_name)])
+                                                    .into_node(),
+                                                Div::new()
+                                                    .style(
+                                                        Style::new()
+                                                            .set("font-size", "0.8rem")
+                                                            .set("font-weight", "500")
+                                                            .set("color", "var(--primary)")
+                                                            .set(
+                                                                "background",
+                                                                "rgb(124 192 216 / 0.12)",
+                                                            )
+                                                            .set("padding", "0.2rem 0.55rem")
+                                                            .set(
+                                                                "border-radius",
+                                                                "var(--radius-full)",
+                                                            ),
+                                                    )
+                                                    .children([text(format!(
+                                                        "{}",
+                                                        optional_part_type_text(&part.part_type)
+                                                    ))])
+                                                    .into_node(),
+                                            ])
+                                            .into_node(),
+                                        Div::new()
+                                            .style(
+                                                Style::new()
+                                                    .set("font-size", "0.82rem")
                                                     .set("color", "var(--text-secondary)"),
                                             )
                                             .children([text(
@@ -280,22 +347,6 @@ pub fn part_list_view(state: &AppState, context: &PageContext) -> Node {
                                                     .to_string(),
                                             )])
                                             .into_node(),
-                                        Div::new()
-                                            .style(Style::new().set("font-size", "0.98rem"))
-                                            .children([text(part.part_name)])
-                                            .into_node(),
-                                        Div::new()
-                                            .style(
-                                                Style::new()
-                                                    .set("font-size", "0.85rem")
-                                                    .set("color", "var(--text-secondary)"),
-                                            )
-                                            .children([text(format!(
-                                                "{} {}",
-                                                context.language.label("type:", "型:", "tipo:"),
-                                                optional_part_type_text(&part.part_type)
-                                            ))])
-                                            .into_node(),
                                         if part.has_definition {
                                             Div::new().children([]).into_node()
                                         } else {
@@ -303,7 +354,7 @@ pub fn part_list_view(state: &AppState, context: &PageContext) -> Node {
                                                 .style(
                                                     Style::new()
                                                         .set("font-size", "0.82rem")
-                                                        .set("color", "var(--text-secondary)"),
+                                                        .set("color", "var(--error)"),
                                                 )
                                                 .children([text(context.language.label(
                                                     "definition event missing",
@@ -312,16 +363,6 @@ pub fn part_list_view(state: &AppState, context: &PageContext) -> Node {
                                                 ))])
                                                 .into_node()
                                         },
-                                        A::<Location>::new()
-                                            .href(context.href_with_lang(Location::Part(
-                                                part.definition_event_hash.clone(),
-                                            )))
-                                            .children([text(context.language.label(
-                                                "Open part detail",
-                                                "パーツ詳細を開く",
-                                                "Malfermi partajn detalojn",
-                                            ))])
-                                            .into_node(),
                                         if part.part_description.is_empty() {
                                             Div::new().children([]).into_node()
                                         } else {
@@ -329,11 +370,41 @@ pub fn part_list_view(state: &AppState, context: &PageContext) -> Node {
                                                 .style(
                                                     Style::new()
                                                         .set("white-space", "pre-wrap")
+                                                        .set("font-size", "0.9rem")
                                                         .set("color", "var(--text-secondary)"),
                                                 )
                                                 .children([text(part.part_description)])
                                                 .into_node()
                                         },
+                                        Div::new()
+                                            .style(
+                                                Style::new()
+                                                    .set("display", "flex")
+                                                    .set("gap", "0.5rem")
+                                                    .set("align-items", "center")
+                                                    .set("margin-top", "0.2rem"),
+                                            )
+                                            .children([A::<Location>::new()
+                                                .href(context.href_with_lang(Location::Part(
+                                                    part.definition_event_hash.clone(),
+                                                )))
+                                                .style(
+                                                    Style::new()
+                                                        .set("font-size", "0.82rem")
+                                                        .set("font-weight", "500")
+                                                        .set("color", "var(--primary)")
+                                                        .set("background", "rgb(124 192 216 / 0.1)")
+                                                        .set("padding", "0.3rem 0.65rem")
+                                                        .set("border-radius", "var(--radius-sm)")
+                                                        .set("text-decoration", "none"),
+                                                )
+                                                .children([text(context.language.label(
+                                                    "Open part detail",
+                                                    "パーツ詳細を開く",
+                                                    "Malfermi partajn detalojn",
+                                                ))])
+                                                .into_node()])
+                                            .into_node(),
                                         Div::new()
                                             .class("mono")
                                             .style(

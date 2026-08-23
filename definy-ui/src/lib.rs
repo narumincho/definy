@@ -100,6 +100,7 @@ pub fn render(state: &AppState, context: &PageContext) -> Node {
             Style::new()
                 .set("display", "grid")
                 .set("gap", "0.8rem")
+                .set("align-content", "start")
                 .set("padding-top", "4.2rem"),
         )
         .children([
