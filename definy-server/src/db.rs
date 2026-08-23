@@ -44,7 +44,7 @@ pub enum AuthCredentials {
 
 pub fn parse_database_url(raw: &str) -> ParsedDbConfig {
     let mut parts = raw.split(';');
-    let endpoint = parts.next().unwrap_or("").trim().to_string();
+    let mut endpoint = parts.next().unwrap_or("").trim().to_string();
 
     let mut namespace = "definy".to_string();
     let mut database = "definy".to_string();
@@ -69,6 +69,10 @@ pub fn parse_database_url(raw: &str) -> ParsedDbConfig {
                 _ => {}
             }
         }
+    }
+
+    if endpoint.starts_with("http://") || endpoint.starts_with("https://") {
+        endpoint = endpoint.trim_end_matches("/rpc").to_string();
     }
 
     if username.is_none()
@@ -121,8 +125,31 @@ pub async fn init_db() -> Result<Surreal<Any>, anyhow::Error> {
         Ok(raw_url) => {
             let config = parse_database_url(&raw_url);
             println!("Connecting to SurrealDB at {}...", config.endpoint);
-            let db = surrealdb::engine::any::connect(&config.endpoint).await?;
-            println!("Connected to SurrealDB.");
+            let db = match surrealdb::engine::any::connect(&config.endpoint).await {
+                Ok(db) => {
+                    println!("Connected to SurrealDB via {}.", config.endpoint);
+                    db
+                }
+                Err(err)
+                    if config.endpoint.starts_with("wss://")
+                        || config.endpoint.starts_with("ws://") =>
+                {
+                    let http_endpoint = if config.endpoint.starts_with("wss://") {
+                        config.endpoint.replacen("wss://", "https://", 1)
+                    } else {
+                        config.endpoint.replacen("ws://", "http://", 1)
+                    };
+                    let http_endpoint = http_endpoint.trim_end_matches("/rpc").to_string();
+                    eprintln!(
+                        "WebSocket connection failed ({:?}). Retrying with HTTP/HTTPS at {}...",
+                        err, http_endpoint
+                    );
+                    let db = surrealdb::engine::any::connect(&http_endpoint).await?;
+                    println!("Connected to SurrealDB via {}.", http_endpoint);
+                    db
+                }
+                Err(err) => return Err(err.into()),
+            };
 
             if let Some(auth) = config.auth {
                 println!("Signing in to SurrealDB...");
