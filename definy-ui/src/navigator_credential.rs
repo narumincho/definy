@@ -32,27 +32,39 @@ pub async fn credential_store(
         let _ = storage.set_item(STORAGE_KEY, &password_str);
     }
 
-    let data = js_sys::Object::new();
-    let _ = js_sys::Reflect::set(
-        &data,
-        &wasm_bindgen::JsValue::from_str("id"),
-        &wasm_bindgen::JsValue::from_str(username),
-    );
-    let _ = js_sys::Reflect::set(
-        &data,
-        &wasm_bindgen::JsValue::from_str("name"),
-        &wasm_bindgen::JsValue::from_str(username),
-    );
-    let _ = js_sys::Reflect::set(
-        &data,
-        &wasm_bindgen::JsValue::from_str("password"),
-        &wasm_bindgen::JsValue::from_str(&password_str),
-    );
-
     // PasswordCredential might not be supported in all contexts (e.g. non-HTTPS / tests)
-    let credential = PasswordCredential::new(&data);
-    let promise = navigator_credentials_store(&credential);
-    let _ = wasm_bindgen_futures::JsFuture::from(promise).await;
+    // Check if the constructor exists before calling it
+    if let Some(window) = web_sys::window() {
+        let pc_exists = js_sys::Reflect::get(
+            &window,
+            &wasm_bindgen::JsValue::from_str("PasswordCredential"),
+        )
+        .ok()
+        .map_or(false, |v| v.is_function());
+
+        if pc_exists {
+            let data = js_sys::Object::new();
+            let _ = js_sys::Reflect::set(
+                &data,
+                &wasm_bindgen::JsValue::from_str("id"),
+                &wasm_bindgen::JsValue::from_str(username),
+            );
+            let _ = js_sys::Reflect::set(
+                &data,
+                &wasm_bindgen::JsValue::from_str("name"),
+                &wasm_bindgen::JsValue::from_str(username),
+            );
+            let _ = js_sys::Reflect::set(
+                &data,
+                &wasm_bindgen::JsValue::from_str("password"),
+                &wasm_bindgen::JsValue::from_str(&password_str),
+            );
+            let credential = PasswordCredential::new(&data);
+            let promise = navigator_credentials_store(&credential);
+            let _ = wasm_bindgen_futures::JsFuture::from(promise).await;
+        }
+    }
+
     Ok(())
 }
 

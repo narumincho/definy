@@ -9,10 +9,7 @@ pub async fn get_events_raw(
     let mut url = "/events".to_string();
     let mut params = Vec::new();
     if let Some(event_type) = event_type {
-        params.push(format!(
-            "event_type={}",
-            serde_urlencoded::to_string(event_type)?
-        ));
+        params.push(format!("event_type={}", event_type));
     }
     if let Some(limit) = limit {
         params.push(format!("limit={}", limit));
@@ -24,18 +21,25 @@ pub async fn get_events_raw(
         url.push('?');
         url.push_str(&params.join("&"));
     }
-    let response_raw =
-        wasm_bindgen_futures::JsFuture::from(web_sys::window().unwrap().fetch_with_str(&url))
-            .await
-            .unwrap();
+    let window = web_sys::window().ok_or_else(|| anyhow::anyhow!("no window"))?;
+    let response_raw = wasm_bindgen_futures::JsFuture::from(window.fetch_with_str(&url))
+        .await
+        .map_err(js_error_to_anyhow)?;
 
-    let response: web_sys::Response = wasm_bindgen::JsCast::dyn_into(response_raw).unwrap();
+    let response: web_sys::Response =
+        wasm_bindgen::JsCast::dyn_into(response_raw).map_err(js_error_to_anyhow)?;
+
+    if !response.ok() {
+        return Err(anyhow::anyhow!("HTTP error: status {}", response.status()));
+    }
+
+    let array_buffer_promise = response.array_buffer().map_err(js_error_to_anyhow)?;
     let response_body: js_sys::ArrayBuffer = wasm_bindgen::JsCast::dyn_into(
-        wasm_bindgen_futures::JsFuture::from(response.array_buffer().unwrap())
+        wasm_bindgen_futures::JsFuture::from(array_buffer_promise)
             .await
-            .unwrap(),
+            .map_err(js_error_to_anyhow)?,
     )
-    .unwrap();
+    .map_err(js_error_to_anyhow)?;
     let response_body_bytes = js_sys::Uint8Array::new(&response_body).to_vec();
     Ok(response_body_bytes)
 }
@@ -82,16 +86,17 @@ pub async fn get_events(
 }
 
 pub async fn post_event(signated_event: &[u8]) -> Result<u16, anyhow::Error> {
-    let headers = web_sys::Headers::new().unwrap();
-    headers.set("Content-Type", "application/cbor").unwrap();
+    let headers = web_sys::Headers::new().map_err(js_error_to_anyhow)?;
+    headers
+        .set("Content-Type", "application/cbor")
+        .map_err(js_error_to_anyhow)?;
     let request_init = web_sys::RequestInit::new();
     request_init.set_method("POST");
     request_init.set_headers(&headers);
     request_init.set_body(&js_sys::Uint8Array::from(signated_event));
+    let window = web_sys::window().ok_or_else(|| anyhow::anyhow!("no window"))?;
     let response_raw = wasm_bindgen_futures::JsFuture::from(
-        web_sys::window()
-            .unwrap()
-            .fetch_with_str_and_init("/events", &request_init),
+        window.fetch_with_str_and_init("/events", &request_init),
     )
     .await
     .map_err(js_error_to_anyhow)?;

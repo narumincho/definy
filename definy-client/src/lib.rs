@@ -43,6 +43,14 @@ fn setup_keydown_listener(fire: &StateUpdater) {
     let fire_for_keydown = std::rc::Rc::clone(fire);
     let on_keydown =
         wasm_bindgen::closure::Closure::wrap(Box::new(move |event: web_sys::KeyboardEvent| {
+            // Safely read the "key" property to avoid passStringToWasm0 crash
+            // when event.key is undefined (e.g. during synthetic/autofocus events)
+            let key_value = js_sys::Reflect::get(&event, &JsValue::from_str("key")).ok();
+            let key = match key_value {
+                Some(v) if v.is_string() => v.as_string().unwrap(),
+                _ => return,
+            };
+
             if let Some(window) = web_sys::window()
                 && let Some(document) = window.document()
                 && let Some(active) = document.active_element()
@@ -53,7 +61,6 @@ fn setup_keydown_listener(fire: &StateUpdater) {
                 }
             }
 
-            let key = event.key();
             let fire = std::rc::Rc::clone(&fire_for_keydown);
             fire(Box::new(move |state| {
                 keyboard_nav::handle_keydown(state, key)
@@ -83,6 +90,18 @@ fn spawn_initial_async_tasks(
 ) {
     let fire = std::rc::Rc::clone(fire);
     wasm_bindgen_futures::spawn_local(async move {
+        if let Some(key) = definy_ui::navigator_credential::credential_get_sync() {
+            fire(Box::new(move |state| AppState {
+                current_key: Some(key),
+                ..state.clone()
+            }));
+        } else if let Some(password) = definy_ui::navigator_credential::credential_get().await {
+            fire(Box::new(move |state| AppState {
+                current_key: Some(password),
+                ..state.clone()
+            }));
+        }
+
         if let Some(decoded_ssr_state) = ssr_state.as_ref() {
             let _ = definy_ui::indexed_db::store_events(&decoded_ssr_state.event_binaries).await;
         } else if let Ok(cached_event_binaries) = definy_ui::indexed_db::load_event_binaries().await
@@ -150,12 +169,6 @@ fn spawn_initial_async_tasks(
             }
         }
 
-        if let Some(password) = definy_ui::navigator_credential::credential_get().await {
-            fire(Box::new(move |state| AppState {
-                current_key: Some(password),
-                ..state.clone()
-            }));
-        }
         let local_events = definy_ui::indexed_db::load_event_records().await;
         fire(Box::new(move |state| {
             let mut next = state.clone();
@@ -225,7 +238,6 @@ impl narumincho_vdom_client::App<AppState> for DefinyApp {
         let has_more = ssr_state.as_ref().is_none_or(|s| s.has_more);
         let is_db_connected = ssr_state.as_ref().is_none_or(|s| s.is_db_connected);
         let has_ssr_state = ssr_state.is_some();
-        let current_key = definy_ui::navigator_credential::credential_get_sync();
 
         spawn_initial_async_tasks(fire, ssr_state.clone(), filter_for_fetch);
         spawn_db_reconnect_poller(fire, filter_for_fetch);
@@ -245,7 +257,7 @@ impl narumincho_vdom_client::App<AppState> for DefinyApp {
             }),
             !has_ssr_state,
             has_more,
-            current_key,
+            None,
             filter_for_fetch,
             is_db_connected,
         )

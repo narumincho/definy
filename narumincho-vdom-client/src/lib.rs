@@ -318,7 +318,7 @@ fn apply_patch(
         diff::Patch::Replace(new_node) => {
             if let Some(parent) = node.parent_node() {
                 let new_sys_node = create_web_sys_node(new_node, dispatch, callback_key_symbol);
-                parent.replace_child(&new_sys_node, &node).unwrap();
+                let _ = parent.replace_child(&new_sys_node, &node);
             }
         }
         diff::Patch::UpdateText(new_text) => {
@@ -328,7 +328,7 @@ fn apply_patch(
             if let Some(element) = node.dyn_ref::<web_sys::Element>() {
                 for (key, value) in attributes {
                     let key = normalize_html_attribute_name(element, key);
-                    element.set_attribute(&key, value).unwrap();
+                    let _ = element.set_attribute(&key, value);
                 }
             }
         }
@@ -336,7 +336,7 @@ fn apply_patch(
             if let Some(element) = node.dyn_ref::<web_sys::Element>() {
                 for name in attribute_names {
                     let name = normalize_html_attribute_name(element, name);
-                    element.remove_attribute(&name).unwrap();
+                    let _ = element.remove_attribute(&name);
                 }
             }
         }
@@ -344,7 +344,7 @@ fn apply_patch(
             if let Some(element) = node.dyn_ref::<web_sys::HtmlElement>() {
                 let style = element.style();
                 for (key, value) in styles {
-                    style.set_property(key, value).unwrap();
+                    let _ = style.set_property(key, value);
                 }
             }
         }
@@ -352,7 +352,7 @@ fn apply_patch(
             if let Some(element) = node.dyn_ref::<web_sys::HtmlElement>() {
                 let style = element.style();
                 for key in keys {
-                    style.remove_property(key).unwrap();
+                    let _ = style.remove_property(key);
                 }
             }
         }
@@ -371,15 +371,13 @@ fn apply_patch(
                         wasm_bindgen_futures::spawn_local(fut);
                     })
                         as Box<dyn FnMut(web_sys::Event)>);
-                    element
-                        .add_event_listener_with_callback(
-                            event_name,
-                            closure.as_ref().unchecked_ref(),
-                        )
-                        .unwrap();
+                    let _ = element.add_event_listener_with_callback(
+                        event_name,
+                        closure.as_ref().unchecked_ref(),
+                    );
 
                     let key = format!("__narumincho_event_{}", event_name);
-                    Reflect::set(element, &JsValue::from_str(&key), closure.as_ref()).unwrap();
+                    let _ = Reflect::set(element, &JsValue::from_str(&key), closure.as_ref());
                     closure.forget();
                 }
             }
@@ -390,11 +388,9 @@ fn apply_patch(
                     let key = format!("__narumincho_event_{}", event_name);
                     if let Ok(value) = Reflect::get(element, &JsValue::from_str(&key)) {
                         if let Some(func) = value.dyn_ref::<js_sys::Function>() {
-                            element
-                                .remove_event_listener_with_callback(event_name, func)
-                                .unwrap();
+                            let _ = element.remove_event_listener_with_callback(event_name, func);
                         }
-                        Reflect::delete_property(element, &JsValue::from_str(&key)).unwrap();
+                        let _ = Reflect::delete_property(element, &JsValue::from_str(&key));
                     }
                 }
             }
@@ -402,7 +398,7 @@ fn apply_patch(
         diff::Patch::AppendChildren(children) => {
             for child in children {
                 let child_node = create_web_sys_node(child, dispatch, callback_key_symbol);
-                node.append_child(&child_node).unwrap();
+                let _ = node.append_child(&child_node);
             }
         }
         diff::Patch::RemoveChildren(count) => {
@@ -410,7 +406,7 @@ fn apply_patch(
             let len = child_nodes.length();
             for i in 0..*count {
                 if let Some(child) = child_nodes.item(len - 1 - i as u32) {
-                    node.remove_child(&child).unwrap();
+                    let _ = node.remove_child(&child);
                 }
             }
         }
@@ -426,12 +422,12 @@ fn create_web_sys_node(
         Node::Element(el) => {
             let element = crate::element_creation::create_element(&el.element_name, el.namespace);
             for (key, value) in &el.attributes {
-                element.set_attribute(key, value).unwrap();
+                let _ = element.set_attribute(key, value);
             }
             if let Some(html_element) = element.dyn_ref::<web_sys::HtmlElement>() {
                 let style = html_element.style();
                 for (key, value) in el.styles.iter() {
-                    style.set_property(key, value).unwrap();
+                    let _ = style.set_property(key, value);
                 }
             }
             for (event_name, msg) in &el.events {
@@ -446,17 +442,18 @@ fn create_web_sys_node(
                     let fut = handler(dispatch);
                     wasm_bindgen_futures::spawn_local(fut);
                 }) as Box<dyn FnMut(web_sys::Event)>);
-                element
-                    .add_event_listener_with_callback(event_name, closure.as_ref().unchecked_ref())
-                    .unwrap();
+                let _ = element
+                    .add_event_listener_with_callback(event_name, closure.as_ref().unchecked_ref());
                 let key = format!("__narumincho_event_{}", event_name);
-                Reflect::set(&element, &JsValue::from_str(&key), closure.as_ref()).unwrap();
+                let _ = Reflect::set(&element, &JsValue::from_str(&key), closure.as_ref());
                 closure.forget();
             }
             for child in &el.children {
-                element
-                    .append_child(&create_web_sys_node(child, dispatch, callback_key_symbol))
-                    .unwrap();
+                let _ = element.append_child(&create_web_sys_node(
+                    child,
+                    dispatch,
+                    callback_key_symbol,
+                ));
             }
             element.into()
         }
