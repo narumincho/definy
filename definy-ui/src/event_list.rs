@@ -153,7 +153,9 @@ pub fn event_list_view(state: &AppState, context: &PageContext) -> Node {
                         .style(
                             Style::new()
                                 .set("text-align", "center")
-                                .set("padding", "1rem"),
+                                .set("padding", "2rem 1rem")
+                                .set("color", "var(--text-secondary)")
+                                .set("font-size", "0.92rem"),
                         )
                         .children([text(context.language.label(
                             "Loading events...",
@@ -175,16 +177,40 @@ pub fn event_list_view(state: &AppState, context: &PageContext) -> Node {
                     )
                 };
                 children.push(
-                    Button::new()
-                        .type_("button")
-                        .on_click(EventHandler::new(move |set_state| {
-                            let state = state.clone();
-                            async move {
-                                let set_state = std::rc::Rc::new(set_state);
-                                crate::app_state::load_more_events(state, set_state).await;
-                            }
-                        }))
-                        .children([text(button_text)])
+                    Div::new()
+                        .style(
+                            Style::new()
+                                .set("display", "flex")
+                                .set("justify-content", "center")
+                                .set("padding", "0.5rem 0 1rem"),
+                        )
+                        .children([Button::new()
+                            .type_("button")
+                            .style(
+                                Style::new()
+                                    .set("display", "inline-flex")
+                                    .set("align-items", "center")
+                                    .set("justify-content", "center")
+                                    .set("padding", "0.6rem 1.6rem")
+                                    .set("background", "rgb(255 255 255 / 0.05)")
+                                    .set("border", "1px solid var(--border)")
+                                    .set("border-radius", "var(--radius-full)")
+                                    .set("color", "var(--text)")
+                                    .set("font-size", "0.9rem")
+                                    .set("font-weight", "500")
+                                    .set("cursor", "pointer")
+                                    .set("transition", "all 0.2s ease")
+                                    .set("box-shadow", "var(--shadow-sm)"),
+                            )
+                            .on_click(EventHandler::new(move |set_state| {
+                                let state = state.clone();
+                                async move {
+                                    let set_state = std::rc::Rc::new(set_state);
+                                    crate::app_state::load_more_events(state, set_state).await;
+                                }
+                            }))
+                            .children([text(button_text)])
+                            .into_node()])
                         .into_node(),
                 );
             } else if state.event_list_state.event_hashes.is_empty()
@@ -192,17 +218,38 @@ pub fn event_list_view(state: &AppState, context: &PageContext) -> Node {
             {
                 children.push(
                     Div::new()
+                        .class("event-detail-card")
                         .style(
                             Style::new()
+                                .set("padding", "3rem 1.5rem")
                                 .set("text-align", "center")
-                                .set("padding", "1rem")
+                                .set("display", "grid")
+                                .set("gap", "0.5rem")
+                                .set("justify-items", "center")
                                 .set("color", "var(--text-secondary)"),
                         )
-                        .children([text(context.language.label(
-                            "No events found. Click 'Load Events' to fetch.",
-                            "イベントが見つかりません。'Load Events' をクリックして取得します。",
-                            "Neniuj eventoj trovitaj. Klaku 'Load Events' por ŝargi.",
-                        ))])
+                        .children([
+                            Div::new()
+                                .style(
+                                    Style::new()
+                                        .set("font-size", "1.5rem")
+                                        .set("opacity", "0.5"),
+                                )
+                                .children([text("📋")])
+                                .into_node(),
+                            Div::new()
+                                .style(
+                                    Style::new()
+                                        .set("font-size", "0.95rem")
+                                        .set("color", "var(--text)"),
+                                )
+                                .children([text(context.language.label(
+                                    "No events found",
+                                    "イベントが見つかりません",
+                                    "Neniuj eventoj trovitaj",
+                                ))])
+                                .into_node(),
+                        ])
                         .into_node(),
                 );
             }

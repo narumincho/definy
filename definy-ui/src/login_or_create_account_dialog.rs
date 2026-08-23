@@ -265,7 +265,12 @@ fn create_account_view(state: &AppState, context: &PageContext, force_offline: b
             let set_state_for_async = set_state.clone();
             let generated_key = generated_key_for_submit.clone();
             async move {
-                let username = crate::dom::get_input_value("input[name='username']");
+                let username_raw = crate::dom::get_input_value("input[name='username']");
+                let username = if username_raw.trim().is_empty() {
+                    "user".to_string()
+                } else {
+                    username_raw
+                };
 
                 if let Some(key) = &generated_key {
                     let key = key.clone();
@@ -277,19 +282,25 @@ fn create_account_view(state: &AppState, context: &PageContext, force_offline: b
                                 time: chrono::Utc::now(),
                                 content: definy_event::event::EventContent::CreateAccount(
                                     definy_event::event::CreateAccountEvent {
-                                        account_name: username.into(),
+                                        account_name: username.clone().into(),
                                     },
                                 ),
                             },
                             &key,
                         )
                         .unwrap();
+                        let event_hash = definy_event::EventHashId::from_bytes(&event_binary);
+                        let decoded_event =
+                            definy_event::verify_and_deserialize(event_binary.as_slice());
                         let result =
                             fetch::post_event_with_queue(event_binary.as_slice(), force_offline)
                                 .await;
                         if let Ok(record) = result {
                             let status = record.status.clone();
                             let status_for_state = status.clone();
+                            let key_for_state = key.clone();
+                            let event_hash_for_state = event_hash.clone();
+                            let decoded_event_for_state = decoded_event.clone();
                             let message = match status {
                                 crate::local_event::LocalEventStatus::Sent => language
                                     .label(
@@ -317,8 +328,35 @@ fn create_account_view(state: &AppState, context: &PageContext, force_offline: b
                                     })
                                 }
                             };
+
+                            let _ = crate::navigator_credential::credential_store(&username, &key)
+                                .await;
+                            let _ = crate::indexed_db::store_events(&[event_binary.clone()]).await;
+
+                            let fetched_events =
+                                if status == crate::local_event::LocalEventStatus::Sent {
+                                    fetch::get_events(None, Some(20), Some(0)).await.ok()
+                                } else {
+                                    None
+                                };
+
                             set_state_for_async(Box::new(move |state: AppState| {
                                 let mut next = state.clone();
+                                next.current_key = Some(key_for_state);
+                                next.event_cache
+                                    .insert(event_hash_for_state.clone(), decoded_event_for_state);
+                                if !next
+                                    .event_list_state
+                                    .event_hashes
+                                    .contains(&event_hash_for_state)
+                                {
+                                    next.event_list_state
+                                        .event_hashes
+                                        .insert(0, event_hash_for_state);
+                                }
+                                if let Some(events) = fetched_events {
+                                    next.apply_latest_events(events, None);
+                                }
                                 crate::app_state::upsert_local_event_record(&mut next, record);
                                 next.login_or_create_account_dialog_state.state =
                                     match status_for_state {

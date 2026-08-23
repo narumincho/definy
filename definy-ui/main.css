@@ -44,8 +44,8 @@ body {
   color: var(--text);
   font-family: 'Outfit', system-ui, -apple-system, sans-serif;
   margin: 0;
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  align-content: start;
   min-height: 100vh;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
@@ -240,6 +240,8 @@ textarea {
   margin: 0 auto;
   padding: 1.2rem 0.9rem 1.9rem;
   animation: fade-up 0.3s ease;
+  display: grid;
+  align-content: start;
 }
 
 .composer {

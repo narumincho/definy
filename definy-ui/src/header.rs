@@ -19,8 +19,8 @@ fn header_main(state: &AppState, context: &PageContext) -> Node {
                 .set("display", "flex")
                 .set("justify-content", "space-between")
                 .set("align-items", "center")
-                .set("padding", "0.72rem 1.2rem")
-                .set("background", "rgb(11 15 25 / 0.6)")
+                .set("padding", "0.65rem 1.2rem")
+                .set("background", "rgb(16 22 27 / 0.8)")
                 .set("backdrop-filter", "var(--glass-blur)")
                 .set("left", "0")
                 .set("right", "0")
@@ -36,7 +36,7 @@ fn header_main(state: &AppState, context: &PageContext) -> Node {
                     Style::new()
                         .set("display", "flex")
                         .set("align-items", "center")
-                        .set("gap", "0.75rem"),
+                        .set("gap", "1rem"),
                 )
                 .children([
                     A::<Location>::new()
@@ -44,12 +44,14 @@ fn header_main(state: &AppState, context: &PageContext) -> Node {
                         .style(
                             Style::new()
                                 .set("text-decoration", "none")
-                                .set("display", "inline-block"),
+                                .set("display", "inline-flex")
+                                .set("align-items", "center")
+                                .set("margin-right", "0.3rem"),
                         )
                         .children([H1::new()
                             .style(
                                 Style::new()
-                                    .set("font-size", "1.48rem")
+                                    .set("font-size", "1.45rem")
                                     .set("font-weight", "700")
                                     .set("color", "var(--primary)")
                                     .set("letter-spacing", "-0.03em"),
@@ -57,54 +59,28 @@ fn header_main(state: &AppState, context: &PageContext) -> Node {
                             .children([text("definy")])
                             .into_node()])
                         .into_node(),
-                    A::<Location>::new()
-                        .href(context.href_with_lang(Location::PartList))
-                        .style(
-                            Style::new()
-                                .set("font-size", "0.9rem")
-                                .set("color", "var(--text-secondary)"),
-                        )
-                        .children([text(context.language.label("Parts", "パーツ", "Partoj"))])
-                        .into_node(),
-                    A::<Location>::new()
-                        .href(context.href_with_lang(Location::ModuleList))
-                        .style(
-                            Style::new()
-                                .set("font-size", "0.9rem")
-                                .set("color", "var(--text-secondary)"),
-                        )
-                        .children([text(context.language.label(
-                            "Modules",
-                            "モジュール",
-                            "Moduloj",
-                        ))])
-                        .into_node(),
-                    A::<Location>::new()
-                        .href(context.href_with_lang(Location::LocalEventQueue))
-                        .style(
-                            Style::new()
-                                .set("font-size", "0.9rem")
-                                .set("color", "var(--text-secondary)"),
-                        )
-                        .children([text(context.language.label(
-                            "Local Events",
-                            "ローカルイベント",
-                            "Lokaj eventoj",
-                        ))])
-                        .into_node(),
-                    A::<Location>::new()
-                        .href(context.href_with_lang(Location::AccountList))
-                        .style(
-                            Style::new()
-                                .set("font-size", "0.9rem")
-                                .set("color", "var(--text-secondary)"),
-                        )
-                        .children([text(context.language.label(
-                            "Accounts",
-                            "アカウント",
-                            "Kontoj",
-                        ))])
-                        .into_node(),
+                    nav_link(context, Location::PartList, "Parts", "パーツ", "Partoj"),
+                    nav_link(
+                        context,
+                        Location::ModuleList,
+                        "Modules",
+                        "モジュール",
+                        "Moduloj",
+                    ),
+                    nav_link(
+                        context,
+                        Location::LocalEventQueue,
+                        "Local Events",
+                        "ローカルイベント",
+                        "Lokaj eventoj",
+                    ),
+                    nav_link(
+                        context,
+                        Location::AccountList,
+                        "Accounts",
+                        "アカウント",
+                        "Kontoj",
+                    ),
                 ])
                 .into_node(),
             Div::new()
@@ -112,14 +88,15 @@ fn header_main(state: &AppState, context: &PageContext) -> Node {
                     Style::new()
                         .set("flex-grow", "1")
                         .set("display", "flex")
-                        .set("justify-content", "center"),
+                        .set("justify-content", "center")
+                        .set("padding", "0 0.8rem"),
                 )
                 .children([Div::new()
                     .style(
                         Style::new()
-                            .set("font-size", "0.88rem")
+                            .set("font-size", "0.86rem")
                             .set("color", "var(--text-secondary)")
-                            .set("max-width", "42vw")
+                            .set("max-width", "36vw")
                             .set("overflow", "hidden")
                             .set("text-overflow", "ellipsis")
                             .set("white-space", "nowrap"),
@@ -140,14 +117,14 @@ fn header_main(state: &AppState, context: &PageContext) -> Node {
                             .style(
                                 Style::new()
                                     .set("font-family", "'JetBrains Mono', monospace")
-                                    .set("font-size", "0.74rem")
-                                    .set("background", "rgb(255 255 255 / 0.05)")
+                                    .set("font-size", "0.76rem")
+                                    .set("background", "rgb(255 255 255 / 0.06)")
                                     .set("color", "var(--text)")
                                     .set("border", "1px solid var(--border)")
-                                    .set("padding", "0.38rem 0.8rem")
+                                    .set("padding", "0.38rem 0.75rem")
                                     .set("border-radius", "var(--radius-sm)")
                                     .set("cursor", "pointer")
-                                    .set("max-width", "min(46vw, 420px)")
+                                    .set("max-width", "min(46vw, 360px)")
                                     .set("overflow", "hidden")
                                     .set("text-overflow", "ellipsis")
                                     .set("white-space", "nowrap")
@@ -165,6 +142,19 @@ fn header_main(state: &AppState, context: &PageContext) -> Node {
                     None => Button::new()
                         .command_for("login-or-create-account-dialog")
                         .command(CommandValue::ShowModal)
+                        .style(
+                            Style::new()
+                                .set("font-size", "0.84rem")
+                                .set("font-weight", "600")
+                                .set("background", "var(--primary)")
+                                .set("color", "#0e1720")
+                                .set("border", "none")
+                                .set("padding", "0.4rem 0.88rem")
+                                .set("border-radius", "var(--radius-sm)")
+                                .set("cursor", "pointer")
+                                .set("box-shadow", "0 2px 8px rgb(124 192 216 / 0.22)")
+                                .set("transition", "opacity 0.15s ease"),
+                        )
                         .children([text(context.language.label(
                             "Log In / Sign Up",
                             "ログイン / サインアップ",
@@ -178,12 +168,52 @@ fn header_main(state: &AppState, context: &PageContext) -> Node {
                         Style::new()
                             .set("display", "flex")
                             .set("align-items", "center")
-                            .set("gap", "0.6rem"),
+                            .set("gap", "0.65rem"),
                     )
                     .children([language_dropdown(state, context), account_button])
                     .into_node()
             },
         ])
+        .into_node()
+}
+
+fn nav_link(
+    context: &PageContext,
+    target: Location,
+    label: &'static str,
+    label_ja: &'static str,
+    label_eo: &'static str,
+) -> Node {
+    let is_active = match (&context.location, &target) {
+        (Some(Location::PartList), Location::PartList) => true,
+        (Some(Location::Part(_)), Location::PartList) => true,
+        (Some(Location::ModuleList), Location::ModuleList) => true,
+        (Some(Location::Module(_)), Location::ModuleList) => true,
+        (Some(Location::LocalEventQueue), Location::LocalEventQueue) => true,
+        (Some(Location::AccountList), Location::AccountList) => true,
+        (Some(Location::Account(_)), Location::AccountList) => true,
+        _ => false,
+    };
+    let mut style = Style::new()
+        .set("font-size", "0.88rem")
+        .set("padding", "0.3rem 0.6rem")
+        .set("border-radius", "var(--radius-sm)")
+        .set("transition", "all 0.15s ease")
+        .set("text-decoration", "none");
+    if is_active {
+        style = style
+            .set("color", "var(--text)")
+            .set("background", "rgb(255 255 255 / 0.08)")
+            .set("font-weight", "500");
+    } else {
+        style = style
+            .set("color", "var(--text-secondary)")
+            .set("font-weight", "400");
+    }
+    A::<Location>::new()
+        .href(context.href_with_lang(target))
+        .style(style)
+        .children([text(context.language.label(label, label_ja, label_eo))])
         .into_node()
 }
 
@@ -333,6 +363,15 @@ fn popover(state: &AppState, context: &PageContext) -> Node {
                     .type_("button")
                     .command("hide-popover")
                     .command_for("header-popover")
+                    .on_click(EventHandler::new(async |set_state| {
+                        crate::navigator_credential::credential_clear();
+                        set_state(Box::new(|state: AppState| -> AppState {
+                            AppState {
+                                current_key: None,
+                                ..state.clone()
+                            }
+                        }));
+                    }))
                     .children([text(context.language.label(
                         "Log Out",
                         "ログアウト",
@@ -365,7 +404,7 @@ mod tests {
 
     #[test]
     fn test_language_dropdown_highlights_selected_language() {
-        let state = build_initial_state(vec![], false, false, None, None);
+        let state = build_initial_state(vec![], false, false, None, None, true);
 
         // 1. 日本語 (ja) の PageContext
         let context_ja = PageContext::from_path_and_query("/", "?lang=ja", None);

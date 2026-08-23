@@ -103,18 +103,7 @@ pub fn local_event_queue_view(state: &AppState, context: &PageContext) -> Node {
         .into_node();
 
     let mut list_items = Vec::new();
-    if state.local_event_queue.items.is_empty() {
-        list_items.push(
-            Div::new()
-                .style(Style::new().set("color", "var(--text-secondary)"))
-                .children([text(context.language.label(
-                    "No local events",
-                    "ローカルイベントはありません",
-                    "Neniuj lokaj eventoj",
-                ))])
-                .into_node(),
-        );
-    } else {
+    if !state.local_event_queue.items.is_empty() {
         for record in &state.local_event_queue.items {
             let status = record.status.clone();
             let status_badge = Div::new()
@@ -269,7 +258,7 @@ pub fn local_event_queue_view(state: &AppState, context: &PageContext) -> Node {
 
     Div::new()
         .class("page-shell")
-        .style(crate::layout::page_shell_style("1rem"))
+        .style(crate::layout::page_shell_style("1.2rem"))
         .children([
             Div::new()
                 .style(
@@ -277,13 +266,19 @@ pub fn local_event_queue_view(state: &AppState, context: &PageContext) -> Node {
                         .set("display", "flex")
                         .set("justify-content", "space-between")
                         .set("align-items", "center")
-                        .set("gap", "0.8rem"),
+                        .set("gap", "0.8rem")
+                        .set("flex-wrap", "wrap"),
                 )
                 .children([
                     Div::new()
                         .style(Style::new().set("display", "grid").set("gap", "0.2rem"))
                         .children([
                             H2::new()
+                                .style(
+                                    Style::new()
+                                        .set("font-size", "1.4rem")
+                                        .set("font-weight", "600"),
+                                )
                                 .children([text(context.language.label(
                                     "Local Events",
                                     "ローカルイベント",
@@ -294,12 +289,14 @@ pub fn local_event_queue_view(state: &AppState, context: &PageContext) -> Node {
                                 .style(
                                     Style::new()
                                         .set("color", "var(--text-secondary)")
-                                        .set("font-size", "0.82rem")
+                                        .set("font-size", "0.84rem")
                                         .set("display", "inline-flex"),
                                 )
-                                .children([text(
-                                    "indexedDB に保存された送信履歴・送信待ちイベント",
-                                )])
+                                .children([text(context.language.label(
+                                    "Queue and history stored in IndexedDB",
+                                    "IndexedDB に保存された送信履歴・送信待ちイベント",
+                                    "Vico kaj historio konservitaj en IndexedDB",
+                                ))])
                                 .into_node(),
                         ])
                         .into_node(),
@@ -314,7 +311,9 @@ pub fn local_event_queue_view(state: &AppState, context: &PageContext) -> Node {
                     .style(
                         Style::new()
                             .set("color", "var(--text-secondary)")
-                            .set("font-size", "0.82rem"),
+                            .set("font-size", "0.88rem")
+                            .set("text-align", "center")
+                            .set("padding", "1.5rem"),
                     )
                     .children([text(context.language.label(
                         "Loading...",
@@ -324,21 +323,55 @@ pub fn local_event_queue_view(state: &AppState, context: &PageContext) -> Node {
                     .into_node()
             } else if let Some(error) = &state.local_event_queue.last_error {
                 Div::new()
-                    .style(
-                        Style::new()
-                            .set("color", "#fca5a5")
-                            .set("font-size", "0.84rem"),
-                    )
+                    .class("error-card")
+                    .style(Style::new().set("font-size", "0.86rem"))
                     .children([text(error)])
                     .into_node()
             } else {
                 Div::new().children([]).into_node()
             },
-            Div::new()
-                .class("event-list")
-                .style(Style::new().set("display", "grid").set("gap", "0.6rem"))
-                .children(list_items)
-                .into_node(),
+            if list_items.is_empty() && !state.local_event_queue.is_loading {
+                Div::new()
+                    .class("event-detail-card")
+                    .style(
+                        Style::new()
+                            .set("padding", "3rem 1.5rem")
+                            .set("text-align", "center")
+                            .set("display", "grid")
+                            .set("gap", "0.5rem")
+                            .set("justify-items", "center")
+                            .set("color", "var(--text-secondary)"),
+                    )
+                    .children([
+                        Div::new()
+                            .style(
+                                Style::new()
+                                    .set("font-size", "1.5rem")
+                                    .set("opacity", "0.5"),
+                            )
+                            .children([text("⚡")])
+                            .into_node(),
+                        Div::new()
+                            .style(
+                                Style::new()
+                                    .set("font-size", "0.95rem")
+                                    .set("color", "var(--text)"),
+                            )
+                            .children([text(context.language.label(
+                                "No local events in queue",
+                                "キューにローカルイベントはありません",
+                                "Neniuj lokaj eventoj en vico",
+                            ))])
+                            .into_node(),
+                    ])
+                    .into_node()
+            } else {
+                Div::new()
+                    .class("event-list")
+                    .style(Style::new().set("display", "grid").set("gap", "0.75rem"))
+                    .children(list_items)
+                    .into_node()
+            },
         ])
         .into_node()
 }

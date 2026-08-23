@@ -4,6 +4,7 @@ pub fn page_shell_style(gap: &str) -> Style {
     Style::new()
         .set("display", "grid")
         .set("gap", gap)
+        .set("align-content", "start")
         .set("width", "100%")
         .set("max-width", "920px")
         .set("margin", "0 auto")

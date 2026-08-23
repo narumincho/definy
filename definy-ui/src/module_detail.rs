@@ -42,13 +42,42 @@ pub fn module_detail_view(
 
     Div::new()
         .class("page-shell")
-        .style(crate::layout::page_shell_style("1rem"))
+        .style(crate::layout::page_shell_style("1.2rem"))
         .children([
+            A::<Location>::new()
+                .class("back-link")
+                .href(context.href_with_lang(Location::ModuleList))
+                .style(
+                    Style::new()
+                        .set("display", "inline-flex")
+                        .set("align-items", "center")
+                        .set("gap", "0.4rem")
+                        .set("color", "var(--primary)")
+                        .set("font-size", "0.88rem")
+                        .set("font-weight", "500")
+                        .set("text-decoration", "none"),
+                )
+                .children([text(context.language.label(
+                    "← Back to Modules",
+                    "← モジュール一覧へ戻る",
+                    "← Reen al moduloj",
+                ))])
+                .into_node(),
             Div::new()
-                .style(Style::new().set("display", "grid").set("gap", "0.4rem"))
+                .class("event-detail-card")
+                .style(
+                    Style::new()
+                        .set("display", "grid")
+                        .set("gap", "0.6rem")
+                        .set("padding", "1.2rem 1.3rem"),
+                )
                 .children([
                     H2::new()
-                        .style(Style::new().set("font-size", "1.3rem"))
+                        .style(
+                            Style::new()
+                                .set("font-size", "1.4rem")
+                                .set("font-weight", "600"),
+                        )
                         .children([text(module_snapshot.module_name.clone())])
                         .into_node(),
                     if module_snapshot.module_description.is_empty() {
@@ -58,6 +87,7 @@ pub fn module_detail_view(
                             .style(
                                 Style::new()
                                     .set("white-space", "pre-wrap")
+                                    .set("font-size", "0.92rem")
                                     .set("color", "var(--text-secondary)"),
                             )
                             .children([text(module_snapshot.module_description.clone())])

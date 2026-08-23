@@ -478,6 +478,7 @@ impl TestServer {
 fn render_html_response(path: &str) -> Response<Full<Bytes>> {
     let context = definy_ui::PageContext::from_path_and_query(path, "", None);
     let state = definy_ui::AppState {
+        is_db_connected: true,
         focused_path: None,
         dropdown_search_query: String::new(),
         login_or_create_account_dialog_state: definy_ui::LoginOrCreateAccountDialogState {

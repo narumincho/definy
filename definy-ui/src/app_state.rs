@@ -94,6 +94,7 @@ use std::{collections::HashMap, str::FromStr};
 
 #[derive(Clone)]
 pub struct AppState {
+    pub is_db_connected: bool,
     pub login_or_create_account_dialog_state: LoginOrCreateAccountDialogState,
     pub event_cache: HashMap<
         EventHashId,
@@ -236,6 +237,7 @@ pub fn build_initial_state(
     event_list_has_more: bool,
     current_key: Option<ed25519_dalek::SigningKey>,
     filter_event_type: Option<definy_event::event::EventType>,
+    is_db_connected: bool,
 ) -> AppState {
     let mut event_cache = HashMap::new();
     let mut event_hashes = Vec::new();
@@ -245,6 +247,7 @@ pub fn build_initial_state(
     }
 
     AppState {
+        is_db_connected,
         login_or_create_account_dialog_state: LoginOrCreateAccountDialogState {
             state: CreatingAccountState::LogIn,
             username: String::new(),
