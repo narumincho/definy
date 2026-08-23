@@ -40,23 +40,18 @@ pub use page_title::document_title_text;
 
 use narumincho_vdom::*;
 
-use crate::language::Language;
-
 pub const SSR_INITIAL_STATE_ELEMENT_ID: &str = "__DEFINY_INITIAL_STATE__";
 
 #[derive(serde::Serialize, serde::Deserialize)]
 struct SsrStateInternal {
     event_binaries_base64: Vec<String>,
     has_more: bool,
-    language: Language,
-    language_requested_code: Option<String>,
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct SsrState {
     pub event_binaries: Vec<Vec<u8>>,
     pub has_more: bool,
-    pub language: Language,
-    pub language_requested_code: Option<String>,
 }
 
 pub fn encode_ssr_state(ssr_state: SsrState) -> Option<String> {
@@ -72,8 +67,6 @@ pub fn encode_ssr_state(ssr_state: SsrState) -> Option<String> {
             })
             .collect(),
         has_more: ssr_state.has_more,
-        language: ssr_state.language,
-        language_requested_code: ssr_state.language_requested_code,
     })
     .ok()
     .map(|vec| base64::Engine::encode(&base64::engine::general_purpose::URL_SAFE_NO_PAD, &vec))
@@ -90,14 +83,12 @@ pub fn decode_ssr_state(json: &str) -> Option<SsrState> {
                 .filter_map(|encoded| {
                     base64::Engine::decode(
                         &base64::engine::general_purpose::URL_SAFE_NO_PAD,
-                        encoded,
+                        &encoded,
                     )
                     .ok()
                 })
                 .collect(),
             has_more: state.has_more,
-            language: state.language,
-            language_requested_code: state.language_requested_code,
         })
 }
 

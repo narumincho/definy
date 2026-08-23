@@ -104,18 +104,9 @@ async fn handler(
             .and_then(|value| value.to_str().ok());
         let language_resolution =
             definy_ui::language::resolve_language(uri.query(), accept_language);
-        let language_requested_code = language_resolution.unsupported_query_lang;
         let pool = ensure_pool(&state).await;
         return match pool {
-            Some(pool) => {
-                handle_html(
-                    &uri,
-                    &pool,
-                    language_resolution.language,
-                    language_requested_code,
-                )
-                .await
-            }
+            Some(pool) => handle_html(&uri, &pool, language_resolution.language).await,
             None => db_unavailable_response(true),
         };
     }
@@ -206,7 +197,6 @@ async fn handle_html(
     uri: &hyper::Uri,
     pool: &sqlx::postgres::PgPool,
     language: definy_ui::language::Language,
-    language_requested_code: Option<String>,
 ) -> Result<Response<Full<Bytes>>, hyper::http::Error> {
     let path = uri.path();
     let query = uri.query();
@@ -251,8 +241,6 @@ async fn handle_html(
     let ssr_initial_state_json = definy_ui::encode_ssr_state(definy_ui::SsrState {
         event_binaries: event_binary_array.into_vec(),
         has_more,
-        language,
-        language_requested_code: language_requested_code.clone(),
     })
     .unwrap();
 
