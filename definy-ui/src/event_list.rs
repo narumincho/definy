@@ -21,13 +21,6 @@ fn part_type_text(part_type: &definy_event::event::PartType) -> String {
     }
 }
 
-fn optional_part_type_text(part_type: &Option<definy_event::event::PartType>) -> String {
-    part_type
-        .as_ref()
-        .map(part_type_text)
-        .unwrap_or_else(|| "None".to_string())
-}
-
 pub fn event_list_view(state: &AppState, context: &PageContext) -> Node {
     let state = state.clone();
     let filter_options = vec![
@@ -129,7 +122,7 @@ pub fn event_list_view(state: &AppState, context: &PageContext) -> Node {
             children.push(
                 Div::new()
                     .class("event-list")
-                    .style(Style::new().set("display", "grid").set("gap", "0.45rem"))
+                    .style(Style::new().set("display", "grid").set("gap", "1rem"))
                     .children({
                         let account_name_map = state.account_name_map();
                         let hashes: Vec<EventHashId> =
@@ -288,59 +281,140 @@ fn event_view(
     account_name_map: &std::collections::HashMap<definy_event::event::AccountId, Box<str>>,
 ) -> Node {
     match event_result {
-        Ok((_, event)) => A::<crate::Location>::new()
-            .class("event-card")
-            .style(
-                Style::new()
-                    .set("background", "rgb(255 255 255 / 0.02)")
-                    .set("backdrop-filter", "var(--glass-blur)")
-                    .set("border", "1px solid var(--border)")
-                    .set("border-radius", "var(--radius-md)")
-                    .set("padding", "0.65rem 0.85rem")
-                    .set("box-shadow", "var(--shadow-sm)")
-                    .set("transition", "all 0.2s ease")
-                    .set("display", "grid")
-                    .set("gap", "0.4rem"),
-            )
-            .href(context.href_with_lang(crate::Location::Event(hash.clone())))
-            .children([
-                Div::new()
-                    .style(
-                        Style::new()
-                            .set("font-size", "0.76rem")
-                            .set("color", "var(--text-secondary)")
-                            .set("display", "flex")
-                            .set("justify-content", "space-between")
-                            .set("align-items", "center"),
-                    )
-                    .children([
-                        Div::new()
-                            .children([text(event.time.format("%Y-%m-%d %H:%M:%S").to_string())])
-                            .into_node(),
-                        Div::new()
-                            .class("badge")
-                            .style(
-                                Style::new()
-                                    .set("font-size", "0.72rem")
-                                    .set("font-weight", "500")
-                                    .set("color", "var(--primary)")
-                                    .set("background", "rgb(124 192 216 / 0.1)")
-                                    .set("padding", "0.15rem 0.45rem")
-                                    .set("border-radius", "var(--radius-full)"),
-                            )
-                            .children([text(event_type_label(&event.content, context))])
-                            .into_node(),
-                    ])
-                    .into_node(),
-                event_content_view(event, context, hash, account_name_map),
-            ])
-            .into_node(),
+        Ok((_, event)) => {
+            let author_name =
+                crate::app_state::account_display_name(account_name_map, &event.account_id);
+            Div::new()
+                .class("event-card")
+                .style(
+                    Style::new()
+                        .set("background", "var(--surface)")
+                        .set("border", "1px solid var(--border)")
+                        .set("border-radius", "var(--radius-md)")
+                        .set("padding", "0.9rem 1.1rem")
+                        .set("box-shadow", "var(--shadow-sm)")
+                        .set("display", "flex")
+                        .set("flex-direction", "column")
+                        .set("gap", "0.65rem"),
+                )
+                .children([
+                    // Header row: Author + Timestamp (left), Event Type badge (right)
+                    Div::new()
+                        .style(
+                            Style::new()
+                                .set("display", "flex")
+                                .set("justify-content", "space-between")
+                                .set("align-items", "center")
+                                .set("padding-bottom", "0.5rem")
+                                .set("border-bottom", "1px solid rgb(255 255 255 / 0.05)")
+                                .set("gap", "0.8rem"),
+                        )
+                        .children([
+                            Div::new()
+                                .style(
+                                    Style::new()
+                                        .set("display", "flex")
+                                        .set("align-items", "center")
+                                        .set("gap", "0.6rem")
+                                        .set("font-size", "0.82rem"),
+                                )
+                                .children([
+                                    A::<crate::Location>::new()
+                                        .href(context.href_with_lang(crate::Location::Account(
+                                            event.account_id.clone(),
+                                        )))
+                                        .style(
+                                            Style::new()
+                                                .set("font-weight", "600")
+                                                .set("color", "var(--primary)")
+                                                .set("text-decoration", "none"),
+                                        )
+                                        .children([text(author_name)])
+                                        .into_node(),
+                                    Div::new()
+                                        .style(
+                                            Style::new()
+                                                .set("color", "var(--text-secondary)")
+                                                .set("font-size", "0.76rem"),
+                                        )
+                                        .children([text(
+                                            event.time.format("%Y-%m-%d %H:%M:%S").to_string(),
+                                        )])
+                                        .into_node(),
+                                ])
+                                .into_node(),
+                            Div::new()
+                                .class("badge")
+                                .style(
+                                    Style::new()
+                                        .set("font-size", "0.72rem")
+                                        .set("font-weight", "500")
+                                        .set("color", "var(--primary)")
+                                        .set("background", "rgb(124 192 216 / 0.1)")
+                                        .set("padding", "0.18rem 0.5rem")
+                                        .set("border-radius", "var(--radius-full)")
+                                        .set("white-space", "nowrap"),
+                                )
+                                .children([text(event_type_label(&event.content, context))])
+                                .into_node(),
+                        ])
+                        .into_node(),
+                    // Body: Main event content
+                    event_content_view(event, context, hash, account_name_map),
+                    // Footer: Hash (left), Event detail link (right)
+                    Div::new()
+                        .style(
+                            Style::new()
+                                .set("display", "flex")
+                                .set("justify-content", "space-between")
+                                .set("align-items", "center")
+                                .set("margin-top", "0.2rem")
+                                .set("padding-top", "0.45rem")
+                                .set("border-top", "1px solid rgb(255 255 255 / 0.04)")
+                                .set("font-size", "0.76rem"),
+                        )
+                        .children([
+                            Div::new()
+                                .class("mono")
+                                .style(
+                                    Style::new()
+                                        .set("color", "var(--text-secondary)")
+                                        .set("opacity", "0.7")
+                                        .set("max-width", "60%")
+                                        .set("overflow", "hidden")
+                                        .set("text-overflow", "ellipsis")
+                                        .set("white-space", "nowrap"),
+                                )
+                                .children([text(hash.to_string())])
+                                .into_node(),
+                            A::<crate::Location>::new()
+                                .href(context.href_with_lang(crate::Location::Event(hash.clone())))
+                                .style(
+                                    Style::new()
+                                        .set("color", "var(--primary)")
+                                        .set("text-decoration", "none")
+                                        .set("font-weight", "500"),
+                                )
+                                .children([text(context.language.label(
+                                    "Event detail →",
+                                    "イベント詳細 →",
+                                    "Eventaj detaloj →",
+                                ))])
+                                .into_node(),
+                        ])
+                        .into_node(),
+                ])
+                .into_node()
+        }
         Err(err) => Div::new()
             .class("event-card")
             .style(
                 Style::new()
-                    .set("padding", "0.65rem 0.85rem")
+                    .set("padding", "0.85rem 1.1rem")
                     .set("border-left", "3px solid var(--error)")
+                    .set("background", "var(--surface)")
+                    .set("border", "1px solid var(--border)")
+                    .set("border-radius", "var(--radius-md)")
                     .set("display", "grid")
                     .set("gap", "0.3rem"),
             )
@@ -379,261 +453,227 @@ fn event_content_view(
     event: &definy_event::event::Event,
     context: &PageContext,
     hash: &EventHashId,
-    account_name_map: &std::collections::HashMap<definy_event::event::AccountId, Box<str>>,
+    _account_name_map: &std::collections::HashMap<definy_event::event::AccountId, Box<str>>,
 ) -> Node {
     match &event.content {
         EventContent::CreateAccount(create_account_event) => Div::new()
             .style(
                 Style::new()
-                    .set("display", "grid")
-                    .set("gap", "0.25rem")
+                    .set("display", "flex")
+                    .set("align-items", "center")
+                    .set("gap", "0.4rem")
                     .set("font-size", "0.95rem"),
             )
             .children([
-                A::<crate::Location>::new()
-                    .href(
-                        context.href_with_lang(crate::Location::Account(event.account_id.clone())),
-                    )
-                    .style(
-                        Style::new()
-                            .set("font-size", "0.82rem")
-                            .set("color", "var(--primary)")
-                            .set("font-weight", "600")
-                            .set("text-decoration", "none"),
-                    )
-                    .children([text(create_account_event.account_name.as_ref())])
-                    .into_node(),
-                text(format!(
-                    "{} {}",
-                    context.language.label(
+                Div::new()
+                    .style(Style::new().set("color", "var(--text-secondary)"))
+                    .children([text(context.language.label(
                         "Created account:",
                         "アカウントを作成しました:",
-                        "Kreis konton:"
-                    ),
-                    create_account_event.account_name
-                )),
+                        "Kreis konton:",
+                    ))])
+                    .into_node(),
+                Div::new()
+                    .style(Style::new().set("font-weight", "600"))
+                    .children([text(create_account_event.account_name.as_ref())])
+                    .into_node(),
             ])
             .into_node(),
         EventContent::ChangeProfile(change_profile_event) => Div::new()
             .style(
                 Style::new()
-                    .set("display", "grid")
-                    .set("gap", "0.25rem")
+                    .set("display", "flex")
+                    .set("align-items", "center")
+                    .set("gap", "0.4rem")
                     .set("font-size", "0.95rem"),
             )
             .children([
-                A::<crate::Location>::new()
-                    .href(
-                        context.href_with_lang(crate::Location::Account(event.account_id.clone())),
-                    )
-                    .style(
-                        Style::new()
-                            .set("font-size", "0.82rem")
-                            .set("color", "var(--primary)")
-                            .set("font-weight", "600")
-                            .set("text-decoration", "none"),
-                    )
-                    .children([text(crate::app_state::account_display_name(
-                        account_name_map,
-                        &event.account_id,
-                    ))])
-                    .into_node(),
-                text(format!(
-                    "{} {}",
-                    context.language.label(
+                Div::new()
+                    .style(Style::new().set("color", "var(--text-secondary)"))
+                    .children([text(context.language.label(
                         "Changed account name to:",
                         "アカウント名を変更しました:",
-                        "Ŝanĝis kontonomon al:"
-                    ),
-                    change_profile_event.account_name
-                )),
+                        "Ŝanĝis kontonomon al:",
+                    ))])
+                    .into_node(),
+                Div::new()
+                    .style(Style::new().set("font-weight", "600"))
+                    .children([text(change_profile_event.account_name.as_ref())])
+                    .into_node(),
             ])
             .into_node(),
         EventContent::PartDefinition(part_definition_event) => {
-            let mut content_children = vec![
+            let mut content_children = Vec::new();
+
+            // Part title row: Part name (link) + Part type badge
+            let mut title_row_children = vec![
                 A::<crate::Location>::new()
-                    .href(
-                        context.href_with_lang(crate::Location::Account(event.account_id.clone())),
-                    )
+                    .href(context.href_with_lang(crate::Location::Part(hash.clone())))
                     .style(
                         Style::new()
-                            .set("font-size", "0.82rem")
-                            .set("color", "var(--primary)")
+                            .set("font-size", "1.05rem")
                             .set("font-weight", "600")
+                            .set("color", "var(--text)")
                             .set("text-decoration", "none"),
                     )
-                    .children([text(crate::app_state::account_display_name(
-                        account_name_map,
-                        &event.account_id,
-                    ))])
+                    .children([text(part_definition_event.part_name.as_ref())])
                     .into_node(),
-                text(if let Some(expr) = &part_definition_event.expression {
-                    format!(
-                        "{}: {} = {}",
-                        part_definition_event.part_name,
-                        optional_part_type_text(&part_definition_event.part_type),
-                        expression_to_source(expr)
-                    )
-                } else {
-                    format!(
-                        "{}: {}",
-                        part_definition_event.part_name,
-                        optional_part_type_text(&part_definition_event.part_type),
-                    )
-                }),
             ];
+            if let Some(part_type) = &part_definition_event.part_type {
+                title_row_children.push(
+                    Div::new()
+                        .class("badge")
+                        .style(
+                            Style::new()
+                                .set("font-size", "0.74rem")
+                                .set("color", "var(--primary)")
+                                .set("background", "rgb(124 192 216 / 0.12)")
+                                .set("padding", "0.15rem 0.45rem")
+                                .set("border-radius", "var(--radius-full)"),
+                        )
+                        .children([text(part_type_text(part_type))])
+                        .into_node(),
+                );
+            }
+            content_children.push(
+                Div::new()
+                    .style(
+                        Style::new()
+                            .set("display", "flex")
+                            .set("align-items", "center")
+                            .set("gap", "0.55rem"),
+                    )
+                    .children(title_row_children)
+                    .into_node(),
+            );
+
+            // Description
             if !part_definition_event.description.is_empty() {
                 content_children.push(
                     Div::new()
                         .style(
                             Style::new()
-                                .set("font-size", "0.78rem")
+                                .set("font-size", "0.84rem")
                                 .set("color", "var(--text-secondary)")
+                                .set("line-height", "1.4")
                                 .set("white-space", "pre-wrap"),
                         )
                         .children([text(part_definition_event.description.as_ref())])
                         .into_node(),
                 );
             }
-            content_children.push(
-                A::<crate::Location>::new()
-                    .href(context.href_with_lang(crate::Location::Part(hash.clone())))
-                    .style(
-                        Style::new()
-                            .set("font-size", "0.78rem")
-                            .set("color", "var(--primary)")
-                            .set("text-decoration", "none"),
-                    )
-                    .children([text(context.language.label(
-                        "Open part detail",
-                        "パーツ詳細を開く",
-                        "Malfermi partajn detalojn",
-                    ))])
-                    .into_node(),
-            );
+
+            // Expression Preview
+            if let Some(expr) = &part_definition_event.expression {
+                content_children.push(
+                    Div::new()
+                        .class("mono")
+                        .style(
+                            Style::new()
+                                .set("font-size", "0.82rem")
+                                .set("color", "var(--text)")
+                                .set("background", "rgb(0 0 0 / 0.25)")
+                                .set("border", "1px solid rgb(255 255 255 / 0.05)")
+                                .set("border-radius", "var(--radius-sm)")
+                                .set("padding", "0.35rem 0.6rem")
+                                .set("overflow-x", "auto")
+                                .set("white-space", "nowrap"),
+                        )
+                        .children([text(format!("= {}", expression_to_source(expr)))])
+                        .into_node(),
+                );
+            }
+
             Div::new()
-                .style(
-                    Style::new()
-                        .set("display", "grid")
-                        .set("gap", "0.25rem")
-                        .set("font-size", "0.95rem"),
-                )
+                .style(Style::new().set("display", "grid").set("gap", "0.35rem"))
                 .children(content_children)
                 .into_node()
         }
-        EventContent::PartUpdate(part_update_event) => Div::new()
-            .style(
-                Style::new()
-                    .set("display", "grid")
-                    .set("gap", "0.25rem")
-                    .set("font-size", "0.95rem"),
-            )
-            .children([
-                A::<crate::Location>::new()
-                    .href(
-                        context.href_with_lang(crate::Location::Account(event.account_id.clone())),
-                    )
-                    .style(
-                        Style::new()
-                            .set("font-size", "0.82rem")
-                            .set("color", "var(--primary)")
-                            .set("font-weight", "600")
-                            .set("text-decoration", "none"),
-                    )
-                    .children([text(crate::app_state::account_display_name(
-                        account_name_map,
-                        &event.account_id,
-                    ))])
-                    .into_node(),
-                text(format!(
-                    "{} {}",
-                    context
-                        .language
-                        .label("Part updated:", "パーツ更新:", "Parto ĝisdatigita:"),
-                    part_update_event.part_name
-                )),
-                Div::new()
-                    .class("mono")
-                    .style(
-                        Style::new()
-                            .set("font-size", "0.78rem")
-                            .set("opacity", "0.85"),
-                    )
-                    .children([text(
-                        part_update_event
-                            .expression
-                            .as_ref()
-                            .map(expression_to_source)
-                            .unwrap_or_else(|| {
-                                context
-                                    .language
-                                    .label("(none)", "(なし)", "(neniu)")
-                                    .to_string()
-                            }),
-                    )])
-                    .into_node(),
+        EventContent::PartUpdate(part_update_event) => {
+            let mut content_children = Vec::new();
+
+            content_children.push(
                 Div::new()
                     .style(
                         Style::new()
-                            .set("font-size", "0.78rem")
-                            .set("color", "var(--text-secondary)"),
+                            .set("display", "flex")
+                            .set("align-items", "center")
+                            .set("gap", "0.4rem")
+                            .set("font-size", "0.95rem"),
                     )
-                    .children([text(format!(
-                        "base: {}",
-                        part_update_event.part_definition_event_hash
-                    ))])
+                    .children([
+                        Div::new()
+                            .style(Style::new().set("color", "var(--text-secondary)"))
+                            .children([text(context.language.label(
+                                "Updated part:",
+                                "パーツを更新しました:",
+                                "Ĝisdatigis parton:",
+                            ))])
+                            .into_node(),
+                        A::<crate::Location>::new()
+                            .href(context.href_with_lang(crate::Location::Part(
+                                part_update_event.part_definition_event_hash.clone(),
+                            )))
+                            .style(
+                                Style::new()
+                                    .set("font-weight", "600")
+                                    .set("color", "var(--text)")
+                                    .set("text-decoration", "none"),
+                            )
+                            .children([text(part_update_event.part_name.as_ref())])
+                            .into_node(),
+                    ])
                     .into_node(),
-                A::<crate::Location>::new()
-                    .href(context.href_with_lang(crate::Location::Part(
-                        part_update_event.part_definition_event_hash.clone(),
-                    )))
-                    .style(
-                        Style::new()
-                            .set("font-size", "0.78rem")
-                            .set("color", "var(--primary)")
-                            .set("text-decoration", "none"),
-                    )
-                    .children([text(context.language.label(
-                        "Open part detail",
-                        "パーツ詳細を開く",
-                        "Malfermi partajn detalojn",
-                    ))])
-                    .into_node(),
-            ])
-            .into_node(),
+            );
+
+            if let Some(expr) = &part_update_event.expression {
+                content_children.push(
+                    Div::new()
+                        .class("mono")
+                        .style(
+                            Style::new()
+                                .set("font-size", "0.82rem")
+                                .set("color", "var(--text)")
+                                .set("background", "rgb(0 0 0 / 0.25)")
+                                .set("border", "1px solid rgb(255 255 255 / 0.05)")
+                                .set("border-radius", "var(--radius-sm)")
+                                .set("padding", "0.35rem 0.6rem")
+                                .set("overflow-x", "auto")
+                                .set("white-space", "nowrap"),
+                        )
+                        .children([text(format!("= {}", expression_to_source(expr)))])
+                        .into_node(),
+                );
+            }
+
+            Div::new()
+                .style(Style::new().set("display", "grid").set("gap", "0.35rem"))
+                .children(content_children)
+                .into_node()
+        }
         EventContent::ModuleDefinition(module_definition_event) => {
-            let mut content_children = vec![
+            let mut content_children = Vec::new();
+            content_children.push(
                 A::<crate::Location>::new()
-                    .href(
-                        context.href_with_lang(crate::Location::Account(event.account_id.clone())),
-                    )
+                    .href(context.href_with_lang(crate::Location::Module(hash.clone())))
                     .style(
                         Style::new()
-                            .set("font-size", "0.82rem")
-                            .set("color", "var(--primary)")
+                            .set("font-size", "1.05rem")
                             .set("font-weight", "600")
+                            .set("color", "var(--text)")
                             .set("text-decoration", "none"),
                     )
-                    .children([text(crate::app_state::account_display_name(
-                        account_name_map,
-                        &event.account_id,
-                    ))])
+                    .children([text(module_definition_event.module_name.as_ref())])
                     .into_node(),
-                text(format!(
-                    "{} {}",
-                    context
-                        .language
-                        .label("Module created:", "モジュール作成:", "Modulo kreita:"),
-                    module_definition_event.module_name
-                )),
-            ];
+            );
             if !module_definition_event.description.is_empty() {
                 content_children.push(
                     Div::new()
                         .style(
                             Style::new()
-                                .set("font-size", "0.78rem")
+                                .set("font-size", "0.84rem")
                                 .set("color", "var(--text-secondary)")
+                                .set("line-height", "1.4")
                                 .set("white-space", "pre-wrap"),
                         )
                         .children([text(module_definition_event.description.as_ref())])
@@ -641,94 +681,61 @@ fn event_content_view(
                 );
             }
             Div::new()
-                .style(
-                    Style::new()
-                        .set("display", "grid")
-                        .set("gap", "0.25rem")
-                        .set("font-size", "0.95rem"),
-                )
+                .style(Style::new().set("display", "grid").set("gap", "0.35rem"))
                 .children(content_children)
                 .into_node()
         }
         EventContent::ModuleUpdate(module_update_event) => {
-            let mut content_children = vec![
-                A::<crate::Location>::new()
-                    .href(
-                        context.href_with_lang(crate::Location::Account(event.account_id.clone())),
-                    )
+            let mut content_children = Vec::new();
+            content_children.push(
+                Div::new()
                     .style(
                         Style::new()
-                            .set("font-size", "0.82rem")
-                            .set("color", "var(--primary)")
-                            .set("font-weight", "600")
-                            .set("text-decoration", "none"),
+                            .set("display", "flex")
+                            .set("align-items", "center")
+                            .set("gap", "0.4rem")
+                            .set("font-size", "0.95rem"),
                     )
-                    .children([text(crate::app_state::account_display_name(
-                        account_name_map,
-                        &event.account_id,
-                    ))])
+                    .children([
+                        Div::new()
+                            .style(Style::new().set("color", "var(--text-secondary)"))
+                            .children([text(context.language.label(
+                                "Updated module:",
+                                "モジュールを更新しました:",
+                                "Ĝisdatigis modulon:",
+                            ))])
+                            .into_node(),
+                        A::<crate::Location>::new()
+                            .href(context.href_with_lang(crate::Location::Module(
+                                module_update_event.module_definition_event_hash.clone(),
+                            )))
+                            .style(
+                                Style::new()
+                                    .set("font-weight", "600")
+                                    .set("color", "var(--text)")
+                                    .set("text-decoration", "none"),
+                            )
+                            .children([text(module_update_event.module_name.as_ref())])
+                            .into_node(),
+                    ])
                     .into_node(),
-                text(format!(
-                    "{} {}",
-                    context.language.label(
-                        "Module updated:",
-                        "モジュール更新:",
-                        "Modulo ĝisdatigita:"
-                    ),
-                    module_update_event.module_name
-                )),
-            ];
+            );
             if !module_update_event.module_description.is_empty() {
                 content_children.push(
                     Div::new()
                         .style(
                             Style::new()
-                                .set("font-size", "0.78rem")
+                                .set("font-size", "0.84rem")
                                 .set("color", "var(--text-secondary)")
+                                .set("line-height", "1.4")
                                 .set("white-space", "pre-wrap"),
                         )
                         .children([text(module_update_event.module_description.as_ref())])
                         .into_node(),
                 );
             }
-            content_children.push(
-                Div::new()
-                    .style(
-                        Style::new()
-                            .set("font-size", "0.78rem")
-                            .set("color", "var(--text-secondary)"),
-                    )
-                    .children([text(format!(
-                        "base: {}",
-                        module_update_event.module_definition_event_hash,
-                    ))])
-                    .into_node(),
-            );
-            content_children.push(
-                A::<crate::Location>::new()
-                    .href(context.href_with_lang(crate::Location::Event(
-                        module_update_event.module_definition_event_hash.clone(),
-                    )))
-                    .style(
-                        Style::new()
-                            .set("font-size", "0.78rem")
-                            .set("color", "var(--primary)")
-                            .set("text-decoration", "none"),
-                    )
-                    .children([text(context.language.label(
-                        "Open module detail",
-                        "モジュール詳細を開く",
-                        "Malfermi modulajn detalojn",
-                    ))])
-                    .into_node(),
-            );
             Div::new()
-                .style(
-                    Style::new()
-                        .set("display", "grid")
-                        .set("gap", "0.25rem")
-                        .set("font-size", "0.95rem"),
-                )
+                .style(Style::new().set("display", "grid").set("gap", "0.35rem"))
                 .children(content_children)
                 .into_node()
         }
