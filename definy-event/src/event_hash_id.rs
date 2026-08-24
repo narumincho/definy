@@ -6,6 +6,16 @@ impl EventHashId {
         let hash: [u8; 32] = <sha2::Sha256 as sha2::Digest>::digest(bytes).into();
         EventHashId(hash)
     }
+
+    pub fn as_bytes(&self) -> &[u8; 32] {
+        &self.0
+    }
+}
+
+impl AsRef<[u8]> for EventHashId {
+    fn as_ref(&self) -> &[u8] {
+        &self.0
+    }
 }
 
 impl std::fmt::Display for EventHashId {

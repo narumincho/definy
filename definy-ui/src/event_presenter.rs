@@ -20,9 +20,13 @@ pub fn event_summary_text(language: Language, event: &Event) -> String {
             )
         }
         EventContent::PartDefinition(part_definition_event) => format!(
-            "{} = {}{}",
+            "{}{}{}",
             part_definition_event.part_name,
-            expression_to_source(&part_definition_event.expression),
+            part_definition_event
+                .expression
+                .as_ref()
+                .map(|e| format!(" = {}", expression_to_source(e)))
+                .unwrap_or_default(),
             if part_definition_event.description.is_empty() {
                 String::new()
             } else {
@@ -30,7 +34,7 @@ pub fn event_summary_text(language: Language, event: &Event) -> String {
             }
         ),
         EventContent::PartUpdate(part_update_event) => format!(
-            "{} {}{} | {}",
+            "{} {}{}{}",
             language.label("Part updated:", "パーツ更新:", "Parto ĝisdatigita:"),
             part_update_event.part_name,
             if part_update_event.part_description.is_empty() {
@@ -38,7 +42,11 @@ pub fn event_summary_text(language: Language, event: &Event) -> String {
             } else {
                 format!(" - {}", part_update_event.part_description)
             },
-            expression_to_source(&part_update_event.expression)
+            part_update_event
+                .expression
+                .as_ref()
+                .map(|e| format!(" | {}", expression_to_source(e)))
+                .unwrap_or_default()
         ),
         EventContent::ModuleDefinition(module_definition_event) => {
             if module_definition_event.description.is_empty() {

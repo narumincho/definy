@@ -85,6 +85,51 @@ pub async fn get_events(
         )>>())
 }
 
+pub async fn get_event(
+    hash: &definy_event::EventHashId,
+) -> anyhow::Result<
+    Option<(
+        definy_event::EventHashId,
+        Result<
+            (ed25519_dalek::Signature, definy_event::event::Event),
+            definy_event::VerifyAndDeserializeError,
+        >,
+    )>,
+> {
+    let url = format!("/events/{}", hash);
+    let window = web_sys::window().ok_or_else(|| anyhow::anyhow!("no window"))?;
+    let response_raw = wasm_bindgen_futures::JsFuture::from(window.fetch_with_str(&url))
+        .await
+        .map_err(js_error_to_anyhow)?;
+
+    let response: web_sys::Response =
+        wasm_bindgen::JsCast::dyn_into(response_raw).map_err(js_error_to_anyhow)?;
+
+    if response.status() == 404 {
+        return Ok(None);
+    }
+    if !response.ok() {
+        return Err(anyhow::anyhow!("HTTP error: status {}", response.status()));
+    }
+
+    let array_buffer_promise = response.array_buffer().map_err(js_error_to_anyhow)?;
+    let response_body: js_sys::ArrayBuffer = wasm_bindgen::JsCast::dyn_into(
+        wasm_bindgen_futures::JsFuture::from(array_buffer_promise)
+            .await
+            .map_err(js_error_to_anyhow)?,
+    )
+    .map_err(js_error_to_anyhow)?;
+    let bytes = js_sys::Uint8Array::new(&response_body).to_vec();
+
+    if let Err(error) = crate::indexed_db::store_events(&[bytes.clone()]).await {
+        web_sys::console::warn_1(&error);
+    }
+
+    let decoded = definy_event::verify_and_deserialize(&bytes);
+    let hash_id = EventHashId::from_bytes(&bytes);
+    Ok(Some((hash_id, decoded)))
+}
+
 pub async fn post_event(signated_event: &[u8]) -> Result<u16, anyhow::Error> {
     let headers = web_sys::Headers::new().map_err(js_error_to_anyhow)?;
     headers

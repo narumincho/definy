@@ -120,8 +120,22 @@ pub fn render(state: &AppState, context: &PageContext) -> Node {
         }
         None => not_found::not_found_view(state, context),
     };
+    let page_key = match &context.location {
+        Some(Location::Home) => "page-home".to_string(),
+        Some(Location::AccountList) => "page-accounts".to_string(),
+        Some(Location::PartList) => "page-parts".to_string(),
+        Some(Location::ModuleList) => "page-modules".to_string(),
+        Some(Location::LocalEventQueue) => "page-local-events".to_string(),
+        Some(Location::Module(hash)) => format!("page-module-{}", hash),
+        Some(Location::Part(hash)) => format!("page-part-{}", hash),
+        Some(Location::Event(hash)) => format!("page-event-{}", hash),
+        Some(Location::Account(account_id)) => format!("page-account-{}", account_id),
+        None => "page-not-found".to_string(),
+    };
+    let page_content = page_content.with_key(page_key);
 
     let main_wrapper = Div::new()
+        .key("main-wrapper")
         .style(
             Style::new()
                 .set("display", "grid")
@@ -141,7 +155,8 @@ pub fn render(state: &AppState, context: &PageContext) -> Node {
                 .set("display", "grid")
                 .set("gap", "0.8rem")
                 .set("align-content", "start")
-                .set("padding-top", "4.2rem"),
+                .set("padding-top", "4.2rem")
+                .set("padding-bottom", "5rem"),
         )
         .children([
             header::header(state, context),

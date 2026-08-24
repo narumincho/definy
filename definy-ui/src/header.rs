@@ -59,6 +59,7 @@ fn header_main(state: &AppState, context: &PageContext) -> Node {
                             .children([text("definy")])
                             .into_node()])
                         .into_node(),
+                    nav_link(context, Location::Home, "Events", "イベント", "Eventoj"),
                     nav_link(context, Location::PartList, "Parts", "パーツ", "Partoj"),
                     nav_link(
                         context,

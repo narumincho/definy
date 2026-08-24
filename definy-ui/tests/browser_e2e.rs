@@ -499,12 +499,11 @@ fn render_html_response(path: &str) -> Response<Full<Bytes>> {
         },
         current_key: None,
         part_definition_form: definy_ui::PartDefinitionFormState {
+            is_form_open: false,
             part_name_input: String::new(),
             part_type_input: Some(definy_event::event::PartType::Number),
             part_description_input: String::new(),
-            composing_expression: definy_event::event::Expression::Number(
-                definy_event::event::NumberExpression { value: 0 },
-            ),
+            composing_expression: None,
             module_definition_event_hash: None,
             eval_result: None,
         },
@@ -512,12 +511,11 @@ fn render_html_response(path: &str) -> Response<Full<Bytes>> {
             part_definition_event_hash: None,
             part_name_input: String::new(),
             part_description_input: String::new(),
-            expression_input: definy_event::event::Expression::Number(
-                definy_event::event::NumberExpression { value: 0 },
-            ),
+            expression_input: None,
             module_definition_event_hash: None,
         },
         module_definition_form: definy_ui::ModuleDefinitionFormState {
+            is_form_open: false,
             module_name_input: String::new(),
             module_description_input: String::new(),
             result_message: None,

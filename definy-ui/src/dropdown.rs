@@ -12,21 +12,21 @@ pub fn searchable_dropdown(
     options: &[(String, String)],
     render_option: DropdownOptionRenderer,
 ) -> Node {
+    let current_label = options
+        .iter()
+        .find_map(|(val, label)| {
+            if val == current_value {
+                let first = label.split('\t').next().unwrap_or(label.as_str());
+                Some(first.to_string())
+            } else {
+                None
+            }
+        })
+        .unwrap_or_else(|| "Select...".to_string());
+
     Div::new()
         .children([
-            dropdown_button(
-                name,
-                options
-                    .iter()
-                    .find_map(|(val, label)| {
-                        if val == current_value {
-                            Some(label.clone())
-                        } else {
-                            None
-                        }
-                    })
-                    .unwrap_or_else(|| "Select...".to_string()),
-            ),
+            dropdown_button(name, current_label),
             dropdown_panel(
                 name,
                 &state.dropdown_search_query,
@@ -61,7 +61,6 @@ fn dropdown_button(name: &str, current_label: String) -> Node {
         )
         .command_for(dropdown_panel_id(name))
         .command("show-popover")
-        // .on_click(toggle_handler)
         .children([
             text(current_label.as_str()),
             Div::new()
@@ -92,6 +91,7 @@ fn dropdown_panel(
                 .set("position-anchor", anchor_name_id(name))
                 .set("top", "anchor(bottom)")
                 .set("left", "anchor(left)")
+                .set("min-width", "max(100%, 22rem)")
                 .set("margin", "2px")
                 .set("background", "var(--surface)")
                 .set("color", "var(--text)")
@@ -178,6 +178,52 @@ pub fn button_option_renderer(
     Rc::new(move |value, label, is_selected| {
         let on_change = on_change.clone();
         let value = value.to_string();
+        let parts: Vec<&str> = label.split('\t').collect();
+        let children_nodes = if parts.len() > 1 {
+            let left_text = parts[0];
+            let right_text = parts[1..].join(" · ");
+            vec![
+                Div::new()
+                    .style(
+                        Style::new()
+                            .set("font-weight", "500")
+                            .set("white-space", "nowrap")
+                            .set("overflow", "hidden")
+                            .set("text-overflow", "ellipsis"),
+                    )
+                    .children([text(left_text)])
+                    .into_node(),
+                Div::new()
+                    .class("mono")
+                    .style(
+                        Style::new()
+                            .set("font-size", "0.72rem")
+                            .set("opacity", "0.65")
+                            .set("margin-left", "0.8rem")
+                            .set("max-width", "14rem")
+                            .set("white-space", "nowrap")
+                            .set("overflow", "hidden")
+                            .set("text-overflow", "ellipsis")
+                            .set("text-align", "right"),
+                    )
+                    .children([text(right_text.as_str())])
+                    .into_node(),
+            ]
+        } else {
+            vec![
+                Div::new()
+                    .style(
+                        Style::new()
+                            .set("font-weight", "500")
+                            .set("white-space", "nowrap")
+                            .set("overflow", "hidden")
+                            .set("text-overflow", "ellipsis"),
+                    )
+                    .children([text(label)])
+                    .into_node(),
+            ]
+        };
+
         Button::new()
             .style(option_style(is_selected))
             .command("hide-popover")
@@ -196,14 +242,22 @@ pub fn button_option_renderer(
                 },
                 value,
             ))
-            .children([text(label)])
+            .children(children_nodes)
             .into_node()
     })
 }
 
 pub fn option_style(is_selected: bool) -> Style {
     Style::new()
-        .set("padding", "0.4rem 0.6rem")
+        .set("width", "100%")
+        .set("display", "flex")
+        .set("justify-content", "space-between")
+        .set("align-items", "center")
+        .set("text-align", "left")
+        .set("box-sizing", "border-box")
+        .set("padding", "0.45rem 0.65rem")
+        .set("border", "none")
+        .set("border-bottom", "1px solid rgb(255 255 255 / 0.04)")
         .set("cursor", "pointer")
         .set(
             "background",

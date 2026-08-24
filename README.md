@@ -49,8 +49,7 @@ docker run -d --name definy-dev-db -p 8000:8000 surrealdb/surrealdb:latest start
 ### 1. インメモリDBで手軽に起動する場合 (DATABASE_URL 不要)
 
 ```sh
-cargo run -p definy-build
-cargo run -p definy-server
+cargo run -p definy-build && cargo run -p definy-server
 ```
 
 ### 2. SurrealDB サーバー / Surreal Cloud に接続して起動する場合

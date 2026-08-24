@@ -215,18 +215,33 @@ async fn handle_html(
     }
 
     let filter_event_type = definy_ui::event_filter_from_query(query);
-    let (event_binary_array, is_db_connected) = match db {
-        Some(db) => match db::get_events(db, filter_event_type, Some(20), Some(0)).await {
-            Ok(events) => (events, true),
+    let (mut event_binary_vec, is_db_connected) = match db {
+        Some(db) => match db::get_events(db, filter_event_type, Some(100), Some(0)).await {
+            Ok(events) => (events.into_vec(), true),
             Err(error) => {
                 eprintln!("Failed to get events for SSR: {:?}", error);
-                (Box::new([]) as Box<[Vec<u8>]>, false)
+                (Vec::new(), false)
             }
         },
-        None => (Box::new([]) as Box<[Vec<u8>]>, false),
+        None => (Vec::new(), false),
     };
 
-    let events = event_binary_array
+    if let (Some(db), Some(location)) = (db, &location) {
+        match location {
+            definy_ui::Location::Part(hash)
+            | definy_ui::Location::Event(hash)
+            | definy_ui::Location::Module(hash) => {
+                if let Ok(Some(single_event)) = db::get_event(db, hash.as_ref()).await {
+                    if !event_binary_vec.contains(&single_event) {
+                        event_binary_vec.push(single_event);
+                    }
+                }
+            }
+            _ => {}
+        }
+    }
+
+    let events = event_binary_vec
         .iter()
         .map(|event_binary| {
             let hash = definy_event::EventHashId::from_bytes(event_binary.as_slice());
@@ -236,9 +251,9 @@ async fn handle_html(
             )
         })
         .collect::<Vec<_>>();
-    let has_more = events.len() == 20;
+    let has_more = events.len() == 100;
     let ssr_initial_state_json = definy_ui::encode_ssr_state(definy_ui::SsrState {
-        event_binaries: event_binary_array.into_vec(),
+        event_binaries: event_binary_vec,
         has_more,
         is_db_connected,
     })

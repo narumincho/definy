@@ -23,8 +23,8 @@ pub fn render_expression_editor(
     let structure_locked = context.structure_locked;
     let allow_kind_change = context.allow_kind_change;
     let language = context.language;
-    let current_selection = current_selection_value(expression);
-    let selector_options = selector_options(state, &scope_variables);
+    let current_selection = current_selection_value(state, expression);
+    let selector_options = selector_options(state, language, &scope_variables, path.is_empty());
     let warning_message = diagnostics
         .iter()
         .find(|diagnostic| diagnostic.path == path)
@@ -644,8 +644,70 @@ pub fn render_expression_editor(
                     .into_node(),
             );
         }
-        definy_event::event::Expression::PartReference(_)
-        | definy_event::event::Expression::Variable(_) => {
+        definy_event::event::Expression::Compiler(builtin) => {
+            let builtin_label = match builtin {
+                definy_event::event::CompilerBuiltin::Let => "[compiler let]",
+                definy_event::event::CompilerBuiltin::Plus => "[compiler plus]",
+                definy_event::event::CompilerBuiltin::NumberLiteral => "[compiler number literal]",
+                definy_event::event::CompilerBuiltin::If => "[compiler if]",
+            };
+            children.push(
+                Div::new()
+                    .style(
+                        Style::new()
+                            .set("font-size", "0.85rem")
+                            .set("color", "var(--text-secondary)")
+                            .set("font-family", "monospace"),
+                    )
+                    .children([text(builtin_label)])
+                    .into_node(),
+            );
+        }
+        definy_event::event::Expression::PartReference(part_ref) => {
+            let part_info = crate::part_projection::find_part_snapshot(
+                state,
+                &part_ref.part_definition_event_hash,
+            );
+            let part_name = part_info
+                .as_ref()
+                .map(|s| s.part_name.as_str())
+                .unwrap_or("(unknown)");
+            let part_type = part_info
+                .as_ref()
+                .and_then(|s| s.part_type.as_ref())
+                .map(crate::part_list::part_type_text)
+                .unwrap_or_else(|| "Part".to_string());
+            children.push(
+                Div::new()
+                    .style(
+                        Style::new()
+                            .set("display", "flex")
+                            .set("align-items", "center")
+                            .set("gap", "0.5rem")
+                            .set("font-size", "0.85rem"),
+                    )
+                    .children([
+                        Div::new()
+                            .style(Style::new().set("font-weight", "600"))
+                            .children([text(part_name)])
+                            .into_node(),
+                        Div::new()
+                            .class("badge")
+                            .style(
+                                Style::new()
+                                    .set("font-size", "0.72rem")
+                                    .set("color", "var(--primary)")
+                                    .set("background", "rgb(124 192 216 / 0.1)")
+                                    .set("padding", "0.1rem 0.4rem")
+                                    .set("border-radius", "var(--radius-full)"),
+                            )
+                            .children([text(part_type.as_str())])
+                            .into_node(),
+                    ])
+                    .into_node(),
+            );
+        }
+        definy_event::event::Expression::Variable(_) => {
             children.push(
                 Div::new()
                     .style(
@@ -654,9 +716,9 @@ pub fn render_expression_editor(
                             .set("color", "var(--text-secondary)"),
                     )
                     .children([text(language.label(
-                        "Select a Global/Local reference from the dropdown.",
-                        "ドロップダウンから Global/Local 参照を選んでください",
-                        "Elektu Globalan/Lokan referencon el la falmenuo.",
+                        "Local variable reference",
+                        "ローカル変数参照",
+                        "Loka variabla referenco",
                     ))])
                     .into_node(),
             );
@@ -685,7 +747,7 @@ pub fn allow_kind_change_for_nested_values(allow_kind_change: bool, path: &[Path
         .any(|step| matches!(step, PathStep::ConstructorValue))
 }
 
-fn expression_selector(
+pub fn expression_selector(
     state: &AppState,
     path: Vec<PathStep>,
     target: EditorTarget,
@@ -716,6 +778,7 @@ fn expression_selector(
                 });
             let root_expression = target_expression_mut(&mut next, target_clone);
             apply_selection(
+                &state,
                 root_expression,
                 path.as_slice(),
                 selected_value.as_str(),
@@ -735,42 +798,49 @@ fn expression_selector(
     )
 }
 
-fn selector_options(state: &AppState, scope_variables: &[ScopeVariable]) -> Vec<(String, String)> {
+pub fn selector_options(
+    state: &AppState,
+    language: Language,
+    scope_variables: &[ScopeVariable],
+    is_root: bool,
+) -> Vec<(String, String)> {
     let snapshots = collect_part_snapshots(state);
-    let mut options = vec![
-        ("expr:number".to_string(), "Constant: Number".to_string()),
-        ("expr:string".to_string(), "Constant: String".to_string()),
-        (
-            "expr:type:number".to_string(),
-            "Builtin Type: Number".to_string(),
-        ),
-        (
-            "expr:type:string".to_string(),
-            "Builtin Type: String".to_string(),
-        ),
-        (
-            "expr:type:boolean".to_string(),
-            "Builtin Type: Boolean".to_string(),
-        ),
-        (
-            "expr:type:list".to_string(),
-            "Builtin Type: List".to_string(),
-        ),
-        ("expr:list".to_string(), "Literal: List".to_string()),
-        ("expr:boolean".to_string(), "Constant: Boolean".to_string()),
-        ("expr:add".to_string(), "Function: Add".to_string()),
-        ("expr:equal".to_string(), "Function: Equal".to_string()),
-        ("expr:if".to_string(), "Syntax: If".to_string()),
-        ("expr:let".to_string(), "Syntax: Let".to_string()),
-        ("expr:type_literal".to_string(), "Literal: Type".to_string()),
-    ];
+    let mut options = Vec::new();
 
+    if is_root {
+        options.push((
+            "expr:none".to_string(),
+            format!("{}\t\t", language.label("None", "なし", "Neniu")),
+        ));
+    }
+
+    // Local Variables
+    options.extend(scope_variables.iter().map(|scope_var| {
+        (
+            format!("ref:local:{}", scope_var.id),
+            format!("{}\tLocal\t#{}", scope_var.name, scope_var.id),
+        )
+    }));
+
+    // Literals and generic constructors (other than basic types that exist as parts)
+    options.extend([
+        ("expr:string".to_string(), "String\tLiteral\t".to_string()),
+        ("expr:boolean".to_string(), "Boolean\tLiteral\t".to_string()),
+        ("expr:list".to_string(), "List\tLiteral\t".to_string()),
+        (
+            "expr:type_literal".to_string(),
+            "Record\tLiteral\t".to_string(),
+        ),
+        ("expr:equal".to_string(), "==\tSyntax\tEqual".to_string()),
+    ]);
+
+    // Type constructors (for type parts)
     options.extend(snapshots.iter().filter_map(|snapshot| {
         if snapshot.part_type == Some(definy_event::event::PartType::Type) {
             Some((
                 format!("expr:constructor:{}", snapshot.definition_event_hash),
                 format!(
-                    "Constructor: {} ({})",
+                    "{}\tConstructor\t{}",
                     snapshot.part_name, snapshot.definition_event_hash
                 ),
             ))
@@ -779,41 +849,71 @@ fn selector_options(state: &AppState, scope_variables: &[ScopeVariable]) -> Vec<
         }
     }));
 
+    // Global Parts (all parts, including migrated parts like plus, let, number literal, if)
     options.extend(snapshots.into_iter().map(|snapshot| {
+        let type_text = snapshot
+            .part_type
+            .as_ref()
+            .map(crate::part_list::part_type_text)
+            .unwrap_or_else(|| "Part".to_string());
         (
             format!("ref:global:{}", snapshot.definition_event_hash),
             format!(
-                "Global: {} ({})",
-                snapshot.part_name, snapshot.definition_event_hash
+                "{}\t{}\t{}",
+                snapshot.part_name, type_text, snapshot.definition_event_hash
             ),
-        )
-    }));
-
-    options.extend(scope_variables.iter().map(|scope_var| {
-        (
-            format!("ref:local:{}", scope_var.id),
-            format!("Local: {} (#{})", scope_var.name, scope_var.id),
         )
     }));
 
     options
 }
 
-fn current_selection_value(expression: &definy_event::event::Expression) -> String {
+fn current_selection_value(
+    state: &AppState,
+    expression: &definy_event::event::Expression,
+) -> String {
     match expression {
-        definy_event::event::Expression::Number(_) => "expr:number".to_string(),
+        definy_event::event::Expression::Number(_) => {
+            find_builtin_part_hash(state, definy_event::event::CompilerBuiltin::NumberLiteral)
+                .map(|h| format!("ref:global:{}", h))
+                .unwrap_or_else(|| "expr:number".to_string())
+        }
+        definy_event::event::Expression::Add(_) => {
+            find_builtin_part_hash(state, definy_event::event::CompilerBuiltin::Plus)
+                .map(|h| format!("ref:global:{}", h))
+                .unwrap_or_else(|| "expr:add".to_string())
+        }
+        definy_event::event::Expression::If(_) => {
+            find_builtin_part_hash(state, definy_event::event::CompilerBuiltin::If)
+                .map(|h| format!("ref:global:{}", h))
+                .unwrap_or_else(|| "expr:if".to_string())
+        }
+        definy_event::event::Expression::Let(_) => {
+            find_builtin_part_hash(state, definy_event::event::CompilerBuiltin::Let)
+                .map(|h| format!("ref:global:{}", h))
+                .unwrap_or_else(|| "expr:let".to_string())
+        }
+        definy_event::event::Expression::Compiler(builtin) => {
+            find_builtin_part_hash(state, *builtin)
+                .map(|h| format!("ref:global:{}", h))
+                .unwrap_or_else(|| match builtin {
+                    definy_event::event::CompilerBuiltin::Let => "expr:let".to_string(),
+                    definy_event::event::CompilerBuiltin::Plus => "expr:add".to_string(),
+                    definy_event::event::CompilerBuiltin::NumberLiteral => {
+                        "expr:number".to_string()
+                    }
+                    definy_event::event::CompilerBuiltin::If => "expr:if".to_string(),
+                })
+        }
         definy_event::event::Expression::String(_) => "expr:string".to_string(),
+        definy_event::event::Expression::Boolean(_) => "expr:boolean".to_string(),
+        definy_event::event::Expression::ListLiteral(_) => "expr:list".to_string(),
+        definy_event::event::Expression::TypeLiteral(_) => "expr:type_literal".to_string(),
+        definy_event::event::Expression::Equal(_) => "expr:equal".to_string(),
         definy_event::event::Expression::TypeNumber => "expr:type:number".to_string(),
         definy_event::event::Expression::TypeString => "expr:type:string".to_string(),
         definy_event::event::Expression::TypeBoolean => "expr:type:boolean".to_string(),
         definy_event::event::Expression::TypeList(_) => "expr:type:list".to_string(),
-        definy_event::event::Expression::ListLiteral(_) => "expr:list".to_string(),
-        definy_event::event::Expression::Boolean(_) => "expr:boolean".to_string(),
-        definy_event::event::Expression::Add(_) => "expr:add".to_string(),
-        definy_event::event::Expression::Equal(_) => "expr:equal".to_string(),
-        definy_event::event::Expression::If(_) => "expr:if".to_string(),
-        definy_event::event::Expression::Let(_) => "expr:let".to_string(),
-        definy_event::event::Expression::TypeLiteral(_) => "expr:type_literal".to_string(),
         definy_event::event::Expression::Constructor(constructor_expression) => format!(
             "expr:constructor:{}",
             constructor_expression.type_part_definition_event_hash
@@ -825,6 +925,19 @@ fn current_selection_value(expression: &definy_event::event::Expression) -> Stri
             format!("ref:local:{}", var_expr.variable_id)
         }
     }
+}
+
+fn find_builtin_part_hash(
+    state: &AppState,
+    target: definy_event::event::CompilerBuiltin,
+) -> Option<EventHashId> {
+    collect_part_snapshots(state)
+        .into_iter()
+        .find(|snapshot| match snapshot.expression.as_ref() {
+            Some(definy_event::event::Expression::Compiler(builtin)) => *builtin == target,
+            _ => false,
+        })
+        .map(|snapshot| snapshot.definition_event_hash)
 }
 
 fn number_input(path: Vec<PathStep>, target: EditorTarget, value: i64) -> Node {
