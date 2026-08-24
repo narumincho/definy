@@ -12,19 +12,21 @@ use hyper::service::service_fn;
 use hyper::{Request, Response};
 use hyper_util::rt::TokioIo;
 use narumincho_vdom::Route;
+use surrealdb::Surreal;
+use surrealdb::engine::any::Any;
 use tokio::net::TcpListener;
 use tokio::sync::RwLock;
 
 #[derive(Clone)]
 struct AppState {
-    pool: Arc<RwLock<Option<sqlx::postgres::PgPool>>>,
+    db: Arc<RwLock<Option<Surreal<Any>>>>,
 }
 
 #[tokio::main]
 async fn main() -> Result<(), anyhow::Error> {
     println!("Starting definy server...");
     let state = AppState {
-        pool: Arc::new(RwLock::new(None)),
+        db: Arc::new(RwLock::new(None)),
     };
 
     let addr = SocketAddr::from((
@@ -104,8 +106,8 @@ async fn handler(
             .and_then(|value| value.to_str().ok());
         let language_resolution =
             definy_ui::language::resolve_language(uri.query(), accept_language);
-        let pool = ensure_pool(&state).await;
-        return handle_html(&uri, pool.as_ref(), language_resolution.language).await;
+        let db = ensure_db(&state).await;
+        return handle_html(&uri, db.as_ref(), language_resolution.language).await;
     }
 
     match path.trim_start_matches('/') {
@@ -122,20 +124,18 @@ async fn handler(
             .header("Cache-Control", "public, max-age=31536000, immutable")
             .body(Full::new(Bytes::from_static(ICON_CONTENT))),
         "events" => {
-            let pool = ensure_pool(&state).await;
-            match pool {
-                Some(pool) => event::handle_events(request, address, &pool).await,
+            let db = ensure_db(&state).await;
+            match db {
+                Some(db) => event::handle_events(request, address, &db).await,
                 None => db_unavailable_response(false),
             }
         }
         path => {
             if let Some(event_binary_hash_hex) = path.strip_prefix("events/") {
                 let event_binary_hash_hex = event_binary_hash_hex.to_string();
-                let pool = ensure_pool(&state).await;
-                match pool {
-                    Some(pool) => {
-                        event::handle_event_get(request, pool, &event_binary_hash_hex).await
-                    }
+                let db = ensure_db(&state).await;
+                match db {
+                    Some(db) => event::handle_event_get(request, &db, &event_binary_hash_hex).await,
                     None => db_unavailable_response(false),
                 }
             } else {
@@ -148,21 +148,21 @@ async fn handler(
     }
 }
 
-async fn ensure_pool(state: &AppState) -> Option<sqlx::postgres::PgPool> {
-    if let Some(pool) = state.pool.read().await.clone() {
-        return Some(pool);
+async fn ensure_db(state: &AppState) -> Option<Surreal<Any>> {
+    if let Some(db) = state.db.read().await.clone() {
+        return Some(db);
     }
 
     match db::init_db().await {
-        Ok(pool) => {
-            let mut guard = state.pool.write().await;
-            if let Some(existing_pool) = guard.clone() {
-                return Some(existing_pool);
+        Ok(db) => {
+            let mut guard = state.db.write().await;
+            if let Some(existing_db) = guard.clone() {
+                return Some(existing_db);
             }
-            *guard = Some(pool.clone());
+            *guard = Some(db.clone());
             drop(guard);
             println!("Database is available. API requests will use the database.");
-            Some(pool)
+            Some(db)
         }
         Err(error) => {
             eprintln!(
@@ -192,7 +192,7 @@ fn db_unavailable_response(wants_html: bool) -> Result<Response<Full<Bytes>>, hy
 
 async fn handle_html(
     uri: &hyper::Uri,
-    pool: Option<&sqlx::postgres::PgPool>,
+    db: Option<&Surreal<Any>>,
     language: definy_ui::language::Language,
 ) -> Result<Response<Full<Bytes>>, hyper::http::Error> {
     let path = uri.path();
@@ -215,8 +215,8 @@ async fn handle_html(
     }
 
     let filter_event_type = definy_ui::event_filter_from_query(query);
-    let (event_binary_array, is_db_connected) = match pool {
-        Some(pool) => match db::get_events(pool, filter_event_type, Some(20), Some(0)).await {
+    let (event_binary_array, is_db_connected) = match db {
+        Some(db) => match db::get_events(db, filter_event_type, Some(20), Some(0)).await {
             Ok(events) => (events, true),
             Err(error) => {
                 eprintln!("Failed to get events for SSR: {:?}", error);
