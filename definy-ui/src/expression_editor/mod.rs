@@ -50,7 +50,7 @@ pub fn render_root_expression_editor(
             Vec::new(),
             target,
             "expr:none",
-            &view::selector_options(state, &[], true),
+            &view::selector_options(state, page_context.language, &[], true),
         ),
     }
 }

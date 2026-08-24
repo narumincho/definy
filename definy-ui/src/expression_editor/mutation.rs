@@ -314,6 +314,7 @@ pub fn next_local_variable_id(expression: &definy_event::event::Expression) -> i
 }
 
 fn build_expression_from_selection(
+    state: &AppState,
     selected_value: &str,
     next_variable_id: i64,
     constructor_default: Option<(EventHashId, definy_event::event::Expression)>,
@@ -402,11 +403,67 @@ fn build_expression_from_selection(
         })
     } else if let Some(encoded) = selected_value.strip_prefix("ref:global:") {
         if let Ok(hash) = EventHashId::from_str(encoded) {
-            definy_event::event::Expression::PartReference(
-                definy_event::event::PartReferenceExpression {
-                    part_definition_event_hash: hash,
-                },
-            )
+            if let Some(snapshot) = crate::part_projection::find_part_snapshot(state, &hash) {
+                match snapshot.expression.as_ref() {
+                    Some(definy_event::event::Expression::Compiler(
+                        definy_event::event::CompilerBuiltin::Plus,
+                    )) => {
+                        definy_event::event::Expression::Add(definy_event::event::AddExpression {
+                            left: Box::new(definy_event::event::Expression::Number(
+                                definy_event::event::NumberExpression { value: 0 },
+                            )),
+                            right: Box::new(definy_event::event::Expression::Number(
+                                definy_event::event::NumberExpression { value: 0 },
+                            )),
+                        })
+                    }
+                    Some(definy_event::event::Expression::Compiler(
+                        definy_event::event::CompilerBuiltin::Let,
+                    )) => {
+                        definy_event::event::Expression::Let(definy_event::event::LetExpression {
+                            variable_id: next_variable_id,
+                            variable_name: "x".into(),
+                            value: Box::new(definy_event::event::Expression::Number(
+                                definy_event::event::NumberExpression { value: 0 },
+                            )),
+                            body: Box::new(definy_event::event::Expression::Variable(
+                                definy_event::event::VariableExpression {
+                                    variable_id: next_variable_id,
+                                },
+                            )),
+                        })
+                    }
+                    Some(definy_event::event::Expression::Compiler(
+                        definy_event::event::CompilerBuiltin::NumberLiteral,
+                    )) => definy_event::event::Expression::Number(
+                        definy_event::event::NumberExpression { value: 0 },
+                    ),
+                    Some(definy_event::event::Expression::Compiler(
+                        definy_event::event::CompilerBuiltin::If,
+                    )) => definy_event::event::Expression::If(definy_event::event::IfExpression {
+                        condition: Box::new(definy_event::event::Expression::Boolean(
+                            definy_event::event::BooleanExpression { value: false },
+                        )),
+                        then_expr: Box::new(definy_event::event::Expression::Number(
+                            definy_event::event::NumberExpression { value: 0 },
+                        )),
+                        else_expr: Box::new(definy_event::event::Expression::Number(
+                            definy_event::event::NumberExpression { value: 0 },
+                        )),
+                    }),
+                    _ => definy_event::event::Expression::PartReference(
+                        definy_event::event::PartReferenceExpression {
+                            part_definition_event_hash: hash,
+                        },
+                    ),
+                }
+            } else {
+                definy_event::event::Expression::PartReference(
+                    definy_event::event::PartReferenceExpression {
+                        part_definition_event_hash: hash,
+                    },
+                )
+            }
         } else {
             current_expr.clone()
         }
@@ -424,6 +481,7 @@ fn build_expression_from_selection(
 }
 
 pub fn apply_selection(
+    state: &AppState,
     root_expression_opt: &mut Option<definy_event::event::Expression>,
     path: &[PathStep],
     selected_value: &str,
@@ -434,20 +492,22 @@ pub fn apply_selection(
             *root_expression_opt = None;
             return;
         }
-        let next_variable_id = if selected_value == "expr:let" {
-            root_expression_opt
-                .as_ref()
-                .map(next_local_variable_id)
-                .unwrap_or(1)
-        } else {
-            0
-        };
+        let next_variable_id =
+            if selected_value == "expr:let" || selected_value.starts_with("ref:global:") {
+                root_expression_opt
+                    .as_ref()
+                    .map(next_local_variable_id)
+                    .unwrap_or(1)
+            } else {
+                0
+            };
         let fallback =
             definy_event::event::Expression::Number(definy_event::event::NumberExpression {
                 value: 0,
             });
         let current_ref = root_expression_opt.as_ref().unwrap_or(&fallback);
         *root_expression_opt = Some(build_expression_from_selection(
+            state,
             selected_value,
             next_variable_id,
             constructor_default,
@@ -457,13 +517,15 @@ pub fn apply_selection(
     }
 
     if let Some(root_expr) = root_expression_opt.as_mut() {
-        let next_variable_id = if selected_value == "expr:let" {
-            next_local_variable_id(root_expr)
-        } else {
-            0
-        };
+        let next_variable_id =
+            if selected_value == "expr:let" || selected_value.starts_with("ref:global:") {
+                next_local_variable_id(root_expr)
+            } else {
+                0
+            };
         if let Some(target_expr) = get_mut_expression_at_path(root_expr, path) {
             *target_expr = build_expression_from_selection(
+                state,
                 selected_value,
                 next_variable_id,
                 constructor_default,

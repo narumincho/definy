@@ -11,7 +11,7 @@ use crate::module_projection::collect_module_snapshots;
 use crate::page_context::PageContext;
 use crate::part_projection::collect_part_snapshots;
 
-fn part_type_text(part_type: &definy_event::event::PartType) -> String {
+pub(crate) fn part_type_text(part_type: &definy_event::event::PartType) -> String {
     match part_type {
         definy_event::event::PartType::Number => "Number".to_string(),
         definy_event::event::PartType::String => "String".to_string(),
@@ -730,50 +730,15 @@ fn render_part_type_editor(
     depth: usize,
 ) -> Node {
     let name = format!("part-definition-type-{}", depth);
-    let selected = current_part_type_selection(part_type);
+    let selected = current_part_type_selection(state, part_type);
 
     let mut options = Vec::new();
     if depth == 0 {
         options.push((
             "none".to_string(),
-            context.language.label("None", "なし", "Neniu").to_string(),
+            format!("{}\t\t", context.language.label("None", "なし", "Neniu")),
         ));
     }
-
-    options.extend([
-        (
-            "number".to_string(),
-            context
-                .language
-                .label("Number", "数値", "Nombro")
-                .to_string(),
-        ),
-        (
-            "string".to_string(),
-            context
-                .language
-                .label("String", "文字列", "Teksto")
-                .to_string(),
-        ),
-        (
-            "boolean".to_string(),
-            context
-                .language
-                .label("Boolean", "真偽値", "Bulea")
-                .to_string(),
-        ),
-        (
-            "type".to_string(),
-            context.language.label("Type", "型", "Tipo").to_string(),
-        ),
-        (
-            "list".to_string(),
-            context
-                .language
-                .label("List<...>", "リスト<...>", "Listo<...>")
-                .to_string(),
-        ),
-    ]);
 
     options.extend(
         collect_part_snapshots(state)
@@ -784,11 +749,8 @@ fn render_part_type_editor(
                 (
                     value,
                     format!(
-                        "{} {}",
-                        context
-                            .language
-                            .label("Type Part:", "型パーツ:", "Tipo-parto:"),
-                        snapshot.part_name
+                        "{}\tType\t{}",
+                        snapshot.part_name, snapshot.definition_event_hash
                     ),
                 )
             }),
@@ -799,6 +761,7 @@ fn render_part_type_editor(
         let update_fn: Box<dyn FnOnce(AppState) -> AppState> = Box::new(move |state: AppState| {
             let mut next = state.clone();
             update_part_type_at_depth(
+                &state,
                 &mut next.part_definition_form.part_type_input,
                 depth_clone,
                 value.as_str(),
@@ -856,66 +819,88 @@ fn render_part_type_editor(
 }
 
 fn update_part_type_at_depth(
+    state: &AppState,
     part_type: &mut Option<definy_event::event::PartType>,
     depth: usize,
     selected: &str,
 ) {
     if depth == 0 {
-        *part_type = next_part_type_from_selected(selected, part_type);
+        *part_type = next_part_type_from_selected(state, selected, part_type);
         return;
     }
 
     match part_type {
         Some(definy_event::event::PartType::List(item_type)) => {
-            update_part_type_nested(item_type.as_mut(), depth - 1, selected);
+            update_part_type_nested(state, item_type.as_mut(), depth - 1, selected);
         }
         _ => {
             *part_type = Some(definy_event::event::PartType::List(Box::new(
                 definy_event::event::PartType::Number,
             )));
             if let Some(definy_event::event::PartType::List(item_type)) = part_type {
-                update_part_type_nested(item_type.as_mut(), depth - 1, selected);
+                update_part_type_nested(state, item_type.as_mut(), depth - 1, selected);
             }
         }
     }
 }
 
 fn update_part_type_nested(
+    state: &AppState,
     part_type: &mut definy_event::event::PartType,
     depth: usize,
     selected: &str,
 ) {
     if depth == 0 {
-        *part_type = next_nested_part_type_from_selected(selected, part_type);
+        *part_type = next_nested_part_type_from_selected(state, selected, part_type);
         return;
     }
 
     match part_type {
         definy_event::event::PartType::List(item_type) => {
-            update_part_type_nested(item_type.as_mut(), depth - 1, selected);
+            update_part_type_nested(state, item_type.as_mut(), depth - 1, selected);
         }
         _ => {
             *part_type = definy_event::event::PartType::List(Box::new(
                 definy_event::event::PartType::Number,
             ));
             if let definy_event::event::PartType::List(item_type) = part_type {
-                update_part_type_nested(item_type.as_mut(), depth - 1, selected);
+                update_part_type_nested(state, item_type.as_mut(), depth - 1, selected);
             }
         }
     }
 }
 
 fn next_part_type_from_selected(
+    state: &AppState,
     selected: &str,
     current: &Option<definy_event::event::PartType>,
 ) -> Option<definy_event::event::PartType> {
+    if selected == "none" {
+        return None;
+    }
     if let Some(encoded) = selected.strip_prefix("type_part:")
         && let Ok(hash) = EventHashId::from_str(encoded)
     {
+        if let Some(snapshot) = crate::part_projection::find_part_snapshot(state, &hash) {
+            return match snapshot.part_name.as_str() {
+                "Number" => Some(definy_event::event::PartType::Number),
+                "String" => Some(definy_event::event::PartType::String),
+                "Boolean" => Some(definy_event::event::PartType::Boolean),
+                "Type" => Some(definy_event::event::PartType::Type),
+                "List" => match current {
+                    Some(definy_event::event::PartType::List(item_type)) => Some(
+                        definy_event::event::PartType::List(Box::new(item_type.as_ref().clone())),
+                    ),
+                    _ => Some(definy_event::event::PartType::List(Box::new(
+                        definy_event::event::PartType::Number,
+                    ))),
+                },
+                _ => Some(definy_event::event::PartType::TypePart(hash)),
+            };
+        }
         return Some(definy_event::event::PartType::TypePart(hash));
     }
     match selected {
-        "none" => None,
         "string" => Some(definy_event::event::PartType::String),
         "boolean" => Some(definy_event::event::PartType::Boolean),
         "type" => Some(definy_event::event::PartType::Type),
@@ -932,12 +917,30 @@ fn next_part_type_from_selected(
 }
 
 fn next_nested_part_type_from_selected(
+    state: &AppState,
     selected: &str,
     current: &definy_event::event::PartType,
 ) -> definy_event::event::PartType {
     if let Some(encoded) = selected.strip_prefix("type_part:")
         && let Ok(hash) = EventHashId::from_str(encoded)
     {
+        if let Some(snapshot) = crate::part_projection::find_part_snapshot(state, &hash) {
+            return match snapshot.part_name.as_str() {
+                "Number" => definy_event::event::PartType::Number,
+                "String" => definy_event::event::PartType::String,
+                "Boolean" => definy_event::event::PartType::Boolean,
+                "Type" => definy_event::event::PartType::Type,
+                "List" => match current {
+                    definy_event::event::PartType::List(item_type) => {
+                        definy_event::event::PartType::List(Box::new(item_type.as_ref().clone()))
+                    }
+                    _ => definy_event::event::PartType::List(Box::new(
+                        definy_event::event::PartType::Number,
+                    )),
+                },
+                _ => definy_event::event::PartType::TypePart(hash),
+            };
+        }
         return definy_event::event::PartType::TypePart(hash);
     }
     match selected {
@@ -956,16 +959,38 @@ fn next_nested_part_type_from_selected(
     }
 }
 
-fn current_part_type_selection(part_type: &Option<definy_event::event::PartType>) -> String {
+fn current_part_type_selection(
+    state: &AppState,
+    part_type: &Option<definy_event::event::PartType>,
+) -> String {
+    let find_type_part = |name: &str| {
+        collect_part_snapshots(state)
+            .into_iter()
+            .find(|s| {
+                s.part_name == name && s.part_type == Some(definy_event::event::PartType::Type)
+            })
+            .map(|s| format!("type_part:{}", s.definition_event_hash))
+    };
+
     match part_type {
         None => "none".to_string(),
-        Some(definy_event::event::PartType::Number) => "number".to_string(),
-        Some(definy_event::event::PartType::String) => "string".to_string(),
-        Some(definy_event::event::PartType::Boolean) => "boolean".to_string(),
-        Some(definy_event::event::PartType::Type) => "type".to_string(),
+        Some(definy_event::event::PartType::Number) => {
+            find_type_part("Number").unwrap_or_else(|| "number".to_string())
+        }
+        Some(definy_event::event::PartType::String) => {
+            find_type_part("String").unwrap_or_else(|| "string".to_string())
+        }
+        Some(definy_event::event::PartType::Boolean) => {
+            find_type_part("Boolean").unwrap_or_else(|| "boolean".to_string())
+        }
+        Some(definy_event::event::PartType::Type) => {
+            find_type_part("Type").unwrap_or_else(|| "type".to_string())
+        }
         Some(definy_event::event::PartType::TypePart(hash)) => {
             format!("type_part:{}", hash)
         }
-        Some(definy_event::event::PartType::List(_)) => "list".to_string(),
+        Some(definy_event::event::PartType::List(_)) => {
+            find_type_part("List").unwrap_or_else(|| "list".to_string())
+        }
     }
 }
