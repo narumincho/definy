@@ -704,7 +704,7 @@ pub fn allow_kind_change_for_nested_values(allow_kind_change: bool, path: &[Path
         .any(|step| matches!(step, PathStep::ConstructorValue))
 }
 
-fn expression_selector(
+pub fn expression_selector(
     state: &AppState,
     path: Vec<PathStep>,
     target: EditorTarget,
@@ -752,39 +752,6 @@ fn expression_selector(
         options,
         crate::dropdown::button_option_renderer(name.clone(), on_change),
     )
-}
-
-pub fn render_empty_expression_editor(
-    state: &AppState,
-    context: &crate::page_context::PageContext,
-    target: EditorTarget,
-) -> Node {
-    let options = selector_options(state, &[], true);
-    Div::new()
-        .class("event-detail-card")
-        .style(
-            Style::new()
-                .set("padding", "0.6rem 0.8rem")
-                .set("display", "grid")
-                .set("gap", "0.4rem")
-                .set("border", "1px dashed var(--border)"),
-        )
-        .children([
-            expression_selector(state, Vec::new(), target, "expr:none", &options),
-            Div::new()
-                .style(
-                    Style::new()
-                        .set("font-size", "0.82rem")
-                        .set("color", "var(--text-secondary)"),
-                )
-                .children([text(context.language.label(
-                    "No expression assigned (default). Select an expression from dropdown above if needed.",
-                    "式なし（デフォルト）。必要に応じて上のドロップダウンから式を設定できます。",
-                    "Neniu esprimo difinita (defaŭlto). Elektu esprimon el la supra falmenuo se necese.",
-                ))])
-                .into_node(),
-        ])
-        .into_node()
 }
 
 pub fn selector_options(

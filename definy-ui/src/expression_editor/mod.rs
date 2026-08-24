@@ -45,7 +45,13 @@ pub fn render_root_expression_editor(
                 },
             )
         }
-        None => view::render_empty_expression_editor(state, page_context, target),
+        None => view::expression_selector(
+            state,
+            Vec::new(),
+            target,
+            "expr:none",
+            &view::selector_options(state, &[], true),
+        ),
     }
 }
 

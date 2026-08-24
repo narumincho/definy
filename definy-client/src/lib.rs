@@ -224,9 +224,92 @@ fn spawn_db_reconnect_poller(
     });
 }
 
+fn fetch_missing_events_for_url(fire: &StateUpdater, url: &web_sys::Url) {
+    let context = get_page_context(url);
+    let fire = std::rc::Rc::clone(fire);
+    wasm_bindgen_futures::spawn_local(async move {
+        match &context.location {
+            Some(definy_ui::Location::Part(hash))
+            | Some(definy_ui::Location::Event(hash))
+            | Some(definy_ui::Location::Module(hash)) => {
+                let hash = hash.clone();
+                let fire_event = std::rc::Rc::clone(&fire);
+                match definy_ui::fetch::get_event(&hash).await {
+                    Ok(Some((event_hash, event))) => {
+                        fire_event(Box::new(move |mut state| {
+                            state.event_cache.insert(event_hash, event);
+                            state
+                        }));
+                    }
+                    _ => {}
+                }
+            }
+            Some(definy_ui::Location::PartList)
+            | Some(definy_ui::Location::ModuleList)
+            | Some(definy_ui::Location::Home) => {
+                let filter = context.filter_event_type;
+                let fire_events = std::rc::Rc::clone(&fire);
+                if let Ok(events) = definy_ui::fetch::get_events(filter, Some(100), Some(0)).await {
+                    let events_count = events.len();
+                    fire_events(Box::new(move |mut state| {
+                        state.is_db_connected = true;
+                        if filter.is_none() || state.event_list_state.event_hashes.is_empty() {
+                            state.apply_latest_events(events, filter);
+                            state.event_list_state.is_loading = false;
+                            state.event_list_state.has_more = events_count == 100;
+                        } else {
+                            for (hash, event) in events {
+                                state.event_cache.insert(hash, event);
+                            }
+                        }
+                        next_state_ensure_cache(&mut state);
+                        state
+                    }));
+                }
+            }
+            _ => {}
+        }
+    });
+}
+
+fn next_state_ensure_cache(state: &mut AppState) {
+    // Collect all referenced definition event hashes that are missing in cache
+    let missing_hashes: Vec<_> = state
+        .event_cache
+        .values()
+        .filter_map(|ev| match ev {
+            Ok((_, event)) => match &event.content {
+                definy_event::event::EventContent::PartUpdate(u) => {
+                    Some(u.part_definition_event_hash.clone())
+                }
+                definy_event::event::EventContent::ModuleUpdate(u) => {
+                    Some(u.module_definition_event_hash.clone())
+                }
+                _ => None,
+            },
+            _ => None,
+        })
+        .filter(|h| !state.event_cache.contains_key(h))
+        .collect();
+
+    for hash in missing_hashes {
+        let hash_for_fetch = hash.clone();
+        wasm_bindgen_futures::spawn_local(async move {
+            let _ = definy_ui::fetch::get_event(&hash_for_fetch).await;
+        });
+    }
+}
+
+thread_local! {
+    static CURRENT_STATE_FIRE: std::cell::RefCell<Option<StateUpdater>> = const { std::cell::RefCell::new(None) };
+}
+
 impl narumincho_vdom_client::App<AppState> for DefinyApp {
     fn initial_state(fire: &StateUpdater) -> AppState {
         setup_keydown_listener(fire);
+        CURRENT_STATE_FIRE.with(|cell| {
+            *cell.borrow_mut() = Some(std::rc::Rc::clone(fire));
+        });
 
         let search_query = web_sys::window()
             .and_then(|w| w.location().search().ok())
@@ -270,6 +353,30 @@ impl narumincho_vdom_client::App<AppState> for DefinyApp {
 
     fn render(state: &AppState, url: &web_sys::Url) -> narumincho_vdom::Node {
         let context = get_page_context(url);
+
+        // Check if current route requires data that might be missing in cache
+        if let Some(location) = &context.location {
+            let is_missing = match location {
+                definy_ui::Location::Part(hash) => !state.event_cache.contains_key(hash),
+                definy_ui::Location::Event(hash) => !state.event_cache.contains_key(hash),
+                definy_ui::Location::Module(hash) => !state.event_cache.contains_key(hash),
+                definy_ui::Location::Home => {
+                    state.event_cache.is_empty() || state.event_list_state.event_hashes.is_empty()
+                }
+                definy_ui::Location::PartList | definy_ui::Location::ModuleList => {
+                    state.event_cache.is_empty()
+                }
+                _ => false,
+            };
+            if is_missing {
+                CURRENT_STATE_FIRE.with(|cell| {
+                    if let Some(fire) = cell.borrow().as_ref() {
+                        fetch_missing_events_for_url(fire, url);
+                    }
+                });
+            }
+        }
+
         definy_ui::render(state, &context)
     }
 }

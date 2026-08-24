@@ -40,7 +40,7 @@ pub async fn credential_store(
             &wasm_bindgen::JsValue::from_str("PasswordCredential"),
         )
         .ok()
-        .map_or(false, |v| v.is_function());
+        .is_some_and(|v| v.is_function());
 
         if pc_exists {
             let data = js_sys::Object::new();

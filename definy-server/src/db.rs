@@ -173,12 +173,13 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
     let verifying_key = signing_key.verifying_key();
     let account_id = definy_event::event::AccountId(verifying_key);
     let system_addr: std::net::SocketAddr = "127.0.0.1:0".parse().unwrap();
-    let epoch = chrono::DateTime::UNIX_EPOCH;
+    // Repository first commit timestamp: 2019-01-31T13:36:01+09:00 (2019-01-31T04:36:01Z)
+    let first_commit_time = chrono::DateTime::from_timestamp(1548909361, 0).unwrap();
 
     let events = vec![
         definy_event::event::Event {
             account_id: account_id.clone(),
-            time: epoch,
+            time: first_commit_time,
             content: definy_event::event::EventContent::CreateAccount(
                 definy_event::event::CreateAccountEvent {
                     account_name: "definy".into(),
@@ -187,7 +188,7 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
         },
         definy_event::event::Event {
             account_id: account_id.clone(),
-            time: epoch + chrono::Duration::milliseconds(1),
+            time: first_commit_time + chrono::Duration::milliseconds(1),
             content: definy_event::event::EventContent::PartDefinition(
                 definy_event::event::PartDefinitionEvent {
                     part_name: "let".into(),
@@ -202,7 +203,7 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
         },
         definy_event::event::Event {
             account_id: account_id.clone(),
-            time: epoch + chrono::Duration::milliseconds(2),
+            time: first_commit_time + chrono::Duration::milliseconds(2),
             content: definy_event::event::EventContent::PartDefinition(
                 definy_event::event::PartDefinitionEvent {
                     part_name: "plus".into(),
@@ -217,7 +218,7 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
         },
         definy_event::event::Event {
             account_id: account_id.clone(),
-            time: epoch + chrono::Duration::milliseconds(3),
+            time: first_commit_time + chrono::Duration::milliseconds(3),
             content: definy_event::event::EventContent::PartDefinition(
                 definy_event::event::PartDefinitionEvent {
                     part_name: "number literal".into(),
@@ -232,7 +233,7 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
         },
         definy_event::event::Event {
             account_id: account_id.clone(),
-            time: epoch + chrono::Duration::milliseconds(4),
+            time: first_commit_time + chrono::Duration::milliseconds(4),
             content: definy_event::event::EventContent::PartDefinition(
                 definy_event::event::PartDefinitionEvent {
                     part_name: "if".into(),
@@ -247,7 +248,7 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
         },
         definy_event::event::Event {
             account_id: account_id.clone(),
-            time: epoch + chrono::Duration::milliseconds(5),
+            time: first_commit_time + chrono::Duration::milliseconds(5),
             content: definy_event::event::EventContent::PartDefinition(
                 definy_event::event::PartDefinitionEvent {
                     part_name: "Number".into(),
@@ -260,7 +261,7 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
         },
         definy_event::event::Event {
             account_id: account_id.clone(),
-            time: epoch + chrono::Duration::milliseconds(6),
+            time: first_commit_time + chrono::Duration::milliseconds(6),
             content: definy_event::event::EventContent::PartDefinition(
                 definy_event::event::PartDefinitionEvent {
                     part_name: "String".into(),
@@ -273,7 +274,7 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
         },
         definy_event::event::Event {
             account_id: account_id.clone(),
-            time: epoch + chrono::Duration::milliseconds(7),
+            time: first_commit_time + chrono::Duration::milliseconds(7),
             content: definy_event::event::EventContent::PartDefinition(
                 definy_event::event::PartDefinitionEvent {
                     part_name: "Boolean".into(),
@@ -286,12 +287,12 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
         },
         definy_event::event::Event {
             account_id: account_id.clone(),
-            time: epoch + chrono::Duration::milliseconds(8),
+            time: first_commit_time + chrono::Duration::milliseconds(8),
             content: definy_event::event::EventContent::PartDefinition(
                 definy_event::event::PartDefinitionEvent {
                     part_name: "List".into(),
                     part_type: Some(definy_event::event::PartType::Type),
-                    description: "Built-in list type".into(),
+                    description: "Built-in list type constructor".into(),
                     expression: None,
                     module_definition_event_hash: None,
                 },

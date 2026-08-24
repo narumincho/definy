@@ -98,18 +98,18 @@ pub fn part_detail_view(
                                     .set("font-size", "0.85rem")
                                     .set("opacity", "0.9"),
                             )
-                            .children([text(format!(
-                                "{} {}",
-                                context.language.label("expression:", "式:", "esprimo:"),
+                            .children([text(
                                 snapshot
                                     .expression
                                     .as_ref()
                                     .map(expression_to_source)
-                                    .unwrap_or_else(|| context
-                                        .language
-                                        .label("(none)", "(なし)", "(neniu)")
-                                        .to_string())
-                            ))])
+                                    .unwrap_or_else(|| {
+                                        context
+                                            .language
+                                            .label("(none)", "(なし)", "(neniu)")
+                                            .to_string()
+                                    }),
+                            )])
                             .into_node(),
                         Div::new()
                             .style(Style::new().set("display", "flex").set("gap", "0.6rem"))
@@ -246,196 +246,186 @@ fn part_update_form(
         .map(|hash| hash.to_string())
         .unwrap_or_else(|| "".to_string());
 
-    Div::new()
-        .class("event-detail-card")
-        .style(
-            Style::new()
-                .set("display", "grid")
-                .set("gap", "0.45rem")
-                .set("padding", "0.85rem"),
-        )
-        .children([
-            Div::new()
-                .style(Style::new().set("font-weight", "600"))
-                .children([text(context.language.label(
-                    "Create PartUpdate event",
-                    "PartUpdate イベントを作成",
-                    "Krei PartUpdate eventon",
-                ))])
-                .into_node(),
-            Div::new()
-                .class("mono")
-                .style(
-                    Style::new()
-                        .set("font-size", "0.74rem")
-                        .set("opacity", "0.8")
-                        .set("word-break", "break-all"),
-                )
-                .children([text(format!(
-                    "{} {}",
-                    context.language.label(
-                        "partDefinitionEventHash:",
-                        "partDefinitionEventHash:",
-                        "partDefinitionEventHash:"
-                    ),
-                    hash_as_base64
-                ))])
-                .into_node(),
-            Input::new()
-                .type_("text")
-                .name("part-update-name")
-                .value(initial_name.as_str())
-                .on_change({
+    let mut children = vec![
+        Div::new()
+            .style(Style::new().set("font-weight", "600"))
+            .children([text(context.language.label(
+                "Create PartUpdate event",
+                "PartUpdate イベントを作成",
+                "Krei PartUpdate eventon",
+            ))])
+            .into_node(),
+        Div::new()
+            .class("mono")
+            .style(
+                Style::new()
+                    .set("font-size", "0.74rem")
+                    .set("opacity", "0.8")
+                    .set("word-break", "break-all"),
+            )
+            .children([text(format!(
+                "{} {}",
+                context.language.label(
+                    "partDefinitionEventHash:",
+                    "partDefinitionEventHash:",
+                    "partDefinitionEventHash:"
+                ),
+                hash_as_base64
+            ))])
+            .into_node(),
+        Input::new()
+            .type_("text")
+            .name("part-update-name")
+            .value(initial_name.as_str())
+            .on_change({
+                let definition_event_hash = definition_event_hash.clone();
+                EventHandler::new(move |set_state| {
                     let definition_event_hash = definition_event_hash.clone();
-                    EventHandler::new(move |set_state| {
-                        let definition_event_hash = definition_event_hash.clone();
-                        async move {
-                            let value =
-                                crate::dom::get_input_value("input[name='part-update-name']");
-                            set_state(Box::new(move |state: AppState| {
-                                let mut next = state.clone();
-                                next.part_update_form.part_definition_event_hash =
-                                    Some(definition_event_hash.clone());
-                                next.part_update_form.part_name_input = value;
-                                next
-                            }));
-                        }
-                    })
+                    async move {
+                        let value = crate::dom::get_input_value("input[name='part-update-name']");
+                        set_state(Box::new(move |state: AppState| {
+                            let mut next = state.clone();
+                            next.part_update_form.part_definition_event_hash =
+                                Some(definition_event_hash.clone());
+                            next.part_update_form.part_name_input = value;
+                            next
+                        }));
+                    }
                 })
-                .into_node(),
-            Div::new()
-                .style(Style::new().set("display", "grid").set("gap", "0.35rem"))
-                .children([
-                    Div::new()
-                        .style(
-                            Style::new()
-                                .set("font-size", "0.85rem")
-                                .set("color", "var(--text-secondary)"),
-                        )
-                        .children([text(context.language.label("Module", "モジュール", "Modulo"))])
-                        .into_node(),
-                    crate::dropdown::searchable_dropdown(
-                        state,
-                        dropdown_name.as_str(),
-                        &current_module_value,
-                        &module_options,
-                        crate::dropdown::button_option_renderer(
-                            dropdown_name.clone(),
-                            std::rc::Rc::new({
-                                let definition_event_hash = definition_event_hash.clone();
-                                move |value| {
-                                    let definition_event_hash = definition_event_hash.clone();
-                                    Box::new(move |state: AppState| {
-                                        let mut next = state.clone();
-                                        next.part_update_form.part_definition_event_hash =
-                                            Some(definition_event_hash.clone());
-                                        next.part_update_form.module_definition_event_hash =
-                                            definy_event::EventHashId::from_str(&value).ok();
-                                        next
-                                    })
-                                }
-                            }),
-                        ),
-                    ),
-                ])
-                .into_node(),
-            Div::new()
-                .style(Style::new().set("display", "grid").set("gap", "0.35rem"))
-                .children([
-                    Div::new()
-                        .style(
-                            Style::new()
-                                .set("font-size", "0.85rem")
-                                .set("color", "var(--text-secondary)"),
-                        )
-                        .children([text(
-                            context.language.label("description", "説明文", "deskribo")
-                        )])
-                        .into_node(),
-                    Textarea::new()
-                        .name("part-update-description")
-                        .value(initial_description.as_str())
-                        .style(Style::new().set("min-height", "5rem"))
-                        .on_input({
+            })
+            .into_node(),
+        Div::new()
+            .style(Style::new().set("display", "grid").set("gap", "0.35rem"))
+            .children([
+                Div::new()
+                    .style(
+                        Style::new()
+                            .set("font-size", "0.85rem")
+                            .set("color", "var(--text-secondary)"),
+                    )
+                    .children([text(context.language.label(
+                        "Module",
+                        "モジュール",
+                        "Modulo",
+                    ))])
+                    .into_node(),
+                crate::dropdown::searchable_dropdown(
+                    state,
+                    dropdown_name.as_str(),
+                    &current_module_value,
+                    &module_options,
+                    crate::dropdown::button_option_renderer(
+                        dropdown_name.clone(),
+                        std::rc::Rc::new({
                             let definition_event_hash = definition_event_hash.clone();
-                            EventHandler::new(move |set_state| {
+                            move |value| {
                                 let definition_event_hash = definition_event_hash.clone();
-                                async move {
-                                    let value = crate::dom::get_textarea_value(
-                                        "textarea[name='part-update-description']",
-                                    );
-                                    set_state(Box::new(move |state: AppState| {
-                                        let mut next = state.clone();
-                                        next.part_update_form.part_definition_event_hash =
-                                            Some(definition_event_hash.clone());
-                                        next.part_update_form.part_description_input = value;
-                                        next
-                                    }));
-                                }
-                            })
-                        })
-                        .into_node(),
-                ])
-                .into_node(),
-            Div::new()
-                .style(
-                    Style::new()
-                        .set("color", "var(--text-secondary)")
-                        .set("font-size", "0.9rem"),
-                )
-                .children([text(context.language.label(
-                    "Expression",
-                    "式",
-                    "Esprimo",
-                ))])
-                .into_node(),
-            render_root_expression_editor(
-                state,
-                context,
-                &initial_expression,
-                EditorTarget::PartUpdate,
-            ),
-            Div::new()
-                .class("mono")
-                .style(
-                    Style::new()
-                        .set("font-size", "0.8rem")
-                        .set("padding", "0.4rem 0.6rem")
-                        .set("opacity", "0.85"),
-                )
-                .children([text(format!(
-                    "{} {}",
-                    context.language.label("Current:", "現在:", "Nuna:"),
-                    initial_expression
-                        .as_ref()
-                        .map(expression_to_source)
-                        .unwrap_or_else(|| context
-                            .language
-                            .label("(none)", "(なし)", "(neniu)")
-                            .to_string())
-                ))])
-                .into_node(),
-            Button::new()
-                .type_("button")
-                .on_click({
-                    let definition_event_hash = definition_event_hash.clone();
-                    let language = context.language;
-                    EventHandler::new(move |set_state| {
+                                Box::new(move |state: AppState| {
+                                    let mut next = state.clone();
+                                    next.part_update_form.part_definition_event_hash =
+                                        Some(definition_event_hash.clone());
+                                    next.part_update_form.module_definition_event_hash =
+                                        definy_event::EventHashId::from_str(&value).ok();
+                                    next
+                                })
+                            }
+                        }),
+                    ),
+                ),
+            ])
+            .into_node(),
+        Div::new()
+            .style(Style::new().set("display", "grid").set("gap", "0.35rem"))
+            .children([
+                Div::new()
+                    .style(
+                        Style::new()
+                            .set("font-size", "0.85rem")
+                            .set("color", "var(--text-secondary)"),
+                    )
+                    .children([text(context.language.label(
+                        "description",
+                        "説明文",
+                        "deskribo",
+                    ))])
+                    .into_node(),
+                Textarea::new()
+                    .name("part-update-description")
+                    .value(initial_description.as_str())
+                    .style(Style::new().set("min-height", "5rem"))
+                    .on_input({
                         let definition_event_hash = definition_event_hash.clone();
-                        async move {
-                            let set_state = std::rc::Rc::new(set_state);
-                            let set_state_for_async = set_state.clone();
-                            set_state(Box::new(move |state: AppState| {
+                        EventHandler::new(move |set_state| {
+                            let definition_event_hash = definition_event_hash.clone();
+                            async move {
+                                let value = crate::dom::get_textarea_value(
+                                    "textarea[name='part-update-description']",
+                                );
+                                set_state(Box::new(move |state: AppState| {
+                                    let mut next = state.clone();
+                                    next.part_update_form.part_definition_event_hash =
+                                        Some(definition_event_hash.clone());
+                                    next.part_update_form.part_description_input = value;
+                                    next
+                                }));
+                            }
+                        })
+                    })
+                    .into_node(),
+            ])
+            .into_node(),
+        render_root_expression_editor(
+            state,
+            context,
+            &initial_expression,
+            EditorTarget::PartUpdate,
+        ),
+        Div::new()
+            .class("mono")
+            .style(
+                Style::new()
+                    .set("font-size", "0.85rem")
+                    .set("opacity", "0.85"),
+            )
+            .children([text(format!(
+                "{} {}",
+                context.language.label("Current:", "現在:", "Nuna:"),
+                initial_expression
+                    .as_ref()
+                    .map(expression_to_source)
+                    .unwrap_or_else(|| context
+                        .language
+                        .label("(none)", "(なし)", "(neniu)")
+                        .to_string())
+            ))])
+            .into_node(),
+    ];
+
+    let definition_event_hash_for_button = definition_event_hash.clone();
+    let language = context.language;
+    children.push(
+        Button::new()
+            .type_("button")
+            .on_click({
+                let definition_event_hash = definition_event_hash_for_button.clone();
+                EventHandler::new(move |set_state| {
+                    let definition_event_hash = definition_event_hash.clone();
+                    async move {
+                        let set_state = std::rc::Rc::new(set_state);
+                        let set_state_for_async = set_state.clone();
+                        set_state(Box::new(move |state: AppState| {
                             let key = if let Some(key) = &state.current_key {
                                 key.clone()
                             } else {
                                 return AppState {
                                     event_detail_eval_result: Some(
-                                        language.label("Error: login required",
-                                            "エラー: ログインが必要です",
-                                            "Eraro: ensaluto necesas",
-                                        )
-                                        .to_string(),
+                                        language
+                                            .label(
+                                                "Error: login required",
+                                                "エラー: ログインが必要です",
+                                                "Eraro: ensaluto necesas",
+                                            )
+                                            .to_string(),
                                     ),
                                     ..state.clone()
                                 };
@@ -445,8 +435,7 @@ fn part_update_form(
                                 current_part_description,
                                 current_expression,
                                 current_module_hash,
-                            ) =
-                                effective_part_update_form(&state, &definition_event_hash);
+                            ) = effective_part_update_form(&state, &definition_event_hash);
                             let part_name = current_part_name.trim().to_string();
                             if part_name.is_empty() {
                                 return AppState {
@@ -473,7 +462,8 @@ fn part_update_form(
                                         definy_event::event::PartUpdateEvent {
                                             part_name: part_name.into(),
                                             part_description: part_description.into(),
-                                            part_definition_event_hash: definition_event_hash.clone(),
+                                            part_definition_event_hash:
+                                                definition_event_hash.clone(),
                                             expression,
                                             module_definition_event_hash,
                                         },
@@ -482,76 +472,100 @@ fn part_update_form(
                                     force_offline,
                                     None,
                                     set_state_for_async,
-                                move |next, record| {
-                                    if record.status == crate::local_event::LocalEventStatus::Sent {
-                                        if let Some(snapshot) = find_part_snapshot(
-                                            next,
-                                            &definition_event_hash_for_cb,
-                                        ) {
-                                            next.part_update_form
-                                                .part_definition_event_hash =
-                                                Some(definition_event_hash_for_cb.clone());
-                                            next.part_update_form.part_name_input =
-                                                snapshot.part_name;
-                                            next.part_update_form
-                                                .part_description_input =
-                                                snapshot.part_description;
-                                            next.part_update_form.expression_input =
-                                                snapshot.expression;
-                                            next.part_update_form
-                                                .module_definition_event_hash =
-                                                snapshot.module_definition_event_hash;
-                                        }
-                                        next.event_detail_eval_result =
-                                            Some(language.label("PartUpdate event posted",
-                                                "PartUpdate を投稿しました",
-                                                "PartUpdate sendita",
-                                            ).to_string());
-                                    } else {
-                                        next.event_detail_eval_result = Some(match record.status {
-                                            crate::local_event::LocalEventStatus::Queued => {
-                                                language.label("PartUpdate queued (offline)",
-                                                    "PartUpdate をキューに追加しました (オフライン)",
-                                                    "PartUpdate envicigita (senkonekte)",
-                                                )
-                                                .to_string()
+                                        move |next, record| {
+                                            if record.status
+                                                == crate::local_event::LocalEventStatus::Sent
+                                            {
+                                                if let Some(snapshot) = find_part_snapshot(
+                                                    next,
+                                                    &definition_event_hash_for_cb,
+                                                ) {
+                                                    next.part_update_form
+                                                        .part_definition_event_hash =
+                                                        Some(definition_event_hash_for_cb.clone());
+                                                    next.part_update_form.part_name_input =
+                                                        snapshot.part_name;
+                                                    next.part_update_form
+                                                        .part_description_input =
+                                                        snapshot.part_description;
+                                                    next.part_update_form.expression_input =
+                                                        snapshot.expression;
+                                                    next.part_update_form
+                                                        .module_definition_event_hash =
+                                                        snapshot.module_definition_event_hash;
+                                                }
+                                                next.event_detail_eval_result = Some(
+                                                    language
+                                                        .label(
+                                                            "PartUpdate event posted",
+                                                            "PartUpdate を投稿しました",
+                                                            "PartUpdate sendita",
+                                                        )
+                                                        .to_string(),
+                                                );
+                                            } else {
+                                                next.event_detail_eval_result =
+                                                    Some(match record.status {
+                                                        crate::local_event::LocalEventStatus::Queued => {
+                                                            language.label(
+                                                                "PartUpdate queued (offline)",
+                                                                "PartUpdate をキューに追加しました (オフライン)",
+                                                                "PartUpdate envicigita (senkonekte)",
+                                                            )
+                                                            .to_string()
+                                                        }
+                                                        crate::local_event::LocalEventStatus::Failed => {
+                                                            language.label(
+                                                                "PartUpdate failed to send",
+                                                                "PartUpdate の送信に失敗しました",
+                                                                "PartUpdate sendado malsukcesis",
+                                                            )
+                                                            .to_string()
+                                                        }
+                                                        crate::local_event::LocalEventStatus::Sent => {
+                                                            unreachable!()
+                                                        }
+                                                    });
                                             }
-                                            crate::local_event::LocalEventStatus::Failed => {
-                                                language.label("PartUpdate failed to send",
-                                                    "PartUpdate の送信に失敗しました",
-                                                    "PartUpdate sendado malsukcesis",
-                                                )
-                                                .to_string()
-                                            }
-                                            crate::local_event::LocalEventStatus::Sent => unreachable!(),
-                                        });
-                                    }
-                                },
-                            ));
-                            state
-                        }));
+                                        },
+                                    ),
+                                );
+                                state
+                            }));
                         }
                     })
                 })
-                .children([text(context.language.label("Send PartUpdate",
-                        "PartUpdate を送信",
-                        "Sendi PartUpdate",
-                    ))])
-                    .into_node()
-            ,
-            match &state.event_detail_eval_result {
-                Some(result) => Div::new()
-                    .class("mono")
-                    .style(
-                        Style::new()
-                            .set("font-size", "0.85rem")
-                            .set("word-break", "break-word"),
-                    )
-                    .children([text(result)])
-                    .into_node(),
-                None => Div::new().children([]).into_node(),
-            },
-        ])
+                .children([text(context.language.label(
+                    "Send PartUpdate",
+                    "PartUpdate を送信",
+                    "Sendi PartUpdate",
+                ))])
+                .into_node(),
+        );
+
+    if let Some(result) = &state.event_detail_eval_result {
+        children.push(
+            Div::new()
+                .class("mono")
+                .style(
+                    Style::new()
+                        .set("font-size", "0.85rem")
+                        .set("word-break", "break-word"),
+                )
+                .children([text(result)])
+                .into_node(),
+        );
+    }
+
+    Div::new()
+        .class("event-detail-card")
+        .style(
+            Style::new()
+                .set("display", "grid")
+                .set("gap", "0.75rem")
+                .set("padding", "1.2rem 1.3rem"),
+        )
+        .children(children)
         .into_node()
 }
 

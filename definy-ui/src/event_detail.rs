@@ -315,18 +315,18 @@ fn render_event_detail(
                                     .set("font-size", "0.8rem")
                                     .set("opacity", "0.85"),
                             )
-                            .children([text(format!(
-                                "{} {}",
-                                context.language.label("expression:", "式:", "esprimo:"),
+                            .children([text(
                                 part_update_event
                                     .expression
                                     .as_ref()
                                     .map(expression_to_source)
-                                    .unwrap_or_else(|| context
-                                        .language
-                                        .label("(none)", "(なし)", "(neniu)")
-                                        .to_string())
-                            ))])
+                                    .unwrap_or_else(|| {
+                                        context
+                                            .language
+                                            .label("(none)", "(なし)", "(neniu)")
+                                            .to_string()
+                                    }),
+                            )])
                             .into_node(),
                         Div::new()
                             .class("mono")

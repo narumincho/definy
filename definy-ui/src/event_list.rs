@@ -132,10 +132,29 @@ pub fn event_list_view(state: &AppState, context: &PageContext) -> Node {
                     .style(Style::new().set("display", "grid").set("gap", "0.45rem"))
                     .children({
                         let account_name_map = state.account_name_map();
+                        let hashes: Vec<EventHashId> =
+                            if !state.event_list_state.event_hashes.is_empty() {
+                                state.event_list_state.event_hashes.clone()
+                            } else {
+                                let mut entries: Vec<_> = state
+                                    .event_cache
+                                    .iter()
+                                    .filter_map(|(hash, event_res)| {
+                                        event_res.as_ref().ok().and_then(|(_, event)| {
+                                            if let Some(filter) = &context.filter_event_type {
+                                                if EventType::from(&event.content) != *filter {
+                                                    return None;
+                                                }
+                                            }
+                                            Some((hash.clone(), event.time))
+                                        })
+                                    })
+                                    .collect();
+                                entries.sort_by(|a, b| b.1.cmp(&a.1));
+                                entries.into_iter().map(|(h, _)| h).collect()
+                            };
 
-                        state
-                            .event_list_state
-                            .event_hashes
+                        hashes
                             .iter()
                             .filter_map(|hash| {
                                 state.event_cache.get(hash).map(|event| (hash, event))
@@ -430,14 +449,8 @@ fn event_content_view(
                 )),
             ])
             .into_node(),
-        EventContent::PartDefinition(part_definition_event) => Div::new()
-            .style(
-                Style::new()
-                    .set("display", "grid")
-                    .set("gap", "0.25rem")
-                    .set("font-size", "0.95rem"),
-            )
-            .children([
+        EventContent::PartDefinition(part_definition_event) => {
+            let mut content_children = vec![
                 A::<crate::Location>::new()
                     .href(
                         context.href_with_lang(crate::Location::Account(event.account_id.clone())),
@@ -468,9 +481,9 @@ fn event_content_view(
                         optional_part_type_text(&part_definition_event.part_type),
                     )
                 }),
-                if part_definition_event.description.is_empty() {
-                    Div::new().children([]).into_node()
-                } else {
+            ];
+            if !part_definition_event.description.is_empty() {
+                content_children.push(
                     Div::new()
                         .style(
                             Style::new()
@@ -479,8 +492,10 @@ fn event_content_view(
                                 .set("white-space", "pre-wrap"),
                         )
                         .children([text(part_definition_event.description.as_ref())])
-                        .into_node()
-                },
+                        .into_node(),
+                );
+            }
+            content_children.push(
                 A::<crate::Location>::new()
                     .href(context.href_with_lang(crate::Location::Part(hash.clone())))
                     .style(
@@ -495,8 +510,17 @@ fn event_content_view(
                         "Malfermi partajn detalojn",
                     ))])
                     .into_node(),
-            ])
-            .into_node(),
+            );
+            Div::new()
+                .style(
+                    Style::new()
+                        .set("display", "grid")
+                        .set("gap", "0.25rem")
+                        .set("font-size", "0.95rem"),
+                )
+                .children(content_children)
+                .into_node()
+        }
         EventContent::PartUpdate(part_update_event) => Div::new()
             .style(
                 Style::new()
@@ -535,18 +559,18 @@ fn event_content_view(
                             .set("font-size", "0.78rem")
                             .set("opacity", "0.85"),
                     )
-                    .children([text(format!(
-                        "{} {}",
-                        context.language.label("expression:", "式:", "esprimo:"),
+                    .children([text(
                         part_update_event
                             .expression
                             .as_ref()
                             .map(expression_to_source)
-                            .unwrap_or_else(|| context
-                                .language
-                                .label("(none)", "(なし)", "(neniu)")
-                                .to_string())
-                    ))])
+                            .unwrap_or_else(|| {
+                                context
+                                    .language
+                                    .label("(none)", "(なし)", "(neniu)")
+                                    .to_string()
+                            }),
+                    )])
                     .into_node(),
                 Div::new()
                     .style(
@@ -577,14 +601,8 @@ fn event_content_view(
                     .into_node(),
             ])
             .into_node(),
-        EventContent::ModuleDefinition(module_definition_event) => Div::new()
-            .style(
-                Style::new()
-                    .set("display", "grid")
-                    .set("gap", "0.25rem")
-                    .set("font-size", "0.95rem"),
-            )
-            .children([
+        EventContent::ModuleDefinition(module_definition_event) => {
+            let mut content_children = vec![
                 A::<crate::Location>::new()
                     .href(
                         context.href_with_lang(crate::Location::Account(event.account_id.clone())),
@@ -608,9 +626,9 @@ fn event_content_view(
                         .label("Module created:", "モジュール作成:", "Modulo kreita:"),
                     module_definition_event.module_name
                 )),
-                if module_definition_event.description.is_empty() {
-                    Div::new().children([]).into_node()
-                } else {
+            ];
+            if !module_definition_event.description.is_empty() {
+                content_children.push(
                     Div::new()
                         .style(
                             Style::new()
@@ -619,18 +637,21 @@ fn event_content_view(
                                 .set("white-space", "pre-wrap"),
                         )
                         .children([text(module_definition_event.description.as_ref())])
-                        .into_node()
-                },
-            ])
-            .into_node(),
-        EventContent::ModuleUpdate(module_update_event) => Div::new()
-            .style(
-                Style::new()
-                    .set("display", "grid")
-                    .set("gap", "0.25rem")
-                    .set("font-size", "0.95rem"),
-            )
-            .children([
+                        .into_node(),
+                );
+            }
+            Div::new()
+                .style(
+                    Style::new()
+                        .set("display", "grid")
+                        .set("gap", "0.25rem")
+                        .set("font-size", "0.95rem"),
+                )
+                .children(content_children)
+                .into_node()
+        }
+        EventContent::ModuleUpdate(module_update_event) => {
+            let mut content_children = vec![
                 A::<crate::Location>::new()
                     .href(
                         context.href_with_lang(crate::Location::Account(event.account_id.clone())),
@@ -656,9 +677,9 @@ fn event_content_view(
                     ),
                     module_update_event.module_name
                 )),
-                if module_update_event.module_description.is_empty() {
-                    Div::new().children([]).into_node()
-                } else {
+            ];
+            if !module_update_event.module_description.is_empty() {
+                content_children.push(
                     Div::new()
                         .style(
                             Style::new()
@@ -667,8 +688,10 @@ fn event_content_view(
                                 .set("white-space", "pre-wrap"),
                         )
                         .children([text(module_update_event.module_description.as_ref())])
-                        .into_node()
-                },
+                        .into_node(),
+                );
+            }
+            content_children.push(
                 Div::new()
                     .style(
                         Style::new()
@@ -680,6 +703,8 @@ fn event_content_view(
                         module_update_event.module_definition_event_hash,
                     ))])
                     .into_node(),
+            );
+            content_children.push(
                 A::<crate::Location>::new()
                     .href(context.href_with_lang(crate::Location::Event(
                         module_update_event.module_definition_event_hash.clone(),
@@ -696,8 +721,17 @@ fn event_content_view(
                         "Malfermi modulajn detalojn",
                     ))])
                     .into_node(),
-            ])
-            .into_node(),
+            );
+            Div::new()
+                .style(
+                    Style::new()
+                        .set("display", "grid")
+                        .set("gap", "0.25rem")
+                        .set("font-size", "0.95rem"),
+                )
+                .children(content_children)
+                .into_node()
+        }
     }
 }
 
