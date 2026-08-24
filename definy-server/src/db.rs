@@ -93,6 +93,10 @@ pub fn load_db_config_from_env() -> Option<DbConfig> {
     })
 }
 
+const SCHEMA_SQL: &str = include_str!("../schema.surql");
+
+const COMPILER_SYSTEM_KEY_SEED: [u8; 32] = *b"definy-compiler-system-key-2026\0";
+
 pub async fn init_db() -> Result<Surreal<Any>, anyhow::Error> {
     let db = match load_db_config_from_env() {
         Some(config) => {
@@ -154,18 +158,108 @@ pub async fn init_db() -> Result<Surreal<Any>, anyhow::Error> {
     };
 
     println!("Migrating database schema...");
-    db.query(
-        "
-        DEFINE TABLE IF NOT EXISTS events SCHEMALESS;
-        DEFINE INDEX IF NOT EXISTS idx_events_time ON TABLE events COLUMNS time;
-        DEFINE INDEX IF NOT EXISTS idx_events_type ON TABLE events COLUMNS event_type;
-        ",
-    )
-    .await?
-    .check()?;
+    db.query(SCHEMA_SQL).await?.check()?;
     println!("Migrating database schema... done");
 
+    println!("Migrating builtin data...");
+    migrate_builtin_data(&db).await?;
+    println!("Migrating builtin data... done");
+
     Ok(db)
+}
+
+pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error> {
+    let signing_key = ed25519_dalek::SigningKey::from_bytes(&COMPILER_SYSTEM_KEY_SEED);
+    let verifying_key = signing_key.verifying_key();
+    let account_id = definy_event::event::AccountId(verifying_key);
+    let system_addr: std::net::SocketAddr = "127.0.0.1:0".parse().unwrap();
+    let epoch = chrono::DateTime::UNIX_EPOCH;
+
+    let events = vec![
+        definy_event::event::Event {
+            account_id: account_id.clone(),
+            time: epoch,
+            content: definy_event::event::EventContent::CreateAccount(
+                definy_event::event::CreateAccountEvent {
+                    account_name: "definy".into(),
+                },
+            ),
+        },
+        definy_event::event::Event {
+            account_id: account_id.clone(),
+            time: epoch + chrono::Duration::milliseconds(1),
+            content: definy_event::event::EventContent::PartDefinition(
+                definy_event::event::PartDefinitionEvent {
+                    part_name: "let".into(),
+                    part_type: None,
+                    description: "Compiler built-in let binding".into(),
+                    expression: definy_event::event::Expression::Compiler(
+                        definy_event::event::CompilerBuiltin::Let,
+                    ),
+                    module_definition_event_hash: None,
+                },
+            ),
+        },
+        definy_event::event::Event {
+            account_id: account_id.clone(),
+            time: epoch + chrono::Duration::milliseconds(2),
+            content: definy_event::event::EventContent::PartDefinition(
+                definy_event::event::PartDefinitionEvent {
+                    part_name: "plus".into(),
+                    part_type: None,
+                    description: "Compiler built-in addition".into(),
+                    expression: definy_event::event::Expression::Compiler(
+                        definy_event::event::CompilerBuiltin::Plus,
+                    ),
+                    module_definition_event_hash: None,
+                },
+            ),
+        },
+        definy_event::event::Event {
+            account_id: account_id.clone(),
+            time: epoch + chrono::Duration::milliseconds(3),
+            content: definy_event::event::EventContent::PartDefinition(
+                definy_event::event::PartDefinitionEvent {
+                    part_name: "number literal".into(),
+                    part_type: Some(definy_event::event::PartType::Number),
+                    description: "Compiler built-in number literal".into(),
+                    expression: definy_event::event::Expression::Compiler(
+                        definy_event::event::CompilerBuiltin::NumberLiteral,
+                    ),
+                    module_definition_event_hash: None,
+                },
+            ),
+        },
+        definy_event::event::Event {
+            account_id: account_id.clone(),
+            time: epoch + chrono::Duration::milliseconds(4),
+            content: definy_event::event::EventContent::PartDefinition(
+                definy_event::event::PartDefinitionEvent {
+                    part_name: "if".into(),
+                    part_type: None,
+                    description: "Compiler built-in conditional expression".into(),
+                    expression: definy_event::event::Expression::Compiler(
+                        definy_event::event::CompilerBuiltin::If,
+                    ),
+                    module_definition_event_hash: None,
+                },
+            ),
+        },
+    ];
+
+    for event in events {
+        let event_binary = definy_event::sign_and_serialize(event.clone(), &signing_key)
+            .map_err(|e| anyhow::anyhow!("Failed to serialize builtin event: {:?}", e))?;
+        let hash = sha2::Sha256::digest(&event_binary);
+        if get_event(db, &hash).await?.is_none() {
+            let (signature, verified_event) =
+                definy_event::verify_and_deserialize(&event_binary)
+                    .map_err(|e| anyhow::anyhow!("Failed to verify builtin event: {:?}", e))?;
+            save_event(&verified_event, &signature, &event_binary, system_addr, db).await?;
+        }
+    }
+
+    Ok(())
 }
 
 pub async fn save_event(
@@ -296,5 +390,38 @@ mod tests {
         let hash = sha2::Sha256::digest(&event_binary);
         let single_event = get_event(&db, &hash).await.unwrap();
         assert_eq!(single_event, Some(event_binary));
+    }
+
+    #[tokio::test]
+    async fn test_builtin_migration() {
+        let db = init_db().await.unwrap();
+
+        let events = get_events(&db, None, Some(10), Some(0)).await.unwrap();
+        // 1 CreateAccount + 4 PartDefinition = 5 events
+        assert_eq!(events.len(), 5);
+
+        let mut part_names = Vec::new();
+        for event_binary in events.iter() {
+            let (_, event) = definy_event::verify_and_deserialize(event_binary).unwrap();
+            match event.content {
+                definy_event::event::EventContent::PartDefinition(part) => {
+                    part_names.push(part.part_name.to_string());
+                }
+                definy_event::event::EventContent::CreateAccount(account) => {
+                    assert_eq!(account.account_name.as_ref(), "definy");
+                }
+                _ => {}
+            }
+        }
+
+        assert!(part_names.contains(&"let".to_string()));
+        assert!(part_names.contains(&"plus".to_string()));
+        assert!(part_names.contains(&"number literal".to_string()));
+        assert!(part_names.contains(&"if".to_string()));
+
+        // Idempotency check: running init_db / migration again shouldn't duplicate records
+        migrate_builtin_data(&db).await.unwrap();
+        let events_after = get_events(&db, None, Some(10), Some(0)).await.unwrap();
+        assert_eq!(events_after.len(), 5);
     }
 }

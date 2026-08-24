@@ -644,6 +644,25 @@ pub fn render_expression_editor(
                     .into_node(),
             );
         }
+        definy_event::event::Expression::Compiler(builtin) => {
+            let builtin_label = match builtin {
+                definy_event::event::CompilerBuiltin::Let => "[compiler let]",
+                definy_event::event::CompilerBuiltin::Plus => "[compiler plus]",
+                definy_event::event::CompilerBuiltin::NumberLiteral => "[compiler number literal]",
+                definy_event::event::CompilerBuiltin::If => "[compiler if]",
+            };
+            children.push(
+                Div::new()
+                    .style(
+                        Style::new()
+                            .set("font-size", "0.85rem")
+                            .set("color", "var(--text-secondary)")
+                            .set("font-family", "monospace"),
+                    )
+                    .children([text(builtin_label)])
+                    .into_node(),
+            );
+        }
         definy_event::event::Expression::PartReference(_)
         | definy_event::event::Expression::Variable(_) => {
             children.push(
@@ -818,6 +837,14 @@ fn current_selection_value(expression: &definy_event::event::Expression) -> Stri
             "expr:constructor:{}",
             constructor_expression.type_part_definition_event_hash
         ),
+        definy_event::event::Expression::Compiler(builtin) => match builtin {
+            definy_event::event::CompilerBuiltin::Let => "expr:compiler:let".to_string(),
+            definy_event::event::CompilerBuiltin::Plus => "expr:compiler:plus".to_string(),
+            definy_event::event::CompilerBuiltin::NumberLiteral => {
+                "expr:compiler:number_literal".to_string()
+            }
+            definy_event::event::CompilerBuiltin::If => "expr:compiler:if".to_string(),
+        },
         definy_event::event::Expression::PartReference(part_ref) => {
             format!("ref:global:{}", part_ref.part_definition_event_hash)
         }

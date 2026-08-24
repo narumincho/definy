@@ -412,6 +412,7 @@ fn check_expression_type(
                     .clone(),
             )
         }
+        definy_event::event::Expression::Compiler(_) => ExpressionType::Unknown,
     };
 
     if let Some(expected_type) = expected_type {

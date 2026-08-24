@@ -95,6 +95,16 @@ pub enum Expression {
     #[serde(alias = "RecordLiteral")]
     TypeLiteral(TypeLiteralExpression),
     Constructor(ConstructorExpression),
+    Compiler(CompilerBuiltin),
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum CompilerBuiltin {
+    Let,
+    Plus,
+    NumberLiteral,
+    If,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]

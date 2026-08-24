@@ -296,6 +296,7 @@ pub fn next_local_variable_id(expression: &definy_event::event::Expression) -> i
             definy_event::event::Expression::Constructor(constructor_expression) => {
                 max_local_variable_id(constructor_expression.value.as_ref())
             }
+            definy_event::event::Expression::Compiler(_) => 0,
         }
     }
     max_local_variable_id(expression).saturating_add(1).max(1)

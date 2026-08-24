@@ -192,6 +192,11 @@ fn emit_expression(
         Expression::Constructor(_) => {
             return Err("Wasm compilation of Constructor expressions is not supported yet.".into());
         }
+        Expression::Compiler(_) => {
+            return Err(
+                "Wasm compilation of Compiler builtin expressions is not supported.".into(),
+            );
+        }
     }
     Ok(())
 }
@@ -218,7 +223,9 @@ fn count_locals(expr: &Expression) -> u32 {
             .map(|item| count_locals(item.value.as_ref()))
             .sum(),
         Expression::Constructor(constructor) => count_locals(constructor.value.as_ref()),
-        _ => 0,
+        Expression::Compiler(_) => 0,
+        Expression::Number(_) | Expression::Boolean(_) | Expression::Variable(_) => 0,
+        Expression::PartReference(_) => 0,
     }
 }
 

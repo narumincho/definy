@@ -331,6 +331,9 @@ fn evaluate_expression_with_depth(
                 depth + 1,
             )
         }
+        definy_event::event::Expression::Compiler(_) => {
+            Err("Compiler builtin expression cannot be evaluated as runtime value")
+        }
     }
 }
 
@@ -341,6 +344,14 @@ pub fn expression_to_source(expression: &definy_event::event::Expression) -> Str
         scope: &[(i64, String)],
     ) -> String {
         match expression {
+            definy_event::event::Expression::Compiler(builtin) => match builtin {
+                definy_event::event::CompilerBuiltin::Let => "[compiler let]".to_string(),
+                definy_event::event::CompilerBuiltin::Plus => "[compiler plus]".to_string(),
+                definy_event::event::CompilerBuiltin::NumberLiteral => {
+                    "[compiler number literal]".to_string()
+                }
+                definy_event::event::CompilerBuiltin::If => "[compiler if]".to_string(),
+            },
             definy_event::event::Expression::Number(number_expression) => {
                 number_expression.value.to_string()
             }
@@ -796,5 +807,26 @@ mod tests {
             expression_to_source(&reference),
             definition_hash.to_string()
         );
+    }
+
+    #[test]
+    fn test_compiler_builtins() {
+        use definy_event::event::{CompilerBuiltin, Expression};
+
+        let let_expr = Expression::Compiler(CompilerBuiltin::Let);
+        assert_eq!(expression_to_source(&let_expr), "[compiler let]");
+        assert!(evaluate_expression(&let_expr, &[]).is_err());
+
+        let plus_expr = Expression::Compiler(CompilerBuiltin::Plus);
+        assert_eq!(expression_to_source(&plus_expr), "[compiler plus]");
+        assert!(evaluate_expression(&plus_expr, &[]).is_err());
+
+        let num_expr = Expression::Compiler(CompilerBuiltin::NumberLiteral);
+        assert_eq!(expression_to_source(&num_expr), "[compiler number literal]");
+        assert!(evaluate_expression(&num_expr, &[]).is_err());
+
+        let if_expr = Expression::Compiler(CompilerBuiltin::If);
+        assert_eq!(expression_to_source(&if_expr), "[compiler if]");
+        assert!(evaluate_expression(&if_expr, &[]).is_err());
     }
 }
