@@ -31,7 +31,8 @@ pub struct PartDefinitionEvent {
     pub part_type: Option<PartType>,
     #[serde(default)]
     pub description: Box<str>,
-    pub expression: Expression,
+    #[serde(default)]
+    pub expression: Option<Expression>,
     #[serde(default)]
     pub module_definition_event_hash: Option<EventHashId>,
 }
@@ -41,8 +42,8 @@ pub struct PartUpdateEvent {
     pub part_name: Box<str>,
     pub part_description: Box<str>,
     pub part_definition_event_hash: EventHashId,
-    #[serde(default = "default_expression")]
-    pub expression: Expression,
+    #[serde(default)]
+    pub expression: Option<Expression>,
     #[serde(default)]
     pub module_definition_event_hash: Option<EventHashId>,
 }
@@ -59,10 +60,6 @@ pub struct ModuleUpdateEvent {
     pub module_name: Box<str>,
     pub module_description: Box<str>,
     pub module_definition_event_hash: EventHashId,
-}
-
-fn default_expression() -> Expression {
-    Expression::Number(NumberExpression { value: 0 })
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

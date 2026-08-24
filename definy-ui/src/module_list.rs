@@ -8,7 +8,7 @@ pub fn module_list_view(state: &AppState, context: &PageContext) -> Node {
     let snapshots = collect_module_snapshots(state);
     let account_name_map = state.account_name_map();
 
-    let create_form = if state.current_key.is_some() {
+    let create_form = if state.current_key.is_some() && state.module_definition_form.is_form_open {
         Some(module_create_form(state, context))
     } else {
         None
@@ -16,21 +16,57 @@ pub fn module_list_view(state: &AppState, context: &PageContext) -> Node {
 
     Div::new()
         .class("page-shell")
-        .style(crate::layout::page_shell_style("1.2rem"))
+        .style(crate::layout::page_shell_style("0.8rem"))
         .children({
             let mut children = Vec::new();
             children.push(
-                H2::new()
+                Div::new()
                     .style(
                         Style::new()
-                            .set("font-size", "1.4rem")
-                            .set("font-weight", "600"),
+                            .set("display", "flex")
+                            .set("justify-content", "space-between")
+                            .set("align-items", "center"),
                     )
-                    .children([text(context.language.label(
-                        "Modules",
-                        "モジュール",
-                        "Moduloj",
-                    ))])
+                    .children([
+                        H2::new()
+                            .style(
+                                Style::new()
+                                    .set("font-size", "1.25rem")
+                                    .set("font-weight", "600")
+                                    .set("margin", "0"),
+                            )
+                            .children([text(context.language.label(
+                                "Modules",
+                                "モジュール",
+                                "Moduloj",
+                            ))])
+                            .into_node(),
+                        if state.current_key.is_some() && !state.module_definition_form.is_form_open
+                        {
+                            Button::new()
+                                .type_("button")
+                                .style(
+                                    Style::new()
+                                        .set("padding", "0.35rem 0.75rem")
+                                        .set("font-size", "0.85rem"),
+                                )
+                                .on_click(EventHandler::new(move |set_state| async move {
+                                    set_state(Box::new(move |state: AppState| {
+                                        let mut next = state.clone();
+                                        next.module_definition_form.is_form_open = true;
+                                        next
+                                    }));
+                                }))
+                                .children([text(context.language.label(
+                                    "+ Create Module",
+                                    "+ モジュールを作成",
+                                    "+ Krei modulon",
+                                ))])
+                                .into_node()
+                        } else {
+                            Div::new().children([]).into_node()
+                        },
+                    ])
                     .into_node(),
             );
             if let Some(form) = create_form {
@@ -42,8 +78,8 @@ pub fn module_list_view(state: &AppState, context: &PageContext) -> Node {
                         .class("event-detail-card")
                         .style(
                             Style::new()
-                                .set("padding", "0.75rem 1rem")
-                                .set("font-size", "0.85rem")
+                                .set("padding", "0.6rem 0.8rem")
+                                .set("font-size", "0.82rem")
                                 .set("color", "var(--text)")
                                 .set("background", "rgb(124 192 216 / 0.1)")
                                 .set("border-color", "var(--primary)")
@@ -59,7 +95,7 @@ pub fn module_list_view(state: &AppState, context: &PageContext) -> Node {
                         .class("event-detail-card")
                         .style(
                             Style::new()
-                                .set("padding", "3rem 1.5rem")
+                                .set("padding", "2rem 1.5rem")
                                 .set("text-align", "center")
                                 .set("display", "grid")
                                 .set("gap", "0.5rem")
@@ -94,7 +130,7 @@ pub fn module_list_view(state: &AppState, context: &PageContext) -> Node {
                 children.push(
                     Div::new()
                         .class("event-list")
-                        .style(Style::new().set("display", "grid").set("gap", "0.75rem"))
+                        .style(Style::new().set("display", "grid").set("gap", "0.45rem"))
                         .children(
                             snapshots
                                 .into_iter()
@@ -108,8 +144,8 @@ pub fn module_list_view(state: &AppState, context: &PageContext) -> Node {
                                         .style(
                                             Style::new()
                                                 .set("display", "grid")
-                                                .set("gap", "0.6rem")
-                                                .set("padding", "1rem 1.1rem"),
+                                                .set("gap", "0.35rem")
+                                                .set("padding", "0.65rem 0.85rem"),
                                         )
                                         .children([
                                             Div::new()
@@ -123,7 +159,7 @@ pub fn module_list_view(state: &AppState, context: &PageContext) -> Node {
                                                     Div::new()
                                                         .style(
                                                             Style::new()
-                                                                .set("font-size", "1.1rem")
+                                                                .set("font-size", "1rem")
                                                                 .set("font-weight", "600")
                                                                 .set("color", "var(--text)"),
                                                         )
@@ -132,7 +168,7 @@ pub fn module_list_view(state: &AppState, context: &PageContext) -> Node {
                                                     Div::new()
                                                         .style(
                                                             Style::new()
-                                                                .set("font-size", "0.8rem")
+                                                                .set("font-size", "0.76rem")
                                                                 .set(
                                                                     "color",
                                                                     "var(--text-secondary)",
@@ -285,21 +321,47 @@ fn module_create_form(state: &AppState, context: &PageContext) -> Node {
         .style(
             Style::new()
                 .set("display", "grid")
-                .set("gap", "0.8rem")
-                .set("padding", "1.2rem 1.3rem"),
+                .set("gap", "0.5rem")
+                .set("padding", "0.8rem 1rem"),
         )
         .children([
             Div::new()
                 .style(
                     Style::new()
-                        .set("font-size", "1.05rem")
-                        .set("font-weight", "600"),
+                        .set("display", "flex")
+                        .set("justify-content", "space-between")
+                        .set("align-items", "center"),
                 )
-                .children([text(context.language.label(
-                    "Create module",
-                    "モジュールを作成",
-                    "Krei modulon",
-                ))])
+                .children([
+                    Div::new()
+                        .style(
+                            Style::new()
+                                .set("font-size", "0.95rem")
+                                .set("font-weight", "600"),
+                        )
+                        .children([text(context.language.label(
+                            "Create module",
+                            "新規モジュール作成",
+                            "Krei modulon",
+                        ))])
+                        .into_node(),
+                    Button::new()
+                        .type_("button")
+                        .style(
+                            Style::new()
+                                .set("padding", "0.2rem 0.5rem")
+                                .set("font-size", "0.75rem"),
+                        )
+                        .on_click(EventHandler::new(move |set_state| async move {
+                            set_state(Box::new(move |state: AppState| {
+                                let mut next = state.clone();
+                                next.module_definition_form.is_form_open = false;
+                                next
+                            }));
+                        }))
+                        .children([text(context.language.label("Cancel", "閉じる", "Fermi"))])
+                        .into_node(),
+                ])
                 .into_node(),
             module_name_input(state, context),
             module_description_input(state, context),
@@ -307,16 +369,15 @@ fn module_create_form(state: &AppState, context: &PageContext) -> Node {
                 .type_("button")
                 .style(
                     Style::new()
-                        .set("font-size", "0.86rem")
+                        .set("font-size", "0.84rem")
                         .set("font-weight", "600")
                         .set("background", "var(--primary)")
                         .set("color", "#0e1720")
                         .set("border", "none")
-                        .set("padding", "0.5rem 1.1rem")
+                        .set("padding", "0.4rem 0.9rem")
                         .set("border-radius", "var(--radius-sm)")
                         .set("cursor", "pointer")
-                        .set("justify-self", "start")
-                        .set("box-shadow", "0 2px 8px rgb(124 192 216 / 0.2)"),
+                        .set("justify-self", "start"),
                 )
                 .on_click(EventHandler::new(move |set_state| {
                     let set_state = std::rc::Rc::new(set_state);
@@ -391,6 +452,7 @@ fn module_create_form(state: &AppState, context: &PageContext) -> Node {
                                 },
                             ));
                             let mut next = state.clone();
+                            next.module_definition_form.is_form_open = false;
                             next.module_definition_form.module_name_input = String::new();
                             next.module_definition_form.module_description_input = String::new();
                             next.module_definition_form.result_message = None;

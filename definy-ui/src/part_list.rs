@@ -38,21 +38,63 @@ fn part_definition_form_view(state: &AppState, context: &PageContext) -> Node {
         .style(
             Style::new()
                 .set("display", "grid")
-                .set("gap", "0.65rem")
+                .set("gap", "0.5rem")
                 .set("background", "var(--surface)")
                 .set("backdrop-filter", "var(--glass-blur)")
-                .set("padding", "1rem")
-                .set("border-radius", "var(--radius-lg)")
-                .set("box-shadow", "var(--shadow-md)")
+                .set("padding", "0.8rem 1rem")
+                .set("border-radius", "var(--radius-md)")
+                .set("box-shadow", "var(--shadow-sm)")
                 .set("border", "1px solid var(--border)"),
         )
         .children([
+            Div::new()
+                .style(
+                    Style::new()
+                        .set("display", "flex")
+                        .set("justify-content", "space-between")
+                        .set("align-items", "center"),
+                )
+                .children([
+                    Div::new()
+                        .style(
+                            Style::new()
+                                .set("font-size", "0.95rem")
+                                .set("font-weight", "600"),
+                        )
+                        .children([text(context.language.label(
+                            "New Part",
+                            "新規パーツ作成",
+                            "Nova Parto",
+                        ))])
+                        .into_node(),
+                    Button::new()
+                        .type_("button")
+                        .style(
+                            Style::new()
+                                .set("padding", "0.2rem 0.5rem")
+                                .set("font-size", "0.75rem"),
+                        )
+                        .on_click(EventHandler::new(move |set_state| async move {
+                            set_state(Box::new(move |state: AppState| {
+                                let mut next = state.clone();
+                                next.part_definition_form.is_form_open = false;
+                                next
+                            }));
+                        }))
+                        .children([text(context.language.label("Cancel", "閉じる", "Fermi"))])
+                        .into_node(),
+                ])
+                .into_node(),
             part_name_input(state),
             module_selection_input(state, context),
             part_type_input(state, context),
             part_description_input(state),
             Div::new()
-                .style(Style::new().set("color", "var(--text-secondary)").set("font-size", "0.84rem"))
+                .style(
+                    Style::new()
+                        .set("color", "var(--text-secondary)")
+                        .set("font-size", "0.82rem"),
+                )
                 .children([text(context.language.label("Expression", "式", "Esprimo"))])
                 .into_node(),
             render_root_expression_editor(
@@ -66,74 +108,117 @@ fn part_definition_form_view(state: &AppState, context: &PageContext) -> Node {
                 .style(
                     Style::new()
                         .set("font-size", "0.76rem")
-                        .set("padding", "0.4rem 0.6rem")
+                        .set("padding", "0.3rem 0.5rem")
                         .set("opacity", "0.85"),
                 )
                 .children([text(format!(
                     "{} {}",
                     context.language.label("Current:", "現在:", "Nuna:"),
-                    expression_to_source(&state.part_definition_form.composing_expression)
+                    state
+                        .part_definition_form
+                        .composing_expression
+                        .as_ref()
+                        .map(expression_to_source)
+                        .unwrap_or_else(|| context
+                            .language
+                            .label("(none)", "(なし)", "(neniu)")
+                            .to_string())
                 ))])
                 .into_node(),
             Div::new()
                 .style(Style::new().set("display", "flex").set("gap", "0.45rem"))
                 .children([
-                    Button::new()
-                        .type_("button")
-                        .on_click(EventHandler::new(move |set_state| async move {
-                            set_state(Box::new(move |state: AppState| {
-                                let events_vec: Vec<_> = state.event_list_state.event_hashes.iter().filter_map(|hash| state.event_cache.get(hash).map(|event| (hash.clone(), event.clone()))).collect();
-                                let result = match evaluate_expression(
-                                    &state.part_definition_form.composing_expression,
-                                    &events_vec,
-                                )
-                                {
-                                    Ok(value) => format!(
-                                        "{} {}",
-                                        language.label("Result:", "結果:", "Rezulto:"),
-                                        value
-                                    ),
-                                    Err(error) => format!(
-                                        "{} {}",
-                                        language.label("Error:", "エラー:", "Eraro:"),
-                                        error
-                                    ),
-                                };
-                                let mut next = state.clone();
-                                next.part_definition_form.eval_result = Some(result);
-                                next
-                            }));
-                        }))
-                        .children([text(context.language.label("Evaluate", "評価", "Taksi"))])
-                        .into_node(),
+                    if state
+                        .part_definition_form
+                        .composing_expression
+                        .is_some()
+                    {
+                        Button::new()
+                            .type_("button")
+                            .on_click(EventHandler::new(move |set_state| async move {
+                                set_state(Box::new(move |state: AppState| {
+                                    let events_vec: Vec<_> = state
+                                        .event_list_state
+                                        .event_hashes
+                                        .iter()
+                                        .filter_map(|hash| {
+                                            state
+                                                .event_cache
+                                                .get(hash)
+                                                .map(|event| (hash.clone(), event.clone()))
+                                        })
+                                        .collect();
+                                    let result = if let Some(expr) =
+                                        &state.part_definition_form.composing_expression
+                                    {
+                                        match evaluate_expression(expr, &events_vec) {
+                                            Ok(value) => format!(
+                                                "{} {}",
+                                                language.label("Result:", "結果:", "Rezulto:"),
+                                                value
+                                            ),
+                                            Err(error) => format!(
+                                                "{} {}",
+                                                language.label("Error:", "エラー:", "Eraro:"),
+                                                error
+                                            ),
+                                        }
+                                    } else {
+                                        language
+                                            .label(
+                                                "No expression to evaluate",
+                                                "評価する式がありません",
+                                                "Neniu esprimo por taksi",
+                                            )
+                                            .to_string()
+                                    };
+                                    let mut next = state.clone();
+                                    next.part_definition_form.eval_result = Some(result);
+                                    next
+                                }));
+                            }))
+                            .children([text(context.language.label("Evaluate", "評価", "Taksi"))])
+                            .into_node()
+                    } else {
+                        Div::new().children([]).into_node()
+                    },
                     Button::new()
                         .on_click(EventHandler::new(move |set_state| async move {
                             let set_state = std::rc::Rc::new(set_state);
                             let set_state_for_async = set_state.clone();
                             set_state(Box::new(move |state: AppState| {
-                                let key: &ed25519_dalek::SigningKey = if let Some(key) = &state.current_key {
-                                    key
-                                } else {
-                                    web_sys::console::log_1(&"login required".into());
-                                    return state;
-                                };
+                                let key: &ed25519_dalek::SigningKey =
+                                    if let Some(key) = &state.current_key {
+                                        key
+                                    } else {
+                                        web_sys::console::log_1(&"login required".into());
+                                        return state;
+                                    };
 
-                                let part_name = state.part_definition_form.part_name_input.trim().to_string();
-                                let description = state.part_definition_form.part_description_input.clone();
+                                let part_name =
+                                    state.part_definition_form.part_name_input.trim().to_string();
+                                let description =
+                                    state.part_definition_form.part_description_input.clone();
                                 let part_type = state.part_definition_form.part_type_input.clone();
-                                let module_definition_event_hash = state.part_definition_form.module_definition_event_hash.clone();
+                                let module_definition_event_hash = state
+                                    .part_definition_form
+                                    .module_definition_event_hash
+                                    .clone();
                                 if part_name.is_empty() {
                                     let mut next = state.clone();
                                     next.part_definition_form.eval_result = Some(
-                                        language.label(
-                                            "Error: part name is required",
-                                            "エラー: パーツ名は必須です",
-                                            "Eraro: parto-nomo estas bezonata",
-                                        ).to_string(),
+                                        language
+                                            .label(
+                                                "Error: part name is required",
+                                                "エラー: パーツ名は必須です",
+                                                "Eraro: parto-nomo estas bezonata",
+                                            )
+                                            .to_string(),
                                     );
                                     return next;
                                 }
-                                let expression = state.part_definition_form.composing_expression.clone();
+                                let expression =
+                                    state.part_definition_form.composing_expression.clone();
                                 let key_for_async = key.clone();
                                 let force_offline = state.force_offline;
 
@@ -152,39 +237,44 @@ fn part_definition_form_view(state: &AppState, context: &PageContext) -> Node {
                                         force_offline,
                                         None,
                                         set_state_for_async,
-                                    move |next, record| {
-                                        if record.status != crate::local_event::LocalEventStatus::Sent {
-                                            next.part_definition_form.eval_result = Some(match record.status {
-                                                crate::local_event::LocalEventStatus::Queued => {
-                                                    language.label(
-                                                        "PartDefinition queued (offline)",
-                                                        "PartDefinition をキューに追加しました (オフライン)",
-                                                        "PartDefinition envicigita (senkonekte)",
-                                                    )
-                                                    .to_string()
-                                                }
-                                                crate::local_event::LocalEventStatus::Failed => {
-                                                    language.label(
-                                                        "PartDefinition failed to send",
-                                                        "PartDefinition の送信に失敗しました",
-                                                        "PartDefinition sendado malsukcesis",
-                                                    )
-                                                    .to_string()
-                                                }
-                                                crate::local_event::LocalEventStatus::Sent => unreachable!(),
-                                            });
-                                        }
-                                    },
-                                ));
+                                        move |next, record| {
+                                            if record.status
+                                                != crate::local_event::LocalEventStatus::Sent
+                                            {
+                                                next.part_definition_form.eval_result =
+                                                    Some(match record.status {
+                                                        crate::local_event::LocalEventStatus::Queued => {
+                                                            language.label(
+                                                                "PartDefinition queued (offline)",
+                                                                "PartDefinition をキューに追加しました (オフライン)",
+                                                                "PartDefinition envicigita (senkonekte)",
+                                                            )
+                                                            .to_string()
+                                                        }
+                                                        crate::local_event::LocalEventStatus::Failed => {
+                                                            language.label(
+                                                                "PartDefinition failed to send",
+                                                                "PartDefinition の送信に失敗しました",
+                                                                "PartDefinition sendado malsukcesis",
+                                                            )
+                                                            .to_string()
+                                                        }
+                                                        crate::local_event::LocalEventStatus::Sent => {
+                                                            unreachable!()
+                                                        }
+                                                    });
+                                            }
+                                        },
+                                    ),
+                                );
                                 let mut next = state.clone();
+                                next.part_definition_form.is_form_open = false;
                                 next.part_definition_form.part_name_input = String::new();
-                                next.part_definition_form.part_type_input = Some(definy_event::event::PartType::Number);
+                                next.part_definition_form.part_type_input = None;
                                 next.part_definition_form.part_description_input = String::new();
                                 next.part_definition_form.module_definition_event_hash = None;
                                 next.part_definition_form.eval_result = None;
-                                next.part_definition_form.composing_expression = definy_event::event::Expression::Number(
-                                    definy_event::event::NumberExpression { value: 0 },
-                                );
+                                next.part_definition_form.composing_expression = None;
                                 next
                             }));
                         }))
@@ -199,26 +289,56 @@ fn part_definition_form_view(state: &AppState, context: &PageContext) -> Node {
 pub fn part_list_view(state: &AppState, context: &PageContext) -> Node {
     let snapshots = collect_part_snapshots(state);
     let account_name_map = state.account_name_map();
-    let part_definition_form = if state.current_key.is_some() {
-        Some(part_definition_form_view(state, context))
-    } else {
-        None
-    };
 
     Div::new()
         .class("page-shell")
-        .style(crate::layout::page_shell_style("1.2rem"))
+        .style(crate::layout::page_shell_style("0.8rem"))
         .children([
-            H2::new()
+            Div::new()
                 .style(
                     Style::new()
-                        .set("font-size", "1.4rem")
-                        .set("font-weight", "600"),
+                        .set("display", "flex")
+                        .set("justify-content", "space-between")
+                        .set("align-items", "center"),
                 )
-                .children([text(context.language.label("Parts", "パーツ", "Partoj"))])
+                .children([
+                    H2::new()
+                        .style(
+                            Style::new()
+                                .set("font-size", "1.25rem")
+                                .set("font-weight", "600")
+                                .set("margin", "0"),
+                        )
+                        .children([text(context.language.label("Parts", "パーツ", "Partoj"))])
+                        .into_node(),
+                    if state.current_key.is_some() && !state.part_definition_form.is_form_open {
+                        Button::new()
+                            .type_("button")
+                            .style(
+                                Style::new()
+                                    .set("padding", "0.35rem 0.75rem")
+                                    .set("font-size", "0.85rem"),
+                            )
+                            .on_click(EventHandler::new(move |set_state| async move {
+                                set_state(Box::new(move |state: AppState| {
+                                    let mut next = state.clone();
+                                    next.part_definition_form.is_form_open = true;
+                                    next
+                                }));
+                            }))
+                            .children([text(context.language.label(
+                                "+ Create Part",
+                                "+ パーツを作成",
+                                "+ Krei parton",
+                            ))])
+                            .into_node()
+                    } else {
+                        Div::new().children([]).into_node()
+                    },
+                ])
                 .into_node(),
-            if let Some(form) = part_definition_form {
-                form
+            if state.current_key.is_some() && state.part_definition_form.is_form_open {
+                part_definition_form_view(state, context)
             } else {
                 Div::new().children([]).into_node()
             },
@@ -277,7 +397,7 @@ pub fn part_list_view(state: &AppState, context: &PageContext) -> Node {
             } else {
                 Div::new()
                     .class("event-list")
-                    .style(Style::new().set("display", "grid").set("gap", "0.75rem"))
+                    .style(Style::new().set("display", "grid").set("gap", "0.45rem"))
                     .children(
                         snapshots
                             .into_iter()
@@ -291,8 +411,8 @@ pub fn part_list_view(state: &AppState, context: &PageContext) -> Node {
                                     .style(
                                         Style::new()
                                             .set("display", "grid")
-                                            .set("gap", "0.6rem")
-                                            .set("padding", "1rem 1.1rem"),
+                                            .set("gap", "0.35rem")
+                                            .set("padding", "0.65rem 0.85rem"),
                                     )
                                     .children([
                                         Div::new()
@@ -306,7 +426,7 @@ pub fn part_list_view(state: &AppState, context: &PageContext) -> Node {
                                                 Div::new()
                                                     .style(
                                                         Style::new()
-                                                            .set("font-size", "1.1rem")
+                                                            .set("font-size", "1rem")
                                                             .set("font-weight", "600")
                                                             .set("color", "var(--text)"),
                                                     )
@@ -315,14 +435,14 @@ pub fn part_list_view(state: &AppState, context: &PageContext) -> Node {
                                                 Div::new()
                                                     .style(
                                                         Style::new()
-                                                            .set("font-size", "0.8rem")
+                                                            .set("font-size", "0.75rem")
                                                             .set("font-weight", "500")
                                                             .set("color", "var(--primary)")
                                                             .set(
                                                                 "background",
                                                                 "rgb(124 192 216 / 0.12)",
                                                             )
-                                                            .set("padding", "0.2rem 0.55rem")
+                                                            .set("padding", "0.15rem 0.45rem")
                                                             .set(
                                                                 "border-radius",
                                                                 "var(--radius-full)",
@@ -338,7 +458,7 @@ pub fn part_list_view(state: &AppState, context: &PageContext) -> Node {
                                         Div::new()
                                             .style(
                                                 Style::new()
-                                                    .set("font-size", "0.82rem")
+                                                    .set("font-size", "0.76rem")
                                                     .set("color", "var(--text-secondary)"),
                                             )
                                             .children([text(
@@ -353,7 +473,7 @@ pub fn part_list_view(state: &AppState, context: &PageContext) -> Node {
                                             Div::new()
                                                 .style(
                                                     Style::new()
-                                                        .set("font-size", "0.82rem")
+                                                        .set("font-size", "0.78rem")
                                                         .set("color", "var(--error)"),
                                                 )
                                                 .children([text(context.language.label(
@@ -370,7 +490,7 @@ pub fn part_list_view(state: &AppState, context: &PageContext) -> Node {
                                                 .style(
                                                     Style::new()
                                                         .set("white-space", "pre-wrap")
-                                                        .set("font-size", "0.9rem")
+                                                        .set("font-size", "0.84rem")
                                                         .set("color", "var(--text-secondary)"),
                                                 )
                                                 .children([text(part.part_description)])
@@ -382,7 +502,7 @@ pub fn part_list_view(state: &AppState, context: &PageContext) -> Node {
                                                     .set("display", "flex")
                                                     .set("gap", "0.5rem")
                                                     .set("align-items", "center")
-                                                    .set("margin-top", "0.2rem"),
+                                                    .set("margin-top", "0.1rem"),
                                             )
                                             .children([A::<Location>::new()
                                                 .href(context.href_with_lang(Location::Part(
@@ -390,11 +510,11 @@ pub fn part_list_view(state: &AppState, context: &PageContext) -> Node {
                                                 )))
                                                 .style(
                                                     Style::new()
-                                                        .set("font-size", "0.82rem")
+                                                        .set("font-size", "0.78rem")
                                                         .set("font-weight", "500")
                                                         .set("color", "var(--primary)")
                                                         .set("background", "rgb(124 192 216 / 0.1)")
-                                                        .set("padding", "0.3rem 0.65rem")
+                                                        .set("padding", "0.2rem 0.5rem")
                                                         .set("border-radius", "var(--radius-sm)")
                                                         .set("text-decoration", "none"),
                                                 )
@@ -409,7 +529,7 @@ pub fn part_list_view(state: &AppState, context: &PageContext) -> Node {
                                             .class("mono")
                                             .style(
                                                 Style::new()
-                                                    .set("font-size", "0.8rem")
+                                                    .set("font-size", "0.78rem")
                                                     .set("opacity", "0.8"),
                                             )
                                             .children([text(format!(
@@ -419,13 +539,19 @@ pub fn part_list_view(state: &AppState, context: &PageContext) -> Node {
                                                     "式:",
                                                     "esprimo:"
                                                 ),
-                                                expression_to_source(&part.expression)
+                                                part.expression
+                                                    .as_ref()
+                                                    .map(expression_to_source)
+                                                    .unwrap_or_else(|| context
+                                                        .language
+                                                        .label("(none)", "(なし)", "(neniu)")
+                                                        .to_string())
                                             ))])
                                             .into_node(),
                                         Div::new()
                                             .style(
                                                 Style::new()
-                                                    .set("font-size", "0.85rem")
+                                                    .set("font-size", "0.8rem")
                                                     .set("color", "var(--primary)"),
                                             )
                                             .children([text(format!(

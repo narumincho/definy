@@ -13,7 +13,7 @@ pub struct PartSnapshot {
     pub part_name: String,
     pub part_type: Option<definy_event::event::PartType>,
     pub part_description: String,
-    pub expression: Expression,
+    pub expression: Option<Expression>,
     pub module_definition_event_hash: Option<EventHashId>,
     pub updated_at: chrono::DateTime<chrono::Utc>,
     pub has_definition: bool,

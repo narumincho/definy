@@ -193,9 +193,9 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
                     part_name: "let".into(),
                     part_type: None,
                     description: "Compiler built-in let binding".into(),
-                    expression: definy_event::event::Expression::Compiler(
+                    expression: Some(definy_event::event::Expression::Compiler(
                         definy_event::event::CompilerBuiltin::Let,
-                    ),
+                    )),
                     module_definition_event_hash: None,
                 },
             ),
@@ -208,9 +208,9 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
                     part_name: "plus".into(),
                     part_type: None,
                     description: "Compiler built-in addition".into(),
-                    expression: definy_event::event::Expression::Compiler(
+                    expression: Some(definy_event::event::Expression::Compiler(
                         definy_event::event::CompilerBuiltin::Plus,
-                    ),
+                    )),
                     module_definition_event_hash: None,
                 },
             ),
@@ -223,9 +223,9 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
                     part_name: "number literal".into(),
                     part_type: Some(definy_event::event::PartType::Number),
                     description: "Compiler built-in number literal".into(),
-                    expression: definy_event::event::Expression::Compiler(
+                    expression: Some(definy_event::event::Expression::Compiler(
                         definy_event::event::CompilerBuiltin::NumberLiteral,
-                    ),
+                    )),
                     module_definition_event_hash: None,
                 },
             ),
@@ -238,9 +238,61 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
                     part_name: "if".into(),
                     part_type: None,
                     description: "Compiler built-in conditional expression".into(),
-                    expression: definy_event::event::Expression::Compiler(
+                    expression: Some(definy_event::event::Expression::Compiler(
                         definy_event::event::CompilerBuiltin::If,
-                    ),
+                    )),
+                    module_definition_event_hash: None,
+                },
+            ),
+        },
+        definy_event::event::Event {
+            account_id: account_id.clone(),
+            time: epoch + chrono::Duration::milliseconds(5),
+            content: definy_event::event::EventContent::PartDefinition(
+                definy_event::event::PartDefinitionEvent {
+                    part_name: "Number".into(),
+                    part_type: Some(definy_event::event::PartType::Type),
+                    description: "Built-in 64-bit integer type".into(),
+                    expression: None,
+                    module_definition_event_hash: None,
+                },
+            ),
+        },
+        definy_event::event::Event {
+            account_id: account_id.clone(),
+            time: epoch + chrono::Duration::milliseconds(6),
+            content: definy_event::event::EventContent::PartDefinition(
+                definy_event::event::PartDefinitionEvent {
+                    part_name: "String".into(),
+                    part_type: Some(definy_event::event::PartType::Type),
+                    description: "Built-in UTF-8 string type".into(),
+                    expression: None,
+                    module_definition_event_hash: None,
+                },
+            ),
+        },
+        definy_event::event::Event {
+            account_id: account_id.clone(),
+            time: epoch + chrono::Duration::milliseconds(7),
+            content: definy_event::event::EventContent::PartDefinition(
+                definy_event::event::PartDefinitionEvent {
+                    part_name: "Boolean".into(),
+                    part_type: Some(definy_event::event::PartType::Type),
+                    description: "Built-in boolean type".into(),
+                    expression: None,
+                    module_definition_event_hash: None,
+                },
+            ),
+        },
+        definy_event::event::Event {
+            account_id: account_id.clone(),
+            time: epoch + chrono::Duration::milliseconds(8),
+            content: definy_event::event::EventContent::PartDefinition(
+                definy_event::event::PartDefinitionEvent {
+                    part_name: "List".into(),
+                    part_type: Some(definy_event::event::PartType::Type),
+                    description: "Built-in list type".into(),
+                    expression: None,
                     module_definition_event_hash: None,
                 },
             ),
@@ -396,9 +448,9 @@ mod tests {
     async fn test_builtin_migration() {
         let db = init_db().await.unwrap();
 
-        let events = get_events(&db, None, Some(10), Some(0)).await.unwrap();
-        // 1 CreateAccount + 4 PartDefinition = 5 events
-        assert_eq!(events.len(), 5);
+        let events = get_events(&db, None, Some(20), Some(0)).await.unwrap();
+        // 1 CreateAccount + 8 PartDefinition = 9 events
+        assert_eq!(events.len(), 9);
 
         let mut part_names = Vec::new();
         for event_binary in events.iter() {
@@ -418,10 +470,14 @@ mod tests {
         assert!(part_names.contains(&"plus".to_string()));
         assert!(part_names.contains(&"number literal".to_string()));
         assert!(part_names.contains(&"if".to_string()));
+        assert!(part_names.contains(&"Number".to_string()));
+        assert!(part_names.contains(&"String".to_string()));
+        assert!(part_names.contains(&"Boolean".to_string()));
+        assert!(part_names.contains(&"List".to_string()));
 
         // Idempotency check: running init_db / migration again shouldn't duplicate records
         migrate_builtin_data(&db).await.unwrap();
-        let events_after = get_events(&db, None, Some(10), Some(0)).await.unwrap();
-        assert_eq!(events_after.len(), 5);
+        let events_after = get_events(&db, None, Some(20), Some(0)).await.unwrap();
+        assert_eq!(events_after.len(), 9);
     }
 }

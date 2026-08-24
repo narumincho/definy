@@ -101,7 +101,14 @@ pub fn part_detail_view(
                             .children([text(format!(
                                 "{} {}",
                                 context.language.label("expression:", "式:", "esprimo:"),
-                                expression_to_source(&snapshot.expression)
+                                snapshot
+                                    .expression
+                                    .as_ref()
+                                    .map(expression_to_source)
+                                    .unwrap_or_else(|| context
+                                        .language
+                                        .label("(none)", "(なし)", "(neniu)")
+                                        .to_string())
                             ))])
                             .into_node(),
                         Div::new()
@@ -399,7 +406,13 @@ fn part_update_form(
                 .children([text(format!(
                     "{} {}",
                     context.language.label("Current:", "現在:", "Nuna:"),
-                    expression_to_source(&initial_expression)
+                    initial_expression
+                        .as_ref()
+                        .map(expression_to_source)
+                        .unwrap_or_else(|| context
+                            .language
+                            .label("(none)", "(なし)", "(neniu)")
+                            .to_string())
                 ))])
                 .into_node(),
             Button::new()
@@ -548,7 +561,7 @@ fn effective_part_update_form(
 ) -> (
     String,
     String,
-    definy_event::event::Expression,
+    Option<definy_event::event::Expression>,
     Option<EventHashId>,
 ) {
     if state.part_update_form.part_definition_event_hash == Some(definition_event_hash.clone()) {

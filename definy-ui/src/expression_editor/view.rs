@@ -24,7 +24,7 @@ pub fn render_expression_editor(
     let allow_kind_change = context.allow_kind_change;
     let language = context.language;
     let current_selection = current_selection_value(expression);
-    let selector_options = selector_options(state, &scope_variables);
+    let selector_options = selector_options(state, &scope_variables, path.is_empty());
     let warning_message = diagnostics
         .iter()
         .find(|diagnostic| diagnostic.path == path)
@@ -754,35 +754,65 @@ fn expression_selector(
     )
 }
 
-fn selector_options(state: &AppState, scope_variables: &[ScopeVariable]) -> Vec<(String, String)> {
+pub fn render_empty_expression_editor(
+    state: &AppState,
+    context: &crate::page_context::PageContext,
+    target: EditorTarget,
+) -> Node {
+    let options = selector_options(state, &[], true);
+    Div::new()
+        .class("event-detail-card")
+        .style(
+            Style::new()
+                .set("padding", "0.6rem 0.8rem")
+                .set("display", "grid")
+                .set("gap", "0.4rem")
+                .set("border", "1px dashed var(--border)"),
+        )
+        .children([
+            expression_selector(state, Vec::new(), target, "expr:none", &options),
+            Div::new()
+                .style(
+                    Style::new()
+                        .set("font-size", "0.82rem")
+                        .set("color", "var(--text-secondary)"),
+                )
+                .children([text(context.language.label(
+                    "No expression assigned (default). Select an expression from dropdown above if needed.",
+                    "式なし（デフォルト）。必要に応じて上のドロップダウンから式を設定できます。",
+                    "Neniu esprimo difinita (defaŭlto). Elektu esprimon el la supra falmenuo se necese.",
+                ))])
+                .into_node(),
+        ])
+        .into_node()
+}
+
+pub fn selector_options(
+    state: &AppState,
+    scope_variables: &[ScopeVariable],
+    is_root: bool,
+) -> Vec<(String, String)> {
     let snapshots = collect_part_snapshots(state);
-    let mut options = vec![
-        ("expr:number".to_string(), "Constant: Number".to_string()),
-        ("expr:string".to_string(), "Constant: String".to_string()),
-        (
-            "expr:type:number".to_string(),
-            "Builtin Type: Number".to_string(),
-        ),
-        (
-            "expr:type:string".to_string(),
-            "Builtin Type: String".to_string(),
-        ),
-        (
-            "expr:type:boolean".to_string(),
-            "Builtin Type: Boolean".to_string(),
-        ),
-        (
-            "expr:type:list".to_string(),
-            "Builtin Type: List".to_string(),
-        ),
+    let mut options = Vec::new();
+
+    if is_root {
+        options.push(("expr:none".to_string(), "None (式なし)".to_string()));
+    }
+
+    options.extend([
+        ("expr:number".to_string(), "Literal: Number".to_string()),
+        ("expr:string".to_string(), "Literal: String".to_string()),
+        ("expr:boolean".to_string(), "Literal: Boolean".to_string()),
         ("expr:list".to_string(), "Literal: List".to_string()),
-        ("expr:boolean".to_string(), "Constant: Boolean".to_string()),
-        ("expr:add".to_string(), "Function: Add".to_string()),
-        ("expr:equal".to_string(), "Function: Equal".to_string()),
+        (
+            "expr:type_literal".to_string(),
+            "Literal: Record".to_string(),
+        ),
+        ("expr:add".to_string(), "Syntax: + (Add)".to_string()),
+        ("expr:equal".to_string(), "Syntax: == (Equal)".to_string()),
         ("expr:if".to_string(), "Syntax: If".to_string()),
         ("expr:let".to_string(), "Syntax: Let".to_string()),
-        ("expr:type_literal".to_string(), "Literal: Type".to_string()),
-    ];
+    ]);
 
     options.extend(snapshots.iter().filter_map(|snapshot| {
         if snapshot.part_type == Some(definy_event::event::PartType::Type) {

@@ -184,12 +184,20 @@ fn render_event_detail(
                             .set("line-height", "1.6"),
                     )
                     .children([
-                        text(format!(
-                            "{}: {} = {}",
-                            part_definition_event.part_name,
-                            optional_part_type_text(&part_definition_event.part_type),
-                            expression_to_source(&part_definition_event.expression)
-                        )),
+                        text(if let Some(expr) = &part_definition_event.expression {
+                            format!(
+                                "{}: {} = {}",
+                                part_definition_event.part_name,
+                                optional_part_type_text(&part_definition_event.part_type),
+                                expression_to_source(expr)
+                            )
+                        } else {
+                            format!(
+                                "{}: {}",
+                                part_definition_event.part_name,
+                                optional_part_type_text(&part_definition_event.part_type),
+                            )
+                        }),
                         if part_definition_event.description.is_empty() {
                             Div::new().children([]).into_node()
                         } else {
@@ -203,8 +211,8 @@ fn render_event_detail(
                                 .children([text(part_definition_event.description.as_ref())])
                                 .into_node()
                         },
-                        {
-                            let expression = part_definition_event.expression.clone();
+                        if let Some(expression) = &part_definition_event.expression {
+                            let expression = expression.clone();
                             let language = context.language;
                             Button::new()
                                 .type_("button")
@@ -234,6 +242,8 @@ fn render_event_detail(
                                     context.language.label("Evaluate", "評価", "Taksi"),
                                 )])
                                 .into_node()
+                        } else {
+                            Div::new().children([]).into_node()
                         },
                         A::<Location>::new()
                             .href(context.href_with_lang(Location::Part(hash.clone())))
@@ -308,7 +318,14 @@ fn render_event_detail(
                             .children([text(format!(
                                 "{} {}",
                                 context.language.label("expression:", "式:", "esprimo:"),
-                                expression_to_source(&part_update_event.expression)
+                                part_update_event
+                                    .expression
+                                    .as_ref()
+                                    .map(expression_to_source)
+                                    .unwrap_or_else(|| context
+                                        .language
+                                        .label("(none)", "(なし)", "(neniu)")
+                                        .to_string())
                             ))])
                             .into_node(),
                         Div::new()

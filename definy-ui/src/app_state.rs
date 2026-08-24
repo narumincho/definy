@@ -129,10 +129,11 @@ pub struct EventListState {
 
 #[derive(Clone)]
 pub struct PartDefinitionFormState {
+    pub is_form_open: bool,
     pub part_name_input: String,
     pub part_type_input: Option<definy_event::event::PartType>,
     pub part_description_input: String,
-    pub composing_expression: definy_event::event::Expression,
+    pub composing_expression: Option<definy_event::event::Expression>,
     pub module_definition_event_hash: Option<EventHashId>,
     pub eval_result: Option<String>,
 }
@@ -142,12 +143,13 @@ pub struct PartUpdateFormState {
     pub part_definition_event_hash: Option<EventHashId>,
     pub part_name_input: String,
     pub part_description_input: String,
-    pub expression_input: definy_event::event::Expression,
+    pub expression_input: Option<definy_event::event::Expression>,
     pub module_definition_event_hash: Option<EventHashId>,
 }
 
 #[derive(Clone)]
 pub struct ModuleDefinitionFormState {
+    pub is_form_open: bool,
     pub module_name_input: String,
     pub module_description_input: String,
     pub result_message: Option<String>,
@@ -240,7 +242,8 @@ pub fn build_initial_state(
     is_db_connected: bool,
 ) -> AppState {
     let mut event_cache = HashMap::new();
-    let mut event_hashes = Vec::new();
+    let events_len = events.len();
+    let mut event_hashes = Vec::with_capacity(events_len);
     for (hash, event) in events {
         event_cache.insert(hash.clone(), event);
         event_hashes.push(hash);
@@ -266,12 +269,11 @@ pub fn build_initial_state(
         },
         current_key,
         part_definition_form: PartDefinitionFormState {
+            is_form_open: false,
             part_name_input: String::new(),
-            part_type_input: Some(definy_event::event::PartType::Number),
+            part_type_input: None,
             part_description_input: String::new(),
-            composing_expression: definy_event::event::Expression::Number(
-                definy_event::event::NumberExpression { value: 0 },
-            ),
+            composing_expression: None,
             module_definition_event_hash: None,
             eval_result: None,
         },
@@ -279,12 +281,11 @@ pub fn build_initial_state(
             part_definition_event_hash: None,
             part_name_input: String::new(),
             part_description_input: String::new(),
-            expression_input: definy_event::event::Expression::Number(
-                definy_event::event::NumberExpression { value: 0 },
-            ),
+            expression_input: None,
             module_definition_event_hash: None,
         },
         module_definition_form: ModuleDefinitionFormState {
+            is_form_open: false,
             module_name_input: String::new(),
             module_description_input: String::new(),
             result_message: None,

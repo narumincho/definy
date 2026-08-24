@@ -293,14 +293,14 @@ fn evaluate_expression_with_depth(
                             if part_reference_expression.part_definition_event_hash
                                 == *event_hash =>
                         {
-                            latest_expression = Some(&part_definition.expression);
+                            latest_expression = part_definition.expression.as_ref();
                             break;
                         }
                         definy_event::event::EventContent::PartUpdate(part_update)
                             if part_update.part_definition_event_hash
                                 == part_reference_expression.part_definition_event_hash =>
                         {
-                            latest_expression = Some(&part_update.expression);
+                            latest_expression = part_update.expression.as_ref();
                             break;
                         }
                         _ => {}
@@ -311,7 +311,7 @@ fn evaluate_expression_with_depth(
                 let empty_env = std::collections::HashMap::new();
                 evaluate_expression_with_depth(expr, events, &empty_env, depth + 1)
             } else {
-                Err("Part not found")
+                Err("Part not found or has no expression")
             }
         }
         definy_event::event::Expression::TypeLiteral(record_expression) => {
@@ -785,7 +785,7 @@ mod tests {
                             part_name: "legacy-name".into(),
                             part_type: Some(definy_event::event::PartType::Number),
                             description: "".into(),
-                            expression: part_expression,
+                            expression: Some(part_expression),
                             module_definition_event_hash: None,
                         },
                     ),

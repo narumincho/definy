@@ -459,11 +459,12 @@ fn infer_constructor_shape_from_type_part_with_visited(
         return ConstructorValueShape::Unknown;
     };
     visited.push(type_part_definition_event_hash.clone());
-    let shape = infer_constructor_shape_from_type_expression(
-        snapshot.expression.clone(),
-        part_snapshot_map,
-        visited,
-    );
+    let Some(expression) = snapshot.expression.clone() else {
+        visited.pop();
+        return ConstructorValueShape::Unknown;
+    };
+    let shape =
+        infer_constructor_shape_from_type_expression(expression, part_snapshot_map, visited);
     visited.pop();
     shape
 }
