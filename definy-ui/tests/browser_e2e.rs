@@ -22,6 +22,9 @@ const TEST_WASM_HASH: &str = include_str!("../../web-distribution/definy_client_
 const TEST_ICON_CONTENT: &[u8] = include_bytes!("../../assets/icon.png");
 const TEST_ICON_HASH: &str = include_str!("../../web-distribution/icon.png.sha256");
 
+static SNIPPETS_DIR: include_dir::Dir =
+    include_dir::include_dir!("$CARGO_MANIFEST_DIR/../web-distribution/snippets");
+
 #[tokio::test(flavor = "multi_thread")]
 #[ignore = "requires running WebDriver (chromedriver/geckodriver/selenium) at WEBDRIVER_URL"]
 async fn browser_can_render_and_navigate() -> Result<(), Box<dyn Error>> {
@@ -565,7 +568,25 @@ fn render_html_response(path: &str) -> Response<Full<Bytes>> {
 
 fn handle_request(request: Request<Incoming>) -> Response<Full<Bytes>> {
     let path = request.uri().path();
-    match path.trim_start_matches('/') {
+    let trimmed = path.trim_start_matches('/');
+    if let Some(snippet_path) = trimmed.strip_prefix("snippets/") {
+        if let Some(file) = SNIPPETS_DIR.get_file(snippet_path) {
+            return Response::builder()
+                .status(200)
+                .header("Content-Type", "application/javascript; charset=utf-8")
+                .header("Cache-Control", "public, max-age=31536000, immutable")
+                .body(Full::new(Bytes::from_static(file.contents())))
+                .expect("failed to build snippet response");
+        } else {
+            return Response::builder()
+                .status(404)
+                .header("Content-Type", "text/plain; charset=utf-8")
+                .body(Full::new(Bytes::from("Snippet Not Found")))
+                .expect("failed to build 404 response");
+        }
+    }
+
+    match trimmed {
         TEST_JAVASCRIPT_HASH => Response::builder()
             .status(200)
             .header("Content-Type", "application/javascript; charset=utf-8")
@@ -615,4 +636,52 @@ fn wait_url_match_allows_query_or_fragment() {
         "http://127.0.0.1:1234/",
         "http://127.0.0.1:1234/unknown-page"
     ));
+}
+
+#[tokio::test]
+async fn test_server_serves_js_wasm_and_snippets_with_proper_mime_types()
+-> Result<(), Box<dyn Error>> {
+    let server = TestServer::spawn().await?;
+    let client = hyper_util::client::legacy::Client::builder(hyper_util::rt::TokioExecutor::new())
+        .build_http::<http_body_util::Empty<hyper::body::Bytes>>();
+
+    // Check JS bundle
+    let js_url = format!("{}/{}", server.base_url(), TEST_JAVASCRIPT_HASH);
+    let js_res = client.get(js_url.parse()?).await?;
+    assert_eq!(js_res.status(), 200);
+    assert_eq!(
+        js_res.headers().get("content-type").unwrap(),
+        "application/javascript; charset=utf-8"
+    );
+
+    // Check WASM bundle
+    let wasm_url = format!("{}/{}", server.base_url(), TEST_WASM_HASH);
+    let wasm_res = client.get(wasm_url.parse()?).await?;
+    assert_eq!(wasm_res.status(), 200);
+    assert_eq!(
+        wasm_res.headers().get("content-type").unwrap(),
+        "application/wasm"
+    );
+
+    // Check all embedded snippets recursively
+    let mut pending_dirs = vec![&SNIPPETS_DIR];
+    while let Some(dir) = pending_dirs.pop() {
+        for file in dir.files() {
+            let path = file.path().to_str().unwrap();
+            let snippet_url = format!("{}/snippets/{}", server.base_url(), path);
+            let snippet_res = client.get(snippet_url.parse()?).await?;
+            assert_eq!(snippet_res.status(), 200, "Failed for snippet: {path}");
+            assert_eq!(
+                snippet_res.headers().get("content-type").unwrap(),
+                "application/javascript; charset=utf-8",
+                "MIME mismatch for {path}"
+            );
+        }
+        for sub_dir in dir.dirs() {
+            pending_dirs.push(sub_dir);
+        }
+    }
+
+    server.shutdown().await;
+    Ok(())
 }
