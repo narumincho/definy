@@ -43,15 +43,7 @@ pub fn EventDetailView(state: AppState, context: PageContext, target_hash: Event
     let page_shell_style = crate::layout::page_shell_style("1.2rem");
 
     rsx! {
-        div {
-            class: "page-shell",
-            style: "{page_shell_style}",
-            a {
-                class: "back-link",
-                href: context.href_with_lang(Location::Home),
-                style: "display: inline-flex; align-items: center; gap: 0.5rem; color: var(--primary); text-decoration: none; font-weight: 500;",
-                "{context.language.label(\"← Back to Home\", \"← ホームへ戻る\", \"← Reen al hejmo\")}"
-            }
+        div { class: "page-shell", style: "{page_shell_style}",
             if let Some(event) = target_event_opt {
                 RenderEventDetail {
                     state: state.clone(),
@@ -61,8 +53,7 @@ pub fn EventDetailView(state: AppState, context: PageContext, target_hash: Event
                     account_name_map: account_name_map.clone(),
                 }
             } else {
-                div {
-                    style: "color: var(--text-secondary); text-align: center; padding: 1.8rem;",
+                div { style: "color: var(--text-secondary); text-align: center; padding: 1.8rem;",
                     "{context.language.label(\"Event not found\", \"イベントが見つかりません\", \"Evento ne trovita\")}"
                 }
             }
@@ -84,17 +75,13 @@ fn RenderEventDetail(
     let time_str = event.time.format("%Y-%m-%d %H:%M:%S").to_string();
 
     rsx! {
-        div {
-            style: "display: grid; gap: 1rem;",
+        div { style: "display: grid; gap: 1rem;",
             div {
                 class: "event-detail-card",
                 style: "display: grid; gap: 1rem; padding: 1.2rem 1.4rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md);",
-                div {
-                    style: "display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 0.8rem;",
-                    div {
-                        style: "display: flex; align-items: center; gap: 0.75rem;",
-                        div {
-                            style: "font-size: 1.25rem; font-weight: 600;",
+                div { style: "display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 0.8rem;",
+                    div { style: "display: flex; align-items: center; gap: 0.75rem;",
+                        div { style: "font-size: 1.25rem; font-weight: 600;",
                             "{crate::event_presenter::event_kind_label(context.language, &event)}"
                         }
                     }
@@ -104,12 +91,9 @@ fn RenderEventDetail(
                         "{crate::event_presenter::event_kind_label(context.language, &event)}"
                     }
                 }
-                div {
-                    style: "display: grid; gap: 0.75rem;",
-                    div {
-                        style: "display: grid; gap: 0.25rem;",
-                        div {
-                            style: "font-size: 0.76rem; color: var(--text-secondary);",
+                div { style: "display: grid; gap: 0.75rem;",
+                    div { style: "display: grid; gap: 0.25rem;",
+                        div { style: "font-size: 0.76rem; color: var(--text-secondary);",
                             "Event ID (Hash)"
                         }
                         div {
@@ -118,21 +102,14 @@ fn RenderEventDetail(
                             "{hash_str}"
                         }
                     }
-                    div {
-                        style: "display: grid; gap: 0.25rem;",
-                        div {
-                            style: "font-size: 0.76rem; color: var(--text-secondary);",
+                    div { style: "display: grid; gap: 0.25rem;",
+                        div { style: "font-size: 0.76rem; color: var(--text-secondary);",
                             "{context.language.label(\"Created At\", \"作成日時\", \"Kreita je\")}"
                         }
-                        div {
-                            style: "font-size: 0.88rem;",
-                            "{time_str}"
-                        }
+                        div { style: "font-size: 0.88rem;", "{time_str}" }
                     }
-                    div {
-                        style: "display: grid; gap: 0.25rem;",
-                        div {
-                            style: "font-size: 0.76rem; color: var(--text-secondary);",
+                    div { style: "display: grid; gap: 0.25rem;",
+                        div { style: "font-size: 0.76rem; color: var(--text-secondary);",
                             "{context.language.label(\"Author\", \"作成者\", \"Aŭtoro\")}"
                         }
                         a {
@@ -142,8 +119,7 @@ fn RenderEventDetail(
                         }
                     }
                 }
-                div {
-                    style: "border-top: 1px solid var(--border); padding-top: 0.8rem;",
+                div { style: "border-top: 1px solid var(--border); padding-top: 0.8rem;",
                     RenderDetailContent {
                         state: state.clone(),
                         context: context.clone(),
@@ -174,27 +150,21 @@ fn RenderDetailContent(
 
     match event.content {
         EventContent::CreateAccount(create_account_event) => rsx! {
-            div {
-                style: "display: grid; gap: 0.4rem;",
-                div {
-                    style: "font-size: 0.8rem; color: var(--text-secondary);",
+            div { style: "display: grid; gap: 0.4rem;",
+                div { style: "font-size: 0.8rem; color: var(--text-secondary);",
                     "{context.language.label(\"Account Name\", \"アカウント名\", \"Kontonomo\")}"
                 }
-                div {
-                    style: "font-size: 1.1rem; font-weight: 600;",
+                div { style: "font-size: 1.1rem; font-weight: 600;",
                     "{create_account_event.account_name}"
                 }
             }
         },
         EventContent::ChangeProfile(change_profile_event) => rsx! {
-            div {
-                style: "display: grid; gap: 0.4rem;",
-                div {
-                    style: "font-size: 0.8rem; color: var(--text-secondary);",
+            div { style: "display: grid; gap: 0.4rem;",
+                div { style: "font-size: 0.8rem; color: var(--text-secondary);",
                     "{context.language.label(\"New Account Name\", \"新しいアカウント名\", \"Nova kontonomo\")}"
                 }
-                div {
-                    style: "font-size: 1.1rem; font-weight: 600;",
+                div { style: "font-size: 1.1rem; font-weight: 600;",
                     "{change_profile_event.account_name}"
                 }
             }
@@ -206,14 +176,10 @@ fn RenderDetailContent(
                 .map(|expr| evaluate_message_result(&context.language, expr, &events_list));
 
             rsx! {
-                div {
-                    style: "display: grid; gap: 0.75rem;",
-                    div {
-                        style: "display: flex; align-items: center; justify-content: space-between;",
-                        div {
-                            style: "display: flex; align-items: center; gap: 0.6rem;",
-                            div {
-                                style: "font-size: 1.15rem; font-weight: 600;",
+                div { style: "display: grid; gap: 0.75rem;",
+                    div { style: "display: flex; align-items: center; justify-content: space-between;",
+                        div { style: "display: flex; align-items: center; gap: 0.6rem;",
+                            div { style: "font-size: 1.15rem; font-weight: 600;",
                                 "{part_definition_event.part_name}"
                             }
                             div {
@@ -229,16 +195,13 @@ fn RenderDetailContent(
                         }
                     }
                     if !part_definition_event.description.is_empty() {
-                        div {
-                            style: "font-size: 0.88rem; color: var(--text-secondary); white-space: pre-wrap;",
+                        div { style: "font-size: 0.88rem; color: var(--text-secondary); white-space: pre-wrap;",
                             "{part_definition_event.description}"
                         }
                     }
                     if let Some(expr) = &part_definition_event.expression {
-                        div {
-                            style: "display: grid; gap: 0.35rem;",
-                            div {
-                                style: "font-size: 0.76rem; color: var(--text-secondary);",
+                        div { style: "display: grid; gap: 0.35rem;",
+                            div { style: "font-size: 0.76rem; color: var(--text-secondary);",
                                 "{context.language.label(\"Expression Body\", \"本体の式\", \"Esprimo korpo\")}"
                             }
                             div {
@@ -249,8 +212,7 @@ fn RenderDetailContent(
                         }
                     }
                     if let Some(eval_text) = eval_result {
-                        div {
-                            style: "font-size: 0.85rem; color: var(--text); font-weight: 500; background: rgb(124 192 216 / 0.08); padding: 0.45rem 0.7rem; border-radius: var(--radius-sm);",
+                        div { style: "font-size: 0.85rem; color: var(--text); font-weight: 500; background: rgb(124 192 216 / 0.08); padding: 0.45rem 0.7rem; border-radius: var(--radius-sm);",
                             "{eval_text}"
                         }
                     }
@@ -265,12 +227,9 @@ fn RenderDetailContent(
                 .map(|expr| evaluate_message_result(&context.language, expr, &events_list));
 
             rsx! {
-                div {
-                    style: "display: grid; gap: 0.75rem;",
-                    div {
-                        style: "display: flex; align-items: center; justify-content: space-between;",
-                        div {
-                            style: "font-size: 1.15rem; font-weight: 600;",
+                div { style: "display: grid; gap: 0.75rem;",
+                    div { style: "display: flex; align-items: center; justify-content: space-between;",
+                        div { style: "font-size: 1.15rem; font-weight: 600;",
                             "{part_update_event.part_name}"
                         }
                         a {
@@ -279,10 +238,8 @@ fn RenderDetailContent(
                             "{context.language.label(\"Open part detail →\", \"パーツ詳細を開く →\", \"Malfermi partajn detalojn →\")}"
                         }
                     }
-                    div {
-                        style: "display: grid; gap: 0.25rem;",
-                        div {
-                            style: "font-size: 0.76rem; color: var(--text-secondary);",
+                    div { style: "display: grid; gap: 0.25rem;",
+                        div { style: "font-size: 0.76rem; color: var(--text-secondary);",
                             "Base Part Definition ID"
                         }
                         div {
@@ -292,10 +249,8 @@ fn RenderDetailContent(
                         }
                     }
                     if let Some(expr) = &part_update_event.expression {
-                        div {
-                            style: "display: grid; gap: 0.35rem;",
-                            div {
-                                style: "font-size: 0.76rem; color: var(--text-secondary);",
+                        div { style: "display: grid; gap: 0.35rem;",
+                            div { style: "font-size: 0.76rem; color: var(--text-secondary);",
                                 "{context.language.label(\"Expression Body\", \"本体の式\", \"Esprimo korpo\")}"
                             }
                             div {
@@ -306,8 +261,7 @@ fn RenderDetailContent(
                         }
                     }
                     if let Some(eval_text) = eval_result {
-                        div {
-                            style: "font-size: 0.85rem; color: var(--text); font-weight: 500; background: rgb(124 192 216 / 0.08); padding: 0.45rem 0.7rem; border-radius: var(--radius-sm);",
+                        div { style: "font-size: 0.85rem; color: var(--text); font-weight: 500; background: rgb(124 192 216 / 0.08); padding: 0.45rem 0.7rem; border-radius: var(--radius-sm);",
                             "{eval_text}"
                         }
                     }
@@ -315,12 +269,9 @@ fn RenderDetailContent(
             }
         }
         EventContent::ModuleDefinition(module_definition_event) => rsx! {
-            div {
-                style: "display: grid; gap: 0.6rem;",
-                div {
-                    style: "display: flex; align-items: center; justify-content: space-between;",
-                    div {
-                        style: "font-size: 1.15rem; font-weight: 600;",
+            div { style: "display: grid; gap: 0.6rem;",
+                div { style: "display: flex; align-items: center; justify-content: space-between;",
+                    div { style: "font-size: 1.15rem; font-weight: 600;",
                         "{module_definition_event.module_name}"
                     }
                     a {
@@ -330,8 +281,7 @@ fn RenderDetailContent(
                     }
                 }
                 if !module_definition_event.description.is_empty() {
-                    div {
-                        style: "font-size: 0.88rem; color: var(--text-secondary); white-space: pre-wrap;",
+                    div { style: "font-size: 0.88rem; color: var(--text-secondary); white-space: pre-wrap;",
                         "{module_definition_event.description}"
                     }
                 }
@@ -340,12 +290,9 @@ fn RenderDetailContent(
         EventContent::ModuleUpdate(module_update_event) => {
             let base_hash = module_update_event.module_definition_event_hash.clone();
             rsx! {
-                div {
-                    style: "display: grid; gap: 0.6rem;",
-                    div {
-                        style: "display: flex; align-items: center; justify-content: space-between;",
-                        div {
-                            style: "font-size: 1.15rem; font-weight: 600;",
+                div { style: "display: grid; gap: 0.6rem;",
+                    div { style: "display: flex; align-items: center; justify-content: space-between;",
+                        div { style: "font-size: 1.15rem; font-weight: 600;",
                             "{module_update_event.module_name}"
                         }
                         a {
@@ -355,8 +302,7 @@ fn RenderDetailContent(
                         }
                     }
                     if !module_update_event.module_description.is_empty() {
-                        div {
-                            style: "font-size: 0.88rem; color: var(--text-secondary); white-space: pre-wrap;",
+                        div { style: "font-size: 0.88rem; color: var(--text-secondary); white-space: pre-wrap;",
                             "{module_update_event.module_description}"
                         }
                     }
@@ -378,13 +324,11 @@ fn RelatedPartEvents(
         div {
             class: "event-detail-card",
             style: "display: grid; gap: 0.6rem; padding: 1.2rem 1.4rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md);",
-            div {
-                style: "font-size: 0.95rem; font-weight: 600;",
+            div { style: "font-size: 0.95rem; font-weight: 600;",
                 "{context.language.label(\"History & Related Events\", \"変更履歴・関連イベント\", \"Historio kaj rilataj eventoj\")}"
             }
-            div {
-                style: "display: grid; gap: 0.4rem;",
-                for (event_hash, ev) in related_events {
+            div { style: "display: grid; gap: 0.4rem;",
+                for (event_hash , ev) in related_events {
                     {
                         let label = crate::event_presenter::event_kind_label(context.language, &ev);
                         let time_str = ev.time.format("%Y-%m-%d %H:%M:%S").to_string();
@@ -393,14 +337,8 @@ fn RelatedPartEvents(
                                 key: "{event_hash}",
                                 href: context.href_with_lang(Location::Event(event_hash.clone())),
                                 style: "display: flex; justify-content: space-between; align-items: center; padding: 0.55rem 0.7rem; border: 1px solid var(--border); border-radius: var(--radius-sm); text-decoration: none; color: var(--text); background: rgb(255 255 255 / 0.02);",
-                                div {
-                                    style: "font-weight: 500;",
-                                    "{label}"
-                                }
-                                div {
-                                    style: "font-size: 0.8rem; color: var(--text-secondary);",
-                                    "{time_str}"
-                                }
+                                div { style: "font-weight: 500;", "{label}" }
+                                div { style: "font-size: 0.8rem; color: var(--text-secondary);", "{time_str}" }
                             }
                         }
                     }
