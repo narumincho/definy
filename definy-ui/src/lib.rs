@@ -106,9 +106,6 @@ pub fn decode_ssr_state(json: &str) -> Option<SsrState> {
 
 #[component]
 pub fn App(state: AppState, context: PageContext) -> Element {
-    // Provide Signal<AppState> in context so children can update state
-    let _state_signal = use_context_provider(|| Signal::new(state.clone()));
-
     render_inner(&state, &context)
 }
 

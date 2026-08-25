@@ -22,3 +22,6 @@ chrono = { version = "0.4.45", default-features = false, features = ["alloc", "s
 anyhow = "1.0.104"
 serde_cbor = { version = "0.11.2", features = ["std", "tags"] }
 sha2 = "0.10.9"
+console_error_panic_hook = "0.1.7"
+futures-channel = "0.3.34"
+futures-util = "0.3.34"

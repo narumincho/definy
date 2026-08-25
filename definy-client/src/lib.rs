@@ -8,7 +8,14 @@ mod keyboard_nav;
 
 #[wasm_bindgen(start)]
 fn run() -> Result<(), JsValue> {
-    dioxus::launch(AppRoot);
+    console_error_panic_hook::set_once();
+    if let Some(window) = web_sys::window()
+        && let Some(document) = window.document()
+        && let Some(main) = document.get_element_by_id("main")
+    {
+        main.set_inner_html("");
+    }
+    dioxus_web::launch::launch_cfg(AppRoot, dioxus_web::Config::new().rootname("main"));
     Ok(())
 }
 
@@ -43,15 +50,6 @@ fn get_current_page_context() -> definy_ui::PageContext {
         &search,
         browser_lang.map(|l| l.to_code()),
     )
-}
-
-async fn sleep_ms(ms: i32) {
-    let promise = js_sys::Promise::new(&mut |resolve, _| {
-        if let Some(window) = web_sys::window() {
-            let _ = window.set_timeout_with_callback_and_timeout_and_arguments_0(&resolve, ms);
-        }
-    });
-    let _ = wasm_bindgen_futures::JsFuture::from(promise).await;
 }
 
 #[component]
@@ -91,28 +89,26 @@ fn AppRoot() -> Element {
 
     use_context_provider(|| state_signal);
 
-    let current_context = use_signal(get_current_page_context);
+    let mut current_context = use_signal(get_current_page_context);
 
-    // Initial setup on mount
-    use_effect(move || {
-        let ssr_state = read_ssr_state();
-        let search_query = web_sys::window()
-            .and_then(|w| w.location().search().ok())
-            .unwrap_or_default();
-        let query_params = definy_ui::query::parse_query(Some(search_query.as_str()));
-        let filter_for_fetch = query_params.event_type;
+    let _sender = use_hook(|| {
+        let (tx, mut rx) = futures_channel::mpsc::unbounded::<ClientMsg>();
 
-        // Keydown listener
-        setup_keydown_listener(state_signal);
+        setup_keydown_listener(tx.clone());
+        setup_click_listener(tx.clone());
+        setup_popstate_listener(tx.clone());
 
-        // Click listener for client-side navigation
-        setup_click_listener(current_context, state_signal);
-
-        // Popstate listener for back/forward navigation
-        setup_popstate_listener(current_context, state_signal);
-
-        // Spawn initial async tasks
         spawn(async move {
+            use futures_util::StreamExt;
+
+            // Run initial data restore and auth on startup
+            let ssr_state = read_ssr_state();
+            let search_query = web_sys::window()
+                .and_then(|w| w.location().search().ok())
+                .unwrap_or_default();
+            let query_params = definy_ui::query::parse_query(Some(search_query.as_str()));
+            let filter_for_fetch = query_params.event_type;
+
             if let Some(key) = definy_ui::navigator_credential::credential_get_sync() {
                 state_signal.write().current_key = Some(key);
             } else if let Some(password) = definy_ui::navigator_credential::credential_get().await {
@@ -186,63 +182,52 @@ fn AppRoot() -> Element {
                 }
             }
             state_signal.set(next);
-        });
 
-        // Spawn DB reconnect poller
-        spawn(async move {
-            loop {
-                sleep_ms(5000).await;
-                let filter = state_signal.read().event_list_state.filter_event_type;
-                match definy_ui::fetch::get_events(filter, Some(20), Some(0)).await {
-                    Ok(events) => {
-                        let events_count = events.len();
-                        let mut next = state_signal.read().clone();
-                        let was_disconnected = !next.is_db_connected;
-                        next.is_db_connected = true;
-                        if was_disconnected || next.event_list_state.event_hashes.is_empty() {
-                            next.apply_latest_events(events, filter);
-                            next.event_list_state.is_loading = false;
-                            next.event_list_state.has_more = events_count == 20;
+            // Fetch route-specific data if needed
+            let initial_ctx = get_current_page_context();
+            fetch_missing_events_async(&mut state_signal, &initial_ctx).await;
+
+            while let Some(msg) = rx.next().await {
+                match msg {
+                    ClientMsg::Navigate(href) => {
+                        if let Some(window) = web_sys::window() {
+                            if let Ok(history) = window.history() {
+                                let _ =
+                                    history.push_state_with_url(&JsValue::NULL, "", Some(&href));
+                            }
                         }
-                        state_signal.set(next);
+                        let ctx = get_current_page_context();
+                        current_context.set(ctx.clone());
+                        fetch_missing_events_async(&mut state_signal, &ctx).await;
                     }
-                    Err(_) => {
-                        let mut next = state_signal.read().clone();
-                        next.is_db_connected = false;
+                    ClientMsg::PopState => {
+                        let ctx = get_current_page_context();
+                        current_context.set(ctx.clone());
+                        fetch_missing_events_async(&mut state_signal, &ctx).await;
+                    }
+                    ClientMsg::Keydown(key) => {
+                        let next = keyboard_nav::handle_keydown(state_signal.read().clone(), key);
                         state_signal.set(next);
                     }
                 }
             }
         });
+
+        tx
     });
 
-    // Update document title when state or route changes
+    // Pure side-effects only (e.g. document title)
+    use_effect(move || {
+        let state_val = state_signal.read().clone();
+        let ctx_val = current_context.read().clone();
+        let title_text = definy_ui::document_title_text(&state_val, &ctx_val);
+        if let Some(doc) = web_sys::window().and_then(|w| w.document()) {
+            doc.set_title(&title_text);
+        }
+    });
+
     let state_val = state_signal.read().clone();
     let ctx_val = current_context.read().clone();
-    let title_text = definy_ui::document_title_text(&state_val, &ctx_val);
-    if let Some(doc) = web_sys::window().and_then(|w| w.document()) {
-        doc.set_title(&title_text);
-    }
-
-    // Check if current route requires data that might be missing in cache
-    if let Some(location) = &ctx_val.location {
-        let is_missing = match location {
-            definy_ui::Location::Part(hash) => !state_val.event_cache.contains_key(hash),
-            definy_ui::Location::Event(hash) => !state_val.event_cache.contains_key(hash),
-            definy_ui::Location::Module(hash) => !state_val.event_cache.contains_key(hash),
-            definy_ui::Location::Home => {
-                state_val.event_cache.is_empty()
-                    || state_val.event_list_state.event_hashes.is_empty()
-            }
-            definy_ui::Location::PartList | definy_ui::Location::ModuleList => {
-                state_val.event_cache.is_empty()
-            }
-            _ => false,
-        };
-        if is_missing {
-            fetch_missing_events(state_signal, &ctx_val);
-        }
-    }
 
     rsx! {
         definy_ui::App {
@@ -252,42 +237,42 @@ fn AppRoot() -> Element {
     }
 }
 
-fn fetch_missing_events(mut state_signal: Signal<AppState>, context: &definy_ui::PageContext) {
-    let context = context.clone();
-    spawn(async move {
-        match &context.location {
-            Some(definy_ui::Location::Part(hash))
-            | Some(definy_ui::Location::Event(hash))
-            | Some(definy_ui::Location::Module(hash)) => {
-                let hash = hash.clone();
-                if let Ok(Some((event_hash, event))) = definy_ui::fetch::get_event(&hash).await {
-                    state_signal.write().event_cache.insert(event_hash, event);
-                }
+async fn fetch_missing_events_async(
+    state_signal: &mut Signal<AppState>,
+    context: &definy_ui::PageContext,
+) {
+    match &context.location {
+        Some(definy_ui::Location::Part(hash))
+        | Some(definy_ui::Location::Event(hash))
+        | Some(definy_ui::Location::Module(hash)) => {
+            let hash = hash.clone();
+            if let Ok(Some((event_hash, event))) = definy_ui::fetch::get_event(&hash).await {
+                state_signal.write().event_cache.insert(event_hash, event);
             }
-            Some(definy_ui::Location::PartList)
-            | Some(definy_ui::Location::ModuleList)
-            | Some(definy_ui::Location::Home) => {
-                let filter = context.filter_event_type;
-                if let Ok(events) = definy_ui::fetch::get_events(filter, Some(100), Some(0)).await {
-                    let events_count = events.len();
-                    let mut next = state_signal.read().clone();
-                    next.is_db_connected = true;
-                    if filter.is_none() || next.event_list_state.event_hashes.is_empty() {
-                        next.apply_latest_events(events, filter);
-                        next.event_list_state.is_loading = false;
-                        next.event_list_state.has_more = events_count == 100;
-                    } else {
-                        for (hash, event) in events {
-                            next.event_cache.insert(hash, event);
-                        }
-                    }
-                    next_state_ensure_cache(&mut next);
-                    state_signal.set(next);
-                }
-            }
-            _ => {}
         }
-    });
+        Some(definy_ui::Location::PartList)
+        | Some(definy_ui::Location::ModuleList)
+        | Some(definy_ui::Location::Home) => {
+            let filter = context.filter_event_type;
+            if let Ok(events) = definy_ui::fetch::get_events(filter, Some(100), Some(0)).await {
+                let events_count = events.len();
+                let mut next = state_signal.read().clone();
+                next.is_db_connected = true;
+                if filter.is_none() || next.event_list_state.event_hashes.is_empty() {
+                    next.apply_latest_events(events, filter);
+                    next.event_list_state.is_loading = false;
+                    next.event_list_state.has_more = events_count == 100;
+                } else {
+                    for (hash, event) in events {
+                        next.event_cache.insert(hash, event);
+                    }
+                }
+                next_state_ensure_cache(&mut next);
+                state_signal.set(next);
+            }
+        }
+        _ => {}
+    }
 }
 
 fn next_state_ensure_cache(state: &mut AppState) {
@@ -316,7 +301,14 @@ fn next_state_ensure_cache(state: &mut AppState) {
     }
 }
 
-fn setup_keydown_listener(mut state_signal: Signal<AppState>) {
+#[derive(Clone, Debug)]
+enum ClientMsg {
+    Navigate(String),
+    PopState,
+    Keydown(String),
+}
+
+fn setup_keydown_listener(tx: futures_channel::mpsc::UnboundedSender<ClientMsg>) {
     let on_keydown =
         wasm_bindgen::closure::Closure::wrap(Box::new(move |event: web_sys::KeyboardEvent| {
             let key_value = js_sys::Reflect::get(&event, &JsValue::from_str("key")).ok();
@@ -335,8 +327,7 @@ fn setup_keydown_listener(mut state_signal: Signal<AppState>) {
                 }
             }
 
-            let next = keyboard_nav::handle_keydown(state_signal.read().clone(), key);
-            state_signal.set(next);
+            let _ = tx.unbounded_send(ClientMsg::Keydown(key));
         }) as Box<dyn FnMut(web_sys::KeyboardEvent)>);
 
     if let Some(window) = web_sys::window() {
@@ -346,10 +337,7 @@ fn setup_keydown_listener(mut state_signal: Signal<AppState>) {
     on_keydown.forget();
 }
 
-fn setup_click_listener(
-    mut context_signal: Signal<definy_ui::PageContext>,
-    state_signal: Signal<AppState>,
-) {
+fn setup_click_listener(tx: futures_channel::mpsc::UnboundedSender<ClientMsg>) {
     let on_click =
         wasm_bindgen::closure::Closure::wrap(Box::new(move |event: web_sys::MouseEvent| {
             // Only handle primary clicks without modifier keys
@@ -395,15 +383,7 @@ fn setup_click_listener(
 
             event.prevent_default();
 
-            if let Some(window) = web_sys::window() {
-                if let Ok(history) = window.history() {
-                    let _ = history.push_state_with_url(&JsValue::NULL, "", Some(&href));
-                }
-            }
-
-            let ctx = get_current_page_context();
-            context_signal.set(ctx.clone());
-            fetch_missing_events(state_signal, &ctx);
+            let _ = tx.unbounded_send(ClientMsg::Navigate(href));
         }) as Box<dyn FnMut(web_sys::MouseEvent)>);
 
     if let Some(window) = web_sys::window()
@@ -415,15 +395,10 @@ fn setup_click_listener(
     on_click.forget();
 }
 
-fn setup_popstate_listener(
-    mut context_signal: Signal<definy_ui::PageContext>,
-    state_signal: Signal<AppState>,
-) {
+fn setup_popstate_listener(tx: futures_channel::mpsc::UnboundedSender<ClientMsg>) {
     let on_popstate =
         wasm_bindgen::closure::Closure::wrap(Box::new(move |_: web_sys::PopStateEvent| {
-            let ctx = get_current_page_context();
-            context_signal.set(ctx.clone());
-            fetch_missing_events(state_signal, &ctx);
+            let _ = tx.unbounded_send(ClientMsg::PopState);
         }) as Box<dyn FnMut(web_sys::PopStateEvent)>);
 
     if let Some(window) = web_sys::window() {
