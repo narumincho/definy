@@ -298,6 +298,21 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
                 },
             ),
         },
+        definy_event::event::Event {
+            account_id: account_id.clone(),
+            time: first_commit_time + chrono::Duration::milliseconds(9),
+            content: definy_event::event::EventContent::PartDefinition(
+                definy_event::event::PartDefinitionEvent {
+                    part_name: "Equal".into(),
+                    part_type: None,
+                    description: "Compiler built-in equality comparison".into(),
+                    expression: Some(definy_event::event::Expression::Compiler(
+                        definy_event::event::CompilerBuiltin::Equal,
+                    )),
+                    module_definition_event_hash: None,
+                },
+            ),
+        },
     ];
 
     for event in events {
@@ -450,8 +465,8 @@ mod tests {
         let db = init_db().await.unwrap();
 
         let events = get_events(&db, None, Some(20), Some(0)).await.unwrap();
-        // 1 CreateAccount + 8 PartDefinition = 9 events
-        assert_eq!(events.len(), 9);
+        // 1 CreateAccount + 9 PartDefinition = 10 events
+        assert_eq!(events.len(), 10);
 
         let mut part_names = Vec::new();
         for event_binary in events.iter() {
@@ -475,10 +490,11 @@ mod tests {
         assert!(part_names.contains(&"String".to_string()));
         assert!(part_names.contains(&"Boolean".to_string()));
         assert!(part_names.contains(&"List".to_string()));
+        assert!(part_names.contains(&"Equal".to_string()));
 
         // Idempotency check: running init_db / migration again shouldn't duplicate records
         migrate_builtin_data(&db).await.unwrap();
         let events_after = get_events(&db, None, Some(20), Some(0)).await.unwrap();
-        assert_eq!(events_after.len(), 9);
+        assert_eq!(events_after.len(), 10);
     }
 }

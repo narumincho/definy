@@ -483,6 +483,7 @@ pub fn render_expression_editor(
                             definy_event::event::CompilerBuiltin::Plus => "[compiler plus]",
                             definy_event::event::CompilerBuiltin::NumberLiteral => "[compiler number literal]",
                             definy_event::event::CompilerBuiltin::If => "[compiler if]",
+                            definy_event::event::CompilerBuiltin::Equal => "[compiler equal]",
                         };
                         rsx! {
                             div {
@@ -624,7 +625,7 @@ pub fn selector_options(
             "expr:type_literal".to_string(),
             "Record\tLiteral\t".to_string(),
         ),
-        ("expr:equal".to_string(), "==\tSyntax\tEqual".to_string()),
+        ("expr:equal".to_string(), "Equal\tSyntax\t".to_string()),
     ]);
 
     // Type constructors
@@ -681,6 +682,11 @@ fn current_selection_value(
                 .map(|h| format!("ref:global:{}", h))
                 .unwrap_or_else(|| "expr:if".to_string())
         }
+        definy_event::event::Expression::Equal(_) => {
+            find_builtin_part_hash(state, definy_event::event::CompilerBuiltin::Equal)
+                .map(|h| format!("ref:global:{}", h))
+                .unwrap_or_else(|| "expr:equal".to_string())
+        }
         definy_event::event::Expression::Let(_) => {
             find_builtin_part_hash(state, definy_event::event::CompilerBuiltin::Let)
                 .map(|h| format!("ref:global:{}", h))
@@ -696,13 +702,13 @@ fn current_selection_value(
                         "expr:number".to_string()
                     }
                     definy_event::event::CompilerBuiltin::If => "expr:if".to_string(),
+                    definy_event::event::CompilerBuiltin::Equal => "expr:equal".to_string(),
                 })
         }
         definy_event::event::Expression::String(_) => "expr:string".to_string(),
         definy_event::event::Expression::Boolean(_) => "expr:boolean".to_string(),
         definy_event::event::Expression::ListLiteral(_) => "expr:list".to_string(),
         definy_event::event::Expression::TypeLiteral(_) => "expr:type_literal".to_string(),
-        definy_event::event::Expression::Equal(_) => "expr:equal".to_string(),
         definy_event::event::Expression::TypeNumber => "expr:type:number".to_string(),
         definy_event::event::Expression::TypeString => "expr:type:string".to_string(),
         definy_event::event::Expression::TypeBoolean => "expr:type:boolean".to_string(),

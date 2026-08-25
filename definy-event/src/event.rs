@@ -102,6 +102,7 @@ pub enum CompilerBuiltin {
     Plus,
     NumberLiteral,
     If,
+    Equal,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]

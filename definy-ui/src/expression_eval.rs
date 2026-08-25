@@ -351,6 +351,7 @@ pub fn expression_to_source(expression: &definy_event::event::Expression) -> Str
                     "[compiler number literal]".to_string()
                 }
                 definy_event::event::CompilerBuiltin::If => "[compiler if]".to_string(),
+                definy_event::event::CompilerBuiltin::Equal => "[compiler equal]".to_string(),
             },
             definy_event::event::Expression::Number(number_expression) => {
                 number_expression.value.to_string()
@@ -410,7 +411,7 @@ pub fn expression_to_source(expression: &definy_event::event::Expression) -> Str
             }
             definy_event::event::Expression::Equal(equal_expression) => {
                 let source = format!(
-                    "== {} {}",
+                    "equal {} {}",
                     render(equal_expression.left.as_ref(), true, scope),
                     render(equal_expression.right.as_ref(), true, scope)
                 );
@@ -684,7 +685,7 @@ mod tests {
             evaluate_expression(&equal_expr, &[]),
             Ok(crate::expression_eval::Value::Bool(true))
         );
-        assert_eq!(expression_to_source(&equal_expr), "== 5 5");
+        assert_eq!(expression_to_source(&equal_expr), "equal 5 5");
     }
 
     #[test]
@@ -828,5 +829,9 @@ mod tests {
         let if_expr = Expression::Compiler(CompilerBuiltin::If);
         assert_eq!(expression_to_source(&if_expr), "[compiler if]");
         assert!(evaluate_expression(&if_expr, &[]).is_err());
+
+        let equal_expr = Expression::Compiler(CompilerBuiltin::Equal);
+        assert_eq!(expression_to_source(&equal_expr), "[compiler equal]");
+        assert!(evaluate_expression(&equal_expr, &[]).is_err());
     }
 }
