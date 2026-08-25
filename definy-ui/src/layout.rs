@@ -1,12 +1,6 @@
-use narumincho_vdom::Style;
-
-pub fn page_shell_style(gap: &str) -> Style {
-    Style::new()
-        .set("display", "grid")
-        .set("gap", gap)
-        .set("align-content", "start")
-        .set("width", "100%")
-        .set("max-width", "920px")
-        .set("margin", "0 auto")
-        .set("padding", "1.2rem 0.9rem 1.9rem")
+pub fn page_shell_style(gap: &str) -> String {
+    format!(
+        "display: grid; gap: {}; align-content: start; width: 100%; max-width: 920px; margin: 0 auto; padding: 1.2rem 0.9rem 1.9rem;",
+        gap
+    )
 }

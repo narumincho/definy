@@ -5,10 +5,7 @@ members = [
   "definy-client",
   "definy-event",
   "definy-server",
-  "definy-ui",
-  "narumincho-vdom",
-  "narumincho-vdom-build",
-  "narumincho-vdom-client"
+  "definy-ui"
 ]
 resolver = "3"
 

@@ -40,7 +40,8 @@ pub use message::Message;
 pub use page_context::PageContext;
 pub use page_title::document_title_text;
 
-use narumincho_vdom::*;
+pub use crate::app_state::Location;
+use dioxus::prelude::*;
 
 pub const SSR_INITIAL_STATE_ELEMENT_ID: &str = "__DEFINY_INITIAL_STATE__";
 
@@ -103,123 +104,87 @@ pub fn decode_ssr_state(json: &str) -> Option<SsrState> {
         })
 }
 
-pub fn render(state: &AppState, context: &PageContext) -> Node {
-    let page_content = match &context.location {
-        Some(Location::Home) => event_list::event_list_view(state, context),
-        Some(Location::AccountList) => account_list::account_list_view(state, context),
-        Some(Location::PartList) => part_list::part_list_view(state, context),
-        Some(Location::ModuleList) => module_list::module_list_view(state, context),
-        Some(Location::LocalEventQueue) => {
-            local_event_queue::local_event_queue_view(state, context)
-        }
-        Some(Location::Module(hash)) => module_detail::module_detail_view(state, context, hash),
-        Some(Location::Part(hash)) => part_detail::part_detail_view(state, context, hash),
-        Some(Location::Event(hash)) => event_detail::event_detail_view(state, context, hash),
-        Some(Location::Account(account_id)) => {
-            account_detail::account_detail_view(state, context, account_id)
-        }
-        None => not_found::not_found_view(state, context),
-    };
-    let page_key = match &context.location {
-        Some(Location::Home) => "page-home".to_string(),
-        Some(Location::AccountList) => "page-accounts".to_string(),
-        Some(Location::PartList) => "page-parts".to_string(),
-        Some(Location::ModuleList) => "page-modules".to_string(),
-        Some(Location::LocalEventQueue) => "page-local-events".to_string(),
-        Some(Location::Module(hash)) => format!("page-module-{}", hash),
-        Some(Location::Part(hash)) => format!("page-part-{}", hash),
-        Some(Location::Event(hash)) => format!("page-event-{}", hash),
-        Some(Location::Account(account_id)) => format!("page-account-{}", account_id),
-        None => "page-not-found".to_string(),
-    };
-    let page_content = page_content.with_key(page_key);
+#[component]
+pub fn App(state: AppState, context: PageContext) -> Element {
+    // Provide Signal<AppState> in context so children can update state
+    let _state_signal = use_context_provider(|| Signal::new(state.clone()));
 
-    let main_wrapper = Div::new()
-        .key("main-wrapper")
-        .style(
-            Style::new()
-                .set("display", "grid")
-                .set("gap", "0.8rem")
-                .set("width", "100%"),
-        )
-        .children(if state.is_db_connected {
-            vec![page_content]
-        } else {
-            vec![db_warning_banner(context), page_content]
-        })
-        .into_node();
-
-    Body::new()
-        .style(
-            Style::new()
-                .set("display", "grid")
-                .set("gap", "0.8rem")
-                .set("align-content", "start")
-                .set("padding-top", "4.2rem")
-                .set("padding-bottom", "5rem"),
-        )
-        .children([
-            header::header(state, context),
-            main_wrapper,
-            login_or_create_account_dialog::login_or_create_account_dialog(state, context),
-        ])
-        .into_node()
+    render_inner(&state, &context)
 }
 
-fn db_warning_banner(context: &PageContext) -> Node {
-    Div::new()
-        .class("db-warning-banner")
-        .style(
-            Style::new()
-                .set("width", "calc(100% - 1.8rem)")
-                .set("max-width", "920px")
-                .set("margin", "0.4rem auto 0")
-                .set("padding", "0.65rem 1rem")
-                .set("background", "rgb(245 158 11 / 0.12)")
-                .set("border", "1px solid rgb(245 158 11 / 0.35)")
-                .set("border-radius", "var(--radius-md)")
-                .set("color", "#fcd34d")
-                .set("font-size", "0.86rem")
-                .set("display", "flex")
-                .set("align-items", "center")
-                .set("justify-content", "space-between")
-                .set("gap", "0.75rem"),
-        )
-        .children([
-            Div::new()
-                .style(
-                    Style::new()
-                        .set("display", "flex")
-                        .set("align-items", "center")
-                        .set("gap", "0.5rem"),
-                )
-                .children([
-                    Div::new()
-                        .style(Style::new().set("font-size", "1rem"))
-                        .children([text("⚠️")])
-                        .into_node(),
-                    Div::new()
-                        .children([text(context.language.label(
-                            "Cannot connect to database. Local and offline features are available. Retrying connection...",
-                            "データベースに接続できません。ローカル機能・式の計算は利用可能です。接続を再試行しています...",
-                            "Ne povas konektiĝi al datumbazo. Lokaj funkcioj disponeblas. Rekonektante...",
-                        ))])
-                        .into_node(),
-                ])
-                .into_node(),
-            Div::new()
-                .style(
-                    Style::new()
-                        .set("font-size", "0.75rem")
-                        .set("opacity", "0.8")
-                        .set("white-space", "nowrap"),
-                )
-                .children([text(context.language.label(
-                    "Retrying...",
-                    "再接続中...",
-                    "Rekonektante...",
-                ))])
-                .into_node(),
-        ])
-        .into_node()
+pub fn render(state: &AppState, context: &PageContext) -> Element {
+    render_inner(state, context)
+}
+
+fn render_inner(state: &AppState, context: &PageContext) -> Element {
+    let page_content = match &context.location {
+        Some(Location::Home) => {
+            rsx! { event_list::EventListView { state: state.clone(), context: context.clone() } }
+        }
+        Some(Location::AccountList) => {
+            rsx! { account_list::AccountListView { state: state.clone(), context: context.clone() } }
+        }
+        Some(Location::PartList) => {
+            rsx! { part_list::PartListView { state: state.clone(), context: context.clone() } }
+        }
+        Some(Location::ModuleList) => {
+            rsx! { module_list::ModuleListView { state: state.clone(), context: context.clone() } }
+        }
+        Some(Location::LocalEventQueue) => {
+            rsx! { local_event_queue::LocalEventQueueView { state: state.clone(), context: context.clone() } }
+        }
+        Some(Location::Module(hash)) => {
+            rsx! { module_detail::ModuleDetailView { state: state.clone(), context: context.clone(), definition_event_hash: hash.clone() } }
+        }
+        Some(Location::Part(hash)) => {
+            rsx! { part_detail::PartDetailView { state: state.clone(), context: context.clone(), definition_event_hash: hash.clone() } }
+        }
+        Some(Location::Event(hash)) => {
+            rsx! { event_detail::EventDetailView { state: state.clone(), context: context.clone(), target_hash: hash.clone() } }
+        }
+        Some(Location::Account(account_id)) => {
+            rsx! { account_detail::AccountDetailView { state: state.clone(), context: context.clone(), account_id: account_id.clone() } }
+        }
+        None => rsx! { not_found::NotFoundView { state: state.clone(), context: context.clone() } },
+    };
+
+    rsx! {
+        div {
+            style: "display: grid; gap: 0.8rem; align-content: start; padding-top: 4.2rem; padding-bottom: 5rem;",
+            header::HeaderView { state: state.clone(), context: context.clone() }
+            div {
+                key: "main-wrapper",
+                style: "display: grid; gap: 0.8rem; width: 100%;",
+                if !state.is_db_connected {
+                    DbWarningBanner { context: context.clone() }
+                }
+                {page_content}
+            }
+            login_or_create_account_dialog::LoginOrCreateAccountDialog { state: state.clone(), context: context.clone() }
+        }
+    }
+}
+
+#[component]
+fn DbWarningBanner(context: PageContext) -> Element {
+    rsx! {
+        div {
+            class: "db-warning-banner",
+            style: "width: calc(100% - 1.8rem); max-width: 920px; margin: 0.4rem auto 0; padding: 0.65rem 1rem; background: rgb(245 158 11 / 0.12); border: 1px solid rgb(245 158 11 / 0.35); border-radius: var(--radius-md); color: #fcd34d; font-size: 0.86rem; display: flex; align-items: center; justify-content: space-between; gap: 0.75rem;",
+            div {
+                style: "display: flex; align-items: center; gap: 0.5rem;",
+                div {
+                    style: "font-size: 1rem;",
+                    "⚠️"
+                }
+                div {
+                    "{context.language.label(\"Cannot connect to database. Local and offline features are available. Retrying connection...\", \"データベースに接続できません。ローカル機能・式の計算は利用可能です。接続を再試行しています...\", \"Ne povas konektiĝi al datumbazo. Lokaj funkcioj disponeblas. Rekonektante...\")}"
+                }
+            }
+            div {
+                style: "font-size: 0.75rem; opacity: 0.8; white-space: nowrap;",
+                "{context.language.label(\"Retrying...\", \"再接続中...\", \"Rekonektante...\")}"
+            }
+        }
+    }
 }

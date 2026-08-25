@@ -2,7 +2,6 @@ use crate::Location;
 use crate::language::{Language, resolve_language};
 use crate::query::parse_query;
 use definy_event::event::EventType;
-use narumincho_vdom::Route;
 
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct PageContext {
@@ -60,7 +59,7 @@ impl PageContext {
         Self::build_url(&Location::Home, self.language.to_code(), event_type)
     }
 
-    pub fn href_with_lang(&self, location: Location) -> narumincho_vdom::Href<Location> {
-        narumincho_vdom::Href::External(self.url_with_lang(&location))
+    pub fn href_with_lang(&self, location: Location) -> String {
+        self.url_with_lang(&location)
     }
 }

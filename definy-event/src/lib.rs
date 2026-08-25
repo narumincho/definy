@@ -30,7 +30,7 @@ pub fn sign_and_serialize(
     serde_cbor::to_vec(&signed_event)
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum VerifyAndDeserializeError {
     DecodeError,
     VerifyError,

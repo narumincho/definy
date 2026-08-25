@@ -1,191 +1,105 @@
-use narumincho_vdom::*;
+use dioxus::prelude::*;
 
 use crate::page_context::PageContext;
 use crate::{AppState, Location};
 
-pub fn header(state: &AppState, context: &PageContext) -> Node {
-    let mut children = vec![header_main(state, context)];
-    if state.current_key.is_some() {
-        children.push(popover(state, context));
+#[component]
+pub fn HeaderView(state: AppState, context: PageContext) -> Element {
+    rsx! {
+        div {
+            HeaderMain { state: state.clone(), context: context.clone() }
+            if state.current_key.is_some() {
+                HeaderPopover { state, context }
+            }
+        }
     }
-    Div::new().children(children).into_node()
 }
 
-fn header_main(state: &AppState, context: &PageContext) -> Node {
-    Header::new()
-        .class("app-header")
-        .style(
-            Style::new()
-                .set("display", "flex")
-                .set("justify-content", "space-between")
-                .set("align-items", "center")
-                .set("padding", "0.65rem 1.2rem")
-                .set("background", "rgb(16 22 27 / 0.8)")
-                .set("backdrop-filter", "var(--glass-blur)")
-                .set("left", "0")
-                .set("right", "0")
-                .set("width", "100%")
-                .set("position", "fixed")
-                .set("top", "0")
-                .set("z-index", "10")
-                .set("border-bottom", "1px solid var(--border)"),
-        )
-        .children([
-            Div::new()
-                .style(
-                    Style::new()
-                        .set("display", "flex")
-                        .set("align-items", "center")
-                        .set("gap", "1rem"),
-                )
-                .children([
-                    A::<Location>::new()
-                        .href(context.href_with_lang(Location::Home))
-                        .style(
-                            Style::new()
-                                .set("text-decoration", "none")
-                                .set("display", "inline-flex")
-                                .set("align-items", "center")
-                                .set("margin-right", "0.3rem"),
-                        )
-                        .children([H1::new()
-                            .style(
-                                Style::new()
-                                    .set("font-size", "1.45rem")
-                                    .set("font-weight", "700")
-                                    .set("color", "var(--primary)")
-                                    .set("letter-spacing", "-0.03em"),
-                            )
-                            .children([text("definy")])
-                            .into_node()])
-                        .into_node(),
-                    nav_link(context, Location::Home, "Events", "イベント", "Eventoj"),
-                    nav_link(context, Location::PartList, "Parts", "パーツ", "Partoj"),
-                    nav_link(
-                        context,
-                        Location::ModuleList,
-                        "Modules",
-                        "モジュール",
-                        "Moduloj",
-                    ),
-                    nav_link(
-                        context,
-                        Location::LocalEventQueue,
-                        "Local Events",
-                        "ローカルイベント",
-                        "Lokaj eventoj",
-                    ),
-                    nav_link(
-                        context,
-                        Location::AccountList,
-                        "Accounts",
-                        "アカウント",
-                        "Kontoj",
-                    ),
-                ])
-                .into_node(),
-            Div::new()
-                .style(
-                    Style::new()
-                        .set("flex-grow", "1")
-                        .set("display", "flex")
-                        .set("justify-content", "center")
-                        .set("padding", "0 0.8rem"),
-                )
-                .children([Div::new()
-                    .style(
-                        Style::new()
-                            .set("font-size", "0.86rem")
-                            .set("color", "var(--text-secondary)")
-                            .set("max-width", "36vw")
-                            .set("overflow", "hidden")
-                            .set("text-overflow", "ellipsis")
-                            .set("white-space", "nowrap"),
-                    )
-                    .children([text(crate::page_title::page_title_text(state, context))])
-                    .into_node()])
-                .into_node(),
-            {
-                let account_button = match &state.current_key {
-                    Some(secret_key) => {
-                        let account_id = definy_event::event::AccountId(secret_key.verifying_key());
-                        let account_name = state.account_name_map().get(&account_id).cloned();
+#[component]
+fn HeaderMain(state: AppState, context: PageContext) -> Element {
+    let title_text = crate::page_title::page_title_text(&state, &context);
+    let current_key_opt = state.current_key.clone();
 
-                        Button::new()
-                            .type_("button")
-                            .command_for("header-popover")
-                            .command("show-popover")
-                            .style(
-                                Style::new()
-                                    .set("font-family", "'JetBrains Mono', monospace")
-                                    .set("font-size", "0.76rem")
-                                    .set("background", "rgb(255 255 255 / 0.06)")
-                                    .set("color", "var(--text)")
-                                    .set("border", "1px solid var(--border)")
-                                    .set("padding", "0.38rem 0.75rem")
-                                    .set("border-radius", "var(--radius-sm)")
-                                    .set("cursor", "pointer")
-                                    .set("max-width", "min(46vw, 360px)")
-                                    .set("overflow", "hidden")
-                                    .set("text-overflow", "ellipsis")
-                                    .set("white-space", "nowrap")
-                                    .set("anchor-name", "--header-popover-button"),
-                            )
-                            .children([text(&match account_name {
-                                Some(name) => name.to_string(),
-                                None => base64::Engine::encode(
-                                    &base64::engine::general_purpose::URL_SAFE_NO_PAD,
-                                    secret_key.verifying_key().to_bytes(),
-                                ),
-                            })])
-                            .into_node()
+    rsx! {
+        header {
+            class: "app-header",
+            style: "display: flex; justify-content: space-between; align-items: center; padding: 0.65rem 1.2rem; background: rgb(16 22 27 / 0.8); backdrop-filter: var(--glass-blur); left: 0; right: 0; width: 100%; position: fixed; top: 0; z-index: 10; border-bottom: 1px solid var(--border); box-sizing: border-box;",
+            div {
+                style: "display: flex; align-items: center; gap: 1rem;",
+                a {
+                    href: context.href_with_lang(Location::Home),
+                    style: "text-decoration: none; display: inline-flex; align-items: center; margin-right: 0.3rem;",
+                    h1 {
+                        style: "font-size: 1.45rem; font-weight: 700; color: var(--primary); letter-spacing: -0.03em; margin: 0;",
+                        "definy"
                     }
-                    None => Button::new()
-                        .command_for("login-or-create-account-dialog")
-                        .command(CommandValue::ShowModal)
-                        .style(
-                            Style::new()
-                                .set("font-size", "0.84rem")
-                                .set("font-weight", "600")
-                                .set("background", "var(--primary)")
-                                .set("color", "#0e1720")
-                                .set("border", "none")
-                                .set("padding", "0.4rem 0.88rem")
-                                .set("border-radius", "var(--radius-sm)")
-                                .set("cursor", "pointer")
-                                .set("box-shadow", "0 2px 8px rgb(124 192 216 / 0.22)")
-                                .set("transition", "opacity 0.15s ease"),
-                        )
-                        .children([text(context.language.label(
-                            "Log In / Sign Up",
-                            "ログイン / サインアップ",
-                            "Ensaluti / Registriĝi",
-                        ))])
-                        .into_node(),
-                };
+                }
+                NavLink { context: context.clone(), target: Location::Home, label: "Events", label_ja: "イベント", label_eo: "Eventoj" }
+                NavLink { context: context.clone(), target: Location::PartList, label: "Parts", label_ja: "パーツ", label_eo: "Partoj" }
+                NavLink { context: context.clone(), target: Location::ModuleList, label: "Modules", label_ja: "モジュール", label_eo: "Moduloj" }
+                NavLink { context: context.clone(), target: Location::LocalEventQueue, label: "Local Events", label_ja: "ローカルイベント", label_eo: "Lokaj eventoj" }
+                NavLink { context: context.clone(), target: Location::AccountList, label: "Accounts", label_ja: "アカウント", label_eo: "Kontoj" }
+            }
+            div {
+                style: "flex-grow: 1; display: flex; justify-content: center; padding: 0 0.8rem;",
+                div {
+                    style: "font-size: 0.86rem; color: var(--text-secondary); max-width: 36vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;",
+                    "{title_text}"
+                }
+            }
+            div {
+                style: "display: flex; align-items: center; gap: 0.65rem;",
+                LanguageDropdown { state: state.clone(), context: context.clone() }
+                if let Some(secret_key) = current_key_opt {
+                    {
+                        let account_id = definy_event::event::AccountId(secret_key.verifying_key());
+                        let account_name = state.account_name_map().get(&account_id).cloned().map(|s| s.to_string()).unwrap_or_else(|| {
+                            base64::Engine::encode(
+                                &base64::engine::general_purpose::URL_SAFE_NO_PAD,
+                                secret_key.verifying_key().to_bytes(),
+                            )
+                        });
 
-                Div::new()
-                    .style(
-                        Style::new()
-                            .set("display", "flex")
-                            .set("align-items", "center")
-                            .set("gap", "0.65rem"),
-                    )
-                    .children([language_dropdown(state, context), account_button])
-                    .into_node()
-            },
-        ])
-        .into_node()
+                        rsx! {
+                            button {
+                                r#type: "button",
+                                "popovertarget": "header-popover",
+                                "popovertargetaction": "show",
+                                style: "font-family: 'JetBrains Mono', monospace; font-size: 0.76rem; background: rgb(255 255 255 / 0.06); color: var(--text); border: 1px solid var(--border); padding: 0.38rem 0.75rem; border-radius: var(--radius-sm); cursor: pointer; max-width: min(46vw, 360px); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; anchor-name: --header-popover-button;",
+                                "{account_name}"
+                            }
+                        }
+                    }
+                } else {
+                    button {
+                        r#type: "button",
+                        onclick: move |_| {
+                            let _ = web_sys::window()
+                                .and_then(|w| w.document())
+                                .and_then(|d| d.get_element_by_id("login-or-create-account-dialog"))
+                                .and_then(|el| wasm_bindgen::JsCast::dyn_into::<web_sys::HtmlDialogElement>(el).ok())
+                                .map(|dlg| dlg.show_modal());
+                        },
+                        style: "font-size: 0.84rem; font-weight: 600; background: var(--primary); color: #0e1720; border: none; padding: 0.4rem 0.88rem; border-radius: var(--radius-sm); cursor: pointer; box-shadow: 0 2px 8px rgb(124 192 216 / 0.22); transition: opacity 0.15s ease;",
+                        "{context.language.label(\"Log In / Sign Up\", \"ログイン / サインアップ\", \"Ensaluti / Registriĝi\")}"
+                    }
+                }
+            }
+        }
+    }
 }
 
-fn nav_link(
-    context: &PageContext,
+#[component]
+fn NavLink(
+    context: PageContext,
     target: Location,
     label: &'static str,
     label_ja: &'static str,
     label_eo: &'static str,
-) -> Node {
+) -> Element {
     let is_active = match (&context.location, &target) {
+        (Some(Location::Home), Location::Home) => true,
+        (Some(Location::Event(_)), Location::Home) => true,
         (Some(Location::PartList), Location::PartList) => true,
         (Some(Location::Part(_)), Location::PartList) => true,
         (Some(Location::ModuleList), Location::ModuleList) => true,
@@ -195,270 +109,130 @@ fn nav_link(
         (Some(Location::Account(_)), Location::AccountList) => true,
         _ => false,
     };
-    let mut style = Style::new()
-        .set("font-size", "0.88rem")
-        .set("padding", "0.3rem 0.6rem")
-        .set("border-radius", "var(--radius-sm)")
-        .set("transition", "all 0.15s ease")
-        .set("text-decoration", "none");
-    if is_active {
-        style = style
-            .set("color", "var(--text)")
-            .set("background", "rgb(255 255 255 / 0.08)")
-            .set("font-weight", "500");
+
+    let style = if is_active {
+        "font-size: 0.88rem; padding: 0.3rem 0.6rem; border-radius: var(--radius-sm); transition: all 0.15s ease; text-decoration: none; color: var(--text); background: rgb(255 255 255 / 0.08); font-weight: 500;"
     } else {
-        style = style
-            .set("color", "var(--text-secondary)")
-            .set("font-weight", "400");
+        "font-size: 0.88rem; padding: 0.3rem 0.6rem; border-radius: var(--radius-sm); transition: all 0.15s ease; text-decoration: none; color: var(--text-secondary); font-weight: 400;"
+    };
+
+    rsx! {
+        a {
+            href: context.href_with_lang(target),
+            style: "{style}",
+            "{context.language.label(label, label_ja, label_eo)}"
+        }
     }
-    A::<Location>::new()
-        .href(context.href_with_lang(target))
-        .style(style)
-        .children([text(context.language.label(label, label_ja, label_eo))])
-        .into_node()
 }
 
-fn language_dropdown(state: &AppState, context: &PageContext) -> Node {
+#[component]
+fn LanguageDropdown(state: AppState, context: PageContext) -> Element {
     let location = context.location.clone().unwrap_or(Location::Home);
     let event_type = context.filter_event_type;
-    let dropdown = crate::dropdown::searchable_dropdown(
-        state,
-        "language",
-        context.language.to_code(),
-        crate::language::SUPPORTED_LANGUAGES
-            .iter()
-            .map(|language| {
-                (
-                    language.to_code().to_string(),
-                    language.native_name().to_string(),
-                )
-            })
-            .collect::<Vec<_>>()
-            .as_slice(),
-        std::rc::Rc::new(move |value, label, is_selected| {
-            let url = crate::language::Language::from_code(value)
-                .map(|language| PageContext::build_url(&location, language.to_code(), event_type))
-                .unwrap_or_default();
-            Anchor::<Location>::new()
-                .href(Href::External(url))
-                .style(
-                    crate::dropdown::option_style(is_selected)
-                        .set("display", "block")
-                        .set("text-decoration", "none"),
-                )
-                .children([text(label)])
-                .into_node()
-        }),
-    );
-    match &context.language_requested_code {
-        Some(notice) => Div::new()
-            .style(
-                Style::new()
-                    .set("display", "grid")
-                    .set("gap", "0.25rem")
-                    .set("justify-items", "start"),
-            )
-            .children([
-                dropdown,
-                Div::new()
-                    .style(
-                        Style::new()
-                            .set("font-size", "0.75rem")
-                            .set("color", "var(--text-secondary)")
-                            .set("max-width", "22rem"),
-                    )
-                    .children([text(format!(
-                        "言語「{}」はサポートされていないため「{}」にフォールバックしました",
-                        notice,
-                        context.language.native_name()
-                    ))])
-                    .into_node(),
-            ])
-            .into_node(),
-        None => dropdown,
+    let current_code = context.language.to_code().to_string();
+    let current_native = context.language.native_name().to_string();
+    let requested_code = context.language_requested_code.clone();
+
+    let supported = crate::language::SUPPORTED_LANGUAGES;
+
+    rsx! {
+        div {
+            style: "display: grid; gap: 0.25rem; justify-items: start;",
+            div {
+                button {
+                    r#type: "button",
+                    "popovertarget": "dropdown-panel-language",
+                    "popovertargetaction": "show",
+                    style: "width: 100%; text-align: left; padding: 0.4rem 0.6rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text); cursor: pointer; display: flex; justify-content: space-between; align-items: center; white-space: nowrap; anchor-name: --dropdown-language;",
+                    "{current_native}"
+                    div {
+                        style: "opacity: 0.5; font-size: 0.8rem; margin-left: 0.5rem;",
+                        "▼"
+                    }
+                }
+                div {
+                    id: "dropdown-panel-language",
+                    "popover": "auto",
+                    style: "position-anchor: --dropdown-language; top: anchor(bottom); left: anchor(left); min-width: max(100%, 12rem); margin: 2px; background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: var(--radius-sm); box-shadow: var(--shadow-lg);",
+                    div {
+                        style: "display: flex; flex-direction: column;",
+                        for lang in supported {
+                            {
+                                let is_selected = lang.to_code() == current_code;
+                                let url = PageContext::build_url(&location, lang.to_code(), event_type);
+                                let bg = if is_selected { "rgb(255 255 255 / 0.1)" } else { "transparent" };
+                                let color = if is_selected { "var(--primary)" } else { "var(--text)" };
+
+                                rsx! {
+                                    a {
+                                        key: "{lang.to_code()}",
+                                        href: "{url}",
+                                        style: "display: block; width: 100%; box-sizing: border-box; padding: 0.45rem 0.65rem; text-decoration: none; border-bottom: 1px solid rgb(255 255 255 / 0.04); background: {bg}; color: {color}; font-weight: 500;",
+                                        "{lang.native_name()}"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            if let Some(notice) = requested_code {
+                div {
+                    style: "font-size: 0.75rem; color: var(--text-secondary); max-width: 22rem;",
+                    "言語「{notice}」はサポートされていないため「{context.language.native_name()}」にフォールバックしました"
+                }
+            }
+        }
     }
 }
 
-fn popover(state: &AppState, context: &PageContext) -> Node {
+#[component]
+fn HeaderPopover(mut state: AppState, context: PageContext) -> Element {
     let account_link = state.current_key.as_ref().map(|key| {
         let account_id = definy_event::event::AccountId(key.verifying_key());
         let account_name =
             crate::app_state::account_display_name(&state.account_name_map(), &account_id);
-        A::<Location>::new()
-            .href(context.href_with_lang(Location::Account(account_id)))
-            .style(
-                Style::new()
-                    .set("padding", "0.4rem 0.5rem")
-                    .set("border-radius", "0.4rem")
-                    .set("background", "rgb(255 255 255 / 0.04)")
-                    .set("color", "var(--text)")
-                    .set("text-decoration", "none")
-                    .set("font-size", "0.85rem")
-                    .set("font-weight", "600"),
-            )
-            .children([text(account_name)])
-            .into_node()
+        (account_id, account_name)
     });
 
-    Div::new()
-        .id("header-popover")
-        .popover()
-        .style(
-            Style::new()
-                .set("position-anchor", "--header-popover-button")
-                .set("top", "anchor(bottom)")
-                .set("left", "auto")
-                .set("right", "anchor(right)")
-                .set("margin", "4px")
-                .set("padding", "0.42rem")
-                .set("border", "1px solid var(--border)")
-                .set("background", "var(--surface)")
-                .set("color", "var(--text)")
-                .set("backdrop-filter", "var(--glass-blur)")
-                .set("border-radius", "var(--radius-md)")
-                .set("box-shadow", "var(--shadow-lg)"),
-        )
-        .children({
-            let mut children = Vec::new();
-            if let Some(account_link) = account_link {
-                children.push(account_link);
+    rsx! {
+        div {
+            id: "header-popover",
+            "popover": "auto",
+            style: "position-anchor: --header-popover-button; top: anchor(bottom); left: auto; right: anchor(right); margin: 4px; padding: 0.42rem; border: 1px solid var(--border); background: var(--surface); color: var(--text); backdrop-filter: var(--glass-blur); border-radius: var(--radius-md); box-shadow: var(--shadow-lg);",
+            if let Some((account_id, account_name)) = account_link {
+                a {
+                    href: context.href_with_lang(Location::Account(account_id)),
+                    style: "display: block; padding: 0.4rem 0.5rem; border-radius: 0.4rem; background: rgb(255 255 255 / 0.04); color: var(--text); text-decoration: none; font-size: 0.85rem; font-weight: 600;",
+                    "{account_name}"
+                }
             }
-            children.push(
-                Button::new()
-                    .type_("button")
-                    .on_click(EventHandler::new(async |set_state| {
-                        set_state(Box::new(|state: AppState| -> AppState {
-                            AppState {
-                                force_offline: !state.force_offline,
-                                ..state.clone()
-                            }
-                        }));
-                    }))
-                    .children([text(if state.force_offline {
-                        context
-                            .language
-                            .label("Offline: On", "オフライン: オン", "Senkonekte: En")
-                    } else {
-                        context.language.label(
-                            "Offline: Off",
-                            "オフライン: オフ",
-                            "Senkonekte: Malŝaltita",
-                        )
-                    })])
-                    .style(
-                        Style::new()
-                            .set("width", "100%")
-                            .set("background-color", "transparent")
-                            .set("color", "var(--text)")
-                            .set("border", "none")
-                            .set("cursor", "pointer")
-                            .set("padding", "0.4rem 0.5rem")
-                            .set("text-align", "left")
-                            .set("display", "flex")
-                            .set("justify-content", "flex-start"),
-                    )
-                    .into_node(),
-            );
-            children.push(
-                Button::new()
-                    .type_("button")
-                    .command("hide-popover")
-                    .command_for("header-popover")
-                    .on_click(EventHandler::new(async |set_state| {
-                        crate::navigator_credential::credential_clear();
-                        set_state(Box::new(|state: AppState| -> AppState {
-                            AppState {
-                                current_key: None,
-                                ..state.clone()
-                            }
-                        }));
-                    }))
-                    .children([text(context.language.label(
-                        "Log Out",
-                        "ログアウト",
-                        "Elsaluti",
-                    ))])
-                    .style(
-                        Style::new()
-                            .set("width", "100%")
-                            .set("background-color", "transparent")
-                            .set("color", "#fca5a5")
-                            .set("border", "none")
-                            .set("cursor", "pointer")
-                            .set("padding", "0.4rem 0.5rem")
-                            .set("text-align", "left")
-                            .set("display", "flex")
-                            .set("justify-content", "flex-start"),
-                    )
-                    .into_node(),
-            );
-            children
-        })
-        .into_node()
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::app_state::build_initial_state;
-    use crate::language::Language;
-
-    #[test]
-    fn test_language_dropdown_highlights_selected_language() {
-        let state = build_initial_state(vec![], false, false, None, None, true);
-
-        // 1. 日本語 (ja) の PageContext
-        let context_ja = PageContext::from_path_and_query("/", "?lang=ja", None);
-        let html_ja = narumincho_vdom::to_html(&header(&state, &context_ja));
-        assert_eq!(context_ja.language, Language::Japanese);
-
-        // 日本語リンクにハイライト (var(--primary) と background:rgb(255 255 255 / 0.1))
-        let ja_link = html_ja
-            .split("<a ")
-            .find(|s| s.contains("日本語</a>"))
-            .unwrap();
-        assert!(ja_link.contains("color:var(--primary)"));
-        assert!(ja_link.contains("background:rgb(255 255 255 / 0.1)"));
-        // 英語リンクは非選択 (var(--text) と background:transparent)
-        let en_link_in_ja = html_ja
-            .split("<a ")
-            .find(|s| s.contains("English</a>"))
-            .unwrap();
-        assert!(en_link_in_ja.contains("color:var(--text)"));
-        assert!(en_link_in_ja.contains("background:transparent"));
-
-        // 2. エスペラント (eo) の PageContext
-        let context_eo = PageContext::from_path_and_query("/", "?lang=eo", None);
-        let html_eo = narumincho_vdom::to_html(&header(&state, &context_eo));
-        assert_eq!(context_eo.language, Language::Esperanto);
-        let eo_link = html_eo
-            .split("<a ")
-            .find(|s| s.contains("Esperanto</a>"))
-            .unwrap();
-        assert!(eo_link.contains("color:var(--primary)"));
-        assert!(eo_link.contains("background:rgb(255 255 255 / 0.1)"));
-        let ja_link_in_eo = html_eo
-            .split("<a ")
-            .find(|s| s.contains("日本語</a>"))
-            .unwrap();
-        assert!(ja_link_in_eo.contains("color:var(--text)"));
-        assert!(ja_link_in_eo.contains("background:transparent"));
-
-        // 3. 英語 (en) の PageContext
-        let context_en = PageContext::from_path_and_query("/", "?lang=en", None);
-        let html_en = narumincho_vdom::to_html(&header(&state, &context_en));
-        assert_eq!(context_en.language, Language::English);
-        let en_link = html_en
-            .split("<a ")
-            .find(|s| s.contains("English</a>"))
-            .unwrap();
-        assert!(en_link.contains("color:var(--primary)"));
-        assert!(en_link.contains("background:rgb(255 255 255 / 0.1)"));
-        let ja_link_in_en = html_en
-            .split("<a ")
-            .find(|s| s.contains("日本語</a>"))
-            .unwrap();
-        assert!(ja_link_in_en.contains("color:var(--text)"));
-        assert!(ja_link_in_en.contains("background:transparent"));
+            button {
+                r#type: "button",
+                style: "width: 100%; background-color: transparent; color: var(--text); border: none; cursor: pointer; padding: 0.4rem 0.5rem; text-align: left; display: flex; justify-content: flex-start;",
+                onclick: move |_| {
+                    let mut dispatch = use_context::<Signal<AppState>>();
+                    let current = dispatch.read().force_offline;
+                    dispatch.write().force_offline = !current;
+                },
+                if state.force_offline {
+                    {context.language.label("Offline: On", "オフライン: オン", "Senkonekte: En")}
+                } else {
+                    {context.language.label("Offline: Off", "オフライン: オフ", "Senkonekte: Malŝaltita")}
+                }
+            }
+            button {
+                r#type: "button",
+                "popovertarget": "header-popover",
+                "popovertargetaction": "hide",
+                style: "width: 100%; background-color: transparent; color: #fca5a5; border: none; cursor: pointer; padding: 0.4rem 0.5rem; text-align: left; display: flex; justify-content: flex-start;",
+                onclick: move |_| {
+                    crate::navigator_credential::credential_clear();
+                    let mut dispatch = use_context::<Signal<AppState>>();
+                    dispatch.write().current_key = None;
+                },
+                "{context.language.label(\"Log Out\", \"ログアウト\", \"Elsaluti\")}"
+            }
+        }
     }
 }

@@ -535,41 +535,26 @@ fn render_html_response(path: &str) -> Response<Full<Bytes>> {
             last_error: None,
         },
     };
-    let head_children = vec![
-        narumincho_vdom::Title::new()
-            .children([narumincho_vdom::text(definy_ui::document_title_text(
-                &state, &context,
-            ))])
-            .into_node(),
-        narumincho_vdom::Meta::new()
-            .name("viewport")
-            .content("width=device-width,initial-scale=1.0")
-            .into_node(),
-        narumincho_vdom::Link::new()
-            .rel("icon")
-            .href(TEST_ICON_HASH)
-            .into_node(),
-        narumincho_vdom::StyleElement::new()
-            .children([narumincho_vdom::text(include_str!("../main.css"))])
-            .into_node(),
-        narumincho_vdom::Script::new()
-            .type_("module")
-            .children([narumincho_vdom::text(format!(
-                "import init from '/{}';\n    init({{ module_or_path: \"/{}\" }});",
-                TEST_JAVASCRIPT_HASH, TEST_WASM_HASH
-            ))])
-            .into_node(),
-    ];
-    let html_node = narumincho_vdom::Html::new()
-        .lang(context.language.to_code())
-        .children([
-            narumincho_vdom::Head::new()
-                .children(head_children)
-                .into_node(),
-            definy_ui::render(&state, &context),
-        ])
-        .into_node();
-    let html = narumincho_vdom::to_html(&html_node);
+    let title = definy_ui::document_title_text(&state, &context);
+    let lang_code = context.language.to_code();
+    let body_html = dioxus_ssr::render_element(definy_ui::render(&state, &context));
+
+    let html = format!(
+        r#"<!DOCTYPE html>
+<html lang="{lang_code}">
+<head>
+<title>{title}</title>
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<link rel="icon" href="{TEST_ICON_HASH}">
+<style>{css}</style>
+<script type="module">import init from '/{TEST_JAVASCRIPT_HASH}'; init({{ module_or_path: '/{TEST_WASM_HASH}' }});</script>
+</head>
+<body>
+<div id="main">{body_html}</div>
+</body>
+</html>"#,
+        css = include_str!("../main.css")
+    );
 
     Response::builder()
         .status(200)
